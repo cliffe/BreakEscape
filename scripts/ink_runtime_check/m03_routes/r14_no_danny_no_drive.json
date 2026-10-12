@@ -8,5 +8,5 @@
 {"set":{"night_confrontation_ready":true}},
 {"talk":"phone","picks":["How do I play this","Understood","Where do I stand","Thanks","Nothing right now"]},
 {"talk":"victoria","picks":["need to talk","approvals","walked away","Work for us","Go."]},
-{"talk":"debrief","picks":["goes dark","move first","So that drive","next assignment"]}
+{"talk":"debrief","picks":["goes dark","move first","So that drive","Find him","next assignment"]}
 ]}

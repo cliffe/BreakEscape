@@ -523,7 +523,15 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
         "emitters": {
           "reception_counter": { "color": "#4de8ff", "radius": 56, "intensity": 0.6, "offsetY": 8 },
           "fire_alarm_point": [ { "intensity": 0 } ]
-        }
+        },
+        "variants": [
+          { "condition": "globalVars.clone_call_done === true", "ambient": "#545c70", "panels": false,
+            "lights": [
+              { "x": 5.2, "y": 3.6, "color": "#e8f0ff", "radius": 96, "intensity": 0.3 },
+              { "x": 5.2, "y": 1.6, "color": "#ffe6c8", "radius": 70, "intensity": 0.35 }
+            ],
+            "emitters": { "reception_counter": { "color": "#4de8ff", "radius": 64, "intensity": 0.8, "offsetY": 8 } } }
+        ]
       },
       "connections": {
         "north": "main_hallway"
@@ -1251,7 +1259,14 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
         "emitters": {
           "threat_map": { "color": "#6ab4ff", "radius": 60, "intensity": 0.65, "offsetY": 6, "effect": "screen" },
           "fire_alarm_point": [ { "intensity": 0 } ]
-        }
+        },
+        "variants": [
+          { "condition": "globalVars.clone_call_done === true", "mode": "on", "ambient": "#323a50", "panels": false,
+            "lights": [
+              { "x": 2.5, "y": 3.2, "color": "#cfd8ff", "radius": 64, "intensity": 0.3 },
+              { "x": 7.5, "y": 3.2, "color": "#cfd8ff", "radius": 64, "intensity": 0.3 }
+            ] }
+        ]
       },
       "connections": {
         "south": "reception_lobby",
@@ -1499,7 +1514,11 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
         "ambient": "#bcb6ae",
         "emitters": {
           "fire_alarm_point": [ { "intensity": 0 } ]
-        }
+        },
+        "variants": [
+          { "condition": "globalVars.clone_call_done === true", "ambient": "#343a50", "panels": false,
+            "lights": [ { "x": 3.5, "y": 2.6, "color": "#ffe2b8", "radius": 64, "intensity": 0.25 } ] }
+        ]
       },
       "connections": {
         "west": "main_hallway",
@@ -1534,6 +1553,7 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
               "pauseToAttack": true
             },
             "facePlayer": false,
+            "torch": { "condition": "globalVars.clone_call_done === true" },
             "patrol": {
               "enabled": true,
               "pauseForPlayer": false,
@@ -1671,7 +1691,8 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
     "danny_office": {
       "type": "room_zds_office",
       "lighting": {
-        "mode": "dark", "darkAmbient": "#161c30",
+        "mode": "on", "darkAmbient": "#161c30",
+        "variants": [ { "condition": "globalVars.clone_call_done === true", "mode": "dark" } ],
         "emitters": {
           "office-misc-lamp": [ { "condition": "globalVars.clone_call_done === true", "color": "#ffc880", "radius": 64, "intensity": 0.7, "offsetX": 10 }, { "intensity": 0 } ],
           "fire_alarm_point": [ { "intensity": 0 } ]

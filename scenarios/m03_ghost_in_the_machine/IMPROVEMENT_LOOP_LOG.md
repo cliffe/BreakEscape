@@ -1587,3 +1587,243 @@ No audio exists for m03. Player choices aren't listed. Pairs come from a line di
   -> HaX (phone text): Network's stripped, the case is made, and Danny's made his call. Sterling's your last move.
 - HaX (phone text): And a line under it: "Target Selection Consultation", ten thousand. They chose the ward for Ghost.
   -> HaX (phone text): And a line under it: "Target Selection Consultation", ten thousand. They chose the hospital for Ghost.
+
+## Lighting cycle 2 (2026-10-12)
+
+Engine work at the coordinator's instruction, in four change sets (patches in `build_evidence/lighting_c2/patches/`, they apply in order from HEAD): L2 white-map fix, L1 room `variants`, L3 NPC torch, tour flags. Then m03's night blocks moved into variants. Plan §10; screenshots `build_evidence/lighting_c2/`.
+
+| Severity | Count | Fixed | Deferred |
+|---|---|---|---|
+| Blocker | 0 | 0 | 0 |
+| Major | 2 | 1 | 1 |
+| Minor | 3 | 3 | 0 |
+
+- **M1 (fixed):** reception, the main hallway and the executive wing stayed in their day state at night, and Danny's office was dark by day. Now variants on `clone_call_done`; Danny's office on by day, dark at night.
+- **M2 (deferred, needs a tester):** a page reload at night staying night isn't proven in a browser. My reload run was blocked by the permission classifier (it syncs game state to the :3001 server). Node tests cover the resolution; the engine resolves at load from saved globals.
+- m1 the night reception at the cycle-1 probe level (`#808aa0`) still read as lit: `#545c70`, counter pool 0.3.
+- m2 the night hallway was a touch bright: `#3a4258` → `#323a50`.
+- m3 the night lobby's only accent was a pool with no source: a warm cove wash on the slat wall (a concealed strip, so no fixture needed from dressing).
+- Terry carries a torch at night (`behavior.torch`, night only); a guard on the floor drops it (KO check).
+- Checks: node suite 481 tests, 475 pass; the 6 failures are pre-existing or not lighting (credits-theme, scada-historian-data, a state-sync wiring test; engine-fixes-pass3 passes alone; two npc-ink-variables tests read m03's Victoria ink, which the dialogue fixer is editing). Validator schema passes for m03, m01, m02, sis01, sis02, Tesseract. Rails suite not run (nothing server-side changed).
+- Not recorded by me: the approval status of L1–L3 in `DECISIONS_PENDING.md` (the coordinator records user decisions).
+
+## Dialogue cycle 4 fixes (2026-10-12)
+
+Review acted on: `DIALOGUE_REVIEW_P2_C4.md` (revise, light: 0 blockers, 2 majors, 19 minors, 10 rewrites W4-1..W4-10, 2 noted lines, 3 flat scenes). This is the last full fix cycle; a light confirmation read follows. Fixer: the same Opus agent, resumed. Ink snapshot: scratchpad `m03-dialogue/snapshot_c4/`. The erb was not touched (lighting and sprite agents are editing it).
+
+| Severity | Found | Fixed | Withdrawn | Deferred |
+|---|---|---|---|---|
+| Blocker | 0 | 0 | 0 | 0 |
+| Major | 2 | 2 | 0 | 0 |
+| Minor | 19 | 19 | 0 | 0 |
+| Line rewrites | 10 + 2 noted | 12 | 0 | 0 |
+| Flat scenes | 3 | 3 | 0 | 0 |
+| Part 3 optional callbacks | 2 | 0 | 0 | 2 (need new scenario globals) |
+
+### Terry's night corridor, rewritten as one scene (D5-1 to D5-5, D5-11, D5-12, D5-17, D5-18, W4-1 to W4-4)
+
+- **Opener order** (`m03_npc_terry_mott.ink`, start):
+  1. Caught picking already (D5-3): "You. The one with the picks. Let's hear it, then."
+  2. Ffion's story, with the afternoon face folded into each line as an inline choice between fixed strings (D5-2):
+     - "Notebook, was it? Should've known it'd be you.";
+     - "The three o'clock, back again.";
+     - "Didn't say it was the three o'clock." in place of "That you?".
+  3. The face alone.
+  4. A stranger.
+- **His question.** "Go on, then. Why are you here?" (W4-1). It isn't asked when the picks opener has already asked, and on the default route there is now only one "Well?".
+- **New choices-only `excuse_menu`.** It re-asks "Still waiting." on a reopen or reload before the player has answered. A new local `excuse_given` means a reload at his question no longer skips to "You again." (D5-11).
+- **The card (D5-1).** If he met the player by day: "A visitor badge at three and her card at eleven. / Either she's taken a shine to you or I'm in trouble. Ten minutes." (+5, still suspicious). Otherwise: "That's one of the exec cards. ...Right. Carry on." (W4-3, +15, no longer suspicious).
+- **D5-4.** All six excuse exits into his hub set `hub_quiet`, so no greeting follows a dismissal. An excuse that landed clears `guard_suspicious`: enrolment forms when he didn't place the face, or the sterling story. So "Mind how you go." now plays (r9b), and the cold greeting is no longer universal. Its variants are "Well?" / "I'm listening." / "Something else?".
+- **Small fixes:**
+  - D5-5: "Maintenance? At eleven at night?"
+  - W4-2: "No work order, and you're not our usual lot. / Who's your supervisor, then?"
+  - W4-4: "New starters don't get nights. Not here."
+  - D5-17: "Go on, then." cut on the sterling-story files line.
+  - D5-18: "[Wrong turn. I'll find it.]" now ends the chat with "Back the way you came."
+- **D5-12.** The detection is counted in a new choice-free knot, `hostile_count`, before `hostile_confrontation`, so a reopen there doesn't count twice.
+- **Idle.** `guard_idle`'s night hand-over also covers "warned but not answered" and skips a bribed guard.
+
+### Route fixes and the rest
+
+| # | Outcome |
+|---|---|
+| D5-6 | Victoria's `idle` plays the first night look-in at once (inside the quiet-flag else, so on a reopen only). "Sterling hasn't left." |
+| D5-7 | Phone status by Danny outcome: out cold (fate ko or `danny_ko`, new synced VAR) / on his way in / on the record / his choice is his now. |
+| D5-8 | "Careful. You're starting to sound like her." |
+| D5-9 | The 214 choice is gated on `transaction_log_read or roster_seen` (VAR `transaction_log_read` added to the debrief; global already declared). |
+| D5-10 | Ffion: `closing_up` re-asks when `night_greeted` but no answer; `night_answer` prints "Well? Is she expecting you?" on any reopen or reload (quiet flag on the first pass). The hub check also covers `ffion_night_story == ""`. Comment corrected. r12 shows it surviving a reload. |
+| D5-11, D5-12 | See Terry. |
+| D5-13 | New `danny_reply_none`: "[Find him before they do.]" / "[He wasn't my job.]". r14's longest run is 10 → 8. |
+| D5-14 | Recap line starts "Their" when it is the whole answer. |
+| D5-15 | "Every buyer downstream just lost their supplier. They'll pay more for worse." |
+| D5-16 | "We'll need you soon" cut from all five `final_assessment` lines; the closing line carries "what's next". |
+| D5-19 | Ffion: "Let me get you checked in." cut; the directions print once (not again on the return from `company_overview`, which now gets "Anyway. Sign in when you're ready."); "Sign in for me, and I'll print you a badge." |
+| D5-20 | Skip route: "The client roster, the logs, and whatever they're planning next. There's a Phase 2." |
+| D5-21 | Routes r2, r7 and r8 repaired. r2 does the cooperation questions as a second visit. r7's mismatch variant resets `player_warned`/`excuse_given`. r8 now ends on the night call, marked as a probe end. Also updated after the Terry rewrite: r9, r12, r14, r16. |
+| W4-5 to W4-10 | All applied: Ffion "Keep it on show, or the guard has kittens."; Victoria "Competent is cheap."; "Some of what they bought from me is already installed."; "The sensible answer."; HaX "Until last night the Architect was a rumour. Now it's a signature on a plan."; "Conspiracy, computer misuse, and they want St. Catherine's on the charge sheet." |
+| Noted lines | debrief "...will remember last night." (no tail); Ffion's sign-in line. |
+
+**Deferred: the two Part 3 callbacks** (the debrief remembering a St. Catherine's opener, and "Danny drew that survey"). Each needs a new scenario global (`came_via_hospital` is local to Victoria's ink), and the erb is off-limits this cycle. One line each when the erb is free.
+
+### Route stats (longest run without a choice; lines/choices; stops)
+
+Remaining stops are deliberate "close the chat here" probe steps (r2, r4, r6, r8, r11, r12, r15).
+
+| Route | Longest run, before → after | Lines, choices | Stops |
+|---|---|---|---|
+| r1_smooth | 9 → 9 | 244/65 → 243/65 | 0 → 0 |
+| r2_suspicious | 9 → 9 | 193/49 → 200/53 | 2 → 1 |
+| r3_skip | 9 → 9 | 149/32 → 149/32 | 0 → 0 |
+| r4_ko | 9 → 9 | 127/29 → 126/29 | 2 → 2 |
+| r5_recruit_expose | 8 → 8 | 188/47 → 186/47 | 0 → 0 |
+| r6_escape | 9 → 9 | 217/67 → 217/67 | 1 → 1 |
+| r7_notebook | 3 → 4 | 17/6 → 22/6 | 1 → 0 |
+| r8_closed | 5 → 5 | 28/6 → 30/7 | 2 → 1 |
+| r9_ffion_day_night | 6 → 5 | 36/12 → 38/13 | 0 → 0 |
+| r9b_ffion_sterling | 3 → 3 | 26/10 → 25/10 | 0 → 0 |
+| r10_guard_ko_bribe | 9 → 9 | 77/16 → 77/16 | 0 → 0 |
+| r11_rude | 8 → 8 | 175/41 → 174/41 | 4 → 4 |
+| r11b_rude_lowinfluence | 5 → 5 | 59/15 → 59/15 | 0 → 0 |
+| r12_reload_everywhere | 9 → 9 | 133/26 → 137/28 | 8 → 8 |
+| r13_sold_then_protect | 9 → 9 | 119/28 → 118/28 | 0 → 0 |
+| r14_no_danny_no_drive | 10 → 8 | 101/27 → 102/28 | 0 → 0 |
+| r15_ko_heavy | 9 → 9 | 83/18 → 83/18 | 2 → 2 |
+| r16_terry_probes | 3 → 3 | 24/7 → 27/9 | 1 → 0 |
+
+Proof the reviewer asked for:
+- r16 (a) shows recognition, then the D5-1 card line.
+- r16 (b) opens "You. The one with the picks."
+- r16 (c) opens "Should've known it'd be you."
+- No greeting follows a dismissal on r1, r9b or r16.
+- r14 has the no-Danny reply.
+- r12 shows Ffion's question ("Well? Is she expecting you?") and Terry's ("Still waiting.") surviving reloads.
+
+### Checks run
+
+- Compile: 8/8, no warnings.
+- Validator with ink, `--no-graph`: no errors, known warnings only.
+- dialoguelint: the 2 justified warnings only.
+- tagdiff `--old snapshot_c4`, all intended:
+  - Terry: 132 differences, mostly his excuse choices moving from `first_excuse` into the new `excuse_menu`, plus `excuse_given`/`excuse_menu_quiet`, `hostile_count`, the opener branches and the `hub_quiet`/`guard_suspicious` writes on the exits.
+  - Victoria: the idle hand-over.
+  - Debrief: `danny_reply_none`, the D5-9 gate, the recap condition, VAR `transaction_log_read`.
+  - Ffion: `night_answer_quiet`, the re-ask, the badge-knot branch.
+  - Phone: the Danny-outcome branches and VAR `danny_ko`.
+  - Briefing, Danny, night transition: structure unchanged.
+- reopencheck: 0 problems.
+- loopcheck: 38 runs, 0 failing:
+  - Terry: each Ffion story × day-met, picks first, warned/unanswered, `excuse_menu`, `hostile_confrontation` re-entry, idle states, lockpick.
+  - Victoria: idle at night first and repeat, the confrontation, D2-4.
+  - Ffion: `night_answer` re-entry, the badge knot.
+  - Phone: report for every Danny outcome.
+- inkcheck, debrief: 125 states, 0 failing. Briefing clean, normal and skip.
+- Route driver: 18 routes, as above.
+- No browser run.
+
+### Spoken lines changed (old → new)
+
+No audio exists for m03. Player choices aren't listed. Pairs come from a line diff, so the Terry opener lines show shifted by one.
+
+#### m03_npc_victoria.ink
+
+- Victoria Sterling: I reviewed your background. Freelance pen testing, some CTF competition work.
+  -> Victoria Sterling: Freelance pen testing. Some CTF work. Competent.
+- Victoria Sterling: Solid technical skills. But that's not why you're here.
+  -> Victoria Sterling: Competent is cheap. That's not why you're here.
+- Victoria Sterling: The window opens in weeks. The assets are already moving into position.
+  -> Victoria Sterling: The window opens in weeks. Some of what they bought from me is already installed.
+- Victoria Sterling: A professional to the end. I could almost have used you.
+  -> Victoria Sterling: The sensible answer. I could almost have used you.
+- Narrator: Sterling hasn't left. The light's still on in the conference room.
+  -> Narrator: Sterling hasn't left.
+
+#### m03_npc_ffion_rees.ink
+
+- Ffion Rees: Let me get you checked in.
+  -> (cut)
+- Ffion Rees: I just need you to sign in here, and I'll print you a visitor badge.
+  -> Ffion Rees: Sign in for me, and I'll print you a badge.
+- (none: new line)
+  -> Ffion Rees: Anyway. Sign in when you're ready.
+- Ffion Rees: Here's your badge. Please keep it visible while you're in the building.
+  -> Ffion Rees: There you go. Keep it on show, or the guard has kittens.
+- (none: new line)
+  -> Ffion Rees: Well? Is she expecting you?
+
+#### m03_npc_terry_mott.ink
+
+- Terry Mott: Ffion said there'd be someone about. Notebook, was it? Conference room's the other end of the building.
+  -> Terry Mott: You. The one with the picks. Let's hear it, then.
+- Terry Mott: Ffion reckons Ms. Sterling's expecting you. She never said nothing to me.
+  -> Terry Mott: Ffion said there'd be someone about. Notebook, was it?{day_greeted: Should've known it'd be you.} Conference room's the other end of the building.
+- Terry Mott: Ffion rang. Said someone come in at eleven and wouldn't say what for. That you?
+  -> Terry Mott: Ffion reckons Ms. Sterling's expecting you.{day_greeted: The three o'clock, back again.} She never said nothing to me.
+- (none: new line)
+  -> Terry Mott: Ffion rang. Said someone come in at eleven and wouldn't say what for.{day_greeted: Didn't say it was the three o'clock.| That you?}
+- Terry Mott: Well? What's your explanation for being here after hours?
+  -> Terry Mott: Go on, then. Why are you here?
+- (none: new line)
+  -> Terry Mott: Still waiting.
+- (none: new line)
+  -> Terry Mott: Back the way you came.
+- Terry Mott: Ffion said the same. Still nobody told me. Go on, then.
+  -> Terry Mott: Ffion said the same. Still nobody told me.
+- Terry Mott: Maintenance? I didn't get a work order notice.
+  -> Terry Mott: Maintenance? At eleven at night?
+- Terry Mott: That's... that's an executive-level card. Alright, carry on.
+  -> Terry Mott: A visitor badge at three and her card at eleven.
+- (none: new line)
+  -> Terry Mott: Either she's taken a shine to you or I'm in trouble. Ten minutes.
+- (none: new line)
+  -> Terry Mott: That's one of the exec cards. ...Right. Carry on.
+- Terry Mott: New hires don't usually have after-hours access...
+  -> Terry Mott: New starters don't get nights. Not here.
+- Terry Mott: No work order, and you don't look like our usual maintenance crew.
+  -> Terry Mott: No work order, and you're not our usual lot.
+- Terry Mott: I'm going to need to verify this.
+  -> Terry Mott: Who's your supervisor, then?
+- Terry Mott: {&Well?|Go on.|I'm listening.}
+  -> Terry Mott: {&Well?|I'm listening.|Something else?}
+
+#### m03_closing_debrief.ink
+
+- Agent HaX: In custody. The CPS are looking at conspiracy, supplying articles for use in fraud and computer misuse, and her part in the deaths at St. Catherine's.
+  -> Agent HaX: In custody. Conspiracy, computer misuse, and they want St. Catherine's on the charge sheet.
+- Agent HaX: Ransomware Incorporated, Critical Mass, the rest -- all of them just got more expensive to run.
+  -> Agent HaX: Every buyer downstream just lost their supplier. They'll pay more for worse.
+- Agent HaX: The directive proves they exist and proves they plan at this scale. Command's had it since first thing.
+  -> Agent HaX: Until last night the Architect was a rumour. Now it's a signature on a plan. Command's had it since first thing.
+- Agent HaX: Careful. That's her word.
+  -> Agent HaX: Careful. You're starting to sound like her.
+- (none: new line)
+  -> Agent HaX: That's the plan. You could have saved us the trouble.
+- (none: new line)
+  -> Agent HaX: He was somebody's. Now he's mine.
+- Agent HaX: And their records sat on the one box they knew was broken: a distcc daemon exploitable since 2004, left listening because it was useful.
+  -> Agent HaX: {reception_badge_cloned or victoria_card_cloned or draft_seen or roster_seen:And their|Their} records sat on the one box they knew was broken: a distcc daemon exploitable since 2004, left listening because it was useful.
+- Agent HaX: It got done. Not cleanly. Some people who never signed up for this will remember last night. We'll still need you soon.
+  -> Agent HaX: It got done. Not cleanly. Some people who never signed up for this will remember last night.
+- Agent HaX: I read your notes on Foster twice. That's not a complaint. We'll need you soon.
+  -> Agent HaX: I read your notes on Foster twice. That's not a complaint.
+- Agent HaX: Good work last night. We'll need you soon.
+  -> Agent HaX: Good work last night.
+- Agent HaX: Clean enough. We'll need you soon.
+  -> Agent HaX: Clean enough.
+- Agent HaX: It's done. We'll need you soon.
+  -> Agent HaX: It's done.
+
+#### m03_opening_briefing.ink
+
+- Agent HaX: The client roster and the operational logs. Proof of who they arm, and how.
+  -> Agent HaX: The client roster, the logs, and whatever they're planning next. There's a Phase 2.
+
+#### m03_phone_agent0x99.ink
+
+- HaX (phone text): Network's stripped, the case is made, and Danny's made his call. Sterling's your last move.
+  -> HaX (phone text): Network's stripped, the case is made, and Danny's out cold in his office. Sterling's your last move.
+- (none: new line)
+  -> HaX (phone text): Network's stripped, the case is made, and Danny's on his way in. Sterling's your last move.
+- (none: new line)
+  -> HaX (phone text): Network's stripped, the case is made, and Danny's on the record. Sterling's your last move.
+- (none: new line)
+  -> HaX (phone text): Network's stripped, the case is made, and Danny's choice is his now. Sterling's your last move.

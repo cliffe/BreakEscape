@@ -52,6 +52,8 @@ VAR pc_call_heard = false
 VAR exec_office_entered = false
 // D2-14: greet on the first open only; later opens go straight to the hub (m02).
 VAR greeted = false
+// D5-7: synced (globalVarOnKO on Danny).
+VAR danny_ko = false
 
 // ---- Field-guide exposure flags (offered synced; given tracked locally) ----
 VAR lockpicking_guide_offered = false
@@ -364,7 +366,17 @@ distcc is the one that matters -- that's where the operational logs sit. Submit 
     { danny_fate == "":
         The case is made. If Danny Foster matters to you, see him before Sterling.
     - else:
-        Network's stripped, the case is made, and Danny's made his call. Sterling's your last move.
+        // D5-7: true for each Danny outcome.
+        {
+        - danny_fate == "ko" or danny_ko:
+            Network's stripped, the case is made, and Danny's out cold in his office. Sterling's your last move.
+        - danny_fate == "protected":
+            Network's stripped, the case is made, and Danny's on his way in. Sterling's your last move.
+        - danny_fate == "exposed":
+            Network's stripped, the case is made, and Danny's on the record. Sterling's your last move.
+        - else:
+            Network's stripped, the case is made, and Danny's choice is his now. Sterling's your last move.
+        }
     }
     { victoria_ko:
         Sterling's still in the conference room where you left her. Go and settle it.

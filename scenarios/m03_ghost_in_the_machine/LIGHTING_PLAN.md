@@ -165,3 +165,28 @@ In `scenario.json.erb`, one `lighting` block per room on the line after its `"ty
 - The stock `tools/playtest/lighting-tour.sh` can't be used on m03 as it stands: the opening briefing and then the tutorial prompt stay open, the scene pauses, and the light map stops drawing (first attempt, game 2111: every shot is the briefing). A scratch tour (`build_evidence/lighting_c1/tour.py`) closes both, checks the light map is drawing before each shot, switches a motion room back off after its lit shot so neighbours aren't left lit, and has a night mode that sets `clone_call_done` and `mission_phase`, re-registers rooms with `night_cfg.json`, and shows Danny.
 - Screenshots (all looked at): `build_evidence/lighting_c1/day/<room>-a.png` (as loaded) and `-b.png` (motion/dark rooms switched on); `night/` the same with the night globals and the E1 probe. Day game 2121, night game 2122 (Danny's office re-shot in 2123 after the lamp tweak).
 - Light-map sanity per shot: `draw+` (ms since last redraw, ~300) and the room's resolved ambient are printed by the tour; all drawing.
+
+## 10. Cycle 2 (2026-10-12): the night switch in place
+
+Engine L1 (room `variants`), L2 (the white-map fix) and L3 (NPC torch) were implemented at the coordinator's instruction, as separate change sets; the tour flags are in `tools/playtest/lighting-tour.sh`. The "With E1" column of section 3 is now what ships. All variants key on `globalVars.clone_call_done === true`.
+
+| Room | Day | Night | Changed in cycle 2 |
+|---|---|---|---|
+| reception_lobby | on, `#e4e8ee` | on, `#545c70`, no ceiling grid; a cool pool over the counter (r 96, 0.3), a warm cove wash on the WHITEHAT slat wall (r 70, 0.35, no fixture: a concealed strip); counter strip glow 0.8 | variant added; darker than the cycle-1 probe (`#808aa0` read as still lit) |
+| main_hallway | motion, `offAfter` 75, threat map | on, "night lights": `#323a50`, two dim pools (r 64, 0.3), threat map | variant added |
+| conference_room_01 | on | on | none |
+| server_room | motion, server darks | same | none |
+| executive_wing_hallway | on, `#bcb6ae` | on, `#343a50`, one low warm pool by the console; Terry's torch beam | variant added; `behavior.torch` on `terry_mott` (night only) |
+| executive_office | motion | motion | none |
+| danny_office | **on**, lit and empty, lamp off | **dark**, lamp on | base mode `dark` → `on`, variant `mode: dark` |
+
+What the tours show:
+
+- **Live switch:** the night tour registers reception by day (it is the start room) and it moves to its night variant once the globals are set (`--check`: `variant=0 lit=#545c70`). The rooms first loaded after the switch register straight into night.
+- **Terry's beam:** a short warm beam the way he faces, over the runner; his vision cone still shows. By day the beam doesn't draw (the room's ambient is too bright).
+- **Player torch:** in Danny's dark office the beam reaches Danny from the desk; in the server room it's faint against the racks.
+- **Strikes:** server room and CEO office captured frame by frame (`strike/`): dark, two staggered flashes per tube by about 270 ms, lit by about 900 ms.
+
+Not yet proven in a browser: a page reload at night staying night (and by day staying day). The engine resolves variants from the saved globals at load (`registerRoom` → `resolveRoomLighting`), and the node test covers the resolution, but my reload run (sync my game's state to :3001, reload) was blocked by the session's permission classifier. It needs a run by the coordinator or a Sonnet tester.
+
+Screenshots: `build_evidence/lighting_c2/day/`, `night/` (tour flags `--close-intro --restore-off --check`, night adds `--globals clone_call_done=true,mission_phase=act2_infiltration --show-npc danny_foster`), `night/*-player-dark.png` and `-player-lit.png`, `strike/`. Day game 2143, night games 2144 and 2146 (reception, hallways re-shot after tuning), strikes 2145.

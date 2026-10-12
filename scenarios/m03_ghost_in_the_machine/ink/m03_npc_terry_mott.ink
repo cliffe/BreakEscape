@@ -22,6 +22,10 @@ VAR day_greeted = false
 VAR asked_knock_off = false
 // D2-12: synced. "notebook" means Ffion told him the player would be about.
 VAR ffion_night_story = ""
+// Cycle 4 (D5-11): the player has answered his first question. A reload or reopen
+// before that goes back to the question, not to "You again."
+VAR excuse_given = false
+VAR excuse_menu_quiet = false
 
 // Root divert. When a conversation has ended (-> DONE), the engine restores only
 // its variables on the next talk and continues from the root (npc-conversation-
@@ -45,15 +49,19 @@ VAR ffion_night_story = ""
     #display:guard-alert
     #set_global:guard_challenged:true
     Narrator: A torch beam swings round and settles on you.
-    // D3-2: what the player told Ffion at eleven has reached him, whichever answer.
+    // Cycle 4, Terry's corridor as one scene. Sharpest first: he has already caught
+    // the player at a lock (D5-3); then what Ffion told him (D3-2), with the
+    // afternoon face folded into each line (D5-2); then the face alone (D4-3).
     {
+    - guard_detection_count > 0:
+        Terry Mott: You. The one with the picks. Let's hear it, then.
     - ffion_night_story == "notebook":
-        Terry Mott: Ffion said there'd be someone about. Notebook, was it? Conference room's the other end of the building.
+        Terry Mott: Ffion said there'd be someone about. Notebook, was it?{day_greeted: Should've known it'd be you.} Conference room's the other end of the building.
     - ffion_night_story == "sterling":
-        Terry Mott: Ffion reckons Ms. Sterling's expecting you. She never said nothing to me.
+        Terry Mott: Ffion reckons Ms. Sterling's expecting you.{day_greeted: The three o'clock, back again.} She never said nothing to me.
     - ffion_night_story == "brushoff":
-        Terry Mott: Ffion rang. Said someone come in at eleven and wouldn't say what for. That you?
-    // D4-3: he met the recruit by day. W3-5: he gets shorter, never louder.
+        Terry Mott: Ffion rang. Said someone come in at eleven and wouldn't say what for.{day_greeted: Didn't say it was the three o'clock.| That you?}
+    // W3-5: he gets shorter, never louder.
     - day_greeted:
         Terry Mott: You. The three o'clock. Building's shut, and you're a long way from the conference room.
     - else:
@@ -62,6 +70,10 @@ VAR ffion_night_story = ""
     ~ player_warned = true
     ~ guard_suspicious = true
     -> first_excuse
+}
+// D5-11: warned but never answered (a reload or a closed chat at his question).
+{ player_warned and not excuse_given and not bribe_accepted:
+    -> excuse_menu
 }
 { player_warned && bribe_accepted:
     #display:guard-neutral
@@ -107,18 +119,38 @@ VAR ffion_night_story = ""
 
 === first_excuse ===
 #speaker:npc
-{ ffion_night_story == "notebook" or ffion_night_story == "sterling":
+{
+- guard_detection_count > 0:
+    // The opener already asked.
+- ffion_night_story == "notebook" or ffion_night_story == "sterling":
     Terry Mott: So what are you doing in my corridor?
 - else:
-    Terry Mott: Well? What's your explanation for being here after hours?
+    // W4-1, and only one "Well?" now (D5-4).
+    Terry Mott: Go on, then. Why are you here?
+}
+~ excuse_menu_quiet = true
+-> excuse_menu
+
+// Choices only, re-entered on a reopen or reload before the player has answered.
+=== excuse_menu ===
+#speaker:npc
+{ excuse_menu_quiet:
+    ~ excuse_menu_quiet = false
+- else:
+    Terry Mott: Still waiting.
 }
 // D3-2: the notebook story has its own answer; a different story from the one
 // Ffion heard gets noticed.
 * {ffion_night_story == "notebook"} [Wrong turn. I'll find it.]
+    ~ excuse_given = true
     Terry Mott: Then you've taken the scenic route. Through the executive wing.
-    ~ hub_quiet = true
-    -> hub
+    // D5-18: the player said they're leaving, so it ends here.
+    Terry Mott: Back the way you came.
+    ~ idle_quiet = true
+    #exit_conversation
+    -> guard_idle
 * [I work here -- research, second floor. Forgot something at my desk.]
+    ~ excuse_given = true
     {
     - ffion_night_story == "notebook":
         ~ guard_influence = guard_influence - 5
@@ -134,6 +166,7 @@ VAR ffion_night_story = ""
     ~ guard_suspicious = true
     -> excuse_work_here
 * [Sterling asked me to grab some files. We met today about the training programme.]
+    ~ excuse_given = true
     {
     - ffion_night_story == "notebook":
         ~ guard_influence = guard_influence - 5
@@ -146,7 +179,7 @@ VAR ffion_night_story = ""
     - ffion_night_story == "sterling":
         ~ guard_influence = guard_influence + 10
         # influence_increased
-        Terry Mott: Ffion said the same. Still nobody told me. Go on, then.
+        Terry Mott: Ffion said the same. Still nobody told me.
     - day_greeted:
         // D4-3: calls back his afternoon "she'd have told me. She hasn't."
         ~ guard_influence = guard_influence + 5
@@ -159,6 +192,7 @@ VAR ffion_night_story = ""
     }
     -> excuse_victoria
 * [Building maintenance, late shift. Checking the air con.]
+    ~ excuse_given = true
     {
     - ffion_night_story == "notebook":
         ~ guard_influence = guard_influence - 5
@@ -171,9 +205,10 @@ VAR ffion_night_story = ""
     }
     ~ guard_influence = guard_influence + 5
     # influence_increased
-    Terry Mott: Maintenance? I didn't get a work order notice.
+    Terry Mott: Maintenance? At eleven at night?
     -> excuse_maintenance
 * [I'm with SAFETYNET. This is an active ENTROPY investigation.]
+    ~ excuse_given = true
     -> safetynet_reveal
 
 === excuse_work_here ===
@@ -185,15 +220,25 @@ VAR ffion_night_story = ""
 }
 Terry Mott: You got ID? Key card?
 * [Hold up the cloned executive card. This do you?]
-    ~ guard_influence = guard_influence + 15
-    # influence_increased
-    Terry Mott: That's... that's an executive-level card. Alright, carry on.
-    Terry Mott: Didn't have you down as a night person.
+    // D5-1: a guard who has just placed the face doesn't wave the CEO's card through.
+    { day_greeted:
+        ~ guard_influence = guard_influence + 5
+        # influence_increased
+        Terry Mott: A visitor badge at three and her card at eleven.
+        Terry Mott: Either she's taken a shine to you or I'm in trouble. Ten minutes.
+    - else:
+        ~ guard_influence = guard_influence + 15
+        # influence_increased
+        ~ guard_suspicious = false
+        Terry Mott: That's one of the exec cards. ...Right. Carry on.
+        Terry Mott: Didn't have you down as a night person.
+    }
+    ~ hub_quiet = true
     -> hub
 * [I'm new. Started this week. Still getting my permanent ID.]
     ~ guard_influence = guard_influence + 5
     # influence_increased
-    Terry Mott: New hires don't usually have after-hours access...
+    Terry Mott: New starters don't get nights. Not here.
     -> suspicious_path
 * [That's what I came back for -- my ID badge. Left it at my desk.]
     ~ guard_influence = guard_influence - 10
@@ -208,31 +253,39 @@ Terry Mott: She does ring down at odd hours. Which files?
 * [Training programme enrolment forms. From her office.]
     ~ guard_influence = guard_influence + 10
     # influence_increased
+    // D5-4: an excuse that landed leaves him less cold; no greeting after a dismissal.
+    { not day_greeted or ffion_night_story == "sterling":
+        ~ guard_suspicious = false
+    }
     Terry Mott: Ten minutes. Then I come looking.
+    ~ hub_quiet = true
     -> hub
 * [She didn't specify -- said I'd know them when I saw them. Confidential.]
     ~ guard_influence = guard_influence + 5
     # influence_increased
     ~ guard_suspicious = true
     Terry Mott: Confidential, huh. Well, don't take too long.
+    ~ hub_quiet = true
     -> hub
 
 === excuse_maintenance ===
 #speaker:npc
-Terry Mott: No work order, and you don't look like our usual maintenance crew.
-Terry Mott: I'm going to need to verify this.
+Terry Mott: No work order, and you're not our usual lot.
+Terry Mott: Who's your supervisor, then?
 * [Ring the supervisor, then. Here's his mobile.]
     ~ guard_influence = guard_influence + 10
     # influence_increased
     Terry Mott: ...at this hour? Nobody's going to answer.
     Terry Mott: Fine. But I'm watching you.
     ~ guard_suspicious = true
+    ~ hub_quiet = true
     -> hub
 * [Emergency call. The temperature sensors tripped an alert. No time for paperwork.]
     ~ guard_influence = guard_influence + 5
     # influence_increased
     Terry Mott: I didn't hear about any alerts...
     ~ guard_suspicious = true
+    ~ hub_quiet = true
     -> hub
 * [I don't have time for this. I've work to do.]
     ~ guard_influence = guard_influence - 20
@@ -240,7 +293,7 @@ Terry Mott: I'm going to need to verify this.
     ~ guard_hostile = true
     // Pass 5 (P3-8): hostile_confrontation counts this detection; counting it here too made one incident two.
     Terry Mott: Wrong answer.
-    -> hostile_confrontation
+    -> hostile_count
 
 === suspicious_path ===
 #speaker:npc
@@ -355,7 +408,7 @@ Terry Mott: What do you need from me?
 - else:
     // Cycle 3: cold while he doubts the player.
     { guard_suspicious:
-        Terry Mott: {&Well?|Go on.|I'm listening.}
+        Terry Mott: {&Well?|I'm listening.|Something else?}
     - else:
         Terry Mott: {&Anything else, or are we done?|Go on, then.|Still here?}
     }
@@ -458,11 +511,16 @@ Terry Mott: I'm giving you one chance. Leave now, or I'm calling the police.
     #exit_conversation
     -> guard_idle
 
+// D5-12: the detection is counted in a choice-free knot, so a reopen of
+// hostile_confrontation (which owns the choices) doesn't count it twice.
+=== hostile_count ===
+~ guard_hostile = true
+~ guard_detection_count = guard_detection_count + 1
+-> hostile_confrontation
+
 === hostile_confrontation ===
 #speaker:npc
 #display:guard-hostile
-~ guard_hostile = true
-~ guard_detection_count = guard_detection_count + 1
 Terry Mott: Right. That's the police, then. Stay where you are.
 Narrator: The guard reaches for his radio.
 * [Tackle the guard before he can call]
@@ -580,7 +638,7 @@ Terry Mott: That's three times. I'm done talking.
 - else:
     // D4-8: the first night meeting goes straight to his challenge (one torch, no
     // extra click). Inside the else, so it runs on a reopen, never on an exit.
-    { mission_phase == "act2_infiltration" and not player_warned and not guard_hostile:
+    { mission_phase == "act2_infiltration" and (not player_warned or not excuse_given) and not guard_hostile and not bribe_accepted:
         -> start
     }
     { mission_phase != "act2_infiltration":

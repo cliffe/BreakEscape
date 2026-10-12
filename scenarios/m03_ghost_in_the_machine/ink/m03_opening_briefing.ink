@@ -55,7 +55,8 @@ Agent HaX: Right. Zero Day Syndicate. You heard of them?
     ~ knows_m2_connection = true
     #set_global:knows_m2_connection:true
     Agent HaX: Short version: the exploit that took down St. Catherine's came from Zero Day, behind a pentest front called WhiteHat. We want their books.
-    Agent HaX: The client roster and the operational logs. Proof of who they arm, and how.
+    // D5-20: sets up Phase 2 on the short route.
+    Agent HaX: The client roster, the logs, and whatever they're planning next. There's a Phase 2.
     -> objectives
 }
 Agent HaX: Zero Day runs behind a real pentest firm -- WhiteHat Security Services. Legitimate audits by day. An exploit marketplace in the back rooms.

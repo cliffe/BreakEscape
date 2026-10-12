@@ -9,8 +9,8 @@
 {"set":{"player_warned":false,"guard_suspicious":false,"day_greeted":false,"asked_knock_off":false,"guard_grace":false}},
 {"talk":"terry","reload":true,"knot":"on_lockpick_detected","picks":["Sorry. Wrong door"]},
 {"set":{"guard_grace":false}},
-{"talk":"terry","picks":[]},
+{"talk":"terry","picks":["I work here","Hold up the cloned","I'll let you get on"]},
 {"note":"(c) met by day; Ffion said notebook"},
 {"set":{"player_warned":false,"guard_suspicious":false,"day_greeted":true,"ffion_night_story":"notebook","guard_detection_count":0}},
-{"talk":"terry","reload":true,"knot":"start","picks":["Wrong turn","I'll let you get on"]}
+{"talk":"terry","reload":true,"knot":"start","picks":["Wrong turn"]}
 ]}

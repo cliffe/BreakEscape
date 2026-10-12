@@ -125,8 +125,8 @@ VAR came_via_hospital = false
 { clone_call_done:
     -> start
 }
-Victoria Sterling: I reviewed your background. Freelance pen testing, some CTF competition work.
-Victoria Sterling: Solid technical skills. But that's not why you're here.
+Victoria Sterling: Freelance pen testing. Some CTF work. Competent.
+Victoria Sterling: Competent is cheap. That's not why you're here.
 * [Why am I here, then?]
     Victoria Sterling: To find out what you're worth. Your CV only tells me what you cost.
     ~ victoria_influence = victoria_influence + 5
@@ -714,7 +714,7 @@ Victoria Sterling: Not immunity. At least you're honest. Most of your people lea
 Victoria Sterling: Then you already have the what. I'm the when.
 Narrator: She lets the bag slide off her shoulder onto the desk.
 Victoria Sterling: I don't have the Architect's name. Nobody does. But I have the comms protocol, the rails the money moves on, and the Phase 2 window.
-Victoria Sterling: The window opens in weeks. The assets are already moving into position.
+Victoria Sterling: The window opens in weeks. Some of what they bought from me is already installed.
 Victoria Sterling: Understand what this is. You didn't move me. You're simply a better bet than a shallow grave.
 ~ victoria_fate = "recruited"
 #set_global:victoria_fate:recruited
@@ -737,7 +737,7 @@ Victoria Sterling: The evidence is real. The name is real. And none of it reache
 
 === confrontation_escape ===
 #speaker:victoria_sterling
-Victoria Sterling: A professional to the end. I could almost have used you.
+Victoria Sterling: The sensible answer. I could almost have used you.
 Victoria Sterling: For what little it's worth -- St. Catherine's was a proof of concept. You'll see the rest.
 Narrator: She's past you and gone before the lift doors settle.
 ~ victoria_fate = "escaped"
@@ -779,6 +779,11 @@ Narrator: She's out cold. Whatever she knows, she isn't saying it tonight.
 { idle_quiet:
     ~ idle_quiet = false
 - else:
+    // D5-6: the first night look-in plays the call at once (one click, and the
+    // call's own line says what she's doing). Inside the else: a reopen, never an exit.
+    { victoria_fate == "" and clone_call_done and not sterling_on_call_seen and not night_confrontation_ready:
+        -> start
+    }
     { victoria_fate == "ko":
         Narrator: She's still out cold.
     - else:
@@ -786,7 +791,7 @@ Narrator: She's out cold. Whatever she knows, she isn't saying it tonight.
             Narrator: Sterling has nothing more to say to you.
         - else:
             { night_confrontation_ready:
-                Narrator: Sterling hasn't left. The light's still on in the conference room.
+                Narrator: Sterling hasn't left.
             - else:
                 { clone_call_done:
                     Narrator: Sterling's still on the phone, her back to the door.

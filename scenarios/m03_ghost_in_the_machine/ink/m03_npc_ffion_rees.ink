@@ -22,6 +22,8 @@ VAR hub_quiet = false
 VAR night_greeted = false
 // D2-12: synced. What the player told her at night; the guard reads "notebook".
 VAR ffion_night_story = ""
+// D5-10: suppresses the re-ask on the first pass.
+VAR night_answer_quiet = false
 
 // Root divert. When a conversation has ended (-> DONE), the engine restores only
 // its variables on the next talk and continues from the root (npc-conversation-
@@ -38,7 +40,6 @@ VAR ffion_night_story = ""
     #display:receptionist-professional
     Ffion Rees: Afternoon! You'll be the three o'clock, is it? I'm Ffion.
     Ffion Rees: Ms. Sterling mentioned you'd be coming in for a consultation.
-    Ffion Rees: Let me get you checked in.
     -> badge_process
 }
 { badge_received:
@@ -55,18 +56,21 @@ VAR ffion_night_story = ""
 { mission_phase == "act2_infiltration":
     -> start
 }
+// D5-19: the directions once, not on the return from company_overview.
 { not topic_company_history:
-    Ffion Rees: I just need you to sign in here, and I'll print you a visitor badge.
+    Ffion Rees: Sign in for me, and I'll print you a badge.
     Narrator: She slides a clipboard across the desk.
+    Ffion Rees: Ms. Sterling's in the conference room. Straight up the hallway, first door on the left.
+- else:
+    Ffion Rees: Anyway. Sign in when you're ready.
 }
-Ffion Rees: Ms. Sterling's in the conference room. Straight up the hallway, first door on the left.
 * [Thanks. Where do I sign?]
     #give_item:id_badge:visitor_badge
     ~ badge_received = true
     ~ receptionist_influence = receptionist_influence + 5
     # influence_increased
     Narrator: You sign the visitor log.
-    Ffion Rees: Here's your badge. Please keep it visible while you're in the building.
+    Ffion Rees: There you go. Keep it on show, or the guard has kittens.
     Ffion Rees: The conference room's behind the card reader on the left -- staff badges only. Ms. Sterling's strict about that. She doesn't come out to fetch people.
     -> first_impression_choice
 * [Before I go in, what's WhiteHat like?]
@@ -144,7 +148,7 @@ Ffion Rees: First time at a place like this, is it?
 // is cloned, the only thing to do is say goodnight.
 // D4-1 (cycle 3 blocker): every exit parks here and a reopen re-enters here, never
 // start, so the first night visit must be routed to her night scene from the hub.
-{ mission_phase == "act2_infiltration" and not night_greeted:
+{ mission_phase == "act2_infiltration" and (not night_greeted or ffion_night_story == ""):
     -> closing_up
 }
 { hub_quiet:
@@ -312,17 +316,29 @@ Narrator: She carries on straightening the sign-in sheet.
 // Pass 4: after the night-transition scene it is eleven at night, so she has
 // popped back in rather than still being on shift. D2-12: the one civilian who puts
 // the cover under pressure, and the player now has to answer her.
+// D5-10: a reload or a closed chat at the question asks it again, rather than
+// skipping to "Found it" for a player who never answered.
+{ night_greeted and ffion_night_story == "":
+    -> night_answer
+}
 { night_greeted:
     -> hub
 }
 ~ night_greeted = true
 Ffion Rees: Oh! You made me jump. I only came back for my charger.
 Ffion Rees: Is Ms. Sterling expecting you this late?
+~ night_answer_quiet = true
 -> night_answer
 
-// Choices only, all sticky: reached once (night_greeted), and a reload mid-question
-// replays it rather than starving.
+// All sticky. Reached first from closing_up (quiet), then on any reopen or reload
+// before an answer, with her question asked again.
 === night_answer ===
+#speaker:ffion_rees
+{ night_answer_quiet:
+    ~ night_answer_quiet = false
+- else:
+    Ffion Rees: Well? Is she expecting you?
+}
 + [She said to come back once the building was quiet.]
     ~ ffion_night_story = "sterling"
     #set_global:ffion_night_story:sterling

@@ -38,6 +38,8 @@ VAR exec_wing_entered = false
 VAR guard_challenged = false
 // Pass 5 (P3-9): set by globalVarOnKO on Danny.
 VAR danny_ko = false
+// D5-9: synced; the printed transaction log was read.
+VAR transaction_log_read = false
 // Pass 2 dialogue round 2 (D2-1): the player put "target selection" to Sterling's face.
 VAR named_target_selection = false
 
@@ -170,7 +172,7 @@ Agent HaX: Whether she stays turned is anyone's guess. Today, it's a win with it
 
 === victoria_arrested ===
 #speaker:agent_0x99
-Agent HaX: In custody. The CPS are looking at conspiracy, supplying articles for use in fraud and computer misuse, and her part in the deaths at St. Catherine's.
+Agent HaX: In custody. Conspiracy, computer misuse, and they want St. Catherine's on the charge sheet.
 Agent HaX: Her lawyers are already calling it "market-driven research". It won't hold.
 { named_target_selection:
     Agent HaX: Not with "target selection, ten thousand" on her own invoice. And you got her to call it consultancy on an open line.
@@ -180,7 +182,8 @@ Agent HaX: Her lawyers are already calling it "market-driven research". It won't
 * {named_target_selection} [She'll call it consultancy in court too.]
     Agent HaX: Targeting. That's the word the CPS will use.
     -> victoria_arrested_path
-* {not named_target_selection} [She picked St. Catherine's off a survey of two hundred and fourteen.]
+// D5-9: only for a player who has seen the figure (the roster or the printed log).
+* {not named_target_selection and (transaction_log_read or roster_seen)} [She picked St. Catherine's off a survey of two hundred and fourteen.]
     Agent HaX: Targeting. That's the word the CPS will use.
     -> victoria_arrested_path
 * [People died on what she sold. This is for St. Catherine's.]
@@ -189,7 +192,7 @@ Agent HaX: Her lawyers are already calling it "market-driven research". It won't
     Agent HaX: *quietly* Yes. It is.
     -> victoria_arrested_path
 * [Take the arms dealer, and every buyer downstream feels it.]
-    Agent HaX: Ransomware Incorporated, Critical Mass, the rest -- all of them just got more expensive to run.
+    Agent HaX: Every buyer downstream just lost their supplier. They'll pay more for worse.
     -> victoria_arrested_path
 
 === victoria_arrested_path ===
@@ -267,7 +270,7 @@ Agent HaX: Grid storage. Substation control. Hospitals on generator for when the
 === architect_revelation ===
 #speaker:agent_0x99
 Agent HaX: The Architect. One mind coordinating the cells. Zero Day arms them, Critical Mass hits the grid, Ransomware Incorporated hits the wards, and someone times it all.
-Agent HaX: The directive proves they exist and proves they plan at this scale. Command's had it since first thing.
+Agent HaX: Until last night the Architect was a rumour. Now it's a signature on a plan. Command's had it since first thing.
 * [Any lead on who the Architect actually is?]
     { victoria_fate == "recruited" or victoria_fate == "arrested":
         Agent HaX: Not yet. Sterling swears she's never met them -- all encrypted channels. But every operation like this narrows it.
@@ -354,7 +357,7 @@ Agent HaX: The Phase 2 target list goes out unsigned. Substations get hardened, 
 }
 { danny_fate == "":
     Agent HaX: You never found the consultant, Danny Foster. His name's still in the recon files, so it'll surface. Where he lands is anyone's guess now.
-    -> final_assessment
+    -> danny_reply_none
 }
 
 // D3-4: the player answers HaX after the Danny lines. Stance only: each choice gets
@@ -393,7 +396,7 @@ Agent HaX: The Phase 2 target list goes out unsigned. Substations get hardened, 
 === danny_reply_exposed ===
 #speaker:agent_0x99
 * {danny_fate == "exposed" and victoria_fate == "recruited"} [She's worth more to us than he is. That's the arithmetic.]
-    Agent HaX: Careful. That's her word.
+    Agent HaX: Careful. You're starting to sound like her.
     -> final_assessment
 * {danny_fate == "exposed" and victoria_fate == "escaped"} [He'll tell them everything. Let him.]
     Agent HaX: He's already started. They've sent out for more tape.
@@ -426,6 +429,16 @@ Agent HaX: The Phase 2 target list goes out unsigned. Substations get hardened, 
     Agent HaX: Then say so in the report. It reads better than a reason.
     -> final_assessment
 
+// D5-13: the one Danny fate that had no reply.
+=== danny_reply_none ===
+#speaker:agent_0x99
+* [Find him before they do.]
+    Agent HaX: That's the plan. You could have saved us the trouble.
+    -> final_assessment
+* [He wasn't my job.]
+    Agent HaX: He was somebody's. Now he's mine.
+    -> final_assessment
+
 === danny_ko_after_choice ===
 #speaker:agent_0x99
 Agent HaX: Danny Foster. You talked to him, and then somebody left him out cold in his own office.
@@ -443,7 +456,8 @@ Agent HaX: We picked him up this morning. Whatever he'd decided, he'll be explai
 { draft_seen or roster_seen:
     Agent HaX: The CEO's password was the house reset default, printed on a slip on her own monitor.
 }
-Agent HaX: And their records sat on the one box they knew was broken: a distcc daemon exploitable since 2004, left listening because it was useful.
+// D5-14: no "And" when this is the whole answer.
+Agent HaX: {reception_badge_cloned or victoria_card_cloned or draft_seen or roster_seen:And their|Their} records sat on the one box they knew was broken: a distcc daemon exploitable since 2004, left listening because it was useful.
 -> aftermath_choices
 
 === final_assessment ===
@@ -480,21 +494,22 @@ Agent HaX: And their records sat on the one box they knew was broken: a distcc d
 }
 // Pass 5 (R1-3): no praise for a clean job when bystanders were knocked out.
 { handler_trust >= 50 and (receptionist_ko or guard_knocked_out or danny_ko or danny_fate == "ko"):
-    Agent HaX: It got done. Not cleanly. Some people who never signed up for this will remember last night. We'll still need you soon.
+    // D5-16: no "we'll need you soon" tails; the closing line says what's next.
+    Agent HaX: It got done. Not cleanly. Some people who never signed up for this will remember last night.
 - else:
     // Pass 5 round 2: "saw the people in it" only for a player who met Danny.
     { handler_trust >= 70 and danny_fate != "":
-        Agent HaX: I read your notes on Foster twice. That's not a complaint. We'll need you soon.
+        Agent HaX: I read your notes on Foster twice. That's not a complaint.
     }
     { handler_trust >= 70 and danny_fate == "":
-        Agent HaX: Good work last night. We'll need you soon.
+        Agent HaX: Good work last night.
     }
     // Pass 5 blind (B-6): "Clean enough" only when the paper trail came out too.
     { (handler_trust >= 50) && (handler_trust < 70) && lore_history_found && (catalogue_seen or lore_catalogue_found):
-        Agent HaX: Clean enough. We'll need you soon.
+        Agent HaX: Clean enough.
     }
     { (handler_trust >= 50) && (handler_trust < 70) && not (lore_history_found && (catalogue_seen or lore_catalogue_found)):
-        Agent HaX: It's done. We'll need you soon.
+        Agent HaX: It's done.
     }
 }
 -> aftermath

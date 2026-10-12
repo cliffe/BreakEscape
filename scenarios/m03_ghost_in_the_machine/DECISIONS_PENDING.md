@@ -28,6 +28,8 @@ Full context: `LIGHTING_PLAN.md` §2 and §7. Night shots of what L1 would give:
 
 ### L1. Room lighting that changes at the night turn (engine)
 
+**User decision 2026-10-12: approved.** Done in 6e3ca578.
+
 The lighting system reads a room's mode and brightness once, when the room loads (`lighting.js:297-353`). m03's reception, main hallway and conference room are always loaded by day, so they can't go to night lighting when `clone_call_done` is set.
 
 - (a) **Recommended.** Room-level `variants` with a `condition`, the same pattern as emitter variants: first match wins, merged over the room's block, resolved at load and on the existing 250 ms tick, applied without a strike. About 40 lines plus a schema entry; scenarios without `variants` are unchanged. Reload-safe, because it reads saved globals.
@@ -38,6 +40,8 @@ Status: open.
 
 ### L2. Bug: a floor tint drawn last blanks the light map (engine)
 
+**User decision 2026-10-12: approved.** Done in 2bea9a58 (five missions re-toured, no change except the bug case).
+
 When an emitter's `floorTint` (a MULTIPLY stamp) is the last thing drawn into the light map in a frame, every visible room renders unlit. Reproduced in game 2120. m03 works round it; m01, m02, sis01 and sis02 use `floorTint` and could hit it depending on object order.
 
 - (a) **Recommended.** One no-op ADD stamp before `rt.endDraw()` in `update()`, then node tests, the Rails suite and the m01/m02/sis01/sis02 tours. Untested so far.
@@ -47,6 +51,12 @@ Status: open.
 
 ### L3 (optional). A visible torch on the night guard (engine)
 
+**User decision 2026-10-12: approved.** Done in 33ecfbe7.
+
 Draw the player's torch beam from an NPC with an opt-in `torch` behaviour flag, so Terry's beam (`m03_npc_terry_mott.ink:477`) shows in the dark executive wing. Only worth doing after L1. Pairs with the approved E-D (guards react to the player in their beam).
 
 Status: open, low priority.
+
+### Tour tooling
+
+**User decision 2026-10-12: approved** folding the scratch tour into `tools/playtest/lighting-tour.sh` (opt-in flags, old default kept). Done in 06deb13e.
