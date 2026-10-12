@@ -343,3 +343,34 @@ The layout is final for the POV-background stage. Open items, none of which move
 
 - Assumption: the directory probe's distance (player position offset 16 px in the facing direction, to the sprite's top-left) matches the engine's `getInteractionDistance`; I copied the formula rather than calling it.
 - Assumption: Danny standing rather than sitting at night is a sprite question for the character pipeline, not a layout one.
+
+## Cycle 6 (2026-10-12): fresh eyes with final lighting and the new sprites
+
+Day and night tours (`lighting-tour.sh --close-intro --check`; night adds `--globals clone_call_done=true --show-npc danny_foster,terry_mott`) with the new walk sprites for Ffion, Victoria, Danny and Terry. Before sheets: `build_evidence/dressing_c6/before_day_sheet.png`, `before_night_sheet.png`. Reception was judged too but left alone (its background is signed off); nothing there is clearly wrong.
+
+### Critique
+
+| # | Room | Sev | Finding |
+|---|---|---|---|
+| S5 | Server | major | The VM Access Terminal, the room's key object, used the pink retro `vm-launcher` sprite. In a slate server room of black racks it read as a toy, day and night. |
+| C6 | Conference | minor | The east third was empty apart from a flip chart against the wall; Victoria stood in a bare field and the table had nothing at its pitch end. |
+| D6 | Danny | minor | The middle floor between his desk and the camp bed is still open. Left: it is the walk to his desk and the night lamp's pool, and more clutter there would fight the "sitting in the dark" read. |
+| X2 | All | obs | The new sprites sit well: Ffion clear of the counter, Victoria between the whiteboard and the table, Danny top right and findable in the dark, Terry's torch along the runner. No layout change needed for any of them. |
+
+### Fixes
+
+- **S5:** the VM terminal now claims `pc10`, a black-bezel monitor, by `"position": "as-type:pc"` on the scenario object (the room has no other `pc` object); the builder places `pc10` on the operator desk where the pink sprite was. Its top-left stays at y 128-129, where the old terminal was reached in the regression walks. It keeps its glow at night from the default `pc` emitter (checked in the dark shot).
+- **C6:** the flip chart moved to the table's east end (x 210, feet 238), where a pitch would be given; a brass drinks trolley (`bar_cart1`, from PixelLab batch 1, unused until now) stands below the E door row (x 246, feet 158), clear of the doorway lane.
+
+Scenario edits: one field, `"position": "as-type:pc"` on `vm_launcher_zero_day`, region re-read first.
+
+### Verify
+
+- `slot_audit.py --verbose --notes`: VM Access Terminal → `pc10` on the operator desk; 0 problems. `validate_scenario.rb --skip-ink --no-graph`: schema passes, geometry and door alignment OK. `check_room_walls.py`: all 64. `node --check` game.js: OK.
+- In game: the server room and conference room interactables are exactly their scenario objects (VM Access Terminal on `pc10`); no "No Tiled item found" logs. The VM terminal was not opened by a tester this cycle; its top-left is within a pixel of where the regression walks opened it.
+
+After shots (`build_evidence/dressing_c6/`): `day/` and `night/` for all seven rooms; maps `grid-room_zds_conference.png`, `grid-room_zds_servers.png`.
+
+### Next
+
+Cycle 6 found one major and one minor and fixed both, so by the coordinator's rule a cycle 7 is due. Candidates are all minor so far (Danny's centre floor, deliberately left), so I expect cycle 7 to confirm the layout as final unless the fresh pass finds something new.

@@ -1889,3 +1889,14 @@ E4 as its own change set (`public/break_escape/js/systems/npc-los.js` only), the
 - m4 Terry's cone drawn over the wall into Danny's office now it's above the map: accepted.
 - Checks: node suite 481 / 475 pass, the same 6 known failures as cycles 2-3; LOS-related tests (engine-fixes-pass4, -pass4c, lockpick-catch, npc-sight-challenge) 50/50. Validator schema passes. m02 lockpick catch not driven in a browser.
 - Lighting stage closed after four cycles: nothing above minor in the final day and night tours with the final maps and sprites.
+
+## Room dressing, cycle 6 (2026-10-12): fresh eyes, final lighting and sprites
+
+| Severity | Found | Fixed | Deferred |
+|---|---|---|---|
+| Blocker | 0 | 0 | 0 |
+| Major | 1 | 1 | 0 |
+| Minor | 2 | 1 | 1 (Danny's centre floor kept open on purpose: the walk to his desk and the night lamp's pool) |
+
+- VM Access Terminal: pink `vm-launcher` sprite replaced by a black monitor (`pc10`, `as-type:pc`, one scenario field). Conference: flip chart to the table's east end, drinks trolley by the E wall.
+- Reception untouched. Checks clean. Shots `build_evidence/dressing_c6/`.
