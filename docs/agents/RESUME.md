@@ -1,13 +1,13 @@
-# Resume note — m03 pass 2 (started 2026-10-12)
+# Resume note — m03 pass 2 (2026-10-12): all stages done except the user's blind run
 
 Brief `docs/agents/M03_PASS2_BRIEF.md`; log `scenarios/m03_ghost_in_the_machine/IMPROVEMENT_LOOP_LOG.md` "Pass 2". Later (user): lab sheet, audio, engine triage, SecGen.
-- Regression: A, B2, re-walk all clean (no blockers). Reload respawns in reception = backlog "Resume in the room you left".
-- Room dressing: cycles 1-4 committed (room_zds_* maps, zds hall, exec hall). Cycle 5 (final polish + lit/night shots) running → then POV backgrounds.
-- Dialogue: cycles 1-4 committed (last fb3049cf). Route driver scripts/ink_runtime_check/m03_routes/ (18 routes). Cycle 5 confirmation read running (ship/revise).
-- Lighting: engine L2 2bea9a58, L1 variants 6e3ca578, L3 torch 33ecfbe7, tour flags 06deb13e (user-approved). m03 cycles 1-2 committed; cycle 3 polish running; Sonnet night-turn + reload check running (the lighting agent's own reload run was blocked by the permission classifier).
-- Characters: Nightshade = renamed male_scientist_v2 (cbc430a8); HaX = agent_hax (2ef7844f). New art for Victoria (A/b01), Danny (A/b03 + eye whites), Ffion (red hair, b04 blush removed), Terry (Black British, b03); portraits + visemes committed ae2fa13d. Viseme retakes, walk sprites (~272 gens approved), wiring and browser check running (fresh agent; old one stood down).
-- Rules added today: ~5 cycles for design stages; cast diversity; recurring characters own sprites; visemes from talk; save chosen concepts (30 committed 7d2159e3).
-- Next: POV backgrounds (after dressing + lighting final), blind playtest last.
+- Dialogue: 5 cycles, signed off (ship), plus blind-run fixes 1-2. Route driver scripts/ink_runtime_check/m03_routes/ (24 routes).
+- Room dressing: 7 cycles, layout final (room_zds_* maps). Lighting: 4 cycles, closed. POV backgrounds: 4 rounds, all 7 rooms, day/night via chatBackground conditions.
+- Characters: Victoria, Danny, Ffion Rees, Terry Mott (Black British) with own art, visemes from talk, walk sprites, frames reviewed (33 strips + round 2 re-alignment). Nightshade = renamed male_scientist_v2; HaX = agent_hax.
+- Engine today (all user-approved): lighting L1 variants, L2 white-map, L3 torch, E4 cones above light map, tour flags, chatBackground conditions, toasts reading-time lifetime, RFID denial hold + door_unlock_failed, KO body on reload.
+- Terry: night on-sight challenge (talk your way out), lockpick catch → hostile; Perfect Stealth = never seen.
+- Blind runs: B (struggling) complete; A, A2, A3 ("do your best") each stopped by auto mode's safety check at 60/30/65%. The user runs the complete one from docs/agents/M03_BLIND_PLAYTEST_PROMPT.md (report → PASS2_BLIND_A3.md is taken; use A4). Session 2191 may still be open on :3001 (user's call).
+- Not pushed (branch ahead of origin by ~70 commits).
 
 # Resume note — room POV chat backgrounds (2026-10-11): COMPLETE
 

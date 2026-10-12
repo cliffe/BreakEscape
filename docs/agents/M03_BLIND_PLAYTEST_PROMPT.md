@@ -32,7 +32,7 @@ You get only what a player gets: the mission brief on screen, the in-game docume
 - Do one page reload at a risky moment, for example after the guard has seen you, or right after the Danny conversation.
 - Take screenshots at key moments and look at them, including during conversations. Check that the conversation backgrounds match the room and the time of day.
 
-**Write the report to `scenarios/m03_ghost_in_the_machine/PASS2_BLIND_A3.md` as you go.** Include:
+**Write the report to `scenarios/m03_ghost_in_the_machine/PASS2_BLIND_A4.md` as you go.** Include:
 - a timeline with what you thought the goal was at each point
 - every "didn't know what to do" moment: where, how long, what you tried, and what unstuck you
 - each real decision: whether it felt arguable or obvious, and whether its consequence showed later, especially in the debrief (Victoria's NHS question, the approach choice, Danny)
