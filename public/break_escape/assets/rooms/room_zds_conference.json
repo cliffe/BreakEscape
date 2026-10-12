@@ -261,6 +261,18 @@
                  "width":16,
                  "x":14,
                  "y":140
+                }, 
+                {
+                 "gid":855,
+                 "height":22,
+                 "id":16,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":18,
+                 "x":290,
+                 "y":152
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -287,7 +299,7 @@
                 {
                  "gid":304,
                  "height":16,
-                 "id":16,
+                 "id":17,
                  "name":"",
                  "rotation":0,
                  "type":"",
@@ -310,7 +322,7 @@
                 {
                  "gid":219,
                  "height":16,
-                 "id":17,
+                 "id":18,
                  "name":"",
                  "rotation":0,
                  "type":"",
@@ -322,7 +334,7 @@
                 {
                  "gid":203,
                  "height":14,
-                 "id":18,
+                 "id":19,
                  "name":"",
                  "rotation":0,
                  "type":"",
@@ -334,7 +346,7 @@
                 {
                  "gid":1013,
                  "height":9,
-                 "id":19,
+                 "id":20,
                  "name":"",
                  "rotation":0,
                  "type":"",
@@ -361,7 +373,7 @@
          "y":0
         }],
  "nextlayerid":14,
- "nextobjectid":20,
+ "nextobjectid":21,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.11.2",
@@ -2833,7 +2845,7 @@
          "margin":0,
          "name":"objects\/hospital_extras",
          "spacing":0,
-         "tilecount":227,
+         "tilecount":228,
          "tileheight":64,
          "tiles":[
                 {
@@ -4211,14 +4223,20 @@
                 {
                  "id":235,
                  "image":"..\/objects\/restricted_sign1.png",
-                 "imageheight":22,
-                 "imagewidth":16
+                 "imageheight":9,
+                 "imagewidth":45
                 }, 
                 {
                  "id":236,
                  "image":"..\/objects\/exec_chair_back1.png",
                  "imageheight":64,
                  "imagewidth":38
+                }, 
+                {
+                 "id":237,
+                 "image":"..\/objects\/usb_bowl1.png",
+                 "imageheight":8,
+                 "imagewidth":13
                 }],
          "tilewidth":252
         }],

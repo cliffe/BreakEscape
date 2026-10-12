@@ -320,15 +320,15 @@
                  "y":87.84
                 }, 
                 {
-                 "gid":210,
-                 "height":15,
+                 "gid":1038,
+                 "height":8,
                  "id":18,
                  "name":"",
                  "rotation":0,
                  "type":"",
                  "visible":true,
-                 "width":10,
-                 "x":195,
+                 "width":13,
+                 "x":193.5,
                  "y":87.84
                 }],
          "opacity":1,
@@ -2821,7 +2821,7 @@
          "margin":0,
          "name":"objects\/hospital_extras",
          "spacing":0,
-         "tilecount":227,
+         "tilecount":228,
          "tileheight":64,
          "tiles":[
                 {
@@ -4199,14 +4199,20 @@
                 {
                  "id":235,
                  "image":"..\/objects\/restricted_sign1.png",
-                 "imageheight":22,
-                 "imagewidth":16
+                 "imageheight":9,
+                 "imagewidth":45
                 }, 
                 {
                  "id":236,
                  "image":"..\/objects\/exec_chair_back1.png",
                  "imageheight":64,
                  "imagewidth":38
+                }, 
+                {
+                 "id":237,
+                 "image":"..\/objects\/usb_bowl1.png",
+                 "imageheight":8,
+                 "imagewidth":13
                 }],
          "tilewidth":252
         }],

@@ -20,7 +20,8 @@ business, has dark slate walls. The floors tell the rooms apart:
                     CEO's desk and visitor chairs
   room_zds_raised   dark raised access floor, perforated cold-aisle rows, a hazard line
                     round the production rack row, slate walls
-  room_zds_office_floor  the carpet with a worn rug where Danny has been living
+  room_zds_office_floor  the carpet with a small worn kilim under Danny's camp bed
+  room_zds_hall_exec  the carpet with a burgundy runner down the executive corridor
 
 Every sheet keeps room6's tile layout, so a map points its room6 tileset at one
 of these images and keeps ROOM6_FIRSTGID. The north wall is raised to the
@@ -256,17 +257,53 @@ def paint_hazard_border(op, box, width=2):
 
 
 def paint_rug_worn(op, box):
-    """A cheap oatmeal-grey rug, a darker border, scuffed."""
+    """A small, warm, well-used kilim: terracotta field with a cream diamond row,
+    a dark red border with cream ticks, a cream fringe on the short ends, and a
+    paler worn patch where he walks to the bed."""
     x0, y0, x1, y1 = box
-    edge, field, scuff = (70, 66, 60), (112, 106, 96), (124, 118, 108)
+    cream, red, red_dark = (214, 194, 152), (112, 46, 38), (92, 38, 32)
+    field, field_dk, worn = (158, 86, 58), (142, 76, 52), (176, 112, 84)
+    cx, cy = (x0 + x1) // 2, (y0 + y1) // 2
     for y in range(y0, y1):
         for x in range(x0, x1):
             d = min(x - x0, y - y0, x1 - 1 - x, y1 - 1 - y)
-            if d <= 2:
-                c = edge
+            if d == 0:
+                c = red_dark
+            elif d in (1, 5):
+                c = cream
+            elif 2 <= d <= 4:
+                along = (x - x0) if min(y - y0, y1 - 1 - y) == d else (y - y0)
+                c = cream if (d == 3 and along % 6 == 0) else red
             else:
-                h = hashxy(x, y)
-                c = scuff if h % 9 == 0 else ((98, 92, 84) if h % 23 == 0 else field)
+                # a row of diamonds along the middle
+                k = abs(x - cx) % 16
+                if abs(y - cy) + min(k, 16 - k) in (6, 7):
+                    c = cream
+                else:
+                    c = field_dk if hashxy(x, y) % 6 == 0 else field
+                # worn patch towards the bed end
+                if (x - (x1 - 22)) ** 2 / 300 + (y - cy) ** 2 / 120 < 1 and hashxy(x, y) % 3:
+                    c = worn
+            op[x, y] = (*c, 255)
+    # fringe on the short (west and east) ends
+    for y in range(y0 + 1, y1 - 1, 2):
+        for x in (x0 - 2, x0 - 1, x1, x1 + 1):
+            op[x, y] = (*cream, 255)
+
+
+def paint_runner(op, y0, y1, x0=32, x1=288):
+    """A deep burgundy corridor runner with thin gold lines, running wall to wall."""
+    gold, edge = (178, 140, 72), (58, 22, 28)
+    field, field2 = (104, 34, 44), (96, 30, 40)
+    for y in range(y0, y1):
+        for x in range(x0, x1):
+            d = min(y - y0, y1 - 1 - y)
+            if d == 0:
+                c = edge
+            elif d == 3:
+                c = gold
+            else:
+                c = field2 if hashxy(x, y) % 7 == 0 else field
             op[x, y] = (*c, 255)
 
 
@@ -297,8 +334,11 @@ def main():
     paint_hazard_border(raised.load(), (28, 112, 194, 190))
     sheets["room_zds_raised"] = raised
     danny = paint_floor(front, CARPET_SLATE)
-    paint_rug_worn(danny.load(), (112, 208, 264, 296))  # the floor he lives on (room_zds_office)
+    paint_rug_worn(danny.load(), (182, 230, 270, 286))  # under the camp bed (room_zds_office)
     sheets["room_zds_office_floor"] = danny
+    exec_hall = paint_floor(front, CARPET_SLATE)
+    paint_runner(exec_hall.load(), 82, 114)  # down the executive corridor (room_zds_hall_exec)
+    sheets["room_zds_hall_exec"] = exec_hall
 
     for name, img in sheets.items():
         path = OUT_DIR / f"{name}.png"

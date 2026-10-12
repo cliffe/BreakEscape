@@ -345,7 +345,7 @@ ZDS_FLOOR_SHEETS = {
     "room_zds_ceo": "room_zds_exec",             # walnut parquet, navy and gold rug under the desk
     "room_zds_servers": "room_zds_raised",       # raised access floor, two cold aisles
     "room_zds_hall": "room_zds_hall",            # the lobby's stone, no decals
-    "room_zds_hall_exec": "room_zds_carpet",     # the executive wing is carpeted
+    "room_zds_hall_exec": "room_zds_hall_exec",  # carpet with a burgundy runner
 }
 
 
@@ -2639,7 +2639,7 @@ def room_zds_reception():
     r.item("planter_fig1", 36.0, 300.0)              # SW corner (decor band)
     r.item("planter_fig1", 262.0, 300.0)             # SE corner (decor band)
     r.on(desk, "phone4", 0.16, 0.36)
-    r.on(desk, "office-misc-pens", 0.80, 0.36)
+    r.on(desk, "usb_bowl1", 0.80, 0.36)              # a bowl of branded USB sticks, help yourself
     return r.build("room_zds_reception")
 
 
@@ -2676,6 +2676,7 @@ def room_zds_conference():
     r.item("flip_chart1", 258.0, 206.0)
     r.item("fig_plant1", 262.0, 300.0)
     r.item("fire_alarm_point1", 14.0, 140.0)         # west wall
+    r.item("power_panel1", 290.0, 152.0)             # east wall below the door row: AV and lighting control
     r.on(table, "notes1", 0.14, 0.40, layer="conditional_table_items")
     r.on(table, "phone4", 0.42, 0.34)                # conference phone
     r.on(table, "office-misc-cup2", 0.60, 0.40)
@@ -2711,13 +2712,14 @@ def room_zds_office():
     r.item("mini_fridge1", 168.0, 182.0)             # beside the side table
     r.item("servers4", 262.0, 146.0)                 # a small lab rack by the east wall
     r.item("camp_bed1", 222.0, 272.0)                # he has been sleeping here
-    r.item("pizza_boxes1", 190.0, 290.0)
+    r.item("pizza_boxes1", 192.0, 282.0)
     r.item("energy_cans1", 196.0, 252.0)
     r.item("cable_tangle1", 118.0, 204.0)            # spare leads under the desk's end
     r.item("bin8", 40.0, 214.0)
     r.item("plant-large11", 34.0, 300.0)
     r.item("coat_stand1", 270.0, 220.0)
     r.item("fire_alarm_point1", 292.0, 132.0)        # east wall
+    r.on(desk, "office-misc-lamp4", 0.07, 0.22)      # his desk lamp: the only light in the night scene
     r.on(desk, "pc8", 0.35, 0.30)
     r.on(desk, "picture5", 0.88, 0.36)
     r.on(desk, "coffee_cups1", 0.62, 0.42)
@@ -2803,7 +2805,7 @@ def room_zds_servers():
     r.item("aircon_unit1", 220.0, 254.0)             # precision cooling, west of the door lane
     r.item("suppression_cylinders1", 36.0, 252.0)
     r.item("suppression_panel1", 14.0, 230.0)        # west wall, by the cylinders
-    r.item("restricted_sign1", 14.0, 158.0)          # west wall at the production row's end
+    r.item("restricted_sign1", 163.0, 59.0)          # RESTRICTED plate under the marketplace board
     # the production row is fenced on the floor by a hazard line (room_zds_raised)
     r.on(op, "vm-launcher", 0.45, 0.32, layer="conditional_table_items")
     r.on(bench, "workstation", 0.18, 0.36, layer="conditional_table_items")
@@ -2836,9 +2838,10 @@ def room_zds_hall():
 def room_zds_hall_exec():
     """
     2×1 GU (10×6) executive-wing corridor (m03 executive_wing_hallway): the quiet,
-    carpeted end of the building, no brand sign. Framed prints and a clock, a
-    fire point, a fig in a concrete planter, and a PRIVATE plate by the NE door
-    to the CEO's office. A 10×10 room to the south covers all but y 64-128, so
+    carpeted end of the building, no brand sign. A burgundy runner down the
+    corridor (in the sheet, y 82-114), a black console table against the wall, a
+    clock and a framed print, a fire point, a fig in a concrete planter, and a
+    PRIVATE plate by the NE door to the CEO's office. A 10×10 room to the south covers all but y 64-128, so
     everything is on or against the back wall.
     Doors: N (NE corner, x 256-288 clear), S (SW corner), W and E on row 2. The
     night guard's patrol (tiles (6,3), (3,4), (5,3)) runs through y 96-128,
@@ -2846,12 +2849,12 @@ def room_zds_hall_exec():
     No scenario slots.
     """
     r = _Uni()
-    r.item("picture12", 48.0, 44.0)
-    r.item("wall_clock1", 86.0, 46.0)
-    r.item("picture10", 128.0, 46.0)
-    r.item("fire_alarm_point1", 156.0, 52.0)
-    r.item("planter_fig1", 178.0, 76.0)
-    r.item("private_sign1", 216.0, 42.0)             # beside the CEO's door
+    r.item("fire_alarm_point1", 40.0, 52.0)
+    r.item("credenza1", 60.0, 78.0)                  # console against the wall: phone, orchid, books
+    r.item("wall_clock1", 130.0, 46.0)
+    r.item("picture10", 164.0, 46.0)
+    r.item("planter_fig1", 186.0, 76.0)
+    r.item("private_sign1", 220.0, 42.0)             # beside the CEO's door (NE, x 256+)
     return r.build("room_zds_hall_exec", "10x6_hall")
 
 

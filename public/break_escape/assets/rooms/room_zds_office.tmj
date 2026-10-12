@@ -530,8 +530,8 @@
      "type": "",
      "visible": true,
      "width": 23,
-     "x": 190.0,
-     "y": 290.0
+     "x": 192.0,
+     "y": 282.0
     },
     {
      "gid": 1027,
@@ -631,7 +631,7 @@
     {
      "gid": 304,
      "height": 16,
-     "id": 24,
+     "id": 25,
      "name": "",
      "rotation": 0,
      "type": "",
@@ -653,9 +653,21 @@
    "name": "table_items",
    "objects": [
     {
+     "gid": 350,
+     "height": 23,
+     "id": 21,
+     "name": "",
+     "rotation": 0,
+     "type": "",
+     "visible": true,
+     "width": 12,
+     "x": 35.46,
+     "y": 149.58
+    },
+    {
      "gid": 368,
      "height": 22,
-     "id": 21,
+     "id": 22,
      "name": "",
      "rotation": 0,
      "type": "",
@@ -667,7 +679,7 @@
     {
      "gid": 174,
      "height": 13,
-     "id": 22,
+     "id": 23,
      "name": "",
      "rotation": 0,
      "type": "",
@@ -679,7 +691,7 @@
     {
      "gid": 1030,
      "height": 20,
-     "id": 23,
+     "id": 24,
      "name": "",
      "rotation": 0,
      "type": "",
@@ -691,7 +703,7 @@
     {
      "gid": 1029,
      "height": 23,
-     "id": 25,
+     "id": 26,
      "name": "",
      "rotation": 0,
      "type": "",
@@ -720,7 +732,7 @@
   }
  ],
  "nextlayerid": 14,
- "nextobjectid": 26,
+ "nextobjectid": 27,
  "orientation": "orthogonal",
  "renderorder": "right-down",
  "tiledversion": "1.11.2",
@@ -3153,7 +3165,7 @@
    "margin": 0,
    "name": "objects/hospital_extras",
    "spacing": 0,
-   "tilecount": 227,
+   "tilecount": 228,
    "tileheight": 60,
    "tiles": [
     {
@@ -4509,14 +4521,20 @@
     {
      "id": 235,
      "image": "../objects/restricted_sign1.png",
-     "imageheight": 22,
-     "imagewidth": 16
+     "imageheight": 9,
+     "imagewidth": 45
     },
     {
      "id": 236,
      "image": "../objects/exec_chair_back1.png",
      "imageheight": 64,
      "imagewidth": 38
+    },
+    {
+     "id": 237,
+     "image": "../objects/usb_bowl1.png",
+     "imageheight": 8,
+     "imagewidth": 13
     }
    ],
    "tilewidth": 60

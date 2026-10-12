@@ -138,7 +138,8 @@ export function preload() {
     this.load.image('room_zds_raised', 'tiles/rooms/room_zds_raised.png'); // m03: raised floor, slate walls
     this.load.image('room_zds_boardroom', 'tiles/rooms/room_zds_boardroom.png'); // m03: carpet with a charcoal rug under the boardroom table
     this.load.image('room_zds_hall', 'tiles/rooms/room_zds_hall.png'); // m03: the lobby stone without decals, for the corridors
-    this.load.image('room_zds_office_floor', 'tiles/rooms/room_zds_office_floor.png'); // m03: carpet with a worn rug (Danny's office)
+    this.load.image('room_zds_office_floor', 'tiles/rooms/room_zds_office_floor.png'); // m03: carpet with a small worn kilim (Danny's office)
+    this.load.image('room_zds_hall_exec', 'tiles/rooms/room_zds_hall_exec.png'); // m03: carpet with a burgundy runner (executive corridor)
     this.load.image('room14', 'tiles/rooms/room14.png');
     this.load.image('room19', 'tiles/rooms/room19.png');
     this.load.image('door_32', 'tiles/door_32.png');
@@ -793,6 +794,7 @@ export function preload() {
     this.load.image('private_sign1', 'objects/private_sign1.png');
     this.load.image('restricted_sign1', 'objects/restricted_sign1.png');
     this.load.image('exec_chair_back1', 'objects/exec_chair_back1.png');
+    this.load.image('usb_bowl1', 'objects/usb_bowl1.png');
     this.load.image('backup_recovery',         'objects/backup_recovery.png');
     this.load.image('dual_auth',               'objects/dual_auth.png');
     this.load.image('ehr-terminal',            'objects/ehr-terminal.png');
