@@ -518,6 +518,10 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
   "rooms": {
     "reception_lobby": {
       "type": "room_zds_reception",
+      "chatBackground": [
+        { "condition": "globalVars.clone_call_done === true", "image": "assets/backgrounds/rooms/m03_reception_lobby_night_blended.png" },
+        { "image": "assets/backgrounds/rooms/m03_reception_lobby_blended.png" }
+      ],
       "lighting": {
         "ambient": "#e4e8ee",
         "emitters": {
@@ -1584,7 +1588,6 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
               "eventPattern": "lockpick_used_in_view",
               "targetKnot": "on_lockpick_detected",
               "conversationMode": "person-chat",
-              "background": "assets/backgrounds/background1.png",
               "onceOnly": false,
               "cooldown": 3000
             }
