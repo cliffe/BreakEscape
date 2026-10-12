@@ -52,6 +52,7 @@ VAR hub_quiet = false
 // back at night. A4 fix pass: now a synced scenario global too, for the credits line.
 VAR victoria_test_answer = ""
 // Scenes #6 / D4-2: "keen" at the afternoon goodbye; read back at night with "sold".
+// A4 fix pass: synced, so a reload between afternoon and night keeps it.
 VAR afternoon_goodbye = ""
 // D2-17: synced. The player looked in on her night call; she reveals she saw them.
 VAR sterling_on_call_seen = false
@@ -64,7 +65,8 @@ VAR defended_danny = false // Synced scenario global: set when the player speaks
 VAR came_via_hospital = false
 // A4 fix pass (S8): synced. She saw the cloner's light during the read (clone_check_2).
 VAR cloner_glimpsed = false
-// Local: how the player covered it ("flattery" / "diagram" / "certs"), read back at night.
+// Synced: how the player covered it ("flattery" / "diagram" / "certs"), read back at night.
+// Synced, not local, because ink locals are not restored after a page reload.
 VAR cloner_deflection = ""
 
 // Root divert. When a conversation has ended (-> DONE), the engine restores only
@@ -519,17 +521,20 @@ Victoria Sterling: You ask questions like someone taking notes. I like that in s
 Narrator: Against your leg, the cloner is still working. A few seconds more.
 * [Skills are cheap. Knowing where to sell them isn't.]
     ~ cloner_deflection = "flattery"
+    #set_global:cloner_deflection:flattery
     ~ victoria_influence = victoria_influence + 10
     # influence_increased
     Victoria Sterling: Exactly. Which is why my researchers are paid like surgeons.
     -> clone_complete
 * [This lab can't have been cheap to build.]
     ~ cloner_deflection = "diagram"
+    #set_global:cloner_deflection:diagram
     Narrator: Your eyes stay on the network diagram.
     Victoria Sterling: It paid for itself in a quarter. Universities teach them to write it up. I teach them what it's worth.
     -> clone_complete
 * [Do you offer any formal certifications?]
     ~ cloner_deflection = "certs"
+    #set_global:cloner_deflection:certs
     Victoria Sterling: Certificates are for people who want permission. My students don't ask.
     -> clone_complete
 
@@ -577,6 +582,7 @@ Victoria Sterling: That's enough philosophy for one afternoon. The programme sta
 // Scenes #6 / D4-2: only "keen" is read back at night (with the "sold" answer).
 * [This is exactly the kind of work I've been looking for.]
     ~ afternoon_goodbye = "keen"
+    #set_global:afternoon_goodbye:keen
     ~ victoria_influence = victoria_influence + 10
     # influence_increased
     Victoria Sterling: Good. I'll have the enrolment details sent over.

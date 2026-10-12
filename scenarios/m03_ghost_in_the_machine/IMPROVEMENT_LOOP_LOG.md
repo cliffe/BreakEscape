@@ -2121,3 +2121,10 @@ No audio exists for m03. Player choices aren't listed.
 - inkcheck: debrief 240 states (4 Victoria fates × 5 Danny fates × 4 approaches × 3 extras) and 80 more with the callbacks on, 0 failing; briefing clean (capped).
 - Route driver: 27 routes, 0 missing picks. The intended mid-chat stops are the same as at HEAD. r1 and r5 now pick the new briefing option; r5 also answers Terry's route question. New routes: `r23_a4_terry_route` (each reply, a reopen, a reload at the question), `r24_a4_cloner_callback` (each deflection, and no glimpse), `r25_a4_debrief_approaches` (each approach into the debrief, plus flexible with Sterling KO'd).
 - No browser run.
+
+### Follow-up: reload-safe night read-backs (2026-10-13)
+
+- Ink locals aren't restored after a page reload (`docs/IDEAS_BACKLOG.md`, "Ink visit counts don't survive a reload"), so `cloner_deflection` and `afternoon_goodbye` (both read in `nighttime_confrontation`) are now synced globals. Each is registered in `globalVariables` and written with `#set_global` (`victoria:524/531/537`, `:585`). New globals: `cloner_deflection` ("" / flattery / diagram / certs), `afternoon_goodbye` ("" / keen).
+- Route driver: `"reload": "page"` restarts a story with only the scenario globals, as a browser reload does. `"reload": true` keeps its old meaning (every ink variable kept). `r24` case (e) walks diagram → "keen" goodbye after "sold" → page reload → night. The deflection line and the "keen" line both still play.
+- Not changed: `read_dropped`, the night opener's first read-back branch, is also an ink local. Its synced twin `clone_read_dropped` is set at the same moment, so the opener could read that instead. That is outside this follow-up and is left for the orchestrator.
+- Checks: compile 8/8; validator (with and without ink) no errors; dialoguelint only the 2 known warnings; tagdiff only the four new `#set_global` tags; reopencheck 0; loopcheck 29/29; 27 routes, 0 missing picks.
