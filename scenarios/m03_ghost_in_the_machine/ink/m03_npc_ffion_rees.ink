@@ -300,6 +300,10 @@ Narrator: She carries on straightening the sign-in sheet.
 
 === clone_badge_debrief ===
 #speaker:ffion_rees
+// D4-1 sweep pattern: a chat closed here by day and reopened at night hands over to start.
+{ mission_phase == "act2_infiltration":
+    -> start
+}
 { reception_badge_cloned:
     Narrator: The badge is in the cloner.
     // Pass 5 round 2: a beat before the hub, so "Anything else, love?" doesn't

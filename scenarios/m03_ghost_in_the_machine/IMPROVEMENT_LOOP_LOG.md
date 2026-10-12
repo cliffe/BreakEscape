@@ -1870,3 +1870,4 @@ Record: `ROOM_DRESSING.md` (cycle 5), screenshots `build_evidence/dressing_c5/` 
 - R-2 fixed with margin (directory in range for any approach from y 104 to 160, best 12 px); R-4, RESTRICTED plate padding, Danny's book pile, distinct corridor sideboard, planter off Terry's patrol.
 - Final checks clean (slot audit, validator, door alignment, wall heights). No scenario edits.
 - **Room dressing is final; the layout is ready for the POV-background stage.** Still open, engine side only: Server Room Whiteboard read-in-place; F-4 dialog titles.
+- **F1 (night lighting check).** `ink/m03_npc_ffion_rees.ink:310-313`: `clone_badge_debrief` now hands over to `start` once it is night (the D4-1 pattern on her other day knots), so a chat closed at "The badge is in the cloner." by day opens at night with only "Oh! You made me jump." No new text. Route `r19_clone_debrief_closed_by_day.json`.
