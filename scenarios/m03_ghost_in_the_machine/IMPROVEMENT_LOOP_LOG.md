@@ -1855,3 +1855,18 @@ Config only (`scenario.json.erb` lighting fields); plan §11; screenshots `build
 - m4 server-room player torch faint against the racks: withdrawn as a lighting issue. The room strikes on within about 0.9 s of entry, so the torch is barely seen there.
 - Fresh look at every cycle-2 shot: nothing above minor.
 - Validator schema passes. No engine files touched this cycle.
+
+## Room dressing, cycle 5 (2026-10-12): polish and confirmation
+
+Record: `ROOM_DRESSING.md` (cycle 5), screenshots `build_evidence/dressing_c5/` (day and night).
+
+| Severity | Found | Fixed | Deferred |
+|---|---|---|---|
+| Blocker | 0 | 0 | 0 |
+| Major | 0 | 0 | 0 |
+| Minor | 5 | 5 | 0 |
+| Observation | 1 | 1 | 0 |
+
+- R-2 fixed with margin (directory in range for any approach from y 104 to 160, best 12 px); R-4, RESTRICTED plate padding, Danny's book pile, distinct corridor sideboard, planter off Terry's patrol.
+- Final checks clean (slot audit, validator, door alignment, wall heights). No scenario edits.
+- **Room dressing is final; the layout is ready for the POV-background stage.** Still open, engine side only: Server Room Whiteboard read-in-place; F-4 dialog titles.

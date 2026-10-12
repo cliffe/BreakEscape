@@ -305,3 +305,41 @@ After shots (`build_evidence/dressing_c4/`): `reception_lobby.png`, `conference_
 
 - Assumption: the burgundy runner and the kilim are warm enough to read as rugs at game scale without new PixelLab art; both are painted into the floor sheets, so they draw under every sprite.
 - Assumption: the CEO office has enough light sources for the lighting stage without floor lamps; the lighting brief can ask for one if it wants.
+
+## Cycle 5 (2026-10-12): polish and confirmation
+
+Inputs: the cycle-3 re-walk (`PASS2_REWALK_C3.md`: F-1 to F-3 hold; carried R-2 and observation R-4), my cycle-4 polish list, the final NPC positions after the dialogue renames, and day and night tours with the lighting in (`lighting-tour.sh --close-intro --check`, night with `--globals clone_call_done=true,mission_phase=act2_infiltration --show-npc danny_foster,terry_mott`). The lighting stage asked for no new fixtures.
+
+### Findings and fixes
+
+| # | Sev | Finding | Outcome |
+|---|---|---|---|
+| R-2 | minor | Building Directory reachable only at 31.3 px in the re-walk. A probe in game showed the harness had stopped at the range edge: against the west wall the player gets to 13 px, but approaching from y 150 it was 33 px (out of range). | Fixed: directory lowered to feet 146 (top-left 14,131), centred on the walk-up line. Re-probed: in range (12-31 px) for any approach between y 104 and y 160, best 12 px. |
+| R-4 | obs | Danny's PC and the Family Photo 26 px apart. | Fixed: PC moved to 0.28 along the desk, a few more px from the photo. No menu was seen before either. |
+| P1 | minor | RESTRICTED plate lettering tight. | Fixed: plate redrawn at 47×11 with a pixel of padding above and below; registries updated (catalogue, `.tsx`, `tilesets_ref.json`). |
+| P2 | minor | Danny's book pile floated mid-floor. | Fixed: stacked against the wall under his whiteboard (x 96, feet 82). |
+| P3 | minor | Boardroom credenza and corridor console were the same sprite. | Fixed: the executive corridor now has the walnut `sideboard1` (water and glasses); the boardroom keeps the black credenza. |
+| N1 | minor | Terry's patrol waypoints (x 80-208, feet 84-116) stood him on the corridor planter at night. | Fixed: planter removed from the executive corridor (the main hall keeps one); he walks the runner in front of the wall pieces with his torch. |
+
+NPC spots against the final dialogue: Ffion (7.5, 4.9) is at the counter's end, still behind it at night per her late-night line; Victoria (5, 4) by the whiteboard, lit at night as the story says; Danny (6.5, 4) stands in the dark mid-room at night with his desk lamp the only light (the ink has him "sitting in the dark with his coat on"; a seated pose is the character pipeline's call, not layout). Terry's patrol is clear of everything. No positions changed this cycle.
+
+Night shots read correctly as layout: the counter's cyan strip and slat-wall accent light reception, the racks and marketplace board carry the server room, the RESTRICTED plate is legible in their glow, the CEO's desk lamp, drinks and trophy cabinets carry her office, Danny's lamp pools on his desk, the threat map lights the main corridor. Nothing placed reads wrong in the dark.
+
+Scenario edits this cycle: none.
+
+### Verify (final)
+
+- `slot_audit.py --verbose --notes`: 16 objects ok, 0 problems; one notes prompt left (Server Room Whiteboard, engine change not approved; stays a notebook page).
+- `validate_scenario.rb --skip-ink --no-graph`: schema passes, geometry OK, door alignment OK. `check_door_alignment.py`: 6 of 6 connections OK. `check_room_walls.py --scenario`: every map 64. `generate_rooms.py --check` on all seven ZDS maps: OK. `node --check` game.js: OK.
+- In game: exactly 16 interactable objects, all scenario objects on their intended sprites; no "No Tiled item found" logs.
+
+Shots (`build_evidence/dressing_c5/`): `day/` and `night/` for all seven rooms (`reception_lobby`, `conference_room_01`, `server_room`, `executive_office`, `danny_office`, `main_hallway`, `executive_wing_hallway`), `day_sheet.png`, `night_sheet.png`, maps `grid-room_zds_*.png`, `grid-contact_sheet.png`.
+
+### Status
+
+The layout is final for the POV-background stage. Open items, none of which moves furniture: the Server Room Whiteboard read-in-place (engine change, not approved), and F-4 dialog titles ("Enter PIN for item", engine wording).
+
+### Assumptions (cycle 5)
+
+- Assumption: the directory probe's distance (player position offset 16 px in the facing direction, to the sprite's top-left) matches the engine's `getInteractionDistance`; I copied the formula rather than calling it.
+- Assumption: Danny standing rather than sitting at night is a sprite question for the character pipeline, not a layout one.
