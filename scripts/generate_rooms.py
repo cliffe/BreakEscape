@@ -302,8 +302,8 @@ def room_tilesets(name: str) -> list[dict]:
             if ts.get("name") == "room6":
                 ts["name"] = floor
                 ts["image"] = ts["image"].replace("room6.png", f"{floor}.png")
-    elif name in UNI_FLOOR_SHEETS:
-        floor = UNI_FLOOR_SHEETS[name]
+    elif name in UNI_FLOOR_SHEETS or name in ZDS_FLOOR_SHEETS:
+        floor = UNI_FLOOR_SHEETS.get(name) or ZDS_FLOOR_SHEETS[name]
         for ts in tilesets:
             if ts.get("name") == "room6":
                 ts["name"] = floor
@@ -334,6 +334,16 @@ UNI_FLOOR_SHEETS = {
     "room_uni_special": "room_uni_special",
     "room_uni_seminar": "room_uni_carpet",
     "room_uni_staff": "room_uni_carpet",
+}
+
+# Zero Day Syndicate's offices (m03): room6 repainted by room_gen/make_zds_tileset.py,
+# cool white walls with a cyan brand line; the server room has slate walls.
+ZDS_FLOOR_SHEETS = {
+    "room_zds_reception": "room_zds_lobby",      # polished stone, hat-mark inlay at the spawn
+    "room_zds_conference": "room_zds_carpet",
+    "room_zds_office": "room_zds_carpet",
+    "room_zds_ceo": "room_zds_exec",             # walnut parquet, navy and gold rug under the desk
+    "room_zds_servers": "room_zds_raised",       # raised access floor, two cold aisles
 }
 
 
@@ -825,6 +835,10 @@ WALL_MOUNTED_EXTRAS = {
     "uni_dartboard",
     "uni_sign_returns",
     "uni_sign_study",
+    "whitehat_sign",
+    "victoria_portrait",
+    "market_board",
+    "threat_map",
 }
 
 
@@ -2570,6 +2584,192 @@ def room_uni_staff():
     return r.build("room_uni_staff", "20x10")
 
 
+# ---------------------------------------------------------------------------
+# Zero Day Syndicate's offices (m03 "Ghost in the Machine"). The firm trades as
+# "WhiteHat Security Services": a polished consultancy front (reception,
+# conference room, a consultant's office, the CEO's office) over a server room
+# that is the real business. Walls and floors: room_gen/make_zds_tileset.py.
+# These maps are m03's own, so m01's room_office/room_reception/room_servers and
+# the shared room_ceo are untouched. Coordinates: x = left edge, y = feet.
+# ---------------------------------------------------------------------------
+
+def room_zds_reception():
+    """
+    2×2 GU lobby: the WHITEHAT sign over a black marble front desk, the founding
+    plaque beside it, a trophy cabinet of industry awards by the door, a live
+    threat-map screen and a CCTV camera watching the room; a waiting area of a
+    black leather sofa and a glass coffee table, fig trees in chrome pots, a
+    coffee machine. Door: N (NW corner, kept clear to y 96). Nothing to the south.
+    The receptionist stands at (6.6, 4.2), clear floor right of the desk front.
+    The hat-mark inlay in the floor (160, 200) stays clear for the spawn.
+    Slots (as-type): plaque (Company Founding Plaque), uni_directory on the west
+    wall below the door row (Building Directory).
+    """
+    r = _Uni()
+    desk = r.table("marble_desk1", 150.0, 116.0, kind="objects")
+    r.item("trophy_cabinet1", 70.0, 84.0)            # awards, against the back wall by the door
+    r.item("plaque1", 120.0, 50.0)                   # founding plaque, beside the desk
+    r.item("whitehat_sign1", 149.0, 40.0)            # the firm's sign over the desk
+    r.item("threat_map1", 234.0, 54.0)               # live "threat intelligence" wall screen
+    r.item("cctv_camera1", 284.0, 30.0)              # watching the lobby
+    r.item("uni_directory1", 14.0, 134.0)            # west wall, below the N door's column
+    r.item("fire_alarm_point1", 292.0, 132.0)        # east wall
+    r.item("fire_extinguisher1", 274.0, 166.0)       # under the call point
+    # waiting area, bottom left, clear of the inlay (x 136-184, y 176-224)
+    r.item("leather_sofa1", 40.0, 228.0)
+    r.table("glass_coffee_table1", 45.0, 266.0, kind="objects")
+    r.item("fig_plant1", 104.0, 226.0)
+    r.item("coffee_station1", 262.0, 228.0)          # bean-to-cup, against the east side
+    r.item("fig_plant1", 262.0, 300.0)               # SE corner (decor band)
+    r.on(desk, "phone4", 0.20, 0.40)
+    r.on(desk, "office-misc-pens", 0.62, 0.42)
+    return r.build("room_zds_reception")
+
+
+def room_zds_conference():
+    """
+    2×2 GU boardroom: blinds either side of a whiteboard and a wall screen with
+    the firm's deck, a sideboard with water and glasses, a long walnut table with
+    leather chairs on its north side and swivel chairs (seen from behind) on its
+    south side, a flip chart, a fig tree. Door: E on row 2 (y 64-100 kept clear
+    at x 256+). Nothing to the south. Victoria Sterling stands at (5, 4) (feet
+    about y 160), between the whiteboard and the table, where the ink has her
+    clone-at-the-whiteboard beat.
+    Slots: whiteboard1 (as-type:whiteboard, Conference Whiteboard), notes1 on the
+    table (Presentation Materials).
+    """
+    r = _Uni()
+    table = r.table("zds_conference_table1", 70.0, 276.0, kind="objects")  # x 70-196, top 221
+    r.item("window_blinds1", 36.0, 50.0)
+    r.item("whiteboard1", 96.0, 52.0)
+    r.item("conference_screen1", 152.0, 52.0)
+    r.item("window_blinds1", 216.0, 50.0)
+    r.item("sideboard1", 36.0, 110.0)                # under the west blinds
+    for x in (80.0, 118.0, 156.0):
+        r.item("leather_chair1", x, 234.0)           # north side, facing the viewer
+    for x in (78.0, 152.0):
+        r.item("chair-exec-rotate5", x, 306.0)       # south side, seen from behind
+    r.item("flip_chart1", 258.0, 206.0)
+    r.item("fig_plant1", 262.0, 300.0)
+    r.item("fire_alarm_point1", 14.0, 140.0)         # west wall
+    r.on(table, "notes1", 0.14, 0.40, layer="conditional_table_items")
+    r.on(table, "office-misc-cup2", 0.55, 0.38)
+    r.on(table, "laptop1", 0.80, 0.42)
+    return r.build("room_zds_conference")
+
+
+def room_zds_office():
+    """
+    2×2 GU consultant's office (Danny Foster's): a whiteboard of network
+    diagrams, framed certifications, a bookcase and binder shelves, his desk on
+    the west side with the PC and a family photo, a side table with his
+    performance review, a camp bed where he has been sleeping, a small lab rack.
+    Door: N (NW corner, kept clear to y 96). Nothing to the south. Danny stands at
+    (6.5, 4) on clear floor, towards the top right.
+    Slots: pc8 on the desk (base pc, Danny's Workstation), picture5 on the desk
+    (as-type:picture, Family Photo; no other picture* in this map), notes1 on the
+    side table (Performance Review).
+    """
+    r = _Uni()
+    desk = r.table("desk1", 36.0, 180.0)             # x 36-114, top 141
+    side = r.table("smalldesk2", 132.0, 182.0)       # x 132-164: review 32px+ from the photo
+    r.item("whiteboard1", 72.0, 52.0)
+    r.item("uni_certificate1", 126.0, 36.0)
+    r.item("uni_certificate1", 126.0, 54.0)
+    r.item("bookcase", 150.0, 76.0)
+    r.item("window_blinds1", 200.0, 50.0)
+    r.item("binder_shelves1", 244.0, 84.0)
+    r.item("chair-grey-1", 62.0, 156.0)              # his chair, behind the desk
+    r.item("servers4", 262.0, 146.0)                 # a small lab rack by the east wall
+    r.item("camp_bed1", 222.0, 272.0)                # he has been sleeping here
+    r.item("bin8", 40.0, 214.0)
+    r.item("plant-large11", 34.0, 300.0)
+    r.item("coat_stand1", 270.0, 220.0)
+    r.item("fire_alarm_point1", 292.0, 132.0)        # east wall
+    r.on(desk, "pc8", 0.35, 0.30)
+    r.on(desk, "picture5", 0.88, 0.36)
+    r.on(desk, "office-misc-cup", 0.62, 0.42)
+    r.on(side, "notes1", 0.5, 0.40, layer="conditional_table_items")
+    return r.build("room_zds_office")
+
+
+def room_zds_ceo():
+    """
+    2×2 GU CEO's office (Victoria Sterling's): walnut parquet with a navy and gold
+    rug, a mahogany desk with a leather chair, blinds either side of her own
+    portrait, a bookcase, a locked steel filing cabinet in the NE corner, a drinks
+    cabinet, a leather sofa and glass coffee table, two leather visitor chairs.
+    Door: S (SE corner); a hallway is to the south, so feet stay above y 256 and
+    the x 248-292 lane up from the door stays clear.
+    Slots: filing_cabinet_locked1 (as-type, Filing Cabinet), pc11 on the desk
+    (base pc, Executive Computer; left end, so its top-left is 32px+ from the
+    drawer's centre), exec_desk_drawer1 laid exactly over the desk's right
+    pedestal (as-type, Desk Drawer).
+    """
+    r = _Uni()
+    desk = r.table("exec_desk_mahogany1", 130.0, 160.0, kind="objects")  # x 130-190, top 107
+    r.item("bookcase", 36.0, 76.0)
+    r.item("window_blinds1", 88.0, 50.0)
+    r.item("victoria_portrait1", 144.0, 54.0)        # her own portrait, behind her chair
+    r.item("window_blinds1", 192.0, 50.0)
+    r.item("filing_cabinet_locked1", 256.0, 84.0)    # NE corner
+    r.item("drinks_cabinet1", 36.0, 150.0)           # decanters, west side
+    r.item("leather_sofa1", 40.0, 230.0)             # seating area, bottom left
+    r.table("glass_coffee_table1", 110.0, 240.0, kind="objects")
+    r.item("chair-exec-rotate5", 124.0, 218.0)       # visitor chairs facing the desk (seen from behind)
+    r.item("chair-exec-rotate5", 160.0, 218.0)
+    r.item("fig_plant1", 214.0, 150.0)
+    r.item("trophy_cabinet1", 214.0, 250.0)          # more awards, west of the door lane
+    r.on(desk, "pc11", 0.25, 0.32)
+    # the drawer overlay: the desk's own right pedestal (sprite x 43-58, y 35-49)
+    r.conditional_table_items.append(make_obj("objects", "exec_desk_drawer1", 130.0 + 43, 107.0 + 50, r._next()))
+    return r.build("room_zds_ceo")
+
+
+def room_zds_servers():
+    """
+    2×2 GU server room, the real business: slate walls, raised floor with two
+    perforated cold aisles (rows y 96-128 and 192-224) in front of two rack rows,
+    a cable tray over the back row, a wall screen showing the exploit
+    marketplace's live board, a wall safe and a whiteboard; the operator's desk
+    with the VM terminal, an ops bench with the decoding laptop and the drop-site
+    terminal, a KVM cart, gas suppression. Door: S (SE corner); feet stay above
+    y 256 and the x 248-292 lane up from the door stays clear.
+    Slots: filing_cabinet_locked1 (as-type, Filing Cabinet), safe4 on the back
+    wall (base safe, Wall Safe), whiteboard2 (as-type:whiteboard, Server Room
+    Whiteboard), vm-launcher on the operator desk, workstation and flag-station
+    on the bench (top-lefts 32px+ from each other's centres).
+    """
+    r = _Uni()
+    # back row against the wall
+    r.item("filing_cabinet_locked1", 36.0, 86.0)
+    r.item("server_rack1", 68.0, 84.0)
+    r.item("server_rack2", 98.0, 86.0)
+    r.item("storage_array1", 128.0, 86.0)
+    r.item("cable_tray1", 36.0, 26.0)                # over the back row
+    r.item("market_board1", 164.0, 50.0)             # the marketplace's live board
+    r.item("safe4", 214.0, 56.0)                     # wall safe
+    r.item("whiteboard2", 244.0, 54.0)
+    # middle row, west half (racks face the second cold aisle)
+    r.item("ups_cabinet1", 32.0, 182.0)
+    r.item("server_rack2", 64.0, 184.0)
+    r.item("network_rack1", 94.0, 184.0)
+    r.item("storage_array1", 128.0, 184.0)
+    r.item("server_rack1", 158.0, 182.0)
+    # operator desk, east, below the clear floor under the wall fixtures
+    op = r.table("desk3", 206.0, 178.0)              # x 206-257, top 139
+    r.item("chair-darkgray-1", 222.0, 152.0)
+    # ops bench, south-west
+    bench = r.table("desk1", 96.0, 246.0)            # x 96-174, top 207
+    r.item("kvm_cart1", 190.0, 252.0)
+    r.item("suppression_cylinders1", 36.0, 252.0)
+    r.item("suppression_panel1", 14.0, 230.0)        # west wall, by the cylinders
+    r.on(op, "vm-launcher", 0.45, 0.32, layer="conditional_table_items")
+    r.on(bench, "workstation", 0.18, 0.36, layer="conditional_table_items")
+    r.on(bench, "flag-station", 0.85, 0.36, layer="conditional_table_items")
+    return r.build("room_zds_servers")
+
+
 def main():
     # Hand-maintained (do not regenerate — edit .tmj in Tiled, then export JSON):
     #   room_hospital_office, room_hospital_cto_office, room_hospital_meeting
@@ -2600,6 +2800,11 @@ def main():
         "room_uni_special": room_uni_special,
         "room_uni_seminar": room_uni_seminar,
         "room_uni_staff": room_uni_staff,
+        "room_zds_reception": room_zds_reception,
+        "room_zds_conference": room_zds_conference,
+        "room_zds_office": room_zds_office,
+        "room_zds_ceo": room_zds_ceo,
+        "room_zds_servers": room_zds_servers,
     }
     # Optionally restrict to specific rooms (argv) so already-updated rooms are
     # not clobbered, e.g.  python3 scripts/generate_rooms.py room_hospital_hall

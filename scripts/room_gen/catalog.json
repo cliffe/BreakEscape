@@ -3409,6 +3409,102 @@
       "w": 78,
       "h": 39,
       "gid": 1000
+    },
+    "whitehat_sign1": {
+      "id": 200,
+      "w": 65,
+      "h": 17,
+      "gid": 1001
+    },
+    "victoria_portrait1": {
+      "id": 201,
+      "w": 32,
+      "h": 38,
+      "gid": 1002
+    },
+    "market_board1": {
+      "id": 202,
+      "w": 42,
+      "h": 25,
+      "gid": 1003
+    },
+    "threat_map1": {
+      "id": 203,
+      "w": 48,
+      "h": 35,
+      "gid": 1004
+    },
+    "leather_sofa1": {
+      "id": 204,
+      "w": 62,
+      "h": 38,
+      "gid": 1005
+    },
+    "glass_coffee_table1": {
+      "id": 205,
+      "w": 52,
+      "h": 30,
+      "gid": 1006
+    },
+    "trophy_cabinet1": {
+      "id": 206,
+      "w": 44,
+      "h": 62,
+      "gid": 1007
+    },
+    "drinks_cabinet1": {
+      "id": 207,
+      "w": 44,
+      "h": 46,
+      "gid": 1008
+    },
+    "exec_desk_mahogany1": {
+      "id": 208,
+      "w": 60,
+      "h": 53,
+      "gid": 1009
+    },
+    "marble_desk1": {
+      "id": 209,
+      "w": 63,
+      "h": 44,
+      "gid": 1010
+    },
+    "fig_plant1": {
+      "id": 210,
+      "w": 34,
+      "h": 59,
+      "gid": 1011
+    },
+    "leather_chair1": {
+      "id": 211,
+      "w": 30,
+      "h": 52,
+      "gid": 1012
+    },
+    "exec_laptop1": {
+      "id": 212,
+      "w": 16,
+      "h": 9,
+      "gid": 1013
+    },
+    "exec_desk_drawer1": {
+      "id": 213,
+      "w": 16,
+      "h": 15,
+      "gid": 1014
+    },
+    "camp_bed1": {
+      "id": 214,
+      "w": 43,
+      "h": 38,
+      "gid": 1015
+    },
+    "zds_conference_table1": {
+      "id": 215,
+      "w": 126,
+      "h": 55,
+      "gid": 1016
     }
   }
 }

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<tileset version="1.10" tiledversion="1.11.2" name="objects/hospital_extras" tilewidth="60" tileheight="60" tilecount="190" columns="0">
+<tileset version="1.10" tiledversion="1.11.2" name="objects/hospital_extras" tilewidth="60" tileheight="60" tilecount="206" columns="0">
  <grid orientation="orthogonal" width="1" height="1"/>
  <tile id="0">
   <image source="../objects/iv_stand1.png" width="25" height="60"/>
@@ -570,5 +570,53 @@
  </tile>
  <tile id="199">
   <image source="../objects/display_table1.png" width="78" height="39"/>
+ </tile>
+ <tile id="200">
+  <image source="../objects/whitehat_sign1.png" width="65" height="17"/>
+ </tile>
+ <tile id="201">
+  <image source="../objects/victoria_portrait1.png" width="32" height="38"/>
+ </tile>
+ <tile id="202">
+  <image source="../objects/market_board1.png" width="42" height="25"/>
+ </tile>
+ <tile id="203">
+  <image source="../objects/threat_map1.png" width="48" height="35"/>
+ </tile>
+ <tile id="204">
+  <image source="../objects/leather_sofa1.png" width="62" height="38"/>
+ </tile>
+ <tile id="205">
+  <image source="../objects/glass_coffee_table1.png" width="52" height="30"/>
+ </tile>
+ <tile id="206">
+  <image source="../objects/trophy_cabinet1.png" width="44" height="62"/>
+ </tile>
+ <tile id="207">
+  <image source="../objects/drinks_cabinet1.png" width="44" height="46"/>
+ </tile>
+ <tile id="208">
+  <image source="../objects/exec_desk_mahogany1.png" width="60" height="53"/>
+ </tile>
+ <tile id="209">
+  <image source="../objects/marble_desk1.png" width="63" height="44"/>
+ </tile>
+ <tile id="210">
+  <image source="../objects/fig_plant1.png" width="34" height="59"/>
+ </tile>
+ <tile id="211">
+  <image source="../objects/leather_chair1.png" width="30" height="52"/>
+ </tile>
+ <tile id="212">
+  <image source="../objects/exec_laptop1.png" width="16" height="9"/>
+ </tile>
+ <tile id="213">
+  <image source="../objects/exec_desk_drawer1.png" width="16" height="15"/>
+ </tile>
+ <tile id="214">
+  <image source="../objects/camp_bed1.png" width="43" height="38"/>
+ </tile>
+ <tile id="215">
+  <image source="../objects/zds_conference_table1.png" width="126" height="55"/>
  </tile>
 </tileset>

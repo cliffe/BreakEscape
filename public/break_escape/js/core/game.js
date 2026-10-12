@@ -106,6 +106,11 @@ export function preload() {
     this.load.tilemapTiledJSON('room_uni_special', 'rooms/room_uni_special.json'); // Special Collections: bookcases, reading table on a rug, archive safe slot (2x2 GU)
     this.load.tilemapTiledJSON('room_uni_seminar', 'rooms/room_uni_seminar.json'); // Seminar room: whiteboard between blinds, long table, flip chart (2x2 GU)
     this.load.tilemapTiledJSON('room_uni_staff', 'rooms/room_uni_staff.json'); // Open-plan staff office: three desk pods, kitchenette, pigeonholes, photocopier (4x2 GU)
+    this.load.tilemapTiledJSON('room_zds_reception', 'rooms/room_zds_reception.json'); // m03 Zero Day lobby: WHITEHAT sign, marble desk, plaque, awards, leather sofa (2x2 GU)
+    this.load.tilemapTiledJSON('room_zds_conference', 'rooms/room_zds_conference.json'); // m03 boardroom: whiteboard, wall screen, walnut table, leather chairs (2x2 GU)
+    this.load.tilemapTiledJSON('room_zds_office', 'rooms/room_zds_office.json'); // m03 consultant's office: desk with PC and photo, review, camp bed (2x2 GU)
+    this.load.tilemapTiledJSON('room_zds_ceo', 'rooms/room_zds_ceo.json'); // m03 CEO office: mahogany desk, portrait, filing cabinet, drinks cabinet, rug (2x2 GU)
+    this.load.tilemapTiledJSON('room_zds_servers', 'rooms/room_zds_servers.json'); // m03 server room: two rack rows, marketplace board, wall safe, VM desk, ops bench (2x2 GU)
 
     // Load room images (now using smaller 32px scale images)
     this.load.image('room_reception', 'tiles/rooms/room1.png');
@@ -125,6 +130,10 @@ export function preload() {
     this.load.image('room_uni_library', 'tiles/rooms/room_uni_library.png'); // deep green carpet
     this.load.image('room_uni_special', 'tiles/rooms/room_uni_special.png'); // oxblood carpet with a rug
     this.load.image('room_uni_workshop', 'tiles/rooms/room_uni_workshop.png'); // concrete, hazard line round the bench
+    this.load.image('room_zds_lobby', 'tiles/rooms/room_zds_lobby.png'); // m03: polished stone, hat-mark inlay
+    this.load.image('room_zds_carpet', 'tiles/rooms/room_zds_carpet.png'); // m03: slate-blue carpet tiles
+    this.load.image('room_zds_exec', 'tiles/rooms/room_zds_exec.png'); // m03: walnut parquet with a navy and gold rug
+    this.load.image('room_zds_raised', 'tiles/rooms/room_zds_raised.png'); // m03: raised floor, slate walls
     this.load.image('room14', 'tiles/rooms/room14.png');
     this.load.image('room19', 'tiles/rooms/room19.png');
     this.load.image('door_32', 'tiles/door_32.png');
@@ -742,6 +751,22 @@ export function preload() {
     this.load.image('kvm_cart_ransomware', 'objects/kvm_cart_ransomware.png');
     this.load.image('checkin_kiosk_ransomware', 'objects/checkin_kiosk_ransomware.png');
     this.load.image('display_table1', 'objects/display_table1.png');
+    this.load.image('whitehat_sign1', 'objects/whitehat_sign1.png');
+    this.load.image('victoria_portrait1', 'objects/victoria_portrait1.png');
+    this.load.image('market_board1', 'objects/market_board1.png');
+    this.load.image('threat_map1', 'objects/threat_map1.png');
+    this.load.image('leather_sofa1', 'objects/leather_sofa1.png');
+    this.load.image('glass_coffee_table1', 'objects/glass_coffee_table1.png');
+    this.load.image('trophy_cabinet1', 'objects/trophy_cabinet1.png');
+    this.load.image('drinks_cabinet1', 'objects/drinks_cabinet1.png');
+    this.load.image('exec_desk_mahogany1', 'objects/exec_desk_mahogany1.png');
+    this.load.image('marble_desk1', 'objects/marble_desk1.png');
+    this.load.image('fig_plant1', 'objects/fig_plant1.png');
+    this.load.image('leather_chair1', 'objects/leather_chair1.png');
+    this.load.image('exec_laptop1', 'objects/exec_laptop1.png');
+    this.load.image('exec_desk_drawer1', 'objects/exec_desk_drawer1.png');
+    this.load.image('camp_bed1', 'objects/camp_bed1.png');
+    this.load.image('zds_conference_table1', 'objects/zds_conference_table1.png');
     this.load.image('backup_recovery',         'objects/backup_recovery.png');
     this.load.image('dual_auth',               'objects/dual_auth.png');
     this.load.image('ehr-terminal',            'objects/ehr-terminal.png');
