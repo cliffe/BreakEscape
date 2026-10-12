@@ -209,3 +209,17 @@ Fresh look at every cycle-2 shot (day and night, all seven rooms, player and str
 - **E5 (optional). Torch start and width per NPC.** `torch: { offsetY, width }` in `stampNpcTorches`/`stampBeam`, so a beam can start at chest height and be narrower. Low value for m03 at present.
 
 Screenshots: `build_evidence/lighting_c3/day/` (game 2151), `night/` (game 2152; player torch in Danny's office and the CEO office), `options/` (game 2148).
+
+## 12. Cycle 4 (2026-10-12): E4 and the final confirmation
+
+- **E4 (engine, user-approved):** LOS cones draw above the light map (`npc-los.js`, depth = the light map's depth + 10 + 9999/100 when lighting is on, else 9999: the `overlayDepth()` rule, written against `window.lightingSystem.lightMap.depth` so the module stays import-free for the four tests that load it alone). Before/after: m02's office corridor (lit) unchanged; m03's executive wing at night, cone edges and fill now clear (`build_evidence/lighting_c4/e4/`).
+- **Executive wing at night back to `#343a50`** (from the cycle-3 stopgap `#424a62`): the cone no longer depends on the corridor's brightness, and Terry's beam is stronger.
+- **Slat-wall accent (tester note L1, "barely distinguishable from day"):** the single warm wash only lifted dark walnut towards its day brightness, so it never read as an accent. Now two small amber downlights (`#ffb070`, r 44, 0.65, tiles 4.2/6.2, 1.1) scallop the slats, and the counter pool moved down to the counter front (tile 5.2, 4.3, r 80) so it no longer lights the wall. Chosen over the current wash and a single amber cove (`options/`).
+- **Danny's office at night:** `darkAmbient` `#161c30` → `#1e2740`. His new dark-suited sprite was nearly lost in the dark; one step up keeps "sitting in the dark" and makes him findable (`options/`).
+- **Tester note L3 (CEO office and server room stay lit after you leave):** left as is. Both are rooms the player searches and returns to; a timer would restrike them on every return (the m01/m02 rule: `offAfter` only on corridors).
+- **Tester note L2 (conference room the brightest night room):** intended ("the light's still on").
+- **Final maps and sprites:** dressing cycle 5 and the four new NPC sprites (Ffion, Victoria, Terry, Danny) are in these tours. The lookup finds no new light sources. Every position-dependent light checked in the shots: counter strip, slat downlights, counter pool, exec-wing console pool (now beside the walnut sideboard), Danny's lamp, CEO desk lamp, threat map, marketplace board.
+- **Accepted:** Terry's cone, now above the map, also draws over the south part of the wall into Danny's office (it shows his real range; the cone isn't clipped to rooms).
+- **Not driven in a browser:** an m02 lockpick catch. E4 changes only the cone's depth; the cone shows in the m02 tour, and the LOS and lockpick-catch node tests pass.
+
+Final screenshots: `build_evidence/lighting_c4/day/`, `night/` (player torch in Danny's office and the CEO office), `options/`, `e4/`.

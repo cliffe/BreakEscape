@@ -1871,3 +1871,21 @@ Record: `ROOM_DRESSING.md` (cycle 5), screenshots `build_evidence/dressing_c5/` 
 - Final checks clean (slot audit, validator, door alignment, wall heights). No scenario edits.
 - **Room dressing is final; the layout is ready for the POV-background stage.** Still open, engine side only: Server Room Whiteboard read-in-place; F-4 dialog titles.
 - **F1 (night lighting check).** `ink/m03_npc_ffion_rees.ink:310-313`: `clone_badge_debrief` now hands over to `start` once it is night (the D4-1 pattern on her other day knots), so a chat closed at "The badge is in the cloner." by day opens at night with only "Oh! You made me jump." No new text. Route `r19_clone_debrief_closed_by_day.json`.
+
+## Lighting cycle 4 (2026-10-12, final)
+
+E4 as its own change set (`public/break_escape/js/systems/npc-los.js` only), then m03 config. Plan §12; screenshots `build_evidence/lighting_c4/`.
+
+| Severity | Count | Fixed | Deferred |
+|---|---|---|---|
+| Blocker | 0 | 0 | 0 |
+| Major | 1 | 1 | 0 |
+| Minor | 4 | 2 | 0 (2 accepted) |
+
+- **M1 (fixed, E4):** Terry's cone dimmed by night lighting. Cone above the light map; exec wing back to `#343a50`.
+- m1 slat-wall accent indistinguishable from day (tester L1): two amber downlights; counter pool lowered off the wall.
+- m2 Danny's new dark sprite lost in the dark: `darkAmbient` `#1e2740`.
+- m3 CEO/server stay lit after leaving (tester L3): accepted, rooms the player searches keep their light.
+- m4 Terry's cone drawn over the wall into Danny's office now it's above the map: accepted.
+- Checks: node suite 481 / 475 pass, the same 6 known failures as cycles 2-3; LOS-related tests (engine-fixes-pass4, -pass4c, lockpick-catch, npc-sight-challenge) 50/50. Validator schema passes. m02 lockpick catch not driven in a browser.
+- Lighting stage closed after four cycles: nothing above minor in the final day and night tours with the final maps and sprites.

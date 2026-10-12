@@ -60,3 +60,13 @@ Status: open, low priority.
 ### Tour tooling
 
 **User decision 2026-10-12: approved** folding the scratch tour into `tools/playtest/lighting-tour.sh` (opt-in flags, old default kept). Done in 06deb13e.
+
+### E4. Vision cones above the light map (engine)
+
+`npc-los.js:385` drew the LOS cone at depth 9999, under the light map, so night lighting dimmed it. Proposal: `overlayDepth(9999)`.
+
+**User decision 2026-10-12 (relayed by the coordinator): approved.** Implemented in lighting cycle 4.
+
+### E5. Torch start point and width per NPC (engine, optional)
+
+**Orchestrator decision 2026-10-12: deferred.** Left unless the blind playtest finds Terry's beam hard to read.
