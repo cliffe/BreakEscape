@@ -381,8 +381,12 @@ export function drawLOSCone(scene, npc, losConfig = {}, color = 0x00ff00, alpha 
     coneOrigin.y + scaledRange * Math.sin(rightAngle)
   );
   
-  // Set depth on top of other objects (was -999, now 9999)
-  graphics.setDepth(9999); // On top of everything
+  // On top of other objects, and above the light map when lighting is on, so a night
+  // room doesn't dim the cone the player has to read. Same rule as overlayDepth() in
+  // utils/constants.js, written against the light map's own depth so this module stays
+  // import-free (several tests load it on its own).
+  const lightMapDepth = (typeof window !== 'undefined') ? window.lightingSystem?.lightMap?.depth : undefined;
+  graphics.setDepth(lightMapDepth !== undefined ? lightMapDepth + 10 + 9999 / 100 : 9999);
   graphics.setAlpha(1.0); // Ensure not transparent
   
   // console.log(`✅ LOS cone rendered successfully:`, {
