@@ -1261,11 +1261,12 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
           "fire_alarm_point": [ { "intensity": 0 } ]
         },
         "variants": [
-          { "condition": "globalVars.clone_call_done === true", "mode": "on", "ambient": "#323a50", "panels": false,
+          { "condition": "globalVars.clone_call_done === true", "mode": "on", "ambient": "#262c40", "panels": false,
             "lights": [
-              { "x": 2.5, "y": 3.2, "color": "#cfd8ff", "radius": 64, "intensity": 0.3 },
-              { "x": 7.5, "y": 3.2, "color": "#cfd8ff", "radius": 64, "intensity": 0.3 }
-            ] }
+              { "x": 2.5, "y": 3.2, "color": "#cfd8ff", "radius": 56, "intensity": 0.2 },
+              { "x": 7.5, "y": 3.2, "color": "#cfd8ff", "radius": 56, "intensity": 0.2 }
+            ],
+            "emitters": { "threat_map": { "color": "#6ab4ff", "radius": 76, "intensity": 0.9, "offsetY": 8, "effect": "screen" } } }
         ]
       },
       "connections": {
@@ -1516,7 +1517,7 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
           "fire_alarm_point": [ { "intensity": 0 } ]
         },
         "variants": [
-          { "condition": "globalVars.clone_call_done === true", "ambient": "#343a50", "panels": false,
+          { "condition": "globalVars.clone_call_done === true", "ambient": "#424a62", "panels": false,
             "lights": [ { "x": 3.5, "y": 2.6, "color": "#ffe2b8", "radius": 64, "intensity": 0.25 } ] }
         ]
       },
@@ -1694,7 +1695,7 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
         "mode": "on", "darkAmbient": "#161c30",
         "variants": [ { "condition": "globalVars.clone_call_done === true", "mode": "dark" } ],
         "emitters": {
-          "office-misc-lamp": [ { "condition": "globalVars.clone_call_done === true", "color": "#ffc880", "radius": 64, "intensity": 0.7, "offsetX": 10 }, { "intensity": 0 } ],
+          "office-misc-lamp": [ { "condition": "globalVars.clone_call_done === true", "color": "#ffc880", "radius": 64, "intensity": 0.6, "offsetX": 10 }, { "intensity": 0 } ],
           "fire_alarm_point": [ { "intensity": 0 } ]
         }
       },

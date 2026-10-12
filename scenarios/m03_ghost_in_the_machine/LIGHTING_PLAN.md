@@ -190,3 +190,22 @@ What the tours show:
 Not yet proven in a browser: a page reload at night staying night (and by day staying day). The engine resolves variants from the saved globals at load (`registerRoom` → `resolveRoomLighting`), and the node test covers the resolution, but my reload run (sync my game's state to :3001, reload) was blocked by the session's permission classifier. It needs a run by the coordinator or a Sonnet tester.
 
 Screenshots: `build_evidence/lighting_c2/day/`, `night/` (tour flags `--close-intro --restore-off --check`, night adds `--globals clone_call_done=true,mission_phase=act2_infiltration --show-npc danny_foster`), `night/*-player-dark.png` and `-player-lit.png`, `strike/`. Day game 2143, night games 2144 and 2146 (reception, hallways re-shot after tuning), strikes 2145.
+
+## 11. Cycle 3 (2026-10-12): night readability
+
+Options rendered by patching the live night variant from the console (`build_evidence/lighting_c3/options/`, game 2148), then chosen by looking.
+
+- **Main hallway at night: darker corridor, brighter threat map** (option B over A "current" and C "darker only"). Ambient `#323a50` → `#262c40`, the two pools 0.3 → 0.2 (r 56), and a night-only threat-map variant (r 76, 0.9, offsetY 8). The screen is now the corridor's light, as the night scene says ("on its night lights"), and the doors stay findable.
+- **Executive wing at night: lifted a step** (`#343a50` → `#424a62`, option B over A and C "darker"). Terry's vision cone draws *under* the light map (`npc-los.js:385`, depth 9999 against the map's 100000), so a darker corridor dims the cone the player needs for the stealth beat. At `#282e42` it nearly vanished. The lift keeps the cone readable and his torch beam still shows (strength about 0.7). The proper fix is engine E4 below.
+- **Terry's beam in the three-tile corridor:** it starts at his feet and reaches the corridor's south wall, so it is short but reads (night shots). Moving the start to his chest or narrowing it is an `stampBeam` change in `lighting.js` (engine), so it isn't done. Recommendation: leave it, unless the playtest says the beam is hard to read (E5 below).
+- **Server-room player torch:** not changed. The torch only draws while the room is below full light, and the server room is a motion room that strikes on as you step in (lit within about 0.9 s, `build_evidence/lighting_c2/strike/`). The player sees their torch there for under a second, while the racks carry the room. A brighter torch would only matter if the room stayed dark.
+- **Danny's lamp:** 0.7 → 0.6. Close up (night shot) the pool lights the desk, lamp, PC and photo, and warms the wall beside it; Danny stands beyond it in the dark.
+
+Fresh look at every cycle-2 shot (day and night, all seven rooms, player and strike shots): nothing above minor. Notes: the conference room is identical day and night by design (the light that's still on); CEO office dark state is as intended; reception at night reads as a night lobby with the counter strip as its accent.
+
+### Engine proposals (need approval; not done)
+
+- **E4. Vision cones above the light map.** `npc-los.js:385` sets the LOS cone's depth to 9999, below `LIGHT_DEPTH` (100000), so lighting darkens it. One line: `graphics.setDepth(overlayDepth(9999))` (import from `utils/constants.js`), the rule the lighting skill already sets for overlays that must stay readable. With it, the executive wing at night could go back to `#343a50` or darker. Affects any lit mission with a visualised cone (m02's guard too), which is the point. Check: m02 and m03 night tours, plus a lockpick-catch playtest.
+- **E5 (optional). Torch start and width per NPC.** `torch: { offsetY, width }` in `stampNpcTorches`/`stampBeam`, so a beam can start at chest height and be narrower. Low value for m03 at present.
+
+Screenshots: `build_evidence/lighting_c3/day/` (game 2151), `night/` (game 2152; player torch in Danny's office and the CEO office), `options/` (game 2148).
