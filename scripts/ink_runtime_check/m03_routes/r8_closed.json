@@ -1,0 +1,7 @@
+{"steps":[
+{"set":{"briefing_played":true,"reception_badge_cloned":true}},
+{"talk":"victoria","picks":["Why am I here","responsible","whiteboard","services","complex","certifications"]},
+{"note":"player closes the chat at the question (card already saved), walks out; night"},
+{"set":{"mission_phase":"act2_infiltration","clone_call_done":true}},
+{"talk":"victoria","picks":["Take the forty"]}
+]}

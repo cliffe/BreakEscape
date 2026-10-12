@@ -514,9 +514,17 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
     }
   },
 
+  "lighting": { "enabled": true, "defaultMode": "on" },
   "rooms": {
     "reception_lobby": {
       "type": "room_zds_reception",
+      "lighting": {
+        "ambient": "#e4e8ee",
+        "emitters": {
+          "reception_counter": { "color": "#4de8ff", "radius": 56, "intensity": 0.6, "offsetY": 8 },
+          "fire_alarm_point": [ { "intensity": 0 } ]
+        }
+      },
       "connections": {
         "north": "main_hallway"
       },
@@ -1238,6 +1246,13 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
 
     "main_hallway": {
       "type": "room_zds_hall",
+      "lighting": {
+        "mode": "motion", "offAfter": 75,
+        "emitters": {
+          "threat_map": { "color": "#6ab4ff", "radius": 60, "intensity": 0.65, "offsetY": 6, "effect": "screen" },
+          "fire_alarm_point": [ { "intensity": 0 } ]
+        }
+      },
       "connections": {
         "south": "reception_lobby",
         "west": "conference_room_01",
@@ -1250,6 +1265,13 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
 
     "conference_room_01": {
       "type": "room_zds_conference",
+      "lighting": {
+        "emitters": {
+          "power_panel": { "color": "#7dffa0", "radius": 14, "intensity": 0.4, "effect": null },
+          "fire_alarm_point": [ { "intensity": 0 } ],
+          "exec_laptop": { "color": "#9fd4ff", "radius": 28, "intensity": 0.45, "effect": "screen" }
+        }
+      },
       "locked": true,
       "lockType": "rfid",
       "requires": "receptionist_badge",
@@ -1337,6 +1359,15 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
 
     "server_room": {
       "type": "room_zds_servers",
+      "lighting": {
+        "mode": "motion", "darkAmbient": "#0a0f1c", "ambient": "#a0b0c0",
+        "emitters": {
+          "server": { "radius": 56, "intensity": 0.7, "floorTint": 0.6 },
+          "network_rack": { "radius": 56, "intensity": 0.7, "floorTint": 0.6 },
+          "storage_array": { "radius": 56, "intensity": 0.7, "floorTint": 0.6 },
+          "market_board": { "color": "#a8f0c8", "radius": 56, "intensity": 1.0, "offsetY": 4, "effect": "screen" }
+        }
+      },
       "connections": {
         "south": "main_hallway"
       },
@@ -1464,6 +1495,12 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
 
     "executive_wing_hallway": {
       "type": "room_zds_hall_exec",
+      "lighting": {
+        "ambient": "#bcb6ae",
+        "emitters": {
+          "fire_alarm_point": [ { "intensity": 0 } ]
+        }
+      },
       "connections": {
         "west": "main_hallway",
         "north": "executive_office",
@@ -1533,6 +1570,14 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
 
     "executive_office": {
       "type": "room_zds_ceo",
+      "lighting": {
+        "mode": "motion", "ambient": "#d2cdc8",
+        "emitters": {
+          "exec_desk_mahogany": { "color": "#ffc880", "radius": 64, "intensity": 0.8, "offsetX": 19, "offsetY": -6 },
+          "drinks_cabinet": { "color": "#ffcf8a", "radius": 26, "intensity": 0.45, "offsetY": -12 },
+          "trophy_cabinet": { "color": "#fff1d0", "radius": 30, "intensity": 0.5 }
+        }
+      },
       "connections": {
         "south": "executive_wing_hallway"
       },
@@ -1625,6 +1670,13 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
 
     "danny_office": {
       "type": "room_zds_office",
+      "lighting": {
+        "mode": "dark", "darkAmbient": "#161c30",
+        "emitters": {
+          "office-misc-lamp": [ { "condition": "globalVars.clone_call_done === true", "color": "#ffc880", "radius": 64, "intensity": 0.7, "offsetX": 10 }, { "intensity": 0 } ],
+          "fire_alarm_point": [ { "intensity": 0 } ]
+        }
+      },
       "connections": {
         "north": "executive_wing_hallway"
       },

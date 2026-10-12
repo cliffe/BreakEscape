@@ -159,3 +159,12 @@ Brief: `docs/agents/LIGHTING_PASS_BRIEF.md`. Plans in each mission's `LIGHTING_P
 - "Main area rooms a little more brightly lit": Tesseract foyer ambient `#eeebe4` (mean 165 → 176 against 183 with lighting off); m01 main office lit ambient `#e4e8ee` (105 → 109, lighting off 108).
 - Tesseract staff room has windows along the top wall: ambient `#e8e4dc` plus daylight pools under the three windows (tiles x 5.3, 9.5, 13.8). The room now matches its lighting-off brightness (103), so the pools can't show as patches: a lit room can't go brighter than its art. Visible window pools would need the rest of the room darker.
 - Rule of thumb for the skill: a room's busiest public space (a foyer, an open-plan office) sits near full brightness; moodier settings belong in side rooms and corridors.
+
+### m03_ghost_in_the_machine (2026-10-12, m03 pass 2, lighting cycle 1)
+
+- Plan `scenarios/m03_ghost_in_the_machine/LIGHTING_PLAN.md`. Afternoon visit then eleven at night in the same building; night keyed on `clone_call_done`. All `room_zds_*` types new; reuse by role (m02/m01 server block, m01 `#e4e8ee` lobby, m02 corridor `offAfter` 75).
+- First `dark` room in a lit mission: Danny's office ("sitting in the dark"), lamp glow only at night via an emitter condition.
+- m03-only props glow through per-room emitter variants (counter strip, threat map, marketplace board, CEO desk lamp painted on the desk sprite, cabinets); no `EMITTERS` change.
+- Found: a `floorTint` stamp as the frame's last draw blanks the whole light map (rooms render unlit). Proposed fix in m03 `DECISIONS_PENDING.md` L2; may affect m01/m02/sis01/sis02.
+- Limit hit: room mode and ambient can't follow game state. Proposal (room `variants` with a condition) in m03 `DECISIONS_PENDING.md` L1.
+- The stock tour stalls on missions whose opening briefing and tutorial prompt stay up (scene paused, map not drawn); m03's scratch tour (`build_evidence/lighting_c1/tour.py`) handles both.

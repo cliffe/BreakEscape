@@ -21,3 +21,32 @@ Status: open. Draft ready: `SECGEN_PROPOSED_m03_ghost_in_the_machine.xml` in thi
 - **History:** keep the branch's commits as they are (no squash).
 - **m03 audio:** later.
 - **Carry-forward:** file the m04 fingerprint-wall note; add the "grep later missions before cutting" rule to the dialogue-review skill; add the m03 harness notes to the playtest skill.
+
+## Lighting (cycle 1, 2026-10-12)
+
+Full context: `LIGHTING_PLAN.md` §2 and §7. Night shots of what L1 would give: `build_evidence/lighting_c1/night/`.
+
+### L1. Room lighting that changes at the night turn (engine)
+
+The lighting system reads a room's mode and brightness once, when the room loads (`lighting.js:297-353`). m03's reception, main hallway and conference room are always loaded by day, so they can't go to night lighting when `clone_call_done` is set.
+
+- (a) **Recommended.** Room-level `variants` with a `condition`, the same pattern as emitter variants: first match wins, merged over the room's block, resolved at load and on the existing 250 ms tick, applied without a strike. About 40 lines plus a schema entry; scenarios without `variants` are unchanged. Reload-safe, because it reads saved globals.
+- (b) A `set_lighting` scenario action fired by the night scene. Smaller in code, but not reload-safe (lighting state isn't saved) and rooms loaded later miss it.
+- (c) No change: keep cycle 1's one-state-per-room compromise.
+
+Status: open.
+
+### L2. Bug: a floor tint drawn last blanks the light map (engine)
+
+When an emitter's `floorTint` (a MULTIPLY stamp) is the last thing drawn into the light map in a frame, every visible room renders unlit. Reproduced in game 2120. m03 works round it; m01, m02, sis01 and sis02 use `floorTint` and could hit it depending on object order.
+
+- (a) **Recommended.** One no-op ADD stamp before `rt.endDraw()` in `update()`, then node tests, the Rails suite and the m01/m02/sis01/sis02 tours. Untested so far.
+- (b) Leave it and avoid `floorTint` as a last emitter in new configs.
+
+Status: open.
+
+### L3 (optional). A visible torch on the night guard (engine)
+
+Draw the player's torch beam from an NPC with an opt-in `torch` behaviour flag, so Terry's beam (`m03_npc_terry_mott.ink:477`) shows in the dark executive wing. Only worth doing after L1. Pairs with the approved E-D (guards react to the player in their beam).
+
+Status: open, low priority.

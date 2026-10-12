@@ -1,0 +1,173 @@
+{
+"steps": [
+{
+"note": "R1 smooth: recruit + protect Danny"
+},
+{
+"talk": "briefing",
+"picks": [
+"exploit marketplace",
+"Which cells",
+"Did Zero Day sell",
+"murder",
+"Who is Victoria",
+"flips",
+"How do I clone",
+"What if she notices",
+"What's my cover",
+"When do I hit",
+"That's everything",
+"flexible",
+"Anything else",
+"decide when"
+]
+},
+{
+"set": {
+"briefing_played": true
+}
+},
+{
+"talk": "ffion",
+"picks": [
+"Before I go in",
+"What kind of training",
+"Where do I sign",
+"Freelance. Small",
+"What's Ms. Sterling like",
+"work late",
+"Who else works",
+"consulting work",
+"Lean in",
+"Thanks. I'll head"
+]
+},
+{
+"set": {
+"conference_reader_tried": true
+}
+},
+{
+"talk": "terry",
+"picks": [
+"knock off"
+]
+},
+{
+"talk": "victoria",
+"picks": [
+"cutting-edge",
+"fair pay",
+"What is Zero Day",
+"free market",
+"Take the forty",
+"ethics",
+"not here to judge",
+"whiteboard",
+"What kind of services",
+"pricing",
+"Skills are cheap",
+"exactly the kind"
+]
+},
+{
+"talk": "night"
+},
+{
+"set": {
+"mission_phase": "act2_infiltration",
+"clone_call_done": true
+}
+},
+{
+"talk": "ffion",
+"picks": [
+"Night, Ffion"
+]
+},
+{
+"talk": "terry",
+"picks": [
+"Talk to the guard",
+"Sterling asked me",
+"enrolment forms",
+"Long night",
+"boring",
+"What's Sterling like",
+"let you get on"
+]
+},
+{
+"talk": "victoria",
+"picks": [
+"Look in"
+]
+},
+{
+"set": {
+"exec_wing_entered": true,
+"exec_office_entered": true,
+"usb_seen": true,
+"draft_seen": true,
+"roster_seen": true,
+"flag_scan_submitted": true,
+"flag_ftp_submitted": true,
+"flag_http_submitted": true,
+"flag_distcc_submitted": true,
+"transaction_log_read": true,
+"lore_history_found": true,
+"catalogue_seen": true
+}
+},
+{
+"talk": "phone",
+"picks": [
+"distcc logs",
+"Direct chain",
+"get everything",
+"Nothing right now"
+]
+},
+{
+"talk": "danny",
+"picks": [
+"lied to you",
+"testify",
+"Sterling goes down"
+]
+},
+{
+"set": {
+"night_confrontation_ready": true
+}
+},
+{
+"talk": "phone",
+"picks": [
+"How do I play this",
+"Understood",
+"Nothing right now"
+]
+},
+{
+"talk": "victoria",
+"picks": [
+"need to talk",
+"name on your approvals",
+"Ten thousand",
+"Danny drew",
+"Phase 2 directive"
+]
+},
+{
+"talk": "debrief",
+"picks": [
+"source than a headline",
+"One hand",
+"map to their whole",
+"tell him",
+"next assignment"
+]
+}
+]
+}

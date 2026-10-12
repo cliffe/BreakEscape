@@ -1272,3 +1272,22 @@ No audio exists for m03. Player choices are not listed. Pairs come from a line d
 
 - (none: new line)
   -> HaX (phone text): And if you want to see her stop and think, ask her about the ten thousand.
+
+## Lighting cycle 1 (2026-10-12)
+
+Skill `mission-room-lighting`; plan `LIGHTING_PLAN.md`; screenshots `build_evidence/lighting_c1/` (day game 2121, night game 2122, Danny re-shot 2123). Config only; no ink, tags, NPC or layout fields touched; no spoken lines changed.
+
+| Severity | Count | Fixed | Deferred |
+|---|---|---|---|
+| Blocker | 0 | 0 | 0 |
+| Major | 2 | 1 | 1 |
+| Minor | 4 | 4 | 0 |
+
+- **M1 (deferred, needs approval):** the engine can't change a room's mode or brightness when night falls (`lighting.js:297-353` reads the room block once). Proposal E1, room `variants` with a condition, in `LIGHTING_PLAN.md` §7 and `DECISIONS_PENDING.md` L1. Cycle 1 ships one state per room: day for reception, the executive wing and the conference room; night for the server room and Danny's office; the main hallway on motion. Glows already switch: Danny's lamp is on only at night.
+- **M2 (fixed by workaround; engine bug filed):** a `floorTint` stamp as the last draw of a frame blanks the light map (reception mean 156 with it, 26-28 without, same ambient; game 2120). The counter's `floorTint` removed. Engine fix proposal E2 (`DECISIONS_PENDING.md` L2); it may affect m01/m02/sis01/sis02 rooms that use `floorTint`.
+- m1 marketplace board lost beside the racks: intensity 0.7 → 1.0, radius 56.
+- m2 call points pulsed red in the conference room and reception at night: off in every m03 room (no lamp in the art; a lone red pulse reads as a clue).
+- m3 Danny's lamp pool smeared up the west wall: radius 72 → 64, offsetX 4 → 10, intensity 0.7, warmer.
+- m4 CEO desk lamp too white beside her PC: `#ffd9a0` → `#ffc880`.
+- Tooling: the stock lighting tour shows only m03's opening briefing (the brief, then the tutorial prompt, pause the scene and the light map stops drawing). Scratch tour `build_evidence/lighting_c1/tour.py` closes both, checks the map is drawing, and has a night mode (night globals, rooms re-registered from `night_cfg.json` to preview E1, Danny shown). Worth folding into `tools/playtest/lighting-tour.sh` (tooling, not done).
+- Decisions taken without asking: night keyed on `clone_call_done` (not `mission_phase`, which flips in the afternoon); Danny's office `dark` (story: "sitting in the dark"; nothing there needs map reading), at the cost of a dark office by day until E1; CEO's office `motion` both halves (four things to search), its lamp and cabinets carrying the view through the door; no flicker and no brownout (nothing in the story; the guard beat owns the corridors).
