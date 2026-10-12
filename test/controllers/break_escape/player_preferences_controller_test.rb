@@ -95,7 +95,7 @@ module BreakEscape
 
     test 'update returns 422 when in_game_name is blank' do
       patch configuration_url,
-            params: { player_preference: { selected_sprite: 'female_spy', in_game_name: '' } },
+            params: { player_preference: { selected_sprite: 'female_hacker_hood_v2', in_game_name: '' } },
             headers: { 'Accept' => 'application/json' }
 
       assert_response :unprocessable_entity
@@ -105,7 +105,7 @@ module BreakEscape
 
     test 'update returns 422 when in_game_name exceeds 20 characters' do
       patch configuration_url,
-            params: { player_preference: { selected_sprite: 'female_spy', in_game_name: 'A' * 21 } },
+            params: { player_preference: { selected_sprite: 'female_hacker_hood_v2', in_game_name: 'A' * 21 } },
             headers: { 'Accept' => 'application/json' }
 
       assert_response :unprocessable_entity
@@ -115,7 +115,7 @@ module BreakEscape
 
     test 'update returns 422 when in_game_name contains invalid characters' do
       patch configuration_url,
-            params: { player_preference: { selected_sprite: 'female_spy', in_game_name: 'Agent<script>' } },
+            params: { player_preference: { selected_sprite: 'female_hacker_hood_v2', in_game_name: 'Agent<script>' } },
             headers: { 'Accept' => 'application/json' }
 
       assert_response :unprocessable_entity
@@ -209,9 +209,9 @@ module BreakEscape
       assert_response :success
 
       # Female sprites must be selectable: no invalid class, radio not disabled
-      assert_select 'label.invalid[data-sprite="female_spy_v2"]', count: 0
+      assert_select 'label.invalid[data-sprite="female_telecom_v2"]', count: 0
       assert_select 'label.invalid[data-sprite="female_scientist_v2"]', count: 0
-      assert_select 'input.sprite-radio[value="female_spy_v2"][disabled]', count: 0
+      assert_select 'input.sprite-radio[value="female_telecom_v2"][disabled]', count: 0
       assert_select 'input.sprite-radio[value="female_scientist_v2"][disabled]', count: 0
 
       # Male sprites must be locked: invalid class + disabled radio
@@ -246,11 +246,12 @@ module BreakEscape
       assert_includes sprites, 'female_hacker_hood_v2'
       assert_includes sprites, 'male_spy_v2'
       assert_includes sprites, 'male_hacker_hood_down_v2'
-      assert_equal 15, sprites.length
+      assert_equal 14, sprites.length
       assert sprites.all? { |s| s.end_with?('_v2') }, "Menu should only offer v2 sprites: #{sprites.inspect}"
       assert_not_includes sprites, 'female_hacker_hood'
       assert_not_includes sprites, 'male_spy'
       assert_not_includes sprites, 'male_scientist_v2'
+      assert_not_includes sprites, 'female_spy_v2'
     end
 
     # Character atlases are loaded by key (systems/character-textures.js), so a menu
@@ -275,7 +276,7 @@ module BreakEscape
     end
 
     test 'a saved selection of a retired sprite falls back to the default male sprite' do
-      %w[male_scientist_v2 male_scientist].each do |retired|
+      %w[male_scientist_v2 male_scientist female_spy_v2 female_spy].each do |retired|
         @preference.update_column(:selected_sprite, retired)
         @preference.reload
         assert_equal PlayerPreference::RETIRED_FALLBACK_SPRITE, @preference.selected_sprite
@@ -283,6 +284,7 @@ module BreakEscape
         assert @preference.valid?, @preference.errors.full_messages.join(', ')
       end
       refute_includes PlayerPreference::AVAILABLE_SPRITES, 'male_scientist_v2'
+      refute_includes PlayerPreference::AVAILABLE_SPRITES, 'female_spy_v2'
     end
 
     test 'a saved legacy sprite reads back as its v2 key and stays valid' do
@@ -296,12 +298,12 @@ module BreakEscape
 
     test 'update accepts a legacy sprite key and stores the v2 key' do
       patch configuration_url,
-            params: { player_preference: { selected_sprite: 'female_spy', in_game_name: 'TestAgent' } },
+            params: { player_preference: { selected_sprite: 'female_telecom', in_game_name: 'TestAgent' } },
             headers: { 'Accept' => 'application/json' }
 
       assert_response :success
-      assert_equal 'female_spy_v2', JSON.parse(response.body)['data']['selected_sprite']
-      assert_equal 'female_spy_v2', @preference.reload.read_attribute_before_type_cast(:selected_sprite)
+      assert_equal 'female_telecom_v2', JSON.parse(response.body)['data']['selected_sprite']
+      assert_equal 'female_telecom_v2', @preference.reload.read_attribute_before_type_cast(:selected_sprite)
     end
 
     test 'configuration screen marks the v2 card selected for a saved legacy sprite' do

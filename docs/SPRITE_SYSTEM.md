@@ -28,7 +28,7 @@ All atlas characters support 8-directional animations with the following types:
 | `female_office_worker` | Office worker (blonde) | 32 animations, 152 frames |
 | `female_security_guard` | Security guard | 40 animations, 208 frames |
 | `female_telecom` | Telecom worker (high vis) | 24 animations, 128 frames |
-| `female_spy` | Spy in trench coat | 40 animations, 208 frames |
+| `female_spy` | Spy in trench coat (renamed `agent_hax`, 2026-10-12; now Agent HaX only) | 40 animations, 208 frames |
 | `female_scientist` | Scientist in lab coat | 30 animations, 170 frames |
 | `woman_bow` | Woman with bow in hair | 31 animations, 149 frames |
 

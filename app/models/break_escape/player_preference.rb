@@ -14,7 +14,6 @@ module BreakEscape
       female_office_worker_v2
       female_security_guard_v2
       female_telecom_v2
-      female_spy_v2
       female_scientist_v2
       female_blowse_v2
       male_hacker_hood_v2
@@ -33,10 +32,11 @@ module BreakEscape
 
     # Sprites taken out of the avatar menu because they now belong to one story
     # character (male_scientist and male_scientist_v2 became Agent 0x47 "Nightshade",
-    # the m08 mole). A player whose saved selection names one of them is moved to
+    # the m08 mole; female_spy and female_spy_v2 became Agent HaX, key agent_hax).
+    # A player whose saved selection names one of them is moved to
     # RETIRED_FALLBACK_SPRITE on read, so their game still loads and the preferences
     # page and updates still validate.
-    RETIRED_SPRITES = %w[male_scientist male_scientist_v2].freeze
+    RETIRED_SPRITES = %w[male_scientist male_scientist_v2 female_spy female_spy_v2].freeze
     RETIRED_FALLBACK_SPRITE = 'male_hacker_hood_v2'
 
     # Sprite the avatar menu previews before the player has chosen one. selected_sprite

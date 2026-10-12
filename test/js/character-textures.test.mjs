@@ -108,11 +108,11 @@ function fakeScene({ loaded = [], loading = false } = {}) {
 
 test('queueCharacterAtlases queues unloaded keys once, with ASSETS_VERSION, and does not start', () => {
     const scene = fakeScene({ loaded: ['hacker'] });
-    queueCharacterAtlases(scene, ['female_spy_v2', 'hacker', 'female_spy_v2', undefined]);
+    queueCharacterAtlases(scene, ['agent_hax', 'hacker', 'agent_hax', undefined]);
     assert.deepEqual(scene.queued, [{
-        key: 'female_spy_v2',
-        png: 'characters/female_spy_v2.png?v=test',
-        json: 'characters/female_spy_v2.json?v=test'
+        key: 'agent_hax',
+        png: 'characters/agent_hax.png?v=test',
+        json: 'characters/agent_hax.json?v=test'
     }]);
     assert.equal(scene.starts, 0);
 });

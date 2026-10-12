@@ -2529,7 +2529,7 @@ def check_common_issues(json_data, valid_item_types = nil)
             # so only warn when neither derived file actually exists.
             if !npc['spriteTalk'] && npc['spriteSheet']
               # Sprites with named frames (not numeric indices) need a portrait image
-              named_frame_sprites = ['female_spy', 'male_spy', 'female_hacker_hood', 'male_doctor']
+              named_frame_sprites = ['female_spy', 'agent_hax', 'male_spy', 'female_hacker_hood', 'male_doctor']
               if named_frame_sprites.include?(npc['spriteSheet'])
                 chars_dir = File.join(File.expand_path('..', __dir__), 'public/break_escape/assets/characters')
                 derived = ["#{npc['spriteSheet']}_talk.png", "#{npc['spriteSheet']}_headshot.png"]

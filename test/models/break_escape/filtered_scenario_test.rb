@@ -336,7 +336,7 @@ module BreakEscape
         { 'id' => 'guard', 'npcType' => 'person', 'spriteSheet' => 'male_security_guard_v2', 'storyPath' => 'secret.json' },
         { 'id' => 'guard2', 'npcType' => 'person', 'spriteSheet' => 'male_security_guard_v2' },
         { 'id' => 'default_sprite', 'npcType' => 'person' },
-        { 'id' => 'handler', 'npcType' => 'phone', 'spriteSheet' => 'female_spy_v2', 'phoneId' => 'player_phone' }
+        { 'id' => 'handler', 'npcType' => 'phone', 'spriteSheet' => 'agent_hax', 'phoneId' => 'player_phone' }
       ]
       @scenario_data['rooms']['next_room']['npcs'] = [
         { 'id' => 'manager', 'npcType' => 'both', 'spriteSheet' => 'female_office_worker_v2' },
@@ -351,7 +351,7 @@ module BreakEscape
 
       assert_equal %w[male_security_guard_v2 hacker female_office_worker_v2 bed_ms_chen female_hacker_hood_v2],
                    filtered['characterSprites']
-      assert_not_includes filtered['characterSprites'], 'female_spy_v2', 'phone NPCs have no world sprite'
+      assert_not_includes filtered['characterSprites'], 'agent_hax', 'phone NPCs have no world sprite'
 
       # Only the keys reach the client: rooms still carry no NPC data at all.
       filtered['rooms'].each do |room_id, room|

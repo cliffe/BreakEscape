@@ -8,7 +8,7 @@ module BreakEscape
       @mission = break_escape_missions(:ceo_exfil)
       @player = break_escape_demo_users(:test_user)
       PlayerPreference.find_or_create_by!(player: @player) do |pref|
-        pref.selected_sprite = 'female_spy'
+        pref.selected_sprite = 'female_hacker_hood_v2'
         pref.in_game_name    = 'TestAgent'
       end
 
@@ -67,7 +67,7 @@ module BreakEscape
     end
 
     test "show redirects to configuration when selected avatar is excluded by the scenario's validSprites" do
-      # @player has female_spy; a male_* restriction excludes it
+      # @player has female_hacker_hood_v2; a male_* restriction excludes it
       restricted_game = Game.create!(
         mission: @mission,
         player: @player,
