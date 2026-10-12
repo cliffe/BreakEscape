@@ -49,16 +49,17 @@ Agent HaX: Right. Zero Day Syndicate. You heard of them?
 
 === briefing_main ===
 #speaker:agent_0x99
-Agent HaX: Zero Day runs behind a real pentest firm -- WhiteHat Security Services. Legitimate audits by day. An exploit marketplace in the back rooms.
-Agent HaX: They don't run the attacks. They arm the cells that do.
-// D2-10: the short route still carries the reason for the mission.
+// D2-10 / D4-18: the short route carries the reason for the mission and the cover
+// name in two lines, and skips the background it asked to skip.
 { skipped_background:
     ~ knows_m2_connection = true
     #set_global:knows_m2_connection:true
-    Agent HaX: Short version: the exploit that took down St. Catherine's came from this shop. We want their books.
+    Agent HaX: Short version: the exploit that took down St. Catherine's came from Zero Day, behind a pentest front called WhiteHat. We want their books.
     Agent HaX: The client roster and the operational logs. Proof of who they arm, and how.
     -> objectives
 }
+Agent HaX: Zero Day runs behind a real pentest firm -- WhiteHat Security Services. Legitimate audits by day. An exploit marketplace in the back rooms.
+Agent HaX: They don't run the attacks. They arm the cells that do.
 * [Which cells buy from them?]
     Agent HaX: Ransomware Incorporated. Critical Mass. Others we haven't confirmed. Zero Day is their common supplier.
     ~ handler_trust = handler_trust + 5
@@ -114,7 +115,7 @@ Agent HaX: They sold it as a product. Twenty-five thousand on the invoice, healt
 
 === objectives ===
 #speaker:agent_0x99
-Agent HaX: Three things, then. One: get inside and clone Victoria Sterling's executive keycard. She's the front's CEO, and she runs this end of the cell for 0day.
+Agent HaX: {skipped_background:Three things.|Three things, then.} One: get inside and clone Victoria Sterling's executive keycard. She's the front's CEO, and she runs this end of the cell for 0day.
 Agent HaX: Two: after hours, get onto their training network and pull the flags. Recon, the services, and the legacy distcc box where their records sit.
 Agent HaX: Three: the physical paper trail. Client roster, the catalogue, anything naming St. Catherine's or Phase 2.
 Agent HaX: Ask me whatever you need before you go in.

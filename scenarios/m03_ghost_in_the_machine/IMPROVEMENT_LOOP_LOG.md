@@ -1291,3 +1291,299 @@ Skill `mission-room-lighting`; plan `LIGHTING_PLAN.md`; screenshots `build_evide
 - m4 CEO desk lamp too white beside her PC: `#ffd9a0` → `#ffc880`.
 - Tooling: the stock lighting tour shows only m03's opening briefing (the brief, then the tutorial prompt, pause the scene and the light map stops drawing). Scratch tour `build_evidence/lighting_c1/tour.py` closes both, checks the map is drawing, and has a night mode (night globals, rooms re-registered from `night_cfg.json` to preview E1, Danny shown). Worth folding into `tools/playtest/lighting-tour.sh` (tooling, not done).
 - Decisions taken without asking: night keyed on `clone_call_done` (not `mission_phase`, which flips in the afternoon); Danny's office `dark` (story: "sitting in the dark"; nothing there needs map reading), at the cost of a dark office by day until E1; CEO's office `motion` both halves (four things to search), its lamp and cabinets carrying the view through the door; no flicker and no brownout (nothing in the story; the guard beat owns the corridors).
+
+## Dialogue cycle 3 fixes (2026-10-12)
+
+Review acted on: `DIALOGUE_REVIEW_P2_C3.md` (revise: 1 blocker, 3 majors, 18 minors, 10 rewrites W3-1..W3-10, 2 noted lines, 3 flat scenes, all local). Fixer: the same Opus agent, resumed. Ink snapshot: scratchpad `m03-dialogue/snapshot_c3/`. Line numbers are in the new files. No change to `scenario.json.erb` this cycle (the lighting agent is editing it). Evidence this cycle is the route driver, `scripts/ink_runtime_check/m03_routes/route.js`, which re-enters a conversation at the knot that owns its saved choices, as the engine does.
+
+| Severity | Found | Fixed | Withdrawn | Deferred |
+|---|---|---|---|---|
+| Blocker | 1 | 1 | 0 | 0 |
+| Major | 3 | 3 | 0 | 0 |
+| Minor | 18 | 18 | 0 | 0 |
+| Line rewrites | 10 + 2 noted | 12 | 0 | 0 |
+| Flat scenes | 3 | 3 | 0 | 0 |
+
+### Blocker and the "scene behind start" sweep
+
+- **D4-1, fixed.** At the top of Ffion's `hub` (`m03_npc_ffion_rees.ink`): `{ mission_phase == "act2_infiltration" and not night_greeted: -> closing_up }`. The new route r9 (day talk, then night without a reload) now plays "Oh! You made me jump..." and the notebook answer, then "Found it. Charger was in the biscuit tin" on the next reopen. Terry opens "Ffion said there'd be someone about." Before this, the night scene played only after a page reload.
+- **Sweep of every m03 NPC for the same pattern** (a reopen lands on the saved-choice knot, so a scene reachable only through `start` can be skipped):
+  - **Ffion:** besides `hub`, her seven day knots with choices (`badge_process`, `company_overview`, `first_impression_choice`, `ask_victoria`, `ask_danny`, `ask_company_history`, `ask_building_layout`) now hand over to `start` at night. A chat closed mid-topic by day can't replay day content at eleven.
+  - **Victoria:** ten day knots with choices (`hub`, `first_impression`, `philosophy_intro`, `zero_day_philosophy`, `ethics_discussion`, `the_question`, `clone_rfid_distraction`, `clone_check_1`, `clone_check_2`, `clone_debrief`) hand over to `start` once `clone_call_done`. That fixes D4-12; r8 now plays her night call, not "Before you go". Her `idle` already routes every night state.
+  - **Terry:** `daytime` hands over to `start` at night. `guard_idle` sends the first night meeting straight to his challenge (D4-8). The check sits inside the quiet-flag else, so it runs on a reopen and never on an exit.
+  - **Danny:** no change needed. His scene exists only at night, so no reopen crosses a phase.
+  - **Phone:** no change needed. It ends on DONE and restarts at `start` on every open; reopencheck covers it.
+  - **Briefing, debrief:** no change needed. One-shot, `disableClose`.
+
+### Majors
+
+- **D4-2, fixed, option (a).** Night read-back (`m03_npc_victoria.ink`, nighttime_confrontation), in this order:
+  1. `read_dropped`.
+  2. Heavy suspicion (`>= 20`, the prosecutor line).
+  3. Low influence (the rude line, which keeps "Brave. Not useful." paid off).
+  4. The test answer.
+  5. Else, the default line, which plays only after a reload or a chat closed before the test.
+  - The goodbye stance adds a second line only for "keen" with "sold".
+  - Deleted the "undecided" and "thanked" night lines and their writes.
+  - Decision: the rude line stays live, above the test, rather than being deleted. It is true wherever it plays and keeps a cycle-1 consequence.
+  - Routes now show four different read-backs (r1 sold + keen, r2 inventory, r3 hedged, r6 asked).
+- **D4-3, fixed.** Terry reads `day_greeted`:
+  - opener: "You. The three o'clock. Building's shut, and you're a long way from the conference room.";
+  - work excuse: "You don't work here. You were in reception at three with a visitor badge.";
+  - suspicious path: "No badge, a visitor this afternoon, and back at eleven. Pull the other one.";
+  - files excuse: "Ms. Sterling told me nothing about it. She told me nothing this afternoon either.", at +5 rather than +10.
+  - Shown on r9b.
+- **D4-4, fixed.** Debrief:
+  - `what_made_it_possible` became `security_recap`, asked for from a new `aftermath_choices` ("[What should they have locked down?]"), which returns to the remaining choices.
+  - The catalogue is folded to one line per branch.
+  - The rest lines are cut (D4-6), and "Let's go through it." and "Now it's in their own books." are gone.
+  - These pairs are folded into single lines: the two recruited-branch lines, the Phase 2 header with its drive line, the two target-list lines, the first two Danny lines, the two paper-trail lines, the two aftermath lines, the guard-call pair and the bribe pair.
+  - Longest debrief run: see the table below.
+
+### Minors
+
+| # | Outcome |
+|---|---|
+| D4-5 | "...riding on a woman who invoices by the body." |
+| D4-6 | "It's done. We'll need you soon."; "We see where ENTROPY surfaces..."; "Go home and get some sleep." kept as the only rest line. |
+| D4-7 | Diplomatic line now "You didn't push. He noticed." |
+| D4-8 | `guard_idle` routes the first night meeting to `start` (one torch, no extra click). |
+| D4-9 | Notebook story + files excuse: "Notebook, files. Make your mind up. Five minutes, and I'm stood at the end of the corridor." Goes to the hub instead of accepting the excuse. |
+| D4-10 | "Then you've taken the scenic route. Through the executive wing." |
+| D4-11 | `the_question` opens "Now one of mine..." after the ethics topic. |
+| D4-12 | Fixed by the sweep (night hand-over on `the_question`, `clone_debrief` and the other day knots). |
+| D4-13 | "Her eyes drop to your pocket..." |
+| D4-14 | Local `came_via_hospital`; the_reckoning skips the "professional who logs the sale" line on that route. |
+| D4-15 | "One more thing. You stood in my doorway earlier..." |
+| D4-16 | Catch then KO: "The guard caught you once, and then you put him on the floor. The log's mostly about that now." (worded to avoid a not-x-but-y). |
+| D4-17 | Bribe: "...because you'd paid your way past him. Five hundred pounds of ours. Finance will want a receipt." The separate receipt line now plays only with a detection or a KO, so it isn't said twice. |
+| D4-18 | Skip route: the cover name is folded into the short-version line and the two background lines are skipped. `{skipped_background:Three things.\|Three things, then.}` |
+| D4-19 | "[I'll give evidence for him. She lied to him first.]" |
+| D4-20 | "Counter-intelligence is running her now." (folded, see D4-4). |
+| D4-21 | Ffion's code comment corrected. |
+| D4-22 | Phone: "Danny's made his call."; "They chose the hospital for Ghost." |
+
+Also: the exposed-branch line "He took the raise after he knew" repeated "the raise" from the line before it on r10, so it became "He'd worked out what it was for before he took it." The target-list line says "goes out unsigned", so "anonymous advisory" isn't used twice.
+
+### Rewrites and scenes
+
+- All applied as proposed: W3-1 to W3-10. W3-9 is folded with the aftermath lines.
+- Noted lines: Ffion "First time at a place like this, is it?"; Victoria's whiteboard sarcasm only at `victoria_suspicious >= 5`, otherwise "The training lab. Have a look."
+- Scene #1 (the reckoning without the ledger): new ungated choice "[You could have walked away from that sale.]" → "I did walk away. With twenty-five thousand."
+- Scenes #2 and #3: D4-1 and D4-3.
+- Terry's hub greeting is cold while `guard_suspicious` ("Well?" / "Go on." / "I'm listening.").
+
+### Routes
+
+- New, kept in `scripts/ink_runtime_check/m03_routes/`:
+  - `r9_ffion_day_night.json`: Ffion and Terry by day, then both at night without a reload.
+  - `r9b_ffion_sterling.json`: the "sterling" story with the files excuse, and Terry's recognition lines.
+  - `r10_guard_ko_bribe.json`: the bribe route and the catch-then-KO route, each into the debrief.
+- Old routes updated to the new flow: r1, r5, r6, r7. "[Talk to the guard]" picks were removed (D4-8 skips that click), Ffion's night picks now answer her question, and r5's "run the whole cell" pick, which never matched, was corrected.
+- Remaining stops are where the review's probes end: r2, r4, r8, the r6 grace-line probe and the r7 already-warned probe.
+
+| Route | Longest run without a choice, before → after | Lines / choices after |
+|---|---|---|
+| r1 smooth | 13 (debrief) → 9 | 244 / 65 |
+| r2 suspicious | 13 → 9 | 193 / 49 |
+| r3 skip | 12 → 9 | 149 / 32 |
+| r4 KO | 12 → 9 | 127 / 29 |
+| r5 recruit + expose | 13 → 8 (briefing; debrief 8) | 188 / 47 |
+| r6 escape | 12 → 9 | 217 / 67 |
+| r7 notebook | 3 → 3 | 17 / 6 |
+| r8 closed at the question | 6 → 5 | 28 / 6 |
+| r9 Ffion day/night (new) | 6 | 36 / 12 |
+| r9b Ffion "sterling" (new) | 3 | 26 / 10 |
+| r10 guard KO / bribe (new) | 9 | 77 / 16 |
+
+### Checks run
+
+- Compile: 8/8, no warnings.
+- Validator with ink, `--no-graph` (the lighting agent is editing the erb, so the shared dungeon graph wasn't rewritten): no errors, same known warnings.
+- dialoguelint: the 2 justified warnings only. One new not-x-but-y (D4-16's first wording) was reworded.
+- tagdiff `--old snapshot_c3`, all intended:
+  - Victoria: hand-overs to `start` in 10 knots; the read-back conditions; `came_via_hospital`; the new reckoning choice; the D4-11 and whiteboard conditions; the removed goodbye writes.
+  - Debrief: `security_recap` and `aftermath_choices`; 20 diverts retargeted from `what_made_it_possible` to `final_assessment`; the guard-line conditions; the catalogue and aftermath branches folded.
+  - Terry: opener branches, recognition conditions, the D4-9 hub divert, the idle and daytime hand-overs.
+  - Ffion: the D4-1 hub divert and 7 hand-overs.
+  - Briefing: the skip-route block moved above the background lines.
+  - Phone, Danny, night transition: structure unchanged.
+- reopencheck: 0 problems.
+- loopcheck: 71 runs, 0 failing. These include every Victoria and Ffion day knot entered at night, Terry's `guard_idle` and `daytime` at night with each Ffion story, the night read-back states, and `came_via_hospital`.
+- inkcheck, debrief: 125 states (5 Victoria fates × 5 Danny fates × 5 extras covering the KO, bribe, catch+KO, SAFETYNET and target-named states), 0 failing. Briefing clean, normal and skip.
+- Route driver: 11 routes, as above.
+- No browser run.
+
+### Spoken lines changed (old → new)
+
+No audio exists for m03. Player choices aren't listed. Pairs come from a line diff; the night read-back lines show as moved, not changed, and folded debrief lines show beside the lines they replaced.
+
+#### m03_npc_victoria.ink
+
+- Victoria Sterling: You must be the candidate. Welcome to WhiteHat Security.
+  -> Victoria Sterling: Victoria Sterling. Sit down. Let's see if you match your file.
+- Victoria Sterling: I'm Victoria Sterling, CEO. Have a seat.
+  -> (cut)
+- Victoria Sterling: Go ahead. I've heard every argument.
+  -> Victoria Sterling: Go on. Everyone brings a speech about it.
+- Victoria Sterling: Interesting question. Where would you draw it?
+  -> Victoria Sterling: You tell me. Where would you draw it?
+- (none: new line)
+  -> Victoria Sterling: Now one of mine. I ask everyone, and most people get it wrong.
+- (none: new line)
+  -> Victoria Sterling: The training lab. Have a look.
+- Narrator: Her eyes drop to your jacket, where the cloner's light shows through the cloth. Then back to the board.
+  -> Narrator: Her eyes drop to your pocket, where the cloner's light shows through the cloth. Then back to the board.
+- (none: new line)
+  -> Victoria Sterling: You asked me the questions a prosecutor asks. Recruits ask about the salary.
+- (none: new line)
+  -> Victoria Sterling: You were rude this afternoon. I put it down to nerves. Nerves don't come back at eleven at night.
+- (none: new line)
+  -> Victoria Sterling: And you told me this was exactly the work you'd been looking for. I believed you. That's the part I mind.
+- Victoria Sterling: You asked me the questions a prosecutor asks. Recruits ask about the salary.
+  -> (cut)
+- Victoria Sterling: You were rude this afternoon. I put it down to nerves. Nerves don't come back at eleven at night.
+  -> (cut)
+- Victoria Sterling: You told me this was exactly the work you'd been looking for. I believed you. That's the part I mind.
+  -> (cut)
+- Victoria Sterling: You said you'd think it over. I suppose you did.
+  -> (cut)
+- Victoria Sterling: You thanked me for being straight with you. I was. Pity it only went one way.
+  -> (cut)
+- Victoria Sterling: Then you've read more than most of my staff. You really have been thorough.
+  -> Victoria Sterling: Then you've read more than my accountant. He'll be disappointed.
+- (none: new line)
+  -> Victoria Sterling: I did walk away. With twenty-five thousand.
+- Victoria Sterling: You stood in my doorway earlier. At night that window's a mirror.
+  -> Victoria Sterling: One more thing. You stood in my doorway earlier. At night that window's a mirror.
+
+#### m03_npc_ffion_rees.ink
+
+- Ffion Rees: Is this your first time working with a Cyber Security firm?
+  -> Ffion Rees: First time at a place like this, is it?
+
+#### m03_npc_terry_mott.ink
+
+- Terry Mott: Hey! What are you doing here? Building's closed for the night.
+  -> Terry Mott: You. The three o'clock. Building's shut, and you're a long way from the conference room.
+- (none: new line)
+  -> Terry Mott: Building's shut, mate. So you're either lost or you're trouble.
+- Terry Mott: Other end, mate. And it's a long way round to a notebook, through the executive wing.
+  -> Terry Mott: Then you've taken the scenic route. Through the executive wing.
+- Terry Mott: Ms. Sterling did mention a recruit... alright.
+  -> Terry Mott: Notebook, files. Make your mind up. Five minutes, and I'm stood at the end of the corridor.
+- (none: new line)
+  -> Terry Mott: Ms. Sterling told me nothing about it. She told me nothing this afternoon either.
+- (none: new line)
+  -> Terry Mott: You don't work here. You were in reception at three with a visitor badge.
+- Terry Mott: Just surprised to see someone here this late.
+  -> Terry Mott: Didn't have you down as a night person.
+- Terry Mott: Ms. Sterling does sometimes have late requests.
+  -> Terry Mott: She does ring down at odd hours. Which files?
+- Terry Mott: What files are you supposed to grab?
+  -> (cut)
+- (none: new line)
+  -> Terry Mott: No badge, a visitor this afternoon, and back at eleven. Pull the other one.
+- (none: new line)
+  -> Terry Mott: {&Well?|Go on.|I'm listening.}
+
+#### m03_closing_debrief.ink
+
+- Agent HaX: There you are. Sit down before you fall down. You've earned it.
+  -> Agent HaX: There you are. Sit down before you fall down.
+- (none: new line)
+  -> Agent HaX: The guard never logged you, because you'd paid your way past him. Five hundred pounds of ours. Finance will want a receipt.
+- (none: new line)
+  -> Agent HaX: The guard caught you once, and then you put him on the floor. The log's mostly about that now.
+- Agent HaX: You told Sterling's own guard who you work for. He rang her.
+  -> Agent HaX: You told Sterling's own guard who you work for. He rang her.{victoria_fate != "ko": That's one reason she had her coat on when you walked in.}
+- Agent HaX: That's one reason she had her coat on when you walked in.
+  -> (cut)
+- Agent HaX: Let's go through it.
+  -> (cut)
+- Agent HaX: Now it's in their own books.
+  -> (cut)
+- Agent HaX: If she delivers. If she isn't burned. If the Architect doesn't smell it. A lot of ifs riding on someone who priced a hospital.
+  -> Agent HaX: If she delivers. If she isn't burned. If the Architect doesn't smell it. A lot of ifs riding on a woman who invoices by the body.
+- Agent HaX: Counter-intelligence has her. First package is already in -- comms protocols for the Architect, the payment rails, contacts at the other cells.
+  -> Agent HaX: Counter-intelligence is running her now. She stays at Zero Day, and the first package is already in: the Architect's comms protocols, the payment rails, contacts at the other cells.
+- Agent HaX: She stays at Zero Day so nothing looks wrong, and she reports to us. For the first time we have eyes inside ENTROPY's supply line.
+  -> (cut)
+- Agent HaX: Now the part that kept me up. Phase 2.
+  -> Agent HaX: Now Phase 2, the part that kept me up. You brought out the drive and read both layers yourself. The Architect's directive.
+- Agent HaX: You brought out the drive from her desk, and you read what was under both layers yourself. The Architect's directive.
+  -> Agent HaX: Now Phase 2, the part that kept me up. Your drive was Base64 over ROT13; our people had it off in ten minutes. The Architect's directive.
+- Agent HaX: You brought out the drive from her desk. Base64 over ROT13; our people had both layers off in ten minutes. Underneath, the Architect's directive.
+  -> Agent HaX: Now Phase 2, the part that kept me up. The search team found a drive in Sterling's desk this morning. Base64 over ROT13. The Architect's directive.
+- Agent HaX: The search team went through Sterling's desk this morning and found a drive. Our people had it read in ten minutes. Base64 over ROT13. The Architect's directive.
+  -> (cut)
+- Agent HaX: The Phase 2 target list goes out unsigned, from an outfit nobody's heard of.
+  -> Agent HaX: The Phase 2 target list goes out unsigned. Substations get hardened, hospitals get assessed, and we'll be standing where they meant to strike.
+- Agent HaX: Substations get hardened. Hospitals get assessed. We'll be standing where they meant to strike.
+  -> Agent HaX: Danny Foster took the way in you gave him. He rang us just after midnight, and our people collected him at two.
+- Agent HaX: Danny Foster. You gave him the way in and he took it.
+  -> (cut)
+- Agent HaX: He rang us just after midnight. Our people collected him at two.
+  -> (cut)
+- Agent HaX: You gave him room to come in by himself. That's why he did.
+  -> Agent HaX: You didn't push. He noticed.
+- Agent HaX: He's been arrested. He took the raise after he knew. A court will care about the date.
+  -> Agent HaX: He's been arrested. He'd worked out what it was for before he took it. A court will care about the date.
+- Agent HaX: For the report, here's what let you in.
+  -> Agent HaX: Their badges. MIFARE Classic, read from arm's length. A card anyone can read from a step away is a key you've handed out.
+- Agent HaX: Their badges run on MIFARE Classic, and you copied them from arm's length. A card anyone can read from a step away is a key you've handed out.
+  -> Agent HaX: The CEO's password was the house reset default, printed on a slip on her own monitor.
+- Agent HaX: The CEO's password was the house reset default, printed on a slip on her own monitor. Nobody made her change it.
+  -> Agent HaX: And their records sat on the one box they knew was broken: a distcc daemon exploitable since 2004, left listening because it was useful.
+- Agent HaX: Their records sat on the one box they knew was broken: a distcc daemon exploitable since 2004, left listening because it was useful to them.
+  -> Agent HaX: And you brought the whole paper trail out -- the history, the catalogue, the directive. Their case and their plan, in their own words.
+- Agent HaX: And you brought the whole paper trail out -- the history, the catalogue, the directive.
+  -> (cut)
+- Agent HaX: We've got their case and their plan now, in their own words.
+  -> (cut)
+- Agent HaX: What you brought out is enough to prosecute and enough to warn people. More would have helped. It usually does.
+  -> Agent HaX: Enough to charge and enough to warn. Not everything. It never is.
+- Agent HaX: The catalogue goes out as an anonymous advisory. Every product on it, flagged to the people who run it.
+  -> Agent HaX: The catalogue goes out as an anonymous advisory, and every buyer on it learns we've read it.
+- Agent HaX: A price list patches nothing, but it tells them where to look.
+  -> Agent HaX: The catalogue trickles out as routine advisories, so nothing points back at her.
+- Agent HaX: The catalogue gets folded into routine advisories over the next few months, a product at a time, so nothing points back at her.
+  -> (cut)
+- Agent HaX: A price list patches nothing, but it tells the people who run those systems where to look.
+  -> (cut)
+- Agent HaX: And word will reach their buyers that the list is in our hands. Every sale off that shelf just got riskier.
+  -> (cut)
+- Agent HaX: It's done. Get some rest. We'll need you soon.
+  -> Agent HaX: It's done. We'll need you soon.
+- Agent HaX: Here's where it stands. Zero Day's exploit line is exposed.
+  -> Agent HaX: Here's where it stands. Zero Day's exposed, its buyers are scrambling, and the Architect has to shop elsewhere.
+- Agent HaX: Here's where it stands. Zero Day doesn't know it's been read.
+  -> Agent HaX: Here's where it stands. Zero Day doesn't know it's been read, and nor do its buyers or the Architect.
+- Agent HaX: The cells that bought from them are scrambling. The Architect will have to shop elsewhere.
+  -> Agent HaX: Ghost's still out there. The people who armed them are on paper now.
+- Agent HaX: The cells that buy from Zero Day still think it's safe. So does the Architect.
+  -> Agent HaX: We see where ENTROPY surfaces. Take one cell down and it shows you the next.
+- Agent HaX: Ghost's still out there. But last night you put the people who armed them on paper. That's ENTROPY's supply chain.
+  -> (cut)
+- Agent HaX: Rest first. Then we see where ENTROPY surfaces. Take one cell down and it shows you the next.
+  -> (cut)
+
+#### m03_opening_briefing.ink
+
+- (none: new line)
+  -> Agent HaX: Short version: the exploit that took down St. Catherine's came from Zero Day, behind a pentest front called WhiteHat. We want their books.
+- (none: new line)
+  -> Agent HaX: The client roster and the operational logs. Proof of who they arm, and how.
+- Agent HaX: Short version: the exploit that took down St. Catherine's came from this shop. We want their books.
+  -> (cut)
+- Agent HaX: The client roster and the operational logs. Proof of who they arm, and how.
+  -> (cut)
+- Agent HaX: Three things, then. One: get inside and clone Victoria Sterling's executive keycard. She's the front's CEO, and she runs this end of the cell for 0day.
+  -> Agent HaX: {skipped_background:Three things.|Three things, then.} One: get inside and clone Victoria Sterling's executive keycard. She's the front's CEO, and she runs this end of the cell for 0day.
+
+#### m03_phone_agent0x99.ink
+
+- HaX (phone text): Network's stripped, the case is made, and Danny's dealt with. Sterling's your last move.
+  -> HaX (phone text): Network's stripped, the case is made, and Danny's made his call. Sterling's your last move.
+- HaX (phone text): And a line under it: "Target Selection Consultation", ten thousand. They chose the ward for Ghost.
+  -> HaX (phone text): And a line under it: "Target Selection Consultation", ten thousand. They chose the hospital for Ghost.

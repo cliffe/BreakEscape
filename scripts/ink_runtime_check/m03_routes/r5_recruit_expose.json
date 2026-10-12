@@ -1,6 +1,6 @@
 {"steps":[
 {"note":"R5 recruit + expose; Ffion sterling story (after reload), Terry files excuse; Terry met by day; office route"},
-{"talk":"briefing","picks":["exploit marketplace","What are they dealing","traces back here","murder","Who is Victoria","run the whole cell","What's the training network","What am I looking for","That's everything","thorough","Anything else","Understood"]},
+{"talk":"briefing","picks":["exploit marketplace","What are they dealing","traces back here","murder","Who is Victoria","runs the whole cell","What's the training network","What am I looking for","That's everything","thorough","Anything else","Understood"]},
 {"set":{"briefing_played":true,"cloner_explained":true}},
 {"talk":"ffion","picks":["Where do I sign","Lean in","How long has WhiteHat","unusual motto","Thanks. I'll head"]},
 {"talk":"terry","picks":["wrong turn"]},
@@ -8,7 +8,7 @@
 {"talk":"night"},
 {"set":{"mission_phase":"act2_infiltration","clone_call_done":true}},
 {"talk":"ffion","reload":true,"picks":["once the building was quiet"]},
-{"talk":"terry","picks":["Talk to the guard","Sterling asked me","didn't specify","Long night","route","let you get on"]},
+{"talk":"terry","picks":["Sterling asked me","didn't specify","Long night","route","let you get on"]},
 {"set":{"exec_wing_entered":true,"exec_office_entered":true,"usb_seen":true,"roster_seen":true,"flag_scan_submitted":true,"flag_ftp_submitted":true,"flag_http_submitted":true,"flag_distcc_submitted":true,"transaction_log_read":true,"catalogue_seen":true,"lore_catalogue_found":true,"lore_history_found":true}},
 {"talk":"danny","picks":["Your reconnaissance","answer for it","logging it all"]},
 {"set":{"night_confrontation_ready":true}},

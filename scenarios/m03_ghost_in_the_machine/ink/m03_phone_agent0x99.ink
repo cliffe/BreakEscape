@@ -364,7 +364,7 @@ distcc is the one that matters -- that's where the operational logs sit. Submit 
     { danny_fate == "":
         The case is made. If Danny Foster matters to you, see him before Sterling.
     - else:
-        Network's stripped, the case is made, and Danny's dealt with. Sterling's your last move.
+        Network's stripped, the case is made, and Danny's made his call. Sterling's your last move.
     }
     { victoria_ko:
         Sterling's still in the conference room where you left her. Go and settle it.
@@ -445,7 +445,7 @@ Client roster, transaction records, anything to the Architect.
 }
 {player_name()}, I've got the distcc logs you just submitted.
 There it is. The ProFTPD backdoor, line item on invoice ZDS-2024-0847. Twenty-five thousand, part of a package to Ghost.
-And a line under it: "Target Selection Consultation", ten thousand. They chose the ward for Ghost.
+And a line under it: "Target Selection Consultation", ten thousand. They chose the hospital for Ghost.
 Target line: St. Catherine's Regional. Sable's sign-off on the approval.
 St. Catherine's gave us the buyer's invoice. This is the seller's own ledger, saying the same thing. A case with a name.
 -> m2_revelation_choices

@@ -55,7 +55,7 @@ VAR named_target_selection = false
 Narrator: SAFETYNET headquarters. The morning after WhiteHat Security.
 
 #speaker:agent_0x99
-Agent HaX: There you are. Sit down before you fall down. You've earned it.
+Agent HaX: There you are. Sit down before you fall down.
 
 // Perfect Stealth needs all three: never detected, actually went past him into
 // Sterling's office, and didn't simply knock him out (P6).
@@ -72,7 +72,12 @@ Agent HaX: There you are. Sit down before you fall down. You've earned it.
     Agent HaX: The guard never logged you. Mind you, he spent most of the night unconscious, so I'm not calling it stealth.
 }
 { guard_detection_count == 0 and not guard_knocked_out and (guard_told_safetynet or guard_bribed):
-    Agent HaX: The guard never logged you, because you'd talked your way past him. Effective. Not stealth.
+    // D4-17: a bribe is paying, not talking. D4-4: the receipt line folds in here.
+    { guard_bribed:
+        Agent HaX: The guard never logged you, because you'd paid your way past him. Five hundred pounds of ours. Finance will want a receipt.
+    - else:
+        Agent HaX: The guard never logged you, because you'd talked your way past him. Effective. Not stealth.
+    }
 }
 // Round 2: only for players who went into his corridor and still kept clear of him.
 { guard_detection_count == 0 and guard_challenged and not guard_knocked_out and not guard_told_safetynet and not guard_bribed:
@@ -82,33 +87,34 @@ Agent HaX: There you are. Sit down before you fall down. You've earned it.
     Agent HaX: The guard never saw you. Then again, you never gave him the chance.
 }
 { guard_detection_count == 1:
-    Agent HaX: Security flagged one run-in with the guard. You recovered, but you left a mark on the log.
+    // D4-16: "You recovered" is false after a fight.
+    { guard_knocked_out:
+        Agent HaX: The guard caught you once, and then you put him on the floor. The log's mostly about that now.
+    - else:
+        Agent HaX: Security flagged one run-in with the guard. You recovered, but you left a mark on the log.
+    }
 }
 { guard_detection_count > 1:
     Agent HaX: The guard clocked you {guard_detection_count == 2:twice|more than twice}. You got it done. Nobody's going to call it quiet.
 }
 { guard_told_safetynet:
-    Agent HaX: You told Sterling's own guard who you work for. He rang her.
-    { victoria_fate != "ko":
-        Agent HaX: That's one reason she had her coat on when you walked in.
-    }
+    Agent HaX: You told Sterling's own guard who you work for. He rang her.{victoria_fate != "ko": That's one reason she had her coat on when you walked in.}
 }
-{ guard_bribed:
+{ guard_bribed and (guard_detection_count > 0 or guard_knocked_out):
     Agent HaX: And there's five hundred pounds of ours in a security guard's pocket. Finance will want a receipt.
 }
 { receptionist_ko:
     Agent HaX: The receptionist, Ffion Rees, is fine, before you ask. Concussed, and still trying to work out what she did to deserve it.
 }
 
-Agent HaX: Let's go through it.
+// D4-4: "Let's go through it." cut; mission_impact does that.
 -> mission_impact
 
 === mission_impact ===
 #speaker:agent_0x99
 Agent HaX: The network first. All four flags, and the distcc logs are the case.
 Agent HaX: The ProFTPD backdoor, sold to Ghost, invoice ZDS-2024-0847, St. Catherine's on the target line, Sable's sign-off on the approval.
-// D2-20: the buyer/seller paperwork line now belongs to the revelation call alone.
-Agent HaX: Now it's in their own books.
+// D2-20 / D4-4: the paperwork point belongs to the revelation call; cut here.
 { called_it_murder:
     Agent HaX: You called it murder with an invoice. Turns out they kept the invoice.
 }
@@ -139,7 +145,7 @@ Agent HaX: And now she's ours. That was a hell of a call -- turning her instead 
     Agent HaX: I agree. Just stay clear-eyed. Someone who thinks they're right is the hardest asset to hold.
     -> victoria_recruited_path
 * [Phase 2 puts thousands at risk. Her intelligence gets us in front of it.]
-    Agent HaX: If she delivers. If she isn't burned. If the Architect doesn't smell it. A lot of ifs riding on someone who priced a hospital.
+    Agent HaX: If she delivers. If she isn't burned. If the Architect doesn't smell it. A lot of ifs riding on a woman who invoices by the body.
     -> victoria_recruited_path
 * [Given the whole picture, it was the right call.]
     ~ handler_trust = handler_trust + 10
@@ -149,8 +155,8 @@ Agent HaX: And now she's ours. That was a hell of a call -- turning her instead 
 
 === victoria_recruited_path ===
 #speaker:agent_0x99
-Agent HaX: Counter-intelligence has her. First package is already in -- comms protocols for the Architect, the payment rails, contacts at the other cells.
-Agent HaX: She stays at Zero Day so nothing looks wrong, and she reports to us. For the first time we have eyes inside ENTROPY's supply line.
+// D4-4: two lines folded into one; the aftermath says Zero Day doesn't know.
+Agent HaX: Counter-intelligence is running her now. She stays at Zero Day, and the first package is already in: the Architect's comms protocols, the payment rails, contacts at the other cells.
 { usb_seen or lore_directive_found:
     Agent HaX: And she knew you already had the directive. That's why she didn't try to sell us the parts we had.
 }
@@ -223,19 +229,19 @@ Agent HaX: Netherton put her on every watch list we can reach. Did it himself, b
 
 === phase_2_discussion ===
 #speaker:agent_0x99
-Agent HaX: Now the part that kept me up. Phase 2.
+// D4-4: the "Phase 2" header is folded into each branch line.
 // Pass 4 (fix 4): the directive is canon by the end of m03 in every branch, because
 // m04 treats it as known. Finding it still earns the recruit option, the credits
 // line and the "whole paper trail" line; decoding it yourself earns the first line.
 { usb_seen or lore_directive_found:
     { directive_decoded and not directive_guessed:
-        Agent HaX: You brought out the drive from her desk, and you read what was under both layers yourself. The Architect's directive.
+        Agent HaX: Now Phase 2, the part that kept me up. You brought out the drive and read both layers yourself. The Architect's directive.
     - else:
-        Agent HaX: You brought out the drive from her desk. Base64 over ROT13; our people had both layers off in ten minutes. Underneath, the Architect's directive.
+        Agent HaX: Now Phase 2, the part that kept me up. Your drive was Base64 over ROT13; our people had it off in ten minutes. The Architect's directive.
     }
 - else:
     // Pass 5 (R1-3): neutral, so it reads true for a player who never saw the drive.
-    Agent HaX: The search team went through Sterling's desk this morning and found a drive. Our people had it read in ten minutes. Base64 over ROT13. The Architect's directive.
+    Agent HaX: Now Phase 2, the part that kept me up. The search team found a drive in Sterling's desk this morning. Base64 over ROT13. The Architect's directive.
 }
 -> directive_substance
 
@@ -282,8 +288,7 @@ Agent HaX: The directive proves they exist and proves they plan at this scale. C
 === architect_investigation ===
 #speaker:agent_0x99
 // D3-4: trimmed, so the run-up to Danny is shorter.
-Agent HaX: The Phase 2 target list goes out unsigned, from an outfit nobody's heard of.
-Agent HaX: Substations get hardened. Hospitals get assessed. We'll be standing where they meant to strike.
+Agent HaX: The Phase 2 target list goes out unsigned. Substations get hardened, hospitals get assessed, and we'll be standing where they meant to strike.
 -> danny_discussion
 
 === danny_discussion ===
@@ -295,12 +300,11 @@ Agent HaX: Substations get hardened. Hospitals get assessed. We'll be standing w
 #speaker:agent_0x99
 { danny_fate == "protected":
     // D2-7 / weakest line #16: what he did, not a verdict on him. Pays off the photo.
-    Agent HaX: Danny Foster. You gave him the way in and he took it.
     // D3-14: he rang in, so "came in by himself" and the credit stay true.
-    Agent HaX: He rang us just after midnight. Our people collected him at two.
+    Agent HaX: Danny Foster took the way in you gave him. He rang us just after midnight, and our people collected him at two.
     Agent HaX: He brought a box file and the photo off his desk, and he hasn't stopped talking since.
     { player_approach == "diplomatic":
-        Agent HaX: You gave him room to come in by himself. That's why he did.
+        Agent HaX: You didn't push. He noticed.
     }
     Agent HaX: He won't be charged. He'll carry it anyway.
     // D2-5: you told him "Sterling goes down for her part". Read it against her fate.
@@ -320,7 +324,7 @@ Agent HaX: Substations get hardened. Hospitals get assessed. We'll be standing w
 { danny_fate == "exposed":
     Agent HaX: Danny Foster. You logged the lot -- the recon, the emails, the raise he took to stay quiet.
     // D3-17: the fact, not a verdict.
-    Agent HaX: He's been arrested. He took the raise after he knew. A court will care about the date.
+    Agent HaX: He's been arrested. He'd worked out what it was for before he took it. A court will care about the date.
     { player_approach == "aggressive":
         Agent HaX: You went in hard and stayed hard. I won't argue with it.
     }
@@ -350,7 +354,7 @@ Agent HaX: Substations get hardened. Hospitals get assessed. We'll be standing w
 }
 { danny_fate == "":
     Agent HaX: You never found the consultant, Danny Foster. His name's still in the recon files, so it'll surface. Where he lands is anyone's guess now.
-    -> what_made_it_possible
+    -> final_assessment
 }
 
 // D3-4: the player answers HaX after the Danny lines. Stance only: each choice gets
@@ -360,94 +364,92 @@ Agent HaX: Substations get hardened. Hospitals get assessed. We'll be standing w
 #speaker:agent_0x99
 * {danny_fate == "protected" and victoria_fate == "recruited"} [I'll tell him.]
     Agent HaX: Do it before Counter-intelligence does. They'll make it sound like a favour.
-    -> what_made_it_possible
+    -> final_assessment
 * {danny_fate == "protected" and victoria_fate == "recruited"} [Not yet. Let him have a week.]
     Agent HaX: A week, then. After that he hears it from someone who doesn't care how it lands.
-    -> what_made_it_possible
+    -> final_assessment
 * {danny_fate == "protected" and victoria_fate == "recruited"} [He was told she'd answer for it. She will. Just not to him.]
     Agent HaX: That's the version I'd use. He won't thank you for it.
-    -> what_made_it_possible
+    -> final_assessment
 * {danny_fate == "protected" and victoria_fate == "arrested"} [Tell him she isn't going anywhere.]
     Agent HaX: I did. He asked again an hour later.
-    -> what_made_it_possible
+    -> final_assessment
 * {danny_fate == "protected" and victoria_fate == "arrested"} [He doesn't need to see her again.]
     Agent HaX: He'll see her in court. That's the one meeting I can't cancel.
-    -> what_made_it_possible
+    -> final_assessment
 * {danny_fate == "protected" and victoria_fate == "escaped"} [I'll find her.]
     Agent HaX: You're the second person to say that this morning. He was the first.
-    -> what_made_it_possible
+    -> final_assessment
 * {danny_fate == "protected" and victoria_fate == "escaped"} [He should stop asking.]
     Agent HaX: He won't. I wouldn't.
-    -> what_made_it_possible
+    -> final_assessment
 * {danny_fate == "protected" and victoria_fate != "recruited" and victoria_fate != "arrested" and victoria_fate != "escaped"} [Good. He earned the way out.]
     Agent HaX: He did. Don't tell him I said so.
-    -> what_made_it_possible
+    -> final_assessment
 * {danny_fate == "protected" and victoria_fate != "recruited" and victoria_fate != "arrested" and victoria_fate != "escaped"} [He'd have been safer keeping quiet.]
     Agent HaX: He tried that for months. You saw where it put him.
-    -> what_made_it_possible
+    -> final_assessment
 
 === danny_reply_exposed ===
 #speaker:agent_0x99
 * {danny_fate == "exposed" and victoria_fate == "recruited"} [She's worth more to us than he is. That's the arithmetic.]
     Agent HaX: Careful. That's her word.
-    -> what_made_it_possible
+    -> final_assessment
 * {danny_fate == "exposed" and victoria_fate == "escaped"} [He'll tell them everything. Let him.]
     Agent HaX: He's already started. They've sent out for more tape.
-    -> what_made_it_possible
-* {danny_fate == "exposed" and (victoria_fate == "recruited" or victoria_fate == "escaped")} [I'll give evidence for him. The deception was real.]
+    -> final_assessment
+* {danny_fate == "exposed" and (victoria_fate == "recruited" or victoria_fate == "escaped")} [I'll give evidence for him. She lied to him first.]
     Agent HaX: Put it in writing. It counts for more than you'd think.
-    -> what_made_it_possible
+    -> final_assessment
 * {danny_fate == "exposed" and victoria_fate != "recruited" and victoria_fate != "escaped"} [Good. He should answer for it.]
     Agent HaX: He agrees with you. He said as much to the arresting officer.
-    -> what_made_it_possible
+    -> final_assessment
 * {danny_fate == "exposed" and victoria_fate != "recruited" and victoria_fate != "escaped"} [Push for a lighter sentence. He came quietly.]
     Agent HaX: I'll put it in the file. Whether anyone reads that page is another matter.
-    -> what_made_it_possible
+    -> final_assessment
 
 === danny_reply_left ===
 #speaker:agent_0x99
 * {danny_fate == "left"} [He'll come in.]
     Agent HaX: Then I hope he's quicker about it than Zero Day.
-    -> what_made_it_possible
+    -> final_assessment
 * {danny_fate == "left"} [I should have made the call for him.]
     Agent HaX: Maybe. He'd have hated you for it, and he'd be safe.
-    -> what_made_it_possible
+    -> final_assessment
 
 === danny_reply_ko ===
 #speaker:agent_0x99
 * {danny_fate == "ko"} [It was the only way to keep him safe.]
     Agent HaX: It's one way. Write down why, before you forget.
-    -> what_made_it_possible
+    -> final_assessment
 * {danny_fate == "ko"} [I lost my temper.]
     Agent HaX: Then say so in the report. It reads better than a reason.
-    -> what_made_it_possible
+    -> final_assessment
 
 === danny_ko_after_choice ===
 #speaker:agent_0x99
 Agent HaX: Danny Foster. You talked to him, and then somebody left him out cold in his own office.
 Agent HaX: We picked him up this morning. Whatever he'd decided, he'll be explaining it from a hospital bed first.
--> what_made_it_possible
+-> final_assessment
 
-// Pass 4 (fix 7): the defender's view of what let the player in, one line each,
-// only for what the player actually did. The distcc line always applies, since
-// the ending needs that flag.
-=== what_made_it_possible ===
+// Pass 4 (fix 7), cycle 3 (D4-4): the defender's view of what let the player in,
+// now asked for from aftermath_choices. One line each, only for what the player did;
+// the distcc line always applies, since the ending needs that flag.
+=== security_recap ===
 #speaker:agent_0x99
-Agent HaX: For the report, here's what let you in.
 { reception_badge_cloned or victoria_card_cloned:
-    Agent HaX: Their badges run on MIFARE Classic, and you copied them from arm's length. A card anyone can read from a step away is a key you've handed out.
+    Agent HaX: Their badges. MIFARE Classic, read from arm's length. A card anyone can read from a step away is a key you've handed out.
 }
 { draft_seen or roster_seen:
-    Agent HaX: The CEO's password was the house reset default, printed on a slip on her own monitor. Nobody made her change it.
+    Agent HaX: The CEO's password was the house reset default, printed on a slip on her own monitor.
 }
-Agent HaX: Their records sat on the one box they knew was broken: a distcc daemon exploitable since 2004, left listening because it was useful to them.
--> final_assessment
+Agent HaX: And their records sat on the one box they knew was broken: a distcc daemon exploitable since 2004, left listening because it was useful.
+-> aftermath_choices
 
 === final_assessment ===
 #speaker:agent_0x99
 { lore_history_found and (catalogue_seen or lore_catalogue_found) and (usb_seen or lore_directive_found):
-    Agent HaX: And you brought the whole paper trail out -- the history, the catalogue, the directive.
-    Agent HaX: We've got their case and their plan now, in their own words.
+    Agent HaX: And you brought the whole paper trail out -- the history, the catalogue, the directive. Their case and their plan, in their own words.
 }
 // Pass 5 (P4-48): only when the history or the catalogue is missing; a drive-only miss is
 // covered in phase_2_discussion, and this block no longer names the drive.
@@ -464,20 +466,16 @@ Agent HaX: Their records sat on the one box they knew was broken: a distcc daemo
     { not (catalogue_seen or lore_catalogue_found):
         Agent HaX: The exploit catalogue stayed in the wall safe.
     }
-    Agent HaX: What you brought out is enough to prosecute and enough to warn people. More would have helped. It usually does.
+    Agent HaX: Enough to charge and enough to warn. Not everything. It never is.
 }
 // The catalogue's own consequence (P2). The vendor line stands alone: the
 // anonymous-advisory knot is only reached when the directive was found.
 { catalogue_seen or lore_catalogue_found:
+    // D4-4: folded to one line per branch.
     { victoria_fate != "recruited":
-        Agent HaX: The catalogue goes out as an anonymous advisory. Every product on it, flagged to the people who run it.
-        Agent HaX: A price list patches nothing, but it tells them where to look.
+        Agent HaX: The catalogue goes out as an anonymous advisory, and every buyer on it learns we've read it.
     - else:
-        Agent HaX: The catalogue gets folded into routine advisories over the next few months, a product at a time, so nothing points back at her.
-        Agent HaX: A price list patches nothing, but it tells the people who run those systems where to look.
-    }
-    { victoria_fate != "recruited":
-        Agent HaX: And word will reach their buyers that the list is in our hands. Every sale off that shelf just got riskier.
+        Agent HaX: The catalogue trickles out as routine advisories, so nothing points back at her.
     }
 }
 // Pass 5 (R1-3): no praise for a clean job when bystanders were knocked out.
@@ -496,28 +494,31 @@ Agent HaX: Their records sat on the one box they knew was broken: a distcc daemo
         Agent HaX: Clean enough. We'll need you soon.
     }
     { (handler_trust >= 50) && (handler_trust < 70) && not (lore_history_found && (catalogue_seen or lore_catalogue_found)):
-        Agent HaX: It's done. Get some rest. We'll need you soon.
+        Agent HaX: It's done. We'll need you soon.
     }
 }
 -> aftermath
 
 === aftermath ===
 #speaker:agent_0x99
+// D4-4: one line per branch.
 { victoria_fate != "recruited":
-    Agent HaX: Here's where it stands. Zero Day's exploit line is exposed.
+    Agent HaX: Here's where it stands. Zero Day's exposed, its buyers are scrambling, and the Architect has to shop elsewhere.
 - else:
-    Agent HaX: Here's where it stands. Zero Day doesn't know it's been read.
-}
-{ victoria_fate != "recruited":
-    Agent HaX: The cells that bought from them are scrambling. The Architect will have to shop elsewhere.
-- else:
-    Agent HaX: The cells that buy from Zero Day still think it's safe. So does the Architect.
+    Agent HaX: Here's where it stands. Zero Day doesn't know it's been read, and nor do its buyers or the Architect.
 }
 // P1-5/P1-24: Ghost is still at large after St. Catherine's (m02 canon). No claim
 // about Nightshade: his supply-chain remark is an optional m02 beat.
-Agent HaX: Ghost's still out there. But last night you put the people who armed them on paper. That's ENTROPY's supply chain.
+Agent HaX: Ghost's still out there. The people who armed them are on paper now.
+-> aftermath_choices
+
+// D4-4: the security recap is a question the player can ask, not a lecture.
+=== aftermath_choices ===
+#speaker:agent_0x99
+* [What should they have locked down?]
+    -> security_recap
 * [What's my next assignment?]
-    Agent HaX: Rest first. Then we see where ENTROPY surfaces. Take one cell down and it shows you the next.
+    Agent HaX: We see where ENTROPY surfaces. Take one cell down and it shows you the next.
     -> closing
 * [When do we go at the Architect directly?]
     Agent HaX: When we know who they are. We're closer than we were, and one day they slip.

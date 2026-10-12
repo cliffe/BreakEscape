@@ -51,6 +51,10 @@ VAR ffion_night_story = ""
 
 === badge_process ===
 #speaker:ffion_rees
+// D4-1 sweep: a day knot re-entered at night hands over to start (night routing).
+{ mission_phase == "act2_infiltration":
+    -> start
+}
 { not topic_company_history:
     Ffion Rees: I just need you to sign in here, and I'll print you a visitor badge.
     Narrator: She slides a clipboard across the desk.
@@ -81,6 +85,10 @@ Ffion Rees: Ms. Sterling's in the conference room. Straight up the hallway, firs
 
 === company_overview ===
 #speaker:ffion_rees
+// D4-1 sweep: a day knot re-entered at night hands over to start (night routing).
+{ mission_phase == "act2_infiltration":
+    -> start
+}
 Ffion Rees: Ms. Sterling started it in 2010.
 { receptionist_influence >= 10:
     Ffion Rees: There's the training side too. Zero Day. Don't ask me what they do in there, I only order the pizzas.
@@ -102,14 +110,18 @@ Ffion Rees: Ms. Sterling started it in 2010.
 
 === first_impression_choice ===
 #speaker:ffion_rees
-Ffion Rees: Is this your first time working with a Cyber Security firm?
+// D4-1 sweep: a day knot re-entered at night hands over to start (night routing).
+{ mission_phase == "act2_infiltration":
+    -> start
+}
+Ffion Rees: First time at a place like this, is it?
 * [I've done freelance pen testing before. Looking to level up.]
     ~ receptionist_influence = receptionist_influence + 10
     # influence_increased
     Ffion Rees: You've come to the right place, then. She doesn't see just anyone, mind.
     -> hub
-// D2-25: cover-consistent (freelance pentester). The modest answer earns a tip
-// that helps at the whiteboard.
+// D2-25: cover-consistent (freelance pentester). The modest answer earns flavour
+// and influence (D4-21).
 * [Freelance. Small jobs, mostly. I'm told she's hard to impress.]
     ~ receptionist_influence = receptionist_influence + 5
     # influence_increased
@@ -130,6 +142,11 @@ Ffion Rees: Is this your first time working with a Cyber Security firm?
 // Resting point (m02 pattern): every exit comes back here, never DONE, so the
 // engine restores the story at these choices. Night-aware: after Victoria's card
 // is cloned, the only thing to do is say goodnight.
+// D4-1 (cycle 3 blocker): every exit parks here and a reopen re-enters here, never
+// start, so the first night visit must be routed to her night scene from the hub.
+{ mission_phase == "act2_infiltration" and not night_greeted:
+    -> closing_up
+}
 { hub_quiet:
     ~ hub_quiet = false
 - else:
@@ -164,6 +181,10 @@ Ffion Rees: Is this your first time working with a Cyber Security firm?
 
 === ask_victoria ===
 #speaker:ffion_rees
+// D4-1 sweep: a day knot re-entered at night hands over to start (night routing).
+{ mission_phase == "act2_infiltration":
+    -> start
+}
 ~ topic_victoria = true
 ~ receptionist_influence = receptionist_influence + 5
 # influence_increased
@@ -188,6 +209,10 @@ Ffion Rees: Oh, she's brilliant. Does the big conferences, gets quoted in the pa
 
 === ask_danny ===
 #speaker:ffion_rees
+// D4-1 sweep: a day knot re-entered at night hands over to start (night routing).
+{ mission_phase == "act2_infiltration":
+    -> start
+}
 ~ topic_danny = true
 ~ receptionist_influence = receptionist_influence + 5
 # influence_increased
@@ -211,6 +236,10 @@ Ffion Rees: Really nice bloke. Always brings doughnuts in on a Friday.
 
 === ask_company_history ===
 #speaker:ffion_rees
+// D4-1 sweep: a day knot re-entered at night hands over to start (night routing).
+{ mission_phase == "act2_infiltration":
+    -> start
+}
 ~ topic_company_history = true
 ~ pin_hint_given = true
 ~ receptionist_influence = receptionist_influence + 5
@@ -232,6 +261,10 @@ Ffion Rees: Says so on the plaque, there, look. "Security Through Economics."
 
 === ask_building_layout ===
 #speaker:ffion_rees
+// D4-1 sweep: a day knot re-entered at night hands over to start (night routing).
+{ mission_phase == "act2_infiltration":
+    -> start
+}
 ~ receptionist_influence = receptionist_influence + 5
 # influence_increased
 Ffion Rees: Reception here, then the main hallway. The conference room's through the card reader, first on the left.

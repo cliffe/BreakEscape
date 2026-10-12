@@ -1,0 +1,12 @@
+{"steps":[
+{"note":"R10 (cycle 3, D4-16/D4-17): the guard bribe route and the catch-then-KO route, each into the debrief."},
+{"set":{"briefing_played":true,"mission_phase":"act2_infiltration","clone_call_done":true,"victoria_card_cloned":true,"night_confrontation_ready":true}},
+{"talk":"terry","knot":"start","picks":["I work here","I'm new","work something out","Five hundred"]},
+{"set":{"victoria_fate":"arrested","danny_fate":"exposed","exec_office_entered":true,"lore_history_found":true,"catalogue_seen":true,"usb_seen":true,"reception_badge_cloned":true}},
+{"talk":"debrief","picks":[0,0,0,0,"locked down","next assignment"]},
+{"note":"catch once, then KO the guard"},
+{"set":{"guard_bribed":false,"guard_detection_count":0,"victoria_fate":"escaped","danny_fate":"protected"}},
+{"talk":"terry","reload":true,"knot":"on_lockpick_detected","picks":["Sorry. Wrong door"]},
+{"set":{"guard_knocked_out":true,"guard_hostile":true}},
+{"talk":"debrief","reload":true,"knot":"start","picks":[0,0,0,0,"next assignment"]}
+]}

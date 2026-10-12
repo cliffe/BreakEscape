@@ -8,7 +8,7 @@
 {"talk":"phone","picks":["Where do I stand","Thanks.","Nothing right now"]},
 {"talk":"night"},
 {"set":{"mission_phase":"act2_infiltration","clone_call_done":true,"exec_wing_entered":true}},
-{"talk":"ffion","picks":["Night, Ffion"]},
+{"talk":"ffion","picks":["once the building was quiet"]},
 {"talk":"ffion","picks":["Night, Ffion"]},
 {"talk":"terry","knot":"on_lockpick_detected","picks":["locked her keys in"]},
 {"talk":"terry","knot":"on_lockpick_detected","picks":["Stand your ground"]},

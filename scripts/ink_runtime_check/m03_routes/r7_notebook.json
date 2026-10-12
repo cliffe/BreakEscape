@@ -3,7 +3,7 @@
 {"talk":"terry","picks":["knock off"]},
 {"set":{"mission_phase":"act2_infiltration","clone_call_done":true,"victoria_card_cloned":true}},
 {"talk":"ffion","knot":"start","picks":["notebook"]},
-{"talk":"terry","picks":["Talk to the guard","Wrong turn","Long night","let you get on"]},
+{"talk":"terry","picks":["Wrong turn","Long night","Fair enough","let you get on"]},
 {"note":"mismatch variant"},
 {"talk":"terry","reload":true,"knot":"start","picks":["Building maintenance","Ring the supervisor","let you get on"]}
 ]}

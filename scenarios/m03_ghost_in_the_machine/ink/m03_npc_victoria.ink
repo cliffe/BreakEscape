@@ -51,8 +51,7 @@ VAR hub_quiet = false
 // D2-3: her afternoon question to the recruit ("sold" / "hedged" / "asked"), quoted
 // back at night. Local: only this ink reads it.
 VAR victoria_test_answer = ""
-// Scenes #6: what the recruit said at the afternoon goodbye ("keen" / "undecided" /
-// "thanked"), read back at night when nothing sharper applies.
+// Scenes #6 / D4-2: "keen" at the afternoon goodbye; read back at night with "sold".
 VAR afternoon_goodbye = ""
 // D2-17: synced. The player looked in on her night call; she reveals she saw them.
 VAR sterling_on_call_seen = false
@@ -60,6 +59,8 @@ VAR sterling_on_call_seen = false
 VAR danny_fate = ""
 // D2-1: synced; the debrief reads it. The player put "target selection" to her face.
 VAR named_target_selection = false
+// D4-14: the player opened the night on St. Catherine's.
+VAR came_via_hospital = false
 
 // Root divert. When a conversation has ended (-> DONE), the engine restores only
 // its variables on the next talk and continues from the root (npc-conversation-
@@ -88,8 +89,7 @@ VAR named_target_selection = false
 { not recruitment_discussed:
     #display:victoria-professional
     Narrator: Victoria Sterling rises as you come in, composed and sure of herself.
-    Victoria Sterling: You must be the candidate. Welcome to WhiteHat Security.
-    Victoria Sterling: I'm Victoria Sterling, CEO. Have a seat.
+    Victoria Sterling: Victoria Sterling. Sit down. Let's see if you match your file.
     Narrator: She gestures to the conference table.
     // Pass 4 (fix 2): a knocked-out receptionist doesn't go unnoticed. Feeds the
     // P4 suspicion logic, and opens the "eager recruit" walk-back.
@@ -120,6 +120,11 @@ VAR named_target_selection = false
 
 === first_impression ===
 #speaker:victoria_sterling
+// D4-1 sweep / D4-12: a day knot re-entered at night (a reopen lands on the knot
+// that owns the saved choices) hands over to start, which routes by phase.
+{ clone_call_done:
+    -> start
+}
 Victoria Sterling: I reviewed your background. Freelance pen testing, some CTF competition work.
 Victoria Sterling: Solid technical skills. But that's not why you're here.
 * [Why am I here, then?]
@@ -141,6 +146,11 @@ Victoria Sterling: Solid technical skills. But that's not why you're here.
 
 === philosophy_intro ===
 #speaker:victoria_sterling
+// D4-1 sweep / D4-12: a day knot re-entered at night (a reopen lands on the knot
+// that owns the saved choices) hands over to start, which routes by phase.
+{ clone_call_done:
+    -> start
+}
 Victoria Sterling: You find a hole and do the decent thing. The vendor sits on it for six months. Somebody less decent finds it in three.
 * [So, responsible disclosure or full disclosure?]
     ~ victoria_influence = victoria_influence + 10
@@ -171,6 +181,11 @@ Victoria Sterling: Systems fail. What matters is who knows first, and who pays t
 -> hub
 
 === hub ===
+// D4-1 sweep / D4-12: a day knot re-entered at night (a reopen lands on the knot
+// that owns the saved choices) hands over to start, which routes by phase.
+{ clone_call_done:
+    -> start
+}
 // D2-3: after the first topic she turns the interview round, once, before the
 // whiteboard. Off the critical path: never offered once the read has started, and
 // every answer returns here with the whiteboard still on offer.
@@ -216,6 +231,11 @@ Victoria Sterling: Systems fail. What matters is who knows first, and who pays t
 
 === zero_day_philosophy ===
 #speaker:victoria_sterling
+// D4-1 sweep / D4-12: a day knot re-entered at night (a reopen lands on the knot
+// that owns the saved choices) hands over to start, which routes by phase.
+{ clone_call_done:
+    -> start
+}
 ~ topic_zero_day_philosophy = true
 Victoria Sterling: Zero Day is simple. A vulnerability is worth something to somebody.
 Victoria Sterling: We find it, we price it, and we find the somebody.
@@ -251,8 +271,13 @@ Victoria Sterling: I pay them properly. You'd be amazed what loyalty that buys.
 
 === ethics_discussion ===
 #speaker:victoria_sterling
+// D4-1 sweep / D4-12: a day knot re-entered at night (a reopen lands on the knot
+// that owns the saved choices) hands over to start, which routes by phase.
+{ clone_call_done:
+    -> start
+}
 ~ topic_ethics = true
-Victoria Sterling: Go ahead. I've heard every argument.
+Victoria Sterling: Go on. Everyone brings a speech about it.
 * [What about when exploits you sold hurt people? Hospitals, infrastructure?]
     ~ victoria_influence = victoria_influence - 5
     # influence_decreased
@@ -266,7 +291,7 @@ Victoria Sterling: Go ahead. I've heard every argument.
 * [There's a line between research and making weapons. Where do you draw it?]
     ~ victoria_influence = victoria_influence + 5
     # influence_increased
-    Victoria Sterling: Interesting question. Where would you draw it?
+    Victoria Sterling: You tell me. Where would you draw it?
     -> ethics_response_nuance
 * [I'm not here to judge your business model. Just to understand it.]
     ~ victoria_influence = victoria_influence + 15
@@ -303,10 +328,20 @@ Victoria Sterling: Good. Indignation is cheap, and it pays nobody's rent.
 // "sold" is the answer the cover wants; "asked" is the slip she remembers.
 === the_question ===
 #speaker:victoria_sterling
+// D4-1 sweep / D4-12: a day knot re-entered at night (a reopen lands on the knot
+// that owns the saved choices) hands over to start, which routes by phase.
+{ clone_call_done:
+    -> start
+}
 { victoria_card_cloned:
     Victoria Sterling: Before you go. One question. I ask everyone, and most people get it wrong.
 - else:
-    Victoria Sterling: My turn. One question. I ask everyone, and most people get it wrong.
+    // D4-11: she has just asked one on the ethics route.
+    { topic_ethics:
+        Victoria Sterling: Now one of mine. I ask everyone, and most people get it wrong.
+    - else:
+        Victoria Sterling: My turn. One question. I ask everyone, and most people get it wrong.
+    }
 }
 Victoria Sterling: You find a hole in an NHS trust's patient records. The vendor offers you a T-shirt and a thank-you. A buyer offers forty thousand. What do you do?
 + [Take the forty. The vendor had years to find it.]
@@ -345,7 +380,12 @@ Narrator: You get up and go to the board, close to Victoria.
 { victoria_influence >= 20:
     Victoria Sterling: Yes. An isolated network, real services. Students practise on it from the server room.
 - else:
-    Victoria Sterling: *curtly* The training lab. Since you're so interested.
+    // Cycle 3 note: the sarcasm only for a player who has given her reason.
+    { victoria_suspicious >= 5:
+        Victoria Sterling: *curtly* The training lab. Since you're so interested.
+    - else:
+        Victoria Sterling: The training lab. Have a look.
+    }
 }
 Narrator: The cloner in your pocket starts reading her card. Custom keys: you'll need Darkside afterwards, and that takes about thirty seconds. Keep her talking while it reads.
 ~ rfid_clone_started = true
@@ -374,6 +414,11 @@ Narrator: Back at the board. The cloner finds her card again and starts a fresh 
 
 === clone_rfid_distraction ===
 #speaker:victoria_sterling
+// D4-1 sweep / D4-12: a day knot re-entered at night (a reopen lands on the knot
+// that owns the saved choices) hands over to start, which routes by phase.
+{ clone_call_done:
+    -> start
+}
 { not read_dropped:
     Victoria Sterling: Everything on that board is real, and everything on it is broken. On purpose.
 }
@@ -400,6 +445,11 @@ Narrator: Back at the board. The cloner finds her card again and starts a fresh 
 
 === clone_check_1 ===
 #speaker:victoria_sterling
+// D4-1 sweep / D4-12: a day knot re-entered at night (a reopen lands on the knot
+// that owns the saved choices) hands over to start, which routes by phase.
+{ clone_call_done:
+    -> start
+}
 // P4: a suspicious Victoria steps out of range once. read_checked stops a reload
 // (which restarts at start with variables restored) failing a player who passed.
 { victoria_suspicious >= 10 and not eager_act_done and not read_dropped and not read_checked:
@@ -433,11 +483,16 @@ Narrator: She walks back to the table. The cloner's read stalls halfway, then dr
 
 === clone_check_2 ===
 #speaker:victoria_sterling
+// D4-1 sweep / D4-12: a day knot re-entered at night (a reopen lands on the knot
+// that owns the saved choices) hands over to start, which routes by phase.
+{ clone_call_done:
+    -> start
+}
 Victoria Sterling: You ask questions like someone taking notes. I like that in staff. I watch for it in guests.
 // Cycle 2, scene #1: one beat of danger during the read, only for a player who has
 // already pushed her. Narration only: no choice, no gate.
 { victoria_suspicious >= 5 and not read_dropped:
-    Narrator: Her eyes drop to your jacket, where the cloner's light shows through the cloth. Then back to the board.
+    Narrator: Her eyes drop to your pocket, where the cloner's light shows through the cloth. Then back to the board.
 }
 Narrator: Nearly there. Keep her talking.
 * [Skills are cheap. Knowing where to sell them isn't.]
@@ -479,6 +534,11 @@ Narrator: She answers at length. She likes this diagram.
 // choices; that is now this one, never the knot carrying the clone tags.
 === clone_debrief ===
 #speaker:victoria_sterling
+// D4-1 sweep / D4-12: a day knot re-entered at night (a reopen lands on the knot
+// that owns the saved choices) hands over to start, which routes by phase.
+{ clone_call_done:
+    -> start
+}
 { not victoria_card_cloned:
     Narrator: The cloner didn't keep the read. You'll need to get close to her card again.
     -> hub
@@ -489,7 +549,7 @@ Narrator: She answers at length. She likes this diagram.
     -> the_question
 }
 Victoria Sterling: That's enough philosophy for one afternoon. The programme starts next month. I'll know by Friday whether you're on it.
-// Scenes #6: the goodbye is a stance she reads back at night.
+// Scenes #6 / D4-2: only "keen" is read back at night (with the "sold" answer).
 * [This is exactly the kind of work I've been looking for.]
     ~ afternoon_goodbye = "keen"
     ~ victoria_influence = victoria_influence + 10
@@ -497,11 +557,9 @@ Victoria Sterling: That's enough philosophy for one afternoon. The programme sta
     Victoria Sterling: Good. I'll have the enrolment details sent over.
     -> meeting_end
 * [Let me think it over.]
-    ~ afternoon_goodbye = "undecided"
     Victoria Sterling: Do. The good ones always want a night on it.
     -> meeting_end
 * [Thanks for being straight with me.]
-    ~ afternoon_goodbye = "thanked"
     ~ victoria_influence = victoria_influence + 5
     # influence_increased
     Victoria Sterling: I'm always straight with people. It's the cheapest way to be believed.
@@ -525,34 +583,33 @@ Victoria Sterling: Excuse me, I need to take this.
 #display:victoria-neutral
 Narrator: Victoria is standing by the window. Coat on, a slim bag over one shoulder. She has been waiting for you.
 Victoria Sterling: You came back after hours. Recruits don't do that.
-// One read-back of the afternoon (cycle 2, D3-3): what she saw (the second trip to
-// the board), then the player's own words to her test, then her general suspicion,
-// then low influence, then the goodbye stance.
+// One read-back of the afternoon (cycle 3, D4-2). Since D3-21 every player reaches
+// the night with a test answer, so branches below the test could never play. Order:
+// what she saw (the second trip to the board), a player she had marked as hostile by
+// the end of the afternoon, a rude one, then the player's own answer to her test.
+// The goodbye stance adds one line only where it sharpens the "sold" line.
 { receptionist_ko:
     Victoria Sterling: Nor do they leave my receptionist on her own floor. She can't remember your face. I can.
 - else:
   {
   - read_dropped:
-    // Only true after a second trip to the whiteboard.
     Victoria Sterling: You asked about the training network twice this afternoon. Once is curiosity. Twice is an inventory.
+  - victoria_suspicious >= 20:
+    Victoria Sterling: You asked me the questions a prosecutor asks. Recruits ask about the salary.
+  - victoria_influence < 10:
+    // D2-16: she told this player they weren't the right fit ("Brave. Not useful.").
+    Victoria Sterling: You were rude this afternoon. I put it down to nerves. Nerves don't come back at eleven at night.
   - victoria_test_answer == "asked":
     Victoria Sterling: You asked what the buyer wanted it for. I should have ended the interview there.
   - victoria_test_answer == "sold":
     Victoria Sterling: You told me you'd take the forty. You said it very quickly. The ones who mean it take longer.
+    { afternoon_goodbye == "keen":
+        Victoria Sterling: And you told me this was exactly the work you'd been looking for. I believed you. That's the part I mind.
+    }
   - victoria_test_answer == "hedged":
     Victoria Sterling: Report it and bill them anyway, you said. I took that for greed. It was a conscience keeping its options open.
-  - victoria_suspicious >= 10 or suspicion_warned:
-    Victoria Sterling: You asked me the questions a prosecutor asks. Recruits ask about the salary.
-  - victoria_influence < 10:
-    // D2-16: she told this player they weren't the right fit.
-    Victoria Sterling: You were rude this afternoon. I put it down to nerves. Nerves don't come back at eleven at night.
-  - afternoon_goodbye == "keen":
-    Victoria Sterling: You told me this was exactly the work you'd been looking for. I believed you. That's the part I mind.
-  - afternoon_goodbye == "undecided":
-    Victoria Sterling: You said you'd think it over. I suppose you did.
-  - afternoon_goodbye == "thanked":
-    Victoria Sterling: You thanked me for being straight with you. I was. Pity it only went one way.
   - else:
+    // Only after a reload or a chat closed before the test.
     Victoria Sterling: You were very easy to like this afternoon. That should have worried me sooner.
   }
 }
@@ -567,9 +624,10 @@ Victoria Sterling: You came back after hours. Recruits don't do that.
     Victoria Sterling: *drily* Nobody's said that name to my face before. You really have been thorough.
     -> the_reckoning
 * {not (sable_named or transaction_log_read or revelation_heard)} [SAFETYNET. And I've read your approvals.]
-    Victoria Sterling: Then you've read more than most of my staff. You really have been thorough.
+    Victoria Sterling: Then you've read more than my accountant. He'll be disappointed.
     -> the_reckoning
 * [St. Catherine's Hospital. Your ProFTPD exploit. People died on that ward.]
+    ~ came_via_hospital = true
     Victoria Sterling: I sold a vulnerability. What a buyer builds with it is a buyer's problem.
     Victoria Sterling: Your Ghost liked to tell people they wrote that exploit themselves. They didn't. They bought it from me, twenty-five thousand, hospital premium and all.
     ++ [Forty per cent extra for a hospital. You priced the bodies in.]
@@ -587,7 +645,10 @@ Victoria Sterling: You came back after hours. Recruits don't do that.
 #display:victoria-neutral
 Victoria Sterling: Let me spare us the scene you're braced for. You want the confession. The tears for the ward.
 Victoria Sterling: I read what that ward cost, down to the number. It changed nothing I believe.
-Victoria Sterling: Vulnerabilities are facts. Someone will always sell the facts. Better a professional who logs the sale than a criminal who doesn't.
+// D4-14: on the St. Catherine's route she has just made this defence.
+{ not came_via_hospital:
+    Victoria Sterling: Vulnerabilities are facts. Someone will always sell the facts. Better a professional who logs the sale than a criminal who doesn't.
+}
 + [That's the story you tell yourself so you can sleep.]
     Victoria Sterling: I sleep perfectly. That's the part people like you can never forgive.
     -> the_reckoning_close
@@ -599,6 +660,10 @@ Victoria Sterling: Vulnerabilities are facts. Someone will always sell the facts
     Victoria Sterling: Two hundred and fourteen sites, and one with the oldest FTP box on the list.
     Victoria Sterling: Ghost wanted somewhere that would pay. I told them where. That's consultancy.
     -> target_followup
+// Cycle 3 scene #1: a real choice for a player without the ledger too.
++ [You could have walked away from that sale.]
+    Victoria Sterling: I did walk away. With twenty-five thousand.
+    -> the_reckoning_close
 
 === target_followup ===
 #speaker:victoria_sterling
@@ -619,7 +684,7 @@ Narrator: She settles the bag on her shoulder.
 Victoria Sterling: To the Architect I'm a line item. Sable, Zero Day, this office -- all of it is rented. All of it replaceable.
 // D2-17, moved here in cycle 2 (D3-1): her last card, and a live threat.
 { sterling_on_call_seen:
-    Victoria Sterling: You stood in my doorway earlier. At night that window's a mirror.
+    Victoria Sterling: One more thing. You stood in my doorway earlier. At night that window's a mirror.
     Victoria Sterling: My associates offered to deal with you. I said I'd do it myself. I still might.
 }
 Victoria Sterling: So decide what you actually want from the next thirty seconds. I have a car downstairs, and you have exactly one move.

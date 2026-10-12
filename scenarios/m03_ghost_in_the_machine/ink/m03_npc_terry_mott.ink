@@ -53,8 +53,11 @@ VAR ffion_night_story = ""
         Terry Mott: Ffion reckons Ms. Sterling's expecting you. She never said nothing to me.
     - ffion_night_story == "brushoff":
         Terry Mott: Ffion rang. Said someone come in at eleven and wouldn't say what for. That you?
+    // D4-3: he met the recruit by day. W3-5: he gets shorter, never louder.
+    - day_greeted:
+        Terry Mott: You. The three o'clock. Building's shut, and you're a long way from the conference room.
     - else:
-        Terry Mott: Hey! What are you doing here? Building's closed for the night.
+        Terry Mott: Building's shut, mate. So you're either lost or you're trouble.
     }
     ~ player_warned = true
     ~ guard_suspicious = true
@@ -77,6 +80,10 @@ VAR ffion_night_story = ""
 
 === daytime ===
 #speaker:npc
+// D4-1 sweep: the day knot re-entered at night hands over to start.
+{ mission_phase == "act2_infiltration":
+    -> start
+}
 #display:guard-neutral
 { not day_greeted:
     ~ day_greeted = true
@@ -108,7 +115,7 @@ VAR ffion_night_story = ""
 // D3-2: the notebook story has its own answer; a different story from the one
 // Ffion heard gets noticed.
 * {ffion_night_story == "notebook"} [Wrong turn. I'll find it.]
-    Terry Mott: Other end, mate. And it's a long way round to a notebook, through the executive wing.
+    Terry Mott: Then you've taken the scenic route. Through the executive wing.
     ~ hub_quiet = true
     -> hub
 * [I work here -- research, second floor. Forgot something at my desk.]
@@ -132,11 +139,19 @@ VAR ffion_night_story = ""
         ~ guard_influence = guard_influence - 5
         # influence_decreased
         Terry Mott: Funny. Ffion said notebook.
-        Terry Mott: Ms. Sterling did mention a recruit... alright.
+        // D4-9: the catch has teeth; he doesn't wave the story through.
+        Terry Mott: Notebook, files. Make your mind up. Five minutes, and I'm stood at the end of the corridor.
+        ~ hub_quiet = true
+        -> hub
     - ffion_night_story == "sterling":
         ~ guard_influence = guard_influence + 10
         # influence_increased
         Terry Mott: Ffion said the same. Still nobody told me. Go on, then.
+    - day_greeted:
+        // D4-3: calls back his afternoon "she'd have told me. She hasn't."
+        ~ guard_influence = guard_influence + 5
+        # influence_increased
+        Terry Mott: Ms. Sterling told me nothing about it. She told me nothing this afternoon either.
     - else:
         ~ guard_influence = guard_influence + 10
         # influence_increased
@@ -163,13 +178,17 @@ VAR ffion_night_story = ""
 
 === excuse_work_here ===
 #speaker:npc
-Terry Mott: I don't recognise you, and I know most of the faces here.
+{ day_greeted:
+    Terry Mott: You don't work here. You were in reception at three with a visitor badge.
+- else:
+    Terry Mott: I don't recognise you, and I know most of the faces here.
+}
 Terry Mott: You got ID? Key card?
 * [Hold up the cloned executive card. This do you?]
     ~ guard_influence = guard_influence + 15
     # influence_increased
     Terry Mott: That's... that's an executive-level card. Alright, carry on.
-    Terry Mott: Just surprised to see someone here this late.
+    Terry Mott: Didn't have you down as a night person.
     -> hub
 * [I'm new. Started this week. Still getting my permanent ID.]
     ~ guard_influence = guard_influence + 5
@@ -185,8 +204,7 @@ Terry Mott: You got ID? Key card?
 
 === excuse_victoria ===
 #speaker:npc
-Terry Mott: Ms. Sterling does sometimes have late requests.
-Terry Mott: What files are you supposed to grab?
+Terry Mott: She does ring down at odd hours. Which files?
 * [Training programme enrolment forms. From her office.]
     ~ guard_influence = guard_influence + 10
     # influence_increased
@@ -226,7 +244,11 @@ Terry Mott: I'm going to need to verify this.
 
 === suspicious_path ===
 #speaker:npc
-Terry Mott: No badge, a face I've never seen, and here at eleven at night. Pull the other one.
+{ day_greeted:
+    Terry Mott: No badge, a visitor this afternoon, and back at eleven. Pull the other one.
+- else:
+    Terry Mott: No badge, a face I've never seen, and here at eleven at night. Pull the other one.
+}
 * [Maybe we can work something out. I need to finish here.]
     -> offer_bribe
 * [Ring Ms. Sterling if you like. She'll vouch for me.]
@@ -331,7 +353,12 @@ Terry Mott: What do you need from me?
 { hub_quiet:
     ~ hub_quiet = false
 - else:
-    Terry Mott: {&Anything else, or are we done?|Go on, then.|Still here?}
+    // Cycle 3: cold while he doubts the player.
+    { guard_suspicious:
+        Terry Mott: {&Well?|Go on.|I'm listening.}
+    - else:
+        Terry Mott: {&Anything else, or are we done?|Go on, then.|Still here?}
+    }
 }
 + {not topic_shift} [Long night ahead of you?]
     -> ask_shift
@@ -551,6 +578,11 @@ Terry Mott: That's three times. I'm done talking.
 { idle_quiet:
     ~ idle_quiet = false
 - else:
+    // D4-8: the first night meeting goes straight to his challenge (one torch, no
+    // extra click). Inside the else, so it runs on a reopen, never on an exit.
+    { mission_phase == "act2_infiltration" and not player_warned and not guard_hostile:
+        -> start
+    }
     { mission_phase != "act2_infiltration":
         Narrator: The guard stops his round and looks you over.
     - else:
