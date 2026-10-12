@@ -1,0 +1,12 @@
+{"steps":[
+{"note":"R14 (cycle 4 review): never meets Danny, never takes HaX's revelation call, never finds the drive or the paper. Tries to recruit Sterling without the drive, is refused, then lets her go."},
+{"set":{"briefing_played":true,"reception_badge_cloned":true,"player_approach":"aggressive"}},
+{"talk":"victoria","picks":["Why am I here","fair pay","ethics","line between research","Report it","whiteboard","impressive","complex","Skills are cheap","Thanks for being straight"]},
+{"talk":"night"},
+{"set":{"mission_phase":"act2_infiltration","clone_call_done":true,"flag_scan_submitted":true,"flag_ftp_submitted":true,"flag_http_submitted":true,"flag_distcc_submitted":true}},
+{"talk":"phone","picks":["Where do I stand","Thanks","Nothing right now"]},
+{"set":{"night_confrontation_ready":true}},
+{"talk":"phone","picks":["How do I play this","Understood","Where do I stand","Thanks","Nothing right now"]},
+{"talk":"victoria","picks":["need to talk","approvals","walked away","Work for us","Go."]},
+{"talk":"debrief","picks":["goes dark","move first","So that drive","next assignment"]}
+]}

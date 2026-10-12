@@ -1,0 +1,22 @@
+{"steps":[
+{"note":"R11 (cycle 4 review): rude to everyone. Short with HaX, sign-and-go at reception, needles Victoria, brushes Ffion off at night, snaps at Terry, condemns Danny, arrests Victoria on the hospital route."},
+{"talk":"briefing","picks":["Skip the background","take the supplier","That's everything","move fast","I'm ready"]},
+{"set":{"briefing_played":true,"cloner_explained":true}},
+{"talk":"ffion","picks":["just sign and go"]},
+{"set":{"conference_reader_tried":true}},
+{"talk":"ffion","picks":["Lean in","head through"]},
+{"talk":"victoria","picks":["Why am I here","advocating selling","What is Zero Day","wilful ignorance","want to know what the buyer","ethics","hurt people","whiteboard","How do students access"]},
+{"note":"read dropped; the rude player walks it back and goes again"},
+{"talk":"victoria","picks":["Sorry about earlier","Drift back","What do the students","Who typically buys","certifications","think it over"]},
+{"talk":"night"},
+{"set":{"mission_phase":"act2_infiltration","clone_call_done":true}},
+{"talk":"ffion","picks":["Something like that"]},
+{"talk":"terry","picks":["Building maintenance","I don't have time"]},
+{"talk":"terry","picks":[]},
+{"set":{"guard_hostile":true,"guard_detection_count":1,"guard_knocked_out":true,"exec_wing_entered":true,"exec_office_entered":true,"usb_seen":true,"flag_scan_submitted":true,"flag_ftp_submitted":true,"flag_http_submitted":true,"flag_distcc_submitted":true}},
+{"talk":"phone","picks":["distcc logs","charged extra","whole network","Where do I stand","Thanks","Nothing right now"]},
+{"talk":"danny","picks":["People died","answer for it","logging it all"]},
+{"set":{"night_confrontation_ready":true}},
+{"talk":"victoria","picks":["need to talk","St. Catherine's Hospital","priced the bodies","walked away","not walking out"]},
+{"talk":"debrief","picks":["Take the arms dealer","mass-casualty","Any lead","answer for it","Ransomware Incorporated"]}
+]}

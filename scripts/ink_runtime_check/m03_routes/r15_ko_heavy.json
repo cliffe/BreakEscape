@@ -1,0 +1,14 @@
+{"steps":[
+{"note":"R15 (cycle 4 review): KO-heavy. Ffion knocked out at reception, Sterling knocked out in the meeting (Nightshade's copy of her card), Terry knocked out at night after a catch, Danny knocked out before he decides."},
+{"talk":"briefing","picks":["Skip the background","What else are they planning","That's everything","move fast","I'm ready"]},
+{"set":{"briefing_played":true,"receptionist_ko":true}},
+{"talk":"victoria","picks":["Why am I here"]},
+{"set":{"victoria_ko":true,"victoria_fate":"ko"}},
+{"talk":"phone","knot":"on_victoria_ko_card","picks":["Where do I stand","Thanks","Nothing right now"]},
+{"talk":"night"},
+{"set":{"mission_phase":"act2_infiltration","clone_call_done":true}},
+{"talk":"terry","knot":"on_lockpick_detected","picks":["Shove past him"]},
+{"set":{"guard_hostile":true,"guard_knocked_out":true,"exec_wing_entered":true,"exec_office_entered":true,"usb_seen":true,"flag_scan_submitted":true,"flag_ftp_submitted":true,"flag_http_submitted":true,"flag_distcc_submitted":true,"night_confrontation_ready":true,"danny_fate":"ko","danny_ko":true}},
+{"talk":"phone","picks":["distcc logs","Direct chain","get everything","Where do I stand","Thanks","Nothing right now"]},
+{"talk":"debrief","picks":["She priced in","mass-casualty","map to","only way","locked down","next assignment"]}
+]}

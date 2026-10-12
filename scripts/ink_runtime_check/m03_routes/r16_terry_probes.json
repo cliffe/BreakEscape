@@ -1,0 +1,16 @@
+{"steps":[
+{"note":"R16 (cycle 4 review): three Terry probes. (a) met by day, then shows the cloned executive card at night; (b) caught at Sterling's door with a pick before he has challenged the player, then talked to; (c) met by day, and Ffion has told him 'notebook'."},
+{"set":{"briefing_played":true,"badge_received":true,"victoria_card_cloned":true}},
+{"talk":"terry","picks":["knock off"]},
+{"set":{"mission_phase":"act2_infiltration","clone_call_done":true}},
+{"note":"(a) reopen at night: recognition, then the executive card"},
+{"talk":"terry","picks":["I work here","Hold up the cloned","I'll let you get on"]},
+{"note":"(b) a fresh night: caught picking before any challenge, then the player talks to him"},
+{"set":{"player_warned":false,"guard_suspicious":false,"day_greeted":false,"asked_knock_off":false,"guard_grace":false}},
+{"talk":"terry","reload":true,"knot":"on_lockpick_detected","picks":["Sorry. Wrong door"]},
+{"set":{"guard_grace":false}},
+{"talk":"terry","picks":[]},
+{"note":"(c) met by day; Ffion said notebook"},
+{"set":{"player_warned":false,"guard_suspicious":false,"day_greeted":true,"ffion_night_story":"notebook","guard_detection_count":0}},
+{"talk":"terry","reload":true,"knot":"start","picks":["Wrong turn","I'll let you get on"]}
+]}
