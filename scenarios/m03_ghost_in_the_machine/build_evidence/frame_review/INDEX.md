@@ -74,3 +74,38 @@ Kept for comparison, not installed: rejected AI takes in `_ai_rejected/`, and re
 - Terry `lead-jab` north-west: a few cyan pixels at the shoulder. Danny `walk` NE/NW: belt visible under the parka.
 - Victoria `walk` west: the QA FACING hints are on the earlier agent's override; that strip looks right.
 - Punch north strips for Danny, Terry and Victoria's lead-jab: the slight turn to the punching side is the stock template pattern the skill says to leave.
+
+---
+
+# Round 2 (coordinator follow-ups, after commit 9c6fa642)
+
+**Images:** `r2_<key>_<anim>_<dir>_f<N>.png`, 4x, showing rotation | original | committed | now. A red line marks the cell centre, so drift is easy to see. Strip views showing original / committed / now rows: `_review/cmp_<key>_<anim>_<dir>.png`. 140 frames changed against the commit.
+
+**Baseline for revert:** the committed export and overrides are in `_r2_base/<key>/` and `_r2_base/ov_<key>/`. To revert a row, copy its committed override back from `_r2_base/ov_<key>/<anim>/<dir>/`, or `git checkout` it (it is committed). Then run `import <key> --force`, or copy the frame back from `_r2_base/<key>/Idle/...` and run `import <key> --offline --force`.
+
+## Cause of the jumps
+
+`fix --use ai` returns each frame re-centred by the API, so every AI strip slid sideways and up or down by 1-12 px per frame, not only the two flagged. I measured every AI frame against the original frame whose pose it kept. Standing (punch) strips use the feet: centre of the bottom 5 rows and the lowest row. Fall strips use the best silhouette overlap. Each frame was then moved by whole pixels onto the original's position, with no resampling and no pixels clipped. The NW strips that are mirrors of an AI NE strip were re-mirrored from the aligned NE.
+
+## Changes
+
+| Character | Anim | Dir | Frames | What was wrong | What I did | Confidence |
+|---|---|---|---|---|---|---|
+| Victoria | taking-punch | north-east | f0-f5 | **Asked.** f1 sat 12 px right of f0/f2; f3 and f4 6-10 px right; small vertical bobs. | Shifted onto the original feet (f1 -12,0; f4 -10,-1; f3 -6,-3; others -2..0, +2). | High |
+| Victoria | taking-punch | north-west | f0-f5 | Mirror of the drifting NE. | Re-mirrored from aligned NE. | High |
+| Terry | taking-punch | north-east | f0-f5 | **Asked.** f4 7 px right (and 3 px low); f0-f1 also 6-7 px right. | Shifted onto original feet (f0 -7,-1; f1 -6,0; f4 -7,-3; f2/f3/f5 0,+1). | High |
+| Ffion | falling-back-death | north | f0-f6 | **Asked.** f2-f6 had a round brown disc for hair; f0-f1 an original bun ball. | AI `edit_with_text`, all 7 frames: "one long ponytail hanging from the back of her head ... no bun and no round ball of hair", back view. Then aligned to the original (f0-f1 feet, f2-f6 silhouette). The ponytail now matches her rotation and her NE/NW death. f0-f1 are new overrides (they were untouched originals before). | High |
+| Victoria | falling-back-death | north | f2-f6 | Same AI drift (up to 8 px; f5 6 px low). *Beyond the asked items.* | Aligned to original silhouette. | High |
+| Victoria | falling-back-death | north-east / north-west | f0-f6 | 1 px drift on every frame. *Beyond.* | Aligned; NW re-mirrored. | High |
+| Victoria | cross-punch | north | f0, f1-f3, f5 | f0 6 px right and 2 px low, f5 3 px. *Beyond.* | Aligned to original feet. | High |
+| Danny | falling-back-death | north | f2, f3, f5, f6 | Drift up to 9 px (f2), f5 6 px low. *Beyond.* | Aligned to original silhouette. | High |
+| Danny | falling-back-death | north-east / north-west | f0-f6 | 2 px drift throughout, f3 6 px. *Beyond.* | Aligned; NW re-mirrored. | High |
+| Danny | cross-punch | north-east / north-west | f0-f5 | f0-f3 2 px left of f4-f5. *Beyond.* | Aligned; NW re-mirrored. | High |
+| Danny | taking-punch | north-east / north-west | f0-f5 | f0, f1, f5 7-10 px right of f2-f4. *Beyond.* | Aligned; NW re-mirrored. | High |
+| Ffion | cross-punch | north | f0-f5 | f0-f1 5 px right. *Beyond.* | Aligned to original feet. | High |
+| Ffion | cross-punch | north-east / north-west | f0-f5 | f0-f3 2-4 px left of f4-f5. *Beyond.* | Aligned; NW re-mirrored. | High |
+| Ffion | falling-back-death | north-east / north-west | f0-f6 | 1 px drift, f3 4 px. *Beyond.* | Aligned; NW re-mirrored. | High |
+| Ffion | taking-punch | north-east / north-west | f0-f5 | f0, f4, f5 6-11 px right. *Beyond.* | Aligned; NW re-mirrored. | High |
+| Terry | cross-punch | north-east | f0-f4 | f0-f3 4 px left of f4-f5. *Beyond.* | Aligned to original feet. | High |
+
+Not affected: every hand edit from round 1 (mirrors of clean template frames, copies, recolours). Those never pass through the API, so they keep the template's placement.

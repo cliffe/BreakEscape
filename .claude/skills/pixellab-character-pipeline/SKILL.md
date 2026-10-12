@@ -165,6 +165,7 @@ python3 tools/pixellab_pipeline.py qa <key>
 This writes one contact sheet per animation to `tmp/pixellab/_qa/<key>/` (a row per direction: rotation first, then the frames, all at native size and aligned on the figure). **Looking at the sheets is the detector.** In a review of 10 characters, the automatic hints found about 4 real defects among 127 flags and missed most of the real ones. That's why only FACING, JUMP and CANVAS are still flagged. Read every sheet (delegate to a subagent for a whole cast) and compare each row with its rotation, looking for:
 
 1. A frame or strip facing the wrong way. **Check every north and south row frame by frame for front/back flips** (user, 2026-10-12): a north-facing frame that shows a face, a south-facing frame that shows the back of the head, or one frame mid-strip that turns to camera. Combat strips on N/NE/NW are the usual offenders (m03: Victoria's knockout turned to camera).
+   **After any `fix --use ai`, re-align the frames.** The API returns every frame re-centred, so an AI-fixed strip drifts 1–12 px per frame and the character jumps sideways in play (m03, 2026-10-12). Shift each AI frame by whole pixels back onto the original frame whose pose it kept (feet for punches, silhouette for falls), and re-mirror any strip mirrored from it.
 2. Colours, skin tone or clothing not in the rotation.
 3. Missing or added details (hair, tie, gloves).
 4. Broken anatomy.
