@@ -589,3 +589,18 @@ Restored 1 (Nightshade, above). Changed 19, cut 3, added 0.
 # Pass 2 (2026-10-12)
 
 Brief: `docs/agents/M03_PASS2_BRIEF.md`. Stages approved by the user: regression playtest, dialogue review round 2 (~5 cycles), room dressing (~5), lighting (~5), POV chat backgrounds, character pipeline for every NPC, fresh blind playtest. Later: lab sheet, audio, engine triage, SecGen.
+
+## Room dressing, cycle 1 (2026-10-12)
+
+Full record, per-room before/after and screenshots: `ROOM_DRESSING.md` (cycle 1), `build_evidence/dressing_c1/`.
+
+| Severity | Found | Fixed | Deferred |
+|---|---|---|---|
+| Blocker | 2 | 2 | 0 |
+| Major | 10 | 10 | 0 |
+| Minor | 8 | 7 | 1 |
+
+- Decision: m03 gets its own map types (`room_zds_reception`, `_conference`, `_office`, `_ceo`, `_servers`, builder rooms in `scripts/generate_rooms.py`, sheets from `scripts/room_gen/make_zds_tileset.py`) because m01 and 15 other scenarios share the old maps. Existing maps untouched.
+- Decision: receptionist (6, 3) → (7.1, 4.9) and Danny (5, 4) → (6.5, 4), onto clear floor; no ink or mapping reads either position.
+- Deferred: Server Room Whiteboard stays a notebook-page read; `readDisplay: "gameDisplay"` would skip its `onRead.setVariable` (`whiteboard_seen`) in `interactions.js`. Engine change, for approval.
+- Spend: two PixelLab prop batches (~40 generations); 12 props kept.

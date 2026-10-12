@@ -516,7 +516,7 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
 
   "rooms": {
     "reception_lobby": {
-      "type": "room_reception",
+      "type": "room_zds_reception",
       "connections": {
         "north": "main_hallway"
       },
@@ -524,16 +524,20 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
         {
           "type": "notes",
           "name": "Building Directory",
+          "position": "as-type:uni_directory",
           "takeable": false,
           "readable": true,
+          "readDisplay": "gameDisplay",
           "text": "WhiteHat Security Services -- Floor Directory\n\nRECEPTION (you are here)\nMAIN HALLWAY: straight ahead, north\n  - Conference room: first door on the left (card access)\n  - Server room: end of the hallway (executive cards only)\nEXECUTIVE WING: east off the main hallway\n  - CEO's office, consultants' offices\n\nVisitors: please sign in at the desk. Staff badges are required beyond reception.",
           "observations": "Floor directory by the reception desk"
         },
         {
           "type": "notes",
           "name": "Company Founding Plaque",
+          "position": "as-type:plaque",
           "takeable": false,
           "readable": true,
+          "readDisplay": "gameDisplay",
           "text": "WhiteHat Security Services\nFounded 2010 by Victoria Sterling\n\n\"Security Through Economics\"",
           "observations": "A brass plaque behind the desk, polished more often than anything else in the lobby",
           "puzzle_graph_role": "clue",
@@ -608,7 +612,7 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
           "id": "receptionist_npc",
           "displayName": "Receptionist",
           "npcType": "person",
-          "position": {"x": 6, "y": 3},
+          "position": {"x": 7.1, "y": 4.9},
           "storyPath": "scenarios/m03_ghost_in_the_machine/ink/m03_npc_receptionist.json",
           "currentKnot": "start",
           "globalVarOnKO": "receptionist_ko",
@@ -1245,7 +1249,7 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
     },
 
     "conference_room_01": {
-      "type": "room_office",
+      "type": "room_zds_conference",
       "locked": true,
       "lockType": "rfid",
       "requires": "receptionist_badge",
@@ -1264,8 +1268,10 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
         {
           "type": "notes",
           "name": "Conference Whiteboard",
+          "position": "as-type:whiteboard",
           "takeable": false,
           "readable": true,
+          "readDisplay": "gameDisplay",
           "text": "TRAINING LAB -- isolated, server room terminal only\n\nRecon -> enumerate -> exploit -> report\n\nServices: FTP, web, and one labelled LEGACY BUILD (distcc) with three underlines.\n\nIn the corner, smaller: \"students do NOT touch the legacy build after hours\"",
           "observations": "The training lab diagram Sterling likes to stand beside"
         }
@@ -1330,7 +1336,7 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
     },
 
     "server_room": {
-      "type": "room_servers",
+      "type": "room_zds_servers",
       "connections": {
         "south": "main_hallway"
       },
@@ -1342,6 +1348,7 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
           "type": "safe",
           "id": "server_filing_cabinet",
           "name": "Filing Cabinet",
+          "position": "as-type:filing_cabinet_locked",
           "takeable": false,
           "locked": true,
           "lockType": "key",
@@ -1362,8 +1369,7 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
           "type": "safe",
           "id": "wall_safe_server",
           "name": "Wall Safe",
-          "_comment": "Pass 3b: pinned high on the west wall (tiles, room-relative). room_servers has its two safe slots stacked 26 px apart at the west wall (x 10-11, y 200/226), so the filing cabinet and this safe landed on top of each other and an interact by the safe opened the cabinet's pick. The strip left of the first server row (x 0-68, y 64-88) is clear in the template.",
-          "position": { "x": 0.6, "y": 2.6 },
+          "_comment": "Room dressing cycle 1 (2026-10-12): room_zds_servers has one safe slot, safe4 on the back wall at x 214 (feet 56); the filing cabinet takes filing_cabinet_locked1 by as-type, so the two no longer stack (the Pass 3b west-wall pin is gone).",
           "takeable": false,
           "locked": true,
           "lockType": "pin",
@@ -1385,6 +1391,7 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
         {
           "type": "notes",
           "name": "Server Room Whiteboard",
+          "position": "as-type:whiteboard",
           "takeable": false,
           "readable": true,
           "text": "<%= whiteboard_message_encoded %>",
@@ -1409,8 +1416,7 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
           "type": "workstation",
           "id": "cyberchef_workstation",
           "name": "CyberChef Workstation",
-          "_comment": "Pass 3e: pinned on the west small desk. room_servers puts the workstation and flag-station slots on top of each other on the east desk (260,166 / 262,172), so interacting with the drop-site picked the laptop up. Elevation keeps it drawn on top of the desk.",
-          "position": { "x": 4.53, "y": 5.25, "elevation": 32 },
+          "_comment": "Room dressing cycle 1 (2026-10-12): room_zds_servers puts the workstation and the flag-station on the ops bench, their top-lefts 32 px or more from each other's centres, so the Pass 3e pin on the old west desk is gone.",
           "takeable": true,
           "puzzle_graph_role": "tool",
           "puzzle_graph_note": "Decoding tool — take it, then paste the whiteboard, Sterling's draft, the client roster and the desk drive to reveal the intel",
@@ -1526,7 +1532,7 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
     },
 
     "executive_office": {
-      "type": "room_ceo",
+      "type": "room_zds_ceo",
       "connections": {
         "south": "executive_wing_hallway"
       },
@@ -1539,6 +1545,7 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
           "type": "safe",
           "id": "exec_filing_cabinet",
           "name": "Filing Cabinet",
+          "position": "as-type:filing_cabinet_locked",
           "takeable": false,
           "locked": true,
           "lockType": "key",
@@ -1596,6 +1603,7 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
         {
           "type": "suitcase",
           "name": "Desk Drawer",
+          "position": "as-type:exec_desk_drawer",
           "takeable": false,
           "locked": false,
           "observations": "A shallow compartment under the top drawer of Sterling's desk, not locked. She did not expect anyone to go through her desk.",
@@ -1616,7 +1624,7 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
     },
 
     "danny_office": {
-      "type": "room_office",
+      "type": "room_zds_office",
       "connections": {
         "north": "executive_wing_hallway"
       },
@@ -1632,8 +1640,10 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
         {
           "type": "notes",
           "name": "Family Photo",
+          "position": "as-type:picture",
           "takeable": false,
           "readable": true,
+          "readDisplay": "gameDisplay",
           "text": "Danny with his wife and their daughter, maybe four. She's holding a crayon sign: 'MY DAD IS A GOOD HACKER'.",
           "observations": "A framed photo on the desk, turned so he can see it while he works"
         },
@@ -1669,7 +1679,7 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
           "id": "danny_foster",
           "displayName": "Danny Foster",
           "npcType": "person",
-          "position": {"x": 5, "y": 4},
+          "position": {"x": 6.5, "y": 4},
           "spriteSheet": "male_nerd_v2",
           "spriteTalk": "assets/characters/male_nerd_talk.png",
           "spriteVisemes": "assets/characters/male_nerd_visemes.png",
