@@ -931,3 +931,18 @@ Record: `ROOM_DRESSING.md` (cycle 2), screenshots `build_evidence/dressing_c2/`.
 - Decision: `exec_laptop1` kept and used on the boardroom table rather than unregistered.
 - Still deferred (not approved): Server Room Whiteboard read-in-place.
 - Spend: two PixelLab prop batches (balance 3230 → 3202); 15 props kept.
+
+## Room dressing, cycle 3 (2026-10-12)
+
+Record: `ROOM_DRESSING.md` (cycle 3), screenshots `build_evidence/dressing_c3/`. Inputs: regression B2 (F-1 to F-3) and a fresh critique.
+
+| Severity | Found | Fixed | Deferred |
+|---|---|---|---|
+| Blocker | 0 | 0 | 0 |
+| Major | 4 | 4 | 0 |
+| Minor | 4 | 4 | 0 |
+
+- F-1 fixed: plaque moved from x 70 (22 px from the lobby exit) to x 230, east of the slat wall.
+- F-2/F-3 fixed: swivel chairs replaced by `exec_chair_back1`, a static copy, so decor never joins a pick-one menu; in game only the 16 scenario objects are interactable.
+- New map `room_zds_hall_exec` for the executive wing (no third WHITEHAT sign). Scenario edits: that `type`, and `ffion_rees` position (7.1, 4.9) → (7.5, 4.9).
+- No PixelLab spend this cycle.

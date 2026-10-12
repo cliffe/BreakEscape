@@ -190,3 +190,62 @@ After shots (`build_evidence/dressing_c2/`): `reception_lobby.png`, `conference_
 - Assumption: repeating a single plain column to lengthen the counter is not rescaling (no pixel is resampled), so it is within the no-resize rule.
 - Assumption: mirroring the club chair for the facing pair is acceptable art reuse, the same as other mirrored variants in the set.
 - Assumption: one hall map for both corridors is fine for this cycle; a separate executive-wing hall is in cycle 3.
+
+## Cycle 3 (2026-10-12)
+
+Inputs: the Sonnet interaction walk (`PASS2_REGRESSION_B2.md`: no blockers, every object in the new rooms works; F-1 to F-3 are dressing findings) and a fresh look at the cycle-2 after shots. The NPC renames had landed (receptionist `ffion_rees`, guard `terry_mott`); only Ffion's `position` was touched.
+
+### Critique
+
+| # | Room | Sev | Finding | Source |
+|---|---|---|---|---|
+| F-1 | Reception | major | The founding plaque (x 70) was 22 px from the N door's tap point: standing at the door raised a Plaque / Door pick-one menu that blocked leaving. | B2 |
+| F-2 | CEO | major | A visitor chair was 18 px from the Desk Drawer (which holds the drive) and joined its pick-one menu. | B2 |
+| F-3 | Conference, CEO | minor | The swivel chairs (`chair-exec-rotate5`) are tappable (`rooms.js` marks every `*-rotateN` sprite as an interactable swivel chair) but do nothing, and fed the Presentation Materials menu too. | B2 |
+| H2 | Exec hall | major | Both corridors shared one map, so the WHITEHAT sign appeared three times; the executive wing read the same as the public corridor. | own |
+| R5 | Reception | minor | The waiting area floated on bare stone; the trophy cabinet overlapped the slat wall's edge once the plaque had to move. | own |
+| S3 | Server | major | Nothing on the floor said "this row is the product"; the racks read as any company's IT. | own |
+| E2 | CEO | minor | The rug sat low: the desk stood at its top edge. | own |
+| D3 | Danny | minor | Open floor between the desk and the camp bed; his "living space" had no edge. | own |
+
+Counts: 4 major, 4 minor.
+
+### Fixes
+
+- **F-1:** plaque moved to x 230 on the back wall east of the slat wall (top-left 230,35): 180 px from the N door, clear of the counter, reachable from the floor in front of it. The trophy cabinet moved to the door side (x 66, decor, never tappable); the slat wall and counter shifted 7-12 px east to make room (slats x 110-224, counter x 112-222). Ffion moved (7.1, 4.9) → (7.5, 4.9) so she stays clear of the counter's end.
+- **F-2/F-3:** new static sprite `exec_chair_back1`, a pixel copy of `chair-exec-rotate5` whose name does not match `-rotateN`, so it is plain decor. Used for both CEO visitor chairs and both south-side boardroom chairs. In game, after the change, the only interactable objects in the five rooms are the 16 scenario objects (checked by dumping `interactable` for every object). The wheeled `chair-grey-1` (Danny) and `chair-darkgray-1` (server) were already not interactable and stay pushable.
+- **H2:** new builder room `room_zds_hall_exec` for `executive_wing_hallway`: carpet (`room_zds_carpet`), two framed prints and a clock, a fire point, a planter, and a hand-drawn PRIVATE plate beside the CEO's door; no brand sign. `main_hallway` keeps `room_zds_hall`. Registered in `game.js`, the schema and the README.
+- **R5:** charcoal rug with the cyan inner line painted under the waiting area (`room_zds_lobby`, x 82-238, y 232-308).
+- **S3:** a yellow and black hazard line painted round the middle (production) rack row on the raised floor (`room_zds_raised`, x 28-194, y 112-190), and a hand-drawn red RESTRICTED sign on the west wall at the row's end. Physical light sources already placed for the lighting stage: the marketplace board, the threat map (corridor), the racks, the VM terminal and the reception counter's cyan strip.
+- **E2:** rug moved up 8 px (`room_zds_exec`, y 92-206).
+- **D3:** new sheet `room_zds_office_floor` (carpet with a worn oatmeal rug, x 112-264, y 208-296) under the camp bed, cans and pizza boxes. First painted grey-green and too bright; toned down after the in-game look.
+
+Scenario edits: `executive_wing_hallway` `type` → `room_zds_hall_exec`; `ffion_rees` `position` only. Each region re-read just before the edit.
+
+### Assets (cycle 3)
+
+No PixelLab this cycle (I made no calls; the shared balance reads 3192, down from 3202, from other agents). Hand-made: `exec_chair_back1` (static copy), `private_sign1`, `restricted_sign1`; sheet `room_zds_office_floor`; decals in `room_zds_lobby` (rug, slats moved), `room_zds_exec` (rug moved), `room_zds_raised` (hazard line).
+
+### Verify
+
+- `generate_rooms.py`: OK for all seven ZDS rooms. `slot_audit.py --notes`: 0 problems (the Server Room Whiteboard prompt stays; engine change not approved).
+- `check_room_walls.py --scenario`: all 64. `validate_scenario.rb --skip-ink --no-graph`: schema passes, geometry and door alignment OK. `node --check` game.js: OK.
+- In game (fresh games of my own on :3001): all 16 scenario objects on their intended sprites; the plaque at 230,35; no decor object interactable; no "No Tiled item found" logs.
+- Not re-walked by a tester: the plaque menu at the door and the drawer menu (both fixed by geometry and by removing the interactable chairs; a short Sonnet check would confirm).
+
+After shots (`build_evidence/dressing_c3/`): `reception_lobby.png`, `conference_room_01.png`, `server_room.png`, `executive_office.png`, `danny_office.png`, `main_hallway.png`, `executive_wing_hallway.png`; maps `grid-room_zds_*.png`, `grid-contact_sheet.png`.
+
+### Cycle 4: what to do next
+
+1. A short Sonnet re-walk: stand at the lobby exit (no menu), tap the CEO drawer and the Presentation Materials (no menu), and tap the plaque from the floor in front of it.
+2. Conference room: the north-east quarter (Victoria's floor and the E door lane) is clean but plain; a wall-mounted speaker or a second screen on the east wall strip, and a glass water carafe on the credenza.
+3. Server room: the east half above the operator desk is empty floor under the whiteboard (kept clear for reading); consider a floor-standing "PRODUCTION" rack label or LED strip along the back row's plinth, to give lighting something to catch.
+4. CEO office: a pair of floor lamps either side of the sofa would give the lighting pass warm sources.
+5. Danny's office: a desk lamp (his only light at night, for the "sitting in the dark" scene) and a second, cheaper visitor chair.
+6. Reception: the counter's top items (phone, pens) are tiny; a visitor sign-in tablet or a bowl of branded USB sticks (a sly joke for a security front) would read better.
+
+### Assumptions (cycle 3)
+
+- Assumption: a pixel-identical copy of the swivel chair under a non-`-rotateN` name is the cleanest way to make it decor; changing `rooms.js` to skip swivel behaviour for certain placements would be an engine change.
+- Assumption: Ffion standing 13 px further east is still "at her desk" for the ink; nothing reads her position.
+- Assumption: a hazard line on the raised floor is a fair "restricted production row" marker in a server room and not too heavy; it can be dimmed by the lighting pass if it dominates.
