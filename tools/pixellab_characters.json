@@ -1,4 +1,13 @@
 {
+  "agent_hax": {
+    "character_id": "52c4d2cc-aca3-4ee0-bfa6-20b526b6db6f",
+    "name": "A woman spy with long dark brown hair under a brow...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-09-29"
+  },
   "amy_clarke": {
     "character_id": "32c736ae-0ffa-48eb-b493-3fd0d71c19d0",
     "name": "Make portrait for Amy Clarke\nA white British woman...",
@@ -25,6 +34,15 @@
       "height": 60
     },
     "imported": "2026-10-06"
+  },
+  "danny_foster": {
+    "character_id": "c0b52964-6a42-4be3-b9b0-2bb2da39ab0d",
+    "name": "Make portrait for Danny Foster\nA British security ...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-10-12"
   },
   "david_osei": {
     "character_id": "ca153084-c850-42c8-85fc-8ec685ec6bdb",
@@ -108,15 +126,6 @@
     },
     "imported": "2026-09-26"
   },
-  "agent_hax": {
-    "character_id": "52c4d2cc-aca3-4ee0-bfa6-20b526b6db6f",
-    "name": "A woman spy with long dark brown hair under a brow...",
-    "size": {
-      "width": 60,
-      "height": 60
-    },
-    "imported": "2026-09-29"
-  },
   "female_telecom_v2": {
     "character_id": "c9ae81c0-04c7-4d6f-af99-437fd3ecd4b0",
     "name": "A young woman telecoms engineer with brown hair ti...",
@@ -125,6 +134,15 @@
       "height": 60
     },
     "imported": "2026-09-29"
+  },
+  "ffion_rees": {
+    "character_id": "19c3a98e-6cbc-429b-83d4-f6a517db285a",
+    "name": "Make portrait for Ffion Rees\nA Welsh woman recepti...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-10-12"
   },
   "fiona_hartley": {
     "character_id": "21604761-bfe3-464c-b091-1deeb4842758",
@@ -208,15 +226,6 @@
     },
     "imported": "2026-09-30"
   },
-  "nightshade": {
-    "character_id": "d363cc74-5990-4eb9-b65f-95483c28c1e9",
-    "name": "An older man scientist with swept-back white hair,...",
-    "size": {
-      "width": 60,
-      "height": 60
-    },
-    "imported": "2026-09-30"
-  },
   "male_security_guard_v2": {
     "character_id": "7f4b98d0-6ef6-4064-8f01-c032e0cd8050",
     "name": "Man, light skin tone, security guard. Wearing a da...",
@@ -238,6 +247,15 @@
   "male_telecom_v2": {
     "character_id": "7295d940-3676-431e-8a55-b3124508f56f",
     "name": "A man telecoms engineer with short brown hair unde...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-09-30"
+  },
+  "nightshade": {
+    "character_id": "d363cc74-5990-4eb9-b65f-95483c28c1e9",
+    "name": "An older man scientist with swept-back white hair,...",
     "size": {
       "width": 60,
       "height": 60
@@ -298,6 +316,15 @@
     },
     "imported": "2026-10-06"
   },
+  "terry_mott": {
+    "character_id": "f00ed76b-8cfd-4591-9fc7-367dd354af70",
+    "name": "Make portrait for Terry Mott\nA Black British night...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-10-12"
+  },
   "tom_shaw": {
     "character_id": "e0906801-40c7-4260-a098-c95dac9cdddc",
     "name": "Make portrait for Dr Tom Shaw\nMan in his late twen...",
@@ -306,5 +333,14 @@
       "height": 60
     },
     "imported": "2026-10-06"
+  },
+  "victoria_sterling": {
+    "character_id": "57297be2-3977-4a1d-a0cc-0a92240f9355",
+    "name": "Make portrait for Victoria Sterling\nA polished Bri...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-10-12"
   }
 }

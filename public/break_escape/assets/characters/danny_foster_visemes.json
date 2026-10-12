@@ -9,5 +9,5 @@
     "wide_open",
     "blink"
   ],
-  "source": "pixellab /animate-with-text-v3 talk frames (4 frames, bust as first and last), lower face pasted on the bust: teeth:teeth_t02_f2 (head -1,+0px), round:medium_open_t01_f3 (head -1,+0px), small_open:small_open_t01_f2 (head -1,-2px), medium_open:round_t01_f2 (head -1,-1px), wide_open:wide_open_t03_f1 (head -1,-1px, jaw +3 rows), blink:the rest frame with the eyes closed behind the lenses, by hand (2026-10-12; the inpaint blink i01 recoloured 25 of the 40 glasses-frame pixels)"
+  "source": "pixellab /animate-with-text-v3 talk frames (4 frames, bust as first and last), lower face pasted on the bust: teeth:teeth_t02_f2 (head -1,+0px), round:round_t05_f3, small_open:small_open_t01_f2 (head -1,-2px), medium_open:round_t01_f2 (head -1,-1px), wide_open:wide_open_t03_f1 (head -1,-1px, jaw +3 rows), blink:the rest frame with the eyes closed behind the lenses, by hand (2026-10-12; the inpaint blink i01 recoloured 25 of the 40 glasses-frame pixels)"
 }
