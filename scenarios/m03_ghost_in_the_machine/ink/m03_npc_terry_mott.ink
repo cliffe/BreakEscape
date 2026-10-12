@@ -28,6 +28,8 @@ VAR ffion_night_story = ""
 // before that goes back to the question, not to "You again."
 VAR excuse_given = false
 VAR excuse_menu_quiet = false
+// A4 fix pass: quiet flag for route_reply, so a reopen there re-asks his question.
+VAR route_quiet = false
 
 // Root divert. When a conversation has ended (-> DONE), the engine restores only
 // its variables on the next talk and continues from the root (npc-conversation-
@@ -481,7 +483,8 @@ Terry Mott: Rounds every fifteen minutes. Doors, windows, anyone where they shou
     Terry Mott: Round the executive wing, mostly. Sterling's office, Mr Foster's, back down the corridor.
     Terry Mott: Why d'you want to know my route?
     ~ guard_suspicious = true
-    -> hub
+    ~ route_quiet = true
+    -> route_reply
 * [Must be boring work.]
     ~ guard_influence = guard_influence + 5
     # influence_increased
@@ -489,6 +492,34 @@ Terry Mott: Rounds every fifteen minutes. Doors, windows, anyone where they shou
     -> hub
 + [Fair enough.]
     -> hub
+
+// A4 fix pass (S6): he asks a straight question, so the player can answer it. Each
+// answer returns to his hub (he has already waved the player on) or ends the chat,
+// like the rest of his hub; the stakes stay those of on_sighted. Its own knot, so a
+// reopen with these choices saved lands here, not on ask_shift's opener.
+=== route_reply ===
+#speaker:npc
+{ route_quiet:
+    ~ route_quiet = false
+- else:
+    Terry Mott: I asked you a question. My route. Why?
+}
+* [So I'm not under your feet. I'll be done before you come round again.]
+    Terry Mott: Considerate. Fifteen minutes, I'm back past this door. Be done by then.
+    ~ hub_quiet = true
+    -> hub
+* [No reason! Just... making conversation.]
+    ~ guard_influence = guard_influence - 5
+    # influence_decreased
+    Terry Mott: Making conversation. At eleven at night. About my route.
+    Terry Mott: I'll be making mine past this corridor a lot more often, then.
+    ~ hub_quiet = true
+    -> hub
+* [Forget I asked. I'll get out of your way.]
+    Terry Mott: Best idea you've had tonight.
+    ~ idle_quiet = true
+    #exit_conversation
+    -> guard_idle
 
 === ask_building ===
 #speaker:npc

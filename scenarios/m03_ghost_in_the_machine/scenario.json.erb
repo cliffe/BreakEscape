@@ -173,6 +173,12 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
           { "text": "PHASE 2 DIRECTIVE: FOUND IN STERLING'S DESK BY THE SEARCH TEAM", "style": "entry", "condition": "globalVars.directive_decoded !== true && globalVars.usb_seen !== true && globalVars.lore_directive_found !== true" },
           { "text": "" },
           { "text": "── DECISIONS ──", "style": "section-header" },
+          { "text": "APPROACH: THOROUGH — document everything", "style": "entry", "condition": "globalVars.player_approach === 'cautious'" },
+          { "text": "APPROACH: FAST — grab the objectives, get out", "style": "entry", "condition": "globalVars.player_approach === 'aggressive'" },
+          { "text": "APPROACH: FLEXIBLE — read the situation", "style": "entry", "condition": "globalVars.player_approach === 'diplomatic'" },
+          { "text": "STERLING'S NHS QUESTION: TAKE THE FORTY — said too quickly to be believed", "style": "entry", "condition": "globalVars.victoria_test_answer === 'sold'" },
+          { "text": "STERLING'S NHS QUESTION: REPORT IT, THEN INVOICE — a conscience keeping its options open", "style": "entry", "condition": "globalVars.victoria_test_answer === 'hedged'" },
+          { "text": "STERLING'S NHS QUESTION: ASKED WHAT THE BUYER WANTED IT FOR — she should have ended the interview there", "style": "entry", "condition": "globalVars.victoria_test_answer === 'asked'" },
           { "text": "VICTORIA STERLING: TURNED — a cold asset now, not a convert", "style": "entry", "condition": "globalVars.victoria_fate === 'recruited'" },
           { "text": "VICTORIA STERLING: ARRESTED — marketplace seized, the name kept from The Architect", "style": "entry", "condition": "globalVars.victoria_fate === 'arrested'" },
           { "text": "VICTORIA STERLING: ESCAPED — the evidence stayed, she didn't", "style": "entry", "condition": "globalVars.victoria_fate === 'escaped'" },
@@ -670,6 +676,14 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
               "onceOnly": true,
               "setGlobal": { "reception_badge_cloned": true },
               "completeTask": "clone_reception_badge"
+            },
+            {
+              "_comment": "A4 fix pass (S7): at night she has come back for her charger. One bark the first time the player walks into reception after the night turn, before she has spoken to them at night, so her being at the desk at eleven reads as on purpose. Her chat opens on different words.",
+              "eventPattern": "room_entered:reception_lobby",
+              "condition": "globalVars.clone_call_done === true && globalVars.receptionist_ko !== true && !globalVars.ffion_night_story",
+              "onceOnly": true,
+              "bark": "Charger, charger... I know I left it here somewhere.",
+              "barkDelay": 400
             }
           ],
           "rfidCard": {
@@ -1894,6 +1908,8 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
     "danny_ko": false,
     "named_target_selection": false,
     "defended_danny": false,
-    "ffion_night_story": ""
+    "ffion_night_story": "",
+    "victoria_test_answer": "",
+    "cloner_glimpsed": false
   }
 }

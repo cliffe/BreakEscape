@@ -1,7 +1,8 @@
 EXTERNAL player_name()
 
-// Pass 5 (P4-23): the stance of record is mission_approach's pick (and last_advice's
-// "aggressive"); earlier briefing writes were always overwritten, so they're gone.
+// Pass 5 (P4-23): the stance of record is mission_approach's pick; earlier briefing
+// writes were always overwritten, so they're gone. A4 fix pass: last_advice no longer
+// overwrites it either, because the debrief names the pick back to the player.
 // player_approach and knows_m2_connection are scenario globals, so assigning them here
 // writes through to game state. The debrief reads player_approach; knows_m2_connection
 // is read only below. No EXTERNAL getters: the engine binds only six, and an unbound
@@ -99,11 +100,13 @@ Agent HaX: The ransomware ran on a ProFTPD backdoor. That exploit didn't come fr
 === mission_stakes ===
 #speaker:agent_0x99
 Agent HaX: They sold it as a product. Twenty-five thousand on the invoice, healthcare premium already built into the price.
-* [That's murder with an invoice attached.]
+// A4 fix pass: the old "murder with an invoice attached" read as a slogan. The
+// global keeps its id (called_it_murder); the debrief quotes the new wording.
+* [So they knew it was a hospital, and put a price on that.]
     ~ handler_trust = handler_trust + 10
     # influence_increased
     #set_global:called_it_murder:true
-    Agent HaX: That's the case we're building. And there's a Phase 2 behind it.
+    Agent HaX: They knew, and they billed for knowing. That's the case we're building. And there's a Phase 2 behind it.
     -> objectives
 * [Then we take the supplier off the board.]
     ~ handler_trust = handler_trust + 5
@@ -208,20 +211,21 @@ Agent HaX: Your call.
 + [I'll be thorough. Document everything.]
     ~ player_approach = "cautious"
     #set_global:player_approach:cautious
-    Agent HaX: Smart. Zero Day leaves paper. Find it, connect it.
-    Agent HaX: And there's a guard on nights. Stealth counts.
+    // A4 fix pass: a reply that answers this option, not a generic one.
+    Agent HaX: Good. Zero Day invoices everything, so somewhere in that building St. Catherine's is on paper. Bring me the paper.
+    Agent HaX: Thorough takes time, though, and there's a guard on nights. Don't let him find you reading.
     -> final_instructions
 + [I move fast, grab the objectives, get out.]
     ~ player_approach = "aggressive"
     #set_global:player_approach:aggressive
-    Agent HaX: Less time for things to go wrong. But don't blow past the distcc logs -- that's the case.
+    Agent HaX: Less time in the building, less time for it to go wrong. Just don't sprint past the distcc logs. They're the case.
     -> final_instructions
 + [I'll stay flexible. Read the situation.]
     ~ player_approach = "diplomatic"
     #set_global:player_approach:diplomatic
     ~ handler_trust = handler_trust + 10
     # influence_increased
-    Agent HaX: Then watch her, not the room. Call if you need me.
+    Agent HaX: Then watch Sterling, not the furniture. Whatever she wants most is your way in. Call if you need me.
     -> final_instructions
 
 === final_instructions ===
@@ -248,9 +252,9 @@ Agent HaX: And there's a consultant, Danny Foster. He did the hospital recon. Co
     # influence_increased
     Agent HaX: Then get the facts. He'll still be there.
     -> deployment
+// A4 fix pass: no longer overwrites player_approach. The debrief now names the
+// approach the player picked in mission_approach, and this is a verdict on Danny.
 * [If he did the recon, he's part of it.]
-    ~ player_approach = "aggressive"
-    #set_global:player_approach:aggressive
     Agent HaX: Maybe. Get the proof before you make that call.
     -> deployment
 * [Understood]

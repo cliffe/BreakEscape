@@ -2060,3 +2060,64 @@ User decision on Terry (2026-10-12), relayed by the orchestrator, plus the minor
   - Entering the executive wing at night, Terry's cone found the player within 3 s. `player_spotted:terry_mott` fired, his challenge opened ("Building's shut, mate…", "Go on, then. Why are you here?") and set `guard_challenged`.
   - The Sterling-files story and the enrolment forms reached his hub and set `guard_waved_on`. He did not challenge again over the next 25 s in the corridor.
   - Picking Sterling's door while he stood at his post facing it (real line of sight, no shortcut) opened "Picks. Right. We're done talking." He came out of it hostile (`isNPCHostile` true, `guard_attacking` true, `guard_detection_count` 1). No errors in the bridge log.
+
+## A4 fix pass (2026-10-13)
+
+Fixes for blind playtest A4 (`PASS2_BLIND_A4.md`), items approved by the user. Static checks only; no browser run (the orchestrator runs that next).
+
+### Changes
+
+- **S6, Terry's route question.** "What's your route?" now leads to a new knot `route_reply` (`terry:~500`) with three answers: "So I'm not under your feet…" (back to his hub, "Fifteen minutes, I'm back past this door"), "No reason! Just… making conversation." (influence −5, back to his hub colder) and "Forget I asked…" (ends the chat at `guard_idle`). A reopen there re-asks the question (local `route_quiet`). Nothing here changes `on_sighted` or `excuse_menu`: he has already waved the player on, and the hub's exits and suspicion stay as before.
+- **S8, the cloner glow.** New synced global `cloner_glimpsed`, set where "Her eyes drop to your pocket" plays (`victoria` `clone_check_2`). Each of the three replies after it records a local `cloner_deflection` (flattery / diagram / certs). The night opener adds one line after her read-back, varied by the reply, with a fallback; not after a receptionist KO.
+- **S3, approach and NHS payoff.**
+  - The briefing writes `cautious` ("I'll be thorough"), `aggressive` ("I move fast…") and `diplomatic` ("I'll stay flexible"). `last_advice`'s "If he did the recon, he's part of it." used to overwrite this with `aggressive`. It no longer does, because the debrief now quotes the pick back.
+  - The debrief's two scattered approach lines in the Sterling branches are gone. `final_assessment` now carries one line for each value that names the briefing choice, varied by outcome (paper trail for thorough, guard record for fast, Sterling's fate for flexible). The three Danny-branch approach lines are unchanged.
+  - `victoria_test_answer` (the NHS answer) is now a synced global, with `#set_global` on each answer.
+  - Credits: three APPROACH lines and three STERLING'S NHS QUESTION lines at the top of DECISIONS (`erb:~171`).
+- **Worst lines.** The briefing option, HaX's three approach replies, both `defended_danny` lines (now "the part of the comms log where you told Sterling what drawing that survey had cost him", which matches what the player actually said) and Danny's "God, yes" line, as in the table below.
+- **Ffion's options.** The topic knots' "Thanks." returns are now "Good to know.", "I'll look out for him." and "Fair enough."; "That's helpful, thanks." is now "That helps." Only the leave option starts with "Thanks".
+- **S7, Ffion at night.** A new bark mapping on Ffion: `room_entered:reception_lobby` when `clone_call_done`, not KO'd, and before she has had her night answer (`!ffion_night_story`), `onceOnly`. Text: "Charger, charger... I know I left it here somewhere." Her chat opens with different words. m03 had no barks before this; the mapping follows m02's pattern.
+- `TESTING_WALKTHROUGH.md`: the debrief callback line updated, four checklist items added.
+
+### Decided against
+
+- Renaming `called_it_murder` to match the new wording: it would mean renaming the id in two ink files and the globals for no change in play. A comment in the briefing records it.
+- New approach payoffs in Danny's branches: they already react to the approach in three places. One named line in the final assessment, which every player hears, does what the item asked without stacking lines.
+- The player's new briefing option first read "…and charged extra for it", but that echoes the phone revelation option "They charged extra to hit a hospital" (`phone:482`), so it now reads "…and put a price on that".
+
+### New globals
+
+`victoria_test_answer` ("" / sold / hedged / asked), `cloner_glimpsed` (bool). Both are in `globalVariables`, declared as VARs in `m03_npc_victoria.ink` and written with `#set_global`.
+
+### Spoken lines changed (old → new)
+
+No audio exists for m03. Player choices aren't listed.
+
+| File | Old | New |
+|---|---|---|
+| briefing `mission_stakes` | "That's the case we're building. And there's a Phase 2 behind it." | "They knew, and they billed for knowing. That's the case we're building. And there's a Phase 2 behind it." |
+| briefing `mission_approach` (thorough) | "Smart. Zero Day leaves paper. Find it, connect it." / "And there's a guard on nights. Stealth counts." | "Good. Zero Day invoices everything, so somewhere in that building St. Catherine's is on paper. Bring me the paper." / "Thorough takes time, though, and there's a guard on nights. Don't let him find you reading." |
+| briefing (fast) | "Less time for things to go wrong. But don't blow past the distcc logs -- that's the case." | "Less time in the building, less time for it to go wrong. Just don't sprint past the distcc logs. They're the case." |
+| briefing (flexible) | "Then watch her, not the room. Call if you need me." | "Then watch Sterling, not the furniture. Whatever she wants most is your way in. Call if you need me." |
+| debrief `mission_impact` | "You called it murder with an invoice. Turns out they kept the invoice." | "In the briefing you said they'd put a price on it being a hospital. Now we can prove they knew." |
+| debrief `victoria_recruited_path` | "You read the moment and took it. That's the whole reason this was on the table." | (removed; see final_assessment) |
+| debrief `victoria_arrested_path` | "Your evidence did that. Clean collection, clean prosecution." | (removed; see final_assessment) |
+| debrief Danny protected | "He knows you spoke up for him in front of Sterling. He mentioned it twice." | "I played him the part of the comms log where you told Sterling what drawing that survey had cost him. He asked to hear it again." |
+| debrief Danny exposed | (same old line) | "His solicitor's heard the part of the comms log where you told Sterling what drawing that survey had cost him. She'll use it. It won't change the charge." |
+| debrief `final_assessment` | (new) | thorough: "You told me you'd be thorough and document everything. You did. I've had to borrow a second evidence locker." / "…Most of it. Next time, the drawers you skipped." fast: "You said you'd move fast, grab the objectives and get out. You did, and nobody kept up with you." / "…Fast got it done. Fast also left marks, and you've heard about them." flexible: "You said you'd stay flexible and read the situation." + "Sterling's deal only happened because you did." / "You read it, and it said handcuffs. Fair." / "You read it as letting her walk. I'd have read it differently." / "In the end the situation was a woman on the floor." |
+| danny `protect` | "Everything. Yes. God, yes." | "Everything. I've carried it round for months. I'd like to put it down." |
+| terry `route_reply` | (new) | "Considerate. Fifteen minutes, I'm back past this door. Be done by then." / "Making conversation. At eleven at night. About my route." / "I'll be making mine past this corridor a lot more often, then." / "Best idea you've had tonight." / re-entry "I asked you a question. My route. Why?" |
+| victoria `nighttime_confrontation` | (new) | "Your pocket lit up this afternoon, and you chose that moment to flatter me. I enjoyed the flattery. I should have looked at the pocket." / "Your pocket lit up this afternoon, and my network diagram suddenly fascinated you. I checked my card was still in my bag. It was. That's the trick, isn't it?" / "Your pocket lit up this afternoon, and you asked me about certificates. Nobody cares about certificates. You wanted me looking anywhere else." / "Something in your pocket lit up this afternoon. I told myself it was a phone." |
+| erb Ffion bark | (new) | "Charger, charger... I know I left it here somewhere." |
+
+### Checks run
+
+- Ink compile 8/8 (`scripts/compile-ink.sh m03_ghost_in_the_machine`).
+- Validator `--skip-ink --no-graph`: schema passes, no errors. The warnings are the known ones (the objective-wiring warning on `npc_ko:victoria_sterling`, Terry's two cutscene mappings). A run with ink checks is clean once the route answers moved into their own knot (nested `**` choices were flagged as markdown bold).
+- dialoguelint: the 2 known warnings only (`victoria:673`, `:736`).
+- tagdiff vs HEAD, all intended: Terry 24 (VAR `route_quiet`, knot `route_reply`, its choices, diverts and tags); Victoria 15 (VARs `cloner_glimpsed`, `cloner_deflection`, the four `#set_global` tags, the night conditions); debrief 13 (two approach conditions moved into `final_assessment`); briefing 2 (the `last_advice` overwrite removed); Ffion and Danny prose only.
+- reopencheck: 0 problems.
+- loopcheck: 29 runs, 0 failing (Terry `ask_shift`, `route_reply` quiet and re-entry, hub, idle; Victoria `clone_check_2` with and without the glimpse, the confrontation for each deflection with and without a receptionist KO; Ffion day and night; briefing `start`, `mission_approach`, `last_advice`; Danny).
+- inkcheck: debrief 240 states (4 Victoria fates × 5 Danny fates × 4 approaches × 3 extras) and 80 more with the callbacks on, 0 failing; briefing clean (capped).
+- Route driver: 27 routes, 0 missing picks. The intended mid-chat stops are the same as at HEAD. r1 and r5 now pick the new briefing option; r5 also answers Terry's route question. New routes: `r23_a4_terry_route` (each reply, a reopen, a reload at the question), `r24_a4_cloner_callback` (each deflection, and no glimpse), `r25_a4_debrief_approaches` (each approach into the debrief, plus flexible with Sterling KO'd).
+- No browser run.

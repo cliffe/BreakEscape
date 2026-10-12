@@ -1,0 +1,23 @@
+{"steps":[
+{"note":"R24 (A4 fix pass, S8): Sterling sees the cloner's light during the read (victoria_suspicious >= 5) and calls it back at night, once per deflection; then a player she never caught (no line). cloner_deflection is an ink local, so it is not reset here: a set would put it in the driver's globals and the clone tag's re-sync would wipe it."},
+{"set":{"briefing_played":true,"victoria_test_answer":"hedged","victoria_suspicious":5}},
+{"note":"(a) flattery"},
+{"talk":"victoria","knot":"clone_check_2","picks":["Skills are cheap","Let me think"]},
+{"set":{"mission_phase":"act2_infiltration","clone_call_done":true,"night_confrontation_ready":true,"usb_seen":true}},
+{"talk":"victoria","knot":"nighttime_confrontation","picks":["SAFETYNET. And I've read","walked away","Bag down"]},
+{"note":"(b) the network diagram"},
+{"set":{"mission_phase":"act1_meeting","clone_call_done":false,"night_confrontation_ready":false,"victoria_card_cloned":false,"rfid_clone_complete":false,"cloner_glimpsed":false,"victoria_fate":"","victoria_suspicious":5}},
+{"talk":"victoria","reload":true,"knot":"clone_check_2","picks":["lab can't have been cheap","Let me think"]},
+{"set":{"mission_phase":"act2_infiltration","clone_call_done":true,"night_confrontation_ready":true}},
+{"talk":"victoria","reload":true,"knot":"nighttime_confrontation","picks":["SAFETYNET. And I've read","walked away","Bag down"]},
+{"note":"(c) certificates"},
+{"set":{"mission_phase":"act1_meeting","clone_call_done":false,"night_confrontation_ready":false,"victoria_card_cloned":false,"rfid_clone_complete":false,"cloner_glimpsed":false,"victoria_fate":"","victoria_suspicious":5}},
+{"talk":"victoria","reload":true,"knot":"clone_check_2","picks":["certifications","Let me think"]},
+{"set":{"mission_phase":"act2_infiltration","clone_call_done":true,"night_confrontation_ready":true}},
+{"talk":"victoria","reload":true,"knot":"nighttime_confrontation","picks":["SAFETYNET. And I've read","walked away","Bag down"]},
+{"note":"(d) she never looked: no callback"},
+{"set":{"mission_phase":"act1_meeting","clone_call_done":false,"night_confrontation_ready":false,"victoria_card_cloned":false,"rfid_clone_complete":false,"cloner_glimpsed":false,"victoria_fate":"","victoria_suspicious":0}},
+{"talk":"victoria","reload":true,"knot":"clone_check_2","picks":["Skills are cheap","Let me think"]},
+{"set":{"mission_phase":"act2_infiltration","clone_call_done":true,"night_confrontation_ready":true}},
+{"talk":"victoria","reload":true,"knot":"nighttime_confrontation","picks":["SAFETYNET. And I've read","walked away","Bag down"]}
+]}

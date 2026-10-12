@@ -186,7 +186,11 @@ Reconciliation is clean: every Puzzle Graph node maps to a walkthrough step (ser
 - [ ] Danny, without opening his folder first: "You're here about the hospital. Aren't you."
 - [ ] Debrief, drive never opened: the search team recovered it and HaX gives its substance, then the Architect section plays (as for a found drive); final assessment says the drive was left "for the search team"
 - [ ] Debrief "For the report, here's what let you in": MIFARE line only if you cloned a badge, password line only if you opened a file on her PC, distcc line always, encoding line only if you opened an encoded item
-- [ ] Debrief "You called it murder with an invoice. Now we have the invoice." only if you picked that briefing choice
+- [ ] Debrief "In the briefing you said they'd put a price on it being a hospital. Now we can prove they knew." only if you picked that briefing choice ("So they knew it was a hospital, and put a price on that.")
+- [ ] (A4 fix pass) The debrief's final assessment names the briefing approach in one line ("You told me you'd be thorough…", "You said you'd move fast…", "You said you'd stay flexible…"); the credits list an APPROACH line and a STERLING'S NHS QUESTION line
+- [ ] (A4 fix pass) Sterling's night opener calls back the cloner's light if she saw it during the read (`cloner_glimpsed`), worded by the reply that followed
+- [ ] (A4 fix pass) Terry's "What's your route?" gets three replies: two back to his hub, one ends the chat
+- [ ] (A4 fix pass) At night, the first walk into reception gets one bark from Ffion about her charger, before she speaks
 - [ ] Recruited ending: "Whether she stays turned is anyone's guess." (no promise of later missions)
 - [ ] Phone hint menu: every topic is still on offer after you've read it once
 

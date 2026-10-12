@@ -119,7 +119,8 @@ Agent HaX: The network first. All four flags, and the distcc logs are the case.
 Agent HaX: The ProFTPD backdoor, sold to Ghost, invoice ZDS-2024-0847, St. Catherine's on the target line, Sable's sign-off on the approval.
 // D2-20 / D4-4: the paperwork point belongs to the revelation call; cut here.
 { called_it_murder:
-    Agent HaX: You called it murder with an invoice. Turns out they kept the invoice.
+    // A4 fix pass: quotes the reworded briefing option.
+    Agent HaX: In the briefing you said they'd put a price on it being a hospital. Now we can prove they knew.
 }
 -> victoria_discussion
 
@@ -163,9 +164,7 @@ Agent HaX: Counter-intelligence is running her now. She stays at Zero Day, and t
 { usb_seen or lore_directive_found:
     Agent HaX: And she knew you already had the directive. That's why she didn't try to sell us the parts we had.
 }
-{ player_approach == "diplomatic":
-    Agent HaX: You read the moment and took it. That's the whole reason this was on the table.
-}
+// A4 fix pass: the approach line moved to final_assessment, where it names the pick.
 // Scenes #7 (orchestrator: HaX, not Netherton): his opening line pays off, shown, not summed up.
 Agent HaX: Netherton signed off at six this morning. He had me write "she priced a hospital" on the cover sheet.
 Agent HaX: Whether she stays turned is anyone's guess. Today, it's a win with its teeth showing.
@@ -200,9 +199,6 @@ Agent HaX: Her lawyers are already calling it "market-driven research". It won't
 #speaker:agent_0x99
 Agent HaX: Her keys opened the client database, the transaction records, the Architect's channels. We're rolling the network up while it's still warm.
 Agent HaX: Netherton's taking the file to the CPS himself. He doesn't, usually.
-{ player_approach == "cautious":
-    Agent HaX: Your evidence did that. Clean collection, clean prosecution.
-}
 -> phase_2_discussion
 
 === victoria_ko ===
@@ -311,8 +307,9 @@ Agent HaX: The Phase 2 target list goes out unsigned. Substations get hardened, 
         Agent HaX: You didn't push. He noticed.
     }
     Agent HaX: He won't be charged. He'll carry it anyway.
+    // A4 fix pass: says only what the player did (put his survey to Sterling).
     { defended_danny:
-        Agent HaX: He knows you spoke up for him in front of Sterling. He mentioned it twice.
+        Agent HaX: I played him the part of the comms log where you told Sterling what drawing that survey had cost him. He asked to hear it again.
     }
     // D2-5: you told him "Sterling goes down for her part". Read it against her fate.
     { victoria_fate == "recruited":
@@ -337,7 +334,7 @@ Agent HaX: The Phase 2 target list goes out unsigned. Substations get hardened, 
     }
     Agent HaX: He'll likely get years, not a life sentence -- the deception's real and he's cooperating. But he serves.
     { defended_danny:
-        Agent HaX: He knows you spoke up for him in front of Sterling. He mentioned it twice.
+        Agent HaX: His solicitor's heard the part of the comms log where you told Sterling what drawing that survey had cost him. She'll use it. It won't change the charge.
     }
     // D2-5: the irony of the recruit ending, said once, as a cost.
     { victoria_fate == "recruited":
@@ -488,6 +485,35 @@ Agent HaX: {reception_badge_cloned or victoria_card_cloned or draft_seen or rost
         Agent HaX: The exploit catalogue stayed in the wall safe.
     }
     Agent HaX: Enough to charge and enough to warn. Not everything. It never is.
+}
+// A4 fix pass (S3): the briefing approach, named back in the player's own words.
+// One line for each value mission_approach writes: "I'll be thorough" = cautious,
+// "I move fast" = aggressive, "I'll stay flexible" = diplomatic. Empty (briefing
+// skipped) says nothing.
+{
+- player_approach == "cautious":
+    { lore_history_found and (catalogue_seen or lore_catalogue_found) and (usb_seen or lore_directive_found):
+        Agent HaX: You told me you'd be thorough and document everything. You did. I've had to borrow a second evidence locker.
+    - else:
+        Agent HaX: You told me you'd be thorough and document everything. Most of it. Next time, the drawers you skipped.
+    }
+- player_approach == "aggressive":
+    { guard_detection_count == 0 and not guard_knocked_out:
+        Agent HaX: You said you'd move fast, grab the objectives and get out. You did, and nobody kept up with you.
+    - else:
+        Agent HaX: You said you'd move fast, grab the objectives and get out. Fast got it done. Fast also left marks, and you've heard about them.
+    }
+- player_approach == "diplomatic":
+    {
+    - victoria_fate == "recruited":
+        Agent HaX: You said you'd stay flexible and read the situation. Sterling's deal only happened because you did.
+    - victoria_fate == "arrested":
+        Agent HaX: You said you'd stay flexible and read the situation. You read it, and it said handcuffs. Fair.
+    - victoria_fate == "escaped":
+        Agent HaX: You said you'd stay flexible and read the situation. You read it as letting her walk. I'd have read it differently.
+    - else:
+        Agent HaX: You said you'd stay flexible and read the situation. In the end the situation was a woman on the floor.
+    }
 }
 // The catalogue's own consequence (P2). The vendor line stands alone: the
 // anonymous-advisory knot is only reached when the directive was found.
