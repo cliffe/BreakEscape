@@ -43,7 +43,7 @@ Common setup (every run):
 3. Guard: pick the turnstile door while he watches. PASS: one challenge; exactly one conversation_closed:checkpoint_guard per catch in the session log; first catch plays the non-grace "Oi" variant. Pick again with guard_grace set: grace line. Pick with his back turned: pick minigame.
 4. "Remind me where we are." still works.
 
-### m03 (night_guard, executive_wing_hallway)
+### m03 (terry_mott, executive_wing_hallway; id was night_guard until 2026-10-12)
 
 1. Pick in view. PASS: one strike, guard_grace set.
 2. Pick again in view straight after the conversation closes. PASS: the no-strike grace line; never a silently swallowed pick.

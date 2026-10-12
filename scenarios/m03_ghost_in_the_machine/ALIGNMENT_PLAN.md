@@ -1,3 +1,5 @@
+> **Rename note (2026-10-12, m03 pass 2 dialogue round 2):** m03's receptionist is now Ffion Rees (id `ffion_rees`, ink `m03_npc_ffion_rees.ink`; was `receptionist_npc` / `m03_npc_receptionist.ink`) and the night guard is Terry Mott (id `terry_mott`, ink `m03_npc_terry_mott.ink`; was `night_guard` / `m03_npc_guard.ink`). Old ids below are historical.
+
 > Renamed 2026-10-01: James Park → Danny Foster (ink file m03_james_choice → m03_danny_choice; room james_office → danny_office; task james_choice_made → danny_choice_made; globals james_fate/james_ko/james_warned/james_protected/james_exposed/james_innocence_confirmed → danny_*; receptionist knot ask_james / VAR topic_james → ask_danny / topic_danny; debrief knot james_discussion → danny_discussion). CIPHER → Sable and Obsidian (codenames only; no ids carried the old name).
 
 # m03 Ghost in the Machine — Alignment & Advancement Plan

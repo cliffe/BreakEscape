@@ -175,14 +175,14 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
           { "text": "VICTORIA STERLING: ARRESTED — marketplace seized, the name kept from The Architect", "style": "entry", "condition": "globalVars.victoria_fate === 'arrested'" },
           { "text": "VICTORIA STERLING: ESCAPED — the evidence stayed, she didn't", "style": "entry", "condition": "globalVars.victoria_fate === 'escaped'" },
           { "text": "VICTORIA STERLING: NEUTRALISED — taken down on site", "style": "entry", "condition": "globalVars.victoria_fate === 'ko'" },
-          { "text": "DANNY FOSTER: PROTECTED — came in on his own, name kept out of the report", "style": "entry", "condition": "globalVars.danny_fate === 'protected' && globalVars.danny_ko !== true" },
+          { "text": "DANNY FOSTER: PROTECTED — came in on his own, not charged", "style": "entry", "condition": "globalVars.danny_fate === 'protected' && globalVars.danny_ko !== true" },
           { "text": "DANNY FOSTER: EXPOSED — named in full, charged alongside Zero Day", "style": "entry", "condition": "globalVars.danny_fate === 'exposed' && globalVars.danny_ko !== true" },
           { "text": "DANNY FOSTER: LEFT TO CHOOSE — phone off, whereabouts unknown", "style": "warning", "condition": "globalVars.danny_fate === 'left' && globalVars.danny_ko !== true" },
           { "text": "DANNY FOSTER: TAKEN DOWN IN HIS OWN OFFICE", "style": "warning", "condition": "globalVars.danny_fate === 'ko'" },
           { "text": "DANNY FOSTER: KNOCKED OUT AFTER YOU'D SPOKEN, picked up in his office", "style": "warning", "condition": "globalVars.danny_ko === true && globalVars.danny_fate !== 'ko' && !!globalVars.danny_fate" },
           { "text": "DANNY FOSTER: NEVER FOUND — his name is still in the recon files", "style": "warning", "condition": "!globalVars.danny_fate" },
-          { "text": "SECURITY GUARD: KNOCKED OUT ON SHIFT", "style": "warning", "condition": "globalVars.guard_knocked_out === true" },
-          { "text": "WHITEHAT RECEPTION: KNOCKED OUT AT HER OWN DESK", "style": "warning", "condition": "globalVars.receptionist_ko === true" },
+          { "text": "TERRY MOTT, NIGHT GUARD: KNOCKED OUT ON SHIFT", "style": "warning", "condition": "globalVars.guard_knocked_out === true" },
+          { "text": "FFION REES, WHITEHAT RECEPTION: KNOCKED OUT AT HER OWN DESK", "style": "warning", "condition": "globalVars.receptionist_ko === true" },
           { "text": "PERFECT STEALTH: past the night guard unseen, with no excuses and no bribes", "style": "entry", "condition": "globalVars.guard_detection_count === 0 && globalVars.exec_office_entered === true && globalVars.guard_knocked_out !== true && globalVars.guard_told_safetynet !== true && globalVars.guard_bribed !== true && globalVars.guard_challenged !== true" },
           { "text": "" },
           { "text": "THE ARCHITECT: identity still unknown. Phase 2 looms.", "style": "warning" },
@@ -596,10 +596,10 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
           "displayName": "Agent 0x47 'Nightshade'",
           "npcType": "person",
           "position": {"x": 520, "y": 500},
-          "spriteSheet": "male_scientist_v2",
-          "spriteTalk": "assets/characters/male_scientist_talk.png",
-          "spriteVisemes": "assets/characters/male_scientist_visemes.png",
-          "avatar": "assets/characters/male_scientist_headshot.png",
+          "spriteSheet": "nightshade",
+          "spriteTalk": "assets/characters/nightshade_talk.png",
+          "spriteVisemes": "assets/characters/nightshade_visemes.png",
+          "avatar": "assets/characters/nightshade_headshot.png",
           "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 },
           "behavior": { "initiallyHidden": true },
           "voice": {
@@ -609,11 +609,11 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
           }
         },
         {
-          "id": "receptionist_npc",
-          "displayName": "Receptionist",
+          "id": "ffion_rees",
+          "displayName": "Ffion Rees",
           "npcType": "person",
           "position": {"x": 7.1, "y": 4.9},
-          "storyPath": "scenarios/m03_ghost_in_the_machine/ink/m03_npc_receptionist.json",
+          "storyPath": "scenarios/m03_ghost_in_the_machine/ink/m03_npc_ffion_rees.json",
           "currentKnot": "start",
           "globalVarOnKO": "receptionist_ko",
           "puzzle_graph_actions": [
@@ -792,14 +792,14 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
               "sendTimedMessage": { "delay": 1500, "message": "Reception badge is in the cloner. Emulate it at the conference room reader. Read, crack, emulate -- same order every time." }
             },
             {
-              "eventPattern": "npc_ko:receptionist_npc",
+              "eventPattern": "npc_ko:ffion_rees",
               "condition": "globalVars.mission_phase !== 'act2_infiltration'",
               "onceOnly": true,
               "sendTimedMessage": { "delay": 2500, "message": "The receptionist's down. Her staff badge will be on the floor by her if you still need it. And an empty front desk gets noticed. Sterling will notice." }
             },
             {
               "_comment": "P3-15: at night the desk is empty anyway, so no 'Sterling will notice'.",
-              "eventPattern": "npc_ko:receptionist_npc",
+              "eventPattern": "npc_ko:ffion_rees",
               "condition": "globalVars.mission_phase === 'act2_infiltration'",
               "onceOnly": true,
               "sendTimedMessage": { "delay": 2500, "message": "The receptionist's down. She shouldn't even have been here this late. Keep moving." }
@@ -1164,7 +1164,7 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
             {
               "_comment": "P1-28: the guard has turned hostile (any route: his ink's #hostile tag or a fight). Synced so HaX's hub can offer the hostile-guard hint. Not onceOnly: setting it true again (e.g. when his restored hostility is re-announced after a reload, engine e03dd0e) is harmless.",
               "eventPattern": "npc_hostile_state_changed",
-              "condition": "data.npcId === 'night_guard' && data.isHostile === true",
+              "condition": "data.npcId === 'terry_mott' && data.isHostile === true",
               "cooldown": 0,
               "setGlobal": { "guard_attacking": true }
             },
@@ -1237,7 +1237,7 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
     },
 
     "main_hallway": {
-      "type": "hall_1x2gu",
+      "type": "room_zds_hall",
       "connections": {
         "south": "reception_lobby",
         "west": "conference_room_01",
@@ -1463,7 +1463,7 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
     },
 
     "executive_wing_hallway": {
-      "type": "hall_1x2gu",
+      "type": "room_zds_hall",
       "connections": {
         "west": "main_hallway",
         "north": "executive_office",
@@ -1473,11 +1473,11 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
       "npcs": [
         {
           "_comment": "Pass 2: moved here from main_hallway (no pickable lock there, so the lockpick LoS check could never fire). Visible all mission; his ink is phase-aware (staff-only by day, closed building at night). Since engine 18237332 a hidden or KO'd NPC no longer sees lockpicking, so knocking him out makes picks free; Perfect Stealth therefore excludes a KO (pass 3, P6). Patrol kept to x 5..8, y 3..4 of the 10x6 hall: clear of the west doorway (y2.5) and the south door (bottom-left), under the north door he watches. Pass 5 (R1-20): loop now x 3..6, y 3..4 (floor is x 1..8, y 2..4), still clear of both doorways; see the behavior comment.",
-          "id": "night_guard",
-          "displayName": "Security Guard",
+          "id": "terry_mott",
+          "displayName": "Terry Mott",
           "npcType": "person",
           "position": {"x": 6, "y": 3},
-          "storyPath": "scenarios/m03_ghost_in_the_machine/ink/m03_npc_guard.json",
+          "storyPath": "scenarios/m03_ghost_in_the_machine/ink/m03_npc_terry_mott.json",
           "currentKnot": "start",
           "spriteSheet": "male_security_guard_v2",
           "spriteTalk": "assets/characters/male_security_guard_talk.png",
@@ -1490,7 +1490,7 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
           },
           "globalVarOnKO": "guard_knocked_out",
           "behavior": {
-            "_comment": "Pass 3: hostile tuning set explicitly to m01's mildest guard-type NPC (Sarah: chaseSpeed 100, attackDamage 10, pauseToAttack true). Before this he used the engine defaults (chaseSpeed 145, attackDamage 10, pauseToAttack true, npc-behavior.js:343-347). He also no longer goes hostile on a detection without a choice (m03_npc_guard.ink on_lockpick_detected). Pass 3c: facePlayer and pauseForPlayer default to true with a 96 px radius (npc-behavior.js:318-328), and every point of this loop is within 96 px of the office door, so he stopped and turned to face anyone at the door: no back-turned window existed. Both off; he walks his loop and the cone does the work. Pass 3e: the 140-degree cone put his west-end dwell (facing up, about 63-69 degrees off the door line) on the cone edge, so the same moment sometimes caught and sometimes didn't. The loop now ends with a short step east into the (5,3) dwell, so he dwells facing east, clearly inside a 120-degree cone (about 25 degrees off the door line); every other dwell is clearly outside. Window: seen about 4.9 s (west dwell, then east under the door), safe about 8.1 s (east dwell facing down, the walk west, the step up) of a 13 s loop. Pass 5 (R1-20): all three night testers were caught on the first pick. The loop ran right under the door, so he was always within 60 px of it and the back-turned moments (a dwell facing down beneath the door, a walk west close by) didn't read as safe. New loop: he walks east to (6,3) and stands looking at the office door for 2 s, then walks west, back to the door, to (3,4) and stands there 5 s, then returns via (5,3) so he always arrives at his post facing east. Measured against the testers' logged pick spot (565,-90) and his logged sprite centres (waypoint row 3 = y -59, row 4 = y -27; x = room 320 + 32*wx + 2): at the post (514,-59) the door is 31 degrees off his facing, clearly inside the 120-degree cone; on the walk west he faces left, down or down-left, 120-165 degrees off; at (3,4), centre (418,-27), he is 160 px from the pick spot (range 150) and facing away. The engine checks LOS once, when the pick starts (lockpick-catch.js, npc-los.js), so a pick started in the window finishes even if he turns round. Window: safe about 7.5 s from the moment he turns his back (walk west about 2.5-3 s, then the 5 s dwell), seen about 4.8 s (the walk back, in range almost at once, then the 2 s post) of a loop of about 12 s. Testers: pick as he turns away from the door.",
+            "_comment": "Pass 3: hostile tuning set explicitly to m01's mildest guard-type NPC (Sarah: chaseSpeed 100, attackDamage 10, pauseToAttack true). Before this he used the engine defaults (chaseSpeed 145, attackDamage 10, pauseToAttack true, npc-behavior.js:343-347). He also no longer goes hostile on a detection without a choice (m03_npc_terry_mott.ink on_lockpick_detected; id night_guard until 2026-10-12). Pass 3c: facePlayer and pauseForPlayer default to true with a 96 px radius (npc-behavior.js:318-328), and every point of this loop is within 96 px of the office door, so he stopped and turned to face anyone at the door: no back-turned window existed. Both off; he walks his loop and the cone does the work. Pass 3e: the 140-degree cone put his west-end dwell (facing up, about 63-69 degrees off the door line) on the cone edge, so the same moment sometimes caught and sometimes didn't. The loop now ends with a short step east into the (5,3) dwell, so he dwells facing east, clearly inside a 120-degree cone (about 25 degrees off the door line); every other dwell is clearly outside. Window: seen about 4.9 s (west dwell, then east under the door), safe about 8.1 s (east dwell facing down, the walk west, the step up) of a 13 s loop. Pass 5 (R1-20): all three night testers were caught on the first pick. The loop ran right under the door, so he was always within 60 px of it and the back-turned moments (a dwell facing down beneath the door, a walk west close by) didn't read as safe. New loop: he walks east to (6,3) and stands looking at the office door for 2 s, then walks west, back to the door, to (3,4) and stands there 5 s, then returns via (5,3) so he always arrives at his post facing east. Measured against the testers' logged pick spot (565,-90) and his logged sprite centres (waypoint row 3 = y -59, row 4 = y -27; x = room 320 + 32*wx + 2): at the post (514,-59) the door is 31 degrees off his facing, clearly inside the 120-degree cone; on the walk west he faces left, down or down-left, 120-165 degrees off; at (3,4), centre (418,-27), he is 160 px from the pick spot (range 150) and facing away. The engine checks LOS once, when the pick starts (lockpick-catch.js, npc-los.js), so a pick started in the window finishes even if he turns round. Window: safe about 7.5 s from the moment he turns his back (walk west about 2.5-3 s, then the 5 s dwell), seen about 4.8 s (the walk back, in range almost at once, then the 2 s post) of a loop of about 12 s. Testers: pick as he turns away from the door.",
             "hostile": {
               "chaseSpeed": 100,
               "attackDamage": 10,
@@ -1714,9 +1714,6 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
     "victoria_suspicious": 0,
     "victoria_trusts_player": false,
     "victoria_choice_made": false,
-    "victoria_recruited": false,
-    "victoria_arrested": false,
-    "victoria_escaped": false,
     "danny_evidence_seen": false,
     "handler_trust": 50,
     "guard_detection_count": 0,
@@ -1772,6 +1769,8 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
     "vm_flag1_reward": false,
     "vm_flag2_reward": false,
     "vm_flag3_reward": false,
-    "danny_ko": false
+    "danny_ko": false,
+    "named_target_selection": false,
+    "ffion_night_story": ""
   }
 }

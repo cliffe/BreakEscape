@@ -13,6 +13,8 @@ VAR asked_about_victoria = false
 VAR asked_clone = false
 VAR asked_network = false
 VAR asked_cover = false
+// D2-10: the short route. Local; replaces the dead player_approach "direct" write.
+VAR skipped_background = false
 
 // Root divert. When a conversation has ended (-> DONE), the engine restores only
 // its variables on the next talk and continues from the root (npc-conversation-
@@ -41,8 +43,7 @@ Agent HaX: Right. Zero Day Syndicate. You heard of them?
     Agent HaX: That's them. And they're escalating.
     -> briefing_main
 * [Skip the background. What's the mission?]
-    ~ player_approach = "direct"
-    #set_global:player_approach:direct
+    ~ skipped_background = true
     Agent HaX: Right to business. Good.
     -> briefing_main
 
@@ -50,8 +51,12 @@ Agent HaX: Right. Zero Day Syndicate. You heard of them?
 #speaker:agent_0x99
 Agent HaX: Zero Day runs behind a real pentest firm -- WhiteHat Security Services. Legitimate audits by day. An exploit marketplace in the back rooms.
 Agent HaX: They don't run the attacks. They arm the cells that do.
-{ player_approach == "direct":
-    Agent HaX: We need the client roster and the operational logs. Proof of who they arm, and how.
+// D2-10: the short route still carries the reason for the mission.
+{ skipped_background:
+    ~ knows_m2_connection = true
+    #set_global:knows_m2_connection:true
+    Agent HaX: Short version: the exploit that took down St. Catherine's came from this shop. We want their books.
+    Agent HaX: The client roster and the operational logs. Proof of who they arm, and how.
     -> objectives
 }
 * [Which cells buy from them?]
@@ -75,7 +80,7 @@ Agent HaX: The ransomware ran on a ProFTPD backdoor. That exploit didn't come fr
     #set_global:knows_m2_connection:true
     ~ handler_trust = handler_trust + 5
     # influence_increased
-    Agent HaX: They did. An invoice turned up at St. Catherine's with Zero Day's name on the sale, the paper the buyer left behind. Now we go after the seller's own ledger.
+    Agent HaX: They did. An invoice turned up at St. Catherine's with Zero Day's name on the sale. Now we want their side of it.
     -> mission_stakes
 * [The exploit at St. Catherine's traces back here?]
     ~ knows_m2_connection = true

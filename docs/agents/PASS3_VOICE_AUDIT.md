@@ -1,5 +1,7 @@
 # Break Escape voice audit (m01–m08)
 
+> **Rename note (2026-10-12, m03 pass 2 dialogue round 2):** m03's receptionist is now Ffion Rees (id `ffion_rees`, ink `m03_npc_ffion_rees.ink`; was `receptionist_npc` / `m03_npc_receptionist.ink`) and the night guard is Terry Mott (id `terry_mott`, ink `m03_npc_terry_mott.ink`; was `night_guard` / `m03_npc_guard.ink`). Old ids below are historical.
+
 Date: 2026-10-01. Scope: `scenarios/m01_*` to `m08_*` `scenario.json.erb`, with sis01–sis03 and biometric_breach checked for reference (none of them reuses a mission character; biometric_breach has no voiced NPCs).
 
 How voices work, as checked in the code:

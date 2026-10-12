@@ -281,9 +281,9 @@ One line each, so that writers can keep a mission's cast distinct and don't reus
 
 | Character (id) | Voice | Accent | Talks like |
 |---|---|---|---|
-| Receptionist (`receptionist_npc`) | Kore | South Wales (Cardiff) | Bright, chatty front desk. |
+| Ffion Rees (`ffion_rees`; was `receptionist_npc` until 2026-10-12) | Kore | South Wales (Cardiff) | Bright, chatty front desk; doesn't know what the back rooms do. |
 | Victoria Sterling (`victoria_sterling`) | Despina | RP | Polished CEO and conference speaker; cool, reasonable, guilty. |
-| Security Guard (`night_guard`) | Algieba | Estuary (Essex) | Tired, dry, procedural. |
+| Terry Mott (`terry_mott`; was `night_guard` until 2026-10-12) | Algieba | Estuary (Essex) | Tired, dry, procedural; Sterling never learnt his name. |
 | Danny Foster (`danny_foster`) | Iapetus | East Midlands (Nottingham) | Frightened consultant; voice tightens under stress. |
 
 ### m04 Critical Failure

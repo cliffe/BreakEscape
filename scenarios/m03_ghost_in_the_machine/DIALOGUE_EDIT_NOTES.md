@@ -1,5 +1,7 @@
 # m03 Ghost in the Machine: script editor's notes on the dialogue pass
 
+> **Rename note (2026-10-12, m03 pass 2 dialogue round 2):** m03's receptionist is now Ffion Rees (id `ffion_rees`, ink `m03_npc_ffion_rees.ink`; was `receptionist_npc` / `m03_npc_receptionist.ink`) and the night guard is Terry Mott (id `terry_mott`, ink `m03_npc_terry_mott.ink`; was `night_guard` / `m03_npc_guard.ink`). Old ids below are historical.
+
 Fresh review, 2 October 2026. Read-only apart from this file.
 
 Baseline: the writer's snapshot `<scratchpad>/m03-dialogue/ink-before/` (ink) and `scenario-before.json.erb`. The current files were compared against it line by line. Line numbers are the **current** files unless marked "before". References: `docs/agents/PASS4_BRIEF.md`, the dialogue style guide, the voice bible, the humanizer rules, `DIALOGUE_REVIEW.md`, and the m07 samples and editor's notes as the bar.

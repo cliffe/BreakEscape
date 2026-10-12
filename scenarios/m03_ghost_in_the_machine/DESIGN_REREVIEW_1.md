@@ -1,5 +1,7 @@
 # m03 Ghost in the Machine: design re-review, round 1 (pass 4)
 
+> **Rename note (2026-10-12, m03 pass 2 dialogue round 2):** m03's receptionist is now Ffion Rees (id `ffion_rees`, ink `m03_npc_ffion_rees.ink`; was `receptionist_npc` / `m03_npc_receptionist.ink`) and the night guard is Terry Mott (id `terry_mott`, ink `m03_npc_terry_mott.ink`; was `night_guard` / `m03_npc_guard.ink`). Old ids below are historical.
+
 Reviewer: fresh adversarial reviewer, 2 October 2026. Read-only apart from this file. Scope: the pass-4 design changes listed in `DESIGN_REVIEW.md` §7, checked against `git diff HEAD -- scenarios/m03_ghost_in_the_machine/` and the untracked `ink/m03_night_transition.ink` and `PASS4_PLAYTEST.md`. Static checks only; no browser run.
 
 ## 1. Checks run

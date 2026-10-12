@@ -81,8 +81,8 @@
       "optional": false
     },
     {
-      "id": "npc_receptionist",
-      "label": "Receptionist",
+      "id": "npc_ffion_rees",
+      "label": "Ffion Rees",
       "kind": "key",
       "optional": false
     },
@@ -290,16 +290,16 @@
     },
     {
       "from": "reception_lobby",
-      "to": "npc_receptionist",
+      "to": "npc_ffion_rees",
       "soft": false
     },
     {
-      "from": "npc_receptionist",
+      "from": "npc_ffion_rees",
       "to": "staff_access_badge",
       "soft": false
     },
     {
-      "from": "npc_receptionist",
+      "from": "npc_ffion_rees",
       "to": "action_clone_reception_badge_talk",
       "soft": false
     },

@@ -115,3 +115,78 @@ Contact sheet: `after/grid-contact_sheet.png`.
 - Assumption: moving the receptionist and Danny is layout, not dialogue; nothing in the ink or event mappings reads their positions (only the night guard has waypoints).
 - Assumption: the cover name on the sign is "WHITEHAT", taken from the Building Directory text; if the front's name changes in the dialogue pass, the sign needs redrawing.
 - Assumption: Victoria's portrait uses the dark-haired PixelLab frame to match her female_blowse sprite, not a likeness check against her dialogue portrait.
+
+## Cycle 2 (2026-10-12)
+
+Started from a fresh look at the cycle-1 after shots (`build_evidence/dressing_c1/after/`), asking of each room: would a player know at a glance this is Zero Day's? Item 1 of the cycle-1 list (the interaction walk) is with a separate Sonnet tester; this cycle did items 2-6 and the `exec_laptop1` leftover.
+
+### Critique of the cycle-1 result
+
+| # | Room | Sev | Finding |
+|---|---|---|---|
+| R1 | Reception | major | The 63 px marble desk read as a side table in a 10×10 lobby; no front-desk presence. |
+| R2 | Reception | major | The back wall behind the desk was plain white; the WHITEHAT sign floated with no feature behind it. |
+| R3 | Reception | major | Middle and right floor empty; waiting area crammed into the SW with the receptionist floating mid-room. |
+| R4 | Reception | minor | Plaque and sign sat over the desk span, so the plaque could not be kept in 32 px reach once the desk grew. |
+| C1 | Conference | major | Bare middle-left floor; the table floated on plain carpet. |
+| C2 | Conference | minor | Brown leather chairs on the north side, black swivels on the south: mismatched set. |
+| C3 | Conference | minor | Pale wooden sideboard with a water jug looked like the hospital set, not a slick boardroom. |
+| S1 | Server | major | Pine-topped desks (desk1/desk3) looked cheap against slate walls and racks. |
+| S2 | Server | minor | Air-con dropped in cycle 1; east floor by the door bare. |
+| E1 | CEO | minor | East wall bare; nothing on the east floor between the fig and the filing cabinet that said ego. |
+| D1 | Danny | major | Middle and south floor empty; one camp bed did not sell "he has been living here". |
+| D2 | Danny | minor | No overflow or neglect: tidy shelves, no clutter. |
+| H1 | Halls | major | Both corridors used the shared purple `hall_1x2gu` with floor bags, a safe and a key decal: the look broke between every room. |
+| X1 | Assets | minor | `exec_laptop1` registered but unused. |
+
+Counts: 7 major, 7 minor, 0 blocker.
+
+### Fixes
+
+**Reception** (R1-R4): a long black reception counter with a cyan light strip (PixelLab, lengthened from 62 to 110 px by repeating its plainest columns, no scaling) under a walnut slat feature wall painted into `room_zds_lobby` (x 98-222), with the WHITEHAT sign on the slats; the plaque moved to x 70 by the N door, clear of the counter and in reach; the trophy cabinet moved east under the CCTV; the threat-map screen moved to the corridor. Waiting area along the south edge: the sofa faces a glass table with a black club chair either side facing in (one PixelLab chair and its mirror), concrete planters with figs in both south corners, a brochure rack by the west wall under the directory.
+
+**Conference room** (C1-C3): new floor sheet `room_zds_boardroom` with a charcoal rug and cyan inner line under the table and chairs; three matching black leather executive chairs on the north side; a black credenza with a phone and an orchid replaces the wooden sideboard; a fig in a concrete planter on the west side; a conference phone and `exec_laptop1` (X1, now used) on the table; the walnut table got a faint grain.
+
+**Server room** (S1-S2): steel-topped `zds_desk1` / `zds_desk3` (recolours in `make_zds_props.py`; the PC tower keeps its colours) for the operator desk and the ops bench; a precision air-con unit beside the KVM cart, west of the door lane.
+
+**CEO office** (E1): a floor globe on a walnut stand east of the desk (the fig went); her business-magazine cover framed on the east wall.
+
+**Danny's office** (D1-D2): pizza boxes and energy-drink cans by the camp bed, a mini fridge by the side table, a cluster of coffee cups on his desk, a dying plant on the side table, a pile of books by the bookcase, a tangle of leads under the desk's end.
+
+**Halls** (H1): new builder room `room_zds_hall` (10×6, sheet `room_zds_hall`: the lobby stone without decals), used by `main_hallway` and `executive_wing_hallway`. Back wall only, because the rooms to the south cover all but y 64-128: the threat-map screen, the WHITEHAT sign, a fire point, a water cooler, a fig in a concrete planter; the NE door corner and both side-door rows clear; the night guard's patrol (y 96-128) clear of the wall pieces. Registered in `game.js`, the schema and the README.
+
+Scenario edits this cycle: the two hallway `type`s only (`hall_1x2gu` → `room_zds_hall`), each region re-read just before the edit. No NPC fields touched.
+
+### New assets (cycle 2)
+
+PixelLab, two calls (balance 3230 → 3202 reported; shared account):
+- batch 3 (canvas 64): `reception_counter1` (lengthened by hand), `club_chair_e1` (+ mirrored `club_chair_w1`), `credenza1`, `floor_globe1`, `exec_chair_black1`, `planter_fig1`, `brochure_rack1`
+- batch 4 (canvas 32): `pizza_boxes1`, `energy_cans1`, `mini_fridge1`, `magazine_cover1`, `wilted_plant1`, `coffee_cups1`, `cable_tangle1`, `book_pile1`
+
+Hand-made: `zds_desk1`, `zds_desk3` (steel recolours), the walnut grain on `zds_conference_table1`, sheets `room_zds_boardroom` and `room_zds_hall`, the slat wall in `room_zds_lobby`.
+
+Caught and fixed while checking: `coffee_cups1` was first installed from the wrong contact-sheet frame (a mini whiteboard on an easel; the sheet's numbers sit above their images); reinstalled from the right frame and its size corrected in the catalogue, `objects_hospital_extras.tsx` and `tilesets_ref.json`. The hall's CCTV camera was hidden behind the planter and was removed.
+
+### Verify
+
+- `generate_rooms.py` for all six ZDS rooms: OK; remaining WARN lines are the generic corner and bottom-row hints (no door in those corners, nothing to the south of reception, conference or Danny's office), the deliberate wall safe, and the drawer overlay.
+- `slot_audit.py --notes`: 0 problems; the one notes prompt left is the Server Room Whiteboard (engine change not approved, stays a notebook page).
+- `check_room_walls.py --scenario`: all maps 64. `validate_scenario.rb --skip-ink --no-graph`: schema passes, geometry OK, door alignment OK. `check_door_alignment.py`: all OK. `node --check` game.js: OK.
+- In game (fresh games of my own on :3001): all 16 scenario objects claimed their intended sprites at the same positions as cycle 1; no "No Tiled item found" logs, no errors in the session logs. NPCs forced visible for the shots; the night guard walks clear of the hall's water cooler and planter.
+
+After shots (`build_evidence/dressing_c2/`): `reception_lobby.png`, `conference_room_01.png`, `server_room.png`, `executive_office.png`, `danny_office.png`, `main_hallway.png`, `executive_wing_hallway.png`; maps `grid-room_zds_*.png`, `grid-contact_sheet.png`.
+
+### Cycle 3: what to do next
+
+1. Fold in the Sonnet interaction-walk findings (cycle-1 item 1).
+2. The WHITEHAT sign now appears three times (reception and both halls, which share a map). Give the executive wing its own variant (`room_zds_hall_exec`: art, a bench, a "PRIVATE" sign, no brand sign) so it reads as the quieter end of the building.
+3. Reception: the counter's monitor faces the visitor side; check it reads right next to the receptionist. A rug or a darker stone border round the waiting area would anchor it.
+4. Server room: the room is busy but still generic; a caged rack or a red-lit "PRODUCTION / DO NOT TOUCH" label on the back row would mark it as the business. Re-check under the lighting pass.
+5. CEO office: the rug sits a touch low under the desk; try moving it up 8 px.
+6. Danny's office: the floor between his desk and the camp bed is still open; a small rug or a second chair would help. Re-check his spot after the dialogue renames.
+
+### Assumptions (cycle 2)
+
+- Assumption: repeating a single plain column to lengthen the counter is not rescaling (no pixel is resampled), so it is within the no-resize rule.
+- Assumption: mirroring the club chair for the facing pair is acceptable art reuse, the same as other mirrored variants in the set.
+- Assumption: one hall map for both corridors is fine for this cycle; a separate executive-wing hall is in cycle 3.

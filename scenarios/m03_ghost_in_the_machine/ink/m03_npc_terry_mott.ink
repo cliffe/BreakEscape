@@ -16,6 +16,12 @@ VAR guard_grace = false
 // Final round: re-entry lines on reopen, skipped once after an exit (quiet flags).
 VAR hub_quiet = false
 VAR idle_quiet = false
+// Pass 2 dialogue round 2 (D2-13): day-only flags, so the day "knock off" question
+// no longer spends the night's topic_shift, and a return visit gets a fresh line.
+VAR day_greeted = false
+VAR asked_knock_off = false
+// D2-12: synced. "notebook" means Ffion told him the player would be about.
+VAR ffion_night_story = ""
 
 // Root divert. When a conversation has ended (-> DONE), the engine restores only
 // its variables on the next talk and continues from the root (npc-conversation-
@@ -27,7 +33,7 @@ VAR idle_quiet = false
 #speaker:npc
 { guard_hostile:
     #display:guard-hostile
-    Security Guard: I told you to leave. I'm calling the police.
+    Terry Mott: I told you to leave. I'm calling the police.
     ~ idle_quiet = true
     #exit_conversation
     -> guard_idle
@@ -39,21 +45,25 @@ VAR idle_quiet = false
     #display:guard-alert
     #set_global:guard_challenged:true
     Narrator: A torch beam swings round and settles on you.
-    Security Guard: Hey! What are you doing here? Building's closed for the night.
+    { ffion_night_story == "notebook":
+        Terry Mott: Ffion said there'd be someone about. Notebook, was it? Conference room's the other end of the building.
+    - else:
+        Terry Mott: Hey! What are you doing here? Building's closed for the night.
+    }
     ~ player_warned = true
     ~ guard_suspicious = true
     -> first_excuse
 }
 { player_warned && bribe_accepted:
     #display:guard-neutral
-    Security Guard: We had a deal. Get on with it.
+    Terry Mott: We had a deal. Get on with it.
     ~ idle_quiet = true
     #exit_conversation
     -> guard_idle
 }
 { (player_warned && not guard_hostile) && not bribe_accepted:
     #display:guard-suspicious
-    Security Guard: You again. I'm keeping my eye on you.
+    Terry Mott: You again. I'm keeping my eye on you.
     ~ hub_quiet = true
     -> hub
 }
@@ -61,24 +71,33 @@ VAR idle_quiet = false
 === daytime ===
 #speaker:npc
 #display:guard-neutral
-Security Guard: Afternoon. Executive wing's staff only, I'm afraid. Visitors stay in reception and the conference area.
-Security Guard: If Ms. Sterling wants you back here, she'll walk you through herself.
-+ [Sorry -- wrong turn]
-    Security Guard: Happens all the time. Conference room's back through to the main hallway and straight across.
+{ not day_greeted:
+    ~ day_greeted = true
+    Terry Mott: Afternoon. Executive wing's staff only, I'm afraid. Visitors stay in reception and the conference area.
+    Terry Mott: If Ms. Sterling wants you back here, she'll walk you through herself.
+- else:
+    Terry Mott: {&Still staff only, mate.|Back again? Still staff only.|Conference room's the other way. Still.}
+}
++ [Sorry -- wrong turn.]
+    Terry Mott: Happens all the time. Conference room's back through to the main hallway and straight across.
     ~ idle_quiet = true
     #exit_conversation
     -> guard_idle
-+ [When do you knock off?]
-    ~ topic_shift = true
-    Security Guard: Knock off? Not till six tomorrow morning. Double shift. Afternoons in here, then the night rounds.
-    Security Guard: Why?
++ {not asked_knock_off} [When do you knock off?]
+    ~ asked_knock_off = true
+    Terry Mott: Knock off? Not till six tomorrow morning. Double shift. Afternoons in here, then the night rounds.
+    Terry Mott: Why?
     ~ idle_quiet = true
     #exit_conversation
     -> guard_idle
 
 === first_excuse ===
 #speaker:npc
-Security Guard: Well? What's your explanation for being here after hours?
+{ ffion_night_story == "notebook":
+    Terry Mott: So what are you doing in my corridor?
+- else:
+    Terry Mott: Well? What's your explanation for being here after hours?
+}
 * [I work here -- research, second floor. Forgot something at my desk.]
     ~ guard_influence = guard_influence - 5
     # influence_decreased
@@ -87,69 +106,69 @@ Security Guard: Well? What's your explanation for being here after hours?
 * [Sterling asked me to grab some files. We met today about the training programme.]
     ~ guard_influence = guard_influence + 10
     # influence_increased
-    Security Guard: *pauses* Ms. Sterling mentioned a potential recruit... alright.
+    Terry Mott: Ms. Sterling mentioned a potential recruit... alright.
     -> excuse_victoria
 * [Building maintenance, late shift. Checking the air con.]
     ~ guard_influence = guard_influence + 5
     # influence_increased
-    Security Guard: Maintenance? I didn't get a work order notice.
+    Terry Mott: Maintenance? I didn't get a work order notice.
     -> excuse_maintenance
 * [I'm with SAFETYNET. This is an active ENTROPY investigation.]
     -> safetynet_reveal
 
 === excuse_work_here ===
 #speaker:npc
-Security Guard: I don't recognise you, and I know most of the faces here.
-Security Guard: You got ID? Key card?
+Terry Mott: I don't recognise you, and I know most of the faces here.
+Terry Mott: You got ID? Key card?
 * [Hold up the cloned executive card. This do you?]
     ~ guard_influence = guard_influence + 15
     # influence_increased
-    Security Guard: That's... that's an executive-level card. Alright, carry on.
-    Security Guard: Just surprised to see someone here this late.
+    Terry Mott: That's... that's an executive-level card. Alright, carry on.
+    Terry Mott: Just surprised to see someone here this late.
     -> hub
 * [I'm new. Started this week. Still getting my permanent ID.]
     ~ guard_influence = guard_influence + 5
     # influence_increased
-    Security Guard: *sceptical* New hires don't usually have after-hours access...
+    Terry Mott: New hires don't usually have after-hours access...
     -> suspicious_path
 * [That's what I came back for -- my ID badge. Left it at my desk.]
     ~ guard_influence = guard_influence - 10
     # influence_decreased
     ~ guard_suspicious = true
-    Security Guard: So you don't have ID, and you're here after hours. That's a problem.
+    Terry Mott: So you don't have ID, and you're here after hours. That's a problem.
     -> suspicious_path
 
 === excuse_victoria ===
 #speaker:npc
-Security Guard: Ms. Sterling does sometimes have late requests.
-Security Guard: What files are you supposed to grab?
+Terry Mott: Ms. Sterling does sometimes have late requests.
+Terry Mott: What files are you supposed to grab?
 * [Training programme enrolment forms. From her office.]
     ~ guard_influence = guard_influence + 10
     # influence_increased
-    Security Guard: Alright. But be quick about it. And stay in the executive area. Don't wander.
+    Terry Mott: Alright. But be quick about it. And stay in the executive area. Don't wander.
     -> hub
 * [She didn't specify -- said I'd know them when I saw them. Confidential.]
     ~ guard_influence = guard_influence + 5
     # influence_increased
     ~ guard_suspicious = true
-    Security Guard: Confidential, huh. Well, don't take too long.
+    Terry Mott: Confidential, huh. Well, don't take too long.
     -> hub
 
 === excuse_maintenance ===
 #speaker:npc
-Security Guard: No work order, and you don't look like our usual maintenance crew.
-Security Guard: I'm going to need to verify this.
+Terry Mott: No work order, and you don't look like our usual maintenance crew.
+Terry Mott: I'm going to need to verify this.
 * [Ring the supervisor, then. Here's his mobile.]
     ~ guard_influence = guard_influence + 10
     # influence_increased
-    Security Guard: ...at this hour? Nobody's going to answer.
-    Security Guard: Fine. But I'm watching you.
+    Terry Mott: ...at this hour? Nobody's going to answer.
+    Terry Mott: Fine. But I'm watching you.
     ~ guard_suspicious = true
     -> hub
 * [Emergency call. The temperature sensors tripped an alert. No time for paperwork.]
     ~ guard_influence = guard_influence + 5
     # influence_increased
-    Security Guard: I didn't hear about any alerts...
+    Terry Mott: I didn't hear about any alerts...
     ~ guard_suspicious = true
     -> hub
 * [I don't have time for this. I've work to do.]
@@ -157,19 +176,19 @@ Security Guard: I'm going to need to verify this.
     # influence_decreased
     ~ guard_hostile = true
     // Pass 5 (P3-8): hostile_confrontation counts this detection; counting it here too made one incident two.
-    Security Guard: Wrong answer.
+    Terry Mott: Wrong answer.
     -> hostile_confrontation
 
 === suspicious_path ===
 #speaker:npc
-Security Guard: This doesn't add up. You're not making sense.
+Terry Mott: No badge, a face I've never seen, and here at eleven at night. Pull the other one.
 * [Maybe we can work something out. I need to finish here.]
     -> offer_bribe
 * [Ring Ms. Sterling if you like. She'll vouch for me.]
     ~ guard_influence = guard_influence - 10
     # influence_decreased
     ~ guard_suspicious = true
-    Security Guard: *flatly* I'm not ringing the boss at this hour on your say-so.
+    Terry Mott: *flatly* I'm not ringing the boss at this hour on your say-so.
     -> trespass_warning
 * [I'm with SAFETYNET. This is an active ENTROPY investigation.]
     -> safetynet_reveal
@@ -177,7 +196,7 @@ Security Guard: This doesn't add up. You're not making sense.
 === offer_bribe ===
 #speaker:npc
 ~ bribe_offered = true
-Security Guard: *sharply* Are you trying to bribe me?
+Terry Mott: Are you trying to bribe me?
 * [I can make it worth your while. A hundred quid, and you didn't see me.]
     -> bribe_response_low
 * [Five hundred, cash. I'm in and out.]
@@ -185,21 +204,21 @@ Security Guard: *sharply* Are you trying to bribe me?
 * [No, no. I just meant -- could you make an exception? A favour?]
     ~ guard_influence = guard_influence - 5
     # influence_decreased
-    Security Guard: *scoffs* No favours.
+    Terry Mott: *scoffs* No favours.
     -> trespass_warning
 
 === bribe_response_low ===
 #speaker:npc
-Security Guard: A hundred quid? You think I'm risking my job for a hundred quid?
+Terry Mott: A hundred quid? You think I'm risking my job for a hundred quid?
 ~ guard_hostile = true
 ~ guard_detection_count = guard_detection_count + 1
 -> trespass_warning
 
 === bribe_response_high ===
 #speaker:npc
-Security Guard: ...Five hundred?
-Security Guard: You finish whatever you're doing and you're gone. I never saw you.
-Security Guard: And if anyone asks, I was on the other side of the building doing rounds.
+Terry Mott: ...Five hundred?
+Terry Mott: You finish whatever you're doing and you're gone. I never saw you.
+Terry Mott: And if anyone asks, I was on the other side of the building doing rounds.
 ~ bribe_accepted = true
 #set_global:guard_bribed:true
 ~ guard_influence = guard_influence + 30
@@ -215,50 +234,50 @@ Narrator: You count five hundred into his hand.
 // Pass 4 (fix 6): he rings Sterling, whatever he promises. Victoria's night
 // opener and the debrief both read this.
 #set_global:guard_told_safetynet:true
-Security Guard: *wary* SAFETYNET. The people off the news?
+Terry Mott: SAFETYNET. Never heard of you. Is that meant to make me feel better?
 * [Here are my credentials. I need your cooperation -- people get hurt if this goes wrong.]
     ~ guard_influence = guard_influence + 30
     # influence_increased
     ~ guard_suspicious = false
-    Security Guard: *stunned* Right. Yeah. Whatever you need.
-    Security Guard: Ms. Sterling... she's involved in something?
+    Terry Mott: Right. Yeah. Whatever you need.
+    Terry Mott: Ms. Sterling... she's involved in something?
     -> safetynet_cooperation
 * [This is classified. Tell no one I was here. Not even Sterling.]
     ~ guard_influence = guard_influence + 20
     # influence_increased
-    Security Guard: Yeah, understood. I... I won't say anything.
+    Terry Mott: Yeah, understood. I... I won't say anything.
     -> safetynet_cooperation
 * [Help me, you help the people this is aimed at. Hinder me, you're obstructing.]
     ~ guard_influence = guard_influence + 25
     # influence_increased
     ~ guard_suspicious = false
-    Security Guard: I'm not getting in the way. Do what you need to do.
+    Terry Mott: I'm not getting in the way. Do what you need to do.
     -> safetynet_cooperation
 
 === safetynet_cooperation ===
 #speaker:npc
-Security Guard: What do you need from me?
+Terry Mott: What do you need from me?
 - (coop_hub)
 * [Just continue your normal patrol. Pretend you didn't see me.]
     ~ guard_influence = guard_influence + 10
     # influence_increased
-    Security Guard: Done. I'll be on the other side of the building if anyone asks.
+    Terry Mott: Done. I'll be on the other side of the building if anyone asks.
     ~ idle_quiet = true
     #exit_conversation
     -> guard_idle
 * [Tell me about Victoria Sterling. What's she like?]
-    Security Guard: Ms. Sterling? Sharp. Stays late. Looks straight through you.
-    Security Guard: Gets visitors who don't look like they've ever owned a tie.
-    Security Guard: But she pays well, so I don't ask questions.
+    Terry Mott: Ms. Sterling? Sharp. Stays late. Looks straight through you.
+    Terry Mott: Gets visitors who don't look like they've ever owned a tie.
+    Terry Mott: But she pays well, so I don't ask questions.
     -> coop_hub
 * [Have you noticed anything unusual? Strange visitors? Odd hours?]
-    Security Guard: More late meetings lately. Last week, some bloke who didn't give a name and didn't want telling twice.
-    Security Guard: And Ms. Sterling's been more stressed. Snapping at people.
+    Terry Mott: More late meetings lately. Last week, some bloke who didn't give a name and didn't want telling twice.
+    Terry Mott: And Ms. Sterling's had a packed bag under her desk since Tuesday. Didn't think anything of it till now.
     ~ guard_influence = guard_influence + 5
     # influence_increased
     -> coop_hub
 + [That's all. Carry on with your patrol.]
-    Security Guard: Right you are. I never saw you. I'm good at that, as it goes.
+    Terry Mott: Right you are. I never saw you. I'm good at that, as it goes.
     ~ idle_quiet = true
     #exit_conversation
     -> guard_idle
@@ -267,7 +286,7 @@ Security Guard: What do you need from me?
 { hub_quiet:
     ~ hub_quiet = false
 - else:
-    Security Guard: {&Anything else, or are we done?|Go on, then.|Still here?}
+    Terry Mott: {&Anything else, or are we done?|Go on, then.|Still here?}
 }
 + {not topic_shift} [Long night ahead of you?]
     -> ask_shift
@@ -279,10 +298,10 @@ Security Guard: What do you need from me?
     -> offer_bribe
 + [I'll let you get on.]
     { guard_suspicious:
-        Security Guard: I'm keeping an eye on you. Don't make me regret this.
+        Terry Mott: I'm keeping an eye on you. Don't make me regret this.
     }
     { not guard_suspicious:
-        Security Guard: Alright. Stay out of trouble.
+        Terry Mott: Alright. Stay out of trouble.
     }
     ~ idle_quiet = true
     #exit_conversation
@@ -293,20 +312,20 @@ Security Guard: What do you need from me?
 ~ topic_shift = true
 ~ guard_influence = guard_influence + 5
 # influence_increased
-Security Guard: Double shift tonight. On till six. Quiet, most nights.
+Terry Mott: Double shift tonight. On till six. Quiet, most nights.
 { guard_suspicious:
-    Security Guard: Though tonight's been more eventful than usual.
+    Terry Mott: Though tonight's been more eventful than usual.
 }
-Security Guard: Rounds every fifteen minutes. Doors, windows, anyone where they shouldn't be. Like you, possibly.
+Terry Mott: Rounds every fifteen minutes. Doors, windows, anyone where they shouldn't be. Like you, possibly.
 * [What's your route?]
-    Security Guard: Round the executive wing, mostly. Sterling's office, Mr Foster's, back down the corridor.
-    Security Guard: Why d'you want to know my route?
+    Terry Mott: Round the executive wing, mostly. Sterling's office, Mr Foster's, back down the corridor.
+    Terry Mott: Why d'you want to know my route?
     ~ guard_suspicious = true
     -> hub
-* [Must be boring work]
+* [Must be boring work.]
     ~ guard_influence = guard_influence + 5
     # influence_increased
-    Security Guard: Pays the mortgage. And nobody talks to me after nine, which suits me.
+    Terry Mott: Pays the mortgage. And nobody talks to me after nine, which suits me.
     -> hub
 + [Fair enough.]
     -> hub
@@ -316,18 +335,18 @@ Security Guard: Rounds every fifteen minutes. Doors, windows, anyone where they 
 ~ topic_building = true
 ~ guard_influence = guard_influence + 5
 # influence_increased
-Security Guard: It's an office, mate. Reception, conference rooms, a hallway, more offices.
-Security Guard: Server room's at the far end of the main hallway. The executive wing's east, where we're standing.
+Terry Mott: It's an office, mate. Reception, conference rooms, a hallway, more offices.
+Terry Mott: Server room's at the far end of the main hallway. The executive wing's east, where we're standing.
 { guard_influence >= 15:
-    Security Guard: Server room's usually locked. Executive-level access only.
+    Terry Mott: Server room's usually locked. Executive-level access only.
 }
 * [What's in the executive area?]
-    Security Guard: Ms. Sterling's office, north side. Mr Foster's across from her.
+    Terry Mott: Ms. Sterling's office, north side. Mr Foster's across from her.
     ~ guard_influence = guard_influence + 5
     # influence_increased
     -> hub
 * [Any restricted areas?]
-    Security Guard: Server room's the main one. And Ms. Sterling doesn't like people in her office without permission.
+    Terry Mott: Server room's the main one. And Ms. Sterling doesn't like people in her office without permission.
     -> hub
 + [Right. Thanks.]
     -> hub
@@ -335,13 +354,13 @@ Security Guard: Server room's at the far end of the main hallway. The executive 
 === ask_victoria ===
 #speaker:npc
 ~ topic_victoria = true
-Security Guard: Ms. Sterling? She's the boss. Signs my wages, never learnt my name.
+Terry Mott: Ms. Sterling? She's the boss. Signs my wages, never learnt my name. It's Terry, since you didn't ask.
 { guard_influence >= 20:
-    Security Guard: Between you and me, I keep out of her way. Everyone does.
-    Security Guard: And the people she meets with sometimes... they don't look like normal corporate clients.
+    Terry Mott: Between you and me, I keep out of her way. Everyone does.
+    Terry Mott: And the people she meets with sometimes... they don't look like normal corporate clients.
 }
 { guard_influence < 20:
-    Security Guard: Why are you asking about Ms. Sterling?
+    Terry Mott: Why are you asking about Ms. Sterling?
     ~ guard_suspicious = true
 }
 -> hub
@@ -349,20 +368,20 @@ Security Guard: Ms. Sterling? She's the boss. Signs my wages, never learnt my na
 === trespass_warning ===
 #speaker:npc
 #display:guard-hostile
-Security Guard: I'm giving you one chance. Leave now, or I'm calling the police.
+Terry Mott: I'm giving you one chance. Leave now, or I'm calling the police.
 * [Alright, I'm going.]
-    Security Guard: Good. Off you go.
+    Terry Mott: Good. Off you go.
     ~ idle_quiet = true
     #exit_conversation
     -> guard_idle
 * [Try to run past the guard]
-    Security Guard: HEY! STOP!
-    #hostile:night_guard
+    Terry Mott: HEY! STOP!
+    #hostile:terry_mott
     ~ idle_quiet = true
     #exit_conversation
     -> guard_idle
 * [Attack the guard]
-    #hostile:night_guard
+    #hostile:terry_mott
     ~ idle_quiet = true
     #exit_conversation
     -> guard_idle
@@ -372,19 +391,19 @@ Security Guard: I'm giving you one chance. Leave now, or I'm calling the police.
 #display:guard-hostile
 ~ guard_hostile = true
 ~ guard_detection_count = guard_detection_count + 1
-Security Guard: That's it. I'm calling the police. Don't move.
+Terry Mott: That's it. I'm calling the police. Don't move.
 Narrator: The guard reaches for his radio.
 * [Tackle the guard before he can call]
-    #hostile:night_guard
+    #hostile:terry_mott
     ~ idle_quiet = true
     #exit_conversation
     -> guard_idle
 * [Wait, wait! Hear me out.]
-    Security Guard: No more talking. You're trespassing.
+    Terry Mott: No more talking. You're trespassing.
     -> trespass_warning
 * [Run]
-    Security Guard: Security! I have an intruder!
-    #hostile:night_guard
+    Terry Mott: Security! I have an intruder!
+    #hostile:terry_mott
     ~ idle_quiet = true
     #exit_conversation
     -> guard_idle
@@ -415,24 +434,24 @@ Narrator: The guard reaches for his radio.
 - else:
     Narrator: The guard has stopped walking. He's looking at your hands, and the pick in them.
 }
-Security Guard: Oi. Away from the door. Now.
+Terry Mott: Oi. Away from the door. Now.
 + [Ms. Sterling locked her keys in. She asked me to fetch her forms.]
     ~ guard_influence = guard_influence + 5
     # influence_increased
-    Security Guard: With a pick set. Course she did.
-    Security Guard: I'm writing it down. Do that again where I can see it and I'm calling it in.
+    Terry Mott: With a pick set. Course she did.
+    Terry Mott: I'm writing it down. Do that again where I can see it and I'm calling it in.
     ~ idle_quiet = true
     #exit_conversation
     -> guard_idle
 + [Sorry. Wrong door. I'm going.]
-    Security Guard: Yeah, you are. I'll be watching.
+    Terry Mott: Yeah, you are. I'll be watching.
     ~ idle_quiet = true
     #exit_conversation
     -> guard_idle
 + [Shove past him.]
     ~ guard_hostile = true
-    Security Guard: Right. That's it.
-    #hostile:night_guard
+    Terry Mott: Right. That's it.
+    #hostile:terry_mott
     ~ idle_quiet = true
     #exit_conversation
     -> guard_idle
@@ -441,7 +460,7 @@ Security Guard: Oi. Away from the door. Now.
 === lockpick_still_here ===
 #speaker:npc
 #display:guard-suspicious
-Security Guard: I can still see you, you know. Away from the door.
+Terry Mott: I can still see you, you know. Away from the door.
 Narrator: Step back from the door. Wait until his back's turned, then try again.
 + [Step away from the door.]
     ~ idle_quiet = true
@@ -451,16 +470,16 @@ Narrator: Step back from the door. Wait until his back's turned, then try again.
 === lockpick_again ===
 #speaker:npc
 #display:guard-hostile
-Security Guard: Again? I told you once.
+Terry Mott: Again? I told you once.
 + [Put the picks away and back off.]
-    Security Guard: Last warning. Next time I'm not asking.
+    Terry Mott: Last warning. Next time I'm not asking.
     ~ idle_quiet = true
     #exit_conversation
     -> guard_idle
 + [Stand your ground.]
     ~ guard_hostile = true
-    Security Guard: Have it your way.
-    #hostile:night_guard
+    Terry Mott: Have it your way.
+    #hostile:terry_mott
     ~ idle_quiet = true
     #exit_conversation
     -> guard_idle
@@ -469,14 +488,14 @@ Security Guard: Again? I told you once.
 #speaker:npc
 #display:guard-hostile
 ~ guard_hostile = true
-Security Guard: That's three times. I'm done talking.
+Terry Mott: That's three times. I'm done talking.
 { mission_phase == "act2_infiltration":
     Narrator: He drops the torch and squares up.
 - else:
     Narrator: He squares up.
 }
 + [Brace yourself]
-    #hostile:night_guard
+    #hostile:terry_mott
     ~ idle_quiet = true
     #exit_conversation
     -> guard_idle
@@ -491,7 +510,7 @@ Security Guard: That's three times. I'm done talking.
         Narrator: The guard stops his round and looks you over.
     - else:
         { guard_hostile:
-            Security Guard: Don't even think about it.
+            Terry Mott: Don't even think about it.
         - else:
             Narrator: The guard's torch swings your way again.
         }

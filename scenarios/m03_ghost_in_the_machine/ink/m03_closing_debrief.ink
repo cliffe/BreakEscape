@@ -38,6 +38,8 @@ VAR exec_wing_entered = false
 VAR guard_challenged = false
 // Pass 5 (P3-9): set by globalVarOnKO on Danny.
 VAR danny_ko = false
+// Pass 2 dialogue round 2 (D2-1): the player put "target selection" to Sterling's face.
+VAR named_target_selection = false
 
 // Root divert. When a conversation has ended (-> DONE), the engine restores only
 // its variables on the next talk and continues from the root (npc-conversation-
@@ -95,7 +97,7 @@ Agent HaX: There you are. Sit down before you fall down. You've earned it.
     Agent HaX: And there's five hundred pounds of ours in a security guard's pocket. Finance will want a receipt.
 }
 { receptionist_ko:
-    Agent HaX: The receptionist's fine, before you ask. Concussed, and still trying to work out what she did to deserve it.
+    Agent HaX: The receptionist, Ffion Rees, is fine, before you ask. Concussed, and still trying to work out what she did to deserve it.
 }
 
 Agent HaX: Let's go through it.
@@ -105,9 +107,10 @@ Agent HaX: Let's go through it.
 #speaker:agent_0x99
 Agent HaX: The network first. All four flags, and the distcc logs are the case.
 Agent HaX: The ProFTPD backdoor, sold to Ghost, invoice ZDS-2024-0847, St. Catherine's on the target line, Sable's sign-off on the approval.
-Agent HaX: At the hospital we had the buyer's paperwork. Now we have the seller's own books.
+// D2-20: the buyer/seller paperwork line now belongs to the revelation call alone.
+Agent HaX: Now it's in their own books.
 { called_it_murder:
-    Agent HaX: You called it murder with an invoice. Now the seller's ledger says it too.
+    Agent HaX: You called it murder with an invoice. Turns out they kept the invoice.
 }
 -> victoria_discussion
 
@@ -154,6 +157,8 @@ Agent HaX: She stays at Zero Day so nothing looks wrong, and she reports to us. 
 { player_approach == "diplomatic":
     Agent HaX: You read the moment and took it. That's the whole reason this was on the table.
 }
+// Scenes #7 (orchestrator: HaX, not Netherton): his opening line pays off, shown, not summed up.
+Agent HaX: Netherton signed off at six this morning. He had me write "she priced a hospital" on the cover sheet, so nobody forgets who we're in business with.
 Agent HaX: Whether she stays turned is anyone's guess. Today, it's a win with its teeth showing.
 -> phase_2_discussion
 
@@ -161,8 +166,12 @@ Agent HaX: Whether she stays turned is anyone's guess. Today, it's a win with it
 #speaker:agent_0x99
 Agent HaX: In custody. The CPS are looking at conspiracy, supplying articles for use in fraud and computer misuse, and her part in the deaths at St. Catherine's.
 Agent HaX: Her lawyers are already calling it "market-driven research". It won't hold.
-* [She put a premium on hospitals that can't defend themselves. Premeditation in a spreadsheet.]
-    Agent HaX: That's the line that closes it.
+{ named_target_selection:
+    Agent HaX: Not with "target selection, ten thousand" on her own invoice. And you got her to call it consultancy on an open line.
+}
+// D2-21: one owner per stance. "Pricing proves intent" stays with the phone call.
+* [She picked the ward off a survey of two hundred and fourteen.]
+    Agent HaX: Targeting. That's the word the CPS will use.
     -> victoria_arrested_path
 * [People died on what she sold. This is for St. Catherine's.]
     ~ handler_trust = handler_trust + 10
@@ -176,6 +185,7 @@ Agent HaX: Her lawyers are already calling it "market-driven research". It won't
 === victoria_arrested_path ===
 #speaker:agent_0x99
 Agent HaX: Her keys opened the client database, the transaction records, the Architect's channels. We're rolling the network up while it's still warm.
+Agent HaX: Netherton's taking the file to the CPS himself. He doesn't, usually.
 { player_approach == "cautious":
     Agent HaX: Your evidence did that. Clean collection, clean prosecution.
 }
@@ -186,7 +196,7 @@ Agent HaX: Her keys opened the client database, the transaction records, the Arc
 Agent HaX: Sterling went down on site. She's in a guarded bed, not a boardroom.
 Agent HaX: We've got the evidence and the name either way. The Architect loses an operator -- she just won't be talking to us about it.
 * [She charged more to hit people who couldn't defend themselves. She'd earned the file.]
-    Agent HaX: Hard to argue. The pricing alone proves intent.
+    Agent HaX: Hard to argue. She'll wake up to a charge sheet.
     -> phase_2_discussion
 * [Unconscious, she tells us nothing. We kept the case, lost the network.]
     Agent HaX: A trade, and you made it.
@@ -196,6 +206,7 @@ Agent HaX: We've got the evidence and the name either way. The Architect loses a
 #speaker:agent_0x99
 Agent HaX: Sterling's in the wind. She had a bag packed before you ever crossed the threshold.
 Agent HaX: We've got the case. The transaction log puts Sable's name on the sale. What we don't have is her.
+Agent HaX: Netherton put her on every watch list we can reach. Did it himself, before I'd finished the sentence.
 * [The proof doesn't run. She's a signature on it now, wherever she is.]
     ~ handler_trust = handler_trust + 5
     # influence_increased
@@ -226,12 +237,17 @@ Agent HaX: Now the part that kept me up. Phase 2.
 === directive_substance ===
 #speaker:agent_0x99
 Agent HaX: Grid storage. Substation control. Hospitals on generator for when the grid drops out from under them. Zero Day supplies, Critical Mass executes. Winter, within weeks.
-Agent HaX: St. Catherine's was the proof of concept. This is the scale-up.
+// D2-8: on the escape route the player heard Victoria say "proof of concept".
+{ victoria_fate == "escaped":
+    Agent HaX: She told you St. Catherine's was a proof of concept. She wasn't showing off.
+- else:
+    Agent HaX: St. Catherine's was the test run. This is the order book.
+}
 * [That's mass-casualty scale. An attack on everyone under the grid.]
     Agent HaX: It is. And timed across cells.
     -> architect_revelation
 * [We have the sectors and the window. We can move first for once.]
-    Agent HaX: We're already moving. Stopping a distributed strike is hard. Knowing it's coming is everything.
+    Agent HaX: We're already moving. For once we've got the head start.
     -> architect_revelation
 * [One hand is behind all of it.]
     Agent HaX: Yes. And that's the thread we pull next.
@@ -273,13 +289,25 @@ Agent HaX: Substations get hardened. Hospitals get emergency assessments. We can
 }
 #speaker:agent_0x99
 { danny_fate == "protected":
-    Agent HaX: Danny Foster. You gave him the way in and he took it -- came to us on his own last night. Cooperating fully.
-    Agent HaX: I read his file and your notes. He drew a map under a lie.
-    Agent HaX: When he understood what it was for, it broke him. Sterling used him. He's no conspirator.
+    // D2-7 / weakest line #16: what he did, not a verdict on him. Pays off the photo.
+    Agent HaX: Danny Foster. You gave him the way in and he took it.
+    Agent HaX: Our people collected him at two this morning. He brought a box file and the photo off his desk, and he hasn't stopped talking since.
     { player_approach == "diplomatic":
         Agent HaX: You gave him room to come in by himself. That's why he did.
     }
-    Agent HaX: He won't be charged. But he'll carry it. That's its own sentence.
+    Agent HaX: He won't be charged. He'll carry it anyway.
+    // D2-5: you told him "Sterling goes down for her part". Read it against her fate.
+    { victoria_fate == "recruited":
+        Agent HaX: Here's the knot. Danny thinks Sterling's going down. She isn't. She's ours, and his statement stays sealed or she's burned inside a week.
+        Agent HaX: As far as Zero Day knows, he's off sick with stress. Which isn't even a lie.
+        Agent HaX: Somebody has to tell him she's walking. It should be you.
+    }
+    { victoria_fate == "arrested":
+        Agent HaX: He asked which floor they're holding Sterling on. I didn't tell him.
+    }
+    { victoria_fate == "escaped":
+        Agent HaX: You told him she'd answer for it. She's in the wind. He asked me this morning if that was still true. I said "not yet".
+    }
     -> what_made_it_possible
 }
 { danny_fate == "exposed":
@@ -289,13 +317,20 @@ Agent HaX: Substations get hardened. Hospitals get emergency assessments. We can
         Agent HaX: You went in hard and stayed hard. I won't argue with it.
     }
     Agent HaX: He'll likely get years, not a life sentence -- the deception's real and he's cooperating. But he serves.
+    // D2-5: the irony of the recruit ending, said once, as a cost.
+    { victoria_fate == "recruited":
+        Agent HaX: So the woman who lied to him gets a deal, and he gets a court date. I'll sign off on it. I won't pretend it's tidy.
+    }
+    { victoria_fate == "escaped":
+        Agent HaX: And with Sterling in the wind, he's the only one from Zero Day standing in the dock. Juries notice that.
+    }
     -> what_made_it_possible
 }
 { danny_fate == "left":
     Agent HaX: Danny Foster. You left the decision with him. Didn't shield him, didn't hang him. Just handed it back.
     Agent HaX: He hasn't called. His phone's been off since last night and he's not at home.
     { player_approach == "cautious":
-        Agent HaX: Letting people choose is a fair principle. It also means they sometimes choose to vanish.
+        Agent HaX: You let him choose. He chose to switch his phone off.
     }
     Agent HaX: If he comes in, he's a witness. If Zero Day's people find him first, he's a loose end to them. I've got someone watching his house.
     -> what_made_it_possible
@@ -374,7 +409,7 @@ Agent HaX: Their records sat on the one box they knew was broken: a distcc daemo
 - else:
     // Pass 5 round 2: "saw the people in it" only for a player who met Danny.
     { handler_trust >= 70 and danny_fate != "":
-        Agent HaX: You did the technical work and still saw the people in it. Keep doing both.
+        Agent HaX: I read your notes on Foster twice. That's not a complaint. We'll need you soon.
     }
     { handler_trust >= 70 and danny_fate == "":
         Agent HaX: Good work last night. We'll need you soon.

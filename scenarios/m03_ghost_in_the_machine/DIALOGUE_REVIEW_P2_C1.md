@@ -1,5 +1,7 @@
 # m03 Ghost in the Machine: dialogue review, pass 2 cycle 1
 
+> **Rename note (2026-10-12, m03 pass 2 dialogue round 2):** m03's receptionist is now Ffion Rees (id `ffion_rees`, ink `m03_npc_ffion_rees.ink`; was `receptionist_npc` / `m03_npc_receptionist.ink`) and the night guard is Terry Mott (id `terry_mott`, ink `m03_npc_terry_mott.ink`; was `night_guard` / `m03_npc_guard.ink`). Old ids below are historical.
+
 Reviewer: fresh Opus, read-only, 2026-10-12. Skill: `npc-dialog-review`, run in full. Aim: a SAFETYNET campaign mission, judged as a TV spy thriller (`docs/agents/M03_PASS2_BRIEF.md`). Phase 4 items (P4-1..P4-64) are closed and are not re-raised unless they have regressed. m03 has no audio yet, so every rewrite below costs nothing in TTS.
 
 Finding ids: `D2-n`. Tags: **blocker / major / minor**, and **local** (mission-local) or **approval** (engine, cross-mission, or a standing rule).

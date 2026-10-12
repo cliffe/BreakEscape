@@ -82,7 +82,7 @@ flowchart TD
   lock_server_filing_cabinet["Server Filing Cabinet"]
   company_founding_plaque{"Company Founding Plaque"}
   lock_victoria_computer["Victoria Computer"]
-  npc_receptionist{"Receptionist"}
+  npc_ffion_rees{"Ffion Rees"}
   staff_access_badge{"Staff Access Badge"}
   action_clone_reception_badge_talk>"Talk to her and clone her staff badge"]
   npc_victoria_sterling{"Victoria Sterling"}
@@ -119,9 +119,9 @@ flowchart TD
   lock_pick_kit -.-> lock_server_filing_cabinet
   reception_lobby -.-> company_founding_plaque
   company_founding_plaque -.-> lock_victoria_computer
-  reception_lobby --> npc_receptionist
-  npc_receptionist --> staff_access_badge
-  npc_receptionist --> action_clone_reception_badge_talk
+  reception_lobby --> npc_ffion_rees
+  npc_ffion_rees --> staff_access_badge
+  npc_ffion_rees --> action_clone_reception_badge_talk
   conference_room_01 --> npc_victoria_sterling
   npc_victoria_sterling --> executive_keycard
   npc_victoria_sterling --> action_clone_victoria_card
@@ -159,7 +159,7 @@ flowchart TD
   class door_conference_room_01,door_server_room,door_executive_office,lock_exec_filing_cabinet,lock_server_filing_cabinet,lock_victoria_computer,lock_wall_safe_server lock
   class conference_room_01,server_room,executive_office,reception_lobby,main_hallway,executive_wing_hallway,danny_office room
   class rfid_cloner,lock_pick_kit,company_founding_plaque,server_room_whiteboard,cyberchef_workstation,unsent_email_to_the_night_team_raw_source item
-  class npc_receptionist,staff_access_badge,npc_victoria_sterling,executive_keycard key
+  class npc_ffion_rees,staff_access_badge,npc_victoria_sterling,executive_keycard key
   class action_clone_reception_badge_talk,action_clone_victoria_card,action_confront_victoria action
   class vm_access_terminal,vmch_submit_network_scan_flag,vmch_submit_ftp_flag,vmch_submit_http_flag,vmch_submit_distcc_flag vm
   class andgate1,andgate2,andgate3 gate
@@ -247,7 +247,7 @@ flowchart TD
   lock_server_filing_cabinet["Server Filing Cabinet"]
   company_founding_plaque{"Company Founding Plaque"}
   lock_victoria_computer["Victoria Computer"]
-  npc_receptionist{"Receptionist"}
+  npc_ffion_rees{"Ffion Rees"}
   staff_access_badge{"Staff Access Badge"}
   action_clone_reception_badge_talk>"Talk to her and clone her staff badge"]
   npc_victoria_sterling{"Victoria Sterling"}
@@ -290,9 +290,9 @@ flowchart TD
   lock_pick_kit -.-> lock_server_filing_cabinet
   reception_lobby -.-> company_founding_plaque
   company_founding_plaque -.-> lock_victoria_computer
-  reception_lobby --> npc_receptionist
-  npc_receptionist --> staff_access_badge
-  npc_receptionist --> action_clone_reception_badge_talk
+  reception_lobby --> npc_ffion_rees
+  npc_ffion_rees --> staff_access_badge
+  npc_ffion_rees --> action_clone_reception_badge_talk
   conference_room_01 --> npc_victoria_sterling
   npc_victoria_sterling --> executive_keycard
   npc_victoria_sterling --> action_clone_victoria_card
@@ -345,7 +345,7 @@ flowchart TD
   class door_conference_room_01,door_server_room,door_executive_office,lock_exec_filing_cabinet,lock_server_filing_cabinet,lock_victoria_computer,lock_wall_safe_server lock
   class conference_room_01,server_room,executive_office,reception_lobby,main_hallway,executive_wing_hallway,danny_office room
   class rfid_cloner,lock_pick_kit,company_founding_plaque,server_room_whiteboard,cyberchef_workstation,unsent_email_to_the_night_team_raw_source item
-  class npc_receptionist,staff_access_badge,npc_victoria_sterling,executive_keycard key
+  class npc_ffion_rees,staff_access_badge,npc_victoria_sterling,executive_keycard key
   class action_clone_reception_badge_talk,action_clone_victoria_card,action_confront_victoria action
   class vm_access_terminal,vmch_submit_network_scan_flag,vmch_submit_ftp_flag,vmch_submit_http_flag,vmch_submit_distcc_flag vm
   class andgate1,andgate2,andgate3 gate
@@ -440,7 +440,7 @@ flowchart TD
   rc_npc_agent_hax_3("Agent HaX")
   rc_npc_director_magnus_netherton_4("Director Magnus Netherton")
   rc_npc_agent_0x47_nightshade_5("Agent 0x47 'Nightshade'")
-  rc_npc_receptionist_6("Receptionist")
+  rc_npc_ffion_rees_6("Ffion Rees")
   rc_visitor_badge_7{"Visitor Badge"}
   rc_obj8_8{"Staff Access Badge"}
   rc_npc_agent_hax_9("Agent HaX")
@@ -465,7 +465,7 @@ flowchart TD
   rc_vm_launcher_zero_day_28{"VM Access Terminal"}
   rc_cyberchef_workstation_29{"CyberChef Workstation"}
   rc_flag_station_dropsite_30{"Drop-Site Terminal"}
-  rc_npc_security_guard_31("Security Guard")
+  rc_npc_terry_mott_31("Terry Mott")
   rc_exec_filing_cabinet_32[["Filing Cabinet"]]
   rc_obj33_33{"Zero Day: A Brief History"}
   rc_victoria_computer_34[["Executive Computer"]]
@@ -491,9 +491,9 @@ flowchart TD
   reception_lobby --> rc_npc_agent_hax_3
   reception_lobby --> rc_npc_director_magnus_netherton_4
   reception_lobby --> rc_npc_agent_0x47_nightshade_5
-  reception_lobby --> rc_npc_receptionist_6
-  rc_npc_receptionist_6 --> rc_visitor_badge_7
-  rc_npc_receptionist_6 --> rc_obj8_8
+  reception_lobby --> rc_npc_ffion_rees_6
+  rc_npc_ffion_rees_6 --> rc_visitor_badge_7
+  rc_npc_ffion_rees_6 --> rc_obj8_8
   reception_lobby --> rc_npc_agent_hax_9
   rc_npc_agent_hax_9 --> rc_relayed_executive_keycard_10
   rc_npc_agent_hax_9 --> rc_m03_rfid_field_guide_11
@@ -516,7 +516,7 @@ flowchart TD
   server_room --> rc_vm_launcher_zero_day_28
   server_room --> rc_cyberchef_workstation_29
   server_room --> rc_flag_station_dropsite_30
-  executive_wing_hallway --> rc_npc_security_guard_31
+  executive_wing_hallway --> rc_npc_terry_mott_31
   executive_office --> rc_exec_filing_cabinet_32
   rc_exec_filing_cabinet_32 --> rc_obj33_33
   executive_office --> rc_victoria_computer_34
@@ -534,7 +534,7 @@ flowchart TD
   class reception_lobby,main_hallway,executive_wing_hallway,danny_office room
   class conference_room_01,server_room,executive_office lock
   class rc_obj1_1,rc_obj2_2,rc_visitor_badge_7,rc_obj8_8,rc_relayed_executive_keycard_10,rc_m03_rfid_field_guide_11,rc_m03_lockpicking_field_guide_12,rc_m03_recon_field_guide_13,rc_m03_netexploit_field_guide_14,rc_m03_cyberchef_field_guide_15,rc_m03_proftpd_field_guide_16,rc_obj19_19,rc_obj20_20,rc_obj22_22,rc_obj24_24,rc_obj26_26,rc_obj27_27,rc_vm_launcher_zero_day_28,rc_cyberchef_workstation_29,rc_flag_station_dropsite_30,rc_obj33_33,rc_obj35_35,rc_obj36_36,rc_obj38_38,rc_obj39_39,rc_obj40_40,rc_obj42_42,rc_obj43_43 item
-  class rc_npc_agent_hax_3,rc_npc_director_magnus_netherton_4,rc_npc_agent_0x47_nightshade_5,rc_npc_receptionist_6,rc_npc_agent_hax_9,rc_npc_agent_hax_17,rc_npc_agent_0x00_18,rc_npc_victoria_sterling_21,rc_npc_security_guard_31,rc_npc_danny_foster_44 npc
+  class rc_npc_agent_hax_3,rc_npc_director_magnus_netherton_4,rc_npc_agent_0x47_nightshade_5,rc_npc_ffion_rees_6,rc_npc_agent_hax_9,rc_npc_agent_hax_17,rc_npc_agent_0x00_18,rc_npc_victoria_sterling_21,rc_npc_terry_mott_31,rc_npc_danny_foster_44 npc
   class rc_server_filing_cabinet_23,rc_wall_safe_server_25,rc_exec_filing_cabinet_32,rc_victoria_computer_34,rc_obj37_37,rc_obj41_41 container
   class node_start start
 ```

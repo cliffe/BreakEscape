@@ -20,6 +20,8 @@ VAR mission_phase = ""
 VAR hub_quiet = false
 // Final round: first night visit vs return visits.
 VAR night_greeted = false
+// D2-12: synced. What the player told her at night; the guard reads "notebook".
+VAR ffion_night_story = ""
 
 // Root divert. When a conversation has ended (-> DONE), the engine restores only
 // its variables on the next talk and continues from the root (npc-conversation-
@@ -28,93 +30,96 @@ VAR night_greeted = false
 -> start
 
 === start ===
-#speaker:receptionist
+#speaker:ffion_rees
 { mission_phase == "act2_infiltration":
     -> closing_up
 }
 { not badge_received:
     #display:receptionist-professional
-    Receptionist: Afternoon! You'll be the three o'clock, is it?
-    Receptionist: Ms. Sterling mentioned you'd be coming in for a consultation.
-    Receptionist: Let me get you checked in.
+    Ffion Rees: Afternoon! You'll be the three o'clock, is it? I'm Ffion.
+    Ffion Rees: Ms. Sterling mentioned you'd be coming in for a consultation.
+    Ffion Rees: Let me get you checked in.
     -> badge_process
 }
 { badge_received:
     #display:receptionist-friendly
-    Receptionist: Back again? Forgotten something?
+    Ffion Rees: Back again? Forgotten something?
     ~ hub_quiet = true
     -> hub
 }
 
 === badge_process ===
-#speaker:receptionist
+#speaker:ffion_rees
 { not topic_company_history:
-    Receptionist: I just need you to sign in here, and I'll print you a visitor badge.
+    Ffion Rees: I just need you to sign in here, and I'll print you a visitor badge.
     Narrator: She slides a clipboard across the desk.
 }
-Receptionist: Ms. Sterling's in the conference room. Straight up the hallway, first door on the left.
+Ffion Rees: Ms. Sterling's in the conference room. Straight up the hallway, first door on the left.
 * [Thanks. Where do I sign?]
     #give_item:id_badge:visitor_badge
     ~ badge_received = true
     ~ receptionist_influence = receptionist_influence + 5
     # influence_increased
     Narrator: You sign the visitor log.
-    Receptionist: Here's your badge. Please keep it visible while you're in the building.
-    Receptionist: The conference room's behind the card reader on the left -- staff badges only. Ms. Sterling's strict about that. She doesn't come out to fetch people.
+    Ffion Rees: Here's your badge. Please keep it visible while you're in the building.
+    Ffion Rees: The conference room's behind the card reader on the left -- staff badges only. Ms. Sterling's strict about that. She doesn't come out to fetch people.
     -> first_impression_choice
 * [Before I go in, what's WhiteHat like?]
     ~ receptionist_influence = receptionist_influence + 10
     # influence_increased
-    Receptionist: Oh, we break into places. For money. Companies pay us to find the holes before somebody nasty does.
+    Ffion Rees: Oh, we break into places. For money. Companies pay us to find the holes before somebody nasty does.
     -> company_overview
 * [I'll just sign and go through, thanks.]
     #give_item:id_badge:visitor_badge
     ~ badge_received = true
     Narrator: You scrawl a signature in the log.
-    Receptionist: Here's your badge. Ms. Sterling's in the conference room -- through the card reader on your left.
+    Ffion Rees: Here's your badge. Ms. Sterling's in the conference room -- through the card reader on your left.
     ~ hub_quiet = true
     #exit_conversation
     -> hub
 
 === company_overview ===
-#speaker:receptionist
-Receptionist: Ms. Sterling started it in 2010.
+#speaker:ffion_rees
+Ffion Rees: Ms. Sterling started it in 2010.
 { receptionist_influence >= 10:
-    Receptionist: We also have a research division - Zero Day training programmes. Very cutting-edge stuff.
+    Ffion Rees: There's the training side too. Zero Day. Don't ask me what they do in there, I only order the pizzas.
 }
 ~ topic_company_history = true
 ~ pin_hint_given = true
 * [2010. She must be proud of how far it's come.]
     ~ receptionist_influence = receptionist_influence + 5
     # influence_increased
-    Receptionist: Oh, very much so. She has a whole wall of awards in her office.
+    Ffion Rees: Oh, very much so. Mind, she'd tell you it's barely started.
     -> badge_process
 * [What kind of training does Zero Day offer?]
-    Receptionist: *slightly evasive* Advanced penetration testing techniques. For serious researchers.
-    Receptionist: Ms. Sterling is very selective about who gets into the programme.
+    Ffion Rees: *slightly evasive* Advanced penetration testing techniques. For serious researchers.
+    Ffion Rees: Ms. Sterling is very selective about who gets into the programme.
     ~ receptionist_influence = receptionist_influence + 5
     # influence_increased
     -> badge_process
 
 === first_impression_choice ===
-#speaker:receptionist
-Receptionist: Is this your first time working with a Cyber Security firm?
+#speaker:ffion_rees
+Ffion Rees: Is this your first time working with a Cyber Security firm?
 * [I've done freelance pen testing before. Looking to level up.]
     ~ receptionist_influence = receptionist_influence + 10
     # influence_increased
-    Receptionist: You've come to the right place, then. She doesn't see just anyone, mind.
+    Ffion Rees: You've come to the right place, then. She doesn't see just anyone, mind.
     -> hub
-* [Relatively new. Still learning.]
+// D2-25: cover-consistent (freelance pentester). The modest answer earns a tip
+// that helps at the whiteboard.
+* [Freelance. Small jobs, mostly. I'm told she's hard to impress.]
     ~ receptionist_influence = receptionist_influence + 5
     # influence_increased
-    Receptionist: Oh, lovely. Don't let her scare you. She's like that with everyone.
+    Ffion Rees: She is. Don't let her scare you, she's like that with everyone.
+    Ffion Rees: Tip? Let her do the talking. She likes an audience.
     -> hub
 // Pass 5 (R1-16): a player who heard about the cloner in the briefing can lean in
 // on the first visit too, not only after reopening her hub.
 * {cloner_explained and not reception_badge_cloned} [Lean in by her lanyard and let the cloner read her badge.]
     -> clone_badge_opportunity
 * [I should head to the conference room. Don't want to keep Victoria waiting.]
-    Receptionist: Go on, then. Up the hallway, first door on the left.
+    Ffion Rees: Go on, then. Up the hallway, first door on the left.
     ~ hub_quiet = true
     #exit_conversation
     -> hub
@@ -127,17 +132,17 @@ Receptionist: Is this your first time working with a Cyber Security firm?
     ~ hub_quiet = false
 - else:
     { mission_phase == "act2_infiltration":
-        { night_greeted:
-            Receptionist: I'm just off, honestly.
-        - else:
-            Narrator: The receptionist is back at her desk, rummaging in a drawer.
-        }
+        // D2-15: she has found the charger, so she isn't searching and leaving at once.
+        Ffion Rees: {Found it. Charger was in the biscuit tin, don't ask.|I'm going, I'm going.}
     - else:
-        Receptionist: {&Anything else, love?|Anything else?|Go on.}
+        Ffion Rees: {&Anything else, love?|Anything else?|Go on.}
     }
 }
-+ {mission_phase == "act2_infiltration"} [You're still here? It's late.]
-    -> closing_up
++ {mission_phase == "act2_infiltration"} [Night, Ffion.]
+    Ffion Rees: Night, then. Don't let the guard scare you.
+    ~ hub_quiet = true
+    #exit_conversation
+    -> hub
 + {mission_phase != "act2_infiltration" && not topic_victoria} [What's Ms. Sterling like?]
     -> ask_victoria
 + {mission_phase != "act2_infiltration" && not topic_danny} [Who else works here?]
@@ -149,30 +154,30 @@ Receptionist: Is this your first time working with a Cyber Security firm?
 + {mission_phase != "act2_infiltration" && badge_received && not reception_badge_cloned && (conference_reader_tried or cloner_explained)} [Lean in by her lanyard and let the cloner read her badge.]
     -> clone_badge_opportunity
 + {mission_phase != "act2_infiltration"} [Thanks. I'll head through.]
-    Receptionist: Go on, then. Shout if you need anything.
+    Ffion Rees: Go on, then. Shout if you need anything.
     ~ hub_quiet = true
     #exit_conversation
     -> hub
 
 === ask_victoria ===
-#speaker:receptionist
+#speaker:ffion_rees
 ~ topic_victoria = true
 ~ receptionist_influence = receptionist_influence + 5
 # influence_increased
-Receptionist: Oh, she's brilliant. Speaks at all the big conferences, writes the papers, the lot.
-Receptionist: And she really cares about the work. Sometimes she's here until midnight.
+Ffion Rees: Oh, she's brilliant. Speaks at all the big conferences, writes the papers, the lot.
+Ffion Rees: And she really cares about the work. Sometimes she's here until midnight.
 { receptionist_influence >= 20:
-    Receptionist: Between you and me, she can be intense. Very particular about her research.
-    Receptionist: But she's fair. If you're good at what you do, she'll respect you.
+    Ffion Rees: Between you and me, she can be intense. Very particular about her research.
+    Ffion Rees: But she's fair. If you're good at what you do, she'll respect you.
 }
 * [She sounds like hard work.]
     ~ receptionist_influence = receptionist_influence + 5
     # influence_increased
-    Receptionist: Ha. You're not wrong. Lives for it, she does.
+    Ffion Rees: Ha. You're not wrong. Lives for it, she does.
     -> hub
 * [Midnight work sessions? That's some serious dedication.]
-    Receptionist: Some nights, yeah. The cleaners find her at her desk gone midnight.
-    Receptionist: She has a whole setup in her office - coffee maker, the works.
+    Ffion Rees: Some nights, yeah. The cleaners find her at her desk gone midnight.
+    Ffion Rees: Rings for a taxi at two in the morning and still beats me in.
     ~ receptionist_influence = receptionist_influence + 5
     # influence_increased
     -> hub
@@ -180,40 +185,40 @@ Receptionist: And she really cares about the work. Sometimes she's here until mi
     -> hub
 
 === ask_danny ===
-#speaker:receptionist
+#speaker:ffion_rees
 ~ topic_danny = true
 ~ receptionist_influence = receptionist_influence + 5
 # influence_increased
-Receptionist: Well, there's Danny Foster - he's one of our senior consultants.
-Receptionist: Really nice bloke. Always brings doughnuts in on a Friday.
+Ffion Rees: Well, there's Danny Foster - he's one of our senior consultants.
+Ffion Rees: Really nice bloke. Always brings doughnuts in on a Friday.
 { receptionist_influence >= 15:
-    Receptionist: He's been a bit stressed lately, though. I think he's working on a big project.
+    Ffion Rees: He's been off it lately, mind. Hasn't touched a doughnut in weeks.
 }
 * [What kind of consulting work does Danny do?]
-    Receptionist: Penetration testing, mostly. He goes on-site to client locations for security audits.
-    Receptionist: He's been with WhiteHat since the beginning - 2010, I think.
+    Ffion Rees: Site visits, mostly. Hospitals, loads of them this year. Came back from one and sat in his car for an hour.
+    Ffion Rees: He's been with WhiteHat since the beginning - 2010, I think.
     ~ receptionist_influence = receptionist_influence + 5
     # influence_increased
     -> hub
 * [Where does Danny work? In case I run into him.]
-    Receptionist: The executive wing -- off to the right from the main hallway. His is the door on the south side.
-    Receptionist: He's usually out at client sites in the day, mind. He comes back in the evening to write up.
+    Ffion Rees: The executive wing -- off to the right from the main hallway. His is the door on the south side.
+    Ffion Rees: He's usually out at client sites in the day, mind. He comes back in the evening to write up.
     -> hub
 + [Thanks.]
     -> hub
 
 === ask_company_history ===
-#speaker:receptionist
+#speaker:ffion_rees
 ~ topic_company_history = true
 ~ pin_hint_given = true
 ~ receptionist_influence = receptionist_influence + 5
 # influence_increased
-Receptionist: WhiteHat Security was founded in 2010 by Victoria Sterling.
-Receptionist: There's actually a plaque right over there *gestures at the wall* with the founding year and mission statement.
-Receptionist: "Security Through Economics" - that's our motto.
+Ffion Rees: WhiteHat Security was founded in 2010 by Victoria Sterling.
+Ffion Rees: There's actually a plaque right over there *gestures at the wall* with the founding year and mission statement.
+Ffion Rees: "Security Through Economics" - that's our motto.
 * [That's an unusual motto. What does it mean?]
-    Receptionist: *uncertain* Something about market-driven security research? Ms. Sterling explains it better than I can.
-    Receptionist: She has strong opinions about how the security industry should work.
+    Ffion Rees: *uncertain* Something about market-driven security research? Ms. Sterling explains it better than I can.
+    Ffion Rees: She has strong opinions about how the security industry should work.
     ~ receptionist_influence = receptionist_influence + 5
     # influence_increased
     -> hub
@@ -225,29 +230,29 @@ Receptionist: "Security Through Economics" - that's our motto.
     -> hub
 
 === ask_building_layout ===
-#speaker:receptionist
+#speaker:ffion_rees
 ~ receptionist_influence = receptionist_influence + 5
 # influence_increased
-Receptionist: Reception here, then the main hallway. The conference room's through the card reader, first on the left.
-Receptionist: Server room at the far end of the main hallway -- executive cards only.
-Receptionist: And Ms. Sterling's office is in the executive wing, east off the main hallway.
+Ffion Rees: Reception here, then the main hallway. The conference room's through the card reader, first on the left.
+Ffion Rees: Server room at the far end of the main hallway -- executive cards only.
+Ffion Rees: And Ms. Sterling's office is in the executive wing, east off the main hallway.
 * [Is anyone here after business hours?]
-    Receptionist: Ms. Sterling, if she's working late. Danny, some evenings. And the night guard. Does his rounds, drinks a lot of tea.
+    Ffion Rees: Ms. Sterling, if she's working late. Danny, some evenings. And the night guard. Does his rounds, drinks a lot of tea.
     ~ receptionist_influence = receptionist_influence + 5
     # influence_increased
     -> hub
 * [Even the conference area needs a card? That's pretty tight security.]
-    Receptionist: Card readers on the conference room and the server room. Ms. Sterling is very particular about access control.
+    Ffion Rees: Ms. Sterling had them fitted herself. Says a door's only as good as whoever's holding the card.
     Narrator: She taps the badge on her lanyard.
-    Receptionist: Staff badges get you into the conference area. The server room takes an executive card. Visitors normally get escorted through.
+    Ffion Rees: Staff badges get you into the conference area. The server room takes an executive card. Visitors normally get escorted through.
     ~ receptionist_influence = receptionist_influence + 5
     # influence_increased
     -> hub
-+ [That's helpful, thanks]
++ [That's helpful, thanks.]
     -> hub
 
 === clone_badge_opportunity ===
-#speaker:receptionist
+#speaker:ffion_rees
 Narrator: The cloner's antenna lights up -- it detects a MIFARE signal from her staff badge. Read it, then crack the keys.
 // The tag sits on a throwaway line: starting the RFID minigame ends this chat.
 // The task completes on Save (card_cloned mapping), never on the tag.
@@ -256,12 +261,12 @@ Narrator: She carries on straightening the sign-in sheet.
 -> clone_badge_debrief
 
 === clone_badge_debrief ===
-#speaker:receptionist
+#speaker:ffion_rees
 { reception_badge_cloned:
     Narrator: The badge is in the cloner.
     // Pass 5 round 2: a beat before the hub, so "Anything else, love?" doesn't
     // land straight after the clone.
-    Receptionist: Sorry, I was miles away. Where were we?
+    Ffion Rees: Sorry, I was miles away. Where were we?
     ~ hub_quiet = true
 - else:
     Narrator: The cloner didn't keep the read. You'll have to lean in again.
@@ -269,18 +274,39 @@ Narrator: She carries on straightening the sign-in sheet.
 -> hub
 
 === closing_up ===
-#speaker:receptionist
+#speaker:ffion_rees
 // Pass 4: after the night-transition scene it is eleven at night, so she has
-// popped back in rather than still being on shift.
+// popped back in rather than still being on shift. D2-12: the one civilian who puts
+// the cover under pressure, and the player now has to answer her.
 { night_greeted:
-    Receptionist: Still looking for that charger. Night!
-- else:
-    ~ night_greeted = true
-    Receptionist: Oh! You made me jump. I only came back for my charger.
-    Receptionist: Is Ms. Sterling expecting you this late?
+    -> hub
 }
-+ [Goodnight. Don't stay too late.]
-    Receptionist: Night, then. Don't let the guard scare you.
+~ night_greeted = true
+Ffion Rees: Oh! You made me jump. I only came back for my charger.
+Ffion Rees: Is Ms. Sterling expecting you this late?
+-> night_answer
+
+// Choices only, all sticky: reached once (night_greeted), and a reload mid-question
+// replays it rather than starving.
+=== night_answer ===
++ [She said to come back once the building was quiet.]
+    ~ ffion_night_story = "sterling"
+    #set_global:ffion_night_story:sterling
+    Ffion Rees: Sounds like her. She does her best talking after hours. Night, then.
+    ~ hub_quiet = true
+    #exit_conversation
+    -> hub
++ [Left my notebook in the conference room. I'll be two minutes.]
+    ~ ffion_night_story = "notebook"
+    #set_global:ffion_night_story:notebook
+    Ffion Rees: Go on, then. I'll tell the guard you're about, so he doesn't jump on you.
+    ~ hub_quiet = true
+    #exit_conversation
+    -> hub
++ [Something like that. Night.]
+    ~ ffion_night_story = "brushoff"
+    #set_global:ffion_night_story:brushoff
+    Ffion Rees: Right. Well. Night, then.
     ~ hub_quiet = true
     #exit_conversation
     -> hub

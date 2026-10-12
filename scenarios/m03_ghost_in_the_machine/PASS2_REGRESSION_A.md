@@ -1,5 +1,7 @@
 # m03 pass 2 regression, Run A (day), 2026-10-12
 
+> **Rename note (2026-10-12, m03 pass 2 dialogue round 2):** m03's receptionist is now Ffion Rees (id `ffion_rees`, ink `m03_npc_ffion_rees.ink`; was `receptionist_npc` / `m03_npc_receptionist.ink`) and the night guard is Terry Mott (id `terry_mott`, ink `m03_npc_terry_mott.ink`; was `night_guard` / `m03_npc_guard.ink`). Old ids below are historical.
+
 Question answered: plumbing (regression of a route that played clean on 2026-10-05). Headless, load average about 1. Keyless server :3001.
 
 - Game 2084 (main run, Run A steps 1-6, two reloads): session log `/tmp/claude-1000/-home-cliffe-Files-Projects-Code-BreakEscape-BreakEscape/d6b8f541-8b07-49dd-af31-499f27c257e9/scratchpad/m03-regA/session.jsonl` (reload 1 about lines 410-430, reload 2 about lines 840-860).

@@ -50,6 +50,8 @@ VAR pc_call_done = false
 VAR catalogue_call_heard = false
 VAR pc_call_heard = false
 VAR exec_office_entered = false
+// D2-14: greet on the first open only; later opens go straight to the hub (m02).
+VAR greeted = false
 
 // ---- Field-guide exposure flags (offered synced; given tracked locally) ----
 VAR lockpicking_guide_offered = false
@@ -86,7 +88,11 @@ VAR hint_guard_hostile_given = false
 === start ===
 #speaker:agent_0x99
 // Pass 5 round 2: a greeting that reads right above or below the first text.
-On the line, {player_name()}.
+// D2-14: once only. The exit ends on DONE, so every reopen restarts here.
+{ not greeted:
+    ~ greeted = true
+    On the line, {player_name()}.
+}
 -> hub
 
 // Pass 5 (P1-11): m02's progress-gated hub. Topics appear only when they're
@@ -435,6 +441,7 @@ Client roster, transaction records, anything to the Architect.
 }
 {player_name()}, I've got the distcc logs you just submitted.
 There it is. The ProFTPD backdoor, line item on invoice ZDS-2024-0847. Twenty-five thousand, part of a package to Ghost.
+And a line under it: "Target Selection Consultation", ten thousand. They chose the ward for Ghost.
 Target line: St. Catherine's Regional. Sable's sign-off on the approval.
 St. Catherine's gave us the buyer's invoice. This is the seller's own ledger, saying the same thing. A case with a name.
 -> m2_revelation_choices
@@ -445,7 +452,7 @@ St. Catherine's gave us the buyer's invoice. This is the seller's own ledger, sa
 // in the history. A choices-only knot replays nothing.
 === m2_revelation_choices ===
 * [Direct chain. Zero Day to Ghost to St. Catherine's. That stands up.]
-    It does. ENTROPY procurement, in writing. Ironclad.
+    It does. One ENTROPY cell invoicing another. I may have it framed.
     -> m2_revelation_impact
 * [They charged extra to hit a hospital. That's intent, on an invoice.]
     That's the line a jury remembers. Keep it.
