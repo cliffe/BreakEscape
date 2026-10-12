@@ -49,7 +49,7 @@ def main():
         x = npc_x_in_concept(*a.suggest)
         print(f"NPC spot ~{x:.0%} across the concept")
         if a.room_tiles > 12:
-            w = max(0.45, min(0.7, 10 / a.room_tiles * 1.1))
+            w = max(0.6, min(0.85, 10 / a.room_tiles * 1.5))   # 0.55 of a 20-tile room made Oleg look small (user, 2026-10-12)
             x0 = x - TARGET * w
             print(f"wide room: --crop {x0:.2f} {x0 + w:.2f}" + ("  (runs off the left edge: outpaint the magenta)" if x0 < 0 else "")
                   + ("  (runs off the right edge: outpaint the magenta)" if x0 + w > 1 else ""))
