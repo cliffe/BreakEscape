@@ -494,6 +494,8 @@ Victoria Sterling: The lab's the easy part. The money is in knowing who'll pay, 
 ~ read_dropped = true
 // Pass 5 (P1-25): synced so HaX's "she keeps stepping away" hint shows only now.
 #set_global:clone_read_dropped:true
+// A4 follow-up: read_dropped is synced too, so the night opener's "training network twice" line survives a reload.
+#set_global:read_dropped:true
 Victoria Sterling: Let's sit back down. I'd rather see your face than the back of your head.
 Narrator: She walks back to the table. The cloner's read stalls halfway, then drops. Out of range.
 // Pass 2 blind fixes (B F2): say how to get the read back, and skip the hub's
