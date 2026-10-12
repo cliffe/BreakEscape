@@ -8,6 +8,7 @@
  */
 
 import { TILE_SIZE, SPRITE_PADDING_BOTTOM_ATLAS, SPRITE_PADDING_BOTTOM_LEGACY } from '../utils/constants.js';
+import { directionFromAnimKey, koPoseAnimKey, KO_ORIGIN_SHIFT } from './npc-direction.js';
 
 /**
  * Create an NPC sprite in the game world
@@ -188,11 +189,14 @@ export function createNPCSprite(scene, npc, roomData) {
                 sprite.body.enable = false;
             }
             
-            // Play death animation if available
+            // Play death animation if available. A new sprite is on the legacy
+            // "npc-<id>-idle" key, which has no direction: getNPCDirection used to read
+            // "idle" from it, found no "death-idle" animation and hid the NPC, so a
+            // knocked-out NPC vanished after a reload while its drops stayed.
             const direction = getNPCDirection(npc.id, sprite);
-            const deathAnimKey = `npc-${npc.id}-death-${direction}`;
+            const deathAnimKey = koPoseAnimKey(npc.id, direction, (k) => scene.anims.exists(k));
             
-            if (scene.anims.exists(deathAnimKey)) {
+            if (deathAnimKey) {
                 // Stop current animation
                 if (sprite.anims.isPlaying) {
                     sprite.anims.stop();
@@ -205,6 +209,8 @@ export function createNPCSprite(scene, npc, roomData) {
                 if (anim && anim.frames && anim.frames.length > 0) {
                     sprite.anims.setProgress(1); // Jump to final frame
                 }
+                // Lie where the live animation leaves the body (npc-hostile.js lowers it)
+                sprite.setOrigin(sprite.originX, sprite.originY - KO_ORIGIN_SHIFT);
                 console.log(`💀 NPC ${npc.id} rendered with death animation final frame`);
             } else {
                 // No death animation - just hide the sprite
@@ -262,12 +268,10 @@ export function getNPCDirection(npcId, sprite = null) {
   }
   
   if (sprite && sprite.anims && sprite.anims.currentAnim) {
-    const animKey = sprite.anims.currentAnim.key;
-    // Extract direction from animation key (e.g., "npc-sarah-idle-down" → "down")
-    const parts = animKey.split('-');
-    if (parts.length >= 3) {
-      return parts[parts.length - 1];
-    }
+    // "npc-sarah-idle-down" → "down", "npc-sarah-walk-up-left" → "up-left";
+    // a key with no direction (the legacy "npc-sarah-idle") falls through to 'down'
+    const fromKey = directionFromAnimKey(sprite.anims.currentAnim.key);
+    if (fromKey) return fromKey;
   }
   
   // Default to 'down' if we can't determine direction
