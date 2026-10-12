@@ -53,6 +53,7 @@ From the PIN cracker fix (2026-10-10), found but not fixed:
 
 ## Story and missions
 
+- **Carry m03's Sterling and Danny threads forward** (m03 pass-2 dialogue review, 2026-10-12; M). No mission from m04 to m08 mentions Victoria Sterling or Danny Foster. A recruited Sterling could turn up as an asset or a liability later, and the debrief's "Somebody has to tell him she's walking. It should be you." could be paid off. Depends on "Carry choices between missions".
 - **m08 pays off the Architect's teacher line** (m07 fixer; S). Nightshade or HaX quotes "Let it hurt afterwards, not during."
 
 - **A sticky "What should I be doing?" handler choice** (style guide; M). Answers from current progress, so a hint the player missed isn't gone for good (m02's hint choices retire after one use).
