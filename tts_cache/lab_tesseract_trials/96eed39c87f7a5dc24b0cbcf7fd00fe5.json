@@ -1,0 +1,13 @@
+{
+  "key": "96eed39c87f7a5dc24b0cbcf7fd00fe5",
+  "npc": "cliffe_schreuders",
+  "text": "Don't mention it.",
+  "voice": "Orus",
+  "style": "Academic who builds learning tools and capture-the-flag games. Consistent Australian accent throughout. Relaxed, dry, quick, amused, sentences that stop a beat early.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "lab_tesseract_trials",
+  "source": "generate",
+  "generated": "2026-10-12",
+  "recorded_at": "2026-10-12T11:16:01Z"
+}
