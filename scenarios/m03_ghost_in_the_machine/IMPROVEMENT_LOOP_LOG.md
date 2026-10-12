@@ -1827,3 +1827,31 @@ No audio exists for m03. Player choices aren't listed. Pairs come from a line di
   -> HaX (phone text): Network's stripped, the case is made, and Danny's on the record. Sterling's your last move.
 - (none: new line)
   -> HaX (phone text): Network's stripped, the case is made, and Danny's choice is his now. Sterling's your last move.
+
+## Dialogue sign-off tidy (2026-10-12)
+
+After the cycle-5 sign-off (`DIALOGUE_REVIEW_P2_C5.md`). One new spoken line, no other new text.
+
+- **C5-1.** `ink/m03_npc_terry_mott.ink:232` (cloned-card excuse) and `:259` (enrolment-forms excuse) now clear `guard_suspicious` only when `guard_detection_count == 0`. A player he caught with picks gets "I've got your face now." instead of "Mind how you go.".
+- **Danny survey callback.** New global `defended_danny`: set by `#set_global:defended_danny:true` on the "Danny drew that survey for you" choice (`ink/m03_npc_victoria.ink:671-673`), declared in `scenario.json.erb:1848` and as a VAR in `m03_npc_victoria.ink:62` and `m03_closing_debrief.ink:45`. Gated HaX line in the debrief at `m03_closing_debrief.ink:314` (protected, after "He'll carry it anyway.") and `:339` (exposed, after "But he serves."): "He knows you spoke up for him in front of Sterling. He mentioned it twice." The line sits before the Sterling-fate lines, including "He asked which floor they're holding Sterling on.". Same text in both places, so one TTS entry.
+- **Validator.** `torch` added to the known NPC behaviour fields (`scripts/validate_scenario.rb:284`); Terry's warning is gone.
+- **Routes** (`scripts/ink_runtime_check/m03_routes/`): r1 drops the extra "Look in" pick; r6 sets `guard_grace:false` before the second lockpick step; r11 and r15 drop the briefing picks that no longer exist; r12 drops the "St. Catherine's" debrief pick. New: `r17_caught_then_excuses.json` (C5-1: card and enrolment forms after a catch both end on "I've got your face now.") and `r18_danny_callback.json` (callback plays with the global set, absent in the control).
+- **Checks.** Ink compiles; validator (with ink, `--no-graph`) passes with known items only; dialoguelint 0 errors, the 2 known Victoria warnings; reopencheck 0 problems; all 20 routes run, and every route that ends does so at its intended end.
+
+## Lighting cycle 3 (2026-10-12)
+
+Config only (`scenario.json.erb` lighting fields); plan §11; screenshots `build_evidence/lighting_c3/` (options game 2148, day 2151, night 2152). Reload checks and the real night turn are with the Sonnet tester (coordinator).
+
+| Severity | Count | Fixed | Deferred |
+|---|---|---|---|
+| Blocker | 0 | 0 | 0 |
+| Major | 1 | 1 (mitigated) | 1 engine proposal |
+| Minor | 4 | 3 | 1 |
+
+- **M1 (mitigated; engine E4 proposed):** Terry's vision cone draws under the light map (`npc-los.js:385`, depth 9999), so the night corridor dimmed it. Exec wing night ambient `#343a50` → `#424a62`; the real fix (cone at `overlayDepth`) is a one-line engine change awaiting approval.
+- m1 main hallway at night: the corridor competed with the threat map. Darker (`#262c40`, pools 0.2) and a night-only threat-map variant (r 76, 0.9): chosen over two other options by looking.
+- m2 Danny's lamp a touch hot on the wall: 0.7 → 0.6.
+- m3 Terry's beam short in the three-tile corridor: reads; start point and width are engine (E5, optional), left.
+- m4 server-room player torch faint against the racks: withdrawn as a lighting issue. The room strikes on within about 0.9 s of entry, so the torch is barely seen there.
+- Fresh look at every cycle-2 shot: nothing above minor.
+- Validator schema passes. No engine files touched this cycle.

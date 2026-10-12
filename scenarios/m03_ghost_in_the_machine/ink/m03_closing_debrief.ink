@@ -42,6 +42,7 @@ VAR danny_ko = false
 VAR transaction_log_read = false
 // Pass 2 dialogue round 2 (D2-1): the player put "target selection" to Sterling's face.
 VAR named_target_selection = false
+VAR defended_danny = false // Synced scenario global: the player spoke up for Danny's survey to Sterling
 
 // Root divert. When a conversation has ended (-> DONE), the engine restores only
 // its variables on the next talk and continues from the root (npc-conversation-
@@ -310,6 +311,9 @@ Agent HaX: The Phase 2 target list goes out unsigned. Substations get hardened, 
         Agent HaX: You didn't push. He noticed.
     }
     Agent HaX: He won't be charged. He'll carry it anyway.
+    { defended_danny:
+        Agent HaX: He knows you spoke up for him in front of Sterling. He mentioned it twice.
+    }
     // D2-5: you told him "Sterling goes down for her part". Read it against her fate.
     { victoria_fate == "recruited":
         Agent HaX: Here's the knot. Danny thinks Sterling's going down. She isn't. She's ours, and his statement stays sealed or she's burned inside a week.
@@ -332,6 +336,9 @@ Agent HaX: The Phase 2 target list goes out unsigned. Substations get hardened, 
         Agent HaX: You went in hard and stayed hard. I won't argue with it.
     }
     Agent HaX: He'll likely get years, not a life sentence -- the deception's real and he's cooperating. But he serves.
+    { defended_danny:
+        Agent HaX: He knows you spoke up for him in front of Sterling. He mentioned it twice.
+    }
     // D2-5: the irony of the recruit ending, said once, as a cost.
     { victoria_fate == "recruited":
         Agent HaX: So the woman who lied to him gets a deal, and he gets a court date. I'll sign off on it. I won't pretend it's tidy.

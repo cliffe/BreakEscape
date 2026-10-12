@@ -1,6 +1,6 @@
 {"steps":[
 {"note":"R15 (cycle 4 review): KO-heavy. Ffion knocked out at reception, Sterling knocked out in the meeting (Nightshade's copy of her card), Terry knocked out at night after a catch, Danny knocked out before he decides."},
-{"talk":"briefing","picks":["Skip the background","What else are they planning","That's everything","move fast","I'm ready"]},
+{"talk":"briefing","picks":["Skip the background","That's everything","move fast","I'm ready"]},
 {"set":{"briefing_played":true,"receptionist_ko":true}},
 {"talk":"victoria","picks":["Why am I here"]},
 {"set":{"victoria_ko":true,"victoria_fate":"ko"}},

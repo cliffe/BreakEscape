@@ -59,6 +59,7 @@ VAR sterling_on_call_seen = false
 VAR danny_fate = ""
 // D2-1: synced; the debrief reads it. The player put "target selection" to her face.
 VAR named_target_selection = false
+VAR defended_danny = false // Synced scenario global: set when the player speaks up for Danny's survey to Sterling
 // D4-14: the player opened the night on St. Catherine's.
 VAR came_via_hospital = false
 
@@ -668,6 +669,8 @@ Victoria Sterling: I read what that ward cost, down to the number. It changed no
 === target_followup ===
 #speaker:victoria_sterling
 + {danny_fate != "" and danny_fate != "ko"} [Danny drew that survey for you. He's been sitting in the dark for months.]
+    ~ defended_danny = true
+    #set_global:defended_danny:true
     Victoria Sterling: Danny was paid a great deal of money to stop asking. He's the one who agreed the price.
     -> the_reckoning_close
 // D3-5: keeps "I sleep perfectly" (a protected line) on the target route too.

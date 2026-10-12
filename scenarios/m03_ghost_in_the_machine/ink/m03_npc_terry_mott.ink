@@ -229,7 +229,9 @@ Terry Mott: You got ID? Key card?
     - else:
         ~ guard_influence = guard_influence + 15
         # influence_increased
-        ~ guard_suspicious = false
+        { guard_detection_count == 0:
+            ~ guard_suspicious = false
+        }
         Terry Mott: That's one of the exec cards. ...Right. Carry on.
         Terry Mott: Didn't have you down as a night person.
     }
@@ -254,7 +256,7 @@ Terry Mott: She does ring down at odd hours. Which files?
     ~ guard_influence = guard_influence + 10
     # influence_increased
     // D5-4: an excuse that landed leaves him less cold; no greeting after a dismissal.
-    { not day_greeted or ffion_night_story == "sterling":
+    { (not day_greeted or ffion_night_story == "sterling") and guard_detection_count == 0:
         ~ guard_suspicious = false
     }
     Terry Mott: Ten minutes. Then I come looking.

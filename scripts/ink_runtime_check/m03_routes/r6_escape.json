@@ -11,6 +11,7 @@
 {"talk":"ffion","picks":["once the building was quiet"]},
 {"talk":"ffion","picks":["Night, Ffion"]},
 {"talk":"terry","knot":"on_lockpick_detected","picks":["locked her keys in"]},
+{"set":{"guard_grace":false}},
 {"talk":"terry","knot":"on_lockpick_detected","picks":["Stand your ground"]},
 {"set":{"guard_hostile":true,"guard_attacking":true}},
 {"talk":"phone","picks":["coming for me","Understood","Where do I stand","Thanks.","Nothing right now"]},

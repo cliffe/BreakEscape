@@ -281,7 +281,7 @@ def check_unknown_fields(json_data)
 
   # Known NPC behavior fields
   known_behavior_fields = %w[
-    initiallyHidden immovable hostile facePlayer patrol staticSprite collisionBox _comment
+    initiallyHidden immovable hostile facePlayer patrol staticSprite collisionBox _comment torch
   ]
 
   # Known eventMapping fields

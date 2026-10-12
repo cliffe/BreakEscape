@@ -1,6 +1,6 @@
 {"steps":[
 {"note":"R11 (cycle 4 review): rude to everyone. Short with HaX, sign-and-go at reception, needles Victoria, brushes Ffion off at night, snaps at Terry, condemns Danny, arrests Victoria on the hospital route."},
-{"talk":"briefing","picks":["Skip the background","take the supplier","That's everything","move fast","I'm ready"]},
+{"talk":"briefing","picks":["Skip the background","That's everything","move fast","I'm ready"]},
 {"set":{"briefing_played":true,"cloner_explained":true}},
 {"talk":"ffion","picks":["just sign and go"]},
 {"set":{"conference_reader_tried":true}},
