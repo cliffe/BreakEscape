@@ -43,7 +43,8 @@ VAR ffion_night_story = ""
 }
 { badge_received:
     #display:receptionist-friendly
-    Ffion Rees: Back again? Forgotten something?
+    // D3-20: varied re-entry.
+    Ffion Rees: {&Back again? Forgotten something?|Hiya again.|You're getting to be a regular.}
     ~ hub_quiet = true
     -> hub
 }
@@ -92,8 +93,9 @@ Ffion Rees: Ms. Sterling started it in 2010.
     Ffion Rees: Oh, very much so. Mind, she'd tell you it's barely started.
     -> badge_process
 * [What kind of training does Zero Day offer?]
-    Ffion Rees: *slightly evasive* Advanced penetration testing techniques. For serious researchers.
-    Ffion Rees: Ms. Sterling is very selective about who gets into the programme.
+    // D3-9: she doesn't know what the back rooms do, and says so.
+    Ffion Rees: Told you, I just do the pizzas. Advanced something. She picks them herself, mind.
+    Ffion Rees: Turned away a lad who'd been on the telly last spring.
     ~ receptionist_influence = receptionist_influence + 5
     # influence_increased
     -> badge_process
@@ -139,7 +141,8 @@ Ffion Rees: Is this your first time working with a Cyber Security firm?
     }
 }
 + {mission_phase == "act2_infiltration"} [Night, Ffion.]
-    Ffion Rees: Night, then. Don't let the guard scare you.
+    // D3-10: no third "Night, then".
+    Ffion Rees: Go on, I'm locking the drawer. Don't let the guard scare you.
     ~ hub_quiet = true
     #exit_conversation
     -> hub
@@ -164,18 +167,17 @@ Ffion Rees: Is this your first time working with a Cyber Security firm?
 ~ topic_victoria = true
 ~ receptionist_influence = receptionist_influence + 5
 # influence_increased
-Ffion Rees: Oh, she's brilliant. Speaks at all the big conferences, writes the papers, the lot.
-Ffion Rees: And she really cares about the work. Sometimes she's here until midnight.
+Ffion Rees: Oh, she's brilliant. Does the big conferences, gets quoted in the papers. Bit terrifying, mind.
 { receptionist_influence >= 20:
-    Ffion Rees: Between you and me, she can be intense. Very particular about her research.
-    Ffion Rees: But she's fair. If you're good at what you do, she'll respect you.
+    Ffion Rees: Between you and me, I've never seen her lose an argument. Not once.
+    Ffion Rees: She remembers everyone's birthday, though. Which is more than my last place did.
 }
 * [She sounds like hard work.]
     ~ receptionist_influence = receptionist_influence + 5
     # influence_increased
     Ffion Rees: Ha. You're not wrong. Lives for it, she does.
     -> hub
-* [Midnight work sessions? That's some serious dedication.]
+* [Does she work late?]
     Ffion Rees: Some nights, yeah. The cleaners find her at her desk gone midnight.
     Ffion Rees: Rings for a taxi at two in the morning and still beats me in.
     ~ receptionist_influence = receptionist_influence + 5
@@ -213,12 +215,11 @@ Ffion Rees: Really nice bloke. Always brings doughnuts in on a Friday.
 ~ pin_hint_given = true
 ~ receptionist_influence = receptionist_influence + 5
 # influence_increased
-Ffion Rees: WhiteHat Security was founded in 2010 by Victoria Sterling.
-Ffion Rees: There's actually a plaque right over there *gestures at the wall* with the founding year and mission statement.
-Ffion Rees: "Security Through Economics" - that's our motto.
+// W-11: keeps 2010 and the plaque (the password clue); leaves "market-driven" to Victoria.
+Ffion Rees: Since 2010. Ms. Sterling started it.
+Ffion Rees: Says so on the plaque, there, look. "Security Through Economics."
 * [That's an unusual motto. What does it mean?]
-    Ffion Rees: *uncertain* Something about market-driven security research? Ms. Sterling explains it better than I can.
-    Ffion Rees: She has strong opinions about how the security industry should work.
+    Ffion Rees: Something about paying people properly? Ask her. Actually, don't, you'll be here till six.
     ~ receptionist_influence = receptionist_influence + 5
     # influence_increased
     -> hub
@@ -306,7 +307,7 @@ Ffion Rees: Is Ms. Sterling expecting you this late?
 + [Something like that. Night.]
     ~ ffion_night_story = "brushoff"
     #set_global:ffion_night_story:brushoff
-    Ffion Rees: Right. Well. Night, then.
+    Ffion Rees: Right. Well. Suit yourself.
     ~ hub_quiet = true
     #exit_conversation
     -> hub

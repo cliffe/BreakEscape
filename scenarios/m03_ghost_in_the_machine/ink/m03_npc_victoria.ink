@@ -104,7 +104,8 @@ VAR named_target_selection = false
 }
 { recruitment_discussed && not victoria_card_cloned:
     #display:victoria-neutral
-    Victoria Sterling: Back for more conversation?
+    // D3-20: varied re-entry.
+    Victoria Sterling: {&Forgotten something?|Reconsidering?|Sit, then.}
     ~ hub_quiet = true
     -> hub
 }
@@ -122,7 +123,7 @@ VAR named_target_selection = false
 Victoria Sterling: I reviewed your background. Freelance pen testing, some CTF competition work.
 Victoria Sterling: Solid technical skills. But that's not why you're here.
 * [Why am I here, then?]
-    Victoria Sterling: To see if you understand the philosophy behind real security research.
+    Victoria Sterling: To find out what you're worth. Your CV only tells me what you cost.
     ~ victoria_influence = victoria_influence + 5
     # influence_increased
     -> philosophy_intro
@@ -135,13 +136,12 @@ Victoria Sterling: Solid technical skills. But that's not why you're here.
     ~ victoria_influence = victoria_influence + 5
     # influence_increased
     ~ victoria_suspicious = victoria_suspicious + 5
-    Victoria Sterling: *slight pause* We push boundaries, yes. Let me explain our approach.
+    Victoria Sterling: Unconventional. That's the polite word. Sit down and I'll tell you the other one.
     -> philosophy_intro
 
 === philosophy_intro ===
 #speaker:victoria_sterling
-Victoria Sterling: The traditional security model is broken. Researchers find vulnerabilities, report them to vendors, wait months for patches.
-Victoria Sterling: Meanwhile, those same vulnerabilities get discovered by others. Sold on dark markets. Exploited.
+Victoria Sterling: You find a hole and do the decent thing. The vendor sits on it for six months. Somebody less decent finds it in three.
 * [So, responsible disclosure or full disclosure?]
     ~ victoria_influence = victoria_influence + 10
     # influence_increased
@@ -201,14 +201,14 @@ Victoria Sterling: Systems fail. What matters is who knows first, and who pays t
 + [Thank you. I've taken enough of your time.]
     #speaker:victoria_sterling
     { victoria_influence >= 30:
-        Victoria Sterling: I think you'd be a good fit for our training programme. I'll be in touch.
+        Victoria Sterling: You'll do. Reception will have the details by Friday.
         ~ victoria_trusts_player = true
     }
     { (victoria_influence < 30) && (victoria_influence >= 10):
-        Victoria Sterling: We'll review your application. Thank you for your time.
+        Victoria Sterling: You're harder to read than most. I'll let you know which way it falls.
     }
     { victoria_influence < 10:
-        Victoria Sterling: I'm not sure you're the right fit for Zero Day's culture. We'll be in touch.
+        Victoria Sterling: You argue with the person interviewing you. Brave. Not useful.
     }
     ~ idle_quiet = true
     #exit_conversation
@@ -303,32 +303,41 @@ Victoria Sterling: Good. Indignation is cheap, and it pays nobody's rent.
 // "sold" is the answer the cover wants; "asked" is the slip she remembers.
 === the_question ===
 #speaker:victoria_sterling
-Victoria Sterling: My turn. One question. I ask everyone, and most people get it wrong.
+{ victoria_card_cloned:
+    Victoria Sterling: Before you go. One question. I ask everyone, and most people get it wrong.
+- else:
+    Victoria Sterling: My turn. One question. I ask everyone, and most people get it wrong.
+}
 Victoria Sterling: You find a hole in an NHS trust's patient records. The vendor offers you a T-shirt and a thank-you. A buyer offers forty thousand. What do you do?
 + [Take the forty. The vendor had years to find it.]
     ~ victoria_test_answer = "sold"
     ~ victoria_influence = victoria_influence + 10
     # influence_increased
     Victoria Sterling: Quickly said. I'll remember that.
-    ~ hub_quiet = true
-    -> hub
+    -> question_done
 + [Report it. Then invoice the vendor for my time anyway.]
     ~ victoria_test_answer = "hedged"
     ~ victoria_influence = victoria_influence + 5
     # influence_increased
     Victoria Sterling: Wanting both. Honest, at least. It won't make you rich.
-    ~ hub_quiet = true
-    -> hub
+    -> question_done
 + [I'd want to know what the buyer wanted it for.]
     ~ victoria_test_answer = "asked"
     ~ victoria_suspicious = victoria_suspicious + 5
-    Victoria Sterling: Nobody tells you. And if you need to know, you can't afford to.
+    Victoria Sterling: Then you'd never sell anything. The buyer who explains himself is the one you should worry about.
     { victoria_suspicious >= 10 and not suspicion_warned:
         ~ suspicion_warned = true
         Narrator: Her smile stays exactly where it was. Her eyes don't. A recruit wouldn't have said that.
     }
-    ~ hub_quiet = true
-    -> hub
+    -> question_done
+
+// D3-21: back to the goodbye when asked after the clone, otherwise to the hub.
+=== question_done ===
+{ victoria_card_cloned:
+    -> clone_debrief
+}
+~ hub_quiet = true
+-> hub
 
 === clone_rfid_opportunity ===
 #speaker:victoria_sterling
@@ -398,14 +407,13 @@ Narrator: Back at the board. The cloner finds her card again and starts a fresh 
 }
 ~ read_checked = true
 Narrator: Halfway. The cloner is still reading.
-Victoria Sterling: Of course, what students learn in the lab is just the beginning.
-Victoria Sterling: The money is in knowing who'll pay, and how much.
+Victoria Sterling: The lab's the easy part. The money is in knowing who'll pay, and how much.
 * [How do you determine pricing for a zero-day vulnerability?]
     // D2-6: oblique by day; the night line ("You priced the bodies in") says it.
     Victoria Sterling: CVSS is the floor. After that, it's what the buyer's target can't afford to lose. Some sectors can't afford to lose anything.
     -> clone_check_2
 * [That sounds more complex than pure technical work.]
-    Victoria Sterling: Security research is as much economics as it is code.
+    Victoria Sterling: That's why I don't hire coders. I hire people who can count.
     ~ victoria_influence = victoria_influence + 5
     # influence_increased
     -> clone_check_2
@@ -426,6 +434,11 @@ Narrator: She walks back to the table. The cloner's read stalls halfway, then dr
 === clone_check_2 ===
 #speaker:victoria_sterling
 Victoria Sterling: You ask questions like someone taking notes. I like that in staff. I watch for it in guests.
+// Cycle 2, scene #1: one beat of danger during the read, only for a player who has
+// already pushed her. Narration only: no choice, no gate.
+{ victoria_suspicious >= 5 and not read_dropped:
+    Narrator: Her eyes drop to your jacket, where the cloner's light shows through the cloth. Then back to the board.
+}
 Narrator: Nearly there. Keep her talking.
 * [Skills are cheap. Knowing where to sell them isn't.]
     ~ victoria_influence = victoria_influence + 10
@@ -434,7 +447,7 @@ Narrator: Nearly there. Keep her talking.
     -> clone_complete
 * [This lab can't have been cheap to build.]
     Narrator: Your eyes stay on the network diagram.
-    Victoria Sterling: Worth every penny. Our students go operational faster than any university programme.
+    Victoria Sterling: It paid for itself in a quarter. Universities teach them to write it up. I teach them what it's worth.
     -> clone_complete
 * [Do you offer any formal certifications?]
     Victoria Sterling: Certificates are for people who want permission. My students don't ask.
@@ -470,6 +483,11 @@ Narrator: She answers at length. She likes this diagram.
     Narrator: The cloner didn't keep the read. You'll need to get close to her card again.
     -> hub
 }
+// D3-21: a player who went straight to the whiteboard still gets the test HaX
+// promised. The card is saved by now, so nothing on the critical path waits on it.
+{ victoria_test_answer == "":
+    -> the_question
+}
 Victoria Sterling: That's enough philosophy for one afternoon. The programme starts next month. I'll know by Friday whether you're on it.
 // Scenes #6: the goodbye is a stance she reads back at night.
 * [This is exactly the kind of work I've been looking for.]
@@ -494,9 +512,8 @@ Victoria Sterling: That's enough philosophy for one afternoon. The programme sta
 // The guard joke holds: she never learnt his name (m03_npc_terry_mott.ink ask_victoria).
 Victoria Sterling: Have a look round on your way out. Reception, the main hallway. Not the executive wing; the guard gets territorial.
 { victoria_trusts_player:
-    Victoria Sterling: Off the record? I think you'd fit in well here. We need more pragmatists.
+    Victoria Sterling: Off the record, you didn't flinch once. People who don't flinch do well here.
 }
-Victoria Sterling: I have another meeting in a few minutes. But we'll be in touch.
 Narrator: Victoria's phone buzzes. She glances at it.
 Victoria Sterling: Excuse me, I need to take this.
 ~ idle_quiet = true
@@ -508,29 +525,27 @@ Victoria Sterling: Excuse me, I need to take this.
 #display:victoria-neutral
 Narrator: Victoria is standing by the window. Coat on, a slim bag over one shoulder. She has been waiting for you.
 Victoria Sterling: You came back after hours. Recruits don't do that.
-// D2-17: she saw the player in the doorway during her call, and let them go.
-// "Deal with it myself" was her answer to the people who offered to deal with them.
-{ sterling_on_call_seen:
-    Victoria Sterling: You looked in on me earlier, while I was on the phone. That window shows the whole doorway.
-    Victoria Sterling: My associates offered to deal with you. I told them I'd do it myself. I wanted to see what you'd bring back.
-}
-// One read-back of the afternoon, sharpest first: what she noticed, then the
-// player's own words (D2-3 test, Scenes #6 goodbye), then her general read.
+// One read-back of the afternoon (cycle 2, D3-3): what she saw (the second trip to
+// the board), then the player's own words to her test, then her general suspicion,
+// then low influence, then the goodbye stance.
 { receptionist_ko:
     Victoria Sterling: Nor do they leave my receptionist on her own floor. She can't remember your face. I can.
 - else:
   {
-  - victoria_suspicious >= 10 or read_dropped or suspicion_warned:
+  - read_dropped:
+    // Only true after a second trip to the whiteboard.
     Victoria Sterling: You asked about the training network twice this afternoon. Once is curiosity. Twice is an inventory.
+  - victoria_test_answer == "asked":
+    Victoria Sterling: You asked what the buyer wanted it for. I should have ended the interview there.
+  - victoria_test_answer == "sold":
+    Victoria Sterling: You told me you'd take the forty. You said it very quickly. The ones who mean it take longer.
+  - victoria_test_answer == "hedged":
+    Victoria Sterling: Report it and bill them anyway, you said. I took that for greed. It was a conscience keeping its options open.
+  - victoria_suspicious >= 10 or suspicion_warned:
+    Victoria Sterling: You asked me the questions a prosecutor asks. Recruits ask about the salary.
   - victoria_influence < 10:
     // D2-16: she told this player they weren't the right fit.
     Victoria Sterling: You were rude this afternoon. I put it down to nerves. Nerves don't come back at eleven at night.
-  - victoria_test_answer == "sold":
-    Victoria Sterling: You told me you'd take the forty. You said it very quickly. The ones who mean it take longer.
-  - victoria_test_answer == "asked":
-    Victoria Sterling: You asked what the buyer wanted it for. I should have ended the interview there.
-  - victoria_test_answer == "hedged":
-    Victoria Sterling: Report it and bill them anyway, you said. I took that for greed. It was a conscience keeping its options open.
   - afternoon_goodbye == "keen":
     Victoria Sterling: You told me this was exactly the work you'd been looking for. I believed you. That's the part I mind.
   - afternoon_goodbye == "undecided":
@@ -580,15 +595,19 @@ Victoria Sterling: Vulnerabilities are facts. Someone will always sell the facts
 + {transaction_log_read or revelation_heard} [Ten thousand for target selection. It's on your invoice. You picked the hospital.]
     ~ named_target_selection = true
     #set_global:named_target_selection:true
-    Victoria Sterling: Danny's survey. Two hundred and fourteen sites, and one with the oldest FTP box on the list.
+    Victoria Sterling: *after a moment* Danny Foster's survey. One of mine.
+    Victoria Sterling: Two hundred and fourteen sites, and one with the oldest FTP box on the list.
     Victoria Sterling: Ghost wanted somewhere that would pay. I told them where. That's consultancy.
-    Narrator: It's the first answer tonight she's had to think about.
     -> target_followup
 
 === target_followup ===
 #speaker:victoria_sterling
 + {danny_fate != "" and danny_fate != "ko"} [Danny drew that survey for you. He's been sitting in the dark for months.]
     Victoria Sterling: Danny was paid a great deal of money to stop asking. He's the one who agreed the price.
+    -> the_reckoning_close
+// D3-5: keeps "I sleep perfectly" (a protected line) on the target route too.
++ [Consultancy. Is that the story you tell yourself so you can sleep?]
+    Victoria Sterling: I sleep perfectly. That's the part people like you can never forgive.
     -> the_reckoning_close
 + [Consultancy. Is that what you'll call it in court?]
     Victoria Sterling: In court I'll call it whatever my barrister tells me to. You'll have to get me there first.
@@ -598,6 +617,11 @@ Victoria Sterling: Vulnerabilities are facts. Someone will always sell the facts
 #speaker:victoria_sterling
 Narrator: She settles the bag on her shoulder.
 Victoria Sterling: To the Architect I'm a line item. Sable, Zero Day, this office -- all of it is rented. All of it replaceable.
+// D2-17, moved here in cycle 2 (D3-1): her last card, and a live threat.
+{ sterling_on_call_seen:
+    Victoria Sterling: You stood in my doorway earlier. At night that window's a mirror.
+    Victoria Sterling: My associates offered to deal with you. I said I'd do it myself. I still might.
+}
 Victoria Sterling: So decide what you actually want from the next thirty seconds. I have a car downstairs, and you have exactly one move.
 -> confrontation_decision
 

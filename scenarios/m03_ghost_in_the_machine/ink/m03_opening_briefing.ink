@@ -44,7 +44,7 @@ Agent HaX: Right. Zero Day Syndicate. You heard of them?
     -> briefing_main
 * [Skip the background. What's the mission?]
     ~ skipped_background = true
-    Agent HaX: Right to business. Good.
+    Agent HaX: Right to business.
     -> briefing_main
 
 === briefing_main ===
@@ -106,7 +106,7 @@ Agent HaX: They sold it as a product. Twenty-five thousand on the invoice, healt
 * [Then we take the supplier off the board.]
     ~ handler_trust = handler_trust + 5
     # influence_increased
-    Agent HaX: Agreed. That's the mission.
+    Agent HaX: That's the mission.
     -> objectives
 * [What else are they planning?]
     Agent HaX: There's a Phase 2. That's the other thing you're going in to find.
@@ -202,7 +202,7 @@ Agent HaX: Entry is a conference-room meeting this afternoon. After that the bui
 === mission_approach ===
 #speaker:agent_0x99
 Agent HaX: Before you go in -- how do you want to play it?
-Agent HaX: Your call. I trust your read.
+Agent HaX: Your call.
 + [I'll be thorough. Document everything.]
     ~ player_approach = "cautious"
     #set_global:player_approach:cautious
@@ -244,7 +244,7 @@ Agent HaX: And there's a consultant, Danny Foster. He did the hospital recon. Co
 * [I'll decide when I've got the facts.]
     ~ handler_trust = handler_trust + 5
     # influence_increased
-    Agent HaX: Good answer. Evidence first.
+    Agent HaX: Then get the facts. He'll still be there.
     -> deployment
 * [If he did the recon, he's part of it.]
     ~ player_approach = "aggressive"

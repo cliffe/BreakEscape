@@ -961,3 +961,314 @@ Record: `ROOM_DRESSING.md` (cycle 4), screenshots `build_evidence/dressing_c4/`.
 - Danny's rug replaced by a small kilim under the camp bed; burgundy runner and console in the executive corridor; RESTRICTED redrawn as a plate on the back wall; AV panel, Danny's desk lamp, USB bowl on the reception counter.
 - Withdrawn by me: CEO floor lamps (read as garden lamps).
 - No scenario edits, no PixelLab spend.
+
+## Dialogue cycle 2 fixes (2026-10-12)
+
+Review acted on: `DIALOGUE_REVIEW_P2_C2.md` (revise, light: 0 blockers, 4 majors, 19 minors, 15 line rewrites W-1..W-15, 4 local flat scenes, 4 cycle-1 items not fully fixed). Fixer: the same Opus agent, resumed. Ink snapshot: scratchpad `m03-dialogue/snapshot_c2/` (taken after commit adee101b). Line numbers are in the new files. Scene #5 (Sterling and Danny threads in later missions) went to `docs/IDEAS_BACKLOG.md` (orchestrator); no other mission touched.
+
+| Severity | Found | Fixed | Withdrawn | Deferred |
+|---|---|---|---|---|
+| Blocker | 0 | 0 | 0 | 0 |
+| Major | 4 | 4 | 0 | 0 |
+| Minor | 19 | 19 | 0 | 0 |
+| Line rewrites | 15 | 15 | 0 | 0 |
+| Flat scenes (local) | 4 | 4 | 0 | 0 |
+| C1 items not fully fixed | 4 | 4 | 0 | 0 |
+
+### Cycle-1 items reopened
+
+- **D2-17 regression:** closed by D3-1. The doorway reveal left the opener, so "Nor do they leave my receptionist..." follows "Recruits don't do that." again.
+- **D2-12:** closed by D3-2. All three of Ffion's answers now reach Terry.
+- **D2-3:** closed by D3-3 and D3-21. The test pays off ahead of the general suspicion line, and players who skip the topics get it after the clone.
+- **D2-25:** log wording corrected in the cycle-1 entry. The tip is flavour; the choice matters only through influence. No ink change.
+
+### Majors
+
+- **D3-1, fixed.** Doorway reveal moved from the opener to `the_reckoning_close` (`m03_npc_victoria.ink:620-624`): "You stood in my doorway earlier. At night that window's a mirror." / "My associates offered to deal with you. I said I'd do it myself. I still might." The opener is now the arrival line, one read-back and, at most, the guard's call.
+- **D3-2, fixed.** Terry reads every value of `ffion_night_story` (`m03_npc_terry_mott.ink:47-58`): "sterling" ("Ffion reckons Ms. Sterling's expecting you. She never said nothing to me."), "brushoff" ("Ffion rang. Said someone come in at eleven and wouldn't say what for. That you?"), "notebook" (as before). The notebook story has its own answer, "[Wrong turn. I'll find it.]" (`:110`). A different story from the one Ffion heard costs 5 influence and gets "Funny. Ffion said notebook." or "That's not what you told Ffion." (`:117-156`). The "sterling" story makes the files excuse land ("Ffion said the same. Still nobody told me. Go on, then.").
+- **D3-3, fixed.** Night read-back order (`m03_npc_victoria.ink:535-552`): `read_dropped` (the protected "Twice is an inventory", now always true) → test "asked" → "sold" → "hedged" → general suspicion, with a new line that is true for every suspicion route ("You asked me the questions a prosecutor asks. Recruits ask about the salary.") → low influence → goodbye stance → default. The review's proving route now plays the "asked" line.
+- **D3-4, fixed.** The player answers HaX after the Danny lines: four choices-only knots, `danny_reply_protected/exposed/left/ko` (`m03_closing_debrief.ink:359-423`).
+  - There are two or three stance choices per (Danny fate, Victoria fate) pair. Each gets a one-line reply and sets nothing.
+  - Recruited + protected: "[I'll tell him.]" / "[Not yet. Let him have a week.]" / "[He was told she'd answer for it. She will. Just not to him.]".
+  - Exposed + recruited: "[She's worth more to us than he is. That's the arithmetic.]" → "Careful. That's her word."
+  - `architect_investigation` is cut from three lines to two (`:285-286`).
+  - Split into four knots so the lint's crowded-hub check passes. The conditions were already exclusive.
+
+### Minors
+
+| # | Outcome | Where |
+|---|---|---|
+| D3-5 | Fixed: "[Consultancy. Is that the story you tell yourself so you can sleep?]" → "I sleep perfectly..." on the target route; the court option stays. | `m03_npc_victoria.ink:609-611` |
+| D3-6 | Fixed: "Danny Foster's survey. One of mine." | `:598` |
+| D3-7 | Fixed: the narrator line is cut; the pause is in her mouth (`*after a moment*`). The figure went to its own line to keep the cue off a line with a number. | `:598-600` |
+| D3-8 | Fixed: "Then you'd never sell anything. The buyer who explains himself is the one you should worry about." | `:327` |
+| D3-9 | Fixed: "Told you, I just do the pizzas..." / "Turned away a lad who'd been on the telly last spring." The cue is cut. | `m03_npc_ffion_rees.ink:97-98` |
+| D3-10 | Fixed: "Go on, I'm locking the drawer..." and "Right. Well. Suit yourself." | Ffion `:145`, `:310` |
+| D3-11 | Fixed: "If Ms. Sterling wanted you back here, she'd have told me. She hasn't." | Terry `:84` |
+| D3-12 | Fixed: inline choice between fixed strings, "Told you this afternoon. On till six." when `asked_knock_off`. | Terry `:360` |
+| D3-13 | Fixed: the laminate line, "Not even her. Right. I'm going to regret this.", and "Obstructing. Lovely. Fine. I'm not in your way." | Terry `:287`, `:293`, `:299` |
+| D3-14 | Fixed: "He rang us just after midnight. Our people collected him at two." The credit and "came in by himself" now hold. | debrief `:300` |
+| D3-15 | Fixed: gated choices, "[She'll call it consultancy in court too.]" or "[She picked St. Catherine's off a survey of two hundred and fourteen.]". | debrief `:174-179` |
+| D3-16 | Fixed: the line ends at "on the cover sheet." | debrief `:161` |
+| D3-17 | Fixed: "He took the raise after he knew. A court will care about the date." | debrief `:323` |
+| D3-18 | Fixed: "[She priced in how fast hospitals pay. She'd earned the file.]" | debrief `:203` |
+| D3-19 | Fixed: "I have another meeting..." cut; the scene closes on the phone buzz. | Victoria meeting_end |
+| D3-20 | Fixed: varied re-entry lines for Victoria, Ffion and Terry. | Victoria `:108`, Ffion `:47`, Terry `:73` |
+| D3-21 | Fixed: `clone_debrief` diverts once to `the_question` when no answer is stored (`:488-490`). The opener there is "Before you go. One question..." New `question_done` (`:335`) returns to the goodbye after the clone, else to the hub. The card is already saved at this point. | `m03_npc_victoria.ink` |
+| D3-22 | Fixed: Ffion's three cues cut, including `*gestures at the wall*`. She now has 0. | Ffion |
+| D3-23 | Fixed: `hint_confrontation` adds "And if you want to see her stop and think, ask her about the ten thousand." when `revelation_heard`. | phone `:171-174` |
+
+### Line rewrites and scenes
+
+- W-1 to W-15: all applied as proposed, with these changes:
+  - W-9: the follow-up choice "[Midnight work sessions?...]" became "[Does she work late?]", because the player no longer hears "midnight" first.
+  - W-11: "Ms. Sterling started it." was added so the founder fact survives.
+  - W-15: "Smart." kept; "Agreed." cut from "That's the mission." and "Good." from "Right to business."
+- Scene #1 (the cloner's light): built in `clone_check_2` (`m03_npc_victoria.ink:437-441`), gated `victoria_suspicious >= 5 and not read_dropped`. Narration only.
+- Scenes #2-#4: D3-1, D3-2, D3-4.
+- Also changed: `architect_investigation`'s "anonymous advisory" became "goes out unsigned", so the phrase isn't used twice in the debrief (the catalogue line keeps it).
+
+### Checks run
+
+- Compile: 8/8, no warnings.
+- Validator (full, with ink): no errors. Only the known, justified warnings remain, unchanged from cycle 1.
+- dialoguelint: 2 warnings, both pre-existing and justified (Victoria's "That isn't cruelty. It's arithmetic." and the P4-37 choice length). A crowded-hub check on the first version of the Danny reply knot was cleared by splitting it.
+- tagdiff `--old snapshot_c2`, every difference intended:
+  - Victoria: knot `question_done`; the_question returns and opener; `clone_debrief` divert; read-back conditions reordered; `sterling_on_call_seen` moved to the close; `target_followup` gains a choice; cloner-light condition.
+  - Debrief: four `danny_reply_*` knots with 18 gated choices; the arrested choice split in two.
+  - Terry: opener branches; the notebook choice; mismatch influence changes.
+  - Ffion, briefing, phone: prose only, plus one phone condition.
+  - Danny and the night transition: unchanged.
+- reopencheck: total problems 0; m03 phone 0 re-greets.
+- loopcheck: 40 runs, 0 failing. They cover every state the review named, plus:
+  - D3-21 (`clone_debrief` and `the_question` with the card saved, answer pending or given);
+  - the cloner-light state;
+  - the night with `read_dropped`, each test answer, suspicion only, low influence, the goodbye stance and the stacked opener, with `sterling_on_call_seen` at the close;
+  - Terry with each Ffion story and with `asked_knock_off`;
+  - Ffion at a high-influence day and at night.
+- inkcheck, debrief: 150 states, 0 failing. Briefing clean.
+- Text walks (inkjs driver) of five routes:
+  - the review's D3-3 route;
+  - the target route ending in the close with the reveal;
+  - D3-21, straight to the whiteboard, then the test and the goodbye;
+  - Terry on the "sterling" story with a mismatched excuse;
+  - the debrief on recruited + protected with the player's reply.
+- No browser run.
+
+### Spoken lines changed (old → new)
+
+No audio exists for m03. Player choices are not listed. Pairs come from a line diff, so a new line sometimes sits beside an unrelated cut line. The three night read-back lines show as moved (cut and re-added), not changed.
+
+#### m03_npc_victoria.ink
+
+- Victoria Sterling: Back for more conversation?
+  -> Victoria Sterling: {&Forgotten something?|Reconsidering?|Sit, then.}
+- Victoria Sterling: To see if you understand the philosophy behind real security research.
+  -> Victoria Sterling: To find out what you're worth. Your CV only tells me what you cost.
+- Victoria Sterling: *slight pause* We push boundaries, yes. Let me explain our approach.
+  -> Victoria Sterling: Unconventional. That's the polite word. Sit down and I'll tell you the other one.
+- Victoria Sterling: The traditional security model is broken. Researchers find vulnerabilities, report them to vendors, wait months for patches.
+  -> Victoria Sterling: You find a hole and do the decent thing. The vendor sits on it for six months. Somebody less decent finds it in three.
+- Victoria Sterling: Meanwhile, those same vulnerabilities get discovered by others. Sold on dark markets. Exploited.
+  -> (cut)
+- Victoria Sterling: I think you'd be a good fit for our training programme. I'll be in touch.
+  -> Victoria Sterling: You'll do. Reception will have the details by Friday.
+- Victoria Sterling: We'll review your application. Thank you for your time.
+  -> Victoria Sterling: You're harder to read than most. I'll let you know which way it falls.
+- Victoria Sterling: I'm not sure you're the right fit for Zero Day's culture. We'll be in touch.
+  -> Victoria Sterling: You argue with the person interviewing you. Brave. Not useful.
+- (none: new line)
+  -> Victoria Sterling: Before you go. One question. I ask everyone, and most people get it wrong.
+- Victoria Sterling: Nobody tells you. And if you need to know, you can't afford to.
+  -> Victoria Sterling: Then you'd never sell anything. The buyer who explains himself is the one you should worry about.
+- Victoria Sterling: Of course, what students learn in the lab is just the beginning.
+  -> Victoria Sterling: The lab's the easy part. The money is in knowing who'll pay, and how much.
+- Victoria Sterling: The money is in knowing who'll pay, and how much.
+  -> (cut)
+- Victoria Sterling: Security research is as much economics as it is code.
+  -> Victoria Sterling: That's why I don't hire coders. I hire people who can count.
+- (none: new line)
+  -> Narrator: Her eyes drop to your jacket, where the cloner's light shows through the cloth. Then back to the board.
+- Victoria Sterling: Worth every penny. Our students go operational faster than any university programme.
+  -> Victoria Sterling: It paid for itself in a quarter. Universities teach them to write it up. I teach them what it's worth.
+- Victoria Sterling: Off the record? I think you'd fit in well here. We need more pragmatists.
+  -> Victoria Sterling: Off the record, you didn't flinch once. People who don't flinch do well here.
+- Victoria Sterling: I have another meeting in a few minutes. But we'll be in touch.
+  -> (cut)
+- Victoria Sterling: You looked in on me earlier, while I was on the phone. That window shows the whole doorway.
+  -> (cut)
+- Victoria Sterling: My associates offered to deal with you. I told them I'd do it myself. I wanted to see what you'd bring back.
+  -> (cut)
+- (none: new line)
+  -> Victoria Sterling: You asked what the buyer wanted it for. I should have ended the interview there.
+- (none: new line)
+  -> Victoria Sterling: You told me you'd take the forty. You said it very quickly. The ones who mean it take longer.
+- (none: new line)
+  -> Victoria Sterling: Report it and bill them anyway, you said. I took that for greed. It was a conscience keeping its options open.
+- (none: new line)
+  -> Victoria Sterling: You asked me the questions a prosecutor asks. Recruits ask about the salary.
+- Victoria Sterling: You told me you'd take the forty. You said it very quickly. The ones who mean it take longer.
+  -> (cut)
+- Victoria Sterling: You asked what the buyer wanted it for. I should have ended the interview there.
+  -> (cut)
+- Victoria Sterling: Report it and bill them anyway, you said. I took that for greed. It was a conscience keeping its options open.
+  -> (cut)
+- Victoria Sterling: Danny's survey. Two hundred and fourteen sites, and one with the oldest FTP box on the list.
+  -> Victoria Sterling: *after a moment* Danny Foster's survey. One of mine.
+- (none: new line)
+  -> Victoria Sterling: Two hundred and fourteen sites, and one with the oldest FTP box on the list.
+- Narrator: It's the first answer tonight she's had to think about.
+  -> (cut)
+- (none: new line)
+  -> Victoria Sterling: I sleep perfectly. That's the part people like you can never forgive.
+- (none: new line)
+  -> Victoria Sterling: You stood in my doorway earlier. At night that window's a mirror.
+- (none: new line)
+  -> Victoria Sterling: My associates offered to deal with you. I said I'd do it myself. I still might.
+
+#### m03_npc_ffion_rees.ink
+
+- Ffion Rees: Back again? Forgotten something?
+  -> Ffion Rees: {&Back again? Forgotten something?|Hiya again.|You're getting to be a regular.}
+- Ffion Rees: *slightly evasive* Advanced penetration testing techniques. For serious researchers.
+  -> Ffion Rees: Told you, I just do the pizzas. Advanced something. She picks them herself, mind.
+- Ffion Rees: Ms. Sterling is very selective about who gets into the programme.
+  -> Ffion Rees: Turned away a lad who'd been on the telly last spring.
+- Ffion Rees: Night, then. Don't let the guard scare you.
+  -> Ffion Rees: Go on, I'm locking the drawer. Don't let the guard scare you.
+- Ffion Rees: Oh, she's brilliant. Speaks at all the big conferences, writes the papers, the lot.
+  -> Ffion Rees: Oh, she's brilliant. Does the big conferences, gets quoted in the papers. Bit terrifying, mind.
+- Ffion Rees: And she really cares about the work. Sometimes she's here until midnight.
+  -> Ffion Rees: Between you and me, I've never seen her lose an argument. Not once.
+- Ffion Rees: Between you and me, she can be intense. Very particular about her research.
+  -> Ffion Rees: She remembers everyone's birthday, though. Which is more than my last place did.
+- Ffion Rees: But she's fair. If you're good at what you do, she'll respect you.
+  -> (cut)
+- Ffion Rees: WhiteHat Security was founded in 2010 by Victoria Sterling.
+  -> Ffion Rees: Since 2010. Ms. Sterling started it.
+- Ffion Rees: There's actually a plaque right over there *gestures at the wall* with the founding year and mission statement.
+  -> Ffion Rees: Says so on the plaque, there, look. "Security Through Economics."
+- Ffion Rees: "Security Through Economics" - that's our motto.
+  -> Ffion Rees: Something about paying people properly? Ask her. Actually, don't, you'll be here till six.
+- Ffion Rees: *uncertain* Something about market-driven security research? Ms. Sterling explains it better than I can.
+  -> (cut)
+- Ffion Rees: She has strong opinions about how the security industry should work.
+  -> (cut)
+- Ffion Rees: Right. Well. Night, then.
+  -> Ffion Rees: Right. Well. Suit yourself.
+
+#### m03_npc_terry_mott.ink
+
+- (none: new line)
+  -> Terry Mott: Ffion reckons Ms. Sterling's expecting you. She never said nothing to me.
+- (none: new line)
+  -> Terry Mott: Ffion rang. Said someone come in at eleven and wouldn't say what for. That you?
+- Terry Mott: You again. I'm keeping my eye on you.
+  -> Terry Mott: {&You again.|Still here, then.|You're making my night very long.}
+- Terry Mott: If Ms. Sterling wants you back here, she'll walk you through herself.
+  -> Terry Mott: If Ms. Sterling wanted you back here, she'd have told me. She hasn't.
+- (none: new line)
+  -> Terry Mott: Other end, mate. And it's a long way round to a notebook, through the executive wing.
+- (none: new line)
+  -> Terry Mott: Funny. Ffion said notebook.
+- (none: new line)
+  -> Terry Mott: That's not what you told Ffion.
+- (none: new line)
+  -> Terry Mott: Funny. Ffion said notebook.
+- (none: new line)
+  -> Terry Mott: Ms. Sterling did mention a recruit... alright.
+- (none: new line)
+  -> Terry Mott: Ffion said the same. Still nobody told me. Go on, then.
+- (none: new line)
+  -> Terry Mott: Funny. Ffion said notebook.
+- (none: new line)
+  -> Terry Mott: That's not what you told Ffion.
+- Terry Mott: Alright. But be quick about it. And stay in the executive area. Don't wander.
+  -> Terry Mott: Ten minutes. Then I come looking.
+- Terry Mott: Right. Yeah. Whatever you need.
+  -> Terry Mott: That's a lot of laminate for people nobody's heard of. Go on, then.
+- Terry Mott: Yeah, understood. I... I won't say anything.
+  -> Terry Mott: Not even her. Right. I'm going to regret this.
+- Terry Mott: I'm not getting in the way. Do what you need to do.
+  -> Terry Mott: Obstructing. Lovely. Fine. I'm not in your way.
+- Terry Mott: I'm keeping an eye on you. Don't make me regret this.
+  -> Terry Mott: I've got your face now. Don't make me use it.
+- Terry Mott: Alright. Stay out of trouble.
+  -> Terry Mott: Mind how you go.
+- Terry Mott: Double shift tonight. On till six. Quiet, most nights.
+  -> Terry Mott: {asked_knock_off:Told you this afternoon. On till six.|Double shift tonight. On till six.} Quiet, most nights.
+- Terry Mott: That's it. I'm calling the police. Don't move.
+  -> Terry Mott: Right. That's the police, then. Stay where you are.
+- Terry Mott: Security! I have an intruder!
+  -> Terry Mott: Oi! Get back here!
+
+#### m03_closing_debrief.ink
+
+- Agent HaX: Netherton signed off at six this morning. He had me write "she priced a hospital" on the cover sheet, so nobody forgets who we're in business with.
+  -> Agent HaX: Netherton signed off at six this morning. He had me write "she priced a hospital" on the cover sheet.
+- (none: new line)
+  -> Agent HaX: Targeting. That's the word the CPS will use.
+- Agent HaX: The Phase 2 target list won't go out with our name on it.
+  -> Agent HaX: The Phase 2 target list goes out unsigned, from an outfit nobody's heard of.
+- Agent HaX: It reaches the operators as an anonymous advisory from an outfit nobody's heard of. They'll act on it -- they always do.
+  -> Agent HaX: Substations get hardened. Hospitals get assessed. We'll be standing where they meant to strike.
+- Agent HaX: Substations get hardened. Hospitals get emergency assessments. We can't unmake ENTROPY, but we can be standing where they meant to strike.
+  -> (cut)
+- Agent HaX: Our people collected him at two this morning. He brought a box file and the photo off his desk, and he hasn't stopped talking since.
+  -> Agent HaX: He rang us just after midnight. Our people collected him at two.
+- (none: new line)
+  -> Agent HaX: He brought a box file and the photo off his desk, and he hasn't stopped talking since.
+- Agent HaX: He's been arrested. Deceived at the start, complicit by the end, and the second part is a choice a court can name.
+  -> Agent HaX: He's been arrested. He took the raise after he knew. A court will care about the date.
+- (none: new line)
+  -> Agent HaX: Do it before Counter-intelligence does. They'll make it sound like a favour.
+- (none: new line)
+  -> Agent HaX: A week, then. After that he hears it from someone who doesn't care how it lands.
+- (none: new line)
+  -> Agent HaX: That's the version I'd use. He won't thank you for it.
+- (none: new line)
+  -> Agent HaX: I did. He asked again an hour later.
+- (none: new line)
+  -> Agent HaX: He'll see her in court. That's the one meeting I can't cancel.
+- (none: new line)
+  -> Agent HaX: You're the second person to say that this morning. He was the first.
+- (none: new line)
+  -> Agent HaX: He won't. I wouldn't.
+- (none: new line)
+  -> Agent HaX: He did. Don't tell him I said so.
+- (none: new line)
+  -> Agent HaX: He tried that for months. You saw where it put him.
+- (none: new line)
+  -> Agent HaX: Careful. That's her word.
+- (none: new line)
+  -> Agent HaX: He's already started. They've sent out for more tape.
+- (none: new line)
+  -> Agent HaX: Put it in writing. It counts for more than you'd think.
+- (none: new line)
+  -> Agent HaX: He agrees with you. He said as much to the arresting officer.
+- (none: new line)
+  -> Agent HaX: I'll put it in the file. Whether anyone reads that page is another matter.
+- (none: new line)
+  -> Agent HaX: Then I hope he's quicker about it than Zero Day.
+- (none: new line)
+  -> Agent HaX: Maybe. He'd have hated you for it, and he'd be safe.
+- (none: new line)
+  -> Agent HaX: It's one way. Write down why, before you forget.
+- (none: new line)
+  -> Agent HaX: Then say so in the report. It reads better than a reason.
+
+#### m03_opening_briefing.ink
+
+- Agent HaX: Right to business. Good.
+  -> Agent HaX: Right to business.
+- Agent HaX: Agreed. That's the mission.
+  -> Agent HaX: That's the mission.
+- Agent HaX: Your call. I trust your read.
+  -> Agent HaX: Your call.
+- Agent HaX: Good answer. Evidence first.
+  -> Agent HaX: Then get the facts. He'll still be there.
+
+#### m03_phone_agent0x99.ink
+
+- (none: new line)
+  -> HaX (phone text): And if you want to see her stop and think, ask her about the ten thousand.

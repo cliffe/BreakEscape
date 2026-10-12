@@ -45,8 +45,14 @@ VAR ffion_night_story = ""
     #display:guard-alert
     #set_global:guard_challenged:true
     Narrator: A torch beam swings round and settles on you.
-    { ffion_night_story == "notebook":
+    // D3-2: what the player told Ffion at eleven has reached him, whichever answer.
+    {
+    - ffion_night_story == "notebook":
         Terry Mott: Ffion said there'd be someone about. Notebook, was it? Conference room's the other end of the building.
+    - ffion_night_story == "sterling":
+        Terry Mott: Ffion reckons Ms. Sterling's expecting you. She never said nothing to me.
+    - ffion_night_story == "brushoff":
+        Terry Mott: Ffion rang. Said someone come in at eleven and wouldn't say what for. That you?
     - else:
         Terry Mott: Hey! What are you doing here? Building's closed for the night.
     }
@@ -63,7 +69,8 @@ VAR ffion_night_story = ""
 }
 { (player_warned && not guard_hostile) && not bribe_accepted:
     #display:guard-suspicious
-    Terry Mott: You again. I'm keeping my eye on you.
+    // D3-20: varied re-entry.
+    Terry Mott: {&You again.|Still here, then.|You're making my night very long.}
     ~ hub_quiet = true
     -> hub
 }
@@ -74,7 +81,7 @@ VAR ffion_night_story = ""
 { not day_greeted:
     ~ day_greeted = true
     Terry Mott: Afternoon. Executive wing's staff only, I'm afraid. Visitors stay in reception and the conference area.
-    Terry Mott: If Ms. Sterling wants you back here, she'll walk you through herself.
+    Terry Mott: If Ms. Sterling wanted you back here, she'd have told me. She hasn't.
 - else:
     Terry Mott: {&Still staff only, mate.|Back again? Still staff only.|Conference room's the other way. Still.}
 }
@@ -93,22 +100,60 @@ VAR ffion_night_story = ""
 
 === first_excuse ===
 #speaker:npc
-{ ffion_night_story == "notebook":
+{ ffion_night_story == "notebook" or ffion_night_story == "sterling":
     Terry Mott: So what are you doing in my corridor?
 - else:
     Terry Mott: Well? What's your explanation for being here after hours?
 }
+// D3-2: the notebook story has its own answer; a different story from the one
+// Ffion heard gets noticed.
+* {ffion_night_story == "notebook"} [Wrong turn. I'll find it.]
+    Terry Mott: Other end, mate. And it's a long way round to a notebook, through the executive wing.
+    ~ hub_quiet = true
+    -> hub
 * [I work here -- research, second floor. Forgot something at my desk.]
+    {
+    - ffion_night_story == "notebook":
+        ~ guard_influence = guard_influence - 5
+        # influence_decreased
+        Terry Mott: Funny. Ffion said notebook.
+    - ffion_night_story == "sterling":
+        ~ guard_influence = guard_influence - 5
+        # influence_decreased
+        Terry Mott: That's not what you told Ffion.
+    }
     ~ guard_influence = guard_influence - 5
     # influence_decreased
     ~ guard_suspicious = true
     -> excuse_work_here
 * [Sterling asked me to grab some files. We met today about the training programme.]
-    ~ guard_influence = guard_influence + 10
-    # influence_increased
-    Terry Mott: Ms. Sterling mentioned a potential recruit... alright.
+    {
+    - ffion_night_story == "notebook":
+        ~ guard_influence = guard_influence - 5
+        # influence_decreased
+        Terry Mott: Funny. Ffion said notebook.
+        Terry Mott: Ms. Sterling did mention a recruit... alright.
+    - ffion_night_story == "sterling":
+        ~ guard_influence = guard_influence + 10
+        # influence_increased
+        Terry Mott: Ffion said the same. Still nobody told me. Go on, then.
+    - else:
+        ~ guard_influence = guard_influence + 10
+        # influence_increased
+        Terry Mott: Ms. Sterling mentioned a potential recruit... alright.
+    }
     -> excuse_victoria
 * [Building maintenance, late shift. Checking the air con.]
+    {
+    - ffion_night_story == "notebook":
+        ~ guard_influence = guard_influence - 5
+        # influence_decreased
+        Terry Mott: Funny. Ffion said notebook.
+    - ffion_night_story == "sterling":
+        ~ guard_influence = guard_influence - 5
+        # influence_decreased
+        Terry Mott: That's not what you told Ffion.
+    }
     ~ guard_influence = guard_influence + 5
     # influence_increased
     Terry Mott: Maintenance? I didn't get a work order notice.
@@ -145,7 +190,7 @@ Terry Mott: What files are you supposed to grab?
 * [Training programme enrolment forms. From her office.]
     ~ guard_influence = guard_influence + 10
     # influence_increased
-    Terry Mott: Alright. But be quick about it. And stay in the executive area. Don't wander.
+    Terry Mott: Ten minutes. Then I come looking.
     -> hub
 * [She didn't specify -- said I'd know them when I saw them. Confidential.]
     ~ guard_influence = guard_influence + 5
@@ -239,19 +284,19 @@ Terry Mott: SAFETYNET. Never heard of you. Is that meant to make me feel better?
     ~ guard_influence = guard_influence + 30
     # influence_increased
     ~ guard_suspicious = false
-    Terry Mott: Right. Yeah. Whatever you need.
+    Terry Mott: That's a lot of laminate for people nobody's heard of. Go on, then.
     Terry Mott: Ms. Sterling... she's involved in something?
     -> safetynet_cooperation
 * [This is classified. Tell no one I was here. Not even Sterling.]
     ~ guard_influence = guard_influence + 20
     # influence_increased
-    Terry Mott: Yeah, understood. I... I won't say anything.
+    Terry Mott: Not even her. Right. I'm going to regret this.
     -> safetynet_cooperation
 * [Help me, you help the people this is aimed at. Hinder me, you're obstructing.]
     ~ guard_influence = guard_influence + 25
     # influence_increased
     ~ guard_suspicious = false
-    Terry Mott: I'm not getting in the way. Do what you need to do.
+    Terry Mott: Obstructing. Lovely. Fine. I'm not in your way.
     -> safetynet_cooperation
 
 === safetynet_cooperation ===
@@ -298,10 +343,10 @@ Terry Mott: What do you need from me?
     -> offer_bribe
 + [I'll let you get on.]
     { guard_suspicious:
-        Terry Mott: I'm keeping an eye on you. Don't make me regret this.
+        Terry Mott: I've got your face now. Don't make me use it.
     }
     { not guard_suspicious:
-        Terry Mott: Alright. Stay out of trouble.
+        Terry Mott: Mind how you go.
     }
     ~ idle_quiet = true
     #exit_conversation
@@ -312,7 +357,7 @@ Terry Mott: What do you need from me?
 ~ topic_shift = true
 ~ guard_influence = guard_influence + 5
 # influence_increased
-Terry Mott: Double shift tonight. On till six. Quiet, most nights.
+Terry Mott: {asked_knock_off:Told you this afternoon. On till six.|Double shift tonight. On till six.} Quiet, most nights.
 { guard_suspicious:
     Terry Mott: Though tonight's been more eventful than usual.
 }
@@ -391,7 +436,7 @@ Terry Mott: I'm giving you one chance. Leave now, or I'm calling the police.
 #display:guard-hostile
 ~ guard_hostile = true
 ~ guard_detection_count = guard_detection_count + 1
-Terry Mott: That's it. I'm calling the police. Don't move.
+Terry Mott: Right. That's the police, then. Stay where you are.
 Narrator: The guard reaches for his radio.
 * [Tackle the guard before he can call]
     #hostile:terry_mott
@@ -402,7 +447,7 @@ Narrator: The guard reaches for his radio.
     Terry Mott: No more talking. You're trespassing.
     -> trespass_warning
 * [Run]
-    Terry Mott: Security! I have an intruder!
+    Terry Mott: Oi! Get back here!
     #hostile:terry_mott
     ~ idle_quiet = true
     #exit_conversation

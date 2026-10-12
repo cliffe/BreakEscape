@@ -158,7 +158,7 @@ Agent HaX: She stays at Zero Day so nothing looks wrong, and she reports to us. 
     Agent HaX: You read the moment and took it. That's the whole reason this was on the table.
 }
 // Scenes #7 (orchestrator: HaX, not Netherton): his opening line pays off, shown, not summed up.
-Agent HaX: Netherton signed off at six this morning. He had me write "she priced a hospital" on the cover sheet, so nobody forgets who we're in business with.
+Agent HaX: Netherton signed off at six this morning. He had me write "she priced a hospital" on the cover sheet.
 Agent HaX: Whether she stays turned is anyone's guess. Today, it's a win with its teeth showing.
 -> phase_2_discussion
 
@@ -170,7 +170,11 @@ Agent HaX: Her lawyers are already calling it "market-driven research". It won't
     Agent HaX: Not with "target selection, ten thousand" on her own invoice. And you got her to call it consultancy on an open line.
 }
 // D2-21: one owner per stance. "Pricing proves intent" stays with the phone call.
-* [She picked the ward off a survey of two hundred and fourteen.]
+// D3-15: no repeat of the line HaX has just said.
+* {named_target_selection} [She'll call it consultancy in court too.]
+    Agent HaX: Targeting. That's the word the CPS will use.
+    -> victoria_arrested_path
+* {not named_target_selection} [She picked St. Catherine's off a survey of two hundred and fourteen.]
     Agent HaX: Targeting. That's the word the CPS will use.
     -> victoria_arrested_path
 * [People died on what she sold. This is for St. Catherine's.]
@@ -195,7 +199,8 @@ Agent HaX: Netherton's taking the file to the CPS himself. He doesn't, usually.
 #speaker:agent_0x99
 Agent HaX: Sterling went down on site. She's in a guarded bed, not a boardroom.
 Agent HaX: We've got the evidence and the name either way. The Architect loses an operator -- she just won't be talking to us about it.
-* [She charged more to hit people who couldn't defend themselves. She'd earned the file.]
+// D3-18: the pricing reason Victoria and the catalogue give.
+* [She priced in how fast hospitals pay. She'd earned the file.]
     Agent HaX: Hard to argue. She'll wake up to a charge sheet.
     -> phase_2_discussion
 * [Unconscious, she tells us nothing. We kept the case, lost the network.]
@@ -276,9 +281,9 @@ Agent HaX: The directive proves they exist and proves they plan at this scale. C
 
 === architect_investigation ===
 #speaker:agent_0x99
-Agent HaX: The Phase 2 target list won't go out with our name on it.
-Agent HaX: It reaches the operators as an anonymous advisory from an outfit nobody's heard of. They'll act on it -- they always do.
-Agent HaX: Substations get hardened. Hospitals get emergency assessments. We can't unmake ENTROPY, but we can be standing where they meant to strike.
+// D3-4: trimmed, so the run-up to Danny is shorter.
+Agent HaX: The Phase 2 target list goes out unsigned, from an outfit nobody's heard of.
+Agent HaX: Substations get hardened. Hospitals get assessed. We'll be standing where they meant to strike.
 -> danny_discussion
 
 === danny_discussion ===
@@ -291,7 +296,9 @@ Agent HaX: Substations get hardened. Hospitals get emergency assessments. We can
 { danny_fate == "protected":
     // D2-7 / weakest line #16: what he did, not a verdict on him. Pays off the photo.
     Agent HaX: Danny Foster. You gave him the way in and he took it.
-    Agent HaX: Our people collected him at two this morning. He brought a box file and the photo off his desk, and he hasn't stopped talking since.
+    // D3-14: he rang in, so "came in by himself" and the credit stay true.
+    Agent HaX: He rang us just after midnight. Our people collected him at two.
+    Agent HaX: He brought a box file and the photo off his desk, and he hasn't stopped talking since.
     { player_approach == "diplomatic":
         Agent HaX: You gave him room to come in by himself. That's why he did.
     }
@@ -308,11 +315,12 @@ Agent HaX: Substations get hardened. Hospitals get emergency assessments. We can
     { victoria_fate == "escaped":
         Agent HaX: You told him she'd answer for it. She's in the wind. He asked me this morning if that was still true. I said "not yet".
     }
-    -> what_made_it_possible
+    -> danny_reply_protected
 }
 { danny_fate == "exposed":
     Agent HaX: Danny Foster. You logged the lot -- the recon, the emails, the raise he took to stay quiet.
-    Agent HaX: He's been arrested. Deceived at the start, complicit by the end, and the second part is a choice a court can name.
+    // D3-17: the fact, not a verdict.
+    Agent HaX: He's been arrested. He took the raise after he knew. A court will care about the date.
     { player_approach == "aggressive":
         Agent HaX: You went in hard and stayed hard. I won't argue with it.
     }
@@ -324,7 +332,7 @@ Agent HaX: Substations get hardened. Hospitals get emergency assessments. We can
     { victoria_fate == "escaped":
         Agent HaX: And with Sterling in the wind, he's the only one from Zero Day standing in the dock. Juries notice that.
     }
-    -> what_made_it_possible
+    -> danny_reply_exposed
 }
 { danny_fate == "left":
     Agent HaX: Danny Foster. You left the decision with him. Didn't shield him, didn't hang him. Just handed it back.
@@ -333,17 +341,86 @@ Agent HaX: Substations get hardened. Hospitals get emergency assessments. We can
         Agent HaX: You let him choose. He chose to switch his phone off.
     }
     Agent HaX: If he comes in, he's a witness. If Zero Day's people find him first, he's a loose end to them. I've got someone watching his house.
-    -> what_made_it_possible
+    -> danny_reply_left
 }
 { danny_fate == "ko":
     Agent HaX: Danny Foster was found unconscious in his own office. We've got him in protective custody.
     Agent HaX: He'll cooperate when he comes round. He was halfway to us before you got there -- you just took the choice out of his hands.
-    -> what_made_it_possible
+    -> danny_reply_ko
 }
 { danny_fate == "":
     Agent HaX: You never found the consultant, Danny Foster. His name's still in the recon files, so it'll surface. Where he lands is anyone's guess now.
     -> what_made_it_possible
 }
+
+// D3-4: the player answers HaX after the Danny lines. Stance only: each choice gets
+// one reply and sets nothing. Every Danny fate that reaches here has at least one
+// choice whatever Victoria's fate (protected and exposed have an "else" pair).
+=== danny_reply_protected ===
+#speaker:agent_0x99
+* {danny_fate == "protected" and victoria_fate == "recruited"} [I'll tell him.]
+    Agent HaX: Do it before Counter-intelligence does. They'll make it sound like a favour.
+    -> what_made_it_possible
+* {danny_fate == "protected" and victoria_fate == "recruited"} [Not yet. Let him have a week.]
+    Agent HaX: A week, then. After that he hears it from someone who doesn't care how it lands.
+    -> what_made_it_possible
+* {danny_fate == "protected" and victoria_fate == "recruited"} [He was told she'd answer for it. She will. Just not to him.]
+    Agent HaX: That's the version I'd use. He won't thank you for it.
+    -> what_made_it_possible
+* {danny_fate == "protected" and victoria_fate == "arrested"} [Tell him she isn't going anywhere.]
+    Agent HaX: I did. He asked again an hour later.
+    -> what_made_it_possible
+* {danny_fate == "protected" and victoria_fate == "arrested"} [He doesn't need to see her again.]
+    Agent HaX: He'll see her in court. That's the one meeting I can't cancel.
+    -> what_made_it_possible
+* {danny_fate == "protected" and victoria_fate == "escaped"} [I'll find her.]
+    Agent HaX: You're the second person to say that this morning. He was the first.
+    -> what_made_it_possible
+* {danny_fate == "protected" and victoria_fate == "escaped"} [He should stop asking.]
+    Agent HaX: He won't. I wouldn't.
+    -> what_made_it_possible
+* {danny_fate == "protected" and victoria_fate != "recruited" and victoria_fate != "arrested" and victoria_fate != "escaped"} [Good. He earned the way out.]
+    Agent HaX: He did. Don't tell him I said so.
+    -> what_made_it_possible
+* {danny_fate == "protected" and victoria_fate != "recruited" and victoria_fate != "arrested" and victoria_fate != "escaped"} [He'd have been safer keeping quiet.]
+    Agent HaX: He tried that for months. You saw where it put him.
+    -> what_made_it_possible
+
+=== danny_reply_exposed ===
+#speaker:agent_0x99
+* {danny_fate == "exposed" and victoria_fate == "recruited"} [She's worth more to us than he is. That's the arithmetic.]
+    Agent HaX: Careful. That's her word.
+    -> what_made_it_possible
+* {danny_fate == "exposed" and victoria_fate == "escaped"} [He'll tell them everything. Let him.]
+    Agent HaX: He's already started. They've sent out for more tape.
+    -> what_made_it_possible
+* {danny_fate == "exposed" and (victoria_fate == "recruited" or victoria_fate == "escaped")} [I'll give evidence for him. The deception was real.]
+    Agent HaX: Put it in writing. It counts for more than you'd think.
+    -> what_made_it_possible
+* {danny_fate == "exposed" and victoria_fate != "recruited" and victoria_fate != "escaped"} [Good. He should answer for it.]
+    Agent HaX: He agrees with you. He said as much to the arresting officer.
+    -> what_made_it_possible
+* {danny_fate == "exposed" and victoria_fate != "recruited" and victoria_fate != "escaped"} [Push for a lighter sentence. He came quietly.]
+    Agent HaX: I'll put it in the file. Whether anyone reads that page is another matter.
+    -> what_made_it_possible
+
+=== danny_reply_left ===
+#speaker:agent_0x99
+* {danny_fate == "left"} [He'll come in.]
+    Agent HaX: Then I hope he's quicker about it than Zero Day.
+    -> what_made_it_possible
+* {danny_fate == "left"} [I should have made the call for him.]
+    Agent HaX: Maybe. He'd have hated you for it, and he'd be safe.
+    -> what_made_it_possible
+
+=== danny_reply_ko ===
+#speaker:agent_0x99
+* {danny_fate == "ko"} [It was the only way to keep him safe.]
+    Agent HaX: It's one way. Write down why, before you forget.
+    -> what_made_it_possible
+* {danny_fate == "ko"} [I lost my temper.]
+    Agent HaX: Then say so in the report. It reads better than a reason.
+    -> what_made_it_possible
 
 === danny_ko_after_choice ===
 #speaker:agent_0x99

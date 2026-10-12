@@ -168,6 +168,10 @@ VAR hint_guard_hostile_given = false
 Want the Architect? Offer her a deal, and a cold one. She flips to save herself, not because she's sorry -- don't mistake the two.
 Want her off the board? Arrest her. But she came ready to run, so corner her or she walks.
 And if the evidence is enough for you, let her go and secure it.
+// D3-23: the lever the revelation call handed over.
+{ revelation_heard:
+    And if you want to see her stop and think, ask her about the ten thousand.
+}
 { victoria_fate == "" and not (usb_seen or lore_directive_found):
     If it's the deal you want, bring her something she can't shrug off. The drive in her desk.
 }
