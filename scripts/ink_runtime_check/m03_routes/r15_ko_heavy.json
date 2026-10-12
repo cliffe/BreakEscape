@@ -7,7 +7,7 @@
 {"talk":"phone","knot":"on_victoria_ko_card","picks":["Where do I stand","Thanks","Nothing right now"]},
 {"talk":"night"},
 {"set":{"mission_phase":"act2_infiltration","clone_call_done":true}},
-{"talk":"terry","knot":"on_lockpick_detected","picks":["Shove past him"]},
+{"talk":"terry","knot":"on_lockpick_detected","picks":[]},
 {"set":{"guard_hostile":true,"guard_knocked_out":true,"exec_wing_entered":true,"exec_office_entered":true,"usb_seen":true,"flag_scan_submitted":true,"flag_ftp_submitted":true,"flag_http_submitted":true,"flag_distcc_submitted":true,"night_confrontation_ready":true,"danny_fate":"ko","danny_ko":true}},
 {"talk":"phone","picks":["distcc logs","Direct chain","get everything","Where do I stand","Thanks","Nothing right now"]},
 {"talk":"debrief","picks":["She priced in","mass-casualty","map to","only way","locked down","next assignment"]}

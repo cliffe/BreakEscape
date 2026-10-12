@@ -177,8 +177,10 @@ Victoria Sterling: You find a hole and do the decent thing. The vendor sits on i
 
 === market_efficiency_pitch ===
 #speaker:victoria_sterling
-Victoria Sterling: Every system tends towards disorder. Entropy, if you like.
-Victoria Sterling: Systems fail. What matters is who knows first, and who pays them for knowing.
+// Pass 2 blind fixes 2 (A3): "Entropy, if you like." read as a non sequitur after
+// "Neither"; the ENTROPY nod now follows from her point.
+Victoria Sterling: Everything breaks in the end. Some people call that entropy. I call it stock.
+Victoria Sterling: What matters is who knows first, and who pays them for knowing.
 -> hub
 
 === hub ===
@@ -197,7 +199,7 @@ Victoria Sterling: Systems fail. What matters is who knows first, and who pays t
     ~ hub_quiet = false
 - else:
     // Pass 2 blind fixes: the old "Go on." / "What else?" / "Ask." read as filler.
-    Victoria Sterling: {&What else would you like to know?|You keep looking at that board. Ask about it, if you like.|Ask. I'll tell you if it's above your pay grade.}
+    Victoria Sterling: {&What else would you like to know?|There's a board behind me, if you've run out of questions.|Ask. I'll tell you if it's above your pay grade.}
 }
 + {not topic_zero_day_philosophy} [What is Zero Day actually for?]
     -> zero_day_philosophy
@@ -583,8 +585,8 @@ Victoria Sterling: Have a look round on your way out. Reception, the main hallwa
 { victoria_trusts_player:
     Victoria Sterling: Off the record, you didn't flinch once. People who don't flinch do well here.
 }
-Narrator: Victoria's phone buzzes. She glances at it.
-Victoria Sterling: Excuse me, I need to take this.
+// Pass 2 blind fixes 2 (A3): one beat, not a narrated buzz then her line.
+Narrator: Her phone buzzes. She glances at it, then at the door, and the meeting is over.
 ~ idle_quiet = true
 #exit_conversation
 -> idle

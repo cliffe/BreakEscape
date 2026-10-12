@@ -70,43 +70,67 @@ Danny Foster: So. What happens now?
 + [This isn't my call. You know what you did. Decide it yourself.]
     -> leave
 
+// Pass 2 blind fixes 2 (A3 #6): each follow-up used to be a single button. Now the
+// player commits or reconsiders after seeing how he takes it; either way the fate
+// is set once, in the *_done knots, so the re-entry guard still holds.
 === protect ===
 #speaker:danny_foster
 Danny Foster: You'd do that. For me.
 + [Sterling goes down for her part. You don't have to. But you tell them everything.]
     Danny Foster: Everything. Yes. God, yes.
-    Narrator: He reaches for his phone with a hand that isn't quite steady, and for the first time all night he looks like a man who might sleep.
-    ~ danny_fate = "protected"
-    #set_global:danny_fate:protected
-    #complete_task:danny_choice_made
-    ~ rest_quiet = true
-    #exit_conversation
-    -> after_choice
+    -> protect_done
++ [Don't thank me yet. Thinking about it, the map's yours. You'll answer for it.]
+    Danny Foster: ...Right. For a second there I thought I'd got away with it.
+    -> expose_done
 
 === expose ===
 #speaker:danny_foster
 Danny Foster: *quietly* You're not wrong. That's the worst of it. You're not wrong.
 + [I'm logging it all -- recon, emails, the raise. Cooperating helps you. Nothing erases it.]
     Danny Foster: Then I'll cooperate. For what it's worth. Just... in whatever you write, say I didn't know at the start. Please.
-    Narrator: He doesn't argue. Somewhere in the last few months he stopped believing he'd get to.
-    ~ danny_fate = "exposed"
-    #set_global:danny_fate:exposed
-    #complete_task:danny_choice_made
-    ~ rest_quiet = true
-    #exit_conversation
-    -> after_choice
+    -> expose_done
++ [You went to her when you worked it out. That counts. Come in and testify.]
+    Danny Foster: You mean that? ...Then yes. Whatever they need.
+    -> protect_done
 
 === leave ===
 #speaker:danny_foster
 Danny Foster: That's almost worse. At least a decision made for me isn't mine.
 + [Yours is the only one that'll hold. Make it.]
-    Narrator: You leave him with the photo, the open folder, and the phone. Whatever he does with the three of them, he does alone.
-    ~ danny_fate = "left"
-    #set_global:danny_fate:left
-    #complete_task:danny_choice_made
-    ~ rest_quiet = true
-    #exit_conversation
-    -> after_choice
+    -> left_done
++ [Fine. Then here's mine: come in, tell them everything, and I'll vouch for you.]
+    Danny Foster: Thank you. I don't think I could have done it on my own.
+    -> protect_done
+
+=== protect_done ===
+#speaker:danny_foster
+Narrator: He reaches for his phone with a hand that isn't quite steady, and for the first time all night he looks like a man who might sleep.
+~ danny_fate = "protected"
+#set_global:danny_fate:protected
+#complete_task:danny_choice_made
+~ rest_quiet = true
+#exit_conversation
+-> after_choice
+
+=== expose_done ===
+#speaker:danny_foster
+Narrator: He doesn't argue. Somewhere in the last few months he stopped believing he'd get to.
+~ danny_fate = "exposed"
+#set_global:danny_fate:exposed
+#complete_task:danny_choice_made
+~ rest_quiet = true
+#exit_conversation
+-> after_choice
+
+=== left_done ===
+#speaker:danny_foster
+Narrator: You leave him with the photo, the open folder, and the phone. Whatever he does with the three of them, he does alone.
+~ danny_fate = "left"
+#set_global:danny_fate:left
+#complete_task:danny_choice_made
+~ rest_quiet = true
+#exit_conversation
+-> after_choice
 
 === after_choice ===
 // Resting point (m02 pattern): choices first, never DONE, so a re-talk in the

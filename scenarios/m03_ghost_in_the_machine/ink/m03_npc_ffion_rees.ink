@@ -95,7 +95,10 @@ VAR night_answer_quiet = false
 }
 Ffion Rees: Ms. Sterling started it in 2010.
 { receptionist_influence >= 10:
-    Ffion Rees: There's the training side too. Zero Day. Don't ask me what they do in there, I only order the pizzas.
+    // Pass 2 blind fixes 2 (A3): Zero Day is the in-house name of Sterling's training
+    // programme (Victoria and the recruit both use it by day), so Ffion can say it;
+    // she now says it as Sterling's name for the back rooms.
+    Ffion Rees: There's the training side too, in the back. Ms. Sterling calls it Zero Day. Don't ask me what they do in there, I only order the pizzas.
 }
 ~ topic_company_history = true
 ~ pin_hint_given = true

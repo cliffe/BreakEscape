@@ -129,7 +129,7 @@ VAR hint_guard_hostile_given = false
     -> hint_danny
 + {guard_attacking and not guard_knocked_out and not hint_guard_hostile_given} [The guard's coming for me. What do I do?]
     -> hint_guard_hostile
-+ {(guard_detection_count > 0 or guard_challenged) and not guard_attacking and not guard_knocked_out and not guard_told_safetynet and not guard_bribed and not hint_guard_given} [The guard keeps catching me. How do I get past him?]
++ {(guard_detection_count > 0 or guard_challenged) and not guard_attacking and not guard_knocked_out and not guard_told_safetynet and not guard_bribed and not hint_guard_given} [The guard keeps stopping me. How do I get past him?]
     -> hint_guard
 + {clone_call_done and whiteboard_seen and not catalogue_seen and not hint_safe_given} [I can't get the server room wall safe open.]
     -> hint_safe
@@ -267,8 +267,8 @@ Whether he answers for that or gets a way out is partly your call. See him befor
 === hint_guard ===
 #speaker:agent_0x99
 ~ hint_guard_given = true
-Never work a lock in his sightline. Watch his loop, wait for his back to turn, then pick.
-If he's already looking, break off. Step out to the main hallway or into Danny's office until he's moved on.
+At night he stops anyone his torch finds. Watch his loop and move while his back's turned.
+And never pick a lock where he can see you. If he catches the picks, he stops talking.
 { clone_call_done:
     You can talk your way past him, or pay him, but then he knows your face. Clean is better.
 }
@@ -318,7 +318,7 @@ Best moment's at the whiteboard. Keep her talking.
 ~ hint_lockpicking_given = true
 You've got the pick kit from the start. Sterling's office and the cabinets are keyed. Pick them.
 It takes time and it exposes you. Work the lock only when the guard's back is turned.
-Get caught at it and that's a detection you don't get back.
+Get caught at it and he won't argue. He'll come for you.
 + [Understood]
     -> hub
 
@@ -427,7 +427,7 @@ distcc is the one that matters -- that's where the operational logs sit. Submit 
         The guard's been paid. Don't push it.
     - else:
         { guard_detection_count > 0:
-            The guard's caught you at a lock. Only pick when he's turned away.
+            The guard's had trouble with you once already. Don't give him a second go.
         - else:
             { guard_challenged:
                 The guard's had a look at you. He'll be watching now.

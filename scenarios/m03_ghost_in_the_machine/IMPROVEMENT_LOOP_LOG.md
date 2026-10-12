@@ -1987,3 +1987,76 @@ No audio exists for m03 yet.
 - reopencheck: 0 problems (m03 HaX 523 reopens).
 - Route driver: new `r20_ko_sweep.json` (night KO, "Not yet", sweep, call in, KO debrief) and `r21_clone_retry.json` (dropped read, retry offered at once and after a close and reload, read completes). All 23 routes run with no missing picks; `r2_suspicious` now stops on a menu that offers "Drift back to the whiteboard" straight after the drop.
 - Browser (headless, keyless :3001, game 2190, session log `tools/playtest/m03-blindfix-check-session.jsonl`): rooms opened with `tools/playtest/unlock-all-rooms.rb` and the night/flag globals set by console, so the run is "exercised, not earned". After `debugKO victoria_sterling` in the conference room: no debrief, `victoria_choice_made` false, HaX's "She's down" toast shown, `victoria_choice_made` task completed, `call_in_after_sweep` active. Clicking the toast opened the phone at the hub with "I'm done in here. Bring me in." first; "Bring me in." → "On my way." closed the phone and opened the `closing_debrief` person-chat at once ("SAFETYNET headquarters. The morning after..."), with `victoria_choice_made` and `debrief_played` true and the call-in task completed. No errors in the bridge log.
+
+## Blind-run fixes 2 (2026-10-12)
+
+User decision on Terry (2026-10-12), relayed by the orchestrator, plus the minors from `PASS2_BLIND_A3.md`. Mission-local edits only. The engine files another agent is changing (toasts, RFID denial, KO-body reload) were not touched. tagdiff is against HEAD (a465dc29).
+
+| Severity | Found | Fixed | By design / no change |
+|---|---|---|---|
+| Blocker | 0 | 0 | 0 |
+| Major | 0 | 0 | 0 |
+| Minor | 8 (A3 #3-#9 and the worst lines) + the Terry decision | 8 + Terry | A3 #1, #2, #10 (backlog, by design, harness) |
+
+### Terry at night (user decision)
+
+- **Seen at night means a challenge.** Terry's `los` now has `challengeOnSight` (`scenario.json.erb:1609`). `requireGlobal: "clone_call_done"` limits it to the night, because by day the player is a signed-in visitor. It is skipped once he has waved the player on (`guard_waved_on`, a new global set when his hub is reached, `m03_npc_terry_mott.ink:440`), and also after he has been paid, been told SAFETYNET, turned hostile (`guard_attacking`), been knocked out, or the debrief has played. The 20 s cooldown gives a player he has ordered out time to leave. The engine supports this gate from scenario data, so no engine change was needed.
+- **The sighting** (`player_spotted:terry_mott`, `erb:1618`) opens the new knot `on_sighted` (`terry:101`), which routes in three ways:
+  - a first sighting, or one before the player has answered him, goes to `start`: his recognition of the afternoon recruit, Ffion's story, the card line and `excuse_menu`, all unchanged;
+  - a player he has ordered out (new local `ordered_out`, set by "Wrong turn" and by "Alright, I'm going", `:178`, `:534`) gets "I told you to leave. You didn't." and the police threat (`hostile_confrontation`);
+  - a player he has already threatened gets `#hostile:terry_mott`.
+- **Seen picking a lock means a fight.** `on_lockpick_detected` (`terry:580`) now counts the detection, plays one line ("Picks. Right. We're done talking.") and carries `#hostile:terry_mott`. The one-strike grace system is gone: `guard_grace` VAR and global, the two clearing mappings on `closing_debrief`, and the knots `lockpick_still_here`, `lockpick_again` and `lockpick_final`. The catch mapping also skips a guard who is already chasing (`guard_attacking`, `erb:1625`). His hostile re-entry line no longer says "I told you to leave" after a lockpick catch (`terry:43`).
+- **Wording to match:**
+  - HaX's exec-wing text: "If he sees you, he stops you. If he sees you picking, he won't stop at talking." (`erb:800`)
+  - HaX's guard hint, lockpicking hint and recap (`phone:132`, `:270`, `:321`, `:430`)
+  - the debrief's single run-in line (`debrief:97`)
+- **Perfect Stealth:** a sighting runs `start`, which sets `guard_challenged`, and the credit, the debrief's "the guard never once saw you" and the `zero_detection` gate all already exclude `guard_challenged`. "Never seen by Terry" is therefore what they now mean, and they read true. Unchanged.
+
+### A3 minors
+
+- **#3** Victoria's "You keep looking at that board." is now "There's a board behind me, if you've run out of questions." (`victoria:202`).
+- **#4** The transaction log now matches m02's invoice ("TOTAL: $55,000 (15% ENTROPY discount applied)", m02 `scenario.json.erb:2886`). The total stays $55,000 and the line reads "(all prices net of the 15% ENTROPY affiliate discount)", so the line items add up, and HaX's and Victoria's "twenty-five thousand" is the backdoor's line item (`erb:68`). The continuity note at the top of the erb says so.
+- **#5** Decision objectives reworded so they don't announce the choice: "Talk to the consultant, Danny Foster" (`erb:346`), "Face Sterling in the conference room" (`:459`), and the Settle Accounts aim's description "Sterling signed the sale. Go and face her." (`:431`). I chose rewording over reveal-on-meeting because it needs no new wiring.
+- **#6** Danny's follow-ups each offer two options (`danny:76-103`): commit to what you said, or reconsider after seeing how he takes it (protect → expose, expose → protect, leave → protect). The fate is set once, in the new `protect_done`, `expose_done` and `left_done` knots. Choices stay sticky.
+- **#7** VM panel vs fiction: the panel's VirtualBox instructions are engine standalone text (`vm-launcher-minigame.js:436`) and the VM work is real. The fiction now explains them: the terminal observation (`erb:1484`) and HaX's server-room text (`:807`) say Nightshade has bridged the isolated lab to the player's own kit.
+- **#9** Runbook: kept in the server-room cabinet. The cabinet now reads "The label on the top drawer reads TRAINING LAB -- STUDENT MATERIALS." (`erb:1430`), so a player stuck on the VM has a reason to pick it. The old text said "not where the sensitive material lives", which sent players away from it.
+- **Worst lines:**
+  - Ffion names Zero Day. By canon this is Sterling's in-house name for the training side (Victoria and the recruit both say it by day), so she now says it that way: "Ms. Sterling calls it Zero Day." (`ffion:101`).
+  - Victoria's "Entropy, if you like." is now "Everything breaks in the end. Some people call that entropy. I call it stock." (`victoria:182`).
+  - Her phone buzz and "Excuse me, I need to take this." are now one narrator beat (`victoria:589`). The tester saw the line twice on advancing; I couldn't find a replay in `person-chat-minigame.js`, so it is probably the harness double-advancing. One line now, either way.
+  - Danny's folder note is now neutral: "Danny's hospital assessment, the email he sent with it, and Sterling's one-line reply." (`erb:1784`).
+- **Not changed:** A3 #1 respawn (backlog), #2 Ffion and Victoria at night (by design), #10 harness `interact` reporting.
+
+### Spoken lines changed (old → new)
+
+| File:line | Old | New |
+|---|---|---|
+| `terry:43` | "I told you to leave. I'm calling the police." | "{ordered_out:I told you to leave.\|Not another word.} I'm calling the police." |
+| `terry:on_sighted` | (new) | "Right. I warned you." / Narrator "The torch finds you again." / "I told you to leave. You didn't." |
+| `terry:~176` | "Back the way you came." | "Back the way you came. And if I see you in here again, I won't be asking." |
+| `terry:~533` | "Good. Off you go." | "Good. Off you go. I see you in here again, I'm not talking." |
+| `terry:on_lockpick_detected` | "Oi. Away from the door. Now." + three choices and their replies; `lockpick_still_here`, `lockpick_again`, `lockpick_final` lines | "Picks. Right. We're done talking." (torch narration kept); the old lines are removed |
+| `victoria:182-183` | "Every system tends towards disorder. Entropy, if you like." / "Systems fail. What matters is who knows first, and who pays them for knowing." | "Everything breaks in the end. Some people call that entropy. I call it stock." / "What matters is who knows first, and who pays them for knowing." |
+| `victoria:202` | "You keep looking at that board. Ask about it, if you like." | "There's a board behind me, if you've run out of questions." |
+| `victoria:589` | Narrator "Victoria's phone buzzes. She glances at it." / "Excuse me, I need to take this." | Narrator "Her phone buzzes. She glances at it, then at the door, and the meeting is over." |
+| `ffion:101` | "There's the training side too. Zero Day. Don't ask me..." | "There's the training side too, in the back. Ms. Sterling calls it Zero Day. Don't ask me..." |
+| `danny:76-103` | (new second options and replies) | "Don't thank me yet. Thinking about it, the map's yours. You'll answer for it." / "...Right. For a second there I thought I'd got away with it." / "You went to her when you worked it out. That counts. Come in and testify." / "You mean that? ...Then yes. Whatever they need." / "Fine. Then here's mine: come in, tell them everything, and I'll vouch for you." / "Thank you. I don't think I could have done it on my own." |
+| `phone:270-271` | "Never work a lock in his sightline. Watch his loop, wait for his back to turn, then pick." / "If he's already looking, break off. Step out to the main hallway or into Danny's office until he's moved on." | "At night he stops anyone his torch finds. Watch his loop and move while his back's turned." / "And never pick a lock where he can see you. If he catches the picks, he stops talking." |
+| `phone:321` | "Get caught at it and that's a detection you don't get back." | "Get caught at it and he won't argue. He'll come for you." |
+| `phone:430` | "The guard's caught you at a lock. Only pick when he's turned away." | "The guard's had trouble with you once already. Don't give him a second go." |
+| `debrief:97` | "Security flagged one run-in with the guard. You recovered, but you left a mark on the log." | "Security flagged one run-in with the guard that turned ugly. You got clear of him, but it's on the log." |
+| `erb:800` (text) | "Sterling's office is keyed, not carded -- that's your pick kit. A guard works this corridor; pick only when his back's turned, or you're made. Lockpicking guide if you want it." | "Sterling's office is keyed -- that's your pick kit. A guard works this corridor. If he sees you, he stops you. If he sees you picking, he won't stop at talking." |
+| `erb:807` (text) | "You're at their VM terminal. Scan first, then work the services. Submit each flag at the drop-site terminal. Guides on request." | "You're at their VM terminal. Nightshade's bridged it to your kit. Scan first, then work the services, and submit each flag at the drop-site." |
+
+### Checks run
+
+- Ink compile 8/8.
+- Validator: schema passes. The objective-wiring warning is the same one as before. Two new advisory warnings on Terry's sighting mapping (no background, no `onceOnly`) are the same as on his lockpick mapping and are deliberate: the challenge must repeat, and the room's own chat background applies.
+- dialoguelint: the two pre-existing warnings only (`victoria:647`, `:710`).
+- tagdiff vs HEAD: Terry 76 differences (VAR `guard_grace` → `ordered_out`, knot `on_sighted`, three lockpick knots removed, the `guard_waved_on` tag in the hub, the `ordered_out` assignments, the catch reduced to one hostile beat). Danny 63 (the outcome code moved into the `*_done` knots, two choices per follow-up). The other files changed prose only.
+- reopencheck: 0 problems.
+- Routes: all 24 run with no missing picks. New `r22_terry_on_sight.json`: first sighting → challenge → waved on; ordered out → police threat → ordered out again → fight; by day hands straight back. `r16` and `r17` now expect hostility after a catch; `r6`, `r10` and `r15` updated for the one-beat catch.
+- Browser (headless, keyless :3001, game 2193, session log `tools/playtest/m03-blindfix2-check-session.jsonl`; night globals set by console, so "exercised, not earned"):
+  - Entering the executive wing at night, Terry's cone found the player within 3 s. `player_spotted:terry_mott` fired, his challenge opened ("Building's shut, mate…", "Go on, then. Why are you here?") and set `guard_challenged`.
+  - The Sterling-files story and the enrolment forms reached his hub and set `guard_waved_on`. He did not challenge again over the next 25 s in the corridor.
+  - Picking Sterling's door while he stood at his post facing it (real line of sight, no shortcut) opened "Picks. Right. We're done talking." He came out of it hostile (`isNPCHostile` true, `guard_attacking` true, `guard_detection_count` 1). No errors in the bridge log.

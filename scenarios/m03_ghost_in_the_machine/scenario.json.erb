@@ -26,7 +26,9 @@ end
 #   exploit  - the ProFTPD 1.3.3c source backdoor (the trojaned 2010 release);
 #              it has no CVE of its own, so none is quoted in this mission
 #   sale     - invoice ZDS-2024-0847 to Ghost (Ransomware Incorporated);
-#              exploit $25,000 within a $55,000 package (incl. 214-hospital recon)
+#              exploit $25,000 within a $55,000 package (incl. 214-hospital recon);
+#              m02's invoice reads "TOTAL: $55,000 (15% ENTROPY discount applied)",
+#              so the line items are the discounted prices (pass 2 blind fixes 2)
 #   attack   - Friday 15 November 2024, 02:47; ransom GBP 150,000 in Bitcoin
 #   deaths   - m02 always ends with at least one dead (1, 2, 5 or 6, by the
 #              player's recovery choice), so m03 never states a count and its
@@ -63,7 +65,7 @@ lore_fragment_3_encoded = architect_directive_double
 # but no buyer names, no SOLD ledger and no reserved stock. Those live only in the wall-safe
 # catalogue above, so cracking the safe pays out something the VM can't give.
 
-operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training network)\n\n[2024-10-21 14:32] Invoice ZDS-2024-0847 to GHOST (Ransomware Incorporated), verified\n  ProFTPD 1.3.3c source backdoor      $25,000\n  Reconnaissance (214 hospitals)      $15,000\n  Target Selection Consultation       $10,000\n  Deployment Guide                     $5,000\n  TOTAL                               $55,000\n  15% ENTROPY affiliate discount applied\n  Target: St. Catherine's Regional Medical Centre (from the 214-site survey)\n  Approved: SABLE / Architect sign-off on file\n  Status: DELIVERED\n  (Healthcare list pricing carries a built-in premium; see catalogue.)\n\n[2024-11-15 02:47] Deployment confirmed\n  Target: St. Catherine's Regional Medical Centre\n  Ransom demand: GBP 150,000 (BTC)\n\n[NOTE] Phase 2 sourcing continues."
+operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training network)\n\n[2024-10-21 14:32] Invoice ZDS-2024-0847 to GHOST (Ransomware Incorporated), verified\n  ProFTPD 1.3.3c source backdoor      $25,000\n  Reconnaissance (214 hospitals)      $15,000\n  Target Selection Consultation       $10,000\n  Deployment Guide                     $5,000\n  TOTAL                               $55,000\n  (all prices net of the 15% ENTROPY affiliate discount)\n  Target: St. Catherine's Regional Medical Centre (from the 214-site survey)\n  Approved: SABLE / Architect sign-off on file\n  Status: DELIVERED\n  (Healthcare list pricing carries a built-in premium; see catalogue.)\n\n[2024-11-15 02:47] Deployment confirmed\n  Target: St. Catherine's Regional Medical Centre\n  Ransom demand: GBP 150,000 (BTC)\n\n[NOTE] Phase 2 sourcing continues."
 
 %>
 {
@@ -341,8 +343,8 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
         {
           "_comment": "P1-29: Danny's optional task sits with the executive wing he works in (round 1 put it under the server room aim). Settle Accounts is story-gated, so this can't reveal it early.",
           "taskId": "danny_choice_made",
-          "title": "Decide Danny Foster's fate",
-          "description": "Decide whether to protect Danny Foster from the collateral damage of the sweep",
+          "title": "Talk to the consultant, Danny Foster",
+          "description": "He works in the office across the corridor from Sterling's. He drew the hospital survey. What happens to him may come down to you.",
           "type": "custom",
           "status": "active",
           "optional": true
@@ -426,7 +428,7 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
     {
       "aimId": "moral_choices",
       "title": "Settle Accounts",
-      "description": "Decide what happens to the woman who signed the sale.",
+      "description": "Sterling signed the sale. Go and face her.",
       "status": "locked",
       "order": 5,
       "missionConclusion": true,
@@ -454,7 +456,7 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
       "tasks": [
         {
           "taskId": "victoria_choice_made",
-          "title": "Settle Victoria's fate in the conference room",
+          "title": "Face Sterling in the conference room",
           "description": "Sterling is still in the conference room. Deal with her there.",
           "type": "custom",
           "status": "active"
@@ -795,14 +797,14 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
               "condition": "globalVars.debrief_played !== true",
               "onceOnly": true,
               "setGlobal": { "lockpicking_guide_offered": true, "exec_wing_entered": true },
-              "sendTimedMessage": { "delay": 0, "message": "Sterling's office is keyed, not carded -- that's your pick kit. A guard works this corridor; pick only when his back's turned, or you're made. Lockpicking guide if you want it." }
+              "sendTimedMessage": { "delay": 0, "message": "Sterling's office is keyed -- that's your pick kit. A guard works this corridor. If he sees you, he stops you. If he sees you picking, he won't stop at talking." }
             },
             {
               "eventPattern": "room_entered:server_room",
               "condition": "globalVars.debrief_played !== true",
               "onceOnly": true,
               "setGlobal": { "netexploit_guide_offered": true },
-              "sendTimedMessage": { "delay": 2500, "message": "You're at their VM terminal. Scan first, then work the services. Submit each flag at the drop-site terminal. Guides on request." }
+              "sendTimedMessage": { "delay": 2500, "message": "You're at their VM terminal. Nightshade's bridged it to your kit. Scan first, then work the services, and submit each flag at the drop-site." }
             },
             <%# Pass 3c: a clone counts only when the card is actually saved in the
                 cloner. card_cloned is emitted on Save (rfid-minigame.js handleSaveCard)
@@ -1164,19 +1166,6 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
               "unlockTask": "call_in_after_sweep"
             },
             {
-              "_comment": "Pass 3b: leaving the executive-wing corridor ends the guard's grace, so the next catch is a new strike.",
-              "eventPattern": "room_entered:main_hallway",
-              "condition": "globalVars.guard_grace === true",
-              "cooldown": 0,
-              "setGlobal": { "guard_grace": false }
-            },
-            {
-              "eventPattern": "room_entered:danny_office",
-              "condition": "globalVars.guard_grace === true",
-              "cooldown": 0,
-              "setGlobal": { "guard_grace": false }
-            },
-            {
               "_comment": "P3-1: Victoria's fate tags run at the start of her last batch (person-chat processes a batch's tags before showing its lines, person-chat-minigame.js:1005-1009), so setting victoria_choice_made there opened the debrief and hid her over her final speech. Her ink now sets only victoria_fate; this sets victoria_choice_made when her conversation closes (conversation_closed is emitted once at cleanup, :1632-1641).",
               "eventPattern": "conversation_closed:victoria_sterling",
               "condition": "globalVars.victoria_fate !== '' && globalVars.victoria_fate !== 'ko' && globalVars.victoria_choice_made !== true",
@@ -1438,7 +1427,7 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
           "lockType": "key",
           "keyPins": [30, 45, 35, 50],
           "difficulty": "easy",
-          "observations": "A four-drawer filing cabinet, locked. Day-staff paperwork; not where the sensitive material lives.",
+          "observations": "A four-drawer filing cabinet, locked. The label on the top drawer reads TRAINING LAB -- STUDENT MATERIALS.",
           "contents": [
             {
               "type": "notes",
@@ -1492,7 +1481,7 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
           "name": "VM Access Terminal",
           "position": "as-type:pc",
           "takeable": false,
-          "observations": "Zero Day's VM access terminal. From here you reach their training network -- the box they rehearse exploits on before they sell them.",
+          "observations": "Zero Day's VM access terminal, the only way into their isolated training network: the box they rehearse exploits on before they sell them. Nightshade has bridged it to your own kit, so the lab opens on your machine like any other VM. The panel says how.",
           "puzzle_graph_role": "vm",
           "hacktivityMode": <%= vm_context && vm_context['hacktivity_mode'] ? 'true' : 'false' %>,
           "vm": <%= vm_object('ghost_in_machine_vm_network', {"id":1,"title":"Zero Day Training Network","ip":"192.168.100.3","enable_console":true}) %>
@@ -1616,12 +1605,24 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
             "enabled": true,
             "range": 150,
             "angle": 120,
-            "visualize": true
+            "visualize": true,
+            "challengeOnSight": {
+              "cooldown": 20000,
+              "requireGlobal": "clone_call_done",
+              "skipIfGlobal": ["guard_waved_on", "guard_bribed", "guard_told_safetynet", "guard_attacking", "guard_knocked_out", "debrief_played"]
+            }
           },
           "eventMappings": [
             {
-              "_comment": "Deliberately repeatable. Pass 3b: one approach = one strike. The ink sets guard_grace on a catch and plays a no-strike 'still here' line until the player leaves the corridor (closing_debrief clears it on main_hallway / danny_office entry). Cooldown cut from 30 s to 3 s because the engine's interrupt gate (npc-manager.js shouldInterruptLockpickingWithPersonChat) ignores the mapping cooldown, so a retry inside a long cooldown was swallowed silently: no pick, no line. Pass 4 round 2: once the player has told him they're SAFETYNET or paid him, he keeps his word and doesn't catch the pick (the LOS gate evaluates this condition, npc-manager.js shouldInterruptLockpickingWithPersonChat). Perfect Stealth excludes both routes.",
-              "condition": "globalVars.guard_told_safetynet !== true && globalVars.guard_bribed !== true",
+              "_comment": "Pass 2 blind fixes 2 (user, 2026-10-12): at night the building is shut, so being seen is a challenge (player_spotted:terry_mott -> on_sighted). By day the player is a signed-in visitor (requireGlobal clone_call_done). Skipped once he has waved the player on, been paid, been told SAFETYNET, turned hostile or been knocked out, and after the debrief. The 20 s cooldown gives a player he has ordered out time to go. The mapping: on_sighted routes a first sighting to his challenge (start), a player he ordered out to the police threat, and a player he already threatened to a fight. cooldown 0 so the los cooldown is the one that counts.",
+              "eventPattern": "player_spotted:terry_mott",
+              "targetKnot": "on_sighted",
+              "conversationMode": "person-chat",
+              "cooldown": 0
+            },
+            {
+              "_comment": "Pass 2 blind fixes 2 (user, 2026-10-12): a catch now turns him hostile at once (on_lockpick_detected carries #hostile:terry_mott), so the old one-strike grace (guard_grace) is gone, and guard_attacking keeps a chasing guard from re-opening the catch. Earlier history: deliberately repeatable. Pass 3b: one approach = one strike. The ink sets guard_grace on a catch and plays a no-strike 'still here' line until the player leaves the corridor (closing_debrief clears it on main_hallway / danny_office entry). Cooldown cut from 30 s to 3 s because the engine's interrupt gate (npc-manager.js shouldInterruptLockpickingWithPersonChat) ignores the mapping cooldown, so a retry inside a long cooldown was swallowed silently: no pick, no line. Pass 4 round 2: once the player has told him they're SAFETYNET or paid him, he keeps his word and doesn't catch the pick (the LOS gate evaluates this condition, npc-manager.js shouldInterruptLockpickingWithPersonChat). Perfect Stealth excludes both routes.",
+              "condition": "globalVars.guard_told_safetynet !== true && globalVars.guard_bribed !== true && globalVars.guard_attacking !== true",
               "eventPattern": "lockpick_used_in_view",
               "targetKnot": "on_lockpick_detected",
               "conversationMode": "person-chat",
@@ -1780,7 +1781,7 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
               "takeable": true,
               "readable": true,
               "text": "GHOST -- HOSPITAL INFRASTRUCTURE ASSESSMENT (D. Foster)\n\nNetwork map of St. Catherine's Regional. Patient monitoring and critical care topology. FTP server flagged: ProFTPD, unpatched source build. Exploitation feasibility: HIGH.\n\nEmail, D. Foster to V. Sterling: \"Assessment complete. FTP vulnerability confirmed exploitable, architecture documented. Ready for the client. -DF\"\n\nSterling's reply, one line: \"Perfect. Security-awareness client, as discussed. Bill it to research.\"",
-              "observations": "The reconnaissance that made St. Catherine's possible -- with Sterling's lie about the client sitting right underneath it.",
+              "observations": "Danny's hospital assessment, the email he sent with it, and Sterling's one-line reply.",
               "onRead": { "setVariable": { "danny_evidence_seen": true } }
             },
             {
@@ -1863,7 +1864,7 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
     "catalogue_seen": false,
     "exec_office_entered": false,
     "pc_call_done": false,
-    "guard_grace": false,
+    "guard_waved_on": false,
     "roster_seen": false,
     "usb_seen": false,
     "lockpicking_guide_offered": false,

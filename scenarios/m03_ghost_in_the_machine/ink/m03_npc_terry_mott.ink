@@ -10,9 +10,11 @@ VAR topic_victoria = false
 VAR guard_detection_count = 0
 // Synced from globalVars: day (act1_meeting) vs night (act2_infiltration).
 VAR mission_phase = ""
-// Synced scenario global (pass 3b): set on a catch, cleared when the player leaves the
-// corridor, so one approach costs one strike however often they retry in his view.
-VAR guard_grace = false
+// Pass 2 blind fixes 2 (user, 2026-10-12): at night being seen means a challenge
+// (los.challengeOnSight, player_spotted:terry_mott -> on_sighted), and being seen
+// picking a lock means a fight. Local: he told the player to leave, so a second
+// sighting is no longer a conversation.
+VAR ordered_out = false
 // Final round: re-entry lines on reopen, skipped once after an exit (quiet flags).
 VAR hub_quiet = false
 VAR idle_quiet = false
@@ -37,7 +39,8 @@ VAR excuse_menu_quiet = false
 #speaker:npc
 { guard_hostile:
     #display:guard-hostile
-    Terry Mott: I told you to leave. I'm calling the police.
+    // Pass 2 blind fixes 2: after a lockpick catch he never told them to leave.
+    Terry Mott: {ordered_out:I told you to leave.|Not another word.} I'm calling the police.
     ~ idle_quiet = true
     #exit_conversation
     -> guard_idle
@@ -89,6 +92,32 @@ VAR excuse_menu_quiet = false
     ~ hub_quiet = true
     -> hub
 }
+
+// Pass 2 blind fixes 2: the night sighting (player_spotted:terry_mott). The scenario
+// skips sightings once he has waved the player on (guard_waved_on, set in hub), been
+// paid, been told SAFETYNET, or turned hostile, so only three cases reach here: a
+// first sighting (or one before the player answered him), a player he ordered out,
+// and a player he already threatened with the police.
+=== on_sighted ===
+#speaker:npc
+{ mission_phase != "act2_infiltration":
+    -> guard_idle
+}
+{ guard_hostile:
+    #display:guard-hostile
+    #hostile:terry_mott
+    Terry Mott: Right. I warned you.
+    ~ idle_quiet = true
+    #exit_conversation
+    -> guard_idle
+}
+{ ordered_out:
+    #display:guard-hostile
+    Narrator: The torch finds you again.
+    Terry Mott: I told you to leave. You didn't.
+    -> hostile_count
+}
+-> start
 
 === daytime ===
 #speaker:npc
@@ -145,7 +174,8 @@ VAR excuse_menu_quiet = false
     ~ excuse_given = true
     Terry Mott: Then you've taken the scenic route. Through the executive wing.
     // D5-18: the player said they're leaving, so it ends here.
-    Terry Mott: Back the way you came.
+    Terry Mott: Back the way you came. And if I see you in here again, I won't be asking.
+    ~ ordered_out = true
     ~ idle_quiet = true
     #exit_conversation
     -> guard_idle
@@ -405,6 +435,9 @@ Terry Mott: What do you need from me?
     -> guard_idle
 
 === hub ===
+// Pass 2 blind fixes 2: reaching his hub means he has accepted the story, for now.
+// From here a sighting no longer stops the player (challengeOnSight skipIfGlobal).
+#set_global:guard_waved_on:true
 { hub_quiet:
     ~ hub_quiet = false
 - else:
@@ -497,7 +530,8 @@ Terry Mott: Ms. Sterling? She's the boss. Signs my wages, never learnt my name. 
 #display:guard-hostile
 Terry Mott: I'm giving you one chance. Leave now, or I'm calling the police.
 * [Alright, I'm going.]
-    Terry Mott: Good. Off you go.
+    Terry Mott: Good. Off you go. I see you in here again, I'm not talking.
+    ~ ordered_out = true
     ~ idle_quiet = true
     #exit_conversation
     -> guard_idle
@@ -540,25 +574,16 @@ Narrator: The guard reaches for his radio.
     #exit_conversation
     -> guard_idle
 
-// Pass 3: a detection is a warning first, not an instant fight (m02 Val Okonkwo
-// pattern). The count still costs Perfect Stealth every time. He only goes
-// hostile if the player refuses to back off, or is caught a third time.
+// Pass 2 blind fixes 2 (user, 2026-10-12): being seen picking a lock is past talking.
+// He turns hostile at once (#hostile runs at the start of this batch, so he is
+// hostile as the chat closes). The detection still counts, for the debrief.
 === on_lockpick_detected ===
 #speaker:npc
-{ guard_grace:
-    -> lockpick_still_here
-}
 ~ guard_suspicious = true
+~ guard_hostile = true
 ~ guard_detection_count = guard_detection_count + 1
-~ guard_grace = true
-#set_global:guard_grace:true
-{ guard_detection_count >= 3:
-    -> lockpick_final
-}
-{ guard_detection_count == 2:
-    -> lockpick_again
-}
-#display:guard-alert
+#display:guard-hostile
+#hostile:terry_mott
 // Pass 4 (fix 14): the office can be picked in the afternoon too, so the torch is
 // night-only.
 { mission_phase == "act2_infiltration":
@@ -566,71 +591,10 @@ Narrator: The guard reaches for his radio.
 - else:
     Narrator: The guard has stopped walking. He's looking at your hands, and the pick in them.
 }
-Terry Mott: Oi. Away from the door. Now.
-+ [Ms. Sterling locked her keys in. She asked me to fetch her forms.]
-    ~ guard_influence = guard_influence + 5
-    # influence_increased
-    Terry Mott: With a pick set. Course she did.
-    Terry Mott: I'm writing it down. Do that again where I can see it and I'm calling it in.
-    ~ idle_quiet = true
-    #exit_conversation
-    -> guard_idle
-+ [Sorry. Wrong door. I'm going.]
-    Terry Mott: Yeah, you are. I'll be watching.
-    ~ idle_quiet = true
-    #exit_conversation
-    -> guard_idle
-+ [Shove past him.]
-    ~ guard_hostile = true
-    Terry Mott: Right. That's it.
-    #hostile:terry_mott
-    ~ idle_quiet = true
-    #exit_conversation
-    -> guard_idle
-
-// Same approach, still in his sight: no new strike, just a firmer nudge away.
-=== lockpick_still_here ===
-#speaker:npc
-#display:guard-suspicious
-Terry Mott: I can still see you, you know. Away from the door.
-Narrator: Step back from the door. Wait until his back's turned, then try again.
-+ [Step away from the door.]
-    ~ idle_quiet = true
-    #exit_conversation
-    -> guard_idle
-
-=== lockpick_again ===
-#speaker:npc
-#display:guard-hostile
-Terry Mott: Again? I told you once.
-+ [Put the picks away and back off.]
-    Terry Mott: Last warning. Next time I'm not asking.
-    ~ idle_quiet = true
-    #exit_conversation
-    -> guard_idle
-+ [Stand your ground.]
-    ~ guard_hostile = true
-    Terry Mott: Have it your way.
-    #hostile:terry_mott
-    ~ idle_quiet = true
-    #exit_conversation
-    -> guard_idle
-
-=== lockpick_final ===
-#speaker:npc
-#display:guard-hostile
-~ guard_hostile = true
-Terry Mott: That's three times. I'm done talking.
-{ mission_phase == "act2_infiltration":
-    Narrator: He drops the torch and squares up.
-- else:
-    Narrator: He squares up.
-}
-+ [Brace yourself]
-    #hostile:terry_mott
-    ~ idle_quiet = true
-    #exit_conversation
-    -> guard_idle
+Terry Mott: Picks. Right. We're done talking.
+~ idle_quiet = true
+#exit_conversation
+-> guard_idle
 
 // Resting point (m02 pattern): exits never reach DONE, so the engine restores
 // the story at these choices on the next talk. Every state has an option.

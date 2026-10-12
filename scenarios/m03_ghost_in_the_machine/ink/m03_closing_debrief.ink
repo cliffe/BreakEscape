@@ -94,7 +94,7 @@ Agent HaX: There you are. Sit down before you fall down.
     { guard_knocked_out:
         Agent HaX: The guard caught you once, and then you put him on the floor. The log's mostly about that now.
     - else:
-        Agent HaX: Security flagged one run-in with the guard. You recovered, but you left a mark on the log.
+        Agent HaX: Security flagged one run-in with the guard that turned ugly. You got clear of him, but it's on the log.
     }
 }
 { guard_detection_count > 1:

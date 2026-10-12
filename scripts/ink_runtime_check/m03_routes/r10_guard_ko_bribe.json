@@ -6,7 +6,7 @@
 {"talk":"debrief","picks":[0,0,0,0,"locked down","next assignment"]},
 {"note":"catch once, then KO the guard"},
 {"set":{"guard_bribed":false,"guard_detection_count":0,"victoria_fate":"escaped","danny_fate":"protected"}},
-{"talk":"terry","reload":true,"knot":"on_lockpick_detected","picks":["Sorry. Wrong door"]},
+{"talk":"terry","reload":true,"knot":"on_lockpick_detected","picks":[]},
 {"set":{"guard_knocked_out":true,"guard_hostile":true}},
 {"talk":"debrief","reload":true,"knot":"start","picks":[0,0,0,0,"next assignment"]}
 ]}

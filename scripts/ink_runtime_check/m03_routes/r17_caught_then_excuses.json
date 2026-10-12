@@ -1,13 +1,6 @@
 {"steps":[
-{"note":"R17 (C5-1): a player Terry has caught picking a lock gets no 'Mind how you go.' / suspicion clear from the cloned card or the enrolment-forms excuse. (a) card, (b) enrolment forms."},
+{"note":"R17 (C5-1, reworked in pass 2 blind fixes 2): a player Terry catches picking a lock gets no talking: on_lockpick_detected carries #hostile:terry_mott and the detection counts. A later talk (if he hasn't chased them down) gets his hostile line, not the excuse menu."},
 {"set":{"briefing_played":true,"victoria_card_cloned":true,"mission_phase":"act2_infiltration","clone_call_done":true,"day_greeted":false}},
-{"note":"(a) caught at the door first, then talks to him and shows the card"},
-{"talk":"terry","knot":"on_lockpick_detected","picks":["Sorry. Wrong door"]},
-{"set":{"guard_grace":false}},
-{"talk":"terry","picks":["I work here","Hold up the cloned","I'll let you get on"]},
-{"note":"(b) a fresh night: caught first, then the enrolment-forms excuse"},
-{"set":{"guard_suspicious":false,"guard_detection_count":0,"guard_grace":false,"player_warned":false}},
-{"talk":"terry","reload":true,"knot":"on_lockpick_detected","picks":["Sorry. Wrong door"]},
-{"set":{"guard_grace":false}},
-{"talk":"terry","picks":["Sterling asked me","enrolment forms","let you get on"]}
+{"talk":"terry","knot":"on_lockpick_detected","picks":[]},
+{"talk":"terry","knot":"start","picks":[]}
 ]}
