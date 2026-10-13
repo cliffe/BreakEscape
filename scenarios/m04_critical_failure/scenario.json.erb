@@ -518,9 +518,23 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
     }
   },
 
+<%# Lighting (pass 5, LIGHTING_PLAN.md): a night shift. Room variants change only
+    ambient and lights; every glow carries its whole phase list in the base block's
+    emitters, keyed on the real globals (crew_warned, hydrogen_alarm, racks_vented,
+    attack_prevented...), so each glow follows its own cause on every route. %>
+  "lighting": { "enabled": true, "defaultMode": "on", "ambient": "#b8bfce" },
   "rooms": {
     "main_entrance": {
       "type": "room_aes_reception",
+      "lighting": {
+        "emitters": {
+          "fire_alarm_point": [
+            { "condition": "globalVars.attack_prevented === true", "intensity": 0 },
+            { "condition": "globalVars.crew_warned === true", "color": "#ff5050", "radius": 32, "intensity": 0.9, "effect": "pulse", "above": true },
+            { "intensity": 0 }
+          ]
+        }
+      },
       "dimensions": { "width": 10, "height": 10 },
       "door_sign": "Albion Energy Storage — Reception",
       "connections": {
@@ -1501,6 +1515,26 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
 
     "scada_control_room": {
       "type": "room_aes_control",
+      "lighting": {
+        "ambient": "#aeb6c8",
+        "panels": false,
+        "lights": [ { "x": 7.2, "y": 3.6, "color": "#e8f0ff", "radius": 80, "intensity": 0.5 } ],
+        "emitters": {
+          "screens": { "radius": 140, "intensity": 0.7, "offsetY": 40, "floorTint": 0.35 },
+          "aes_mimic_board": { "color": "#a8e0ff", "radius": 48, "intensity": 0.4 },
+          "aes_ups": { "color": "#7dffa0", "radius": 10, "intensity": 0.5, "offsetY": -8, "above": true },
+          "alarm_panel": [
+            { "condition": "globalVars.attack_prevented === true", "color": "#5dff8a", "radius": 18, "intensity": 0.6, "above": true },
+            { "condition": "globalVars.racks_vented === true", "color": "#ff5050", "radius": 34, "intensity": 1.0, "above": true },
+            { "condition": "globalVars.crew_warned === true", "color": "#ff5050", "radius": 34, "intensity": 1.0, "effect": "pulse", "above": true },
+            {}
+          ]
+        },
+        "variants": [
+          { "condition": "globalVars.attack_prevented === true", "ambient": "#aeb6c8" },
+          { "condition": "globalVars.crew_warned === true", "ambient": "#b4aebc" }
+        ]
+      },
       "dimensions": { "width": 10, "height": 6 },
       "door_sign": "SCADA Control Room",
       "connections": {
@@ -1543,6 +1577,7 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
 
     "engineering_workshop": {
       "type": "room_aes_workshop",
+      "lighting": { "mode": "motion", "ambient": "#aab4c6", "darkAmbient": "#0a0f1c" },
       "dimensions": { "width": 10, "height": 10 },
       "locked": true,
       "lockType": "rfid",
@@ -1672,6 +1707,17 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
 
     "security_office": {
       "type": "room_aes_security",
+      "lighting": {
+        "mode": "motion",
+        "emitters": {
+          "aes_dvr": { "color": "#7dffa0", "radius": 10, "intensity": 0.5, "above": true },
+          "fire_alarm_point": [
+            { "condition": "globalVars.attack_prevented === true", "intensity": 0 },
+            { "condition": "globalVars.crew_warned === true", "color": "#ff5050", "radius": 32, "intensity": 0.9, "effect": "pulse", "above": true },
+            { "intensity": 0 }
+          ]
+        }
+      },
       "dimensions": { "width": 10, "height": 10 },
       "door_sign": "Security Office",
       "connections": {
@@ -1749,6 +1795,27 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
 
     "battery_hall_1": {
       "type": "room_aes_hall1",
+      "lighting": {
+        "ambient": "#b0b8c8",
+        "emitters": {
+          "rack_status_panel": { "color": "#5dff8a", "radius": 20, "intensity": 0.8, "above": true },
+          "hydrogen_detector": [
+            { "condition": "globalVars.attack_prevented === true", "color": "#ffb347", "radius": 12, "intensity": 0.5, "above": true },
+            { "color": "#ffb347", "radius": 14, "intensity": 0.75, "effect": "breathe", "above": true }
+          ],
+          "aes_round_terminal": { "color": "#9fd4ff", "radius": 12, "intensity": 0.5, "effect": "screen", "above": true },
+          "aes_bms_tower": { "color": "#7dffa0", "radius": 10, "intensity": 0.5, "above": true },
+          "aes_beacon": [
+            { "condition": "globalVars.attack_prevented === true", "intensity": 0 },
+            { "condition": "globalVars.crew_warned === true", "color": "#f0f4ff", "radius": 56, "intensity": 1.0, "effect": "pulse", "above": true },
+            { "intensity": 0 }
+          ]
+        },
+        "variants": [
+          { "condition": "globalVars.attack_prevented === true", "ambient": "#b0b8c8" },
+          { "condition": "globalVars.clock_started === true", "ambient": "#a2aabc" }
+        ]
+      },
       "dimensions": { "width": 20, "height": 10 },
       "door_sign": "BATTERY HALL 1 — RESTRICTED ACCESS — PPE REQUIRED",
       "ambientSound": "server_room_ventilation",
@@ -1962,6 +2029,45 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
 
     "battery_hall_2": {
       "type": "room_aes_hall2",
+      "lighting": {
+        "ambient": "#b0b8c8",
+        "emitters": {
+          "batrack": [
+            { "condition": "globalVars.attack_prevented === true && globalVars.racks_vented === true", "ledColor": "#ffb02e", "ledAlpha": 0.8 },
+            { "condition": "globalVars.attack_prevented === true && globalVars.hydrogen_alarm === true", "ledColor": "#ffb02e" },
+            { "condition": "globalVars.attack_prevented === true", "ledColor": "#4dff7a" },
+            { "condition": "globalVars.racks_vented === true", "color": "#ff5a3c", "radius": 36, "intensity": 0.45, "effect": null, "ledColor": "#ff7a3c", "ledAlpha": 0.5 },
+            { "condition": "globalVars.hydrogen_alarm === true", "color": "#ff5a3c", "radius": 30, "intensity": 0.3, "effect": null, "ledColor": "#ff7a3c", "ledAlpha": 0.5 },
+            { "ledColor": "#4dff7a" }
+          ],
+          "aes_gas_detector": [
+            { "condition": "globalVars.attack_prevented === true", "color": "#ffb347", "radius": 12, "intensity": 0.5, "above": true },
+            { "condition": "globalVars.racks_vented === true", "color": "#ff4030", "radius": 18, "intensity": 0.9, "effect": "pulse", "above": true },
+            { "condition": "globalVars.hydrogen_alarm === true", "color": "#ff4030", "radius": 18, "intensity": 0.9, "effect": "pulse", "above": true },
+            { "color": "#ffb347", "radius": 14, "intensity": 0.75, "effect": "breathe", "above": true }
+          ],
+          "power_panel": { "color": "#7dffa0", "radius": 10, "intensity": 0.5, "effect": null, "above": true },
+          "aes_hv_danger": [
+            { "condition": "globalVars.attack_prevented === true && globalVars.racks_vented === true", "color": "#ff7a3c", "radius": 56, "intensity": 0.4, "effect": "breathe", "offsetY": 90, "above": true, "floorTint": 0.3 },
+            { "condition": "globalVars.attack_prevented === true", "intensity": 0 },
+            { "condition": "globalVars.racks_vented === true", "color": "#ff6a2c", "radius": 110, "intensity": 0.8, "effect": "breathe", "offsetY": 90, "above": true, "floorTint": 0.6 }
+          ],
+          "aes_inverter1": { "color": "#7dffa0", "radius": 8, "intensity": 0.45, "offsetY": -10, "above": true },
+          "aes_inverter2": { "color": "#7dffa0", "radius": 8, "intensity": 0.45, "offsetY": -10, "above": true },
+          "fire_extinguisher": [
+            { "condition": "globalVars.attack_prevented === true", "intensity": 0 },
+            { "condition": "globalVars.crew_warned === true", "color": "#f0f4ff", "radius": 26, "intensity": 1.0, "effect": "pulse", "offsetY": -22, "above": true },
+            { "intensity": 0 }
+          ]
+        },
+        "variants": [
+          { "condition": "globalVars.attack_prevented === true && globalVars.racks_vented === true", "ambient": "#b8b4b4" },
+          { "condition": "globalVars.attack_prevented === true", "ambient": "#b0b8c8" },
+          { "condition": "globalVars.racks_vented === true", "ambient": "#c4a290" },
+          { "condition": "globalVars.hydrogen_alarm === true", "ambient": "#b4acb4" },
+          { "condition": "globalVars.clock_started === true", "ambient": "#a2aabc" }
+        ]
+      },
       "dimensions": { "width": 20, "height": 10 },
       "locked": true,
       "lockType": "rfid",
@@ -2114,6 +2220,30 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
 
     "plant_room": {
       "type": "room_aes_plant",
+      "lighting": {
+        "ambient": "#b2b4be",
+        "emitters": {
+          "esd_pushbutton": [
+            { "condition": "globalVars.attack_prevented === true", "color": "#5dff8a", "radius": 26, "intensity": 0.7, "above": true, "floorTint": 0.3 },
+            { "condition": "globalVars.esd_authorized === true", "color": "#ff3b30", "radius": 44, "intensity": 1.0, "effect": "pulse", "above": true, "floorTint": 0.7 },
+            { "color": "#ff3b30", "radius": 16, "intensity": 0.3, "above": true }
+          ],
+          "laptop": [
+            { "condition": "globalVars.voltage_fight_started === true && globalVars.voltage_neutralised !== true && globalVars.attack_prevented !== true", "color": "#ff5a4c", "radius": 20, "intensity": 0.9, "effect": "pulse", "above": true },
+            { "condition": "globalVars.voltage_neutralised !== true && globalVars.attack_prevented !== true", "color": "#ff6a5c", "radius": 20, "intensity": 0.7, "effect": "screen", "above": true },
+            {}
+          ],
+          "aes_breaker_panel": { "color": "#ffb347", "radius": 10, "intensity": 0.5, "above": true },
+          "aes_inverter1": { "color": "#7dffa0", "radius": 8, "intensity": 0.45, "offsetY": -10, "above": true },
+          "aes_inverter2": { "color": "#7dffa0", "radius": 8, "intensity": 0.45, "offsetY": -10, "above": true },
+          "aes_switchgear": { "color": "#7dffa0", "radius": 8, "intensity": 0.45, "offsetY": -10, "above": true },
+          "aes_pcs_cabinet": { "color": "#7dffa0", "radius": 8, "intensity": 0.45, "offsetY": -10, "above": true }
+        },
+        "variants": [
+          { "condition": "globalVars.attack_prevented === true", "ambient": "#bcc2ce" },
+          { "condition": "globalVars.clock_started === true", "ambient": "#a4a8b4" }
+        ]
+      },
       "dimensions": { "width": 10, "height": 10 },
       "locked": true,
       "lockType": "biometric",
@@ -2357,6 +2487,18 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
 
     "loading_dock": {
       "type": "room_aes_dock",
+      "lighting": {
+        "mode": "motion",
+        "flicker": true,
+        "emitters": {
+          "aes_beacon": [
+            { "condition": "globalVars.attack_prevented === true", "intensity": 0 },
+            { "condition": "globalVars.crew_warned === true", "color": "#ffb02e", "radius": 30, "intensity": 0.9, "effect": "pulse", "above": true },
+            { "intensity": 0 }
+          ],
+          "aes_shutter_ctrl": { "color": "#7dffa0", "radius": 8, "intensity": 0.45, "above": true }
+        }
+      },
       "dimensions": { "width": 10, "height": 10 },
       "door_sign": "Loading Dock",
       "connections": {
