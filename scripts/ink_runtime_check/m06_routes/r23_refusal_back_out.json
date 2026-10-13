@@ -1,0 +1,17 @@
+{"steps":[
+{"note":"R23 (scenario design R2, n2): the lowest-trust path. A brusque opener left unrepaired, the pitch refused, time given, then 'I need an answer' again: she still refuses, and the player can back out instead of being left with detention only. Her hub stays open, so the turn route survives."},
+{"set":{"briefing_played":true}},
+{"room":"security_checkpoint"},
+{"talk":"guard","picks":["Financial Conduct Authority","Dr Volkova"]},
+{"room":"trading_floor"},
+{"talk":"irina","picks":["Let's be quick","That's all for now"]},
+{"set":{"found_blockchain_evidence":true,"flag1_submitted":true,"flag2_submitted":true,"flag3_submitted":true,"found_architects_fund":true}},
+{"talk":"irina","picks":["I'm not from the FCA","You built it believing","Think about it"]},
+{"expect":{"given_time":true,"irina_recruited":false,"irina_arrested":false}},
+{"said":[]},
+{"talk":"irina","picks":["I need an answer","Then I'll leave you to it"]},
+{"said":["Then I'll leave you to it. For now.","Then you're complicit","For now."]},
+{"expect":{"irina_recruited":false,"irina_arrested":false,"irina_fate_decided":false}},
+{"talk":"irina","picks":[]},
+{"said":["I need an answer, Dr. Volkova."]}
+]}

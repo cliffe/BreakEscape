@@ -380,9 +380,9 @@ Agent HaX: Map it, get on it, crack it, reuse it, move sideways, take the keys. 
 // ================================================
 // THE FCA LETTER (PASS 4 fix 2: the lessons, in the cover's own terms)
 // ================================================
-// Three picks from nine. Seven are real findings from tonight; two are not.
+// Three picks from ten. Eight are real findings from tonight; two are not.
 // Once-only choices in a looping knot: a picked item is never offered again,
-// and six are always left, so the knot can't run dry.
+// and seven are always left, so the knot can't run dry.
 
 === fca_letter ===
 {fca_picks == 0:

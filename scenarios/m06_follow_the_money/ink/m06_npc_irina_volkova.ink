@@ -474,6 +474,13 @@ Dr. Irina Volkova: My work. Used to kill people.
     + {read_irina_notes} [You wrote "What have I become?" I read it in your office.]
         -> notes_leverage
     // Review minor 1: a real alternative. Giving her time can turn her.
+    // Scenario design R2 (n2): once she's had time, the player can still back
+    // out, so "I need an answer" never leaves detention as the only choice.
+    + {given_time} [Then I'll leave you to it. For now.]
+        Dr. Irina Volkova: For now.
+        ~ hub_quiet = true
+        #exit_conversation
+        -> hub
     + {not given_time} [Think about it. I'll come back before anyone else does.]
         ~ given_time = true
         ~ irina_trust += 10

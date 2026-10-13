@@ -660,3 +660,35 @@ Not voiced: the guide item and menu names, the FCA letter's new option, the cred
 
 - The browser checks above.
 - D6 (S1–S7) and D7 (CyBOK keywords) are with the user.
+
+### Phase 3 scenario design, round 2
+
+Review: `SCENARIO_DESIGN_REVIEW_P5_R2.md` (Opus, read-only, static). Counts: 0 blockers, 0 majors, 5 minors. Outcomes: n2–n4 fixed; n1 and n5 left by the orchestrator's decision. The stage closes after these fixes and a browser check.
+
+| # | Sev. | Finding | Outcome |
+|---|---|---|---|
+| n1 | minor (tooling, docs) | The engine already saves ink-local variables with the game (only visit counts, `TURNS()` and position are lost), so round 1's M1 premise looks wrong, and the route driver's `"reload": "page"` is harsher than the engine | **Left for the orchestrator** (orchestrator). The browser check settles whether ink locals survive a reload; the orchestrator handles the driver, the backlog entry and Kemal's "(resets on a page reload)" comment after it. Round 1's synced globals do no harm either way: they reach the same result by a second route |
+| n2 | minor | Once Irina had refused and been given time, "I need an answer" could leave a single choice: detain her | **Fixed.** The refusal branch adds `+ {given_time} [Then I'll leave you to it. For now.]`, with a one-line reply, "For now." (`dialoguelint` asks for a reply before an exit). Her hub topics can still raise trust, so the turn stays open. Route r23: brusque opener, pitch, time, ask again; two choices, back out, fate still open |
+| n3 | minor | The FCA-letter comment still counted nine options | **Fixed.** "Three picks from ten. Eight are real findings from tonight; two are not. … seven are always left" |
+| n4 | minor | The renamed privilege-escalation guide's observation still described the old guide | **Fixed.** "Taking an ordinary account up to root, once you have a foothold". Not voiced. Folds into D6/S5 if the user repoints the guide |
+| n5 | minor (dialogue stage) | Irina's hub lists her late topics last | **Deferred to the dialogue phase** (orchestrator). Ink order only, no tag change |
+
+#### Checks (static; no browser session started)
+
+- Ink compiles (9 files).
+- Validator, full: all passes; no unknown fields; dialogue lint clean.
+- `dialoguelint`: no findings (the first draft of n2 flagged exit-no-reply, cleared by "For now.").
+- `check_door_alignment.py`: all doors OK.
+- `tagdiff` against HEAD: Irina 6 (the new choice and its exit; the rest are round 1's synced-trust changes not yet committed); debrief structure unchanged.
+- inkcheck (Irina's `recruitment_decision` with time given and low trust) and loopcheck (her hub after a refusal): no errors.
+- `reopencheck`: m06 HaX phone, 1800 reopens, 0 problems.
+- Routes r1–r23: all expectations met.
+
+#### Spoken lines changed (old → new)
+
+- Irina, new: "For now." (reply to the new back-out choice).
+
+#### Open
+
+- The closing browser check: round 1's list, plus n2's back-out and the reload question in n1.
+- n1 (tooling and backlog) is with the orchestrator; n5 goes to the dialogue phase.
