@@ -1,0 +1,121 @@
+{
+"steps": [
+{
+"note": "R6 (round 2): Vance knocked out in his office. His phone gives no answer, HaX's crew hint takes the KO branch with no cost line, no warning is possible, the normal clock vents bank B with the crew in Hall 2, Vance is absent from the debrief."
+},
+{
+"set": {
+"briefing_played": true,
+"guard_admitted": true,
+"vance_met": true,
+"vance_provided_keycard": true,
+"vance_card_cloned": true,
+"robert_vance_ko": true,
+"anomaly_detected": true
+}
+},
+{
+"talk": "vance_phone",
+"picks": [
+"No answer"
+]
+},
+{
+"said": [
+"(No answer.)"
+]
+},
+{
+"talk": "phone",
+"picks": [
+"Can we get the night crew",
+"Nothing right now"
+]
+},
+{
+"said": [
+"Nobody's sounding it now"
+],
+"notSaid": [
+"half an hour",
+"can't cost you"
+]
+},
+{
+"set": {
+"server_room_reached": true,
+"plant_reader_seen": true,
+"fingerprint_kit_found": true,
+"flag_network_scan_submitted": true,
+"flag_ftp_intel_submitted": true,
+"flag_distcc_exploit_submitted": true,
+"flag_privesc_submitted": true,
+"all_flags_in": true,
+"evidence_maintenance_logs_found": true,
+"attack_mechanism_known": true
+}
+},
+{
+"advance": 15
+},
+{
+"expect": {
+"racks_vented": true,
+"crew_lost": true,
+"crew_warned": false
+}
+},
+{
+"set": {
+"voltage_captured": true,
+"voltage_neutralised": true,
+"esd_authorized": true,
+"attack_prevented": true,
+"operative_static_defeated": true
+}
+},
+{
+"talk": "phone",
+"picks": [
+"Bring me in",
+"Bring me in",
+"On my way"
+]
+},
+{
+"talk": "debrief",
+"picks": [
+"Bank B went",
+"What did we get",
+"how did they get in",
+"goes in the report",
+"How far",
+"I'm in",
+"Keep it classified",
+"Make sure Vance"
+]
+},
+{
+"said": [
+"Nine on the night crew",
+"being treated by medics"
+],
+"notSaid": [
+"Robert Vance:"
+]
+},
+{
+"credits": true
+},
+{
+"said": [
+"CASUALTIES: the Hall 2 night crew",
+"knocked down in his own office"
+],
+"notSaid": [
+"ALL ELEVEN",
+"EVERYONE ON SITE"
+]
+}
+]
+}

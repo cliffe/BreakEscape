@@ -114,3 +114,109 @@ HaX texts (scenario.json.erb), new: the crew-warned pair, the bank-B-venting var
 - Browser checks listed under Checks, for the round-2 playtest.
 - m12 (Task Force Null in m05) needs the user or the m05 pass.
 - The six blank-reentry checks go to the dialogue phase.
+
+### Phase 1 alignment, round 2
+
+Inputs: `ALIGNMENT_REVIEW_P5_R2.md` (Opus, static; 0 blockers, 3 majors, 20 minors; it confirms A1, A2, A4, A5 and A6, and A3 in part) and `PASS5_ALIGN_R1_BROWSER.md` (Sonnet, games 2201 to 2203 on :3001: every round-1 change passes in the browser, plus minors N1 to N5 and observations O1 to O3). The fixer checked each finding against the files before acting.
+
+Counts: review 0 / 3 / 20; browser 0 / 0 / 5 minors, 3 observations. Outcomes: 18 fixed, 1 fixed with an accepted limit, 2 withdrawn, 9 deferred to later stages, 1 needs an engine change.
+
+| # | Sev. | Finding | Outcome |
+|---|---|---|---|
+| M1 | major | The night-crew warning isn't a fair choice: an early alarm ran the 14-minute clock across the VM stage, the cost wasn't stated, a late alarm cost nothing while HaX still said "think first", and the debrief never linked the alarm to a vent | **Fixed** (orchestrator decision 1, option b). An early alarm (before the attack is mapped) sets `crew_warned_early`, which starts its own pair: `h2_advisory_alarm` at 24 min and `racks_vent_alarm` at 30 min. The normal pair starts on `attack_mechanism_known` again, as before round 1; whichever fires first wins (each checks `racks_vented` / `hydrogen_alarm`). `clock_started` now only drives the music phase. Vance states the cost before "Sound it.", face to face and by phone, and it's true to the moment: before the mapping, "He won't wait for eight. You'll have half an hour, maybe, and your workshop job isn't done."; after it, "your clock's already running, so it costs you nothing now but surprise". HaX's hint says the same. The debrief: `vented_by_alarm_clock` (set by the alarm's vent timer) gets "Your alarm started his clock. Bank B and two on the feed are what it cost. / Nine people in Hall 2 are what it bought." Static still stands aside after the alarm, as decided. HUD limit, documented in the timer comment: the widget shows the first pending countdown in array order, so the alarm's advisory sits first; it is the earlier deadline unless the attack is mapped within 16 minutes of the alarm |
+| M2 | major | Vance claims the historian shows the real temperatures (it reads the poisoned bus), and his phone text steers to the ESD before the dial | **Fixed** (decision 3). Every historian claim is gone. Before the dial, Vance only distrusts his screens and points at the dial; after it, he watches the hydrogen readout from the vent controller, which is off SCADA (the H2 panel, erb `hydrogen_detector`). The 20 s phone text now points to the dial, `skipIfGlobal: anomaly_detected`; the ally text drops "with the historian up". The HMI's "Feed source: BMS sensor bus → SCADA historian" stays: it says the historian is on the poisoned feed |
+| M3 | major | Cipher's sight challenge never fires on the normal route (he faced away; 96 px turn) | **Fixed** (decision 2). A Terry-shaped beat: up the rack gap at x=12 to the door row, a look east (2.5 s), a look west (2.5 s), back to his panel facing south (4 s). `los.visualize` draws his cone; the walk back is the window to cross; `pauseForPlayer: false` keeps the timing. **Needs a browser check**: the waypoints are from the room template (gap between rack columns 11 and 13), not seen walked |
+| m1 | minor | "Started your clock early" when the alarm came late | **Fixed** (`crew_warned_early`); the late version is "Vance's alarm had the night crew out before the button went in." |
+| m2 | minor | Vance's phone stale after the shutdown; its "what should I be doing" skipped the dial and the card | **Fixed.** `attack_prevented` branches in the greeting, "How bad is it?", the goodbye ("And hurry" no longer after the shutdown) and `priority_guidance`, which now mirrors the face-to-face version (dial, the Level 2 card, the workshop, the ESD, after) |
+| m3 | minor | HaX's crew hint says "think first" once the alarm costs nothing | **Fixed** (reads `attack_mechanism_known`; no cost line at all when Vance is KO'd) |
+| m4 | minor | Face-to-face offer lacks the phone's wording; "get to them first" is unclear | **Fixed.** Same cost wording both places; "Not yet. Let me get closer to Voltage first." |
+| m5 | minor | The hydrogen text doesn't say the alarm is still on Vance's desk | **Fixed.** A third disjoint variant when Vance is an ally and up: "…Vance can still sound the evacuation. Then the button." |
+| m6 | minor | Voltage never reacts to the alarm; "your eleven" after the crew died | **Fixed.** "Your klaxon. Nine people in hi-vis on my cameras, walking out the fire doors. Very humane." and "You save your forty." when `crew_lost` |
+| m7 | minor | Vance's debrief lines say "one bank" with nine of his crew dead | **Fixed.** HaX: "Vance lost nine of his crew tonight. He hasn't said a word about you yet."; Vance: "Nine of mine. I'll be telling their families myself." |
+| m8 | minor | Static idles through the sweep on the button route | **Fixed.** On `voltage_escaped` with Static stood aside and up, `static_left` hides him (setVisible plus a room_entered re-hide); Voltage's narration: "Static peels off the wall and goes with him without a word."; credit "STATIC: stood aside, and left with Voltage" |
+| m9 | minor | A first punch on Voltage doesn't bring Static in | **Accepted and noted.** No mapping action turns an NPC hostile (npc-manager.js mapping config); opening a chat mid-fight would be worse. The stance route brings him in |
+| m10 | minor | HaX's first call skips the dial | **Fixed.** "First, prove the screens are lying. There's an old dial thermometer in Battery Hall 1. / Then the engineering workshop, off the same hall." |
+| m11 | minor | Lockpicking guide only offered in the security office | **Fixed.** Also offered on workshop entry (the OptiGrid case) |
+| m12 | minor | Briefing HaX uses the player's `hacker` sheet | **Deferred** to the character stage (orchestrator) |
+| m13 | minor | Hostile music ignores the phase | **Fixed** with N1 (below) |
+| m14 | minor | Declared room `dimensions` don't match the templates | **Deferred** to room dressing (orchestrator), which re-checks positions after correcting them |
+| m15 | minor | Stale timer comment ("restart from the reload moment") | **Fixed** (timers resume their saved running time). The Voltage ink comment about a restarted race describes a KO respawn as well as a reload and was left |
+| m16 | minor | No klaxon or strobe in the world | **Deferred** to the lighting stage (a strobe on `crew_warned`) |
+| m17 | minor | VM claims ("calibration override") with no mission-doc source | **Deferred** to the puzzle-chains stage (high-level check against SecGen) |
+| m18 | minor | Static's three standoff choices share one reply | **Withdrawn.** Two of the three have their own reply before the shared "Not past me."; all three are fight choices by design, and the talk-past is the alternative |
+| m19 | minor | The guard's opening reads oddly after a sight challenge | **Fixed.** The challenge opens a new `on_sighted` knot: "The guard is out of his chair before you reach the inner door." / "Oi. Desk first. Who are you, then?"; "(Keep walking.)" leads into his existing stop |
+| m20 | minor | No field guide for the fingerprint kit | **Deferred**: lab sheets are out of this pass (for the backlog) |
+| N1 | minor | Restored hostility after a reload, or a fight after the ESD, plays `threat` | **Fixed.** The rule skips events with `restored` (npc-hostile.js:107; guarded with `typeof` so a missing key can't break it) and anything after the shutdown; a clock-phase twin keeps `spy-action` (m13) |
+| N2 | minor | Cipher's trigger is 96 px | **Fixed** with M3 |
+| N3 | minor | The kit text replays after a reload | **Fixed.** Both kit texts `skipIfGlobal: vance_print_lifted`, set by the print mapping. Before the print is lifted a reload can still replay the kit text once: the replay comes from the inventory restore re-emitting the pickup, and no single global separates "picked up before" from "picking up now" without an engine change |
+| N4 | minor | The guard's first-frame challenge collides with the tutorial prompt | **Needs an engine change, not made.** The tutorial prompt is not a minigame (the sight watcher only pauses for those), it emits no event, and a returning player's "done" state lives in localStorage, so `engine_tutorial_completed` / `_declined` can stay false all game; a `requireGlobal` on them would silence the guard for returning players. Two engine fixes would work: have the watcher pause while the tutorial prompt is open, or mirror the localStorage state into the game globals on load. Reported to the orchestrator |
+| N5 | minor | Vance's chat portrait is the hooded hacker | **Deferred** to the character stage |
+| O1 | obs. | "You don't get to have both" when the button isn't offered | **Fixed.** Without the button stance: "And Static's still in this room. I'd decide quickly." |
+| O2 | obs. | A fight with Static joining can down an idle player | **Open** for a human playtest (fairness at real pace) |
+| O3 | obs. | KO'd Static stands upright | **Deferred** to the character stage |
+
+Task Force Null in m05: deferred to the m05 pass (orchestrator decision 4; in the backlog).
+
+#### Decisions taken (with reasons)
+
+- **Option (b), not (c)** (orchestrator): closing the quiet route after the alarm would punish the humane choice. Delays 24 / 30 min for the alarm pair: "about half an hour", long enough for a focused VM run, short enough to be a race.
+- **Late alarm stays free**: the clock is already running, and now both Vance and HaX say so before the player chooses.
+- **Normal clocks back on `attack_mechanism_known`**, so the music's `clock_started` can be set by the alarm without starting the 8 / 14-minute pair.
+- **Cipher's beat uses the x=12 gap** he already stood in, so his start and end tile are unchanged and his drop point stays on open floor.
+- **N4 not worked around**: every mission-local option either silences the guard for returning players or needs a timer action the engine doesn't have.
+
+#### Route driver
+
+`scripts/ink_runtime_check/m04_routes/route.js` gains a clock model (`advance`: the erb's timers start on their globals and fire in due order with their conditions), `said` / `notSaid` assertions on what was printed, a `backstops` step that evaluates the per-room backstop conditions against the globals, and the round-2 engine reactions (`crew_warned_early`, `static_left`). r1 now shows an early warner beating the 30-minute clock; r4 shows the alarm clock venting bank B at 30 minutes with the crew out. New routes, all passing with r1 to r4:
+
+- r5 late warning (no time cost said, no "clock early", Voltage's klaxon line, Static leaves, credits);
+- r6 Vance KO'd (no answer, KO hint, normal clock vents with the crew in, Vance absent from the debrief);
+- r7 cover held then a late reveal (no offer before, "half an hour" after, the alarm clock wins at 30 against the normal one at 34);
+- r8 Cipher walked, with and without the alarm (police line, credit, "...Nine?");
+- r9 button stance after an unwarned vent ("your forty", Vance's nine);
+- r10 the A4 backstops (none after the ESD, re-emit after "Bring me in", hear-the-debrief after its first line);
+- r11 Voltage fought before the dial (no button, no crew offer, trigger race vents with the crew in).
+
+#### Checks (static; no browser session started)
+
+Ink compiles (10 files). Validator, full: schema passed, all ink valid, doors and geometry OK; 16 warnings, the same set as round 1 (the Static room_entered pair was made disjoint). dialoguelint: 0 errors, 6 blank-reentry checks (unchanged set). reopencheck: 0 problems (m04 block of missions.json regenerated). tagdiff against HEAD: 66 structural differences, all from this round. inkcheck and loopcheck over the changed knots (guard sighted, Voltage with the alarm and after a vent, debrief warned-early / lost / late, Vance phone after the shutdown and after the mapping, Vance hub, HaX hub with Vance KO'd): clean. `check_door_alignment.py`: OK. Routes: 11 of 11 pass.
+
+Browser checks for round 3: Cipher's beat (walkable, cone, crossing window), the guard's `on_sighted` knot, the alarm clocks and the HUD order, Static leaving with Voltage, the music after a reload with Relay hostile.
+
+#### Spoken lines changed (old → new)
+
+Robert Vance, face to face:
+- "The screens are lying to you. I'm on the historian, and the real rack temperatures are climbing. Get to the hardwired shutdown. Software won't save us." → "The screens are lying to you. I've the hydrogen readout from the vent controller up here. It's off their network, and it's climbing." / "Get to the hardwired shutdown. Software won't save us."
+- "With Voltage on the other side? And somebody has to watch the real numbers." → "With Voltage on the other side? And somebody has to stay on this desk."
+- "Whoever's in my plant room hears it too. The minute it goes, they know we've found them." → (before the mapping) "Whoever's in my plant room hears it too. He won't wait for eight. You'll have half an hour, maybe, and your workshop job isn't done." / (after) "Whoever's in my plant room hears it too. But your clock's already running, so it costs you nothing now but surprise."
+- Choice: "Not yet. Give me time to get to them first." → "Not yet. Let me get closer to Voltage first."
+- New: "The workshop wants a Level 2 card, and mine's only Level 1. Their contractors had Level 2."
+
+Robert Vance, phone:
+- "Still here. Still watching it climb." → "Still here. Still watching the hydrogen climb." (after the dial) / "Still here." (before) / "Banks are isolated. The hydrogen's coming down at last." (after the shutdown)
+- "I can't leave the desk. Voltage is through there, and somebody has to watch the real numbers." → "…somebody has to watch the hydrogen."
+- "And whoever's in my plant room hears it too. The minute it goes, they know we've found them, and they won't wait for eight." → (before the mapping) "And whoever's in my plant room hears it too. He won't wait for eight." / "You'll have half an hour, maybe, and your workshop job isn't done." (after) "Whoever's in my plant room hears it too. But your clock's already running, so it costs you nothing now but surprise."
+- "The historian has the cells past sixty and climbing. My screens still say twenty-eight." → "Your dial says sixty-one. I've the hydrogen readout from the vent controller up here, it's off their network, and it's climbing."
+- "The historian reads hotter than my screens. Read the dial in Hall 1 and you'll see by how much." → "My screens say twenty-eight and I don't believe them. Read the dial in Hall 1. It isn't on their network."
+- "Find out how they're driving the SCADA network. Everything waits on that." / "The jump-server terminal in the workshop is your way in." → the five-step `priority_guidance` (new lines: "You've done it. Banks isolated, vents at full. Go and see what they left behind."; "My screens all read the same feed. Check the racks against something that isn't on it." / "There's an old dial on the Rack Bank C wall in Hall 1."; the Level 2 card line; "The workshop. If they got onto my network, it was through the jump server in there."); the two ESD lines kept.
+- New: "It's over. Banks isolated, vents at full, and the hydrogen's falling."
+- Texts: "It's Vance. The historian has the cells far hotter than the SCADA admits. Get to the hardwired ESD in the plant room. The software won't save us." → "It's Vance. Every screen I've got says twenty-eight, and I don't believe one of them. There's an old dial on the Rack Bank C wall in Hall 1. Read it."; "It's Vance. I'm on the ops desk with the historian up, and on comms if you're moving…" → "It's Vance. I'm on the ops desk, and on comms if you're moving…"
+
+HaX:
+- "First job: find how they got onto the SCADA network." / "The way on is the engineering workshop, off Battery Hall 1. Start there." → "First, prove the screens are lying. There's an old dial thermometer in Battery Hall 1." / "Then the engineering workshop, off the same hall. That's how they got onto the SCADA network."
+- "But think first. The minute that alarm goes, Voltage knows we've found him, and he won't wait for eight." → (before the mapping) "But think first. The minute that alarm goes, Voltage knows we've found him. You'd have about half an hour, not till eight." / (after) "The clock's already running, so the alarm can't cost you any time now." / (Vance KO'd) nothing.
+- Texts: "…Your clock just started." → "…You've about half an hour."; new hydrogen variant "Hall 2's night foreman rang the ops desk. Nine of them behind the inverter wall can smell it. Vance can still sound the evacuation. Then the button."
+- Debrief: "And Vance's alarm had the night crew out before the button went in. It started your clock early. It was still the right call." now only for an early alarm; late: "And Vance's alarm had the night crew out before the button went in." New: "Your alarm started his clock. Bank B and two on the feed are what it cost." / "Nine people in Hall 2 are what it bought. Hall 2 was empty when it went."; "Vance lost nine of his crew tonight. He hasn't said a word about you yet."
+
+Robert Vance, debrief, new: "Nine of mine. I'll be telling their families myself."
+
+Voltage: new "Your klaxon. Nine people in hi-vis on my cameras, walking out the fire doors. Very humane."; "You don't get to have both. I'd decide quickly." now only with the button on offer, else "And Static's still in this room. I'd decide quickly."; "You save your eleven and your forty…" → "You save your forty…" after a vent with the crew in; narration "Static peels off the wall and goes with him without a word."
+
+Security guard, new (`on_sighted`): narration "The guard is out of his chair before you reach the inner door."; "Oi. Desk first. Who are you, then?"; narration "You keep walking. He steps into your path."
+
+#### Open after round 2
+
+- N4 needs an engine change (see the table); reported.
+- O2 (fight fairness with Static joining) needs a human playtest.
+- Browser checks listed above.
+- Deferred to later stages: m12, N5, O3 (characters); m14 (room dressing); m16 (lighting); m17 (puzzle chains); m20 (lab sheets, backlog); Task Force Null (m05 pass).

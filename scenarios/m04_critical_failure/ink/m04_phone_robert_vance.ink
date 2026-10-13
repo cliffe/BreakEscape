@@ -41,6 +41,12 @@ VAR racks_vented = false
 // is written with #set_global (synced); attack_prevented is read only.
 VAR crew_warned = false
 VAR attack_prevented = false
+// Round 2: the hub states the alarm's real cost, which depends on whether the
+// clock is already running. vance_provided_keycard and the workshop card feed
+// priority_guidance, mirroring the face-to-face vance_priority.
+VAR vance_provided_keycard = false
+VAR relay_card_cloned = false
+VAR operative_relay_defeated = false
 
 EXTERNAL player_name()
 
@@ -73,10 +79,15 @@ EXTERNAL player_name()
     -> vance_no_answer
 
 === vance_phone_support_start ===
-{vance_support_calls == 1:
+{
+- vance_support_calls == 1:
     Vance. What do you need?
+- attack_prevented:
+    Banks are isolated. The hydrogen's coming down at last.
+- anomaly_detected:
+    Still here. Still watching the hydrogen climb.
 - else:
-    Still here. Still watching it climb.
+    Still here.
 }
 
 -> support_hub
@@ -108,7 +119,7 @@ EXTERNAL player_name()
 + {plant_reader_seen and not asked_plant_reader} [The plant room's on a fingerprint reader.]
     ~ asked_plant_reader = true
     HV room. Authorised persons only, and tonight that's me.
-    I can't leave the desk. Voltage is through there, and somebody has to watch the real numbers.
+    I can't leave the desk. Voltage is through there, and somebody has to watch the hydrogen.
     They didn't need me on the ninth. I log every round on the Hall 1 panel. They lifted my print off it. Do the same.
     -> support_hub
 
@@ -179,24 +190,39 @@ Get to it and press it. That's the mission.
 
 -> support_hub
 
+// Round 2 (review m2): mirrors the face-to-face vance_priority, so the phone
+// never sends the player to the shutdown before it can work.
 === priority_guidance ===
-{not attack_mechanism_known:
-    Find out how they're driving the SCADA network. Everything waits on that.
-    The jump-server terminal in the workshop is your way in.
-}
-{attack_mechanism_known and urgency_stage >= 3:
+{
+- attack_prevented:
+    You've done it. Banks isolated, vents at full. Go and see what they left behind.
+- not anomaly_detected:
+    My screens all read the same feed. Check the racks against something that isn't on it.
+    There's an old dial on the Rack Bank C wall in Hall 1.
+- not server_room_reached and not (relay_card_cloned or operative_relay_defeated):
+    The workshop wants a Level 2 card, and mine's only Level 1. Their contractors had Level 2.
+- not attack_mechanism_known:
+    The workshop. If they got onto my network, it was through the jump server in there.
+- urgency_stage >= 3:
     We're past planning. Get to the hardwired shutdown and press it. It's the only thing left that works.
-}
-{attack_mechanism_known and urgency_stage < 3:
+- else:
     You know what they did. Now get to the shutdown and press it.
 }
 
 -> support_hub
 
 // Pass 5 decision 1. Text knot, then a choices-only knot (phone reopen rule, E13).
+// Round 2 (review M1, orchestrator decision 1): the cost is said plainly before
+// "Sound it.", and it is true to when it's asked: before the attack is mapped
+// the alarm starts a clock; after, the clock is already running.
 === crew_offer ===
 I can sound the evacuation from here. Klaxon and strobes in every hall.
-And whoever's in my plant room hears it too. The minute it goes, they know we've found them, and they won't wait for eight.
+{attack_mechanism_known:
+    Whoever's in my plant room hears it too. But your clock's already running, so it costs you nothing now but surprise.
+- else:
+    And whoever's in my plant room hears it too. He won't wait for eight.
+    You'll have half an hour, maybe, and your workshop job isn't done.
+}
 -> crew_offer_choices
 
 === crew_offer_choices ===
@@ -214,6 +240,8 @@ Sounding it now. They're moving. Nine of them, out through the Hall 2 fire doors
 
 === urgency_assessment ===
 {
+- attack_prevented:
+    It's over. Banks isolated, vents at full, and the hydrogen's falling.
 - racks_vented:
     Bank B's gone. A and C are holding, for now.
     The hardwired shutdown isolates what's left and forces the vents. Get to it.
@@ -221,10 +249,10 @@ Sounding it now. They're moving. Nine of them, out through the Hall 2 fire doors
     Bank B's venting hydrogen. That's the stage before fire.
     The ESD is built for exactly this. Get to it.
 - anomaly_detected:
-    The historian has the cells past sixty and climbing. My screens still say twenty-eight.
+    Your dial says sixty-one. I've the hydrogen readout from the vent controller up here, it's off their network, and it's climbing.
     They've set it for 0800, but cells that hot don't wait for a clock.
 - else:
-    The historian reads hotter than my screens. Read the dial in Hall 1 and you'll see by how much.
+    My screens say twenty-eight and I don't believe them. Read the dial in Hall 1. It isn't on their network.
     They've set it for 0800.
 }
 
@@ -233,7 +261,7 @@ Sounding it now. They're moving. Nine of them, out through the Hall 2 fire doors
 === support_call_end ===
 Call me if you need it.
 
-{urgency_stage >= 3:
+{urgency_stage >= 3 and not attack_prevented:
     And hurry.
 - else:
     I'm not going anywhere.

@@ -1,0 +1,116 @@
+{
+"steps": [
+{
+"note": "R9 (round 2): bank B vents (normal clock) with the crew never warned; then the button stance. Voltage says 'your forty', not 'your eleven'; the debrief's Vance lines speak of his nine dead."
+},
+{
+"set": {
+"briefing_played": true,
+"guard_admitted": true,
+"vance_met": true,
+"vance_provided_keycard": true,
+"vance_card_cloned": true,
+"vance_is_ally": true,
+"vance_trust_level": 90,
+"anomaly_detected": true
+}
+},
+{
+"set": {
+"server_room_reached": true,
+"plant_reader_seen": true,
+"fingerprint_kit_found": true,
+"flag_network_scan_submitted": true,
+"flag_ftp_intel_submitted": true,
+"flag_distcc_exploit_submitted": true,
+"flag_privesc_submitted": true,
+"all_flags_in": true,
+"evidence_maintenance_logs_found": true,
+"attack_mechanism_known": true
+}
+},
+{
+"advance": 15
+},
+{
+"expect": {
+"crew_lost": true
+}
+},
+{
+"talk": "vance_phone",
+"picks": [
+"That's everything"
+]
+},
+{
+"notSaid": [
+"Can you get them out"
+]
+},
+{
+"set": {
+"plant_room_entered": true
+}
+},
+{
+"talk": "static",
+"picks": [
+"not here for you"
+]
+},
+{
+"talk": "voltage",
+"picks": [
+"It's over",
+"Then we do this the hard way",
+"Go for the button"
+]
+},
+{
+"said": [
+"You save your forty"
+],
+"notSaid": [
+"your eleven"
+]
+},
+{
+"set": {
+"voltage_neutralised": true,
+"esd_authorized": true,
+"attack_prevented": true
+}
+},
+{
+"talk": "phone",
+"picks": [
+"Bring me in",
+"Bring me in",
+"On my way"
+]
+},
+{
+"talk": "debrief",
+"picks": [
+"Bank B went",
+"What did we get",
+"how did they get in",
+"goes in the report",
+"The Architect",
+"I'm in",
+"Full public",
+"honour"
+]
+},
+{
+"said": [
+"Vance lost nine of his crew",
+"Nine of mine"
+],
+"notSaid": [
+"You kept it to one bank"
+]
+}
+]
+}

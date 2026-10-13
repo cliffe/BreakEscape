@@ -28,6 +28,10 @@ VAR attack_prevented = false
 VAR crew_warned = false
 VAR racks_vented = false
 VAR crew_discussed = false
+// Round 2: the workshop-card step in vance_priority.
+VAR server_room_reached = false
+VAR relay_card_cloned = false
+VAR operative_relay_defeated = false
 
 // Game state variables
 VAR operatives_defeated = 0
@@ -415,10 +419,13 @@ This place is my responsibility. People depend on it.
     Robert Vance: The banks are isolated and the needle's coming down. Go and see what they left behind.
 - not anomaly_detected:
     Robert Vance: My screens all read the same feed. Check the racks against something that isn't on it. There's an old dial on the Rack Bank C wall in Hall 1.
+- not server_room_reached and not (relay_card_cloned or operative_relay_defeated):
+    Robert Vance: The workshop wants a Level 2 card, and mine's only Level 1. Their contractors had Level 2.
 - not attack_mechanism_known:
     Robert Vance: The workshop. If they got onto my network, it was through the jump server in there.
 - else:
-    Robert Vance: The screens are lying to you. I'm on the historian, and the real rack temperatures are climbing. Get to the hardwired shutdown. Software won't save us.
+    Robert Vance: The screens are lying to you. I've the hydrogen readout from the vent controller up here. It's off their network, and it's climbing.
+    Robert Vance: Get to the hardwired shutdown. Software won't save us.
 }
 -> vance_hub
 
@@ -426,13 +433,17 @@ This place is my responsibility. People depend on it.
 ~ crew_discussed = true
 Robert Vance: Nine. The module-swap crew, behind the inverter wall in Hall 2, till six. Your contractor wanted the halls clear from midnight. I said no.
 Robert Vance: I can sound the evacuation from this desk. Klaxon and strobes in every hall.
-Robert Vance: Whoever's in my plant room hears it too. The minute it goes, they know we've found them.
+{attack_mechanism_known:
+    Robert Vance: Whoever's in my plant room hears it too. But your clock's already running, so it costs you nothing now but surprise.
+- else:
+    Robert Vance: Whoever's in my plant room hears it too. He won't wait for eight. You'll have half an hour, maybe, and your workshop job isn't done.
+}
 -> vance_crew_choices
 
 === vance_crew_choices ===
 + [Sound it. Get them out.]
     -> vance_crew_sound
-+ [Not yet. Give me time to get to them first.]
++ [Not yet. Let me get closer to Voltage first.]
     Robert Vance: Your call. It's on this desk when you want it.
     -> vance_hub
 
@@ -448,7 +459,7 @@ Robert Vance: They're moving. Nine of them, out through the Hall 2 fire doors.
 // Round 2: no #speaker here. On a choices-only knot the tag printed an empty
 // "None: " line before the choices (playtest issue 7).
 + [Then come and open it.]
-    Robert Vance: With Voltage on the other side? And somebody has to watch the real numbers.
+    Robert Vance: With Voltage on the other side? And somebody has to stay on this desk.
     Robert Vance: They didn't need me on the ninth. I log every round on the Hall 1 panel. They'll have lifted it off that. Do what they did.
     Robert Vance: One finger, no second check. We'll be fixing that.
     -> vance_hub

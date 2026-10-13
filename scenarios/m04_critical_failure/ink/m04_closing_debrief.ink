@@ -47,6 +47,10 @@ VAR voltage_print_on_bypass = false
 // crew still in Hall 2 (crew_lost, set by HaX's racks_vented mapping). Read only.
 VAR crew_warned = false
 VAR crew_lost = false
+// Round 2 (review M1, m1): the alarm came before the attack was mapped (it
+// started its own clock), and that clock is what vented the bank. Read only.
+VAR crew_warned_early = false
+VAR vented_by_alarm_clock = false
 
 // External variables (set by game)
 EXTERNAL player_name()
@@ -95,7 +99,10 @@ Agent, report.
 }
 
 {vance_trust_level >= 70 and not robert_vance_ko:
-    {racks_vented:
+    {
+    - crew_lost:
+        Vance lost nine of his crew tonight. He hasn't said a word about you yet.
+    - racks_vented:
         Vance says you kept it to one bank. He still wants that in writing.
     - else:
         Vance says the grid held because of you. He wants that in writing.
@@ -287,9 +294,14 @@ First, one more decision.
         Agent HaX: The banks are isolated, but Bank B went before you got to the button.
     }
     // Pass 5 decision 1: the casualties depend on whether the crew was warned.
-    {crew_lost:
+    {
+    - crew_lost:
         Agent HaX: Nine on the night crew in Hall 2. Two more on the feed before the grid caught up.
         Agent HaX: You stopped the rest of it. Hold on to that, because the number you read tomorrow won't be zero.
+    - vented_by_alarm_clock:
+        // Round 2 (review M1d): the alarm's own clock vented the bank.
+        Agent HaX: Your alarm started his clock. Bank B and two on the feed are what it cost.
+        Agent HaX: Nine people in Hall 2 are what it bought. Hall 2 was empty when it went.
     - else:
         Agent HaX: Hall 2 was empty when it went. Vance's alarm had the night crew out through the fire doors.
         Agent HaX: Two on the feed before the grid caught up. The number tomorrow won't be zero. It won't be eleven either.
@@ -301,8 +313,12 @@ First, one more decision.
     - else:
         Agent HaX: Eleven people walked out of there tonight. Forty-odd on that feed never knew they were on it.
     }
-    {crew_warned:
+    // Round 2 (review m1): "started your clock early" only when it did.
+    {
+    - crew_warned_early:
         Agent HaX: And Vance's alarm had the night crew out before the button went in. It started your clock early. It was still the right call.
+    - crew_warned:
+        Agent HaX: And Vance's alarm had the night crew out before the button went in.
     }
 }
 
@@ -420,7 +436,11 @@ Done.
 
         Robert Vance: I don't know what you are. I know what you did.
 
-        {casualties_occurred:
+        // Round 2 (review m7): nine of his crew dead is not "one bank".
+        {
+        - crew_lost:
+            Robert Vance: Nine of mine. I'll be telling their families myself.
+        - casualties_occurred:
             Robert Vance: You kept it to one bank. Without you it was the whole hall.
         - else:
             Robert Vance: Nobody in that hall died, and two hundred and forty thousand never lost the lights.

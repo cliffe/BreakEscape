@@ -8,6 +8,17 @@
 //   {"expect": {"global": value, ...}}      assert globals; prints PASS/FAIL and fails the run
 //   {"credits": true}                       print the credits lines whose conditions hold now,
 //                                           evaluated from scenario.json.erb as the engine does
+//   {"said": ["substr", ...]}              assert each substring appears in the lines (and
+//   {"notSaid": ["substr", ...]}           choices) printed since the last said/notSaid step
+//   {"backstops": {"expect": ["re-emit"|"hear"|...]}}  evaluate the erb's per-room
+//                                           room_entered backstops (the <% each %> loops) against
+//                                           the current globals; print which would fire on the
+//                                           next room entry, and check the expected set
+//   {"advance": 12}                         clock model: 12 minutes of game time pass. The
+//                                           scenario's "timers" array is read from the erb;
+//                                           each startOnGlobal timer starts when its global
+//                                           turns truthy, fires when due (condition checked at
+//                                           fire time, cancelOnGlobal honoured), in due order
 // "reload": true restarts the story keeping every ink variable; "reload": "page" keeps only the
 // scenario globals, as a browser reload does (ink locals and visit counts aren't restored).
 // A talk ends when an #exit_conversation tag has been seen and the story waits at choices,
@@ -15,7 +26,10 @@
 //
 // Engine reactions simulated here (the ones these routes depend on; see scenario.json.erb):
 //   #clone_keycard:<id>       -> the card_cloned mappings (Vance's or Relay's card)
-//   crew_warned               -> clock_started (HaX's crew_warned mappings)
+//   crew_warned               -> clock_started, plus crew_warned_early if the attack
+//                                wasn't mapped yet (HaX's crew_warned mappings)
+//   attack_mechanism_known    -> clock_started (the map_the_attack mapping)
+//   voltage_escaped, Static stood aside -> static_left (Static's mapping)
 //   racks_vented, no warning  -> crew_lost (HaX's racks_vented mapping)
 //   #hostile[:id]             -> the npc_hostile_state_changed mappings (cipher_engaged,
 //                                static_engaged, guard_hostile, voltage_fight_started)
@@ -51,10 +65,54 @@ const stats = { lines: 0, choices: 0, maxRun: 0, run: 0, runs: [], fails: 0 };
 function syncIn(s) { for (const k of Object.keys(G)) { if (s.variablesState.GlobalVariableExistsWithName(k)) s.variablesState[k] = G[k]; } }
 function syncOut(s) { for (const k of Object.keys(G)) { if (s.variablesState.GlobalVariableExistsWithName(k)) G[k] = s.variablesState[k]; } }
 function knotOfChoices(s) { const c = s.currentChoices[0]; if (!c) return null; const p = c.sourcePath || (c.targetPath && c.targetPath.toString()); return p ? p.split('.')[0] : null; }
-function out(t) { console.log(t); }
+let heard = [];
+function out(t) { console.log(t); heard.push(t); }
+// ---- clock model ----
+function timersFromErb() {
+  const at = erb.indexOf('[', erb.indexOf('"timers"'));
+  let depth = 0, end = at;
+  for (let i = at; i < erb.length; i++) { if (erb[i] === '[') depth++; if (erb[i] === ']') { depth--; if (!depth) { end = i; break; } } }
+  return JSON.parse(stripErb(erb.slice(at, end + 1)));
+}
+const TIMERS = timersFromErb();
+const clock = { t: 0, started: {}, done: {} };
+const cond = c => { try { return !!(new Function('globalVars', `return (${c});`))(G); } catch (e) { out(`   [timer condition error: ${c}]`); return false; } };
+function startTimers() {
+  for (const tm of TIMERS) {
+    if (clock.done[tm.id] || clock.started[tm.id] !== undefined) continue;
+    if (!tm.startOnGlobal || G[tm.startOnGlobal]) { clock.started[tm.id] = clock.t; if (tm.startOnGlobal) out(`      [clock: ${tm.id} started at ${Math.round(clock.t / 60000)} min]`); }
+  }
+}
+function advance(ms) {
+  const until = clock.t + ms;
+  while (true) {
+    let next = null;
+    for (const tm of TIMERS) {
+      if (clock.done[tm.id] || clock.started[tm.id] === undefined) continue;
+      if (tm.cancelOnGlobal && G[tm.cancelOnGlobal]) { clock.done[tm.id] = true; out(`      [clock: ${tm.id} cancelled]`); continue; }
+      const due = clock.started[tm.id] + tm.delayMs;
+      if (due <= until && (!next || due < next.due)) next = { tm, due };
+    }
+    if (!next) break;
+    clock.t = next.due; clock.done[next.tm.id] = true;
+    if (next.tm.condition && !cond(next.tm.condition)) { out(`      [clock ${Math.round(clock.t / 60000)} min: ${next.tm.id} skipped (condition)]`); continue; }
+    Object.assign(G, next.tm.setGlobal || {});
+    out(`      [clock ${Math.round(clock.t / 60000)} min: ${next.tm.id} FIRES ${JSON.stringify(next.tm.setGlobal || {})}]`);
+    engine();
+  }
+  clock.t = until;
+}
+let warnSeen = false;
 function engine() {
-  if (G.crew_warned && !G.clock_started) { G.clock_started = true; out('      [engine: crew_warned -> clock_started]'); }
+  if (G.attack_mechanism_known && !G.clock_started) { G.clock_started = true; out('      [engine: attack mapped -> clock_started]'); }
+  if (G.crew_warned && !warnSeen) {
+    warnSeen = true; G.clock_started = true;
+    if (!G.attack_mechanism_known) { G.crew_warned_early = true; out('      [engine: early alarm -> crew_warned_early, clock_started]'); }
+    else out('      [engine: late alarm -> clock already running]');
+  }
   if (G.racks_vented && !G.crew_warned && !G.crew_lost) { G.crew_lost = true; out('      [engine: racks_vented with the crew in Hall 2 -> crew_lost]'); }
+  if (G.voltage_escaped && G.static_stood_aside && !G.static_engaged && !G.operative_static_defeated && !G.static_left) { G.static_left = true; out('      [engine: Static leaves with Voltage -> static_left]'); }
+  startTimers();
 }
 function hostile(npc) {
   out(`      [engine: ${npc} hostile]`);
@@ -67,6 +125,25 @@ function load(f) { const s = new inkjs.Story(fs.readFileSync(path.join(DIR, f + 
 for (const step of route.steps) {
   if (step.set) { Object.assign(G, step.set); out(`   {set ${JSON.stringify(step.set)}}`); engine(); continue; }
   if (step.note) { out(`\n## ${step.note}`); continue; }
+  if (step.backstops) {
+    const re = /"_comment": "([^"]*)",\s*"eventPattern": "room_entered:<%= r %>",\s*"condition": "([^"]*)",[\s\S]*?"(setGlobal|completeTask)": ([^\n]*)/g;
+    const firing = []; let m;
+    while ((m = re.exec(erb))) {
+      if (cond(m[2])) { const tag = /hear-the-debrief/.test(m[1]) ? 'hear' : /reload backstop/.test(m[1]) ? 're-emit' : m[1].slice(0, 30); firing.push(tag); out(`   [backstop would fire on next room entry: ${tag} -> ${m[3]} ${m[4].trim()}]`); }
+    }
+    if (!firing.length) out('   [no room_entered backstop would fire]');
+    const want = (step.backstops.expect || []).slice().sort().join(','), got = firing.slice().sort().join(',');
+    const ok = want === got; if (!ok) stats.fails++;
+    out(`   [${ok ? 'PASS' : 'FAIL'}] backstops firing: [${got}] (expected [${want}])`);
+    continue;
+  }
+  if (step.said || step.notSaid) {
+    const text = heard.join('\n').toLowerCase();
+    for (const x of step.said || []) { const ok = text.includes(x.toLowerCase()); if (!ok) stats.fails++; console.log(`   [${ok ? 'PASS' : 'FAIL'}] said: "${x}"`); }
+    for (const x of step.notSaid || []) { const ok = !text.includes(x.toLowerCase()); if (!ok) stats.fails++; console.log(`   [${ok ? 'PASS' : 'FAIL'}] not said: "${x}"`); }
+    heard = []; continue;
+  }
+  if (step.advance !== undefined) { out(`   {advance ${step.advance} min}`); advance(step.advance * 60000); continue; }
   if (step.expect) {
     for (const [k, v] of Object.entries(step.expect)) {
       const ok = G[k] === v; if (!ok) stats.fails++;

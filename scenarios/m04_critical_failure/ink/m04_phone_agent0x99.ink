@@ -349,7 +349,15 @@ Not from here. The site's evacuation alarm is on Vance's desk.
 - else:
     Ask him. He'll do it.
 }
-But think first. The minute that alarm goes, Voltage knows we've found him, and he won't wait for eight.
+// Round 2 (review m3, orchestrator decision 1): true to when it's asked.
+{
+- robert_vance_ko:
+    // nobody can sound it; no cost to weigh
+- attack_mechanism_known:
+    The clock's already running, so the alarm can't cost you any time now.
+- else:
+    But think first. The minute that alarm goes, Voltage knows we've found him. You'd have about half an hour, not till eight.
+}
 -> support_hub
 
 // ===========================================
@@ -532,9 +540,10 @@ Whatever it is, it's set for 0800. Time, but not much.
 === first_call_objectives ===
 #speaker:agent_0x99
 
-First job: find how they got onto the SCADA network.
+// Round 2 (review m10): dial first, as the gated hints and "Where do I stand?" say.
+First, prove the screens are lying. There's an old dial thermometer in Battery Hall 1.
 
-The way on is the engineering workshop, off Battery Hall 1. Start there.
+Then the engineering workshop, off the same hall. That's how they got onto the SCADA network.
 
 {vance_is_ally:
     Vance can point you to the right systems.

@@ -29,6 +29,22 @@ EXTERNAL player_name()
 {guard_admitted: -> guard_idle}
 -> security_guard_entry
 
+// Round 2 (review m19): reached from the sight challenge (player_spotted
+// mapping), when he has seen the player walking past his desk.
+=== on_sighted ===
+{guard_admitted: -> guard_idle}
+#speaker:security_guard
+Narrator: The guard is out of his chair before you reach the inner door.
+Security Guard: Oi. Desk first. Who are you, then?
+* [Grid-safety regulator. I'm here for the audit.]
+    -> guard_credentials_check
+* [Just a routine visit. Won't take long.]
+    -> guard_inspection_response
+* [(Keep walking.)]
+    ~ guard_suspicious = true
+    Narrator: You keep walking. He steps into your path.
+    -> guard_stealth_challenge
+
 === security_guard_entry ===
 #speaker:security_guard
 
@@ -103,7 +119,10 @@ Security Guard: Right. Sign in anyway, let me cover myself.
 ~ guard_suspicious = true
 
 Narrator: You angle for the inner door. He is on his feet before you clear the desk.
+-> guard_stealth_challenge
 
+=== guard_stealth_challenge ===
+#speaker:security_guard
 Security Guard: Hey. Where do you think you're going?
 
 * [Testing your entry protocols. Part of the audit.]

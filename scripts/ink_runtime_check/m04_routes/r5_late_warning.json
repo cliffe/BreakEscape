@@ -1,0 +1,145 @@
+{
+"steps": [
+{
+"note": "R5 (round 2): a LATE warning, after the attack is mapped. The clock is already running, so HaX and Vance say the alarm costs no time; crew_warned_early stays false; Voltage reacts to the klaxon; Static leaves with him on the button route; the debrief doesn't say 'started your clock early'."
+},
+{
+"set": {
+"briefing_played": true,
+"guard_admitted": true,
+"vance_met": true,
+"vance_provided_keycard": true,
+"vance_card_cloned": true,
+"vance_is_ally": true,
+"anomaly_detected": true,
+"rfid_guide_offered": true
+}
+},
+{
+"set": {
+"server_room_reached": true,
+"plant_reader_seen": true,
+"fingerprint_kit_found": true,
+"flag_network_scan_submitted": true,
+"flag_ftp_intel_submitted": true,
+"flag_distcc_exploit_submitted": true,
+"flag_privesc_submitted": true,
+"all_flags_in": true,
+"evidence_maintenance_logs_found": true,
+"attack_mechanism_known": true
+}
+},
+{
+"talk": "phone",
+"picks": [
+"Can we get the night crew",
+"Nothing right now"
+]
+},
+{
+"said": [
+"can't cost you any time"
+],
+"notSaid": [
+"half an hour"
+]
+},
+{
+"talk": "vance_phone",
+"picks": [
+"night crew",
+"Sound it",
+"That's everything"
+]
+},
+{
+"said": [
+"costs you nothing now but surprise"
+]
+},
+{
+"expect": {
+"crew_warned": true,
+"crew_warned_early": false
+}
+},
+{
+"set": {
+"plant_room_entered": true
+}
+},
+{
+"talk": "static",
+"picks": [
+"not here for you"
+]
+},
+{
+"talk": "voltage",
+"picks": [
+"It's over",
+"Make me understand",
+"Who is The Architect",
+"Go for the button"
+]
+},
+{
+"said": [
+"Your klaxon",
+"Static peels off the wall"
+]
+},
+{
+"expect": {
+"voltage_escaped": true,
+"static_left": true
+}
+},
+{
+"set": {
+"voltage_neutralised": true,
+"esd_authorized": true,
+"attack_prevented": true
+}
+},
+{
+"talk": "phone",
+"picks": [
+"Bring me in",
+"Bring me in",
+"On my way"
+]
+},
+{
+"talk": "debrief",
+"picks": [
+"Shutdown engaged",
+"What did we get",
+"how did they get in",
+"goes in the report",
+"The Architect",
+"I'm in",
+"Full public",
+"honour"
+]
+},
+{
+"notSaid": [
+"started your clock early"
+],
+"said": [
+"Vance's alarm had the night crew out before the button went in"
+]
+},
+{
+"credits": true
+},
+{
+"said": [
+"STATIC: stood aside, and left with Voltage",
+"NIGHT CREW",
+"ALL ELEVEN"
+]
+}
+]
+}

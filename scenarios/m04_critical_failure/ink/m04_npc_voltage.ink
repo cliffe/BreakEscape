@@ -44,6 +44,12 @@ VAR operative_relay_defeated = false
 // shed (the same two conditions as the ESD's permissive, less Voltage himself).
 VAR attack_mechanism_known = false
 VAR anomaly_detected = false
+// Round 2 (review m6, m8): he heard the alarm; the night crew's fate; Static
+// leaves with him on the button route. Read only.
+VAR crew_warned = false
+VAR crew_lost = false
+VAR static_stood_aside = false
+VAR static_engaged = false
 
 // External variables (set by game)
 EXTERNAL player_name()
@@ -117,6 +123,11 @@ So they sent someone.
     You got past my people.
 - else:
     And not one of my people saw you come.
+}
+
+// Round 2 (review m6): HaX says he heard the alarm, so he has.
+{crew_warned:
+    Your klaxon. Nine people in hi-vis on my cameras, walking out the fire doors. Very humane.
 }
 
 But you're late. This place has no security worth the name, and we've had three days in it.
@@ -277,10 +288,14 @@ Narrator: The laptop is open on the plant-room bench with the trigger armed on s
 
 // PASS 3 P11a/P11b: with Static up, a fight is a race he can win, so "both" is
 // genuinely off the table; with Static down the arrest is earned instead.
-{operative_static_defeated:
+// Round 2 (browser O1): "both" only parses when the button is on offer.
+{
+- operative_static_defeated:
     Voltage: Static's down. So it's you, me, and one keystroke.
-- else:
+- attack_mechanism_known and anomaly_detected:
     Voltage: You don't get to have both. I'd decide quickly.
+- else:
+    Voltage: And Static's still in this room. I'd decide quickly.
 }
 
 + [I'm taking you down. Now.] #color:red
@@ -381,10 +396,20 @@ Narrator: He steps back from the bench with his hands open, and lets you take th
 #speaker:voltage
 
 Narrator: You break for the wall. He doesn't try to stop you. He goes the other way, for the dock door.
+// Round 2 (review m8): Static, who stood aside, goes with him (the scenario hides
+// him on static_left, set from voltage_escaped).
+{static_stood_aside and not static_engaged and not operative_static_defeated:
+    Narrator: Static peels off the wall and goes with him without a word.
+}
 
 Voltage: Good. That's the right call.
 
-Voltage: You save your eleven and your forty. I'll be long gone before anyone counts them.
+// Round 2 (review m6): after a vent with the crew in Hall 2, there is no eleven left to save.
+{crew_lost:
+    Voltage: You save your forty. I'll be long gone before anyone counts them.
+- else:
+    Voltage: You save your eleven and your forty. I'll be long gone before anyone counts them.
+}
 
 ~ voltage_escaped = true
 ~ voltage_confronted = true

@@ -133,10 +133,21 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
         "playlist": "spy-action",
         "fade": true
       },
+      <%# Round 2 (browser N1, review m13): a fight plays threat before the clock
+          and keeps spy-action once the clock runs; nothing after the shutdown.
+          A reload restores hostile NPCs with {restored: true} (npc-hostile.js:107),
+          which must not change the phase's music. typeof keeps the condition safe
+          when the key is absent. %>
       {
         "trigger": "npc_hostile_state_changed",
-        "condition": "isHostile === true",
+        "condition": "isHostile === true && (typeof restored === 'undefined' || !restored) && !<%= music_clockish %> && globalVars.attack_prevented !== true",
         "playlist": "threat",
+        "fade": true
+      },
+      {
+        "trigger": "npc_hostile_state_changed",
+        "condition": "isHostile === true && (typeof restored === 'undefined' || !restored) && <%= music_clockish %> && globalVars.attack_prevented !== true",
+        "playlist": "spy-action",
         "fade": true
       },
       { "trigger": "all_hostiles_ko", "condition": "<%= music_day %>",    "playlist": "noir",       "fade": true },
@@ -184,6 +195,7 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
           { "text": "ROBERT VANCE: knocked down in his own office, by us", "style": "warning", "condition": "globalVars.robert_vance_ko" },
           { "text": "GATE GUARD: knocked out at his own desk, doing his job by the book", "style": "warning", "condition": "globalVars.security_guard_ko" },
           { "text": "CIPHER: walked off the job when you told him about the night crew", "style": "entry", "condition": "globalVars.cipher_walked" },
+          { "text": "STATIC: stood aside, and left with Voltage", "style": "entry", "condition": "globalVars.static_left" },
           { "text": "RELAY: card copied mid-standoff", "style": "entry", "condition": "globalVars.relay_card_cloned" },
           { "text": "EVIDENCE: Voltage's own print on the bypass module", "style": "entry", "condition": "globalVars.voltage_print_on_bypass" },
           { "text": "SOCIAL FABRIC SAFEHOUSE: located", "style": "entry", "condition": "globalVars.lore_safehouse_address_found" },
@@ -595,7 +607,7 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
           "eventMappings": [
             {
               "eventPattern": "player_spotted:security_guard",
-              "targetKnot": "start",
+              "targetKnot": "on_sighted",
               "conversationMode": "person-chat",
               "background": "assets/backgrounds/background1.png",
               "cooldown": 0
@@ -785,13 +797,13 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
               "eventPattern": "item_picked_up:fingerprint_kit",
               "condition": "globalVars.attack_mechanism_known !== true",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 1500, "message": "The crew's own fingerprint kit. It's how they beat the plant reader. Their reference cards are in the lid, with our file prints of the cell. Lift Vance's print now." }
+              "sendTimedMessage": { "delay": 1500, "message": "The crew's own fingerprint kit. It's how they beat the plant reader. Their reference cards are in the lid, with our file prints of the cell. Lift Vance's print now.", "skipIfGlobal": "vance_print_lifted" }
             },
             {
               "eventPattern": "item_picked_up:fingerprint_kit",
               "condition": "globalVars.attack_mechanism_known === true",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 1500, "message": "The crew's own fingerprint kit. It's how they beat the plant reader. Vance's print is on the Hall 1 duty panel. Hurry." }
+              "sendTimedMessage": { "delay": 1500, "message": "The crew's own fingerprint kit. It's how they beat the plant reader. Vance's print is on the Hall 1 duty panel. Hurry.", "skipIfGlobal": "vance_print_lifted" }
             },
             <%# PASS 4 fix 6 (quiet route): Relay's Level 2 card is old prox too, so
                 the m03 cloner can copy it while she talks. Clone rule: the task and
@@ -806,9 +818,23 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
             },
             <%# PASS 4 fix 1 (optional beat): the people at risk are heard once.
                 Pass 5 decision 1: not if Vance has already sounded the evacuation. %>
+            <%# Round 2 (review m5): the last fair warning names Vance's alarm when
+                he can still sound it. Three disjoint conditions. %>
             {
               "eventPattern": "global_variable_changed:hydrogen_alarm",
-              "condition": "value === true && globalVars.crew_warned !== true",
+              "condition": "value === true && globalVars.crew_warned !== true && globalVars.vance_is_ally === true && globalVars.robert_vance_ko !== true",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 5000, "message": "Hall 2's night foreman rang the ops desk. Nine of them behind the inverter wall can smell it. Vance can still sound the evacuation. Then the button.", "skipIfGlobal": "attack_prevented" }
+            },
+            {
+              "eventPattern": "global_variable_changed:hydrogen_alarm",
+              "condition": "value === true && globalVars.crew_warned !== true && globalVars.vance_is_ally !== true",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 5000, "message": "Hall 2's night foreman just rang the ops desk. Nine of them behind the inverter wall, and they can smell it. Get to that button.", "skipIfGlobal": "attack_prevented" }
+            },
+            {
+              "eventPattern": "global_variable_changed:hydrogen_alarm",
+              "condition": "value === true && globalVars.crew_warned !== true && globalVars.vance_is_ally === true && globalVars.robert_vance_ko === true",
               "onceOnly": true,
               "sendTimedMessage": { "delay": 5000, "message": "Hall 2's night foreman just rang the ops desk. Nine of them behind the inverter wall, and they can smell it. Get to that button.", "skipIfGlobal": "attack_prevented" }
             },
@@ -819,16 +845,20 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
               "sendTimedMessage": { "delay": 5000, "message": "Bank B's venting. Hall 2 is empty, thanks to Vance's alarm. Now get to that button.", "skipIfGlobal": "attack_prevented" }
             },
             <%# Pass 5 decision 1: the night crew can be warned. Vance sounds the
-                evacuation (his hub or his phone, #set_global:crew_warned). The cost:
-                the alarm tells the cell they've been found, so the clock starts now
-                if it hasn't already (clock_started, which both timers wait on). Two
-                disjoint mappings, each setting clock_started. %>
+                evacuation (his hub or his phone, #set_global:crew_warned).
+                Round 2 (review M1, orchestrator decision 1, option b): an EARLY
+                alarm (before the attack is mapped) sets crew_warned_early, which
+                starts the alarm's own longer clock (h2_advisory_alarm 24 min,
+                racks_vent_alarm 30 min) alongside the normal clocks, which still
+                start when the attack is mapped. Whichever fires first wins. A LATE
+                alarm costs no time: the clock is already running. clock_started is
+                the music phase only. Two disjoint mappings. %>
             {
               "eventPattern": "global_variable_changed:crew_warned",
               "condition": "value === true && globalVars.attack_mechanism_known !== true",
               "onceOnly": true,
-              "setGlobal": { "clock_started": true },
-              "sendTimedMessage": { "delay": 3000, "message": "That's the evacuation. Good. But Voltage heard it too, and he won't wait for eight now. Your clock just started.", "skipIfGlobal": "attack_prevented" }
+              "setGlobal": { "clock_started": true, "crew_warned_early": true },
+              "sendTimedMessage": { "delay": 3000, "message": "That's the evacuation. Good. But Voltage heard it too, and he won't wait for eight now. You've about half an hour.", "skipIfGlobal": "attack_prevented" }
             },
             {
               "eventPattern": "global_variable_changed:crew_warned",
@@ -869,6 +899,7 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
             {
               "eventPattern": "fingerprint_collected:robert_vance",
               "onceOnly": true,
+              "setGlobal": { "vance_print_lifted": true },
               "sendTimedMessage": { "delay": 1000, "message": "That's Vance's print. He leaves it on every panel he touches, and the reader in Hall 2 can't tell a lift from a living thumb." }
             },
             {
@@ -880,7 +911,7 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
             {
               "eventPattern": "room_entered:engineering_workshop",
               "onceOnly": true,
-              "setGlobal": { "recon_guide_offered": true, "vuln_guide_offered": true, "server_room_reached": true },
+              "setGlobal": { "recon_guide_offered": true, "vuln_guide_offered": true, "server_room_reached": true, "lockpicking_guide_offered": true },
               "sendTimedMessage": { "delay": 3000, "message": "You're on the OT network. The BMS jump server is their way in; scan it from the terminal. Four flags make the case: status page, FTP drop, distcc foothold, root." }
             },
             <%# Round 2 (re-review m7): the 87-word workshop text split in two. The
@@ -1190,10 +1221,10 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
           "timedMessages": [
             {
               "delay": 20000,
-              "message": "It's Vance. The historian has the cells far hotter than the SCADA admits. Get to the hardwired ESD in the plant room. The software won't save us.",
+              "message": "It's Vance. Every screen I've got says twenty-eight, and I don't believe one of them. There's an old dial on the Rack Bank C wall in Hall 1. Read it.",
               "type": "text",
               "waitForEvent": "global_variable_changed:vance_phone_available",
-              "skipIfGlobal": "attack_prevented"
+              "skipIfGlobal": "anomaly_detected"
             }
           ],
           "eventMappings": [
@@ -1206,7 +1237,7 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
               "condition": "globalVars.vance_is_ally === true && globalVars.vance_met === true",
               "onceOnly": true,
               "setGlobal": { "vance_phone_available": true },
-              "sendTimedMessage": { "delay": 2500, "message": "It's Vance. I'm on the ops desk with the historian up, and on comms if you're moving. Call me for the engineering side — the BMS and the shutdown." }
+              "sendTimedMessage": { "delay": 2500, "message": "It's Vance. I'm on the ops desk, and on comms if you're moving. Call me for the engineering side — the BMS and the shutdown." }
             }<% %w[main_entrance operations_office security_office scada_control_room battery_hall_1 engineering_workshop battery_hall_2 plant_room loading_dock].each do |r| %>,
             {
               "_comment": "Pass 5 hear-the-debrief backstop (m03 hear_debrief pattern): report_to_0x99 completes on the debrief's last line. If the page reloads mid-debrief, debrief_started is set and the debrief won't replay, so the next room entry completes the task and the mission concludes. Kept on this always-loaded NPC so it doesn't share a pattern with the debrief NPC's re-emit backstop.",
@@ -1636,8 +1667,30 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
           "spriteConfig": { "idleFrameStart": 20, "idleFrameEnd": 23 },
           "storyPath": "scenarios/m04_critical_failure/ink/m04_npc_operative_cipher.json",
           "currentKnot": "start",
+          <%# Round 2 (review M3, browser N2; orchestrator decision 2): standing at
+              (12,7) he faced south, away from the Hall 1 door row, so his challenge
+              fired only inside 96 px. He now walks a short beat like m03's Terry:
+              up the rack gap at x=12 to the door row, a look east towards Hall 2,
+              a look west towards the thermometer, then back to his panel, where he
+              dwells facing south. His cone is drawn (los.visualize), and the walk
+              back to (12,7) is the window to cross behind him. pauseForPlayer false
+              keeps the beat on its timing. Waypoints are room tiles; the x=12 gap
+              between rack columns 11 and 13 is clear (room_battery_hall.json). %>
           "behavior": {
-            "hostile": { "chaseSpeed": 110, "attackDamage": 4, "pauseToAttack": true }
+            "hostile": { "chaseSpeed": 110, "attackDamage": 4, "pauseToAttack": true },
+            "patrol": {
+              "enabled": true,
+              "pauseForPlayer": false,
+              "waypoints": [
+                { "x": 12, "y": 7, "dwellTime": 4000 },
+                { "x": 12, "y": 3 },
+                { "x": 14, "y": 3, "dwellTime": 2500 },
+                { "x": 10, "y": 3, "dwellTime": 2500 },
+                { "x": 12, "y": 3 }
+              ],
+              "speed": 40,
+              "loop": true
+            }
           },
           "globalVarOnKO": "operative_cipher_defeated",
           "taskOnKO": "neutralize_operative_cipher",
@@ -1650,6 +1703,7 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
             "enabled": true,
             "range": 150,
             "angle": 120,
+            "visualize": true,
             "challengeOnSight": {
               "cooldown": 20000,
               "skipIfGlobal": ["cipher_engaged", "cipher_walked", "operative_cipher_defeated", "attack_prevented"]
@@ -2041,6 +2095,28 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
               "condition": "data.npcId === 'operative_static' && data.isHostile === true",
               "onceOnly": true,
               "setGlobal": { "static_engaged": true }
+            },
+            <%# Round 2 (review m8): on the button route Static stood aside, and when
+                Voltage runs he goes with him (Voltage's ink narrates it), so the
+                sweep isn't spent next to an idle enemy. Same hide pattern as
+                Voltage's escape: setVisible on the global, plus a room_entered
+                re-hide for a reload. Credit: "STATIC: stood aside, and left with
+                Voltage". %>
+            {
+              "eventPattern": "global_variable_changed:voltage_escaped",
+              "condition": "value === true && globalVars.static_stood_aside === true && globalVars.static_engaged !== true && globalVars.operative_static_defeated !== true",
+              "onceOnly": true,
+              "setGlobal": { "static_left": true }
+            },
+            {
+              "eventPattern": "global_variable_changed:static_left",
+              "condition": "value === true",
+              "setVisible": false
+            },
+            {
+              "eventPattern": "room_entered:plant_room",
+              "condition": "globalVars.static_left === true && globalVars.static_stood_aside === true",
+              "setVisible": false
             }
           ],
           "itemsHeld": [
@@ -2200,17 +2276,23 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
     wall-time through the whole VM stage, so COSTLY SUCCESS was effectively the
     default outcome. The countdown is now the final act: mechanism proven -> race
     to the plant room and the hardwired ESD. Cancelled by the shutdown
-    (attack_prevented). Reload is lenient: if the start global is already set the
-    dispatcher restarts the clock from the reload moment
-    (scenario-timer-dispatcher.js:37-38), so a reload never strands the player.
+    (attack_prevented). Reload: the dispatcher resumes each started timer from
+    its saved running time (scenario-timer-dispatcher.js, exportState and the
+    constructor's savedStarted), so a reload neither restarts nor skips a clock.
 
-    Pass 5 (decision 1): both timers now start on clock_started, which is set by
-    the map_the_attack mapping (as before) OR by Vance's evacuation alarm
-    (crew_warned), whichever comes first. Warning the night crew tells the cell
-    they've been found, so the clock starts then. A second set of clock_started
-    does not restart a running timer (the startOnGlobal handler only starts a
-    dormant one). With the crew out, a vent costs the bank and the feed, not
-    the crew (crew_lost is set only for a vent with the crew still in Hall 2).
+    Pass 5 round 2 (orchestrator decision 1, review M1 option b): the normal
+    pair starts on attack_mechanism_known, as before round 1. An EARLY
+    evacuation alarm (before the attack is mapped) sets crew_warned_early, which
+    starts a second, longer pair (h2_advisory_alarm 24 min, racks_vent_alarm
+    30 min). Both pairs can run; whichever fires first wins (each checks
+    racks_vented / hydrogen_alarm, and attack_prevented cancels all four). A late
+    alarm starts nothing. With the crew out, a vent costs the bank and the feed,
+    not the crew (crew_lost is set only for a vent with the crew still in Hall 2).
+    HUD: the widget shows the first pending showCountdown timer in array order,
+    so h2_advisory_alarm sits before h2_advisory. When both run, the HUD shows
+    the alarm's countdown; that is the earlier one whenever the attack was mapped
+    16+ minutes after the alarm, the usual case at VM pace. If the player maps
+    the attack faster, the normal advisory can land before the HUD's figure.
 
     DELIBERATE DIVERGENCE FROM sis02: its h2_evacuation timer fires a
     `show_end_screen` action with outcome "failure" and a "Return to Missions" button,
@@ -2253,12 +2335,37 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
       ]
     },
     {
+      "id": "h2_advisory_alarm",
+      "label": "H\u2082 Advisory \u2014 rack bank B",
+      "startOnGlobal": "crew_warned_early",
+      "delayMs": 1440000,
+      "cancelOnGlobal": "attack_prevented",
+      "condition": "!globalVars.attack_prevented && !globalVars.racks_vented && !globalVars.hydrogen_alarm",
+      "setGlobal": { "hydrogen_alarm": true, "urgency_stage": 3 },
+      "showCountdown": true,
+      "onceOnly": true,
+      "actions": [
+        {
+          "type": "tint_objects",
+          "roomId": "battery_hall_2",
+          "textureKey": "batrack",
+          "color": 16729122,
+          "pulse": true
+        },
+        {
+          "type": "hint",
+          "title": "H\u2082 ADVISORY \u2014 RACK BANK B",
+          "message": "The hydrogen alarm in Battery Hall 2 has gone. Bank B is venting. The hardwired ESD pushbutton is in the plant room."
+        }
+      ]
+    },
+    {
       "id": "h2_advisory",
       "label": "H\u2082 Advisory \u2014 rack bank B",
-      "startOnGlobal": "clock_started",
+      "startOnGlobal": "attack_mechanism_known",
       "delayMs": 480000,
       "cancelOnGlobal": "attack_prevented",
-      "condition": "!globalVars.attack_prevented && !globalVars.racks_vented",
+      "condition": "!globalVars.attack_prevented && !globalVars.racks_vented && !globalVars.hydrogen_alarm",
       "setGlobal": { "hydrogen_alarm": true, "urgency_stage": 3 },
       "showCountdown": true,
       "onceOnly": true,
@@ -2281,9 +2388,27 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
     partial-failure state, which the debrief and the credits branch on. The player can
     still reach the ESD and still reaches an ending. %>
     {
+      "id": "racks_vent_alarm",
+      "label": "Thermal runaway \u2014 rack bank B",
+      "startOnGlobal": "crew_warned_early",
+      "delayMs": 1800000,
+      "cancelOnGlobal": "attack_prevented",
+      "condition": "!globalVars.attack_prevented && !globalVars.racks_vented",
+      "setGlobal": { "racks_vented": true, "casualties_occurred": true, "vented_by_alarm_clock": true, "urgency_stage": 4 },
+      "showCountdown": false,
+      "onceOnly": true,
+      "actions": [
+        {
+          "type": "hint",
+          "title": "THERMAL RUNAWAY \u2014 BANK B",
+          "message": "Bank B has gone. The hall is burning and the feed has dropped. It is not over \u2014 banks A and C are still holding, and the shutdown will still save them. Get to the button."
+        }
+      ]
+    },
+    {
       "id": "racks_vent",
       "label": "Thermal runaway \u2014 rack bank B",
-      "startOnGlobal": "clock_started",
+      "startOnGlobal": "attack_mechanism_known",
       "delayMs": 840000,
       "cancelOnGlobal": "attack_prevented",
       "condition": "!globalVars.attack_prevented && !globalVars.racks_vented",
@@ -2425,6 +2550,17 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
     "debrief_started": false,
     "plant_room_entered": false,
     "server_room_advice_given": false,
-    "blackout_named": false
+    "blackout_named": false,
+
+    <%# Pass 5 alignment, round 2.
+        crew_warned_early: the alarm came before the attack was mapped (starts
+        the alarm clocks; debrief wording). vented_by_alarm_clock: racks_vent_alarm
+        fired (the debrief links the alarm to the vent). static_left: Static went
+        with Voltage on the button route. vance_print_lifted: Vance's print has been
+        lifted (stops the kit text replaying after a reload). %>
+    "crew_warned_early": false,
+    "vented_by_alarm_clock": false,
+    "static_left": false,
+    "vance_print_lifted": false
   }
 }

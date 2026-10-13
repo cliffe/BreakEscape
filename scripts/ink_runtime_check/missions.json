@@ -578,7 +578,11 @@
       "debrief_started": false,
       "plant_room_entered": false,
       "server_room_advice_given": false,
-      "blackout_named": false
+      "blackout_named": false,
+      "crew_warned_early": false,
+      "vented_by_alarm_clock": false,
+      "static_left": false,
+      "vance_print_lifted": false
     },
     "npcs": [
       {

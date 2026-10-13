@@ -1,0 +1,75 @@
+{
+"steps": [
+{
+"note": "R10 (round 2): the A4 reload backstops. After the shutdown nothing fires. After 'Bring me in', a page reload before the debrief's first line: the re-emit backstop fires on the next room entry. After the debrief's first line, a reload: the hear-the-debrief backstop completes report_to_0x99 on the next room entry."
+},
+{
+"set": {
+"briefing_played": true,
+"guard_admitted": true,
+"vance_met": true,
+"vance_provided_keycard": true,
+"vance_card_cloned": true,
+"server_room_reached": true,
+"plant_reader_seen": true,
+"fingerprint_kit_found": true,
+"flag_network_scan_submitted": true,
+"flag_ftp_intel_submitted": true,
+"flag_distcc_exploit_submitted": true,
+"flag_privesc_submitted": true,
+"all_flags_in": true,
+"evidence_maintenance_logs_found": true,
+"attack_mechanism_known": true,
+"vance_is_ally": true,
+"anomaly_detected": true,
+"voltage_captured": true,
+"voltage_neutralised": true,
+"esd_authorized": true,
+"attack_prevented": true,
+"operative_static_defeated": true
+}
+},
+{
+"backstops": {
+"expect": []
+}
+},
+{
+"talk": "phone",
+"picks": [
+"Bring me in",
+"Bring me in",
+"On my way"
+]
+},
+{
+"expect": {
+"mission_complete": true,
+"debrief_started": false
+}
+},
+{
+"backstops": {
+"expect": [
+"re-emit"
+]
+}
+},
+{
+"talk": "debrief",
+"picks": []
+},
+{
+"expect": {
+"debrief_started": true
+}
+},
+{
+"backstops": {
+"expect": [
+"hear"
+]
+}
+}
+]
+}
