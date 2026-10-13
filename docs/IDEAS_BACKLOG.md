@@ -68,6 +68,8 @@ From the PIN cracker fix (2026-10-10), found but not fixed:
 
 - **Per-item `dropOnKO: false`** (m05 alignment review, 2026-10-13; S). An NPC's KO drops everything in `itemsHeld`, so Owen's office spare lands before anyone suspects Torres. Allow items to stay with a KO'd NPC (or be relayed later by script).
 
+- **Save person-chat conversation state with the game** (m06 scenario review, 2026-10-13; M). Reviews disagree on whether ink locals and visit counts survive a page reload (m06 found `npc-conversation-state.js` keeps them in memory; m05 found server-side saving for phones). Confirm, then save NPC conversation state with the game so first-meeting scenes, trust and once-only topics don't replay after a reload in any mission. Missions currently work round it with synced globals.
+
 ## Story and missions
 
 - **Carry m03's Sterling and Danny threads forward** (m03 pass-2 dialogue review, 2026-10-12; M). No mission from m04 to m08 mentions Victoria Sterling or Danny Foster. A recruited Sterling could turn up as an asset or a liability later, and the debrief's "Somebody has to tell him she's walking. It should be you." could be paid off. Depends on "Carry choices between missions".
