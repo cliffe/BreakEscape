@@ -185,25 +185,19 @@ Sterling's office computer was reset to a default built from two public facts: h
 
 ### Network Reconnaissance {#recon}
 
-Before you attack anything, you map it. A network scan (with a tool such as **nmap**) finds which hosts are up and which ports and services they run, and reads the **banners** those services announce when you connect.
+Before you attack anything, you map it. A network scan (with a tool such as **nmap**) finds which hosts are up, which ports and services they run, and what version each service reports. It also reads the **banners** services announce when you connect. Versions matter: a service version is often enough to tell you whether a known weakness applies. On this network the scan turns up an FTP service, a web host, and a service labelled as a legacy build. Read what each one says when you connect; the scan flag is in a service banner.
 
-```
-nmap -sV 192.168.100.0/24
-```
-
-The `-sV` flag asks nmap to identify the service and version on each open port. Versions matter: a service version is often enough to tell you whether a known exploit applies. On this network the scan turns up an FTP service, a web host, and a service on a high port labelled as a legacy build. Read what each one says when you connect; the scan flag is in a service banner.
-
-To learn more in game, open your phone, choose **[Send me a field guide.]** then **[The recon and network mapping guide.]**.
+The field guide has the exact scan commands and what to do with the results. To get it in game, open your phone, choose **[Send me a field guide.]** then **[The recon and network mapping guide.]** (offered once you have reached the server room). Published version: [Reconnaissance and Network Mapping](https://cliffe.github.io/HacktivityLabSheets/labs/safetynet/reconnaissance-and-network-mapping/).
 
 ### Service Exploitation: A Trojaned Release and a Trusting Daemon {#exploitation}
 
-Two services on the training network each give remote command execution, by very different routes.
+Two services on the training network can be made to run commands for you, by very different routes. You do not need the detail here; the field guides carry the workflow. The point is to understand the class of weakness behind each.
 
-**The ProFTPD 1.3.3c source backdoor.** In 2010 the source release of the ProFTPD FTP server was tampered with: someone added code that opens a command shell when a special sequence is sent. Anyone who downloaded and installed that release was running the backdoor. It is not a bug in the design, it is a poisoned supply chain, and it is the exact build Zero Day sold for the hospital job. Anonymous FTP login gets you nothing that matters; the backdoor gets you root.
+**The ProFTPD 1.3.3c source backdoor.** In 2010 the source release of this FTP server was tampered with before it was published, so anyone who downloaded and installed that release was running hidden back-door code. It is not a flaw in the design, it is a poisoned supply chain, and it is the exact build Zero Day sold for the hospital job. The anonymous FTP area holds nothing that matters; the intelligence sits behind the back door.
 
-**distcc command execution (CVE-2004-2687).** distcc spreads compile jobs across machines. The daemon, on port 3632, will run a compile job for anyone who can reach it, and that job can be made to run arbitrary commands. It is a service that trusts the network it sits on. The legacy box runs it, and the operational records sit behind it.
+**distcc (CVE-2004-2687).** distcc spreads software-compile jobs across machines, and the daemon trusts any machine on its network to send it work. That trust is the weakness: a service that assumes the network around it is friendly. The legacy box runs it, and the operational records sit behind it.
 
-To learn more in game, open your phone, choose **[Send me a field guide.]** then **[The ProFTPD exploitation guide.]** or **[The distcc exploitation guide.]** (both appear once you have the first flag in).
+The two field guides have the step-by-step workflow for each. To get them in game, open your phone, choose **[Send me a field guide.]** then **[The ProFTPD exploitation guide.]** or **[The distcc exploitation guide.]** (both appear once you have the first flag in). Published versions: [ProFTPD Exploitation Workflow](https://cliffe.github.io/HacktivityLabSheets/labs/safetynet/proftpd-exploitation-workflow/) and [distcc Exploitation](https://cliffe.github.io/HacktivityLabSheets/labs/safetynet/distcc-exploitation/).
 
 > Question: The FTP backdoor came from a tampered release, and the distcc daemon runs jobs for anyone who asks. One is a supply-chain problem, one is a trust-the-network problem. For each, name one thing a defender could have done that would have stopped it.
 
@@ -295,22 +289,20 @@ Finish anything you want to do by day first (there is little). When you walk int
 <details markdown="1">
 <summary>Nudge</summary>
 
-Emulate Sterling's Executive Keycard at the server-room reader. Inside, the VM Access Terminal opens their isolated training network on your own machine (Nightshade has bridged it). Scan the network first, read what each service says, then work them in turn. There are four flags: the network scan, the FTP box, the web host's price list, and the legacy distcc box. Submit each at the Drop-Site Terminal.
-
-**Learn it:** ==action: Read the Training Lab Runbook in the server-room filing cabinet==. It lays out the order: scan, FTP, web, then the legacy build.
-
-**To learn more in game:** open your phone, choose **[Send me a field guide.]** then **[The recon and network mapping guide.]**.
+Emulate Sterling's Executive Keycard at the server-room reader. Inside, the VM Access Terminal opens their isolated training network on your own machine (Nightshade has bridged it). The job is four flags, submitted at the Drop-Site Terminal. Work the services in order; the Training Lab Runbook in the server-room filing cabinet lays it out, and HaX has a field guide for each stage. The steps below give the goal of each flag and which guide to ask for; the guides carry the exact commands.
 
 </details>
 
 <details markdown="1">
-<summary>Recipe</summary>
+<summary>Steps</summary>
 
-1. \==action: Emulate the Executive Keycard at the server-room reader==.
-2. \==action: Launch the VM Access Terminal and scan the network== (for example `nmap -sV` across the subnet). Read the banners; the scan flag is in one of them. Submit it at the drop-site.
-3. \==action: Exploit the FTP box== (the ProFTPD 1.3.3c source backdoor) for root, read the notes it protects, and submit the FTP flag.
-4. \==action: Pull the price list off the web host, decode it, and submit the pricing flag== (see the decoding stage).
-5. \==action: Exploit the legacy distcc daemon on its high port== and submit the distcc flag. The drop-site then prints the Zero Day transaction log.
+> Note: These four stages run on the training VMs. The goal and the field guide for each are below; the commands live in the guides, not in this sheet.
+
+1. \==action: Emulate the Executive Keycard at the server-room reader, then launch the VM Access Terminal==.
+2. **Scan flag.** Goal: map the network and read the service banners; the scan flag is in one of them. Field guide in game: **[Send me a field guide.]** then **[The recon and network mapping guide.]** (offered once you reach the server room). Published: [Reconnaissance and Network Mapping](https://cliffe.github.io/HacktivityLabSheets/labs/safetynet/reconnaissance-and-network-mapping/). Concept: [Network Reconnaissance](#recon).
+3. **FTP flag.** Goal: get past the FTP service (the trojaned ProFTPD build) to the intelligence it protects. Field guide in game: **[The ProFTPD exploitation guide.]** (offered once the scan flag is in). Published: [ProFTPD Exploitation Workflow](https://cliffe.github.io/HacktivityLabSheets/labs/safetynet/proftpd-exploitation-workflow/). Concept: [Service Exploitation](#exploitation).
+4. **Pricing flag.** Goal: pull the price list off the web host and decode it. The web page carries it encoded, not encrypted, so it decodes at the CyberChef workstation. Concept and route: [Decoding What You Find](#hints-decode).
+5. **distcc flag.** Goal: get command execution through the legacy distcc service to the operational records behind it. Field guide in game: **[The distcc exploitation guide.]** (offered once the scan flag is in). Published: [distcc Exploitation](https://cliffe.github.io/HacktivityLabSheets/labs/safetynet/distcc-exploitation/). Concept: [Service Exploitation](#exploitation). When this flag lands, the drop-site prints the Zero Day transaction log.
 
 </details>
 
@@ -595,5 +587,5 @@ Work through these after you finish. Use your own run: the network flags were ge
 - The SAFETYNET field guides handed out in this mission, published online: [RFID Cloning](https://cliffe.github.io/HacktivityLabSheets/labs/safetynet/rfid-cloning/), [Reconnaissance and Network Mapping](https://cliffe.github.io/HacktivityLabSheets/labs/safetynet/reconnaissance-and-network-mapping/), [ProFTPD Exploitation Workflow](https://cliffe.github.io/HacktivityLabSheets/labs/safetynet/proftpd-exploitation-workflow/), [distcc Exploitation](https://cliffe.github.io/HacktivityLabSheets/labs/safetynet/distcc-exploitation/), [Encoding and Decoding with CyberChef](https://cliffe.github.io/HacktivityLabSheets/labs/safetynet/encoding-and-decoding-with-cyberchef/) and [Lockpicking](https://cliffe.github.io/HacktivityLabSheets/labs/safetynet/lockpicking/).
 - The broader [Scanning and Exploitation](https://cliffe.github.io/HacktivityLabSheets/labs/safetynet/scanning-and-exploitation/) field guide, for the scan-to-exploit workflow end to end.
 - The CyberChef documentation and wiki, and its Magic operation for recognising unknown encodings.
-- The nmap reference guide (`man nmap`), and the Metasploit modules behind the two exploits (`unix/ftp/proftpd_133c_backdoor`, `unix/misc/distcc_exec`).
+- The nmap reference guide (`man nmap`) for the reconnaissance stage.
 - The Cyber Security Body of Knowledge (CyBOK) chapters on Network Security, on Malware and Attack Technology, and on Applied Cryptography.
