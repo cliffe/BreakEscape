@@ -59,6 +59,7 @@ The orchestrator makes mission-local, reversible choices and logs each one with 
 - Everything goes into the repo (`scenarios/m07_architects_gambit/`), never only the scratchpad. Log each round in `IMPROVEMENT_LOOP_LOG.md` (create it, modelled on m03's): severity table with counts and each finding's outcome (fixed / withdrawn and why / deferred and why).
 - Reviewers are read-only and cite file:line. Verify claims against `scenario.json.erb` and the ink, not the older design docs.
 - `scenario.json.erb` is shared between stages: small, exact Edit replacements, re-read the region first. Dialogue edits stay in ink and NPC/dialogue fields; dressing edits room layout, objects and maps.
+- Several agents share one working tree. Never `git stash`, `git checkout -- <file>` or `git reset`: compare against `git show HEAD:<path>` instead.
 - Engine changes only with the orchestrator's approval; committed separately, before mission changes. Subagents don't commit unless told; the orchestrator commits.
 - **Don't open these files** (a safety check has stopped agents reading their exploit detail, three times on 2026-10-13):
   - the SecGen scenario XML for any mission;
