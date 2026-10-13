@@ -1,12 +1,12 @@
-# Resume note — m03 pass 2 (2026-10-12): all stages done except the user's blind run
+# Resume note — m03 pass 2 (2026-10-13): complete
 
 Brief `docs/agents/M03_PASS2_BRIEF.md`; log `scenarios/m03_ghost_in_the_machine/IMPROVEMENT_LOOP_LOG.md` "Pass 2". Later (user): lab sheet, audio, engine triage, SecGen.
-- Dialogue: 5 cycles, signed off (ship), plus blind-run fixes 1-2. Route driver scripts/ink_runtime_check/m03_routes/ (24 routes).
+- Dialogue: 5 cycles, signed off (ship), plus blind-run fixes 1-2. Route driver scripts/ink_runtime_check/m03_routes/ (27 routes).
 - Room dressing: 7 cycles, layout final (room_zds_* maps). Lighting: 4 cycles, closed. POV backgrounds: 4 rounds, all 7 rooms, day/night via chatBackground conditions.
 - Characters: Victoria, Danny, Ffion Rees, Terry Mott (Black British) with own art, visemes from talk, walk sprites, frames reviewed (33 strips + round 2 re-alignment). Nightshade = renamed male_scientist_v2; HaX = agent_hax.
 - Engine today (all user-approved): lighting L1 variants, L2 white-map, L3 torch, E4 cones above light map, tour flags, chatBackground conditions, toasts reading-time lifetime, RFID denial hold + door_unlock_failed, KO body on reload.
 - Terry: night on-sight challenge (talk your way out), lockpick catch → hostile; Perfect Stealth = never seen.
-- Blind runs: B (struggling) complete; A, A2, A3 ("do your best") each stopped by auto mode's safety check at 60/30/65%. The user runs the complete one from docs/agents/M03_BLIND_PLAYTEST_PROMPT.md (report → PASS2_BLIND_A3.md is taken; use A4). Session 2191 may still be open on :3001 (user's call).
+- Blind runs: B (struggling) complete; A4 ("do your best", user-run) reached the credits: 0 blockers, 0 majors, 8 minors, fixed in 408e0805, 7745ec6f, 4b6acad7. PASS2_STEALTH_CHECK.md: the A4 fixes pass in the browser; the lockpick catch forces a fight (user: fine, it's winnable); Terry's clock threats reworded (157dae9b). Route driver now has "reload": "page" (only synced globals survive), 27 routes.
 - Not pushed (branch ahead of origin by ~70 commits).
 
 # Resume note — room POV chat backgrounds (2026-10-11): COMPLETE
