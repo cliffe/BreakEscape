@@ -9,7 +9,7 @@ Infiltrate the Albion Energy Storage facility — 200 MWh of grid-scale lithium-
 | Metric | Value |
 |---|---|
 | Story aims | 6 |
-| Total tasks | 19 (5 optional) |
+| Total tasks | 19 (6 optional) |
 | VM flag challenges | 4 |
 | Physical locks | 7 |
 | AND-gate convergences | 0 |

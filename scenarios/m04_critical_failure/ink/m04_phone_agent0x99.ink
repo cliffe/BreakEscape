@@ -36,14 +36,11 @@ VAR proftpd_guide_hint_given = false
 VAR relay_card_cloned = false        // PASS 4: Relay's card copied on the quiet route
 VAR operative_relay_defeated = false
 VAR fingerprint_kit_found = false
-// PLAYTEST ROUND: all four flags in (set by the flag mappings), and the evidence
-// globals, so the hint can name what still holds the ESD when the flags are done.
+// PLAYTEST ROUND: all four flags in (set by the flag mappings), so the hint can
+// name what still holds the ESD when the flags are done. (The evidence globals
+// were dropped in pass 5 puzzle chains R2-1: nothing here reads them now.)
 VAR all_flags_in = false
 VAR anomaly_detected = false
-VAR evidence_maintenance_logs_found = false
-VAR evidence_access_logs_found = false
-VAR evidence_camera_tampering_found = false
-VAR evidence_reader_spoof_found = false
 
 // Game state variables
 VAR vance_is_ally = false
@@ -441,9 +438,19 @@ The screens lie because ENTROPY feed them. That dial isn't on ENTROPY's network.
     #exit_conversation
     With how they're driving it. The workshop, off Hall 1.
     -> support_hub
-+ {server_room_reached} [Then the dial was the last piece.]
+// Puzzle chains R2-3: "the last piece" only when it was (the attack mapped and
+// Voltage dealt with); otherwise say what's still missing.
++ {server_room_reached and attack_mechanism_known and voltage_neutralised} [Then the dial was the last piece.]
     #exit_conversation
     It was. Grid control can see the difference now.
+    -> support_hub
++ {server_room_reached and not (attack_mechanism_known and voltage_neutralised)} [Then what's still missing?]
+    #exit_conversation
+    {attack_mechanism_known:
+        Grid control has the hazard and the cause. Now Voltage.
+    - else:
+        Grid control has the hazard now. Get them the cause, off the workshop terminal.
+    }
     -> support_hub
 
 // ===========================================
@@ -817,19 +824,17 @@ Two hundred and forty thousand people are on that grid.
         Relay carries one. She walks Hall 2, and Hall 2 opens on Vance's card.
     }
 - not attack_mechanism_known:
-    {
-    - all_flags_in and not (evidence_maintenance_logs_found or evidence_access_logs_found or evidence_camera_tampering_found or evidence_reader_spoof_found):
-        Your flags are in. Grid control still wants the break-in on paper.
-        Vance's work orders in the operations office, the access log in the workshop, or the camera log in the security office.
-    - all_flags_in and not anomaly_detected:
-        Your flags are in. Grid control still wants a real reading off the racks.
-        The dial thermometer on the Rack Bank C wall in Hall 1. It isn't on their network.
-    - else:
-        Work the terminal in the workshop. Find how they're driving the attack, and drop the flags as you go.
-        {not anomaly_detected:
-            And read the dial on the Rack Bank C wall in Hall 1. Grid control will want it.
-        }
+    // Puzzle chains R2-1: the paper-evidence branch is gone (the gate is retired;
+    // map_the_attack completes on the four flags alone).
+    Work the terminal in the workshop. Find how they're driving the attack, and drop the flags as you go.
+    {not anomaly_detected:
+        And read the dial on the Rack Bank C wall in Hall 1. Grid control will want it.
     }
+// Puzzle chains R2-2: once the flags are in, the dial can still be missing, and
+// it holds the ESD. Named before the plant-room steps.
+- not anomaly_detected:
+    Your flags are in. Grid control still wants a real reading off the racks.
+    The dial thermometer on the Rack Bank C wall in Hall 1. It isn't on their network.
 - not plant_room_entered:
     You know how they did it. The plant room's off Hall 2, and its reader wants Vance's print.
     {not fingerprint_kit_found:

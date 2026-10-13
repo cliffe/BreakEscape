@@ -6,7 +6,7 @@
 > The pass-2 version of this file (games 1161–1164) is superseded: the lock chain changed.
 > Pass-3 browser playtests passed: `tools/playtest/m04-pass3a-report.md` (fingerprint chain) and `m04-pass3b-report.md` (race and endings; games 1224, 1227 completed). Follow-up fixes after those runs are folded in below.
 > Updated 2026-10-02 for the pass-4 design fixes (`DESIGN_REVIEW.md` → "Changes made (pass 4 design)"; playtest script `PASS4_PLAYTEST.md`). Route changes: Relay challenges you on entering Hall 2; her card can be cloned instead of won; Cipher can be talked out of the hall; `enter_facility` ticks in the operations office; a cover-route player can bring Vance in later; an optional second print on the Hall 2 bypass module.
-> Ids renamed 2026-10-01: `chen_*` → `vance_*` (globals `vance_trust_level`, `vance_is_ally`, `vance_provided_keycard`, `vance_phone_available`, `vance_knows_truth`, and every ink knot/VAR).
+> Ids renamed 2026-10-01: `chen_*` → `vance_*` (globals `vance_trust_level`, `vance_is_ally`, `vance_provided_keycard`, `vance_phone_available`, `vance_knows_truth` (removed as unused in pass 5), and every ink knot/VAR).
 
 ## Prerequisites
 
@@ -63,7 +63,7 @@ Minimum route: entrance → ops → SCADA → Hall 1 → Hall 2 → Hall 1 → w
    - **Vance's phone before allying:** shows only "(He's at the ops desk. Talk to him there.)", with no message. Once `vance_is_ally` flips, reopening routes to his support hub. If he is KO'd: "(No answer.)".
 
 ## Aim 2 — Confirm the Telemetry Is Lying
-4. Work orders (ops), camera log or **reader export** (security office) → `find_infiltration_evidence`. The export shows Vance's print opening the plant room on 9–10 Jan and at 03:58 tonight, 23 minutes after his card put him in the ops office.
+4. Work orders (ops), camera log or **reader export** (security office) → `find_infiltration_evidence`. Optional since pass 5 (puzzle chains R2-1): nothing gates on the paper; `map_the_attack` completes on the four flags alone and the ESD needs only the dial, the attack mapped and Voltage dealt with. The export shows Vance's print opening the plant room on 9–10 Jan and at 03:58 tonight, 23 minutes after his card put him in the ops office.
 5. **Hall 1 analogue thermometer** → `anomaly_detected`, `identify_scada_anomalies`. HaX opens a short phone conversation (round 2): she quotes Nightshade's read of the 61, and the player's one reply lands on the workshop pointer (or, if the workshop is already reached, "Then the dial was the last piece."). The H₂ panel reads 1.1% (amber). On entering Hall 1, HaX says the workshop wants a Level 2 card: "Relay has, and it's old prox, like his."
    - **Cipher (optional)** stands at the far end of the hall. Leave him and nothing happens. Talk to him: "Hall 2 is venting…" or "Put the radio down." stalls his radio; then "Whatever Voltage told you…" → "There's a night crew in Hall 2. Go and look." makes him walk (`cipher_walked`, task done, he disappears; credit and debrief line). If he gets the radio call out, `cell_alerted` is set and Relay is waiting for you.
    - **Seed:** the **Duty Round Panel** (Hall 1 at (6, 7), west half, on the aisle; moved up from row 8, where it drew over the workshop wall) answers "You need a fingerprint kit…" before the kit.

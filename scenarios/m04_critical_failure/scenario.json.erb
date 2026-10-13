@@ -253,11 +253,15 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
       "unlockCondition": { "aimCompleted": "get_inside" },
       "order": 1,
       "tasks": [
+        <%# Puzzle chains R2-1: optional. The paper evidence gates nothing since the
+            gate was retired (see the flag-tracking comment on agent_0x99); it stays
+            as story, a task tick and debrief material. The aim completes on the dial. %>
         {
           "taskId": "find_infiltration_evidence",
           "title": "Search for evidence of unauthorised access",
           "type": "custom",
-          "status": "active"
+          "status": "active",
+          "optional": true
         },
         {
           "taskId": "identify_scada_anomalies",
@@ -1125,13 +1129,18 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
               "onceOnly": true,
               "setGlobal": { "attack_mechanism_known": true, "clock_started": true }
             },
-            <%# PLAYTEST ROUND (dead end): map_the_attack stays locked until confirm_the_lie
-                is done, so with all four flags in but no evidence document read,
-                attack_mechanism_known never sets and the ESD stays unarmed. The gate stays;
-                these mappings track the flags (the flag_*_submitted globals were declared
-                but never set) and name what is missing. Flag tasks still complete and emit
-                objective_task_completed:<id> while their aim is locked
-                (objectives-manager.js handleFlagTasksUpdated). %>
+            <%# These mappings track the flags (flag_*_submitted, all_flags_in). History:
+                in the pass-4 playtest map_the_attack waited on confirm_the_lie, so the
+                four flags without a paper-evidence document left the ESD unarmed, and a
+                HaX text sent the player for the paper. Since engine 657f6158 an
+                aimCompleted aim completes on its own tasks (objectives-manager.js
+                checkAimCompletion defers only globalVariable aims), so map_the_attack
+                completes on the four flags alone and sets attack_mechanism_known.
+                Pass 5 puzzle chains R2-1: the paper gate is retired. The evidence
+                documents stay as optional story (find_infiltration_evidence, the
+                credits and the debrief); nothing requires them, and the "break-in on
+                paper" text, ESD variant and hub branch are gone. The dial is still
+                required (the ESD's anomaly_detected condition). %>
             { "eventPattern": "objective_task_completed:submit_network_scan_flag", "onceOnly": true, "setGlobal": { "flag_network_scan_submitted": true } },
             { "eventPattern": "objective_task_completed:submit_ftp_intel_flag", "onceOnly": true, "setGlobal": { "flag_ftp_intel_submitted": true } },
             { "eventPattern": "objective_task_completed:submit_distcc_exploit_flag", "onceOnly": true, "setGlobal": { "flag_distcc_exploit_submitted": true } },
@@ -1140,13 +1149,12 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
             { "eventPattern": "objective_task_completed:submit_ftp_intel_flag", "condition": "globalVars.flag_network_scan_submitted === true && globalVars.flag_distcc_exploit_submitted === true && globalVars.flag_privesc_submitted === true", "onceOnly": true, "setGlobal": { "all_flags_in": true } },
             { "eventPattern": "objective_task_completed:submit_distcc_exploit_flag", "condition": "globalVars.flag_network_scan_submitted === true && globalVars.flag_ftp_intel_submitted === true && globalVars.flag_privesc_submitted === true", "onceOnly": true, "setGlobal": { "all_flags_in": true } },
             { "eventPattern": "objective_task_completed:submit_privesc_flag", "condition": "globalVars.flag_network_scan_submitted === true && globalVars.flag_ftp_intel_submitted === true && globalVars.flag_distcc_exploit_submitted === true", "onceOnly": true, "setGlobal": { "all_flags_in": true } },
-            { "eventPattern": "global_variable_changed:all_flags_in", "condition": "value === true && globalVars.evidence_maintenance_logs_found !== true && globalVars.evidence_access_logs_found !== true && globalVars.evidence_camera_tampering_found !== true && globalVars.evidence_reader_spoof_found !== true", "onceOnly": true, "sendTimedMessage": { "delay": 2500, "message": "Flags are in, but grid control won't move without the break-in on paper. Work orders in the ops office, the workshop access log, or the camera log in security." } },
-            { "eventPattern": "global_variable_changed:all_flags_in", "condition": "value === true && globalVars.anomaly_detected !== true", "onceOnly": true, "sendTimedMessage": { "delay": 7000, "message": "And grid control wants a real reading. The dial thermometer on the Rack Bank C wall, Hall 1. It isn't on their network.", "skipIfGlobal": "anomaly_detected" } },
+            { "eventPattern": "global_variable_changed:all_flags_in", "condition": "value === true && globalVars.anomaly_detected !== true", "onceOnly": true, "sendTimedMessage": { "delay": 2500, "message": "Flags are in. Grid control still wants a real reading off the racks. The dial thermometer on the Rack Bank C wall, Hall 1. It isn't on their network.", "skipIfGlobal": "anomaly_detected" } },
             {
               "eventPattern": "objective_aim_completed:map_the_attack",
               "condition": "globalVars.voltage_neutralised !== true",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 1500, "message": "That's the attack mechanism confirmed — falsified thermals, ESD interlocks disabled, overcharge armed for 0800. The trigger is in the plant room. Get there, and get to the ESD.", "skipIfGlobal": "voltage_neutralised" }
+              "sendTimedMessage": { "delay": 1500, "message": "Their route in, proven. They pushed the charge-ceiling override from that box, and the bypass modules hide it. The trigger is in the plant room. Get to the ESD.", "skipIfGlobal": "voltage_neutralised" }
             },
 
             <%# ESD authorisation requires all THREE: the thermal hazard confirmed
@@ -1195,7 +1203,7 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
               "eventPattern": "global_variable_changed:evidence_maintenance_logs_found",
               "condition": "value === true && globalVars.anomaly_detected !== true",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 1500, "message": "That work order was never authorised — there's your evidence. Don't trust the SCADA screens; they're spoofed. Check the racks against the physical dial in Battery Hall 1.", "skipIfGlobal": "anomaly_detected" }
+              "sendTimedMessage": { "delay": 1500, "message": "That work order was never authorised. There's your evidence. Don't take the SCADA screens on trust.", "skipIfGlobal": "anomaly_detected" }
             },
             {
               "eventPattern": "global_variable_changed:evidence_access_logs_found",
@@ -2170,7 +2178,6 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
             "unauthorizedText": "NOT ARMED. GRID PERMISSIVE NOT RECEIVED. Shedding 200 MWh with nobody at grid control ready trips the region. They need the hazard confirmed off the BMS bus, the attack proven, and nobody in reach of a trigger that fires first.",
             "unauthorizedTextVariants": [
               { "condition": "!globalVars.anomaly_detected", "text": "NOT ARMED. GRID PERMISSIVE NOT RECEIVED. Grid control won't drop supply on a screen that says everything is fine. Check the racks on an instrument that isn't on the bus." },
-              { "condition": "!globalVars.attack_mechanism_known && globalVars.all_flags_in && !globalVars.evidence_maintenance_logs_found && !globalVars.evidence_access_logs_found && !globalVars.evidence_camera_tampering_found && !globalVars.evidence_reader_spoof_found", "text": "NOT ARMED. GRID PERMISSIVE NOT RECEIVED. Grid control has the hazard and the attack, not the break-in. On paper: work orders (ops office), access log (workshop) or camera log (security office)." },
               { "condition": "!globalVars.attack_mechanism_known", "text": "NOT ARMED. GRID PERMISSIVE NOT RECEIVED. Grid control has the hazard, not the cause. The proof is on the workshop jump server." },
               { "condition": "!globalVars.voltage_neutralised", "text": "NOT ARMED. GRID PERMISSIVE NOT RECEIVED. The trigger holder is still within reach of the laptop." }
             ],
@@ -2182,7 +2189,6 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
                 "Bring me in" sets mission_complete, which opens the debrief. %>
             "completionActions": [
               { "type": "set_global",    "key": "attack_prevented",       "value": true },
-              { "type": "set_global",    "key": "remote_trigger_disabled", "value": true },
               { "type": "complete_task", "taskId": "disable_attack_vectors" }
             ]
           }
@@ -2451,14 +2457,10 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
   "globalVariables": {
     "player_name": "Agent 0x00",
     "briefing_played": false,
-    "mission_started": false,
-    "agent_0x99_contacted": false,
 
     "vance_is_ally": false,
-    "vance_knows_truth": false,
     "vance_trust_level": 0,
     "vance_phone_available": false,
-    "facility_access_granted": false,
     <%# vance_met / vance_provided_keycard are written from Vance's ink but declared
         here as globals so they persist across a reload (ink-local VAR state is lost
         on reload, m03 D5). vance_met routes re-talk to the hub; vance_provided_keycard
@@ -2467,8 +2469,6 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
     "vance_provided_keycard": false,
 
     "anomaly_detected": false,
-    "scada_anomalies_identified": false,
-    "infiltration_confirmed": false,
 
     "evidence_maintenance_logs_found": false,
     "evidence_camera_tampering_found": false,
@@ -2503,11 +2503,9 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
     "voltage_escaped": false,
     "voltage_fight_started": false,
     "vented_by_trigger": false,
-    "remote_trigger_disabled": false,
 
     "esd_authorized": false,
     "voltage_neutralised": false,
-    "esd_activated": false,
     "mission_complete": false,
     "attack_prevented": false,
 
@@ -2545,9 +2543,6 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
     "casualties_occurred": false,
 
     "objectives_completed": 0,
-    "optional_objectives_completed": 0,
-    "combat_encounters_won": 0,
-    "stealth_takedowns": 0,
     "flags_submitted": 0,
     "all_flags_in": false,
 
