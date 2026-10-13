@@ -2,9 +2,25 @@
 
 Running alongside m04's pass, without the user's input (user, 2026-10-13): anything needing the user goes in each mission's `DECISIONS_PENDING.md` and work moves on. Briefs `docs/agents/M05_PASS_BRIEF.md`, `M06_PASS_BRIEF.md` (no VM-content summaries: a safety check stopped the orchestrator writing them; reviewers judge only that flags are required and woven in). Stage order as AGENTS.md "Iterating": regression, alignment, puzzle chains, scenario design, dialogue + dressing, lighting, POV, characters (parked for picks), playtests and blind runs. Started: regression A and alignment round 1 for both.
 
-# Resume note — m04 full pass (pass 5, started 2026-10-13)
+# Resume note — m04 full pass (pass 5, 2026-10-13): all stages done except the user's blind run
 
-Brief `docs/agents/M04_PASS_BRIEF.md`; log `scenarios/m04_critical_failure/IMPROVEMENT_LOOP_LOG.md`. Regression A: 0/0/7. Phase 1 alignment CLOSED after 4 rounds (5363380c): night-crew warning choice, sweep-then-call-in, sight challenges, phase music, progress-gated HaX hub, route driver `scripts/ink_runtime_check/m04_routes/` (13 routes, clock model). Engine 0b66f334 (sight challenges hold for the tutorial prompt). Next: phase 2 puzzle chains, then scenario design, dialogue + dressing, lighting, POV, characters, blind runs. Deferred to characters: operative death anims / portraits, Vance portrait, briefing HaX sprite.
+Brief `docs/agents/M04_PASS_BRIEF.md`; log `scenarios/m04_critical_failure/IMPROVEMENT_LOOP_LOG.md`. Stages closed:
+- alignment (4 rounds)
+- puzzle chains (4)
+- scenario design (2)
+- dialogue (3 cycles)
+- room dressing (7)
+- lighting (4)
+- POV backgrounds (all 9 rooms, 19 Gemini calls)
+- characters (7 new; HaX glow-up option A in every mission)
+- struggling-player run, its fixes, and a final targeted check
+
+Route driver: 33 routes. The user's blind run: `docs/agents/M04_BLIND_PLAYTEST_PROMPT.md` (report → `PASS5_BLIND_A.md`).
+
+Pending for the user, in `scenarios/m04_critical_failure/DECISIONS_PENDING.md`:
+- sign-offs: the first POV room (P1);
+- engine: L1 fire effect, L2 hue-preserving glows, L3 validator `||` check, E1 dotted paths, E2 pause hostiles during cutscenes;
+- SecGen checks.
 
 # Resume note — m03 pass 2 (2026-10-13): complete
 
