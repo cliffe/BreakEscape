@@ -70,6 +70,8 @@ From the PIN cracker fix (2026-10-10), found but not fixed:
 
 - **Save visit counts with the game** (m06 scenario review, 2026-10-13; S–M). Ink-local VARs already survive a reload (`npcInkVariables`, confirmed in m06 game 2304). Visit counts, `TURNS()` and story position don't, so an opener keyed on `knot > 1` replays. Saving visit counts would fix that class in every mission.
 
+- **KO item drops land on top of each other** (m06 dressing, 2026-10-13; S). Items dropped by a knocked-out NPC land about 8 px apart, so picking one up opens a pick-one menu. Spread drops at least 32 px.
+
 ## Story and missions
 
 - **Carry m03's Sterling and Danny threads forward** (m03 pass-2 dialogue review, 2026-10-12; M). No mission from m04 to m08 mentions Victoria Sterling or Danny Foster. A recruited Sterling could turn up as an asset or a liability later, and the debrief's "Somebody has to tell him she's walking. It should be you." could be paid off. Depends on "Carry choices between missions".
