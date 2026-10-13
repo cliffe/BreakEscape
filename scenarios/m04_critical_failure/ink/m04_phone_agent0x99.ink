@@ -104,9 +104,9 @@ EXTERNAL player_name()
 // ===========================================
 
 === start ===
-// greeted is ink-local, so a page reload forgets it. The status check only fits
-// the early game, so after a late reload (dial read, or the workshop reached)
-// the phone opens straight on the hub.
+// greeted is ink-local; the engine saves ink variables (npcInkVariables), so it
+// survives a page reload (confirmed in the browser, m06 game 2304). The late-game
+// fallback below stays as a guard: the status check only fits the early game.
 {not greeted:
     ~ greeted = true
     {not anomaly_detected and not server_room_reached and not attack_prevented:
