@@ -1,3 +1,7 @@
+# Resume note — m04 full pass (pass 5, started 2026-10-13)
+
+Brief `docs/agents/M04_PASS_BRIEF.md`; log `scenarios/m04_critical_failure/IMPROVEMENT_LOOP_LOG.md`. Regression A: 0/0/7. Phase 1 alignment CLOSED after 4 rounds (5363380c): night-crew warning choice, sweep-then-call-in, sight challenges, phase music, progress-gated HaX hub, route driver `scripts/ink_runtime_check/m04_routes/` (13 routes, clock model). Engine 0b66f334 (sight challenges hold for the tutorial prompt). Next: phase 2 puzzle chains, then scenario design, dialogue + dressing, lighting, POV, characters, blind runs. Deferred to characters: operative death anims / portraits, Vance portrait, briefing HaX sprite.
+
 # Resume note — m03 pass 2 (2026-10-13): complete
 
 Brief `docs/agents/M03_PASS2_BRIEF.md`; log `scenarios/m03_ghost_in_the_machine/IMPROVEMENT_LOOP_LOG.md` "Pass 2". Later (user): lab sheet, audio, engine triage, SecGen.

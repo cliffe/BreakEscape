@@ -53,6 +53,8 @@ From the PIN cracker fix (2026-10-10), found but not fixed:
 
 - **Tutorial prompt over the opening cutscene** (engine, 2026-10-13; S). The yes/no tutorial prompt appears about 1 s after load, on top of a `game_loaded` cutscene (seen in m03 and m04). Hold the prompt until the opening cutscene and brief close. `timedConversation` and event-triggered person-chats also don't check `tutorialManager.isPromptOpen()` (added in 0b66f334 for sight challenges); a short-delay one can open over the prompt.
 
+- **Completion toasts cover a countdown HUD** (m04 pass 5, 2026-10-13; S). Task Complete / Objective Complete toasts sit over the right half of the scenario-timer HUD for a few seconds. Offset the toast stack below an active countdown.
+
 ## Story and missions
 
 - **Carry m03's Sterling and Danny threads forward** (m03 pass-2 dialogue review, 2026-10-12; M). No mission from m04 to m08 mentions Victoria Sterling or Danny Foster. A recruited Sterling could turn up as an asset or a liability later, and the debrief's "Somebody has to tell him she's walking. It should be you." could be paid off. Depends on "Carry choices between missions".
