@@ -124,7 +124,7 @@ Work through these after you have finished. Use your own run: Eleanor's debrief 
 
 > Tip: In a group, split the roles: one player argues Albion's case using Whitworth's points, one argues Meridian's using Eleanor's, and one plays the loss adjuster. Swap and repeat.
 
-### 1. Risk Management {#1-risk-management}
+### 1. Risk Management {#reflect-1-risk-management}
 
 **Questions**
 
@@ -142,7 +142,7 @@ Work through these after you have finished. Use your own run: Eleanor's debrief 
 
 > Action: **E2. Moral hazard.** In no more than 300 words, explain how insurance can weaken or strengthen a policyholder's incentive to invest in security, using one example from Albion and one from Meridian's own conduct.
 
-### 2. Incident Response and Evidence {#2-incident-response-and-evidence}
+### 2. Incident Response and Evidence {#reflect-2-incident-response-and-evidence}
 
 **Questions**
 
@@ -160,7 +160,7 @@ Work through these after you have finished. Use your own run: Eleanor's debrief 
 
 > Action: **E4. Two timelines.** Build a timeline of the incident from the first foothold to the claim on 5 May 2026, then a second timeline of the policy (inception, renewal review, deadline, extension request, incident, claim). Mark where the two meet.
 
-### 3. Security-Informed Safety and the Coverage Decision {#3-security-informed-safety-and-the-coverage-decision}
+### 3. Security-Informed Safety and the Coverage Decision {#reflect-3-security-informed-safety-and-the-coverage-decision}
 
 **Questions**
 

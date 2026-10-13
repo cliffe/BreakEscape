@@ -51,26 +51,29 @@ source: "https://github.com/cliffe/BreakEscape/blob/main/scenarios/sis01_healthc
 
 ## Purpose {#purpose}
 
-By the end of this lab you should be able to:
+This lab gives you a hands-on way to work through a case study and see theory in action: risk management, incident handling, regulation and security planning, applied to an organisation in trouble. Here it is an NHS hospital, where ransomware has reached the cardiac ward.
 
-- explain how a cyber attack can become a hazard to a patient, using the chain: cyber attack, loss of a safety function, physical hazard
-- triage security alerts and authentication logs, and tell an attacker's actions from routine noise
-- read a safety case claim as claim, argument and evidence, and judge whether its conditions still hold
-- weigh a containment action against what it costs the wards, and record the gap as a compensating control or an accepted risk with an owner
-- check a medical device's configuration for tampering, using a hash and two independent sources
-- choose a recovery source by trading recovery time against how sure you are it is clean
-- say who must be told about a hospital cyber incident, when, and under which law
+The concepts in play, each with a short section under [Concepts](#concepts) if you want to read up:
 
-The game teaches by doing. The questions are in this sheet, after the game.
+- Security-informed safety: how a cyber attack becomes a danger to patients
+- Spotting the attack: security alerts, VPN logs and MFA
+- Safety cases: claim, argument and evidence, and whether they still hold
+- Containment: isolating the network, and what that costs the wards
+- Integrity: checking a medical device's settings for tampering
+- Recovery: backups, recovery time and the risk of reinfection
+- Regulation: who must be told, when, and under which law (UK GDPR, the NIS Regulations)
+- Risk ownership: accepted risks, compensating controls and who signs for them
+
+> Note: Northgate General Hospital is fictional. The [Information Pack](/HacktivityLabSheets/labs/security_informed_safety/sis01-healthcare-information-pack/) has a lot more detail on it: its systems, its safety case and the incident timeline. You don't need it to play.
 
 ## How to Use This Sheet {#how-to-use}
 
-1. Read the [Information Pack](/HacktivityLabSheets/labs/security_informed_safety/sis01-healthcare-information-pack/) if your tutor has set it, then read **Getting Started** and try the short warm-up. It takes five minutes.
+1. Read **Starting the Game** and start playing.
 2. Play. Skim **Concepts** as you reach each new idea, or come back to it when a character or a document leaves you wanting more.
-3. If you get stuck, go to **Stuck? Hints, Stage by Stage** and find the stage you are on. Each stage has a hint you can read straight away, then a stronger nudge and the full steps hidden behind "Show" buttons. Open one at a time, and go back to the game after each.
+3. Explore the game and try to work things out inside it. If you are not sure what to do next, check the objectives list and talk to the people you meet: they often have more to say after something changes. If you are still stuck, go to **Stuck? Hints, Stage by Stage** and find the stage you are on. Each stage starts with a light hint, and the stronger nudges and full steps stay hidden until you open them.
 4. After the game, work through **Reflection and Exercises**.
 
-> Note: Some stages are decisions, not puzzles. Several things in this game have more than one outcome: whether Mr Ahmed in Bed 4 is escalated in time, whether the drug library tamper is caught, and when the ICO hears from the Trust. The hints for those stages tell you what you know and what each obligation means. They do not tell you what to choose. Every ending gives you something to reflect on, and the debrief and the closing credits show what happened as a result of your choices.
+> Note: Most stages in this game are decisions, not puzzles. Several things in this game have more than one outcome: whether Mr Ahmed in Bed 4 is escalated in time, whether the drug library tamper is caught, and when the ICO hears from the Trust. The hints for those stages tell you what you know and what each obligation means. They do not tell you what to choose. Every ending gives you something to reflect on, and the debrief and the closing credits show what happened as a result of your choices.
 
 ## Getting Started {#getting-started}
 
@@ -84,6 +87,8 @@ Your mission is to:
 - Verify the integrity and safety of the InfusionGuard smart infusion pump system, including critical drug library parameters
 - Make decisions about network isolation and backup restoration that balance security containment with clinical operations
 - Meet the 72-hour regulatory notification deadline while conducting a thorough investigation
+
+> Note: In a real hospital, an IT incident responder would not check on patients or confirm an infusion pump's rate. Nurses, doctors and clinical engineers would, and you would advise them. The game puts you on the ward, so that you can see what is at stake and how a cyber attack reaches the people and physical systems that depend on IT. Treat the bedside decisions as the information you would be giving the clinical team, and the questions you would be asking them.
 
 ### What You Will Do {#what-you-will-do}
 
@@ -99,7 +104,7 @@ By the end of the scenario, you should have a complete understanding of:
 
 ### Starting the Game {#starting-the-game}
 
-You do not need a clinical background. The people you meet explain their side of things, and the documents lying around the hospital explain the rest. Everything happens in the browser: this game has no virtual machines and no flags to find. The log analysis, the network map and the drug library check are all consoles inside the game.
+You do not need a clinical background. The people you meet explain their side of things, and the documents lying around the hospital explain the rest. Everything happens in the browser. The log analysis, the network map and the drug library check are all consoles inside the game.
 
 1. \==action: Start the Break Escape mission **Northgate General: Code Black**==.
 2. \==action: Watch the opening briefing from Sarah Mitchell, the charge nurse==. She hands you the **Northgate IT Security — Visitor Access Card**, which opens the IT Security office.
@@ -958,7 +963,7 @@ Work through these after you have finished the scenario. Use your own run: the d
 
 Each section opens with questions to discuss, then exercises to work through.
 
-### 1. Risk Management {#1-risk-management}
+### 1. Risk Management {#reflect-1-risk-management}
 
 Nothing that failed at Northgate was new. Each failure had been known about, and in most cases someone had decided to live with it.
 
@@ -982,7 +987,7 @@ Nothing that failed at Northgate was new. Each failure had been known about, and
 
 > Action: **E3. Bow-tie.** Draw a bow-tie for the top event "a patient's infusion pump runs at the wrong morphine rate". Put threats on the left (including the tampered drug library) and consequences on the right, with preventive and mitigating barriers between them. Mark which barriers the attack defeated, which held in your run, and which depended on a person (the second check, querying pharmacy).
 
-### 2. Incident Response {#2-incident-response}
+### 2. Incident Response {#reflect-2-incident-response}
 
 **Questions**
 
@@ -1006,7 +1011,7 @@ Nothing that failed at Northgate was new. Each failure had been known about, and
 
 > Action: **E6. Learning response.** England's NHS now reviews patient safety incidents under PSIRF, which looks for system causes rather than individual blame. Write three improvement actions for Northgate in that style: each names a system weakness the incident exposed, the action, an owner and how the Trust would know it worked.
 
-### 3. Security-Informed Safety {#3-security-informed-safety}
+### 3. Security-Informed Safety {#reflect-3-security-informed-safety}
 
 The hazard chain at Northgate was: **cyber attack → loss of a safety function → physical hazard to a patient**. Security-informed safety asks how a safety case must change once you accept that someone may be trying to defeat it.
 

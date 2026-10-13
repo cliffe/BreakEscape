@@ -48,24 +48,26 @@ source: "https://github.com/cliffe/BreakEscape/blob/main/scenarios/sis02_energy/
 
 ## Purpose {#purpose}
 
-By the end of this lab you should be able to:
+This lab gives you a hands-on way to work through a case study and see theory in action: risk management, incident handling, regulation and security planning, applied to an organisation in trouble. Here it is a battery storage site, where an attacker has quietly changed the safety system's settings overnight.
 
-- explain how a cyber attack on an energy site becomes a physical hazard, using the chain: cyber attack, loss of a safety function, physical hazard
-- check a networked display against an independent physical measurement, and spot data that is being written rather than measured
-- tell apart the control system, a programmable safety system and a hardwired emergency shutdown, and say which ones an attacker on the network can reach
-- read a remote access log for a dormant account and a source address that does not belong
-- compare a safety system's live setpoints with its certified baseline, and convert a gas reading between per cent by volume and per cent of the lower explosive limit
-- weigh a safety action against the evidence it destroys, and an isolation option against what it costs
-- say who must be told about an incident at a GB energy operator, when, and under which law
-- read a safety case claim as claim, argument and evidence, and judge whether it held
+The concepts in play, each with a short section under [Concepts](#concepts) if you want to read up:
 
-The game teaches by doing. The questions are in this sheet, after the game.
+- Security-informed safety: how a cyber attack becomes a physical hazard
+- Trusting a screen: independent measurements and data that is written, not measured
+- Layers of protection: the control system, the safety system and a hardwired emergency shutdown
+- Spotting the attacker: remote access logs and dormant accounts
+- Integrity: checking safety settings against a certified baseline
+- Incident handling: evidence or safety first, and how far to cut the attacker off
+- Regulation: who must be told, when, and under which law (the NIS Regulations)
+- Safety cases: claim, argument and evidence, and whether they held
+
+> Note: Albion Energy Storage is fictional. The [Information Pack](/HacktivityLabSheets/labs/security_informed_safety/sis02-energy-information-pack/) has a lot more detail on it: its systems, its safety case and the incident timeline. You don't need it to play.
 
 ## How to Use This Sheet {#how-to-use}
 
-1. Read the [Information Pack](/HacktivityLabSheets/labs/security_informed_safety/sis02-energy-information-pack/) if your tutor has set it, then read **Getting Started** and try the short warm-up. It takes five minutes.
+1. Read **Starting the Game** and start playing.
 2. Play. Skim **Concepts** as you reach each new idea, or come back to it when a character or a document leaves you wanting more.
-3. If you get stuck, go to **Stuck? Hints, Stage by Stage** and find the stage you are on. Each stage has a hint you can read straight away, then a stronger hint in a collapsed section labelled **Nudge**, and the full method in one labelled **Steps** or **Recipe**. Open one at a time, and go back to the game after each.
+3. Explore the game and try to work things out inside it. If you are not sure what to do next, check the objectives list and talk to the people you meet: they often have more to say after something changes. If you are still stuck, go to **Stuck? Hints, Stage by Stage** and find the stage you are on. Each stage starts with a light hint, and the stronger nudges and full steps stay hidden until you open them.
 4. After the game, work through **After the Game: Reflection and Exercises**.
 
 > Note: Most stages in this game are decisions, not puzzles. When to press the emergency shutdown, whether to save evidence first, how far to cut the attacker off, when to notify and whether to warn a neighbour all have more than one defensible answer. The hints tell you what you know and what each option costs. They do not tell you what to choose. No ending is a failure: even if nobody shuts the hall down in time, the game carries on to the debrief, and the debrief and the closing credits show what happened as a result of your choices.
@@ -97,13 +99,12 @@ By the end of the scenario, you should be able to explain:
 
 ### Starting the Game {#starting-the-game}
 
-You play a member of the response and engineering team, on site early for a maintenance window, when the site's SCADA engineer decides she does not believe her own screens. You do not need an engineering background. Helen explains the plant as you go, Marcus explains the network, and the documents around the site explain the rest. Everything happens in the browser: this game has no virtual machines and no flags to find. The historian, the jump server log and the safety system panel are all consoles inside the game.
+You play a member of the response and engineering team, on site early for a maintenance window, when the site's SCADA engineer decides she does not believe her own screens. You do not need an engineering background. Helen explains the plant as you go, Marcus explains the network, and the documents around the site explain the rest. Everything happens in the browser. The historian, the jump server log and the safety system panel are all consoles inside the game.
 
-1. \==action: Read the [Information Pack](/HacktivityLabSheets/labs/security_informed_safety/sis02-energy-information-pack/)== to understand the site's network architecture, the SCADA system, the SIS and its safety case, the UK regulatory context (the NIS Regulations, IEC 61511 and IEC 62443) and the incident timeline. If your tutor has not set it, skim its timeline after the game instead.
-2. \==action: Start the Break Escape mission **Albion Battery Hall: Code Red** (SIS02 Energy)==.
-3. \==action: Watch the opening scene and listen to Helen's briefing in the control room==. She gives you her **Battery Hall Access Badge**, which opens the north door into Battery Hall 1.
-4. \==action: Read the **Incident Response Folder** on the duty desk before you head for the hall==. It holds the site's rules for the emergency shutdown, the hydrogen levels, the NIS notification and who may instruct CastleTech.
-5. \==action: Open the objectives list and keep an eye on it==. Aims open as you find things, and their tasks tell you which room to go to next.
+1. \==action: Start the Break Escape mission **Albion Battery Hall: Code Red** (SIS02 Energy)==.
+2. \==action: Watch the opening scene and listen to Helen's briefing in the control room==. She gives you her **Battery Hall Access Badge**, which opens the north door into Battery Hall 1.
+3. \==action: Read the **Incident Response Folder** on the duty desk before you head for the hall==. It holds the site's rules for the emergency shutdown, the hydrogen levels, the NIS notification and who may instruct CastleTech.
+4. \==action: Open the objectives list and keep an eye on it==. Aims open as you find things, and their tasks tell you which room to go to next.
 
 The game takes about 70 minutes, including the debrief. In a 60-minute class, read Getting Started and do the warm-up before the session. If you run out of time, a good place to stop is once the emergency shutdown for Hall 1 is in and you have found who is on the jump server: the hall is safe, and what is left (isolation, the notification and the debrief) can wait for next time. Your progress is saved, and the game's clocks count only the time you spend playing, so they carry on from where they were when you come back.
 
@@ -944,7 +945,7 @@ Work through these after you have finished the scenario. Use your own run: Priya
 
 Each section opens with questions to discuss, then exercises to work through.
 
-### 1. Risk Management {#1-risk-management}
+### 1. Risk Management {#reflect-1-risk-management}
 
 Nothing that failed at Albion was new. In her closing, Priya names a commissioning link nobody closed, a dead account nobody removed and a patch nobody rescheduled.
 
@@ -968,7 +969,7 @@ Nothing that failed at Albion was new. In her closing, Priya names a commissioni
 
 > Action: **E3. Bow-tie.** Draw a bow-tie for the top event "thermal runaway in Racks A1 to A4". Put threats on the left (including falsified readings that let an overcharge through, and the raised SIS setpoints) and consequences on the right (venting, hydrogen build-up, fire, loss of grid services, harm to people), with preventive and mitigating barriers between them: the BMS charge cut-off, the operator watching the HMI, the SIS trip, the hydrogen alarm, the analogue dial, the hardwired ESD and evacuation. Mark which barriers the attack defeated, which held in your run, and which depended on a person.
 
-### 2. Incident Response {#2-incident-response}
+### 2. Incident Response {#reflect-2-incident-response}
 
 **Questions**
 
@@ -996,7 +997,7 @@ Nothing that failed at Albion was new. In her closing, Priya names a commissioni
 
 > Action: **E6. OT incident decision guide.** Write a one-page guide for Albion's control room for "a credible thermal hazard with a suspected intrusion". Cover: who may press the ESD and when; what evidence may be captured first, and the time limit; the isolation options, each with the compensating control it needs; who may instruct CastleTech and how they verify it; and who is told, by when. This is the kind of evidence CLAIM-EN-010 asks for.
 
-### 3. Security-Informed Safety {#3-security-informed-safety}
+### 3. Security-Informed Safety {#reflect-3-security-informed-safety}
 
 The hazard chain at Albion was: **cyber attack → loss of a safety function → physical hazard**. Security-informed safety asks what a safety case must claim, and what evidence it needs, once you accept that someone may be trying to defeat it.
 
