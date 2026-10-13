@@ -247,3 +247,32 @@ Fifteen routes, all expectations met. New: `r14_owen_drop_late_disclosure.json` 
 
 - Round 4 confirmation and the browser checks (round 1's list, round 2's retry and lethal lines, round 3's lethal twins).
 - B3 and the other long runs to the dialogue phase; D9 until `dropOnKO`; D1, D3 to D8 as before.
+
+### Phase 1 alignment, round 4 fixes + confirmation
+
+Review: `ALIGNMENT_REVIEW_P5_R4.md` (Opus, read-only, static, with probes p3 and p4; a browser game, 2234, noted N2 and N5). Counts: 0 blockers, 1 major, 2 minors. All fixed as the reviewer proposed (coordinator's instruction); none withdrawn. The confirmation below is the fixer's own static check, as the coordinator asked; the browser checklist follows.
+
+| # | Sev. | Finding | Outcome |
+|---|---|---|---|
+| R4-1 | major | Patricia's in-person `torres_why` had no `torres_identified` guard. A person-chat closed on its choices re-runs the owning knot on reopen (`person-chat-minigame.js:525-537`), so a parked reason menu could be answered after naming him elsewhere, setting `door_log_reasoned_first` and reopening the early-naming reward (probe p3); an honest player who parked it was greeted with "David. Why?" again | **Fixed**: `{torres_identified: -> hub}` as the first line of `torres_why`, matching her phone and HaX, and the same guard on `name_torres` and `log_reason_right`. Probe p3 promoted to route r16 (the reopen lands on the hub; no reason menu, no "David. Why?", no reward) |
+| N2 | minor | HaX's first call, closed unanswered, reopens on `first_call_choices` and hides the hub (and later "Bring me in") until answered (probe p4; game 2234) | **Fixed**: first line of `first_call_choices` is `{server_door_seen or torres_suspected or flag1_submitted or final_choice != "": -> support_hub}` (start's staleness test reversed; a fresh first call is unchanged). Probe p4 promoted to route r17 ("Bring me in" can be picked). m04's identical `first_call_choices` is m04's own pass |
+| N5 | minor | The vault line names Halloran and gives Torres by title, which reads as a hint | **Fixed** in all three places, matching Owen: the vault text "Two prints enrolled: Dr Halloran's and David Torres'."; the Owen-KO relay, now one line (the `torres_suspected` split had nothing left to do) "Past the server room is the key vault. Fingerprint reader, two prints enrolled: Dr Halloran's and David Torres'."; "Where do I stand?" "The vault takes one of two prints, Halloran's or Torres'. Work out which you're after before you hunt for a print." Route r6 updated |
+
+#### Confirmation (static)
+
+- Routes r1 to r17: all expectations met (r16 and r17 new; r6 updated for N5).
+- Probe p3 re-run against this build (`m05-align-fixer/p3_after_r4.out` in the session scratchpad): it now fails at its own pick "front door" (the reason menu no longer appears after the naming), `door_log_reasoned_first` stays false, and none of the three reward lines (Torres' "Somebody read Owen's sheet properly", the debrief's "You had him before the server did", the NAMED ON THE EVIDENCE credit) appears in the output.
+- Grep: the guard is the first statement of `name_torres` (patricia.ink:352), `torres_why` (:371) and `log_reason_right` (:403); HaX's `first_call_choices` guard at phone.ink:141; no "cryptography lead's" left in any m05 line (only in comments and Owen's old wording notes).
+- Ink compiles (10 files). Validator, full: schema passes, dungeon graph regenerates, the same intended warnings. dialoguelint: 0 errors. reopencheck: 0 problems on all three phones (no new globals, so `missions.json` is unchanged this round). tagdiff against HEAD: 10 structural differences, all from this round (the four guards, the relay's condition removed, the line changes). inkcheck (Patricia with Torres named) and loopcheck (HaX after the server door): clean. Door alignment 9/9.
+
+#### Spoken lines changed (old → new)
+
+All new this pass, no cached audio:
+- HaX text: "Fingerprint reader on the key vault. Two prints enrolled: Dr Halloran's and the cryptography lead's. You've got the kit." → "…Dr Halloran's and David Torres'. You've got the kit."
+- HaX, Owen-KO relay: "…two prints enrolled: Dr Halloran's and Torres'." / "…Dr Halloran's and the cryptography lead's." → one line, "…two prints enrolled: Dr Halloran's and David Torres'."
+- HaX, "Where do I stand?": "The vault takes one of two prints, Halloran's or the cryptography lead's. Work out which you're after before you hunt for a print." → "The vault takes one of two prints, Halloran's or Torres'. Work out which you're after before you hunt for a print."
+
+#### Open after round 4
+
+- The browser checklist (rounds 1 to 4).
+- B3 and the other long runs to the dialogue phase; D9 until `dropOnKO`; D1, D3 to D8 as before.

@@ -136,6 +136,9 @@ Someone in that building is feeding ENTROPY the keys to the 999 dispatch network
 -> first_call_choices
 
 === first_call_choices ===
+// PASS 5 R4 N2: a chat closed on these choices reopens here; once the night has
+// moved on (start's staleness test, reversed) it lands on the hub instead.
+{server_door_seen or torres_suspected or flag1_submitted or final_choice != "": -> support_hub}
 + [I'll get to work.]
     -> support_hub
 
@@ -581,11 +584,8 @@ So is the server-room password. It was sitting in IT's ticket queue.
     #give_item:notes:relayed_door_log
     And the night badge log he'd have pulled for you. Read it properly.
 }
-{torres_suspected:
-    Past the server room is the key vault. Fingerprint reader, two prints enrolled: Dr Halloran's and Torres'.
-- else:
-    Past the server room is the key vault. Fingerprint reader, two prints enrolled: Dr Halloran's and the cryptography lead's.
-}
+// R4 N5: both leads by name, as Owen says it.
+Past the server room is the key vault. Fingerprint reader, two prints enrolled: Dr Halloran's and David Torres'.
 Whatever else he knew, you'll have to find the hard way.
 -> on_owen_ko_relay_choices
 
@@ -946,7 +946,7 @@ See you at HQ.
     - torres_suspected and not has_exfil():
         You know why he might. Now the proof it's leaving: the vault past the server room has it, and so does the research server.
     - server_password_obtained and not torres_suspected:
-        The vault takes one of two prints, Halloran's or the cryptography lead's. Work out which you're after before you hunt for a print.
+        The vault takes one of two prints, Halloran's or Torres'. Work out which you're after before you hunt for a print.
     }
 }
 // R2 (m7): after the fate she has no pitch left (never_talked_terms).

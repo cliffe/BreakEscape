@@ -1,0 +1,41 @@
+{
+"steps": [
+{
+"note": "R17 (round 4, N2; the reviewer's probe p4): HaX's first call left unanswered (phone closed on its choices); the night moves on (suspicion, a fate). The reopen lands on the hub, so 'I'm done here. Bring me in.' can be picked."
+},
+{
+"set": {
+"briefing_played": true
+}
+},
+{
+"talk": "phone",
+"picks": []
+},
+{
+"note": "(phone closed with the first-call choices showing)"
+},
+{
+"set": {
+"torres_suspected": true,
+"final_choice": "arrest"
+}
+},
+{
+"talk": "phone",
+"picks": [
+"Bring me in"
+]
+},
+{
+"said": [
+"Bring me in"
+]
+},
+{
+"notSaid": [
+"What should I know going in"
+]
+}
+]
+}

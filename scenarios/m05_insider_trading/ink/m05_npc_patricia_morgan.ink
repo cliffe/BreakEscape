@@ -347,6 +347,9 @@ Patricia Morgan: If you're wrong, that's her career. And whoever it really is ha
 -> hub
 
 === name_torres ===
+// PASS 5 R4-1: a person-chat closed on its choices re-runs this knot on reopen
+// (person-chat-minigame.js:525-537); never after the naming.
+{torres_identified: -> hub}
 #speaker:patricia_morgan
 {has_motive() and has_exfil():
     -> significant_findings
@@ -363,6 +366,9 @@ Patricia Morgan: If you're wrong, that's her career. And whoever it really is ha
 // Documents sit on both sides (a log decoy), the right log reason isn't
 // first, and a wrong reason ends the conversation (re-talk to try again).
 === torres_why ===
+// PASS 5 R4-1: a person-chat closed on its choices re-runs this knot on reopen
+// (person-chat-minigame.js:525-537); never after the naming.
+{torres_identified: -> hub}
 + {found_door_log} [His own badge is on the server hallway those nights.]
     Patricia Morgan: Read it again. His badge never touches the server hallway. Hers does.
     -> reason_wrong
@@ -392,6 +398,9 @@ Patricia Morgan: If you're wrong, that's her career. And whoever it really is ha
 -> hub
 
 === log_reason_right ===
+// PASS 5 R4-1: a person-chat closed on its choices re-runs this knot on reopen
+// (person-chat-minigame.js:525-537); never after the naming.
+{torres_identified: -> hub}
 #speaker:patricia_morgan
 ~ door_log_reasoned = true
 ~ door_log_reasoned_first = true
