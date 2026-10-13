@@ -493,3 +493,33 @@ Browser checks needed: M1 (meet Halloran, accuse, talk again with no reload); th
 
 - The browser checks above.
 - D12 to D14 for the user.
+
+### Phase 3 scenario design, round 2
+
+Review: `SCENARIO_DESIGN_REVIEW_P5_R2.md` (Opus, read-only, static). Counts: 0 blockers, 1 major, 4 minors. All fixed as the reviewer proposed (coordinator's instruction); none withdrawn.
+
+| # | Sev. | Finding | Outcome |
+|---|---|---|---|
+| R2-M1 | major | Round 1's hub check made Halloran say she was still suspended after Patricia had reinstated her, and "It's David." then said the opposite | **Fixed**: `accused_greeting` branches on `torres_identified`. After the naming it plays her existing reinstatement lines ("Patricia's given me my access back. I'll want an apology from you. Not tonight.", or "Security have…" with Patricia down) and sets a local `reinstated_said`; `halloran_guilt` skips those lines once said. The same knot serves the hub and `start`, so a first meeting after reinstatement is covered. Routes r26 (met, accused, named, visited again with no reload: the line plays once, no "suspended my access") and r27 (first meeting after reinstatement) |
+| R2-m1 | minor | The Recruiter's ring-back answers ran on into "Think it over. I'm not in a hurry." | **Fixed**: both go to a new `hangs_up` knot (narrator "She hangs up first.", exit, `idle`). r24 now checks "She hangs up first." and no "Think it over" |
+| R2-m2 | minor | "Textbook, once it came to that" praised an unprovoked KO | **Fixed**: both subdued-path openings carry it only with `torres_fight_offered`; otherwise the sentence ends at the ambulance and police |
+| R2-m3 | minor | The new debrief beat repeated the admin login, and "QDC had a list…" claimed something nothing showed | **Fixed**: "an admin's leaked login" dropped from the borrowed-trust line (back to badge, password, thumbprint; the research-portal beat now carries the login), and the fix line ends "QDC's own staff could have done all three." r1 and r25 updated |
+| R2-m4 | minor (tidy) | "Privilege escalation" filed under SOIM, unlike m04 and m07 | **Fixed**: moved to its own OSV entry, "Primitives for Isolation and Mediation", as m07 files it (text edit; D13 updated). The coordinator aligns m04 and m06 |
+
+#### Static confirmation
+
+- Routes r1 to r27: all expectations met (r26, r27 new; r1, r24, r25 updated).
+- Ink compiles (10 files). Validator, full: schema passes, dungeon graph regenerates, the same intended warnings. dialoguelint: 0 errors. reopencheck: 0 problems (no new synced globals; `missions.json` unchanged this round). tagdiff against HEAD: 23 structural differences, all from this round. inkcheck (Halloran accused and reinstated, the Recruiter after a yes, the subdued debrief) and loopcheck (Halloran reinstated): clean. Door alignment 9/9. `mission.json` parses.
+
+#### Spoken lines changed (old → new)
+
+- Debrief: "Every locked door in that building, you opened on someone else's trust. A colleague's badge, a colleague's password, an admin's leaked login, his thumbprint." → "…A colleague's badge, a colleague's password, his thumbprint." (back to its pre-pass wording)
+- Debrief: "Patch it, rotate the logins, trim the rights. QDC had a list for all three and never worked it." → "Patch it, rotate the logins, trim the rights. QDC's own staff could have done all three." (new this pass, no audio)
+- Debrief, new variants without "Textbook, once it came to that.": "Detained after a fight. You stayed with him, kept his airway clear, and the ambulance came with the police." / "…and Patricia brought the police and an ambulance."
+- The Recruiter, new: narrator "She hangs up first." (the existing line, in a new knot).
+- Halloran: no new lines; her reinstatement lines now also open `accused_greeting` after the naming.
+
+#### Open after round 2
+
+- Browser checks from round 1 plus: Halloran after reinstatement (met before, and first meeting); the Recruiter's ring-back close.
+- D12 to D14 for the user.

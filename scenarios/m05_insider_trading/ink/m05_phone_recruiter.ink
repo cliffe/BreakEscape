@@ -280,11 +280,11 @@ Narrator: The line goes dead.
 // Scenario design R1 (m4): an answer already given is remembered.
 {recruiter_deal_accepted:
     We have an arrangement. Don't ring this number again.
-    -> end_contact
+    -> hangs_up
 }
 {recruiter_deal_decided:
     You said no once. I heard you.
-    -> end_contact
+    -> hangs_up
 }
 
 Still deciding? The offer doesn't improve with age, agent.
@@ -377,6 +377,13 @@ Agent. Torres is dealt with, and we never did talk terms. Pity.
 There was an envelope under his keyboard I'd have liked back. Whatever you did with it, the next one will cost me more.
 #speaker:narrator
 Narrator: The line goes dead.
+#exit_conversation
+-> idle
+
+// Scenario design R2 (R2-m1): the ring-back answers close without "Think it over".
+=== hangs_up ===
+#speaker:narrator
+Narrator: She hangs up first.
 #exit_conversation
 -> idle
 

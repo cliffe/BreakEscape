@@ -66,7 +66,7 @@
 {"backstops":{"expect":["re-emit"]}},
 {"talk":"debrief","picks":["What have we got","Not"]},
 {"expect":{"debrief_played":true}},
-{"said":["ninety-seven per cent","Task Force Null's wall","an admin's leaked login"],"notSaid":["before the server did","East of England","We never got the authorisation"]},
+{"said":["ninety-seven per cent","Task Force Null's wall","Old software with a known flaw nobody had patched"],"notSaid":["before the server did","East of England","We never got the authorisation"]},
 {"backstops":{"expect":["hear"]}},
 {"credits":true},
 {"said":["MISSION COMPLETE","TURNED","SHE NEVER MADE HER PITCH — the TalentStack list went to SAFETYNET","Nobody on staff hurt"],"notSaid":["AT A COST","TALENTSTACK LIST — left unread","ROTATION WINDOW"]}

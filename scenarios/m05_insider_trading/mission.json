@@ -22,7 +22,12 @@
     {
       "ka": "SOIM",
       "topic": "PENETRATION TESTING",
-      "keywords": ["PENETRATION TESTING - SOFTWARE TOOLS", "Insider threat detection", "Privilege escalation"]
+      "keywords": ["PENETRATION TESTING - SOFTWARE TOOLS", "Insider threat detection"]
+    },
+    {
+      "ka": "OSV",
+      "topic": "Primitives for Isolation and Mediation",
+      "keywords": ["Privilege escalation"]
     },
     {
       "ka": "HF",

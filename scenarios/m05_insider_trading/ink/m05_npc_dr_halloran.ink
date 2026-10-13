@@ -30,6 +30,7 @@ VAR first_meeting = true
 VAR accused_acknowledged = false
 VAR hub_quiet = false
 VAR asked_vault = false       // puzzle R1 (D-A): the gloves answer, once
+VAR reinstated_said = false   // scenario design R2 (R2-M1): the "access back" line, once
 VAR spare_handed = false      // puzzle browser F3: retires the ask in the same conversation (the synced server_badge_obtained only arrives with the pickup)
 
 // Synced from scenario globals
@@ -221,7 +222,20 @@ Dr Ruth Halloran: You'll not lift anything of mine in here. Try it if you like.
     -> hub
 }
 
+// Scenario design R2 (R2-M1): once Torres is named she has been reinstated,
+// so the greeting says that instead (and halloran_guilt doesn't repeat it).
 === accused_greeting ===
+{torres_identified:
+    ~ reinstated_said = true
+    #speaker:dr_halloran
+    {patricia_ko:
+        Dr Ruth Halloran: Security have given me my access back. I'll want an apology from you. Not tonight.
+    - else:
+        Dr Ruth Halloran: Patricia's given me my access back. I'll want an apology from you. Not tonight.
+    }
+    ~ hub_quiet = true
+    -> hub
+}
 #speaker:narrator
 Narrator: Dr Halloran sits at her bench with her coat on, as if she's been told to wait.
 #speaker:dr_halloran
@@ -249,7 +263,8 @@ Dr Ruth Halloran: Any of them could have walked out with it. I never thought to 
 === halloran_guilt ===
 #speaker:dr_halloran
 ~ told_about_torres = true
-{halloran_accused:
+{halloran_accused and not reinstated_said:
+    ~ reinstated_said = true
     {patricia_ko:
         Dr Ruth Halloran: Security have given me my access back. I'll want an apology from you. Not tonight.
     - else:

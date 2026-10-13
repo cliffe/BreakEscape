@@ -300,7 +300,7 @@ Agent HaX: Let's go through it.
     }
 }
 
-Agent HaX: Every locked door in that building, you opened on someone else's trust. A colleague's badge, a colleague's password, an admin's leaked login, his thumbprint.
+Agent HaX: Every locked door in that building, you opened on someone else's trust. A colleague's badge, a colleague's password, his thumbprint.
 
 Agent HaX: In the logs, that looks exactly like an insider. It's why nobody saw him.
 
@@ -311,7 +311,7 @@ Agent HaX: And the research portal. Old software with a known flaw nobody had pa
 
 Agent HaX: Once you were in, one account was allowed to run far more than its job needed. That's how you reached the Architect's sign-off.
 
-Agent HaX: Patch it, rotate the logins, trim the rights. QDC had a list for all three and never worked it.
+Agent HaX: Patch it, rotate the logins, trim the rights. QDC's own staff could have done all three.
 
 {indicators_found() > 0:
     Agent HaX: The warning signs go in the training file. The ones you found, anyway.
@@ -479,9 +479,18 @@ Agent HaX: And everything he knew about the Initiative died with him. We're mapp
 #speaker:agent_0x99
 
 {patricia_ko:
-    Agent HaX: Detained after a fight. You stayed with him, kept his airway clear, and the ambulance came with the police. Textbook, once it came to that.
+    // Scenario design R2 (R2-m2): no praise if the player struck first.
+    {torres_fight_offered:
+        Agent HaX: Detained after a fight. You stayed with him, kept his airway clear, and the ambulance came with the police. Textbook, once it came to that.
+    - else:
+        Agent HaX: Detained after a fight. You stayed with him, kept his airway clear, and the ambulance came with the police.
+    }
 - else:
-    Agent HaX: Detained after a fight. You stayed with him, kept his airway clear, and Patricia brought the police and an ambulance. Textbook, once it came to that.
+    {torres_fight_offered:
+        Agent HaX: Detained after a fight. You stayed with him, kept his airway clear, and Patricia brought the police and an ambulance. Textbook, once it came to that.
+    - else:
+        Agent HaX: Detained after a fight. You stayed with him, kept his airway clear, and Patricia brought the police and an ambulance.
+    }
 }
 
 Agent HaX: He woke up in hospital under police guard, angry, and he hasn't said a word to anyone since. What happens to him now is up to them.
