@@ -547,3 +547,171 @@ Ink compiles (10 files). Validator, full: schema passed, all ink valid, doors an
 | Browser | 0 | 0 | 3 |
 
 Open for the user: SecGen checks S1–S7, M1's network lines, R2-6 / m17. Next: phase 4 dialogue and room dressing in parallel, then lighting, POV backgrounds and blind runs. The character stage is running.
+
+## Phase 4: dialogue
+
+Snapshot for `tagdiff --old`: the session scratchpad's `m04-dialogue-snapshot/ink/` (commit 504a46cc's ink).
+
+### Phase 4 dialogue, cycle 1
+
+Review: `DIALOGUE_REVIEW_P5_C1.md` (Opus, static plus the route driver; 0 blockers, 5 majors, 34 minors). Fixer: Opus, resumed between cycles. Every finding was checked against the ink before it was acted on. No browser session was started; the do-not-open rule held.
+
+User decisions this cycle: D5-4 takes the reviewer's 7-line version with a player beat; D5-2/D5-3 must account for the dead crew and tie them to the unsounded alarm where that's true, without presenting any ending as a failure; accents get one or two idioms each for the guard, Cipher, Relay and Voltage; dead variables are removed, and `asked_the_number` is paid off; "Keep the crew's fingerprint kit." stays on every route (m05 depends on it).
+
+| # | Sev. | Finding | Outcome |
+|---|---|---|---|
+| D5-1 | major | Voltage's "not one of my people saw you come" after Static's challenge | **Fixed.** `static_stood_aside`: "And Static let you walk up to my bench. He'll explain that later."; otherwise "You got past my people." |
+| D5-2 | major | Disclosure scene ignores `crew_lost` | **Fixed.** Each option has a crew-lost branch for HaX and for Vance at both trust levels; "maintenance fault" and "how close it came" don't play after deaths. One change from the review: Vance's full/≥70 line became "Good. Nobody gets to call it an accident.", because the review's "Nine of mine. People will know why." doubled his ≥80 closing "Nine of mine. I'll be telling their families myself." (seen in r9) |
+| D5-3 | major | Deaths never tied to the alarm | **Fixed**, three ways, each true to the route: ally "Vance had the evacuation alarm on his desk all night."; Vance KO'd "The evacuation alarm was on Vance's desk. He was on the floor beside it."; never told "…He never knew he had a reason to use it." Stated once, then the existing "You stopped the rest of it." |
+| D5-4 | major | 11-line "what failed" lecture | **Fixed** (user decision): run 1 (4 lines, plus Relay's line when it applies), then `[And the network?]` / `[So what do they fix first?]`, then the three fix-beside-weakness lines. Both choices get the same answer (a question, not a stance). Wording kept at the brief's level; "root it never needed" became "more privilege than it ever needed", because the brief describes a sudo misconfiguration, not a root account. New knot `debrief_what_failed_fixes` |
+| D5-5 | major | Four lines steer to the button before it arms | **Fixed.** HaX `three_vector_confirmation`, `capture_vs_speed_guidance`, `final_phase_briefing` branch on `anomaly_detected`; Vance's `safe_disabling_guidance` branches four ways (both / attack only / dial only / neither) |
+| D5-6 | minor | Climax narration reprints and claims a false dilemma | **Fixed.** First visit only (`confrontation_choice == 1`); "You cannot reach both." only when the button is on offer |
+| D5-7 | minor | "three cities" vs Voltage's six | **Fixed** (city count dropped) |
+| D5-8 | minor | Never-met "[Just doing my job.]" answered out of turn | **Fixed.** New knot `debrief_end_not_met_job` |
+| D5-9 | minor | Vance speaks in an HQ debrief unexplained | **Fixed.** Narrator: "Vance is on the line from the Albion ops desk." HaX's "Vance needs to hear it too." cut as the same fact twice |
+| D5-10 | minor | "It was still the right call." | **Fixed** (cut) |
+| D5-11 | minor | "Lives first" four times | **Fixed** as proposed, except phone :751 became "Good. If he reaches for that laptop, put him down." (the lint flags "however"; "any way you have to" is the briefing's) |
+| D5-12 | minor | Guard: "early" three times; "The regulator?" unprompted | **Fixed.** Narration first, then "Regulator, is it." |
+| D5-13 | minor | "Inspection?" answers what wasn't said | **Fixed**, reworded to "Nobody said anything to me about a visit." (the review's version would have put "visitors" and "this hour" back in) |
+| D5-14 | minor | No West Country in the guard's words | **Fixed**, two markers (user: light touch): "my lover" on his re-sighting line, "That OptiGrid lot". "Where you to, then?" not used: in Bristol it means "where are you", not "where are you going" |
+| D5-15 | minor | Sight challenge replays the opener every 20 s | **Fixed.** Repeat visits: "Still need you at the desk first, my lover. Badge." (visit count; the guard's story never ends, so it's saved in full) |
+| D5-16 | minor | "Never found the order" twice | **Fixed** |
+| D5-17 | minor | "access to the halls" then "escorted, not carded" | **Fixed** |
+| D5-18 | minor | Vance knows "eight" and "Voltage" untold | **Fixed** ("for morning", "whoever's on the other side", phone reader line reworded) |
+| D5-19 | minor | Game-speak in the crew cost lines | **Fixed** face to face and on the phone (Teesside "He'll not", "you've not finished") |
+| D5-20 | minor | Commit exit closes on the player's line | **Fixed.** "Go. I'll be on the desk." |
+| D5-21 | minor | "The screens are lying to you." after mapping | **Fixed** |
+| D5-22 | minor | "Still here." from four characters | **Fixed.** Static cycles `{&Talk.|Still watching.|From there.}`; Voltage "You came back. Nothing you say next will be new."; Vance hub "Aye?"; Vance phone "Vance." / "Vance. The hydrogen's still climbing." |
+| D5-23 | minor | "Then we do this the hard way." twice | **Fixed** (Voltage's choice: "[Then I take that laptop off you.]") |
+| D5-24 | minor | Bracket labels | **Fixed** ("[(Leave him be.)]", "[(Make for the inner door.)]") |
+| D5-25 | minor | Blank re-entry ×5 | **Fixed** the three real ones: `guard_idle` (new local `guard_quiet`; its `#speaker` tag dropped, as on Vance's choices-only knots), `voltage_captured_end` (`voltage_quiet`, set at both arrests and on "Say nothing"), `vance_commits_choices` ("Right. What else?" after the first arrival). `voltage_escape_success` simplified to one `[(He's gone.)]` as proposed. **Withdrawn** (reviewer): `cipher_gone`, `voltage_escape_success`, both on hidden NPCs; the lint still lists them |
+| D5-26 | minor | Dial named before the player has looked | **Fixed.** Vance's 20 s text and HaX's first call no longer name the dial; `first_call_end` became "Call me when you've got a real reading." so it doesn't refer to a dial nobody named. Named still in `hint_dial`, `report_progress`, `vance_priority` and the flags-in text |
+| D5-27 | minor | Dead variables | **Fixed.** Removed: `task_force_null_assigned`, `mission_debriefed`, `operatives_defeated` (debrief, Vance, Voltage), `revealed_mission`, `scada_threat_confirmed`, `urgency_stage` (Vance face to face, HaX phone; still live in Vance's phone), `guard_suspicious`, `entry_method`, `handler_trust` (14 writes), `mission_priority`, `mission_briefed`, `guidance_provided`; Voltage's unread "fought"/"arrested" writes. `asked_the_number` paid off (D5-32) |
+| D5-28 | minor | "Your flags are landing." | **Fixed** |
+| D5-29 | minor | Choice repeats HaX's line | **Fixed** ("[Where do I start on it?]") |
+| D5-30 | minor | Stock sign-off | **Fixed** (see D5-26 for the wording) |
+| D5-31 | minor | List in `final_phase_briefing` | **Fixed** |
+| D5-32 | minor | Voltage stances never remembered | **Fixed.** New synced globals `promised_voltage_alive` (briefing "[Stop the trigger, and bring Voltage in alive if I can.]", HaX phone "[Understood. I'll try to take him alive.]") and `asked_the_number` (Voltage). Debrief: captured "The same one he gave you when you asked, to the decimal." / "You said you'd bring him in breathing. You did."; gone "You got his number out of him, at least. It goes in the file next to Blackout's signature." / (escaped) "You wanted him alive, and you chose the button. I'd have chosen the same." Both globals added to `globalVariables` and to `missions.json` |
+| D5-33 | minor | "a gas monitor nobody read" | **Fixed** (in the shortened line, so it stays under the 30-word cap) |
+| D5-34 | minor | "Thorough." echoes Voltage | **Fixed** |
+| D5-35 | minor | "You picked the wrong facility." | **Fixed**, as "Wrong night to come looking.": the review's "Wrong night to be a regulator" doesn't fit, because neither route into that line has Cipher hear "regulator" (the player claims a thermal survey, or says nothing about a cover) |
+| D5-36 | minor | Stock aphorism | **Fixed** ("Ja. They all say that on the way in.", Voltage's accent marker) |
+| D5-37 | minor | "God. What have I done?" | **Fixed** |
+| D5-38 | minor | "Stability, bought with silence." | **Fixed** (cut) |
+| D5-39 | minor | Untrue "Rush it" line | **Fixed** |
+
+Also from the review's voice notes: Cipher "Verdomme." (one Dutch marker) and the trimmed opener narration; Relay "Aye. Easy." and "No. But you're here, and that's enough."; Voltage "six cities lined up"; HaX briefing's echo of Netherton replaced (the review's own line would have repeated "This lot don't want paying" two lines up); the phone hints that quoted texts word for word now vary ("living thumb", "Picks and cloner"); Vance phone says "the one thing they couldn't touch" once, and the post-shutdown news is varied across opener, "How bad is it?" and priority; the debrief has one sign-off. Cut "First, one more decision." (padding; the run before the disclosure choice was 9–10 lines on crew-lost routes, now at most 9).
+
+Accent markers, all told (user: light touch): guard "my lover", "that OptiGrid lot"; Cipher "Verdomme"; Relay "Aye"; Voltage "Ja". Vance already had his and gains "He'll not", "you've not finished" and "Aye?" from the fixes above.
+
+#### Routes
+
+Updated for changed text and picks: r1, r2, r3, r4, r5, r6, r8, r9, r11, r12, r16, r17, r18, r19 (the debrief's new network beat, Voltage's and the guard's renamed choices, "Where do I start on it?", and expectations that quoted old lines). New:
+- `r20_crew_lost_partial_promise_captured.json`: briefing promise, ally at trust 60, crew lost, number asked, arrest, partial disclosure.
+- `r21_crew_lost_quiet_button_phone_promise.json`: HaX's phone promise with the dial read (D5-5 "press it" branch), crew lost, Static aside (D5-1), number asked, button, quiet disclosure at trust 90.
+- `r22_crew_lost_full_cover_held.json`: cover never dropped, trust 30, crew lost, Voltage punched, full disclosure ("never knew he had a reason").
+- `r23_crew_lost_partial_high_quiet_low.json`: attack mapped before the dial (HaX and Vance say the button won't arm), crew lost, partial at 75, then a page reload of the debrief at 40 with quiet.
+- `r24_resight_and_standoff_return.json`: the guard's second sighting and idle re-entry, Vance's commit exit line, Voltage's narration not replaying after a back-off, his captured re-entry line.
+
+24 of 24 routes: all expectations met. Longest run without a choice: 9 (debrief, outcome recap before the disclosure choice), down from 11.
+
+#### Checks (static; no browser session)
+
+- Ink compiles (10 files, 0 failed, no loose ends; END warnings on the debrief, Voltage and briefing as before).
+- Validator with ink, `--no-graph`: schema passed, all ink valid, geometry and doors OK; the same 16 warnings and suggestions as before.
+- dialoguelint: 0 errors, 0 warnings; 2 blank-reentry checks, both withdrawn above.
+- reopencheck: 0 problems for both m04 phones (1800 reopens each).
+- tagdiff `--old` against the snapshot: Cipher, Relay and Static structure unchanged; debrief 58, Voltage 20, briefing 19, guard 15, Vance 6, HaX phone 8, Vance phone 8 differences. Every one is listed in the table above: removed dead VARs and their writes; the new knots `debrief_what_failed_fixes` and `debrief_end_not_met_job`; the crew-lost and stance conditions; the `#set_global` tags for the two new globals; the quiet flags and visit-count conditions; the `#speaker` tag dropped from `guard_idle`; `voltage_escape_success` reduced to one choice.
+- inkcheck (debrief, Voltage, Vance, guard, briefing, both phones) and loopcheck over 29 states (crew lost with Vance ally / KO'd / not told; captured and escaped with both stances; Voltage with Static aside, Static down, captured, escaped, after the race; Vance ally with and without the attack mapped; guard at the sight knot and admitted; HaX before and after the dial; Vance phone with `urgency_stage` 3 and after the shutdown): clean.
+
+#### Spoken lines changed (old → new)
+
+No m04 audio exists yet; listed for the record. Choice text isn't voiced.
+
+HaX, debrief:
+- Cut: "Lives over one operative, every time."
+- New: "The same one he gave you when you asked, to the decimal." / "You said you'd bring him in breathing. You did." / "You got his number out of him, at least. It goes in the file next to Blackout's signature." / "You wanted him alive, and you chose the button. I'd have chosen the same."
+- "And the control room believed its own sensors. The honest instruments were the ones nobody had wired to the bus: a dial, and a gas monitor nobody read." → "And the control room believed its own sensors. The honest ones weren't on the bus: a dial on a wall, and a gas monitor off their network."
+- Cut: "On the network it was the same story." / "A legacy compile service left running on an OT box, trusting whatever it was sent." / "An FTP service that handed their cross-cell plan to anyone who looked. And an account on the jump server with far more privilege than its job needed." / "Encrypted cards. A second factor on the HV door, and a reader that checks for a live finger." / "A temperature gauge in every hall that isn't on the bus, and somebody reading it." / "Old services off the OT network, and privileges somebody actually reviews."
+- New: "A legacy compile service on an OT box, trusting whatever it was sent. That comes off the network." / "An FTP service handing their cross-cell plan to anyone who looked, and a jump-server account with more privilege than it ever needed. Somebody reviews those." / "Encrypted cards, a second factor on the HV door, and a gauge in every hall that somebody reads."
+- "Social Fabric had disinformation ready in three cities, to turn the fire into a panic." → "Social Fabric had disinformation ready to turn the fire into a panic."
+- Cut: "First, one more decision."
+- New (crew lost): "Vance had the evacuation alarm on his desk all night." / "The evacuation alarm was on Vance's desk. He was on the floor beside it." / "The evacuation alarm was on Vance's desk. He never knew he had a reason to use it."
+- "And Vance's alarm had the night crew out before the button went in. It started your clock early. It was still the right call." → "…It started your clock early."
+- Cut: "Vance needs to hear it too."
+- "We classify it. A maintenance fault, resolved. Albion patches the holes quietly." kept; new crew-lost variant "We classify what we can. Nine deaths don't go in a drawer, so it's an industrial accident, cause under investigation."
+- "Nobody hears how close this came. Albion's name survives, the upgrades happen, and nothing makes the rest of the sector move. Stability, bought with silence." → "…nothing makes the rest of the sector move."; new crew-lost variant "Nine families get an accident report. Albion's name survives, the upgrades happen, and nothing makes the rest of the sector move."
+- New crew-lost variants: "An incident, nine dead, cause withheld. The coroner will want more than that, and get it." / "People hear that nine died in an incident, not why. Enough to push some change, not enough to start a panic."
+- New: "Then do it again. And somebody should tell Vance you were there."
+- Cut: "Get some rest."
+- "All three of his crew down. Thorough." → "All three of his crew on the floor. Remind me not to annoy you."
+
+Narrator, debrief: new "Vance is on the line from the Albion ops desk."
+
+Vance, debrief (new crew-lost variants): "Good. Nobody gets to call it an accident." / "There'll be hell to pay for this place. There should be." / "Accident. I'll sign it. I'll not pretend I like it." / "An accident. Aye. That's what the inquiry will call it." / "Something, not everything. I'll answer the rest at the inquest." / "Upstairs will like that. The inquest won't."
+
+Voltage:
+- "*not looking up from the laptop* Still here." + "Nothing you say next will be new." → "*not looking up* You came back. Nothing you say next will be new."
+- "And not one of my people saw you come." → "And Static let you walk up to my bench. He'll explain that later." / "You got past my people."
+- "Bold. Conviction never stopped an attack." → "Ja. They all say that on the way in."
+- "This site is one test run. The Architect has six cities on the go." → "…six cities lined up."
+- New: "*flat* Still counting?" / "*flat* You've got me. You haven't got him." (cycle)
+- Narrator, plant room: first visit only; a variant without "You cannot reach both." when the button isn't on offer. Cut (unreachable): "The loading bay is empty and cold. A vehicle was here. It isn't now." / "The red mushroom head is still on the wall behind you, and the racks are still climbing."
+
+Robert Vance, face to face:
+- "Staff records, maintenance logs, access to the halls. Whatever it takes." → "Staff records, maintenance logs, whatever you need off this desk."
+- "Cards and an order number. I never found the order behind it. What's your concern?" → "They didn't want an escort, either. What's your concern?"
+- Hub cycle "Still here." → "Aye?"
+- "The screens are lying to you. I've the hydrogen readout from the vent controller up here. It's off their network, and it's climbing." → "You know what they did. My hydrogen readout's still climbing."
+- "Whoever's in my plant room hears it too. But your clock's already running, so it costs you nothing now but surprise." → "Whoever's in my plant room hears it too. Your clock's running anyway. All it costs you now is surprise."
+- "Whoever's in my plant room hears it too. He won't wait for eight. You'll have half an hour, maybe, and your workshop job isn't done." → "Whoever's in my plant room hears it too. He'll not wait for morning. Half an hour, maybe, and you've not finished in the workshop."
+- "With Voltage on the other side? And somebody has to stay on this desk." → "With whoever's on the other side? And somebody has to stay on this desk."
+- "Credentials, background checks, all of it. God. What have I done?" → "Credentials, background checks, the lot. I never rang the firm."
+- New: "Right. What else?" / "Go. I'll be on the desk."
+
+Robert Vance, phone:
+- "Still here. Still watching the hydrogen climb." → "Vance. The hydrogen's still climbing."; "Still here." → "Vance."
+- "I can't leave the desk. Voltage is through there, and somebody has to watch the hydrogen." → "I can't leave the desk. Somebody has to watch the hydrogen, and I don't know who's through there."
+- "The one thing they can't reach is the hardwired shutdown in the plant room." → "What they can't reach is the hardwired shutdown in the plant room."
+- "The shutdown button in the plant room is hardwired. Straight to the bank isolators, no network in the middle. The one thing they couldn't touch." → "…no network in the middle."
+- "Get to it and press it. That's the mission." → "Get to it and press it." / "It won't arm until grid control has a real reading. The dial in Hall 1." / "It won't arm until grid control knows how they did it. That's the workshop." / "It won't arm until grid control believes you. Prove the screens wrong, then prove how."
+- "Steady, though. Rush it and you trip the very thing you're stopping." → "Steady, though. Watch the hydrogen panel in Hall 2 on your way."
+- "You've done it. Banks isolated, vents at full. Go and see what they left behind." → "Go and see what they left behind. I'll watch the banks."
+- "Whoever's in my plant room hears it too. But your clock's already running, so it costs you nothing now but surprise." → "Whoever's in my plant room hears it too. Your clock's running anyway. All it costs you now is surprise."
+- "And whoever's in my plant room hears it too. He won't wait for eight." / "You'll have half an hour, maybe, and your workshop job isn't done." → "And whoever's in my plant room hears it too. He'll not wait for morning." / "Half an hour, maybe, and you've not finished in the workshop."
+- "It's over. Banks isolated, vents at full, and the hydrogen's falling." → "Not any more. The cells are cooling."
+
+HaX, phone:
+- "You've got his print. Use it on the reader. It can't tell a lift from a living thumb." → "You've got his print. Put it on the reader in Hall 2. That's all it checks for."
+- "Picks and cloner won't touch a fingerprint reader. The crew beat it on the ninth with their own kit." → "That reader wants a finger, not a card. The crew beat it on the ninth with their own kit."
+- "First, prove the screens are lying. There's an old dial thermometer in Battery Hall 1." → "First, prove the screens are lying. Something in Battery Hall 1 that isn't on their feed."
+- "Stay sharp. If anyone comes at you, defend yourself. Call if you need me." → "Call me when you've got a real reading."
+- "Your flags are landing. Grid control can see it too." → "Your flags are in. Grid control can see it too."
+- New (dial unread): "It won't arm till grid control has a real reading. The dial in Hall 1 first." / "Go for the button and he's out the dock and gone. And it won't arm till grid control has a real reading." / "The button won't arm till grid control has a real reading. The dial in Hall 1 first."
+- "Good. But if he reaches for that trigger, stop him any way you have to. Lives first." → "Good. If he reaches for that laptop, put him down."
+- "Right priorities. If he runs but the attack fails, that's still a win." → "Copy. Then the button's your job and he's a bonus."
+- "Last stretch. In the plant room:" / "Deal with Voltage and anyone still standing with him." / "Keep him off that laptop." / "Then the hardwired shutdown button. Press it." → "Last stretch. Keep him off that laptop and put down anyone standing with him." / "Then the button." (or the not-armed line above)
+
+HaX, briefing: "They break the things people live on, and they mean to." → "They want the lights out, and they've done the sums."
+
+Security Guard:
+- New (repeat sighting): "Still need you at the desk first, my lover. Badge."
+- "The regulator? This early?" → "Regulator, is it." (after the narration)
+- "Alright, sign in here. Mr Vance said there was an audit today. Didn't say it'd be this early. He's not happy about it, fair warning." → "Alright, sign in here. Mr Vance said there was an audit today. He's not happy about it, fair warning."
+- "Inspection? Nobody told me it'd be at this hour." → "Nobody said anything to me about a visit."
+- "Quiet. That OptiGrid crew came through late on the ninth…" → "Quiet. That OptiGrid lot came through late on the ninth…"
+- New: "Still about?" / "Need something?" / "You again." (cycle)
+
+Cipher: Narrator "He's halfway up the rack row, a handset already half out of its clip." → "He's up the rack row, a handset already half out of its clip."; "That panel's amber. That panel is not supposed to be amber." → "Verdomme. That panel's amber. That panel is not supposed to be amber."; "You picked the wrong facility." → "Wrong night to come looking."
+
+Relay: "Easy." → "Aye. Easy."; "No. You're really not." → "No. But you're here, and that's enough."
+
+Static: "I'm still here." → "Talk." / "Still watching." / "From there." (cycle)
+
+Not voiced (texts and choices): Vance's 20 s text "It's Vance. Every screen I've got says twenty-eight, and I don't believe one of them. There's an old dial on the Rack Bank C wall in Hall 1. Read it." → "Every screen I've got says twenty-eight, and I don't believe one of them. Anything in Hall 1 older than the network, read it."; choices "[And the network?]", "[So what do they fix first?]", "[Then I take that laptop off you.]", "[Where do I start on it?]", "[(Make for the inner door.)]", "[(Leave him be.)]", "[(He's gone.)]".
+
+#### Open after cycle 1
+
+- Browser checks: the guard's repeat sighting on the 20 s cooldown; the Narrator line and Vance's portrait on the HQ debrief background; Voltage's narration not replaying after a back-off; the two new globals syncing from the briefing and the phone.
+- The user: the debrief's network lines against SecGen (unchanged in substance, still at the brief's level).
+- Watch in cycle 2: HaX's first call no longer names the dial (D5-26), so a player who never asks for a hint relies on the HMI clue and Vance's vaguer text; `hint_dial` and "Where do I stand?" still name it.

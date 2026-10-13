@@ -45,7 +45,7 @@ VAR anomaly_detected = false
 // Game state variables
 VAR vance_is_ally = false
 VAR operatives_defeated = 0
-VAR urgency_stage = 0
+// Phase 4 dialogue C1 (D5-27): urgency_stage removed (never read here).
 
 // Pass 5 A5: synced progress globals the hub's gated hints read (all declared
 // in scenario.json.erb globalVariables). Read only, except mission_complete,
@@ -320,12 +320,12 @@ Or put her down. She won't chase far, so if she turns on you, back off and cross
 // Puzzle chains R4-3: don't send a player who holds the print back for it.
 {
 - vance_print_lifted:
-    You've got his print. Use it on the reader. It can't tell a lift from a living thumb.
+    You've got his print. Put it on the reader in Hall 2. That's all it checks for.
 - fingerprint_kit_found:
     You've got the crew's kit. Now you need Vance's print, off something he touches every round.
     The duty panel in Hall 1. He logs every round on it.
 - else:
-    Picks and cloner won't touch a fingerprint reader. The crew beat it on the ninth with their own kit.
+    That reader wants a finger, not a card. The crew beat it on the ninth with their own kit.
     Their tool case is under the workshop bench. Open it.
 }
 -> support_hub
@@ -570,7 +570,9 @@ Whatever it is, it's set for 0800. Time, but not much.
 #speaker:agent_0x99
 
 // Round 2 (review m10): dial first, as the gated hints and "Where do I stand?" say.
-First, prove the screens are lying. There's an old dial thermometer in Battery Hall 1.
+// Phase 4 dialogue C1 (D5-26): the dial isn't named here, so the HMI's clue has
+// work to do; hint_dial and "Where do I stand?" name it for a player who asks.
+First, prove the screens are lying. Something in Battery Hall 1 that isn't on their feed.
 
 Then the engineering workshop, off the same hall. That's how they got onto the SCADA network.
 
@@ -587,7 +589,7 @@ Then the engineering workshop, off the same hall. That's how they got onto the S
 === first_call_end ===
 #speaker:agent_0x99
 
-Stay sharp. If anyone comes at you, defend yourself. Call if you need me.
+Call me when you've got a real reading.
 
 #exit_conversation
 -> support_hub
@@ -610,7 +612,7 @@ The BMS jump server runs through there, and so does the route onto the SCADA net
 
 === event_server_room_entered_choices ===
 
-+ [There's a terminal here into the BMS jump server.]
++ [Where do I start on it?]
     -> vm_guidance
 
 + [What specifically should I investigate?]
@@ -668,7 +670,7 @@ Call when you've got something.
 
 ~ handler_confidence += 20
 
-Your flags are landing. Grid control can see it too.
+Your flags are in. Grid control can see it too.
 
 They own the SCADA layer, and there's a remote trigger sitting on top of it.
 -> event_attack_mechanism_identified_choices
@@ -692,7 +694,12 @@ So you don't fight it with software.
 
 The plant room has a hardwired shutdown button, no network path. The one thing they couldn't reach.
 
-Press it and the attack's dead.
+// Phase 4 dialogue C1 (D5-5): not "press it" before it can arm.
+{anomaly_detected:
+    Press it and the attack's dead.
+- else:
+    It won't arm till grid control has a real reading. The dial in Hall 1 first.
+}
 
 -> voltage_priority_update
 
@@ -721,6 +728,8 @@ He knows The Architect, how the cells coordinate, what's coming next.
     -> capture_vs_speed_guidance
 
 * [Understood. I'll try to take him alive.]
+    // Phase 4 dialogue C1 (D5-32): the debrief remembers the promise.
+    #set_global:promised_voltage_alive:true
     ~ handler_confidence += 10
     -> capture_attempt_acknowledged
 
@@ -734,7 +743,11 @@ Your call on the ground. Both ways cost something.
 
 Go for him and you're close to the trigger he's holding. Cornered, he'll use it.
 
-Go for the button and the grid holds, but he's out the dock and gone.
+{anomaly_detected:
+    Go for the button and the grid holds, but he's out the dock and gone.
+- else:
+    Go for the button and he's out the dock and gone. And it won't arm till grid control has a real reading.
+}
 
 You'll see it better than I will. Make the call there.
 -> capture_vs_speed_guidance_choices
@@ -748,7 +761,7 @@ You'll see it better than I will. Make the call there.
 === capture_attempt_acknowledged ===
 #speaker:agent_0x99
 
-Good. But if he reaches for that trigger, stop him any way you have to. Lives first.
+Good. If he reaches for that laptop, put him down.
 
 -> final_phase_briefing
 
@@ -757,7 +770,7 @@ Good. But if he reaches for that trigger, stop him any way you have to. Lives fi
 
 ~ handler_confidence += 5
 
-Right priorities. If he runs but the attack fails, that's still a win.
+Copy. Then the button's your job and he's a bonus.
 
 -> final_phase_briefing
 
@@ -771,13 +784,14 @@ That's the approach. Work with what you find.
 === final_phase_briefing ===
 #speaker:agent_0x99
 
-Last stretch. In the plant room:
+// Phase 4 dialogue C1 (D5-31, D5-5): no list; the button only once it can arm.
+Last stretch. Keep him off that laptop and put down anyone standing with him.
 
-Deal with Voltage and anyone still standing with him.
-
-Keep him off that laptop.
-
-Then the hardwired shutdown button. Press it.
+{anomaly_detected:
+    Then the button.
+- else:
+    The button won't arm till grid control has a real reading. The dial in Hall 1 first.
+}
 
 {operatives_defeated >= 2:
     Two of them down already. You're almost there.

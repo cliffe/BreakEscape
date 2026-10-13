@@ -8,12 +8,12 @@
 
 // Variables for tracking relationship and mission state
 VAR vance_trust_level = 0 // Synced scenario global: Vance's trust/cooperation (0-100), read by the debrief; also raised by phone (m04_phone_robert_vance)
-VAR revealed_mission = false       // Has player revealed SAFETYNET mission?
+// Phase 4 dialogue C1 (D5-27): revealed_mission, scada_threat_confirmed,
+// operatives_defeated and urgency_stage removed (never read here).
 VAR vance_is_ally = false          // Full ally status activated
 VAR vance_provided_keycard = false  // global; set ONLY by mappings when the card is really held: card_cloned (PASS 3 clone route) or item_picked_up:keycard (KO drop)
 VAR plant_reader_seen = false      // global; set by HaX's room_entered:battery_hall_2 bark (PASS 3 P8)
 VAR discussed_optigrid = false
-VAR scada_threat_confirmed = false
 VAR vance_met = false              // First meeting completed; re-talk lands in the hub
 // PASS 4 fix 9: globals, read only. Hard evidence lets a cover-route player
 // bring Vance in later, as HaX advises.
@@ -38,10 +38,6 @@ VAR vance_quiet = false
 VAR server_room_reached = false
 VAR relay_card_cloned = false
 VAR operative_relay_defeated = false
-
-// Game state variables
-VAR operatives_defeated = 0
-VAR urgency_stage = 0
 
 // External variables (set by game)
 // The engine binds exactly six externals (person-chat-conversation.js:96-129):
@@ -210,7 +206,7 @@ Unusual? Not that I've seen. Why?
 
 Alright. What do you need?
 
-Staff records, maintenance logs, access to the halls. Whatever it takes.
+Staff records, maintenance logs, whatever you need off this desk.
 
 -> vance_provides_access
 
@@ -257,7 +253,7 @@ The workshop's on the contractors' cards. The plant room's high-voltage, authori
 
 Three of them, here two days. Network work and SCADA optimisation, they said.
 
-Cards and an order number. I never found the order behind it. What's your concern?
+They didn't want an escort, either. What's your concern?
 
 + [Nothing yet. Just building a picture.]
     -> initial_meeting_end_professional
@@ -374,7 +370,7 @@ This place is my responsibility. People depend on it.
 - vance_quiet:
     ~ vance_quiet = false
 - vance_is_ally:
-    Robert Vance: {&What do you need?|Go on.|Still here.}
+    Robert Vance: {&What do you need?|Go on.|Aye?}
 - else:
     Robert Vance: {&Something else?|Yes?|Make it quick.}
 }
@@ -444,7 +440,7 @@ This place is my responsibility. People depend on it.
 - not attack_mechanism_known:
     Robert Vance: The workshop. If they got onto my network, it was through the jump server in there.
 - else:
-    Robert Vance: The screens are lying to you. I've the hydrogen readout from the vent controller up here. It's off their network, and it's climbing.
+    Robert Vance: You know what they did. My hydrogen readout's still climbing.
     Robert Vance: Get to the hardwired shutdown. Software won't save us.
 }
 -> vance_hub
@@ -457,9 +453,9 @@ Robert Vance: I can sound the evacuation from this desk. Klaxon and strobes in e
 - voltage_neutralised:
     Robert Vance: Whoever was in my plant room isn't listening any more. It costs you nothing.
 - attack_mechanism_known:
-    Robert Vance: Whoever's in my plant room hears it too. But your clock's already running, so it costs you nothing now but surprise.
+    Robert Vance: Whoever's in my plant room hears it too. Your clock's running anyway. All it costs you now is surprise.
 - else:
-    Robert Vance: Whoever's in my plant room hears it too. He won't wait for eight. You'll have half an hour, maybe, and your workshop job isn't done.
+    Robert Vance: Whoever's in my plant room hears it too. He'll not wait for morning. Half an hour, maybe, and you've not finished in the workshop.
 }
 -> vance_crew_choices
 
@@ -482,7 +478,7 @@ Robert Vance: They're moving. Nine of them, out through the Hall 2 fire doors.
 // Round 2: no #speaker here. On a choices-only knot the tag printed an empty
 // "None: " line before the choices (playtest issue 7).
 + [Then come and open it.]
-    Robert Vance: With Voltage on the other side? And somebody has to stay on this desk.
+    Robert Vance: With whoever's on the other side? And somebody has to stay on this desk.
     Robert Vance: They didn't need me on the ninth. I log every round on the Hall 1 panel. They'll have lifted it off that. Do what they did.
     Robert Vance: One finger, no second check. We'll be fixing that.
     -> vance_hub
@@ -510,7 +506,6 @@ Alright. You've got my attention. What's this really about?
 === vance_early_reveal ===
 #speaker:robert_vance
 
-~ revealed_mission = true
 ~ vance_trust_level += 30
 # influence_increased
 
@@ -555,7 +550,7 @@ How long have we got?
 
 I let them in. Their cards worked and I didn't chase the order.
 
-Credentials, background checks, all of it. God. What have I done?
+Credentials, background checks, the lot. I never rang the firm.
 
 + [You couldn't have known. The credentials were forged. Stop them with me now.]
     ~ vance_trust_level += 15
@@ -616,6 +611,10 @@ Come back to the ops desk when you need the SCADA side, and I'm on comms while y
 === vance_commits_choices ===
 // Round 2: no #speaker here. On a choices-only knot the tag printed an empty
 // "None: " line before the choices (playtest issue 7).
+// Phase 4 dialogue C1 (D5-25): a re-entry line, after the first arrival.
+{vance_commits_choices > 1:
+    Robert Vance: Right. What else?
+}
 + {not vance_provided_keycard} [I'll need into the halls.]
     -> vance_clone_ally
 + [I'm going.]
@@ -626,6 +625,8 @@ Come back to the ops desk when you need the SCADA side, and I'm on comms while y
 // TRIGGERS: Task 1.2 completion, vance_is_ally activated early
 ~ vance_met = true
 ~ vance_quiet = true
+// Phase 4 dialogue C1 (D5-20): he answers the player's "I'm going."
+Robert Vance: Go. I'll be on the desk.
 #exit_conversation
 -> vance_hub
 

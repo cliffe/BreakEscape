@@ -6,13 +6,18 @@
 
 // Variables for tracking debrief choices
 VAR disclosure_choice = ""           // full, quiet, partial
-VAR task_force_null_assigned = false // Player assigned to TF Null
-VAR mission_debriefed = false        // Debrief completed
+// Phase 4 dialogue C1 (D5-27): task_force_null_assigned, mission_debriefed and
+// operatives_defeated removed (never read).
 
 // Game state variables
 VAR voltage_captured = false
 VAR vance_trust_level = 0
-VAR operatives_defeated = 0
+// Phase 4 dialogue C1 (D5-32): stances the debrief now remembers. Synced, read only.
+// promised_voltage_alive: the briefing's or HaX's phone "alive" choice.
+// asked_the_number: the player asked Voltage how many the hall takes with it.
+VAR voltage_escaped = false
+VAR promised_voltage_alive = false
+VAR asked_the_number = false
 
 // Engine-owned; set by the racks_vent timer. Read only.
 VAR racks_vented = false
@@ -149,10 +154,8 @@ Agent, report.
     He'll talk. Men like him always want to explain themselves.
 - else:
     A shame. But the attack's stopped, and that was the job.
-    // Round 4 (review m5): not after nine of the night crew died.
-    {not crew_lost:
-        Lives over one operative, every time.
-    }
+    // Phase 4 dialogue C1 (D5-11): "Lives over one operative" cut; the briefing
+    // already gave that moral.
 }
 
 // Round 4 (review m5): this opener skipped the Vance and KO lines.
@@ -173,8 +176,22 @@ The directive said it: Zero Day supplies, Critical Mass executes, grid storage t
 
 {voltage_captured:
     Voltage is in a room now. So far he's given us one thing: his casualty figure.
+    // Phase 4 dialogue C1 (D5-27, D5-32): the number he gave when asked, and the
+    // "alive" stance, paid off.
+    {asked_the_number:
+        The same one he gave you when you asked, to the decimal.
+    }
+    {promised_voltage_alive:
+        You said you'd bring him in breathing. You did.
+    }
 - else:
     Voltage is gone, so the paper will have to talk.
+    {asked_the_number:
+        You got his number out of him, at least. It goes in the file next to Blackout's signature.
+    }
+    {promised_voltage_alive and voltage_escaped:
+        You wanted him alive, and you chose the button. I'd have chosen the same.
+    }
 }
 {voltage_print_on_bypass:
     {voltage_captured:
@@ -222,16 +239,23 @@ Agent HaX: Before you write it up. Here's what let them in. Nearly all of it let
     Agent HaX: You did it to Relay too, while she was talking.
 }
 Agent HaX: The HV door took one finger, and that finger was on a panel he touched every two hours. A print names you. It can't prove you're the one standing there.
-Agent HaX: And the control room believed its own sensors. The honest instruments were the ones nobody had wired to the bus: a dial, and a gas monitor nobody read.
+Agent HaX: And the control room believed its own sensors. The honest ones weren't on the bus: a dial on a wall, and a gas monitor off their network.
+
+// Phase 4 dialogue C1 (D5-4): the lecture split by a player beat; each fix sits
+// beside its weakness, no fragment list. Both questions get the same answer.
+* [And the network?]
+    -> debrief_what_failed_fixes
+* [So what do they fix first?]
+    -> debrief_what_failed_fixes
+
+=== debrief_what_failed_fixes ===
+#speaker:agent_0x99
 // Scenario design M1 (orchestrator decision 1): what the four flags exposed, at
 // the brief's level (no commands, ports or exploit detail). Check against SecGen
 // by the user.
-Agent HaX: On the network it was the same story.
-Agent HaX: A legacy compile service left running on an OT box, trusting whatever it was sent.
-Agent HaX: An FTP service that handed their cross-cell plan to anyone who looked. And an account on the jump server with far more privilege than its job needed.
-Agent HaX: Encrypted cards. A second factor on the HV door, and a reader that checks for a live finger.
-Agent HaX: A temperature gauge in every hall that isn't on the bus, and somebody reading it.
-Agent HaX: Old services off the OT network, and privileges somebody actually reviews.
+Agent HaX: A legacy compile service on an OT box, trusting whatever it was sent. That comes off the network.
+Agent HaX: An FTP service handing their cross-cell plan to anyone who looked, and a jump-server account with more privilege than it ever needed. Somebody reviews those.
+Agent HaX: Encrypted cards, a second factor on the HV door, and a gauge in every hall that somebody reads.
 
 * {vance_spoken or vance_is_ally} [It goes in the report. Vance will want every line.]
     -> debrief_big_picture
@@ -248,7 +272,7 @@ Agent HaX: Old services off the OT network, and privileges somebody actually rev
 
 None of this was random.
 
-Social Fabric had disinformation ready in three cities, to turn the fire into a panic.
+Social Fabric had disinformation ready to turn the fire into a panic.
 
 * [The Architect. He's running all of it.]
     -> debrief_architect_revelation
@@ -314,11 +338,11 @@ Four missions now, and you're still standing. The last of them nearly didn't go 
 === task_force_accepted ===
 #speaker:agent_0x99
 
-~ task_force_null_assigned = true
-
 He'll call when he's ready. Not tonight.
 
-First, one more decision.
+// Phase 4 dialogue C1: "First, one more decision." cut; the run before the
+// disclosure choice was 9 lines with the crew-lost alarm line, and "How do we
+// handle this publicly?" already asks it.
 
 {racks_vented:
     {vented_by_trigger:
@@ -330,6 +354,16 @@ First, one more decision.
     {
     - crew_lost:
         Agent HaX: Nine on the night crew in Hall 2. Two more on the feed before the grid caught up.
+        // Phase 4 dialogue C1 (D5-3, user decision): the alarm that wasn't sounded,
+        // stated once and left. crew_lost means it never went.
+        {
+        - robert_vance_ko:
+            Agent HaX: The evacuation alarm was on Vance's desk. He was on the floor beside it.
+        - vance_is_ally:
+            Agent HaX: Vance had the evacuation alarm on his desk all night.
+        - else:
+            Agent HaX: The evacuation alarm was on Vance's desk. He never knew he had a reason to use it.
+        }
         Agent HaX: You stopped the rest of it. Hold on to that, because the number you read tomorrow won't be zero.
     - vented_by_alarm_clock:
         // Round 2 (review M1d): the alarm's own clock vented the bank.
@@ -349,7 +383,7 @@ First, one more decision.
     // Round 2 (review m1): "started your clock early" only when it did.
     {
     - crew_warned_early:
-        Agent HaX: And Vance's alarm had the night crew out before the button went in. It started your clock early. It was still the right call.
+        Agent HaX: And Vance's alarm had the night crew out before the button went in. It started your clock early.
     - crew_warned:
         Agent HaX: And Vance's alarm had the night crew out before the button went in.
     }
@@ -362,11 +396,14 @@ First, one more decision.
 #speaker:agent_0x99
 
 // Robert Vance present, listening
-
-How do we handle this publicly?
+// Phase 4 dialogue C1 (D5-9): why he's in an HQ debrief.
 {(vance_spoken or vance_is_ally) and not robert_vance_ko:
-    Vance needs to hear it too.
+    Narrator: Vance is on the line from the Albion ops desk.
 }
+
+// The narrator line above now says Vance is listening ("Vance needs to hear it
+// too." cut as the same fact twice).
+How do we handle this publicly?
 
 * [Full public disclosure. People have a right to know.]
     -> disclosure_full_public
@@ -387,7 +424,13 @@ Full transparency. The attack, the holes it came through, ENTROPY. All of it.
 {(vance_spoken or vance_is_ally) and not robert_vance_ko:
     // Robert Vance reacts
     #speaker:robert_vance
-    {vance_trust_level >= 70:
+    // Phase 4 dialogue C1 (D5-2): nine dead is not "how close it came".
+    {
+    - crew_lost and vance_trust_level >= 70:
+        Robert Vance: Good. Nobody gets to call it an accident.
+    - crew_lost:
+        Robert Vance: There'll be hell to pay for this place. There should be.
+    - vance_trust_level >= 70:
         Robert Vance: It'll hurt us. People should still know how close it came.
     - else:
         Robert Vance: There'll be hell to pay for this place. Fair enough.
@@ -406,12 +449,22 @@ Netherton will back that.
 
 ~ disclosure_choice = "quiet"
 
-We classify it. A maintenance fault, resolved. Albion patches the holes quietly.
+// Phase 4 dialogue C1 (D5-2): nine deaths don't classify as a fault.
+{crew_lost:
+    We classify what we can. Nine deaths don't go in a drawer, so it's an industrial accident, cause under investigation.
+- else:
+    We classify it. A maintenance fault, resolved. Albion patches the holes quietly.
+}
 
 {(vance_spoken or vance_is_ally) and not robert_vance_ko:
     // Robert Vance reacts
     #speaker:robert_vance
-    {vance_trust_level >= 70:
+    {
+    - crew_lost and vance_trust_level >= 70:
+        Robert Vance: Accident. I'll sign it. I'll not pretend I like it.
+    - crew_lost:
+        Robert Vance: An accident. Aye. That's what the inquiry will call it.
+    - vance_trust_level >= 70:
         Robert Vance: I'll keep my mouth shut. Doesn't mean I like it. Those people are on our feed.
     - else:
         Robert Vance: Good. One more headline and they'd close us.
@@ -419,7 +472,12 @@ We classify it. A maintenance fault, resolved. Albion patches the holes quietly.
     #speaker:agent_0x99
 }
 
-Nobody hears how close this came. Albion's name survives, the upgrades happen, and nothing makes the rest of the sector move. Stability, bought with silence.
+// D5-38: "Stability, bought with silence." cut.
+{crew_lost:
+    Nine families get an accident report. Albion's name survives, the upgrades happen, and nothing makes the rest of the sector move.
+- else:
+    Nobody hears how close this came. Albion's name survives, the upgrades happen, and nothing makes the rest of the sector move.
+}
 
 Netherton won't argue.
 
@@ -430,12 +488,21 @@ Netherton won't argue.
 
 ~ disclosure_choice = "partial"
 
-An incident, acknowledged. No detail.
+{crew_lost:
+    An incident, nine dead, cause withheld. The coroner will want more than that, and get it.
+- else:
+    An incident, acknowledged. No detail.
+}
 
 {(vance_spoken or vance_is_ally) and not robert_vance_ko:
     // Robert Vance reacts
     #speaker:robert_vance
-    {vance_trust_level >= 70:
+    {
+    - crew_lost and vance_trust_level >= 70:
+        Robert Vance: Something, not everything. I'll answer the rest at the inquest.
+    - crew_lost:
+        Robert Vance: Upstairs will like that. The inquest won't.
+    - vance_trust_level >= 70:
         Robert Vance: Something, not everything. I can live with that.
     - else:
         Robert Vance: That'll go down well upstairs, I suppose.
@@ -443,7 +510,11 @@ An incident, acknowledged. No detail.
     #speaker:agent_0x99
 }
 
-People hear something happened, not all of it. Enough to push some change, not enough to start a panic.
+{crew_lost:
+    People hear that nine died in an incident, not why. Enough to push some change, not enough to start a panic.
+- else:
+    People hear something happened, not all of it. Enough to push some change, not enough to start a panic.
+}
 
 Netherton can live with that.
 
@@ -505,7 +576,7 @@ Done.
     -> debrief_end_not_met
 
 * {not vance_spoken and not vance_is_ally and not robert_vance_ko} [Just doing my job.]
-    -> debrief_end_not_met
+    -> debrief_end_not_met_job
 
 * {robert_vance_ko} [Make sure Vance gets the full credit when he comes round.]
     -> debrief_end_ko
@@ -536,6 +607,14 @@ He'll get it. He'll want to know who was in his plant tonight, and why nobody to
 
 -> mission_complete
 
+// Phase 4 dialogue C1 (D5-8): its own reply.
+=== debrief_end_not_met_job ===
+#speaker:agent_0x99
+
+Then do it again. And somebody should tell Vance you were there.
+
+-> mission_complete
+
 === debrief_end_ko ===
 #speaker:agent_0x99
 
@@ -548,10 +627,7 @@ The methods are a separate conversation. You put a facility manager on the floor
 === mission_complete ===
 #speaker:agent_0x99
 
-~ mission_debriefed = true
-
-Get some rest.
-
+// Phase 4 dialogue C1: one sign-off ("Get some rest." cut, "Sleep. I'll call." kept).
 {voltage_captured:
     Voltage will keep.
 - else:
@@ -560,7 +636,7 @@ Get some rest.
 
 {
 - operative_cipher_defeated and operative_relay_defeated and operative_static_defeated:
-    All three of his crew down. Thorough.
+    All three of his crew on the floor. Remind me not to annoy you.
 - not operative_cipher_defeated and not operative_relay_defeated and not operative_static_defeated:
     And not one of his crew on the floor. Harder than it looks.
 }

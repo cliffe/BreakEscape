@@ -1,0 +1,57 @@
+{
+"steps": [
+{
+"note": "R21 (phase 4 dialogue C1, D5-2/D5-5/D5-32): HaX's phone 'alive' choice with the dial read, an ally Vance at trust 90 never asked about the crew, bank B vents with the crew in Hall 2, Static stands aside, the player asks the number and takes the button. Quiet disclosure: no 'maintenance fault', Vance signs the accident, HaX pays off both stances."
+},
+{
+"set": {
+"briefing_played": true, "guard_admitted": true, "vance_met": true, "vance_spoken": true,
+"vance_provided_keycard": true, "vance_card_cloned": true, "vance_is_ally": true,
+"vance_trust_level": 90, "anomaly_detected": true
+}
+},
+{
+"set": {
+"server_room_reached": true, "plant_reader_seen": true, "fingerprint_kit_found": true,
+"flag_network_scan_submitted": true, "flag_ftp_intel_submitted": true,
+"flag_distcc_exploit_submitted": true, "flag_privesc_submitted": true,
+"all_flags_in": true, "attack_mechanism_known": true, "server_room_advice_given": true
+}
+},
+{"talk": "phone", "picks": ["attack mechanism mapped", "software's theirs", "take him alive", "Ready"]},
+{
+"said": ["Press it and the attack's dead", "If he reaches for that laptop, put him down", "Keep him off that laptop and put down anyone standing with him", "Then the button."],
+"notSaid": ["won't arm", "Lives first", "In the plant room:"]
+},
+{"expect": {"promised_voltage_alive": true}},
+{"advance": 15},
+{"expect": {"crew_lost": true}},
+{"set": {"plant_room_entered": true}},
+{"talk": "static", "picks": ["not here for you"]},
+{
+"talk": "voltage",
+"picks": ["It's over", "Make me understand", "Why infrastructure", "How many does the hall take", "Say their names", "Go for the button"]
+},
+{"said": ["And Static let you walk up to my bench", "You cannot reach both"], "notSaid": ["not one of my people"]},
+{"expect": {"asked_the_number": true, "voltage_escaped": true}},
+{"set": {"voltage_neutralised": true, "esd_authorized": true, "attack_prevented": true}},
+{"talk": "phone", "picks": ["Bring me in", "Bring me in", "On my way"]},
+{
+"talk": "debrief",
+"picks": ["Bank B went", "What did we get", "how did they get in", "fix first", "goes in the report", "The Architect", "I'm in", "Keep it classified", "Just doing my job"]
+},
+{
+"said": [
+"You got his number out of him, at least",
+"You wanted him alive, and you chose the button",
+"Vance had the evacuation alarm on his desk all night",
+"We classify what we can. Nine deaths don't go in a drawer",
+"Accident. I'll sign it. I'll not pretend I like it.",
+"Nine families get an accident report",
+"I'll have those card readers out",
+"Keep the crew's fingerprint kit"
+],
+"notSaid": ["maintenance fault", "Stability", "Nobody hears how close", "breathing"]
+}
+]
+}

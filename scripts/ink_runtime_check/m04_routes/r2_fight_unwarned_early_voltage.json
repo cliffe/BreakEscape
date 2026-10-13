@@ -1,7 +1,7 @@
 {"steps":[
 {"note":"R2 (pass 5 alignment): the fight route, crew never warned. The guard catches the player slipping past (sight challenge opens his start knot). Vance kept on the cover; his card copied covertly. Cipher gets his radio call out and fights (cipher_engaged). Relay fought and knocked out. The player reaches Voltage BEFORE the flags (A1): no button stance, only fight or back off; the player backs off, comes back, and fights, and Static comes in with him. The trigger race is lost, bank B vents with the crew in Hall 2 (crew_lost). Then flags, ESD, sweep, call-in. Credits: no ALL ELEVEN; night-crew casualties."},
 {"set":{"briefing_played":true}},
-{"talk":"guard","picks":["slip past","Testing your entry","That's a pass","Proper procedure"]},
+{"talk":"guard","picks":["inner door","Testing your entry","That's a pass","Proper procedure"]},
 {"expect":{"guard_admitted":true}},
 {"talk":"vance","picks":["Just doing the job","Tell me about the recent maintenance","Any other contractors","Lean in over the site map","Thank you. I'll start"]},
 {"expect":{"vance_is_ally":false,"vance_provided_keycard":true}},
@@ -29,6 +29,6 @@
 {"set":{"flag_network_scan_submitted":true,"flag_ftp_intel_submitted":true,"flag_distcc_exploit_submitted":true,"flag_privesc_submitted":true,"all_flags_in":true,"evidence_maintenance_logs_found":true,"attack_mechanism_known":true,"clock_started":true,"esd_authorized":true,"attack_prevented":true}},
 {"talk":"phone","picks":["Bring me in","Bring me in","On my way"]},
 {"expect":{"mission_complete":true}},
-{"talk":"debrief","picks":["He reached the laptop","What did we get","how did they get in","budget","How far","What would Task Force","Keep it classified","Just doing my job"]},
+{"talk":"debrief","picks":["He reached the laptop","What did we get","how did they get in","fix first","budget","How far","What would Task Force","Keep it classified","Just doing my job"]},
 {"credits":true}
 ]}

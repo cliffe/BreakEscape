@@ -36,7 +36,7 @@ VAR crew_warned = false
 // ===========================================
 
 === cipher_detection ===
-Narrator: He's halfway up the rack row, a handset already half out of its clip.
+Narrator: He's up the rack row, a handset already half out of its clip.
 
 ENTROPY Operative 'Cipher': Hey. Hey! This bay's locked off for maintenance. Who signed you in?
 
@@ -53,7 +53,7 @@ ENTROPY Operative 'Cipher': Hey. Hey! This bay's locked off for maintenance. Who
 * [Hall 2 is venting. You want to be on a radio right now?]
     ~ radio_interrupted = true
     Narrator: It lands. His eyes go to the hydrogen panel over your shoulder, and the handset stops moving.
-    ENTROPY Operative 'Cipher': That panel's amber. That panel is not supposed to be amber.
+    ENTROPY Operative 'Cipher': Verdomme. That panel's amber. That panel is not supposed to be amber.
     -> cipher_standoff
 
 // ===========================================
@@ -68,7 +68,7 @@ ENTROPY Operative 'Cipher': Voltage, Hall 1. We've got a live one.
 
 Narrator: The handset squawks once and goes dead. He drops it and squares up.
 
-ENTROPY Operative 'Cipher': You picked the wrong facility.
+ENTROPY Operative 'Cipher': Wrong night to come looking.
 
 #hostile
 #exit_conversation

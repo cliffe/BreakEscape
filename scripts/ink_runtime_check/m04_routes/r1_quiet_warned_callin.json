@@ -20,7 +20,7 @@
 {"talk":"relay","picks":["Keep her talking"]},
 {"expect":{"relay_card_cloned":true}},
 {"set":{"plant_reader_seen":true,"server_room_reached":true,"recon_guide_offered":true,"vuln_guide_offered":true}},
-{"talk":"phone","picks":["field guide","network mapping","field guide","Not now","OT network","terminal here","On it"]},
+{"talk":"phone","picks":["field guide","network mapping","field guide","Not now","OT network","Where do I start on it","On it"]},
 {"advance":3},
 {"set":{"fingerprint_kit_found":true,"flag_network_scan_submitted":true,"flag_ftp_intel_submitted":true,"flag_distcc_exploit_submitted":true,"flag_privesc_submitted":true,"all_flags_in":true,"attack_mechanism_known":true}},
 {"note":"Plant room: Static challenges on entry (room_entered); the player talks past him."},
@@ -40,7 +40,7 @@
 {"note":"Page reload mid-sweep: the hub still offers the way out (attack_prevented and mission_complete are synced)."},
 {"talk":"phone","reload":"page","picks":["Bring me in","Bring me in","On my way"]},
 {"expect":{"mission_complete":true}},
-{"talk":"debrief","picks":["Shutdown engaged","What did we get","how did they get in","goes in the report","The Architect","I'm in","Full public","honour"]},
+{"talk":"debrief","picks":["Shutdown engaged","What did we get","how did they get in","And the network","goes in the report","The Architect","I'm in","Full public","honour"]},
 {"expect":{"debrief_started":true}},
 {"credits":true}
 ]}

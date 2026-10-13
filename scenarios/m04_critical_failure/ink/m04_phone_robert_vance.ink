@@ -13,7 +13,7 @@
 
 // Ink-owned state
 VAR vance_support_calls = 0
-VAR guidance_provided = ""
+// Phase 4 dialogue C1 (D5-27): guidance_provided removed (never read).
 VAR asked_charge_control = false
 VAR asked_server_room = false
 VAR asked_disabling = false
@@ -86,10 +86,11 @@ EXTERNAL player_name()
     Vance. What do you need?
 - attack_prevented:
     Banks are isolated. The hydrogen's coming down at last.
+// Phase 4 dialogue C1 (D5-22): not "Still here." from four characters.
 - anomaly_detected:
-    Still here. Still watching the hydrogen climb.
+    Vance. The hydrogen's still climbing.
 - else:
-    Still here.
+    Vance.
 }
 
 -> support_hub
@@ -121,7 +122,7 @@ EXTERNAL player_name()
 + {plant_reader_seen and not asked_plant_reader} [The plant room's on a fingerprint reader.]
     ~ asked_plant_reader = true
     HV room. Authorised persons only, and tonight that's me.
-    I can't leave the desk. Voltage is through there, and somebody has to watch the hydrogen.
+    I can't leave the desk. Somebody has to watch the hydrogen, and I don't know who's through there.
     They didn't need me on the ninth. I log every round on the Hall 1 panel. They lifted my print off it. Do the same.
     -> support_hub
 
@@ -147,21 +148,17 @@ EXTERNAL player_name()
 // ===========================================
 
 === charge_control_systems_explanation ===
-~ guidance_provided = "charge_control_systems"
-
 Three rack banks, A, B and C, and each one's got its own management unit and its own cooling loop.
 
 They all run over SCADA, and SCADA is theirs. Type a change at a terminal and they'll just push it back.
 
-The one thing they can't reach is the hardwired shutdown in the plant room.
+What they can't reach is the hardwired shutdown in the plant room.
 
 It isolates the banks and forces the vents. It all comes down to that button.
 
 -> support_hub
 
 === server_room_guidance ===
-~ guidance_provided = "server_room"
-
 {attack_mechanism_known:
     You've got their setup mapped. That's the hard part done.
     Now it's the shutdown. Nothing you type will hold. They own that layer.
@@ -174,20 +171,29 @@ It isolates the banks and forces the vents. It all comes down to that button.
 -> support_hub
 
 === safe_disabling_guidance ===
-~ guidance_provided = "disabling"
-
 One thing, and it isn't a keyboard.
 
 Every control path runs through SCADA, and SCADA is theirs. Delete their script and they'll push it back before you've closed the window.
 
-The shutdown button in the plant room is hardwired. Straight to the bank isolators, no network in the middle. The one thing they couldn't touch.
+// Phase 4 dialogue C1: "the one thing they couldn't touch" is said once, in
+// charge_control_systems_explanation. D5-5: no "press it" before it can arm.
+The shutdown button in the plant room is hardwired. Straight to the bank isolators, no network in the middle.
 
-Get to it and press it. That's the mission.
+{
+- attack_mechanism_known and anomaly_detected:
+    Get to it and press it.
+- attack_mechanism_known:
+    It won't arm until grid control has a real reading. The dial in Hall 1.
+- anomaly_detected:
+    It won't arm until grid control knows how they did it. That's the workshop.
+- else:
+    It won't arm until grid control believes you. Prove the screens wrong, then prove how.
+}
 
 {urgency_stage >= 3:
     And be quick. I'm watching bank B climb while we talk.
 - else:
-    Steady, though. Rush it and you trip the very thing you're stopping.
+    Steady, though. Watch the hydrogen panel in Hall 2 on your way.
 }
 
 -> support_hub
@@ -197,7 +203,7 @@ Get to it and press it. That's the mission.
 === priority_guidance ===
 {
 - attack_prevented:
-    You've done it. Banks isolated, vents at full. Go and see what they left behind.
+    Go and see what they left behind. I'll watch the banks.
 - not anomaly_detected:
     My screens all read the same feed. Check the racks against something that isn't on it.
     There's an old dial on the Rack Bank C wall in Hall 1.
@@ -223,10 +229,10 @@ I can sound the evacuation from here. Klaxon and strobes in every hall.
 - voltage_neutralised:
     Whoever was in my plant room isn't listening any more. It costs you nothing.
 - attack_mechanism_known:
-    Whoever's in my plant room hears it too. But your clock's already running, so it costs you nothing now but surprise.
+    Whoever's in my plant room hears it too. Your clock's running anyway. All it costs you now is surprise.
 - else:
-    And whoever's in my plant room hears it too. He won't wait for eight.
-    You'll have half an hour, maybe, and your workshop job isn't done.
+    And whoever's in my plant room hears it too. He'll not wait for morning.
+    Half an hour, maybe, and you've not finished in the workshop.
 }
 -> crew_offer_choices
 
@@ -246,7 +252,7 @@ Sounding it now. They're moving. Nine of them, out through the Hall 2 fire doors
 === urgency_assessment ===
 {
 - attack_prevented:
-    It's over. Banks isolated, vents at full, and the hydrogen's falling.
+    Not any more. The cells are cooling.
 - racks_vented:
     Bank B's gone. A and C are holding, for now.
     The hardwired shutdown isolates what's left and forces the vents. Get to it.

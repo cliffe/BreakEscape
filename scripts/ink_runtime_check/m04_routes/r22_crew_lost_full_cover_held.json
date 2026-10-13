@@ -1,0 +1,40 @@
+{
+"steps": [
+{
+"note": "R22 (phase 4 dialogue C1, D5-2/D5-3): Vance met on the cover, never told, trust 30. Bank B vents with the crew in Hall 2; Voltage punched down. Full disclosure. HaX ties the nine to an alarm Vance never had a reason to sound; Vance's low-trust line accounts for the dead; no 'alive' payoff without a promise."
+},
+{
+"set": {
+"briefing_played": true, "guard_admitted": true, "vance_met": true, "vance_spoken": true,
+"vance_provided_keycard": true, "vance_card_cloned": true, "vance_trust_level": 30,
+"anomaly_detected": true
+}
+},
+{
+"set": {
+"server_room_reached": true, "plant_reader_seen": true, "fingerprint_kit_found": true,
+"flag_network_scan_submitted": true, "flag_ftp_intel_submitted": true,
+"flag_distcc_exploit_submitted": true, "flag_privesc_submitted": true,
+"all_flags_in": true, "attack_mechanism_known": true
+}
+},
+{"advance": 15},
+{"expect": {"crew_lost": true}},
+{"set": {"plant_room_entered": true, "operative_static_defeated": true}},
+{"ko": "voltage"},
+{"set": {"esd_authorized": true, "attack_prevented": true}},
+{"talk": "phone", "picks": ["Bring me in", "Bring me in", "On my way"]},
+{
+"talk": "debrief",
+"picks": ["Bank B went", "What did we get", "how did they get in", "And the network", "goes in the report", "How far", "I'm in", "Full public", "Just doing my job"]
+},
+{
+"said": [
+"The evacuation alarm was on Vance's desk. He never knew he had a reason to use it.",
+"There'll be hell to pay for this place. There should be.",
+"I don't follow all of it"
+],
+"notSaid": ["breathing", "same one he gave you", "Fair enough", "how close it came", "Vance had the evacuation alarm"]
+}
+]
+}

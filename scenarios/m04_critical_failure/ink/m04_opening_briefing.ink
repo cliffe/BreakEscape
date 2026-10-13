@@ -5,14 +5,13 @@
 // ===========================================
 
 // Variables for tracking player choices and state
-VAR handler_trust = 50            // 0-100 Handler's confidence in player
+// Phase 4 dialogue C1 (D5-27): handler_trust (written 14 times, never read),
+// mission_priority (never set) and mission_briefed (never read) removed.
 VAR knows_full_threat = false     // Did player ask about chemical threat?
 VAR knows_entropy_cell = false    // Did player ask about Critical Mass?
 VAR asked_timeline = false        // Did player ask about the attack timeline?
 VAR asked_cover = false           // Did player ask about their cover story?
-VAR mission_priority = ""         // investigation, speed, stealth
 VAR combat_ready = false          // Player acknowledged combat risk
-VAR mission_briefed = false       // Briefing completed
 
 // External variables (set by game)
 EXTERNAL player_name()
@@ -41,15 +40,13 @@ Agent HaX: A grid battery site, and ENTROPY are inside it.
 Agent HaX: Worse than Ransomware Incorporated. This lot don't want paying.
 
 * [Go ahead. I'm listening.]
-    ~ handler_trust += 5
     -> briefing_main
 
 * [What makes this cell more dangerous?]
-    Agent HaX: They break the things people live on, and they mean to.
+    Agent HaX: They want the lights out, and they've done the sums.
     -> briefing_main
 
 * [I'm ready. What's the target?]
-    ~ handler_trust += 10
     Agent HaX: Good. Hold on to that. This one may come to a fight.
     ~ combat_ready = true
     -> briefing_main
@@ -86,7 +83,6 @@ Agent HaX: Two hundred and forty thousand people get their power through that si
 
 + {not knows_full_threat} [What happens if they set those batteries off?]
     ~ knows_full_threat = true
-    ~ handler_trust += 5
     -> chemical_threat_explanation
 
 + {not knows_entropy_cell} [Critical Mass. What do we know about them?]
@@ -116,7 +112,6 @@ Agent HaX: If it fires, the cells heat past the point where they can stop themse
 Agent HaX: One rack lights the next, then the hydrogen goes. The hall burns and the grid drops.
 
 + [Then we stop them before they press it.]
-    ~ handler_trust += 5
     Agent HaX: Yes.
     -> briefing_hub
 
@@ -145,7 +140,6 @@ Agent HaX: Don't go in hoping to talk him round. He knows exactly what happens t
 
 + {not knows_full_threat} [What are they actually going to do to the grid?]
     ~ knows_full_threat = true
-    ~ handler_trust += 5
     -> chemical_threat_explanation
 
 === timeline_explanation ===
@@ -159,7 +153,6 @@ Agent HaX: Three operatives on site: Cipher, Relay and Static. And Voltage.
 
 + [Four of them. Should I expect a fight?]
     ~ combat_ready = true
-    ~ handler_trust += 10
     -> combat_warning
 
 + [Understood. What's my cover?]
@@ -178,7 +171,8 @@ Agent HaX: You don't have to fight all of them. Your cover and that cloner will 
 Agent HaX: Whatever force it takes to stop that trigger. But I want Voltage breathing. He knows things.
 
 + [Stop the trigger, and bring Voltage in alive if I can.]
-    ~ handler_trust += 15
+    // Phase 4 dialogue C1 (D5-32): the debrief remembers the promise.
+    #set_global:promised_voltage_alive:true
     Agent HaX: That's the order.
     -> briefing_hub
 
@@ -196,7 +190,6 @@ Agent HaX: So they prove it, on the grid and the trains, and call it exposing th
 Agent HaX: People fall through the cracks. They know that before they start.
 
 + [So they're calling murder a public service.]
-    ~ handler_trust += 5
     Agent HaX: More or less. Don't let anyone on site sell it to you.
     -> briefing_hub
 
@@ -228,7 +221,6 @@ Agent HaX: But if they're watching him, your cover goes with his.
 Agent HaX: Read him first. Hard evidence will do the persuading for you.
 
 + [I'll size him up in person first.]
-    ~ handler_trust += 10
     Agent HaX: Good.
     -> briefing_hub
 
@@ -244,7 +236,6 @@ Agent HaX: Social Fabric are standing by to amplify the panic. Strikes across th
 Agent HaX: One mind behind it, the one the directive named: The Architect. Voltage answers up that chain. Take him, and we're closer to whoever's setting the clock on all of it.
 
 + [So this is the attack the directive warned us about.]
-    ~ handler_trust += 10
     Agent HaX: The same one. Stop it, take Voltage if you can, and bring out anything that names the next target.
     -> mission_objectives
 
@@ -274,7 +265,6 @@ Agent HaX: Four. The operatives. Voltage alive, if you can.
 Agent HaX: Kit: your picks, and the cloner from the WhiteHat job. No PIN cracker. We have one, it's ENTROPY's, and it isn't leaving the lab.
 
 * [Got it. I'm on my way.]
-    ~ handler_trust += 10
     Agent HaX: Go carefully. They've had three days to get ready for you.
     -> mission_departure
 
@@ -294,12 +284,10 @@ Agent HaX: Vance can help once he trusts you. He knows the systems.
 Agent HaX: And I'm on the phone the whole way. Call me.
 
 + [Solo, then. I've got this.]
-    ~ handler_trust += 15
     Agent HaX: I know you have.
     -> mission_departure
 
 + [Understood. I'll work it out on the ground.]
-    ~ handler_trust += 5
     -> mission_departure
 
 === priority_clarification ===
@@ -312,7 +300,6 @@ Agent HaX: Take Voltage if you can. What he knows could save the next site.
 Agent HaX: But if he goes for the trigger, stop him any way you have to. Lives first. Intelligence second.
 
 + [The attack first. Got it.]
-    ~ handler_trust += 10
     Agent HaX: Good.
     -> mission_departure
 
@@ -326,8 +313,6 @@ Agent HaX: Show them the regulator badge. You're a routine audit that came early
 Agent HaX: {combat_ready: If it comes to a fight, keep your head.| Stay alert. They're expecting somebody.}
 
 Agent HaX: Good luck. Find Vance first.
-
-~ mission_briefed = true
 
 // This is a linear cutscene, not a hub conversation: it must terminate, not
 // loop back to `start`. The old `-> start` re-entered a knot whose once-only

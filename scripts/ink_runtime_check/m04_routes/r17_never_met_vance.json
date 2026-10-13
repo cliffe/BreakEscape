@@ -51,6 +51,7 @@
 "Shutdown engaged",
 "What did we get",
 "how did they get in",
+"fix first",
 "It goes in the report",
 "The Architect",
 "I'm in",
@@ -60,14 +61,14 @@
 },
 {
 "said": [
-"A legacy compile service left running",
+"A legacy compile service on an OT box",
 "He'll want to know who was in his plant tonight"
 ],
 "notSaid": [
 "Robert Vance:",
 "honour working with you",
 "Vance will want every line",
-"Vance needs to hear it too"
+"Vance is on the line from the Albion ops desk"
 ]
 },
 {

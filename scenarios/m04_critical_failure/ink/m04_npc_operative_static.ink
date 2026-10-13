@@ -74,9 +74,9 @@ ENTROPY Operative 'Static': Talk, then. From there.
 {static_quiet:
     ~ static_quiet = false
 - else:
-    ENTROPY Operative 'Static': I'm still here.
+    ENTROPY Operative 'Static': {&Talk.|Still watching.|From there.}
 }
-+ [Leave him be.]
++ [(Leave him be.)]
     ~ static_quiet = true
     #exit_conversation
     -> static_watching

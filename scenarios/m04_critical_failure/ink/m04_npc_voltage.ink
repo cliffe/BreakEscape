@@ -15,9 +15,12 @@
 VAR voltage_confronted = false           // Has the confrontation played?
 // Pass 5: skip the standoff re-entry lines once, right after a goodbye (m03 hub_quiet).
 VAR voltage_quiet = false
+// Phase 4 dialogue C1 (D5-32): now a synced global, set with #set_global; the
+// debrief pays it off.
 VAR asked_the_number = false             // Did the player make him state the casualty figure?
 
-// Ink-owned record of how the DIALOGUE ended: "", "escaped", "fought".
+// Ink-owned record of how the DIALOGUE ended: "" or "escaped" (D5-27: the
+// unread "fought" and "arrested" writes were removed).
 VAR voltage_dialogue_outcome = ""
 
 // Engine-owned, synced in from globalVariables. Read freely. Only the peaceful
@@ -33,7 +36,6 @@ VAR operative_static_defeated = false
 VAR voltage_fight_started = false
 VAR vented_by_trigger = false
 VAR racks_vented = false              // engine-owned; the 14-minute vent or the race
-VAR operatives_defeated = 0
 // PASS 4 fix 21: set when the player identifies his print on the bypass module. Read only.
 VAR voltage_print_on_bypass = false
 // Round 2 (playtest issue 4): his count reads all three KO globals; the old
@@ -84,8 +86,8 @@ EXTERNAL player_name()
 {voltage_quiet:
     ~ voltage_quiet = false
 - else:
-    Voltage: *not looking up from the laptop* Still here.
-    Voltage: Nothing you say next will be new.
+    // Phase 4 dialogue C1 (D5-22): not a fourth "Still here."
+    Voltage: *not looking up* You came back. Nothing you say next will be new.
 }
 
 // Pass 5 A1: backing off is now a stance, so the choice has to come back.
@@ -122,7 +124,12 @@ So they sent someone.
 - down == 1:
     You got past my people.
 - else:
-    And not one of my people saw you come.
+    // Phase 4 dialogue C1 (D5-1): Static's challenge always plays first.
+    {static_stood_aside:
+        And Static let you walk up to my bench. He'll explain that later.
+    - else:
+        You got past my people.
+    }
 }
 
 // Round 2 (review m6): HaX says he heard the alarm, so he has.
@@ -148,7 +155,7 @@ Polite. They train that into you.
 === voltage_confrontational ===
 #speaker:voltage
 
-Bold. Conviction never stopped an attack.
+Ja. They all say that on the way in.
 
 -> voltage_threatens_trigger
 
@@ -166,7 +173,7 @@ Bold. Conviction never stopped an attack.
 
 Your move.
 
-* [Then we do this the hard way.]
+* [Then I take that laptop off you.]
     -> confrontation_choice
 
 * [Make me understand it first.]
@@ -188,7 +195,7 @@ Look at my hand. Then look at the clock.
 
 You want to talk? Fine.
 
-This site is one test run. The Architect has six cities on the go.
+This site is one test run. The Architect has six cities lined up.
 
 Infrastructure attacks, and Social Fabric ready to turn the panic into a riot.
 
@@ -215,6 +222,7 @@ Voltage: Budget cuts, ageing cells, one fake maintenance firm, and we walked in 
 Voltage: We didn't make it fragile. We just stopped pretending it wasn't.
 
 * [How many does the hall take with it?]
+    #set_global:asked_the_number:true
     ~ asked_the_number = true
     -> voltage_states_the_number
 
@@ -278,7 +286,15 @@ Voltage: I run this site. Blackout signs for Critical Mass. Above him it stops b
 === confrontation_choice ===
 #speaker:voltage
 
-Narrator: The laptop is open on the plant-room bench with the trigger armed on screen, and the red mushroom head of the hardwired shutdown is on the wall behind him. You cannot reach both.
+// Phase 4 dialogue C1 (D5-6): the narration plays on the first visit only, and
+// claims the dilemma only when the button is on offer.
+{confrontation_choice == 1:
+    {attack_mechanism_known and anomaly_detected:
+        Narrator: The laptop is open on the plant-room bench with the trigger armed on screen, and the red mushroom head of the hardwired shutdown is on the wall behind him. You cannot reach both.
+    - else:
+        Narrator: The laptop is open on the plant-room bench with the trigger armed on screen, and the red mushroom head of the hardwired shutdown is on the wall behind him.
+    }
+}
 
 // Pass 5 A1: before grid control will take the shed, the button does nothing,
 // so he says so, and the button stance isn't offered.
@@ -301,14 +317,12 @@ Narrator: The laptop is open on the plant-room bench with the trigger armed on s
 }
 
 + [I'm taking you down. Now.] #color:red
-    ~ voltage_dialogue_outcome = "fought"
     -> choice_fight
 
 // Scenario design m9 (orchestrator decision 2): SAFETYNET has no arrest powers;
 // agents detain and hand over to the police (bible safetynet/overview.md, "The
 // Cost of Independence"; PASS2 lesson 39). Globals and credits unchanged.
 + {operative_static_defeated} [Step away from the bench. You're coming with me.]
-    ~ voltage_dialogue_outcome = "arrested"
     -> choice_arrest
 
 + {attack_mechanism_known and anomaly_detected} [Go for the button and let him run.]
@@ -386,6 +400,8 @@ Voltage: Nobody left to stop you. All right.
 // Every OTHER path leaves voltage_captured to the engine.
 ~ voltage_captured = true
 ~ voltage_confronted = true
+// D5-25: the resting knot's re-entry line is skipped once, right after this.
+~ voltage_quiet = true
 #complete_task:confront_voltage
 #set_global:blackout_named:true
 Voltage: ...A court. Fine. Let them read the casualty model. I signed it.
@@ -454,6 +470,7 @@ Narrator: The dock door bangs open onto the loading bay and the cold, and he's g
 + {operative_static_defeated} [Hands on the bench. The police can have you.]
     ~ voltage_captured = true
     ~ voltage_confronted = true
+    ~ voltage_quiet = true
     #complete_task:confront_voltage
     Voltage: Why not. The number's moving already.
     #exit_conversation
@@ -479,12 +496,19 @@ Narrator: The dock door bangs open onto the loading bay and the cold, and he's g
 #speaker:voltage
 
 #complete_task:confront_voltage
+// Phase 4 dialogue C1 (D5-25): a re-entry line, skipped once after a goodbye.
+{voltage_quiet:
+    ~ voltage_quiet = false
+- else:
+    Voltage: *flat* {&Still counting?|You've got me. You haven't got him.}
+}
 
 + [Nothing you want to tell me?]
     Voltage: I told you the number. The only true thing anyone said in here tonight.
     -> voltage_captured_end
 
 + [Say nothing.]
+    ~ voltage_quiet = true
     #exit_conversation
     Narrator: He sits against the bench with his wrists zipped, watching the red button he never reached.
     -> voltage_captured_end
@@ -493,20 +517,16 @@ Narrator: The dock door bangs open onto the loading bay and the cold, and he's g
 // ESCAPE OUTCOMES
 // ===========================================
 
-// Re-entered after he ran for the dock. He is gone; this knot just holds the
-// dock door open in the fiction and never ends the story (lesson 21).
+// Re-entered after he ran for the dock. He is gone (setVisible false on
+// voltage_escaped, plus #remove_npc), so nobody can talk to him; this knot only
+// keeps the story from ending (lesson 21). Phase 4 dialogue C1 (D5-25): the two
+// choices here were dead text, so one resting choice, as Cipher's cipher_gone.
 === voltage_escape_success ===
 ~ voltage_dialogue_outcome = "escaped"
 ~ voltage_confronted = true
 #complete_task:confront_voltage
 
-+ [Look through the dock door.]
-    Narrator: The loading bay is empty and cold. A vehicle was here. It isn't now.
++ [(He's gone.)]
     #exit_conversation
-    -> voltage_escape_success
-
-+ [Turn back to the button.]
-    #exit_conversation
-    Narrator: The red mushroom head is still on the wall behind you, and the racks are still climbing.
     -> voltage_escape_success
 

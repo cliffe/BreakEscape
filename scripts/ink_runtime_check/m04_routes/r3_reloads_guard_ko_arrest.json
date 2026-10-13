@@ -16,14 +16,14 @@
 {"talk":"static","reload":"page","picks":["Out of my way"]},
 {"expect":{"static_engaged":true}},
 {"set":{"operative_static_defeated":true}},
-{"talk":"voltage","picks":["It's over","Then we do this the hard way"]},
+{"talk":"voltage","picks":["It's over","take that laptop"]},
 {"talk":"voltage","picks":[]},
 {"note":"The fight stance re-shown with Static down: arrest available, button stance available (case made)."},
-{"talk":"voltage","reload":"page","picks":["It's over","hard way","coming with me","Blackout signed it"]},
+{"talk":"voltage","reload":"page","picks":["It's over","take that laptop","coming with me","Blackout signed it"]},
 {"expect":{"voltage_captured":true,"blackout_named":true}},
 {"set":{"voltage_neutralised":true,"esd_authorized":true,"attack_prevented":true}},
 {"talk":"phone","reload":"page","picks":["Where do I stand","Right","Bring me in","Bring me in","On my way"]},
 {"expect":{"mission_complete":true}},
-{"talk":"debrief","picks":["Shutdown engaged","What did we get","how did they get in","goes in the report","How far","I'm in","Say there was an incident","Just doing my job"]},
+{"talk":"debrief","picks":["Shutdown engaged","What did we get","how did they get in","fix first","goes in the report","How far","I'm in","Say there was an incident","Just doing my job"]},
 {"credits":true}
 ]}

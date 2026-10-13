@@ -574,7 +574,9 @@
       "checkpoint_passed": false,
       "static_left_alone": false,
       "voltage_six_cities": false,
-      "vance_spoken": false
+      "vance_spoken": false,
+      "promised_voltage_alive": false,
+      "asked_the_number": false
     },
     "npcs": [
       {
