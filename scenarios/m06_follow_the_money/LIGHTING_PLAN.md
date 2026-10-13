@@ -16,7 +16,7 @@ Scenario block: `{ "enabled": true, "defaultMode": "on", "ambient": "#b8bfce" }`
 
 ## 2. Story phases and the globals that mark them
 
-From the erb. Every one is a saved global, so room `variants` and emitter conditions resolve again after a reload.
+From the erb (line numbers are HEAD before the lighting blocks went in; they have since moved down by about 20-150 lines). Every one is a saved global, so room `variants` and emitter conditions resolve again after a reload.
 
 | Phase | Global | Set by |
 |---|---|---|
@@ -39,6 +39,9 @@ Ordering rule for every emitter list (first match wins): money settled, then the
 
 ## 3. Room modes
 
+Sections 2-6 are the plan as first designed. Section 7 lists what the design review changed (among them: no `cover_strained` variants, no hard blinks, a brighter executive wing).
+
+
 | Room | People | Mode | Lit ambient | Why |
 |---|---|---|---|---|
 | reception_lobby | none standing (HaX and the briefing NPCs are hidden cutscene characters) | on | `#c4b8a6` warm | The start room and the front the exchange shows a regulator. Warm brass and amber; the BTC screen, ATM and price board glow. |
@@ -53,9 +56,9 @@ Ordering rule for every emitter list (first match wins): money settled, then the
 
 **No `dark` rooms, no `offAfter`, no flicker.** Nothing in the story cuts power, and a fintech front would fix a faulty tube. Every room holds something the player comes back to.
 
-**No NPC torches.** The guard and Kemal both stand in lit rooms. A torch shows only in a dim room (`npcTorchStrength`, zero above a luma of about 0.62), and the dimmest lit ambient here (`#a2bac8`, luma about 0.71) is well above it. Sight cones draw above the light map (m03 E4), so the guard's and Kemal's cones stay readable.
+**No NPC torches.** The guard and Kemal both stand in lit rooms. A torch shows only in a dim room (`npcTorchStrength`, zero above a luma of about 0.62), and the dimmest lit ambient here (the executive wing, luma about 0.68 as designed, 0.72 after review) is above it. Sight cones draw above the light map (m03 E4), so the guard's and Kemal's cones stay readable.
 
-**Fire-alarm call points off.** Seven rooms have one (`fire_alarm_point1`). The engine's default is a red pulse; m03 and m04 found a lone red pulse reads as a clue, and nothing in m06 sounds an alarm. Each room sets it to `intensity: 0`.
+**Fire-alarm call points off.** Five rooms have one (lobby, trading floor, Irina, executive wing, Satoshi) (`fire_alarm_point1`). The engine's default is a red pulse; m03 and m04 found a lone red pulse reads as a clue, and nothing in m06 sounds an alarm. Each room sets it to `intensity: 0`.
 
 ## 4. Light sources
 
@@ -82,7 +85,7 @@ No `EMITTERS` change. The `hce_*` props have no `EMITTERS` match, so each glows 
 | lab | `hce_node_shelf` | `#5ce1ff`, r 30, 0.45, blink, above |
 | lab | `hce_chart_screen` | `#8fd8ff`, r 34, 0.45, screen |
 | lab | `threat_map` | `#7fb4ff`, r 34, 0.4, screen |
-| server room, data centre | `server` (rack1, rack2, `servers`), `network_rack`, `storage_array`, `tape_library` | engine LEDs; glow cyan `#5cd8ff`. The long `servers` row adds floorTint 0.25 |
+| server room, data centre | `server` (rack1, rack2, `servers`), `network_rack`, `storage_array`; `tape_library` (data centre only) | engine LEDs; glow cyan `#5cd8ff`. The long `servers` row adds floorTint 0.25 |
 | server room | `hce_comms_cabinet` | `#5cd8ff`, r 36, 0.45, blink |
 | server room | `aes_ups` | `#8dff9a`, r 20, 0.4, screen, above |
 | server room | `aircon_unit` | `#9fe8ff`, r 22, 0.4, above |
@@ -126,3 +129,113 @@ Left alone: `brochure_rack1`, `magazine_rack2`, `mini_fridge1`, `hce_cage_panel1
 ## 6. Reuse
 
 `ruby scripts/lighting_lookup.rb`: every m06 room type (`room_hce_*`) is new, so nothing has been lit before. Reuse by role, with no tile coordinates copied: the scenario night ambient (m02, m04); the market wall's glow from sis02's SCADA `screens` block; call points off (m03, m04); motion for empty offices and machine rooms (m01-m04); server darks `#0a0f1c` (m02 server room, m04 workshop); per-cause phase glows in base `emitters` and ambient-only room variants (m04).
+
+## 7. Design review (fresh Opus, read-only): 0 blockers, 3 majors, 9 minors
+
+The reviewer checked every ink line, global, setter, texture key, prefix and the console's id key (all correct; no prefix collisions; `as-type` keeps the map texture, `core/rooms.js:520`; tables are in `room.objects`, so table emitters build). It reviewed the lighting blocks already in the erb as well as the plan. Folded in before the cycle 2 tour.
+
+| id | sev | finding | outcome |
+|---|---|---|---|
+| M1 | major | The `cover_strained` ambient variants have no cause in the building (a phone call to the FCA changes no lights; the plan's own call-in rule, and m04 M3), and the step (+4/+9/+14) is about the size m04 found invisible | **Fixed:** both variants removed. HaX's texts and the debrief carry the strain. The brief's "cooler light once the cover is blown" was weighed against this and dropped: in the cycle 1 strained shots the step barely shows, and where it shows it has no reason |
+| M2 | major | `blink` + `above` blinks hard on and off at about 1 Hz (`lighting.js:936-940`), m01's signpost for an interactable clue (`LIGHTING_LOG.md:135`); four props doing it in the lab and cage would read as "interact here" | **Fixed:** mining rigs and node shelf `breathe`, 0.35; HSMs steady, 0.35. The comms cabinet keeps `blink` without `above` (the rack flicker 0.7-1.0). The rack-LED wish is D9 in `DECISIONS_PENDING.md`, with the reviewer's one-line `EMITTERS` option |
+| M3 | major | The executive wing (`#b2aca8`, luma about 0.678) was below the readability floor, with no panels; the plan wrongly named the data centre as dimmest | **Fixed:** ambient `#bcb6b0` (luma about 0.72), panels still off. Plan text corrected |
+| m1 | minor | Five call points, not seven; `tape_library` is data centre only; erb line refs are HEAD's | **Fixed** in the text |
+| m2 | minor | A red pulse that lasts all game on the tripped console reads as a live alarm; the custody sign competes | **Fixed:** tripped is steady red (a log entry, not a siren); warned keeps an amber pulse; custody sign r 24, 0.25 |
+| m3 | minor | Two sconce glows and a picture light overlap the press clipping | **Fixed:** sconces r 32, 0.7; picture light 0.25. To check in the shot |
+| m4 | minor | The guard's monitor glow sat below the monitors | **Fixed:** offsetX −15, offsetY −28 |
+| m5 | minor | The desk-lamp glow is about 31 px from the Signing Case | To check in the shot |
+| m6 | minor | A red market wall plus red ticker gets no reaction from the floor staff and can read as an alarm about the player | **Fixed:** the frozen wall is a softer `#ff8a70` at 0.45; the ticker stays red (prices falling) |
+| m7 | minor | Skipped sources: the reception desk's cyan trim, CCTV tallies, photocopier, Pi bench | **Fixed** for the desk trim (steady cyan, r 40, 0.3, above). The rest left: small, and tallies could read as a mechanic |
+| m8 | minor | Red clock digits beside the passphrase door could read as a lock light | **Fixed:** warm white `#ffd8a0` |
+| m9 | minor | Ticker glow over the upper screens; plan says "steady green" for the opened console but the file uses `screen` | Ticker: see cycle 2. The opened console keeps `screen` (a screen's slight shimmer, no pulse); read "steady" as "not pulsing" |
+
+## 8. Cycle 1 (2026-10-13): as implemented
+
+`scenario.json.erb`: the scenario block before `"rooms"` with a short ERB comment, and one `lighting` block per room on the line after its `"type"`. No ink, tags, NPC fields or layout changed. Implemented as sections 3-4 (before the design review was folded in).
+
+Checks: validator schema pass (its warnings were there before); `check_door_alignment.py` 8/8; routes 29/29.
+
+Tours on keyless :3001 (`--close-intro --restore-off --check`); every room drew (redraw 300-350 ms) and every variant resolved as designed: base 2336, strained 2337, warned 2338, tripped 2339, fund 2340, seized 2341. Baseline without lighting: game 2334, `build_evidence/lighting_c0/before/`. Evidence: `build_evidence/lighting_c1/<phase>/`, `tours.log`.
+
+First look (mine, not a review): the cyan data centre and server room read well, the console glows, Irina's lamp shows, Kemal's cone is clear. Too faint in lit rooms: the cage wash (an additive glow on the near-white mesh door adds nothing), Satoshi's block screen and desk lamp, the ticker; the ticker's glow, centred near the top of the wall strip, bleeds north into the server room.
+
+## 9. Cycle 2 (2026-10-13)
+
+The design review fixes (section 7), plus:
+
+- **Cage:** the door glow moved down onto the hatched floor line (offsetY 28, r 72, 0.5, floorTint 0.35), and the two dark mesh panels get their own cool glow (`hce_cage_panel`, r 52, 0.45, above), where an additive glow shows.
+- **Satoshi:** block screen r 60, 0.9, offsetY 12 (both states); desk lamp r 72, 1.0, floorTint 0.3.
+- **Ticker:** r 44, 0.8, offsetY 24, so its visible radius (about 26 px) stays inside the wall strip and off the server room.
+
+Checks: validator schema pass; door alignment 8/8; routes 29/29. Tours on :3001, every shot drew: base 2344, warned 2345, tripped 2346, fund 2348, seized 2349. Evidence: `build_evidence/lighting_c2/<phase>/`. Pairs: `tmp/review/m06_lighting_c2_*.png` (before against cycle 2 per room; dark against lit for the motion rooms; console phases; frozen money).
+
+### Cycle 2 visual review (fresh Opus): 0 blockers, 3 majors, 8 minors
+
+Passes: the warm lobby, Irina's office dark and lit, the cyan server room and data centre, Satoshi's office, the executive wing's sconce pools and trophy cabinet; every clue reads; both sight cones clear; console phases clear in the dark; the ticker no longer bleeds; flash safety.
+
+| id | sev | finding | outcome |
+|---|---|---|---|
+| V1 | major | The ticker glow (offsetY 24) misses the ticker and makes a white hot spot on the screen under "XMR", which in a mixer story could pass for a clue | **Fixed:** base ticker glow off (the LED art carries itself); frozen red r 36, 0.9, offsetY 0, inside the strip |
+| V2 | major | The frozen-money change can't be seen (a faint pink smudge) | **Fixed:** the red ticker now shows on its dark strip; market wall frozen `#ff7058`, r 80, 0.6, floorTint 0.5, above |
+| V3 | major | The block-screen glow sits low, on the skirting (offsetY 12), not high as I'd guessed | **Fixed:** offsetY 0, r 44, 0.75, both states |
+| V4 | minor | Console glow on the keyboard, not the screen; warned hard to see lit | **Fixed:** offsetY −10 on all four; warned 0.9 |
+| V5 | minor | Mining rigs barely glow; the node shelf outshines them | **Fixed:** rigs r 48, 0.55; shelf 0.25 |
+| V6 | minor | Market wall throws no blue on the floor | **Fixed:** base wall above, r 80, 0.35, offsetY 24 (check the first desk row isn't washed) |
+| V7 | minor | Guard's monitor glow now above the monitors | **Fixed:** offsetY −20 |
+| V8 | minor | Desk lamp pool on the lamp head and chair back; Signing Case reads fine (about 45 px away; closes design m5) | **Fixed:** offsetY −20 |
+| V9 | minor | Kiosk glow a blob beside it; logo and exit glows spill onto the checkpoint wall | **Fixed:** kiosk offsetX −4, offsetY −18, 0.4; logo r 40. The exit sign is the engine's own (left) |
+| V10 | minor | Cage panels brightest thing in the dark room | **Fixed:** 0.35 |
+| V11 | minor | The clipping's picture light adds nothing | **Fixed:** removed; the sconces light it (closes design m3) |
+
+## 10. Cycle 3 (2026-10-13)
+
+V1-V11 applied as listed.
+
+Checks: validator schema pass; door alignment 8/8; routes 29/29. Tours on :3001, every shot drew: base 2352, warned 2353, tripped 2354, fund 2355, seized 2357. Evidence: `build_evidence/lighting_c3/<phase>/`. Pairs: `tmp/review/m06_lighting_c3_*.png` (cycle 2 against cycle 3; base against seized).
+
+### Cycle 3 visual review (fresh Opus): 0 blockers, 0 majors, 6 minors
+
+V1-V11 all closed. The whole set judged afresh: every room meets its mood brief, every clue reads, both sight cones are clear, console phases show (subtle lit, clear dark), flash safety passes.
+
+| id | sev | finding | outcome |
+|---|---|---|---|
+| W1 | minor | The frozen ticker glow blooms above the 9 px strip, a pink flare over "XMR" crossing the rim | **Fixed (c4):** r 28, 0.8, offsetY 4 |
+| W2 | minor | Console phase glow centres on the cage door's hazard stripe; could read as the door reacting | **Fixed:** offsetY −5 on all four |
+| W3 | minor | The aircon's white `above` glow is a hot spot next to the PC desk, like a highlight | **Fixed:** 0.2, offsetY −20 (onto its display) |
+| W4 | minor | Frozen red on the block screen faint | **Fixed:** 0.95 |
+| W5 | minor | Small-sign glows spill over the rim into the room to the north | **Fixed:** `hce_logo_small` (checkpoint, exec wing) and `hce_logo_sign` offsetY 4 |
+| W6 | minor | Violet rig weaker than green | **Fixed:** 0.7 |
+
+## 11. Cycle 4 (2026-10-13)
+
+W1-W6 applied as listed.
+
+Checks: validator schema pass; door alignment 8/8; routes 29/29. Tours on :3001, every shot drew: base 2358, warned 2359, tripped 2361, fund 2362, seized 2363. Evidence: `build_evidence/lighting_c4/<phase>/`. Pairs: `tmp/review/m06_lighting_c4_*.png`.
+
+### Cycle 4 visual review (fresh Opus): 0 blockers, 0 majors, 6 minors
+
+W1-W6 closed, none broke anything. Judged afresh, every room meets its brief; every clue reads; cones clear; no far bleed; flash safety passes; every lit room still looks like itself, moodier.
+
+| id | sev | finding | outcome |
+|---|---|---|---|
+| X1 | minor | Frozen ticker a red patch on "XMR" with a small rim bloom | **Fixed:** r 24, 0.9, offsetY 6. A spot on XMR (the mixer's coin) after the settlement is accepted: it can't be a hint |
+| X2 | minor | Block-screen red lands on the rim above the screen | **Fixed:** r 32, offsetY 4, frozen 1.0. Re-shot: the face reads red |
+| X3 | minor | Custody, executive-suite and server-room signs spill over the rim | **Fixed:** offsetY 4 |
+| X4 | minor | One clock glow on NYC looks like a pointer | **Fixed:** r 30, 0.3, covers all three |
+| X5 | minor | Warned amber hard to tell from cyan in a lit still (low point of its pulse) | **Fixed:** r 44, 1.0. Re-shot lit: a warm glow on the monitor, subtle; clear in the dark. A live pulse check fits the stage-6 playtests |
+| X6 | minor | Kemal's range circle reaches into Satoshi's office | Not lighting (the NPC sight overlay); left |
+
+After X1-X5: validator, door alignment 8/8, routes 29/29; targeted re-tours (games 2364 base, 2365 warned, 2366 seized; `build_evidence/lighting_c4/final/`) checked by eye.
+
+## Phase art: lighting CLOSED (2026-10-13)
+
+| Cycle | Blockers | Majors | Minors |
+|---|---|---|---|
+| Design review | 0 | 3 | 9 |
+| 2 (visual) | 0 | 3 | 8 |
+| 3 (visual) | 0 | 0 | 6 |
+| 4 (visual) | 0 | 0 | 6 |
+
+Closed after cycle 4: two visual reviews in a row found nothing above minor. No engine change. Open: D9 in `DECISIONS_PENDING.md` (rack-style LEDs for `hce_*` props, engine). Accepted: the exit sign's own green spill onto the checkpoint rim (engine glow); the warned pulse is subtle in the lit room by design.
+
+Not yet done: a browser check of a phase change live (console strike, freeze) with a reload; it fits the stage-6 playtests. Next in the art order: POV chat backgrounds (`room-pov-background`); lighting is final for them.

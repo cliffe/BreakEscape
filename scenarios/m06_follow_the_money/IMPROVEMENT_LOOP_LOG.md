@@ -1032,3 +1032,33 @@ The black conversation backgrounds are expected; the POV stage comes after light
 | Browser | 0 | 0 | 0 |
 
 29 routes, each run limited to 9 lines without a choice.
+
+
+## Lighting (2026-10-13)
+
+The full log is in `LIGHTING_PLAN.md`, with evidence in `build_evidence/lighting_c0..c4`.
+- A night at the exchange:
+  - a warm lobby;
+  - a trading floor carried by the market wall and screens;
+  - Irina's office dark with her lamp (motion);
+  - mining-rig glows in the lab;
+  - a cyan server room and data centre (motion), with the custody cage lit;
+  - a low-lit gallery in the executive wing;
+  - Satoshi's lamp and block screen.
+- Phases:
+  - The custody console answers strikes: amber, then red, then green when the fund opens.
+  - Freezing the money turns the ticker, the market wall and the block screen red.
+  - Watching the money changes nothing, on purpose.
+  - The design review dropped a `cover_strained` light change, because the building gives it no cause.
+- No engine change. The rack-style LEDs proposal is D9.
+
+### Phase art: lighting CLOSED (2026-10-13)
+
+| Cycle | Blocker | Major | Minor |
+|---|---|---|---|
+| Design review | 0 | 3 | 9 |
+| 2 | 0 | 3 | 8 |
+| 3 | 0 | 0 | 6 |
+| 4 | 0 | 0 | 6 |
+
+Two visual reviews in a row found nothing above minor. Next: POV backgrounds.

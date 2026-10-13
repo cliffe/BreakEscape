@@ -726,8 +726,8 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
 
 <%# Lighting (pass 5, LIGHTING_PLAN.md): a night at the exchange. Warm lobby, screens
     on the floor, cyan machine rooms, gallery light at the top. Phase glows sit in each
-    room's base emitters keyed on their own cause (console strikes, assets_seized);
-    room variants change ambient only (cover_strained, on rooms only). && only, no ||. %>
+    room's base emitters keyed on their own cause (console strikes, assets_seized).
+    No room variants (a phone call to the FCA changes no lights). && only, no ||. %>
   "lighting": { "enabled": true, "defaultMode": "on", "ambient": "#b8bfce" },
   "rooms": {
     "reception_lobby": {
@@ -736,9 +736,10 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
         "ambient": "#c4b8a6",
         "emitters": {
           "hce_sconce": [{ "color": "#ffc070", "radius": 34, "intensity": 0.8, "above": true }],
-          "hce_logo_sign": [{ "color": "#ffb040", "radius": 52, "intensity": 0.45, "above": true }],
+          "hce_logo_sign": [{ "color": "#ffb040", "radius": 40, "intensity": 0.45, "offsetY": 4, "above": true }],
+          "hce_reception_desk": [{ "color": "#6fe0ff", "radius": 40, "intensity": 0.3, "offsetY": 8, "above": true }],
           "hce_chart_screen": [{ "color": "#8fe8c8", "radius": 36, "intensity": 0.5, "effect": "screen" }],
-          "hce_kiosk": [{ "color": "#9fd4ff", "radius": 30, "intensity": 0.5, "effect": "screen", "offsetY": -14 }],
+          "hce_kiosk": [{ "color": "#9fd4ff", "radius": 30, "intensity": 0.4, "effect": "screen", "offsetX": -4, "offsetY": -18 }],
           "hce_crypto_atm": [{ "color": "#ff9a30", "radius": 36, "intensity": 0.55, "effect": "screen", "offsetY": -10, "above": true }],
           "hce_price_board": [{ "color": "#ffb050", "radius": 40, "intensity": 0.45, "effect": "screen" }],
           "hce_display_case": [{ "color": "#fff2d8", "radius": 24, "intensity": 0.45, "offsetY": -10, "above": true }],
@@ -1543,12 +1544,9 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
       "type": "room_hce_hall",
       "lighting": {
         "emitters": {
-          "aes_security_desk": [{ "color": "#9fd4ff", "radius": 40, "intensity": 0.5, "effect": "screen", "offsetY": -10 }],
-          "hce_logo_small": [{ "color": "#ffb040", "radius": 20, "intensity": 0.35, "above": true }]
-        },
-        "variants": [
-          { "condition": "globalVars.cover_strained === true", "ambient": "#bcc8dc" }
-        ]
+          "aes_security_desk": [{ "color": "#9fd4ff", "radius": 40, "intensity": 0.5, "effect": "screen", "offsetX": -15, "offsetY": -20 }],
+          "hce_logo_small": [{ "color": "#ffb040", "radius": 20, "intensity": 0.35, "offsetY": 4, "above": true }]
+        }
       },
       "door_sign": "Restricted",
       "connections": {
@@ -1631,20 +1629,17 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
         "ambient": "#b2b8c8",
         "emitters": {
           "screens": [
-            { "condition": "globalVars.assets_seized === true", "color": "#ff5a48", "radius": 120, "intensity": 0.6, "effect": "screen", "offsetY": 36, "floorTint": 0.3 },
-            { "color": "#8fd8ff", "radius": 120, "intensity": 0.6, "effect": "screen", "offsetY": 36, "floorTint": 0.3 }
+            { "condition": "globalVars.assets_seized === true", "color": "#ff7058", "radius": 80, "intensity": 0.6, "effect": "screen", "offsetY": 24, "floorTint": 0.5, "above": true },
+            { "color": "#8fd8ff", "radius": 80, "intensity": 0.35, "effect": "screen", "offsetY": 24, "floorTint": 0.3, "above": true }
           ],
           "hce_ticker": [
-            { "condition": "globalVars.assets_seized === true", "color": "#ff4a3a", "radius": 70, "intensity": 0.5, "above": true },
-            { "color": "#ffb23e", "radius": 70, "intensity": 0.5, "above": true }
+            { "condition": "globalVars.assets_seized === true", "color": "#ff4a3a", "radius": 24, "intensity": 0.9, "offsetY": 6, "above": true },
+            { "intensity": 0 }
           ],
-          "hce_world_clocks": [{ "color": "#ff6a4a", "radius": 16, "intensity": 0.5, "above": true }],
+          "hce_world_clocks": [{ "color": "#ffd8a0", "radius": 30, "intensity": 0.3, "above": true }],
           "hce_trading_station": [{ "color": "#8fd8ff", "radius": 44, "intensity": 0.55, "effect": "screen", "offsetY": -16 }],
           "fire_alarm_point": [{ "intensity": 0 }]
-        },
-        "variants": [
-          { "condition": "globalVars.cover_strained === true", "ambient": "#bac6da" }
-        ]
+        }
       },
       "door_sign": "Trading Floor",
       "locked": true,
@@ -1798,8 +1793,8 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
           "storage_array": [{ "color": "#5cd8ff" }],
           "hce_comms_cabinet": [{ "color": "#5cd8ff", "radius": 36, "intensity": 0.45, "effect": "blink" }],
           "aes_ups": [{ "color": "#8dff9a", "radius": 20, "intensity": 0.4, "effect": "screen", "above": true }],
-          "aircon_unit": [{ "color": "#9fe8ff", "radius": 22, "intensity": 0.4, "above": true }],
-          "hce_server_sign": [{ "color": "#5ce1ff", "radius": 24, "intensity": 0.4, "above": true }],
+          "aircon_unit": [{ "color": "#9fe8ff", "radius": 22, "intensity": 0.2, "offsetY": -20, "above": true }],
+          "hce_server_sign": [{ "color": "#5ce1ff", "radius": 24, "intensity": 0.4, "offsetY": 4, "above": true }],
           "suppression_panel": [{ "radius": 18, "effect": null }]
         }
       },
@@ -1906,16 +1901,17 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
         "darkAmbient": "#0a0f1c",
         "emitters": {
           "cold_storage_console": [
-            { "condition": "globalVars.found_architects_fund === true", "color": "#3dff7a", "radius": 40, "intensity": 0.8, "effect": "screen", "above": true, "floorTint": 0.3 },
-            { "condition": "globalVars.console_tripped === true", "color": "#ff3b30", "radius": 44, "intensity": 0.9, "effect": "pulse", "above": true, "floorTint": 0.4 },
-            { "condition": "globalVars.console_warned === true", "color": "#ffa02e", "radius": 40, "intensity": 0.8, "effect": "pulse", "above": true, "floorTint": 0.3 },
-            { "color": "#6fe0ff", "radius": 40, "intensity": 0.7, "effect": "screen", "above": true }
+            { "condition": "globalVars.found_architects_fund === true", "color": "#3dff7a", "radius": 40, "intensity": 0.8, "effect": "screen", "offsetY": -5, "above": true, "floorTint": 0.3 },
+            { "condition": "globalVars.console_tripped === true", "color": "#ff3b30", "radius": 44, "intensity": 0.9, "effect": null, "offsetY": -5, "above": true, "floorTint": 0.4 },
+            { "condition": "globalVars.console_warned === true", "color": "#ffa02e", "radius": 44, "intensity": 1.0, "effect": "pulse", "offsetY": -5, "above": true, "floorTint": 0.3 },
+            { "color": "#6fe0ff", "radius": 40, "intensity": 0.7, "effect": "screen", "offsetY": -5, "above": true }
           ],
-          "hce_cage_door": [{ "color": "#d6f2ff", "radius": 64, "intensity": 0.4, "offsetY": -10, "floorTint": 0.25, "above": true }],
-          "hce_hsm": [{ "color": "#5cff8a", "radius": 22, "intensity": 0.45, "effect": "blink", "above": true }],
+          "hce_cage_door": [{ "color": "#d6f2ff", "radius": 72, "intensity": 0.5, "offsetY": 28, "floorTint": 0.35, "above": true }],
+          "hce_cage_panel": [{ "color": "#cfefff", "radius": 52, "intensity": 0.35, "above": true }],
+          "hce_hsm": [{ "color": "#5cff8a", "radius": 22, "intensity": 0.35, "above": true }],
           "hce_wallet_cabinet": [{ "color": "#ffb347", "radius": 22, "intensity": 0.4, "above": true }],
-          "hce_custody_sign": [{ "color": "#ff5a4a", "radius": 30, "intensity": 0.4, "above": true }],
-          "hce_exec_sign": [{ "color": "#ffb040", "radius": 24, "intensity": 0.35, "above": true }],
+          "hce_custody_sign": [{ "color": "#ff5a4a", "radius": 24, "intensity": 0.25, "offsetY": 4, "above": true }],
+          "hce_exec_sign": [{ "color": "#ffb040", "radius": 24, "intensity": 0.35, "offsetY": 4, "above": true }],
           "server": [{ "color": "#5cd8ff" }],
           "storage_array": [{ "color": "#5cd8ff" }],
           "tape_library": [{ "color": "#5cd8ff" }],
@@ -2036,9 +2032,9 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
       "lighting": {
         "ambient": "#b0b8c6",
         "emitters": {
-          "hce_mining_rig2": [{ "color": "#5cff8a", "radius": 40, "intensity": 0.5, "effect": "blink", "above": true }],
-          "hce_mining_rig1": [{ "color": "#c070ff", "radius": 40, "intensity": 0.5, "effect": "blink", "above": true }],
-          "hce_node_shelf": [{ "color": "#5ce1ff", "radius": 30, "intensity": 0.45, "effect": "blink", "above": true }],
+          "hce_mining_rig2": [{ "color": "#5cff8a", "radius": 48, "intensity": 0.55, "effect": "breathe", "above": true }],
+          "hce_mining_rig1": [{ "color": "#c070ff", "radius": 48, "intensity": 0.7, "effect": "breathe", "above": true }],
+          "hce_node_shelf": [{ "color": "#5ce1ff", "radius": 30, "intensity": 0.25, "effect": "breathe", "above": true }],
           "hce_chart_screen": [{ "color": "#8fd8ff", "radius": 34, "intensity": 0.45, "effect": "screen" }],
           "threat_map": [{ "color": "#7fb4ff", "radius": 34, "intensity": 0.4, "effect": "screen" }]
         }
@@ -2165,14 +2161,13 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
     "executive_wing": {
       "type": "room_hce_exec_hall",
       "lighting": {
-        "ambient": "#b2aca8",
+        "ambient": "#bcb6b0",
         "panels": false,
         "emitters": {
-          "hce_sconce": [{ "color": "#ffc070", "radius": 40, "intensity": 0.85, "offsetY": 6, "above": true }],
-          "hce_press_clipping": [{ "color": "#fff0d0", "radius": 26, "intensity": 0.35, "above": true }],
+          "hce_sconce": [{ "color": "#ffc070", "radius": 32, "intensity": 0.7, "offsetY": 6, "above": true }],
           "hce_art_canvas": [{ "color": "#fff0d0", "radius": 30, "intensity": 0.3, "above": true }],
           "trophy_cabinet": [{ "color": "#fff4dc", "radius": 30, "intensity": 0.4, "above": true }],
-          "hce_logo_small": [{ "color": "#ffb040", "radius": 20, "intensity": 0.35, "above": true }],
+          "hce_logo_small": [{ "color": "#ffb040", "radius": 20, "intensity": 0.35, "offsetY": 4, "above": true }],
           "fire_alarm_point": [{ "intensity": 0 }]
         }
       },
@@ -2304,10 +2299,10 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
         "ambient": "#b6aea6",
         "emitters": {
           "hce_block_screen": [
-            { "condition": "globalVars.assets_seized === true", "color": "#ff4a3a", "radius": 52, "intensity": 0.6, "above": true },
-            { "color": "#ffa040", "radius": 52, "intensity": 0.6, "effect": "screen", "above": true }
+            { "condition": "globalVars.assets_seized === true", "color": "#ff4a3a", "radius": 32, "intensity": 1.0, "offsetY": 4, "above": true },
+            { "color": "#ffa040", "radius": 32, "intensity": 0.75, "effect": "screen", "offsetY": 4, "above": true }
           ],
-          "desk-ceo2": [{ "color": "#ffd08a", "radius": 60, "intensity": 0.8, "offsetX": -22, "offsetY": -30 }],
+          "desk-ceo2": [{ "color": "#ffd08a", "radius": 72, "intensity": 1.0, "offsetX": -22, "offsetY": -20, "floorTint": 0.3 }],
           "hce_whitepaper_frame": [{ "color": "#fff0d0", "radius": 24, "intensity": 0.3, "above": true }],
           "hce_display_case": [{ "color": "#fff2d8", "radius": 24, "intensity": 0.45, "offsetY": -10, "above": true }],
           "exec_laptop": [{ "color": "#9fd4ff", "radius": 26, "intensity": 0.5, "effect": "screen" }],
