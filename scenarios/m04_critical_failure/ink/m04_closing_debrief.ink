@@ -106,7 +106,13 @@ Agent, report.
 #speaker:agent_0x99
 
 {racks_vented:
-    Bank B's gone, but you isolated A and C and forced the vents. It could have been the whole hall. It wasn't.
+    // C2 (D6-1 follow-on): "It wasn't." cut on crew-lost routes, where the next
+    // line names the nine.
+    {crew_lost:
+        Bank B's gone, but you isolated A and C and forced the vents. It could have been the whole hall.
+    - else:
+        Bank B's gone, but you isolated A and C and forced the vents. It could have been the whole hall. It wasn't.
+    }
 - else:
     Clean. Runaway aborted before a single cell vented. Banks isolated.
 }
@@ -136,6 +142,11 @@ Agent, report.
         Vance says the grid held because of you. He wants that in writing.
     }
 }
+// Phase 4 dialogue C2 (D6-1): the deaths land at the top on every crew-lost
+// route, not 25 lines later; the >=70 line above already says it there.
+{crew_lost and not (vance_trust_level >= 70 and not robert_vance_ko):
+    The night crew were still in Hall 2 when Bank B went. Nine of them.
+}
 {robert_vance_ko:
     The facility manager's being treated by medics. He'll live. He won't be filing a commendation.
 }
@@ -151,9 +162,14 @@ Agent, report.
     #set_global:blackout_named:true
     Good. Nobody else in that building knows the chain above Blackout.
 
-    He'll talk. Men like him always want to explain themselves.
+    He'll talk. He wants someone to check his sums.
 - else:
-    A shame. But the attack's stopped, and that was the job.
+    // Phase 4 dialogue C2 (D6-1): no "A shame" straight before nine dead.
+    {crew_lost:
+        He's out of reach. For now.
+    - else:
+        A shame. But the attack's stopped, and that was the job.
+    }
     // Phase 4 dialogue C1 (D5-11): "Lives over one operative" cut; the briefing
     // already gave that moral.
 }
@@ -179,7 +195,8 @@ The directive said it: Zero Day supplies, Critical Mass executes, grid storage t
     // Phase 4 dialogue C1 (D5-27, D5-32): the number he gave when asked, and the
     // "alive" stance, paid off.
     {asked_the_number:
-        The same one he gave you when you asked, to the decimal.
+        // C2 (D6-3): in the plant room he gave "forty-odd", not a decimal.
+        To the decimal this time. You only got "forty-odd".
     }
     {promised_voltage_alive:
         You said you'd bring him in breathing. You did.
@@ -255,7 +272,7 @@ Agent HaX: And the control room believed its own sensors. The honest ones weren'
 // by the user.
 Agent HaX: A legacy compile service on an OT box, trusting whatever it was sent. That comes off the network.
 Agent HaX: An FTP service handing their cross-cell plan to anyone who looked, and a jump-server account with more privilege than it ever needed. Somebody reviews those.
-Agent HaX: Encrypted cards, a second factor on the HV door, and a gauge in every hall that somebody reads.
+Agent HaX: And on site: encrypted cards, a second factor on the HV door, and a gauge in every hall that somebody reads.
 
 * {vance_spoken or vance_is_ally} [It goes in the report. Vance will want every line.]
     -> debrief_big_picture
@@ -270,8 +287,7 @@ Agent HaX: Encrypted cards, a second factor on the HV door, and a gauge in every
 === debrief_big_picture ===
 #speaker:agent_0x99
 
-None of this was random.
-
+// C2 (D6-18): "None of this was random." cut.
 Social Fabric had disinformation ready to turn the fire into a panic.
 
 * [The Architect. He's running all of it.]
@@ -287,7 +303,7 @@ The same name the Zero Day directive carried. The Architect.
 
 We've just watched one of his strikes run start to finish. Now we know how the cells fit together.
 
-This site was a rehearsal. The real thing is bigger, and it's coming.
+This site was a rehearsal.
 
 -> debrief_task_force_announcement
 
@@ -353,7 +369,8 @@ He'll call when he's ready. Not tonight.
     // Pass 5 decision 1: the casualties depend on whether the crew was warned.
     {
     - crew_lost:
-        Agent HaX: Nine on the night crew in Hall 2. Two more on the feed before the grid caught up.
+        // C2 (D6-1): a recap now; the nine were named at the top.
+        Agent HaX: Nine in Hall 2. Two more on the feed before the grid caught up.
         // Phase 4 dialogue C1 (D5-3, user decision): the alarm that wasn't sounded,
         // stated once and left. crew_lost means it never went.
         {
@@ -371,7 +388,7 @@ He'll call when he's ready. Not tonight.
         Agent HaX: Nine people in Hall 2 are what it bought. Hall 2 was empty when it went.
     - else:
         Agent HaX: Hall 2 was empty when it went. Vance's alarm had the night crew out through the fire doors.
-        Agent HaX: Two on the feed before the grid caught up. The number tomorrow won't be zero. It won't be eleven either.
+        Agent HaX: Two on the feed before the grid caught up. The number tomorrow won't be zero. It could have been fifty.
     }
 - else:
     // Eleven on site: the nine night crew, Vance and the gate guard.
@@ -474,7 +491,8 @@ Netherton will back that.
 
 // D5-38: "Stability, bought with silence." cut.
 {crew_lost:
-    Nine families get an accident report. Albion's name survives, the upgrades happen, and nothing makes the rest of the sector move.
+    // C2 (D6-5): not a third "accident" in a row.
+    Nine families get a report with no cause in it. Albion's name survives, the upgrades happen, and nothing makes the rest of the sector move.
 - else:
     Nobody hears how close this came. Albion's name survives, the upgrades happen, and nothing makes the rest of the sector move.
 }
@@ -511,7 +529,7 @@ Netherton won't argue.
 }
 
 {crew_lost:
-    People hear that nine died in an incident, not why. Enough to push some change, not enough to start a panic.
+    People hear the number, not the reason. Enough to push some change, not enough to start a panic.
 - else:
     People hear something happened, not all of it. Enough to push some change, not enough to start a panic.
 }
@@ -538,8 +556,11 @@ Done.
 {(vance_spoken or vance_is_ally) and not robert_vance_ko:
     // Robert Vance final words
     #speaker:robert_vance
+    // Phase 4 dialogue C2 (D6-2): every trust band accounts for the nine.
     {vance_trust_level >= 80:
-        Robert Vance: Thank you.
+        {not crew_lost:
+            Robert Vance: Thank you.
+        }
 
         Robert Vance: I don't know what you are. I know what you did.
 
@@ -554,12 +575,22 @@ Done.
         }
     }
     {vance_trust_level >= 50 and vance_trust_level < 80:
-        Robert Vance: You did right by this place.
+        {crew_lost:
+            Robert Vance: The hall's standing. Nine of mine aren't.
 
-        Robert Vance: I'll not forget it.
+            Robert Vance: I'll not forget either.
+        - else:
+            Robert Vance: You did right by this place.
+
+            Robert Vance: I'll not forget it.
+        }
     }
     {vance_trust_level < 50:
-        Robert Vance: I don't follow all of it. I know the hall's still standing.
+        {crew_lost:
+            Robert Vance: Nobody told me what was in my own plant. Nine of mine paid for that.
+        - else:
+            Robert Vance: I don't follow all of it. I know the hall's still standing.
+        }
     }
 }
 
@@ -634,11 +665,15 @@ The methods are a separate conversation. You put a facility manager on the floor
     Voltage is out there. So is The Architect.
 }
 
-{
-- operative_cipher_defeated and operative_relay_defeated and operative_static_defeated:
-    All three of his crew on the floor. Remind me not to annoy you.
-- not operative_cipher_defeated and not operative_relay_defeated and not operative_static_defeated:
-    And not one of his crew on the floor. Harder than it looks.
+// C2 (D6-4): not after nine of Vance's crew died, and "operatives", so "crew"
+// stays the night crew's word.
+{not crew_lost:
+    {
+    - operative_cipher_defeated and operative_relay_defeated and operative_static_defeated:
+        All three of his operatives on the floor. Remind me not to annoy you.
+    - not operative_cipher_defeated and not operative_relay_defeated and not operative_static_defeated:
+        And not one of his operatives on the floor. Harder than it looks.
+    }
 }
 
 Sleep. I'll call.

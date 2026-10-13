@@ -501,7 +501,7 @@ Agent, status check. Are you inside the facility?
 
 * {not guard_admitted and not security_guard_ko and not checkpoint_passed} [Not yet. I'm at the gate.]
     #exit_conversation
-    Then the badge. Routine audit, came early. Call me once you're past him.
+    Then the badge. Routine audit, came early. Once you're past him: Vance, then something in Hall 1 that isn't on their feed.
     -> support_hub
 
 === vance_status_inquiry ===
@@ -623,7 +623,7 @@ The BMS jump server runs through there, and so does the route onto the SCADA net
 
 ~ handler_confidence += 5
 
-Good. Scan what's on that network first, then see what each box is running.
+Scan what's on that network first, then see what each box is running.
 
 Where they got in is on the jump server. Anything you find goes into the drop-site terminal.
 -> vm_guidance_choices
@@ -652,7 +652,7 @@ Three of them were in here for hours. They left something behind. Find it, and w
 {operatives_defeated >= 1:
     And you've already met one of them. There'll be more.
 - else:
-    Watch your back. They won't hesitate.
+    They'll know someone's opened the workshop. Keep an eye on the door.
 }
 
 Call when you've got something.
@@ -785,7 +785,8 @@ That's the approach. Work with what you find.
 #speaker:agent_0x99
 
 // Phase 4 dialogue C1 (D5-31, D5-5): no list; the button only once it can arm.
-Last stretch. Keep him off that laptop and put down anyone standing with him.
+// C2 (D6-15): the laptop was in her line just before this.
+Last stretch. Anyone still standing with him goes down first.
 
 {anomaly_detected:
     Then the button.
@@ -793,15 +794,7 @@ Last stretch. Keep him off that laptop and put down anyone standing with him.
     The button won't arm till grid control has a real reading. The dial in Hall 1 first.
 }
 
-{operatives_defeated >= 2:
-    Two of them down already. You're almost there.
-}
-{operatives_defeated == 1:
-    One down. The rest won't make it easy.
-}
-{operatives_defeated == 0:
-    Their people are still up. Be ready.
-}
+// C2 (D6-21): the operative-count lines cut (filler, and the counter misses Static).
 -> final_phase_briefing_choices
 
 === final_phase_briefing_choices ===
@@ -813,17 +806,12 @@ Last stretch. Keep him off that laptop and put down anyone standing with him.
 === final_encouragement ===
 #speaker:agent_0x99
 
+// C2 (D6-21, D6-18): one closer; the 240,000 line is the briefing's.
 {handler_confidence >= 80:
     Clean run so far. Finish it.
-}
-{handler_confidence >= 60 and handler_confidence < 80:
-    Good so far. Stay sharp for the last of it.
-}
-{handler_confidence < 60:
+- else:
     Careful. This is the worst of it.
 }
-
-Two hundred and forty thousand people are on that grid.
 
 #exit_conversation
 -> support_hub

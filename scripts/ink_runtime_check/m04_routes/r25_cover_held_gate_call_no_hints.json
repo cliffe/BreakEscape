@@ -1,0 +1,28 @@
+{
+"steps": [
+{
+"note": "R25 (phase 4 dialogue C2, D6-7/D6-8/D6-12): a player who holds the cover, opens HaX's phone at the gate and never asks for a hint. The briefing's objectives say what the reading is for; the gate reply still points at Hall 1; the guard's Bristol marker reaches a first-time admission; Vance never learns the truth, and the phone never names the dial unasked."
+},
+{
+"talk": "briefing",
+"picks": ["Go ahead", "What are my orders", "So this is the attack", "Got it"]
+},
+{"said": ["Press it and the banks isolate, once grid control believes you. That's what Nightshade's reading is for.", "Get me a real reading off that floor"]},
+{"set": {"briefing_played": true}},
+{"talk": "phone", "picks": ["at the gate"]},
+{
+"said": ["Once you're past him: Vance, then something in Hall 1 that isn't on their feed."],
+"notSaid": ["Call me once you're past him", "dial thermometer"]
+},
+{"talk": "guard", "picks": ["regulator", "keep that in mind"]},
+{"said": ["Go on through, my lover."], "notSaid": ["Still need you at the desk"]},
+{"expect": {"guard_admitted": true}},
+{"talk": "vance", "picks": ["Just doing the job", "staff records", "Thank you. I'll start"]},
+{"expect": {"vance_is_ally": false, "vance_met": true}},
+{"talk": "vance", "picks": ["A few more questions", "That's all for now"]},
+{"said": ["Three banks, nine on the module swap in Hall 2, and one of me."]},
+{"set": {"checkpoint_passed": true}},
+{"talk": "phone", "picks": ["Nothing right now"]},
+{"said": ["How do I prove the screens are lying?"], "notSaid": ["dial thermometer", "Rack Bank C"]}
+]
+}

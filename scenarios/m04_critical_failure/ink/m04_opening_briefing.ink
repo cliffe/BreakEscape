@@ -23,7 +23,7 @@ EXTERNAL player_name()
 === start ===
 Narrator: A SAFETYNET operations room. Director Netherton is already on his feet; Agent HaX is patching in the technical desk.
 
-Director Magnus Netherton: Agent 0x00. ENTROPY used to steal. Now they break the things people stand under.
+Director Magnus Netherton: Agent 0x00. ENTROPY used to steal. Now they break the things people can't live without.
 
 Director Magnus Netherton: I want my best in the room and my best on the wire. Nightshade has read the control systems. HaX has the rest.
 
@@ -162,7 +162,7 @@ Agent HaX: Three operatives on site: Cipher, Relay and Static. And Voltage.
 === combat_warning ===
 #speaker:agent_0x99
 
-Agent HaX: Yes. More of them than you've faced before, and none of them cornered.
+Agent HaX: Yes. More of them than you've faced before, and none of them amateurs.
 
 Agent HaX: Cipher holds Battery Hall 1. Relay walks the inverter room. Static stays with Voltage in the plant room.
 
@@ -258,7 +258,7 @@ Agent HaX: Two. Prove how they took the control network. Their jump server's in 
 
 Agent HaX: Three. The plant room has a hardwired Emergency Shutdown button, the ESD. No network path, so it's the one control they couldn't take.
 
-Agent HaX: Press it and the banks isolate.
+Agent HaX: Press it and the banks isolate, once grid control believes you. That's what Nightshade's reading is for.
 
 Agent HaX: Four. The operatives. Voltage alive, if you can.
 

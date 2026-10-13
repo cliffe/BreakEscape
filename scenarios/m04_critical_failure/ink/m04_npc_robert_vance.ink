@@ -420,7 +420,7 @@ This place is my responsibility. People depend on it.
     -> vance_early_reveal
 
 + {not vance_is_ally} [A few more questions about the facility.]
-    Robert Vance: Make it quick. I've got a plant to run.
+    Robert Vance: Make it quick. Three banks, nine on the module swap in Hall 2, and one of me.
     -> vance_hub
 
 + {not vance_is_ally} [That's all for now.]
@@ -550,7 +550,7 @@ How long have we got?
 
 I let them in. Their cards worked and I didn't chase the order.
 
-Credentials, background checks, the lot. I never rang the firm.
+They had credentials, background checks, the lot. I never once rang the firm.
 
 + [You couldn't have known. The credentials were forged. Stop them with me now.]
     ~ vance_trust_level += 15
@@ -572,7 +572,7 @@ Credentials, background checks, the lot. I never rang the firm.
 
 That's under four hours.
 
-Right. Then there's no time to waste.
+Right. Then I'd best stop sitting here.
 
 -> vance_commits_to_helping
 

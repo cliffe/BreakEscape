@@ -19,7 +19,7 @@
 {"talk":"voltage","picks":["It's over","take that laptop"]},
 {"talk":"voltage","picks":[]},
 {"note":"The fight stance re-shown with Static down: arrest available, button stance available (case made)."},
-{"talk":"voltage","reload":"page","picks":["It's over","take that laptop","coming with me","Blackout signed it"]},
+{"talk":"voltage","reload":"page","picks":["It's over","take that laptop","coming with me","explain your sums"]},
 {"expect":{"voltage_captured":true,"blackout_named":true}},
 {"set":{"voltage_neutralised":true,"esd_authorized":true,"attack_prevented":true}},
 {"talk":"phone","reload":"page","picks":["Where do I stand","Right","Bring me in","Bring me in","On my way"]},

@@ -715,3 +715,93 @@ Not voiced (texts and choices): Vance's 20 s text "It's Vance. Every screen I've
 - Browser checks: the guard's repeat sighting on the 20 s cooldown; the Narrator line and Vance's portrait on the HQ debrief background; Voltage's narration not replaying after a back-off; the two new globals syncing from the briefing and the phone.
 - The user: the debrief's network lines against SecGen (unchanged in substance, still at the brief's level).
 - Watch in cycle 2: HaX's first call no longer names the dial (D5-26), so a player who never asks for a hint relies on the HMI clue and Vance's vaguer text; `hint_dial` and "Where do I stand?" still name it.
+
+### Phase 4 dialogue, cycle 2
+
+Review: `DIALOGUE_REVIEW_P5_C2.md` (Opus, static plus the route driver; 0 blockers, 2 majors, 19 minors; it confirmed all 39 cycle-1 findings closed). Same fixer, resumed. Every finding was checked against the ink first; none withdrawn. The erb regions were re-read after b37b6e3f (sprite wiring) before the one erb edit. No browser session; the do-not-open rule held.
+
+| # | Sev. | Finding | Outcome |
+|---|---|---|---|
+| D6-1 | major | Crew deaths first mentioned ~25 lines into the debrief | **Fixed.** `debrief_people` (both openers pass through it near the top) now says "The night crew were still in Hall 2 when Bank B went. Nine of them." on crew-lost routes where Vance's ≥70 line doesn't already say it. "A shame…" becomes "He's out of reach. For now." on crew-lost routes. The later line is a recap ("Nine in Hall 2. Two more…"). Follow-on: the opener's "It could have been the whole hall. It wasn't." drops "It wasn't." on crew-lost routes, where the next line names the nine (seen reading r22 end to end) |
+| D6-2 | major | Vance's goodbye forgets the dead below trust 80 | **Fixed** as proposed. ≥80 skips "Thank you." when the crew is lost; 50–79 "The hall's standing. Nine of mine aren't." / "I'll not forget either."; below 50 "Nobody told me what was in my own plant. Nine of mine paid for that." |
+| D6-3 | minor | "to the decimal" misquotes Voltage | **Fixed** |
+| D6-4 | minor | "crew on the floor" quips after Vance's dead | **Fixed.** Gated on `not crew_lost`, and "operatives" for "crew" |
+| D6-5 | minor | "accident" ×3, "nine … incident" ×2 | **Fixed** |
+| D6-6 | minor | No turn into the on-site fixes | **Fixed** ("And on site: …") |
+| D6-7 | minor | Gate-first players lose HaX's Hall 1 pointer | **Fixed** in the gate reply, text only |
+| D6-8 | minor | Briefing objectives omit the reading | **Fixed** |
+| D6-9 | minor | Arrest choices quote "countersigned" unheard | **Fixed** |
+| D6-10 | minor | "I told you the number" on routes where he didn't | **Fixed** (visit-count branch with a fallback that's true after a reload) |
+| D6-11 | minor | Relay shares Vance's "Aye" | **Fixed** ("Nae bother.") |
+| D6-12 | minor | Guard's Bristol marker only on re-sighting | **Fixed.** "Go on through, my lover." on every admission; the re-sighting line keeps its "my lover" too (a player hears both only after being challenged twice) |
+| D6-13 | minor | Guard contradicts himself on visit/audit | **Fixed** |
+| D6-14 | minor | Text and hub choice say the same thing | **Fixed** (erb text) |
+| D6-15 | minor | "laptop … put down" twice in a row | **Fixed** |
+| D6-16 | minor | Vance's dead "few more questions" choice | **Fixed** (crew breadcrumb on the cover route) |
+| D6-17 | minor | "Credentials … the lot" reads as his checks | **Fixed** |
+| D6-18 | minor | Stock lines | **Fixed** as proposed (Voltage's entrance, debrief :154/:273/:290, phone "Good.", the workshop line, the 240,000 closer, Vance's "no time to waste") |
+| D6-19 | minor | "It won't be eleven either." | **Fixed** ("It could have been fifty.") |
+| D6-20 | minor | Netherton's image; "none of them cornered" | **Fixed** |
+| D6-21 | minor | Filler count and confidence lines | **Fixed.** Count lines cut; one two-way closer |
+
+Before cutting, grepped m05–m08 for the changed lines: nothing later depends on them ("Keep the crew's fingerprint kit." untouched).
+
+#### Routes
+
+Updated for changed text and picks: r3, r6, r20, r21, r22, r24 (Voltage's arrest choices, the crew-lost recap, the disclosure and goodbye lines). r20 and r21 now also assert the D6-1/D6-2/D6-4 lines and their absences ("You did right by this place", "A shame", "Robert Vance: Thank you.", the operative quips). New `r25_cover_held_gate_call_no_hints.json` (the review's request): briefing objectives with the reading, phone opened at the gate (Hall 1 pointer, no dial named), the guard's "my lover" on a first admission, Vance met on the cover with the crew breadcrumb, the hub never naming the dial unasked. 25 of 25 routes: all expectations met. Longest run without a choice: 9 (debrief), unchanged.
+
+#### Checks (static; no browser session)
+
+- Ink compiles (10 files, 0 failed, no loose ends).
+- Validator with ink, `--no-graph`: schema passed, all ink valid; 12 issues and suggestions (down from 16 after the sprite wiring in b37b6e3f).
+- dialoguelint: 0 errors, 0 warnings; the 2 withdrawn blank-reentry checks.
+- reopencheck: 0 problems for both m04 phones.
+- tagdiff against HEAD (cycle 1 committed): debrief 11 (the crew-lost conditions in `debrief_attack_stopped`, `debrief_people`, `debrief_voltage_status`, `disclosure_outcome`, `mission_complete`), Voltage 2 (`voltage_captured_end` branch), HaX phone 6 (the count and confidence conditions cut, one `else`); the other seven files structurally unchanged. Against the snapshot: debrief 69, Voltage 22, briefing 19, guard 15, HaX phone 14, Vance phone 8, Vance 6, Cipher/Relay/Static unchanged (cycle 1 plus the above).
+- inkcheck and loopcheck over 14 states (crew-lost debrief at trust 30, 60 and 90; Voltage fresh, captured, arrest with the print; guard; Vance; Relay; briefing; HaX phone before and after the dial): clean.
+
+#### Spoken lines changed (old → new)
+
+No m04 audio exists yet; listed for the record.
+
+HaX, debrief:
+- New (crew lost, top): "The night crew were still in Hall 2 when Bank B went. Nine of them."
+- New (crew lost, Voltage gone): "He's out of reach. For now." in place of "A shame. But the attack's stopped, and that was the job."
+- New variant (crew lost): "Bank B's gone, but you isolated A and C and forced the vents. It could have been the whole hall." (without "It wasn't.")
+- "He'll talk. Men like him always want to explain themselves." → "He'll talk. He wants someone to check his sums."
+- "The same one he gave you when you asked, to the decimal." → "To the decimal this time. You only got "forty-odd"."
+- "Encrypted cards, a second factor on the HV door, and a gauge in every hall that somebody reads." → "And on site: encrypted cards, …"
+- Cut: "None of this was random."
+- "This site was a rehearsal. The real thing is bigger, and it's coming." → "This site was a rehearsal."
+- "Nine on the night crew in Hall 2. Two more on the feed before the grid caught up." → "Nine in Hall 2. Two more on the feed before the grid caught up."
+- "…The number tomorrow won't be zero. It won't be eleven either." → "…The number tomorrow won't be zero. It could have been fifty."
+- "Nine families get an accident report. Albion's name survives…" → "Nine families get a report with no cause in it. Albion's name survives…"
+- "People hear that nine died in an incident, not why. Enough to push some change, not enough to start a panic." → "People hear the number, not the reason. Enough to push some change, not enough to start a panic."
+- "All three of his crew on the floor. Remind me not to annoy you." → "All three of his operatives on the floor. Remind me not to annoy you." (not on crew-lost routes)
+- "And not one of his crew on the floor. Harder than it looks." → "And not one of his operatives on the floor. Harder than it looks." (not on crew-lost routes)
+
+Vance, debrief: "Thank you." no longer plays when the crew is lost; new "The hall's standing. Nine of mine aren't." / "I'll not forget either." / "Nobody told me what was in my own plant. Nine of mine paid for that."
+
+Voltage: "So they sent someone." → "One of you. I'd budgeted for more."; new fallback "Read the casualty model on that bench. It's the only honest document in the building." (when he never stated the number).
+
+Robert Vance: "Make it quick. I've got a plant to run." → "Make it quick. Three banks, nine on the module swap in Hall 2, and one of me."; "Credentials, background checks, the lot. I never rang the firm." → "They had credentials, background checks, the lot. I never once rang the firm."; "Right. Then there's no time to waste." → "Right. Then I'd best stop sitting here."
+
+HaX, phone:
+- "Then the badge. Routine audit, came early. Call me once you're past him." → "Then the badge. Routine audit, came early. Once you're past him: Vance, then something in Hall 1 that isn't on their feed."
+- "Good. Scan what's on that network first, then see what each box is running." → "Scan what's on that network first, then see what each box is running."
+- "Watch your back. They won't hesitate." → "They'll know someone's opened the workshop. Keep an eye on the door."
+- "Last stretch. Keep him off that laptop and put down anyone standing with him." → "Last stretch. Anyone still standing with him goes down first."
+- Cut: "Two of them down already. You're almost there." / "One down. The rest won't make it easy." / "Their people are still up. Be ready." / "Good so far. Stay sharp for the last of it." / "Two hundred and forty thousand people are on that grid."
+
+Briefing: Netherton "Now they break the things people stand under." → "Now they break the things people can't live without."; HaX "…and none of them cornered." → "…and none of them amateurs."; "Press it and the banks isolate." → "Press it and the banks isolate, once grid control believes you. That's what Nightshade's reading is for."
+
+Security Guard: "Go on through. Operations office is straight down the hall." → "Go on through, my lover. Operations office is straight down the hall."; "Nobody said anything to me about a visit." → "A visit? I've an audit on my list, not a visit."
+
+Relay: "Aye. Easy." → "Nae bother."
+
+Not voiced: HaX text "He's going for the laptop. Drop him." → "Fight's on. Don't let him reach that bench."; Voltage's arrest choices "[Your thumb's on the bypass module. Blackout signed, you countersigned. Tell that to a court.]" → "[Your thumb's on the bypass module. Explain that to a court.]" and "[Blackout signed it. You countersigned. Tell that to a court.]" → "[It's over. You can explain your sums to a court.]".
+
+#### Open after cycle 2
+
+- Browser check (cycle 1's four items plus Vance's new goodbyes, the top-of-debrief nine line on both openers, and the gate reply).
+- The user: the debrief's network lines and "status page" (erb:980) against SecGen.
+- Cycle 3 per the review: confirm D6-1 to D6-21 and re-read r20–r23 and r25 end to end.

@@ -100,7 +100,7 @@ Security Guard: He'll be at his desk or in the control room at this hour.
 ~ guard_quiet = true
 #set_global:guard_admitted:true
 
-Security Guard: Go on through. Operations office is straight down the hall.
+Security Guard: Go on through, my lover. Operations office is straight down the hall.
 
 #exit_conversation
 -> guard_idle
@@ -108,7 +108,7 @@ Security Guard: Go on through. Operations office is straight down the hall.
 === guard_inspection_response ===
 #speaker:security_guard
 
-Nobody said anything to me about a visit.
+A visit? I've an audit on my list, not a visit.
 
 * [It's on today's list. I'm early. Check with your supervisor if you like.]
     -> guard_confused_allows

@@ -20,7 +20,7 @@
 },
 {"talk": "phone", "picks": ["attack mechanism mapped", "software's theirs", "take him alive", "Ready"]},
 {
-"said": ["Press it and the attack's dead", "If he reaches for that laptop, put him down", "Keep him off that laptop and put down anyone standing with him", "Then the button."],
+"said": ["Press it and the attack's dead", "If he reaches for that laptop, put him down", "Last stretch. Anyone still standing with him goes down first.", "Then the button."],
 "notSaid": ["won't arm", "Lives first", "In the plant room:"]
 },
 {"expect": {"promised_voltage_alive": true}},
@@ -47,11 +47,13 @@
 "Vance had the evacuation alarm on his desk all night",
 "We classify what we can. Nine deaths don't go in a drawer",
 "Accident. I'll sign it. I'll not pretend I like it.",
-"Nine families get an accident report",
+"Nine families get a report with no cause in it",
 "I'll have those card readers out",
-"Keep the crew's fingerprint kit"
+"Keep the crew's fingerprint kit",
+"I don't know what you are. I know what you did.",
+"Nine of mine. I'll be telling their families myself."
 ],
-"notSaid": ["maintenance fault", "Stability", "Nobody hears how close", "breathing"]
+"notSaid": ["maintenance fault", "Stability", "Nobody hears how close", "breathing", "Robert Vance: Thank you.", "Remind me not to annoy you", "Harder than it looks", "The night crew were still in Hall 2 when Bank B went"]
 }
 ]
 }

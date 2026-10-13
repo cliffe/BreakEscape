@@ -63,7 +63,7 @@ ENTROPY Operative 'Relay': Inverter room's closed. Has been all week.
 * [Radio. Down. Now.]
     ~ radio_interrupted = true
     Narrator: Her hand stops halfway. She weighs it, and leaves the radio where it is.
-    ENTROPY Operative 'Relay': Aye. Easy.
+    ENTROPY Operative 'Relay': Nae bother.
     -> relay_standoff
 
 * [The bypass modules on all three rack banks. Was that you?]

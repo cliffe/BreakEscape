@@ -1118,7 +1118,7 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
               "eventPattern": "npc_hostile_state_changed",
               "condition": "data.npcId === 'voltage' && data.isHostile === true && globalVars.racks_vented !== true",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 1500, "message": "He's going for the laptop. Drop him.", "skipIfGlobal": "voltage_neutralised" }
+              "sendTimedMessage": { "delay": 1500, "message": "Fight's on. Don't let him reach that bench.", "skipIfGlobal": "voltage_neutralised" }
             },
             <%# Playtest D7: the three optional methodology tasks never ticked.
                 Each is completed by the flag its step produces: the scan finds the

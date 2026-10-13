@@ -30,7 +30,7 @@
 {"set": {"plant_room_entered": true, "operative_static_defeated": true}},
 {
 "talk": "voltage",
-"picks": ["It's over", "Make me understand", "Why infrastructure", "How many does the hall take", "And you came anyway", "coming with me", "Blackout signed it"]
+"picks": ["It's over", "Make me understand", "Why infrastructure", "How many does the hall take", "And you came anyway", "coming with me", "explain your sums"]
 },
 {"expect": {"asked_the_number": true, "voltage_captured": true}},
 {"set": {"voltage_neutralised": true, "esd_authorized": true, "attack_prevented": true}},
@@ -41,17 +41,20 @@
 },
 {
 "said": [
-"The same one he gave you when you asked",
+"To the decimal this time",
 "You said you'd bring him in breathing",
-"Nine on the night crew",
+"The night crew were still in Hall 2 when Bank B went. Nine of them.",
+"Nine in Hall 2. Two more on the feed",
+"The hall's standing. Nine of mine aren't.",
+"I'll not forget either.",
 "Vance had the evacuation alarm on his desk all night",
 "Vance is on the line from the Albion ops desk",
 "An incident, nine dead, cause withheld",
 "Upstairs will like that. The inquest won't.",
-"People hear that nine died in an incident",
+"People hear the number, not the reason",
 "Keep the crew's fingerprint kit"
 ],
-"notSaid": ["Stability", "maintenance fault", "how close it came", "Get some rest", "You chose the button"]
+"notSaid": ["Stability", "maintenance fault", "how close it came", "Get some rest", "You chose the button", "You did right by this place", "A shame", "Thorough", "Harder than it looks", "None of this was random"]
 }
 ]
 }

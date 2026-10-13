@@ -104,7 +104,7 @@ EXTERNAL player_name()
 
 // Voltage at laptop, notices player entry
 
-So they sent someone.
+One of you. I'd budgeted for more.
 
 ~ temp down = 0
 {operative_cipher_defeated:
@@ -380,10 +380,10 @@ Narrator: He looks at your hands, then at the door behind you.
 Voltage: Nobody left to stop you. All right.
 
 // PASS 4 fix 21: the optional second print gives the arrest line its evidence.
-+ {voltage_print_on_bypass} [Your thumb's on the bypass module. Blackout signed, you countersigned. Tell that to a court.]
++ {voltage_print_on_bypass} [Your thumb's on the bypass module. Explain that to a court.]
     -> arrest_taken
 
-+ {not voltage_print_on_bypass} [Blackout signed it. You countersigned. Tell that to a court.]
++ {not voltage_print_on_bypass} [It's over. You can explain your sums to a court.]
     -> arrest_taken
 
 // PASS 3 (round 3, M2): the old "Last chance. Step away." made him refuse and
@@ -504,7 +504,13 @@ Narrator: The dock door bangs open onto the loading bay and the cold, and he's g
 }
 
 + [Nothing you want to tell me?]
-    Voltage: I told you the number. The only true thing anyone said in here tonight.
+    // Phase 4 dialogue C2 (D6-10): only if he stated it on this route. The visit
+    // count is lost on a reload, and the fallback is still true then.
+    {voltage_states_the_number:
+        Voltage: I told you the number. The only true thing anyone said in here tonight.
+    - else:
+        Voltage: Read the casualty model on that bench. It's the only honest document in the building.
+    }
     -> voltage_captured_end
 
 + [Say nothing.]
