@@ -3486,7 +3486,7 @@ def room_hce_trading():
     _trading_desk(r, 180, 190, [("pc11", 0.24, 0.40), ("pc6", 0.62, 0.42)],
                   [("phone3", 0.92, 0.40), ("office-misc-cup", 0.04, 0.34)])
     # the head trader's six-screen station closes the east bank (cycle 2, TR-1)
-    r.table("hce_trading_station1", 186.0, 246.0, kind="objects")
+    r.table("hce_trading_station1", 194.0, 246.0, kind="objects")   # x 194-254: 8 px further from the trader (c5 walk F3)
     # bins at the desk ends on the aisle side
     r.item("bin1", 116.0, 138.0)
     r.item("bin4", 116.0, 190.0)                     # (not at the east desks: the trader stands at x 144-176)

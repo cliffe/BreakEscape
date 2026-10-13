@@ -220,4 +220,51 @@ Fresh Opus review of the cycle 4 rooms: 0 blockers, 1 major, 6 minors (5 optiona
 | DOC-1 | CEO, exec wing | minor | Docstrings described the cycle-1 rooms | **Fixed** |
 | EXW-5 | Exec wing | note | Lower corridor bare, forced by Kemal's beat | None |
 
-The lab, executive wing, Satoshi's office and data centre maps were regenerated after the fixes. The in-game re-shot of the lab and the Sonnet interaction walk (game in `m06-dressing-walk-c5/` in the session scratchpad: every object tapped, read then dust the clipping then open the Signing Case, NPC taps, door-to-door walks, a reload) are still to be folded in. The walk loaded its maps before the LAB-4 chair swap, which is cosmetic.
+The lab, executive wing, Satoshi's office and data centre maps were regenerated after the fixes.
+
+### Interaction walk (Sonnet, game 2328, every room unlocked server-side; session stopped, :3001 left as found)
+
+All six checklist items pass. Every room loads its new map, with no duplicate sprites and no "No Tiled item found", before and after a page reload. Every scenario object opens directly, with no pick-one menu. Each door-to-door walk crosses. The guard and Kemal were talked past, with no debug KO.
+
+**EX-1 confirmed in game:**
+1. The clipping is read, and stays on the wall.
+2. It is dusted (88% lift, Satoshi's card matched), and still stays.
+3. The lifted print opens the Signing Case, which holds the Release Signing Record.
+
+The Signing Case draws above the desk on its front-left edge, and nothing hides the safe.
+
+| id | room | sev | finding | outcome |
+|---|---|---|---|---|
+| F1 | Satoshi | minor | The CEO chair and a guest chair can be pushed. Walking to the safe corner shoved one below the safe, which stayed reachable. | **Left:** this is the swivel-chair behaviour, the same as room_ceo before |
+| F2 | Exec wing | minor | The harness's `moveToNear` stops short of Kemal; `interact` then walks up and works | **Left:** harness only |
+| F3 | Trading | minor | Tapping the trader raised a menu in the harness. He stood 26 px from the head-trader station. | **Fixed:** station moved 8 px east (x 194-254). The S-door lane is still clear. |
+| F4 | Trading, exec wing | minor | Console notice "Tables object layer not found or empty" | **Left:** harmless. Both maps have no table-layer furniture by design. |
+| F5 | Lab | minor | A thin grey bar across the floor | **Left:** this is the floor trunking painted into `room_hce_lab` (y 150-156), which is intended |
+| F6 | Engine | minor | 404s: `female_hacker_hood_v2_talk.png` and the fingerprint minigame's surface images | **For the orchestrator:** not dressing assets |
+| F7 | Engine | minor | Resume after a reload returns the player to the lobby start | **For the orchestrator:** engine behaviour |
+
+### Checks after cycle 5
+
+- Validator: schema, geometry and door alignment pass.
+- `check_door_alignment`: 8/8.
+- Walls: all 64.
+- Slot audit: 0 problems.
+- Routes: 29/29.
+- In game, game 2332: the lab, with its back-view chairs facing the desks, and the trading floor, with the moved station. No "No Tiled item found". Shots are in `build_evidence/dressing_c5/` and `tmp/review/m06_dressing_c5_*.png`.
+
+### Phase art: room dressing CLOSED (2026-10-13)
+
+| Cycle | Blocker | Major | Minor |
+|---|---|---|---|
+| 1 (survey, first room, all nine rooms built) | 1 | 6 | 2 |
+| 2 (review of cycle 1) | 0 | 7 | 13 |
+| 3 (review; Priya moved, clipping read in place) | 0 | 2 | 8 |
+| 4 | fixes for cycle 3 | | |
+| 5 (review and interaction walk, game 2328) | 0 | 1 | 6 review + 7 walk |
+
+Cycle 5's one major (LAB-4, the lab chairs) is fixed and confirmed in game 2332. Nothing above minor remains. The leftover minors are optional sprite repeats and engine or harness items, all listed above. The first-room look is still waiting for the user's sign-off (D8 in `DECISIONS_PENDING.md`).
+
+Next: lighting (`mission-room-lighting`), then the POV backgrounds. Lighting should note three things:
+- the ticker and market wall;
+- the cyan server room;
+- the custody cage.

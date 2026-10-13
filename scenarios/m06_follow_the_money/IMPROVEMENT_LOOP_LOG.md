@@ -993,3 +993,25 @@ Side effect: with the defiant branch gone, nothing reads `moral_conflict_reveale
 
 - Irina, cut: "This is the state overreach we warned people about." (every detention now gets the existing wrists line).
 - Satoshi: "You haven't found my wallet. But you've seen enough of my exchange to guess." → "You've seen enough of my exchange to guess."
+
+## Phase art: room dressing
+
+The full log is in `ROOM_DRESSING.md`, with evidence in `build_evidence/dressing_c1..c5`.
+- Cycles 1–5 gave m06 its own HashChain Exchange building: nine `room_hce_*` maps at the old sizes.
+- Every scenario object sits on a fixture (`slot_audit`: 0 problems, down from 5).
+- The m11 layout needed no connection change. The data centre carries an EXECUTIVE SUITE plate, and the two server rooms now look different.
+- The orchestrator approved two changes:
+  - the press clipping is read in place, and in game 2328 it stays on the wall through read, then dust, then the Signing Case;
+  - Priya moved to (6,4).
+- The guard's and Kemal's sight windows are unchanged (`dressing_c1/cone.py`).
+
+### Phase art: room dressing CLOSED (2026-10-13)
+
+| Cycle | Blocker | Major | Minor |
+|---|---|---|---|
+| 1 | 1 | 6 | 2 |
+| 2 | 0 | 7 | 13 |
+| 3 | 0 | 2 | 8 |
+| 5 (review and interaction walk) | 0 | 1 | 13 |
+
+Nothing above minor remains. The first-room sign-off is still pending (D8). Next: lighting, then POV backgrounds.
