@@ -1015,3 +1015,20 @@ The full log is in `ROOM_DRESSING.md`, with evidence in `build_evidence/dressing
 | 5 (review and interaction walk) | 0 | 1 | 13 |
 
 Nothing above minor remains. The first-room sign-off is still pending (D8). Next: lighting, then POV backgrounds.
+
+**Dialogue closing browser check (PASS5_DIALOGUE_BROWSER, games 2331, 2335, 2343, 2347, 2351):** 7 of 7 pass, with 0 blockers, 0 majors and 0 minors. Two nits are carried to the playtest stage:
+- P5D-2: HaX's first-call preload says "You're inside." at the checkpoint.
+- P5D-3: Priya's credit wording.
+
+The black conversation backgrounds are expected; the POV stage comes after lighting.
+
+### Phase 4 dialogue: CLOSED (2026-10-13)
+
+| Cycle | Blockers | Majors | Minors |
+|---|---|---|---|
+| 1 | 0 | 6 | 38 |
+| 2 | 0 | 1 | 21 |
+| 3 | 0 | 1 | 1 |
+| Browser | 0 | 0 | 0 |
+
+29 routes, each run limited to 9 lines without a choice.
