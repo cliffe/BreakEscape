@@ -202,6 +202,32 @@
   line-height: 1.3;
 }
 
+/* Required vs optional. Required tasks carry a '*' (only in aims that also
+ * have optional tasks); optional tasks are unmarked and a step dimmer than
+ * the #ccc task text, and brighter than skipped tasks (#888 at 0.7) */
+/* GNF draws '*' small and high, so it is enlarged to read at a glance */
+.task-required-mark {
+  margin-left: 4px;
+  color: #ffcc00;
+  font-size: 1.6em;
+  line-height: 0;
+  vertical-align: -0.3em;
+}
+.task-active.task-optional {
+  color: #999;
+}
+
+/* "* required" key in the header, shown only while a '*' is on screen */
+.objectives-key {
+  align-self: center;
+  color: #aaa;
+  font-size: 11px;
+  white-space: nowrap;
+}
+.objectives-key[hidden] {
+  display: none;
+}
+
 .task-progress {
   color: #888;
   font-size: 12px;

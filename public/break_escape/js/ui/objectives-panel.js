@@ -38,6 +38,7 @@ export class ObjectivesPanel {
     header.innerHTML = `
       <span class="objectives-title">📋 Objectives</span>
       <div class="objectives-controls">
+        <span class="objectives-key" title="Tasks marked * are required. Unmarked tasks are optional." hidden><span class="task-required-mark">*</span> required</span>
         <button class="objectives-toggle" aria-label="Toggle objectives" title="Collapse/Expand">▼</button>
       </div>
     `;
@@ -70,6 +71,8 @@ export class ObjectivesPanel {
       if (toggle) toggle.textContent = this.aimCollapsed[aimId] ? '▶' : '▼';
     });
 
+    this.keyEl = header.querySelector('.objectives-key');
+
     this.container.appendChild(header);
     this.container.appendChild(this.content);
     document.body.appendChild(this.container);
@@ -83,13 +86,34 @@ export class ObjectivesPanel {
     if (window.getTutorialManager) window.getTutorialManager().notifyObjectivesToggled();
   }
   
+  /**
+   * Required tasks get a '*' only in an aim that has at least one visible
+   * optional task, so aims (and missions) without optional tasks look as they
+   * always did. Only open tasks carry it: a completed or skipped task is
+   * settled. Purely presentational; task.title is never changed.
+   */
+  static requiredMarkerTaskIds(aim) {
+    const visible = (aim.tasks || []).filter(t => t.status !== 'locked');
+    if (!visible.some(t => t.optional === true)) return new Set();
+    return new Set(visible
+      .filter(t => t.optional !== true && t.status !== 'completed' && t.status !== 'skipped')
+      .map(t => t.taskId));
+  }
+
+  /** Show the "* required" key only while a '*' is on screen */
+  setKeyVisible(visible) {
+    if (this.keyEl) this.keyEl.hidden = !visible;
+  }
+
   render(aims) {
     if (!aims || aims.length === 0) {
       this.content.innerHTML = '<div class="no-objectives">No active objectives</div>';
+      this.setKeyVisible(false);
       return;
     }
     
     let html = '';
+    let anyMarker = false;
     
     aims.forEach(aim => {
       const isCompleted = aim.status === 'completed';
@@ -127,6 +151,9 @@ export class ObjectivesPanel {
           <div class="aim-tasks">
       `;
       
+      const markedIds = ObjectivesPanel.requiredMarkerTaskIds(aim);
+      if (markedIds.size > 0 && !isCompleted) anyMarker = true;
+
       aim.tasks.forEach(task => {
         if (task.status === 'locked') return; // Don't show locked tasks
         
@@ -141,11 +168,14 @@ export class ObjectivesPanel {
           progressText = ` <span class="task-progress">(${task.currentCount || 0}/${task.targetCount})</span>`;
         }
         const skippedLabel = skipped ? '<span class="task-skipped-label">skipped</span>' : '';
+        const optionalClass = task.optional === true ? ' task-optional' : '';
+        const requiredMark = markedIds.has(task.taskId)
+          ? '<span class="task-required-mark" aria-label="required">*</span>' : '';
         
         html += `
-          <div class="objective-task ${taskClass}" data-task-id="${task.taskId}">
+          <div class="objective-task ${taskClass}${optionalClass}" data-task-id="${task.taskId}">
             <span class="task-icon">${taskIcon}</span>
-            <span class="task-title">${this.escapeHtml(task.title)}${progressText}</span>${skippedLabel}
+            <span class="task-title">${this.escapeHtml(task.title)}${requiredMark}${progressText}</span>${skippedLabel}
           </div>
         `;
       });
@@ -157,6 +187,7 @@ export class ObjectivesPanel {
     });
     
     this.content.innerHTML = html;
+    this.setKeyVisible(anyMarker);
   }
   
   /**
