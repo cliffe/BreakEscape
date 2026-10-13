@@ -1,3 +1,7 @@
+# Resume note — m05 and m06 full passes (pass 5, started 2026-10-13)
+
+Running alongside m04's pass, without the user's input (user, 2026-10-13): anything needing the user goes in each mission's `DECISIONS_PENDING.md` and work moves on. Briefs `docs/agents/M05_PASS_BRIEF.md`, `M06_PASS_BRIEF.md` (no VM-content summaries: a safety check stopped the orchestrator writing them; reviewers judge only that flags are required and woven in). Stage order as AGENTS.md "Iterating": regression, alignment, puzzle chains, scenario design, dialogue + dressing, lighting, POV, characters (parked for picks), playtests and blind runs. Started: regression A and alignment round 1 for both.
+
 # Resume note — m04 full pass (pass 5, started 2026-10-13)
 
 Brief `docs/agents/M04_PASS_BRIEF.md`; log `scenarios/m04_critical_failure/IMPROVEMENT_LOOP_LOG.md`. Regression A: 0/0/7. Phase 1 alignment CLOSED after 4 rounds (5363380c): night-crew warning choice, sweep-then-call-in, sight challenges, phase music, progress-gated HaX hub, route driver `scripts/ink_runtime_check/m04_routes/` (13 routes, clock model). Engine 0b66f334 (sight challenges hold for the tutorial prompt). Next: phase 2 puzzle chains, then scenario design, dialogue + dressing, lighting, POV, characters, blind runs. Deferred to characters: operative death anims / portraits, Vance portrait, briefing HaX sprite.
