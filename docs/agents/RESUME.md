@@ -7,6 +7,7 @@ Brief `docs/agents/M03_PASS2_BRIEF.md`; log `scenarios/m03_ghost_in_the_machine/
 - Engine today (all user-approved): lighting L1 variants, L2 white-map, L3 torch, E4 cones above light map, tour flags, chatBackground conditions, toasts reading-time lifetime, RFID denial hold + door_unlock_failed, KO body on reload.
 - Terry: night on-sight challenge (talk your way out), lockpick catch → hostile; Perfect Stealth = never seen.
 - Blind runs: B (struggling) complete; A4 ("do your best", user-run) reached the credits: 0 blockers, 0 majors, 8 minors, fixed in 408e0805, 7745ec6f, 4b6acad7. PASS2_STEALTH_CHECK.md: the A4 fixes pass in the browser; the lockpick catch forces a fight (user: fine, it's winnable); Terry's clock threats reworded (157dae9b). Route driver now has "reload": "page" (only synced globals survive), 27 routes.
+- TODO (user + orchestrator, 2026-10-13): m03 lab sheet VM stages. The lab sheet (`scenarios/m03_ghost_in_the_machine/labsheet.md`, copied to HacktivityLabSheets) has the scan, FTP, price list and distcc stages written from the in-game text and field guides only, marked "not checked against the VM". Auto mode's safety check stopped this session reading the SecGen XML for them, so the user runs that step in a normal session, writing to `scenarios/m03_ghost_in_the_machine/LABSHEET_VM_STAGES.md`. Then merge it into labsheet.md and the HacktivityLabSheets copy together.
 - Not pushed (branch ahead of origin by ~70 commits).
 
 # Resume note — room POV chat backgrounds (2026-10-11): COMPLETE
