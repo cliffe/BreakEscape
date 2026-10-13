@@ -313,8 +313,9 @@ def room_tilesets(name: str) -> list[dict]:
             elif ts.get("name") == "room18":
                 ts["name"] = east
                 ts["image"] = ts["image"].replace("room18.png", f"{east}.png")
-    elif name in UNI_FLOOR_SHEETS or name in ZDS_FLOOR_SHEETS or name in AES_FLOOR_SHEETS:
-        floor = UNI_FLOOR_SHEETS.get(name) or ZDS_FLOOR_SHEETS.get(name) or AES_FLOOR_SHEETS[name]
+    elif name in UNI_FLOOR_SHEETS or name in ZDS_FLOOR_SHEETS or name in AES_FLOOR_SHEETS or name in HCE_FLOOR_SHEETS:
+        floor = (UNI_FLOOR_SHEETS.get(name) or ZDS_FLOOR_SHEETS.get(name) or AES_FLOOR_SHEETS.get(name)
+                 or HCE_FLOOR_SHEETS[name])
         for ts in tilesets:
             if ts.get("name") == "room6":
                 ts["name"] = floor
@@ -370,6 +371,20 @@ AES_FLOOR_SHEETS = {
     "room_aes_workshop": "room_aes_workshop",    # sealed concrete, hazard line round the bench
     "room_aes_plant": "room_aes_plant",          # green epoxy, red-hatched box at the ESD
     "room_aes_dock": "room_aes_dock",            # concrete, bay lines, threshold stripes
+}
+# HashChain Exchange (m06): room6 repainted by room_gen/make_hce_tileset.py,
+# midnight navy walls with a bitcoin-amber line front of house, pale grey in the
+# back offices, petrol blue with a cyan line in the server room and data centre.
+HCE_FLOOR_SHEETS = {
+    "room_hce_trading": "room_hce_trading",      # blue-grey carpet tiles, a lighter aisle
+    "room_hce_lobby": "room_hce_lobby",          # marble, gold hex-chain inlay
+    "room_hce_hall": "room_hce_hall",            # marble (checkpoint)
+    "room_hce_office": "room_hce_office",        # taupe carpet (Irina)
+    "room_hce_lab": "room_hce_lab",              # grey vinyl, trunking
+    "room_hce_servers": "room_hce_servers",      # raised floor, cold aisles
+    "room_hce_vault": "room_hce_vault",          # darker raised floor, custody cage line
+    "room_hce_exec_hall": "room_hce_exec_hall",  # smoked oak, navy runner
+    "room_hce_ceo": "room_hce_ceo",              # smoked oak, amber rug
 }
 # 20x10 halls whose floor is one 640px sheet cut in two (west half, east half).
 AES_WIDE_SHEETS = {
@@ -907,6 +922,22 @@ WALL_MOUNTED_EXTRAS = {
     "aes_hivis_hook",
     "aes_shutter_ctrl",
     "aes_mimic_board",
+    "hce_logo_sign",
+    "hce_logo_small",
+    "hce_ticker",
+    "hce_world_clocks",
+    "hce_chart_screen",
+    "hce_press_clipping",
+    "hce_whiteboard_maths",
+    "hce_whiteboard_graph",
+    "hce_whitepaper_frame",
+    "hce_custody_sign",
+    "hce_exec_sign",
+    "hce_staff_sign",
+    "hce_server_sign",
+    "hce_lab_sign",
+    "hce_block_screen",
+    "hce_phd_frame",
 }
 
 
@@ -3392,6 +3423,388 @@ def room_aes_dock():
     return r.build("room_aes_dock")
 
 
+# ---------------------------------------------------------------------------
+# HashChain Exchange (m06 "Follow the Money"): the Crypto Anarchists' exchange,
+# a slick fintech front at night. Walls and floors: room_gen/make_hce_tileset.py;
+# hand-drawn signs, ticker and screens: room_gen/make_hce_props.py (hce_*).
+# Furniture is the photo-based house set where it exists. These maps are m06's
+# own, so the shared room_reception, hall_1x2gu, room_office, room_servers and
+# room_ceo are untouched. Coordinates: x = left edge, y = feet.
+# ---------------------------------------------------------------------------
+
+def _trading_desk(r, x, feet, monitors, extras=(), chairs=True):
+    """A steel trading desk (zds_desk1, 78x39) with its monitors and clutter on it
+    (name, x_frac, surface_frac; the first in `monitors` is placed first, so a
+    scenario pc claims it), and two mesh chairs seen from behind, tucked in at the
+    front edge (the traders face their screens). The desk body is a table, so it
+    collides; the chairs are walk-behind decor."""
+    d = r.table("zds_desk1", float(x), float(feet), kind="objects")
+    for name, xf, sf, *layer in monitors:
+        r.on(d, name, xf, sf, layer=layer[0] if layer else "table_items")
+    for name, xf, sf, *layer in extras:
+        r.on(d, name, xf, sf, layer=layer[0] if layer else "table_items")
+    if chairs:
+        r.item("chair-grey-4", float(x + 14), float(feet + 12))
+        r.item("chair-grey-4", float(x + 46), float(feet + 12))
+    return d
+
+
+def room_hce_trading():
+    """
+    2×2 GU trading floor: the exchange's shop window. Blue-grey carpet with a
+    lighter aisle (x 114-180) down the middle (room_hce_trading). Back wall: the
+    LED price ticker over a wall of market monitors, and world clocks (London, New
+    York, Tokyo) beside the N door. Five steel trading desks in two banks of three
+    rows, each with two or three screens and two mesh chairs tucked in, facing the
+    screens; the west bank's third row is the photocopier and coffee point.
+    Doors: W and E on row 2 (the row y 64-104 stays clear wall to wall), N (NE
+    corner, x 256-288), S (SE corner). The east lane x 258-288 runs clear from the
+    N and E doors down to the S door. The checkpoint covers the bottom two rows,
+    so feet stay at y 256 or above.
+    NPCs: Irina at (5,5) and the trader at (5,7) (sprite centres x 160) stand in
+    the aisle, which stays clear from y 104 down; her dropped things land there.
+    Slots: pc10 on the east bank's front desk (base pc, Trading Workstation; the
+    only pc10 and the first pc in table_items), notes3 on the west bank's back
+    desk (Daily Trading Report), 70 px+ apart.
+    """
+    r = _Uni()
+    # back wall
+    r.item("hce_ticker1", 28.0, 21.0)                # LED ticker, top 12
+    r.item("screens", 28.0, 58.0)                    # the market wall, top 21
+    r.item("hce_world_clocks1", 212.0, 42.0)         # LDN / NYC / TKY, west of the N door
+    # three rows a bank (feet 138, 190, 242); the east bank's front desk goes first: its pc10
+    # is the Trading Workstation
+    _trading_desk(r, 180, 138, [("pc10", 0.36, 0.42), ("pc6", 0.76, 0.42)],   # pc10 clear of Irina's tap frame (c2 TR-2)
+                  [("phone1", 0.95, 0.40), ("coffee_cups1", 0.06, 0.38)])
+    _trading_desk(r, 36, 138, [("pc8", 0.24, 0.40), ("pc11", 0.56, 0.40), ("laptop1", 0.86, 0.44)],
+                  [("energy_cans1", 0.04, 0.30)])
+    _trading_desk(r, 36, 190, [("pc6", 0.28, 0.42), ("pc8", 0.66, 0.40)],
+                  [("notes3", 0.92, 0.42, "conditional_table_items"), ("office-misc-headphones", 0.06, 0.34)])
+    _trading_desk(r, 180, 190, [("pc11", 0.24, 0.40), ("pc6", 0.62, 0.42)],
+                  [("phone3", 0.92, 0.40), ("office-misc-cup", 0.04, 0.34)])
+    # the head trader's six-screen station closes the east bank (cycle 2, TR-1)
+    r.table("hce_trading_station1", 186.0, 246.0, kind="objects")
+    r.item("pizza_boxes1", 250.0, 248.0)
+    # bins at the desk ends on the aisle side
+    r.item("bin1", 116.0, 138.0)
+    r.item("bin4", 116.0, 190.0)                     # (not at the east desks: the trader stands at x 144-176)
+    # the west bank's third row is the coffee and print point
+    r.item("photocopier1", 36.0, 244.0)
+    r.item("coffee_station1", 74.0, 242.0)
+    r.item("mini_fridge1", 100.0, 240.0)
+    # side walls, below the door row
+    r.item("fire_extinguisher1", 14.0, 140.0)
+    r.item("fire_alarm_point1", 292.0, 136.0)
+    return r.build("room_hce_trading")
+
+
+def room_hce_lobby():
+    """
+    2×2 GU HashChain lobby (reception_lobby, the start room): pale marble with the
+    gold hex-chain inlay in front of the counter (room_hce_lobby), navy walls with
+    the amber line. Back wall: the HASHCHAIN wordmark over the curved reception
+    desk, a candlestick screen, an exit sign by the N door; a bitcoin ATM in the NE
+    corner, a visitor kiosk beside the desk. A gold-coin pedestal and a display
+    case (a hardware wallet under glass) flank the inlay; a lounge of two club
+    chairs and a glass table along the south, fig planters in the corners, a
+    brochure rack on the east side.
+    Doors: N (NW corner, x 32-64): the lane x 32-70 stays clear down to y 140.
+    Nothing to the south, so the floor runs to y 300. The spawn and the inlay
+    (x 120-200, y 120-220) stay clear.
+    Slots: notes3 on the reception desk (HashChain Exchange Brochure).
+    """
+    r = _Uni()
+    r.item("exit_sign1", 70.0, 34.0)
+    r.item("hce_logo_sign1", 128.0, 36.0)            # over the desk
+    r.item("hce_chart_screen1", 200.0, 54.0)
+    desk = r.table("hce_reception_desk1", 129.0, 112.0, kind="objects")   # x 129-191, top 62
+    r.on(desk, "notes3", 0.30, 0.30, layer="conditional_table_items")
+    r.on(desk, "pc11", 0.66, 0.24)
+    r.solid("hce_kiosk1", 204.0, 112.0)              # visitor sign-in kiosk
+    r.solid("hce_crypto_atm1", 252.0, 92.0)          # NE corner
+    r.solid("hce_price_board1", 32.0, 176.0)         # live price board below the N-door lane (cycle 2, LOB-1)
+    r.solid("hce_display_case1", 94.0, 196.0)        # a hardware wallet under glass
+    r.solid("hce_coin_pedestal1", 214.0, 196.0)
+    r.solid("brochure_rack1", 242.0, 252.0)
+    # the lounge, south
+    r.solid("club_chair_e1", 92.0, 290.0)
+    r.table("glass_coffee_table1", 130.0, 288.0, kind="objects")
+    r.solid("club_chair_w1", 184.0, 290.0)
+    r.solid("planter_fig1", 34.0, 300.0)
+    r.solid("planter_fig1", 254.0, 186.0)
+    r.solid("water_cooler1", 36.0, 236.0)
+    # side walls
+    r.item("fire_extinguisher1", 14.0, 200.0)
+    r.item("fire_alarm_point1", 292.0, 150.0)
+    return r.build("room_hce_lobby")
+
+
+def room_hce_hall():
+    """
+    2×1 GU (10×6) security checkpoint: the lobby's marble, navy walls
+    (room_hce_hall). The lobby covers the bottom two rows, so the floor is y 64-128
+    and everything stands against the back wall or hangs on it: a STAFF ONLY plate
+    and a camera by the N door, the noticeboard with the IT checklist pinned on it,
+    the guard's desk with his monitors, a water cooler.
+    Doors: S (SW corner, x 32-64), N (NE corner, x 256-288).
+    Kept clear for the guard (checkpoint_guard, waypoints (4,4) and (3,4), sprite
+    centres x 96-128): x 80-150 below y 90. Kept clear for the pick window: the
+    floor x 200-288 (the player's centre x 209-279 within 64 px of the N door).
+    Slots: notes4 pinned on the noticeboard (IT New Starter Checklist).
+    """
+    r = _Uni()
+    r.item("key_cabinet1", 38.0, 36.0)               # over the cooler (cycle 2, CP-3)
+    r.solid("water_cooler1", 36.0, 84.0)             # NW corner, clear of the noticeboard (cycle 2, CP-1)
+    r.item("notice_board1", 70.0, 52.0)              # x 70-112, top 21
+    r.conditional_items.append(make_obj("objects", "notes4", 78.0, 44.0, r._next()))   # pinned on it
+    r.item("fire_action_notice1", 116.0, 52.0)
+    r.item("hce_logo_small1", 142.0, 23.0)
+    r.solid("aes_security_desk1", 140.0, 90.0)       # x 140-201: the guard's desk and monitors
+    r.item("hce_staff_sign1", 194.0, 28.0)
+    r.item("cctv_camera1", 230.0, 52.0)
+    return r.build("room_hce_hall", "10x6_hall")
+
+
+def room_hce_office():
+    """
+    2×2 GU Irina Volkova's office (the CTO, a cryptographer): taupe carpet, pale
+    grey walls with the amber line (room_hce_office). Bookcases and a steel filing
+    cabinet along the back wall, her elliptic-curve whiteboard and the framed
+    bitcoin white paper; her desk facing the room with a banker's lamp, journals
+    piled beside it; a reading corner (club chair, side table with the research
+    notes) south-west; a printer table with the Architect's email south-east; a
+    coat stand by the door.
+    Doors: E on row 2 (x 240-288, y 64-110 kept clear). Nothing to the south: the
+    floor runs to y 300.
+    Slots: pc11 on her desk (base pc, Irina's Secure Workstation), notes3 on the
+    reading table (Cryptography Research Notes), notes1 on the printer table
+    (Email: From The Architect); 32 px+ apart, scenario order.
+    """
+    r = _Uni()
+    r.solid("bookcase", 36.0, 84.0)
+    r.solid("bookcase", 80.0, 84.0)
+    r.item("hce_whiteboard_maths1", 130.0, 54.0)
+    r.item("hce_phd_frame1", 184.0, 44.0)            # her doctorate (cycle 2, OFF-1: the white paper is Satoshi's)
+    r.solid("filing_cabinet_steel1", 208.0, 86.0)
+    r.item("wall_clock1", 240.0, 42.0)
+    # her desk, facing the room
+    r.item("exec_chair_black1", 136.0, 140.0)
+    desk = r.table("exec_desk1", 112.0, 172.0, kind="objects")    # x 112-192, top 126
+    r.on(desk, "pc11", 0.40, 0.30)
+    r.on(desk, "bankers_lamp1", 0.12, 0.26)
+    r.on(desk, "coffee_cups1", 0.80, 0.30)
+    r.solid("journal_stack1", 196.0, 172.0)
+    r.solid("book_pile1", 84.0, 170.0)
+    r.solid("bin2", 64.0, 172.0)
+    r.item("chair-grey-4", 140.0, 208.0)             # visitor chair facing her desk
+    # reading corner, SW
+    r.solid("club_chair_e1", 38.0, 252.0)
+    side = r.table("smalldesk2", 80.0, 250.0)
+    r.on(side, "notes3", 0.5, 0.30, layer="conditional_table_items")
+    r.solid("fig_plant1", 36.0, 300.0)
+    # printer table, SE
+    pt = r.table("smalldesk1", 220.0, 250.0)
+    r.on(pt, "notes1", 0.30, 0.34, layer="conditional_table_items")
+    r.on(pt, "office-misc-hdd6", 0.78, 0.30)
+    r.solid("shredder1", 270.0, 252.0)
+    r.solid("binder_shelves1", 210.0, 200.0)
+    r.solid("coat_stand1", 262.0, 160.0)
+    r.item("fire_alarm_point1", 14.0, 150.0)
+    return r.build("room_hce_office")
+
+
+def room_hce_lab():
+    """
+    2×2 GU blockchain lab (chain analysis): grey vinyl with floor trunking, pale
+    grey walls with the amber line (room_hce_lab). Back wall: CHAIN ANALYSIS plate,
+    the analysts' transaction-graph whiteboard, two screens (wallet-flow graph and
+    order book). Mining rigs and a node shelf down the east side with an air mover;
+    two analyst desks in the middle; a Pi-cluster bench and a beanbag west.
+    Doors: W on row 2 (x 32-80, y 64-110 kept clear). Nothing to the south.
+    Priya (blockchain_analyst) at (3,3): sprite x 80-112, y 64-128, on clear floor.
+    Slots: pc10 on the front desk (base pc, Blockchain Analysis Workstation);
+    notes3 and notes1 at either end of the back desk (Network Analysis, Mixing
+    Analysis; 50 px+ apart), scenario order.
+    """
+    r = _Uni()
+    r.item("threat_map1", 40.0, 56.0)                # flows of money across the map (cycle 2, LAB-1)
+    r.item("hce_lab_sign1", 132.0, 24.0)
+    r.item("hce_whiteboard_graph1", 128.0, 56.0)
+    r.item("hce_chart_screen3", 180.0, 54.0)
+    r.item("hce_chart_screen2", 234.0, 54.0)
+    # east: the rigs
+    r.solid("hce_mining_rig2", 232.0, 140.0, depth=14)
+    r.solid("hce_node_shelf1", 232.0, 200.0, depth=14)
+    r.solid("hce_mining_rig1", 226.0, 270.0, depth=14)
+    r.solid("aes_air_mover1", 204.0, 120.0)
+    # analyst desks
+    d1 = _trading_desk(r, 120, 160, [("pc10", 0.32, 0.42), ("pc8", 0.72, 0.40)],
+                       [("energy_cans1", 0.94, 0.30)])
+    # the analysis table: Priya's two papers at either end, 90 px apart (cycle 2, LAB-1)
+    t = r.table("zds_conference_table1", 100.0, 240.0, kind="objects")   # x 100-226
+    r.on(t, "notes3", 0.10, 0.30, layer="conditional_table_items")
+    r.on(t, "laptop3", 0.36, 0.28)
+    r.on(t, "pc6", 0.58, 0.30)
+    r.on(t, "coffee_cups1", 0.74, 0.28)
+    r.on(t, "notes1", 0.90, 0.30, layer="conditional_table_items")
+    r.item("aes_office_chair1", 128.0, 258.0)
+    r.item("aes_office_chair1", 178.0, 258.0)
+    # west: the hardware bench and the beanbags
+    bench = r.table("it_workbench1", 36.0, 200.0, kind="objects")
+    r.solid("beanbag1", 40.0, 280.0)
+    r.solid("pizza_boxes1", 88.0, 284.0)
+    r.item("fire_extinguisher1", 292.0, 170.0)
+    return r.build("room_hce_lab")
+
+
+def room_hce_servers():
+    """
+    2×2 GU server room (the exchange's backend): raised floor with two perforated
+    cold aisles, petrol-blue walls with a cyan line (room_hce_servers). A back row
+    of racks under a cable tray, the long row of blue servers across the middle,
+    an ops bench with the SAFETYNET drop and the rack sheet, the backend console
+    desk, a precision air-con unit and the UPS.
+    Doors: S (SE corner) and N (NE corner): the east lane x 256-288 runs clear from
+    door to door. The trading floor covers the bottom two rows (feet <= 256).
+    Slots: pc8 on the console desk (as-type:pc, HashChain Backend Server Terminal),
+    flag-station and notes3 on the bench, 32 px+ apart.
+    """
+    r = _Uni()
+    r.item("cable_tray1", 36.0, 27.0)
+    r.solid("server_rack1", 36.0, 86.0)
+    r.solid("network_rack1", 68.0, 88.0)
+    r.solid("server_rack2", 104.0, 88.0)
+    r.solid("storage_array1", 136.0, 88.0)
+    r.solid("hce_comms_cabinet1", 166.0, 90.0)       # (cycle 2, VLT-2: unlike the data centre's kit)
+    r.item("hce_server_sign1", 194.0, 26.0)
+    r.solid("aes_ups1", 216.0, 88.0)
+    r.table("servers", 34.0, 170.0, kind="objects")  # x 34-255
+    # console desk and bench, south
+    con = r.table("zds_desk3", 172.0, 240.0, kind="objects")   # x 172-223
+    r.on(con, "pc8", 0.45, 0.42, layer="conditional_table_items")
+    r.item("chair-grey-4", 186.0, 252.0)
+    bench = r.table("zds_desk1", 40.0, 240.0, kind="objects")  # x 40-118
+    r.on(bench, "flag-station", 0.22, 0.38, layer="conditional_table_items")
+    r.on(bench, "notes3", 0.80, 0.40, layer="conditional_table_items")
+    r.solid("kvm_cart1", 126.0, 246.0)
+    r.solid("aircon_unit1", 224.0, 252.0)
+    r.item("suppression_panel1", 14.0, 210.0)
+    return r.build("room_hce_servers")
+
+
+def room_hce_vault():
+    """
+    2×2 GU data centre, the custody core: darker raised floor, petrol-blue walls
+    with a cyan line (room_hce_vault). The custody cage across the NW: mesh panels
+    and a cage door along a hatched floor line (y 150), HSM cabinets and the
+    hardware-wallet cabinet inside under a CUSTODY VAULT / TWO-PERSON RULE plate.
+    The custody console on its own steel desk in front of the cage door, with the
+    cold-storage procedure; the transaction server's terminal beside a block of
+    black racks east; EXECUTIVE SUITE plate over the E door's end of the wall
+    (the executive wing is through here); gas suppression, CRAC unit, UPS.
+    Doors: E on row 2, S (SE corner): the east lane x 256-288 stays clear from the E
+    door down to the S door (the rack block x 186-250 stands against the back wall,
+    west of it). The server room covers the bottom two rows.
+    Slots (scenario order): pc6 on the server desk (Financial Transaction Server),
+    pc10 on the console desk (Custody Console), notes3 on the console desk's far
+    end (Cold Storage Procedure, 40 px+ from the console).
+    """
+    r = _Uni()
+    r.item("hce_custody_sign1", 60.0, 30.0)
+    r.item("aes_cctv1", 134.0, 34.0)                 # watching the cage door (cycle 2, VLT-3)
+    r.solid("hce_hsm1", 36.0, 112.0, depth=12)
+    r.solid("server_rack1", 80.0, 110.0)             # (cycle 2, VLT-1: one angled HSM fewer)
+    r.solid("hce_wallet_cabinet1", 122.0, 112.0, depth=12)
+    # the cage front (y 150): panels either side of the door
+    r.solid("hce_cage_panel1", 32.0, 152.0, inset=0, depth=8)
+    r.item("hce_cage_door1", 85.0, 152.0)            # the door, shut (walk-behind decor)
+    r.collision(85.0, 144.0, 36.0, 8.0)
+    r.solid("hce_cage_panel1", 121.0, 152.0, inset=0, depth=8)
+    # east: the rack block and the transaction server
+    r.item("hce_exec_sign1", 214.0, 30.0)
+    r.solid("server_rack2", 186.0, 90.0)
+    r.solid("storage_array1", 218.0, 90.0)
+    srv = r.table("zds_desk3", 196.0, 168.0, kind="objects")   # x 196-247
+    r.on(srv, "pc6", 0.45, 0.42)
+    r.item("chair-grey-4", 210.0, 180.0)
+    # the custody console, in front of the cage door
+    con = r.table("zds_desk1", 64.0, 210.0, kind="objects")    # x 64-142
+    r.on(con, "pc10", 0.30, 0.42)
+    r.on(con, "notes3", 0.90, 0.40, layer="conditional_table_items")
+    r.item("chair-grey-4", 82.0, 222.0)
+    r.solid("supply_boxes1", 140.0, 252.0)
+    r.solid("tape_library1", 172.0, 250.0)
+    r.solid("ups_cabinet1", 206.0, 248.0)
+    r.solid("suppression_cylinders1", 34.0, 252.0)
+    r.item("suppression_panel1", 14.0, 220.0)
+    return r.build("room_hce_vault")
+
+
+def room_hce_exec_hall():
+    """
+    2×1 GU (10×6) executive wing corridor: smoked oak with a navy and amber runner
+    (room_hce_exec_hall), navy walls. The framed press clipping hangs on the back
+    wall; a console table with an orchid, a gold-coin sculpture, framed prints, a
+    PRIVATE plate by the N door, a leather bench against the south wall at the west
+    end. Nothing to the south: the floor is y 64-160.
+    Doors: W on row 2 (the mouth x 32-60, y 64-100 clear), N (NE corner, x 256-288).
+    Kept clear for Kemal (satoshi_minder): his beat (8,4) <-> (4,4), sprite centres
+    x 128-256, y 128, so x 112-272 below y 92 stays open; the back-wall furniture
+    stands at feet 84-86 and the bench is west of x 104.
+    Slots (as-type): hce_press_clipping (Framed Press Clipping).
+    """
+    r = _Uni()
+    r.item("plaque1", 44.0, 44.0)                    # (cycle 2, EX-2: the scenery prints went)
+    r.item("hce_press_clipping1", 98.0, 54.0)        # top-left 98,24
+    r.item("hce_logo_small1", 138.0, 23.0)
+    r.solid("hce_console_table1", 136.0, 86.0, depth=8)
+    r.item("aes_cctv1", 72.0, 30.0)                  # watching the corridor
+    r.solid("hce_coin_sculpture1", 198.0, 86.0, depth=8)
+    r.item("private_sign1", 216.0, 26.0)
+    r.solid("hce_bench1", 40.0, 158.0, depth=10)
+    return r.build("room_hce_exec_hall", "10x6_hall")
+
+
+def room_hce_ceo():
+    """
+    2×2 GU Satoshi's office: smoked oak with an amber and black rug under the desk
+    (room_hce_ceo), navy walls. The desk is room_ceo's (desk-ceo2 at x 118, feet
+    147) and his chair behind it, so the Signing Case keeps its pinned spot on the
+    desk's front edge (3.6, 3.35, elevation 32). Back wall: two market screens
+    either side of the framed bitcoin white paper; the executive safe in the NE
+    corner (pinned at (8,2)). A hardware wallet in a display case and a node shelf
+    west; a black leather sofa and glass table SW; his side table with the
+    manifesto and a laptop east; a gold coin on a pedestal, a mini fridge.
+    Doors: S (SE corner, the lane x 256-288 from y 196 clear). The executive wing
+    covers the bottom two rows (feet <= 256). Satoshi at (5,6): x 144-176,
+    y 160-224 clear.
+    Slots: briefcase11 and safe2 (conditional, claimed then pinned by the
+    scenario), notes3 on the side table (Crypto Anarchist Manifesto).
+    """
+    r = _Uni()
+    r.item("hce_block_screen1", 40.0, 52.0)          # his own screen: the chain's block height (cycle 2, CEO-1)
+    r.item("hce_whitepaper_frame1", 150.0, 48.0)
+    r.item("chair-exec-rotate1", 142.0, 128.0)
+    r.table("desk-ceo2", 118.0, 147.0)
+    r.conditional_items.append(make_obj("objects", "briefcase11", 121.0, 150.0, r._next()))
+    r.conditional_items.append(make_obj("objects", "safe2", 229.0, 66.0, r._next()))
+    r.solid("hce_display_case1", 36.0, 130.0)
+    r.solid("drinks_cabinet1", 70.0, 112.0)
+    r.solid("leather_sofa1", 36.0, 214.0)
+    r.table("glass_coffee_table1", 42.0, 250.0, kind="objects")
+    # visitor chairs facing the desk, either side of Satoshi (x 144-176 clear) (cycle 2, CEO-2)
+    r.item("chair-exec-rotate5", 102.0, 200.0)
+    r.item("chair-exec-rotate5", 182.0, 200.0)
+    r.solid("floor_globe1", 196.0, 254.0)
+    side = r.table("smalldesk1", 228.0, 180.0)
+    r.on(side, "notes3", 0.25, 0.30, layer="conditional_table_items")
+    r.on(side, "exec_laptop1", 0.75, 0.26)
+    r.solid("bar_cart1", 200.0, 140.0)
+    r.solid("planter_fig1", 256.0, 140.0)
+    r.item("fire_alarm_point1", 14.0, 160.0)
+    return r.build("room_hce_ceo")
+
+
 def main():
     # Hand-maintained (do not regenerate — edit .tmj in Tiled, then export JSON):
     #   room_hospital_office, room_hospital_cto_office, room_hospital_meeting
@@ -3438,6 +3851,15 @@ def main():
         "room_aes_reception": room_aes_reception,
         "room_aes_control": room_aes_control,
         "room_aes_dock": room_aes_dock,
+        "room_hce_trading": room_hce_trading,
+        "room_hce_lobby": room_hce_lobby,
+        "room_hce_hall": room_hce_hall,
+        "room_hce_office": room_hce_office,
+        "room_hce_lab": room_hce_lab,
+        "room_hce_servers": room_hce_servers,
+        "room_hce_vault": room_hce_vault,
+        "room_hce_exec_hall": room_hce_exec_hall,
+        "room_hce_ceo": room_hce_ceo,
     }
     # Optionally restrict to specific rooms (argv) so already-updated rooms are
     # not clobbered, e.g.  python3 scripts/generate_rooms.py room_hospital_hall

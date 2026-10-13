@@ -4189,6 +4189,228 @@
       "w": 33,
       "h": 54,
       "gid": 1130
+    },
+    "hce_logo_sign1": {
+      "id": 330,
+      "w": 64,
+      "h": 17,
+      "gid": 1131
+    },
+    "hce_logo_small1": {
+      "id": 331,
+      "w": 48,
+      "h": 11,
+      "gid": 1132
+    },
+    "hce_ticker1": {
+      "id": 332,
+      "w": 184,
+      "h": 9,
+      "gid": 1133
+    },
+    "hce_world_clocks1": {
+      "id": 333,
+      "w": 44,
+      "h": 19,
+      "gid": 1134
+    },
+    "hce_chart_screen1": {
+      "id": 334,
+      "w": 48,
+      "h": 30,
+      "gid": 1135
+    },
+    "hce_chart_screen2": {
+      "id": 335,
+      "w": 48,
+      "h": 30,
+      "gid": 1136
+    },
+    "hce_chart_screen3": {
+      "id": 336,
+      "w": 48,
+      "h": 30,
+      "gid": 1137
+    },
+    "hce_mining_rig1": {
+      "id": 337,
+      "w": 60,
+      "h": 54,
+      "gid": 1138
+    },
+    "hce_mining_rig2": {
+      "id": 338,
+      "w": 54,
+      "h": 58,
+      "gid": 1139
+    },
+    "hce_cage_panel1": {
+      "id": 339,
+      "w": 53,
+      "h": 54,
+      "gid": 1140
+    },
+    "hce_cage_door1": {
+      "id": 340,
+      "w": 36,
+      "h": 60,
+      "gid": 1141
+    },
+    "hce_console_table1": {
+      "id": 341,
+      "w": 52,
+      "h": 54,
+      "gid": 1142
+    },
+    "hce_bench1": {
+      "id": 342,
+      "w": 60,
+      "h": 31,
+      "gid": 1143
+    },
+    "hce_crypto_atm1": {
+      "id": 343,
+      "w": 32,
+      "h": 61,
+      "gid": 1144
+    },
+    "hce_node_shelf1": {
+      "id": 344,
+      "w": 54,
+      "h": 49,
+      "gid": 1145
+    },
+    "hce_wallet_cabinet1": {
+      "id": 345,
+      "w": 51,
+      "h": 58,
+      "gid": 1146
+    },
+    "hce_price_board1": {
+      "id": 346,
+      "w": 53,
+      "h": 55,
+      "gid": 1147
+    },
+    "hce_trading_station1": {
+      "id": 347,
+      "w": 60,
+      "h": 57,
+      "gid": 1148
+    },
+    "hce_comms_cabinet1": {
+      "id": 348,
+      "w": 46,
+      "h": 59,
+      "gid": 1149
+    },
+    "hce_kiosk1": {
+      "id": 349,
+      "w": 30,
+      "h": 58,
+      "gid": 1150
+    },
+    "hce_hsm1": {
+      "id": 350,
+      "w": 40,
+      "h": 60,
+      "gid": 1151
+    },
+    "hce_hsm2": {
+      "id": 351,
+      "w": 42,
+      "h": 60,
+      "gid": 1152
+    },
+    "hce_coin_sculpture1": {
+      "id": 352,
+      "w": 38,
+      "h": 59,
+      "gid": 1153
+    },
+    "hce_coin_pedestal1": {
+      "id": 353,
+      "w": 24,
+      "h": 60,
+      "gid": 1154
+    },
+    "hce_display_case1": {
+      "id": 354,
+      "w": 30,
+      "h": 60,
+      "gid": 1155
+    },
+    "hce_reception_desk1": {
+      "id": 355,
+      "w": 62,
+      "h": 50,
+      "gid": 1156
+    },
+    "hce_press_clipping1": {
+      "id": 356,
+      "w": 26,
+      "h": 30,
+      "gid": 1157
+    },
+    "hce_whiteboard_maths1": {
+      "id": 357,
+      "w": 46,
+      "h": 30,
+      "gid": 1158
+    },
+    "hce_whiteboard_graph1": {
+      "id": 358,
+      "w": 46,
+      "h": 30,
+      "gid": 1159
+    },
+    "hce_whitepaper_frame1": {
+      "id": 359,
+      "w": 20,
+      "h": 26,
+      "gid": 1160
+    },
+    "hce_custody_sign1": {
+      "id": 360,
+      "w": 67,
+      "h": 17,
+      "gid": 1161
+    },
+    "hce_exec_sign1": {
+      "id": 361,
+      "w": 67,
+      "h": 11,
+      "gid": 1162
+    },
+    "hce_staff_sign1": {
+      "id": 362,
+      "w": 47,
+      "h": 11,
+      "gid": 1163
+    },
+    "hce_server_sign1": {
+      "id": 363,
+      "w": 59,
+      "h": 11,
+      "gid": 1164
+    },
+    "hce_lab_sign1": {
+      "id": 364,
+      "w": 63,
+      "h": 11,
+      "gid": 1165
+    },
+    "hce_block_screen1": {
+      "id": 365,
+      "w": 48,
+      "h": 30,
+      "gid": 1166
+    },
+    "hce_phd_frame1": {
+      "id": 366,
+      "w": 24,
+      "h": 19,
+      "gid": 1167
     }
   }
 }

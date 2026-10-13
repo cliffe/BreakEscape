@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<tileset version="1.10" tiledversion="1.11.2" name="objects/hospital_extras" tilewidth="60" tileheight="60" tilecount="320" columns="0">
+<tileset version="1.10" tiledversion="1.11.2" name="objects/hospital_extras" tilewidth="60" tileheight="60" tilecount="357" columns="0">
  <grid orientation="orthogonal" width="1" height="1"/>
  <tile id="0">
   <image source="../objects/iv_stand1.png" width="25" height="60"/>
@@ -960,5 +960,116 @@
  </tile>
  <tile id="329">
   <image source="../objects/aes_office_chair1.png" width="33" height="54"/>
+ </tile>
+ <tile id="330">
+  <image source="../objects/hce_logo_sign1.png" width="64" height="17"/>
+ </tile>
+ <tile id="331">
+  <image source="../objects/hce_logo_small1.png" width="48" height="11"/>
+ </tile>
+ <tile id="332">
+  <image source="../objects/hce_ticker1.png" width="184" height="9"/>
+ </tile>
+ <tile id="333">
+  <image source="../objects/hce_world_clocks1.png" width="44" height="19"/>
+ </tile>
+ <tile id="334">
+  <image source="../objects/hce_chart_screen1.png" width="48" height="30"/>
+ </tile>
+ <tile id="335">
+  <image source="../objects/hce_chart_screen2.png" width="48" height="30"/>
+ </tile>
+ <tile id="336">
+  <image source="../objects/hce_chart_screen3.png" width="48" height="30"/>
+ </tile>
+ <tile id="337">
+  <image source="../objects/hce_mining_rig1.png" width="60" height="54"/>
+ </tile>
+ <tile id="338">
+  <image source="../objects/hce_mining_rig2.png" width="54" height="58"/>
+ </tile>
+ <tile id="339">
+  <image source="../objects/hce_cage_panel1.png" width="53" height="54"/>
+ </tile>
+ <tile id="340">
+  <image source="../objects/hce_cage_door1.png" width="36" height="60"/>
+ </tile>
+ <tile id="341">
+  <image source="../objects/hce_console_table1.png" width="52" height="54"/>
+ </tile>
+ <tile id="342">
+  <image source="../objects/hce_bench1.png" width="60" height="31"/>
+ </tile>
+ <tile id="343">
+  <image source="../objects/hce_crypto_atm1.png" width="32" height="61"/>
+ </tile>
+ <tile id="344">
+  <image source="../objects/hce_node_shelf1.png" width="54" height="49"/>
+ </tile>
+ <tile id="345">
+  <image source="../objects/hce_wallet_cabinet1.png" width="51" height="58"/>
+ </tile>
+ <tile id="346">
+  <image source="../objects/hce_price_board1.png" width="53" height="55"/>
+ </tile>
+ <tile id="347">
+  <image source="../objects/hce_trading_station1.png" width="60" height="57"/>
+ </tile>
+ <tile id="348">
+  <image source="../objects/hce_comms_cabinet1.png" width="46" height="59"/>
+ </tile>
+ <tile id="349">
+  <image source="../objects/hce_kiosk1.png" width="30" height="58"/>
+ </tile>
+ <tile id="350">
+  <image source="../objects/hce_hsm1.png" width="40" height="60"/>
+ </tile>
+ <tile id="351">
+  <image source="../objects/hce_hsm2.png" width="42" height="60"/>
+ </tile>
+ <tile id="352">
+  <image source="../objects/hce_coin_sculpture1.png" width="38" height="59"/>
+ </tile>
+ <tile id="353">
+  <image source="../objects/hce_coin_pedestal1.png" width="24" height="60"/>
+ </tile>
+ <tile id="354">
+  <image source="../objects/hce_display_case1.png" width="30" height="60"/>
+ </tile>
+ <tile id="355">
+  <image source="../objects/hce_reception_desk1.png" width="62" height="50"/>
+ </tile>
+ <tile id="356">
+  <image source="../objects/hce_press_clipping1.png" width="26" height="30"/>
+ </tile>
+ <tile id="357">
+  <image source="../objects/hce_whiteboard_maths1.png" width="46" height="30"/>
+ </tile>
+ <tile id="358">
+  <image source="../objects/hce_whiteboard_graph1.png" width="46" height="30"/>
+ </tile>
+ <tile id="359">
+  <image source="../objects/hce_whitepaper_frame1.png" width="20" height="26"/>
+ </tile>
+ <tile id="360">
+  <image source="../objects/hce_custody_sign1.png" width="67" height="17"/>
+ </tile>
+ <tile id="361">
+  <image source="../objects/hce_exec_sign1.png" width="67" height="11"/>
+ </tile>
+ <tile id="362">
+  <image source="../objects/hce_staff_sign1.png" width="47" height="11"/>
+ </tile>
+ <tile id="363">
+  <image source="../objects/hce_server_sign1.png" width="59" height="11"/>
+ </tile>
+ <tile id="364">
+  <image source="../objects/hce_lab_sign1.png" width="63" height="11"/>
+ </tile>
+ <tile id="365">
+  <image source="../objects/hce_block_screen1.png" width="48" height="30"/>
+ </tile>
+ <tile id="366">
+  <image source="../objects/hce_phd_frame1.png" width="24" height="19"/>
  </tile>
 </tileset>

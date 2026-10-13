@@ -122,6 +122,15 @@ export function preload() {
     this.load.tilemapTiledJSON('room_aes_reception', 'rooms/room_aes_reception.json'); // m04 gatehouse reception: Albion sign, security counter, PPE station (2x2 GU)
     this.load.tilemapTiledJSON('room_aes_control', 'rooms/room_aes_control.json'); // m04 SCADA control room: HMI console, operator chairs (2x1 GU, 10x6)
     this.load.tilemapTiledJSON('room_aes_dock', 'rooms/room_aes_dock.json'); // m04 loading dock: roller shutter, pallets, bay lines (2x2 GU)
+    this.load.tilemapTiledJSON('room_hce_trading', 'rooms/room_hce_trading.json'); // m06 HashChain trading floor: ticker, market wall, trading desks (2x2 GU)
+    this.load.tilemapTiledJSON('room_hce_lobby', 'rooms/room_hce_lobby.json'); // m06 HashChain lobby: wordmark, curved desk, ATM, lounge (2x2 GU)
+    this.load.tilemapTiledJSON('room_hce_hall', 'rooms/room_hce_hall.json'); // m06 HashChain checkpoint: noticeboard, guard desk (2x1 GU, 10x6)
+    this.load.tilemapTiledJSON('room_hce_office', 'rooms/room_hce_office.json'); // m06 HashChain Irina's office: bookcases, maths whiteboard, desk (2x2 GU)
+    this.load.tilemapTiledJSON('room_hce_lab', 'rooms/room_hce_lab.json'); // m06 HashChain blockchain lab: mining rigs, node shelf, analyst desks (2x2 GU)
+    this.load.tilemapTiledJSON('room_hce_servers', 'rooms/room_hce_servers.json'); // m06 HashChain server room: rack rows, ops bench, console (2x2 GU)
+    this.load.tilemapTiledJSON('room_hce_vault', 'rooms/room_hce_vault.json'); // m06 HashChain data centre: custody cage, HSMs, custody console (2x2 GU)
+    this.load.tilemapTiledJSON('room_hce_exec_hall', 'rooms/room_hce_exec_hall.json'); // m06 HashChain executive wing: runner, press clipping, console table (2x1 GU, 10x6)
+    this.load.tilemapTiledJSON('room_hce_ceo', 'rooms/room_hce_ceo.json'); // m06 HashChain Satoshi's office: desk, screens, display case, sofa (2x2 GU)
 
     // Load room images (now using smaller 32px scale images)
     this.load.image('room_reception', 'tiles/rooms/room1.png');
@@ -160,6 +169,15 @@ export function preload() {
     this.load.image('room_aes_hall1_e', 'tiles/rooms/room_aes_hall1_e.png'); // m04 Albion Energy Storage: Hall 1 epoxy, east half
     this.load.image('room_aes_hall2_w', 'tiles/rooms/room_aes_hall2_w.png'); // m04 Albion Energy Storage: Hall 2 epoxy, west half
     this.load.image('room_aes_hall2_e', 'tiles/rooms/room_aes_hall2_e.png'); // m04 Albion Energy Storage: Hall 2 epoxy, east half
+    this.load.image('room_hce_lobby', 'tiles/rooms/room_hce_lobby.png'); // m06 HashChain Exchange: marble, hex-chain inlay
+    this.load.image('room_hce_hall', 'tiles/rooms/room_hce_hall.png'); // m06 HashChain Exchange: marble (checkpoint)
+    this.load.image('room_hce_trading', 'tiles/rooms/room_hce_trading.png'); // m06 HashChain Exchange: blue-grey carpet, aisle
+    this.load.image('room_hce_office', 'tiles/rooms/room_hce_office.png'); // m06 HashChain Exchange: taupe carpet
+    this.load.image('room_hce_lab', 'tiles/rooms/room_hce_lab.png'); // m06 HashChain Exchange: grey vinyl, trunking
+    this.load.image('room_hce_servers', 'tiles/rooms/room_hce_servers.png'); // m06 HashChain Exchange: raised floor, cold aisles
+    this.load.image('room_hce_vault', 'tiles/rooms/room_hce_vault.png'); // m06 HashChain Exchange: raised floor, custody cage line
+    this.load.image('room_hce_exec_hall', 'tiles/rooms/room_hce_exec_hall.png'); // m06 HashChain Exchange: smoked oak, navy runner
+    this.load.image('room_hce_ceo', 'tiles/rooms/room_hce_ceo.png'); // m06 HashChain Exchange: smoked oak, amber rug
     this.load.image('room14', 'tiles/rooms/room14.png');
     this.load.image('room19', 'tiles/rooms/room19.png');
     this.load.image('door_32', 'tiles/door_32.png');
@@ -907,6 +925,43 @@ export function preload() {
     this.load.image('aes_security_desk1', 'objects/aes_security_desk1.png');
     this.load.image('aes_dvr1', 'objects/aes_dvr1.png');
     this.load.image('aes_office_chair1', 'objects/aes_office_chair1.png');
+    this.load.image('hce_logo_sign1', 'objects/hce_logo_sign1.png');
+    this.load.image('hce_logo_small1', 'objects/hce_logo_small1.png');
+    this.load.image('hce_ticker1', 'objects/hce_ticker1.png');
+    this.load.image('hce_world_clocks1', 'objects/hce_world_clocks1.png');
+    this.load.image('hce_chart_screen1', 'objects/hce_chart_screen1.png');
+    this.load.image('hce_chart_screen2', 'objects/hce_chart_screen2.png');
+    this.load.image('hce_chart_screen3', 'objects/hce_chart_screen3.png');
+    this.load.image('hce_mining_rig1', 'objects/hce_mining_rig1.png');
+    this.load.image('hce_mining_rig2', 'objects/hce_mining_rig2.png');
+    this.load.image('hce_cage_panel1', 'objects/hce_cage_panel1.png');
+    this.load.image('hce_cage_door1', 'objects/hce_cage_door1.png');
+    this.load.image('hce_console_table1', 'objects/hce_console_table1.png');
+    this.load.image('hce_bench1', 'objects/hce_bench1.png');
+    this.load.image('hce_crypto_atm1', 'objects/hce_crypto_atm1.png');
+    this.load.image('hce_node_shelf1', 'objects/hce_node_shelf1.png');
+    this.load.image('hce_wallet_cabinet1', 'objects/hce_wallet_cabinet1.png');
+    this.load.image('hce_price_board1', 'objects/hce_price_board1.png');
+    this.load.image('hce_trading_station1', 'objects/hce_trading_station1.png');
+    this.load.image('hce_comms_cabinet1', 'objects/hce_comms_cabinet1.png');
+    this.load.image('hce_kiosk1', 'objects/hce_kiosk1.png');
+    this.load.image('hce_hsm1', 'objects/hce_hsm1.png');
+    this.load.image('hce_hsm2', 'objects/hce_hsm2.png');
+    this.load.image('hce_coin_sculpture1', 'objects/hce_coin_sculpture1.png');
+    this.load.image('hce_coin_pedestal1', 'objects/hce_coin_pedestal1.png');
+    this.load.image('hce_display_case1', 'objects/hce_display_case1.png');
+    this.load.image('hce_reception_desk1', 'objects/hce_reception_desk1.png');
+    this.load.image('hce_press_clipping1', 'objects/hce_press_clipping1.png');
+    this.load.image('hce_whiteboard_maths1', 'objects/hce_whiteboard_maths1.png');
+    this.load.image('hce_whiteboard_graph1', 'objects/hce_whiteboard_graph1.png');
+    this.load.image('hce_whitepaper_frame1', 'objects/hce_whitepaper_frame1.png');
+    this.load.image('hce_custody_sign1', 'objects/hce_custody_sign1.png');
+    this.load.image('hce_exec_sign1', 'objects/hce_exec_sign1.png');
+    this.load.image('hce_staff_sign1', 'objects/hce_staff_sign1.png');
+    this.load.image('hce_server_sign1', 'objects/hce_server_sign1.png');
+    this.load.image('hce_lab_sign1', 'objects/hce_lab_sign1.png');
+    this.load.image('hce_block_screen1', 'objects/hce_block_screen1.png');
+    this.load.image('hce_phd_frame1', 'objects/hce_phd_frame1.png');
     this.load.image('backup_recovery',         'objects/backup_recovery.png');
     this.load.image('dual_auth',               'objects/dual_auth.png');
     this.load.image('ehr-terminal',            'objects/ehr-terminal.png');

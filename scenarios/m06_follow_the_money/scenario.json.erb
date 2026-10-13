@@ -724,7 +724,7 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
 
   "rooms": {
     "reception_lobby": {
-      "type": "room_reception",
+      "type": "room_hce_lobby",
       "door_sign": "HashChain Exchange",
       "connections": {
         "north": "security_checkpoint"
@@ -1519,7 +1519,7 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
     },
 
     "security_checkpoint": {
-      "type": "hall_1x2gu",
+      "type": "room_hce_hall",
       "door_sign": "Restricted",
       "connections": {
         "south": "reception_lobby",
@@ -1583,7 +1583,6 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
           "type": "notes",
           "id": "it_onboarding_checklist",
           "name": "IT New Starter Checklist",
-          "position": { "x": 2, "y": 2 },
           "takeable": true,
           "readable": true,
           "text": <%= password_hint_note.to_json %>,
@@ -1597,7 +1596,7 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
     },
 
     "trading_floor": {
-      "type": "room_office",
+      "type": "room_hce_trading",
       "door_sign": "Trading Floor",
       "locked": true,
       "lockType": "key",
@@ -1738,7 +1737,7 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
     },
 
     "server_room": {
-      "type": "room_servers",
+      "type": "room_hce_servers",
       "door_sign": "Server Room",
       "locked": true,
       "lockType": "password",
@@ -1753,6 +1752,7 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
           "type": "vm-launcher",
           "id": "vm_launcher_hackme",
           "name": "HashChain Backend Server Terminal",
+          "position": "as-type:pc",
           "takeable": false,
           "observations": "Operator terminal onto the exchange's backend financial estate — several servers, all of them behind passwords",
           "hacktivityMode": <%= vm_context && vm_context['hacktivity_mode'] ? 'true' : 'false' %>,
@@ -1822,8 +1822,7 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
           "type": "notes",
           "id": "server_rack_labels",
           "name": "Rack Inventory Sheet",
-          "_comment": "Pass-4 dialogue playtest: auto-placed 23 px south of the flag station, so interacting from the north opened the station. Pinned clear of it.",
-          "position": { "x": 3, "y": 7 },
+          "_comment": "Pass-4 dialogue playtest: auto-placed 23 px south of the flag station, so interacting from the north opened the station. Room dressing (room_hce_servers): it now has its own notes slot at the far end of the ops bench, 32 px+ from the station.",
           "takeable": true,
           "readable": true,
           "text": "HASHCHAIN — RACK B INVENTORY\n\nB-01  hc-auth-01      (staff authentication)\nB-02  hc-trade-01     (matching engine)\nB-03  hc-ledger-01    (internal ledger — RESTRICTED)\nB-04  hc-findb-01     (financial database — RESTRICTED)\nB-05  hc-vault-01     (cold storage keys — RESTRICTED)\nB-06  hc-mixer-01     (privacy conversion service)\n\nNote from ops: the auth and ledger service accounts share a password.\nThe financial database account also drives the door controllers.\nRaised as a risk in March. Closed as 'accepted'.",
@@ -1835,7 +1834,7 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
     },
 
     "data_center": {
-      "type": "room_servers",
+      "type": "room_hce_vault",
       "door_sign": "Data Centre",
       <%# PASS 2: was unlocked, so the VM work gated nothing physical. The PIN is
           in the door-controller export the drop-site pays out for flag 3. %>
@@ -1946,7 +1945,7 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
     },
 
     "blockchain_lab": {
-      "type": "room_office",
+      "type": "room_hce_lab",
       "door_sign": "Blockchain Analysis",
       "connections": {
         "west": "trading_floor"
@@ -2015,7 +2014,7 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
     },
 
     "irina_office": {
-      "type": "room_office",
+      "type": "room_hce_office",
       "door_sign": "Dr. I. Volkova, CTO",
       "locked": true,
       "lockType": "rfid",
@@ -2060,7 +2059,7 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
     },
 
     "executive_wing": {
-      "type": "hall_1x2gu",
+      "type": "room_hce_exec_hall",
       "door_sign": "Executive",
       "locked": true,
       "lockType": "rfid",
@@ -2159,7 +2158,7 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
           "type": "notes",
           "id": "executive_wing_plaque",
           "name": "Framed Press Clipping",
-          "position": { "x": 4, "y": 2 },
+          "position": "as-type:hce_press_clipping",
           "_comment": "Pass 5 puzzle chains: D3, the number moved to Priya's margin (the clipping keeps the motive); D2, Satoshi's thumbprint is on the glass, the only print surface for his signing case. Not takeable, so the print stays on the wall (m05 mug pattern). It sits inside Kemal's hall, where his usual sight challenge applies; nothing reacts to the dusting itself.",
           "takeable": false,
           "readable": true,
@@ -2181,8 +2180,9 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
     "satoshi_office": {
       <%# Playtest D5: in room_office the south door lands at tile x 8.5 under the
           right desk block, and the player stalled at the doorway. room_ceo keeps the
-          bottom half clear; the objects are pinned clear of the door column. %>
-      "type": "room_ceo",
+          bottom half clear; the objects are pinned clear of the door column.
+          Room dressing: room_hce_ceo keeps room_ceo's desk and the door lane x 256-288. %>
+      "type": "room_hce_ceo",
       "door_sign": "CEO",
       <%# Pass 5 round 2 (R2-M3 / R2-D2): locked, so the minder gates something.
           Kemal holds the key (itemsHeld, dropped on a KO); his talk-past and a
@@ -2237,7 +2237,6 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
           "type": "notes",
           "id": "crypto_anarchist_manifesto",
           "name": "Crypto Anarchist Manifesto",
-          "position": { "x": 2, "y": 6 },
           "takeable": true,
           "readable": true,
           "text": "THE CRYPTO ANARCHIST MANIFESTO\n\nGovernments cannot control what they cannot see.\nCryptography enables true financial freedom.\nPrivacy is a fundamental human right.\nCentralised finance is slavery.\nDecentralised systems bring liberation.\n\nHashChain Exchange exists to accelerate the collapse of state monetary control.\n\nEvery transaction we enable undermines government power.\nEvery privacy coin we support creates freedom.\n\nENTROPY understands: chaos is the path to liberty.\nThe Architect coordinates the acceleration.\n\nWe are Crypto Anarchists. We will not be stopped.\n\n- Satoshi Nakamoto II (obviously not the real Satoshi)",
