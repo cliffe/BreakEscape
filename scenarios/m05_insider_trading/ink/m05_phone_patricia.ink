@@ -58,6 +58,7 @@ VAR halloran_accused = false // Synced scenario global: Halloran suspended on th
 VAR halloran_questioned = false
 VAR door_log_reasoned = false // Synced scenario global: the player has read the badge-log pattern; also set by HaX (m05_phone_agent_0x99) and Patricia in person (m05_npc_patricia_morgan)
 VAR it_notice_read = false
+VAR torres_reason_guessed = false // Synced scenario global (pass 5 R2 B2): a wrong reason or a wrong name was tried; also set by HaX and Patricia's phone/in person. Excludes the early-naming reward
 
 === function has_motive()
 ~ return found_medical_bills or found_torres_journal or found_vetting_file
@@ -132,6 +133,7 @@ Go on, then. Who?
 + {found_door_log and not halloran_accused} [Dr Ruth Halloran.]
     -> phone_accuse_halloran
 + {found_door_log} [Ben Ashworth.]
+    ~ torres_reason_guessed = true
     Thursday at eight? The transfers run two till four, and he logged it with Owen. Try again.
     -> hub
 + {found_door_log or torres_suspected or has_motive() or has_exfil()} [David Torres.]
@@ -161,7 +163,12 @@ If you're wrong, that's her career. And whoever it really is has just watched Se
 {has_motive() and has_exfil():
     -> phone_significant_findings
 }
-David. Why?
+// PASS 5 R2 (B2): the retry is allowed, and noticed.
+{torres_reason_guessed:
+    Again? Fine. Convince me this time.
+- else:
+    David. Why?
+}
 -> phone_torres_why
 
 // Round 3: the shared reason menu (see m05_npc_patricia_morgan.ink,
@@ -171,10 +178,12 @@ David. Why?
 {patricia_ko: -> no_answer}
 {torres_identified: -> hub}
 + {found_door_log} [His own badge is on the server hallway those nights.]
+    ~ torres_reason_guessed = true
     Read it again. His badge never touches the server hallway. Hers does.
     #exit_conversation
     -> hub
 + [He's been under strain. His wife's ill.]
+    ~ torres_reason_guessed = true
     Half this building has someone ill at home. That's not evidence.
     #exit_conversation
     -> hub
@@ -190,6 +199,7 @@ David. Why?
     That's how. I need why. People don't do this for nothing.
     -> phone_partial_naming
 + [He's the cryptography lead. He'd know how.]
+    ~ torres_reason_guessed = true
     So would seven other people. That's not evidence either.
     #exit_conversation
     -> hub

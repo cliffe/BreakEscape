@@ -58,6 +58,7 @@ VAR halloran_accused = false // Synced scenario global: Halloran suspended on th
 VAR halloran_questioned = false
 VAR door_log_reasoned = false // Synced scenario global: the player has read the badge-log pattern; also set by HaX (m05_phone_agent_0x99) and Patricia's phone (m05_phone_patricia)
 VAR it_notice_read = false
+VAR torres_reason_guessed = false // Synced scenario global (pass 5 R2 B2): a wrong reason or a wrong name was tried; also set by HaX and Patricia's phone/in person. Excludes the early-naming reward
 
 === function has_motive()
 ~ return found_medical_bills or found_torres_journal or found_vetting_file
@@ -320,6 +321,7 @@ Patricia Morgan: Go on, then. Who?
 + {found_door_log and not halloran_accused} [Dr Ruth Halloran.]
     -> accuse_halloran
 + {found_door_log} [Ben Ashworth.]
+    ~ torres_reason_guessed = true
     Patricia Morgan: Thursday at eight? The transfers run two till four, and he logged it with Owen. Try again.
     -> hub
 + {found_door_log or torres_suspected or has_motive() or has_exfil()} [David Torres.]
@@ -348,7 +350,12 @@ Patricia Morgan: If you're wrong, that's her career. And whoever it really is ha
 {has_motive() and has_exfil():
     -> significant_findings
 }
-Patricia Morgan: David. Why?
+// PASS 5 R2 (B2): the retry is allowed, and noticed.
+{torres_reason_guessed:
+    Patricia Morgan: Again? Fine. Convince me this time.
+- else:
+    Patricia Morgan: David. Why?
+}
 -> torres_why
 
 // Round 3: one reason menu for every Torres naming without both halves.
@@ -378,6 +385,7 @@ Patricia Morgan: David. Why?
 
 === reason_wrong ===
 ~ patricia_influence -= 1
+~ torres_reason_guessed = true
 ~ hub_quiet = true
 #exit_conversation
 -> hub

@@ -84,7 +84,7 @@ password_hint_sticky = "Server room temp password (expires Friday): #{server_roo
 # only Amara is explained on the sheet; Ben is cleared by checking his times
 # against the incident log (23:47, transfers 02:00-04:00).
 door_log_text = "QDC BADGE READERS - AFTER-HOURS SWIPES (19:00-07:00)\nWed 16 Sep to Tue 6 Oct. Pulled by O. Gallagher for Security.\n\nWed 23 Sep  23:41  Main entrance    #4408 D. TORRES\nWed 23 Sep  23:47  Server hallway   #4471 R. HALLORAN (spare)\nThu 24 Sep  20:05  Main entrance    #4419 B. ASHWORTH\nThu 24 Sep  20:11  Server hallway   #4419 B. ASHWORTH\nTue 29 Sep  19:20  Main entrance    #4412 A. OKAFOR\nTue 29 Sep  22:05  Main entrance    #4412 A. OKAFOR (exit)\nWed 30 Sep  01:52  Main entrance    #4408 D. TORRES\nWed 30 Sep  01:58  Server hallway   #4471 R. HALLORAN (spare)\nFri 02 Oct  01:59  Main entrance    #4408 D. TORRES\nFri 02 Oct  02:05  Server hallway   #4471 R. HALLORAN (spare)\nSun 04 Oct  22:10  Main entrance    #4430 O. GALLAGHER\nSun 04 Oct  23:55  Main entrance    #4430 O. GALLAGHER (exit)\nMon 05 Oct  01:46  Main entrance    #4408 D. TORRES\nMon 05 Oct  01:52  Server hallway   #4471 R. HALLORAN (spare)\n\n#4462 R. HALLORAN (primary): no after-hours swipes in this period.\n\n[Pencilled at the bottom: \"4471 is a visitor spare. Spares are meant to be signed out. Amara stayed in the lab. Sunday was me, patching the core switch. - O\"]"
-torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing retainer if I finish the upload tonight. Elena's first trial dose is Monday.\n\nI know what this costs. Thirty to forty-five people, by their own projections. Ambulances that don't arrive in time.\n\nI've talked myself round with their philosophy. The system is rotten. Collateral damage for the greater good.\n\nI read that back and I don't recognise the man who wrote it. What have I become?"
+torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing retainer if I finish the upload tonight. Elena's first trial dose is Monday.\n\nI know what this costs. Thirty to forty-five people, by their own projections. Ambulances that don't arrive in time.\n\nI've talked myself round with their philosophy. The system is rotten. Collateral damage for the greater good.\n\nI read that back and I don't recognise the man who wrote it. Elena wouldn't either."
 %>
 {
   "narrator": {
@@ -175,12 +175,12 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
           { "text": "ROTATION WINDOW LOST — the East of England re-keyed a month early", "style": "warning", "condition": "globalVars.halloran_accused" },
           { "text": "" },
           { "text": "── THE CASE ──",                                      "style": "section-header" },
-          { "text": "NAMED ON THE EVIDENCE — before the server confirmed it", "style": "entry", "condition": "globalVars.named_before_portal" },
+          { "text": "NAMED ON THE EVIDENCE — before the server confirmed it", "style": "entry", "_comment": "Pass 5 R2 B1/B2/m1: the reward needs the badge-log reasoning, no guessed reason and no accusation, not only the timing.", "condition": "globalVars.named_before_portal && globalVars.door_log_reasoned && !globalVars.torres_reason_guessed && !globalVars.halloran_accused" },
           { "text": "MOTIVE, MEANS AND AUTHORISATION — all on file",       "style": "entry", "condition": "(globalVars.found_medical_bills || globalVars.found_torres_journal || globalVars.found_vetting_file) && globalVars.found_pamphlet" },
           { "text": "RECRUITMENT PIPELINE — TalentStack link not documented", "style": "entry", "condition": "!globalVars.found_pamphlet && !globalVars.found_pipeline_list" },
           { "text": "BORROWED BADGE — Halloran's spare traced back to Torres", "style": "entry", "condition": "globalVars.door_log_reasoned && !globalVars.halloran_accused" },
           { "text": "WRONG ACCUSATION — Dr Ruth Halloran suspended, then cleared", "style": "warning", "condition": "globalVars.halloran_accused" },
-          { "text": "INSIDER NAMED — David Torres, though not every piece of evidence was recovered", "style": "entry", "_comment": "PASS 4 newcheck: catch-all so THE CASE never prints empty (found_pamphlet false with the pipeline list found matched no other line). Pass 5 m6: the always-true flag4_submitted term dropped (the debrief needs all four flags).", "condition": "!((globalVars.found_medical_bills || globalVars.found_torres_journal || globalVars.found_vetting_file) && globalVars.found_pamphlet) && !(!globalVars.found_pamphlet && !globalVars.found_pipeline_list) && !(globalVars.door_log_reasoned && !globalVars.halloran_accused) && !(globalVars.halloran_accused) && !globalVars.named_before_portal" },
+          { "text": "INSIDER NAMED — David Torres, though not every piece of evidence was recovered", "style": "entry", "_comment": "PASS 4 newcheck: catch-all so THE CASE never prints empty (found_pamphlet false with the pipeline list found matched no other line). Pass 5 m6: the always-true flag4_submitted term dropped (the debrief needs all four flags).", "condition": "!((globalVars.found_medical_bills || globalVars.found_torres_journal || globalVars.found_vetting_file) && globalVars.found_pamphlet) && !(!globalVars.found_pamphlet && !globalVars.found_pipeline_list) && !(globalVars.door_log_reasoned && !globalVars.halloran_accused) && !(globalVars.halloran_accused) && !(globalVars.named_before_portal && globalVars.door_log_reasoned && !globalVars.torres_reason_guessed)" },
           { "text": "" },
           { "text": "── DAVID TORRES ──",                                  "style": "section-header" },
           { "text": "TURNED — working for SAFETYNET inside ENTROPY's network", "style": "entry", "condition": "globalVars.final_choice === 'turn_double_agent'" },
@@ -220,7 +220,8 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
           { "text": "PATRICIA MORGAN: A&E, on your account",               "style": "warning", "condition": "globalVars.patricia_ko" },
           { "text": "OWEN GALLAGHER: concussion, on your account",          "style": "warning", "condition": "globalVars.owen_ko" },
           { "text": "LISA PARK: off work with a head injury",              "style": "warning", "condition": "globalVars.lisa_ko" },
-          { "text": "DR RUTH HALLORAN: off work, her division two short",   "style": "warning", "condition": "globalVars.halloran_ko" },
+          { "text": "DR RUTH HALLORAN: off work, her division one short",   "style": "warning", "condition": "globalVars.halloran_ko && globalVars.final_choice === 'turn_double_agent'" },
+          { "text": "DR RUTH HALLORAN: off work, her division two short",   "style": "warning", "condition": "globalVars.halloran_ko && globalVars.final_choice !== 'turn_double_agent'" },
           { "text": "" },
           { "text": "The Architect remains at large...",                   "style": "warning" }
         ]
@@ -677,7 +678,8 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
     "named_before_portal": false,
     "owen_office_card_relayed": false,
     "door_log_held": false,
-    "data_center_entered": false
+    "data_center_entered": false,
+    "torres_reason_guessed": false
   },
 
   "endGoal": "Identify the insider with both halves of the case (motive and proof of exfiltration), stop the final upload, and decide David Torres' fate: turn him, hand him to the police, expose the programme, or fight.",
@@ -1162,9 +1164,16 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
             {
               "_comment": "Pass 5 A2 (m04 A4): the fate is set in person with every flag in. The debrief waits for the call-in.",
               "eventPattern": "conversation_closed:david_torres",
-              "condition": "globalVars.final_choice !== '' && globalVars.flag1_submitted === true && globalVars.flag2_submitted === true && globalVars.flag3_submitted === true && globalVars.flag4_submitted === true",
+              "condition": "globalVars.final_choice !== '' && globalVars.final_choice !== 'combat_lethal' && globalVars.flag1_submitted === true && globalVars.flag2_submitted === true && globalVars.flag3_submitted === true && globalVars.flag4_submitted === true",
               "onceOnly": true,
               "sendTimedMessage": { "delay": 2000, "message": "Upload's dead. Sweep the vault before you go: whatever's on that desk is ours if you read it. Then call me and I'll bring you in." }
+            },
+            {
+              "_comment": "Pass 5 R2 m5: left to die, Torres is bleeding beside the desk. No leisurely sweep; the cost is felt now, and the debrief's forty minutes still holds.",
+              "eventPattern": "conversation_closed:david_torres",
+              "condition": "globalVars.final_choice === 'combat_lethal' && globalVars.flag1_submitted === true && globalVars.flag2_submitted === true && globalVars.flag3_submitted === true && globalVars.flag4_submitted === true",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 2000, "message": "Upload's dead. If you're leaving him there, take what's on that desk and go. Call me." }
             },
             {
               "_comment": "Pass 5 A2: any fate (in person, after the knockout, or by phone) opens the call-in task.",

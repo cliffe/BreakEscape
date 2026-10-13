@@ -188,6 +188,9 @@
 },
 {
 "said": [
+"If you're leaving him there, take what's on that desk and go"
+],
+"notSaid": [
 "Sweep the vault before you go"
 ]
 },
@@ -206,7 +209,10 @@
 },
 {
 "said": [
-"It's done. The upload's dead"
+"He's still on that floor"
+],
+"notSaid": [
+"Sweep the vault if you haven't"
 ]
 },
 {

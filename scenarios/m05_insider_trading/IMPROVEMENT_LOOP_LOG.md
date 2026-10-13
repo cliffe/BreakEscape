@@ -144,3 +144,77 @@ Debrief (`m05_closing_debrief.ink`):
 - F6 (Owen's dropped office spare before suspicion).
 - `DECISIONS_PENDING.md` D4 to D8 (Torres' HP and attack rate, a lost fight's way back, Torres' post-KO bust, the dungeon-graph crash, the Recruiter's art), plus D1 (SecGen manifest) and D3 (VM claims).
 - m12 to room dressing. The long debrief runs without a choice (18 to 34 lines on the routes) and the briefing's 10-line opening run go to the dialogue phase.
+
+### Phase 1 alignment, round 2
+
+Review: `ALIGNMENT_REVIEW_P5_R2.md` (Opus, read-only, static; reviews commit 6ac8d95f). It confirms 19 round-1 fixes, agrees with both partial withdrawals, and raises F6 as part of B1. The fixer checked each finding against the files before acting. A round-1 browser check was running alongside; its results are not folded in here.
+
+Counts: 0 blockers, 3 majors (one handed to the dialogue phase), 9 minors. All acted on or routed; none withdrawn.
+
+| # | Sev. | Finding | Outcome |
+|---|---|---|---|
+| B1 | major | The early-naming reward can be earned without the deduction (Owen knocked out, his dropped spare, the journal, the vault) | **Fixed** (coordinator's decision). The credit, the debrief's "before the server did" and the new scene line (m8) all need `named_before_portal && door_log_reasoned && !torres_reason_guessed && !halloran_accused`. The 88 per cent bar stays on `named_before_portal` alone (elapsed time, not credit). The case catch-all credit excludes exactly the rewarded case. Moving Owen's spare out of his `itemsHeld` was weighed and **not done**: `#give_item` gives only from the speaking NPC's own `itemsHeld` (`chat-helpers.js:93-110`), so Owen would have to stop handing over a card at all (a remote unlock through `unlockable`), which reworks `obtain_torres_keycard` and every `office_card_obtained` check, unverified in a browser. Logged as D9; `dropOnKO` is in the backlog. Route r7 proves the drop no longer earns the reward |
+| B2 | major | The naming reason menu can be brute-forced for free | **Fixed** (coordinator's decision). New synced global `torres_reason_guessed`, set by every wrong Torres reason (Patricia in person via `reason_wrong`, three on her phone, three on HaX's) and by every "Ben Ashworth". The retry stays (a stuck player must recover) and is noticed: Patricia "Again? Fine. Convince me this time.", HaX "Second go. Make it count." It excludes the early-naming reward; the debrief's badge-log line becomes "You got to the front-door times in the end. It took a couple of goes." when it applies. Route r9 |
+| B3 | major (dialogue) | Debrief runs up to 34 lines with no choice; the hand-over-with-deal ending has none at all | **Deferred to the dialogue phase** (coordinator's decision). The runs, from the routes: r2 (hand-over with the deal) 34, no choice; r12 24; r6 23; r3 and r8 21; r5, r7, r10, r13 19; r1, r4, r9, r11 18; the tail after the last choice 15 to 19. The review's "Long runs" table has where each choice belongs (a beat inside the deal path; a reaction after the bar paragraph, varied by route; a split at the revelation into TFN and the money; a friendly-KO choice). Also the briefing's 10-line opening and Patricia's 12-to-13-line `significant_findings` (mild) |
+| m1 | minor | Credit and debrief disagree on "accused, then named early" | **Fixed** with B1 (`!halloran_accused` in the credit). Route r8 |
+| m2 | minor | The TFN line breaks "runs them like a business" / "And pays them like one" | **Fixed**: the TFN line moved after the $847,000 line |
+| m3 | minor | "Where do I stand?" says "You can see it leaving" with nothing yet seen leaving | **Fixed**: a new first branch for a suspicion with neither half: "You've a pattern on him, not a case. His office for why, then the vault past the server room for proof." Route r8 |
+| m4 | minor | The accusation aside outlives the accusation | **Fixed**: `halloran_accused and not torres_suspected` |
+| m5 | minor | The lethal ending asks for a leisurely sweep beside a bleeding Torres | **Fixed.** Narration "You step over him. He doesn't move." The close-of-scene text splits: lethal gets "Upload's dead. If you're leaving him there, take what's on that desk and go. Call me."; the same split in `post_ko_safety_net_sweep`, in "Where do I stand?" ("The upload's dead and the flags are in. He's still on that floor. Take what you need and call me.") and in the call-in's "Not yet" ("Your call. He hasn't got long."). The four flag nags still end "Then sweep the vault and call me" on a lethal ending with flags out; left as they are, since the player has to leave the vault for the server room anyway. Routes r5, r13 |
+| m6 | minor | Halloran's KO line and credit assume Torres is gone on the turn ending | **Fixed**: debrief "Her division's running without its head for a fortnight." and credit "DR RUTH HALLORAN: off work, her division one short" when turned; the old lines otherwise. Route r12 |
+| m7 | minor | HaX points the player at a Recruiter who has nothing left to say | **Fixed**: the "Where do I stand?" aside only before the fate; the call-in says "That TalentStack text never got an answer. She's lost him. Ring her if you want to hear her lose." |
+| m8 | minor | The early-naming reward is invisible in the scene | **Fixed**: Torres, after "The vault logged me in twice tonight", under the reward condition: "Half an hour early. Somebody read Owen's sheet properly." Route r2 |
+| m9 | minor | Torres' journal and m06's Irina notes both end "What have I become?" | **Fixed in m05** (coordinator's decision). Both date from 14 January; m05 comes first in play and the line was its own (m05 Stage 9 assembly), and m06 also has a player choice quoting Irina's, so m05 changes. Journal now ends "I read that back and I don't recognise the man who wrote it. Elena wouldn't either." Torres' turn choice: "[You wrote you don't recognise yourself. People who've gone all the way don't.]" → "You did read it. I've read it back every night for a month." HaX's journal choice: "[He also wrote that he doesn't recognise himself.]" m06 untouched |
+| R2-1 | decision | Owen's KO drop hands over the office | **Decided** (coordinator): option (b) now (B1), `dropOnKO` in the backlog. Logged as D9 in `DECISIONS_PENDING.md` |
+
+#### Decisions taken (with reasons)
+
+- **B1, the reward condition is shared** by the credit, the debrief and Torres' new line, so the three can never disagree; the bar and clock keep the looser timing condition because they describe the night, not the player's reasoning.
+- **B2, "Ben Ashworth" counts as a guess** on all three surfaces: it's the other cheap retry the review found, and the reasoning that clears Ben (the incident log's hours) is the same reasoning the log rewards.
+- **B2, a single retry line, not an escalating one.** It fires on any later naming with the flag set; enough to show the retry was noticed without punishing a stuck player further.
+- **m5, the lethal "Not yet" line ("Your call. He hasn't got long.")** keeps the choice open but makes the player choose it knowingly; the debrief's forty minutes still holds.
+- **m9, the new journal line ("Elena wouldn't either.")** keeps the beat (he can't face what he wrote) and ties it to his reason; the choices that quoted the question now quote this.
+- **D9, the card stays with Owen** for now (see B1).
+
+#### Route driver
+
+Seven new routes, generated with the earlier ones; all thirteen meet every expectation:
+
+- `r7_owen_drop_early.json` (B1): Owen knocked out before suspicion, his dropped spare picked up, the journal, the vault, named before flag 3 without the log reason: the 88 per cent bar runs, but no credit, no debrief line, no scene line.
+- `r8_accused_then_early.json` (m1, m3): Halloran accused, cleared by the front-door reason ("Where do I stand?" now says "a pattern, not a case" and no longer leads with the accusation), named before flag 3: 99 per cent, no reward anywhere, debrief and credits agree.
+- `r9_reason_guessed.json` (B2): Ben named, a wrong Torres reason on Patricia's mobile, the right one on the retry ("Again? Fine. Convince me this time."): `torres_reason_guessed`; named early, reward excluded; "It took a couple of goes."
+- `r10_patricia_ko_name_to_hax.json`: Patricia knocked out after the first meeting: pass and authorisations by relay, partial naming to HaX on the front-door reason, Owen's password on "Security's signed it off", both halves to HaX, handed over without a deal with the Patricia-KO lines; PATRICIA MORGAN credit.
+- `r11_recruiter_deal_lie.json`: the Recruiter's deal taken, the envelope read anyway, a lie in the debrief ("Four minutes is a long sales pitch"); OFFER TAKEN.
+- `r12_turn_halloran_ko_lisa_confess.json`: leaflet, vetting files, CEO email; Lisa and Halloran knocked out; deal taken then confessed; turned. m6's lines; MOTIVE, MEANS AND AUTHORISATION, CEO'S STAND-DOWN, LISA PARK, "one short", OFFER TAKEN, THEN CONFESSED.
+- `r13_fight_leave_in_person.json` (m5): left to die in the post-KO person-chat: the new narration, the lethal text, "He hasn't got long", end music, AT A COST.
+
+r1 and r5 were updated for the new journal choice and the lethal texts; r2 now also expects Torres' reward line.
+
+#### Checks (static; no browser session started)
+
+- Ink compiles (10 files).
+- Validator, full: schema passes, dungeon graph regenerates, door alignment OK; the same intended same-pattern warnings as round 1, nothing new.
+- dialoguelint: 0 errors; the same pre-existing check and warning (Recruiter L87, L352). One new choice over the length cap was shortened.
+- reopencheck (m05 block of `missions.json` regenerated, re-read just before; diff confined to that block): 0 problems on HaX, the Recruiter and Patricia's phone.
+- tagdiff against HEAD (the round-1 commit): 37 structural differences, all from this round (the new VAR in five inks; its assignments; the retry, lethal, m3, m4, m6, m7, m8 and reward conditions). Opening, Owen, Halloran, Lisa and the Recruiter: structure unchanged.
+- inkcheck (Torres with the reward and accused; both Patricias and HaX with a guessed reason; HaX after a lethal fate; the debrief turned with Halloran knocked out and a guessed reason) and loopcheck (HaX after a lethal fate, both Patricias): clean.
+- `check_door_alignment.py`: 9/9 OK.
+
+Still not checked in a browser: everything listed after round 1, plus the retry lines and the lethal texts.
+
+#### Spoken lines changed (old → new)
+
+- Torres' journal (document, not voiced): "…I don't recognise the man who wrote it. What have I become?" → "…I don't recognise the man who wrote it. Elena wouldn't either."
+- Torres, new: "Half an hour early. Somebody read Owen's sheet properly." Turn reply: "You did read it. I've asked it every night for a month." → "You did read it. I've read it back every night for a month."
+- Narrator: "You step over him on the way out." → "You step over him. He doesn't move."
+- Patricia (in person and phone), new: "Again? Fine. Convince me this time." (in place of "David. Why?" on a retry).
+- HaX, phone, new: "Second go. Make it count." (in place of "Why him?" on a retry); "You've a pattern on him, not a case. His office for why, then the vault past the server room for proof."; "If you're leaving him there, take what's on that desk and go. Call me."; "The upload's dead and the flags are in. He's still on that floor. Take what you need and call me."; "Your call. He hasn't got long."; "And that TalentStack text is still unanswered. Ring her or don't. Your call." → "That TalentStack text never got an answer. She's lost him. Ring her if you want to hear her lose."
+- HaX text, new: "Upload's dead. If you're leaving him there, take what's on that desk and go. Call me."
+- Debrief, new: "You got to the front-door times in the end. It took a couple of goes."; "Dr Halloran is off work. Her division's running without its head for a fortnight." The TFN line is unchanged in wording, moved after the money line.
+- Choices (not voiced): Torres "[You wrote "what have I become". People who've gone all the way don't ask that.]" → "[You wrote you don't recognise yourself. People who've gone all the way don't.]"; HaX "[He also wrote "what have I become".]" → "[He also wrote that he doesn't recognise himself.]"
+
+#### Open after round 2
+
+- The browser checks (round 1's list, the retry lines, the lethal texts).
+- B3 and the other long runs, to the dialogue phase.
+- D9 (Owen's dropped spare) until `dropOnKO`; D4 to D8, D1, D3 as before.

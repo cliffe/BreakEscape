@@ -39,6 +39,8 @@ VAR recruiter_contacted_player = false
 VAR patricia_ko = false
 VAR halloran_accused = false
 VAR named_before_portal = false // Synced scenario global: Torres named before flag 3 (D1; set by HaX's torres_identified mapping)
+VAR door_log_reasoned = false
+VAR torres_reason_guessed = false
 
 // PASS 5 (D1, D2): how far the upload has got depends on the night. Named
 // early, before the research server confirmed it: a lower bar and more time.
@@ -93,6 +95,12 @@ Narrator: He doesn't turn around.
 David Torres: "Security consultant." You're not an auditor.
 
 David Torres: The vault logged me in twice tonight. One of them was you.
+
+// PASS 5 R2 m8: the early-naming reward lands in the scene, when it is
+// earned the honest way (the same terms as the credit and the debrief line).
+{named_before_portal and door_log_reasoned and not torres_reason_guessed and not halloran_accused:
+    David Torres: Half an hour early. Somebody read Owen's sheet properly.
+}
 
 {halloran_accused:
     David Torres: You had Ruth suspended. I watched Security walk her back to the lab, and I brought the upload forward. One region's schedule went an hour ago.
@@ -236,9 +244,11 @@ David Torres: Not too far gone? You don't know how far.
 // PASS 4 fix 8: what the player can say depends on what they found.
 // The Elena argument is always there, so the ending never closes.
 === turn_argument ===
-+ {found_torres_journal} [You wrote "what have I become". People who've gone all the way don't ask that.]
+// PASS 5 R2 m9: the journal no longer ends on "What have I become?", which
+// m06's Irina notes also use; the turn argument quotes the line that's left.
++ {found_torres_journal} [You wrote you don't recognise yourself. People who've gone all the way don't.]
     #speaker:david_torres
-    David Torres: You did read it. I've asked it every night for a month.
+    David Torres: You did read it. I've read it back every night for a month.
     -> turn_come_back
 + {flag4_submitted} [The Architect signed off on forty-five deaths. What's your life worth to them?]
     #speaker:david_torres
@@ -449,7 +459,7 @@ Narrator: Torres went down hard against the rack. He isn't getting up.
     Narrator: You pull the drive and kill the transfer at 97 per cent. The last of it stays in the building.
 }
 
-Narrator: You step over him on the way out.
+Narrator: You step over him. He doesn't move.
 
 ~ after_quiet = true
 #exit_conversation

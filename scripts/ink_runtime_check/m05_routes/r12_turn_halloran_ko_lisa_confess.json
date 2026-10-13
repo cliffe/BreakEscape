@@ -1,0 +1,241 @@
+{
+"steps": [
+{
+"note": "R12 (round 2): the leaflet, the vetting files and the CEO email found; Lisa and Halloran knocked out; the Recruiter's deal taken and then confessed; turned. m6's turned-ending Halloran lines."
+},
+{
+"talk": "briefing",
+"picks": [
+"damage so far",
+"Who's this going to",
+"What's the mission",
+"And the third",
+"my cover",
+"Who else will I meet",
+"I'm ready",
+"Methodically",
+"Any last advice"
+]
+},
+{
+"set": {
+"briefing_played": true
+}
+},
+{
+"talk": "patricia",
+"picks": [
+"Fill me in",
+"Who has access",
+"without tipping",
+"Where should I start"
+]
+},
+{
+"read": "security_incident_log"
+},
+{
+"talk": "owen",
+"picks": [
+"What can you tell me",
+"That's useful",
+"Lean over",
+"Sorry. Habit",
+"23:47. Whose",
+"That's everything"
+]
+},
+{
+"read": "entropy_pamphlet"
+},
+{
+"talk": "patricia",
+"picks": [
+"I need your help with something",
+"vetting files",
+"That's everything"
+]
+},
+{
+"expect": {
+"found_vetting_file": true
+}
+},
+{
+"read": "ceo_stand_down_email"
+},
+{
+"ko": "lisa_park"
+},
+{
+"ko": "dr_halloran"
+},
+{
+"enter": "server_hallway"
+},
+{
+"read": "it_access_notice"
+},
+{
+"event": "door_unlock_attempt",
+"data": {
+"connectedRoom": "server_room"
+}
+},
+{
+"talk": "owen",
+"picks": [
+"wants a password",
+"Patricia's log has a crypto badge",
+"That's everything"
+]
+},
+{
+"talk": "patricia_phone",
+"picks": [
+"I know who it is",
+"David Torres",
+"front door",
+"Just checking in"
+]
+},
+{
+"expect": {
+"torres_suspected": true
+}
+},
+{
+"enter": "server_room"
+},
+{
+"set": {
+"flag1_submitted": true
+}
+},
+{
+"set": {
+"flag2_submitted": true
+}
+},
+{
+"set": {
+"flag3_submitted": true
+}
+},
+{
+"set": {
+"flag4_submitted": true
+}
+},
+{
+"talk": "owen",
+"picks": [
+"David Torres' office",
+"That's everything"
+]
+},
+{
+"enter": "torres_office"
+},
+{
+"read": "personal_journal"
+},
+{
+"event": "fingerprint_collected:david_torres"
+},
+{
+"event": "door_unlock_attempt",
+"data": {
+"connectedRoom": "data_center"
+}
+},
+{
+"enter": "data_center"
+},
+{
+"talk": "patricia_phone",
+"picks": [
+"I know who it is",
+"David Torres",
+"On my way"
+]
+},
+{
+"expect": {
+"torres_identified": true
+}
+},
+{
+"talk": "recruiter",
+"picks": [
+"How many more",
+"What were you actually after",
+"Why does ENTROPY want",
+"That number was known",
+"What exactly would",
+"Fine. The envelope"
+]
+},
+{
+"read": "talentstack_envelope"
+},
+{
+"talk": "torres",
+"picks": [
+"It's over, David",
+"They lied to you",
+"You knew people would die",
+"not too far gone",
+"Three months",
+"Go back to your desk",
+"I need everything",
+"Pull the drive myself"
+]
+},
+{
+"talk": "phone",
+"picks": [
+"Bring me in",
+"Bring me in",
+"On my way"
+]
+},
+{
+"expect": {
+"mission_complete": true
+}
+},
+{
+"talk": "debrief",
+"picks": [
+"What have we got",
+"She offered to keep me out"
+]
+},
+{
+"said": [
+"running without its head for a fortnight",
+"Lisa Park ran the collection"
+],
+"notSaid": [
+"two most senior people"
+]
+},
+{
+"credits": true
+},
+{
+"said": [
+"MOTIVE, MEANS AND AUTHORISATION",
+"CEO'S STAND-DOWN",
+"LISA PARK",
+"DR RUTH HALLORAN: off work, her division one short",
+"OFFER TAKEN, THEN CONFESSED",
+"TURNED"
+],
+"notSaid": [
+"two short"
+]
+}
+]
+}

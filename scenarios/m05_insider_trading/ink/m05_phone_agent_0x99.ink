@@ -66,6 +66,7 @@ VAR door_log_held = false
 VAR owen_office_card_relayed = false // Synced scenario global: HaX has pushed Owen's office spare (set here only)
 VAR recruiter_texted = false
 VAR it_notice_read = false
+VAR torres_reason_guessed = false // Synced scenario global (pass 5 R2 B2): a wrong reason or a wrong name was tried; also set by Patricia (m05_npc_patricia_morgan, m05_phone_patricia). Excludes the early-naming reward
 
 // Field-guide exposure flags. Each _offered is set by an eventMapping when
 // the player meets the thing the guide is about; each _hint_given is set
@@ -298,7 +299,7 @@ That should worry you more than the pitch. He understands the cost. He decided h
     What you can offer is a way out he hasn't let himself look at.
     -> support_hub
 
-+ [He also wrote "what have I become".]
++ [He also wrote that he doesn't recognise himself.]
     He did. That line's the door, if you want one.
     -> support_hub
 
@@ -403,6 +404,7 @@ Go on. Who?
 + {found_door_log and not halloran_accused} [Dr Ruth Halloran.]
     -> hax_accuse_halloran
 + {found_door_log} [Ben Ashworth.]
+    ~ torres_reason_guessed = true
     Eight in the evening, logged with IT. The transfers run two till four. Look again.
     -> support_hub
 + {found_door_log or torres_suspected or has_motive() or has_exfil()} [David Torres.]
@@ -454,7 +456,12 @@ If she's the wrong name, the right one has just watched Security move. Be sure a
     }
     -> hax_named_close
 - else:
-    Why him?
+    // PASS 5 R2 (B2): the retry is allowed, and noticed.
+    {torres_reason_guessed:
+        Second go. Make it count.
+    - else:
+        Why him?
+    }
     -> hax_torres_why
 }
 
@@ -488,10 +495,12 @@ If she's the wrong name, the right one has just watched Security move. Be sure a
 === hax_torres_why ===
 {torres_identified: -> support_hub}
 + {found_door_log} [His own badge is on the server hallway those nights.]
+    ~ torres_reason_guessed = true
     Read it again. His badge never touches the server hallway. Hers does.
     #exit_conversation
     -> support_hub
 + [He's been under strain. His wife's ill.]
+    ~ torres_reason_guessed = true
     Half that building has someone ill at home. That's not evidence.
     #exit_conversation
     -> support_hub
@@ -507,6 +516,7 @@ If she's the wrong name, the right one has just watched Security move. Be sure a
     You can see it leaving, under his name. Now find me why.
     -> hax_partial_naming
 + [He's the cryptography lead. He'd know how.]
+    ~ torres_reason_guessed = true
     So would seven others. Not evidence.
     #exit_conversation
     -> support_hub
@@ -632,8 +642,12 @@ What are you doing with him?
 // PASS 5 (A2): the phone-fate path gets the same sweep-then-call-in as the
 // person-chat one (whose text comes from the conversation_closed mappings).
 === post_ko_safety_net_sweep ===
-{not all_flags_in():
+// R2 (m5): no leisurely sweep beside a man left to die.
+{
+- not all_flags_in():
     The upload's dead. Finish the research server: all four flags in the drop-site. Then sweep the vault and call me.
+- final_choice == "combat_lethal":
+    If you're leaving him there, take what's on that desk and go. Call me.
 - else:
     Sweep the vault before you go. Then call me and I'll bring you in.
 }
@@ -803,8 +817,9 @@ Once you're out, QDC's own people go through that vault before ours do. Whatever
 {not found_manifest:
     The package manifest's still there as well.
 }
+// R2 (m7): she has nothing left to offer once he's dealt with.
 {recruiter_texted and not recruiter_contacted_player:
-    And that TalentStack text is still unanswered. Ring her or don't. Your call.
+    That TalentStack text never got an answer. She's lost him. Ring her if you want to hear her lose.
 }
 -> extract_choices
 
@@ -813,7 +828,12 @@ Once you're out, QDC's own people go through that vault before ours do. Whatever
     Car's at the front entrance. Two minutes.
     -> extract_confirm
 + [Not yet. I'm still looking.]
-    Take your time. The vault isn't going anywhere.
+    // R2 (m5): left to die, he is still on the floor beside the desk.
+    {final_choice == "combat_lethal":
+        Your call. He hasn't got long.
+    - else:
+        Take your time. The vault isn't going anywhere.
+    }
     -> support_hub
 
 === extract_confirm ===
@@ -843,6 +863,8 @@ See you at HQ.
 {
 - final_choice != "" and not all_flags_in():
     The upload's dead. The research server isn't. All four flags in the drop-site, then call me and I'll bring you in.
+- final_choice == "combat_lethal":
+    The upload's dead and the flags are in. He's still on that floor. Take what you need and call me.
 - final_choice != "":
     It's done. The upload's dead and the flags are in.
     Sweep the vault if you haven't, then tell me to bring you in.
@@ -890,7 +912,8 @@ See you at HQ.
         - else:
             You have both halves of the case. Give Patricia the name, in person or on her mobile.
         }
-    - halloran_accused:
+    // R2 (m4): only until the front-door reason has cleared her.
+    - halloran_accused and not torres_suspected:
         You put Halloran's name up, and the upload sped up when Security moved.
         Check it holds. Where was she on the twenty-third, and whose badge came through the front door first?
     - door_log_held and not found_door_log:
@@ -907,6 +930,9 @@ See you at HQ.
         Patricia's log has a cryptography badge at 23:47. Owen keeps the reader logs. Ask him whose.
     - not found_incident_log and not door_log_held and not torres_suspected and not patricia_ko:
         For the who, start with the incident log on Patricia's desk.
+    // R2 (m3): a log-reasoned suspicion with nothing else yet.
+    - torres_suspected and not has_motive() and not has_exfil():
+        You've a pattern on him, not a case. His office for why, then the vault past the server room for proof.
     - torres_suspected and not has_motive():
         You can see it leaving under his name. Now find out why: his office, the break room, Patricia's files.
     - torres_suspected and not has_exfil():
@@ -915,7 +941,8 @@ See you at HQ.
         The vault takes one of two prints, Halloran's or the cryptography lead's. Work out which you're after before you hunt for a print.
     }
 }
-{recruiter_texted and not recruiter_contacted_player and not mission_complete:
+// R2 (m7): after the fate she has no pitch left (never_talked_terms).
+{recruiter_texted and not recruiter_contacted_player and final_choice == "":
     That TalentStack text is still unanswered. Hear her out if you want. Just don't give her anything.
 }
 -> report_progress_choices
