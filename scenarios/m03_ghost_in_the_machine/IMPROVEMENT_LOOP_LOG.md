@@ -2130,3 +2130,17 @@ No audio exists for m03. Player choices aren't listed.
 - Checks: compile 8/8; validator (with and without ink) no errors; dialoguelint only the 2 known warnings; tagdiff only the four new `#set_global` tags; reopencheck 0; loopcheck 29/29; 27 routes, 0 missing picks.
 
 **Follow-up 2 (orchestrator).** `read_dropped` is now a synced global too (`#set_global:read_dropped:true` in `clone_read_dropped`, registered in `globalVariables`), so Sterling's night opener "You asked about the training network twice…" survives a page reload. r2 now page-reloads before the confrontation and still gets the line. All 27 routes clean.
+
+**Stealth-check follow-up (orchestrator, PASS2_STEALTH_CHECK.md).**
+- **Terry's lockpick fight:** the user ruled the forced fight fine because it's winnable, so it's unchanged.
+- **M1, Terry's clock threats:** none of his clock threats was enforced, so they're reworded to unenforced ones:
+  - "Five minutes, and I'm stood at the end of the corridor" → "Get what you came for, and don't make me come looking."
+  - "Ten minutes." → "Don't be long."
+  - "Ten minutes. Then I come looking." → "Don't make me come looking for you."
+  - "Rounds every fifteen minutes" → "I do my rounds"
+  - "Fifteen minutes, I'm back past this door" → "I'll be back past this door before long"
+- **M2, Ffion's first-visit option:** "Thanks. Where do I sign?" → "Where do I sign?". r12 updated.
+- **M3, bark replay after reload:** no change needed, because fired onceOnly handlers are saved to the server (`npc-manager.js` ~1226–1253).
+- **M4, the drive found in the desk:** left as intended.
+
+Checks: compile 8/8, validator 0 errors, dialoguelint the 2 known Victoria warnings, reopencheck 0 problems, all 27 routes clean.

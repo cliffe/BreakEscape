@@ -205,7 +205,7 @@ VAR route_quiet = false
         # influence_decreased
         Terry Mott: Funny. Ffion said notebook.
         // D4-9: the catch has teeth; he doesn't wave the story through.
-        Terry Mott: Notebook, files. Make your mind up. Five minutes, and I'm stood at the end of the corridor.
+        Terry Mott: Notebook, files. Make your mind up. Get what you came for, and don't make me come looking.
         ~ hub_quiet = true
         -> hub
     - ffion_night_story == "sterling":
@@ -257,7 +257,7 @@ Terry Mott: You got ID? Key card?
         ~ guard_influence = guard_influence + 5
         # influence_increased
         Terry Mott: A visitor badge at three and her card at eleven.
-        Terry Mott: Either she's taken a shine to you or I'm in trouble. Ten minutes.
+        Terry Mott: Either she's taken a shine to you or I'm in trouble. Don't be long.
     - else:
         ~ guard_influence = guard_influence + 15
         # influence_increased
@@ -291,7 +291,7 @@ Terry Mott: She does ring down at odd hours. Which files?
     { (not day_greeted or ffion_night_story == "sterling") and guard_detection_count == 0:
         ~ guard_suspicious = false
     }
-    Terry Mott: Ten minutes. Then I come looking.
+    Terry Mott: Don't make me come looking for you.
     ~ hub_quiet = true
     -> hub
 * [She didn't specify -- said I'd know them when I saw them. Confidential.]
@@ -478,7 +478,7 @@ Terry Mott: {asked_knock_off:Told you this afternoon. On till six.|Double shift 
 { guard_suspicious:
     Terry Mott: Though tonight's been more eventful than usual.
 }
-Terry Mott: Rounds every fifteen minutes. Doors, windows, anyone where they shouldn't be. Like you, possibly.
+Terry Mott: I do my rounds. Doors, windows, anyone where they shouldn't be. Like you, possibly.
 * [What's your route?]
     Terry Mott: Round the executive wing, mostly. Sterling's office, Mr Foster's, back down the corridor.
     Terry Mott: Why d'you want to know my route?
@@ -505,7 +505,7 @@ Terry Mott: Rounds every fifteen minutes. Doors, windows, anyone where they shou
     Terry Mott: I asked you a question. My route. Why?
 }
 * [So I'm not under your feet. I'll be done before you come round again.]
-    Terry Mott: Considerate. Fifteen minutes, I'm back past this door. Be done by then.
+    Terry Mott: Considerate. I'll be back past this door before long. Be done by then.
     ~ hub_quiet = true
     -> hub
 * [No reason! Just... making conversation.]

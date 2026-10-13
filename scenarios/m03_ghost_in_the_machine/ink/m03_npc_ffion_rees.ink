@@ -64,7 +64,7 @@ VAR night_answer_quiet = false
 - else:
     Ffion Rees: Anyway. Sign in when you're ready.
 }
-* [Thanks. Where do I sign?]
+* [Where do I sign?]
     #give_item:id_badge:visitor_badge
     ~ badge_received = true
     ~ receptionist_influence = receptionist_influence + 5
