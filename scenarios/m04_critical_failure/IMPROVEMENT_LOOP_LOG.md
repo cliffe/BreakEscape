@@ -424,3 +424,19 @@ HaX, phone:
 Not spoken: the credits line "THE BREAK-IN: on paper — the OptiGrid work order, the camera gaps, the spoofed reader" → "THE BREAK-IN: traced on paper to the OptiGrid crew". The two VM texts are unchanged in wording; they are now skipped when out of order.
 
 Carried: R2-6 / m17 **need checking against SecGen by the user**.
+
+### Phase 2 puzzle chains: CLOSED (2026-10-13)
+
+| Round | Blockers | Majors | Minors |
+|---|---|---|---|
+| 1 | 0 | 2 (decisions: F1 accepted, F2 softened) | 5 |
+| 2 | 0 | 2 | 5 |
+| 3 | 0 | 2 | 4 |
+| 4 | 0 | 0 | 5 (fixed, 0035bb4d) |
+
+Browser check of the round-3 checks, PASS5_PUZZLE_R3_BROWSER (games 2209–2210): 6/6 pass, briefing HaX on her own sprite. Its minors M-1 to M-3 go to phase 3, scenario design:
+- M-1: two HaX texts land back to back once the flags are in but the dial is unread.
+- M-2: "Find the OT engineer" stays open when the player never meets Vance.
+- M-3: the debrief and credits assume Vance was met.
+
+Open for the user: R2-6 / m17 (SecGen check).
