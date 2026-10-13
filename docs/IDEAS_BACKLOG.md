@@ -59,6 +59,13 @@ From the PIN cracker fix (2026-10-10), found but not fixed:
 
 - **Line of sight blocked by walls and tall props** (m04 room dressing, 2026-10-13; M–L). NPC sight cones (`npc-los.js` isInLineOfSight) check only range and angle. Neither walls nor tall props (battery racks, cabinets) block an NPC's view, so racks give no stealth cover and guards can see through walls. Add occlusion (wall tiles and props flagged as sight-blocking), then rebalance every mission with sight cones (m03 Terry, m04 guard/Cipher/Static, others) with browser checks.
 
+- **Engine minors from the m06 regression (2026-10-13; S each):**
+  - **Hostile NPC HP after a reload:** it isn't saved. Dani went from 30 to 100 HP and was still hostile.
+  - **Objectives panel:** with several aims open it clips the later tasks and shows no scrollbar. It also covers the left of the room.
+  - **Guard sight cone:** it keeps drawing across other rooms after he has waved the player through.
+  - **Hearts row:** it overlaps the inventory bar.
+- **HaX's headshot avatar** (art, 2026-10-13; S). The phone and toast avatar `agent_hax_headshot.png` still shows her old look, because it's cut from the walk sprite. Her bust was glowed up (option A). Make a headshot from the new bust, or redo her walk sprite to match.
+
 ## Story and missions
 
 - **Carry m03's Sterling and Danny threads forward** (m03 pass-2 dialogue review, 2026-10-12; M). No mission from m04 to m08 mentions Victoria Sterling or Danny Foster. A recruited Sterling could turn up as an asset or a liability later, and the debrief's "Somebody has to tell him she's walking. It should be you." could be paid off. Depends on "Carry choices between missions".
