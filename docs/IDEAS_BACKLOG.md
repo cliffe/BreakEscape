@@ -66,6 +66,8 @@ From the PIN cracker fix (2026-10-10), found but not fixed:
   - **Hearts row:** it overlaps the inventory bar.
 - **HaX's headshot avatar** (art, 2026-10-13; S). The phone and toast avatar `agent_hax_headshot.png` still shows her old look, because it's cut from the walk sprite. Her bust was glowed up (option A). Make a headshot from the new bust, or redo her walk sprite to match.
 
+- **Per-item `dropOnKO: false`** (m05 alignment review, 2026-10-13; S). An NPC's KO drops everything in `itemsHeld`, so Owen's office spare lands before anyone suspects Torres. Allow items to stay with a KO'd NPC (or be relayed later by script).
+
 ## Story and missions
 
 - **Carry m03's Sterling and Danny threads forward** (m03 pass-2 dialogue review, 2026-10-12; M). No mission from m04 to m08 mentions Victoria Sterling or Danny Foster. A recruited Sterling could turn up as an asset or a liability later, and the debrief's "Somebody has to tell him she's walking. It should be you." could be paid off. Depends on "Carry choices between missions".
