@@ -16,3 +16,6 @@ Empty or change the locker when Nightshade is tipped off. Trying `textVariants` 
 ## U4. Canon: HaX and the Architect's teacher line
 May HaX hedge-recognise "Let it hurt afterwards, not during" in m08 ("Same classroom") without naming Tesseract?
 **Orchestrator went ahead with yes** (one line, easy to remove).
+
+## E1. Required-task key wording (engine, from regression run 1)
+`objectives-panel.js` marks required tasks with `*` only in aims that have a visible optional task (by design), but the panel's key reads as if every unmarked task is optional. Recommendation: show the key only beside aims that use the marker, or word it "* required (in aims with optional tasks)". Backlogged; not blocking.
