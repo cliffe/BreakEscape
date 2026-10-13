@@ -45,6 +45,8 @@ From the PIN cracker fix (2026-10-10), found but not fixed:
 - **Phone timestamps survive a reload** (m03 dialogue playtest; S). After a reload every message in a thread is re-stamped with the reload minute.
 - **Resume in the room you left** (engine fixer; M). Reload always respawns at `startRoom`; see P10 in the pass-4 log.
   - Also on a KO (m06 struggling run A, 2026-10-13): a knocked-out player respawns in reception, five rooms from the fight, with the hostile NPC still hostile.
+- **Hidden NPCs still draw their vision cone** (m06 fix check, 2026-10-13; S). After Kemal walks out (`minder_walked`, sprite hidden) his cone and range circle stay drawn in the wing, before and after a reload.
+- **Fists mode swallows click-to-move** (m06 fix check; S). In fists mode a click throws a punch instead of walking until the player presses Q again; say so on screen or let a click on open floor still move.
 - **RFID clone shows "Emulating..." with no message** (m06 struggling run A; S). When an emulation fails or does nothing, the flipper minigame should say why.
 - **Timers survive a reload** (m07 fixer; S). A started timer restarts from zero after a reload.
 - **Re-readable cutscene transcripts on the phone** (m07 fixer; M). Players could reread a briefing instead of relying on paper summaries like m07's Threat Desk Summary.
