@@ -171,3 +171,14 @@ Brief: `docs/agents/LIGHTING_PASS_BRIEF.md`. Plans in each mission's `LIGHTING_P
 - Cycle 2 (engine, at the coordinator's instruction): **L2** the light map now ends each frame on a no-op additive stamp, so a `floorTint` stamp drawn last no longer blanks it; m01, m02, sis01, sis02 and Tesseract re-toured before/after: same on/off states, pixel differences only from blinking LEDs, pulses and walking NPCs. **L1** room lighting `variants` with a condition (schema, node test `test/js/lighting-room-variants.test.mjs`); missions without variants re-toured: unchanged. **L3** NPC torch via `behavior.torch` (schema, node test `test/js/lighting-npc-torch.test.mjs`); strength from the room's current ambient, so it never shows in a lit office. Tour flags `--close-intro`, `--globals`, `--show-npc`, `--restore-off`, `--check` (skill Step 5).
 - Not yet exercised: a page reload at night with variants (blocked in the agent session; needs a tester).
 - Cycle 4: **E4** vision cones above the light map (`npc-los.js`, overlayDepth rule against the light map's depth). m03 closed: final tours with final maps and sprites, nothing above minor.
+
+### m06_follow_the_money (2026-10-13, m06 pass 5, lighting cycles 1-4)
+
+Plan and log: `scenarios/m06_follow_the_money/LIGHTING_PLAN.md`. Night (`#b8bfce`). Rooms: lobby on, warm `#c4b8a6`; checkpoint on; trading floor on `#b2b8c8` (market wall `above`, r 80); Irina's office motion `#bcb6aa` (banker's lamp); lab on `#b0b8c6`; server room and data centre motion, cyan `#a8c2ce` / `#a2bac8`, darks `#0a0f1c`; executive wing on `#bcb6b0`, `panels: false` (gallery sconces); Satoshi's office on `#b6aea6`. All `hce_*` props glow through per-room emitters (no `EMITTERS` change). Phase glows: the custody console by id (cyan, amber pulse on `console_warned`, steady red on `console_tripped`, green on `found_architects_fund`); `assets_seized` turns the ticker, the market wall and Satoshi's block screen red. No room variants, no torches, call points off.
+
+Lessons:
+- `blink` with `above` is a hard 1 Hz on/off, m01's signpost for an interactable; on props it reads as "interact here". Use `breathe` or steady.
+- An additive glow on a near-white sprite adds nothing; light the darker parts round it (the cage panels, not the white mesh door).
+- Wall-strip signs and screens are short: the glow centres on the sprite, so anything over about r 24 blooms over the rim into the room to the north. Use offsetY 4-6 and small radii.
+- Additive glows don't show on bright screens or pale floors in a lit room; a story change on a screen wall needs `above` plus `floorTint`, or a dark surface to land on.
+- Proposal: rack-style LEDs for `hce_*` props (m06 `DECISIONS_PENDING.md` D9).
