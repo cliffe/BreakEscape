@@ -962,6 +962,8 @@ export function preload() {
     this.load.image('hce_lab_sign1', 'objects/hce_lab_sign1.png');
     this.load.image('hce_block_screen1', 'objects/hce_block_screen1.png');
     this.load.image('hce_phd_frame1', 'objects/hce_phd_frame1.png');
+    this.load.image('hce_sconce1', 'objects/hce_sconce1.png');
+    this.load.image('hce_art_canvas1', 'objects/hce_art_canvas1.png');
     this.load.image('backup_recovery',         'objects/backup_recovery.png');
     this.load.image('dual_auth',               'objects/dual_auth.png');
     this.load.image('ehr-terminal',            'objects/ehr-terminal.png');
