@@ -66,7 +66,8 @@ ENTROPY Operative 'Relay': Inverter room's closed. Has been all week.
     ENTROPY Operative 'Relay': Keep the heid. It's staying where it is.
     -> relay_standoff
 
-* [The bypass modules on all three rack banks. Was that you?]
+// Struggling run A (F6): don't name a module the player may not have seen.
+* [Somebody's been in your rack cabinets. Was that you?]
     ~ radio_interrupted = true
     Narrator: That stops her harder than a raised voice would.
     ENTROPY Operative 'Relay': ...You've been in the cabinets.

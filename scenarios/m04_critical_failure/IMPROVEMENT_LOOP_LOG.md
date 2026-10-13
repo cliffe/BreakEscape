@@ -954,3 +954,48 @@ Orchestrator request: HaX's `first_call_choices` had no guard. A first call open
 - reopencheck: 0 problems (HaX phone: 1800 reopens, 1307 re-runs).
 - loopcheck on the phone (`start`; inside; `first_call_choices` after the shutdown): clean.
 - Validator with ink: schema passed, all ink valid. It now shows 16 issues, up from 12. The 4 new ones are "person-chat cutscene has no background" on the sighting and entry mappings, from 84bbc1a7 (generic background pins removed for the POV backgrounds), not from this fix.
+
+## Phase 8 playtests: struggling run A fixes
+
+Report: `PASS5_STRUGGLING_A.md` (game 2316; 0 blockers, 4 majors, 6 minors). Mission-side findings fixed by the dialogue fixer after checking each against the ink and erb. F1, F2 and F10 are harness or engine items, left as the orchestrator directed. No browser session.
+
+| # | Sev. | Finding | Outcome |
+|---|---|---|---|
+| F3 | major | Debrief and credits contradict on a lost race, then a capture | **Reachable without assists.** Once Voltage turns hostile the button stance is closed. If he reaches the laptop (`vented_by_trigger`), a later KO still captures him (`npc_ko:voltage`), so `vented_by_trigger` at the debrief always means "then put down". **Fixed:** the first-opener choice reads "[He reached the laptop before I put him down. …]"; HaX's recap reads "…he reached the laptop before you put him down, and Bank B went with it."; the credit reads "RACK BANK B LOST — he reached the laptop before you put him down". The second headline was the mission-name subtitle "CRITICAL FAILURE" printed under "COSTLY SUCCESS". It's now "MISSION 4: CRITICAL FAILURE", so there's exactly one headline. Sweep: the disclosure credits had the same branch slip as D5-2 (CLASSIFIED said "maintenance fault" after nine deaths), so they now have crew-lost variants that match the debrief |
+| F4 | major | Nine dead tied to an alarm a cover-holding player never learned of | **Fixed** with a fair signal; the choice is still the player's. New HaX text, sent once on whichever comes first (the dial read, 30 s after the 61-degree call; or the clock starting, 15 s): "Nine of Vance's night crew are behind the Hall 2 inverter wall till six. If those racks go, so do they. Only Vance can sound the evacuation." It's skipped after the alarm, with Vance KO'd (nobody can sound it), or once a bank has gone. New global `crew_hint_texted` (erb and `missions.json`). The routes the text points to now exist on every path: HaX's crew topic, Vance's crew offer and his phone crew offer now open on `anomaly_detected or attack_mechanism_known` (they needed the dial before); and a new Vance hub line lets a cover-route player with the attack mapped but no dial or logs drop the cover ("[I'm not an auditor. They're inside your control network, and I can prove it.]"). The cost stays visible: HaX's hint ("He'd have to trust you first.", the clock note) and Vance's offer lines are unchanged |
+| F5 | minor | Vance's cloner option reads as flavour | **Fixed.** "[(Use the cloner.) Lean in over the site map, close enough to read his lanyard.]"; hub: "[(Use the cloner.) Ask about the site map again, and stand close to his lanyard.]" |
+| F6 | minor | Relay's choice names the bypass modules unseen | **Fixed** by rewording: "[Somebody's been in your rack cabinets. Was that you?]" (her reply "...You've been in the cabinets." still fits) |
+| F7 | minor | BESS diagram popup keeps reopening near Hall 1 | **Withdrawn (not a trigger).** The diagram is a readable poster (`readDisplay: gameDisplay`) with no proximity, interact-radius, bark or eventMapping trigger; nothing in the erb or the engine opens it unasked. The tester's `interact` calls aimed at the KO'd Cipher, who can't be interacted with, so the harness took the nearest interactable, which is the poster. For the room-dressing owner: if a human hits the same thing, move the poster away from Cipher's spot. Logged for the harness alongside F1 |
+| F8 | minor | "Where do I stand?" ends on a stale "Right." menu; "Send me a field guide" has no reply | **Fixed.** `report_progress` returns straight to the hub (as the hint knots do; `report_progress_choices` removed). The guide choice now answers "Which one?" before the list |
+| F9 | minor | Brief doesn't say the ESD needs grid permission and Voltage kept off the laptop | **Fixed** (`scenario_brief`, text only): "…Confirm the falsified telemetry against a real instrument and prove how they took control: the Emergency Shutdown arms only once grid control has both. Keep the trigger holder away from his laptop, then press the shutdown before the 0800 trigger time." (`mission.json`'s Hacktivity description already says "past the man holding the remote"; left alone) |
+
+#### Routes
+
+- New `r30_race_lost_then_captured.json`: real fight with Static up, race lost, crew lost, Static and Voltage KO'd, ESD. Both debrief openers tell it in order; the credits show COSTLY SUCCESS plus the mission-name subtitle, the new Bank B line, VOLTAGE: CAPTURED and the crew-lost CLASSIFIED line, and no MISSION COMPLETE.
+- New `r31_cover_held_crew_signal.json`: cover held, the attack mapped before the dial (the clock starts; the erb text fires on `clock_started`); HaX's crew topic opens without the dial; the new cover-drop line; the ally alarm offer with its cost; the crew saved when bank B vents. The route driver doesn't simulate texts, so the text itself was checked in the erb and by dialoguelint (texts under the 30-word cap).
+- 31 of 31 routes: all expectations met.
+
+#### Checks (static; no browser session)
+
+- Ink compiles (0 failed, no loose ends).
+- Validator with ink, `--no-graph`: schema passed, all ink valid, 12 issues.
+- dialoguelint: 0 errors, 0 warnings, plus the 2 withdrawn checks.
+- reopencheck: 0 problems for both phones.
+- tagdiff against HEAD: 16 differences, all from the list above: Vance's crew-offer condition and the new cover-drop choice (hub choice count 12 → 13); HaX's crew-topic condition, and `report_progress` diverting to the hub with `report_progress_choices` removed; the Vance phone's crew-offer condition. The debrief, Relay and Vance clone edits are text only.
+- inkcheck and loopcheck: HaX phone (attack mapped without the dial; after the shutdown), Vance phone (ally, attack mapped), Vance (cover and ally with the attack mapped), debrief (race lost, then captured, crew lost), Relay. All clean.
+
+#### Spoken lines changed (old → new)
+
+- HaX, debrief: "The banks are isolated, but he got to the laptop before you got to him, and Bank B went with it." → "The banks are isolated, but he reached the laptop before you put him down, and Bank B went with it."
+- HaX, phone: new reply "Which one?" (field guides).
+
+Not voiced:
+- New HaX text "Nine of Vance's night crew are behind the Hall 2 inverter wall till six. If those racks go, so do they. Only Vance can sound the evacuation."
+- Choices: "[He reached the laptop before I reached him. …]" → "[He reached the laptop before I put him down. …]"; the two Vance cloner choices; Relay "[The bypass modules on all three rack banks. Was that you?]" → "[Somebody's been in your rack cabinets. Was that you?]"; new Vance "[I'm not an auditor. They're inside your control network, and I can prove it.]"; "[Right.]" removed.
+- Credits: subtitle "CRITICAL FAILURE" → "MISSION 4: CRITICAL FAILURE"; "RACK BANK B LOST — he reached the laptop" → "…before you put him down"; new crew-lost variants "DISCLOSED IN FULL — the attack, the vulnerabilities, and the nine it cost" and "CLASSIFIED — filed as an industrial accident, cause under investigation".
+- `scenario_brief` as in F9.
+
+#### Open
+
+- Browser check: the new HaX text on both triggers (timing against the 61-degree call; not landing on a conversation); the credits screen with one headline; Vance's cloner labels.
+- F7 for room dressing, if a human run hits it. F1, F2 and F10 stay with the harness and engine backlog.

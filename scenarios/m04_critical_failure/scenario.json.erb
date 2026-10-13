@@ -78,7 +78,7 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
 
 %>
 {
-  "scenario_brief": "Infiltrate the Albion Energy Storage facility — 200 MWh of grid-scale lithium-ion battery storage — to investigate a suspected ENTROPY operation. The Critical Mass cell has weaponised the BMS and SCADA systems to drive the battery racks into thermal runaway, threatening a catastrophic fire and a grid blackout for 240,000 people. Confirm the infiltration, expose the attack mechanism, and trigger Emergency Shutdown before the 0800 trigger time.",
+  "scenario_brief": "Infiltrate the Albion Energy Storage facility — 200 MWh of grid-scale lithium-ion battery storage — to investigate a suspected ENTROPY operation. The Critical Mass cell has weaponised the BMS and SCADA systems to drive the battery racks into thermal runaway, threatening a catastrophic fire and a grid blackout for 240,000 people. Confirm the falsified telemetry against a real instrument and prove how they took control: the Emergency Shutdown arms only once grid control has both. Keep the trigger holder away from his laptop, then press the shutdown before the 0800 trigger time.",
 
   "show_scenario_brief": "once",
 
@@ -171,7 +171,9 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
         "credits": [
           { "text": "MISSION COMPLETE", "style": "title", "condition": "globalVars.attack_prevented && !globalVars.racks_vented" },
           { "text": "COSTLY SUCCESS", "style": "title", "condition": "globalVars.attack_prevented && globalVars.racks_vented" },
-          { "text": "CRITICAL FAILURE", "style": "subtitle" },
+          <%# Struggling run A (F3): the mission name read as a second headline beside
+              COSTLY SUCCESS. Exactly one headline (the title); the subtitle names the mission. %>
+          { "text": "MISSION 4: CRITICAL FAILURE", "style": "subtitle" },
           { "text": "" },
           { "text": "ALBION ENERGY STORAGE: THERMAL RUNAWAY AVERTED — Emergency Shutdown engaged", "style": "entry", "condition": "globalVars.attack_prevented && !globalVars.racks_vented" },
           { "text": "GRID HELD: 240,000 residents kept on supply", "style": "entry", "condition": "globalVars.attack_prevented && !globalVars.racks_vented" },
@@ -183,7 +185,7 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
           { "text": "EVERYONE ON SITE GOT OUT ALIVE — not all of them on their own feet", "style": "entry", "condition": "globalVars.attack_prevented && !globalVars.crew_lost && (globalVars.security_guard_ko || globalVars.robert_vance_ko)" },
           { "text": "NIGHT CREW: out of Hall 2 on Vance's alarm, and the cell heard it too", "style": "entry", "condition": "globalVars.crew_warned" },
           { "text": "RACK BANK B LOST — banks A and C isolated in time", "style": "entry", "condition": "globalVars.racks_vented && !globalVars.vented_by_trigger" },
-          { "text": "RACK BANK B LOST — he reached the laptop", "style": "entry", "condition": "globalVars.vented_by_trigger" },
+          { "text": "RACK BANK B LOST — he reached the laptop before you put him down", "style": "entry", "condition": "globalVars.vented_by_trigger" },
           { "text": "CASUALTIES: the Hall 2 night crew, and the dropped feed", "style": "warning", "condition": "globalVars.crew_lost" },
           { "text": "CASUALTIES: two on the dropped feed. Hall 2 was empty when it went", "style": "warning", "condition": "globalVars.casualties_occurred && !globalVars.crew_lost" },
           { "text": "" },
@@ -203,8 +205,11 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
           { "text": "THE BREAK-IN: traced on paper to the OptiGrid crew", "style": "entry", "condition": "globalVars.evidence_maintenance_logs_found || globalVars.evidence_camera_tampering_found || globalVars.evidence_reader_spoof_found || globalVars.evidence_access_logs_found" },
           { "text": "EVIDENCE: Voltage's own print on the bypass module", "style": "entry", "condition": "globalVars.voltage_print_on_bypass" },
           { "text": "SOCIAL FABRIC SAFEHOUSE: located", "style": "entry", "condition": "globalVars.lore_safehouse_address_found" },
-          { "text": "DISCLOSED IN FULL — the attack, the vulnerabilities, and how close it came", "style": "entry", "condition": "globalVars.disclosure_choice === 'full'" },
-          { "text": "CLASSIFIED — filed as a maintenance fault, patched quietly", "style": "entry", "condition": "globalVars.disclosure_choice === 'quiet'" },
+          <%# Struggling run A (F3 sweep): the credits match the debrief's crew-lost lines. %>
+          { "text": "DISCLOSED IN FULL — the attack, the vulnerabilities, and how close it came", "style": "entry", "condition": "globalVars.disclosure_choice === 'full' && !globalVars.crew_lost" },
+          { "text": "DISCLOSED IN FULL — the attack, the vulnerabilities, and the nine it cost", "style": "entry", "condition": "globalVars.disclosure_choice === 'full' && globalVars.crew_lost" },
+          { "text": "CLASSIFIED — filed as a maintenance fault, patched quietly", "style": "entry", "condition": "globalVars.disclosure_choice === 'quiet' && !globalVars.crew_lost" },
+          { "text": "CLASSIFIED — filed as an industrial accident, cause under investigation", "style": "entry", "condition": "globalVars.disclosure_choice === 'quiet' && globalVars.crew_lost" },
           { "text": "PARTIALLY DISCLOSED — an incident acknowledged, the details withheld", "style": "entry", "condition": "globalVars.disclosure_choice === 'partial'" },
           { "text": "" },
           { "text": "BLACKOUT: signed the casualty model. Still at large.", "style": "warning", "condition": "globalVars.blackout_named" },
@@ -797,6 +802,27 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
               "condition": "value === true",
               "onceOnly": true,
               "sendTimedMessage": { "delay": 6000, "targetKnot": "on_anomaly_confirmed", "message": "Sixty-one on that dial? Call me when you're clear of it." }
+            },
+            <%# Struggling run A (F4): a fair, unprompted signal that the night crew is
+                in danger and that Vance can clear them, for every player, cover held
+                or not, before a bank can vent. Sent once, on whichever comes first:
+                the dial read (after the 61-degree call) or the clock starting (the
+                attack mapped). Not after the alarm (crew_warned), with Vance on the
+                floor (nobody can sound it), or once a bank has gone. The choice stays
+                the player's: HaX's hub topic and Vance state the cost. %>
+            {
+              "eventPattern": "global_variable_changed:anomaly_detected",
+              "condition": "value === true && globalVars.crew_hint_texted !== true && globalVars.crew_warned !== true && globalVars.robert_vance_ko !== true && globalVars.racks_vented !== true && globalVars.attack_prevented !== true",
+              "onceOnly": true,
+              "setGlobal": { "crew_hint_texted": true },
+              "sendTimedMessage": { "delay": 30000, "skipIfGlobal": "crew_warned", "message": "Nine of Vance's night crew are behind the Hall 2 inverter wall till six. If those racks go, so do they. Only Vance can sound the evacuation." }
+            },
+            {
+              "eventPattern": "global_variable_changed:clock_started",
+              "condition": "value === true && globalVars.crew_hint_texted !== true && globalVars.crew_warned !== true && globalVars.robert_vance_ko !== true && globalVars.racks_vented !== true && globalVars.attack_prevented !== true",
+              "onceOnly": true,
+              "setGlobal": { "crew_hint_texted": true },
+              "sendTimedMessage": { "delay": 15000, "skipIfGlobal": "crew_warned", "message": "Nine of Vance's night crew are behind the Hall 2 inverter wall till six. If those racks go, so do they. Only Vance can sound the evacuation." }
             },
             <%# PASS 4 fix 6: Relay now challenges the player on entering Hall 2
                 (her own room_entered mapping), so these two texts wait for that
@@ -2874,6 +2900,9 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
         promised_voltage_alive: the briefing's or HaX's "alive" choice.
         asked_the_number: the player asked Voltage how many the hall takes. %>
     "promised_voltage_alive": false,
-    "asked_the_number": false
+    "asked_the_number": false,
+
+    <%# Struggling run A (F4): HaX's night-crew text has been sent (either trigger). %>
+    "crew_hint_texted": false
   }
 }

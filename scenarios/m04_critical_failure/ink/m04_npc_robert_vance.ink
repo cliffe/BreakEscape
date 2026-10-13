@@ -227,7 +227,7 @@ The workshop's on the contractors' cards. The plant room's high-voltage, authori
 // Round 2: no #speaker here. On a choices-only knot the tag printed an empty
 // "None: " line before the choices (playtest issue 7).
 
-+ {not vance_provided_keycard} [(Lean in over the site map while the cloner reads his lanyard.)]
++ {not vance_provided_keycard} [(Use the cloner.) Lean in over the site map, close enough to read his lanyard.]
     -> vance_clone_cover
 
 // STICKY. This knot is reached from contractors_inquiry, concerns_question,
@@ -377,7 +377,7 @@ This place is mine to answer for. I'd rather hear it from you than from the fire
 // don't gather reliably). At least one is always available in every state.
 // Safety net (M3, PASS 3 P2): copy the Level 1 card if no path did. Covert
 // wording on the cover route so the hub doesn't blow the cover.
-+ {not vance_provided_keycard and not vance_is_ally} [(Ask about the site map again, and stand close.)]
++ {not vance_provided_keycard and not vance_is_ally} [(Use the cloner.) Ask about the site map again, and stand close to his lanyard.]
     -> vance_clone_hub
 
 + {not vance_provided_keycard and vance_is_ally} [Let me copy your card.]
@@ -397,7 +397,7 @@ This place is mine to answer for. I'd rather hear it from you than from the fire
 
 // Pass 5 decision 1: the night crew. Vance raises the cost before he acts; the
 // choice stays open until it's taken, a bank vents, or the shutdown goes in.
-+ {vance_is_ally and anomaly_detected and not crew_warned and not crew_discussed and not racks_vented and not attack_prevented} [Is anyone working in the halls tonight?]
++ {vance_is_ally and (anomaly_detected or attack_mechanism_known) and not crew_warned and not crew_discussed and not racks_vented and not attack_prevented} [Is anyone working in the halls tonight?]
     -> vance_crew_offer
 
 + {vance_is_ally and crew_discussed and not crew_warned and not racks_vented and not attack_prevented} [Sound the evacuation. Get the night crew out.]
@@ -415,6 +415,11 @@ This place is mine to answer for. I'd rather hear it from you than from the fire
     -> vance_early_reveal
 
 + {not vance_is_ally and not anomaly_detected and evidence_maintenance_logs_found} [I'm not an auditor. That OptiGrid crew you emailed about is still in your building.]
+    -> vance_early_reveal
+
+// Struggling run A (F4): a cover-route player with the attack mapped but no dial
+// and no logs could not drop the cover, so HaX's crew text had nowhere to go.
++ {not vance_is_ally and not anomaly_detected and not evidence_maintenance_logs_found and attack_mechanism_known} [I'm not an auditor. They're inside your control network, and I can prove it.]
     -> vance_early_reveal
 
 + {not vance_is_ally} [A few more questions about the facility.]

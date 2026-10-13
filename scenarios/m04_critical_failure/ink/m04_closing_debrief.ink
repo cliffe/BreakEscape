@@ -96,7 +96,7 @@ Agent, report.
 * {racks_vented and not vented_by_trigger} [Bank B went before I reached the button. Shutdown held A and C.]
     -> debrief_attack_stopped
 
-* {vented_by_trigger} [He reached the laptop before I reached him. Shutdown held A and C.]
+* {vented_by_trigger} [He reached the laptop before I put him down. Shutdown held A and C.]
     -> debrief_attack_stopped
 
 * [Voltage is {voltage_captured:in custody.|out through the dock.}]
@@ -372,7 +372,9 @@ He'll call when he's ready. Not tonight.
     // opener has already named Bank B.
     {not debrief_attack_stopped:
         {vented_by_trigger:
-            Agent HaX: The banks are isolated, but he got to the laptop before you got to him, and Bank B went with it.
+            // Struggling run A (F3): he reached the laptop, then was put down and
+            // taken (vented_by_trigger implies a fight, so no escape): say both in order.
+            Agent HaX: The banks are isolated, but he reached the laptop before you put him down, and Bank B went with it.
         - else:
             Agent HaX: The banks are isolated, but Bank B went before you got to the button.
         }

@@ -141,7 +141,8 @@ EXTERNAL player_name()
     -> hint_voltage
 
 // Decision 1: the night crew. Pointer only; Vance sounds the alarm.
-+ {anomaly_detected and not crew_warned and not racks_vented and not attack_prevented and not hint_crew_given} [Can we get the night crew out of Hall 2?]
+// Struggling run A (F4): also once the clock is running without the dial.
++ {(anomaly_detected or attack_mechanism_known) and not crew_warned and not racks_vented and not attack_prevented and not hint_crew_given} [Can we get the night crew out of Hall 2?]
     -> hint_crew
 
 + {attack_mechanism_known and not voltage_priority_discussed and not voltage_neutralised} [I've got their attack mechanism mapped.]
@@ -171,6 +172,8 @@ EXTERNAL player_name()
 // ---- Field guides, one choice. Exposure-gated: offered by an eventMapping
 // ---- when the player meets the obstacle, handed over here on request.
 + {(rfid_guide_offered and not rfid_guide_hint_given) or (lockpicking_guide_offered and not lockpicking_guide_hint_given) or (recon_guide_offered and not recon_guide_hint_given) or (vuln_guide_offered and not vuln_guide_hint_given) or (distcc_guide_offered and not distcc_guide_hint_given) or (privesc_guide_offered and not privesc_guide_hint_given) or (proftpd_guide_offered and not proftpd_guide_hint_given) or (cyberchef_guide_offered and not cyberchef_guide_hint_given)} [Send me a field guide.]
+    // Struggling run A (F8): a visible reply before the list.
+    Which one?
     -> field_guides
 
 // ---- Always available: the fallback that stops this hub ever running dry.
@@ -880,8 +883,6 @@ Last stretch. Anyone still standing with him goes down first.
 - else:
     The ESD is live. Press it.
 }
--> report_progress_choices
-
-=== report_progress_choices ===
-+ [Right.]
-    -> support_hub
+// Struggling run A (F8): straight back to the hub (as the hint knots do), not a
+// one-option "Right." menu.
+-> support_hub

@@ -126,7 +126,7 @@ EXTERNAL player_name()
     They didn't need me on the ninth. I log every round on the Hall 1 panel. They lifted my print off it. Do the same.
     -> support_hub
 
-+ {anomaly_detected and not crew_warned and not racks_vented and not attack_prevented} [The night crew in Hall 2. Can you get them out?]
++ {(anomaly_detected or attack_mechanism_known) and not crew_warned and not racks_vented and not attack_prevented} [The night crew in Hall 2. Can you get them out?]
     -> crew_offer
 
 + [What should I be doing right now?]
