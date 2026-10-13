@@ -39,7 +39,7 @@
 ]
 },
 {
-"note": "Part 2 (a fresh night, page reload): slipped past the guard, never met Vance, the locker spare. The hub skips the Vance step too."
+"note": "Part 2 (page reload, ink locals kept as the engine saves them, so the greeted flag survives and the phone opens on the hub, not the status check): slipped past the guard, never met Vance, the locker spare. The hub skips the Vance step too."
 },
 {
 "set": {
@@ -50,13 +50,6 @@
 {
 "talk": "phone",
 "reload": "page",
-"picks": [
-"Inside the facility",
-"On it"
-]
-},
-{
-"talk": "phone",
 "picks": [
 "Where do I stand",
 "Right",

@@ -31,7 +31,7 @@ VAR minder_challenged = false   // Synced scenario global (round 2, R2-m7)
 // Ink-local
 VAR minder_met = false
 VAR sighted_open = false   // R2-m4: the scene opened on his "The FCA does not come up here."
-VAR saw_picks = false      // R2-M3: he caught the picks; the FCA line no longer works (resets on a page reload)
+VAR saw_picks = false      // R2-M3: he caught the picks; the FCA line no longer works (survives a page reload with the other variables; only visit counts reset)
 
 -> start
 

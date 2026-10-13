@@ -10,7 +10,7 @@
 //   {"note": "..."}                          a heading in the output
 //   {"set": {...}}                           globals the engine would set; each change raises
 //                                            global_variable_changed:<name>
-//   {"talk": "phone", "knot": "opt", "picks": ["substr", 0, ...], "reload": true|"page"}
+//   {"talk": "phone", "knot": "opt", "picks": ["substr", 0, ...], "reload": true|"page"|"wipe"}
 //   {"enter": "room_id"}                     raises room_entered:<room_id>
 //   {"pickup": "item_id"}                    picks an item up off the floor (no onRead; type looked up)
 //   {"read": "item_id"}                      reads an item (its onRead setVariable)
@@ -22,8 +22,11 @@
 //   {"credits": true}                        print the credits lines whose conditions hold now
 //   {"said": [...]} / {"notSaid": [...]}     substrings of lines, choices and texts since the last check
 //   {"backstops": {"expect": ["re-emit"|"hear"|"office-card"]}}  room-entry mappings that would fire
-// "reload": true restarts the story keeping every ink variable; "reload": "page" keeps only the
-// scenario globals, as a browser reload does. A talk ends when an #exit_conversation tag has been
+// "reload": true restarts the story keeping every ink variable. "reload": "page" is a browser reload:
+// the story restarts with the synced scenario globals and every ink-local variable restored (the
+// engine saves them as npcInkVariables), but visit counts, TURNS() and position reset.
+// "reload": "wipe" is the old, harsher "page": only synced scenario globals survive, ink locals are lost.
+// A talk ends when an #exit_conversation tag has been
 // seen and the story waits at choices, or when picks run out, or at END/DONE.
 // Conversations the mappings open (phone-chat, person-chat) are reported as "[opens npc @knot]";
 // the route then plays them with a talk step.
@@ -202,9 +205,9 @@ for (const step of route.steps) {
   out(`\n--- ${name}${step.knot ? ' @' + step.knot : ''} ---`);
   if (s && step.reload) {
     const old = s; s = load(f);
-    if (step.reload !== 'page') { for (const k of old.variablesState._globalVariables.keys()) { if (!(k in G)) s.variablesState[k] = old.variablesState[k]; } }
+    if (step.reload !== 'wipe') { for (const k of old.variablesState._globalVariables.keys()) { if (!(k in G)) s.variablesState[k] = old.variablesState[k]; } }
     stories[name] = s; syncIn(s); s.ChoosePathString(step.knot || 'start');
-    out(step.reload === 'page' ? '   (after a page reload: synced globals only, ink locals lost)' : '   (after a reload: variables only, restart at start)');
+    out(step.reload === 'wipe' ? '   (after a wipe: synced globals only, ink locals lost)' : '   (after a reload: variables kept, visit counts and position reset)');
   } else if (!s) { s = load(f); stories[name] = s; syncIn(s); s.ChoosePathString(step.knot || 'start'); }
   else { syncIn(s); const k = step.knot || (s.currentChoices.length ? knotOfChoices(s) : 'start'); if (k) s.ChoosePathString(k); }
   const picks = (step.picks || []).slice(); let exited = false; stats.run = 0;

@@ -7,7 +7,7 @@
 {"talk":"vance","picks":["Is anyone working","Not yet","Stay on the ops desk"]},
 {"expect":{"crew_warned":false}},
 {"note":"Page reload before deciding."},
-{"talk":"vance","reload":"page","knot":"initial_meeting","picks":["Is anyone working","Sound it","What should I be doing","Stay on the ops desk"]},
+{"talk":"vance","reload":"page","knot":"initial_meeting","picks":["Sound the evacuation","What should I be doing","Stay on the ops desk"]},
 {"expect":{"crew_warned":true,"clock_started":true}},
 {"set":{"plant_reader_seen":true,"server_room_reached":true,"operative_relay_defeated":true,"fingerprint_kit_found":true}},
 {"set":{"flag_network_scan_submitted":true,"flag_ftp_intel_submitted":true,"flag_distcc_exploit_submitted":true,"flag_privesc_submitted":true,"all_flags_in":true,"evidence_maintenance_logs_found":true,"attack_mechanism_known":true,"plant_room_entered":true}},

@@ -5,7 +5,7 @@
 // Route file: { "globals": {...}, "steps": [ step, ... ] } where a step is one of
 //   {"note": "..."}                         a heading in the output
 //   {"set": {...}}                          globals the engine would set (pickups, flags, safe)
-//   {"talk": "irina", "knot": "opt", "picks": ["substr", 0, ...], "reload": true|"page"}
+//   {"talk": "irina", "knot": "opt", "picks": ["substr", 0, ...], "reload": true|"page"|"wipe"}
 //   {"room": "trading_floor"}               the player enters a room (HaX's room_entered mappings)
 //   {"strike": "wrong" | "cancel"}         a PIN pad closes on a wrong code (console: maxAttempts 1)
 //                                           or a cancel; the erb's real minigame_failed mappings
@@ -20,8 +20,10 @@
 //   {"backstops": {"expect": ["re-emit"|"hear"|"irina-taken"]}}  evaluate the erb's per-room
 //                                           room_entered backstops (the <% each %> loops that
 //                                           carry a _comment) against the current globals
-// "reload": true restarts the story keeping every ink variable; "reload": "page" keeps only the
-// scenario globals, as a browser reload does (ink locals and visit counts aren't restored).
+// "reload": true restarts the story keeping every ink variable. "reload": "page" is a browser reload:
+// the story restarts with the synced scenario globals and every ink-local variable restored (the
+// engine saves them as npcInkVariables), but visit counts, TURNS() and position reset.
+// "reload": "wipe" is the old, harsher "page": only synced scenario globals survive, ink locals are lost.
 // A talk ends when an #exit_conversation tag has been seen and the story waits at choices,
 // or when picks run out (reported), or at END/DONE.
 //
@@ -220,9 +222,9 @@ for (const step of route.steps) {
   out(`\n--- ${name}${step.knot ? ' @' + step.knot : ''} ---`);
   if (s && step.reload) {
     const old = s; s = load(f);
-    if (step.reload !== 'page') { for (const k of old.variablesState._globalVariables.keys()) { if (!(k in G)) s.variablesState[k] = old.variablesState[k]; } }
+    if (step.reload !== 'wipe') { for (const k of old.variablesState._globalVariables.keys()) { if (!(k in G)) s.variablesState[k] = old.variablesState[k]; } }
     stories[name] = s; syncIn(s); s.ChoosePathString(step.knot || ENTRY[name] || 'start');
-    out(step.reload === 'page' ? '   (after a page reload: synced globals only, ink locals lost)' : '   (after a reload: variables only, restart at start)');
+    out(step.reload === 'wipe' ? '   (after a wipe: synced globals only, ink locals lost)' : '   (after a reload: variables kept, visit counts and position reset)');
   } else if (!s) { s = load(f); stories[name] = s; syncIn(s); s.ChoosePathString(step.knot || ENTRY[name] || 'start'); }
   else { syncIn(s); const k = step.knot || (s.currentChoices.length ? knotOfChoices(s) : 'start'); if (k) s.ChoosePathString(k); }
   const picks = (step.picks || []).slice(); let exited = false; stats.run = 0;

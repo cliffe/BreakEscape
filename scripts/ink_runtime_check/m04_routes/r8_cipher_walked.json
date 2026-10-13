@@ -83,7 +83,7 @@
 ]
 },
 {
-"note": "Second variant: the alarm has gone (a fresh night, page reload)."
+"note": "Second variant: the alarm has gone (page reload; ink locals are kept as the engine saves them, so the radio opener is already spent and Cipher is picked up from his second option)."
 },
 {
 "set": {
@@ -95,7 +95,6 @@
 "talk": "cipher",
 "reload": "page",
 "picks": [
-"Put the radio down",
 "Whatever Voltage told you",
 "Hear that klaxon"
 ]

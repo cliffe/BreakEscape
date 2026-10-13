@@ -1,8 +1,10 @@
 // Route driver: plays several m03 conversations in order with shared globals.
 // usage: node scripts/ink_runtime_check/m03_routes/route.js scripts/ink_runtime_check/m03_routes/<name>.json
 // Route file: { "globals": {...}, "steps": [ {"set": {...}} | {"talk": "victoria", "knot": "opt", "picks": ["substr", 0, ...]} ] }
-// "reload": true restarts the story keeping every ink variable; "reload": "page" keeps only the
-// scenario globals, as a browser reload does (ink locals and visit counts aren't restored).
+// "reload": true restarts the story keeping every ink variable. "reload": "page" is a browser reload:
+// the story restarts with the synced scenario globals and every ink-local variable restored (the
+// engine saves them as npcInkVariables), but visit counts, TURNS() and position reset.
+// "reload": "wipe" is the old, harsher "page": only synced scenario globals survive, ink locals are lost.
 // A talk ends when an #exit_conversation tag has been seen and the story waits at choices,
 // or when picks run out (reported), or at END/DONE.
 const path = require('path'); const fs = require('fs');
@@ -29,7 +31,7 @@ for (const step of route.steps) {
   const name = step.talk; const f = FILES[name];
   let s = stories[name];
   out(`\n--- ${name}${step.knot ? ' @' + step.knot : ''} ---`);
-  if (s && step.reload) { const old = s; s = new inkjs.Story(fs.readFileSync(path.join(DIR, f + '.json'), 'utf8').replace(/^\uFEFF/, '')); try { s.BindExternalFunction('player_name', () => 'Agent'); } catch (e) {} if (step.reload !== 'page') { for (const k of old.variablesState._globalVariables.keys()) { if (!(k in G)) s.variablesState[k] = old.variablesState[k]; } } stories[name] = s; syncIn(s); s.ChoosePathString(step.knot || 'start'); out(step.reload === 'page' ? '   (after a page reload: synced globals only, ink locals lost)' : '   (after a reload: variables only, restart at start)'); }
+  if (s && step.reload) { const old = s; s = new inkjs.Story(fs.readFileSync(path.join(DIR, f + '.json'), 'utf8').replace(/^\uFEFF/, '')); try { s.BindExternalFunction('player_name', () => 'Agent'); } catch (e) {} if (step.reload !== 'wipe') { for (const k of old.variablesState._globalVariables.keys()) { if (!(k in G)) s.variablesState[k] = old.variablesState[k]; } } stories[name] = s; syncIn(s); s.ChoosePathString(step.knot || 'start'); out(step.reload === 'wipe' ? '   (after a wipe: synced globals only, ink locals lost)' : '   (after a reload: variables kept, visit counts and position reset)'); }
   else if (!s) { s = new inkjs.Story(fs.readFileSync(path.join(DIR, f + '.json'), 'utf8').replace(/^﻿/, '')); try { s.BindExternalFunction('player_name', () => 'Agent'); } catch (e) {} stories[name] = s; syncIn(s); if (step.knot) s.ChoosePathString(step.knot); }
   else { syncIn(s); const k = step.knot || (s.currentChoices.length ? knotOfChoices(s) : 'start'); if (k) s.ChoosePathString(k); }
   const picks = (step.picks || []).slice(); let exited = false; stats.run = 0;
