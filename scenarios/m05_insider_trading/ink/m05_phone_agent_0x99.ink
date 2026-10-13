@@ -777,6 +777,9 @@ Ask me what you want to ask.
 -> moral_sounding_board_choices
 
 === moral_sounding_board_choices ===
+// Pass 5 browser check N1: a chat parked here before the confrontation
+// resumes here after it; the pre-fight answers no longer fit.
+{final_choice != "": -> support_hub}
 + [Does knowing why change what he deserves?]
     Maybe it changes what's fair. It doesn't change the upload.
     -> support_hub
