@@ -73,6 +73,8 @@ From the PIN cracker fix (2026-10-10), found but not fixed:
 
 - **m05: pay off m04's open threads** (m04 pass-5 alignment review, 2026-10-13; S). m04 sets up Task Force Null, Calder Wharf and Loom, but m05 never mentions them. Add one line to m05's briefing (at least Task Force Null) during the m05 pass, and weigh re-voicing a cached line.
 
+- **"Under arrest" canon in m01, m02, m06** (m04 scenario review, 2026-10-13; S). SAFETYNET agents detain and hand over; they don't arrest. m04 is fixed; m01 (cached audio), m02 and m06 still say "You're under arrest". Fix during each mission's pass and re-voice the line.
+
 ## New games
 
 - **Eldritch Hacker** (user, 2026-10-10; L). Summoned cultists interfere with your VM use: they walk into the room and cast a concentration spell that turns your screen upside down or remaps your keyboard, so you have to fight them off while you hack. Could be multiplayer, with players facing off against each other.
