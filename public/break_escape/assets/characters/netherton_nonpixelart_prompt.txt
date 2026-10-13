@@ -1,0 +1,11 @@
+Make portrait for Director Magnus Netherton
+A Black British man of Caribbean heritage in his late fifties, dark brown skin tone, the director of a secret British cyber security agency, ex-military, stern but fair, distinguished and impeccably groomed, a parade-ground upright bearing: a composed, lined face with a firm mouth and a level, evaluating gaze, a short neatly trimmed grey moustache, close-cropped black hair greying at the temples. Wearing a perfectly pressed dark navy blue suit with the jacket buttoned, a crisp white shirt, a conservative dark green and navy striped tie with a tie bar, a small plain silver shield-shaped pin on the lapel, a white pocket square, matching navy suit trousers with a black leather belt.
+Body angled slightly to the side in a three-quarter turn, head turned toward the camera.
+Dialog view of character
+Dramatic lighting
+In the style of a detailed vector graphics illustration. the portrait shows the body from the hips up, including the waistline, belt, pockets and top of the trousers, against a plain background, in a game art design, realism and digital art aesthetic. Dialog character. Gritty realism.
+Slightly anime. Neutral expression.
+Square aspect ratio
+
+# Post: reframe_portrait.py --flip (character faces right, cast convention). Concept c02 of the m04 pass-5 set (2026-10-13), picked by the user.
+# Recurring character: own key 'netherton' (as nightshade, agent_hax); NPC id stays director_netherton, still on male_spy_v2 in every mission until rewired. Canon: story_design/universe_bible/04_characters/safetynet/director_netherton.md (late fifties, grey at temples, pressed suit, conservative tie, SAFETYNET lapel pin). Ethnicity chosen by the user (Black British), 2026-10-13.

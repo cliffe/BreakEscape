@@ -1,0 +1,11 @@
+Make portrait for ENTROPY Operative Cipher
+A young Dutch-Indonesian man in his late twenties from Rotterdam, warm light-brown skin tone, an ENTROPY operative passing himself off as a maintenance contractor on a night job, lean and tense, jumpy under a show of aggression: angular cheekbones, dark narrowed eyes that keep checking the door, thick black hair pushed back off his forehead with a few strands falling loose, a thin black moustache and chin stubble, a small silver hoop in one ear. Wearing a long-sleeved navy blue boiler suit with no logos and no lettering, the zip pulled half down over a grey t-shirt, the sleeves shoved up to the elbows, a worn tan leather tool belt slung at his hips with a black handheld two-way radio clipped to it, a plain contractor pass on a lanyard.
+Body angled slightly to the side in a three-quarter turn, head turned toward the camera.
+Dialog view of character
+Dramatic lighting
+In the style of a detailed vector graphics illustration. the portrait shows the body from the hips up, including the waistline, belt, pockets and top of the trousers, against a plain background, in a game art design, realism and digital art aesthetic. Dialog character. Gritty realism.
+Slightly anime. Neutral expression.
+Square aspect ratio
+
+# Post: reframe_portrait.py --flip (character faces right, cast convention). Concept c02 of the m04 pass-5 set (2026-10-13), picked by the user.
+# No reference image (stand-in hacker-red). Canon: voice style 'ENTROPY operative posing as a maintenance contractor, late twenties ... Dutch-accented English (Rotterdam)'; m04_npc_operative_cipher.ink 'He clips the handset back on his belt'.

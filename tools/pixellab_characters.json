@@ -253,6 +253,15 @@
     },
     "imported": "2026-09-30"
   },
+  "netherton": {
+    "character_id": "37ee8f05-6adf-4c4c-b780-810098d9f00b",
+    "name": "Make portrait for Director Magnus Netherton\nA Blac...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-10-13"
+  },
   "nightshade": {
     "character_id": "d363cc74-5990-4eb9-b65f-95483c28c1e9",
     "name": "An older man scientist with swept-back white hair,...",
@@ -270,6 +279,33 @@
       "height": 60
     },
     "imported": "2026-10-06"
+  },
+  "operative_cipher": {
+    "character_id": "9b83fe5e-3f8c-4d5d-9593-ec0d73b33ac9",
+    "name": "Make portrait for ENTROPY Operative Cipher\nA young...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-10-13"
+  },
+  "operative_relay": {
+    "character_id": "4e1534f2-ffb3-452b-b3e3-699da4c2b5a1",
+    "name": "Make portrait for ENTROPY Operative Relay\nA Black ...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-10-13"
+  },
+  "operative_static": {
+    "character_id": "54f2dfbd-fa2f-418e-9dec-5199fa24943e",
+    "name": "Make portrait for ENTROPY Operative Static\nA white...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-10-13"
   },
   "priya_s": {
     "character_id": "eb263472-5d6d-43c9-9aa3-bf613f2983b3",
@@ -289,6 +325,15 @@
     },
     "imported": "2026-10-02"
   },
+  "robert_vance": {
+    "character_id": "6edbd770-785c-4f56-91ea-45953f7d1594",
+    "name": "Make portrait for Robert Vance\nA British Pakistani...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-10-13"
+  },
   "sarah_kim": {
     "character_id": "1792c7b7-4189-4a22-857e-4a0a738bd83d",
     "name": "An East Asian (Korean) woman in her forties, the C...",
@@ -306,6 +351,15 @@
       "height": 60
     },
     "imported": "2026-10-03"
+  },
+  "security_guard": {
+    "character_id": "29efd3e6-40d7-4ca9-a30e-9d8a21bf2d3f",
+    "name": "Make portrait for Security Guard\nA white British s...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-10-13"
   },
   "sidhu_selvarajan": {
     "character_id": "683d2a03-378d-4e03-acf2-3f97b07741b5",
@@ -342,5 +396,14 @@
       "height": 60
     },
     "imported": "2026-10-12"
+  },
+  "voltage": {
+    "character_id": "a51966d8-6ef5-4dec-8404-15e0799f18ae",
+    "name": "Make portrait for Voltage\nAn Indian South African ...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-10-13"
   }
 }
