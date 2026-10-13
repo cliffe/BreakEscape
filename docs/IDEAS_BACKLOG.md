@@ -44,6 +44,8 @@ From the PIN cracker fix (2026-10-10), found but not fixed:
 - **Carry choices between missions** (m07 review; L). `consequences_persist` is set on missions but nothing carries globals from one mission to the next. It would let m08 open differently depending on m07 (the Austin backdoor "day nine"), and let HaX remember the Tesseract conversation.
 - **Phone timestamps survive a reload** (m03 dialogue playtest; S). After a reload every message in a thread is re-stamped with the reload minute.
 - **Resume in the room you left** (engine fixer; M). Reload always respawns at `startRoom`; see P10 in the pass-4 log.
+  - Also on a KO (m06 struggling run A, 2026-10-13): a knocked-out player respawns in reception, five rooms from the fight, with the hostile NPC still hostile.
+- **RFID clone shows "Emulating..." with no message** (m06 struggling run A; S). When an emulation fails or does nothing, the flipper minigame should say why.
 - **Timers survive a reload** (m07 fixer; S). A started timer restarts from zero after a reload.
 - **Re-readable cutscene transcripts on the phone** (m07 fixer; M). Players could reread a briefing instead of relying on paper summaries like m07's Threat Desk Summary.
 - **Guard line-of-sight hooks** (m07 fixer; M). Some missions draw decorative LOS cones that mean nothing; a general "player spotted" event would let any guard react.
