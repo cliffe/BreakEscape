@@ -84,14 +84,15 @@ test('Victoria: export, JSON round trip, import, restart at start goes to the hu
     assert.equal(reloaded.variablesState.$('recruitment_discussed'), true);
 
     const { text, choices } = runFrom(reloaded, 'start');
-    assert.match(text, /Back for more conversation\?/);
-    assert.doesNotMatch(text, /Welcome to WhiteHat Security/);
+    // Re-entry line is a shuffle (m03_npc_victoria.ink start knot); any of its three variants is the hub, not the intro
+    assert.match(text, /Forgotten something\?|Reconsidering\?|Sit, then\./);
+    assert.doesNotMatch(text, /Victoria Sterling rises as you come in/);
     assert.ok(choices.length > 0, 'hub offers choices');
 });
 
 test('control: without the import, Victoria plays her intro', () => {
     const { text } = runFrom(loadStory(VICTORIA), 'start');
-    assert.match(text, /Welcome to WhiteHat Security/);
+    assert.match(text, /Victoria Sterling rises as you come in/);
 });
 
 test('phone path (m06 HaX): recordInkVariables / applySavedInkVariables skip first_call', () => {

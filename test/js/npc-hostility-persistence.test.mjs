@@ -94,7 +94,7 @@ test('a restored hostile is announced with the behavior attack damage; a KO is n
 test('wiring: state sync saves it, game.js restores it, the behavior applies it', () => {
     const sync = readFileSync(join(js, 'state-sync.js'), 'utf8');
     assert.match(sync, /npcHostileSystem\?\.exportHostility\?\.\(\)/);
-    assert.match(sync, /payload\.npcHostility = npcHostility/);
+    assert.match(sync, /out\.npcHostility = npcHostility/); // change-only sync builds `out` (5decddae)
 
     const game = readFileSync(join(js, 'core/game.js'), 'utf8');
     const init = game.indexOf('window.npcHostileSystem = initNPCHostileSystem();');

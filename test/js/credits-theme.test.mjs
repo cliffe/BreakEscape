@@ -8,7 +8,9 @@ import { dirname, join } from 'node:path';
 import { readFileSync } from 'node:fs';
 
 const here = dirname(fileURLToPath(import.meta.url));
-const T = await import(pathToFileURL(join(here, '../../public/break_escape/js/music/credits-theme.js')).href);
+// The game modules are ESM but public/ has no package.json "type": "module", so Node would load
+// a plain import as CommonJS and fail on `export`. Import the source as an ES module via a data URL.
+const T = await import('data:text/javascript;base64,' + readFileSync(join(here, '../../public/break_escape/js/music/credits-theme.js')).toString('base64'));
 
 test('theme selection: creditsTheme picks a theme, anything else gets safetynet', () => {
     assert.equal(T.resolveCreditsTheme({ creditsTheme: 'cyber' }), 'cyber');
