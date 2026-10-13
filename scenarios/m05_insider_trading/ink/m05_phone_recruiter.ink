@@ -11,7 +11,6 @@
 VAR recruiter_contacted_player = false
 VAR recruiter_deal_offered = false
 VAR recruiter_deal_decided = false   // global; set when she gets an answer (reload backstop, PASS 3)
-VAR recruiter_persuasion_attempted = false
 
 // Variables synced from globalVars by engine at call-open
 VAR final_choice = ""
@@ -111,13 +110,13 @@ Torres took debt relief and a standing consultancy retainer. Cheaper than most, 
 === recruiter_line_item ===
 #speaker:recruiter
 
-He was a line item, agent. There are forty-seven more candidates in the pipeline right now.
+He was a line item, agent. There are more like him in the pipeline right now.
 
 I don't say that to be cruel. I say it because it's accurate, and accuracy is the only thing I owe you.
 
 You'll want to feel sorry for him. Go ahead. It costs me nothing.
 
-And it won't help the other forty-seven, unless you move faster than I do.
+And it won't help the others, unless you move faster than I do.
 
 -> recruiter_reveals_target
 
@@ -128,7 +127,7 @@ Project Heisenberg was never going to a foreign buyer. Nobody's shopping this ar
 
 ENTROPY wants the key material and the rollout schedule for your national dispatch network. Nine-nine-nine call routing.
 
-We keep it. We integrate it. That's the whole disposition.
+We keep it. We integrate it. Operation Schrödinger, if your file needs a name.
 
 -> recruiter_reveals_target_choices
 
@@ -139,18 +138,18 @@ We keep it. We integrate it. That's the whole disposition.
     -> recruiter_confirms_casualties
 
 * [Why does ENTROPY want control of emergency dispatch?]
+    // Phase 4 dialogue C1 (D5-24): this choice gets its own answer first.
+    Control? Nobody wants to run it. We want the minutes.
     -> recruiter_confirms_casualties
 
 === recruiter_confirms_casualties ===
 #speaker:recruiter
 
-I'm talking about a forty-to-seventy-minute failover window during the key-rotation cutover, across twelve regions, in the first wave alone.
+A forty-to-seventy-minute failover window during the key-rotation cutover, across twelve regions, in the first wave alone.
 
 The Architect's office ran the numbers before signing off. Thirty to forty-five excess deaths, where minutes decide things: cardiac, stroke, structure fires.
 
 It's filed as an acceptable cost of acquisition. I didn't file it. I just recruited the man who could get us the schedule.
-
-~ recruiter_persuasion_attempted = true
 
 -> recruiter_confirms_casualties_choices
 
@@ -174,7 +173,7 @@ It's filed as an acceptable cost of acquisition. I didn't file it. I just recrui
 
 Here's why I actually called. What you do with Torres doesn't much interest me. He's already spent.
 
-But I'd rather you didn't spend the next six months chasing my other forty-seven.
+But I'd rather you didn't spend the next six months chasing the rest of my pipeline.
 
 Under Torres' keyboard there's an envelope addressed to a PO box in Reading. Forty-seven names.
 
@@ -205,7 +204,7 @@ Everyone has a price, agent. I'm asking what yours is.
 === recruiter_deal_terms ===
 #speaker:recruiter
 
-Nothing dramatic. You forget the number forty-seven. The envelope goes to Reading, not to your handler.
+Nothing dramatic. You forget the envelope. It goes to Reading, not to your handler.
 
 You get a clean report, a grateful handler, and one less thing keeping you up at night.
 
@@ -216,7 +215,7 @@ Most agents take that trade without needing it spelled out.
 === recruiter_deal_terms_choices ===
 // Playtest 3b: a reopened chat re-navigates here (E10); never resume a pre-confrontation menu once the fate is set.
 {final_choice != "": -> post_confrontation_contact}
-* [Fine. The envelope goes to Reading. I never heard the number forty-seven.]
+* [Fine. The envelope goes to Reading. I never saw it.]
     -> recruiter_deal_taken
 
 * [Not interested. That list is going to SAFETYNET.]
@@ -296,13 +295,16 @@ Forty-seven names. One call from you protects them, or leaves them where they ar
 === mid_mission_contact_choices ===
 // Playtest 3b: a reopened chat re-navigates here (E10); never resume a pre-confrontation menu once the fate is set.
 {final_choice != "": -> post_confrontation_contact}
-+ [I already told you. No deal.]
-    Consistent. I can respect that, while I disagree with it.
-    -> end_contact
+// Phase 4 dialogue C1 (D5-5): a player who hung up on the offer has given no
+// answer. A refusal here is recorded, so the debrief agrees with it, and the
+// deal can still be taken by hearing the terms again.
++ [No deal.]
+    ~ recruiter_deal_decided = true
+    Then we're done. I'll close your file.
+    -> hangs_up
 
-+ [I'm going to find every one of them.]
-    You're welcome to try. I have a considerable head start.
-    -> end_contact
++ [Run the terms past me again.]
+    -> recruiter_deal_terms
 
 + [I'm done talking. This call's over.]
     -> end_contact
@@ -322,7 +324,7 @@ Forty-seven names. One call from you protects them, or leaves them where they ar
 === deal_accepted_response ===
 #speaker:recruiter
 
-Sensible. The file's forgotten on my end too. As far as anyone official knows, this call never happened.
+We're square, then. The file's forgotten on my end too.
 
 You'll sleep fine. Most people do, once they've priced it out.
 
@@ -337,7 +339,7 @@ You'll sleep fine. Most people do, once they've priced it out.
 
 Torres is dealt with, one way or another, and you didn't take the trade. I respect that more than I expected to.
 
-It changes nothing about the other forty-seven. I'll simply be more careful with whoever's next.
+It changes nothing about the rest. I'll simply be more careful with whoever's next.
 
 -> deal_refused_response_choices
 

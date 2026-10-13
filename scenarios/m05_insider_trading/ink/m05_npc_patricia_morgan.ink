@@ -27,6 +27,7 @@ VAR topic_company_politics = false
 VAR gave_vetting_file = false
 VAR first_meeting = true
 VAR hub_quiet = false
+VAR fate_noted = false   // Phase 4 dialogue C1 (D5-8): her reaction to Torres' fate, once
 
 // Synced from scenario globals
 VAR player_name = "Agent 0x00"
@@ -37,7 +38,6 @@ VAR owen_ko = false
 VAR found_medical_bills = false
 VAR found_torres_journal = false
 VAR found_vetting_file = false // Synced scenario global: also set by the vetting file's onRead; assigned at the hand-over (puzzle browser F2)
-VAR found_incident_log = false
 VAR found_pamphlet = false
 VAR flag3_submitted = false
 VAR flag4_submitted = false
@@ -61,6 +61,7 @@ VAR it_notice_read = false
 VAR door_log_reasoned_first = false // Synced scenario global (pass 5 R3-1): the front-door reason given in a reason menu, before the naming; set only in the *log_reason_right knots. The early-naming reward reads this, not door_log_reasoned
 VAR owen_refused_password = false // Synced scenario global (pass 5 puzzle R1, P6): Owen has been asked for the server-room password and wanted a reason; set by Owen. Patricia's sign-off waits for it
 VAR torres_reason_guessed = false // Synced scenario global (pass 5 R2 B2): a wrong reason or a wrong name was tried; also set by HaX and Patricia's phone/in person. Excludes the early-naming reward
+VAR final_choice = "" // Synced scenario global: Torres' fate; set by m05_torres_confrontation and HaX's post-KO call. Read for her reaction (D5-8)
 
 === function has_motive()
 ~ return found_medical_bills or found_torres_journal or found_vetting_file
@@ -89,16 +90,19 @@ Patricia Morgan: You'll be the consultant. Patricia Morgan, Chief Security Offic
 
 + [Fill me in. What have you found so far?]
     ~ patricia_influence += 1
+    #influence_increased
     -> briefing_details
 
 + [Skip the pleasantries. What access can you give me?]
-    Patricia Morgan: Direct. Good.
     ~ patricia_influence += 1
+    #influence_increased
+    Patricia Morgan: Direct. Good.
     -> provide_access
 
 + [I've been briefed. Quantum-safe keys, an inside job, and it ends tonight.]
-    Patricia Morgan: Then we can skip a step.
     ~ patricia_influence += 2
+    #influence_increased
+    Patricia Morgan: Then we can skip a step.
     -> provide_access
 
 === briefing_details ===
@@ -129,6 +133,7 @@ Patricia Morgan: All vetted. All trusted. One of them shouldn't be.
 
 + [Can you get me in front of them without tipping anyone off?]
     ~ patricia_influence += 1
+    #influence_increased
     Patricia Morgan: Already done. As far as the building knows, you're a routine security audit.
     -> provide_access
 
@@ -165,8 +170,26 @@ Patricia Morgan: My log of what's been flagged is on the desk. Take it.
 
 === hub ===
 #speaker:patricia_morgan
-{hub_quiet:
+// Phase 4 dialogue C1 (D5-8): after the fate, the first reopen notices it.
+// (A reopened chat resumes here, not at start; fate_noted is an ink local,
+// so it survives a reload.)
+{
+- hub_quiet:
     ~ hub_quiet = false
+- final_choice != "" and not fate_noted:
+    ~ fate_noted = true
+    {
+    - final_choice == "combat_nonlethal":
+        Patricia Morgan: Ambulance is in the car park, and the police are with it. I'll go down with them.
+    - final_choice == "arrest":
+        Patricia Morgan: Police are on their way up. I've given them the side door. Nobody in this building needs to watch.
+    - final_choice == "public_exposure":
+        Patricia Morgan: You let him walk out of my building. I hope you know what you've started.
+    - final_choice == "combat_lethal":
+        Patricia Morgan: Torres hasn't come up from the data centre. Should I be sending someone down?
+    - else:
+        Patricia Morgan: I'm told he's gone home. I'm told nothing else, and I'm not asking.
+    }
 - else:
     Patricia Morgan: {&Go on.|What now?|Quickly, now. The CEO's prowling.}
 }
@@ -189,7 +212,7 @@ Patricia Morgan: My log of what's been flagged is on the desk. Take it.
 + {topic_investigation and not found_stand_down_email and patricia_influence >= 7} [You mentioned an email that stopped you. Can I see it?]
     -> ceo_copy_handover
 
-+ {torres_identified} [Anything else I should know before I go in?]
++ {torres_identified and final_choice == ""} [Anything else I should know before I go in?]
     Patricia Morgan: He's not a fighter. But cornered people surprise you. Keep the terminal between you and the door.
     -> hub
 
@@ -230,6 +253,7 @@ Patricia Morgan: I kept a copy. If this goes wrong, it went wrong there.
 === patricia_confession ===
 #speaker:patricia_morgan
 ~ patricia_influence += 1
+#influence_increased
 Patricia Morgan: Between you and me? I should have pushed harder. I let a polite email stop me.
 + {not found_stand_down_email} [Show me the email.]
     -> ceo_copy_handover
@@ -259,8 +283,9 @@ Patricia Morgan: The Home Office readiness review is in three weeks. The CEO, Je
 Patricia Morgan: So: no press, no prosecution if it can be avoided, and no security incident on the record.
 
 {patricia_influence >= 6:
-    Patricia Morgan: I want it done properly. She wants it done quietly. Tonight we find out which of us wins.
     ~ patricia_influence += 1
+    #influence_increased
+    Patricia Morgan: I want it done properly. She wants it done quietly. Tonight we find out which of us wins.
 }
 
 -> hub
@@ -284,6 +309,7 @@ Patricia Morgan: What do you need?
     }
     ~ gave_vetting_file = true
     ~ patricia_influence += 1
+    #influence_increased
     #give_item:notes:torres_vetting_file
     #give_item:notes:halloran_vetting_file
     // Puzzle browser F2: the hand-over's onRead sets the global, but this
@@ -351,6 +377,7 @@ Patricia Morgan: Ruth. Her spare, on the server hallway at two in the morning.
 Patricia Morgan: I've waited three weeks to do something. All right. I'll suspend her access and keep her in the lab until the police can talk to her.
 ~ halloran_accused = true
 ~ patricia_influence -= 2
+#influence_decreased
 Patricia Morgan: If you're wrong, that's her career. And whoever it really is has just watched Security move.
 ~ hub_quiet = true
 #exit_conversation
@@ -380,15 +407,19 @@ Patricia Morgan: If you're wrong, that's her career. And whoever it really is ha
 // (person-chat-minigame.js:525-537); never after the naming.
 {torres_identified: -> hub}
 + {found_door_log} [His own badge is on the server hallway those nights.]
+    ~ patricia_influence -= 1
+    #influence_decreased
     Patricia Morgan: Read it again. His badge never touches the server hallway. Hers does.
     -> reason_wrong
 + [He's been under strain. His wife's ill.]
+    ~ patricia_influence -= 1
+    #influence_decreased
     Patricia Morgan: Half this building has someone ill at home. That's not evidence.
     -> reason_wrong
 + {halloran_questioned} [Halloran puts him in her lab after hours, and the spare is the lab's.]
     Patricia Morgan: Her word, about her own badge. It's enough to look, not to act.
     -> partial_naming
-+ {found_door_log} [Check who comes in the front door just before the spare is used.]
++ {found_door_log} [His badge comes in the front door six minutes before her spare. Every night.]
     -> log_reason_right
 + {has_motive()} [Money. He's hiding how much he owes.]
     Patricia Morgan: That's why he might. It isn't proof that he did. Show me it leaving the building.
@@ -397,11 +428,13 @@ Patricia Morgan: If you're wrong, that's her career. And whoever it really is ha
     Patricia Morgan: That's how. I need why. People don't do this for nothing.
     -> partial_naming
 + [He's the cryptography lead. He'd know how.]
+    ~ patricia_influence -= 1
+    #influence_decreased
     Patricia Morgan: So would seven other people. That's not evidence either.
     -> reason_wrong
 
+// The influence change and its tag sit above each wrong reply (D5-6).
 === reason_wrong ===
-~ patricia_influence -= 1
 ~ torres_reason_guessed = true
 ~ hub_quiet = true
 #exit_conversation
@@ -414,7 +447,10 @@ Patricia Morgan: If you're wrong, that's her career. And whoever it really is ha
 #speaker:patricia_morgan
 ~ door_log_reasoned = true
 ~ door_log_reasoned_first = true
-Patricia Morgan: ...His badge at the front door, then Ruth's spare at the server hallway six minutes on. Every night. And Ruth's own badge never comes in after seven.
+// Phase 4 dialogue C1 (D5-3): the player has said the pattern; she checks it
+// and admits what she missed.
+Patricia Morgan: *runs a finger down the sheet* ...Every night. And Ruth's own badge never comes in after seven.
+Patricia Morgan: I sign that log off every Monday. I never once read the front door.
 {halloran_accused:
     Patricia Morgan: And Ruth's sitting in her lab, suspended on your word. That's on both of us now.
 }
@@ -457,19 +493,35 @@ Patricia Morgan: Slowly. I'm writing this down.
     Patricia Morgan: And a firm called TalentStack ringing his desk.
 }
 
+-> significant_reaction
+
+// Phase 4 dialogue C1 (D5-4): a player beat breaks the run and lands the
+// Christmas-party line. A chat closed on these choices re-runs this knot, so
+// it opens on her reaction rather than the whole summary.
+=== significant_reaction ===
+{torres_identified: -> hub}
+#speaker:patricia_morgan
 Patricia Morgan: ...Damn.
++ [You knew him.]
+    Patricia Morgan: I sat three desks from him at the Christmas party. His kids drew on the tablecloth.
+    -> significant_orders
++ [I'm sorry. He's one of yours.]
+    Patricia Morgan: He's Ruth's. But I vetted him. I sat three desks from him at the Christmas party.
+    -> significant_orders
 
-Patricia Morgan: I sat three desks from him at the Christmas party. His kids drew on the tablecloth.
-
+=== significant_orders ===
+{torres_identified: -> hub}
+#speaker:patricia_morgan
 {halloran_accused:
     Patricia Morgan: And I suspended Ruth on your say-so. I'll have her access back on tonight. You can do your own apologising.
 }
 
 ~ patricia_influence += 2
+#influence_increased
 #complete_task:identify_torres
 ~ torres_identified = true
 ~ patricia_authorised_office = true
-Patricia Morgan: Right. Your call from here. I'll keep the building quiet and the CEO out of your way.
+Patricia Morgan: Right. Your call from here.
 
 Patricia Morgan: His badge just went through the hallway and the vault's logged him in. He's at the upload terminal.
 
@@ -495,9 +547,9 @@ Patricia Morgan: Be careful. Down there, you're on your own.
 -> significant_close
 
 === significant_close ===
-+ {found_door_log and not door_log_reasoned} [And the badge log. Look at the main-entrance times.]
++ {found_door_log and not door_log_reasoned} [And the badge log. He comes in the front door six minutes before her spare.]
     ~ door_log_reasoned = true
-    Patricia Morgan: ...Six minutes before her spare, every night. You did read it properly.
+    Patricia Morgan: ...Every night. I should have seen that myself.
     -> significant_close
 + [I'll stop him.]
     Patricia Morgan: Go on, then.

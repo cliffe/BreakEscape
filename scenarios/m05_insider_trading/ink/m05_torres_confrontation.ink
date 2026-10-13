@@ -39,7 +39,6 @@ VAR recruiter_contacted_player = false
 VAR patricia_ko = false
 VAR halloran_accused = false
 VAR named_before_portal = false // Synced scenario global: Torres named before flag 3 (D1; set by HaX's torres_identified mapping)
-VAR door_log_reasoned = false
 VAR torres_fight_offered = false // Synced scenario global (scenario design R1, m2): Torres turned on the player from the fight line, set in combat_offer; read by the debrief
 VAR door_log_hinted = false // Synced scenario global (puzzle R1, P1/D-D): HaX spelled out the front-door method; bars the early-naming reward
 VAR door_log_reasoned_first = false // Synced scenario global (pass 5 R3-1): the front-door reason given in a reason menu, before the naming; set only in the *log_reason_right knots. The early-naming reward reads this, not door_log_reasoned
@@ -104,7 +103,7 @@ David Torres: The vault logged me in twice tonight. One of them was you.
 // R3-1: the front-door reason given before the naming, not the late click.
 // R3-3: "You're early", so it doesn't echo "half an hour" below.
 {named_before_portal and door_log_reasoned_first and not torres_reason_guessed and not halloran_accused and not door_log_hinted:
-    David Torres: You're early. Somebody read Owen's sheet properly.
+    David Torres: You're early. I thought I had until the server gave me up.
 }
 
 {halloran_accused:
@@ -170,7 +169,7 @@ David Torres: Thirty to forty-five people, the first time they use it. Ambulance
 
 + [You're no different from ENTROPY's other true believers.]
     #speaker:narrator
-    Narrator: He opens his mouth to answer, then stops himself.
+    Narrator: He almost laughs.
     -> torres_rationalization
 
 === torres_rationalization ===
@@ -280,8 +279,8 @@ David Torres: And Elena?
 Narrator: You make the offer: the trial paid for, and somewhere quiet for the family if it ever gets dangerous.
 
 {recruiter_contacted_player:
-    Narrator: You tell him the Recruiter has been in touch with you tonight, with forty-seven more names lined up behind him.
-    David Torres: Forty-seven...
+    Narrator: You tell him the Recruiter rang you tonight, and that he isn't her only one.
+    David Torres: She told me I was the only one.
 }
 
 + [I need everything. How she contacts you, how you're paid, who else you've met.]
@@ -485,6 +484,11 @@ David Torres: The others she's working on... they'd be warned. That's the point,
 David Torres: And me? My family?
 
 + [You'll be named. Elena will read it. The kids will see your face.]
+    -> public_exposure_consequence
+// Phase 4 dialogue C1 (D5-22): the ending can be chosen for the programme
+// without wanting to hurt the family.
++ [I'll keep your name out of it if I can. I can't promise.]
+    David Torres: You can't. They'll find it. They always find it.
     -> public_exposure_consequence
 
 === public_exposure_consequence ===

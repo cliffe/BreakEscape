@@ -6,6 +6,7 @@
 {
 "talk": "briefing",
 "picks": [
+"find out who sold",
 "damage so far",
 "Who's this going to",
 "What's the mission",
@@ -185,6 +186,7 @@
 "picks": [
 "I think I know who it is",
 "David Torres",
+"I'm sorry. He's one of yours",
 "I'll stop him"
 ]
 },
@@ -245,8 +247,12 @@
 {
 "talk": "debrief",
 "picks": [
+1,
+"Nobody was watching",
+"won't thank me",
 "He did this",
-"Not"
+"Who signs off",
+"same way again"
 ]
 },
 {
@@ -256,6 +262,9 @@
 "said": [
 "HANDED TO THE POLICE — said nothing"
 ]
+},
+{
+"maxRun": 9
 }
 ]
 }

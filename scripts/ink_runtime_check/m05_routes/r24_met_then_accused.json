@@ -6,6 +6,7 @@
 {
 "talk": "briefing",
 "picks": [
+"find out who sold",
 "damage so far",
 "Who's this going to",
 "What's the mission",
@@ -235,6 +236,9 @@
 "notSaid": [
 "[choice] It's David. He's the one."
 ]
+},
+{
+"maxRun": 9
 }
 ]
 }

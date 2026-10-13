@@ -1,0 +1,78 @@
+{
+"steps": [
+{
+"note": "R29 (phase 4 dialogue C1, D5-1): the debrief's longest runs, synthetic state. Every sign found, all four friendly KOs, the early-naming reward, left to die after a fight, the Recruiter's offer never answered. No run without a choice may exceed nine lines."
+},
+{
+"set": {
+"found_medical_bills": true,
+"found_vetting_file": true,
+"found_door_log": true,
+"found_incident_log": true,
+"found_pamphlet": true,
+"found_stand_down_email": true,
+"found_halloran_vetting": true,
+"found_torres_journal": true,
+"found_upload_schedule": true,
+"found_manifest": true,
+"flag1_submitted": true,
+"flag2_submitted": true,
+"flag3_submitted": true,
+"flag4_submitted": true,
+"torres_identified": true,
+"knows_full_stakes": true,
+"patricia_ko": true,
+"owen_ko": true,
+"lisa_ko": true,
+"halloran_ko": true,
+"named_before_portal": true,
+"door_log_reasoned": true,
+"door_log_reasoned_first": true,
+"final_choice": "combat_lethal",
+"torres_fight_offered": true,
+"recruiter_deal_offered": true,
+"found_pipeline_list": true,
+"player_approach": "diplomatic",
+"confront_stance": "hardline"
+}
+},
+{
+"talk": "debrief",
+"picks": [
+0,
+"And the research portal",
+"Whose job",
+"He came at me",
+"Same hand",
+"Did I get him right"
+]
+},
+{
+"said": [
+"For the training file: money.",
+"Hours. His badge at the front door",
+"An approach.",
+"And a boss who told Security",
+"Halloran had the same recruiter",
+"You had him before the server did",
+"You never answered her offer",
+"David Torres is dead",
+"You know the answer to that."
+]
+},
+{
+"notSaid": [
+"And David Torres...",
+"One last thing",
+"One more thing.",
+"Patch it",
+"thirty to forty-five people, in the first wave alone",
+"There was never a clean way",
+"Nine per cent to spare"
+]
+},
+{
+"maxRun": 9
+}
+]
+}

@@ -32,6 +32,7 @@ VAR hub_quiet = false
 VAR asked_vault = false       // puzzle R1 (D-A): the gloves answer, once
 VAR reinstated_said = false   // scenario design R2 (R2-M1): the "access back" line, once
 VAR spare_handed = false      // puzzle browser F3: retires the ask in the same conversation (the synced server_badge_obtained only arrives with the pickup)
+VAR fate_noted = false        // Phase 4 dialogue C1 (D5-8): her reaction to Torres' fate, once
 
 // Synced from scenario globals
 VAR player_name = "Agent 0x00"
@@ -41,8 +42,7 @@ VAR found_door_log = false
 VAR found_halloran_alibi = false // Synced scenario global: the player has Halloran's Zurich alibi; also set by the conference lanyard's onRead
 VAR halloran_questioned = false
 VAR halloran_accused = false
-VAR torres_suspected = false
-VAR door_log_reasoned = false
+VAR final_choice = "" // Synced scenario global: Torres' fate; set by m05_torres_confrontation and HaX's post-KO call. Read for her reaction (D5-8)
 VAR patricia_ko = false
 VAR vault_reader_seen = false
 VAR server_password_obtained = false
@@ -72,6 +72,8 @@ Dr Ruth Halloran: You're the consultant. Ruth Halloran. I run Heisenberg.
 Dr Ruth Halloran: Find whoever did this, and quickly. And I hope to God you're wrong about my team.
 
 + [Walk me through what was taken. It'll help me narrow it down.]
+    // No tag here: heisenberg_explanation's own tag lands on the same line,
+    // and two tags would show two popups (D5-6).
     ~ halloran_influence += 10
     -> heisenberg_explanation
 
@@ -80,23 +82,26 @@ Dr Ruth Halloran: Find whoever did this, and quickly. And I hope to God you're w
     -> defensive_response
 
 + [Could you have missed someone behaving differently?]
-    Dr Ruth Halloran: I know my people.
     ~ halloran_influence -= 5
+    #influence_decreased
+    Dr Ruth Halloran: I know my people.
     -> defensive_response
 
 === heisenberg_explanation ===
 #speaker:dr_halloran
 ~ topic_heisenberg = true
 ~ halloran_influence += 5
+#influence_increased
 
 Dr Ruth Halloran: Heisenberg is quantum-safe key exchange for the new national emergency dispatch network. The system that routes 999 calls.
 
 Dr Ruth Halloran: Lattice-based, built to survive a quantum computer. That's a problem for the 2030s. Tonight's problem is simpler.
 
 {halloran_influence >= 15:
+    ~ halloran_influence += 5
+    #influence_increased
     Dr Ruth Halloran: The keys rotate region by region during the rollout. Hold the keys, know the windows, and you don't need to break anything. You wait.
     Dr Ruth Halloran: People could die waiting for an ambulance. I've done the arithmetic. I try not to look at it.
-    ~ halloran_influence += 5
 }
 
 -> hub
@@ -110,12 +115,14 @@ Dr Ruth Halloran: If one of them did this, somebody gave them a reason. Pressure
 
 + [I'm not here to judge. Whoever did this might be a victim too.]
     ~ halloran_influence += 10
+    #influence_increased
     Dr Ruth Halloran: Thank you. Not many in your line would say that.
     -> hub
 
 + [A reason doesn't make it right. They made a choice.]
-    Dr Ruth Halloran: We're done here.
     ~ halloran_influence -= 10
+    #influence_decreased
+    Dr Ruth Halloran: We're done here.
     ~ hub_quiet = true
     #exit_conversation
     -> hub
@@ -132,8 +139,22 @@ Dr Ruth Halloran: If one of them did this, somebody gave them a reason. Pressure
     -> accused_greeting
 }
 #speaker:dr_halloran
-{hub_quiet:
+// Phase 4 dialogue C1 (D5-8): after the fate, the first reopen notices it.
+{
+- hub_quiet:
     ~ hub_quiet = false
+- final_choice != "" and not fate_noted:
+    ~ fate_noted = true
+    {
+    - final_choice == "arrest" or final_choice == "combat_nonlethal":
+        Dr Ruth Halloran: The police have David. Nobody's told me anything else.
+    - final_choice == "public_exposure":
+        Dr Ruth Halloran: David walked past my door with his coat on. He didn't look in.
+    - final_choice == "combat_lethal":
+        Dr Ruth Halloran: I've rung David twice. He's not answering.
+    - else:
+        Dr Ruth Halloran: {patricia_ko:Security say|Patricia says} I'm to treat David as normal on Monday. I don't know how I'll manage that.
+    }
 - else:
     Dr Ruth Halloran: {&What else?|Go on, so.|Quickly, please. I've work to do.}
 }
@@ -171,14 +192,16 @@ Dr Ruth Halloran: If one of them did this, somebody gave them a reason. Pressure
 #speaker:dr_halloran
 ~ topic_team = true
 ~ halloran_influence += 5
+#influence_increased
 
 Dr Ruth Halloran: Eight people. I hired most of them myself.
 
 Dr Ruth Halloran: Amara and Tomasz could rebuild the key exchange from memory. David Torres is my cryptography lead, the best I've worked with.
 
 {halloran_influence >= 20:
-    Dr Ruth Halloran: Ben's frightened of falling behind. David's had a hard year at home. I've carried both of them.
     ~ halloran_influence += 5
+    #influence_increased
+    Dr Ruth Halloran: Ben's frightened of falling behind. David's had a hard year at home. I've carried both of them.
 }
 
 -> hub
@@ -190,8 +213,9 @@ Dr Ruth Halloran: Amara and Tomasz could rebuild the key exchange from memory. D
 Dr Ruth Halloran: David made Heisenberg work. Two years of his life are in that key exchange.
 
 {halloran_influence >= 30:
-    Dr Ruth Halloran: I've watched him fight the insurer for months. Every denial letter, he'd come in next morning and work twice as hard.
     ~ halloran_influence += 10
+    #influence_increased
+    Dr Ruth Halloran: I've watched him fight the insurer for months. Every denial letter, he'd come in next morning and work twice as hard.
 }
 
 -> hub
@@ -211,10 +235,11 @@ Dr Ruth Halloran: You'll not lift anything of mine in here. Try it if you like.
 
 {halloran_influence >= 25:
     ~ spare_handed = true
+    ~ halloran_influence += 5
+    #influence_increased
     #give_item:keycard:research_lab_badge
     Dr Ruth Halloran: You've been straight with me. Here, the visitor spare. It's signed out through me, and I'm signing it out to you.
     Dr Ruth Halloran: It's registered to me, and it opens the server hallway. Bring it back when you're done.
-    ~ halloran_influence += 5
     -> hub
 - else:
     Dr Ruth Halloran: I don't know you well enough to hand you my access.
@@ -248,6 +273,10 @@ Dr Ruth Halloran: Ask what you came to ask.
 #speaker:dr_halloran
 ~ halloran_questioned = true
 ~ found_halloran_alibi = true
+// Phase 4 dialogue C1 (D5-11): the wrong accusation costs something here.
+{halloran_accused and not torres_identified:
+    Dr Ruth Halloran: You could have asked me this before you rang Security.
+}
 {spare_badge_taken:
     Dr Ruth Halloran: The one you're carrying. It's signed out through me, and I've never signed it out at night.
 - else:
@@ -274,7 +303,7 @@ Dr Ruth Halloran: Any of them could have walked out with it. I never thought to 
 
 Dr Ruth Halloran: I should have seen it. He was pulling away. Working late, alone. Avoiding my eye.
 
-Dr Ruth Halloran: I failed him. As his manager, and as his friend.
+Dr Ruth Halloran: I signed his overtime every week and never once asked what it was for.
 
 + [ENTROPY picked him because he was drowning. That isn't on you.]
     Dr Ruth Halloran: It doesn't help. Thank you anyway.
@@ -290,12 +319,18 @@ Dr Ruth Halloran: I failed him. As his manager, and as his friend.
 
 Dr Ruth Halloran: What happens to him now?
 
-+ [That depends on whether he helps us.]
+// D5-8: once his fate is settled, the player can't promise anything.
++ {final_choice == ""} [That depends on whether he helps us.]
     Dr Ruth Halloran: Then think about his circumstances when you're in front of him. Please.
     ~ hub_quiet = true
     -> hub
 
-+ [He'll face justice.]
++ {final_choice != ""} [It's out of my hands now.]
+    Dr Ruth Halloran: It was never in yours. Mine, maybe.
+    ~ hub_quiet = true
+    -> hub
+
++ {final_choice == ""} [He'll face justice.]
     Dr Ruth Halloran: *quietly* I suppose he will.
     ~ hub_quiet = true
     -> hub

@@ -6,6 +6,7 @@
 {
 "talk": "briefing",
 "picks": [
+"Bought a person",
 "damage so far",
 "Who's this going to",
 "What's the mission",
@@ -257,8 +258,12 @@
 {
 "talk": "debrief",
 "picks": [
+0,
+"And the research portal",
+"Whose job",
 "I should have stayed",
-"Not"
+"Same hand",
+"Did I get him right"
 ]
 },
 {
@@ -269,6 +274,9 @@
 "MISSION COMPLETE — AT A COST",
 "DEAD — left injured"
 ]
+},
+{
+"maxRun": 9
 }
 ]
 }

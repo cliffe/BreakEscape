@@ -35,7 +35,6 @@ VAR patricia_authorised_office = false // Synced scenario global: Owen may hand 
 VAR torres_ko = false
 VAR final_choice = "" // Synced scenario global: Torres' fate; also set by m05_torres_confrontation
 VAR torres_arrested = false // Synced scenario global: Torres is in police custody; also set by m05_torres_confrontation
-VAR torres_fate_by_phone = false
 VAR architect_approval_confirmed = false
 VAR recruiter_contacted_player = false
 VAR flag1_submitted = false
@@ -146,13 +145,13 @@ Someone in that building is feeding ENTROPY the keys to the 999 dispatch network
     -> support_hub
 
 + [What should I know going in?]
-    Nobody in there is your enemy by default. It's an office, with one person who made a terrible choice under terrible pressure.
+    Nobody in there is your enemy by default. It's an office, and one person in it has made a very bad trade.
     Talk to people. The evidence will give you who and why. You need both before you confront anyone.
     -> support_hub
 
 + [Anything I should be careful of?]
     Don't show your hand early. If the insider hears Security has a name, they'll bring the upload forward.
-    Then you lose any chance of turning them.
+    Then you're racing a clock that's just got shorter.
     And watch for anyone who reaches out to you directly. ENTROPY recruits. You might be on someone's list tonight.
     -> support_hub
 
@@ -181,12 +180,17 @@ Someone in that building is feeding ENTROPY the keys to the 999 dispatch network
 + {recruiter_contacted_player and not recruiter_discussed} [The Recruiter just called me.]
     -> topic_recruiter
 
-+ {found_pamphlet and not recruitment_method_discussed} [Someone here has been talking to a recruiter called TalentStack.]
+// Phase 4 dialogue C1 (D5-2, P10): the hub is capped at nine choices. The
+// pamphlet topic retires once he is named; the debt and the moral board fold
+// into one "About Torres" choice (choices-only follow-up); the four flag
+// topics fold into one that answers the newest flag (the flags can arrive in
+// any order since P3).
++ {found_pamphlet and not recruitment_method_discussed and not torres_identified} [Someone here has been talking to a recruiter called TalentStack.]
     -> topic_recruitment_method
 
 // m13: any motive find, the journal included.
-+ {torres_suspected and has_motive() and not leverage_discussed} [Torres is buried in debt he's hiding. Is that the hook?]
-    -> topic_leverage
++ {torres_suspected and has_motive() and final_choice == ""} [I need to talk about Torres.]
+    -> about_torres
 
 + {found_torres_journal and not journal_discussed} [I've read his journal. He knew.]
     -> topic_journal
@@ -194,20 +198,8 @@ Someone in that building is feeding ENTROPY the keys to the 999 dispatch network
 + {architect_approval_confirmed and not architect_discussed} [The Architect signed off on the casualty projection.]
     -> topic_architect
 
-+ {flag1_submitted and not flag1_discussed} [First flag's in. What next on the Bludit box?]
-    -> topic_flag1
-
-+ {flag2_submitted and not flag2_discussed} [Second flag's in. I've got a shell.]
-    -> topic_flag2
-
-+ {flag3_submitted and not flag3_discussed} [Third flag's in. I found his staging manifest.]
-    -> topic_flag3
-
-+ {flag4_submitted and not flag4_discussed} [Fourth flag's in. Root, and the Architect's sign-off.]
-    -> topic_flag4
-
-+ {torres_suspected and has_motive() and final_choice == ""} [What ENTROPY did to him. I need to talk it through.]
-    -> moral_sounding_board
++ {(flag1_submitted and not flag1_discussed) or (flag2_submitted and not flag2_discussed) or (flag3_submitted and not flag3_discussed) or (flag4_submitted and not flag4_discussed)} [About that flag.]
+    -> flag_news
 
 // ---- Field guides, one choice. Exposure-gated: offered by an eventMapping
 // ---- when the player meets the obstacle, handed over here on request.
@@ -248,7 +240,7 @@ Someone in that building is feeding ENTROPY the keys to the 999 dispatch network
 
 TalentStack Executive Recruiting is the Insider Threat Initiative's front. "R." is the Recruiter.
 
-She finds someone in trouble and makes an offer. The ideology comes later, once the casualties stop feeling like the point.
+She finds someone in trouble and makes an offer. By the time they read the small print, they've already spent the money.
 
 An answer scribbled on the back of that leaflet means somebody in there has already said yes.
 
@@ -269,7 +261,7 @@ An answer scribbled on the back of that leaflet means somebody in there has alre
 
 {
 - found_medical_bills:
-    Three hundred and eighty thousand dollars for a trial abroad, an insurer that walked away, and a wife with Stage 3 cancer.
+    A trial abroad, a wife with Stage 3 cancer, and nobody left to ask.
     That's a target file, written by his own bad luck.
 - found_vetting_file:
     Undeclared loans, a second charge on the house, and treatment abroad no insurer will cover. That's a target file.
@@ -350,48 +342,44 @@ Whatever she offered, she's very good at making a bad trade sound reasonable. It
     -> support_hub
 
 // ===========================================
-// FLAG STATUS TOPICS
+// FLAG NEWS (Phase 4 dialogue C1, D5-2 / D5-15 / D5-17)
+// One choice for the flags. The newest flag answers; advice for an older
+// flag is stale once a later one is in, so it retires too. The flag texts
+// (erb) already name each flag, so nothing here repeats them.
 // ===========================================
 
-=== topic_flag1 ===
+=== flag_news ===
 #speaker:agent_0x99
-~ flag1_discussed = true
-
-Somebody's sloppy handover note got you that login.
-
-Now use it. The upload flaw needs you logged in, and you are.
-
+{
+- flag4_submitted and not flag4_discussed:
+    ~ flag1_discussed = true
+    ~ flag2_discussed = true
+    ~ flag3_discussed = true
+    ~ flag4_discussed = true
+    {final_choice == "": Read the number on that sign-off before you face Torres. He's seen it too.|That's the number he read, and kept going.}
+- flag3_submitted and not flag3_discussed:
+    ~ flag1_discussed = true
+    ~ flag2_discussed = true
+    ~ flag3_discussed = true
+    His name's on the manifest. Root's the last door. Start with what that account is allowed to run.
+- flag2_submitted and not flag2_discussed:
+    ~ flag1_discussed = true
+    ~ flag2_discussed = true
+    You're on the box. Their home directory will tell you who's been living on it.
+- else:
+    ~ flag1_discussed = true
+    Now use it. The upload flaw needs you logged in, and you are.
+}
 -> support_hub
 
-=== topic_flag2 ===
-#speaker:agent_0x99
-~ flag2_discussed = true
-
-Now find out who's been living on that box.
-
-Their home directory will tell you who.
-
--> support_hub
-
-=== topic_flag3 ===
-#speaker:agent_0x99
-~ flag3_discussed = true
-
-His name's on the manifest. That's the exfiltration proved.
-
-Root's the last door. Start with what that account is allowed to run.
-
--> support_hub
-
-=== topic_flag4 ===
-#speaker:agent_0x99
-~ flag4_discussed = true
-
-Then you've seen the Architect's signature.
-
-Read the number on it before you face Torres. He's seen it too.
-
--> support_hub
+// The debt and the moral board, behind one hub choice (D5-2).
+=== about_torres ===
++ {not leverage_discussed} [Is the debt the hook?]
+    -> topic_leverage
++ [What ENTROPY did to him. I need to talk it through.]
+    -> moral_sounding_board
++ [Not now.]
+    -> support_hub
 
 // ===========================================
 // NAMING THE INSIDER TO HAX (Patricia KO'd)
@@ -475,9 +463,9 @@ If she's the wrong name, the right one has just watched Security move. Be sure a
 }
 
 === hax_named_close ===
-+ {found_door_log and not door_log_reasoned} [And the badge log. Look at the main-entrance times.]
++ {found_door_log and not door_log_reasoned} [And the badge log. He comes in the front door six minutes before her spare.]
     ~ door_log_reasoned = true
-    Six minutes before her spare, every night. Good. You read it properly.
+    Every night. That's the one.
     -> hax_named_close
 + [On my way.]
     #exit_conversation
@@ -516,7 +504,7 @@ If she's the wrong name, the right one has just watched Security move. Be sure a
 + {halloran_questioned} [Halloran puts him in her lab after hours, and the spare is the lab's.]
     Her word, about her own badge. Enough to look, not to act.
     -> hax_partial_naming
-+ {found_door_log} [Check who comes in the front door just before the spare is used.]
++ {found_door_log} [His badge comes in the front door six minutes before her spare. Every night.]
     -> hax_log_reason_right
 + {has_motive()} [Money. He's hiding how much he owes.]
     You've got why. I need proof it's leaving the building: the server room, the portal, the data centre.
@@ -534,7 +522,7 @@ If she's the wrong name, the right one has just watched Security move. Be sure a
 #speaker:agent_0x99
 ~ door_log_reasoned = true
 ~ door_log_reasoned_first = true
-His badge at the front door, her spare six minutes on, every night. Good. That's a pattern.
+Six minutes, every night. That's the pattern.
 Now find me why, and proof it's leaving.
 -> hax_partial_naming
 
@@ -637,13 +625,11 @@ What are you doing with him?
     - else:
         Calling it now. Patricia will ring the police. Keep his airway clear.
     }
-    ~ torres_fate_by_phone = true
     -> post_ko_safety_net_sweep
 + [I'm leaving him. He's not my problem.]
     #complete_task:make_critical_choice
     ~ final_choice = "combat_lethal"
     ...Understood. I'll note the time.
-    ~ torres_fate_by_phone = true
     -> post_ko_safety_net_sweep
 
 // PASS 5 (A2): the phone-fate path gets the same sweep-then-call-in as the
@@ -782,16 +768,17 @@ It only works if he wants out.
 === moral_sounding_board ===
 #speaker:agent_0x99
 
-ENTROPY weaponises suffering. They find someone drowning and throw a rope with a hook in it.
+// Phase 4 dialogue C1 (D5-7): HaX states the cost and doesn't preach; the
+// Recruiter owns "he still chose" (m05_phone_recruiter.ink, final statement).
+You've read what he's carrying. I won't tell you what he deserves.
 
-None of that excuses him. From the first phone call to tonight, he could have walked into Patricia's office. He didn't.
+Ask me what you want to ask.
 
 -> moral_sounding_board_choices
 
 === moral_sounding_board_choices ===
 + [Does knowing why change what he deserves?]
-    Maybe it changes what's fair. It doesn't undo thirty to forty-five deaths if that upload goes.
-    Both are true at once. Nobody's philosophy handles that cleanly.
+    Maybe it changes what's fair. It doesn't change the upload.
     -> support_hub
 
 + [What happens to people like him after this?]
@@ -944,7 +931,7 @@ See you at HQ.
     - found_door_log and halloran_ko and not found_halloran_alibi and not torres_suspected:
         Halloran's in no state to answer. Her desk in the lab might.
     - found_door_log and not halloran_questioned and not found_halloran_alibi and not torres_suspected:
-        That log says Halloran's spare. Ask her where it lives.
+        That log says Halloran's spare. Ask her who signs it out.
     - found_door_log and (halloran_questioned or found_halloran_alibi) and torres_reason_guessed and not torres_suspected:
         ~ door_log_hinted = true
         Her spare goes in at night. Look at who comes through the front door just before it.

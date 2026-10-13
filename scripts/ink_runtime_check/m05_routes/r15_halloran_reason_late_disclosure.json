@@ -6,6 +6,7 @@
 {
 "talk": "briefing",
 "picks": [
+"Bought a person",
 "damage so far",
 "Who's this going to",
 "What's the mission",
@@ -130,6 +131,7 @@
 "picks": [
 "I think I know who it is",
 "David Torres",
+"You knew him",
 "And the badge log",
 "I'll stop him"
 ]
@@ -252,8 +254,12 @@
 {
 "talk": "debrief",
 "picks": [
-"He did this",
-"Not"
+0,
+"And the research portal",
+"Whose job",
+"court know",
+"Same hand",
+"Did I get him right"
 ]
 },
 {
@@ -291,6 +297,9 @@
 "door_log_reasoned_first": false,
 "named_before_portal": true
 }
+},
+{
+"maxRun": 9
 }
 ]
 }

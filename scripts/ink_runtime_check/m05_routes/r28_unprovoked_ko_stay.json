@@ -6,6 +6,7 @@
 {
 "talk": "briefing",
 "picks": [
+"find out who sold",
 "damage so far",
 "Who's this going to",
 "What's the mission",
@@ -184,8 +185,12 @@
 {
 "talk": "debrief",
 "picks": [
+1,
+"Nobody was watching",
+"won't thank me",
 "I didn't give him the chance",
-"Not"
+"Who signs off",
+"same way again"
 ]
 },
 {
@@ -201,6 +206,9 @@
 "AFTER A FIGHT",
 "Textbook"
 ]
+},
+{
+"maxRun": 9
 }
 ]
 }

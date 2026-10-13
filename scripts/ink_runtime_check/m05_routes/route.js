@@ -17,6 +17,7 @@
 //   {"ko": "owen_gallagher"}                 a KO: globalVarOnKO, taskOnKO, npc_ko:<id>
 //   {"event": "name", "data": {...}}         raise any other event
 //   {"expect": {"global": value, ...}}       assert globals
+//   {"maxRun": 9}                            assert the longest run without a choice so far is <= 9
 //   {"tasks": {"task_id": "completed"|"unlocked"|"open"}}  assert task state as the mappings left it
 //   {"music": "trigger", "expect": "playlist"}  which playlist the music events pick now
 //   {"credits": true}                        print the credits lines whose conditions hold now
@@ -167,6 +168,8 @@ for (const step of route.steps) {
     for (const [k, v] of Object.entries(step.expect)) { const ok = G[k] === v; if (!ok) fail(); out(`   [${ok ? 'PASS' : 'FAIL'}] ${k} = ${JSON.stringify(G[k])} (expected ${JSON.stringify(v)})`); }
     continue;
   }
+  // Phase 4 dialogue C1 (D5-1): {"maxRun": 9} asserts the longest run without a choice so far.
+  if (step.maxRun !== undefined) { const ok = stats.maxRun <= step.maxRun; if (!ok) fail(); console.log(`   [${ok ? 'PASS' : 'FAIL'}] longest run ${stats.maxRun} (${stats.maxAt}) <= ${step.maxRun}`); continue; }
   if (step.tasks) {
     for (const [k, v] of Object.entries(step.tasks)) { const ok = TASKS[k] === v; if (!ok) fail(); out(`   [${ok ? 'PASS' : 'FAIL'}] task ${k} is ${TASKS[k]} (expected ${v})`); }
     continue;

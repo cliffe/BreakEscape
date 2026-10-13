@@ -32,6 +32,14 @@ Director Magnus Netherton: I have brought Nightshade in because catching a mole 
 // since. Nothing promised about later missions.
 Director Magnus Netherton: Task Force Null is three people and a whiteboard so far. Every cell we've hit bought something. This time it's bought a person. I want to know how.
 
+// Phase 4 dialogue C1 (D5-28): the player speaks before the run reaches ten.
+// Both choices converge (a stance on the same briefing). Nightshade's "calm"
+// line below is quoted by m08 (m08_suspect_nightshade.ink:64): keep it word for word.
++ [Bought a person how?]
+    Director Magnus Netherton: That is what you are going to tell me.
++ [Then we find out who sold.]
+    Director Magnus Netherton: Quite.
+-
 Agent 0x47 'Nightshade': Insiders are hard to catch because they never have to break in. They're already trusted.
 
 Agent 0x47 'Nightshade': So you hunt the pattern. Access a little too broad, hours a little too odd.
@@ -275,12 +283,12 @@ Agent HaX: Last thing. How are you going to play it?
 
 + [Methodically. Document everything, interview everyone.]
     ~ player_approach = "cautious"
-    Agent HaX: Good. It's a puzzle. Give it the time it needs.
+    Agent HaX: Good. Write it all down. The police will want every page.
     -> final_instructions
 
 + [Fast and direct. Find the insider, stop the upload, get out.]
     ~ player_approach = "aggressive"
-    Agent HaX: Speed's good.
+    Agent HaX: Fast's fine. Sloppy isn't.
     -> final_instructions
 
 + [I'll read the room when I get there.]

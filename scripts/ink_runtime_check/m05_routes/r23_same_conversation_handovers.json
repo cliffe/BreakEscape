@@ -6,6 +6,7 @@
 {
 "talk": "briefing",
 "picks": [
+"Bought a person",
 "damage so far",
 "Who's this going to",
 "What's the mission",
@@ -80,6 +81,7 @@
 "vetting files",
 "I think I know who it is",
 "David Torres",
+"You knew him",
 "I'll stop him"
 ]
 },
@@ -95,6 +97,9 @@
 "expect": {
 "torres_identified": true
 }
+},
+{
+"maxRun": 9
 }
 ]
 }

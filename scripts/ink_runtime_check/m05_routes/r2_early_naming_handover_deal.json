@@ -6,6 +6,7 @@
 {
 "talk": "briefing",
 "picks": [
+"find out who sold",
 "damage so far",
 "Who's this going to",
 "What's the mission",
@@ -132,6 +133,7 @@
 "picks": [
 "I think I know who it is",
 "David Torres",
+"I'm sorry. He's one of yours",
 "I'll stop him"
 ]
 },
@@ -159,7 +161,7 @@
 "said": [
 "20:02",
 "88 per cent",
-"You're early. Somebody read Owen's sheet properly",
+"You're early. I thought I had until the server gave me up",
 "Twenty-eight minutes",
 "half an hour",
 "89 per cent",
@@ -254,8 +256,12 @@
 {
 "talk": "debrief",
 "picks": [
-"He did this",
-"Not"
+1,
+"Nobody was watching",
+"won't thank me",
+"And the family",
+"Who signs off",
+"same way again"
 ]
 },
 {
@@ -283,6 +289,9 @@
 "AT A COST",
 "ROTATION WINDOW"
 ]
+},
+{
+"maxRun": 9
 }
 ]
 }

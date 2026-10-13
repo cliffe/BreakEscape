@@ -6,6 +6,7 @@
 {
 "talk": "briefing",
 "picks": [
+"Bought a person",
 "damage so far",
 "Who's this going to",
 "What's the mission",
@@ -79,6 +80,7 @@
 "picks": [
 "I think I know who it is",
 "David Torres",
+"You knew him",
 "I'll stop him"
 ]
 },
@@ -143,8 +145,12 @@
 {
 "talk": "debrief",
 "picks": [
+0,
+"And the research portal",
+"Whose job",
 "He did this",
-"Not"
+"Same hand",
+"Did I get him right"
 ]
 },
 {
@@ -156,6 +162,9 @@
 "You had him before the server did",
 "Somebody read Owen's sheet"
 ]
+},
+{
+"maxRun": 9
 }
 ]
 }

@@ -548,3 +548,156 @@ Spoken lines changed (old → new):
 | Browser check (closing) | `PASS5_DESIGN_R2_BROWSER.md` | 6/6 checks pass; 2 small fixes | F1 and F2 fixed above. Route r28 |
 
 Nothing above minor is open. Carried forward: D12 to D14 for the user; to the dialogue phase, B3 (the debrief's long runs) and P10 (HaX's hub size); to room dressing, the Lab Rules notice and the lab hook as a prop only.
+
+## Phase 4: dialogue
+
+### Phase 4 dialogue, cycle 1
+
+Review: `DIALOGUE_REVIEW_P5_C1.md` (Opus, read-only, `npc-dialog-review` in full). Counts: 0 blockers, 8 majors, 26 minors (D5-1 to D5-36; D5-29 and D5-34 folded by the reviewer). Snapshot for `tagdiff --old`: the session scratchpad's `m05-dialogue-snapshot/ink/` (commit `f65b3336`). The coordinator's decisions D5-1 to D5-8, D5-18 and D5-30 are applied as given. Every finding was checked against the ink before it was acted on; none was withdrawn. Where the fix differs from the reviewer's wording, the reason is given.
+
+| # | Sev. | Finding | Outcome |
+|---|---|---|---|
+| D5-1 (B3) | major | Debrief runs of 37 lines; the deal ending had no choice | **Fixed** with the reviewer's five beats and cuts: one merged opening narrator line; the accused bar merged and trimmed (:242 and "thirty to forty-five… first wave" cut); beat 1 `bar_reaction` (four route-gated choices); beat 2, the portal and the remedy (see D5-18); the signs' header rides on the first sign found (`temp header_said`); "And David Torres..." cut; beat 3 in the deal path (:558 cut); exposure lines merged and "Expect them to hit back" cut; beat 4 at the revelation (stitch `cells`); beat 5 replaces the summing-up tail. **One extra beat** in the exposure aftermath (`[Will it come back to SAFETYNET?]` / `[It had to come out.]`), because the run from the exposure choice through the Recruiter to the revelation still came to ten; "One more thing" and the Recruiter's undecided pair are each merged into one line. Wording changes from the review: "Nine per cent of room" → "Nine per cent to spare"; "It worked." → "It worked. This time."; the beat-5 reply "There wasn't a right. There was what you did with him." (a "Not X. Y." shape) → "Ask me in a year.", and on the lethal ending "You know the answer to that."; the deal-beat reply "It'll know he helped the police. Not us." contradicted the scene (he talked to SAFETYNET, not the police) → "No. What he told us stays with us. The court sees him without it." Longest run on any route is now 9. Briefing and Patricia, also asked for: see D5-28 and D5-4 |
+| D5-2 (P10) | major | HaX's hub could show 14 choices; flag topics numbered | **Fixed** as proposed: one `[About that flag.]` choice → `flag_news` answers the newest flag and retires older ones (the four `topic_flagN` knots are gone); `[I need to talk about Torres.]` → choices-only `about_torres` (the debt, the moral board, "Not now."); the pamphlet topic retires once he is named. Most the hub shows is 9 (r36 asserts it after the naming, and before it with Patricia down). The about-Torres follow-up keeps the old board label "What ENTROPY did to him. I need to talk it through." so the board's own first choice isn't repeated |
+| D5-3 | major | The deduction played as a quiz; someone else said the line | **Fixed** on all three surfaces: the right reason is now the player's statement `[His badge comes in the front door six minutes before her spare. Every night.]`; Patricia checks it and admits "I sign that log off every Monday. I never once read the front door." (in person and by phone); HaX: "Six minutes, every night. That's the pattern." The late one-click disclosure after the naming is also the player's statement (`[And the badge log. He comes in the front door six minutes before her spare.]`, 15 words), and the replies no longer repeat it (D5-13) |
+| D5-4 | major | `significant_findings` ran 12–13 lines, the Christmas-party line buried | **Fixed** as proposed: after "...Damn." the player says `[You knew him.]` or `[I'm sorry. He's one of yours.]`, and the Christmas-party line is the reply. "...Damn." and the choices sit in a new knot `significant_reaction`, so a chat closed on them reopens on her reaction, not the whole summary; the orders follow in `significant_orders` (torres_identified, the task and the influence move with them). :472's second sentence cut. Longest Patricia run is now 8 |
+| D5-5 | major | Hanging up on the offer, then "[I already told you. No deal.]" recorded nothing | **Fixed**: ring-back choices are now `[No deal.]` (sets `recruiter_deal_decided`, "Then we're done. I'll close your file.", hangs up), `[Run the terms past me again.]` (→ `recruiter_deal_terms`, so the deal can still be taken) and `[I'm done talking. This call's over.]`. The reply differs from the review's "I'll be more careful with the next one", which her post-fate call already says. The debrief then says "you turned her down". Routes r32 (hang up, refuse, third call "You said no once", debrief) and r33 (hang up, take the deal) |
+| D5-6 | major | No influence feedback on four rapport-gated NPCs | **Fixed**: `#influence_increased` / `#influence_decreased` after every change in Patricia, Owen, Halloran and Lisa, each directly above a line that NPC speaks; changes that came after a branch's last line moved above it; Patricia's `reason_wrong` decrease moved into each wrong reply. Two opening choices (Halloran "Walk me through…", Lisa "What have you noticed lately?") lead into knots whose own increase is tagged on the same line, so they carry no second tag (two tags show two popups, `chat-helpers.js:199`). Owen's "[That's useful. Thanks.]" and Lisa's "[That's rough. Thanks for telling me.]" gain a short reply so the popup lands on it, not on a hub greeting |
+| D5-7 | major | HaX delivered the moral three times | **Fixed** as proposed: :251, :785-787 and :793-794 rewritten; :280 kept for the leverage topic. The hook metaphor and "Nobody's philosophy" are gone; "he still chose" is left to the Recruiter |
+| D5-8 | major | Nobody in the building noticed the ending | **Fixed**: `final_choice` declared in Patricia, Owen, Halloran and Lisa. Each says one line, once (`fate_noted`, an ink local), on the first reopen after the fate, varied by ending. Patricia's lethal line differs from the review's ("Tell me you didn't walk past him"): she mustn't know yet, because the debrief has her find him forty minutes later, so it reads "Torres hasn't come up from the data centre. Should I be sending someone down?". Owen and Halloran say "Security" instead of "Patricia" when she is down. Pre-fate options retired: Patricia's "[Anything else I should know before I go in?]", Halloran's "[That depends on whether he helps us.]" and "[He'll face justice.]" (after the fate: "[It's out of my hands now.]"), Lisa's "[I don't know yet…]" (after: "[It's done. I'm sorry.]"), Owen's "[Keep it to yourself until it's over.]". Routes r34 (lethal) and r35 (turned, Patricia down) |
+| D5-9 | minor | "Forty-seven" said too often | **Fixed** as proposed (:114, :120, :177, :208, choice :219, :340) |
+| D5-10 | minor | Torres' "Forty-seven..." echo | **Fixed** as proposed |
+| D5-11 | minor | The alibi after an accusation had no edge | **Fixed** as proposed |
+| D5-12 | minor | Hint rung stale since R2-2 | **Fixed** ("Ask her who signs it out.") |
+| D5-13 | minor | Torres knew which sheet gave him away; "properly" ×6 | **Fixed**: Torres' reward line as proposed; HaX's late-disclosure reply "Every night. That's the one."; Patricia's (both) "...Every night. I should have seen that myself." (the player's choice now carries the six minutes, so the replies don't repeat it); the debrief line rewritten without "properly" and without the review's "not just" ("You read past her line on the badge log. …"). :294 and :590 kept |
+| D5-14 | minor | First call gave away the motive and misstated the cost | **Fixed** as proposed |
+| D5-15 | minor | `topic_flag4` wrong after the fate | **Fixed** by the D5-2 fold (`flag_news` branches on `final_choice`) |
+| D5-16 | minor | The bills fact twice in a row | **Fixed** as proposed |
+| D5-17 | minor | Flag 1's reply repeated its text | **Fixed** by the fold ("Now use it.") |
+| D5-18 | minor | The checklist fix line | **Fixed** inside beat 2. **"He asked for the budget twice" doesn't fit Owen's ink or canon** (nothing says he asked; his words are "Budget cuts" and "nobody watches it live", `m05_npc_owen_gallagher.ink`, `ask_security`), so the remedy reads "Owen's, on paper. One sysadmin, after the budget cuts. The CEO wanted a clean file more than a safe one." (the clean file is Patricia's, `ask_company_politics`). The other choice: "The board won't. Owen might." :314 cut. Still at the D12 level; needs checking against SecGen by the user only as far as D12 already covers |
+| D5-19 | minor | "One more/last thing" ×3 in the tail | **Fixed**: :717 replaced by beat 5, :746's opener dropped; :645 is now the only one |
+| D5-20 | minor | "Thirty to forty-five… first wave" on every route | **Fixed**: cut (the closer carries it) |
+| D5-21 | minor | HaX summing the player up | **Fixed** by beat 5 |
+| D5-22 | minor | Exposure forced the cruellest line | **Fixed** as proposed |
+| D5-23 | minor | "He opens his mouth… then stops himself", then speaks | **Fixed** ("He almost laughs.") |
+| D5-24 | minor | Flat pair in the Recruiter's reveal | **Fixed** as proposed |
+| D5-25 | minor | Owen's "I'll be back" fell into "What else?" | **Fixed**: reply, `hub_quiet`, exit. Reply "Password's not going anywhere. Neither am I." instead of the review's "I'll be here. Always am.", which echoed his hub exit |
+| D5-26 | minor | Owen's ≥ 25 branch said nothing | **Fixed**: "Off the record? Nobody's audited who holds the spares since I started. I keep meaning to." (ties to the badge log's pencilled "Spares are meant to be signed out"), in place of the review's "Half the office spares open more than they should", which nothing in the scenario shows |
+| D5-27 | minor | "[He's in the data centre.]" added nothing | **Fixed** as proposed |
+| D5-28 | minor | Briefing ran 10 lines | **Fixed** as proposed (choice after Netherton's Task Force Null line). Nightshade's "calm" line untouched (m08 quotes it). Longest briefing run now 7 |
+| D5-30 | minor | Dead variables | **Fixed**: `recruiter_persuasion_attempted` (VAR and assignment); `torres_fate_by_phone` (VAR, both assignments, the erb global, the m05 block of `missions.json`; nothing read it; the erb mapping comment that named it now names `post_ko_safety_net`); Halloran's `torres_suspected` and `door_log_reasoned`, Torres' `door_log_reasoned`, Patricia's `found_incident_log` |
+| D5-31 | minor | Thin approach replies | **Fixed** as proposed |
+| D5-32 | minor | "Operation Schrödinger" first named at the end | **Fixed**: planted in the Recruiter's reveal |
+| D5-33 | minor | Halloran's stock-words line | **Fixed** as proposed |
+| D5-35 | minor | Patricia's Cardiff voice | **No change**, as the review recommends; the optional "Duw" not taken (it would be the only Welsh word in the mission) |
+| D5-36 | minor | Two calls open on "Sensible." | **Fixed** as proposed |
+
+#### Decisions taken (with reasons)
+
+- **A sixth debrief beat (exposure)**: the five proposed beats left one run at ten, and the user's rule is nine.
+- **Late disclosure as a statement too (D5-3)**: the user's decision is that the player states the deduction; the one-click "Look at the main-entrance times" was the same instruction in another place.
+- **Owen, Halloran and Lisa get reaction lines (D5-8)**, not only retired options: the decision says they react. Each reacts to what they would see (Owen the reader logs, Lisa the office, Halloran a phone that isn't answered), so nobody knows more than they could.
+- **Small hub tidy-ups found on the way**: Lisa's two told-Torres replies and Owen's "That's useful" reply now set `hub_quiet`, so a greeting doesn't follow the reply.
+
+#### Route driver
+
+`route.js` gains the `{"maxRun": 9}` step (as m04 and m06). Every route, old and new, ends by asserting it. All 28 existing routes updated for the new choices (a briefing pick, Patricia's reaction pick, the debrief beats, varied across routes) and for quoted lines that changed (r1, r2, r9, r14, r16, r18, r25; r5's `torres_fate_by_phone` check removed). New: r29 (debrief, worst lethal: every sign, four KOs, the reward, an unanswered offer), r30 (debrief, worst exposure), r31 (debrief, the deal path after a wrong accusation, deal taken and confessed), r32 and r33 (D5-5), r34 and r35 (D5-8), r36 (D5-2 hub cap). **36 routes, all expectations met; longest run 9 (debrief, r29 and r30; Patricia's phone summary, unchanged)**.
+
+#### Checks (static; no browser session started)
+
+- Recompiled with `scripts/compile-ink.sh m05_insider_trading` before every route run: 10 files, 0 failed, no loose ends (the two expected END warnings).
+- Validator (`--skip-ink --no-graph`, another agent is editing rooms): schema passes; the same 12 same-pattern notes, the `object_interacted` text pair and the credits suggestions as before. Nothing new.
+- dialoguelint: 0 errors; the two known, allowed findings (the Recruiter's non-verbal "Say nothing", her one "not X, Y").
+- reopencheck (m05): HaX, the Recruiter and Patricia's phone, 1800 reopens each, 0 problems.
+- tagdiff `--old` against the snapshot: 285 structural differences (debrief 53, briefing 4, Halloran 30, Lisa 28, Owen 25, Patricia 64, HaX 65, Recruiter 11, Torres 5, Patricia's phone none). Every one is from the changes above: new knots and stitches (`bar_reaction`, `cells`, `significant_reaction`, `significant_orders`, `flag_news`, `about_torres`), removed knots (`topic_flag1`–`4`), influence tags, `fate_noted`/`final_choice` declarations and conditions, the retired-option conditions, the D5-5 ring-back diverts, removed dead variables.
+- loopcheck and inkcheck over a state matrix (each person-chat at `start` and at `hub` after each fate; Torres at `start` and `post_ko_choice`; the Recruiter before and after the offer; the debrief on the deal, exposure and lethal-with-four-KOs paths; the briefing; HaX with every topic open and with Patricia down; Patricia's phone): no runtime errors.
+- AI-tell scan of the ink: clean.
+
+#### Spoken lines changed (old → new)
+
+8 clips are cached for m05, so re-voicing costs almost nothing. New lines are marked "new".
+
+Briefing
+- Netherton, new: "That is what you are going to tell me."; "Quite."
+- HaX: "Good. It's a puzzle. Give it the time it needs." → "Good. Write it all down. The police will want every page."
+- HaX: "Speed's good." → "Fast's fine. Sloppy isn't."
+
+HaX (phone)
+- "Nobody in there is your enemy by default. It's an office, with one person who made a terrible choice under terrible pressure." → "…It's an office, and one person in it has made a very bad trade."
+- "Then you lose any chance of turning them." → "Then you're racing a clock that's just got shorter."
+- "She finds someone in trouble and makes an offer. The ideology comes later, once the casualties stop feeling like the point." → "…By the time they read the small print, they've already spent the money."
+- "Three hundred and eighty thousand dollars for a trial abroad, an insurer that walked away, and a wife with Stage 3 cancer." → "A trial abroad, a wife with Stage 3 cancer, and nobody left to ask."
+- Flag topics: "Somebody's sloppy handover note got you that login." / "Now use it. The upload flaw needs you logged in, and you are." → "Now use it. The upload flaw needs you logged in, and you are."; "Now find out who's been living on that box." / "Their home directory will tell you who." → "You're on the box. Their home directory will tell you who's been living on it."; "His name's on the manifest. That's the exfiltration proved." / "Root's the last door…" → "His name's on the manifest. Root's the last door. Start with what that account is allowed to run."; "Then you've seen the Architect's signature." / "Read the number on it before you face Torres. He's seen it too." → "Read the number on that sign-off before you face Torres. He's seen it too." or, after the fate, new "That's the number he read, and kept going."
+- "Six minutes before her spare, every night. Good. You read it properly." → "Every night. That's the one."
+- "His badge at the front door, her spare six minutes on, every night. Good. That's a pattern." → "Six minutes, every night. That's the pattern."
+- "ENTROPY weaponises suffering. They find someone drowning and throw a rope with a hook in it." / "None of that excuses him. From the first phone call to tonight, he could have walked into Patricia's office. He didn't." → "You've read what he's carrying. I won't tell you what he deserves." / "Ask me what you want to ask."
+- "Maybe it changes what's fair. It doesn't undo thirty to forty-five deaths if that upload goes." / "Both are true at once. Nobody's philosophy handles that cleanly." → "Maybe it changes what's fair. It doesn't change the upload."
+- "That log says Halloran's spare. Ask her where it lives." → "…Ask her who signs it out."
+
+Patricia (in person)
+- "...His badge at the front door, then Ruth's spare at the server hallway six minutes on. Every night. And Ruth's own badge never comes in after seven." → "*runs a finger down the sheet* ...Every night. And Ruth's own badge never comes in after seven."; new "I sign that log off every Monday. I never once read the front door."
+- "I sat three desks from him at the Christmas party. His kids drew on the tablecloth." (unchanged, now the reply to "[You knew him.]"); new "He's Ruth's. But I vetted him. I sat three desks from him at the Christmas party."
+- "Right. Your call from here. I'll keep the building quiet and the CEO out of your way." → "Right. Your call from here."
+- "...Six minutes before her spare, every night. You did read it properly." → "...Every night. I should have seen that myself."
+- New (after the fate): "Ambulance is in the car park, and the police are with it. I'll go down with them."; "Police are on their way up. I've given them the side door. Nobody in this building needs to watch."; "You let him walk out of my building. I hope you know what you've started."; "Torres hasn't come up from the data centre. Should I be sending someone down?"; "I'm told he's gone home. I'm told nothing else, and I'm not asking."
+
+Patricia (phone)
+- "...His badge at the front door, then Ruth's spare six minutes on. Every night. And Ruth's own badge never comes in after seven." → "...Every night. And Ruth's own badge never comes in after seven."; new "I sign that log off every Monday. I never once read the front door."
+- "...Six minutes before her spare, every night. You did read it properly." → "...Every night. I should have seen that myself."
+- "I know. Ring me when it's done." → "I know. I'm watching his badge on the vault log. He hasn't moved." / "Ring me when it's done."
+
+Owen
+- New: "No bother."; "Off the record? Nobody's audited who holds the spares since I started. I keep meaning to."; "Password's not going anywhere. Neither am I."
+- New (after the fate): "There's police on the stairs. Never thought I'd see that in here."; "David's badge just went out the front door. Thought you'd want to know."; "David's badge went into the vault and never came out. Should I be worried?"; "Patricia says I never pulled that badge log. Fine by me." / "Security say…" (Patricia down)
+
+Halloran
+- New: "You could have asked me this before you rang Security."; "It was never in yours. Mine, maybe."
+- "I failed him. As his manager, and as his friend." → "I signed his overtime every week and never once asked what it was for."
+- New (after the fate): "The police have David. Nobody's told me anything else."; "David walked past my door with his coat on. He didn't look in."; "I've rung David twice. He's not answering."; "Patricia says I'm to treat David as normal on Monday. I don't know how I'll manage that." / "Security say…"
+
+Lisa
+- New: "He'd hate that I told you. He hates a fuss."; "Don't be. Just... don't tell me which way."
+- New (after the fate): "There are police in reception. Everyone's pretending not to look."; "David just walked out in his coat. He didn't even look at the tin."; "Has anyone seen David? His coat's still on his chair."; "Someone said David's gone home early. Is that good?"
+
+The Recruiter
+- "He was a line item, agent. There are forty-seven more candidates in the pipeline right now." → "…There are more like him in the pipeline right now."
+- "And it won't help the other forty-seven, unless you move faster than I do." → "And it won't help the others, unless you move faster than I do."
+- "We keep it. We integrate it. That's the whole disposition." → "We keep it. We integrate it. Operation Schrödinger, if your file needs a name."
+- New: "Control? Nobody wants to run it. We want the minutes."
+- "I'm talking about a forty-to-seventy-minute failover window…" → "A forty-to-seventy-minute failover window…"
+- "But I'd rather you didn't spend the next six months chasing my other forty-seven." → "…chasing the rest of my pipeline."
+- "Nothing dramatic. You forget the number forty-seven. The envelope goes to Reading, not to your handler." → "Nothing dramatic. You forget the envelope. It goes to Reading, not to your handler."
+- "Consistent. I can respect that, while I disagree with it." and "You're welcome to try. I have a considerable head start." → removed; new "Then we're done. I'll close your file."
+- "Sensible. The file's forgotten on my end too. As far as anyone official knows, this call never happened." → "We're square, then. The file's forgotten on my end too."
+- "It changes nothing about the other forty-seven. I'll simply be more careful with whoever's next." → "It changes nothing about the rest. …"
+- Choice (not voiced): "[Fine. The envelope goes to Reading. I never heard the number forty-seven.]" → "[Fine. The envelope goes to Reading. I never saw it.]"
+
+Torres and the narrator
+- "You're early. Somebody read Owen's sheet properly." → "You're early. I thought I had until the server gave me up."
+- Narrator: "He opens his mouth to answer, then stops himself." → "He almost laughs."
+- Narrator: "You tell him the Recruiter has been in touch with you tonight, with forty-seven more names lined up behind him." → "You tell him the Recruiter rang you tonight, and that he isn't her only one."; Torres: "Forty-seven..." → "She told me I was the only one."
+- New: "You can't. They'll find it. They always find it."
+
+Debrief
+- Narrator: "SAFETYNET headquarters. Thursday morning, nine o'clock." / "You sit across from Agent HaX. The mission report is up on the screen." → "SAFETYNET headquarters, Thursday, nine o'clock. HaX has your report up on the screen."
+- "The final upload stopped at ninety-nine per cent. The key material left in pieces over six weeks." / "Most of the rotation windows were in the last of it, and they never went." → "The final upload stopped at ninety-nine per cent. Most of the rotation windows were in the last of it, and they never went."
+- Cut: "Without the rest, what they have is a very expensive paperweight, and one region we're already fixing."; "That was thirty to forty-five people, in the first wave alone."; "And David Torres..."; "Patch it, rotate the logins, trim the rights. QDC's own staff could have done all three."; "His family gets through this. The kids have a chance."; "Expect them to hit back. You made them look weak, and they won't forget it."; "One last thing."; "There was never a clean way to handle Torres. How you handled him tells me what kind of agent you are."
+- New (beat 1): "Yes. That goes in the file next to your name."; "A month of overtime for the Home Office. Nobody dies of it, because they moved first."; "Nine per cent to spare. You bought that yourself." / "Three per cent. I'd rather not do that again."; "It worked. This time."
+- "You read the badge log properly. Her spare…" → "You read past her line on the badge log. Her spare…"
+- "And the research portal. Old software with a known flaw nobody had patched, and an admin login sitting in a handover note." → "Old software with a known flaw nobody had patched, and an admin login sitting in a handover note."; new "Owen was, when he wasn't fixing everything else. The portal was worse: old software nobody had patched, and an admin login in a handover note."; new "Owen's, on paper. One sysadmin, after the budget cuts. The CEO wanted a clean file more than a safe one."; new "The board won't. Owen might."
+- "The warning signs go in the training file. The ones you found, anyway." → folded into the first sign: "For the training file: money. …" / "For the training file: hours. …" / "For the training file: an approach. …" / "For the training file: a boss who told Security to stop asking." (the later signs as before)
+- New (beat 3): "No. What he told us stays with us. The court sees him without it."; "Sofia and Miguel get their mother through this, and a father on remand. It's more than they had at eight o'clock last night."
+- "You went public." / "The Insider Threat Initiative is front-page news. TalentStack's offices are empty. The police picked Torres up the next morning." → "You went public. The Initiative is front-page news, TalentStack's offices are empty, and the police picked Torres up the next morning."
+- "And you did it as one of ours. When this goes right, nobody hears about us at all." / "This week, three newspapers are asking who their source was." → one line.
+- New: "It already has. Your consultant cover is burnt, and Netherton wants you in his office at two." ("Your consultant cover is burnt. Netherton wants you in his office at two." and the two trust lines are kept, after the other choice)
+- "And the Recruiter. She rang you and made you an offer. You never gave her an answer." / "She'll have taken the silence for a no by now." → "And the Recruiter. You never answered her offer. She'll have taken the silence for a no by now."
+- New (beat 4): "Someone who never has to hear the ambulance not come."
+- New (beat 5): "Ask me in a year." / "You know the answer to that." (lethal); "I know. I read the report."
+- "One more thing. The people who'd have waited too long for that ambulance will never know your name. But they're alive." → "The people who'd have waited too long…"
+
+Choices (not voiced) also changed: the reason choice and late disclosure (D5-3), the Recruiter's ring-back trio (D5-5), the HaX hub labels (D5-2), and the new beat choices above.
+
+#### Open after cycle 1
+
+- Browser checks for the structural changes: the debrief beats on two endings; Patricia's naming (reaction beat, then a close and reopen on it); a fate reaction in a person-chat; HaX's flag choice with two flags waiting; the Recruiter hang-up and ring-back.
+- D12 (SecGen wording of the portal beat) stays with the user, unchanged in level.

@@ -6,6 +6,7 @@
 {
 "talk": "briefing",
 "picks": [
+"Bought a person",
 "damage so far",
 "Who's this going to",
 "What's the mission",
@@ -169,6 +170,9 @@
 "suspended my access",
 "sits at her bench with her coat on"
 ]
+},
+{
+"maxRun": 9
 }
 ]
 }

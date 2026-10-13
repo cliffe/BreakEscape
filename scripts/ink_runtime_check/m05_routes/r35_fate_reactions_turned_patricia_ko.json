@@ -1,0 +1,61 @@
+{
+"steps": [
+{
+"note": "R35 (phase 4 dialogue C1, D5-8): turned, with Patricia knocked out: Owen and Halloran hear it from Security, not from her."
+},
+{
+"talk": "owen",
+"picks": [
+"Point me at the logs",
+"That's everything"
+]
+},
+{
+"talk": "halloran",
+"picks": [
+"I need to talk to everyone",
+"I'm not here to judge",
+"That's all for now"
+]
+},
+{
+"talk": "lisa",
+"picks": [
+"Who's the collection tin",
+"That's rough",
+"That's all"
+]
+},
+{
+"set": {
+"torres_identified": true,
+"final_choice": "turn_double_agent",
+"patricia_ko": true
+}
+},
+{
+"talk": "owen"
+},
+{
+"talk": "halloran"
+},
+{
+"talk": "lisa"
+},
+{
+"said": [
+"Security say I never pulled that badge log",
+"Security say I'm to treat David as normal on Monday",
+"Someone said David's gone home early"
+]
+},
+{
+"notSaid": [
+"Patricia says"
+]
+},
+{
+"maxRun": 9
+}
+]
+}

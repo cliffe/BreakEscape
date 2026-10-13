@@ -6,6 +6,7 @@
 {
 "talk": "briefing",
 "picks": [
+"find out who sold",
 "damage so far",
 "Who's this going to",
 "What's the mission",
@@ -79,6 +80,7 @@
 "picks": [
 "I think I know who it is",
 "David Torres",
+"I'm sorry. He's one of yours",
 "And the badge log",
 "I'll stop him"
 ]
@@ -106,7 +108,7 @@
 "88 per cent"
 ],
 "notSaid": [
-"Somebody read Owen's sheet"
+"I thought I had until the server gave me up"
 ]
 },
 {
@@ -148,8 +150,12 @@
 {
 "talk": "debrief",
 "picks": [
+1,
+"Nobody was watching",
+"won't thank me",
 "He did this",
-"Not"
+"Who signs off",
+"same way again"
 ]
 },
 {
@@ -158,7 +164,7 @@
 {
 "said": [],
 "notSaid": [
-"Somebody read Owen's sheet",
+"I thought I had until the server gave me up",
 "before the server did",
 "NAMED ON THE EVIDENCE"
 ]
@@ -169,6 +175,9 @@
 "door_log_reasoned_first": false,
 "named_before_portal": true
 }
+},
+{
+"maxRun": 9
 }
 ]
 }

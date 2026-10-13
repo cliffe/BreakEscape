@@ -6,6 +6,7 @@
 {
 "talk": "briefing",
 "picks": [
+"find out who sold",
 "damage so far",
 "Who's this going to",
 "What's the mission",
@@ -203,8 +204,12 @@
 {
 "talk": "debrief",
 "picks": [
+1,
+"Nobody was watching",
+"won't thank me",
 "He did this",
-"Not"
+"Who signs off",
+"same way again"
 ]
 },
 {
@@ -224,6 +229,9 @@
 "notSaid": [
 "Nobody on staff hurt"
 ]
+},
+{
+"maxRun": 9
 }
 ]
 }

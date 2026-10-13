@@ -6,6 +6,7 @@
 {
 "talk": "briefing",
 "picks": [
+"Bought a person",
 "damage so far",
 "Who's this going to",
 "What's the mission",
@@ -194,19 +195,26 @@
 {
 "talk": "debrief",
 "picks": [
+0,
+"And the research portal",
+"Whose job",
 "I didn't give him the chance",
-"Not"
+"Same hand",
+"Did I get him right"
 ]
 },
 {
 "said": [
 "Old software with a known flaw nobody had patched",
-"Patch it, rotate the logins, trim the rights. QDC's own staff could have done all three.",
+"Old software with a known flaw nobody had patched",
 "[choice] I didn't give him the chance"
 ],
 "notSaid": [
 "[choice] He came at me"
 ]
+},
+{
+"maxRun": 9
 }
 ]
 }

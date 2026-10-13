@@ -195,7 +195,7 @@ If you're wrong, that's her career. And whoever it really is has just watched Se
 + {halloran_questioned} [Halloran puts him in her lab after hours, and the spare is the lab's.]
     Her word, about her own badge. It's enough to look, not to act.
     -> phone_partial_naming
-+ {found_door_log} [Check who comes in the front door just before the spare is used.]
++ {found_door_log} [His badge comes in the front door six minutes before her spare. Every night.]
     -> phone_log_reason_right
 + {has_motive()} [Money. He's hiding how much he owes.]
     That's why he might. It isn't proof that he did. Show me it leaving the building.
@@ -214,7 +214,9 @@ If you're wrong, that's her career. And whoever it really is has just watched Se
 #speaker:patricia_morgan
 ~ door_log_reasoned = true
 ~ door_log_reasoned_first = true
-...His badge at the front door, then Ruth's spare six minutes on. Every night. And Ruth's own badge never comes in after seven.
+// Phase 4 dialogue C1 (D5-3): the player has said the pattern; she checks it.
+...Every night. And Ruth's own badge never comes in after seven.
+I sign that log off every Monday. I never once read the front door.
 {halloran_accused:
     And Ruth's sitting in her lab, suspended on your word. That's on both of us now.
 }
@@ -280,9 +282,9 @@ Whatever you decide in front of him, ring me when it's done.
 
 === phone_significant_findings_choices ===
 {patricia_ko: -> no_answer}
-+ {found_door_log and not door_log_reasoned} [And the badge log. Look at the main-entrance times.]
++ {found_door_log and not door_log_reasoned} [And the badge log. He comes in the front door six minutes before her spare.]
     ~ door_log_reasoned = true
-    ...Six minutes before her spare, every night. You did read it properly.
+    ...Every night. I should have seen that myself.
     -> phone_significant_findings_choices
 + [On my way.]
     #exit_conversation
@@ -291,7 +293,8 @@ Whatever you decide in front of him, ring me when it's done.
 === phone_hold_him ===
 {final_choice != "": -> hub}
 #speaker:patricia_morgan
-I know. Ring me when it's done.
+I know. I'm watching his badge on the vault log. He hasn't moved.
+Ring me when it's done.
 -> phone_hold_him_choices
 
 === phone_hold_him_choices ===

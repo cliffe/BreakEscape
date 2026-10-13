@@ -33,6 +33,7 @@ VAR hub_quiet = false
 VAR asked_access = false      // playtest round: the access ask stays in the hub until used
 VAR told_about_david = false   // scenario design R1 (m6): the news about David, once
 VAR card_handed = false       // playtest round: local, hides the office ask once the card is given
+VAR fate_noted = false        // Phase 4 dialogue C1 (D5-8): his reaction to Torres' fate, once
 
 // Synced from scenario globals
 VAR player_name = "Agent 0x00"
@@ -48,6 +49,7 @@ VAR found_incident_log = false
 VAR torres_suspected = false
 VAR found_door_log = false
 VAR it_notice_read = false
+VAR final_choice = "" // Synced scenario global: Torres' fate; set by m05_torres_confrontation and HaX's post-KO call. Read for his reaction (D5-8)
 VAR owen_refused_password = false // Synced scenario global (pass 5 puzzle R1, P6): Owen has been asked for the server-room password and wanted a reason; set by Owen. Patricia's sign-off waits for it
 
 
@@ -71,12 +73,14 @@ Owen Gallagher: Finally. Someone to fix our mess who isn't me.
 
 + [What can you tell me about the data leaving the building?]
     ~ owen_influence += 10
+    #influence_increased
     -> network_situation
 
 + [I'll need your help with access. Logs, badges, that kind of thing.]
     ~ asked_access = true
-    Owen Gallagher: Sure. I hold the spares for most of the doors here. Give me a reason I can write in the log and they're yours.
     ~ owen_influence += 5
+    #influence_increased
+    Owen Gallagher: Sure. I hold the spares for most of the doors here. Give me a reason I can write in the log and they're yours.
     -> hub
 
 + [Point me at the logs. I'll take it from here.]
@@ -92,12 +96,16 @@ Owen Gallagher: Someone's been pushing huge files out between two and four in th
 Owen Gallagher: I thought it was remote work at first. It's too tidy for that. Same hours, same encrypted channel, same research share.
 
 + [Why didn't you report it earlier?]
-    Owen Gallagher: I did. Patricia's been on it three weeks. Then someone upstairs told her to leave it.
     ~ owen_influence += 5
+    #influence_increased
+    Owen Gallagher: I did. Patricia's been on it three weeks. Then someone upstairs told her to leave it.
     -> hub
 
 + [That's useful. Thanks.]
     ~ owen_influence += 10
+    #influence_increased
+    Owen Gallagher: No bother.
+    ~ hub_quiet = true
     -> hub
 
 // ===========================================
@@ -106,8 +114,23 @@ Owen Gallagher: I thought it was remote work at first. It's too tidy for that. S
 
 === hub ===
 #speaker:owen_gallagher
-{hub_quiet:
+// Phase 4 dialogue C1 (D5-8): after the fate, the first reopen notices it.
+// He watches the reader logs all night, so he reacts to what they show.
+{
+- hub_quiet:
     ~ hub_quiet = false
+- final_choice != "" and not fate_noted:
+    ~ fate_noted = true
+    {
+    - final_choice == "arrest" or final_choice == "combat_nonlethal":
+        Owen Gallagher: There's police on the stairs. Never thought I'd see that in here.
+    - final_choice == "public_exposure":
+        Owen Gallagher: David's badge just went out the front door. Thought you'd want to know.
+    - final_choice == "combat_lethal":
+        Owen Gallagher: David's badge went into the vault and never came out. Should I be worried?
+    - else:
+        Owen Gallagher: {patricia_ko:Security say|Patricia says} I never pulled that badge log. Fine by me.
+    }
 - else:
     Owen Gallagher: {&What else?|Go on. I'm half listening.|Yeah?}
 }
@@ -151,14 +174,16 @@ Owen Gallagher: I thought it was remote work at first. It's too tidy for that. S
 #speaker:owen_gallagher
 ~ topic_network = true
 ~ owen_influence += 5
+#influence_increased
 
 Owen Gallagher: Standard setup. Corporate VPN, segmented VLANs. The research portal sits on its own subnet behind the server room.
 
 Owen Gallagher: Server hallway's badge-only. The server room has a password on the door, which I'm told is "temporary". It's been temporary for a year.
 
 {owen_influence >= 15:
-    Owen Gallagher: There's a terminal in there that sees the research subnet. If you want to know what's on the portal, start there.
     ~ owen_influence += 5
+    #influence_increased
+    Owen Gallagher: There's a terminal in there that sees the research subnet. If you want to know what's on the portal, start there.
 }
 
 -> hub
@@ -167,6 +192,7 @@ Owen Gallagher: Server hallway's badge-only. The server room has a password on t
 #speaker:owen_gallagher
 ~ topic_torres = true
 ~ owen_influence += 5
+#influence_increased
 
 // Round 3 (playtest): hours and pressure across the team, no name for the
 // man in the hallway. The badge log is where the name comes from.
@@ -174,8 +200,9 @@ Owen Gallagher: Halloran practically lives in that lab. Ben Ashworth does the od
 Owen Gallagher: Half of them work stupid hours. It's that kind of team.
 
 {owen_influence >= 20:
-    Owen Gallagher: I saw someone from crypto in the server hallway the other night. Not doing anything. Just stood there, looking wrecked. Didn't get a proper look.
     ~ owen_influence += 10
+    #influence_increased
+    Owen Gallagher: I saw someone from crypto in the server hallway the other night. Not doing anything. Just stood there, looking wrecked. Didn't get a proper look.
 }
 
 -> hub
@@ -184,13 +211,17 @@ Owen Gallagher: Half of them work stupid hours. It's that kind of team.
 #speaker:owen_gallagher
 ~ topic_security = true
 ~ owen_influence += 5
+#influence_increased
 
 Owen Gallagher: Security's not great. Budget cuts. We log access, but nobody watches it live.
 
 Owen Gallagher: And the door locks are the cheap pin-tumbler kind. I proved that on last year's pen test.
 
+// Phase 4 dialogue C1 (D5-26): the rapport branch now says something.
 {owen_influence >= 25:
     ~ owen_influence += 5
+    #influence_increased
+    Owen Gallagher: Off the record? Nobody's audited who holds the spares since I started. I keep meaning to.
 }
 
 -> hub
@@ -260,6 +291,9 @@ Owen Gallagher: After-hours server access gets logged with IT. That's me.
     }
     -> password_given
 + [Fair enough. I'll be back.]
+    Owen Gallagher: Password's not going anywhere. Neither am I.
+    ~ hub_quiet = true
+    #exit_conversation
     -> hub
 
 === password_given ===
@@ -279,6 +313,7 @@ Owen Gallagher: Board bought it because you can't write a thumb on a sticky note
 #speaker:owen_gallagher
 ~ door_log_handed = true
 ~ owen_influence += 5
+#influence_increased
 #give_item:notes:server_door_log
 Owen Gallagher: Reader logs. Every after-hours swipe for three weeks, every door. Give us a sec... there.
 Owen Gallagher: That's Halloran's spare on the server hallway. Odd. She's in that lab all day, but never at night.
@@ -324,7 +359,7 @@ Owen Gallagher: He stood in that hallway looking wrecked and I just... walked pa
     Owen Gallagher: Yeah. Doesn't help much, but cheers.
     ~ hub_quiet = true
     -> hub
-+ [Keep it to yourself until it's over.]
++ {final_choice == ""} [Keep it to yourself until it's over.]
     Owen Gallagher: Who would I even tell?
     ~ hub_quiet = true
     -> hub

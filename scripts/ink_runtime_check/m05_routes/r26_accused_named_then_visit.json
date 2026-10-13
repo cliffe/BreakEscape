@@ -6,6 +6,7 @@
 {
 "talk": "briefing",
 "picks": [
+"find out who sold",
 "damage so far",
 "Who's this going to",
 "What's the mission",
@@ -176,6 +177,9 @@
 "notSaid": [
 "suspended my access"
 ]
+},
+{
+"maxRun": 9
 }
 ]
 }

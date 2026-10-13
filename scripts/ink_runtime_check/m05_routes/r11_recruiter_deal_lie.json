@@ -6,6 +6,7 @@
 {
 "talk": "briefing",
 "picks": [
+"Bought a person",
 "damage so far",
 "Who's this going to",
 "What's the mission",
@@ -204,8 +205,13 @@
 {
 "talk": "debrief",
 "picks": [
+0,
+"And the research portal",
+"Whose job",
 "He did this",
-"It was nothing"
+"It was nothing",
+"Same hand",
+"Did I get him right"
 ]
 },
 {
@@ -223,6 +229,9 @@
 "notSaid": [
 "THEN CONFESSED"
 ]
+},
+{
+"maxRun": 9
 }
 ]
 }
