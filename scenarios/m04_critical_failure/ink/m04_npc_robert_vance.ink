@@ -63,6 +63,8 @@ EXTERNAL player_name()
 {vance_met: -> vance_hub}
 #speaker:robert_vance
 #complete_task:meet_robert_vance
+// Scenario design n4: the player has spoken to him, even if they leave mid-meeting.
+#set_global:vance_spoken:true
 
 // Vance looks up from desk, visibly tired and annoyed
 

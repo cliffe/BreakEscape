@@ -15,7 +15,8 @@
 "server_room_reached": true,
 "flag_network_scan_submitted": true,
 "flag_ftp_intel_submitted": true,
-"flag_distcc_exploit_submitted": true
+"flag_distcc_exploit_submitted": true,
+"vance_spoken": true
 }
 },
 {

@@ -365,7 +365,6 @@ flowchart TD
   vmfl_submit_distcc_exploit_flag -.-> aim_map_the_attack
   vmfl_submit_privesc_flag -.-> aim_map_the_attack
   door_plant_room -.-> aim_take_back_the_plant
-  action_meet_robert_vance -.-> aim_confirm_the_lie
   bms_jump_server_terminal -.-> aim_map_the_attack
   analogue_thermometer_rack_bank_c_wall -.-> aim_confirm_the_lie
   lock_esd_pushbutton -.-> aim_stop_the_runaway

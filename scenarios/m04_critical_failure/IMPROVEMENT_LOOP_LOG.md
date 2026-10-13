@@ -460,8 +460,8 @@ Review: `SCENARIO_DESIGN_REVIEW_P5_R1.md` (Opus, static; 0 blockers, 1 major, 17
 | m7 | minor | "So far he's given us one thing" vs "Voltage put it at six cities" | As proposed | **Fixed.** `voltage_six_cities` (synced) is set in `voltage_negotiation_attempt`; the debrief says "Voltage told you six cities, in the plant room." only then, otherwise "The documents name several cities." |
 | m8 | minor | HaX's first call offers an untrue "I told him the truth… He's in." | As proposed | **Fixed.** Choice deleted, with its now-orphaned reply knot |
 | m10 | minor | The alarm texts land while Vance's chat is open | As proposed (option 1) | **Fixed.** The three `crew_warned` texts wait 8 s (were 3) |
-| m11 | minor | Optional tasks read as required | **Mission-local stopgap** (orchestrator); engine styling is a question for the user (decision 4) | **Fixed.** "(Optional) Deal with the intruder in Battery Hall 1" and "(Optional) Find evidence of the break-in" |
-| M-2 | minor | "Find the OT engineer on shift" stays open for ever when Vance is never met | **Make it optional** (orchestrator's first option): completing it any other way would tick a task the player didn't do | **Fixed.** `meet_robert_vance` is optional and titled "(Optional) Find the OT engineer on shift". The "Get Inside" aim now completes on entering the ops office, so the next aim can appear before Vance is met |
+| m11 | minor | Optional tasks read as required | **Mission-local stopgap** (orchestrator); engine styling is a question for the user (decision 4) | **Fixed**, then superseded. Retitled "(Optional) …" in this round; the orchestrator dropped the prefix in a0d7a195 once the panel marked required tasks with * (engine 9290f89f). Current titles: "Deal with the intruder in Battery Hall 1", "Find evidence of the break-in" |
+| M-2 | minor | "Find the OT engineer on shift" stays open for ever when Vance is never met | **Make it optional** (orchestrator's first option): completing it any other way would tick a task the player didn't do | **Fixed.** `meet_robert_vance` is optional (titled "(Optional) Find the OT engineer on shift" in this round; back to "Find the OT engineer on shift" since a0d7a195, the panel marking optionals). The "Get Inside" aim now completes on entering the ops office, so the next aim can appear before Vance is met |
 | m12 | minor | "Hall 2 opens on Vance's card" to a player with the spare | As proposed | **Fixed.** "…Hall 2 opens on any Level 1 card." |
 | m13 | minor | Stale comments (globalVarOnKO emitting; the race "restarts" on reload) | As proposed | **Fixed** (three comments; no logic change) |
 | m14 | minor | `agent_0x99_debrief` in the phone's `npcIds` | As proposed | **Fixed** (removed) |
@@ -499,10 +499,36 @@ HaX, texts:
 
 Voltage (choices): "[Step away from the bench. You're under arrest.]" → "[Step away from the bench. You're coming with me.]"; "[Hands on the bench. You're under arrest.]" → "[Hands on the bench. The police can have you.]"
 
-Not spoken: credits "ROBERT VANCE: vindicated — his warning broke the case open" → "ROBERT VANCE: brought in — ran the desk while you ran the halls"; new "ROBERT VANCE: never met — you went round him"; new "STATIC: stood aside, and slipped out when Voltage fell"; task titles with "(Optional)"; the field guide's item name.
+Not spoken: credits "ROBERT VANCE: vindicated — his warning broke the case open" → "ROBERT VANCE: brought in — ran the desk while you ran the halls"; new "ROBERT VANCE: never met — you went round him"; new "STATIC: stood aside, and slipped out when Voltage fell"; task titles with "(Optional)" (prefix since removed, a0d7a195); the field guide's item name.
 
 #### Open after round 1
 
 - Browser checks: the dial text opening the call (and the hub re-offer); the Hall 2 refusal text; Static slipping out on Voltage's KO; the aims now that "Get Inside" completes without Vance.
 - The user: M1's lines and R2-6 / m17 against SecGen; decision 4 (optional-task styling in the engine).
 - Backlog (orchestrator): "under arrest" in m01, m02, m06.
+
+### Phase 3 scenario design, round 2
+
+Review: `SCENARIO_DESIGN_REVIEW_P5_R2.md` (Opus, static; 0 blockers, 0 majors, 5 minors). All five fixed as the reviewer proposes (orchestrator). The do-not-open rule held.
+
+| # | Sev. | Finding | Outcome |
+|---|---|---|---|
+| n1 | minor | Round 1's Hall 2 no-card text can't fire: with the cloner but no card, the RFID minigame's "No keycards" screen never emits `door_unlock_failed` | **Fixed** (m05 pattern): keyed on `door_unlock_attempt` with `data.connectedRoom === 'battery_hall_2'`, which fires before the outcome; the condition still excludes anyone holding a Level 1 card. Same text |
+| n2 | minor | "Three things let them in. Two of them let you in too." no longer matches six listed weaknesses | **Fixed** (line below) |
+| n3 | minor | Static vanishes in view on the punch-down route with no line | **Fixed.** HaX text on `static_left_alone` (2 s, skipped after the shutdown) |
+| n4 | minor | A player who clones Vance's card mid-meeting and walks off counts as "never met" | **Fixed.** New synced global `vance_spoken`, set by `#set_global` beside `#complete_task:meet_robert_vance` where the meeting starts. The debrief's not-met conditions and the two Vance credits use it; `vance_met` (the re-talk router) is unchanged, as are HaX's uses of it |
+| n5 | minor | Vance's graph action still claims `unlocks_aim: confirm_the_lie` | **Fixed** (dropped) |
+
+Also: the orchestrator dropped the "(Optional)" title prefixes in a0d7a195 (the panel now marks required tasks with *, engine 9290f89f). The erb comment and the round-1 log rows that quoted them are updated; the walkthrough never quoted them. Not reinstated.
+
+Routes: new `r19_vance_left_mid_meeting.json` (clone mid-meeting, walk off: `vance_spoken` true, `vance_met` false; the debrief keeps Vance's lines and thanks; credit "never told", not "never met"). Routes that set `vance_met` by hand now also set `vance_spoken`, so they stay faithful. 19 of 19 pass.
+
+#### Checks (static; no browser session)
+
+Ink compiles (10 files). Validator, full: schema passed, all ink valid, doors and geometry OK; 16 warnings, the same set as round 1. dialoguelint: 0 errors, 5 blank-reentry checks. reopencheck: 0 problems (missions.json m04 globals regenerated, 86). tagdiff against HEAD: 25 structural differences, all from this round. inkcheck and loopcheck on the debrief (never spoken; spoken) and Vance's meeting: clean. Door alignment OK.
+
+#### Spoken lines changed (old → new)
+
+- HaX, debrief: "Before you write it up. Three things let them in. Two of them let you in too." → "Before you write it up. Here's what let them in. Nearly all of it let you in too."
+- HaX, text, new: "Static's gone out the dock door. Let him go. The button's what matters."
+- The Hall 2 no-card text is unchanged in wording (new trigger).

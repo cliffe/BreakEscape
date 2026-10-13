@@ -191,8 +191,8 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
           { "text": "VOLTAGE: CAPTURED — Blackout's field lead in custody", "style": "entry", "condition": "globalVars.voltage_captured" },
           { "text": "VOLTAGE: ESCAPED — you took the button and let him reach the dock", "style": "entry", "condition": "globalVars.voltage_escaped" },
           { "text": "ROBERT VANCE: brought in — ran the desk while you ran the halls", "style": "entry", "condition": "globalVars.vance_is_ally" },
-          { "text": "ROBERT VANCE: never told — the cover held all night", "style": "entry", "condition": "globalVars.vance_met && !globalVars.vance_is_ally && !globalVars.robert_vance_ko" },
-          { "text": "ROBERT VANCE: never met — you went round him", "style": "entry", "condition": "!globalVars.vance_met && !globalVars.vance_is_ally && !globalVars.robert_vance_ko" },
+          { "text": "ROBERT VANCE: never told — the cover held all night", "style": "entry", "condition": "globalVars.vance_spoken && !globalVars.vance_is_ally && !globalVars.robert_vance_ko" },
+          { "text": "ROBERT VANCE: never met — you went round him", "style": "entry", "condition": "!globalVars.vance_spoken && !globalVars.vance_is_ally && !globalVars.robert_vance_ko" },
           { "text": "ROBERT VANCE: knocked down in his own office, by us", "style": "warning", "condition": "globalVars.robert_vance_ko" },
           { "text": "GATE GUARD: knocked out at his own desk, doing his job by the book", "style": "warning", "condition": "globalVars.security_guard_ko" },
           { "text": "CIPHER: walked off the job when you told him about the night crew", "style": "entry", "condition": "globalVars.cipher_walked" },
@@ -269,9 +269,9 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
             completes on the dial. %>
         {
           "taskId": "find_infiltration_evidence",
-          <%# Scenario design m11: the panel draws optional tasks like required ones,
-              so the title says it (mission-local stopgap; engine styling is a user
-              question). %>
+          <%# Scenario design m11: retitled "(Optional) …" as a stopgap, then the
+              prefix was dropped (a0d7a195) once the objectives panel marked required
+              tasks with * and dimmed optional ones (engine 9290f89f). %>
           "title": "Find evidence of the break-in",
           "type": "custom",
           "status": "active",
@@ -803,11 +803,14 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
               "setGlobal": { "plant_reader_seen": true, "rfid_guide_offered": true },
               "sendTimedMessage": { "delay": 2500, "message": "That plant-room door is biometric. Picks and cloner won't touch it. Somebody got through it on the ninth, though." }
             },
-            <%# Scenario design m1: Hall 2's RFID reader refuses a player with no Level 1
-                card; RFID refusals emit door_unlock_failed:<room> (unlock-system.js). %>
+            <%# Scenario design m1, moved in round 2 (n1, m05 pattern): a player with no
+                card and the cloner in inventory gets the RFID minigame's "No keycards"
+                screen, which never emits door_unlock_failed. door_unlock_attempt fires
+                before the outcome (unlock-system.js), and the condition excludes
+                anyone holding a Level 1 card. %>
             {
-              "eventPattern": "door_unlock_failed:battery_hall_2",
-              "condition": "globalVars.vance_provided_keycard !== true && globalVars.level1_card_held !== true",
+              "eventPattern": "door_unlock_attempt",
+              "condition": "data.connectedRoom === 'battery_hall_2' && globalVars.vance_provided_keycard !== true && globalVars.level1_card_held !== true",
               "onceOnly": true,
               "sendTimedMessage": { "delay": 1500, "message": "That reader wants a Level 1 card. Vance's is old prox: stand close while he talks and the cloner reads it. Or the spare in the security locker." }
             },
@@ -1429,7 +1432,9 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
             "name": "Level 1 Facility Card"
           },
           "puzzle_graph_actions": [
-            { "id": "meet_robert_vance", "label": "Win Vance's trust and gain facility access", "unlocks_aim": "confirm_the_lie" }
+            <%# Scenario design n5: no unlocks_aim; since M-2 the next aim opens when
+                Get Inside completes on entering the ops office, without Vance. %>
+            { "id": "meet_robert_vance", "label": "Win Vance's trust and gain facility access" }
           ],
           "itemsHeld": [
             {
@@ -2209,6 +2214,14 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
               "condition": "value === true",
               "setVisible": false
             },
+            <%# Scenario design n3: he vanishes in view on the punch-down route, so a
+                line says where he went (the escape route has Voltage's narration). %>
+            {
+              "eventPattern": "global_variable_changed:static_left_alone",
+              "condition": "value === true",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 2000, "message": "Static's gone out the dock door. Let him go. The button's what matters.", "skipIfGlobal": "attack_prevented" }
+            },
             {
               "eventPattern": "room_entered:plant_room",
               "condition": "globalVars.static_left === true && globalVars.static_stood_aside === true",
@@ -2660,6 +2673,11 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
         Voltage was punched down (m3). voltage_six_cities: Voltage named six cities
         in the plant room (m7, read by the debrief). %>
     "static_left_alone": false,
-    "voltage_six_cities": false
+    "voltage_six_cities": false,
+
+    <%# Scenario design n4: the player spoke to Vance at all (set where the
+        meeting starts). The debrief's never-met lines and the two Vance credits
+        use it; vance_met, set at the meeting's end, still routes re-talk. %>
+    "vance_spoken": false
   }
 }

@@ -1,0 +1,101 @@
+{
+"steps": [
+{
+"note": "R19 (scenario design n4): the player talks to Vance on the cover, clones his card mid-meeting and walks off before the meeting ends. vance_met stays false (it routes re-talk), but vance_spoken is set where the meeting starts, so the debrief treats him as met: his lines and the thanks, and the credit 'never told', not 'never met'."
+},
+{
+"set": {
+"briefing_played": true,
+"guard_admitted": true,
+"checkpoint_passed": true
+}
+},
+{
+"talk": "vance",
+"picks": [
+"Just doing the job",
+"Tell me about the recent maintenance",
+"Any other contractors",
+"Lean in over the site map"
+]
+},
+{
+"expect": {
+"vance_spoken": true,
+"vance_met": false,
+"vance_provided_keycard": true,
+"vance_is_ally": false
+}
+},
+{
+"set": {
+"server_room_reached": true,
+"plant_reader_seen": true,
+"fingerprint_kit_found": true,
+"vance_print_lifted": true,
+"flag_network_scan_submitted": true,
+"flag_ftp_intel_submitted": true,
+"flag_distcc_exploit_submitted": true,
+"flag_privesc_submitted": true,
+"all_flags_in": true,
+"attack_mechanism_known": true,
+"anomaly_detected": true,
+"relay_card_cloned": true,
+"plant_room_entered": true,
+"operative_static_defeated": true
+}
+},
+{
+"ko": "voltage"
+},
+{
+"set": {
+"esd_authorized": true,
+"attack_prevented": true
+}
+},
+{
+"talk": "phone",
+"picks": [
+"Bring me in",
+"Bring me in",
+"On my way"
+]
+},
+{
+"talk": "debrief",
+"picks": [
+"Shutdown engaged",
+"What did we get",
+"how did they get in",
+"Vance will want every line",
+"The Architect",
+"I'm in",
+"Full public",
+"honour working with you"
+]
+},
+{
+"said": [
+"Vance needs to hear it too",
+"Robert Vance:",
+"Here's what let them in. Nearly all of it let you in too."
+],
+"notSaid": [
+"Make sure the site manager",
+"why nobody told him"
+]
+},
+{
+"credits": true
+},
+{
+"said": [
+"ROBERT VANCE: never told \u2014 the cover held all night"
+],
+"notSaid": [
+"never met"
+]
+}
+]
+}

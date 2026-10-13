@@ -26,7 +26,8 @@
 "voltage_neutralised": true,
 "esd_authorized": true,
 "attack_prevented": true,
-"operative_static_defeated": true
+"operative_static_defeated": true,
+"vance_spoken": true
 }
 },
 {

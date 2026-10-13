@@ -8,7 +8,8 @@
 "briefing_played": true,
 "checkpoint_passed": true,
 "vance_met": true,
-"level1_card_held": true
+"level1_card_held": true,
+"vance_spoken": true
 }
 },
 {
@@ -42,7 +43,8 @@
 },
 {
 "set": {
-"vance_met": false
+"vance_met": false,
+"vance_spoken": false
 }
 },
 {
@@ -77,7 +79,8 @@
 {
 "set": {
 "level1_card_held": false,
-"vance_met": true
+"vance_met": true,
+"vance_spoken": true
 }
 },
 {

@@ -17,7 +17,8 @@
 "flag_distcc_exploit_submitted": true,
 "flag_privesc_submitted": true,
 "all_flags_in": true,
-"attack_mechanism_known": true
+"attack_mechanism_known": true,
+"vance_spoken": true
 }
 },
 {

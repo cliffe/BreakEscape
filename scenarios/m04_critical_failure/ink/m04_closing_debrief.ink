@@ -48,8 +48,10 @@ VAR voltage_print_on_bypass = false
 VAR crew_warned = false
 // Scenario design round 1 (m4, browser M-3): Vance may never have been met.
 // m6: HaX naming Blackout counts as hearing the name. m7: Voltage said "six
-// cities" in the plant room. Synced globals; vance_met / vance_is_ally read only.
-VAR vance_met = false
+// cities" in the plant room. Synced globals; vance_spoken / vance_is_ally read only.
+// Round 2 (n4): vance_spoken is set where the meeting starts (not vance_spoken, set
+// at its end), so a player who cloned his card mid-meeting and walked off still met him.
+VAR vance_spoken = false
 VAR vance_is_ally = false
 VAR voltage_six_cities = false
 VAR crew_lost = false
@@ -210,7 +212,7 @@ Keep the crew's fingerprint kit. Forensics can have the case.
 === debrief_what_failed ===
 #speaker:agent_0x99
 
-Agent HaX: Before you write it up. Three things let them in. Two of them let you in too.
+Agent HaX: Before you write it up. Here's what let them in. Nearly all of it let you in too.
 {vance_card_cloned:
     Agent HaX: Vance's door card copied from across his own desk. Old prox hands its number to anything that asks.
 - else:
@@ -231,10 +233,10 @@ Agent HaX: Encrypted cards. A second factor on the HV door, and a reader that ch
 Agent HaX: A temperature gauge in every hall that isn't on the bus, and somebody reading it.
 Agent HaX: Old services off the OT network, and privileges somebody actually reviews.
 
-* {vance_met or vance_is_ally} [It goes in the report. Vance will want every line.]
+* {vance_spoken or vance_is_ally} [It goes in the report. Vance will want every line.]
     -> debrief_big_picture
 
-* {not vance_met and not vance_is_ally} [It goes in the report.]
+* {not vance_spoken and not vance_is_ally} [It goes in the report.]
     -> debrief_big_picture
 
 * [The budget let them in as much as the readers did.]
@@ -362,7 +364,7 @@ First, one more decision.
 // Robert Vance present, listening
 
 How do we handle this publicly?
-{(vance_met or vance_is_ally) and not robert_vance_ko:
+{(vance_spoken or vance_is_ally) and not robert_vance_ko:
     Vance needs to hear it too.
 }
 
@@ -382,7 +384,7 @@ How do we handle this publicly?
 
 Full transparency. The attack, the holes it came through, ENTROPY. All of it.
 
-{(vance_met or vance_is_ally) and not robert_vance_ko:
+{(vance_spoken or vance_is_ally) and not robert_vance_ko:
     // Robert Vance reacts
     #speaker:robert_vance
     {vance_trust_level >= 70:
@@ -406,7 +408,7 @@ Netherton will back that.
 
 We classify it. A maintenance fault, resolved. Albion patches the holes quietly.
 
-{(vance_met or vance_is_ally) and not robert_vance_ko:
+{(vance_spoken or vance_is_ally) and not robert_vance_ko:
     // Robert Vance reacts
     #speaker:robert_vance
     {vance_trust_level >= 70:
@@ -430,7 +432,7 @@ Netherton won't argue.
 
 An incident, acknowledged. No detail.
 
-{(vance_met or vance_is_ally) and not robert_vance_ko:
+{(vance_spoken or vance_is_ally) and not robert_vance_ko:
     // Robert Vance reacts
     #speaker:robert_vance
     {vance_trust_level >= 70:
@@ -462,7 +464,7 @@ Done.
     A controlled statement goes to the press.
 }
 
-{(vance_met or vance_is_ally) and not robert_vance_ko:
+{(vance_spoken or vance_is_ally) and not robert_vance_ko:
     // Robert Vance final words
     #speaker:robert_vance
     {vance_trust_level >= 80:
@@ -492,17 +494,17 @@ Done.
 
 #speaker:agent_0x99
 
-* {(vance_met or vance_is_ally) and not robert_vance_ko} [It was an honour working with you, Mr Vance.]
+* {(vance_spoken or vance_is_ally) and not robert_vance_ko} [It was an honour working with you, Mr Vance.]
     -> debrief_end_respectful
 
-* {(vance_met or vance_is_ally) and not robert_vance_ko} [Just doing my job.]
+* {(vance_spoken or vance_is_ally) and not robert_vance_ko} [Just doing my job.]
     -> debrief_end_professional
 
 // Scenario design m4 / browser M-3: the player never met him.
-* {not vance_met and not vance_is_ally and not robert_vance_ko} [Make sure the site manager gets the report.]
+* {not vance_spoken and not vance_is_ally and not robert_vance_ko} [Make sure the site manager gets the report.]
     -> debrief_end_not_met
 
-* {not vance_met and not vance_is_ally and not robert_vance_ko} [Just doing my job.]
+* {not vance_spoken and not vance_is_ally and not robert_vance_ko} [Just doing my job.]
     -> debrief_end_not_met
 
 * {robert_vance_ko} [Make sure Vance gets the full credit when he comes round.]

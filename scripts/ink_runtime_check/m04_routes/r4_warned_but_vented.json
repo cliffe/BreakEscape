@@ -1,20 +1,125 @@
-{"steps":[
-{"note":"R4 (pass 5 alignment, decision 1): the crew warned early through Vance's phone; the clock started on the alarm and ran out (racks_vent timer) before the shutdown. The crew were out, so crew_lost stays false: ALL ELEVEN walked out, and the casualties line is the feed only. A second route check: once a bank has vented the warn choice is gone (vance_unwarned part)."},
-{"set":{"briefing_played":true,"guard_admitted":true,"vance_met":true,"vance_is_ally":true,"vance_provided_keycard":true,"anomaly_detected":true}},
-{"talk":"vance_phone","picks":["night crew","Sound it","That's everything"]},
-{"expect":{"crew_warned":true,"clock_started":true}},
-{"note":"Round 2 clock model: the early alarm started the 30-minute alarm clock; the VM stage takes longer. The h2 advisory at 24 min, the vent at 30."},
-{"advance":24},
-{"expect":{"hydrogen_alarm":true,"racks_vented":false}},
-{"advance":7},
-{"expect":{"racks_vented":true,"vented_by_alarm_clock":true,"crew_lost":false,"crew_warned_early":true}},
-{"talk":"vance_phone","picks":["How bad is it","That's everything"]},
-{"set":{"voltage_captured":true,"voltage_neutralised":true,"operative_static_defeated":true,"flag_network_scan_submitted":true,"flag_ftp_intel_submitted":true,"flag_distcc_exploit_submitted":true,"flag_privesc_submitted":true,"all_flags_in":true,"attack_mechanism_known":true,"esd_authorized":true,"attack_prevented":true,"lore_architect_directive_found":true,"lore_safehouse_address_found":true}},
-{"talk":"phone","picks":["Bring me in","Bring me in","On my way"]},
-{"expect":{"mission_complete":true}},
-{"talk":"debrief","picks":["Bank B went","What did we get","how did they get in","goes in the report","The Architect","I'm in","Full public","honour"]},
-{"credits":true},
-{"note":"Separately: a bank vented with the crew never warned. Vance's phone no longer offers the evacuation."},
-{"set":{"crew_warned":false,"attack_prevented":false,"mission_complete":false}},
-{"talk":"vance_phone","reload":"page","picks":["That's everything"]}
-]}
+{
+"steps": [
+{
+"note": "R4 (pass 5 alignment, decision 1): the crew warned early through Vance's phone; the clock started on the alarm and ran out (racks_vent timer) before the shutdown. The crew were out, so crew_lost stays false: ALL ELEVEN walked out, and the casualties line is the feed only. A second route check: once a bank has vented the warn choice is gone (vance_unwarned part)."
+},
+{
+"set": {
+"briefing_played": true,
+"guard_admitted": true,
+"vance_met": true,
+"vance_is_ally": true,
+"vance_provided_keycard": true,
+"anomaly_detected": true,
+"vance_spoken": true
+}
+},
+{
+"talk": "vance_phone",
+"picks": [
+"night crew",
+"Sound it",
+"That's everything"
+]
+},
+{
+"expect": {
+"crew_warned": true,
+"clock_started": true
+}
+},
+{
+"note": "Round 2 clock model: the early alarm started the 30-minute alarm clock; the VM stage takes longer. The h2 advisory at 24 min, the vent at 30."
+},
+{
+"advance": 24
+},
+{
+"expect": {
+"hydrogen_alarm": true,
+"racks_vented": false
+}
+},
+{
+"advance": 7
+},
+{
+"expect": {
+"racks_vented": true,
+"vented_by_alarm_clock": true,
+"crew_lost": false,
+"crew_warned_early": true
+}
+},
+{
+"talk": "vance_phone",
+"picks": [
+"How bad is it",
+"That's everything"
+]
+},
+{
+"set": {
+"voltage_captured": true,
+"voltage_neutralised": true,
+"operative_static_defeated": true,
+"flag_network_scan_submitted": true,
+"flag_ftp_intel_submitted": true,
+"flag_distcc_exploit_submitted": true,
+"flag_privesc_submitted": true,
+"all_flags_in": true,
+"attack_mechanism_known": true,
+"esd_authorized": true,
+"attack_prevented": true,
+"lore_architect_directive_found": true,
+"lore_safehouse_address_found": true
+}
+},
+{
+"talk": "phone",
+"picks": [
+"Bring me in",
+"Bring me in",
+"On my way"
+]
+},
+{
+"expect": {
+"mission_complete": true
+}
+},
+{
+"talk": "debrief",
+"picks": [
+"Bank B went",
+"What did we get",
+"how did they get in",
+"goes in the report",
+"The Architect",
+"I'm in",
+"Full public",
+"honour"
+]
+},
+{
+"credits": true
+},
+{
+"note": "Separately: a bank vented with the crew never warned. Vance's phone no longer offers the evacuation."
+},
+{
+"set": {
+"crew_warned": false,
+"attack_prevented": false,
+"mission_complete": false
+}
+},
+{
+"talk": "vance_phone",
+"reload": "page",
+"picks": [
+"That's everything"
+]
+}
+]
+}
