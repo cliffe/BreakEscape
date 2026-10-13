@@ -127,8 +127,8 @@
   </div>
 
   <div class="stats">
-    <h2>Critical Path — 4 hops</h2>
-    <div class="crit-path">Report In And Take The Brief → Get Into The Internal Repository → Correlate The Leak Timeline → Confront The Mole → Close The Investigation</div>
+    <h2>Critical Path — 5 hops</h2>
+    <div class="crit-path">Report In And Take The Brief → Get Into The Internal Repository → Correlate The Leak Timeline → + → Confront The Mole → Close The Investigation</div>
     <div class="note-oos">
       ⚠️&nbsp; Dashed aim arrows = narrative unlock only. A player with physical access to a room may complete an
       objective before the system unlocks that aim. Solid arrows indicate hard dependencies (AND gates, physical
@@ -137,13 +137,13 @@
     <table>
       <tr><th>Aims (story objectives)</th><td class="val">6</td></tr>
       <tr><th>Total tasks</th><td class="val">15</td></tr>
-      <tr><th>Optional tasks</th><td class="val">2 / 15</td></tr>
+      <tr><th>Optional tasks</th><td class="val">1 / 15</td></tr>
       <tr><th>VM flag challenges</th><td class="val">4</td></tr>
-      <tr><th>AND-gate convergences</th><td class="val">0</td></tr>
+      <tr><th>AND-gate convergences</th><td class="val">1</td></tr>
       <tr><th>Physical locks (puzzle)</th><td class="val">6</td></tr>
       <tr><th>Rooms</th><td class="val">9</td></tr>
       <tr><th>Puzzle nodes / edges</th><td class="val">50 / 62</td></tr>
-      <tr><th>Story nodes / edges</th><td class="val">6 / 5</td></tr>
+      <tr><th>Story nodes / edges</th><td class="val">7 / 7</td></tr>
     </table>
   </div>
 
@@ -319,14 +319,17 @@
   aim_correlate_the_evidence{{"Correlate The Leak Timeline"}}
   aim_confront_the_mole{{"Confront The Mole"}}
   aim_close_the_investigation{{"Close The Investigation"}}
+  aim_andgate_confront_the_mole((" + "))
 
   aim_take_the_brief -.-> aim_work_the_suspects
   aim_take_the_brief -.-> aim_get_into_the_repo
   aim_get_into_the_repo -.-> aim_correlate_the_evidence
-  aim_correlate_the_evidence -.-> aim_confront_the_mole
+  aim_work_the_suspects --> aim_andgate_confront_the_mole
+  aim_correlate_the_evidence --> aim_andgate_confront_the_mole
+  aim_andgate_confront_the_mole --> aim_confront_the_mole
   aim_confront_the_mole -.-> aim_close_the_investigation
 
-  class aim_take_the_brief,aim_get_into_the_repo,aim_correlate_the_evidence,aim_confront_the_mole,aim_close_the_investigation critical
+  class aim_take_the_brief,aim_get_into_the_repo,aim_correlate_the_evidence,aim_confront_the_mole,aim_close_the_investigation,aim_andgate_confront_the_mole critical
   class aim_work_the_suspects aim`,
       integrated: `flowchart TD
 
@@ -404,6 +407,7 @@
   aim_correlate_the_evidence{{"Correlate The Leak Timeline"}}
   aim_confront_the_mole{{"Confront The Mole"}}
   aim_close_the_investigation{{"Close The Investigation"}}
+  aim_andgate_confront_the_mole((" + "))
 
   door_server_room --> server_room
   door_security_archives --> security_archives
@@ -470,7 +474,9 @@
   aim_take_the_brief -.-> aim_work_the_suspects
   aim_take_the_brief -.-> aim_get_into_the_repo
   aim_get_into_the_repo -.-> aim_correlate_the_evidence
-  aim_correlate_the_evidence -.-> aim_confront_the_mole
+  aim_work_the_suspects --> aim_andgate_confront_the_mole
+  aim_correlate_the_evidence --> aim_andgate_confront_the_mole
+  aim_andgate_confront_the_mole --> aim_confront_the_mole
   aim_confront_the_mole -.-> aim_close_the_investigation
   vmfl_recover_gitlist_exposure -.-> aim_get_into_the_repo
   vmfl_recover_stashed_credentials -.-> aim_get_into_the_repo
@@ -484,7 +490,7 @@
   class action_clone_the_director_card,action_read_the_door_audit_to_the_director action
   class gitlist_repository_server,vmch_recover_gitlist_exposure,vmch_recover_stashed_credentials,vmch_recover_home_flag,vmch_escalate_to_root vm
   class vmfl_recover_gitlist_exposure,vmfl_recover_stashed_credentials,vmfl_recover_home_flag,vmfl_escalate_to_root flag
-  class aim_take_the_brief,aim_get_into_the_repo,aim_correlate_the_evidence,aim_confront_the_mole,aim_close_the_investigation critical
+  class aim_take_the_brief,aim_get_into_the_repo,aim_correlate_the_evidence,aim_confront_the_mole,aim_close_the_investigation,aim_andgate_confront_the_mole critical
   class aim_work_the_suspects aim
 
   classDef optional stroke-dasharray:5 2

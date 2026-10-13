@@ -9,19 +9,19 @@ Nine days ago four ENTROPY operations went live inside the same minute, and the 
 | Metric | Value |
 |---|---|
 | Story aims | 6 |
-| Total tasks | 15 (2 optional) |
+| Total tasks | 15 (1 optional) |
 | VM flag challenges | 4 |
 | Physical locks | 6 |
-| AND-gate convergences | 0 |
+| AND-gate convergences | 1 |
 | Rooms | 9 |
 | Puzzle graph nodes / edges | 50 / 62 |
-| Story graph nodes / edges | 6 / 5 |
+| Story graph nodes / edges | 7 / 7 |
 
 ## Critical Path
 
-4 hops through story aims — minimum mandatory sequence to reach mission completion:
+5 hops through story aims — minimum mandatory sequence to reach mission completion:
 
-**Report In And Take The Brief → Get Into The Internal Repository → Correlate The Leak Timeline → Confront The Mole → Close The Investigation**
+**Report In And Take The Brief → Get Into The Internal Repository → Correlate The Leak Timeline → + → Confront The Mole → Close The Investigation**
 
 ## How to Read These Diagrams
 
@@ -224,14 +224,17 @@ flowchart TD
   aim_correlate_the_evidence{{"Correlate The Leak Timeline"}}
   aim_confront_the_mole{{"Confront The Mole"}}
   aim_close_the_investigation{{"Close The Investigation"}}
+  aim_andgate_confront_the_mole((" + "))
 
   aim_take_the_brief -.-> aim_work_the_suspects
   aim_take_the_brief -.-> aim_get_into_the_repo
   aim_get_into_the_repo -.-> aim_correlate_the_evidence
-  aim_correlate_the_evidence -.-> aim_confront_the_mole
+  aim_work_the_suspects --> aim_andgate_confront_the_mole
+  aim_correlate_the_evidence --> aim_andgate_confront_the_mole
+  aim_andgate_confront_the_mole --> aim_confront_the_mole
   aim_confront_the_mole -.-> aim_close_the_investigation
 
-  class aim_take_the_brief,aim_get_into_the_repo,aim_correlate_the_evidence,aim_confront_the_mole,aim_close_the_investigation critical
+  class aim_take_the_brief,aim_get_into_the_repo,aim_correlate_the_evidence,aim_confront_the_mole,aim_close_the_investigation,aim_andgate_confront_the_mole critical
   class aim_work_the_suspects aim
 ```
 
@@ -316,6 +319,7 @@ flowchart TD
   aim_correlate_the_evidence{{"Correlate The Leak Timeline"}}
   aim_confront_the_mole{{"Confront The Mole"}}
   aim_close_the_investigation{{"Close The Investigation"}}
+  aim_andgate_confront_the_mole((" + "))
 
   door_server_room --> server_room
   door_security_archives --> security_archives
@@ -382,7 +386,9 @@ flowchart TD
   aim_take_the_brief -.-> aim_work_the_suspects
   aim_take_the_brief -.-> aim_get_into_the_repo
   aim_get_into_the_repo -.-> aim_correlate_the_evidence
-  aim_correlate_the_evidence -.-> aim_confront_the_mole
+  aim_work_the_suspects --> aim_andgate_confront_the_mole
+  aim_correlate_the_evidence --> aim_andgate_confront_the_mole
+  aim_andgate_confront_the_mole --> aim_confront_the_mole
   aim_confront_the_mole -.-> aim_close_the_investigation
   vmfl_recover_gitlist_exposure -.-> aim_get_into_the_repo
   vmfl_recover_stashed_credentials -.-> aim_get_into_the_repo
@@ -396,7 +402,7 @@ flowchart TD
   class action_clone_the_director_card,action_read_the_door_audit_to_the_director action
   class gitlist_repository_server,vmch_recover_gitlist_exposure,vmch_recover_stashed_credentials,vmch_recover_home_flag,vmch_escalate_to_root vm
   class vmfl_recover_gitlist_exposure,vmfl_recover_stashed_credentials,vmfl_recover_home_flag,vmfl_escalate_to_root flag
-  class aim_take_the_brief,aim_get_into_the_repo,aim_correlate_the_evidence,aim_confront_the_mole,aim_close_the_investigation critical
+  class aim_take_the_brief,aim_get_into_the_repo,aim_correlate_the_evidence,aim_confront_the_mole,aim_close_the_investigation,aim_andgate_confront_the_mole critical
   class aim_work_the_suspects aim
 
   classDef optional stroke-dasharray:5 2

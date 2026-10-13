@@ -27,6 +27,9 @@ VAR found_badge_audit = false
 VAR nightshade_audit_confirmed = false
 VAR asked_audit = false
 VAR gave_locker_key = false
+// PASS 5 (B1): mole_identified can now come from the door audit before the
+// box, so the root-logs topic also needs flag 4 (found_access_logs).
+VAR found_access_logs = false
 
 === start ===
 { nightshade_interviewed:
@@ -69,7 +72,7 @@ Agent 0x47 'Nightshade': Of everyone in this building, they picked the one perso
     Agent 0x47 'Nightshade': Don't rule anyone out because they wrote the list. #set_global:nightshade_suspected:true
     Narrator: He holds your eye a moment longer than a colleague would.
     -> hub
-+ { mole_identified and not asked_logs } [The root logs have your account on the Portland plan. Forty-seven minutes.]
++ { mole_identified and found_access_logs and not asked_logs } [The root logs have your account on the Portland plan. Forty-seven minutes.]
     ~ asked_logs = true
     ~ nightshade_suspected = true
     Agent 0x47 'Nightshade': Then you have root on our own repository. I'm genuinely impressed. Nobody's touched that box in years.
@@ -94,6 +97,7 @@ Agent 0x47 'Nightshade': Of everyone in this building, they picked the one perso
 + { (asked_audit or asked_training) and not gave_locker_key } [Your locker in the break room. I want to see inside it.]
     ~ gave_locker_key = true
     #give_item:key:nightshade_locker_key
+    Narrator: He holds it out, and keeps hold of it a second longer than he needs to.
     Agent 0x47 'Nightshade': Take it. 0x47, second from the end. I'd genuinely encourage it.
     -> hub
 + { not mole_identified } [I think it's you, Nightshade.] -> accuse

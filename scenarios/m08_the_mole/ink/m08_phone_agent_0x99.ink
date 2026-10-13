@@ -39,6 +39,16 @@ VAR netherton_card_cloned = false
 VAR cipher_seen = false
 VAR phantom_seen = false
 VAR nightshade_seen = false
+// PASS 5 (alignment B1): the naming hint ladder. Synced scenario globals; the
+// ladder checks whether each step of the door-audit reading is done, never how.
+VAR found_timeline = false
+VAR found_access_logs_hint = false
+VAR cipher_audit_confirmed = false
+VAR nightshade_audit_confirmed = false
+VAR cipher_ko = false
+VAR nightshade_ko = false
+VAR audit_misread = false
+VAR audit_closed = false
 
 // PASS 3 (impl review m5): start prints nothing after the first call, as in
 // m07, so a reopen or a reload's preload adds no "Go ahead." message (E10).
@@ -81,7 +91,7 @@ So I'm going to be very professional tonight. Bear with me.
     Get into the account and let's find out whose it is.
     -> hub
 + { found_architect_comms and not found_access_logs } [The mail's real. How do I make it stick?]
-    You need root. A user shell shows you the mailbox. Root shows you the logs, and logs put a body in a chair.
+    You need root. A user shell shows you the mailbox. Root shows you the logs, and logs put an account at a terminal.
     There's a sudo rule on that box begging to be abused. Take it.
     -> hub
 // PASS 3 (P4, R2-m3, R3-m12): the suite is a keypad. Before flag 4 HaX
@@ -99,6 +109,26 @@ So I'm going to be very professional tonight. Bear with me.
 + { not found_badge_audit } [Where would the door logs be?]
     Security Archives, south of the ops floor. Facilities set the passphrase, and facilities write things down. Kettle.
     The lab's got one door. Whatever that door saw, it saw everyone.
+    -> hub
+// PASS 5 (B1): progress-gated ladder for the naming. Each tier is the first
+// step not yet done: the audit, a clock, a confirmed row, then the reading.
++ { not mole_identified and not audit_closed } [What does the Director need from me?]
+    {
+    - not found_badge_audit:
+        A name he can stand behind, and you haven't got one yet. Doors before faces. The archives keep the door audits.
+    - not (found_timeline or found_access_logs_hint or found_access_logs):
+        You've got the door. Now you need the clock: when was the plan opened? Somebody in this building wrote it down.
+    - not (cipher_audit_confirmed or nightshade_audit_confirmed or (cipher_ko and nightshade_ko)):
+        Door and clock. He'll want someone on that audit to stand behind their own row. Ask the men who badge through the lab door.
+    - audit_misread:
+        He's said no once. Before you go back, put every row against the minute the plan opened. Who was still inside?
+    - else:
+        Door, clock, a confirmed row. Take it to him. Read the door against the minute, not the man.
+    }
+    -> hub
++ { audit_closed and not mole_identified } [The Director's taken the audit off me.]
+    He has. He'll put the name to it himself once the box gives him the account. Get root.
+    And he's asking questions on the floor now, so don't expect anyone to stay surprised.
     -> hub
 + { mole_identified and not all_flags_submitted } [Why isn't he in the interrogation room yet?]
     The Director wants all four flags through the relay first. Give Nightshade half a case and he'll take it apart.

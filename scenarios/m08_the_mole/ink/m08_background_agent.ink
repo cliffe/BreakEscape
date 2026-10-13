@@ -35,7 +35,8 @@ Off-Duty Agent: I'm sitting where I can see the door. You should too.
     { mole_identified:
         Off-Duty Agent: Only that the Director's had the interrogation suite cleared. Nobody's said for who. Nobody needs to.
     - else:
-        Off-Duty Agent: Phantom's stopped being charming. Nightshade's the same as ever.
+        Off-Duty Agent: Phantom's stopped being charming. He was off the floor all that morning, two days before Portland, and nobody's said where.
+        Off-Duty Agent: Nightshade's the same as ever.
     }
     -> hub
 + [I'll leave you to it.]

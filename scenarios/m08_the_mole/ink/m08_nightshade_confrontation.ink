@@ -38,6 +38,9 @@ VAR accused_nightshade = false
 // PASS 4 (fixes 1, 11)
 VAR nightshade_print_lifted = false
 VAR asked_cracker = false
+// PASS 5 (M3, m6): a tipped-off mole tidied his locker; the triple agent's first payment.
+VAR nightshade_tidied = false
+VAR triple_agent_first_payment = false
 
 === start ===
 { fate_decided: -> after_choice }
@@ -63,14 +66,26 @@ Agent 0x47 'Nightshade': I could have scrubbed every trace years ago. You're won
     Agent 0x47 'Nightshade': The door log. I walked past that reader every morning for fifteen years and never once thought of it as a witness.
 }
 // PASS 4 (fix 10): its own block, so it plays alongside the door-log line.
-// The accusation is only on offer before flag 4, so this is always early.
-{ accused_nightshade:
-    Agent 0x47 'Nightshade': You said it to my face before you could prove it.
-    Agent 0x47 'Nightshade': I had the whole night to tidy up after that, and I didn't. Think about why.
+// The accusation is only on offer before he is named, so this is always early.
+// PASS 5 (M3): a tip-off now has a cost. If the locker was still untouched he
+// cleared it (nightshade_tidied); if the player had been in first, there was
+// nothing left to clear.
+{
+- accused_nightshade and nightshade_tidied:
+    Agent 0x47 'Nightshade': You said it to my face before you could prove it. So I tidied. The bag, the stick.
+    Agent 0x47 'Nightshade': Not well enough, it seems.
+- accused_nightshade:
+    Agent 0x47 'Nightshade': You said it to my face before you could prove it. By then you'd been through my locker, so there was nothing left to tidy.
+- nightshade_tidied:
+    Agent 0x47 'Nightshade': The Director went asking questions on my floor. I can count. So I tidied. Not well enough, it seems.
 }
 // PASS 4 (fix 1): the thumbprint lifted off the USB stick.
 { nightshade_print_lifted:
-    Agent 0x47 'Nightshade': And you printed the stick. Of course you did. I'd have told you nobody planted it, if you'd asked.
+    { nightshade_tidied:
+        Agent 0x47 'Nightshade': And you printed the stick. I wiped the file and forgot my own thumb. Fifteen years, and I forgot my thumb.
+    - else:
+        Agent 0x47 'Nightshade': And you printed the stick. Of course you did. I'd have told you nobody planted it, if you'd asked.
+    }
 }
 -> the_case
 
@@ -107,7 +122,7 @@ Agent 0x47 'Nightshade': I could have scrubbed every trace years ago. You're won
     Agent 0x47 'Nightshade': He did. Every word I taught you was true. I just never said where I'd learned it.
     Agent 0x47 'Nightshade': If anyone ever used it on me, I wanted it to be you. Vanity, I know. It's the last one I've got.
     -> hub
-+ { found_go_bag and not asked_bag } [You had a flight to Montana the morning after Portland. Why are you still here?]
++ { found_go_bag and not nightshade_tidied and not asked_bag } [You had a flight to Montana the morning after Portland. Why are you still here?]
     ~ asked_bag = true
     Agent 0x47 'Nightshade': Because I wanted to see who they would send. I hoped it would be you.
     { asked_architect:
@@ -147,10 +162,11 @@ Agent 0x47 'Nightshade': So. What does SAFETYNET do with a man who thinks he was
     #complete_task:decide_the_fate
     ~ nightshade_triple_agent = true
     -> lock_in ->
+    ~ triple_agent_first_payment = true
     Narrator: A long pause.
     Agent 0x47 'Nightshade': You've grown a ruthless streak since I taught you. I approve, which should frighten you more than it does.
-    Agent 0x47 'Nightshade': I'll be your ghost inside their machine, for exactly as long as it suits me.
-    Agent 0x47 'Nightshade': Never forget I told you that part.
+    Agent 0x47 'Nightshade': First payment, then. Tomb Gamma's defences were chosen out of our own threat database. I know which entries. Ask me when you're standing at the door.
+    Agent 0x47 'Nightshade': I'll be your ghost inside their machine, for exactly as long as it suits me. Never forget I told you that part. #set_global:triple_agent_first_payment:true
     -> aftermath
 
 // PASS 2 playtest D1 found End Conversation ignoring disableClose; the engine

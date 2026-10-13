@@ -46,33 +46,46 @@ Agent 0x88 'Phantom': And yes, I put myself there too. Charmed?
     ~ phantom_influence += 1
     # influence_increased
     -> hub
+// PASS 5 (alignment M1): he no longer clears himself on the first question.
+// The door audit's TRAVEL DESK row clears him (the audit beat below).
 + { not asked_alibi } [Where were you in the leak window?]
     ~ asked_alibi = true
-    ~ phantom_alibi_known = true
-    Agent 0x88 'Phantom': Airborne. Zurich handover, forty passengers and a flight manifest with my name on it.
-    Agent 0x88 'Phantom': The one alibi in this building nobody can fake. Check it. I'll wait.
-    Agent 0x88 'Phantom': Only time I've ever been glad of economy class. #set_global:phantom_alibi_known:true
+    Agent 0x88 'Phantom': Out of the building. Where is my business.
+    Agent 0x88 'Phantom': You want my morning, find something that logged it. I'm not making your job easy just because I'd like to be off your list.
     -> hub
 + { not asked_list } [Who's on your list?]
     ~ asked_list = true
     Agent 0x88 'Phantom': The other two on your list. I'm not putting a name to either until I've seen a door log.
-    Agent 0x88 'Phantom': There's no money trail. So it's belief. Ask yourself who in this building has stopped believing we can win.
+    Agent 0x88 'Phantom': There's no money trail. So it's belief, or it's fear. I haven't worked out which.
     ~ phantom_influence += 1
     # influence_increased
     -> hub
+// PASS 5 (M3): a wrong accusation costs his lead until the player apologises.
 + { found_phantom_lead and not asked_help } [I read your notes. The Crypto Lab terminal.]
+    { accused_phantom and not apologised:
+        Agent 0x88 'Phantom': You put it on me to my face. You don't get my notes as well.
+        Agent 0x88 'Phantom': Apologise, or work it out on your own.
+        -> hub
+    }
     ~ asked_help = true
     Narrator: He leans in, and all the charm goes out of his face.
     Agent 0x88 'Phantom': Then you're further than I got. Someone's been in mission_planning from a Crypto Lab terminal.
     Agent 0x88 'Phantom': Forty-seven minutes, on a file you'd read in five.
     Agent 0x88 'Phantom': I couldn't get root on the repo to prove whose account it was. You've got the Director's blessing. I've got a reprimand pending.
-    Agent 0x88 'Phantom': Get onto that box. The name's in the logs.
+    Agent 0x88 'Phantom': My door audit's still in the archive printer, if nobody's binned it. Doors tell you who was in the room. The box tells you when.
     ~ phantom_influence += 2
     # influence_increased
     -> hub
-+ { found_badge_audit and not asked_audit } [Your door audit was still in the archive printer.]
++ { found_badge_audit and not asked_audit } [Your audit was in the archive printer. Travel desk has you on the Zurich flight.]
     ~ asked_audit = true
-    Agent 0x88 'Phantom': So it printed. The duty officer walked me out before it finished. I never saw what it says, and I'd rather you didn't tell me. Tell the Director.
+    ~ phantom_alibi_known = true
+    Narrator: He sits back, and for once he doesn't smile.
+    Agent 0x88 'Phantom': So it printed. Wheels up 10:09, forty passengers and a manifest. I wanted to see whether you'd check or take my word.
+    Agent 0x88 'Phantom': The archive duty officer walked me out before it finished. I never saw the rest, and I'd rather you didn't tell me. Tell the Director. #set_global:phantom_alibi_known:true
+    -> hub
++ { accused_phantom and not mole_identified and not apologised } [I was wrong to put it on you. I'm sorry.]
+    ~ apologised = true
+    Agent 0x88 'Phantom': An apology before the evidence. Either you've found something, or you've got manners. I'll take either.
     -> hub
 + { accused_phantom and mole_identified and not apologised } [You were right. I was wrong to put it on you.]
     ~ apologised = true
@@ -88,12 +101,12 @@ Agent 0x88 'Phantom': And yes, I put myself there too. Charmed?
 ~ accused_phantom = true
 { phantom_alibi_known:
     Narrator: He laughs, without any warmth in it.
-    Agent 0x88 'Phantom': I was thirty thousand feet over France with forty witnesses, and you know it, because you're the type who checked.
+    Agent 0x88 'Phantom': I was thirty thousand feet over France with forty witnesses, and you know it, because you've read the travel desk.
     Agent 0x88 'Phantom': So either you're testing me or you're lazy, and I don't think you're lazy. Don't waste the night rattling the wrong man.
     ~ phantom_influence -= 1
     # influence_decreased
 - else:
-    Agent 0x88 'Phantom': Bold. On what? A flight manifest you haven't pulled, and a vibe?
+    Agent 0x88 'Phantom': Bold. On what? An empty morning on a roster, and a vibe?
     Agent 0x88 'Phantom': I've been hunting this leak longer than you've known it existed. Accuse me properly, or get out of my way and let one of us catch him.
     ~ phantom_influence -= 1
     # influence_decreased

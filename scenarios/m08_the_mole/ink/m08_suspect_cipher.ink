@@ -57,7 +57,16 @@ Agent 0x23 'Cipher': I've run the inference on myself and it's not flattering. A
     Agent 0x23 'Cipher': The library logs its own door. And the terminal auth for the leak window will show my account never touched the mission_planning share.
     Agent 0x23 'Cipher': Whoever opened that plan did it from a Crypto Lab terminal. My desk is on the ops floor. Do the geography. #set_global:cipher_alibi_known:true
     -> hub
+// PASS 5 (alignment M3): a wrong accusation costs his confirmation of his own
+// row (the Director's step-4 check) until the player apologises. Nightshade
+// can still confirm his, so nothing soft-locks.
 + { found_badge_audit and asked_alibi and not asked_audit } [The door audit has you in the Crypto Lab that morning. You left that out.]
+    { accused_cipher and not apologised:
+        Narrator: His jaw sets.
+        Agent 0x23 'Cipher': You've already decided I did it. I'm not handing you another row to hang me with.
+        Agent 0x23 'Cipher': Apologise, or read it without me.
+        -> hub
+    }
     ~ asked_audit = true
     ~ cipher_alibi_known = true
     ~ cipher_audit_confirmed = true
@@ -84,6 +93,14 @@ Agent 0x23 'Cipher': I've run the inference on myself and it's not flattering. A
     ~ asked_handle = true
     Narrator: His jaw sets.
     Agent 0x23 'Cipher': I had it first. Eleven years first. Then one of theirs turned up wearing it, and I'd love to know who told them it was mine.
+    -> hub
+// PASS 5 (M3): the apology is open before the evidence too, because the
+// accusation now costs his row.
++ { accused_cipher and not mole_identified and not apologised } [I was wrong to say that. I'm sorry.]
+    ~ apologised = true
+    Narrator: He looks at you for a long second, as if checking the sum.
+    Agent 0x23 'Cipher': Before you've proved anything either way. That's either decent or tactical.
+    Agent 0x23 'Cipher': I'll take it. People don't usually come back at all.
     -> hub
 + { accused_cipher and mole_identified and not apologised } [The logs cleared you. I was wrong to say it.]
     ~ apologised = true

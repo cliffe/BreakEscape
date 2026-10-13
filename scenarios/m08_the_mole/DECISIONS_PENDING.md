@@ -19,3 +19,15 @@ May HaX hedge-recognise "Let it hurt afterwards, not during" in m08 ("Same class
 
 ## E1. Required-task key wording (engine, from regression run 1)
 `objectives-panel.js` marks required tasks with `*` only in aims that have a visible optional task (by design), but the panel's key reads as if every unmarked task is optional. Recommendation: show the key only beside aims that use the marker, or word it "* required (in aims with optional tasks)". Backlogged; not blocking.
+
+## U1 addendum (alignment fix round 1, 2026-10-14)
+Option B makes the door audit, not the box, name the mole. That holds only if the VM itself doesn't show a person's name. The evidence wall (shown after he is named) still says the committed credentials "resolve to nightshade_ops". If the VM's account or home directory is literally named after Nightshade, a player reads the answer off the box and the audit becomes a formality. Needs checking against SecGen by the user. Recommendation: if it is, either rename the account on the VM to something neutral (a service login), which turns Option B into Option A, or accept it and treat the audit as corroboration.
+
+## E2. PIN keypad title (engine, from regression finding 12)
+`minigame-starters.js:531` titles every PIN keypad `Enter PIN for ${type}`, so the Director's safe reads "Enter PIN for item". No scenario field overrides it. Recommendation: use the lockable's `name` when it has one ("Enter PIN: Director's Safe"). Small, shared; not blocking.
+
+## E3. Dusting panel long text (engine, from regression finding 10)
+`.dusting-quote` (`css/dusting.css:64`) has no `overflow-wrap`, so any unbroken string runs off the panel. m08 now wraps its ciphertext at 64 characters, which fixes it here. Recommendation: add `overflow-wrap: anywhere` to the class for other missions. Not blocking.
+
+## E4. No `nameVariants` for items (engine, noted while doing M3)
+`textVariants` and `observationVariants` resolve on any object (`utils/conditional-text.js`), but item names don't. After a tip-off the go-bag still lists as "Go-Bag -- Locker 0x47" while its text says the shelf is empty. Recommendation: none needed for m08 (the text carries it); backlog if other missions want it.

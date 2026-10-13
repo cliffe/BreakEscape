@@ -31,10 +31,14 @@ VAR found_nightshade_profile = false
 VAR named_on_evidence = false
 VAR audit_misread = false
 VAR audit_closed = false
+// PASS 5 (B1, M5): how the name was reached, and the teacher's line.
+VAR named_before_box = false
+VAR named_by_hax = false
+VAR asked_line = false
 
 === start ===
 #set_global:debrief_played:true
-Narrator: Netherton is waiting in the corridor outside the interrogation suite, empty-handed. He looks older than he did at the briefing a few hours ago.
+Narrator: Netherton finds you, empty-handed. He looks older than he did at the briefing a few hours ago.
 { netherton_ko:
     Director Magnus Netherton: Before anything else. My jaw is fine, thank you for asking. We will not be discussing it.
 }
@@ -68,7 +72,11 @@ Director Magnus Netherton: Say it, Agent. Whatever you think of me tonight. I wo
     Director Magnus Netherton: It is in the file now, and it will follow {accused_cipher and accused_phantom:them|him} longer than it follows you.
 }
 { named_on_evidence:
-    Director Magnus Netherton: You named him to me before the box did, on something I could put in front of a lawyer. You read the clock, not the face.
+    { named_before_box:
+        Director Magnus Netherton: You named him to me before the box did, on something I could put in front of a lawyer. You read the clock, not the face.
+    - else:
+        Director Magnus Netherton: The box gave me a login. You gave me the man at the keyboard, off a door log. You read the clock, not the face.
+    }
     { audit_misread:
         Director Magnus Netherton: Not on the first reading. I noticed. So would a lawyer.
     }
@@ -77,8 +85,11 @@ Director Magnus Netherton: Say it, Agent. Whatever you think of me tonight. I wo
 // line replaces the later tiers rather than stacking on them, and "the box made
 // the case" is never said twice.
 {
+- named_by_hax:
+    Director Magnus Netherton: HaX read the door audit against the box while I was on my office floor. The name reached me secondhand.
+    Director Magnus Netherton: Next time, bring the reading to me yourself.
 - audit_closed:
-    Director Magnus Netherton: You read me that door log three ways. The box made the case in the end.
+    Director Magnus Netherton: You read me that door log three ways. In the end I read it myself.
     Director Magnus Netherton: Next time, read it once, and read it right.
 - suspect_theory == "cipher" || suspect_theory == "phantom":
     Director Magnus Netherton: Your first name for me was the wrong one. You came back and corrected it, which is worth more than being right first.
@@ -103,7 +114,14 @@ Director Magnus Netherton: Say it, Agent. Whatever you think of me tonight. I wo
         Director Magnus Netherton: That is how the innocent walk out of a mole hunt with their careers intact.
     }
 }
--> disposition
+-> the_box
+
+// PASS 5 (alignment M4): the VM chain, from what HaX said at each flag. A
+// single player line on every path; it also breaks the debrief's long run.
+=== the_box ===
++ [Our own code server let me in without a password, sir.]
+    Director Magnus Netherton: And kept credentials in its history for anyone patient enough to read it. That goes in my report too.
+    -> disposition
 
 === disposition ===
 { nightshade_triple_agent:
@@ -119,7 +137,11 @@ Director Magnus Netherton: Say it, Agent. Whatever you think of me tonight. I wo
         Director Magnus Netherton: And no deal. He goes to the police with every page of the case file, and a court hears what he did.
         Director Magnus Netherton: We have no claim on him after that, and we will not pretend to one.
     }
-    Director Magnus Netherton: It buys us not one scrap of intelligence, and I do not care. Some lines you hold because they are the line.
+    { tomb_gamma_location_known:
+        Director Magnus Netherton: Beyond what he gave freely tonight, it buys us nothing, and I do not care. Some lines you hold because they are the line.
+    - else:
+        Director Magnus Netherton: It buys us not one scrap of intelligence, and I do not care. Some lines you hold because they are the line.
+    }
 }
 -> hub
 
@@ -135,6 +157,13 @@ Director Magnus Netherton: Say it, Agent. Whatever you think of me tonight. I wo
     Director Magnus Netherton: As bad as it gets. Every weakness we have ever catalogued is now theirs.
     Director Magnus Netherton: Portland, Austin, all of it was theatre, to cover the one door Nightshade left open.
     Director Magnus Netherton: Nine days ago we handed the enemy the map to every battle still coming.
+    -> hub
+// PASS 5 (alignment M5, U4): a hedge, never a name. The M9 reveal stays intact.
++ { not nightshade_ko_before_fate and not asked_line } [He used HaX's line. "Let it hurt afterwards, not during."]
+    ~ asked_line = true
+    Narrator: He is quiet for a moment.
+    Director Magnus Netherton: Then whoever taught her taught him. There are not many people left who could have done both, and I do not like any of the names.
+    Director Magnus Netherton: We will not say one aloud until we can prove it.
     -> hub
 + { not asked_next } [Then what now.] -> the_next
 + [Nothing more, sir.] -> close

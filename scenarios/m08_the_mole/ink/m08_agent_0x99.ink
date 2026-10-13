@@ -12,6 +12,8 @@ VAR found_go_bag = false
 VAR asked_bag = false
 // PASS 3 (impl review m9): synced global, so the intro doesn't replay after a reload.
 VAR hax_person_met = false
+// PASS 5 (M3): the go-bag is gone if he was tipped off before the locker was opened.
+VAR nightshade_tidied = false
 
 === start ===
 { hax_person_met: -> return_visit }
@@ -40,7 +42,7 @@ Agent HaX: Still here. The coffee's still cold.
         Agent HaX: Get me evidence. Let the box say it.
     }
     -> hub
-+ { found_go_bag and not asked_bag } [Nightshade had a bag packed.]
++ { found_go_bag and not nightshade_tidied and not asked_bag } [Nightshade had a bag packed.]
     ~ asked_bag = true
     Agent HaX: Of course he did. Yours has picks in it. His had a passport.
     Agent HaX: And he's still here. Either he's very sure of himself or he's waiting for someone. I don't like either.
@@ -50,10 +52,17 @@ Agent HaX: Still here. The coffee's still cold.
     Agent HaX: Nightshade. Of course it's Nightshade.
     Agent HaX: Go and do the job, 0x00. I'll sit here and un-know a friend. I'll manage.
     -> hub
+// PASS 5 (alignment M2): before he is named, nothing here points at one
+// suspect (only Nightshade has fifteen years' service).
 + { not fate_decided } [Any advice for the room?]
-    Agent HaX: Yeah. When you're across that table, he'll explain. They always explain.
-    Agent HaX: Don't argue the philosophy. He's had fifteen years to polish it, and you'll lose.
-    Agent HaX: Hold the two dead agents up and make him look at them. That's the one thing in the room he can't out-talk.
+    { mole_identified:
+        Agent HaX: Yeah. When you're across that table, he'll explain. They always explain.
+        Agent HaX: Don't argue the philosophy. He's had fifteen years to polish it, and you'll lose.
+    - else:
+        Agent HaX: Yeah. Whoever's across that table will explain. They always explain.
+        Agent HaX: Don't argue the philosophy. They've had years to polish it, and you'll lose.
+    }
+    Agent HaX: Hold the two dead agents up and make them look. That's the one thing in the room nobody can out-talk.
     -> hub
 + [Netherton send you down here?]
     Narrator: A small, worn smile.
