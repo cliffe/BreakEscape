@@ -486,6 +486,12 @@ Agent, status check. Are you inside the facility?
 -> first_call_choices
 
 === first_call_choices ===
+// Post-close fix (m05 pattern, m05_phone_agent_0x99.ink first_call_choices): a
+// first call closed unanswered reopens here, and its once-only answers kept the
+// hub (and "Bring me in") out of reach. On a reopen (second visit or later) once
+// the player is past the gate, or any later step, go to the hub. A first arrival
+// inside still gets the inside answers.
+{first_call_choices > 1 and (guard_admitted or security_guard_ko or checkpoint_passed or vance_met or vance_provided_keycard or level1_card_held or anomaly_detected or server_room_reached or attack_mechanism_known or plant_room_entered or attack_prevented): -> support_hub}
 
 // Puzzle chains R4-1: the first open usually comes at the gate (HaX's "Gate
 // first" text), so the "inside" answers wait until the player is inside, and

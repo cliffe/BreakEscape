@@ -935,3 +935,22 @@ Skill `mission-room-lighting`; log and evidence in `LIGHTING_PLAN.md` and `build
 | 4 | 0 | 0 | 2 |
 
 Checks after every implement: validator, door alignment 8/8, route driver 27/27, `lighting-tour.sh --check` on :3001 (games 2249-2295). Engine proposals (not done): `fire` effect, hue-preserving `above` glows, a validator check for `||` in conditions (unsupported by `evaluateGlobalCondition`).
+
+### Post-close fix: first-call hub guard
+
+Orchestrator request: HaX's `first_call_choices` had no guard. A first call opened at the gate and closed unanswered reopens on that knot (the phone reopen rule), and its once-only answers kept the hub, and with it "Bring me in", out of reach until the player answered a stale status check.
+
+**Fix** (m05 pattern, `m05_phone_agent_0x99.ink` `first_call_choices`): a guard at the top of `first_call_choices` diverts to `support_hub` when the knot is being re-entered (`first_call_choices > 1`) and the player is past the gate or any later step: `guard_admitted`, `security_guard_ko`, `checkpoint_passed`, `vance_met`, `vance_provided_keycard`, `level1_card_held`, `anomaly_detected`, `server_room_reached`, `attack_mechanism_known`, `plant_room_entered`, `attack_prevented`. The visit-count test keeps the normal case: a player whose first open comes once inside still gets the inside answers and `first_call_objectives`. After a page reload the visit count resets, but `greeted` resets with it, so `start` routes the same way as before. No line changed, so there are no spoken-line changes.
+
+**Routes:**
+- New `r28_first_call_unanswered.json`: first call opened at the gate and left unanswered; the night is finished; reopening lands on the hub and reaches "Bring me in" (`mission_complete` true). Against the previous compiled ink it fails (pick not found: Bring me in; the stale inside answers offered; `mission_complete` false), so it proves the bug.
+- New `r29_first_call_opened_inside.json` (control): first open inside, and the inside answers and objectives still play.
+- 29 of 29 routes: all expectations met.
+
+**Checks (static; no browser session):**
+- Ink compiles (0 failed).
+- tagdiff against HEAD: HaX phone 2 differences (the guard condition and its divert); every other file unchanged.
+- dialoguelint: 0 errors, 0 warnings, plus the 2 withdrawn blank-reentry checks.
+- reopencheck: 0 problems (HaX phone: 1800 reopens, 1307 re-runs).
+- loopcheck on the phone (`start`; inside; `first_call_choices` after the shutdown): clean.
+- Validator with ink: schema passed, all ink valid. It now shows 16 issues, up from 12. The 4 new ones are "person-chat cutscene has no background" on the sighting and entry mappings, from 84bbc1a7 (generic background pins removed for the POV backgrounds), not from this fix.
