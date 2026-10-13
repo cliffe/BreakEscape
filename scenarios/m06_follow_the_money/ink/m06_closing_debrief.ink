@@ -44,6 +44,7 @@ VAR minder_ko = false        // A5
 VAR minder_passed = false    // A5
 VAR irina_taken = false      // A4: collected by the police while the player was still inside
 VAR minder_hostile = false   // Round 2 (R2-m8)
+VAR console_tripped = false // Puzzle chains R2 (M-R2-2): a console lockout before the fund
 VAR signing_record_found = false // Puzzle chains D2: Satoshi's signing case opened on his own print
 VAR minder_challenged = false // Round 2 (R2-m7)
 VAR fca_picks = 0
@@ -111,8 +112,11 @@ Agent HaX: Depends what you did with the wallet.
 // ================================================
 
 === architects_fund_discussion ===
-{irina_confirmed_slot:
+{
+- irina_confirmed_slot:
     Agent HaX: You traced the fund, and Volkova confirmed the slot. That's how we know she meant it.
+- console_tripped:
+    Agent HaX: You found the fund by working the console until it gave. It logged every slot you tried, so ENTROPY will know exactly where we looked.
 - else:
     Agent HaX: You traced the fund yourself. In through the mixer, out by amount and time.
 }
@@ -332,7 +336,7 @@ Agent HaX: The Crypto Anarchists have lost their best cryptographer. Replacing h
 
 === cover_and_staff ===
 {cover_strained:
-    Agent HaX: Your cover didn't last the night. Somebody on that floor rang the FCA, and the FCA had never heard of you.
+    Agent HaX: Your cover didn't last the night. Somebody at HashChain rang the FCA, and the FCA had never heard of you.
     Agent HaX: It didn't cost us the job. It might cost us the next one. The FCA will want a word with us.
 - else:
     Agent HaX: And the cover held on the floor. Only Satoshi thought to check, and by then you were at his desk.

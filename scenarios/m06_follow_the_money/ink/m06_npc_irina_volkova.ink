@@ -71,7 +71,7 @@ VAR irina_exec_badge_given = false // set by the pickup mappings (lesson 26)
 VAR read_irina_notes = false       // onPickup of her research notes (P10)
 VAR architect_identity_found = false // safe opened (PASS 4 fix 3)
 VAR read_settlement_log = false      // settlement log picked up (round 2, M3)
-VAR slot_checked_visit = false // Pass 5 puzzle chains (M1, D1): one slot check per visit; cleared in start
+VAR slot_checked_visit = false // Synced scenario global (puzzle chains M1 / R2 M-R2-1): one slot check per visit to the console; HaX's room_entered:data_center mapping clears it, so a reload doesn't
 VAR cover_strained = false   // Pass 5 A3: synced; the floor has a reason to ring the FCA
 VAR given_time = false
 VAR asked_passwords = false   // playtest D1: the second ask always succeeds
@@ -87,7 +87,6 @@ VAR hub_quiet = false
 
 === start ===
 #speaker:irina_volkova
-~ slot_checked_visit = false
 {irina_fate_decided:
     -> after_choice
 }
@@ -552,6 +551,7 @@ Dr. Irina Volkova: Which one?
     -> slot_wrong
 + [6120.]
     ~ slot_checked_visit = true
+    #set_variable:slot_checked_visit=true
     Dr. Irina Volkova: I told you. That's the one he shows auditors.
     -> after_choice
 + [8846.]
@@ -562,6 +562,7 @@ Dr. Irina Volkova: Which one?
 === slot_wrong ===
 #speaker:irina_volkova
 ~ slot_checked_visit = true
+#set_variable:slot_checked_visit=true
 Dr. Irina Volkova: No. Take my cut off each deposit, then check the times against my hold.
 Dr. Irina Volkova: Work it through before you ask me again.
 -> after_choice
@@ -569,6 +570,7 @@ Dr. Irina Volkova: Work it through before you ask me again.
 === slot_right ===
 #speaker:irina_volkova
 ~ slot_checked_visit = true
+#set_variable:slot_checked_visit=true
 #set_variable:irina_confirmed_slot=true
 Dr. Irina Volkova: Yes. Every deposit I cleared ended up there.
 -> after_choice
@@ -590,8 +592,9 @@ Dr. Irina Volkova: Yes. Every deposit I cleared ended up there.
 }
 + {found_architects_fund and not irina_exec_badge_given and TURNS() > exec_badge_turn} [Satoshi's wing. You've a badge for it.]
     -> exec_badge_handover
-// Pass 5 puzzle chains (M1, D1): one check per visit, so she confirms the
-// player's reasoning rather than doing it for them.
+// Pass 5 puzzle chains (M1, D1; R2 M-R2-1): one check per visit to the
+// console, so she confirms the player's reasoning rather than doing it for
+// them. The latch is synced and clears on entering the data centre.
 + {irina_recruited and not found_architects_fund and read_settlement_log and not slot_checked_visit} [I've read the settlement log. Check a slot for me.]
     -> slot_check
 // Pass 5 puzzle chains (M2): turned or detained before she handed over the

@@ -41,7 +41,7 @@
 {"set":{"door_open_satoshi_office":true}},
 {"room":"satoshi_office"},
 {"talk":"satoshi","picks":["You're funding ENTROPY","You're paying for people to die","You worked out how many","You're a criminal","I'm leaving it running","The map's worth more","No. Your ideology"]},
-{"said":["Somebody on my floor rang the FCA","heard Kemal hit the floor","Irina in handcuffs"]},
+{"said":["Somebody here rang the FCA tonight","heard Kemal hit the floor","Irina in handcuffs"]},
 {"notSaid":["Your paperwork was good"]},
 {"expect":{"monitoring_enabled":true,"ready_to_extract":true}},
 {"talk":"phone","picks":["Bring me in","Bring me in","On my way"]},

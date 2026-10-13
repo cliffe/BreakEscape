@@ -106,6 +106,7 @@ for (const step of route.steps) {
     if (step.room === 'trading_floor') { G.guard_resolved = true; G.rfid_guide_offered = true; }
     if (step.room === 'security_checkpoint') G.lockpick_guide_offered = true;
     if (step.room === 'server_room') G.server_room_entered = true;
+    if (step.room === 'data_center') { G.entered_data_center = true; if (G.irina_recruited && !G.found_architects_fund && G.slot_checked_visit) setG('slot_checked_visit', false, 'a new visit to the console'); }
     engine(); continue;
   }
   if (step.backstops) {
@@ -132,6 +133,7 @@ for (const step of route.steps) {
     // is a browser check, not modelled here).
     out('   {custody console: two wrong slots, pad locked}');
     if (G.entered_data_center && !G.found_architects_fund && !G.cover_strained) { setG('cover_strained', true, 'custody console lockout'); out("      [HaX text: That console logs every slot it opens. Somebody's phone just buzzed.]"); }
+    if (G.entered_data_center && !G.found_architects_fund) setG('console_tripped', true, 'custody console lockout (every one, R2)');
     engine(); continue;
   }
   if (step.ko) {

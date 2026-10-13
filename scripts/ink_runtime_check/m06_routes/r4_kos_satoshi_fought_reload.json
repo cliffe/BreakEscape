@@ -17,7 +17,7 @@
 {"room":"executive_wing"},
 {"room":"satoshi_office"},
 {"talk":"satoshi","picks":["I'm detaining you","Sit down"]},
-{"said":["Somebody on my floor rang the FCA","On what evidence"]},
+{"said":["Somebody here rang the FCA tonight","On what evidence"]},
 {"notSaid":["Kemal"]},
 {"ko":"satoshi_nakamoto"},
 {"talk":"phone","knot":"on_satoshi_ko","picks":["Leave it running"]},

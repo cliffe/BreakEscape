@@ -173,7 +173,8 @@ Everything after that is joining up the cells' money.
 + {flag1_submitted and not reacted_first_server and not flag3_submitted} [First server is cracked. What now?]
     ~ reacted_first_server = true
     -> on_first_server_cracked
-+ {found_password_lists and not reacted_password_lists and not flag1_submitted} [I've got Volkova's wordlist. What do I do with it?]
+// Puzzle chains R2 (m-R2-4): only while the server room door is still shut.
++ {found_password_lists and not reacted_password_lists and not flag1_submitted and not server_room_entered} [I've got Volkova's wordlist. What do I do with it?]
     ~ reacted_password_lists = true
     -> on_password_lists_found
 
@@ -266,7 +267,7 @@ Try the other way first.
 === recap ===
 #speaker:agent_0x99
 {cover_strained and not assets_decided:
-    Someone on that floor has a reason to ring the FCA about you now. Don't hang about.
+    Someone here has a reason to ring the FCA about you now. Don't hang about.
 }
 {not guard_resolved:
     You're FCA, on a routine visit. You want Dr Irina Volkova, the CTO, on the trading floor.
@@ -275,7 +276,7 @@ Try the other way first.
 {guard_resolved and not irina_badge_obtained and not irina_badge_cloned and not irina_ko and not irina_fate_decided:
     Volkova's office is west off the trading floor, on RFID. Your cloner reads her badge from across a desk.
 }
-{not found_password_lists:
+{not found_password_lists and not server_room_entered:
     {irina_ko:
         Volkova kept a wordlist of what people here pick. Ask and I'll send a copy.
     - else:

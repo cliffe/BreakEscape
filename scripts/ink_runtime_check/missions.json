@@ -909,6 +909,8 @@
       "minder_ko": false,
       "minder_challenged": false,
       "signing_record_found": false,
+      "console_tripped": false,
+      "slot_checked_visit": false,
       "server_room_entered": false
     },
     "npcs": [

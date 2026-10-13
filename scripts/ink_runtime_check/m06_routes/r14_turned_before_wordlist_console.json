@@ -25,7 +25,20 @@
 {"said":["Work it through before you ask me again"]},
 {"talk":"irina","picks":[]},
 {"notSaid":["Check a slot for me"]},
-{"note":"A new visit (the chat opens at start again): she will check one more slot."},
-{"talk":"irina","reload":true,"picks":["Check a slot for me","4471","Nothing. Carry on"]},
-{"expect":{"irina_confirmed_slot":true}}
+{"note":"R2 (M-R2-1): a page reload no longer resets the latch."},
+{"talk":"irina","reload":"page","picks":[]},
+{"notSaid":["Check a slot for me"]},
+{"note":"A real visit: back to the console, then to Irina again."},
+{"room":"server_room"},
+{"room":"data_center"},
+{"expect":{"slot_checked_visit":false}},
+{"room":"server_room"},
+{"room":"trading_floor"},
+{"talk":"irina","picks":["Check a slot for me","4471","Nothing. Carry on"]},
+{"expect":{"irina_confirmed_slot":true,"slot_checked_visit":true,"console_tripped":true}},
+{"note":"R2 (M-R2-2): the fund found after a lockout, but Volkova confirmed it, so her credit wins."},
+{"set":{"found_architects_fund":true}},
+{"credits":true},
+{"said":["CONFIRMED BY VOLKOVA"]},
+{"notSaid":["FOUND BY ELIMINATION","TRACED THROUGH THE MIXER"]}
 ]}

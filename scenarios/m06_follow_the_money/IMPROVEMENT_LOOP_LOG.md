@@ -408,3 +408,78 @@ Document text (not voiced): the press clipping's last line and observation, Priy
 - The browser checks above.
 - Round 2 should confirm M1–M3, m3–m5 and D2.
 - Room dressing: confirm the signing case's position (3,3) and that the clipping (now non-takeable) reads well on the wall.
+
+### Phase 2 puzzle chains, round 2
+
+Review: `PUZZLE_CHAINS_REVIEW_P5_R2.md` (Opus, read-only, static). It confirms round 1's fixes, apart from the two below. The browser check of round 1 was running at the same time; this round did not wait for it. Counts: 0 blockers, 2 majors, 6 minors, all fixed (m-R2-6 with one change).
+
+| # | Sev. | Finding | Outcome |
+|---|---|---|---|
+| M-R2-1 | major | Irina's "one check per visit" was one per page load. A reopen re-navigates to `after_choice` and never runs `start`, so the latch only cleared on a reload: a wrong check lost the option for good, and reloading reset the oracle | **Fixed** (orchestrator). `slot_checked_visit` is now a synced global, written with `#set_variable` beside each `~` in her ink, with its clear in `start` removed. A HaX mapping on `room_entered:data_center` (while she is turned and the fund isn't found; not onceOnly, cooldown 0) clears it, so each further check costs a trip back to the console, which makes "Work it through before you ask me again" true. r14 now shows the latch surviving a page reload, then clearing after a walk to the data centre. Ink comment and walkthrough 17a updated |
+| M-R2-2 | major | Once the cover was already strained, a console lockout cost nothing, and the deduction could be skipped again | **Fixed** (orchestrator). The strain stays once-only. A second mapping on the same event and condition, minus the cover clause, sets the new synced `console_tripped` on every lockout before the fund. Credits: "TRACED THROUGH THE MIXER" now needs `!console_tripped`; new "THE ARCHITECT'S FUND: $12.8M — FOUND BY ELIMINATION ON THE CONSOLE" for a tripped console without Volkova's confirmation (her confirmation still wins). Debrief: "You found the fund by working the console until it gave. It logged every slot you tried, so ENTROPY will know exactly where we looked." New route r16 |
+| m-R2-1 | minor | The signing record printed the fund's slot, which the early-KO route can reach before the console | **Fixed.** "Release: the Fund's cold slot (1ARCHITECT9FUND), …" |
+| m-R2-2 | minor | Nothing warned that a lockout costs anything | **Fixed.** The console's observation adds "It logs every opening to the exchange's on-call phone." |
+| m-R2-3 | minor | The strain's wording ("on that floor", "an hour ago") didn't fit a console lockout | **Fixed** (orchestrator: neutral wording for every cause). Satoshi: "Somebody here rang the FCA tonight. They've never heard of you."; recap: "Someone here has a reason to ring the FCA about you now."; debrief: "Somebody at HashChain rang the FCA…"; credit: "strained — somebody at HashChain rang the FCA" |
+| m-R2-4 | minor | A player who guessed the passphrase had a required wordlist task open all night, and HaX's three wordlist lines went stale | **Fixed** (orchestrator). `obtain_access_tools` is optional (the required step is `find_server_credentials`, which completes on entry). The pickup text skips on `server_room_entered`; the hub's "What do I do with it?" and the recap's "Get it from her" both need `not server_room_entered`. r16 checks both |
+| m-R2-5 | minor | The comments called dusting the clipping a stealth beat; nothing reacts to dusting | **Fixed (comments).** The clipping's and the case's comments now say "inside Kemal's hall, where his usual sight challenge applies; nothing reacts to the dusting itself". The round-1 D2 row above overstated this; this row corrects it. Browser check added: whether his sight challenge can open over a running dusting minigame |
+| m-R2-6 | minor | The new collect task had no `showProgress` | **Fixed, one change.** The review proposed `false`, but the validator checks for a truthy value. `true`, as the mission's other one-item collect tasks (`find_transaction_records`, `discover_architects_fund`) use |
+
+#### Decisions taken (with reasons)
+
+- **M-R2-1, a visit means a trip to the console** (orchestrator). The latch lives in a synced global because the engine doesn't re-run `start` on a reopen. The data centre is where the player gathers the evidence she checks against.
+- **M-R2-2, a score cost on every lockout, the strain once** (orchestrator). The cover strain is a story beat and shouldn't repeat. The credit and debrief line make brute force visible in the outcome without gating anything. Volkova's confirmation still wins the credit, because her check is the reasoning route.
+- **m-R2-3, neutral wording** (orchestrator). One wording now fits every cause (guard, staff KO, Irina, console).
+- **m-R2-4, the wordlist optional** (orchestrator). The door's own task carries the requirement, so a correct guess is never left with an open required task.
+- **m-R2-6, `showProgress: true`** (fixer). The validator's rule and the mission's own convention both point that way.
+
+#### Route driver
+
+`route.js`:
+- `{"room": "data_center"}` now clears `slot_checked_visit` (HaX's mapping);
+- `{"lockout": true}` sets `console_tripped` on every lockout before the fund.
+
+Updated routes:
+- r14: the latch survives a page reload, then clears on a real visit; Volkova's credit beats the elimination one;
+- r2, r3, r4: Satoshi's neutral strain line.
+
+New `r16_strained_lockout_elimination`:
+- the cover strained first (guard catch);
+- the door guessed, so the wordlist lines stay quiet;
+- two lockouts: no second strain text, `console_tripped` set;
+- the debrief and credits say "found by elimination", with neutral strain wording throughout.
+
+#### Checks (static; no browser session started)
+
+- Ink compiles (9 files).
+- Validator, full: all passes. 14 issues and suggestions (20 duplicate-pattern notes on HaX: the new `room_entered:data_center` and `minigame_failed` mappings share patterns with the existing ones and have disjoint or harmless conditions). The `showProgress` note is cleared, and there are no toast-stacking warnings.
+- `dialoguelint`: no findings.
+- `check_door_alignment.py`: all doors OK.
+- `tagdiff` against HEAD:
+  - phone: 4 (the wordlist gates);
+  - Irina: 4 (the `#set_variable` tags; the clear in `start` removed);
+  - debrief: 2 (`console_tripped`);
+  - Satoshi: structure unchanged.
+- inkcheck (Irina turned in the slot phase; debrief with `console_tripped`; phone recap with the door open) and loopcheck (Irina's `after_choice`): no errors.
+- `reopencheck` (m06 block: `console_tripped`, `slot_checked_visit` added): m06 HaX phone, 1800 reopens, 0 problems.
+- Routes r1–r16: all expectations met.
+
+Browser checks owed:
+- the console lockout's `minigame_failed` scoping, and that a cancel doesn't trip it (the review reads the cancel as carrying `result: null`);
+- whether Kemal's sight challenge can open over a running dusting minigame;
+- the dusting-and-case beat itself;
+- N1.
+
+#### Spoken lines changed (old → new)
+
+- Satoshi: "Somebody on my floor rang the FCA an hour ago. They've never heard of you." → "Somebody here rang the FCA tonight. They've never heard of you."
+- HaX recap: "Someone on that floor has a reason to ring the FCA about you now. Don't hang about." → "Someone here has a reason to ring the FCA about you now. Don't hang about."
+- Debrief: "Your cover didn't last the night. Somebody on that floor rang the FCA, and the FCA had never heard of you." → "Your cover didn't last the night. Somebody at HashChain rang the FCA, and the FCA had never heard of you."
+- Debrief, new: "You found the fund by working the console until it gave. It logged every slot you tried, so ENTROPY will know exactly where we looked."
+- HaX texts: the wordlist pickup text, same words, now skipped once the door is open.
+
+Not voiced: the console's observation, the signing record's release line, the credits.
+
+#### Open after round 2
+
+- The browser checks above.
+- Room dressing: the signing case's position (3,3) and the clipping on the wall.

@@ -60,7 +60,7 @@ VAR hub_quiet = false
     // Pass 5 A3: the cover pays off either way, and differently.
     {
     - cover_strained:
-        Satoshi Nakamoto II: Somebody on my floor rang the FCA an hour ago. They've never heard of you.
+        Satoshi Nakamoto II: Somebody here rang the FCA tonight. They've never heard of you.
     - else:
         Satoshi Nakamoto II: Your paperwork was good. I had you checked anyway. Old habit.
     }
