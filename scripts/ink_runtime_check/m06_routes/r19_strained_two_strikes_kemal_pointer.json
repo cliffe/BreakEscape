@@ -27,7 +27,7 @@
 {"room": "data_center"},
 {"room": "executive_wing"},
 {"talk": "minder", "knot": "on_sighted", "picks": ["Routine supervisory visit", "Back off"]},
-{"said": ["He won't take the FCA now. When he walks back to the data-centre end"]},
+{"said": ["He won't take the FCA now. Wait by the trophy cabinet, unseen. When he's at the data-centre end"]},
 {"talk": "minder", "knot": "on_sighted", "picks": ["Wrong floor"]},
 {"notSaid": ["He won't take the FCA now"]},
 {"maxRun": 9}

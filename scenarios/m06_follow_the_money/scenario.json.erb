@@ -1393,7 +1393,7 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
               "eventPattern": "conversation_closed:satoshi_minder",
               "condition": "globalVars.cover_strained === true && globalVars.minder_challenged === true && globalVars.minder_passed !== true && globalVars.minder_hostile !== true && globalVars.minder_ko !== true && globalVars.minder_walked !== true && globalVars.satoshi_confronted !== true",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 2500, "message": "He won't take the FCA now. When he walks back to the data-centre end, you've a few seconds at that door. Or show him what his boss is paying for." }
+              "sendTimedMessage": { "delay": 2500, "message": "He won't take the FCA now. Wait by the trophy cabinet, unseen. When he's at the data-centre end, you've seconds at that door. Or show him the casualty line." }
             },
             <%# Struggling run A (S1, S6): when a fight starts, say how to fight and that
                 there is a way out. %>
@@ -1401,7 +1401,7 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
               "eventPattern": "npc_hostile_state_changed",
               "condition": "data.npcId === 'satoshi_minder' && data.isHostile === true",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 1000, "message": "He's coming for you. Q for your fists, then E or click when he's in front of you. He's slow; step back between swings. Or back off." }
+              "sendTimedMessage": { "delay": 1000, "message": "He's coming for you. Q for fists, then E or click when he's in front. Step back between swings. Or back off: Q again stows them, then click to walk." }
             },
             {
               "eventPattern": "npc_hostile_state_changed",
@@ -2197,7 +2197,7 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
       },
       "npcs": [
         {
-          "_comment": "Pass 5 A5 / D1: Satoshi's minder, a Crypto Anarchists operative, between the player and the CEO. Stand-in sprite until the character stage; cast-look proposal C1 in DECISIONS_PENDING.md. Struggling run A (S1): his beat moved west, away from Satoshi's north door (tile x 8.5): he dwells 4 s at (6,4) facing east, where the door is about 125 px off and about 50 degrees from his facing (seen), then walks west and dwells 6 s at (3,4) facing the data-centre door, about 186 px from the door (out of his 150 px range). The walk west, the west dwell and the walk back are the window to pick the door, about 9-10 s a loop; the old beat dwelt right under the door and the struggling player never saw a window. Needs a browser check. Routes past him: the FCA line (cover held); Volkova's word (turned, on her feet); the casualty line (fund found; he unlocks the door and walks out, still at large); the pick in his window; or a fight (gentler since run A; the KO drops the key).",
+          "_comment": "Pass 5 A5 / D1: Satoshi's minder, a Crypto Anarchists operative, between the player and the CEO. Stand-in sprite until the character stage; cast-look proposal C1 in DECISIONS_PENDING.md. Struggling run A (S1): his beat moved west, away from Satoshi's north door (tile x 8.5): he dwells 4 s at (6,4) facing east, where the door is about 125 px off and about 50 degrees from his facing (seen), then walks west and dwells 6 s at (3,4) facing the data-centre door, about 186 px from the door (out of his 150 px range). The walk west, the west dwell and the walk back are the window to pick the door, about 8-9 s a loop (browser check, fix-check run: 8.2-8.8 s); the old beat dwelt right under the door and the struggling player never saw a window. A spot that stays unseen while waiting is about 15-20 px west of his east dwell, by the trophy cabinet (HaX's pointer names it). Routes past him: the FCA line (cover held); Volkova's word (turned, on her feet); the casualty line (fund found; he unlocks the door and walks out, still at large); the pick in his window; or a fight (gentler since run A; the KO drops the key).",
           "id": "satoshi_minder",
           "displayName": "Kemal Aydin",
           "npcType": "person",

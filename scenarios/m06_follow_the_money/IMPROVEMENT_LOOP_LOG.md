@@ -1142,3 +1142,25 @@ Debrief, new: "His minder read the casualty line and walked out of the building.
 - The casualty line: the door unlocks, he's hidden and re-hidden after a reload.
 - Satoshi's "Sit down. (Make him.)" beat.
 - Whether a hostile Kemal follows the player out of the wing (D8).
+
+### Pass 5, playtest wrap-up: struggling run A fix-check minors (N2, N3, N4)
+
+Source: `PASS5_STRUGGLE_A_FIXCHECK.md`. No blockers or majors in that check; these are its three mission-side minors. Wait spot taken from the check's measurement (about (494,-850), 15-20 px west of Kemal's east dwell) and matched to the room's art: the trophy cabinet at the east end of the wing's north wall. Landmark not re-checked in the browser; the pointer names the cabinet, the unseen position itself was measured.
+
+| # | Sev. | Finding | Outcome |
+| --- | --- | --- | --- |
+| N2 | minor | Fists mode swallows click-to-walk; "Or back off" doesn't say to press Q again | Fixed |
+| N3 | minor | Pick window measured 8.2-8.8 s, comment said 9-10 s | Fixed (comment) |
+| N4 | minor | The unseen waiting spot isn't findable by accident | Fixed (HaX names a landmark) |
+
+Changes (old to new):
+
+- Kemal hostile text (`scenario.json.erb`, `npc_hostile_state_changed`, satoshi_minder): "He's coming for you. Q for your fists, then E or click when he's in front of you. He's slow; step back between swings. Or back off." to "He's coming for you. Q for fists, then E or click when he's in front. Step back between swings. Or back off: Q again stows them, then click to walk." Trimmed ("He's slow" dropped) to stay under the 30-word dialoguelint cap.
+- Pick-window pointer (`scenario.json.erb`, `conversation_closed:satoshi_minder`): "He won't take the FCA now. When he walks back to the data-centre end, you've a few seconds at that door. Or show him what his boss is paying for." to "He won't take the FCA now. Wait by the trophy cabinet, unseen. When he's at the data-centre end, you've seconds at that door. Or show him the casualty line."
+- Same pointer in the phone ink (`m06_phone_agent_0x99.ink`, strained branch): "Or pick the door when he walks back to the data-centre end. Or show him the casualty line on the fund." to "Or pick the door when he walks back to the data-centre end. Wait by the trophy cabinet until then, out of his sight." then "Or show him the casualty line on the fund." on its own line (25-word cap).
+- Kemal NPC `_comment`: "about 9-10 s a loop ... Needs a browser check." to "about 8-9 s a loop (browser check, fix-check run: 8.2-8.8 s)" plus a note on the unseen waiting spot.
+- Routes: `r19` and `r30` quotes updated to the new pointer; `r32` quote updated to the new fight text.
+
+Checks: compile 9/9; all 32 m06 routes meet their expectations; dialoguelint 0 problems; reopencheck 0 problems; `validate_scenario.rb --skip-ink --no-graph` completes with no errors (warnings only, none new from this edit).
+
+Owed: a browser look that the trophy-cabinet spot reads as the place the check measured.

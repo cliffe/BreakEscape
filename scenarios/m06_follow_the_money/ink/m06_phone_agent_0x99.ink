@@ -353,7 +353,8 @@ Try the other way first.
             {irina_recruited and not irina_ko:
                 Volkova's word will get you past him.
             }
-            Or pick the door when he walks back to the data-centre end. Or show him the casualty line on the fund.
+            Or pick the door when he walks back to the data-centre end. Wait by the trophy cabinet until then, out of his sight.
+            Or show him the casualty line on the fund.
         - else:
             The FCA line should get him to open it. If it doesn't, pick it while his back's turned.
         }

@@ -14,7 +14,7 @@
 {"said":["Or show him the casualty line on the fund"],"notSaid":["Volkova's word will"]},
 {"room":"executive_wing"},
 {"talk":"minder","knot":"on_sighted","picks":["Routine supervisory visit","Back off"]},
-{"said":["When he walks back to the data-centre end, you've a few seconds at that door"],"notSaid":["Dr Volkova sent me up"]},
+{"said":["Wait by the trophy cabinet, unseen. When he's at the data-centre end, you've seconds at that door"],"notSaid":["Dr Volkova sent me up"]},
 {"talk":"minder","knot":"on_sighted","picks":["Routine supervisory visit","casualty line"]},
 {"said":["Never between them and a grave","The door is open. I am going home."]},
 {"expect":{"minder_walked":true,"door_open_satoshi_office":true,"minder_hostile":false}},
