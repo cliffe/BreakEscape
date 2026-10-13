@@ -301,3 +301,27 @@ Round-4 browser minors, deferred:
 O4, where a player standing still is permanently safe east of Cipher, is accepted. A player who waits at the door gets past him, and the Hall 2 door has its own challenge in Relay.
 
 Engine change for N4: 0b66f334 (sight challenges hold while the tutorial prompt is open).
+
+### Phase 2 puzzle chains, round 1
+
+Review: `PUZZLE_CHAINS_REVIEW_P5_R1.md` (Opus, static; 0 blockers, 2 majors, 5 minors). The orchestrator decided each finding; the fixer checked them against the files and applied them. The SecGen XML was not opened.
+
+| # | Sev. | Finding | Decision and reason | Outcome |
+|---|---|---|---|---|
+| F1 | major | The compare/identify step doesn't gate the plant door: any lift of Vance's print opens it (biometric-lock.js matches on the lift's owner, not `identified`) | **Accept** (orchestrator). The "fun, not hard" rule; the lift is still required, and identifying still earns the optional bypass-module evidence. No engine change | **No game change.** Checked every hint and text: none claims the identification opens the door (HaX's kit and print texts, `hint_reader`, Vance's lines all ask only for the lift). `TESTING_WALKTHROUGH.md` step 11 now says the compare is a forensic flourish, not a gate |
+| F2 | major | HaX's root text and the privesc reward description claim a temperature-rewriting "calibration override" that no in-game text supports | **Soften to what the game shows** (orchestrator): the SCADA Parameter Change Log's charge-ceiling override. The user will check the VM against SecGen later | **Fixed.** HaX's privesc text, the flag-reward description and the sudo guide line now name the charge-ceiling override (lines below). No other occurrence. Flag names unchanged, pending the user's SecGen check (still m17) |
+| F3 | minor | Over-redundancy: four evidence sources, three routes to the Level 1 card | **Keep** (orchestrator): they are softlock backstops, and each evidence document is a distinct in-world artefact | No change |
+| F4 | minor | The dial deduction is over-signposted: the digital rack panel says the dial is off-bus | **Tone down** (orchestrator), keeping one clear in-world clue | **Fixed.** The panel ends at "Feed source: BMS sensor bus."; the player makes the jump themselves. The clue kept is the SCADA HMI's "If that feed is lying, only a standalone instrument in the hall would show it." Noted, not changed: two automatic texts still name the dial (HaX's work-order text, Vance's 20 s text); the dialogue phase can judge whether they're too direct |
+| F5 | minor | 13 validator duplicate-mapping notes on `agent_0x99` | **As the review proposes** (orchestrator): leave as known. Most pairs are independent side effects, not mutually exclusive globals, so `mutuallyExclusiveGlobals` would misstate them | No change; known noise |
+| F6 | minor | Voltage's two resting knots have no re-entry line | **Dialogue phase** (orchestrator) | Deferred |
+| F7 | minor | Legacy sprites on four speaking characters | **Character stage** for the operatives (orchestrator); the briefing HaX now, user-approved | **Briefing HaX fixed:** `agent_hax` sheet, talk and viseme fields as m03's briefing HaX, plus the `agent_hax_headshot.png` avatar that m04's other two HaX NPCs use (m03's briefing NPC has no avatar field). The validator's two "legacy hacker sheet" and "hacker shared with the player" suggestions are gone. Cipher, Relay and Static stay deferred |
+
+#### Checks (static; no browser session)
+
+Ink compiles (10 files). Validator, full: schema passed, all ink valid, doors and geometry OK, 16 warnings, the same set as round 4; the two hacker-sheet items it no longer lists were suggestions, not warnings. dialoguelint: 0 errors, 5 blank-reentry checks. reopencheck: 0 problems. tagdiff against HEAD: structure unchanged (10 files). Door alignment OK. Routes: 13 of 13 pass.
+
+#### Spoken lines changed (old → new)
+
+- HaX, text: "Root. Now you can see their calibration override: that box rewrites every rack temperature before SCADA gets it. That's how sixty reads as twenty-eight." → "Root. Now you can see what they changed from that box: the charge-ceiling override on every bank. That's how they're pushing the racks past safe."
+- HaX, phone (sudo guide): "Sent. On the box, check what sudo lets you run. That's how the crew reached the calibration file." → "Sent. On the box, check what sudo lets you run. That's how the crew got at the charge settings."
+- Not spoken: the flag-reward description "Root on the jump server - the calibration override that fakes the thermals" → "Root on the jump server - where the charge-ceiling override was pushed from"; the digital rack panel loses "The mechanical dial on this same wall is not on the bus."

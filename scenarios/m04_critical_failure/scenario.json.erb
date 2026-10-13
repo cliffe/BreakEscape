@@ -519,8 +519,14 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
             "language": "en-GB"
           },
           "position": { "x": 500, "y": 500 },
-          "spriteSheet": "hacker",
-          "spriteConfig": { "idleFrameStart": 20, "idleFrameEnd": 23 },
+          <%# Phase 2 (user-approved): HaX's own sheet, not the player's hooded
+              "hacker" one. Sprite, talk and viseme fields as m03's briefing HaX
+              (m03 erb briefing_cutscene); the headshot as m04's other two HaX NPCs. %>
+          "spriteSheet": "agent_hax",
+          "spriteTalk": "assets/characters/agent_hax_talk.png",
+          "spriteVisemes": "assets/characters/agent_hax_visemes.png",
+          "avatar": "assets/characters/agent_hax_headshot.png",
+          "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 },
           "storyPath": "scenarios/m04_critical_failure/ink/m04_opening_briefing.json",
           "currentKnot": "start",
           "behavior": { "initiallyHidden": true },
@@ -961,7 +967,7 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
             {
               "eventPattern": "objective_task_completed:submit_privesc_flag",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 4000, "message": "Root. Now you can see their calibration override: that box rewrites every rack temperature before SCADA gets it. That's how sixty reads as twenty-eight.", "skipIfGlobal": "all_flags_in" }
+              "sendTimedMessage": { "delay": 4000, "message": "Root. Now you can see what they changed from that box: the charge-ceiling override on every bank. That's how they're pushing the racks past safe.", "skipIfGlobal": "all_flags_in" }
             },
             <%# PASS 3 P19: m02's exploit, m03's directive. %>
             <%# PASS 4 fix 20: the same message offers the ProFTPD guide. %>
@@ -1523,7 +1529,7 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
               "type": "set_global",
               "key": "flag_privesc_submitted",
               "value": true,
-              "description": "Root on the jump server - the calibration override that fakes the thermals"
+              "description": "Root on the jump server - where the charge-ceiling override was pushed from"
             },
             {
               "type": "set_global",
@@ -1797,7 +1803,7 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
           "readable": true,
           "observationDisplay": "gameDisplay",
           "observations": "Digital status panels on each rack. All showing green. Readings look normal.",
-          "text": "BATTERY RACK STATUS — HALL 1 (DIGITAL DISPLAY)\n\nRack C1: 28.0°C | SoC 72% | Status: NORMAL\nRack C2: 27.9°C | SoC 71% | Status: NORMAL\nRack C3: 28.1°C | SoC 73% | Status: NORMAL\n\nAll values within certified operating parameters.\nAll alarm setpoints: SATISFIED\n\nFeed source: BMS sensor bus. The mechanical dial on this same wall is not on the bus."
+          "text": "BATTERY RACK STATUS — HALL 1 (DIGITAL DISPLAY)\n\nRack C1: 28.0°C | SoC 72% | Status: NORMAL\nRack C2: 27.9°C | SoC 71% | Status: NORMAL\nRack C3: 28.1°C | SoC 73% | Status: NORMAL\n\nAll values within certified operating parameters.\nAll alarm setpoints: SATISFIED\n\nFeed source: BMS sensor bus."
         },
         {
           "type": "tablet",

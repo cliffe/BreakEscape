@@ -233,7 +233,7 @@ Sent. Old daemon, runs compile jobs for anyone who asks. That's your way onto th
 === request_privesc_guide ===
 ~ privesc_guide_hint_given = true
 #give_item:lab-workstation:safetynet_field_guide_privesc
-Sent. On the box, check what sudo lets you run. That's how the crew reached the calibration file.
+Sent. On the box, check what sudo lets you run. That's how the crew got at the charge settings.
 -> support_hub
 
 === request_proftpd_guide ===
