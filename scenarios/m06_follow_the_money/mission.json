@@ -1,6 +1,6 @@
 {
   "display_name": "Follow the Money",
-  "description": "Track cryptocurrency payments from previous ENTROPY operations to the Crypto Anarchists' HashChain Exchange. Infiltrate the exchange as a compliance auditor, access financial records, and map ENTROPY's funding network. Discover 'The Architect's Fund' and the financial infrastructure supporting all ENTROPY cells.",
+  "description": "Track cryptocurrency payments from previous ENTROPY operations to the Crypto Anarchists' HashChain Exchange. Infiltrate the exchange as a visiting FCA supervisor, access financial records, and map ENTROPY's funding network. Discover 'The Architect's Fund' and the financial infrastructure supporting all ENTROPY cells.",
   "difficulty_level": 2,
   "secgen_scenario": "m06_follow_the_money",
   "collection": "season_1",
@@ -48,7 +48,7 @@
     {
       "ka": "HF",
       "topic": "Human Factors",
-      "keywords": ["Undercover operations", "Compliance auditor cover", "Social engineering", "Recruitment tactics"]
+      "keywords": ["Undercover operations", "FCA supervisor cover", "Social engineering", "Recruitment tactics"]
     },
     {
       "ka": "CPS",

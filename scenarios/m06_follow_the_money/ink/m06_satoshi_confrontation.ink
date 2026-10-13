@@ -27,6 +27,9 @@ VAR assets_seized = false
 VAR monitoring_enabled = false
 VAR irina_ko = false
 VAR detain_announced = false
+VAR cover_strained = false  // Pass 5 A3: synced; the player's own actions gave the floor a reason to ring the FCA
+VAR minder_ko = false       // Pass 5 A5: synced; his minder was knocked out in the corridor
+VAR minder_passed = false   // Pass 5 A5: synced; the minder let the player in
 VAR assets_decided = false  // synced global: the re-entry guard survives a reload (review M3)
 // Final round (m03 pattern): set by every exit, so the resting knot's re-entry
 // line shows on a reopen and never in the same batch as a goodbye.
@@ -52,7 +55,19 @@ VAR hub_quiet = false
     #speaker:narrator
     Narrator: A man in his early forties leans against the front of an executive desk. The Bitcoin whitepaper is framed on the wall behind him, at exactly the height of his own head.
 
-    Satoshi Nakamoto II: You're not from the FCA. I had you investigated.
+    // Pass 5 A3: the cover pays off either way, and differently.
+    {
+    - cover_strained:
+        Satoshi Nakamoto II: Somebody on my floor rang the FCA an hour ago. They've never heard of you.
+    - else:
+        Satoshi Nakamoto II: Your paperwork was good. I had you checked anyway. Old habit.
+    }
+    {
+    - minder_ko:
+        Satoshi Nakamoto II: And I heard Kemal hit the floor. He's guarded money for thirty years. He'll be embarrassed.
+    - minder_passed:
+        Satoshi Nakamoto II: Kemal let you in, so you must have been convincing.
+    }
 
     Satoshi Nakamoto II: SAFETYNET, right? So you've worked out what this place is for.
 
@@ -68,7 +83,7 @@ VAR hub_quiet = false
         ~ shown_evidence = true
         -> ghost_name
 
-    + [You're under arrest. Laundering and terrorist financing.]
+    + [I'm detaining you. Laundering and terrorist financing.]
         -> arrest_attempt
 - not asset_choice_made:
     { not hub_quiet:
@@ -333,7 +348,7 @@ Satoshi Nakamoto II: You can't win. You can only choose how you lose.
 #complete_task:decide_asset_strategy
 
 {found_architects_fund:
-    Narrator: On your phone, the transfer clears. The cells still waiting get nothing.
+    Narrator: On your phone, the transfer clears. The balances will never reach the cells.
 }
 
 Narrator: He claps, slowly.

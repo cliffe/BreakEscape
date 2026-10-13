@@ -37,6 +37,12 @@ VAR irina_badge_cloned = false
 VAR irina_confirmed_slot = false
 VAR exchange_infiltrated = false
 VAR satoshi_stance = ""   // set by Satoshi's final_words choices (script-edit round, S14)
+// Pass 5 alignment (synced scenario globals)
+VAR cover_strained = false   // A3
+VAR guard_ko = false         // minor: the debrief now names the staff KOs the credits list
+VAR minder_ko = false        // A5
+VAR minder_passed = false    // A5
+VAR irina_taken = false      // A4: collected by the police while the player was still inside
 VAR fca_picks = 0
 VAR fca_right = 0
 
@@ -222,6 +228,12 @@ Agent HaX: She came over because she believed you. Remember that when someone as
 === irina_arrested_path ===
 Agent HaX: You detained her and handed her over with the evidence. By the book.
 
+{irina_taken:
+    Agent HaX: The police collected her from her desk while you were still working the building.
+- else:
+    Agent HaX: The police collected her from her desk after you'd gone.
+}
+
 Agent HaX: The charges are for the police. Laundering, conspiracy, terrorist financing. Long file.
 
 + [She knew what she was building.]
@@ -296,6 +308,39 @@ Agent HaX: The Crypto Anarchists have lost their best cryptographer. Replacing h
     Agent HaX: The payout was pre-signed, so it goes out with him in a cell. Once it has, the police can have the rest.
 }
 
+{minder_ko:
+    Agent HaX: His minder's in custody too. Thirty years guarding banks, and he finishes the night on a corridor floor.
+- else:
+    {minder_passed:
+        Agent HaX: His minder let you walk in. I'd like to hear what you said to him.
+    }
+}
+
+-> cover_and_staff
+
+// ================================================
+// THE COVER AND THE STAFF (Pass 5 A3; minor: the KOs the credits list)
+// ================================================
+
+=== cover_and_staff ===
+{cover_strained:
+    Agent HaX: Your cover didn't last the night. Somebody on that floor rang the FCA, and the FCA had never heard of you.
+    Agent HaX: It didn't cost us the job. It might cost us the next one. The FCA will want a word with us.
+- else:
+    Agent HaX: And the cover held. Nobody on that floor ever thought to ring the FCA.
+}
+{trader_ko:
+    Agent HaX: Okonkwo flagged those wallets before we ever did, and got knocked down for it.
+}
+{analyst_ko:
+    Agent HaX: Raghavan drew us the money, and got knocked down for it.
+}
+{guard_ko:
+    Agent HaX: The guard on the checkpoint was a contractor doing his job.
+}
+{trader_ko or analyst_ko or guard_ko:
+    Agent HaX: None of them had done anything wrong. That goes in the report.
+}
 -> password_cracking_discussion
 
 // ================================================
@@ -303,7 +348,10 @@ Agent HaX: The Crypto Anarchists have lost their best cryptographer. Replacing h
 // ================================================
 
 === password_cracking_discussion ===
-Agent HaX: All four flags in. One exposed service to the vault account, one reused password at a time.
+// Pass 5 minor: one line per flag, in story terms.
+Agent HaX: All four flags in.
+Agent HaX: One cracked password got you onto their backend, and the same password opened a second account.
+Agent HaX: The financial database gave us their doors, and the vault account gave us the keys to every cold wallet they hold.
 
 -> fca_letter
 
@@ -440,9 +488,9 @@ Agent HaX: If it's him... *quietly* Let's leave it there for tonight.
 -> mission_conclusion
 
 === identity_missing ===
-Agent HaX: The one thing we didn't get is whatever Satoshi kept in his safe.
+Agent HaX: You left Satoshi's safe shut. Whatever he kept in it, the police will open on their schedule, not ours.
 
-Agent HaX: A man like that keeps insurance. I'd have liked to read it.
+Agent HaX: A man like that keeps insurance. I'd have liked to read it first.
 
 -> mission_conclusion
 

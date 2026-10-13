@@ -663,16 +663,6 @@
   },
   "m05_insider_trading": {
     "globals": {
-      "found_halloran_vetting": false,
-      "door_log_reasoned": false,
-      "it_notice_read": false,
-      "rfid_guide_offered": false,
-      "rfid_guide_hint_given": false,
-      "torres_suspected": false,
-      "found_door_log": false,
-      "found_halloran_alibi": false,
-      "halloran_questioned": false,
-      "halloran_accused": false,
       "briefing_played": false,
       "player_name": "Agent 0x00",
       "player_approach": "",
@@ -743,7 +733,22 @@
       "lockpicking_guide_offered": false,
       "lockpicking_guide_hint_given": false,
       "recon_guide_offered": false,
-      "recon_guide_hint_given": false
+      "recon_guide_hint_given": false,
+      "rfid_guide_offered": false,
+      "rfid_guide_hint_given": false,
+      "torres_suspected": false,
+      "found_door_log": false,
+      "found_halloran_alibi": false,
+      "halloran_questioned": false,
+      "halloran_accused": false,
+      "found_halloran_vetting": false,
+      "door_log_reasoned": false,
+      "it_notice_read": false,
+      "mission_complete": false,
+      "server_room_entered": false,
+      "named_before_portal": false,
+      "owen_office_card_relayed": false,
+      "door_log_held": false
     },
     "npcs": [
       {
@@ -889,7 +894,17 @@
       "recon_guide_offered": false,
       "recon_guide_hint_given": false,
       "distcc_guide_offered": false,
-      "distcc_guide_hint_given": false
+      "distcc_guide_hint_given": false,
+      "lockpick_guide_offered": false,
+      "lockpick_guide_hint_given": false,
+      "cover_strained": false,
+      "irina_suspicious": false,
+      "ready_to_extract": false,
+      "irina_taken": false,
+      "minder_passed": false,
+      "minder_hostile": false,
+      "minder_ko": false,
+      "server_room_entered": false
     },
     "npcs": [
       {
@@ -957,6 +972,13 @@
         "storyPath": "scenarios/m06_follow_the_money/ink/m06_satoshi_confrontation.json",
         "currentKnot": "start",
         "room": "satoshi_office"
+      },
+      {
+        "id": "satoshi_minder",
+        "npcType": "person",
+        "storyPath": "scenarios/m06_follow_the_money/ink/m06_npc_minder.json",
+        "currentKnot": "start",
+        "room": "executive_wing"
       }
     ]
   },

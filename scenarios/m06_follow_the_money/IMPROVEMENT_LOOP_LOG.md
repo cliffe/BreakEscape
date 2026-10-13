@@ -1,0 +1,150 @@
+# m06 Follow the Money: improvement loop
+
+Started 2026-10-13. Method: the five-phase improvement loop in `AGENTS.md`, to the standard m03 and m04 reached in pass 5 (`scenarios/m04_critical_failure/IMPROVEMENT_LOOP_LOG.md` is the worked example). Shared agent brief: `docs/agents/M06_PASS_BRIEF.md`. Items for the user: `DECISIONS_PENDING.md`.
+
+Stages: regression playtest, then alignment, puzzle chains and scenario design (review → fix loops), dialogue, room dressing, lighting, POV backgrounds, characters (parked for the user), playtests. Each round is logged here with a severity table and an outcome for every finding (fixed, withdrawn and why, or deferred and why).
+
+## Pass 5 (2026-10-13)
+
+### Phase 1 alignment, round 1
+
+Review: `ALIGNMENT_REVIEW_P5_R1.md` (Opus, read-only, static). The file is partial: a safety check stopped the reviewer partway through, and the orchestrator finished it from the hand-back. Before acting, the fixer checked each finding against `scenario.json.erb` and the ink. The fixer was also stopped once by a safety check while reading engine source. It resumed on the orchestrator's instruction and worked from m03's and m04's scenario configs only.
+
+Counts: 0 blockers, 7 majors, 13 minors listed (the review said "about 15"). Outcomes: 7 majors fixed (A6 reworded); 9 minors fixed; 3 minors deferred to later stages; 1 found while fixing, left for a browser check.
+
+| # | Sev. | Finding | Outcome |
+|---|---|---|---|
+| A1 | major | The debrief opened the moment the last decision or flag landed, so a player who confronted Satoshi last lost his safe and the Tesseract file | **Fixed** with m04's sweep-then-call-in. The 13 old debrief triggers moved to HaX; the first to see both decisions and all four flags sets the new `ready_to_extract`, unlocks a new optional, locked task `call_in_after_sweep` and texts "That's both calls made… call me and I'll bring you in." (plus "His safe's still shut, if that matters to you." while `architect_identity_found` is false). HaX's hub gains "I'm done here. Bring me in." → `extract_offer` (names the shut safe) → "Bring me in." → "On my way." → `extract_go`, which completes the task and sets `start_debrief_cutscene`. The debrief opens on that global, and a per-room reload backstop re-emits it if the page reloads before the debrief's first line (`debrief_played`). The existing hear-the-debrief backstop is kept. The concludeRequires gate still holds, because the call-in is only offered once all four flags are in |
+| A2 | major | Music forgot the story phase; no `restored` guard; debrief on spy-action; no named credits track | **Fixed** (m03/m04 pattern). Phase conditions `music_day` (fund not found), `music_climax` (fund found, money not settled) and `music_after` (money settled), each with a `game_loaded` and an `all_hostiles_ko` twin. New `assets_decided` → `end` cue; the debrief cue now plays `end`. The hostile cue carries the `restored` guard and is silent once the money is settled. The fund cue doesn't fire after the money is settled. The credits play "Digital Leashes", which no other mission uses |
+| A3 | major | The cover was set up as a risk and never paid off | **Fixed** (orchestrator: a visible consequence of moderate weight). New synced `cover_strained`, set by `guard_caught`, by a KO of the guard, Dani, Priya or Irina (`npc_ko:` mappings), or by Irina's first conversation closing with her still suspicious (`irina_suspicious` is now a synced global, set and cleared in her ink with `#set_variable`). Consequences: (1) HaX texts once, "Someone on that floor is going to ring the FCA. Get what you need before they do." (skipped once the money is settled), and the recap repeats it; (2) Irina lends her badge only at trust ≥ 35, not 25, with her own line explaining why, and the cloner route is unchanged; (3) Satoshi's opener branches ("Somebody on my floor rang the FCA an hour ago…" / "Your paperwork was good. I had you checked anyway."); (4) the minder won't take the FCA line (A5); (5) a debrief line and the credits "FCA COVER: held all night" / "strained". Nothing locks the player out and no ending is a failure |
+| A4 | major | The choices and the reveal landed in silence; a detained Irina waited for police who never came | **Fixed.** New HaX texts: turned ("She's turned. Whatever she gives you tonight, write it down twice."), detained ("Police are on their way up for her…"), freeze, watch, the safe opened ("Tesseract. ...Bring that page out with you…"), each staff KO, and the minder KO. A detained Irina is collected: on the player's next room entry away from the trading floor, HaX's mapping sets `irina_taken`, and her own mappings hide her (`setVisible`, re-hidden on reload, as m04 does for Cipher). HaX's relayed wordlist, office badge and executive badge are now offered for `irina_ko or irina_taken`, so nothing she held is lost. Her resting narration and the debrief say the police came ("…collected her from her desk while you were still working the building" / "…after you'd gone") |
+| A5 | major | No antagonist in the building, no sight challenge | **Fixed** (D1, built on a stand-in). Kemal Aydin (`satoshi_minder`), Satoshi's minder in the executive wing: `los.challengeOnSight` → `on_sighted`, the m04 guard and Cipher shape; skipped once he has let the player in, turned hostile or been knocked out, or once Satoshi has been confronted. While the cover holds, the FCA line talks him round. With `cover_strained`, only a turned Irina's word does ("Dr Volkova sent me up."); otherwise he asks who the player really is, and they can square up (he turns hostile) or back off. He walks a short beat (dwelling 4.5 s at (8,4) under the north door, facing east, and 3.5 s at (4,4) facing the west door), so slipping past while his back is turned always works. Satoshi reacts to him ("Kemal let you in…" / "I heard Kemal hit the floor."); the debrief and credits do too. New ink `m06_npc_minder.ink` |
+| A6 | major | Reworded (orchestrator): flag 1 already reacts through its task mapping; flag 2 has no story reaction, and the flag 1/2 `emit_event` rewards had no listener | **Fixed.** Flag 2 gets a HaX text ("Second account. One password, two boxes, just as their own rack sheet admitted…", skipped after flag 3). Flag 1's text was trimmed to story terms and under the 30-word cap. The two `emit_event` rewards are now `set_global` rewards for `flag1_submitted` / `flag2_submitted` (m04 m8), so the drop-site no longer says "Event triggered". The debrief gives each flag a story beat. VM wording goes to `DECISIONS_PENDING.md` D4 for a SecGen check |
+| A7 | major | Canon: "You're under arrest" and "with him arrested" | **Fixed.** Satoshi's opening choice is "I'm detaining you. Laundering and terrorist financing."; HaX: "Watching still works with him detained… we keep it quiet until it's gone." Irina's credit is "Detained — collected by the police…"; the endGoal says "detained and handed over". Police lines that describe the police themselves ("the arresting officer") are kept: the police arrest, SAFETYNET hands over |
+| m1 | minor | A voiced line printed `{player_name}` (phone first call) | **Fixed.** "You're inside. How's the FCA cover holding?" No m06 voiced line prints a variable now (grepped) |
+| m2 | minor | HaX's phone avatar was `npc_helper.png` | **Fixed.** `assets/characters/agent_hax_headshot.png` |
+| m3 | minor | "The cells not yet paid go without" contradicts the fund document (all six had advances) | **Fixed.** Credits: "The balances never reach the cells."; Satoshi's narration: "The balances will never reach the cells."; HaX's recommendation: "the balances never reach the cells" |
+| m4 | minor | Irina's KO credit "the offer was never made" can be false | **Fixed.** "Knocked down on the trading floor before her part was settled" |
+| m5 | minor | The debrief said nothing about the staff KOs the credits list | **Fixed.** New `cover_and_staff` knot: one line each for Dani, Priya and the guard, then "None of them had done anything wrong. That goes in the report." The minder KO has its own line |
+| m6 | minor | The guard says "Afternoon" in a night mission | **Fixed.** "Evening." (The briefing gives no time of day; the debrief is at 4 a.m.) |
+| m7 | minor | The guard sends the player to an unstaffed reception | **Fixed.** "Go back out to the lobby and come in properly." / "Lobby's that way." The lobby's `room_entered` mapping is what clears his grace, so the wording now matches the mechanism |
+| m8 | minor | `mission.json` "compliance auditor" vs the game's "FCA supervisor" | **Fixed.** `mission.json` description and keyword now say "visiting FCA supervisor" / "FCA supervisor cover"; the first aim's description says "visiting FCA supervisor" (was "FCA supervision officer"). The scenario brief and briefing already said FCA supervisor / supervisory visit |
+| m9 | minor | Five separate guide options, no lockpicking guide | **Fixed.** One "Send me a field guide." choice, shown while any met guide is unsent, opening a menu of only those. New lockpicking guide (`m06_lockpicking_field_guide`, the published lockpicking sheet), offered on entering the checkpoint |
+| m10 | minor | "How do I play Volkova?" retired after one use | **Fixed.** Stays on offer until her part is settled or she is knocked out (`irina_guidance_given` removed) |
+| m11 | minor | The executive wing is reached through the data centre; two server rooms back to back | **Deferred** to room dressing, which owns layout |
+| m12 | minor | The fingerprint kit is carried but never used | **Deferred** to puzzle chains |
+| m13 | minor | The debrief covers the VM work in one generic line | **Fixed** with A6 (three lines, one beat per flag) |
+| F1 | found | Irina's badge hand-over tag is `#give_item:keycard:cto_access_badge`, but the held item's id is `m06_cto_badge` (its `opens_lock` is `cto_access_badge`), and the pickup mapping checks `m06_cto_badge` | **Not changed; browser check.** This predates the pass. If the give resolves the item by `opens_lock` the hand-over works; if not, the lend route fails silently and `irina_badge_obtained` never sets (the cloner route and HaX's relay still work). Engine source wasn't read. Check it in the round-2 browser run |
+
+Regression items folded in from `PASS5_REGRESSION_A.md` (Sonnet, game 2223; 0 blockers, 0 majors, 12 minors). The orchestrator passed on M4–M6 and kept the rest out of this round:
+
+| # | Sev. | Finding | Outcome |
+|---|---|---|---|
+| R-M4 | minor | HaX's recap repeats the server-room door lines after the door is open, until flag 1 | **Fixed.** New synced `server_room_entered`, set by HaX's existing `room_entered:server_room` mapping; the recap's door lines now need `not server_room_entered`. Route r1 checks both sides |
+| R-M5 | minor | "Police on their way up", "handed to the police" | **Withdrawn after checking; no change** (orchestrator ruling). SAFETYNET detains and hands over, as in m04; the police are who it hands over to. The one place SAFETYNET arrested someone (A7) is fixed |
+| R-M6 | minor | The walkthrough says the custody console gives three tries per opening; the run saw five wrong tries with no lockout | **Doc fixed.** The console sets no `maxAttempts` (the field other scenarios use for a limit), and an unlimited PIN fits "fun, not hard" and the deduction puzzle: a wrong slot is refused and says nothing. `TESTING_WALKTHROUGH.md` 17a and the erb comment now say there's no attempt limit. Engine source wasn't read to confirm what a default would be |
+| R-M1, R-M3 | minor | Art | **Deferred** to the character stage (orchestrator) |
+| R-M2 | minor | Backgrounds | **Deferred** to the POV stage (orchestrator) |
+| R-E1–E4 | minor | Engine | **Deferred**: engine issues, already in the backlog (orchestrator) |
+
+Canon checks from the review (m05 → m06 → m07) needed no change. The freeze/watch choice carrying into m07 stays as D2.
+
+### Decisions taken (with reasons)
+
+- **A1: m04's sweep-then-call-in** (orchestrator). The safe and the Tesseract reveal stay reachable whatever order the player takes. The call-in text is sent 13.5 s after the trigger so it can't stack with HaX's other texts on the same events (the validator's 4 s toast rule; the lab text on Irina's close fires at 9 s).
+- **A2: phase-aware music with a named credits track** (orchestrator). "Digital Leashes" was the unused vocal track that fitted a money-trail ending. "Cipher Tide" stays free.
+- **A3: what strains the cover** (orchestrator: the player's own actions). These count: being caught at the guard's lock, knocking out any member of staff (guard, Dani, Priya, Irina), and leaving Irina's first conversation still suspicious. Not counted: wrong answers to the guard ("IT", "consultant", "the CEO"). He turns those away, but they're honest mistakes and cost the walk already. Knocking out the minder or Satoshi doesn't count either: by then the player is past the cover.
+- **A3 weight:** moderate. It makes Irina's badge loan and the minder harder, and it changes Satoshi's opener, one debrief beat and one credit. There's no fail state and no lost route.
+- **A4: Irina is collected on the next room entry, not at once.** Hiding her mid-conversation would pull her out from under the player. Once the player has left the floor, the police can plausibly have come and gone. The trading floor is excluded so a reload on the floor doesn't hide her in view.
+- **A5: the minder's talk-past needs a turned Irina when the cover is strained,** not some other item, because the turned Irina already exists as the "insider vouches" thread. The fight and the slip-past stay open on every route. He stops challenging once Satoshi has been confronted, so the sweep isn't interrupted.
+- **A5: his voice and look.** Kemal Aydin is Turkish-German, late fifties, with a German (Hamburg) accent and the voice Iapetus. He fills the cast's missing age band and adds an origin no one else has (`DECISIONS_PENDING.md` C1). His stand-in sprite is `male_hacker_hood_down_v2`, the Crypto Anarchists' look, hood down so he isn't mistaken for Satoshi.
+- **A5: his beat.** `check_door_alignment.py` puts the wing's north door at tile x 8.5. A dwell at (7,4) would have left the door about 63° off his facing, on the cone's edge. At (8,4) the door is about 80° off (outside the 120° cone) and the corridor is behind him. This comes from geometry, not from a browser run.
+- **m9: one guide choice** (m04 A5). Six guide choices would crowd the hub late in the mission.
+
+### Checks (static; no browser session was started)
+
+- Ink compiles (9 files, including the new `m06_npc_minder.ink`).
+- Validator, full: ERB, JSON, schema, ink, geometry and door alignment all pass. Dialogue lint inside the validator is clean once flag 1's text was cut to under 30 words.
+  - 19 warnings. 16 are duplicate-pattern notes on `agent_0x99_handler`. The extra 4 come from the new per-room loops (the `irina_taken` and call-in mappings share the `room_entered` patterns with older backstops). Their conditions use different globals, and firing together is harmless.
+  - 2 are the repeatable sight-challenge and lockpick-catch chats, as m04's are.
+  - 1 is the pre-existing two-sources-for-the-server-room note.
+  - The 4 new toast-stacking warnings were cleared by the 13.5 s delay, and the ink-VAR warning by a "Synced scenario global" comment.
+- `dialoguelint`: no findings.
+- `reopencheck` (the m06 block of `missions.json` gained the 10 new globals and the minder; rerun after R-M4): m06 HaX phone, 1800 reopens, 0 problems.
+- `tagdiff` against HEAD. Every difference comes from the changes above:
+  - phone: 81 (the call-in knots, the guide menu, the relays on `irina_taken`, the sticky Volkova guidance, the recap conditions);
+  - debrief: 20 (the `cover_and_staff` knot, the minder and Irina-collected conditions);
+  - Irina: 8 (`#set_variable:irina_suspicious`, the badge threshold);
+  - Satoshi: 7 (the cover and minder openers);
+  - guard: structure unchanged.
+- `inkcheck` over a state matrix found no errors and no runaways: minder fresh, strained, strained with Irina turned, on_sighted both ways, passed; phone start early, ready to extract, Irina collected with the cover strained; Satoshi strained with the minder knocked out, and with the minder passed; Irina strained, and detained; debrief strained with every KO and Irina collected, and held with Irina turned and the safe opened; guard.
+- `loopcheck` (phone hub, minder both ways, Irina hub strained, the FCA letter): no runtime errors.
+- `python3 scripts/check_door_alignment.py`: all doors OK.
+- New route driver `scripts/ink_runtime_check/m06_routes/route.js`, adapted from m04's. It drops the clock model, because m06 has no timers. It adds `room` and `ko` steps and m06's engine reactions: pickups, `cover_strained`, `ready_to_extract`, `irina_taken`, and the debrief opening. Six routes, all expectations met:
+  - `r1_cover_held_recruit_freeze_callin`: cover held, Irina turned, the minder talked past on the FCA line, freeze. The first call-in is declined (names the shut safe); the safe is opened in the sweep; then a page reload, "Bring me in", the re-emit backstop and the debrief (cover held, minder let you in, Tesseract). Credits: FCA COVER held, Kemal talked past.
+  - `r2_strained_detain_minder_fought_watch`: guard catch → strained; HaX's recap warns; Irina won't lend her badge at trust 30. She is detained after the fund, collected on the next room entry, and HaX relays her executive badge. The minder: "rang the FCA an hour ago", squared up, hostile, knocked out. Satoshi: strained opener, "heard Kemal hit the floor"; watch. Debrief: collected while you were still working, minder in custody, cover didn't last, safe left shut.
+  - `r3_suspicious_opener_irina_vouches`: the unrepaired bad opener strains the cover on her first close. She is turned through her notes; her word gets the player past the minder; his re-entry after a page reload greets the player as let through. The safe is left shut and the call-in says so.
+  - `r4_kos_satoshi_fought_reload`: Irina, Dani and Priya knocked out (strained, relays). HaX's recap warns about the minder. The minder is never seen. Satoshi fights on an unbacked "I'm detaining you", is knocked out, and the money is decided by phone. A reload between "Bring me in" and the debrief: re-emit. Debrief: the staff lines, "still out cold". Credits: "Never saw you come up the corridor".
+  - `r5_repaired_opener_detain_last`: the bad opener repaired in the same chat, so the cover holds. The minder is backed off, then talked past. Satoshi first, then Irina detained last on the floor (no `irina_taken`), so the debrief says "after you'd gone".
+  - `r6_guard_ko_irina_ko_after_recruit`: guard knocked out → strained; Irina turned then knocked out, so she can't vouch, and the minder offers no talk-past (back off). Debrief: the guard line; credits: CHECKPOINT GUARD knocked out.
+
+Not yet checked in a browser: the minder's cone and beat (facing at each dwell, range to the west door, the slip-past window); `#hostile:satoshi_minder` from his chat; Irina's hide on `irina_taken` and its reload re-hide; the phone → debrief handoff after "Bring me in" (the same shape as m04's and m03's, both browser-tested); the music phases; the `set_global` flag rewards; F1.
+
+### Spoken lines changed (old → new)
+
+No m06 audio exists on 3.8 yet as far as this pass knows, so this is the record for re-voicing. Player choices are not voiced and are not listed.
+
+HaX, phone (`m06_phone_agent_0x99.ink`):
+- "{player_name}. You're inside. How's the FCA cover holding?" → "You're inside. How's the FCA cover holding?"
+- "If you freeze it, the cells still waiting go short, and ENTROPY knows its bank is burned." → "If you freeze it, the balances never reach the cells, and ENTROPY knows its bank is burned."
+- "Watching still works with him arrested. The payout's pre-signed; we keep the arrest quiet until it's gone." → "Watching still works with him detained. The payout's pre-signed; we keep it quiet until it's gone."
+- "That's everything. Walk out of there and I'll bring you in." → "That's everything. Look round if you want, then tell me to bring you in."
+- New lines:
+  - recap: "Someone on that floor has a reason to ring the FCA about you now. Don't hang about."; "The spare executive badge was signed out to Volkova, and the police have her now. Ask me for a copy."; "He keeps a minder on that corridor."; "With your cover strained, he won't take the FCA line. Wait for his back, or bring Volkova's word if she's with us."
+  - call-in: "Once you're out, you don't go back in. Whatever you haven't read stays for forensics."; "His safe's still shut, for one."; "Car's round the back of the building. Two minutes."; "Take your time. The police can wait a few minutes."; "See you at HQ."
+  - guides: "Which one?"; "Lockpicking guide sent."; "The checkpoint door's a cheap lock. The guard's the hard part. Pick while his back's turned."
+
+HaX texts (`scenario.json.erb`):
+- Flag 1: "First account's yours. That password was almost certainly reused. Try it everywhere before anything clever. I've a credential reuse guide if you want it." → "First account's yours. People here reuse passwords, so that one opens more than one door. I've a credential reuse guide if you want it."
+- New texts:
+  - flag 2: "Second account. One password, two boxes, just as their own rack sheet admitted. Next is the financial database. Its account runs their doors."
+  - cover: "Someone on that floor is going to ring the FCA. Get what you need before they do."
+  - KOs: "The guard was doing his job. That goes in the report, and so does the noise."; "Okonkwo had done nothing. That goes in the report."; "Raghavan drew us the money and had done nothing else. That goes in the report."; "His minder's down. If Satoshi didn't hear that, he's the only one on the floor who didn't."
+  - Irina: "She's turned. Whatever she gives you tonight, write it down twice."; "Police are on their way up for her. Leave her where she is; they'll have her out before you're back on the floor."
+  - the money: "Transfer's confirmed. The balances are in a wallet we hold. ENTROPY will notice by morning."; "Tags are on. When that release fires, every address it pays lights up on my screen."
+  - the safe: "Tesseract. ...Bring that page out with you. Don't read it to anyone else."
+  - the call-in: "That's both calls made, and the backend's done. Look round if you want, then call me and I'll bring you in." (and the same plus "His safe's still shut, if that matters to you.")
+- Changed behaviour, same words: "That's the money settled. Volkova is still on the trading floor…" now has `skipIfGlobal: irina_fate_decided`.
+
+Satoshi (`m06_satoshi_confrontation.ink`):
+- "You're not from the FCA. I had you investigated." → "Somebody on my floor rang the FCA an hour ago. They've never heard of you." (cover strained) / "Your paperwork was good. I had you checked anyway. Old habit." (cover held)
+- New: "And I heard Kemal hit the floor. He's guarded money for thirty years. He'll be embarrassed."; "Kemal let you in, so you must have been convincing."
+- Narration: "On your phone, the transfer clears. The cells still waiting get nothing." → "On your phone, the transfer clears. The balances will never reach the cells."
+
+Irina (`m06_npc_irina_volkova.ink`):
+- New: "Someone on the floor has been asking whether you are who you say you are. Until they stop, my badge stays on my neck."
+- Narration: "She sits very still at her desk, waiting for the police, and doesn't look up." → "She sits very still at her desk and doesn't look up. The police are on their way up for her, and she knows it."
+
+Checkpoint guard (`m06_npc_checkpoint_guard.ink`):
+- "Afternoon. Floor's restricted. Who are you?" → "Evening. Floor's restricted. Who are you?"
+- "Still here. Still not on my list. Try reception." → "Still here. Still not on my list. Lobby's that way."
+- "…Go back out to reception and sign in properly." → "…Go back out to the lobby and come in properly."
+
+Debrief (`m06_closing_debrief.ink`):
+- "All four flags in. One exposed service to the vault account, one reused password at a time." → "All four flags in." / "One cracked password got you onto their backend, and the same password opened a second account." / "The financial database gave us their doors, and the vault account gave us the keys to every cold wallet they hold."
+- "The one thing we didn't get is whatever Satoshi kept in his safe." → "You left Satoshi's safe shut. Whatever he kept in it, the police will open on their schedule, not ours."
+- "A man like that keeps insurance. I'd have liked to read it." → "A man like that keeps insurance. I'd have liked to read it first."
+- New lines:
+  - Irina collected: "The police collected her from her desk while you were still working the building." / "…after you'd gone."
+  - the minder: "His minder's in custody too. Thirty years guarding banks, and he finishes the night on a corridor floor."; "His minder let you walk in. I'd like to hear what you said to him."
+  - the cover: "Your cover didn't last the night. Somebody on that floor rang the FCA, and the FCA had never heard of you."; "It didn't cost us the job. It might cost us the next one. The FCA will want a word with us."; "And the cover held. Nobody on that floor ever thought to ring the FCA."
+  - the staff: "Okonkwo flagged those wallets before we ever did, and got knocked down for it."; "Raghavan drew us the money, and got knocked down for it."; "The guard on the checkpoint was a contractor doing his job."; "None of them had done anything wrong. That goes in the report."
+
+Kemal Aydin (`m06_npc_minder.ink`): all new (16 lines).
+
+### Open after round 1
+
+- The browser checks listed under Checks, for the round-2 playtest (F1 among them).
+- The debrief's longest unbroken run is now 13–16 lines (the cover, staff and flag beats after Satoshi's aftermath). Left for the dialogue phase, which can add a choice or trim.
+- m11 (layout) goes to room dressing and m12 (the fingerprint kit) to puzzle chains.
+- D2 (m07 carry-over), D3/D4 (SecGen checks of the in-game VM wording) and C1 (Kemal's look) are with the user.

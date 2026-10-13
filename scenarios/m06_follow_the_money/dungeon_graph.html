@@ -136,8 +136,8 @@
     </div>
     <table>
       <tr><th>Aims (story objectives)</th><td class="val">6</td></tr>
-      <tr><th>Total tasks</th><td class="val">25</td></tr>
-      <tr><th>Optional tasks</th><td class="val">4 / 25</td></tr>
+      <tr><th>Total tasks</th><td class="val">26</td></tr>
+      <tr><th>Optional tasks</th><td class="val">5 / 26</td></tr>
       <tr><th>VM flag challenges</th><td class="val">4</td></tr>
       <tr><th>AND-gate convergences</th><td class="val">0</td></tr>
       <tr><th>Physical locks (puzzle)</th><td class="val">11</td></tr>
@@ -575,41 +575,43 @@
   rc_m06_privesc_field_guide_8{"SAFETYNET Field Guide: Privilege Escalation and Credential Reuse"}
   rc_m06_recon_field_guide_9{"SAFETYNET Field Guide: Reconnaissance and Network Mapping"}
   rc_m06_rfid_field_guide_10{"SAFETYNET Field Guide: RFID Cloning"}
-  rc_relayed_password_dictionary_11{"Password Dictionary List (relayed copy)"}
-  rc_relayed_cto_badge_12{"CTO Badge (relayed copy)"}
-  rc_relayed_executive_badge_13{"Executive Badge (relayed copy)"}
-  rc_npc_agent_hax_14("Agent HaX")
-  rc_it_onboarding_checklist_15{"IT New Starter Checklist"}
-  rc_npc_checkpoint_guard_16("Checkpoint Guard")
-  rc_trading_workstation_17{"Trading Workstation"}
-  rc_daily_trading_report_18{"Daily Trading Report"}
-  rc_npc_dr_irina_volkova_19("Dr. Irina Volkova")
-  rc_m06_cto_badge_20{"CTO Access Badge"}
-  rc_m06_password_dictionary_21{"Password Dictionary List"}
-  rc_executive_access_badge_22{"Executive Access Badge"}
-  rc_npc_dani_okonkwo_23("Dani Okonkwo")
-  rc_vm_launcher_hackme_24{"HashChain Backend Server Terminal"}
-  rc_flag_station_financial_25{"SAFETYNET Financial Intelligence Drop"}
-  rc_server_rack_labels_26{"Rack Inventory Sheet"}
-  rc_transaction_server_27[["Financial Transaction Server"]]
-  rc_settlement_log_28{"mixer_settlements.log"}
-  rc_mixer_config_29{"mixer_pool_config.yml"}
-  rc_custody_index_30{"custody_index.csv"}
-  rc_cold_storage_console_31[["Custody Console"]]
-  rc_architects_fund_doc_32{"The Architect's Fund Allocation"}
-  rc_wallet_recovery_keys_33{"Cold Storage Procedure"}
-  rc_blockchain_workstation_34{"Blockchain Analysis Workstation"}
-  rc_blockchain_evidence_35{"ENTROPY Transaction Network Analysis"}
-  rc_mixing_analysis_36{"Privacy Coin Mixing Analysis"}
-  rc_npc_priya_raghavan_37("Priya Raghavan")
-  rc_irina_workstation_38{"Irina's Secure Workstation"}
-  rc_irina_research_notes_39{"Cryptography Research Notes"}
-  rc_architect_email_40{"Email: From The Architect"}
-  rc_executive_wing_plaque_41{"Framed Press Clipping"}
-  rc_crypto_anarchist_manifesto_42{"Crypto Anarchist Manifesto"}
-  rc_executive_safe_43[["Executive Safe"]]
-  rc_architect_identity_file_44{"The Architect's Identity File"}
-  rc_npc_satoshi_nakamoto_ii_45("Satoshi Nakamoto II")
+  rc_m06_lockpicking_field_guide_11{"SAFETYNET Field Guide: Lockpicking"}
+  rc_relayed_password_dictionary_12{"Password Dictionary List (relayed copy)"}
+  rc_relayed_cto_badge_13{"CTO Badge (relayed copy)"}
+  rc_relayed_executive_badge_14{"Executive Badge (relayed copy)"}
+  rc_npc_agent_hax_15("Agent HaX")
+  rc_it_onboarding_checklist_16{"IT New Starter Checklist"}
+  rc_npc_checkpoint_guard_17("Checkpoint Guard")
+  rc_trading_workstation_18{"Trading Workstation"}
+  rc_daily_trading_report_19{"Daily Trading Report"}
+  rc_npc_dr_irina_volkova_20("Dr. Irina Volkova")
+  rc_m06_cto_badge_21{"CTO Access Badge"}
+  rc_m06_password_dictionary_22{"Password Dictionary List"}
+  rc_executive_access_badge_23{"Executive Access Badge"}
+  rc_npc_dani_okonkwo_24("Dani Okonkwo")
+  rc_vm_launcher_hackme_25{"HashChain Backend Server Terminal"}
+  rc_flag_station_financial_26{"SAFETYNET Financial Intelligence Drop"}
+  rc_server_rack_labels_27{"Rack Inventory Sheet"}
+  rc_transaction_server_28[["Financial Transaction Server"]]
+  rc_settlement_log_29{"mixer_settlements.log"}
+  rc_mixer_config_30{"mixer_pool_config.yml"}
+  rc_custody_index_31{"custody_index.csv"}
+  rc_cold_storage_console_32[["Custody Console"]]
+  rc_architects_fund_doc_33{"The Architect's Fund Allocation"}
+  rc_wallet_recovery_keys_34{"Cold Storage Procedure"}
+  rc_blockchain_workstation_35{"Blockchain Analysis Workstation"}
+  rc_blockchain_evidence_36{"ENTROPY Transaction Network Analysis"}
+  rc_mixing_analysis_37{"Privacy Coin Mixing Analysis"}
+  rc_npc_priya_raghavan_38("Priya Raghavan")
+  rc_irina_workstation_39{"Irina's Secure Workstation"}
+  rc_irina_research_notes_40{"Cryptography Research Notes"}
+  rc_architect_email_41{"Email: From The Architect"}
+  rc_executive_wing_plaque_42{"Framed Press Clipping"}
+  rc_npc_kemal_aydin_43("Kemal Aydin")
+  rc_crypto_anarchist_manifesto_44{"Crypto Anarchist Manifesto"}
+  rc_executive_safe_45[["Executive Safe"]]
+  rc_architect_identity_file_46{"The Architect's Identity File"}
+  rc_npc_satoshi_nakamoto_ii_47("Satoshi Nakamoto II")
 
   reception_lobby --> security_checkpoint
   security_checkpoint --> trading_floor
@@ -629,47 +631,49 @@
   rc_npc_agent_hax_5 --> rc_m06_privesc_field_guide_8
   rc_npc_agent_hax_5 --> rc_m06_recon_field_guide_9
   rc_npc_agent_hax_5 --> rc_m06_rfid_field_guide_10
-  rc_npc_agent_hax_5 --> rc_relayed_password_dictionary_11
-  rc_npc_agent_hax_5 --> rc_relayed_cto_badge_12
-  rc_npc_agent_hax_5 --> rc_relayed_executive_badge_13
-  reception_lobby --> rc_npc_agent_hax_14
-  security_checkpoint --> rc_it_onboarding_checklist_15
-  security_checkpoint --> rc_npc_checkpoint_guard_16
-  trading_floor --> rc_trading_workstation_17
-  trading_floor --> rc_daily_trading_report_18
-  trading_floor --> rc_npc_dr_irina_volkova_19
-  rc_npc_dr_irina_volkova_19 --> rc_m06_cto_badge_20
-  rc_npc_dr_irina_volkova_19 --> rc_m06_password_dictionary_21
-  rc_npc_dr_irina_volkova_19 --> rc_executive_access_badge_22
-  trading_floor --> rc_npc_dani_okonkwo_23
-  server_room --> rc_vm_launcher_hackme_24
-  server_room --> rc_flag_station_financial_25
-  server_room --> rc_server_rack_labels_26
-  data_center --> rc_transaction_server_27
-  rc_transaction_server_27 --> rc_settlement_log_28
-  rc_transaction_server_27 --> rc_mixer_config_29
-  rc_transaction_server_27 --> rc_custody_index_30
-  data_center --> rc_cold_storage_console_31
-  rc_cold_storage_console_31 --> rc_architects_fund_doc_32
-  data_center --> rc_wallet_recovery_keys_33
-  blockchain_lab --> rc_blockchain_workstation_34
-  blockchain_lab --> rc_blockchain_evidence_35
-  blockchain_lab --> rc_mixing_analysis_36
-  blockchain_lab --> rc_npc_priya_raghavan_37
-  irina_office --> rc_irina_workstation_38
-  irina_office --> rc_irina_research_notes_39
-  irina_office --> rc_architect_email_40
-  executive_wing --> rc_executive_wing_plaque_41
-  satoshi_office --> rc_crypto_anarchist_manifesto_42
-  satoshi_office --> rc_executive_safe_43
-  rc_executive_safe_43 --> rc_architect_identity_file_44
-  satoshi_office --> rc_npc_satoshi_nakamoto_ii_45
+  rc_npc_agent_hax_5 --> rc_m06_lockpicking_field_guide_11
+  rc_npc_agent_hax_5 --> rc_relayed_password_dictionary_12
+  rc_npc_agent_hax_5 --> rc_relayed_cto_badge_13
+  rc_npc_agent_hax_5 --> rc_relayed_executive_badge_14
+  reception_lobby --> rc_npc_agent_hax_15
+  security_checkpoint --> rc_it_onboarding_checklist_16
+  security_checkpoint --> rc_npc_checkpoint_guard_17
+  trading_floor --> rc_trading_workstation_18
+  trading_floor --> rc_daily_trading_report_19
+  trading_floor --> rc_npc_dr_irina_volkova_20
+  rc_npc_dr_irina_volkova_20 --> rc_m06_cto_badge_21
+  rc_npc_dr_irina_volkova_20 --> rc_m06_password_dictionary_22
+  rc_npc_dr_irina_volkova_20 --> rc_executive_access_badge_23
+  trading_floor --> rc_npc_dani_okonkwo_24
+  server_room --> rc_vm_launcher_hackme_25
+  server_room --> rc_flag_station_financial_26
+  server_room --> rc_server_rack_labels_27
+  data_center --> rc_transaction_server_28
+  rc_transaction_server_28 --> rc_settlement_log_29
+  rc_transaction_server_28 --> rc_mixer_config_30
+  rc_transaction_server_28 --> rc_custody_index_31
+  data_center --> rc_cold_storage_console_32
+  rc_cold_storage_console_32 --> rc_architects_fund_doc_33
+  data_center --> rc_wallet_recovery_keys_34
+  blockchain_lab --> rc_blockchain_workstation_35
+  blockchain_lab --> rc_blockchain_evidence_36
+  blockchain_lab --> rc_mixing_analysis_37
+  blockchain_lab --> rc_npc_priya_raghavan_38
+  irina_office --> rc_irina_workstation_39
+  irina_office --> rc_irina_research_notes_40
+  irina_office --> rc_architect_email_41
+  executive_wing --> rc_executive_wing_plaque_42
+  executive_wing --> rc_npc_kemal_aydin_43
+  satoshi_office --> rc_crypto_anarchist_manifesto_44
+  satoshi_office --> rc_executive_safe_45
+  rc_executive_safe_45 --> rc_architect_identity_file_46
+  satoshi_office --> rc_npc_satoshi_nakamoto_ii_47
 
   class reception_lobby,security_checkpoint,blockchain_lab,satoshi_office room
   class trading_floor,server_room,data_center,irina_office,executive_wing lock
-  class rc_hashchain_brochure_1,rc_m06_cracking_field_guide_6,rc_m06_distcc_field_guide_7,rc_m06_privesc_field_guide_8,rc_m06_recon_field_guide_9,rc_m06_rfid_field_guide_10,rc_relayed_password_dictionary_11,rc_relayed_cto_badge_12,rc_relayed_executive_badge_13,rc_it_onboarding_checklist_15,rc_trading_workstation_17,rc_daily_trading_report_18,rc_m06_cto_badge_20,rc_m06_password_dictionary_21,rc_executive_access_badge_22,rc_vm_launcher_hackme_24,rc_flag_station_financial_25,rc_server_rack_labels_26,rc_settlement_log_28,rc_mixer_config_29,rc_custody_index_30,rc_architects_fund_doc_32,rc_wallet_recovery_keys_33,rc_blockchain_workstation_34,rc_blockchain_evidence_35,rc_mixing_analysis_36,rc_irina_workstation_38,rc_irina_research_notes_39,rc_architect_email_40,rc_executive_wing_plaque_41,rc_crypto_anarchist_manifesto_42,rc_architect_identity_file_44 item
-  class rc_npc_agent_hax_2,rc_npc_director_magnus_netherton_3,rc_npc_agent_0x47_nightshade_4,rc_npc_agent_hax_5,rc_npc_agent_hax_14,rc_npc_checkpoint_guard_16,rc_npc_dr_irina_volkova_19,rc_npc_dani_okonkwo_23,rc_npc_priya_raghavan_37,rc_npc_satoshi_nakamoto_ii_45 npc
-  class rc_transaction_server_27,rc_cold_storage_console_31,rc_executive_safe_43 container
+  class rc_hashchain_brochure_1,rc_m06_cracking_field_guide_6,rc_m06_distcc_field_guide_7,rc_m06_privesc_field_guide_8,rc_m06_recon_field_guide_9,rc_m06_rfid_field_guide_10,rc_m06_lockpicking_field_guide_11,rc_relayed_password_dictionary_12,rc_relayed_cto_badge_13,rc_relayed_executive_badge_14,rc_it_onboarding_checklist_16,rc_trading_workstation_18,rc_daily_trading_report_19,rc_m06_cto_badge_21,rc_m06_password_dictionary_22,rc_executive_access_badge_23,rc_vm_launcher_hackme_25,rc_flag_station_financial_26,rc_server_rack_labels_27,rc_settlement_log_29,rc_mixer_config_30,rc_custody_index_31,rc_architects_fund_doc_33,rc_wallet_recovery_keys_34,rc_blockchain_workstation_35,rc_blockchain_evidence_36,rc_mixing_analysis_37,rc_irina_workstation_39,rc_irina_research_notes_40,rc_architect_email_41,rc_executive_wing_plaque_42,rc_crypto_anarchist_manifesto_44,rc_architect_identity_file_46 item
+  class rc_npc_agent_hax_2,rc_npc_director_magnus_netherton_3,rc_npc_agent_0x47_nightshade_4,rc_npc_agent_hax_5,rc_npc_agent_hax_15,rc_npc_checkpoint_guard_17,rc_npc_dr_irina_volkova_20,rc_npc_dani_okonkwo_24,rc_npc_priya_raghavan_38,rc_npc_kemal_aydin_43,rc_npc_satoshi_nakamoto_ii_47 npc
+  class rc_transaction_server_28,rc_cold_storage_console_32,rc_executive_safe_45 container
   class node_start start`
     };
     const rendered = {};

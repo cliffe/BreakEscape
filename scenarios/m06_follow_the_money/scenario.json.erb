@@ -21,7 +21,14 @@
 #   → blockchain lab evidence (any time) → data centre → Architect's Fund
 #   → back to Irina for the spare executive badge (pass 3, P9)
 #   → Satoshi → asset decision + Irina's fate
-#   → debrief (also waits for all four flags, the concludeRequires gate)
+#   → (pass 5) sweep, then "Bring me in" on HaX's phone: offered only once both
+#     decisions and all four flags are in (the concludeRequires gate), so the
+#     safe in the CEO's office stays reachable → debrief
+#
+# PASS 5 ALIGNMENT: Satoshi's minder (Kemal Aydin) holds the executive wing
+# (sight challenge; talk-past while the FCA cover holds). cover_strained (guard
+# catch, staff KOs, an unrepaired bad opener with Irina) makes him and Irina
+# harder and changes Satoshi's opener, the debrief and the credits.
 #
 # PASS 3: the checkpoint guard is a turnstile on the trading-floor door (talk,
 # pick in his blind window, or KO). Start kit is lockpick + RFID cloner +
@@ -88,6 +95,14 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
   "scenario_brief": "Track cryptocurrency payments from previous ENTROPY operations to the Crypto Anarchists' HashChain Exchange. Get in as a visiting FCA supervisor, map the financial network funding every ENTROPY cell, and find out what The Architect is buying with it.",
   "show_scenario_brief": "on_resume",
 
+  <%# Pass 5 alignment A2 (m03/m04 phase pattern): one condition per story phase,
+      so a reload (game_loaded) and the end of a fight (all_hostiles_ko) return to
+      the phase's own playlist. Mutually exclusive once the briefing has played. %>
+  <%
+    music_day    = "globalVars.briefing_played === true && globalVars.found_architects_fund !== true && globalVars.assets_decided !== true"
+    music_climax = "globalVars.briefing_played === true && globalVars.found_architects_fund === true && globalVars.assets_decided !== true"
+    music_after  = "globalVars.briefing_played === true && globalVars.assets_decided === true"
+  %>
   "music": {
     "events": [
       {
@@ -97,49 +112,53 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
         "fade": false,
         "comment": "Opening briefing cutscene — play immediately, no fade (first run only)"
       },
-      {
-        "trigger": "game_loaded",
-        "condition": "globalVars.briefing_played === true",
-        "playlist": "noir",
-        "fade": false,
-        "comment": "Cutscene already seen (resume) — straight to noir"
-      },
+      { "trigger": "game_loaded", "condition": "<%= music_day %>",    "playlist": "noir",       "fade": false },
+      { "trigger": "game_loaded", "condition": "<%= music_climax %>", "playlist": "spy-action", "fade": false },
+      { "trigger": "game_loaded", "condition": "<%= music_after %>",  "playlist": "end",        "fade": false },
       {
         "trigger": "conversation_closed:opening_briefing_npc",
         "playlist": "noir",
         "fade": true,
         "comment": "Briefing ends → infiltration proper begins"
       },
+      <%# A reload restores hostile NPCs with {restored: true}, which must not change
+          the phase's music (m04 round 2, N1). typeof keeps it safe when the key is
+          absent. No threat cue once the money is settled. %>
       {
         "trigger": "npc_hostile_state_changed",
-        "condition": "isHostile === true",
+        "condition": "isHostile === true && (typeof restored === 'undefined' || !restored) && globalVars.assets_decided !== true",
         "playlist": "threat",
         "fade": true,
-        "comment": "Any NPC turns hostile → tension"
+        "comment": "A fresh fight → tension"
       },
-      {
-        "trigger": "all_hostiles_ko",
-        "playlist": "noir",
-        "fade": true,
-        "comment": "All hostiles down — back to noir"
-      },
+      { "trigger": "all_hostiles_ko", "condition": "<%= music_day %>",    "playlist": "noir",       "fade": true },
+      { "trigger": "all_hostiles_ko", "condition": "<%= music_climax %>", "playlist": "spy-action", "fade": true },
+      { "trigger": "all_hostiles_ko", "condition": "<%= music_after %>",  "playlist": "end",        "fade": true },
       {
         "trigger": "global_variable_changed:found_architects_fund",
-        "condition": "value === true",
+        "condition": "value === true && globalVars.assets_decided !== true",
         "playlist": "spy-action",
         "fade": true,
         "comment": "The Architect's Fund found — the mission changes gear"
       },
       {
+        "trigger": "global_variable_changed:assets_decided",
+        "condition": "value === true",
+        "playlist": "end",
+        "fade": true,
+        "comment": "A1/A2: the money is settled; the sweep plays under a settled cue"
+      },
+      {
         "trigger": "global_variable_changed:start_debrief_cutscene",
         "condition": "value === true",
-        "playlist": "spy-action",
+        "playlist": "end",
         "fade": true,
-        "comment": "Final debrief begins"
+        "comment": "Final debrief begins (m03/m04 use end here)"
       },
       {
         "trigger": "conversation_closed:closing_debrief_person",
         "playlist": "victory",
+        "track": "Digital Leashes",
         "autoStop": true,
         "disableClose": true,
         "fade": true,
@@ -154,7 +173,7 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
           { "text": "ENTROPY FINANCIAL NETWORK: PARTIALLY MAPPED",                 "style": "entry",   "condition": "!globalVars.financial_network_mapped" },
           { "text": "" },
           { "text": "── ASSETS ──",                                                "style": "section-header" },
-          { "text": "FROZEN — $12.8M moved into a SAFETYNET wallet. The cells not yet paid go without.", "style": "entry", "condition": "globalVars.assets_seized" },
+          { "text": "FROZEN — $12.8M moved into a SAFETYNET wallet. The balances never reach the cells.", "style": "entry", "condition": "globalVars.assets_seized" },
           { "text": "WATCHED — Fund left running. Every recipient wallet now tagged.", "style": "entry", "condition": "globalVars.monitoring_enabled" },
           { "text": "" },
           { "text": "── PERSONNEL ──",                                             "style": "section-header" },
@@ -165,8 +184,8 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
           { "text": "CHECKPOINT GUARD: Never saw you pick his door", "style": "entry", "condition": "globalVars.guard_resolved && !globalVars.guard_waved_through && !globalVars.guard_ko && !globalVars.guard_caught" },
           { "text": "CHECKPOINT GUARD: Caught you at his lock once; you got through anyway", "style": "entry", "condition": "globalVars.guard_resolved && !globalVars.guard_waved_through && !globalVars.guard_ko && globalVars.guard_caught" },
           { "text": "DR. IRINA VOLKOVA: Turned — gave up the mixer tonight", "style": "entry", "condition": "globalVars.irina_recruited" },
-          { "text": "DR. IRINA VOLKOVA: Detained — handed to the police with the laundering evidence", "style": "entry", "condition": "globalVars.irina_arrested" },
-          { "text": "DR. IRINA VOLKOVA: Knocked down on the trading floor — the offer was never made", "style": "entry", "condition": "globalVars.irina_ko && !globalVars.irina_recruited && !globalVars.irina_arrested" },
+          { "text": "DR. IRINA VOLKOVA: Detained — collected by the police with the laundering evidence", "style": "entry", "condition": "globalVars.irina_arrested" },
+          { "text": "DR. IRINA VOLKOVA: Knocked down on the trading floor before her part was settled", "style": "entry", "condition": "globalVars.irina_ko && !globalVars.irina_recruited && !globalVars.irina_arrested" },
           { "text": "'SATOSHI NAKAMOTO II': Detained — handed to the police",       "style": "entry",   "condition": "!globalVars.satoshi_ko" },
           { "text": "'SATOSHI NAKAMOTO II': Knocked out in his own office — handed to the police", "style": "entry", "condition": "globalVars.satoshi_ko" },
           <%# PASS 4 fix 17: the specific credit needs the conversation the task names
@@ -179,6 +198,15 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
           { "text": "PRIYA RAGHAVAN (ANALYST): Drew the graph — left alone",       "style": "entry",   "condition": "globalVars.analyst_walked_through && !globalVars.analyst_ko" },
           { "text": "PRIYA RAGHAVAN (ANALYST): Never knew what her graph proved — left alone", "style": "entry", "condition": "globalVars.analyst_spoken && !globalVars.analyst_walked_through && !globalVars.analyst_ko" },
           { "text": "PRIYA RAGHAVAN (ANALYST): Knocked out — had done nothing wrong", "style": "entry", "condition": "globalVars.analyst_ko" },
+          <%# Pass 5 A5: Satoshi's minder in the executive wing. %>
+          { "text": "KEMAL AYDIN (MINDER): Talked your way past him", "style": "entry", "condition": "globalVars.minder_passed && !globalVars.minder_ko" },
+          { "text": "KEMAL AYDIN (MINDER): Never saw you come up the corridor", "style": "entry", "condition": "globalVars.satoshi_confronted && !globalVars.minder_passed && !globalVars.minder_hostile && !globalVars.minder_ko" },
+          { "text": "KEMAL AYDIN (MINDER): Knocked out outside his boss's door", "style": "entry", "condition": "globalVars.minder_ko" },
+          { "text": "KEMAL AYDIN (MINDER): Went for you; you got past him anyway", "style": "entry", "condition": "globalVars.minder_hostile && !globalVars.minder_ko" },
+          { "text": "" },
+          <%# Pass 5 A3: the cover's weight. %>
+          { "text": "FCA COVER: held all night", "style": "entry", "condition": "!globalVars.cover_strained" },
+          { "text": "FCA COVER: strained — somebody on the floor rang the FCA", "style": "entry", "condition": "globalVars.cover_strained" },
           { "text": "" },
           { "text": "── THE ARCHITECT ──",                                          "style": "section-header" },
           { "text": "IDENTITY: 87% probability — Dr. Adrian Tesseract",             "style": "entry",   "condition": "globalVars.architect_identity_found" },
@@ -199,7 +227,7 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
     {
       "aimId": "establish_cover",
       "title": "Establish Cover",
-      "description": "Walk into HashChain Exchange as an FCA supervision officer and get the CTO talking.",
+      "description": "Walk into HashChain Exchange as a visiting FCA supervisor and get the CTO talking.",
       "status": "active",
       "order": 0,
       "tasks": [
@@ -479,6 +507,19 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
           "type": "manual",
           "status": "active"
         },
+        <%# Pass 5 A1 (m04 call_in_after_sweep pattern): the last decision or flag no
+            longer opens the debrief. HaX's mappings set ready_to_extract and unlock
+            this task; the phone hub's "Bring me in" (extract_go) completes it and
+            sets start_debrief_cutscene, which opens the debrief. Optional and
+            locked, as in m03/m04, so a missed unlock can never hold the aim. %>
+        {
+          "taskId": "call_in_after_sweep",
+          "title": "Look round if you want, then call HaX to bring you in",
+          "description": "Both calls are made and the backend is done. Anything you haven't read stays behind when you leave. When you're ready, call HaX.",
+          "type": "custom",
+          "status": "locked",
+          "optional": true
+        },
         <%# Playtest D2: the aim completed on the last decision and raised the
             bond_visualiser over the debrief. This task completes on the debrief's
             last line (m05 hear_debrief pattern), so the credits come after it. %>
@@ -607,6 +648,14 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
     "analyst_walked_through": false,
     "analyst_ko": false,
 
+    "cover_strained": false,
+    "irina_suspicious": false,
+    "ready_to_extract": false,
+    "irina_taken": false,
+    "minder_passed": false,
+    "minder_hostile": false,
+    "minder_ko": false,
+
     "cracking_guide_offered": false,
     "cracking_guide_hint_given": false,
     "privesc_guide_offered": false,
@@ -616,10 +665,13 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
     "recon_guide_offered": false,
     "recon_guide_hint_given": false,
     "distcc_guide_offered": false,
-    "distcc_guide_hint_given": false
+    "distcc_guide_hint_given": false,
+    "lockpick_guide_offered": false,
+    "lockpick_guide_hint_given": false,
+    "server_room_entered": false
   },
 
-  "endGoal": "Map ENTROPY's financial network, recover The Architect's Fund allocation, confront the exchange's leadership, and settle two questions: whether $12.8M is frozen tonight or watched for weeks, and whether Dr. Irina Volkova is turned or handed to the police.",
+  "endGoal": "Map ENTROPY's financial network, recover The Architect's Fund allocation, confront the exchange's leadership, and settle two questions: whether $12.8M is frozen tonight or watched for weeks, and whether Dr. Irina Volkova is turned or detained and handed over.",
 
   "rooms": {
     "reception_lobby": {
@@ -702,7 +754,7 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
           "displayName": "Agent HaX",
           "npcType": "phone",
           "storyPath": "scenarios/m06_follow_the_money/ink/m06_phone_agent_0x99.json",
-          "avatar": "assets/npc/avatars/npc_helper.png",
+          "avatar": "assets/characters/agent_hax_headshot.png",
           "phoneId": "player_phone",
           "currentKnot": "start",
           "voice": {
@@ -753,13 +805,22 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
               "observations": "Reading, identifying and duplicating access badges with a handheld cloner"
             },
             {
+              "_comment": "Pass 5 (alignment minor): the checkpoint door is the mission's pick, and no guide covered it.",
+              "type": "lab-workstation",
+              "id": "m06_lockpicking_field_guide",
+              "name": "SAFETYNET Field Guide: Lockpicking",
+              "takeable": true,
+              "labUrl": "https://cliffe.github.io/HacktivityLabSheets/labs/safetynet/lockpicking/",
+              "observations": "Pin-tumbler lockpicking, with notes on picking while somebody's back is turned"
+            },
+            {
               "_comment": "PASS 3 P9: backstop, given only when the player asks HaX (hub option while irina_ko and not found_password_lists). A KO drops Irina's own copy, but a loose text_file can't be taken (engine E20), so this is the working route after a KO. obtain_access_tools lists this id.",
               "type": "text_file",
               "id": "relayed_password_dictionary",
               "name": "Password Dictionary List (relayed copy)",
               "takeable": true,
               "text": "HASHCHAIN INTERNAL — CREDENTIAL AUDIT WORDLIST\n(copy pulled from Dr. Volkova's workstation by SAFETYNET)\n\nbitcoin\nethereum\nsatoshi\nblockchain\nledger\nmonero\nhodl\nmoonshot\nprivatekey\ncoldstorage\n\nAppend: 2023 / 2024 / 2025 / 123 / !",
-              "observations": "Volkova's audit wordlist, pulled off her workstation by SAFETYNET after she went down"
+              "observations": "Volkova's audit wordlist, pulled off her workstation by SAFETYNET"
             },
             {
               "type": "keycard",
@@ -792,6 +853,13 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
               "condition": "globalVars.briefing_played === true",
               "onceOnly": true,
               "completeTask": "receive_briefing"
+            },
+            {
+              "_comment": "Pass 5 A3: an opener that went straight for the machines and was never repaired (irina_suspicious, synced from her ink) strains the cover. Only her first conversation counts: this sits before the mapping that sets exchange_infiltrated on that close.",
+              "eventPattern": "conversation_closed:irina_volkova",
+              "condition": "globalVars.irina_suspicious === true && globalVars.exchange_infiltrated !== true && globalVars.irina_ko !== true",
+              "onceOnly": true,
+              "setGlobal": { "cover_strained": true }
             },
             {
               "_comment": "PASS 2 review: meet_irina now completes at the top of her first conversation, so this waits for the conversation to close instead of landing mid-dialogue.",
@@ -913,6 +981,8 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
               "_comment": "Backstop: a player who guesses the passphrase still ticks the task.",
               "eventPattern": "room_entered:server_room",
               "onceOnly": true,
+              "setGlobal": { "server_room_entered": true },
+              "_comment": "Pass 5 regression M4: server_room_entered retires the recap's door lines once the door is open.",
               "completeTask": "find_server_credentials"
             },
             {
@@ -931,12 +1001,14 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
               "eventPattern": "objective_task_completed:submit_flag1",
               "onceOnly": true,
               "setGlobal": { "flag1_submitted": true, "privesc_guide_offered": true },
-              "sendTimedMessage": { "delay": 1200, "message": "First account's yours. That password was almost certainly reused. Try it everywhere before anything clever. I've a credential reuse guide if you want it." }
+              "sendTimedMessage": { "delay": 1200, "message": "First account's yours. People here reuse passwords, so that one opens more than one door. I've a credential reuse guide if you want it." }
             },
             {
               "eventPattern": "objective_task_completed:submit_flag2",
               "onceOnly": true,
-              "setGlobal": { "flag2_submitted": true }
+              "setGlobal": { "flag2_submitted": true },
+              "_comment": "Pass 5 A6: flag 2 had no story reaction.",
+              "sendTimedMessage": { "delay": 1500, "message": "Second account. One password, two boxes, just as their own rack sheet admitted. Next is the financial database. Its account runs their doors.", "skipIfGlobal": "flag3_submitted" }
             },
             {
               "eventPattern": "objective_task_completed:submit_flag3",
@@ -1101,7 +1173,7 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
               "eventPattern": "global_variable_changed:assets_decided",
               "condition": "value === true && globalVars.irina_fate_decided !== true",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 2500, "message": "That's the money settled. Volkova is still on the trading floor and nobody has decided what happens to her. That's yours too." }
+              "sendTimedMessage": { "delay": 2500, "message": "That's the money settled. Volkova is still on the trading floor and nobody has decided what happens to her. That's yours too.", "skipIfGlobal": "irina_fate_decided" }
             },
 <% (1..4).each do |n| %>
             {
@@ -1118,7 +1190,122 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
               "onceOnly": true,
               "setGlobal": { "flags_nag_sent": true },
               "sendTimedMessage": { "delay": 4000, "message": "Before I pull you out, finish the backend. I want all four flags at the drop-site in the server room, or the file on this exchange has holes in it." }
-            }
+            },
+            <%# ---------------------------------------------------------------
+                Pass 5 alignment (A3, A4, A1). HaX is always loaded, so every
+                story reaction lives here.
+                --------------------------------------------------------------- %>
+            {
+              "_comment": "Pass 5: the checkpoint door is a pick; the hub offers the lockpicking guide from here.",
+              "eventPattern": "room_entered:security_checkpoint",
+              "onceOnly": true,
+              "setGlobal": { "lockpick_guide_offered": true }
+            },
+            <%# A3: the cover strains when the player's own actions give the floor a
+                reason to ring the FCA: caught at the guard's lock, or a member of
+                staff knocked out. KO reactions key on npc_ko:<id> (globalVarOnKO
+                emits no global_variable_changed). %>
+            {
+              "eventPattern": "global_variable_changed:guard_caught",
+              "condition": "value === true",
+              "onceOnly": true,
+              "setGlobal": { "cover_strained": true }
+            },
+            {
+              "eventPattern": "npc_ko:checkpoint_guard",
+              "onceOnly": true,
+              "setGlobal": { "cover_strained": true },
+              "sendTimedMessage": { "delay": 2500, "message": "The guard was doing his job. That goes in the report, and so does the noise." }
+            },
+            {
+              "eventPattern": "npc_ko:trader_npc",
+              "onceOnly": true,
+              "setGlobal": { "cover_strained": true },
+              "sendTimedMessage": { "delay": 2500, "message": "Okonkwo had done nothing. That goes in the report." }
+            },
+            {
+              "eventPattern": "npc_ko:blockchain_analyst",
+              "onceOnly": true,
+              "setGlobal": { "cover_strained": true },
+              "sendTimedMessage": { "delay": 2500, "message": "Raghavan drew us the money and had done nothing else. That goes in the report." }
+            },
+            {
+              "eventPattern": "npc_ko:irina_volkova",
+              "onceOnly": true,
+              "setGlobal": { "cover_strained": true }
+            },
+            {
+              "_comment": "A3: one text when the cover first strains. Stale once the money is settled.",
+              "eventPattern": "global_variable_changed:cover_strained",
+              "condition": "value === true",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 6000, "message": "Someone on that floor is going to ring the FCA. Get what you need before they do.", "skipIfGlobal": "assets_decided" }
+            },
+            <%# A4: the choices and the reveal, each answered in the moment. %>
+            {
+              "eventPattern": "global_variable_changed:irina_recruited",
+              "condition": "value === true",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 2500, "message": "She's turned. Whatever she gives you tonight, write it down twice.", "skipIfGlobal": "irina_ko" }
+            },
+            {
+              "eventPattern": "global_variable_changed:irina_arrested",
+              "condition": "value === true",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 2500, "message": "Police are on their way up for her. Leave her where she is; they'll have her out before you're back on the floor.", "skipIfGlobal": "irina_ko" }
+            },
+            {
+              "eventPattern": "global_variable_changed:assets_seized",
+              "condition": "value === true",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 3000, "message": "Transfer's confirmed. The balances are in a wallet we hold. ENTROPY will notice by morning." }
+            },
+            {
+              "eventPattern": "global_variable_changed:monitoring_enabled",
+              "condition": "value === true",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 3000, "message": "Tags are on. When that release fires, every address it pays lights up on my screen." }
+            },
+            {
+              "eventPattern": "global_variable_changed:architect_identity_found",
+              "condition": "value === true",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 2500, "message": "Tesseract. ...Bring that page out with you. Don't read it to anyone else." }
+            },
+            {
+              "eventPattern": "npc_ko:satoshi_minder",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 2500, "message": "His minder's down. If Satoshi didn't hear that, he's the only one on the floor who didn't.", "skipIfGlobal": "satoshi_confronted" }
+            },
+<% (%w[reception_lobby security_checkpoint server_room data_center blockchain_lab irina_office executive_wing satoshi_office]).each do |r| %>
+            {
+              "_comment": "Pass 5 A4: a detained Irina is collected while the player is out of the room. The next room entry sets irina_taken, which hides her (her own mappings) and opens HaX's relayed copies of anything she still held.",
+              "eventPattern": "room_entered:<%= r %>",
+              "condition": "globalVars.irina_arrested === true && globalVars.irina_taken !== true && globalVars.irina_ko !== true",
+              "onceOnly": true,
+              "setGlobal": { "irina_taken": true }
+            },
+<% end %>
+<%# A1 (m04 sweep-then-call-in). These triggers used to open the debrief; now the
+    first one to see both decisions and all four flags sets ready_to_extract,
+    unlocks the call-in task and texts the player. ready_to_extract is the
+    synchronous latch (setGlobal runs before the next listener evaluates), so a
+    person-chat close, which emits both conversation_closed and
+    minigame_completed, sends one text. The safe gets its own clause. %>
+<% ready = "globalVars.assets_decided === true && globalVars.irina_fate_decided === true && globalVars.flag1_submitted === true && globalVars.flag2_submitted === true && globalVars.flag3_submitted === true && globalVars.flag4_submitted === true && globalVars.ready_to_extract !== true && globalVars.debrief_played !== true" %>
+<% triggers = %w[conversation_closed:satoshi_nakamoto conversation_closed:irina_volkova minigame_completed minigame_failed] + %w[reception_lobby security_checkpoint trading_floor server_room data_center blockchain_lab irina_office executive_wing satoshi_office].map { |r| "room_entered:#{r}" } %>
+<% variants = [["globalVars.architect_identity_found === true", "That's both calls made, and the backend's done. Look round if you want, then call me and I'll bring you in."], ["globalVars.architect_identity_found !== true", "That's both calls made, and the backend's done. Look round if you want, then call me and I'll bring you in. His safe's still shut, if that matters to you."]] %>
+<% pairs = triggers.product(variants) %>
+<% pairs.each_with_index do |(pat, (vcond, msg)), i| %>
+            {
+              "eventPattern": "<%= pat %>",
+              "condition": "<%= ready %> && <%= vcond %>",
+              "setGlobal": { "ready_to_extract": true },
+              "unlockTask": "call_in_after_sweep",
+              "sendTimedMessage": { "delay": 13500, "message": "<%= msg %>" },
+              "onceOnly": true
+            }<%= i < pairs.size - 1 ? ',' : '' %>
+<% end %>
           ]
         },
         {
@@ -1144,38 +1331,28 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
           "behavior": {
             "initiallyHidden": true
           },
-          <%# PASS 2: was keyed on start_debrief_cutscene, set by a mapping the moment the
-              second decision tag ran, so the debrief could open over the Satoshi or Irina
-              conversation and ignored the concludeRequires flags (debrief shown, server
-              refuses to conclude). Now it waits for a conversation to CLOSE (or a phone
-              decision, or the last flag) with both decisions made and all four flags in.
-              debrief_played (set at the top of the debrief) stops a replay; lesson 41. %>
+          <%# Pass 5 A1 (m04 call-in): the debrief opens when the phone hub's "Bring me
+              in" (extract_go) sets start_debrief_cutscene. It can only be asked for
+              once both decisions and all four flags are in (ready_to_extract, set by
+              HaX's mappings), so the concludeRequires gate still holds.
+              debrief_played (set on the debrief's first line) stops a replay. %>
           "eventMappings": [
-<% all_in = "globalVars.assets_decided === true && globalVars.irina_fate_decided === true && globalVars.flag1_submitted === true && globalVars.flag2_submitted === true && globalVars.flag3_submitted === true && globalVars.flag4_submitted === true && globalVars.debrief_played !== true && globalVars.start_debrief_cutscene !== true" %>
-<%# PASS 2 review B2 / minor 13. The final state change can land inside a phone
-    chat (Satoshi-KO decision, Irina-KO relay) or the drop-site UI (last flag).
-    Opening the debrief then would tear that UI down mid-line, so those cases
-    wait for the UI to close: every minigame close emits minigame_completed
-    (#exit_conversation, flag success) or minigame_failed (the X / Esc),
-    base-minigame.js:94-104. The two person-chats close with conversation_closed.
-    room_entered on every room is the backstop if the player walks away.
-    start_debrief_cutscene is the synchronous latch: a person-chat close emits
-    both conversation_closed and minigame_completed, and setGlobal runs before
-    the next listener evaluates (npc-manager.js:541-553), so only one opens.
-    It also drives the spy-action music cue. %>
-<% triggers = [["conversation_closed:satoshi_nakamoto", nil], ["conversation_closed:irina_volkova", nil], ["minigame_completed", nil], ["minigame_failed", nil]] + %w[reception_lobby security_checkpoint trading_floor server_room data_center blockchain_lab irina_office executive_wing satoshi_office].map { |r| ["room_entered:#{r}", nil] } %>
-<% triggers.each_with_index do |(pat, cond), i| %>
             {
-              "eventPattern": "<%= pat %>",
-              "condition": "<%= [cond, all_in].compact.join(' && ') %>",
-              "setGlobal": { "start_debrief_cutscene": true },
+              "eventPattern": "global_variable_changed:start_debrief_cutscene",
+              "condition": "value === true && globalVars.debrief_played !== true",
               "conversationMode": "person-chat",
               "targetKnot": "start",
               "background": "assets/backgrounds/hq1.png",
               "onceOnly": true,
               "disableClose": true
-            }<%= i < triggers.size - 1 ? ',' : '' %>
-<% end %>
+            }<% %w[reception_lobby security_checkpoint trading_floor server_room data_center blockchain_lab irina_office executive_wing satoshi_office].each do |r| %>,
+            {
+              "_comment": "Pass 5 reload backstop (m04 pattern): the player asked to be brought in but the page reloaded before the debrief's first line. Re-emitting start_debrief_cutscene (setGlobal emits even when unchanged) re-fires the mapping above.",
+              "eventPattern": "room_entered:<%= r %>",
+              "condition": "globalVars.start_debrief_cutscene === true && globalVars.debrief_played !== true",
+              "onceOnly": true,
+              "setGlobal": { "start_debrief_cutscene": true }
+            }<% end %>
           ]
         }
       ],
@@ -1315,6 +1492,22 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
           "puzzle_graph_actions": [
             { "id": "irina_cooperation", "label": "Win Irina over (or settle her fate)", "unlocks_aim": "resolve_the_fund" }
           ],
+          <%# Pass 5 A4: a detained Irina doesn't wait all night for police who never
+              come. HaX's room_entered mappings set irina_taken on the player's next
+              room entry; she is hidden then, and again on a reload (m04 Cipher's
+              hide pattern). HaX's hub relays anything she still held. %>
+          "eventMappings": [
+            {
+              "eventPattern": "global_variable_changed:irina_taken",
+              "condition": "value === true",
+              "setVisible": false
+            },
+            {
+              "eventPattern": "room_entered:trading_floor",
+              "condition": "globalVars.irina_taken === true",
+              "setVisible": false
+            }
+          ],
           "itemsHeld": [
             {
               "type": "keycard",
@@ -1430,14 +1623,16 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
           "puzzle_graph_role": "terminal",
           "flagRewards": [
             {
-              "type": "emit_event",
-              "event_name": "flag1_server_cracked",
+              "type": "set_global",
+              "key": "flag1_submitted",
+              "value": true,
               "description": "Flag 1: First server password cracked — initial backend access"
             },
             {
-              "type": "emit_event",
-              "event_name": "flag2_credential_reuse",
-              "description": "Flag 2: Credential reuse exploited — lateral movement across the estate"
+              "type": "set_global",
+              "key": "flag2_submitted",
+              "value": true,
+              "description": "Flag 2: Credential reuse — the same password opens a second account"
             },
             {
               "type": "give_item",
@@ -1554,7 +1749,7 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
         <%# PASS 4 fix 1: the fund document is no longer a free pickup. The custody
             console opens one slot's file by its four-digit number; the fund is the
             slot the ENTROPY money lands in after the mixer (see the comment at the
-            top of this file). PIN pad, 3 tries per attempt, reopen to retry. The
+            top of this file). PIN pad, no attempt limit (no maxAttempts; pass 5 regression M6 saw five wrong tries in one opening with no lockout, which suits "fun, not hard"). The
             PIN cracker is not in the kit (capability arc). %>
         {
           "type": "pc",
@@ -1717,7 +1912,67 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
         "west": "data_center",
         "north": "satoshi_office"
       },
-      "npcs": [],
+      "npcs": [
+        {
+          "_comment": "Pass 5 A5 / D1: Satoshi's minder, a Crypto Anarchists operative, between the player and the CEO. Stand-in sprite (male_hacker_hood_down_v2, the Crypto Anarchists' look, hood down to tell him from Satoshi) until the character stage; cast-look proposal in DECISIONS_PENDING.md. He walks a short horizontal beat on the floor of the 10x6 hall (floor x 1..8, y 2..4, as m03 Terry's hall), clear of the west doorway (y 2.5), under the north door on the right. The north door is at tile x 8.5 (check_door_alignment: world x 592, wing origin x 320). Dwelling at (4,4) after the walk west he faces the west door, about 137 px away (seen). Dwelling at (8,4) after the walk east he faces east with the north door almost straight above him, about 80 degrees off his facing and outside the 120-degree cone, and the corridor behind him: that 4.5 s dwell is the window to slip past. On the walk east the door is about 40 degrees off his facing (seen, if in range). Needs a browser check (facing and range not seen walked). Talk-past while the cover holds; with cover_strained only a turned Irina's word gets past him, otherwise he turns hostile. Slipping past unseen or a KO always remain, so a strained cover never locks the player out.",
+          "id": "satoshi_minder",
+          "displayName": "Kemal Aydin",
+          "npcType": "person",
+          "position": { "x": 8, "y": 4 },
+          "spriteSheet": "male_hacker_hood_down_v2",
+          "spriteTalk": "assets/characters/male_hacker_hood_down_v2_talk.png",
+          "spriteVisemes": "assets/characters/male_hacker_hood_down_v2_visemes.png",
+          "avatar": "assets/characters/male_hacker_hood_down_v2_headshot.png",
+          "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 },
+          "voice": {
+            "name": "Iapetus",
+            "style": "Turkish-German former bank vault security chief in his late fifties, now a true believer in the Crypto Anarchists' cause and Satoshi's minder. Speak with a consistent German accent (Hamburg) in fluent, careful English throughout — do not shift to any other accent. Low, gravelly pitch; slow, deliberate pace. Courteous and immovable; thirty years of guarding other people's money.",
+            "language": "en-GB"
+          },
+          "storyPath": "scenarios/m06_follow_the_money/ink/m06_npc_minder.json",
+          "currentKnot": "start",
+          "globalVarOnKO": "minder_ko",
+          "behavior": {
+            "facePlayer": false,
+            "hostile": { "chaseSpeed": 100, "attackDamage": 6, "pauseToAttack": true },
+            "patrol": {
+              "enabled": true,
+              "pauseForPlayer": false,
+              "waypoints": [
+                { "x": 8, "y": 4, "dwellTime": 4500 },
+                { "x": 4, "y": 4, "dwellTime": 3500 }
+              ],
+              "speed": 40,
+              "loop": true
+            }
+          },
+          "los": {
+            "enabled": true,
+            "range": 150,
+            "angle": 120,
+            "visualize": true,
+            "challengeOnSight": {
+              "cooldown": 20000,
+              "skipIfGlobal": ["minder_passed", "minder_hostile", "minder_ko", "satoshi_confronted"]
+            }
+          },
+          "eventMappings": [
+            {
+              "eventPattern": "player_spotted:satoshi_minder",
+              "targetKnot": "on_sighted",
+              "conversationMode": "person-chat",
+              "background": "assets/backgrounds/background1.png",
+              "cooldown": 0
+            },
+            {
+              "eventPattern": "npc_hostile_state_changed",
+              "condition": "data.npcId === 'satoshi_minder' && data.isHostile === true",
+              "onceOnly": true,
+              "setGlobal": { "minder_hostile": true }
+            }
+          ]
+        }
+      ],
       "objects": [
         {
           "type": "notes",

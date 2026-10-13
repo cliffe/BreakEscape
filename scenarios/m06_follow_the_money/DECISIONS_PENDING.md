@@ -4,6 +4,19 @@ Started 2026-10-13. The pass runs without the user's input; anything that needs 
 
 | # | Stage | Decision needed | Recommendation | Blocking? |
 |---|---|---|---|---|
-| D1 | Alignment | Add a minder NPC for Satoshi in the executive wing, with a sight challenge and a talk-past while the cover holds (A5). A new NPC needs character art, and the character stage is parked. | Yes. Build it now on a stand-in sprite; art comes with the character stage. | No (built on a stand-in) |
+| D1 | Alignment | Add a minder NPC for Satoshi in the executive wing, with a sight challenge and a talk-past while the cover holds (A5). A new NPC needs character art, and the character stage is parked. | **Built** in round 1 (Kemal Aydin, `satoshi_minder`) on the stand-in sprite `male_hacker_hood_down_v2`. His own art waits for the character stage: cast-look proposal C1 below. | No (built on a stand-in) |
 | D2 | Alignment | Carry the freeze/watch choice into m07 | Yes, a line in m07's briefing during m07's pass (backlog) | No |
 | D3 | SecGen | Check the in-game VM claims at phone.ink:212, :529, erb:903, :1486 and the rack-sheet account mapping | Check outside the session | No |
+| D4 | SecGen | Round 1 added story-level VM wording: HaX's flag 2 text ("One password, two boxes, just as their own rack sheet admitted"), a reworded flag 1 text, and the debrief's per-flag lines ("One cracked password got you onto their backend, and the same password opened a second account. / The financial database gave us their doors, and the vault account gave us the keys to every cold wallet they hold."). They restate in-game text and don't describe the VM, but they make claims about it | Needs checking against SecGen by the user, with D3 | No |
+
+## Cast-look proposals (character stage, parked)
+
+### C1: Kemal Aydin, Satoshi's minder (`satoshi_minder`)
+
+- **Who he is:** Turkish-German, late fifties, from Hamburg. He spent thirty years as a bank's vault security chief and now guards Satoshi for the Crypto Anarchists, because he believes in them. Courteous and immovable.
+- **Voice (as set in the erb):** Iapetus; a German (Hamburg) accent in careful, fluent English; low, gravelly and slow.
+- **Why him:** the m06 cast already has a Russian woman in her thirties (Irina), a British-Nigerian trader in their twenties (Dani), a British-Indian analyst in her thirties from Leeds (Priya), a West Coast American in his forties (Satoshi), a South London guard in his forties, and HaX, Netherton and Nightshade in RP. Nobody else is in their late fifties, and nobody else is Turkish or German.
+- **Look for the concept prompt:** a broad-shouldered Turkish-German man of about 58, close-cropped grey hair greying at the temples, a neat grey moustache, olive skin, dark eyes. He wears a dark charcoal overcoat over a black roll-neck, a plain earpiece wire, and a small HashChain lapel pin. He stands like an ex-bank security chief. The Crypto Anarchists' hooded look appears only as a black hood worn down under the coat collar, which keeps a family resemblance to Satoshi's sprite without copying it.
+- **Stand-in now:** `male_hacker_hood_down_v2` (the Crypto Anarchists' hood-down look, which tells him apart from Satoshi's hood up). Replace it with his own sprite key (`kemal_aydin`) at the character stage.
+- **Recommendation:** approve the look; generate him with the rest of the m06 cast once the character stage is unparked.
+

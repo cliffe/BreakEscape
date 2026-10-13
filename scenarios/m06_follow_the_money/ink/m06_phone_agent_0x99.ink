@@ -27,7 +27,6 @@
 
 VAR password_hint_given = false
 VAR blockchain_hint_given = false
-VAR irina_guidance_given = false
 VAR first_contact = true
 // Same-conversation latches for the relayed copies (the synced globals come
 // from the pickup mappings and may land a moment after the give).
@@ -81,6 +80,14 @@ VAR reacted_first_server = false
 VAR reacted_blockchain = false
 VAR reacted_fund = false
 VAR reacted_network = false
+// Pass 5 alignment (synced scenario globals)
+VAR cover_strained = false        // A3: the floor has a reason to ring the FCA
+VAR irina_taken = false           // A4: a detained Irina has been collected
+VAR ready_to_extract = false      // A1: both decisions and all four flags in (HaX's mappings)
+VAR start_debrief_cutscene = false // Synced scenario global (A1): set by extract_go; opens the debrief
+VAR lockpick_guide_offered = false
+VAR lockpick_guide_hint_given = false
+VAR server_room_entered = false   // Synced scenario global (regression M4): the server room door is open
 
 // ================================================
 // START
@@ -101,7 +108,7 @@ VAR reacted_network = false
 
 === first_call ===
 #speaker:agent_0x99
-{player_name}. You're inside. How's the FCA cover holding?
+You're inside. How's the FCA cover holding?
 Tonight's about money. Where it comes in, where it lands, who it pays.
 -> first_call_choices
 
@@ -133,6 +140,11 @@ Everything after that is joining up the cells' money.
 // Ordered by relevance (m01 support_hub pattern): topics that arrive later in
 // the mission come first, spent topics retire, fixed choices sit last.
 
+// Pass 5 A1: the call-in (m04 extract_offer). Offered once both decisions and
+// all four flags are in, so the debrief can never open with the backend unfinished.
++ {ready_to_extract and not start_debrief_cutscene} [I'm done here. Bring me in.]
+    -> extract_offer
+
 // Urgent: the decision Satoshi's KO left open (review B2/M4 safety net).
 + {satoshi_ko and not assets_decided} [About the fund. I'm ready to decide.]
     -> on_satoshi_ko
@@ -144,7 +156,7 @@ Everything after that is joining up the cells' money.
 + {fund_debrief_available and not reacted_fund} [I've found The Architect's Fund.]
     ~ reacted_fund = true
     -> on_architects_fund_discovered
-+ {irina_ko and found_architects_fund and not irina_exec_badge_given and not relay_exec_badge_sent} [I need the executive badge she signed out.]
++ {(irina_ko or irina_taken) and found_architects_fund and not irina_exec_badge_given and not relay_exec_badge_sent} [I need the executive badge she signed out.]
     -> relay_exec_badge
 
 // PASS 4 fix 1: sticky, graded nudges for the custody-console puzzle.
@@ -161,29 +173,23 @@ Everything after that is joining up the cells' money.
     -> on_password_lists_found
 
 // PASS 3 P9: relayed copies, on request, only for what isn't picked up yet.
-+ {irina_ko and not irina_badge_obtained and not irina_badge_cloned and not relay_cto_badge_sent} [I need her office badge.]
++ {(irina_ko or irina_taken) and not irina_badge_obtained and not irina_badge_cloned and not relay_cto_badge_sent} [I need her office badge.]
     -> relay_cto_badge
-+ {irina_ko and not found_password_lists and not relay_wordlist_sent} [Send me Volkova's wordlist.]
++ {(irina_ko or irina_taken) and not found_password_lists and not relay_wordlist_sent} [Send me Volkova's wordlist.]
     -> relay_wordlist
 
-// Field guides, offered once the player has met the thing they explain
-+ {distcc_guide_offered and not distcc_guide_hint_given} [Send me the distcc guide.]
-    -> request_distcc_guide
-+ {privesc_guide_offered and not privesc_guide_hint_given} [Send me the privilege escalation and credential reuse guide.]
-    -> request_privesc_guide
-+ {cracking_guide_offered and not cracking_guide_hint_given} [Send me the offline password cracking guide.]
-    -> request_cracking_guide
-+ {recon_guide_offered and not recon_guide_hint_given} [Send me the reconnaissance field guide.]
-    -> request_recon_guide
-+ {rfid_guide_offered and not rfid_guide_hint_given} [Send me the RFID cloning guide.]
-    -> request_rfid_guide
+// Field guides (Pass 5 minor): one choice, offered while any guide the player
+// has met is still unsent; the menu lists only those.
++ {(distcc_guide_offered and not distcc_guide_hint_given) or (privesc_guide_offered and not privesc_guide_hint_given) or (cracking_guide_offered and not cracking_guide_hint_given) or (recon_guide_offered and not recon_guide_hint_given) or (rfid_guide_offered and not rfid_guide_hint_given) or (lockpick_guide_offered and not lockpick_guide_hint_given)} [Send me a field guide.]
+    -> guide_menu
 
 // Early-game topics, retired once the player is past them
 + {not blockchain_hint_given and not found_blockchain_evidence} [Where do I start on the money trail?]
     -> blockchain_help
 + {not password_hint_given and not flag1_submitted} [Any tips on their passwords?]
     -> password_help
-+ {not irina_guidance_given and not irina_ko and not irina_fate_decided} [How do I play Volkova?]
+// Pass 5 minor: stays on offer until her part is settled.
++ {not irina_ko and not irina_fate_decided} [How do I play Volkova?]
     -> irina_guidance
 
 // Fixed choices, always last. PASS 3 playtest (engine E9): phone history is
@@ -231,7 +237,6 @@ Look for the ransomware wallet and TalentStack's. Both run through HashChain.
     -> hub
 
 === irina_guidance ===
-~ irina_guidance_given = true
 She wrote the privacy code for "financial freedom". Now it washes ransom money.
 Our profile says that keeps her up at night. Not enough to quit.
 -> irina_guidance_choices
@@ -255,6 +260,9 @@ Try the other way first.
 
 === recap ===
 #speaker:agent_0x99
+{cover_strained and not assets_decided:
+    Someone on that floor has a reason to ring the FCA about you now. Don't hang about.
+}
 {not guard_resolved:
     You're FCA, on a routine visit. You want Dr Irina Volkova, the CTO, on the trading floor.
     There's a guard on the checkpoint. You've an appointment, so act like it.
@@ -269,7 +277,7 @@ Try the other way first.
         Volkova keeps a wordlist of what people here actually pick. Get it from her.
     }
 }
-{(found_password_lists or server_passphrase_known) and not flag1_submitted:
+{(found_password_lists or server_passphrase_known) and not server_room_entered and not flag1_submitted:
     The server room door takes a crypto term and a year. The checklist at the checkpoint gives the year.
     The term is whatever tops Volkova's list.
 }
@@ -298,14 +306,22 @@ Try the other way first.
     Get the vault account before you go upstairs. It's the last box on the backend, and it holds the wallet keys.
 }
 {found_architects_fund and not irina_exec_badge_given:
-    {irina_ko:
+    {irina_ko or irina_taken:
+        {irina_ko:
         The spare executive badge was signed out to Volkova. Check where she went down, or ask me for a copy.
+    - else:
+        The spare executive badge was signed out to Volkova, and the police have her now. Ask me for a copy.
+    }
     - else:
         Volkova has the spare executive badge. She's on the trading floor. The wing is east of the data centre.
     }
 }
 {found_architects_fund and irina_exec_badge_given and not satoshi_confronted:
     You've the badge. The wing's east of the data centre; his office is north of that.
+    He keeps a minder on that corridor.
+    {cover_strained:
+        With your cover strained, he won't take the FCA line. Wait for his back, or bring Volkova's word if she's with us.
+    }
 }
 {irina_recruited and not architect_identity_found:
     Volkova says Satoshi's safe is 2140.
@@ -326,7 +342,7 @@ Try the other way first.
     Before I pull you out, finish the backend. I want all four flags at the drop-site.
 }
 {assets_decided and irina_fate_decided and flag1_submitted and flag2_submitted and flag3_submitted and flag4_submitted:
-    That's everything. Walk out of there and I'll bring you in.
+    That's everything. Look round if you want, then tell me to bring you in.
 }
 -> hub
 
@@ -403,9 +419,9 @@ Or watch it. We map every cell that draws on it, and the money reaches them.
 
 === handler_recommendation ===
 I'll give you the cost of each. The call's yours.
-If you freeze it, the cells still waiting go short, and ENTROPY knows its bank is burned.
+If you freeze it, the balances never reach the cells, and ENTROPY knows its bank is burned.
 If you watch it, the balances pay for what's on that page, and we get the map.
-Watching still works with him arrested. The payout's pre-signed; we keep the arrest quiet until it's gone.
+Watching still works with him detained. The payout's pre-signed; we keep it quiet until it's gone.
 The advances are gone either way.
 #exit_conversation
 -> hub
@@ -517,8 +533,73 @@ For the file, that's Satoshi's Ghost, the Crypto Anarchists' leader. Not Ghost P
     -> hub
 
 // ================================================
+// THE CALL-IN (Pass 5 A1, m04 extract_offer / extract_go)
+// Text first, choices in a text-free knot (phone reopen rule). extract_go sets
+// start_debrief_cutscene, which opens the debrief (closing_debrief_person's
+// mapping); the call-in task completes in the same batch.
+// ================================================
+
+=== extract_offer ===
+#speaker:agent_0x99
+Once you're out, you don't go back in. Whatever you haven't read stays for forensics.
+{not architect_identity_found:
+    His safe's still shut, for one.
+}
+-> extract_choices
+
+=== extract_choices ===
++ [Bring me in.]
+    Car's round the back of the building. Two minutes.
+    -> extract_confirm
++ [Not yet. I'm still looking.]
+    Take your time. The police can wait a few minutes.
+    -> hub
+
+=== extract_confirm ===
++ [On my way.]
+    -> extract_go
+
+=== extract_go ===
+#speaker:agent_0x99
+#complete_task:call_in_after_sweep
+#set_variable:start_debrief_cutscene=true
+~ start_debrief_cutscene = true
+See you at HQ.
+-> hub
+
+// ================================================
 // FIELD GUIDES
 // ================================================
+
+=== guide_menu ===
+#speaker:agent_0x99
+Which one?
+-> guide_menu_choices
+
+=== guide_menu_choices ===
++ {lockpick_guide_offered and not lockpick_guide_hint_given} [Lockpicking.]
+    -> request_lockpick_guide
++ {rfid_guide_offered and not rfid_guide_hint_given} [RFID cloning.]
+    -> request_rfid_guide
++ {recon_guide_offered and not recon_guide_hint_given} [Reconnaissance and network mapping.]
+    -> request_recon_guide
++ {distcc_guide_offered and not distcc_guide_hint_given} [Exploiting distcc.]
+    -> request_distcc_guide
++ {cracking_guide_offered and not cracking_guide_hint_given} [Offline password cracking.]
+    -> request_cracking_guide
++ {privesc_guide_offered and not privesc_guide_hint_given} [Privilege escalation and credential reuse.]
+    -> request_privesc_guide
++ [Never mind.]
+    -> hub
+
+=== request_lockpick_guide ===
+#speaker:agent_0x99
+~ lockpick_guide_hint_given = true
+#set_variable:lockpick_guide_hint_given=true
+#give_item:lab-workstation:m06_lockpicking_field_guide
+Lockpicking guide sent.
+The checkpoint door's a cheap lock. The guard's the hard part. Pick while his back's turned.
+-> hub
 
 === request_cracking_guide ===
 #speaker:agent_0x99

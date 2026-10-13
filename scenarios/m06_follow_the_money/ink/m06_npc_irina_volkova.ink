@@ -42,6 +42,9 @@
 // ===========================================
 
 VAR irina_trust = 0              // -50 to 100 scale
+// Pass 5 A3: synced scenario global, written with #set_variable so HaX's
+// conversation_closed mapping can see it. Left true when her first
+// conversation closes, it strains the cover (cover_strained).
 VAR irina_suspicious = false
 VAR moral_conflict_revealed = false
 VAR shown_casualties = false
@@ -68,6 +71,7 @@ VAR irina_exec_badge_given = false // set by the pickup mappings (lesson 26)
 VAR read_irina_notes = false       // onPickup of her research notes (P10)
 VAR architect_identity_found = false // safe opened (PASS 4 fix 3)
 VAR read_settlement_log = false      // settlement log picked up (round 2, M3)
+VAR cover_strained = false   // Pass 5 A3: synced; the floor has a reason to ring the FCA
 VAR given_time = false
 VAR asked_passwords = false   // playtest D1: the second ask always succeeds
 VAR wordlist_handed = false   // playtest D4: menu latch, same conversation
@@ -115,6 +119,7 @@ Dr. Irina Volkova: A supervisory visit. Always a pleasure, I'm sure.
     ~ irina_trust -= 5
     #influence_decreased
     ~ irina_suspicious = true
+    #set_variable:irina_suspicious=true
     -> suspicious_response
 
 + [Thirty-seven papers and nearly three thousand citations. I've read some of your work.]
@@ -136,7 +141,6 @@ Dr. Irina Volkova: Eager, aren't you?
 
 Dr. Irina Volkova: Supervisors start with paperwork. Customer checks, anti-laundering. You went straight for the machines.
 
-~ irina_suspicious = true
 -> audit_discussion
 
 === academic_response ===
@@ -282,6 +286,7 @@ Dr. Irina Volkova: It's the part of this job I'm still proud of.
 ~ irina_trust += 10
 #influence_increased
 ~ irina_suspicious = false
+#set_variable:irina_suspicious=false
 
 Dr. Irina Volkova: Now that's a supervisor's question.
 
@@ -305,7 +310,9 @@ Dr. Irina Volkova: Satoshi is paranoid about doors and careless about passwords.
 
 === badge_followup ===
 #speaker:irina_volkova
-{irina_trust >= 25:
+// Pass 5 A3: with the cover strained she wants more before she lends it; the
+// cloner route is unchanged.
+{(irina_trust >= 25 and not cover_strained) or irina_trust >= 35:
     ~ irina_trust += 5
     #influence_increased
     ~ badge_handed = true
@@ -315,7 +322,11 @@ Dr. Irina Volkova: Satoshi is paranoid about doors and careless about passwords.
     Dr. Irina Volkova: West door. Try not to judge the whiteboard.
     -> hub
 - else:
-    Dr. Irina Volkova: My badge stays on my neck for a visitor I met an hour ago. Nothing personal.
+    {cover_strained and irina_trust >= 25:
+        Dr. Irina Volkova: Someone on the floor has been asking whether you are who you say you are. Until they stop, my badge stays on my neck.
+    - else:
+        Dr. Irina Volkova: My badge stays on my neck for a visitor I met an hour ago. Nothing personal.
+    }
 
     Narrator: Her lanyard hangs open at her collar, well within a cloner's range.
     -> hub
@@ -563,7 +574,7 @@ Dr. Irina Volkova: Yes. Every deposit I cleared ended up there.
     {irina_recruited:
         Dr. Irina Volkova: What else do you need?
     - else:
-        Narrator: She sits very still at her desk, waiting for the police, and doesn't look up.
+        Narrator: She sits very still at her desk and doesn't look up. The police are on their way up for her, and she knows it.
     }
 }
 + {found_architects_fund and not irina_exec_badge_given and TURNS() > exec_badge_turn} [Satoshi's wing. You've a badge for it.]

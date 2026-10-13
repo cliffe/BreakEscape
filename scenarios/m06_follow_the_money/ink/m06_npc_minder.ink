@@ -1,0 +1,120 @@
+// ===========================================
+// Mission 6: NPC - Kemal Aydin, Satoshi's minder (executive wing)
+// Pass 5 alignment A5 / D1 (m04 guard and Cipher pattern).
+// - Sight challenge (los.challengeOnSight -> on_sighted), or spoken to.
+// - Cover held: the FCA cover talks him round (minder_passed).
+// - Cover strained (A3): somebody rang the FCA. Only a turned Irina's word
+//   gets past him; otherwise he turns hostile, or the player backs off and
+//   slips past his cone later. A strained cover never locks the player out.
+//
+// Re-entry (guard file pattern): every resting choice lives in a stitch of
+// `start`, so a re-open re-navigates to `start` and plays the opener for the
+// current state. Exits print nothing after the exit line.
+// ===========================================
+
+// Synced scenario globals
+VAR cover_strained = false
+VAR irina_recruited = false
+VAR irina_ko = false
+VAR minder_passed = false
+VAR minder_hostile = false
+VAR satoshi_confronted = false
+
+// Ink-local
+VAR minder_met = false
+
+-> start
+
+=== start ===
+#speaker:satoshi_minder
+{ minder_passed:
+    Kemal Aydin: He is expecting you. Go in.
+    -> start.passed_choices
+}
+{ not minder_met:
+    ~ minder_met = true
+    #speaker:narrator
+    Narrator: A broad man in his late fifties, grey at the temples, stands between you and the corner office as if he were part of the wall.
+    #speaker:satoshi_minder
+    Kemal Aydin: This floor is closed. Who let you up?
+- else:
+    Kemal Aydin: You again. The answer has not changed.
+}
+-> start.challenge
+
+= challenge
++ {not cover_strained} [The FCA. Mr Nakamoto's compliance file has my name on it.]
+    -> talked_past
++ {cover_strained and irina_recruited and not irina_ko} [Dr Volkova sent me up. Ring her if you like.]
+    -> irina_vouches
++ {cover_strained} [The FCA. Routine supervisory visit.]
+    -> cover_blown
++ [Wrong floor. I'll go.]
+    Kemal Aydin: Yes. You will.
+    #exit_conversation
+    -> start.challenge
+
+= passed_choices
++ [Thanks.]
+    Kemal Aydin: Do not thank me. I only open the door.
+    #exit_conversation
+    -> start.passed_choices
+
+= standoff_choices
++ [Then step aside, or I'll move you.]
+    -> goes_hostile
++ [(Back off down the corridor.)]
+    Kemal Aydin: Good. Stay down there.
+    #exit_conversation
+    -> start.challenge
+
+// los.challengeOnSight: he has seen the player in the corridor.
+=== on_sighted ===
+#speaker:satoshi_minder
+{ minder_passed:
+    -> start
+}
+#speaker:narrator
+Narrator: The man by the corner office turns, sees you, and steps squarely into your path.
+#speaker:satoshi_minder
+{ not minder_met:
+    ~ minder_met = true
+    Kemal Aydin: The FCA does not come up here.
+- else:
+    Kemal Aydin: I told you once. This floor is closed.
+}
+-> start.challenge
+
+=== talked_past ===
+#speaker:satoshi_minder
+~ minder_passed = true
+#set_variable:minder_passed=true
+Kemal Aydin: It does tonight, then.
+Kemal Aydin: Thirty years I guarded banks for men in good suits. Then I guarded this one for a man in a hood. The paperwork is always the same.
+Kemal Aydin: Go in. I will be outside the door.
+#exit_conversation
+-> start.passed_choices
+
+=== irina_vouches ===
+#speaker:narrator
+Narrator: He holds your eye while he dials. A short exchange in German-accented English, then a longer silence on the other end.
+#speaker:satoshi_minder
+~ minder_passed = true
+#set_variable:minder_passed=true
+Kemal Aydin: She says you are expected. She has never once lied to me, so.
+Kemal Aydin: Go in.
+#exit_conversation
+-> start.passed_choices
+
+=== cover_blown ===
+#speaker:satoshi_minder
+Kemal Aydin: Somebody on the trading floor rang the FCA an hour ago. They have never heard of you.
+Kemal Aydin: So. Who are you really?
+-> start.standoff_choices
+
+=== goes_hostile ===
+#speaker:satoshi_minder
+Kemal Aydin: I hoped you would say that.
+#hostile:satoshi_minder
+#exit_conversation
+-> start.challenge
