@@ -90,6 +90,8 @@ From the PIN cracker fix (2026-10-10), found but not fixed:
 
 - **"Under arrest" canon in m01, m02, m06** (m04 scenario review, 2026-10-13; S). SAFETYNET agents detain and hand over; they don't arrest. m04 is fixed; m01 (cached audio), m02 and m06 still say "You're under arrest". Fix during each mission's pass and re-voice the line.
 
+- **v2 sprites without a talk sheet** (m06 dressing walk, 2026-10-13; S–M, PixelLab). These 11 sprite keys have no `<key>_talk.png`: female_blowse_v2, **female_hacker_hood_v2** (the default player sprite), female_office_worker_v2, female_scientist_v2, female_security_guard_v2, female_telecom_v2, male_nerd_v2, male_office_worker_v2, male_security_guard_v2, male_spy_v2 and male_telecom_v2. Every conversation requests the player's talk image, giving about 80–90 404s per session, and the portrait falls back. Run the pipeline's talk and visemes stages for each, or have `player.js` fall back to the headshot without requesting. The fingerprint minigame's `reader-bezel.png` and similar 404s are optional art probes (`fingerprint-art.js`) and are fine.
+
 ## New games
 
 - **Eldritch Hacker** (user, 2026-10-10; L). Summoned cultists interfere with your VM use: they walk into the room and cast a concentration spell that turns your screen upside down or remaps your keyboard, so you have to fight them off while you hack. Could be multiplayer, with players facing off against each other.
