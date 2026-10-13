@@ -31,9 +31,7 @@
 "His name's on the manifest. Root's the last door.",
 "[choice] I need to talk about Torres.",
 "[choice] I'm going in. Soft or hard?"
-]
-},
-{
+],
 "notSaid": [
 "[choice] Someone here has been talking to a recruiter",
 "[choice] First flag's in",
@@ -52,9 +50,7 @@
 {
 "said": [
 "A trial abroad, a wife with Stage 3 cancer, and nobody left to ask."
-]
-},
-{
+],
 "notSaid": [
 "[choice] About that flag.",
 "Three hundred and eighty thousand dollars"
@@ -70,11 +66,9 @@
 },
 {
 "said": [
-"You've read what he's carrying. I won't tell you what he deserves.",
+"You've read his file. I won't tell you what he deserves.",
 "Maybe it changes what's fair. It doesn't change the upload."
-]
-},
-{
+],
 "notSaid": [
 "weaponises",
 "rope with a hook",

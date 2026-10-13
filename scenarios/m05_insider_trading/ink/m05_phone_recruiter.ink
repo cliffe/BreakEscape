@@ -392,7 +392,7 @@ Narrator: She hangs up first.
 === end_contact ===
 #speaker:recruiter
 
-Think it over. I'm not in a hurry.
+Think it over. Quickly.
 
 #speaker:narrator
 Narrator: She hangs up first.

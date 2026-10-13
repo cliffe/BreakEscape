@@ -22,6 +22,9 @@
 }
 },
 {
+"said": []
+},
+{
 "talk": "phone",
 "picks": [
 "Bring me in"
@@ -30,9 +33,7 @@
 {
 "said": [
 "Bring me in"
-]
-},
-{
+],
 "notSaid": [
 "What should I know going in"
 ]

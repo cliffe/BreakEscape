@@ -230,7 +230,7 @@ David Torres: Three months ago I was trying to save my wife.
     #complete_task:confront_torres
     -> combat_offer
 
-+ [I'm going public. The programme, the Recruiter, you. From a source nobody can trace.]
++ [I'm going public. The programme and the Recruiter, from a source nobody can trace.]
     #complete_task:confront_torres
     -> public_exposure_path
 
@@ -488,7 +488,7 @@ David Torres: And me? My family?
 // Phase 4 dialogue C1 (D5-22): the ending can be chosen for the programme
 // without wanting to hurt the family.
 + [I'll keep your name out of it if I can. I can't promise.]
-    David Torres: You can't. They'll find it. They always find it.
+    David Torres: You can't. Somebody always finds the name.
     -> public_exposure_consequence
 
 === public_exposure_consequence ===
@@ -545,12 +545,12 @@ David Torres: I did this to save them. And you're going to wreck them anyway.
     Narrator: As many as you can reach. You don't promise more.
 }
 
+// C2 (D5C2-20): without the deal he has "nothing to say to you", so he gets
+// one line. With it, the court question already came in arrest_family_question.
 {torres_arrested and not entropy_program_exposed:
     #speaker:david_torres
-    David Torres: How long will I get?
-    David Torres: ...No. That's for a court, isn't it. Not you.
     {elena_treatment_funded:
-        David Torres: But Elena gets her treatment.
+        David Torres: Elena gets her treatment. That's all I asked for.
         Narrator: You nod.
     - else:
         David Torres: Elena will be dead before I get out.

@@ -127,7 +127,7 @@ Owen Gallagher: I thought it was remote work at first. It's too tidy for that. S
     - final_choice == "public_exposure":
         Owen Gallagher: David's badge just went out the front door. Thought you'd want to know.
     - final_choice == "combat_lethal":
-        Owen Gallagher: David's badge went into the vault and never came out. Should I be worried?
+        Owen Gallagher: David's badge went into the vault an hour ago. It's not come out.
     - else:
         Owen Gallagher: {patricia_ko:Security say|Patricia says} I never pulled that badge log. Fine by me.
     }

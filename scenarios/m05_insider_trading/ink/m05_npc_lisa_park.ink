@@ -106,7 +106,8 @@ Lisa Park: He's lost weight. Looks like he hasn't slept in months.
     ~ fate_noted = true
     {
     - final_choice == "arrest" or final_choice == "combat_nonlethal":
-        Lisa Park: There are police in reception. Everyone's pretending not to look.
+        // C2 (D5C2-5): Patricia gives the police the side door.
+        Lisa Park: Someone's had the side door propped open for ten minutes. Nobody will say why.
     - final_choice == "public_exposure":
         Lisa Park: David just walked out in his coat. He didn't even look at the tin.
     - final_choice == "combat_lethal":

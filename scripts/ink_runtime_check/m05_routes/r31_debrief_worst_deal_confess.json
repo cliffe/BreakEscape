@@ -35,7 +35,7 @@
 {
 "talk": "debrief",
 "picks": [
-"named the wrong person",
+"That one's on me",
 "And the research portal",
 "Whose job",
 "court know",
@@ -47,14 +47,12 @@
 {
 "said": [
 "The final upload stopped at ninety-nine per cent. Most of the rotation windows",
-"Yes. That goes in the file next to your name.",
+"Yes. It's in the report, next to your name.",
 "He talked to you before the police arrived",
 "No. What he told us stays with us.",
-"Less than a double agent",
+"less than a double agent",
 "One more thing. Your report doesn't mention"
-]
-},
-{
+],
 "notSaid": [
 "The key material left in pieces",
 "very expensive paperweight, and one region",

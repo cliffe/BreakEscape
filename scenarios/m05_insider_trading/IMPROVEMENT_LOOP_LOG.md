@@ -701,3 +701,113 @@ Choices (not voiced) also changed: the reason choice and late disclosure (D5-3),
 
 - Browser checks for the structural changes: the debrief beats on two endings; Patricia's naming (reaction beat, then a close and reopen on it); a fate reaction in a person-chat; HaX's flag choice with two flags waiting; the Recruiter hang-up and ring-back.
 - D12 (SecGen wording of the portal beat) stays with the user, unchanged in level.
+
+### Phase 4 dialogue, cycle 2
+
+Review: `DIALOGUE_REVIEW_P5_C2.md` (fresh Opus, read-only). Counts: 0 blockers, 1 major, 31 minors (D5C2-1 to D5C2-32). Cycle 1 confirmed closed by the reviewer. Snapshot for `tagdiff --old`: the session scratchpad's `m05-dialogue-c2-fixer/snap/`. Every finding was checked against the ink before acting; none withdrawn. No erb edit was needed.
+
+| # | Sev. | Finding | Outcome |
+|---|---|---|---|
+| D5C2-1 | major | Stance praise softened the lethal verdict | **Fixed**, and taken further: on `combat_lethal` the final reflection skips both stance lines **and** the trust branch (at `handler_trust` >= 70 it would otherwise have said "I trust your judgement. Last night proved that." over a death). The lethal close is "You know the answer to that." then "The job got done. I'm still deciding about the rest."; a sympathetic player first hears the review's optional line, "You went looking for the man underneath. Then you left him on the floor." |
+| D5C2-2 | minor | Badge-log fact twice | **Fixed** as proposed (:344, :350 → "Two in the morning, week after week, and nobody asked why.") |
+| D5C2-3 | minor | "Slow way" twice | **Fixed** as proposed (only `combat_nonlethal`) |
+| D5C2-4 | minor | Lethal: Patricia and Owen ask unanswerable questions | **Fixed** as proposed |
+| D5C2-5 | minor | Lisa's police "in reception" vs Patricia's side door | **Fixed**, with "Someone's" in place of "Patricia's": Lisa's ink has no `patricia_ko`, and with Patricia down Lisa can't credit her. Adding a synced VAR for one word wasn't worth it |
+| D5C2-6 | minor | Halloran's "[It's David.]" after "The police have David." | **Fixed** as proposed ("[It's David.]" before the fate, "[It was David. I'm sorry.]" after; one shows at a time) |
+| D5C2-7 | minor | "Methodical" praise after a wrong accusation | **Fixed** ("Most of the night, you were."). Also the diplomatic branch, which had the same flaw: "You said you'd read the room. You did." after naming an innocent woman → "Most of the night, you did." (KOs still take precedence) |
+| D5C2-8 | minor | Choice echoed HaX | **Fixed**: "[That one's on me.]"; reply "Yes. It's in the report, next to your name." ("report" in place of the review's "file", for D5C2-15) |
+| D5C2-9 | minor | "Less than a double agent" had no subject | **Fixed** as proposed |
+| D5C2-10 | minor | "Forty-seven" assumed | **Fixed** as proposed |
+| D5C2-11 | minor | Torres' "they" clash | **Fixed** as proposed ("Somebody always finds the name.") |
+| D5C2-12 | minor | Exposure pick named Torres, then offered to hide his name | **Fixed** as proposed |
+| D5C2-13 | minor | Patricia's interview only in the vetting file | **Fixed** as proposed |
+| D5C2-14 | minor | Money five times | **Fixed**: :749 as proposed ("Somebody pays the Architect, too. Next, we follow the money."; it sets up m06's opening "Every cell we have hit is being paid by someone"). Also :752 "Torres knows how TalentStack paid him." → "Torres knows where his came from." so the tail says "pay" once fewer |
+| D5C2-15 | minor | "File" six times | **Fixed**: :330 "clean audit", :215 "You were.", and :207 "with the rest of the file" → "with everything else" (one more cut than proposed) |
+| D5C2-16 | minor | "Same hand?" unanswered | **Fixed** ("The same hand.") |
+| D5C2-17 | minor | Empty 50-69 trust verdict | **Fixed** (cut; that band prints nothing) |
+| D5C2-18 | minor | Halloran/Lisa exposure twins | **Fixed** as proposed |
+| D5C2-19 | minor | "Go on" three times | **Fixed** as proposed |
+| D5C2-20 | minor | Torres' silence lasted one click | **Fixed**, going further than proposed: without the deal he says only "Elena will be dead before I get out." With the deal, "How long will I get? / ...No. That's for a court" also repeated his own "And the court? No. You can't promise that." from `arrest_family_question`, so both lines go there too; the deal path ends "Elena gets her treatment. That's all I asked for." (callback to "Just... Elena. Please.") and "You nod." |
+| D5C2-21 | minor | Kids dropped from the second reply and the phone | **Fixed** as proposed |
+| D5C2-22 | minor | Weaker late admission | **Fixed** as proposed, in person and on the phone. Now 21 of 38 routes hear "I never once read the front door" (was the reason-menu routes only) |
+| D5C2-23 | minor | HaX echoed the player | **Fixed** as proposed ("Checked. All four nights."); the badge log has four Torres-then-spare pairs (erb `door_log_text`) |
+| D5C2-24 | minor | Two "I need to talk" labels | **Fixed** as proposed |
+| D5C2-25 | minor | "Carrying" ×3, game-menu line | **Fixed** as proposed (:757's "You've seen what he's carrying" kept as the one use) |
+| D5C2-26 | minor | "Reasonable" twice | **Fixed** with "Weigh what it costs. Forget how it sounded." instead of "…, not how it sounded", which is the "X, not Y" shape the lint flags |
+| D5C2-27 | minor | "I'm not in a hurry" contradicts the ring-back | **Fixed** as proposed (`end_contact` is reached only from the ring-back) |
+| D5C2-28 | minor | "That part" pointed at nothing | **Fixed** as proposed |
+| D5C2-29 | minor (polish) | Paired influence popups | **Declined**: the reviewer marks it optional; folding the pairs changes the arithmetic in seven knots and risks moving a threshold, for a cosmetic gain. Each popup lands on a spoken line, as the README asks |
+| D5C2-30 | minor | "[Bought a person how?]" asked Netherton his own question | **Fixed** with "[Bought with what?]" instead of "[Who sells out the 999 network?]": the other choice is already "[Then we find out who sold.]", so a second "who" choice would duplicate it. "With what" asks the how, and "That is what you are going to tell me." still lands |
+| D5C2-31 | minor | "Fast's fine. Sloppy isn't." twice | **Fixed** as proposed |
+| D5C2-32 | minor | Narrator spoils Netherton's line | **Fixed** as proposed |
+
+#### Route driver
+
+- Quotes updated: 13 routes pick "Bought with what"; r31 "less than a double agent"; 13 routes' "won't thank me" pick → "won't like seeing"; r31 "That one's on me" and its reply; r29, r34, r36 for the reworded lines.
+- **Found and fixed a driver-use bug:** a `notSaid` step directly after a `said` step checked nothing, because `said` clears what was heard (`route.js:161-165`). Ten routes had one (r3, r17, r29-r36). They are merged into the preceding step, so those checks now run. Two old checks were wrong once live: r29's notSaid "Nine per cent to spare" (r29 names Torres before the portal, so it is said, correctly; removed), and r17's notSaid that also saw the first call (a `{"said": []}` reset added before the second call).
+- New checks: r29 (lethal close: no "Cold, maybe", no "I trust your judgement", no "slow way", hears "The job got done…"), r3 ("Most of the night, you were.", "told Patricia to stop looking", "so does TalentStack's recruiting"; no "slow way", no "forty-seven stay"), r34 (Patricia's "ten minutes", no "Should I be"; Halloran's "[It was David. I'm sorry.]").
+- New routes: **r37** (the exposure pick without "you", the softer follow-up, Halloran's badge-on-desk line) and **r38** (hand-over without the deal through the drive pull: one last line from Torres; Lisa's side door; Halloran's post-fate choice; Patricia's side door).
+- **38 routes, all expectations met; longest run without a choice 9.**
+
+#### Checks (static; no browser session started)
+
+- `scripts/compile-ink.sh m05_insider_trading`: 10 files, 0 failed, no loose ends (the two expected END warnings).
+- dialoguelint: 0 errors; the same two known, allowed findings (Recruiter L86, L363).
+- reopencheck: total problems 0 (HaX, the Recruiter, Patricia's phone, 1800 reopens each).
+- tagdiff `--old` against the snapshot: debrief 11 structural differences (the D5C2-13, -7, -10, -3, -1/-17 conditions); Halloran 6 (the split "[It's David.]" choice, D5C2-6); every other file structure unchanged.
+- loopcheck: debrief on lethal (sympathetic, trust 90; hardline), arrest with a wrong accusation (diplomatic), subdued with a wrong accusation (cautious), turned (trust 60); Halloran, Lisa, Patricia, Owen at `hub` after a fate; Torres, the Recruiter, HaX, the briefing, Patricia's phone: no runtime errors.
+- Validator (`--skip-ink --no-graph`): schema passes; the same 12 same-pattern notes and the `object_interacted` timed-text pair. Nothing new.
+- Banned-vocabulary scan of the added lines: clean.
+
+#### Spoken lines changed (old → new)
+
+Debrief
+- "…went to the Home Office review with the rest of the file." → "…with everything else."
+- New: "QDC's readiness review passed. Nobody asked who told Patricia to stop looking." (the "interview" line kept for vetting-file players)
+- "You said you'd be methodical. The file says you were." → "…You were."; new "You said you'd be methodical. Most of the night, you were."; new "You said you'd read the room. Most of the night, you did."
+- "Yes. That goes in the file next to your name." → "Yes. It's in the report, next to your name."
+- "The CEO wanted a clean file more than a safe one." → "…a clean audit…"
+- "Hours. His badge at the front door at two in the morning, and a borrowed one on the server hallway." (and the "For the training file:" form) → "Hours. Two in the morning, week after week, and nobody asked why."
+- "…Not all forty-seven, but it's a start." gains the variant "He's met some of the Recruiter's other candidates. It's a start."
+- "…The placements carry on. The forty-seven stay in the pipeline until we find them ourselves." → "…The placements carry on, and so does TalentStack's recruiting."
+- "Less than a double agent would give us. …" → "What he gave us is less than a double agent would. …"
+- New: "The same hand."
+- "Every one of these operations has been paid for by someone. Next, we follow the money." → "Somebody pays the Architect, too. Next, we follow the money."
+- "Torres knows how TalentStack paid him. That's a thread we can pull." → "Torres knows where his came from. …"
+- New (lethal, sympathetic): "You went looking for the man underneath. Then you left him on the floor."
+- Cut: "You made hard calls, and you made them yourself." The stance and trust lines are now gated off the lethal ending (not reworded).
+
+Patricia (in person and phone)
+- "Torres hasn't come up from the data centre. Should I be sending someone down?" → "…I'll give him ten minutes, then I'm sending someone down."
+- Greeting cycle "Go on." → "Yes?" (order: "What now?", "Yes?", "Quickly, now…")
+- "He's Ruth's. But I vetted him. I sat three desks from him at the Christmas party." → "He's Ruth's. But I vetted him. His kids drew on the tablecloth at our Christmas party."
+- "...Every night. I should have seen that myself." (both) → "...Every night. I sign that log off every Monday, and I never once read the front door."
+- "Go on, then." (farewell) → "Then go."
+- Phone: "...Damn. I sat three desks from him at the Christmas party." → "...Damn. His kids drew on the tablecloth at our Christmas party."
+
+Owen, Halloran, Lisa
+- Owen: "David's badge went into the vault and never came out. Should I be worried?" → "David's badge went into the vault an hour ago. It's not come out."
+- Halloran: "David walked past my door with his coat on. He didn't look in." → "David left his badge on my desk on his way out. No note."
+- Lisa: "There are police in reception. Everyone's pretending not to look." → "Someone's had the side door propped open for ten minutes. Nobody will say why."
+
+Torres
+- "You can't. They'll find it. They always find it." → "You can't. Somebody always finds the name."
+- Cut: "How long will I get?", "...No. That's for a court, isn't it. Not you."; "But Elena gets her treatment." → "Elena gets her treatment. That's all I asked for."
+
+HaX (phone), the Recruiter
+- "Six minutes, every night. That's the pattern." → "Checked. All four nights."
+- "Of course she did. Weigh what it costs. Ignore how reasonable she sounded." → "…Weigh what it costs. Forget how it sounded."
+- "You've read what he's carrying. I won't tell you what he deserves." → "You've read his file. …"
+- "Depends on what you do tonight. Each way you go writes a different ending for him and for Elena." / "That's a lot to carry." → "Depends on what you do tonight. Whichever way you go, Elena lives with it too."
+- Recruiter: "Think it over. I'm not in a hurry." → "Think it over. Quickly."
+
+Briefing
+- Narrator: "…Beside him, Nightshade has three monitors of access logs open. Before he ran the technical side, insider threat was his speciality." → last sentence cut.
+- "Move fast, but the police will still need a file they can use." → "And keep Patricia on side. You'll need her doors."
+
+Choices (not voiced): debrief "[That one's on me.]", "[QDC won't like seeing that in my report.]"; Halloran "[It was David. I'm sorry.]" (new, post-fate); Torres "[I'm going public. The programme and the Recruiter, from a source nobody can trace.]"; HaX "[What ENTROPY did to him. Help me think it through.]"; briefing "[Bought with what?]".
+
+#### Open after cycle 2
+
+- Browser checks still open from cycle 1 (debrief beats on two endings; Patricia's naming with a close and reopen on "...Damn."; a fate reaction in a person-chat; HaX's flag choice with two flags waiting; the Recruiter's hang-up and ring-back), plus from this cycle: the lethal debrief close, and Halloran's post-fate choice.
+- Nothing pending for the erb. D12 stays with the user.

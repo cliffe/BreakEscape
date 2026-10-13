@@ -149,7 +149,7 @@ Dr Ruth Halloran: If one of them did this, somebody gave them a reason. Pressure
     - final_choice == "arrest" or final_choice == "combat_nonlethal":
         Dr Ruth Halloran: The police have David. Nobody's told me anything else.
     - final_choice == "public_exposure":
-        Dr Ruth Halloran: David walked past my door with his coat on. He didn't look in.
+        Dr Ruth Halloran: David left his badge on my desk on his way out. No note.
     - final_choice == "combat_lethal":
         Dr Ruth Halloran: I've rung David twice. He's not answering.
     - else:
@@ -179,7 +179,11 @@ Dr Ruth Halloran: If one of them did this, somebody gave them a reason. Pressure
 + {(vault_reader_seen or server_password_obtained) and not asked_vault} [The key vault takes your thumbprint. Could someone have lifted it?]
     -> ask_vault
 
-+ {torres_identified and not told_about_torres} [It's David.]
+// C2 (D5C2-6): after the fate she may have just said his name herself.
++ {torres_identified and not told_about_torres and final_choice == ""} [It's David.]
+    -> halloran_guilt
+
++ {torres_identified and not told_about_torres and final_choice != ""} [It was David. I'm sorry.]
     -> halloran_guilt
 
 + [That's all for now.]

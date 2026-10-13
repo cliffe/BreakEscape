@@ -335,7 +335,7 @@ Whatever she offered, she's very good at making a bad trade sound reasonable. It
 
 === topic_recruiter_choices ===
 + [She offered me a deal.]
-    Of course she did. Weigh what it costs. Ignore how reasonable she sounded.
+    Of course she did. Weigh what it costs. Forget how it sounded.
     -> support_hub
 
 + [I'll be careful.]
@@ -376,7 +376,7 @@ Whatever she offered, she's very good at making a bad trade sound reasonable. It
 === about_torres ===
 + {not leverage_discussed} [Is the debt the hook?]
     -> topic_leverage
-+ [What ENTROPY did to him. I need to talk it through.]
++ [What ENTROPY did to him. Help me think it through.]
     -> moral_sounding_board
 + [Not now.]
     -> support_hub
@@ -522,7 +522,7 @@ If she's the wrong name, the right one has just watched Security move. Be sure a
 #speaker:agent_0x99
 ~ door_log_reasoned = true
 ~ door_log_reasoned_first = true
-Six minutes, every night. That's the pattern.
+Checked. All four nights.
 Now find me why, and proof it's leaving.
 -> hax_partial_naming
 
@@ -770,7 +770,7 @@ It only works if he wants out.
 
 // Phase 4 dialogue C1 (D5-7): HaX states the cost and doesn't preach; the
 // Recruiter owns "he still chose" (m05_phone_recruiter.ink, final statement).
-You've read what he's carrying. I won't tell you what he deserves.
+You've read his file. I won't tell you what he deserves.
 
 Ask me what you want to ask.
 
@@ -782,8 +782,7 @@ Ask me what you want to ask.
     -> support_hub
 
 + [What happens to people like him after this?]
-    Depends on what you do tonight. Each way you go writes a different ending for him and for Elena.
-    That's a lot to carry.
+    Depends on what you do tonight. Whichever way you go, Elena lives with it too.
     -> support_hub
 
 + [I don't know what I think yet.]

@@ -50,9 +50,7 @@
 "Still deciding?",
 "Then we're done. I'll close your file.",
 "She hangs up first."
-]
-},
-{
+],
 "notSaid": [
 "[choice] I already told you",
 "Think it over"
@@ -98,9 +96,7 @@
 {
 "said": [
 "you turned her down"
-]
-},
-{
+],
 "notSaid": [
 "You never answered her offer"
 ]

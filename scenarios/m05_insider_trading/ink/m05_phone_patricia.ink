@@ -254,7 +254,7 @@ Slowly. I'm writing this down.
 {found_pamphlet:
     And a firm called TalentStack ringing his desk.
 }
-...Damn. I sat three desks from him at the Christmas party.
+...Damn. His kids drew on the tablecloth at our Christmas party.
 {halloran_accused:
     And I'll have Ruth's access back on tonight. You can do your own apologising.
 }
@@ -284,7 +284,7 @@ Whatever you decide in front of him, ring me when it's done.
 {patricia_ko: -> no_answer}
 + {found_door_log and not door_log_reasoned} [And the badge log. He comes in the front door six minutes before her spare.]
     ~ door_log_reasoned = true
-    ...Every night. I should have seen that myself.
+    ...Every night. I sign that log off every Monday, and I never once read the front door.
     -> phone_significant_findings_choices
 + [On my way.]
     #exit_conversation

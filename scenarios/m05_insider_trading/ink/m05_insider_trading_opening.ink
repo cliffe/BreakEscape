@@ -22,7 +22,7 @@ VAR player_name = "Agent 0x00"
 // too, not only on the last line. An early close or a reload mid-briefing
 // no longer strands it.
 #complete_task:receive_mission_briefing
-Narrator: A SAFETYNET briefing room. Director Netherton stands at the head of the table. Beside him, Nightshade has three monitors of access logs open. Before he ran the technical side, insider threat was his speciality.
+Narrator: A SAFETYNET briefing room. Director Netherton stands at the head of the table. Beside him, Nightshade has three monitors of access logs open.
 
 Director Magnus Netherton: Agent 0x00. This one is close to home in a way I dislike. Someone inside a Home Office contractor is handing ENTROPY the crown jewels.
 
@@ -35,7 +35,7 @@ Director Magnus Netherton: Task Force Null is three people and a whiteboard so f
 // Phase 4 dialogue C1 (D5-28): the player speaks before the run reaches ten.
 // Both choices converge (a stance on the same briefing). Nightshade's "calm"
 // line below is quoted by m08 (m08_suspect_nightshade.ink:64): keep it word for word.
-+ [Bought a person how?]
++ [Bought with what?]
     Director Magnus Netherton: That is what you are going to tell me.
 + [Then we find out who sold.]
     Director Magnus Netherton: Quite.
@@ -312,7 +312,7 @@ Agent HaX: Thirty to forty-five lives ride on that upload. Keep the number with 
     Agent HaX: Just watch the clock while you're at it.
 }
 {player_approach == "aggressive":
-    Agent HaX: Move fast, but the police will still need a file they can use.
+    Agent HaX: And keep Patricia on side. You'll need her doors.
 }
 {player_approach == "diplomatic":
     Agent HaX: The insider might surprise you. Be ready for that.

@@ -203,16 +203,25 @@ Agent HaX: Let's go through it.
     Agent HaX: You stopped the upload. The file behind it is thin. The police will get what we send them, and it won't be much.
 }
 
-{found_stand_down_email:
-    Agent HaX: Patricia's copy of the CEO's email went to the Home Office review with the rest of the file. Nobody signs off on a stand-down like that twice.
-- else:
+{
+- found_stand_down_email:
+    Agent HaX: Patricia's copy of the CEO's email went to the Home Office review with everything else. Nobody signs off on a stand-down like that twice.
+// Phase 4 dialogue C2 (D5C2-13): the interview is only in the vetting file;
+// every player hears that Patricia was stopped (her ask_investigation, Owen).
+- found_vetting_file:
     Agent HaX: QDC's readiness review passed. Nobody asked who cancelled Patricia's interview.
+- else:
+    Agent HaX: QDC's readiness review passed. Nobody asked who told Patricia to stop looking.
 }
 
 // PASS 4 fix 5: the briefing answer is a promise, checked against the night.
+// C2 (D5C2-7, D5C2-15): naming the wrong woman wasn't methodical, or reading the room.
 {player_approach == "cautious":
-    {case_strength() >= 6:
-        Agent HaX: You said you'd be methodical. The file says you were.
+    {
+    - halloran_accused:
+        Agent HaX: You said you'd be methodical. Most of the night, you were.
+    - case_strength() >= 6:
+        Agent HaX: You said you'd be methodical. You were.
     - else:
         Agent HaX: You said you'd be methodical. The file's thinner than that promise.
     }
@@ -225,8 +234,11 @@ Agent HaX: Let's go through it.
     }
 }
 {player_approach == "diplomatic":
-    {friendly_kos() > 0:
+    {
+    - friendly_kos() > 0:
         Agent HaX: You said you'd read the room. Then you put people in it on the floor.
+    - halloran_accused:
+        Agent HaX: You said you'd read the room. Most of the night, you did.
     - else:
         Agent HaX: You said you'd read the room. You did.
     }
@@ -250,8 +262,8 @@ Agent HaX: Let's go through it.
 
 // Beat 1 (D5-1): a reaction to the bar, varied by route. Choices only.
 === bar_reaction ===
-+ {halloran_accused} [One region. Because I named the wrong person.]
-    Agent HaX: Yes. That goes in the file next to your name.
++ {halloran_accused} [That one's on me.]
+    Agent HaX: Yes. It's in the report, next to your name.
     -> the_night
 + {halloran_accused} [How bad is the East of England?]
     Agent HaX: A month of overtime for the Home Office. Nobody dies of it, because they moved first.
@@ -327,8 +339,8 @@ Agent HaX: In the logs, that looks exactly like an insider. It's why nobody saw 
 -
 Agent HaX: Once you were in, one account was allowed to run far more than its job needed. That's how you reached the Architect's sign-off.
 + [Whose job was it to fix that?]
-    Agent HaX: Owen's, on paper. One sysadmin, after the budget cuts. The CEO wanted a clean file more than a safe one.
-+ [QDC won't thank me for that part.]
+    Agent HaX: Owen's, on paper. One sysadmin, after the budget cuts. The CEO wanted a clean audit more than a safe one.
++ [QDC won't like seeing that in my report.]
     Agent HaX: The board won't. Owen might.
 -
 // Beat 5 cut (D5-1): the header rides on the first sign found.
@@ -340,14 +352,15 @@ Agent HaX: Once you were in, one account was allowed to run far more than its jo
     }
     {found_door_log or found_incident_log:
         {header_said:
+            // C2 (D5C2-2): the_night has already given the badge log's facts.
             {found_door_log:
-                Agent HaX: Hours. His badge at the front door at two in the morning, and a borrowed one on the server hallway.
+                Agent HaX: Hours. Two in the morning, week after week, and nobody asked why.
             - else:
                 Agent HaX: Hours. A cryptography badge in the server hallway near midnight, and nobody asked why.
             }
         - else:
             {found_door_log:
-                Agent HaX: For the training file: hours. His badge at the front door at two in the morning, and a borrowed one on the server hallway.
+                Agent HaX: For the training file: hours. Two in the morning, week after week, and nobody asked why.
             - else:
                 Agent HaX: For the training file: hours. A cryptography badge in the server hallway near midnight, and nobody asked why.
             }
@@ -434,7 +447,8 @@ Agent HaX: Twenty-three active placements. He's giving us the companies, and som
 - recruiter_deal_accepted:
     Agent HaX: He's met some of the Recruiter's other candidates. Not the list. We'll come back to that.
 - else:
-    Agent HaX: He's met some of the Recruiter's other candidates. Not all forty-seven, but it's a start.
+    // C2 (D5C2-10): the number only where the player has heard it.
+    Agent HaX: {recruiter_deal_offered: He's met some of the Recruiter's other candidates. Not all forty-seven, but it's a start.|He's met some of the Recruiter's other candidates. It's a start.}
 }
 
 Agent HaX: And how TalentStack actually works: the front, the payments, the approach.
@@ -576,7 +590,7 @@ Agent HaX: Elena's treatment is unfunded. She has months, maybe. Sofia and Migue
 {found_pipeline_list and not recruiter_deal_accepted:
     Agent HaX: Without him, we're blind on the Initiative. The placements carry on. We have forty-seven names, and no idea which of them she's already turned.
 - else:
-    Agent HaX: Without him, we're blind on the Initiative. The placements carry on. The forty-seven stay in the pipeline until we find them ourselves.
+    Agent HaX: Without him, we're blind on the Initiative. The placements carry on, and so does TalentStack's recruiting.
 }
 
 -> recruiter_reckoning
@@ -598,7 +612,8 @@ Agent HaX: She starts on Monday, and we're paying. What happens to him is the co
 + [And the family?]
     Agent HaX: Sofia and Miguel get their mother through this, and a father on remand. It's more than they had at eight o'clock last night.
 -
-Agent HaX: Less than a double agent would give us. A good deal more than nothing, and clean.
+// C2 (D5C2-9): the line needs its subject after either reply.
+Agent HaX: What he gave us is less than a double agent would. A good deal more than nothing, and clean.
 
 -> recruiter_reckoning
 
@@ -711,6 +726,7 @@ Agent HaX: The Architect's authorisation is the part I keep coming back to. A ca
 
 // Beat 4 (D5-1): two stances on the same facts; convergent by design.
 + [Same hand as the other cells?]
+    Agent HaX: The same hand.
     -> cells
 + [Who signs off on a number like that?]
     Agent HaX: Someone who never has to hear the ambulance not come.
@@ -739,17 +755,20 @@ Agent HaX: The authorisation goes up on Task Force Null's wall, with every other
 {final_choice == "turn_double_agent":
     Agent HaX: Torres is an asset now. We'll be leaning on him for months.
 }
-{final_choice == "combat_lethal" or final_choice == "combat_nonlethal" or (final_choice == "arrest" and not elena_treatment_funded):
+// C2 (D5C2-3): the lethal and no-deal paths have already said it.
+{final_choice == "combat_nonlethal":
     Agent HaX: We'll map the Initiative the slow way. Harder, but doable.
 }
 {final_choice == "public_exposure":
     Agent HaX: We'll be watching for their reply.
 }
 
-Agent HaX: Every one of these operations has been paid for by someone. Next, we follow the money.
+// C2 (D5C2-14): fewer money lines; sets up m06's "Every cell we have hit is
+// being paid by someone."
+Agent HaX: Somebody pays the Architect, too. Next, we follow the money.
 
 {final_choice == "turn_double_agent" or elena_treatment_funded:
-    Agent HaX: Torres knows how TalentStack paid him. That's a thread we can pull.
+    Agent HaX: Torres knows where his came from. That's a thread we can pull.
 }
 
 -> final_reflection
@@ -763,19 +782,26 @@ Agent HaX: Every one of these operations has been paid for by someone. Next, we 
 + [I'd do it the same way again.]
     Agent HaX: I know. I read the report.
 -
-{confront_stance == "sympathetic":
-    Agent HaX: You went looking for the man underneath. That mattered, whatever you decided in the end.
-}
-{confront_stance == "hardline":
-    Agent HaX: You never let him hide behind his story. Cold, maybe. But you saw it clearly.
-}
-
-{handler_trust >= 70:
-    Agent HaX: I trust your judgement. Last night proved that.
+// C2 (D5C2-1): on the lethal ending the stance praise and the trust praise
+// would soften HaX's verdict, so that ending gets its own close.
+// C2 (D5C2-17): the 50-69 trust line said nothing; that band prints nothing.
+{
+- final_choice == "combat_lethal":
+    {confront_stance == "sympathetic":
+        Agent HaX: You went looking for the man underneath. Then you left him on the floor.
+    }
+    Agent HaX: The job got done. I'm still deciding about the rest.
 - else:
-    {handler_trust >= 50:
-        Agent HaX: You made hard calls, and you made them yourself.
-    - else:
+    {confront_stance == "sympathetic":
+        Agent HaX: You went looking for the man underneath. That mattered, whatever you decided in the end.
+    }
+    {confront_stance == "hardline":
+        Agent HaX: You never let him hide behind his story. Cold, maybe. But you saw it clearly.
+    }
+    {
+    - handler_trust >= 70:
+        Agent HaX: I trust your judgement. Last night proved that.
+    - handler_trust < 50:
         Agent HaX: The job got done. I'm still deciding about the rest.
     }
 }

@@ -55,21 +55,20 @@
 },
 {
 "said": [
-"Torres hasn't come up from the data centre",
-"David's badge went into the vault and never came out",
+"Torres hasn't come up from the data centre. I'll give him ten minutes",
+"David's badge went into the vault an hour ago",
 "I've rung David twice",
 "His coat's still on his chair"
-]
-},
-{
+],
 "notSaid": [
-"[choice] Anything else I should know before I go in?"
+"[choice] Anything else I should know before I go in?",
+"Should I be"
 ]
 },
 {
 "talk": "halloran",
 "picks": [
-"It's David",
+"It was David. I'm sorry",
 "ENTROPY picked him",
 "It's out of my hands now"
 ]
@@ -78,9 +77,7 @@
 "said": [
 "I signed his overtime every week",
 "It was never in yours. Mine, maybe."
-]
-},
-{
+],
 "notSaid": [
 "[choice] That depends on whether he helps us",
 "[choice] He'll face justice",
@@ -98,9 +95,7 @@
 {
 "said": [
 "Don't be. Just... don't tell me which way."
-]
-},
-{
+],
 "notSaid": [
 "[choice] I don't know yet",
 "His coat's still on his chair"

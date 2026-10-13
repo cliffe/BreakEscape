@@ -186,12 +186,12 @@ Patricia Morgan: My log of what's been flagged is on the desk. Take it.
     - final_choice == "public_exposure":
         Patricia Morgan: You let him walk out of my building. I hope you know what you've started.
     - final_choice == "combat_lethal":
-        Patricia Morgan: Torres hasn't come up from the data centre. Should I be sending someone down?
+        Patricia Morgan: Torres hasn't come up from the data centre. I'll give him ten minutes, then I'm sending someone down.
     - else:
         Patricia Morgan: I'm told he's gone home. I'm told nothing else, and I'm not asking.
     }
 - else:
-    Patricia Morgan: {&Go on.|What now?|Quickly, now. The CEO's prowling.}
+    Patricia Morgan: {&What now?|Yes?|Quickly, now. The CEO's prowling.}
 }
 
 + {not topic_investigation} [How far did your own investigation get?]
@@ -506,7 +506,7 @@ Patricia Morgan: ...Damn.
     Patricia Morgan: I sat three desks from him at the Christmas party. His kids drew on the tablecloth.
     -> significant_orders
 + [I'm sorry. He's one of yours.]
-    Patricia Morgan: He's Ruth's. But I vetted him. I sat three desks from him at the Christmas party.
+    Patricia Morgan: He's Ruth's. But I vetted him. His kids drew on the tablecloth at our Christmas party.
     -> significant_orders
 
 === significant_orders ===
@@ -549,10 +549,12 @@ Patricia Morgan: Be careful. Down there, you're on your own.
 === significant_close ===
 + {found_door_log and not door_log_reasoned} [And the badge log. He comes in the front door six minutes before her spare.]
     ~ door_log_reasoned = true
-    Patricia Morgan: ...Every night. I should have seen that myself.
+    // C2 (D5C2-22): most full-case players reach the naming without the
+    // reason menu, so the admission lives here too.
+    Patricia Morgan: ...Every night. I sign that log off every Monday, and I never once read the front door.
     -> significant_close
 + [I'll stop him.]
-    Patricia Morgan: Go on, then.
+    Patricia Morgan: Then go.
     ~ hub_quiet = true
     #exit_conversation
     -> hub
