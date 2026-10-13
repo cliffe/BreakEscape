@@ -999,3 +999,34 @@ Not voiced:
 
 - Browser check: the new HaX text on both triggers (timing against the 61-degree call; not landing on a conversation); the credits screen with one headline; Vance's cloner labels.
 - F7 for room dressing, if a human run hits it. F1, F2 and F10 stay with the harness and engine backlog.
+
+## Phase 8: final check fixes
+
+Report: `PASS5_FINAL_CHECK.md` (the earlier fixes confirmed). Three items for the dialogue fixer; no browser session.
+
+| # | Sev. | Finding | Outcome |
+|---|---|---|---|
+| F1 | major | A hostile operative still on their feet can cut the debrief (game B: Relay hit the player during the debrief person-chat, the engine closed it, and the credits ran with no debrief or disclosure) | **Fixed, mission-local.** "Bring me in" now checks `hostile_standing()`, built from the globals the mission already sets: `cipher_engaged`, `static_engaged`, `guard_hostile` and `voltage_fight_started` (from each NPC's `npc_hostile_state_changed` mapping), against `operative_*_defeated`, `security_guard_ko` and `voltage_neutralised`. Relay had no hostile global, so her existing hostile mapping now also sets a new `relay_engaged` (erb, `globalVariables`, `missions.json`, `route.js`'s hostile model). While anyone is hostile and up, HaX names them and why: "Not with Relay still on you. Lose her or put her down, then call." (Cipher, Static, the gate guard and Voltage have their own lines). Choices: "[I'm well clear of them. Bring me in.]" or "[Understood.]". **Judgement call, logged:** "well clear" is the lose-them route. Hostility never resets in m04, so a hard block would make a KO the only finish, and a player who can't win the fight would be soft-locked. The danger is being hit while the debrief plays, so a player who has got away can still finish on every route. The engine fix (pause hostile NPCs during cutscenes) is with the user in DECISIONS_PENDING |
+| F2 | minor | The first phone open always lands on the hub | **Cause found:** the phone preloads HaX's opening, and the story stops at `first_call_choices` (visit 1). On the player's first open, globals have changed since the preload (`guard_admitted` and so on), so `reopenWithCurrentGlobals` (`phone-chat-conversation.js`) re-navigates to the knot of the first saved choice, which is visit 2. The post-close guard keyed on `first_call_choices > 1`, so it fired on the first open. **Fixed:** the guard no longer reads visit counts. Ink can't tell a preload from the player viewing, because the preload runs the same ink, so a "seen" variable would be set by the preload too. The guard now keys on progress: exactly `start`'s own staleness test (`anomaly_detected`, `server_room_reached` or `attack_prevented`). The status check stops being offered at the same point it would stop being opened, so a first arrival never prints the question and then skips its answers (an early draft that added `plant_room_entered` did that in r11). It's reload-safe because all three are synced globals. The original post-close bug stays fixed: by the call-in, `attack_prevented` is true |
+| F5 | minor | Vance's chat portrait looked like a hooded figure | **Not a Vance wiring fault.** Vance is wired to `robert_vance` with `robert_vance_talk.png` / visemes / headshot (erb, Vance's NPC block); the talk sheet shows Vance (glasses, dark jumper, lanyard). Screenshot B07 is taken while the choices are up. The hooded navy figure is the player's own portrait: the scenario's `player` block uses `hacker` / `hacker-talk.png`. Nothing changed. If the player's chat art should be a SAFETYNET agent rather than a hooded hacker, that's an art and shared-asset question for the user |
+
+#### Routes
+
+- New `r32_callin_blocked_by_hostile_relay.json`: Relay hostile and up after the shutdown; the call-in explains, then proceeds once she's down, and again after a page reload via "well clear".
+- New `r33_first_open_after_preload.json`: the preload at the gate, then the first open inside (re-navigation, visit count 2); the inside answers and objectives play.
+- Both fail on the HEAD phone ink (r32: 8 fails, r33: 3), so they prove the bugs.
+- Updated `r1`: Relay turns hostile when she catches the clone, so the quiet route's call-in now goes via "well clear" (the turned-down call-in is kept).
+- 33 of 33 routes: all expectations met.
+
+#### Checks (static; no browser session)
+
+- Ink compiles (0 failed).
+- Validator with ink, `--no-graph`: schema passed, all ink valid, 12 issues (unchanged).
+- dialoguelint: 0 errors, 0 warnings, plus the 2 withdrawn checks.
+- reopencheck: 0 problems (HaX phone: 1800 reopens).
+- tagdiff against HEAD: HaX phone 35 differences, all from F1 and F2: five new VARs; `hostile_standing()`; `extract_offer` split into the guard, `extract_blocked`, `extract_blocked_choices` and `extract_offer_text` (the old `#speaker` and lore conditions moved with the text); the first-call guard condition. Other files unchanged.
+- loopcheck on the phone (`start`; after the shutdown with Relay hostile; with Cipher and the guard hostile; at `extract_offer`): clean.
+
+#### Spoken lines changed (old → new)
+
+All new, HaX phone: "Not with Relay still on you. Lose her or put her down, then call." / "Not with Cipher still on you. Lose him or put him down, then call." / "Not with Static still on you. Lose him or put him down, then call." / "Not with the gate guard still after you. Lose him or put him down, then call." / "Not with Voltage still on his feet. Put him down, then call." Not voiced (choices): "[I'm well clear of them. Bring me in.]", "[Understood.]".

@@ -77,6 +77,17 @@ VAR attack_prevented = false
 VAR mission_complete = false           // Synced scenario global: set by extract_go (A4 call-in); opens the debrief
 VAR lore_architect_directive_found = false
 VAR lore_safehouse_address_found = false
+// Phase 8 final check (F1): a hostile operative still on their feet can hit the
+// player during the debrief person-chat, and the engine closes it (no debrief, no
+// disclosure). The call-in waits until none is. Synced globals, read only:
+// cipher_engaged / static_engaged / guard_hostile / voltage_fight_started and the new
+// relay_engaged are set by each NPC's npc_hostile_state_changed mapping; the KO
+// globals by globalVarOnKO.
+VAR cipher_engaged = false
+VAR relay_engaged = false
+VAR static_engaged = false
+VAR guard_hostile = false
+VAR operative_cipher_defeated = false
 
 // Local: greet on the first open only (m03 D2-14); one gated hint per stuck
 // point, retired once given (m03 pass 5 P1-12).
@@ -392,6 +403,39 @@ Not from here. The site's evacuation alarm is on Vance's desk.
 // ===========================================
 
 === extract_offer ===
+{hostile_standing(): -> extract_blocked}
+-> extract_offer_text
+
+// Phase 8 final check (F1).
+=== function hostile_standing() ===
+~ return (relay_engaged and not operative_relay_defeated) or (cipher_engaged and not operative_cipher_defeated) or (static_engaged and not operative_static_defeated) or (guard_hostile and not security_guard_ko) or (voltage_fight_started and not voltage_neutralised)
+
+=== extract_blocked ===
+#speaker:agent_0x99
+{
+- relay_engaged and not operative_relay_defeated:
+    Not with Relay still on you. Lose her or put her down, then call.
+- cipher_engaged and not operative_cipher_defeated:
+    Not with Cipher still on you. Lose him or put him down, then call.
+- static_engaged and not operative_static_defeated:
+    Not with Static still on you. Lose him or put him down, then call.
+- guard_hostile and not security_guard_ko:
+    Not with the gate guard still after you. Lose him or put him down, then call.
+- else:
+    Not with Voltage still on his feet. Put him down, then call.
+}
+-> extract_blocked_choices
+
+// Choices-only (phone reopen rule). "Well clear" is the lose-them route: the
+// danger is being hit while the debrief plays, so a player who has got away (or
+// can't win the fight) still has a way to finish.
+=== extract_blocked_choices ===
++ [I'm well clear of them. Bring me in.]
+    -> extract_offer_text
++ [Understood.]
+    -> support_hub
+
+=== extract_offer_text ===
 #speaker:agent_0x99
 Once you're out, you don't go back in. Whatever you haven't read stays for forensics.
 {not lore_architect_directive_found:
@@ -494,7 +538,16 @@ Agent, status check. Are you inside the facility?
 // hub (and "Bring me in") out of reach. On a reopen (second visit or later) once
 // the player is past the gate, or any later step, go to the hub. A first arrival
 // inside still gets the inside answers.
-{first_call_choices > 1 and (guard_admitted or security_guard_ko or checkpoint_passed or vance_met or vance_provided_keycard or level1_card_held or anomaly_detected or server_room_reached or attack_mechanism_known or plant_room_entered or attack_prevented): -> support_hub}
+// Phase 8 final check (F2): this keyed on the visit count, which is already 2 on
+// the first open (the phone preloads the opening, then re-navigates to this knot
+// when globals have changed since: phone-chat-conversation.js reopenWithCurrentGlobals),
+// so the guard always fired. It now keys on progress only, the reverse of
+// start's staleness test: once the dial is read, the workshop reached or the
+// attack mapped, the status check is stale and the hub takes over. An inside first
+// open (gate passed, Vance met) still gets these answers; reload-safe (globals).
+// Exactly start's test, so a first arrival never prints the status question and
+// then skips its answers.
+{anomaly_detected or server_room_reached or attack_prevented: -> support_hub}
 
 // Puzzle chains R4-1: the first open usually comes at the gate (HaX's "Gate
 // first" text), so the "inside" answers wait until the player is inside, and

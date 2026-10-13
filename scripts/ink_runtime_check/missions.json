@@ -577,7 +577,8 @@
       "vance_spoken": false,
       "promised_voltage_alive": false,
       "asked_the_number": false,
-      "crew_hint_texted": false
+      "crew_hint_texted": false,
+      "relay_engaged": false
     },
     "npcs": [
       {

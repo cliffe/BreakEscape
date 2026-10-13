@@ -41,7 +41,7 @@
 //   attack_mechanism_known    -> clock_started (the map_the_attack mapping)
 //   voltage_escaped, Static stood aside -> static_left (Static's mapping)
 //   racks_vented, no warning  -> crew_lost (HaX's racks_vented mapping)
-//   #hostile[:id]             -> the npc_hostile_state_changed mappings (cipher_engaged,
+//   #hostile[:id]             -> the npc_hostile_state_changed mappings (cipher_engaged, relay_engaged,
 //                                static_engaged, guard_hostile, voltage_fight_started)
 // Everything else the engine does is a {"set"} step in the route.
 const path = require('path'); const fs = require('fs');
@@ -129,6 +129,7 @@ function hostile(npc) {
   out(`      [engine: ${npc} hostile]`);
   if (npc === 'operative_cipher') G.cipher_engaged = true;
   if (npc === 'operative_static') G.static_engaged = true;
+  if (npc === 'operative_relay') G.relay_engaged = true;  // Phase 8 final check (F1)
   if (npc === 'security_guard') G.guard_hostile = true;
   if (npc === 'voltage') G.voltage_fight_started = true;
 }

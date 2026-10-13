@@ -2183,7 +2183,9 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
               "eventPattern": "npc_hostile_state_changed",
               "condition": "data.npcId === 'operative_relay' && data.isHostile === true",
               "onceOnly": true,
-              "setPatrolSpeed": 70
+              "setPatrolSpeed": 70,
+              <%# Phase 8 final check (F1): HaX's call-in waits while she's hostile and up. %>
+              "setGlobal": { "relay_engaged": true }
             }
           ],
           "itemsHeld": [
@@ -2903,6 +2905,10 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
     "asked_the_number": false,
 
     <%# Struggling run A (F4): HaX's night-crew text has been sent (either trigger). %>
-    "crew_hint_texted": false
+    "crew_hint_texted": false,
+
+    <%# Phase 8 final check (F1): Relay turned hostile (the other operatives already
+        have cipher_engaged / static_engaged / guard_hostile / voltage_fight_started). %>
+    "relay_engaged": false
   }
 }
