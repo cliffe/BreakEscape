@@ -7,7 +7,7 @@
 // Variables for tracking entry approach
 VAR guard_suspicious = false
 VAR entry_method = ""            // credentials, smooth_talk
-VAR guard_admitted = false       // Has the guard let the player in?
+VAR guard_admitted = false       // Has the guard let the player in? Pass 5: synced global; skips his sight challenge (A3)
 
 // External variables (set by game)
 // NOTE: the engine binds exactly six externals (person-chat-conversation.js:96-129):
@@ -72,6 +72,7 @@ Security Guard: He'll be at his desk or in the control room at this hour.
 
 ~ entry_method = "credentials"
 ~ guard_admitted = true
+#set_global:guard_admitted:true
 
 Security Guard: Go on through. Operations office is straight down the hall.
 

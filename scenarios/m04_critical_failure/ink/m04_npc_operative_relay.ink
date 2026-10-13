@@ -21,6 +21,8 @@ VAR radio_interrupted = false
 // card_cloned mapping (clone rule: never from the tag), read in the debrief knot.
 VAR cell_alerted = false
 VAR relay_card_cloned = false
+// Pass 5 decision 1: Vance's evacuation alarm. Read only.
+VAR crew_warned = false
 // Round 2: ink-local; true when the clone was a rush from relay_last_chance.
 VAR clone_rushed = false
 
@@ -29,7 +31,15 @@ VAR clone_rushed = false
 === start ===
 {radio_interrupted or relay_alerted_team: -> relay_standoff}
 {cell_alerted: -> relay_waiting}
+{crew_warned: -> relay_waiting_alarm}
 -> relay_patrol_alert
+
+// Pass 5 decision 1: the alarm went, the night crew walked out past her, and
+// she has been waiting for whoever caused it.
+=== relay_waiting_alarm ===
+Narrator: The strobes are still going. She's standing in the middle of the aisle, watching the door, as if she's been waiting for it to open.
+ENTROPY Operative 'Relay': Nine of them went past me in their hi-vis. Somebody told them to. That'll be you.
+-> relay_standoff
 
 === relay_waiting ===
 Narrator: She's already facing the door when it opens, one hand resting on the radio.
@@ -106,8 +116,12 @@ Narrator: There is no flinch in it.
     ENTROPY Operative 'Relay': I modelled the grid. The casualties were a line in the same spreadsheet.
     -> relay_refuses
 
-* [Then you know the night crew is still in Hall 2.]
+* {not crew_warned} [Then you know the night crew is still in Hall 2.]
     ENTROPY Operative 'Relay': They were told to clear at midnight. If they didn't, that's on them.
+    -> relay_refuses
+
+* {crew_warned} [You watched nine people walk past you and let them go.]
+    ENTROPY Operative 'Relay': They weren't the job. The racks are.
     -> relay_refuses
 
 // Clone knots: m03/m04 shape. Narration first, the tag on a throwaway line

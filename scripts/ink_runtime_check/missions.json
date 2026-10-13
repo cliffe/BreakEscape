@@ -490,7 +490,6 @@
   "m04_critical_failure": {
     "globals": {
       "player_name": "Agent 0x00",
-      "all_flags_in": false,
       "briefing_played": false,
       "mission_started": false,
       "agent_0x99_contacted": false,
@@ -566,7 +565,20 @@
       "optional_objectives_completed": 0,
       "combat_encounters_won": 0,
       "stealth_takedowns": 0,
-      "flags_submitted": 0
+      "flags_submitted": 0,
+      "all_flags_in": false,
+      "guard_admitted": false,
+      "guard_hostile": false,
+      "cipher_engaged": false,
+      "static_engaged": false,
+      "static_stood_aside": false,
+      "crew_warned": false,
+      "crew_lost": false,
+      "clock_started": false,
+      "debrief_started": false,
+      "plant_room_entered": false,
+      "server_room_advice_given": false,
+      "blackout_named": false
     },
     "npcs": [
       {
@@ -597,7 +609,7 @@
         "id": "agent_0x99",
         "npcType": "phone",
         "storyPath": "scenarios/m04_critical_failure/ink/m04_phone_agent0x99.json",
-        "currentKnot": "first_call",
+        "currentKnot": "start",
         "room": "main_entrance"
       },
       {

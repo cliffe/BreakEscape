@@ -87,7 +87,7 @@ Minimum route: entrance → ops → SCADA → Hall 1 → Hall 2 → Hall 1 → w
 10. `map_the_attack` complete → `attack_mechanism_known` → timers start: `h2_advisory` at 8 min (Hall 2, Bank B) and `racks_vent` at 14 min (round 2; were 6 and 12).
 
 ## Aim 4b — Take the Plant Back
-11. **Hall 1 round panel** with the kit → the fingerprint kit minigame → "Robert Vance" sample. It can be done before the VM; the kit bark says so ("Lift his print now, while nothing's counting down."). Reference cards: Security Guard, Cipher, Relay (Static dropped). The print bark now carries the lesson: "A print tells a reader who you are. It can't tell it you're standing there."
+11. **Hall 1 round panel** with the kit → the fingerprint kit minigame → "Robert Vance" sample. It can be done before the VM; the kit bark says so ("Lift his print now, while nothing's counting down."). Compare step: two cards, "Robert Vance" and one decoy. The panel is easy difficulty, which shows the owner plus one decoy (dusting-model.js:102); the decoy is drawn from the candidate list (Security Guard, Cipher, Relay; Static dropped) by a fixed seed, so in practice it is always Security Guard (pass 5, regression M3). The print bark now carries the lesson: "A print tells a reader who you are. It can't tell it you're standing there."
     - **Optional second print (pass 4):** the **BMS Interlock-Bypass Module** in Hall 2 is a print surface (owner Voltage, easy, pale surface, so black powder). Identify it as Voltage → `voltage_print_on_bypass`, a HaX text, a credit line, a debrief line, and the arrest choice gains "Your thumb's on the bypass module…". "Use normally" still shows its text.
     - **Ally:** Vance names the panel in person or by phone.
 12. **Plant door** opens with the sample → `get_past_plant_reader`.
@@ -101,7 +101,7 @@ Minimum route: entrance → ops → SCADA → Hall 1 → Hall 2 → Hall 1 → w
     - **Button:** he escapes via the dock.
 
 ## Aim 5 — Stop the Thermal Runaway (conclusion)
-14. **ESD.** The refusal is now grid control's permissive ("NOT ARMED. GRID PERMISSIVE NOT RECEIVED…") and still names the missing condition (thermal, network, trigger holder). Press → `attack_prevented`, `mission_complete`.
+14. **ESD.** The refusal is now grid control's permissive ("NOT ARMED. GRID PERMISSIVE NOT RECEIVED…") and still names the missing condition (thermal, network, trigger holder). Press → `attack_prevented` (pass 5: no longer `mission_complete`). HaX texts "sweep, then call me" and the call-in task opens; sweep the plant room (Voltage's Operation Log, marked blueprints) and the dock (go-bag), then HaX's phone hub → "I'm done here. Bring me in." → "Bring me in." → "On my way." sets `mission_complete` and opens the debrief.
 15. **Debrief.**
     - **Opener:** exactly one Bank B option per state (intact / vented by the clock / "He reached the laptop").
     - **Intel:** lines branch on the lore globals; the safehouse line rewards opening the go-bag.

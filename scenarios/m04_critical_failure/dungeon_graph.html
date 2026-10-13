@@ -136,8 +136,8 @@
     </div>
     <table>
       <tr><th>Aims (story objectives)</th><td class="val">6</td></tr>
-      <tr><th>Total tasks</th><td class="val">18</td></tr>
-      <tr><th>Optional tasks</th><td class="val">4 / 18</td></tr>
+      <tr><th>Total tasks</th><td class="val">19</td></tr>
+      <tr><th>Optional tasks</th><td class="val">5 / 19</td></tr>
       <tr><th>VM flag challenges</th><td class="val">4</td></tr>
       <tr><th>AND-gate convergences</th><td class="val">0</td></tr>
       <tr><th>Physical locks (puzzle)</th><td class="val">7</td></tr>
@@ -202,7 +202,7 @@
   npc_entropy_operative_relay{"ENTROPY Operative 'Relay'"}
   workshop_keycard_level_2{"Workshop Keycard (Level 2)"}
   lock_esd_pushbutton["Emergency Shutdown Pushbutton — Rack Banks A-C"]
-  npc_voltage_critical_mass_leader{"Voltage (Critical Mass Leader)"}
+  npc_voltage_critical_mass{"Voltage (Critical Mass)"}
   action_deal_with_voltage>"Deal with Voltage: fight, arrest, or let him run"]
   loading_dock("Loading Dock")
   social_fabric_safehouse_card_encoded{"Social Fabric Safehouse Card (Encoded)"}
@@ -245,8 +245,8 @@
   npc_entropy_operative_relay --> workshop_keycard_level_2
   workshop_keycard_level_2 --> door_engineering_workshop
   plant_room --> lock_esd_pushbutton
-  plant_room --> npc_voltage_critical_mass_leader
-  npc_voltage_critical_mass_leader --> action_deal_with_voltage
+  plant_room --> npc_voltage_critical_mass
+  npc_voltage_critical_mass --> action_deal_with_voltage
   loading_dock --> lock_extraction_gobag
   lock_extraction_gobag --> social_fabric_safehouse_card_encoded
   vmch_submit_network_scan_flag --> vmfl_submit_network_scan_flag
@@ -271,7 +271,7 @@
   class door_engineering_workshop,door_battery_hall_2,door_plant_room,lock_security_equipment_locker,lock_optigrid_tool_case,lock_extraction_gobag,lock_esd_pushbutton lock
   class engineering_workshop,battery_hall_2,plant_room,main_entrance,operations_office,scada_control_room,security_office,battery_hall_1,loading_dock room
   class rfid_cloner,lock_pick_kit,maintenance_work_orders,scada_hmi_main_display,fingerprint_kit,optigrid_job_card_4782_back_page,access_control_export_hv_plant_room,analogue_thermometer_rack_bank_c_wall,h_gas_detector_panel,duty_round_panel,social_fabric_safehouse_card_encoded item
-  class npc_robert_vance,facility_access_keycard_level_1,npc_entropy_operative_relay,workshop_keycard_level_2,npc_voltage_critical_mass_leader key
+  class npc_robert_vance,facility_access_keycard_level_1,npc_entropy_operative_relay,workshop_keycard_level_2,npc_voltage_critical_mass key
   class action_meet_robert_vance,action_deal_with_voltage action
   class bms_jump_server_terminal,vmch_submit_network_scan_flag,vmch_submit_ftp_intel_flag,vmch_submit_distcc_exploit_flag,vmch_submit_privesc_flag vm
   class vmfl_submit_network_scan_flag,vmfl_submit_ftp_intel_flag,vmfl_submit_distcc_exploit_flag,vmfl_submit_privesc_flag flag
@@ -362,7 +362,7 @@
   npc_entropy_operative_relay{"ENTROPY Operative 'Relay'"}
   workshop_keycard_level_2{"Workshop Keycard (Level 2)"}
   lock_esd_pushbutton["Emergency Shutdown Pushbutton — Rack Banks A-C"]
-  npc_voltage_critical_mass_leader{"Voltage (Critical Mass Leader)"}
+  npc_voltage_critical_mass{"Voltage (Critical Mass)"}
   action_deal_with_voltage>"Deal with Voltage: fight, arrest, or let him run"]
   loading_dock("Loading Dock")
   social_fabric_safehouse_card_encoded{"Social Fabric Safehouse Card (Encoded)"}
@@ -411,8 +411,8 @@
   npc_entropy_operative_relay --> workshop_keycard_level_2
   workshop_keycard_level_2 --> door_engineering_workshop
   plant_room --> lock_esd_pushbutton
-  plant_room --> npc_voltage_critical_mass_leader
-  npc_voltage_critical_mass_leader --> action_deal_with_voltage
+  plant_room --> npc_voltage_critical_mass
+  npc_voltage_critical_mass --> action_deal_with_voltage
   loading_dock --> lock_extraction_gobag
   lock_extraction_gobag --> social_fabric_safehouse_card_encoded
   vmch_submit_network_scan_flag --> vmfl_submit_network_scan_flag
@@ -453,7 +453,7 @@
   class door_engineering_workshop,door_battery_hall_2,door_plant_room,lock_security_equipment_locker,lock_optigrid_tool_case,lock_extraction_gobag,lock_esd_pushbutton lock
   class engineering_workshop,battery_hall_2,plant_room,main_entrance,operations_office,scada_control_room,security_office,battery_hall_1,loading_dock room
   class rfid_cloner,lock_pick_kit,maintenance_work_orders,scada_hmi_main_display,fingerprint_kit,optigrid_job_card_4782_back_page,access_control_export_hv_plant_room,analogue_thermometer_rack_bank_c_wall,h_gas_detector_panel,duty_round_panel,social_fabric_safehouse_card_encoded item
-  class npc_robert_vance,facility_access_keycard_level_1,npc_entropy_operative_relay,workshop_keycard_level_2,npc_voltage_critical_mass_leader key
+  class npc_robert_vance,facility_access_keycard_level_1,npc_entropy_operative_relay,workshop_keycard_level_2,npc_voltage_critical_mass key
   class action_meet_robert_vance,action_deal_with_voltage action
   class bms_jump_server_terminal,vmch_submit_network_scan_flag,vmch_submit_ftp_intel_flag,vmch_submit_distcc_exploit_flag,vmch_submit_privesc_flag vm
   class vmfl_submit_network_scan_flag,vmfl_submit_ftp_intel_flag,vmfl_submit_distcc_exploit_flag,vmfl_submit_privesc_flag flag
@@ -590,8 +590,8 @@
   rc_esd_pushbutton_54{"Emergency Shutdown Pushbutton — Rack Banks A-C"}
   rc_obj55_55{"ENTROPY Command Laptop"}
   rc_obj56_56{"Facility Blueprints (Marked)"}
-  rc_obj57_57{"The Architect's Directive"}
-  rc_npc_voltage_critical_mass_leader_58("Voltage (Critical Mass Leader)")
+  rc_obj57_57{"Voltage's Operation Log"}
+  rc_npc_voltage_critical_mass_58("Voltage (Critical Mass)")
   rc_npc_entropy_operative_static_59("ENTROPY Operative 'Static'")
   rc_obj60_60{"Critical Mass Coordination Log"}
   rc_obj61_61{"Loading Dock Schedule"}
@@ -664,7 +664,7 @@
   plant_room --> rc_obj55_55
   plant_room --> rc_obj56_56
   plant_room --> rc_obj57_57
-  plant_room --> rc_npc_voltage_critical_mass_leader_58
+  plant_room --> rc_npc_voltage_critical_mass_58
   plant_room --> rc_npc_entropy_operative_static_59
   rc_npc_entropy_operative_static_59 --> rc_obj60_60
   loading_dock --> rc_obj61_61
@@ -675,7 +675,7 @@
   class main_entrance,operations_office,scada_control_room,security_office,battery_hall_1,loading_dock room
   class engineering_workshop,battery_hall_2,plant_room lock
   class rc_obj1_1,rc_obj2_2,rc_safetynet_field_guide_rfid_cloning_8,rc_safetynet_field_guide_lockpicking_9,rc_safetynet_field_guide_recon_network_mapping_10,rc_safetynet_field_guide_vuln_analysis_11,rc_safetynet_field_guide_distcc_12,rc_safetynet_field_guide_cyberchef_13,rc_safetynet_field_guide_privesc_14,rc_safetynet_field_guide_proftpd_15,rc_relayed_workshop_keycard_16,rc_obj19_19,rc_obj20_20,rc_obj21_21,rc_obj22_22,rc_vance_level1_keycard_24,rc_scada_hmi_display_25,rc_obj26_26,rc_obj27_27,rc_vm_launcher_bms_jump_server_28,rc_flag_station_dropsite_29,rc_obj30_30,rc_obj31_31,rc_obj33_33,rc_obj34_34,rc_obj35_35,rc_obj36_36,rc_obj37_37,rc_obj39_39,rc_obj40_40,rc_analog_thermometer_41,rc_rack_status_panel_42,rc_hydrogen_detector_43,rc_obj44_44,rc_hall1_round_panel_45,rc_obj47_47,rc_obj48_48,rc_bms_bypass_module_49,rc_obj50_50,rc_obj52_52,rc_obj53_53,rc_esd_pushbutton_54,rc_obj55_55,rc_obj56_56,rc_obj57_57,rc_obj60_60,rc_obj61_61,rc_obj62_62,rc_obj64_64 item
-  class rc_npc_agent_hax_3,rc_npc_director_magnus_netherton_4,rc_npc_agent_0x47_nightshade_5,rc_npc_security_guard_6,rc_npc_agent_hax_7,rc_npc_robert_vance_17,rc_npc_agent_hax_18,rc_npc_robert_vance_23,rc_npc_entropy_operative_cipher_46,rc_npc_entropy_operative_relay_51,rc_npc_voltage_critical_mass_leader_58,rc_npc_entropy_operative_static_59 npc
+  class rc_npc_agent_hax_3,rc_npc_director_magnus_netherton_4,rc_npc_agent_0x47_nightshade_5,rc_npc_security_guard_6,rc_npc_agent_hax_7,rc_npc_robert_vance_17,rc_npc_agent_hax_18,rc_npc_robert_vance_23,rc_npc_entropy_operative_cipher_46,rc_npc_entropy_operative_relay_51,rc_npc_voltage_critical_mass_58,rc_npc_entropy_operative_static_59 npc
   class rc_optigrid_tool_case_32,rc_security_equipment_locker_38,rc_extraction_gobag_63 container
   class node_start start`
     };

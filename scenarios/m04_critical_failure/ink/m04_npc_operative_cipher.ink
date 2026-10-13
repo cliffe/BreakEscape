@@ -22,6 +22,9 @@ VAR radio_interrupted = false
 // call got out, so Relay is waiting in Hall 2.
 VAR cipher_walked = false
 VAR cell_alerted = false
+// Pass 5 decision 1: if Vance has sounded the evacuation, the crew is already
+// out, so the "go and look" line changes. Read only.
+VAR crew_warned = false
 
 === start ===
 {cipher_walked: -> cipher_gone}
@@ -102,8 +105,13 @@ ENTROPY Operative 'Cipher': Nobody's in the halls at night. That's the whole poi
 
 Narrator: He says it too fast.
 
-* [There's a night crew in Hall 2. Go and look.]
+* {not crew_warned} [There's a night crew in Hall 2. Go and look.]
     ENTROPY Operative 'Cipher': ...You're lying.
+    Narrator: His eyes go to the Hall 2 door, and stay there.
+    -> cipher_walks
+
+* {crew_warned} [Hear that klaxon? Nine people just walked out of Hall 2.]
+    ENTROPY Operative 'Cipher': ...Nine?
     Narrator: His eyes go to the Hall 2 door, and stay there.
     -> cipher_walks
 

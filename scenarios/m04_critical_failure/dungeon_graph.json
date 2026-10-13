@@ -189,8 +189,8 @@
       "optional": false
     },
     {
-      "id": "npc_voltage_critical_mass_leader",
-      "label": "Voltage (Critical Mass Leader)",
+      "id": "npc_voltage_critical_mass",
+      "label": "Voltage (Critical Mass)",
       "kind": "key",
       "optional": false
     },
@@ -414,11 +414,11 @@
     },
     {
       "from": "plant_room",
-      "to": "npc_voltage_critical_mass_leader",
+      "to": "npc_voltage_critical_mass",
       "soft": false
     },
     {
-      "from": "npc_voltage_critical_mass_leader",
+      "from": "npc_voltage_critical_mass",
       "to": "action_deal_with_voltage",
       "soft": false
     },

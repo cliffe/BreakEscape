@@ -19,6 +19,15 @@ VAR vance_met = false              // First meeting completed; re-talk lands in 
 // bring Vance in later, as HaX advises.
 VAR anomaly_detected = false
 VAR evidence_maintenance_logs_found = false
+// Pass 5 (alignment minor): "What should I be doing?" reads the night as it is.
+VAR attack_mechanism_known = false
+VAR attack_prevented = false
+// Pass 5 decision 1: the night crew can be warned. crew_warned is written with
+// #set_global (synced); racks_vented is engine-owned. crew_discussed is local:
+// Vance has explained the cost once.
+VAR crew_warned = false
+VAR racks_vented = false
+VAR crew_discussed = false
 
 // Game state variables
 VAR operatives_defeated = 0
@@ -368,8 +377,15 @@ This place is my responsibility. People depend on it.
     -> vance_hub
 
 + {vance_is_ally} [What should I be doing right now?]
-    Robert Vance: The screens are lying to you. I'm on the historian, and the real rack temperatures are climbing. Get to the hardwired shutdown. Software won't save us.
-    -> vance_hub
+    -> vance_priority
+
+// Pass 5 decision 1: the night crew. Vance raises the cost before he acts; the
+// choice stays open until it's taken, a bank vents, or the shutdown goes in.
++ {vance_is_ally and anomaly_detected and not crew_warned and not crew_discussed and not racks_vented and not attack_prevented} [Is anyone working in the halls tonight?]
+    -> vance_crew_offer
+
++ {vance_is_ally and crew_discussed and not crew_warned and not racks_vented and not attack_prevented} [Sound the evacuation. Get the night crew out.]
+    -> vance_crew_sound
 
 + {vance_is_ally} [Stay on the ops desk. I'll call if I need the engineering side.]
     Robert Vance: I'm not going anywhere. Call the moment you're moving.
@@ -392,6 +408,41 @@ This place is my responsibility. People depend on it.
     Robert Vance: Right. I'll be at the ops desk.
     #exit_conversation
     -> vance_hub
+
+=== vance_priority ===
+{
+- attack_prevented:
+    Robert Vance: The banks are isolated and the needle's coming down. Go and see what they left behind.
+- not anomaly_detected:
+    Robert Vance: My screens all read the same feed. Check the racks against something that isn't on it. There's an old dial on the Rack Bank C wall in Hall 1.
+- not attack_mechanism_known:
+    Robert Vance: The workshop. If they got onto my network, it was through the jump server in there.
+- else:
+    Robert Vance: The screens are lying to you. I'm on the historian, and the real rack temperatures are climbing. Get to the hardwired shutdown. Software won't save us.
+}
+-> vance_hub
+
+=== vance_crew_offer ===
+~ crew_discussed = true
+Robert Vance: Nine. The module-swap crew, behind the inverter wall in Hall 2, till six. Your contractor wanted the halls clear from midnight. I said no.
+Robert Vance: I can sound the evacuation from this desk. Klaxon and strobes in every hall.
+Robert Vance: Whoever's in my plant room hears it too. The minute it goes, they know we've found them.
+-> vance_crew_choices
+
+=== vance_crew_choices ===
++ [Sound it. Get them out.]
+    -> vance_crew_sound
++ [Not yet. Give me time to get to them first.]
+    Robert Vance: Your call. It's on this desk when you want it.
+    -> vance_hub
+
+=== vance_crew_sound ===
+#set_global:crew_warned:true
+~ crew_warned = true
+Robert Vance: Sounding it now.
+Narrator: Somewhere past the walls a klaxon starts, and the strobes in the corridor go white.
+Robert Vance: They're moving. Nine of them, out through the Hall 2 fire doors.
+-> vance_hub
 
 === vance_plant_reader_ally ===
 // Round 2: no #speaker here. On a choices-only knot the tag printed an empty

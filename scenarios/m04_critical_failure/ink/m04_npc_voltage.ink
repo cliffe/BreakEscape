@@ -1,7 +1,7 @@
 // ===========================================
 // VOLTAGE - CONFRONTATION (ANTAGONIST)
 // Mission 4: Critical Failure
-// Break Escape - Climactic Encounter with Critical Mass Leader
+// Break Escape - Climactic Encounter with Critical Mass's field lead (Blackout leads the cell)
 // ===========================================
 
 // ===========================================
@@ -13,6 +13,8 @@
 
 // Ink-owned state
 VAR voltage_confronted = false           // Has the confrontation played?
+// Pass 5: skip the standoff re-entry lines once, right after a goodbye (m03 hub_quiet).
+VAR voltage_quiet = false
 VAR asked_the_number = false             // Did the player make him state the casualty figure?
 
 // Ink-owned record of how the DIALOGUE ended: "", "escaped", "fought".
@@ -38,6 +40,10 @@ VAR voltage_print_on_bypass = false
 // operatives_defeated counter only ever counted Cipher and Relay.
 VAR operative_cipher_defeated = false
 VAR operative_relay_defeated = false
+// Pass 5 A1: the button stance is offered only once grid control can take the
+// shed (the same two conditions as the ESD's permissive, less Voltage himself).
+VAR attack_mechanism_known = false
+VAR anomaly_detected = false
 
 // External variables (set by game)
 EXTERNAL player_name()
@@ -69,11 +75,19 @@ EXTERNAL player_name()
 
 // Re-entry while the fight is unresolved: he is still here, still working.
 === voltage_standoff_resumed ===
-Voltage: *not looking up from the laptop* Still here.
+{voltage_quiet:
+    ~ voltage_quiet = false
+- else:
+    Voltage: *not looking up from the laptop* Still here.
+    Voltage: Nothing you say next will be new.
+}
 
-Voltage: Nothing you say next will be new.
+// Pass 5 A1: backing off is now a stance, so the choice has to come back.
++ [Then let's finish this.]
+    -> confrontation_choice
 
 + [Say nothing.]
+    ~ voltage_quiet = true
     #exit_conversation
     -> voltage_standoff_resumed
 
@@ -198,9 +212,10 @@ Voltage: We didn't make it fragile. We just stopped pretending it wasn't.
 === voltage_states_the_number ===
 #speaker:voltage
 
+#set_global:blackout_named:true
 Narrator: He answers without hesitating, and without looking away.
 
-Voltage: Eleven on site tonight. Nine on the night crew in Hall 2, two in the gatehouse.
+Voltage: Eleven on site tonight. Nine on the night crew in Hall 2, the duty engineer, and the man on the gate.
 
 Voltage: On the feed, best case, forty-odd. Oxygen concentrators, the dialysis unit at St Aldate's, home ventilators. That's the number Blackout signed, and I countersigned.
 
@@ -225,6 +240,7 @@ Voltage: There's no version of this where I blink. You should have worked that o
 
 === voltage_architect_deflection ===
 #speaker:voltage
+#set_global:blackout_named:true
 
 Voltage: The Architect? You'll never find him.
 
@@ -251,7 +267,13 @@ Voltage: I run this site. Blackout signs for Critical Mass. Above him it stops b
 
 Narrator: The laptop is open on the plant-room bench with the trigger armed on screen, and the red mushroom head of the hardwired shutdown is on the wall behind him. You cannot reach both.
 
-Voltage: So. The button, or me.
+// Pass 5 A1: before grid control will take the shed, the button does nothing,
+// so he says so, and the button stance isn't offered.
+{attack_mechanism_known and anomaly_detected:
+    Voltage: So. The button, or me.
+- else:
+    Voltage: The button? Press it. Grid control won't shed a megawatt on what you've got.
+}
 
 // PASS 3 P11a/P11b: with Static up, a fight is a race he can win, so "both" is
 // genuinely off the table; with Static down the arrest is earned instead.
@@ -269,9 +291,18 @@ Voltage: So. The button, or me.
     ~ voltage_dialogue_outcome = "arrested"
     -> choice_arrest
 
-+ [Go for the button and let him run.]
++ {attack_mechanism_known and anomaly_detected} [Go for the button and let him run.]
     ~ voltage_dialogue_outcome = "escaped"
     -> choice_button
+
+// Pass 5 A1: the way out when the player isn't ready to commit. He stays at the
+// bench; re-talk lands on voltage_standoff_resumed, which offers the stances again.
++ [Not like this. (Back off.)]
+    ~ voltage_confronted = true
+    ~ voltage_quiet = true
+    Voltage: Then get out of my plant room. The clock doesn't care either way.
+    #exit_conversation
+    -> voltage_standoff_resumed
 
 // ---------- FIGHT ----------
 
@@ -281,9 +312,25 @@ Voltage: So. The button, or me.
 
 #complete_task:confront_voltage
 Voltage: You've picked the slow option.
+// Pass 5 A3: Static is no longer only a man you talk to. If he's still up when
+// the fight starts, he comes in with it.
+{operative_static_defeated:
+    -> choice_fight_alone
+- else:
+    -> choice_fight_with_static
+}
 
+=== choice_fight_alone ===
 Narrator: He moves for the bench and you move for him, and the plant room stops being a place where anyone is talking.
 
+#hostile
+#exit_conversation
+-> END
+
+=== choice_fight_with_static ===
+Narrator: He moves for the bench, Static comes off the wall at you, and the plant room stops being a place where anyone is talking.
+
+#hostile:operative_static
 #hostile
 #exit_conversation
 -> END
@@ -320,6 +367,7 @@ Voltage: Nobody left to stop you. All right.
 ~ voltage_captured = true
 ~ voltage_confronted = true
 #complete_task:confront_voltage
+#set_global:blackout_named:true
 Voltage: ...A court. Fine. Let them read the casualty model. I signed it.
 Narrator: He steps back from the bench with his hands open, and lets you take the laptop off it.
 #exit_conversation

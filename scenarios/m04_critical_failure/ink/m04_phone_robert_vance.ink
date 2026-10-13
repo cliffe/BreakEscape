@@ -37,6 +37,10 @@ VAR robert_vance_ko = false        // global; Vance knocked out -- nobody answer
 VAR anomaly_detected = false
 VAR hydrogen_alarm = false
 VAR racks_vented = false
+// Pass 5 decision 1: the night crew can be warned from the phone too. crew_warned
+// is written with #set_global (synced); attack_prevented is read only.
+VAR crew_warned = false
+VAR attack_prevented = false
 
 EXTERNAL player_name()
 
@@ -70,7 +74,7 @@ EXTERNAL player_name()
 
 === vance_phone_support_start ===
 {vance_support_calls == 1:
-    {player_name()}. What do you need?
+    Vance. What do you need?
 - else:
     Still here. Still watching it climb.
 }
@@ -107,6 +111,9 @@ EXTERNAL player_name()
     I can't leave the desk. Voltage is through there, and somebody has to watch the real numbers.
     They didn't need me on the ninth. I log every round on the Hall 1 panel. They lifted my print off it. Do the same.
     -> support_hub
+
++ {anomaly_detected and not crew_warned and not racks_vented and not attack_prevented} [The night crew in Hall 2. Can you get them out?]
+    -> crew_offer
 
 + [What should I be doing right now?]
     ~ vance_trust_level += 5
@@ -184,6 +191,25 @@ Get to it and press it. That's the mission.
     You know what they did. Now get to the shutdown and press it.
 }
 
+-> support_hub
+
+// Pass 5 decision 1. Text knot, then a choices-only knot (phone reopen rule, E13).
+=== crew_offer ===
+I can sound the evacuation from here. Klaxon and strobes in every hall.
+And whoever's in my plant room hears it too. The minute it goes, they know we've found them, and they won't wait for eight.
+-> crew_offer_choices
+
+=== crew_offer_choices ===
++ [Sound it. Get them out.]
+    -> crew_sound
++ [Not yet.]
+    Your call. Say the word and it goes.
+    -> support_hub
+
+=== crew_sound ===
+#set_global:crew_warned:true
+~ crew_warned = true
+Sounding it now. They're moving. Nine of them, out through the Hall 2 fire doors.
 -> support_hub
 
 === urgency_assessment ===

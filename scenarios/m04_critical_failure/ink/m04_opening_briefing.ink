@@ -5,7 +5,6 @@
 // ===========================================
 
 // Variables for tracking player choices and state
-VAR player_approach = ""          // tactical, methodical, aggressive
 VAR handler_trust = 50            // 0-100 Handler's confidence in player
 VAR knows_full_threat = false     // Did player ask about chemical threat?
 VAR knows_entropy_cell = false    // Did player ask about Critical Mass?
@@ -51,7 +50,6 @@ Agent HaX: Worse than Ransomware Incorporated. This lot don't want paying.
 
 * [I'm ready. What's the target?]
     ~ handler_trust += 10
-    ~ player_approach = "confident"
     Agent HaX: Good. Hold on to that. This one may come to a fight.
     ~ combat_ready = true
     -> briefing_main
@@ -134,6 +132,7 @@ Agent HaX: One rack lights the next, then the hydrogen goes. The hall burns and 
 
 Agent HaX: ENTROPY's infrastructure cell. Power storage, generation, transport.
 
+#set_global:blackout_named:true
 Agent HaX: They answer to Blackout: Dr James Mercer. He signs the casualty models, and he has never once revised one down.
 
 Agent HaX: Mercer won't be on site. His lieutenant runs Albion, calls himself Voltage. Former grid engineer, which is why he got this one.
@@ -180,12 +179,10 @@ Agent HaX: Whatever force it takes to stop that trigger. But I want Voltage brea
 
 + [Stop the trigger, and bring Voltage in alive if I can.]
     ~ handler_trust += 15
-    ~ player_approach = "tactical"
     Agent HaX: That's the order.
     -> briefing_hub
 
 + [I'll keep it quiet where I can. No more fights than I have to.]
-    ~ player_approach = "methodical"
     Agent HaX: Good. Just don't count on quiet lasting.
     -> briefing_hub
 
@@ -232,7 +229,6 @@ Agent HaX: Read him first. Hard evidence will do the persuading for you.
 
 + [I'll size him up in person first.]
     ~ handler_trust += 10
-    ~ player_approach = "methodical"
     Agent HaX: Good.
     -> briefing_hub
 
@@ -299,7 +295,6 @@ Agent HaX: And I'm on the phone the whole way. Call me.
 
 + [Solo, then. I've got this.]
     ~ handler_trust += 15
-    ~ player_approach = "confident"
     Agent HaX: I know you have.
     -> mission_departure
 
@@ -310,7 +305,7 @@ Agent HaX: And I'm on the phone the whole way. Call me.
 === priority_clarification ===
 #speaker:agent_0x99
 
-Agent HaX: The attack. Eleven people on site, and everyone on that feed.
+Agent HaX: The attack. Eleven people on site, nine of them on the night crew, and everyone on that feed.
 
 Agent HaX: Take Voltage if you can. What he knows could save the next site.
 

@@ -43,6 +43,10 @@ VAR cipher_walked = false
 VAR vance_card_cloned = false
 VAR relay_card_cloned = false
 VAR voltage_print_on_bypass = false
+// Pass 5 decision 1: Vance's evacuation alarm (crew_warned) and a vent with the
+// crew still in Hall 2 (crew_lost, set by HaX's racks_vented mapping). Read only.
+VAR crew_warned = false
+VAR crew_lost = false
 
 // External variables (set by game)
 EXTERNAL player_name()
@@ -65,7 +69,8 @@ EXTERNAL player_name()
 #speaker:agent_0x99
 
 // Agent HaX on screen
-
+// Pass 5 A4: the reload backstops key on this (scenario.json.erb).
+#set_global:debrief_started:true
 Agent, report.
 
 * {not racks_vented} [Shutdown engaged before the racks went. Banks isolated, hall intact.]
@@ -281,10 +286,24 @@ First, one more decision.
     - else:
         Agent HaX: The banks are isolated, but Bank B went before you got to the button.
     }
-    Agent HaX: Nine on the night crew in Hall 2. Two more on the feed before the grid caught up.
-    Agent HaX: You stopped the rest of it. Hold on to that, because the number you read tomorrow won't be zero.
+    // Pass 5 decision 1: the casualties depend on whether the crew was warned.
+    {crew_lost:
+        Agent HaX: Nine on the night crew in Hall 2. Two more on the feed before the grid caught up.
+        Agent HaX: You stopped the rest of it. Hold on to that, because the number you read tomorrow won't be zero.
+    - else:
+        Agent HaX: Hall 2 was empty when it went. Vance's alarm had the night crew out through the fire doors.
+        Agent HaX: Two on the feed before the grid caught up. The number tomorrow won't be zero. It won't be eleven either.
+    }
 - else:
-    Agent HaX: Eleven people walked out of there tonight. Forty-odd on that feed never knew they were on it.
+    // Eleven on site: the nine night crew, Vance and the gate guard.
+    {security_guard_ko or robert_vance_ko:
+        Agent HaX: Everyone on site got out alive tonight, not all of them on their own feet. Forty-odd on that feed never knew they were on it.
+    - else:
+        Agent HaX: Eleven people walked out of there tonight. Forty-odd on that feed never knew they were on it.
+    }
+    {crew_warned:
+        Agent HaX: And Vance's alarm had the night crew out before the button went in. It started your clock early. It was still the right call.
+    }
 }
 
 

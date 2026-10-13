@@ -5,11 +5,12 @@
 // ===========================================
 
 // Variables for tracking conversation state
-VAR handler_contacted = 0              // Number of times player contacted handler
 VAR handler_confidence = 50            // 0-100 handler's confidence in mission success
 VAR server_room_reached = false
 VAR attack_mechanism_known = false
 VAR voltage_priority_discussed = false
+// Pass 5 A5: synced (declared in globalVariables), so the workshop advice
+// retires across a reload.
 VAR server_room_advice_given = false
 
 // Field-guide exposure flags. Engine-owned: each _offered is set by an
@@ -50,82 +51,147 @@ VAR operatives_defeated = 0
 VAR urgency_stage = 0
 VAR flags_submitted = 0
 
+// Pass 5 A5: synced progress globals the hub's gated hints read (all declared
+// in scenario.json.erb globalVariables). Read only, except mission_complete,
+// which extract_go sets with #set_global (A4 call-in).
+VAR guard_admitted = false
+VAR security_guard_ko = false
+VAR vance_met = false
+VAR vance_provided_keycard = false
+VAR robert_vance_ko = false
+VAR plant_reader_seen = false
+VAR plant_room_entered = false
+VAR operative_static_defeated = false
+VAR voltage_fight_started = false
+VAR voltage_neutralised = false
+VAR esd_authorized = false
+VAR crew_warned = false
+VAR racks_vented = false
+VAR attack_prevented = false
+VAR mission_complete = false           // Synced scenario global: set by extract_go (A4 call-in); opens the debrief
+VAR lore_architect_directive_found = false
+VAR lore_safehouse_address_found = false
+
+// Local: greet on the first open only (m03 D2-14); one gated hint per stuck
+// point, retired once given (m03 pass 5 P1-12).
+VAR greeted = false
+VAR hint_guard_given = false
+VAR hint_clone_given = false
+VAR hint_dial_given = false
+VAR hint_relay_given = false
+VAR hint_reader_given = false
+VAR hint_voltage_given = false
+VAR hint_race_given = false
+VAR hint_crew_given = false
+VAR operative_down_given = false
+
 // External variables (set by game)
 EXTERNAL player_name()
 
+// Root divert (m03 pattern). When a conversation has ended, the engine restores
+// only its variables on the next talk and continues from the root; without this
+// line the root is empty.
+-> start
+
 // ===========================================
-// CONVERSATION HUB
+// ENTRY
 // ===========================================
 
 === start ===
-{handler_contacted == 0: -> first_call}
+// greeted is ink-local, so a page reload forgets it. The status check only fits
+// the early game, so after a late reload (dial read, or the workshop reached)
+// the phone opens straight on the hub.
+{not greeted:
+    ~ greeted = true
+    {not anomaly_detected and not server_room_reached and not attack_prevented:
+        -> first_call
+    }
+}
 -> support_hub
 
 // ===========================================
 // SUPPORT HUB
 //
-// PHASE 1a SKELETON. Every call branch returns here instead of falling through
-// `#exit_conversation` into `-> start`, which re-entered `first_call` with its
-// once-only choices already consumed -- that is what made all 18 enumerated
-// paths error on the FIRST call, not on re-entry.
-//
-// The three event knots below (event_server_room_entered,
-// event_attack_mechanism_identified, player_guidance_request) were previously
-// ORPHANED: no eventMapping uses targetKnot, so nothing could reach them.
-// They are now reachable from this hub, gated on progress.
-//
-// PHASE 4 will rebuild this to the m02 standard
-// (m02_ransomed_trust/ink/m02_phone_agent0x99.ink:101-175): finer progress
-// gating, an always-on fallback, and exposure-gated field-guide offers with
-// #give_item:lab-workstation:<key>.
+// Pass 5 A5: rebuilt to m03's standard (m03_phone_agent0x99.ink `hub`). Every
+// call branch returns here. Topics appear only when the player is at that beat,
+// sit most urgent first, and retire through their own guards. The field guides
+// are folded into one choice. The two fixed choices ("Where do I stand?" and the
+// exit) sit last, so the hub is never empty and a stuck player always has the
+// progress read to fall back on.
 // ===========================================
 
 === support_hub ===
-// Progress-gated advice. Each option appears only once the player is actually
-// at that beat, and disappears once used -- so the hub always reflects where
-// they are, and never offers a hint for a problem they haven't met yet.
+// A4: the way out once the shutdown is in. First, because it ends the mission.
++ {attack_prevented and not mission_complete} [I'm done here. Bring me in.]
+    -> extract_offer
+
++ {voltage_fight_started and not voltage_neutralised and not racks_vented and not hint_race_given} [He's going for the laptop!]
+    -> hint_race
+
++ {plant_room_entered and not voltage_neutralised and not voltage_fight_started and not hint_voltage_given} [Voltage. How do I play this?]
+    -> hint_voltage
+
+// Decision 1: the night crew. Pointer only; Vance sounds the alarm.
++ {anomaly_detected and not crew_warned and not racks_vented and not attack_prevented and not hint_crew_given} [Can we get the night crew out of Hall 2?]
+    -> hint_crew
+
++ {attack_mechanism_known and not voltage_priority_discussed and not voltage_neutralised} [I've got their attack mechanism mapped.]
+    -> event_attack_mechanism_identified
+
 + {server_room_reached and not server_room_advice_given and not all_flags_in} [I'm on the OT network. What am I looking at?]
     -> event_server_room_entered
 
-+ {attack_mechanism_known and not voltage_priority_discussed} [I've got their attack mechanism mapped.]
-    -> event_attack_mechanism_identified
++ {plant_reader_seen and not plant_room_entered and not hint_reader_given} [How do I get through the plant-room reader?]
+    -> hint_reader
 
-+ {operatives_defeated >= 1 and not voltage_priority_discussed} [I've put one of their people down.]
++ {plant_reader_seen and not relay_card_cloned and not operative_relay_defeated and not server_room_reached and not hint_relay_given} [Relay's got the workshop card. How do I get it?]
+    -> hint_relay
+
++ {operatives_defeated >= 1 and not voltage_priority_discussed and not operative_down_given} [I've put one of their people down.]
     -> operative_down_advice
 
-// ---- Field guides. Exposure-gated: offered by an eventMapping when the
-// ---- player meets the obstacle, handed over here on request.
-+ {rfid_guide_offered and not rfid_guide_hint_given} [Send me the RFID cloning guide.]
-    -> request_rfid_guide
++ {(vance_met or robert_vance_ko) and not anomaly_detected and not hint_dial_given} [How do I prove the screens are lying?]
+    -> hint_dial
 
-+ {lockpicking_guide_offered and not lockpicking_guide_hint_given} [Send me the lockpicking guide.]
-    -> request_lockpicking_guide
++ {guard_admitted and not vance_provided_keycard and not hint_clone_given} [How do I get through the card readers?]
+    -> hint_clone
 
-+ {recon_guide_offered and not recon_guide_hint_given} [Send me the network mapping guide.]
-    -> request_recon_guide
++ {not guard_admitted and not security_guard_ko and not hint_guard_given} [How do I get past the gate?]
+    -> hint_guard
 
-+ {vuln_guide_offered and not vuln_guide_hint_given} [Send me the attack surface guide.]
-    -> request_vuln_guide
-
-+ {distcc_guide_offered and not distcc_guide_hint_given} [Send me the distcc guide.]
-    -> request_distcc_guide
-
-+ {privesc_guide_offered and not privesc_guide_hint_given} [Send me the sudo guide.]
-    -> request_privesc_guide
-
-+ {proftpd_guide_offered and not proftpd_guide_hint_given} [Send me the ProFTPD guide.]
-    -> request_proftpd_guide
-
-+ {cyberchef_guide_offered and not cyberchef_guide_hint_given} [Send me the CyberChef decoding guide.]
-    -> request_cyberchef_guide
+// ---- Field guides, one choice. Exposure-gated: offered by an eventMapping
+// ---- when the player meets the obstacle, handed over here on request.
++ {(rfid_guide_offered and not rfid_guide_hint_given) or (lockpicking_guide_offered and not lockpicking_guide_hint_given) or (recon_guide_offered and not recon_guide_hint_given) or (vuln_guide_offered and not vuln_guide_hint_given) or (distcc_guide_offered and not distcc_guide_hint_given) or (privesc_guide_offered and not privesc_guide_hint_given) or (proftpd_guide_offered and not proftpd_guide_hint_given) or (cyberchef_guide_offered and not cyberchef_guide_hint_given)} [Send me a field guide.]
+    -> field_guides
 
 // ---- Always available: the fallback that stops this hub ever running dry.
-+ [I need guidance.]
-    -> player_guidance_request
++ [Where do I stand?]
+    -> report_progress
 
 + [Nothing right now.]
     #exit_conversation
     Line's open. Call it in when you have something.
+    -> support_hub
+
+// Choices-only: the guides on offer and not yet sent (m02/m03 field_guides).
+=== field_guides ===
++ {rfid_guide_offered and not rfid_guide_hint_given} [The RFID cloning guide.]
+    -> request_rfid_guide
++ {lockpicking_guide_offered and not lockpicking_guide_hint_given} [The lockpicking guide.]
+    -> request_lockpicking_guide
++ {recon_guide_offered and not recon_guide_hint_given} [The network mapping guide.]
+    -> request_recon_guide
++ {vuln_guide_offered and not vuln_guide_hint_given} [The attack surface guide.]
+    -> request_vuln_guide
++ {proftpd_guide_offered and not proftpd_guide_hint_given} [The ProFTPD guide.]
+    -> request_proftpd_guide
++ {distcc_guide_offered and not distcc_guide_hint_given} [The distcc guide.]
+    -> request_distcc_guide
++ {privesc_guide_offered and not privesc_guide_hint_given} [The sudo guide.]
+    -> request_privesc_guide
++ {cyberchef_guide_offered and not cyberchef_guide_hint_given} [The CyberChef decoding guide.]
+    -> request_cyberchef_guide
++ [Not now.]
     -> support_hub
 
 // ===========================================
@@ -183,8 +249,12 @@ Sent. Paste it in, hit Magic, and it'll tell you what it is.
 -> support_hub
 
 === operative_down_advice ===
+~ operative_down_given = true
 {operatives_defeated >= 2:
-    Two down. Both halls clear. The only one left is the one who matters.
+    Two down. Both halls clear.
+    {not operative_static_defeated:
+        Static's still with Voltage in the plant room.
+    }
 - else:
     {operative_relay_defeated:
         One down. Check what she dropped: that's the workshop card.
@@ -193,8 +263,132 @@ Sent. Paste it in, hit Magic, and it'll tell you what it is.
     }
 }
 
-And {player_name()}, the hall doesn't care who's winning. Watch the hydrogen panel.
+And the hall doesn't care who's winning. Watch the hydrogen panel.
 
+-> support_hub
+
+// ===========================================
+// PASS 5 A5: GATED HINTS
+// One per stuck point, offered in the hub only when the player is at that point,
+// and retired once given (m03 hint_* pattern). Text knot, then back to the hub.
+// ===========================================
+
+=== hint_guard ===
+#speaker:agent_0x99
+~ hint_guard_given = true
+Show him the regulator badge. You're a routine audit that came early. He'll grumble and sign you in.
+Don't try to walk past him. He's the one person on that site doing his job properly.
+-> support_hub
+
+=== hint_clone ===
+#speaker:agent_0x99
+~ hint_clone_given = true
+Vance's door card is old prox. Stand close while he talks and the cloner reads it off his lanyard.
+If that goes wrong, there's a spare Level 1 in the security office locker. It's a pin tumbler.
+-> support_hub
+
+=== hint_dial ===
+#speaker:agent_0x99
+~ hint_dial_given = true
+Every screen in that building reads the same poisoned feed. You need an instrument that isn't on it.
+Battery Hall 1. There's an old dial thermometer on the Rack Bank C wall. Read it.
+-> support_hub
+
+=== hint_relay ===
+#speaker:agent_0x99
+~ hint_relay_given = true
+Two ways. Keep her talking and step in close. Her card's old prox, like Vance's, and the cloner will copy it.
+Or put her down. She won't chase far, so if she turns on you, back off and cross when she's at the far end.
+-> support_hub
+
+=== hint_reader ===
+#speaker:agent_0x99
+~ hint_reader_given = true
+{fingerprint_kit_found:
+    You've got the crew's kit. Now you need Vance's print, off something he touches every round.
+    The duty panel in Hall 1. He logs every round on it.
+- else:
+    Picks and cloner won't touch a fingerprint reader. The crew beat it on the ninth with their own kit.
+    Their tool case is under the workshop bench. Open it.
+}
+-> support_hub
+
+=== hint_voltage ===
+#speaker:agent_0x99
+~ hint_voltage_given = true
+He's costed tonight to the decimal. Don't expect to talk him round.
+Go for him and it's a race to his laptop. Drop him fast.
+{operative_static_defeated:
+    Static's down, so he's got nobody. You can arrest him.
+- else:
+    With Static still up, you won't take him quietly. Put Static down and the arrest is yours.
+}
+{attack_mechanism_known and anomaly_detected:
+    Or go for the button and let him run. Grid control will take the shed now.
+- else:
+    The button won't arm yet, so letting him run buys you nothing. Grid control needs the case first.
+}
+-> support_hub
+
+=== hint_race ===
+#speaker:agent_0x99
+~ hint_race_given = true
+Then stop talking to me and drop him.
+If he gets there it's Bank B, not the whole hall. The button still saves A and C.
+-> support_hub
+
+=== hint_crew ===
+#speaker:agent_0x99
+~ hint_crew_given = true
+Not from here. The site's evacuation alarm is on Vance's desk.
+{
+- robert_vance_ko:
+    And Vance is on the floor of his own office. Nobody's sounding it now.
+- not vance_is_ally:
+    He'd have to trust you first. Tell him who you are.
+- else:
+    Ask him. He'll do it.
+}
+But think first. The minute that alarm goes, Voltage knows we've found him, and he won't wait for eight.
+-> support_hub
+
+// ===========================================
+// PASS 5 A4: THE CALL-IN (m03 extract_offer / extract_go)
+// After the shutdown the player sweeps the site and calls in here. Text first,
+// choices in a text-free knot (phone reopen rule, E13). Leaving sets
+// mission_complete, which opens the debrief (agent_0x99_debrief mapping); the
+// call-in task completes in the same batch.
+// ===========================================
+
+=== extract_offer ===
+#speaker:agent_0x99
+Once you're out, you don't go back in. Whatever you haven't read stays for forensics.
+{not lore_architect_directive_found:
+    Voltage's operation log is still on the plant-room bench, for one.
+}
+{not lore_safehouse_address_found:
+    And there's a go-bag at the dock nobody's opened.
+}
+-> extract_choices
+
+=== extract_choices ===
++ [Bring me in.]
+    Car's at the loading dock. Two minutes.
+    -> extract_confirm
++ [Not yet. I'm still looking.]
+    Take your time. The banks aren't going anywhere.
+    -> support_hub
+
+=== extract_confirm ===
++ [On my way.]
+    -> extract_go
+
+=== extract_go ===
+#speaker:agent_0x99
+#complete_task:call_in_after_sweep
+#set_global:mission_complete:true
+~ mission_complete = true
+See you at HQ.
 -> support_hub
 
 // ===========================================
@@ -243,27 +437,24 @@ The screens lie because ENTROPY feed them. That dial isn't on ENTROPY's network.
 
 // ===========================================
 // FIRST CALL (Initial Contact)
-// Triggered: Shortly after mission start
+// Reached from start on the first open (greeted).
 // ===========================================
 
 === first_call ===
 #speaker:agent_0x99
 
-{player_name()}, status check. Are you inside the facility?
+Agent, status check. Are you inside the facility?
 -> first_call_choices
 
 === first_call_choices ===
 
 * [I'm inside. Met Robert Vance, the facility manager.]
-    ~ handler_contacted += 1
     -> vance_status_inquiry
 
 * [Inside the facility. Beginning investigation now.]
-    ~ handler_contacted += 1
     -> investigation_update
 
 * [I'm in. Anything new from your end?]
-    ~ handler_contacted += 1
     -> intel_update
 
 === vance_status_inquiry ===
@@ -365,7 +556,7 @@ Stay sharp. If anyone comes at you, defend yourself. Call if you need me.
 
 // ===========================================
 // EVENT: SERVER ROOM ENTERED
-// Triggered: Player enters the engineering workshop
+// Offered in the hub once the player is in the engineering workshop
 // ===========================================
 
 === event_server_room_entered ===
@@ -374,7 +565,7 @@ Stay sharp. If anyone comes at you, defend yourself. Call if you need me.
 ~ server_room_advice_given = true
 ~ handler_confidence += 10
 
-{player_name()}, you're in the workshop. That's their way in.
+You're in the workshop. That's their way in.
 
 The BMS jump server runs through there, and so does the route onto the SCADA network.
 -> event_server_room_entered_choices
@@ -419,7 +610,7 @@ Three of them were in here for hours. They left something behind. Find it, and w
 #speaker:agent_0x99
 
 {operatives_defeated >= 1:
-    And {player_name()}, you've already met one of them. There'll be more.
+    And you've already met one of them. There'll be more.
 - else:
     Watch your back. They won't hesitate.
 }
@@ -431,7 +622,7 @@ Call when you've got something.
 
 // ===========================================
 // EVENT: ATTACK MECHANISM IDENTIFIED
-// Triggered: Player submits final VM flag (distcc exploit)
+// Offered in the hub once map_the_attack is complete
 // ===========================================
 
 === event_attack_mechanism_identified ===
@@ -439,7 +630,7 @@ Call when you've got something.
 
 ~ handler_confidence += 20
 
-{player_name()}, your flags are landing. Grid control can see it too.
+Your flags are landing. Grid control can see it too.
 
 They own the SCADA layer, and there's a remote trigger sitting on top of it.
 -> event_attack_mechanism_identified_choices
@@ -481,7 +672,7 @@ That's where he is, and where this ends.
 
 ~ voltage_priority_discussed = true
 
-{player_name()}, listen. Voltage is worth more to us talking than down.
+Listen. Voltage is worth more to us talking than down.
 
 He knows The Architect, how the cells coordinate, what's coming next.
 -> voltage_priority_update_choices
@@ -551,7 +742,7 @@ Keep him off that laptop.
 Then the hardwired shutdown button. Press it.
 
 {operatives_defeated >= 2:
-    {operatives_defeated} of them down already. You're almost there.
+    Two of them down already. You're almost there.
 }
 {operatives_defeated == 1:
     One down. The rest won't make it easy.
@@ -571,7 +762,7 @@ Then the hardwired shutdown button. Press it.
 #speaker:agent_0x99
 
 {handler_confidence >= 80:
-    Clean run so far, {player_name()}. Finish it.
+    Clean run so far. Finish it.
 }
 {handler_confidence >= 60 and handler_confidence < 80:
     Good so far. Stay sharp for the last of it.
@@ -586,52 +777,34 @@ Two hundred and forty thousand people are on that grid.
 -> support_hub
 
 // ===========================================
-// OPTIONAL: PLAYER-INITIATED CALL (GUIDANCE REQUEST)
-// Player can call for hints/support
+// WHERE DO I STAND? (Pass 5 A5)
+// The always-on fallback: reads the night as it is and names the next step.
+// Replaces the old guidance sub-hub (player_guidance_request and its six knots),
+// whose content the gated hints above now carry. First unmet step wins.
 // ===========================================
 
-=== player_guidance_request ===
+=== report_progress ===
 #speaker:agent_0x99
-
-~ handler_contacted += 1
-
-{player_name()}, go ahead.
-
-// These are STICKY (+). As once-only (*) choices they were consumed after
-// three visits, and `guidance_call_end` routes back here ("One more thing...")
-// -- so a fourth visit found an empty choice list and ran out of content.
-// A guidance hub must always have something to offer.
--> player_guidance_request_choices
-
-=== player_guidance_request_choices ===
-+ [What should I be doing right now?]
-    -> priority_guidance
-
-+ [Anything new on your end?]
-    -> intel_status_update
-
-+ [I'm stuck. Where do I look?]
-    -> tactical_suggestions
-
-+ [Nothing. Just checking in.]
-    -> guidance_call_end
-
-=== priority_guidance ===
-#speaker:agent_0x99
-
-{not server_room_reached:
-    The engineering workshop, off Battery Hall 1. That's where they got onto the SCADA network. It wants a Level 2 card.
+{
+- attack_prevented:
+    It's done. The banks are isolated and cooling.
+    Sweep what you want, then tell me to bring you in.
+- not guard_admitted and not security_guard_ko:
+    You're not in yet. Regulator badge at the gate. A routine audit that came early.
+- not vance_met and not robert_vance_ko:
+    Find Robert Vance, in the operations office. Nobody knows that plant better.
+- not vance_provided_keycard:
+    You need Vance's door card. It's old prox: the cloner copies it while he talks. There's a spare in the security office locker.
+- not anomaly_detected and not server_room_reached:
+    Prove the screens are lying. The dial on the Rack Bank C wall in Hall 1 isn't on their network.
+- not server_room_reached:
+    The engineering workshop, off Hall 1. It wants a Level 2 card.
     {relay_card_cloned or operative_relay_defeated:
         You've got Relay's. Use it on the workshop door.
     - else:
         Relay carries one. She walks Hall 2, and Hall 2 opens on Vance's card.
     }
-
-    {vance_is_ally:
-        Vance can point you to it from the ops desk.
-    }
-}
-{server_room_reached and not attack_mechanism_known:
+- not attack_mechanism_known:
     {
     - all_flags_in and not (evidence_maintenance_logs_found or evidence_access_logs_found or evidence_camera_tampering_found or evidence_reader_spoof_found):
         Your flags are in. Grid control still wants the break-in on paper.
@@ -641,165 +814,24 @@ Two hundred and forty thousand people are on that grid.
         The dial thermometer on the Rack Bank C wall in Hall 1. It isn't on their network.
     - else:
         Work the terminal in the workshop. Find how they're driving the attack, and drop the flags as you go.
-    }
-}
-{server_room_reached and attack_mechanism_known:
-    You know how they did it. Now stop it.
-
-    Voltage's in the plant room with the trigger. Deal with him, then the shutdown button.
-}
--> priority_guidance_choices
-
-=== priority_guidance_choices ===
-
-+ [Right.]
-    -> guidance_call_end
-
-=== intel_status_update ===
-#speaker:agent_0x99
-
-{attack_mechanism_known:
-    Their whole mechanism's on record now. That's the case made.
-- else:
-    {server_room_reached:
-        You're on the network. Keep pulling flags into the drop-site terminal.
-    - else:
-        Nothing in yet. The intel's on the BMS jump server in the workshop. Scan it, submit what you find.
-    }
-}
-
-{operatives_defeated >= 2:
-    Both halls clear. Static and Voltage are waiting in the plant room.
-}
-{operatives_defeated == 1:
-    One down. Stay alert for the rest.
-}
-{operatives_defeated == 0:
-    No contact yet. They're here. Be ready.
-}
--> intel_status_update_choices
-
-=== intel_status_update_choices ===
-
-+ [Thanks.]
-    -> guidance_call_end
-
-=== tactical_suggestions ===
-#speaker:agent_0x99
-
-What's the problem?
-
-// Sticky + a fallback: this knot is re-enterable from the guidance hub, and as
-// once-only choices it emptied on the fourth visit.
--> tactical_suggestions_choices
-
-=== tactical_suggestions_choices ===
-+ [I can't work out where to go next.]
-    -> navigation_help
-
-+ [One of them's giving me trouble.]
-    -> combat_help
-
-+ [The network side has me lost.]
-    -> vm_challenge_help
-
-+ [Actually, I'm fine.]
-    -> guidance_call_end
-
-=== navigation_help ===
-#speaker:agent_0x99
-
-{not server_room_reached:
-    The workshop's off Battery Hall 1, and it wants a Level 2 card. Vance's only reaches Level 1.
-
-    {operative_relay_defeated:
-        Relay's down. Her card's on the floor by her, and I've pushed you a copy anyway.
-    - else:
-        {relay_card_cloned:
-            You've got Relay's card. Play it at the workshop door.
-        - else:
-            Relay's in the inverter room, and she carries a workshop card. Hall 2 opens on Vance's.
+        {not anomaly_detected:
+            And read the dial on the Rack Bank C wall in Hall 1. Grid control will want it.
         }
     }
-}
-{server_room_reached:
-    The plant room's off Hall 2, and the reader wants Vance's print.
-
-    {fingerprint_kit_found:
-        You've got the crew's kit. Now find somewhere he touches on every round.
-    - else:
-        You need a kit, and somewhere he touches every round. Their tool case is in the workshop. Start there.
+- not plant_room_entered:
+    You know how they did it. The plant room's off Hall 2, and its reader wants Vance's print.
+    {not fingerprint_kit_found:
+        The crew's own kit is in their tool case in the workshop.
     }
+- not voltage_neutralised:
+    Voltage is in the plant room with the trigger. Deal with him, then the shutdown button.
+- not esd_authorized:
+    Grid control's nearly there. Stay by the button.
+- else:
+    The ESD is live. Press it.
 }
--> navigation_help_choices
+-> report_progress_choices
 
-=== navigation_help_choices ===
-
-+ [That helps. Thanks.]
-    -> guidance_call_end
-
-=== combat_help ===
-#speaker:agent_0x99
-
-Use cover. They've got training, but so have you.
-
-And you don't have to win every fight. Most won't chase far.
-
-{not operative_relay_defeated and not relay_card_cloned:
-    Relay's card copies like Vance's did, if you keep her talking.
-}
-
-{vance_is_ally:
-    Vance may know where the others are, if you ask him.
-}
--> combat_help_choices
-
-=== combat_help_choices ===
-
-+ [Understood]
-    -> guidance_call_end
-
-=== vm_challenge_help ===
-#speaker:agent_0x99
-
-Start with a scan to map the network. Nmap.
-
-Then see what each box is running. The FTP and web services are holding intel.
-
-Then push on the weak one to get a foothold. The guides cover each step.
-
-{vance_is_ally:
-    Vance can fill in the SCADA side if you get stuck.
-}
--> vm_challenge_help_choices
-
-=== vm_challenge_help_choices ===
-
-+ [Got it. Thanks.]
-    -> guidance_call_end
-
-=== guidance_call_end ===
-#speaker:agent_0x99
-
-~ handler_confidence += 3
-
-Anything else?
-
-// Sticky: this knot is re-entered every time the player loops the guidance
-// hub, so once-only choices leave it empty on the second pass.
--> guidance_call_end_choices
-
-=== guidance_call_end_choices ===
-+ [No, I'm good. Thanks.]
-    -> call_final_end
-
-+ [One more thing...]
-    -> player_guidance_request
-
-=== call_final_end ===
-#speaker:agent_0x99
-
-Stay safe. Call if you need me.
-
-#exit_conversation
--> support_hub
+=== report_progress_choices ===
++ [Right.]
+    -> support_hub
