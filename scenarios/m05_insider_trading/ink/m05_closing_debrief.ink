@@ -75,6 +75,7 @@ VAR found_halloran_vetting = false
 VAR named_before_portal = false
 // PASS 5 R2 (B2): a wrong reason was given before the right one
 VAR torres_reason_guessed = false
+VAR torres_fight_offered = false // Synced scenario global (scenario design R1, m2): Torres turned on the player from the fight line, set in combat_offer; read by the debrief
 VAR door_log_hinted = false // Synced scenario global (puzzle R1, P1/D-D): HaX spelled out the front-door method; bars the early-naming reward
 VAR door_log_reasoned_first = false // Synced scenario global (pass 5 R3-1): the front-door reason given in a reason menu, before the naming; set only in the *log_reason_right knots. The early-naming reward reads this, not door_log_reasoned
 
@@ -270,7 +271,7 @@ Agent HaX: Let's go through it.
 // PASS 4 (whodunnit): how the player read the badge log.
 {
 - halloran_accused:
-    Agent HaX: Dr Halloran spent the rest of the night under suspension because of a badge log read halfway. She was in Zurich. She's lodged a complaint, and she's right to.
+    Agent HaX: Dr Halloran spent hours suspended because of a badge log read halfway. She was in Zurich. She's lodged a complaint, and she's right to.
 - door_log_reasoned and torres_reason_guessed:
     Agent HaX: You got to the front-door times in the end. It took a couple of goes.
 - door_log_reasoned:
@@ -302,6 +303,15 @@ Agent HaX: Let's go through it.
 Agent HaX: Every locked door in that building, you opened on someone else's trust. A colleague's badge, a colleague's password, an admin's leaked login, his thumbprint.
 
 Agent HaX: In the logs, that looks exactly like an insider. It's why nobody saw him.
+
+// Scenario design R1 (M2/U4): what the four flags exposed, at m04's "what
+// failed" level: no commands, versions or exploit mechanics. Needs checking
+// against SecGen by the user (D12).
+Agent HaX: And the research portal. Old software with a known flaw nobody had patched, and an admin login sitting in a handover note.
+
+Agent HaX: Once you were in, one account was allowed to run far more than its job needed. That's how you reached the Architect's sign-off.
+
+Agent HaX: Patch it, rotate the logins, trim the rights. QDC had a list for all three and never worked it.
 
 {indicators_found() > 0:
     Agent HaX: The warning signs go in the training file. The ones you found, anyway.
@@ -422,7 +432,11 @@ Agent HaX: David Torres is dead.
 
 Agent HaX: The pathologist thinks twenty minutes would have been enough.
 
-+ [He came at me. I did what the mission needed.]
+// Scenario design R1 (m2): only true if he turned on the player from the fight line.
++ {torres_fight_offered} [He came at me. I did what the mission needed.]
+    -> torres_tactical_discussion
+
++ {not torres_fight_offered} [I didn't give him the chance. The upload was running.]
     -> torres_tactical_discussion
 
 + [I should have stayed with him. I know.]
@@ -474,8 +488,12 @@ Agent HaX: He woke up in hospital under police guard, angry, and he hasn't said 
 
 Agent HaX: Elena's treatment is unfunded. He never talked to us, so there's no deal to hang it on.
 
-+ [He chose to fight. I gave him the chance to step away.]
+// Scenario design R1 (m2): only true if he turned on the player from the fight line.
++ {torres_fight_offered} [He chose to fight. I gave him the chance to step away.]
     Agent HaX: You did. And now we're both living with what came after.
+    -> recruiter_reckoning
++ {not torres_fight_offered} [I didn't give him the chance. The upload was running.]
+    Agent HaX: No. And he'll say so, if anyone ever asks him.
     -> recruiter_reckoning
 + [Is there any way back to a cooperation deal?]
     Agent HaX: Not through us. He's in police hands now, and we don't get to walk into their interview rooms.

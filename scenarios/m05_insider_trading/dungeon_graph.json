@@ -172,7 +172,7 @@
     },
     {
       "id": "vmch_submit_flag1",
-      "label": "Flag 1: The login someone left lying about (recon)",
+      "label": "Submit Flag 1: The login someone left lying about (recon)",
       "kind": "vm",
       "optional": false
     },
@@ -184,7 +184,7 @@
     },
     {
       "id": "vmch_submit_flag2",
-      "label": "Flag 2: A foothold on the research portal (upload RCE)",
+      "label": "Submit Flag 2: A foothold on the research portal (upload RCE)",
       "kind": "vm",
       "optional": false
     },

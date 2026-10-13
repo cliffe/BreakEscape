@@ -22,7 +22,7 @@
     {
       "ka": "SOIM",
       "topic": "PENETRATION TESTING",
-      "keywords": ["PENETRATION TESTING - SOFTWARE TOOLS", "Incident Response", "Insider threat detection"]
+      "keywords": ["PENETRATION TESTING - SOFTWARE TOOLS", "Insider threat detection", "Privilege escalation"]
     },
     {
       "ka": "HF",
@@ -32,7 +32,7 @@
     {
       "ka": "AC",
       "topic": "Applied Cryptography",
-      "keywords": ["Quantum Cryptography", "Cryptographic research protection"]
+      "keywords": ["Key management and rotation"]
     },
     {
       "ka": "MAT",

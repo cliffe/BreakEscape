@@ -31,6 +31,7 @@ VAR password_handed = false   // local: hides the ask until the pickup mapping s
 VAR door_log_handed = false   // local: same pattern for the badge log
 VAR hub_quiet = false
 VAR asked_access = false      // playtest round: the access ask stays in the hub until used
+VAR told_about_david = false   // scenario design R1 (m6): the news about David, once
 VAR card_handed = false       // playtest round: local, hides the office ask once the card is given
 
 // Synced from scenario globals
@@ -137,7 +138,7 @@ Owen Gallagher: I thought it was remote work at first. It's too tidy for that. S
 + {torres_suspected and not office_card_obtained and not card_handed} [I need into David Torres' office.]
     -> request_office_card
 
-+ {torres_identified} [It's David. He's the one.]
++ {torres_identified and not told_about_david} [It's David. He's the one.]
     -> owen_told
 
 + [That's everything for now. Catch you later.]
@@ -312,6 +313,7 @@ Owen Gallagher: I like my job. Get her to message me and it's yours.
 -> hub
 
 === owen_told ===
+~ told_about_david = true
 #speaker:owen_gallagher
 
 Owen Gallagher: David? No way. He wouldn't...

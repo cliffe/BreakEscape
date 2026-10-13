@@ -9,7 +9,7 @@ Infiltrate Quantum Dynamics Corporation to identify and stop an insider threat. 
 | Metric | Value |
 |---|---|
 | Story aims | 5 |
-| Total tasks | 28 (8 optional) |
+| Total tasks | 29 (8 optional) |
 | VM flag challenges | 4 |
 | Physical locks | 6 |
 | AND-gate convergences | 1 |
@@ -97,9 +97,9 @@ flowchart TD
   data_package_manifest{"Data Package Manifest"}
   npc_david_torres{"David Torres"}
   action_confront_torres>"Confront Torres and decide his fate"]
-  vmch_submit_flag1["Flag 1: The login someone left lying about (recon)"]
+  vmch_submit_flag1["Submit Flag 1: The login someone left lying about (recon)"]
   vmfl_submit_flag1{"Flag1 Flag"}
-  vmch_submit_flag2["Flag 2: A foothold on the research portal (upload RCE)"]
+  vmch_submit_flag2["Submit Flag 2: A foothold on the research portal (upload RCE)"]
   vmfl_submit_flag2{"Flag2 Flag"}
   vmch_submit_flag3["Submit Flag 3: The insider's staging manifest (user access)"]
   vmfl_submit_flag3{"Flag3 Flag"}
@@ -283,9 +283,9 @@ flowchart TD
   data_package_manifest{"Data Package Manifest"}
   npc_david_torres{"David Torres"}
   action_confront_torres>"Confront Torres and decide his fate"]
-  vmch_submit_flag1["Flag 1: The login someone left lying about (recon)"]
+  vmch_submit_flag1["Submit Flag 1: The login someone left lying about (recon)"]
   vmfl_submit_flag1{"Flag1 Flag"}
-  vmch_submit_flag2["Flag 2: A foothold on the research portal (upload RCE)"]
+  vmch_submit_flag2["Submit Flag 2: A foothold on the research portal (upload RCE)"]
   vmfl_submit_flag2{"Flag2 Flag"}
   vmch_submit_flag3["Submit Flag 3: The insider's staging manifest (user access)"]
   vmfl_submit_flag3{"Flag3 Flag"}

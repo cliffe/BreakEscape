@@ -755,7 +755,8 @@
       "door_log_reasoned_first": false,
       "door_log_hinted": false,
       "owen_refused_password": false,
-      "spare_badge_taken": false
+      "spare_badge_taken": false,
+      "torres_fight_offered": false
     },
     "npcs": [
       {
@@ -909,6 +910,7 @@
       "ready_to_extract": false,
       "irina_taken": false,
       "minder_passed": false,
+      "minder_vouched": false,
       "minder_hostile": false,
       "minder_ko": false,
       "minder_challenged": false,

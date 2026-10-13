@@ -277,6 +277,15 @@ Narrator: The line goes dead.
 {not recruiter_deal_offered:
     -> recruiter_deal
 }
+// Scenario design R1 (m4): an answer already given is remembered.
+{recruiter_deal_accepted:
+    We have an arrangement. Don't ring this number again.
+    -> end_contact
+}
+{recruiter_deal_decided:
+    You said no once. I heard you.
+    -> end_contact
+}
 
 Still deciding? The offer doesn't improve with age, agent.
 

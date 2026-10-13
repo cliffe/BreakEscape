@@ -124,6 +124,12 @@ Dr Ruth Halloran: If one of them did this, somebody gave them a reason. Pressure
 // ===========================================
 
 === hub ===
+// Scenario design R1 (M1): a reopened person-chat resumes at the hub, so a
+// player who met her before accusing her hears the suspension here.
+{halloran_accused and not accused_acknowledged:
+    ~ accused_acknowledged = true
+    -> accused_greeting
+}
 #speaker:dr_halloran
 {hub_quiet:
     ~ hub_quiet = false

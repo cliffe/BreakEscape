@@ -439,3 +439,57 @@ Spoken lines changed (old → new):
 | Browser check (engine question, same run) | `PASS5_PUZZLE_R2_BROWSER.md`, mid-mission reloads in 2318 and 2321 | Ink locals survive a page reload | m05 comments and two log rows corrected; route drivers updated by the coordinator (2d2736ae) |
 
 Nothing above minor is open. Carried forward: D11 (the clone's timing) and D3's flag-order question for the user; P10 (HaX's hub size) and B3 (the debrief's long runs) for the dialogue phase; room dressing to place the Lab Rules notice and keep the lab hook a prop only.
+
+## Phase 3: scenario design
+
+### Phase 3 scenario design, round 1
+
+Review: `SCENARIO_DESIGN_REVIEW_P5_R1.md` (Opus, read-only, static). Counts: 0 blockers, 2 majors, 10 minors, decisions U1 to U4. The coordinator's decisions are logged with each outcome. None withdrawn.
+
+| # | Sev. | Finding | Outcome |
+|---|---|---|---|
+| M1 | major | Halloran's suspension greeting lived in `start`, so a player who met her before accusing her (the common route) heard "What else?" instead | **Fixed** (coordinator): the check `halloran_accused and not accused_acknowledged` → `accused_greeting` also sits at the top of her `hub`, which is where a reopened chat resumes; the `start` check stays for a first meeting. Route r24 (met, accused, talked to again without a reload: "Security have suspended my access", no "What else?") |
+| M2 / U4 | major | The debrief reflected almost none of what the four flags taught | **Fixed** (coordinator): three lines after "It's why nobody saw him", at m04's "what failed" level, with no commands, versions or exploit mechanics: "And the research portal. Old software with a known flaw nobody had patched, and an admin login sitting in a handover note." / "Once you were in, one account was allowed to run far more than its job needed. That's how you reached the Architect's sign-off." / fix line "Patch it, rotate the logins, trim the rights. QDC had a list for all three and never worked it." Marked "check against SecGen by the user" (D12). Route r25 |
+| m1 | minor | "Find Out Why" completed without a why (its motive tasks are optional) | **Fixed**: new required custom task "Find out why he'd do it" (`establish_motive`) in that aim, completed by two HaX mappings (`case_motive` with `torres_suspected`, and the reverse), not a collect task, so a vetting hand-over can't reveal the aim before suspicion. Route r25 |
+| m2 | minor | Two KO-route debrief choices claimed Torres attacked first, false if the player struck before speaking | **Fixed** (coordinator: a synced global): `torres_fight_offered`, set in `combat_offer`, declared in `globalVariables`. "He came at me…" and "He chose to fight…" need it; otherwise "[I didn't give him the chance. The upload was running.]" (the subdued path answers "No. And he'll say so, if anyone ever asks him."). Route r25 |
+| m3 | minor | "The rest of the night" contradicted Halloran's same-night reinstatement | **Fixed**: "Dr Halloran spent hours suspended because of a badge log read halfway…" (r3 updated) |
+| m4 | minor | Ringing the Recruiter back after an answer got "Still deciding?" | **Fixed**: `mid_mission_contact` answers a taken deal with "We have an arrangement. Don't ring this number again." and a refusal with "You said no once. I heard you.", then ends the call. Route r24 |
+| m5 | minor | HaX's hint sent the player to ask a knocked-out Halloran | **Fixed**: `halloran_ko` declared in HaX's ink; a first case "She's in no state to answer. Her desk in the lab might." (her desk holds the Zurich lanyard) |
+| m6 | minor | Owen's "It's David. He's the one." repeated on every visit | **Fixed**: a local `told_about_david`, set in `owen_told`. Route r24 |
+| m7 | minor | Patricia's `found_vetting_file` VAR lacked its synced-global comment | **Fixed** (validator warning gone) |
+| m8 / U1 | minor | CyBOK keywords nothing teaches; privilege escalation taught but unlisted | **Fixed** (coordinator: trim): removed SOIM "Incident Response"; folded AC "Quantum Cryptography" and "Cryptographic research protection" into "Key management and rotation"; added SOIM "Privilege escalation". Edited as text, so the rest of `mission.json` is untouched. Recorded as D13 so the user can restore anything the VM teaches |
+| m9 | minor (tidy) | Comments between `{` and the first case in two HaX knots | **Fixed**: moved above their `{` (`post_ko_safety_net_sweep`, `report_progress`) |
+| m10 | minor | Flag task titles inconsistent | **Fixed**: all four now "Submit Flag N: …" |
+| U2 | user | Field-guide sheet titles against the item names | **To the user** as D14 (a safety check refused the reviewer's listing; not retried) |
+| U3 | user | The SecGen claims S1 to S6 | **To the user** as D12, with the new M2 lines |
+
+#### Decisions taken (with reasons)
+
+- **M2's wording is generic on purpose** ("old software with a known flaw", "an account allowed to run far more than its job needed"): it names the failure class the player saw, not how it was done, and stays true if the VM's details change.
+- **m2's else choice** keeps the moment the player's own: no excuse, and HaX's reply on the subdued path says it may come out.
+- **m5's alternative points at her desk,** where the lanyard (the alibi) already is.
+- **U1:** option (a), at no cost in spoken lines.
+
+#### Route driver
+
+Twenty-five routes, all expectations met. New: `r24_met_then_accused.json` (M1, m4, m6) and `r25_unprovoked_ko.json` (m2, M2, m1). r3 updated for m3.
+
+#### Checks (static; no browser session started)
+
+- Ink compiles (10 files). Validator, full: schema passes, dungeon graph regenerates; two new intended same-pattern notes (`torres_suspected`: the aim unlock and `establish_motive`; `case_motive`: the case-ready texts and `establish_motive`), otherwise as before. dialoguelint: 0 errors (the same pre-existing check and warning). reopencheck (m05 block regenerated, re-read just before; my hunk is the m05 block only, the other hunk is m06's): 0 problems. tagdiff against HEAD: 28 structural differences, all from this round. inkcheck (Halloran accused after a meeting, the Recruiter after a refusal, the debrief subdued, Owen told) and loopcheck (Halloran accused, Owen): clean. Door alignment 9/9.
+
+Browser checks needed: M1 (meet Halloran, accuse, talk again with no reload); the new debrief beat; the unprovoked-KO debrief choice; "Find out why he'd do it" ticking on the no-picks and VM-first routes; the Recruiter after an answer.
+
+#### Spoken lines changed (old → new)
+
+- Debrief, new: "And the research portal. Old software with a known flaw nobody had patched, and an admin login sitting in a handover note."; "Once you were in, one account was allowed to run far more than its job needed. That's how you reached the Architect's sign-off."; "Patch it, rotate the logins, trim the rights. QDC had a list for all three and never worked it."; "No. And he'll say so, if anyone ever asks him."
+- Debrief: "Dr Halloran spent the rest of the night under suspension because of a badge log read halfway…" → "Dr Halloran spent hours suspended because of a badge log read halfway…"
+- The Recruiter, new: "We have an arrangement. Don't ring this number again."; "You said no once. I heard you."
+- HaX, phone, new: "She's in no state to answer. Her desk in the lab might."
+- Choices (not voiced), new: "[I didn't give him the chance. The upload was running.]" (twice).
+- Task (not voiced), new: "Find out why he'd do it"; flag titles 1 and 2 gain "Submit".
+
+#### Open after round 1
+
+- The browser checks above.
+- D12 to D14 for the user.

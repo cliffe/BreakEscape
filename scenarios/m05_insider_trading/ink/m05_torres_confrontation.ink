@@ -40,6 +40,7 @@ VAR patricia_ko = false
 VAR halloran_accused = false
 VAR named_before_portal = false // Synced scenario global: Torres named before flag 3 (D1; set by HaX's torres_identified mapping)
 VAR door_log_reasoned = false
+VAR torres_fight_offered = false // Synced scenario global (scenario design R1, m2): Torres turned on the player from the fight line, set in combat_offer; read by the debrief
 VAR door_log_hinted = false // Synced scenario global (puzzle R1, P1/D-D): HaX spelled out the front-door method; bars the early-naming reward
 VAR door_log_reasoned_first = false // Synced scenario global (pass 5 R3-1): the front-door reason given in a reason menu, before the naming; set only in the *log_reason_right knots. The early-naming reward reads this, not door_log_reasoned
 VAR torres_reason_guessed = false
@@ -373,6 +374,7 @@ David Torres: Then I've got nothing to say to you. I'll wait for them.
 // ===========================================
 
 === combat_offer ===
+~ torres_fight_offered = true
 #speaker:david_torres
 
 David Torres: You're not taking me. Elena needs me.

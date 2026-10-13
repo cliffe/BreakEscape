@@ -67,6 +67,7 @@ VAR owen_office_card_relayed = false // Synced scenario global: HaX has pushed O
 VAR recruiter_texted = false
 VAR it_notice_read = false
 VAR owen_refused_password = false // Synced scenario global (puzzle R1 P6): set by Owen; read here for the status line (R2-3)
+VAR halloran_ko = false // Synced scenario global (KO): read by the status read (scenario design R1, m5)
 VAR door_log_hinted = false // Synced scenario global (pass 5 puzzle R1, P1/D-D): HaX has spelled out the front-door method; set here only. Bars the early-naming reward
 VAR door_log_reasoned_first = false // Synced scenario global (pass 5 R3-1): the front-door reason given in a reason menu, before the naming; set only in the *log_reason_right knots. The early-naming reward reads this, not door_log_reasoned
 VAR torres_reason_guessed = false // Synced scenario global (pass 5 R2 B2): a wrong reason or a wrong name was tried; also set by Patricia (m05_npc_patricia_morgan, m05_phone_patricia). Excludes the early-naming reward
@@ -649,8 +650,8 @@ What are you doing with him?
 // person-chat one (whose text comes from the conversation_closed mappings).
 === post_ko_safety_net_sweep ===
 // R2 (m5): no leisurely sweep beside a man left to die.
-{
 // R3-2: left to die with flags still out: no sweep, no "Good."
+{
 - final_choice == "combat_lethal" and not all_flags_in():
     He's still on that floor, and the upload's dead. Finish the research server: all four flags in the drop-site, then call me.
 - not all_flags_in():
@@ -869,8 +870,8 @@ See you at HQ.
 
 === report_progress ===
 #speaker:agent_0x99
-{
 // R3-2: the lethal twin comes first.
+{
 - final_choice == "combat_lethal" and not all_flags_in():
     The upload's dead and he's still on that floor. The research server isn't. All four flags, then call me.
 - final_choice != "" and not all_flags_in():
@@ -939,6 +940,9 @@ See you at HQ.
     // sets door_log_hinted, which bars the early-naming reward.
     // Puzzle R2 (N2): the "in your kit, read it" rung is gone; a handed-over
     // or picked-up log fires its onRead before door_log_held is set.
+    // Scenario design R1 (m5): she can't answer if she's knocked out.
+    - found_door_log and halloran_ko and not found_halloran_alibi and not torres_suspected:
+        She's in no state to answer. Her desk in the lab might.
     - found_door_log and not halloran_questioned and not found_halloran_alibi and not torres_suspected:
         That log says Halloran's spare. Ask her where it lives.
     - found_door_log and (halloran_questioned or found_halloran_alibi) and torres_reason_guessed and not torres_suspected:
