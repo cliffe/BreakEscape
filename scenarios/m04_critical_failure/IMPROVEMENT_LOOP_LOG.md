@@ -284,3 +284,20 @@ Cipher: "He is crouched at the end of the rack row with a panel open and a hands
 - O2 (fight fairness with Static joining) still needs a human.
 - N4 is with the engine agent (the watcher pausing for the tutorial prompt).
 - Deferred to later stages as before: m12, N5, O3 (characters); m14 and the log's bench position (room dressing); m16 (lighting); m17 (puzzle chains); m20 (backlog); Task Force Null (m05 pass).
+
+### Phase 1 alignment: CLOSED (2026-10-13)
+
+| Round | Blockers | Majors | Minors | Browser check |
+|---|---|---|---|---|
+| 1 (partial review; safety check stopped it) | 0 | 6 | 11+ | PASS5_ALIGN_R1_BROWSER: all pass, 5 minors |
+| 2 | 0 | 3 | 20 | PASS5_ALIGN_R2_BROWSER: 7/7 pass, 1 major (HUD) |
+| 3 | 0 | 2 | 8 | — |
+| 4 (confirmation) | 0 | 0 | 2 | PASS5_ALIGN_R4_BROWSER: 7/7 pass, game 2207 |
+
+Round-4 browser minors, deferred:
+- **Completion toasts briefly cover the countdown HUD.** This is a toast-layout issue that affects every mission, so it goes to the backlog.
+- **The Resume overlay is inconsistent between reloads.** This is the known engine item E3.
+
+O4, where a player standing still is permanently safe east of Cipher, is accepted. A player who waits at the door gets past him, and the Hall 2 door has its own challenge in Relay.
+
+Engine change for N4: 0b66f334 (sight challenges hold while the tutorial prompt is open).
