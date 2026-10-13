@@ -621,7 +621,6 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
     "found_pipeline_list": false,
     "flags_nag_sent": false,
     "debrief_played": false,
-    "torres_fate_by_phone": false,
 
     "server_badge_obtained": false,
     "office_card_obtained": false,
@@ -701,7 +700,7 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
 
   "rooms": {
     "reception_lobby": {
-      "type": "room_reception",
+      "type": "room_qdc_lobby",
       "connections": {
         "north": "main_corridor",
         "east": "patricia_office"
@@ -1350,7 +1349,7 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
           },
           "eventMappings": [
             {
-              "_comment": "Pass 5 A2 (m04 A4): the debrief opens when the player asks HaX to bring them in (extract_go sets mission_complete), not when the Torres conversation closes. The hub only offers the call-in with all four flags in (the concludeRequires gate) and a fate set; the phone-fate path (torres_fate_by_phone) reaches the same call-in. debrief_played stops a replay.",
+              "_comment": "Pass 5 A2 (m04 A4): the debrief opens when the player asks HaX to bring them in (extract_go sets mission_complete), not when the Torres conversation closes. The hub only offers the call-in with all four flags in (the concludeRequires gate) and a fate set; the phone-fate path (HaX's post_ko_safety_net) reaches the same call-in. debrief_played stops a replay.",
               "eventPattern": "global_variable_changed:mission_complete",
               "condition": "value === true && globalVars.debrief_played !== true",
               "conversationMode": "person-chat",
@@ -1383,7 +1382,7 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
     },
 
     "main_corridor": {
-      "type": "hall_1x2gu",
+      "type": "room_qdc_hall",
       "connections": {
         "south": "reception_lobby",
         "west": "break_room",
@@ -1398,8 +1397,7 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
           "name": "Noticeboard Flyer",
           "takeable": true,
           "readable": true,
-          "position": { "x": 7, "y": 4 },
-          "_comment": "PASS 4 (whodunnit): no names. Lisa says whose family it is if asked.",
+          "_comment": "PASS 4 (whodunnit): no names. Lisa says whose family it is if asked. Room dressing (pass 5): pinned on the corridor noticeboard (notes4 slot), no floor position.",
           "text": "COLLECTION FOR A COLLEAGUE'S FAMILY\n\nSome of you know that one of our colleagues has a family member who is very unwell. The treatment that might help isn't available here, and the insurer has said no.\n\nIf you'd like to chip in, the tin is in the break room. Every bit helps. Please be discreet.\n\nThank you - Lisa (Marketing)\n\n[Someone has written underneath in biro: \"Raised so far: £2,140. Target: don't ask.\"]",
           "observations": "A handwritten flyer pinned to the corridor noticeboard"
         }
@@ -1407,7 +1405,7 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
     },
 
     "break_room": {
-      "type": "room_break",
+      "type": "room_qdc_break",
       "connections": {
         "east": "main_corridor"
       },
@@ -1448,7 +1446,7 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
     },
 
     "open_office_area": {
-      "type": "room_it",
+      "type": "room_qdc_open",
       "dimensions": { "width": 10, "height": 10 },
       "connections": {
         "south": "main_corridor",
@@ -1519,7 +1517,7 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
     },
 
     "server_hallway": {
-      "type": "hall_1x2gu",
+      "type": "room_qdc_server_hall",
       "locked": true,
       "lockType": "rfid",
       "requires": "employee_badge",
@@ -1530,13 +1528,13 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
       "npcs": [],
       "objects": [
         {
-          "_comment": "PASS 3 P5: moved here from the open office. It is the hint at the password door and gives the hallway a job. Pinned on the visible floor (rows 2-3; row 4 renders on the wall line where the hallway overlaps Patricia's office, playtest 3a), clear of the west and north doors.",
+          "_comment": "PASS 3 P5: moved here from the open office. It is the hint at the password door and gives the hallway a job. Room dressing (pass 5): taped on the wall beside the server-room door (as-type onto the hand-drawn qdc_it_notice1 in room_qdc_server_hall), no floor position.",
           "type": "notes",
           "id": "it_access_notice",
+          "position": "as-type:qdc_it_notice",
           "name": "IT Notice: Server Room Access",
           "takeable": true,
           "readable": true,
-          "position": { "x": 3, "y": 2.3 },
           "text": "IT SECURITY NOTICE\n\nSERVER ROOM: password access.\nAfter-hours server access must be logged with IT in advance.\nThe temporary password is rotated by IT and expires Friday.\n\nForgotten it? Contact O. Gallagher (IT), open-plan office.\n\n- IT Department",
           "observations": "A printed notice taped beside the server-room door",
           "onRead": { "setVariable": { "it_notice_read": true } }
@@ -1545,7 +1543,7 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
     },
 
     "server_room": {
-      "type": "room_servers",
+      "type": "room_qdc_servers",
       "locked": true,
       "lockType": "password",
       "requires": "<%= server_room_password %>",
@@ -1563,7 +1561,6 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
           "takeable": false,
           "puzzle_graph_role": "vm",
           "puzzle_graph_note": "PASS 4 fix 16: hangs the VM flag chain off the server room in the dungeon graph",
-          "position": { "x": 2, "y": 7 },
           "observations": "A terminal on the research network. QDC's Bludit research portal is somewhere on this subnet.",
           "hacktivityMode": <%= vm_context && vm_context['hacktivity_mode'] ? 'true' : 'false' %>,
           "vm": <%= vm_object('attack_vm', {"id":5,"title":"kali","ip":"192.168.100.75","enable_console":true}) %>
@@ -1607,7 +1604,7 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
     },
 
     "torres_office": {
-      "type": "room_ceo",
+      "type": "room_qdc_torres",
       "locked": true,
       "lockType": "rfid",
       "requires": "office_keycard",
@@ -1617,12 +1614,11 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
       "npcs": [],
       "objects": [
         {
-          "_comment": "PASS 3 P6: the only Torres print surface. It carries no text and no readable of its own. (A print surface no longer hides its text: the kit panel offers Use normally.) Pinned on the front-right of the desk (desk x 118-196, y 86-147 in room px; the chair sprite covers y 64-128 and the plant x 67-131), so it is not hidden behind the plant (playtest 3a).",
+          "_comment": "PASS 3 P6: the only Torres print surface. It carries no text and no readable of its own. (A print surface no longer hides its text: the kit panel offers Use normally.) Room dressing (pass 5): the office-misc-cup slot on the front-right of his desk in room_qdc_torres (first in table_items), nothing in front of it; no pinned position.",
           "type": "office-misc-cup",
           "id": "torres_mug",
           "name": "Mug",
           "takeable": false,
-          "position": { "x": 5.6, "y": 4.1, "elevation": 32 },
           "hasFingerprint": true,
           "fingerprintOwner": "David Torres",
           "fingerprintCandidates": ["Lisa Park", "Owen Gallagher", "Patricia Morgan", "Dr Ruth Halloran"],
@@ -1634,6 +1630,7 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
           "type": "suitcase",
           "id": "torres_briefcase",
           "name": "Torres' Briefcase",
+          "position": "as-type:briefcase",
           "takeable": false,
           "locked": true,
           "lockType": "key",
@@ -1668,7 +1665,7 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
     },
 
     "research_lab": {
-      "type": "room_lab",
+      "type": "room_qdc_lab",
       "connections": {
         "east": "open_office_area"
       },
@@ -1710,14 +1707,16 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
       ],
       "objects": [
         {
-          "_comment": "Puzzle R1 (D-A): why the vault's second enrolled print can't be lifted, readable even with Halloran knocked out. Room dressing places it by the benches.",
+          "_comment": "Puzzle R1 (D-A): why the vault's second enrolled print can't be lifted, readable even with Halloran knocked out. Room dressing (pass 5): on the lab's back wall by the door (as-type onto the hand-drawn qdc_lab_rules1, clear floor under it); readDisplay keeps it on the wall after a read (the engine removes a read notes object otherwise).",
           "type": "notes",
           "id": "lab_rules_notice",
           "name": "Lab Rules",
+          "position": "as-type:qdc_lab_rules",
+          "readDisplay": "gameDisplay",
           "takeable": false,
           "readable": true,
           "text": "HEISENBERG LAB - HOUSE RULES\n\n1. Gloves at the bench. Always. No exceptions for leads.\n2. Nothing leaves this lab on removable media.\n3. The visitor spare (#4471) is signed out through me. Visitors only.\n\n- R. Halloran",
-          "observations": "A laminated notice taped to the end of the bench"
+          "observations": "A laminated notice taped to the wall by the lab door"
         },
         {
           "_comment": "PASS 4 (whodunnit): Halloran's alibi for the first night on the badge log (Wed 23 Sep).",
@@ -1734,7 +1733,7 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
     },
 
     "patricia_office": {
-      "type": "room_office",
+      "type": "room_qdc_security",
       "locked": false,
       "connections": {
         "west": "reception_lobby"
@@ -1817,6 +1816,7 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
           "type": "safe",
           "id": "patricia_filing_cabinet",
           "name": "Locked Filing Cabinet",
+          "position": "as-type:filing_cabinet_locked",
           "takeable": false,
           "locked": true,
           "lockType": "key",
@@ -1840,7 +1840,7 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
     },
 
     "data_center": {
-      "type": "room_servers",
+      "type": "room_qdc_vault",
       "locked": true,
       "lockType": "biometric",
       <%# Pass 5 A3: both Heisenberg leads are enrolled, so the sign and the lines
@@ -1925,7 +1925,6 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
           "type": "pc",
           "name": "Exfiltration Upload Terminal",
           "takeable": false,
-          "position": { "x": 6, "y": 7 },
           "locked": false,
           "observations": "A rack terminal with a USB drive in the front port. A transfer window is open.",
           "contents": [

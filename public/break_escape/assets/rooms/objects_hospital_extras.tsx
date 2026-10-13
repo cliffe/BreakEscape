@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<tileset version="1.10" tiledversion="1.11.2" name="objects/hospital_extras" tilewidth="60" tileheight="60" tilecount="359" columns="0">
+<tileset version="1.10" tiledversion="1.11.2" name="objects/hospital_extras" tilewidth="60" tileheight="60" tilecount="401" columns="0">
  <grid orientation="orthogonal" width="1" height="1"/>
  <tile id="0">
   <image source="../objects/iv_stand1.png" width="25" height="60"/>
@@ -1077,5 +1077,131 @@
  </tile>
  <tile id="368">
   <image source="../objects/hce_art_canvas1.png" width="40" height="26"/>
+ </tile>
+ <tile id="369">
+  <image source="../objects/qdc_cryostat1.png" width="50" height="64"/>
+ </tile>
+ <tile id="370">
+  <image source="../objects/qdc_dewar1.png" width="34" height="61"/>
+ </tile>
+ <tile id="371">
+  <image source="../objects/qdc_key_lockers1.png" width="54" height="58"/>
+ </tile>
+ <tile id="372">
+  <image source="../objects/qdc_key_cabinet1.png" width="36" height="60"/>
+ </tile>
+ <tile id="373">
+  <image source="../objects/qdc_fume_hood1.png" width="50" height="62"/>
+ </tile>
+ <tile id="374">
+  <image source="../objects/qdc_glovebox1.png" width="56" height="57"/>
+ </tile>
+ <tile id="375">
+  <image source="../objects/qdc_optical_bench1.png" width="56" height="44"/>
+ </tile>
+ <tile id="376">
+  <image source="../objects/qdc_kitchenette1.png" width="54" height="49"/>
+ </tile>
+ <tile id="377">
+  <image source="../objects/qdc_espresso1.png" width="44" height="54"/>
+ </tile>
+ <tile id="378">
+  <image source="../objects/qdc_fridge1.png" width="36" height="61"/>
+ </tile>
+ <tile id="379">
+  <image source="../objects/qdc_recycling_bins1.png" width="58" height="32"/>
+ </tile>
+ <tile id="380">
+  <image source="../objects/qdc_instrument_rack1.png" width="30" height="62"/>
+ </tile>
+ <tile id="381">
+  <image source="../objects/qdc_rack_black1.png" width="38" height="59"/>
+ </tile>
+ <tile id="382">
+  <image source="../objects/qdc_collection_tin1.png" width="10" height="12"/>
+ </tile>
+ <tile id="383">
+  <image source="../objects/qdc_logo_sign1.png" width="76" height="19"/>
+ </tile>
+ <tile id="384">
+  <image source="../objects/qdc_logo_small1.png" width="32" height="13"/>
+ </tile>
+ <tile id="385">
+  <image source="../objects/qdc_lab_sign1.png" width="63" height="11"/>
+ </tile>
+ <tile id="386">
+  <image source="../objects/qdc_server_sign1.png" width="51" height="11"/>
+ </tile>
+ <tile id="387">
+  <image source="../objects/qdc_vault_sign1.png" width="91" height="17"/>
+ </tile>
+ <tile id="388">
+  <image source="../objects/qdc_security_sign1.png" width="39" height="11"/>
+ </tile>
+ <tile id="389">
+  <image source="../objects/qdc_it_sign1.png" width="47" height="11"/>
+ </tile>
+ <tile id="390">
+  <image source="../objects/qdc_lab_rules1.png" width="22" height="28"/>
+ </tile>
+ <tile id="391">
+  <image source="../objects/qdc_badge_hook1.png" width="14" height="22"/>
+ </tile>
+ <tile id="392">
+  <image source="../objects/qdc_laser_warning1.png" width="34" height="11"/>
+ </tile>
+ <tile id="393">
+  <image source="../objects/qdc_whiteboard_lattice1.png" width="46" height="30"/>
+ </tile>
+ <tile id="394">
+  <image source="../objects/qdc_whiteboard_net1.png" width="46" height="30"/>
+ </tile>
+ <tile id="395">
+  <image source="../objects/qdc_suspects_board1.png" width="46" height="30"/>
+ </tile>
+ <tile id="396">
+  <image source="../objects/qdc_dispatch_screen1.png" width="48" height="30"/>
+ </tile>
+ <tile id="397">
+  <image source="../objects/qdc_kid_drawing1.png" width="22" height="17"/>
+ </tile>
+ <tile id="398">
+  <image source="../objects/qdc_poster_secure1.png" width="16" height="21"/>
+ </tile>
+ <tile id="399">
+  <image source="../objects/qdc_poster_ready1.png" width="16" height="21"/>
+ </tile>
+ <tile id="400">
+  <image source="../objects/qdc_poster_team1.png" width="16" height="21"/>
+ </tile>
+ <tile id="401">
+  <image source="../objects/qdc_it_notice1.png" width="18" height="24"/>
+ </tile>
+ <tile id="402">
+  <image source="../objects/qdc_whiteboard_keys1.png" width="46" height="30"/>
+ </tile>
+ <tile id="403">
+  <image source="../objects/qdc_two_person_sign1.png" width="67" height="11"/>
+ </tile>
+ <tile id="404">
+  <image source="../objects/qdc_kitchenette2.png" width="56" height="59"/>
+ </tile>
+ <tile id="405">
+  <image source="../objects/qdc_cctv_desk1.png" width="60" height="51"/>
+ </tile>
+ <tile id="406">
+  <image source="../objects/qdc_eyewash1.png" width="40" height="48"/>
+ </tile>
+ <tile id="407">
+  <image source="../objects/qdc_lab_desk1.png" width="58" height="43"/>
+ </tile>
+ <tile id="408">
+  <image source="../objects/qdc_filing_steel1.png" width="29" height="60"/>
+ </tile>
+ <tile id="409">
+  <image source="../objects/filing_cabinet_locked2.png" width="29" height="60"/>
+ </tile>
+ <tile id="410">
+  <image source="../objects/qdc_hsm1.png" width="32" height="58"/>
  </tile>
 </tileset>

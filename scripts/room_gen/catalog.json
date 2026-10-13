@@ -4423,6 +4423,258 @@
       "w": 40,
       "h": 26,
       "gid": 1169
+    },
+    "qdc_cryostat1": {
+      "id": 369,
+      "w": 50,
+      "h": 64,
+      "gid": 1170
+    },
+    "qdc_dewar1": {
+      "id": 370,
+      "w": 34,
+      "h": 61,
+      "gid": 1171
+    },
+    "qdc_key_lockers1": {
+      "id": 371,
+      "w": 54,
+      "h": 58,
+      "gid": 1172
+    },
+    "qdc_key_cabinet1": {
+      "id": 372,
+      "w": 36,
+      "h": 60,
+      "gid": 1173
+    },
+    "qdc_fume_hood1": {
+      "id": 373,
+      "w": 50,
+      "h": 62,
+      "gid": 1174
+    },
+    "qdc_glovebox1": {
+      "id": 374,
+      "w": 56,
+      "h": 57,
+      "gid": 1175
+    },
+    "qdc_optical_bench1": {
+      "id": 375,
+      "w": 56,
+      "h": 44,
+      "gid": 1176
+    },
+    "qdc_kitchenette1": {
+      "id": 376,
+      "w": 54,
+      "h": 49,
+      "gid": 1177
+    },
+    "qdc_espresso1": {
+      "id": 377,
+      "w": 44,
+      "h": 54,
+      "gid": 1178
+    },
+    "qdc_fridge1": {
+      "id": 378,
+      "w": 36,
+      "h": 61,
+      "gid": 1179
+    },
+    "qdc_recycling_bins1": {
+      "id": 379,
+      "w": 58,
+      "h": 32,
+      "gid": 1180
+    },
+    "qdc_instrument_rack1": {
+      "id": 380,
+      "w": 30,
+      "h": 62,
+      "gid": 1181
+    },
+    "qdc_rack_black1": {
+      "id": 381,
+      "w": 38,
+      "h": 59,
+      "gid": 1182
+    },
+    "qdc_collection_tin1": {
+      "id": 382,
+      "w": 10,
+      "h": 12,
+      "gid": 1183
+    },
+    "qdc_logo_sign1": {
+      "id": 383,
+      "w": 76,
+      "h": 19,
+      "gid": 1184
+    },
+    "qdc_logo_small1": {
+      "id": 384,
+      "w": 32,
+      "h": 13,
+      "gid": 1185
+    },
+    "qdc_lab_sign1": {
+      "id": 385,
+      "w": 63,
+      "h": 11,
+      "gid": 1186
+    },
+    "qdc_server_sign1": {
+      "id": 386,
+      "w": 51,
+      "h": 11,
+      "gid": 1187
+    },
+    "qdc_vault_sign1": {
+      "id": 387,
+      "w": 91,
+      "h": 17,
+      "gid": 1188
+    },
+    "qdc_security_sign1": {
+      "id": 388,
+      "w": 39,
+      "h": 11,
+      "gid": 1189
+    },
+    "qdc_it_sign1": {
+      "id": 389,
+      "w": 47,
+      "h": 11,
+      "gid": 1190
+    },
+    "qdc_lab_rules1": {
+      "id": 390,
+      "w": 22,
+      "h": 28,
+      "gid": 1191
+    },
+    "qdc_badge_hook1": {
+      "id": 391,
+      "w": 14,
+      "h": 22,
+      "gid": 1192
+    },
+    "qdc_laser_warning1": {
+      "id": 392,
+      "w": 34,
+      "h": 11,
+      "gid": 1193
+    },
+    "qdc_whiteboard_lattice1": {
+      "id": 393,
+      "w": 46,
+      "h": 30,
+      "gid": 1194
+    },
+    "qdc_whiteboard_net1": {
+      "id": 394,
+      "w": 46,
+      "h": 30,
+      "gid": 1195
+    },
+    "qdc_suspects_board1": {
+      "id": 395,
+      "w": 46,
+      "h": 30,
+      "gid": 1196
+    },
+    "qdc_dispatch_screen1": {
+      "id": 396,
+      "w": 48,
+      "h": 30,
+      "gid": 1197
+    },
+    "qdc_kid_drawing1": {
+      "id": 397,
+      "w": 22,
+      "h": 17,
+      "gid": 1198
+    },
+    "qdc_poster_secure1": {
+      "id": 398,
+      "w": 16,
+      "h": 21,
+      "gid": 1199
+    },
+    "qdc_poster_ready1": {
+      "id": 399,
+      "w": 16,
+      "h": 21,
+      "gid": 1200
+    },
+    "qdc_poster_team1": {
+      "id": 400,
+      "w": 16,
+      "h": 21,
+      "gid": 1201
+    },
+    "qdc_it_notice1": {
+      "id": 401,
+      "w": 18,
+      "h": 24,
+      "gid": 1202
+    },
+    "qdc_whiteboard_keys1": {
+      "id": 402,
+      "w": 46,
+      "h": 30,
+      "gid": 1203
+    },
+    "qdc_two_person_sign1": {
+      "id": 403,
+      "w": 67,
+      "h": 11,
+      "gid": 1204
+    },
+    "qdc_kitchenette2": {
+      "id": 404,
+      "w": 56,
+      "h": 59,
+      "gid": 1205
+    },
+    "qdc_cctv_desk1": {
+      "id": 405,
+      "w": 60,
+      "h": 51,
+      "gid": 1206
+    },
+    "qdc_eyewash1": {
+      "id": 406,
+      "w": 40,
+      "h": 48,
+      "gid": 1207
+    },
+    "qdc_lab_desk1": {
+      "id": 407,
+      "w": 58,
+      "h": 43,
+      "gid": 1208
+    },
+    "qdc_filing_steel1": {
+      "id": 408,
+      "w": 29,
+      "h": 60,
+      "gid": 1209
+    },
+    "filing_cabinet_locked2": {
+      "id": 409,
+      "w": 29,
+      "h": 60,
+      "gid": 1210
+    },
+    "qdc_hsm1": {
+      "id": 410,
+      "w": 32,
+      "h": 58,
+      "gid": 1211
     }
   }
 }

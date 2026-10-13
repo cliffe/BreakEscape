@@ -131,6 +131,16 @@ export function preload() {
     this.load.tilemapTiledJSON('room_hce_vault', 'rooms/room_hce_vault.json'); // m06 HashChain data centre: custody cage, HSMs, custody console (2x2 GU)
     this.load.tilemapTiledJSON('room_hce_exec_hall', 'rooms/room_hce_exec_hall.json'); // m06 HashChain executive wing: runner, press clipping, console table (2x1 GU, 10x6)
     this.load.tilemapTiledJSON('room_hce_ceo', 'rooms/room_hce_ceo.json'); // m06 HashChain Satoshi's office: desk, screens, display case, sofa (2x2 GU)
+    this.load.tilemapTiledJSON('room_qdc_lobby', 'rooms/room_qdc_lobby.json'); // m05 QDC reception: wordmark, security desk, speed gates, waiting area (2x2 GU)
+    this.load.tilemapTiledJSON('room_qdc_hall', 'rooms/room_qdc_hall.json'); // m05 QDC main corridor: noticeboard, posters, vending (2x1 GU, 10x6)
+    this.load.tilemapTiledJSON('room_qdc_server_hall', 'rooms/room_qdc_server_hall.json'); // m05 QDC server hallway: badge reader, notices, comms cabinet (2x1 GU, 10x6)
+    this.load.tilemapTiledJSON('room_qdc_break', 'rooms/room_qdc_break.json'); // m05 QDC break room: kitchenette, espresso, tables, sofa (2x2 GU)
+    this.load.tilemapTiledJSON('room_qdc_open', 'rooms/room_qdc_open.json'); // m05 QDC open-plan office: desk banks, IT corner, rollout screen (2x2 GU)
+    this.load.tilemapTiledJSON('room_qdc_torres', 'rooms/room_qdc_torres.json'); // m05 QDC Torres' office: desk, bookcase, lattice board, family drawing (2x2 GU)
+    this.load.tilemapTiledJSON('room_qdc_security', 'rooms/room_qdc_security.json'); // m05 QDC security office (Patricia): CCTV wall, suspects board, filing (2x2 GU)
+    this.load.tilemapTiledJSON('room_qdc_servers', 'rooms/room_qdc_servers.json'); // m05 QDC server room: rack rows, research terminal, drop-site bench (2x2 GU)
+    this.load.tilemapTiledJSON('room_qdc_vault', 'rooms/room_qdc_vault.json'); // m05 QDC key vault: key safes, HSM racks, upload terminal (2x2 GU)
+    this.load.tilemapTiledJSON('room_qdc_lab', 'rooms/room_qdc_lab.json'); // m05 QDC Heisenberg lab: cryostat, laser bench, glovebox, lab bench (2x2 GU)
 
     // Load room images (now using smaller 32px scale images)
     this.load.image('room_reception', 'tiles/rooms/room1.png');
@@ -178,6 +188,16 @@ export function preload() {
     this.load.image('room_hce_vault', 'tiles/rooms/room_hce_vault.png'); // m06 HashChain Exchange: raised floor, custody cage line
     this.load.image('room_hce_exec_hall', 'tiles/rooms/room_hce_exec_hall.png'); // m06 HashChain Exchange: smoked oak, navy runner
     this.load.image('room_hce_ceo', 'tiles/rooms/room_hce_ceo.png'); // m06 HashChain Exchange: smoked oak, amber rug
+    this.load.image('room_qdc_lobby', 'tiles/rooms/room_qdc_lobby.png'); // m05 Quantum Dynamics: pale stone, Bloch-sphere inlay
+    this.load.image('room_qdc_hall', 'tiles/rooms/room_qdc_hall.png'); // m05 Quantum Dynamics: slate carpet tiles
+    this.load.image('room_qdc_server_hall', 'tiles/rooms/room_qdc_server_hall.png'); // m05 Quantum Dynamics: grey vinyl, trunking
+    this.load.image('room_qdc_break', 'tiles/rooms/room_qdc_break.png'); // m05 Quantum Dynamics: wood-effect vinyl, kitchen strip
+    this.load.image('room_qdc_open', 'tiles/rooms/room_qdc_open.png'); // m05 Quantum Dynamics: blue-grey carpet, walkway
+    this.load.image('room_qdc_torres', 'tiles/rooms/room_qdc_torres.png'); // m05 Quantum Dynamics: oak, blue rug
+    this.load.image('room_qdc_security', 'tiles/rooms/room_qdc_security.png'); // m05 Quantum Dynamics: plum carpet
+    this.load.image('room_qdc_servers', 'tiles/rooms/room_qdc_servers.png'); // m05 Quantum Dynamics: raised floor, cold aisles
+    this.load.image('room_qdc_vault', 'tiles/rooms/room_qdc_vault.png'); // m05 Quantum Dynamics: dark raised floor, red two-person line
+    this.load.image('room_qdc_lab', 'tiles/rooms/room_qdc_lab.png'); // m05 Quantum Dynamics: white anti-static tiles, hatched boxes
     this.load.image('room14', 'tiles/rooms/room14.png');
     this.load.image('room19', 'tiles/rooms/room19.png');
     this.load.image('door_32', 'tiles/door_32.png');
@@ -964,6 +984,48 @@ export function preload() {
     this.load.image('hce_phd_frame1', 'objects/hce_phd_frame1.png');
     this.load.image('hce_sconce1', 'objects/hce_sconce1.png');
     this.load.image('hce_art_canvas1', 'objects/hce_art_canvas1.png');
+    this.load.image('qdc_cryostat1', 'objects/qdc_cryostat1.png');
+    this.load.image('qdc_dewar1', 'objects/qdc_dewar1.png');
+    this.load.image('qdc_key_lockers1', 'objects/qdc_key_lockers1.png');
+    this.load.image('qdc_key_cabinet1', 'objects/qdc_key_cabinet1.png');
+    this.load.image('qdc_fume_hood1', 'objects/qdc_fume_hood1.png');
+    this.load.image('qdc_glovebox1', 'objects/qdc_glovebox1.png');
+    this.load.image('qdc_optical_bench1', 'objects/qdc_optical_bench1.png');
+    this.load.image('qdc_kitchenette1', 'objects/qdc_kitchenette1.png');
+    this.load.image('qdc_espresso1', 'objects/qdc_espresso1.png');
+    this.load.image('qdc_fridge1', 'objects/qdc_fridge1.png');
+    this.load.image('qdc_recycling_bins1', 'objects/qdc_recycling_bins1.png');
+    this.load.image('qdc_instrument_rack1', 'objects/qdc_instrument_rack1.png');
+    this.load.image('qdc_rack_black1', 'objects/qdc_rack_black1.png');
+    this.load.image('qdc_collection_tin1', 'objects/qdc_collection_tin1.png');
+    this.load.image('qdc_logo_sign1', 'objects/qdc_logo_sign1.png');
+    this.load.image('qdc_logo_small1', 'objects/qdc_logo_small1.png');
+    this.load.image('qdc_lab_sign1', 'objects/qdc_lab_sign1.png');
+    this.load.image('qdc_server_sign1', 'objects/qdc_server_sign1.png');
+    this.load.image('qdc_vault_sign1', 'objects/qdc_vault_sign1.png');
+    this.load.image('qdc_security_sign1', 'objects/qdc_security_sign1.png');
+    this.load.image('qdc_it_sign1', 'objects/qdc_it_sign1.png');
+    this.load.image('qdc_lab_rules1', 'objects/qdc_lab_rules1.png');
+    this.load.image('qdc_badge_hook1', 'objects/qdc_badge_hook1.png');
+    this.load.image('qdc_laser_warning1', 'objects/qdc_laser_warning1.png');
+    this.load.image('qdc_whiteboard_lattice1', 'objects/qdc_whiteboard_lattice1.png');
+    this.load.image('qdc_whiteboard_net1', 'objects/qdc_whiteboard_net1.png');
+    this.load.image('qdc_suspects_board1', 'objects/qdc_suspects_board1.png');
+    this.load.image('qdc_dispatch_screen1', 'objects/qdc_dispatch_screen1.png');
+    this.load.image('qdc_kid_drawing1', 'objects/qdc_kid_drawing1.png');
+    this.load.image('qdc_poster_secure1', 'objects/qdc_poster_secure1.png');
+    this.load.image('qdc_poster_ready1', 'objects/qdc_poster_ready1.png');
+    this.load.image('qdc_poster_team1', 'objects/qdc_poster_team1.png');
+    this.load.image('qdc_it_notice1', 'objects/qdc_it_notice1.png');
+    this.load.image('qdc_whiteboard_keys1', 'objects/qdc_whiteboard_keys1.png');
+    this.load.image('qdc_two_person_sign1', 'objects/qdc_two_person_sign1.png');
+    this.load.image('qdc_kitchenette2', 'objects/qdc_kitchenette2.png');
+    this.load.image('qdc_cctv_desk1', 'objects/qdc_cctv_desk1.png');
+    this.load.image('qdc_eyewash1', 'objects/qdc_eyewash1.png');
+    this.load.image('qdc_lab_desk1', 'objects/qdc_lab_desk1.png');
+    this.load.image('qdc_filing_steel1', 'objects/qdc_filing_steel1.png');
+    this.load.image('filing_cabinet_locked2', 'objects/filing_cabinet_locked2.png');
+    this.load.image('qdc_hsm1', 'objects/qdc_hsm1.png');
     this.load.image('backup_recovery',         'objects/backup_recovery.png');
     this.load.image('dual_auth',               'objects/dual_auth.png');
     this.load.image('ehr-terminal',            'objects/ehr-terminal.png');
