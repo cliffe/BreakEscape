@@ -1,13 +1,14 @@
 {"steps":[
-{"note":"R11 (round 2, R2-m2, R2-M2): the bad opener left unrepaired strains the cover with its own HaX text; asked for her badge, Irina blames the player's own opener, not 'someone on the floor'. The cloner still works."},
-{"set":{"briefing_played":true}},
-{"room":"security_checkpoint"},
-{"talk":"guard","picks":["Financial Conduct Authority","Dr Volkova"]},
-{"room":"trading_floor"},
-{"talk":"irina","picks":["Let's be quick","Tell me about your door access","borrow your badge","That's all for now"]},
-{"said":["You came in asking for my wallets before my paperwork","Volkova didn't buy you"]},
-{"notSaid":["Someone on the floor has been asking"]},
-{"expect":{"cover_strained":true,"irina_badge_obtained":false}},
-{"talk":"irina","picks":["Let the cloner read","That's all for now"]},
-{"expect":{"irina_badge_cloned":true}}
+{"note": "R11 (round 2, R2-m2, R2-M2): the bad opener left unrepaired strains the cover with its own HaX text; asked for her badge, Irina blames the player's own opener, not 'someone on the floor'. The cloner still works."},
+{"set": {"briefing_played": true}},
+{"room": "security_checkpoint"},
+{"talk": "guard", "picks": ["Financial Conduct Authority", "Dr Volkova"]},
+{"room": "trading_floor"},
+{"talk": "irina", "picks": ["Let's be quick", "Tell me about your door access", "borrow your badge", "That's all for now"]},
+{"said": ["You came in asking for my wallets before my paperwork", "Volkova didn't buy you"]},
+{"notSaid": ["Someone on the floor has been asking"]},
+{"expect": {"cover_strained": true, "irina_badge_obtained": false}},
+{"talk": "irina", "picks": ["Let the cloner read", "That's all for now"]},
+{"expect": {"irina_badge_cloned": true}},
+{"maxRun": 9}
 ]}

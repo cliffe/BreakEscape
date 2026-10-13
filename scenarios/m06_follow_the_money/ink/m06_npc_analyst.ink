@@ -7,7 +7,6 @@
 // option so it can be asked again. Her write-up no longer names the fund.
 // ===========================================
 
-VAR analyst_talked = false
 VAR topic_forensics = false
 VAR topic_patterns = false
 VAR topic_concerns = false
@@ -16,9 +15,14 @@ VAR analyst_spoken = false // Synced scenario global (scenario design R1, m12): 
 // Final round (m03 pattern): set by every exit, so the resting knot's re-entry
 // line shows on a reopen and never in the same batch as a goodbye.
 VAR hub_quiet = false
+// Dialogue C1 (D6-5): the latest thing about Irina Priya has reacted to (1 detained, 2 knocked down)
+VAR irina_news = 0
 
 // External variables
 VAR player_name = "Agent 0x00"
+// Dialogue C1 (D6-5): synced; Priya is next door to the trading floor
+VAR irina_arrested = false
+VAR irina_ko = false
 
 // ===========================================
 // INITIAL MEETING
@@ -50,6 +54,10 @@ VAR player_name = "Agent 0x00"
         #exit_conversation
         -> hub
 - else:
+    // Dialogue C1 (D6-5): news about Irina comes first (the hub prints it).
+    {(irina_ko and irina_news < 2) or (irina_arrested and not irina_ko and irina_news < 1):
+        -> hub
+    }
     Priya Raghavan: Need something?
     ~ hub_quiet = true
     -> hub
@@ -86,8 +94,16 @@ Priya Raghavan: Big money through our mixer. Big round sums, always late in the 
 // ===========================================
 
 === hub ===
-{ hub_quiet:
+// Dialogue C1 (D6-5): word of Irina reaches the lab, once per change.
+{
+- hub_quiet:
     ~ hub_quiet = false
+- irina_ko and irina_news < 2:
+    ~ irina_news = 2
+    Priya Raghavan: Someone said Irina's out cold on the trading floor. Was that to do with my graph?
+- irina_arrested and not irina_ko and irina_news < 1:
+    ~ irina_news = 1
+    Priya Raghavan: Someone said Irina's been detained. Was it the graph? Was it my graph?
 - else:
     Priya Raghavan: {&What else?|Go on.|Anything else?}
 }
@@ -193,7 +209,7 @@ Priya Raghavan: Anything odd goes to Irina. She decides what gets reported.
 === suspicious_patterns ===
 #speaker:analyst
 
-Priya Raghavan: Big round sums, late evening, straight into the mixer. Same habit every time.
+Priya Raghavan: Same habit every time. In, mixed, and gone by midnight.
 
 Priya Raghavan: Three of them have names on. Another twelve million or so since January hasn't.
 

@@ -9,9 +9,6 @@
 // detail cut here lives in HaX's phone hub and her timed texts.
 // ================================================
 
-VAR asked_about_irina = false
-VAR mission_accepted = false
-
 // External variables
 VAR player_name = "Agent 0x00"
 
@@ -65,7 +62,6 @@ Agent HaX: Two people matter. The CEO calls himself "Satoshi Nakamoto II". True 
 Agent HaX: The CTO, Dr Irina Volkova, built the mixer. She might turn.
 
 + [Why would Volkova help us?]
-    ~ asked_about_irina = true
     -> irina_background
 + [How do I get in?]
     -> cover_story
@@ -116,8 +112,6 @@ Agent HaX: And there's a clock. The wallets we watch have gone quiet, the way th
 Agent HaX: Find the fund. Then you'll have two calls to make: what happens to the money, and what happens to Volkova.
 
 Agent HaX: Volkova's on the trading floor, through the checkpoint. Start with her.
-
-~ mission_accepted = true
 
 #exit_conversation
 -> DONE

@@ -82,6 +82,7 @@ VAR reacted_fund = false
 VAR reacted_network = false
 // Pass 5 alignment (synced scenario globals)
 VAR cover_strained = false        // A3: the floor has a reason to ring the FCA
+VAR guard_ko = false              // Dialogue C1 (D6-33): synced; the first call knows the guard went down
 VAR irina_taken = false           // A4: a detained Irina has been collected
 VAR ready_to_extract = false      // A1: both decisions and all four flags in (HaX's mappings)
 VAR start_debrief_cutscene = false // Synced scenario global (A1): set by extract_go; opens the debrief
@@ -120,8 +121,15 @@ Tonight's about money. Where it comes in, where it lands, who it pays.
 -> first_call_choices
 
 === first_call_choices ===
-+ {not guard_resolved} [Holding fine. Nobody's looked twice.]
+// Dialogue C1 (D6-33): the cover answer follows what happened at the checkpoint.
++ {not guard_resolved and not cover_strained} [Holding fine. Nobody's looked twice.]
     Keep it boring. Regulators turn up at crypto exchanges every week.
+    -> hub
++ {not guard_resolved and cover_strained and not guard_ko} [The guard caught me at his door.]
+    Then he'll ring the FCA. Get to Volkova before the answer comes back.
+    -> hub
++ {not guard_resolved and guard_ko} [The guard's down. It was him or the cover.]
+    Then somebody finds him soon. Get to Volkova before they do.
     -> hub
 + {not guard_resolved} [What should I focus on first?]
     -> initial_guidance
@@ -345,7 +353,7 @@ Try the other way first.
     Volkova says Satoshi's safe is 2140.
 }
 {satoshi_confronted and found_architects_fund and not assets_decided:
-    The wallet is still yours to decide: freeze it, or leave it running and watch it.
+    The wallet's still yours to decide. Freeze it, or leave it running and watch it.
 }
 // Puzzle chains D2: the print kit's beat, once the player has seen the case.
 {resolve_aim_open and not signing_record_found:
@@ -380,7 +388,7 @@ Put it next to the house convention and the server room opens.
 
 === on_first_server_cracked ===
 #speaker:agent_0x99
-Try that password on every other account before anything clever. Someone will have reused it.
+Someone will have reused it. Try it on the other accounts first.
 Then the financial database. Its account runs their doors.
 -> hub
 
@@ -660,7 +668,7 @@ The example's from an earlier job. Here the build service just gets you on the b
 #give_item:lab-workstation:m06_privesc_field_guide
 Privilege escalation guide sent.
 The rack sheet says two of those boxes share a service account. Start there.
-Try the password you have everywhere before anything clever.
+The password you have is the place to start.
 -> hub
 
 === request_recon_guide ===

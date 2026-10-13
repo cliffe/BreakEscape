@@ -48,6 +48,7 @@ VAR satoshi_spoken = false // Scenario design R1 (m8): Satoshi spoke to the play
 VAR console_tripped = false // Puzzle chains R2 (M-R2-2): a console lockout before the fund
 VAR signing_record_found = false // Puzzle chains D2: Satoshi's signing case opened on his own print
 VAR minder_challenged = false // Round 2 (R2-m7)
+VAR analyst_walked_through = false // Dialogue C1 (D6-31): Priya walked the player through her graph
 VAR fca_picks = 0
 VAR fca_right = 0
 
@@ -151,7 +152,6 @@ Agent HaX: Greed I could bargain with. These people believe it.
 - else:
     Agent HaX: Every cell that took a payout is on our map, and they don't know it.
     Agent HaX: They'll have the money in three days. Whatever it buys goes ahead unless we get there first.
-    Agent HaX: We let it run. What's on that document is ours to stop now.
 }
 
 -> irina_discussion
@@ -202,7 +202,7 @@ Agent HaX: You turned her.
 Agent HaX: She gave us the mixer. Nobody alive knows ENTROPY's plumbing better.
 
 {irina_ko:
-    Agent HaX: And then she went down on the trading floor. That's in the report as a mistake.
+    Agent HaX: And then she went down on the trading floor. I'll be explaining that one upstairs.
     Agent HaX: What she gave us still stands.
 }
 
@@ -221,13 +221,12 @@ Agent HaX: Pool keys and the wallet map before midnight, and the account that pa
 === moral_reasoning ===
 Agent HaX: You read her right. She built it for "financial freedom".
 
-Agent HaX: She never looked at what it paid for until you put it in front of her.
+Agent HaX: She'd looked. She just hadn't let herself read it. You made her.
 
 -> recruitment_impact
 
 === recruitment_impact ===
-Agent HaX: The police and the lawyers decide what happens to her now. She knows that.
-
+// Dialogue C1 (D6-3): "The police and the lawyers decide…" cut; the next line carries it.
 Agent HaX: She came over because she believed you. Remember that when someone asks if she was worth it.
 
 -> irina_how_you_worked_her
@@ -311,21 +310,37 @@ Agent HaX: The Crypto Anarchists have lost their best cryptographer. Replacing h
     }
 }
 
+// Dialogue C1 (D6-3): a player beat after the Satoshi block, so the debrief
+// never runs more than nine lines without the player.
++ [He'll be making speeches at the trial.]
+    Agent HaX: Let him. The jury will have the allocation.
+    -> exchange_aftermath
++ [Did he give anything up?]
+    {architect_identity_found:
+        Agent HaX: Nothing his safe hadn't already told us.
+    - else:
+        Agent HaX: Not a word about The Architect. That's what his safe was for.
+    }
+    -> exchange_aftermath
+
+=== exchange_aftermath ===
+// Dialogue C1 (D6-3): each outcome in one line.
 {assets_seized:
-    Agent HaX: HashChain's finished. The police have the building and the mixer's dark.
-    Agent HaX: Every cell needs a new bank now, and they won't trust the next one for months.
+    Agent HaX: HashChain's finished and the mixer's dark. Every cell needs a new bank, and they won't trust the next one for months.
 - else:
-    Agent HaX: The exchange stays open for now, under watch. Shutting it would tell ENTROPY exactly what we're doing.
-    Agent HaX: The payout was pre-signed, so it goes out with him in a cell. Once it has, the police can have the rest.
+    Agent HaX: The exchange stays open under watch. His payout was pre-signed, so it still goes, and then the police get the rest.
 }
 
 // Round 2: the same precedence as the credits and Satoshi (KO, hostile,
 // talked past, turned back once).
 {
 - minder_ko:
-    Agent HaX: His minder's in custody too. Thirty years guarding banks, and he finishes the night on a corridor floor.
+    Agent HaX: His minder's in custody too. He finishes a long career on a corridor floor.
 - minder_hostile:
     Agent HaX: His minder came at you and you went round him. He's in custody now, and furious.
+// Dialogue C1 (D6-39): with the cover strained, only Volkova's word gets past him.
+- minder_passed and cover_strained and irina_recruited:
+    Agent HaX: His minder took Volkova's word for you, on the phone, with his boss behind the door.
 - minder_passed:
     Agent HaX: His minder let you walk in. I'd like to hear what you said to him.
 - minder_challenged:
@@ -340,8 +355,7 @@ Agent HaX: The Crypto Anarchists have lost their best cryptographer. Replacing h
 
 === cover_and_staff ===
 {cover_strained:
-    Agent HaX: Your cover didn't last the night. Somebody at HashChain rang the FCA, and the FCA had never heard of you.
-    Agent HaX: It didn't cost us the job. It might cost us the next one. The FCA will want a word with us.
+    Agent HaX: Your cover didn't last the night. The FCA had never heard of you, and that might cost us the next job.
 - else:
     {satoshi_spoken:
         Agent HaX: And the cover held on the floor. Only Satoshi thought to check, and by then you were at his desk.
@@ -356,10 +370,14 @@ Agent HaX: The Crypto Anarchists have lost their best cryptographer. Replacing h
     Agent HaX: Raghavan drew us the money, and got knocked down for it.
 }
 {guard_ko:
-    Agent HaX: The guard on the checkpoint was a contractor doing his job.
+    Agent HaX: The guard on the checkpoint has a wife who wants to know why he's in A&E.
 }
 {trader_ko or analyst_ko or guard_ko:
-    Agent HaX: None of them had done anything wrong. That goes in the report.
+    Agent HaX: None of them knew what HashChain was.
+}
+// Dialogue C1 (D6-31): Priya asked what she'd been drawing.
+{analyst_walked_through and not analyst_ko:
+    Agent HaX: Raghavan will want to know what she was drawing. Somebody from the police will tell her. I'd rather it was you.
 }
 -> password_cracking_discussion
 
@@ -370,12 +388,17 @@ Agent HaX: The Crypto Anarchists have lost their best cryptographer. Replacing h
 === password_cracking_discussion ===
 // Pass 5 minor: one line per flag, in story terms.
 Agent HaX: All four flags in.
-Agent HaX: A build service nobody had switched off got you onto their backend. One cracked password, and the same password opened a second account.
-Agent HaX: The financial database gave us their doors, and the vault account gave us the keys to every cold wallet they hold.
-// Scenario design R1, decision 1 (CyBOK kill chains): the night as one chain.
-Agent HaX: Map it, get on it, crack it, reuse it, move sideways, take the keys. A whole chain, and they'd left every link open.
-
--> fca_letter
+// Dialogue C1 (D6-3): the player chooses whether to hear the chain again.
++ [Walk me through it.]
+    Agent HaX: A build service nobody had switched off got you onto their backend. One cracked password, and the same password opened a second account.
+    Agent HaX: The financial database gave us their doors, and the vault account gave us the keys to every cold wallet they hold.
+    // Scenario design R1, decision 1 (CyBOK kill chains): the night as one chain.
+    // Dialogue C1 (D6-4): one line, not a list.
+    Agent HaX: That's the whole chain, from outside to the keys, and they'd left every link open.
+    -> fca_letter
++ [I was there. Just the letter.]
+    Agent HaX: Short version, then. They left every link open.
+    -> fca_letter
 
 // ================================================
 // THE FCA LETTER (PASS 4 fix 2: the lessons, in the cover's own terms)
@@ -386,7 +409,12 @@ Agent HaX: Map it, get on it, crack it, reuse it, move sideways, take the keys. 
 
 === fca_letter ===
 {fca_picks == 0:
-    Agent HaX: One more thing. You were their regulator tonight, and the FCA wants its letter. Give me the three findings that go in it.
+    // Dialogue C1 (D6-35): a strained cover means the FCA knows its name was used.
+    {cover_strained:
+        Agent HaX: One more thing. The FCA wants to know who was using its name tonight, and it wants a letter. Three findings.
+    - else:
+        Agent HaX: One more thing. You were their regulator tonight, and the FCA wants its letter. Give me the three findings that go in it.
+    }
 }
 {fca_picks >= 3:
     -> fca_verdict
@@ -434,7 +462,7 @@ Agent HaX: Map it, get on it, crack it, reuse it, move sideways, take the keys. 
 - 2:
     Agent HaX: Two good ones. Close enough to sign.
 - else:
-    Agent HaX: Their people will be glad you wrote it and not someone from the FCA. Read it again before it goes.
+    Agent HaX: One of those would stand up. Read it again before it goes.
 }
 
 -> evidence_review
@@ -484,13 +512,12 @@ Agent HaX: And Satoshi's safe. His own notes on who The Architect is.
 
 Agent HaX: His best guess is Dr Adrian Tesseract. Our chief strategist, once. Walked out seven years ago.
 
+// Dialogue C1 (D6-36): each question gets its own fact.
 + [One of ours?]
-    Agent HaX: Ours. He trained half the agents in the field.
-    Agent HaX: Satoshi only rates it eighty-seven per cent. Treat it as a lead.
+    Agent HaX: Ours. He wrote the training I gave you.
     -> tesseract_revelation
 + [How much weight does his guess carry?]
-    Agent HaX: Eighty-seven per cent, by Satoshi's sum. Treat it as a lead.
-    Agent HaX: It fits, though. Tesseract trained half the agents in the field.
+    Agent HaX: Eighty-seven per cent, by Satoshi's sum. Satoshi doesn't round up.
     -> tesseract_revelation
 
 === tesseract_revelation ===
@@ -506,7 +533,7 @@ Agent HaX: If collapse is coming anyway, you speed it up and pick the terms.
 
 Agent HaX: He'd call these attacks lessons. I call them attacks.
 
--> mission_conclusion
+-> final_assessment
 
 === personal_connection ===
 Agent HaX: ...I was one of his students.
@@ -515,22 +542,14 @@ Agent HaX: Best strategic mind I ever met. Most of how I think about this job, I
 
 Agent HaX: If it's him... *quietly* Let's leave it there for tonight.
 
--> mission_conclusion
+-> final_assessment
 
 === identity_missing ===
 Agent HaX: You left Satoshi's safe shut. Whatever he kept in it, the police will open on their schedule, not ours.
 
 Agent HaX: A man like that keeps insurance. I'd have liked to read it first.
 
--> mission_conclusion
-
-// ================================================
-// MISSION CONCLUSION
-// ================================================
-
-=== mission_conclusion ===
-Agent HaX: The man in the corner office was Satoshi's Ghost. The Crypto Anarchists' own leader.
-
+// Dialogue C1 (D6-37): mission_conclusion cut (it restated Satoshi's confession).
 -> final_assessment
 
 // ================================================
@@ -550,7 +569,7 @@ Agent HaX: Six cells, one fund, one seventy-two-hour clock. Somebody wrote one s
     Agent HaX: We find out which of them moves first. Some of them are already paid for.
     -> next_mission_hint
 + [So they all move at once.]
-    Agent HaX: If they do, we won't get much warning. Some of them are already paid for.
+    Agent HaX: If they do, we won't get much warning.
     -> next_mission_hint
 
 === next_mission_hint ===

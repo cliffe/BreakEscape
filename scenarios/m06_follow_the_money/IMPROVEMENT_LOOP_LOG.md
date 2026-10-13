@@ -704,3 +704,172 @@ Review: `SCENARIO_DESIGN_REVIEW_P5_R2.md` (Opus, read-only, static). Counts: 0 b
 | Browser | 0 | 0 | 0 |
 
 Next: phase 4 dialogue (with n5, the hub order, and the debrief's long runs without a choice), alongside room dressing (m11 layout, the signing case and clipping placement).
+
+## Phase 4: dialogue
+
+Snapshot for `tagdiff --old`: the session scratchpad's `m06-dialogue-snapshot/ink/` (commit 7a1a829a's ink).
+
+### Phase 4 dialogue, cycle 1
+
+Review: `DIALOGUE_REVIEW_P5_C1.md` (Opus, static plus the route driver; 0 blockers, 6 majors, 38 minors). Fixer: Opus, resumed between cycles. Every finding was checked against the ink before it was acted on. No browser session was started, the do-not-open rule held, and `scenario.json.erb` was not edited (no finding needed it: D6-8 keeps the texts).
+
+User decisions this cycle: D6-1 and D6-2 take the reviewer's branches and subtext beat; D6-3 adds the two player beats and the cut, no debrief run over 9, a `maxRun` assertion in the route driver and routes for the worst debrief paths; D6-4 the single replacement line; D6-5 re-entry lines for Dani and Priya; D6-7 trim Satoshi's finale; D6-6 newest-first hub order; D6-13 a light Hamburg touch for Kemal; Satoshi's stock villain lines rewritten so he argues rather than sneers; D6-31 Priya's question paid off; D6-42 dead locals removed.
+
+| # | Sev. | Finding | Outcome |
+|---|---|---|---|
+| D6-1 | major | Direct reveal answers evidence she never saw | **Fixed** as proposed: without the write-up or the fund page, the reveal shows the fund at the casualty line ("*reads it twice* I wrote the mixer so nobody could see where money went. Not so nobody could see this.") and marks it shown |
+| D6-2 | major | Badge scene shows the deaths and she reacts only to the signature | **Fixed** as proposed: new local `shown_signature`; "You show her the authorisation line on the fund page, and nothing else."; the subtext line "You're not from the FCA. ...No. Don't tell me yet." while no pitch has been made. `shown_architects_fund` is no longer set there, so the evidence scene's "They costed the deaths" is her one reaction |
+| D6-3 | major | Debrief runs of 14–18 lines | **Fixed.** Player beat after the Satoshi block ("[He'll be making speeches at the trial.]" / "[Did he give anything up?]", both into a new knot `exchange_aftermath`); "[Walk me through it.]" / "[I was there. Just the letter.]" after "All four flags in."; "The police and the lawyers decide…" cut. Two further trims were needed to hold 9 on every route: each asset outcome is now one line, and the strained-cover lines are one ("Your cover didn't last the night. The FCA had never heard of you, and that might cost us the next job."). Also D6-39's cut of "We let it run." keeps the run before the Irina choice at 9. Longest debrief run on any route: 9 (r6, r21, r24, r25), from 18 |
+| D6-4 | major | Kill-chain list | **Fixed**: "That's the whole chain, from outside to the keys, and they'd left every link open." (in the walk-through branch; CyBOK decision 1 kept) |
+| D6-5 | major | Dani and Priya don't notice Irina | **Fixed, placed differently.** A reopen re-enters the resting knot (`hub`), not `start`, so a line in `start`'s `- else:` would only play after a page reload (checked in the driver: the first draft never printed). The reactions are in each hub's re-entry line, once per change (new local `irina_news`); `start`'s reload branch hands over to the hub when news is pending. Dani: detained at her desk, walked out, knocked down (reviewer's lines, with `--` cut-offs). Priya: "Someone said Irina's been detained. Was it the graph? Was it my graph?" / "Someone said Irina's out cold on the trading floor. Was that to do with my graph?" (the review's "taken out" reads as killed). Dani's "What's Dr. Volkova like to work for?" is hidden once Irina is detained or down. Declared `irina_arrested`, `irina_taken`, `irina_ko` (Dani) and `irina_arrested`, `irina_ko` (Priya) |
+| D6-7 | major | Four villain closers | **Fixed** as proposed: "Enjoy the map while it's fresh."; "The idea will outlive her…", "ENTROPY has no head to cut off…" and "you'll find out what it cost" cut. Satoshi's longest run 8, from 10 |
+| D6-6 | minor | Irina's hub order | **Fixed** (user: newest first), the reviewer's order; conditions unchanged |
+| D6-8 | minor | "That goes in the report" ×7 | **Fixed** as proposed in the debrief (A&E line, "None of them knew what HashChain was.", "I'll be explaining that one upstairs."); texts kept |
+| D6-9 | minor | Refusal replays, mentions a graph that wasn't there | **Fixed** as proposed; the second line plays on the first ask only |
+| D6-10 | minor | "For now." echo | **Fixed**: "Don't take too long. He notices when I'm quiet." |
+| D6-11 | minor | "Someone on the floor has been asking…" | **Fixed** as proposed |
+| D6-12 | minor | Same re-entry for a turned Irina | **Fixed**, with "Ask, then." for the review's "Still here." (the guard already says "Still here." twice) |
+| D6-13 | minor | No Hamburg in Kemal's words | **Fixed** (user: light touch): "Moin." on the first meeting, "Na gut. Go in." after Volkova vouches. Two uses |
+| D6-14 | minor | Narration of his accent | **Fixed** |
+| D6-15 | minor | "I hoped you would say that." | **Fixed**: "*takes off his watch and pockets it* Then come and move me." |
+| D6-16 | minor | "Thirty years" ×4 | **Fixed** as proposed (Kemal :148, debrief); his first speech and Satoshi's kept |
+| D6-17 | minor | "Casualties are inevitable…" | **Fixed**: "People die when systems change. They die when they don't, too. You just never count yours." ("invoice" would clash with "I just pay the invoices" on the same route) |
+| D6-18 | minor | The same argument twice | **Fixed**: "Everything justifies something. You just don't like my arithmetic." then, for "We just make it visible.", a concrete argument: "Your side freezes a country's reserves and the hospitals run out of insulin. Nobody writes that up as a casualty projection." |
+| D6-19 | minor | Filler before his best line | **Fixed** (cut) |
+| D6-20 | minor | Asks about a KO'd Irina | **Fixed** (`not irina_ko`) |
+| D6-21 | minor | The pitch replays on every return | **Fixed.** New local `pitch_heard`; a return gets one line: "Found my wallet yet? No?" (no fund), "You found the keys. So, which is it?", or "Freeze or watch. I'm still waiting." |
+| D6-22 | minor | "the door only opens one way" | **Fixed** as proposed |
+| D6-23 | minor | "You can't win…" | **Fixed** (cut) |
+| D6-24 | minor | Slow clap | **Fixed**: "He watches it land, and smiles as if he'd sent it himself." (shortened, since the line before already has the transfer clearing) |
+| D6-25 | minor | Awkward choice | **Fixed** |
+| D6-26 | minor | "People tonight over people later" | **Fixed** as proposed |
+| D6-27 | minor | "Patient" twice; "Bold." | **Fixed** as proposed |
+| D6-28 | minor | "deckchairs" | **Fixed**, differently: "Murder's what they call it when you lose. The winners get statues." (shorter than the review's, and not a history-books lecture) |
+| D6-29 | minor | "Both of them." | **Fixed** |
+| D6-43 | minor | Unreachable branch | **Fixed** (deleted; reaching it from `corrupted_ideals` would double the finale's "Irina in handcuffs as well") |
+| D6-30 | minor | Priya says the same fact twice | **Fixed** as proposed |
+| D6-31 | minor | Priya's question never answered | **Fixed**, worded so it holds on every route that sets the condition: `analyst_walked_through and not analyst_ko` → "Raghavan will want to know what she was drawing. Somebody from the police will tell her. I'd rather it was you." (the review's "Raghavan asked you…" claims a question she asks only after "[I can't talk about that.]", and there's no global for that; adding one would mean editing `globalVariables` in the shared erb) |
+| D6-32 | minor | "Eight hundred million" quoted untold | **Fixed** |
+| D6-33 | minor | First call ignores a strained cover | **Fixed**, with a third case the review didn't cover: a knocked-out guard also strains the cover, so "[The guard caught me at his door.]" would be false. Options: holding fine (cover intact) / caught ("Then he'll ring the FCA. Get to Volkova before the answer comes back.") / "[The guard's down. It was him or the cover.]" ("Then somebody finds him soon. Get to Volkova before they do."). `guard_ko` declared in the phone ink (already in `missions.json`) |
+| D6-34 | minor | "before anything clever" ×3 | **Fixed** as proposed (:383, :663); the recap's use kept |
+| D6-35 | minor | Letter set-up ignores the strain; muddled verdict | **Fixed** as proposed |
+| D6-36 | minor | Flat Tesseract pair | **Fixed** as proposed |
+| D6-37 | minor | `mission_conclusion` restates the confession | **Fixed** (knot cut; m07/m08 grepped by the reviewer) |
+| D6-38 | minor | "She never looked…" untrue on two routes | **Fixed** as proposed |
+| D6-39 | minor | Minder line wrong after Volkova vouches; "You/We let it run"; doubled ending | **Fixed.** "His minder took Volkova's word for you, on the phone, with his boss behind the door." when `minder_passed and cover_strained and irina_recruited` (one line, for the run limit; the review's "twice tonight" didn't say what the first time was). Edge left: a player who talks past Kemal and strains the cover afterwards hears the Volkova line; it needs a new global to tell apart. :154 cut; :553 "If they do, we won't get much warning." |
+| D6-40 | minor | Colon after six words | **Fixed** as proposed |
+| D6-41 | minor | `TURNS()` latch after a reload | **Fixed**: cleared at the top of `start` and on every reopen of `hub` and `after_choice` (the `hub_quiet` branch), because a reopen re-enters the resting knot, not `start` |
+| D6-42 | minor | Dead locals | **Fixed**: `analyst_talked`, `trader_talked`, `asked_about_irina`, `mission_accepted`, `ideology_discussed` and their writes removed |
+| D6-44 | minor | "[Start with the fund.]" skips two lines | **Left as it is** (fixer, as the review allows): `cell_disruption` gives the same outcome on that route, and folding the lines in would lengthen the fund route's run |
+
+Satoshi beyond the numbered findings (user: a man with a real argument): "midwives" → "Look, every crash so far, the banks got rescued and everybody else got the bill. This time I'd like to choose who pays."; "You protect the status quo" → "You won't agree. You work for the people who'd lose the most if I'm right."; "Too much conscience for an anarchist" → "She wanted the privacy without the customers. Most people do."; "Not everybody has the stomach." → "Most people want the freedom and none of the bookkeeping."; the freeze sneer → "Twelve point eight million, gone on one agent's say-so. No court, no hearing." / "That's the state I've been warning people about."; "more dangerous to us than the true believers" → "Hold on to that. It's how I started."; "Systems that can't question themselves don't." → "Sure. Nobody at your agency gets paid to wonder."; aftermath "Come to gloat…" → "Still waiting on your police. You want to argue some more, or just look?"; "Time will tell." → "You made a call. I made mine a long time ago." American turns: "Look,", "waiting on", "Sure.". His one rhetorical contrast per scene is now "You'd call it laundering. I call it financial freedom…".
+
+Found while fixing:
+- **A direct reveal, then the write-up.** "There's something you need to see" stayed on offer after a direct reveal (it keys on `shown_casualties`), and `evidence_pivot` always went to `reveal_identity`, so she was shown the credentials a second time. It now goes to her answer when the pitch has been made, and with the fund already shown she says "The hospital money as well. All of it through my mixer, and all of it to that page." instead of reading the casualty line again. Route r27.
+- **An ink gotcha.** A `//` comment between `{` and the first `- case:` of a multi-line conditional made ink skip the first case without any compile warning (seen in `evidence_pivot`; the comment now sits above the `{`). Comments between later cases are fine. Worth adding to `README_ink_best_practices.md` (orchestrator).
+- **Route driver.** A `said` step cleared the heard lines, so a `notSaid` step straight after it checked nothing: every old `notSaid` that followed a `said` was vacuous. Consecutive `said`/`notSaid` steps now check the same lines. Re-running showed one stale check (r2's `notSaid: "reception"` matched the briefing), now narrowed to the guard's wording. Every other old `notSaid` passes.
+
+#### Routes
+
+Driver: `{"maxRun": 9}` (as m04's) asserts the longest run without a choice so far; every route now ends with it. The said/notSaid fix above.
+
+Updated for the new debrief picks (both branches of each beat are used across the set), the renamed Satoshi choice, and expectations that quoted changed lines: r1–r10, r12, r13, r15–r17, r21, r22.
+
+New:
+- `r24_worst_debrief_watch_strained_two_kos.json`: watch, strained, guard and Dani down, Priya walked through, Irina turned (cloned, notes) then down, Kemal passed on Volkova's word, stance "wondered", the ideology pick. Two runs of exactly 9 (before the Irina choice and after the Satoshi beat).
+- `r25_worst_debrief_three_kos_detained_seized.json`: freeze, all three staff down (no Priya line), Kemal down, Irina detained and collected (lent badge, notes), Satoshi down, safe and signing case open; the other branch of each new beat. One run of 9.
+- `r26_direct_reveal_exec_badge_floor_reacts.json`: D6-2 badge scene, D6-1 direct reveal, Dani and Priya after the detention and the collection (D6-5), Satoshi's pitch once, then the one-line returns across page reloads (D6-21), the freeze sneer rewrite and the trimmed finale.
+- `r27_refused_then_evidence_after_reveal.json`: direct reveal, refusal (D6-9), time, back out (D6-10), then the write-up goes to her answer, not a second reveal; the turned re-entry after a reload (D6-12).
+
+27 of 27 routes: all expectations met, including `maxRun` 9 on each. Longest runs: debrief 9 (was 18), Irina 9 (r3, unchanged), briefing 8, Satoshi 8 (was 10).
+
+#### Checks (static; no browser session)
+
+- Ink compiles (9 files, 0 failed, no loose ends).
+- Validator with ink, `--no-graph`: schema passed, all ink valid, geometry and doors OK; the same warnings as before (three repeatable cutscenes, 20 duplicate-pattern notes, credits suggestions). The erb wasn't touched by this cycle.
+- dialoguelint: no findings (`Totals by rule: none`). The first pass flagged Priya's cue density at 5 in 69; the new "*quietly*" was cut.
+- reopencheck: m06 HaX phone, 1800 reopens, 0 problems.
+- tagdiff `--old` against the snapshot: guard and minder structure unchanged; debrief 37, Irina 19, trader 15, analyst 10, phone 9, Satoshi 12, briefing 4 differences. Every one is in the table above: the new `exchange_aftermath` knot and the two choice pairs, `mission_conclusion` gone, the moved minder and asset conditions, the strained-cover letter branch and the Priya condition; Irina's `shown_signature`, latch clears, reveal and refusal branches and the evidence re-route; the `irina_news` reactions and their declarations; the phone's three first-call options; `pitch_heard`; the removed dead locals.
+- inkcheck (debrief strained and turned; Irina with fund and evidence; Satoshi with fund and keys) and loopcheck over 40 entry-and-state runs (three debrief extremes; Irina fresh, low-trust with fund, refused with time, hub after the signature, turned, detained; Dani and Priya at `start` and `hub` in four Irina states each; Satoshi with fund, turned Irina, Irina KO'd, a return after the pitch; Kemal three entries; the phone fresh, strained, guard down; briefing; guard): no runtime errors.
+
+#### Spoken lines changed (old → new)
+
+No m06 audio exists yet; listed for the record. Choice text isn't voiced.
+
+HaX, debrief:
+- Cut: "We let it run. What's on that document is ours to stop now." / "The police and the lawyers decide what happens to her now. She knows that." / "The man in the corner office was Satoshi's Ghost. The Crypto Anarchists' own leader."
+- "And then she went down on the trading floor. That's in the report as a mistake." → "…I'll be explaining that one upstairs."
+- "She never looked at what it paid for until you put it in front of her." → "She'd looked. She just hadn't let herself read it. You made her."
+- New: "Let him. The jury will have the allocation." / "Nothing his safe hadn't already told us." / "Not a word about The Architect. That's what his safe was for."
+- "HashChain's finished. The police have the building and the mixer's dark." + "Every cell needs a new bank now, and they won't trust the next one for months." → "HashChain's finished and the mixer's dark. Every cell needs a new bank, and they won't trust the next one for months."
+- "The exchange stays open for now, under watch. Shutting it would tell ENTROPY exactly what we're doing." + "The payout was pre-signed, so it goes out with him in a cell. Once it has, the police can have the rest." → "The exchange stays open under watch. His payout was pre-signed, so it still goes, and then the police get the rest."
+- "His minder's in custody too. Thirty years guarding banks, and he finishes the night on a corridor floor." → "His minder's in custody too. He finishes a long career on a corridor floor."
+- New: "His minder took Volkova's word for you, on the phone, with his boss behind the door."
+- "Your cover didn't last the night. Somebody at HashChain rang the FCA, and the FCA had never heard of you." + "It didn't cost us the job. It might cost us the next one. The FCA will want a word with us." → "Your cover didn't last the night. The FCA had never heard of you, and that might cost us the next job."
+- "The guard on the checkpoint was a contractor doing his job." → "The guard on the checkpoint has a wife who wants to know why he's in A&E."
+- "None of them had done anything wrong. That goes in the report." → "None of them knew what HashChain was."
+- New: "Raghavan will want to know what she was drawing. Somebody from the police will tell her. I'd rather it was you."
+- "Map it, get on it, crack it, reuse it, move sideways, take the keys. A whole chain, and they'd left every link open." → "That's the whole chain, from outside to the keys, and they'd left every link open."
+- New: "Short version, then. They left every link open." / "One more thing. The FCA wants to know who was using its name tonight, and it wants a letter. Three findings."
+- "Their people will be glad you wrote it and not someone from the FCA. Read it again before it goes." → "One of those would stand up. Read it again before it goes."
+- "Ours. He trained half the agents in the field." + "Satoshi only rates it eighty-seven per cent. Treat it as a lead." → "Ours. He wrote the training I gave you."
+- "Eighty-seven per cent, by Satoshi's sum. Treat it as a lead." + "It fits, though. Tesseract trained half the agents in the field." → "Eighty-seven per cent, by Satoshi's sum. Satoshi doesn't round up."
+- "If they do, we won't get much warning. Some of them are already paid for." → "If they do, we won't get much warning."
+
+HaX, phone:
+- New: "Then he'll ring the FCA. Get to Volkova before the answer comes back." / "Then somebody finds him soon. Get to Volkova before they do."
+- "Try that password on every other account before anything clever. Someone will have reused it." → "Someone will have reused it. Try it on the other accounts first."
+- "Try the password you have everywhere before anything clever." → "The password you have is the place to start."
+- "The wallet is still yours to decide: freeze it, or leave it running and watch it." → "The wallet's still yours to decide. Freeze it, or leave it running and watch it."
+
+Dr. Irina Volkova:
+- Narrator "You put the fund allocation in front of her. She reads the per-cell lines, then the casualty line, then the signature." → "You show her the authorisation line on the fund page, and nothing else."
+- New: "*quietly* You're not from the FCA. ...No. Don't tell me yet." / Narrator "Then the fund allocation, open at the casualty line." / "*reads it twice* I wrote the mixer so nobody could see where money went. Not so nobody could see this." / "The hospital money as well. All of it through my mixer, and all of it to that page."
+- "Someone on the floor has been asking whether you are who you say you are. Until they stop, my badge stays on my neck." → "There's been talk about you tonight. Until it stops, my badge stays on my neck."
+- "I won't turn on Satoshi on the strength of one conversation and a graph." → "I won't turn on Satoshi because a stranger put a badge on my desk." (first ask) / "I said I'd think. I'm thinking. It's slower than you'd like." (return)
+- "For now." → "Don't take too long. He notices when I'm quiet."
+- "What else do you need?" → cycle "What else do you need?" / "Ask, then." / "Quickly. He calls down at odd hours."
+
+Dani Okonkwo, new: "Irina's on the floor and nobody's-- did you-- *stops* Don't answer that." / "*barely above a whisper* She's just sitting there. Are you allowed to tell me what's going on?" / "They walked Irina out past my desk. Am I next? Honestly, you can tell me."
+
+Priya Raghavan:
+- New: "Someone said Irina's been detained. Was it the graph? Was it my graph?" / "Someone said Irina's out cold on the trading floor. Was that to do with my graph?"
+- "Big round sums, late evening, straight into the mixer. Same habit every time." → "Same habit every time. In, mixed, and gone by midnight."
+
+Kemal Aydin:
+- "This floor is closed. Who let you up?" → "Moin. This floor is closed. Who let you up?"
+- Narrator "…A short exchange in German-accented English, then…" → "…A short exchange, then a longer silence on the other end."
+- "Go in." (after the call) → "Na gut. Go in."
+- "I gave thirty years to banks that stole politely. He at least says what he is." → "I guarded banks that stole politely. He at least says what he is."
+- "I hoped you would say that." → "*takes off his watch and pockets it* Then come and move me."
+
+Satoshi Nakamoto II:
+- "Casualties are inevitable in any revolution." → "People die when systems change. They die when they don't, too. You just never count yours."
+- "The system you protect kills people too. Slowly, with paperwork." / "We just make it visible." → "Everything justifies something. You just don't like my arithmetic." / "Your side freezes a country's reserves and the hospitals run out of insulin. Nobody writes that up as a casualty projection."
+- Cut: "You don't understand our philosophy, do you?" / "You can't win. You can only choose how you lose." / "You'll let the money go to see where it lands. Bold." / "The idea will outlive her. It'll outlive me." / "ENTROPY has no head to cut off. The Architect will adapt." / "Whatever you chose tonight, you'll find out what it cost. So will I." / "She refused you, I presume? Good. Her loyalty held." (unreachable)
+- "We're not terrorists. We're midwives." → "Look, every crash so far, the banks got rescued and everybody else got the bill. This time I'd like to choose who pays."
+- "Too much conscience for an anarchist. I always knew." → "She wanted the privacy without the customers. Most people do."
+- "Not everybody has the stomach." → "Most people want the freedom and none of the bookkeeping."
+- "But I don't expect you to agree. You're SAFETYNET. You protect the status quo." → "You won't agree. You work for the people who'd lose the most if I'm right."
+- New (returns): "Found my wallet yet? No?" / "You found the keys. So, which is it?" / "Freeze or watch. I'm still waiting."
+- "The vault account. Of course. I'll be here; the door only opens one way for me now." → "The vault account. Of course. Go on. I'm not going anywhere, and neither is the money."
+- Narrator "He claps, slowly." → "He watches it land, and smiles as if he'd sent it himself."
+- "Short-term thinking. SAFETYNET's speciality." → "Twelve point eight million, gone on one agent's say-so. No court, no hearing."
+- "The state takes your coins whenever it likes. You just proved it for me." → "That's the state I've been warning people about. You just proved it for me."
+- "People tonight over people later. That's human. Wrong, but human." → "The names on that page over whoever my martyrdom recruits. That's human. Wrong, but human."
+- "Patient. I didn't expect that from SAFETYNET." → "You'll let it run. I didn't expect that from SAFETYNET."
+- "And the wallet you left running? We'll adapt. Your map gets older every day." → "And the wallet you left running? Enjoy the map while it's fresh."
+- "Ask me in fifty years. You might find you were rearranging deckchairs." → "Murder's what they call it when you lose. The winners get statues."
+- "That makes you more dangerous to us than the true believers." → "Hold on to that. It's how I started."
+- "Of course not. Systems that can't question themselves don't." → "Sure. Nobody at your agency gets paid to wonder."
+- "Still waiting for your police. Come to gloat, or having second thoughts?" → "Still waiting on your police. You want to argue some more, or just look?"
+- "Time will tell." → "You made a call. I made mine a long time ago."
+
+Not voiced (choices): "[He'll be making speeches at the trial.]", "[Did he give anything up?]", "[Walk me through it.]", "[I was there. Just the letter.]", "[How much goes through here in a day?]", "[The guard caught me at his door.]", "[The guard's down. It was him or the cover.]", "[Whatever hadn't gone out stays put.]", "[I made the right call.]".
+
+#### Open after cycle 1
+
+- Browser checks: Dani's and Priya's re-entry lines after a real detention, collection and KO (the reopen re-enters `hub`; the driver models that, the browser should confirm); Irina's badge scene and direct reveal; Satoshi's one-line return after a deferral and a reload; HaX's first call after a checkpoint catch and after a guard KO.
+- D6-39 edge: talk past Kemal, then strain the cover, and the debrief credits Volkova. Needs a new global (`globalVariables` in the shared erb) if it's worth closing.
+- The ink-comment gotcha for `README_ink_best_practices.md` (orchestrator; a shared doc).
+- The user: the debrief's VM lines are unchanged in substance and still at the brief's level.

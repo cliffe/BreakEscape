@@ -13,6 +13,8 @@
 //   {"room": "x"} also evaluates the erb's literal room_entered:x mappings (setGlobal, texts)
 //   {"ko": "trader_npc"}                    a KO, with the scenario's npc_ko / globalVarOnKO effects
 //   {"expect": {"global": value, ...}}      assert globals; prints PASS/FAIL and fails the run
+//   {"maxRun": 9}                          assert the longest run without a choice so far is <= 9
+//                                           (dialogue C1, as m04's driver)
 //   {"credits": true}                       print the credits lines whose conditions hold now,
 //                                           evaluated from scenario.json.erb as the engine does
 //   {"said": ["substr", ...]}              assert each substring appears in the lines, or in
@@ -144,9 +146,13 @@ function closed(name) {
   engine();
 }
 function load(f) { const s = new inkjs.Story(fs.readFileSync(path.join(DIR, f + '.json'), 'utf8').replace(/^﻿/, '')); try { s.BindExternalFunction('player_name', () => 'Agent'); } catch (e) {} return s; }
+let checkMark = false; // dialogue C1: consecutive said/notSaid steps check the same lines
 for (const step of route.steps) {
+  if (checkMark && !(step.said || step.notSaid)) { heard = []; checkMark = false; }
   if (step.set) { Object.assign(G, step.set); out(`   {set ${JSON.stringify(step.set)}}`); engine(); continue; }
   if (step.note) { console.log(`\n## ${step.note}`); continue; }
+  // Phase 4 dialogue C1 (D6-3): {"maxRun": 9} asserts the longest run without a choice so far.
+  if (step.maxRun !== undefined) { const ok = stats.maxRun <= step.maxRun; if (!ok) stats.fails++; console.log(`   [${ok ? 'PASS' : 'FAIL'}] longest run ${stats.maxRun} (${stats.maxAt}) <= ${step.maxRun}`); continue; }
   if (step.room) {
     out(`   {room ${step.room}}`);
     if (step.room !== 'trading_floor' && G.irina_arrested && !G.irina_taken && !G.irina_ko) setG('irina_taken', true, 'police collect a detained Irina');
@@ -172,7 +178,7 @@ for (const step of route.steps) {
     const text = heard.join('\n').toLowerCase();
     for (const x of step.said || []) { const ok = text.includes(x.toLowerCase()); if (!ok) stats.fails++; console.log(`   [${ok ? 'PASS' : 'FAIL'}] said: "${x}"`); }
     for (const x of step.notSaid || []) { const ok = !text.includes(x.toLowerCase()); if (!ok) stats.fails++; console.log(`   [${ok ? 'PASS' : 'FAIL'}] not said: "${x}"`); }
-    heard = []; continue;
+    checkMark = true; continue;
   }
   if (step.strike) {
     // Puzzle chains R3: a PIN pad closes. "wrong" = a wrong code at maxAttempts

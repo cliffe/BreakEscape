@@ -52,7 +52,7 @@ VAR saw_picks = false      // R2-M3: he caught the picks; the FCA line no longer
     #speaker:narrator
     Narrator: A broad man in his late fifties, grey at the temples, stands between you and the corner office as if he were part of the wall.
     #speaker:satoshi_minder
-    Kemal Aydin: This floor is closed. Who let you up?
+    Kemal Aydin: Moin. This floor is closed. Who let you up?
 - else:
     Kemal Aydin: You again. The answer has not changed.
 }
@@ -128,13 +128,13 @@ Kemal Aydin: There. It is open. I will be outside the door.
 
 === irina_vouches ===
 #speaker:narrator
-Narrator: He holds your eye while he dials. A short exchange in German-accented English, then a longer silence on the other end.
+Narrator: He holds your eye while he dials. A short exchange, then a longer silence on the other end.
 #speaker:satoshi_minder
 ~ minder_passed = true
 #set_variable:minder_passed=true
 Kemal Aydin: She says you are expected. She has never once lied to me, so.
 #unlock_door:satoshi_office
-Kemal Aydin: Go in.
+Kemal Aydin: Na gut. Go in.
 #exit_conversation
 -> start.passed_choices
 
@@ -145,13 +145,13 @@ Kemal Aydin: Go in.
 - else:
     Kemal Aydin: Mr Nakamoto's phone has been ringing about you. The FCA has never heard your name.
 }
-Kemal Aydin: I gave thirty years to banks that stole politely. He at least says what he is.
+Kemal Aydin: I guarded banks that stole politely. He at least says what he is.
 Kemal Aydin: So. Who are you really?
 -> start.standoff_choices
 
 === goes_hostile ===
 #speaker:satoshi_minder
-Kemal Aydin: I hoped you would say that.
+Kemal Aydin: *takes off his watch and pockets it* Then come and move me.
 #hostile:satoshi_minder
 #exit_conversation
 -> start.challenge
