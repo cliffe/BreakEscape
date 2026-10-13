@@ -17,6 +17,10 @@
 //   {"hud": "timer_id" | null}             which countdown the HUD widget would show now: the
 //                                           first started, undone showCountdown timer in array
 //                                           order whose condition holds (scenario-timer.js)
+//   {"ko": "voltage"}                      a KO, with the scenario's npc_ko mappings: for Voltage,
+//                                           voltage_neutralised and voltage_captured (unless he
+//                                           escaped), and Static slipping out if he stood aside;
+//                                           for others, their globalVarOnKO global
 //   {"advance": 12}                         clock model: 12 minutes of game time pass. The
 //                                           scenario's "timers" array is read from the erb;
 //                                           each startOnGlobal timer starts when its global
@@ -159,6 +163,17 @@ for (const step of route.steps) {
     const ok = (shown ? shown.id : null) === step.hud; if (!ok) stats.fails++;
     out(`   [${ok ? 'PASS' : 'FAIL'}] HUD shows ${shown ? shown.id + ' (' + left + ' min)' : 'nothing'} (expected ${step.hud})`);
     continue;
+  }
+  if (step.ko) {
+    const id = step.ko; out(`   {ko ${id}}`);
+    if (id === 'voltage') {
+      if (!G.voltage_escaped) { G.voltage_neutralised = true; G.voltage_captured = true; }
+      if (G.static_stood_aside && !G.static_engaged && !G.operative_static_defeated) { G.static_left = true; G.static_left_alone = true; out('      [engine: Static slips out -> static_left, static_left_alone]'); }
+    } else {
+      const map = { operative_cipher: 'operative_cipher_defeated', operative_relay: 'operative_relay_defeated', operative_static: 'operative_static_defeated', security_guard: 'security_guard_ko', robert_vance: 'robert_vance_ko' };
+      if (map[id]) G[map[id]] = true;
+    }
+    engine(); continue;
   }
   if (step.advance !== undefined) { out(`   {advance ${step.advance} min}`); advance(step.advance * 60000); continue; }
   if (step.expect) {

@@ -1,0 +1,94 @@
+{
+"steps": [
+{
+"note": "R18 (scenario design m3): Static talked past, then Voltage punched down without the stance chat (no #hostile:operative_static). Static slips out; his credit says so, not that he left with Voltage."
+},
+{
+"set": {
+"briefing_played": true,
+"guard_admitted": true,
+"checkpoint_passed": true,
+"vance_met": true,
+"vance_is_ally": true,
+"vance_provided_keycard": true,
+"plant_room_entered": true
+}
+},
+{
+"set": {
+"server_room_reached": true,
+"plant_reader_seen": true,
+"fingerprint_kit_found": true,
+"vance_print_lifted": true,
+"flag_network_scan_submitted": true,
+"flag_ftp_intel_submitted": true,
+"flag_distcc_exploit_submitted": true,
+"flag_privesc_submitted": true,
+"all_flags_in": true,
+"attack_mechanism_known": true,
+"anomaly_detected": true
+}
+},
+{
+"talk": "static",
+"picks": [
+"not here for you"
+]
+},
+{
+"expect": {
+"static_stood_aside": true
+}
+},
+{
+"ko": "voltage"
+},
+{
+"expect": {
+"static_left": true,
+"static_left_alone": true,
+"voltage_captured": true
+}
+},
+{
+"set": {
+"esd_authorized": true,
+"attack_prevented": true
+}
+},
+{
+"talk": "phone",
+"picks": [
+"Bring me in",
+"Bring me in",
+"On my way"
+]
+},
+{
+"talk": "debrief",
+"picks": [
+"Shutdown engaged",
+"What did we get",
+"how did they get in",
+"It goes in the report",
+"The Architect",
+"I'm in",
+"Full public",
+"honour"
+]
+},
+{
+"credits": true
+},
+{
+"said": [
+"STATIC: stood aside, and slipped out when Voltage fell",
+"ROBERT VANCE: brought in"
+],
+"notSaid": [
+"STATIC: stood aside, and left with Voltage",
+"vindicated"
+]
+}
+]
+}

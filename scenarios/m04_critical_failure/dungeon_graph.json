@@ -147,6 +147,12 @@
       "optional": false
     },
     {
+      "id": "spare_keycard_level_1",
+      "label": "Spare Keycard (Level 1)",
+      "kind": "key",
+      "optional": true
+    },
+    {
       "id": "battery_hall_1",
       "label": "BATTERY HALL 1 — RESTRICTED ACCESS — PPE REQUIRED",
       "kind": "room",
@@ -288,6 +294,11 @@
       "soft": false
     },
     {
+      "from": "rfid_cloner",
+      "to": "door_engineering_workshop",
+      "soft": false
+    },
+    {
       "from": "main_entrance",
       "to": "lock_pick_kit",
       "soft": false
@@ -371,6 +382,16 @@
       "from": "security_office",
       "to": "lock_security_equipment_locker",
       "soft": false
+    },
+    {
+      "from": "lock_security_equipment_locker",
+      "to": "spare_keycard_level_1",
+      "soft": true
+    },
+    {
+      "from": "spare_keycard_level_1",
+      "to": "door_battery_hall_2",
+      "soft": true
     },
     {
       "from": "battery_hall_1",

@@ -9,12 +9,12 @@ Infiltrate the Albion Energy Storage facility — 200 MWh of grid-scale lithium-
 | Metric | Value |
 |---|---|
 | Story aims | 6 |
-| Total tasks | 19 (6 optional) |
+| Total tasks | 19 (7 optional) |
 | VM flag challenges | 4 |
 | Physical locks | 7 |
 | AND-gate convergences | 0 |
 | Rooms | 9 |
-| Puzzle graph nodes / edges | 43 / 52 |
+| Puzzle graph nodes / edges | 44 / 55 |
 | Story graph nodes / edges | 6 / 5 |
 
 ## Critical Path
@@ -93,6 +93,7 @@ flowchart TD
   optigrid_job_card_4782_back_page{"OptiGrid Job Card #4782 (back page)"}
   security_office("Security Office")
   access_control_export_hv_plant_room{"Access Control Export: HV Plant Room"}
+  spare_keycard_level_1{"Spare Keycard (Level 1)"}
   battery_hall_1("BATTERY HALL 1 — RESTRICTED ACCESS — PPE REQUIRED")
   analogue_thermometer_rack_bank_c_wall{"Analogue Thermometer — Rack Bank C Wall"}
   h_gas_detector_panel{"H₂ Gas Detector Panel"}
@@ -118,6 +119,7 @@ flowchart TD
   door_plant_room --> plant_room
   main_entrance --> rfid_cloner
   rfid_cloner --> door_battery_hall_2
+  rfid_cloner --> door_engineering_workshop
   main_entrance --> lock_pick_kit
   lock_pick_kit --> lock_security_equipment_locker
   lock_pick_kit --> lock_optigrid_tool_case
@@ -135,6 +137,8 @@ flowchart TD
   lock_optigrid_tool_case --> optigrid_job_card_4782_back_page
   security_office --> access_control_export_hv_plant_room
   security_office --> lock_security_equipment_locker
+  lock_security_equipment_locker -.-> spare_keycard_level_1
+  spare_keycard_level_1 -.-> door_battery_hall_2
   battery_hall_1 --> analogue_thermometer_rack_bank_c_wall
   battery_hall_1 --> h_gas_detector_panel
   battery_hall_1 --> duty_round_panel
@@ -169,13 +173,13 @@ flowchart TD
   class door_engineering_workshop,door_battery_hall_2,door_plant_room,lock_security_equipment_locker,lock_optigrid_tool_case,lock_extraction_gobag,lock_esd_pushbutton lock
   class engineering_workshop,battery_hall_2,plant_room,main_entrance,operations_office,scada_control_room,security_office,battery_hall_1,loading_dock room
   class rfid_cloner,lock_pick_kit,maintenance_work_orders,scada_hmi_main_display,fingerprint_kit,optigrid_job_card_4782_back_page,access_control_export_hv_plant_room,analogue_thermometer_rack_bank_c_wall,h_gas_detector_panel,duty_round_panel,social_fabric_safehouse_card_encoded item
-  class npc_robert_vance,facility_access_keycard_level_1,npc_entropy_operative_relay,workshop_keycard_level_2,npc_voltage_critical_mass key
+  class npc_robert_vance,facility_access_keycard_level_1,spare_keycard_level_1,npc_entropy_operative_relay,workshop_keycard_level_2,npc_voltage_critical_mass key
   class action_meet_robert_vance,action_deal_with_voltage action
   class bms_jump_server_terminal,vmch_submit_network_scan_flag,vmch_submit_ftp_intel_flag,vmch_submit_distcc_exploit_flag,vmch_submit_privesc_flag vm
   class vmfl_submit_network_scan_flag,vmfl_submit_ftp_intel_flag,vmfl_submit_distcc_exploit_flag,vmfl_submit_privesc_flag flag
 
   classDef optional stroke-dasharray:5 2
-  class facility_access_keycard_level_1 optional
+  class facility_access_keycard_level_1,spare_keycard_level_1 optional
   class node_start start
 ```
 
@@ -267,6 +271,7 @@ flowchart TD
   optigrid_job_card_4782_back_page{"OptiGrid Job Card #4782 (back page)"}
   security_office("Security Office")
   access_control_export_hv_plant_room{"Access Control Export: HV Plant Room"}
+  spare_keycard_level_1{"Spare Keycard (Level 1)"}
   battery_hall_1("BATTERY HALL 1 — RESTRICTED ACCESS — PPE REQUIRED")
   analogue_thermometer_rack_bank_c_wall{"Analogue Thermometer — Rack Bank C Wall"}
   h_gas_detector_panel{"H₂ Gas Detector Panel"}
@@ -298,6 +303,7 @@ flowchart TD
   door_plant_room --> plant_room
   main_entrance --> rfid_cloner
   rfid_cloner --> door_battery_hall_2
+  rfid_cloner --> door_engineering_workshop
   main_entrance --> lock_pick_kit
   lock_pick_kit --> lock_security_equipment_locker
   lock_pick_kit --> lock_optigrid_tool_case
@@ -315,6 +321,8 @@ flowchart TD
   lock_optigrid_tool_case --> optigrid_job_card_4782_back_page
   security_office --> access_control_export_hv_plant_room
   security_office --> lock_security_equipment_locker
+  lock_security_equipment_locker -.-> spare_keycard_level_1
+  spare_keycard_level_1 -.-> door_battery_hall_2
   battery_hall_1 --> analogue_thermometer_rack_bank_c_wall
   battery_hall_1 --> h_gas_detector_panel
   battery_hall_1 --> duty_round_panel
@@ -365,7 +373,7 @@ flowchart TD
   class door_engineering_workshop,door_battery_hall_2,door_plant_room,lock_security_equipment_locker,lock_optigrid_tool_case,lock_extraction_gobag,lock_esd_pushbutton lock
   class engineering_workshop,battery_hall_2,plant_room,main_entrance,operations_office,scada_control_room,security_office,battery_hall_1,loading_dock room
   class rfid_cloner,lock_pick_kit,maintenance_work_orders,scada_hmi_main_display,fingerprint_kit,optigrid_job_card_4782_back_page,access_control_export_hv_plant_room,analogue_thermometer_rack_bank_c_wall,h_gas_detector_panel,duty_round_panel,social_fabric_safehouse_card_encoded item
-  class npc_robert_vance,facility_access_keycard_level_1,npc_entropy_operative_relay,workshop_keycard_level_2,npc_voltage_critical_mass key
+  class npc_robert_vance,facility_access_keycard_level_1,spare_keycard_level_1,npc_entropy_operative_relay,workshop_keycard_level_2,npc_voltage_critical_mass key
   class action_meet_robert_vance,action_deal_with_voltage action
   class bms_jump_server_terminal,vmch_submit_network_scan_flag,vmch_submit_ftp_intel_flag,vmch_submit_distcc_exploit_flag,vmch_submit_privesc_flag vm
   class vmfl_submit_network_scan_flag,vmfl_submit_ftp_intel_flag,vmfl_submit_distcc_exploit_flag,vmfl_submit_privesc_flag flag
@@ -373,7 +381,7 @@ flowchart TD
   class aim_take_back_the_plant aim
 
   classDef optional stroke-dasharray:5 2
-  class facility_access_keycard_level_1 optional
+  class facility_access_keycard_level_1,spare_keycard_level_1 optional
   class node_start start
 ```
 
@@ -474,7 +482,7 @@ flowchart TD
   rc_safetynet_field_guide_distcc_12{"SAFETYNET Field Guide: distcc Exploitation"}
   rc_safetynet_field_guide_cyberchef_13{"SAFETYNET Field Guide: Encoding and Decoding with CyberChef"}
   rc_safetynet_field_guide_privesc_14{"SAFETYNET Field Guide: Privilege Escalation via Sudo"}
-  rc_safetynet_field_guide_proftpd_15{"SAFETYNET Field Guide: ProFTPD Backdoor"}
+  rc_safetynet_field_guide_proftpd_15{"SAFETYNET Field Guide: ProFTPD Exploitation Workflow"}
   rc_relayed_workshop_keycard_16{"Workshop Keycard (relayed copy)"}
   rc_npc_robert_vance_17("Robert Vance")
   rc_npc_agent_hax_18("Agent HaX")

@@ -19,7 +19,7 @@
 {"talk":"voltage","picks":["It's over","Then we do this the hard way"]},
 {"talk":"voltage","picks":[]},
 {"note":"The fight stance re-shown with Static down: arrest available, button stance available (case made)."},
-{"talk":"voltage","reload":"page","picks":["It's over","hard way","under arrest","Blackout signed it"]},
+{"talk":"voltage","reload":"page","picks":["It's over","hard way","coming with me","Blackout signed it"]},
 {"expect":{"voltage_captured":true,"blackout_named":true}},
 {"set":{"voltage_neutralised":true,"esd_authorized":true,"attack_prevented":true}},
 {"talk":"phone","reload":"page","picks":["Where do I stand","Right","Bring me in","Bring me in","On my way"]},

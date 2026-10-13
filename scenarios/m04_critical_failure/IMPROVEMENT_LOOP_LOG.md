@@ -440,3 +440,69 @@ Browser check of the round-3 checks, PASS5_PUZZLE_R3_BROWSER (games 2209–2210)
 - M-3: the debrief and credits assume Vance was met.
 
 Open for the user: R2-6 / m17 (SecGen check).
+
+## Phase 3: scenario design
+
+### Phase 3 scenario design, round 1
+
+Review: `SCENARIO_DESIGN_REVIEW_P5_R1.md` (Opus, static; 0 blockers, 1 major, 17 minors; the second half finished by the orchestrator from the reviewer's hand-back after a safety stop) plus browser minors M-1 to M-3 from `PASS5_PUZZLE_R3_BROWSER.md`. Each finding checked against the files first. The do-not-open rule held.
+
+| # | Sev. | Finding | Decision and reason | Outcome |
+|---|---|---|---|---|
+| M1 | major | The debrief reflects on none of the OT-network weaknesses the four flags expose, and says the cross-cell paper is still "for forensics" when flag 2 has already shown it | **Yes** (orchestrator, decision 1): these are the mission's MAT, SS and NS lessons; m02 and m03 both name theirs | **Fixed.** `debrief_what_failed` gains three lines at the brief's "VM side, at a high level" level (a legacy compile service left running and trusted on an OT box; an FTP service that handed over the cross-cell plan; a jump-server account with too much privilege) and one fix line. The `else` of the intelligence beat now credits the FTP drop. **Check against SecGen by the user** |
+| m9 | minor | Canon: "You're under arrest" | **Change m04 now** (orchestrator, decision 2); m01, m02, m06 to the backlog | **Fixed.** Bible: SAFETYNET has no jurisdiction or arrest powers; agents detain and hand over to the police (`story_design/universe_bible/02_organisations/safetynet/overview.md`, "The Cost of Independence"; PASS2 lesson 39). Voltage's choices: "Step away from the bench. You're coming with me." / "Hands on the bench. The police can have you."; HaX's hint "take him and hand him to the police" / "he's yours to hand over". Globals and credits unchanged ("in custody" is true after hand-over). Voltage's own "Above him it stops being a person you can arrest" is left: it's his line about the police, not a SAFETYNET power |
+| m1 | minor | No prompt when Hall 2's reader refuses a player with no Level 1 card | As proposed | **Fixed.** HaX mapping on `door_unlock_failed:battery_hall_2` (no clone, no spare), onceOnly |
+| m2 | minor | HaX's 61°C call opens itself the instant the dial is touched | **Make it safe** (orchestrator) | **Fixed** with m03's P3-3 pattern: a text that opens the call when clicked ("Sixty-one on that dial? Call me when you're clear of it.", 6 s, spaced from the 1.2 s ESD-live text), plus a hub re-offer "[You wanted to talk about the dial reading.]" until heard (`anomaly_call_heard`). No auto-opened chat can now close the dial view |
+| m3 | minor | Static idles beside a knocked-out Voltage | As proposed | **Fixed.** Static mapping on `npc_ko:voltage` (stood aside, not engaged, not down) sets `static_left` and a new `static_left_alone`; the existing hide and re-hide apply; credit twin "STATIC: stood aside, and slipped out when Voltage fell" |
+| m4 / M-3 | minor | Vance speaks in, and is thanked in, a debrief he was never part of | As proposed | **Fixed.** The debrief reads `vance_met` / `vance_is_ally`: no "Vance needs to hear it too", no Vance reactions or final words, no "Vance will want every line", and two not-met farewells ("Make sure the site manager gets the report." / "Just doing my job.") → HaX: "He'll get it. He'll want to know who was in his plant tonight, and why nobody told him." Credits: "ROBERT VANCE: never met — you went round him"; "never told" now needs `vance_met` |
+| m5 | minor | "Vindicated — his warning broke the case open" overclaims | As proposed | **Fixed.** "ROBERT VANCE: brought in — ran the desk while you ran the halls" |
+| m6 | minor | The debrief names Blackout while the credits hide him | As proposed (option 1) | **Fixed.** That debrief line sets `blackout_named` (HaX names him, so the player has now heard it) |
+| m7 | minor | "So far he's given us one thing" vs "Voltage put it at six cities" | As proposed | **Fixed.** `voltage_six_cities` (synced) is set in `voltage_negotiation_attempt`; the debrief says "Voltage told you six cities, in the plant room." only then, otherwise "The documents name several cities." |
+| m8 | minor | HaX's first call offers an untrue "I told him the truth… He's in." | As proposed | **Fixed.** Choice deleted, with its now-orphaned reply knot |
+| m10 | minor | The alarm texts land while Vance's chat is open | As proposed (option 1) | **Fixed.** The three `crew_warned` texts wait 8 s (were 3) |
+| m11 | minor | Optional tasks read as required | **Mission-local stopgap** (orchestrator); engine styling is a question for the user (decision 4) | **Fixed.** "(Optional) Deal with the intruder in Battery Hall 1" and "(Optional) Find evidence of the break-in" |
+| M-2 | minor | "Find the OT engineer on shift" stays open for ever when Vance is never met | **Make it optional** (orchestrator's first option): completing it any other way would tick a task the player didn't do | **Fixed.** `meet_robert_vance` is optional and titled "(Optional) Find the OT engineer on shift". The "Get Inside" aim now completes on entering the ops office, so the next aim can appear before Vance is met |
+| m12 | minor | "Hall 2 opens on Vance's card" to a player with the spare | As proposed | **Fixed.** "…Hall 2 opens on any Level 1 card." |
+| m13 | minor | Stale comments (globalVarOnKO emitting; the race "restarts" on reload) | As proposed | **Fixed** (three comments; no logic change) |
+| m14 | minor | `agent_0x99_debrief` in the phone's `npcIds` | As proposed | **Fixed** (removed) |
+| m15 | minor | Graph metadata gaps (the spare; the cloner into the workshop) | As proposed | **Fixed.** The validator now notes "2 items point to engineering_workshop", which is the point: Relay's card and the clone are both routes |
+| m16 | minor | Field guide item name doesn't match the sheet | As proposed | **Fixed.** "SAFETYNET Field Guide: ProFTPD Exploitation Workflow" (title only; the sheet itself was not opened) |
+| m17 | minor | A reload mid-debrief ends the mission with no credits | **Accept and log** (orchestrator) | **Accepted.** Same pattern as m03, where it was accepted; a fix would be an engine item (credits on mission conclusion). No browser check run in this session |
+| M-1 | minor | Flags in with the dial unread: "Get to the ESD", then "the ESD won't arm" | **No back-to-back contradiction** (orchestrator) | **Fixed.** With the dial unread, the aim-complete text is the variant without "The trigger is in the plant room. Get to the ESD."; the dial text follows it |
+
+New globals: `static_left_alone`, `voltage_six_cities`. New routes: `r17_never_met_vance.json` (the never-met-Vance ending: debrief and credits) and `r18_voltage_punched_static_aside.json` (Static slips out). The driver gains a `ko` step that applies the scenario's `npc_ko` mappings. r3 updated for the new arrest wording. 18 of 18 routes pass.
+
+#### Checks (static; no browser session)
+
+Ink compiles (10 files). Validator, full: schema passed, all ink valid, doors and geometry OK; 16 warnings: the earlier set, the map_the_attack handler count now 4 (the setter and three disjoint texts), and the m15 multiple-paths note. A timed-text spacing warning introduced by m2 was fixed by moving the call text to 6 s. dialoguelint: 0 errors, 5 blank-reentry checks. reopencheck: 0 problems (missions.json m04 globals regenerated, 85). tagdiff against HEAD: 50 structural differences, all from this round. inkcheck and loopcheck over the debrief (Vance never met; met with high trust, six cities; Vance KO'd), Voltage with Static down, and the HaX phone entry and hub after the dial: clean. Door alignment OK.
+
+#### Spoken lines changed (old → new)
+
+HaX, debrief:
+- New (what failed): "On the network it was the same story." / "A legacy compile service left running on an OT box, trusting whatever it was sent." / "An FTP service that handed their cross-cell plan to anyone who looked. And an account on the jump server with far more privilege than its job needed." / "Old services off the OT network, and privileges somebody actually reviews." (check against SecGen by the user)
+- "The paper's still in the plant room. Forensics will bag it, but I'd rather you'd read it." → "Their FTP drop already put Critical Mass and Social Fabric on the same job. The paper in the plant room would have signed it."
+- "Voltage put it at six cities." → "Voltage told you six cities, in the plant room." (only when he said it; otherwise the existing "The documents name several cities.")
+- "How do we handle this publicly? Vance needs to hear it too." → "How do we handle this publicly?" plus "Vance needs to hear it too." only when Vance was met.
+- New: choices "[It goes in the report.]", "[Make sure the site manager gets the report.]", "[Just doing my job.]" (not-met), and "He'll get it. He'll want to know who was in his plant tonight, and why nobody told him."
+
+HaX, phone:
+- "Static's down, so he's got nobody. You can arrest him." → "Static's down, so he's got nobody. You can take him and hand him to the police."
+- "With Static still up, you won't take him quietly. Put Static down and the arrest is yours." → "…Put Static down and he's yours to hand over."
+- "Relay carries one. She walks Hall 2, and Hall 2 opens on Vance's card." → "…and Hall 2 opens on any Level 1 card."
+- Deleted: choice "[I told him the truth about ENTROPY. He's in.]" and "Bold. If he's in, use him. He knows how they'd have moved through those systems."
+- New: hub choice "[You wanted to talk about the dial reading.]".
+
+HaX, texts:
+- New: "Sixty-one on that dial? Call me when you're clear of it." (the 61°C call now opens from this text)
+- New: "That reader wants a Level 1 card. Vance's is old prox: stand close while he talks and the cloner reads it. Or the spare in the security locker."
+- New variant (dial unread): "Their route in, proven. They pushed the charge-ceiling override from that box, and the bypass modules hide it."
+
+Voltage (choices): "[Step away from the bench. You're under arrest.]" → "[Step away from the bench. You're coming with me.]"; "[Hands on the bench. You're under arrest.]" → "[Hands on the bench. The police can have you.]"
+
+Not spoken: credits "ROBERT VANCE: vindicated — his warning broke the case open" → "ROBERT VANCE: brought in — ran the desk while you ran the halls"; new "ROBERT VANCE: never met — you went round him"; new "STATIC: stood aside, and slipped out when Voltage fell"; task titles with "(Optional)"; the field guide's item name.
+
+#### Open after round 1
+
+- Browser checks: the dial text opening the call (and the hub re-offer); the Hall 2 refusal text; Static slipping out on Voltage's KO; the aims now that "Get Inside" completes without Vance.
+- The user: M1's lines and R2-6 / m17 against SecGen; decision 4 (optional-task styling in the engine).
+- Backlog (orchestrator): "under arrest" in m01, m02, m06.

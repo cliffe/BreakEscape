@@ -571,7 +571,9 @@
       "static_left": false,
       "vance_print_lifted": false,
       "level1_card_held": false,
-      "checkpoint_passed": false
+      "checkpoint_passed": false,
+      "static_left_alone": false,
+      "voltage_six_cities": false
     },
     "npcs": [
       {

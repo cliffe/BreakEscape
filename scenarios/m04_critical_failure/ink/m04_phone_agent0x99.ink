@@ -61,6 +61,9 @@ VAR level1_card_held = false
 VAR checkpoint_passed = false
 // Puzzle chains R4-3: the print is already lifted (set on every lift). Read only.
 VAR vance_print_lifted = false
+// Scenario design m2: the 61°C call now arrives as a text the player clicks;
+// the hub re-offers it if the text was missed (m03 P3-19). Local.
+VAR anomaly_call_heard = false
 VAR robert_vance_ko = false
 VAR plant_reader_seen = false
 VAR plant_room_entered = false
@@ -127,6 +130,9 @@ EXTERNAL player_name()
 // A4: the way out once the shutdown is in. First, because it ends the mission.
 + {attack_prevented and not mission_complete} [I'm done here. Bring me in.]
     -> extract_offer
+
++ {anomaly_detected and not anomaly_call_heard and not attack_prevented} [You wanted to talk about the dial reading.]
+    -> on_anomaly_confirmed
 
 + {voltage_fight_started and not voltage_neutralised and not racks_vented and not hint_race_given} [He's going for the laptop!]
     -> hint_race
@@ -330,9 +336,9 @@ Or put her down. She won't chase far, so if she turns on you, back off and cross
 He's costed tonight to the decimal. Don't expect to talk him round.
 Go for him and it's a race to his laptop. Drop him fast.
 {operative_static_defeated:
-    Static's down, so he's got nobody. You can arrest him.
+    Static's down, so he's got nobody. You can take him and hand him to the police.
 - else:
-    With Static still up, you won't take him quietly. Put Static down and the arrest is yours.
+    With Static still up, you won't take him quietly. Put Static down and he's yours to hand over.
 }
 {attack_mechanism_known and anomaly_detected:
     Or go for the button and let him run. Grid control will take the shed now.
@@ -442,6 +448,7 @@ Relay's down. I've pulled her Level 2 number off the reader logs and pushed you 
 
 === on_anomaly_confirmed ===
 #speaker:agent_0x99
+~ anomaly_call_heard = true
 Nightshade's got your reading. Sixty-one degrees on the Hall 1 battery thermometer, against twenty-eight on the screens.
 His words: those cells are past safe, and they won't wait for 0800, trigger or no trigger.
 The screens lie because ENTROPY feed them. That dial isn't on ENTROPY's network.
@@ -526,9 +533,8 @@ Agent, status check. Are you inside the facility?
 * [Sceptical, but he's going along with the audit.]
     -> vance_skeptical_acknowledged
 
-* [I told him the truth about ENTROPY. He's in.]
-    ~ handler_confidence += 10
-    -> vance_revealed_acknowledged
+// Scenario design m8: "I told him the truth… He's in." was removed: this knot is
+// reached only when vance_is_ally is false, so it was always untrue.
 
 === vance_cooperation_acknowledged ===
 #speaker:agent_0x99
@@ -541,15 +547,6 @@ Good. Hold the cover until you've got hard evidence. Then bring him in.
 #speaker:agent_0x99
 
 Keep him onside. Find proof of the breach and it'll convince him for you.
-
--> first_call_objectives
-
-=== vance_revealed_acknowledged ===
-#speaker:agent_0x99
-
-~ handler_confidence += 10
-
-Bold. If he's in, use him. He knows how they'd have moved through those systems.
 
 -> first_call_objectives
 
@@ -846,7 +843,7 @@ Two hundred and forty thousand people are on that grid.
     {relay_card_cloned or operative_relay_defeated:
         You've got Relay's. Use it on the workshop door.
     - else:
-        Relay carries one. She walks Hall 2, and Hall 2 opens on Vance's card.
+        Relay carries one. She walks Hall 2, and Hall 2 opens on any Level 1 card.
     }
 - not attack_mechanism_known:
     // Puzzle chains R2-1: the paper-evidence branch is gone (the gate is retired;

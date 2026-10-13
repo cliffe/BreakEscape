@@ -183,6 +183,8 @@ Look at my hand. Then look at the clock.
 
 === voltage_negotiation_attempt ===
 #speaker:voltage
+// Scenario design m7: the debrief can say he told you this.
+#set_global:voltage_six_cities:true
 
 You want to talk? Fine.
 
@@ -302,7 +304,10 @@ Narrator: The laptop is open on the plant-room bench with the trigger armed on s
     ~ voltage_dialogue_outcome = "fought"
     -> choice_fight
 
-+ {operative_static_defeated} [Step away from the bench. You're under arrest.]
+// Scenario design m9 (orchestrator decision 2): SAFETYNET has no arrest powers;
+// agents detain and hand over to the police (bible safetynet/overview.md, "The
+// Cost of Independence"; PASS2 lesson 39). Globals and credits unchanged.
++ {operative_static_defeated} [Step away from the bench. You're coming with me.]
     ~ voltage_dialogue_outcome = "arrested"
     -> choice_arrest
 
@@ -446,7 +451,7 @@ Narrator: The dock door bangs open onto the loading bay and the cold, and he's g
     #exit_conversation
     -> voltage_after_trigger
 
-+ {operative_static_defeated} [Hands on the bench. You're under arrest.]
++ {operative_static_defeated} [Hands on the bench. The police can have you.]
     ~ voltage_captured = true
     ~ voltage_confronted = true
     #complete_task:confront_voltage

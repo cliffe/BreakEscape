@@ -46,6 +46,12 @@ VAR voltage_print_on_bypass = false
 // Pass 5 decision 1: Vance's evacuation alarm (crew_warned) and a vent with the
 // crew still in Hall 2 (crew_lost, set by HaX's racks_vented mapping). Read only.
 VAR crew_warned = false
+// Scenario design round 1 (m4, browser M-3): Vance may never have been met.
+// m6: HaX naming Blackout counts as hearing the name. m7: Voltage said "six
+// cities" in the plant room. Synced globals; vance_met / vance_is_ally read only.
+VAR vance_met = false
+VAR vance_is_ally = false
+VAR voltage_six_cities = false
 VAR crew_lost = false
 // Round 2 (review M1, m1): the alarm came before the attack was mapped (it
 // started its own clock), and that clock is what vented the bank. Read only.
@@ -135,6 +141,7 @@ Agent, report.
 #speaker:agent_0x99
 
 {voltage_captured:
+    #set_global:blackout_named:true
     Good. Nobody else in that building knows the chain above Blackout.
 
     He'll talk. Men like him always want to explain themselves.
@@ -181,7 +188,8 @@ The directive said it: Zero Day supplies, Critical Mass executes, grid storage t
 {lore_cross_cell_coordination_found or lore_architect_directive_found:
     The documents show Critical Mass and Social Fabric coordinating the one attack, in their own handwriting.
 - else:
-    The paper's still in the plant room. Forensics will bag it, but I'd rather you'd read it.
+    // Scenario design M1: the required FTP flag already showed the cross-cell link.
+    Their FTP drop already put Critical Mass and Social Fabric on the same job. The paper in the plant room would have signed it.
 }
 
 {lore_safehouse_address_found:
@@ -213,10 +221,20 @@ Agent HaX: Before you write it up. Three things let them in. Two of them let you
 }
 Agent HaX: The HV door took one finger, and that finger was on a panel he touched every two hours. A print names you. It can't prove you're the one standing there.
 Agent HaX: And the control room believed its own sensors. The honest instruments were the ones nobody had wired to the bus: a dial, and a gas monitor nobody read.
+// Scenario design M1 (orchestrator decision 1): what the four flags exposed, at
+// the brief's level (no commands, ports or exploit detail). Check against SecGen
+// by the user.
+Agent HaX: On the network it was the same story.
+Agent HaX: A legacy compile service left running on an OT box, trusting whatever it was sent.
+Agent HaX: An FTP service that handed their cross-cell plan to anyone who looked. And an account on the jump server with far more privilege than its job needed.
 Agent HaX: Encrypted cards. A second factor on the HV door, and a reader that checks for a live finger.
 Agent HaX: A temperature gauge in every hall that isn't on the bus, and somebody reading it.
+Agent HaX: Old services off the OT network, and privileges somebody actually reviews.
 
-* [It goes in the report. Vance will want every line.]
+* {vance_met or vance_is_ally} [It goes in the report. Vance will want every line.]
+    -> debrief_big_picture
+
+* {not vance_met and not vance_is_ally} [It goes in the report.]
     -> debrief_big_picture
 
 * [The budget let them in as much as the readers did.]
@@ -250,8 +268,10 @@ This site was a rehearsal. The real thing is bigger, and it's coming.
 === debrief_scale_explanation ===
 #speaker:agent_0x99
 
-{voltage_captured:
-    Voltage put it at six cities.
+// Scenario design m7: he said it in the plant room (voltage_six_cities); in
+// custody he has given only his casualty figure.
+{voltage_six_cities:
+    Voltage told you six cities, in the plant room.
 
     OptiGrid, their cover firm, has contracts at forty sites nationwide. We're auditing every one.
 - else:
@@ -341,7 +361,10 @@ First, one more decision.
 
 // Robert Vance present, listening
 
-How do we handle this publicly? Vance needs to hear it too.
+How do we handle this publicly?
+{(vance_met or vance_is_ally) and not robert_vance_ko:
+    Vance needs to hear it too.
+}
 
 * [Full public disclosure. People have a right to know.]
     -> disclosure_full_public
@@ -359,7 +382,7 @@ How do we handle this publicly? Vance needs to hear it too.
 
 Full transparency. The attack, the holes it came through, ENTROPY. All of it.
 
-{not robert_vance_ko:
+{(vance_met or vance_is_ally) and not robert_vance_ko:
     // Robert Vance reacts
     #speaker:robert_vance
     {vance_trust_level >= 70:
@@ -383,7 +406,7 @@ Netherton will back that.
 
 We classify it. A maintenance fault, resolved. Albion patches the holes quietly.
 
-{not robert_vance_ko:
+{(vance_met or vance_is_ally) and not robert_vance_ko:
     // Robert Vance reacts
     #speaker:robert_vance
     {vance_trust_level >= 70:
@@ -407,7 +430,7 @@ Netherton won't argue.
 
 An incident, acknowledged. No detail.
 
-{not robert_vance_ko:
+{(vance_met or vance_is_ally) and not robert_vance_ko:
     // Robert Vance reacts
     #speaker:robert_vance
     {vance_trust_level >= 70:
@@ -439,7 +462,7 @@ Done.
     A controlled statement goes to the press.
 }
 
-{not robert_vance_ko:
+{(vance_met or vance_is_ally) and not robert_vance_ko:
     // Robert Vance final words
     #speaker:robert_vance
     {vance_trust_level >= 80:
@@ -469,11 +492,18 @@ Done.
 
 #speaker:agent_0x99
 
-* {not robert_vance_ko} [It was an honour working with you, Mr Vance.]
+* {(vance_met or vance_is_ally) and not robert_vance_ko} [It was an honour working with you, Mr Vance.]
     -> debrief_end_respectful
 
-* {not robert_vance_ko} [Just doing my job.]
+* {(vance_met or vance_is_ally) and not robert_vance_ko} [Just doing my job.]
     -> debrief_end_professional
+
+// Scenario design m4 / browser M-3: the player never met him.
+* {not vance_met and not vance_is_ally and not robert_vance_ko} [Make sure the site manager gets the report.]
+    -> debrief_end_not_met
+
+* {not vance_met and not vance_is_ally and not robert_vance_ko} [Just doing my job.]
+    -> debrief_end_not_met
 
 * {robert_vance_ko} [Make sure Vance gets the full credit when he comes round.]
     -> debrief_end_ko
@@ -494,6 +524,13 @@ Robert Vance: That stops on my shift.
 #speaker:robert_vance
 
 Robert Vance: I'll have those card readers out by the end of the week.
+
+-> mission_complete
+
+=== debrief_end_not_met ===
+#speaker:agent_0x99
+
+He'll get it. He'll want to know who was in his plant tonight, and why nobody told him.
 
 -> mission_complete
 
