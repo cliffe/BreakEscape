@@ -517,3 +517,53 @@ Spoken lines changed: none.
 - A first console lockout: the strain, HaX's text, `console_tripped`, and the "FOUND BY ELIMINATION" credit.
 - The signing case visible on the desk, and tappable without catching Satoshi or the manifesto.
 - Whether Kemal's sight challenge can open over a running dusting minigame.
+
+### Phase 2 puzzle chains, round 3
+
+Review: `PUZZLE_CHAINS_REVIEW_P5_R3.md` (Opus, read-only, static, with an engine-evaluator probe `probe_console_engine.js`). It settles the open F1 question statically: a cancel after one wrong try also emits `result: null`, because the pad sets `gameResult` only on success or lockout. The flat `data.result` test is therefore safe from cancels, but it misses the "one guess, cancel, reopen" sweep. Counts: 0 blockers, 1 major, 3 minors, all fixed with the reviewer's mission-local fix.
+
+| # | Sev. | Finding | Outcome |
+|---|---|---|---|
+| M-R3-1 | major | One guess per opening never locked the console out (the pad's count resets on every opening, and a wrong guess under the limit leaves `result` null), so "TRACED THROUGH THE MIXER" was open to guessing for every player | **Fixed** (orchestrator, the reviewer's fix). The console is `maxAttempts: 1`, so every wrong slot closes the pad with a non-null `result`. Strikes are counted across openings by three `minigame_failed` mappings in a deliberate order (the dispatcher runs listeners in array order and `setGlobal` is synchronous): (1) second and later strikes, `console_warned === true` → `console_tripped`; (2) second strike, once, if the cover isn't already strained → the cover strain with "That console logs every slot it opens. Somebody's phone just buzzed."; (3) first strike, `console_warned !== true`, once → `console_warned` and "That console just logged a slot that wasn't the fund. One more and somebody's phone goes." All three need `data.minigameName === 'PinMinigame' && data.result && globalVars.at_console === true && globalVars.found_architects_fund !== true`. New synced globals `console_warned` and `at_console` (in `missions.json`). The erb comment explains the order |
+| m-R3-1 | minor | A lockout at the CEO's safe (early-KO route) wrote a false "found by elimination" credit and debrief line | **Fixed** with M-R3-1's scope: `at_console` is set on `room_entered:data_center` and cleared on `room_entered:server_room` and `room_entered:executive_wing` (cooldown 0, not onceOnly), replacing `entered_data_center`, so the safe never matches. This also closes the strain-text edge round 2 had accepted. Route r18 |
+| m-R3-2 | minor | A player whose cover was already strained got no signal at a console lockout | **Fixed** with M-R3-1: the first-strike warning fires whatever the cover's state. r16 checks it |
+| m-R3-3 | minor | The walkthrough quoted Satoshi's old strain line | **Fixed.** "Somebody here rang the FCA tonight. They've never heard of you." |
+
+#### Decisions taken (with reasons)
+
+- **Count strikes in globals, not with the engine** (orchestrator). The pad keeps its count per opening, and the condition evaluator can't read `data.result.attempts` (D5). With one try per opening, every strike is visible as a flat non-null `result`. One honest slip is free and warned; a second costs the strain once and the credit. That is the "two strikes" D1 meant, without the per-opening reset.
+- **Scope by place (`at_console`)** (orchestrator). `minigame_failed` carries no object id; the data centre is the only room where the console can be open, and leaving it by either door clears the scope.
+- **The warning skips once the fund is found**, so a stray PIN failure afterwards says nothing.
+
+#### Route driver
+
+The driver now evaluates the scenario's real mappings, as the reviewer asked:
+- A port of the engine's condition rules (`&&`-terms; `value`, `name`, `data.<one name>`, `globalVars.<name>`; negation; comparison with a literal; bare truthiness). It reports unsupported terms, as the engine logs them.
+- It reads every literal `eventPattern` mapping out of the erb, in file order.
+- `{"strike": "wrong" | "cancel"}` fires the real `minigame_failed` mappings.
+- `{"room": x}` fires the real `room_entered:x` mappings (setGlobals and texts). These replace the hand-modelled data-centre and latch logic.
+- ERB-generated mappings (the per-room loops, the call-in) are still modelled.
+
+Routes:
+- r14 and r16 are rewritten with strikes.
+- New `r17_one_slip_then_correct`: one strike warns; leave, return, cancel; no strain, no `console_tripped`; credit TRACED THROUGH THE MIXER.
+- New `r18_early_ko_safe_lockout`: two failed attempts at the CEO's safe with `at_console` false trip nothing; the credit stays TRACED.
+
+#### Checks (static; no browser session started)
+
+- Ink compiles (9 files; no ink changed).
+- Validator, full: all passes; no unknown fields, no toast-stacking warnings. 20 duplicate-pattern notes; the new `room_entered` scope mappings share patterns with the existing ones and only set `at_console`.
+- `dialoguelint`: no findings.
+- `check_door_alignment.py`: all doors OK.
+- `tagdiff` against HEAD: structure unchanged.
+- `reopencheck` (m06 block: `console_warned`, `at_console` added): m06 HaX phone, 1800 reopens, 0 problems.
+- Routes r1–r18: all expectations met, with no unsupported condition terms reported.
+
+#### Spoken lines changed (old → new)
+
+- HaX text, new: "That console just logged a slot that wasn't the fund. One more and somebody's phone goes."
+- "That console logs every slot it opens. Somebody's phone just buzzed." is unchanged in wording; it now plays on the second strike.
+
+#### Next
+
+The reviewer's ten-item browser checklist (`PUZZLE_CHAINS_REVIEW_P5_R3.md`, "Final browser checklist for closing the phase"). Item 1's "before any fix" half no longer applies to this build. The rest covers: the strikes, the old bypass closed, the safe not counting, Irina's per-visit check, the signing case's render and tap area, and Kemal's sight challenge over dusting.

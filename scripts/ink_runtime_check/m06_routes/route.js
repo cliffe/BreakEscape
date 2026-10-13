@@ -7,8 +7,10 @@
 //   {"set": {...}}                          globals the engine would set (pickups, flags, safe)
 //   {"talk": "irina", "knot": "opt", "picks": ["substr", 0, ...], "reload": true|"page"}
 //   {"room": "trading_floor"}               the player enters a room (HaX's room_entered mappings)
-//   {"lockout": true | "cancel"}           two wrong slots in one opening of the custody console,
-//                                           or a cancel (result null: nothing fires)
+//   {"strike": "wrong" | "cancel"}         a PIN pad closes on a wrong code (console: maxAttempts 1)
+//                                           or a cancel; the erb's real minigame_failed mappings
+//                                           are evaluated (scoped by at_console)
+//   {"room": "x"} also evaluates the erb's literal room_entered:x mappings (setGlobal, texts)
 //   {"ko": "trader_npc"}                    a KO, with the scenario's npc_ko / globalVarOnKO effects
 //   {"expect": {"global": value, ...}}      assert globals; prints PASS/FAIL and fails the run
 //   {"credits": true}                       print the credits lines whose conditions hold now,
@@ -64,6 +66,43 @@ function knotOfChoices(s) { const c = s.currentChoices[0]; if (!c) return null; 
 let heard = [];
 function out(t) { console.log(t); heard.push(t); }
 const cond = c => { try { return !!(new Function('globalVars', `return (${c});`))(G); } catch (e) { out(`   [condition error: ${c}]`); return false; } };
+// ---- real mappings (puzzle chains R3): the erb's literal eventMappings for a pattern,
+// in file order, evaluated with the engine's condition rules (npc-manager.js
+// safeEvaluateCondition: &&-terms; value / name / data.<one name> / globalVars.<name>;
+// negation; comparison with a literal; bare truthiness). ERB-generated mappings
+// (<%= %> patterns) are not included: the driver models those itself.
+function engineCond(str, data) {
+  const lit = t => { t = t.trim(); if (t === 'true') return true; if (t === 'false') return false; if (t === 'null') return null; if (t === 'undefined') return undefined; const n = Number(t); if (!isNaN(n) && t !== '') return n; const m = t.match(/^['"](.*)['"]$/); return m ? m[1] : t; };
+  const lhs = t => { t = t.trim(); if (t === 'value') return data.value; if (t === 'name') return data.name; let m = t.match(/^data\.(\w+)$/); if (m) return data[m[1]]; m = t.match(/^globalVars\.(\w+)$/); if (m) return G[m[1]]; return undefined; };
+  const one = e => { e = e.trim(); if (e.startsWith('!')) return !one(e.slice(1));
+    let m = e.match(/^(value|name|data\.\w+|globalVars\.\w+)\s*(===|!==|>=|<=|>|<)\s*(.+)$/);
+    if (m) { const a = lhs(m[1]), b = lit(m[3]); return { '===': a === b, '!==': a !== b, '>=': a >= b, '<=': a <= b, '>': a > b, '<': a < b }[m[2]]; }
+    if (/^(value|name|data\.\w+|globalVars\.\w+)$/.test(e)) return !!lhs(e);
+    out(`   [engine: unsupported condition term "${e}" -> false]`); return false; };
+  return str.split('&&').every(one);
+}
+const MAPS = (() => {
+  const src = stripErb(erb), list = [];
+  const re = /"eventPattern": "([^"<]+)"/g; let m;
+  while ((m = re.exec(src))) {
+    let i = m.index, d = 0; for (; i >= 0; i--) { if (src[i] === '}') d++; if (src[i] === '{') { if (!d) break; d--; } }
+    let j = m.index; d = 0; for (; j < src.length; j++) { if (src[j] === '{') d++; if (src[j] === '}') { if (!d) break; d--; } }
+    try { list.push(JSON.parse(src.slice(i, j + 1))); } catch (e) { /* not a flat mapping */ }
+  }
+  return list;
+})();
+const usedOnce = new Set();
+function fire(pattern, data) {
+  MAPS.forEach((mp, idx) => {
+    if (mp.eventPattern !== pattern) return;
+    if (mp.onceOnly && usedOnce.has(idx)) return;
+    if (mp.condition && !engineCond(mp.condition, data)) return;
+    if (mp.onceOnly) usedOnce.add(idx);
+    for (const [k, v] of Object.entries(mp.setGlobal || {})) setG(k, v, `${pattern} mapping`);
+    const tm = mp.sendTimedMessage;
+    if (tm && !(tm.skipIfGlobal && G[tm.skipIfGlobal])) out(`      [HaX text: ${tm.message}]`);
+  });
+}
 function setG(k, v, why) { if (G[k] !== v) { G[k] = v; out(`      [engine: ${why} -> ${k}=${v}]`); } }
 let debriefOpened = false;
 function engine() {
@@ -107,7 +146,7 @@ for (const step of route.steps) {
     if (step.room === 'trading_floor') { G.guard_resolved = true; G.rfid_guide_offered = true; }
     if (step.room === 'security_checkpoint') G.lockpick_guide_offered = true;
     if (step.room === 'server_room') G.server_room_entered = true;
-    if (step.room === 'data_center') { G.entered_data_center = true; if (G.irina_recruited && !G.found_architects_fund && G.slot_checked_visit) setG('slot_checked_visit', false, 'a new visit to the console'); }
+    fire('room_entered:' + step.room, {});
     engine(); continue;
   }
   if (step.backstops) {
@@ -128,15 +167,14 @@ for (const step of route.steps) {
     for (const x of step.notSaid || []) { const ok = !text.includes(x.toLowerCase()); if (!ok) stats.fails++; console.log(`   [${ok ? 'PASS' : 'FAIL'}] not said: "${x}"`); }
     heard = []; continue;
   }
-  if (step.lockout) {
-    // Puzzle chains M1/D1: two wrong slots in one opening of the custody console.
-    // HaX's minigame_failed mappings key on a bare data.result (browser follow-up
-    // F1: conditions read one level of data.<name> only). A cancel emits
-    // result: null, so {"lockout": "cancel"} changes nothing.
-    if (step.lockout === 'cancel') { out('   {custody console: cancelled (minigame_failed, result null): no mapping fires}'); continue; }
-    out('   {custody console: two wrong slots, pad locked}');
-    if (G.entered_data_center && !G.found_architects_fund && !G.cover_strained) { setG('cover_strained', true, 'custody console lockout'); out("      [HaX text: That console logs every slot it opens. Somebody's phone just buzzed.]"); }
-    if (G.entered_data_center && !G.found_architects_fund) setG('console_tripped', true, 'custody console lockout (every one, R2)');
+  if (step.strike) {
+    // Puzzle chains R3: a PIN pad closes. "wrong" = a wrong code at maxAttempts
+    // (result non-null), "cancel" = cancelled (result null). Which pad doesn't
+    // matter to the event; the mappings scope by at_console. Evaluates the erb's
+    // real minigame_failed mappings in order.
+    const wrong = step.strike === 'wrong';
+    out(`   {PIN pad: ${wrong ? 'wrong code, pad closes (result non-null)' : 'cancelled (result null)'}}`);
+    fire('minigame_failed', { minigameName: 'PinMinigame', success: false, result: wrong ? { success: false, attempts: 1, maxAttemptsReached: true } : null });
     engine(); continue;
   }
   if (step.ko) {

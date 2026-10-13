@@ -686,6 +686,8 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
     "minder_challenged": false,
     "signing_record_found": false,
     "console_tripped": false,
+    "console_warned": false,
+    "at_console": false,
     "slot_checked_visit": false,
 
     "cracking_guide_offered": false,
@@ -1278,39 +1280,64 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
               "sendTimedMessage": { "delay": 7000, "message": "Someone on that floor is going to ring the FCA. Get what you need before they do.", "skipIfGlobal": "assets_decided" }
             },
 <% end %>
-            <%# Pass 5 puzzle chains (M1, D1): the custody console allows two tries per
-                opening. A lockout (two wrong slots in one opening) strains the cover
-                once. minigame_failed carries no object id (base-minigame.js:99-104,
-                per the review), so the condition scopes it: a PIN pad that hit its
-                limit, in the data centre phase, before the fund. The only other PIN
-                pads that could be open then are the data-centre door (already open
-                once entered_data_center is set) and the CEO's safe (behind the
-                executive wing, which needs the fund, except on the early-KO route).
-                Browser follow-up (PASS5_PUZZLE_R1_BROWSER.md F1): mapping conditions
-                resolve only one level of data.<name> (npc-manager.js
-                safeEvaluateCondition), so data.result.maxAttemptsReached was always
-                false and nothing fired. Keyed now on a bare data.result, which is
-                null on a cancel (seen: {"result":null}) and an object on a lockout
-                (seen: {"result":{"attempts":2,"maxAttemptsReached":true}}). Still a
-                browser check: a cancel AFTER one wrong try, whose result the run
-                didn't record. Engine item in DECISIONS_PENDING.md (dotted paths). %>
+            <%# Pass 5 puzzle chains: the custody console's strike count.
+                M1/D1 (round 1) wanted two strikes; the pad's own count resets on every
+                opening (pin-minigame.js:57), so round 3 (M-R3-1) counts across openings
+                in globals instead. The console has maxAttempts 1: every wrong slot
+                closes the pad and emits minigame_failed with a non-null result; a
+                cancel emits result: null (base-minigame.js:12, 99-104), so a bare
+                data.result tells them apart. Mapping conditions read only one level of
+                data.<name> (browser follow-up F1; engine item D5), and the event has
+                no object id, so the place is scoped by at_console (set on entering the
+                data centre, cleared on leaving it for the server room or the wing),
+                which keeps the CEO's safe out (m-R3-1).
+                ORDER MATTERS: listeners run in array order and setGlobal is
+                synchronous, so the later strikes come first and the first strike last,
+                or a first strike would fall through into the second.
+                  1. second and later strikes: console_tripped (credit and debrief);
+                  2. second strike: the cover strain, once;
+                  3. first strike: console_warned and a warning, whatever the cover
+                     (m-R3-2). %>
             {
               "eventPattern": "minigame_failed",
-              "condition": "data.minigameName === 'PinMinigame' && data.result && globalVars.entered_data_center === true && globalVars.found_architects_fund !== true && globalVars.cover_strained !== true",
+              "condition": "data.minigameName === 'PinMinigame' && data.result && globalVars.at_console === true && globalVars.found_architects_fund !== true && globalVars.console_warned === true",
+              "onceOnly": false,
+              "cooldown": 0,
+              "setGlobal": { "console_tripped": true }
+            },
+            {
+              "eventPattern": "minigame_failed",
+              "condition": "data.minigameName === 'PinMinigame' && data.result && globalVars.at_console === true && globalVars.found_architects_fund !== true && globalVars.console_warned === true && globalVars.cover_strained !== true",
               "onceOnly": true,
               "setGlobal": { "cover_strained": true },
               "sendTimedMessage": { "delay": 2500, "message": "That console logs every slot it opens. Somebody's phone just buzzed.", "skipIfGlobal": "assets_decided" }
             },
-            <%# Puzzle chains R2 (M-R2-2): the strain above is once-only, so a player
-                whose cover was already strained paid nothing. Every lockout before the
-                fund sets console_tripped, which changes the fund credit (found by
-                elimination) and one debrief line. %>
             {
               "eventPattern": "minigame_failed",
-              "condition": "data.minigameName === 'PinMinigame' && data.result && globalVars.entered_data_center === true && globalVars.found_architects_fund !== true",
+              "condition": "data.minigameName === 'PinMinigame' && data.result && globalVars.at_console === true && globalVars.found_architects_fund !== true && globalVars.console_warned !== true",
+              "onceOnly": true,
+              "setGlobal": { "console_warned": true },
+              "sendTimedMessage": { "delay": 2000, "message": "That console just logged a slot that wasn't the fund. One more and somebody's phone goes.", "skipIfGlobal": "found_architects_fund" }
+            },
+            <%# Puzzle chains R3 (M-R3-1, m-R3-1): at_console is true only while the
+                player is in the data centre. %>
+            {
+              "eventPattern": "room_entered:data_center",
               "onceOnly": false,
               "cooldown": 0,
-              "setGlobal": { "console_tripped": true }
+              "setGlobal": { "at_console": true }
+            },
+            {
+              "eventPattern": "room_entered:server_room",
+              "onceOnly": false,
+              "cooldown": 0,
+              "setGlobal": { "at_console": false }
+            },
+            {
+              "eventPattern": "room_entered:executive_wing",
+              "onceOnly": false,
+              "cooldown": 0,
+              "setGlobal": { "at_console": false }
             },
             <%# Puzzle chains R2 (M-R2-1): a turned Irina checks one slot per visit, and
                 a visit is a trip back to the console. slot_checked_visit is synced
@@ -1838,10 +1865,11 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
         <%# PASS 4 fix 1: the fund document is no longer a free pickup. The custody
             console opens one slot's file by its four-digit number; the fund is the
             slot the ENTROPY money lands in after the mixer (see the comment at the
-            top of this file). Pass 5 puzzle chains (M1, D1): two tries per opening (maxAttempts 2; the
-            engine default is 5 and resets on each opening, which let every slot be
-            tried in two openings). A lockout strains the cover once (HaX's
-            minigame_failed mapping). The
+            top of this file). Pass 5 puzzle chains (M1, D1; R3 M-R3-1): one try per opening
+            (maxAttempts 1), so every wrong slot closes the pad and counts as a
+            strike. HaX's three minigame_failed mappings count strikes across
+            openings: the first warns, the second strains the cover (once) and sets
+            console_tripped, as does every later one. The
             PIN cracker is not in the kit (capability arc). %>
         {
           "type": "pc",
@@ -1852,7 +1880,7 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
           "lockType": "pin",
           "requires": "<%= fund_slot %>",
           "difficulty": "easy",
-          "maxAttempts": 2,
+          "maxAttempts": 1,
           "observations": "The custody console for the exchange's cold wallets. Key in a four-digit slot number and it opens that slot's custody file. The slots are listed on the transaction server. It logs every opening to the exchange's on-call phone.",
           "puzzle_graph_role": "lock",
           "puzzle_graph_note": "Follow the money: Priya's mixer deposits (amount, time) + the pool's fee and minimum hold + the settlement log's credits to slots -> slot <%= fund_slot %>. A turned Irina narrows it and confirms a slot the player names.",
