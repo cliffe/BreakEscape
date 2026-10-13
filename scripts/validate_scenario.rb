@@ -2539,8 +2539,9 @@ def check_common_issues(json_data, valid_item_types = nil)
               end
             end
 
-            # Validate background for person-chat cutscenes
-            unless mapping['background']
+            # Validate background for person-chat cutscenes. The engine falls back to the
+            # room's chatBackground (person-chat-background.js), so that counts too.
+            unless mapping['background'] || room['chatBackground']
               issues << "⚠️ WARNING: '#{mapping_path}' is a person-chat cutscene but has no 'background' property. Person-chat cutscenes should have a background image for better visual presentation (e.g., 'assets/backgrounds/hq1.png')"
             end
 
