@@ -245,21 +245,33 @@
    "name": "items",
    "objects": [
     {
-     "gid": 854,
-     "height": 17,
+     "gid": 1169,
+     "height": 26,
      "id": 1,
      "name": "",
      "rotation": 0,
      "type": "",
      "visible": true,
-     "width": 24,
-     "x": 44.0,
-     "y": 44.0
+     "width": 40,
+     "x": 36.0,
+     "y": 48.0
+    },
+    {
+     "gid": 1168,
+     "height": 16,
+     "id": 2,
+     "name": "",
+     "rotation": 0,
+     "type": "",
+     "visible": true,
+     "width": 10,
+     "x": 84.0,
+     "y": 42.0
     },
     {
      "gid": 1157,
      "height": 30,
-     "id": 2,
+     "id": 3,
      "name": "",
      "rotation": 0,
      "type": "",
@@ -269,9 +281,21 @@
      "y": 54.0
     },
     {
+     "gid": 1168,
+     "height": 16,
+     "id": 4,
+     "name": "",
+     "rotation": 0,
+     "type": "",
+     "visible": true,
+     "width": 10,
+     "x": 128.0,
+     "y": 42.0
+    },
+    {
      "gid": 1132,
      "height": 11,
-     "id": 3,
+     "id": 5,
      "name": "",
      "rotation": 0,
      "type": "",
@@ -283,7 +307,7 @@
     {
      "gid": 1142,
      "height": 54,
-     "id": 4,
+     "id": 6,
      "name": "",
      "rotation": 0,
      "type": "",
@@ -293,45 +317,45 @@
      "y": 86.0
     },
     {
-     "gid": 1051,
-     "height": 18,
-     "id": 6,
+     "gid": 1007,
+     "height": 62,
+     "id": 8,
      "name": "",
      "rotation": 0,
      "type": "",
      "visible": true,
-     "width": 23,
-     "x": 72.0,
-     "y": 30.0
-    },
-    {
-     "gid": 1153,
-     "height": 59,
-     "id": 7,
-     "name": "",
-     "rotation": 0,
-     "type": "",
-     "visible": true,
-     "width": 38,
+     "width": 44,
      "x": 198.0,
      "y": 86.0
     },
     {
      "gid": 1035,
      "height": 11,
-     "id": 9,
+     "id": 10,
      "name": "",
      "rotation": 0,
      "type": "",
      "visible": true,
      "width": 35,
      "x": 216.0,
-     "y": 26.0
+     "y": 23.0
+    },
+    {
+     "gid": 828,
+     "height": 20,
+     "id": 11,
+     "name": "",
+     "rotation": 0,
+     "type": "",
+     "visible": true,
+     "width": 16,
+     "x": 14.0,
+     "y": 150.0
     },
     {
      "gid": 1143,
      "height": 31,
-     "id": 10,
+     "id": 12,
      "name": "",
      "rotation": 0,
      "type": "",
@@ -387,7 +411,7 @@
    "objects": [
     {
      "height": 8,
-     "id": 5,
+     "id": 7,
      "name": "collision",
      "rotation": 0,
      "type": "",
@@ -398,18 +422,18 @@
     },
     {
      "height": 8,
-     "id": 8,
+     "id": 9,
      "name": "collision",
      "rotation": 0,
      "type": "",
      "visible": true,
-     "width": 34,
+     "width": 40,
      "x": 200.0,
      "y": 78.0
     },
     {
      "height": 10,
-     "id": 11,
+     "id": 13,
      "name": "collision",
      "rotation": 0,
      "type": "",
@@ -427,7 +451,7 @@
   }
  ],
  "nextlayerid": 14,
- "nextobjectid": 12,
+ "nextobjectid": 14,
  "orientation": "orthogonal",
  "renderorder": "right-down",
  "tiledversion": "1.11.2",
@@ -2860,7 +2884,7 @@
    "margin": 0,
    "name": "objects/hospital_extras",
    "spacing": 0,
-   "tilecount": 357,
+   "tilecount": 359,
    "tileheight": 60,
    "tiles": [
     {
@@ -5004,6 +5028,18 @@
      "image": "../objects/hce_phd_frame1.png",
      "imageheight": 19,
      "imagewidth": 24
+    },
+    {
+     "id": 367,
+     "image": "../objects/hce_sconce1.png",
+     "imageheight": 16,
+     "imagewidth": 10
+    },
+    {
+     "id": 368,
+     "image": "../objects/hce_art_canvas1.png",
+     "imageheight": 26,
+     "imagewidth": 40
     }
    ],
    "tilewidth": 60

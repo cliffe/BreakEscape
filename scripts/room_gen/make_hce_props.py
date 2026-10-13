@@ -339,6 +339,41 @@ def phd_frame():
     c.save(OBJ, "hce_phd_frame1")
 
 
+def sconce():
+    """A brass wall sconce with a warm glow above and below, 10x16."""
+    w, h = 10, 16
+    c = Canvas(w, h)
+    glow = (250, 200, 120, 90)
+    for y in range(0, 5):
+        for x in range(2 + (4 - y) // 2, 8 - (4 - y) // 2):
+            c.px(x, y, glow)
+    c.rect(2, 5, 7, 9, (250, 226, 170))
+    c.frame(2, 5, 7, 9, GOLD_DARK)
+    c.rect(4, 10, 5, 12, GOLD_DARK)
+    c.rect(3, 13, 6, 13, GOLD)
+    for y in range(14, 16):
+        c.hline(3, 6, y, (250, 200, 120, 60))
+    c.save(OBJ, "hce_sconce1")
+
+
+def art_canvas():
+    """A large abstract canvas in navy, amber and white: bold blocks and a gold stroke,
+    unframed with a thin dark edge, 40x26."""
+    w, h = 40, 26
+    c = Canvas(w, h)
+    c.rect(0, 0, w - 1, h - 1, (20, 20, 26))
+    c.rect(1, 1, w - 2, h - 2, (232, 228, 220))
+    c.rect(2, 2, 17, h - 3, NAVY_MID)
+    c.rect(18, 12, w - 3, h - 3, AMBER)
+    c.rect(24, 4, 33, 10, (30, 30, 36))
+    import math
+    for x in range(3, w - 3):
+        y = int(13 + 6 * math.sin(x / 5.0))
+        c.px(x, y, GOLD)
+        c.px(x, y + 1, GOLD_DARK)
+    c.save(OBJ, "hce_art_canvas1")
+
+
 def main():
     only = None
     if "--only" in sys.argv:
@@ -362,6 +397,8 @@ def main():
         "hce_server_sign1": lambda: plate("SERVER ROOM 1", (30, 64, 78), CYAN, "hce_server_sign1", rim=CYAN),
         "hce_block_screen1": block_screen,
         "hce_phd_frame1": phd_frame,
+        "hce_sconce1": sconce,
+        "hce_art_canvas1": art_canvas,
         "hce_lab_sign1": lambda: plate("CHAIN ANALYSIS", NAVY, AMBER, "hce_lab_sign1", rim=AMBER_DARK),
     }
     for name, fn in jobs.items():

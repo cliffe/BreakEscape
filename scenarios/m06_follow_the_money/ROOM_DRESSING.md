@@ -163,3 +163,45 @@ Hand-drawn: `hce_block_screen1`, `hce_phd_frame1` (registered `--wall`). No Pixe
 
 - Assumption: the press clipping's read mode and Priya's position are not mine to change (a clue's interaction and an NPC tile), so both go to the orchestrator with a recommendation.
 - Assumption: `chair-exec-rotate5` (back view) reads as visitor chairs facing Satoshi's desk; the in-game shot agrees.
+
+## Cycle 3 (2026-10-13): the coordinator's decisions, the gallery wall, the lobby
+
+The coordinator approved two cycle-2 items and parked one:
+
+- **EX-1:** `"readDisplay": "gameDisplay"` added to the press clipping (`executive_wing_plaque`), so it stays on the wall after it is read. To check in the interaction walk: read it, dust it for the print, then open the Signing Case.
+- **LAB-2:** Priya (`blockchain_analyst`) moved from (3,3) to (6,4). Nothing refers to her tile: the ink, the erb mappings and the m06 route drivers name her only by id (`route.js:144,195-202`, `r4`). The lab was rearranged around her: the workstation desk to the west below the W-door row, the IT workbench under it, the air mover by the rigs, beanbags and pizza boxes SW; the floor x 168-216, y 90-172 is clear for her.
+- **TR-3** (Irina's dropped items making a menu among themselves): engine issue, now in the backlog.
+
+My own pass: the executive wing's west wall became a small gallery (a hand-drawn abstract canvas, `hce_art_canvas1`, and two brass sconces, `hce_sconce1`, either side of the clipping); the lobby got the sconces either side of the wordmark and a navy rug painted under the lounge.
+
+Checks: validator, door alignment 8/8, walls all 64, slot audit 0 problems and 0 notes prompts (the clipping's prompt is gone), routes 27/27 (one run showed 12 failures while the dialogue agent was mid-compile; re-run clean). Kemal's cone unchanged. In game: game 2326, `build_evidence/dressing_c3/`.
+
+### Review (fresh Opus reviewer, read-only)
+
+All hard constraints pass, including Priya's new spot (her ~80 px tap frame holds no slot; nearest paper 75 px from her centre) and the clipping (wall object with `readDisplay`, reachable from below). Verdict: a real but modest improvement; Satoshi's office, Irina's office and the executive wing deserve one more cycle, the rest are at small returns.
+
+| id | room | sev | finding | outcome |
+|---|---|---|---|---|
+| CEO-4 | Satoshi | major | The fig planter (x 256-288, feet 140) stood in front of the safe pinned at (8,2) and hid its dial; there since cycle 2 | **Fixed (c4):** planter moved SW (x 104, feet 254); the safe stands alone in its corner |
+| OFF-2 | Irina | major | Still the sparsest room: open south-centre, nothing marks the desk area | **Fixed (c4):** a burgundy rug painted under the desk, two visitor chairs facing it, a book trolley (the room's one angled prop) and a steel journal rack by the reading corner |
+| OFF-3 | Irina | minor | Journal stack caught behind the binder shelves | **Fixed (c4):** moved beside the book trolley |
+| EXW-3 | Exec wing | minor | The gold coin on a plinth repeated the lobby's | **Fixed (c4):** a trophy cabinet of industry awards at the same feet (86), clear of Kemal's beat |
+| EXW-4 | Exec wing | minor | No side-wall fixture | **Fixed (c4):** fire alarm point on the west wall below the W-door row |
+| TR-4 | Trading | minor | Pizza boxes in the east lane at the S door's mouth (no collision), repeating the lab's | **Fixed (c4):** removed |
+| LAB-3 | Lab | minor | The workstation desk still had the trading floor's chairs | **Fixed (c4):** the lab's own office chairs (`_trading_desk` takes a `chair` now) |
+| VLT-5 | Servers / DC | minor | The two rooms' console desks were the same setup | **Fixed (c4):** the data centre's transaction-server terminal is a standing station, no chair |
+| LOB-2 | Lobby | minor | The right sconce was squeezed against the BTC screen | **Fixed (c4):** the wordmark group moved 6 px west |
+| LOB-3 | Lobby | minor (optional) | No queue stanchions | **Left:** the only free spot overlaps the coin pedestal; the lobby is at small returns |
+
+Counts: 0 blockers, 2 majors, 8 minors. Fixed 9, 1 left (optional).
+
+## Cycle 4 (2026-10-13): fixes from the cycle 3 review
+
+All of the above. Checks: validator (schema, geometry, door alignment) pass; door alignment 8/8; walls all 64; slot audit 0 problems, 0 notes prompts; routes 29/29 (the dialogue stage added two); Kemal's cone 26 / 117 / 108 cells with 2/20, 20/20, 0/20 window cells seen (unchanged; 117 from the trophy cabinet's slightly wider base); the guard's map is unchanged since cycle 2. In game: game 2327, no "No Tiled item found". Shots `build_evidence/dressing_c4/` (`sheet.png`, `grid/`). Pairs for the user: `tmp/review/m06_dressing_c4_<room>.png` (cycle 2 against cycle 4) and `tmp/review/m06_dressing_c4_sheet.png`.
+
+New art (cycles 3-4): hand-drawn `hce_sconce1`, `hce_art_canvas1`. No PixelLab spend.
+
+### Assumptions (cycles 3-4)
+
+- Assumption: the route drivers and ink are the places a tile reference to Priya would live; the old playtest session logs in `tools/playtest/` mention her by id only and are historical.
+- Assumption: the trophy cabinet (also used in m03's Zero Day offices) is fine to reuse in another mission's building.

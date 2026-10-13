@@ -227,6 +227,7 @@ def main():
 
     lobby = paint_floor(front, marble_pixel)
     paint_hex_inlay(lobby.load(), 160, 196, 16)
+    paint_rug(lobby.load(), (84, 250, 224, 302), (34, 44, 82), (22, 28, 54), (208, 168, 72))   # under the lounge
     sheets["room_hce_lobby"] = lobby
     sheets["room_hce_hall"] = paint_floor(front, marble_pixel)
 
@@ -237,7 +238,9 @@ def main():
         paint_floor_box(op, x, y)
     sheets["room_hce_trading"] = trading
 
-    sheets["room_hce_office"] = paint_floor(office, CARPET_TAUPE)
+    office_floor = paint_floor(office, CARPET_TAUPE)
+    paint_rug(office_floor.load(), (98, 110, 206, 222), (112, 54, 46), (64, 34, 30), (214, 176, 80))   # under Irina's desk
+    sheets["room_hce_office"] = office_floor
 
     lab = paint_floor(office, vinyl_pixel)
     paint_trunking(lab.load(), 32, 150, 250, 156)

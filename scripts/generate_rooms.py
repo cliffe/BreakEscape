@@ -938,6 +938,8 @@ WALL_MOUNTED_EXTRAS = {
     "hce_lab_sign",
     "hce_block_screen",
     "hce_phd_frame",
+    "hce_sconce",
+    "hce_art_canvas",
 }
 
 
@@ -3432,7 +3434,7 @@ def room_aes_dock():
 # room_ceo are untouched. Coordinates: x = left edge, y = feet.
 # ---------------------------------------------------------------------------
 
-def _trading_desk(r, x, feet, monitors, extras=(), chairs=True):
+def _trading_desk(r, x, feet, monitors, extras=(), chairs=True, chair="chair-grey-4"):
     """A steel trading desk (zds_desk1, 78x39) with its monitors and clutter on it
     (name, x_frac, surface_frac; the first in `monitors` is placed first, so a
     scenario pc claims it), and two mesh chairs seen from behind, tucked in at the
@@ -3444,8 +3446,9 @@ def _trading_desk(r, x, feet, monitors, extras=(), chairs=True):
     for name, xf, sf, *layer in extras:
         r.on(d, name, xf, sf, layer=layer[0] if layer else "table_items")
     if chairs:
-        r.item("chair-grey-4", float(x + 14), float(feet + 12))
-        r.item("chair-grey-4", float(x + 46), float(feet + 12))
+        dy = 12 if chair == "chair-grey-4" else 18
+        r.item(chair, float(x + 12), float(feet + dy))
+        r.item(chair, float(x + 44), float(feet + dy))
     return d
 
 
@@ -3484,7 +3487,6 @@ def room_hce_trading():
                   [("phone3", 0.92, 0.40), ("office-misc-cup", 0.04, 0.34)])
     # the head trader's six-screen station closes the east bank (cycle 2, TR-1)
     r.table("hce_trading_station1", 186.0, 246.0, kind="objects")
-    r.item("pizza_boxes1", 250.0, 248.0)
     # bins at the desk ends on the aisle side
     r.item("bin1", 116.0, 138.0)
     r.item("bin4", 116.0, 190.0)                     # (not at the east desks: the trader stands at x 144-176)
@@ -3515,8 +3517,10 @@ def room_hce_lobby():
     """
     r = _Uni()
     r.item("exit_sign1", 70.0, 34.0)
-    r.item("hce_logo_sign1", 128.0, 36.0)            # over the desk
-    r.item("hce_chart_screen1", 200.0, 54.0)
+    r.item("hce_logo_sign1", 122.0, 36.0)            # over the desk
+    r.item("hce_sconce1", 106.0, 42.0)               # either side of the wordmark (cycle 3)
+    r.item("hce_sconce1", 192.0, 42.0)
+    r.item("hce_chart_screen1", 208.0, 54.0)
     desk = r.table("hce_reception_desk1", 129.0, 112.0, kind="objects")   # x 129-191, top 62
     r.on(desk, "notes3", 0.30, 0.30, layer="conditional_table_items")
     r.on(desk, "pc11", 0.66, 0.24)
@@ -3593,10 +3597,13 @@ def room_hce_office():
     r.on(desk, "pc11", 0.40, 0.30)
     r.on(desk, "bankers_lamp1", 0.12, 0.26)
     r.on(desk, "coffee_cups1", 0.80, 0.30)
-    r.solid("journal_stack1", 196.0, 172.0)
     r.solid("book_pile1", 84.0, 170.0)
     r.solid("bin2", 64.0, 172.0)
-    r.item("chair-grey-4", 140.0, 208.0)             # visitor chair facing her desk
+    r.item("chair-grey-4", 128.0, 208.0)             # two visitor chairs facing her desk (c3 OFF-2)
+    r.item("chair-grey-4", 160.0, 208.0)
+    r.solid("book_trolley1", 136.0, 296.0)           # the room's one angled prop
+    r.solid("journal_stack1", 178.0, 296.0)          # (c3 OFF-3: was caught behind the shelves)
+    r.solid("magazine_rack2", 120.0, 254.0)          # journals by the reading corner
     # reading corner, SW
     r.solid("club_chair_e1", 38.0, 252.0)
     side = r.table("smalldesk2", 80.0, 250.0)
@@ -3621,7 +3628,7 @@ def room_hce_lab():
     order book). Mining rigs and a node shelf down the east side with an air mover;
     two analyst desks in the middle; a Pi-cluster bench and a beanbag west.
     Doors: W on row 2 (x 32-80, y 64-110 kept clear). Nothing to the south.
-    Priya (blockchain_analyst) at (3,3): sprite x 80-112, y 64-128, on clear floor.
+    Priya (blockchain_analyst) at (6,4) since cycle 3: sprite x 176-208, y 96-160, on clear floor.
     Slots: pc10 on the front desk (base pc, Blockchain Analysis Workstation);
     notes3 and notes1 at either end of the back desk (Network Analysis, Mixing
     Analysis; 50 px+ apart), scenario order.
@@ -3636,10 +3643,12 @@ def room_hce_lab():
     r.solid("hce_mining_rig2", 232.0, 140.0, depth=14)
     r.solid("hce_node_shelf1", 232.0, 200.0, depth=14)
     r.solid("hce_mining_rig1", 226.0, 270.0, depth=14)
-    r.solid("aes_air_mover1", 204.0, 120.0)
-    # analyst desks
-    d1 = _trading_desk(r, 120, 160, [("pc10", 0.32, 0.42), ("pc8", 0.72, 0.40)],
-                       [("energy_cans1", 0.94, 0.30)])
+    r.solid("aes_air_mover1", 200.0, 290.0)          # blowing at the rigs
+    # Priya (blockchain_analyst) at (6,4), moved from (3,3) out of the W door's walk-in line
+    # (cycle 2, LAB-2, approved): the floor x 168-216, y 90-172 stays clear for her.
+    # the workstation desk, west, below the W-door row
+    _trading_desk(r, 40, 166, [("pc10", 0.32, 0.42), ("pc8", 0.72, 0.40)],
+                  [("energy_cans1", 0.94, 0.30)], chair="aes_office_chair1")   # the lab's own chairs (c3 LAB-3)
     # the analysis table: Priya's two papers at either end, 90 px apart (cycle 2, LAB-1)
     t = r.table("zds_conference_table1", 100.0, 240.0, kind="objects")   # x 100-226
     r.on(t, "notes3", 0.10, 0.30, layer="conditional_table_items")
@@ -3650,9 +3659,9 @@ def room_hce_lab():
     r.item("aes_office_chair1", 128.0, 258.0)
     r.item("aes_office_chair1", 178.0, 258.0)
     # west: the hardware bench and the beanbags
-    bench = r.table("it_workbench1", 36.0, 200.0, kind="objects")
-    r.solid("beanbag1", 40.0, 280.0)
-    r.solid("pizza_boxes1", 88.0, 284.0)
+    r.table("it_workbench1", 36.0, 244.0, kind="objects")
+    r.solid("beanbag1", 40.0, 292.0)
+    r.solid("pizza_boxes1", 88.0, 294.0)
     r.item("fire_extinguisher1", 292.0, 170.0)
     return r.build("room_hce_lab")
 
@@ -3725,8 +3734,7 @@ def room_hce_vault():
     r.solid("server_rack2", 186.0, 90.0)
     r.solid("storage_array1", 218.0, 90.0)
     srv = r.table("zds_desk3", 196.0, 168.0, kind="objects")   # x 196-247
-    r.on(srv, "pc6", 0.45, 0.42)
-    r.item("chair-grey-4", 210.0, 180.0)
+    r.on(srv, "pc6", 0.45, 0.42)                     # a standing terminal in the core (c3 VLT-5: no chair)
     # the custody console, in front of the cage door
     con = r.table("zds_desk1", 64.0, 210.0, kind="objects")    # x 64-142
     r.on(con, "pc10", 0.30, 0.42)
@@ -3754,13 +3762,15 @@ def room_hce_exec_hall():
     Slots (as-type): hce_press_clipping (Framed Press Clipping).
     """
     r = _Uni()
-    r.item("plaque1", 44.0, 44.0)                    # (cycle 2, EX-2: the scenery prints went)
-    r.item("hce_press_clipping1", 98.0, 54.0)        # top-left 98,24
+    r.item("hce_art_canvas1", 36.0, 48.0)            # (cycle 3: a gallery wall, not scenery prints)
+    r.item("hce_sconce1", 84.0, 42.0)
+    r.item("hce_press_clipping1", 98.0, 54.0)        # top-left 98,24, between two sconces
+    r.item("hce_sconce1", 128.0, 42.0)
     r.item("hce_logo_small1", 138.0, 23.0)
     r.solid("hce_console_table1", 136.0, 86.0, depth=8)
-    r.item("aes_cctv1", 72.0, 30.0)                  # watching the corridor
-    r.solid("hce_coin_sculpture1", 198.0, 86.0, depth=8)
-    r.item("private_sign1", 216.0, 26.0)
+    r.solid("trophy_cabinet1", 198.0, 86.0, depth=8)  # industry awards (c3 EXW-3: the gold coin is the lobby's)
+    r.item("private_sign1", 216.0, 23.0)
+    r.item("fire_alarm_point1", 14.0, 150.0)
     r.solid("hce_bench1", 40.0, 158.0, depth=10)
     return r.build("room_hce_exec_hall", "10x6_hall")
 
@@ -3800,7 +3810,7 @@ def room_hce_ceo():
     r.on(side, "notes3", 0.25, 0.30, layer="conditional_table_items")
     r.on(side, "exec_laptop1", 0.75, 0.26)
     r.solid("bar_cart1", 200.0, 140.0)
-    r.solid("planter_fig1", 256.0, 140.0)
+    r.solid("planter_fig1", 104.0, 254.0)            # SW, off the safe in the NE corner (c3 CEO-4)
     r.item("fire_alarm_point1", 14.0, 160.0)
     return r.build("room_hce_ceo")
 
