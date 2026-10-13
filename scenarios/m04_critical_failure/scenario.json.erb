@@ -526,6 +526,7 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
   "rooms": {
     "main_entrance": {
       "type": "room_aes_reception",
+      "chatBackground": "assets/backgrounds/rooms/m04_main_entrance_blended.png",
       "lighting": {
         "emitters": {
           "fire_alarm_point": [
@@ -648,7 +649,6 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
               "eventPattern": "player_spotted:security_guard",
               "targetKnot": "on_sighted",
               "conversationMode": "person-chat",
-              "background": "assets/backgrounds/background1.png",
               "cooldown": 0
             },
             {
@@ -1414,6 +1414,7 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
 
     "operations_office": {
       "type": "room_aes_ops",
+      "chatBackground": "assets/backgrounds/rooms/m04_operations_office_blended.png",
       "dimensions": { "width": 10, "height": 10 },
       "door_sign": "Operations Office",
       "connections": {
@@ -1515,6 +1516,7 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
 
     "scada_control_room": {
       "type": "room_aes_control",
+      "chatBackground": "assets/backgrounds/rooms/m04_scada_control_room_blended.png",
       "lighting": {
         "ambient": "#aeb6c8",
         "panels": false,
@@ -1577,6 +1579,7 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
 
     "engineering_workshop": {
       "type": "room_aes_workshop",
+      "chatBackground": "assets/backgrounds/rooms/m04_engineering_workshop_blended.png",
       "lighting": { "mode": "motion", "ambient": "#aab4c6", "darkAmbient": "#0a0f1c" },
       "dimensions": { "width": 10, "height": 10 },
       "locked": true,
@@ -1707,6 +1710,7 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
 
     "security_office": {
       "type": "room_aes_security",
+      "chatBackground": "assets/backgrounds/rooms/m04_security_office_blended.png",
       "lighting": {
         "mode": "motion",
         "emitters": {
@@ -1795,6 +1799,7 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
 
     "battery_hall_1": {
       "type": "room_aes_hall1",
+      "chatBackground": "assets/backgrounds/rooms/m04_battery_hall_1_blended.png",
       "lighting": {
         "ambient": "#b0b8c8",
         "emitters": {
@@ -1897,7 +1902,6 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
               "eventPattern": "player_spotted:operative_cipher",
               "targetKnot": "start",
               "conversationMode": "person-chat",
-              "background": "assets/backgrounds/background1.png",
               "cooldown": 0
             },
             {
@@ -2029,6 +2033,10 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
 
     "battery_hall_2": {
       "type": "room_aes_hall2",
+      "chatBackground": [
+        { "condition": "globalVars.racks_vented === true && globalVars.attack_prevented !== true", "image": "assets/backgrounds/rooms/m04_battery_hall_2_vent_blended.png" },
+        { "image": "assets/backgrounds/rooms/m04_battery_hall_2_blended.png" }
+      ],
       "lighting": {
         "ambient": "#b0b8c8",
         "emitters": {
@@ -2141,8 +2149,7 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
               "condition": "globalVars.operative_relay_defeated !== true",
               "onceOnly": true,
               "conversationMode": "person-chat",
-              "targetKnot": "start",
-              "background": "assets/backgrounds/background1.png"
+              "targetKnot": "start"
             },
             <%# Round 2 (re-review m2): once she knows, she sweeps the hall faster
                 (loop about 11 s instead of 20), so the danger is visible. %>
@@ -2220,6 +2227,12 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
 
     "plant_room": {
       "type": "room_aes_plant",
+      "chatBackground": [
+        { "condition": "globalVars.esd_authorized === true && globalVars.attack_prevented !== true", "x": [0.55, 1], "image": "assets/backgrounds/rooms/m04_plant_room_armed_blended.png" },
+        { "condition": "globalVars.esd_authorized === true && globalVars.attack_prevented !== true", "x": [0, 0.55], "image": "assets/backgrounds/rooms/m04_plant_room_armed_left_blended.png" },
+        { "x": [0.55, 1], "image": "assets/backgrounds/rooms/m04_plant_room_blended.png" },
+        { "x": [0, 0.55], "image": "assets/backgrounds/rooms/m04_plant_room_left_blended.png" }
+      ],
       "lighting": {
         "ambient": "#b2b4be",
         "emitters": {
@@ -2347,8 +2360,7 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
               "condition": "globalVars.operative_static_defeated !== true && globalVars.static_engaged !== true && globalVars.static_stood_aside !== true && globalVars.attack_prevented !== true",
               "onceOnly": true,
               "conversationMode": "person-chat",
-              "targetKnot": "start",
-              "background": "assets/backgrounds/background1.png"
+              "targetKnot": "start"
             },
             {
               "eventPattern": "npc_hostile_state_changed",
@@ -2487,6 +2499,7 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
 
     "loading_dock": {
       "type": "room_aes_dock",
+      "chatBackground": "assets/backgrounds/rooms/m04_loading_dock_blended.png",
       "lighting": {
         "mode": "motion",
         "flicker": true,
