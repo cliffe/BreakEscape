@@ -729,6 +729,13 @@ export function handleObjectInteraction(sprite) {
     if (sprite.scenarioData.type === 'keycard' && sprite.scenarioData.takeable === false) {
         console.log('KEYCARD INTERACTION (inventory) - checking for cloner');
 
+        // The cloner is already open (e.g. mid-read from a conversation): starting it
+        // again in clone mode would end that minigame and lose the read (as E-H).
+        if (window.MinigameFramework?.isOpen?.('rfid')) {
+            console.log('RFID minigame already open; ignoring keycard click');
+            return;
+        }
+
         // Check if player has RFID cloner
         const hasCloner = window.inventory.items.some(item =>
             item && item.scenarioData &&
