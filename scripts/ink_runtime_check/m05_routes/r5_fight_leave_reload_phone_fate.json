@@ -125,7 +125,10 @@
 "read": "personal_journal"
 },
 {
-"event": "fingerprint_collected:david_torres"
+"event": "fingerprint_collected:david_torres",
+"data": {
+"identified": true
+}
 },
 {
 "event": "door_unlock_attempt",

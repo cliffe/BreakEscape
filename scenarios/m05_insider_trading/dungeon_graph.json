@@ -135,8 +135,8 @@
       "optional": false
     },
     {
-      "id": "research_badge",
-      "label": "Research Badge",
+      "id": "visitor_spare_4471",
+      "label": "Visitor Spare (#4471)",
       "kind": "key",
       "optional": true
     },
@@ -340,11 +340,11 @@
     },
     {
       "from": "npc_dr_ruth_halloran",
-      "to": "research_badge",
+      "to": "visitor_spare_4471",
       "soft": true
     },
     {
-      "from": "research_badge",
+      "from": "visitor_spare_4471",
       "to": "door_server_hallway",
       "soft": true
     },

@@ -9,7 +9,7 @@ Infiltrate Quantum Dynamics Corporation to identify and stop an insider threat. 
 | Metric | Value |
 |---|---|
 | Story aims | 5 |
-| Total tasks | 28 (7 optional) |
+| Total tasks | 28 (8 optional) |
 | VM flag challenges | 4 |
 | Physical locks | 6 |
 | AND-gate convergences | 1 |
@@ -91,7 +91,7 @@ flowchart TD
   mug{"Mug"}
   npc_dr_ruth_halloran{"Dr Ruth Halloran"}
   research_lab("Research Lab")
-  research_badge{"Research Badge"}
+  visitor_spare_4471{"Visitor Spare (#4471)"}
   sealed_talentstack_envelope{"Sealed TalentStack Envelope"}
   upload_schedule{"Upload Schedule"}
   data_package_manifest{"Data Package Manifest"}
@@ -129,8 +129,8 @@ flowchart TD
   mug --> door_data_center
   torres_office --> lock_torres_briefcase
   research_lab --> npc_dr_ruth_halloran
-  npc_dr_ruth_halloran -.-> research_badge
-  research_badge -.-> door_server_hallway
+  npc_dr_ruth_halloran -.-> visitor_spare_4471
+  visitor_spare_4471 -.-> door_server_hallway
   patricia_office --> lock_patricia_filing_cabinet
   data_center --> sealed_talentstack_envelope
   data_center --> upload_schedule
@@ -154,13 +154,13 @@ flowchart TD
   class door_server_hallway,door_server_room,door_torres_office,door_data_center,lock_torres_briefcase,lock_patricia_filing_cabinet lock
   class server_hallway,server_room,torres_office,data_center,reception_lobby,open_office_area,research_lab,main_corridor,patricia_office,break_room room
   class lock_pick_kit,rfid_cloner,fingerprint_kit,server_password_sticky_note,mug,sealed_talentstack_envelope,upload_schedule,data_package_manifest item
-  class npc_owen_gallagher,it_spare_office_card,npc_dr_ruth_halloran,research_badge,npc_david_torres key
+  class npc_owen_gallagher,it_spare_office_card,npc_dr_ruth_halloran,visitor_spare_4471,npc_david_torres key
   class bludit_cms_server_terminal,vmch_submit_flag1,vmch_submit_flag2,vmch_submit_flag3,vmch_submit_flag4 vm
   class action_confront_torres action
   class vmfl_submit_flag1,vmfl_submit_flag2,vmfl_submit_flag3,vmfl_submit_flag4 flag
 
   classDef optional stroke-dasharray:5 2
-  class research_badge optional
+  class visitor_spare_4471 optional
   class node_start start
 ```
 
@@ -277,7 +277,7 @@ flowchart TD
   mug{"Mug"}
   npc_dr_ruth_halloran{"Dr Ruth Halloran"}
   research_lab("Research Lab")
-  research_badge{"Research Badge"}
+  visitor_spare_4471{"Visitor Spare (#4471)"}
   sealed_talentstack_envelope{"Sealed TalentStack Envelope"}
   upload_schedule{"Upload Schedule"}
   data_package_manifest{"Data Package Manifest"}
@@ -334,8 +334,8 @@ flowchart TD
   mug --> door_data_center
   torres_office --> lock_torres_briefcase
   research_lab --> npc_dr_ruth_halloran
-  npc_dr_ruth_halloran -.-> research_badge
-  research_badge -.-> door_server_hallway
+  npc_dr_ruth_halloran -.-> visitor_spare_4471
+  visitor_spare_4471 -.-> door_server_hallway
   patricia_office --> lock_patricia_filing_cabinet
   data_center --> sealed_talentstack_envelope
   data_center --> upload_schedule
@@ -386,7 +386,7 @@ flowchart TD
   class door_server_hallway,door_server_room,door_torres_office,door_data_center,lock_torres_briefcase,lock_patricia_filing_cabinet lock
   class server_hallway,server_room,torres_office,data_center,reception_lobby,open_office_area,research_lab,main_corridor,patricia_office,break_room room
   class lock_pick_kit,rfid_cloner,fingerprint_kit,server_password_sticky_note,mug,sealed_talentstack_envelope,upload_schedule,data_package_manifest item
-  class npc_owen_gallagher,it_spare_office_card,npc_dr_ruth_halloran,research_badge,npc_david_torres key
+  class npc_owen_gallagher,it_spare_office_card,npc_dr_ruth_halloran,visitor_spare_4471,npc_david_torres key
   class bludit_cms_server_terminal,vmch_submit_flag1,vmch_submit_flag2,vmch_submit_flag3,vmch_submit_flag4 vm
   class action_confront_torres,story_knock_out_patricia_morgan,story_knock_out_owen_gallagher,story_enter_reception_lobby,story_enter_main_corridor,story_enter_break_room,story_enter_open_office_area,story_enter_server_hallway,story_enter_server_room_password_access_contact_it,story_enter_torres_office,story_enter_research_lab,story_enter_patricia_office,story_enter_key_vault_fingerprint_access_heisenberg_leads_only,story_talk_to_patricia_morgan action
   class vmfl_submit_flag1,vmfl_submit_flag2,vmfl_submit_flag3,vmfl_submit_flag4 flag
@@ -394,7 +394,7 @@ flowchart TD
   class aim_gather_evidence aim
 
   classDef optional stroke-dasharray:5 2
-  class research_badge optional
+  class visitor_spare_4471 optional
   class node_start start
 ```
 
@@ -512,27 +512,28 @@ flowchart TD
   rc_it_access_notice_26{"IT Notice: Server Room Access"}
   rc_vm_launcher_bludit_27{"Bludit CMS Server Terminal"}
   rc_flag_station_evidence_28{"SAFETYNET Drop-Site Terminal"}
-  rc_personal_journal_29{"Personal Journal"}
-  rc_torres_mug_30{"Mug"}
-  rc_torres_briefcase_31[["Torres' Briefcase"]]
+  rc_torres_mug_29{"Mug"}
+  rc_torres_briefcase_30[["Torres' Briefcase"]]
+  rc_personal_journal_31{"Personal Journal"}
   rc_medical_bills_32{"Medical Bills"}
-  rc_zurich_lanyard_33{"Conference Lanyard"}
-  rc_npc_dr_ruth_halloran_34("Dr Ruth Halloran")
-  rc_research_lab_badge_35{"Research Badge"}
-  rc_security_incident_log_36{"Security Incident Log"}
-  rc_patricia_filing_cabinet_37[["Locked Filing Cabinet"]]
-  rc_ceo_stand_down_email_38{"Printed Email from the CEO's Office"}
-  rc_npc_patricia_morgan_39("Patricia Morgan")
-  rc_visitor_badge_40{"Visitor Badge"}
-  rc_torres_vetting_file_41{"Vetting Aftercare File: D. Torres"}
-  rc_halloran_vetting_file_42{"Vetting Aftercare File: R. Halloran"}
-  rc_ceo_stand_down_copy_43{"Patricia's Copy of the CEO's Email"}
-  rc_obj44_44[["Exfiltration Upload Terminal"]]
-  rc_obj45_45{"transfer_queue.log"}
-  rc_talentstack_envelope_46{"Sealed TalentStack Envelope"}
-  rc_upload_schedule_47{"Upload Schedule"}
-  rc_data_package_manifest_48{"Data Package Manifest"}
-  rc_npc_david_torres_49("David Torres")
+  rc_lab_rules_notice_33{"Lab Rules"}
+  rc_zurich_lanyard_34{"Conference Lanyard"}
+  rc_npc_dr_ruth_halloran_35("Dr Ruth Halloran")
+  rc_research_lab_badge_36{"Visitor Spare (#4471)"}
+  rc_security_incident_log_37{"Security Incident Log"}
+  rc_patricia_filing_cabinet_38[["Locked Filing Cabinet"]]
+  rc_ceo_stand_down_email_39{"Printed Email from the CEO's Office"}
+  rc_npc_patricia_morgan_40("Patricia Morgan")
+  rc_visitor_badge_41{"Visitor Badge"}
+  rc_torres_vetting_file_42{"Vetting Aftercare File: D. Torres"}
+  rc_halloran_vetting_file_43{"Vetting Aftercare File: R. Halloran"}
+  rc_ceo_stand_down_copy_44{"Patricia's Copy of the CEO's Email"}
+  rc_obj45_45[["Exfiltration Upload Terminal"]]
+  rc_obj46_46{"transfer_queue.log"}
+  rc_talentstack_envelope_47{"Sealed TalentStack Envelope"}
+  rc_upload_schedule_48{"Upload Schedule"}
+  rc_data_package_manifest_49{"Data Package Manifest"}
+  rc_npc_david_torres_50("David Torres")
 
   reception_lobby --> main_corridor
   reception_lobby --> patricia_office
@@ -571,32 +572,33 @@ flowchart TD
   server_hallway --> rc_it_access_notice_26
   server_room --> rc_vm_launcher_bludit_27
   server_room --> rc_flag_station_evidence_28
-  torres_office --> rc_personal_journal_29
-  torres_office --> rc_torres_mug_30
-  torres_office --> rc_torres_briefcase_31
-  rc_torres_briefcase_31 --> rc_medical_bills_32
-  research_lab --> rc_zurich_lanyard_33
-  research_lab --> rc_npc_dr_ruth_halloran_34
-  rc_npc_dr_ruth_halloran_34 --> rc_research_lab_badge_35
-  patricia_office --> rc_security_incident_log_36
-  patricia_office --> rc_patricia_filing_cabinet_37
-  rc_patricia_filing_cabinet_37 --> rc_ceo_stand_down_email_38
-  patricia_office --> rc_npc_patricia_morgan_39
-  rc_npc_patricia_morgan_39 --> rc_visitor_badge_40
-  rc_npc_patricia_morgan_39 --> rc_torres_vetting_file_41
-  rc_npc_patricia_morgan_39 --> rc_halloran_vetting_file_42
-  rc_npc_patricia_morgan_39 --> rc_ceo_stand_down_copy_43
-  data_center --> rc_obj44_44
-  rc_obj44_44 --> rc_obj45_45
-  data_center --> rc_talentstack_envelope_46
-  data_center --> rc_upload_schedule_47
-  data_center --> rc_data_package_manifest_48
-  data_center --> rc_npc_david_torres_49
+  torres_office --> rc_torres_mug_29
+  torres_office --> rc_torres_briefcase_30
+  rc_torres_briefcase_30 --> rc_personal_journal_31
+  rc_torres_briefcase_30 --> rc_medical_bills_32
+  research_lab --> rc_lab_rules_notice_33
+  research_lab --> rc_zurich_lanyard_34
+  research_lab --> rc_npc_dr_ruth_halloran_35
+  rc_npc_dr_ruth_halloran_35 --> rc_research_lab_badge_36
+  patricia_office --> rc_security_incident_log_37
+  patricia_office --> rc_patricia_filing_cabinet_38
+  rc_patricia_filing_cabinet_38 --> rc_ceo_stand_down_email_39
+  patricia_office --> rc_npc_patricia_morgan_40
+  rc_npc_patricia_morgan_40 --> rc_visitor_badge_41
+  rc_npc_patricia_morgan_40 --> rc_torres_vetting_file_42
+  rc_npc_patricia_morgan_40 --> rc_halloran_vetting_file_43
+  rc_npc_patricia_morgan_40 --> rc_ceo_stand_down_copy_44
+  data_center --> rc_obj45_45
+  rc_obj45_45 --> rc_obj46_46
+  data_center --> rc_talentstack_envelope_47
+  data_center --> rc_upload_schedule_48
+  data_center --> rc_data_package_manifest_49
+  data_center --> rc_npc_david_torres_50
 
   class reception_lobby,main_corridor,break_room,open_office_area,research_lab,patricia_office room
   class server_hallway,server_room,torres_office,data_center lock
-  class rc_obj1_1,rc_safetynet_field_guide_bludit_cms_6,rc_safetynet_field_guide_lockpicking_7,rc_safetynet_field_guide_recon_network_mapping_8,rc_relayed_server_badge_9,rc_relayed_torres_office_card_10,rc_relayed_contractor_pass_11,rc_relayed_server_password_note_12,rc_safetynet_field_guide_rfid_cloning_13,rc_relayed_door_log_14,rc_safetynet_field_guide_privilege_escalation_15,rc_collection_flyer_19,rc_entropy_pamphlet_20,rc_torres_office_keycard_23,rc_server_door_log_24,rc_server_password_note_25,rc_it_access_notice_26,rc_vm_launcher_bludit_27,rc_flag_station_evidence_28,rc_personal_journal_29,rc_torres_mug_30,rc_medical_bills_32,rc_zurich_lanyard_33,rc_research_lab_badge_35,rc_security_incident_log_36,rc_ceo_stand_down_email_38,rc_visitor_badge_40,rc_torres_vetting_file_41,rc_halloran_vetting_file_42,rc_ceo_stand_down_copy_43,rc_obj45_45,rc_talentstack_envelope_46,rc_upload_schedule_47,rc_data_package_manifest_48 item
-  class rc_npc_agent_hax_2,rc_npc_director_magnus_netherton_3,rc_npc_agent_0x47_nightshade_4,rc_npc_agent_hax_5,rc_npc_the_recruiter_16,rc_npc_patricia_morgan_17,rc_npc_agent_hax_18,rc_npc_lisa_park_21,rc_npc_owen_gallagher_22,rc_npc_dr_ruth_halloran_34,rc_npc_patricia_morgan_39,rc_npc_david_torres_49 npc
-  class rc_torres_briefcase_31,rc_patricia_filing_cabinet_37,rc_obj44_44 container
+  class rc_obj1_1,rc_safetynet_field_guide_bludit_cms_6,rc_safetynet_field_guide_lockpicking_7,rc_safetynet_field_guide_recon_network_mapping_8,rc_relayed_server_badge_9,rc_relayed_torres_office_card_10,rc_relayed_contractor_pass_11,rc_relayed_server_password_note_12,rc_safetynet_field_guide_rfid_cloning_13,rc_relayed_door_log_14,rc_safetynet_field_guide_privilege_escalation_15,rc_collection_flyer_19,rc_entropy_pamphlet_20,rc_torres_office_keycard_23,rc_server_door_log_24,rc_server_password_note_25,rc_it_access_notice_26,rc_vm_launcher_bludit_27,rc_flag_station_evidence_28,rc_torres_mug_29,rc_personal_journal_31,rc_medical_bills_32,rc_lab_rules_notice_33,rc_zurich_lanyard_34,rc_research_lab_badge_36,rc_security_incident_log_37,rc_ceo_stand_down_email_39,rc_visitor_badge_41,rc_torres_vetting_file_42,rc_halloran_vetting_file_43,rc_ceo_stand_down_copy_44,rc_obj46_46,rc_talentstack_envelope_47,rc_upload_schedule_48,rc_data_package_manifest_49 item
+  class rc_npc_agent_hax_2,rc_npc_director_magnus_netherton_3,rc_npc_agent_0x47_nightshade_4,rc_npc_agent_hax_5,rc_npc_the_recruiter_16,rc_npc_patricia_morgan_17,rc_npc_agent_hax_18,rc_npc_lisa_park_21,rc_npc_owen_gallagher_22,rc_npc_dr_ruth_halloran_35,rc_npc_patricia_morgan_40,rc_npc_david_torres_50 npc
+  class rc_torres_briefcase_30,rc_patricia_filing_cabinet_38,rc_obj45_45 container
   class node_start start
 ```

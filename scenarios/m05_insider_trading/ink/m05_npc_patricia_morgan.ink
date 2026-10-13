@@ -59,6 +59,7 @@ VAR halloran_questioned = false
 VAR door_log_reasoned = false // Synced scenario global: the player has read the badge-log pattern; also set by HaX (m05_phone_agent_0x99) and Patricia's phone (m05_phone_patricia)
 VAR it_notice_read = false
 VAR door_log_reasoned_first = false // Synced scenario global (pass 5 R3-1): the front-door reason given in a reason menu, before the naming; set only in the *log_reason_right knots. The early-naming reward reads this, not door_log_reasoned
+VAR owen_refused_password = false // Synced scenario global (pass 5 puzzle R1, P6): Owen has been asked for the server-room password and wanted a reason; set by Owen. Patricia's sign-off waits for it
 VAR torres_reason_guessed = false // Synced scenario global (pass 5 R2 B2): a wrong reason or a wrong name was tried; also set by HaX and Patricia's phone/in person. Excludes the early-naming reward
 
 === function has_motive()
@@ -293,7 +294,8 @@ Patricia Morgan: What do you need?
     Patricia Morgan: If this turns out to be nothing, it was a routine audit. Understood?
     -> hub
 
-+ {(server_door_seen or it_notice_read) and not server_password_obtained and not patricia_authorised_server} [The server room wants a password Owen won't give me.]
+// Puzzle R1 (P6): only once Owen has actually refused.
++ {(server_door_seen or it_notice_read) and owen_refused_password and not server_password_obtained and not patricia_authorised_server} [The server room wants a password Owen won't give me.]
     ~ patricia_authorised_server = true
     Patricia Morgan: I sign the access log; IT holds the password. I'll message Owen and tell him it's on my authority.
     -> hub
@@ -334,6 +336,8 @@ Patricia Morgan: Go on, then. Who?
 === accuse_halloran ===
 #speaker:patricia_morgan
 {found_halloran_alibi:
+    // Puzzle R1 (P2): striking a cleared decoy is a guess too.
+    ~ torres_reason_guessed = true
     Patricia Morgan: Halloran was in Zurich the night that badge first went in. You've seen that. Try again.
     -> hub
 }

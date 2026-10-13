@@ -47,6 +47,7 @@ VAR found_incident_log = false
 VAR torres_suspected = false
 VAR found_door_log = false
 VAR it_notice_read = false
+VAR owen_refused_password = false // Synced scenario global (pass 5 puzzle R1, P6): Owen has been asked for the server-room password and wanted a reason; set by Owen. Patricia's sign-off waits for it
 
 
 // ===========================================
@@ -237,6 +238,9 @@ Narrator: He keeps scrolling.
 // ===========================================
 
 === request_password ===
+// Puzzle R1 (P6): Patricia's authority is the way round a refusal, so it
+// waits for one.
+~ owen_refused_password = true
 #speaker:owen_gallagher
 Owen Gallagher: After-hours server access gets logged with IT. That's me.
 {patricia_authorised_office and not patricia_authorised_server:

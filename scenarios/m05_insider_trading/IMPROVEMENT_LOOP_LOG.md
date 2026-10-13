@@ -293,3 +293,75 @@ Notes, none needing a fix:
 - **N-P:** the player's portrait shows behind Patricia's menus. This goes to the character stage.
 
 Open for the user: D1, D3 (SecGen), D4–D10.
+
+## Phase 2: puzzle chains
+
+### Phase 2 puzzle chains, round 1
+
+Review: `PUZZLE_CHAINS_REVIEW_P5_R1.md` (Opus, read-only, static, with probe p1). Counts: 0 blockers, 1 major, 9 minors, and decisions D-A to D-E. The coordinator's decisions are logged with each outcome. None withdrawn.
+
+| # | Sev. | Finding | Outcome |
+|---|---|---|---|
+| P1 / D-D | major | "Where do I stand?" gave the badge-log method on the first ask ("read the front-door lines"), and the early-naming reward still paid (probe p1); the hint tiers ran backwards | **Fixed** (coordinator's decision, both halves). The badge-log aside now gets more specific as the player goes: log held unread → "The badge log's in your kit. Read it."; log read, Halloran not yet asked → "That log says Halloran's spare. Ask her where it lives."; Halloran asked *and* a wrong answer given (`torres_reason_guessed`) → "Her spare goes in at night. Look at who comes through the front door just before it.", which sets the new synced `door_log_hinted`; then the existing "pattern on that sheet" line. `door_log_hinted` is added to all four reward conditions (credit, catch-all credit, Torres' "You're early", the debrief's "before the server did"). The accusation nudge keeps its front-door wording (`halloran_accused` already bars the reward). Probe p1 is route r18: under the new tiers its hint no longer gives the method, so it is now the *positive* case (reward kept); the negative case is r19 (method hint given, no reward). Note: since the third tier needs `torres_reason_guessed`, which already bars the reward, `door_log_hinted` changes nothing today; it is there so the reward stays honest if the hint ladder ever changes |
+| D-A / P9 | decision | The vault's second enrolled print promises a hunt with nothing at the end | **Done** (coordinator: explain, don't add a lift). Halloran, once the player has heard of the vault (`vault_reader_seen` or the password from Owen, who describes it): "[The key vault takes your thumbprint. Could someone have lifted it?]" → "Off me? Not in this lab. Gloves at the bench, always; it's the first rule I wrote." / "You'll not lift anything of mine in here. Try it if you like." A readable "Lab Rules" notice in the lab says the same ("1. Gloves at the bench. Always. No exceptions for leads."), so it works with her knocked out. Room dressing places the notice |
+| D-B | decision | The journal lies in the desk tray, so the m01 picks are never needed | **Done** (coordinator). The journal is now in `torres_briefcase.contents` beside the bills; its observation says it's zipped into the inside pocket; the briefcase is "locked and heavy with papers". `find_journal` is now optional, so a player who never picks it isn't left with an aim that can't complete. **Fallback, matching the mission's other locks:** the motive doesn't depend on the briefcase. Patricia's vetting files give `has_motive()` (asked once the badge log or Halloran's answer is in; on her KO they drop on her floor and HaX's hint says so), and HaX offers the lockpicking guide on the first try at the briefcase. Checked for softlocks: the naming needs `has_motive()` and `has_exfil()`, and both have a route without the briefcase (route r20: briefcase never opened, journal and bills unread, named, handed over, called in). HaX's "A personal journal. Call me once you've read it." still fires on pickup from the container |
+| D-C / P7 | decision | Owen's clone and Halloran's badge come before the reader | **Rejected** (coordinator: pass 3 made the clone deliberately fast, not reversed without the user). Logged as **D11** in `DECISIONS_PENDING.md` with the reviewer's case. P7 wording: checked and left. Neither choice presumes a reader the player hasn't heard of: the staff directory says "Server hallway: staff badge only" and Patricia says "Dr Halloran's badge opens the server side" in the first meeting |
+| P2 | minor | Naming Halloran after her alibi was a free elimination | **Fixed**: `torres_reason_guessed` set in all three alibi branches (Patricia in person, her phone, HaX), so the retry lines follow, as for Ben. Route r19 |
+| P3 | minor | Flag texts and the portal task assumed flags arrive 1→4 | **Fixed**: the counts are gone. Texts name the flag instead: "Login flag in…", "Foothold flag in…", "Manifest flag verified… The authorisation behind it sits where only root can read…", "Root flag in. The Architect's authorisation…". All four flags now complete `access_bludit_vm` (`completeTask` returns early on a done task, `objectives-manager.js:546`; flag 4 through its own unconditional mapping, since its text mapping waits for no fate). Whether the VM lets flags be found out of order is added to **D3** for the user to check against SecGen |
+| P4 | minor | "That's Torres' print." landed even on a lift logged unidentified | **Fixed**: the mapping splits on `data.identified` (a top-level key of the payload, `biometrics.js:89-93`; checked). Unidentified: "Print's lifted off his mug. You didn't match it, but the vault reader will tell you whose it is. North of the server room." Both set `torres_print_collected`. Route r20 |
+| P5 | minor | The status hub checked for the note, not the door | **Fixed**: the password step reads `not server_password_obtained and not server_room_entered`. Route r21 (typed password: "You're on the research subnet", not "Owen holds the server-room password") |
+| P6 | minor | Patricia's password sign-off needed no refusal from Owen | **Fixed**: new synced `owen_refused_password`, set at the top of Owen's `request_password`; both Patricia choices (in person and phone) wait for it. Route r20 |
+| P8 | minor | Halloran's spare didn't hang together (handed over as "my spare", then "I haven't touched it in months") | **Fixed**: she now says "Take the visitor spare off the hook by the door." / "It's registered to me, and it opens the server hallway. Bring it back when you're done." The item is "Visitor Spare (#4471)", "registered to Dr Halloran… on the hook by the lab door", the same badge number as the log. Her spare-badge answer has a variant when she gave it: "The one you're carrying. It lives on that hook by the door, for visitors, and nobody signs it out." The lab rules notice names the hook as well. Room dressing (m12) places the hook |
+| P10 | minor | HaX's hub can show 14 choices | **Deferred to the dialogue phase** (coordinator): fold the four flag topics into one, as the reviewer proposes |
+| D-E | carried | D1, the VM's flag-3 manifest | Unchanged, with the user |
+
+#### Decisions taken (with reasons)
+
+- **P1's third tier needs Halloran asked *and* a wrong answer.** The coordinator's rule ("only after a wrong reason") plus the ladder order: the method is the last rung, for a player who has visibly struggled.
+- **P1's p1 route is the positive case.** The reviewer wrote p1 as the negative case, but after the re-tiering the hint it asks for no longer gives the method, so the reward is fair. r19 is the negative.
+- **D-A by a line and a notice, not a new hub topic for Patricia or HaX.** The lab is where the player would look; the notice covers Halloran's KO.
+- **D-B: `find_journal` made optional,** matching `find_medical_bills` in the same briefcase.
+- **P3: names, not counts** ("Login flag", "Foothold flag", "Manifest flag", "Root flag"), so no text needs a variant per order.
+- **P8: the spare is the visitor spare,** the version of the story that agrees with the log's pencil note ("4471 is a visitor spare") and makes the hook a clue room dressing can place.
+
+#### Route driver
+
+Twenty-one routes, all expectations met. New:
+- `r18_hint_tiers_reward_kept.json` (the reviewer's p1, P1): a status call straight after the badge log gets "Ask her where it lives." with no front-door wording; the reward still pays.
+- `r19_method_hint_no_reward.json` (P1, P2): Halloran named after her alibi (a guess); the third tier gives the method and sets `door_log_hinted`; the right reason, "Again? Fine.", an early naming; no reward anywhere.
+- `r20_no_picks_vetting_motive.json` (D-B, P6, P4): the briefcase never opened; Patricia's sign-off appears only after Owen's refusal; an unidentified lift gets the new toast; named on the vetting file and the upload schedule; handed over; called in.
+- `r21_typed_password_status.json` (P5).
+The shared office step now sends `identified: true` with the print lift.
+
+#### Checks (static; no browser session started)
+
+- Ink compiles (10 files). Validator, full: schema passes, dungeon graph regenerates; the intended same-pattern warnings, plus two new intended ones (`flag4_submitted`: the text and the portal tick; `fingerprint_collected:david_torres`: the identified and unidentified texts, disjoint on `data.identified`). dialoguelint: 0 errors (the same pre-existing check and warning). reopencheck (m05 block regenerated, re-read just before; my hunk is the m05 block only, the other hunk in the file is another agent's m06 work): 0 problems on all three phones. tagdiff against HEAD: 37 structural differences, all from this round (two new VARs across seven inks, the hint tiers, the P2 assignments, P5's condition, P6's gate and setter, Halloran's two knots and variant, the reward terms). inkcheck (Halloran with the vault heard of, Owen refusing, HaX on the third tier) and loopcheck (Halloran, Patricia with the refusal): clean. Door alignment 9/9.
+
+Browser checks needed: one status call after the log then the reward route (reward kept); the third tier after a wrong answer (no reward); the journal from the briefcase ticks `find_journal` and fires HaX's text; an unidentified lift; Patricia's sign-off only after Owen refuses; the Lab Rules notice and Halloran's spare lines.
+
+#### Spoken lines changed (old → new)
+
+HaX, phone:
+- "The badge log's in your kit. Read it, the front-door lines as well as hers." → "The badge log's in your kit. Read it."
+- "That log says Halloran's spare. Ask her where it lives. And read the front-door lines, not just hers." → "That log says Halloran's spare. Ask her where it lives."
+- New: "Her spare goes in at night. Look at who comes through the front door just before it."
+
+HaX texts:
+- "First flag in. An admin login, left lying about in a handover note. Somebody wanted that box easy to get into. Three to go." → "Login flag in. An admin login, left lying about in a handover note. Somebody wanted that box easy to get into."
+- "Second flag in. You're on the research portal's box now. Find out who's been living on it." → "Foothold flag in. You're on the research portal's box now. Find out who's been living on it."
+- "Third flag verified. His staging manifest, under his own name. Last one's the authorisation behind it, where only root can read. Sudo guide's yours if you want it." → "Manifest flag verified. His staging manifest, under his own name. The authorisation behind it sits where only root can read. Sudo guide's yours if you want it."
+- "Final flag in. The Architect's authorisation, casualty projection and all. Call me. You need to hear this." → "Root flag in. The Architect's authorisation, casualty projection and all. Call me. You need to hear this."
+- New: "Print's lifted off his mug. You didn't match it, but the vault reader will tell you whose it is. North of the server room."
+
+Dr Halloran:
+- "You've been straight with me. Here's my spare." / "Senior badges open the server hallway. Bring it back when you're done." → "You've been straight with me. Take the visitor spare off the hook by the door." / "It's registered to me, and it opens the server hallway. Bring it back when you're done."
+- New variant: "The one you're carrying. It lives on that hook by the door, for visitors, and nobody signs it out." (when she gave it; otherwise the old line stays).
+- New: "Off me? Not in this lab. Gloves at the bench, always; it's the first rule I wrote." / "You'll not lift anything of mine in here. Try it if you like."
+
+Documents (not voiced): the Lab Rules notice (new); the Visitor Spare item name and description; the journal and briefcase observations.
+
+#### Open after round 1
+
+- The browser checks above.
+- D11 (the clone's timing) for the user; D3 now also asks about out-of-order flags.
+- P10 to the dialogue phase.

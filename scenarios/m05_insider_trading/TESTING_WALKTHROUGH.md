@@ -108,8 +108,10 @@ answer.
    office, not the server room"). Either:
    - with the incident log read: "Patricia's log has a crypto badge in your
      server room at 23:47…", or
-   - ask Patricia (in person) via "I need your help with something" → "The
-     server room wants a password Owen won't give me", then back to Owen.
+   - ask Patricia (in person or by phone) via "I need your help with
+     something" → "The server room wants a password Owen won't give me", then
+     back to Owen. Puzzle chains R1 (P6): this choice appears only after Owen
+     has refused once (`owen_refused_password`).
 
    (Round 2: reading the IT notice by the door also opens this ask.) He hands over the sticky note (`quantum2024`) → `find_server_password`. He
    also says the key vault past the server room has **two thumbs enrolled,
@@ -145,11 +147,13 @@ person or by phone) for his office, or name him with part of the case, then
 Owen → `obtain_torres_keycard`. Before that, neither Patricia nor Owen offers it.
 
 11. North from the open-plan into `torres_office` → `access_torres_office`.
-12. Read the **journal** → `find_journal`.
+12. The **journal** is now in the locked **briefcase** with the bills (puzzle
+    chains R1, D-B): pick it (step 14) → `find_journal` (optional now). Without
+    the picks the motive comes from Patricia's vetting files.
 13. **Dust the mug** on the front-right of the desk with the fingerprint kit: "Collected David
     Torres's fingerprint sample". HaX: "That's Torres' print."
-14. Pick the **briefcase** (pins 35/60/45/30) for the **medical bills** →
-    `find_medical_bills` (optional).
+14. Pick the **briefcase** (pins 35/60/45/30) for the **journal** and the
+    **medical bills** → `find_journal`, `find_medical_bills` (both optional).
 15. Optional, the CEO's stand-down email (`found_stand_down_email`), either way:
     - pick Patricia's filing cabinet (pins 40/55/30/50); or
     - ask Patricia "How far did your own investigation get?", then "Show me the

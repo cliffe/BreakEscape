@@ -1,0 +1,261 @@
+{
+"steps": [
+{
+"note": "R20 (puzzle R1, D-B, P6, P4): the briefcase is never opened, so the journal and bills stay locked; the motive comes from Patricia's vetting files. Patricia's password sign-off appears only after Owen has refused (P6). The mug lift is logged unidentified (P4). Named with both halves, handed over, called in."
+},
+{
+"talk": "briefing",
+"picks": [
+"damage so far",
+"Who's this going to",
+"What's the mission",
+"And the third",
+"my cover",
+"Who else will I meet",
+"I'm ready",
+"Methodically",
+"Any last advice"
+]
+},
+{
+"set": {
+"briefing_played": true
+}
+},
+{
+"talk": "patricia",
+"picks": [
+"Fill me in",
+"Who has access",
+"without tipping",
+"Where should I start"
+]
+},
+{
+"read": "security_incident_log"
+},
+{
+"talk": "owen",
+"picks": [
+"What can you tell me",
+"That's useful",
+"Lean over",
+"Sorry. Habit",
+"23:47. Whose",
+"That's everything"
+]
+},
+{
+"enter": "server_hallway"
+},
+{
+"read": "it_access_notice"
+},
+{
+"event": "door_unlock_attempt",
+"data": {
+"connectedRoom": "server_room"
+}
+},
+{
+"said": []
+},
+{
+"talk": "patricia",
+"picks": [
+"I need your help with something",
+"vetting files",
+"That's everything"
+]
+},
+{
+"notSaid": [
+"password Owen won't give me"
+]
+},
+{
+"expect": {
+"found_vetting_file": true,
+"owen_refused_password": false
+}
+},
+{
+"talk": "owen",
+"picks": [
+"wants a password",
+"I'll be back",
+"That's everything"
+]
+},
+{
+"expect": {
+"owen_refused_password": true,
+"server_password_obtained": false
+}
+},
+{
+"talk": "patricia",
+"picks": [
+"I need your help with something",
+"password Owen won't give me",
+"That's everything"
+]
+},
+{
+"expect": {
+"patricia_authorised_server": true
+}
+},
+{
+"talk": "owen",
+"picks": [
+"wants a password",
+"Security's signed it off",
+"That's everything"
+]
+},
+{
+"expect": {
+"server_password_obtained": true
+}
+},
+{
+"talk": "halloran",
+"picks": [
+"I need to talk to everyone",
+"I'm not here to judge",
+"Your spare badge",
+"That's all for now"
+]
+},
+{
+"talk": "patricia_phone",
+"picks": [
+"I know who it is",
+"David Torres",
+"front door",
+"Just checking in"
+]
+},
+{
+"expect": {
+"torres_suspected": true
+}
+},
+{
+"talk": "owen",
+"picks": [
+"David Torres' office",
+"That's everything"
+]
+},
+{
+"enter": "torres_office"
+},
+{
+"said": []
+},
+{
+"event": "fingerprint_collected:david_torres",
+"data": {
+"identified": false
+}
+},
+{
+"said": [
+"You didn't match it, but the vault reader will tell you whose it is"
+],
+"notSaid": [
+"That's Torres' print"
+]
+},
+{
+"expect": {
+"torres_print_collected": true
+}
+},
+{
+"enter": "data_center"
+},
+{
+"read": "upload_schedule"
+},
+{
+"talk": "patricia",
+"picks": [
+"I think I know who it is",
+"David Torres",
+"I'll stop him"
+]
+},
+{
+"expect": {
+"torres_identified": true,
+"found_torres_journal": false,
+"found_medical_bills": false
+}
+},
+{
+"talk": "torres",
+"picks": [
+"It's over, David",
+"They lied to you",
+"You knew people would die",
+"staying here until the police",
+"It doesn't matter",
+"social worker"
+]
+},
+{
+"enter": "server_room"
+},
+{
+"set": {
+"flag1_submitted": true
+}
+},
+{
+"set": {
+"flag2_submitted": true
+}
+},
+{
+"set": {
+"flag3_submitted": true
+}
+},
+{
+"set": {
+"flag4_submitted": true
+}
+},
+{
+"talk": "phone",
+"picks": [
+"Bring me in",
+"Bring me in",
+"On my way"
+]
+},
+{
+"expect": {
+"mission_complete": true
+}
+},
+{
+"talk": "debrief",
+"picks": [
+"He did this",
+"Not"
+]
+},
+{
+"credits": true
+},
+{
+"said": [
+"HANDED TO THE POLICE — said nothing"
+]
+}
+]
+}

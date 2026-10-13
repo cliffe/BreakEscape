@@ -175,12 +175,12 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
           { "text": "ROTATION WINDOW LOST — the East of England re-keyed a month early", "style": "warning", "condition": "globalVars.halloran_accused" },
           { "text": "" },
           { "text": "── THE CASE ──",                                      "style": "section-header" },
-          { "text": "NAMED ON THE EVIDENCE — before the server confirmed it", "style": "entry", "_comment": "Pass 5 R2 B1/B2/m1, R3-1: the reward needs the badge-log reasoning given in a reason menu before the naming (not the post-naming disclosure click), no guessed reason and no accusation, not only the timing.", "condition": "globalVars.named_before_portal && globalVars.door_log_reasoned_first && !globalVars.torres_reason_guessed && !globalVars.halloran_accused" },
+          { "text": "NAMED ON THE EVIDENCE — before the server confirmed it", "style": "entry", "_comment": "Pass 5 R2 B1/B2/m1, R3-1: the reward needs the badge-log reasoning given in a reason menu before the naming (not the post-naming disclosure click), no guessed reason and no accusation, not only the timing.", "condition": "globalVars.named_before_portal && globalVars.door_log_reasoned_first && !globalVars.torres_reason_guessed && !globalVars.halloran_accused && !globalVars.door_log_hinted" },
           { "text": "MOTIVE, MEANS AND AUTHORISATION — all on file",       "style": "entry", "condition": "(globalVars.found_medical_bills || globalVars.found_torres_journal || globalVars.found_vetting_file) && globalVars.found_pamphlet" },
           { "text": "RECRUITMENT PIPELINE — TalentStack link not documented", "style": "entry", "condition": "!globalVars.found_pamphlet && !globalVars.found_pipeline_list" },
           { "text": "BORROWED BADGE — Halloran's spare traced back to Torres", "style": "entry", "condition": "globalVars.door_log_reasoned && !globalVars.halloran_accused" },
           { "text": "WRONG ACCUSATION — Dr Ruth Halloran suspended, then cleared", "style": "warning", "condition": "globalVars.halloran_accused" },
-          { "text": "INSIDER NAMED — David Torres, though not every piece of evidence was recovered", "style": "entry", "_comment": "PASS 4 newcheck: catch-all so THE CASE never prints empty (found_pamphlet false with the pipeline list found matched no other line). Pass 5 m6: the always-true flag4_submitted term dropped (the debrief needs all four flags).", "condition": "!((globalVars.found_medical_bills || globalVars.found_torres_journal || globalVars.found_vetting_file) && globalVars.found_pamphlet) && !(!globalVars.found_pamphlet && !globalVars.found_pipeline_list) && !(globalVars.door_log_reasoned && !globalVars.halloran_accused) && !(globalVars.halloran_accused) && !(globalVars.named_before_portal && globalVars.door_log_reasoned_first && !globalVars.torres_reason_guessed)" },
+          { "text": "INSIDER NAMED — David Torres, though not every piece of evidence was recovered", "style": "entry", "_comment": "PASS 4 newcheck: catch-all so THE CASE never prints empty (found_pamphlet false with the pipeline list found matched no other line). Pass 5 m6: the always-true flag4_submitted term dropped (the debrief needs all four flags).", "condition": "!((globalVars.found_medical_bills || globalVars.found_torres_journal || globalVars.found_vetting_file) && globalVars.found_pamphlet) && !(!globalVars.found_pamphlet && !globalVars.found_pipeline_list) && !(globalVars.door_log_reasoned && !globalVars.halloran_accused) && !(globalVars.halloran_accused) && !(globalVars.named_before_portal && globalVars.door_log_reasoned_first && !globalVars.torres_reason_guessed && !globalVars.door_log_hinted)" },
           { "text": "" },
           { "text": "── DAVID TORRES ──",                                  "style": "section-header" },
           { "text": "TURNED — working for SAFETYNET inside ENTROPY's network", "style": "entry", "condition": "globalVars.final_choice === 'turn_double_agent'" },
@@ -381,7 +381,9 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
           "type": "collect_items",
           "targetCount": 1,
           "targetItemIds": ["personal_journal"],
-          "status": "active"
+          "status": "active",
+          "_comment": "Puzzle R1 (D-B): optional now that the journal is in the locked briefcase, so a player who never picks it isn't left with an aim that can't complete.",
+          "optional": true
         },
         {
           "taskId": "find_medical_bills",
@@ -680,7 +682,9 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
     "door_log_held": false,
     "data_center_entered": false,
     "torres_reason_guessed": false,
-    "door_log_reasoned_first": false
+    "door_log_reasoned_first": false,
+    "door_log_hinted": false,
+    "owen_refused_password": false
   },
 
   "endGoal": "Identify the insider with both halves of the case (motive and proof of exfiltration), stop the final upload, and decide David Torres' fate: turn him, hand him to the police, expose the programme, or fight.",
@@ -934,20 +938,23 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
               "condition": "value === true",
               "onceOnly": true,
               "completeTask": "access_bludit_vm",
-              "sendTimedMessage": { "delay": 1500, "message": "First flag in. An admin login, left lying about in a handover note. Somebody wanted that box easy to get into. Three to go." }
+              "_comment": "Puzzle R1 (P3): no counts in the flag texts, and every flag ticks 'Get into the research portal' (completeTask returns early on a done task, objectives-manager.js:546), since the drop-site takes flags in any order.",
+              "sendTimedMessage": { "delay": 1500, "message": "Login flag in. An admin login, left lying about in a handover note. Somebody wanted that box easy to get into." }
             },
             {
               "eventPattern": "global_variable_changed:flag2_submitted",
               "condition": "value === true",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 1500, "message": "Second flag in. You're on the research portal's box now. Find out who's been living on it." }
+              "completeTask": "access_bludit_vm",
+              "sendTimedMessage": { "delay": 1500, "message": "Foothold flag in. You're on the research portal's box now. Find out who's been living on it." }
             },
             {
               "eventPattern": "global_variable_changed:flag3_submitted",
               "condition": "value === true",
               "onceOnly": true,
               "setGlobal": { "privesc_guide_offered": true },
-              "sendTimedMessage": { "delay": 1500, "message": "Third flag verified. His staging manifest, under his own name. Last one's the authorisation behind it, where only root can read. Sudo guide's yours if you want it." }
+              "completeTask": "access_bludit_vm",
+              "sendTimedMessage": { "delay": 1500, "message": "Manifest flag verified. His staging manifest, under his own name. The authorisation behind it sits where only root can read. Sudo guide's yours if you want it." }
             },
             {
               "_comment": "PASS 3 (E11 audit): with the fate already set, the debrief follows at once and this 'call me' would land after it.",
@@ -955,7 +962,13 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
               "condition": "value === true && globalVars.final_choice === ''",
               "onceOnly": true,
               "setGlobal": { "architect_approval_confirmed": true },
-              "sendTimedMessage": { "delay": 1500, "message": "Final flag in. The Architect's authorisation, casualty projection and all. Call me. You need to hear this." }
+              "sendTimedMessage": { "delay": 1500, "message": "Root flag in. The Architect's authorisation, casualty projection and all. Call me. You need to hear this." }
+            },
+            {
+              "eventPattern": "global_variable_changed:flag4_submitted",
+              "condition": "value === true",
+              "onceOnly": true,
+              "completeTask": "access_bludit_vm"
             },
 <%# Pass 5 A2: the last flag lands after the fate. The debrief no longer
     follows at once, so HaX asks for the call-in. Only the last flag can
@@ -1132,9 +1145,18 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
             {
               "_comment": "PASS 3 P6, re-keyed by the fingerprint redesign: fires on a lift of Torres' print. Lifted prints are saved with the game, so torres_print_collected is safe to read.",
               "eventPattern": "fingerprint_collected:david_torres",
+              "condition": "data.identified === true",
               "onceOnly": true,
               "setGlobal": { "torres_print_collected": true },
               "sendTimedMessage": { "delay": 1500, "message": "That's Torres' print. The vault's north of the server room." }
+            },
+            {
+              "_comment": "Puzzle R1 (P4): the lift was logged unidentified. 'identified' is a top-level key of the payload (biometrics.js:89-93).",
+              "eventPattern": "fingerprint_collected:david_torres",
+              "condition": "data.identified !== true",
+              "onceOnly": true,
+              "setGlobal": { "torres_print_collected": true },
+              "sendTimedMessage": { "delay": 1500, "message": "Print's lifted off his mug. You didn't match it, but the vault reader will tell you whose it is. North of the server room." }
             },
 <% ["Locked Filing Cabinet", "Torres' Briefcase"].each do |nm| %>
             {
@@ -1565,16 +1587,6 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
       "npcs": [],
       "objects": [
         {
-          "type": "notes",
-          "id": "personal_journal",
-          "name": "Personal Journal",
-          "takeable": true,
-          "readable": true,
-          "text": <%= torres_journal_excerpt.to_json %>,
-          "observations": "A battered notebook in the desk tray, written in small neat capitals in blue ink. The last few pages are pressed hard enough to dent the paper.",
-          "onRead": { "setVariable": { "found_torres_journal": true } }
-        },
-        {
           "_comment": "PASS 3 P6: the only Torres print surface. It carries no text and no readable of its own. (A print surface no longer hides its text: the kit panel offers Use normally.) Pinned on the front-right of the desk (desk x 118-196, y 86-147 in room px; the chair sprite covers y 64-128 and the plant x 67-131), so it is not hidden behind the plant (playtest 3a).",
           "type": "office-misc-cup",
           "id": "torres_mug",
@@ -1597,8 +1609,19 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
           "lockType": "key",
           "keyPins": [35, 60, 45, 30],
           "difficulty": "easy",
-          "observations": "A scuffed leather briefcase under the desk, locked. Pin tumbler.",
+          "observations": "A scuffed leather briefcase under the desk, locked and heavy with papers. Pin tumbler.",
           "contents": [
+            {
+              "_comment": "Puzzle R1 (D-B): moved from the desk tray into the locked briefcase, where its author would keep it. Spends the m01 picks on the main motive route; without them the motive still comes from Patricia's vetting files (or her KO drop), so nothing is held.",
+              "type": "notes",
+              "id": "personal_journal",
+              "name": "Personal Journal",
+              "takeable": true,
+              "readable": true,
+              "text": <%= torres_journal_excerpt.to_json %>,
+              "observations": "A battered notebook zipped into the briefcase's inside pocket, written in small neat capitals in blue ink. The last few pages are pressed hard enough to dent the paper.",
+              "onRead": { "setVariable": { "found_torres_journal": true } }
+            },
             {
               "type": "notes",
               "id": "medical_bills",
@@ -1644,11 +1667,12 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
             {
               "_comment": "PASS 2: the lab is unlocked, so the badge now opens the server hallway (a second route beside Owen's clone, lesson 8).",
               "type": "keycard",
-              "name": "Research Badge",
+              "name": "Visitor Spare (#4471)",
               "id": "research_lab_badge",
               "opens_lock": "employee_badge",
               "takeable": true,
-              "observations": "Dr Halloran's spare research badge. Senior staff badges open the server hallway.",
+              "_comment": "Puzzle R1 (P8): the lab's visitor spare off the hook by the door, the #4471 on the badge log. Room dressing (m12) places the hook.",
+              "observations": "The research lab's visitor spare, badge #4471, registered to Dr Halloran. It hangs on the hook by the lab door. It opens the server hallway.",
               "puzzle_graph_unlocks": "server_hallway",
               "puzzle_graph_optional": true
             }
@@ -1656,6 +1680,16 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
         }
       ],
       "objects": [
+        {
+          "_comment": "Puzzle R1 (D-A): why the vault's second enrolled print can't be lifted, readable even with Halloran knocked out. Room dressing places it by the benches.",
+          "type": "notes",
+          "id": "lab_rules_notice",
+          "name": "Lab Rules",
+          "takeable": false,
+          "readable": true,
+          "text": "HEISENBERG LAB - HOUSE RULES\n\n1. Gloves at the bench. Always. No exceptions for leads.\n2. Nothing leaves this lab on removable media.\n3. The visitor spare (#4471) lives on the hook by the door. Visitors only.\n\n- R. Halloran",
+          "observations": "A laminated notice taped to the end of the bench"
+        },
         {
           "_comment": "PASS 4 (whodunnit): Halloran's alibi for the first night on the badge log (Wed 23 Sep).",
           "type": "notes",

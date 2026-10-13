@@ -66,6 +66,7 @@ VAR door_log_held = false
 VAR owen_office_card_relayed = false // Synced scenario global: HaX has pushed Owen's office spare (set here only)
 VAR recruiter_texted = false
 VAR it_notice_read = false
+VAR door_log_hinted = false // Synced scenario global (pass 5 puzzle R1, P1/D-D): HaX has spelled out the front-door method; set here only. Bars the early-naming reward
 VAR door_log_reasoned_first = false // Synced scenario global (pass 5 R3-1): the front-door reason given in a reason menu, before the naming; set only in the *log_reason_right knots. The early-naming reward reads this, not door_log_reasoned
 VAR torres_reason_guessed = false // Synced scenario global (pass 5 R2 B2): a wrong reason or a wrong name was tried; also set by Patricia (m05_npc_patricia_morgan, m05_phone_patricia). Excludes the early-naming reward
 
@@ -420,6 +421,8 @@ Go on. Who?
 {halloran_accused or torres_identified: -> support_hub}
 #speaker:agent_0x99
 {found_halloran_alibi:
+    // Puzzle R1 (P2): striking a cleared decoy is a guess too.
+    ~ torres_reason_guessed = true
     Halloran was in Zurich the night that badge first went in. You know that. Look again.
     -> support_hub
 }
@@ -889,7 +892,8 @@ See you at HQ.
     Start with Patricia Morgan. Her office is off reception, on the east side.
 - not server_badge_obtained:
     The server hallway wants a staff badge. Owen carries one on his lanyard in the open-plan, and your cloner reads it while he talks.
-- not server_password_obtained:
+// Puzzle R1 (P5): whether the player is in, not how (a typed password counts).
+- not server_password_obtained and not server_room_entered:
     {
     - not server_door_seen and not it_notice_read:
         Get to the server-room door, off the server hallway. The notice beside it says who holds the password.
@@ -924,10 +928,16 @@ See you at HQ.
     - halloran_accused and not torres_suspected:
         You put Halloran's name up, and the upload sped up when Security moved.
         Check it holds. Where was she on the twenty-third, and whose badge came through the front door first?
+    // Puzzle R1 (P1/D-D): the badge-log hints get more specific as the player
+    // goes. The method itself comes only after a wrong reason, and giving it
+    // sets door_log_hinted, which bars the early-naming reward.
     - door_log_held and not found_door_log:
-        The badge log's in your kit. Read it, the front-door lines as well as hers.
+        The badge log's in your kit. Read it.
     - found_door_log and not halloran_questioned and not found_halloran_alibi and not torres_suspected:
-        That log says Halloran's spare. Ask her where it lives. And read the front-door lines, not just hers.
+        That log says Halloran's spare. Ask her where it lives.
+    - found_door_log and (halloran_questioned or found_halloran_alibi) and torres_reason_guessed and not torres_suspected:
+        ~ door_log_hinted = true
+        Her spare goes in at night. Look at who comes through the front door just before it.
     - found_door_log and not torres_suspected:
         {patricia_ko:
             You've got a pattern on that sheet. Give me the name and the reason, or read her files. They're on her office floor.

@@ -29,6 +29,8 @@ VAR told_about_torres = false
 VAR first_meeting = true
 VAR accused_acknowledged = false
 VAR hub_quiet = false
+VAR gave_spare = false        // puzzle R1 (P8): she handed the player the visitor spare
+VAR asked_vault = false       // puzzle R1 (D-A): the gloves answer, once
 
 // Synced from scenario globals
 VAR player_name = "Agent 0x00"
@@ -41,6 +43,8 @@ VAR halloran_accused = false
 VAR torres_suspected = false
 VAR door_log_reasoned = false
 VAR patricia_ko = false
+VAR vault_reader_seen = false
+VAR server_password_obtained = false
 
 // ===========================================
 // INITIAL MEETING
@@ -141,6 +145,11 @@ Dr Ruth Halloran: If one of them did this, somebody gave them a reason. Pressure
 + {not server_badge_obtained and topic_heisenberg and not halloran_accused} [I need into the server hallway. Your badge opens it.]
     -> request_research_access
 
+// Puzzle R1 (D-A): the vault's second enrolled print, once the player has
+// heard of the vault (Owen's password handover, or the reader itself).
++ {(vault_reader_seen or server_password_obtained) and not asked_vault} [The key vault takes your thumbprint. Could someone have lifted it?]
+    -> ask_vault
+
 + {torres_identified and not told_about_torres} [It's David.]
     -> halloran_guilt
 
@@ -179,13 +188,23 @@ Dr Ruth Halloran: David made Heisenberg work. Two years of his life are in that 
 
 -> hub
 
+// Puzzle R1 (P8): the spare she hands over is the visitor spare off the hook,
+// the same #4471 the badge log shows at night.
+=== ask_vault ===
+#speaker:dr_halloran
+~ asked_vault = true
+Dr Ruth Halloran: Off me? Not in this lab. Gloves at the bench, always; it's the first rule I wrote.
+Dr Ruth Halloran: You'll not lift anything of mine in here. Try it if you like.
+-> hub
+
 === request_research_access ===
 #speaker:dr_halloran
 
 {halloran_influence >= 25:
+    ~ gave_spare = true
     #give_item:keycard:research_lab_badge
-    Dr Ruth Halloran: You've been straight with me. Here's my spare.
-    Dr Ruth Halloran: Senior badges open the server hallway. Bring it back when you're done.
+    Dr Ruth Halloran: You've been straight with me. Take the visitor spare off the hook by the door.
+    Dr Ruth Halloran: It's registered to me, and it opens the server hallway. Bring it back when you're done.
     ~ halloran_influence += 5
     -> hub
 - else:
@@ -207,7 +226,11 @@ Dr Ruth Halloran: Ask what you came to ask.
 #speaker:dr_halloran
 ~ halloran_questioned = true
 ~ found_halloran_alibi = true
-Dr Ruth Halloran: My spare? It hangs on the hook by the door, for visitors. I haven't touched it in months.
+{gave_spare:
+    Dr Ruth Halloran: The one you're carrying. It lives on that hook by the door, for visitors, and nobody signs it out.
+- else:
+    Dr Ruth Halloran: My spare? It hangs on the hook by the door, for visitors. I haven't touched it in months.
+}
 Dr Ruth Halloran: The twenty-third I was in Zurich, giving a paper to two hundred people. The lanyard's on my monitor.
 // PASS 5 (m3): three names, not one. The badge log's front-door times decide it.
 Dr Ruth Halloran: Who's in here after hours? Amara some evenings, gone by ten. Ben, for his test runs. David, some nights; he says it's quieter than his office.
