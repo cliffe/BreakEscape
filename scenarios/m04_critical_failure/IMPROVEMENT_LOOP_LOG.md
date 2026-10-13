@@ -904,3 +904,5 @@ Not voiced (choices): new "[Nine. Tell me we came out with something.]" (crew lo
 | Browser | 0 | 0 | 4 |
 
 The reviewer judged that a fourth review cycle wasn't needed once the cycle-3 fixes landed. 27 routes. Still open for the user: the debrief's network lines and "status page" (erb ~981), both waiting on the SecGen check.
+
+**Open item from m05's review (2026-10-13):** HaX's first-call choices have no guard, so a first call left unanswered keeps the hub (with "Bring me in") hidden until the player answers. m04 has the same shape. Fix in m04's playtest stage: put an outcome guard at the top of the first-call choices knot that sends a player who's already past the first step to the hub.
