@@ -3643,6 +3643,438 @@
       "w": 42,
       "h": 45,
       "gid": 1039
+    },
+    "aes_esd_station1": {
+      "id": 239,
+      "w": 20,
+      "h": 25,
+      "gid": 1040
+    },
+    "aes_esd_button2": {
+      "id": 240,
+      "w": 22,
+      "h": 22,
+      "gid": 1041
+    },
+    "aes_dial_thermometer1": {
+      "id": 241,
+      "w": 24,
+      "h": 23,
+      "gid": 1042
+    },
+    "aes_h2_detector1": {
+      "id": 242,
+      "w": 14,
+      "h": 22,
+      "gid": 1043
+    },
+    "aes_vent_fan1": {
+      "id": 243,
+      "w": 22,
+      "h": 22,
+      "gid": 1044
+    },
+    "aes_ppe_rack1": {
+      "id": 244,
+      "w": 26,
+      "h": 25,
+      "gid": 1045
+    },
+    "aes_status_display1": {
+      "id": 245,
+      "w": 26,
+      "h": 20,
+      "gid": 1046
+    },
+    "aes_first_aid1": {
+      "id": 246,
+      "w": 22,
+      "h": 20,
+      "gid": 1047
+    },
+    "aes_emergency_phone1": {
+      "id": 247,
+      "w": 18,
+      "h": 23,
+      "gid": 1048
+    },
+    "aes_breaker_panel1": {
+      "id": 248,
+      "w": 20,
+      "h": 32,
+      "gid": 1049
+    },
+    "aes_pegboard1": {
+      "id": 249,
+      "w": 27,
+      "h": 19,
+      "gid": 1050
+    },
+    "aes_cctv1": {
+      "id": 250,
+      "w": 23,
+      "h": 18,
+      "gid": 1051
+    },
+    "aes_lockout_station1": {
+      "id": 251,
+      "w": 25,
+      "h": 22,
+      "gid": 1052
+    },
+    "aes_hose_reel1": {
+      "id": 252,
+      "w": 21,
+      "h": 24,
+      "gid": 1053
+    },
+    "aes_hose_reel2": {
+      "id": 253,
+      "w": 21,
+      "h": 25,
+      "gid": 1054
+    },
+    "aes_radio_charger1": {
+      "id": 254,
+      "w": 16,
+      "h": 20,
+      "gid": 1055
+    },
+    "aes_hv_sign1": {
+      "id": 255,
+      "w": 18,
+      "h": 25,
+      "gid": 1056
+    },
+    "aes_barrier1": {
+      "id": 256,
+      "w": 27,
+      "h": 22,
+      "gid": 1057
+    },
+    "aes_battery_module1": {
+      "id": 257,
+      "w": 24,
+      "h": 22,
+      "gid": 1058
+    },
+    "aes_battery_rack1": {
+      "id": 258,
+      "w": 33,
+      "h": 63,
+      "gid": 1059
+    },
+    "aes_battery_rack2": {
+      "id": 259,
+      "w": 30,
+      "h": 63,
+      "gid": 1060
+    },
+    "aes_beacon1": {
+      "id": 260,
+      "w": 20,
+      "h": 21,
+      "gid": 1061
+    },
+    "aes_bms_bypass1": {
+      "id": 261,
+      "w": 47,
+      "h": 57,
+      "gid": 1062
+    },
+    "aes_bms_bypass2": {
+      "id": 262,
+      "w": 43,
+      "h": 57,
+      "gid": 1063
+    },
+    "aes_bollard1": {
+      "id": 263,
+      "w": 10,
+      "h": 24,
+      "gid": 1064
+    },
+    "aes_cable_drum1": {
+      "id": 264,
+      "w": 27,
+      "h": 24,
+      "gid": 1065
+    },
+    "aes_chiller1": {
+      "id": 265,
+      "w": 60,
+      "h": 55,
+      "gid": 1066
+    },
+    "aes_clipboard1": {
+      "id": 266,
+      "w": 17,
+      "h": 24,
+      "gid": 1067
+    },
+    "aes_compressor1": {
+      "id": 267,
+      "w": 24,
+      "h": 23,
+      "gid": 1068
+    },
+    "aes_cones1": {
+      "id": 268,
+      "w": 26,
+      "h": 24,
+      "gid": 1069
+    },
+    "aes_control_panel1": {
+      "id": 269,
+      "w": 57,
+      "h": 60,
+      "gid": 1070
+    },
+    "aes_drum1": {
+      "id": 270,
+      "w": 17,
+      "h": 24,
+      "gid": 1071
+    },
+    "aes_gas_cylinders1": {
+      "id": 271,
+      "w": 20,
+      "h": 25,
+      "gid": 1072
+    },
+    "aes_generator1": {
+      "id": 272,
+      "w": 61,
+      "h": 54,
+      "gid": 1073
+    },
+    "aes_generator2": {
+      "id": 273,
+      "w": 62,
+      "h": 51,
+      "gid": 1074
+    },
+    "aes_inverter1": {
+      "id": 274,
+      "w": 56,
+      "h": 56,
+      "gid": 1075
+    },
+    "aes_inverter2": {
+      "id": 275,
+      "w": 31,
+      "h": 58,
+      "gid": 1076
+    },
+    "aes_junction_box1": {
+      "id": 276,
+      "w": 37,
+      "h": 52,
+      "gid": 1077
+    },
+    "aes_microwave1": {
+      "id": 277,
+      "w": 19,
+      "h": 23,
+      "gid": 1078
+    },
+    "aes_pallet1": {
+      "id": 278,
+      "w": 30,
+      "h": 26,
+      "gid": 1079
+    },
+    "aes_pallet_truck1": {
+      "id": 279,
+      "w": 28,
+      "h": 28,
+      "gid": 1080
+    },
+    "aes_suppression1": {
+      "id": 280,
+      "w": 41,
+      "h": 63,
+      "gid": 1081
+    },
+    "aes_switchgear1": {
+      "id": 281,
+      "w": 62,
+      "h": 59,
+      "gid": 1082
+    },
+    "aes_switchgear2": {
+      "id": 282,
+      "w": 28,
+      "h": 61,
+      "gid": 1083
+    },
+    "aes_toolbox1": {
+      "id": 283,
+      "w": 23,
+      "h": 21,
+      "gid": 1084
+    },
+    "aes_tool_trolley1": {
+      "id": 284,
+      "w": 26,
+      "h": 23,
+      "gid": 1085
+    },
+    "aes_transformer1": {
+      "id": 285,
+      "w": 53,
+      "h": 60,
+      "gid": 1086
+    },
+    "aes_bank_c_sign1": {
+      "id": 286,
+      "w": 51,
+      "h": 11,
+      "gid": 1087
+    },
+    "aes_bank_a_sign1": {
+      "id": 287,
+      "w": 51,
+      "h": 11,
+      "gid": 1088
+    },
+    "aes_bank_b_sign1": {
+      "id": 288,
+      "w": 51,
+      "h": 11,
+      "gid": 1089
+    },
+    "aes_esd_sign1": {
+      "id": 289,
+      "w": 43,
+      "h": 17,
+      "gid": 1090
+    },
+    "aes_inverter_sign1": {
+      "id": 290,
+      "w": 63,
+      "h": 11,
+      "gid": 1091
+    },
+    "aes_dock_sign1": {
+      "id": 291,
+      "w": 59,
+      "h": 11,
+      "gid": 1092
+    },
+    "aes_ppe_sign1": {
+      "id": 292,
+      "w": 20,
+      "h": 27,
+      "gid": 1093
+    },
+    "aes_hv_danger1": {
+      "id": 293,
+      "w": 26,
+      "h": 27,
+      "gid": 1094
+    },
+    "aes_process_diagram1": {
+      "id": 294,
+      "w": 46,
+      "h": 30,
+      "gid": 1095
+    },
+    "aes_procedures_sign1": {
+      "id": 295,
+      "w": 28,
+      "h": 34,
+      "gid": 1096
+    },
+    "aes_round_terminal1": {
+      "id": 296,
+      "w": 18,
+      "h": 24,
+      "gid": 1097
+    },
+    "aes_logo_sign1": {
+      "id": 297,
+      "w": 69,
+      "h": 19,
+      "gid": 1098
+    },
+    "aes_roller_shutter1": {
+      "id": 298,
+      "w": 96,
+      "h": 52,
+      "gid": 1099
+    },
+    "aes_spill_kit1": {
+      "id": 299,
+      "w": 20,
+      "h": 27,
+      "gid": 1100
+    },
+    "aes_spill_cabinet1": {
+      "id": 300,
+      "w": 23,
+      "h": 26,
+      "gid": 1101
+    },
+    "aes_ladder1": {
+      "id": 301,
+      "w": 22,
+      "h": 29,
+      "gid": 1102
+    },
+    "aes_combiner1": {
+      "id": 302,
+      "w": 19,
+      "h": 31,
+      "gid": 1103
+    },
+    "aes_combiner2": {
+      "id": 303,
+      "w": 20,
+      "h": 26,
+      "gid": 1104
+    },
+    "aes_floor_tray1": {
+      "id": 304,
+      "w": 28,
+      "h": 20,
+      "gid": 1105
+    },
+    "aes_air_mover1": {
+      "id": 305,
+      "w": 23,
+      "h": 27,
+      "gid": 1106
+    },
+    "aes_condenser1": {
+      "id": 306,
+      "w": 24,
+      "h": 27,
+      "gid": 1107
+    },
+    "aes_bms_tower1": {
+      "id": 307,
+      "w": 19,
+      "h": 28,
+      "gid": 1108
+    },
+    "aes_ppe_cabinet1": {
+      "id": 308,
+      "w": 18,
+      "h": 28,
+      "gid": 1109
+    },
+    "aes_cabinet_dark1": {
+      "id": 309,
+      "w": 18,
+      "h": 26,
+      "gid": 1110
+    },
+    "aes_floor_grate1": {
+      "id": 310,
+      "w": 28,
+      "h": 16,
+      "gid": 1111
     }
   }
 }

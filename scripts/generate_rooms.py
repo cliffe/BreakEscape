@@ -250,6 +250,7 @@ def tile_layer(name: str, layer_id: int, width: int, height: int, data: list, vi
 
 
 ROOM6_FIRSTGID = 701
+ROOM18_FIRSTGID = 601  # room18's slot in TILESETS; AES_WIDE_SHEETS put the east half of a hall there
 ROOM6_SHEET_COLS = 10
 
 
@@ -302,8 +303,18 @@ def room_tilesets(name: str) -> list[dict]:
             if ts.get("name") == "room6":
                 ts["name"] = floor
                 ts["image"] = ts["image"].replace("room6.png", f"{floor}.png")
-    elif name in UNI_FLOOR_SHEETS or name in ZDS_FLOOR_SHEETS:
-        floor = UNI_FLOOR_SHEETS.get(name) or ZDS_FLOOR_SHEETS[name]
+    elif name in AES_WIDE_SHEETS:
+        # a 20-wide sheet in two halves: west on room6's gids, east on room18's (unused by builder maps)
+        west, east = AES_WIDE_SHEETS[name]
+        for ts in tilesets:
+            if ts.get("name") == "room6":
+                ts["name"] = west
+                ts["image"] = ts["image"].replace("room6.png", f"{west}.png")
+            elif ts.get("name") == "room18":
+                ts["name"] = east
+                ts["image"] = ts["image"].replace("room18.png", f"{east}.png")
+    elif name in UNI_FLOOR_SHEETS or name in ZDS_FLOOR_SHEETS or name in AES_FLOOR_SHEETS:
+        floor = UNI_FLOOR_SHEETS.get(name) or ZDS_FLOOR_SHEETS.get(name) or AES_FLOOR_SHEETS[name]
         for ts in tilesets:
             if ts.get("name") == "room6":
                 ts["name"] = floor
@@ -346,6 +357,24 @@ ZDS_FLOOR_SHEETS = {
     "room_zds_servers": "room_zds_raised",       # raised access floor, two cold aisles
     "room_zds_hall": "room_zds_hall",            # the lobby's stone, no decals
     "room_zds_hall_exec": "room_zds_hall_exec",  # carpet with a burgundy runner
+}
+
+# Albion Energy Storage (m04): room6 repainted by room_gen/make_aes_tileset.py,
+# cream office walls with a green brand line; grey blockwork with a yellow band
+# for the plant side.
+AES_FLOOR_SHEETS = {
+    "room_aes_reception": "room_aes_lobby",      # terrazzo, Albion bolt inlay at the spawn
+    "room_aes_ops": "room_aes_carpet",           # blue-grey carpet, kitchenette vinyl NE
+    "room_aes_security": "room_aes_security",    # charcoal carpet
+    "room_aes_control": "room_aes_control",      # anti-static vinyl tiles
+    "room_aes_workshop": "room_aes_workshop",    # sealed concrete, hazard line round the bench
+    "room_aes_plant": "room_aes_plant",          # green epoxy, red-hatched box at the ESD
+    "room_aes_dock": "room_aes_dock",            # concrete, bay lines, threshold stripes
+}
+# 20x10 halls whose floor is one 640px sheet cut in two (west half, east half).
+AES_WIDE_SHEETS = {
+    "room_aes_hall1": ("room_aes_hall1_w", "room_aes_hall1_e"),
+    "room_aes_hall2": ("room_aes_hall2_w", "room_aes_hall2_e"),
 }
 
 
@@ -844,6 +873,36 @@ WALL_MOUNTED_EXTRAS = {
     "magazine_cover",
     "private_sign",
     "restricted_sign",
+    "aes_esd_station",
+    "aes_beacon",
+    "aes_cable_tray",
+    "aes_esd_button",
+    "aes_dial_thermometer",
+    "aes_h2_detector",
+    "aes_vent_fan",
+    "aes_ppe_rack",
+    "aes_status_display",
+    "aes_first_aid",
+    "aes_emergency_phone",
+    "aes_breaker_panel",
+    "aes_pegboard",
+    "aes_cctv",
+    "aes_lockout_station",
+    "aes_hose_reel",
+    "aes_radio_charger",
+    "aes_hv_sign",
+    "aes_bank_c_sign",
+    "aes_bank_a_sign",
+    "aes_bank_b_sign",
+    "aes_esd_sign",
+    "aes_inverter_sign",
+    "aes_dock_sign",
+    "aes_ppe_sign",
+    "aes_hv_danger",
+    "aes_process_diagram",
+    "aes_procedures_sign",
+    "aes_round_terminal",
+    "aes_logo_sign",
 }
 
 
@@ -2097,6 +2156,11 @@ class _Uni:
         elif template_key == "20x10":
             kw = {"room_override": [ROOM6_FIRSTGID + row * ROOM6_SHEET_COLS + COLS_20[col]
                                     for row in range(10) for col in range(20)]}
+        elif template_key == "20x10_wide":
+            # AES_WIDE_SHEETS: cols 0-9 from the west half (room6's gids), 10-19 from the east (room18's)
+            template_key = "20x10"
+            kw = {"room_override": [(ROOM6_FIRSTGID if col < 10 else ROOM18_FIRSTGID) + row * ROOM6_SHEET_COLS + col % 10
+                                    for row in range(10) for col in range(20)]}
         if self.collisions:
             kw["collisions"] = self.collisions
         return build_room(
@@ -2864,6 +2928,86 @@ def room_zds_hall_exec():
     return r.build("room_zds_hall_exec", "10x6_hall")
 
 
+# ---------------------------------------------------------------------------
+# Albion Energy Storage (m04 "Critical Failure"): a 200 MWh grid battery site on
+# a night shift. Walls and floors: room_gen/make_aes_tileset.py; hand-drawn signs
+# and the shutter: room_gen/make_aes_props.py; plant (racks, inverters,
+# switchgear, generator, BMS cabinet, ESD station, dial thermometer, gas
+# detector...): PixelLab, aes_* objects. These maps are m04's own, so the shared
+# room_battery_hall, room_it, room_control_1x2gu, room_office, room_reception and
+# small_room_1x1gu (used by sis02, m01 and others) are untouched.
+# Coordinates: x = left edge, y = feet.
+# ---------------------------------------------------------------------------
+
+def _rack_row(r, x0, feet, count):
+    """A row of the original dark battery stacks (batrack, 32x72, drawn from photos;
+    user, 2026-10-13: kept in preference to new art) from x0. Returns the x after the row."""
+    for i in range(count):
+        r.table("batrack", float(x0 + 32 * i), float(feet), kind="objects")
+    return x0 + 32 * count
+
+
+def room_aes_hall1():
+    """
+    4×2 GU (20×10) Battery Hall 1: Rack Bank C, rows of the original dark battery
+    stacks (batrack). Grey epoxy floor with a yellow
+    walkway edge along the door row, hatched keep-clear borders round the rack
+    rows and a marked north-south aisle (room_aes_hall1_w/_e).
+    Doors: W and E on row 2 (y 64-100), S in the SW corner (x 32-64); the
+    workshop covers cols 0-9 below y 256.
+    Kept clear: the door row y 64-132 wall to wall; the aisle x 346-454 from the
+    door row to y 300, where Cipher (operative_cipher) patrols: waypoints (12,7),
+    (12,3), (13,3), (10,3) (sprite centres x 320-416, feet y 128-256); the west
+    south aisle (y 210-256) to the S door.
+    Back wall, west to east: PPE sign, the dial thermometer (the core deduction:
+    an analogue instrument on the Rack Bank C wall, same spot as before, x 66),
+    the RACK BANK C plate over the row, a vent fan, the digital rack status
+    display (x 228, as before), an HV warning sign, the H2 detector under the
+    ventilation outlet (x 388, as before), the BESS process diagram, a CCTV
+    camera and an amber beacon. West wall: the duty-round terminal (where the
+    old decorative red button was: nothing red in the hall now reads as an ESD)
+    and an extinguisher. East wall: an emergency phone.
+    Slots (as-type): aes_dial_thermometer (Analogue Thermometer), aes_status_display
+    (Battery Rack Status Panels), aes_h2_detector (H2 Gas Detector Panel),
+    aes_process_diagram (BESS Process Diagram), aes_round_terminal (Duty Round Panel).
+    """
+    r = _Uni()
+    # rack blocks of the original batrack stacks (72 tall), packed in overlapping rows as
+    # the photos show (cycle 2, user: "a lot of open space"). Tops stay below the walkway
+    # (y 130+), the aisle x 346-448 and the S-door lane x 32-64 stay clear.
+    _rack_row(r, 112, 202, 7)                         # Rack Bank C, west block back row: x 112-336
+    _rack_row(r, 112, 238, 7)                         # west block front row
+    _rack_row(r, 456, 202, 4)                         # east block: x 456-584, three rows
+    _rack_row(r, 456, 240, 4)
+    _rack_row(r, 456, 278, 4)
+    # west pocket between the S-door lane and the block (x 66-110)
+    r.item("aes_suppression1", 68.0, 200.0)           # gas suppression cylinders, top 137
+    r.item("aes_combiner1", 70.0, 236.0)              # DC combiner cabinet fed from the block
+    r.item("aes_spill_kit1", 90.0, 236.0)             # electrolyte spill kit
+    # east edge strip (x 586-606) and the aisle's south end (below Cipher's (12,7))
+    r.item("aes_ladder1", 586.0, 236.0)
+    r.item("aes_bollard1", 592.0, 300.0)
+    r.item("aes_cable_drum1", 414.0, 304.0)
+    r.item("aes_bms_tower1", 586.0, 196.0)            # bank C's BMS master controller, end of the east block
+    # back wall
+    r.item("aes_ppe_sign1", 38.0, 52.0)
+    r.item("aes_dial_thermometer1", 66.0, 56.0)       # top-left 66,33: in reach from the walkway
+    r.item("aes_bank_c_sign1", 98.0, 34.0)
+    r.item("aes_vent_fan1", 160.0, 50.0)
+    r.item("aes_status_display1", 228.0, 54.0)        # top-left 228,34
+    r.item("aes_hv_danger1", 280.0, 56.0)
+    r.item("aes_h2_detector1", 388.0, 56.0)           # top-left 388,34
+    r.item("aes_vent_fan1", 410.0, 48.0)              # the ventilation outlet over the aisle
+    r.item("aes_process_diagram1", 470.0, 52.0)
+    r.item("aes_cctv1", 556.0, 32.0)
+    r.item("aes_beacon1", 586.0, 44.0)
+    # side walls
+    r.item("aes_round_terminal1", 12.0, 176.0)        # west wall, below the door row
+    r.item("fire_extinguisher1", 14.0, 238.0)
+    r.item("aes_emergency_phone1", 610.0, 162.0)      # east wall, below the door row
+    return r.build("room_aes_hall1", "20x10_wide")
+
+
 def main():
     # Hand-maintained (do not regenerate — edit .tmj in Tiled, then export JSON):
     #   room_hospital_office, room_hospital_cto_office, room_hospital_meeting
@@ -2901,6 +3045,7 @@ def main():
         "room_zds_servers": room_zds_servers,
         "room_zds_hall": room_zds_hall,
         "room_zds_hall_exec": room_zds_hall_exec,
+        "room_aes_hall1": room_aes_hall1,
     }
     # Optionally restrict to specific rooms (argv) so already-updated rooms are
     # not clobbered, e.g.  python3 scripts/generate_rooms.py room_hospital_hall

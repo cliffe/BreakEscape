@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<tileset version="1.10" tiledversion="1.11.2" name="objects/hospital_extras" tilewidth="60" tileheight="60" tilecount="229" columns="0">
+<tileset version="1.10" tiledversion="1.11.2" name="objects/hospital_extras" tilewidth="60" tileheight="60" tilecount="301" columns="0">
  <grid orientation="orthogonal" width="1" height="1"/>
  <tile id="0">
   <image source="../objects/iv_stand1.png" width="25" height="60"/>
@@ -687,5 +687,221 @@
  </tile>
  <tile id="238">
   <image source="../objects/bar_cart1.png" width="42" height="45"/>
+ </tile>
+ <tile id="239">
+  <image source="../objects/aes_esd_station1.png" width="20" height="25"/>
+ </tile>
+ <tile id="240">
+  <image source="../objects/aes_esd_button2.png" width="22" height="22"/>
+ </tile>
+ <tile id="241">
+  <image source="../objects/aes_dial_thermometer1.png" width="24" height="23"/>
+ </tile>
+ <tile id="242">
+  <image source="../objects/aes_h2_detector1.png" width="14" height="22"/>
+ </tile>
+ <tile id="243">
+  <image source="../objects/aes_vent_fan1.png" width="22" height="22"/>
+ </tile>
+ <tile id="244">
+  <image source="../objects/aes_ppe_rack1.png" width="26" height="25"/>
+ </tile>
+ <tile id="245">
+  <image source="../objects/aes_status_display1.png" width="26" height="20"/>
+ </tile>
+ <tile id="246">
+  <image source="../objects/aes_first_aid1.png" width="22" height="20"/>
+ </tile>
+ <tile id="247">
+  <image source="../objects/aes_emergency_phone1.png" width="18" height="23"/>
+ </tile>
+ <tile id="248">
+  <image source="../objects/aes_breaker_panel1.png" width="20" height="32"/>
+ </tile>
+ <tile id="249">
+  <image source="../objects/aes_pegboard1.png" width="27" height="19"/>
+ </tile>
+ <tile id="250">
+  <image source="../objects/aes_cctv1.png" width="23" height="18"/>
+ </tile>
+ <tile id="251">
+  <image source="../objects/aes_lockout_station1.png" width="25" height="22"/>
+ </tile>
+ <tile id="252">
+  <image source="../objects/aes_hose_reel1.png" width="21" height="24"/>
+ </tile>
+ <tile id="253">
+  <image source="../objects/aes_hose_reel2.png" width="21" height="25"/>
+ </tile>
+ <tile id="254">
+  <image source="../objects/aes_radio_charger1.png" width="16" height="20"/>
+ </tile>
+ <tile id="255">
+  <image source="../objects/aes_hv_sign1.png" width="18" height="25"/>
+ </tile>
+ <tile id="256">
+  <image source="../objects/aes_barrier1.png" width="27" height="22"/>
+ </tile>
+ <tile id="257">
+  <image source="../objects/aes_battery_module1.png" width="24" height="22"/>
+ </tile>
+ <tile id="258">
+  <image source="../objects/aes_battery_rack1.png" width="33" height="63"/>
+ </tile>
+ <tile id="259">
+  <image source="../objects/aes_battery_rack2.png" width="30" height="63"/>
+ </tile>
+ <tile id="260">
+  <image source="../objects/aes_beacon1.png" width="20" height="21"/>
+ </tile>
+ <tile id="261">
+  <image source="../objects/aes_bms_bypass1.png" width="47" height="57"/>
+ </tile>
+ <tile id="262">
+  <image source="../objects/aes_bms_bypass2.png" width="43" height="57"/>
+ </tile>
+ <tile id="263">
+  <image source="../objects/aes_bollard1.png" width="10" height="24"/>
+ </tile>
+ <tile id="264">
+  <image source="../objects/aes_cable_drum1.png" width="27" height="24"/>
+ </tile>
+ <tile id="265">
+  <image source="../objects/aes_chiller1.png" width="60" height="55"/>
+ </tile>
+ <tile id="266">
+  <image source="../objects/aes_clipboard1.png" width="17" height="24"/>
+ </tile>
+ <tile id="267">
+  <image source="../objects/aes_compressor1.png" width="24" height="23"/>
+ </tile>
+ <tile id="268">
+  <image source="../objects/aes_cones1.png" width="26" height="24"/>
+ </tile>
+ <tile id="269">
+  <image source="../objects/aes_control_panel1.png" width="57" height="60"/>
+ </tile>
+ <tile id="270">
+  <image source="../objects/aes_drum1.png" width="17" height="24"/>
+ </tile>
+ <tile id="271">
+  <image source="../objects/aes_gas_cylinders1.png" width="20" height="25"/>
+ </tile>
+ <tile id="272">
+  <image source="../objects/aes_generator1.png" width="61" height="54"/>
+ </tile>
+ <tile id="273">
+  <image source="../objects/aes_generator2.png" width="62" height="51"/>
+ </tile>
+ <tile id="274">
+  <image source="../objects/aes_inverter1.png" width="56" height="56"/>
+ </tile>
+ <tile id="275">
+  <image source="../objects/aes_inverter2.png" width="31" height="58"/>
+ </tile>
+ <tile id="276">
+  <image source="../objects/aes_junction_box1.png" width="37" height="52"/>
+ </tile>
+ <tile id="277">
+  <image source="../objects/aes_microwave1.png" width="19" height="23"/>
+ </tile>
+ <tile id="278">
+  <image source="../objects/aes_pallet1.png" width="30" height="26"/>
+ </tile>
+ <tile id="279">
+  <image source="../objects/aes_pallet_truck1.png" width="28" height="28"/>
+ </tile>
+ <tile id="280">
+  <image source="../objects/aes_suppression1.png" width="41" height="63"/>
+ </tile>
+ <tile id="281">
+  <image source="../objects/aes_switchgear1.png" width="62" height="59"/>
+ </tile>
+ <tile id="282">
+  <image source="../objects/aes_switchgear2.png" width="28" height="61"/>
+ </tile>
+ <tile id="283">
+  <image source="../objects/aes_toolbox1.png" width="23" height="21"/>
+ </tile>
+ <tile id="284">
+  <image source="../objects/aes_tool_trolley1.png" width="26" height="23"/>
+ </tile>
+ <tile id="285">
+  <image source="../objects/aes_transformer1.png" width="53" height="60"/>
+ </tile>
+ <tile id="286">
+  <image source="../objects/aes_bank_c_sign1.png" width="51" height="11"/>
+ </tile>
+ <tile id="287">
+  <image source="../objects/aes_bank_a_sign1.png" width="51" height="11"/>
+ </tile>
+ <tile id="288">
+  <image source="../objects/aes_bank_b_sign1.png" width="51" height="11"/>
+ </tile>
+ <tile id="289">
+  <image source="../objects/aes_esd_sign1.png" width="43" height="17"/>
+ </tile>
+ <tile id="290">
+  <image source="../objects/aes_inverter_sign1.png" width="63" height="11"/>
+ </tile>
+ <tile id="291">
+  <image source="../objects/aes_dock_sign1.png" width="59" height="11"/>
+ </tile>
+ <tile id="292">
+  <image source="../objects/aes_ppe_sign1.png" width="20" height="27"/>
+ </tile>
+ <tile id="293">
+  <image source="../objects/aes_hv_danger1.png" width="26" height="27"/>
+ </tile>
+ <tile id="294">
+  <image source="../objects/aes_process_diagram1.png" width="46" height="30"/>
+ </tile>
+ <tile id="295">
+  <image source="../objects/aes_procedures_sign1.png" width="28" height="34"/>
+ </tile>
+ <tile id="296">
+  <image source="../objects/aes_round_terminal1.png" width="18" height="24"/>
+ </tile>
+ <tile id="297">
+  <image source="../objects/aes_logo_sign1.png" width="69" height="19"/>
+ </tile>
+ <tile id="298">
+  <image source="../objects/aes_roller_shutter1.png" width="96" height="52"/>
+ </tile>
+ <tile id="299">
+  <image source="../objects/aes_spill_kit1.png" width="20" height="27"/>
+ </tile>
+ <tile id="300">
+  <image source="../objects/aes_spill_cabinet1.png" width="23" height="26"/>
+ </tile>
+ <tile id="301">
+  <image source="../objects/aes_ladder1.png" width="22" height="29"/>
+ </tile>
+ <tile id="302">
+  <image source="../objects/aes_combiner1.png" width="19" height="31"/>
+ </tile>
+ <tile id="303">
+  <image source="../objects/aes_combiner2.png" width="20" height="26"/>
+ </tile>
+ <tile id="304">
+  <image source="../objects/aes_floor_tray1.png" width="28" height="20"/>
+ </tile>
+ <tile id="305">
+  <image source="../objects/aes_air_mover1.png" width="23" height="27"/>
+ </tile>
+ <tile id="306">
+  <image source="../objects/aes_condenser1.png" width="24" height="27"/>
+ </tile>
+ <tile id="307">
+  <image source="../objects/aes_bms_tower1.png" width="19" height="28"/>
+ </tile>
+ <tile id="308">
+  <image source="../objects/aes_ppe_cabinet1.png" width="18" height="28"/>
+ </tile>
+ <tile id="309">
+  <image source="../objects/aes_cabinet_dark1.png" width="18" height="26"/>
+ </tile>
+ <tile id="310">
+  <image source="../objects/aes_floor_grate1.png" width="28" height="16"/>
  </tile>
 </tileset>

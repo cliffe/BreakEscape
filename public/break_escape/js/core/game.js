@@ -113,6 +113,7 @@ export function preload() {
     this.load.tilemapTiledJSON('room_zds_servers', 'rooms/room_zds_servers.json'); // m03 server room: two rack rows, marketplace board, wall safe, VM desk, ops bench (2x2 GU)
     this.load.tilemapTiledJSON('room_zds_hall', 'rooms/room_zds_hall.json'); // m03 corridor: threat map, WHITEHAT sign, water cooler, planter (2x1 GU, 10x6)
     this.load.tilemapTiledJSON('room_zds_hall_exec', 'rooms/room_zds_hall_exec.json'); // m03 executive-wing corridor: carpet, prints, clock, PRIVATE plate (2x1 GU, 10x6)
+    this.load.tilemapTiledJSON('room_aes_hall1', 'rooms/room_aes_hall1.json'); // m04 Battery Hall 1: Rack Bank C rows, dial thermometer, status display, H2 detector (4x2 GU, 20x10)
 
     // Load room images (now using smaller 32px scale images)
     this.load.image('room_reception', 'tiles/rooms/room1.png');
@@ -140,6 +141,17 @@ export function preload() {
     this.load.image('room_zds_hall', 'tiles/rooms/room_zds_hall.png'); // m03: the lobby stone without decals, for the corridors
     this.load.image('room_zds_office_floor', 'tiles/rooms/room_zds_office_floor.png'); // m03: carpet with a small worn kilim (Danny's office)
     this.load.image('room_zds_hall_exec', 'tiles/rooms/room_zds_hall_exec.png'); // m03: carpet with a burgundy runner (executive corridor)
+    this.load.image('room_aes_lobby', 'tiles/rooms/room_aes_lobby.png'); // m04 Albion Energy Storage: terrazzo, bolt inlay
+    this.load.image('room_aes_carpet', 'tiles/rooms/room_aes_carpet.png'); // m04 Albion Energy Storage: blue-grey carpet, kitchenette vinyl
+    this.load.image('room_aes_security', 'tiles/rooms/room_aes_security.png'); // m04 Albion Energy Storage: charcoal carpet
+    this.load.image('room_aes_control', 'tiles/rooms/room_aes_control.png'); // m04 Albion Energy Storage: anti-static vinyl
+    this.load.image('room_aes_workshop', 'tiles/rooms/room_aes_workshop.png'); // m04 Albion Energy Storage: concrete, hazard line
+    this.load.image('room_aes_plant', 'tiles/rooms/room_aes_plant.png'); // m04 Albion Energy Storage: green epoxy, ESD keep-clear
+    this.load.image('room_aes_dock', 'tiles/rooms/room_aes_dock.png'); // m04 Albion Energy Storage: concrete, bay lines
+    this.load.image('room_aes_hall1_w', 'tiles/rooms/room_aes_hall1_w.png'); // m04 Albion Energy Storage: Hall 1 epoxy, west half
+    this.load.image('room_aes_hall1_e', 'tiles/rooms/room_aes_hall1_e.png'); // m04 Albion Energy Storage: Hall 1 epoxy, east half
+    this.load.image('room_aes_hall2_w', 'tiles/rooms/room_aes_hall2_w.png'); // m04 Albion Energy Storage: Hall 2 epoxy, west half
+    this.load.image('room_aes_hall2_e', 'tiles/rooms/room_aes_hall2_e.png'); // m04 Albion Energy Storage: Hall 2 epoxy, east half
     this.load.image('room14', 'tiles/rooms/room14.png');
     this.load.image('room19', 'tiles/rooms/room19.png');
     this.load.image('door_32', 'tiles/door_32.png');
@@ -796,6 +808,78 @@ export function preload() {
     this.load.image('exec_chair_back1', 'objects/exec_chair_back1.png');
     this.load.image('usb_bowl1', 'objects/usb_bowl1.png');
     this.load.image('bar_cart1', 'objects/bar_cart1.png');
+    this.load.image('aes_esd_station1', 'objects/aes_esd_station1.png');
+    this.load.image('aes_esd_button2', 'objects/aes_esd_button2.png');
+    this.load.image('aes_dial_thermometer1', 'objects/aes_dial_thermometer1.png');
+    this.load.image('aes_h2_detector1', 'objects/aes_h2_detector1.png');
+    this.load.image('aes_vent_fan1', 'objects/aes_vent_fan1.png');
+    this.load.image('aes_ppe_rack1', 'objects/aes_ppe_rack1.png');
+    this.load.image('aes_status_display1', 'objects/aes_status_display1.png');
+    this.load.image('aes_first_aid1', 'objects/aes_first_aid1.png');
+    this.load.image('aes_emergency_phone1', 'objects/aes_emergency_phone1.png');
+    this.load.image('aes_breaker_panel1', 'objects/aes_breaker_panel1.png');
+    this.load.image('aes_pegboard1', 'objects/aes_pegboard1.png');
+    this.load.image('aes_cctv1', 'objects/aes_cctv1.png');
+    this.load.image('aes_lockout_station1', 'objects/aes_lockout_station1.png');
+    this.load.image('aes_hose_reel1', 'objects/aes_hose_reel1.png');
+    this.load.image('aes_hose_reel2', 'objects/aes_hose_reel2.png');
+    this.load.image('aes_radio_charger1', 'objects/aes_radio_charger1.png');
+    this.load.image('aes_hv_sign1', 'objects/aes_hv_sign1.png');
+    this.load.image('aes_barrier1', 'objects/aes_barrier1.png');
+    this.load.image('aes_battery_module1', 'objects/aes_battery_module1.png');
+    this.load.image('aes_battery_rack1', 'objects/aes_battery_rack1.png');
+    this.load.image('aes_battery_rack2', 'objects/aes_battery_rack2.png');
+    this.load.image('aes_beacon1', 'objects/aes_beacon1.png');
+    this.load.image('aes_bms_bypass1', 'objects/aes_bms_bypass1.png');
+    this.load.image('aes_bms_bypass2', 'objects/aes_bms_bypass2.png');
+    this.load.image('aes_bollard1', 'objects/aes_bollard1.png');
+    this.load.image('aes_cable_drum1', 'objects/aes_cable_drum1.png');
+    this.load.image('aes_chiller1', 'objects/aes_chiller1.png');
+    this.load.image('aes_clipboard1', 'objects/aes_clipboard1.png');
+    this.load.image('aes_compressor1', 'objects/aes_compressor1.png');
+    this.load.image('aes_cones1', 'objects/aes_cones1.png');
+    this.load.image('aes_control_panel1', 'objects/aes_control_panel1.png');
+    this.load.image('aes_drum1', 'objects/aes_drum1.png');
+    this.load.image('aes_gas_cylinders1', 'objects/aes_gas_cylinders1.png');
+    this.load.image('aes_generator1', 'objects/aes_generator1.png');
+    this.load.image('aes_generator2', 'objects/aes_generator2.png');
+    this.load.image('aes_inverter1', 'objects/aes_inverter1.png');
+    this.load.image('aes_inverter2', 'objects/aes_inverter2.png');
+    this.load.image('aes_junction_box1', 'objects/aes_junction_box1.png');
+    this.load.image('aes_microwave1', 'objects/aes_microwave1.png');
+    this.load.image('aes_pallet1', 'objects/aes_pallet1.png');
+    this.load.image('aes_pallet_truck1', 'objects/aes_pallet_truck1.png');
+    this.load.image('aes_suppression1', 'objects/aes_suppression1.png');
+    this.load.image('aes_switchgear1', 'objects/aes_switchgear1.png');
+    this.load.image('aes_switchgear2', 'objects/aes_switchgear2.png');
+    this.load.image('aes_toolbox1', 'objects/aes_toolbox1.png');
+    this.load.image('aes_tool_trolley1', 'objects/aes_tool_trolley1.png');
+    this.load.image('aes_transformer1', 'objects/aes_transformer1.png');
+    this.load.image('aes_bank_c_sign1', 'objects/aes_bank_c_sign1.png');
+    this.load.image('aes_bank_a_sign1', 'objects/aes_bank_a_sign1.png');
+    this.load.image('aes_bank_b_sign1', 'objects/aes_bank_b_sign1.png');
+    this.load.image('aes_esd_sign1', 'objects/aes_esd_sign1.png');
+    this.load.image('aes_inverter_sign1', 'objects/aes_inverter_sign1.png');
+    this.load.image('aes_dock_sign1', 'objects/aes_dock_sign1.png');
+    this.load.image('aes_ppe_sign1', 'objects/aes_ppe_sign1.png');
+    this.load.image('aes_hv_danger1', 'objects/aes_hv_danger1.png');
+    this.load.image('aes_process_diagram1', 'objects/aes_process_diagram1.png');
+    this.load.image('aes_procedures_sign1', 'objects/aes_procedures_sign1.png');
+    this.load.image('aes_round_terminal1', 'objects/aes_round_terminal1.png');
+    this.load.image('aes_logo_sign1', 'objects/aes_logo_sign1.png');
+    this.load.image('aes_roller_shutter1', 'objects/aes_roller_shutter1.png');
+    this.load.image('aes_spill_kit1', 'objects/aes_spill_kit1.png');
+    this.load.image('aes_spill_cabinet1', 'objects/aes_spill_cabinet1.png');
+    this.load.image('aes_ladder1', 'objects/aes_ladder1.png');
+    this.load.image('aes_combiner1', 'objects/aes_combiner1.png');
+    this.load.image('aes_combiner2', 'objects/aes_combiner2.png');
+    this.load.image('aes_floor_tray1', 'objects/aes_floor_tray1.png');
+    this.load.image('aes_air_mover1', 'objects/aes_air_mover1.png');
+    this.load.image('aes_condenser1', 'objects/aes_condenser1.png');
+    this.load.image('aes_bms_tower1', 'objects/aes_bms_tower1.png');
+    this.load.image('aes_ppe_cabinet1', 'objects/aes_ppe_cabinet1.png');
+    this.load.image('aes_cabinet_dark1', 'objects/aes_cabinet_dark1.png');
+    this.load.image('aes_floor_grate1', 'objects/aes_floor_grate1.png');
     this.load.image('backup_recovery',         'objects/backup_recovery.png');
     this.load.image('dual_auth',               'objects/dual_auth.png');
     this.load.image('ehr-terminal',            'objects/ehr-terminal.png');

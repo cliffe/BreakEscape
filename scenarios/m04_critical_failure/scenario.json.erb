@@ -563,10 +563,10 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
           "displayName": "Director Magnus Netherton",
           "npcType": "person",
           "position": { "x": 480, "y": 500 },
-          "spriteSheet": "male_spy_v2",
-          "spriteTalk": "assets/characters/male_spy_talk.png",
-          "spriteVisemes": "assets/characters/male_spy_visemes.png",
-          "avatar": "assets/characters/male_spy_headshot.png",
+          "spriteSheet": "netherton",
+          "spriteTalk": "assets/characters/netherton_talk.png",
+          "spriteVisemes": "assets/characters/netherton_visemes.png",
+          "avatar": "assets/characters/netherton_headshot.png",
           "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 },
           "behavior": { "initiallyHidden": true },
           "voice": {
@@ -604,11 +604,12 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
           },
           "position": { "x": 5, "y": 4 },
           <%# Was hacker-red, the operatives' sprite, so the one bystander the debrief
-              scolds you for hitting looked like the enemy. Own guard set now. %>
-          "spriteSheet": "male_security_guard_v2",
-          "spriteTalk": "assets/characters/male_security_guard_talk.png",
-          "spriteVisemes": "assets/characters/male_security_guard_visemes.png",
-          "avatar": "assets/characters/male_security_guard_headshot.png",
+              scolds you for hitting looked like the enemy. Pass 5 (characters): his
+              own art now, security_guard (West Country, grey beard, hi-vis). %>
+          "spriteSheet": "security_guard",
+          "spriteTalk": "assets/characters/security_guard_talk.png",
+          "spriteVisemes": "assets/characters/security_guard_visemes.png",
+          "avatar": "assets/characters/security_guard_headshot.png",
           "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 },
           "storyPath": "scenarios/m04_critical_failure/ink/m04_npc_security_guard.json",
           "currentKnot": "start",
@@ -1301,13 +1302,13 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
             "language": "en-GB"
           },
           "storyPath": "scenarios/m04_critical_failure/ink/m04_phone_robert_vance.json",
-          "avatar": "assets/characters/male_telecom_headshot.png",
+          "avatar": "assets/characters/robert_vance_headshot.png",
           "phoneId": "player_phone",
           "currentKnot": "start",
           "timedMessages": [
             {
               "delay": 20000,
-              "message": "It's Vance. Every screen I've got says twenty-eight, and I don't believe one of them. There's an old dial on the Rack Bank C wall in Hall 1. Read it.",
+              "message": "Every screen I've got says twenty-eight, and I don't believe one of them. Anything in Hall 1 older than the network, read it.",
               "type": "text",
               "waitForEvent": "global_variable_changed:vance_phone_available",
               "skipIfGlobal": "anomaly_detected"
@@ -1419,11 +1420,13 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
               it clashes with no one on screen in m04 (HaX; Netherton male_spy_v2;
               Nightshade (nightshade); the guard and the operatives hacker-red).
               This also fixes his portrait in the debrief, where his lines resolve to
-              this NPC's displayName. %>
-          "spriteSheet": "male_telecom_v2",
-          "spriteTalk": "assets/characters/male_telecom_talk.png",
-          "spriteVisemes": "assets/characters/male_telecom_visemes.png",
-          "avatar": "assets/characters/male_telecom_headshot.png",
+              this NPC's displayName.
+              Pass 5 (characters): his own art now, robert_vance (British Pakistani,
+              Teesside, mid-fifties, reading glasses, site lanyard). %>
+          "spriteSheet": "robert_vance",
+          "spriteTalk": "assets/characters/robert_vance_talk.png",
+          "spriteVisemes": "assets/characters/robert_vance_visemes.png",
+          "avatar": "assets/characters/robert_vance_headshot.png",
           "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 },
           "storyPath": "scenarios/m04_critical_failure/ink/m04_npc_robert_vance.json",
           "currentKnot": "initial_meeting",
@@ -1738,8 +1741,8 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
     },
 
     "battery_hall_1": {
-      "type": "room_battery_hall",
-      "dimensions": { "width": 18, "height": 12 },
+      "type": "room_aes_hall1",
+      "dimensions": { "width": 20, "height": 10 },
       "door_sign": "BATTERY HALL 1 — RESTRICTED ACCESS — PPE REQUIRED",
       "ambientSound": "server_room_ventilation",
       "ambientVolume": 0.7,
@@ -1759,9 +1762,11 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
             "language": "en-GB"
           },
           "position": { "x": 12, "y": 7 },
-          "spriteSheet": "hacker-red",
-          "spriteTalk": "assets/characters/hacker-red-talk.png",
-          "spriteConfig": { "idleFrameStart": 20, "idleFrameEnd": 23 },
+          "spriteSheet": "operative_cipher",
+          "spriteTalk": "assets/characters/operative_cipher_talk.png",
+          "spriteVisemes": "assets/characters/operative_cipher_visemes.png",
+          "avatar": "assets/characters/operative_cipher_headshot.png",
+          "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 },
           "storyPath": "scenarios/m04_critical_failure/ink/m04_npc_operative_cipher.json",
           "currentKnot": "start",
           <%# Round 2 (review M3, browser N2; orchestrator decision 2): standing at
@@ -1855,6 +1860,8 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
           "type": "thermometer",
           "id": "analog_thermometer",
           "name": "Analogue Thermometer — Rack Bank C Wall",
+          <%# Room dressing c1: the dial on the back wall beside the RACK BANK C plate (room_aes_hall1, top-left 66,33), where the old one was. %>
+          "position": "as-type:aes_dial_thermometer",
           "takeable": false,
           "readable": true,
           "important": true,
@@ -1881,6 +1888,7 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
           "type": "tablet",
           "id": "rack_status_panel",
           "name": "Battery Rack Status Panels (Digital)",
+          "position": "as-type:aes_status_display",
           "takeable": false,
           "readable": true,
           "observationDisplay": "gameDisplay",
@@ -1891,6 +1899,7 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
           "type": "tablet",
           "id": "hydrogen_detector",
           "name": "H₂ Gas Detector Panel",
+          "position": "as-type:aes_h2_detector",
           "takeable": false,
           "readable": true,
           "observationDisplay": "gameDisplay",
@@ -1910,8 +1919,9 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
           "name": "BESS Process Diagram",
           "takeable": false,
           "readable": true,
-          <%# PASS 2 (playtest D8): the battery-hall template has no notes slot, so this fell back to a random position and landed in the east doorway, blocking the walk to Hall 2. Pinned to the bottom-right corner of the service aisle, clear of the west (0.5,2.5), east (19.5,2.5) and south (1.5,9) doorways. %>
-          "position": { "x": 18, "y": 8 },
+          <%# Room dressing c1: a poster on the back wall (room_aes_hall1, aes_process_diagram1), read in place; it was a paper pinned at (18,8) since pass 2 D8. %>
+          "position": "as-type:aes_process_diagram",
+          "readDisplay": "gameDisplay",
           "text": "BATTERY ENERGY STORAGE — PROCESS OVERVIEW\n\n1. Grid import → rectifier / PCS\n2. Charge management (BMS per-rack)\n3. Lithium-ion rack banks A, B, C (cells, thermocouples, vent paths)\n4. Hydrogen detection + forced ventilation\n5. ESD interlocks (hardwired) → isolation\n6. Inverter / export to grid\n\nCapacity: 200 MWh\nServes: 240,000 residents at peak",
           "observations": "Process overview showing the facility scale and the safety interlocks"
         },
@@ -1921,13 +1931,16 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
             normal interaction runs.) West half of the hall, away from Cipher (12,7),
             off the E/W door line (top + 2.5) and clear of the south door (1.5, 9).
             Row 7, not 8: at row 8 the sprite drew over the workshop's top wall
-            (playtest m04-pass3a-roundpanel.png). %>
+            (playtest m04-pass3a-roundpanel.png).
+            Room dressing c1: a wall terminal on the west wall below the door row
+            (room_aes_hall1, aes_round_terminal1, top-left 12,152), still in the west
+            half away from Cipher; it replaces the decorative red button. %>
         {
           "type": "pc",
           "id": "hall1_round_panel",
           "name": "Duty Round Panel",
           "takeable": false,
-          "position": { "x": 6, "y": 7 },
+          "position": "as-type:aes_round_terminal",
           "hasFingerprint": true,
           "fingerprintOwner": "Robert Vance",
           "fingerprintCandidates": ["Security Guard", "Cipher", "Relay"],
@@ -1965,9 +1978,11 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
             "language": "en-GB"
           },
           "position": { "x": 7, "y": 7 },
-          "spriteSheet": "hacker-red",
-          "spriteTalk": "assets/characters/hacker-red-talk.png",
-          "spriteConfig": { "idleFrameStart": 20, "idleFrameEnd": 23 },
+          "spriteSheet": "operative_relay",
+          "spriteTalk": "assets/characters/operative_relay_talk.png",
+          "spriteVisemes": "assets/characters/operative_relay_visemes.png",
+          "avatar": "assets/characters/operative_relay_headshot.png",
+          "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 },
           "storyPath": "scenarios/m04_critical_failure/ink/m04_npc_operative_relay.json",
           "currentKnot": "start",
           "behavior": {
@@ -2108,13 +2123,13 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
             "language": "en-GB"
           },
           "position": { "x": 7, "y": 7 },
-          <%# PLAYTEST ROUND: was hacker-red (same as Static, faceless bust). The field
-              lead gets a face: a former grid engineer in shirt and loose tie. Unused
-              elsewhere in m04 (Phantom has it in m08, a different mission). %>
-          "spriteSheet": "male_office_worker_v2",
-          "spriteTalk": "assets/characters/male_office_worker_talk.png",
-          "spriteVisemes": "assets/characters/male_office_worker_visemes.png",
-          "avatar": "assets/characters/male_office_worker_headshot.png",
+          <%# PLAYTEST ROUND: was hacker-red (same as Static, faceless bust); then the
+              generic male_office_worker_v2. Pass 5 (characters): his own art, voltage
+              (Indian South African former grid engineer, olive field jacket). %>
+          "spriteSheet": "voltage",
+          "spriteTalk": "assets/characters/voltage_talk.png",
+          "spriteVisemes": "assets/characters/voltage_visemes.png",
+          "avatar": "assets/characters/voltage_headshot.png",
           "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 },
           "storyPath": "scenarios/m04_critical_failure/ink/m04_npc_voltage.json",
           "currentKnot": "start",
@@ -2166,9 +2181,11 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
             "language": "en-GB"
           },
           "position": { "x": 4, "y": 7 },
-          "spriteSheet": "hacker-red",
-          "spriteTalk": "assets/characters/hacker-red-talk.png",
-          "spriteConfig": { "idleFrameStart": 20, "idleFrameEnd": 23 },
+          "spriteSheet": "operative_static",
+          "spriteTalk": "assets/characters/operative_static_talk.png",
+          "spriteVisemes": "assets/characters/operative_static_visemes.png",
+          "avatar": "assets/characters/operative_static_headshot.png",
+          "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 },
           "storyPath": "scenarios/m04_critical_failure/ink/m04_npc_operative_static.json",
           "currentKnot": "start",
           "behavior": {
@@ -2678,6 +2695,12 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
     <%# Scenario design n4: the player spoke to Vance at all (set where the
         meeting starts). The debrief's never-met lines and the two Vance credits
         use it; vance_met, set at the meeting's end, still routes re-talk. %>
-    "vance_spoken": false
+    "vance_spoken": false,
+
+    <%# Phase 4 dialogue C1 (D5-32): stances the debrief remembers.
+        promised_voltage_alive: the briefing's or HaX's "alive" choice.
+        asked_the_number: the player asked Voltage how many the hall takes. %>
+    "promised_voltage_alive": false,
+    "asked_the_number": false
   }
 }
