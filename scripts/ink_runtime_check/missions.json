@@ -751,7 +751,9 @@
       "door_log_held": false,
       "data_center_entered": false,
       "torres_reason_guessed": false,
-      "door_log_reasoned_first": false
+      "door_log_reasoned_first": false,
+      "door_log_hinted": false,
+      "owen_refused_password": false
     },
     "npcs": [
       {
@@ -912,6 +914,18 @@
       "console_tripped": false,
       "console_warned": false,
       "at_console": false,
+      "satoshi_spoken": false,
+      "irina_trust": 0,
+      "asked_research": false,
+      "asked_paperwork": false,
+      "asked_passwords": false,
+      "given_time": false,
+      "badge_discussion": false,
+      "shown_casualties": false,
+      "shown_architects_fund": false,
+      "moral_conflict_revealed": false,
+      "recruitment_offered": false,
+      "recruitment_refused": false,
       "slot_checked_visit": false,
       "server_room_entered": false
     },

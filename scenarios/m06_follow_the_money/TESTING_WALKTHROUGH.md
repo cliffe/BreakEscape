@@ -1,5 +1,9 @@
 # Follow the Money — Testing Walkthrough
 
+> Updated 2026-10-13 for pass 5 scenario design round 1: page reloads keep Irina's first meeting,
+> trust and once-only topics (synced), and Satoshi's, Dani's, Priya's and Kemal's openers; HaX
+> answers a second console strike when the cover is already strained, and points at the pick after
+> Kemal's stand-off; the debrief and credits cover the no-write-up and turned-then-KO cases.
 > Updated 2026-10-13 for pass 5 puzzle chains round 3: the console allows one try per opening and
 > counts strikes across openings (17a); the strain causes in 2a; Satoshi's neutral line.
 > Updated 2026-10-13 for pass 5 puzzle chains round 2: Irina's slot check is per trip to the console
@@ -142,6 +146,9 @@ Critical path (6 aims, 5 hops): **Establish Cover → Work The Floor → Crack T
 - [ ] **KO Irina** (`npc_ko:irina_volkova`) → badges on the floor beside her; HaX's KO text gives nothing, sets `irina_fate_decided` and matches her fate; HaX hub offers a copy only for items not yet picked up; aim 5 does not appear early; credits branch on `irina_ko`
 - [ ] Trader and analyst credit lines appear only if you talked to them (`trader_spoken`, `analyst_spoken`)
 - [ ] Satoshi is always detained after the asset decision, and the confrontation says so
+- [ ] **Page reload after meeting Irina** → "Back again." (no first meeting); her trust holds (the badge loan still works); a refused pitch stays refused (route r20)
+- [ ] **Page reload after deferring Satoshi** → "Back again." and the decision, not the opening (r20)
+- [ ] **Skip Priya's lab, land the console** → credit "FOUND ON THE CONSOLE", debrief "without Priya's write-up" (r21)
 - [ ] **HaX recap after a reload**: "Remind me where we are." repeats whatever once-only guidance still applies (phone history is memory-only, engine E9)
 - [ ] **Checkpoint guard**: talk route, pick in the safe window, catch → grace until the lobby, KO → free picks; credits show one guard line
 - [ ] **Irina KO as the very last decision** (Satoshi KO'd + phone decision + all flags first) → HaX's call-in text; the debrief waits for "Bring me in"

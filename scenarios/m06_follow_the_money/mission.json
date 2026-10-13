@@ -13,7 +13,7 @@
     {
       "ka": "SS",
       "topic": "Categories of Vulnerabilities",
-      "keywords": ["CVEs and CWEs", "Password cracking", "Credential reuse", "Shadow file exploitation"]
+      "keywords": ["Password cracking", "Credential reuse", "Shadow file exploitation"]
     },
     {
       "ka": "SOIM",
@@ -43,7 +43,7 @@
     {
       "ka": "AC",
       "topic": "Applied Cryptography",
-      "keywords": ["Cryptocurrency", "Blockchain analysis", "Hash functions", "Password hashing", "Cryptographic wallets"]
+      "keywords": ["Cryptocurrency", "Blockchain analysis", "Password hashing", "Cryptographic wallets"]
     },
     {
       "ka": "HF",

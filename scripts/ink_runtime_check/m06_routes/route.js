@@ -134,6 +134,11 @@ function closed(name) {
   }
   if (name === 'trader') G.trader_spoken = true;
   if (name === 'analyst') G.analyst_spoken = true;
+  // Scenario design R1: also the erb's real literal conversation_closed mappings
+  // (e.g. HaX's pointer after Kemal's stand-off). The hand-modelled ones above
+  // run first; their real twins then find their conditions already spent.
+  const NPCID = { irina: 'irina_volkova', trader: 'trader_npc', analyst: 'blockchain_analyst', minder: 'satoshi_minder', satoshi: 'satoshi_nakamoto', guard: 'checkpoint_guard' };
+  if (NPCID[name]) fire('conversation_closed:' + NPCID[name], {});
   engine();
 }
 function load(f) { const s = new inkjs.Story(fs.readFileSync(path.join(DIR, f + '.json'), 'utf8').replace(/^﻿/, '')); try { s.BindExternalFunction('player_name', () => 'Agent'); } catch (e) {} return s; }

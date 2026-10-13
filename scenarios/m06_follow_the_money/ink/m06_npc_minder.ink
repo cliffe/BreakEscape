@@ -45,8 +45,9 @@ VAR saw_picks = false      // R2-M3: he caught the picks; the FCA line no longer
     -> start.passed_choices
 }
 ~ sighted_open = false
-#set_variable:minder_challenged=true
-{ not minder_met:
+// Scenario design R1 (m12): keyed on the synced minder_challenged too, so the
+// opener doesn't replay after a page reload; it's set after the check.
+{ not minder_met and not minder_challenged:
     ~ minder_met = true
     #speaker:narrator
     Narrator: A broad man in his late fifties, grey at the temples, stands between you and the corner office as if he were part of the wall.
@@ -55,6 +56,8 @@ VAR saw_picks = false      // R2-M3: he caught the picks; the FCA line no longer
 - else:
     Kemal Aydin: You again. The answer has not changed.
 }
+~ minder_met = true
+~ minder_challenged = true
 -> start.challenge
 
 = challenge
@@ -92,10 +95,10 @@ VAR saw_picks = false      // R2-M3: he caught the picks; the FCA line no longer
     -> start
 }
 ~ sighted_open = true
-#set_variable:minder_challenged=true
 // Round 3 (R3-m1): the narration plays on the first meeting only, so a repeat
-// sighting is one line and a choice.
-{ not minder_met:
+// sighting is one line and a choice. Scenario design R1 (m12): and not after a
+// reload once he has challenged the player.
+{ not minder_met and not minder_challenged:
     ~ minder_met = true
     #speaker:narrator
     Narrator: The man by the corner office turns, sees you, and steps squarely into your path.
@@ -104,6 +107,8 @@ VAR saw_picks = false      // R2-M3: he caught the picks; the FCA line no longer
 - else:
     Kemal Aydin: I told you once. This floor is closed.
 }
+~ minder_met = true
+~ minder_challenged = true
 -> start.challenge
 
 === talked_past ===

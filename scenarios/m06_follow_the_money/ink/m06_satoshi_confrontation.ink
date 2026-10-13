@@ -32,6 +32,7 @@ VAR minder_ko = false       // Pass 5 A5: synced; his minder was knocked out in 
 VAR minder_passed = false   // Pass 5 A5: synced; the minder let the player in
 VAR minder_hostile = false  // Round 2 (R2-m8): synced; the minder turned hostile
 VAR minder_challenged = false // Round 2 (R2-m7): synced; the minder turned the player back at least once
+VAR satoshi_confronted = false // Synced scenario global (scenario design R1, m3): the opening has played
 VAR assets_decided = false  // synced global: the re-entry guard survives a reload (review M3)
 // Final round (m03 pattern): set by every exit, so the resting knot's re-entry
 // line shows on a reopen and never in the same batch as a goodbye.
@@ -48,11 +49,12 @@ VAR hub_quiet = false
     -> aftermath
 }
 {
-- not confrontation_started:
+- not confrontation_started and not satoshi_confronted:
     ~ confrontation_started = true
     // Review M2: complete at the top so an early close can't strand the task.
     #complete_task:confront_satoshi
     #set_variable:satoshi_confronted=true
+    #set_variable:satoshi_spoken=true
 
     #speaker:narrator
     Narrator: A man in his early forties leans against the front of an executive desk. The Bitcoin whitepaper is framed on the wall behind him, at exactly the height of his own head.

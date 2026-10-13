@@ -167,7 +167,9 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
           { "text": "MISSION COMPLETE",                                            "style": "title" },
           { "text": "FOLLOW THE MONEY",                                            "style": "subtitle" },
           { "text": "" },
-          { "text": "THE ARCHITECT'S FUND: $12.8M — TRACED THROUGH THE MIXER",     "style": "entry", "condition": "globalVars.found_architects_fund && !globalVars.irina_confirmed_slot && !globalVars.console_tripped" },
+          { "text": "THE ARCHITECT'S FUND: $12.8M — TRACED THROUGH THE MIXER",     "style": "entry", "condition": "globalVars.found_architects_fund && globalVars.found_blockchain_evidence && !globalVars.irina_confirmed_slot && !globalVars.console_tripped" },
+          <%# Scenario design R1 (m4): without Priya's write-up there was no trace to follow. %>
+          { "text": "THE ARCHITECT'S FUND: $12.8M — FOUND ON THE CONSOLE", "style": "entry", "condition": "globalVars.found_architects_fund && !globalVars.found_blockchain_evidence && !globalVars.irina_confirmed_slot && !globalVars.console_tripped" },
           <%# Puzzle chains R2 (M-R2-2): any console lockout before the fund was found. %>
           { "text": "THE ARCHITECT'S FUND: $12.8M — FOUND BY ELIMINATION ON THE CONSOLE", "style": "entry", "condition": "globalVars.found_architects_fund && globalVars.console_tripped && !globalVars.irina_confirmed_slot" },
           { "text": "THE ARCHITECT'S FUND: $12.8M — TRACED, CONFIRMED BY VOLKOVA", "style": "entry", "condition": "globalVars.found_architects_fund && globalVars.irina_confirmed_slot" },
@@ -187,7 +189,8 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
           { "text": "CHECKPOINT GUARD: Knocked out at his own door", "style": "entry", "condition": "globalVars.guard_ko" },
           { "text": "CHECKPOINT GUARD: Never saw you pick his door", "style": "entry", "condition": "globalVars.guard_resolved && !globalVars.guard_waved_through && !globalVars.guard_ko && !globalVars.guard_caught" },
           { "text": "CHECKPOINT GUARD: Caught you at his lock once; you got through anyway", "style": "entry", "condition": "globalVars.guard_resolved && !globalVars.guard_waved_through && !globalVars.guard_ko && globalVars.guard_caught" },
-          { "text": "DR. IRINA VOLKOVA: Turned — gave up the mixer tonight", "style": "entry", "condition": "globalVars.irina_recruited" },
+          { "text": "DR. IRINA VOLKOVA: Turned — gave up the mixer tonight", "style": "entry", "condition": "globalVars.irina_recruited && !globalVars.irina_ko" },
+          { "text": "DR. IRINA VOLKOVA: Turned, then knocked down — what she gave still stands", "style": "entry", "condition": "globalVars.irina_recruited && globalVars.irina_ko" },
           { "text": "DR. IRINA VOLKOVA: Detained — collected by the police with the laundering evidence", "style": "entry", "condition": "globalVars.irina_arrested && !globalVars.irina_ko" },
           { "text": "DR. IRINA VOLKOVA: Detained, then knocked down — carried out by the police", "style": "entry", "condition": "globalVars.irina_arrested && globalVars.irina_ko" },
           { "text": "DR. IRINA VOLKOVA: Knocked down on the trading floor before her part was settled", "style": "entry", "condition": "globalVars.irina_ko && !globalVars.irina_recruited && !globalVars.irina_arrested" },
@@ -688,6 +691,18 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
     "console_tripped": false,
     "console_warned": false,
     "at_console": false,
+    "satoshi_spoken": false,
+    "irina_trust": 0,
+    "asked_research": false,
+    "asked_paperwork": false,
+    "asked_passwords": false,
+    "given_time": false,
+    "badge_discussion": false,
+    "shown_casualties": false,
+    "shown_architects_fund": false,
+    "moral_conflict_revealed": false,
+    "recruitment_offered": false,
+    "recruitment_refused": false,
     "slot_checked_visit": false,
 
     "cracking_guide_offered": false,
@@ -817,7 +832,7 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
             {
               "type": "lab-workstation",
               "id": "m06_privesc_field_guide",
-              "name": "SAFETYNET Field Guide: Privilege Escalation and Credential Reuse",
+              "name": "SAFETYNET Field Guide: Privilege Escalation via Sudo",
               "takeable": true,
               "labUrl": "https://cliffe.github.io/HacktivityLabSheets/labs/safetynet/privilege-escalation/",
               "observations": "Turning one cracked account into access across a whole estate — enumeration, reused credentials, and pivoting"
@@ -1035,7 +1050,7 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
               "eventPattern": "objective_task_completed:submit_flag1",
               "onceOnly": true,
               "setGlobal": { "flag1_submitted": true, "privesc_guide_offered": true },
-              "sendTimedMessage": { "delay": 1200, "message": "First account's yours. People here reuse passwords, so that one opens more than one door. I've a credential reuse guide if you want it.", "skipIfGlobal": "flag2_submitted" }
+              "sendTimedMessage": { "delay": 1200, "message": "First account's yours. People here reuse passwords, so that one opens more than one door. When you need root, I've a guide.", "skipIfGlobal": "flag2_submitted" }
             },
             {
               "eventPattern": "objective_task_completed:submit_flag2",
@@ -1298,6 +1313,15 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
                   2. second strike: the cover strain, once;
                   3. first strike: console_warned and a warning, whatever the cover
                      (m-R3-2). %>
+            <%# Scenario design R1 (m1): a second strike with the cover already
+                strained still gets a line. First in the list, so it reads
+                cover_strained before the strain mapping could set it. %>
+            {
+              "eventPattern": "minigame_failed",
+              "condition": "data.minigameName === 'PinMinigame' && data.result && globalVars.at_console === true && globalVars.found_architects_fund !== true && globalVars.console_warned === true && globalVars.console_tripped !== true && globalVars.cover_strained === true",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 2500, "message": "Another wrong slot, and it's logged. They already know we're inside. Now they know where we're looking.", "skipIfGlobal": "assets_decided" }
+            },
             {
               "eventPattern": "minigame_failed",
               "condition": "data.minigameName === 'PinMinigame' && data.result && globalVars.at_console === true && globalVars.found_architects_fund !== true && globalVars.console_warned === true",
@@ -1338,6 +1362,14 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
               "onceOnly": false,
               "cooldown": 0,
               "setGlobal": { "at_console": false }
+            },
+            <%# Scenario design R1 (m2): after Kemal's stand-off with the cover
+                strained and no turned Irina, HaX points at the pick. %>
+            {
+              "eventPattern": "conversation_closed:satoshi_minder",
+              "condition": "globalVars.cover_strained === true && globalVars.minder_challenged === true && globalVars.minder_passed !== true && globalVars.minder_hostile !== true && globalVars.minder_ko !== true && globalVars.satoshi_confronted !== true && globalVars.irina_recruited !== true",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 2500, "message": "He won't take the FCA from you now. Watch his walk. When his back's turned, that door's an easy lock." }
             },
             <%# Puzzle chains R2 (M-R2-1): a turned Irina checks one slot per visit, and
                 a visit is a trip back to the console. slot_checked_visit is synced

@@ -90,6 +90,8 @@ VAR lockpick_guide_hint_given = false
 VAR minder_passed = false        // Synced scenario global (round 2, R2-m10)
 VAR minder_ko = false            // Synced scenario global (round 2, R2-m10)
 VAR minder_hostile = false       // Synced scenario global (round 2, R2-m10)
+VAR console_warned = false       // Synced scenario global (scenario design R1, m10)
+VAR console_tripped = false      // Synced scenario global (scenario design R1, m10)
 VAR resolve_aim_open = false     // Synced scenario global (puzzle chains m5): the player has been in Satoshi's office
 VAR signing_record_found = false // Synced scenario global (puzzle chains D2): the signing case is open
 VAR server_room_entered = false   // Synced scenario global (regression M4): the server room door is open
@@ -304,6 +306,10 @@ Try the other way first.
         The data centre's through the north door of the server room. The code's in the door controller export.
     }
     The fund is one of the slots on the data centre's custody console.
+    // Scenario design R1 (m10): HaX's first-strike text is lost on a reload.
+    {console_warned and not console_tripped:
+        That console's logged one wrong slot already. Another and somebody's phone goes.
+    }
     {irina_recruited:
         Volkova says it isn't 6120, and nothing inside her six-hour hold is his. She'll check a slot for you.
     }
@@ -615,7 +621,7 @@ Which one?
     -> request_distcc_guide
 + {cracking_guide_offered and not cracking_guide_hint_given} [Offline password cracking.]
     -> request_cracking_guide
-+ {privesc_guide_offered and not privesc_guide_hint_given} [Privilege escalation and credential reuse.]
++ {privesc_guide_offered and not privesc_guide_hint_given} [Privilege escalation via sudo.]
     -> request_privesc_guide
 + [Never mind.]
     -> hub
@@ -652,7 +658,7 @@ The example's from an earlier job. Here the build service just gets you on the b
 ~ privesc_guide_hint_given = true
 #set_variable:privesc_guide_hint_given=true
 #give_item:lab-workstation:m06_privesc_field_guide
-Privilege escalation and credential reuse guide sent.
+Privilege escalation guide sent.
 The rack sheet says two of those boxes share a service account. Start there.
 Try the password you have everywhere before anything clever.
 -> hub

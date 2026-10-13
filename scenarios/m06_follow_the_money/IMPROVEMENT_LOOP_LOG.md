@@ -581,3 +581,82 @@ Carried into phase 3:
 - **R2:** with the cover strained and Irina not turned, the only ways past Kemal are a pick or a fight. That's by design, but the stand-off itself hasn't been played in a browser.
 
 Engine item D5 (dotted paths) is with the user.
+
+## Phase 3: scenario design
+
+### Phase 3 scenario design, round 1
+
+Review: `SCENARIO_DESIGN_REVIEW_P5_R1.md` (Opus, read-only, static). Counts: 0 blockers, 1 major, 12 minors, three decisions and seven SecGen items. Outcomes: M1 and 11 minors fixed; m11 left by decision; decisions 1–3 acted on; S1–S7 to the user.
+
+| # | Sev. | Finding | Outcome |
+|---|---|---|---|
+| M1 | major | A page reload replayed Irina's first meeting and reset her trust and once-only topics (ink-local state is lost on reload) | **Fixed in the mission** (orchestrator; an engine-level fix that saves NPC conversation state is the backlog item). Her first meeting is keyed on the synced `exchange_infiltrated` (`{first_meeting and not exchange_infiltrated:`; a reload goes straight to "Back again."). `irina_trust` and the once-only flags that matter are now scenario globals of the same names, so the engine's ink-to-global observer (`npc-conversation-state.js:468-490`) syncs every `~` change and they survive a reload: `asked_research`, `asked_paperwork`, `asked_passwords`, `given_time`, `badge_discussion`, `shown_casualties`, `shown_architects_fund`, `moral_conflict_revealed`, `recruitment_offered` and `recruitment_refused`. A refused pitch stays refused, and the trust topics can't be farmed by reloading. Route r20 (`"reload": "page"`): trust 35 survives, the badge loan works, no "You must be the FCA" |
+| m1 | minor | A second console strike with the cover already strained sent no text | **Fixed.** A mapping placed before the strike mappings (it reads `cover_strained` before anything could set it), once only: "Another wrong slot, and it's logged. They already know we're inside. Now they know where we're looking." Route r19 |
+| m2 | minor | After Kemal's stand-off with the cover strained, nothing said how to get past him | **Fixed.** HaX mapping on `conversation_closed:satoshi_minder` (strained, challenged, not passed, hostile or down, Satoshi not yet confronted, Irina not turned), once only: "He won't take the FCA from you now. Watch his walk. When his back's turned, that door's an easy lock." Route r19 |
+| m3 | minor | A reload replayed Satoshi's opening on the defer route | **Fixed.** The opening also needs `not satoshi_confronted` (synced, declared in his ink), so a return goes to "Back again." and the decision. Route r20 |
+| m4 | minor | "Traced through the mixer" was claimed without Priya's write-up | **Fixed.** The TRACED credit needs `found_blockchain_evidence`; new "THE ARCHITECT'S FUND: $12.8M — FOUND ON THE CONSOLE" for no write-up, no strikes and no confirmation. Debrief branch "You found the slot on the console without Priya's write-up. Lucky, or good. The file will say lucky.", placed after the elimination branch so it matches the credits' order. Route r21 |
+| m5 | minor | A turned-then-KO'd Irina got the plain "Turned" credit | **Fixed.** "DR. IRINA VOLKOVA: Turned, then knocked down — what she gave still stands"; the plain line needs `!irina_ko`. Route r21 |
+| m6 | minor | The debrief spoke of a payout three days off in the past tense | **Fixed.** Freeze: "When the clock runs out, it runs out on an empty wallet."; watch: "When the payout goes, every wallet it reaches gets tagged."; "They'll have the money in three days." Routes r21, r22 |
+| m7 | minor | The debrief got the way in wrong, and the FCA letter didn't cover it | **Fixed.** "A build service nobody had switched off got you onto their backend. One cracked password, and the same password opened a second account." A tenth FCA option, a real finding: "A build service on their backend runs whatever it's sent." Ten options, three picks. The wording needs checking against SecGen by the user (D6, S1). Route r21 |
+| m8 | minor | "Only Satoshi thought to check" could be said to a player who never heard him | **Fixed.** New synced `satoshi_spoken`, set beside `#complete_task:confront_satoshi`; without it: "And the cover held. Nobody at HashChain thought to ring the FCA." Route r22 |
+| m9 | minor | The privilege-escalation guide's name didn't match its sheet | **Fixed.** The item is now "SAFETYNET Field Guide: Privilege Escalation via Sudo", the menu label "Privilege escalation via sudo.", and the give line "Privilege escalation guide sent." Flag 1's text: "…When you need root, I've a guide." Whether the route needs sudo: D6, S5 |
+| m10 | minor | After a reload nothing reminded a warned player about the console | **Fixed.** Recap: "That console's logged one wrong slot already. Another and somebody's phone goes." (warned, not tripped). Route r19 |
+| m11 | minor | The status recap gives the whole passphrase recipe | **Left as it is** (orchestrator). The player asks for the recap, and minigames aren't meant to be hard |
+| m12 | minor | Other first-meeting openers replayed after a reload | **Fixed where cheap.** Dani's and Priya's openers key on the synced `trader_spoken` / `analyst_spoken`. Kemal's keys on `minder_challenged`, now set with `~` after the opener check in `start` and `on_sighted` (it was a tag set before the check). The guard and Kemal's `saw_picks` are left, as accepted. Route r20 |
+| Decision 1 | CyBOK | Thin keywords | **(a).** Debrief line in `password_cracking_discussion`: "Map it, get on it, crack it, reuse it, move sideways, take the keys. A whole chain, and they'd left every link open." Removed "CVEs and CWEs" (SS) and "Hash functions" (AC) from `mission.json`, because nothing in the erb or ink teaches them. "Password hashing" and the kill-chain keywords stay. `DECISIONS_PENDING.md` D7: the user may restore them if the VM covers them |
+| Decision 2 | Reload | How Irina survives a reload | **(a) plus synced trust and topics**, as M1 |
+| Decision 3 | SecGen | S1–S7 | **To the user.** `DECISIONS_PENDING.md` D6, with each item and the lines they touch |
+
+#### Decisions taken (with reasons)
+
+- **M1, synced globals rather than a trust floor** (orchestrator). Syncing keeps the exact trust and the once-only topics, and costs only the global declarations, since the observer syncs `~` writes. The engine-level fix stays in the backlog.
+- **m4, the elimination branch before the no-write-up branch** (fixer). The debrief then follows the credits' precedence (confirmed, tripped, no write-up, traced).
+- **m12, Kemal's `minder_challenged` set with `~` after the check** (fixer). A tag before the check doesn't change the ink variable during that run, so it couldn't gate the opener.
+- **m11 unchanged** (orchestrator).
+
+#### Route driver
+
+`route.js` also fires the erb's real literal `conversation_closed:<npc>` mappings when a talk closes; the hand-modelled ones run first.
+
+New routes, all passing with r1–r18:
+- `r19_strained_two_strikes_kemal_pointer` (m1, m10, m2);
+- `r20_reloads_keep_openers` (M1, m3, m12: Irina, Dani, Priya, Kemal and Satoshi across page reloads);
+- `r21_no_writeup_turned_then_ko` (m4, m5, m6, m7, decision 1);
+- `r22_satoshi_ko_unspoken_cover_held` (m8, m6).
+
+#### Checks (static; no browser session started)
+
+- Ink compiles (9 files).
+- Validator, full: all passes; no unknown fields; no toast-stacking warnings; dialogue lint clean; 20 duplicate-pattern notes.
+- `dialoguelint`: no findings.
+- `check_door_alignment.py`: all doors OK.
+- `tagdiff` against HEAD: phone 3, Irina 4, debrief 9, Satoshi 4, trader 3, analyst 3, minder 10. Every one is a change listed above.
+- inkcheck (Irina after a reload and fresh; Satoshi after a reload; Dani and Priya after a reload; Kemal re-sighted; debrief tripped with Irina turned then KO'd) and loopcheck (Irina's hub after a reload, the ten-option FCA letter, Kemal): no errors.
+- `reopencheck` (m06 block: `satoshi_spoken`, `irina_trust` and the ten topic flags added): m06 HaX phone, 1800 reopens, 0 problems.
+- Routes r1–r22: all expectations met; no unsupported condition terms.
+
+Browser checks owed (the review's list): M1 (meet Irina, reload, talk); m1 (two strikes with the cover strained); m2 (Kemal's stand-off, back off, the pointer, pick unseen; a second run that squares up); m3 (defer Satoshi, reload, return); m4 (skip the lab, land the console).
+
+#### Spoken lines changed (old → new)
+
+HaX texts (`scenario.json.erb`):
+- Flag 1: "First account's yours. People here reuse passwords, so that one opens more than one door. I've a credential reuse guide if you want it." → "First account's yours. People here reuse passwords, so that one opens more than one door. When you need root, I've a guide."
+- New: "Another wrong slot, and it's logged. They already know we're inside. Now they know where we're looking."; "He won't take the FCA from you now. Watch his walk. When his back's turned, that door's an easy lock."
+
+HaX phone:
+- "Privilege escalation and credential reuse guide sent." → "Privilege escalation guide sent."
+- New recap line: "That console's logged one wrong slot already. Another and somebody's phone goes."
+
+Debrief:
+- "You froze it before the payout. The clock ran down on an empty wallet." → "You froze it before the payout. When the clock runs out, it runs out on an empty wallet."
+- "You let it run. The payout went out on time, and every wallet it reached is tagged." → "You let it run. When the payout goes, every wallet it reaches gets tagged."
+- "They also have the money. Whatever it buys goes ahead unless we get there first." → "They'll have the money in three days. Whatever it buys goes ahead unless we get there first."
+- "One cracked password got you onto their backend, and the same password opened a second account." → "A build service nobody had switched off got you onto their backend. One cracked password, and the same password opened a second account."
+- New: "Map it, get on it, crack it, reuse it, move sideways, take the keys. A whole chain, and they'd left every link open."; "You found the slot on the console without Priya's write-up. Lucky, or good. The file will say lucky."; "And the cover held. Nobody at HashChain thought to ring the FCA." (when Satoshi never spoke)
+
+Not voiced: the guide item and menu names, the FCA letter's new option, the credits, the `mission.json` keywords.
+
+#### Open after round 1
+
+- The browser checks above.
+- D6 (S1–S7) and D7 (CyBOK keywords) are with the user.

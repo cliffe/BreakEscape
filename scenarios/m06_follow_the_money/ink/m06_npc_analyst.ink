@@ -12,6 +12,7 @@ VAR topic_forensics = false
 VAR topic_patterns = false
 VAR topic_concerns = false
 VAR first_meeting = true
+VAR analyst_spoken = false // Synced scenario global (scenario design R1, m12): set when her first chat closes
 // Final round (m03 pattern): set by every exit, so the resting knot's re-entry
 // line shows on a reopen and never in the same batch as a goodbye.
 VAR hub_quiet = false
@@ -26,7 +27,7 @@ VAR player_name = "Agent 0x00"
 === start ===
 #speaker:analyst
 
-{first_meeting:
+{first_meeting and not analyst_spoken:
     ~ first_meeting = false
 
     #speaker:narrator

@@ -44,6 +44,7 @@ VAR minder_ko = false        // A5
 VAR minder_passed = false    // A5
 VAR irina_taken = false      // A4: collected by the police while the player was still inside
 VAR minder_hostile = false   // Round 2 (R2-m8)
+VAR satoshi_spoken = false // Scenario design R1 (m8): Satoshi spoke to the player (not only KO'd)
 VAR console_tripped = false // Puzzle chains R2 (M-R2-2): a console lockout before the fund
 VAR signing_record_found = false // Puzzle chains D2: Satoshi's signing case opened on his own print
 VAR minder_challenged = false // Round 2 (R2-m7)
@@ -100,9 +101,9 @@ Agent HaX: Advances first, then the balances, all on one clock. Seventy-two hour
 Agent HaX: Depends what you did with the wallet.
 
 {assets_seized:
-    Agent HaX: You froze it before the payout. The clock ran down on an empty wallet.
+    Agent HaX: You froze it before the payout. When the clock runs out, it runs out on an empty wallet.
 - else:
-    Agent HaX: You let it run. The payout went out on time, and every wallet it reached is tagged.
+    Agent HaX: You let it run. When the payout goes, every wallet it reaches gets tagged.
 }
 
 -> architects_fund_discussion
@@ -117,6 +118,9 @@ Agent HaX: Depends what you did with the wallet.
     Agent HaX: You traced the fund, and Volkova confirmed the slot. That's how we know she meant it.
 - console_tripped:
     Agent HaX: You found the fund by working the console until it gave. It logged every slot you tried, so ENTROPY will know exactly where we looked.
+// Scenario design R1 (m4): the same order as the credits.
+- not found_blockchain_evidence:
+    Agent HaX: You found the slot on the console without Priya's write-up. Lucky, or good. The file will say lucky.
 - else:
     Agent HaX: You traced the fund yourself. In through the mixer, out by amount and time.
 }
@@ -146,7 +150,7 @@ Agent HaX: Greed I could bargain with. These people believe it.
     Agent HaX: And ENTROPY knows we were inside their bank. We won't get in again.
 - else:
     Agent HaX: Every cell that took a payout is on our map, and they don't know it.
-    Agent HaX: They also have the money. Whatever it buys goes ahead unless we get there first.
+    Agent HaX: They'll have the money in three days. Whatever it buys goes ahead unless we get there first.
     Agent HaX: We let it run. What's on that document is ours to stop now.
 }
 
@@ -339,7 +343,11 @@ Agent HaX: The Crypto Anarchists have lost their best cryptographer. Replacing h
     Agent HaX: Your cover didn't last the night. Somebody at HashChain rang the FCA, and the FCA had never heard of you.
     Agent HaX: It didn't cost us the job. It might cost us the next one. The FCA will want a word with us.
 - else:
-    Agent HaX: And the cover held on the floor. Only Satoshi thought to check, and by then you were at his desk.
+    {satoshi_spoken:
+        Agent HaX: And the cover held on the floor. Only Satoshi thought to check, and by then you were at his desk.
+    - else:
+        Agent HaX: And the cover held. Nobody at HashChain thought to ring the FCA.
+    }
 }
 {trader_ko:
     Agent HaX: Okonkwo flagged those wallets before we ever did, and got knocked down for it.
@@ -362,8 +370,10 @@ Agent HaX: The Crypto Anarchists have lost their best cryptographer. Replacing h
 === password_cracking_discussion ===
 // Pass 5 minor: one line per flag, in story terms.
 Agent HaX: All four flags in.
-Agent HaX: One cracked password got you onto their backend, and the same password opened a second account.
+Agent HaX: A build service nobody had switched off got you onto their backend. One cracked password, and the same password opened a second account.
 Agent HaX: The financial database gave us their doors, and the vault account gave us the keys to every cold wallet they hold.
+// Scenario design R1, decision 1 (CyBOK kill chains): the night as one chain.
+Agent HaX: Map it, get on it, crack it, reuse it, move sideways, take the keys. A whole chain, and they'd left every link open.
 
 -> fca_letter
 
@@ -394,6 +404,10 @@ Agent HaX: The financial database gave us their doors, and the vault account gav
     ~ fca_right += 1
     -> fca_next
 * [Every cold wallet's recovery keys sit on one account.]
+    ~ fca_right += 1
+    -> fca_next
+// Scenario design R1 (m7): the way in is a finding too. Ten options, three picks.
+* [A build service on their backend runs whatever it's sent.]
     ~ fca_right += 1
     -> fca_next
 * [The CEO switched off compliance reporting on the mixer.]

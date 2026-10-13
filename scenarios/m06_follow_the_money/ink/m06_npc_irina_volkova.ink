@@ -41,20 +41,20 @@
 //   (E20/E22). A detained Irina gives nothing.
 // ===========================================
 
-VAR irina_trust = 0              // -50 to 100 scale
+VAR irina_trust = 0              // -50 to 100 scale  Synced scenario global (scenario design R1, M1: survives a reload)
 // Pass 5 A3: synced scenario global, written with #set_variable so HaX's
 // conversation_closed mapping can see it. Left true when her first
 // conversation closes, it strains the cover (cover_strained).
 VAR irina_suspicious = false
-VAR moral_conflict_revealed = false
-VAR shown_casualties = false
-VAR shown_architects_fund = false
-VAR recruitment_offered = false
-VAR recruitment_refused = false
-VAR badge_discussion = false
+VAR moral_conflict_revealed = false  // Synced scenario global (scenario design R1, M1: survives a reload)
+VAR shown_casualties = false  // Synced scenario global (scenario design R1, M1: survives a reload)
+VAR shown_architects_fund = false  // Synced scenario global (scenario design R1, M1: survives a reload)
+VAR recruitment_offered = false  // Synced scenario global (scenario design R1, M1: survives a reload)
+VAR recruitment_refused = false  // Synced scenario global (scenario design R1, M1: survives a reload)
+VAR badge_discussion = false  // Synced scenario global (scenario design R1, M1: survives a reload)
 VAR exec_badge_turn = -1   // TURNS() at the last hand-over
-VAR asked_research = false
-VAR asked_paperwork = false
+VAR asked_research = false  // Synced scenario global (scenario design R1, M1: survives a reload)
+VAR asked_paperwork = false  // Synced scenario global (scenario design R1, M1: survives a reload)
 VAR first_meeting = true
 
 // Synced from scenario globals / inventory
@@ -71,10 +71,11 @@ VAR irina_exec_badge_given = false // set by the pickup mappings (lesson 26)
 VAR read_irina_notes = false       // onPickup of her research notes (P10)
 VAR architect_identity_found = false // safe opened (PASS 4 fix 3)
 VAR read_settlement_log = false      // settlement log picked up (round 2, M3)
+VAR exchange_infiltrated = false // Synced scenario global: set by HaX when her first chat closes (M1)
 VAR slot_checked_visit = false // Synced scenario global (puzzle chains M1 / R2 M-R2-1): one slot check per visit to the console; HaX's room_entered:data_center mapping clears it, so a reload doesn't
 VAR cover_strained = false   // Pass 5 A3: synced; the floor has a reason to ring the FCA
-VAR given_time = false
-VAR asked_passwords = false   // playtest D1: the second ask always succeeds
+VAR given_time = false  // Synced scenario global (scenario design R1, M1: survives a reload)
+VAR asked_passwords = false   // playtest D1: the second ask always succeeds  Synced scenario global (scenario design R1, M1: survives a reload)
 VAR wordlist_handed = false   // playtest D4: menu latch, same conversation
 VAR badge_handed = false
 // Final round (m03 pattern): set by every exit, so the resting knot's re-entry
@@ -93,9 +94,14 @@ VAR hub_quiet = false
 // Playtest D1: the openers used to sit inside {first_meeting:} with no divert,
 // so they fell through into the hub and all seven options showed at once. A
 // first pick from the hub discarded the openers and capped trust at 10.
-{first_meeting:
+// Scenario design R1 (M1): ink-local state is lost on a page reload, so the
+// first meeting is keyed on the synced exchange_infiltrated (set by HaX when
+// her first chat closes), and her trust and once-only topics are synced
+// globals of the same names.
+{first_meeting and not exchange_infiltrated:
     -> first_meeting_scene
 }
+~ first_meeting = false
 Dr. Irina Volkova: Back again. What do you need?
 ~ hub_quiet = true
 -> hub

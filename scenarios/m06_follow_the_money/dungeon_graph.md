@@ -533,7 +533,7 @@ flowchart TD
   rc_npc_agent_hax_5("Agent HaX")
   rc_m06_cracking_field_guide_6{"SAFETYNET Field Guide: Offline Password Cracking"}
   rc_m06_distcc_field_guide_7{"SAFETYNET Field Guide: Exploiting distcc"}
-  rc_m06_privesc_field_guide_8{"SAFETYNET Field Guide: Privilege Escalation and Credential Reuse"}
+  rc_m06_privesc_field_guide_8{"SAFETYNET Field Guide: Privilege Escalation via Sudo"}
   rc_m06_recon_field_guide_9{"SAFETYNET Field Guide: Reconnaissance and Network Mapping"}
   rc_m06_rfid_field_guide_10{"SAFETYNET Field Guide: RFID Cloning"}
   rc_m06_lockpicking_field_guide_11{"SAFETYNET Field Guide: Lockpicking"}
