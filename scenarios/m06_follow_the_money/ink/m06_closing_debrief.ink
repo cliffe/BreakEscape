@@ -49,6 +49,7 @@ VAR console_tripped = false // Puzzle chains R2 (M-R2-2): a console lockout befo
 VAR signing_record_found = false // Puzzle chains D2: Satoshi's signing case opened on his own print
 VAR minder_challenged = false // Round 2 (R2-m7)
 VAR analyst_walked_through = false // Dialogue C1 (D6-31): Priya walked the player through her graph
+VAR minder_walked = false // Struggling run A (S1): Kemal read the casualty line and walked out
 VAR minder_vouched = false // Dialogue C2 (D6-63): Kemal let the player in on Volkova's word
 VAR fca_picks = 0
 VAR fca_right = 0
@@ -344,6 +345,8 @@ Agent HaX: The Crypto Anarchists have lost their best cryptographer. Replacing h
     Agent HaX: His minder's in custody too. He finishes a long career on a corridor floor.
 - minder_hostile:
     Agent HaX: His minder came at you and you went round him. He's in custody now, and furious.
+- minder_walked:
+    Agent HaX: His minder read the casualty line and walked out of the building. He isn't in custody. I'd rather he was, but I understand him.
 // Dialogue C2 (D6-63): a synced global records Volkova's word, on either route to it.
 - minder_vouched:
     Agent HaX: His minder took Volkova's word for you, on the phone, with his boss behind the door.

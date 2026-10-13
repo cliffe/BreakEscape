@@ -10,7 +10,7 @@
 {"set": {"found_blockchain_evidence": true, "flag1_submitted": true, "flag2_submitted": true, "flag3_submitted": true, "flag4_submitted": true, "found_wallet_keys": true, "found_architects_fund": true}},
 {"talk": "irina", "picks": ["Satoshi's wing", "That's all for now"]},
 {"talk": "phone", "picks": ["Remind me where we are", "I'm good for now"]},
-{"said": ["the minder has the key to Satoshi's door", "Pick the door while his back's turned"]},
+{"said": ["the minder has the key to Satoshi's door", "Or pick the door when he walks back to the data-centre end"]},
 {"room": "executive_wing"},
 {"talk": "minder", "knot": "on_sighted", "picks": ["Routine supervisory visit", "step aside"]},
 {"expect": {"minder_hostile": true, "minder_ko": false}},

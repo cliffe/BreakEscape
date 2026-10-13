@@ -918,6 +918,7 @@
       "console_tripped": false,
       "console_warned": false,
       "at_console": false,
+      "minder_walked": false,
       "satoshi_spoken": false,
       "irina_trust": 0,
       "asked_research": false,

@@ -93,6 +93,7 @@ VAR minder_ko = false            // Synced scenario global (round 2, R2-m10)
 VAR minder_hostile = false       // Synced scenario global (round 2, R2-m10)
 VAR console_warned = false       // Synced scenario global (scenario design R1, m10)
 VAR console_tripped = false      // Synced scenario global (scenario design R1, m10)
+VAR minder_walked = false        // Synced scenario global (struggling run A, S1)
 VAR resolve_aim_open = false     // Synced scenario global (puzzle chains m5): the player has been in Satoshi's office
 VAR signing_record_found = false // Synced scenario global (puzzle chains D2): the signing case is open
 VAR server_room_entered = false   // Synced scenario global (regression M4): the server room door is open
@@ -225,7 +226,7 @@ Everything after that is joining up the cells' money.
 === password_help ===
 ~ password_hint_given = true
 Crypto shops all do it. A coin name with a year bolted on.
-Volkova keeps an audit list of the exact words her people pick. Get it.
+Volkova keeps an audit list of the exact words her people pick. Get it. The IT checklist on the checkpoint noticeboard has the rule.
 And once one account falls, try that password on the rest. Admins reuse.
 -> password_help_choices
 
@@ -286,6 +287,10 @@ Try the other way first.
 {guard_resolved and not irina_badge_obtained and not irina_badge_cloned and not irina_ko and not irina_fate_decided:
     Volkova's office is west off the trading floor, on RFID. Your cloner reads her badge from across a desk.
 }
+// Struggling run A (S4): point at the checklist early, for a player who skipped it.
+{not server_passphrase_known and not server_room_entered:
+    There's an IT checklist on the checkpoint noticeboard. It has their house rule for door passphrases.
+}
 {not found_password_lists and not server_room_entered:
     {irina_ko:
         Volkova kept a wordlist of what people here pick. Ask and I'll send a copy.
@@ -340,10 +345,15 @@ Try the other way first.
     You've the badge. The wing's east of the data centre; his office is north of that.
     // Round 2 (R2-m10, R2-M3): only while the minder still stands in the way.
     // Puzzle chains m5: and not once the player has been through his door.
-    {not minder_passed and not minder_ko and not minder_hostile and not resolve_aim_open:
+    {not minder_passed and not minder_ko and not minder_hostile and not minder_walked and not resolve_aim_open:
         He keeps a minder on that corridor, and the minder has the key to Satoshi's door.
         {cover_strained:
-            With your cover strained, he won't take the FCA line. Pick the door while his back's turned, or bring Volkova's word if she's with us.
+            With your cover strained, he won't take the FCA line.
+            // Struggling run A (S1): only offer Volkova's word while it exists.
+            {irina_recruited and not irina_ko:
+                Volkova's word will get you past him.
+            }
+            Or pick the door when he walks back to the data-centre end. Or show him the casualty line on the fund.
         - else:
             The FCA line should get him to open it. If it doesn't, pick it while his back's turned.
         }
@@ -499,7 +509,7 @@ That's the vault account, and the recovery keys are in your kit.
 ~ fund_hint_level += 1
 {fund_hint_level:
 - 1:
-    Match each of Priya's deposits to a settlement credit: less the mixer's cut, after its hold.
+    Match each of Priya's deposits to a settlement credit: less the mixer's cut, after its hold. The pool config has both numbers.
 - 2:
     Start with the biggest deposit. Look for it less the fee, at least six hours on.
 - else:

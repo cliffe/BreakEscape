@@ -26,7 +26,7 @@ Director Magnus Netherton: Agent 0x00. Every cell we have hit is being paid by s
 
 Agent 0x47 'Nightshade': Money's just another protocol, and this one leaks. Follow enough hops and the mixers stop hiding people and start revealing them.
 
-Agent HaX: Two payments. One came in, one went out, and both went through the same exchange.
+Agent HaX: Two payments we've traced so far. One came in, one went out, and both went through the same exchange.
 
 + [Which payments?]
     -> money_explanation

@@ -122,6 +122,8 @@ function engine() {
 function hostile(npc) {
   out(`      [engine: ${npc} hostile]`);
   if (npc === 'satoshi_minder') G.minder_hostile = true;
+  // Struggling run A: the erb's real npc_hostile_state_changed mappings (HaX's fight texts).
+  fire('npc_hostile_state_changed', { npcId: npc, isHostile: true });
 }
 function gave(kind, id) {
   out(`      [give ${kind}:${id}]`);

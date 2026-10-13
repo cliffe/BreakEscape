@@ -209,9 +209,10 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
           <%# Pass 5 A5: Satoshi's minder in the executive wing. %>
           <%# Round 2 (R2-m7): mutually exclusive; KO, then hostile, then talked past,
               then turned back once, then never seen. %>
+          { "text": "KEMAL AYDIN (MINDER): Read the casualty line and walked out — still at large", "style": "entry", "condition": "globalVars.minder_walked && !globalVars.minder_hostile && !globalVars.minder_ko" },
           { "text": "KEMAL AYDIN (MINDER): Talked your way past him", "style": "entry", "condition": "globalVars.minder_passed && !globalVars.minder_vouched && !globalVars.minder_hostile && !globalVars.minder_ko" },
           { "text": "KEMAL AYDIN (MINDER): Let you in on Volkova's word", "style": "entry", "condition": "globalVars.minder_vouched && !globalVars.minder_hostile && !globalVars.minder_ko" },
-          { "text": "KEMAL AYDIN (MINDER): Turned you back once; you got past him anyway", "style": "entry", "condition": "globalVars.minder_challenged && !globalVars.minder_passed && !globalVars.minder_hostile && !globalVars.minder_ko" },
+          { "text": "KEMAL AYDIN (MINDER): Turned you back once; you got past him anyway", "style": "entry", "condition": "globalVars.minder_challenged && !globalVars.minder_passed && !globalVars.minder_walked && !globalVars.minder_hostile && !globalVars.minder_ko" },
           { "text": "KEMAL AYDIN (MINDER): Never saw you come up the corridor", "style": "entry", "condition": "globalVars.satoshi_confronted && !globalVars.minder_challenged && !globalVars.minder_passed && !globalVars.minder_hostile && !globalVars.minder_ko" },
           { "text": "KEMAL AYDIN (MINDER): Knocked out outside his boss's door", "style": "entry", "condition": "globalVars.minder_ko" },
           { "text": "KEMAL AYDIN (MINDER): Went for you; you got past him anyway", "style": "entry", "condition": "globalVars.minder_hostile && !globalVars.minder_ko" },
@@ -686,6 +687,7 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
     "irina_taken": false,
     "minder_passed": false,
     "minder_vouched": false,
+    "minder_walked": false,
     "minder_hostile": false,
     "minder_ko": false,
     "minder_challenged": false,
@@ -1389,9 +1391,23 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
                 strained and no turned Irina, HaX points at the pick. %>
             {
               "eventPattern": "conversation_closed:satoshi_minder",
-              "condition": "globalVars.cover_strained === true && globalVars.minder_challenged === true && globalVars.minder_passed !== true && globalVars.minder_hostile !== true && globalVars.minder_ko !== true && globalVars.satoshi_confronted !== true && globalVars.irina_recruited !== true",
+              "condition": "globalVars.cover_strained === true && globalVars.minder_challenged === true && globalVars.minder_passed !== true && globalVars.minder_hostile !== true && globalVars.minder_ko !== true && globalVars.minder_walked !== true && globalVars.satoshi_confronted !== true",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 2500, "message": "He won't take the FCA from you now. Watch his walk. When his back's turned, that door's an easy lock." }
+              "sendTimedMessage": { "delay": 2500, "message": "He won't take the FCA now. When he walks back to the data-centre end, you've a few seconds at that door. Or show him what his boss is paying for." }
+            },
+            <%# Struggling run A (S1, S6): when a fight starts, say how to fight and that
+                there is a way out. %>
+            {
+              "eventPattern": "npc_hostile_state_changed",
+              "condition": "data.npcId === 'satoshi_minder' && data.isHostile === true",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 1000, "message": "He's coming for you. Q for your fists, then E or click when he's in front of you. He's slow; step back between swings. Or back off." }
+            },
+            {
+              "eventPattern": "npc_hostile_state_changed",
+              "condition": "data.npcId === 'satoshi_nakamoto' && data.isHostile === true",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 1000, "message": "He's fighting. Q for your fists, then E or click when he's in front of you." }
             },
             <%# Puzzle chains R2 (M-R2-1): a turned Irina checks one slot per visit, and
                 a visit is a trip back to the console. slot_checked_visit is synced
@@ -2181,11 +2197,11 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
       },
       "npcs": [
         {
-          "_comment": "Pass 5 A5 / D1: Satoshi's minder, a Crypto Anarchists operative, between the player and the CEO. Stand-in sprite (male_hacker_hood_down_v2, the Crypto Anarchists' look, hood down to tell him from Satoshi) until the character stage; cast-look proposal in DECISIONS_PENDING.md. He walks a short horizontal beat on the floor of the 10x6 hall (floor x 1..8, y 2..4, as m03 Terry's hall), clear of the west doorway (y 2.5), under the north door on the right. The north door is at tile x 8.5 (check_door_alignment: world x 592, wing origin x 320). Dwelling at (4,4) after the walk west he faces the west door, about 137 px away (seen). Dwelling at (8,4) after the walk east he faces east with the north door almost straight above him, about 80 degrees off his facing and outside the 120-degree cone, and the corridor behind him: that 4.5 s dwell is the window to slip past. On the walk east the door is about 40 degrees off his facing (seen, if in range). Beat, facing and windows measured in game 2237 (PASS5_ALIGN_R1_BROWSER.md 1a, 1g). Talk-past while the cover holds; with cover_strained only a turned Irina's word gets past him, otherwise the player picks the door in his blind window, squares up (hostile) or backs off. Round 2: Satoshi's door is locked and Kemal holds the key, so the routes are talk (he unlocks it), pick it in his blind window, or fight (the KO drops the key). A strained cover never locks the player out.",
+          "_comment": "Pass 5 A5 / D1: Satoshi's minder, a Crypto Anarchists operative, between the player and the CEO. Stand-in sprite until the character stage; cast-look proposal C1 in DECISIONS_PENDING.md. Struggling run A (S1): his beat moved west, away from Satoshi's north door (tile x 8.5): he dwells 4 s at (6,4) facing east, where the door is about 125 px off and about 50 degrees from his facing (seen), then walks west and dwells 6 s at (3,4) facing the data-centre door, about 186 px from the door (out of his 150 px range). The walk west, the west dwell and the walk back are the window to pick the door, about 9-10 s a loop; the old beat dwelt right under the door and the struggling player never saw a window. Needs a browser check. Routes past him: the FCA line (cover held); Volkova's word (turned, on her feet); the casualty line (fund found; he unlocks the door and walks out, still at large); the pick in his window; or a fight (gentler since run A; the KO drops the key).",
           "id": "satoshi_minder",
           "displayName": "Kemal Aydin",
           "npcType": "person",
-          "position": { "x": 8, "y": 4 },
+          "position": { "x": 6, "y": 4 },
           "spriteSheet": "male_hacker_hood_down_v2",
           "spriteTalk": "assets/characters/male_hacker_hood_down_v2_talk.png",
           "spriteVisemes": "assets/characters/male_hacker_hood_down_v2_visemes.png",
@@ -2215,13 +2231,17 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
           ],
           "behavior": {
             "facePlayer": false,
-            "hostile": { "chaseSpeed": 100, "attackDamage": 6, "pauseToAttack": true },
+            <%# Struggling run A (S1): was chaseSpeed 100, attackDamage 6; a first-time
+                player lost about 6 HP a second and was knocked out twice. A former
+                vault guard in his late fifties: 75 and 3, gentler than Torres (90 / 5)
+                and m04's guard (4). %>
+            "hostile": { "chaseSpeed": 75, "attackDamage": 3, "pauseToAttack": true },
             "patrol": {
               "enabled": true,
               "pauseForPlayer": false,
               "waypoints": [
-                { "x": 8, "y": 4, "dwellTime": 4500 },
-                { "x": 4, "y": 4, "dwellTime": 3500 }
+                { "x": 6, "y": 4, "dwellTime": 4000 },
+                { "x": 3, "y": 4, "dwellTime": 6000 }
               ],
               "speed": 40,
               "loop": true
@@ -2234,7 +2254,7 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
             "visualize": true,
             "challengeOnSight": {
               "cooldown": 20000,
-              "skipIfGlobal": ["minder_passed", "minder_hostile", "minder_ko", "satoshi_confronted"]
+              "skipIfGlobal": ["minder_passed", "minder_hostile", "minder_ko", "minder_walked", "satoshi_confronted"]
             }
           },
           "eventMappings": [
@@ -2248,7 +2268,7 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
             {
               "_comment": "Round 2 (R2-M3): he sees the picks on Satoshi's door. Repeatable, cooldown 250 ms, as the checkpoint guard's (see his comment). Not while he is hostile or down.",
               "eventPattern": "lockpick_used_in_view",
-              "condition": "globalVars.minder_hostile !== true && globalVars.minder_ko !== true",
+              "condition": "globalVars.minder_hostile !== true && globalVars.minder_ko !== true && globalVars.minder_walked !== true",
               "targetKnot": "on_lockpick_seen",
               "conversationMode": "person-chat",
               "background": "assets/backgrounds/background1.png",
@@ -2260,6 +2280,18 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
               "condition": "data.npcId === 'satoshi_minder' && data.isHostile === true",
               "onceOnly": true,
               "setGlobal": { "minder_hostile": true }
+            },
+            <%# Struggling run A (S1): shown the casualty line, he unlocks the door and
+                walks out (m04 Cipher's hide pattern, with a reload re-hide). %>
+            {
+              "eventPattern": "global_variable_changed:minder_walked",
+              "condition": "value === true",
+              "setVisible": false
+            },
+            {
+              "eventPattern": "room_entered:executive_wing",
+              "condition": "globalVars.minder_walked === true",
+              "setVisible": false
             }
           ]
         }

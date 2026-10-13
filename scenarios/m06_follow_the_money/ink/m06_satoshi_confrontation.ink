@@ -31,6 +31,7 @@ VAR minder_ko = false       // Pass 5 A5: synced; his minder was knocked out in 
 VAR minder_passed = false   // Pass 5 A5: synced; the minder let the player in
 VAR minder_hostile = false  // Round 2 (R2-m8): synced; the minder turned hostile
 VAR minder_challenged = false // Round 2 (R2-m7): synced; the minder turned the player back at least once
+VAR minder_walked = false // Struggling run A (S1): synced; Kemal read the casualty line and walked out
 VAR minder_vouched = false // Dialogue C2 (D6-63): synced; Kemal let the player in on Volkova's word
 VAR satoshi_confronted = false // Synced scenario global (scenario design R1, m3): the opening has played
 VAR assets_decided = false  // synced global: the re-entry guard survives a reload (review M3)
@@ -73,6 +74,8 @@ VAR pitch_heard = false  // Dialogue C1 (D6-21): the full freeze-or-watch pitch 
         Satoshi Nakamoto II: And I heard Kemal hit the floor. He's guarded money for thirty years. He'll be embarrassed.
     - minder_hostile:
         Satoshi Nakamoto II: Kemal's still out there looking for you. Let's be quick.
+    - minder_walked:
+        Satoshi Nakamoto II: I heard the lift. Kemal walked out, didn't he? Thirty years, and he leaves on a number.
     - minder_vouched:
         Satoshi Nakamoto II: Kemal rang Irina, and she vouched for you. So that's where she's gone.
     - minder_passed:
@@ -471,8 +474,11 @@ Satoshi Nakamoto II: You came in on a fake compliance booking, you've shown me n
 
 Satoshi Nakamoto II: No. I don't think I will.
 
-+ [Sit down.]
+// Struggling run A (S6): the choice says it's a fight, and a beat before it.
++ [Sit down. (Make him.)]
     Satoshi Nakamoto II: Make me.
+    #speaker:narrator
+    Narrator: He comes off the desk with his fists up. This is going to be a fight.
     #hostile:satoshi_nakamoto
     ~ hub_quiet = true
     #exit_conversation

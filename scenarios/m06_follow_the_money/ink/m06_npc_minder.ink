@@ -28,6 +28,8 @@ VAR minder_hostile = false
 VAR satoshi_confronted = false
 VAR minder_challenged = false   // Synced scenario global (round 2, R2-m7)
 VAR minder_vouched = false      // Synced scenario global (dialogue C2, D6-63): let in on Volkova's word
+VAR minder_walked = false       // Synced scenario global (struggling run A, S1): shown the casualty line, he walked out
+VAR found_architects_fund = false // Synced scenario global: the casualty line needs the fund document
 
 // Ink-local
 VAR minder_met = false
@@ -55,7 +57,8 @@ VAR saw_picks = false      // R2-M3: he caught the picks; the FCA line no longer
     #speaker:satoshi_minder
     Kemal Aydin: Moin. This floor is closed. Who let you up?
 - else:
-    Kemal Aydin: You again. The answer has not changed.
+    // Struggling run A (S7): repeat visits vary.
+    Kemal Aydin: {&You again. The answer has not changed.|Still here. Still closed.|Again? My answer is the same.}
 }
 ~ minder_met = true
 ~ minder_challenged = true
@@ -82,6 +85,11 @@ VAR saw_picks = false      // R2-M3: he caught the picks; the FCA line no longer
 = standoff_choices
 + {irina_recruited and not irina_ko} [Dr Volkova sent me up. Ring her if you like.]
     -> irina_vouches
+// Struggling run A (S1): a non-combat way past him on every route with the fund
+// found, whatever the cover and whatever happened to Irina. Its cost: he walks
+// out of the building and isn't detained.
++ {found_architects_fund} [(Show him the casualty line on the fund.)]
+    -> casualty_line
 + [Then step aside, or I'll move you.]
     -> goes_hostile
 + [(Back off down the corridor.)]
@@ -106,7 +114,7 @@ VAR saw_picks = false      // R2-M3: he caught the picks; the FCA line no longer
     #speaker:satoshi_minder
     Kemal Aydin: The FCA does not come up here.
 - else:
-    Kemal Aydin: I told you once. This floor is closed.
+    Kemal Aydin: {&I told you once. This floor is closed.|Back again. No.|You are persistent. I am more so.}
 }
 ~ minder_met = true
 ~ minder_challenged = true
@@ -151,6 +159,19 @@ Kemal Aydin: Na gut. Go in.
 Kemal Aydin: I guarded banks that stole politely. He at least says what he is.
 Kemal Aydin: So. Who are you really?
 -> start.standoff_choices
+
+=== casualty_line ===
+#speaker:narrator
+Narrator: You hold the allocation up where he can read it. He reads the per-cell lines, then the last one, twice.
+#speaker:satoshi_minder
+Kemal Aydin: Three hundred and fifty to six hundred.
+Kemal Aydin: Thirty years I stood between people and their money. Never between them and a grave.
+#unlock_door:satoshi_office
+~ minder_walked = true
+#set_variable:minder_walked=true
+Kemal Aydin: The door is open. I am going home. Do not look for me tonight.
+#exit_conversation
+-> start.challenge
 
 === goes_hostile ===
 #speaker:satoshi_minder

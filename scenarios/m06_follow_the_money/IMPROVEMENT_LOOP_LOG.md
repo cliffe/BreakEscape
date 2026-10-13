@@ -1062,3 +1062,83 @@ The full log is in `LIGHTING_PLAN.md`, with evidence in `build_evidence/lighting
 | 4 | 0 | 0 | 6 |
 
 Two visual reviews in a row found nothing above minor. Next: POV backgrounds.
+
+## Phase 8 playtests: struggling run A fixes
+
+Input: `PASS5_STRUGGLING_A.md` (blind struggling-player run, game 2367: 0 blockers, 2 majors, 6 minors; fun 3, pacing 3, clarity 3, openness 4, teaching 4). Dialogue and lighting are closed, so line changes are kept small and listed below. The orchestrator scoped the work: S1, S3–S8 here; S2 (respawn in reception) is already in the backlog.
+
+| # | Sev. | Finding | Outcome |
+|---|---|---|---|
+| S1 | major | The Kemal fight couldn't be learned in game; both hinted bypasses failed for a struggling player (no visible window; Volkova's word gone after detaining her) | **Fixed, five parts.** (1) **Combat:** `chaseSpeed` 100 → 75, `attackDamage` 6 → 3 (a vault guard in his late fifties; gentler than m05 Torres's 90 / 5 and m04's guard 4). (2) **How to fight:** on Kemal turning hostile, HaX texts "He's coming for you. Q for your fists, then E or click when he's in front of you. He's slow; step back between swings. Or back off." (the controls as the tutorial gives them, `tutorial-manager.js` "Combat Mode"). (3) **A readable pick window:** his beat moved west, away from Satoshi's north door at tile x 8.5. He dwells 4 s at (6,4) facing east (door about 125 px and 50° off: seen), then walks west and dwells 6 s at (3,4) facing the data-centre door (about 186 px from Satoshi's door, outside his 150 px range). That gives a window of about 9–10 s a loop; the old east dwell sat right under the door. HaX's pointer names it: "He won't take the FCA now. When he walks back to the data-centre end, you've a few seconds at that door. Or show him what his boss is paying for." Its condition no longer needs Irina un-turned (a turned Irina can be knocked out). (4) **Volkova's word only while it exists:** the recap offers it only for a turned Irina on her feet. (5) **A non-combat way past him on every route with the fund:** a new stand-off choice "(Show him the casualty line on the fund.)". He reads the projection, unlocks the door and walks out; new synced `minder_walked` hides him (and re-hides on reload). The cost: he isn't detained. Satoshi ("I heard the lift. Kemal walked out, didn't he?"), the debrief ("…walked out of the building. He isn't in custody.") and the credits ("Read the casualty line and walked out — still at large") reflect it. The sight challenge, pick catch, pointer and recap all skip once he has walked. **Browser checks owed:** the new beat and window, the combat feel, the hide |
+| S3 | minor | The RFID flipper stays on "Emulating…" with no result when the CTO badge is wrong for a door | **Engine, not mission config** (the executive door is an ordinary `rfid` lock requiring `executive_badge`). Noted in `DECISIONS_PENDING.md` D8 for the orchestrator to log |
+| S4 | minor | The server-room passphrase relies on a checklist a rusher skips | **Hint ladder tightened; puzzle unchanged.** The recap now opens with "There's an IT checklist on the checkpoint noticeboard. It has their house rule for door passphrases." until the checklist is read or the door is open. "Any tips on their passwords?" adds "The IT checklist on the checkpoint noticeboard has the rule." |
+| S5 | minor | Matching the fund needs hand arithmetic from three documents | **Hint ladder tightened; puzzle unchanged.** The first rung of "Which cold slot is the fund?" adds "The pool config has both numbers." Priya's write-up is already pointed at early: the recap from the moment the player reaches the floor, HaX's lab text on Irina's first close, and the data-centre entry text. The console's "System locked" is engine text; HaX's first-strike text explains the cost |
+| S6 | minor | Satoshi's "Sit down." starts a fight with no warning | **Fixed.** The choice now reads "Sit down. (Make him.)", a narration beat comes before the fight ("He comes off the desk with his fists up. This is going to be a fight."), and HaX texts the controls when he turns hostile |
+| S7 | minor | Kemal's repeat lines are identical; he followed the player into the data centre | **Lines varied.** Each repeat opener now cycles three lines (`{&…}`). **Following:** he was hostile then, and nothing in his config leaves the wing, so it looks like the engine's hostile chase crossing rooms. Not confirmed from source; `DECISIONS_PENDING.md` D8 |
+| S8 | minor | The briefing's "Two payments" didn't match the documents (three inbound wallets, two outbound payments) | **Fixed.** "Two payments we've traced so far. One came in, one went out, and both went through the same exchange." |
+| S2 | major | Respawn in reception with the minder still hostile | **Not in scope** (already in the backlog, orchestrator). The fight is now gentler and has three non-combat alternatives |
+
+Noticed, not acted on: the validator suggests that `moral_conflict_revealed` is now set but never read. Its read in Irina's detain line went in the dialogue phase; for the dialogue owner to drop or use.
+
+#### Decisions taken (with reasons)
+
+- **Kemal 75 / 3** (fixer, within the orchestrator's brief). He's a guard, not a fighter, and the struggling player was knocked out twice at 100 / 6. The values sit below the gentlest campaign references.
+- **The casualty line as the extra talk route** (fixer, as the orchestrator suggested: "a talk route that still works when the cover is strained, at some cost"). It needs the fund document, which almost every player at his door has, and it fits his belief line ("He at least says what he is"). The cost, Kemal at large, shows in Satoshi's line, the debrief and the credits. It can't be offered without the fund (the early-KO route), where the pick and the fight remain.
+- **The beat moved west, not the cone narrowed** (fixer). The window becomes visible as he walks away to the far end, and the pointer can name it in-world terms.
+- **The S4/S5 hints:** only the asked-for recap, the asked-for tips and the first rung of the asked-for ladder changed. The puzzles are unchanged.
+
+#### Route driver
+
+`route.js` now also fires the scenario's real `npc_hostile_state_changed` mappings (HaX's fight texts). Updated routes: r12 and r19 (the new pointer and recap wording). New routes (r24–r29 were added by other agents meanwhile), all passing with the rest:
+- `r30_detained_strained_casualty_line` (S1, S6): Irina detained, cover strained; no Volkova's word in the recap; the pointer; the casualty line; Satoshi, the debrief and the credits; "Sit down. (Make him.)".
+- `r31_hints_point_early` (S4, S5, S8).
+- `r32_fight_texts` (S1, S6): HaX's fight text for Kemal and for Satoshi; the narration beat.
+
+#### Checks (static; no browser session started)
+
+- Ink compiles (9 files).
+- Validator, full: all passes; no unknown fields; no toast-stacking warnings; dialogue lint clean. One new suggestion (the `moral_conflict_revealed` note above).
+- `dialoguelint`: no findings.
+- `check_door_alignment.py`: all doors OK.
+- `tagdiff` against HEAD:
+  - minder 14 (the casualty-line knot, its choice, the `{&…}` cycles, the new VARs);
+  - Satoshi 3 (the walked branch, the choice text, the narration);
+  - debrief 2 (the walked branch);
+  - phone 5 (the checklist pointer, the Volkova gate, `minder_walked`);
+  - briefing: structure unchanged.
+- inkcheck (Kemal strained with the fund; his pick catch; Satoshi after a walk-out; the recap with a detained Irina; the debrief after a walk-out) and loopcheck (Kemal strained): no errors.
+- `reopencheck` (m06 block: `minder_walked` added): m06 HaX phone, 1800 reopens, 0 problems.
+- Routes r1–r32: all expectations met; no unsupported condition terms.
+
+#### Spoken lines changed (old → new)
+
+Briefing: "Two payments. One came in, one went out, and both went through the same exchange." → "Two payments we've traced so far. One came in, one went out, and both went through the same exchange."
+
+HaX texts (`scenario.json.erb`):
+- Pointer: "He won't take the FCA from you now. Watch his walk. When his back's turned, that door's an easy lock." → "He won't take the FCA now. When he walks back to the data-centre end, you've a few seconds at that door. Or show him what his boss is paying for."
+- New: "He's coming for you. Q for your fists, then E or click when he's in front of you. He's slow; step back between swings. Or back off."; "He's fighting. Q for your fists, then E or click when he's in front of you."
+
+HaX phone:
+- Recap: "With your cover strained, he won't take the FCA line. Pick the door while his back's turned, or bring Volkova's word if she's with us." → "With your cover strained, he won't take the FCA line." + (turned Irina on her feet) "Volkova's word will get you past him." + "Or pick the door when he walks back to the data-centre end. Or show him the casualty line on the fund."
+- New recap line: "There's an IT checklist on the checkpoint noticeboard. It has their house rule for door passphrases."
+- "Volkova keeps an audit list of the exact words her people pick. Get it." → "… Get it. The IT checklist on the checkpoint noticeboard has the rule."
+- "Match each of Priya's deposits to a settlement credit: less the mixer's cut, after its hold." → "… The pool config has both numbers."
+
+Kemal:
+- "You again. The answer has not changed." → cycles with "Still here. Still closed." and "Again? My answer is the same."
+- "I told you once. This floor is closed." → cycles with "Back again. No." and "You are persistent. I am more so."
+- New: narration "You hold the allocation up where he can read it. He reads the per-cell lines, then the last one, twice."; "Three hundred and fifty to six hundred."; "Thirty years I stood between people and their money. Never between them and a grave."; "The door is open. I am going home. Do not look for me tonight."
+
+Satoshi:
+- New: "I heard the lift. Kemal walked out, didn't he? Thirty years, and he leaves on a number."; narration "He comes off the desk with his fists up. This is going to be a fight."
+- Choice text (not voiced): "Sit down." → "Sit down. (Make him.)"
+
+Debrief, new: "His minder read the casualty line and walked out of the building. He isn't in custody. I'd rather he was, but I understand him."
+
+#### Browser checks owed
+
+- Kemal's new beat: the pick window from the data-centre end, and that the west dwell sees the west door.
+- The fight at 75 / 3, and HaX's fight text.
+- The casualty line: the door unlocks, he's hidden and re-hidden after a reload.
+- Satoshi's "Sit down. (Make him.)" beat.
+- Whether a hostile Kemal follows the player out of the wing (D8).
