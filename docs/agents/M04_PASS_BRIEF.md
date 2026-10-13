@@ -27,7 +27,10 @@ Not in this pass: lab sheet, audio, SecGen edits.
 - Reviewers are read-only and cite file:line. Verify claims against `scenario.json.erb` and the ink, not the older design docs.
 - `scenario.json.erb` is shared between stages: small, exact Edit replacements, re-read the region first. Dialogue edits stay in ink and NPC/dialogue fields; dressing edits room layout, objects and maps.
 - Engine changes only with the orchestrator's approval; committed separately, before mission changes. Subagents don't commit unless told; the orchestrator commits.
-- SecGen: don't open exploit-detail content in the SecGen XML (a safety check has stopped an agent doing that); work from the in-game text and the published field guides. Propose SecGen text changes in writing only.
+- **Don't open these files** (a safety check has stopped agents reading their exploit detail, three times on 2026-10-13):
+  - the SecGen scenario XML for any mission;
+  - in HacktivityLabSheets `_labs/safetynet/`: `distcc-exploitation.md`, `proftpd-exploitation-workflow.md`, `scanning-and-exploitation.md`, `privilege-escalation.md`.
+  Refer to those guides by title and published URL only. Grep for an exact option string or title if you must, but never read their bodies. For the VM side, work from the in-game text (HaX's flag texts, hints, documents, debrief). Anything that can only be checked against those files goes in your report as "needs checking against SecGen by the user". Propose SecGen text changes in writing only.
 - Image generation: PixelLab is flat-rate; Gemini is metered (one image at a time, look at each; the orchestrator checks with the user before batches). Never downscale pixel art. Props square to the walls; one or two angled per room is fine.
 - If a permission or safety check refuses an action, stop and report it. Don't route around it.
 
