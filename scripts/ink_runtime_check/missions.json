@@ -750,7 +750,8 @@
       "owen_office_card_relayed": false,
       "door_log_held": false,
       "data_center_entered": false,
-      "torres_reason_guessed": false
+      "torres_reason_guessed": false,
+      "door_log_reasoned_first": false
     },
     "npcs": [
       {

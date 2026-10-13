@@ -40,6 +40,7 @@ VAR patricia_ko = false
 VAR halloran_accused = false
 VAR named_before_portal = false // Synced scenario global: Torres named before flag 3 (D1; set by HaX's torres_identified mapping)
 VAR door_log_reasoned = false
+VAR door_log_reasoned_first = false // Synced scenario global (pass 5 R3-1): the front-door reason given in a reason menu, before the naming; set only in the *log_reason_right knots. The early-naming reward reads this, not door_log_reasoned
 VAR torres_reason_guessed = false
 
 // PASS 5 (D1, D2): how far the upload has got depends on the night. Named
@@ -98,8 +99,10 @@ David Torres: The vault logged me in twice tonight. One of them was you.
 
 // PASS 5 R2 m8: the early-naming reward lands in the scene, when it is
 // earned the honest way (the same terms as the credit and the debrief line).
-{named_before_portal and door_log_reasoned and not torres_reason_guessed and not halloran_accused:
-    David Torres: Half an hour early. Somebody read Owen's sheet properly.
+// R3-1: the front-door reason given before the naming, not the late click.
+// R3-3: "You're early", so it doesn't echo "half an hour" below.
+{named_before_portal and door_log_reasoned_first and not torres_reason_guessed and not halloran_accused:
+    David Torres: You're early. Somebody read Owen's sheet properly.
 }
 
 {halloran_accused:

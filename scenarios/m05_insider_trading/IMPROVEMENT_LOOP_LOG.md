@@ -218,3 +218,32 @@ Still not checked in a browser: everything listed after round 1, plus the retry 
 - The browser checks (round 1's list, the retry lines, the lethal texts).
 - B3 and the other long runs, to the dialogue phase.
 - D9 (Owen's dropped spare) until `dropOnKO`; D4 to D8, D1, D3 as before.
+
+### Phase 1 alignment, round 3
+
+Review: `ALIGNMENT_REVIEW_P5_R3.md` (Opus, read-only, static, with two probe routes). Counts: 0 blockers, 1 major, 2 minors. All fixed as the reviewer proposed (coordinator's instruction); none withdrawn.
+
+| # | Sev. | Finding | Outcome |
+|---|---|---|---|
+| R3-1 | major | B1's gate leaks through the post-naming "And the badge log. Look at the main-entrance times." choice, which sets `door_log_reasoned` with one option and no wrong alternatives, so merely opening the log earned the early-naming reward (probes p1, Owen knocked out; p2, Halloran's testimony as the reason) | **Fixed.** New synced global `door_log_reasoned_first`, set only beside `door_log_reasoned = true` in the three `*log_reason_right` knots (Patricia in person, her phone, HaX), which sit in the reason menus among wrong reasons and run only before the naming. The four reward conditions (credit, catch-all credit, Torres' line, the debrief's "before the server did") read it instead of `door_log_reasoned`. The late disclosure keeps setting `door_log_reasoned`, so BORROWED BADGE and "You read the badge log properly" still recognise reading the log. The probes are now routes r14 and r15 (negative: no reward anywhere); r2 also expects `door_log_reasoned_first`. Kept the catch-all's last term, rewritten on the new global, rather than dropping it: with `door_log_reasoned` false and the new global somehow true the catch-all would otherwise print beside the reward (not reachable today, but the term costs nothing) |
+| R3-2 | minor | Lethal ending with flags still out: the nag says "Good." and "sweep the vault"; the phone path, the last-flag text and "Where do I stand?" likewise | **Fixed.** Each gets a lethal twin with no "Good." and no sweep: the four nags split on `final_choice === 'combat_lethal'` (same `flags_nag_sent` guard): "The upload's dead. He's still on that floor. The research server isn't finished: all four flags in the drop-site, then call me."; the last-flag loop: "That's the last flag. Call me."; `post_ko_safety_net_sweep`: "He's still on that floor, and the upload's dead. Finish the research server: all four flags in the drop-site, then call me." (worded apart from the text so the validator's "bark repeats the chat line" check passes); `report_progress`: "The upload's dead and he's still on that floor. The research server isn't. All four flags, then call me." Route r13 now faces Torres with flags 3 and 4 out and checks the nag, the hub, the call-in refusal and the last-flag text; r5 still covers the lethal texts with every flag in |
+| R3-3 | minor | "Half an hour" twice in Torres' scene on the early route | **Fixed**: "You're early. Somebody read Owen's sheet properly." |
+
+#### Route driver
+
+Fifteen routes, all expectations met. New: `r14_owen_drop_late_disclosure.json` and `r15_halloran_reason_late_disclosure.json` (the reviewer's p1 and p2, with the reward strings turned into `notSaid` checks and `door_log_reasoned` true, `door_log_reasoned_first` false at the end). Changed: r2 (expects `door_log_reasoned_first` and the new Torres line), r13 (flags out at the fate, the lethal twins). One `notSaid` was narrowed to "dead. Good." because Torres' own "for the greater good." matched "Good.".
+
+#### Checks (static; no browser session started)
+
+- Ink compiles (10 files). Validator, full: schema passes, dungeon graph regenerates, the same intended warnings, nothing new. dialoguelint: 0 errors (the same pre-existing check and warning). reopencheck (m05 block regenerated, re-read just before; diff confined to that block): 0 problems on all three phones. tagdiff against HEAD: 14 structural differences, all from this round (the new VAR in five inks, its three assignments, the reward conditions, the two lethal branches). inkcheck and loopcheck over the new states: clean. Door alignment 9/9.
+
+#### Spoken lines changed (old → new)
+
+- Torres: "Half an hour early. Somebody read Owen's sheet properly." → "You're early. Somebody read Owen's sheet properly." (new in round 2, no audio).
+- HaX phone, new: "He's still on that floor, and the upload's dead. Finish the research server: all four flags in the drop-site, then call me."; "The upload's dead and he's still on that floor. The research server isn't. All four flags, then call me."
+- HaX texts, new: "The upload's dead. He's still on that floor. The research server isn't finished: all four flags in the drop-site, then call me."; "That's the last flag. Call me."
+
+#### Open after round 3
+
+- Round 4 confirmation and the browser checks (round 1's list, round 2's retry and lethal lines, round 3's lethal twins).
+- B3 and the other long runs to the dialogue phase; D9 until `dropOnKO`; D1, D3 to D8 as before.

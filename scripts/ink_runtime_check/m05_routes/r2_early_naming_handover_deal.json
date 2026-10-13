@@ -136,7 +136,8 @@
 "expect": {
 "torres_identified": true,
 "named_before_portal": true,
-"flag3_submitted": false
+"flag3_submitted": false,
+"door_log_reasoned_first": true
 }
 },
 {
@@ -155,7 +156,7 @@
 "said": [
 "20:02",
 "88 per cent",
-"Half an hour early. Somebody read Owen's sheet properly",
+"You're early. Somebody read Owen's sheet properly",
 "Twenty-eight minutes",
 "half an hour",
 "89 per cent",

@@ -1,7 +1,7 @@
 {
 "steps": [
 {
-"note": "R13 (round 2, m5): the fight, then left to die in the post-KO person-chat with every flag in. The scene, HaX's text, the hub and 'Not yet' all reflect him on the floor; AT A COST; end music."
+"note": "R13 (round 2 m5, round 3 R3-2): the fight with flags 3 and 4 still out, then left to die in the post-KO person-chat. The nag, the hub and the last-flag text all have him on the floor: no 'Good.', no sweep. Then 'Not yet' at the call-in; AT A COST; end music. (r5 covers the lethal texts with every flag in.)"
 },
 {
 "talk": "briefing",
@@ -102,16 +102,6 @@
 }
 },
 {
-"set": {
-"flag3_submitted": true
-}
-},
-{
-"set": {
-"flag4_submitted": true
-}
-},
-{
 "talk": "owen",
 "picks": [
 "David Torres' office",
@@ -137,6 +127,12 @@
 "enter": "data_center"
 },
 {
+"read": "upload_schedule"
+},
+{
+"read": "data_package_manifest"
+},
+{
 "talk": "patricia_phone",
 "picks": [
 "I know who it is",
@@ -148,6 +144,9 @@
 "expect": {
 "torres_identified": true
 }
+},
+{
+"said": []
 },
 {
 "talk": "torres",
@@ -176,10 +175,12 @@
 {
 "said": [
 "You step over him. He doesn't move.",
-"If you're leaving him there, take what's on that desk and go"
+"He's still on that floor. The research server isn't finished"
 ],
 "notSaid": [
-"Sweep the vault before you go",
+"dead. Good.",
+"sweep the vault",
+"Sweep the vault",
 "on the way out"
 ]
 },
@@ -187,6 +188,42 @@
 "music": "global_variable_changed:final_choice",
 "value": "combat_lethal",
 "expect": "end"
+},
+{
+"talk": "phone",
+"picks": [
+"Where do I stand",
+"Right",
+"Bring me in",
+"Nothing right now"
+]
+},
+{
+"said": [
+"The upload's dead and he's still on that floor. The research server isn't",
+"Not yet. The research server isn't finished"
+],
+"notSaid": [
+"Sweep the vault"
+]
+},
+{
+"set": {
+"flag3_submitted": true
+}
+},
+{
+"set": {
+"flag4_submitted": true
+}
+},
+{
+"said": [
+"That's the last flag. Call me."
+],
+"notSaid": [
+"Sweep the vault if you haven't"
+]
 },
 {
 "talk": "phone",

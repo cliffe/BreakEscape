@@ -75,6 +75,7 @@ VAR found_halloran_vetting = false
 VAR named_before_portal = false
 // PASS 5 R2 (B2): a wrong reason was given before the right one
 VAR torres_reason_guessed = false
+VAR door_log_reasoned_first = false // Synced scenario global (pass 5 R3-1): the front-door reason given in a reason menu, before the naming; set only in the *log_reason_right knots. The early-naming reward reads this, not door_log_reasoned
 
 === function friendly_kos()
 ~ temp n = 0
@@ -259,8 +260,9 @@ Agent HaX: Let's go through it.
 #speaker:agent_0x99
 
 // PASS 5 (D1): the deduction paid off before the server confirmed it.
-// R2 (B1, B2): only when it came from reading the log, first time.
-{named_before_portal and door_log_reasoned and not torres_reason_guessed and not halloran_accused:
+// R2 (B1, B2), R3-1: only when it came from reading the log, first time
+// (a reason-menu answer before the naming, not the post-naming disclosure).
+{named_before_portal and door_log_reasoned_first and not torres_reason_guessed and not halloran_accused:
     Agent HaX: You had him before the server did. The research portal only confirmed a name you'd already given us.
 }
 

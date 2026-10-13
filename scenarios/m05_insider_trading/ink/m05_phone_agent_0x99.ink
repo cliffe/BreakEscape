@@ -66,6 +66,7 @@ VAR door_log_held = false
 VAR owen_office_card_relayed = false // Synced scenario global: HaX has pushed Owen's office spare (set here only)
 VAR recruiter_texted = false
 VAR it_notice_read = false
+VAR door_log_reasoned_first = false // Synced scenario global (pass 5 R3-1): the front-door reason given in a reason menu, before the naming; set only in the *log_reason_right knots. The early-naming reward reads this, not door_log_reasoned
 VAR torres_reason_guessed = false // Synced scenario global (pass 5 R2 B2): a wrong reason or a wrong name was tried; also set by Patricia (m05_npc_patricia_morgan, m05_phone_patricia). Excludes the early-naming reward
 
 // Field-guide exposure flags. Each _offered is set by an eventMapping when
@@ -524,6 +525,7 @@ If she's the wrong name, the right one has just watched Security move. Be sure a
 === hax_log_reason_right ===
 #speaker:agent_0x99
 ~ door_log_reasoned = true
+~ door_log_reasoned_first = true
 His badge at the front door, her spare six minutes on, every night. Good. That's a pattern.
 Now find me why, and proof it's leaving.
 -> hax_partial_naming
@@ -644,6 +646,9 @@ What are you doing with him?
 === post_ko_safety_net_sweep ===
 // R2 (m5): no leisurely sweep beside a man left to die.
 {
+// R3-2: left to die with flags still out: no sweep, no "Good."
+- final_choice == "combat_lethal" and not all_flags_in():
+    He's still on that floor, and the upload's dead. Finish the research server: all four flags in the drop-site, then call me.
 - not all_flags_in():
     The upload's dead. Finish the research server: all four flags in the drop-site. Then sweep the vault and call me.
 - final_choice == "combat_lethal":
@@ -861,6 +866,9 @@ See you at HQ.
 === report_progress ===
 #speaker:agent_0x99
 {
+// R3-2: the lethal twin comes first.
+- final_choice == "combat_lethal" and not all_flags_in():
+    The upload's dead and he's still on that floor. The research server isn't. All four flags, then call me.
 - final_choice != "" and not all_flags_in():
     The upload's dead. The research server isn't. All four flags in the drop-site, then call me and I'll bring you in.
 - final_choice == "combat_lethal":

@@ -58,6 +58,7 @@ VAR halloran_accused = false // Synced scenario global: Halloran suspended on th
 VAR halloran_questioned = false
 VAR door_log_reasoned = false // Synced scenario global: the player has read the badge-log pattern; also set by HaX (m05_phone_agent_0x99) and Patricia in person (m05_npc_patricia_morgan)
 VAR it_notice_read = false
+VAR door_log_reasoned_first = false // Synced scenario global (pass 5 R3-1): the front-door reason given in a reason menu, before the naming; set only in the *log_reason_right knots. The early-naming reward reads this, not door_log_reasoned
 VAR torres_reason_guessed = false // Synced scenario global (pass 5 R2 B2): a wrong reason or a wrong name was tried; also set by HaX and Patricia's phone/in person. Excludes the early-naming reward
 
 === function has_motive()
@@ -208,6 +209,7 @@ If you're wrong, that's her career. And whoever it really is has just watched Se
 {patricia_ko: -> no_answer}
 #speaker:patricia_morgan
 ~ door_log_reasoned = true
+~ door_log_reasoned_first = true
 ...His badge at the front door, then Ruth's spare six minutes on. Every night. And Ruth's own badge never comes in after seven.
 {halloran_accused:
     And Ruth's sitting in her lab, suspended on your word. That's on both of us now.

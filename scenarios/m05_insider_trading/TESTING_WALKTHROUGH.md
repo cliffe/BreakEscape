@@ -184,9 +184,11 @@ Owen → `obtain_torres_keycard`. Before that, neither Patricia nor Owen offers 
     HaX texts about the Recruiter ~6 s after her text, unless you've already
     rung her. Naming him before flag 3 (from the vault paperwork) sets
     `named_before_portal` (pass 5 D1): his scene opens at 20:02 and 88 per
-    cent. The reward (his line "Somebody read Owen's sheet properly", the
+    cent. The reward (his line "You're early. Somebody read Owen's sheet properly", the
     debrief's "before the server did" and the NAMED ON THE EVIDENCE credit)
-    needs the front-door reason (`door_log_reasoned`), no wrong reason or
+    needs the front-door reason given in a reason menu before the naming
+    (`door_log_reasoned_first`, round 3; the post-naming "And the badge log"
+    click sets only `door_log_reasoned`, which still earns BORROWED BADGE), no wrong reason or
     wrong name tried first (`torres_reason_guessed`, round 2) and no
     accusation of Halloran. A wrong reason still ends the call; the retry is
     allowed and Patricia or HaX remarks on it.

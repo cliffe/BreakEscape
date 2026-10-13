@@ -175,12 +175,12 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
           { "text": "ROTATION WINDOW LOST — the East of England re-keyed a month early", "style": "warning", "condition": "globalVars.halloran_accused" },
           { "text": "" },
           { "text": "── THE CASE ──",                                      "style": "section-header" },
-          { "text": "NAMED ON THE EVIDENCE — before the server confirmed it", "style": "entry", "_comment": "Pass 5 R2 B1/B2/m1: the reward needs the badge-log reasoning, no guessed reason and no accusation, not only the timing.", "condition": "globalVars.named_before_portal && globalVars.door_log_reasoned && !globalVars.torres_reason_guessed && !globalVars.halloran_accused" },
+          { "text": "NAMED ON THE EVIDENCE — before the server confirmed it", "style": "entry", "_comment": "Pass 5 R2 B1/B2/m1, R3-1: the reward needs the badge-log reasoning given in a reason menu before the naming (not the post-naming disclosure click), no guessed reason and no accusation, not only the timing.", "condition": "globalVars.named_before_portal && globalVars.door_log_reasoned_first && !globalVars.torres_reason_guessed && !globalVars.halloran_accused" },
           { "text": "MOTIVE, MEANS AND AUTHORISATION — all on file",       "style": "entry", "condition": "(globalVars.found_medical_bills || globalVars.found_torres_journal || globalVars.found_vetting_file) && globalVars.found_pamphlet" },
           { "text": "RECRUITMENT PIPELINE — TalentStack link not documented", "style": "entry", "condition": "!globalVars.found_pamphlet && !globalVars.found_pipeline_list" },
           { "text": "BORROWED BADGE — Halloran's spare traced back to Torres", "style": "entry", "condition": "globalVars.door_log_reasoned && !globalVars.halloran_accused" },
           { "text": "WRONG ACCUSATION — Dr Ruth Halloran suspended, then cleared", "style": "warning", "condition": "globalVars.halloran_accused" },
-          { "text": "INSIDER NAMED — David Torres, though not every piece of evidence was recovered", "style": "entry", "_comment": "PASS 4 newcheck: catch-all so THE CASE never prints empty (found_pamphlet false with the pipeline list found matched no other line). Pass 5 m6: the always-true flag4_submitted term dropped (the debrief needs all four flags).", "condition": "!((globalVars.found_medical_bills || globalVars.found_torres_journal || globalVars.found_vetting_file) && globalVars.found_pamphlet) && !(!globalVars.found_pamphlet && !globalVars.found_pipeline_list) && !(globalVars.door_log_reasoned && !globalVars.halloran_accused) && !(globalVars.halloran_accused) && !(globalVars.named_before_portal && globalVars.door_log_reasoned && !globalVars.torres_reason_guessed)" },
+          { "text": "INSIDER NAMED — David Torres, though not every piece of evidence was recovered", "style": "entry", "_comment": "PASS 4 newcheck: catch-all so THE CASE never prints empty (found_pamphlet false with the pipeline list found matched no other line). Pass 5 m6: the always-true flag4_submitted term dropped (the debrief needs all four flags).", "condition": "!((globalVars.found_medical_bills || globalVars.found_torres_journal || globalVars.found_vetting_file) && globalVars.found_pamphlet) && !(!globalVars.found_pamphlet && !globalVars.found_pipeline_list) && !(globalVars.door_log_reasoned && !globalVars.halloran_accused) && !(globalVars.halloran_accused) && !(globalVars.named_before_portal && globalVars.door_log_reasoned_first && !globalVars.torres_reason_guessed)" },
           { "text": "" },
           { "text": "── DAVID TORRES ──",                                  "style": "section-header" },
           { "text": "TURNED — working for SAFETYNET inside ENTROPY's network", "style": "entry", "condition": "globalVars.final_choice === 'turn_double_agent'" },
@@ -679,7 +679,8 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
     "owen_office_card_relayed": false,
     "door_log_held": false,
     "data_center_entered": false,
-    "torres_reason_guessed": false
+    "torres_reason_guessed": false,
+    "door_log_reasoned_first": false
   },
 
   "endGoal": "Identify the insider with both halves of the case (motive and proof of exfiltration), stop the final upload, and decide David Torres' fate: turn him, hand him to the police, expose the programme, or fight.",
@@ -959,13 +960,16 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
 <%# Pass 5 A2: the last flag lands after the fate. The debrief no longer
     follows at once, so HaX asks for the call-in. Only the last flag can
     satisfy the all-four term, so at most one of these fires. %>
+<%# Pass 5 R3-2: lethal twin of the last-flag text, without the sweep. %>
 <% (1..4).each do |n| %>
+<% [["!==", "That's the last flag. Sweep the vault if you haven't, then call me and I'll bring you in."], ["===", "That's the last flag. Call me."]].each do |op, msg| %>
             {
               "eventPattern": "global_variable_changed:flag<%= n %>_submitted",
-              "condition": "value === true && globalVars.final_choice !== '' && globalVars.flag1_submitted === true && globalVars.flag2_submitted === true && globalVars.flag3_submitted === true && globalVars.flag4_submitted === true",
+              "condition": "value === true && globalVars.final_choice !== '' && globalVars.final_choice <%= op %> 'combat_lethal' && globalVars.flag1_submitted === true && globalVars.flag2_submitted === true && globalVars.flag3_submitted === true && globalVars.flag4_submitted === true",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 6000, "message": "That's the last flag. Sweep the vault if you haven't, then call me and I'll bring you in." }
+              "sendTimedMessage": { "delay": 6000, "message": <%= msg.to_json %> }
             },
+<% end %>
 <% end %>
             <%# Pass 5 m1: naming him (by whatever route) shows the last aim, as the
                 case-ready mappings below do; unlockAim is idempotent
@@ -1152,14 +1156,17 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
 <%# Pass 5 m9: the four nags are disjoint (nag n needs flags 1..n-1 in and
     flag n out), so two missing flags can't send it twice. A2: the text now
     ends on the sweep and the call-in. %>
+<%# Pass 5 R3-2: a lethal twin per nag, with no "Good." and no sweep. %>
 <% (1..4).each do |n| %>
+<% [["!==", "The upload's dead. Good. Finish that research server before I pull you out: all four flags in the drop-site. Then sweep the vault and call me."], ["===", "The upload's dead. He's still on that floor. The research server isn't finished: all four flags in the drop-site, then call me."]].each do |op, msg| %>
             {
               "eventPattern": "conversation_closed:david_torres",
-              "condition": "globalVars.final_choice !== ''<% (1...n).each do |k| %> && globalVars.flag<%= k %>_submitted === true<% end %> && globalVars.flag<%= n %>_submitted !== true && globalVars.flags_nag_sent !== true",
+              "condition": "globalVars.final_choice !== '' && globalVars.final_choice <%= op %> 'combat_lethal'<% (1...n).each do |k| %> && globalVars.flag<%= k %>_submitted === true<% end %> && globalVars.flag<%= n %>_submitted !== true && globalVars.flags_nag_sent !== true",
               "onceOnly": true,
               "setGlobal": { "flags_nag_sent": true },
-              "sendTimedMessage": { "delay": 2000, "message": "The upload's dead. Good. Finish that research server before I pull you out: all four flags in the drop-site. Then sweep the vault and call me." }
+              "sendTimedMessage": { "delay": 2000, "message": <%= msg.to_json %> }
             },
+<% end %>
 <% end %>
             {
               "_comment": "Pass 5 A2 (m04 A4): the fate is set in person with every flag in. The debrief waits for the call-in.",
