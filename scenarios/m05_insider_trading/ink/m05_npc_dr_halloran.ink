@@ -9,7 +9,7 @@
 // rollout), not the pre-alignment "military communications" draft.
 //
 // PASS 4 (whodunnit): she is the red herring. Asked about her spare badge
-// (the night log), she gives her Zurich alibi, says where the spare hangs,
+// (the night log), she gives her Zurich alibi, says the spare is signed out through her,
 // and who works in her lab late. That clears her. Round 2: it no longer
 // sets torres_suspected on its own (the player still has to make the case).
 // If the player accused her first, she's suspended and says so, still
@@ -30,6 +30,7 @@ VAR first_meeting = true
 VAR accused_acknowledged = false
 VAR hub_quiet = false
 VAR asked_vault = false       // puzzle R1 (D-A): the gloves answer, once
+VAR spare_handed = false      // puzzle browser F3: retires the ask in the same conversation (the synced server_badge_obtained only arrives with the pickup)
 
 // Synced from scenario globals
 VAR player_name = "Agent 0x00"
@@ -142,7 +143,7 @@ Dr Ruth Halloran: If one of them did this, somebody gave them a reason. Pressure
 + {found_door_log and not halloran_questioned} [Your spare badge has been through the server hallway at night. Four times.]
     -> spare_badge
 
-+ {not server_badge_obtained and topic_heisenberg and not halloran_accused} [I need into the server hallway. Your badge opens it.]
++ {not server_badge_obtained and not spare_handed and topic_heisenberg and not halloran_accused} [I need into the server hallway. Your badge opens it.]
     -> request_research_access
 
 // Puzzle R1 (D-A): the vault's second enrolled print, once the player has
@@ -202,6 +203,7 @@ Dr Ruth Halloran: You'll not lift anything of mine in here. Try it if you like.
 #speaker:dr_halloran
 
 {halloran_influence >= 25:
+    ~ spare_handed = true
     #give_item:keycard:research_lab_badge
     Dr Ruth Halloran: You've been straight with me. Here, the visitor spare. It's signed out through me, and I'm signing it out to you.
     Dr Ruth Halloran: It's registered to me, and it opens the server hallway. Bring it back when you're done.

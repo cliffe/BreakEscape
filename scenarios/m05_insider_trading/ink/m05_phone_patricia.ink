@@ -192,7 +192,7 @@ If you're wrong, that's her career. And whoever it really is has just watched Se
     Half this building has someone ill at home. That's not evidence.
     #exit_conversation
     -> hub
-+ {halloran_questioned} [Halloran says he's in her lab after hours, where the spare hangs.]
++ {halloran_questioned} [Halloran puts him in her lab after hours, and the spare is the lab's.]
     Her word, about her own badge. It's enough to look, not to act.
     -> phone_partial_naming
 + {found_door_log} [Check who comes in the front door just before the spare is used.]

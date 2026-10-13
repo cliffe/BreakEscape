@@ -286,6 +286,10 @@ Patricia Morgan: What do you need?
     ~ patricia_influence += 1
     #give_item:notes:torres_vetting_file
     #give_item:notes:halloran_vetting_file
+    // Puzzle browser F2: the hand-over's onRead sets the global, but this
+    // conversation's copy stays stale until it reopens; set it here so a
+    // naming in the same conversation counts the motive.
+    ~ found_vetting_file = true
     Patricia Morgan: That's what vetting will let me give you.
     Patricia Morgan: Read them properly. Nobody's file is as tidy as it looks.
     -> hub
@@ -381,7 +385,7 @@ Patricia Morgan: If you're wrong, that's her career. And whoever it really is ha
 + [He's been under strain. His wife's ill.]
     Patricia Morgan: Half this building has someone ill at home. That's not evidence.
     -> reason_wrong
-+ {halloran_questioned} [Halloran says he's in her lab after hours, where the spare hangs.]
++ {halloran_questioned} [Halloran puts him in her lab after hours, and the spare is the lab's.]
     Patricia Morgan: Her word, about her own badge. It's enough to look, not to act.
     -> partial_naming
 + {found_door_log} [Check who comes in the front door just before the spare is used.]

@@ -19,7 +19,7 @@
 // hands over Torres' office card before anyone suspects him.
 // ===========================================
 
-VAR first_contact = true // ink-local: a page reload forgets it, so first_call also checks the night (A6)
+VAR first_contact = true // ink-local; the engine saves ink locals, so it survives a page reload. first_call also checks the night (A6)
 
 // ---- Mission state (synced from globalVars when the call opens) ----
 VAR player_name = "Agent 0x00"
@@ -115,9 +115,9 @@ VAR confrontation_advice_given = false
 // ===========================================
 
 === start ===
-// PASS 5 (A6): first_contact is ink-local, so a page reload forgets it. The
-// opening call only fits the early game; after a late reload the phone opens
-// straight on the hub.
+// PASS 5 (A6): the opening call only fits the early game, so it also checks
+// the night. (Ink locals such as first_contact survive a page reload, as the
+// engine saves them (browser-confirmed, 2026-10-13); the check is a backstop.)
 {first_contact:
     ~ first_contact = false
     {not server_door_seen and not torres_suspected and not flag1_submitted and final_choice == "":
@@ -512,7 +512,7 @@ If she's the wrong name, the right one has just watched Security move. Be sure a
     Half that building has someone ill at home. That's not evidence.
     #exit_conversation
     -> support_hub
-+ {halloran_questioned} [Halloran says he's in her lab after hours, where the spare hangs.]
++ {halloran_questioned} [Halloran puts him in her lab after hours, and the spare is the lab's.]
     Her word, about her own badge. Enough to look, not to act.
     -> hax_partial_naming
 + {found_door_log} [Check who comes in the front door just before the spare is used.]

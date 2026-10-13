@@ -276,7 +276,7 @@ Agent HaX: Let's go through it.
 - door_log_reasoned:
     Agent HaX: You read the badge log properly. Her spare on the server hallway, his badge on the front door six minutes before, every night.
 - halloran_questioned:
-    Agent HaX: Halloran told you where her spare hangs. The log had already said who carried it.
+    Agent HaX: Halloran told you whose spare it was. The log had already said who carried it.
 - found_door_log:
     Agent HaX: The badge log was in your kit. Its front-door lines had him all along.
 }
