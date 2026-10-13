@@ -1552,7 +1552,7 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
     "server_hallway": {
       "type": "room_qdc_server_hall",
       "lighting": {
-        "mode": "motion",
+        "mode": "motion", "offAfter": 60,
         "ambient": "#b4b6c6",
         "darkAmbient": "#121828",
         "variants": [
@@ -1586,7 +1586,7 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
     "server_room": {
       "type": "room_qdc_servers",
       "lighting": {
-        "mode": "motion",
+        "mode": "motion", "offAfter": 60,
         "ambient": "#b2b2c8",
         "darkAmbient": "#0a0f1c",
         "emitters": {
@@ -1917,12 +1917,12 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
     "data_center": {
       "type": "room_qdc_vault",
       "lighting": {
-        "mode": "motion",
+        "mode": "motion", "offAfter": 60,
         "ambient": "#b0b2c2",
         "darkAmbient": "#0a0f1c",
         "emitters": {
           "pc": [
-            { "condition": "globalVars.final_choice !== ''", "color": "#ff4a3a", "radius": 40, "intensity": 0.9, "effect": null, "offsetY": 0, "above": true, "floorTint": 0.45 },
+            { "condition": "globalVars.final_choice !== ''", "color": "#ff4a3a", "radius": 40, "intensity": 1.0, "effect": null, "offsetY": 0, "above": true, "floorTint": 0.6 },
             { "condition": "globalVars.torres_identified === true", "color": "#ff8a1a", "radius": 44, "intensity": 1.0, "effect": "breathe", "offsetY": 0, "above": true, "floorTint": 0.65 }
           ],
           "qdc_rack_black": [{ "color": "#6dffb0", "radius": 40, "intensity": 0.45, "effect": "blink" }],

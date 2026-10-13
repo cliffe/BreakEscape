@@ -874,3 +874,6 @@ Full plan and log: `LIGHTING_PLAN.md`. m05 had no lighting before this stage. St
 | 5 (tours 2399-2401, live 2403, reload 2405) | 0 | 0 | 0 | closed |
 
 Checks: validator schema pass; doors 9/9; routes 38/38. Browser (keyless :3001, my own games, sessions stopped): the phase switch live (variants and terminal states as designed, the corridor strikes on entry after hours) and after a page reload (variants kept). Globals were set by console, so "exercised, not earned". Pending: D16 (engine, rack LEDs for `qdc_*` props). No PixelLab or Gemini use. Next: POV backgrounds.
+
+### Fresh lighting review follow-up (orchestrator, 2026-10-14)
+`LIGHTING_REVIEW_P5_FRESH.md`: 0/0/4. Applied F1 (`"offAfter": 60` on the pre-naming blocks of server_hallway, server_room, data_center, so the lights-on moment at the naming can be seen) and F2 (red upload-stopped glow: intensity 0.9 → 1.0, floorTint 0.45 → 0.6). Validator passes; not yet seen in a browser (the next playtest should note the server side going dark after a minute and lighting at the naming). Left: F3 (document the corridor's after-hours `#b8bfce` in the plan and log) and F4 (terminal glow keyed on the `pc` prefix; re-key if another `pc*` object is ever added to the vault). Not lighting: Torres stands at (5,7), not at the terminal the confrontation describes — for the next dressing touch.
