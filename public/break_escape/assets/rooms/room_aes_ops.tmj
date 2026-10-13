@@ -553,7 +553,7 @@
      "type": "",
      "visible": true,
      "width": 16,
-     "x": 254.3,
+     "x": 258.2,
      "y": 154.55
     },
     {
@@ -3172,7 +3172,7 @@
    "margin": 0,
    "name": "objects/hospital_extras",
    "spacing": 0,
-   "tilecount": 316,
+   "tilecount": 320,
    "tileheight": 60,
    "tiles": [
     {
@@ -5070,6 +5070,30 @@
      "image": "../objects/aes_mimic_board1.png",
      "imageheight": 32,
      "imagewidth": 96
+    },
+    {
+     "id": 326,
+     "image": "../objects/aes_speed_gate1.png",
+     "imageheight": 53,
+     "imagewidth": 51
+    },
+    {
+     "id": 327,
+     "image": "../objects/aes_security_desk1.png",
+     "imageheight": 55,
+     "imagewidth": 61
+    },
+    {
+     "id": 328,
+     "image": "../objects/aes_dvr1.png",
+     "imageheight": 56,
+     "imagewidth": 36
+    },
+    {
+     "id": 329,
+     "image": "../objects/aes_office_chair1.png",
+     "imageheight": 54,
+     "imagewidth": 33
     }
    ],
    "tilewidth": 60

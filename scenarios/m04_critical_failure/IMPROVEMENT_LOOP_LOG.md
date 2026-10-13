@@ -906,3 +906,18 @@ Not voiced (choices): new "[Nine. Tell me we came out with something.]" (crew lo
 The reviewer judged that a fourth review cycle wasn't needed once the cycle-3 fixes landed. 27 routes. Still open for the user: the debrief's network lines and "status page" (erb ~981), both waiting on the SecGen check.
 
 **Open item from m05's review (2026-10-13):** HaX's first-call choices have no guard, so a first call left unanswered keeps the hub (with "Bring me in") hidden until the player answers. m04 has the same shape. Fix in m04's playtest stage: put an outcome guard at the top of the first-call choices knot that sends a player who's already past the first step to the hub.
+
+
+### Phase art: room dressing CLOSED (2026-10-13)
+
+| Cycle | Blocker | Major | Minor |
+|---|---|---|---|
+| 1 (survey; Hall 1 first-room sign-off) | 2 | 10 | 1 |
+| 2 (Hall 1, user: too empty) | 0 | 2 | 1 |
+| 3 (review) | 0 | 4 | 10 |
+| 4 | fixes for cycle 3 (all nine rooms on the Albion treatment) | | |
+| 5 (review + interaction walk, game 2230) | 0 | 6 | 10 |
+| 6 (review) | 0 | 2 | 5 |
+| 7 (review + re-walk, games 2238/2239; guard tap re-check, game 2245) | 0 | 1 | 11 |
+
+Cycle 7's major (the gate guard's tap area against the reception papers) is fixed and confirmed in game 2245: his challenge fires on its own from spawn, and each paper and his head open with one tap. The leftover minors are logged in ROOM_DRESSING.md cycle 7. Orchestrator text fixes after the close: the guard's sighting narration is now "The guard looks up from the desk and gets to his feet." (the player spawns inside the room), and the tool case is now "by the bench" / "against the end of the bench". Next: lighting (the new ESD sprite needs its own emitter), then POV backgrounds.

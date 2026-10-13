@@ -3264,7 +3264,7 @@ def room_aes_ops():
     r.on(counter, "kettle1", 0.3, 0.25)
     r.on(fridge, "aes_microwave1", 0.5, 0.15)
     r.on(desk, "pc8", 0.35, 0.40)
-    r.on(desk, "notes1", 0.85, 0.45, layer="conditional_table_items")
+    r.on(desk, "notes1", 0.90, 0.45, layer="conditional_table_items")
     r.on(desk, "office-misc-cup", 0.62, 0.40)
     # array order decides which paper lands where (scenario order: Work Orders, Layout Map, Budget Memo)
     r.conditional_table_items.append(make_obj("objects", "notes4", 112.0, 44.0, r._next()))  # pinned on the noticeboard
@@ -3281,8 +3281,13 @@ def room_aes_reception():
     seating, a water cooler.
     Door: S in the SW corner (x 32-64); the operations office covers the bottom two
     rows (floor y 64-256).
-    The guard (security_guard) stands at (6.5,5), sprite centre (208,160), beside the
-    sign-in counter on clear floor, off the player's spawn line (cycle 6).
+    The guard (security_guard) stands at (7.3,4): feet (234,128), sprite centre about
+    (234,97), at the east end of the sign-in counter. Two limits pin the spot: his centre
+    must be within 96 px of the player's spawn (160,144) (facePlayerDistance), or he
+    never turns to face it and his opening challenge doesn't fire (at (7.8,4), 101 px, it
+    didn't); and his 80 px tap frame (x 194-274) must stay off the Procedures paper (at
+    (7.1,4) it swallowed it into a pick-one menu). Here: 88 px, and the paper sits at
+    x 176-190 (cycle 7).
     Slots: notes1 and notes3 on the counter (Visitor Sign-In Log, Security Desk
     Procedures), top-lefts 32 px+ apart.
     """
@@ -3291,6 +3296,8 @@ def room_aes_reception():
     # counter beside it (cycle 6, review F3: the salmon counter read as a hotel lobby)
     r.table("aes_security_desk1", 96.0, 112.0, kind="objects")   # x 96-157, top 57
     counter = r.table("zds_desk3", 158.0, 112.0, kind="objects")  # x 158-209, the sign-in counter
+    gatehouse = r.tables[-2]
+    r.collision(96.0, 64.0, 114.0, 48.0)             # nobody gets behind the desks (cycle 7 walk: a gap let the player in)
     r.item("aes_logo_sign1", 124.0, 36.0)
     r.item("aes_cctv1", 274.0, 30.0)
     r.item("aes_ppe_sign1", 40.0, 50.0)
@@ -3298,15 +3305,16 @@ def room_aes_reception():
     r.item("hospital_chart_board1", 200.0, 44.0)     # site safety board: permits and the induction sheet
     r.item("aed_cabinet1", 248.0, 56.0)
     r.item("fire_alarm_point1", 292.0, 132.0)
-    r.solid("water_cooler1", 266.0, 120.0)
+    r.solid("water_cooler1", 264.0, 200.0)          # east side, clear of the guard's spot
     # visitor seating in the SE corner, a check-in kiosk by the door lane
     r.solid("leather_sofa1", 196.0, 252.0, depth=12)
     r.table("glass_coffee_table1", 200.0, 212.0, kind="objects")  # in front of the sofa
     r.solid("planter_fig1", 264.0, 250.0, depth=12)
     r.solid("checkin_kiosk1", 40.0, 140.0)           # visitor check-in, inside the door lane's top
     r.item("aes_speed_gate1", 96.0, 222.0)           # speed gates on the way in (walk-through)
-    r.on(counter, "notes1", 0.18, 0.45, layer="conditional_table_items")   # Visitor Sign-In Log
-    r.on(counter, "notes3", 0.84, 0.45, layer="conditional_table_items")   # Security Desk Procedures, 32 px+ apart
+    # array order follows the scenario's (Sign-In Log, then Procedures)
+    r.on(gatehouse, "notes1", 0.65, 0.55, layer="conditional_table_items")  # Visitor Sign-In Log, on the gatehouse desk
+    r.on(counter, "notes3", 0.50, 0.45, layer="conditional_table_items")    # Security Desk Procedures, on the sign-in counter
     return r.build("room_aes_reception")
 
 

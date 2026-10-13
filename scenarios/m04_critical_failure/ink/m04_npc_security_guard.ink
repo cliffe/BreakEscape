@@ -43,7 +43,7 @@ EXTERNAL player_name()
 {on_sighted > 1:
     Security Guard: Still need you at the desk first, my lover. Badge.
 - else:
-    Narrator: The guard's already on his feet as you come through the door.
+    Narrator: The guard looks up from the desk and gets to his feet.
     Security Guard: Morning. Bit early for visitors. Desk first, if you don't mind.
 }
 * [Grid-safety regulator. I'm here for the audit.]

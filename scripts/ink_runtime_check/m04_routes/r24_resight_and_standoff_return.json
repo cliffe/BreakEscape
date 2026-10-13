@@ -4,9 +4,9 @@
 "note": "R24 (phase 4 dialogue C1, D5-15/D5-6/D5-25/D5-20): the guard's sight challenge fires twice before he admits the player (the repeat doesn't replay his opener); admitted, a re-talk gets a fresh idle line. Vance's commit exit answers 'I'm going.'. Voltage's standoff narration plays once, and a backed-off player coming back doesn't hear it again."
 },
 {"talk": "guard", "knot": "on_sighted", "picks": []},
-{"said": ["The guard's already on his feet", "Bit early for visitors"]},
+{"said": ["The guard looks up from the desk", "Bit early for visitors"]},
 {"talk": "guard", "knot": "on_sighted", "picks": ["regulator", "Where do I find Mr Vance"]},
-{"said": ["Still need you at the desk first, my lover", "Regulator, is it.", "Go on through"], "notSaid": ["The guard's already on his feet", "This early?"]},
+{"said": ["Still need you at the desk first, my lover", "Regulator, is it.", "Go on through"], "notSaid": ["The guard looks up from the desk", "This early?"]},
 {"talk": "guard", "picks": ["Anything unusual", "Nothing. Carry on"]},
 {"said": ["That OptiGrid lot came through late on the ninth"]},
 {"talk": "guard", "picks": ["Nothing. Carry on"]},

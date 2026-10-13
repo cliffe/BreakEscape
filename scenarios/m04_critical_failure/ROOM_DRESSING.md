@@ -280,3 +280,36 @@ The reviewer judges the scene close to small returns after this cycle. Cycle 7 w
 
 - Assumption: moving the gate guard 1.5 tiles right and one down is a layout change the dialogue doesn't depend on (no waypoint, no story reference to where he stands).
 - Assumption: walk-through speed gates are acceptable; giving them collision would need a gap a player can find.
+
+## Cycle 7 (2026-10-13): confirmation (close pending one tap re-check)
+
+Inputs: a fresh Opus review (0 blockers, 1 major, 5 minors; all hard constraints pass, Cipher's cone unchanged at 138 / 28 / 183 / 174 cells, 0 door-row cells at the dwell) and a Sonnet re-walk of the cycle 5-6 changes (0 majors, 6 minors), then a Sonnet tap check of reception.
+
+| id | source | sev | finding | outcome |
+|---|---|---|---|---|
+| R-F1 | review | major | The guard, moved to (7.1,4) at the counter's east end (his ink: "looks up from the desk"), took the Procedures paper inside his 80 px tap frame: a pick-one menu | **Fixed**, then refined. At (7.8,4) the menu went but his opening challenge stopped firing: his centre was 101 px from the spawn, beyond the 96 px face-player distance, so he never turned to the player (tap check, games 2242/2244). Now (7.3,4), 88 px from the spawn, with the papers re-spaced so his frame (x 194-274) is clear of them. **Re-check of the opening in a fresh game is running** |
+| R-F2 / W1 | both | minor | The two papers on the 51 px counter were 27 px apart at their middles (pick-one menu on the log) | **Fixed:** Sign-In Log on the gatehouse desk, Procedures on the counter (40 px+). Tap check: each opens directly |
+| R-F3 | review | minor | Vance's PC 31 px from the Work Orders | **Fixed:** paper moved along the desk (35 px) |
+| W2 | walk | minor | A gap between the two reception desks let the player walk behind them | **Fixed:** one collision block over both desks' footprint; tap check: blocked from both ends |
+| R-F4 | review | minor | The plant bench papers sit inside Static's frame until he is dealt with | Left: the encounter clears both NPCs before the papers matter |
+| R-F5 | review | minor | Cipher's frame covers the gas detector while he looks east from (13,3) | Left: a moment of the stealth beat |
+| W3 | walk | minor | His cone covers the speed gates' east half only | Left: the gates are on the way in, inside his range; nothing depends on it |
+| W4 | walk | minor | Dialogue/text, not layout: the guard's `on_sighted` narrator line ("on his feet as you come through the door") never showed and doesn't fit a spawn inside the room; HaX's message and the tool case's observation say "under the bench" (it stands by the bench's end, 32 px+ from the drop-site terminal, so it can't go under) | **For the dialogue stage** |
+| W5 | walk | minor | One `door-locked` on the first workshop entry in an unlocked game; fine on retry | Left: not reproducible, not layout |
+
+Scenario edits: the guard's `position` (6.5,5) → (7.3,4). Checks after the fixes: validator (schema, geometry, door alignment) pass; door alignment 8/8; routes 27/27; walls all 64; slot audit 0 problems. Shots: `build_evidence/dressing_c7/` (reception and ops, in game and maps).
+
+
+### Phase art: room dressing CLOSED (2026-10-13)
+
+| Cycle | Blocker | Major | Minor |
+|---|---|---|---|
+| 1 (survey; Hall 1 first-room sign-off) | 2 | 10 | 1 |
+| 2 (Hall 1, user: too empty) | 0 | 2 | 1 |
+| 3 (review) | 0 | 4 | 10 |
+| 4 | fixes for cycle 3 (all nine rooms on the Albion treatment) | | |
+| 5 (review + interaction walk, game 2230) | 0 | 6 | 10 |
+| 6 (review) | 0 | 2 | 5 |
+| 7 (review + re-walk, games 2238/2239; guard tap re-check, game 2245) | 0 | 1 | 11 |
+
+Cycle 7's major (the gate guard's tap area against the reception papers) is fixed and confirmed in game 2245: his challenge fires on its own from spawn, and each paper and his head open with one tap. The leftover minors are logged in ROOM_DRESSING.md cycle 7. Orchestrator text fixes after the close: the guard's sighting narration is now "The guard looks up from the desk and gets to his feet." (the player spawns inside the room), and the tool case is now "by the bench" / "against the end of the bench". Next: lighting (the new ESD sprite needs its own emitter), then POV backgrounds.

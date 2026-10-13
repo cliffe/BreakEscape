@@ -380,7 +380,7 @@
     {
      "gid": 1006,
      "height": 30,
-     "id": 14,
+     "id": 15,
      "name": "",
      "rotation": 0,
      "type": "",
@@ -404,7 +404,7 @@
     {
      "gid": 1098,
      "height": 19,
-     "id": 3,
+     "id": 4,
      "name": "",
      "rotation": 0,
      "type": "",
@@ -416,7 +416,7 @@
     {
      "gid": 1051,
      "height": 18,
-     "id": 4,
+     "id": 5,
      "name": "",
      "rotation": 0,
      "type": "",
@@ -428,7 +428,7 @@
     {
      "gid": 1093,
      "height": 27,
-     "id": 5,
+     "id": 6,
      "name": "",
      "rotation": 0,
      "type": "",
@@ -440,7 +440,7 @@
     {
      "gid": 1045,
      "height": 25,
-     "id": 6,
+     "id": 7,
      "name": "",
      "rotation": 0,
      "type": "",
@@ -452,7 +452,7 @@
     {
      "gid": 314,
      "height": 32,
-     "id": 7,
+     "id": 8,
      "name": "",
      "rotation": 0,
      "type": "",
@@ -464,7 +464,7 @@
     {
      "gid": 885,
      "height": 24,
-     "id": 8,
+     "id": 9,
      "name": "",
      "rotation": 0,
      "type": "",
@@ -476,7 +476,7 @@
     {
      "gid": 828,
      "height": 20,
-     "id": 9,
+     "id": 10,
      "name": "",
      "rotation": 0,
      "type": "",
@@ -488,19 +488,19 @@
     {
      "gid": 806,
      "height": 47,
-     "id": 10,
+     "id": 11,
      "name": "",
      "rotation": 0,
      "type": "",
      "visible": true,
      "width": 24,
-     "x": 266.0,
-     "y": 120.0
+     "x": 264.0,
+     "y": 200.0
     },
     {
      "gid": 1005,
      "height": 38,
-     "id": 12,
+     "id": 13,
      "name": "",
      "rotation": 0,
      "type": "",
@@ -512,7 +512,7 @@
     {
      "gid": 1024,
      "height": 61,
-     "id": 15,
+     "id": 16,
      "name": "",
      "rotation": 0,
      "type": "",
@@ -524,7 +524,7 @@
     {
      "gid": 891,
      "height": 60,
-     "id": 17,
+     "id": 18,
      "name": "",
      "rotation": 0,
      "type": "",
@@ -536,7 +536,7 @@
     {
      "gid": 1127,
      "height": 53,
-     "id": 19,
+     "id": 20,
      "name": "",
      "rotation": 0,
      "type": "",
@@ -571,25 +571,25 @@
     {
      "gid": 304,
      "height": 16,
-     "id": 20,
-     "name": "",
-     "rotation": 0,
-     "type": "",
-     "visible": true,
-     "width": 16,
-     "x": 159.18,
-     "y": 90.55
-    },
-    {
-     "gid": 212,
-     "height": 11,
      "id": 21,
      "name": "",
      "rotation": 0,
      "type": "",
      "visible": true,
+     "width": 16,
+     "x": 127.65,
+     "y": 87.25
+    },
+    {
+     "gid": 212,
+     "height": 11,
+     "id": 22,
+     "name": "",
+     "rotation": 0,
+     "type": "",
+     "visible": true,
      "width": 14,
-     "x": 193.84,
+     "x": 176.5,
      "y": 90.55
     }
    ],
@@ -616,19 +616,30 @@
    "name": "Object Layer 1",
    "objects": [
     {
+     "height": 48.0,
+     "id": 3,
+     "name": "collision",
+     "rotation": 0,
+     "type": "",
+     "visible": true,
+     "width": 114.0,
+     "x": 96.0,
+     "y": 64.0
+    },
+    {
      "height": 10,
-     "id": 11,
+     "id": 12,
      "name": "collision",
      "rotation": 0,
      "type": "",
      "visible": true,
      "width": 20,
-     "x": 268.0,
-     "y": 110.0
+     "x": 266.0,
+     "y": 190.0
     },
     {
      "height": 12,
-     "id": 13,
+     "id": 14,
      "name": "collision",
      "rotation": 0,
      "type": "",
@@ -639,7 +650,7 @@
     },
     {
      "height": 12,
-     "id": 16,
+     "id": 17,
      "name": "collision",
      "rotation": 0,
      "type": "",
@@ -650,7 +661,7 @@
     },
     {
      "height": 10,
-     "id": 18,
+     "id": 19,
      "name": "collision",
      "rotation": 0,
      "type": "",
@@ -668,7 +679,7 @@
   }
  ],
  "nextlayerid": 14,
- "nextobjectid": 22,
+ "nextobjectid": 23,
  "orientation": "orthogonal",
  "renderorder": "right-down",
  "tiledversion": "1.11.2",
