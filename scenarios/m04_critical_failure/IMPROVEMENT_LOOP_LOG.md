@@ -887,3 +887,20 @@ Not voiced (choices): new "[Nine. Tell me we came out with something.]" (crew lo
 
 - The browser check that closes the phase: cycle 1's four items (guard re-sighting, the HQ-background narrator line, Voltage's narration after a back-off, the two new globals syncing); cycle 2's Vance goodbyes, the top-of-debrief nine line on both openers and HaX's gate reply; this cycle's beat on the Voltage-first opener and the crew-lost bracket choices (inline conditionals in choice text).
 - The user: the debrief's network lines and "status page" (erb:981) against SecGen.
+
+**Browser check of dialogue cycles 1–3 (PASS5_DIALOGUE_C2_BROWSER, games 2224, 2226, 2229):** all 6 dialogue checks pass, with 0 blockers, 0 majors and 4 minors.
+- **F1:** the on-site conversation backgrounds are still placeholders. This goes to the POV-background stage.
+- **F2:** Vance's chat showed a walk-sprite bust on black in the seeded game 2229. His wiring is correct (`spriteTalk` and `spriteVisemes` are set), so this is probably an artefact of the seeded game. The blind run will check it.
+- **F3:** the short briefing route never offers the promise. This is by design.
+- **F4 (orchestrator):** Relay's "Nae bother." after "Radio. Down. Now." changes to "Keep the heid. It's staying where it is." (spoken line).
+
+### Phase 4 dialogue: CLOSED (2026-10-13)
+
+| Cycle | Blockers | Majors | Minors |
+|---|---|---|---|
+| 1 | 0 | 5 | 34 |
+| 2 | 0 | 2 | 19 |
+| 3 | 0 | 1 | 20 |
+| Browser | 0 | 0 | 4 |
+
+The reviewer judged that a fourth review cycle wasn't needed once the cycle-3 fixes landed. 27 routes. Still open for the user: the debrief's network lines and "status page" (erb ~981), both waiting on the SecGen check.
