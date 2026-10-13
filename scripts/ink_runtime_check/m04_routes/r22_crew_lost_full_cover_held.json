@@ -26,7 +26,7 @@
 {"talk": "phone", "picks": ["Bring me in", "Bring me in", "On my way"]},
 {
 "talk": "debrief",
-"picks": ["Bank B went", "What did we get", "how did they get in", "And the network", "goes in the report", "How far", "I'm in", "Full public", "Just doing my job"]
+"picks": ["Bank B went", "Tell me we came out", "how did they get in", "And the network", "goes in the report", "How far", "I'm in", "Full public", "all going in the report"]
 },
 {
 "said": [

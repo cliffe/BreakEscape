@@ -6,6 +6,7 @@
 //   {"set": {...}}                          globals the engine would set (KOs, flags, items, timers)
 //   {"talk": "voltage", "knot": "opt", "picks": ["substr", 0, ...], "reload": true|"page"}
 //   {"expect": {"global": value, ...}}      assert globals; prints PASS/FAIL and fails the run
+//   {"maxRun": 9}                          assert the longest run without a choice so far is <= 9
 //   {"credits": true}                       print the credits lines whose conditions hold now,
 //                                           evaluated from scenario.json.erb as the engine does
 //   {"said": ["substr", ...]}              assert each substring appears in the lines, or in
@@ -133,6 +134,8 @@ function load(f) { const s = new inkjs.Story(fs.readFileSync(path.join(DIR, f + 
 for (const step of route.steps) {
   if (step.set) { Object.assign(G, step.set); out(`   {set ${JSON.stringify(step.set)}}`); engine(); continue; }
   if (step.note) { console.log(`\n## ${step.note}`); continue; }  // notes stay out of said/notSaid
+  // Phase 4 dialogue C3: {"maxRun": 9} asserts the longest run without a choice so far.
+  if (step.maxRun !== undefined) { const ok = stats.maxRun <= step.maxRun; if (!ok) stats.fails++; console.log(`   [${ok ? 'PASS' : 'FAIL'}] longest run ${stats.maxRun} <= ${step.maxRun}`); continue; }
   if (step.backstops) {
     const re = /"_comment": "([^"]*)",\s*"eventPattern": "room_entered:<%= r %>",\s*"condition": "([^"]*)",[\s\S]*?"(setGlobal|completeTask)": ([^\n]*)/g;
     const firing = []; let m;

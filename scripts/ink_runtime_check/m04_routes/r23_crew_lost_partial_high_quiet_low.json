@@ -34,13 +34,13 @@
 {"talk": "phone", "picks": ["Bring me in", "Bring me in", "On my way"]},
 {
 "talk": "debrief",
-"picks": ["Bank B went", "What did we get", "how did they get in", "And the network", "goes in the report", "How far", "I'm in", "Say there was an incident", "honour"]
+"picks": ["Bank B went", "Tell me we came out", "how did they get in", "And the network", "goes in the report", "How far", "I'm in", "Say there was an incident", "sorry about your people"]
 },
 {"said": ["Something, not everything. I'll answer the rest at the inquest."], "notSaid": ["I can live with that"]},
 {"set": {"vance_trust_level": 40}},
 {
 "talk": "debrief", "reload": "page",
-"picks": ["Bank B went", "What did we get", "how did they get in", "fix first", "goes in the report", "How far", "I'm in", "Keep it classified", "Just doing my job"]
+"picks": ["Bank B went", "Tell me we came out", "how did they get in", "fix first", "goes in the report", "How far", "I'm in", "Keep it classified", "all going in the report"]
 },
 {"said": ["An accident. Aye. That's what the inquiry will call it."], "notSaid": ["One more headline"]}
 ]

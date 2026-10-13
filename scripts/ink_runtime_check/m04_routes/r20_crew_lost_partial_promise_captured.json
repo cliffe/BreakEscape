@@ -30,14 +30,14 @@
 {"set": {"plant_room_entered": true, "operative_static_defeated": true}},
 {
 "talk": "voltage",
-"picks": ["It's over", "Make me understand", "Why infrastructure", "How many does the hall take", "And you came anyway", "coming with me", "explain your sums"]
+"picks": ["It's over", "Make me understand", "Why infrastructure", "How many does the hall take", "And you came anyway", "coming with me", "check your sums"]
 },
 {"expect": {"asked_the_number": true, "voltage_captured": true}},
 {"set": {"voltage_neutralised": true, "esd_authorized": true, "attack_prevented": true}},
 {"talk": "phone", "picks": ["Bring me in", "Bring me in", "On my way"]},
 {
 "talk": "debrief",
-"picks": ["Bank B went", "What did we get", "how did they get in", "And the network", "goes in the report", "How far", "I'm in", "Say there was an incident", "honour"]
+"picks": ["Bank B went", "Tell me we came out", "how did they get in", "And the network", "goes in the report", "How far", "I'm in", "Say there was an incident", "sorry about your people"]
 },
 {
 "said": [
@@ -52,7 +52,7 @@
 "An incident, nine dead, cause withheld",
 "Upstairs will like that. The inquest won't.",
 "People hear the number, not the reason",
-"Keep the crew's fingerprint kit"
+"Keep the OptiGrid print kit"
 ],
 "notSaid": ["Stability", "maintenance fault", "how close it came", "Get some rest", "You chose the button", "You did right by this place", "A shame", "Thorough", "Harder than it looks", "None of this was random"]
 }

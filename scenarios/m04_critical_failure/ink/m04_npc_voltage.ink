@@ -383,7 +383,7 @@ Voltage: Nobody left to stop you. All right.
 + {voltage_print_on_bypass} [Your thumb's on the bypass module. Explain that to a court.]
     -> arrest_taken
 
-+ {not voltage_print_on_bypass} [It's over. You can explain your sums to a court.]
++ {not voltage_print_on_bypass} [Hands where I can see them. A court can check your sums.]
     -> arrest_taken
 
 // PASS 3 (round 3, M2): the old "Last chance. Step away." made him refuse and
@@ -516,7 +516,7 @@ Narrator: The dock door bangs open onto the loading bay and the cold, and he's g
 + [Say nothing.]
     ~ voltage_quiet = true
     #exit_conversation
-    Narrator: He sits against the bench with his wrists zipped, watching the red button he never reached.
+    Narrator: He sits against the bench with his wrists zipped, watching the laptop he'll never touch again.
     -> voltage_captured_end
 
 // ===========================================

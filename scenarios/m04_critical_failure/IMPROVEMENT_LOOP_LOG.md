@@ -805,3 +805,85 @@ Not voiced: HaX text "He's going for the laptop. Drop him." → "Fight's on. Don
 - Browser check (cycle 1's four items plus Vance's new goodbyes, the top-of-debrief nine line on both openers, and the gate reply).
 - The user: the debrief's network lines and "status page" (erb:980) against SecGen.
 - Cycle 3 per the review: confirm D6-1 to D6-21 and re-read r20–r23 and r25 end to end.
+
+### Phase 4 dialogue, cycle 3
+
+Review: `DIALOGUE_REVIEW_P5_C3.md` (Opus, static plus the route driver and a scratch run of the Voltage-first opener; 0 blockers, 1 major, 20 minors; cycle 2's 21 confirmed). Same fixer. All 21 fixed as proposed after checking each against the ink; none withdrawn. Orchestrator addition: the kit line reworded so "crew" can't read as the dead night crew. No erb edit this cycle. No browser session; the do-not-open rule held.
+
+| # | Sev. | Finding | Outcome |
+|---|---|---|---|
+| D7-1 | major | Voltage-first opener: 14 bubbles with no choice on a thorough run; "proof" said twice | **Fixed.** The same player beat after `debrief_people` on that opener (new sticky choice, `+ -> debrief_intelligence_gathered`); the "proof we've been chasing" line folded into the documents line. r26: longest run 9 |
+| D7-2 | minor | Bank B named four or five times on the first opener | **Fixed.** The recap is gated `{not debrief_attack_stopped: …}` (visit count: plays only on the Voltage-first opener) |
+| D7-3 | minor | "won't be zero" after the number | **Fixed** |
+| D7-4 | minor | "turn the fire" on routes with no fire | **Fixed** |
+| D7-5 | minor | "run start to finish" | **Fixed** |
+| D7-6 | minor | "Relay too" with no Vance clone | **Fixed** (fixed-string inline conditional) |
+| D7-7 | minor | The player's last words on crew-lost routes | **Fixed** (bracket conditionals; replies unchanged) |
+| D7-8 | minor | "[What did we get out of there?]" after "Nine of them." | **Fixed**, on both openers |
+| D7-9 | minor | "Good." before the nine | **Fixed** |
+| D7-10 | minor | "talking than down" (a KO is the capture) | **Fixed** |
+| D7-11 | minor | "your call" four times | **Fixed** |
+| D7-12 | minor | Voltage "watching the red button" | **Fixed** |
+| D7-13 | minor | Arrest choice repeats "It's over" | **Fixed** |
+| D7-14 | minor | "here two days" vs three | **Fixed** |
+| D7-15 | minor | "SCADA side" twice; stock line | **Fixed** |
+| D7-16 | minor | Vance asks then talks over the answer | **Fixed** |
+| D7-17 | minor | "Make it quick." twice via the hub cycle | **Fixed** |
+| D7-18 | minor | "can live with that" twice | **Fixed** |
+| D7-19 | minor | Vance repeats the cards/order fact | **Fixed** |
+| D7-20 | minor | Two flat lines | **Fixed** |
+| D7-21 | minor | No route on the Voltage-first opener or with every optional flag | **Fixed** (r26, r27) |
+| (orch.) | — | "Keep the crew's fingerprint kit." now follows the nine dead | **Fixed:** "Keep the OptiGrid print kit. Forensics can have the case it came in." Still unconditional on every route. m05's briefing depends on the player having brought a print kit back from Albion (`m05_insider_trading_opening.ink:218`, "the print kit you brought back from Albion"); the new line keeps that and matches its "print kit" wording |
+
+#### Routes
+
+- `route.js`: new step `{"maxRun": N}` asserts the longest run without a choice so far (documented in its header).
+- New `r26_voltage_first_opener_all_flags.json` (Voltage-first, every optional debrief flag, crew lost, Voltage taken) and `r27_first_opener_all_flags.json` (first opener, same flags). Both assert `maxRun` 9 (each reaches exactly 9), the new beat, the folded proof line, the kit line, and that Bank B is recapped on r26 and not on r27.
+- Updated: crew-lost routes now pick the new bracket texts (r2, r6, r9, r20–r23); "check your sums" (r3, r20, r24); the kit line (r20, r21); r17 also asserts "You did it to Relay, while she was talking" (no "too") and the new Social Fabric line.
+- 27 of 27: all expectations met.
+
+#### Checks (static; no browser session)
+
+- Ink compiles (10 files, 0 failed, no loose ends).
+- Validator with ink, `--no-graph`: schema passed, all ink valid, 12 issues and suggestions (unchanged).
+- dialoguelint: 0 errors, 0 warnings; the 2 withdrawn blank-reentry checks.
+- reopencheck: 0 problems for both phones.
+- tagdiff against HEAD: debrief 10 (the new sticky choice in `debrief_voltage_status` and its `crew_lost` bracket condition; the `crew_lost` conditions for D7-8/D7-9 and D7-7's two closing brackets; the `vance_card_cloned` inline condition; the `not debrief_attack_stopped` gate; the removed "proof" condition). Every other file is structurally unchanged (line edits only). Against the snapshot: debrief 79, Voltage 22, briefing 19, guard 15, HaX phone 14, Vance phone 8, Vance 6, Cipher/Relay/Static unchanged.
+- inkcheck and loopcheck: debrief (clean; crew lost at 30 and 90; trigger vent), Voltage (Static down; captured), Vance, HaX phone after the dial. All clean.
+
+#### Spoken lines changed (old → new)
+
+No m04 audio exists yet; listed for the record.
+
+HaX, debrief:
+- "Good. Nobody else in that building knows the chain above Blackout." → on crew-lost routes "In custody. Nobody else in that building knows the chain above Blackout." (unchanged otherwise)
+- Cut: "The intelligence you brought out is the proof we've been chasing since the Zero Day job."
+- "The documents show Critical Mass and Social Fabric coordinating the one attack, in their own handwriting." → "…in their own handwriting. That's the proof we've chased since Zero Day."
+- "Keep the crew's fingerprint kit. Forensics can have the case." → "Keep the OptiGrid print kit. Forensics can have the case it came in."
+- "You did it to Relay too, while she was talking." → "You did it to Relay, while she was talking." when Vance's card wasn't cloned
+- "Social Fabric had disinformation ready to turn the fire into a panic." → "Social Fabric had disinformation queued for the morning, ready to turn a fire into a panic."
+- "We've just watched one of his strikes run start to finish. Now we know how the cells fit together." → "We've just watched one of his strikes from the inside. Now we know how the cells fit together."
+- "Four missions now, and you're still standing. The last of them nearly didn't go that way." → "…Tonight nearly went the other way."
+- "The banks are isolated, but Bank B went before you got to the button." / "…he got to the laptop before you got to him, and Bank B went with it." → now Voltage-first opener only
+- "You stopped the rest of it. Hold on to that, because the number you read tomorrow won't be zero." → "You stopped the rest of it. Hold on to that when the names come out tomorrow."
+- "Netherton can live with that." → "Netherton will sign off on it."
+
+Voltage: Narrator "He sits against the bench with his wrists zipped, watching the red button he never reached." → "…watching the laptop he'll never touch again."
+
+Robert Vance:
+- "Staff records? Fine. But tell me what you're after." / "We've nothing to hide." → "Staff records? Fine. We've nothing to hide."
+- "Three of them, here two days. Network work and SCADA optimisation, they said." → "Three of them, in and out since the ninth. Network work and SCADA optimisation, they said."
+- "This place is my responsibility. People depend on it." → "This place is mine to answer for. I'd rather hear it from you than from the fire brigade."
+- "Make it quick. Three banks, nine on the module swap in Hall 2, and one of me." → "Quickly, then. Three banks, nine on the module swap in Hall 2, and one of me."
+- "I let them in. Their cards worked and I didn't chase the order." → "I let them in. I signed them through myself."
+- Cut: "Not on my site. We're stopping this."
+- "Come back to the ops desk when you need the SCADA side, and I'm on comms while you move." → "Come back to the ops desk when you need it, and I'm on comms while you move."
+
+HaX, phone: "Listen. Voltage is worth more to us talking than down." → "Listen. Voltage is worth more to us in a cell than in the wind."; "You'll see it better than I will. Make the call there." → "You'll see it better than I will."; "That's the approach. Work with what you find." → "Good."
+
+Not voiced (choices): new "[Nine. Tell me we came out with something.]" (crew lost, both openers); "[What did we get out of there?]" now also on the Voltage-first opener; "[I'm sorry about your people, Mr Vance.]" and "[It's all going in the report. Every line.]" on crew-lost routes; Voltage "[It's over. You can explain your sums to a court.]" → "[Hands where I can see them. A court can check your sums.]".
+
+#### Open after cycle 3
+
+- The browser check that closes the phase: cycle 1's four items (guard re-sighting, the HQ-background narrator line, Voltage's narration after a back-off, the two new globals syncing); cycle 2's Vance goodbyes, the top-of-debrief nine line on both openers and HaX's gate reply; this cycle's beat on the Voltage-first opener and the crew-lost bracket choices (inline conditionals in choice text).
+- The user: the debrief's network lines and "status page" (erb:981) against SecGen.

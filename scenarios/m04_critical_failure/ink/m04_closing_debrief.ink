@@ -127,7 +127,8 @@ Agent, report.
 
 // PLAYTEST ROUND: a player beat, so the outcome and the intelligence aren't one
 // fifteen-bubble run before the first choice.
-+ [What did we get out of there?]
+// C3 (D7-8): on crew-lost routes the player answers the nine.
++ [{crew_lost:Nine. Tell me we came out with something.|What did we get out of there?}]
     -> debrief_intelligence_gathered
 
 // Round 4 (review m5): the Vance and KO lines, shared by both openers (a tunnel).
@@ -160,7 +161,8 @@ Agent, report.
 
 {voltage_captured:
     #set_global:blackout_named:true
-    Good. Nobody else in that building knows the chain above Blackout.
+    // C3 (D7-9): no "Good." before the nine.
+    {crew_lost:In custody.|Good.} Nobody else in that building knows the chain above Blackout.
 
     He'll talk. He wants someone to check his sums.
 - else:
@@ -177,17 +179,17 @@ Agent, report.
 // Round 4 (review m5): this opener skipped the Vance and KO lines.
 -> debrief_people ->
 
--> debrief_intelligence_gathered
+// Phase 4 dialogue C3 (D7-1): the same player beat as the first opener, so a
+// thorough run isn't fourteen bubbles before a choice.
++ [{crew_lost:Nine. Tell me we came out with something.|What did we get out of there?}]
+    -> debrief_intelligence_gathered
 
 === debrief_intelligence_gathered ===
 #speaker:agent_0x99
 
 // PASS 3 review: the "proof" claim needs the paper; the directive itself is
 // m03's, so HaX can quote it either way.
-{lore_cross_cell_coordination_found or lore_architect_directive_found:
-    The intelligence you brought out is the proof we've been chasing since the Zero Day job.
-}
-
+// C3 (D7-1): "the proof we've been chasing" folded into the documents line below.
 The directive said it: Zero Day supplies, Critical Mass executes, grid storage this winter. Tonight was that plan, running.
 
 {voltage_captured:
@@ -222,7 +224,7 @@ The directive said it: Zero Day supplies, Critical Mass executes, grid storage t
 }
 
 {lore_cross_cell_coordination_found or lore_architect_directive_found:
-    The documents show Critical Mass and Social Fabric coordinating the one attack, in their own handwriting.
+    The documents show Critical Mass and Social Fabric coordinating the one attack, in their own handwriting. That's the proof we've chased since Zero Day.
 - else:
     // Scenario design M1: the required FTP flag already showed the cross-cell link.
     Their FTP drop already put Critical Mass and Social Fabric on the same job. The paper in the plant room would have signed it.
@@ -232,7 +234,10 @@ The directive said it: Zero Day supplies, Critical Mass executes, grid storage t
     And that card from the go-bag. It decodes to Calder Wharf, Social Fabric's regional safehouse. That goes on the board.
 }
 
-Keep the crew's fingerprint kit. Forensics can have the case.
+// C3: "crew" now follows the nine dead, so the kit is named as OptiGrid's. m05's
+// briefing depends on it ("the print kit you brought back from Albion",
+// m05_insider_trading_opening.ink:218): keep on every route.
+Keep the OptiGrid print kit. Forensics can have the case it came in.
 
 // PLAYTEST ROUND: second player beat before the what-failed lesson.
 + [And how did they get in? How did I?]
@@ -253,7 +258,8 @@ Agent HaX: Before you write it up. Here's what let them in. Nearly all of it let
     Agent HaX: Their door cards are old prox. They hand their number to anything that asks. You could have had Vance's from across his desk.
 }
 {relay_card_cloned:
-    Agent HaX: You did it to Relay too, while she was talking.
+    // C3 (D7-6): "too" only if Vance's card was cloned.
+    Agent HaX: You did it to Relay{vance_card_cloned: too}, while she was talking.
 }
 Agent HaX: The HV door took one finger, and that finger was on a panel he touched every two hours. A print names you. It can't prove you're the one standing there.
 Agent HaX: And the control room believed its own sensors. The honest ones weren't on the bus: a dial on a wall, and a gas monitor off their network.
@@ -288,7 +294,8 @@ Agent HaX: And on site: encrypted cards, a second factor on the HV door, and a g
 #speaker:agent_0x99
 
 // C2 (D6-18): "None of this was random." cut.
-Social Fabric had disinformation ready to turn the fire into a panic.
+// C3 (D7-4): true on routes where nothing burned.
+Social Fabric had disinformation queued for the morning, ready to turn a fire into a panic.
 
 * [The Architect. He's running all of it.]
     -> debrief_architect_revelation
@@ -301,7 +308,7 @@ Social Fabric had disinformation ready to turn the fire into a panic.
 
 The same name the Zero Day directive carried. The Architect.
 
-We've just watched one of his strikes run start to finish. Now we know how the cells fit together.
+We've just watched one of his strikes from the inside. Now we know how the cells fit together.
 
 This site was a rehearsal.
 
@@ -347,7 +354,7 @@ He's calling it Task Force Null. Your name's on his list.
 
 Find whoever sends the directives. Every cell we've hit so far was working from the same ones.
 
-Four missions now, and you're still standing. The last of them nearly didn't go that way.
+Four missions now, and you're still standing. Tonight nearly went the other way.
 
 -> task_force_accepted
 
@@ -361,10 +368,14 @@ He'll call when he's ready. Not tonight.
 // handle this publicly?" already asks it.
 
 {racks_vented:
-    {vented_by_trigger:
-        Agent HaX: The banks are isolated, but he got to the laptop before you got to him, and Bank B went with it.
-    - else:
-        Agent HaX: The banks are isolated, but Bank B went before you got to the button.
+    // C3 (D7-2): only on the Voltage-first opener, where it's news; the first
+    // opener has already named Bank B.
+    {not debrief_attack_stopped:
+        {vented_by_trigger:
+            Agent HaX: The banks are isolated, but he got to the laptop before you got to him, and Bank B went with it.
+        - else:
+            Agent HaX: The banks are isolated, but Bank B went before you got to the button.
+        }
     }
     // Pass 5 decision 1: the casualties depend on whether the crew was warned.
     {
@@ -381,7 +392,8 @@ He'll call when he's ready. Not tonight.
         - else:
             Agent HaX: The evacuation alarm was on Vance's desk. He never knew he had a reason to use it.
         }
-        Agent HaX: You stopped the rest of it. Hold on to that, because the number you read tomorrow won't be zero.
+        // C3 (D7-3): she has just given the number.
+        Agent HaX: You stopped the rest of it. Hold on to that when the names come out tomorrow.
     - vented_by_alarm_clock:
         // Round 2 (review M1d): the alarm's own clock vented the bank.
         Agent HaX: Your alarm started his clock. Bank B and two on the feed are what it cost.
@@ -534,7 +546,7 @@ Netherton won't argue.
     People hear something happened, not all of it. Enough to push some change, not enough to start a panic.
 }
 
-Netherton can live with that.
+Netherton will sign off on it.
 
 -> disclosure_outcome
 
@@ -596,10 +608,11 @@ Done.
 
 #speaker:agent_0x99
 
-* {(vance_spoken or vance_is_ally) and not robert_vance_ko} [It was an honour working with you, Mr Vance.]
+// C3 (D7-7): the player's last words fit nine dead; the replies fit both.
+* {(vance_spoken or vance_is_ally) and not robert_vance_ko} [{crew_lost:I'm sorry about your people, Mr Vance.|It was an honour working with you, Mr Vance.}]
     -> debrief_end_respectful
 
-* {(vance_spoken or vance_is_ally) and not robert_vance_ko} [Just doing my job.]
+* {(vance_spoken or vance_is_ally) and not robert_vance_ko} [{crew_lost:It's all going in the report. Every line.|Just doing my job.}]
     -> debrief_end_professional
 
 // Scenario design m4 / browser M-3: the player never met him.

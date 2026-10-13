@@ -131,9 +131,7 @@ Safety record's spotless. Who've you been listening to?
 ~ vance_trust_level += 3
 # influence_increased
 
-Staff records? Fine. But tell me what you're after.
-
-We've nothing to hide.
+Staff records? Fine. We've nothing to hide.
 
 -> vance_provides_access
 
@@ -251,7 +249,7 @@ The workshop's on the contractors' cards. The plant room's high-voltage, authori
 === optigrid_details_request ===
 #speaker:robert_vance
 
-Three of them, here two days. Network work and SCADA optimisation, they said.
+Three of them, in and out since the ninth. Network work and SCADA optimisation, they said.
 
 They didn't want an escort, either. What's your concern?
 
@@ -349,7 +347,7 @@ Anything else, I'm at the ops desk. Watching the screens.
 
 Of course. And... if you find anything, come to me.
 
-This place is my responsibility. People depend on it.
+This place is mine to answer for. I'd rather hear it from you than from the fire brigade.
 
 ~ vance_quiet = true
 #exit_conversation
@@ -420,7 +418,7 @@ This place is my responsibility. People depend on it.
     -> vance_early_reveal
 
 + {not vance_is_ally} [A few more questions about the facility.]
-    Robert Vance: Make it quick. Three banks, nine on the module swap in Hall 2, and one of me.
+    Robert Vance: Quickly, then. Three banks, nine on the module swap in Hall 2, and one of me.
     -> vance_hub
 
 + {not vance_is_ally} [That's all for now.]
@@ -548,7 +546,7 @@ How long have we got?
 
 // Vance's expression shows horror and guilt
 
-I let them in. Their cards worked and I didn't chase the order.
+I let them in. I signed them through myself.
 
 They had credentials, background checks, the lot. I never once rang the firm.
 
@@ -597,11 +595,9 @@ Tell me what you need. Anything.
 
 You'll have the halls. And I know the SCADA side better than they do.
 
-Not on my site. We're stopping this.
-
 I'll have the access logs and the monitoring up from here.
 
-Come back to the ops desk when you need the SCADA side, and I'm on comms while you move.
+Come back to the ops desk when you need it, and I'm on comms while you move.
 
 // PASS 3 P2: the ally paths bypass vance_provides_access, so the card is copied
 // here (12 ally paths, M3). The exit is its own knot so the clone can't share

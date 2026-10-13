@@ -38,7 +38,7 @@
 {"talk": "phone", "picks": ["Bring me in", "Bring me in", "On my way"]},
 {
 "talk": "debrief",
-"picks": ["Bank B went", "What did we get", "how did they get in", "fix first", "goes in the report", "The Architect", "I'm in", "Keep it classified", "Just doing my job"]
+"picks": ["Bank B went", "Tell me we came out", "how did they get in", "fix first", "goes in the report", "The Architect", "I'm in", "Keep it classified", "all going in the report"]
 },
 {
 "said": [
@@ -49,7 +49,7 @@
 "Accident. I'll sign it. I'll not pretend I like it.",
 "Nine families get a report with no cause in it",
 "I'll have those card readers out",
-"Keep the crew's fingerprint kit",
+"Keep the OptiGrid print kit",
 "I don't know what you are. I know what you did.",
 "Nine of mine. I'll be telling their families myself."
 ],

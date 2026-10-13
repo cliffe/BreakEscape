@@ -717,7 +717,7 @@ That's where he is, and where this ends.
 
 ~ voltage_priority_discussed = true
 
-Listen. Voltage is worth more to us talking than down.
+Listen. Voltage is worth more to us in a cell than in the wind.
 
 He knows The Architect, how the cells coordinate, what's coming next.
 -> voltage_priority_update_choices
@@ -749,7 +749,7 @@ Go for him and you're close to the trigger he's holding. Cornered, he'll use it.
     Go for the button and he's out the dock and gone. And it won't arm till grid control has a real reading.
 }
 
-You'll see it better than I will. Make the call there.
+You'll see it better than I will.
 -> capture_vs_speed_guidance_choices
 
 === capture_vs_speed_guidance_choices ===
@@ -777,7 +777,7 @@ Copy. Then the button's your job and he's a bonus.
 === judgment_trusted ===
 #speaker:agent_0x99
 
-That's the approach. Work with what you find.
+Good.
 
 -> final_phase_briefing
 

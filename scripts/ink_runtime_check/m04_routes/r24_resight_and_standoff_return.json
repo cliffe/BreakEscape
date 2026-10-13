@@ -17,7 +17,7 @@
 {"set": {"anomaly_detected": true, "attack_mechanism_known": true, "plant_room_entered": true, "operative_static_defeated": true}},
 {"talk": "voltage", "picks": ["It's over", "take that laptop", "Back off"]},
 {"said": ["You cannot reach both", "You got past my people"]},
-{"talk": "voltage", "picks": ["Then let's finish this", "coming with me", "explain your sums"]},
+{"talk": "voltage", "picks": ["Then let's finish this", "coming with me", "check your sums"]},
 {"notSaid": ["The laptop is open on the plant-room bench"]},
 {"talk": "voltage", "picks": ["Nothing you want to tell me"]},
 {"said": ["Still counting?"]}
