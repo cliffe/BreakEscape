@@ -1670,11 +1670,10 @@ async function checkAndShowTutorial() {
         return;
     }
 
-    // Wait a bit for the game to settle (after title screen, etc.)
-    await new Promise(resolve => setTimeout(resolve, 1000));
-
-    // Ask if player wants tutorial
-    const wantsTutorial = await tutorialManager.showTutorialPrompt();
+    // Ask if player wants tutorial, after a second for the game to settle (title
+    // screen, etc.). The prompt counts as open from now, so sight challenges hold
+    // through the delay too (npc-sight-challenge.js).
+    const wantsTutorial = await tutorialManager.showTutorialPrompt({ delayMs: 1000 });
 
     if (wantsTutorial) {
         // Start the tutorial

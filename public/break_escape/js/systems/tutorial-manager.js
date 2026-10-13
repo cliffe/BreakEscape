@@ -41,6 +41,9 @@ export class TutorialManager {
         this.isMobile = this.detectMobile();
         this.tutorialOverlay = null;
         this.onComplete = null;
+        // True from the moment the game decides to ask until the player answers,
+        // including the settle delay before the modal appears (isPromptOpen)
+        this.promptOpen = false;
 
         // Track player actions for tutorial progression
         this.playerMoved = false;
@@ -103,10 +106,24 @@ export class TutorialManager {
     }
 
     /**
-     * Show prompt asking if player wants to do tutorial
+     * Is the "would you like a tutorial?" prompt open, or about to open?
+     * It is plain DOM, not a minigame, so systems that hold while a minigame is
+     * open (npc-sight-challenge.js) check this as well.
      */
-    showTutorialPrompt() {
+    isPromptOpen() {
+        return this.promptOpen;
+    }
+
+    /**
+     * Show prompt asking if player wants to do tutorial.
+     * @param {Object} [options]
+     * @param {number} [options.delayMs=0] wait this long before showing the modal;
+     *   the prompt counts as open (isPromptOpen) from the call, not from when it appears
+     */
+    showTutorialPrompt({ delayMs = 0 } = {}) {
+        this.promptOpen = true;
         return new Promise((resolve) => {
+          const open = () => {
             // Create modal overlay
             const overlay = document.createElement('div');
             overlay.className = 'tutorial-prompt-overlay';
@@ -125,14 +142,19 @@ export class TutorialManager {
 
             document.getElementById('tutorial-yes').addEventListener('click', () => {
                 document.body.removeChild(overlay);
+                this.promptOpen = false;
                 resolve(true);
             });
 
             document.getElementById('tutorial-no').addEventListener('click', () => {
                 this.markDeclined();
                 document.body.removeChild(overlay);
+                this.promptOpen = false;
                 resolve(false);
             });
+          };
+          if (delayMs > 0) setTimeout(open, delayMs);
+          else open();
         });
     }
 
