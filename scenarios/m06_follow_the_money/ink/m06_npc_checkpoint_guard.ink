@@ -129,5 +129,6 @@ Checkpoint Guard: Door's open. Don't touch the screens; the traders bite.
 Narrator: Across the room, the guard's head comes up. He has seen the picks.
 Checkpoint Guard: Oi. Away from that door.
 Checkpoint Guard: I don't know who you are, and now I'm not going to take your word for it. Go back out to the lobby and come in properly.
+Checkpoint Guard: And I'll be ringing whoever you say sent you.
 #exit_conversation
 -> start.grace_choices

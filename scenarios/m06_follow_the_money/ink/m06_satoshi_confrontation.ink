@@ -30,6 +30,8 @@ VAR detain_announced = false
 VAR cover_strained = false  // Pass 5 A3: synced; the player's own actions gave the floor a reason to ring the FCA
 VAR minder_ko = false       // Pass 5 A5: synced; his minder was knocked out in the corridor
 VAR minder_passed = false   // Pass 5 A5: synced; the minder let the player in
+VAR minder_hostile = false  // Round 2 (R2-m8): synced; the minder turned hostile
+VAR minder_challenged = false // Round 2 (R2-m7): synced; the minder turned the player back at least once
 VAR assets_decided = false  // synced global: the re-entry guard survives a reload (review M3)
 // Final round (m03 pattern): set by every exit, so the resting knot's re-entry
 // line shows on a reopen and never in the same batch as a goodbye.
@@ -62,11 +64,16 @@ VAR hub_quiet = false
     - else:
         Satoshi Nakamoto II: Your paperwork was good. I had you checked anyway. Old habit.
     }
+    // Round 2: the same precedence as the credits and the debrief.
     {
     - minder_ko:
         Satoshi Nakamoto II: And I heard Kemal hit the floor. He's guarded money for thirty years. He'll be embarrassed.
+    - minder_hostile:
+        Satoshi Nakamoto II: Kemal's still out there looking for you. Let's be quick.
     - minder_passed:
         Satoshi Nakamoto II: Kemal let you in, so you must have been convincing.
+    - minder_challenged:
+        Satoshi Nakamoto II: Kemal turned you away, I hear. And yet here you are.
     }
 
     Satoshi Nakamoto II: SAFETYNET, right? So you've worked out what this place is for.
@@ -500,8 +507,12 @@ Satoshi Nakamoto II: They'll convict me. They'll want an example.
     Satoshi Nakamoto II: And Irina is on the trading-floor carpet, I hear. Your side has a strange way of treating people who might have helped it.
 }
 
-{irina_arrested:
+{irina_arrested and not irina_ko:
     Satoshi Nakamoto II: And Irina in handcuffs as well. Whatever she said to you at the end, she built all of this with me.
+}
+// Round 2: detained, then knocked down (the credits' "carried out" line).
+{irina_arrested and irina_ko:
+    Satoshi Nakamoto II: And Irina, handcuffed and then knocked flat, I hear. Whatever she said to you at the end, she built all of this with me.
 }
 
 Satoshi Nakamoto II: ENTROPY has no head to cut off. The Architect will adapt.

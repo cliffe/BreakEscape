@@ -25,7 +25,9 @@
 //   #give_item / #clone_keycard   -> the pickup and card_cloned mappings (found_password_lists,
 //                                    irina_badge_obtained, irina_badge_cloned, irina_exec_badge_given)
 //   #hostile:<id>                 -> minder_hostile for the minder (his npc_hostile_state_changed mapping)
-//   guard_caught                  -> cover_strained (A3)
+//   guard_caught                  -> cover_strained (A3), with the cause's HaX text (round 2)
+//   #unlock_door:<room>           -> door_open_<room> (a driver-only marker; picking the door
+//                                    or the dropped key is a {"set": {"door_open_satoshi_office": true}})
 //   Irina's first close with irina_suspicious -> cover_strained, then exchange_infiltrated (A3)
 //   ko of a staff member          -> cover_strained (A3); ko of Irina -> irina_fate_decided
 //   ko of Satoshi                 -> satoshi_confronted (the phone opens on_satoshi_ko: talk it)
@@ -63,7 +65,7 @@ const cond = c => { try { return !!(new Function('globalVars', `return (${c});`)
 function setG(k, v, why) { if (G[k] !== v) { G[k] = v; out(`      [engine: ${why} -> ${k}=${v}]`); } }
 let debriefOpened = false;
 function engine() {
-  if (G.guard_caught) setG('cover_strained', true, 'caught at the checkpoint lock');
+  if (G.guard_caught && !G.cover_strained) { setG('cover_strained', true, 'caught at the checkpoint lock'); out("      [HaX text: The guard saw your picks. He'll ring the FCA to check on you...]"); }
   const allIn = G.assets_decided && G.irina_fate_decided && G.flag1_submitted && G.flag2_submitted && G.flag3_submitted && G.flag4_submitted;
   if (allIn && !G.ready_to_extract && !G.debrief_played) {
     setG('ready_to_extract', true, 'both calls made, all four flags in');
@@ -86,7 +88,7 @@ const firstClose = {};
 function closed(name) {
   if (name === 'irina' && !firstClose.irina) {
     firstClose.irina = true;
-    if (G.irina_suspicious && !G.exchange_infiltrated && !G.irina_ko) setG('cover_strained', true, 'Irina\'s first chat closed with her still suspicious');
+    if (G.irina_suspicious && !G.exchange_infiltrated && !G.irina_ko && !G.cover_strained) { setG('cover_strained', true, 'Irina\'s first chat closed with her still suspicious'); out("      [HaX text: Volkova didn't buy you...]"); }
     if (!G.exchange_infiltrated && !G.irina_ko) setG('exchange_infiltrated', true, 'Irina\'s first close');
   }
   if (name === 'trader') G.trader_spoken = true;
@@ -127,7 +129,13 @@ for (const step of route.steps) {
     const id = step.ko; out(`   {ko ${id}}`);
     const map = { checkpoint_guard: 'guard_ko', trader_npc: 'trader_ko', blockchain_analyst: 'analyst_ko', irina_volkova: 'irina_ko', satoshi_nakamoto: 'satoshi_ko', satoshi_minder: 'minder_ko' };
     if (map[id]) G[map[id]] = true;
-    if (['checkpoint_guard', 'trader_npc', 'blockchain_analyst', 'irina_volkova'].includes(id)) setG('cover_strained', true, `${id} knocked out`);
+    if (['checkpoint_guard', 'trader_npc', 'blockchain_analyst', 'irina_volkova'].includes(id) && !G.cover_strained) {
+      setG('cover_strained', true, `${id} knocked out`);
+      out(id === 'checkpoint_guard' ? '      [HaX text: Somebody will find him and ring whoever sent you...]' : '      [HaX text: Someone on that floor is going to ring the FCA...]');
+    }
+    if (id === 'satoshi_minder') out("      [engine: Kemal drops the CEO's office key (itemsHeld)]");
+    const koText = { checkpoint_guard: 'The guard was doing his job. That goes in the report, and so does the noise.', trader_npc: 'Okonkwo had done nothing. That goes in the report.', blockchain_analyst: 'Raghavan drew us the money and had done nothing else. That goes in the report.' };
+    if (koText[id]) out(`      [HaX text: ${koText[id]}]`);
     if (id === 'irina_volkova') setG('irina_fate_decided', true, 'npc_ko:irina_volkova');
     if (id === 'satoshi_nakamoto') setG('satoshi_confronted', true, 'npc_ko:satoshi_nakamoto (phone opens on_satoshi_ko)');
     engine(); continue;
@@ -169,6 +177,7 @@ for (const step of route.steps) {
         if (tg === 'exit_conversation') exited = true;
         if (tg.startsWith('hostile:')) { syncOut(s); hostile(tg.split(':')[1]); syncIn(s); }
         if (tg.startsWith('complete_task:')) out(`      [task: ${tg.split(':')[1]}]`);
+        if (tg.startsWith('unlock_door:')) { const r = tg.split(':')[1]; G['door_open_' + r] = true; out(`      [unlock_door ${r}]`); }
         if (tg.startsWith('give_item:')) { const [, kind, id] = tg.split(':'); syncOut(s); gave(kind, id); syncIn(s); }
         if (tg.startsWith('clone_keycard:')) { G.irina_badge_cloned = true; syncIn(s); out('      [RFID minigame: card saved]'); }
       }

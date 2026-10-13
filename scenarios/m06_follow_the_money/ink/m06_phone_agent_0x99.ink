@@ -87,6 +87,9 @@ VAR ready_to_extract = false      // A1: both decisions and all four flags in (H
 VAR start_debrief_cutscene = false // Synced scenario global (A1): set by extract_go; opens the debrief
 VAR lockpick_guide_offered = false
 VAR lockpick_guide_hint_given = false
+VAR minder_passed = false        // Synced scenario global (round 2, R2-m10)
+VAR minder_ko = false            // Synced scenario global (round 2, R2-m10)
+VAR minder_hostile = false       // Synced scenario global (round 2, R2-m10)
 VAR server_room_entered = false   // Synced scenario global (regression M4): the server room door is open
 
 // ================================================
@@ -318,9 +321,14 @@ Try the other way first.
 }
 {found_architects_fund and irina_exec_badge_given and not satoshi_confronted:
     You've the badge. The wing's east of the data centre; his office is north of that.
-    He keeps a minder on that corridor.
-    {cover_strained:
-        With your cover strained, he won't take the FCA line. Wait for his back, or bring Volkova's word if she's with us.
+    // Round 2 (R2-m10, R2-M3): only while the minder still stands in the way.
+    {not minder_passed and not minder_ko and not minder_hostile:
+        He keeps a minder on that corridor, and the minder has the key to Satoshi's door.
+        {cover_strained:
+            With your cover strained, he won't take the FCA line. Pick the door while his back's turned, or bring Volkova's word if she's with us.
+        - else:
+            The FCA line should get him to open it. If it doesn't, pick it while his back's turned.
+        }
     }
 }
 {irina_recruited and not architect_identity_found:

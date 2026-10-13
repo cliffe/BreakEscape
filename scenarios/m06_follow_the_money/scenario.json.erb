@@ -177,14 +177,16 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
           { "text": "WATCHED — Fund left running. Every recipient wallet now tagged.", "style": "entry", "condition": "globalVars.monitoring_enabled" },
           { "text": "" },
           { "text": "── PERSONNEL ──",                                             "style": "section-header" },
-          <%# PASS 3 P8: four mutually exclusive guard lines; talking through wins, then KO.
+          <%# PASS 3 P8: four mutually exclusive guard lines. Pass 5 round 2 (R2-m6): a KO
+              now wins over talking through, so the credits agree with the debrief.
               guard_caught is set on a catch and never cleared. %>
-          { "text": "CHECKPOINT GUARD: Waved you through on the FCA cover", "style": "entry", "condition": "globalVars.guard_waved_through" },
-          { "text": "CHECKPOINT GUARD: Knocked out at his own door", "style": "entry", "condition": "globalVars.guard_ko && !globalVars.guard_waved_through" },
+          { "text": "CHECKPOINT GUARD: Waved you through on the FCA cover", "style": "entry", "condition": "globalVars.guard_waved_through && !globalVars.guard_ko" },
+          { "text": "CHECKPOINT GUARD: Knocked out at his own door", "style": "entry", "condition": "globalVars.guard_ko" },
           { "text": "CHECKPOINT GUARD: Never saw you pick his door", "style": "entry", "condition": "globalVars.guard_resolved && !globalVars.guard_waved_through && !globalVars.guard_ko && !globalVars.guard_caught" },
           { "text": "CHECKPOINT GUARD: Caught you at his lock once; you got through anyway", "style": "entry", "condition": "globalVars.guard_resolved && !globalVars.guard_waved_through && !globalVars.guard_ko && globalVars.guard_caught" },
           { "text": "DR. IRINA VOLKOVA: Turned — gave up the mixer tonight", "style": "entry", "condition": "globalVars.irina_recruited" },
-          { "text": "DR. IRINA VOLKOVA: Detained — collected by the police with the laundering evidence", "style": "entry", "condition": "globalVars.irina_arrested" },
+          { "text": "DR. IRINA VOLKOVA: Detained — collected by the police with the laundering evidence", "style": "entry", "condition": "globalVars.irina_arrested && !globalVars.irina_ko" },
+          { "text": "DR. IRINA VOLKOVA: Detained, then knocked down — carried out by the police", "style": "entry", "condition": "globalVars.irina_arrested && globalVars.irina_ko" },
           { "text": "DR. IRINA VOLKOVA: Knocked down on the trading floor before her part was settled", "style": "entry", "condition": "globalVars.irina_ko && !globalVars.irina_recruited && !globalVars.irina_arrested" },
           { "text": "'SATOSHI NAKAMOTO II': Detained — handed to the police",       "style": "entry",   "condition": "!globalVars.satoshi_ko" },
           { "text": "'SATOSHI NAKAMOTO II': Knocked out in his own office — handed to the police", "style": "entry", "condition": "globalVars.satoshi_ko" },
@@ -199,8 +201,11 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
           { "text": "PRIYA RAGHAVAN (ANALYST): Never knew what her graph proved — left alone", "style": "entry", "condition": "globalVars.analyst_spoken && !globalVars.analyst_walked_through && !globalVars.analyst_ko" },
           { "text": "PRIYA RAGHAVAN (ANALYST): Knocked out — had done nothing wrong", "style": "entry", "condition": "globalVars.analyst_ko" },
           <%# Pass 5 A5: Satoshi's minder in the executive wing. %>
-          { "text": "KEMAL AYDIN (MINDER): Talked your way past him", "style": "entry", "condition": "globalVars.minder_passed && !globalVars.minder_ko" },
-          { "text": "KEMAL AYDIN (MINDER): Never saw you come up the corridor", "style": "entry", "condition": "globalVars.satoshi_confronted && !globalVars.minder_passed && !globalVars.minder_hostile && !globalVars.minder_ko" },
+          <%# Round 2 (R2-m7): mutually exclusive; KO, then hostile, then talked past,
+              then turned back once, then never seen. %>
+          { "text": "KEMAL AYDIN (MINDER): Talked your way past him", "style": "entry", "condition": "globalVars.minder_passed && !globalVars.minder_hostile && !globalVars.minder_ko" },
+          { "text": "KEMAL AYDIN (MINDER): Turned you back once; you got past him anyway", "style": "entry", "condition": "globalVars.minder_challenged && !globalVars.minder_passed && !globalVars.minder_hostile && !globalVars.minder_ko" },
+          { "text": "KEMAL AYDIN (MINDER): Never saw you come up the corridor", "style": "entry", "condition": "globalVars.satoshi_confronted && !globalVars.minder_challenged && !globalVars.minder_passed && !globalVars.minder_hostile && !globalVars.minder_ko" },
           { "text": "KEMAL AYDIN (MINDER): Knocked out outside his boss's door", "style": "entry", "condition": "globalVars.minder_ko" },
           { "text": "KEMAL AYDIN (MINDER): Went for you; you got past him anyway", "style": "entry", "condition": "globalVars.minder_hostile && !globalVars.minder_ko" },
           { "text": "" },
@@ -655,6 +660,7 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
     "minder_passed": false,
     "minder_hostile": false,
     "minder_ko": false,
+    "minder_challenged": false,
 
     "cracking_guide_offered": false,
     "cracking_guide_hint_given": false,
@@ -859,7 +865,8 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
               "eventPattern": "conversation_closed:irina_volkova",
               "condition": "globalVars.irina_suspicious === true && globalVars.exchange_infiltrated !== true && globalVars.irina_ko !== true",
               "onceOnly": true,
-              "setGlobal": { "cover_strained": true }
+              "setGlobal": { "cover_strained": true },
+              "sendTimedMessage": { "delay": 17500, "message": "Volkova didn't buy you. If she asks around, the FCA will say they've never heard of you.", "skipIfGlobal": "irina_fate_decided" }
             },
             {
               "_comment": "PASS 2 review: meet_irina now completes at the top of her first conversation, so this waits for the conversation to close instead of landing mid-dialogue.",
@@ -1008,7 +1015,7 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
               "onceOnly": true,
               "setGlobal": { "flag2_submitted": true },
               "_comment": "Pass 5 A6: flag 2 had no story reaction.",
-              "sendTimedMessage": { "delay": 1500, "message": "Second account. One password, two boxes, just as their own rack sheet admitted. Next is the financial database. Its account runs their doors.", "skipIfGlobal": "flag3_submitted" }
+              "sendTimedMessage": { "delay": 5500, "message": "Second account. One password, two boxes, just as their own rack sheet admitted. Next is the financial database. Its account runs their doors.", "skipIfGlobal": "flag3_submitted" }
             },
             {
               "eventPattern": "objective_task_completed:submit_flag3",
@@ -1201,46 +1208,51 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
               "onceOnly": true,
               "setGlobal": { "lockpick_guide_offered": true }
             },
-            <%# A3: the cover strains when the player's own actions give the floor a
-                reason to ring the FCA: caught at the guard's lock, or a member of
-                staff knocked out. KO reactions key on npc_ko:<id> (globalVarOnKO
-                emits no global_variable_changed). %>
+            <%# A3: the cover strains when the player's own actions give someone a
+                reason to ring the FCA: caught at the guard's lock, a member of staff
+                knocked out, or Irina's first chat left suspicious. Round 2 (R2-M2,
+                R2-m1): one text per cause, naming it, sent only by whichever cause
+                strains the cover first (the condition is read before setGlobal), and
+                staggered off the other texts on the same event: the catch closes
+                the guard's chat, then 3 s; KO texts at 2.5 s, the strain text at
+                7 s; Irina's close already sends texts at 4 s and 9 s (and, if it is the last decision, the 13.5 s call-in text), so 17.5 s.
+                KO reactions key on npc_ko:<id> (globalVarOnKO emits no
+                global_variable_changed). %>
             {
               "eventPattern": "global_variable_changed:guard_caught",
-              "condition": "value === true",
+              "condition": "value === true && globalVars.cover_strained !== true",
               "onceOnly": true,
-              "setGlobal": { "cover_strained": true }
+              "setGlobal": { "cover_strained": true },
+              "sendTimedMessage": { "delay": 3000, "message": "The guard saw your picks. He'll ring the FCA to check on you, and they've never heard of you.", "skipIfGlobal": "assets_decided" }
             },
             {
               "eventPattern": "npc_ko:checkpoint_guard",
               "onceOnly": true,
-              "setGlobal": { "cover_strained": true },
               "sendTimedMessage": { "delay": 2500, "message": "The guard was doing his job. That goes in the report, and so does the noise." }
             },
             {
-              "eventPattern": "npc_ko:trader_npc",
+              "eventPattern": "npc_ko:checkpoint_guard",
+              "condition": "globalVars.cover_strained !== true",
               "onceOnly": true,
               "setGlobal": { "cover_strained": true },
-              "sendTimedMessage": { "delay": 2500, "message": "Okonkwo had done nothing. That goes in the report." }
+              "sendTimedMessage": { "delay": 7000, "message": "Somebody will find him and ring whoever sent you. The FCA has never heard of you.", "skipIfGlobal": "assets_decided" }
             },
+<% [["trader_npc", "Okonkwo had done nothing. That goes in the report."], ["blockchain_analyst", "Raghavan drew us the money and had done nothing else. That goes in the report."], ["irina_volkova", nil]].each do |id, ko_text| %>
+<% if ko_text %>
             {
-              "eventPattern": "npc_ko:blockchain_analyst",
+              "eventPattern": "npc_ko:<%= id %>",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 2500, "message": "<%= ko_text %>" }
+            },
+<% end %>
+            {
+              "eventPattern": "npc_ko:<%= id %>",
+              "condition": "globalVars.cover_strained !== true",
               "onceOnly": true,
               "setGlobal": { "cover_strained": true },
-              "sendTimedMessage": { "delay": 2500, "message": "Raghavan drew us the money and had done nothing else. That goes in the report." }
+              "sendTimedMessage": { "delay": 7000, "message": "Someone on that floor is going to ring the FCA. Get what you need before they do.", "skipIfGlobal": "assets_decided" }
             },
-            {
-              "eventPattern": "npc_ko:irina_volkova",
-              "onceOnly": true,
-              "setGlobal": { "cover_strained": true }
-            },
-            {
-              "_comment": "A3: one text when the cover first strains. Stale once the money is settled.",
-              "eventPattern": "global_variable_changed:cover_strained",
-              "condition": "value === true",
-              "onceOnly": true,
-              "sendTimedMessage": { "delay": 6000, "message": "Someone on that floor is going to ring the FCA. Get what you need before they do.", "skipIfGlobal": "assets_decided" }
-            },
+<% end %>
             <%# A4: the choices and the reveal, each answered in the moment. %>
             {
               "eventPattern": "global_variable_changed:irina_recruited",
@@ -1914,7 +1926,7 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
       },
       "npcs": [
         {
-          "_comment": "Pass 5 A5 / D1: Satoshi's minder, a Crypto Anarchists operative, between the player and the CEO. Stand-in sprite (male_hacker_hood_down_v2, the Crypto Anarchists' look, hood down to tell him from Satoshi) until the character stage; cast-look proposal in DECISIONS_PENDING.md. He walks a short horizontal beat on the floor of the 10x6 hall (floor x 1..8, y 2..4, as m03 Terry's hall), clear of the west doorway (y 2.5), under the north door on the right. The north door is at tile x 8.5 (check_door_alignment: world x 592, wing origin x 320). Dwelling at (4,4) after the walk west he faces the west door, about 137 px away (seen). Dwelling at (8,4) after the walk east he faces east with the north door almost straight above him, about 80 degrees off his facing and outside the 120-degree cone, and the corridor behind him: that 4.5 s dwell is the window to slip past. On the walk east the door is about 40 degrees off his facing (seen, if in range). Needs a browser check (facing and range not seen walked). Talk-past while the cover holds; with cover_strained only a turned Irina's word gets past him, otherwise he turns hostile. Slipping past unseen or a KO always remain, so a strained cover never locks the player out.",
+          "_comment": "Pass 5 A5 / D1: Satoshi's minder, a Crypto Anarchists operative, between the player and the CEO. Stand-in sprite (male_hacker_hood_down_v2, the Crypto Anarchists' look, hood down to tell him from Satoshi) until the character stage; cast-look proposal in DECISIONS_PENDING.md. He walks a short horizontal beat on the floor of the 10x6 hall (floor x 1..8, y 2..4, as m03 Terry's hall), clear of the west doorway (y 2.5), under the north door on the right. The north door is at tile x 8.5 (check_door_alignment: world x 592, wing origin x 320). Dwelling at (4,4) after the walk west he faces the west door, about 137 px away (seen). Dwelling at (8,4) after the walk east he faces east with the north door almost straight above him, about 80 degrees off his facing and outside the 120-degree cone, and the corridor behind him: that 4.5 s dwell is the window to slip past. On the walk east the door is about 40 degrees off his facing (seen, if in range). Needs a browser check (facing and range not seen walked). Talk-past while the cover holds; with cover_strained only a turned Irina's word gets past him, otherwise he turns hostile. Round 2: Satoshi's door is locked and Kemal holds the key, so the routes are talk (he unlocks it), pick it in his blind window, or fight (the KO drops the key). A strained cover never locks the player out.",
           "id": "satoshi_minder",
           "displayName": "Kemal Aydin",
           "npcType": "person",
@@ -1932,6 +1944,20 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
           "storyPath": "scenarios/m06_follow_the_money/ink/m06_npc_minder.json",
           "currentKnot": "start",
           "globalVarOnKO": "minder_ko",
+          "unlockable": ["satoshi_office"],
+          "itemsHeld": [
+            {
+              "type": "key",
+              "id": "ceo_office_key",
+              "name": "CEO's Office Key",
+              "takeable": true,
+              "opens_lock": "ceo_office_key",
+              "keyPins": [40, 30, 50, 35],
+              "observations": "A heavy brass key on a lanyard. Kemal never let it out of his hand.",
+              "puzzle_graph_role": "key",
+              "puzzle_graph_unlocks": "satoshi_office"
+            }
+          ],
           "behavior": {
             "facePlayer": false,
             "hostile": { "chaseSpeed": 100, "attackDamage": 6, "pauseToAttack": true },
@@ -1963,6 +1989,16 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
               "conversationMode": "person-chat",
               "background": "assets/backgrounds/background1.png",
               "cooldown": 0
+            },
+            {
+              "_comment": "Round 2 (R2-M3): he sees the picks on Satoshi's door. Repeatable, cooldown 250 ms, as the checkpoint guard's (see his comment). Not while he is hostile or down.",
+              "eventPattern": "lockpick_used_in_view",
+              "condition": "globalVars.minder_hostile !== true && globalVars.minder_ko !== true",
+              "targetKnot": "on_lockpick_seen",
+              "conversationMode": "person-chat",
+              "background": "assets/backgrounds/background1.png",
+              "onceOnly": false,
+              "cooldown": 250
             },
             {
               "eventPattern": "npc_hostile_state_changed",
@@ -1997,6 +2033,16 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
           bottom half clear; the objects are pinned clear of the door column. %>
       "type": "room_ceo",
       "door_sign": "CEO",
+      <%# Pass 5 round 2 (R2-M3 / R2-D2): locked, so the minder gates something.
+          Kemal holds the key (itemsHeld, dropped on a KO); his talk-past and a
+          turned Irina's word open it (#unlock_door:satoshi_office, he is
+          unlockable for it); otherwise the player picks it while his back is
+          turned, and a pick he sees opens his lockpick-catch chat. %>
+      "locked": true,
+      "lockType": "key",
+      "requires": "ceo_office_key",
+      "keyPins": [40, 30, 50, 35],
+      "difficulty": "easy",
       "connections": {
         "south": "executive_wing"
       },

@@ -316,13 +316,18 @@ Dr. Irina Volkova: Satoshi is paranoid about doors and careless about passwords.
     ~ irina_trust += 5
     #influence_increased
     ~ badge_handed = true
-    #give_item:keycard:cto_access_badge
+    #give_item:keycard:m06_cto_badge
     Dr. Irina Volkova: *unclips it* Bring it back. And don't tell facilities I handed it over, they'll write a memo about it.
 
     Dr. Irina Volkova: West door. Try not to judge the whiteboard.
     -> hub
 - else:
-    {cover_strained and irina_trust >= 25:
+    // Round 2 (R2-m2): her own suspicion comes first, at any trust. (Trust 25
+    // can't be reached with the suspicion unrepaired: the repair topic clears it.)
+    {
+    - irina_suspicious:
+        Dr. Irina Volkova: You came in asking for my wallets before my paperwork. My badge stays on my neck.
+    - cover_strained and irina_trust >= 25:
         Dr. Irina Volkova: Someone on the floor has been asking whether you are who you say you are. Until they stop, my badge stays on my neck.
     - else:
         Dr. Irina Volkova: My badge stays on my neck for a visitor I met an hour ago. Nothing personal.

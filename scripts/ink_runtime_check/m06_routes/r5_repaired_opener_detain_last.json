@@ -24,7 +24,7 @@
 {"talk":"irina","picks":["I'm not from the FCA","I'm detaining you"]},
 {"expect":{"irina_arrested":true,"ready_to_extract":true,"irina_taken":false}},
 {"talk":"phone","picks":["Bring me in","Bring me in","On my way"]},
-{"talk":"debrief","picks":["On my way","Start with the fund","How does anyone","She knew what she was building","Their door passphrases","Two service accounts","Every cold wallet","What's next"]},
+{"talk":"debrief","picks":["Start with the fund","How does anyone","She knew what she was building","Their door passphrases","Two service accounts","Every cold wallet","What's next"]},
 {"said":["after you'd gone","And the cover held","His minder let you walk in"]},
 {"notSaid":["while you were still working the building"]},
 {"credits":true},

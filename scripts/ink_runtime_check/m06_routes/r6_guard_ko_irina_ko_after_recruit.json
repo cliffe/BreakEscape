@@ -14,12 +14,14 @@
 {"room":"executive_wing"},
 {"talk":"minder","knot":"on_sighted","picks":["Routine supervisory visit","Back off"]},
 {"notSaid":["Dr Volkova sent me up","compliance file"]},
-{"expect":{"minder_passed":false,"minder_hostile":false}},
+{"expect":{"minder_passed":false,"minder_hostile":false,"minder_challenged":true}},
+{"note":"R2-M3: the door is locked; the player picks it in his blind window."},
+{"set":{"door_open_satoshi_office":true}},
 {"room":"satoshi_office"},
 {"talk":"satoshi","picks":["Satoshi's Ghost","You worked out how many","Privacy has honest uses","I'm leaving it running","The map's worth more","Sometimes"]},
 {"talk":"phone","picks":["Bring me in","Bring me in","On my way"]},
-{"talk":"debrief","picks":["On my way","Start with the fund","How does anyone","Was it the right call","Their door passphrases","Two service accounts","Every cold wallet","What's next"]},
-{"said":["The guard on the checkpoint was a contractor","None of them had done anything wrong","then she went down on the trading floor"]},
+{"talk":"debrief","picks":["Start with the fund","How does anyone","Was it the right call","Their door passphrases","Two service accounts","Every cold wallet","What's next"]},
+{"said":["The guard on the checkpoint was a contractor","None of them had done anything wrong","then she went down on the trading floor","His minder turned you back"]},
 {"credits":true},
-{"said":["CHECKPOINT GUARD: Knocked out","DR. IRINA VOLKOVA: Turned","Never saw you come up the corridor","FCA COVER: strained"]}
+{"said":["CHECKPOINT GUARD: Knocked out","DR. IRINA VOLKOVA: Turned","Turned you back once; you got past him anyway","FCA COVER: strained"]}
 ]}

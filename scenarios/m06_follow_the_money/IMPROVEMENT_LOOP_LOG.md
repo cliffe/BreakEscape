@@ -148,3 +148,132 @@ Kemal Aydin (`m06_npc_minder.ink`): all new (16 lines).
 - The debrief's longest unbroken run is now 13–16 lines (the cover, staff and flag beats after Satoshi's aftermath). Left for the dialogue phase, which can add a choice or trim.
 - m11 (layout) goes to room dressing and m12 (the fingerprint kit) to puzzle chains.
 - D2 (m07 carry-over), D3/D4 (SecGen checks of the in-game VM wording) and C1 (Kemal's look) are with the user.
+
+### Phase 1 alignment, round 2
+
+Review: `ALIGNMENT_REVIEW_P5_R2.md` (Opus, read-only, static). It confirms every round-1 finding as fixed (A3 with fairness gaps, A5 needing a browser check) and withdraws F1 after reading the give-item code. A browser check of round 1 was running at the same time; this round did not wait for it. The fixer checked each finding against the files before acting.
+
+Counts: 0 blockers, 3 majors, 12 minors. Outcomes: 3 majors fixed; 11 minors fixed (one, R2-m2, with a changed condition); F1 withdrawn and tidied; 2 user-style decisions taken by the orchestrator.
+
+| # | Sev. | Finding | Outcome |
+|---|---|---|---|
+| R2-M1 | major | The debrief opened with "That's enough. Come in." and a second [On my way.] after the phone call-in had already sent the car | **Fixed** (orchestrator: m04's shape). The debrief sets `debrief_played` and goes straight to the HQ narration (`debrief_location`). Two spoken lines and one choice removed |
+| R2-M2 | major | The guard catch strains the cover for good, but nothing at the catch says so, and HaX's single text blamed "that floor" | **Fixed** (orchestrator, R2-D1 (a): permanent, made readable). The guard's catch now ends "And I'll be ringing whoever you say sent you." The one generic strain text is replaced by one text per cause, sent only by whichever cause strains the cover first (its condition is read before its own setGlobal). Guard catch: "The guard saw your picks. He'll ring the FCA to check on you, and they've never heard of you." Guard KO: "Somebody will find him and ring whoever sent you…". Dani, Priya or Irina KO: "Someone on that floor is going to ring the FCA…". Irina's opener: "Volkova didn't buy you. If she asks around…" |
+| R2-M3 | major | The minder gated nothing: Satoshi's office was unlocked, so a refused player could walk in during the cooldown | **Fixed** (orchestrator, R2-D2 (a)). `satoshi_office` is now key-locked (`ceo_office_key`, easy, the m01 key-lock pattern). Kemal holds the key in `itemsHeld`, so a KO drops it. He is `unlockable` for the room, and both talk-pasts (the FCA line, or a turned Irina's word) give `#unlock_door:satoshi_office`, re-issued on re-entry until Satoshi is confronted (the guard's fire-and-forget pattern). Slipping past now means picking the door in his blind window. He has a `lockpick_used_in_view` mapping like the guard's, which is skipped while he is hostile or down. A pick he sees opens `on_lockpick_seen`: "No." leads into the stand-off, where the player can square up, back off, or use Irina's word. Every route stays open: talk, pick, or fight. The browser check the review asked for (walk in during the cooldown) is now moot: the door is locked whatever the cooldown does |
+| R2-m1 | minor | Strain texts stacked with the other texts on the same event | **Fixed** with R2-M2. The guard catch text is at 3 s (after his chat closes). KO texts stay at 2.5 s and the strain text moves to 7 s. Irina's strain text is at 17.5 s: her close already sends texts at 4 s and 9 s, and the validator flagged 13 s against the 13.5 s call-in text. No toast-stacking warnings remain |
+| R2-m2 | minor | Irina blamed "someone on the floor" for a strain her own suspicion caused; Kemal's line repeated Satoshi's; "trading floor" was wrong when the guard was the cause | **Fixed, condition changed.** The review's condition (strained, trust ≥ 25 and suspicious) can never hold: reaching trust 25 needs the repair topic, which clears the suspicion. Her line "You came in asking for my wallets before my paperwork. My badge stays on my neck." now plays whenever she is still suspicious, at any trust. Kemal: "Mr Nakamoto's phone has been ringing about you. The FCA has never heard your name." Satoshi keeps "an hour ago" |
+| R2-m3 | minor | "The cover held. Nobody… thought to ring the FCA" contradicts Satoshi's "I had you checked anyway" | **Fixed.** "And the cover held on the floor. Only Satoshi thought to check, and by then you were at his desk." |
+| R2-m4 | minor | "It does tonight, then." didn't follow when Kemal was spoken to first | **Fixed.** Ink-local `sighted_open`, set in `on_sighted` and cleared in `start`. When spoken to first, he says "The FCA. At this hour. Very well." |
+| R2-m5 | minor | Kemal's belief never shows | **Fixed.** In the stand-off: "I gave thirty years to banks that stole politely. He at least says what he is." |
+| R2-m6 | minor | Guard waved through, then knocked out: the credits said "waved through", the debrief said KO | **Fixed.** The KO credit wins (`guard_ko`); the waved-through credit needs `!guard_ko`. P8 comment updated |
+| R2-m7 | minor | Minder credits: talked past then punched printed two lines; turned back then slipped past printed "Never saw you" | **Fixed.** New synced `minder_challenged` (set by his sight-challenge opener, by being spoken to, and by his pick catch). The credits are now mutually exclusive in this order: KO, hostile, talked past, turned back once ("Turned you back once; you got past him anyway", new), never seen |
+| R2-m8 | minor | A hostile minder the player got past was in the credits only | **Fixed.** Satoshi: "Kemal's still out there looking for you. Let's be quick." Debrief: "His minder came at you and you went round him. He's in custody now, and furious." Satoshi, the debrief and the credits now use the same order (KO, hostile, passed, turned back). Satoshi and the debrief also get a turned-back line ("Kemal turned you away, I hear. And yet here you are." / "His minder turned you back, and you went through his boss's door anyway.") |
+| R2-m9 | minor | Irina detained then knocked out on the floor: the debrief said she was collected "from her desk" | **Fixed.** Debrief: "She went down on the trading floor after you'd detained her. The police carried her out. That's in the report too." New credit "Detained, then knocked down — carried out by the police"; the collected credit needs `!irina_ko`. Satoshi: "And Irina, handcuffed and then knocked flat, I hear…" in place of "in handcuffs as well" |
+| R2-m10 | minor | The recap's minder lines stayed after he'd let the player in, turned hostile or been knocked out | **Fixed.** Wrapped in `not minder_passed and not minder_ko and not minder_hostile`, and rewritten for the key: "He keeps a minder on that corridor, and the minder has the key to Satoshi's door." plus a strained or held follow-up (pick the door while his back's turned) |
+| R2-m11 | minor | Flag 1 and flag 2 texts could stack | **Fixed.** Flag 2 text at 5.5 s (flag 1's is at 1.2 s) |
+| R2-m12 / F1 | minor | The CTO badge give tag named `opens_lock`, not the item id | **F1 withdrawn** (orchestrator, from the review: the give matches on id, `opens_lock`, `key_id` or name, so it worked). Tag tidied to `#give_item:keycard:m06_cto_badge`, matching the other give tags |
+
+#### Decisions taken (with reasons)
+
+- **R2-M1, open on the HQ narration** (orchestrator). The phone call-in is the hand-off now, as in m04. The narration also changes the scene, so no replacement line was needed.
+- **R2-D1 (a), the guard catch stays permanent and is made readable** (orchestrator). It keeps the first sight challenge meaningful. The guard now says he'll ring, and HaX names the cause.
+- **One strain text per cause, first cause only.** A player who strains the cover twice hears one warning, about the thing that did it. Later causes still get their own KO text.
+- **R2-D2 (a), lock Satoshi's door; Kemal holds the key** (orchestrator). Refusals now cost something, and talk, pick and fight all stay open. The pick reuses the checkpoint's mechanic, but Kemal patrols, which makes it a different puzzle.
+- **A seen pick ends the FCA line for that visit only** (ink-local `saw_picks`). A synced global would mean another flag the credits don't use. After a page reload he forgets the picks; that's an accepted limit, and the strained-cover gate is unaffected.
+- **A pick Kemal sees doesn't strain the cover.** By then the player is at Satoshi's door, and Satoshi's opener already reads `minder_challenged`.
+- **R2-m2's condition widened** (fixer). The review's version could never play.
+- **Shared precedence for the minder** across the credits, Satoshi and the debrief: KO, hostile, talked past, turned back, never seen.
+
+#### Route driver
+
+`route.js` gains:
+- `#unlock_door` handling (a driver-only `door_open_<room>` marker; a pick or the dropped key is a `set`);
+- the per-cause strain texts and the staff KO texts;
+- a note when Kemal drops his key.
+
+The debrief picks in r1–r13 drop the removed [On my way.]. Existing routes were updated for the new behaviour:
+- r1: the door opens on the talk-past, and the debrief opens at HQ;
+- r2: the guard's call line, the cause text and Kemal's new line, then the key from the KO;
+- r6: the door picked; the credit is now "Turned you back once".
+
+New routes, all passing with r1–r6:
+- `r7_minder_passed_then_punched` (R2-m7a): one credit, the hostile one; Satoshi's and the debrief's hostile lines; neither "Talked your way past" nor "Never saw you".
+- `r8_minder_catches_pick_then_slip` (R2-M3, R2-m7b): cover held. Turned back; a pick he sees ("The FCA does not carry picks"); the FCA talk-past is withheld for that visit while Irina's word is offered; the door picked unseen. Satoshi and the debrief say he turned the player back. Credit: "Turned you back once".
+- `r9_detained_then_ko_on_floor` (R2-m9): `irina_taken` stays false; Satoshi, the debrief and the credits all say detained, then knocked down.
+- `r10_guard_waved_then_ko` (R2-m6): the guard KO's own strain text; KO credit only; the debrief's guard line.
+- `r11_own_suspicion_badge_refusal` (R2-m2, R2-M2): Irina's own-suspicion line and HaX's "Volkova didn't buy you"; the cloner still works.
+- `r12_minder_hostile_slipped_past` (R2-m8, R2-m10): the recap explains the key while Kemal stands, then drops him once he is hostile; Satoshi's, the debrief's and the credits' hostile lines; the trader KO text and strain text.
+- `r13_callin_reloads`:
+  - The call-in is declined; after a page reload the hub still offers it and the recap says "That's everything".
+  - A second page reload lands mid call-in (after "Bring me in.", before "On my way."): the confirm step is lost and the call-in starts again from the hub.
+  - The re-emit backstop fires; the debrief opens once, at HQ, with no "That's enough. Come in"; then the hear backstop fires and the hub no longer offers the call-in.
+
+#### Checks (static; no browser session started)
+
+- Ink compiles (9 files).
+- Validator, full: ERB, JSON, schema, ink, geometry and door alignment all pass; its dialogue lint is clean. Warnings:
+  - 19 duplicate-pattern notes on `agent_0x99_handler`. Three are new: the KO pairs, a KO text plus a first-cause strain mapping, meant to fire together.
+  - 3 repeatable-cutscene notes: the guard's catch, and Kemal's sight challenge and pick catch, all deliberate.
+  - The pre-existing two-sources note for the server room.
+  - No toast-stacking warnings.
+- `dialoguelint`: no findings.
+- `reopencheck` (m06 block: `minder_challenged` added): m06 HaX phone, 1800 reopens, 0 problems.
+- `tagdiff` against HEAD (round 1, ef4d1057):
+  - phone: 5 (the three minder VARs, the recap condition);
+  - debrief: 8 (the removed opener choice, the KO-first Irina branch, the minder precedence);
+  - Irina: 3 (the give tag, the own-suspicion branch);
+  - Satoshi: 7 (the minder and Irina branches);
+  - minder: 37 (the unlock tags, `minder_challenged`, `sighted_open`, `saw_picks`, `on_lockpick_seen`);
+  - guard: structure unchanged.
+- `inkcheck` over a state matrix found no errors and no runaways:
+  - minder: fresh; strained with Irina turned; `on_sighted`; `on_lockpick_seen` fresh and passed;
+  - Satoshi: hostile minder with Irina detained and knocked out; minder challenged;
+  - Irina: strained;
+  - debrief: detained-then-KO with a hostile minder; challenged with Irina turned;
+  - phone: the recap with the badge and a strained cover;
+  - the guard's catch.
+- `loopcheck` (minder `start` and `on_lockpick_seen`, phone hub): no errors.
+- `python3 scripts/check_door_alignment.py`: all doors OK.
+- Route driver: r1–r13, all expectations met.
+
+Not yet checked in a browser (added to round 1's list):
+- the locked CEO door with Kemal's key: the talk-past unlock, the dropped key, and the pick;
+- his `lockpick_used_in_view` catch from his beat (the door is directly above his east dwell, about 80° off his facing, and seen only on his walk east);
+- the per-cause texts' timing in play.
+
+#### Spoken lines changed (old → new)
+
+Debrief:
+- Removed: "That's enough. Come in." / "I want to hear it in person."
+- "And the cover held. Nobody on that floor ever thought to ring the FCA." → "And the cover held on the floor. Only Satoshi thought to check, and by then you were at his desk."
+- New: "She went down on the trading floor after you'd detained her. The police carried her out. That's in the report too."; "His minder came at you and you went round him. He's in custody now, and furious."; "His minder turned you back, and you went through his boss's door anyway."
+
+Checkpoint guard, new: "And I'll be ringing whoever you say sent you."
+
+HaX texts (`scenario.json.erb`):
+- The single strain text ("Someone on that floor is going to ring the FCA. Get what you need before they do.") now plays only for a Dani, Priya or Irina KO. Same words.
+- New: "The guard saw your picks. He'll ring the FCA to check on you, and they've never heard of you."; "Somebody will find him and ring whoever sent you. The FCA has never heard of you."; "Volkova didn't buy you. If she asks around, the FCA will say they've never heard of you."
+- Flag 2 text: timing only.
+
+HaX phone recap:
+- "He keeps a minder on that corridor." → "He keeps a minder on that corridor, and the minder has the key to Satoshi's door."
+- "With your cover strained, he won't take the FCA line. Wait for his back, or bring Volkova's word if she's with us." → "With your cover strained, he won't take the FCA line. Pick the door while his back's turned, or bring Volkova's word if she's with us."
+- New: "The FCA line should get him to open it. If it doesn't, pick it while his back's turned."
+
+Satoshi:
+- New: "Kemal's still out there looking for you. Let's be quick."; "Kemal turned you away, I hear. And yet here you are."
+- "And Irina in handcuffs as well. Whatever she said to you at the end, she built all of this with me." now plays only if she wasn't knocked out. New variant: "And Irina, handcuffed and then knocked flat, I hear. Whatever she said to you at the end, she built all of this with me."
+
+Irina, new: "You came in asking for my wallets before my paperwork. My badge stays on my neck."
+
+Kemal Aydin:
+- "It does tonight, then." now plays only after his sight-challenge opener. New alternative: "The FCA. At this hour. Very well."
+- "Go in. I will be outside the door." → "There. It is open. I will be outside the door."
+- "Somebody on the trading floor rang the FCA an hour ago. They have never heard of you." → "Mr Nakamoto's phone has been ringing about you. The FCA has never heard your name." / (a seen pick, cover held) "The FCA does not carry picks."
+- New: "I gave thirty years to banks that stole politely. He at least says what he is."; narration "A hand the size of a shovel closes over yours before the second pin sets."; "No."; "It is open. Put those away."
+
+#### Open after round 2
+
+- Browser checks: round 1's list plus the locked door, Kemal's pick catch and the text timing. The round-1 browser check now running predates this round's door lock.
+- The debrief's longest unbroken run goes to the dialogue phase (14 lines in r1 now that the opener is gone).
+- Unchanged: m11 (room dressing), m12 (puzzle chains), D2, D3/D4, C1.

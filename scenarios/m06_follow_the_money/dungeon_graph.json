@@ -63,6 +63,18 @@
       "optional": false
     },
     {
+      "id": "door_satoshi_office",
+      "label": "CEO<br/>Key lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "satoshi_office",
+      "label": "CEO",
+      "kind": "room",
+      "optional": false
+    },
+    {
       "id": "reception_lobby",
       "label": "HashChain Exchange",
       "kind": "room",
@@ -231,9 +243,15 @@
       "optional": true
     },
     {
-      "id": "satoshi_office",
-      "label": "CEO",
-      "kind": "room",
+      "id": "npc_kemal_aydin",
+      "label": "Kemal Aydin",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "ceo_s_office_key",
+      "label": "CEO's Office Key",
+      "kind": "key",
       "optional": false
     },
     {
@@ -339,6 +357,11 @@
     {
       "from": "door_executive_wing",
       "to": "executive_wing",
+      "soft": false
+    },
+    {
+      "from": "door_satoshi_office",
+      "to": "satoshi_office",
       "soft": false
     },
     {
@@ -515,6 +538,21 @@
       "from": "framed_press_clipping",
       "to": "lock_executive_safe",
       "soft": true
+    },
+    {
+      "from": "executive_wing",
+      "to": "npc_kemal_aydin",
+      "soft": false
+    },
+    {
+      "from": "npc_kemal_aydin",
+      "to": "ceo_s_office_key",
+      "soft": false
+    },
+    {
+      "from": "ceo_s_office_key",
+      "to": "door_satoshi_office",
+      "soft": false
     },
     {
       "from": "satoshi_office",

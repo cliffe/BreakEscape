@@ -26,7 +26,7 @@
 {"said":["Somebody on my floor rang the FCA","Kemal let you in","Irina understood that too"]},
 {"talk":"phone","picks":["Bring me in","Bring me in","On my way"]},
 {"said":["His safe's still shut, for one"]},
-{"talk":"debrief","picks":["On my way","Start with the fund","What happens to the cells now","She wanted out","Their door passphrases","Two service accounts","Every cold wallet","What's next"]},
+{"talk":"debrief","picks":["Start with the fund","What happens to the cells now","She wanted out","Their door passphrases","Two service accounts","Every cold wallet","What's next"]},
 {"said":["Your cover didn't last the night","His minder let you walk in","You left Satoshi's safe shut","you read her notes first"]},
 {"credits":true},
 {"said":["FCA COVER: strained","KEMAL AYDIN (MINDER): Talked your way past him","IDENTITY: Unknown"]}

@@ -905,6 +905,7 @@
       "minder_passed": false,
       "minder_hostile": false,
       "minder_ko": false,
+      "minder_challenged": false,
       "server_room_entered": false
     },
     "npcs": [

@@ -26,7 +26,7 @@
 {"expect":{"start_debrief_cutscene":true,"debrief_played":false}},
 {"note":"Page reload before the debrief's first line: the next room entry re-emits start_debrief_cutscene."},
 {"backstops":{"expect":["re-emit"]}},
-{"talk":"debrief","picks":["On my way","Start with the fund","How does anyone","She was complicit","The office badges","They trade","Their CTO","What's next"]},
+{"talk":"debrief","picks":["Start with the fund","How does anyone","She was complicit","The office badges","They trade","Their CTO","What's next"]},
 {"said":["Okonkwo flagged those wallets","Raghavan drew us the money","None of them had done anything wrong","Your cover didn't last the night","still out cold"]},
 {"notSaid":["His minder","The guard on the checkpoint"]},
 {"credits":true},

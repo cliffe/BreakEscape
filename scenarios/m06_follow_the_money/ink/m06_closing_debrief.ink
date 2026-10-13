@@ -43,6 +43,8 @@ VAR guard_ko = false         // minor: the debrief now names the staff KOs the c
 VAR minder_ko = false        // A5
 VAR minder_passed = false    // A5
 VAR irina_taken = false      // A4: collected by the police while the player was still inside
+VAR minder_hostile = false   // Round 2 (R2-m8)
+VAR minder_challenged = false // Round 2 (R2-m7)
 VAR fca_picks = 0
 VAR fca_right = 0
 
@@ -55,13 +57,9 @@ VAR fca_right = 0
 // PASS 2: set at the top so a reload can't replay the debrief (the triggers
 // all require debrief_played === false).
 #set_variable:debrief_played=true
-
-Agent HaX: That's enough. Come in.
-
-Agent HaX: I want to hear it in person.
-
-+ [On my way.]
-    -> debrief_location
+// Round 2 (R2-M1): the call-in on the phone already brought the player in, so
+// the debrief opens at HQ, as m04's does ("Agent, report.").
+-> debrief_location
 
 // ================================================
 // DEBRIEF LOCATION
@@ -228,7 +226,11 @@ Agent HaX: She came over because she believed you. Remember that when someone as
 === irina_arrested_path ===
 Agent HaX: You detained her and handed her over with the evidence. By the book.
 
-{irina_taken:
+// Round 2 (R2-m9): detained, then knocked down, before the police came.
+{
+- irina_ko:
+    Agent HaX: She went down on the trading floor after you'd detained her. The police carried her out. That's in the report too.
+- irina_taken:
     Agent HaX: The police collected her from her desk while you were still working the building.
 - else:
     Agent HaX: The police collected her from her desk after you'd gone.
@@ -308,12 +310,17 @@ Agent HaX: The Crypto Anarchists have lost their best cryptographer. Replacing h
     Agent HaX: The payout was pre-signed, so it goes out with him in a cell. Once it has, the police can have the rest.
 }
 
-{minder_ko:
+// Round 2: the same precedence as the credits and Satoshi (KO, hostile,
+// talked past, turned back once).
+{
+- minder_ko:
     Agent HaX: His minder's in custody too. Thirty years guarding banks, and he finishes the night on a corridor floor.
-- else:
-    {minder_passed:
-        Agent HaX: His minder let you walk in. I'd like to hear what you said to him.
-    }
+- minder_hostile:
+    Agent HaX: His minder came at you and you went round him. He's in custody now, and furious.
+- minder_passed:
+    Agent HaX: His minder let you walk in. I'd like to hear what you said to him.
+- minder_challenged:
+    Agent HaX: His minder turned you back, and you went through his boss's door anyway.
 }
 
 -> cover_and_staff
@@ -327,7 +334,7 @@ Agent HaX: The Crypto Anarchists have lost their best cryptographer. Replacing h
     Agent HaX: Your cover didn't last the night. Somebody on that floor rang the FCA, and the FCA had never heard of you.
     Agent HaX: It didn't cost us the job. It might cost us the next one. The FCA will want a word with us.
 - else:
-    Agent HaX: And the cover held. Nobody on that floor ever thought to ring the FCA.
+    Agent HaX: And the cover held on the floor. Only Satoshi thought to check, and by then you were at his desk.
 }
 {trader_ko:
     Agent HaX: Okonkwo flagged those wallets before we ever did, and got knocked down for it.
