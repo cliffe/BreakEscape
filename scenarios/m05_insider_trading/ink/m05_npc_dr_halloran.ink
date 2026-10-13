@@ -149,7 +149,7 @@ Dr Ruth Halloran: If one of them did this, somebody gave them a reason. Pressure
     - final_choice == "arrest" or final_choice == "combat_nonlethal":
         Dr Ruth Halloran: The police have David. Nobody's told me anything else.
     - final_choice == "public_exposure":
-        Dr Ruth Halloran: David left his badge on my desk on his way out. No note.
+        Dr Ruth Halloran: David put his head round my door on his way out. He said thank you, and went.
     - final_choice == "combat_lethal":
         Dr Ruth Halloran: I've rung David twice. He's not answering.
     - else:

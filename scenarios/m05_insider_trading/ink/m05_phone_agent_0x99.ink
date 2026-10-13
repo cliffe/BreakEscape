@@ -770,7 +770,7 @@ It only works if he wants out.
 
 // Phase 4 dialogue C1 (D5-7): HaX states the cost and doesn't preach; the
 // Recruiter owns "he still chose" (m05_phone_recruiter.ink, final statement).
-You've read his file. I won't tell you what he deserves.
+You know his reasons now. I won't tell you what he deserves.
 
 Ask me what you want to ask.
 

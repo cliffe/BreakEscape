@@ -182,11 +182,11 @@ Patricia Morgan: My log of what's been flagged is on the desk. Take it.
     - final_choice == "combat_nonlethal":
         Patricia Morgan: Ambulance is in the car park, and the police are with it. I'll go down with them.
     - final_choice == "arrest":
-        Patricia Morgan: Police are on their way up. I've given them the side door. Nobody in this building needs to watch.
+        Patricia Morgan: The police are with him now. I gave them the side door. Nobody in this building needs to watch.
     - final_choice == "public_exposure":
         Patricia Morgan: You let him walk out of my building. I hope you know what you've started.
     - final_choice == "combat_lethal":
-        Patricia Morgan: Torres hasn't come up from the data centre. I'll give him ten minutes, then I'm sending someone down.
+        Patricia Morgan: Torres hasn't come up from the data centre. I'll go down myself once the CEO's off my phone.
     - else:
         Patricia Morgan: I'm told he's gone home. I'm told nothing else, and I'm not asking.
     }

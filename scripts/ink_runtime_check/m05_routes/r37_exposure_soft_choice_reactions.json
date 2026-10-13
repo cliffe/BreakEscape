@@ -79,9 +79,13 @@
 "talk": "lisa"
 },
 {
+"talk": "owen"
+},
+{
 "said": [
-"David left his badge on my desk on his way out. No note.",
-"David just walked out in his coat"
+"David put his head round my door on his way out. He said thank you, and went.",
+"David just walked out in his coat",
+"David's badge just went out the front door"
 ],
 "notSaid": [
 "walked past my door"

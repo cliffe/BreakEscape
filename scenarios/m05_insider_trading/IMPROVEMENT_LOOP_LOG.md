@@ -811,3 +811,48 @@ Choices (not voiced): debrief "[That one's on me.]", "[QDC won't like seeing tha
 
 - Browser checks still open from cycle 1 (debrief beats on two endings; Patricia's naming with a close and reopen on "...Damn."; a fate reaction in a person-chat; HaX's flag choice with two flags waiting; the Recruiter's hang-up and ring-back), plus from this cycle: the lethal debrief close, and Halloran's post-fate choice.
 - Nothing pending for the erb. D12 stays with the user.
+
+### Phase 4 dialogue, cycle 3 (2026-10-13)
+
+Review: `DIALOGUE_REVIEW_P5_C3.md` (fresh Opus, read-only). **0 blockers, 0 majors, 6 minors.** The review side can close. The fix pass below is ink and routes only; the erb was not touched (room-dressing agent is editing it).
+
+| # | Sev. | Outcome |
+|---|---|---|
+| D5C3-1 | minor | Fixed as proposed |
+| D5C3-2 | minor | Fixed as proposed |
+| D5C3-3 | minor | Fixed as proposed |
+| D5C3-4 | minor | Fixed as proposed |
+| D5C3-5 | minor | **Pending for the orchestrator** (needs `scenario.json.erb:217`; not edited here) |
+| D5C3-6 | minor | Fixed as proposed |
+
+No rewrite needed adjusting: each proposed line fitted its context.
+
+#### Changed lines (old → new)
+
+- D5C3-1, `m05_npc_dr_halloran.ink:152` (exposure reaction): "David left his badge on my desk on his way out. No note." → "David put his head round my door on his way out. He said thank you, and went." Removes the clash with Owen's "David's badge just went out the front door."
+- D5C3-2, `m05_npc_patricia_morgan.ink:189` (lethal): "Torres hasn't come up from the data centre. I'll give him ten minutes, then I'm sending someone down." → "Torres hasn't come up from the data centre. I'll go down myself once the CEO's off my phone." No number, so the debrief's forty minutes holds.
+- D5C3-3, `m05_npc_patricia_morgan.ink:185` (arrest): "Police are on their way up. I've given them the side door. Nobody in this building needs to watch." → "The police are with him now. I gave them the side door. Nobody in this building needs to watch." Holds in any visit order against Halloran's "The police have David."
+- D5C3-4, `m05_closing_debrief.ink:266`: "Yes. It's in the report, next to your name." → "Yes. Dr Halloran will want to hear you say it." Stops the repeat of :199 and leads into :295.
+- D5C3-6, `m05_phone_agent_0x99.ink:773`: "You've read his file. I won't tell you what he deserves." → "You know his reasons now. I won't tell you what he deserves." True for the journal-only and bills-only routes.
+
+#### Routes
+
+- r31: quote → "Yes. Dr Halloran will want to hear you say it."
+- r34: quote → "Torres hasn't come up from the data centre. I'll go down myself once the CEO's off my phone"
+- r36: quote → "You know his reasons now. I won't"
+- r37: Halloran quote updated; added `{"talk": "owen"}` after Lisa's visit and a `said` for "David's badge just went out the front door", so the exposure ending is checked across Halloran and Owen (covers D5C3-1).
+- r38: quote → "I gave them the side door."
+- **38 routes, all expectations met; longest run without a choice 9** (r12, r13, r16, r29, r30).
+
+#### Checks (static; no browser session started)
+
+- `scripts/compile-ink.sh m05_insider_trading`: 10 files, 0 failed (the two expected END warnings).
+- dialoguelint: 0 errors; the same two known, allowed findings (Recruiter L86, L363).
+- reopencheck: total problems 0.
+- loopcheck: Patricia, Halloran and Owen at `start` under lethal, arrest and public exposure (with `torres_identified`); debrief on arrest after a wrong accusation; HaX with the journal found: no runtime errors.
+- Banned-vocabulary scan of the five new lines: clean.
+
+#### Pending for the orchestrator
+
+- **D5C3-5** (`scenario.json.erb`, credits "QUANTUM DYNAMICS", about line 217): keep the "WHO STOPPED THE INTERVIEW — never asked" entry with condition `"!globalVars.found_stand_down_email && globalVars.found_vetting_file"`, and add `{ "text": "WHO TOLD SECURITY TO STOP — never asked", "style": "warning", "condition": "!globalVars.found_stand_down_email && !globalVars.found_vetting_file" }`. One small exact Edit after re-reading the region. Not voiced.
+- Re-voice (new or uncached lines): the five lines above. Browser checks from cycle 2 remain open (see "Open after cycle 2").

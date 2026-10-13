@@ -263,7 +263,7 @@ Agent HaX: Let's go through it.
 // Beat 1 (D5-1): a reaction to the bar, varied by route. Choices only.
 === bar_reaction ===
 + {halloran_accused} [That one's on me.]
-    Agent HaX: Yes. It's in the report, next to your name.
+    Agent HaX: Yes. Dr Halloran will want to hear you say it.
     -> the_night
 + {halloran_accused} [How bad is the East of England?]
     Agent HaX: A month of overtime for the Home Office. Nobody dies of it, because they moved first.
