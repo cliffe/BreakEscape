@@ -276,3 +276,20 @@ All new this pass, no cached audio:
 
 - The browser checklist (rounds 1 to 4).
 - B3 and the other long runs to the dialogue phase; D9 until `dropOnKO`; D1, D3 to D8 as before.
+
+### Phase 1 alignment: CLOSED (2026-10-13)
+
+| Round | Blockers | Majors | Minors | Browser |
+|---|---|---|---|---|
+| 1 | 0 | 6 | 15 | PASS5_ALIGN_R1_BROWSER: 8/8 pass; engine bug D10 (first-encounter attackDamage) |
+| 2 | 0 | 3 | 9 | — |
+| 3 | 0 | 1 | 2 | — |
+| 4 (+ fixes and static confirmation) | 0 | 1 | 2 | PASS5_ALIGN_R4_BROWSER: 10/10 pass (9 games) |
+
+Notes, none needing a fix:
+- **N-8:** a reload mid-debrief concludes without the remaining lines. Accepted, as in m03 and m04 (m17).
+- **N-10:** the Patricia-first vault hint corner is not exercised.
+- **N-3:** the safety-net sweep covers the phone-fate nag.
+- **N-P:** the player's portrait shows behind Patricia's menus. This goes to the character stage.
+
+Open for the user: D1, D3 (SecGen), D4–D10.
