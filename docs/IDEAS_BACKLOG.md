@@ -57,6 +57,8 @@ From the PIN cracker fix (2026-10-10), found but not fixed:
 
 - **Scenario timers and closed tabs** (m04 puzzle review, 2026-10-13; S). Timers run on wall-clock time while the tab is open, but resume from their saved running time after a reload, so closing the tab pauses a clock (m04's early-alarm clock) while VM work goes on elsewhere. Decide whether a mission clock should keep running server-side.
 
+- **Line of sight blocked by walls and tall props** (m04 room dressing, 2026-10-13; M–L). NPC sight cones (`npc-los.js` isInLineOfSight) check only range and angle. Neither walls nor tall props (battery racks, cabinets) block an NPC's view, so racks give no stealth cover and guards can see through walls. Add occlusion (wall tiles and props flagged as sight-blocking), then rebalance every mission with sight cones (m03 Terry, m04 guard/Cipher/Static, others) with browser checks.
+
 ## Story and missions
 
 - **Carry m03's Sterling and Danny threads forward** (m03 pass-2 dialogue review, 2026-10-12; M). No mission from m04 to m08 mentions Victoria Sterling or Danny Foster. A recruited Sterling could turn up as an asset or a liability later, and the debrief's "Somebody has to tell him she's walking. It should be you." could be paid off. Depends on "Carry choices between missions".
