@@ -16,6 +16,8 @@
 {"talk":"irina","picks":["Nothing. Carry on"]},
 {"notSaid":["I still need that wordlist","Can I borrow your office badge"]},
 {"set":{"flag1_submitted":true,"flag2_submitted":true,"flag3_submitted":true,"entered_data_center":true,"read_settlement_log":true}},
+{"lockout":"cancel"},
+{"expect":{"cover_strained":false,"console_tripped":false}},
 {"lockout":true},
 {"expect":{"cover_strained":true}},
 {"said":["That console logs every slot it opens"]},

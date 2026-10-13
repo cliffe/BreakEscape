@@ -483,3 +483,37 @@ Not voiced: the console's observation, the signing record's release line, the cr
 
 - The browser checks above.
 - Room dressing: the signing case's position (3,3) and the clipping on the wall.
+
+### Phase 2 puzzle chains, round 2: browser follow-up
+
+Input: `PASS5_PUZZLE_R1_BROWSER.md` (Sonnet, games 2247 and 2256, keyless :3001). It confirms N1: a real pick inside Kemal's cone gives "A hand the size of a shovel…", "No." and the stand-off, and "Dr Volkova sent me up" then gets the player in. It also confirms that cancelling the console without a try doesn't trip the lockout. It found two majors and one minor wording item.
+
+| # | Sev. | Finding | Outcome |
+|---|---|---|---|
+| F1 | major | The console lockout never fired: neither the cover strain nor `console_tripped`. Mapping conditions resolve only one level of `data.<name>` (`safeEvaluateCondition`, npc-manager.js), so `data.result.maxAttemptsReached === true` is an unsupported term and always false | **Fixed by a workaround, no engine change** (orchestrator). Both mappings now key on a bare `data.result`, a supported truthiness term. The run recorded `result: null` on a cancel and `{"success":false,"attempts":2,"maxAttemptsReached":true}` on a lockout; `data.minigameName === 'PinMinigame'` stays. I read the evaluator (npc-manager.js:15-100) to confirm the bare term is supported and that `null` parses. **Browser check still owed:** a cancel *after* one wrong try, whose event data the run didn't record (if it carries a result, it would trip the mapping). Route driver mirrored: `{"lockout": "cancel"}` fires nothing, and r14 asserts it. Engine item logged as `DECISIONS_PENDING.md` D5, recommending dotted-path support |
+| F2 | major | The signing case drew under Satoshi's desk (depth -1038.5 against the desk's -1004.5), so nobody could see it | **Fixed (needs a render check).** Moved onto the desk's front edge at (3.6, 3.35) with `elevation: 32`, the m05 mug pattern (`docs/test-bridge.md`: elevation feeds render depth only, not interaction range). From the run's numbers, depth is the top-left y plus height plus 0.5. That gives -1044.8 + 17.5 = -1027.3, plus 32 ≈ -995, in front of the desk. x 435-458 is inside the desk's 399-477. It's about 70 px from Satoshi (5,6) and the manifesto (2,6); a render and tap check is owed |
+| F4 | minor | The dusting compare showed only Irina and Satoshi, while the log and walkthrough said Kemal, Irina and Dani | **Doc aligned; scenario unchanged.** Easy difficulty shows the owner plus one decoy from `fingerprintCandidates`, picked by a fixed seed (the same behaviour as m04 R-M3). The candidates list is right; the walkthrough and an ERB comment now say so |
+
+#### Decisions taken (with reasons)
+
+- **F1, flatten the condition rather than change the engine** (orchestrator). It's mission-local and reversible, and the same evaluator handles every mapping in the game. D5 asks for the proper fix.
+- **F2, lift the case on the desk with elevation rather than move it off the desk.** Its observation says "on the desk", and m05's mug proved the pattern.
+
+#### Checks (static; no browser session started)
+
+- Ink compiles (9 files; no ink changed this step).
+- Validator, full: all passes; no unknown fields (the position and candidates notes are ERB comments).
+- `dialoguelint`: no findings.
+- `check_door_alignment.py`: all doors OK.
+- `tagdiff` against HEAD: structure unchanged.
+- `reopencheck`: m06 phone, 1800 reopens, 0 problems.
+- Routes r1–r16: all expectations met (r14 now includes a cancel).
+
+Spoken lines changed: none.
+
+#### Browser checks still owed
+
+- A console cancel after one wrong try.
+- A first console lockout: the strain, HaX's text, `console_tripped`, and the "FOUND BY ELIMINATION" credit.
+- The signing case visible on the desk, and tappable without catching Satoshi or the manifesto.
+- Whether Kemal's sight challenge can open over a running dusting minigame.

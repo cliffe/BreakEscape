@@ -1286,11 +1286,17 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
                 pads that could be open then are the data-centre door (already open
                 once entered_data_center is set) and the CEO's safe (behind the
                 executive wing, which needs the fund, except on the early-KO route).
-                NEEDS A BROWSER CHECK: that a cancel (X / Esc) doesn't carry
-                maxAttemptsReached, and that the data shape matches. %>
+                Browser follow-up (PASS5_PUZZLE_R1_BROWSER.md F1): mapping conditions
+                resolve only one level of data.<name> (npc-manager.js
+                safeEvaluateCondition), so data.result.maxAttemptsReached was always
+                false and nothing fired. Keyed now on a bare data.result, which is
+                null on a cancel (seen: {"result":null}) and an object on a lockout
+                (seen: {"result":{"attempts":2,"maxAttemptsReached":true}}). Still a
+                browser check: a cancel AFTER one wrong try, whose result the run
+                didn't record. Engine item in DECISIONS_PENDING.md (dotted paths). %>
             {
               "eventPattern": "minigame_failed",
-              "condition": "data.minigameName === 'PinMinigame' && data.result && data.result.maxAttemptsReached === true && globalVars.entered_data_center === true && globalVars.found_architects_fund !== true && globalVars.cover_strained !== true",
+              "condition": "data.minigameName === 'PinMinigame' && data.result && globalVars.entered_data_center === true && globalVars.found_architects_fund !== true && globalVars.cover_strained !== true",
               "onceOnly": true,
               "setGlobal": { "cover_strained": true },
               "sendTimedMessage": { "delay": 2500, "message": "That console logs every slot it opens. Somebody's phone just buzzed.", "skipIfGlobal": "assets_decided" }
@@ -1301,7 +1307,7 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
                 elimination) and one debrief line. %>
             {
               "eventPattern": "minigame_failed",
-              "condition": "data.minigameName === 'PinMinigame' && data.result && data.result.maxAttemptsReached === true && globalVars.entered_data_center === true && globalVars.found_architects_fund !== true",
+              "condition": "data.minigameName === 'PinMinigame' && data.result && globalVars.entered_data_center === true && globalVars.found_architects_fund !== true",
               "onceOnly": false,
               "cooldown": 0,
               "setGlobal": { "console_tripped": true }
@@ -2100,6 +2106,7 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
           "hasFingerprint": true,
           "fingerprintOwner": "Satoshi Nakamoto II",
           "fingerprintCandidates": ["Kemal Aydin", "Dr. Irina Volkova", "Dani Okonkwo"],
+          <%# Browser follow-up F4: easy difficulty shows the owner plus one decoy from this list, picked by a fixed seed (m04 R-M3), so the compare step showed Satoshi and Irina only. Intended. %>
           "fingerprintDifficulty": "easy",
           "text": "CRYPTO WEEKLY — 'THE MAN WHO WON'T GIVE HIS NAME'\n\nHashChain's founder gives interviews only in text, only over Tor, and only under a pseudonym that is either a tribute or a taunt depending on who you ask.\n\n'The state cannot regulate what it cannot see,' he told us. 'We are not hiding money. We are demonstrating that the concept of hidden money is now permanent.'\n\nAsked whether HashChain screens its customers, he replied: 'We screen for competence.'\n\nHe signed off the interview the way he signs everything: 'Until the last coin.'",
           "observations": "Framed in the corridor outside the CEO's office. He had it mounted himself, and straightened it often enough to leave a thumbprint square on the glass.",
@@ -2182,7 +2189,8 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
           "type": "briefcase",
           "id": "satoshi_signing_case",
           "name": "Signing Case",
-          "position": { "x": 3, "y": 3 },
+          "position": { "x": 3.6, "y": 3.35, "elevation": 32 },
+          <%# Browser follow-up F2: at (3,3) the case (depth -1038.5) drew under the desk (desk-ceo2, centre 438,-1066, 78x61, depth -1004.5). Now on the desk's front edge, x 435-458 inside the desk's 399-477; depth = top y + height + 0.5 = -1044.8 + 17.5 = -1027.3, plus elevation 32 (m05 mug pattern; elevation feeds render depth only, not interaction range) = about -995, in front of the desk. About 70 px from Satoshi (5,6) and the manifesto (2,6). Render check owed. %>
           "takeable": false,
           "locked": true,
           "lockType": "biometric",

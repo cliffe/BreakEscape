@@ -7,7 +7,8 @@
 //   {"set": {...}}                          globals the engine would set (pickups, flags, safe)
 //   {"talk": "irina", "knot": "opt", "picks": ["substr", 0, ...], "reload": true|"page"}
 //   {"room": "trading_floor"}               the player enters a room (HaX's room_entered mappings)
-//   {"lockout": true}                      two wrong slots in one opening of the custody console
+//   {"lockout": true | "cancel"}           two wrong slots in one opening of the custody console,
+//                                           or a cancel (result null: nothing fires)
 //   {"ko": "trader_npc"}                    a KO, with the scenario's npc_ko / globalVarOnKO effects
 //   {"expect": {"global": value, ...}}      assert globals; prints PASS/FAIL and fails the run
 //   {"credits": true}                       print the credits lines whose conditions hold now,
@@ -128,9 +129,11 @@ for (const step of route.steps) {
     heard = []; continue;
   }
   if (step.lockout) {
-    // Puzzle chains M1/D1: two wrong slots in one opening of the custody console
-    // (HaX's minigame_failed mapping; its PinMinigame/maxAttemptsReached scoping
-    // is a browser check, not modelled here).
+    // Puzzle chains M1/D1: two wrong slots in one opening of the custody console.
+    // HaX's minigame_failed mappings key on a bare data.result (browser follow-up
+    // F1: conditions read one level of data.<name> only). A cancel emits
+    // result: null, so {"lockout": "cancel"} changes nothing.
+    if (step.lockout === 'cancel') { out('   {custody console: cancelled (minigame_failed, result null): no mapping fires}'); continue; }
     out('   {custody console: two wrong slots, pad locked}');
     if (G.entered_data_center && !G.found_architects_fund && !G.cover_strained) { setG('cover_strained', true, 'custody console lockout'); out("      [HaX text: That console logs every slot it opens. Somebody's phone just buzzed.]"); }
     if (G.entered_data_center && !G.found_architects_fund) setG('console_tripped', true, 'custody console lockout (every one, R2)');
