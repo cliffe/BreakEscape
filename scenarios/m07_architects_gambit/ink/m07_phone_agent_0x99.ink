@@ -22,6 +22,7 @@ VAR grid_saved = false
 VAR countdown_expired = false
 VAR redirect_declined = false
 VAR found_coordination_traffic = false
+VAR decode_read_open = false // Synced scenario global (PASS 5 r2, m3): the decode was read with the window open and the team elsewhere
 VAR found_tomb_gamma = false
 VAR found_mole_evidence = false
 VAR generator_hall_reached = false
@@ -350,11 +351,16 @@ Austin. What's wrong with it?
 {projection_revised:
     -> hub
 }
-+ [Dormancy. Theirs says nine days. Ours says ninety.]
+// PASS 5 alignment r2 (m4): the choices name the field, not the value, so
+// the player has to have read the rows. deduce_right says the values back.
+// Key count and site are wrong: both documents say 840 and Austin/TechForge.
++ [The dormancy.]
     -> deduce_right
-+ [The manifest. EHR and CAD: health records and dispatch.]
++ [The manifest.]
     -> deduce_right
-+ [The key count. Theirs isn't eight hundred and forty.]
++ [The key count.]
+    -> deduce_wrong
++ [The site.]
     -> deduce_wrong
 + [Never mind. I'll read it again.]
     -> hub
@@ -380,7 +386,10 @@ One authority signing for all four. One operation wearing four coats.
 {team_redirected or team_assignment == "trojan_horse":
     The team's already in Austin. You picked the one that was worse than the brief said.
 - else:
-    {redirect_window_closed and team_assigned:
+    {
+    - redirect_window_closed and team_assigned and decode_read_open:
+        The window's shut. You had their schedule while it was open. It goes in the report as late.
+    - redirect_window_closed and team_assigned:
         The window's shut. It goes in the report as found, not as ignored.
     - else:
         {team_assigned:

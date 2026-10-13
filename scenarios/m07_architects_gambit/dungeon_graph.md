@@ -9,7 +9,7 @@ Four ENTROPY operations went live inside the same sixty seconds. SAFETYNET has o
 | Metric | Value |
 |---|---|
 | Story aims | 6 |
-| Total tasks | 18 (7 optional) |
+| Total tasks | 18 (5 optional) |
 | VM flag challenges | 4 |
 | Physical locks | 8 |
 | AND-gate convergences | 1 |
@@ -199,7 +199,7 @@ flowchart TD
 
   aim_commit_the_team{{"Commit The Team And Get Inside"}}
   aim_reach_the_control_network{{"Get Onto The Control Network"}}
-  aim_trace_the_intrusion{{"Trace How They Got In (Optional)"}}
+  aim_trace_the_intrusion{{"Trace How They Got In"}}
   aim_reach_the_control_room{{"Get Into The Control Room"}}
   aim_take_the_attack_host{{"Take The Attack Host Off The Board"}}
   aim_end_the_sequence{{"Stop The Sequence And Report"}}
@@ -283,7 +283,7 @@ flowchart TD
   vmfl_terminate_cascade_scripts{"Terminate Cascade Scripts Flag"}
   aim_commit_the_team{{"Commit The Team And Get Inside"}}
   aim_reach_the_control_network{{"Get Onto The Control Network"}}
-  aim_trace_the_intrusion{{"Trace How They Got In (Optional)"}}
+  aim_trace_the_intrusion{{"Trace How They Got In"}}
   aim_reach_the_control_room{{"Get Into The Control Room"}}
   aim_take_the_attack_host{{"Take The Attack Host Off The Board"}}
   aim_end_the_sequence{{"Stop The Sequence And Report"}}

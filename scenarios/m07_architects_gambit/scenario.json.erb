@@ -195,13 +195,18 @@ scada_password = "CascadeWindow19"
           { "text": "PROJECTION CORRECTED: Trojan Horse dormancy nine days, not ninety — EHR and dispatch keys on the manifest", "style": "entry", "condition": "globalVars.projection_revised" },
           { "text": "REDIRECT OFFERED WITH THE WINDOW OPEN: weighed, and held", "style": "entry", "condition": "globalVars.redirect_declined && !globalVars.team_redirected" },
           { "text": "CORRECTION FOUND WITH THE WINDOW OPEN: the team was not moved", "style": "warning", "condition": "globalVars.revision_found_open && !globalVars.redirect_declined && !globalVars.team_redirected" },
-          { "text": "CORRECTION FOUND AFTER THE WINDOW SHUT: on the record as found, not as ignored", "style": "entry", "condition": "globalVars.projection_revised && !globalVars.revision_found_open && globalVars.team_assigned && globalVars.team_assignment !== 'trojan_horse'" },
-          { "text": "PROJECTION UNCHALLENGED: Two copies of the correction were in the building; neither was read", "style": "warning", "condition": "!globalVars.projection_revised && globalVars.team_assignment !== 'trojan_horse'" },
+          <%# PASS 5 alignment r2 (m2, m3, A2): held before the commit; read with the
+              window open but stated after it shut; read but never stated. %>
+          { "text": "CORRECTION IN HAND BEFORE THE CALL: the team went elsewhere", "style": "warning", "condition": "globalVars.revision_before_commit && !globalVars.revision_found_open && globalVars.team_assigned && globalVars.team_assignment !== 'trojan_horse'" },
+          { "text": "CORRECTION FOUND LATE: their schedule was read with the window open, put against the brief after it shut", "style": "warning", "condition": "globalVars.projection_revised && globalVars.decode_read_open && !globalVars.revision_found_open && !globalVars.revision_before_commit && globalVars.team_assigned && globalVars.team_assignment !== 'trojan_horse'" },
+          { "text": "CORRECTION FOUND AFTER THE WINDOW SHUT: on the record as found, not as ignored", "style": "entry", "condition": "globalVars.projection_revised && !globalVars.revision_found_open && !globalVars.revision_before_commit && !globalVars.decode_read_open && globalVars.team_assigned && globalVars.team_assignment !== 'trojan_horse'" },
+          { "text": "PROJECTION UNCHALLENGED: Two copies of the correction were in the building; neither was read", "style": "warning", "condition": "!globalVars.projection_revised && !globalVars.found_coordination_traffic && globalVars.team_assignment !== 'trojan_horse'" },
+          { "text": "PROJECTION UNCHALLENGED: Their schedule was read; the Austin row was never put against the brief", "style": "warning", "condition": "!globalVars.projection_revised && globalVars.found_coordination_traffic === true && globalVars.team_assignment !== 'trojan_horse'" },
           { "text": "" },
           { "text": "── INSIDE THE FACILITY ──", "style": "section-header" },
           { "text": "DR. JAMES MERCER (BLACKOUT): Detained — signed casualty projection in evidence", "style": "entry", "condition": "globalVars.mercer_fate === 'arrested'" },
           { "text": "DR. JAMES MERCER (BLACKOUT): Neutralised at the console — questioning deferred", "style": "warning", "condition": "globalVars.mercer_ko" },
-          { "text": "DR. JAMES MERCER (BLACKOUT): Left the building during the abort — no trace", "style": "warning", "condition": "globalVars.mercer_fate === 'escaped' && !globalVars.mercer_ko" },
+          { "text": "DR. JAMES MERCER (BLACKOUT): Left before the cordon closed — no trace", "style": "warning", "condition": "globalVars.mercer_fate === 'escaped' && !globalVars.mercer_ko" },
           { "text": "DR. JAMES MERCER (BLACKOUT): Came at the agent, then gone before the police reached the room", "style": "warning", "condition": "globalVars.mercer_fate === 'ko' && !globalVars.mercer_ko" },
           { "text": "DR. JAMES MERCER (BLACKOUT): Left at the console — gone before the police reached the room", "style": "warning", "condition": "!globalVars.mercer_fate && !globalVars.mercer_ko" },
           { "text": "MERCER ON RECORD: Named the dead he had already costed", "style": "entry", "condition": "globalVars.mercer_stance === 'condemned' && globalVars.mercer_fate === 'arrested' && !globalVars.mercer_ko" },
@@ -425,32 +430,29 @@ scada_password = "CascadeWindow19"
         they now unlock with the network aim, on commit_the_team. %>
     {
       "aimId": "trace_the_intrusion",
-      "title": "Trace How They Got In (Optional)",
+      "title": "Trace How They Got In",
       "description": "The control stack did not reach the breakers by wishing. Something physical was put in this building months ago. Follow it down through the plant, before the abort or after it. Once you call HaX for the debrief, the building belongs to the police.",
       "status": "locked",
       "order": 2,
       "unlockCondition": { "aimCompleted": "commit_the_team" },
       "tasks": [
-        <%# PASS 5 alignment r1 (regression M-3): these two showed the required
-            '*' inside an aim titled "(Optional)". Every task in the aim is now
-            optional, so the panel marks none of them. Side effect, engine-side:
-            objectives-manager.js:847 completes an all-optional aim on its first
-            settled task (the generator hall). Logged in DECISIONS_PENDING.md. %>
+        <%# U5 (orchestrator, 2026-10-14): required again so the aim doesn't
+            complete on the generator hall; it gates nothing. The engine fix (an
+            all-optional aim completing on its first settled task) stays in the
+            backlog. %>
         {
           "taskId": "secure_generator_room",
           "title": "Get into the backup generator hall",
           "type": "enter_room",
           "targetRoom": "generator_room",
-          "status": "active",
-          "optional": true
+          "status": "active"
         },
         {
           "taskId": "recover_vault_pin",
           "title": "Work out the plant keypad code",
           "type": "unlock_room",
           "targetRoom": "cable_vault",
-          "status": "active",
-          "optional": true
+          "status": "active"
         },
         {
           "taskId": "neutralise_park",
@@ -825,10 +827,18 @@ scada_password = "CascadeWindow19"
             {
               "_comment": "PASS 3 (P5): Elena's verdict, sent once (verdict_sent latch; the hub's deduce_right sets it too). Keyed on her chat closing, never mid-scene, and repeats none of her lines. PASS 5 r1: no longer requires the decode unread, because the decode no longer sets projection_revised.",
               "eventPattern": "conversation_closed:elena_rodriguez",
-              "condition": "globalVars.projection_revised === true && !globalVars.verdict_sent && !globalVars.team_redirected && globalVars.team_assignment !== 'trojan_horse' && !globalVars.redirect_window_closed",
+              "condition": "globalVars.projection_revised === true && !globalVars.verdict_sent && !globalVars.team_redirected && globalVars.team_assignment !== 'trojan_horse' && !globalVars.redirect_window_closed && globalVars.team_assigned === true",
               "onceOnly": true,
               "setGlobal": { "verdict_sent": true, "verdict_from_elena": true },
               "sendTimedMessage": { "delay": 1500, "message": "One frightened engineer, but it fits. Their share will have it in writing. If the team's in the wrong place, call me before you log in on their host." }
+            },
+            {
+              "_comment": "PASS 5 alignment r2 (m8): the team isn't committed yet, so there is no wrong place for it to be in.",
+              "eventPattern": "conversation_closed:elena_rodriguez",
+              "condition": "globalVars.projection_revised === true && !globalVars.verdict_sent && !globalVars.team_assigned && !globalVars.redirect_window_closed",
+              "onceOnly": true,
+              "setGlobal": { "verdict_sent": true, "verdict_from_elena": true },
+              "sendTimedMessage": { "delay": 1500, "message": "One frightened engineer, but it fits. When you call the team, that's where it goes." }
             },
             {
               "eventPattern": "conversation_closed:elena_rodriguez",
@@ -892,6 +902,27 @@ scada_password = "CascadeWindow19"
               "condition": "value === true && globalVars.projection_revised === true && !globalVars.redirect_window_closed && globalVars.team_assignment !== 'trojan_horse'",
               "onceOnly": true,
               "setGlobal": { "revision_found_open": true }
+            },
+            {
+              "_comment": "PASS 5 alignment r2 (m1, m2): the correction was in hand before the team was committed, wherever it went and whether or not the window was open. The debrief stops telling an informed Trojan Horse commit that it had no way to know, and an informed commit elsewhere after a login that it found the correction late.",
+              "eventPattern": "global_variable_changed:team_assigned",
+              "condition": "value === true && globalVars.projection_revised === true",
+              "onceOnly": true,
+              "setGlobal": { "revision_before_commit": true }
+            },
+            {
+              "_comment": "PASS 5 alignment r2 (m3): the decode was read with the window open and the team somewhere other than Austin. A later deduction is then reported as late, not as the Architect's timing. Every read re-emits the event, so a re-read inside the window also counts.",
+              "eventPattern": "global_variable_changed:found_coordination_traffic",
+              "condition": "value === true && globalVars.team_assigned === true && !globalVars.redirect_window_closed && globalVars.team_assignment !== 'trojan_horse'",
+              "onceOnly": true,
+              "setGlobal": { "decode_read_open": true }
+            },
+            {
+              "_comment": "...or the decode was already read when the team was committed elsewhere (the window opens at the commit).",
+              "eventPattern": "global_variable_changed:team_assigned",
+              "condition": "value === true && globalVars.found_coordination_traffic === true && !globalVars.redirect_window_closed && globalVars.team_assignment !== 'trojan_horse'",
+              "onceOnly": true,
+              "setGlobal": { "decode_read_open": true }
             },
             {
               "_comment": "PASS 5 alignment r1 (M1): the debrief and credits say whether the player logged in on the host before or after opening the control room door.",
@@ -1285,22 +1316,25 @@ scada_password = "CascadeWindow19"
                 ten before the redirect window shuts. "Ten minutes left" named no clock
                 the player could see. Three rows, disjoint on redirect_window_closed and
                 team_assignment: window open and the team movable / team in Austin /
-                window already shut by a flag 3 login. %>
+                window already shut by a flag 3 login.
+                PASS 5 alignment r2 (A1): the third row keys on cascade_armed (the login),
+                as the ink's taunt_t10 does; the first two also need no login, so the
+                rows stay disjoint. %>
             {
               "eventPattern": "global_variable_changed:architect_t10_played",
-              "condition": "value === true && !globalVars.grid_saved && !globalVars.architect_t5_played && !globalVars.redirect_window_closed && globalVars.team_assignment !== 'trojan_horse'",
+              "condition": "value === true && !globalVars.grid_saved && !globalVars.architect_t5_played && !globalVars.redirect_window_closed && !globalVars.cascade_armed && globalVars.team_assignment !== 'trojan_horse'",
               "onceOnly": true,
               "sendTimedMessage": { "delay": 500, "message": "Ten minutes before your team is too committed to move, Agent 0x00.", "targetKnot": "start" }
             },
             {
               "eventPattern": "global_variable_changed:architect_t10_played",
-              "condition": "value === true && !globalVars.grid_saved && !globalVars.architect_t5_played && !globalVars.redirect_window_closed && globalVars.team_assignment === 'trojan_horse'",
+              "condition": "value === true && !globalVars.grid_saved && !globalVars.architect_t5_played && !globalVars.redirect_window_closed && !globalVars.cascade_armed && globalVars.team_assignment === 'trojan_horse'",
               "onceOnly": true,
               "sendTimedMessage": { "delay": 500, "message": "A word about Austin, Agent 0x00.", "targetKnot": "start" }
             },
             {
               "eventPattern": "global_variable_changed:architect_t10_played",
-              "condition": "value === true && !globalVars.grid_saved && !globalVars.architect_t5_played && globalVars.redirect_window_closed === true",
+              "condition": "value === true && !globalVars.grid_saved && !globalVars.architect_t5_played && globalVars.cascade_armed === true",
               "onceOnly": true,
               "sendTimedMessage": { "delay": 500, "message": "You logged in, Agent 0x00. A word about doors.", "targetKnot": "start" }
             },
@@ -1967,6 +2001,8 @@ scada_password = "CascadeWindow19"
     "redirect_window_closed": false,
     "redirect_declined": false,
     "revision_found_open": false,
+    "revision_before_commit": false,
+    "decode_read_open": false,
 
 <%# --- The countdown (engine timers, narrative only) ---------------------- %>
     "architect_t20_played": false,

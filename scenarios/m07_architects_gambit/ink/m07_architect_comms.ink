@@ -138,12 +138,10 @@ You've sent your team.
         The update pipeline. Interesting. Almost nobody picks the one with no bodies in the brief.
         So Washington goes unanswered, and San Francisco goes unanswered. A hundred and eighty-seven million records. Eighty to a hundred and forty dead by morning.
     - else:
-        {team_assignment == "meltdown":
-            San Francisco. Of course. The number was largest and it was tonight.
-            Washington stands open. So does the vendor pipeline. Nobody will notice the second one for a while.
-        - else:
-            Or you haven't. The clock does not care either way, and neither, particularly, do I.
-        }
+        // PASS 5 alignment r2 (m9): T-20 starts only on a commit, so the
+        // uncommitted line that sat here could never play.
+        San Francisco. Of course. The number was largest and it was tonight.
+        Washington stands open. So does the vendor pipeline. Nobody will notice the second one for a while.
     }
 }
 
@@ -159,11 +157,9 @@ You've sent your team.
     -> t20_close
 
 === t20_close ===
-{team_assigned:
-    Answer honestly. I'll know either way. Did you decide with a number, or with your stomach?
-- else:
-    Choose slowly. I have all evening.
-}
+// PASS 5 alignment r2 (m9): T-20 needs a commit, so the uncommitted "Choose
+// slowly" branch is gone.
+Answer honestly. I'll know either way. Did you decide with a number, or with your stomach?
 
 Narrator: Dead air, then the ordinary hiss of a handset that thinks it has been idle for twenty minutes.
 
@@ -181,11 +177,16 @@ Narrator: Dead air, then the ordinary hiss of a handset that thinks it has been 
 ~ heard_t10 = true
 Narrator: Your screen wakes on its own. Nothing else on it moves.
 
+// PASS 5 alignment r2 (A1): the login line keys on cascade_armed, not on the
+// window, because the call can be opened late (after minute 40) by a player
+// who never logged in. A redirect is named first, whatever happened after it.
 {
-- redirect_window_closed:
-    You logged in. The door closed behind you.
 - team_redirected:
     You moved them. I had wondered whether you would.
+- cascade_armed:
+    You logged in. The door closed behind you.
+- redirect_window_closed:
+    Forty minutes. Your team is committed now, wherever you left it.
 - team_assignment == "trojan_horse":
     You sent them to the one with no bodies in the brief. I'd like to know what you saw.
 - projection_revised:

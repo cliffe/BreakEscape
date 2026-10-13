@@ -230,9 +230,11 @@ Ray Hollis: Yeah. Thought so.
 -> back
 
 === wary_again ===
-Narrator: He is jumpier now. The flashlight comes up fast.
+// PASS 5 alignment r2 (m6): the sight challenge fired because he saw the
+// player, so he isn't searching any more.
+Narrator: He is jumpier now. The flashlight comes up fast, and this time it finds you.
 
-Ray Hollis: Something's in here. I know something's in here.
+Ray Hollis: There you are. I knew something was in here.
 
 -> back
 

@@ -50,6 +50,14 @@
    }
   },
   {
+   "said": [
+    "One frightened engineer, but it fits. When you call the team, that's where it goes."
+   ],
+   "notSaid": [
+    "If the team's in the wrong place"
+   ]
+  },
+  {
    "talk": "phone",
    "picks": [
     "ready to make the call",

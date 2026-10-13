@@ -1033,6 +1033,8 @@
       "redirect_window_closed": false,
       "redirect_declined": false,
       "revision_found_open": false,
+      "revision_before_commit": false,
+      "decode_read_open": false,
       "architect_t20_played": false,
       "architect_t10_played": false,
       "architect_t5_played": false,

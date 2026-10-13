@@ -1,0 +1,54 @@
+{
+ "steps": [
+  {
+   "note": "R6 (r2, A1; was probe p1): commit Fracture, ignore the T-10 bark, open the Architect's call after the 40-minute window has shut by time, with no login. He must not say 'You logged in'."
+  },
+  {
+   "talk": "briefing",
+   "picks": [
+    "Understood. Talk to me",
+    "I've made the call",
+    "Fracture"
+   ]
+  },
+  {
+   "expect": {
+    "team_assignment": "fracture"
+   }
+  },
+  {
+   "advance": 31
+  },
+  {
+   "said": [
+    "Ten minutes before your team is too committed to move"
+   ]
+  },
+  {
+   "advance": 10
+  },
+  {
+   "expect": {
+    "redirect_window_closed": true,
+    "cascade_armed": false,
+    "flag3_submitted": false
+   }
+  },
+  {
+   "talk": "architect",
+   "picks": [
+    "You're not as clever"
+   ]
+  },
+  {
+   "said": [
+    "Forty minutes. Your team is committed now, wherever you left it.",
+    "Doors close"
+   ],
+   "notSaid": [
+    "You logged in",
+    "You still have a door open"
+   ]
+  }
+ ]
+}

@@ -1,0 +1,136 @@
+{
+ "steps": [
+  {
+   "note": "R9 (r2, m1, m8; was probe p3): no commit in the briefing; the deduction made with no team; then Trojan Horse chosen on HaX's hub. Elena's beat afterwards: the Austin line, no apology. Debrief: the informed-commit lines."
+  },
+  {
+   "talk": "briefing",
+   "picks": [
+    "Understood. Talk to me"
+   ]
+  },
+  {
+   "talk": "phone",
+   "picks": []
+  },
+  {
+   "enter": "operations_floor"
+  },
+  {
+   "read": "shift_handover_sheet"
+  },
+  {
+   "pickup": "printed_contractor_badge"
+  },
+  {
+   "enter": "server_room"
+  },
+  {
+   "event": "object_interacted",
+   "data": {
+    "objectType": "vm-launcher"
+   }
+  },
+  {
+   "flag": 1
+  },
+  {
+   "read": "coordination_extract"
+  },
+  {
+   "talk": "phone",
+   "picks": [
+    "Their schedule doesn't match",
+    "Trojan",
+    "The manifest"
+   ]
+  },
+  {
+   "said": [
+    "The team's still waiting on your call"
+   ]
+  },
+  {
+   "talk": "phone",
+   "picks": [
+    "ready to make the call",
+    "Trojan"
+   ]
+  },
+  {
+   "expect": {
+    "team_assignment": "trojan_horse",
+    "revision_before_commit": true,
+    "revision_found_open": false,
+    "decode_read_open": false
+   }
+  },
+  {
+   "talk": "elena",
+   "picks": [
+    "You're Elena Rodriguez",
+    "What were you told this was",
+    "The other three operations",
+    "Why Austin",
+    "Assume I don't know",
+    "I need to keep moving"
+   ]
+  },
+  {
+   "said": [
+    "If your people are in Austin, they're in the right place. Tell them about dispatch."
+   ],
+   "notSaid": [
+    "you sent them on those numbers",
+    "I'm sorry"
+   ]
+  },
+  {
+   "flag": 2
+  },
+  {
+   "enter": "scada_control"
+  },
+  {
+   "flag": 3
+  },
+  {
+   "flag": 4
+  },
+  {
+   "task": "shut_down_the_cascade"
+  },
+  {
+   "talk": "phone",
+   "picks": [
+    "Bring me in"
+   ]
+  },
+  {
+   "enter": "server_room"
+  },
+  {
+   "talk": "debrief",
+   "picks": [
+    "Nothing on the record",
+    "I made the call"
+   ]
+  },
+  {
+   "said": [
+    "You read their schedule before you made the call",
+    "You found it before you chose, and you chose Austin."
+   ],
+   "notSaid": [
+    "You had no way to know",
+    "You found out what you had chosen"
+   ]
+  },
+  {
+   "note": "Run-length guard: the debrief read-out is the longest run (pre-existing). Dialogue stage owns breaking it up."
+  },
+  {
+   "maxRun": 70
+  }
+ ]
+}

@@ -1,0 +1,125 @@
+{
+ "steps": [
+  {
+   "note": "R12 (r2, N1, N2): commit Fracture; the deduction with the window open; the team left where it was (no redirect asked). Hardened stance: no praise for speed and no 'Above expectations' after 'You knew'. Mercer walked out before the abort: the credit says before the cordon, not during the abort."
+  },
+  {
+   "talk": "briefing",
+   "picks": [
+    "Understood. Talk to me",
+    "I've made the call",
+    "Fracture"
+   ]
+  },
+  {
+   "expect": {
+    "team_assignment": "fracture"
+   }
+  },
+  {
+   "talk": "phone",
+   "picks": [
+    "Understood. Let"
+   ]
+  },
+  {
+   "enter": "operations_floor"
+  },
+  {
+   "read": "shift_handover_sheet"
+  },
+  {
+   "pickup": "printed_contractor_badge"
+  },
+  {
+   "enter": "server_room"
+  },
+  {
+   "event": "object_interacted",
+   "data": {
+    "objectType": "vm-launcher"
+   }
+  },
+  {
+   "flag": 1
+  },
+  {
+   "read": "coordination_extract"
+  },
+  {
+   "talk": "phone",
+   "picks": [
+    "Their schedule doesn't match",
+    "Trojan",
+    "The dormancy"
+   ]
+  },
+  {
+   "expect": {
+    "revision_found_open": true
+   }
+  },
+  {
+   "set": {
+    "mercer_fate": "escaped"
+   }
+  },
+  {
+   "flag": 2
+  },
+  {
+   "enter": "scada_control"
+  },
+  {
+   "flag": 3
+  },
+  {
+   "flag": 4
+  },
+  {
+   "task": "shut_down_the_cascade"
+  },
+  {
+   "talk": "phone",
+   "picks": [
+    "Bring me in"
+   ]
+  },
+  {
+   "enter": "server_room"
+  },
+  {
+   "talk": "debrief",
+   "picks": [
+    "Nothing on the record",
+    "I want the numbers"
+   ]
+  },
+  {
+   "said": [
+    "You knew. You found it and it did not move",
+    "You had one of his numbers in your hands tonight. Next time it moves the team.",
+    "You finished it, Agent"
+   ],
+   "notSaid": [
+    "Almost nobody gets there this quickly",
+    "Above expectations"
+   ]
+  },
+  {
+   "creditsSaid": [
+    "CORRECTION FOUND WITH THE WINDOW OPEN",
+    "Left before the cordon closed"
+   ],
+   "creditsNotSaid": [
+    "during the abort"
+   ]
+  },
+  {
+   "note": "Run-length guard: the debrief read-out is the longest run (pre-existing). Dialogue stage owns breaking it up."
+  },
+  {
+   "maxRun": 70
+  }
+ ]
+}

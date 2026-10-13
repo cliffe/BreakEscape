@@ -20,7 +20,7 @@
 // Outcomes: elena_outcome = "turned" | "fled" | "ko". KO is engine-side.
 // ===========================================
 
-EXTERNAL player_name()
+// PASS 5 alignment r2 (m9): the unused EXTERNAL player_name() is gone.
 
 // Synced from globalVariables by the engine at call-open
 VAR elena_outcome = ""
@@ -243,11 +243,16 @@ Elena Rodriguez: I spent six months telling myself I was the one operation where
     Elena Rodriguez: It's on the backup server, on a share nobody locked down. Read it yourself. Don't take it from me.
 }
 
-{team_assigned and not team_redirected and not redirect_window_closed:
+// PASS 5 alignment r2 (m8): a team already in Austin was not sent on the
+// brief's numbers, and nobody needs her sympathy for it.
+{team_assigned and team_assignment != "trojan_horse" and not redirect_window_closed:
     Elena Rodriguez: If you've already sent people somewhere tonight, you sent them on those numbers.
 }
-{team_assigned and redirect_window_closed:
+{team_assigned and team_assignment != "trojan_horse" and redirect_window_closed:
     Elena Rodriguez: You've already sent them, haven't you. I'm sorry. I'd rather have known this in June.
+}
+{team_assignment == "trojan_horse":
+    Elena Rodriguez: If your people are in Austin, they're in the right place. Tell them about dispatch.
 }
 
 -> hub

@@ -165,3 +165,93 @@ Briefing (`m07_opening_briefing.ink`), new: "Frozen or watched, the advances had
 - m12 (cloner route) to puzzle chains; the debrief's long read-out and the pre-existing dialoguelint flags to the dialogue stage; generator hall and cable vault look to room dressing.
 - Browser checks still owed: Park's entry chat (hostile, talked down, evaded), the T-10 bark at 30 minutes with the window open, the HUD redirect timer appearing after the deduction and clearing on flag 3, the deduction menus on the phone, the debrief branches, HaX's and Netherton's busts in the debrief.
 - Needs checking against SecGen by the user: the three-doors description in the debrief and the ATTACK HOST credit (share, listener password, root via the operator account), the one-host wording, and the CyBOK NS/OSV keywords (U3).
+
+### Stage 2 alignment, round 2 (fixer)
+
+Review: `ALIGNMENT_REVIEW_P5_C2.md` (0 blockers, 2 majors, 9 minors), plus N1 and N2 from the round-1 browser check (`PASS5_ALIGN_R1_BROWSER.md`). Orchestrator decisions applied: U5 (drop "(Optional)", two tasks required again) and m7 (Park's third visit sends him hostile). Every finding was checked against `scenario.json.erb` and the ink before acting. No SecGen XML and none of the four restricted field guides were opened. No browser session was started this round.
+
+Counts: 0 blockers, 2 majors, 11 minors (9 review + 2 browser). All fixed; none deferred.
+
+| # | Sev. | Finding | Outcome |
+|---|---|---|---|
+| A1 | major | A late-opened T-10 call says "You logged in" to a player who never did | **Fixed.** `taunt_t10` branches `team_redirected` first, then `cascade_armed` ("You logged in…"), then a new time-shut branch on `redirect_window_closed` ("Forty minutes. Your team is committed now, wherever you left it."), then Trojan Horse, discrepancy, nothing found. The third bark row keys on `cascade_armed === true`; the first two rows also need `!cascade_armed`, so the three stay disjoint. Routes r6 (late open, no login) and r7 (redirected, then a login at minute 22) |
+| A2 | major | Debrief and credits say the correction was never read to a player who read the decode | **Fixed.** The debrief declares `found_coordination_traffic`. In `revision_payoff`, a reader hears "Their own schedule was in your hands tonight. The Austin row said nine days. Nobody put it next to the brief."; "Two copies. Nobody read them." stays for a player who never read it. `dark_trojan` adds HaX's "It was in your hands. Nine days, in their own table." The PROJECTION UNCHALLENGED credit is split on `found_coordination_traffic`. Route r8 |
+| m1 | minor | Informed Trojan commit told "You had no way to know" | **Fixed.** New latch `revision_before_commit` (HaX mapping on `team_assigned` while `projection_revised`). `covered_trojan_direct` and the Trojan block of `revision_payoff` branch on it. Route r9 |
+| m2 | minor | Correction held, commit elsewhere after a login, told "found it after the window had closed" | **Fixed** with the same latch: a `revision_before_commit` branch in the found-late block, and in `dark_trojan`. New credit "CORRECTION IN HAND BEFORE THE CALL: the team went elsewhere" (warning). The AFTER THE WINDOW SHUT credit excludes it. Route r10 |
+| m3 | minor | Decode read with the window open, deduction late: "The timing was his" lets the player off | **Fixed.** New latch `decode_read_open`, set by two mappings: the decode read while the window is open with the team elsewhere, or the decode already read at the commit. The found-late block has a `decode_read_open` branch ("Their schedule was in your hands with the window open…" / HaX "Late is still found…"). HaX's `deduce_right` says the same on the phone ("…It goes in the report as late."), so the phone and the debrief agree. New credit "CORRECTION FOUND LATE" (warning). The AFTER THE WINDOW SHUT credit excludes it. Route r11 |
+| m4 | minor | The deduction can be brute-forced; right answers spell out the values | **Fixed.** The second menu names fields only: "The dormancy." / "The manifest." / "The key count." / "The site." (key count and site wrong). `deduce_right` still says the values back. "Costs nothing" kept. Route r11 checks the four choices and that the old values are gone |
+| m5 | minor | U5 not applied | **Fixed.** Title "Trace How They Got In"; `optional` removed from `secure_generator_room` and `recover_vault_pin`; comment rewritten. `DECISIONS_PENDING.md` U5 notes it. Browser look still owed |
+| m6 | minor | Hollis's re-sighting line says he can't see the player | **Fixed.** `wary_again` narration and line rewritten (below). r2 updated |
+| m7 | minor | Park's third-visit threat is empty | **Fixed** (orchestrator's choice). The third visit says "I said there wasn't a third." and diverts to `goes_loud.swing` (a new stitch, the same narration, `park_resolved: ko`, hostile) without "Right.". The entry-chat mapping already skips `ko`. r2 now ends Park hostile and checks the "Fought off, not stopped" credit |
+| m8 | minor | Elena's team lines and HaX's first Elena verdict misread Trojan, redirected and uncommitted players | **Fixed.** Elena's two team lines need `team_assignment != "trojan_horse"`. A team in Austin hears "If your people are in Austin, they're in the right place. Tell them about dispatch." (route r9). HaX's open-window verdict row needs `team_assigned === true`. A new disjoint row for an uncommitted player says "One frightened engineer, but it fits. When you call the team, that's where it goes." (r4 checks it) |
+| m9 | minor | Tidy-ups | **Fixed.** T-20's uncommitted branches ("Or you haven't…", "Choose slowly…") are removed with a comment, because T-20 starts only on a commit. The T-10 order is covered by A1. Elena's unused `EXTERNAL player_name()` is removed |
+| N1 | minor | Stance praise after "You knew… it did not move" | **Fixed.** The hardened stance's "Almost nobody gets there this quickly" and the handoff's "Above expectations" are both withheld when `revision_found_open and not team_redirected and not redirect_declined`. The alternatives are "Yes. You had one of his numbers in your hands tonight. Next time it moves the team." and "You finished it, Agent. I will write the rest myself." A redirect weighed and declined keeps the praise, because the debrief already records it as a decision (r4 unchanged). Route r12 |
+| N2 | minor | Mercer credit "during the abort" when he left before it | **Fixed.** "Left before the cordon closed — no trace". This matches the debrief's "left before the cordon closed" and holds for either timing. Route r12 |
+
+#### Decisions taken (fixer, with reasons)
+
+- **N1 spares a declined redirect.** The browser case was a player who let the window pass without asking. A player who asked for the cost and said no hears "on the record as a decision", so withholding praise from them as well would punish a deliberate call. r4 still expects "Above expectations".
+- **`deduce_right` gets a late branch** that the review didn't ask for. Without it, HaX tells an m3 player "found, not ignored" on the phone and the debrief then says "late".
+- **`decode_read_open` also latches at the commit**, so a decode read before the team was sent counts as in hand once the window opens.
+- **T-10 bark rows 1-2 gain `!cascade_armed`**, so all three rows stay disjoint now that row 3 keys on the login.
+- **Park's third visit reuses the `goes_loud` narration** through a stitch rather than "I said there wasn't a third." followed by "Right.", which read as two answers.
+
+#### Route driver
+
+New routes, all expectations met: `r6_t10_late_open` (was probe p1), `r7_t10_redirected_then_login`, `r8_decode_read_not_deduced` (was p2, now played from the flags rather than preset globals), `r9_informed_trojan` (was p3, played: deduction with no team, then Trojan on the hub, then Elena), `r10_informed_commit_after_login`, `r11_decode_open_deduced_late`, `r12_open_window_held_hardened`. Changes to existing routes: r2 (Hollis's new line, Park's third visit hostile, the Park credit) and r4 (the uncommitted Elena verdict text). r1-r12: all twelve pass. The longest run is still the debrief read-out (58-66 lines), which belongs to the dialogue stage.
+
+#### Checks
+
+- Ink compiles (8 files; the briefing's END warning as before).
+- Validator, full: schema passed, geometry and doors OK. 11 duplicate-mapping notes (10 before). The new one is `team_assigned` with four handlers: the commit text, `revision_found_open`, `revision_before_commit` and `decode_read_open`, independent latches meant to fire together. There are also 4 repeatable person-chat warnings (deliberate, as before) and 10 dialogue-lint style notes (unchanged).
+- dialoguelint: 0 errors; transition 1, not-x-but-y 1, you-after-choice 2, blank-reentry 6, all pre-existing.
+- reopencheck (`missions.json` m07 globals gain `revision_before_commit`, `decode_read_open`): 0 problems for both m07 phones.
+- inkcheck and loopcheck over a state matrix: Architect T-10 closed by time, and redirected with a login; T-20 meltdown; the debrief with decode read, informed Trojan, informed Fracture, decode open/late, open window; the phone deduction with the window shut and `decode_read_open`; Elena with Trojan and uncommitted; Park evaded and fresh; Hollis backed off. No failing paths, no runaways, no runtime errors.
+- tagdiff against HEAD: 47 structural differences, all from the changes above. Mercer and briefing structure unchanged.
+- `check_door_alignment.py`: all doors OK.
+
+#### Spoken lines changed (old → new)
+
+No m07 audio exists yet; listed for the record.
+
+The Architect (`m07_architect_comms.ink`):
+- New (T-10, window shut by time): "Forty minutes. Your team is committed now, wherever you left it."
+- T-10 order: "You moved them…" now plays before "You logged in. The door closed behind you."; the login line now needs the login (`cascade_armed`).
+- Removed (unreachable): "Or you haven't. The clock does not care either way, and neither, particularly, do I."; "Choose slowly. I have all evening."
+- Bark "You logged in, Agent 0x00. A word about doors.": text unchanged, now keyed on `cascade_armed`.
+
+Debrief (`m07_closing_debrief.ink`):
+- "You had no way to know what you were choosing. I would like it noted that you chose it anyway." stays; new alternative for an informed commit: "You read their schedule before you made the call, and sent the team where the brief said nothing would happen. I would like that noted."
+- "The team was already there. You found out what you had chosen while they were stopping it." stays; new alternative: "The team was already there. You found it before you chose, and you chose Austin."
+- New (held before the commit, sent elsewhere): "You had it before you made the call, and sent the team elsewhere." (HaX follows with her existing "I logged it. You found the thing that was built not to be found. That's the part I'd keep.")
+- New (decode read open, deduced late): "Their schedule was in your hands with the window open. You put it against the brief after it shut." / HaX "Late is still found. It goes in the report as late."
+- "The evidence was in that building tonight. Two copies. Nobody read them." stays for a player who never read the decode; new for a reader: "Their own schedule was in your hands tonight. The Austin row said nine days. Nobody put it next to the brief."
+- New HaX (`dark_trojan`): "You had it before you sent them anywhere. That goes in the report too."; "It was in your hands. Nine days, in their own table."
+- "Yes. Almost nobody gets there this quickly." stays; new alternative when the window passed without a decision: "Yes. You had one of his numbers in your hands tonight. Next time it moves the team."
+- "Above expectations, Agent…": same text, now also withheld in that case (falls to "You finished it, Agent. I will write the rest myself.").
+
+HaX, phone (`m07_phone_agent_0x99.ink`):
+- Player choices (not voiced): "Dormancy. Theirs says nine days. Ours says ninety." → "The dormancy."; "The manifest. EHR and CAD: health records and dispatch." → "The manifest."; "The key count. Theirs isn't eight hundred and forty." → "The key count."; new "The site."
+- New: "The window's shut. You had their schedule while it was open. It goes in the report as late."
+
+HaX texts (`scenario.json.erb`), new: "One frightened engineer, but it fits. When you call the team, that's where it goes."
+
+Ray Hollis (`m07_npc_ray_hollis.ink`):
+- Narrator: "He is jumpier now. The flashlight comes up fast." → "He is jumpier now. The flashlight comes up fast, and this time it finds you."
+- "Something's in here. I know something's in here." → "There you are. I knew something was in here."
+
+Thomas Park (`m07_npc_thomas_park.ink`):
+- Narrator (third visit): "He doesn't look round. The flashlight stays on the wire." → "He sets the wire down on the mat without looking round."
+- "I said there wasn't a third." unchanged, now followed by the existing "He comes up off his knees with the crimping tool swinging." and a hostile Park, not the hub.
+
+Elena Rodriguez (`m07_npc_elena_rodriguez.ink`), new: "If your people are in Austin, they're in the right place. Tell them about dispatch." Her "…you sent them on those numbers." and "…I'm sorry. I'd rather have known this in June." no longer play for a team in Austin.
+
+Credits (`scenario.json.erb`):
+- "DR. JAMES MERCER (BLACKOUT): Left the building during the abort — no trace" → "…Left before the cordon closed — no trace"
+- New: "CORRECTION IN HAND BEFORE THE CALL: the team went elsewhere"; "CORRECTION FOUND LATE: their schedule was read with the window open, put against the brief after it shut"; "PROJECTION UNCHALLENGED: Their schedule was read; the Austin row was never put against the brief".
+
+#### Open after round 2
+
+- Browser checks still owed: the U5 aim no longer folding on the generator hall; Park's third visit turning him hostile in the vault, and his KO and talked-down outcomes; the T-10 late open after minute 40; the new deduction menu wording on the phone; the debrief branches above.
+- Needs checking against SecGen by the user (U3, unchanged): the three-doors line and the ATTACK HOST credit, one host, the CyBOK NS/OSV keywords, and whether flag 4 can be reached before flag 3.
+- U4 (NFS guide URL), U6 (shared-map pictures), U7 (HaX phone spriteSheet) unchanged. No new engine items.

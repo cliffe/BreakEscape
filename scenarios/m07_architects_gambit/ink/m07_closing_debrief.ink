@@ -35,6 +35,12 @@ VAR projection_revised = false
 VAR redirect_declined = false
 // PASS 5 alignment r1 (M3): the correction landed while the team could still move.
 VAR revision_found_open = false
+// PASS 5 alignment r2 (A2, m1-m3): the decode was read (flag 1 reward); the
+// correction was stated before the team was committed; the decode was read
+// while the window was open and the team elsewhere.
+VAR found_coordination_traffic = false
+VAR revision_before_commit = false
+VAR decode_read_open = false
 
 // People
 VAR mercer_fate = ""
@@ -160,7 +166,13 @@ Narrator: He scrolls. He reads the next part more slowly than the rest.
 Director Magnus Netherton: The manifest was not what the brief said. A third of those keys sign health record and emergency dispatch systems.
 Director Magnus Netherton: The dormancy field said ninety days. The staged payload was set to wake in nine.
 Narrator: He puts the tablet face down on the console.
-Director Magnus Netherton: You had no way to know what you were choosing. I would like it noted that you chose it anyway.
+// PASS 5 alignment r2 (m1): a player who made the deduction (or heard Elena)
+// before committing knew exactly what they were choosing.
+{revision_before_commit:
+    Director Magnus Netherton: You read their schedule before you made the call, and sent the team where the brief said nothing would happen. I would like that noted.
+- else:
+    Director Magnus Netherton: You had no way to know what you were choosing. I would like it noted that you chose it anyway.
+}
 -> revision_payoff
 
 = covered_trojan_redirect
@@ -199,7 +211,11 @@ Director Magnus Netherton: I will need an explanation for that in writing. Not t
 // were standing in, not a road not taken.
 { projection_revised and team_assignment == "trojan_horse":
     Director Magnus Netherton: Your field notes say the Trojan Horse projection was understated. Nine days, not ninety, and dispatch on the manifest.
-    Director Magnus Netherton: The team was already there. You found out what you had chosen while they were stopping it.
+    {revision_before_commit:
+        Director Magnus Netherton: The team was already there. You found it before you chose, and you chose Austin.
+    - else:
+        Director Magnus Netherton: The team was already there. You found out what you had chosen while they were stopping it.
+    }
     Agent HaX: I logged it. You found the thing that was built not to be found. That's the part I'd keep.
     -> revision_lesson
 }
@@ -224,6 +240,16 @@ Director Magnus Netherton: I will need an explanation for that in writing. Not t
     - team_assignment == "":
         Director Magnus Netherton: The team was never committed, on that or on anything else.
         Agent HaX: I logged it. You found the thing that was built not to be found. That's the part I'd keep.
+    // PASS 5 alignment r2 (m2): held before the commit, then sent elsewhere
+    // after a login had already shut the window.
+    - revision_before_commit:
+        Director Magnus Netherton: You had it before you made the call, and sent the team elsewhere.
+        Agent HaX: I logged it. You found the thing that was built not to be found. That's the part I'd keep.
+    // PASS 5 alignment r2 (m3): the decode was in hand with the window open;
+    // the deduction came after it shut.
+    - decode_read_open:
+        Director Magnus Netherton: Their schedule was in your hands with the window open. You put it against the brief after it shut.
+        Agent HaX: Late is still found. It goes in the report as late.
     - else:
         Director Magnus Netherton: You found it after the window had closed. That is in the report as found, not as ignored.
         Agent HaX: You found the thing that was built not to be found. The timing was his, not yours.
@@ -233,7 +259,14 @@ Director Magnus Netherton: I will need an explanation for that in writing. Not t
 
 { team_assignment != "trojan_horse":
     Director Magnus Netherton: One note from analysis, added an hour ago. The Trojan Horse projection was wrong, in the direction that made it easy to set aside.
-    Director Magnus Netherton: The evidence was in that building tonight. Two copies. Nobody read them.
+    // PASS 5 alignment r2 (A2): reading the decode no longer states the
+    // deduction, so a player who read it and never called is not told
+    // that nobody read it.
+    {found_coordination_traffic:
+        Director Magnus Netherton: Their own schedule was in your hands tonight. The Austin row said nine days. Nobody put it next to the brief.
+    - else:
+        Director Magnus Netherton: The evidence was in that building tonight. Two copies. Nobody read them.
+    }
 }
 
 -> revision_lesson
@@ -302,8 +335,13 @@ Director Magnus Netherton: Then the health record systems. Eighteen thousand hos
     Agent HaX: I'm not saying it to punish you. Somebody has to write it down, and it's going to be me.
 - projection_revised and team_assignment == "":
     Agent HaX: You found it, and the team still went nowhere.
+// PASS 5 alignment r2 (m2, A2)
+- revision_before_commit:
+    Agent HaX: You had it before you sent them anywhere. That goes in the report too.
 - projection_revised:
     Agent HaX: You found it after the window shut. I'm writing that down too, in those words.
+- found_coordination_traffic:
+    Agent HaX: It was in your hands. Nine days, in their own table.
 }
 ->->
 
@@ -560,7 +598,14 @@ Director Magnus Netherton: Three briefs. One team. You sent it where you sent it
 
 * [I want the numbers before he writes them. Next time.]
     #set_global:debrief_stance:hardened
-    Director Magnus Netherton: Yes. Almost nobody gets there this quickly.
+    // PASS 5 alignment r2 (N1): no praise for speed straight after "You knew"
+    // to a player who held the correction with the window open and let it
+    // pass. A redirect weighed and declined is a decision, so it keeps it.
+    {revision_found_open and not team_redirected and not redirect_declined:
+        Director Magnus Netherton: Yes. You had one of his numbers in your hands tonight. Next time it moves the team.
+    - else:
+        Director Magnus Netherton: Yes. Almost nobody gets there this quickly.
+    }
     Director Magnus Netherton: I will raise it with the Council on Monday. It will not be a pleasant meeting. I intend to have it.
     -> handoff
 
@@ -571,7 +616,9 @@ Director Magnus Netherton: Three briefs. One team. You sent it where you sent it
 Narrator: Netherton closes the tablet cover and holds it against his chest, which is what he does instead of sighing.
 
 // PASS 5 alignment r1 (m7): not for a night with no team sent or Seattle dark.
-{team_assignment != "" and not countdown_expired:
+// PASS 5 alignment r2 (N1): nor when the correction was found with the window
+// open and the team left where it was without a declined redirect.
+{team_assignment != "" and not countdown_expired and not (revision_found_open and not team_redirected and not redirect_declined):
     Director Magnus Netherton: Above expectations, Agent. I do not say that often and I am not going to elaborate on it.
 - else:
     Director Magnus Netherton: You finished it, Agent. I will write the rest myself.

@@ -1,7 +1,7 @@
 {
  "steps": [
   {
-   "note": "R2: commit Meltdown. Hollis is backed off, re-sighted (wary_again) and slipped past (evaded on the server hall). T-10 at 30 min with nothing found: the warning is in the open-window line. The window shuts at 40 min. Elena is turned after the window shut: door password, and the vault rule not the digits; no page forty without asking why. Flag 2 corroborates her. The decode is read late and the deduction lands with the window shut. Login before the control room door; the clock runs out. Park: entry chat, backed off, second and third visits. Debrief: found-after-the-window split, no 'Above expectations'."
+   "note": "R2: commit Meltdown. Hollis is backed off, re-sighted (wary_again) and slipped past (evaded on the server hall). T-10 at 30 min with nothing found: the warning is in the open-window line. The window shuts at 40 min. Elena is turned after the window shut: door password, and the vault rule not the digits; no page forty without asking why. Flag 2 corroborates her. The decode is read late and the deduction lands with the window shut. Login before the control room door; the clock runs out. Park: entry chat, backed off, second visit backed off, third visit turns him hostile (r2 m7). Debrief: found-after-the-window split, no 'Above expectations'."
   },
   {
    "talk": "briefing",
@@ -48,7 +48,7 @@
   },
   {
    "said": [
-    "Something's in here"
+    "There you are. I knew something was in here."
    ]
   },
   {
@@ -279,16 +279,26 @@
    "enter": "cable_vault"
   },
   {
+   "note": "PASS 5 alignment r2 (m7): the third visit turns Park hostile; no hub."
+  },
+  {
    "talk": "park",
    "knot": "start",
-   "picks": [
-    "Nothing. I was never here."
-   ]
+   "picks": []
   },
   {
    "said": [
-    "I said there wasn't a third."
+    "I said there wasn't a third.",
+    "crimping tool swinging"
+   ],
+   "notSaid": [
+    "Step away from the cable"
    ]
+  },
+  {
+   "expect": {
+    "park_resolved": "ko"
+   }
   },
   {
    "music": "npc_hostile_state_changed",
@@ -333,7 +343,7 @@
     "CORRECTION FOUND AFTER THE WINDOW SHUT",
     "Operation Meltdown",
     "Evaded — still on the checkpoint desk",
-    "THOMAS PARK: Evaded"
+    "THOMAS PARK: Fought off, not stopped"
    ],
    "creditsNotSaid": [
     "CORRECTION FOUND WITH THE WINDOW OPEN",

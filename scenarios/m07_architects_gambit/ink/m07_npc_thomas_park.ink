@@ -96,7 +96,10 @@ Narrator: He picks up his bag and walks out past you, unhurried.
 
 === goes_loud ===
 Thomas Park: Right.
+-> swing
 
+// PASS 5 alignment r2 (m7): the third visit lands here too, without "Right."
+= swing
 Narrator: He comes up off his knees with the crimping tool swinging.
 
 ~ park_resolved = "ko"
@@ -120,8 +123,11 @@ Narrator: You back into the dark of the stairwell. He waits, then goes back to t
     Narrator: He is still at the junction box, working faster. His flashlight finds the door before you're through it.
     Thomas Park: Second time. There isn't a third.
 - else:
-    Narrator: He doesn't look round. The flashlight stays on the wire.
+    // PASS 5 alignment r2 (m7): the threat was empty. A third visit turns him
+    // hostile, so backing off twice is a real choice.
+    Narrator: He sets the wire down on the mat without looking round.
     Thomas Park: I said there wasn't a third.
+    -> goes_loud.swing
 }
 -> hub
 

@@ -1,0 +1,127 @@
+{
+ "steps": [
+  {
+   "note": "R10 (r2, m2): no commit in the briefing; the deduction with no team; the flag 3 login shuts the window; then Fracture committed on HaX's hub. The debrief must not say the correction was found after the window shut."
+  },
+  {
+   "talk": "briefing",
+   "picks": [
+    "Understood. Talk to me"
+   ]
+  },
+  {
+   "talk": "phone",
+   "picks": []
+  },
+  {
+   "enter": "operations_floor"
+  },
+  {
+   "read": "shift_handover_sheet"
+  },
+  {
+   "pickup": "printed_contractor_badge"
+  },
+  {
+   "enter": "server_room"
+  },
+  {
+   "event": "object_interacted",
+   "data": {
+    "objectType": "vm-launcher"
+   }
+  },
+  {
+   "flag": 1
+  },
+  {
+   "read": "coordination_extract"
+  },
+  {
+   "talk": "phone",
+   "picks": [
+    "Their schedule doesn't match",
+    "Trojan",
+    "The dormancy"
+   ]
+  },
+  {
+   "flag": 2
+  },
+  {
+   "enter": "scada_control"
+  },
+  {
+   "flag": 3
+  },
+  {
+   "expect": {
+    "redirect_window_closed": true,
+    "team_assigned": false
+   }
+  },
+  {
+   "talk": "phone",
+   "picks": [
+    "ready to make the call",
+    "Fracture"
+   ]
+  },
+  {
+   "expect": {
+    "team_assignment": "fracture",
+    "revision_before_commit": true,
+    "revision_found_open": false
+   }
+  },
+  {
+   "flag": 4
+  },
+  {
+   "task": "shut_down_the_cascade"
+  },
+  {
+   "talk": "phone",
+   "picks": [
+    "Bring me in"
+   ]
+  },
+  {
+   "enter": "server_room"
+  },
+  {
+   "talk": "debrief",
+   "picks": [
+    "Nothing on the record",
+    "I made the call"
+   ]
+  },
+  {
+   "said": [
+    "You had it before you made the call, and sent the team elsewhere.",
+    "You had it before you sent them anywhere."
+   ],
+   "notSaid": [
+    "after the window had closed",
+    "You found it after the window shut",
+    "You knew. You found it"
+   ]
+  },
+  {
+   "creditsSaid": [
+    "CORRECTION IN HAND BEFORE THE CALL"
+   ],
+   "creditsNotSaid": [
+    "AFTER THE WINDOW SHUT",
+    "WITH THE WINDOW OPEN",
+    "CORRECTION FOUND LATE"
+   ]
+  },
+  {
+   "note": "Run-length guard: the debrief read-out is the longest run (pre-existing). Dialogue stage owns breaking it up."
+  },
+  {
+   "maxRun": 70
+  }
+ ]
+}
