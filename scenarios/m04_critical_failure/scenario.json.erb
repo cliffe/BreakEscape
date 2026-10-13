@@ -520,8 +520,8 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
 
   "rooms": {
     "main_entrance": {
-      "type": "room_reception",
-      "dimensions": { "width": 10, "height": 8 },
+      "type": "room_aes_reception",
+      "dimensions": { "width": 10, "height": 10 },
       "door_sign": "Albion Energy Storage — Reception",
       "connections": {
         "south": "operations_office"
@@ -1399,8 +1399,8 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
     },
 
     "operations_office": {
-      "type": "room_office",
-      "dimensions": { "width": 15, "height": 10 },
+      "type": "room_aes_ops",
+      "dimensions": { "width": 10, "height": 10 },
       "door_sign": "Operations Office",
       "connections": {
         "north": "main_entrance",
@@ -1500,8 +1500,8 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
     },
 
     "scada_control_room": {
-      "type": "room_control_1x2gu",
-      "dimensions": { "width": 12, "height": 10 },
+      "type": "room_aes_control",
+      "dimensions": { "width": 10, "height": 6 },
       "door_sign": "SCADA Control Room",
       "connections": {
         "west": "operations_office",
@@ -1513,6 +1513,7 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
           "type": "tablet",
           "id": "scada_hmi_display",
           "name": "SCADA HMI — Main Display",
+          "position": "as-type:screens",
           "takeable": false,
           "readable": true,
           "observationDisplay": "gameDisplay",
@@ -1541,8 +1542,8 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
     },
 
     "engineering_workshop": {
-      "type": "room_it",
-      "dimensions": { "width": 10, "height": 8 },
+      "type": "room_aes_workshop",
+      "dimensions": { "width": 10, "height": 10 },
       "locked": true,
       "lockType": "rfid",
       "requires": "server_room_keycard",
@@ -1557,6 +1558,8 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
           "type": "vm-launcher",
           "id": "vm_launcher_bms_jump_server",
           "name": "BMS Jump Server Terminal",
+          <%# Room dressing c3: a black monitor (pc10) on the workshop's terminal bench (room_aes_workshop). %>
+          "position": "as-type:pc",
           "takeable": false,
           "observations": "Network terminal providing access to the BMS jump server for vulnerability analysis",
           "hacktivityMode": <%= vm_context && vm_context['hacktivity_mode'] ? 'true' : 'false' %>,
@@ -1627,6 +1630,7 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
         {
           "type": "pc",
           "name": "Network Monitoring Station",
+          "position": "as-type:kvm_cart",
           "takeable": false,
           "observations": "A live traffic monitor for the OT network. Steady SCADA polling, and a second stream into the BMS jump server at 192.168.100.10 from a host that isn't on Albion's asset list."
         },
@@ -1634,12 +1638,13 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
           "type": "briefcase",
           "id": "optigrid_tool_case",
           "name": "OptiGrid Tool Case",
+          "position": "as-type:briefcase-yellow-",
           "takeable": false,
           "locked": true,
           "lockType": "key",
           "keyPins": [35, 50, 30, 45],
           "difficulty": "medium",
-          "position": { "x": 7, "y": 7 },
+          <%# Room dressing c3: under the end of the workshop's terminal bench (room_aes_workshop, briefcase11); it was pinned at (7,7). %>
           "observations": "A hard-shell tool case with OptiGrid stickers, shoved under the bench. Padlocked.",
           "contents": [
             {
@@ -1666,8 +1671,8 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
     },
 
     "security_office": {
-      "type": "room_office",
-      "dimensions": { "width": 8, "height": 6 },
+      "type": "room_aes_security",
+      "dimensions": { "width": 10, "height": 10 },
       "door_sign": "Security Office",
       "connections": {
         "north": "operations_office"
@@ -1677,6 +1682,7 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
         {
           "type": "pc",
           "name": "Security Camera Monitors",
+          "position": "as-type:cctv_monitors",
           "takeable": false,
           "observations": "The camera wall. Scrub back to the 9th and cameras 7, 8, 12 and 15 go black at 23:45 and come back at 03:00. Workshop corridor and the Hall 2 door."
         },
@@ -1704,6 +1710,7 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
           "type": "safe",
           "id": "security_equipment_locker",
           "name": "Security Equipment Locker",
+          "position": "as-type:filing_cabinet_locked",
           "takeable": false,
           "locked": true,
           "lockType": "key",
@@ -1777,7 +1784,7 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
               dwells facing south. His cone is drawn (los.visualize), and the walk
               back to (12,7) is the window to cross behind him. pauseForPlayer false
               keeps the beat on its timing. Waypoints are room tiles; the x=12 gap
-              between rack columns 11 and 13 is clear (room_battery_hall.json).
+              between the rack blocks is clear (room_aes_hall1 since room dressing c1-c4: open floor x 300-456 from the back wall to y 256).
               Round 4 (browser m1): the east look was at (14,3), 144 px from where
               players stop at the Hall 2 door, inside his 150 px range; at (13,3)
               it is about 176 px, so waiting at the door is safe. %>
@@ -1954,8 +1961,8 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
     },
 
     "battery_hall_2": {
-      "type": "room_battery_hall",
-      "dimensions": { "width": 14, "height": 10 },
+      "type": "room_aes_hall2",
+      "dimensions": { "width": 20, "height": 10 },
       "locked": true,
       "lockType": "rfid",
       "requires": "facility_keycard_level1",
@@ -2065,6 +2072,8 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
         {
           "type": "notes",
           "name": "Rack Bank Maintenance Manifest",
+          <%# Room dressing c3: on a clipboard hook by Hall 2's west door (room_aes_hall2). %>
+          "position": "as-type:aes_clipboard",
           "takeable": true,
           "readable": true,
           "text": "RACK BANK MAINTENANCE MANIFEST — HALL 2\n\nRack Bank A: 64 modules | NMC lithium-ion\nRack Bank B: 64 modules | NMC lithium-ion\nInverter / PCS: 4 MW string inverters\nHydrogen vent fans: 2 × redundant\nESD interlocks: hardwired to plant room\n\nNote: forcing charge beyond the certified ceiling drives cells into thermal runaway. The interlocks exist for exactly this reason.\n\nNight module-swap crew (9): bay 2B, behind the inverter wall, 22:00-06:00.\nContractor request to clear the halls from midnight: REFUSED -- R. Vance.",
@@ -2079,6 +2088,8 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
           "type": "notes",
           "id": "bms_bypass_module",
           "name": "BMS Interlock-Bypass Module",
+          <%# Room dressing c3: the open BMS cabinet against Hall 2's back wall (room_aes_hall2, aes_bms_bypass1). %>
+          "position": "as-type:aes_bms_bypass",
           "takeable": false,
           "readable": true,
           "hasFingerprint": true,
@@ -2091,6 +2102,8 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
         {
           "type": "notes",
           "name": "Emergency Procedures",
+          "position": "as-type:aes_procedures_sign",
+          "readDisplay": "gameDisplay",
           "takeable": false,
           "readable": true,
           "text": "THERMAL EVENT — EMERGENCY ACTIONS\n\n1. Press the hardwired ESD pushbutton (plant room)\n2. Confirm hydrogen vent fans to maximum\n3. Evacuate if H₂ reaches 2.0% by volume (50% of LEL)\n4. Notify grid control\n5. Do not approach a venting rack without SCBA\n\nThe ESD pushbutton is hardwired and cannot be disabled from SCADA.",
@@ -2100,8 +2113,8 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
     },
 
     "plant_room": {
-      "type": "room_it",
-      "dimensions": { "width": 15, "height": 12 },
+      "type": "room_aes_plant",
+      "dimensions": { "width": 10, "height": 10 },
       "locked": true,
       "lockType": "biometric",
       "requires": "Robert Vance",
@@ -2252,6 +2265,8 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
           "type": "emergency-button",
           "id": "esd_pushbutton",
           "name": "Emergency Shutdown Pushbutton — Rack Banks A-C",
+          <%# Room dressing c3: fixed on the plant room's back wall under the EMERGENCY SHUTDOWN plate, a red-hatched keep-clear box on the floor in front (room_aes_plant, aes_esd_station1, top-left 160,33). It landed at random before (regression M4). %>
+          "position": "as-type:aes_esd_station",
           "takeable": false,
           "locked": false,
           "puzzle_graph_role": "lock",
@@ -2296,6 +2311,7 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
         {
           "type": "pc",
           "name": "ENTROPY Command Laptop",
+          "position": "as-type:laptop",
           "takeable": false,
           "readable": true,
           "text": "REMOTE OVERCHARGE CONTROLLER — ARMED\n\nTarget: Albion Rack Banks A / B / C\nTrigger: 0800 local (countdown running)\nSCADA thermal feed: SPOOFED (nominal)\nHydrogen vent fans: FORCED OFF\nESD interlocks (software): DISABLED\n\nSoftware abort: LOCKED until trigger. Hardwired ESD: OUT OF OUR REACH.",
@@ -2340,8 +2356,8 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
     },
 
     "loading_dock": {
-      "type": "small_room_1x1gu",
-      "dimensions": { "width": 8, "height": 8 },
+      "type": "room_aes_dock",
+      "dimensions": { "width": 10, "height": 10 },
       "door_sign": "Loading Dock",
       "connections": {
         "west": "plant_room"
@@ -2351,6 +2367,8 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
         {
           "type": "notes",
           "name": "Loading Dock Schedule",
+          "position": "as-type:aes_clipboard",
+          "readDisplay": "gameDisplay",
           "takeable": false,
           "readable": true,
           "text": "DELIVERY SCHEDULE — JANUARY\n\nJan 10: Module delivery (scheduled)\nJan 12: Coolant delivery (scheduled)\nJan 15: General supplies (scheduled)\n\nNote: OptiGrid van parked here Jan 9-10 (unscheduled). Vance questioned this.",

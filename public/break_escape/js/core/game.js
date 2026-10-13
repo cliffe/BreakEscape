@@ -114,6 +114,14 @@ export function preload() {
     this.load.tilemapTiledJSON('room_zds_hall', 'rooms/room_zds_hall.json'); // m03 corridor: threat map, WHITEHAT sign, water cooler, planter (2x1 GU, 10x6)
     this.load.tilemapTiledJSON('room_zds_hall_exec', 'rooms/room_zds_hall_exec.json'); // m03 executive-wing corridor: carpet, prints, clock, PRIVATE plate (2x1 GU, 10x6)
     this.load.tilemapTiledJSON('room_aes_hall1', 'rooms/room_aes_hall1.json'); // m04 Battery Hall 1: Rack Bank C rows, dial thermometer, status display, H2 detector (4x2 GU, 20x10)
+    this.load.tilemapTiledJSON('room_aes_hall2', 'rooms/room_aes_hall2.json'); // m04 Battery Hall 2 / inverter room: banks A and B, BMS cabinet, inverter rows (4x2 GU, 20x10)
+    this.load.tilemapTiledJSON('room_aes_plant', 'rooms/room_aes_plant.json'); // m04 inverter / plant room: ESD station, switchgear, transformer, generator, bench (2x2 GU)
+    this.load.tilemapTiledJSON('room_aes_workshop', 'rooms/room_aes_workshop.json'); // m04 engineering workshop: terminal bench, test bench, OT racks (2x2 GU)
+    this.load.tilemapTiledJSON('room_aes_security', 'rooms/room_aes_security.json'); // m04 security office: camera wall, console, lockers (2x2 GU)
+    this.load.tilemapTiledJSON('room_aes_ops', 'rooms/room_aes_ops.json'); // m04 operations office: duty engineer's desk, kitchenette, noticeboard (2x2 GU)
+    this.load.tilemapTiledJSON('room_aes_reception', 'rooms/room_aes_reception.json'); // m04 gatehouse reception: Albion sign, security counter, PPE station (2x2 GU)
+    this.load.tilemapTiledJSON('room_aes_control', 'rooms/room_aes_control.json'); // m04 SCADA control room: HMI console, operator chairs (2x1 GU, 10x6)
+    this.load.tilemapTiledJSON('room_aes_dock', 'rooms/room_aes_dock.json'); // m04 loading dock: roller shutter, pallets, bay lines (2x2 GU)
 
     // Load room images (now using smaller 32px scale images)
     this.load.image('room_reception', 'tiles/rooms/room1.png');

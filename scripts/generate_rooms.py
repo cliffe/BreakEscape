@@ -2139,6 +2139,13 @@ class _Uni:
             place_on_table(table, name, x_frac=x_frac, surface_frac=surface_frac, obj_id=self._next())
         )
 
+    def solid(self, name, x, y, layer="items", inset=2, depth=10):
+        """An item that blocks the player: the sprite plus an invisible collision strip
+        along its base (items-layer sprites get no physics body of their own)."""
+        self.item(name, x, y, layer=layer)
+        w = lookup("objects", name)["w"]
+        self.collision(x + inset, y - depth, w - 2 * inset, depth)
+
     def collision(self, x, y_top, w, h):
         """An invisible blocking rectangle (room pixels; y is the TOP edge)."""
         self.collisions.append({
@@ -2941,71 +2948,414 @@ def room_zds_hall_exec():
 
 def _rack_row(r, x0, feet, count):
     """A row of the original dark battery stacks (batrack, 32x72, drawn from photos;
-    user, 2026-10-13: kept in preference to new art) from x0. Returns the x after the row."""
+    user, 2026-10-13: kept in preference to new art) from x0, with one collision strip
+    along the row's base so the row is solid (a batrack's own table body is only 12 px
+    wide, which left 20 px gaps a player could slip through). The stack above the base
+    is walk-behind. Returns the x after the row."""
     for i in range(count):
         r.table("batrack", float(x0 + 32 * i), float(feet), kind="objects")
+    r.collision(float(x0 + 2), float(feet - 16), float(32 * count - 4), 16.0)
     return x0 + 32 * count
+
+
+def _rack_block(r, x0, rows, count):
+    """Overlapping rows of batrack from x0 at the given feet. The stacks are drawn
+    walk-behind, but the block is solid from the first row's base to the last row's
+    (cycle 4, review F2: 20 px corridors between overlapping rows read as a bug), so
+    the only walk-behind lane is the one in front of the block's top."""
+    for feet in rows:
+        _rack_row(r, x0, feet, count)
+    r.collision(float(x0 + 2), float(rows[0] - 16), float(32 * count - 4), float(rows[-1] - rows[0] + 16))
 
 
 def room_aes_hall1():
     """
-    4×2 GU (20×10) Battery Hall 1: Rack Bank C, rows of the original dark battery
-    stacks (batrack). Grey epoxy floor with a yellow
-    walkway edge along the door row, hatched keep-clear borders round the rack
-    rows and a marked north-south aisle (room_aes_hall1_w/_e).
-    Doors: W and E on row 2 (y 64-100), S in the SW corner (x 32-64); the
-    workshop covers cols 0-9 below y 256.
-    Kept clear: the door row y 64-132 wall to wall; the aisle x 346-454 from the
-    door row to y 300, where Cipher (operative_cipher) patrols: waypoints (12,7),
-    (12,3), (13,3), (10,3) (sprite centres x 320-416, feet y 128-256); the west
-    south aisle (y 210-256) to the S door.
-    Back wall, west to east: PPE sign, the dial thermometer (the core deduction:
-    an analogue instrument on the Rack Bank C wall, same spot as before, x 66),
-    the RACK BANK C plate over the row, a vent fan, the digital rack status
-    display (x 228, as before), an HV warning sign, the H2 detector under the
-    ventilation outlet (x 388, as before), the BESS process diagram, a CCTV
-    camera and an amber beacon. West wall: the duty-round terminal (where the
-    old decorative red button was: nothing red in the hall now reads as an ESD)
-    and an extinguisher. East wall: an emergency phone.
-    Slots (as-type): aes_dial_thermometer (Analogue Thermometer), aes_status_display
-    (Battery Rack Status Panels), aes_h2_detector (H2 Gas Detector Panel),
-    aes_process_diagram (BESS Process Diagram), aes_round_terminal (Duty Round Panel).
+    4×2 GU (20×10) Battery Hall 1: Rack Bank C, packed blocks of the original dark
+    battery stacks (batrack). Grey epoxy floor with trunking, drains, door wear, a
+    yellow line along the back-wall kit and hatched keep-clear borders
+    (room_aes_hall1_w/_e).
+    Doors: W and E on row 2 (y 64-100), S in the SW corner (x 32-64); the workshop
+    covers cols 0-9 below y 256.
+    Cycle 3 (user: fill the door row too; stacks collide only at the base, so the
+    player can walk behind them): low kit stands along the back wall (feet 84-88) in
+    the gaps between the readable fixtures; the west block (x 108-300) and the east
+    block (x 456-584) start at feet 166, so their tops (y 94) overhang the lane along
+    the back wall and a player walking it is half hidden behind the stacks. The lane
+    y 88-148 is walkable wall to wall.
+    Kept clear for Cipher (operative_cipher): his waypoints (12,7), (12,3), (13,3),
+    (10,3) (sprite centres x 320-416) are on open floor x 300-456 from the back wall
+    to y 256; nothing overhangs them, so he stays in view for timing the crossing.
+    Kept clear for reading: the floor under the dial (x 56-100), the status display
+    (x 218-264), the H2 detector (x 378-412) and the process diagram (x 462-524).
+    Kept clear for walking: the W and E door mouths, the S-door lane x 32-64.
+    Slots (as-type): aes_dial_thermometer, aes_status_display, aes_h2_detector,
+    aes_process_diagram, aes_round_terminal.
     """
     r = _Uni()
-    # rack blocks of the original batrack stacks (72 tall), packed in overlapping rows as
-    # the photos show (cycle 2, user: "a lot of open space"). Tops stay below the walkway
-    # (y 130+), the aisle x 346-448 and the S-door lane x 32-64 stay clear.
-    _rack_row(r, 112, 202, 7)                         # Rack Bank C, west block back row: x 112-336
-    _rack_row(r, 112, 238, 7)                         # west block front row
-    _rack_row(r, 456, 202, 4)                         # east block: x 456-584, three rows
-    _rack_row(r, 456, 240, 4)
-    _rack_row(r, 456, 278, 4)
-    # west pocket between the S-door lane and the block (x 66-110)
-    r.item("aes_suppression1", 68.0, 200.0)           # gas suppression cylinders, top 137
-    r.item("aes_combiner1", 70.0, 236.0)              # DC combiner cabinet fed from the block
-    r.item("aes_spill_kit1", 90.0, 236.0)             # electrolyte spill kit
-    # east edge strip (x 586-606) and the aisle's south end (below Cipher's (12,7))
-    r.item("aes_ladder1", 586.0, 236.0)
-    r.item("aes_bollard1", 592.0, 300.0)
-    r.item("aes_cable_drum1", 414.0, 304.0)
-    r.item("aes_bms_tower1", 586.0, 196.0)            # bank C's BMS master controller, end of the east block
+    # rack blocks (72 tall): west 3 rows of 6, east 4 rows of 4
+    _rack_block(r, 108, (166, 202, 238), 6)           # Rack Bank C, x 108-300
+    _rack_block(r, 456, (166, 202, 238, 278), 4)      # x 456-584
     # back wall
     r.item("aes_ppe_sign1", 38.0, 52.0)
-    r.item("aes_dial_thermometer1", 66.0, 56.0)       # top-left 66,33: in reach from the walkway
-    r.item("aes_bank_c_sign1", 98.0, 34.0)
-    r.item("aes_vent_fan1", 160.0, 50.0)
+    r.item("aes_dial_thermometer1", 66.0, 56.0)       # top-left 66,33
+    r.item("aes_bank_c_sign1", 104.0, 34.0)
+    r.item("aes_vent_fan1", 186.0, 48.0)
     r.item("aes_status_display1", 228.0, 54.0)        # top-left 228,34
-    r.item("aes_hv_danger1", 280.0, 56.0)
+    r.item("aes_hv_danger1", 272.0, 50.0)
     r.item("aes_h2_detector1", 388.0, 56.0)           # top-left 388,34
-    r.item("aes_vent_fan1", 410.0, 48.0)              # the ventilation outlet over the aisle
+    r.item("aes_vent_fan1", 410.0, 48.0)              # the ventilation outlet over the open floor
     r.item("aes_process_diagram1", 470.0, 52.0)
     r.item("aes_cctv1", 556.0, 32.0)
     r.item("aes_beacon1", 586.0, 44.0)
+    # low kit along the back wall, in the gaps between the fixtures a player reads
+    r.solid("aes_spill_cabinet1", 106.0, 86.0)
+    r.solid("aes_combiner2", 132.0, 86.0)
+    r.solid("aes_drum1", 156.0, 86.0)
+    r.solid("aes_ppe_cabinet1", 178.0, 88.0)
+    r.solid("aes_air_mover1", 268.0, 88.0)
+    r.solid("aes_spill_kit1", 528.0, 88.0)
+    # west pocket between the S-door lane and the block
+    r.solid("aes_suppression1", 64.0, 238.0)
+    # the open floor's west edge, clear of Cipher's x 368-400
+    r.solid("aes_junction_box1", 304.0, 202.0)       # DC junction box fed from the block
+    r.solid("aes_cabinet_dark1", 306.0, 244.0)
+    # east edge strip and the SE corner
+    r.solid("aes_bms_tower1", 586.0, 196.0)
+    r.solid("aes_ladder1", 586.0, 236.0)
+    r.solid("aes_bollard1", 594.0, 300.0)
+    r.solid("aes_cable_drum1", 420.0, 304.0)
     # side walls
     r.item("aes_round_terminal1", 12.0, 176.0)        # west wall, below the door row
-    r.item("fire_extinguisher1", 14.0, 238.0)
-    r.item("aes_emergency_phone1", 610.0, 162.0)      # east wall, below the door row
+    r.item("fire_extinguisher1", 14.0, 136.0)
+    r.item("aes_emergency_phone1", 610.0, 140.0)      # east wall, below the door row
     return r.build("room_aes_hall1", "20x10_wide")
+
+
+def room_aes_hall2():
+    """
+    4×2 GU (20×10) Battery Hall 2 / inverter room: rack banks A and B (batrack),
+    the BMS cabinet the bypass module is fitted in, a row of string inverters along
+    the back wall's east end and a second inverter row in front of it, behind a
+    red-hatched HV keep-clear box (room_aes_hall2_w/_e).
+    Doors: W on row 2, S in the SW corner (x 32-64); the plant room and the loading
+    dock cover the bottom two rows, so floor is y 64-256.
+    Relay (operative_relay) patrols row 7 between tiles 5 and 15 (sprite centres
+    x 160-480, feet about 240): y 206-256 stays clear from x 100 to 520.
+    Kept clear: the W door mouth and a lane x 32-96 down to the S door; a lane along
+    the back wall y 88-148 behind the banks (walk-behind), reaching the procedures
+    sign and the BMS cabinet.
+    Slots (as-type): aes_procedures_sign (Emergency Procedures), aes_bms_bypass (BMS
+    Interlock-Bypass Module), aes_clipboard (Rack Bank Maintenance Manifest, on the
+    west wall by the door).
+    """
+    r = _Uni()
+    _rack_block(r, 136, (166, 202), 4)                # Rack Bank A, x 136-264
+    _rack_block(r, 296, (166, 202), 4)                # Rack Bank B, x 296-424
+    # inverters: a back row against the wall and a front row
+    for x in (440.0, 496.0, 552.0):
+        r.table("aes_inverter1", x, 120.0, kind="objects")
+    r.collision(442.0, 104.0, 164.0, 16.0)
+    for x in (452.0, 484.0, 516.0, 548.0):
+        r.table("aes_inverter2", x, 202.0, kind="objects")
+    r.collision(454.0, 186.0, 124.0, 16.0)
+    # back wall
+    r.item("aes_h2_detector1", 40.0, 56.0)
+    r.item("aes_vent_fan1", 60.0, 48.0)
+    r.item("aes_procedures_sign1", 140.0, 56.0)       # Emergency Procedures, read in place
+    # BMS cabinet A/B, door open, the bypass module: in the open beside bank A, fully in
+    # view and reachable from the floor (cycle 4, review F1: it stood behind the racks)
+    r.solid("aes_bms_bypass1", 86.0, 120.0, depth=12)
+    r.item("aes_bank_a_sign1", 196.0, 34.0)
+    r.item("aes_status_display1", 252.0, 54.0)
+    r.item("aes_bank_b_sign1", 296.0, 34.0)
+    r.item("aes_hv_danger1", 360.0, 52.0)
+    r.solid("aes_combiner2", 392.0, 86.0)
+    r.item("aes_inverter_sign1", 470.0, 26.0)
+    r.item("aes_cctv1", 586.0, 30.0)
+    # west wall: the manifest on a clipboard hook by the door, an extinguisher
+    r.item("aes_clipboard1", 12.0, 150.0)
+    r.item("fire_extinguisher1", 14.0, 200.0)
+    # floor kit east of Relay's beat
+    r.solid("aes_chiller1", 522.0, 250.0, depth=14)  # the inverter room's cooling unit
+    r.solid("aes_gas_cylinders1", 586.0, 250.0)
+    r.solid("aes_cable_drum1", 270.0, 200.0)          # in the gap between the banks
+    return r.build("room_aes_hall2", "20x10_wide")
+
+
+def room_aes_plant():
+    """
+    2×2 GU inverter / plant room, the finale: green epoxy, a red-hatched keep-clear
+    box in front of the ESD (room_aes_plant). Back wall: the EMERGENCY SHUTDOWN plate
+    over the ESD station (fixed, x 160), HV switchgear either side; east wall a breaker
+    panel and the lockout station; a transformer and the standby generator along the
+    south; the plant-room bench on the west side with the Coordination Log; Critical
+    Mass's folding table with the command laptop and the marked blueprints east.
+    Doors: N in the NW corner (x 32-64), E on row 2. Nothing to the south.
+    Static (4,7) and Voltage (7,7) stand on clear floor at x 112-240, y 190-256.
+    Slots (as-type): aes_esd_station (ESD pushbutton), laptop (ENTROPY Command
+    Laptop); notes1/notes3 on the bench (Coordination Log, Operation Log) and notes4
+    on the folding table (Blueprints), top-lefts 32 px+ apart (array order matches the
+    scenario's object order).
+    """
+    r = _Uni()
+    # back wall: ESD at the centre, switchgear either side, kept clear in front
+    r.item("aes_esd_sign1", 148.0, 30.0)
+    r.item("aes_esd_station1", 160.0, 58.0)           # top-left 160,33; the red-hatched box below
+    r.table("aes_switchgear2", 102.0, 116.0, kind="objects")
+    r.collision(104.0, 104.0, 24.0, 12.0)
+    r.table("aes_switchgear1", 198.0, 116.0, kind="objects")
+    r.collision(200.0, 104.0, 58.0, 12.0)
+    r.item("aes_hv_danger1", 106.0, 50.0)
+    # east wall below the door row
+    r.item("aes_breaker_panel1", 266.0, 54.0)  # back wall, by the E door
+    # west: the plant-room bench (steel), Static's side
+    bench = r.table("zds_desk1", 34.0, 186.0, kind="objects")  # x 34-112, top 147
+    r.solid("aes_toolbox1", 40.0, 214.0)
+    # east: Critical Mass's folding table, Voltage's command post
+    camp = r.table("smalldesk2", 212.0, 196.0)        # two folding tables pushed together: Voltage's command post
+    camp2 = r.table("smalldesk2", 246.0, 196.0)
+    r.solid("aes_tool_trolley1", 140.0, 300.0)
+    # south: transformer and generator
+    r.solid("aes_transformer1", 34.0, 300.0, depth=14)
+    r.solid("aes_hv_sign1", 92.0, 300.0)
+    r.solid("aes_generator1", 200.0, 300.0, depth=14)
+    r.solid("aes_gas_cylinders1", 266.0, 300.0)
+    r.item("fire_extinguisher1", 14.0, 140.0)
+    # array order decides which paper lands where (scenario order: Blueprints, Coordination Log, Operation Log)
+    r.on(camp2, "notes4", 0.70, 0.45, layer="conditional_table_items")  # Facility Blueprints (Marked)
+    r.on(camp, "laptop6", 0.30, 0.40, layer="conditional_table_items")  # ENTROPY Command Laptop, 32 px+ from the plans
+    r.on(bench, "notes1", 0.22, 0.40, layer="conditional_table_items")   # Coordination Log
+    r.on(bench, "aes_battery_module1", 0.55, 0.30)
+    r.on(bench, "notes3", 0.86, 0.40, layer="conditional_table_items")   # Voltage's Operation Log
+    return r.build("room_aes_plant")
+
+
+def room_aes_workshop():
+    """
+    2×2 GU engineering workshop: sealed concrete, a hazard line round the module
+    test bench (room_aes_workshop). Back wall: pegboard of tools, the OT network
+    diagram, a clock; the OT comms rack and the BMS jump server's rack against it.
+    The terminal bench (steel) with the jump-server terminal and the drop-site
+    terminal; a parts bench and an electronics bench; the network monitoring cart;
+    spare battery modules, a tool trolley, lockers, a cable drum. The OptiGrid tool
+    case is shoved under the terminal bench's end.
+    Door: N in the NW corner (x 32-64). Nothing to the south.
+    Slots: pc10 on the terminal bench (as-type:pc, BMS Jump Server Terminal),
+    flag-station on it (Drop-Site Terminal), kvm_cart1 (as-type:kvm_cart, Network
+    Monitoring Station), notes3 on the parts bench (Workshop Access Log),
+    briefcase-yellow-1 (as-type, OptiGrid Tool Case).
+    """
+    r = _Uni()
+    r.item("pegboard_tools1", 100.0, 58.0)
+    r.item("network_architecture", 160.0, 52.0)
+    r.item("wall_clock1", 236.0, 38.0)
+    r.item("aes_ppe_sign1", 266.0, 44.0)
+    r.table("network_rack1", 222.0, 112.0, kind="objects")
+    r.table("server_rack1", 258.0, 110.0, kind="objects")
+    r.collision(224.0, 96.0, 64.0, 16.0)
+    # terminal bench, west of the middle
+    term = r.table("zds_desk1", 100.0, 160.0, kind="objects")   # x 100-178, top 121
+    r.item("chair-darkgray-1", 130.0, 132.0)
+    # module test bench inside the hazard line (90,186)-(230,262)
+    r.table("it_workbench2", 104.0, 246.0, kind="objects")
+    r.table("electronics_bench2", 166.0, 246.0, kind="objects")
+    r.solid("aes_battery_module1", 214.0, 256.0)
+    # parts bench along the east wall
+    parts = r.table("desk3", 238.0, 200.0)
+    r.item("kvm_cart1", 250.0, 270.0, layer="conditional_items")  # Network Monitoring Station
+    r.solid("staff_lockers1", 34.0, 300.0, depth=12)
+    r.solid("aes_tool_trolley1", 92.0, 300.0)
+    r.solid("aes_cable_drum1", 124.0, 300.0)
+    r.item("fire_extinguisher1", 14.0, 140.0)
+    r.item("briefcase-yellow-1", 182.0, 180.0, layer="conditional_items")  # a yellow hard case at the bench's end  # OptiGrid Tool Case, under the bench's end
+    r.on(term, "pc10", 0.30, 0.45, layer="conditional_table_items")
+    r.on(term, "flag-station", 0.82, 0.45, layer="conditional_table_items")
+    r.on(parts, "notes3", 0.50, 0.40, layer="conditional_table_items")
+    r.on(parts, "aes_toolbox1", 0.5, 0.95)
+    return r.build("room_aes_workshop")
+
+
+def room_aes_security():
+    """
+    2×2 GU security office: charcoal carpet (room_aes_security). Back wall: the
+    camera wall over the console desk, the key cabinet, the radio charger; the
+    equipment lockers; a desk with the logs and the access-control printout; a
+    kettle and mugs on a side unit; the guard's hi-vis on hooks.
+    Door: N in the NW corner (x 32-64). Nothing to the south.
+    Slots (as-type): cctv_monitors (Security Camera Monitors), filing_cabinet_locked
+    (Security Equipment Locker); notes on the console and the side desk (Camera System
+    Logs, Access Control Export).
+    """
+    r = _Uni()
+    r.item("cctv_monitors1", 98.0, 50.0)
+    r.item("cctv_monitors2", 146.0, 50.0)
+    r.item("key_cabinet1", 196.0, 46.0)
+    r.item("aes_radio_charger1", 218.0, 46.0)
+    r.item("rota_board1", 238.0, 44.0)               # guard rota
+    console = r.table("desk1", 104.0, 118.0)          # x 104-182, under the camera wall
+    r.item("chair-grey-1", 132.0, 148.0)
+    r.solid("filing_cabinet_locked1", 240.0, 122.0, depth=12)  # the equipment locker, padlocked
+    side = r.table("desk3", 36.0, 220.0)              # the printer desk, west
+    r.table("smalldesk2", 236.0, 236.0)               # tea station, east
+    r.item("fire_alarm_point1", 14.0, 140.0)
+    r.solid("filing_cabinet_steel1", 258.0, 300.0)
+    r.solid("bin8", 92.0, 236.0)
+    r.solid("undercounter_fridge1", 212.0, 238.0)
+    r.solid("photocopier1", 40.0, 280.0)             # printer for the access-control exports
+    r.item("chair-grey-1", 150.0, 290.0)             # a spare chair (wheeled, pushable: no fixed collision)
+    r.item("hospital_chair_north", 60.0, 246.0)      # at the printer desk
+    r.on(console, "pc8", 0.25, 0.40)
+    r.on(console, "notes1", 0.78, 0.45, layer="conditional_table_items")   # Camera System Logs
+    r.on(console, "phone4", 0.55, 0.42)
+    r.on(side, "notes3", 0.30, 0.42, layer="conditional_table_items")      # Access Control Export
+    r.on(side, "binders1", 0.80, 0.30)
+    r.on(r.tables[-1], "kettle1", 0.3, 0.30)
+    r.on(r.tables[-1], "mugs_tray1", 0.75, 0.40)
+    return r.build("room_aes_security")
+
+
+def room_aes_ops():
+    """
+    2×2 GU operations office (Robert Vance's, the duty engineer): blue-grey carpet,
+    a vinyl patch under the night-shift kitchenette (room_aes_carpet). Back wall: a
+    site plan, the shift rota board, blinds, the kitchenette (sink, fridge, kettle,
+    microwave). Vance's desk with the BMS terminal and his work orders; a second
+    desk with the budget memo; the noticeboard with the layout map on the back wall;
+    filing cabinets; a coat stand with a hi-vis; the night-shift sofa.
+    Doors: N in the NW corner (x 32-64), E on row 2 (y 64-100), S in the SW corner;
+    the security office covers the bottom two rows (floor y 64-256).
+    Vance (robert_vance) stands at (5,7), sprite centre (160,224): clear floor x
+    136-184, y 190-256.
+    Slots: pc8 on Vance's desk (BMS Monitoring Terminal), notes1 on it (Work
+    Orders), notes3 on the second desk (Budget Cut Memo), notes4 pinned on the
+    noticeboard (Facility Layout Map).
+    """
+    r = _Uni()
+    r.item("notice_board1", 104.0, 50.0)              # noticeboard, the layout map pinned on it
+    r.item("year_planner1", 204.0, 52.0)              # shift rota, over the kitchenette
+    r.item("window_blinds1", 152.0, 50.0)
+    counter = r.table("kitchen_counter_sink1", 196.0, 104.0, kind="objects")
+    fridge = r.table("undercounter_fridge1", 243.0, 104.0, kind="objects")
+    r.collision(198.0, 92.0, 66.0, 12.0)
+    desk = r.table("desk1", 196.0, 176.0)             # Vance's desk, x 196-274
+    r.item("chair-grey-1", 226.0, 150.0)
+    desk2 = r.table("desk3", 60.0, 176.0)             # the day engineer's desk, x 60-111
+    r.solid("filing_cabinet", 92.0, 250.0, depth=12)
+    r.solid("filing_cabinet", 120.0, 250.0, depth=12)
+    r.solid("coat_stand1", 262.0, 150.0)
+    r.solid("uni_sofa2", 210.0, 252.0, depth=12)     # the night-shift sofa
+    r.solid("bin8", 116.0, 196.0)
+    r.item("wall_clock1", 266.0, 44.0)
+    r.on(counter, "kettle1", 0.3, 0.25)
+    r.on(fridge, "aes_microwave1", 0.5, 0.15)
+    r.on(desk, "pc8", 0.35, 0.40)
+    r.on(desk, "notes1", 0.85, 0.45, layer="conditional_table_items")
+    r.on(desk, "office-misc-cup", 0.62, 0.40)
+    # array order decides which paper lands where (scenario order: Work Orders, Layout Map, Budget Memo)
+    r.conditional_table_items.append(make_obj("objects", "notes4", 112.0, 44.0, r._next()))  # pinned on the noticeboard
+    r.on(desk2, "notes3", 0.50, 0.42, layer="conditional_table_items")
+    return r.build("room_aes_ops")
+
+
+def room_aes_reception():
+    """
+    2×2 GU gatehouse reception: terrazzo with the Albion bolt inlay (room_aes_lobby).
+    Back wall: the ALBION ENERGY STORAGE sign over the security counter, a site
+    safety board, CCTV; a PPE station by the door (hard hats, hi-vis), the visitor
+    seating, a water cooler.
+    Door: S in the SW corner (x 32-64); the operations office covers the bottom two
+    rows (floor y 64-256).
+    The guard (security_guard) stands at (5,4), sprite centre (160,128), in front of
+    the counter, on clear floor.
+    Slots: notes1 and notes3 on the counter (Visitor Sign-In Log, Security Desk
+    Procedures), top-lefts 32 px+ apart.
+    """
+    r = _Uni()
+    counter = r.table("reception_table1", 72.0, 100.0)   # x 72-246, top 53
+    r.item("aes_logo_sign1", 124.0, 36.0)
+    r.item("aes_cctv1", 268.0, 32.0)
+    r.item("aes_ppe_sign1", 40.0, 50.0)
+    r.item("aes_ppe_rack1", 62.0, 56.0)              # visitors' hard hats and hi-vis
+    r.item("hospital_chart_board1", 200.0, 52.0)     # site safety board: permits and the induction sheet
+    r.item("fire_alarm_point1", 292.0, 132.0)
+    r.solid("water_cooler1", 266.0, 120.0)
+    # visitor seating in the SE corner, a check-in kiosk by the door lane
+    r.solid("leather_sofa1", 196.0, 252.0, depth=12)
+    r.solid("planter_fig1", 264.0, 250.0, depth=12)
+    r.solid("checkin_kiosk1", 72.0, 230.0)
+    r.on(counter, "notes1", 0.30, 0.45, layer="conditional_table_items")
+    r.on(counter, "notes3", 0.62, 0.45, layer="conditional_table_items")
+    r.on(counter, "pc10", 0.85, 0.35)
+    r.on(counter, "phone4", 0.12, 0.40)
+    return r.build("room_aes_reception")
+
+
+def room_aes_control():
+    """
+    2×1 GU (10×6) SCADA control room: anti-static vinyl (room_aes_control). The
+    console of HMI screens across the back wall on two operator desks, the network
+    architecture diagram, an alarm panel, two operator chairs, a printer stand with
+    the parameter log, a filing cabinet, an extinguisher.
+    Doors: W and E on row 2. Nothing to the south.
+    Slots: screens on the console (as-type:screens, SCADA HMI Main Display); notes1
+    on the side table (Thermal & Charge Parameters Log), notes3 on the console's
+    east end (Emergency Shutdown Procedure).
+    """
+    r = _Uni()
+    d1 = r.table("desk1", 64.0, 96.0)
+    d2 = r.table("desk3", 142.0, 96.0)
+    r.items.append(make_obj("objects", "screens", 64.0, 92.0, r._next()))
+    r.item("network_architecture", 230.0, 52.0)
+    r.item("alarm_panel", 40.0, 50.0)
+    r.item("hospital_chair_north", 96.0, 132.0)
+    r.item("hospital_chair_north", 160.0, 132.0)
+    side = r.table("desk1", 200.0, 150.0)             # the printer table: log and procedure, 46 px apart
+    r.item("fire_extinguisher1", 14.0, 150.0)
+    r.on(side, "notes1", 0.2, 0.40, layer="conditional_table_items")
+    r.on(side, "notes3", 0.8, 0.40, layer="conditional_table_items")
+    return r.build("room_aes_control", "10x6_hall")
+
+
+def room_aes_dock():
+    """
+    2×2 GU loading dock: concrete with bay lines and a striped threshold at the
+    shutter (room_aes_dock). Back wall: the roller shutter (x 112-208) under the
+    LOADING BAY 1 sign and a beacon, bollards either side, the delivery clipboard on
+    the wall; pallets of modules, a pallet truck, cones; the go-bag dumped by the
+    shutter, the escape plan dropped beside it.
+    Door: W on row 2. Nothing to the south.
+    Slots (as-type): aes_clipboard (Loading Dock Schedule, read in place);
+    suitcase8 (Go-Bag); notes2 on the floor by the shutter (Voltage's Escape Plan).
+    """
+    r = _Uni()
+    r.item("aes_roller_shutter1", 112.0, 64.0)
+    r.item("aes_dock_sign1", 130.0, 12.0 + 11.0)
+    r.item("aes_beacon1", 214.0, 34.0)
+    r.item("aes_clipboard1", 236.0, 52.0)             # delivery schedule
+    r.solid("aes_bollard1", 96.0, 88.0)
+    r.solid("aes_bollard1", 212.0, 88.0)
+    r.item("suitcase8", 140.0, 100.0, layer="conditional_items")   # the go-bag, by the shutter
+    r.item("notes2", 180.0, 98.0, layer="conditional_items")       # the escape plan, dropped
+    # returns, west: pallets of spent modules
+    r.solid("aes_pallet1", 40.0, 200.0)
+    r.item("aes_battery_module1", 43.0, 186.0)
+    r.solid("aes_pallet1", 40.0, 260.0)
+    r.solid("aes_pallet1", 40.0, 296.0)
+    r.solid("aes_pallet1", 72.0, 296.0)
+    r.item("aes_battery_module1", 75.0, 282.0)
+    # the bay: tyre marks and a dock plate in the floor sheet, a barrier at its mouth
+    r.solid("aes_barrier1", 146.0, 262.0)
+    r.solid("aes_pallet_truck1", 110.0, 300.0)
+    # deliveries in, east
+    r.solid("aes_pallet1", 228.0, 200.0)
+    r.solid("aes_pallet1", 256.0, 200.0)
+    r.item("aes_battery_module1", 231.0, 186.0)
+    r.solid("aes_compressor1", 258.0, 140.0)
+    r.solid("aes_spill_kit1", 262.0, 252.0)
+    r.solid("aes_drum1", 240.0, 252.0)
+    r.solid("aes_cones1", 250.0, 300.0)
+    r.item("fire_extinguisher1", 292.0, 140.0)
+    return r.build("room_aes_dock")
 
 
 def main():
@@ -3046,6 +3396,14 @@ def main():
         "room_zds_hall": room_zds_hall,
         "room_zds_hall_exec": room_zds_hall_exec,
         "room_aes_hall1": room_aes_hall1,
+        "room_aes_hall2": room_aes_hall2,
+        "room_aes_plant": room_aes_plant,
+        "room_aes_workshop": room_aes_workshop,
+        "room_aes_security": room_aes_security,
+        "room_aes_ops": room_aes_ops,
+        "room_aes_reception": room_aes_reception,
+        "room_aes_control": room_aes_control,
+        "room_aes_dock": room_aes_dock,
     }
     # Optionally restrict to specific rooms (argv) so already-updated rooms are
     # not clobbered, e.g.  python3 scripts/generate_rooms.py room_hospital_hall

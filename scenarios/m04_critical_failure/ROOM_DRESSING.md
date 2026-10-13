@@ -145,3 +145,69 @@ Shots: `build_evidence/dressing_c2/battery_hall_1-a.png` (in game, Cipher shown)
 
 - Assumption: overlapping rows (as the original map did) are the "packed" look the user wants, rather than more aisles between single rows; there isn't room for a second full single row in the west half without crossing the door row.
 - Assumption: the red cylinders in the suppression cabinet read as gas cylinders, not as an ESD.
+
+## Cycle 3 (2026-10-13): Hall 1's door row, and the other eight rooms built
+
+User on Hall 1 cycle 2: fill the door row with low kit; another rack row is fine; racks collide only at the base, so the player can walk behind them. Standing approval from here: keep iterating, build the other eight rooms in the same treatment (the 10×10 dock approved), up to ten cycles while each still improves, a fresh reviewer each cycle, report every two cycles.
+
+### What changed
+
+- **Hall 1:** the blocks moved up to feet 166 (west 3 rows of 6, x 108-300; east 4 rows of 4, x 456-584), so the stacks' tops (y 94) overhang a walk-behind lane y 88-148 along the back wall. Low kit stands against the wall in the gaps between the readable fixtures: spill cabinet, combiner, drum, PPE cabinet, air mover, spill kit. The floor under the dial (x 56-100), the status display (x 218-264), the H2 detector (x 378-412) and the process diagram (x 462-524) stays clear. Each rack row gets a collision strip along its base: a batrack's own table body is 12 px wide (`rooms.js:2576-2588`, inset 10 px each side), which left 20 px gaps a player (18 px wide, `player.js:135`) could slip through. Items-layer props get no body of their own, so the builder's new `_Uni.solid()` adds a strip under each.
+- **The other eight rooms** got their own builders and maps (`room_aes_hall2`, `_plant`, `_workshop`, `_security`, `_ops`, `_reception`, `_control`, `_dock`), registered in `game.js`, the schema and the README room table. Every scenario object sits on a fixture (`slot_audit`: 0 problems, down from 12). Every room's `dimensions` now matches its map; the dock is 10×10 under Hall 2's east half (door alignment 8/8, overlap check clean).
+- **Plant room:** the ESD fixed on the back wall (top-left 160,33) under an EMERGENCY SHUTDOWN plate, with a red-hatched keep-clear box in front and switchgear either side; the Coordination Log and the Operation Log on the steel bench, the laptop and the marked blueprints on Voltage's tables.
+- **Scenario edits** (layout fields only, each replacement asserted unique on a fresh read): eight room `type`s and `dimensions`; `as-type` on 14 objects; `readDisplay: gameDisplay` on Hall 2's Emergency Procedures and the dock's schedule; the tool case's (7,7) pin replaced.
+
+### Review (fresh Opus reviewer, read-only)
+
+Hard constraints all passed: Cipher's waypoints on walkable floor with his crossing window intact, Relay's beat clear, Static and Voltage on clear floor, the ESD fixed, slot audit clean.
+
+| id | room | sev | finding | outcome |
+|---|---|---|---|---|
+| F1 | Hall 2 | major | The BMS bypass cabinet stood behind Rack Bank A, half hidden and reachable only from the hidden lane | **Fixed:** bank A shortened to 4 stacks (x 136-264), cabinet moved into the open at x 86, procedures sign to x 140 (67 px from the cabinet's top-left) |
+| F2 | Halls 1, 2 | major | 20 px corridors between overlapping rows, open at both ends | **Fixed:** each block is solid from its first row's base to its last (`_rack_block`); the only walk-behind lane is the one along the back wall, in front of each block's top. Decision logged (the user's "walk behind them" read as the back-wall lane) |
+| F3 | Dock | major | Mostly empty; kit pushed into the corners | **Fixed:** returns pallets west, deliveries east, dock plate and tyre marks painted in the bay, barrier at its mouth, compressor, spill kit, drum |
+| F4 | Security | major | Sparse, no printer, a fridge that read as a speaker | **Fixed:** photocopier, rota board, undercounter fridge, printer-desk chair, spare chair |
+| F5 | Ops | minor | Noticeboard 24 px over the floor; coat stand in the east wall | **Fixed:** noticeboard to the back wall with the layout map pinned on it; filing cabinets moved south to clear the floor under it; coat stand to x 262 |
+| F6 | Security, dock | minor | Cabinet and drum in the east wall strip | **Fixed:** moved to x 258 and x 240 |
+| F7 | SCADA | minor | The procedure note lay inside the HMI's bounds (pick-one menu) | **Fixed:** both papers on a printer table, 47 px apart, clear of the console |
+| F8 | Reception | minor | Orange retro chairs, no safety board, PPE rack over the floor | **Fixed:** leather sofa, safety board, PPE rack on the back wall, check-in kiosk |
+| F9 | Hall 1 | minor | The pale combiner read as a ghostly tank | **Fixed:** dark junction box |
+| F10 | Hall 1 | minor | Kit line stopped short; a lone bollard | **Fixed:** line to x 586; spill kit instead |
+| F11 | Plant | minor | Toolbox and HV sign walk-through; red lockout box beside the ESD; office desk as camp table | **Fixed:** both solid; lockout station removed; two folding tables |
+| F12 | Workshop | minor | First aid on the rack top; executive briefcase as the tool case | **Fixed:** first aid removed; a yellow hard case at the bench's end (`as-type:briefcase-yellow-`) |
+| F13 | Hall 2 | minor | Red hatch at the inverters echoed the ESD box; outdoor condenser | **Fixed:** yellow/black hatch; chiller unit |
+| F14 | erb | minor | Stale comment naming room_battery_hall | **Fixed:** comment updated (ERB comment only) |
+
+Counts: 0 blockers, 4 majors, 10 minors; all fixed in cycle 4.
+
+## Cycle 4 (2026-10-13): fixes from the cycle 3 review
+
+All fourteen findings above, plus my own pass on the cycle 4 shots: the same blue sofa had landed in three rooms (reception now has the leather sofa, security a spare chair, ops keeps the sofa), and the dock's tyre marks were too heavy (lightened).
+
+### Cipher (Hall 1), recomputed after the door-row change
+
+`build_evidence/dressing_c2/cone.py` now also counts the builder's collision rectangles, so walkable floor is measured as the engine sees it.
+
+| Pose | Cells in cone, cycle 2 | Cycle 4 | Share of walkable floor, cycle 4 |
+|---|---|---|---|
+| (12,7) dwell, facing S | 140 | 138 | 10.2% |
+| (12,3) walking N | 28 | 28 | 2.1% |
+| (13,3) look E | 243 | 183 | 13.5% |
+| (10,3) look W | 243 | 174 | 12.9% |
+| Door-row cells seen at the (12,7) dwell | 0 | 0 | |
+
+The crossing window is intact (nothing in the door row is in his cone while he dwells facing south). The share rises only because the walkable floor shrank by a fifth (1694 to 1351 cells, 8 px); the cells in his view are the same or fewer at every pose. Cycle 2 counts are from the committed cycle-2 map (`git show HEAD:...room_aes_hall1.json`) under the same script. Sight has no occlusion in the engine (`npc-los.js:21-63`), so the stacks are visual cover only.
+
+### Checks (after cycle 4)
+
+Validator: schema, geometry and door alignment pass. `check_door_alignment.py`: 8/8. Route driver: 27/27 (the dialogue stage keeps adding routes). `check_room_walls.py`: every map 64. `slot_audit.py`: 0 problems; three notes prompts left on purpose (Hall 2's manifest is a takeable clipboard; the bypass module keeps the notebook read for its fingerprint branch). `node --check` game.js: OK. Session logs: no "No Tiled item found", no failed tileset.
+
+### Evidence
+
+`build_evidence/dressing_c3/` and `dressing_c4/final/`: in-game shots of all nine rooms (NPCs shown), `sheet.png`, grid maps. Before/after pairs for the user in `tmp/review/m04_dressing_c4_*.png`.
+
+### Assumptions (cycles 3-4)
+
+- Assumption: the user's "walk behind them" means the lane along the back wall behind the front of each block, not corridors inside the blocks.
+- Assumption: the dock's 10×10 position (east of the plant room, under Hall 2's east half) is right; door alignment and the overlap check confirm it.
+- Assumption: `as-type:briefcase-yellow-` (base type with a trailing hyphen) is how the engine names that sprite's base type; slot_audit agrees, not yet confirmed by a tap in game.

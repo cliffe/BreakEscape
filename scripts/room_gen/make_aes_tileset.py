@@ -190,7 +190,7 @@ def epoxy_fn(base):
 
 
 EPOXY_GREY = epoxy_fn((128, 136, 136))
-EPOXY_GREEN = epoxy_fn((92, 128, 104))
+EPOXY_GREEN = epoxy_fn((108, 146, 118))  # light enough that the shaded wall foot never reads as the floor line
 
 
 # --- decals -------------------------------------------------------------------
@@ -291,6 +291,32 @@ def paint_kitchen_patch(op, box):
             op[x, y] = (*c, 255)
 
 
+def paint_dock_plate(op, box):
+    """Steel dock-leveller plate: a raised diamond tread inside a dark rim."""
+    x0, y0, x1, y1 = box
+    for y in range(y0, y1):
+        for x in range(x0, x1):
+            d = min(x - x0, y - y0, x1 - 1 - x, y1 - 1 - y)
+            if d == 0:
+                c = (82, 86, 90)
+            elif ((x - x0) + 2 * (y - y0)) % 8 in (0, 1) and ((x - x0) - 2 * (y - y0)) % 8 in (0, 1):
+                c = (178, 184, 188)
+            else:
+                c = (136, 142, 146)
+            op[x, y] = (*c, 255)
+
+
+def paint_tyre_marks(op, boxes):
+    """Rubber marks where vans reverse in: dark, broken, slightly wavy streaks."""
+    for x0, y0, x1, y1 in boxes:
+        for y in range(y0, y1):
+            wob = int(2 * math.sin(y / 23.0))
+            for x in range(x0 + wob, x1 + wob):
+                if hashxy(x * 5, y // 2) % 4 == 0 and is_floor(x, y):
+                    r, g, b, a = op[x, y]
+                    op[x, y] = (*shade((r, g, b), 0.84), a)
+
+
 def split_wide(img):
     return img.crop((0, 0, 320, img.height)), img.crop((320, 0, 640, img.height))
 
@@ -338,51 +364,45 @@ def paint_wear(op, box, width=320, strength=0.9):
 
 
 def hall1_sheet(walls):
-    """Battery Hall 1 (Rack Bank C), 640 px wide. Racks are the original batrack stacks
-    packed in overlapping rows (generate_rooms.room_aes_hall1): west block x 112-336
-    feet 202 and 238, east block x 456-584 feet 202, 240, 278. The aisle x 346-448
-    (Cipher's patrol, tiles 11-13), the door row y 64-130 and the S-door lane x 32-64
-    stay clear. Trunking runs from the blocks across the aisle to the walls, drains in
-    the walkway and the aisle, wear at the three doors."""
+    """Battery Hall 1 (Rack Bank C), 640 px wide (generate_rooms.room_aes_hall1): batrack
+    blocks x 108-300 (feet 166-238) and x 456-584 (feet 166-278); low kit along the back
+    wall (feet 84-88), a yellow line along its front; Cipher's open floor x 300-456.
+    Trunking along the blocks' feet and across the open floor, drains, wear at the doors."""
     img = paint_floor(walls, EPOXY_GREY, width=640)
     op = img.load()
-    # wear first, so the paint lines sit on top of it
     paint_wear(op, (32, 64, 110, 120), width=640)     # W door
     paint_wear(op, (540, 64, 608, 120), width=640)    # E door
     paint_wear(op, (32, 180, 80, 256), width=640)     # S door lane
-    paint_wear(op, (120, 76, 560, 122), width=640, strength=0.94)  # the walkway's beaten path
-    # walkway edge along the door row, broken where the aisle goes south
-    paint_line(op, 32, 130, 346, 132, width=640)
-    paint_line(op, 448, 130, 608, 132, width=640)
-    # the north-south aisle's edges (Cipher's patrol)
-    paint_line(op, 344, 130, 346, 300, width=640)
-    paint_line(op, 448, 130, 450, 300, width=640)
-    # keep-clear borders round the rack blocks (the stacks' tops cover each north edge)
-    paint_hatch_border(op, (106, 140, 342, 246), width=640)
-    paint_hatch_border(op, (450, 140, 590, 286), width=640)
-    # floor trunking: under the west block's front, across the aisle, along the east block's foot
+    paint_wear(op, (300, 84, 456, 140), width=640, strength=0.94)  # where everyone crosses
+    paint_line(op, 100, 90, 300, 92, width=640)       # in front of the back-wall kit
+    paint_line(op, 456, 90, 586, 92, width=640)
+    paint_hatch_border(op, (102, 150, 306, 246), width=640)
+    paint_hatch_border(op, (450, 150, 590, 286), width=640)
     paint_trunking(op, 64, 247, 456, 253, width=640)
     paint_trunking(op, 450, 288, 608, 294, width=640)
-    paint_trunking(op, 336, 253, 342, 300, width=640)
-    # drains
-    for x, y in ((180, 110), (300, 110), (500, 110), (390, 286), (36, 236)):
+    for x, y in ((372, 150), (36, 236), (390, 284), (520, 112)):
         paint_grate(op, x, y, width=640)
     return img
 
 
 def hall2_sheet(walls):
-    """Battery Hall 2 (rack banks A and B, the inverter row), 640 px wide. Racks
-    (generate_rooms.room_aes_hall2): bank A x 96-262, bank B x 300-433, feet 202;
-    inverters on the back wall x 446-604. Relay's patrol (y 200-256, x 140-500)
-    and the door row stay clear."""
+    """Battery Hall 2 / inverter room, 640 px wide (generate_rooms.room_aes_hall2): banks A
+    x 104-264 and B x 296-424 (feet 166, 202), inverters on the back wall x 440-608 (feet
+    120) and in front x 452-580 (feet 202) with a red-hatched HV box between them. Relay's
+    beat y 206-256 x 100-520 and the S-door lane x 32-96 stay plain."""
     img = paint_floor(walls, EPOXY_GREY, width=640)
     op = img.load()
-    paint_line(op, 32, 134, 440, 136, width=640)
-    paint_hatch_border(op, (90, 142, 268, 210), width=640)
-    paint_hatch_border(op, (294, 142, 440, 210), width=640)
-    # red-hatched keep-clear in front of the inverter row (HV)
-    paint_hatch_box(op, (442, 124, 608, 150), width=640)
-    paint_line(op, 32, 212, 608, 214, width=640)  # the south aisle's edge
+    paint_wear(op, (32, 64, 110, 120), width=640)     # W door
+    paint_wear(op, (32, 180, 96, 256), width=640)     # S door lane
+    paint_wear(op, (120, 214, 500, 252), width=640, strength=0.94)  # Relay's beat
+    paint_hatch_border(op, (98, 150, 270, 210), width=640)
+    paint_hatch_border(op, (290, 150, 430, 210), width=640)
+    # yellow/black, not red: red hatching is the plant room's ESD box only (cycle 4, review F13)
+    paint_hatch_box(op, (438, 122, 608, 144), colours=(YELLOW, BLACK), width=640)
+    paint_trunking(op, 96, 211, 600, 217, width=640)
+    paint_line(op, 96, 90, 430, 92, width=640)
+    for x, y in ((60, 236), (276, 236), (460, 236)):
+        paint_grate(op, x, y, width=640)
     return img
 
 
@@ -397,26 +417,27 @@ def main():
     sheets["room_aes_lobby"] = lobby
 
     ops = paint_floor(office, CARPET_BLUE)
-    paint_kitchen_patch(ops.load(), (224, 64, 288, 160))  # the night-shift kitchenette, NE
+    paint_kitchen_patch(ops.load(), (190, 64, 270, 116))  # under the night-shift kitchenette (room_aes_ops)
     sheets["room_aes_carpet"] = ops
     sheets["room_aes_security"] = paint_floor(office, CARPET_CHARCOAL)
     sheets["room_aes_control"] = paint_floor(office, antistatic_pixel)
 
     workshop = paint_floor(industrial, concrete_pixel)
-    paint_hatch_border(workshop.load(), (90, 186, 230, 262))  # round the test bench
+    paint_hatch_border(workshop.load(), (96, 182, 238, 262))  # round the module test bench (room_aes_workshop)
     sheets["room_aes_workshop"] = workshop
 
     plant = paint_floor(industrial, EPOXY_GREEN)
     op = plant.load()
-    paint_hatch_box(op, (146, 64, 196, 100))   # in front of the ESD station
-    paint_line(op, 32, 132, 288, 134)          # walkway edge below the switchgear
+    paint_hatch_box(op, (146, 66, 196, 100))   # in front of the ESD station (room_aes_plant)
     sheets["room_aes_plant"] = plant
 
     dock = paint_floor(industrial, concrete_pixel)
     op = dock.load()
-    paint_hatch_border(op, (96, 64, 224, 76), width_px=6, colours=(YELLOW, (96, 82, 36)))  # the shutter threshold (no near-black: check_room_walls reads it as the floor line)
-    paint_line(op, 92, 76, 94, 250)
-    paint_line(op, 226, 76, 228, 250)
+    paint_hatch_border(op, (108, 64, 212, 76), width_px=6, colours=(YELLOW, (96, 82, 36)))  # the shutter threshold (no near-black: check_room_walls reads it as the floor line)
+    paint_line(op, 104, 76, 106, 250)
+    paint_line(op, 214, 76, 216, 250)
+    paint_dock_plate(op, (112, 76, 208, 104))
+    paint_tyre_marks(op, [(124, 108, 140, 250), (180, 108, 196, 250)])
     sheets["room_aes_dock"] = dock
 
     for name, fn in (("room_aes_hall1", hall1_sheet), ("room_aes_hall2", hall2_sheet)):

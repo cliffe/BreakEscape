@@ -1,6 +1,7 @@
 """Cipher's cone coverage over Hall 1's walkable floor (geometry only: the engine's LOS
 has no occlusion). Floor visible in game: cols 0-9 y 64-256 (workshop below), cols 10-19
-y 64-304. Obstacles: bottom 16 px of each floor object's sprite (approximate body)."""
+y 64-304. Obstacles: bottom 16 px of each floor object's sprite (approximate body) plus the
+builder's collision rectangles (Object Layer 1)."""
 import json, math, sys
 d = json.load(open(sys.argv[1]))
 gid = {}
@@ -10,7 +11,11 @@ for ts in d['tilesets']:
         gid[ts['firstgid'] + t['id']] = img.split('/')[-1][:-4]
 obst = []
 for l in d['layers']:
-    if l['type'] != 'objectgroup' or l['name'] in ('Object Layer 1',):
+    if l['type'] != 'objectgroup':
+        continue
+    if l['name'] == 'Object Layer 1':  # builder collision rectangles (y = top edge)
+        for o in l['objects']:
+            obst.append((o['x'], o['y'], o['x'] + o['width'], o['y'] + o['height']))
         continue
     for o in l['objects']:
         x, y, w = o['x'], o['y'], o['width']
@@ -31,4 +36,4 @@ for name, (cx, cy, f) in poses.items():
     seen = [c for c in cells if math.dist(c, (cx, cy)) <= 150 and
             abs((math.degrees(math.atan2(c[1] - cy, c[0] - cx)) - f + 180) % 360 - 180) <= 60]
     door = [c for c in seen if c[1] < 128]
-    print(f"  {name}: {100 * len(seen) / len(cells):.1f}% of walkable floor; door-row cells seen {len(door)}")
+    print(f"  {name}: {len(seen)} cells, {100 * len(seen) / len(cells):.1f}% of walkable floor; door-row cells seen {len(door)}")
