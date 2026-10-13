@@ -692,3 +692,15 @@ Review: `SCENARIO_DESIGN_REVIEW_P5_R2.md` (Opus, read-only, static). Counts: 0 b
 
 - The closing browser check: round 1's list, plus n2's back-out and the reload question in n1.
 - n1 (tooling and backlog) is with the orchestrator; n5 goes to the dialogue phase.
+
+**Closing browser check (PASS5_DESIGN_R2_BROWSER, games 2304, 2310, 2315):** all six checks pass, with 0 mission findings. It also settles n1: ink-local variables DO survive a page reload, because the engine saves `npcInkVariables` after each choice. Only visit counts, `TURNS()` and story position are lost. Round 1's M1 premise was wrong, but the synced-globals fix is harmless.
+
+### Phase 3 scenario design: CLOSED (2026-10-13)
+
+| Round | Blockers | Majors | Minors |
+|---|---|---|---|
+| 1 | 0 | 1 | 12 |
+| 2 | 0 | 0 | 5 |
+| Browser | 0 | 0 | 0 |
+
+Next: phase 4 dialogue (with n5, the hub order, and the debrief's long runs without a choice), alongside room dressing (m11 layout, the signing case and clipping placement).

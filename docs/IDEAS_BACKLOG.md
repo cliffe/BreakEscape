@@ -30,7 +30,7 @@ From the PIN cracker fix (2026-10-10), found but not fixed:
 - **A "VM launched" event** (m05 fixer; S). Tasks like "Get into the research portal" could complete on real use instead of on flag 1.
 - **`object_unlock_failed` event** (m06 re-review; S). The engine emits nothing when a PIN or password is wrong, so a handler can't react to repeated wrong guesses.
 - **Combat tuning for missions** (m04 playtest; S–M). A heal item or slow regen missions can place; a room leash so a chasing NPC gives up at her own door; pass `maxHP` and `attackCooldown` through from a scenario's hostile config (`parseConfig` drops them today). Fights in sequence are currently hard to survive.
-- **Ink visit counts don't survive a reload** (m02 pre-commit check; S–M). After a reload Val replays her full Reeves speech because knot visit counts and local VARs aren't restored (only synced globals are). Missions work round it with synced globals.
+- **Ink visit counts don't survive a reload** (m02 pre-commit check; S–M). After a reload, knot visit counts, `TURNS()` and the story position are lost. Ink-local VARs ARE restored: the engine saves `npcInkVariables` after each choice (since 18237332, confirmed in the browser in m06 game 2304, 2026-10-13). Openers keyed on visit counts replay; key them on a VAR or a synced global instead.
 - **Standing NPCs can be pushed and don't return** (m05 pre-commit check; S). The player's path pushed Halloran 35–60 px off her spot and she stayed there; standing NPCs should be immovable or walk back.
 - **Non-combatant NPCs** (m02 fixer; S). A `nonCombatant` flag so bed-bound patients and similar can't be punched.
 - **Console source tiles hidden until available** (m02 fixer; S). The Ghost tile shows greyed before the offer.
@@ -68,7 +68,7 @@ From the PIN cracker fix (2026-10-10), found but not fixed:
 
 - **Per-item `dropOnKO: false`** (m05 alignment review, 2026-10-13; S). An NPC's KO drops everything in `itemsHeld`, so Owen's office spare lands before anyone suspects Torres. Allow items to stay with a KO'd NPC (or be relayed later by script).
 
-- **Save person-chat conversation state with the game** (m06 scenario review, 2026-10-13; M). Reviews disagree on whether ink locals and visit counts survive a page reload (m06 found `npc-conversation-state.js` keeps them in memory; m05 found server-side saving for phones). Confirm, then save NPC conversation state with the game so first-meeting scenes, trust and once-only topics don't replay after a reload in any mission. Missions currently work round it with synced globals.
+- **Save visit counts with the game** (m06 scenario review, 2026-10-13; S–M). Ink-local VARs already survive a reload (`npcInkVariables`, confirmed in m06 game 2304). Visit counts, `TURNS()` and story position don't, so an opener keyed on `knot > 1` replays. Saving visit counts would fix that class in every mission.
 
 ## Story and missions
 
