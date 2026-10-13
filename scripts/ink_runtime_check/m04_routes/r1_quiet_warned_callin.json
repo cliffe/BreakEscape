@@ -31,7 +31,7 @@
 {"talk":"voltage","picks":["It's over","Make me understand","Why infrastructure","How many","Say their names","Go for the button"]},
 {"expect":{"voltage_escaped":true}},
 {"note":"Engine: voltage_escaped -> voltage_neutralised -> esd_authorized; the ESD sets attack_prevented, NOT mission_complete; HaX's mapping unlocks the call-in."},
-{"set":{"voltage_neutralised":true,"esd_authorized":true,"attack_prevented":true,"remote_trigger_disabled":true}},
+{"set":{"voltage_neutralised":true,"esd_authorized":true,"attack_prevented":true}},
 {"expect":{"mission_complete":false}},
 {"talk":"phone","picks":["Bring me in","Not yet","Nothing right now"]},
 {"expect":{"mission_complete":false}},

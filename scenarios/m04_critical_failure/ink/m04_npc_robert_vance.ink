@@ -28,10 +28,9 @@ VAR attack_prevented = false
 VAR crew_warned = false
 VAR racks_vented = false
 VAR crew_discussed = false
-// Round 4: Voltage down makes the alarm free (review M2); all four flags in
-// means the workshop job is done (review m1). Read only.
+// Round 4: Voltage down makes the alarm free (review M2). Read only.
+// (The all_flags_in branch was dead once the gate went: puzzle chains R3-4.)
 VAR voltage_neutralised = false
-VAR all_flags_in = false
 // Round 4 (browser m2): a re-entry line on the hub, skipped once right after a
 // goodbye (m03 hub_quiet), so a re-talk doesn't open under a stale line.
 VAR vance_quiet = false
@@ -457,8 +456,6 @@ Robert Vance: I can sound the evacuation from this desk. Klaxon and strobes in e
     Robert Vance: Whoever was in my plant room isn't listening any more. It costs you nothing.
 - attack_mechanism_known:
     Robert Vance: Whoever's in my plant room hears it too. But your clock's already running, so it costs you nothing now but surprise.
-- all_flags_in:
-    Robert Vance: Whoever's in my plant room hears it too. He won't wait for eight. You'll have half an hour, maybe.
 - else:
     Robert Vance: Whoever's in my plant room hears it too. He won't wait for eight. You'll have half an hour, maybe, and your workshop job isn't done.
 }

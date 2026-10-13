@@ -553,8 +553,6 @@
       "hydrogen_alarm": false,
       "racks_vented": false,
       "casualties_occurred": false,
-      "objectives_completed": 0,
-      "flags_submitted": 0,
       "all_flags_in": false,
       "guard_admitted": false,
       "guard_hostile": false,
@@ -571,7 +569,9 @@
       "crew_warned_early": false,
       "vented_by_alarm_clock": false,
       "static_left": false,
-      "vance_print_lifted": false
+      "vance_print_lifted": false,
+      "level1_card_held": false,
+      "checkpoint_passed": false
     },
     "npcs": [
       {

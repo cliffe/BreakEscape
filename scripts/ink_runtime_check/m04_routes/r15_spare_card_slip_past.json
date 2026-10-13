@@ -1,0 +1,99 @@
+{
+"steps": [
+{
+"note": "R15 (puzzle chains R3-1, R3-2 and the round-3 sweep): the hub must read whether each step is done, not how. Part 1: slipped past the guard (checkpoint_passed, no guard_admitted), met Vance on the cover, took the locker spare (level1_card_held, no vance_provided_keycard). 'Where do I stand?' names the dial; no gate or card line; neither the gate nor the card-reader hint is on offer."
+},
+{
+"set": {
+"briefing_played": true,
+"checkpoint_passed": true,
+"vance_met": true,
+"level1_card_held": true
+}
+},
+{
+"talk": "phone",
+"picks": [
+"Inside the facility",
+"On it"
+]
+},
+{
+"talk": "phone",
+"picks": [
+"Where do I stand",
+"Right",
+"Nothing right now"
+]
+},
+{
+"said": [
+"dial on the Rack Bank C wall"
+],
+"notSaid": [
+"Regulator badge",
+"Vance's door card",
+"How do I get past the gate",
+"How do I get through the card readers"
+]
+},
+{
+"note": "Part 2 (a fresh night, page reload): slipped past the guard, never met Vance, the locker spare. The hub skips the Vance step too."
+},
+{
+"set": {
+"vance_met": false
+}
+},
+{
+"talk": "phone",
+"reload": "page",
+"picks": [
+"Inside the facility",
+"On it"
+]
+},
+{
+"talk": "phone",
+"picks": [
+"Where do I stand",
+"Right",
+"Nothing right now"
+]
+},
+{
+"said": [
+"dial on the Rack Bank C wall"
+],
+"notSaid": [
+"Find Robert Vance",
+"Vance's door card",
+"Regulator badge"
+]
+},
+{
+"note": "Part 3: no card yet, past the gate by slipping by: the card-reader hint is on offer, the gate hint isn't."
+},
+{
+"set": {
+"level1_card_held": false,
+"vance_met": true
+}
+},
+{
+"talk": "phone",
+"picks": [
+"How do I get through the card readers",
+"Nothing right now"
+]
+},
+{
+"said": [
+"old prox"
+],
+"notSaid": [
+"How do I get past the gate"
+]
+}
+]
+}

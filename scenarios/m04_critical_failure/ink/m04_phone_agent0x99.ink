@@ -46,7 +46,6 @@ VAR anomaly_detected = false
 VAR vance_is_ally = false
 VAR operatives_defeated = 0
 VAR urgency_stage = 0
-VAR flags_submitted = 0
 
 // Pass 5 A5: synced progress globals the hub's gated hints read (all declared
 // in scenario.json.erb globalVariables). Read only, except mission_complete,
@@ -55,6 +54,11 @@ VAR guard_admitted = false
 VAR security_guard_ko = false
 VAR vance_met = false
 VAR vance_provided_keycard = false
+// Puzzle chains R3-1/R3-2: the hub asks whether a step is done, not how.
+// level1_card_held: the security-locker spare taken. checkpoint_passed: the
+// player reached the operations office, however they got past the gate.
+VAR level1_card_held = false
+VAR checkpoint_passed = false
 VAR robert_vance_ko = false
 VAR plant_reader_seen = false
 VAR plant_room_entered = false
@@ -147,13 +151,13 @@ EXTERNAL player_name()
 + {operatives_defeated >= 1 and not voltage_priority_discussed and not operative_down_given} [I've put one of their people down.]
     -> operative_down_advice
 
-+ {(vance_met or robert_vance_ko) and not anomaly_detected and not hint_dial_given} [How do I prove the screens are lying?]
++ {(vance_met or robert_vance_ko or checkpoint_passed) and not anomaly_detected and not hint_dial_given} [How do I prove the screens are lying?]
     -> hint_dial
 
-+ {guard_admitted and not vance_provided_keycard and not hint_clone_given} [How do I get through the card readers?]
++ {(guard_admitted or security_guard_ko or checkpoint_passed) and not vance_provided_keycard and not level1_card_held and not plant_reader_seen and not hint_clone_given} [How do I get through the card readers?]
     -> hint_clone
 
-+ {not guard_admitted and not security_guard_ko and not hint_guard_given} [How do I get past the gate?]
++ {not guard_admitted and not security_guard_ko and not checkpoint_passed and not hint_guard_given} [How do I get past the gate?]
     -> hint_guard
 
 // ---- Field guides, one choice. Exposure-gated: offered by an eventMapping
@@ -808,11 +812,14 @@ Two hundred and forty thousand people are on that grid.
 - attack_prevented:
     It's done. The banks are isolated and cooling.
     Sweep what you want, then tell me to bring you in.
-- not guard_admitted and not security_guard_ko:
+// Puzzle chains R3-1/R3-2 and the round-3 sweep: each step asks whether it's
+// done, whatever route the player took (slipped past the guard, the locker
+// spare, never met Vance, Hall 2 already open).
+- not guard_admitted and not security_guard_ko and not checkpoint_passed:
     You're not in yet. Regulator badge at the gate. A routine audit that came early.
-- not vance_met and not robert_vance_ko:
+- not vance_met and not robert_vance_ko and not vance_provided_keycard and not level1_card_held and not plant_reader_seen:
     Find Robert Vance, in the operations office. Nobody knows that plant better.
-- not vance_provided_keycard:
+- not vance_provided_keycard and not level1_card_held and not plant_reader_seen:
     You need Vance's door card. It's old prox: the cloner copies it while he talks. There's a spare in the security office locker.
 - not anomaly_detected and not server_room_reached:
     Prove the screens are lying. The dial on the Rack Bank C wall in Hall 1 isn't on their network.

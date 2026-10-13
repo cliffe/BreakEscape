@@ -42,12 +42,11 @@ VAR racks_vented = false
 VAR crew_warned = false
 VAR attack_prevented = false
 // Round 2: the hub states the alarm's real cost, which depends on whether the
-// clock is already running. vance_provided_keycard and the workshop card feed
-// priority_guidance, mirroring the face-to-face vance_priority.
-VAR vance_provided_keycard = false
-// Round 4 (review M2, m1). Read only.
+// clock is already running. The workshop card feeds priority_guidance,
+// mirroring the face-to-face vance_priority.
+// Round 4 (review M2). Read only. (all_flags_in and vance_provided_keycard
+// dropped in puzzle chains R3-4 / R3-6: nothing read them.)
 VAR voltage_neutralised = false
-VAR all_flags_in = false
 VAR relay_card_cloned = false
 VAR operative_relay_defeated = false
 
@@ -225,8 +224,6 @@ I can sound the evacuation from here. Klaxon and strobes in every hall.
     Whoever was in my plant room isn't listening any more. It costs you nothing.
 - attack_mechanism_known:
     Whoever's in my plant room hears it too. But your clock's already running, so it costs you nothing now but surprise.
-- all_flags_in:
-    And whoever's in my plant room hears it too. He won't wait for eight. You'll have half an hour, maybe.
 - else:
     And whoever's in my plant room hears it too. He won't wait for eight.
     You'll have half an hour, maybe, and your workshop job isn't done.

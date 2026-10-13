@@ -332,7 +332,7 @@ Review: `PUZZLE_CHAINS_REVIEW_P5_R2.md` (Opus, static; 0 blockers, 2 majors, 5 m
 
 | # | Sev. | Finding | Decision and reason | Outcome |
 |---|---|---|---|---|
-| R2-1 | major | The paper-evidence gate no longer exists (engine 657f6158: `map_the_attack` completes on the four flags alone), but a HaX text still sent the player for the paper with the clock running; a hub branch and an ESD refusal variant were dead | **Retire the gate** (orchestrator). The ESD's own wording asks only for the hazard and the cause; the documents stay as optional story and credits material | **Fixed.** The "break-in on paper" HaX text (erb, on `all_flags_in`) is deleted; the dead ESD variant and the dead hub branch are deleted; the flag-tracking comment is rewritten with the history. HaX's ink no longer declares the four evidence globals (nothing there reads them). `find_infiltration_evidence` is now `optional: true`, so its task line no longer reads as required and `confirm_the_lie` completes on the dial; the evidence still ticks the task and feeds the debrief. Checked HaX, Vance, the walkthrough and every aim and task text: no other text says the paper is required. `TESTING_WALKTHROUGH.md` step 4 says it's optional. The follow-on dial text on `all_flags_in` now stands alone ("Flags are in. Grid control still wants a real reading off the racks…", 2.5 s instead of 7). Browser check: the review notes `attack_mechanism_known` is set before `objective_task_completed` fires (objectives-manager.js:432-440); the deletion makes the ordering moot |
+| R2-1 | major | The paper-evidence gate no longer exists (engine 657f6158: `map_the_attack` completes on the four flags alone), but a HaX text still sent the player for the paper with the clock running; a hub branch and an ESD refusal variant were dead | **Retire the gate** (orchestrator). The ESD's own wording asks only for the hazard and the cause; the documents stay as optional story and credits material | **Fixed.** The "break-in on paper" HaX text (erb, on `all_flags_in`) is deleted; the dead ESD variant and the dead hub branch are deleted; the flag-tracking comment is rewritten with the history. HaX's ink no longer declares the four evidence globals (nothing there reads them). `find_infiltration_evidence` is now `optional: true`, so `confirm_the_lie` completes on the dial; the evidence still ticks the task. (Corrected in round 3: the objectives panel draws an optional task like a required one, and the debrief doesn't read the evidence globals; R3-3 adds a credits line instead.) Checked HaX, Vance, the walkthrough and every aim and task text: no other text says the paper is required. `TESTING_WALKTHROUGH.md` step 4 says it's optional. The follow-on dial text on `all_flags_in` now stands alone ("Flags are in. Grid control still wants a real reading off the racks…", 2.5 s instead of 7). Browser check: the review notes `attack_mechanism_known` is set before `objective_task_completed` fires (objectives-manager.js:432-440); the deletion makes the ordering moot |
 | R2-2 | major | "Where do I stand?" stops naming the dial once the flags are in, and says "Stay by the button" at the climax | **As the review gives** | **Fixed.** A `- not anomaly_detected:` branch after the `not attack_mechanism_known` block names the dial; the old flags-in sub-branches are gone. New route `r14_flags_first_dial_last.json` (flags first, no paper, no dial; the hub names the dial before and after Voltage is down, never "Stay by the button" or the paper; then the "last piece" reply once it's true) |
 | R2-3 | minor | "Then the dial was the last piece." whenever the workshop had been reached | **Gate it properly** | **Fixed.** Offered only with the attack mapped and Voltage dealt with; otherwise "[Then what's still missing?]" with a reply that names the cause or Voltage |
 | R2-4 | minor | The work-order text names the dial before the player can infer it | **Trim it; keep Vance's 20 s text** (pointing at the dial is his job) | **Fixed** (line below) |
@@ -356,3 +356,41 @@ HaX:
 - Phone, new: choice "[Then what's still missing?]"; "Grid control has the hazard and the cause. Now Voltage." / "Grid control has the hazard now. Get them the cause, off the workshop terminal."
 
 Not spoken: the ESD refusal variant naming the missing break-in is deleted.
+
+### Phase 2 puzzle chains, round 3
+
+Review: `PUZZLE_CHAINS_REVIEW_P5_R3.md` (Opus, static; 0 blockers, 2 majors, 4 minors). All six fixed as the reviewer proposes (orchestrator). The do-not-open rule held.
+
+| # | Sev. | Finding | Outcome |
+|---|---|---|---|
+| R3-1 | major | Take the locker spare and "Where do I stand?" says "You need Vance's door card" for the rest of the mission; the card-reader hint stays on offer | **Fixed.** The spare has an id (`security_spare_keycard_l1`) and `onPickup` latches `level1_card_held`; the hub's card step and the card-reader hint read it. `vance_provided_keycard` is deliberately not set from the spare (the RFID-guide text would claim a clone, and Vance's clone choices would vanish) |
+| R3-2 | major | Slip past the guard and the hub says "You're not in yet" all mission, keeps the gate hint, never offers the card-reader hint | **Fixed.** HaX's `room_entered:operations_office` mapping sets `checkpoint_passed`; the gate step and gate hint skip on it; the card-reader hint opens on `guard_admitted or security_guard_ko or checkpoint_passed`. `guard_admitted` is not set (the guard would greet the player as signed in) |
+| R3-3 | minor | The paper thread was described as paying off in the debrief and credits, where it didn't | **Fixed.** One unvoiced credits line: "THE BREAK-IN: on paper — the OptiGrid work order, the camera gaps, the spoofed reader", shown when any of the four documents was read. Both erb comments now say what the documents really earn; the round-2 log line above is corrected |
+| R3-4 | minor | Dead `all_flags_in` branches in Vance's crew cost (in person and phone) | **Fixed.** Both deleted, with the now-unused `all_flags_in` VARs |
+| R3-5 | minor | The root beat is lost when Voltage was dealt with before the last flag | **Fixed.** A disjoint twin on `objective_aim_completed:map_the_attack` for `voltage_neutralised === true`, 1.5 s, before the ESD-live text |
+| R3-6 | minor | Leftovers: `flags_submitted`, `objectives_completed`, r1's `remote_trigger_disabled`, two stale comments, Vance phone's unused `vance_provided_keycard` VAR | **Fixed.** Both globals and HaX's `flags_submitted` VAR removed (the engine's `objectives_completed` is a database column, not this global); r1's key removed; the evidence-sources comment now lists four and the work-order text's purpose; the VAR removed. `missions.json` m04 globals regenerated (83) |
+
+#### The "how, not whether" sweep
+
+The hub has three times checked how a player got past a step rather than whether they did. Every branch of `report_progress` and every hint gate in `support_hub` was checked for that pattern. Two more found and fixed:
+- **The Vance step.** "Find Robert Vance" fired for a player who never spoke to him but already held a Level 1 card (the locker spare, or Hall 2 already open). It now skips when the player has any Level 1 card or has been in Hall 2 (`plant_reader_seen`). The card step also skips on `plant_reader_seen`, since Hall 2 opens only on a Level 1 card.
+- **The dial hint's gate.** It opened only after meeting Vance or knocking him out; it now also opens once the player is inside (`checkpoint_passed`).
+Checked and already whether-based: the dial step (`anomaly_detected`), the workshop (`server_room_reached`; its Level 2 line accepts the clone or the KO, the only two routes to the card), the mapping (`attack_mechanism_known`, set however the flags land), the plant room (`plant_room_entered`), Voltage (`voltage_neutralised`, set by KO, arrest or escape), the ESD (`esd_authorized`), and the race, Voltage, crew, reader, Relay, workshop and operative-down hints.
+
+#### Route driver
+
+Every choice offered now counts towards `said` / `notSaid` (before, only the picked one did, so a "this hint isn't on offer" check was weak). All earlier routes still pass under the stricter check. New route `r15_spare_card_slip_past.json`: past the gate by slipping by, with the locker spare and no clone; the hub names the dial, with no gate or card line and neither hint on offer; then the same with Vance never met (the Vance step is skipped); then with no card yet, the card-reader hint is offered and the gate hint isn't. 15 of 15 routes pass.
+
+#### Checks (static; no browser session)
+
+Ink compiles (10 files). Validator, full: schema passed, all ink valid, doors and geometry OK; 15 warnings, the same set except that `objective_aim_completed:map_the_attack` now has three handlers (the setter and the two disjoint texts, by design). dialoguelint: 0 errors, 5 blank-reentry checks. reopencheck: 0 problems. tagdiff against HEAD: 20 structural differences, all from this round. inkcheck and loopcheck on `report_progress` and the hub with the new globals, Vance's hub and phone: clean. Door alignment OK.
+
+#### Spoken lines changed (old → new)
+
+- Vance, face to face, deleted (dead branch): "Whoever's in my plant room hears it too. He won't wait for eight. You'll have half an hour, maybe."
+- Vance, phone, deleted (dead branch): "And whoever's in my plant room hears it too. He won't wait for eight. You'll have half an hour, maybe."
+- HaX, new text (twin): "Their route in, proven. They pushed the charge-ceiling override from that box, and the bypass modules hide it."
+- No other wording changed: the hub's lines are the same, only when they show.
+- Not spoken: the new credits line "THE BREAK-IN: on paper — the OptiGrid work order, the camera gaps, the spoofed reader".
+
+Carried: R2-6 / m17 **need checking against SecGen by the user**.

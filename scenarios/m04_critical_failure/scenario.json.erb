@@ -197,6 +197,8 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
           { "text": "CIPHER: walked off the job when you told him about the night crew", "style": "entry", "condition": "globalVars.cipher_walked" },
           { "text": "STATIC: stood aside, and left with Voltage", "style": "entry", "condition": "globalVars.static_left" },
           { "text": "RELAY: card copied mid-standoff", "style": "entry", "condition": "globalVars.relay_card_cloned" },
+          <%# Puzzle chains R3-3: the optional break-in documents get a word at the end. %>
+          { "text": "THE BREAK-IN: on paper — the OptiGrid work order, the camera gaps, the spoofed reader", "style": "entry", "condition": "globalVars.evidence_maintenance_logs_found || globalVars.evidence_camera_tampering_found || globalVars.evidence_reader_spoof_found || globalVars.evidence_access_logs_found" },
           { "text": "EVIDENCE: Voltage's own print on the bypass module", "style": "entry", "condition": "globalVars.voltage_print_on_bypass" },
           { "text": "SOCIAL FABRIC SAFEHOUSE: located", "style": "entry", "condition": "globalVars.lore_safehouse_address_found" },
           { "text": "DISCLOSED IN FULL — the attack, the vulnerabilities, and how close it came", "style": "entry", "condition": "globalVars.disclosure_choice === 'full'" },
@@ -254,8 +256,12 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
       "order": 1,
       "tasks": [
         <%# Puzzle chains R2-1: optional. The paper evidence gates nothing since the
-            gate was retired (see the flag-tracking comment on agent_0x99); it stays
-            as story, a task tick and debrief material. The aim completes on the dial. %>
+            gate was retired (see the flag-tracking comment on agent_0x99). What it
+            still earns: this task's tick and score, the work-order HaX text, the
+            work-order route to dropping the cover with Vance, the reader export's
+            print clue, and (R3-3) a credits line. The debrief doesn't read it. The
+            objectives panel draws an optional task like a required one. The aim
+            completes on the dial. %>
         {
           "taskId": "find_infiltration_evidence",
           "title": "Search for evidence of unauthorised access",
@@ -912,6 +918,14 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
               "onceOnly": true,
               "setGlobal": { "plant_room_entered": true }
             },
+            <%# Puzzle chains R3-2: the hub asks whether the player is past the gate,
+                not how (signed in, slipped past, or the guard down). Doesn't set
+                guard_admitted, which would make the guard greet them as signed in. %>
+            {
+              "eventPattern": "room_entered:operations_office",
+              "onceOnly": true,
+              "setGlobal": { "checkpoint_passed": true }
+            },
             <%# PASS 3 P9, re-keyed by the fingerprint redesign: fires on every lift of
                 Vance's print (dusting is now the only way to collect one), and lifted
                 prints are saved with the game. %>
@@ -1137,9 +1151,10 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
                 checkAimCompletion defers only globalVariable aims), so map_the_attack
                 completes on the four flags alone and sets attack_mechanism_known.
                 Pass 5 puzzle chains R2-1: the paper gate is retired. The evidence
-                documents stay as optional story (find_infiltration_evidence, the
-                credits and the debrief); nothing requires them, and the "break-in on
-                paper" text, ESD variant and hub branch are gone. The dial is still
+                documents stay as optional story (find_infiltration_evidence and,
+                since R3-3, one credits line; the debrief doesn't read them); nothing
+                requires them, and the "break-in on paper" text, ESD variant and hub
+                branch are gone. The dial is still
                 required (the ESD's anomaly_detected condition). %>
             { "eventPattern": "objective_task_completed:submit_network_scan_flag", "onceOnly": true, "setGlobal": { "flag_network_scan_submitted": true } },
             { "eventPattern": "objective_task_completed:submit_ftp_intel_flag", "onceOnly": true, "setGlobal": { "flag_ftp_intel_submitted": true } },
@@ -1155,6 +1170,15 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
               "condition": "globalVars.voltage_neutralised !== true",
               "onceOnly": true,
               "sendTimedMessage": { "delay": 1500, "message": "Their route in, proven. They pushed the charge-ceiling override from that box, and the bypass modules hide it. The trigger is in the plant room. Get to the ESD.", "skipIfGlobal": "voltage_neutralised" }
+            },
+            <%# Puzzle chains R3-5: the disjoint twin, so the root beat (what the flags
+                showed) still lands when Voltage was dealt with first. 1.5 s, before the
+                2.5 s ESD-live text from the attack_mechanism_known mapping. %>
+            {
+              "eventPattern": "objective_aim_completed:map_the_attack",
+              "condition": "globalVars.voltage_neutralised === true",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 1500, "message": "Their route in, proven. They pushed the charge-ceiling override from that box, and the bypass modules hide it." }
             },
 
             <%# ESD authorisation requires all THREE: the thermal hazard confirmed
@@ -1187,12 +1211,13 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
               "setGlobal": { "esd_authorized": true },
               "sendTimedMessage": { "delay": 2500, "message": "He's out of the way, the sixty-one degrees in Hall 1 is on record, and so is the attack. Grid control's standing by. The ESD is live. Press it." }
             },
-            <%# find_infiltration_evidence has three sources, not one (lesson 8):
-                the unscheduled work order, the workshop access log, and the camera
-                tampering log. Any of them completes it; the first also delivers the
-                "don't trust the SCADA screens" nudge. completeTask is idempotent,
-                so later ones firing is harmless. %>
-            <%# Round 2: the "go and check the racks" text only while nobody has. %>
+            <%# find_infiltration_evidence has four sources (lesson 8): the
+                unscheduled work order, the workshop access log, the camera tampering
+                log, and the plant-reader export (its mapping is with the card
+                mappings above). Any of them completes it; the work order also
+                delivers the "don't take the SCADA screens on trust" text, only
+                while the dial is unread. completeTask is idempotent, so later ones
+                firing is harmless. %>
             {
               "eventPattern": "global_variable_changed:evidence_maintenance_logs_found",
               "condition": "value === true",
@@ -1643,12 +1668,18 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
           "difficulty": "easy",
           "observations": "Security equipment storage locker",
           "contents": [
+            <%# Puzzle chains R3-1: the spare is a real route to the Level 1 card, so
+                taking it latches level1_card_held (the hub's card step reads it). It
+                deliberately doesn't set vance_provided_keycard: that would make the
+                RFID-guide text claim a clone and hide Vance's clone choices. %>
             {
               "type": "keycard",
+              "id": "security_spare_keycard_l1",
               "name": "Spare Keycard (Level 1)",
               "takeable": true,
               "opens_lock": "facility_keycard_level1",
-              "observations": "Backup facility access keycard"
+              "observations": "Backup facility access keycard",
+              "onPickup": { "setVariable": { "level1_card_held": true } }
             },
             {
               "type": "notes",
@@ -2542,8 +2573,6 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
     "racks_vented": false,
     "casualties_occurred": false,
 
-    "objectives_completed": 0,
-    "flags_submitted": 0,
     "all_flags_in": false,
 
     <%# Pass 5 alignment, round 1.
@@ -2579,6 +2608,12 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
     "crew_warned_early": false,
     "vented_by_alarm_clock": false,
     "static_left": false,
-    "vance_print_lifted": false
+    "vance_print_lifted": false,
+
+    <%# Puzzle chains round 3. level1_card_held: the security-locker spare was
+        taken (R3-1). checkpoint_passed: the player reached the operations office,
+        however they got past the gate (R3-2). Both read by HaX's hub. %>
+    "level1_card_held": false,
+    "checkpoint_passed": false
   }
 }

@@ -8,8 +8,8 @@
 //   {"expect": {"global": value, ...}}      assert globals; prints PASS/FAIL and fails the run
 //   {"credits": true}                       print the credits lines whose conditions hold now,
 //                                           evaluated from scenario.json.erb as the engine does
-//   {"said": ["substr", ...]}              assert each substring appears in the lines (and
-//   {"notSaid": ["substr", ...]}           choices) printed since the last said/notSaid step
+//   {"said": ["substr", ...]}              assert each substring appears in the lines, or in
+//   {"notSaid": ["substr", ...]}           any choice offered, since the last said/notSaid step
 //   {"backstops": {"expect": ["re-emit"|"hear"|...]}}  evaluate the erb's per-room
 //                                           room_entered backstops (the <% each %> loops) against
 //                                           the current globals; print which would fire on the
@@ -213,6 +213,7 @@ for (const step of route.steps) {
     if (!s.currentChoices.length) { out('  [end]'); break; }
     if (exited && !picks.length) { out('  [chat closes]'); break; }
     const ch = s.currentChoices.map(c => c.text);
+    heard.push(...ch.map(c => `[choice] ${c}`));  // every offered choice counts for said/notSaid
     if (!picks.length) { ch.forEach((c, j) => out(`     [${j}] ${c}`)); out('  [stopped: no pick]'); break; }
     let p = picks.shift(); let idx = typeof p === 'number' ? p : ch.findIndex(c => c.toLowerCase().includes(String(p).toLowerCase()));
     if (idx < 0 || idx >= ch.length) { ch.forEach((c, j) => out(`     [${j}] ${c}`)); out(`  [pick not found: ${p}]`); stats.fails++; break; }

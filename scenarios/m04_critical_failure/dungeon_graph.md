@@ -498,7 +498,7 @@ flowchart TD
   rc_obj36_36{"Camera System Logs"}
   rc_obj37_37{"Access Control Export: HV Plant Room"}
   rc_security_equipment_locker_38[["Security Equipment Locker"]]
-  rc_obj39_39{"Spare Keycard (Level 1)"}
+  rc_security_spare_keycard_l1_39{"Spare Keycard (Level 1)"}
   rc_obj40_40{"Incident Response Guide"}
   rc_analog_thermometer_41{"Analogue Thermometer — Rack Bank C Wall"}
   rc_rack_status_panel_42{"Battery Rack Status Panels (Digital)"}
@@ -571,7 +571,7 @@ flowchart TD
   security_office --> rc_obj36_36
   security_office --> rc_obj37_37
   security_office --> rc_security_equipment_locker_38
-  rc_security_equipment_locker_38 --> rc_obj39_39
+  rc_security_equipment_locker_38 --> rc_security_spare_keycard_l1_39
   rc_security_equipment_locker_38 --> rc_obj40_40
   battery_hall_1 --> rc_analog_thermometer_41
   battery_hall_1 --> rc_rack_status_panel_42
@@ -600,7 +600,7 @@ flowchart TD
 
   class main_entrance,operations_office,scada_control_room,security_office,battery_hall_1,loading_dock room
   class engineering_workshop,battery_hall_2,plant_room lock
-  class rc_obj1_1,rc_obj2_2,rc_safetynet_field_guide_rfid_cloning_8,rc_safetynet_field_guide_lockpicking_9,rc_safetynet_field_guide_recon_network_mapping_10,rc_safetynet_field_guide_vuln_analysis_11,rc_safetynet_field_guide_distcc_12,rc_safetynet_field_guide_cyberchef_13,rc_safetynet_field_guide_privesc_14,rc_safetynet_field_guide_proftpd_15,rc_relayed_workshop_keycard_16,rc_obj19_19,rc_obj20_20,rc_obj21_21,rc_obj22_22,rc_vance_level1_keycard_24,rc_scada_hmi_display_25,rc_obj26_26,rc_obj27_27,rc_vm_launcher_bms_jump_server_28,rc_flag_station_dropsite_29,rc_obj30_30,rc_obj31_31,rc_obj33_33,rc_obj34_34,rc_obj35_35,rc_obj36_36,rc_obj37_37,rc_obj39_39,rc_obj40_40,rc_analog_thermometer_41,rc_rack_status_panel_42,rc_hydrogen_detector_43,rc_obj44_44,rc_hall1_round_panel_45,rc_obj47_47,rc_obj48_48,rc_bms_bypass_module_49,rc_obj50_50,rc_obj52_52,rc_obj53_53,rc_esd_pushbutton_54,rc_obj55_55,rc_obj56_56,rc_obj57_57,rc_obj58_58,rc_obj61_61,rc_obj62_62,rc_obj64_64 item
+  class rc_obj1_1,rc_obj2_2,rc_safetynet_field_guide_rfid_cloning_8,rc_safetynet_field_guide_lockpicking_9,rc_safetynet_field_guide_recon_network_mapping_10,rc_safetynet_field_guide_vuln_analysis_11,rc_safetynet_field_guide_distcc_12,rc_safetynet_field_guide_cyberchef_13,rc_safetynet_field_guide_privesc_14,rc_safetynet_field_guide_proftpd_15,rc_relayed_workshop_keycard_16,rc_obj19_19,rc_obj20_20,rc_obj21_21,rc_obj22_22,rc_vance_level1_keycard_24,rc_scada_hmi_display_25,rc_obj26_26,rc_obj27_27,rc_vm_launcher_bms_jump_server_28,rc_flag_station_dropsite_29,rc_obj30_30,rc_obj31_31,rc_obj33_33,rc_obj34_34,rc_obj35_35,rc_obj36_36,rc_obj37_37,rc_security_spare_keycard_l1_39,rc_obj40_40,rc_analog_thermometer_41,rc_rack_status_panel_42,rc_hydrogen_detector_43,rc_obj44_44,rc_hall1_round_panel_45,rc_obj47_47,rc_obj48_48,rc_bms_bypass_module_49,rc_obj50_50,rc_obj52_52,rc_obj53_53,rc_esd_pushbutton_54,rc_obj55_55,rc_obj56_56,rc_obj57_57,rc_obj58_58,rc_obj61_61,rc_obj62_62,rc_obj64_64 item
   class rc_npc_agent_hax_3,rc_npc_director_magnus_netherton_4,rc_npc_agent_0x47_nightshade_5,rc_npc_security_guard_6,rc_npc_agent_hax_7,rc_npc_robert_vance_17,rc_npc_agent_hax_18,rc_npc_robert_vance_23,rc_npc_entropy_operative_cipher_46,rc_npc_entropy_operative_relay_51,rc_npc_voltage_critical_mass_59,rc_npc_entropy_operative_static_60 npc
   class rc_optigrid_tool_case_32,rc_security_equipment_locker_38,rc_extraction_gobag_63 container
   class node_start start
