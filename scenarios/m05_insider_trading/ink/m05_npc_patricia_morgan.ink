@@ -276,7 +276,9 @@ Patricia Morgan: What do you need?
 
 + {not gave_vetting_file} [I need the vetting files on the cryptography team.]
     // Round 2 (M1): the files answer the badge log; they don't replace it.
-    {not (found_door_log or halloran_questioned):
+    // Puzzle R2 (R2-1): suspicion counts too, so a VM-first player without
+    // the picks has a motive source (the journal is in the locked briefcase).
+    {not (found_door_log or halloran_questioned or torres_suspected):
         Patricia Morgan: Vetting files are restricted. Bring me a name or a pattern and I'll pull the ones that matter.
         -> hub
     }

@@ -29,7 +29,6 @@ VAR told_about_torres = false
 VAR first_meeting = true
 VAR accused_acknowledged = false
 VAR hub_quiet = false
-VAR gave_spare = false        // puzzle R1 (P8): she handed the player the visitor spare
 VAR asked_vault = false       // puzzle R1 (D-A): the gloves answer, once
 
 // Synced from scenario globals
@@ -45,6 +44,7 @@ VAR door_log_reasoned = false
 VAR patricia_ko = false
 VAR vault_reader_seen = false
 VAR server_password_obtained = false
+VAR spare_badge_taken = false // Synced scenario global (puzzle R2, R2-2): the player holds the visitor spare (set on pickup), so the variant survives a reload
 
 // ===========================================
 // INITIAL MEETING
@@ -188,8 +188,9 @@ Dr Ruth Halloran: David made Heisenberg work. Two years of his life are in that 
 
 -> hub
 
-// Puzzle R1 (P8): the spare she hands over is the visitor spare off the hook,
-// the same #4471 the badge log shows at night.
+// Puzzle R1 (P8), R2 (R2-2): the spare she hands over is the lab's visitor
+// spare, #4471, the badge the log shows at night. It is signed out through
+// her; the hook by the door is set dressing only, never a source.
 === ask_vault ===
 #speaker:dr_halloran
 ~ asked_vault = true
@@ -201,9 +202,8 @@ Dr Ruth Halloran: You'll not lift anything of mine in here. Try it if you like.
 #speaker:dr_halloran
 
 {halloran_influence >= 25:
-    ~ gave_spare = true
     #give_item:keycard:research_lab_badge
-    Dr Ruth Halloran: You've been straight with me. Take the visitor spare off the hook by the door.
+    Dr Ruth Halloran: You've been straight with me. Here, the visitor spare. It's signed out through me, and I'm signing it out to you.
     Dr Ruth Halloran: It's registered to me, and it opens the server hallway. Bring it back when you're done.
     ~ halloran_influence += 5
     -> hub
@@ -226,10 +226,10 @@ Dr Ruth Halloran: Ask what you came to ask.
 #speaker:dr_halloran
 ~ halloran_questioned = true
 ~ found_halloran_alibi = true
-{gave_spare:
-    Dr Ruth Halloran: The one you're carrying. It lives on that hook by the door, for visitors, and nobody signs it out.
+{spare_badge_taken:
+    Dr Ruth Halloran: The one you're carrying. It's signed out through me, and I've never signed it out at night.
 - else:
-    Dr Ruth Halloran: My spare? It hangs on the hook by the door, for visitors. I haven't touched it in months.
+    Dr Ruth Halloran: My spare? It's the visitor spare, signed out through me. I haven't signed it out in months.
 }
 Dr Ruth Halloran: The twenty-third I was in Zurich, giving a paper to two hundred people. The lanyard's on my monitor.
 // PASS 5 (m3): three names, not one. The badge log's front-door times decide it.

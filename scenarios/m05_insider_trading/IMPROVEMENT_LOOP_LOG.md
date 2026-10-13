@@ -365,3 +365,44 @@ Documents (not voiced): the Lab Rules notice (new); the Visitor Spare item name 
 - The browser checks above.
 - D11 (the clone's timing) for the user; D3 now also asks about out-of-order flags.
 - P10 to the dialogue phase.
+
+### Phase 2 puzzle chains, round 2
+
+Review: `PUZZLE_CHAINS_REVIEW_P5_R2.md` (Opus, read-only, static, probes p1 to p4). Counts: 0 blockers, 0 majors, 4 minors, and side notes N2 to N4. All fixed as the reviewer proposed (coordinator's instruction); none withdrawn. The stage closes after these fixes and the reviewer's nine browser checks.
+
+| # | Sev. | Finding | Outcome |
+|---|---|---|---|
+| R2-1 | minor | The no-picks motive fallback failed on the VM-first route: Patricia refused the vetting files without the badge log or Halloran, and HaX sent the player to the break room, which sets no motive (probe p2) | **Fixed**: Patricia's vetting gate also accepts `torres_suspected` (in person; her phone has no vetting ask). HaX: "…Now find out why: what he keeps in his office, or Patricia's vetting files." p2 promoted to route r22 (VM-first, no picks, files on suspicion, named on the vetting file and flag 3, handed over, called in) |
+| R2-2 | minor | The visitor spare was advertised on a hook that isn't there; the description went wrong once the badge was held or dropped; Halloran's variant reset on a page reload | **Fixed**: Lab Rules rule 3 is now "The visitor spare (#4471) is signed out through me. Visitors only."; the item description "The research lab's visitor spare, badge #4471, registered to Dr Halloran. It opens the server hallway." (true in the kit or dropped). Halloran's hand-over: "Here, the visitor spare. It's signed out through me, and I'm signing it out to you."; her answer keys on a new synced `spare_badge_taken` (set by the badge's pickup mapping, which now sets both it and `server_badge_obtained`, so it doesn't pair with the relayed badge's mapping): "The one you're carrying. It's signed out through me, and I've never signed it out at night." / "My spare? It's the visitor spare, signed out through me. I haven't signed it out in months." The item's comment tells room dressing the hook is a prop only (empty or not interactive, never a source of the badge) |
+| R2-3 | minor | HaX named Patricia's sign-off before Owen had refused (probe p3) | **Fixed**: two whole-line variants on `owen_refused_password`. Not yet refused: "Owen holds the server-room password and wants a reason for his log. Patricia's incident log has one." Refused: "Owen wants a reason for his log. Patricia's incident log has one, or ask Patricia to sign it off." |
+| R2-4 | minor | "Work out which you're after before you hunt for a print" offers a choice D-A took away | **Fixed**: "The vault takes one of two prints, Halloran's or Torres'. Don't go hunting until you know whose door you'll be knocking on." |
+| N2 | note | The first ladder rung ("The badge log's in your kit. Read it.") can't show: a handed-over or picked-up log fires its onRead before `door_log_held` is set | **Removed** (the coordinator allowed either). The ladder now starts at "Ask her where it lives." `door_log_held` stays: the Owen-KO relay still reads it |
+| N3 | note | Walkthrough still put the journal on the desk | **Fixed** (motive list now says "briefcase, with the bills"; step 11's vetting gate updated for R2-1) |
+| N4 | note | The badge item had two `_comment` keys | **Fixed**: merged into one |
+
+#### Static confirmation
+
+- Routes r1 to r22: all expectations met (r22 new).
+- The reviewer's probes on this build: p2 now gets the files ("That's what vetting will let me give you"); p3 fails only on its assertion of the old sign-off wording, and HaX now says "Owen holds the server-room password and wants a reason for his log. Patricia's incident log has one."; p4 passes.
+- Grep: no hook as a location in any game line (only in comments); the badge item has one `_comment`.
+- Ink compiles (10 files). Validator, full: schema passes, dungeon graph regenerates; the intended same-pattern warnings only (the spare's pickup no longer pairs with the relayed badge). dialoguelint: 0 errors (the same pre-existing check and warning). reopencheck (m05 block regenerated, re-read just before; diff confined to it): 0 problems. tagdiff against HEAD: 11 structural differences, all from this round. inkcheck (Halloran with the spare taken, Patricia with suspicion, HaX after Owen's refusal): clean. Door alignment 9/9.
+
+#### Spoken lines changed (old → new)
+
+HaX, phone:
+- "Owen holds the server-room password and wants a reason for his log. Patricia's incident log has one, or ask Patricia to sign it off." → two variants: "Owen holds the server-room password and wants a reason for his log. Patricia's incident log has one." (not yet refused) / "Owen wants a reason for his log. Patricia's incident log has one, or ask Patricia to sign it off." (refused)
+- "You can see it leaving under his name. Now find out why: his office, the break room, Patricia's files." → "You can see it leaving under his name. Now find out why: what he keeps in his office, or Patricia's vetting files."
+- "The vault takes one of two prints, Halloran's or Torres'. Work out which you're after before you hunt for a print." → "The vault takes one of two prints, Halloran's or Torres'. Don't go hunting until you know whose door you'll be knocking on."
+- Removed: "The badge log's in your kit. Read it."
+
+Dr Halloran:
+- "You've been straight with me. Take the visitor spare off the hook by the door." → "You've been straight with me. Here, the visitor spare. It's signed out through me, and I'm signing it out to you."
+- "The one you're carrying. It lives on that hook by the door, for visitors, and nobody signs it out." → "The one you're carrying. It's signed out through me, and I've never signed it out at night."
+- "My spare? It hangs on the hook by the door, for visitors. I haven't touched it in months." → "My spare? It's the visitor spare, signed out through me. I haven't signed it out in months."
+
+Documents (not voiced): Lab Rules rule 3; the Visitor Spare description.
+
+#### Open after round 2
+
+- The reviewer's nine browser checks, then the stage closes.
+- Room dressing: the hook by the lab door is a prop only (empty or not interactive); the Lab Rules notice needs placing.

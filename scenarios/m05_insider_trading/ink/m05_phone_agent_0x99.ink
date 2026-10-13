@@ -66,6 +66,7 @@ VAR door_log_held = false
 VAR owen_office_card_relayed = false // Synced scenario global: HaX has pushed Owen's office spare (set here only)
 VAR recruiter_texted = false
 VAR it_notice_read = false
+VAR owen_refused_password = false // Synced scenario global (puzzle R1 P6): set by Owen; read here for the status line (R2-3)
 VAR door_log_hinted = false // Synced scenario global (pass 5 puzzle R1, P1/D-D): HaX has spelled out the front-door method; set here only. Bars the early-naming reward
 VAR door_log_reasoned_first = false // Synced scenario global (pass 5 R3-1): the front-door reason given in a reason menu, before the naming; set only in the *log_reason_right knots. The early-naming reward reads this, not door_log_reasoned
 VAR torres_reason_guessed = false // Synced scenario global (pass 5 R2 B2): a wrong reason or a wrong name was tried; also set by Patricia (m05_npc_patricia_morgan, m05_phone_patricia). Excludes the early-naming reward
@@ -900,7 +901,12 @@ See you at HQ.
     - patricia_ko:
         Owen holds the server-room password and wants a reason for his log. He's had word from Security. Tell him.
     - else:
-        Owen holds the server-room password and wants a reason for his log. Patricia's incident log has one, or ask Patricia to sign it off.
+        // Puzzle R2 (R2-3): Patricia's sign-off only once Owen has refused (P6).
+        {owen_refused_password:
+            Owen wants a reason for his log. Patricia's incident log has one, or ask Patricia to sign it off.
+        - else:
+            Owen holds the server-room password and wants a reason for his log. Patricia's incident log has one.
+        }
     }
 - not server_room_entered:
     You've got the password. The server room is north of the server hallway.
@@ -931,8 +937,8 @@ See you at HQ.
     // Puzzle R1 (P1/D-D): the badge-log hints get more specific as the player
     // goes. The method itself comes only after a wrong reason, and giving it
     // sets door_log_hinted, which bars the early-naming reward.
-    - door_log_held and not found_door_log:
-        The badge log's in your kit. Read it.
+    // Puzzle R2 (N2): the "in your kit, read it" rung is gone; a handed-over
+    // or picked-up log fires its onRead before door_log_held is set.
     - found_door_log and not halloran_questioned and not found_halloran_alibi and not torres_suspected:
         That log says Halloran's spare. Ask her where it lives.
     - found_door_log and (halloran_questioned or found_halloran_alibi) and torres_reason_guessed and not torres_suspected:
@@ -952,11 +958,11 @@ See you at HQ.
     - torres_suspected and not has_motive() and not has_exfil():
         You've a pattern on him, not a case. His office for why, then the vault past the server room for proof.
     - torres_suspected and not has_motive():
-        You can see it leaving under his name. Now find out why: his office, the break room, Patricia's files.
+        You can see it leaving under his name. Now find out why: what he keeps in his office, or Patricia's vetting files.
     - torres_suspected and not has_exfil():
         You know why he might. Now the proof it's leaving: the vault past the server room has it, and so does the research server.
     - server_password_obtained and not torres_suspected:
-        The vault takes one of two prints, Halloran's or Torres'. Work out which you're after before you hunt for a print.
+        The vault takes one of two prints, Halloran's or Torres'. Don't go hunting until you know whose door you'll be knocking on.
     }
 }
 // R2 (m7): after the fate she has no pitch left (never_talked_terms).

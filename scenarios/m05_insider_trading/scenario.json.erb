@@ -684,7 +684,8 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
     "torres_reason_guessed": false,
     "door_log_reasoned_first": false,
     "door_log_hinted": false,
-    "owen_refused_password": false
+    "owen_refused_password": false,
+    "spare_badge_taken": false
   },
 
   "endGoal": "Identify the insider with both halves of the case (motive and proof of exfiltration), stop the final upload, and decide David Torres' fate: turn him, hand him to the police, expose the programme, or fight.",
@@ -904,7 +905,14 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
               "setGlobal": { "server_password_obtained": true }
             },
 <% end %>
-<% %w[research_lab_badge relayed_server_badge].each do |id| %>
+            {
+              "_comment": "Puzzle R2 (R2-2): Halloran's spare-badge answer keys on spare_badge_taken, a synced global, so it survives a reload. One mapping for the spare (both globals), so it doesn't pair with the relayed badge's.",
+              "eventPattern": "item_picked_up:keycard",
+              "condition": "data.itemId === 'research_lab_badge'",
+              "onceOnly": true,
+              "setGlobal": { "spare_badge_taken": true, "server_badge_obtained": true }
+            },
+<% %w[relayed_server_badge].each do |id| %>
             {
               "_comment": "PASS 2 (lesson 26): 'given' globals come from the pickup, not from ink before the tag.",
               "eventPattern": "item_picked_up:keycard",
@@ -1665,14 +1673,13 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
           "taskOnKO": "talk_to_dr_halloran",
           "itemsHeld": [
             {
-              "_comment": "PASS 2: the lab is unlocked, so the badge now opens the server hallway (a second route beside Owen's clone, lesson 8).",
+              "_comment": "PASS 2: the lab is unlocked, so the badge opens the server hallway (a second route beside Owen's clone, lesson 8). Puzzle R1 (P8): it is the lab's visitor spare, the #4471 on the badge log. R2 (R2-2): signed out through Halloran; the description stays true in the kit or dropped after a KO. Room dressing (m12) may add an empty hook by the lab door as a prop only, never a source of the badge (a third free hallway route would undercut Halloran's rapport route and D11).",
               "type": "keycard",
               "name": "Visitor Spare (#4471)",
               "id": "research_lab_badge",
               "opens_lock": "employee_badge",
               "takeable": true,
-              "_comment": "Puzzle R1 (P8): the lab's visitor spare off the hook by the door, the #4471 on the badge log. Room dressing (m12) places the hook.",
-              "observations": "The research lab's visitor spare, badge #4471, registered to Dr Halloran. It hangs on the hook by the lab door. It opens the server hallway.",
+              "observations": "The research lab's visitor spare, badge #4471, registered to Dr Halloran. It opens the server hallway.",
               "puzzle_graph_unlocks": "server_hallway",
               "puzzle_graph_optional": true
             }
@@ -1687,7 +1694,7 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
           "name": "Lab Rules",
           "takeable": false,
           "readable": true,
-          "text": "HEISENBERG LAB - HOUSE RULES\n\n1. Gloves at the bench. Always. No exceptions for leads.\n2. Nothing leaves this lab on removable media.\n3. The visitor spare (#4471) lives on the hook by the door. Visitors only.\n\n- R. Halloran",
+          "text": "HEISENBERG LAB - HOUSE RULES\n\n1. Gloves at the bench. Always. No exceptions for leads.\n2. Nothing leaves this lab on removable media.\n3. The visitor spare (#4471) is signed out through me. Visitors only.\n\n- R. Halloran",
           "observations": "A laminated notice taped to the end of the bench"
         },
         {

@@ -1,0 +1,202 @@
+{
+"steps": [
+{
+"note": "R22 (puzzle R2, R2-1; the reviewer's probe p2): VM-first, no picks. Flags 1 to 3 make Torres a suspect; the badge log is never fetched and Halloran never asked. HaX points at his office or Patricia's vetting files; Patricia now gives the files on suspicion; named on the vetting file and the server's manifest; handed over; called in. The briefcase is never opened."
+},
+{
+"talk": "briefing",
+"picks": [
+"damage so far",
+"Who's this going to",
+"What's the mission",
+"And the third",
+"my cover",
+"Who else will I meet",
+"I'm ready",
+"Methodically",
+"Any last advice"
+]
+},
+{
+"set": {
+"briefing_played": true
+}
+},
+{
+"talk": "patricia",
+"picks": [
+"Fill me in",
+"Who has access",
+"without tipping",
+"Where should I start"
+]
+},
+{
+"set": {
+"server_badge_obtained": true,
+"server_password_obtained": true,
+"server_room_entered": true
+}
+},
+{
+"set": {
+"flag1_submitted": true
+}
+},
+{
+"set": {
+"flag2_submitted": true
+}
+},
+{
+"set": {
+"flag3_submitted": true
+}
+},
+{
+"expect": {
+"torres_suspected": true,
+"case_exfil": true
+}
+},
+{
+"said": []
+},
+{
+"talk": "phone",
+"picks": [
+"Where do I stand",
+"Right",
+"Nothing right now"
+]
+},
+{
+"said": [
+"what he keeps in his office, or Patricia's vetting files"
+],
+"notSaid": [
+"the break room"
+]
+},
+{
+"talk": "lisa",
+"picks": [
+"collection tin"
+]
+},
+{
+"expect": {
+"found_vetting_file": false,
+"found_medical_bills": false,
+"found_torres_journal": false
+}
+},
+{
+"said": []
+},
+{
+"talk": "patricia",
+"picks": [
+"I need your help with something",
+"vetting files",
+"That's everything"
+]
+},
+{
+"said": [
+"That's what vetting will let me give you"
+],
+"notSaid": [
+"Bring me a name or a pattern"
+]
+},
+{
+"expect": {
+"found_vetting_file": true,
+"found_torres_journal": false,
+"found_medical_bills": false
+}
+},
+{
+"talk": "patricia",
+"picks": [
+"I think I know who it is",
+"David Torres",
+"I'll stop him"
+]
+},
+{
+"expect": {
+"torres_identified": true,
+"named_before_portal": false
+}
+},
+{
+"talk": "owen",
+"picks": [
+"Point me at the logs",
+"David Torres' office",
+"That's everything"
+]
+},
+{
+"enter": "torres_office"
+},
+{
+"event": "fingerprint_collected:david_torres",
+"data": {
+"identified": true
+}
+},
+{
+"enter": "data_center"
+},
+{
+"talk": "torres",
+"picks": [
+"It's over, David",
+"They lied to you",
+"You knew people would die",
+"staying here until the police",
+"It doesn't matter",
+"social worker"
+]
+},
+{
+"set": {
+"flag4_submitted": true
+}
+},
+{
+"talk": "phone",
+"picks": [
+"Bring me in",
+"Bring me in",
+"On my way"
+]
+},
+{
+"expect": {
+"mission_complete": true
+}
+},
+{
+"talk": "debrief",
+"picks": [
+"He did this",
+"Not"
+]
+},
+{
+"credits": true
+},
+{
+"said": [
+"HANDED TO THE POLICE — said nothing"
+],
+"notSaid": [
+"NAMED ON THE EVIDENCE"
+]
+}
+]
+}

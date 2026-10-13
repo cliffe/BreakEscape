@@ -46,7 +46,7 @@ Evidence is a set of booleans, not a counter. Patricia (in person or by
 phone), or HaX if Patricia is KO'd, accepts a name only with **one motive item
 and one exfiltration item**:
 
-- Motive: `found_medical_bills` (briefcase), `found_torres_journal` (desk) or
+- Motive: `found_medical_bills` (briefcase), `found_torres_journal` (briefcase, with the bills) or
   `found_vetting_file` (from Patricia).
 - Exfiltration: `flag3_submitted`, `found_manifest` or `found_upload_schedule`.
 
@@ -133,8 +133,8 @@ answer.
     (pass 5 D2): Torres' scene opens at 99 per cent, and the debrief and
     credits report the East of England's rotation window lost.
 11. Optional: vetting files from Patricia (`find_vetting_file`, "Find out who
-    on the team is under pressure"), only once the badge log is read
-    (round 2): **two** files, Torres (undeclared debts) and Halloran (late
+    on the team is under pressure"), only once the badge log is read, Halloran
+    has been asked, or Torres is already suspected (round 2; puzzle chains R2): **two** files, Torres (undeclared debts) and Halloran (late
     report, no dates, cancelled interview; not an alibi on its own). TalentStack leaflet in the break room (`find_entropy_pamphlet`);
     its handwriting matches the journal. Lisa says whose collection it is when
     asked, and mentions Halloran's row with the CEO. Halloran's spare badge is a
