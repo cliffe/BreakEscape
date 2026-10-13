@@ -394,3 +394,33 @@ Ink compiles (10 files). Validator, full: schema passed, all ink valid, doors an
 - Not spoken: the new credits line "THE BREAK-IN: on paper — the OptiGrid work order, the camera gaps, the spoofed reader".
 
 Carried: R2-6 / m17 **need checking against SecGen by the user**.
+
+### Phase 2 puzzle chains, round 4
+
+Review: `PUZZLE_CHAINS_REVIEW_P5_R4.md` (Opus, static; 0 blockers, 0 majors, 5 minors; recommends closing the phase). All five applied as the reviewer proposes (orchestrator). The do-not-open rule held.
+
+| # | Sev. | Finding | Outcome |
+|---|---|---|---|
+| R4-1 | minor | HaX's first call assumes the player is inside, and offers "Met Robert Vance" before they've met him | **Fixed.** A fourth choice, "[Not yet. I'm at the gate.]" (→ "Then the badge. Routine audit, came early. Call me once you're past him."), offered until the player is inside. The three "inside" answers wait for `guard_admitted or security_guard_ko or checkpoint_passed`, and "Met Robert Vance" also for `vance_met`. There is always at least one choice |
+| R4-2 | minor | "I've put one of their people down" sends the player after Relay's card they already hold | **Fixed.** "Relay's the one carrying a workshop card." only while the card isn't held (`not relay_card_cloned and not server_room_reached`) |
+| R4-3 | minor | The plant-reader hint sends a player holding the print back for it | **Fixed.** HaX's ink declares `vance_print_lifted`; `hint_reader` opens with "You've got his print. Use it on the reader. It can't tell a lift from a living thumb.", and the reviewer's optional `report_progress` branch is added ("You've got it. Use it on the reader.") |
+| R4-4 | minor | The credits line names three documents whenever any one of four was read | **Fixed.** Generic: "THE BREAK-IN: traced on paper to the OptiGrid crew" (same condition) |
+| R4-5 | minor | Two VM texts assume the flags arrive in task order | **Fixed, after checking the order.** The flag station has no ordering: the server's `submit_flag` checks station ownership, duplicates and validity only (games_controller.rb `submit_flag`), so any flag can land first. The FTP-flag text now has `skipIfGlobal: flag_distcc_exploit_submitted`, the scan-flag text `skipIfGlobal: flag_ftp_intel_submitted`; the guide offers (`setGlobal`) stay |
+
+Route `r16_gate_first_call_card_print.json` covers R4-1 to R4-3 (gate-state first open; Cipher down with Relay's card held; kit and print in hand). 16 of 16 routes pass.
+
+#### Checks (static; no browser session)
+
+Ink compiles (10 files). Validator, full: schema passed, all ink valid, doors and geometry OK; 15 warnings, the same set. dialoguelint: 0 errors, 5 blank-reentry checks. reopencheck: 0 problems. tagdiff against HEAD: 15 structural differences, all from this round. inkcheck and loopcheck on the first call (at the gate, and inside), `hint_reader` with the print, and the hub with one operative down: clean. Door alignment OK.
+
+#### Spoken lines changed (old → new)
+
+HaX, phone:
+- New choice and reply: "[Not yet. I'm at the gate.]" → "Then the badge. Routine audit, came early. Call me once you're past him."
+- "One down. Check what he dropped. Relay's the one carrying a workshop card." → "One down. Check what he dropped." plus "Relay's the one carrying a workshop card." only while the card isn't held.
+- New (`hint_reader`): "You've got his print. Use it on the reader. It can't tell a lift from a living thumb."
+- New (`report_progress`): "You've got it. Use it on the reader."
+
+Not spoken: the credits line "THE BREAK-IN: on paper — the OptiGrid work order, the camera gaps, the spoofed reader" → "THE BREAK-IN: traced on paper to the OptiGrid crew". The two VM texts are unchanged in wording; they are now skipped when out of order.
+
+Carried: R2-6 / m17 **need checking against SecGen by the user**.

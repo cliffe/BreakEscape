@@ -198,7 +198,7 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
           { "text": "STATIC: stood aside, and left with Voltage", "style": "entry", "condition": "globalVars.static_left" },
           { "text": "RELAY: card copied mid-standoff", "style": "entry", "condition": "globalVars.relay_card_cloned" },
           <%# Puzzle chains R3-3: the optional break-in documents get a word at the end. %>
-          { "text": "THE BREAK-IN: on paper — the OptiGrid work order, the camera gaps, the spoofed reader", "style": "entry", "condition": "globalVars.evidence_maintenance_logs_found || globalVars.evidence_camera_tampering_found || globalVars.evidence_reader_spoof_found || globalVars.evidence_access_logs_found" },
+          { "text": "THE BREAK-IN: traced on paper to the OptiGrid crew", "style": "entry", "condition": "globalVars.evidence_maintenance_logs_found || globalVars.evidence_camera_tampering_found || globalVars.evidence_reader_spoof_found || globalVars.evidence_access_logs_found" },
           { "text": "EVIDENCE: Voltage's own print on the bypass module", "style": "entry", "condition": "globalVars.voltage_print_on_bypass" },
           { "text": "SOCIAL FABRIC SAFEHOUSE: located", "style": "entry", "condition": "globalVars.lore_safehouse_address_found" },
           { "text": "DISCLOSED IN FULL — the attack, the vulnerabilities, and how close it came", "style": "entry", "condition": "globalVars.disclosure_choice === 'full'" },
@@ -959,7 +959,7 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
               "onceOnly": true,
               "completeTask": "investigate_compromised_services",
               "setGlobal": { "distcc_guide_offered": true },
-              "sendTimedMessage": { "delay": 2000, "message": "There's a legacy distccd on that box too. The crew left it as a way back in. Prove it works. I've a guide if you want it." }
+              "sendTimedMessage": { "delay": 2000, "message": "There's a legacy distccd on that box too. The crew left it as a way back in. Prove it works. I've a guide if you want it.", "skipIfGlobal": "flag_distcc_exploit_submitted" }
             },
             <%# PASS 3 P15 (review): the sudo offer on the FTP flag, only if the
                 distcc flag hasn't already made it. %>
@@ -993,7 +993,7 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
               "eventPattern": "objective_task_completed:submit_network_scan_flag",
               "onceOnly": true,
               "setGlobal": { "proftpd_guide_offered": true },
-              "sendTimedMessage": { "delay": 1500, "message": "That FTP service. Same backdoored build you met at St Catherine's. Zero Day supplies, Critical Mass executes. I've the ProFTPD guide if you want a refresher." }
+              "sendTimedMessage": { "delay": 1500, "message": "That FTP service. Same backdoored build you met at St Catherine's. Zero Day supplies, Critical Mass executes. I've the ProFTPD guide if you want a refresher.", "skipIfGlobal": "flag_ftp_intel_submitted" }
             },
             {
               "eventPattern": "global_variable_changed:lore_safehouse_address_found",

@@ -59,6 +59,8 @@ VAR vance_provided_keycard = false
 // player reached the operations office, however they got past the gate.
 VAR level1_card_held = false
 VAR checkpoint_passed = false
+// Puzzle chains R4-3: the print is already lifted (set on every lift). Read only.
+VAR vance_print_lifted = false
 VAR robert_vance_ko = false
 VAR plant_reader_seen = false
 VAR plant_room_entered = false
@@ -260,7 +262,11 @@ Sent. Paste it in, hit Magic, and it'll tell you what it is.
     {operative_relay_defeated:
         One down. Check what she dropped: that's the workshop card.
     - else:
-        One down. Check what he dropped. Relay's the one carrying a workshop card.
+        One down. Check what he dropped.
+        // Puzzle chains R4-2: not once the workshop card is held.
+        {not relay_card_cloned and not server_room_reached:
+            Relay's the one carrying a workshop card.
+        }
     }
 }
 
@@ -305,7 +311,11 @@ Or put her down. She won't chase far, so if she turns on you, back off and cross
 === hint_reader ===
 #speaker:agent_0x99
 ~ hint_reader_given = true
-{fingerprint_kit_found:
+// Puzzle chains R4-3: don't send a player who holds the print back for it.
+{
+- vance_print_lifted:
+    You've got his print. Use it on the reader. It can't tell a lift from a living thumb.
+- fingerprint_kit_found:
     You've got the crew's kit. Now you need Vance's print, off something he touches every round.
     The duty panel in Hall 1. He logs every round on it.
 - else:
@@ -470,14 +480,22 @@ Agent, status check. Are you inside the facility?
 
 === first_call_choices ===
 
-* [I'm inside. Met Robert Vance, the facility manager.]
+// Puzzle chains R4-1: the first open usually comes at the gate (HaX's "Gate
+// first" text), so the "inside" answers wait until the player is inside, and
+// "Met Robert Vance" until they have met him.
+* {(guard_admitted or security_guard_ko or checkpoint_passed) and vance_met} [I'm inside. Met Robert Vance, the facility manager.]
     -> vance_status_inquiry
 
-* [Inside the facility. Beginning investigation now.]
+* {guard_admitted or security_guard_ko or checkpoint_passed} [Inside the facility. Beginning investigation now.]
     -> investigation_update
 
-* [I'm in. Anything new from your end?]
+* {guard_admitted or security_guard_ko or checkpoint_passed} [I'm in. Anything new from your end?]
     -> intel_update
+
+* {not guard_admitted and not security_guard_ko and not checkpoint_passed} [Not yet. I'm at the gate.]
+    #exit_conversation
+    Then the badge. Routine audit, came early. Call me once you're past him.
+    -> support_hub
 
 === vance_status_inquiry ===
 #speaker:agent_0x99
@@ -844,7 +862,10 @@ Two hundred and forty thousand people are on that grid.
     The dial thermometer on the Rack Bank C wall in Hall 1. It isn't on their network.
 - not plant_room_entered:
     You know how they did it. The plant room's off Hall 2, and its reader wants Vance's print.
-    {not fingerprint_kit_found:
+    {
+    - vance_print_lifted:
+        You've got it. Use it on the reader.
+    - not fingerprint_kit_found:
         The crew's own kit is in their tool case in the workshop.
     }
 - not voltage_neutralised:
