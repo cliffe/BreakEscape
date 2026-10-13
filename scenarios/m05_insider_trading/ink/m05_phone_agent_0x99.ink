@@ -942,7 +942,7 @@ See you at HQ.
     // or picked-up log fires its onRead before door_log_held is set.
     // Scenario design R1 (m5): she can't answer if she's knocked out.
     - found_door_log and halloran_ko and not found_halloran_alibi and not torres_suspected:
-        She's in no state to answer. Her desk in the lab might.
+        Halloran's in no state to answer. Her desk in the lab might.
     - found_door_log and not halloran_questioned and not found_halloran_alibi and not torres_suspected:
         That log says Halloran's spare. Ask her where it lives.
     - found_door_log and (halloran_questioned or found_halloran_alibi) and torres_reason_guessed and not torres_suspected:

@@ -523,3 +523,28 @@ Review: `SCENARIO_DESIGN_REVIEW_P5_R2.md` (Opus, read-only, static). Counts: 0 b
 
 - Browser checks from round 1 plus: Halloran after reinstatement (met before, and first meeting); the Recruiter's ring-back close.
 - D12 to D14 for the user.
+
+### Phase 3 scenario design: browser findings (closing check)
+
+`PASS5_DESIGN_R2_BROWSER.md`: all six checks pass; two small fixes:
+
+| # | Finding | Outcome |
+|---|---|---|
+| F1 | HaX's "She's in no state to answer" doesn't say who | **Fixed**: "Halloran's in no state to answer. Her desk in the lab might." |
+| F2 | With `torres_fight_offered` false, the debrief and credits still said "after a fight" | **Fixed**: the debrief's two no-fight openings now say "Detained at the terminal. You stayed with him…"; the credit splits into "DETAINED AFTER A FIGHT — handed to the police" (fight offered) and "DETAINED AT THE TERMINAL — handed to the police" (not). Route r28 |
+
+Checks (static; no browser session started): routes r1 to r28 all pass; ink compiles; validator, full: schema passes, the same intended warnings; dialoguelint 0 errors; reopencheck 0 problems; tagdiff against HEAD: structure unchanged (prose and credits only); door alignment 9/9.
+
+Spoken lines changed (old → new):
+- HaX: "She's in no state to answer. Her desk in the lab might." → "Halloran's in no state to answer. Her desk in the lab might." (new this pass, no audio)
+- Debrief (no-fight variants, new this pass): "Detained after a fight. You stayed with him, kept his airway clear, and the ambulance came with the police." → "Detained at the terminal. You stayed with him…"; likewise the Patricia variant.
+
+## Phase 3 scenario design: CLOSED (2026-10-13)
+
+| Round | Source | Counts | Outcome |
+|---|---|---|---|
+| Round 1 | `SCENARIO_DESIGN_REVIEW_P5_R1.md` (Opus, static) | 0 blockers, 2 majors, 10 minors; U1 to U4 | All fixed: Halloran's suspension at the hub (M1), the debrief's research-portal beat (M2/U4), "Find out why he'd do it" (m1), `torres_fight_offered` (m2), m3 to m10, the CyBOK trim (U1, D13). U2 and U3 to the user (D14, D12). Routes r24, r25 |
+| Round 2 | `SCENARIO_DESIGN_REVIEW_P5_R2.md` (Opus, static) | 0 blockers, 1 major, 4 minors | All fixed: Halloran's greeting after reinstatement (R2-M1), the Recruiter's ring-back close, "Textbook" gated, the repeated login and the remediation line, privilege escalation under OSV. Routes r26, r27 |
+| Browser check (closing) | `PASS5_DESIGN_R2_BROWSER.md` | 6/6 checks pass; 2 small fixes | F1 and F2 fixed above. Route r28 |
+
+Nothing above minor is open. Carried forward: D12 to D14 for the user; to the dialogue phase, B3 (the debrief's long runs) and P10 (HaX's hub size); to room dressing, the Lab Rules notice and the lab hook as a prop only.

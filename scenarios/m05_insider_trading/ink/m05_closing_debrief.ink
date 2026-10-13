@@ -483,13 +483,13 @@ Agent HaX: And everything he knew about the Initiative died with him. We're mapp
     {torres_fight_offered:
         Agent HaX: Detained after a fight. You stayed with him, kept his airway clear, and the ambulance came with the police. Textbook, once it came to that.
     - else:
-        Agent HaX: Detained after a fight. You stayed with him, kept his airway clear, and the ambulance came with the police.
+        Agent HaX: Detained at the terminal. You stayed with him, kept his airway clear, and the ambulance came with the police.
     }
 - else:
     {torres_fight_offered:
         Agent HaX: Detained after a fight. You stayed with him, kept his airway clear, and Patricia brought the police and an ambulance. Textbook, once it came to that.
     - else:
-        Agent HaX: Detained after a fight. You stayed with him, kept his airway clear, and Patricia brought the police and an ambulance.
+        Agent HaX: Detained at the terminal. You stayed with him, kept his airway clear, and Patricia brought the police and an ambulance.
     }
 }
 
