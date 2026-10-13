@@ -28,6 +28,10 @@ Director Magnus Netherton: Agent 0x00. This one is close to home in a way I disl
 
 Director Magnus Netherton: I have brought Nightshade in because catching a mole is precisely his trade. Learn from him. HaX will run you on the ground.
 
+// PASS 5 (A5): m04's debrief set up Task Force Null; this is its first word
+// since. Nothing promised about later missions.
+Director Magnus Netherton: Task Force Null is three people and a whiteboard so far. Every cell we've hit bought something. This time it's bought a person. I want to know how.
+
 Agent 0x47 'Nightshade': Insiders are hard to catch because they never have to break in. They're already trusted.
 
 Agent 0x47 'Nightshade': So you hunt the pattern. Access a little too broad, hours a little too odd.

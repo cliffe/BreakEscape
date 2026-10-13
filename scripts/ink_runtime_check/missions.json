@@ -748,7 +748,8 @@
       "server_room_entered": false,
       "named_before_portal": false,
       "owen_office_card_relayed": false,
-      "door_log_held": false
+      "door_log_held": false,
+      "data_center_entered": false
     },
     "npcs": [
       {

@@ -59,7 +59,7 @@ Narrator: Caller ID: TALENTSTACK EXECUTIVE RECRUITING.
 
 #speaker:recruiter
 
-{player_name}. Or whatever they're calling you this week.
+Agent. Or whatever they're calling you this week.
 
 I run TalentStack. Executive search, mostly technical roles.
 
@@ -364,7 +364,7 @@ Narrator: The line goes dead.
 // moment has passed.
 === never_talked_terms ===
 #speaker:recruiter
-{player_name}. Torres is dealt with, and we never did talk terms. Pity.
+Agent. Torres is dealt with, and we never did talk terms. Pity.
 There was an envelope under his keyboard I'd have liked back. Whatever you did with it, the next one will cost me more.
 #speaker:narrator
 Narrator: The line goes dead.

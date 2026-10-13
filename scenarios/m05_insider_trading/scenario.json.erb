@@ -37,11 +37,21 @@
 #   server_room     password  Owen refuses by default; Patricia's incident
 #                             log (evidence) or her authority opens him up
 #   torres_office   rfid      Owen's spare, on Patricia's authority
-#   data_center     biometric the key vault, enrolled to Torres alone; his
-#                             print is on the mug in his office. Owen names
-#                             the reader when he hands over the password
+#   data_center     biometric the key vault, enrolled to both Heisenberg
+#                             leads (Torres and Halloran, pass 5 A3); only his
+#                             print is there to lift, on the mug in his office.
+#                             Owen names the reader when he hands over the
+#                             password
 #   briefcase, Patricia's cabinet: picks (by design)
 #   Naming: Patricia in person, Patricia by phone (patricia_phone), or HaX.
+#
+# THE ENDING (pass 5, A2): the fate stops the upload and unlocks the call-in
+#   task; HaX asks for a sweep of the vault. The hub's "Bring me in" (all four
+#   flags in) sets mission_complete, which opens the debrief, with m04's two
+#   reload backstops. Music follows three phases (A1): investigating, named,
+#   after the fate. An early naming (before flag 3, named_before_portal) and a
+#   wrong accusation of Halloran (the upload brought forward) each change
+#   Torres' scene, the debrief and the credits (D1, D2).
 #
 # THE WHODUNNIT (pass 4, user decision on design-review fix 10):
 #   Nothing names Torres before the player has evidence. Red herring: Dr
@@ -89,8 +99,19 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
 
   "scenario_brief": "Infiltrate Quantum Dynamics Corporation to identify and stop an insider threat. ENTROPY's Insider Threat Initiative has recruited an employee to exfiltrate quantum-safe key material for the National Emergency-Services Dispatch Network. You have 4 hours to find the insider, build the case, and stop the final upload.",
 
-  "show_scenario_brief": "on_resume",
+  "show_scenario_brief": "once",
 
+  <%# Pass 5 alignment A1 (m04 A2 pattern): one condition per story phase, so a
+      reload (game_loaded) and the end of a fight (all_hostiles_ko) return to the
+      phase's own playlist instead of the opening noir. The three are mutually
+      exclusive once the briefing has played: investigating (nobody named),
+      named (Torres named, his fate open), after (the fate is set; the sweep and
+      the call-in). %>
+  <%
+    music_investigate = "globalVars.briefing_played === true && globalVars.torres_identified !== true && globalVars.final_choice === ''"
+    music_named       = "globalVars.briefing_played === true && globalVars.torres_identified === true && globalVars.final_choice === ''"
+    music_after       = "globalVars.briefing_played === true && globalVars.final_choice !== ''"
+  %>
   "music": {
     "events": [
       {
@@ -100,13 +121,9 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
         "fade": false,
         "comment": "Opening briefing cutscene — play immediately, no fade (first run only)"
       },
-      {
-        "trigger": "game_loaded",
-        "condition": "globalVars.briefing_played === true",
-        "playlist": "noir",
-        "fade": false,
-        "comment": "Briefing already seen (resume) — skip straight to noir"
-      },
+      { "trigger": "game_loaded", "condition": "<%= music_investigate %>", "playlist": "noir",       "fade": false },
+      { "trigger": "game_loaded", "condition": "<%= music_named %>",       "playlist": "spy-action", "fade": false },
+      { "trigger": "game_loaded", "condition": "<%= music_after %>",       "playlist": "end",        "fade": false },
       {
         "trigger": "conversation_closed:opening_briefing",
         "playlist": "noir",
@@ -115,44 +132,55 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
       },
       {
         "trigger": "global_variable_changed:torres_identified",
-        "condition": "value === true",
+        "condition": "value === true && globalVars.final_choice === ''",
         "playlist": "spy-action",
         "fade": true,
         "comment": "Suspect named — the hunt narrows"
       },
+      <%# A reload restores hostile NPCs with {restored: true} (npc-hostile.js:107),
+          which must not change the phase's music (m04 round 2). typeof keeps the
+          condition safe when the key is absent. Nothing after the fate. %>
       {
         "trigger": "npc_hostile_state_changed",
-        "condition": "isHostile === true",
+        "condition": "isHostile === true && (typeof restored === 'undefined' || !restored) && globalVars.final_choice === ''",
         "playlist": "threat",
         "fade": true,
-        "comment": "Any NPC turns hostile → switch to tension music"
+        "comment": "Any NPC turns hostile before the fate → tension music"
       },
+      { "trigger": "all_hostiles_ko", "condition": "<%= music_investigate %>", "playlist": "noir",       "fade": true },
+      { "trigger": "all_hostiles_ko", "condition": "<%= music_named %>",       "playlist": "spy-action", "fade": true },
+      { "trigger": "all_hostiles_ko", "condition": "<%= music_after %>",       "playlist": "end",        "fade": true },
       {
-        "trigger": "all_hostiles_ko",
-        "playlist": "noir",
-        "fade": true,
-        "comment": "All hostile NPCs KO'd — back to noir"
+        "comment": "A1/A2: the fate is set and the upload is dead. The sweep and the call-in play under a settled cue; the credits follow the debrief.",
+        "trigger": "global_variable_changed:final_choice",
+        "condition": "value !== ''",
+        "playlist": "end",
+        "fade": true
       },
       {
         "trigger": "conversation_closed:closing_debrief_trigger",
         "playlist": "victory",
+        "track": "Cipher Tide",
         "autoStop": true,
         "disableClose": true,
         "fade": true,
-        "comment": "Debrief ends — play victory track with mission credits scroll",
+        "comment": "Debrief ends — victory track (not used by m01-m04) with the credits scroll",
         "credits": [
-          { "text": "MISSION COMPLETE",                                    "style": "title" },
+          { "text": "MISSION COMPLETE",                                    "style": "title", "condition": "globalVars.final_choice !== 'combat_lethal' && !globalVars.halloran_accused" },
+          { "text": "MISSION COMPLETE — AT A COST",                        "style": "title", "condition": "globalVars.final_choice === 'combat_lethal' || globalVars.halloran_accused" },
           { "text": "INSIDER TRADING",                                     "style": "subtitle" },
           { "text": "" },
           { "text": "OPERATION SCHRÖDINGER: STOPPED",                       "style": "entry" },
           { "text": "CIVILIAN LIVES SAVED: 30-45 (estimated, first rollout wave)", "style": "entry" },
+          { "text": "ROTATION WINDOW LOST — the East of England re-keyed a month early", "style": "warning", "condition": "globalVars.halloran_accused" },
           { "text": "" },
           { "text": "── THE CASE ──",                                      "style": "section-header" },
-          { "text": "MOTIVE, MEANS AND AUTHORISATION — all on file",       "style": "entry", "condition": "globalVars.flag4_submitted && (globalVars.found_medical_bills || globalVars.found_torres_journal || globalVars.found_vetting_file) && globalVars.found_pamphlet" },
+          { "text": "NAMED ON THE EVIDENCE — before the server confirmed it", "style": "entry", "condition": "globalVars.named_before_portal" },
+          { "text": "MOTIVE, MEANS AND AUTHORISATION — all on file",       "style": "entry", "condition": "(globalVars.found_medical_bills || globalVars.found_torres_journal || globalVars.found_vetting_file) && globalVars.found_pamphlet" },
           { "text": "RECRUITMENT PIPELINE — TalentStack link not documented", "style": "entry", "condition": "!globalVars.found_pamphlet && !globalVars.found_pipeline_list" },
           { "text": "BORROWED BADGE — Halloran's spare traced back to Torres", "style": "entry", "condition": "globalVars.door_log_reasoned && !globalVars.halloran_accused" },
           { "text": "WRONG ACCUSATION — Dr Ruth Halloran suspended, then cleared", "style": "warning", "condition": "globalVars.halloran_accused" },
-          { "text": "INSIDER NAMED — David Torres, though not every piece of evidence was recovered", "style": "entry", "_comment": "PASS 4 newcheck: catch-all so THE CASE never prints empty (found_pamphlet false with the pipeline list found matched no other line).", "condition": "!(globalVars.flag4_submitted && (globalVars.found_medical_bills || globalVars.found_torres_journal || globalVars.found_vetting_file) && globalVars.found_pamphlet) && !(!globalVars.found_pamphlet && !globalVars.found_pipeline_list) && !(globalVars.door_log_reasoned && !globalVars.halloran_accused) && !(globalVars.halloran_accused)" },
+          { "text": "INSIDER NAMED — David Torres, though not every piece of evidence was recovered", "style": "entry", "_comment": "PASS 4 newcheck: catch-all so THE CASE never prints empty (found_pamphlet false with the pipeline list found matched no other line). Pass 5 m6: the always-true flag4_submitted term dropped (the debrief needs all four flags).", "condition": "!((globalVars.found_medical_bills || globalVars.found_torres_journal || globalVars.found_vetting_file) && globalVars.found_pamphlet) && !(!globalVars.found_pamphlet && !globalVars.found_pipeline_list) && !(globalVars.door_log_reasoned && !globalVars.halloran_accused) && !(globalVars.halloran_accused) && !globalVars.named_before_portal" },
           { "text": "" },
           { "text": "── DAVID TORRES ──",                                  "style": "section-header" },
           { "text": "TURNED — working for SAFETYNET inside ENTROPY's network", "style": "entry", "condition": "globalVars.final_choice === 'turn_double_agent'" },
@@ -180,12 +208,19 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
           { "text": "OFFER LEFT UNANSWERED — she rang off without a yes", "style": "entry", "condition": "globalVars.recruiter_deal_offered && !globalVars.recruiter_deal_decided" },
           { "text": "OFFER TAKEN — forty-seven names left in her pipeline", "style": "warning", "condition": "globalVars.recruiter_deal_accepted && !globalVars.recruiter_deal_confessed" },
           { "text": "OFFER TAKEN, THEN CONFESSED — the list went in late",  "style": "warning", "condition": "globalVars.recruiter_deal_accepted && globalVars.recruiter_deal_confessed" },
-          { "text": "NEVER HEARD HER OFFER — the TalentStack list went to SAFETYNET", "style": "entry", "condition": "!globalVars.recruiter_deal_offered && globalVars.found_pipeline_list" },
-          { "text": "NEVER HEARD HER OFFER — the TalentStack list was never recovered", "style": "warning", "condition": "!globalVars.recruiter_deal_offered && !globalVars.found_pipeline_list" },
+          { "text": "SHE NEVER MADE HER PITCH — the TalentStack list went to SAFETYNET", "style": "entry", "_comment": "Pass 5 A2: no longer worded as the player's miss. With the sweep the envelope can always be read before the call-in.", "condition": "!globalVars.recruiter_deal_offered && globalVars.found_pipeline_list" },
+          { "text": "TALENTSTACK LIST — left unread under the terminal keyboard", "style": "warning", "_comment": "Pass 5 A2: shows only when the player called in without reading the envelope that HaX's call-in named.", "condition": "!globalVars.recruiter_deal_offered && !globalVars.found_pipeline_list" },
           { "text": "" },
           { "text": "── QUANTUM DYNAMICS ──",                              "style": "section-header" },
           { "text": "CEO'S STAND-DOWN — on file with the Home Office review", "style": "entry", "condition": "globalVars.found_stand_down_email" },
           { "text": "WHO STOPPED THE INTERVIEW — never asked",            "style": "warning", "condition": "!globalVars.found_stand_down_email" },
+          { "text": "" },
+          { "text": "── QUANTUM DYNAMICS STAFF ──",                        "style": "section-header" },
+          { "text": "Nobody on staff hurt",                                "style": "entry", "condition": "!globalVars.patricia_ko && !globalVars.owen_ko && !globalVars.lisa_ko && !globalVars.halloran_ko" },
+          { "text": "PATRICIA MORGAN: A&E, on your account",               "style": "warning", "condition": "globalVars.patricia_ko" },
+          { "text": "OWEN GALLAGHER: concussion, on your account",          "style": "warning", "condition": "globalVars.owen_ko" },
+          { "text": "LISA PARK: off work with a head injury",              "style": "warning", "condition": "globalVars.lisa_ko" },
+          { "text": "DR RUTH HALLORAN: off work, her division two short",   "style": "warning", "condition": "globalVars.halloran_ko" },
           { "text": "" },
           { "text": "The Architect remains at large...",                   "style": "warning" }
         ]
@@ -381,7 +416,7 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
         },
         {
           "taskId": "submit_flag1",
-          "title": "Submit Flag 1: Leaked Bludit admin credentials (recon)",
+          "title": "Flag 1: The login someone left lying about (recon)",
           "type": "submit_flags",
           "targetFlags": ["flag_station_evidence:qdc_research_server-flag1"],
           "targetCount": 1,
@@ -391,7 +426,7 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
         },
         {
           "taskId": "submit_flag2",
-          "title": "Submit Flag 2: Authenticated Bludit image-upload RCE",
+          "title": "Flag 2: A foothold on the research portal (upload RCE)",
           "type": "submit_flags",
           "targetFlags": ["flag_station_evidence:qdc_research_server-flag2"],
           "targetCount": 1,
@@ -460,7 +495,7 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
       "tasks": [
         {
           "taskId": "identify_torres",
-          "title": "Name your suspect to Patricia Morgan",
+          "title": "Name your suspect",
           "type": "custom",
           "status": "active"
         },
@@ -472,9 +507,22 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
         },
         {
           "taskId": "make_critical_choice",
-          "title": "Decide what happens to David Torres",
+          "title": "Decide what happens to him",
           "type": "custom",
           "status": "active"
+        },
+        <%# Pass 5 A2 (m04 call_in_after_sweep pattern): the fate no longer opens the
+            debrief. A HaX mapping on final_choice unlocks this task and texts
+            "sweep, then call me"; the phone hub's "Bring me in" (extract_go)
+            completes it and sets mission_complete, which opens the debrief.
+            Optional, as in m03 and m04, so a missed unlock can never hold the aim. %>
+        {
+          "taskId": "call_in_after_sweep",
+          "title": "Sweep the vault, then call HaX to bring you in",
+          "description": "The upload is dead. Anything you haven't read is still in the key vault. When you're ready to leave, call HaX.",
+          "type": "custom",
+          "status": "locked",
+          "optional": true
         },
         {
           "taskId": "hear_debrief",
@@ -622,7 +670,14 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
     "halloran_accused": false,
     "found_halloran_vetting": false,
     "door_log_reasoned": false,
-    "it_notice_read": false
+    "it_notice_read": false,
+
+    "mission_complete": false,
+    "server_room_entered": false,
+    "named_before_portal": false,
+    "owen_office_card_relayed": false,
+    "door_log_held": false,
+    "data_center_entered": false
   },
 
   "endGoal": "Identify the insider with both halves of the case (motive and proof of exfiltration), stop the final upload, and decide David Torres' fate: turn him, hand him to the police, expose the programme, or fight.",
@@ -709,7 +764,8 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
             "language": "en-GB"
           },
           "storyPath": "scenarios/m05_insider_trading/ink/m05_phone_agent_0x99.json",
-          "avatar": "assets/npc/avatars/npc_helper.png",
+          <%# Pass 5 m4: HaX's own headshot on her phone, as m03 and m04. %>
+          "avatar": "assets/characters/agent_hax_headshot.png",
           "phoneId": "player_phone",
           "currentKnot": "start",
           "itemsHeld": [
@@ -875,13 +931,13 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
               "condition": "value === true",
               "onceOnly": true,
               "completeTask": "access_bludit_vm",
-              "sendTimedMessage": { "delay": 1500, "message": "First flag verified. Three to go. Call if you want a status check." }
+              "sendTimedMessage": { "delay": 1500, "message": "First flag in. An admin login, left lying about in a handover note. Somebody wanted that box easy to get into. Three to go." }
             },
             {
               "eventPattern": "global_variable_changed:flag2_submitted",
               "condition": "value === true",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 1500, "message": "Second flag in. You've got a shell. Call me for the next step." }
+              "sendTimedMessage": { "delay": 1500, "message": "Second flag in. You're on the research portal's box now. Find out who's been living on it." }
             },
             {
               "eventPattern": "global_variable_changed:flag3_submitted",
@@ -898,6 +954,55 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
               "setGlobal": { "architect_approval_confirmed": true },
               "sendTimedMessage": { "delay": 1500, "message": "Final flag in. The Architect's authorisation, casualty projection and all. Call me. You need to hear this." }
             },
+<%# Pass 5 A2: the last flag lands after the fate. The debrief no longer
+    follows at once, so HaX asks for the call-in. Only the last flag can
+    satisfy the all-four term, so at most one of these fires. %>
+<% (1..4).each do |n| %>
+            {
+              "eventPattern": "global_variable_changed:flag<%= n %>_submitted",
+              "condition": "value === true && globalVars.final_choice !== '' && globalVars.flag1_submitted === true && globalVars.flag2_submitted === true && globalVars.flag3_submitted === true && globalVars.flag4_submitted === true",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 6000, "message": "That's the last flag. Sweep the vault if you haven't, then call me and I'll bring you in." }
+            },
+<% end %>
+            <%# Pass 5 m1: naming him (by whatever route) shows the last aim, as the
+                case-ready mappings below do; unlockAim is idempotent
+                (objectives-manager.js:789-795). D1: a naming before flag 3 is
+                remembered for Torres' scene, the debrief and the credits. %>
+            {
+              "eventPattern": "global_variable_changed:torres_identified",
+              "condition": "value === true",
+              "onceOnly": true,
+              "unlockAim": "confront_insider"
+            },
+            {
+              "eventPattern": "global_variable_changed:torres_identified",
+              "condition": "value === true && globalVars.flag3_submitted !== true",
+              "onceOnly": true,
+              "setGlobal": { "named_before_portal": true }
+            },
+            <%# Pass 5 A6: the hub's "Where do I stand?" asks whether the player has
+                been in the server room, and whether the badge log is in the kit
+                (a pickup, whoever handed it over), not only whether it was read. %>
+            {
+              "eventPattern": "room_entered:server_room",
+              "onceOnly": true,
+              "setGlobal": { "server_room_entered": true }
+            },
+            {
+              "_comment": "Pass 5 regression M4: lets the vault texts skip once the vault is open.",
+              "eventPattern": "room_entered:data_center",
+              "onceOnly": true,
+              "setGlobal": { "data_center_entered": true }
+            },
+<% %w[server_door_log relayed_door_log].each do |id| %>
+            {
+              "eventPattern": "item_picked_up:notes",
+              "condition": "data.itemId === '<%= id %>'",
+              "onceOnly": true,
+              "setGlobal": { "door_log_held": true }
+            },
+<% end %>
             <%# PASS 2: "enough to name him" = one motive item AND one exfil item.
                 Each piece of evidence latches case_motive or case_exfil; the
                 nudge fires when the second half lands. && only (see _comment). %>
@@ -938,7 +1043,7 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
               "eventPattern": "global_variable_changed:halloran_accused",
               "condition": "value === true",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 15000, "message": "Halloran's suspended on your word. Check it holds. Where was she on the twenty-third, and whose badge came through the front door just before hers?", "skipIfGlobal": "torres_identified" }
+              "sendTimedMessage": { "delay": 15000, "message": "Halloran's suspended on your word, and the research share started pushing faster. Someone saw Security move. Where was she on the twenty-third? Whose badge came in the front door first?", "skipIfGlobal": "torres_identified" }
             },
 <% [%w[case_motive case_exfil], %w[case_exfil case_motive]].each do |me, other| %>
 <% [["!== true", "Patricia will act on that. Call her."], ["=== true", "Patricia's out of it, so call me and give me the name."]].each do |ko, tail| %>
@@ -947,7 +1052,8 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
               "condition": "value === true && globalVars.<%= other %> === true && globalVars.case_ready_notified !== true && globalVars.torres_identified !== true && globalVars.patricia_ko <%= ko %>",
               "onceOnly": true,
               "setGlobal": { "case_ready_notified": true },
-              "_comment": "Round 3: 8 s, so it doesn't stack with the vault and print texts; worded to read right after a partial naming too.",
+              "unlockAim": "confront_insider",
+              "_comment": "Round 3: 8 s, so it doesn't stack with the vault and print texts; worded to read right after a partial naming too. Pass 5 m1: also shows the last aim, so 'Name your suspect' is on screen once the case is ready.",
               "sendTimedMessage": { "delay": 8000, "message": "That's both halves: why he'd do it, and proof it's leaving the building. <%= tail %>" }
             },
 <% end %>
@@ -983,14 +1089,15 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
               "eventPattern": "door_unlock_attempt",
               "condition": "data.connectedRoom === 'torres_office' && globalVars.torres_suspected === true",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 1500, "message": "Torres' office. IT holds a spare for every office, and Owen won't part with it without a reason." }
+              "_comment": "Pass 5 regression M4: door_unlock_attempt fires before the lock check, so with the card in hand this used to arrive as the player walked in.",
+              "sendTimedMessage": { "delay": 1500, "message": "Torres' office. IT holds a spare for every office, and Owen won't part with it without a reason.", "skipIfGlobal": "office_card_obtained" }
             },
             {
               "_comment": "Round 3 (F5): before suspicion there is no Owen ask yet, so the bark doesn't name him or promise one.",
               "eventPattern": "door_unlock_attempt",
               "condition": "data.connectedRoom === 'torres_office' && globalVars.torres_suspected !== true",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 1500, "message": "Office keycard. IT holds a spare for every office. You'd need a reason Owen can write in his log." }
+              "sendTimedMessage": { "delay": 1500, "message": "Office keycard. IT holds a spare for every office. You'd need a reason Owen can write in his log.", "skipIfGlobal": "office_card_obtained" }
             },
             {
               "_comment": "PASS 3 P5/P7: door_unlock_attempt fires before the lock check (unlock-system.js:110-118), so the bark is worded to be true whether or not the player already has the password.",
@@ -1006,14 +1113,15 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
               "condition": "data.connectedRoom === 'data_center' && globalVars.torres_print_collected !== true",
               "onceOnly": true,
               "setGlobal": { "vault_reader_seen": true },
-              "sendTimedMessage": { "delay": 1500, "message": "Fingerprint reader on the key vault. It takes the cryptography lead's print, and you've got the kit." }
+              "sendTimedMessage": { "delay": 1500, "message": "Fingerprint reader on the key vault. Two prints enrolled: Dr Halloran's and the cryptography lead's. You've got the kit.", "skipIfGlobal": "data_center_entered" }
             },
             {
               "eventPattern": "door_unlock_attempt",
               "condition": "data.connectedRoom === 'data_center' && globalVars.torres_print_collected === true && globalVars.vault_reader_seen !== true",
               "onceOnly": true,
               "setGlobal": { "vault_reader_seen": true },
-              "sendTimedMessage": { "delay": 1500, "message": "That's the vault reader. You've already lifted his print. Use it." }
+              "_comment": "Pass 5 regression M4: skipped (checked at delivery, npc-manager.js:863) once the vault is open.",
+              "sendTimedMessage": { "delay": 1500, "message": "That's the vault reader. You've already lifted his print. Use it.", "skipIfGlobal": "data_center_entered" }
             },
             {
               "_comment": "PASS 3 P6, re-keyed by the fingerprint redesign: fires on a lift of Torres' print. Lifted prints are saved with the game, so torres_print_collected is safe to read.",
@@ -1039,13 +1147,48 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
               "setGlobal": { "bludit_guide_offered": true, "recon_guide_offered": true },
               "sendTimedMessage": { "delay": 1500, "message": "QDC's research portal runs Bludit. I've two guides: one for mapping the network, one for the CMS. Ask and they're yours." }
             },
+<%# Pass 5 m9: the four nags are disjoint (nag n needs flags 1..n-1 in and
+    flag n out), so two missing flags can't send it twice. A2: the text now
+    ends on the sweep and the call-in. %>
 <% (1..4).each do |n| %>
             {
               "eventPattern": "conversation_closed:david_torres",
-              "condition": "globalVars.final_choice !== '' && globalVars.flag<%= n %>_submitted !== true && globalVars.flags_nag_sent !== true",
+              "condition": "globalVars.final_choice !== ''<% (1...n).each do |k| %> && globalVars.flag<%= k %>_submitted === true<% end %> && globalVars.flag<%= n %>_submitted !== true && globalVars.flags_nag_sent !== true",
               "onceOnly": true,
               "setGlobal": { "flags_nag_sent": true },
-              "sendTimedMessage": { "delay": 2000, "message": "The upload's dead. Good. Before I pull you out, finish that research server. All four flags in the drop-site, or the file on the Architect has holes." }
+              "sendTimedMessage": { "delay": 2000, "message": "The upload's dead. Good. Finish that research server before I pull you out: all four flags in the drop-site. Then sweep the vault and call me." }
+            },
+<% end %>
+            {
+              "_comment": "Pass 5 A2 (m04 A4): the fate is set in person with every flag in. The debrief waits for the call-in.",
+              "eventPattern": "conversation_closed:david_torres",
+              "condition": "globalVars.final_choice !== '' && globalVars.flag1_submitted === true && globalVars.flag2_submitted === true && globalVars.flag3_submitted === true && globalVars.flag4_submitted === true",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 2000, "message": "Upload's dead. Sweep the vault before you go: whatever's on that desk is ours if you read it. Then call me and I'll bring you in." }
+            },
+            {
+              "_comment": "Pass 5 A2: any fate (in person, after the knockout, or by phone) opens the call-in task.",
+              "eventPattern": "global_variable_changed:final_choice",
+              "condition": "value !== ''",
+              "onceOnly": true,
+              "unlockTask": "call_in_after_sweep"
+            },
+<%# Pass 5 A4: Owen is down and nobody suspected Torres when he went down, so
+    the relay held back the office spare. Once the evidence points at Torres,
+    the next room entry pushes it. Not on torres_suspected itself: that can
+    change inside Patricia's chat or a reading, and a phone-chat mapping
+    closes whatever minigame is open (npc-manager.js:1051-1054). The knot sets
+    owen_office_card_relayed, so only the first room's mapping fires. HaX's
+    own partial naming gives the card in the call and sets the flag first.
+    One mapping per room: the bare room_entered event breaks the dungeon-graph
+    generator (generate_dungeon_graph.rb:106). %>
+<% %w[reception_lobby main_corridor break_room open_office_area server_hallway server_room torres_office research_lab patricia_office data_center].each do |r| %>
+            {
+              "eventPattern": "room_entered:<%= r %>",
+              "condition": "globalVars.torres_suspected === true && globalVars.owen_ko === true && globalVars.office_card_obtained !== true && globalVars.owen_office_card_relayed !== true && globalVars.debrief_played !== true",
+              "onceOnly": true,
+              "conversationMode": "phone-chat",
+              "targetKnot": "on_owen_ko_office_card"
             },
 <% end %>
             {
@@ -1055,7 +1198,14 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
               "onceOnly": false,
               "conversationMode": "phone-chat",
               "targetKnot": "post_ko_safety_net"
-            }
+            }<% %w[reception_lobby main_corridor break_room open_office_area server_hallway server_room torres_office research_lab patricia_office data_center].each do |r| %>,
+            {
+              "_comment": "Pass 5 hear-the-debrief backstop (m04 pattern): hear_debrief completes on the debrief's last line. If the page reloads mid-debrief, debrief_played is already set and the debrief won't replay, so the next room entry completes the task and the mission concludes. Kept on this always-loaded NPC so it doesn't share a pattern with the debrief NPC's re-emit backstop.",
+              "eventPattern": "room_entered:<%= r %>",
+              "condition": "globalVars.debrief_played === true",
+              "onceOnly": true,
+              "completeTask": "hear_debrief"
+            }<% end %>
           ]
         },
         {
@@ -1068,7 +1218,11 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
             "language": "en-US"
           },
           "storyPath": "scenarios/m05_insider_trading/ink/m05_phone_recruiter.json",
-          "avatar": "assets/npc/avatars/npc_hacker.png",
+          <%# Pass 5 regression M1: a grey-haired woman in a dark coat, closer to
+              "a talent spotter in her fifties" than the generic hacker. Interim:
+              helen_carver_headshot.png is used by no scenario; the character
+              stage gives the Recruiter art of her own. %>
+          "avatar": "assets/characters/helen_carver_headshot.png",
           "phoneId": "player_phone",
           "currentKnot": "start",
           "_comment": "PASS 2 review B2: not in the phone's npcIds. Listed contacts get their start knot preloaded the first time the phone opens (phone-chat-minigame.js:283-380), which played her first call -- and set recruiter_contacted_player -- before Torres was named. She now appears only once a mapping gives her history (phone-chat-ui.js:373-384), and her start knot also guards on torres_identified.",
@@ -1128,36 +1282,22 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
           },
           "eventMappings": [
             {
-              "_comment": "Waits for the Torres conversation to close with a fate set AND all four flags in (the concludeRequires gate). If flags are still out, HaX sends the player back and the last flag fires the debrief.",
-              "eventPattern": "conversation_closed:david_torres",
-              "condition": "globalVars.final_choice !== '' && globalVars.flag1_submitted === true && globalVars.flag2_submitted === true && globalVars.flag3_submitted === true && globalVars.flag4_submitted === true && globalVars.debrief_played !== true",
+              "_comment": "Pass 5 A2 (m04 A4): the debrief opens when the player asks HaX to bring them in (extract_go sets mission_complete), not when the Torres conversation closes. The hub only offers the call-in with all four flags in (the concludeRequires gate) and a fate set; the phone-fate path (torres_fate_by_phone) reaches the same call-in. debrief_played stops a replay.",
+              "eventPattern": "global_variable_changed:mission_complete",
+              "condition": "value === true && globalVars.debrief_played !== true",
               "conversationMode": "person-chat",
               "targetKnot": "start",
               "background": "assets/backgrounds/hq1.png",
               "onceOnly": true,
               "disableClose": true
-            },
+            }<% %w[reception_lobby main_corridor break_room open_office_area server_hallway server_room torres_office research_lab patricia_office data_center].each do |r| %>,
             {
-              "_comment": "B1 safety-net path: the fate was decided by phone, so no person-chat closes.",
-              "eventPattern": "global_variable_changed:torres_fate_by_phone",
-              "condition": "value === true && globalVars.flag1_submitted === true && globalVars.flag2_submitted === true && globalVars.flag3_submitted === true && globalVars.flag4_submitted === true && globalVars.debrief_played !== true",
-              "conversationMode": "person-chat",
-              "targetKnot": "start",
-              "background": "assets/backgrounds/hq1.png",
+              "_comment": "Pass 5 reload backstop (m04 pattern): the player asked to be brought in but the page reloaded before the debrief's first line. Re-emitting mission_complete (setGlobal emits even when unchanged) re-fires the mapping above, whose onceOnly is only recorded when the scene closes. debrief_played is set at the debrief's start.",
+              "eventPattern": "room_entered:<%= r %>",
+              "condition": "globalVars.mission_complete === true && globalVars.debrief_played !== true",
               "onceOnly": true,
-              "disableClose": true
-            },
-<% (1..4).each do |n| %>
-            {
-              "eventPattern": "global_variable_changed:flag<%= n %>_submitted",
-              "condition": "value === true && globalVars.final_choice !== '' && globalVars.flag1_submitted === true && globalVars.flag2_submitted === true && globalVars.flag3_submitted === true && globalVars.flag4_submitted === true && globalVars.debrief_played !== true",
-              "conversationMode": "person-chat",
-              "targetKnot": "start",
-              "background": "assets/backgrounds/hq1.png",
-              "onceOnly": true,
-              "disableClose": true
-            }<%= n < 4 ? ',' : '' %>
-<% end %>
+              "setGlobal": { "mission_complete": true }
+            }<% end %>
           ]
         }
       ],
@@ -1624,8 +1764,14 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
       "type": "room_servers",
       "locked": true,
       "lockType": "biometric",
-      "requires": "David Torres",
-      "door_sign": "Key Vault — Fingerprint Access. Cryptography Lead Only.",
+      <%# Pass 5 A3: both Heisenberg leads are enrolled, so the sign and the lines
+          about the reader no longer name the insider. An array is matched by
+          evaluateBiometricLock (biometric-lock.js:49-50: any enrolled owner);
+          the server trusts the client for biometric (game.rb:986-991). Only
+          Torres' print exists to lift (the mug), so the vault still opens on his
+          print alone in practice. %>
+      "requires": ["David Torres", "Dr Ruth Halloran"],
+      "door_sign": "Key Vault — Fingerprint Access. Heisenberg Leads Only.",
       "connections": {
         "south": "server_room"
       },
@@ -1656,9 +1802,18 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
           ],
           "behavior": {
             "initiallyHidden": true,
+            <%# Pass 5 regression M7 (coordinator's decision): Torres is a scientist,
+                not a fighter. Was attackDamage 20, chaseSpeed 140: five hits, about
+                10 s to live. Now 5 and 90: twenty hits (about 40 s at the engine's
+                2 s attack cooldown), and slow enough to step away from. The player's
+                jab (10 per 0.5 s) takes his default 100 HP in about 5 s. References:
+                m04 Relay 5, Static 4, guard 4, Voltage 12; m03 Terry 10. Only
+                chaseSpeed and attackDamage reach the engine from here (maxHP and
+                attackCooldown fall back to combat-config.js defaults:
+                npc-hostile.js:121-123); see DECISIONS_PENDING.md. %>
             "hostile": {
-              "chaseSpeed": 140,
-              "attackDamage": 20,
+              "chaseSpeed": 90,
+              "attackDamage": 5,
               "pauseToAttack": true
             }
           },
@@ -1701,7 +1856,7 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
               "name": "transfer_queue.log",
               "takeable": false,
               "readable": true,
-              "text": "QUEUE: heisenberg_final.tar.gpg -> drop.talentstack-careers[.]net\nSTAGED: 73% (previous sessions)\nTHIS SESSION: resuming...\nOPERATOR: dtorres\nWINDOW: 20:30 tonight\n\nThe last line has been typed and deleted several times: \"cancel?\""
+              "text": "QUEUE: heisenberg_final.tar.gpg -> drop.talentstack-careers[.]net\nSTAGED: most of the package (previous sessions)\nTHIS SESSION: resuming, final segment...\nOPERATOR: dtorres\nWINDOW: 20:30 tonight\n\nThe last line has been typed and deleted several times: \"cancel?\""
             }
           ]
         },

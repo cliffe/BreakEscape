@@ -1,0 +1,283 @@
+{
+"steps": [
+{
+"note": "R2: early naming (D1). The case is made from the journal and the vault paperwork before flag 3, and Torres is named to Patricia in person. Handed over with the treatment deal. The flags come after the fate: the call-in refuses until all four are in (A2). The envelope is left unread at the call-in."
+},
+{
+"talk": "briefing",
+"picks": [
+"damage so far",
+"Who's this going to",
+"What's the mission",
+"And the third",
+"my cover",
+"Who else will I meet",
+"I'm ready",
+"Methodically",
+"Any last advice"
+]
+},
+{
+"set": {
+"briefing_played": true
+}
+},
+{
+"talk": "patricia",
+"picks": [
+"Fill me in",
+"Who has access",
+"without tipping",
+"Where should I start"
+]
+},
+{
+"read": "security_incident_log"
+},
+{
+"talk": "owen",
+"picks": [
+"What can you tell me",
+"That's useful",
+"Lean over",
+"Sorry. Habit",
+"23:47. Whose",
+"That's everything"
+]
+},
+{
+"enter": "server_hallway"
+},
+{
+"read": "it_access_notice"
+},
+{
+"event": "door_unlock_attempt",
+"data": {
+"connectedRoom": "server_room"
+}
+},
+{
+"talk": "owen",
+"picks": [
+"wants a password",
+"Patricia's log has a crypto badge",
+"That's everything"
+]
+},
+{
+"talk": "halloran",
+"picks": [
+"I need to talk to everyone",
+"I'm not here to judge",
+"Your spare badge",
+"That's all for now"
+]
+},
+{
+"talk": "patricia_phone",
+"picks": [
+"I know who it is",
+"David Torres",
+"front door",
+"Just checking in"
+]
+},
+{
+"expect": {
+"torres_suspected": true
+}
+},
+{
+"talk": "owen",
+"picks": [
+"David Torres' office",
+"That's everything"
+]
+},
+{
+"enter": "torres_office"
+},
+{
+"read": "personal_journal"
+},
+{
+"event": "fingerprint_collected:david_torres"
+},
+{
+"event": "door_unlock_attempt",
+"data": {
+"connectedRoom": "data_center"
+}
+},
+{
+"enter": "data_center"
+},
+{
+"read": "upload_schedule"
+},
+{
+"read": "data_package_manifest"
+},
+{
+"said": [
+"both halves"
+]
+},
+{
+"talk": "patricia",
+"picks": [
+"I think I know who it is",
+"David Torres",
+"I'll stop him"
+]
+},
+{
+"expect": {
+"torres_identified": true,
+"named_before_portal": true,
+"flag3_submitted": false
+}
+},
+{
+"talk": "torres",
+"picks": [
+"It's over, David",
+"They lied to you",
+"You knew people would die",
+"staying here until the police",
+"Someone who stopped this",
+"Tell me everything",
+"Cancel it, David"
+]
+},
+{
+"said": [
+"20:02",
+"88 per cent",
+"Twenty-eight minutes",
+"half an hour",
+"89 per cent",
+"91 per cent",
+"Finish that research server before I pull you out"
+],
+"notSaid": [
+"94 per cent",
+"99 per cent",
+"Sixteen minutes"
+]
+},
+{
+"expect": {
+"final_choice": "arrest",
+"elena_treatment_funded": true
+}
+},
+{
+"talk": "phone",
+"picks": [
+"Bring me in",
+"Where do I stand",
+"Right",
+"Nothing right now"
+]
+},
+{
+"said": [
+"The research server isn't finished",
+"The upload's dead. The research server isn't"
+],
+"notSaid": [
+"Car's at the front entrance"
+]
+},
+{
+"expect": {
+"mission_complete": false
+}
+},
+{
+"enter": "server_room"
+},
+{
+"set": {
+"flag1_submitted": true
+}
+},
+{
+"set": {
+"flag2_submitted": true
+}
+},
+{
+"set": {
+"flag3_submitted": true
+}
+},
+{
+"set": {
+"flag4_submitted": true
+}
+},
+{
+"said": [
+"That's the last flag"
+]
+},
+{
+"talk": "phone",
+"picks": [
+"Bring me in",
+"Bring me in",
+"On my way"
+]
+},
+{
+"said": [
+"envelope under the terminal keyboard"
+],
+"notSaid": [
+"His upload schedule's still",
+"package manifest's still"
+]
+},
+{
+"expect": {
+"mission_complete": true
+}
+},
+{
+"talk": "debrief",
+"picks": [
+"He did this",
+"Not"
+]
+},
+{
+"said": [
+"ninety-one per cent",
+"You had him before the server did",
+"talked to you before the police"
+],
+"notSaid": [
+"ninety-seven",
+"East of England"
+]
+},
+{
+"credits": true
+},
+{
+"said": [
+"MISSION COMPLETE",
+"NAMED ON THE EVIDENCE — before the server confirmed it",
+"HANDED TO THE POLICE — talked to SAFETYNET first",
+"TALENTSTACK LIST — left unread"
+],
+"notSaid": [
+"AT A COST",
+"ROTATION WINDOW"
+]
+}
+]
+}

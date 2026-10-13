@@ -71,6 +71,9 @@ VAR door_log_reasoned = false
 VAR halloran_questioned = false
 VAR found_halloran_vetting = false
 
+// PASS 5 (D1): Torres named before flag 3 (set by HaX's torres_identified mapping)
+VAR named_before_portal = false
+
 === function friendly_kos()
 ~ temp n = 0
 {patricia_ko:
@@ -224,9 +227,21 @@ Agent HaX: Let's go through it.
     }
 }
 
-Agent HaX: The final upload stopped at ninety-seven per cent. The key material left in pieces over six weeks. The rotation windows were in the last of it, and they never went.
-
-Agent HaX: Without those, what they have is a very expensive paperweight.
+// PASS 5 (D1, D2): the bar in Torres' scene, and what a wrong accusation cost.
+{
+- halloran_accused:
+    Agent HaX: The final upload stopped at ninety-nine per cent. The key material left in pieces over six weeks.
+    Agent HaX: Most of the rotation windows were in the last of it, and they never went.
+    Agent HaX: One region's did. When Security moved on Dr Halloran, he brought the upload forward, and its window went out before you got there.
+    Agent HaX: The Home Office is re-keying the East of England a month early.
+    Agent HaX: Without the rest, what they have is a very expensive paperweight, and one region we're already fixing.
+- named_before_portal:
+    Agent HaX: The final upload stopped at ninety-one per cent. The key material left in pieces over six weeks. The rotation windows were in the last of it, and they never went.
+    Agent HaX: Without those, what they have is a very expensive paperweight.
+- else:
+    Agent HaX: The final upload stopped at ninety-seven per cent. The key material left in pieces over six weeks. The rotation windows were in the last of it, and they never went.
+    Agent HaX: Without those, what they have is a very expensive paperweight.
+}
 
 {knows_full_stakes:
     Agent HaX: That was thirty to forty-five people, in the first wave alone.
@@ -241,16 +256,21 @@ Agent HaX: Without those, what they have is a very expensive paperweight.
 === the_night ===
 #speaker:agent_0x99
 
+// PASS 5 (D1): the deduction paid off before the server confirmed it.
+{named_before_portal and not halloran_accused:
+    Agent HaX: You had him before the server did. The research portal only confirmed a name you'd already given us.
+}
+
 // PASS 4 (whodunnit): how the player read the badge log.
 {
 - halloran_accused:
-    Agent HaX: Dr Halloran spent four hours under suspension because of a badge log read halfway. She was in Zurich. She's lodged a complaint, and she's right to.
+    Agent HaX: Dr Halloran spent the rest of the night under suspension because of a badge log read halfway. She was in Zurich. She's lodged a complaint, and she's right to.
 - door_log_reasoned:
     Agent HaX: You read the badge log properly. Her spare on the server hallway, his badge on the front door six minutes before, every night.
 - halloran_questioned:
     Agent HaX: Halloran told you where her spare hangs. The log had already said who carried it.
 - found_door_log:
-    Agent HaX: The badge log was in your kit all night. It would have saved you time.
+    Agent HaX: The badge log was in your kit. Its front-door lines had him all along.
 }
 
 {patricia_ko:
@@ -266,7 +286,7 @@ Agent HaX: Without those, what they have is a very expensive paperweight.
     Agent HaX: Dr Halloran is off work. Her division lost its two most senior people in one night.
 }
 
-Agent HaX: Every locked door in that building, you opened on someone else's trust. A colleague's badge, a colleague's password, his thumbprint.
+Agent HaX: Every locked door in that building, you opened on someone else's trust. A colleague's badge, a colleague's password, an admin's leaked login, his thumbprint.
 
 Agent HaX: In the logs, that looks exactly like an insider. It's why nobody saw him.
 
@@ -610,15 +630,16 @@ Agent HaX: The phone logs do. Four minutes, from a TalentStack number, right aft
 === entropy_revelation ===
 #speaker:agent_0x99
 
-{flag4_submitted:
-    Agent HaX: The Architect's authorisation is the part I keep coming back to. A casualty projection, reviewed, and filed as an acceptable cost.
-- else:
-    Agent HaX: We never got the authorisation off that server. Somebody above the Recruiter signed this off, and we can't prove who.
-}
+// PASS 5 (m7): the debrief needs all four flags, so the "never got the
+// authorisation" branch could not play and has gone.
+Agent HaX: The Architect's authorisation is the part I keep coming back to. A casualty projection, reviewed, and filed as an acceptable cost.
 
 Agent HaX: Ransomware Incorporated. Zero Day Syndicate. Critical Mass. Now the Insider Threat Initiative.
 
 Agent HaX: The cells share suppliers, targets and a signature. The Architect runs them like a business.
+
+// PASS 5 (A5): m04's Task Force Null, paid off. Promises nothing about m06.
+Agent HaX: The authorisation goes up on Task Force Null's wall, with every other directive we've pulled off a cell.
 
 Agent HaX: And pays them like one. The Initiative got eight hundred and forty-seven thousand dollars for this job alone.
 

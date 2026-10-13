@@ -8,9 +8,18 @@
 // Speaker id stays agent_0x99 (the NPC id); the display name is Agent HaX,
 // as in m02, m03, m04 and m06.
 // PASS 4 (dialogue): HaX's own lines carry no prefix (phone convention).
+//
+// PASS 5 (alignment round 1, A2/A4/A6): the hub is rebuilt to m04's
+// standard. "Where do I stand?" (report_progress) names the next step from
+// what is done, whatever route got there, with the who-case as an aside
+// until he is named. The five guide offers are one "Send me a field guide."
+// choice. Once the fate is set the player sweeps the vault and calls in
+// ("I'm done here. Bring me in." -> extract_offer -> extract_go sets
+// mission_complete, which opens the debrief). The Owen-KO relay no longer
+// hands over Torres' office card before anyone suspects him.
 // ===========================================
 
-VAR first_contact = true
+VAR first_contact = true // ink-local: a page reload forgets it, so first_call also checks the night (A6)
 
 // ---- Mission state (synced from globalVars when the call opens) ----
 VAR player_name = "Agent 0x00"
@@ -48,6 +57,15 @@ VAR halloran_questioned = false
 VAR halloran_accused = false // Synced scenario global: Halloran suspended on the player's word; also set by Patricia (m05_phone_patricia, m05_npc_patricia_morgan)
 VAR found_incident_log = false
 VAR door_log_reasoned = false // Synced scenario global: the player has read the badge-log pattern; also set by Patricia (m05_phone_patricia, m05_npc_patricia_morgan)
+// PASS 5 (A2/A4/A6)
+VAR mission_complete = false // Synced scenario global: set by extract_go (the call-in); opens the debrief
+VAR server_room_entered = false
+VAR server_badge_obtained = false
+VAR patricia_phone_available = false
+VAR door_log_held = false
+VAR owen_office_card_relayed = false // Synced scenario global: HaX has pushed Owen's office spare (set here only)
+VAR recruiter_texted = false
+VAR it_notice_read = false
 
 // Field-guide exposure flags. Each _offered is set by an eventMapping when
 // the player meets the thing the guide is about; each _hint_given is set
@@ -75,6 +93,10 @@ VAR flag3_discussed = false
 VAR flag4_discussed = false
 VAR confrontation_advice_given = false
 
+// Root divert (m03/m04 pattern). When a conversation has ended, the engine
+// restores only its variables on the next talk and continues from the root.
+-> start
+
 === function has_motive()
 ~ return found_medical_bills or found_torres_journal or found_vetting_file
 
@@ -89,16 +111,21 @@ VAR confrontation_advice_given = false
 // ===========================================
 
 === start ===
+// PASS 5 (A6): first_contact is ink-local, so a page reload forgets it. The
+// opening call only fits the early game; after a late reload the phone opens
+// straight on the hub.
 {first_contact:
     ~ first_contact = false
-    -> first_call
+    {not server_door_seen and not torres_suspected and not flag1_submitted and final_choice == "":
+        -> first_call
+    }
 }
 -> support_hub
 
 === first_call ===
 #speaker:agent_0x99
 
-{player_name}. Four hours to the final upload window. Let's use them.
+Agent. Four hours to the final upload window.
 
 Patricia Morgan runs security. She called us in, and she can open doors for you. Keep her in the picture.
 
@@ -123,17 +150,34 @@ Someone in that building is feeding ENTROPY the keys to the 999 dispatch network
 
 // ===========================================
 // SUPPORT HUB (gated by mission state)
-// Options appear when relevant and retire once used, except the moral
-// sounding board, which stays open.
+// PASS 5 (A6): m04's shape. Choices only, most urgent first; topics appear
+// at their beat and retire through their own guards. The field guides are
+// one choice. The two fixed choices ("Where do I stand?" and the exit) sit
+// last, so the hub is never empty and a stuck player always has the
+// progress read to fall back on.
 // ===========================================
 
 === support_hub ===
 #speaker:agent_0x99
 
+// A2: the way out once the fate is set. First, because it ends the mission.
++ {final_choice != "" and not mission_complete} [I'm done here. Bring me in.]
+    -> extract_offer
+
++ {patricia_ko and not torres_identified} [Patricia's down. I'll give you the name instead.]
+    -> name_to_hax
+
++ {torres_identified and final_choice == "" and not confrontation_advice_given} [I'm going in. Soft or hard?]
+    -> confrontation_advice
+
++ {recruiter_contacted_player and not recruiter_discussed} [The Recruiter just called me.]
+    -> topic_recruiter
+
 + {found_pamphlet and not recruitment_method_discussed} [Someone here has been talking to a recruiter called TalentStack.]
     -> topic_recruitment_method
 
-+ {torres_suspected and (found_medical_bills or found_vetting_file) and not leverage_discussed} [Torres is buried in debt he's hiding. Is that the hook?]
+// m13: any motive find, the journal included.
++ {torres_suspected and has_motive() and not leverage_discussed} [Torres is buried in debt he's hiding. Is that the hook?]
     -> topic_leverage
 
 + {found_torres_journal and not journal_discussed} [I've read his journal. He knew.]
@@ -141,9 +185,6 @@ Someone in that building is feeding ENTROPY the keys to the 999 dispatch network
 
 + {architect_approval_confirmed and not architect_discussed} [The Architect signed off on the casualty projection.]
     -> topic_architect
-
-+ {recruiter_contacted_player and not recruiter_discussed} [The Recruiter just called me.]
-    -> topic_recruiter
 
 + {flag1_submitted and not flag1_discussed} [First flag's in. What next on the Bludit box?]
     -> topic_flag1
@@ -157,36 +198,36 @@ Someone in that building is feeding ENTROPY the keys to the 999 dispatch network
 + {flag4_submitted and not flag4_discussed} [Fourth flag's in. Root, and the Architect's sign-off.]
     -> topic_flag4
 
-+ {bludit_guide_offered and not bludit_guide_hint_given} [This Bludit box. Where do I even start?]
-    -> request_bludit_guide
-
-+ {lockpicking_guide_offered and not lockpicking_guide_hint_given} [Can you send me the lockpicking guide?]
-    -> request_lockpicking_guide
-
-+ {recon_guide_offered and not recon_guide_hint_given} [Can you send me the network recon guide?]
-    -> request_recon_guide
-
-+ {privesc_guide_offered and not privesc_guide_hint_given} [Can you send me the sudo guide?]
-    -> request_privesc_guide
-
-+ {rfid_guide_offered and not rfid_guide_hint_given} [Can you send me the badge-cloning guide?]
-    -> request_rfid_guide
-
-+ {patricia_ko and not torres_identified} [Patricia's down. I'll give you the name instead.]
-    -> name_to_hax
-
-+ {torres_identified and final_choice == "" and not confrontation_advice_given} [I'm going in. Soft or hard?]
-    -> confrontation_advice
-
-+ {torres_suspected and has_motive()} [What ENTROPY did to him. I need to talk it through.]
++ {torres_suspected and has_motive() and final_choice == ""} [What ENTROPY did to him. I need to talk it through.]
     -> moral_sounding_board
 
-+ [What should I be doing right now?]
-    -> general_advice
+// ---- Field guides, one choice. Exposure-gated: offered by an eventMapping
+// ---- when the player meets the obstacle, handed over here on request.
++ {(bludit_guide_offered and not bludit_guide_hint_given) or (lockpicking_guide_offered and not lockpicking_guide_hint_given) or (recon_guide_offered and not recon_guide_hint_given) or (privesc_guide_offered and not privesc_guide_hint_given) or (rfid_guide_offered and not rfid_guide_hint_given)} [Send me a field guide.]
+    -> field_guides
 
-+ [Just checking in.]
-    Copy. Mind the clock.
+// ---- Always available: the fallback that stops this hub ever running dry.
++ [Where do I stand?]
+    -> report_progress
+
++ [Nothing right now.]
     #exit_conversation
+    Line's open. Call when you have something.
+    -> support_hub
+
+// Choices-only: the guides on offer and not yet sent (m04 field_guides).
+=== field_guides ===
++ {rfid_guide_offered and not rfid_guide_hint_given} [The badge-cloning guide.]
+    -> request_rfid_guide
++ {lockpicking_guide_offered and not lockpicking_guide_hint_given} [The lockpicking guide.]
+    -> request_lockpicking_guide
++ {recon_guide_offered and not recon_guide_hint_given} [The network mapping guide.]
+    -> request_recon_guide
++ {bludit_guide_offered and not bludit_guide_hint_given} [The Bludit guide.]
+    -> request_bludit_guide
++ {privesc_guide_offered and not privesc_guide_hint_given} [The sudo guide.]
+    -> request_privesc_guide
++ [Not now.]
     -> support_hub
 
 // ===========================================
@@ -218,11 +259,14 @@ An answer scribbled on the back of that leaflet means somebody in there has alre
 #speaker:agent_0x99
 ~ leverage_discussed = true
 
-{found_medical_bills:
+{
+- found_medical_bills:
     Three hundred and eighty thousand dollars for a trial abroad, an insurer that walked away, and a wife with Stage 3 cancer.
     That's a target file, written by his own bad luck.
-- else:
+- found_vetting_file:
     Undeclared loans, a second charge on the house, and treatment abroad no insurer will cover. That's a target file.
+- else:
+    Debt relief and a retainer, in his own handwriting, and a trial dose booked for Monday. That's a target file.
 }
 
 ENTROPY rarely recruits believers. They recruit desperate people and sell them the belief afterwards, so it feels like their idea.
@@ -424,7 +468,15 @@ If she's the wrong name, the right one has just watched Security move. Be sure a
     -> support_hub
 
 // Some evidence, not both halves: enough to search his office.
+// PASS 5 (A4): with Owen down, HaX rebuilds the spare in the call. The relay
+// flag is set before torres_suspected, so the room-entry relay mapping (which
+// checks owen_office_card_relayed) never opens a second chat over this one.
 === hax_partial_naming ===
+{owen_ko and not office_card_obtained and not owen_office_card_relayed:
+    ~ owen_office_card_relayed = true
+    #give_item:keycard:relayed_torres_office_card
+    That's enough to look in his office. Owen can't hand you the spare, so I've rebuilt it. It's in your kit.
+}
 ~ torres_suspected = true
 {not owen_ko and not office_card_obtained:
     That's enough to look in his office. I'll tell Owen you can have the spare.
@@ -477,7 +529,7 @@ Now find me why, and proof it's leaving.
 #give_item:id_badge:relayed_contractor_pass
 ~ patricia_authorised_office = true
 ~ patricia_authorised_server = true
-Patricia's down. She was our way into that building, {player_name}.
+Patricia's down. She was our way into that building.
 I've printed you a contractor pass against their visitor system. It's in your kit.
 Owen will get a message "from Security": you can have the office spares and the server-room password.
 {not torres_identified:
@@ -497,28 +549,52 @@ Owen will get a message "from Security": you can have the office spares and the 
 // (npc-hostile.js:256-261), but his badge is an rfidCard, not an item. HaX
 // pushes working copies of all three as a safety net, and says the vault
 // line Owen would have said at the password handover (PASS 3 P5/P6).
+// PASS 5 (A4): the office spare only once someone suspects Torres. Before
+// that, on_owen_ko_office_card pushes it later (room-entry mapping on
+// torres_suspected with owen_ko), or hax_partial_naming does in the call.
+// A3: two prints enrolled on the vault, so the line no longer names him.
 === on_owen_ko_relay ===
 #speaker:agent_0x99
 #give_item:keycard:relayed_server_badge
-#give_item:keycard:relayed_torres_office_card
 #give_item:notes:relayed_server_password_note
 Owen's down. That wasn't how I'd have done it.
-I've rebuilt his badge and the office spare from the reader logs. They're in your kit.
+I've rebuilt his badge from the reader logs. It's in your kit.
 So is the server-room password. It was sitting in IT's ticket queue.
-{not found_door_log:
+{torres_suspected and not office_card_obtained and not owen_office_card_relayed:
+    ~ owen_office_card_relayed = true
+    #give_item:keycard:relayed_torres_office_card
+    And IT's spare for Torres' office, since that's where the evidence points.
+}
+{not door_log_held and not found_door_log:
     #give_item:notes:relayed_door_log
     And the night badge log he'd have pulled for you. Read it properly.
 }
 {torres_suspected:
-    Past the server room is the key vault. It's on a fingerprint reader, and the only print enrolled is Torres'.
+    Past the server room is the key vault. Fingerprint reader, two prints enrolled: Dr Halloran's and Torres'.
 - else:
-    Past the server room is the key vault. It's on a fingerprint reader, and the only print enrolled is the cryptography lead's.
+    Past the server room is the key vault. Fingerprint reader, two prints enrolled: Dr Halloran's and the cryptography lead's.
 }
 Whatever else he knew, you'll have to find the hard way.
 -> on_owen_ko_relay_choices
 
 === on_owen_ko_relay_choices ===
 + [I'll manage.]
+    #exit_conversation
+    -> support_hub
+
+// PASS 5 (A4): reached by the room_entered mapping once Torres is suspected
+// with Owen down and no office card yet. Text first, choices in a text-free
+// knot (phone reopen rule).
+=== on_owen_ko_office_card ===
+{office_card_obtained or owen_office_card_relayed: -> support_hub}
+#speaker:agent_0x99
+~ owen_office_card_relayed = true
+#give_item:keycard:relayed_torres_office_card
+That's enough to look in Torres' office. Owen can't hand you the spare, so I've rebuilt it from the reader logs. It's in your kit.
+-> on_owen_ko_office_card_choices
+
+=== on_owen_ko_office_card_choices ===
++ [Thanks.]
     #exit_conversation
     -> support_hub
 
@@ -545,15 +621,24 @@ What are you doing with him?
         Calling it now. Patricia will ring the police. Keep his airway clear.
     }
     ~ torres_fate_by_phone = true
-    #exit_conversation
-    -> support_hub
+    -> post_ko_safety_net_sweep
 + [I'm leaving him. He's not my problem.]
     #complete_task:make_critical_choice
     ~ final_choice = "combat_lethal"
     ...Understood. I'll note the time.
     ~ torres_fate_by_phone = true
-    #exit_conversation
-    -> support_hub
+    -> post_ko_safety_net_sweep
+
+// PASS 5 (A2): the phone-fate path gets the same sweep-then-call-in as the
+// person-chat one (whose text comes from the conversation_closed mappings).
+=== post_ko_safety_net_sweep ===
+{not all_flags_in():
+    The upload's dead. Finish the research server: all four flags in the drop-site. Then sweep the vault and call me.
+- else:
+    Sweep the vault before you go. Then call me and I'll bring you in.
+}
+#exit_conversation
+-> support_hub
 
 // ===========================================
 // FIELD GUIDE HANDOVERS
@@ -649,10 +734,10 @@ It only works if he wants out.
 
 {patricia_ko:
     Go hard and you hold him, and I call the police from a number that leads nowhere.
-    We have no badge, {player_name}. What happens to him after that is up to them.
+    We have no badge. What happens to him after that is up to them.
 - else:
     Go hard and you hold him, hand him to Patricia, and she calls the police.
-    We have no badge, {player_name}. What happens to him after that is up to them.
+    We have no badge. What happens to him after that is up to them.
 }
 
 -> confrontation_advice_choices
@@ -687,7 +772,7 @@ None of that excuses him. From the first phone call to tonight, he could have wa
 
 + [What happens to people like him after this?]
     Depends on what you do tonight. Each way you go writes a different ending for him and for Elena.
-    That's a lot to carry, {player_name}.
+    That's a lot to carry.
     -> support_hub
 
 + [I don't know what I think yet.]
@@ -695,32 +780,122 @@ None of that excuses him. From the first phone call to tonight, he could have wa
     -> support_hub
 
 // ===========================================
-// GENERAL ADVICE (state-aware)
+// PASS 5 A2: THE CALL-IN (m04 extract_offer / extract_go)
+// After the fate the player sweeps the vault and calls in here. Text first,
+// choices in a text-free knot (phone reopen rule). extract_go sets
+// mission_complete, which opens the debrief (closing_debrief_trigger
+// mapping); the call-in task completes in the same batch.
 // ===========================================
 
-=== general_advice ===
+=== extract_offer ===
 #speaker:agent_0x99
-// PASS 3 P7: these sit above the torres_identified early return.
-{server_door_seen and not server_password_obtained and not patricia_ko:
-    Owen wants a reason. Patricia's log has one, or ask Patricia.
+{not all_flags_in():
+    Not yet. The research server isn't finished: all four flags in the drop-site, then I'll pull you out.
+    -> support_hub
 }
-{server_door_seen and not server_password_obtained and patricia_ko:
-    Owen wants a reason. He's had word from Security; tell him.
+Once you're out, QDC's own people go through that vault before ours do. Whatever you haven't read could walk.
+{not found_pipeline_list:
+    There's an envelope under the terminal keyboard nobody's opened.
 }
-{vault_reader_seen and not torres_print_collected:
-    {torres_suspected:
-        The vault takes Torres' print. His office has it.
-    - else:
-        The vault takes the cryptography lead's print. Something he handles every day will carry it.
-    }
+{not found_upload_schedule:
+    His upload schedule's still on the desk.
 }
+{not found_manifest:
+    The package manifest's still there as well.
+}
+{recruiter_texted and not recruiter_contacted_player:
+    And that TalentStack text is still unanswered. Ring her or don't. Your call.
+}
+-> extract_choices
 
-// PASS 4 (whodunnit): help a player who is stuck on the "who".
-{not torres_identified:
+=== extract_choices ===
++ [Bring me in.]
+    Car's at the front entrance. Two minutes.
+    -> extract_confirm
++ [Not yet. I'm still looking.]
+    Take your time. The vault isn't going anywhere.
+    -> support_hub
+
+=== extract_confirm ===
++ [On my way.]
+    -> extract_go
+
+=== extract_go ===
+#speaker:agent_0x99
+#complete_task:call_in_after_sweep
+#set_global:mission_complete:true
+~ mission_complete = true
+See you at HQ.
+-> support_hub
+
+// ===========================================
+// WHERE DO I STAND? (PASS 5 A6)
+// The always-on fallback, replacing general_advice. It reads the night as
+// it is and names the next step; first unmet step wins. Each step asks
+// whether it is done (a pickup, a lift, a flag, a room), never how: Owen's
+// clone, Halloran's spare or HaX's relay all count for the hallway, and
+// the badge log counts as soon as it is in the kit. Until he is named, an
+// aside gives the next step on the who.
+// ===========================================
+
+=== report_progress ===
+#speaker:agent_0x99
+{
+- final_choice != "" and not all_flags_in():
+    The upload's dead. The research server isn't. All four flags in the drop-site, then call me and I'll bring you in.
+- final_choice != "":
+    It's done. The upload's dead and the flags are in.
+    Sweep the vault if you haven't, then tell me to bring you in.
+- torres_ko:
+    Torres is down and nobody's decided what happens to him. Get back to the vault.
+- torres_identified and not torres_print_collected:
+    He's in the key vault, past the server room. The reader takes one of two prints, and his is on something in his office.
+    {not office_card_obtained and not owen_ko:
+        Owen's been told you can have the spare.
+    }
+- torres_identified:
+    You've got his print. He's at the upload terminal in the vault. Go and face him.
+- not patricia_phone_available and not patricia_ko:
+    Start with Patricia Morgan. Her office is off reception, on the east side.
+- not server_badge_obtained:
+    The server hallway wants a staff badge. Owen carries one on his lanyard in the open-plan, and your cloner reads it while he talks.
+- not server_password_obtained:
     {
+    - not server_door_seen and not it_notice_read:
+        Get to the server-room door, off the server hallway. The notice beside it says who holds the password.
+    - patricia_ko:
+        Owen holds the server-room password and wants a reason for his log. He's had word from Security. Tell him.
+    - else:
+        Owen holds the server-room password and wants a reason for his log. Patricia's incident log has one, or ask Patricia to sign it off.
+    }
+- not server_room_entered:
+    You've got the password. The server room is north of the server hallway.
+- not flag1_submitted:
+    You're on the research subnet. Map it, then find the login someone left lying about.
+- not flag2_submitted:
+    You've got the admin login. The portal's upload flaw needs you logged in, and you are.
+- not flag3_submitted:
+    You're on the box. Find out whose files are on it.
+- not flag4_submitted:
+    Root's the last door. Start with what that account is allowed to run.
+- else:
+    All four flags are in. What's left is the name.
+}
+// The who, until he's named. Not before Patricia: that step comes first.
+{not torres_identified and final_choice == "" and (patricia_phone_available or patricia_ko):
+    {
+    - has_motive() and has_exfil():
+        {patricia_ko:
+            You have both halves of the case. Patricia's out of it, so give me the name.
+        - else:
+            You have both halves of the case. Give Patricia the name, in person or on her mobile.
+        }
     - halloran_accused:
-        You put Halloran's name up. Check it holds: where was she on the twenty-third, and whose badge came through the front door first?
-    - found_door_log and not halloran_questioned and not found_halloran_alibi:
+        You put Halloran's name up, and the upload sped up when Security moved.
+        Check it holds. Where was she on the twenty-third, and whose badge came through the front door first?
+    - door_log_held and not found_door_log:
+        The badge log's in your kit. Read it, the front-door lines as well as hers.
+    - found_door_log and not halloran_questioned and not found_halloran_alibi and not torres_suspected:
         That log says Halloran's spare. Ask her where it lives. And read the front-door lines, not just hers.
     - found_door_log and not torres_suspected:
         {patricia_ko:
@@ -728,43 +903,23 @@ None of that excuses him. From the first phone call to tonight, he could have wa
         - else:
             You've got a pattern on that sheet. Take it to Patricia, or ask her for the vetting files on the names in it.
         }
-    - found_incident_log and not found_door_log:
+    - found_incident_log and not door_log_held and not torres_suspected:
         Patricia's log has a cryptography badge at 23:47. Owen keeps the reader logs. Ask him whose.
+    - not found_incident_log and not door_log_held and not torres_suspected and not patricia_ko:
+        For the who, start with the incident log on Patricia's desk.
+    - torres_suspected and not has_motive():
+        You can see it leaving under his name. Now find out why: his office, the break room, Patricia's files.
+    - torres_suspected and not has_exfil():
+        You know why he might. Now the proof it's leaving: the vault past the server room has it, and so does the research server.
+    - server_password_obtained and not torres_suspected:
+        The vault takes one of two prints, Halloran's or the cryptography lead's. Work out which you're after before you hunt for a print.
     }
 }
+{recruiter_texted and not recruiter_contacted_player and not mission_complete:
+    That TalentStack text is still unanswered. Hear her out if you want. Just don't give her anything.
+}
+-> report_progress_choices
 
-// PASS 4 fix 6: the fate is set but the portal isn't finished.
-{final_choice != "" and not all_flags_in():
-    Torres is dealt with. The portal isn't. All four flags in the drop-site, then I'll pull you out.
+=== report_progress_choices ===
++ [Right.]
     -> support_hub
-}
-{final_choice != "":
-    Torres is dealt with and the portal's done. I'm bringing you in.
-    -> support_hub
-}
-{torres_identified:
-    You've named him. Be ready for anything down there. People with nothing left to lose don't always behave.
-    -> support_hub
-}
-{has_motive() and has_exfil():
-    {patricia_ko:
-        You have both halves of the case. Patricia's out of it, so give me the name.
-    - else:
-        You have both halves of the case. Call Patricia and give her the name.
-    }
-    -> support_hub
-}
-{has_motive():
-    You know why someone would. Now prove it's leaving the building. Server room first, then whatever's behind it.
-    -> support_hub
-}
-{has_exfil():
-    You can see it leaving. Now find out who and why. The offices, the break room, and Patricia's files.
-    -> support_hub
-}
-{not found_pamphlet:
-    Start with people. Patricia, Owen in IT, anyone who notices things. Evidence comes out of conversations as often as drawers.
-    -> support_hub
-}
-Keep talking to people, and keep reading what they leave lying around. It'll come.
--> support_hub

@@ -112,17 +112,24 @@ answer.
      server room wants a password Owen won't give me", then back to Owen.
 
    (Round 2: reading the IT notice by the door also opens this ask.) He hands over the sticky note (`quantum2024`) → `find_server_password`. He
-   also says the key vault past the server room reads **David's thumb and
-   nobody else's**, and that you can't change a thumb.
+   also says the key vault past the server room has **two thumbs enrolled,
+   Ruth Halloran's and David's** (pass 5 A3), and that you can't change a thumb.
 9. The badge log: with the incident log read, ask Owen "Patricia's log has a
    crypto badge in the server hallway at 23:47. Whose?" He hands over the
    **Server Hallway Badge Log** → `find_door_log` (optional), and says "That's
    Halloran's spare". Read the main-entrance lines too.
 10. Clear (or accuse) Halloran: in the research lab, "Your spare badge has been
     through the server hallway after midnight. Four times." She gives the
-    Zurich alibi, says the spare hangs on the hook by the door, and that David
-    works in her lab late → `halloran_questioned`, `torres_suspected`. The
-    **Conference Lanyard** on her monitor carries the same alibi.
+    Zurich alibi, says the spare hangs on the hook by the door, and names
+    three people who work in her lab late (Amara, Ben, David; pass 5 m3) →
+    `halloran_questioned`, `found_halloran_alibi`. This does **not** set
+    `torres_suspected` (pass 4 round 2): that comes from naming him with a
+    reason (Patricia in person or by phone, or HaX), or from the bills, the
+    journal, flag 3, the manifest or the upload schedule. The **Conference
+    Lanyard** on her monitor carries the same alibi.
+    Accusing her instead (`halloran_accused`) brings the upload forward
+    (pass 5 D2): Torres' scene opens at 99 per cent, and the debrief and
+    credits report the East of England's rotation window lost.
 11. Optional: vetting files from Patricia (`find_vetting_file`, "Find out who
     on the team is under pressure"), only once the badge log is read
     (round 2): **two** files, Torres (undeclared debts) and Halloran (late
@@ -156,9 +163,10 @@ Owen → `obtain_torres_keycard`. Before that, neither Patricia nor Owen offers 
 16. Hallway → `server_room` (password `quantum2024`) → `access_server_room`.
 17. Bludit terminal; four flags (`access_bludit_vm` now ticks on flag 1) at the drop-site →
     `submit_flag1..4`. After flag 3 HaX offers the sudo guide.
-18. North door: the key-vault fingerprint reader (`vault_reader_seen`). With
-    Torres' print it opens → `access_data_center`. Without it: "requires David
-    Torres's fingerprint". Go back for the mug.
+18. North door: the key-vault fingerprint reader (`vault_reader_seen`), sign
+    "Heisenberg Leads Only", enrolled to Torres and Halloran (pass 5 A3). Only
+    Torres' print can be lifted (the mug), so it opens on his →
+    `access_data_center`. Without it, go back for the mug.
 19. Read the **upload schedule**, the **manifest** and the **TalentStack
     envelope**.
 
@@ -174,7 +182,9 @@ Owen → `obtain_torres_keycard`. Before that, neither Patricia nor Owen offers 
     then "You've got his print. Go." / the fingerprint hint / "You'll need his
     print first." Torres appears at the upload terminal.
     HaX texts about the Recruiter ~6 s after her text, unless you've already
-    rung her.
+    rung her. Naming him before flag 3 (from the vault paperwork) sets
+    `named_before_portal` (pass 5 D1): his scene opens at 20:02 and 88 per
+    cent, and the debrief and credits say you had him before the server did.
 21. When the naming conversation closes, the Recruiter **texts**
     (`recruiter_texted`). Ring her back from the phone for her offer: leave the
     envelope out of your report. If you confront Torres first and ring her
@@ -192,8 +202,14 @@ Owen → `obtain_torres_keycard`. Before that, neither Patricia nor Owen offers 
 
     On the talk endings the upload is stopped by a choice: pull the drive
     yourself, or make him cancel it.
-23. `concludeRequires` = all four flags. The debrief fires when the Torres
-    conversation closes with all four flags in; otherwise on the last flag.
+23. `concludeRequires` = all four flags. Pass 5 A2: the fate no longer opens
+    the debrief. It unlocks "Sweep the vault, then call HaX to bring you in",
+    and HaX texts "Upload's dead. Sweep the vault…" (or, with flags out,
+    "finish that research server… Then sweep the vault and call me"). Call
+    HaX: "I'm done here. Bring me in." names anything unread (envelope,
+    schedule, manifest, the Recruiter's text); "Bring me in" → "On my way"
+    sets `mission_complete`, which opens the debrief. A reload after that
+    re-opens it on the next room entry.
 24. Debrief and credits. The CEO line reads one way or the other depending on
     `found_stand_down_email`.
 
@@ -211,12 +227,15 @@ Owen → `obtain_torres_keycard`. Before that, neither Patricia nor Owen offers 
   and safety net, `after_choice` and three debrief branches no longer name
   her. Her dropped items include both vetting files.
 - **Owen KO**: his office card, password note and badge log drop. HaX's
-  `on_owen_ko_relay` gives copies of the staff badge, the office card and the
-  password (from IT's ticket queue), plus the badge log if not yet read, and
-  says the vault line.
+  `on_owen_ko_relay` gives copies of the staff badge and the password (from
+  IT's ticket queue), plus the badge log if not yet held, and says the vault
+  line. Pass 5 A4: the office card only if Torres is already suspected;
+  otherwise HaX pushes it on the first room entry after suspicion
+  (`on_owen_ko_office_card`), or in the call if you name him to HaX.
 - **Wrong accusation**: Halloran accused → suspended (her greeting changes, no
   spare badge), HaX nudge, `general_advice` points at the alibi and the
-  front-door lines. Torres can still be named the usual way.
+  front-door lines. Torres can still be named the usual way. The upload is
+  brought forward (99 per cent in his scene; a lost region in the debrief).
 - **Torres KO**: `post_ko_choice` (`disableClose`); safety net on re-entering the
   data centre.
 - Lisa / Halloran KO only close their optional interviews.

@@ -9,13 +9,13 @@ Infiltrate Quantum Dynamics Corporation to identify and stop an insider threat. 
 | Metric | Value |
 |---|---|
 | Story aims | 5 |
-| Total tasks | 27 (6 optional) |
+| Total tasks | 28 (7 optional) |
 | VM flag challenges | 4 |
 | Physical locks | 6 |
 | AND-gate convergences | 1 |
 | Rooms | 10 |
 | Puzzle graph nodes / edges | 39 / 41 |
-| Story graph nodes / edges | 6 / 5 |
+| Story graph nodes / edges | 19 / 18 |
 
 ## Critical Path
 
@@ -75,8 +75,8 @@ flowchart TD
   server_room("Server Room — Password Access. Contact IT.")
   door_torres_office["Torres Office<br/>RFID lock"]
   torres_office("Torres Office")
-  door_data_center["Key Vault — Fingerprint Access. Cryptography Lead Only.<br/>Biometric lock"]
-  data_center("Key Vault — Fingerprint Access. Cryptography Lead Only.")
+  door_data_center["Key Vault — Fingerprint Access. Heisenberg Leads Only.<br/>Biometric lock"]
+  data_center("Key Vault — Fingerprint Access. Heisenberg Leads Only.")
   reception_lobby("Reception Lobby")
   lock_pick_kit{"Lock Pick Kit"}
   lock_torres_briefcase["Torres Briefcase"]
@@ -97,9 +97,9 @@ flowchart TD
   data_package_manifest{"Data Package Manifest"}
   npc_david_torres{"David Torres"}
   action_confront_torres>"Confront Torres and decide his fate"]
-  vmch_submit_flag1["Submit Flag 1: Leaked Bludit admin credentials (recon)"]
+  vmch_submit_flag1["Flag 1: The login someone left lying about (recon)"]
   vmfl_submit_flag1{"Flag1 Flag"}
-  vmch_submit_flag2["Submit Flag 2: Authenticated Bludit image-upload RCE"]
+  vmch_submit_flag2["Flag 2: A foothold on the research portal (upload RCE)"]
   vmfl_submit_flag2{"Flag2 Flag"}
   vmch_submit_flag3["Submit Flag 3: The insider's staging manifest (user access)"]
   vmfl_submit_flag3{"Flag3 Flag"}
@@ -192,15 +192,42 @@ flowchart TD
   aim_exploit_infrastructure{{"Prove the Exfiltration on the Server"}}
   aim_confront_insider{{"Decide What Happens to Him"}}
   aim_andgate_confront_insider((" + "))
+  story_knock_out_patricia_morgan>"Knock out Patricia Morgan"]
+  story_knock_out_owen_gallagher>"Knock out Owen Gallagher"]
+  story_enter_reception_lobby>"Enter Reception Lobby"]
+  story_enter_main_corridor>"Enter Main Corridor"]
+  story_enter_break_room>"Enter Break Room"]
+  story_enter_open_office_area>"Enter Open Office Area"]
+  story_enter_server_hallway>"Enter Server Hallway"]
+  story_enter_server_room_password_access_contact_it>"Enter Server Room — Password Access. Contact IT."]
+  story_enter_torres_office>"Enter Torres Office"]
+  story_enter_research_lab>"Enter Research Lab"]
+  story_enter_patricia_office>"Enter Patricia Office"]
+  story_enter_key_vault_fingerprint_access_heisenberg_leads_only>"Enter Key Vault — Fingerprint Access. Heisenberg Leads Only."]
+  story_talk_to_patricia_morgan>"Talk to Patricia Morgan"]
 
   aim_establish_access -.-> aim_investigate_employees
   aim_investigate_employees -.-> aim_exploit_infrastructure
   aim_gather_evidence --> aim_andgate_confront_insider
   aim_exploit_infrastructure --> aim_andgate_confront_insider
   aim_andgate_confront_insider --> aim_confront_insider
+  story_knock_out_patricia_morgan -.->|torres_suspected| aim_gather_evidence
+  story_knock_out_owen_gallagher -.->|torres_suspected| aim_gather_evidence
+  story_enter_reception_lobby -.->|torres_suspected| aim_gather_evidence
+  story_enter_main_corridor -.->|torres_suspected| aim_gather_evidence
+  story_enter_break_room -.->|torres_suspected| aim_gather_evidence
+  story_enter_open_office_area -.->|torres_suspected| aim_gather_evidence
+  story_enter_server_hallway -.->|torres_suspected| aim_gather_evidence
+  story_enter_server_room_password_access_contact_it -.->|torres_suspected| aim_gather_evidence
+  story_enter_torres_office -.->|torres_suspected| aim_gather_evidence
+  story_enter_research_lab -.->|torres_suspected| aim_gather_evidence
+  story_enter_patricia_office -.->|torres_suspected| aim_gather_evidence
+  story_enter_key_vault_fingerprint_access_heisenberg_leads_only -.->|torres_suspected| aim_gather_evidence
+  story_talk_to_patricia_morgan -.->|torres_suspected| aim_gather_evidence
 
   class aim_establish_access,aim_investigate_employees,aim_exploit_infrastructure,aim_confront_insider,aim_andgate_confront_insider critical
   class aim_gather_evidence aim
+  class story_knock_out_patricia_morgan,story_knock_out_owen_gallagher,story_enter_reception_lobby,story_enter_main_corridor,story_enter_break_room,story_enter_open_office_area,story_enter_server_hallway,story_enter_server_room_password_access_contact_it,story_enter_torres_office,story_enter_research_lab,story_enter_patricia_office,story_enter_key_vault_fingerprint_access_heisenberg_leads_only,story_talk_to_patricia_morgan action
 ```
 
 ## Story + Puzzle (Integrated)
@@ -234,8 +261,8 @@ flowchart TD
   server_room("Server Room — Password Access. Contact IT.")
   door_torres_office["Torres Office<br/>RFID lock"]
   torres_office("Torres Office")
-  door_data_center["Key Vault — Fingerprint Access. Cryptography Lead Only.<br/>Biometric lock"]
-  data_center("Key Vault — Fingerprint Access. Cryptography Lead Only.")
+  door_data_center["Key Vault — Fingerprint Access. Heisenberg Leads Only.<br/>Biometric lock"]
+  data_center("Key Vault — Fingerprint Access. Heisenberg Leads Only.")
   reception_lobby("Reception Lobby")
   lock_pick_kit{"Lock Pick Kit"}
   lock_torres_briefcase["Torres Briefcase"]
@@ -256,9 +283,9 @@ flowchart TD
   data_package_manifest{"Data Package Manifest"}
   npc_david_torres{"David Torres"}
   action_confront_torres>"Confront Torres and decide his fate"]
-  vmch_submit_flag1["Submit Flag 1: Leaked Bludit admin credentials (recon)"]
+  vmch_submit_flag1["Flag 1: The login someone left lying about (recon)"]
   vmfl_submit_flag1{"Flag1 Flag"}
-  vmch_submit_flag2["Submit Flag 2: Authenticated Bludit image-upload RCE"]
+  vmch_submit_flag2["Flag 2: A foothold on the research portal (upload RCE)"]
   vmfl_submit_flag2{"Flag2 Flag"}
   vmch_submit_flag3["Submit Flag 3: The insider's staging manifest (user access)"]
   vmfl_submit_flag3{"Flag3 Flag"}
@@ -273,6 +300,19 @@ flowchart TD
   aim_exploit_infrastructure{{"Prove the Exfiltration on the Server"}}
   aim_confront_insider{{"Decide What Happens to Him"}}
   aim_andgate_confront_insider((" + "))
+  story_knock_out_patricia_morgan>"Knock out Patricia Morgan"]
+  story_knock_out_owen_gallagher>"Knock out Owen Gallagher"]
+  story_enter_reception_lobby>"Enter Reception Lobby"]
+  story_enter_main_corridor>"Enter Main Corridor"]
+  story_enter_break_room>"Enter Break Room"]
+  story_enter_open_office_area>"Enter Open Office Area"]
+  story_enter_server_hallway>"Enter Server Hallway"]
+  story_enter_server_room_password_access_contact_it>"Enter Server Room — Password Access. Contact IT."]
+  story_enter_torres_office>"Enter Torres Office"]
+  story_enter_research_lab>"Enter Research Lab"]
+  story_enter_patricia_office>"Enter Patricia Office"]
+  story_enter_key_vault_fingerprint_access_heisenberg_leads_only>"Enter Key Vault — Fingerprint Access. Heisenberg Leads Only."]
+  story_talk_to_patricia_morgan>"Talk to Patricia Morgan"]
 
   door_server_hallway --> server_hallway
   door_server_room --> server_room
@@ -320,6 +360,19 @@ flowchart TD
   aim_gather_evidence --> aim_andgate_confront_insider
   aim_exploit_infrastructure --> aim_andgate_confront_insider
   aim_andgate_confront_insider --> aim_confront_insider
+  story_knock_out_patricia_morgan -.->|torres_suspected| aim_gather_evidence
+  story_knock_out_owen_gallagher -.->|torres_suspected| aim_gather_evidence
+  story_enter_reception_lobby -.->|torres_suspected| aim_gather_evidence
+  story_enter_main_corridor -.->|torres_suspected| aim_gather_evidence
+  story_enter_break_room -.->|torres_suspected| aim_gather_evidence
+  story_enter_open_office_area -.->|torres_suspected| aim_gather_evidence
+  story_enter_server_hallway -.->|torres_suspected| aim_gather_evidence
+  story_enter_server_room_password_access_contact_it -.->|torres_suspected| aim_gather_evidence
+  story_enter_torres_office -.->|torres_suspected| aim_gather_evidence
+  story_enter_research_lab -.->|torres_suspected| aim_gather_evidence
+  story_enter_patricia_office -.->|torres_suspected| aim_gather_evidence
+  story_enter_key_vault_fingerprint_access_heisenberg_leads_only -.->|torres_suspected| aim_gather_evidence
+  story_talk_to_patricia_morgan -.->|torres_suspected| aim_gather_evidence
   door_server_hallway -.-> aim_investigate_employees
   door_torres_office -.-> aim_gather_evidence
   door_server_room -.-> aim_exploit_infrastructure
@@ -335,7 +388,7 @@ flowchart TD
   class lock_pick_kit,rfid_cloner,fingerprint_kit,server_password_sticky_note,mug,sealed_talentstack_envelope,upload_schedule,data_package_manifest item
   class npc_owen_gallagher,it_spare_office_card,npc_dr_ruth_halloran,research_badge,npc_david_torres key
   class bludit_cms_server_terminal,vmch_submit_flag1,vmch_submit_flag2,vmch_submit_flag3,vmch_submit_flag4 vm
-  class action_confront_torres action
+  class action_confront_torres,story_knock_out_patricia_morgan,story_knock_out_owen_gallagher,story_enter_reception_lobby,story_enter_main_corridor,story_enter_break_room,story_enter_open_office_area,story_enter_server_hallway,story_enter_server_room_password_access_contact_it,story_enter_torres_office,story_enter_research_lab,story_enter_patricia_office,story_enter_key_vault_fingerprint_access_heisenberg_leads_only,story_talk_to_patricia_morgan action
   class vmfl_submit_flag1,vmfl_submit_flag2,vmfl_submit_flag3,vmfl_submit_flag4 flag
   class aim_establish_access,aim_investigate_employees,aim_exploit_infrastructure,aim_confront_insider,aim_andgate_confront_insider critical
   class aim_gather_evidence aim
@@ -379,7 +432,7 @@ flowchart TD
   torres_office["Torres Office<br/>(locked)"]
   research_lab("Research Lab")
   patricia_office("Patricia Office")
-  data_center["Key Vault — Fingerprint Access. Cryptography Lead Only.<br/>(locked)"]
+  data_center["Key Vault — Fingerprint Access. Heisenberg Leads Only.<br/>(locked)"]
 
   reception_lobby --> main_corridor
   reception_lobby --> patricia_office
@@ -430,7 +483,7 @@ flowchart TD
   torres_office["Torres Office<br/>(locked)"]
   research_lab("Research Lab")
   patricia_office("Patricia Office")
-  data_center["Key Vault — Fingerprint Access. Cryptography Lead Only.<br/>(locked)"]
+  data_center["Key Vault — Fingerprint Access. Heisenberg Leads Only.<br/>(locked)"]
   rc_obj1_1{"Building Directory"}
   rc_npc_agent_hax_2("Agent HaX")
   rc_npc_director_magnus_netherton_3("Director Magnus Netherton")

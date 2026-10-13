@@ -262,11 +262,9 @@ Owen Gallagher: After-hours server access gets logged with IT. That's me.
 ~ password_handed = true
 #give_item:notes:server_password_note
 Owen Gallagher: It's on my monitor. It's been on my monitor for a year. Take it, and please don't put that in your report.
-{torres_suspected:
-    Owen Gallagher: Past the server room is the key vault. Fingerprint reader. David's thumb and nobody else's. Don't ask me how you'd get in there.
-- else:
-    Owen Gallagher: Past the server room is the key vault. Fingerprint reader. The cryptography lead's thumb and nobody else's. Don't ask me how you'd get in there.
-}
+// PASS 5 (A3): both Heisenberg leads are enrolled, so this no longer names
+// the insider before anyone suspects him.
+Owen Gallagher: Past the server room is the key vault. Fingerprint reader. Two thumbs enrolled, Ruth Halloran's and David's, and nobody else's. Don't ask me how you'd get in there.
 Owen Gallagher: Board bought it because you can't write a thumb on a sticky note. Course, you can't change one either, once it's out.
 -> hub
 

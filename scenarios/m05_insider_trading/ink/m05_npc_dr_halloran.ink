@@ -209,8 +209,9 @@ Dr Ruth Halloran: Ask what you came to ask.
 ~ found_halloran_alibi = true
 Dr Ruth Halloran: My spare? It hangs on the hook by the door, for visitors. I haven't touched it in months.
 Dr Ruth Halloran: The twenty-third I was in Zurich, giving a paper to two hundred people. The lanyard's on my monitor.
-Dr Ruth Halloran: Who's in here after hours? Amara some evenings, but she's gone by ten. David, mostly. He says the lab's quieter than his office.
-Dr Ruth Halloran: ...Oh. Oh, no.
+// PASS 5 (m3): three names, not one. The badge log's front-door times decide it.
+Dr Ruth Halloran: Who's in here after hours? Amara some evenings, gone by ten. Ben, for his test runs. David, some nights; he says it's quieter than his office.
+Dr Ruth Halloran: Any of them could have walked out with it. I never thought to count.
 ~ hub_quiet = true
 -> hub
 

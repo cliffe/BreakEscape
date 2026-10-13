@@ -38,6 +38,14 @@ VAR flag4_submitted = false
 VAR recruiter_contacted_player = false
 VAR patricia_ko = false
 VAR halloran_accused = false
+VAR named_before_portal = false // Synced scenario global: Torres named before flag 3 (D1; set by HaX's torres_identified mapping)
+
+// PASS 5 (D1, D2): how far the upload has got depends on the night. Named
+// early, before the research server confirmed it: a lower bar and more time.
+// Halloran accused: he saw Security move and brought the upload forward, so
+// the bar sits at 99 and one region's rotation window has already gone.
+// The accusation wins if both are true. Whole-line variants, no printed
+// numbers (voiced-line rule).
 
 // PASS 4 (design): evidence shapes what the player can argue on the turn
 // path (journal, flag 4), and every ending stays open whatever was found.
@@ -61,9 +69,17 @@ VAR halloran_accused = false
 
 === confrontation_scene ===
 #speaker:narrator
-Narrator: 20:14. The data centre. The racks roar.
-
-Narrator: David Torres sits alone at the terminal, a USB drive in the front port. The transfer bar reads 94 per cent. Sixteen minutes to the window.
+{
+- halloran_accused:
+    Narrator: 20:14. The data centre. The racks roar.
+    Narrator: David Torres sits alone at the terminal, a USB drive in the front port. The transfer bar reads 99 per cent. He brought the window forward.
+- named_before_portal:
+    Narrator: 20:02. The data centre. The racks roar.
+    Narrator: David Torres sits alone at the terminal, a USB drive in the front port. The transfer bar reads 88 per cent. Twenty-eight minutes to the window.
+- else:
+    Narrator: 20:14. The data centre. The racks roar.
+    Narrator: David Torres sits alone at the terminal, a USB drive in the front port. The transfer bar reads 94 per cent. Sixteen minutes to the window.
+}
 
 Narrator: He doesn't turn around.
 
@@ -79,7 +95,7 @@ David Torres: "Security consultant." You're not an auditor.
 David Torres: The vault logged me in twice tonight. One of them was you.
 
 {halloran_accused:
-    David Torres: You had Ruth suspended. I watched Security walk her back to the lab. That's when I knew I had tonight and no more.
+    David Torres: You had Ruth suspended. I watched Security walk her back to the lab, and I brought the upload forward. One region's schedule went an hour ago.
 }
 
 + [It's over, David. Step away from the terminal.]
@@ -166,10 +182,20 @@ David Torres: Is thirty to forty-five families. Like mine.
 
 David Torres: Three months ago I was trying to save my wife.
 
-David Torres: Now I'm sixteen minutes from getting people killed.
-
-#speaker:narrator
-Narrator: The transfer bar ticks to 95 per cent.
+{
+- halloran_accused:
+    David Torres: Now I'm one per cent from getting people killed. More than one region's worth.
+    #speaker:narrator
+    Narrator: The transfer bar holds at 99 per cent. The last segment is the biggest.
+- named_before_portal:
+    David Torres: Now I'm half an hour from getting people killed.
+    #speaker:narrator
+    Narrator: The transfer bar ticks to 89 per cent.
+- else:
+    David Torres: Now I'm sixteen minutes from getting people killed.
+    #speaker:narrator
+    Narrator: The transfer bar ticks to 95 per cent.
+}
 
 -> final_choice_moment
 
@@ -371,7 +397,14 @@ Narrator: He shoves the chair back and comes at you.
 #speaker:narrator
 Narrator: Torres went down hard against the rack. He isn't getting up.
 
-Narrator: His breathing is ragged, and blood is pooling under his head. The terminal reads 97 per cent.
+{
+- halloran_accused:
+    Narrator: His breathing is ragged, and blood is pooling under his head. The terminal reads 99 per cent.
+- named_before_portal:
+    Narrator: His breathing is ragged, and blood is pooling under his head. The terminal reads 91 per cent.
+- else:
+    Narrator: His breathing is ragged, and blood is pooling under his head. The terminal reads 97 per cent.
+}
 
 + [Kill the upload, then stay with him: recovery position, pressure, call it in.]
     ~ torres_arrested = true
@@ -386,7 +419,14 @@ Narrator: His breathing is ragged, and blood is pooling under his head. The term
 
 === post_ko_arrest ===
 #speaker:narrator
-Narrator: You pull the drive and kill the transfer at 97 per cent. The last of it stays in the building.
+{
+- halloran_accused:
+    Narrator: You pull the drive and kill the transfer at 99 per cent. The last of it stays in the building.
+- named_before_portal:
+    Narrator: You pull the drive and kill the transfer at 91 per cent. The last of it stays in the building.
+- else:
+    Narrator: You pull the drive and kill the transfer at 97 per cent. The last of it stays in the building.
+}
 
 {patricia_ko:
     Narrator: Then you roll him onto his side, press your jacket to the cut, and call HaX. An ambulance and the police arrive together, and nobody asks who rang. He comes round in hospital, under guard.
@@ -400,7 +440,14 @@ Narrator: You pull the drive and kill the transfer at 97 per cent. The last of i
 
 === post_ko_handoff ===
 #speaker:narrator
-Narrator: You pull the drive and kill the transfer at 97 per cent. The last of it stays in the building.
+{
+- halloran_accused:
+    Narrator: You pull the drive and kill the transfer at 99 per cent. The last of it stays in the building.
+- named_before_portal:
+    Narrator: You pull the drive and kill the transfer at 91 per cent. The last of it stays in the building.
+- else:
+    Narrator: You pull the drive and kill the transfer at 97 per cent. The last of it stays in the building.
+}
 
 Narrator: You step over him on the way out.
 
@@ -446,7 +493,14 @@ David Torres: I did this to save them. And you're going to wreck them anyway.
 // PASS 4 fix 15: the player's hand or his. Same outcome either way.
 === stop_upload ===
 #speaker:narrator
-Narrator: The transfer bar sits at 97 per cent. His hand is still beside the keyboard.
+{
+- halloran_accused:
+    Narrator: The transfer bar sits at 99 per cent. His hand is still beside the keyboard.
+- named_before_portal:
+    Narrator: The transfer bar sits at 91 per cent. His hand is still beside the keyboard.
+- else:
+    Narrator: The transfer bar sits at 97 per cent. His hand is still beside the keyboard.
+}
 + [Pull the drive myself.]
     Narrator: You pull the USB drive out of the port. The transfer window stalls, then throws an error. The last of it stays in the building.
     -> upload_stopped
