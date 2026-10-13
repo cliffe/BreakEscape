@@ -211,3 +211,72 @@ Validator: schema, geometry and door alignment pass. `check_door_alignment.py`: 
 - Assumption: the user's "walk behind them" means the lane along the back wall behind the front of each block, not corridors inside the blocks.
 - Assumption: the dock's 10×10 position (east of the plant room, under Hall 2's east half) is right; door alignment and the overlap check confirm it.
 - Assumption: `as-type:briefcase-yellow-` (base type with a trailing hyphen) is how the engine names that sprite's base type; slot_audit agrees, not yet confirmed by a tap in game.
+
+## Cycle 5 (2026-10-13): review fixes and the interaction walk
+
+Inputs: a fresh Opus review of the cycle-4 rooms (0 blockers, 5 majors, 8 minors; its report reached the orchestrator, who relayed it) and a Sonnet interaction walk on :3001 (game 2230, every room unlocked server-side; `debugKO` used on Cipher, Relay and Static to get past their line-of-sight challenges; report and screenshots in the session scratchpad `m04-dressing-walk-c5/`).
+
+### Interaction walk
+
+Every object on its new fixture opened the right thing: Hall 1's five (the thermometer fires its caption and `anomaly_detected`; status display, H2 detector and process diagram open in place; the round panel examines), Hall 2's three, the plant room's ESD ("NOT ARMED. GRID PERMISSIVE NOT RECEIVED...", not pressed), laptop and three papers, the workshop's five (the tool case opens the lockpick), security's four (the camera wall reached from beside the console), ops' four, SCADA's three, reception's two, the dock's three. Every door-to-door walk passed; the Hall 1 lane runs W door to E door behind the racks (the player draws behind them), and the blocks are solid from the south. No "No Tiled item found", no stuck spots.
+
+| id | sev | finding | outcome |
+|---|---|---|---|
+| W1 | major | A `notes` object leaves the scene after its first read (engine behaviour, `notes-minigame.js` removeNoteFromScene, regardless of `takeable: false`). Fine for papers, but the BMS bypass cabinet, a whole piece of furniture, vanished | **Fixed:** the cabinet is now decor (tables layer, with a collision strip); the scenario object claims `aes_bypass_module1`, a crop of the cabinet's own module laid exactly over it, so a read removes only the overlay and the cabinet looks unchanged. The bypass keeps the notebook read (its fingerprint branch). Papers vanishing after reading is left as is (engine behaviour, the same in every mission) |
+| W2 | minor | Hugging the back wall in Hall 1, the player meets the low kit and has to step 25 px down into the lane | Left: the kit stands against the wall by design and the lane is wide (pathfinding takes it without help) |
+| W3 | minor | 18 unattributed 404s and 2 TypeErrors in the console | Left: the server log ties the 404s to assets m04 doesn't use (other agents' games on the shared server) |
+
+### Review findings
+
+| id | room | sev | outcome |
+|---|---|---|---|
+| F1 | Hall 2 | major | **Fixed:** the empty hatched box west of bank A redrawn to bank A's four stacks |
+| F2 | Plant | major | **Fixed:** a PCS inverter (`aes_inverter2`) where the single switchgear panel was, a PCS control cabinet on the south side (new PixelLab `aes_pcs_cabinet1`), an exit sign by the N door, trunking from the switchgear and PCS down both sides to the transformer and generator, walkway lines and wear on the ESD approach |
+| F3 | Plant | minor | **Fixed:** Voltage's tables lifted to feet 178; a steel trestle (new `aes_trestle1`) and a folding table, laptop and plans 42 px apart |
+| F4 | Ops | major | **Fixed:** filing cabinets against the back wall (blinds dropped to make room), bin beside the day desk, binders on it |
+| F5 | Ops, workshop | minor | **Fixed:** desk chairs face their desks |
+| F6 | Security | major | **Fixed:** the chair off the photocopier and the stray chair gone, a desk chair at the printer desk, photocopier to the SE, a warm taupe carpet so the room reads apart from ops, the guard's hi-vis/hard hat/radio hook (new PixelLab `aes_hivis_hook1`) by the door |
+| F7 | SCADA | major | **Fixed:** a hand-drawn grid mimic board (`aes_mimic_board1`, 96×32: busbar, breakers, three bank lamps green/green/amber/red) over the console, office chairs, the console moved up to free the W-E lane |
+| F8 | Reception | minor | **Fixed:** safety board clear of the PC, an AED cabinet, a glass coffee table in front of the sofa |
+| F9 | Workshop | minor | **Fixed:** the monitoring cart solid, the tool case against the bench end, supply shelves on the west side, grey lockers (new `aes_lockers_grey1`) in place of the P B C lockers security also had, a cable tangle on the parts bench |
+| F10 | Halls | minor | **Fixed early:** a grey wall gas detector with a readout (new PixelLab `aes_gas_detector2`) replaces the beacon-like H2 detector in both halls; Hall 1's object now `as-type:aes_gas_detector` (top-left 386,31, 2 px from the old spot). BMS tower kept (one use) |
+| F11 | Hall 2 | minor | **Fixed:** chiller lowered clear of the inverters; a power panel instead of the second status display |
+| F12 | Repeats | minor | **Fixed:** the dock's drum became a gas cylinder rack; the other repeats went with F6/F9/F10 |
+| F13 | Signs | minor | **Fixed in part:** exit signs in the plant room and the dock, a yellow shutter control box (PixelLab `aes_shutter_ctrl1`) beside the shutter. The halls' S-door exits sit in rows the room to the south covers, so no sign there |
+
+Scenario edits: `as-type` for the H2 detector (`aes_gas_detector`) and the bypass module (`aes_bypass_module`), and the bypass comment. Layout fields only.
+
+New art: two PixelLab calls (64 px: trestle, folding table, UPS, grey lockers, shelving, PCS cabinet, electrical cabinet, console, skip, tool chest; 32 px: gas detector, hi-vis hook, shutter control), about 40 generations; hand-made `aes_mimic_board1` and `aes_bypass_module1` (a crop, no rescale).
+
+Checks: validator (schema, geometry, door alignment) pass; door alignment 8/8; routes 27/27; walls all 64; slot audit 0 problems; `node --check` game.js OK; no "No Tiled item found". Cipher's cone unchanged from cycle 4 (138 / 28 / 183 / 174 cells; 0 door-row cells at the dwell).
+
+Shots: `build_evidence/dressing_c5/` (all nine rooms in game, sheet, grid maps).
+
+## Cycle 6 (2026-10-13)
+
+Fresh Opus review of the cycle-5 rooms: 0 blockers, 2 majors, 5 minors. Hard constraints all pass (Cipher, readable fixtures, Relay, Static and Voltage, the ESD, door mouths, no ESD look-alikes, collision, slot audit 34/34). Its verdict: cycle 5 improved things (plant room most); the halls, dock and workshop are at small returns; security, reception and SCADA lag.
+
+| id | room | sev | finding | outcome |
+|---|---|---|---|---|
+| F1 | Workshop | major | Tapping the jump-server PC's middle also caught the drop-site terminal (28 px), and the tool case sat 21 px from it: pick-one menus on the mission's two key terminals (the walk missed them because the harness taps top-lefts) | **Fixed:** PC at 0.22 and drop-site at 0.86 along the bench (top-lefts 55 px apart); tool case moved to the bench end on the hazard line, 42 px from the drop-site |
+| F2 | Security | major | Still the weakest room: bare middle, one PC under an 8-screen wall | **Fixed:** the console runs on with a second desk carrying the access-control monitor; a CCTV recorder (new PixelLab `aes_dvr1`); the printer desk group moved up to make the middle a work area |
+| F3 | Reception | minor | Read as a hotel lobby (salmon counter) | **Fixed:** a grey gatehouse security desk (new PixelLab `aes_security_desk1`) with a steel sign-in counter beside it carrying both papers (36 px apart); speed gates (new `aes_speed_gate1`, walk-through) on the way in; the kiosk moved to the top of the door lane |
+| F4 | Reception | minor | The guard at (5,4) overlapped the counter and the player's spawn | **Fixed:** `security_guard` `position` (5,4) → (6.5,5), beside the sign-in counter (layout field; no patrol, no story reference to the spot) |
+| F5 | SCADA | minor | Lower floor empty, no clock | **Fixed:** wall clock, a steel filing cabinet and a UPS |
+| F6 | Dock | minor | Escape plan 27 px from the go-bag | **Fixed:** moved 10 px east (37 px) |
+| F7 | Plant | minor | Light trunking read as raised kerbs on the green epoxy | **Fixed:** darker lids with a yellow edge for the plant sheet only |
+
+Scenario edit: the guard's `position`. New art: one PixelLab call (64 px, about 20 generations; balance 1837 before): speed gates, security desk, CCTV recorder, office chair.
+
+Checks: validator (schema, geometry, door alignment) pass; door alignment 8/8; routes 27/27; walls all 64; slot audit 0 problems; no "No Tiled item found". Cipher's cone unchanged (138 cells at the dwell, 0 in the door row).
+
+Shots: `build_evidence/dressing_c6/` (nine rooms, sheet, grids). Pairs for the user: `tmp/review/m04_dressing_c6_*.png` (cycle 4 against cycle 6).
+
+### Where it stands
+
+The reviewer judges the scene close to small returns after this cycle. Cycle 7 will check that with a fresh reviewer and a short Sonnet re-walk of the cycle 5-6 changes (the bypass overlay, the workshop terminals and tool case, the reception counter and guard); I stop once a cycle finds nothing above minor.
+
+### Assumptions (cycle 6)
+
+- Assumption: moving the gate guard 1.5 tiles right and one down is a layout change the dialogue doesn't depend on (no waypoint, no story reference to where he stands).
+- Assumption: walk-through speed gates are acceptable; giving them collision would need a gap a player can find.

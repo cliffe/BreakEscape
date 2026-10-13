@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<tileset version="1.10" tiledversion="1.11.2" name="objects/hospital_extras" tilewidth="60" tileheight="60" tilecount="301" columns="0">
+<tileset version="1.10" tiledversion="1.11.2" name="objects/hospital_extras" tilewidth="60" tileheight="60" tilecount="320" columns="0">
  <grid orientation="orthogonal" width="1" height="1"/>
  <tile id="0">
   <image source="../objects/iv_stand1.png" width="25" height="60"/>
@@ -903,5 +903,62 @@
  </tile>
  <tile id="310">
   <image source="../objects/aes_floor_grate1.png" width="28" height="16"/>
+ </tile>
+ <tile id="311">
+  <image source="../objects/aes_trestle1.png" width="52" height="43"/>
+ </tile>
+ <tile id="312">
+  <image source="../objects/aes_trestle2.png" width="52" height="45"/>
+ </tile>
+ <tile id="313">
+  <image source="../objects/aes_ups1.png" width="34" height="57"/>
+ </tile>
+ <tile id="314">
+  <image source="../objects/aes_lockers_grey1.png" width="58" height="59"/>
+ </tile>
+ <tile id="315">
+  <image source="../objects/aes_shelving1.png" width="52" height="63"/>
+ </tile>
+ <tile id="316">
+  <image source="../objects/aes_pcs_cabinet1.png" width="52" height="59"/>
+ </tile>
+ <tile id="317">
+  <image source="../objects/aes_elec_cabinet1.png" width="50" height="57"/>
+ </tile>
+ <tile id="318">
+  <image source="../objects/aes_console1.png" width="57" height="51"/>
+ </tile>
+ <tile id="319">
+  <image source="../objects/aes_skip1.png" width="50" height="53"/>
+ </tile>
+ <tile id="320">
+  <image source="../objects/aes_tool_chest1.png" width="48" height="48"/>
+ </tile>
+ <tile id="321">
+  <image source="../objects/aes_gas_detector2.png" width="18" height="27"/>
+ </tile>
+ <tile id="322">
+  <image source="../objects/aes_hivis_hook1.png" width="30" height="25"/>
+ </tile>
+ <tile id="323">
+  <image source="../objects/aes_shutter_ctrl1.png" width="20" height="27"/>
+ </tile>
+ <tile id="324">
+  <image source="../objects/aes_bypass_module1.png" width="21" height="16"/>
+ </tile>
+ <tile id="325">
+  <image source="../objects/aes_mimic_board1.png" width="96" height="32"/>
+ </tile>
+ <tile id="326">
+  <image source="../objects/aes_speed_gate1.png" width="51" height="53"/>
+ </tile>
+ <tile id="327">
+  <image source="../objects/aes_security_desk1.png" width="61" height="55"/>
+ </tile>
+ <tile id="328">
+  <image source="../objects/aes_dvr1.png" width="36" height="56"/>
+ </tile>
+ <tile id="329">
+  <image source="../objects/aes_office_chair1.png" width="33" height="54"/>
  </tile>
 </tileset>

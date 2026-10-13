@@ -146,7 +146,8 @@ def terrazzo_pixel(x, y):
 
 CARPET_BLUE = carpet_pixel_fn((104, 118, 140), (94, 108, 129), (118, 132, 152), (110, 122, 142))
 # dark floors keep some colour: check_room_walls reads a dark, near-neutral row as the floor line
-CARPET_CHARCOAL = carpet_pixel_fn((96, 104, 130), (88, 96, 120), (110, 118, 142), (110, 118, 144))
+# security: warm taupe carpet, so it reads apart from the operations office's blue (cycle 5, review F6)
+CARPET_CHARCOAL = carpet_pixel_fn((140, 126, 112), (128, 115, 102), (154, 140, 126), (150, 136, 122))
 
 
 def antistatic_pixel(x, y):
@@ -323,14 +324,18 @@ def split_wide(img):
 
 # --- sheets -------------------------------------------------------------------
 
-def paint_trunking(op, x0, y0, x1, y1, width=320):
-    """Steel floor trunking: a dark lid with a light edge and a joint every 24 px."""
+def paint_trunking(op, x0, y0, x1, y1, width=320, dark=False):
+    """Steel floor trunking: a dark lid with a light edge and a joint every 24 px.
+    dark=True: a darker lid with a yellow edge, for floors where light grey would read
+    as a raised kerb (the plant room's green epoxy)."""
     for y in range(y0, y1):
         for x in range(x0, x1):
             if not floor_at(x, y, width):
                 continue
             if y in (y0, y1 - 1) or x in (x0, x1 - 1):
-                c = (70, 74, 76)
+                c = (196, 164, 40) if dark else (70, 74, 76)
+            elif dark:
+                c = (70, 76, 78) if (x - x0) % 24 and (y - y0) % 24 else (54, 58, 60)
             elif y == y0 + 1:
                 c = (128, 134, 138)
             elif (x - x0) % 24 == 0 or (y - y0) % 24 == 0:
@@ -395,7 +400,7 @@ def hall2_sheet(walls):
     paint_wear(op, (32, 64, 110, 120), width=640)     # W door
     paint_wear(op, (32, 180, 96, 256), width=640)     # S door lane
     paint_wear(op, (120, 214, 500, 252), width=640, strength=0.94)  # Relay's beat
-    paint_hatch_border(op, (98, 150, 270, 210), width=640)
+    paint_hatch_border(op, (130, 150, 270, 210), width=640)  # bank A is 4 stacks since cycle 4
     paint_hatch_border(op, (290, 150, 430, 210), width=640)
     # yellow/black, not red: red hatching is the plant room's ESD box only (cycle 4, review F13)
     paint_hatch_box(op, (438, 122, 608, 144), colours=(YELLOW, BLACK), width=640)
@@ -429,6 +434,12 @@ def main():
     plant = paint_floor(industrial, EPOXY_GREEN)
     op = plant.load()
     paint_hatch_box(op, (146, 66, 196, 100))   # in front of the ESD station (room_aes_plant)
+    paint_trunking(op, 196, 118, 288, 124, dark=True)     # from the switchgear along to the east wall
+    paint_trunking(op, 64, 118, 132, 124, dark=True)      # from the PCS inverter to the west
+    paint_trunking(op, 64, 124, 70, 246, dark=True)       # down the west side to the transformer
+    paint_trunking(op, 282, 124, 288, 246, dark=True)     # down the east side to the generator
+    paint_line(op, 140, 104, 202, 106)         # the ESD approach: a walkway line either side
+    paint_wear(op, (140, 100, 202, 130))
     sheets["room_aes_plant"] = plant
 
     dock = paint_floor(industrial, concrete_pixel)

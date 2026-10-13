@@ -4075,6 +4075,120 @@
       "w": 28,
       "h": 16,
       "gid": 1111
+    },
+    "aes_trestle1": {
+      "id": 311,
+      "w": 52,
+      "h": 43,
+      "gid": 1112
+    },
+    "aes_trestle2": {
+      "id": 312,
+      "w": 52,
+      "h": 45,
+      "gid": 1113
+    },
+    "aes_ups1": {
+      "id": 313,
+      "w": 34,
+      "h": 57,
+      "gid": 1114
+    },
+    "aes_lockers_grey1": {
+      "id": 314,
+      "w": 58,
+      "h": 59,
+      "gid": 1115
+    },
+    "aes_shelving1": {
+      "id": 315,
+      "w": 52,
+      "h": 63,
+      "gid": 1116
+    },
+    "aes_pcs_cabinet1": {
+      "id": 316,
+      "w": 52,
+      "h": 59,
+      "gid": 1117
+    },
+    "aes_elec_cabinet1": {
+      "id": 317,
+      "w": 50,
+      "h": 57,
+      "gid": 1118
+    },
+    "aes_console1": {
+      "id": 318,
+      "w": 57,
+      "h": 51,
+      "gid": 1119
+    },
+    "aes_skip1": {
+      "id": 319,
+      "w": 50,
+      "h": 53,
+      "gid": 1120
+    },
+    "aes_tool_chest1": {
+      "id": 320,
+      "w": 48,
+      "h": 48,
+      "gid": 1121
+    },
+    "aes_gas_detector2": {
+      "id": 321,
+      "w": 18,
+      "h": 27,
+      "gid": 1122
+    },
+    "aes_hivis_hook1": {
+      "id": 322,
+      "w": 30,
+      "h": 25,
+      "gid": 1123
+    },
+    "aes_shutter_ctrl1": {
+      "id": 323,
+      "w": 20,
+      "h": 27,
+      "gid": 1124
+    },
+    "aes_bypass_module1": {
+      "id": 324,
+      "w": 21,
+      "h": 16,
+      "gid": 1125
+    },
+    "aes_mimic_board1": {
+      "id": 325,
+      "w": 96,
+      "h": 32,
+      "gid": 1126
+    },
+    "aes_speed_gate1": {
+      "id": 326,
+      "w": 51,
+      "h": 53,
+      "gid": 1127
+    },
+    "aes_security_desk1": {
+      "id": 327,
+      "w": 61,
+      "h": 55,
+      "gid": 1128
+    },
+    "aes_dvr1": {
+      "id": 328,
+      "w": 36,
+      "h": 56,
+      "gid": 1129
+    },
+    "aes_office_chair1": {
+      "id": 329,
+      "w": 33,
+      "h": 54,
+      "gid": 1130
     }
   }
 }

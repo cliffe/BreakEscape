@@ -903,6 +903,10 @@ WALL_MOUNTED_EXTRAS = {
     "aes_procedures_sign",
     "aes_round_terminal",
     "aes_logo_sign",
+    "aes_gas_detector",
+    "aes_hivis_hook",
+    "aes_shutter_ctrl",
+    "aes_mimic_board",
 }
 
 
@@ -2988,7 +2992,7 @@ def room_aes_hall1():
     Kept clear for reading: the floor under the dial (x 56-100), the status display
     (x 218-264), the H2 detector (x 378-412) and the process diagram (x 462-524).
     Kept clear for walking: the W and E door mouths, the S-door lane x 32-64.
-    Slots (as-type): aes_dial_thermometer, aes_status_display, aes_h2_detector,
+    Slots (as-type): aes_dial_thermometer, aes_status_display, aes_gas_detector,
     aes_process_diagram, aes_round_terminal.
     """
     r = _Uni()
@@ -3002,7 +3006,7 @@ def room_aes_hall1():
     r.item("aes_vent_fan1", 186.0, 48.0)
     r.item("aes_status_display1", 228.0, 54.0)        # top-left 228,34
     r.item("aes_hv_danger1", 272.0, 50.0)
-    r.item("aes_h2_detector1", 388.0, 56.0)           # top-left 388,34
+    r.item("aes_gas_detector2", 386.0, 58.0)          # top-left 386,31 (cycle 6 swap; was aes_h2_detector1 at 388,34)
     r.item("aes_vent_fan1", 410.0, 48.0)              # the ventilation outlet over the open floor
     r.item("aes_process_diagram1", 470.0, 52.0)
     r.item("aes_cctv1", 556.0, 32.0)
@@ -3044,8 +3048,8 @@ def room_aes_hall2():
     Kept clear: the W door mouth and a lane x 32-96 down to the S door; a lane along
     the back wall y 88-148 behind the banks (walk-behind), reaching the procedures
     sign and the BMS cabinet.
-    Slots (as-type): aes_procedures_sign (Emergency Procedures), aes_bms_bypass (BMS
-    Interlock-Bypass Module), aes_clipboard (Rack Bank Maintenance Manifest, on the
+    Slots (as-type): aes_procedures_sign (Emergency Procedures), aes_bypass_module
+    (BMS Interlock-Bypass Module, an overlay on the cabinet), aes_clipboard (Rack Bank Maintenance Manifest, on the
     west wall by the door).
     """
     r = _Uni()
@@ -3059,14 +3063,20 @@ def room_aes_hall2():
         r.table("aes_inverter2", x, 202.0, kind="objects")
     r.collision(454.0, 186.0, 124.0, 16.0)
     # back wall
-    r.item("aes_h2_detector1", 40.0, 56.0)
-    r.item("aes_vent_fan1", 60.0, 48.0)
+    r.item("aes_gas_detector2", 40.0, 56.0)
+    r.item("aes_vent_fan1", 62.0, 48.0)
     r.item("aes_procedures_sign1", 140.0, 56.0)       # Emergency Procedures, read in place
     # BMS cabinet A/B, door open, the bypass module: in the open beside bank A, fully in
     # view and reachable from the floor (cycle 4, review F1: it stood behind the racks)
-    r.solid("aes_bms_bypass1", 86.0, 120.0, depth=12)
+    # The cabinet is decor in the tables layer; the scenario object claims a crop of its
+    # own bypass module laid exactly over it (aes_bypass_module1), so when the engine
+    # removes a read note from the scene only the overlay goes and the cabinet stays
+    # (cycle 5 walk: the whole cabinet vanished after one read).
+    r.table("aes_bms_bypass1", 86.0, 120.0, kind="objects")
+    r.collision(88.0, 108.0, 43.0, 12.0)
+    r.conditional_table_items.append(make_obj("objects", "aes_bypass_module1", 86.0 + 6, 63.0 + 36, r._next()))
     r.item("aes_bank_a_sign1", 196.0, 34.0)
-    r.item("aes_status_display1", 252.0, 54.0)
+    r.item("power_panel1", 256.0, 52.0)
     r.item("aes_bank_b_sign1", 296.0, 34.0)
     r.item("aes_hv_danger1", 360.0, 52.0)
     r.solid("aes_combiner2", 392.0, 86.0)
@@ -3076,7 +3086,7 @@ def room_aes_hall2():
     r.item("aes_clipboard1", 12.0, 150.0)
     r.item("fire_extinguisher1", 14.0, 200.0)
     # floor kit east of Relay's beat
-    r.solid("aes_chiller1", 522.0, 250.0, depth=14)  # the inverter room's cooling unit
+    r.solid("aes_chiller1", 522.0, 254.0, depth=14)  # the inverter room's cooling unit
     r.solid("aes_gas_cylinders1", 586.0, 250.0)
     r.solid("aes_cable_drum1", 270.0, 200.0)          # in the gap between the banks
     return r.build("room_aes_hall2", "20x10_wide")
@@ -3101,29 +3111,30 @@ def room_aes_plant():
     # back wall: ESD at the centre, switchgear either side, kept clear in front
     r.item("aes_esd_sign1", 148.0, 30.0)
     r.item("aes_esd_station1", 160.0, 58.0)           # top-left 160,33; the red-hatched box below
-    r.table("aes_switchgear2", 102.0, 116.0, kind="objects")
-    r.collision(104.0, 104.0, 24.0, 12.0)
+    r.table("aes_inverter2", 100.0, 116.0, kind="objects")  # the PCS inverter feeding the banks
+    r.collision(102.0, 104.0, 27.0, 12.0)
     r.table("aes_switchgear1", 198.0, 116.0, kind="objects")
     r.collision(200.0, 104.0, 58.0, 12.0)
-    r.item("aes_hv_danger1", 106.0, 50.0)
+    r.item("aes_hv_danger1", 106.0, 44.0)
+    r.item("exit_sign1", 66.0, 28.0)                 # over the way out, by the N door
     # east wall below the door row
     r.item("aes_breaker_panel1", 266.0, 54.0)  # back wall, by the E door
     # west: the plant-room bench (steel), Static's side
     bench = r.table("zds_desk1", 34.0, 186.0, kind="objects")  # x 34-112, top 147
     r.solid("aes_toolbox1", 40.0, 214.0)
     # east: Critical Mass's folding table, Voltage's command post
-    camp = r.table("smalldesk2", 212.0, 196.0)        # two folding tables pushed together: Voltage's command post
-    camp2 = r.table("smalldesk2", 246.0, 196.0)
-    r.solid("aes_tool_trolley1", 140.0, 300.0)
+    camp = r.table("aes_trestle1", 196.0, 178.0, kind="objects")  # a steel trestle and a folding table: Voltage's command post
+    camp2 = r.table("smalldesk2", 250.0, 178.0)
+    r.solid("aes_pcs_cabinet1", 118.0, 300.0, depth=14)  # PCS control cabinet
     # south: transformer and generator
     r.solid("aes_transformer1", 34.0, 300.0, depth=14)
-    r.solid("aes_hv_sign1", 92.0, 300.0)
+    r.solid("aes_hv_sign1", 92.0, 252.0)
     r.solid("aes_generator1", 200.0, 300.0, depth=14)
     r.solid("aes_gas_cylinders1", 266.0, 300.0)
     r.item("fire_extinguisher1", 14.0, 140.0)
     # array order decides which paper lands where (scenario order: Blueprints, Coordination Log, Operation Log)
-    r.on(camp2, "notes4", 0.70, 0.45, layer="conditional_table_items")  # Facility Blueprints (Marked)
-    r.on(camp, "laptop6", 0.30, 0.40, layer="conditional_table_items")  # ENTROPY Command Laptop, 32 px+ from the plans
+    r.on(camp2, "notes4", 0.5, 0.45, layer="conditional_table_items")   # Facility Blueprints (Marked)
+    r.on(camp, "laptop6", 0.30, 0.35, layer="conditional_table_items")  # ENTROPY Command Laptop, 32 px+ from the plans
     r.on(bench, "notes1", 0.22, 0.40, layer="conditional_table_items")   # Coordination Log
     r.on(bench, "aes_battery_module1", 0.55, 0.30)
     r.on(bench, "notes3", 0.86, 0.40, layer="conditional_table_items")   # Voltage's Operation Log
@@ -3155,7 +3166,7 @@ def room_aes_workshop():
     r.collision(224.0, 96.0, 64.0, 16.0)
     # terminal bench, west of the middle
     term = r.table("zds_desk1", 100.0, 160.0, kind="objects")   # x 100-178, top 121
-    r.item("chair-darkgray-1", 130.0, 132.0)
+    r.item("chair-darkgray-1", 112.0, 184.0)         # in front of the terminal bench
     # module test bench inside the hazard line (90,186)-(230,262)
     r.table("it_workbench2", 104.0, 246.0, kind="objects")
     r.table("electronics_bench2", 166.0, 246.0, kind="objects")
@@ -3163,15 +3174,17 @@ def room_aes_workshop():
     # parts bench along the east wall
     parts = r.table("desk3", 238.0, 200.0)
     r.item("kvm_cart1", 250.0, 270.0, layer="conditional_items")  # Network Monitoring Station
-    r.solid("staff_lockers1", 34.0, 300.0, depth=12)
+    r.collision(252.0, 258.0, 33.0, 12.0)
+    r.solid("aes_lockers_grey1", 34.0, 300.0, depth=12)
+    r.solid("supply_shelves1", 34.0, 222.0, depth=12)
     r.solid("aes_tool_trolley1", 92.0, 300.0)
     r.solid("aes_cable_drum1", 124.0, 300.0)
     r.item("fire_extinguisher1", 14.0, 140.0)
-    r.item("briefcase-yellow-1", 182.0, 180.0, layer="conditional_items")  # a yellow hard case at the bench's end  # OptiGrid Tool Case, under the bench's end
-    r.on(term, "pc10", 0.30, 0.45, layer="conditional_table_items")
-    r.on(term, "flag-station", 0.82, 0.45, layer="conditional_table_items")
+    r.item("briefcase-yellow-1", 180.0, 186.0, layer="conditional_items")  # a yellow hard case by the bench's end, 32 px+ from the drop-site terminal  # OptiGrid Tool Case, under the bench's end
+    r.on(term, "pc10", 0.22, 0.45, layer="conditional_table_items")
+    r.on(term, "flag-station", 0.86, 0.45, layer="conditional_table_items")   # 37 px clear of the PC (cycle 6, review F1)
     r.on(parts, "notes3", 0.50, 0.40, layer="conditional_table_items")
-    r.on(parts, "aes_toolbox1", 0.5, 0.95)
+    r.on(parts, "cable_tangle1", 0.5, 0.95)
     return r.build("room_aes_workshop")
 
 
@@ -3192,21 +3205,24 @@ def room_aes_security():
     r.item("key_cabinet1", 196.0, 46.0)
     r.item("aes_radio_charger1", 218.0, 46.0)
     r.item("rota_board1", 238.0, 44.0)               # guard rota
+    r.item("aes_hivis_hook1", 66.0, 56.0)            # the guard's hi-vis, hard hat and radio, by the door
     console = r.table("desk1", 104.0, 118.0)          # x 104-182, under the camera wall
+    access = r.table("desk2", 182.0, 118.0)           # the console runs on: access control
     r.item("chair-grey-1", 132.0, 148.0)
     r.solid("filing_cabinet_locked1", 240.0, 122.0, depth=12)  # the equipment locker, padlocked
-    side = r.table("desk3", 36.0, 220.0)              # the printer desk, west
+    side = r.table("desk3", 60.0, 200.0)              # the printer desk, west
     r.table("smalldesk2", 236.0, 236.0)               # tea station, east
     r.item("fire_alarm_point1", 14.0, 140.0)
     r.solid("filing_cabinet_steel1", 258.0, 300.0)
-    r.solid("bin8", 92.0, 236.0)
+    r.solid("bin8", 118.0, 204.0)
     r.solid("undercounter_fridge1", 212.0, 238.0)
-    r.solid("photocopier1", 40.0, 280.0)             # printer for the access-control exports
-    r.item("chair-grey-1", 150.0, 290.0)             # a spare chair (wheeled, pushable: no fixed collision)
-    r.item("hospital_chair_north", 60.0, 246.0)      # at the printer desk
+    r.solid("photocopier1", 214.0, 300.0)            # printer for the access-control exports
+    r.item("chair-grey-2", 76.0, 230.0)              # at the printer desk
+    r.solid("aes_dvr1", 252.0, 210.0)                # the CCTV recorder
     r.on(console, "pc8", 0.25, 0.40)
     r.on(console, "notes1", 0.78, 0.45, layer="conditional_table_items")   # Camera System Logs
     r.on(console, "phone4", 0.55, 0.42)
+    r.on(access, "security_monitor1", 0.45, 0.40)
     r.on(side, "notes3", 0.30, 0.42, layer="conditional_table_items")      # Access Control Export
     r.on(side, "binders1", 0.80, 0.30)
     r.on(r.tables[-1], "kettle1", 0.3, 0.30)
@@ -3233,18 +3249,17 @@ def room_aes_ops():
     r = _Uni()
     r.item("notice_board1", 104.0, 50.0)              # noticeboard, the layout map pinned on it
     r.item("year_planner1", 204.0, 52.0)              # shift rota, over the kitchenette
-    r.item("window_blinds1", 152.0, 50.0)
     counter = r.table("kitchen_counter_sink1", 196.0, 104.0, kind="objects")
     fridge = r.table("undercounter_fridge1", 243.0, 104.0, kind="objects")
     r.collision(198.0, 92.0, 66.0, 12.0)
     desk = r.table("desk1", 196.0, 176.0)             # Vance's desk, x 196-274
-    r.item("chair-grey-1", 226.0, 150.0)
+    r.item("chair-grey-1", 226.0, 200.0)             # in front of the desk, facing it
     desk2 = r.table("desk3", 60.0, 176.0)             # the day engineer's desk, x 60-111
-    r.solid("filing_cabinet", 92.0, 250.0, depth=12)
-    r.solid("filing_cabinet", 120.0, 250.0, depth=12)
+    r.solid("filing_cabinet", 66.0, 96.0, depth=12)
+    r.solid("filing_cabinet", 152.0, 96.0, depth=12)
     r.solid("coat_stand1", 262.0, 150.0)
     r.solid("uni_sofa2", 210.0, 252.0, depth=12)     # the night-shift sofa
-    r.solid("bin8", 116.0, 196.0)
+    r.solid("bin8", 114.0, 176.0)
     r.item("wall_clock1", 266.0, 44.0)
     r.on(counter, "kettle1", 0.3, 0.25)
     r.on(fridge, "aes_microwave1", 0.5, 0.15)
@@ -3254,6 +3269,7 @@ def room_aes_ops():
     # array order decides which paper lands where (scenario order: Work Orders, Layout Map, Budget Memo)
     r.conditional_table_items.append(make_obj("objects", "notes4", 112.0, 44.0, r._next()))  # pinned on the noticeboard
     r.on(desk2, "notes3", 0.50, 0.42, layer="conditional_table_items")
+    r.on(desk2, "binders1", 0.12, 0.30)
     return r.build("room_aes_ops")
 
 
@@ -3265,28 +3281,32 @@ def room_aes_reception():
     seating, a water cooler.
     Door: S in the SW corner (x 32-64); the operations office covers the bottom two
     rows (floor y 64-256).
-    The guard (security_guard) stands at (5,4), sprite centre (160,128), in front of
-    the counter, on clear floor.
+    The guard (security_guard) stands at (6.5,5), sprite centre (208,160), beside the
+    sign-in counter on clear floor, off the player's spawn line (cycle 6).
     Slots: notes1 and notes3 on the counter (Visitor Sign-In Log, Security Desk
     Procedures), top-lefts 32 px+ apart.
     """
     r = _Uni()
-    counter = r.table("reception_table1", 72.0, 100.0)   # x 72-246, top 53
+    # the gatehouse desk (grey security desk with its monitors) and a steel sign-in
+    # counter beside it (cycle 6, review F3: the salmon counter read as a hotel lobby)
+    r.table("aes_security_desk1", 96.0, 112.0, kind="objects")   # x 96-157, top 57
+    counter = r.table("zds_desk3", 158.0, 112.0, kind="objects")  # x 158-209, the sign-in counter
     r.item("aes_logo_sign1", 124.0, 36.0)
-    r.item("aes_cctv1", 268.0, 32.0)
+    r.item("aes_cctv1", 274.0, 30.0)
     r.item("aes_ppe_sign1", 40.0, 50.0)
     r.item("aes_ppe_rack1", 62.0, 56.0)              # visitors' hard hats and hi-vis
-    r.item("hospital_chart_board1", 200.0, 52.0)     # site safety board: permits and the induction sheet
+    r.item("hospital_chart_board1", 200.0, 44.0)     # site safety board: permits and the induction sheet
+    r.item("aed_cabinet1", 248.0, 56.0)
     r.item("fire_alarm_point1", 292.0, 132.0)
     r.solid("water_cooler1", 266.0, 120.0)
     # visitor seating in the SE corner, a check-in kiosk by the door lane
     r.solid("leather_sofa1", 196.0, 252.0, depth=12)
+    r.table("glass_coffee_table1", 200.0, 212.0, kind="objects")  # in front of the sofa
     r.solid("planter_fig1", 264.0, 250.0, depth=12)
-    r.solid("checkin_kiosk1", 72.0, 230.0)
-    r.on(counter, "notes1", 0.30, 0.45, layer="conditional_table_items")
-    r.on(counter, "notes3", 0.62, 0.45, layer="conditional_table_items")
-    r.on(counter, "pc10", 0.85, 0.35)
-    r.on(counter, "phone4", 0.12, 0.40)
+    r.solid("checkin_kiosk1", 40.0, 140.0)           # visitor check-in, inside the door lane's top
+    r.item("aes_speed_gate1", 96.0, 222.0)           # speed gates on the way in (walk-through)
+    r.on(counter, "notes1", 0.18, 0.45, layer="conditional_table_items")   # Visitor Sign-In Log
+    r.on(counter, "notes3", 0.84, 0.45, layer="conditional_table_items")   # Security Desk Procedures, 32 px+ apart
     return r.build("room_aes_reception")
 
 
@@ -3302,13 +3322,17 @@ def room_aes_control():
     east end (Emergency Shutdown Procedure).
     """
     r = _Uni()
-    d1 = r.table("desk1", 64.0, 96.0)
-    d2 = r.table("desk3", 142.0, 96.0)
-    r.items.append(make_obj("objects", "screens", 64.0, 92.0, r._next()))
-    r.item("network_architecture", 230.0, 52.0)
+    d1 = r.table("desk1", 64.0, 90.0)
+    d2 = r.table("desk3", 142.0, 90.0)
+    r.items.append(make_obj("objects", "screens", 64.0, 86.0, r._next()))
+    r.item("aes_mimic_board1", 104.0, 46.0)          # the site's single-line mimic board over the console
+    r.item("network_architecture", 236.0, 46.0)
+    r.item("wall_clock1", 206.0, 40.0)
+    r.solid("filing_cabinet_steel1", 40.0, 176.0)
+    r.solid("aes_ups1", 262.0, 176.0)
     r.item("alarm_panel", 40.0, 50.0)
-    r.item("hospital_chair_north", 96.0, 132.0)
-    r.item("hospital_chair_north", 160.0, 132.0)
+    r.item("chair-grey-2", 92.0, 124.0)
+    r.item("chair-grey-2", 156.0, 124.0)
     side = r.table("desk1", 200.0, 150.0)             # the printer table: log and procedure, 46 px apart
     r.item("fire_extinguisher1", 14.0, 150.0)
     r.on(side, "notes1", 0.2, 0.40, layer="conditional_table_items")
@@ -3335,7 +3359,7 @@ def room_aes_dock():
     r.solid("aes_bollard1", 96.0, 88.0)
     r.solid("aes_bollard1", 212.0, 88.0)
     r.item("suitcase8", 140.0, 100.0, layer="conditional_items")   # the go-bag, by the shutter
-    r.item("notes2", 180.0, 98.0, layer="conditional_items")       # the escape plan, dropped
+    r.item("notes2", 190.0, 98.0, layer="conditional_items")       # the escape plan, dropped
     # returns, west: pallets of spent modules
     r.solid("aes_pallet1", 40.0, 200.0)
     r.item("aes_battery_module1", 43.0, 186.0)
@@ -3350,9 +3374,11 @@ def room_aes_dock():
     r.solid("aes_pallet1", 228.0, 200.0)
     r.solid("aes_pallet1", 256.0, 200.0)
     r.item("aes_battery_module1", 231.0, 186.0)
-    r.solid("aes_compressor1", 258.0, 140.0)
-    r.solid("aes_spill_kit1", 262.0, 252.0)
-    r.solid("aes_drum1", 240.0, 252.0)
+    r.solid("aes_compressor1", 262.0, 120.0)
+    r.solid("aes_spill_kit1", 266.0, 252.0)
+    r.solid("cylinder_rack1", 222.0, 252.0)
+    r.item("aes_shutter_ctrl1", 86.0, 54.0)          # shutter up/down control, beside the shutter
+    r.item("exit_sign1", 36.0, 40.0)
     r.solid("aes_cones1", 250.0, 300.0)
     r.item("fire_extinguisher1", 292.0, 140.0)
     return r.build("room_aes_dock")

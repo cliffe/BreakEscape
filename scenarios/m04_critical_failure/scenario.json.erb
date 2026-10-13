@@ -602,7 +602,7 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
             "style": "Site security guard on the early shift, mid-fifties. Speak with a consistent West Country (Bristol) accent throughout -- do not shift to any other accent. Low, even pitch; unhurried pace. Polite and a little grumpy about the hour, then firmly by-the-book once pushed.",
             "language": "en-GB"
           },
-          "position": { "x": 5, "y": 4 },
+          "position": { "x": 6.5, "y": 5 },
           <%# Was hacker-red, the operatives' sprite, so the one bystander the debrief
               scolds you for hitting looked like the enemy. Pass 5 (characters): his
               own art now, security_guard (West Country, grey beard, hi-vis). %>
@@ -1906,7 +1906,7 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
           "type": "tablet",
           "id": "hydrogen_detector",
           "name": "H₂ Gas Detector Panel",
-          "position": "as-type:aes_h2_detector",
+          "position": "as-type:aes_gas_detector",
           "takeable": false,
           "readable": true,
           "observationDisplay": "gameDisplay",
@@ -2088,8 +2088,8 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
           "type": "notes",
           "id": "bms_bypass_module",
           "name": "BMS Interlock-Bypass Module",
-          <%# Room dressing c3: the open BMS cabinet against Hall 2's back wall (room_aes_hall2, aes_bms_bypass1). %>
-          "position": "as-type:aes_bms_bypass",
+          <%# Room dressing c3/c5: the open BMS cabinet against Hall 2's back wall (room_aes_hall2); this object claims an overlay of the module on it (aes_bypass_module1), so a read removes only the overlay, not the cabinet. %>
+          "position": "as-type:aes_bypass_module",
           "takeable": false,
           "readable": true,
           "hasFingerprint": true,

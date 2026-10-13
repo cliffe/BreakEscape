@@ -356,7 +356,7 @@
     {
      "gid": 107,
      "height": 39,
-     "id": 6,
+     "id": 7,
      "name": "",
      "rotation": 0,
      "type": "",
@@ -366,21 +366,33 @@
      "y": 118.0
     },
     {
+     "gid": 113,
+     "height": 39,
+     "id": 8,
+     "name": "",
+     "rotation": 0,
+     "type": "",
+     "visible": true,
+     "width": 44,
+     "x": 182.0,
+     "y": 118.0
+    },
+    {
      "gid": 114,
      "height": 39,
-     "id": 10,
+     "id": 12,
      "name": "",
      "rotation": 0,
      "type": "",
      "visible": true,
      "width": 51,
-     "x": 36.0,
-     "y": 220.0
+     "x": 60.0,
+     "y": 200.0
     },
     {
      "gid": 110,
      "height": 41,
-     "id": 11,
+     "id": 13,
      "name": "",
      "rotation": 0,
      "type": "",
@@ -462,9 +474,21 @@
      "y": 44.0
     },
     {
+     "gid": 1123,
+     "height": 25,
+     "id": 6,
+     "name": "",
+     "rotation": 0,
+     "type": "",
+     "visible": true,
+     "width": 30,
+     "x": 66.0,
+     "y": 56.0
+    },
+    {
      "gid": 271,
      "height": 38,
-     "id": 7,
+     "id": 9,
      "name": "",
      "rotation": 0,
      "type": "",
@@ -476,7 +500,7 @@
     {
      "gid": 900,
      "height": 61,
-     "id": 8,
+     "id": 10,
      "name": "",
      "rotation": 0,
      "type": "",
@@ -488,7 +512,7 @@
     {
      "gid": 828,
      "height": 20,
-     "id": 12,
+     "id": 14,
      "name": "",
      "rotation": 0,
      "type": "",
@@ -500,7 +524,7 @@
     {
      "gid": 888,
      "height": 61,
-     "id": 13,
+     "id": 15,
      "name": "",
      "rotation": 0,
      "type": "",
@@ -512,19 +536,19 @@
     {
      "gid": 119,
      "height": 25,
-     "id": 15,
+     "id": 17,
      "name": "",
      "rotation": 0,
      "type": "",
      "visible": true,
      "width": 21,
-     "x": 92.0,
-     "y": 236.0
+     "x": 118.0,
+     "y": 204.0
     },
     {
      "gid": 842,
      "height": 29,
-     "id": 17,
+     "id": 19,
      "name": "",
      "rotation": 0,
      "type": "",
@@ -536,38 +560,38 @@
     {
      "gid": 896,
      "height": 46,
-     "id": 19,
-     "name": "",
-     "rotation": 0,
-     "type": "",
-     "visible": true,
-     "width": 35,
-     "x": 40.0,
-     "y": 280.0
-    },
-    {
-     "gid": 271,
-     "height": 38,
      "id": 21,
      "name": "",
      "rotation": 0,
      "type": "",
      "visible": true,
-     "width": 24,
-     "x": 150.0,
-     "y": 290.0
+     "width": 35,
+     "x": 214.0,
+     "y": 300.0
     },
     {
-     "gid": 316,
-     "height": 26,
-     "id": 22,
+     "gid": 267,
+     "height": 37,
+     "id": 23,
      "name": "",
      "rotation": 0,
      "type": "",
      "visible": true,
-     "width": 16,
-     "x": 60.0,
-     "y": 246.0
+     "width": 25,
+     "x": 76.0,
+     "y": 230.0
+    },
+    {
+     "gid": 1129,
+     "height": 56,
+     "id": 24,
+     "name": "",
+     "rotation": 0,
+     "type": "",
+     "visible": true,
+     "width": 36,
+     "x": 252.0,
+     "y": 210.0
     }
    ],
    "opacity": 1,
@@ -595,7 +619,7 @@
     {
      "gid": 304,
      "height": 16,
-     "id": 24,
+     "id": 27,
      "name": "",
      "rotation": 0,
      "type": "",
@@ -607,14 +631,14 @@
     {
      "gid": 212,
      "height": 11,
-     "id": 26,
+     "id": 30,
      "name": "",
      "rotation": 0,
      "type": "",
      "visible": true,
      "width": 14,
-     "x": 44.3,
-     "y": 197.38
+     "x": 68.3,
+     "y": 177.38
     }
    ],
    "opacity": 1,
@@ -631,7 +655,7 @@
     {
      "gid": 368,
      "height": 22,
-     "id": 23,
+     "id": 26,
      "name": "",
      "rotation": 0,
      "type": "",
@@ -643,7 +667,7 @@
     {
      "gid": 219,
      "height": 16,
-     "id": 25,
+     "id": 28,
      "name": "",
      "rotation": 0,
      "type": "",
@@ -653,21 +677,33 @@
      "y": 95.38
     },
     {
+     "gid": 909,
+     "height": 29,
+     "id": 29,
+     "name": "",
+     "rotation": 0,
+     "type": "",
+     "visible": true,
+     "width": 24,
+     "x": 189.8,
+     "y": 94.6
+    },
+    {
      "gid": 830,
      "height": 22,
-     "id": 27,
+     "id": 31,
      "name": "",
      "rotation": 0,
      "type": "",
      "visible": true,
      "width": 20,
-     "x": 66.8,
-     "y": 192.7
+     "x": 90.8,
+     "y": 172.7
     },
     {
      "gid": 834,
      "height": 18,
-     "id": 28,
+     "id": 32,
      "name": "",
      "rotation": 0,
      "type": "",
@@ -679,7 +715,7 @@
     {
      "gid": 835,
      "height": 15,
-     "id": 29,
+     "id": 33,
      "name": "",
      "rotation": 0,
      "type": "",
@@ -702,7 +738,7 @@
    "objects": [
     {
      "height": 12,
-     "id": 9,
+     "id": 11,
      "name": "collision",
      "rotation": 0,
      "type": "",
@@ -713,7 +749,7 @@
     },
     {
      "height": 10,
-     "id": 14,
+     "id": 16,
      "name": "collision",
      "rotation": 0,
      "type": "",
@@ -724,18 +760,18 @@
     },
     {
      "height": 10,
-     "id": 16,
+     "id": 18,
      "name": "collision",
      "rotation": 0,
      "type": "",
      "visible": true,
      "width": 17,
-     "x": 94.0,
-     "y": 226.0
+     "x": 120.0,
+     "y": 194.0
     },
     {
      "height": 10,
-     "id": 18,
+     "id": 20,
      "name": "collision",
      "rotation": 0,
      "type": "",
@@ -746,14 +782,25 @@
     },
     {
      "height": 10,
-     "id": 20,
+     "id": 22,
      "name": "collision",
      "rotation": 0,
      "type": "",
      "visible": true,
      "width": 31,
-     "x": 42.0,
-     "y": 270.0
+     "x": 216.0,
+     "y": 290.0
+    },
+    {
+     "height": 10,
+     "id": 25,
+     "name": "collision",
+     "rotation": 0,
+     "type": "",
+     "visible": true,
+     "width": 32,
+     "x": 254.0,
+     "y": 200.0
     }
    ],
    "opacity": 1,
@@ -764,7 +811,7 @@
   }
  ],
  "nextlayerid": 14,
- "nextobjectid": 30,
+ "nextobjectid": 34,
  "orientation": "orthogonal",
  "renderorder": "right-down",
  "tiledversion": "1.11.2",
@@ -3197,7 +3244,7 @@
    "margin": 0,
    "name": "objects/hospital_extras",
    "spacing": 0,
-   "tilecount": 301,
+   "tilecount": 320,
    "tileheight": 60,
    "tiles": [
     {
@@ -5005,6 +5052,120 @@
      "image": "../objects/aes_floor_grate1.png",
      "imageheight": 16,
      "imagewidth": 28
+    },
+    {
+     "id": 311,
+     "image": "../objects/aes_trestle1.png",
+     "imageheight": 43,
+     "imagewidth": 52
+    },
+    {
+     "id": 312,
+     "image": "../objects/aes_trestle2.png",
+     "imageheight": 45,
+     "imagewidth": 52
+    },
+    {
+     "id": 313,
+     "image": "../objects/aes_ups1.png",
+     "imageheight": 57,
+     "imagewidth": 34
+    },
+    {
+     "id": 314,
+     "image": "../objects/aes_lockers_grey1.png",
+     "imageheight": 59,
+     "imagewidth": 58
+    },
+    {
+     "id": 315,
+     "image": "../objects/aes_shelving1.png",
+     "imageheight": 63,
+     "imagewidth": 52
+    },
+    {
+     "id": 316,
+     "image": "../objects/aes_pcs_cabinet1.png",
+     "imageheight": 59,
+     "imagewidth": 52
+    },
+    {
+     "id": 317,
+     "image": "../objects/aes_elec_cabinet1.png",
+     "imageheight": 57,
+     "imagewidth": 50
+    },
+    {
+     "id": 318,
+     "image": "../objects/aes_console1.png",
+     "imageheight": 51,
+     "imagewidth": 57
+    },
+    {
+     "id": 319,
+     "image": "../objects/aes_skip1.png",
+     "imageheight": 53,
+     "imagewidth": 50
+    },
+    {
+     "id": 320,
+     "image": "../objects/aes_tool_chest1.png",
+     "imageheight": 48,
+     "imagewidth": 48
+    },
+    {
+     "id": 321,
+     "image": "../objects/aes_gas_detector2.png",
+     "imageheight": 27,
+     "imagewidth": 18
+    },
+    {
+     "id": 322,
+     "image": "../objects/aes_hivis_hook1.png",
+     "imageheight": 25,
+     "imagewidth": 30
+    },
+    {
+     "id": 323,
+     "image": "../objects/aes_shutter_ctrl1.png",
+     "imageheight": 27,
+     "imagewidth": 20
+    },
+    {
+     "id": 324,
+     "image": "../objects/aes_bypass_module1.png",
+     "imageheight": 16,
+     "imagewidth": 21
+    },
+    {
+     "id": 325,
+     "image": "../objects/aes_mimic_board1.png",
+     "imageheight": 32,
+     "imagewidth": 96
+    },
+    {
+     "id": 326,
+     "image": "../objects/aes_speed_gate1.png",
+     "imageheight": 53,
+     "imagewidth": 51
+    },
+    {
+     "id": 327,
+     "image": "../objects/aes_security_desk1.png",
+     "imageheight": 55,
+     "imagewidth": 61
+    },
+    {
+     "id": 328,
+     "image": "../objects/aes_dvr1.png",
+     "imageheight": 56,
+     "imagewidth": 36
+    },
+    {
+     "id": 329,
+     "image": "../objects/aes_office_chair1.png",
+     "imageheight": 54,
+     "imagewidth": 33
     }
    ],
    "tilewidth": 60

@@ -1146,16 +1146,16 @@
      "y": 50.0
     },
     {
-     "gid": 1043,
-     "height": 22,
+     "gid": 1122,
+     "height": 27,
      "id": 50,
      "name": "",
      "rotation": 0,
      "type": "",
      "visible": true,
-     "width": 14,
-     "x": 388.0,
-     "y": 56.0
+     "width": 18,
+     "x": 386.0,
+     "y": 58.0
     },
     {
      "gid": 1044,
@@ -4126,7 +4126,7 @@
    "margin": 0,
    "name": "objects/hospital_extras",
    "spacing": 0,
-   "tilecount": 301,
+   "tilecount": 316,
    "tileheight": 60,
    "tiles": [
     {
@@ -5934,6 +5934,96 @@
      "image": "../objects/aes_floor_grate1.png",
      "imageheight": 16,
      "imagewidth": 28
+    },
+    {
+     "id": 311,
+     "image": "../objects/aes_trestle1.png",
+     "imageheight": 43,
+     "imagewidth": 52
+    },
+    {
+     "id": 312,
+     "image": "../objects/aes_trestle2.png",
+     "imageheight": 45,
+     "imagewidth": 52
+    },
+    {
+     "id": 313,
+     "image": "../objects/aes_ups1.png",
+     "imageheight": 57,
+     "imagewidth": 34
+    },
+    {
+     "id": 314,
+     "image": "../objects/aes_lockers_grey1.png",
+     "imageheight": 59,
+     "imagewidth": 58
+    },
+    {
+     "id": 315,
+     "image": "../objects/aes_shelving1.png",
+     "imageheight": 63,
+     "imagewidth": 52
+    },
+    {
+     "id": 316,
+     "image": "../objects/aes_pcs_cabinet1.png",
+     "imageheight": 59,
+     "imagewidth": 52
+    },
+    {
+     "id": 317,
+     "image": "../objects/aes_elec_cabinet1.png",
+     "imageheight": 57,
+     "imagewidth": 50
+    },
+    {
+     "id": 318,
+     "image": "../objects/aes_console1.png",
+     "imageheight": 51,
+     "imagewidth": 57
+    },
+    {
+     "id": 319,
+     "image": "../objects/aes_skip1.png",
+     "imageheight": 53,
+     "imagewidth": 50
+    },
+    {
+     "id": 320,
+     "image": "../objects/aes_tool_chest1.png",
+     "imageheight": 48,
+     "imagewidth": 48
+    },
+    {
+     "id": 321,
+     "image": "../objects/aes_gas_detector2.png",
+     "imageheight": 27,
+     "imagewidth": 18
+    },
+    {
+     "id": 322,
+     "image": "../objects/aes_hivis_hook1.png",
+     "imageheight": 25,
+     "imagewidth": 30
+    },
+    {
+     "id": 323,
+     "image": "../objects/aes_shutter_ctrl1.png",
+     "imageheight": 27,
+     "imagewidth": 20
+    },
+    {
+     "id": 324,
+     "image": "../objects/aes_bypass_module1.png",
+     "imageheight": 16,
+     "imagewidth": 21
+    },
+    {
+     "id": 325,
+     "image": "../objects/aes_mimic_board1.png",
+     "imageheight": 32,
+     "imagewidth": 96
     }
    ],
    "tilewidth": 60
