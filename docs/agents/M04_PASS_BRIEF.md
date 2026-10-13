@@ -8,6 +8,19 @@ Read `AGENTS.md` first ("Iterating", "Making judgements without asking", "Standi
 
 A SAFETYNET campaign mission: a TV spy thriller. Tension, secrets, characters with their own agendas, sharp exchanges and reveals that land. Agent HaX is the handler, ENTROPY's Critical Mass cell the enemy. The player infiltrates Albion Energy Storage (200 MWh grid battery site) where the BMS and SCADA telemetry is falsified to drive the racks into thermal runaway before an 0800 trigger; eleven people on site, 240,000 on the feed. Confirm the lie against a physical instrument, work the OT network from the engineering workshop (VM flags, required and woven into the story), deal with the cell's operatives (Cipher, Relay, Static, Voltage), and reach the hardwired Emergency Shutdown. Teaching comes through the VM work and field guides, not lectures. Kit is cumulative: lockpick (m01), RFID cloner (m03), fingerprint kit; check what m04 introduces.
 
+## The VM side, at a high level (read this instead of the SecGen XML and the exploit guides)
+
+Built from the in-game text and `mission.json` only. It tells you what each flag stands for in the story, so you can judge hints, texts and the debrief. It isn't a walkthrough and has no commands. Anything finer than this is "needs checking against SecGen by the user".
+
+- **Where:** the workshop terminal reaches the OT network and the BMS jump server, the box the crew used to push their changes. Task: "Work the BMS jump server from the workshop terminal and prove how they took control". Flags go in at the flag station.
+- **Four flags, in story order:**
+  1. **Network scan** (`flag_network_scan_submitted`): map the OT network and find which services are exposed. Teaches reconnaissance and service/version detection.
+  2. **FTP intelligence** (`flag_ftp_intel_submitted`): material on an FTP service reveals cross-cell coordination (Critical Mass working with other ENTROPY cells). Teaches that weakly protected services leak.
+  3. **distcc foothold** (`flag_distcc_exploit_submitted`): a legacy distributed-compile daemon trusts the network and runs what it's sent (CVE-2004-2687), which gives remote command execution on the jump server. Teaches the risk of legacy services left running in OT.
+  4. **Privilege escalation** (`flag_privesc_submitted`): from the foothold to root through a sudo editing misconfiguration (CVE-2023-22809). Root shows where the charge-ceiling override on every bank was pushed from. Teaches least privilege.
+- **Story effect:** flags plus the paper evidence map the attack (`attack_mechanism_known`). That starts the clocks, unless an early alarm already has. The ESD arms only once the attack is proven.
+- **Field guides,** offered through HaX's phone hub. Refer to them by title only: Reconnaissance and Network Mapping, ProFTPD exploitation workflow, distcc exploitation, privilege escalation, lockpicking, fingerprinting/RFID where relevant.
+
 ## Stages, in order (user-approved 2026-10-13: "all the review, design, develop steps")
 
 1. **Regression playtest** against today's engine (lighting, toasts, RFID denial hold, KO on reload, sight challenges, sprite renames). Fix what breaks.

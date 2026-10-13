@@ -8,6 +8,18 @@ Read `AGENTS.md` first ("Iterating", "Making judgements without asking", "Standi
 
 A SAFETYNET campaign mission: a TV spy thriller. Tension, secrets, characters with their own agendas, sharp exchanges and reveals that land. Agent HaX is the handler, ENTROPY the enemy. The player infiltrates Zero Day Syndicate as a recruit (cover identity), clones Victoria Sterling's keycard, breaks into the server room at night, exploits the training VM (four flags, required), and links Zero Day to m02's St. Catherine's ransomware. Teaching comes through the VM work and the field guides, not lectures in dialogue. Kit is cumulative: lockpick from m01, RFID cloner introduced here.
 
+## The VM side, at a high level (read this instead of the SecGen XML and the exploit guides)
+
+Built from the in-game text and `mission.json` only. No commands; anything finer is "needs checking against SecGen by the user".
+
+- **Where:** the VM terminal in the server room reaches Zero Day's isolated training network, where they rehearse the exploits they sell. Flags go in at the drop-site terminal.
+- **Four flags, in story order:**
+  1. **Scan** (`flag_scan_submitted`): sweep the training network and read the service banners. Teaches reconnaissance and banner grabbing.
+  2. **FTP** (`flag_ftp_submitted`): an FTP service running a backdoored release (ProFTPD 1.3.3c, a supply-chain compromise with no CVE, deliberately). It's the same kind of exploit Zero Day sold for St. Catherine's.
+  3. **Pricing intel** (`flag_http_submitted`): pull the pricing material off the web service and decode it (an encoding, not encryption). It shows the healthcare premium.
+  4. **distcc** (`flag_distcc_submitted`): command execution through the legacy distcc daemon (CVE-2004-2687). The drop-site then prints the transaction log naming GHOST and St. Catherine's.
+- **Field guides,** offered through HaX's phone hub. Refer to them by title only: RFID cloning, CyberChef, Reconnaissance and Network Mapping, ProFTPD exploitation, distcc exploitation, lockpicking.
+
 ## Stages, in order (user-approved 2026-10-12)
 
 1. **Regression playtest** against today's engine (about 50 engine commits since m03 closed: lighting, room backgrounds, save state, aims, person-chat). Fix what breaks.
