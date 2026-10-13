@@ -1,0 +1,13 @@
+{
+  "key": "38af30080d55a28663d772e844d88917",
+  "npc": "director_netherton",
+  "text": "Agent 0x00. This is Operation Cyber Arsenal.",
+  "voice": "Charon",
+  "style": "SAFETYNET's director. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Low, deliberate, unhurried; sets the stakes then lets his people run the detail.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m03_ghost_in_the_machine",
+  "source": "generate",
+  "generated": "2026-10-13",
+  "recorded_at": "2026-10-13T00:50:25Z"
+}

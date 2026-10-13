@@ -1,0 +1,13 @@
+{
+  "key": "f8def768d8d1836e1bce55b1a642efe4",
+  "npc": "director_netherton",
+  "text": "Zero Day Syndicate used to sell exploits to whoever paid. Now they choose the targets first.",
+  "voice": "Charon",
+  "style": "SAFETYNET's director. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Low, deliberate, unhurried; sets the stakes then lets his people run the detail.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m03_ghost_in_the_machine",
+  "source": "generate",
+  "generated": "2026-10-13",
+  "recorded_at": "2026-10-13T00:50:31Z"
+}
