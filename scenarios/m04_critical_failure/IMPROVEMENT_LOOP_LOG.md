@@ -921,3 +921,17 @@ The reviewer judged that a fourth review cycle wasn't needed once the cycle-3 fi
 | 7 (review + re-walk, games 2238/2239; guard tap re-check, game 2245) | 0 | 1 | 11 |
 
 Cycle 7's major (the gate guard's tap area against the reception papers) is fixed and confirmed in game 2245: his challenge fires on its own from spawn, and each paper and his head open with one tap. The leftover minors are logged in ROOM_DRESSING.md cycle 7. Orchestrator text fixes after the close: the guard's sighting narration is now "The guard looks up from the desk and gets to his feet." (the player spawns inside the room), and the tool case is now "by the bench" / "against the end of the bench". Next: lighting (the new ESD sprite needs its own emitter), then POV backgrounds.
+
+### Phase art: lighting CLOSED (2026-10-13)
+
+Skill `mission-room-lighting`; log and evidence in `LIGHTING_PLAN.md` and `build_evidence/lighting_c1/`-`lighting_c4/`. A night shift (`#b8bfce`) that tightens by phase: clock (halls and plant a step darker), alarm (white hall strobes, red call points, SCADA fire panel, dock beacon), H2 (Hall 2 detector and racks red), vent (fire on bank B), ESD armed (red pulse on the keep-clear box), after (alarms off, ESD green; COSTLY SUCCESS keeps amber LEDs and embers). Every glow follows its own global, so each route lights correctly. Motion rooms: security, workshop, dock (the dock's tube faulty). No NPC torches (all patrollers stand in lit rooms). No engine change.
+
+| Cycle | Blocker | Major | Minor |
+|---|---|---|---|
+| Design review | 0 | 6 | 9 |
+| 1 | 0 | 4 | 6 |
+| 2 | 0 | 1 | 6 |
+| 3 | 0 | 0 | 5 |
+| 4 | 0 | 0 | 2 |
+
+Checks after every implement: validator, door alignment 8/8, route driver 27/27, `lighting-tour.sh --check` on :3001 (games 2249-2295). Engine proposals (not done): `fire` effect, hue-preserving `above` glows, a validator check for `||` in conditions (unsupported by `evaluateGlobalCondition`).

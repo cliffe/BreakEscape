@@ -530,7 +530,7 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
         "emitters": {
           "fire_alarm_point": [
             { "condition": "globalVars.attack_prevented === true", "intensity": 0 },
-            { "condition": "globalVars.crew_warned === true", "color": "#ff5050", "radius": 32, "intensity": 0.9, "effect": "pulse", "above": true },
+            { "condition": "globalVars.crew_warned === true", "color": "#ff5050", "radius": 26, "intensity": 0.9, "effect": "pulse", "above": true },
             { "intensity": 0 }
           ]
         }
@@ -1713,7 +1713,7 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
           "aes_dvr": { "color": "#7dffa0", "radius": 10, "intensity": 0.5, "above": true },
           "fire_alarm_point": [
             { "condition": "globalVars.attack_prevented === true", "intensity": 0 },
-            { "condition": "globalVars.crew_warned === true", "color": "#ff5050", "radius": 32, "intensity": 0.9, "effect": "pulse", "above": true },
+            { "condition": "globalVars.crew_warned === true", "color": "#ff5050", "radius": 26, "intensity": 0.9, "effect": "pulse", "above": true },
             { "intensity": 0 }
           ]
         }
@@ -1801,7 +1801,7 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
           "rack_status_panel": { "color": "#5dff8a", "radius": 20, "intensity": 0.8, "above": true },
           "hydrogen_detector": [
             { "condition": "globalVars.attack_prevented === true", "color": "#ffb347", "radius": 12, "intensity": 0.5, "above": true },
-            { "color": "#ffb347", "radius": 14, "intensity": 0.75, "effect": "breathe", "above": true }
+            { "color": "#ff7a10", "radius": 22, "intensity": 0.75, "above": true }
           ],
           "aes_round_terminal": { "color": "#9fd4ff", "radius": 12, "intensity": 0.5, "effect": "screen", "above": true },
           "aes_bms_tower": { "color": "#7dffa0", "radius": 10, "intensity": 0.5, "above": true },
@@ -2033,24 +2033,24 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
         "ambient": "#b0b8c8",
         "emitters": {
           "batrack": [
-            { "condition": "globalVars.attack_prevented === true && globalVars.racks_vented === true", "ledColor": "#ffb02e", "ledAlpha": 0.8 },
-            { "condition": "globalVars.attack_prevented === true && globalVars.hydrogen_alarm === true", "ledColor": "#ffb02e" },
+            { "condition": "globalVars.attack_prevented === true && globalVars.racks_vented === true", "ledColor": "#ffb02e", "ledAlpha": 0.8, "color": "#ffb02e", "radius": 30, "intensity": 0.15, "effect": null },
+            { "condition": "globalVars.attack_prevented === true && globalVars.hydrogen_alarm === true", "ledColor": "#ffb02e", "color": "#ffb02e", "radius": 30, "intensity": 0.15, "effect": null },
             { "condition": "globalVars.attack_prevented === true", "ledColor": "#4dff7a" },
-            { "condition": "globalVars.racks_vented === true", "color": "#ff5a3c", "radius": 36, "intensity": 0.45, "effect": null, "ledColor": "#ff7a3c", "ledAlpha": 0.5 },
+            { "condition": "globalVars.racks_vented === true", "color": "#ff5a3c", "radius": 36, "intensity": 0.3, "effect": null, "ledColor": "#ff7a3c", "ledAlpha": 0.5 },
             { "condition": "globalVars.hydrogen_alarm === true", "color": "#ff5a3c", "radius": 30, "intensity": 0.3, "effect": null, "ledColor": "#ff7a3c", "ledAlpha": 0.5 },
             { "ledColor": "#4dff7a" }
           ],
           "aes_gas_detector": [
             { "condition": "globalVars.attack_prevented === true", "color": "#ffb347", "radius": 12, "intensity": 0.5, "above": true },
-            { "condition": "globalVars.racks_vented === true", "color": "#ff4030", "radius": 18, "intensity": 0.9, "effect": "pulse", "above": true },
-            { "condition": "globalVars.hydrogen_alarm === true", "color": "#ff4030", "radius": 18, "intensity": 0.9, "effect": "pulse", "above": true },
-            { "color": "#ffb347", "radius": 14, "intensity": 0.75, "effect": "breathe", "above": true }
+            { "condition": "globalVars.racks_vented === true", "color": "#ff2a1a", "radius": 26, "intensity": 1.0, "effect": "pulse", "above": true },
+            { "condition": "globalVars.hydrogen_alarm === true", "color": "#ff2a1a", "radius": 26, "intensity": 1.0, "effect": "pulse", "above": true },
+            { "color": "#ff7a10", "radius": 22, "intensity": 0.75, "above": true }
           ],
           "power_panel": { "color": "#7dffa0", "radius": 10, "intensity": 0.5, "effect": null, "above": true },
           "aes_hv_danger": [
-            { "condition": "globalVars.attack_prevented === true && globalVars.racks_vented === true", "color": "#ff7a3c", "radius": 56, "intensity": 0.4, "effect": "breathe", "offsetY": 90, "above": true, "floorTint": 0.3 },
+            { "condition": "globalVars.attack_prevented === true && globalVars.racks_vented === true", "color": "#ff7a3c", "radius": 56, "intensity": 0.4, "effect": "breathe", "offsetY": 130, "above": true, "floorTint": 0.3 },
             { "condition": "globalVars.attack_prevented === true", "intensity": 0 },
-            { "condition": "globalVars.racks_vented === true", "color": "#ff6a2c", "radius": 110, "intensity": 0.8, "effect": "breathe", "offsetY": 90, "above": true, "floorTint": 0.6 }
+            { "condition": "globalVars.racks_vented === true", "color": "#ff6a2c", "radius": 105, "intensity": 1.0, "effect": "breathe", "offsetX": -12, "offsetY": 115, "above": true, "floorTint": 0.4 }
           ],
           "aes_inverter1": { "color": "#7dffa0", "radius": 8, "intensity": 0.45, "offsetY": -10, "above": true },
           "aes_inverter2": { "color": "#7dffa0", "radius": 8, "intensity": 0.45, "offsetY": -10, "above": true },
@@ -2063,8 +2063,8 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
         "variants": [
           { "condition": "globalVars.attack_prevented === true && globalVars.racks_vented === true", "ambient": "#b8b4b4" },
           { "condition": "globalVars.attack_prevented === true", "ambient": "#b0b8c8" },
-          { "condition": "globalVars.racks_vented === true", "ambient": "#c4a290" },
-          { "condition": "globalVars.hydrogen_alarm === true", "ambient": "#b4acb4" },
+          { "condition": "globalVars.racks_vented === true", "ambient": "#bca8a0" },
+          { "condition": "globalVars.hydrogen_alarm === true", "ambient": "#b8a8ac" },
           { "condition": "globalVars.clock_started === true", "ambient": "#a2aabc" }
         ]
       },
@@ -2224,12 +2224,12 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
         "ambient": "#b2b4be",
         "emitters": {
           "esd_pushbutton": [
-            { "condition": "globalVars.attack_prevented === true", "color": "#5dff8a", "radius": 26, "intensity": 0.7, "above": true, "floorTint": 0.3 },
-            { "condition": "globalVars.esd_authorized === true", "color": "#ff3b30", "radius": 44, "intensity": 1.0, "effect": "pulse", "above": true, "floorTint": 0.7 },
+            { "condition": "globalVars.attack_prevented === true", "color": "#3dff7a", "radius": 40, "intensity": 0.5, "offsetY": 22, "floorTint": 0.5 },
+            { "condition": "globalVars.esd_authorized === true", "color": "#ff3b30", "radius": 52, "intensity": 1.0, "effect": "pulse", "offsetY": 20, "above": true, "floorTint": 0.7 },
             { "color": "#ff3b30", "radius": 16, "intensity": 0.3, "above": true }
           ],
           "laptop": [
-            { "condition": "globalVars.voltage_fight_started === true && globalVars.voltage_neutralised !== true && globalVars.attack_prevented !== true", "color": "#ff5a4c", "radius": 20, "intensity": 0.9, "effect": "pulse", "above": true },
+            { "condition": "globalVars.voltage_fight_started === true && globalVars.voltage_neutralised !== true && globalVars.attack_prevented !== true", "color": "#ff3b30", "radius": 34, "intensity": 1.0, "effect": "pulse", "above": true, "floorTint": 0.5 },
             { "condition": "globalVars.voltage_neutralised !== true && globalVars.attack_prevented !== true", "color": "#ff6a5c", "radius": 20, "intensity": 0.7, "effect": "screen", "above": true },
             {}
           ],

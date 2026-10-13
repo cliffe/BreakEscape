@@ -190,3 +190,57 @@ Cycle-1 findings: ESD, SCADA alarm, call points, Hall 1 beacon, Hall 2 strobe, C
 | — | — | Clock step still barely shows (~3-4% darker) | Accepted (design review m7: no lower than the muddy line) |
 
 Engine proposals (not done; would go to `DECISIONS_PENDING.md` if wanted): a `fire` emitter effect (irregular breathe under 3 Hz); hue-preserving blending for `above` glows in lit rooms; a validator check that flags `||` in lighting conditions.
+
+## 12. Cycle 3 (2026-10-13)
+
+W1-W7 from section 11, applied as listed, with one change: the fire glow's offsetY is 130, not the suggested ~200. Bank B's rack bodies run from about y 94 to 202 in the room, and the sign's centre is about y 37, so 130 puts the glow on the racks rather than at their feet. COSTLY SUCCESS embers moved with it.
+
+Checks: validator (schema, geometry, door alignment) pass; door alignment 8/8; route driver 27/27. Tours on :3001 for the rooms the changes touch, every shot drew: base 2275, alarm 2276, h2 2277, vent 2278, race 2279, after 2280, after_vent 2281. Evidence: `build_evidence/lighting_c3/<phase>/`; untouched rooms are as in `lighting_c2/`.
+
+First look: the vent's orange now sits on bank B, with bank A cooler; the armed ESD's red reaches the keep-clear box.
+
+### Cycle 3 visual review (fresh Opus): 0 blockers, 0 majors, 5 minors
+
+W1 (vent fire), W2 (armed ESD tint), W6 (call points) and W7 (H2 ambient, barely visible) are closed. W3 (race laptop) is partly closed; W4 (the amber H2 lamp still weaker than the green panel) and W5 (the ESD's after-state still yellow over the orange housing) are not closed.
+
+| id | sev | finding | outcome |
+|---|---|---|---|
+| X1 | minor | H2 lamp still weaker than the lie (the breathe dips it; r 16 under the panel's r 20) | **Fixed (cycle 4):** steady `#ff9a2e`, r 22, 1.0 in both halls ("An amber indicator is lit") |
+| X2 | minor | The fire is one round spot on bank B's third rack | **Fixed:** offsetX −12, offsetY 115, r 105 |
+| X3 | minor | The race laptop doesn't stand out from the ESD | **Fixed:** r 34, `floorTint` 0.5 |
+| X4 | minor | The ESD's after-state is yellow: green added over orange | **Fixed:** green moved to the floor (no `above`, offsetY 22, r 40, 0.5, `floorTint` 0.5) |
+| X5 | minor | COSTLY SUCCESS racks keep the engine's green halo under amber LEDs | **Fixed:** an amber glow (r 30, 0.15) on both after-ESD amber entries |
+| — | optional | SCADA could dim its screens on the vent | Not done: "the feed has dropped" is the grid feed, not the HMI's |
+
+## 13. Cycle 4 (2026-10-13)
+
+X1-X5 applied. Checks: validator (schema, geometry, door alignment) pass; door alignment 8/8; route driver 27/27. Full tours on :3001, 37 shots, every one drew: base 2283, clock 2284, alarm 2285 (all rooms), h2 2286, vent 2287, race 2288, after 2290 (all rooms), after_h2 2291, after_vent 2292. Evidence: `build_evidence/lighting_c4/<phase>/`.
+
+### Cycle 4 visual review (fresh Opus): 0 blockers, 0 majors, 2 minors (both optional)
+
+X1-X5 closed (X1 for brightness, X3 just; the vent still reads as a glow, not flames, which needs the proposed engine `fire` effect). The whole set judged afresh: mood, escalation, readability of every clue and the route to the plant door, sight cones, flash safety all pass; no new stray glows or bleed beyond the known engine limits (the plant exit sign into Hall 2; Hall 2's strobe faintly at Hall 1's east edge).
+
+| id | sev | finding | outcome |
+|---|---|---|---|
+| n1 | minor | The Hall 2 H2 lamp got softer and pinker when the alarm came on (salmon r 18 against a cream r 22 base); the amber base clipped to cream over the white housing | **Fixed:** alarm entries `#ff2a1a`, r 26, 1.0, pulse; base in both halls `#ff7a10`, 0.75. Re-shot (games 2293, 2295; `build_evidence/lighting_c4/n1/`) and checked by eye: the base lamp reads amber and still outshines the green panel, the alarm reads as a red step up |
+| n2 | minor | Red/amber `above` glows over pale housings wash towards white in lit rooms | Engine proposal (hue-preserving `above` blending), not done |
+
+Checks after n1: validator pass, door alignment 8/8, routes 27/27.
+
+## Phase art: lighting CLOSED (2026-10-13)
+
+| Cycle | Blockers | Majors | Minors |
+|---|---|---|---|
+| Design review | 0 | 6 | 9 |
+| 1 (visual) | 0 | 4 | 6 |
+| 2 (visual) | 0 | 1 | 6 |
+| 3 (visual) | 0 | 0 | 5 |
+| 4 (visual) | 0 | 0 | 2 |
+
+Closed after cycle 4: two rounds in a row found nothing above minor. No engine change was made; the ESD's glow comes from a per-room emitter keyed on its id, so `DECISIONS_PENDING.md` wasn't needed.
+
+Open, as engine proposals only: a `fire` emitter effect; hue-preserving blending for `above` glows in lit rooms; a validator check flagging `||` in lighting (and other global) conditions, which `evaluateGlobalCondition` doesn't support. Accepted: the clock step is subtle (kept above the readability floor); exit-sign and strobe bloom cross shared wall strips (engine limit).
+
+Not yet done: a browser check with a page reload mid-phase (the variants resolve from saved globals at load, as m03 proved), and seeing the Hall 2 `tint_objects` pulse together with the H2 lighting in play. Both fit the stage-8 playtests.
+
+Next in the art order: POV chat backgrounds (`room-pov-background`); lighting is final for them.
