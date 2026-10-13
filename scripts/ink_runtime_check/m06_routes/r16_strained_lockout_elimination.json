@@ -29,6 +29,7 @@
 {"expect": {"console_tripped": true}},
 {"set": {"found_architects_fund": true}},
 {"talk": "irina", "picks": ["Satoshi's wing", "I'm not from the FCA", "I'm detaining you"]},
+{"said": ["*offers her wrists* I really did think I was building something good."], "notSaid": ["state overreach"]},
 {"room": "executive_wing"},
 {"talk": "minder", "knot": "on_sighted", "picks": ["Routine supervisory visit", "step aside"]},
 {"ko": "satoshi_minder"},

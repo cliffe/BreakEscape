@@ -21,6 +21,7 @@
 {"talk": "satoshi", "picks": ["Satoshi's Ghost", "You worked out how many", "You're a criminal", "I'm freezing it", "Whatever hadn't gone out", "No. Your ideology"]},
 {"said": ["Kemal's still out there looking for you"]},
 {"talk": "irina", "picks": ["I'm not from the FCA", "I'm detaining you"]},
+{"said": ["*offers her wrists* I really did think I was building something good."], "notSaid": ["state overreach"]},
 {"talk": "phone", "picks": ["Bring me in", "Bring me in", "On my way"]},
 {"talk": "debrief", "picks": ["Start with the fund", "How does anyone", "She knew what she was building", "Did he give anything up", "Walk me through it", "Their door passphrases", "Two service accounts", "Every cold wallet", "What's next"]},
 {"said": ["His minder came at you and you went round him", "Okonkwo flagged those wallets"]},

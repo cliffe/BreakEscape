@@ -473,6 +473,7 @@ Narrator: You put your SAFETYNET credentials on the desk.
     Dr. Irina Volkova: My work. Used to kill people.
 - else:
     ~ shown_architects_fund = true
+    ~ moral_conflict_revealed = true   // Dialogue C3 (D6-67): she has read the projection
     Narrator: Then the fund allocation, open at the casualty line.
     Dr. Irina Volkova: *reads it twice* I wrote the mixer so nobody could see where money went. Not so nobody could see this.
 }
@@ -571,11 +572,9 @@ Dr. Irina Volkova: And thank you for treating this as a choice.
 #set_variable:irina_arrested=true
 #set_variable:irina_fate_decided=true
 
-{moral_conflict_revealed:
-    Dr. Irina Volkova: *offers her wrists* I really did think I was building something good.
-- else:
-    Dr. Irina Volkova: This is the state overreach we warned people about.
-}
+// Dialogue C3 (D6-67): every route here has shown her the projection, so the
+// defiant "state overreach" line could no longer play anywhere it fits.
+Dr. Irina Volkova: *offers her wrists* I really did think I was building something good.
 
 Dr. Irina Volkova: All those papers. For this.
 ~ hub_quiet = true

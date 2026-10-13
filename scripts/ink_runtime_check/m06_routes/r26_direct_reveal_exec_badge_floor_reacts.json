@@ -10,7 +10,7 @@
 {"said": ["You show her the authorisation line on the fund page, and nothing else.", "He thinks it's funny.", "You're not from the FCA. ...No. Don't tell me yet."], "notSaid": ["then the casualty line", "My work. Used to kill people."]},
 {"expect": {"shown_architects_fund": false}},
 {"talk": "irina", "picks": ["I'm not from the FCA", "I'm detaining you"]},
-{"said": ["I asked you not to tell me.", "Then the fund allocation, open at the casualty line.", "Not so nobody could see this."], "notSaid": ["My work. Used to kill people."]},
+{"said": ["I asked you not to tell me.", "Then the fund allocation, open at the casualty line.", "Not so nobody could see this.", "*offers her wrists* I really did think I was building something good."], "notSaid": ["My work. Used to kill people.", "state overreach"]},
 {"expect": {"irina_arrested": true, "shown_architects_fund": true}},
 {"talk": "trader", "picks": ["That's all, thanks"]},
 {"said": ["She's just sitting there. Are you allowed to tell me what's going on?"], "notSaid": ["Hi again. What's up?", "What's Dr. Volkova like to work for?"]},

@@ -22,7 +22,7 @@
 {"set": {"entered_data_center": true, "read_settlement_log": true, "found_architects_fund": true, "fund_debrief_available": true}},
 {"talk": "irina", "picks": ["I'm not from the FCA", "I'm detaining you"]},
 {"expect": {"irina_arrested": true, "irina_fate_decided": true, "irina_exec_badge_given": false}},
-{"said": ["All those papers"]},
+{"said": ["All those papers", "*offers her wrists* I really did think I was building something good."], "notSaid": ["state overreach"]},
 {"talk": "irina", "picks": ["Nothing. Carry on"]},
 {"said": ["The police are on their way up for her"]},
 {"notSaid": ["waiting for the police"]},

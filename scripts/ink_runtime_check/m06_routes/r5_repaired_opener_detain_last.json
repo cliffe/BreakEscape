@@ -22,6 +22,7 @@
 {"room": "executive_wing"},
 {"room": "trading_floor"},
 {"talk": "irina", "picks": ["I'm not from the FCA", "I'm detaining you"]},
+{"said": ["*offers her wrists* I really did think I was building something good."], "notSaid": ["state overreach"]},
 {"expect": {"irina_arrested": true, "ready_to_extract": true, "irina_taken": false}},
 {"talk": "phone", "picks": ["Bring me in", "Bring me in", "On my way"]},
 {"talk": "debrief", "picks": ["Start with the fund", "How does anyone", "She knew what she was building", "He'll be making speeches", "Walk me through it", "Their door passphrases", "Two service accounts", "Every cold wallet", "What's next"]},

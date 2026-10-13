@@ -7,6 +7,7 @@
 {"talk": "irina", "picks": ["Thirty-seven papers", "Financial surveillance", "password strength", "That's all for now"]},
 {"set": {"found_blockchain_evidence": true, "flag1_submitted": true, "flag2_submitted": true, "flag3_submitted": true, "flag4_submitted": true, "found_wallet_keys": true, "found_architects_fund": true}},
 {"talk": "irina", "picks": ["Satoshi's wing", "I'm not from the FCA", "I'm detaining you"]},
+{"said": ["*offers her wrists* I really did think I was building something good."], "notSaid": ["state overreach"]},
 {"ko": "irina_volkova"},
 {"room": "server_room"},
 {"expect": {"irina_arrested": true, "irina_ko": true, "irina_taken": false}},

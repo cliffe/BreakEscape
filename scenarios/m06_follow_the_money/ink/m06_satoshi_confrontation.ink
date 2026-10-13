@@ -126,7 +126,7 @@ Satoshi Nakamoto II: "Nakamoto II" is for the brochure. The Ghost is who pays fo
 {found_architects_fund:
     Satoshi Nakamoto II: You mapped the network. Impressive.
 - else:
-    Satoshi Nakamoto II: You haven't found my wallet. But you've seen enough of my exchange to guess.
+    Satoshi Nakamoto II: You've seen enough of my exchange to guess.
 }
 
 Satoshi Nakamoto II: Sure. HashChain is ENTROPY's bank. Every cell.

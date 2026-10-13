@@ -969,3 +969,27 @@ Not voiced: choices "[I was there. Skip it.]", "[I'll leave you to it.]" (Priya)
 
 - Browser checks (carried over, plus Kemal's vouch): Dani's and Priya's reactions after a real detention, collection and KO, and a first meeting after one; Irina's badge scene, direct reveal and the new payoff line; Satoshi's return after a deferral and a reload; HaX's first call after a catch and after a guard KO; Kemal's vouch route and its credit.
 - The user: the debrief's VM lines are still unchanged in substance and at the brief's level.
+
+### Phase 4 dialogue, cycle 3 fixes
+
+Review: `DIALOGUE_REVIEW_P5_C3.md` (0 blockers, 1 major, 1 minor; all 22 cycle-2 findings confirmed). Verdict: close once these are fixed and the browser checklist passes. Fixer: the same agent, resumed. No browser session; no erb edit.
+
+| # | Sev. | Finding | Outcome |
+|---|---|---|---|
+| D6-67 | major | A direct reveal never set `moral_conflict_revealed`, so a detention straight after "*reads it twice*…" got "This is the state overreach we warned people about." (9 routes) | **Fixed** as proposed. `~ moral_conflict_revealed = true` in `reveal_identity`'s direct branch, and `detain_irina` collapsed to "*offers her wrists* I really did think I was building something good." (the defiant line is cut; it could no longer play anywhere it fit). r2, r5, r7, r9, r12, r16, r17, r22 and r26 now assert the wrists line and `notSaid: "state overreach"` |
+| D6-68 | minor | Two "You haven't…" openers, and the wallet point twice, on the no-fund route | **Fixed**: "You've seen enough of my exchange to guess." r29 updated, with `notSaid` on the old opener |
+
+Side effect: with the defiant branch gone, nothing reads `moral_conflict_revealed`, and the validator now gives a 💡 suggestion (set, never read). It's harmless. Removing it would mean dropping the two ink writes, the `VAR`, and the erb `globalVariables` entry; that's left for the orchestrator.
+
+#### Checks (static; no browser session)
+
+- Ink compiles (9 files, 0 failed, no loose ends).
+- tagdiff against HEAD: Irina 3 differences (the new assignment in `reveal_identity`, and `detain_irina`'s two conditions removed); every other file's structure unchanged. That matches the review's expectation.
+- Routes: 29 of 29 pass, each with `maxRun` 9.
+- dialoguelint: no findings. reopencheck: m06 phone, 1800 reopens, 0 problems. Validator with ink, `--no-graph`: schema passed, all ink valid; the one new suggestion is noted above.
+- loopcheck: Irina (low trust, fund found) and Satoshi (fresh): no runtime errors.
+
+#### Spoken lines changed (old → new)
+
+- Irina, cut: "This is the state overreach we warned people about." (every detention now gets the existing wrists line).
+- Satoshi: "You haven't found my wallet. But you've seen enough of my exchange to guess." → "You've seen enough of my exchange to guess."
