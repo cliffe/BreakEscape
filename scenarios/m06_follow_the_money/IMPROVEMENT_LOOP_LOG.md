@@ -277,3 +277,46 @@ Kemal Aydin:
 - Browser checks: round 1's list plus the locked door, Kemal's pick catch and the text timing. The round-1 browser check now running predates this round's door lock.
 - The debrief's longest unbroken run goes to the dialogue phase (14 lines in r1 now that the opener is gone).
 - Unchanged: m11 (room dressing), m12 (puzzle chains), D2, D3/D4, C1.
+
+### Phase 1 alignment, round 3
+
+Review: `ALIGNMENT_REVIEW_P5_R3.md` (Opus, read-only, static). It confirms every round-2 fix. It rules on the browser findings: N1 (a pick inside Kemal's cone) is a harness artefact, still owed one real pick; N3 (repeat sightings) and N4 (the pick window) are fair. Verdict: close the phase. Counts: 0 blockers, 0 majors, 4 minors, all fixed.
+
+| # | Sev. | Finding | Outcome |
+|---|---|---|---|
+| R3-m1 | minor | A repeat sighting replayed the full narrator line | **Fixed.** The narration and the "The FCA does not come up here." line now sit inside the first-meeting branch of `on_sighted`; a repeat is "I told you once. This floor is closed." and the choices. No spoken line changed |
+| R3-m2 | minor | Irina's strain text wasn't limited to the first cause | **Fixed.** Her mapping now also needs `cover_strained !== true`, as the guard and KO mappings do. The route driver already modelled first-cause-only |
+| R3-m3 | minor | `TESTING_WALKTHROUGH.md` predated pass 5 | **Fixed.** New header note; prerequisites (9 ink files, the warnings, key locks, the route driver); step 1 (catch line and strain); new 2a (cover strain: causes, texts, effects); step 20 and 26 (Irina collected, relays, detained-then-KO); new 21a (Kemal: beat and window from game 2237, sight challenge, locked door, talk / pick / fight, `minder_challenged`, the owed real pick); step 22 (locked door, Satoshi at (5,6)); step 24 ("I'm detaining you."); step 27 rewritten for `ready_to_extract` → "I'm done here. Bring me in." → `extract_go` → debrief at HQ; checklist and edge cases (locked door, Kemal, N1, cover strain, Irina collected, call-in reloads, minder states, guard credit order) |
+| R3-m4 | minor | Stale comments on Kemal | **Fixed.** The erb comment and the ink header now say "otherwise the player picks the door in his blind window, squares up (hostile) or backs off", and the erb comment cites the beat measured in game 2237 (`PASS5_ALIGN_R1_BROWSER.md` 1a, 1g) |
+| N1 | browser | Kemal's pick catch not seen with a real pick | **Harness artefact (review ruling).** One real pick started inside his cone is owed in the puzzle-chains stage's first browser run: expect "A hand the size of a shovel…", "No.", then the stand-off. It's in `TESTING_WALKTHROUGH.md` 21a and the checklist |
+
+Checks (static; no browser session started):
+- ink compiles (9 files);
+- validator, full: all passes, no toast-stacking warnings;
+- dialoguelint: no findings;
+- `check_door_alignment.py`: all doors OK;
+- routes r1–r13: all expectations met;
+- inkcheck and loopcheck on the minder's `on_sighted`: clean;
+- tagdiff on the minder against HEAD: structure unchanged;
+- reopencheck: m06 phone, 0 problems.
+
+Spoken lines changed: none (R3-m1 changes only when two existing lines play).
+
+### Phase 1 alignment: CLOSED (2026-10-13)
+
+| Round | Input | Blockers / majors / minors | Outcome |
+|---|---|---|---|
+| 1 | `ALIGNMENT_REVIEW_P5_R1.md` (partial; finished by the orchestrator) + regression `PASS5_REGRESSION_A.md` (M4–M6) | 0 / 7 / 13; regression 0 / 0 / 12 (3 taken) | 7 majors fixed (A6 reworded); 9 minors fixed, 3 deferred to later stages; R-M4 and R-M6 fixed, R-M5 withdrawn; F1 left for the browser. Built: sweep-then-call-in, phase music, cover strain, reactions to every choice and flag, Irina collected, Kemal Aydin, detain-and-hand-over wording, the guide menu, route driver r1–r6 |
+| 2 | `ALIGNMENT_REVIEW_P5_R2.md` | 0 / 3 / 12 | All fixed. The debrief opens at HQ; the guard catch is made readable, with per-cause strain texts; Satoshi's door locked with Kemal's key (talk / pick / fight); debrief, Satoshi and credits agree for every minder, Irina and guard state; R2-m2's condition widened; F1 withdrawn and tidied; routes r7–r13 |
+| Browser | `PASS5_ALIGN_R1_BROWSER.md` (Sonnet, games 2232 on round 1, 2235 and 2237 on round 2; keyless :3001) | 0 / 0 / 5 | Every round-1 and round-2 change checked passes: Kemal's beat, cone, sight challenge, talk-past and Irina's word, the locked door and the KO key drop, the strained cover, Irina detained and relayed, the debrief at HQ, music, credits. N1 (real pick in Kemal's cone) owed; N3 and N4 ruled fair in round 3; N2 (stand-in portrait) goes to the character stage |
+| 3 | `ALIGNMENT_REVIEW_P5_R3.md` | 0 / 0 / 4 | All fixed (above). Verdict: close |
+
+Open after the phase:
+- **N1:** one real pick started inside Kemal's cone, in the puzzle-chains stage's first browser run.
+- **Not yet browser-confirmed** (low risk, per round 3): a page reload in the day music phase, and a fight actually fought rather than assisted.
+- **Dialogue phase:** the debrief's 13–17-line runs without a choice.
+- **Puzzle chains:** m12 (the fingerprint kit is carried but unused). If Kemal's beat is lengthened, set `changeDirectionInterval` as m02 does for Val, and consider a longer east dwell (4500 → 6000 ms) if a real pick shows the glimpse interrupting an open minigame.
+- **Room dressing:** m11 (the executive wing reached through the data centre; two server rooms back to back).
+- **Character stage:** C1 (Kemal's look, `DECISIONS_PENDING.md`), N2 and R-M1/R-M3 (art); R-M2 (backgrounds) goes to the POV stage.
+- **With the user:** D2 (the freeze/watch choice in m07), D3/D4 (needs checking against SecGen by the user: the in-game VM wording).
+- Engine items R-E1 to R-E4 are in the backlog.

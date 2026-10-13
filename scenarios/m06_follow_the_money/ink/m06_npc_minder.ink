@@ -4,8 +4,9 @@
 // - Sight challenge (los.challengeOnSight -> on_sighted), or spoken to.
 // - Cover held: the FCA cover talks him round (minder_passed).
 // - Cover strained (A3): somebody rang the FCA. Only a turned Irina's word
-//   gets past him; otherwise he turns hostile, or the player backs off and
-//   slips past his cone later. A strained cover never locks the player out.
+//   gets past him; otherwise the player picks the door in his blind window,
+//   squares up (he turns hostile) or backs off. A strained cover never locks
+//   the player out.
 // Round 2 (R2-M3): Satoshi's door is locked and Kemal holds the key. The
 // talk-past unlocks it (#unlock_door, fire-and-forget like the guard's, so it
 // is re-issued on re-entry until the player has reached Satoshi). A pick he
@@ -92,11 +93,13 @@ VAR saw_picks = false      // R2-M3: he caught the picks; the FCA line no longer
 }
 ~ sighted_open = true
 #set_variable:minder_challenged=true
-#speaker:narrator
-Narrator: The man by the corner office turns, sees you, and steps squarely into your path.
-#speaker:satoshi_minder
+// Round 3 (R3-m1): the narration plays on the first meeting only, so a repeat
+// sighting is one line and a choice.
 { not minder_met:
     ~ minder_met = true
+    #speaker:narrator
+    Narrator: The man by the corner office turns, sees you, and steps squarely into your path.
+    #speaker:satoshi_minder
     Kemal Aydin: The FCA does not come up here.
 - else:
     Kemal Aydin: I told you once. This floor is closed.
