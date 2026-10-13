@@ -7,6 +7,7 @@
 //   {"set": {...}}                          globals the engine would set (pickups, flags, safe)
 //   {"talk": "irina", "knot": "opt", "picks": ["substr", 0, ...], "reload": true|"page"}
 //   {"room": "trading_floor"}               the player enters a room (HaX's room_entered mappings)
+//   {"lockout": true}                      two wrong slots in one opening of the custody console
 //   {"ko": "trader_npc"}                    a KO, with the scenario's npc_ko / globalVarOnKO effects
 //   {"expect": {"global": value, ...}}      assert globals; prints PASS/FAIL and fails the run
 //   {"credits": true}                       print the credits lines whose conditions hold now,
@@ -124,6 +125,14 @@ for (const step of route.steps) {
     for (const x of step.said || []) { const ok = text.includes(x.toLowerCase()); if (!ok) stats.fails++; console.log(`   [${ok ? 'PASS' : 'FAIL'}] said: "${x}"`); }
     for (const x of step.notSaid || []) { const ok = !text.includes(x.toLowerCase()); if (!ok) stats.fails++; console.log(`   [${ok ? 'PASS' : 'FAIL'}] not said: "${x}"`); }
     heard = []; continue;
+  }
+  if (step.lockout) {
+    // Puzzle chains M1/D1: two wrong slots in one opening of the custody console
+    // (HaX's minigame_failed mapping; its PinMinigame/maxAttemptsReached scoping
+    // is a browser check, not modelled here).
+    out('   {custody console: two wrong slots, pad locked}');
+    if (G.entered_data_center && !G.found_architects_fund && !G.cover_strained) { setG('cover_strained', true, 'custody console lockout'); out("      [HaX text: That console logs every slot it opens. Somebody's phone just buzzed.]"); }
+    engine(); continue;
   }
   if (step.ko) {
     const id = step.ko; out(`   {ko ${id}}`);

@@ -320,3 +320,91 @@ Open after the phase:
 - **Character stage:** C1 (Kemal's look, `DECISIONS_PENDING.md`), N2 and R-M1/R-M3 (art); R-M2 (backgrounds) goes to the POV stage.
 - **With the user:** D2 (the freeze/watch choice in m07), D3/D4 (needs checking against SecGen by the user: the in-game VM wording).
 - Engine items R-E1 to R-E4 are in the backlog.
+
+## Phase 2: puzzle chains
+
+### Phase 2 puzzle chains, round 1
+
+Review: `PUZZLE_CHAINS_REVIEW_P5_R1.md` (Opus, read-only, static; it read only the PIN-minigame lines of the engine to settle the console's attempt limit). The fixer checked each finding against the files before acting. Counts: 0 blockers, 3 majors, 10 minors, plus three decisions (D1–D3), settled by the orchestrator. Outcomes: all 13 findings fixed; D1–D3 built; one correction to an earlier log entry.
+
+| # | Sev. | Finding | Outcome |
+|---|---|---|---|
+| M1 | major | The follow-the-money deduction could be skipped: the console had no `maxAttempts`, so the engine default (5, reset on each opening) let every slot be tried in two openings; a turned Irina was a second free oracle | **Fixed** (orchestrator, D1 a + c). The console has `"maxAttempts": 2`. A HaX mapping on `minigame_failed`, scoped by condition (`PinMinigame`, `maxAttemptsReached`, in the data centre, before the fund, cover not yet strained), strains the cover once: "That console logs every slot it opens. Somebody's phone just buzzed." **Browser check owed**: that a cancel doesn't carry `maxAttemptsReached`, and that the event's data matches. Irina checks one slot per visit (ink-local `slot_checked_visit`, cleared in `start`; "Let me look again" doesn't use it up), and a wrong answer adds "Work it through before you ask me again." |
+| M2 | major | Irina turned before she handed over the wordlist could never hand it over; a required task stayed open | **Fixed.** `after_choice` offers "I still need that wordlist." (turned) → `#give_item` and "Of course. Here."; a detained Irina still on the floor gets "(Take the wordlist from her desk.)" with narration. Route r14 |
+| M3 | major | An unasked toast on the checklist pickup stated the passphrase recipe | **Fixed** (orchestrator). Now a pointer: "That's their house rule for door passphrases. Volkova keeps the list of words her people pick." The recap, which the player asks for, keeps the recipe |
+| m1 | minor | The safe's number hung on the corridor wall | **Fixed** with D3 |
+| m2 | minor | The print kit was promised and never used | **Fixed** with D2 |
+| m3 | minor | A late flag 4 gave stale lines (the flag-4 text; the hub's "whole estate" beat) | **Fixed** (orchestrator: any order). The flag-4 text skips on `assets_decided`. `on_network_complete` gates the wing/badge line on `not satoshi_confronted and not irina_exec_badge_given` and the Volkova line on `not irina_fate_decided`, and returns to the hub without the choices once the money is settled; "[I'm going up.]" only shows before Satoshi is confronted ("[Understood.]" after). Route r15 |
+| m4 | minor | Flag 1's text didn't skip once flag 2 was in | **Fixed.** `skipIfGlobal: flag2_submitted`. Whether the VM allows that order needs checking against SecGen by the user |
+| m5 | minor | The recap's Kemal lines checked how he was dealt with, not whether the door was open | **Fixed** (orchestrator). They also need `not resolve_aim_open` (declared in the phone ink; already in `missions.json`) |
+| m6 | minor | The "no attempt limit" note was wrong | **Fixed.** The erb comment and `TESTING_WALKTHROUGH.md` 17a now give the two-try limit and the strain. **Correction to round 1's R-M6 entry above:** the console did have a limit (the engine default of 5, reset on each opening); the regression run's five wrong tries were exactly that limit |
+| m7 | minor | Aims can reveal out of order on the early-KO route; the comment claimed they couldn't | **Fixed (comment).** The comment now says what happens: the wing is behind the flag-3 PIN, not the fund, so a player with a KO'd Irina's dropped badge can reveal "Reach The Top Floor" early; HaX's text and Satoshi's deferral cover it. No structural change |
+| m8 | minor | Priya's notes named the Fund before it was found | **Fixed** with D3: "5. Into one wallet? Every cell draws on something." |
+| m9 | minor | A turned Irina could no longer lend her office badge | **Fixed.** `after_choice`: "Can I borrow your office badge?" → `#give_item:keycard:m06_cto_badge`, "Take it. There's nothing in there I'm proud of any more." |
+| m10 | minor | Tidy-ups: two `_comment` keys on the server-room mapping; the guard ink said "cooldown 0" | **Fixed.** The two comments are merged onto the backstop mapping; the guard ink says 250 ms |
+| D1 | decision | What a wrong slot costs | **(a) + (c)**, as M1 |
+| D2 | decision | The print kit | **(b), built.** New optional `satoshi_signing_case` in Satoshi's office: a `briefcase` with a `biometric` lock enrolled to "Satoshi Nakamoto II" (`biometric_breach`'s biometric safe shape). The press clipping in the corridor is now the print surface (`hasFingerprint`, easy, candidates Kemal, Irina, Dani; made non-takeable as the m05 mug is), and it sits inside Kemal's beat, so dusting it is a stealth beat. Contents: the Release Signing Record (`onPickup: signing_record_found`). Payoffs: a HaX text, a recap hint once the player has seen the office, a debrief line in `evidence_review`, the credit "THE RELEASE: signed on Satoshi's own thumb, off the glass of his press clipping", and the optional task `open_signing_case`. That task is a collect task because the validator can't confirm a biometric lock emits `item_unlocked`. The freeze/watch outcome is unchanged. No engine change. The case's position (3,3) is provisional for room dressing |
+| D3 | decision | The safe clue | **(a), built.** The clipping keeps the motive ("Until the last coin."); Irina's email keeps the meaning; Priya's mixing notes carry the number ("21M cap. Last coin due around 2140. Not our problem."). The clue now spans three rooms; a turned Irina still says it outright |
+
+#### Decisions taken (with reasons)
+
+- **D1, two tries and a once-only strain** (orchestrator). It uses a consequence the player already understands, with no fail state. The condition does the scoping because the event carries no object id. While `entered_data_center` is true and the fund isn't found, the only other PIN pad the player can open is the CEO's safe on the early-KO route, which is an acceptable edge.
+- **Irina's per-visit check doesn't cost trust** (fixer). The orchestrator asked only for one check per visit. A trust cost would punish the player for asking the ally they turned.
+- **No passphrase hint in the turned Irina's wordlist line** (fixer). A first draft added "Bitcoin's at the top", which would have undone M3.
+- **D2, a biometric case, not a biometric safe.** This keeps the 2140 ego deduction. The print is on an object the player already reads, inside Kemal's beat, so the print kit and the stealth beat meet. The payoff keys on the record's pickup rather than on a print event, so it doesn't depend on how the engine slugs the owner's name.
+- **D2, the task as `collect_items`:** this cleared the validator's warning about whether biometric locks emit `item_unlocked`, and it completes from the same pickup the debrief reads.
+- **D3:** Priya's margin is a natural home for the number (an analyst noting the supply cap), and it gives the lab a second reason to be read.
+
+#### Route driver
+
+`route.js` gains a `{"lockout": true}` step (the console lockout with HaX's condition; the event-data scoping is a browser check). New routes, all passing with r1–r13:
+- `r14_turned_before_wordlist_console`: turned before the wordlist; "I still need that wordlist." and the office badge from `after_choice`, both retiring once given; a console lockout strains the cover once (a second lockout is silent); one slot check per visit, another after a new visit.
+- `r15_watch_then_flag4_signing_case`: watch decided before flag 4; the recap's signing-case hint; the "whole estate" beat after flag 4 says only the keys line and returns to the hub; the signing record's debrief line and credit.
+
+#### Checks (static; no browser session started)
+
+- Ink compiles (9 files).
+- Validator, full: all passes; its dialogue lint is clean.
+  - 20 duplicate-pattern notes on HaX: one new, `minigame_failed`, where the lockout mapping shares the pattern with the call-in triggers; disjoint conditions.
+  - The deliberate repeatable-cutscene notes and the two-sources note.
+  - No toast-stacking warnings; the biometric-task warning is cleared.
+- `dialoguelint`: no findings.
+- `check_door_alignment.py`: all doors OK.
+- `tagdiff` against HEAD:
+  - phone: 16 (the two VARs, the `on_network_complete` gates, the recap gates);
+  - Irina: 22 (`slot_checked_visit`, the three new `after_choice` options);
+  - debrief: 2 (the VAR and the signing line);
+  - guard, Satoshi, minder: structure unchanged.
+- inkcheck (Irina `start` turned and detained, the phone's `on_network_complete` after the decision, the phone recap in Satoshi's office, the debrief with the record) and loopcheck (Irina's `after_choice` turned and detained): no errors.
+- `reopencheck` (m06 block: `signing_record_found` added): m06 HaX phone, 1800 reopens, 0 problems.
+- Routes r1–r15: all expectations met.
+
+Browser checks owed:
+- the console lockout's `minigame_failed` scoping, including that a cancel doesn't trip it;
+- dusting the clipping and opening the case (the print's owner name matching the lock);
+- the case's position;
+- N1, a real pick inside Kemal's cone.
+
+#### Spoken lines changed (old → new)
+
+HaX texts (`scenario.json.erb`):
+- Checklist pickup: "House rule: a crypto term and a year. The checklist's own date is the year. The term tops the list people here use. Volkova keeps one." → "That's their house rule for door passphrases. Volkova keeps the list of words her people pick."
+- New: "That console logs every slot it opens. Somebody's phone just buzzed."; "His own thumb on his own release. That's the difference between running the exchange and signing the payout. Bring it out."
+- Flag 1 and flag 4 texts: the same words, now skipped when stale.
+
+HaX phone:
+- "She's yours to decide about too. Don't leave it to the police by default." → "Volkova's yours to decide about too. Don't leave it to the police by default." (it no longer always follows the badge line)
+- New recap line: "His desk has a signing case on a thumb reader. He'll have left that thumb on something he's proud of."
+
+Irina:
+- New: "Work it through before you ask me again."; "Of course. Here."; narration "Her audit wordlist is in the top tray, under a mug. She watches you take it and says nothing."; "Take it. There's nothing in there I'm proud of any more."
+
+Debrief, new: "And his signing case. You lifted his thumb off his own press clipping and opened it. The release has one signer, and it's him."
+
+Document text (not voiced): the press clipping's last line and observation, Priya's mixing notes (step 5 and a margin line), the new Release Signing Record and signing-case observation.
+
+#### Open after round 1
+
+- The browser checks above.
+- Round 2 should confirm M1–M3, m3–m5 and D2.
+- Room dressing: confirm the signing case's position (3,3) and that the clipping (now non-takeable) reads well on the wall.

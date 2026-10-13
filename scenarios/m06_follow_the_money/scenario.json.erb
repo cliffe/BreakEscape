@@ -175,6 +175,7 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
           { "text": "── ASSETS ──",                                                "style": "section-header" },
           { "text": "FROZEN — $12.8M moved into a SAFETYNET wallet. The balances never reach the cells.", "style": "entry", "condition": "globalVars.assets_seized" },
           { "text": "WATCHED — Fund left running. Every recipient wallet now tagged.", "style": "entry", "condition": "globalVars.monitoring_enabled" },
+          { "text": "THE RELEASE: signed on Satoshi's own thumb, off the glass of his press clipping", "style": "entry", "condition": "globalVars.signing_record_found" },
           { "text": "" },
           { "text": "── PERSONNEL ──",                                             "style": "section-header" },
           <%# PASS 3 P8: four mutually exclusive guard lines. Pass 5 round 2 (R2-m6): a KO
@@ -442,9 +443,12 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
       "unlockCondition": { "aimCompleted": "map_financial_network" },
       "order": 4,
       "tasks": [
-        <%# PASS 3 P9: enter_room, not collect. A KO'd Irina drops the badge before
-            the fund is found, and a collect task would complete from that pickup and
-            reveal this aim early. The wing is behind the flag-3 PIN. %>
+        <%# PASS 3 P9: enter_room, not collect: a collect task would complete from
+            picking up a KO'd Irina's dropped badge. Pass 5 puzzle chains (m7): the
+            wing is behind the flag-3 PIN, not the fund, so a player with her dropped
+            badge can still enter it before the fund and reveal this aim while
+            "Map The Money" is open. Nothing breaks (HaX's wing text sends them back,
+            Satoshi defers the decision); the task list just reads out of order. %>
         {
           "taskId": "take_executive_badge",
           "title": "Get through the executive wing door",
@@ -466,6 +470,19 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
           "title": "Crack the CEO's safe",
           "type": "unlock_object",
           "targetObject": "executive_safe",
+          "status": "active",
+          "optional": true
+        },
+        <%# Pass 5 puzzle chains (D2): the print kit's beat. collect_items, not
+            unlock_object: the validator can't confirm a biometric lock emits
+            item_unlocked, and the record is what the debrief reads anyway. %>
+        {
+          "taskId": "open_signing_case",
+          "title": "Open the CEO's signing case",
+          "type": "collect_items",
+          "targetItemIds": ["release_signing_record", "Release Signing Record"],
+          "targetCount": 1,
+          "currentCount": 0,
           "status": "active",
           "optional": true
         }
@@ -580,7 +597,9 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
       "takeable": true,
       "observations": "Powder, brush, lifting tape. Carried since Albion.",
       "puzzle_graph_role": "tool",
-      "puzzle_graph_note": "Carried, unused: nothing at HashChain sits behind a print"
+      "puzzle_graph_optional": true,
+      "puzzle_graph_unlocks": ["satoshi_signing_case"],
+      "puzzle_graph_note": "Pass 5 puzzle chains (D2): Satoshi's print off the press clipping opens his signing case"
     }
   ],
 
@@ -661,6 +680,7 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
     "minder_hostile": false,
     "minder_ko": false,
     "minder_challenged": false,
+    "signing_record_found": false,
 
     "cracking_guide_offered": false,
     "cracking_guide_hint_given": false,
@@ -982,14 +1002,13 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
               "eventPattern": "global_variable_changed:server_passphrase_known",
               "condition": "value === true",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 1200, "message": "House rule: a crypto term and a year. The checklist's own date is the year. The term tops the list people here use. Volkova keeps one." }
+              "sendTimedMessage": { "delay": 1200, "message": "That's their house rule for door passphrases. Volkova keeps the list of words her people pick." }
             },
             {
-              "_comment": "Backstop: a player who guesses the passphrase still ticks the task.",
+              "_comment": "Backstop: a player who guesses the passphrase still ticks the task. Pass 5 regression M4: server_room_entered retires the recap's door lines once the door is open.",
               "eventPattern": "room_entered:server_room",
               "onceOnly": true,
               "setGlobal": { "server_room_entered": true },
-              "_comment": "Pass 5 regression M4: server_room_entered retires the recap's door lines once the door is open.",
               "completeTask": "find_server_credentials"
             },
             {
@@ -1008,7 +1027,7 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
               "eventPattern": "objective_task_completed:submit_flag1",
               "onceOnly": true,
               "setGlobal": { "flag1_submitted": true, "privesc_guide_offered": true },
-              "sendTimedMessage": { "delay": 1200, "message": "First account's yours. People here reuse passwords, so that one opens more than one door. I've a credential reuse guide if you want it." }
+              "sendTimedMessage": { "delay": 1200, "message": "First account's yours. People here reuse passwords, so that one opens more than one door. I've a credential reuse guide if you want it.", "skipIfGlobal": "flag2_submitted" }
             },
             {
               "eventPattern": "objective_task_completed:submit_flag2",
@@ -1028,7 +1047,7 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
               "eventPattern": "objective_task_completed:submit_flag4",
               "onceOnly": true,
               "setGlobal": { "flag4_submitted": true, "found_wallet_keys": true },
-              "sendTimedMessage": { "delay": 1800, "message": "Full estate. The vault account had the recovery keys, and they're in your kit. Whoever holds the keys holds the money: freeze it, or watch it." }
+              "sendTimedMessage": { "delay": 1800, "message": "Full estate. The vault account had the recovery keys, and they're in your kit. Whoever holds the keys holds the money: freeze it, or watch it.", "skipIfGlobal": "assets_decided" }
             },
             {
               "eventPattern": "global_variable_changed:found_blockchain_evidence",
@@ -1253,6 +1272,30 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
               "sendTimedMessage": { "delay": 7000, "message": "Someone on that floor is going to ring the FCA. Get what you need before they do.", "skipIfGlobal": "assets_decided" }
             },
 <% end %>
+            <%# Pass 5 puzzle chains (M1, D1): the custody console allows two tries per
+                opening. A lockout (two wrong slots in one opening) strains the cover
+                once. minigame_failed carries no object id (base-minigame.js:99-104,
+                per the review), so the condition scopes it: a PIN pad that hit its
+                limit, in the data centre phase, before the fund. The only other PIN
+                pads that could be open then are the data-centre door (already open
+                once entered_data_center is set) and the CEO's safe (behind the
+                executive wing, which needs the fund, except on the early-KO route).
+                NEEDS A BROWSER CHECK: that a cancel (X / Esc) doesn't carry
+                maxAttemptsReached, and that the data shape matches. %>
+            {
+              "eventPattern": "minigame_failed",
+              "condition": "data.minigameName === 'PinMinigame' && data.result && data.result.maxAttemptsReached === true && globalVars.entered_data_center === true && globalVars.found_architects_fund !== true && globalVars.cover_strained !== true",
+              "onceOnly": true,
+              "setGlobal": { "cover_strained": true },
+              "sendTimedMessage": { "delay": 2500, "message": "That console logs every slot it opens. Somebody's phone just buzzed.", "skipIfGlobal": "assets_decided" }
+            },
+            <%# Pass 5 puzzle chains (D2): the signing case's record. %>
+            {
+              "eventPattern": "global_variable_changed:signing_record_found",
+              "condition": "value === true",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 2000, "message": "His own thumb on his own release. That's the difference between running the exchange and signing the payout. Bring it out." }
+            },
             <%# A4: the choices and the reveal, each answered in the moment. %>
             {
               "eventPattern": "global_variable_changed:irina_recruited",
@@ -1761,7 +1804,10 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
         <%# PASS 4 fix 1: the fund document is no longer a free pickup. The custody
             console opens one slot's file by its four-digit number; the fund is the
             slot the ENTROPY money lands in after the mixer (see the comment at the
-            top of this file). PIN pad, no attempt limit (no maxAttempts; pass 5 regression M6 saw five wrong tries in one opening with no lockout, which suits "fun, not hard"). The
+            top of this file). Pass 5 puzzle chains (M1, D1): two tries per opening (maxAttempts 2; the
+            engine default is 5 and resets on each opening, which let every slot be
+            tried in two openings). A lockout strains the cover once (HaX's
+            minigame_failed mapping). The
             PIN cracker is not in the kit (capability arc). %>
         {
           "type": "pc",
@@ -1772,6 +1818,7 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
           "lockType": "pin",
           "requires": "<%= fund_slot %>",
           "difficulty": "easy",
+          "maxAttempts": 2,
           "observations": "The custody console for the exchange's cold wallets. Key in a four-digit slot number and it opens that slot's custody file. The slots are listed on the transaction server.",
           "puzzle_graph_role": "lock",
           "puzzle_graph_note": "Follow the money: Priya's mixer deposits (amount, time) + the pool's fee and minimum hold + the settlement log's credits to slots -> slot <%= fund_slot %>. A turned Irina narrows it and confirms a slot the player names.",
@@ -1862,8 +1909,12 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
           "name": "Privacy Coin Mixing Analysis",
           "takeable": true,
           "readable": true,
-          "text": "MONERO (XMR) MIXING PATTERNS\n\nHashChain Exchange specialises in privacy coin conversions.\n\nPattern Detected:\n1. ENTROPY cells deposit Bitcoin\n2. Convert to Monero (untraceable)\n3. Mix through multiple wallets\n4. Convert back to Bitcoin\n5. Send to The Architect's Fund\n\nThis makes tracing nearly impossible from the blockchain alone.\nA complete picture requires the exchange's own internal records.\n\n(Margin, P.R.: every cell seems to use us. Are we the bank for all of them?)",
+          "text": "MONERO (XMR) MIXING PATTERNS\n\nHashChain Exchange specialises in privacy coin conversions.\n\nPattern Detected:\n1. ENTROPY cells deposit Bitcoin\n2. Convert to Monero (untraceable)\n3. Mix through multiple wallets\n4. Convert back to Bitcoin\n5. Into one wallet? Every cell draws on something.\n\nThis makes tracing nearly impossible from the blockchain alone.\nA complete picture requires the exchange's own internal records.\n\n(Margin, P.R.: every cell seems to use us. Are we the bank for all of them?)\n(Margin, P.R.: 21M cap. Last coin due around 2140. Not our problem.)",
           "observations": "Priya's working notes. She has half-guessed that the exchange is the bank for every cell.",
+          "_comment": "Pass 5 puzzle chains (D3): the safe's number lives here now, in a margin line about the bitcoin supply cap. The clipping gives the motive ('Until the last coin'), Irina's email the meaning ('the year the last bitcoin is mined'): three rooms.",
+          "puzzle_graph_role": "clue",
+          "puzzle_graph_reveals": "executive_safe_pin",
+          "puzzle_graph_unlocks": "executive_safe",
           "puzzle_graph_optional": true
         }
       ]
@@ -2015,13 +2066,18 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
           "id": "executive_wing_plaque",
           "name": "Framed Press Clipping",
           "position": { "x": 4, "y": 2 },
-          "takeable": true,
+          "_comment": "Pass 5 puzzle chains: D3, the number moved to Priya's margin (the clipping keeps the motive); D2, Satoshi's thumbprint is on the glass, the only print surface for his signing case. Not takeable, so the print stays on the wall inside Kemal's beat (m05 mug pattern).",
+          "takeable": false,
           "readable": true,
-          "text": "CRYPTO WEEKLY — 'THE MAN WHO WON'T GIVE HIS NAME'\n\nHashChain's founder gives interviews only in text, only over Tor, and only under a pseudonym that is either a tribute or a taunt depending on who you ask.\n\n'The state cannot regulate what it cannot see,' he told us. 'We are not hiding money. We are demonstrating that the concept of hidden money is now permanent.'\n\nAsked whether HashChain screens its customers, he replied: 'We screen for competence.'\n\nHe signed off the interview the way he signs everything: 'Until 2140', the year the last bitcoin is due to be mined.",
-          "observations": "Framed in the corridor outside the CEO's office. He had it mounted himself.",
+          "hasFingerprint": true,
+          "fingerprintOwner": "Satoshi Nakamoto II",
+          "fingerprintCandidates": ["Kemal Aydin", "Dr. Irina Volkova", "Dani Okonkwo"],
+          "fingerprintDifficulty": "easy",
+          "text": "CRYPTO WEEKLY — 'THE MAN WHO WON'T GIVE HIS NAME'\n\nHashChain's founder gives interviews only in text, only over Tor, and only under a pseudonym that is either a tribute or a taunt depending on who you ask.\n\n'The state cannot regulate what it cannot see,' he told us. 'We are not hiding money. We are demonstrating that the concept of hidden money is now permanent.'\n\nAsked whether HashChain screens its customers, he replied: 'We screen for competence.'\n\nHe signed off the interview the way he signs everything: 'Until the last coin.'",
+          "observations": "Framed in the corridor outside the CEO's office. He had it mounted himself, and straightened it often enough to leave a thumbprint square on the glass.",
           "puzzle_graph_role": "clue",
-          "puzzle_graph_reveals": "executive_safe_pin",
-          "puzzle_graph_unlocks": "executive_safe",
+          "puzzle_graph_reveals": "satoshi_fingerprint",
+          "puzzle_graph_unlocks": "satoshi_signing_case",
           "puzzle_graph_optional": true
         }
       ]
@@ -2092,6 +2148,33 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
           "text": "THE CRYPTO ANARCHIST MANIFESTO\n\nGovernments cannot control what they cannot see.\nCryptography enables true financial freedom.\nPrivacy is a fundamental human right.\nCentralised finance is slavery.\nDecentralised systems bring liberation.\n\nHashChain Exchange exists to accelerate the collapse of state monetary control.\n\nEvery transaction we enable undermines government power.\nEvery privacy coin we support creates freedom.\n\nENTROPY understands: chaos is the path to liberty.\nThe Architect coordinates the acceleration.\n\nWe are Crypto Anarchists. We will not be stopped.\n\n- Satoshi Nakamoto II (obviously not the real Satoshi)",
           "observations": "The Crypto Anarchists' creed, signed by the man who wrote it",
           "puzzle_graph_optional": true
+        },
+        {
+          "_comment": "Pass 5 puzzle chains (D2): the print kit's payoff, optional. A hardware signing case enrolled to Satoshi's own print (Irina: 'paranoid about doors and careless about passwords'). His print is on the glass of the press clipping in the corridor, inside Kemal's beat (biometric object lock as biometric_breach's safe; print surface as the m05 mug). Position is provisional for room dressing to confirm.",
+          "type": "briefcase",
+          "id": "satoshi_signing_case",
+          "name": "Signing Case",
+          "position": { "x": 3, "y": 3 },
+          "takeable": false,
+          "locked": true,
+          "lockType": "biometric",
+          "requires": "Satoshi Nakamoto II",
+          "observations": "A slim aluminium case on the desk with a thumb reader in the lid. It holds the hardware device he signs releases with. Only one thumb opens it.",
+          "puzzle_graph_role": "container",
+          "puzzle_graph_optional": true,
+          "contents": [
+            {
+              "type": "notes",
+              "id": "release_signing_record",
+              "name": "Release Signing Record",
+              "takeable": true,
+              "readable": true,
+              "text": "SIGNING DEVICE :: RELEASE LOG\n\nRelease: cold slot <%= fund_slot %> (1ARCHITECT9FUND), balances to six recipient wallets\nSigned: 4 Aug, on this device\nEnrolled thumb: S.N. II (sole signer)\nBroadcast: scheduled, 72 hours from signing\nCountersignature: none required\n\nDevice note: 'One key, one thumb. Nobody else at HashChain can move this money, and nobody else can be blamed for it.'",
+              "observations": "The release that pays the six cells, signed on his own device with his own thumb. Nobody else signed it.",
+              "puzzle_graph_role": "evidence",
+              "onPickup": { "setVariable": { "signing_record_found": true } }
+            }
+          ]
         },
         {
           "type": "safe",

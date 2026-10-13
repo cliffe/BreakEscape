@@ -44,6 +44,7 @@ VAR minder_ko = false        // A5
 VAR minder_passed = false    // A5
 VAR irina_taken = false      // A4: collected by the police while the player was still inside
 VAR minder_hostile = false   // Round 2 (R2-m8)
+VAR signing_record_found = false // Puzzle chains D2: Satoshi's signing case opened on his own print
 VAR minder_challenged = false // Round 2 (R2-m7)
 VAR fca_picks = 0
 VAR fca_right = 0
@@ -425,6 +426,10 @@ Agent HaX: The financial database gave us their doors, and the vault account gav
 // ================================================
 
 === evidence_review ===
+// Puzzle chains D2: the print kit's payoff.
+{signing_record_found:
+    Agent HaX: And his signing case. You lifted his thumb off his own press clipping and opened it. The release has one signer, and it's him.
+}
 {found_blockchain_evidence:
     -> evidence_complete
 - else:

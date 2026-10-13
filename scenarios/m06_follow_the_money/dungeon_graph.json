@@ -96,6 +96,12 @@
       "id": "fingerprint_kit",
       "label": "Fingerprint Kit",
       "kind": "item",
+      "optional": true
+    },
+    {
+      "id": "lock_satoshi_signing_case",
+      "label": "Satoshi Signing Case",
+      "kind": "lock",
       "optional": false
     },
     {
@@ -219,6 +225,18 @@
       "optional": false
     },
     {
+      "id": "privacy_coin_mixing_analysis",
+      "label": "Privacy Coin Mixing Analysis",
+      "kind": "item",
+      "optional": true
+    },
+    {
+      "id": "lock_executive_safe",
+      "label": "Executive Safe",
+      "kind": "lock",
+      "optional": false
+    },
+    {
       "id": "cryptography_research_notes",
       "label": "Cryptography Research Notes",
       "kind": "item",
@@ -228,12 +246,6 @@
       "id": "email_from_the_architect",
       "label": "Email: From The Architect",
       "kind": "item",
-      "optional": false
-    },
-    {
-      "id": "lock_executive_safe",
-      "label": "Executive Safe",
-      "kind": "lock",
       "optional": false
     },
     {
@@ -253,6 +265,18 @@
       "label": "CEO's Office Key",
       "kind": "key",
       "optional": false
+    },
+    {
+      "id": "release_signing_record",
+      "label": "Release Signing Record",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "signing_case",
+      "label": "Signing Case",
+      "kind": "item",
+      "optional": true
     },
     {
       "id": "executive_safe",
@@ -387,7 +411,12 @@
     {
       "from": "reception_lobby",
       "to": "fingerprint_kit",
-      "soft": false
+      "soft": true
+    },
+    {
+      "from": "fingerprint_kit",
+      "to": "lock_satoshi_signing_case",
+      "soft": true
     },
     {
       "from": "security_checkpoint",
@@ -515,6 +544,16 @@
       "soft": false
     },
     {
+      "from": "blockchain_lab",
+      "to": "privacy_coin_mixing_analysis",
+      "soft": true
+    },
+    {
+      "from": "privacy_coin_mixing_analysis",
+      "to": "lock_executive_safe",
+      "soft": true
+    },
+    {
       "from": "irina_office",
       "to": "cryptography_research_notes",
       "soft": false
@@ -536,7 +575,7 @@
     },
     {
       "from": "framed_press_clipping",
-      "to": "lock_executive_safe",
+      "to": "lock_satoshi_signing_case",
       "soft": true
     },
     {
@@ -553,6 +592,21 @@
       "from": "ceo_s_office_key",
       "to": "door_satoshi_office",
       "soft": false
+    },
+    {
+      "from": "satoshi_office",
+      "to": "lock_satoshi_signing_case",
+      "soft": false
+    },
+    {
+      "from": "lock_satoshi_signing_case",
+      "to": "release_signing_record",
+      "soft": false
+    },
+    {
+      "from": "satoshi_office",
+      "to": "signing_case",
+      "soft": true
     },
     {
       "from": "satoshi_office",

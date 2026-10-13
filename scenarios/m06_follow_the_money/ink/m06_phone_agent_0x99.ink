@@ -90,6 +90,8 @@ VAR lockpick_guide_hint_given = false
 VAR minder_passed = false        // Synced scenario global (round 2, R2-m10)
 VAR minder_ko = false            // Synced scenario global (round 2, R2-m10)
 VAR minder_hostile = false       // Synced scenario global (round 2, R2-m10)
+VAR resolve_aim_open = false     // Synced scenario global (puzzle chains m5): the player has been in Satoshi's office
+VAR signing_record_found = false // Synced scenario global (puzzle chains D2): the signing case is open
 VAR server_room_entered = false   // Synced scenario global (regression M4): the server room door is open
 
 // ================================================
@@ -322,7 +324,8 @@ Try the other way first.
 {found_architects_fund and irina_exec_badge_given and not satoshi_confronted:
     You've the badge. The wing's east of the data centre; his office is north of that.
     // Round 2 (R2-m10, R2-M3): only while the minder still stands in the way.
-    {not minder_passed and not minder_ko and not minder_hostile:
+    // Puzzle chains m5: and not once the player has been through his door.
+    {not minder_passed and not minder_ko and not minder_hostile and not resolve_aim_open:
         He keeps a minder on that corridor, and the minder has the key to Satoshi's door.
         {cover_strained:
             With your cover strained, he won't take the FCA line. Pick the door while his back's turned, or bring Volkova's word if she's with us.
@@ -336,6 +339,10 @@ Try the other way first.
 }
 {satoshi_confronted and found_architects_fund and not assets_decided:
     The wallet is still yours to decide: freeze it, or leave it running and watch it.
+}
+// Puzzle chains D2: the print kit's beat, once the player has seen the case.
+{resolve_aim_open and not signing_record_found:
+    His desk has a signing case on a thumb reader. He'll have left that thumb on something he's proud of.
 }
 {asset_decision_deferred and not found_architects_fund:
     You can't decide about a wallet you haven't found. It's on the custody console.
@@ -436,9 +443,18 @@ The advances are gone either way.
 
 === on_network_complete ===
 #speaker:agent_0x99
+// Pass 5 puzzle chains (m3): flag 4 can land in any order, so each line
+// checks whether its step is still ahead.
 That's the vault account, and the recovery keys are in your kit.
-Satoshi's wing is on an executive badge. The spare's signed out to Volkova.
-She's yours to decide about too. Don't leave it to the police by default.
+{not satoshi_confronted and not irina_exec_badge_given:
+    Satoshi's wing is on an executive badge. The spare's signed out to Volkova.
+}
+{not irina_fate_decided:
+    Volkova's yours to decide about too. Don't leave it to the police by default.
+}
+{assets_decided:
+    -> hub
+}
 -> on_network_choices
 
 === on_network_choices ===
@@ -447,8 +463,11 @@ She's yours to decide about too. Don't leave it to the police by default.
     Watch it and they reach the cells, and we learn who the cells are.
     #exit_conversation
     -> hub
-+ [I'm going up.]
++ {not satoshi_confronted} [I'm going up.]
     He'll be expecting someone. Let it be you.
+    #exit_conversation
+    -> hub
++ {satoshi_confronted} [Understood.]
     #exit_conversation
     -> hub
 

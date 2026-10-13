@@ -9,12 +9,12 @@ Track cryptocurrency payments from previous ENTROPY operations to the Crypto Ana
 | Metric | Value |
 |---|---|
 | Story aims | 6 |
-| Total tasks | 26 (5 optional) |
+| Total tasks | 27 (6 optional) |
 | VM flag challenges | 4 |
-| Physical locks | 12 |
+| Physical locks | 13 |
 | AND-gate convergences | 0 |
 | Rooms | 9 |
-| Puzzle graph nodes / edges | 55 / 60 |
+| Puzzle graph nodes / edges | 59 / 66 |
 | Story graph nodes / edges | 6 / 5 |
 
 ## Critical Path
@@ -85,6 +85,7 @@ flowchart TD
   lock_pick_kit{"Lock Pick Kit"}
   rfid_cloner{"RFID Cloner"}
   fingerprint_kit{"Fingerprint Kit"}
+  lock_satoshi_signing_case["Satoshi Signing Case"]
   security_checkpoint("Restricted")
   it_new_starter_checklist{"IT New Starter Checklist"}
   daily_trading_report{"Daily Trading Report"}
@@ -105,12 +106,15 @@ flowchart TD
   cold_storage_procedure{"Cold Storage Procedure"}
   blockchain_lab("Blockchain Analysis")
   entropy_transaction_network_analysis{"ENTROPY Transaction Network Analysis"}
+  privacy_coin_mixing_analysis{"Privacy Coin Mixing Analysis"}
+  lock_executive_safe["Executive Safe"]
   cryptography_research_notes{"Cryptography Research Notes"}
   email_from_the_architect{"Email: From The Architect"}
-  lock_executive_safe["Executive Safe"]
   framed_press_clipping{"Framed Press Clipping"}
   npc_kemal_aydin{"Kemal Aydin"}
   ceo_s_office_key{"CEO's Office Key"}
+  release_signing_record{"Release Signing Record"}
+  signing_case{"Signing Case"}
   executive_safe{"Executive Safe"}
   npc_satoshi_nakamoto_ii{"Satoshi Nakamoto II"}
   action_satoshi_confrontation>"Confront Satoshi's Ghost"]
@@ -135,7 +139,8 @@ flowchart TD
   lock_pick_kit --> door_trading_floor
   reception_lobby -.-> rfid_cloner
   rfid_cloner -.-> door_irina_office
-  reception_lobby --> fingerprint_kit
+  reception_lobby -.-> fingerprint_kit
+  fingerprint_kit -.-> lock_satoshi_signing_case
   security_checkpoint --> it_new_starter_checklist
   it_new_starter_checklist --> door_server_room
   trading_floor --> daily_trading_report
@@ -161,14 +166,19 @@ flowchart TD
   data_center --> cold_storage_procedure
   blockchain_lab --> entropy_transaction_network_analysis
   entropy_transaction_network_analysis --> lock_cold_storage_console
+  blockchain_lab -.-> privacy_coin_mixing_analysis
+  privacy_coin_mixing_analysis -.-> lock_executive_safe
   irina_office --> cryptography_research_notes
   irina_office --> email_from_the_architect
   email_from_the_architect --> lock_executive_safe
   executive_wing -.-> framed_press_clipping
-  framed_press_clipping -.-> lock_executive_safe
+  framed_press_clipping -.-> lock_satoshi_signing_case
   executive_wing --> npc_kemal_aydin
   npc_kemal_aydin --> ceo_s_office_key
   ceo_s_office_key --> door_satoshi_office
+  satoshi_office --> lock_satoshi_signing_case
+  lock_satoshi_signing_case --> release_signing_record
+  satoshi_office -.-> signing_case
   satoshi_office --> lock_executive_safe
   satoshi_office -.-> executive_safe
   satoshi_office --> npc_satoshi_nakamoto_ii
@@ -186,16 +196,16 @@ flowchart TD
   hashchain_backend_server_terminal --> vmch_submit_flag1
   reception_lobby --> security_checkpoint
 
-  class door_trading_floor,door_server_room,door_data_center,door_irina_office,door_executive_wing,door_satoshi_office,lock_flag_station_financial,lock_cold_storage_console,custody_console,lock_executive_safe,lock_credential_reuse_available,lock_financial_database_reachable lock
+  class door_trading_floor,door_server_room,door_data_center,door_irina_office,door_executive_wing,door_satoshi_office,lock_satoshi_signing_case,lock_flag_station_financial,lock_cold_storage_console,custody_console,lock_executive_safe,lock_credential_reuse_available,lock_financial_database_reachable lock
   class trading_floor,server_room,data_center,irina_office,executive_wing,satoshi_office,reception_lobby,security_checkpoint,blockchain_lab room
-  class lock_pick_kit,rfid_cloner,fingerprint_kit,it_new_starter_checklist,daily_trading_report,password_dictionary_list,hashchain_backend_server_terminal,safetynet_financial_intelligence_drop,rack_inventory_sheet,mixer_settlements_log,mixer_pool_config_yml,the_architect_s_fund_allocation,cold_storage_procedure,entropy_transaction_network_analysis,cryptography_research_notes,email_from_the_architect,framed_press_clipping,executive_safe item
+  class lock_pick_kit,rfid_cloner,fingerprint_kit,it_new_starter_checklist,daily_trading_report,password_dictionary_list,hashchain_backend_server_terminal,safetynet_financial_intelligence_drop,rack_inventory_sheet,mixer_settlements_log,mixer_pool_config_yml,the_architect_s_fund_allocation,cold_storage_procedure,entropy_transaction_network_analysis,privacy_coin_mixing_analysis,cryptography_research_notes,email_from_the_architect,framed_press_clipping,release_signing_record,signing_case,executive_safe item
   class npc_dr_irina_volkova,cto_access_badge,executive_access_badge,npc_kemal_aydin,ceo_s_office_key,npc_satoshi_nakamoto_ii key
   class action_irina_cooperation,action_satoshi_confrontation action
   class vmch_submit_flag1,vmch_submit_flag2,vmch_submit_flag3,vmch_submit_flag4 vm
   class vmfl_submit_flag1,vmfl_submit_flag2,vmfl_submit_flag3,vmfl_submit_flag4 flag
 
   classDef optional stroke-dasharray:5 2
-  class rfid_cloner,framed_press_clipping,executive_safe optional
+  class rfid_cloner,fingerprint_kit,privacy_coin_mixing_analysis,framed_press_clipping,signing_case,executive_safe optional
   class node_start start
 ```
 
@@ -278,6 +288,7 @@ flowchart TD
   lock_pick_kit{"Lock Pick Kit"}
   rfid_cloner{"RFID Cloner"}
   fingerprint_kit{"Fingerprint Kit"}
+  lock_satoshi_signing_case["Satoshi Signing Case"]
   security_checkpoint("Restricted")
   it_new_starter_checklist{"IT New Starter Checklist"}
   daily_trading_report{"Daily Trading Report"}
@@ -298,12 +309,15 @@ flowchart TD
   cold_storage_procedure{"Cold Storage Procedure"}
   blockchain_lab("Blockchain Analysis")
   entropy_transaction_network_analysis{"ENTROPY Transaction Network Analysis"}
+  privacy_coin_mixing_analysis{"Privacy Coin Mixing Analysis"}
+  lock_executive_safe["Executive Safe"]
   cryptography_research_notes{"Cryptography Research Notes"}
   email_from_the_architect{"Email: From The Architect"}
-  lock_executive_safe["Executive Safe"]
   framed_press_clipping{"Framed Press Clipping"}
   npc_kemal_aydin{"Kemal Aydin"}
   ceo_s_office_key{"CEO's Office Key"}
+  release_signing_record{"Release Signing Record"}
+  signing_case{"Signing Case"}
   executive_safe{"Executive Safe"}
   npc_satoshi_nakamoto_ii{"Satoshi Nakamoto II"}
   action_satoshi_confrontation>"Confront Satoshi's Ghost"]
@@ -334,7 +348,8 @@ flowchart TD
   lock_pick_kit --> door_trading_floor
   reception_lobby -.-> rfid_cloner
   rfid_cloner -.-> door_irina_office
-  reception_lobby --> fingerprint_kit
+  reception_lobby -.-> fingerprint_kit
+  fingerprint_kit -.-> lock_satoshi_signing_case
   security_checkpoint --> it_new_starter_checklist
   it_new_starter_checklist --> door_server_room
   trading_floor --> daily_trading_report
@@ -360,14 +375,19 @@ flowchart TD
   data_center --> cold_storage_procedure
   blockchain_lab --> entropy_transaction_network_analysis
   entropy_transaction_network_analysis --> lock_cold_storage_console
+  blockchain_lab -.-> privacy_coin_mixing_analysis
+  privacy_coin_mixing_analysis -.-> lock_executive_safe
   irina_office --> cryptography_research_notes
   irina_office --> email_from_the_architect
   email_from_the_architect --> lock_executive_safe
   executive_wing -.-> framed_press_clipping
-  framed_press_clipping -.-> lock_executive_safe
+  framed_press_clipping -.-> lock_satoshi_signing_case
   executive_wing --> npc_kemal_aydin
   npc_kemal_aydin --> ceo_s_office_key
   ceo_s_office_key --> door_satoshi_office
+  satoshi_office --> lock_satoshi_signing_case
+  lock_satoshi_signing_case --> release_signing_record
+  satoshi_office -.-> signing_case
   satoshi_office --> lock_executive_safe
   satoshi_office -.-> executive_safe
   satoshi_office --> npc_satoshi_nakamoto_ii
@@ -405,12 +425,13 @@ flowchart TD
   door_satoshi_office -.-> aim_breach_executive_wing
   satoshi_office -.-> aim_resolve_the_fund
   lock_executive_safe -.-> aim_breach_executive_wing
+  release_signing_record -.-> aim_breach_executive_wing
   action_irina_cooperation -.-> aim_resolve_the_fund
   action_satoshi_confrontation -.-> aim_resolve_the_fund
 
-  class door_trading_floor,door_server_room,door_data_center,door_irina_office,door_executive_wing,door_satoshi_office,lock_flag_station_financial,lock_cold_storage_console,custody_console,lock_executive_safe,lock_credential_reuse_available,lock_financial_database_reachable lock
+  class door_trading_floor,door_server_room,door_data_center,door_irina_office,door_executive_wing,door_satoshi_office,lock_satoshi_signing_case,lock_flag_station_financial,lock_cold_storage_console,custody_console,lock_executive_safe,lock_credential_reuse_available,lock_financial_database_reachable lock
   class trading_floor,server_room,data_center,irina_office,executive_wing,satoshi_office,reception_lobby,security_checkpoint,blockchain_lab room
-  class lock_pick_kit,rfid_cloner,fingerprint_kit,it_new_starter_checklist,daily_trading_report,password_dictionary_list,hashchain_backend_server_terminal,safetynet_financial_intelligence_drop,rack_inventory_sheet,mixer_settlements_log,mixer_pool_config_yml,the_architect_s_fund_allocation,cold_storage_procedure,entropy_transaction_network_analysis,cryptography_research_notes,email_from_the_architect,framed_press_clipping,executive_safe item
+  class lock_pick_kit,rfid_cloner,fingerprint_kit,it_new_starter_checklist,daily_trading_report,password_dictionary_list,hashchain_backend_server_terminal,safetynet_financial_intelligence_drop,rack_inventory_sheet,mixer_settlements_log,mixer_pool_config_yml,the_architect_s_fund_allocation,cold_storage_procedure,entropy_transaction_network_analysis,privacy_coin_mixing_analysis,cryptography_research_notes,email_from_the_architect,framed_press_clipping,release_signing_record,signing_case,executive_safe item
   class npc_dr_irina_volkova,cto_access_badge,executive_access_badge,npc_kemal_aydin,ceo_s_office_key,npc_satoshi_nakamoto_ii key
   class action_irina_cooperation,action_satoshi_confrontation action
   class vmch_submit_flag1,vmch_submit_flag2,vmch_submit_flag3,vmch_submit_flag4 vm
@@ -418,7 +439,7 @@ flowchart TD
   class aim_establish_cover,aim_access_backend_systems,aim_crack_passwords,aim_map_financial_network,aim_breach_executive_wing,aim_resolve_the_fund critical
 
   classDef optional stroke-dasharray:5 2
-  class rfid_cloner,framed_press_clipping,executive_safe optional
+  class rfid_cloner,fingerprint_kit,privacy_coin_mixing_analysis,framed_press_clipping,signing_case,executive_safe optional
   class node_start start
 ```
 
@@ -550,9 +571,11 @@ flowchart TD
   rc_npc_kemal_aydin_43("Kemal Aydin")
   rc_ceo_office_key_44{"CEO's Office Key"}
   rc_crypto_anarchist_manifesto_45{"Crypto Anarchist Manifesto"}
-  rc_executive_safe_46[["Executive Safe"]]
-  rc_architect_identity_file_47{"The Architect's Identity File"}
-  rc_npc_satoshi_nakamoto_ii_48("Satoshi Nakamoto II")
+  rc_satoshi_signing_case_46[["Signing Case"]]
+  rc_release_signing_record_47{"Release Signing Record"}
+  rc_executive_safe_48[["Executive Safe"]]
+  rc_architect_identity_file_49{"The Architect's Identity File"}
+  rc_npc_satoshi_nakamoto_ii_50("Satoshi Nakamoto II")
 
   reception_lobby --> security_checkpoint
   security_checkpoint --> trading_floor
@@ -607,14 +630,16 @@ flowchart TD
   executive_wing --> rc_npc_kemal_aydin_43
   rc_npc_kemal_aydin_43 --> rc_ceo_office_key_44
   satoshi_office --> rc_crypto_anarchist_manifesto_45
-  satoshi_office --> rc_executive_safe_46
-  rc_executive_safe_46 --> rc_architect_identity_file_47
-  satoshi_office --> rc_npc_satoshi_nakamoto_ii_48
+  satoshi_office --> rc_satoshi_signing_case_46
+  rc_satoshi_signing_case_46 --> rc_release_signing_record_47
+  satoshi_office --> rc_executive_safe_48
+  rc_executive_safe_48 --> rc_architect_identity_file_49
+  satoshi_office --> rc_npc_satoshi_nakamoto_ii_50
 
   class reception_lobby,security_checkpoint,blockchain_lab room
   class trading_floor,server_room,data_center,irina_office,executive_wing,satoshi_office lock
-  class rc_hashchain_brochure_1,rc_m06_cracking_field_guide_6,rc_m06_distcc_field_guide_7,rc_m06_privesc_field_guide_8,rc_m06_recon_field_guide_9,rc_m06_rfid_field_guide_10,rc_m06_lockpicking_field_guide_11,rc_relayed_password_dictionary_12,rc_relayed_cto_badge_13,rc_relayed_executive_badge_14,rc_it_onboarding_checklist_16,rc_trading_workstation_18,rc_daily_trading_report_19,rc_m06_cto_badge_21,rc_m06_password_dictionary_22,rc_executive_access_badge_23,rc_vm_launcher_hackme_25,rc_flag_station_financial_26,rc_server_rack_labels_27,rc_settlement_log_29,rc_mixer_config_30,rc_custody_index_31,rc_architects_fund_doc_33,rc_wallet_recovery_keys_34,rc_blockchain_workstation_35,rc_blockchain_evidence_36,rc_mixing_analysis_37,rc_irina_workstation_39,rc_irina_research_notes_40,rc_architect_email_41,rc_executive_wing_plaque_42,rc_ceo_office_key_44,rc_crypto_anarchist_manifesto_45,rc_architect_identity_file_47 item
-  class rc_npc_agent_hax_2,rc_npc_director_magnus_netherton_3,rc_npc_agent_0x47_nightshade_4,rc_npc_agent_hax_5,rc_npc_agent_hax_15,rc_npc_checkpoint_guard_17,rc_npc_dr_irina_volkova_20,rc_npc_dani_okonkwo_24,rc_npc_priya_raghavan_38,rc_npc_kemal_aydin_43,rc_npc_satoshi_nakamoto_ii_48 npc
-  class rc_transaction_server_28,rc_cold_storage_console_32,rc_executive_safe_46 container
+  class rc_hashchain_brochure_1,rc_m06_cracking_field_guide_6,rc_m06_distcc_field_guide_7,rc_m06_privesc_field_guide_8,rc_m06_recon_field_guide_9,rc_m06_rfid_field_guide_10,rc_m06_lockpicking_field_guide_11,rc_relayed_password_dictionary_12,rc_relayed_cto_badge_13,rc_relayed_executive_badge_14,rc_it_onboarding_checklist_16,rc_trading_workstation_18,rc_daily_trading_report_19,rc_m06_cto_badge_21,rc_m06_password_dictionary_22,rc_executive_access_badge_23,rc_vm_launcher_hackme_25,rc_flag_station_financial_26,rc_server_rack_labels_27,rc_settlement_log_29,rc_mixer_config_30,rc_custody_index_31,rc_architects_fund_doc_33,rc_wallet_recovery_keys_34,rc_blockchain_workstation_35,rc_blockchain_evidence_36,rc_mixing_analysis_37,rc_irina_workstation_39,rc_irina_research_notes_40,rc_architect_email_41,rc_executive_wing_plaque_42,rc_ceo_office_key_44,rc_crypto_anarchist_manifesto_45,rc_release_signing_record_47,rc_architect_identity_file_49 item
+  class rc_npc_agent_hax_2,rc_npc_director_magnus_netherton_3,rc_npc_agent_0x47_nightshade_4,rc_npc_agent_hax_5,rc_npc_agent_hax_15,rc_npc_checkpoint_guard_17,rc_npc_dr_irina_volkova_20,rc_npc_dani_okonkwo_24,rc_npc_priya_raghavan_38,rc_npc_kemal_aydin_43,rc_npc_satoshi_nakamoto_ii_50 npc
+  class rc_transaction_server_28,rc_cold_storage_console_32,rc_satoshi_signing_case_46,rc_executive_safe_48 container
   class node_start start
 ```

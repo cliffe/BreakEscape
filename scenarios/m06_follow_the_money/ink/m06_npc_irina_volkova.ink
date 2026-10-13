@@ -71,6 +71,7 @@ VAR irina_exec_badge_given = false // set by the pickup mappings (lesson 26)
 VAR read_irina_notes = false       // onPickup of her research notes (P10)
 VAR architect_identity_found = false // safe opened (PASS 4 fix 3)
 VAR read_settlement_log = false      // settlement log picked up (round 2, M3)
+VAR slot_checked_visit = false // Pass 5 puzzle chains (M1, D1): one slot check per visit; cleared in start
 VAR cover_strained = false   // Pass 5 A3: synced; the floor has a reason to ring the FCA
 VAR given_time = false
 VAR asked_passwords = false   // playtest D1: the second ask always succeeds
@@ -86,6 +87,7 @@ VAR hub_quiet = false
 
 === start ===
 #speaker:irina_volkova
+~ slot_checked_visit = false
 {irina_fate_decided:
     -> after_choice
 }
@@ -549,6 +551,7 @@ Dr. Irina Volkova: Which one?
 + [5093.]
     -> slot_wrong
 + [6120.]
+    ~ slot_checked_visit = true
     Dr. Irina Volkova: I told you. That's the one he shows auditors.
     -> after_choice
 + [8846.]
@@ -558,11 +561,14 @@ Dr. Irina Volkova: Which one?
 
 === slot_wrong ===
 #speaker:irina_volkova
+~ slot_checked_visit = true
 Dr. Irina Volkova: No. Take my cut off each deposit, then check the times against my hold.
+Dr. Irina Volkova: Work it through before you ask me again.
 -> after_choice
 
 === slot_right ===
 #speaker:irina_volkova
+~ slot_checked_visit = true
 #set_variable:irina_confirmed_slot=true
 Dr. Irina Volkova: Yes. Every deposit I cleared ended up there.
 -> after_choice
@@ -584,8 +590,29 @@ Dr. Irina Volkova: Yes. Every deposit I cleared ended up there.
 }
 + {found_architects_fund and not irina_exec_badge_given and TURNS() > exec_badge_turn} [Satoshi's wing. You've a badge for it.]
     -> exec_badge_handover
-+ {irina_recruited and not found_architects_fund and read_settlement_log} [I've read the settlement log. Check a slot for me.]
+// Pass 5 puzzle chains (M1, D1): one check per visit, so she confirms the
+// player's reasoning rather than doing it for them.
++ {irina_recruited and not found_architects_fund and read_settlement_log and not slot_checked_visit} [I've read the settlement log. Check a slot for me.]
     -> slot_check
+// Pass 5 puzzle chains (M2): turned or detained before she handed over the
+// wordlist, it was lost for good and a required task stayed open.
++ {irina_recruited and not found_password_lists and not wordlist_handed} [I still need that wordlist.]
+    ~ wordlist_handed = true
+    #give_item:text_file:m06_password_dictionary
+    Dr. Irina Volkova: Of course. Here.
+    -> after_choice
++ {irina_arrested and not found_password_lists and not wordlist_handed} [(Take the wordlist from her desk.)]
+    ~ wordlist_handed = true
+    #speaker:narrator
+    #give_item:text_file:m06_password_dictionary
+    Narrator: Her audit wordlist is in the top tray, under a mug. She watches you take it and says nothing.
+    -> after_choice
+// Pass 5 puzzle chains (m9): a turned Irina can still lend her office badge.
++ {irina_recruited and not irina_badge_obtained and not irina_badge_cloned and not badge_handed} [Can I borrow your office badge?]
+    ~ badge_handed = true
+    #give_item:keycard:m06_cto_badge
+    Dr. Irina Volkova: Take it. There's nothing in there I'm proud of any more.
+    -> after_choice
 + [Nothing. Carry on.]
     {irina_recruited:
         Dr. Irina Volkova: Then be careful up there.

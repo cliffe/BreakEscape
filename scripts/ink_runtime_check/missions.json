@@ -908,6 +908,7 @@
       "minder_hostile": false,
       "minder_ko": false,
       "minder_challenged": false,
+      "signing_record_found": false,
       "server_room_entered": false
     },
     "npcs": [

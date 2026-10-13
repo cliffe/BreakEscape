@@ -105,7 +105,7 @@ Checkpoint Guard: Door's open. Don't touch the screens; the traders bite.
 #exit_conversation
 -> start.waved_choices
 
-// lockpick_used_in_view (event-started, cooldown 0). Checks the waved-through
+// lockpick_used_in_view (event-started, cooldown 250 ms; see the erb comment). Checks the waved-through
 // and grace states first, so a man who let you in never challenges you.
 === on_lockpick_seen ===
 { guard_waved_through:
