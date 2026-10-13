@@ -47,7 +47,6 @@
       "topic": "Systems Security",
       "keywords": [
         "Vulnerability exploitation",
-        "Privilege escalation",
         "Linux security"
       ]
     },
@@ -90,6 +89,13 @@
       "keywords": [
         "RFID authentication",
         "Access control bypass"
+      ]
+    },
+    {
+      "ka": "OSV",
+      "topic": "Primitives for Isolation and Mediation",
+      "keywords": [
+        "Privilege escalation"
       ]
     }
   ]

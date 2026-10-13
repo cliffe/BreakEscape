@@ -59,6 +59,11 @@
       "ka": "AAA",
       "topic": "Authentication",
       "keywords": ["RFID authentication", "PIN-based authentication", "Access control bypass"]
+    },
+    {
+      "ka": "OSV",
+      "topic": "Primitives for Isolation and Mediation",
+      "keywords": ["Privilege escalation"]
     }
   ]
 }
