@@ -51,6 +51,8 @@ From the PIN cracker fix (2026-10-10), found but not fixed:
 - **Person-chat resume** (pass 3; M). When a face-to-face conversation reopens, the engine goes back to the knot of the first saved choice, so a resumed check can show its choices without the question that led to them (seen with Netherton in m08). Phone chat had the same problem and now replays nothing already seen (E10/E13); person-chat could get the same treatment.
 - **Sync globals when a conversation closes** (sis02 D6, 2026-10-09; S). Globals reach the server every 30 s or on pagehide (`state-sync.js`), so a crash or killed tab within 30 s of a conversation loses flags like `helen_briefed` and the NPC replays its scene. Call `window.stateSync?.sync()` after `conversation_closed` in person-chat and phone-chat. Normal reloads aren't affected.
 
+- **Tutorial prompt over the opening cutscene** (engine, 2026-10-13; S). The yes/no tutorial prompt appears about 1 s after load, on top of a `game_loaded` cutscene (seen in m03 and m04). Hold the prompt until the opening cutscene and brief close. `timedConversation` and event-triggered person-chats also don't check `tutorialManager.isPromptOpen()` (added in 0b66f334 for sight challenges); a short-delay one can open over the prompt.
+
 ## Story and missions
 
 - **Carry m03's Sterling and Danny threads forward** (m03 pass-2 dialogue review, 2026-10-12; M). No mission from m04 to m08 mentions Victoria Sterling or Danny Foster. A recruited Sterling could turn up as an asset or a liability later, and the debrief's "Somebody has to tell him she's walking. It should be you." could be paid off. Depends on "Carry choices between missions".
