@@ -182,3 +182,16 @@ Lessons:
 - Wall-strip signs and screens are short: the glow centres on the sprite, so anything over about r 24 blooms over the rim into the room to the north. Use offsetY 4-6 and small radii.
 - Additive glows don't show on bright screens or pale floors in a lit room; a story change on a screen wall needs `above` plus `floorTint`, or a dark surface to land on.
 - Proposal: rack-style LEDs for `hce_*` props (m06 `DECISIONS_PENDING.md` D9).
+
+### m05_insider_trading (2026-10-13/14, m05 pass 5, lighting cycles 1-5)
+
+Plan and log: `scenarios/m05_insider_trading/LIGHTING_PLAN.md`. Evening, about 16:30 to 20:15 (scenario ambient `#c6c4c8`). On: lobby `#d2d0d0`, corridor, break room `#ccc4b8`, open office, lab `#ccd2dc`, Patricia `#c4bec4`. Motion: server hallway (dark `#121828`), server room `#b2b2c8` and vault `#b0b2c2` (darks `#0a0f1c`), Torres' office `#c4bcb0` with his desk lamp left on. Room `variants` (as m03, here keyed on a story beat): at `torres_identified` (about 20:00, past the badge log's 19:00 after-hours line) the lobby goes to `#b0b8ca` with `panels: false`, the corridor to motion with `offAfter` 75 and dark `#161c30`, and the server hallway, server room and vault to `on` (Patricia: "His badge just went through the hallway and the vault's logged him in"). The upload terminal (texture prefix `pc` in the vault, the only PC there): engine screen glow, then amber breathe while it runs, steady red once `final_choice` is set. All `qdc_*` props through per-room emitters; no `EMITTERS` change. Call points off; suppression panels steady.
+
+Lessons:
+- A good switch for a lit-room variant is a global set inside a conversation whose own words explain the change ("his badge just went through the hallway"). The chat covers the screen while the variant lands, so the missing strike isn't seen, and the player has been told why.
+- `motion` as a variant for a corridor works as "after hours": the corridor goes dark at once if the player isn't in it, and strikes the next time they walk through. A small ambient step on a lit room (the lobby, `#b8bfce` against `#d2d0d0`) barely shows; `panels: false` plus about 25 per channel does.
+- Emitter `offsetX`/`offsetY` are world pixels. At the tour's 2x zoom they move the glow twice as far on screen, so halve what you measure on a shot.
+- Glows on props in a room that is always lit only show if the prop is dark (sign faces, rack fronts). Cool glows on pale lab kit, a TV on a sage wall and a glass case did nothing or made a flare; drop them rather than keep no-op config.
+- A glow on one item of a set (one locker in a bank of key safes) reads as "this one matters". Light the whole set or none of it.
+- The resume overlay still makes the harness's `bootstrap` loop after a reload (playtest skill note). For a reload check, click the overlay's "Resume" button by its exact text in an `eval`, then poll for `window.lightingSystem`.
+- Proposal: LEDs for `qdc_*` racks and HSMs (m05 `DECISIONS_PENDING.md` D16, the same limit as m06 D9).

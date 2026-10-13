@@ -38,6 +38,7 @@ Read the scenario brief and opening (time of day, setting). Pick the scenario-le
 | ------------------- | ------------------------------- | ------- |
 | Day office, default | omit (engine default `#c4cad8`) | —       |
 | Night shift         | `#b8bfce`                       | m02     |
+| Evening office      | `#c6c4c8`                       | m05     |
 
 Keep lit rooms readable: below about `#a8b0c0`, the art starts to look muddy. `darkAmbient` defaults to `#101424`; `#0a0f1c` suits server rooms, where the LEDs carry the room.
 

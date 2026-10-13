@@ -860,3 +860,17 @@ No rewrite needed adjusting: each proposed line fitted its context.
 ## Phase art: room dressing CLOSED (2026-10-13)
 
 Full log: `ROOM_DRESSING.md`. m05 now has its own building: ten `room_qdc_*` maps for Quantum Dynamics Corporation (new builders in `scripts/generate_rooms.py`, sheets from `scripts/room_gen/make_qdc_tileset.py`, hand-drawn props from `scripts/room_gen/make_qdc_props.py`); the shared maps are untouched. Five cycles: cycle 1 built all ten rooms (1 blocker, 6 majors in the old maps); fresh Opus reviews in cycles 2, 3 and 5 (8, 4 and 0 majors); the user's square-to-the-walls rule applied in cycle 2 (the angled PixelLab kit regenerated front-on) and finished in cycle 4 (hand-drawn front-on filing cabinets and HSM racks); a Sonnet interaction walk (game 2373) found one major, a chair making a pick-one menu on the lanyard, fixed across four rooms and confirmed (game 2380). Known items closed: m12 (rooms; the empty visitor-badge hook in the lab, decor only); the Lab Rules on the lab wall, read in place (`readDisplay`); N3 (the vault walk-in to Torres is open); the briefcase and Mug findable; "Heisenberg Leads Only" on the vault sign; no pick-one menus. Scenario edits were layout-only: room types, `as-type` slots (Lab Rules, IT notice, briefcase, filing cabinet), five explicit floor positions removed. Checks: validator 0 errors, doors 9/9, walls 64, `slot_audit` 0 problems, routes 38/38. First-room sign-off pending (D15). PixelLab 1787 → 1767; no Gemini.
+
+## Phase art: lighting (2026-10-13/14)
+
+Full plan and log: `LIGHTING_PLAN.md`. m05 had no lighting before this stage. Story-led: an evening at QDC from about 16:30 to the 20:30 window. Staffed rooms are lit; the server side, the vault and Torres' office are on motion sensors (his desk lamp left on). At the naming (`torres_identified`, about 20:00 and past the badge log's 19:00 after-hours line) the lobby drops to night light, the corridor goes on its sensor, and the route Patricia says his badge just took (server hallway, server room, vault) lights up. The upload terminal breathes amber while it runs and turns steady red once `final_choice` is set. Only the lighting blocks in `scenario.json.erb` changed (one scenario block, ten room blocks); no ink, NPC, layout or engine change. The reviews were the lighting agent's own, from tour shots, not a separate reviewer agent.
+
+| Cycle | Blocker | Major | Minor | Outcome |
+|---|---|---|---|---|
+| 1 (design, implement, tours 2384-2386) | 0 | 1 | 8 | all fixed (terminal phases invisible in the lit vault → `above` + `floorTint`; rim bloom on signs; key-locker hint removed; no-op glows dropped) |
+| 2 (tours 2387-2390) | 0 | 1 | 4 | all fixed (amber still faint → deeper orange, floorTint 0.65; lamp offsets in world px) |
+| 3 (tours 2393-2398) | 0 | 0 | 3 | 2 fixed; amber subtle in a still accepted (clear in the dark vault, the narrator gives the bar, seen live) |
+| 4 | fixes only | | | |
+| 5 (tours 2399-2401, live 2403, reload 2405) | 0 | 0 | 0 | closed |
+
+Checks: validator schema pass; doors 9/9; routes 38/38. Browser (keyless :3001, my own games, sessions stopped): the phase switch live (variants and terminal states as designed, the corridor strikes on entry after hours) and after a page reload (variants kept). Globals were set by console, so "exercised, not earned". Pending: D16 (engine, rack LEDs for `qdc_*` props). No PixelLab or Gemini use. Next: POV backgrounds.

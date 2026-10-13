@@ -699,9 +699,30 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
 
   "endGoal": "Identify the insider with both halves of the case (motive and proof of exfiltration), stop the final upload, and decide David Torres' fate: turn him, hand him to the police, expose the programme, or fight.",
 
+<%# Lighting (pass 5, LIGHTING_PLAN.md): an evening at QDC, about half past four
+    to a quarter past eight. Staffed rooms lit; the server side and Torres' office on
+    motion sensors. Once Torres is named (about 20:00, after the 19:00 after-hours
+    line) the front of house drops to night lighting and the corridor goes on its
+    sensor, and the route his badge just took (server hallway, server room, vault)
+    is lit. The upload terminal: amber while it runs, red once it is stopped.
+    && only, no ||. %>
+  "lighting": { "enabled": true, "defaultMode": "on", "ambient": "#c6c4c8" },
   "rooms": {
     "reception_lobby": {
       "type": "room_qdc_lobby",
+      "lighting": {
+        "ambient": "#d2d0d0",
+        "emitters": {
+          "qdc_logo_sign": [{ "color": "#a98cff", "radius": 24, "intensity": 0.3, "offsetY": 2, "above": true }],
+          "qdc_dispatch_screen": [{ "color": "#6dffa0", "radius": 30, "intensity": 0.5, "effect": "screen", "offsetY": 4, "above": true }],
+          "reception_counter": [{ "color": "#6fe0ff", "radius": 40, "intensity": 0.3, "above": true }],
+          "display_case": [{ "color": "#fff2d8", "radius": 20, "intensity": 0.2, "offsetY": -10, "above": true }],
+          "fire_alarm_point": [{ "intensity": 0 }]
+        },
+        "variants": [
+          { "condition": "globalVars.torres_identified === true", "ambient": "#b0b8ca", "panels": false }
+        ]
+      },
       "connections": {
         "north": "main_corridor",
         "east": "patricia_office"
@@ -1384,6 +1405,11 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
 
     "main_corridor": {
       "type": "room_qdc_hall",
+      "lighting": {
+        "variants": [
+          { "condition": "globalVars.torres_identified === true", "mode": "motion", "offAfter": 75, "ambient": "#b8bfce", "darkAmbient": "#161c30" }
+        ]
+      },
       "connections": {
         "south": "reception_lobby",
         "west": "break_room",
@@ -1407,6 +1433,7 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
 
     "break_room": {
       "type": "room_qdc_break",
+      "lighting": { "ambient": "#ccc4b8" },
       "connections": {
         "east": "main_corridor"
       },
@@ -1448,6 +1475,11 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
 
     "open_office_area": {
       "type": "room_qdc_open",
+      "lighting": {
+        "emitters": {
+          "fire_alarm_point": [{ "intensity": 0 }]
+        }
+      },
       "dimensions": { "width": 10, "height": 10 },
       "connections": {
         "south": "main_corridor",
@@ -1519,6 +1551,14 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
 
     "server_hallway": {
       "type": "room_qdc_server_hall",
+      "lighting": {
+        "mode": "motion",
+        "ambient": "#b4b6c6",
+        "darkAmbient": "#121828",
+        "variants": [
+          { "condition": "globalVars.torres_identified === true", "mode": "on" }
+        ]
+      },
       "locked": true,
       "lockType": "rfid",
       "requires": "employee_badge",
@@ -1545,6 +1585,20 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
 
     "server_room": {
       "type": "room_qdc_servers",
+      "lighting": {
+        "mode": "motion",
+        "ambient": "#b2b2c8",
+        "darkAmbient": "#0a0f1c",
+        "emitters": {
+          "qdc_rack_black": [{ "color": "#6dffb0", "radius": 40, "intensity": 0.45, "effect": "blink" }],
+          "qdc_server_sign": [{ "color": "#b090ff", "radius": 12, "intensity": 0.35, "offsetY": 8, "above": true }],
+          "suppression_panel": [{ "radius": 18, "intensity": 0.45, "effect": null }],
+          "aircon_unit": [{ "color": "#9fe8ff", "radius": 18, "intensity": 0.2, "offsetY": -20, "above": true }]
+        },
+        "variants": [
+          { "condition": "globalVars.torres_identified === true", "mode": "on" }
+        ]
+      },
       "locked": true,
       "lockType": "password",
       "requires": "<%= server_room_password %>",
@@ -1606,6 +1660,14 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
 
     "torres_office": {
       "type": "room_qdc_torres",
+      "lighting": {
+        "mode": "motion",
+        "ambient": "#c4bcb0",
+        "emitters": {
+          "exec_desk_mahogany": [{ "color": "#ffd08a", "radius": 48, "intensity": 0.7, "offsetX": 14, "offsetY": -8 }],
+          "fire_alarm_point": [{ "intensity": 0 }]
+        }
+      },
       "locked": true,
       "lockType": "rfid",
       "requires": "office_keycard",
@@ -1667,6 +1729,12 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
 
     "research_lab": {
       "type": "room_qdc_lab",
+      "lighting": {
+        "ambient": "#ccd2dc",
+        "emitters": {
+          "qdc_laser_warning": [{ "color": "#ff4040", "radius": 14, "intensity": 0.6, "offsetY": 5, "above": true }]
+        }
+      },
       "connections": {
         "east": "open_office_area"
       },
@@ -1735,6 +1803,12 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
 
     "patricia_office": {
       "type": "room_qdc_security",
+      "lighting": {
+        "ambient": "#c4bec4",
+        "emitters": {
+          "qdc_cctv_desk": [{ "color": "#9fd4ff", "radius": 36, "intensity": 0.55, "effect": "screen", "offsetY": -8, "above": true }]
+        }
+      },
       "locked": false,
       "connections": {
         "west": "reception_lobby"
@@ -1842,6 +1916,25 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
 
     "data_center": {
       "type": "room_qdc_vault",
+      "lighting": {
+        "mode": "motion",
+        "ambient": "#b0b2c2",
+        "darkAmbient": "#0a0f1c",
+        "emitters": {
+          "pc": [
+            { "condition": "globalVars.final_choice !== ''", "color": "#ff4a3a", "radius": 40, "intensity": 0.9, "effect": null, "offsetY": 0, "above": true, "floorTint": 0.45 },
+            { "condition": "globalVars.torres_identified === true", "color": "#ff8a1a", "radius": 44, "intensity": 1.0, "effect": "breathe", "offsetY": 0, "above": true, "floorTint": 0.65 }
+          ],
+          "qdc_rack_black": [{ "color": "#6dffb0", "radius": 40, "intensity": 0.45, "effect": "blink" }],
+          "qdc_hsm": [{ "color": "#5cff8a", "radius": 22, "intensity": 0.35, "above": true }],
+          "qdc_vault_sign": [{ "color": "#ff4a3a", "radius": 18, "intensity": 0.35, "offsetY": 6, "above": true }],
+          "qdc_two_person_sign": [{ "color": "#ff4a3a", "radius": 14, "intensity": 0.3, "offsetY": 6, "above": true }],
+          "suppression_panel": [{ "radius": 18, "intensity": 0.45, "effect": null }]
+        },
+        "variants": [
+          { "condition": "globalVars.torres_identified === true", "mode": "on" }
+        ]
+      },
       "locked": true,
       "lockType": "biometric",
       <%# Pass 5 A3: both Heisenberg leads are enrolled, so the sign and the lines
