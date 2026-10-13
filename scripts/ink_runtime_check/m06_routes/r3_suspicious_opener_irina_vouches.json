@@ -23,12 +23,12 @@
 {"said": ["He is expecting you"]},
 {"room": "satoshi_office"},
 {"talk": "satoshi", "picks": ["Satoshi's Ghost", "Nothing justifies this", "Privacy has honest uses", "I'm freezing it", "Better that than", "I'm not debating"]},
-{"said": ["Somebody here rang the FCA tonight", "Kemal let you in", "Irina understood that too"]},
+{"said": ["Somebody here rang the FCA tonight", "Kemal rang Irina, and she vouched for you", "Irina understood that too"]},
 {"talk": "phone", "picks": ["Bring me in", "Bring me in", "On my way"]},
 {"said": ["His safe's still shut, for one"]},
 {"talk": "debrief", "picks": ["Start with the fund", "What happens to the cells now", "She wanted out", "He'll be making speeches", "Walk me through it", "Their door passphrases", "Two service accounts", "Every cold wallet", "What's next"]},
-{"said": ["Your cover didn't last the night", "His minder took Volkova's word for you", "You left Satoshi's safe shut", "you read her notes first"]},
+{"said": ["Your cover didn't last the night", "His minder took Volkova's word for you", "You left Satoshi's safe shut", "Reading her notes first"]},
 {"credits": true},
-{"said": ["FCA COVER: strained", "KEMAL AYDIN (MINDER): Talked your way past him", "IDENTITY: Unknown"]},
+{"said": ["FCA COVER: strained", "KEMAL AYDIN (MINDER): Let you in on Volkova's word", "IDENTITY: Unknown"]},
 {"maxRun": 9}
 ]}

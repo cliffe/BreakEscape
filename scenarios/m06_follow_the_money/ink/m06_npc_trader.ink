@@ -35,11 +35,25 @@ VAR irina_ko = false
     #speaker:narrator
     Narrator: A young trader watches six price charts at once, placing the occasional order without appearing to look at it.
 
-    Dani Okonkwo: You're the regulator, yeah? FCA?
+    // Dialogue C2 (D6-53): a first meeting after Irina's fate is settled.
+    {
+    - irina_arrested or irina_ko:
+        {
+        - irina_ko:
+            ~ irina_news = 3
+        - irina_taken:
+            ~ irina_news = 2
+        - else:
+            ~ irina_news = 1
+        }
+        Dani Okonkwo: You're the regulator? Is this about Irina? *glances at her desk* I don't know anything. Honestly.
+    - else:
+        Dani Okonkwo: You're the regulator, yeah? FCA?
 
-    Dani Okonkwo: Don't worry, we're legit. Mostly.
+        Dani Okonkwo: Don't worry, we're legit. Mostly.
+    }
 
-    + [Mostly? That's an interesting qualifier.]
+    + {not irina_arrested and not irina_ko} [Mostly? That's an interesting qualifier.]
         Dani Okonkwo: Joking. It's all above board. Irina makes sure. Honestly. Ignore me.
         -> hub
 
@@ -103,7 +117,7 @@ Dani Okonkwo: Fast, cheap, loads of volume. It's a tough market, to be fair.
 + {not topic_monero} [Why is so much of this in Monero?]
     -> monero_discussion
 
-+ {not topic_irina and not irina_arrested and not irina_ko} [What's Dr. Volkova like to work for?]
++ {not topic_irina and not irina_arrested and not irina_ko} [What's Dr Volkova like to work for?]
     -> irina_discussion
 
 + [That's all, thanks.]
@@ -237,7 +251,7 @@ Dani Okonkwo: Irina and Satoshi do compliance. I just watch the charts.
 // Review M1: this is the "flagged the wallets" conversation the task names.
 #complete_task:question_the_trader
 
-Dani Okonkwo: *lowers voice* Between us? Some of it's weird. Big round sums going in late at night. Same wallets, same habit.
+Dani Okonkwo: *lowers voice* Between us? Some of it's weird. Big round sums going in late at night. Same wallets, like clockwork.
 
 Dani Okonkwo: I put the wallet names in the daily report. It's on the desk. One's got "ENTROPY" right there in the address.
 

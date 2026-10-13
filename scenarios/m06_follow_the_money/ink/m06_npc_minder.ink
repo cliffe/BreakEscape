@@ -27,6 +27,7 @@ VAR minder_passed = false
 VAR minder_hostile = false
 VAR satoshi_confronted = false
 VAR minder_challenged = false   // Synced scenario global (round 2, R2-m7)
+VAR minder_vouched = false      // Synced scenario global (dialogue C2, D6-63): let in on Volkova's word
 
 // Ink-local
 VAR minder_met = false
@@ -132,6 +133,8 @@ Narrator: He holds your eye while he dials. A short exchange, then a longer sile
 #speaker:satoshi_minder
 ~ minder_passed = true
 #set_variable:minder_passed=true
+~ minder_vouched = true
+#set_variable:minder_vouched=true
 Kemal Aydin: She says you are expected. She has never once lied to me, so.
 #unlock_door:satoshi_office
 Kemal Aydin: Na gut. Go in.
@@ -143,7 +146,7 @@ Kemal Aydin: Na gut. Go in.
 { saw_picks and not cover_strained:
     Kemal Aydin: The FCA does not carry picks.
 - else:
-    Kemal Aydin: Mr Nakamoto's phone has been ringing about you. The FCA has never heard your name.
+    Kemal Aydin: Mr Nakamoto's phone has been ringing about you. The FCA has no file on you.
 }
 Kemal Aydin: I guarded banks that stole politely. He at least says what he is.
 Kemal Aydin: So. Who are you really?

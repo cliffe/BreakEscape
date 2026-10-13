@@ -18,7 +18,7 @@
 {"notSaid": ["Kemal let you in"]},
 {"talk": "irina", "picks": ["I'm not from the FCA", "I'm detaining you"]},
 {"talk": "phone", "picks": ["Bring me in", "Bring me in", "On my way"]},
-{"talk": "debrief", "picks": ["Start with the fund", "How does anyone", "She knew what she was building", "He'll be making speeches", "Just the letter", "Their door passphrases", "Two service accounts", "Every cold wallet", "What's next"]},
+{"talk": "debrief", "picks": ["Start with the fund", "How does anyone", "She knew what she was building", "He'll be making speeches", "Skip it", "Their door passphrases", "Two service accounts", "Every cold wallet", "What's next"]},
 {"said": ["His minder came at you and you went round him"]},
 {"notSaid": ["His minder let you walk in"]},
 {"credits": true},

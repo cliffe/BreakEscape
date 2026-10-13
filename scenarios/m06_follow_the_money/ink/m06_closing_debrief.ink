@@ -49,6 +49,7 @@ VAR console_tripped = false // Puzzle chains R2 (M-R2-2): a console lockout befo
 VAR signing_record_found = false // Puzzle chains D2: Satoshi's signing case opened on his own print
 VAR minder_challenged = false // Round 2 (R2-m7)
 VAR analyst_walked_through = false // Dialogue C1 (D6-31): Priya walked the player through her graph
+VAR minder_vouched = false // Dialogue C2 (D6-63): Kemal let the player in on Volkova's word
 VAR fca_picks = 0
 VAR fca_right = 0
 
@@ -150,8 +151,13 @@ Agent HaX: Greed I could bargain with. These people believe it.
     Agent HaX: The freeze doesn't stop the cells that were already paid.
     Agent HaX: And ENTROPY knows we were inside their bank. We won't get in again.
 - else:
-    Agent HaX: Every cell that took a payout is on our map, and they don't know it.
-    Agent HaX: They'll have the money in three days. Whatever it buys goes ahead unless we get there first.
+    // Dialogue C2 (D6-66): the outcome and the clock were just given in operation_disrupted.
+    {operation_disrupted:
+        Agent HaX: They don't know we're watching. Whatever the money buys goes ahead unless we get there first.
+    - else:
+        Agent HaX: Every cell that took a payout is on our map, and they don't know it.
+        Agent HaX: They'll have the money in three days. Whatever it buys goes ahead unless we get there first.
+    }
 }
 
 -> irina_discussion
@@ -237,7 +243,7 @@ Agent HaX: You detained her and handed her over with the evidence. By the book.
 // Round 2 (R2-m9): detained, then knocked down, before the police came.
 {
 - irina_ko:
-    Agent HaX: She went down on the trading floor after you'd detained her. The police carried her out. That's in the report too.
+    Agent HaX: She went down on the trading floor after you'd detained her. The police carried her out.
 - irina_taken:
     Agent HaX: The police collected her from her desk while you were still working the building.
 - else:
@@ -280,7 +286,7 @@ Agent HaX: The Crypto Anarchists have lost their best cryptographer. Replacing h
     }
 }
 {read_irina_notes:
-    Agent HaX: And you read her notes first. Good. Know what they've already told themselves.
+    Agent HaX: Reading her notes first was good work. Know what they've already told themselves.
 }
 -> satoshi_aftermath
 
@@ -338,8 +344,8 @@ Agent HaX: The Crypto Anarchists have lost their best cryptographer. Replacing h
     Agent HaX: His minder's in custody too. He finishes a long career on a corridor floor.
 - minder_hostile:
     Agent HaX: His minder came at you and you went round him. He's in custody now, and furious.
-// Dialogue C1 (D6-39): with the cover strained, only Volkova's word gets past him.
-- minder_passed and cover_strained and irina_recruited:
+// Dialogue C2 (D6-63): a synced global records Volkova's word, on either route to it.
+- minder_vouched:
     Agent HaX: His minder took Volkova's word for you, on the phone, with his boss behind the door.
 - minder_passed:
     Agent HaX: His minder let you walk in. I'd like to hear what you said to him.
@@ -355,7 +361,7 @@ Agent HaX: The Crypto Anarchists have lost their best cryptographer. Replacing h
 
 === cover_and_staff ===
 {cover_strained:
-    Agent HaX: Your cover didn't last the night. The FCA had never heard of you, and that might cost us the next job.
+    Agent HaX: Your cover didn't last the night. HashChain rang the FCA, and that might cost us the next job.
 - else:
     {satoshi_spoken:
         Agent HaX: And the cover held on the floor. Only Satoshi thought to check, and by then you were at his desk.
@@ -367,13 +373,13 @@ Agent HaX: The Crypto Anarchists have lost their best cryptographer. Replacing h
     Agent HaX: Okonkwo flagged those wallets before we ever did, and got knocked down for it.
 }
 {analyst_ko:
-    Agent HaX: Raghavan drew us the money, and got knocked down for it.
+    Agent HaX: Raghavan drew us the money, and woke up on the lab floor.
 }
 {guard_ko:
     Agent HaX: The guard on the checkpoint has a wife who wants to know why he's in A&E.
 }
 {trader_ko or analyst_ko or guard_ko:
-    Agent HaX: None of them knew what HashChain was.
+    Agent HaX: None of them were in on it.
 }
 // Dialogue C1 (D6-31): Priya asked what she'd been drawing.
 {analyst_walked_through and not analyst_ko:
@@ -396,7 +402,7 @@ Agent HaX: All four flags in.
     // Dialogue C1 (D6-4): one line, not a list.
     Agent HaX: That's the whole chain, from outside to the keys, and they'd left every link open.
     -> fca_letter
-+ [I was there. Just the letter.]
++ [I was there. Skip it.]
     Agent HaX: Short version, then. They left every link open.
     -> fca_letter
 
@@ -566,7 +572,7 @@ Agent HaX: Six cells, one fund, one seventy-two-hour clock. Somebody wrote one s
 }
 
 + [What's next?]
-    Agent HaX: We find out which of them moves first. Some of them are already paid for.
+    Agent HaX: We find out which of them moves first, and get there before it does.
     -> next_mission_hint
 + [So they all move at once.]
     Agent HaX: If they do, we won't get much warning.

@@ -21,7 +21,7 @@
 {"talk": "phone", "reload": "page", "picks": ["Bring me in", "Bring me in", "On my way"]},
 {"expect": {"start_debrief_cutscene": true, "debrief_played": false}},
 {"backstops": {"expect": ["re-emit"]}},
-{"talk": "debrief", "picks": ["Start with the fund", "How does anyone", "Was it the right call", "He'll be making speeches", "Just the letter", "Their door passphrases", "Two service accounts", "Every cold wallet", "What's next"]},
+{"talk": "debrief", "picks": ["Start with the fund", "How does anyone", "Was it the right call", "He'll be making speeches", "Skip it", "Their door passphrases", "Two service accounts", "Every cold wallet", "What's next"]},
 {"said": ["SAFETYNET headquarters"]},
 {"notSaid": ["That's enough. Come in", "I want to hear it in person"]},
 {"expect": {"debrief_played": true}},

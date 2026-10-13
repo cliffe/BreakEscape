@@ -37,9 +37,20 @@ VAR irina_ko = false
     #speaker:narrator
     Narrator: An analyst is bent over a wall-sized monitor, dragging nodes around a transaction graph and muttering at it.
 
-    Priya Raghavan: *doesn't look up* If you're here about the flagged transactions, talk to Irina.
+    // Dialogue C2 (D6-53): a first meeting after Irina's fate is settled.
+    {
+    - irina_arrested or irina_ko:
+        {irina_ko:
+            ~ irina_news = 2
+        - else:
+            ~ irina_news = 1
+        }
+        Priya Raghavan: If you're here about Irina, I just draw the pictures.
+    - else:
+        Priya Raghavan: *doesn't look up* If you're here about the flagged transactions, talk to Irina.
 
-    Priya Raghavan: I just draw the pictures. She decides what they mean.
+        Priya Raghavan: I just draw the pictures. She decides what they mean.
+    }
 
     + [That's quite a setup. I'm FCA. I'd like to see how you work.]
         Priya Raghavan: Oh. The regulator. Right, yeah.
@@ -48,7 +59,13 @@ VAR irina_ko = false
     + [What transactions are you analysing?]
         -> transaction_work
 
-    + [I'll find Dr Volkova, then.]
+    + {not irina_arrested and not irina_ko} [I'll find Dr Volkova, then.]
+        Priya Raghavan: Cheers.
+        ~ hub_quiet = true
+        #exit_conversation
+        -> hub
+
+    + {irina_arrested or irina_ko} [I'll leave you to it.]
         Priya Raghavan: Cheers.
         ~ hub_quiet = true
         #exit_conversation

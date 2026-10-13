@@ -21,7 +21,7 @@
 {"talk": "satoshi", "picks": ["Satoshi's Ghost", "You worked out how many", "Privacy has honest uses", "I'm leaving it running", "The map's worth more", "Sometimes"]},
 {"talk": "phone", "picks": ["Bring me in", "Bring me in", "On my way"]},
 {"talk": "debrief", "picks": ["Start with the fund", "How does anyone", "Was it the right call", "Did he give anything up", "Walk me through it", "Their door passphrases", "Two service accounts", "Every cold wallet", "What's next"]},
-{"said": ["The guard on the checkpoint has a wife", "None of them knew what HashChain was", "then she went down on the trading floor", "His minder turned you back"]},
+{"said": ["The guard on the checkpoint has a wife", "None of them were in on it", "then she went down on the trading floor", "His minder turned you back"]},
 {"credits": true},
 {"said": ["CHECKPOINT GUARD: Knocked out", "DR. IRINA VOLKOVA: Turned", "Turned you back once; you got past him anyway", "FCA COVER: strained"]},
 {"maxRun": 9}

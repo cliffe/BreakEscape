@@ -16,7 +16,7 @@
 {"talk": "phone", "knot": "on_satoshi_ko", "picks": ["Leave it running"]},
 {"expect": {"satoshi_spoken": false, "cover_strained": false}},
 {"talk": "phone", "picks": ["Bring me in", "Bring me in", "On my way"]},
-{"talk": "debrief", "picks": ["What does it give us", "What's left of that clock", "What happens to the cells now", "She knew what she was building", "He'll be making speeches", "Just the letter", "Their door passphrases", "Two service accounts", "Every cold wallet", "What's next"]},
-{"said": ["And the cover held. Nobody at HashChain thought to ring the FCA.", "When the payout goes, every wallet it reaches gets tagged", "They'll have the money in three days"], "notSaid": ["Only Satoshi thought to check", "The payout went out on time"]},
+{"talk": "debrief", "picks": ["What does it give us", "What's left of that clock", "What happens to the cells now", "She knew what she was building", "He'll be making speeches", "Skip it", "Their door passphrases", "Two service accounts", "Every cold wallet", "What's next"]},
+{"said": ["And the cover held. Nobody at HashChain thought to ring the FCA.", "When the payout goes, every wallet it reaches gets tagged", "They don't know we're watching"], "notSaid": ["Only Satoshi thought to check", "The payout went out on time"]},
 {"maxRun": 9}
 ]}

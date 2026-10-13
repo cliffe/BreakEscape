@@ -1,0 +1,19 @@
+{"steps":[
+{"note": "R29 (dialogue C2, D6-65): Satoshi reached without the fund (Irina knocked down early, the minder passed). The no-fund casualties line (D6-17, D6-57) must not double his argument; D6-58's reworded guess line; then a deferral."},
+{"set": {"briefing_played": true, "guard_resolved": true, "exchange_infiltrated": true, "irina_ko": true, "irina_fate_decided": true, "cover_strained": true, "minder_passed": true, "minder_challenged": true, "door_open_satoshi_office": true}},
+{"note": "D6-53: first meetings with Dani and Priya after Irina is already down, and no second reaction on the reopen."},
+{"room": "trading_floor"},
+{"talk": "trader", "picks": ["standard audit", "That's all, thanks"]},
+{"said": ["You're the regulator? Is this about Irina?"], "notSaid": ["we're legit. Mostly.", "Mostly? That's an interesting qualifier."]},
+{"talk": "trader", "picks": ["That's all, thanks"]},
+{"notSaid": ["Irina's on the floor and nobody's"]},
+{"talk": "analyst", "picks": ["I'll leave you to it"]},
+{"said": ["If you're here about Irina, I just draw the pictures."], "notSaid": ["talk to Irina", "I'll find Dr Volkova"]},
+{"talk": "analyst", "picks": ["Thanks for your time"]},
+{"notSaid": ["out cold on the trading floor"]},
+{"room": "satoshi_office"},
+{"talk": "satoshi", "picks": ["You're funding ENTROPY", "You're paying for people to die", "Nothing justifies this", "Privacy has honest uses", "Not yet. I'll find your wallet first"]},
+{"said": ["You haven't found my wallet. But you've seen enough of my exchange to guess.", "You haven't seen the numbers. I have. They're smaller than you'd think.", "How many die keeping the current system running?", "the hospitals run out of insulin", "Irina thought so too. Look where it got her.", "Though you don't know which wallet is mine.", "The money doesn't wait, but I can."], "notSaid": ["never count yours", "Thorough", "you've guessed", "Casualties are inevitable", "moral difficulties", "doesn't like what the idea costs"]},
+{"expect": {"asset_decision_deferred": true}},
+{"maxRun": 9}
+]}

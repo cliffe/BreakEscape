@@ -873,3 +873,99 @@ Not voiced (choices): "[He'll be making speeches at the trial.]", "[Did he give 
 - D6-39 edge: talk past Kemal, then strain the cover, and the debrief credits Volkova. Needs a new global (`globalVariables` in the shared erb) if it's worth closing.
 - The ink-comment gotcha for `README_ink_best_practices.md` (orchestrator; a shared doc).
 - The user: the debrief's VM lines are unchanged in substance and still at the brief's level.
+
+### Phase 4 dialogue, cycle 2
+
+Review: `DIALOGUE_REVIEW_P5_C2.md` (Opus, read-only; 0 blockers, 1 major, 21 minors; cycle 1 confirmed: 42 fixed, D6-44 rightly left, D6-39 partly closed). Fixer: the same Opus agent, resumed. Each finding was checked against the ink first. No browser session; the do-not-open rule held. The erb got two small exact edits (re-read first): a `globalVariables` entry and the credits (D6-63, allowed this cycle).
+
+**Correction to cycle 1's "ink gotcha".** It wasn't real. I edited `evidence_pivot`, then ran the routes and a direct inkjs test without recompiling, so both read the old JSON. The next compile came only after I'd moved the comment, which made the move look like the fix. inklecate compiles both forms identically (the orchestrator and the reviewer both confirmed this), and the README entry has been removed. Lesson: recompile before any runtime test.
+
+| # | Sev. | Finding | Outcome |
+|---|---|---|---|
+| D6-45 | major | Freeze branch makes "your freeze recruits for me" four times | **Fixed.** "Thank you. That'll recruit…" cut. `immediate_impact_response` is now one line, "The balances, sure. The advances went out a week ago, and nobody's asking for them back.", and "everyone on the fence…" is cut with it, since the review's replacement already carries its first sentence. The argument is kept, plus the casualty answer and the forum closer |
+| D6-46 | minor | "[Just the letter.]" before the letter is mentioned | **Fixed**: "[I was there. Skip it.]" |
+| D6-47 | minor | "None of them knew what HashChain was." contradicts Dani | **Fixed**: "None of them were in on it." |
+| D6-48 | minor | Two "got knocked down for it" | **Fixed** (Priya: "woke up on the lab floor") |
+| D6-49 | minor | "too" with nothing before it | **Fixed** (cut) |
+| D6-50 | minor | "already paid for" before the credits stinger | **Fixed** |
+| D6-51 | minor | Two "And…" lines | **Fixed** |
+| D6-52 | minor | "never heard of you" ×4 | **Fixed** as proposed (Kemal, Satoshi, debrief); texts kept |
+| D6-66 | minor | Watch outcome twice after "What's left of that clock?" | **Fixed** as proposed (`{operation_disrupted:` visit count; the debrief is one sitting) |
+| D6-57 | minor | No-fund casualty line doubles the argument | **Fixed**: "You haven't seen the numbers. I have. They're smaller than you'd think." Route r29 |
+| D6-58 | minor | Two stock compliments; "guess… guessed" | **Fixed** as proposed |
+| D6-59 | minor | Present tense about a detained or downed Irina | **Fixed**: a new case in `corrupted_ideals` ("Irina thought so too. Look where it got her." → `choice_presentation`), made a multi-case conditional. A turned Irina keeps the recruited case first |
+| D6-60 | minor | "neither is the money" vs "The money doesn't wait" | **Fixed** as proposed |
+| D6-61 | minor | "map goes stale" then "map while it's fresh" | **Fixed** as proposed. r28(b) asserts it |
+| D6-53 | minor | First meeting after Irina's fate | **Fixed** as proposed, with `irina_news` set to the matching level so the hub doesn't react again (asserted in r29). Priya's first-meeting line drops the cue (the lint counted it, 5 in 71). Her exit "[I'll find Dr Volkova, then.]" is hidden in that case, so a new exit "[I'll leave you to it.]" → "Cheers." keeps the meeting closable |
+| D6-54 | minor | Dani and Priya share phrases | **Fixed** ("like clockwork") |
+| D6-55 | minor | Three reactions to the deaths; subtext never paid off | **Fixed** as proposed: "I told myself this was about privacy… Not... this." cut from the fund branch, and "I asked you not to tell me." after the credentials when `shown_signature`. r26 asserts it |
+| D6-56 | minor | "through the mixer she wrote" twice | **Fixed** |
+| D6-62 | minor | "start" two lines running | **Fixed** |
+| D6-64 | minor | "Dr." in choices | **Fixed** (three choices) |
+| D6-63 | minor | Kemal precedence edges (a) and (b) | **Fixed** as proposed. New synced global `minder_vouched` (erb `globalVariables`, and m06's block of `missions.json`), set in `irina_vouches`. Debrief case `- minder_vouched:`. Satoshi opener "Kemal rang Irina, and she vouched for you. So that's where she's gone." Credits: "Talked your way past him" now needs `!minder_vouched`, and there's a new entry "KEMAL AYDIN (MINDER): Let you in on Volkova's word" |
+| D6-65 | minor (test gap) | No route for the no-fund casualties line or the Kemal edges | **Fixed**: r28, r29 |
+
+#### Routes
+
+New:
+- `r28_kemal_vouch_edges.json` covers two cases. (a) The FCA talk-past, then Dani KO'd with Irina turned: Satoshi says "you must have been convincing", the debrief says "I'd like to hear what you said to him", the credits say "Talked your way past him", and nothing credits Volkova. (b) The cover holds, picks are caught, Volkova vouches: the Satoshi opener, "took Volkova's word", and the new credit, with "Talked your way past him" absent. Also asserts the D6-45 and D6-61 lines.
+- `r29_no_fund_satoshi_casualties.json`: Irina down early. Dani's and Priya's first meetings, with no second reaction on the reopen (D6-53). Satoshi without the fund (D6-57, D6-58, D6-59), then a deferral.
+
+Updated for the new choice wording and lines: r3 (now Kemal's vouch route: new opener and credit), r4, r7, r13, r16, r17, r22 (D6-66), r23, r24 (`minder_vouched` added to its globals, since it models Volkova's word), r25, r26 (D6-60 line, D6-55 payoff).
+
+29 of 29 routes pass, each with `maxRun` 9. Longest run: 9 (debrief on r6, r21, r24 and r25; Irina on r3).
+
+#### Checks (static; no browser session)
+
+- Ink compiles (9 files, 0 failed, no loose ends).
+- Validator with ink, `--no-graph`: schema passed, all ink valid, the same 14 warnings and suggestions as before.
+- dialoguelint: no findings (after the Priya cue cut).
+- reopencheck: m06 HaX phone, 1800 reopens, 0 problems.
+- tagdiff against HEAD (cycle 2 only): debrief 5, Priya 14, Dani 10, Satoshi 4, Kemal 3, Irina 1; guard, briefing and phone unchanged. All are listed above: `minder_vouched` declared in four files and set in `irina_vouches`; the debrief's `minder_vouched` case and the D6-66 condition; the first-meeting branches, `irina_news` assignments and the guarded or new first-meeting choices (D6-53); Satoshi's `corrupted_ideals` case; Irina's `shown_signature` payoff condition. Against the snapshot: debrief 40, Dani 25, Priya 24, Irina 20, Satoshi 16, phone 9, briefing 4, Kemal 3.
+- loopcheck on Dani and Priya at `start` with Irina detained, collected and knocked out; Priya fresh; Satoshi with Irina detained, and with `minder_vouched`; Kemal's `on_lockpick_seen` with Irina turned; Irina's hub after the signature; the debrief with `minder_vouched` and fresh. inkcheck on the debrief (watch) and on Satoshi (Irina KO'd). No runtime errors.
+
+#### Spoken lines changed (old → new)
+
+No m06 audio exists yet.
+
+Satoshi Nakamoto II:
+- "Somebody here rang the FCA tonight. They've never heard of you." → "Somebody here rang the FCA tonight. You're not on their books."
+- New: "Kemal rang Irina, and she vouched for you. So that's where she's gone." / "Irina thought so too. Look where it got her."
+- "You've seen enough of my exchange to guess. You haven't found my wallet, but you've guessed." → "You haven't found my wallet. But you've seen enough of my exchange to guess."
+- "You found the allocation. Thorough." → "You found the allocation."
+- "People die when systems change. They die when they don't, too. You just never count yours." → "You haven't seen the numbers. I have. They're smaller than you'd think."
+- "…Go on. I'm not going anywhere, and neither is the money." → "…Go on. I'm not going anywhere. The money is, in three days."
+- Cut: "Thank you. That'll recruit better than anything I could write." / "And everyone on the fence just climbed down on my side."
+- "The balances, sure. The advances went out a week ago." → "…a week ago, and nobody's asking for them back."
+- "Maybe. Or we open new channels and your map goes stale." → "Maybe. Cells move house. We've done it before."
+
+HaX, debrief:
+- New (watch, after the clock): "They don't know we're watching. Whatever the money buys goes ahead unless we get there first."
+- "She went down on the trading floor after you'd detained her. The police carried her out. That's in the report too." → "…The police carried her out."
+- "And you read her notes first. Good. Know what they've already told themselves." → "Reading her notes first was good work. Know what they've already told themselves."
+- "Your cover didn't last the night. The FCA had never heard of you, and that might cost us the next job." → "Your cover didn't last the night. HashChain rang the FCA, and that might cost us the next job."
+- "Raghavan drew us the money, and got knocked down for it." → "Raghavan drew us the money, and woke up on the lab floor."
+- "None of them knew what HashChain was." → "None of them were in on it."
+- "We find out which of them moves first. Some of them are already paid for." → "We find out which of them moves first, and get there before it does."
+
+HaX, phone: "The password you have is the place to start." → "Try the password you already have."
+
+Kemal Aydin: "Mr Nakamoto's phone has been ringing about you. The FCA has never heard your name." → "…The FCA has no file on you."
+
+Dr. Irina Volkova:
+- Cut (fund branch of the evidence scene): "I told myself this was about privacy. Financial freedom. Not... this."
+- New: "I asked you not to tell me."
+- Narrator "You lay Priya's write-up on her desk. Money in from the cells, money back out, all of it through the mixer she wrote." → "…money back out."
+
+Dani Okonkwo:
+- New: "You're the regulator? Is this about Irina? *glances at her desk* I don't know anything. Honestly."
+- "…Big round sums going in late at night. Same wallets, same habit." → "…Same wallets, like clockwork."
+
+Priya Raghavan: new "If you're here about Irina, I just draw the pictures."
+
+Not voiced: choices "[I was there. Skip it.]", "[I'll leave you to it.]" (Priya), "[I need an answer, Dr Volkova.]", "[There's something you need to see, Dr Volkova.]", "[What's Dr Volkova like to work for?]"; the credit "KEMAL AYDIN (MINDER): Let you in on Volkova's word".
+
+#### Open after cycle 2
+
+- Browser checks (carried over, plus Kemal's vouch): Dani's and Priya's reactions after a real detention, collection and KO, and a first meeting after one; Irina's badge scene, direct reveal and the new payoff line; Satoshi's return after a deferral and a reload; HaX's first call after a catch and after a guard KO; Kemal's vouch route and its credit.
+- The user: the debrief's VM lines are still unchanged in substance and at the brief's level.

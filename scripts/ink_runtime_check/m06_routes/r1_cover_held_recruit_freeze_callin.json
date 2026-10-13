@@ -46,7 +46,7 @@
 {"talk": "debrief", "picks": ["Start with the fund", "How does anyone", "Was it the right call", "He'll be making speeches", "Walk me through it", "Their door passphrases", "Two service accounts", "Every cold wallet", "One of ours", "Do you know him", "What's next"]},
 {"said": ["And the cover held on the floor", "His minder let you walk in", "Satoshi's safe. His own notes", "SAFETYNET headquarters"]},
 {"notSaid": ["That's enough. Come in"]},
-{"notSaid": ["You left Satoshi's safe shut", "None of them knew what HashChain was"]},
+{"notSaid": ["You left Satoshi's safe shut", "None of them were in on it"]},
 {"expect": {"debrief_played": true}},
 {"backstops": {"expect": ["hear"]}},
 {"credits": true},

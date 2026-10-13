@@ -31,6 +31,7 @@ VAR minder_ko = false       // Pass 5 A5: synced; his minder was knocked out in 
 VAR minder_passed = false   // Pass 5 A5: synced; the minder let the player in
 VAR minder_hostile = false  // Round 2 (R2-m8): synced; the minder turned hostile
 VAR minder_challenged = false // Round 2 (R2-m7): synced; the minder turned the player back at least once
+VAR minder_vouched = false // Dialogue C2 (D6-63): synced; Kemal let the player in on Volkova's word
 VAR satoshi_confronted = false // Synced scenario global (scenario design R1, m3): the opening has played
 VAR assets_decided = false  // synced global: the re-entry guard survives a reload (review M3)
 // Final round (m03 pattern): set by every exit, so the resting knot's re-entry
@@ -62,7 +63,7 @@ VAR pitch_heard = false  // Dialogue C1 (D6-21): the full freeze-or-watch pitch 
     // Pass 5 A3: the cover pays off either way, and differently.
     {
     - cover_strained:
-        Satoshi Nakamoto II: Somebody here rang the FCA tonight. They've never heard of you.
+        Satoshi Nakamoto II: Somebody here rang the FCA tonight. You're not on their books.
     - else:
         Satoshi Nakamoto II: Your paperwork was good. I had you checked anyway. Old habit.
     }
@@ -72,6 +73,8 @@ VAR pitch_heard = false  // Dialogue C1 (D6-21): the full freeze-or-watch pitch 
         Satoshi Nakamoto II: And I heard Kemal hit the floor. He's guarded money for thirty years. He'll be embarrassed.
     - minder_hostile:
         Satoshi Nakamoto II: Kemal's still out there looking for you. Let's be quick.
+    - minder_vouched:
+        Satoshi Nakamoto II: Kemal rang Irina, and she vouched for you. So that's where she's gone.
     - minder_passed:
         Satoshi Nakamoto II: Kemal let you in, so you must have been convincing.
     - minder_challenged:
@@ -123,7 +126,7 @@ Satoshi Nakamoto II: "Nakamoto II" is for the brochure. The Ghost is who pays fo
 {found_architects_fund:
     Satoshi Nakamoto II: You mapped the network. Impressive.
 - else:
-    Satoshi Nakamoto II: You've seen enough of my exchange to guess. You haven't found my wallet, but you've guessed.
+    Satoshi Nakamoto II: You haven't found my wallet. But you've seen enough of my exchange to guess.
 }
 
 Satoshi Nakamoto II: Sure. HashChain is ENTROPY's bank. Every cell.
@@ -145,11 +148,11 @@ Satoshi Nakamoto II: You'd call it laundering. I call it financial freedom for p
 ~ shown_evidence = true
 
 {found_architects_fund:
-    Satoshi Nakamoto II: You found the allocation. Thorough.
+    Satoshi Nakamoto II: You found the allocation.
 
     Satoshi Nakamoto II: Three hundred and fifty to six hundred, across every operation. The cells' own estimates. Yes.
 - else:
-    Satoshi Nakamoto II: People die when systems change. They die when they don't, too. You just never count yours.
+    Satoshi Nakamoto II: You haven't seen the numbers. I have. They're smaller than you'd think.
 }
 
 Satoshi Nakamoto II: Here's my question. How many die keeping the current system running?
@@ -209,9 +212,14 @@ Satoshi Nakamoto II: Look, every crash so far, the banks got rescued and everybo
 
 Satoshi Nakamoto II: *amused* Maybe. You wouldn't be the first to tell me.
 
-{irina_recruited:
+// Dialogue C2 (D6-59): he knows when she's in handcuffs or on the floor.
+{
+- irina_recruited:
     Satoshi Nakamoto II: Irina understood that too. That's why she betrayed us, isn't it?
     -> irina_betrayal_reaction
+- irina_arrested or irina_ko:
+    Satoshi Nakamoto II: Irina thought so too. Look where it got her.
+    -> choice_presentation
 - else:
     Satoshi Nakamoto II: At least, Irina thinks so. She's been having... moral difficulties.
     -> irina_conflict
@@ -314,7 +322,7 @@ Satoshi Nakamoto II: Most people want the freedom and none of the bookkeeping.
 
 + {found_architects_fund and not found_wallet_keys} [Not yet. I'll be back with the recovery keys.]
     #set_variable:asset_decision_deferred=true
-    Satoshi Nakamoto II: The vault account. Of course. Go on. I'm not going anywhere, and neither is the money.
+    Satoshi Nakamoto II: The vault account. Of course. Go on. I'm not going anywhere. The money is, in three days.
     ~ hub_quiet = true
     #exit_conversation
     -> start
@@ -368,8 +376,6 @@ Satoshi Nakamoto II: Twelve point eight million, gone on one agent's say-so. No 
 
 Satoshi Nakamoto II: That's the state I've been warning people about. You just proved it for me.
 
-Satoshi Nakamoto II: Thank you. That'll recruit better than anything I could write.
-
 + [Whatever hadn't gone out stays put.]
     -> immediate_impact_response
 
@@ -379,9 +385,7 @@ Satoshi Nakamoto II: Thank you. That'll recruit better than anything I could wri
 === immediate_impact_response ===
 #speaker:satoshi
 
-Satoshi Nakamoto II: The balances, sure. The advances went out a week ago.
-
-Satoshi Nakamoto II: And everyone on the fence just climbed down on my side.
+Satoshi Nakamoto II: The balances, sure. The advances went out a week ago, and nobody's asking for them back.
 
 -> arrest_finale
 
@@ -417,7 +421,7 @@ Satoshi Nakamoto II: You'll let it run. I didn't expect that from SAFETYNET.
 === long_term_strategy_response ===
 #speaker:satoshi
 
-Satoshi Nakamoto II: Maybe. Or we open new channels and your map goes stale.
+Satoshi Nakamoto II: Maybe. Cells move house. We've done it before.
 
 Satoshi Nakamoto II: Meanwhile the operations on that page go ahead. You've read the projection.
 

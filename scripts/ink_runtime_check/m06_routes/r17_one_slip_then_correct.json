@@ -23,7 +23,7 @@
 {"room": "satoshi_office"},
 {"talk": "satoshi", "picks": ["Satoshi's Ghost", "You worked out how many", "You're a criminal", "I'm freezing it", "Whatever hadn't gone out", "No. Your ideology"]},
 {"talk": "phone", "picks": ["Bring me in", "Bring me in", "On my way"]},
-{"talk": "debrief", "picks": ["Start with the fund", "How does anyone", "She knew what she was building", "Did he give anything up", "Just the letter", "Their door passphrases", "Two service accounts", "Every cold wallet", "What's next"]},
+{"talk": "debrief", "picks": ["Start with the fund", "How does anyone", "She knew what she was building", "Did he give anything up", "Skip it", "Their door passphrases", "Two service accounts", "Every cold wallet", "What's next"]},
 {"said": ["In through the mixer, out by amount and time"], "notSaid": ["working the console until it gave"]},
 {"credits": true},
 {"said": ["TRACED THROUGH THE MIXER", "FCA COVER: held all night"], "notSaid": ["FOUND BY ELIMINATION"]},

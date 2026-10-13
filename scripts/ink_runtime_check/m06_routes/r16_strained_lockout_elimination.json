@@ -38,7 +38,7 @@
 {"said": ["Somebody here rang the FCA tonight"]},
 {"talk": "phone", "picks": ["Bring me in", "Bring me in", "On my way"]},
 {"talk": "debrief", "picks": ["Start with the fund", "How does anyone", "She knew what she was building", "He'll be making speeches", "Walk me through it", "Their door passphrases", "Two service accounts", "Every cold wallet", "What's next"]},
-{"said": ["You found the fund by working the console until it gave", "The FCA had never heard of you"]},
+{"said": ["You found the fund by working the console until it gave", "HashChain rang the FCA, and that might cost us the next job"]},
 {"notSaid": ["In through the mixer, out by amount and time"]},
 {"credits": true},
 {"said": ["FOUND BY ELIMINATION ON THE CONSOLE", "somebody at HashChain rang the FCA"]},

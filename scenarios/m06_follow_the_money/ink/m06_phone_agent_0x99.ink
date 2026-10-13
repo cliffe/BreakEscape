@@ -668,7 +668,7 @@ The example's from an earlier job. Here the build service just gets you on the b
 #give_item:lab-workstation:m06_privesc_field_guide
 Privilege escalation guide sent.
 The rack sheet says two of those boxes share a service account. Start there.
-The password you have is the place to start.
+Try the password you already have.
 -> hub
 
 === request_recon_guide ===

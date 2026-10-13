@@ -13,6 +13,6 @@
 {"said": ["Then I'll leave you to it. For now.", "Then you're complicit", "For now."]},
 {"expect": {"irina_recruited": false, "irina_arrested": false, "irina_fate_decided": false}},
 {"talk": "irina", "picks": []},
-{"said": ["I need an answer, Dr. Volkova."]},
+{"said": ["I need an answer, Dr Volkova."]},
 {"maxRun": 9}
 ]}

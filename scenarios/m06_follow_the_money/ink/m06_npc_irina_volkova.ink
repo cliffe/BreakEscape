@@ -200,13 +200,13 @@ Dr. Irina Volkova: So what does the FCA want to see? Our customer checks are com
 }
 // Dialogue C1 (D6-6): newest topics first, so the choice that matters now
 // sits at the top. Order only; conditions unchanged.
-+ {recruitment_offered and not irina_recruited and not recruitment_refused} [I need an answer, Dr. Volkova.]
++ {recruitment_offered and not irina_recruited and not recruitment_refused} [I need an answer, Dr Volkova.]
     -> recruitment_decision
 
 + {found_architects_fund and not recruitment_offered} [I'm not from the FCA. I'm SAFETYNET, and your exchange banks ENTROPY.]
     -> reveal_identity
 
-+ {irina_trust >= 20 and found_blockchain_evidence and not shown_casualties} [There's something you need to see, Dr. Volkova.]
++ {irina_trust >= 20 and found_blockchain_evidence and not shown_casualties} [There's something you need to see, Dr Volkova.]
     -> show_blockchain_evidence
 
 + {found_architects_fund and not irina_exec_badge_given and TURNS() > exec_badge_turn} [Satoshi's wing. You've a badge for it.]
@@ -416,7 +416,7 @@ Dr. Irina Volkova: His wing is east of the data centre. He'll be at his desk; he
 === show_blockchain_evidence ===
 #speaker:narrator
 ~ shown_casualties = true
-Narrator: You lay Priya's write-up on her desk. Money in from the cells, money back out, all of it through the mixer she wrote.
+Narrator: You lay Priya's write-up on her desk. Money in from the cells, money back out.
 
 #speaker:irina_volkova
 Dr. Irina Volkova: Where did you get our internal analysis?
@@ -441,8 +441,6 @@ Dr. Irina Volkova: Where did you get our internal analysis?
     ~ irina_trust += 15
     #influence_increased
     Dr. Irina Volkova: They costed the deaths. They put a number in a cell and moved on.
-
-    Dr. Irina Volkova: I told myself this was about privacy. Financial freedom. Not... this.
 - else:
     ~ irina_trust += 15
     #influence_increased
@@ -466,6 +464,10 @@ Dr. Irina Volkova: Where did you get our internal analysis?
 ~ recruitment_offered = true
 Narrator: You put your SAFETYNET credentials on the desk.
 
+// Dialogue C2 (D6-55): pays off "Don't tell me yet." from the badge scene.
+{shown_signature:
+    Dr. Irina Volkova: I asked you not to tell me.
+}
 // Dialogue C1 (D6-1): on the direct route she hasn't seen the evidence yet.
 {shown_casualties or shown_architects_fund:
     Dr. Irina Volkova: My work. Used to kill people.
