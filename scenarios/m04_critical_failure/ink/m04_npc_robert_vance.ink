@@ -28,6 +28,13 @@ VAR attack_prevented = false
 VAR crew_warned = false
 VAR racks_vented = false
 VAR crew_discussed = false
+// Round 4: Voltage down makes the alarm free (review M2); all four flags in
+// means the workshop job is done (review m1). Read only.
+VAR voltage_neutralised = false
+VAR all_flags_in = false
+// Round 4 (browser m2): a re-entry line on the hub, skipped once right after a
+// goodbye (m03 hub_quiet), so a re-talk doesn't open under a stale line.
+VAR vance_quiet = false
 // Round 2: the workshop-card step in vance_priority.
 VAR server_room_reached = false
 VAR relay_card_cloned = false
@@ -332,6 +339,7 @@ Anything else, I'm at the ops desk. Watching the screens.
 
 // TRIGGERS: Task 1.2 completion
 
+~ vance_quiet = true
 #exit_conversation
 -> vance_hub
 
@@ -346,6 +354,7 @@ Of course. And... if you find anything, come to me.
 
 This place is my responsibility. People depend on it.
 
+~ vance_quiet = true
 #exit_conversation
 -> vance_hub
 
@@ -360,6 +369,14 @@ This place is my responsibility. People depend on it.
 === vance_hub ===
 // Round 2: no #speaker here. On a choices-only knot the tag printed an empty
 // "None: " line before the choices (playtest issue 7).
+{
+- vance_quiet:
+    ~ vance_quiet = false
+- vance_is_ally:
+    Robert Vance: {&What do you need?|Go on.|Still here.}
+- else:
+    Robert Vance: {&Something else?|Yes?|Make it quick.}
+}
 
 // Flat knot-level choices with conditions (choices inside a {cond: ...} block
 // don't gather reliably). At least one is always available in every state.
@@ -393,6 +410,7 @@ This place is my responsibility. People depend on it.
 
 + {vance_is_ally} [Stay on the ops desk. I'll call if I need the engineering side.]
     Robert Vance: I'm not going anywhere. Call the moment you're moving.
+    ~ vance_quiet = true
     #exit_conversation
     -> vance_hub
 
@@ -410,6 +428,7 @@ This place is my responsibility. People depend on it.
 
 + {not vance_is_ally} [That's all for now.]
     Robert Vance: Right. I'll be at the ops desk.
+    ~ vance_quiet = true
     #exit_conversation
     -> vance_hub
 
@@ -433,8 +452,13 @@ This place is my responsibility. People depend on it.
 ~ crew_discussed = true
 Robert Vance: Nine. The module-swap crew, behind the inverter wall in Hall 2, till six. Your contractor wanted the halls clear from midnight. I said no.
 Robert Vance: I can sound the evacuation from this desk. Klaxon and strobes in every hall.
-{attack_mechanism_known:
+{
+- voltage_neutralised:
+    Robert Vance: Whoever was in my plant room isn't listening any more. It costs you nothing.
+- attack_mechanism_known:
     Robert Vance: Whoever's in my plant room hears it too. But your clock's already running, so it costs you nothing now but surprise.
+- all_flags_in:
+    Robert Vance: Whoever's in my plant room hears it too. He won't wait for eight. You'll have half an hour, maybe.
 - else:
     Robert Vance: Whoever's in my plant room hears it too. He won't wait for eight. You'll have half an hour, maybe, and your workshop job isn't done.
 }
@@ -602,6 +626,7 @@ Come back to the ops desk when you need the SCADA side, and I'm on comms while y
 #speaker:robert_vance
 // TRIGGERS: Task 1.2 completion, vance_is_ally activated early
 ~ vance_met = true
+~ vance_quiet = true
 #exit_conversation
 -> vance_hub
 

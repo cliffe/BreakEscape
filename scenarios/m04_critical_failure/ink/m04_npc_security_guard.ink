@@ -30,12 +30,15 @@ EXTERNAL player_name()
 -> security_guard_entry
 
 // Round 2 (review m19): reached from the sight challenge (player_spotted
-// mapping), when he has seen the player walking past his desk.
+// mapping). Round 4 (review m3): it fires on the spawn tile for almost every
+// player, so it reads as a first meeting at the door, and keeps his opener
+// ("Morning. Bit early for visitors.") for everyone; "(Keep walking.)" is still
+// the slip-past.
 === on_sighted ===
 {guard_admitted: -> guard_idle}
 #speaker:security_guard
-Narrator: The guard is out of his chair before you reach the inner door.
-Security Guard: Oi. Desk first. Who are you, then?
+Narrator: The guard's already on his feet as you come through the door.
+Security Guard: Morning. Bit early for visitors. Desk first, if you don't mind.
 * [Grid-safety regulator. I'm here for the audit.]
     -> guard_credentials_check
 * [Just a routine visit. Won't take long.]

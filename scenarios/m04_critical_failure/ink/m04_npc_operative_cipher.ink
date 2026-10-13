@@ -36,7 +36,7 @@ VAR crew_warned = false
 // ===========================================
 
 === cipher_detection ===
-Narrator: He is crouched at the end of the rack row with a panel open and a handset already half out of its clip.
+Narrator: He's halfway up the rack row, a handset already half out of its clip.
 
 ENTROPY Operative 'Cipher': Hey. Hey! This bay's locked off for maintenance. Who signed you in?
 

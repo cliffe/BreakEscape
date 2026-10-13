@@ -353,6 +353,9 @@ Not from here. The site's evacuation alarm is on Vance's desk.
 {
 - robert_vance_ko:
     // nobody can sound it; no cost to weigh
+- voltage_neutralised:
+    // Round 4 (review M2): nobody left to fire early.
+    Voltage is down, so nobody's listening. The alarm costs you nothing.
 - attack_mechanism_known:
     The clock's already running, so the alarm can't cost you any time now.
 - else:

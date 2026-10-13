@@ -98,6 +98,21 @@ Agent, report.
     Clean. Runaway aborted before a single cell vented. Banks isolated.
 }
 
+-> debrief_people ->
+
+{voltage_captured:
+    And you've got Voltage.
+- else:
+    And Voltage got out through the dock.
+}
+
+// PLAYTEST ROUND: a player beat, so the outcome and the intelligence aren't one
+// fifteen-bubble run before the first choice.
++ [What did we get out of there?]
+    -> debrief_intelligence_gathered
+
+// Round 4 (review m5): the Vance and KO lines, shared by both openers (a tunnel).
+=== debrief_people ===
 {vance_trust_level >= 70 and not robert_vance_ko:
     {
     - crew_lost:
@@ -114,17 +129,7 @@ Agent, report.
 {security_guard_ko:
     And the gate guard's in A&E with a sore head. He was the one person on site doing his job by the book.
 }
-
-{voltage_captured:
-    And you've got Voltage.
-- else:
-    And Voltage got out through the dock.
-}
-
-// PLAYTEST ROUND: a player beat, so the outcome and the intelligence aren't one
-// fifteen-bubble run before the first choice.
-+ [What did we get out of there?]
-    -> debrief_intelligence_gathered
+->->
 
 === debrief_voltage_status ===
 #speaker:agent_0x99
@@ -135,9 +140,14 @@ Agent, report.
     He'll talk. Men like him always want to explain themselves.
 - else:
     A shame. But the attack's stopped, and that was the job.
-
-    Lives over one operative, every time.
+    // Round 4 (review m5): not after nine of the night crew died.
+    {not crew_lost:
+        Lives over one operative, every time.
+    }
 }
+
+// Round 4 (review m5): this opener skipped the Vance and KO lines.
+-> debrief_people ->
 
 -> debrief_intelligence_gathered
 
@@ -202,8 +212,9 @@ Agent HaX: Before you write it up. Three things let them in. Two of them let you
     Agent HaX: You did it to Relay too, while she was talking.
 }
 Agent HaX: The HV door took one finger, and that finger was on a panel he touched every two hours. A print names you. It can't prove you're the one standing there.
-Agent HaX: And the control room believed its own sensors. The one honest instrument in the place was a dial nobody had wired to anything.
-Agent HaX: Encrypted cards. A second factor on the HV door, and a reader that checks for a live finger. A gauge in every hall that isn't on the bus.
+Agent HaX: And the control room believed its own sensors. The honest instruments were the ones nobody had wired to the bus: a dial, and a gas monitor nobody read.
+Agent HaX: Encrypted cards. A second factor on the HV door, and a reader that checks for a live finger.
+Agent HaX: A temperature gauge in every hall that isn't on the bus, and somebody reading it.
 
 * [It goes in the report. Vance will want every line.]
     -> debrief_big_picture

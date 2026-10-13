@@ -847,7 +847,7 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
             <%# Pass 5 decision 1: the night crew can be warned. Vance sounds the
                 evacuation (his hub or his phone, #set_global:crew_warned).
                 Round 2 (review M1, orchestrator decision 1, option b): an EARLY
-                alarm (before the attack is mapped) sets crew_warned_early, which
+                alarm (before the attack is mapped, Voltage still up) sets crew_warned_early, which
                 starts the alarm's own longer clock (h2_advisory_alarm 24 min,
                 racks_vent_alarm 30 min) alongside the normal clocks, which still
                 start when the attack is mapped. Whichever fires first wins. A LATE
@@ -855,17 +855,26 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
                 the music phase only. Two disjoint mappings. %>
             {
               "eventPattern": "global_variable_changed:crew_warned",
-              "condition": "value === true && globalVars.attack_mechanism_known !== true",
+              "condition": "value === true && globalVars.attack_mechanism_known !== true && globalVars.voltage_neutralised !== true",
               "onceOnly": true,
               "setGlobal": { "clock_started": true, "crew_warned_early": true },
               "sendTimedMessage": { "delay": 3000, "message": "That's the evacuation. Good. But Voltage heard it too, and he won't wait for eight now. You've about half an hour.", "skipIfGlobal": "attack_prevented" }
             },
             {
               "eventPattern": "global_variable_changed:crew_warned",
-              "condition": "value === true && globalVars.attack_mechanism_known === true",
+              "condition": "value === true && globalVars.attack_mechanism_known === true && globalVars.voltage_neutralised !== true",
               "onceOnly": true,
               "setGlobal": { "clock_started": true },
               "sendTimedMessage": { "delay": 3000, "message": "That's the evacuation. Nine out of Hall 2. Voltage knows we're here now. Keep moving.", "skipIfGlobal": "attack_prevented" }
+            },
+            <%# Round 4 (review M2): with Voltage already down nobody fires early, so
+                the alarm is free whenever it comes: no alarm clock, and no music
+                change (clock_started is left alone). %>
+            {
+              "eventPattern": "global_variable_changed:crew_warned",
+              "condition": "value === true && globalVars.voltage_neutralised === true",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 3000, "message": "That's the evacuation. Nine out of Hall 2. Nobody left in the plant room to hear it.", "skipIfGlobal": "attack_prevented" }
             },
             <%# crew_lost: a bank vented (the 14-minute timer or the trigger race)
                 with the night crew still in Hall 2. Read by the credits and the
@@ -1675,7 +1684,10 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
               dwells facing south. His cone is drawn (los.visualize), and the walk
               back to (12,7) is the window to cross behind him. pauseForPlayer false
               keeps the beat on its timing. Waypoints are room tiles; the x=12 gap
-              between rack columns 11 and 13 is clear (room_battery_hall.json). %>
+              between rack columns 11 and 13 is clear (room_battery_hall.json).
+              Round 4 (browser m1): the east look was at (14,3), 144 px from where
+              players stop at the Hall 2 door, inside his 150 px range; at (13,3)
+              it is about 176 px, so waiting at the door is safe. %>
           "behavior": {
             "hostile": { "chaseSpeed": 110, "attackDamage": 4, "pauseToAttack": true },
             "patrol": {
@@ -1684,7 +1696,7 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
               "waypoints": [
                 { "x": 12, "y": 7, "dwellTime": 4000 },
                 { "x": 12, "y": 3 },
-                { "x": 14, "y": 3, "dwellTime": 2500 },
+                { "x": 13, "y": 3, "dwellTime": 2500 },
                 { "x": 10, "y": 3, "dwellTime": 2500 },
                 { "x": 12, "y": 3 }
               ],
@@ -2118,17 +2130,6 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
               "condition": "globalVars.static_left === true && globalVars.static_stood_aside === true",
               "setVisible": false
             }
-          ],
-          "itemsHeld": [
-            {
-              "type": "notes",
-              "name": "Critical Mass Coordination Log",
-              "takeable": true,
-              "readable": true,
-              "text": "ENCRYPTED COMMUNICATION LOG\n\nFROM: Voltage (Critical Mass)\nTO: Loom (Social Fabric)\n\nPhase 2 synchronisation confirmed.\n\nCritical Mass targets: power storage, generation, transit infrastructure\nSocial Fabric targets: public panic amplification, emergency-response disruption\n\nSimultaneous execution: 0800 local, all cells\n\nThe Architect's Phase 3: multi-city expansion\n\nThis is bigger than any single operation. We're proving the grid's fragility.",
-              "observations": "Critical intelligence revealing cross-cell coordination and The Architect's larger plan",
-              "onPickup": { "setVariable": { "lore_cross_cell_coordination_found": true } }
-            }
           ]
         }
       ],
@@ -2201,6 +2202,19 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
         <%# Pass 5 (alignment minor): this is Voltage's operation log, not a
             directive from The Architect (the directive is m03's). The global keeps
             its id. %>
+        <%# Round 4 (review m4): this was Static's itemsHeld drop, so a player who
+            talked past him (and, since round 2, watched him leave with Voltage)
+            never saw it. It now sits in the plant room for every route, one more
+            thing for the sweep. %>
+        {
+          "type": "notes",
+          "name": "Critical Mass Coordination Log",
+          "takeable": true,
+          "readable": true,
+          "text": "ENCRYPTED COMMUNICATION LOG\n\nFROM: Voltage (Critical Mass)\nTO: Loom (Social Fabric)\n\nPhase 2 synchronisation confirmed.\n\nCritical Mass targets: power storage, generation, transit infrastructure\nSocial Fabric targets: public panic amplification, emergency-response disruption\n\nSimultaneous execution: 0800 local, all cells\n\nThe Architect's Phase 3: multi-city expansion\n\nThis is bigger than any single operation. We're proving the grid's fragility.",
+          "observations": "A printout of Voltage's messages to Social Fabric, left on the plant-room bench. Cross-cell coordination, and The Architect's larger plan",
+          "onPickup": { "setVariable": { "lore_cross_cell_coordination_found": true } }
+        },
         {
           "type": "notes",
           "name": "Voltage's Operation Log",
@@ -2288,11 +2302,14 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
     racks_vented / hydrogen_alarm, and attack_prevented cancels all four). A late
     alarm starts nothing. With the crew out, a vent costs the bank and the feed,
     not the crew (crew_lost is set only for a vent with the crew still in Hall 2).
-    HUD: the widget shows the first pending showCountdown timer in array order,
-    so h2_advisory_alarm sits before h2_advisory. When both run, the HUD shows
-    the alarm's countdown; that is the earlier one whenever the attack was mapped
-    16+ minutes after the alarm, the usual case at VM pace. If the player maps
-    the attack faster, the normal advisory can land before the HUD's figure.
+    HUD (round 4, review M1 / browser B1): the widget shows the first pending
+    showCountdown timer in array order and re-evaluates its condition each tick.
+    h2_advisory_alarm's condition includes !attack_mechanism_known, so once the
+    attack is mapped the HUD falls through to h2_advisory, the real next event,
+    and the alarm's advisory never fires. racks_vent_alarm keeps no such guard,
+    so the vent still comes at min(alarm + 30, mapping + 14). If mapping comes
+    16+ minutes after the alarm the advisory now lands later than the alarm's
+    would have; the HUD never shows a figure later than the real advisory.
 
     DELIBERATE DIVERGENCE FROM sis02: its h2_evacuation timer fires a
     `show_end_screen` action with outcome "failure" and a "Return to Missions" button,
@@ -2340,7 +2357,7 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
       "startOnGlobal": "crew_warned_early",
       "delayMs": 1440000,
       "cancelOnGlobal": "attack_prevented",
-      "condition": "!globalVars.attack_prevented && !globalVars.racks_vented && !globalVars.hydrogen_alarm",
+      "condition": "!globalVars.attack_prevented && !globalVars.racks_vented && !globalVars.hydrogen_alarm && !globalVars.attack_mechanism_known",
       "setGlobal": { "hydrogen_alarm": true, "urgency_stage": 3 },
       "showCountdown": true,
       "onceOnly": true,

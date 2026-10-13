@@ -45,6 +45,9 @@ VAR attack_prevented = false
 // clock is already running. vance_provided_keycard and the workshop card feed
 // priority_guidance, mirroring the face-to-face vance_priority.
 VAR vance_provided_keycard = false
+// Round 4 (review M2, m1). Read only.
+VAR voltage_neutralised = false
+VAR all_flags_in = false
 VAR relay_card_cloned = false
 VAR operative_relay_defeated = false
 
@@ -110,7 +113,7 @@ EXTERNAL player_name()
     # influence_increased
     -> server_room_guidance
 
-+ {not asked_disabling} [How do I shut this down safely?]
++ {not asked_disabling and not attack_prevented} [How do I shut this down safely?]
     ~ asked_disabling = true
     ~ vance_trust_level += 3
     # influence_increased
@@ -217,8 +220,13 @@ Get to it and press it. That's the mission.
 // the alarm starts a clock; after, the clock is already running.
 === crew_offer ===
 I can sound the evacuation from here. Klaxon and strobes in every hall.
-{attack_mechanism_known:
+{
+- voltage_neutralised:
+    Whoever was in my plant room isn't listening any more. It costs you nothing.
+- attack_mechanism_known:
     Whoever's in my plant room hears it too. But your clock's already running, so it costs you nothing now but surprise.
+- all_flags_in:
+    And whoever's in my plant room hears it too. He won't wait for eight. You'll have half an hour, maybe.
 - else:
     And whoever's in my plant room hears it too. He won't wait for eight.
     You'll have half an hour, maybe, and your workshop job isn't done.

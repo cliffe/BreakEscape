@@ -8,8 +8,9 @@
 //
 // PASS 2: the dead post-KO interrogation hub was removed (a KO'd NPC is
 // non-interactable, interactions.js:1690; no subdue mechanic). The Architect
-// intel it carried is on Static's coordination log (itemsHeld), in the plant-room
-// documents, and in Voltage's confrontation, so nothing is lost.
+// intel it carried is on the coordination log (a plant-room object since round 4,
+// so a talk-past player can still find it), in the plant-room documents, and in
+// Voltage's confrontation, so nothing is lost.
 // ===========================================
 
 VAR static_challenged = false

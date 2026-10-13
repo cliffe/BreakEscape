@@ -220,3 +220,67 @@ Security guard, new (`on_sighted`): narration "The guard is out of his chair bef
 - O2 (fight fairness with Static joining) needs a human playtest.
 - Browser checks listed above.
 - Deferred to later stages: m12, N5, O3 (characters); m14 (room dressing); m16 (lighting); m17 (puzzle chains); m20 (lab sheets, backlog); Task Force Null (m05 pass).
+
+### Phase 1 alignment, round 4
+
+Inputs: round 3's review `ALIGNMENT_REVIEW_P5_R3.md` (Opus, static; 0 blockers, 2 majors, 8 minors; rounds 1 and 2 confirmed apart from two regressions from round 2's clock) and `PASS5_ALIGN_R2_BROWSER.md` (Sonnet; all 7 checks pass; B1 is the review's M1, plus browser minors m1 and m2). Each finding checked against the files first. Outcomes: all 12 fixed, none withdrawn.
+
+| # | Sev. | Finding | Outcome |
+|---|---|---|---|
+| M1 / B1 | major | After an early alarm and a quick mapping, the HUD kept showing the alarm's 24-minute advisory while the real advisory came at mapping + 8 | **Fixed** (reviewer's fix). `h2_advisory_alarm`'s condition adds `!globalVars.attack_mechanism_known`; the widget re-evaluates conditions each tick, so at the mapping it falls through to `h2_advisory`. `racks_vent_alarm` is unchanged, so the vent still comes at min(alarm + 30, mapping + 14) (r7 shows the alarm vent at 30 after a mapping at 20). The round-2 "HUD limit" note in the timer comment is replaced by the new behaviour; round 2's table above describes the state at the time |
+| M2 | major | An early alarm with Voltage already down still started "his clock" | **Fixed.** The early mapping needs `voltage_neutralised !== true`; the late mapping too; a third mapping for `voltage_neutralised === true` sends "That's the evacuation. Nine out of Hall 2. Nobody left in the plant room to hear it." and leaves `clock_started` alone (no music change, no timers). Vance (face to face and phone) and HaX's hint get a first "Voltage down" branch. `vented_by_alarm_clock` can't arise with him down, so the debrief needs no change |
+| m1 | minor | "Your workshop job isn't done" with all four flags in | **Fixed.** An `all_flags_in` branch drops the clause, in both Vance inks |
+| m2 | minor | Cipher's opening narration predates the patrol | **Fixed.** "He's halfway up the rack row, a handset already half out of its clip." |
+| m3 | minor | The guard's sight challenge fires on the spawn tile, so nobody hears his friendly opener | **Fixed by routing the openers.** `on_sighted` now reads as a first meeting at the door and keeps his opener: "The guard's already on his feet as you come through the door." / "Morning. Bit early for visitors. Desk first, if you don't mind." "(Keep walking.)" is still the slip-past. Turning his cone is a dressing change, and would let players walk past him unseen |
+| m4 | minor | Static's coordination log was an itemsHeld drop, lost to a talk-past player (and gone with him since round 2) | **Fixed: moved.** It is a plant-room object now, same text and `onPickup`, for every route; Static carries nothing. His ink comment corrected. Placement is the template's; room dressing may pin it to the bench |
+| m5 | minor | The debrief's "Voltage is…" opener skipped the Vance and KO lines and played "Lives over one operative" after a crew loss | **Fixed.** The Vance and KO lines are a shared tunnel (`debrief_people`) called from both openers; "Lives over one operative, every time." only when the crew wasn't lost |
+| m6 | minor | Vance's phone still offered "How do I shut this down safely?" after the shutdown | **Fixed.** Gated on `not attack_prevented` |
+| m7 | minor | "The one honest instrument… a dial" contradicts the hydrogen monitor and Vance's readout | **Fixed.** "The honest instruments were the ones nobody had wired to the bus: a dial, and a gas monitor nobody read."; the fix line is split and now reads "A temperature gauge in every hall that isn't on the bus, and somebody reading it." |
+| m8 | minor | No routes for an early alarm then quick mapping, or a warning with Voltage down | **Fixed.** r12 and r13 (below) |
+| br-m1 | minor | Cipher's east look reached players waiting at the Hall 2 door (144 px, range 150) | **Fixed.** East waypoint (14,3) → (13,3), about 176 px from the door stop. Needs the browser check |
+| br-m2 | minor | Vance's hub reopened under a stale line ("That's uncomfortably easy…") | **Fixed.** `vance_hub` opens with a short re-entry line ("What do you need?" / "Go on." / "Still here."; off-cover "Something else?" / "Yes?" / "Make it quick."), skipped once right after a goodbye (`vance_quiet`, m03 hub_quiet), so a re-talk opens on a fresh line. This also clears the hub's blank-reentry lint check |
+
+No new globals this round (the m04 block of `missions.json` is unchanged).
+
+#### Route driver
+
+`hud` step added (which countdown the widget would show: the first started, undone `showCountdown` timer in array order whose condition holds). Route notes no longer count towards `said` / `notSaid`. The Voltage-down rule mirrors the new mapping. New routes:
+- r12: three flags in, an early alarm, the mapping 2 minutes later. The HUD switches from `h2_advisory_alarm` to `h2_advisory`; the normal advisory fires at mapping + 8 and the vent at + 14; no `vented_by_alarm_clock`; the debrief plays "Hall 2 was empty when it went", not "Your alarm started his clock".
+- r13: Voltage KO'd before the mapping, then the dial and a warning. HaX and Vance say it costs nothing; no `crew_warned_early`, no `clock_started`, no HUD countdown, nothing vents after 40 minutes.
+
+All 13 routes pass.
+
+#### Checks (static; no browser session started; engine JS untouched)
+
+Ink compiles (10 files). Validator, full: schema passed, all ink valid, doors and geometry OK, 16 warnings (the same set). dialoguelint: 0 errors, 5 blank-reentry checks (vance_hub cleared). reopencheck: 0 problems. tagdiff against HEAD: 40 structural differences, all from this round. inkcheck and loopcheck over the changed knots (debrief both openers with KOs and a crew loss, Vance meeting and hub with Voltage down, Vance phone after the shutdown, guard `on_sighted`, HaX hub with Voltage down): clean. Door alignment OK.
+
+Browser checks for the confirmation run: the HUD switching at the mapping after an early alarm; Cipher's east look from (13,3) against a player at the Hall 2 door; the guard's new opener on the spawn tile; the coordination log's placement in the plant room; Vance's hub re-entry line on the ally-by-clone route; plus round 3's carried checks (Cipher's beat, Static leaving and the re-hide, music after a reload with Relay hostile).
+
+#### Spoken lines changed (old → new)
+
+Robert Vance, face to face:
+- Crew cost, new first branch (Voltage down): "Whoever was in my plant room isn't listening any more. It costs you nothing."
+- New branch (all four flags in, not yet mapped): "Whoever's in my plant room hears it too. He won't wait for eight. You'll have half an hour, maybe."
+- Hub re-entry, new: "What do you need?" / "Go on." / "Still here." (ally); "Something else?" / "Yes?" / "Make it quick." (cover).
+
+Robert Vance, phone:
+- Crew cost, new branches: "Whoever was in my plant room isn't listening any more. It costs you nothing."; "And whoever's in my plant room hears it too. He won't wait for eight. You'll have half an hour, maybe."
+- "How do I shut this down safely?" and its answer no longer offered after the shutdown.
+
+HaX:
+- Crew hint, new branch (Voltage down): "Voltage is down, so nobody's listening. The alarm costs you nothing."
+- Text, new: "That's the evacuation. Nine out of Hall 2. Nobody left in the plant room to hear it."
+- Debrief: "And the control room believed its own sensors. The one honest instrument in the place was a dial nobody had wired to anything." → "And the control room believed its own sensors. The honest instruments were the ones nobody had wired to the bus: a dial, and a gas monitor nobody read."
+- Debrief: "Encrypted cards. A second factor on the HV door, and a reader that checks for a live finger. A gauge in every hall that isn't on the bus." → "Encrypted cards. A second factor on the HV door, and a reader that checks for a live finger." / "A temperature gauge in every hall that isn't on the bus, and somebody reading it."
+- Debrief: "Lives over one operative, every time." now not after a crew loss; the Vance and KO lines now also play on the "Voltage is…" opener (no wording change).
+
+Security guard (`on_sighted`): "The guard is out of his chair before you reach the inner door." / "Oi. Desk first. Who are you, then?" → "The guard's already on his feet as you come through the door." / "Morning. Bit early for visitors. Desk first, if you don't mind."
+
+Cipher: "He is crouched at the end of the rack row with a panel open and a handset already half out of its clip." → "He's halfway up the rack row, a handset already half out of its clip."
+
+#### Open after round 4
+
+- The browser checks above (one Sonnet confirmation run, as round 3 recommends).
+- O2 (fight fairness with Static joining) still needs a human.
+- N4 is with the engine agent (the watcher pausing for the tutorial prompt).
+- Deferred to later stages as before: m12, N5, O3 (characters); m14 and the log's bench position (room dressing); m16 (lighting); m17 (puzzle chains); m20 (backlog); Task Force Null (m05 pass).

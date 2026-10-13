@@ -14,6 +14,9 @@
 //                                           room_entered backstops (the <% each %> loops) against
 //                                           the current globals; print which would fire on the
 //                                           next room entry, and check the expected set
+//   {"hud": "timer_id" | null}             which countdown the HUD widget would show now: the
+//                                           first started, undone showCountdown timer in array
+//                                           order whose condition holds (scenario-timer.js)
 //   {"advance": 12}                         clock model: 12 minutes of game time pass. The
 //                                           scenario's "timers" array is read from the erb;
 //                                           each startOnGlobal timer starts when its global
@@ -106,9 +109,10 @@ let warnSeen = false;
 function engine() {
   if (G.attack_mechanism_known && !G.clock_started) { G.clock_started = true; out('      [engine: attack mapped -> clock_started]'); }
   if (G.crew_warned && !warnSeen) {
-    warnSeen = true; G.clock_started = true;
-    if (!G.attack_mechanism_known) { G.crew_warned_early = true; out('      [engine: early alarm -> crew_warned_early, clock_started]'); }
-    else out('      [engine: late alarm -> clock already running]');
+    warnSeen = true;
+    if (G.voltage_neutralised) { out('      [engine: alarm with Voltage down -> free, no clock]'); }
+    else if (!G.attack_mechanism_known) { G.clock_started = true; G.crew_warned_early = true; out('      [engine: early alarm -> crew_warned_early, clock_started]'); }
+    else { G.clock_started = true; out('      [engine: late alarm -> clock already running]'); }
   }
   if (G.racks_vented && !G.crew_warned && !G.crew_lost) { G.crew_lost = true; out('      [engine: racks_vented with the crew in Hall 2 -> crew_lost]'); }
   if (G.voltage_escaped && G.static_stood_aside && !G.static_engaged && !G.operative_static_defeated && !G.static_left) { G.static_left = true; out('      [engine: Static leaves with Voltage -> static_left]'); }
@@ -124,7 +128,7 @@ function hostile(npc) {
 function load(f) { const s = new inkjs.Story(fs.readFileSync(path.join(DIR, f + '.json'), 'utf8').replace(/^﻿/, '')); try { s.BindExternalFunction('player_name', () => 'Agent'); } catch (e) {} return s; }
 for (const step of route.steps) {
   if (step.set) { Object.assign(G, step.set); out(`   {set ${JSON.stringify(step.set)}}`); engine(); continue; }
-  if (step.note) { out(`\n## ${step.note}`); continue; }
+  if (step.note) { console.log(`\n## ${step.note}`); continue; }  // notes stay out of said/notSaid
   if (step.backstops) {
     const re = /"_comment": "([^"]*)",\s*"eventPattern": "room_entered:<%= r %>",\s*"condition": "([^"]*)",[\s\S]*?"(setGlobal|completeTask)": ([^\n]*)/g;
     const firing = []; let m;
@@ -142,6 +146,19 @@ for (const step of route.steps) {
     for (const x of step.said || []) { const ok = text.includes(x.toLowerCase()); if (!ok) stats.fails++; console.log(`   [${ok ? 'PASS' : 'FAIL'}] said: "${x}"`); }
     for (const x of step.notSaid || []) { const ok = !text.includes(x.toLowerCase()); if (!ok) stats.fails++; console.log(`   [${ok ? 'PASS' : 'FAIL'}] not said: "${x}"`); }
     heard = []; continue;
+  }
+  if (step.hud !== undefined) {
+    let shown = null;
+    for (const tm of TIMERS) {
+      if (!tm.showCountdown || clock.done[tm.id] || clock.started[tm.id] === undefined) continue;
+      if (tm.cancelOnGlobal && G[tm.cancelOnGlobal]) continue;
+      if (tm.condition && !cond(tm.condition)) continue;
+      shown = tm; break;
+    }
+    const left = shown ? Math.round((clock.started[shown.id] + shown.delayMs - clock.t) / 60000) : null;
+    const ok = (shown ? shown.id : null) === step.hud; if (!ok) stats.fails++;
+    out(`   [${ok ? 'PASS' : 'FAIL'}] HUD shows ${shown ? shown.id + ' (' + left + ' min)' : 'nothing'} (expected ${step.hud})`);
+    continue;
   }
   if (step.advance !== undefined) { out(`   {advance ${step.advance} min}`); advance(step.advance * 60000); continue; }
   if (step.expect) {
