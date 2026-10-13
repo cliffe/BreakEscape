@@ -9,7 +9,7 @@ Four ENTROPY operations went live inside the same sixty seconds. SAFETYNET has o
 | Metric | Value |
 |---|---|
 | Story aims | 6 |
-| Total tasks | 18 (5 optional) |
+| Total tasks | 18 (7 optional) |
 | VM flag challenges | 4 |
 | Physical locks | 8 |
 | AND-gate convergences | 1 |

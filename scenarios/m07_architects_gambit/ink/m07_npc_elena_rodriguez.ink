@@ -12,8 +12,10 @@
 //      summaries and read the Trojan Horse vendor manifest. Sets
 //      projection_revised. Redundant with VM flag 1 (NFS traffic), which is
 //      the same document.
-//   2. The SCADA control room password, and the cable vault PIN. Both
-//      redundant elsewhere. Nothing is gated on her.
+//   2. The SCADA control room password, and the rule for the cable vault
+//      keypad (PASS 5 alignment r1, regression m-8: the rule, not the digits,
+//      so the ATS-1 plate is still read). Both redundant elsewhere. Nothing is
+//      gated on her.
 //
 // Outcomes: elena_outcome = "turned" | "fled" | "ko". KO is engine-side.
 // ===========================================
@@ -30,7 +32,6 @@ VAR team_redirected = false
 VAR redirect_window_closed = false
 VAR found_coordination_traffic = false
 VAR casualty_projection_found = false
-VAR vault_pin_found = false
 VAR scada_password_found = false
 VAR elena_met = false
 
@@ -106,7 +107,9 @@ Elena Rodriguez: If you're not one of his, you're law. Either way, let me finish
 + {not asked_mercer} [Tell me about Mercer.]
     -> q_mercer
 
-+ {asked_told and not revision_heard} [The Austin operation. They briefed it as no fatalities, dormant for ninety days.]
+// PASS 5 alignment r1 (M2): the player no longer names Austin out of nowhere.
+// They ask about the other operations; she is the one who picks out Austin.
++ {asked_told and not revision_heard} [The other three operations tonight. What were you told about them?]
     -> lever_briefing
 
 + {casualty_projection_found and not revision_heard} [I've read the casualty projection. His signature's on it.]
@@ -143,9 +146,9 @@ Elena Rodriguez: That was the plan I agreed to. I have the version I signed off.
 
 Elena Rodriguez: Because the grid really is that fragile. That part was never a lie. It's the part nobody wants to hear.
 
-Elena Rodriguez: I wrote a cascade study in 2019. Twenty-three transformers, no spares, eighteen months to build replacements.
+Elena Rodriguez: I wrote a cascade study in 2019. Twenty-three transformers. If the spares were gone, eighteen months to build replacements.
 
-Elena Rodriguez: One bad afternoon and you lose a region for a year.
+Elena Rodriguez: They found spares since. Four to seven days, this time. In December, that's long enough.
 
 Elena Rodriguez: I sent it to the operator, the regulator and a congressional committee. One of them acknowledged receipt.
 
@@ -175,7 +178,7 @@ Elena Rodriguez: James Mercer. My professor's professor. Twenty years at the Dep
 
 Elena Rodriguez: He's the most convincing man I've ever met. I think he lied to himself first, and I was downstream.
 
-Elena Rodriguez: He's upstairs in the control room. He won't come down. He'd have to look at somebody who believed him.
+Elena Rodriguez: He's in the control room, through the north door. He won't come out. He'd have to look at somebody who believed him.
 
 {not scada_password_found and elena_outcome == "":
     Elena Rodriguez: Don't ask me for the door. Not yet.
@@ -190,11 +193,11 @@ Elena Rodriguez: He's upstairs in the control room. He won't come down. He'd hav
 === lever_briefing ===
 Narrator: She stops working. For the first time, both her hands are still.
 
-Elena Rodriguez: Say the second half of that again. Ninety days.
+Elena Rodriguez: Told? Nothing. I was copied on their schedule. What were you told about Austin?
 
-+ [Ninety days dormant. No projected fatalities. That's the brief.]
++ [Dormant ninety days. No projected fatalities. That's our brief.]
     -> revision_beat
-+ [Why? What do you know about Austin?]
++ [Why Austin?]
     -> revision_beat
 
 === lever_projection ===
@@ -259,7 +262,8 @@ Elena Rodriguez: You know what you're asking. Help you, and there's no version o
 + [I'm not going to pretend otherwise. There isn't.]
     Elena Rodriguez: No. There isn't. Thank you for not making it sound like a deal.
     -> turn_yes
-+ [Then do it for the reason you wrote page forty.]
+// PASS 5 alignment r1 (regression m-6): only once she has told you about page forty.
++ {asked_why} [Then do it for the reason you wrote page forty.]
     Elena Rodriguez: That's a cheap thing to say to me.
     Elena Rodriguez: It's also the only true thing anyone's said in this building since Thursday.
     -> turn_yes
@@ -272,14 +276,15 @@ Elena Rodriguez: You know what you're asking. Help you, and there's no version o
 // PASS 2 (lesson 3): tags above the lines, so an early close still records them.
 #set_global:elena_outcome:turned
 #set_global:scada_password_found:true
-#set_global:vault_pin_found:true
 ~ gave_keys = true
 
 Narrator: She flattens a folded worksheet against the rack.
 
 Elena Rodriguez: Control room door: CascadeWindow19. He's too vain to change it twice.
 
-Elena Rodriguez: Cable vault keypad: 4703. Mercer's tech reset it after my survey, so the plant log's out of date.
+Elena Rodriguez: Mercer's tech reset the vault keypad after my survey. The plant log's out of date.
+
+Elena Rodriguez: The new code is the last four of the serial on the transfer switch plate.
 
 Elena Rodriguez: The trunk runs are down there. That's where the physical half of this got in.
 
@@ -291,7 +296,7 @@ Elena Rodriguez: He'll be at the master console. He won't be armed. He'll want t
 // PASS 2: was gated on "not gave_keys", which was always true by here, so
 // the repeat could never be offered.
 + [Give me the control room door and the vault code again.]
-    Elena Rodriguez: CascadeWindow19. Vault keypad is 4703.
+    Elena Rodriguez: CascadeWindow19. The vault code is the last four of the serial on the transfer switch plate.
     -> post_turn_hub
 
 + [What do I say to him?]
@@ -348,9 +353,8 @@ Elena Rodriguez: Ask me again. Properly. If I say no, you leave me at this rack.
     ~ elena_outcome = "turned"
     #set_global:elena_outcome:turned
     #set_global:scada_password_found:true
-    #set_global:vault_pin_found:true
     ~ gave_keys = true
-    Elena Rodriguez: Control room door is CascadeWindow19. Vault keypad is 4703.
+    Elena Rodriguez: Control room door is CascadeWindow19. Vault code is the last four of the serial on the transfer switch plate.
     Elena Rodriguez: That's everything I have. Go.
     -> post_turn_hub
 

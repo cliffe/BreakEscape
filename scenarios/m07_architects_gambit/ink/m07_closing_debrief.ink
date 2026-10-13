@@ -24,12 +24,17 @@ VAR player_name = "Agent 0x00"
 // The win
 VAR grid_saved = false
 VAR countdown_expired = false
+// PASS 5 alignment r1 (M1): set by HaX's mapping when flag 3 lands before the
+// control room door was ever opened.
+VAR logged_in_before_door = false
 
 // The delegation
 VAR team_assignment = ""
 VAR team_redirected = false
 VAR projection_revised = false
 VAR redirect_declined = false
+// PASS 5 alignment r1 (M3): the correction landed while the team could still move.
+VAR revision_found_open = false
 
 // People
 VAR mercer_fate = ""
@@ -70,7 +75,7 @@ VAR asked_what_now = false
 
 // PASS 2 review minor 10: the debrief is the same night, over the secure
 // link (the text says "tonight" and "four hours ago" throughout).
-Narrator: A borrowed office at the grid site, an hour after the abort. The secure link to headquarters, lights down in the room behind the Director.
+Narrator: A borrowed office at the grid site, not long after the abort. The secure link to headquarters, lights down in the room behind the Director.
 
 Narrator: Netherton sits down in front of the camera with a tablet, in the suit he briefed you in.
 
@@ -94,6 +99,24 @@ Director Magnus Netherton: Agent. Sit down. You have earned that much.
 {countdown_expired:
     Director Magnus Netherton: The first step ran before the abort went through. Seattle lost power until it did.
     Director Magnus Netherton: Steps two to four never ran. Crews are bringing Seattle back one substation at a time.
+}
+
+// PASS 5 alignment r1 (M1): the VM work, at game-design level. The debrief
+// only opens with all four flags in, so this is never conditional on them.
+Director Magnus Netherton: Their backup server shared its coordination file with anyone who asked. Its listener read the operator's password to anyone who connected. And that account could make itself root.
+{countdown_expired:
+    Director Magnus Netherton: Three doors they left open. You went through all of them.
+- else:
+    Director Magnus Netherton: Three doors they left open, and you went through all of them before the clock did.
+}
+{logged_in_before_door:
+    Director Magnus Netherton: You logged in on their host before the control room door was open. The clock ran while you were on the wrong side of it.
+- else:
+    {countdown_expired:
+        Director Magnus Netherton: You opened the door before you touched their host. That is the order that kept it to one step.
+    - else:
+        Director Magnus Netherton: You opened the door before you touched their host. That is the order that kept it clean.
+    }
 }
 
 Narrator: He lets that stand for a moment. Then he turns the tablet over.
@@ -143,7 +166,7 @@ Director Magnus Netherton: You had no way to know what you were choosing. I woul
 = covered_trojan_redirect
 Director Magnus Netherton: The team went to Austin on your amended tasking. They arrived forty minutes late, with the run already going.
 Director Magnus Netherton: They stopped it at roughly thirty per cent. Fourteen million systems took the backdoor first. The clean-up is a national programme, starting Monday.
-Director Magnus Netherton: The dispatch keys were late in the sequence. The team reached them first. Nobody's ambulance goes missing.
+Director Magnus Netherton: The dispatch and health-record keys were late in the sequence. The team reached them first. Nobody's ambulance goes missing.
 Director Magnus Netherton: Ninety days was the brief. Nine was the truth. You found that out with the clock running, and moved a committed team on it.
 Narrator: He looks up for the first time since he started reading.
 Director Magnus Netherton: You changed your mind under a countdown. Most people cannot.
@@ -186,13 +209,25 @@ Director Magnus Netherton: I will need an explanation for that in writing. Not t
     // PASS 2: was "timestamped an hour and six minutes before the tactical
     // element was committed", impossible -- the team is committed in the
     // briefing, before the player is inside.
-    {redirect_declined:
-        Director Magnus Netherton: You weighed moving the team with the window open, and held. That is on the record as a decision.
+    // PASS 5 alignment r1 (M3): only a player who found it with the window
+    // open hears that the team "did not move". Found after the window shut
+    // (40 minutes, or the flag 3 login) is reported as found, not ignored.
+    {
+    - revision_found_open:
+        {redirect_declined:
+            Director Magnus Netherton: You weighed moving the team with the window open, and held. That is on the record as a decision.
+        - else:
+            Director Magnus Netherton: The team was not moved on it.
+        }
+        Agent HaX: I logged it. You found the thing that was built not to be found. That's the part I'd keep.
+        Agent HaX: The team not moving is a separate sentence. I won't pretend otherwise.
+    - team_assignment == "":
+        Director Magnus Netherton: The team was never committed, on that or on anything else.
+        Agent HaX: I logged it. You found the thing that was built not to be found. That's the part I'd keep.
     - else:
-        Director Magnus Netherton: The team was not moved on it.
+        Director Magnus Netherton: You found it after the window had closed. That is in the report as found, not as ignored.
+        Agent HaX: You found the thing that was built not to be found. The timing was his, not yours.
     }
-    Agent HaX: I logged it. You found the thing that was built not to be found. That's the part I'd keep.
-    Agent HaX: The team not moving is a separate sentence. I won't pretend otherwise.
     -> revision_lesson
 }
 
@@ -260,9 +295,15 @@ Director Magnus Netherton: On day nine, emergency dispatch in eleven counties st
 Director Magnus Netherton: Ninety to a hundred and sixty dead over the following month.
 Director Magnus Netherton: Spread thin enough that no single coroner sees a cluster.
 Director Magnus Netherton: Then the health record systems. Eighteen thousand hospitals rebuild from bare metal.
-{ projection_revised:
+// PASS 5 alignment r1 (M3): "You knew" only when the team could still have moved.
+{
+- revision_found_open:
     Agent HaX: You knew. You found it and it did not move.
     Agent HaX: I'm not saying it to punish you. Somebody has to write it down, and it's going to be me.
+- projection_revised and team_assignment == "":
+    Agent HaX: You found it, and the team still went nowhere.
+- projection_revised:
+    Agent HaX: You found it after the window shut. I'm writing that down too, in those words.
 }
 ->->
 
@@ -529,7 +570,12 @@ Director Magnus Netherton: Three briefs. One team. You sent it where you sent it
 
 Narrator: Netherton closes the tablet cover and holds it against his chest, which is what he does instead of sighing.
 
-Director Magnus Netherton: Above expectations, Agent. I do not say that often and I am not going to elaborate on it.
+// PASS 5 alignment r1 (m7): not for a night with no team sent or Seattle dark.
+{team_assignment != "" and not countdown_expired:
+    Director Magnus Netherton: Above expectations, Agent. I do not say that often and I am not going to elaborate on it.
+- else:
+    Director Magnus Netherton: You finished it, Agent. I will write the rest myself.
+}
 
 Director Magnus Netherton: Report to headquarters when your leave ends. Not to this room. Somewhere without windows.
 

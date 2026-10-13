@@ -24,6 +24,10 @@ Director Magnus Netherton: Four ENTROPY operations went live inside the same six
 
 Director Magnus Netherton: Three days ago you followed one fund paying six cells on one seventy-two-hour clock. Four of them are on that map.
 
+// PASS 5 alignment r1 (m13): fate-neutral nod to m06's freeze-or-watch choice
+// (no cross-mission state; DECISIONS_PENDING U2).
+Director Magnus Netherton: Frozen or watched, the advances had already been paid. Tonight is what they paid for.
+
 Director Magnus Netherton: Washington. Austin. San Francisco. And a grid control facility outside Portland, Oregon.
 
 Narrator: The Portland pin stops blinking and goes solid.
@@ -61,6 +65,9 @@ Director Magnus Netherton: You have your go-bag: picks, the cloner, the print ki
 * [Four operations on one clock. How do we know all this?]
     Director Magnus Netherton: We know the shape of it because we intercepted the tasking traffic. Targets, assignments, casualty modelling.
     Director Magnus Netherton: The threat desk has had six hours with it. Everything I read you tonight comes out of that intercept.
+    // PASS 5 alignment r1 (M6, DECISIONS_PENDING U1): m08's mole read a Portland
+    // plan two days before this order, so the plan has to have existed.
+    Director Magnus Netherton: Portland has been on our contingency board since Thursday, with you pencilled in as the nearest agent. Tonight's intercept told us it was live, and gave us the other three.
     -> briefing_questions
 + [Understood. Talk to me about the other three.]
     -> delegation_intro

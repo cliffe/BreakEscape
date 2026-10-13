@@ -172,20 +172,26 @@ Narrator: Dead air, then the ordinary hiss of a handset that thinks it has been 
 
 // ===========================================
 // T-10 -- the redirect window. Reads redirect_window_closed (boolean only).
+// PASS 5 alignment r1 (M4): its own timer now, 30 minutes after the commit and
+// ten before the window shuts, so the open branches play. Closed here means a
+// flag 3 login before minute 30.
 // ===========================================
 
 === taunt_t10 ===
 ~ heard_t10 = true
 Narrator: Your screen wakes on its own. Nothing else on it moves.
 
-{redirect_window_closed:
-    Whatever you have just learnt, you've learnt it too late to move anybody. That happens.
+{
+- redirect_window_closed:
+    You logged in. The door closed behind you.
+- team_redirected:
+    You moved them. I had wondered whether you would.
+- team_assignment == "trojan_horse":
+    You sent them to the one with no bodies in the brief. I'd like to know what you saw.
+- projection_revised:
+    You've found the discrepancy. Good. Now watch how long it takes you to act on it.
 - else:
-    {projection_revised:
-        You've found the discrepancy. Good. Now watch how long it takes you to act on it.
-    - else:
-        The beauty of entropy is that it doesn't require me to win.
-    }
+    The beauty of entropy is that it doesn't require me to win. Ten minutes, and your team is too committed to move.
 }
 
 Stop this, and something else fails. Someone else dies. You simply won't be in the room for it.
@@ -202,7 +208,7 @@ Stop this, and something else fails. Someone else dies. You simply won't be in t
     -> t10_close
 
 === t10_close ===
-{redirect_window_closed:
+{redirect_window_closed or team_assignment == "trojan_horse":
     Doors close. It's the one thing they reliably do.
 - else:
     You still have a door open. I'd hurry, but that's your business.
@@ -267,7 +273,7 @@ Narrator: One minute. The handset is warm in your hand and the line is already o
 {countdown_expired:
     Late. I did wonder.
 - else:
-    Impressive. Genuinely. You've moved faster than the file suggested.
+    Closer than the file suggested. Not close enough to be comfortable.
 }
 
 But the grid was never the point.

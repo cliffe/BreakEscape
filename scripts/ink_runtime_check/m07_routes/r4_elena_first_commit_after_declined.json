@@ -1,0 +1,208 @@
+{
+ "steps": [
+  {
+   "note": "R4: the briefing is closed before the commit. Elena gives the correction before any team is sent (the deduction option stays hidden: she is the witness). Committing Fracture on HaX's hub afterwards latches revision_found_open (the commit mapping). The HUD shows the window; the redirect is offered and declined; a page reload of the phone; the flag-2 warning before the login; the window shuts at 40 min. Debrief: 'weighed and held', 'You knew'."
+  },
+  {
+   "talk": "briefing",
+   "picks": [
+    "Understood. Talk to me"
+   ]
+  },
+  {
+   "expect": {
+    "team_assigned": false
+   }
+  },
+  {
+   "talk": "phone",
+   "picks": []
+  },
+  {
+   "enter": "operations_floor"
+  },
+  {
+   "read": "shift_handover_sheet"
+  },
+  {
+   "pickup": "printed_contractor_badge"
+  },
+  {
+   "enter": "server_room"
+  },
+  {
+   "talk": "elena",
+   "picks": [
+    "You're Elena Rodriguez",
+    "What were you told this was",
+    "Why does an engineer",
+    "The other three operations",
+    "Why Austin",
+    "Assume I don't know",
+    "I need to keep moving"
+   ]
+  },
+  {
+   "expect": {
+    "projection_revised": true,
+    "revision_found_open": false,
+    "team_assigned": false
+   }
+  },
+  {
+   "talk": "phone",
+   "picks": [
+    "ready to make the call",
+    "Fracture"
+   ]
+  },
+  {
+   "notSaid": [
+    "Their schedule doesn't match"
+   ]
+  },
+  {
+   "expect": {
+    "team_assigned": true,
+    "revision_found_open": true
+   }
+  },
+  {
+   "hud": "redirect_window_display"
+  },
+  {
+   "talk": "phone",
+   "reload": "page",
+   "picks": [
+    "I want the team moved",
+    "No. Leave them"
+   ]
+  },
+  {
+   "expect": {
+    "redirect_declined": true,
+    "team_redirected": false
+   }
+  },
+  {
+   "talk": "elena",
+   "picks": [
+    "Help me stop it",
+    "Then do it for the reason you wrote page forty"
+   ]
+  },
+  {
+   "said": [
+    "only true thing anyone's said"
+   ]
+  },
+  {
+   "event": "object_interacted",
+   "data": {
+    "objectType": "vm-launcher"
+   }
+  },
+  {
+   "flag": 1
+  },
+  {
+   "read": "coordination_extract"
+  },
+  {
+   "notSaid": [
+    "If a row in there doesn't match"
+   ]
+  },
+  {
+   "talk": "phone",
+   "picks": [
+    "four operations running off one schedule"
+   ]
+  },
+  {
+   "said": [
+    "nine days, not ninety"
+   ]
+  },
+  {
+   "flag": 2
+  },
+  {
+   "said": [
+    "Same door password as Elena",
+    "Before you log in: if the team's moving, move it now"
+   ]
+  },
+  {
+   "advance": 41
+  },
+  {
+   "expect": {
+    "redirect_window_closed": true
+   }
+  },
+  {
+   "hud": null
+  },
+  {
+   "enter": "scada_control"
+  },
+  {
+   "flag": 3
+  },
+  {
+   "flag": 4
+  },
+  {
+   "task": "shut_down_the_cascade"
+  },
+  {
+   "advance": 9
+  },
+  {
+   "expect": {
+    "debrief_requested": true
+   }
+  },
+  {
+   "said": [
+    "Netherton's done waiting"
+   ]
+  },
+  {
+   "enter": "server_room"
+  },
+  {
+   "talk": "debrief",
+   "picks": [
+    "Nothing on the record",
+    "Don't ask me to rank them"
+   ]
+  },
+  {
+   "said": [
+    "You weighed moving the team with the window open, and held",
+    "You knew. You found it and it did not move",
+    "Above expectations"
+   ],
+   "notSaid": [
+    "after the window had closed"
+   ]
+  },
+  {
+   "creditsSaid": [
+    "weighed, and held",
+    "Operation Fracture"
+   ],
+   "creditsNotSaid": [
+    "CORRECTION FOUND"
+   ]
+  },
+  {
+   "note": "Run-length guard: the debrief's read-out is the longest run (pre-existing; about 4 lines added by the M1 beat). Dialogue stage owns breaking it up."
+  },
+  {
+   "maxRun": 66
+  }
+ ]
+}

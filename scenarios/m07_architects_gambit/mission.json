@@ -19,7 +19,17 @@
     {
       "ka": "MAT",
       "topic": "Attacks and exploitation",
-      "keywords": ["EXPLOITATION", "Multi-stage attack chains", "Coordinated attacks", "Attack synchronization"]
+      "keywords": ["EXPLOITATION", "Multi-stage attack chains"]
+    },
+    {
+      "ka": "SS",
+      "topic": "Categories of Vulnerabilities",
+      "keywords": ["Misconfiguration", "Information leakage"]
+    },
+    {
+      "ka": "AB",
+      "topic": "Models",
+      "keywords": ["Coordinated attacks", "Attack synchronization"]
     },
     {
       "ka": "OSV",
@@ -33,8 +43,8 @@
     },
     {
       "ka": "CPS",
-      "topic": "Cyber-Physical Systems",
-      "keywords": ["Critical infrastructure protection", "ICS/SCADA security", "Power grid security", "industrial control systems", "Physical access control", "Lock bypass"]
+      "topic": "Physical Security",
+      "keywords": ["Critical infrastructure protection", "Physical access control", "Lock bypass"]
     },
     {
       "ka": "HF",

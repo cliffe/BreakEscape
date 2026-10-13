@@ -1,7 +1,8 @@
 // ===========================================
 // m07 The Architect's Gambit -- THOMAS PARK
 // NPC id: thomas_park   displayName: Thomas Park
-// Room: cable_vault. Static, reacts on entry.
+// Room: cable_vault. Static. PASS 5 alignment r1 (M5): speaks first on every
+// entry while he is still working (room_entered mapping in scenario.json.erb).
 //
 // Critical Mass sabotage tech, in the vault to cut the facility's own backup
 // power. Cold, brief, busy. He is pressure on the last approach, not plot.
@@ -14,7 +15,6 @@
 VAR park_resolved = ""
 VAR park_ko = false
 VAR casualty_projection_found = false
-VAR found_mole_evidence = false
 
 VAR park_greeted = false
 
@@ -114,9 +114,15 @@ Narrator: You back into the dark of the stairwell. He waits, then goes back to t
 -> hub
 
 === back_at_it ===
-Narrator: He is still at the junction box, working faster. His flashlight finds the door before you're through it.
-
-Thomas Park: Second time. There isn't a third.
+// PASS 5 alignment r1 (M5): the entry chat now opens on every return, so a
+// third visit gets its own line rather than "Second time" again.
+{back_at_it == 1:
+    Narrator: He is still at the junction box, working faster. His flashlight finds the door before you're through it.
+    Thomas Park: Second time. There isn't a third.
+- else:
+    Narrator: He doesn't look round. The flashlight stays on the wire.
+    Thomas Park: I said there wasn't a third.
+}
 -> hub
 
 === gone ===

@@ -8,7 +8,7 @@
 // ---- Mission state (synced from globalVariables at call-open) ----
 VAR team_assignment = ""
 VAR team_assigned = false // Synced scenario global: a tactical team has been assigned (starts the clocks); also set by m07_opening_briefing and the assign_tactical_team mapping
-VAR projection_revised = false
+VAR projection_revised = false // Synced scenario global: the Trojan Horse correction is established; set here by deduce_right and by Elena's revision_beat
 VAR team_redirected = false
 VAR redirect_window_closed = false
 
@@ -70,13 +70,12 @@ VAR tomb_discussed = false
 VAR mole_discussed = false
 VAR teacher_discussed = false
 VAR park_hint_given = false
+VAR deduce_wrong_count = 0
 VAR vm1_hint_given = false
 VAR vm2_hint_given = false
 VAR vm3_hint_given = false
 VAR vm4_hint_given = false
 VAR vault_hint_given = false
-
-EXTERNAL player_name()
 
 // ===========================================
 // ENTRY POINT
@@ -104,11 +103,11 @@ EXTERNAL player_name()
 }
 #complete_task:assign_tactical_team
 
-HaX here, {player_name()}. I've got your channel and the board.
+HaX here, Agent. I've got your channel and the board.
 
 The ops room's covering three continents tonight. If I go quiet for ten seconds, it isn't personal.
 
-The team's logged for {team_assignment == "fracture": Fracture -- Washington|{team_assignment == "meltdown": Meltdown -- San Francisco|Trojan Horse -- Austin}}. It's on the record. I'm not reopening it.
+The team's logged for {team_assignment == "fracture": Fracture -- Washington|{team_assignment == "meltdown": Meltdown -- San Francisco|Trojan Horse -- Austin}}. It's on the record. It'd take something new to move it.
 
 I can't be in the other two places.
 
@@ -146,7 +145,7 @@ Get past the checkpoint to the operations floor.
 // PASS 2 playtest D3 (lesson 36): this can run in the phone preload, before
 // the briefing commit lands, so it must not claim the team is uncommitted.
 // The commit option lives on the hub, gated on the synced team_assigned.
-HaX here, {player_name()}. I've got your channel and the board.
+HaX here, Agent. I've got your channel and the board.
 
 Get past the checkpoint to the operations floor. Call me when you hit something you can't open.
 
@@ -232,8 +231,15 @@ Get past the checkpoint to the operations floor. Call me when you hit something 
 + {elena_ko and elena_outcome == "" and not elena_discussed} [The engineer in the server hall. Elena Rodriguez. She's down.]
     -> topic_elena
 
-// --- The coordination traffic ---
-+ {found_coordination_traffic and not traffic_discussed} [The share -- four operations running off one schedule.]
+// --- PASS 5 alignment r1 (M2): the deduction. The decode no longer sets
+// projection_revised and nobody names the row; the player says which operation
+// and what's wrong. Checks what's done (the decode read), not how.
++ {found_coordination_traffic and not projection_revised} [Their schedule doesn't match our brief.]
+    -> deduce_schedule
+
+// --- The coordination traffic (the player already has the correction, from
+// Elena; deduce_right covers the same ground and sets traffic_discussed) ---
++ {found_coordination_traffic and projection_revised and not traffic_discussed} [The share -- four operations running off one schedule.]
     -> topic_traffic
 
 // --- Mercer ---
@@ -311,6 +317,82 @@ Get past the checkpoint to the operations floor. Call me when you hit something 
 -> hub
 
 // ===========================================
+// PASS 5 alignment r1 (M2): THE DEDUCTION
+// The player names the operation, then what's wrong with it. A wrong pick
+// costs nothing: HaX says so and the hub comes back. Text knots print, then
+// divert to choices-only knots, so a reopen replays nothing (E13). The
+// choices knots re-check projection_revised, so a reopen after Elena has
+// given it goes to the hub.
+// ===========================================
+
+=== deduce_schedule ===
+Go on. Which operation?
+-> deduce_op_choices
+
+=== deduce_op_choices ===
+{projection_revised:
+    -> hub
+}
++ [Fracture. Washington.]
+    -> deduce_wrong
++ [Trojan Horse. Austin.]
+    -> deduce_what
++ [Meltdown. San Francisco.]
+    -> deduce_wrong
++ [Never mind. I'll read it again.]
+    -> hub
+
+=== deduce_what ===
+Austin. What's wrong with it?
+-> deduce_what_choices
+
+=== deduce_what_choices ===
+{projection_revised:
+    -> hub
+}
++ [Dormancy. Theirs says nine days. Ours says ninety.]
+    -> deduce_right
++ [The manifest. EHR and CAD: health records and dispatch.]
+    -> deduce_right
++ [The key count. Theirs isn't eight hundred and forty.]
+    -> deduce_wrong
++ [Never mind. I'll read it again.]
+    -> hub
+
+=== deduce_wrong ===
+~ deduce_wrong_count += 1
+{deduce_wrong_count > 1:
+    Still not what I'm reading. Put their rows next to the desk summary, line by line.
+- else:
+    That isn't what I'm reading. Look again.
+}
+-> hub
+
+// The tags sit above the lines, so an early close still records them.
+// verdict_sent stops Elena's verdict text repeating this.
+=== deduce_right ===
+#set_global:projection_revised:true
+#set_global:verdict_sent:true
+~ projection_revised = true
+~ traffic_discussed = true
+Yes. Nine days, and dispatch keys on the manifest. Austin was briefed low on purpose.
+One authority signing for all four. One operation wearing four coats.
+{team_redirected or team_assignment == "trojan_horse":
+    The team's already in Austin. You picked the one that was worse than the brief said.
+- else:
+    {redirect_window_closed and team_assigned:
+        The window's shut. It goes in the report as found, not as ignored.
+    - else:
+        {team_assigned:
+            That's grounds to move the team. The window's open until they're too committed, or until you log in on their host. Whichever comes first.
+        - else:
+            The team's still waiting on your call. If you're making it now, that's where it goes.
+        }
+    }
+}
+-> hub
+
+// ===========================================
 // THE REDIRECT
 // ===========================================
 
@@ -326,6 +408,8 @@ And the place you pull them from goes dark. Whatever was going to happen there, 
 Health record and dispatch keys are late in the Austin run. Even a late team keeps ambulances on the road.
 
 You pay for it with the operation you abandon. Your call.
+
+And it's now or never. Once you log in on their host, the team stays where it is.
 
 -> redirect_open_choices
 
@@ -530,6 +614,9 @@ Submit its flag and the relay hands you the capture. The control room password's
 You've got a name from the share and a password from the listener. That's one SSH login. The flag's in its home directory.
 
 But open the control room door first. The moment you log in, assume they see you and start the clock.
+{projection_revised and team_assigned and team_assignment != "trojan_horse" and not team_redirected and not redirect_window_closed:
+    And if you mean to move the team, do it before you log in. Once they see you, it stays where it is.
+}
 -> hub
 
 === vm_hint_4 ===
@@ -608,7 +695,7 @@ Recon and network mapping guide sent.
 
 Know what's on the network before you touch anything.
 
-The attack host and its backup server both turn up in a sweep. Find them first.
+Their host turns up in a sweep. Find it first.
 
 -> guide_recon_choices
 
