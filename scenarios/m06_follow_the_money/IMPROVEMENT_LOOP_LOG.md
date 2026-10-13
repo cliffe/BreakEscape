@@ -567,3 +567,17 @@ Routes:
 #### Next
 
 The reviewer's ten-item browser checklist (`PUZZLE_CHAINS_REVIEW_P5_R3.md`, "Final browser checklist for closing the phase"). Item 1's "before any fix" half no longer applies to this build. The rest covers: the strikes, the old bypass closed, the safe not counting, Irina's per-visit check, the signing case's render and tap area, and Kemal's sight challenge over dusting.
+
+### Phase 2 puzzle chains: CLOSED (2026-10-13)
+
+| Round | Blockers | Majors | Minors | Browser |
+|---|---|---|---|---|
+| 1 | 0 | 3 | 10 | PASS5_PUZZLE_R1_BROWSER: 2 majors (nested-path lockout, hidden case), fixed in the follow-up; N1 real pick confirmed |
+| 2 | 0 | 2 | 6 | — |
+| 3 | 0 | 1 | 3 | PASS5_PUZZLE_R3_BROWSER: checklist items 1–7 and 9 pass (4 games), 0 blockers, 0 majors |
+
+Carried into phase 3:
+- **R1:** a second console strike when the cover is already strained sets `console_tripped` and sends no HaX text. Add a short line.
+- **R2:** with the cover strained and Irina not turned, the only ways past Kemal are a pick or a fight. That's by design, but the stand-off itself hasn't been played in a browser.
+
+Engine item D5 (dotted paths) is with the user.
