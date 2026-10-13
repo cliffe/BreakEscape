@@ -226,53 +226,53 @@
                  "y":290
                 }, 
                 {
-                 "gid":1130,
-                 "height":54,
+                 "gid":268,
+                 "height":37,
                  "id":18,
                  "name":"",
                  "rotation":0,
                  "type":"",
                  "visible":true,
-                 "width":33,
+                 "width":24,
                  "x":52,
-                 "y":184
+                 "y":178
                 },
             
                 {
-                 "gid":1130,
-                 "height":54,
+                 "gid":268,
+                 "height":37,
                  "id":19,
                  "name":"",
                  "rotation":0,
                  "type":"",
                  "visible":true,
-                 "width":33,
+                 "width":24,
                  "x":84,
-                 "y":184
+                 "y":178
                 }, 
                 {
-                 "gid":1130,
-                 "height":54,
+                 "gid":268,
+                 "height":37,
                  "id":26,
                  "name":"",
                  "rotation":0,
                  "type":"",
                  "visible":true,
-                 "width":33,
+                 "width":24,
                  "x":128,
-                 "y":258
+                 "y":252
                 }, 
                 {
-                 "gid":1130,
-                 "height":54,
+                 "gid":268,
+                 "height":37,
                  "id":27,
                  "name":"",
                  "rotation":0,
                  "type":"",
                  "visible":true,
-                 "width":33,
+                 "width":24,
                  "x":178,
-                 "y":258
+                 "y":252
                 }, 
                 {
                  "gid":957,

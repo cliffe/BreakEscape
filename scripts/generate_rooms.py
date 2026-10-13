@@ -3446,7 +3446,7 @@ def _trading_desk(r, x, feet, monitors, extras=(), chairs=True, chair="chair-gre
     for name, xf, sf, *layer in extras:
         r.on(d, name, xf, sf, layer=layer[0] if layer else "table_items")
     if chairs:
-        dy = 12 if chair == "chair-grey-4" else 18
+        dy = 12 if chair in ("chair-grey-4", "chair-darkgray-1") else 18
         r.item(chair, float(x + 12), float(feet + dy))
         r.item(chair, float(x + 44), float(feet + dy))
     return d
@@ -3648,7 +3648,7 @@ def room_hce_lab():
     # (cycle 2, LAB-2, approved): the floor x 168-216, y 90-172 stays clear for her.
     # the workstation desk, west, below the W-door row
     _trading_desk(r, 40, 166, [("pc10", 0.32, 0.42), ("pc8", 0.72, 0.40)],
-                  [("energy_cans1", 0.94, 0.30)], chair="aes_office_chair1")   # the lab's own chairs (c3 LAB-3)
+                  [("energy_cans1", 0.94, 0.30)], chair="chair-darkgray-1")   # the lab's own back-view chairs (c3 LAB-3, c5 LAB-4)
     # the analysis table: Priya's two papers at either end, 90 px apart (cycle 2, LAB-1)
     t = r.table("zds_conference_table1", 100.0, 240.0, kind="objects")   # x 100-226
     r.on(t, "notes3", 0.10, 0.30, layer="conditional_table_items")
@@ -3656,8 +3656,8 @@ def room_hce_lab():
     r.on(t, "pc6", 0.58, 0.30)
     r.on(t, "coffee_cups1", 0.74, 0.28)
     r.on(t, "notes1", 0.90, 0.30, layer="conditional_table_items")
-    r.item("aes_office_chair1", 128.0, 258.0)
-    r.item("aes_office_chair1", 178.0, 258.0)
+    r.item("chair-darkgray-1", 128.0, 252.0)         # back view, facing the table (c5 LAB-4)
+    r.item("chair-darkgray-1", 178.0, 252.0)
     # west: the hardware bench and the beanbags
     r.table("it_workbench1", 36.0, 244.0, kind="objects")
     r.solid("beanbag1", 40.0, 292.0)
@@ -3710,10 +3710,12 @@ def room_hce_vault():
     The custody console on its own steel desk in front of the cage door, with the
     cold-storage procedure; the transaction server's terminal beside a block of
     black racks east; EXECUTIVE SUITE plate over the E door's end of the wall
-    (the executive wing is through here); gas suppression, CRAC unit, UPS.
+    (the executive wing is through here); gas suppression, supply boxes, tape
+    library, UPS.
     Doors: E on row 2, S (SE corner): the east lane x 256-288 stays clear from the E
     door down to the S door (the rack block x 186-250 stands against the back wall,
-    west of it). The server room covers the bottom two rows.
+    west of it). The server room covers the bottom two rows. (Precision cooling is
+    the server room's; the custody core has gas suppression, tape library and UPS.)
     Slots (scenario order): pc6 on the server desk (Financial Transaction Server),
     pc10 on the console desk (Custody Console), notes3 on the console desk's far
     end (Cold Storage Procedure, 40 px+ from the console).
@@ -3752,8 +3754,9 @@ def room_hce_exec_hall():
     """
     2×1 GU (10×6) executive wing corridor: smoked oak with a navy and amber runner
     (room_hce_exec_hall), navy walls. The framed press clipping hangs on the back
-    wall; a console table with an orchid, a gold-coin sculpture, framed prints, a
-    PRIVATE plate by the N door, a leather bench against the south wall at the west
+    wall between two sconces, beside an abstract canvas; a HASHCHAIN plate over a
+    console table with an orchid, a trophy cabinet, a PRIVATE plate by the N door, a
+    fire point on the west wall, a leather bench against the south wall at the west
     end. Nothing to the south: the floor is y 64-160.
     Doors: W on row 2 (the mouth x 32-60, y 64-100 clear), N (NE corner, x 256-288).
     Kept clear for Kemal (satoshi_minder): his beat (8,4) <-> (4,4), sprite centres
@@ -3780,11 +3783,11 @@ def room_hce_ceo():
     2×2 GU Satoshi's office: smoked oak with an amber and black rug under the desk
     (room_hce_ceo), navy walls. The desk is room_ceo's (desk-ceo2 at x 118, feet
     147) and his chair behind it, so the Signing Case keeps its pinned spot on the
-    desk's front edge (3.6, 3.35, elevation 32). Back wall: two market screens
-    either side of the framed bitcoin white paper; the executive safe in the NE
-    corner (pinned at (8,2)). A hardware wallet in a display case and a node shelf
-    west; a black leather sofa and glass table SW; his side table with the
-    manifesto and a laptop east; a gold coin on a pedestal, a mini fridge.
+    desk's front edge (3.6, 3.35, elevation 32); two visitor chairs face it. Back
+    wall: a block-height screen and the framed bitcoin white paper; the executive
+    safe alone in the NE corner (pinned at (8,2)). A hardware wallet in a display
+    case and a drinks cabinet west; a black leather sofa, glass table and a fig SW;
+    a bar cart, his side table with the manifesto and a laptop east; a floor globe SE.
     Doors: S (SE corner, the lane x 256-288 from y 196 clear). The executive wing
     covers the bottom two rows (feet <= 256). Satoshi at (5,6): x 144-176,
     y 160-224 clear.

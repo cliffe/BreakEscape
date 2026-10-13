@@ -510,52 +510,52 @@
      "y": 290.0
     },
     {
-     "gid": 1130,
-     "height": 54,
+     "gid": 268,
+     "height": 37,
      "id": 18,
      "name": "",
      "rotation": 0,
      "type": "",
      "visible": true,
-     "width": 33,
+     "width": 24,
      "x": 52.0,
-     "y": 184.0
+     "y": 178.0
     },
     {
-     "gid": 1130,
-     "height": 54,
+     "gid": 268,
+     "height": 37,
      "id": 19,
      "name": "",
      "rotation": 0,
      "type": "",
      "visible": true,
-     "width": 33,
+     "width": 24,
      "x": 84.0,
-     "y": 184.0
+     "y": 178.0
     },
     {
-     "gid": 1130,
-     "height": 54,
+     "gid": 268,
+     "height": 37,
      "id": 26,
      "name": "",
      "rotation": 0,
      "type": "",
      "visible": true,
-     "width": 33,
+     "width": 24,
      "x": 128.0,
-     "y": 258.0
+     "y": 252.0
     },
     {
-     "gid": 1130,
-     "height": 54,
+     "gid": 268,
+     "height": 37,
      "id": 27,
      "name": "",
      "rotation": 0,
      "type": "",
      "visible": true,
-     "width": 33,
+     "width": 24,
      "x": 178.0,
-     "y": 258.0
+     "y": 252.0
     },
     {
      "gid": 957,

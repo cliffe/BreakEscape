@@ -205,3 +205,19 @@ New art (cycles 3-4): hand-drawn `hce_sconce1`, `hce_art_canvas1`. No PixelLab s
 
 - Assumption: the route drivers and ink are the places a tile reference to Priya would live; the old playtest session logs in `tools/playtest/` mention her by id only and are historical.
 - Assumption: the trophy cabinet (also used in m03's Zero Day offices) is fine to reuse in another mission's building.
+
+## Cycle 5 (2026-10-13, in progress): confirmation review and interaction walk
+
+Fresh Opus review of the cycle 4 rooms: 0 blockers, 1 major, 6 minors (5 optional or housekeeping, plus 1 note). All hard constraints pass: Kemal 26/117/108 cells, window 2/20, 20/20, 0/20; guard 36/36 walkable, poses unchanged; Signing Case on the desk edge; the safe unobscured; the clipping on the wall with `readDisplay`; clues readable; every slot 50 px or more from the next; lanes and covered rows clear. Verdict: dressing can close once LAB-4 is fixed; every room is at small returns.
+
+| id | room | sev | finding | outcome |
+|---|---|---|---|---|
+| LAB-4 | Lab | major | The four `aes_office_chair1` (three-quarter, seat to camera) faced away from their desks, and made four angled props in one room (came in with c4's LAB-3) | **Fixed:** back-view `chair-darkgray-1`, used nowhere else in m06 |
+| VLT-6 | Servers / DC | minor | Five rack/desk sprites still shared | **Left** (optional): the rooms read apart; the alternatives have baked backgrounds |
+| CEO-5 | Satoshi / lobby | minor | Coffee table and fig repeat the lobby's | **Left** (optional) |
+| CH-1 | Several | minor | `chair-grey-4` in four rooms | **Left** (optional) |
+| VLT-7 | Data centre | minor | Docstring promised a CRAC unit that isn't there | **Fixed** (docstring) |
+| DOC-1 | CEO, exec wing | minor | Docstrings described the cycle-1 rooms | **Fixed** |
+| EXW-5 | Exec wing | note | Lower corridor bare, forced by Kemal's beat | None |
+
+The lab, executive wing, Satoshi's office and data centre maps were regenerated after the fixes. The in-game re-shot of the lab and the Sonnet interaction walk (game in `m06-dressing-walk-c5/` in the session scratchpad: every object tapped, read then dust the clipping then open the Signing Case, NPC taps, door-to-door walks, a reload) are still to be folded in. The walk loaded its maps before the LAB-4 chair swap, which is cosmetic.
