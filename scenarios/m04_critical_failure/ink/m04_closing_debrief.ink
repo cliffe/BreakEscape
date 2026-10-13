@@ -342,9 +342,9 @@ First, one more decision.
 - else:
     // Eleven on site: the nine night crew, Vance and the gate guard.
     {security_guard_ko or robert_vance_ko:
-        Agent HaX: Everyone on site got out alive tonight, not all of them on their own feet. Forty-odd on that feed never knew they were on it.
+        Agent HaX: Everyone on site got out alive tonight, not all of them on their own feet. Two hundred and forty thousand on that feed never knew they were on it.
     - else:
-        Agent HaX: Eleven people walked out of there tonight. Forty-odd on that feed never knew they were on it.
+        Agent HaX: Eleven people walked out of there tonight. Two hundred and forty thousand on that feed never knew they were on it.
     }
     // Round 2 (review m1): "started your clock early" only when it did.
     {

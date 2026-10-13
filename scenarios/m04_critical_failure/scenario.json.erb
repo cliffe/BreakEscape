@@ -743,6 +743,14 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
             }
           ],
           "eventMappings": [
+            <%# Scenario design n3 (on HaX since browser check F2, so it lands in her thread, not as a toast from Static): he vanishes in view on the punch-down route, so a
+                line says where he went (the escape route has Voltage's narration). %>
+            {
+              "eventPattern": "global_variable_changed:static_left_alone",
+              "condition": "value === true",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 2000, "message": "Static's gone out the dock door. Let him go. The button's what matters.", "skipIfGlobal": "attack_prevented" }
+            },
             <%# PASS 3 P9. The RFID guide is offered once Vance's card is actually in
                 the cloner. conversation_closed:robert_vance also fires mid-clone
                 (the RFID minigame tears the chat down, person-chat-minigame.js
@@ -2213,14 +2221,6 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
               "eventPattern": "global_variable_changed:static_left",
               "condition": "value === true",
               "setVisible": false
-            },
-            <%# Scenario design n3: he vanishes in view on the punch-down route, so a
-                line says where he went (the escape route has Voltage's narration). %>
-            {
-              "eventPattern": "global_variable_changed:static_left_alone",
-              "condition": "value === true",
-              "onceOnly": true,
-              "sendTimedMessage": { "delay": 2000, "message": "Static's gone out the dock door. Let him go. The button's what matters.", "skipIfGlobal": "attack_prevented" }
             },
             {
               "eventPattern": "room_entered:plant_room",

@@ -532,3 +532,18 @@ Ink compiles (10 files). Validator, full: schema passed, all ink valid, doors an
 - HaX, debrief: "Before you write it up. Three things let them in. Two of them let you in too." → "Before you write it up. Here's what let them in. Nearly all of it let you in too."
 - HaX, text, new: "Static's gone out the dock door. Let him go. The button's what matters."
 - The Hall 2 no-card text is unchanged in wording (new trigger).
+
+**Browser check of scenario design rounds 1–2 (PASS5_DESIGN_R1_BROWSER, games 2211, 2213–2216):** 8 of 10 checks pass, plus 3 minors, all now fixed or superseded:
+- **F1 (orchestrator):** superseded by the round-2 n1 fix.
+- **F2 (orchestrator):** the "Static's gone out the dock door" text moved from Static's mappings to HaX's, so it lands in her thread instead of showing as a toast from Static.
+- **F3 (orchestrator):** the debrief said "Forty-odd on that feed" against 240,000 in the credits and documents. It now reads "Two hundred and forty thousand on that feed never knew they were on it." (spoken line, both branches).
+
+### Phase 3 scenario design: CLOSED (2026-10-13)
+
+| Round | Blockers | Majors | Minors |
+|---|---|---|---|
+| 1 (report finished by the orchestrator after a safety stop) | 0 | 1 | 17 |
+| 2 | 0 | 0 | 5 |
+| Browser | 0 | 0 | 3 |
+
+Open for the user: SecGen checks S1–S7, M1's network lines, R2-6 / m17. Next: phase 4 dialogue and room dressing in parallel, then lighting, POV backgrounds and blind runs. The character stage is running.
