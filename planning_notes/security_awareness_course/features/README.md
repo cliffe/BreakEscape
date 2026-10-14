@@ -38,6 +38,7 @@ Priority: **MVP** is needed for the first sellable course (the Induction Essenti
 | BE-19 | Open minigames from conversations and events | An ink tag and an action that open any minigame (the inbox, a check question, a form) without the player clicking an object; today `#trigger_minigame` is a stub | MVP | S |
 | BE-20 | Authorable tutorial, title screen and end screen | Scenario-defined tutorial steps, the course's own title screen (with the customer's logo) and a non-spy end screen; today these are fixed | MVP | M |
 | BE-21 | Workplace music and sound | A music and ambience set for the workplace tone; today's playlists are spy-styled | P2 | S |
+| BE-22 | Tactic spotter card | A light overlay listing manipulation tactics (urgency, authority, flattery and so on) that the player ticks off as they hear them in play; becomes part of the debrief score | P2 | S |
 
 ## Minigames (MG)
 

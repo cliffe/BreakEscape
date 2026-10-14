@@ -10,7 +10,7 @@ The "Used for" lists come from the model module and `docs/agents/AWARENESS_MODUL
 
 ### Design principles
 
-1. **Teach one idea per step.** The model is the fingerprint minigame (`JS/minigames/dusting/`), which the user liked more than the old version (`docs/IDEAS_BACKLOG.md`, Minigames). It has five named steps (find, powder, dust, lift, compare), a one-line fact under each step and a one-sentence reason after every wrong choice (`dusting-game.js:33-52`), and nothing in it can fail. Awareness minigames copy that shape: a visible step list where the task has stages (redaction, payment checks, the MFA set-up), one fact per step, and a reason for every wrong choice. Where the real tool has no steps (an inbox), the practice mode adds them and the mission mode takes them away.
+1. **Teach one idea per step.** The model is the fingerprint minigame (`JS/minigames/dusting/`), which the user liked more than the old version (`docs/IDEAS_BACKLOG.md`, Minigames). It has five named steps (find, powder, dust, lift, compare) and a one-line fact under each step (`dusting-game.js:33-54`), gives a one-sentence reason after a wrong choice (`wrongPowderReason` in `dusting-model.js`), and nothing in it can fail (`dusting-game.js:1-11`). Awareness minigames copy that shape: a visible step list where the task has stages (redaction, payment checks, the MFA set-up), one fact per step, and a reason for every wrong choice. Where the real tool has no steps (an inbox), the practice mode adds them and the mission mode takes them away.
 2. **Fun, not fiddly, and not hard.** `AGENTS.md`: "Minigames should be fun and educational, not hard." The challenge is the judgement, never the controls: big targets, no pixel hunting, no precise dragging, no fail screens. Every work task can be finished whatever the player did; mistakes play out as consequences and are explained. Small pleasures matter: Kai's thanks in the team chat, a stamp on a reported email, a streak in a drill, ordinary work emails with some humour in them.
 3. **Realistic enough to transfer, never a copy of a brand.** The interfaces follow the patterns of tools staff use every day (a three-pane mail client, an address bar, a share dialog with "specific people" and "anyone with the link", a push prompt with number matching) so the habit carries over to their real tools. No real logos, product names or page designs. Where it matters, names come from the organisation profile (BE-05): the Report button carries the label and position of the learner's own mail client.
 4. **Accessible by default.** Every minigame is an HTML overlay that meets WCAG 2.2 AA (see `features/accessibility_and_inclusion.md`):
@@ -18,10 +18,11 @@ The "Used for" lists come from the model module and `docs/agents/AWARENESS_MODUL
    - screen reader friendly: the overlay is a dialog with a heading, focus moves in when it opens and back to the world when it closes, state changes are announced in a polite live region (the dusting minigame already does this), controls have names, and nothing depends on hover alone;
    - every drag has a single-pointer alternative (SC 2.5.7) and targets are at least 24 by 24 CSS pixels (SC 2.5.8);
    - colour is never the only signal, text resizes to 200% and contrast meets AA;
+   - it works by touch and in a narrow window: hover always has a focus or press-and-hold equivalent, and layouts reflow (SC 1.4.10), because today's minigames are laid out for desktop (`research/current_state_break_escape.md`);
    - nothing moves, flashes or makes a sound without a way to stop it, and `prefers-reduced-motion` is honoured;
    - toasts never cover the minigame or the focused control (SC 2.4.11; the backlog already records toasts sitting over minigame overlays);
-   - each minigame's data can be shown by the text route (BE-03) with the same decisions and the same records.
-5. **No required speed unless it's optional.** Nothing is scored on reaction time. Real-time timers are off by default and appear only as an optional challenge in drills (SC 2.2.1). Story deadlines ("the schedule by 10:00") add realism and can't be failed. When a rating depends on "how soon", it's measured in story events (before the next email arrived, before Ama came over), not real minutes, because the game clock runs on wall time (`JS/systems/game-clock.js`) and would penalise slow readers and screen reader users.
+   - each new minigame has an **accessible mode**: plain HTML showing the same data and offering the same decisions, which the text route (BE-03) opens inline and which records exactly what the game version records (`break_escape_engine.md`, BE-03 asks every new minigame for one).
+5. **No required speed unless it's optional.** Nothing is scored on reaction time. Real-time timers are off by default and appear only as an optional challenge in drills (SC 2.2.1). Story deadlines ("the schedule by 10:00") add realism and can't be failed. When a rating depends on "how soon", it's measured in story events (before the next email arrived, before Ama came over), not real minutes. Today the game clock runs on wall time with no pause (`JS/systems/game-clock.js`), which would penalise slow readers and screen reader users; BE-04 proposes a pausable clock with a time scale, and BE-03 writes timed rules as sequences, so story events keep both routes and every time scale fair.
 6. **Feedback depends on the beat.** In Practise, feedback is immediate: the clue highlighted, the right route and one line of why. In Apply there is no feedback beyond what happens in the story, and the debrief (BE-02) explains. In the Check, each answer gets per-option feedback. This follows "Practise before Apply" in `01_LEARNING_DESIGN.md`.
 7. **No blame, no gotchas.** Wrong choices are framed as common ("that one fools lots of people") and followed by what to do. Over-reporting is never rated Not yet. Every threat in an assessed minigame can be caught with what the module taught.
 8. **Never ask for real credentials or real personal data.** Fake sign-in pages come pre-filled with the in-game account and have a Sign in button; their password fields can't be typed into. The passphrase builder uses in-game word tiles, not free typing. Learners never type an email body, a report narrative or an AI prompt that gets stored: free text, where offered, is optional, unscored and stays in the browser. Names, domains and phone numbers are fictional.
@@ -35,23 +36,24 @@ What every new minigame does, so modules can be written against the minigames be
 **Framework fit.** Each new minigame:
 
 - extends `MinigameScene` (`JS/minigames/framework/base-minigame.js`), lives in `JS/minigames/<name>/` with its stylesheet in `public/break_escape/css/<name>-minigame.css`, and is registered in `JS/minigames/index.js`;
-- has a starter in `JS/systems/minigame-starters.js` that reads the object's `minigameData` (like `startShreddedDocumentMinigame`, `minigame-starters.js:879-909`), and an object `type` dispatched in `JS/systems/interactions.js` (like `forensic_data_platform`, `interactions.js:1153-1164`);
+- has a starter in `JS/systems/minigame-starters.js` that reads the object's `minigameData` (like `startShreddedDocumentMinigame`, `minigame-starters.js:879-909`), and an object `type` dispatched in `JS/systems/interactions.js` (like `forensic_data_platform`, `interactions.js:1153-1163`);
 - declares its keys in `scripts/minigame-data-schemas.json`, which `scripts/validate_scenario.rb` checks;
 - overrides `getTestState()` (`base-minigame.js:158-229`) so the `window.__test` bridge (`JS/systems/test-bridge/minigames.js`) and the playtest skill can drive it;
 - runs side effects through the shared action executor, `applyActions` in `JS/systems/apply-actions.js` (`set_global`, `emit_event`, `complete_task`, `unlock_object`, `give_item`, `hint` and others), rather than its own copy;
 - sets `requiresKeyboardInput: true` when it has text fields (`minigame-manager.js:29-52`), so typing doesn't walk the player about;
-- can hand control back to the conversation that opened it, using the `window.pendingConversationReturn` pattern in `JS/minigames/rfid/rfid-minigame.js:472-506`, which BE-19 needs;
+- registers a launcher with BE-19's registry (`JS/systems/minigame-launchers.js`, proposed in `break_escape_engine.md`), so ink and actions can open it, and hands control back to the conversation that opened it (BE-19's "close, run, return", built on the `window.pendingConversationReturn` pattern in `JS/minigames/rfid/rfid-minigame.js:472-506`);
+- ships an accessible mode for the text route (principle 4);
 - keeps its rules (scoring, draws, rating) in a DOM-free module with node tests in `test/js/`, as `command-board/command-board-timeline.js` does.
 
-**Ways in.** One configuration opens a minigame four ways: clicking an object in the world; from ink or an event (BE-19, which replaces the `#trigger_minigame` stub at `JS/minigames/helpers/chat-helpers.js:185-196`); as a stand-alone drill (BE-07); and as text (BE-03). An ink tag can't carry a whole configuration, so we propose named configurations at the scenario level, `"minigameConfigs": { "inbox_main": { "type": "mail_client", "minigameData": { } } }`, which objects and tags both refer to by id. That is a decision for BE-19.
+**Ways in.** One configuration opens a minigame four ways: clicking an object in the world; from ink or an event (BE-19, which replaces the `#trigger_minigame` stub at `JS/minigames/helpers/chat-helpers.js:185-196`); as a stand-alone drill (BE-07); and as text, through the accessible mode (BE-03). BE-19 keeps named configurations at the scenario level (`"minigameConfigs": { "q_phish_ask": { "minigame": "knowledge_check", "data": { "item": "C01-Q1" } } }`) and opens them with `#trigger_minigame:<minigame>|<configKey>` or an `open_minigame` action. So every new minigame accepts the same keys whether they arrive as an object's `minigameData` or as a named configuration's `data`, and the examples below work in either place.
 
 **Modes.** `practice` (immediate feedback, a hint after 15 seconds without progress as in `dusting-game.js:35`, retries), `mission` (no feedback beyond consequences), `drill` (BE-07: random content, a results screen, an optional timer) and, for MG-20 only, `check`.
 
 **Events.** Sent through `window.eventDispatcher` (`JS/systems/npc-events.js`) in the engine's existing `noun_verb:id` form (`door_unlocked`, `item_picked_up:key`, `conversation_closed:<npcId>`), with one prefix per minigame so a listener can take them all with the existing `prefix*` wildcard (for example `email_*`). The payload is `{ sceneType, itemId, action, mode, gameTime, details }`. Events drive NPC event mappings (Kai's thank-you), timers, tasks and BE-01. The base class's `minigame_completed` and `minigame_failed` still fire; they should also carry `sceneType`, because `minigameName` is only the class name (`base-minigame.js:96-105`).
 
-**Records.** For each assessed item the minigame hands BE-01 a decision record: the minigame and the item (with the bank item's version), the actions that matter in order, the rating from the item's `assess` block, the outcome and behaviour ids, the mode, the attempt number and the story events it fell between. BE-01 owns the record format and sends it to the server; HA-05 keeps it. Practice records are marked formative. Never recorded: free text, anything like a password, and accessibility settings against a named person (captions or a "more time" setting can reveal a disability, so they are reported only in aggregate: HA-09, HA-15).
+**Records.** BE-01 owns the record (`break_escape_engine.md`). Minigames report a behaviour id and an **option** (what the player did, such as `reported` or `signed_in`), never a rating: through `window.assessment.record({ behaviour, option, source })` or a declarative `assess` block in their configuration. The server rates each option from the module's own `assessment` map, so a rating can't be set in the browser. The `source` carries the minigame, the item and its bank version, and the mode; practice records are marked formative. MG-20 writes BE-01's `check_item` and `check_result` kinds. Free text and anything like a password are never recorded. Accessibility settings (captions, "more time") are never tied to a named person in a record or a report, because they can reveal a disability; they are counted only in aggregate (HA-09, HA-15).
 
-**Ratings in data.** Each assessed item carries an `assess` block: the behaviour id, the outcome ids and a map from actions to Secure, Developing or Not yet. Most items need only the map. A few need short sequence rules, evaluated when the beat ends: core_01's C01-B1 rates "clicks, stops, then reports" as Developing, and C01-B7 asks whether a click was reported soon after. Windows are defined by story events (principle 5).
+**Options in data.** An item's `assess` block names the behaviour and maps the minigame's actions to that behaviour's options (`"onAction": { "reported": "reported", "signed_in": "signed_in" }`). Most items need only the map. A few need short sequence rules that turn a run of actions into one option, checked when the behaviour closes (BE-01's `unanswered.closeOn` event): core_01's C01-B1 has "clicks, stops, then reports" (Developing) and "signs in and doesn't report before Ama arrives" (Not yet), and C01-B7 asks whether a click was reported soon after. Windows are defined by story events such as `ama_arrives`, not minutes (principle 5). Where this document says an action is Secure or Not yet, that is what the module's map would say; the minigame only reports the option. MG-01's example in section 3 shows both forms.
 
 **Banks and safe content.** Content lives in bank files per module (BE-13). Each item has a stable id, a version and tags (outcome, slot, lever, difficulty, edition, locale, organisation slot). Draws are seeded and the seed goes into the record, so an auditor can see exactly what a learner was shown (HA-19). Scenarios are ERB templates, so per-game draws already work today (`rand`, `.sample`, the helpers in `app/models/break_escape/mission.rb`). Bank text follows the course writing rules and avoids " -- ", which `JS/utils/display-dashes.js` turns into a dash on screen. Every domain must be on the module's checked list of fictional or reserved names; phone numbers come from Ofcom's ranges reserved for drama (for example 07700 900xxx and 0161 496 0xxx: check the current list before use).
 
@@ -79,19 +81,19 @@ Wave is the build wave in section 5 (0 foundations, 1 the MVP course, 2 the core
 
 | Id | Minigame | Priority | Size | Main modules | Builds on | Wave |
 |---|---|---|---|---|---|---|
-| MG-01 | Inbox | MVP | L | core_00, core_01, core_04, core_05, core_06, core_07, core_11, core_13, core_17, role_02, sector_01 | `phone-chat` threads and timed messages, scenario timers, `notes` markdown, `container` desktop | 1 |
+| MG-01 | Inbox | MVP | L | core_00, core_01, core_04, core_05, core_06, core_07, core_11, core_13, core_16, core_17, role_02, sector_01 | `phone-chat` threads and timed messages, scenario timers, `notes` markdown, `container` desktop | 1 |
 | MG-02 | Web browser | P2 | L | core_08; pages for core_01, core_07, core_09, core_13 | MG-01's page renderer, `forensic-data-platform` blocks, `lab-workstation` | 2 |
 | MG-03 | Link and domain drill | P2 (inline part MVP) | S | core_01, core_08, core_02, drills | address reader, MG-20 hotspot, dusting step list | 1 inline, 2 drill |
-| MG-04 | Voice calls | P2 | M | core_02, core_11, core_15, core_01, role_02, role_03, role_06, sector_01 | `phone-chat`, `person-chat`, TTS | 2 |
-| MG-05 | Messaging apps | P2 | S | core_02, core_01, core_03, core_04, core_11, core_14, core_15 | `phone-chat` | 2 |
+| MG-04 | Voice calls | P2 | M | core_02, core_11, core_15, core_01, core_05, core_07, core_08, core_09, role_01, role_02, role_03, role_05, role_06, sector_01 | `phone-chat`, `person-chat`, TTS | 2 |
+| MG-05 | Messaging apps | P2 | S | core_02, core_00, core_01, core_03, core_04, core_09, core_11, core_12, core_14, core_15, role_06 | `phone-chat` | 2 |
 | MG-06 | QR code scanner | P2 | S | core_02, core_17 | `examine`, MG-05, page renderer | 2 |
-| MG-07 | MFA prompts and authenticator | MVP | M | core_03, core_00, core_04, core_17 | `pin`, `phone-chat`, game clock | 1 |
+| MG-07 | MFA prompts and authenticator | MVP | M | core_03, core_00, core_04, core_14, core_17 | `pin`, `phone-chat`, game clock | 1 |
 | MG-08 | Password manager and passphrase builder | MVP | M | core_03, core_00, core_17 | `password`, page renderer | 1 |
 | MG-09 | Incident report form | MVP | S | core_04, core_05, core_09, core_10, core_14, core_17 | `coverage-decision-form` | 1 |
 | MG-10 | Classification sorter | P2 | S | core_06, core_17 | MG-20 sort item, `warranty-checklist` | 2 |
 | MG-11 | Sharing settings | P2 | S | core_06, core_13 | `coverage-decision-form`, `warranty-checklist` | 2 |
 | MG-12 | Redaction | MVP | M | core_05, core_06 | annotated document, `text-file`, `notes` | 1 |
-| MG-13 | Social media profile and OSINT board | P3 | M | core_12 | MG-05, BE-10, BE-11 | 3 |
+| MG-13 | Social media profile and OSINT board | P3 | M | core_12; the board in core_11's alternative concept | MG-05, BE-10, BE-11 | 3 |
 | MG-14 | Wi-Fi and VPN picker | P3 (P2 proposed) | S | core_09 | MG-23, page renderer | 2 |
 | MG-15 | Payment verification desk | P2 | M | core_11, role_02 | MG-25, MG-04, `dual-auth`, `forensic-data-platform` | 2 |
 | MG-16 | AI assistant chat | P2 | M | core_15, role_04 | `phone-chat` layout, annotated document, page renderer | 2 |
@@ -99,11 +101,11 @@ Wave is the build wave in section 5 (0 foundations, 1 the MVP course, 2 the core
 | MG-18 | Access review | P3 | S | role_05, role_03, role_07 | `warranty-checklist` | 3 |
 | MG-19 | Code review | P3 | M | role_04 | `log-filter` | 3 |
 | MG-20 | Knowledge check | MVP | M | every module | `coverage-decision-form`, `flag-station` server checks, m01's ink quiz | 0 |
-| MG-21 | Video player | P2 | M (first version S) | EX-02 and EX-03 videos in any module, core_01, role_01 | `lab-workstation`, `person-chat` frame | 2 |
+| MG-21 | Video player | P2 | M (first version S) | EX-02 and EX-03 videos: so far core_00, core_01, core_03, core_05, core_07, core_09, core_11, role_01 | `lab-workstation`, `person-chat` frame | 2 |
 | MG-22 | Supplier assessment | P3 | S | role_07 | `warranty-checklist`, `forensic-data-platform`, MG-25 | 3 |
 | MG-23 | Device settings | P2 | S | core_07, core_09, core_17 | `container` desktop, `phone-chat` phone frame | 2 |
 | MG-24 | Crisis decision board | P2 | M | role_01, core_17 team mode | `command-board`, `backup-recovery` | 2 |
-| MG-25 | Document inspector | P2 | M | core_10, core_11, role_02, role_05, role_07 | `forensic-data-platform`, `examine`, dusting compare step | 2 |
+| MG-25 | Document inspector | P2 | M | core_10, core_11, role_02, role_05, role_06, role_07 | `forensic-data-platform`, `examine`, dusting compare step | 2 |
 
 ## 3. The new minigames
 
@@ -121,6 +123,7 @@ Wave is the build wave in section 5 (0 foundations, 1 the MVP course, 2 the core
 - **core_07:** an invoice attachment that asks to "enable content".
 - **core_11:** the bank detail change from a lookalike Northbeck address, handed on to MG-15.
 - **core_13:** the temptation to forward work to a personal account.
+- **core_16:** a client's meeting invitation that wants an app installed.
 - **core_17, role_02, sector_01:** the capstone's phish and misdirected email; a supplier change mid-run; a phish to a ward's shared mailbox. core_15 touches AI-written phishing.
 
 **What the player does:**
@@ -170,9 +173,11 @@ Wave is the build wave in section 5 (0 foundations, 1 the MVP course, 2 the core
         "tags": { "slot": "hook", "levers": ["urgency", "fear"] },
         "assess": {
           "behaviour": "C01-B1",
-          "outcomes": ["C01-LO5"],
-          "rate": { "reported": "secure", "deleted": "developing", "ignored": "developing", "signed_in": "not_yet" },
-          "rules": [{ "if": ["link_clicked", "reported", "!signed_in"], "rating": "developing" }]
+          "rules": [
+            { "if": ["signed_in", "!reported_before:ama_arrives"], "option": "signed_in_unreported" },
+            { "if": ["link_clicked", "reported"], "option": "clicked_then_reported" }
+          ],
+          "onAction": { "reported": "reported", "deleted": "deleted" }
         },
         "onAction": { "reported": [{ "type": "set_global", "key": "hook_reported", "value": true }] }
       },
@@ -200,10 +205,12 @@ Wave is the build wave in section 5 (0 foundations, 1 the MVP course, 2 the core
 }
 ```
 
+The `assess` block reports options; core_01's `assessment` map rates them (`reported` Secure, `clicked_then_reported` and `deleted` Developing, `signed_in_unreported` Not yet), and its `unanswered.closeOn` writes `ignored` if the player does nothing.
+
 **Events and records:**
 
-- **Events** (prefix `email_`, plus `inbox_opened` and `inbox_closed`): `email_received:<id>`, `email_opened:<id>`, `email_sender_checked:<id>`, `email_link_checked:<id>` and `email_link_clicked:<id>` (with the link id), `email_attachment_opened:<id>`, `email_content_enabled:<id>`, `email_signin_submitted:<id>`, `email_reported:<id>`, `email_deleted:<id>`, `email_replied:<id>`, `email_forwarded:<id>`, `email_checked_another_way:<id>` (practice), `email_send_check_shown:<checkId>`, and `email_sent:<composeId>` (recipients, attachments, checks hit, corrected or not).
-- **Records:** one per assessed email when its beat ends: the first decisive action and everything after it (core_01's "clicks, stops, then reports"), whether the sender details or the link were checked first, how many story events passed between arrival and report, and the rating from `assess`. In practice, per item: the choice, right or not, and the clue the player missed. For compose: recipients, checks hit, whether the player corrected. These cover core_01's C01-B1 to C01-B9, including the before and after (B1 against B2).
+- **Events** (prefix `email_`, plus `inbox_opened` and `inbox_closed`): `email_received:<id>`, `email_opened:<id>`, `email_sender_checked:<id>`, `email_link_checked:<id>` (once per link, however often the player hovers) and `email_link_clicked:<id>` (with the link id), `email_attachment_opened:<id>`, `email_content_enabled:<id>`, `email_signin_submitted:<id>`, `email_reported:<id>`, `email_deleted:<id>`, `email_replied:<id>`, `email_forwarded:<id>`, `email_checked_another_way:<id>` (practice), `email_send_check_shown:<checkId>`, and `email_sent:<composeId>` (recipients, attachments, checks hit, corrected or not).
+- **Records:** one `decision` per assessed email when its behaviour closes: the option from `assess`, worked out from the first decisive action and everything after it (core_01's "clicks, stops, then reports"), with the source noting whether the sender details or the link were checked first and how many story events passed between arrival and report. In practice, per item: the choice, right or not, and the clue the player missed. For compose: recipients, checks hit, whether the player corrected. These cover core_01's C01-B1 to C01-B9, including the before and after (B1 against B2).
 
 **Builds on:**
 
@@ -219,7 +226,7 @@ Wave is the build wave in section 5 (0 foundations, 1 the MVP course, 2 the core
 - Single-key actions with a visible key legend (R reply, F forward, Delete, and the organisation's own Report shortcut where its client has one). Report is also the first toolbar button in tab order.
 - Sender details and link destinations open on focus or with a key, not only on hover; a focused link reads "Link: Re-validate mailbox. Goes to account-verify.net."
 - New mail is announced politely and never interrupts reading. Arrivals wait during compose and can be spaced out further by BE-04's "more time" setting.
-- The text route shows each email as text, with "Show sender details" and "Check where this goes" as actions and the same choices.
+- The accessible mode (BE-03) is a message list: each email as text in the same order as the game shows it (display name first, the address on request), with "Show sender details" and "Check where this goes" as actions and the same choices.
 - Narrow screens get a single-pane layout (list, then message), which later doubles as the phone view.
 
 **Art:** a flat, legible mail client in the game's palette with pixel-art icons (the Report flag, a paper clip, file types). Sender avatars are initials on coloured circles, not photos. Fake pages copy Larkspur's own fictional sign-in page or a generic document portal, never a real provider's. A monitor frame around the overlay ties it to the PC sprites (`assets/objects/pc*.png`, `laptop*.png`).
@@ -271,7 +278,7 @@ Wave is the build wave in section 5 (0 foundations, 1 the MVP course, 2 the core
       "kind": "captcha_instruction",
       "url": "https://human-check.example/verify",
       "clipboard": "A hidden command that would run a program on your computer",
-      "assess": { "behaviour": "C08-Bx", "rate": { "closed": "secure", "reported": "secure", "followed": "not_yet" } }
+      "assess": { "behaviour": "C08-Bx", "onAction": { "closed": "closed_page", "reported": "reported", "followed": "followed_instructions" } }
     },
     "portal": { "kind": "portal", "url": "https://software.larkspur.co.uk/", "downloads": ["approved_converter"] }
   }
@@ -295,7 +302,7 @@ Wave is the build wave in section 5 (0 foundations, 1 the MVP course, 2 the core
 
 ### MG-03 Link and domain drill
 
-**Priority and size:** P2 in the catalogue, S. The inline version inside MG-01's practice mode is needed by core_01, an MVP module, so that part is built in wave 1 (section 6). It is an MG-20 item type plus a drill wrapper rather than a separate app.
+**Priority and size:** P2 in the catalogue, S. The inline version inside MG-01's practice mode is needed by core_01, an MVP module, so that part is built in wave 1 (sections 5 and 6). It is an MG-20 item type plus a drill wrapper rather than a separate app.
 
 **Used for:** core_01 (three practice emails and Ama's check question: C01-LO2, C01-B8); core_08 (its practice beat); core_02 (links in texts, QR destinations); monthly drills (BE-07).
 
@@ -325,7 +332,7 @@ Each step gets one line of feedback. Items get harder: a plain domain; a decorat
 
 **Priority and size:** P2, M. Built as a call mode inside `phone-chat` rather than a separate app, so contacts, threads, voicemail and calls share one phone (the `phone` object type already opens `phone-chat`: `JS/systems/interactions.js:1328-1378`).
 
-**Used for:** core_02 (the Apply beat: covering the Operations line); core_01 (calling Northbeck on the directory number; the callback phish's number); core_11 (calling Dawn back; "Gillian" calling); core_15 (a cloned voice asking for money); role_02, role_03, role_06 and sector_01 (callers at work, with MG-17).
+**Used for:** core_02 (the Apply beat: covering the Operations line); core_01 (calling Northbeck on the directory number; the callback phish's number); core_11 (calling Dawn back; "Gillian" calling); core_15 (a cloned voice asking for money); core_05 (two calls to Customer Services); core_07 and core_09 (ringing the service desk; core_09 also calls a client back); core_08 (ringing the number on a scam pop-up); role_01 (the 02:13 call, the insurer, a client); role_05 (ringing a referee on a number found independently); role_02, role_03, role_06 and sector_01 (callers at work, with MG-17). Until MG-04 exists, the module plans use `phone-chat` conversations instead.
 
 **What the player does:**
 
@@ -353,7 +360,7 @@ Each step gets one line of feedback. Items get harder: a plain domain; a decorat
     "knot": "call_start",
     "arrive": { "at": "Tue 10:05" },
     "voicemail": "Hi, it's Owain from IT. Can you ring me back on this number? It's urgent.",
-    "assess": { "behaviour": "C02-Bx", "rate": { "called_back_directory": "secure", "refused": "developing", "read_code": "not_yet" } }
+    "assess": { "behaviour": "C02-Bx", "onAction": { "called_back_directory": "called_back", "refused": "refused", "read_code": "shared_code" } }
   }],
   "outgoing": { "0161 496 0200": { "npcId": "owain_jenkins", "knot": "callback_check" } },
   "holdBarks": ["Are you still there? This really can't wait."]
@@ -377,7 +384,7 @@ Each step gets one line of feedback. Items get harder: a plain domain; a decorat
 
 **Priority and size:** P2, S. Skins and a few actions added to `phone-chat`.
 
-**Used for:** core_02 (a parcel text; "Hi, it's me, new number" from "Gillian"); core_01 and core_04 (the team chat with Lena, Leo and Kai); core_03 (a chat from "IT" during the prompt storm); core_11 (a gift card request); core_14 (a "recruiter" message); core_15 (a voice note from "Leo"); sector_01.
+**Used for:** core_02 (a parcel text; "Hi, it's me, new number" from "Gillian"); core_01 and core_04 (the team chat with Lena, Leo and Kai); core_00 (a message on the player's own phone); core_03 (a chat from "IT" during the prompt storm); core_09 (engineers messaging from the road); core_11 (a gift card request); core_12 and core_14 (a "recruiter" message); core_15 (a voice note from "Leo"); role_06 (a customer web chat); sector_01.
 
 **What the player does:**
 
@@ -409,7 +416,7 @@ Each step gets one line of feedback. Items get harder: a plain domain; a decorat
 
 **What the player does:**
 
-1. Uses a QR code in the world (a sticker, a poster, a letter, an image in an email) and chooses "Scan with phone".
+1. Finds a QR code in the world (a sticker, a poster, a letter, an image in an email) and chooses "Scan with phone".
 2. Sees the phone's camera view with the destination shown before anything opens, as phone cameras do.
 3. Can look closer first (`examine`): a sticker stuck over another code.
 4. Chooses Open, Don't open, or Report (a photo to facilities or the security team).
@@ -433,16 +440,16 @@ Each step gets one line of feedback. Items get harder: a plain domain; a decorat
 
 **Priority and size:** MVP, M.
 
-**Used for:** core_03 (enrolling, number matching, the 02:13 prompt storm and the "IT" chat asking the player to accept); core_00 (approving the first prompt, lightly); core_04 (a prompt the player didn't start, as a sign something is wrong); core_17.
+**Used for:** core_03 (enrolling, number matching, the 02:13 prompt storm and the "IT" chat asking the player to accept); core_00 (approving the first prompt, lightly); core_04 (a prompt the player didn't start, as a sign something is wrong); core_14 (a 02:10 prompt storm as one short decision); core_17.
 
 **What the player does,** on a phone app and the laptop's sign-in, in stages:
 
 1. **Set up:** add the work account to a generic authenticator app (scan a stylised code from the laptop), name it, try a test prompt, add a back-up method. The step list reads Add, Test, Back-up.
 2. **A normal sign-in:** sign in on the laptop (pre-filled). The phone asks "Are you trying to sign in?", shows the app and a rough location, and asks for the number on the laptop screen (number matching). The player picks or types it.
 3. **One-time codes:** a six-digit code that changes every 30 seconds. The countdown is decoration: any code from the last minute is accepted.
-4. **A prompt they didn't start:** it arrives while they're doing something else. The choices are Approve, Deny, and "Deny and report: this wasn't me", as real apps offer.
+4. **A prompt they didn't start:** it arrives while they're doing something else. The choices are Approve, Deny, and "Deny and report: this wasn't me", as some real apps offer.
 5. **The prompt storm** (a time skip to 02:13, BE-16): prompt after prompt. With number matching on, the attacker's prompts ask for a number the player can't see. A chat from "IT" (MG-05) asks them to approve "so it stops". The right moves are deny, report, don't reply, and ring the 24/7 service desk. After the third prompt a single "Deny all and report" button appears, so nobody has to tap through a long storm.
-6. **Someone asks for a code** on a call or in a message (MG-04 or MG-05). The code is never shared.
+6. **Someone asks for a code** on a call or in a message (MG-04 or MG-05). The right answer is always no.
 7. **Optional: a passkey** that won't work on a lookalike site, to show why passkeys resist phishing (awareness level only).
 
 **What it teaches:** what MFA does and why it matters; approve only prompts you started; how number matching helps; never share a code; deny and report a prompt storm; passkeys resist phishing.
@@ -458,17 +465,17 @@ Each step gets one line of feedback. Items get harder: a plain domain; a decorat
     {
       "id": "storm", "kind": "storm", "at": "Wed 02:13", "prompts": 8, "everyGameSeconds": 20,
       "chatThread": "fake_it_night",
-      "assess": { "behaviour": "C03-Bx", "rate": { "approved_any": "not_yet", "denied": "developing", "denied_and_reported": "secure" } }
+      "assess": { "behaviour": "C03-Bx", "onAction": { "approved_any": "approved", "denied": "denied", "denied_and_reported": "denied_and_reported" } }
     }
   ]
 }
 ```
 
-**Events and records:** prefix `mfa_`: `mfa_enrolled`, `mfa_prompt_shown:<promptId>` (whether the player started it), `mfa_prompt_approved:<promptId>`, `mfa_prompt_denied:<promptId>`, `mfa_prompt_reported:<promptId>`, `mfa_code_shared:<sceneId>`, `mfa_storm_ended` (approved any, number denied, reported or not). Records: approving a prompt the player didn't start is Not yet; denying without reporting is Developing; denying and reporting is Secure.
+**Events and records:** prefix `mfa_`: `mfa_enrolled`, `mfa_prompt_shown:<promptId>` (whether the player started it), `mfa_prompt_approved:<promptId>`, `mfa_prompt_denied:<promptId>`, `mfa_prompt_reported:<promptId>`, `mfa_code_shared:<sceneId>`, `mfa_storm_ended` (approved any, number denied, reported or not). Records: the storm's option (`approved`, `denied`, `denied_and_reported`), which core_03's map would rate Not yet, Developing and Secure.
 
 **Builds on:** the `pin` keypad (`JS/minigames/pin/pin-minigame.js`) for code entry; `phone-chat`'s phone and notifications; MG-05 for the "IT" chat; the game clock and BE-16 for the night-time skip; the `password` minigame's sign-in screen (`JS/minigames/password/password-minigame.js`) for the laptop side.
 
-**Accessibility notes:** prompts stay until answered; the number to match is read out; typing a code is optional, because copying a code from one screen to another is the kind of memory task WCAG 2.2 SC 3.3.8 asks interfaces to avoid, so paste and "pick the matching number from three" are offered too; no shaking phone under reduced motion; the buzz is shown as well as heard.
+**Accessibility notes:** prompts stay until answered; the number to match is read out; typing a code is optional, because retyping a code from one screen on another counts as a cognitive test under WCAG 2.2 SC 3.3.8 unless an aid such as paste is allowed, so paste and "pick the matching number from three" are offered; no shaking phone under reduced motion; the buzz is shown as well as heard.
 
 **Art:** a phone lock screen with notification cards, a generic authenticator app, and a dark bedside view for 02:13 (a phone-only overlay, so no new room is needed).
 
@@ -520,7 +527,7 @@ Each step gets one line of feedback. Items get harder: a plain domain; a decorat
 2. **What happened:** picks a category (suspicious message, lost or stolen device, data sent to the wrong person, an MFA prompt they didn't start, a ransom note, a stranger in a secure area, something else) and adds **evidence chips**: facts the player noticed during play ("Leo's account sent 30 emails at 14:02").
 3. **When and where:** the time noticed (filled in from the game clock) and the place or system.
 4. **Who and what:** the people involved, and whether personal data is involved (Yes, No, Not sure; Yes and Not sure also send it to the DPO).
-5. **What you did:** ticks from a list that includes things not to do ("deleted the email", "tried to fix it myself"), so the form itself teaches.
+5. **What you did:** ticks what they did on a list that also holds things not to do ("deleted the email", "tried to fix it myself"), so the form itself teaches.
 6. **Submit:** a receipt with a reference number. In practice mode, feedback on what was missing. In a mission, Kai or Tomasz rings back with one question about anything missing.
 7. Ringing the security team (MG-04) also counts as reporting: the form is for completeness, not the only route.
 
@@ -557,7 +564,7 @@ Each step gets one line of feedback. Items get harder: a plain domain; a decorat
 
 **Events and records:** prefix `classify_`: `classify_labelled:<docId>` (label, reason, right or not), `classify_completed` (score). Records per document.
 
-**Builds on:** MG-20's sort item; `warranty-checklist`'s row and verdict buttons (`JS/minigames/warranty-checklist/warranty-checklist-minigame.js:158-200`); `notes` to read a document in full.
+**Builds on:** MG-20's sort item; `warranty-checklist`'s row and verdict buttons (`JS/minigames/warranty-checklist/warranty-checklist-minigame.js:161-204`); `notes` to read a document in full.
 
 **Accessibility notes:** no dragging needed: each card has a label menu, and dragging is an extra.
 
@@ -604,7 +611,7 @@ Each step gets one line of feedback. Items get harder: a plain domain; a decorat
 2. **Mark** what must go by selecting words or phrases: names, addresses, health details, other people's information. A hint arrives if they stall ("Look for a phone number"), and "Mark every copy of this name" saves effort.
 3. **Hidden:** look for what isn't on show: a hidden spreadsheet tab, comments, tracked changes, the author in the file details.
 4. **Redact:** choose "Redact and remove" (the text is deleted) or "Draw a box" (the text is only covered). Both look the same on screen.
-5. **Check:** "Select all and copy" or "Search for a name" shows whether anything is still there. A box-only redaction fails this check in plain view, and the debrief explains why.
+5. **Check:** "Select all and copy" or "Search for a name" shows whether anything is still there. After a box-only redaction, the covered text comes straight back in the copy, and the debrief explains why.
 6. Save and send (MG-01 compose).
 
 **What it teaches:** what personal data looks like; send only what's needed; look for hidden tabs, comments and file details; a black box drawn over text doesn't remove it; check the result before it goes.
@@ -624,7 +631,7 @@ Each step gets one line of feedback. Items get harder: a plain domain; a decorat
     "hidden": { "tabs": [{ "name": "Staff sickness", "mustRemove": true }], "boxes": [{ "spanId": "s2" }] }
   },
   "checks": ["copy_all", "search"],
-  "assess": { "behaviour": "C05-Bx", "rate": { "all_removed": "secure", "tab_missed": "developing", "box_only": "not_yet" } }
+  "assess": { "behaviour": "C05-Bx", "onAction": { "all_removed": "removed_all", "tab_missed": "missed_hidden_tab", "box_only": "box_only" } }
 }
 ```
 
@@ -645,7 +652,7 @@ Each step gets one line of feedback. Items get harder: a plain domain; a decorat
 
 **Priority and size:** P3, M.
 
-**Used for:** core_12, the whole module: with Jo, on an authorised test, the player builds a pretext from Leo's public posts on a corkboard, then locks down Leo's profile and their own. Light use in core_14 and role_05 (recruiter approaches, fake profiles).
+**Used for:** core_12, the whole module: with Jo, on an authorised test, the player builds a pretext from Leo's public posts on a corkboard, then locks down Leo's profile and their own. Light use in core_14 and role_05 (recruiter approaches, fake profiles); core_11's alternative "Follow the Money" concept reuses the corkboard to trace how a payment fraud got through.
 
 **What the player does:**
 
@@ -668,7 +675,7 @@ Each step gets one line of feedback. Items get harder: a plain domain; a decorat
 
 **Art:** corkboard, pins, string and photo cards in pixel art; a fictional social network with its own made-up name and look.
 
-**Open questions:** **Photographs in posts?** *Recommendation:* pixel-art posts only; no photographs anywhere in the game content.
+**Open questions:** **Photographs in posts?** *Recommendation:* pixel-art posts only, in the game's own style; photographs of people would look real enough to raise questions about whose they are.
 
 ### MG-14 Wi-Fi and VPN picker
 
@@ -710,8 +717,8 @@ Each step gets one line of feedback. Items get harder: a plain domain; a decorat
 2. **Record:** compare it with the supplier record in Ledger, the finance system, and mark what differs (MG-25's comparison view).
 3. **Call back** on the number already on record (MG-04). Dawn knows nothing about it. Ringing the number on the letter reaches the fraudster, who is very reassuring.
 4. **Payee check:** run Confirmation of Payee on the new details. It answers Match, Close match or No match, with the name the bank holds (wording to check against core_11's concepts file). It helps; it isn't proof.
-5. **Approve or refuse:** approve, hold and escalate, or refuse and report. Payments need a second approver: in core_11 the player gathers the evidence and hands it to Hassan; in role_02 the player is the second approver, challenging a colleague's evidence.
-6. **The run** (role_02): a table of thirty payments; filter and flag the odd ones (a new account, urgent and large; a changed remittance contact; a duplicate invoice).
+5. **Approve or refuse:** approve, hold and escalate, or refuse and report. Payments need a second approver: in core_11 the player gathers the evidence and watches Hassan and a colleague approve or refuse on it (core_11's plan); in role_02 the player is the second approver, challenging a colleague's evidence.
+6. **The run** (role_02): a table of thirty payments; filter and flag the odd ones (a large, urgent payment to a new account; a changed remittance contact; a duplicate invoice).
 7. **If money goes:** a time skip shows the chance of getting it back falling by the hour (BE-16). The right move is to ring the bank at once, then report.
 
 **What it teaches:** never use the contact details in the request; call back on the number already on record; two people approve; urgency plus secrecy plus money means slow down; Confirmation of Payee helps but isn't foolproof; act at once if money has gone.
@@ -725,7 +732,7 @@ Each step gets one line of feedback. Items get harder: a plain domain; a decorat
   "callback": { "onRecord": "0161 496 0450", "inRequest": "0161 496 0991" },
   "payeeCheck": { "result": "no_match", "nameHeld": "NBK Trading" },
   "approval": { "second": "hassan_qureshi", "via": "dual_auth" },
-  "assess": { "behaviour": "C11-Bx", "rate": { "called_on_record_and_refused": "secure", "refused_without_call": "developing", "approved": "not_yet" } }
+  "assess": { "behaviour": "C11-Bx", "onAction": { "called_on_record_and_refused": "verified_and_refused", "refused_without_call": "refused_unverified", "approved": "approved" } }
 }
 ```
 
@@ -766,7 +773,7 @@ Each step gets one line of feedback. Items get harder: a plain domain; a decorat
     "input": "content/complaint_record.json",
     "mustRemove": ["resident_names", "health_details"],
     "responses": [{ "id": "r1", "text": "Laundry complaints rose 40% last year (Northern Facilities Index, 2025).", "flags": ["inventedFact"] }],
-    "assess": { "behaviour": "C15-Bx", "rate": { "removed_and_checked": "secure", "removed_only": "developing", "pasted_all": "not_yet" } }
+    "assess": { "behaviour": "C15-Bx", "onAction": { "removed_and_checked": "removed_and_checked", "removed_only": "removed_only", "pasted_all": "pasted_all" } }
   }]
 }
 ```
@@ -827,7 +834,7 @@ Each step gets one line of feedback. Items get harder: a plain domain; a decorat
 
 **Configuration:** `rows[] {person, role, system, permission, lastUsed, status, expected}`, `joiner {role, template[], minimum[]}`, `leaverChecklist[]`, `assess`.
 
-**Events and records:** prefix `access_`: `access_row_decided:<rowId>`, `access_joiner_granted` (anything beyond the minimum), `access_leaver_item:<itemId>`, `access_review_submitted` (removals missed, removals too many).
+**Events and records:** prefix `access_`: `access_row_decided:<rowId>`, `access_joiner_granted` (anything beyond the minimum), `access_leaver_item:<itemId>`, `access_review_submitted` (removals missed, access removed that was still needed).
 
 **Builds on:** `warranty-checklist`'s rows and verdict buttons, generalised (section 4).
 
@@ -865,4 +872,519 @@ Each step gets one line of feedback. Items get harder: a plain domain; a decorat
 
 **Open questions:** **Which language?** *Recommendation:* one short JavaScript or Python example per edition, plain enough that comments carry the meaning for non-specialists.
 
-<!-- append -->
+### MG-20 Knowledge check
+
+**Priority and size:** MVP, M. Folder `JS/minigames/knowledge-check/`, scene `knowledge-check`, object type `knowledge_check` (The Lark's "spot check" page on a terminal). It also opens from ink (BE-19), as a drill (BE-07) and in the text route (BE-03). It is the first new minigame to build (section 5).
+
+**Used for:**
+
+- **Every module's Check beat:** five or six items drawn from the module's bank, covering every outcome (core_01 draws six from the eleven in its `assessment.md`).
+- **The mentor's check question** in each Learn beat (EX-01): one item opened from the conversation ("Which part of this address is the real domain?").
+- **core_00:** four questions on the motto and the reporting route.
+- **core_16:** the lunchtime game show "Allowed, Not Allowed, or Ask First?", with answers taken from the organisation's policy settings (HA-11).
+- **core_05:** a quick "Is this personal data?" sort.
+- **core_17:** a longer check across the core outcomes.
+- **Test-out, retakes and monthly drills.**
+
+**Item types:**
+
+1. **Single choice,** with feedback on every option.
+2. **Multiple select** ("Choose all that apply"), with feedback on every option. In an assessed check an answer needs every right option and no wrong one; practice can give partial credit.
+3. **Hotspot:** click the part of a picture or a piece of text that answers the question (the domain in an email header, the badge in a photo, the risky line in a post). Regions are defined in data. Every region, right or wrong, can be reached by keyboard and has a text name, so keyboard and screen reader users make the same choice as everyone else.
+4. **Ordering:** put the steps in order. More than one order can be accepted where the content allows (core_01's Q4 accepts its first two steps either way round).
+5. **True or false with reason:** choose true or false, then the reason. Full marks need both, and the feedback covers both.
+6. **Sort into groups** (an addition to the catalogue's list): place each card in a group ("Allowed", "Not allowed", "Ask first"; "Personal data", "Not personal data"). It drives core_16's game show, core_05's drill and MG-10.
+
+**Banks.** Items are written from each module's `assessment.md`. Every item has an id, a version, its outcomes, its type, its difficulty and any organisation slot: core_01's Q11 is dropped where the organisation runs no phishing simulations. In the MVP the items ship inside each module version (a bank file such as `content/check_bank.json` in the module's scenario folder); with HA-08 the platform holds the banks, lets organisations add their own items and retire weak ones, and answers MG-20's request for a sitting. The draw follows HA-08: six items by default, at least one per outcome, at most two organisation items, nothing from the learner's previous attempt while unseen items remain for that outcome, and options shuffled except in ordering items.
+
+**Feedback.** Every option has its own line, written the way a colleague would say it ("Right. Check through a route the attacker doesn't control."). In core and role modules the feedback shows after each answer, because answering and then seeing why is good practice. In the capstone and a test-out it waits until the end, so the check stays an assessment.
+
+**Pass marks and retakes.** The default pass mark is 80% (5 of 6); the organisation can change it. Not passing never ends anything: a retake draws fresh items, and after two attempts that don't pass, the mentor replays the Learn beat before the third (core_01's rule). The learner sees a result for each outcome (Secure, Developing, Not yet) as well as the score.
+
+**Graded on the server when it counts.** For every item that counts as evidence (the Check, the mentor's question, a test-out), the answer keys stay on the server: the browser receives the drawn items without them, sends the chosen option ids, and gets back right or wrong and the feedback (BE-01). That's how `flag-station` treats flags: the answers never reach the client (`JS/minigames/flag-station/flag-station-minigame.js:17-21`). It keeps the record credible for auditors. Practice and drill items can be graded in the browser.
+
+**Presentations.** One engine with several looks:
+
+- **Spot check** (the default): The Lark's intranet style, one item per screen, "Question 2 of 6".
+- **Mentor question:** one item opened from the conversation by BE-19 (`#trigger_minigame:knowledge_check|<configKey>`). The conversation closes, the item opens with no score shown, and the conversation reopens with the result in a global (`kc_<configKey>` set to `correct` or `incorrect`) so the mentor's next line can branch: a fixed voiced line ("That's it." or "Not quite. Look at the end of the address."), with the specific feedback as text, so no voiced line prints a variable. Showing the item over the conversation panel without closing it is a later addition to MG-20, which BE-19 puts at a few days.
+- **Game show** (core_16): Ama and Owain host in the kitchen with buzzers, a scoreboard and gentle sounds; the same items, mostly sort into groups and single choice. core_16's plan sets out the details: labelled buzzers on keys 1 to 3, the other contestants' answers shown after the player locks in, rounds, and no speed scoring.
+- **Drill:** a streak and an optional timer.
+
+**What the player does:**
+
+1. Opens the check: Kai's spot check on The Lark, or the mentor asks a question.
+2. Reads the start screen: how many questions, no time limit, feedback after each one.
+3. Answers each item and presses Check, sees the feedback on their choice and why the right answer is right, and presses Next.
+4. Sees the result: the score, a line per outcome, and either "Passed" with a link to the reference card, or "Let's try a few more" with a fresh set.
+
+**What it teaches:** recall of each module's key messages in workplace situations; the act of recalling is itself practice (`01_LEARNING_DESIGN.md`, "Check last"). It also produces the evidence an auditor recognises.
+
+**Configuration.** The check and the bank are separate. The check's `minigameData`:
+
+```json
+{
+  "type": "knowledge_check",
+  "name": "The Lark: security spot check",
+  "minigameData": {
+    "checkId": "core01_spot_check",
+    "presentation": "spot_check",
+    "mode": "check",
+    "bank": "content/check_bank.json",
+    "draw": { "count": 6, "coverOutcomes": true, "excludeLastAttempt": true, "maxOrgItems": 2 },
+    "passMark": { "correct": 5, "of": 6, "orgSetting": "check_pass_mark" },
+    "feedback": "after_each",
+    "scoring": "server",
+    "retake": { "freshDraw": true, "mentorAfterAttempts": 2, "mentorEvent": "core01_relearn" },
+    "onPass": [{ "type": "complete_task", "taskId": "spot_check" }],
+    "onNotPassed": [{ "type": "emit_event", "event_name": "core01_check_not_passed" }]
+  }
+}
+```
+
+Bank items, one of each type, taken from core_01's `assessment.md`:
+
+```json
+[
+  {
+    "id": "C01-Q1", "version": 1, "type": "single", "outcomes": ["C01-LO2"],
+    "stem": "Which website does this link really go to?",
+    "code": "https://larkspur.co.uk.secure-login.info/mail",
+    "options": [
+      { "id": "a", "text": "larkspur.co.uk", "feedback": "\"larkspur.co.uk\" is only at the front. Read the domain from the right-hand end." },
+      { "id": "b", "text": "secure-login.info", "correct": true, "feedback": "Right. The real domain is the part just before the first single slash, read from the right." },
+      { "id": "c", "text": "mail", "feedback": "That is the page on the site, not the site itself." }
+    ]
+  },
+  {
+    "id": "C01-Q3", "version": 1, "type": "multiple", "outcomes": ["C01-LO1"],
+    "stem": "\"From the Chief Executive. Complete the staff survey by 12:00. Most of your team already has.\" Which pressures is it using?",
+    "options": [
+      { "id": "a", "text": "Authority", "correct": true, "feedback": "It claims to come from the top." },
+      { "id": "b", "text": "Urgency", "correct": true, "feedback": "A deadline in a couple of hours." },
+      { "id": "c", "text": "Social proof", "correct": true, "feedback": "\"Most of your team already has.\"" },
+      { "id": "d", "text": "Reward", "feedback": "Nothing is offered here." }
+    ]
+  },
+  {
+    "id": "C01-Q9", "version": 1, "type": "hotspot", "outcomes": ["C01-LO2"],
+    "stem": "Click the part that shows this email isn't from Larkspur.",
+    "target": {
+      "kind": "text",
+      "regions": [
+        { "id": "name", "text": "Larkspur IT Service Desk", "feedback": "Anyone can set the display name." },
+        { "id": "user", "text": "servicedesk@", "feedback": "The part before the @ can be anything." },
+        { "id": "domain", "text": "larkspur-support.net", "correct": true, "feedback": "Right. The domain shows where it really came from." }
+      ]
+    }
+  },
+  {
+    "id": "C01-Q4", "version": 1, "type": "ordering", "outcomes": ["C01-LO6"],
+    "stem": "You typed your password into a page from an email link, then realised it was fake. Put these steps in order.",
+    "steps": [
+      { "id": "report", "text": "Report it with the Report button and call the service desk." },
+      { "id": "change", "text": "Change your password by going to the real site yourself." },
+      { "id": "elsewhere", "text": "Change the same password anywhere else you used it." },
+      { "id": "follow", "text": "Follow the service desk's further instructions." }
+    ],
+    "accept": [["report", "change", "elsewhere", "follow"], ["change", "report", "elsewhere", "follow"]],
+    "feedback": "Telling the service desk first matters most: they can lock the attacker out while you change the password."
+  },
+  {
+    "id": "C01-Q6", "version": 1, "type": "true_false_reason", "outcomes": ["C01-LO3"],
+    "statement": "If an email has no spelling mistakes and the logo looks right, it's probably genuine.",
+    "answer": false,
+    "reasons": [
+      { "id": "r1", "text": "Phishing emails are usually badly written.", "feedback": "Not any more. Attackers use translation and AI tools." },
+      { "id": "r2", "text": "Well-made phishing can look perfect, so judge what it asks for and check another way.", "correct": true, "feedback": "Right." }
+    ]
+  }
+]
+```
+
+Other keys: `presentation` (`spot_check`, `mentor`, `game_show`, `drill`); `items` (inline items, for a mentor question); `timer` (drills only, off by default); `showOutcomeResults`; `reviewAtEnd`. In the text route a hotspot becomes a choice between the region names, scored the same way.
+
+**Events and records:** prefix `check_`: `check_started:<checkId>` (attempt, seed, items drawn), `check_item_answered:<itemId>` (response, right or not, outcomes), `check_completed:<checkId>` (score, pass mark, result, attempt), `check_passed:<checkId>`, `check_not_passed:<checkId>`, `check_left:<checkId>` (closed part-way; progress is kept). Records: BE-01's `check_item` for each answer (the item id and version, the options in the order shown, the response and the attempt; the server adds right or wrong and the outcomes) and `check_result` for each sitting (the score, the pass mark, the result, the seed, the route (game, text, test-out) and the attempt count). BE-14 turns these into xAPI "answered" and "passed" statements, and HA-05 keeps the sitting.
+
+**Builds on:**
+
+- `coverage-decision-form` for the choice items: sections of options, a submit gate, and completion actions that write the chosen value or whether it matched (`JS/minigames/coverage-decision-form/coverage-decision-form-minigame.js:22-28`);
+- `warranty-checklist`'s verdict buttons for sort into groups;
+- `shredded-document`'s reordering for ordering items, with keyboard moves added;
+- `flag-station`'s server-side checking (answers validated by `POST /games/:id/flags`) for assessed scoring;
+- m01 Kevin's five-question "security audit" in ink (`scenarios/m01_first_contact/ink/m01_npc_kevin.ink`), the precedent for a check inside a conversation;
+- the shared feedback panel, seeded draw and annotated document (section 1).
+
+**Accessibility notes:**
+
+- Native radio buttons and checkboxes in a fieldset whose legend is the question.
+- Hotspots: every region is a focusable button with a text name, in reading order.
+- Ordering: Move up and Move down buttons on every step, with the new position announced; dragging is an extra.
+- Feedback goes to a polite live region and takes focus, with Next as the following tab stop.
+- No time limit except an optional one in drills; leaving and coming back keeps progress.
+- Right and wrong are shown with a tick, a cross and the words "Right" and "Not quite", never by colour alone.
+- The text route asks the same items, with the same scoring and the same records.
+
+**Art:** The Lark's page style and tick and cross icons. For the game show: a kitchen redress with two buzzers and a scoreboard (new props), with Ama and Owain's busts.
+
+**Open questions:**
+
+1. **Feedback after each item or at the end?** *Recommendation:* after each in core and role modules; at the end in the capstone and test-out.
+2. **Partial credit for multiple select?** *Recommendation:* none in assessed checks; partial credit in practice.
+3. **Bank size.** *Recommendation:* 8 to 12 items per module, as the brief asks, rising to about 20 for modules with monthly drills so repeats are rare.
+4. **Per-outcome results for learners.** *Recommendation:* show them, in plain words ("Reading web addresses: Secure").
+
+### MG-21 Video player
+
+**Priority and size:** P2, M; the first version is S. Folder `JS/minigames/video-player/`, scene `video-player`, object type `video_screen` (the meeting room screen, a laptop, the kitchen television). It also opens from ink when a colleague says "Watch this" (BE-19).
+
+**Used for:**
+
+- **Engine-recorded explainers (EX-02):** 60 to 120 seconds on a screen in the world, as the Learn beat or beside the mentor (`01_LEARNING_DESIGN.md`). The module plans so far place videos in core_00, core_01, core_03, core_05, core_07, core_09, core_11 and role_01.
+- **core_01's optional "Sixty-second phish"** on the meeting room screen, linked from the reference card.
+- **Produced videos (EX-03):** the course introduction (`DECISIONS_PENDING.md`, D7) and leaders' content in role_01.
+- **Facilitated sessions (BE-15),** played on the shared screen.
+- **Reference cards** on The Lark (BE-09), where a short video sits beside the card.
+
+**The first version (S): a hosted page in the lab workstation.** The `lab-workstation` object already opens any HTTPS page in a near-full-screen iframe (`JS/utils/lab-workstation.js`; the markup is at `app/views/break_escape/games/show.html.erb:107-121`). A video page hosted by Hacktivity (HA-20), or a HacktivityLabSheets page with an embedded video, gives a working video screen with no new minigame. It needs two small fixes: the popup's title always reads "Lab Sheet" (`show.html.erb:112`), and closing it tells the game nothing. Its limits: no record that the video was watched (the page belongs to another site, so it would have to message the game), captions depend on the host's player, and the "open in new tab" button takes people out of the game. Good enough for optional videos in the first pilots; not for a video that is the Learn beat.
+
+**The full version (M): an HTML5 player in a framed screen.**
+
+- **Captions** from WebVTT files (`<track kind="captions">`), on by default, with the choice remembered and options for caption size and background. One caption file per language (BE-06).
+- **A transcript** beside the video, with speaker names, the words, and short descriptions of anything shown but not said. It's a full alternative, and the text route uses it.
+- **Chapters** from a WebVTT chapters track, listed as buttons that jump to each part.
+- **Description of visuals.** Videos are scripted so the narration says what's on screen ("Look at the address: it ends in account-verify.net"), which in most cases avoids the need for a separate audio description track. A video that can't do that gets a described version (SC 1.2.5).
+- **Controls:** play and pause, a seek bar, back and forward 10 seconds, speed (0.75 to 1.5), volume, captions, transcript, and a larger view inside the overlay. All are labelled buttons with keyboard shortcuts (Space or K to play, arrows to seek, C for captions, T for the transcript).
+- **No autoplay with sound.** The player opens paused on a poster frame with a large Play button, the length ("1 min 40") and "Captions on". An in-world screen may loop a silent, captioned preview, but sound starts only when the learner presses Play (`explainers_video_and_npc.md`, video standards). Game music fades while a video plays and returns afterwards.
+- **A watched record.** The player keeps track of which parts were actually played, so it can record both that the learner played the video and the share of the running time played (for example 94%). HA-20 counts a video as watched at 90% played or when the transcript is opened, so reading counts the same as watching. Whatever the rule, it is never a gate (see open question 4).
+- **Resume.** The position is saved (state-sync) and offered next time ("Carry on from 0:48").
+- **Never forced.** A Skip button is always there, and the story never waits on a video: forcing anyone to sit through one would break the no-required-waits rule (BE-04) and annoy experienced staff. A skip is recorded, and a module that needs the content covered follows it with the mentor's short version or a check question.
+- **Afterwards,** an optional MG-20 mentor question about the video.
+- **Hosting and formats.** Files sit on Hacktivity's video hosting (HA-20: Hacktivity or a UK or EU sub-processor named under HA-15) or in the game's own assets: MP4 (H.264 and AAC) at 720p, plus 480p for slow connections, with the poster, captions, chapters and transcript beside each video. The game page already allows video from its own site and HTTPS hosts (`media_src` in `app/controllers/break_escape/games_controller.rb:15-25`). Self-hosting is preferred to public video platforms: no tracking cookies on learners (HA-15) and a dependable watched record.
+- **Low bandwidth.** Nothing loads until Play; a "transcript only" mode suits thin clients.
+
+**What the player does:**
+
+1. Walks up to the meeting room screen, or Ama says "Here, watch this on my laptop". The video opens in a frame that matches the object.
+2. Sees the poster: the title, the length, the chapters, "Captions on", Play, and "Read the transcript instead".
+3. Watches, and pauses, rewinds, changes speed or opens the transcript as they like.
+4. Carries on when they like: Close at the end, or Skip at any point. A skip is recorded, and the mentor can give the short version.
+5. Answers the optional question.
+
+**What it teaches:** whatever each video teaches. The player's job is to make the EX-02 and EX-03 explainers usable by everyone and to record that they were seen.
+
+**Configuration:**
+
+```json
+{
+  "type": "video_screen",
+  "name": "Meeting room screen",
+  "minigameData": {
+    "videoId": "core01_sixty_second_phish",
+    "version": 1,
+    "title": "Sixty-second phish",
+    "frame": "meeting_room_screen",
+    "sources": [
+      { "src": "https://media.example/awareness/core01/phish60-720.mp4", "type": "video/mp4", "label": "720p" },
+      { "src": "https://media.example/awareness/core01/phish60-480.mp4", "type": "video/mp4", "label": "480p" }
+    ],
+    "poster": "https://media.example/awareness/core01/phish60-poster.png",
+    "captions": [{ "src": "https://media.example/awareness/core01/phish60.en-GB.vtt", "srclang": "en-GB", "label": "English", "default": true }],
+    "chapters": "https://media.example/awareness/core01/phish60.chapters.vtt",
+    "transcript": "https://media.example/awareness/core01/phish60.transcript.html",
+    "description": "integrated",
+    "durationSec": 62,
+    "autoplay": false,
+    "silentPreview": true,
+    "transcriptOpenCountsAsWatched": true,
+    "afterwards": { "checkItem": "C01-V1" },
+    "onWatched": [{ "type": "set_global", "key": "core01_video_watched", "value": true }],
+    "fallback": { "kind": "hosted_page", "url": "https://media.example/awareness/core01/phish60.html", "popupTitle": "Meeting room screen" }
+  }
+}
+```
+
+(`media.example` stands for the HA-20 host.)
+
+**Events and records:** prefix `video_`: `video_opened:<videoId>`, `video_played:<videoId>`, `video_paused:<videoId>`, `video_chapter_chosen:<videoId>`, `video_transcript_opened:<videoId>`, `video_watched:<videoId>` (how much was played, and whether through the video or the transcript), `video_skipped:<videoId>`, `video_closed:<videoId>` (position and how much was played). Records: a BE-01 `milestone` for watched or skipped, with the route, the share played, the time spent and the video's id and version (HA-19); BE-14 turns "watched" into an xAPI "experienced" statement. Captions use is counted only in aggregate (section 1, "Records").
+
+**Builds on:** one player component shared with HA-20's pages in Hacktivity ("MG-21 uses the same player in the game", `hacktivity.md`); `lab-workstation` (`JS/utils/lab-workstation.js`) for the first version; `person-chat`'s video-call frame (`person-chat-ui.js:243-314`) for the look of a framed screen; the TTS voices (`JS/systems/tts-manager.js`) that EX-02 videos are recorded with; the dialogue caption styles; state-sync for resume. There is no video code in the engine today: no `<video>` element or caption track anywhere in `JS/`.
+
+**Accessibility notes:** captions on by default (SC 1.2.2); a full transcript; integrated or separate description of visuals (SC 1.2.3, 1.2.5); every control reachable by keyboard with visible focus; no autoplay with sound (SC 1.4.2); anything moving can be paused (SC 2.2.2); videos checked for flashing before release (SC 2.3.1); speed control; video volume separate from game music; state changes ("Playing", "Captions on") announced.
+
+**Art:** frames for the meeting room screen, a laptop and the kitchen television, matching `conference_screen1.png`, `laptop*.png` and `smartscreen.png` in `assets/objects/`; a poster frame per video. The videos themselves are EX-02's and EX-03's work.
+
+**Open questions:**
+
+1. **Where the first version's pages live.** *Recommendation:* Hacktivity's video hosting (HA-20), so a later version can post "watched" back to the game.
+2. **Making a video required.** *Recommendation:* never. Where a video is the Learn beat, a skip leads to the mentor's short version and the check question, so the evidence still comes from the learner's answers.
+3. **Public video platforms.** *Recommendation:* no, for learners' privacy (HA-15) and a dependable record.
+4. **One definition of "watched".** `explainers_video_and_npc.md` says watched means opened and played; HA-20 says 90% played or the transcript opened. *Recommendation:* HA-20's rule, which an auditor can rely on, with the explainers plan's promise kept: nothing waits on it and Skip is always there. MG-21 records enough for either rule.
+
+### MG-22 Supplier assessment
+
+**Priority and size:** P3, S.
+
+**Used for:** role_07 (three bidders for a rostering system with glossy answers and uneven evidence; the contract clauses; a breach notice six months later; the supplier's accounts still live at the end of the contract, with MG-18).
+
+**What the player does:**
+
+1. Reads a questionnaire grid: the questions (MFA on remote access? Cyber Essentials? What does the ISO 27001 certificate cover? How soon are breaches reported? Subcontractors? Data deleted at the end?) against three bidders' answers.
+2. Opens the evidence (a certificate and its scope, an assurance report extract with an exception, a policy) and judges each answer: evidenced, claimed only, a gap, or a red flag.
+3. Picks the contract clauses to ask for (breach notice within a set time, audit rights, MFA on supplier access, data returned and deleted, approval of subcontractors).
+4. Sees a summary for each bidder and makes a recommendation: evidence beats claims, and the cheapest bid isn't always the riskiest.
+
+**What it teaches:** proportionate due diligence; evidence over claims; check what a certificate actually covers; the contract clauses that matter.
+
+**Configuration:** `questions[]`, `bidders[] {name, answers{} {text, evidence, verdict}}`, `documents{}`, `clauses[] {id, text, importance}`, `assess`.
+
+**Events and records:** prefix `supplier_`: `supplier_answer_judged:<bidderId>` (question, verdict), `supplier_evidence_opened:<docId>`, `supplier_clause_chosen:<clauseId>`, `supplier_assessment_submitted` (gaps found and missed, the recommendation).
+
+**Builds on:** `warranty-checklist` (a verdict per row behind an evidence gate); `forensic-data-platform` and `claims-management-system` for the evidence documents; MG-25 to check a certificate's scope.
+
+**Accessibility notes:** the grid is a table with headers for questions and bidders; verdicts are radio groups.
+
+**Art:** a questionnaire screen and generic certificate and report documents; scheme names appear as text only, with no real certification marks.
+
+**Open questions:** **How much assurance report detail?** *Recommendation:* one short extract with one exception to notice.
+
+### MG-23 Device settings
+
+**Priority and size:** P2, S as one data-driven settings panel with a phone skin and a laptop skin; M if each skin gets its own full set of screens (section 6).
+
+**Used for:** core_07 (the shared warehouse PC that has put off its update for six weeks; the player's own phone updates; its plan also proposes a "pop-up triage" mode, where prompts and alerts arrive one at a time to be answered Go, Stop and report, or Ask IT first); core_09 (screen lock, encryption, updates, approved apps, the lost phone and its remote wipe, with MG-14 as a panel); core_17.
+
+**What the player does:**
+
+1. Opens Settings on a phone or a laptop, with sections for screen lock, updates, encryption, backup, app permissions, find my device and, for MG-14, Wi-Fi.
+2. Works through Owain's checklist ("Get your phone ready for the field"): a screen lock of six or more digits or a fingerprint; install the waiting updates and restart; check that encryption is on; take a torch app's access to contacts and location away; remove an app that isn't approved.
+3. Gets one line of why for each change, and "Device ready" at the end.
+4. After losing the phone (core_09), reports it (MG-09) and watches IT lock and wipe it (BE-16).
+
+**What it teaches:** use a screen lock; update quickly and restart; encryption; app permissions; approved apps only; report a lost device at once.
+
+**Configuration:** `device` (`phone`, `laptop`), `settings[] {id, section, label, state, target, why}`, `updates[] {id, postponedDays, restart}`, `apps[] {name, permissions[], approved}`, `checklist[]`, `assess`.
+
+**Events and records:** prefix `device_`: `device_setting_changed:<settingId>` (from, to, meets the target), `device_update_installed:<updateId>`, `device_app_removed:<appId>`, `device_permission_removed:<appId>`, `device_ready`, `device_reported_lost`. Records: the checklist and anything left undone.
+
+**Builds on:** the `container` desktop mode for the laptop; `phone-chat`'s phone frame for the phone; `alarm-panel`'s status lamps (`JS/minigames/alarm-panel/`) for a readiness summary.
+
+**Accessibility notes:** toggles with labels and their state in words; a restart is a short skip, not a wait.
+
+**Art:** a generic phone settings screen and laptop settings window; icons for fictional apps.
+
+**Open questions:** **Two skins or one?** *Recommendation:* one panel with two skins to begin with.
+
+### MG-24 Crisis decision board
+
+**Priority and size:** P2, M, as an extension of `command-board`. A group vote in facilitated mode (BE-15) may push it to L (section 6).
+
+**Used for:** role_01 (a ransomware crisis compressed from 36 hours into 30 minutes: who to call in; whether to isolate and lose deliveries to schools and hospitals; whether and when to notify the ICO; what to tell clients, staff and the press; the ransom demand and the threat to leak data; what to restore first. Faisal advises, and Anne-Marie asks the questions a regulator would ask); core_17's team mode (HA-13).
+
+**What the player does:**
+
+1. Reads the board: the incident timeline, status rows (services, regulator, communications) and the clock.
+2. Gets an inject card ("02:00. Ransomware found on the finance servers.") with two to four decision cards.
+3. Asks the advisers (Faisal, Ama, Tomasz, Hassan). Each gives a short view, and some decisions are genuinely arguable.
+4. Decides. The decision is stamped on the timeline and changes the status rows; later injects depend on earlier choices.
+5. Moves time on with "Go to 06:00": time moves by injects, not in real time.
+6. In facilitated mode the room votes and the facilitator confirms (BE-15).
+7. Finishes with a debrief against the principles of the UK Cyber Governance Code of Practice (as role_01's concepts file verifies them) and the NCSC Board Toolkit.
+
+**What it teaches:** cyber risk is business risk; decisions prepared in advance are easier; notification duties and their timing; communications; what to weigh about a ransom; recovery priorities.
+
+**Configuration:** extends the board's existing `commandBoard` block (title, subtitle, preseed, timeline and status rows: `command-board-timeline.js:14-25`) with `injects[] {id, at, condition, title, body, advisers[] {npcId, line}, options[] {id, label, actions[], principle}}`, `principles[]`, `facilitated` and `assess`.
+
+```json
+{
+  "commandBoard": {
+    "title": "Larkspur Group: incident decision board",
+    "injects": [{
+      "id": "isolate",
+      "at": "Sat 02:00",
+      "title": "Ransomware on the finance servers",
+      "body": "Kai: it's spreading. Cutting the network stops it, but schools and hospitals get no deliveries tomorrow.",
+      "advisers": [{ "npcId": "faisal_karim", "line": "What's our worst case if we wait an hour?" }],
+      "options": [
+        { "id": "isolate_now", "label": "Isolate now", "actions": [{ "type": "set_global", "key": "isolated_early", "value": true }], "principle": "prepared_response" },
+        { "id": "wait", "label": "Wait for more information", "actions": [{ "type": "set_global", "key": "spread_wider", "value": true }], "principle": "risk_ownership" }
+      ]
+    }]
+  }
+}
+```
+
+**Events and records:** prefix `crisis_`: `crisis_inject_shown:<injectId>`, `crisis_adviser_asked:<injectId>` (who), `crisis_decision:<injectId>` (the option, and whether one person or the room decided), `crisis_time_moved` (to when), `crisis_completed`. Records: each decision, the principle it relates to, and the advice heard before it.
+
+**Builds on:** `command-board` (`JS/minigames/command-board/`: a recorder that stamps entries as globals change, status rows, the game clock); `backup-recovery`'s option cards that lock in a choice; `ncsc-brief`'s sealed document for a briefing opened mid-crisis (once relabelled, section 4); sis01's decision and debrief patterns, and sis03's insurance thread (`claims-management-system`, `coverage-decision-form`).
+
+**Accessibility notes:** no real-time deadline unless a facilitator sets one; injects and the timeline are lists; status changes are announced; decision cards are buttons.
+
+**Art:** the board room screen (`room_zds_conference`, redressed), inject cards and status lamps.
+
+**Open questions:** **Real-time pressure?** *Recommendation:* off; a facilitator can run a clock in a live session.
+
+### MG-25 Document inspector
+
+**Priority and size:** P2, M.
+
+**Used for:** core_10 (a "fire safety inspector's" ID and work order; a visitor's booking); core_11 (Northbeck's letterhead against the supplier record); role_02 (invoices against purchase orders; duplicate invoices); role_05 (a remote candidate's documents); role_06 (an "engineer's" work order at the front desk, optional); role_07 (a certificate's scope). It is also the base of MG-15 and MG-22.
+
+**What the player does** (steps: Compare, Mark, Decide):
+
+1. **Compare:** two panes, the document being checked (a letter, an invoice, an ID badge, a work order) and a trusted reference the organisation already holds (the supplier record, the visitor list, the purchase order, the booking system).
+2. **Mark** the fields that don't match by selecting them. A magnifier shows the detail: a different phone number, an edited account number, a domain one letter off, a date that falls on a Sunday.
+3. **Explain** harmless differences by checking another source (a new logo announced on The Lark).
+4. **Decide:** accept, refuse and report, or check another way (call back through MG-04; ring the visitor's host).
+5. Gets feedback on what was found, what was missed, and what matters most (bank details and phone numbers far more than a logo).
+
+**What it teaches:** compare with records you already hold; the contact details in a document can't vouch for it; small edits matter; if in doubt, check another way.
+
+**Configuration:** `document {kind, look, fields[] {id, label, value, region}}`, `reference {source, fields[]}`, `differences[] {field, kind: edited|added|harmless, why}`, `decisions[]`, `assess`.
+
+```json
+{
+  "document": { "kind": "work_order", "look": "contractor_letterhead", "fields": [
+    { "id": "company", "label": "Company", "value": "Kestrel Lane Fire Safety" },
+    { "id": "visit_date", "label": "Visit date", "value": "Sunday 18 October" },
+    { "id": "contact", "label": "Office number", "value": "0161 496 0777" },
+    { "id": "areas", "label": "Areas", "value": "All areas, including the comms room" }
+  ] },
+  "reference": { "source": "Visitor bookings", "fields": [
+    { "id": "company", "value": "Kestrel Lane Fire Safety" },
+    { "id": "visit_date", "value": "No visit booked" },
+    { "id": "contact", "value": "0161 496 0300" }
+  ] },
+  "differences": [
+    { "field": "visit_date", "kind": "edited", "why": "No visit is booked, and the date is a Sunday." },
+    { "field": "contact", "kind": "edited", "why": "The number differs from the one on record, so ringing it proves nothing." }
+  ],
+  "decisions": ["accept", "refuse_and_report", "check_another_way"]
+}
+```
+
+**Events and records:** prefix `inspect_`: `inspect_field_marked:<docId>` (the field, right or not), `inspect_reference_opened:<docId>`, `inspect_decision:<docId>`, `inspect_completed:<docId>` (found, missed, wrongly marked). Records: differences found and missed, and the decision.
+
+**Builds on:** `forensic-data-platform` (two kinds of evidence and a gated confirm); `examine` for the close-up; the dusting minigame's compare step, which lays reference cards side by side (`JS/minigames/dusting/dusting-game.js`); MG-20's hotspot regions.
+
+**Accessibility notes:** the comparison is also a table ("The document says" against "Our record says"), so nobody has to hunt through an image; zoom without pixel hunting; marking with buttons.
+
+**Art:** document templates (letterhead, invoice, ID badge, work order) and a pixel-art magnifier.
+
+**Open questions:** **Image-based or field-based documents?** *Recommendation:* field-based with an image skin, so documents are cheap to write and accessible. Forged documents stay non-instructional: the lesson is "check against what you hold", never how forgeries are made.
+
+## 4. Existing minigames: reuse and fixes
+
+File names without a folder are in that minigame's own folder under `JS/minigames/`; other paths start from `JS/` or the repository root. Size is the work to make each one reusable in the course, not to build it.
+
+| Minigame | Course use | Generalisation or fix needed | Size |
+|---|---|---|---|
+| `person-chat`, including video-call mode | Every conversation; the mentor (EX-01); people at the door (core_02, core_10); video calls (core_09's whiteboard, core_15's deepfake call); the conversation engine for MG-04 | The call bar's "SECURE VIDEO LINK", "LIVE" and "YOU" are fixed in code (`person-chat-ui.js:251-273`): take them from scenario data ("Larkspur Meet"). Add screen sharing in a call for BE-08 | S |
+| `phone-chat` | Texts, the team chat, voicemail; the base of MG-04 and MG-05 | Only two looks, the default and `terminal` (`phone-chat-ui.js:32`): add a skin registry, link destinations and a Report action per thread (MG-05) | S to M, as MG-05 |
+| `notes`, `text-file` | Memos, policy extracts, sticky notes, printed emails (EX-04) | None for reuse. Pictures in notes would help EX-04's posters | none |
+| `examine` | A found USB stick, a badge, a QR sticker, a poster | None | none |
+| `container` | Clean desk sweeps, bins, the player's PC | Its desktop mode (`container-minigame.js:17-23`) could host the work apps (section 6) | S |
+| `forensic-data-platform` | An evidence viewer with a confirm step (core_11, role_02, role_07); the base of MG-15, MG-22 and MG-25 | Its completion actions handle only `set_global` and `complete_task` (`forensic-data-platform-minigame.js:262-271`): use `applyActions`, and send a BE-01 record when the player confirms. Add block types for an image with regions and a side-by-side comparison | S |
+| `claims-management-system` | Read-and-acknowledge policy tabs (core_16 with BE-09); role_01's insurance thread | The default title "Meridian Claims Management System" (`claims-management-system-minigame.js:4`), sis03's claim reference and "Coverage Analysis Workspace" as the subtitle (`:419`), the "Evidence Relevance" panel (`:369`) and the "CMS Print Queue" alert (`:281`) are fixed, and it always writes `cms_reviewed` (`:183-187`). Take all of them from data | S |
+| `coverage-decision-form` | role_01's decisions; the base of MG-09 and of MG-20's choice items | "Meridian Cyber Insurance" in the header (`coverage-decision-form-minigame.js:77-81`), the submit button and the "recommendation logged" badge (`:83-85`, `:106`) are fixed, and the starter fixes the title (`JS/systems/minigame-starters.js:1037-1052`). Make them data; add per-option feedback and a BE-01 record | S |
+| `warranty-checklist` | The base of MG-18, MG-22 and MG-20's sort into groups | sis03's title and claim reference are the default (`warranty-checklist-minigame.js:4`); the verdicts Compliant, Arguable and Breached are fixed (`:6-10`); it is gated on the global `warranty_evidence_reviewed` (`:114`) with a note naming sis03's evidence (`:209-211`), writes `warranty_checklist_complete`, `ins001_assessed` and `ins003_assessed`, and its alert names a sis03 character (`:132-146`). Make all of these data | S |
+| `ncsc-brief` | A sealed security bulletin that opens after a step (core_04, role_01) | The envelope reads "NCSC Attribution Brief", with a TLP banner and a "sealed" badge in code (`ncsc-brief-minigame.js:76-108`), and the starter fixes the title (`JS/systems/minigame-starters.js:1004-1019`). The course must never present a document as a real agency's, so every label comes from data ("Larkspur security bulletin") | S |
+| `shredded-document` | core_06's attacker view: Jo pieces together a draft from the recycling | Drag and drop only (`shredded-document-minigame.js:216-290`): add Move up and Move down buttons and announce the order (SC 2.5.7) | S |
+| `password` | A weak or written-down password in use (core_03's sticky notes, Kev's shared PC); sign-in moments | None: it is entry only, and MG-08 covers making passwords | none |
+| `pin` | Shoulder-surfed door codes (core_10); MG-07's code entry | The backlog's PIN fixes: lengths other than four when the server keeps the PIN (`JS/systems/minigame-starters.js:535`), the `window.startPinMinigame` clash (`JS/minigames/index.js:202`), Cancel showing "PIN Rejected" | S |
+| `flag-station` | A free-text answer checked on the server, where a role module needs one; its server check is the model for MG-20's scoring | Uses the browser's own `confirm()` box (`flag-station-minigame.js:556`, `:564`), which can't be styled or relabelled: use the shared dialog | S |
+| `dual-auth` | Two-person approval (core_11, role_02, MG-15) | Not registered in `minigames/index.js`, with no starter and no dispatch. It writes sis01's globals (`itsec_authorised`, `clinical_eng_authorised`, `network_isolation_authorised`, `network_isolated`, `dual_auth_failed`: `dual-auth-minigame.js:203-308`); its PINs are `itsec_pin` and `clinical_pin` (`scripts/minigame-data-schemas.json:110-113`) and sit in the page; a five-minute timer fails the approval (`:20`, `:304-318`); the keypads take clicks only; the title is fixed (`:10`); and the server has no `dual_auth` unlock method (`app/models/break_escape/game.rb:883-892`). Its text is already overridable (`dual-auth-text.js`). For the course: named approver panels with a checklist instead of PINs, globals from data, no timer by default | S to M |
+| `backup-recovery` | "Choose your response" cards: core_07's restore, seen behind the scenes; role_01 | Global names are fixed (`backup_recovery_source`, `recovery_eta_hours`, `backup_restore_initiated`, `backup_reinfected`: `backup-recovery-minigame.js:336-426`) and the default sources are sis01's | S |
+| `esd-pushbutton` | A guarded "stop the payment" or "isolate" button with a confirm step | Already data-driven (`esd-pushbutton-minigame.js:6-25`); add a plain office look | S |
+| `command-board` | The base of MG-24 (role_01); Kai's incident timeline (core_04) | Defaults are sis01's (`command-board-timeline.js:30-39`) but overridable through `commandBoard` (`:14-25`), a different key from every other minigame's `minigameData`; it needs injects and decision cards (MG-24) | M, as MG-24 |
+| `alarm-panel` | A status board (device readiness, incident status) | None | none |
+| `ransomware-display` | What an infection looks like (core_07, core_04), seen, not played | The starter opens it only when the global `ransomware_deployed` is true (`JS/systems/minigame-starters.js:618-623`): make the condition a setting. Check its art suits the calm tone (no skulls) | S |
+| `siem` (registered as `siem-dashboard`) | role_03's alerts | The starter passes only `timeLimitSec` (`JS/systems/minigame-starters.js:658-672`), so `alertConfig` in `minigameData` never reaches the minigame, which would look it up in its own `ALERT_SETS` (`siem-dashboard-minigame.js:245`). Support inline `alerts` (the TODO at `:240-244`); make the 180-second timer optional (`:238`); the title is fixed (`:233`) | S |
+| `log-filter` | role_03's impossible-travel sign-ins; the base of MG-19's line flagging | None for reuse | none |
+| `network-segmentation-map` | IT staff (role_03); a possible base for core_04's spread view (section 6) | Four fixed zone slots (external, enterprise, clinical, legacy: `network-segmentation-map-minigame.js:7-10`) and a fixed "ACTIVE INCIDENT" badge (`:57`) | M, for core_04 |
+| `rfid`, `lockpicking` | core_10's attacker view with Jo (EX-06, BE-11) | None; keep the framing at awareness level | none |
+| `cryptex`, `combination` | A padlock on a confidential waste bin or a key safe (core_06, core_10), if a module wants one | No server unlock method: they call `apiClient.unlock` with `'cryptex'` and `'combination'` (`cryptex-minigame.js:316`, `combination-minigame.js:259`), which the server's `UNLOCK_METHODS_BY_LOCK_TYPE` doesn't list (`app/models/break_escape/game.rb:883-892`), so it refuses them | S |
+| `ehr-terminal` | sector_01 ("only open the records you need") | Check the fit when sector_01 is planned | unknown |
+| `lab-workstation` (an object type, `JS/utils/lab-workstation.js`) | The Lark (BE-09); the first versions of MG-21 and MG-02 | The popup title is always "Lab Sheet" (`app/views/break_escape/games/show.html.erb:112`); closing it emits nothing; "open in new tab" leaves the game | S |
+| `dusting` | No course use | The model for staged minigames (section 1) | none |
+
+**Fixes that apply to every minigame:**
+
+- **Fifteen minigames define their own `setGlobalAndNotify` (or `_setGlobalAndNotify`),** and the copies differ: some go through `npcManager.setGlobalVariable`, some write the scenario's copy as well (for example `shredded-document-minigame.js:18-35` against `dual-auth-minigame.js:320-331`). One shared helper should replace them.
+- **No overlay is a proper dialog.** None declares `role="dialog"` or `aria-modal`, none moves focus in and back out, and the base close button is a bare "×" with no accessible name (`JS/minigames/framework/base-minigame.js:23`).
+- **Completion events name the class, not the scene.** `minigame_completed` and `minigame_failed` carry `minigameName: this.constructor.name` (`base-minigame.js:101-105`); they should also carry the registered scene name, which the manager already stores (`JS/minigames/framework/minigame-manager.js:104`).
+- **Old minigame numbers in the code.** Comments and saved state keys use the SIS games' own minigame numbers: `forensic-data-platform` calls itself MG-02 and `network-segmentation-map` MG-04, `JS/systems/interactions.js:989` labels the claims system "SIS03 MG-01", sis01's scenario calls `dual_auth` MG-11 (`scenarios/sis01_healthcare/scenario.json.erb:34`, which core_11's README quotes), and `siem` and the command board save under `mg01_siem_state` and `mg12_command_board_state`. They have nothing to do with this catalogue. Leave the saved keys alone (old saves use them), but mark the comments so nobody reads `MG-04` in the code as voice calls.
+
+## 5. Build order
+
+Four waves, following the roadmap in `00_COURSE_OVERVIEW.md`. Within a wave, items are listed in the order to start them.
+
+### Wave 0: foundations (phase 0, with BE-01, BE-04 and BE-19)
+
+1. **The shared building blocks** (section 1): first the record and event helpers, the feedback panel, the accessible dialog and the seeded draw, because MG-20 needs them and every later minigame reuses them.
+2. **MG-20 Knowledge check.** Every module needs it. It is the smallest new minigame that runs through the whole evidence chain (a BE-01 record, server-side scoring, HA-05), and it proves BE-19 (Ama's question opens inside her conversation and hands back to it) and BE-03 (the same items as text). Build single choice and multiple select first, then ordering, true or false with reason, hotspot, and sort into groups. The game show look comes last; core_16 can use the spot check look until then.
+3. **Small fixes that unblock early modules:** a title that can be set on the `lab-workstation` popup (for The Lark, BE-09), the video-call bar text, and registering `dual-auth` with its globals moved into data.
+
+### Wave 1: the MVP course (phase 1, Induction Essentials)
+
+4. **MG-01 Inbox,** started as soon as the shared blocks exist, in four slices that are each playable:
+   1. reading, sender details, link destinations, Report and scheduled arrivals (core_00, and core_01's hook);
+   2. practice mode with MG-03 inline (core_01's Practise beat);
+   3. the browser panel with pre-filled fake pages, and attachments (core_01's Apply beat);
+   4. reply, forward, and compose with recipient checks (core_05, then core_06).
+
+   It starts early because it is the largest build, core_01 is the course's showcase, and four MVP modules use it.
+5. **MG-09 Incident report form:** small, and the main action in core_04 and in core_05's breach report.
+6. **MG-07 MFA prompts** and **MG-08 Password manager,** together: core_03 and core_00 need both, and they share the phone frame and the page renderer.
+7. **MG-12 Redaction** for core_05; it reuses the annotated document built for MG-20's hotspots.
+8. **core_04's spread view** (proposed in section 6), because core_04 is an MVP module whose main mechanic has no catalogue entry yet.
+
+### Wave 2: the core library and first role paths (phase 2)
+
+9. **MG-21 Video player:** the hosted-page version as soon as EX-02 has a first video (it is S), then the full player alongside HA-20.
+10. **MG-05 Messaging apps,** then **MG-04 Voice calls,** for core_02, core_11 and core_15. MG-04 also replaces the `phone-chat` stand-in for core_01's call to Northbeck.
+11. **MG-25 Document inspector,** then **MG-15 Payment verification desk** with the `dual-auth` rework, for core_10, core_11 and role_02.
+12. **MG-02 Web browser,** reusing MG-01's page renderer, then **MG-06 QR code scanner,** which needs MG-05's phone and MG-02's pages: core_08 and core_02.
+13. **MG-10** and **MG-11** (core_06); **MG-23** with MG-14 as one of its panels (core_07, core_09); **MG-16** (core_15); **MG-24** (role_01).
+
+### Wave 3: the rest (phase 3)
+
+14. **MG-13** (core_12); **MG-17,** built on MG-04 (role_03, role_06, sector_01); **MG-18** (role_05); **MG-19** (role_04); **MG-22,** built on MG-25 (role_07).
+
+### Why this order
+
+- **Evidence first.** Nothing in the assessment trail works without BE-01, MG-20 and HA-05 (`features/README.md`, Dependencies), and MG-20 is the cheapest way to prove that trail end to end.
+- **Shared parts before the minigames that use them.** The address reader, the page renderer and the annotated document each serve four to six minigames. MG-01 builds the page renderer MG-02 needs; MG-25 builds the comparison MG-15 and MG-22 need; MG-04 builds the call engine MG-17 needs.
+- **Reuse.** MG-20 and MG-01 serve the most modules; MG-19 and MG-22 serve one each.
+- **Risk early.** MG-01 is the largest build and the one where transfer to real inboxes matters most, so it reaches playtests with real staff first.
+- **Accessibility from the start.** The shared blocks carry the accessibility patterns, so later minigames inherit them instead of having them retrofitted.
+
+## 6. Catalogue notes (proposals)
+
+For the orchestrator. Nothing here changes an id.
+
+**Not in the catalogue:**
+
+- **proposed:** Incident spread map, a floor or network map on which an incident spreads with game time until someone reports it, and is then contained. It is core_04's main mechanic (the "blast radius") and suits core_07's ransomware spread. It could extend `network-segmentation-map` (M). It is needed for the MVP, because core_04 is. core_07's plan (a scene status panel) and core_14's (a rumour map) propose views that could share it.
+- **proposed:** Work desktop, the player's PC as a generic desktop that opens the inbox, browser, chat, The Lark and settings, and shows new-mail and chat notifications. It extends the `container` desktop mode (S to M, MVP with MG-01), makes "your computer" one consistent place across modules, and gives BE-18's interruptions somewhere to appear.
+- **proposed:** Tactic card, a bingo-style card of persuasion tactics (authority, urgency, fear, helpfulness, flattery, insider jargon) that the player ticks off as they hear them, scored in the debrief, for core_02 (S, P2). core_02's README proposes the same card as an overlay under an id of its own (BE-22); it needs one catalogue id, as an MG or a BE.
+
+**Minigame proposals in the module plans so far,** and where each fits:
+
+- core_07's "pop-up triage": a feed mode of MG-23, S on top of it.
+- core_16's game show mode: MG-20's game show presentation (above).
+- core_05's "Down to One" board (a grid of faces that clues rule out one by one): a variant of MG-13's board or MG-20's sort into groups, S to M.
+- role_06's secure payment line (card digits reach the adviser masked while the recording pauses): a keypad overlay built on `pin`, S, also useful for role_02.
+- core_06's keyboard controls for `shredded-document`, core_11's `dual-auth` rework, and core_09's and role_05's video-call bar label are the fixes in section 4.
+
+**Priority and size:**
+
+- **MG-03:** P2, but core_01 (MVP) uses it inline. The inline part should be MVP; it is mostly the shared address reader.
+- **MG-14:** P3, but core_09 is P2. Make it P2 as a panel of MG-23; the size stays S.
+- **MG-20:** M is right. core_16 (MVP) wants the game show look, so either build that look in the MVP or let core_16 start with the spot check look.
+- **MG-23:** S holds only as one data-driven panel with two skins; full phone and laptop screens would make it M.
+- **MG-24:** M as an extension of `command-board`; L with the facilitated group vote (BE-15).
+- **MG-02:** stays L, but its risk drops if MG-01's page renderer is built as a shared part.
+- **MG-09:** S holds with structured fields; marking free text would make it M and raise data protection questions.
+- **MG-01:** L; plan it as four slices so core_00 and core_01 aren't held up by compose.
+
+**Wording in the catalogue:** MG-03's "at speed" and MG-24's "timed" should read "with an optional timer" (principle 5), and MG-09's "speed" means how soon in story time, never how fast someone types.

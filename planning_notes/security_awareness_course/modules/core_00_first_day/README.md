@@ -59,7 +59,7 @@ Contributes to (short references from `02_COMPLIANCE_MAPPING.md`):
 
 | Beat | What happens | Format | Minutes |
 |---|---|---|---|
-| Hook | 08:52 at reception. While Maureen finishes a call, the player's own phone buzzes: "Gillian", the chief executive, on a new number, wants a quick favour and asks them to keep it quiet. What they do before Maureen looks up is the baseline | Game (`phone-chat`, `person-chat`) | 1 |
+| Hook | 08:52 at reception. While Maureen finishes a call, a message request pops up on the player's own phone from "Lena Fischer, Operations Manager": their new manager, whom they've never met, asking for their personal mobile and email "for the team group". What they do before Maureen looks up is the baseline | Game (`phone-chat`, `person-chat`) | 1 |
 | Learn (on the move) | Maureen prints the badge (one line on badge rules). Precious walks the player to the security office, and the controls tutorial happens inside the walk | Game tutorial (BE-20) | 2 |
 | Learn | Ama: why it matters, in a minute; the motto; how to report here; no blame, and the phish she once fell for. Kai: what happens to a report. One check question | NPC explainer (EX-01, BE-08) | 2 |
 | Practise | Owain at the service desk: the laptop; the Report button tried on a harmless test email; a three-random-words passphrase in the password manager; the first MFA prompt, and one to refuse; the settings | Game (MG-01, MG-08 and MG-07, light) | 1.5 |
@@ -72,7 +72,7 @@ Contributes to (short references from `02_COMPLIANCE_MAPPING.md`):
 
 - **Rooms:** `room_reception` (reception and the badge gate), `room_office` (the Operations floor and the player's desk), `room_break` (the kitchen and the motto poster), `room_security` (Ama and Kai), `room_IT` (Owain's service desk). No new rooms.
 - **Conversation backgrounds:** m01's office set (main office, reception, break room, IT room) suits a generic office until Larkspur's own are made (`room-pov-background` skill).
-- **Conversations:** `person-chat` for Maureen, Precious, Ama, Kai, Owain and Leo; `phone-chat` for the "Gillian" text and the team chat, using phone NPC `timedMessages` for arrivals.
+- **Conversations:** `person-chat` for Maureen, Precious, Ama, Kai, Owain and Leo; `phone-chat` for the fake "Lena" message request and the team chat, using phone NPC `timedMessages` for arrivals.
 - **Systems:** `systems/tutorial-manager.js` is the starting point for BE-20 (it already drops its combat step when `disableAttacks` is true); the title screen in `minigames/title-screen/`; objectives and tasks (`systems/objectives-manager.js`) for the morning's list; `gameClock` for the 08:52 start; event mappings with `patrolOverride` and barks so Precious can lead the way (`README_scenario_design.md`, NPC Event Mappings); keycard doors for the badge gate (`scenarios/RFID_SCENARIO_PATTERNS.md`); `validSprites` and the player preferences modal (`app/views/break_escape/player_preferences/_modal.html.erb`) for the name and avatar.
 - **Documents:** `notes` for The Lark's pages, and a `lab-workstation` object (`utils/lab-workstation.js`) as the cheap first version of The Lark, until BE-09.
 - **Patterns:** the instructor topic hub (`scenarios/lab_intro_linux/ink/instructor.ink`) reshaped into the short EX-01 form; m01's in-ink quiz (`scenarios/m01_first_contact/ink/m01_npc_kevin.ink`) as the fallback for the check before MG-20 exists.
@@ -106,12 +106,12 @@ Contributes to (short references from `02_COMPLIANCE_MAPPING.md`):
 - The intranet's name.
 - The learner's assigned modules and due dates (from HA-03).
 - What the organisation can see in training records (HA-05, HA-15), shown on The Lark's "About your training record" page.
-- Optional: a welcome message from the chief executive, on screen, saying they will never text staff for favours, gift cards or passwords.
+- Optional: a welcome message from the chief executive, on screen, saying nobody at the organisation will ever message staff for favours, codes, gift cards or personal details.
 
 ## Open questions
 
-1. **A scam text in the first minute.** Is a fake chief executive text on the learner's own phone too sharp a start? *Recommendation: keep it. It is a pattern new starters really meet, it is caught by Maureen with warmth, and nobody is marked down for it. Give organisations a setting to move it to later in the morning.*
+1. **A scam in the first minute.** Is a fake "new manager" message on the learner's own phone too sharp a start? *Recommendation: keep it. It is a pattern new starters really meet, it is caught by Maureen with warmth, and nobody is marked down for it. Give organisations a setting to move it to later in the morning. (The seed's direction, a chief executive asking a favour on a new number, is core_02's Apply scene, so core_00 uses the manager-impersonation variant instead.)*
 2. **Where the name comes from.** *Recommendation: the player sets name and avatar in the existing preferences modal before the title screen; the name appears on the printed badge and in on-screen text, never in a voiced line.*
 3. **Existing staff.** Should staff who have worked there for years get a different opening? *Recommendation: yes, one ink branch on an organisation-set cohort flag: "Morning! New badge day" instead of "first day", and Owain swaps the laptop handover for a security check-up. Same assessment.*
-4. **The real chief executive.** Should Gillian appear in person to say she never asks for gift cards? *Recommendation: yes, as a team chat message on screen, which the organisation can replace with its own leader's words (NCSC culture principles: leaders model the behaviour).*
+4. **The real chief executive.** Should Gillian post a welcome saying nobody will ever message staff for favours, codes or personal details? *Recommendation: yes, as a team chat message on screen, which the organisation can replace with its own leader's words (NCSC culture principles: leaders model the behaviour).*
 5. **Order.** Should core_00 be required before other modules? *Recommendation: assign it first (HA-03) but don't lock other modules behind it; every module explains its own controls in one line.*
