@@ -46,7 +46,7 @@ Rough lengths (the model module is a guide): README 80 to 120 lines; concepts 12
 ### Rules that apply to every file
 
 - **UK English.** "Cyber security" as two words in our prose (official names like "NIST Cybersecurity Framework" keep their spelling). Organise, behaviour, licence (noun), programme (except computer program), defence, centre, colour, judgement, enrol.
-- **No em dashes or en dashes anywhere.** Use commas, colons, brackets, full stops, or "to" for ranges ("15 to 20 minutes", "2023 to 2025"). Check before you finish: `grep -nP '[\x{2014}\x{2013}]' <file>` must print nothing.
+- **No em dashes or en dashes anywhere.** Use commas, colons, brackets, full stops, or "to" for ranges ("15 to 20 minutes", "2023 to 2025"). Check before you finish: `LC_ALL=C.UTF-8 grep -nP '[\x{2014}\x{2013}]' <file>` must print nothing.
 - **Plain writing.** Short sentences, everyday words. No filler, no hype, no "in today's digital landscape", "robust", "seamless", "leverage", "delve", "crucial".
 - **No victim blaming, no fear without action, no gotchas** (see the design principles in `01_LEARNING_DESIGN.md`).
 - **Never ask a learner for real credentials** in a design. Fake sign-in pages are pre-filled.
@@ -71,4 +71,4 @@ A short report:
 3. Proposed new features (name and one line each), and which existing features you used most.
 4. Requests for course-level changes: new cast members, boundary clashes, open questions for the user.
 5. Facts you could not verify and left out or marked "to verify".
-6. Confirmation that `grep -nP '[\x{2014}\x{2013}]'` finds nothing in your files and that the four template headings are present.
+6. Confirmation that `LC_ALL=C.UTF-8 grep -nP '[\x{2014}\x{2013}]'` finds nothing in your files and that the four template headings are present.
