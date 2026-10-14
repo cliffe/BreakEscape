@@ -107,12 +107,36 @@ scenario_dirs.each do |dir|
   end
 end
 
-# Remove missions whose scenario directories no longer exist on disk
-orphaned_missions = BreakEscape::Mission.where.not(name: scenario_names_on_disk)
-orphaned_missions.each do |mission|
-  puts "  DELETE: #{mission.display_name} (scenario directory removed)"
-  mission.destroy!
-  deleted_count += 1
+# Remove missions whose scenario directories no longer exist on disk. Destroying a mission
+# also destroys its games and Hacktivity listings, so this needs confirmation: typed at a
+# terminal, or BREAK_ESCAPE_PRUNE=1 when run without one (deploy scripts, the admin button).
+orphaned_missions = BreakEscape::Mission.where.not(name: scenario_names_on_disk).to_a
+if orphaned_missions.any?
+  puts ''
+  puts "  #{orphaned_missions.size} mission(s) have no scenario directory on disk:"
+  orphaned_missions.each do |mission|
+    listings = mission.respond_to?(:game_slots) ? mission.game_slots.count : 0
+    puts "    #{mission.name}: #{mission.games.count} game(s), #{listings} listing(s)"
+  end
+
+  prune = if ENV['BREAK_ESCAPE_PRUNE'] == '1'
+            true
+          elsif $stdin.tty?
+            print "  Delete them, with their games and listings? Type 'delete' to confirm: "
+            $stdin.gets.to_s.strip == 'delete'
+          else
+            false
+          end
+
+  if prune
+    orphaned_missions.each do |mission|
+      puts "  DELETE: #{mission.display_name} (scenario directory removed)"
+      mission.destroy!
+      deleted_count += 1
+    end
+  else
+    puts '  Kept them. To delete, run at a terminal and confirm, or set BREAK_ESCAPE_PRUNE=1.'
+  end
 end
 
 puts ''
