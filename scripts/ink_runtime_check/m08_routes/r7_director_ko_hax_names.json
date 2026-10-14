@@ -32,7 +32,7 @@
 { "tasks": { "name_the_mole": "open" } },
 { "lockedAims": ["confront_the_mole"] },
 { "talk": "phone", "picks": ["What does the Director need", "Nothing right now"] },
-{ "said": ["it's me you read it to. Tell me you can name the leak"] },
+{ "said": ["He's on his floor, so it's me you read it to.", "Tell me you can name the leak"] },
 { "talk": "phone", "picks": ["I can name the leak", "10:32", "I can name the leak", "10:38", "Phantom.", "Nothing right now"] },
 { "said": ["When was the plan opened?", "That's a door moving or the file closing", "Who was behind the lab door at 10:38", "Read the door against the minute, not the man"] },
 { "expect": { "mole_identified": false } },

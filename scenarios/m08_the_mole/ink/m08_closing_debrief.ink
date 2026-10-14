@@ -39,6 +39,11 @@ VAR asked_line = false
 VAR nightshade_tipped_off = false
 VAR locker_seen_picked = false // PASS 5 (puzzle chains C1, m6): seen picking a locker
 VAR offduty_agent_ko = false // Puzzle chains C2 (N2): the off-duty agent knocked out
+// Design C1 (D1, m6): the Director punched and left standing; the analyst and
+// ATHENA's avatar knocked out. Synced scenario globals.
+VAR netherton_hostile = false
+VAR analyst_ko = false
+VAR athena_ko = false
 
 === start ===
 #set_global:debrief_played:true
@@ -49,8 +54,11 @@ VAR offduty_agent_ko = false // Puzzle chains C2 (N2): the off-duty agent knocke
     Narrator: Your phone buzzes once in the corridor. HaX: "He said it to you? 'Afterwards, not during.' I was taught that line, and I say it to every agent I run. Same classroom, 0x00. Don't ask me whose yet."
 }
 Narrator: Netherton finds you, empty-handed. He looks older than he did at the briefing a few hours ago.
-{ netherton_ko:
+{
+- netherton_ko:
     Director Magnus Netherton: Before anything else. My jaw is fine, thank you for asking. We will not be discussing it.
+- netherton_hostile:
+    Director Magnus Netherton: Before anything else. You struck me in my own office tonight. We will not be discussing it.
 }
 
 Director Magnus Netherton: It's done, then. Agent 0x47. Nightshade.
@@ -87,6 +95,12 @@ Director Magnus Netherton: Say it, Agent. Whatever you think of me tonight. I wo
 { offduty_agent_ko:
     Director Magnus Netherton: You put an off-duty agent on the break-room floor. He was a witness, not a suspect. He'll mend. The floor's opinion of you may not.
 }
+{ analyst_ko:
+    Director Magnus Netherton: You knocked out a junior analyst at her desk. She was a witness to nothing. She will remember you longer than she remembers tonight.
+}
+{ athena_ko:
+    Director Magnus Netherton: And ATHENA logged you putting her reception avatar on the floor. Facilities would like a word.
+}
 { named_on_evidence:
     { named_before_box:
         Director Magnus Netherton: You named him to me before the box did, on something I could put in front of a lawyer. You read the clock, not the face.
@@ -102,7 +116,7 @@ Director Magnus Netherton: Say it, Agent. Whatever you think of me tonight. I wo
 // the case" is never said twice.
 {
 - named_by_hax:
-    Director Magnus Netherton: You read the door audit to HaX while I was on my office floor. The name reached me secondhand.
+    Director Magnus Netherton: {netherton_ko:You read the door audit to HaX while I was on my office floor.|You read the door audit to HaX, because after you struck me I would not have you in the room.} The name reached me secondhand.
     Director Magnus Netherton: Next time, bring the reading to me yourself.
 - audit_closed:
     Director Magnus Netherton: You read me that door log three ways. In the end I read it myself.
@@ -112,23 +126,10 @@ Director Magnus Netherton: Say it, Agent. Whatever you think of me tonight. I wo
     Director Magnus Netherton: Two good officers spent a night under a suspicion they did not earn. Buy them a drink. The service won't.
 - named_on_evidence:
     Director Magnus Netherton: That, more than any instinct, is the reason you're still useful to me after they burned you.
-- else:
-    // impl review m4: a misread that was never followed up leaves a trace.
-    { audit_misread:
-        Director Magnus Netherton: You brought me that door log, read it wrong, and never came back to read it right. Noted.
-    }
-    {
-    - nightshade_suspected or suspect_theory == "nightshade":
-        Director Magnus Netherton: You had him before the evidence did. You sat across a desk from the calmest man in a frightened building and didn't buy the calm.
-        Director Magnus Netherton: That instinct is the reason you are still useful to me after they burned you.
-    - accused_cipher or accused_phantom:
-        Director Magnus Netherton: You never gave me a name, but you gave one to a man's face. The box made the case in the end. Next time, let it make the case first.
-    - audit_misread:
-        Director Magnus Netherton: The box made the case. Next time, finish the reading before you bring it to me.
-    - else:
-        Director Magnus Netherton: You let the box make the case and kept your opinion to yourself until it was proven. Cold, and correct.
-        Director Magnus Netherton: That is how the innocent walk out of a mole hunt with their careers intact.
-    }
+// Design C1 (m10): the old else branch ("You let the box make the case") is
+// gone. Under Option B every naming sets named_on_evidence, named_by_hax or
+// audit_closed (flag 4 alone never names him), and each has a branch above,
+// so it could not run and it misstated the design.
 }
 { nightshade_tipped_off:
     Director Magnus Netherton: And he knew we were coming before we came. Whatever he had time to clear, we will never see now.

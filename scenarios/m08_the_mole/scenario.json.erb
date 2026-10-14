@@ -159,7 +159,7 @@ backup_plain = "SENT -- To: architect@entropy.onion  From: nightshade_deep_state
       { "trigger": "game_loaded", "condition": "globalVars.mole_identified === true", "playlist": "threat", "fade": false },
       { "trigger": "conversation_closed:opening_briefing_cutscene", "playlist": "noir", "fade": true },
       { "trigger": "global_variable_changed:mole_identified", "condition": "value === true", "playlist": "threat" },
-      { "trigger": "room_entered:interrogation_room", "condition": "globalVars.all_flags_submitted === true && !globalVars.fate_decided", "playlist": "spy-action" },
+      { "trigger": "room_entered:interrogation_room", "condition": "globalVars.all_flags_submitted === true && globalVars.mole_identified === true && !globalVars.fate_decided", "playlist": "spy-action" },
 <%# PASS 2: was "conversation_ended:m08_closing_debrief", an event nothing
     emits, so the victory track and the bond visualiser never ran and there were
     no credits at all. Now the m07 shape: conversation_closed on the debrief NPC,
@@ -196,7 +196,8 @@ backup_plain = "SENT -- To: architect@entropy.onion  From: nightshade_deep_state
           { "text": "THE CASE: Named from the door audit, against the box's minute", "style": "entry", "condition": "globalVars.named_on_evidence && !globalVars.named_before_box && !globalVars.audit_misread" },
           { "text": "THE CASE: Named from the door audit, not on the first reading", "style": "entry", "condition": "globalVars.named_on_evidence && globalVars.audit_misread" },
           { "text": "THE CASE: The door audit, misread three times. The Director read it himself.", "style": "warning", "condition": "globalVars.audit_closed && !globalVars.named_by_hax" },
-          { "text": "THE CASE: The door audit read to HaX, with the Director on his floor", "style": "warning", "condition": "globalVars.named_by_hax" },
+          { "text": "THE CASE: The door audit read to HaX, with the Director on his floor", "style": "warning", "condition": "globalVars.named_by_hax && globalVars.netherton_ko" },
+          { "text": "THE CASE: The door audit read to HaX. The Director would not have you in the room.", "style": "warning", "condition": "globalVars.named_by_hax && !globalVars.netherton_ko" },
           { "text": "THE LOCKERS: Seen picking one by an off-duty agent who saw nothing", "style": "warning", "condition": "globalVars.locker_seen_picked" },
           { "text": "NIGHTSHADE: Tipped off before he was named", "style": "warning", "condition": "globalVars.nightshade_tipped_off" },
           { "text": "YOUR FIRST CALL TO THE DIRECTOR: Cipher -- wrong, and corrected", "style": "warning", "condition": "globalVars.suspect_theory === 'cipher'" },
@@ -224,9 +225,12 @@ backup_plain = "SENT -- To: architect@entropy.onion  From: nightshade_deep_state
           { "text": "AGENT 0x00 TO THE DIRECTOR: He's the crime, not you", "style": "entry", "condition": "globalVars.debrief_stance === 'defended'" },
           { "text": "AGENT 0x00 TO THE DIRECTOR: Own the gap", "style": "entry", "condition": "globalVars.debrief_stance === 'owned'" },
           { "text": "DIRECTOR NETHERTON: Knocked down in his own office. He did not mention it again.", "style": "warning", "condition": "globalVars.netherton_ko" },
+          { "text": "DIRECTOR NETHERTON: Struck in his own office, and left standing. He did not mention it again.", "style": "warning", "condition": "globalVars.netherton_hostile && !globalVars.netherton_ko" },
           { "text": "NIGHTSHADE: Knocked down in his lab before the evidence was in.", "style": "warning", "condition": "globalVars.nightshade_ko" },
           { "text": "AGENT HAX: Put on the break-room floor by her own agent.", "style": "warning", "condition": "globalVars.hax_ko" },
           { "text": "AN OFF-DUTY AGENT: Knocked out in the break room. A witness, not a suspect.", "style": "warning", "condition": "globalVars.offduty_agent_ko" },
+          { "text": "A JUNIOR ANALYST: Knocked out at her desk. A witness to nothing.", "style": "warning", "condition": "globalVars.analyst_ko" },
+          { "text": "ATHENA: Her reception avatar, knocked flat. She logged it.", "style": "warning", "condition": "globalVars.athena_ko" },
           { "text": "" },
           { "text": "THE ARCHITECT: At large, with every weakness SAFETYNET ever catalogued.", "style": "warning" },
           { "text": "ENTROPY: Still operational.", "style": "warning" }
@@ -360,10 +364,13 @@ CREDITS
         <%# PASS 2 review: moved here from correlate_the_evidence, where opening
             the archives (ATHENA gives the password at minute one) revealed that
             aim before any VM work (lesson 27). Completed by brief-gated
-            mappings like the interviews. %>
+            mappings like the interviews.
+            PASS 5 (design C1, m2): completes on reading the door audit
+            (found_badge_audit), not on entering the room, so it can't tick
+            while the required clue is still on the floor. %>
         {
           "taskId": "read_the_archives",
-          "title": "Cross-check the leak window against the Security Archives",
+          "title": "Find the door audit for the leak window in the Security Archives",
           "type": "custom",
           "status": "active",
           "optional": true
@@ -378,7 +385,7 @@ CREDITS
             The Mole waits for this aim as well as the box. %>
         {
           "taskId": "name_the_mole",
-          "title": "Name the leak to Director Netherton, on evidence",
+          "title": "Name the leak from the door audit, on evidence",
           "type": "custom",
           "status": "active"
         }
@@ -422,7 +429,7 @@ CREDITS
     },
     {
       "aimId": "correlate_the_evidence",
-      "title": "Correlate The Leak Timeline",
+      "title": "Follow The Account To Root",
       "description": "A foothold is not a case. Log in as the account's owner, get root, and read the access logs the box keeps from its users.",
       "status": "locked",
       "order": 3,
@@ -572,14 +579,14 @@ CREDITS
               room entry completes it. %>
           "eventMappings": [
             {
-              "eventPattern": "global_variable_changed:archives_entered",
+              "eventPattern": "global_variable_changed:found_badge_audit",
               "condition": "value === true && globalVars.brief_taken === true",
               "onceOnly": true,
               "completeTask": "read_the_archives"
             },
             {
               "eventPattern": "global_variable_changed:brief_taken",
-              "condition": "value === true && globalVars.archives_entered === true",
+              "condition": "value === true && globalVars.found_badge_audit === true",
               "onceOnly": true,
               "completeTask": "read_the_archives"
             },
@@ -619,6 +626,8 @@ CREDITS
               swings from the chase state, and an aggroDistance of 1 px never lets
               the chase start (npc-behavior.js:694, :1369); 0 would fall back to 160. %>
           "behavior": { "hostile": { "chaseSpeed": 70, "attackDamage": 3, "pauseToAttack": true, "aggroDistance": 1 } },
+          <%# Design C1 (m6): a KO is on the record and, before the naming, tips the mole off (HaX). %>
+          "globalVarOnKO": "athena_ko",
           <%# PASS 5 (alignment C2): ATHENA hosts two latches with no text of their
               own (main_lobby is always loaded, lesson 43), so they don't share
               events with HaX's onceOnly texts on the same NPC. %>
@@ -733,7 +742,11 @@ CREDITS
          Director reads the audit against the box himself (named_by_director).
       C  the Director is down: HaX reads it (named_by_hax).
       D  not named, check open, Director up: terminal and time only.
-    Disjoint, &&-only. A pair on netherton_ko covers a KO after flag 4. %>
+    Disjoint, &&-only. A pair on netherton_ko covers a KO after flag 4.
+    PASS 5 (design C1, D1): a Director punched but left standing is hostile
+    for good and won't talk, so he is "unavailable" just as a KO'd one is.
+    C' twins C on netherton_hostile && !netherton_ko (a KO also makes him
+    hostile, so C keeps that case), and B and D exclude netherton_hostile. %>
 <%# PASS 5 (alignment C2, J3): the KO'd Director no longer hands HaX the
     answer. C splits on the door audit and names nobody; the player reads the
     audit to HaX on the phone (m08_phone_agent_0x99.ink, hax_reading), which
@@ -745,7 +758,7 @@ CREDITS
      ["globalVars.named_on_evidence !== true && globalVars.mole_identified === true",
       { "found_access_logs" => true, "database_theft_understood" => true }, nil,
       "Root. Logs agree with the reading you gave me: Crypto Lab terminal, forty-seven minutes, for our threat database. It's Nightshade. I trained with him."],
-     ["globalVars.named_on_evidence !== true && globalVars.mole_identified !== true && globalVars.audit_closed === true && globalVars.netherton_ko !== true",
+     ["globalVars.named_on_evidence !== true && globalVars.mole_identified !== true && globalVars.audit_closed === true && globalVars.netherton_ko !== true && globalVars.netherton_hostile !== true",
       { "found_access_logs" => true, "database_theft_understood" => true, "mole_identified" => true, "named_by_director" => true }, "name_the_mole",
       "Root. Crypto Lab terminal, forty-seven minutes, for our threat database. The Director read the door audit against it himself. It's Nightshade. I trained with him."],
      ["globalVars.named_on_evidence !== true && globalVars.mole_identified !== true && globalVars.netherton_ko === true && globalVars.found_badge_audit !== true",
@@ -754,7 +767,13 @@ CREDITS
      ["globalVars.named_on_evidence !== true && globalVars.mole_identified !== true && globalVars.netherton_ko === true && globalVars.found_badge_audit === true",
       { "found_access_logs" => true, "database_theft_understood" => true }, nil,
       "Root. A terminal and a time, no face: crypto-lab-04, D-2 10:38, forty-seven minutes. The Director's down, so read me the door audit instead. Call me when you've got it."],
-     ["globalVars.named_on_evidence !== true && globalVars.mole_identified !== true && globalVars.audit_closed !== true && globalVars.netherton_ko !== true",
+     ["globalVars.named_on_evidence !== true && globalVars.mole_identified !== true && globalVars.netherton_hostile === true && globalVars.netherton_ko !== true && globalVars.found_badge_audit !== true",
+      { "found_access_logs" => true, "database_theft_understood" => true }, nil,
+      "Root. A terminal and a time, no face: crypto-lab-04, D-2 10:38, forty-seven minutes. The Director won't hear it from you now. Get the door audit from the archives and read it to me."],
+     ["globalVars.named_on_evidence !== true && globalVars.mole_identified !== true && globalVars.netherton_hostile === true && globalVars.netherton_ko !== true && globalVars.found_badge_audit === true",
+      { "found_access_logs" => true, "database_theft_understood" => true }, nil,
+      "Root. A terminal and a time, no face: crypto-lab-04, D-2 10:38, forty-seven minutes. The Director won't hear it from you now, so read me the door audit instead. Call me when you've got it."],
+     ["globalVars.named_on_evidence !== true && globalVars.mole_identified !== true && globalVars.audit_closed !== true && globalVars.netherton_ko !== true && globalVars.netherton_hostile !== true",
       { "found_access_logs" => true, "database_theft_understood" => true }, nil,
       "Root. A terminal and a time, no face: crypto-lab-04, D-2 10:38, forty-seven minutes. The root file says it was for our threat database. Who was behind that lab door?"]
    ].each do |cond, sets, task, msg| %>
@@ -787,6 +806,13 @@ CREDITS
               "sendTimedMessage": { "delay": 2000, "message": "That's the door audit. With the Director on his floor, you read it to me: the door against the minute the plan was opened. Call me when you've got both." }
             },
             {
+              "_comment": "PASS 5 (design C1, D1): the same for a Director who was punched and left standing (hostile, won't talk).",
+              "eventPattern": "global_variable_changed:found_badge_audit",
+              "condition": "value === true && globalVars.netherton_hostile === true && globalVars.netherton_ko !== true && globalVars.mole_identified !== true",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 2000, "message": "That's the door audit. The Director won't hear it from you, so read it to me: the door against the minute the plan was opened. Call when you've got both." }
+            },
+            {
               "eventPattern": "global_variable_changed:mole_identified",
               "condition": "value === true && globalVars.all_flags_submitted !== true",
               "onceOnly": true,
@@ -811,12 +837,22 @@ CREDITS
               "sendTimedMessage": { "delay": <%= ev == 'all_flags_submitted' ? 6000 : 10000 %>, "message": "Whole chain's in. Security have walked him down to the interrogation room. The Director's still on his floor, so it's your call. Suite code's in his safe." }
             },
 <% end %>
+<%# Design C1 (D1): "Give him the person" is wrong with the Director down or
+    hostile (the reading comes to HaX then), so split three ways, &&-only. %>
             {
               "eventPattern": "global_variable_changed:all_flags_submitted",
-              "condition": "value === true && globalVars.mole_identified !== true",
+              "condition": "value === true && globalVars.mole_identified !== true && globalVars.netherton_ko !== true && globalVars.netherton_hostile !== true",
               "onceOnly": true,
               "sendTimedMessage": { "delay": 6000, "message": "Whole chain's in: a terminal, a time, an account. The Director won't walk anyone anywhere on a login. Give him the person. Door audit." }
             },
+<% ["globalVars.netherton_ko === true", "globalVars.netherton_hostile === true && globalVars.netherton_ko !== true"].each do |who| %>
+            {
+              "eventPattern": "global_variable_changed:all_flags_submitted",
+              "condition": "value === true && globalVars.mole_identified !== true && <%= who %>",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 6000, "message": "Whole chain's in: a terminal, a time, an account. Nobody walks anyone anywhere on a login. Read me the door audit and give me the person." }
+            },
+<% end %>
             {
               "_comment": "KO -- Director Netherton. A KO'd NPC drops his itemsHeld (npc-hostile.js:139, :258-261), so his physical keycard lands beside him (PASS 4: he never hands it over; the player clones it). The badge printer stays the other route.",
               "eventPattern": "npc_ko:director_netherton",
@@ -857,7 +893,15 @@ CREDITS
     Puzzle chains C2 (N3): in m08 hostility never clears (no #hostile:false,
     no influence recovery) and survives a reload, and clicking a hostile NPC
     jabs even with the open hand. So the texts say the NPC won't talk again;
-    for the Director, the KO route (his card off the floor) is what's left. %>
+    for the Director, the KO route (his card off the floor) is what's left.
+    Design C1 (D1, m1, m7): the first text also latches <npc>_hostile, so the
+    mission can treat "punched but standing" like a KO where a conversation is
+    needed: the Director (HaX's ladder and reading, flag 4; he also counts as
+    briefed, as on a KO), the two lab-door witnesses (step 4 of the reading),
+    Phantom (no sight challenge) and the off-duty agent (no locker catch).
+    A reload's restored hostility needs no latch: the global is saved. The
+    Director's second text names the naming before he is named (D1b). %>
+<% hostile_latch = { "director_netherton" => "netherton_hostile", "agent_cipher" => "cipher_hostile", "agent_phantom" => "phantom_hostile", "agent_nightshade" => "nightshade_hostile", "background_agent" => "offduty_agent_hostile" } %>
 <% [["director_netherton", "The Director's coming for you."],
     ["agent_cipher", "Cipher's swinging."],
     ["agent_phantom", "Phantom's coming at you."],
@@ -869,14 +913,32 @@ CREDITS
               "eventPattern": "npc_hostile_state_changed",
               "condition": "data.npcId === '<%= id %>' && data.isHostile === true && data.restored !== true",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 1000, "message": <%= (opener + " Q switches to fists (again for a harder punch), then E or click when he's in front. Face him squarely.").then { |t| id == "background_analyst" ? t.sub("when he's", "when she's").sub("Face him", "Face her") : t }.to_json %> }
+<% if id == "director_netherton" %>              "setGlobal": { "netherton_hostile": true, "brief_taken": true },
+              "completeTask": "brief_with_netherton",
+<% elsif hostile_latch[id] %>              "setGlobal": { "<%= hostile_latch[id] %>": true },
+<% end %>              "sendTimedMessage": { "delay": 1000, "message": <%= (opener + " Q switches to fists (again for a harder punch), then E or click when he's in front. Face him squarely.").then { |t| id == "background_analyst" ? t.sub("when he's", "when she's").sub("Face him", "Face her") : t }.to_json %> }
             },
+<% if id == "director_netherton" %>
+            {
+              "eventPattern": "npc_hostile_state_changed",
+              "condition": "data.npcId === 'director_netherton' && data.isHostile === true && data.restored !== true && globalVars.mole_identified !== true",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 5500, "message": "He won't talk again tonight, so bring me the door audit instead. Keep away: he's slower. Keep pressing Q until the open hand shows to walk by clicking." }
+            },
+            {
+              "eventPattern": "npc_hostile_state_changed",
+              "condition": "data.npcId === 'director_netherton' && data.isHostile === true && data.restored !== true && globalVars.mole_identified === true",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 5500, "message": "He won't talk to you again tonight. Put him down for his card, or keep away: he's slower. Keep pressing Q until the open hand shows to walk by clicking." }
+            },
+<% else %>
             {
               "eventPattern": "npc_hostile_state_changed",
               "condition": "data.npcId === '<%= id %>' && data.isHostile === true && data.restored !== true",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 5500, "message": <%= (id == "director_netherton" ? "He won't talk to you again tonight. Put him down for his card, or keep away: he's slower. Keep pressing Q until the open hand shows to walk by clicking." : (id == "background_analyst" ? "She won't talk to you again tonight. Put her down or keep away: she's slower than you. " : "He won't talk to you again tonight. Put him down or keep away: he's slower than you. ") + "Keep pressing Q until the open hand shows to walk by clicking.").to_json %> }
+              "sendTimedMessage": { "delay": 5500, "message": <%= ((id == "background_analyst" ? "She won't talk to you again tonight. Put her down or keep away: she's slower than you. " : "He won't talk to you again tonight. Put him down or keep away: he's slower than you. ") + "Keep pressing Q until the open hand shows to walk by clicking.").to_json %> }
             },
+<% end %>
 <% end %>
             {
               "eventPattern": "npc_hostile_state_changed",
@@ -967,7 +1029,7 @@ CREDITS
 <%   end %>
             {
               "eventPattern": "global_variable_changed:<%= n %>_seen",
-              "condition": "value === true && globalVars.brief_taken === true && globalVars.cipher_seen === true && globalVars.phantom_seen === true && globalVars.nightshade_seen === true && globalVars.netherton_card_taken !== true && globalVars.badge_cloned !== true && globalVars.netherton_ko !== true && globalVars.access_nudge_sent !== true",
+              "condition": "value === true && globalVars.brief_taken === true && globalVars.cipher_seen === true && globalVars.phantom_seen === true && globalVars.nightshade_seen === true && globalVars.netherton_card_taken !== true && globalVars.badge_cloned !== true && globalVars.netherton_ko !== true && globalVars.netherton_hostile !== true && globalVars.access_nudge_sent !== true",
               "onceOnly": true,
               "setGlobal": { "access_nudge_sent": true },
               "sendTimedMessage": { "delay": 3000, "message": "That's all three. Now go and see the Director about the server room. Take the cloner, and give it time: his card has proper keys on it." }
@@ -1010,6 +1072,32 @@ CREDITS
               "setGlobal": { "nightshade_tipped_off": true },
               "sendTimedMessage": { "delay": 2000, "message": "An agent out cold in the break room. That's round the floor by midnight, and if one of those lockers is his, so is he." }
             },
+<%# Design C1 (m6): the junior analyst and ATHENA's avatar, the same way as
+    the off-duty agent: before the naming, a KO tips the mole off (once, if
+    nothing has yet); the credits and the debrief read analyst_ko and
+    athena_ko (globalVarOnKO) whenever it happens. %>
+            {
+              "eventPattern": "npc_ko:background_analyst",
+              "condition": "globalVars.mole_identified !== true && globalVars.nightshade_tipped_off !== true",
+              "onceOnly": true,
+              "setGlobal": { "nightshade_tipped_off": true },
+              "sendTimedMessage": { "delay": 2000, "message": "You've put a junior analyst on the ops floor out cold. The whole floor saw it. If the mole's listening, and he is, he knows we're looking." }
+            },
+            {
+              "eventPattern": "npc_ko:receptionist_ai",
+              "condition": "globalVars.mole_identified !== true && globalVars.nightshade_tipped_off !== true",
+              "onceOnly": true,
+              "setGlobal": { "nightshade_tipped_off": true },
+              "sendTimedMessage": { "delay": 2000, "message": "ATHENA's avatar is down, and she logged every second of it. Half this building reads her logs. If the mole's one of them, he knows we're looking." }
+            },
+<%# Design C1 (m5): a short brief named no rooms. One pointer as the
+    Director's door closes, only if no suspect has been seen yet. %>
+            {
+              "eventPattern": "conversation_closed:director_netherton",
+              "condition": "globalVars.brief_taken === true && globalVars.cipher_seen !== true && globalVars.phantom_seen !== true && globalVars.nightshade_seen !== true",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 2000, "message": "Three names, three rooms. Cipher on the ops floor, Phantom north of it, Nightshade in the Crypto Lab. See all three before the server room." }
+            },
 <%# PASS 5 (alignment C2, J4): the go-bag reads as any agent's holdall until
     he is named. Once he is named, a player who read it earlier hears what was
     in the lining (go_bag_lining_known, latched on receptionist_ai); one who
@@ -1030,12 +1118,9 @@ CREDITS
               "setGlobal": { "recon_guide_offered": true, "server_room_entered": true },
               "sendTimedMessage": { "delay": 2500, "message": "You're on their internal network now. Map it before you touch anything. Want the recon and network mapping field guide? Ask me on the line." }
             },
-            {
-              "_comment": "PASS 2 review: marks the archives as visited, for the brief-gated read_the_archives task (lesson 27).",
-              "eventPattern": "room_entered:security_archives",
-              "onceOnly": true,
-              "setGlobal": { "archives_entered": true }
-            },
+<%# Design C1 (m2): the archives_entered latch (room_entered:security_archives)
+    is gone: read_the_archives now completes on found_badge_audit, and nothing
+    else read it. %>
             {
               "_comment": "Scanning/exploitation guide -- when the player first interacts with the VM launcher. PASS 4 (fix 19): the vulnerability-analysis guide is offered here too, before the exploit, not after it.",
               "eventPattern": "object_interacted",
@@ -1418,6 +1503,8 @@ CREDITS
           <%# PASS 5 (puzzle chains C1, m2): a punch makes any NPC hostile; without
               this block he chased at 145 for 10 a hit. Range as m06 Kemal / m07 Hollis. %>
           "behavior": { "hostile": { "chaseSpeed": 70, "attackDamage": 3, "pauseToAttack": true } },
+          <%# Design C1 (m6): a KO is on the record and, before the naming, tips the mole off (HaX). %>
+          "globalVarOnKO": "analyst_ko",
           "observations": "A junior analyst monitoring threat feeds she has read four times without seeing."
         }
       ],
@@ -1483,6 +1570,22 @@ CREDITS
               this block he chased at 145 for 10 a hit. Range as m06 Kemal / m07 Hollis. %>
           "behavior": { "hostile": { "chaseSpeed": 90, "attackDamage": 4, "pauseToAttack": true } },
           "globalVarOnKO": "phantom_ko",
+          <%# Design C1 (m1): the sight challenge (m04's guard, m07's Hollis;
+              npc-sight-challenge.js). His observation says he clocks you the
+              second you enter, so he opens his own interview as he spots you
+              ("The Director's own bloodhound. Sit."), once, after the brief.
+              Not drawn: he's a suspect, not a guard to sneak past. Not on
+              Nightshade: a challenge only the mole makes would be an oracle. %>
+          "los": {
+            "enabled": true,
+            "range": 150,
+            "angle": 120,
+            "challengeOnSight": {
+              "cooldown": 20000,
+              "requireGlobal": "brief_taken",
+              "skipIfGlobal": ["phantom_interviewed", "phantom_ko", "phantom_hostile"]
+            }
+          },
           <%# PASS 5 (alignment C2, J4): his locker key, as Nightshade's: he hands it
               over when asked after the door-audit beat (#give_item); a KO drops it. %>
           "itemsHeld": [
@@ -1500,6 +1603,13 @@ CREDITS
           ],
           <%# PASS 2 review (lesson 27): the interview task completes only once the brief is taken. %>
           "eventMappings": [
+            {
+              "eventPattern": "player_spotted:agent_phantom",
+              "targetKnot": "start",
+              "conversationMode": "person-chat",
+              "onceOnly": true,
+              "cooldown": 0
+            },
             {
               "eventPattern": "global_variable_changed:phantom_interviewed",
               "condition": "value === true && globalVars.brief_taken === true",
@@ -1934,14 +2044,17 @@ CREDITS
               mole off (C2, N2). With any key in hand there is no catch either:
               keys go to the key minigame, which never runs the gate unless the
               player chooses "Switch to Lockpicking" (unlock-system.js,
-              minigame-starters.js), so the owner's key opens his locker quietly. %>
+              minigame-starters.js), so the owner's key opens his locker quietly.
+              Design C1 (m7): nor while he is hostile (offduty_agent_hostile, set
+              with HaX's controls text): a man mid-fight doesn't stop to say he
+              saw nothing. %>
           "los": { "enabled": true, "range": 160, "angle": 360, "visualize": true },
           "eventMappings": [
             {
               "eventPattern": "lockpick_used_in_view",
               "targetKnot": "on_locker_picked",
               "conversationMode": "person-chat",
-              "condition": "!globalVars.mole_identified",
+              "condition": "!globalVars.mole_identified && !globalVars.offduty_agent_hostile",
               "onceOnly": true
             }
           ],
@@ -2199,7 +2312,6 @@ CREDITS
     "briefing_played": false,
     "brief_taken": false,
     "server_room_entered": false,
-    "archives_entered": false,
     "mission_complete": false,
     "start_debrief_cutscene": false,
     "debrief_played": false,
@@ -2304,12 +2416,21 @@ CREDITS
     "nightshade_tipped_off": false,
     "locker_seen_picked": false,
     "offduty_agent_ko": false,
+    "analyst_ko": false,
+    "athena_ko": false,
     "nightshade_tidied": false,
     "triple_agent_first_payment": false,
 
 <%# --- PASS 5 alignment round 2: the misread warning, the go-bag lining ------ %>
     "audit_warned": false,
     "go_bag_lining_known": false,
-    "go_bag_read_named": false
+    "go_bag_read_named": false,
+
+<%# --- Design C1: punched but standing (hostile for good; latched with HaX's controls text) --- %>
+    "netherton_hostile": false,
+    "cipher_hostile": false,
+    "phantom_hostile": false,
+    "nightshade_hostile": false,
+    "offduty_agent_hostile": false
   }
 }

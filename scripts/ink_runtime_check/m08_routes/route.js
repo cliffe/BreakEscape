@@ -20,7 +20,7 @@
 //   {"expect": {"global": value, ...}}       assert globals
 //   {"maxRun": 9}                            assert the longest run without a choice so far is <= 9
 //   {"tasks": {"task_id": "completed"|"unlocked"|"open"}}  assert task state as the mappings left it
-//   {"music": "trigger", "expect": "playlist"}  which playlist the music events pick now
+//   {"music": "trigger", "expect": "playlist"}  which playlist the music events pick now ("expect": null: none fires)
 //   {"credits": true}                        print the credits lines whose conditions hold now
 //   {"said": [...]} / {"notSaid": [...]}     substrings of lines, choices and texts since the last check
 //   {"backstops": {"expect": ["re-emit"|"hear"|"office-card"]}}  room-entry mappings that would fire
@@ -226,7 +226,8 @@ for (const step of route.steps) {
   }
   if (step.music) {
     const hits = (scenario.music.events || []).filter(ev => ev.trigger === step.music && evalCond(ev.condition, { value: step.value, isHostile: step.isHostile, restored: step.restored })).map(ev => ev.playlist);
-    const ok = step.expect === undefined ? true : (hits.length === 1 && hits[0] === step.expect);
+    // Design C1 (m3): "expect": null asserts that no music event fires.
+    const ok = step.expect === undefined ? true : step.expect === null ? hits.length === 0 : (hits.length === 1 && hits[0] === step.expect);
     if (!ok) fail();
     out(`   [${ok ? 'PASS' : 'FAIL'}] music on ${step.music}: [${hits.join(', ')}]${step.expect !== undefined ? ` (expected ${step.expect})` : ''}`);
     continue;

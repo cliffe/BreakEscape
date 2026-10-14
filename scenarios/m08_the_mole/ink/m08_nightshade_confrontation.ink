@@ -44,6 +44,8 @@ VAR triple_agent_first_payment = false
 // Puzzle chains C2 (N1, N2): why he tidied, when no accusation did it.
 VAR locker_seen_picked = false // Synced scenario global: seen picking a locker
 VAR offduty_agent_ko = false // Synced scenario global: the off-duty agent knocked out
+VAR analyst_ko = false // Synced scenario global (design C1, m6): the junior analyst knocked out
+VAR athena_ko = false // Synced scenario global (design C1, m6): ATHENA's avatar knocked out
 // PASS 5 (alignment C2, J2, J4): an accusation of either innocent man tips him
 // off too; the go-bag's contents are known only once he is named.
 VAR accused_cipher = false
@@ -95,6 +97,12 @@ Agent 0x47 'Nightshade': I could have scrubbed every trace years ago. You're won
     Agent 0x47 'Nightshade': Somebody saw you at the lockers in the break room. On this floor that reaches me before the kettle boils. So I tidied. Not well enough, it seems.
 - offduty_agent_ko and nightshade_tidied:
     Agent 0x47 'Nightshade': You left a man out cold in the break room. That was round the building before he woke. So I tidied. Not well enough, it seems.
+// Design C1 (m6): the analyst's and ATHENA's KOs tip him off the same way.
+// If several KOs happened, the order can't be told; the break room comes first.
+- analyst_ko and nightshade_tidied:
+    Agent 0x47 'Nightshade': You knocked a junior analyst out at her desk, in front of the whole floor. So I tidied. Not well enough, it seems.
+- athena_ko and nightshade_tidied:
+    Agent 0x47 'Nightshade': You put ATHENA's avatar on the floor, and ATHENA logs to everyone with planning access. Including me. So I tidied. Not well enough, it seems.
 - nightshade_tidied:
     Agent 0x47 'Nightshade': The Director went asking questions on my floor. I can count. So I tidied. Not well enough, it seems.
 }

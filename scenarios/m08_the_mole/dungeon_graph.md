@@ -21,7 +21,7 @@ Nine days ago four ENTROPY operations went live inside the same minute, and the 
 
 5 hops through story aims — minimum mandatory sequence to reach mission completion:
 
-**Report In And Take The Brief → Get Into The Internal Repository → Correlate The Leak Timeline → + → Confront The Mole → Close The Investigation**
+**Report In And Take The Brief → Get Into The Internal Repository → Follow The Account To Root → + → Confront The Mole → Close The Investigation**
 
 ## How to Read These Diagrams
 
@@ -245,7 +245,7 @@ flowchart TD
   aim_take_the_brief{{"Report In And Take The Brief"}}
   aim_work_the_suspects{{"Work The Three Suspects"}}
   aim_get_into_the_repo{{"Get Into The Internal Repository"}}
-  aim_correlate_the_evidence{{"Correlate The Leak Timeline"}}
+  aim_correlate_the_evidence{{"Follow The Account To Root"}}
   aim_confront_the_mole{{"Confront The Mole"}}
   aim_close_the_investigation{{"Close The Investigation"}}
   aim_andgate_confront_the_mole((" + "))
@@ -350,7 +350,7 @@ flowchart TD
   aim_take_the_brief{{"Report In And Take The Brief"}}
   aim_work_the_suspects{{"Work The Three Suspects"}}
   aim_get_into_the_repo{{"Get Into The Internal Repository"}}
-  aim_correlate_the_evidence{{"Correlate The Leak Timeline"}}
+  aim_correlate_the_evidence{{"Follow The Account To Root"}}
   aim_confront_the_mole{{"Confront The Mole"}}
   aim_close_the_investigation{{"Close The Investigation"}}
   aim_andgate_confront_the_mole((" + "))

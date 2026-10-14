@@ -1,0 +1,30 @@
+{
+"steps": [
+{ "note": "R20 (design C1, m6). ATHENA's reception avatar knocked out first, before anything else has tipped the mole off: HaX's text, the tip-off and the tidy, Nightshade's ATHENA reason in the confrontation." },
+{ "talk": "briefing" }, { "set": { "briefing_played": true } },
+{ "talk": "netherton", "picks": ["I'm ready"] },
+{ "event": "npc_hostile_state_changed", "data": { "npcId": "receptionist_ai", "isHostile": true } },
+{ "ko": "receptionist_ai" },
+{ "expect": { "athena_ko": true, "nightshade_tipped_off": true } },
+{ "said": ["ATHENA's avatar is down, and she logged every second of it"] },
+{ "enter": "operations_floor" },
+{ "expect": { "nightshade_tidied": true } },
+{ "talk": "cipher", "picks": ["That's all"] },
+{ "talk": "phantom", "picks": ["We'll talk"] },
+{ "talk": "nightshade", "picks": ["We're done"] },
+{ "talk": "netherton", "picks": ["I'll need access", "Step up beside him", "Understood"] },
+{ "read": "password_sticky_note" },
+{ "enter": "security_archives" },
+{ "read": "badge_audit_printout" },
+{ "read": "timeline_reconstruction" },
+{ "enter": "server_room" },
+{ "flag": 1 }, { "flag": 2 }, { "flag": 3 }, { "flag": 4 },
+{ "talk": "nightshade", "picks": ["door log has you", "We're done"] },
+{ "talk": "netherton", "picks": ["I can name the leak", "10:38", "Nightshade.", "out of the lab at 10:32", "confirm their own rows", "I'm ready"] },
+{ "enter": "interrogation_room" },
+{ "talk": "confront", "picks": ["Tell me why", "What happens to you now", "No deals"] },
+{ "said": ["You put ATHENA's avatar on the floor"], "notSaid": ["The Director went asking questions on my floor"] },
+{ "talk": "debrief", "picks": ["He's the crime", "code server", "Nothing more"] },
+{ "said": ["ATHENA logged you putting her reception avatar on the floor"], "notSaid": ["junior analyst"] }
+]
+}

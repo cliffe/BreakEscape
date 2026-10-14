@@ -64,6 +64,10 @@ VAR nightshade_tipped_off = false // Synced scenario global: three misreads befo
 // HaX's ladder), and the relay line after the whole chain is in.
 VAR audit_warned = false // Synced scenario global: he has warned the player once
 VAR all_flags_submitted = false // Synced scenario global
+// Design C1 (D1): a lab-door witness punched and left standing won't talk, so
+// can't confirm his row. Synced scenario globals.
+VAR cipher_hostile = false
+VAR nightshade_hostile = false
 
 === start ===
 { met: -> return_visit }
@@ -147,7 +151,7 @@ Director Magnus Netherton: Already? Say it. Not for the file -- for me. Who is y
 + [Phantom. The questions, the absences.]
     ~ suspect_theory = "phantom"
     Director Magnus Netherton: A man asking too many questions is either the leak or the only other person hunting it.
-    Director Magnus Netherton: I have not decided which, and neither, yet, have you. Bring me the logs. #set_global:suspect_theory:phantom
+    Director Magnus Netherton: I have not decided which, and neither, yet, have you. Bring me the door log. #set_global:suspect_theory:phantom
     -> hub
 + [Nightshade. It's the man with no marks.]
     ~ suspect_theory = "nightshade"
@@ -240,8 +244,9 @@ Director Magnus Netherton: Then don't give me a suspect. Give me a reading.
 }
 ~ audit_skip_step4 = false
 { not (cipher_audit_confirmed or nightshade_audit_confirmed):
-    { cipher_ko and nightshade_ko:
+    { (cipher_ko or cipher_hostile) and (nightshade_ko or nightshade_hostile):
         // R3-m3: both men on the audit are down; nobody can confirm it. Three steps.
+        // Design C1 (D1): or hostile (punched, standing, won't talk): the same.
         ~ audit_skip_step4 = true
     - else:
         // PASS 5 (puzzle chains C1, m1): "the men who went through that lab door", so
