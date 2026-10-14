@@ -33,7 +33,7 @@
 { "enter": "server_room" },
 { "flag": 1 }, { "flag": 2 }, { "flag": 3 }, { "flag": 4 },
 { "enter": "interrogation_room" },
-{ "talk": "confront", "picks": ["Tell me why", "flight to Montana", "What happens to you now", "No deals"] },
+{ "talk": "confront", "picks": ["Face him", "Tell me why", "flight to Montana", "What happens to you now", "No deals"] },
 { "said": ["By then you'd been through my locker"] },
 { "notSaid": ["So I tidied"] },
 { "talk": "debrief", "picks": ["He's the crime", "code server", "Nothing more"] },

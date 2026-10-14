@@ -62,7 +62,7 @@ Evidence: `build_evidence/lighting_c<N>/{base,named,confront,after,triple}/` wit
 | m2 | minor | Evidence-wall glow lit the floor strip, not the screen | **Fixed (c2)**, then deleted in c3 (n1) |
 | m3 | minor | Disposition glow invisible in a lit room | **Fixed:** removed |
 | m4 | minor | `{intensity:0}` fallback on the lamp was a no-op | **Fixed:** removed |
-| m5 | minor | Door sign "Recording In Progress" vs a lamp that is off | **Deferred:** a room field outside the lighting remit; L1 |
+| m5 | minor | Door sign "Recording In Progress" vs a lamp that is off | **Deferred:** a room field outside the lighting remit; L1. Done in the blind run A fix round: the sign reads "Interrogation Suite" and the lamp is the scenario object `recording_lamp` with a lit face during the confrontation. |
 | m6 | minor | Director's window glow and second light barely showed | **Fixed:** removed |
 | m7 | minor | Intel `hq_console` glow a no-op | **Fixed:** removed |
 | m8 | minor | `hq_rack1` gets no LEDs (engine-only) | **Deferred:** E14 in `DECISIONS_PENDING.md` |

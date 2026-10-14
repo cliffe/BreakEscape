@@ -42,7 +42,7 @@
 { "read": "interrogation_suite_code" },
 { "unlocked": ["confront_the_mole"] },
 { "enter": "interrogation_room" },
-{ "talk": "confront", "picks": ["Tell me why", "What happens to you now", "No deals"] },
+{ "talk": "confront", "picks": ["Face him", "Tell me why", "What happens to you now", "No deals"] },
 { "expect": { "fate_decided": true } },
 { "talk": "debrief", "picks": ["He's the crime", "code server", "Nothing more"] },
 { "said": ["You struck me in my own office tonight", "because after you struck me I would not have you in the room", "The name reached me secondhand"], "notSaid": ["My jaw is fine", "while I was on my office floor"] },

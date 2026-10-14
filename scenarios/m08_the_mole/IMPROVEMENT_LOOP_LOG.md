@@ -672,3 +672,59 @@ Cycle 2 review 0/0/10, fixed (e8d10bcf). Browser check games 2482/2495/2501 (`PA
 
 ### Stage 4 room lighting, cycles 1-6: CLOSED (2026-10-14)
 Full record: `LIGHTING_PLAN.md`. Night on Level Red (`#b8bfce`); six rooms on, three motion; the interrogation suite follows the story by room variant (dark before the confrontation; lit pool on the subject, RECORDING lamp and tally lights red during it; house lights after the fate), with evidence-wall and disposition faces per state (`spriteVariants`). Cycle 1 review (fresh Opus): 0 blockers, 2 majors (lamp face can't follow its light; pool missed Nightshade), 10 minors; 8 fixed, 1 in part, 2 deferred (door sign with L1, rack LEDs E14), 1 left (m10, tour-only notes). Cycle 2: 0/0/3 (evidence-wall glow singled out the middle anonymous card; lamp spill; no-op dark ambient), all fixed. Cycle 3: 0/0/0. Cycle 4 browser check (game 2508): start modes, motion strike, closed/awaiting/handover faces, recording emitters, variants hold across two reloads (by eval; one screenshot after reload); the named face was reloaded in the cycle 5 re-check (game 2509). Cycle 5 closing review (fresh Opus): 1 blocker (no base `sprite` on the two screens, so a suite loaded before the naming swapped the disposition screen to the generic smartscreen at `mole_identified`), 6 record minors; all fixed, B1 re-checked in the failing order (game 2509, 6/6 pass). Cycle 6 confirmation review (fresh Opus): 0/0/4 record wording, fixed; closed. Erb edits: lighting blocks, two `spriteVariants` and their base `sprite` fields only. New pending: L1 (RECORDING lamp as a scenario object, door sign), E14 (hq_rack LEDs).
+
+### Phase 8 playtests: blind run A fixes (2026-10-14)
+Source: `PASS5_BLIND_STRUGGLE_A.md` (game 2510; 0 blockers, 0 majors, 2 moderate, 5 minors, 3 harness, 1 info) and the orchestrator's list. No browser session in this round; a Sonnet check follows.
+
+| # | Severity | Finding | Outcome |
+|---|---|---|---|
+| A1 | moderate | "Bring me the account" with the auth log still `[REDACTED]` | fixed: Nightshade, the Director (two lines) and HaX now ask for root and its logs, never an account; Option B kept. U1 addendum 4: does root show an account name in-game? Needs checking against SecGen by the user |
+| A2 | moderate | Badge 0x3C inside the lab door all window, never ruled out | fixed: the audit row reads `0x3C OFF-SHIFT (break room; no planning clearance)`, and the off-duty agent's testimony now says so in his own words. Neither names the mole |
+| A3 | minor | HaX's one-word "Kettle." read as the passphrase | fixed: "Try the break room, round the coffee machine." (where, not what) |
+| A4 | minor | The confrontation starts on entry, before the wall can be read | fixed mission-side: the scene opens on a choice, "(Read the wall first.)" (narrated recap: the four box steps, Okafor's file if read, his audit row ringed) or "(Face him.)". Event mappings take no delay (E15) |
+| A5 | minor | Reload replays the title and Mission Brief | not mission-side: `on_resume` is the m01 standard; noted against E10 (respawn) |
+| A6 | minor | Early accusations' cost unseen before the choice | fixed: all three choices read "[I think it's you, X. (Out loud. The whole floor will hear.)]", the m05/m07 parenthesis convention |
+| A7 | minor | Audit-trust question: "the badge system printed it" also reads as sound | fixed by rewording, reasoning below |
+| A8 | minor (orchestrator) | Early giveaways: ATHENA's PIN-device line, Nightshade's empty dossier, the psych file as the only motive file | fixed: balanced, below |
+| L1 | lighting | RECORDING lamp as a scenario object; door sign | done: `recording_lamp`, `as-type:hq_recording`, base `hq_recording1`, `spriteVariants` to `hq_recording_on1` on the confrontation condition; door sign "Interrogation Suite" |
+| H8-H10, I11 | harness / info | tool retries, turn cap, board misreport; credits VM lines exercised not earned | no mission change (harness; VM lines are U1) |
+
+**A7 reasoning.** The Director's question is why a suspect's own printout can be trusted. "The badge system printed it. Nobody typed those rows" asserts the thing in doubt: the player can't see that nobody typed or dropped rows, only that it looks like a system printout, and the paper came off Phantom's printer from Phantom's query. "The people on it confirm their own rows" is independent corroboration, and the step only opens after one of the lab-door men has confirmed his row. Accepting both would make the step a coin toss; rewording the wrong one so it plainly rests on appearance keeps one right answer. New option: "[It looks like a straight badge-system printout.]"; it now has its own reply (it used to fall to the generic "Somebody chose the query, Agent, and the window."): "Paper says what the man at the printer wants it to. Who else will swear to it?", which points at the right answer without giving it.
+
+**A8 balance.** ATHENA's PIN-device line stays (it explains why the cracker isn't in the kit) and is followed by one naming kit signed out to the other two. Nightshade's dossier flag "none on file" is now "a PIN device signed out since St. Catherine's, never returned. In the lab most nights, alone.", so each of the three has a flag; the Director's instinct choice for him changed to match. The safe now holds a sealed file on each suspect: Okafor's evaluation (unchanged, still sets `found_nightshade_profile`), a vetting query on Cipher (annex badge outside the chain, night token sign-outs, deferred by the Director) and a standards referral on Phantom (absences off the roster, closed files outside remit, an undeclared foreign liaison meeting, held by the Director). Each is later explained by its subject's existing dialogue and locker (Cipher's unrostered key-schedule project; Phantom's off-book hunt and pending reprimand), so neither new file needs new ink.
+
+Spoken lines changed (old → new), for the TTS stage:
+
+ATHENA, briefing (`m08_opening_briefing.ink`):
+- new, after the PIN-device line: "Read nothing into it. Agent 0x23 has a hardware token out tonight, and Agent 0x88 a travel pack. Everyone on the planning list keeps something they shouldn't."
+- "You are wondering what happened here. Portland happened. Four sites in one night, and one team to send." / "Then someone read the after-action report and realised the enemy had the deployment before we did." → "You are wondering what happened here. Portland happened. Four sites in one night, one team to send, and an enemy who had the deployment before we did." (keeps the briefing at 9 lines)
+
+Nightshade, lab (`m08_suspect_nightshade.ink`):
+- "Yes. {I told you: I'm always here.|I'm always here.} You've proved I keep long hours, 0x00. Bring me the account." → "Yes, that row's right. {I told you: I'm always here.|I'm always here.} You've proved I keep long hours, 0x00." / "A door says who walked in. It doesn't say what anyone did at the bench."
+- choice (not voiced): "[I think it's you, Nightshade.]" → "[I think it's you, Nightshade. (Out loud. The whole floor will hear.)]"; the same for Cipher and Phantom.
+
+Director Netherton (`m08_director_netherton.ink`):
+- "People will notice. If he did not know we were looking, he will soon. Bring me the account, and I will put the name to it." → "People will notice. If he did not know we were looking, he will soon. Get root on the box. When its logs come in, I will name him."
+- "A door is not an account, and a court will want both. Get me the account from the box." → "A door is not a login, and a court will want both. Get root on the box and bring me its logs."
+- choice (not voiced): "[Nightshade. It's the man with no marks.]" → "[Nightshade. Too calm, and he never gave the PIN device back.]"
+- "An instinct is not evidence. And the man with nothing on his file is the second-easiest man in this building to suspect." → "An instinct is not evidence. Calm is a temperament, and half this floor keeps kit it should have returned."
+- choice (not voiced): "[The badge system printed it. Nobody typed those rows.]" → "[It looks like a straight badge-system printout.]"
+- new reply to it: "Paper says what the man at the printer wants it to. Who else will swear to it?" (was the generic "Somebody chose the query, Agent, and the window."; that `else` line is now reached by no answer and stays only as a guard)
+
+HaX, phone hub (`m08_phone_agent_0x99.ink`):
+- "Security Archives, south of the ops floor. Facilities set the passphrase, and facilities write things down. Kettle." → "... and facilities write things down. Try the break room, round the coffee machine."
+- "He has. He'll put the name to it himself once the box gives him the account. Get root." → "... once the box gives him its logs. Get root."
+
+Off-duty agent (`m08_background_agent.ink`), new testimony line: "And before you ask, I'm off-shift with no planning clearance. I couldn't open that share if I wanted to."
+
+Nightshade, confrontation (`m08_nightshade_confrontation.ink`), new opening beat:
+- Narrator "Behind him the evidence wall is lit. He follows your eyes to it and waits." then choices "[(Read the wall first.)]" / "[(Face him.)]".
+- on the wall: Narrator "The case runs down the wall in order. The repository, opened with no password. Credentials left in its history. Mail to the Architect. Root, and forty-seven minutes on the Portland plan from a Crypto Lab terminal."; if Okafor's file was read, "Under it, Okafor's evaluation, with the Director's seal across the recommendation."; "Pinned beside it, the door audit. One row ringed in red: 0x47, in at 10:15, out at 11:43."; "Nightshade lets you finish. He has read it already."; choice "[(Turn back to him.)]". The rest of the old `start` is now knot `opening`, unchanged.
+
+Scenario text (not voiced): audit row `07:52 IN 0x3C OFF-SHIFT (break room; no planning clearance)`; Nightshade's dossier flag (above); two new safe files `cipher_vetting_query`, `phantom_standards_referral`; `recording_lamp`; door sign "Interrogation Suite". Prop builder: `make_hq_props.py` `recording_lamp` docstring/comment only (no art change; `hq_recording_on1` already existed).
+
+Routes: every confrontation talk now picks "Face him" first (r1 "Read the wall", "Turn back"); r1's "Get me the account from the box" assertion → "Get root on the box and bring me its logs". New r26 (blind run A fixes) asserts each new line and choice, the dossier and audit text, the trust reply and misread, and the wall recap with Okafor's file.
+
+Checks (after the last edit): `scripts/compile-ink.sh m08_the_mole` 12/12. Routes 26/26 "all expectations met", 0 FAILs, longest run 9 on every route (the briefing; the confrontation opening is now 8 at most). dialoguelint: no findings (one line-len and one "however" transition on the first wordings, fixed). reopencheck: 0 problems (m08 phone 1800 reopens). loopcheck 200 steps x 6 strategies on ten state sets across the eight changed files (confrontation with Okafor's file and with an accusation tidy, Nightshade with the audit, Cipher, Phantom, Director at the reading and at the second misread, phone, briefing, off-duty agent): no runtime errors. Validator (`--no-graph`, with ink): schema valid, all ink valid, lint clean, only the known warnings. `check_door_alignment.py`: all OK. `slot_audit.py`: 0 problems, `recording_lamp` on `hq_recording1` at 70,24.
+
+Owed at the Sonnet browser check: the lamp's unlit face before the confrontation, lit during it, dark after the fate (and after a reload in each state); the door sign; the wall beat both ways; the safe's three files; the reworded accusation choices fit their buttons.

@@ -47,7 +47,7 @@
 { "read": "interrogation_suite_code" },
 { "enter": "interrogation_room" },
 { "said": ["[opens nightshade_confrontation"] },
-{ "talk": "confront", "picks": ["Tell me why", "What happens to you now", "No deals"] },
+{ "talk": "confront", "picks": ["Face him", "Tell me why", "What happens to you now", "No deals"] },
 { "said": ["The Director went asking questions on my floor"] },
 { "talk": "debrief", "picks": ["He's the crime", "code server", "Nothing more"] },
 { "said": ["In the end I read it myself"] },

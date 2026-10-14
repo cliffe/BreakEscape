@@ -346,9 +346,10 @@ def one_way_mirror():
 
 def recording_lamp():
     """RECORDING lamp on the interview room's back wall, drawn switched off: a dark
-    maroon box, the word in dull rose. The lighting stage lights it (a red `above`
-    glow in the scenario's interrogation_room lighting block) only while the
-    confrontation is on, so the art must read as an unlit lamp the rest of the time."""
+    maroon box, the word in dull rose. It is a scenario object (recording_lamp, as-type
+    hq_recording) whose spriteVariants swap in the lit face below while the confrontation
+    is on, with a red `above` glow from the room's lighting block as spill; the rest of
+    the time the art must read as an unlit lamp."""
     w, h = 48, 11
     c = Canvas(w, h)
     c.rect(0, 0, w - 1, h - 1, (30, 26, 28))
@@ -358,8 +359,8 @@ def recording_lamp():
     c.rect(3, 4, 5, 6, (176, 150, 150))
     c.text(8, 3, "RECORDING", (176, 168, 168))
     c.save(OBJ, "hq_recording1")
-    # The lit face (the dressing stage's original art), for DECISIONS_PENDING L1: used
-    # only if the lamp becomes a scenario object with spriteVariants.
+    # The lit face (the dressing stage's original art): recording_lamp's spriteVariants
+    # value during the confrontation (DECISIONS_PENDING L1, done).
     c = Canvas(w, h)
     c.rect(0, 0, w - 1, h - 1, (30, 26, 28))
     c.rect(1, 1, w - 2, h - 2, (226, 52, 52))

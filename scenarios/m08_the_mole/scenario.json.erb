@@ -1417,7 +1417,7 @@ CREDITS
             { "from": "fingerprint_kit", "to": "usb_stick_personal_backup_enc", "dashed": true }
           ],
           "observationDisplay": "gameDisplay",
-          "text": "INTERNAL INVESTIGATION -- PERSONS OF INTEREST\n\nAgent 0x23 'CIPHER' -- Intelligence Analyst\n  Access: signals intelligence, cryptography, mission planning (crypto annex).\n  Service: eleven years.\n  Flag: works odd hours, secretive about a personal project. Withdrawn.\n\nAgent 0x47 'NIGHTSHADE' -- Cryptographic-Hardware Analyst (seconded to mission planning)\n  Access: mission planning, operational security.\n  Service: fifteen years. Taught tradecraft to Agent 0x00's intake.\n  Flag: none on file.\n\nAgent 0x88 'PHANTOM' -- Field Coordinator\n  Access: team movements, tactical planning, mission planning.\n  Service: sixteen years.\n  Flag: asking questions outside remit. Unlogged absences, including the morning of D-2.\n\nNetherton, handwritten: 'All three had the plan. I need the one who had the room, at the minute.'"
+          "text": "INTERNAL INVESTIGATION -- PERSONS OF INTEREST\n\nAgent 0x23 'CIPHER' -- Intelligence Analyst\n  Access: signals intelligence, cryptography, mission planning (crypto annex).\n  Service: eleven years.\n  Flag: works odd hours, secretive about a personal project. Withdrawn.\n\nAgent 0x47 'NIGHTSHADE' -- Cryptographic-Hardware Analyst (seconded to mission planning)\n  Access: mission planning, operational security.\n  Service: fifteen years. Taught tradecraft to Agent 0x00's intake.\n  Flag: a PIN device signed out since St. Catherine's, never returned. In the lab most nights, alone.\n\nAgent 0x88 'PHANTOM' -- Field Coordinator\n  Access: team movements, tactical planning, mission planning.\n  Service: sixteen years.\n  Flag: asking questions outside remit. Unlogged absences, including the morning of D-2.\n\nNetherton, handwritten: 'All three had the plan. I need the one who had the room, at the minute.'"
         },
         {
           "_comment": "Biometric safe. PIN is the Director's own service number, printed in the Requested-by line of the ops-floor personnel printout; ATHENA and HaX point at the printout (neither reads it out). PASS 3 (P4): holds the interrogation-suite code card (the suite is now a keypad, so the start-kit picks can't skip this chain) and Okafor's evaluation. Netherton also gives the code aloud after a correct reading of the door audit (P6).",
@@ -1462,6 +1462,29 @@ CREDITS
               "onPickup": { "setVariable": { "found_nightshade_profile": true } },
               "puzzle_graph_role": "clue",
               "puzzle_graph_reveals": "netherton_buried_the_warning"
+            },
+            {
+              "_comment": "Blind run A fixes (finding 7): the Director sealed a file on each of the three, so Okafor's evaluation isn't the only motive file in the safe. Both are explained later by their subjects (Cipher's unrostered key-schedule project; Phantom's off-book hunt and reprimand).",
+              "type": "text_file",
+              "id": "cipher_vetting_query",
+              "name": "Sealed Vetting Query -- Agent 0x23",
+              "takeable": true,
+              "readable": true,
+              "observations": "A vetting query, sealed by the Director's own order.",
+              "observationDisplay": "gameDisplay",
+              "text": "CLASSIFIED -- VETTING QUERY\nSubject: Agent 0x23 'Cipher'\nRaised by: Security Vetting Office\n\nSubject holds a crypto annex badge issued outside this office's chain; the issuing authority will not confirm it. Signs hardware tokens out of the annex cabinet at night, alone. Declined to explain either to two reviewers.\n\nRECOMMENDATION: suspend annex access pending interview.\nACTION TAKEN: [DEFERRED BY ORDER OF THE DIRECTOR -- M.N.]\n\nNetherton, appended: 'The annex says he is theirs. I have asked twice.'",
+              "puzzle_graph_role": "clue"
+            },
+            {
+              "type": "text_file",
+              "id": "phantom_standards_referral",
+              "name": "Sealed Standards Referral -- Agent 0x88",
+              "takeable": true,
+              "readable": true,
+              "observations": "A professional-standards referral, sealed by the Director's own order.",
+              "observationDisplay": "gameDisplay",
+              "text": "CLASSIFIED -- PROFESSIONAL STANDARDS REFERRAL\nSubject: Agent 0x88 'Phantom'\nRaised by: Operations Floor Supervisor\n\nThree absences from the floor in six weeks, none on the roster. Queried closed mission files outside his remit. An undeclared meeting with a foreign liaison officer, reported by a third party.\n\nRECOMMENDATION: formal reprimand; restrict travel pending review.\nACTION TAKEN: [HELD BY ORDER OF THE DIRECTOR -- M.N.]\n\nNetherton, appended: 'Not until Portland is closed.'",
+              "puzzle_graph_role": "clue"
             }
           ]
         }
@@ -1839,7 +1862,7 @@ CREDITS
           "readable": true,
                     "observations": "A door-audit query, printed and never collected, slid off the desk onto the floor. The header carries Phantom's account.",
           "observationDisplay": "gameDisplay",
-          "text": "BADGE AUDIT -- QUERY RESULTS (all times UTC)\nRun by: 0x88 (PHANTOM). Printed. Not collected.\nWindow: D-2 07:00 to 13:00 (D-2 = two days before the Portland order)\n\nCL-1 -- Crypto Lab door. The only way into the lab, the break room\n        and the interrogation suite.\n  07:52  IN   0x3C  OFF-SHIFT\n  08:12  IN   0x61  FACILITIES (clean)\n  08:58  OUT  0x61\n  10:15  IN   0x47  NIGHTSHADE\n  10:24  IN   0x23  CIPHER\n  10:32  OUT  0x23  CIPHER\n  11:43  OUT  0x47  NIGHTSHADE\n  (next event: 13:10 OUT 0x3C)\n\nLIB-2 -- Crypto library door\n  10:35  IN   0x23  CIPHER\n  (next event: 13:40 OUT 0x23)\n\nTRAVEL DESK\n  0x88  PHANTOM  Zurich handover. Wheels up 10:09, down 11:54. Manifest on file.",
+          "text": "BADGE AUDIT -- QUERY RESULTS (all times UTC)\nRun by: 0x88 (PHANTOM). Printed. Not collected.\nWindow: D-2 07:00 to 13:00 (D-2 = two days before the Portland order)\n\nCL-1 -- Crypto Lab door. The only way into the lab, the break room\n        and the interrogation suite.\n  07:52  IN   0x3C  OFF-SHIFT (break room; no planning clearance)\n  08:12  IN   0x61  FACILITIES (clean)\n  08:58  OUT  0x61\n  10:15  IN   0x47  NIGHTSHADE\n  10:24  IN   0x23  CIPHER\n  10:32  OUT  0x23  CIPHER\n  11:43  OUT  0x47  NIGHTSHADE\n  (next event: 13:10 OUT 0x3C)\n\nLIB-2 -- Crypto library door\n  10:35  IN   0x23  CIPHER\n  (next event: 13:40 OUT 0x23)\n\nTRAVEL DESK\n  0x88  PHANTOM  Zurich handover. Wheels up 10:09, down 11:54. Manifest on file.",
           "onRead": { "setVariable": { "found_badge_audit": true } },
           "puzzle_graph_role": "clue",
           "puzzle_graph_reveals": "who_was_behind_the_lab_door",
@@ -1989,7 +2012,7 @@ CREDITS
       "lockType": "pin",
       "requires": "<%= suite_code %>",
       "difficulty": "medium",
-      "door_sign": "Interrogation -- Recording In Progress",
+      "door_sign": "Interrogation Suite",
       "connections": { "north": "cryptography_lab" },
       "npcs": [
         {
@@ -2042,6 +2065,22 @@ CREDITS
         }
       ],
       "objects": [
+        {
+          "_comment": "Lighting L1 (orchestrator, blind run A fixes): the RECORDING lamp is a scenario object so its face can light with the confrontation (only scenario objects take spriteVariants). It claims the map's hq_recording1 decor slot; base sprite as on the screens below, else rooms.js falls back to the type when a watched global changes. Same condition as the room's red emitters.",
+          "type": "smartscreen",
+          "id": "recording_lamp",
+          "name": "RECORDING Lamp",
+          "position": "as-type:hq_recording",
+          "sprite": "hq_recording1",
+          "spriteVariants": [
+            { "condition": "globalVars.all_flags_submitted && globalVars.mole_identified && !globalVars.fate_decided", "value": "hq_recording_on1" }
+          ],
+          "takeable": false,
+          "observations": "A RECORDING lamp over the door. When it is lit, every word in this room goes on file.",
+          "observationVariants": [
+            { "condition": "globalVars.all_flags_submitted && globalVars.mole_identified && !globalVars.fate_decided", "value": "The RECORDING lamp is lit. Every word in this room is going on file." }
+          ]
+        },
         {
           "_comment": "PASS 2: the wall used to read 'VERDICT: conclusive' from the moment the room was picked open, before any evidence existed. It now fills in as the case does (textVariants, first match wins).",
           "type": "smartscreen",

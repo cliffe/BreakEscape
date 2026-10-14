@@ -25,7 +25,7 @@
 { "talk": "netherton", "picks": ["I can name the leak", "10:38", "Nightshade.", "out of the lab at 10:32", "confirm their own rows", "I'm ready"] },
 { "expect": { "mole_identified": true, "named_on_evidence": true } },
 { "enter": "interrogation_room" },
-{ "talk": "confront", "picks": ["Tell me why", "What happens to you now", "No deals"] },
+{ "talk": "confront", "picks": ["Face him", "Tell me why", "What happens to you now", "No deals"] },
 { "expect": { "fate_decided": true } },
 { "talk": "debrief", "picks": ["He's the crime", "It was wrong", "code server", "Nothing more"] },
 { "said": ["You hit Cipher on my floor. An innocent man."], "notSaid": ["Cipher and Phantom"] },

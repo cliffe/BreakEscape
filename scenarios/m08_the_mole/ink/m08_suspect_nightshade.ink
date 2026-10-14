@@ -102,7 +102,8 @@ Agent 0x47 'Nightshade': Of everyone in this building, they picked the one perso
 + { found_badge_audit and not asked_audit } [The door log has you in this lab from 10:15 to 11:43 that morning.]
     ~ asked_audit = true
     ~ nightshade_audit_confirmed = true
-    Agent 0x47 'Nightshade': Yes. {asked_alibi:I told you: I'm always here.|I'm always here.} You've proved I keep long hours, 0x00. Bring me the account. #set_global:nightshade_audit_confirmed:true
+    Agent 0x47 'Nightshade': Yes, that row's right. {asked_alibi:I told you: I'm always here.|I'm always here.} You've proved I keep long hours, 0x00.
+    Agent 0x47 'Nightshade': A door says who walked in. It doesn't say what anyone did at the bench. #set_global:nightshade_audit_confirmed:true
     -> back
 + { (asked_audit or asked_training) and not gave_locker_key } [Your locker in the break room. I want to see inside it.]
     ~ gave_locker_key = true
@@ -111,7 +112,7 @@ Agent 0x47 'Nightshade': Of everyone in this building, they picked the one perso
     Agent 0x47 'Nightshade': Take it. 0x47, second from the end. I'd genuinely encourage it.
     -> back
 // Phase 4 dialogue C1 (D8-16): once said, it isn't on offer again.
-+ { not mole_identified and not accused_nightshade } [I think it's you, Nightshade.] -> accuse
++ { not mole_identified and not accused_nightshade } [I think it's you, Nightshade. (Out loud. The whole floor will hear.)] -> accuse
 + [We're done here.] -> leave
 
 === accuse ===

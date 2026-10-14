@@ -33,6 +33,7 @@ Narrator: He doesn't look up from the magazine.
 Off-Duty Agent: You didn't hear it from me. Two days before Portland I was in here from before eight.
 Off-Duty Agent: Went through to the lab for the stapler. Just gone twenty past ten, half past at the latest.
 Off-Duty Agent: Someone at the bench at the far end. Had the build of the nerdy one, Cipher. Or not. I wasn't looking.
+Off-Duty Agent: And before you ask, I'm off-shift with no planning clearance. I couldn't open that share if I wanted to.
 Off-Duty Agent: I'm sitting where I can see the door. You should too.
 -> back
 

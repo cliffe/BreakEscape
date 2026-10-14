@@ -61,12 +61,29 @@ VAR netherton_hostile = false // Synced scenario global
 // Phase 4 dialogue C1 (D8-9): after_choice's line is the re-entry line, so the
 // walk-out batch skips it once (the quiet-flag pattern).
 VAR after_quiet = false
+// Blind run A fixes (finding 4): the scene opens on entering the suite, so the
+// evidence wall gets an optional beat here (the engine has no delay on a
+// room-entry mapping). Synced scenario global, the wall's own condition.
+VAR found_nightshade_profile = false
 
 === start ===
 { fate_decided: -> after_choice }
 #complete_task:confront_nightshade
 Narrator: The interrogation room records everything. Nightshade stands at the table with both hands flat on it. He doesn't sit.
+Narrator: Behind him the evidence wall is lit. He follows your eyes to it and waits.
++ [(Read the wall first.)] -> wall
++ [(Face him.)] -> opening
 
+=== wall ===
+Narrator: The case runs down the wall in order. The repository, opened with no password. Credentials left in its history. Mail to the Architect. Root, and forty-seven minutes on the Portland plan from a Crypto Lab terminal.
+{ found_nightshade_profile:
+    Narrator: Under it, Okafor's evaluation, with the Director's seal across the recommendation.
+}
+Narrator: Pinned beside it, the door audit. One row ringed in red: 0x47, in at 10:15, out at 11:43.
+Narrator: Nightshade lets you finish. He has read it already.
++ [(Turn back to him.)] -> opening
+
+=== opening ===
 Agent 0x47 'Nightshade': You found it. Forty-seven minutes on the Portland plan, two days before you deployed. My account, my terminal, my mail.
 Agent 0x47 'Nightshade': The name they stripped off that intercept in the cable vault was mine. I could have scrubbed it years ago.
 { nightshade_suspected:

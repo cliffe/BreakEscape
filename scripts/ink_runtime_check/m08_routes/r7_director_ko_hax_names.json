@@ -46,7 +46,7 @@
 { "read": "nightshade_personnel_record" },
 { "read": "interrogation_suite_code" },
 { "enter": "interrogation_room" },
-{ "talk": "confront", "picks": ["Tell me why", "What happens to you now", "No deals"] },
+{ "talk": "confront", "picks": ["Face him", "Tell me why", "What happens to you now", "No deals"] },
 { "said": ["You put it on Phantom in front of the floor"] },
 { "talk": "debrief", "picks": ["He's the crime", "It was the job", "code server", "Nothing more"] },
 { "said": ["Same classroom, 0x00", "My jaw is fine", "You read the door audit to HaX while I was on my office floor", "You accused Phantom to his face", "He knew we were coming"] },

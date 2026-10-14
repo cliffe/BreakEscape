@@ -49,7 +49,7 @@
 { "enter": "interrogation_room" },
 { "look": "deep_state_manual", "has": "ENTROPY -- INSIDER THREAT INITIATIVE", "lacks": "No letterhead" },
 { "look": "deep_state_manual", "has": "One torn page" },
-{ "talk": "confront", "picks": ["Tell me why", "What happens to you now", "No deals"] },
+{ "talk": "confront", "picks": ["Face him", "Tell me why", "What happens to you now", "No deals"] },
 { "said": ["So I tidied the bag and the stick", "I wiped the file and forgot my own thumb"] },
 { "notSaid": ["flight to Montana the morning after"] },
 { "talk": "debrief", "picks": ["He's the crime", "code server", "Nothing more"] },

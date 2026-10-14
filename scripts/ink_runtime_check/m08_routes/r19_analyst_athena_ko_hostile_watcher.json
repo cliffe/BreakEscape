@@ -38,7 +38,7 @@
 { "expect": { "mole_identified": true } },
 { "music": "room_entered:interrogation_room", "expect": "spy-action" },
 { "enter": "interrogation_room" },
-{ "talk": "confront", "picks": ["Tell me why", "What happens to you now", "No deals"] },
+{ "talk": "confront", "picks": ["Face him", "Tell me why", "What happens to you now", "No deals"] },
 { "said": ["You knocked a junior analyst out at her desk"], "notSaid": ["The Director went asking questions on my floor", "ATHENA logs to everyone"] },
 { "talk": "debrief", "picks": ["He's the crime", "It was wrong", "code server", "Nothing more"] },
 { "said": ["You knocked out a junior analyst at her desk", "ATHENA logged you putting her reception avatar on the floor"] },

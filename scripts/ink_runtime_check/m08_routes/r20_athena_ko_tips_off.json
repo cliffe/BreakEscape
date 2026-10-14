@@ -22,7 +22,7 @@
 { "talk": "nightshade", "picks": ["door log has you", "We're done"] },
 { "talk": "netherton", "picks": ["I can name the leak", "10:38", "Nightshade.", "out of the lab at 10:32", "confirm their own rows", "I'm ready"] },
 { "enter": "interrogation_room" },
-{ "talk": "confront", "picks": ["Tell me why", "What happens to you now", "No deals"] },
+{ "talk": "confront", "picks": ["Face him", "Tell me why", "What happens to you now", "No deals"] },
 { "said": ["You put ATHENA's avatar on the floor"], "notSaid": ["The Director went asking questions on my floor"] },
 { "talk": "debrief", "picks": ["He's the crime", "It was the job", "code server", "Nothing more"] },
 { "said": ["ATHENA logged you putting her reception avatar on the floor"], "notSaid": ["junior analyst"] }

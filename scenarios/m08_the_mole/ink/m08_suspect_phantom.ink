@@ -121,7 +121,7 @@ Agent 0x88 'Phantom': And yes, I put myself there too. Charmed?
     # influence_increased
     -> back
 // Phase 4 dialogue C1 (D8-16): once said, it isn't on offer again.
-+ { not mole_identified and not accused_phantom } [I think it's you, Phantom.] -> accuse
++ { not mole_identified and not accused_phantom } [I think it's you, Phantom. (Out loud. The whole floor will hear.)] -> accuse
 + [We'll talk again.] -> leave
 
 === accuse ===

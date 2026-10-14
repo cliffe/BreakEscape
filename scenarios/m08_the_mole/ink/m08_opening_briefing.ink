@@ -14,10 +14,9 @@ ATHENA: Welcome back, Agent 0x00. Security posture is Level Red. I have logged y
 
 ATHENA: I have also logged your kit. One pick set, one RFID cloner, one fingerprint kit.
 ATHENA: The PIN device you are thinking of is still signed out to Agent 0x47, as it has been since St. Catherine's.
+ATHENA: Read nothing into it. Agent 0x23 has a hardware token out tonight, and Agent 0x88 a travel pack. Everyone on the planning list keeps something they shouldn't.
 
-ATHENA: You are wondering what happened here. Portland happened. Four sites in one night, and one team to send.
-
-ATHENA: Then someone read the after-action report and realised the enemy had the deployment before we did.
+ATHENA: You are wondering what happened here. Portland happened. Four sites in one night, one team to send, and an enemy who had the deployment before we did.
 
 ATHENA: The leak came from inside this building. Director Netherton has three names, and one of them got two of your colleagues killed.
 

@@ -17,7 +17,7 @@
 { "said": ["Not my collar, then"], "notSaid": ["Go and get onto that repo"] },
 { "talk": "phantom", "picks": ["We'll talk"] },
 { "said": ["The hunt's over, I hear"] },
-{ "talk": "confront", "picks": ["Tell me why", "Enough talk", "No cell"] },
+{ "talk": "confront", "picks": ["Face him", "Tell me why", "Enough talk", "No cell"] },
 { "expect": { "nightshade_triple_agent": true, "fate_decided": true, "tomb_gamma_location_known": true } },
 { "said": ["who will not see you tonight", "from an office that won't open its door to you", "ghost inside their machine", "Let it hurt afterwards, not during"], "notSaid": ["expecting you upstairs", "A long pause"] },
 { "maxRun": 9 },

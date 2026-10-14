@@ -53,7 +53,7 @@
 { "look": "evidence_display", "has": "CASE FILE -- AGENT 0x47" },
 { "enter": "interrogation_room" },
 { "said": ["[opens nightshade_confrontation"] },
-{ "talk": "confront", "picks": ["Tell me why", "What happens to you now", "No cell"] },
+{ "talk": "confront", "picks": ["Face him", "Tell me why", "What happens to you now", "No cell"] },
 { "expect": { "nightshade_triple_agent": true, "triple_agent_first_payment": true, "tomb_gamma_location_known": true } },
 { "said": ["You put it on Cipher in front of the floor", "First payment, then", "You never asked about The Architect"] },
 { "talk": "debrief", "picks": ["Own the gap", "It was wrong", "code server", "Nothing more"] },

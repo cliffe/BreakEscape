@@ -165,9 +165,9 @@ Director Magnus Netherton: Already? Say it. Not for the file. For me. Who is you
     Director Magnus Netherton: A man asking too many questions is either the leak or the only other person hunting it.
     Director Magnus Netherton: I have not decided which, and neither, yet, have you. Bring me the door log. #set_global:suspect_theory:phantom
     -> back
-+ [Nightshade. It's the man with no marks.]
++ [Nightshade. Too calm, and he never gave the PIN device back.]
     ~ suspect_theory = "nightshade"
-    Director Magnus Netherton: An instinct is not evidence. And the man with nothing on his file is the second-easiest man in this building to suspect.
+    Director Magnus Netherton: An instinct is not evidence. Calm is a temperament, and half this floor keeps kit it should have returned.
     Director Magnus Netherton: If it is him, he has been careful for years. Careful men leave exactly one mistake. Find it. #set_global:suspect_theory:nightshade
     -> back
 + [Not yet, sir.]
@@ -334,7 +334,7 @@ Director Magnus Netherton: That audit is Phantom's query, off Phantom's printer.
 + [It agrees with the auth log Phantom pulled.]
     ~ audit_reply = 9
     -> audit_wrong
-+ [The badge system printed it. Nobody typed those rows.]
++ [It looks like a straight badge-system printout.]
     ~ audit_reply = 10
     -> audit_wrong
 + [Let me read it again.]
@@ -375,6 +375,7 @@ Director Magnus Netherton: That audit is Phantom's query, off Phantom's printer.
 - 7: Director Magnus Netherton: He told you. What does the door say?
 - 8: Director Magnus Netherton: That clears him of the leak, not of the printout.
 - 9: Director Magnus Netherton: Then it agrees with Phantom twice.
+- 10: Director Magnus Netherton: Paper says what the man at the printer wants it to. Who else will swear to it?
 - else: Director Magnus Netherton: Somebody chose the query, Agent, and the window.
 }
 // PASS 5 (alignment C2, J5): the third misread is never a surprise.
@@ -393,7 +394,7 @@ Director Magnus Netherton: That audit is Phantom's query, off Phantom's printer.
         Director Magnus Netherton: The suite code is in my safe, with Dr Okafor's evaluation. Read hers before you face him.
     - else:
         Director Magnus Netherton: Enough. You've read me that log three ways. I shall take it from here, and that means asking questions on this floor. #set_global:audit_closed:true #set_global:nightshade_tipped_off:true
-        Director Magnus Netherton: People will notice. If he did not know we were looking, he will soon. Bring me the account, and I will put the name to it.
+        Director Magnus Netherton: People will notice. If he did not know we were looking, he will soon. Get root on the box. When its logs come in, I will name him.
     }
 }
 -> back
@@ -417,7 +418,7 @@ Director Magnus Netherton: He walked into his own lab twenty-three minutes befor
 { found_access_logs:
     Director Magnus Netherton: And the box has an account on that terminal for the same forty-seven minutes. A door and a login, at the same minute. That I can act on.
 - else:
-    Director Magnus Netherton: A door is not an account, and a court will want both. Get me the account from the box.
+    Director Magnus Netherton: A door is not a login, and a court will want both. Get root on the box and bring me its logs.
 }
 Narrator: He puts one hand flat on the desk, as if the floor has moved.
 Director Magnus Netherton: I sealed a warning about him a year ago and told myself it was prudence.

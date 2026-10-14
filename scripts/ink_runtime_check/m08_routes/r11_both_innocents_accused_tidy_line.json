@@ -56,7 +56,7 @@
 { "flag": 1 }, { "flag": 2 }, { "flag": 3 }, { "flag": 4 },
 { "said": ["Logs agree with your door audit"] },
 { "enter": "interrogation_room" },
-{ "talk": "confront", "picks": ["Tell me why", "What happens to you now", "No deals"] },
+{ "talk": "confront", "picks": ["Face him", "Tell me why", "What happens to you now", "No deals"] },
 { "said": ["You put it on Cipher and Phantom both in front of the floor. Walls are thin here. So I tidied"] },
 { "notSaid": ["The Director went asking questions"] },
 { "talk": "debrief", "picks": ["He's the crime", "It was wrong", "code server", "Nothing more"] },

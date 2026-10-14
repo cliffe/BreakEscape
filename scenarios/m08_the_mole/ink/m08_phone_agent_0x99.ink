@@ -134,7 +134,7 @@ So I'm going to be very professional tonight. Bear with me.
     }
     -> hub
 + { audit_closed and not netherton_ko and not netherton_hostile and not mole_identified } [The Director's taken the audit off me.]
-    He has. He'll put the name to it himself once the box gives him the account. Get root.
+    He has. He'll put the name to it himself once the box gives him its logs. Get root.
     And he's asking questions on the floor now, so don't expect anyone to stay surprised.
     -> hub
 // PASS 3 (P4, R2-m3, R3-m12): the suite is a keypad. Before flag 4 HaX
@@ -151,7 +151,7 @@ So I'm going to be very professional tonight. Bear with me.
     -> hub
 // PASS 3 (P5): the door audit and the lab's single door.
 + { not found_badge_audit } [Where would the door logs be?]
-    Security Archives, south of the ops floor. Facilities set the passphrase, and facilities write things down. Kettle.
+    Security Archives, south of the ops floor. Facilities set the passphrase, and facilities write things down. Try the break room, round the coffee machine.
     The lab's got one door. Whatever that door saw, it saw everyone.
     -> hub
 // PASS 5 (puzzle chains C1, F1): the VM ladder shows only the current step.

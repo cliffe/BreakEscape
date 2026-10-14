@@ -119,7 +119,7 @@ Agent 0x23 'Cipher': I've run the inference on myself and it's not flattering. A
     -> back
 + { asked_audit and not gave_locker_key } [Your locker in the break room. I want to see inside it.] -> locker_key
 // Phase 4 dialogue C1 (D8-16): once said, it isn't on offer again.
-+ { not mole_identified and not accused_cipher } [I think it's you, Cipher.] -> accuse
++ { not mole_identified and not accused_cipher } [I think it's you, Cipher. (Out loud. The whole floor will hear.)] -> accuse
 + [That's all for now.] -> leave
 
 === audit_beat ===

@@ -33,7 +33,7 @@
 { "read": "nightshade_profile" },
 { "tasks": { "get_suite_code": "completed" } },
 { "enter": "interrogation_room" },
-{ "talk": "confront", "picks": ["Tell me why", "What happens to you now", "No deals"] },
+{ "talk": "confront", "picks": ["Face him", "Tell me why", "What happens to you now", "No deals"] },
 { "notSaid": ["The door log. I walked past"] },
 { "talk": "debrief", "picks": ["Okafor warned you", "code server", "Nothing more"] },
 { "said": ["In the end I read it myself", "read it once, and read it right"] },
