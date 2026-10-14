@@ -367,3 +367,78 @@ HaX texts (`scenario.json.erb`), no audio exists:
 
 ### Stage 2 puzzle chains: CLOSED (orchestrator, 2026-10-14)
 Cycle 2 review 0/0/4, round-1 browser check all four items pass, closing round fixed F7, F8/N1, F9 (N3 to U11, engine). Owed on screen, carried to the next browser check: the two-part controls texts at a hostile Hollis; the clone choice appearing on the sighting after the ops floor. F10 to the dialogue stage.
+
+### Stage 2 scenario design, round 1 (fixer, 2026-10-14)
+
+Review: `DESIGN_REVIEW_P5_C1.md` (0 blockers, 3 majors, 15 minors). Each finding was checked against `scenario.json.erb`, the ink and the engine before acting. No SecGen XML and none of the four restricted field guides were opened. No browser session. Nothing committed.
+
+Counts: 0 blockers, 3 majors, 15 minors. All fixed; D3's engine half stays as E1.
+
+| # | Sev. | Finding | Outcome |
+|---|---|---|---|
+| D1 | major | HaX has no progress-aware "Where do I stand?" | **Fixed.** Sticky `[Where do I stand?]` on the hub (above "Remind me of the layout and the clock.", which stays) → text-only `report_progress`, m04's pattern. First unmet step, in order: the debrief state once the grid is saved (missing flags / sweep then "bring you in" / Netherton waiting); the commit; the checkpoint and badge (badge held / not inside yet / Hollis KO'd: his badge on the floor / otherwise Hollis, the clone, the badge station); the Kali box; flag 1; flag 2; the control room door (with or without the password); flag 3 (plus the redirect line while the window is open and the correction held); root (with "Step one ran" after expiry, and the door if still shut); the abort. One closing line on the optional plant while `not vault_entered`. Each test reads whether a step is done (`server_hall_reached`, `badge_obtained`, `scada_door_reached`, the flag globals), never which route did it. New phone VARs: `inside_reached`, `badge_obtained`, `server_hall_reached`, `scada_door_reached`, `scada_password_found`. Route r21 walks every state; r22 the uncommitted and missing-flag states |
+| D2 | major | The clock runs out in silence; HaX's clock answer goes false | **Fixed.** (a) Two HaX texts on `countdown_expired`, disjoint on `flag4_submitted`, at 5 s (the Architect's bark is at 0.5 s; 4 s tripped the validator's 4-second spacing rule). (b) The clock answer branches on `countdown_expired` first, and on `flag4_submitted` (root in: the console is next) in both the expired and armed cases. (c) Display variant `globalVars.countdown_expired` between `grid_saved` and `cascade_armed` (first match wins, `conditional-text.js`). r2 now checks the expiry text; r21 and r22 cover both rows and both clock answers |
+| D3 | major | The win console asks for a flag it can never accept | **Fixed mission-side.** HaX text on `object_interacted` with `data.objectName === 'Cascade Control System' && !globalVars.flag4_submitted`, onceOnly, 0.8 s (the event fires before the lock screen, `interactions.js` `handleObjectInteraction`). All four flag tasks now end "…at the relay". **Engine half deferred** (E1, already in `DECISIONS_PENDING.md`). The validator flags the console text and the Kali-box text as able to stack on `object_interacted`; they can't, as the conditions name different objects (logged as a false positive) |
+| m1 | minor | Five toasts on the first ops-floor entry, one for a room two doors away | **Fixed.** `reach_the_control_room` and `trace_the_intrusion` now have `"unlockCondition": { "globalVariable": "server_hall_reached" }`. A new HaX mapping on `room_entered:server_room` sets `server_hall_reached` and calls `unlockAim` on both (the m05 `torres_identified` shape; the server re-derives a met story gate on reload, `game.rb` `objectives_state_for_client`). Objectives comments updated. New global declared in the erb and `missions.json` |
+| m2 | minor | No pointer to the commit for a player who closed the briefing uncommitted | **Fixed.** The ops-floor HaX row is split on `team_assigned` (uncommitted text below; the committed row keeps the old text as a backstop). Aim description names the desk summary and HaX. r22 |
+| m3 | minor | Briefing story clock contradicts the 40-minute window | **Fixed.** The transit beat moves to the top of `delegation_intro`, reworded so the Director holds the line during the drive. The commit is now made at the gate, so "before you are through the gate" is literal. `handoff` keeps the building lines. r23 |
+| m4 | minor | T-20 can play before first contact | **Fixed, with one addition.** `taunt_t20` opens with T-30's narrator line when `not heard_t30` and sets it. Addition: `t20_close` then carries T-30's echo ("Let it hurt afterwards…") and sets `architect_echo_heard`, so the teacher thread (user decision P6) isn't lost. The ops-floor "Agent 0x00." bark now needs `!architect_t20_played`, because it would otherwise open on dead air after T-20. r23 |
+| m5 | minor | Stale engine comments | **Fixed.** Timers block says timers resume on reload (guards kept); the WP header no longer lists landed work as absent |
+| m6 | minor | Reload after the abort plays noir | **Fixed.** `!globalVars.grid_saved` on the three `game_loaded` rows, plus a `game_loaded` → `end` row on `grid_saved`. r22, r23 |
+| m7 | minor | Console description false after it opens | **Fixed.** "The master control position for 147 substations. The abort goes in here, once the host driving the sequence is off the network and reported at the relay. Nothing typed at this chair changes that." |
+| m8 | minor | Mercer quotes Elena to a player who never met her | **Fixed.** `VAR elena_met` in Mercer's ink; the choice needs `elena_met and not heard_elena`. r23 |
+| m9 | minor | Mole intercept says "thirty minutes" | **Fixed.** "Window: forty minutes." |
+| m10 | minor | Cloner route missing from the graph | **Fixed.** `puzzle_graph_unlocks: ["server_room"]`, `puzzle_graph_optional: true`; graph regenerated (`rfid_cloner -.-> door_server_room`) |
+| m11 | minor | RFID guide hand-over doesn't mention cloning | **Fixed** with the review's line |
+| m12 | minor | A never-committed player can commit after the abort | **Fixed.** `{not team_assigned and not grid_saved}`. r22 checks the choice is gone |
+| m13 | minor | "The console up there" | **Fixed.** "The console in there…" |
+| m14 | minor | Gendered credit with an unclear "his" | **Fixed.** "AGENT 0x00: Wants the numbers before writing them — no more briefing off the Architect's figures" |
+| m15 | minor | Six field-guide choices on the hub | **Fixed.** One `[Send me a field guide.]` (gated on an ink function `guide_waiting()`) → choices-only `field_guides` with a sticky "Never mind."; each guide's give stays in its text half. r21 |
+
+#### Decisions taken (fixer, with reasons)
+
+- **"Remind me of the layout and the clock." kept** beside "Where do I stand?": the layout answer is the only map talk, and the clock answer is now right in every state.
+- **D2's text split on `flag4_submitted`.** A player who got root and hasn't reached the console yet would otherwise be told to get root.
+- **D3 text at 0.8 s,** so it lands with the lock screen rather than after the player has typed.
+- **m4 keeps the echo line.** The review accepted losing T-30's content; T-30's last line is the hook for HaX's `topic_teacher`, so it moves to T-20's close for this player.
+- **m1 unlocks both aims from one mapping** that also sets the global, so the client and the server's reload view agree.
+- **The report's plant line** shows only once the server hall is reached, and not after the vault. It says "optional", because the aim gates nothing.
+
+#### Route driver
+
+New: `r21_where_do_i_stand_ladder` (every progress state, the guide sub-menu, the console click, server-hall aim unlock, expiry before and after root), `r22_uncommitted_ops_floor_flags_missing` (m2, m12, D2 root-in, the missing-flag state, end track on reload), `r23_t20_first_contact_mercer_music` (m3, m4, m8, m6). Changed: r2 checks the expiry texts. r1–r23: all 23 pass.
+
+#### Checks
+
+- Ink compiles (8 files, 0 failed; the briefing's END warning as before).
+- Validator, full: schema passed, geometry and doors OK, graph regenerated. 13 onceOnly-overlap notes (one new, `object_interacted`: the Kali-box and console rows name different objects). New spacing note on `object_interacted` (false positive, as above). The `countdown_expired` spacing note was cleared by moving HaX to 5 s. Person-chat and credits notes unchanged.
+- dialoguelint: 0 errors (three new phone lines first ran over the 25-word cap and were split); totals unchanged (transition 1, not-x-but-y 1, you-after-choice 2, blank-reentry 6).
+- reopencheck: 0 problems (m07 HaX 1800 reopens, the Architect 476).
+- inkcheck (phone hub, `report_progress`, `field_guides`, the clock answer with expiry and root; the Architect's start after T-20; the briefing; Mercer with `elena_met`): no failing paths, no runaways. loopcheck on the same knots and `delegation_intro`: no runtime errors.
+- tagdiff against HEAD: 79 structural differences, all from the changes above (mostly the phone's new knots and conditions).
+- `check_door_alignment.py`: all OK.
+
+#### Spoken lines changed (old → new)
+
+No m07 audio exists yet; listed for the record.
+
+HaX, phone (`m07_phone_agent_0x99.ink`):
+- New, `report_progress`: "It's done. Netherton's waiting. Next door you go through, he's on the link." / "It's done. The grid's holding. Sweep what you want, then tell me to bring you in." / "Grid's held. Some of what you took off their host hasn't gone through the relay. Submit the rest, then call me." / "The team's still waiting on your call. Make it first. Tell me where it goes and I'll pass it up." / "You've got a badge. The server hall reader's on the far side of the ops floor." / "Get past the checkpoint to the ops floor. The server hall beyond it wants a badge." / "The server hall reader wants a zone badge. Hollis's should be on the floor by him." + "Or print one at the badge station behind his desk." / "The server hall reader wants a zone badge. Hollis wears one, and the cloner copies it if you stand close." + (same) / "The Kali box in the server hall is your way onto their network. Start there." / "Their host has an NFS share open to anyone. Read it from the Kali box and put its flag through the relay." / "Scan every port on their host. Something answers whoever connects. Its flag goes through the relay." / "Open the control room door, north of the server hall, before you log in on their host." + "You've got the password." or "Elena knows the password, and their listener gives it out." / "One SSH login: the name from the share, the password from the listener. The flag's in its home directory. The moment you log in, the clock starts." / "If you mean to move the team, do it before you log in." / "Step one ran. Steps two to four haven't." / "Get root on their host and put the root flag through the relay. The console opens itself after." / "And you'll need the control room door open for the abort." / "Root's in. Put the abort in at the console in the control room." / "The plant's south of the server hall, if you want to see how they got in. That part's optional."
+- Clock answer, new: "Step one ran. Seattle's dark. Steps two to four wait on the abort, and the console in the control room will take it now." / "Step one ran. The rest waits on the abort. Root first, then the console." / "It's running, and root's in. The console in the control room takes the abort now."
+- "So open the control room door first. The console up there is the only place the abort goes in." → "…The console in there is the only place the abort goes in."
+- RFID guide: "Hollis's badge works. So does anything the badge station behind his desk prints." → "Hollis's badge works, and so does a copy: stand close while he talks and the cloner reads it. Or the badge station behind his desk."
+- Player choices (not voiced): "Where do I stand?", "Send me a field guide." with "The RFID cloning guide." … "The privilege escalation guide.", "Never mind." (replacing six "Send me the … field guide." choices).
+
+HaX texts (`scenario.json.erb`), new: "You're inside, and the team's still over Denver waiting on your call. Phone me when you've decided. Let it hurt afterwards, not during." (uncommitted, ops floor); "That console takes nothing typed into it. The root flag goes through the relay in the server hall, and the console opens itself after."; "Seattle's dark. Step one ran. Steps two to four haven't. Get root, put it through the relay, then the abort at the console."; "Seattle's dark. Step one ran. Steps two to four haven't. Root's in, so the console takes the abort now. Go."
+
+Briefing (`m07_opening_briefing.ink`): "Narrator: Forty minutes of rain and empty interstate. Then an industrial park outside Portland, 03:24 by the dashboard clock." (in `handoff`) → "Narrator: He keeps the line open while the desk pulls the other three together. Forty minutes of rain and empty interstate. Then an industrial park outside Portland, 03:24 by the dashboard clock." (top of `delegation_intro`).
+
+The Architect (`m07_architect_comms.ink`): when T-20 is first contact, "Narrator: The handset cuts across the facility alarm. Same voice, same absence of hurry." is replaced by T-30's "Narrator: Your handset lights without ringing. The call is already connected, and has been for some seconds.", and T-20's close adds "Let it hurt afterwards, not during. I expect you've been told that." The ops-floor bark "Agent 0x00." doesn't fire after T-20.
+
+Not voiced: console description, display variant ("AUTOMATED SEQUENCE -- RUNNING / STEP 01 SEATTLE METRO -- EXECUTED / STEPS 02-04 -- PENDING / One region of the map has gone grey. The rest is waiting on the next step."), the intercept's "Window: forty minutes.", the credit, the four flag task titles, the first aim's description.
+
+#### Open after round 1
+
+- Browser check owed: "Where do I stand?" at two or three stages; the field-guide sub-menu; the console click before flag 4 (HaX text over the lock screen); the ops floor showing one new aim and the server hall two; the clock running out (HaX text, display variant); a reload after the abort (end track).
+- Still owed from puzzle chains: the two-part controls texts at a hostile Hollis; the clone choice on the sighting after the ops floor.
+- Engine: E1 (flag lock with no `requires`). User: E2 (guide titles), S1/U3 (SecGen claims, unchanged).

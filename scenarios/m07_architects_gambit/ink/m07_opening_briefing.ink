@@ -77,6 +77,12 @@ Director Magnus Netherton: You have your go-bag: picks, the cloner, the print ki
 // ================================================
 
 === delegation_intro ===
+// PASS 5 scenario design r1 (m3): the drive happens here, with the Director
+// still on the line, so the commit is made at the gate. The window (40 min from
+// the commit), T-10 and "before you are through the gate" then agree with the
+// story clock. The handoff keeps the building.
+Narrator: He keeps the line open while the desk pulls the other three together. Forty minutes of rain and empty interstate. Then an industrial park outside Portland, 03:24 by the dashboard clock.
+
 Director Magnus Netherton: We have one tactical team airborne and uncommitted. One. It can reach one of the other three in time to matter.
 
 Director Magnus Netherton: The other two go unanswered.
@@ -292,8 +298,6 @@ Director Magnus Netherton: Say the word and their aircraft turns.
 Director Magnus Netherton: Two operations now run with nobody in their way. On the record, that is my decision as much as yours.
 
 Director Magnus Netherton: Go. I will pick you up on the secure channel when it matters.
-
-Narrator: Forty minutes of rain and empty interstate. Then an industrial park outside Portland, 03:24 by the dashboard clock.
 
 Narrator: Chain-link, a lowered barrier, three storeys of concrete. People are coming out of the front doors with coats over their heads.
 

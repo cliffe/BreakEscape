@@ -14,14 +14,14 @@ Four ENTROPY operations went live inside the same sixty seconds. SAFETYNET has o
 | Physical locks | 8 |
 | AND-gate convergences | 1 |
 | Rooms | 6 |
-| Puzzle graph nodes / edges | 42 / 48 |
-| Story graph nodes / edges | 6 / 5 |
+| Puzzle graph nodes / edges | 42 / 49 |
+| Story graph nodes / edges | 7 / 5 |
 
 ## Critical Path
 
 3 hops through story aims — minimum mandatory sequence to reach mission completion:
 
-**Commit The Team And Get Inside → Get Into The Control Room → Take The Attack Host Off The Board → Stop The Sequence And Report**
+**Enter Server Hall -- Restricted → Get Into The Control Room → Take The Attack Host Off The Board → Stop The Sequence And Report**
 
 ## How to Read These Diagrams
 
@@ -103,13 +103,13 @@ flowchart TD
   recovered_site_reference_tomb_gamma{"Recovered Site Reference -- 'Tomb Gamma'"}
   intercepted_mail_deployment_confirmed{"Intercepted Mail -- Deployment Confirmed"}
   andgate1((" + "))
-  vmch_recover_coordination_traffic["Mount the attack host's open NFS export and submit the flag on it"]
+  vmch_recover_coordination_traffic["Mount the attack host's open NFS export and submit its flag at the relay"]
   vmfl_recover_coordination_traffic{"Recover Coordination Traffic Flag"}
-  vmch_intercept_c2_channel["Find the listener on the attack host, read what it sends and submit the flag"]
+  vmch_intercept_c2_channel["Find the listener on the attack host, read what it sends and submit its flag at the relay"]
   vmfl_intercept_c2_channel{"Intercept C2 Channel Flag"}
-  vmch_escalate_on_attack_host["Log in to the attack host with the recovered account and submit the flag in its home directory"]
+  vmch_escalate_on_attack_host["Log in to the attack host with the recovered account; submit the flag in its home directory at the relay"]
   vmfl_escalate_on_attack_host{"Escalate On Attack Host Flag"}
-  vmch_terminate_cascade_scripts["Escalate to root on the attack host and submit the root flag"]
+  vmch_terminate_cascade_scripts["Escalate to root on the attack host and submit the root flag at the relay"]
   vmfl_terminate_cascade_scripts{"Terminate Cascade Scripts Flag"}
 
   door_server_room --> server_room
@@ -118,7 +118,8 @@ flowchart TD
   door_cable_vault --> cable_vault
   security_checkpoint -.-> lock_pick_kit
   lock_pick_kit -.-> door_generator_room
-  security_checkpoint --> rfid_cloner
+  security_checkpoint -.-> rfid_cloner
+  rfid_cloner -.-> door_server_room
   security_checkpoint --> fingerprint_kit
   security_checkpoint --> threat_desk_summary_tasking_02_41_pt
   security_checkpoint --> lock_badge_printer
@@ -171,7 +172,7 @@ flowchart TD
   class vmfl_recover_coordination_traffic,vmfl_intercept_c2_channel,vmfl_escalate_on_attack_host,vmfl_terminate_cascade_scripts flag
 
   classDef optional stroke-dasharray:5 2
-  class lock_pick_kit,contractor_badge_station optional
+  class lock_pick_kit,rfid_cloner,contractor_badge_station optional
   class node_start start
 ```
 
@@ -203,15 +204,16 @@ flowchart TD
   aim_reach_the_control_room{{"Get Into The Control Room"}}
   aim_take_the_attack_host{{"Take The Attack Host Off The Board"}}
   aim_end_the_sequence{{"Stop The Sequence And Report"}}
+  story_enter_server_hall_restricted>"Enter Server Hall -- Restricted"]
 
   aim_commit_the_team -.-> aim_reach_the_control_network
-  aim_commit_the_team -.-> aim_trace_the_intrusion
-  aim_commit_the_team -.-> aim_reach_the_control_room
   aim_reach_the_control_room -.-> aim_take_the_attack_host
   aim_take_the_attack_host -.-> aim_end_the_sequence
+  story_enter_server_hall_restricted -.->|server_hall_reached| aim_trace_the_intrusion
+  story_enter_server_hall_restricted -.->|server_hall_reached| aim_reach_the_control_room
 
-  class aim_commit_the_team,aim_reach_the_control_room,aim_take_the_attack_host,aim_end_the_sequence critical
-  class aim_reach_the_control_network,aim_trace_the_intrusion aim
+  class aim_commit_the_team,aim_reach_the_control_network,aim_trace_the_intrusion aim
+  class aim_reach_the_control_room,aim_take_the_attack_host,aim_end_the_sequence,story_enter_server_hall_restricted critical
 ```
 
 ## Story + Puzzle (Integrated)
@@ -273,13 +275,13 @@ flowchart TD
   recovered_site_reference_tomb_gamma{"Recovered Site Reference -- 'Tomb Gamma'"}
   intercepted_mail_deployment_confirmed{"Intercepted Mail -- Deployment Confirmed"}
   andgate1((" + "))
-  vmch_recover_coordination_traffic["Mount the attack host's open NFS export and submit the flag on it"]
+  vmch_recover_coordination_traffic["Mount the attack host's open NFS export and submit its flag at the relay"]
   vmfl_recover_coordination_traffic{"Recover Coordination Traffic Flag"}
-  vmch_intercept_c2_channel["Find the listener on the attack host, read what it sends and submit the flag"]
+  vmch_intercept_c2_channel["Find the listener on the attack host, read what it sends and submit its flag at the relay"]
   vmfl_intercept_c2_channel{"Intercept C2 Channel Flag"}
-  vmch_escalate_on_attack_host["Log in to the attack host with the recovered account and submit the flag in its home directory"]
+  vmch_escalate_on_attack_host["Log in to the attack host with the recovered account; submit the flag in its home directory at the relay"]
   vmfl_escalate_on_attack_host{"Escalate On Attack Host Flag"}
-  vmch_terminate_cascade_scripts["Escalate to root on the attack host and submit the root flag"]
+  vmch_terminate_cascade_scripts["Escalate to root on the attack host and submit the root flag at the relay"]
   vmfl_terminate_cascade_scripts{"Terminate Cascade Scripts Flag"}
   aim_commit_the_team{{"Commit The Team And Get Inside"}}
   aim_reach_the_control_network{{"Get Onto The Control Network"}}
@@ -287,6 +289,7 @@ flowchart TD
   aim_reach_the_control_room{{"Get Into The Control Room"}}
   aim_take_the_attack_host{{"Take The Attack Host Off The Board"}}
   aim_end_the_sequence{{"Stop The Sequence And Report"}}
+  story_enter_server_hall_restricted>"Enter Server Hall -- Restricted"]
 
   door_server_room --> server_room
   door_scada_control --> scada_control
@@ -294,7 +297,8 @@ flowchart TD
   door_cable_vault --> cable_vault
   security_checkpoint -.-> lock_pick_kit
   lock_pick_kit -.-> door_generator_room
-  security_checkpoint --> rfid_cloner
+  security_checkpoint -.-> rfid_cloner
+  rfid_cloner -.-> door_server_room
   security_checkpoint --> fingerprint_kit
   security_checkpoint --> threat_desk_summary_tasking_02_41_pt
   security_checkpoint --> lock_badge_printer
@@ -337,10 +341,10 @@ flowchart TD
   vm_access_terminal --> vmch_recover_coordination_traffic
   security_checkpoint --> operations_floor
   aim_commit_the_team -.-> aim_reach_the_control_network
-  aim_commit_the_team -.-> aim_trace_the_intrusion
-  aim_commit_the_team -.-> aim_reach_the_control_room
   aim_reach_the_control_room -.-> aim_take_the_attack_host
   aim_take_the_attack_host -.-> aim_end_the_sequence
+  story_enter_server_hall_restricted -.->|server_hall_reached| aim_trace_the_intrusion
+  story_enter_server_hall_restricted -.->|server_hall_reached| aim_reach_the_control_room
   operations_floor -.-> aim_commit_the_team
   door_server_room -.-> aim_reach_the_control_network
   vmfl_recover_coordination_traffic -.-> aim_reach_the_control_network
@@ -361,11 +365,11 @@ flowchart TD
   class action_question_elena action
   class andgate1 gate
   class vmfl_recover_coordination_traffic,vmfl_intercept_c2_channel,vmfl_escalate_on_attack_host,vmfl_terminate_cascade_scripts flag
-  class aim_commit_the_team,aim_reach_the_control_room,aim_take_the_attack_host,aim_end_the_sequence critical
-  class aim_reach_the_control_network,aim_trace_the_intrusion aim
+  class aim_commit_the_team,aim_reach_the_control_network,aim_trace_the_intrusion aim
+  class aim_reach_the_control_room,aim_take_the_attack_host,aim_end_the_sequence,story_enter_server_hall_restricted critical
 
   classDef optional stroke-dasharray:5 2
-  class lock_pick_kit,contractor_badge_station optional
+  class lock_pick_kit,rfid_cloner,contractor_badge_station optional
   class node_start start
 ```
 

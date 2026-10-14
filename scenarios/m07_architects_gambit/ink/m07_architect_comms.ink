@@ -38,6 +38,7 @@ VAR heard_t10 = false
 VAR heard_t5 = false
 VAR heard_t1 = false
 VAR heard_signoff = false
+VAR t20_first_contact = false // PASS 5 design r1 (m4): T-20 came before T-30
 
 === start ===
 // PASS 2 playtest D2: after the win he is done. Synced global, so a reset
@@ -126,7 +127,16 @@ Narrator: The line drops. Your handset reports no call in the log.
 
 === taunt_t20 ===
 ~ heard_t20 = true
-Narrator: The handset cuts across the facility alarm. Same voice, same absence of hurry.
+// PASS 5 scenario design r1 (m4): a player held at the checkpoint for ten
+// minutes gets T-20 before first contact. Open as T-30 does and skip T-30;
+// t20_close carries T-30's echo line, so the teacher thread isn't lost.
+{not heard_t30:
+    ~ heard_t30 = true
+    ~ t20_first_contact = true
+    Narrator: Your handset lights without ringing. The call is already connected, and has been for some seconds.
+- else:
+    Narrator: The handset cuts across the facility alarm. Same voice, same absence of hurry.
+}
 
 You've sent your team.
 
@@ -160,6 +170,10 @@ You've sent your team.
 // PASS 5 alignment r2 (m9): T-20 needs a commit, so the uncommitted "Choose
 // slowly" branch is gone.
 Answer honestly. I'll know either way. Did you decide with a number, or with your stomach?
+{t20_first_contact and not architect_echo_heard:
+    ~ architect_echo_heard = true
+    Let it hurt afterwards, not during. I expect you've been told that.
+}
 
 Narrator: Dead air, then the ordinary hiss of a handset that thinks it has been idle for twenty minutes.
 

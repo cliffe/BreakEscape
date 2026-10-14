@@ -22,6 +22,7 @@ VAR player_name = "Agent 0x00"
 VAR casualty_projection_found = false
 VAR found_coordination_traffic = false
 VAR elena_outcome = ""
+VAR elena_met = false // Synced scenario global; PASS 5 design r1 (m8): only a player who met Elena can quote her
 VAR team_assignment = ""
 VAR team_redirected = false
 VAR countdown_expired = false
@@ -132,7 +133,7 @@ Dr. James Mercer: Sit if you like. You've walked a long way through my building.
 + {not heard_the_numbers} [{grid_saved:How many people were going to die tonight?|How many people die tonight?}]
     -> topic_numbers
 
-+ {not heard_elena} [Elena Rodriguez thinks this is a six-hour demonstration with nobody hurt.]
++ {elena_met and not heard_elena} [Elena Rodriguez thinks this is a six-hour demonstration with nobody hurt.]
     -> topic_elena
 
 + {casualty_projection_found and not showed_him_the_page} [I've got your projection here. Read it back to me.]

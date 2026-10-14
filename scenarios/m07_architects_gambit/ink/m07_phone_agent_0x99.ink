@@ -39,6 +39,12 @@ VAR hurt_line_said = false
 // PASS 4 dialogue playtest round: the clock answer and the vault hint read these.
 VAR cascade_armed = false
 VAR vault_pin_found = false
+// PASS 5 scenario design r1 (D1): report_progress reads these. Synced globals.
+VAR inside_reached = false
+VAR badge_obtained = false
+VAR server_hall_reached = false // Synced scenario global (PASS 5 design r1, m1): set by HaX's room_entered:server_room mapping, which also opens the control-room and plant aims
+VAR scada_door_reached = false
+VAR scada_password_found = false
 
 VAR flag1_submitted = false
 VAR flag2_submitted = false
@@ -131,11 +137,20 @@ Get past the checkpoint to the operations floor.
     {grid_saved:
         No clock now. The abort's in and the grid's holding.
     - else:
-        {cascade_armed:
+        // PASS 5 scenario design r1 (D2): the clock can run out; say what's
+        // left. Root already in means the console is the next step.
+        {
+        - countdown_expired and flag4_submitted:
+            Step one ran. Seattle's dark. Steps two to four wait on the abort, and the console in the control room will take it now.
+        - countdown_expired:
+            Step one ran. The rest waits on the abort. Root first, then the console.
+        - cascade_armed and flag4_submitted:
+            It's running, and root's in. The console in the control room takes the abort now.
+        - cascade_armed:
             It's running. Fifteen minutes from your login on their host. Get root, then put the abort in at the control room console.
         - else:
             No clock yet. The sequence waits on the host that drives it. The moment you log in there, assume they start it.
-            So open the control room door first. The console up there is the only place the abort goes in.
+            So open the control room door first. The console in there is the only place the abort goes in.
         }
     }
     -> first_call_committed_choices
@@ -208,7 +223,9 @@ Get past the checkpoint to the operations floor. Call me when you hit something 
 // assign_tactical_team itself, so it was always redundant once team_assigned.
 
 // --- No team yet (briefing closed early) ---
-+ {not team_assigned} [Where the team goes: I'm ready to make the call.]
+// PASS 5 scenario design r1 (m12): not after the abort; the night is over.
+// A commit after the login stays allowed (HaX's uncommitted flag-3 text invites it).
++ {not team_assigned and not grid_saved} [Where the team goes: I'm ready to make the call.]
     -> commit_team
 
 // --- The redirect window: open (never when the team is already there) ---
@@ -279,18 +296,14 @@ Get past the checkpoint to the operations floor. Call me when you hit something 
     -> vm_hint_4
 
 // --- Field guide requests ---
-+ {rfid_guide_offered and not rfid_guide_hint_given} [Send me the RFID cloning field guide.]
-    -> guide_rfid
-+ {lockpicking_guide_offered and not lockpicking_guide_hint_given} [Send me the lockpicking field guide.]
-    -> guide_lockpicking
-+ {recon_guide_offered and not recon_guide_hint_given} [Send me the recon and network mapping field guide.]
-    -> guide_recon
-+ {nfs_guide_offered and not nfs_guide_hint_given} [Send me the NFS and netcat field guide.]
-    -> guide_nfs
-+ {ssh_guide_offered and not ssh_guide_hint_given} [Send me the SSH field guide.]
-    -> guide_ssh
-+ {privesc_guide_offered and not privesc_guide_hint_given} [Send me the privilege escalation field guide.]
-    -> guide_privesc
+// PASS 5 scenario design r1 (m15): one choice, m04's pattern; the guides are
+// on a choices-only sub-menu (field_guides).
++ {guide_waiting()} [Send me a field guide.]
+    -> field_guides
+
+// --- PASS 5 scenario design r1 (D1): progress-aware status, m04's pattern ---
++ [Where do I stand?]
+    -> report_progress
 
 // --- PASS 4 dialogue (script edit S2): the preload lands in first_call_open, so the
 // layout and clock answers were unreachable. This sticky choice reaches them.
@@ -301,6 +314,87 @@ Get past the checkpoint to the operations floor. Call me when you hit something 
 + [I'll call you back.]
     I'm here. Go.
     #exit_conversation
+    -> hub
+
+// ===========================================
+// PASS 5 scenario design r1 (D1): WHERE DO I STAND?
+// Names the first step not yet done, in mission order. Each test asks whether a
+// step is done, never how (Hollis, the badge station or the clone; Elena or the
+// capture). Text only, then the hub; owns no choices, so a reopen can't land here.
+// ===========================================
+=== report_progress ===
+{
+- grid_saved and debrief_requested and flag1_submitted and flag2_submitted and flag3_submitted and flag4_submitted:
+    It's done. Netherton's waiting. Next door you go through, he's on the link.
+- grid_saved and flag1_submitted and flag2_submitted and flag3_submitted and flag4_submitted:
+    It's done. The grid's holding. Sweep what you want, then tell me to bring you in.
+- grid_saved:
+    Grid's held. Some of what you took off their host hasn't gone through the relay. Submit the rest, then call me.
+- not team_assigned:
+    The team's still waiting on your call. Make it first. Tell me where it goes and I'll pass it up.
+- not server_hall_reached:
+    {
+    - badge_obtained:
+        You've got a badge. The server hall reader's on the far side of the ops floor.
+    - not inside_reached:
+        Get past the checkpoint to the ops floor. The server hall beyond it wants a badge.
+    - hollis_ko:
+        The server hall reader wants a zone badge. Hollis's should be on the floor by him.
+        Or print one at the badge station behind his desk.
+    - else:
+        The server hall reader wants a zone badge. Hollis wears one, and the cloner copies it if you stand close.
+        Or print one at the badge station behind his desk.
+    }
+- not vm_terminal_used and not flag1_submitted:
+    The Kali box in the server hall is your way onto their network. Start there.
+- not flag1_submitted:
+    Their host has an NFS share open to anyone. Read it from the Kali box and put its flag through the relay.
+- not flag2_submitted:
+    Scan every port on their host. Something answers whoever connects. Its flag goes through the relay.
+- not scada_door_reached and not flag3_submitted:
+    Open the control room door, north of the server hall, before you log in on their host.
+    {scada_password_found: You've got the password.|Elena knows the password, and their listener gives it out.}
+- not flag3_submitted:
+    One SSH login: the name from the share, the password from the listener. The flag's in its home directory. The moment you log in, the clock starts.
+    {projection_revised and team_assigned and team_assignment != "trojan_horse" and not team_redirected and not redirect_window_closed:
+        If you mean to move the team, do it before you log in.
+    }
+- not flag4_submitted:
+    {countdown_expired:
+        Step one ran. Steps two to four haven't.
+    }
+    Get root on their host and put the root flag through the relay. The console opens itself after.
+    {not scada_door_reached:
+        And you'll need the control room door open for the abort.
+    }
+- else:
+    Root's in. Put the abort in at the console in the control room.
+}
+{not vault_entered and server_hall_reached:
+    The plant's south of the server hall, if you want to see how they got in. That part's optional.
+}
+-> hub
+
+// PASS 5 scenario design r1 (m15): is any field guide offered and not yet sent?
+=== function guide_waiting() ===
+~ return (rfid_guide_offered and not rfid_guide_hint_given) or (lockpicking_guide_offered and not lockpicking_guide_hint_given) or (recon_guide_offered and not recon_guide_hint_given) or (nfs_guide_offered and not nfs_guide_hint_given) or (ssh_guide_offered and not ssh_guide_hint_given) or (privesc_guide_offered and not privesc_guide_hint_given)
+
+// PASS 5 scenario design r1 (m15): choices-only, so a reopen replays nothing.
+// "Never mind." is sticky, so the menu is never empty.
+=== field_guides ===
++ {rfid_guide_offered and not rfid_guide_hint_given} [The RFID cloning guide.]
+    -> guide_rfid
++ {lockpicking_guide_offered and not lockpicking_guide_hint_given} [The lockpicking guide.]
+    -> guide_lockpicking
++ {recon_guide_offered and not recon_guide_hint_given} [The recon and network mapping guide.]
+    -> guide_recon
++ {nfs_guide_offered and not nfs_guide_hint_given} [The NFS and netcat guide.]
+    -> guide_nfs
++ {ssh_guide_offered and not ssh_guide_hint_given} [The SSH guide.]
+    -> guide_ssh
++ {privesc_guide_offered and not privesc_guide_hint_given} [The privilege escalation guide.]
+    -> guide_privesc
++ [Never mind.]
     -> hub
 
 // PASS 4 (design review fix 1): prints, exits, parks on the hub; owns no
@@ -678,7 +772,7 @@ RFID cloning guide's on your terminal.
 
 The reader trusts the card and never asks who's holding it.
 
-Hollis's badge works. So does anything the badge station behind his desk prints.
+Hollis's badge works, and so does a copy: stand close while he talks and the cloner reads it. Or the badge station behind his desk.
 
 -> guide_rfid_choices
 

@@ -14,11 +14,9 @@
 # storyPath / currentKnot / position / patrol / los), globalVariables and the
 # engine countdown timers.
 #
-# DELIBERATELY ABSENT — owned by later work packages:
-#   WP2  objectives + tasks, flagRewards, taskOnKO / globalVarOnKO
-#   WP6  itemsHeld field guides on agent_0x99, dialogue eventMappings
-#   WP7  Architect taunt eventMappings, Hollis / Park barks
-#   WP9  voice blocks, the music block, narrator block
+# The later work packages (WP2 objectives, flagRewards and KO wiring; WP6
+# field guides and HaX's mappings; WP7 the Architect's taunts and the barks;
+# WP9 voices, music and the narrator) have all landed in this file since.
 #
 # ROOM LAYOUT (grid units; 1 GU = 5 x 4 tiles = 160 x 128 px)
 #
@@ -102,9 +100,17 @@ scada_password = "CascadeWindow19"
     held back until the debrief has actually finished -- the m01/m02 pattern. %>
   "music": {
     "events": [
+      <%# PASS 5 scenario design r1 (m6): the game_loaded rows skip a saved grid,
+          which gets the end track back (a reload after the abort). %>
       {
         "trigger": "game_loaded",
-        "condition": "!globalVars.team_assigned && !globalVars.inside_reached",
+        "condition": "globalVars.grid_saved === true",
+        "playlist": "end",
+        "fade": false
+      },
+      {
+        "trigger": "game_loaded",
+        "condition": "!globalVars.team_assigned && !globalVars.inside_reached && !globalVars.grid_saved",
         "playlist": "cutscene",
         "fade": false
       },
@@ -113,7 +119,7 @@ scada_password = "CascadeWindow19"
           first ops-floor entry), so this fires once and never re-rolls the track. %>
       {
         "trigger": "game_loaded",
-        "condition": "globalVars.inside_reached === true && !globalVars.team_assigned",
+        "condition": "globalVars.inside_reached === true && !globalVars.team_assigned && !globalVars.grid_saved",
         "playlist": "noir",
         "fade": false
       },
@@ -125,7 +131,7 @@ scada_password = "CascadeWindow19"
       },
       {
         "trigger": "game_loaded",
-        "condition": "globalVars.team_assigned === true",
+        "condition": "globalVars.team_assigned === true && !globalVars.grid_saved",
         "playlist": "noir",
         "fade": false
       },
@@ -245,7 +251,7 @@ scada_password = "CascadeWindow19"
           { "text": "AGENT 0x00: Defended the call — the triage was sound on what was known", "style": "entry", "condition": "globalVars.debrief_stance === 'defended'" },
           { "text": "AGENT 0x00: Owned the two that went unanswered", "style": "entry", "condition": "globalVars.debrief_stance === 'owned'" },
           { "text": "AGENT 0x00: Refused the premise — one agent, four operations, no fourth option", "style": "entry", "condition": "globalVars.debrief_stance === 'refused'" },
-          { "text": "AGENT 0x00: Wants the numbers before he writes them — no more briefing off his figures", "style": "entry", "condition": "globalVars.debrief_stance === 'hardened'" },
+          { "text": "AGENT 0x00: Wants the numbers before writing them — no more briefing off the Architect's figures", "style": "entry", "condition": "globalVars.debrief_stance === 'hardened'" },
           { "text": "" },
           { "text": "THE ARCHITECT: At large. He chose the night, and the questions you were given.", "style": "warning" },
           { "text": "ENTROPY: Still operational.", "style": "warning" }
@@ -284,7 +290,9 @@ scada_password = "CascadeWindow19"
       "name": "RFID Cloner",
       "takeable": true,
       "observations": "Concealed RFID cloning device. Get close to a keycard to copy it.",
-      "puzzle_graph_role": "tool"
+      "puzzle_graph_role": "tool",
+      "puzzle_graph_unlocks": ["server_room"],
+      "puzzle_graph_optional": true
     },
     {
       "type": "fingerprint_kit",
@@ -327,10 +335,15 @@ scada_password = "CascadeWindow19"
     renamed -- ink packages reference them in #complete_task tags, and taskOnKO
     / concludeRequires reference them here.
 
-    Aim chain: commit_the_team -> {reach_the_control_network ->
-    reach_the_control_room -> take_the_attack_host -> end_the_sequence,
-    trace_the_intrusion (side branch)}. trace_the_intrusion unlocks off
-    commit_the_team rather than sitting in the chain. Two of its tasks are
+    Aim chain: commit_the_team -> reach_the_control_network; then, on the
+    first server-hall entry, reach_the_control_room -> take_the_attack_host ->
+    end_the_sequence and trace_the_intrusion (side branch). PASS 5 scenario
+    design r1 (m1): the control-room and plant aims are story-gated on
+    server_hall_reached (HaX's room_entered:server_room mapping sets it and
+    calls unlockAim), so the ops floor announces one aim, not three, and each
+    branch is announced where its door is. Neither aim has a task that can
+    complete before the server hall; an early one would be recorded and shown
+    on unlock (revealAimForTask). Two of its tasks are
     required within the aim since alignment round 2 (U5), but no other aim and
     no concludeRequires entry depends on it, so it never gates the conclusion.
 
@@ -350,7 +363,7 @@ scada_password = "CascadeWindow19"
     {
       "aimId": "commit_the_team",
       "title": "Commit The Team And Get Inside",
-      "description": "One tactical team, three crises it could answer, and a guard between you and the floor. Read all three briefs before you call it. The team turns the moment you do.",
+      "description": "One tactical team, three crises it could answer, and a guard between you and the floor. The desk summary in your kit has all three briefs: read them before you call it. The team turns the moment you do. If the Director didn't get your call, HaX takes it.",
       "status": "active",
       "order": 0,
       "tasks": [
@@ -411,7 +424,7 @@ scada_password = "CascadeWindow19"
             could never be met. Now the station-qualified display form. %>
         {
           "taskId": "recover_coordination_traffic",
-          "title": "Mount the attack host's open NFS export and submit the flag on it",
+          "title": "Mount the attack host's open NFS export and submit its flag at the relay",
           "type": "submit_flags",
           "targetFlags": ["flag_station_safetynet_relay:scada_attack_host-flag1"],
           "targetCount": 1,
@@ -422,7 +435,7 @@ scada_password = "CascadeWindow19"
         {
           "taskId": "intercept_c2_channel",
           "puzzle_graph_unlocks": "scada_control",
-          "title": "Find the listener on the attack host, read what it sends and submit the flag",
+          "title": "Find the listener on the attack host, read what it sends and submit its flag at the relay",
           "type": "submit_flags",
           "targetFlags": ["flag_station_safetynet_relay:scada_attack_host-flag2"],
           "targetCount": 1,
@@ -435,15 +448,17 @@ scada_password = "CascadeWindow19"
     <%# PASS 2 review minor 12 (lesson 27): this aim and reach_the_control_room
         used to unlock on reach_the_control_network (flags 1 and 2), but their
         tasks could complete earlier (Elena's password, for one), which
-        auto-revealed them out of order. Both are parallel goals once inside, so
-        they now unlock with the network aim, on commit_the_team. %>
+        auto-revealed them out of order. Both are parallel goals once inside.
+        PASS 5 scenario design r1 (m1): they open on the first server-hall
+        entry (server_hall_reached), not on commit_the_team, so they no longer
+        land on the ops floor two rooms early. %>
     {
       "aimId": "trace_the_intrusion",
       "title": "Trace How They Got In",
       "description": "The control stack did not reach the breakers by wishing. Something physical was put in this building months ago. Follow it down through the plant, before the abort or after it. Once you call HaX for the debrief, the building belongs to the police.",
       "status": "locked",
       "order": 2,
-      "unlockCondition": { "aimCompleted": "commit_the_team" },
+      "unlockCondition": { "globalVariable": "server_hall_reached" },
       "tasks": [
         <%# U5 (orchestrator, 2026-10-14): required again so the aim doesn't
             complete on the generator hall; it gates nothing. The engine fix (an
@@ -497,7 +512,7 @@ scada_password = "CascadeWindow19"
       "description": "The master console for 147 substations is behind a password nobody left lying about, and there is someone already sitting at it.",
       "status": "locked",
       "order": 3,
-      "unlockCondition": { "aimCompleted": "commit_the_team" },
+      "unlockCondition": { "globalVariable": "server_hall_reached" },
       "tasks": [
         {
           "taskId": "reach_scada_control",
@@ -530,7 +545,7 @@ scada_password = "CascadeWindow19"
             (CONTRACT.md S8). %>
         {
           "taskId": "escalate_on_attack_host",
-          "title": "Log in to the attack host with the recovered account and submit the flag in its home directory",
+          "title": "Log in to the attack host with the recovered account; submit the flag in its home directory at the relay",
           "type": "submit_flags",
           "targetFlags": ["flag_station_safetynet_relay:scada_attack_host-flag3"],
           "targetCount": 1,
@@ -541,7 +556,7 @@ scada_password = "CascadeWindow19"
         {
           "taskId": "terminate_cascade_scripts",
           "puzzle_graph_unlocks": "crisis_control_system",
-          "title": "Escalate to root on the attack host and submit the root flag",
+          "title": "Escalate to root on the attack host and submit the root flag at the relay",
           "type": "submit_flags",
           "targetFlags": ["flag_station_safetynet_relay:scada_attack_host-flag4"],
           "targetCount": 1,
@@ -615,11 +630,12 @@ scada_password = "CascadeWindow19"
       architect_t1_played     14 min after flag3_submitted
       countdown_expired       15 min after flag3_submitted (step one runs: Seattle)
     Only the armed clock is shown. All cancelled by grid_saved.
-    PASS 2 review M1: the HUD (ui/scenario-timer.js) ignores cancelOnGlobal and
-    the dispatcher restarts started timers on reload, so each timer also
-    carries a "condition" on grid_saved: the HUD hides a timer whose condition
-    fails (ui/scenario-timer.js:190-196) and the dispatcher skips its setGlobal
-    (ui/scenario-timer-dispatcher.js:205-213). Engine gap logged. The redirect
+    PASS 2 review M1: the HUD (ui/scenario-timer.js) ignores cancelOnGlobal, so
+    each timer also carries a "condition" on grid_saved: the HUD hides a timer
+    whose condition fails and the dispatcher skips its setGlobal. PASS 5
+    scenario design r1 (m5): the dispatcher now resumes started timers on
+    reload from their saved start times (scenario-timer-dispatcher.js, D14),
+    so the fifteen-minute clock survives a reload; the guards stay. The redirect
     window also closes on flag3_submitted (agent_0x99 mapping).
     PASS 5 alignment r1 (M4): T-10 used to share the 40-minute timer with the
     window, so it always opened with the window shut and its open-window lines
@@ -806,9 +822,19 @@ scada_password = "CascadeWindow19"
               "setGlobal": { "hurt_line_said": true },
               "sendTimedMessage": { "delay": 2000, "message": "Team's turned. Two of the three go unanswered tonight. Let it hurt afterwards, not during." }
             },
+            <%# PASS 5 scenario design r1 (m2): a player who closed the briefing
+                uncommitted is told where the call is made. Two rows, disjoint on
+                team_assigned (the committed row is a backstop). %>
             {
               "eventPattern": "room_entered:operations_floor",
-              "condition": "!globalVars.hurt_line_said",
+              "condition": "!globalVars.hurt_line_said && !globalVars.team_assigned",
+              "onceOnly": true,
+              "setGlobal": { "hurt_line_said": true },
+              "sendTimedMessage": { "delay": 1000, "message": "You're inside, and the team's still over Denver waiting on your call. Phone me when you've decided. Let it hurt afterwards, not during." }
+            },
+            {
+              "eventPattern": "room_entered:operations_floor",
+              "condition": "!globalVars.hurt_line_said && globalVars.team_assigned === true",
               "onceOnly": true,
               "setGlobal": { "hurt_line_said": true },
               "sendTimedMessage": { "delay": 1000, "message": "You're inside. Whatever you decide tonight, let it hurt afterwards, not during." }
@@ -975,6 +1001,32 @@ scada_password = "CascadeWindow19"
               "setGlobal": { "flag4_submitted": true },
               "sendTimedMessage": { "delay": 1500, "message": "Root. Their job's dead and they're locked out. The console in the control room will take an abort now. Go and give it one." }
             },
+            <%# PASS 5 scenario design r1 (D3): the console is flag-locked with no
+                requires (one submission point per flag), so the engine's flag
+                prompt can never accept anything there. object_interacted fires
+                before the lock screen (interactions.js handleObjectInteraction).
+                Mission-side stopgap; the engine fix is E1 in DECISIONS_PENDING. %>
+            {
+              "eventPattern": "object_interacted",
+              "condition": "data.objectName === 'Cascade Control System' && !globalVars.flag4_submitted",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 800, "message": "That console takes nothing typed into it. The root flag goes through the relay in the server hall, and the console opens itself after." }
+            },
+            <%# PASS 5 scenario design r1 (D2): the clock ran out. The Architect barks
+                at 0.5 s; HaX follows at 5 s with what is left. Two rows, disjoint on
+                flag4_submitted. %>
+            {
+              "eventPattern": "global_variable_changed:countdown_expired",
+              "condition": "value === true && !globalVars.grid_saved && !globalVars.flag4_submitted",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 5000, "message": "Seattle's dark. Step one ran. Steps two to four haven't. Get root, put it through the relay, then the abort at the console." }
+            },
+            {
+              "eventPattern": "global_variable_changed:countdown_expired",
+              "condition": "value === true && !globalVars.grid_saved && globalVars.flag4_submitted === true",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 5000, "message": "Seattle's dark. Step one ran. Steps two to four haven't. Root's in, so the console takes the abort now. Go." }
+            },
             {
               "_comment": "PASS 3 (P6): recover_vault_pin is now unlock_room on cable_vault, so it ticks at the door. search_cable_vault ticks on reading the splice (vault_trunk_runs onRead), a separate beat.",
               "eventPattern": "global_variable_changed:splice_found",
@@ -988,6 +1040,13 @@ scada_password = "CascadeWindow19"
               "condition": "globalVars.hollis_backed_off === true && globalVars.hollis_resolved === '' && !globalVars.hollis_ko",
               "onceOnly": true,
               "setGlobal": { "hollis_resolved": "evaded" }
+            },
+            {
+              "_comment": "PASS 5 scenario design r1 (m1): the control-room and plant aims open here, where their doors are, instead of on the ops floor. unlockAim is idempotent; the server re-derives the unlock from the saved global on reload. Also read by HaX's report_progress (D1).",
+              "eventPattern": "room_entered:server_room",
+              "onceOnly": true,
+              "setGlobal": { "server_hall_reached": true },
+              "unlockAim": ["reach_the_control_room", "trace_the_intrusion"]
             },
             {
               "_comment": "PASS 3 (P6): gates HaX's 'where do I get the vault code' hub option.",
@@ -1382,8 +1441,9 @@ scada_password = "CascadeWindow19"
           "currentKnot": "start",
           "eventMappings": [
             {
-              "_comment": "T-30 equivalent: first contact once the player is inside. A bark, not an auto-opened call, so it never tears down a conversation or a terminal (lesson 20).",
+              "_comment": "T-30 equivalent: first contact once the player is inside. A bark, not an auto-opened call, so it never tears down a conversation or a terminal (lesson 20). PASS 5 scenario design r1 (m4): skipped when T-20 has already played, because T-20 was then the first contact and this bark would open on dead air.",
               "eventPattern": "room_entered:operations_floor",
+              "condition": "!globalVars.architect_t20_played",
               "onceOnly": true,
               "setGlobal": { "architect_contact": true },
               "sendTimedMessage": { "delay": 5000, "message": "Agent 0x00.", "targetKnot": "start" }
@@ -1848,7 +1908,7 @@ scada_password = "CascadeWindow19"
           "takeable": false,
           "locked": true,
           "lockType": "flag",
-          "observations": "The master control position for 147 substations. The scheduled sequence is loaded and pending. It will not take an abort from this chair while the host driving it is still on the network, and nothing typed here changes that. It opens itself once you have root on that host and report it at the relay.",
+          "observations": "The master control position for 147 substations. The abort goes in here, once the host driving the sequence is off the network and reported at the relay. Nothing typed at this chair changes that.",
           "contents": [
             {
               "type": "text_file",
@@ -1878,6 +1938,7 @@ scada_password = "CascadeWindow19"
           "text": "AUTOMATED SEQUENCE -- LOADED\nAWAITING START SIGNAL FROM HOST\n\nThe sequence is local. Once the host starts it, it does not phone home, it cannot be paused from outside this building, and it does not care whether anyone is watching it.",
           "textVariants": [
             { "condition": "globalVars.grid_saved", "value": "AUTOMATED SEQUENCE -- ABORTED\n\nThe display has stopped. Nobody has thought to switch it off." },
+            { "condition": "globalVars.countdown_expired", "value": "AUTOMATED SEQUENCE -- RUNNING\nSTEP 01  SEATTLE METRO -- EXECUTED\nSTEPS 02-04 -- PENDING\n\nOne region of the map has gone grey. The rest is waiting on the next step." },
             { "condition": "globalVars.cascade_armed", "value": "AUTOMATED SEQUENCE -- ARMED\nEXECUTION PENDING\n\nThe sequence is local. It does not phone home, it cannot be paused from outside this building, and it does not care whether anyone is watching it." }
           ]
         },
@@ -2056,7 +2117,7 @@ scada_password = "CascadeWindow19"
           "readable": true,
           "observations": "An intercept pulled off the compromised host and printed here, on this side of the wire, by somebody who wanted a paper copy.",
           "observationDisplay": "gameDisplay",
-          "text": "From:    [REDACTED]@safetynet.gov\nTo:      architect@entropy.onion\nDate:    09:50 UTC\nSubject: Deployment confirmed\n\n\"Four targets, simultaneous. 0x00 to Portland. One team uncommitted --\nthey'll have to choose. Window: thirty minutes.\"\n\n-- end of message --",
+          "text": "From:    [REDACTED]@safetynet.gov\nTo:      architect@entropy.onion\nDate:    09:50 UTC\nSubject: Deployment confirmed\n\n\"Four targets, simultaneous. 0x00 to Portland. One team uncommitted --\nthey'll have to choose. Window: forty minutes.\"\n\n-- end of message --",
           "onRead": { "setVariable": { "found_mole_evidence": true } },
           "puzzle_graph_role": "clue",
           "puzzle_graph_reveals": "the_mole_leaked_the_agent_before_the_tasking_order"
@@ -2150,6 +2211,7 @@ scada_password = "CascadeWindow19"
     "vault_entered": false,
     "splice_found": false,
     "inside_reached": false,
+    "server_hall_reached": false,
 
 <%# --- Win condition and lore --------------------------------------------- %>
     "grid_saved": false,

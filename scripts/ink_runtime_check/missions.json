@@ -1077,6 +1077,7 @@
       "vault_entered": false,
       "splice_found": false,
       "inside_reached": false,
+      "server_hall_reached": false,
       "grid_saved": false,
       "found_tomb_gamma": false,
       "found_mole_evidence": false,

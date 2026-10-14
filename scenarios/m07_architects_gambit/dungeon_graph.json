@@ -66,7 +66,7 @@
       "id": "rfid_cloner",
       "label": "RFID Cloner",
       "kind": "item",
-      "optional": false
+      "optional": true
     },
     {
       "id": "fingerprint_kit",
@@ -208,7 +208,7 @@
     },
     {
       "id": "vmch_recover_coordination_traffic",
-      "label": "Mount the attack host's open NFS export and submit the flag on it",
+      "label": "Mount the attack host's open NFS export and submit its flag at the relay",
       "kind": "vm",
       "optional": false
     },
@@ -220,7 +220,7 @@
     },
     {
       "id": "vmch_intercept_c2_channel",
-      "label": "Find the listener on the attack host, read what it sends and submit the flag",
+      "label": "Find the listener on the attack host, read what it sends and submit its flag at the relay",
       "kind": "vm",
       "optional": false
     },
@@ -232,7 +232,7 @@
     },
     {
       "id": "vmch_escalate_on_attack_host",
-      "label": "Log in to the attack host with the recovered account and submit the flag in its home directory",
+      "label": "Log in to the attack host with the recovered account; submit the flag in its home directory at the relay",
       "kind": "vm",
       "optional": false
     },
@@ -244,7 +244,7 @@
     },
     {
       "id": "vmch_terminate_cascade_scripts",
-      "label": "Escalate to root on the attack host and submit the root flag",
+      "label": "Escalate to root on the attack host and submit the root flag at the relay",
       "kind": "vm",
       "optional": false
     },
@@ -289,7 +289,12 @@
     {
       "from": "security_checkpoint",
       "to": "rfid_cloner",
-      "soft": false
+      "soft": true
+    },
+    {
+      "from": "rfid_cloner",
+      "to": "door_server_room",
+      "soft": true
     },
     {
       "from": "security_checkpoint",
