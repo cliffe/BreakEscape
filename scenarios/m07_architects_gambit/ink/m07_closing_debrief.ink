@@ -580,6 +580,7 @@ Agent HaX: The variable was you. Something in that building could have shown us 
 = coda_close
 + [Then he got what he came for.]
 + [What does he do with a reading?]
+    Director Magnus Netherton: Uses it. That is next year's problem, not tonight's.
 - Director Magnus Netherton: Agent. Look at me.
 {countdown_expired:
     Director Magnus Netherton: Seattle lost power for a while. The rest of three states never did. Nothing either of you has said changes that.

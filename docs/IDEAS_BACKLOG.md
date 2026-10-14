@@ -45,6 +45,7 @@ From the PIN cracker fix (2026-10-10), found but not fixed:
 - **Phone timestamps survive a reload** (m03 dialogue playtest; S). After a reload every message in a thread is re-stamped with the reload minute.
 - **Resume in the room you left** (engine fixer; M). Reload always respawns at `startRoom`; see P10 in the pass-4 log.
   - Also on a KO (m06 struggling run A, 2026-10-13): a knocked-out player respawns in reception, five rooms from the fight, with the hostile NPC still hostile.
+- **Phone-chat number keys stop at 5** (m07 dialogue browser check, 2026-10-14; S). `phone-chat-minigame.js` `handleKeyPress` maps keys 1–5 only, but hubs show up to 9 choices, so choices 6–9 (often "Where do I stand?") can only be clicked. Map 1–9.
 - **A hit closes the phone** (m05/m07 browser checks, 2026-10-14; S–M). `player-damage-interrupt.js` closes any open minigame on damage, so a player being chased can't read HaX's fight-controls texts or use a phone way out (m05 "Send Security"). Pause NPC attacks while the phone is open, or don't close the phone on damage.
 - **Punch cone misses with single-arrow facing** (m07 puzzle browser check, 2026-10-14; S). The ±30° punch cone means attackers standing ~45° off a cardinal facing are mostly missed unless the player holds two arrow keys (1 of ~25 vs 11 of 11). Widen the cone, auto-face the nearest hostile on a punch, or show a cue.
 - **RFID reader opens the cloner with nothing to emulate** (m07 puzzle fixer, 2026-10-14; S). The reader starts the flipper minigame even when the player holds no saved card; say so instead.

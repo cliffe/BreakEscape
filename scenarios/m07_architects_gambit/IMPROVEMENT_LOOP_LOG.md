@@ -730,3 +730,6 @@ Full detail, per room and per finding, in `ROOM_DRESSING.md`; evidence in `build
 
 ### Stage 4 room dressing: CLOSED (orchestrator, 2026-10-14)
 Cycles 3–5 detail in `ROOM_DRESSING.md`. Cycle 5 fresh review 0/0/4 (`build_evidence/dressing_c5/review_c5.md`): m-1 ops back-row chair behind shelves, m-2 ATS cover should lean on the wall, m-3 open trench reads as a grille, m-4 stale builder docstrings — all optional, to pick up during lighting. Interaction walk game 2443 (`build_evidence/dressing_c5/walk_game2443.md`): 0/0/5, no pick-one menus, doors and lanes clear, fixtures persist after read and reload; F1 SCADA monitor hides the mimic's left lights (minor). Top-left taps on the five takeables untested (they vanish on first take). First room (operations floor) pending sign-off, U13. Next: lighting.
+
+### Phase 4 dialogue: CLOSED (orchestrator, 2026-10-14)
+Cycle 2 review 0/0/23, fixed (ba0308c5); browser check games 2445/2450 all five items pass (`PASS5_DIALOGUE_BROWSER_CHECK.md`). Orchestrator fixed its N3 (Netherton now answers "[What does he do with a reading?]": "Uses it. That is next year's problem, not tonight's.") and N4 (the deduction choice retires after the abort). N1 (number keys 1–5 only) backlogged; N2 sub-menu reopen is known and accepted. Routes 31/31, lint clean.

@@ -254,7 +254,7 @@ HaX here, Agent. I've got your channel and the board.
 // --- PASS 5 alignment r1 (M2): the deduction. The decode no longer sets
 // projection_revised and nobody names the row; the player says which operation
 // and what's wrong. Checks what's done (the decode read), not how.
-+ {found_coordination_traffic and not projection_revised} [Their schedule doesn't match our brief.]
++ {found_coordination_traffic and not projection_revised and not grid_saved} [Their schedule doesn't match our brief.]
     -> deduce_schedule
 
 // --- The coordination traffic (the player already has the correction, from
