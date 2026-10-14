@@ -12,7 +12,7 @@
 {"room":"data_center"},
 {"room":"executive_wing"},
 {"talk":"minder","knot":"on_sighted","picks":["Routine supervisory visit","step aside"]},
-{"said":["Q for fists, then E or click when he's in front. Step back between swings. Or back off: Q again stows them, then click to walk."]},
+{"said":["Q for fists, then E or click when he's in front. Step back between swings. Press Q till the open hand shows to walk by clicking."]},
 {"expect":{"minder_hostile":true}},
 {"ko":"satoshi_minder"},
 {"set":{"door_open_satoshi_office":true}},
