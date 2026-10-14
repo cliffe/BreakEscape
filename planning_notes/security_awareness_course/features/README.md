@@ -80,6 +80,7 @@ Priority: **MVP** is needed for the first sellable course (the Induction Essenti
 | EX-05 | Demonstration scenes | A short cutscene of an attack working on a colleague, then unpicked by the mentor | P2 | S |
 | EX-06 | Attacker-view interludes | The learner briefly plays an authorised tester to see how little an attacker needs | P2 | M |
 | EX-07 | Shared glossary and tooltips | One definition per term across the course, shown as tooltips and on reference cards | P2 | S |
+| EX-08 | Printable poster and briefing pack | Posters, desk cards and a short team briefing per module, branded with the organisation profile, for customers' own offices; helps meet PCI DSS 12.6.3's "multiple methods" | P2 | S |
 
 ## Hacktivity (HA)
 
