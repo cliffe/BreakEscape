@@ -283,8 +283,8 @@ Robin Tait (a made-up learner) completed core_01 over two sittings. In the hook 
 ```
 GAME (in the learner's browser)
   BE-01 assessed decisions
-  MG-20 check answers              events: with the game's saves (MVP),
-  BE-09 policy acknowledgements    then also as xAPI statements (BE-14) to HA-22 (P2)
+  MG-20 check answers              records: behaviour and option only, posted as they happen;
+  BE-09 policy acknowledgements    the server rates them, and from P2 turns them into xAPI (BE-14, HA-22)
         |
         v
 HACKTIVITY
@@ -300,29 +300,28 @@ OUTSIDE                                                                  |
 ```
 
 1. **Launch.** Hacktivity creates the attempt, stamps it with the module version (HA-19) and the organisation profile version (HA-11), and gives the game a short-lived token. The game builds the scenario with the organisation's values (BE-05).
-2. **During play.** BE-01 records each assessed moment as an event: the behaviour id, the outcome ids, the rating, the beat (hook, practise, apply, remediation), the game time, and what the player did (the choice or minigame result). Every event has its own id, so sending it twice does no harm, and resuming after a break (BE-12) loses nothing.
-   - *In the MVP*, the events travel with the game's existing saves to the server (which already happen every 30 seconds and when the page is hidden).
-   - *From P2*, each event is also an xAPI statement (BE-14) sent to Hacktivity's learning record store (HA-22). Statements identify the learner by an opaque account, never by name or email.
-3. **The debrief (BE-02)** is built in the game from the same events and the same rules, so the learner sees their results at once.
-4. **The check (MG-20)** sends each answer; the server marks it against the key it holds.
-5. **The server applies the rules.** The module's evidence rules (the behaviour table, transcribed into the scenario data that BE-01 reads) are applied again on the server, and the server's result is the one recorded. If it ever differs from what the debrief showed, that is logged as a bug.
-6. **Completion.** When the rules in section 7 are met, the record is written, policy acknowledgements are linked, the certificate is issued, the assignment closes, reminders stop and the dashboards update.
+2. **During play.** For each assessed moment, the game records which behaviour it was and which option the player took (never a rating), with the beat (hook, practise, apply, remediation), the game time and where it happened (BE-01). Knowledge check answers (MG-20), critical behaviour loops and policy acknowledgements (BE-09) are recorded the same way. Records are queued in the browser and posted within about a second; each has its own id, so sending one twice does no harm, and a dropped connection or a break between sittings (BE-12) loses nothing.
+3. **The server rates them.** As each record arrives, the server checks it against the module's assessment map (the behaviour table, transcribed into the scenario data; the rating map never reaches the browser), works out the rating, the outcomes it counts towards and any critical behaviour it settles, and keeps a running summary for the game. Check answers are marked against keys the browser never receives.
+4. **The debrief (BE-02)** shows the server's summary, so what the learner sees is exactly what is recorded.
+5. **From P2, the statements.** The server also turns the records into xAPI statements (BE-14) and stores them in Hacktivity's learning record store (HA-22). Statements identify the learner by an opaque account, never by name or email, and no store credentials reach the browser.
+6. **Completion.** When the rules in section 7 are met, the engine hands its summary to Hacktivity, which writes the completion record (HA-05) with the assignment, the versions and the times, links any policy acknowledgements, issues the certificate, closes the assignment, stops reminders and updates the dashboards.
 7. **Out to an LMS** (HA-10), when the learner was launched from one: SCORM 1.2 gets `incomplete` until completion and then `passed` with the check score; SCORM 2004 gets completion and success separately, the scaled score and the session time (and per-outcome objectives only if the organisation turns them on); LTI 1.3 gets a score with activity progress Completed and grading progress FullyGraded through Assignment and Grade Services; cmi5 gets the cmi5 statements (initialized, completed, passed, terminated), and per-outcome statements only if the organisation turns them on.
 8. **Out to a customer's own learning record store** (HA-22 forwarding), optional, filtered, with the same privacy caution.
 
 ### The statements, in outline
 
-BE-14 defines the course's xAPI profile. In outline:
+BE-14 defines the course's xAPI statements and publishes them as an xAPI profile. In outline:
 
 | Moment | Verb | Object | Result and context |
 |---|---|---|---|
-| Module launched, started, finished | The cmi5 verbs (launched, initialized, completed, passed, terminated) | The module version | Score in passed; duration |
-| Assessed decision | A course profile verb defined in BE-14 | The behaviour (for example C01-B3) | Rating; outcome ids; beat; module version |
-| Check item answered | An ADL vocabulary verb such as answered | The item (for example C01-Q2) | Correct or not; the option chosen |
-| Critical behaviour loop | The course profile verb | The critical behaviour | Shown after practice, or not yet shown; loop number |
-| Policy acknowledged | The course profile verb | The policy version | The statement text's fingerprint |
+| Session | initialized, suspended, resumed, terminated | The module | Registration per attempt; module version, route, language |
+| Assessed decision | interacted | The behaviour (for example C01-B3) | The option chosen; a rating extension; the outcome ids |
+| Check item | answered | The item (for example C01-Q2) | Correct or not; the option chosen |
+| The knowledge check | passed; an attempt below the pass mark is recorded as failed inside Hacktivity only | The module's check | Scaled score |
+| Module complete | completed | The module | Duration |
+| Reference card opened, video watched | experienced | The card or video | |
 
-The xAPI version is 2.0 (the current one; ADL's specification repository points to it), keeping to what version 1.0.3 learning record stores also accept (see HA-22).
+Verbs are from the ADL vocabulary. Statements that leave Hacktivity never use failed: to a customer's LMS or store, an attempt below the pass mark is simply not passed yet (principle 4). For a learner launched through cmi5 (HA-10), the statements cmi5 defines go to the customer's LMS in the order cmi5 requires; per-decision statements go only if the organisation turns them on (BE-14 recommends module-level results by default). The xAPI version is the one BE-14 names: the current base standard, which ADL's [specification repository](https://github.com/adlnet/xAPI-Spec) points to as xAPI 2.0, maintained with IEEE (BE-14 gives the IEEE reference).
 
 ## 9. What each framework expects, and how the record meets it
 

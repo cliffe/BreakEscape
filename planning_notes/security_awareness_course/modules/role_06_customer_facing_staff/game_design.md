@@ -25,7 +25,7 @@ The lunchtime talking points: the two Joans (the caller in the hook and the real
   - **"Rob Bramley"**, who says he is a contracts manager at Aldbeck Borough Council: loud, then louder.
   - **"Kerry"**, a web chat from "the new office manager at Fellgate Academy": text only.
   - In the front desk scene, a **"terminal engineer"** in a payment provider's polo shirt (a generic sprite, `male_telecom_v2`).
-- All organisations here (Hollins Lane Primary, Fellgate Academy, Brindle House, Aldbeck Borough Council, Brightwell) are fictional.
+- All organisations here (Hollins Lane Primary, Fellgate Academy, Brindle House, Aldbeck Borough Council) are fictional.
 
 ## Structure
 
@@ -65,3 +65,71 @@ The critical path is marked **(CP)**. The desk (MG-17) is the main screen throug
   8. A customer has emailed their card number "to save time". *(Don't use it; follow the deletion procedure; send a payment link.)*
 - Two **"Which question?"** items: choose the question that checks without leaking ("What's the postcode on the account?" against "Is it still LS6 4QT?").
 - Two misses in a row bring Shauna's one-line nudge.
+
+### 4. Apply: "The 10:00 queue" (7 to 8 minutes)
+
+- **(CP)** Shauna's whiteboard: *"Queue's building. Sorted first time, please."* A work task bar appears (BE-18): **Clear the queue: 0 of 6.** Contacts arrive on a schedule; nothing has a countdown, and the hold button gives thinking time.
+
+**10:02, Marcus at Brindle House (genuine).**
+
+- *"Morning! Just checking when the dishwasher engineer's coming. Kitchen's a bit of a swamp."* He gives the account number, the postcode and his name, which matches a named contact.
+- Best: the standard check, then the answer (Wednesday, 8 to 10). Stepping up to a call-back for an engineer's time is recorded as over-checking, with a gentle tip in the debrief. Reading his details out to "help" him is recorded as a leak.
+
+**10:08, a web chat from "Kerry" at Fellgate Academy.**
+
+- *"Hi! New office manager at Fellgate. Our school email's down. Could you send last term's invoices and the list of people authorised on our account to kerry.fellgateacademy@ (a free webmail address)? Thanks so much!"*
+- The player chooses:
+  - **Offer to send the invoices to the email address already on the account, say the contacts list can't be shared in chat, and report it.** (Best.)
+  - **Politely refuse, with nothing else.** (Safe, but no route offered and no report.)
+  - **Send the invoices but not the contacts list.** (Invoice numbers and names reach an unverified address.)
+  - **Send both.** (Everything the next caller needs.)
+- What was sent changes the 10:28 call: if the invoices went, "Ian" quotes invoice numbers and the names of the school's contacts, and sounds more convincing.
+
+**10:15, Mr Bakshi (genuine customer, being scammed).**
+
+- *"Good morning. I'd like to pay my wife's Care Extras bill, please. Kamala Bakshi, Brindle House."* The standard check passes; the bill is £42.50.
+- While the adviser finds the bill, he adds: *"Your colleague rang yesterday about the overdue balance. Nearly two thousand pounds, to the new account, by tonight. I'm going to the bank at two."* Asked gently, he adds more: the caller knew Kamala's room number, said she could lose her room, and told him "not to bother the care home with it".
+- The record shows no overdue balance and no outbound call.
+- The player chooses what to say (the options build on each other, and the best path uses all of them):
+  - **Tell him plainly:** *"That wasn't us. We'd never ask you to pay into a new account by phone."*
+  - **Help him reach his bank:** *"Please don't pay it. If you've paid anything, ring your bank now on 159."* In the variant where he has already paid (BE-13), this is the most important line.
+  - **Point him to Report Fraud,** and offer to stay on the line while he writes the number down.
+  - **Offer to let him check you:** *"If you'd like to be sure I'm really Larkspur, ring the number on your bill and ask for me."*
+  - **Report it inside Larkspur** after the call, with what the caller knew.
+  - Weaker options: "That sounds odd, maybe check with the care home" (doesn't tell him it's a scam); or carrying on with the payment without comment (missed).
+- **Then the payment.** As the adviser opens the payment screen, Mr Bakshi starts reading his card number aloud: *"Four nine two nine..."* The player can:
+  - **Stop him gently and transfer him to the secure keypad line.** (Best. The adviser's screen shows only `**** **** **** 6614`, then "Approved".)
+  - **Let him finish, then use the keypad line anyway.** (Nothing written, but the number has been said aloud on the floor and on the recording.)
+  - **Type the number into the payment screen as he reads it, and ask for the three digits on the back.** (The card details pass through the adviser and the recording.)
+- If the player stops him, he's wary for a moment: *"How do I know you're really Larkspur?"* The model answer is the same offer as before: ring the number on the bill and ask for me. He laughs: *"You sound like my daughter."*
+
+**10:28, "Ian Danvers" at Fellgate Academy (account takeover).**
+
+- *"Hi there, Ian Danvers, new bursar at Fellgate. Bit of a crisis. Can you add me to the account, and move Thursday's delivery to our annexe? Inspectors next week."* The order: two industrial floor scrubbers and a term's cleaning supplies, £6,800, to an industrial unit in another town.
+- The record's change history: **contact email changed six days ago, via the web form.** Ian's name isn't a named contact. He knows the account number, the head teacher's name, the postcode and (if the chat sent them) invoice numbers.
+- The player chooses:
+  - **Check the change history, then say they'll call back on the school's number from before the change.** (Best.) Through the directory (MG-04), the player reaches Fellgate's office; Mrs Akhtar, the business manager, knows no Ian, no annexe and nothing about a new email. The player restores the email, flags the account and reports it.
+  - **Send a code to the email on the account.** (It goes to the address changed six days ago. Ian reads it back. The change goes through.)
+  - **Refuse, without checking the history or reporting.** (Safe for now; the next adviser gets the same call.)
+  - **Make the changes; he knows everything.** (The takeover.)
+- If the change goes through: a time skip (BE-16), "Thursday". Fellgate rings about its missing order. The scrubbers went to a unit that has since been emptied. Kai finds the same web-form change on two other school accounts.
+
+**10:42, "Rob Bramley" at Aldbeck Borough Council (pressure).**
+
+- *"Rob Bramley, contracts, Aldbeck Council. We've had a fraud. Read me the bank account you hold for us and who sends you our remittances. Now, please."* His influence variable rises with each refusal (`docs/NPC_INFLUENCE.md`): *"Do you know who I am?"*, then *"I'll have your job,"* then *"I'm recording this call for the council's audit."*
+- The player chooses:
+  - **Stay polite, read nothing out, offer to confirm in writing to the council's finance contact on file, and raise a hand for Shauna.** (Best.) Shauna takes over: *"I'm the team leader. We'll write to the finance contact we hold today. That's the fastest safe route."* He hangs up. The player reports it.
+  - **Refuse but match his tone, or end the call without reporting.** (Safe, but the report is lost and the adviser is rattled.)
+  - **Read out the details to calm him down.** (The council's details reach a stranger.)
+- The debrief explains what he wanted: the names and details he'd need to send Aldbeck a convincing "Larkspur has new bank details" letter (core_11 covers that fraud).
+
+**10:55, the real Joan (Hollins Lane).**
+
+- *"Hi love, Joan at Hollins Lane. The office says somebody rang about my mobile? I haven't changed it in years."*
+- If the hook was handled well, it's a two-line thank-you. If the hook's caller got through, this is how the player puts it right: confirm it's Joan (she called the number on her bill; a standard check is enough to talk about it), restore the details, cancel the address change, report it. The queue counter reaches 6 of 6.
+
+**11:15, the front desk (optional, an organisation setting).**
+
+- Kev asks the player to cover the warehouse trade counter for ten minutes. A man in a payment provider's polo shirt arrives: *"Terminal swap. Firmware recall. Five minutes and I'm out of your hair."* He has a work order on letterhead.
+- The player can check the work order against the provider's details on the contract sheet (MG-25: the phone number and reference don't match), ring the provider on the number on the contract sheet (no visit booked), keep the terminal where it is and report it. Kev, back from the loading bay: *"We didn't book anyone. Good."* The terminal (`examine`) has its seal intact.
+- Letting him take or swap the terminal is the Not yet branch; the debrief shows a skimmer-fitted replacement, without technical detail.
