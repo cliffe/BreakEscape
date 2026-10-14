@@ -55,6 +55,15 @@ Questions for the user. Each has a recommendation; the plan follows the recommen
 - **Options:** (a) keep it here; (b) move it to the Hacktivity repo and leave a pointer.
 - **Recommendation:** (a) for now, since the course plan reads better in one place; move it if you'd rather keep Hacktivity's roadmap private.
 
+### D11. Compliance gaps the mapping found
+
+`02_COMPLIANCE_MAPPING.md` shows four requirements no planned module meets:
+
+1. **Specialised data protection training.** The ICO expects extra training for data protection officers, subject access teams and records managers. *Recommendation:* add a role module later (role_08, data protection specialists) rather than stretching core_05.
+2. **Developer and incident-response training under PCI DSS.** role_03 and role_04 are awareness level, so they don't meet PCI DSS 6.2.2 (secure coding training for developers) or 12.10.4 (incident response staff) on their own. *Recommendation:* say so plainly in the sales material, and point to Hacktivity's existing technical labs as the route for those roles.
+3. **Exercising the customer's own incident plan.** Cyber Governance Code D2 asks boards to exercise their own plan at least annually; role_01 exercises Larkspur's. *Recommendation:* let the facilitated version of role_01 load the customer's plan headings and contacts from the organisation profile.
+4. **Advanced persistent threats.** NIST AT-2(5) isn't covered (it sits in no NIST baseline, so few customers will ask). *Recommendation:* a short optional explainer in role_01 or role_03, not a module.
+
 ## Decided
 
 (None yet.)

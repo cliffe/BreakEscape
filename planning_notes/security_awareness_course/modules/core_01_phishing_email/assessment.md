@@ -146,11 +146,11 @@ Your organisation sends you a test phishing email and you report it. What happen
 
 The learner's record (HA-05) shows: module id and version, start and completion dates, time on task, route (game, text, test-out), each assessed behaviour's rating, critical behaviours shown or remediated, the check score, and whether the reference card was opened. This supports:
 
-- PCI DSS 12.6.3.1 (awareness training covering phishing and related attacks);
-- ISO/IEC 27001 Annex A 6.3 and clause 7.3;
-- NIST SP 800-53 AT-2 and AT-2(3) (social engineering) where used;
-- CIS Control 14.2 (recognise social engineering attacks) and 14.6 (recognise and report security incidents);
-- NCSC CAF B6.
+- PCI DSS 12.6.3.1 (training covering phishing and related attacks and social engineering);
+- ISO 27001 cl. 7.2 (records of competence), cl. 7.3 and A.6.3;
+- NIST AT-2, AT-2(3) and AT-4 (training records) where used;
+- CIS 14.2 and CIS 14.6;
+- NCSC CAF B6.b (each individual's training tracked, with effectiveness evaluated: the hook-to-Apply change is that evaluation).
 
 See `02_COMPLIANCE_MAPPING.md` for the full references.
 

@@ -37,13 +37,14 @@ After this module, staff can:
 
 Contributes to (references in `02_COMPLIANCE_MAPPING.md`):
 
-- **PCI DSS** 12.6.3.1: awareness training on phishing and related attacks and social engineering. This module and core_02 together meet it.
-- **ISO/IEC 27001** clause 7.3 and Annex A 6.3.
-- **NIST SP 800-53** AT-2 and AT-2(3) (social engineering and mining); AT-2(4) (suspicious communications).
-- **CIS Controls** 14.2 (recognise social engineering attacks), 14.6 (recognise and report incidents).
-- **NIS2** Article 21(2)(g) (basic cyber hygiene practices and training).
-- **NCSC CAF** B6 (staff awareness and training).
-- **NYDFS 23 NYCRR 500.14** (training including social engineering), for US financial services customers.
+- **PCI DSS 12.6.3.1**: training covers phishing and related attacks and social engineering. This module and core_02 together meet it.
+- **ISO 27001 cl. 7.3** and **ISO 27001 A.6.3**.
+- **NIST AT-2, AT-2(3) and AT-2(4)**: literacy training; social engineering and mining; suspicious communications.
+- **CIS 14.2** (recognise social engineering attacks, including business email compromise) and **CIS 14.6** (recognise and report incidents).
+- **NIS2 Art 21(2)(g)** (basic cyber hygiene practices and training) and **NIS2 IR 8.1** where the Implementing Regulation applies.
+- **NCSC CAF B6.a** (a reporting culture) and **NCSC CAF B6.b** (training).
+- **UK GDPR Art 32** (security of processing: staff awareness is the usual organisational measure).
+- **NYDFS 500.14(a)(3)** (annual training including social engineering), for US financial services customers.
 
 ## Module flow
 
