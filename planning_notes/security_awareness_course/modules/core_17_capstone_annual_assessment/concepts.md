@@ -80,7 +80,7 @@ Ama's three headline changes for the 2027 huddle (spoken lines are generic; any 
 
 What learners are told (on The Lark and in the learner home):
 
-- **Your year profile** shows, for each area of the course (email, calls and messages, passwords and MFA, reporting, personal data, handling information, devices and the web, working away from the office, the building, money, posting online, insider risk, AI and voices, the rules), how you did in this year's capstone: Secure, Developing, Not yet, new to you, or not assessed this year. Last year's rating sits beside it.
+- **Your year profile** shows, for each area of the course (one per core module, from email to the rules), how you did in this year's capstone: Secure, Developing, Not yet, new to you, or not assessed this year. Last year's rating sits beside it. (The rules for building it are in `assessment.md`.)
 - **Spotlights:** up to two areas to practise this year, with the module or the monthly drill that covers each. They're for you; your manager doesn't see them.
 - **Who sees what:** you see your profile; your organisation sees areas only for groups of ten or more, and your completion and check score as for any module. Your choices are practice and never used for discipline or performance reviews (`features/assessment_and_evidence.md`, section 11).
 

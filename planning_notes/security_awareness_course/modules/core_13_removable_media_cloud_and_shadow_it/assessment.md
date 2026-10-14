@@ -8,7 +8,7 @@ Each row is recorded through BE-01 and shown in the debrief and the learner's re
 |---|---|---|---|---|---|---|
 | C13-B1 | Handles the car park stick | LO1 (baseline) | Hook | Takes it to IT, or to reception for IT, without plugging it in | Leaves it or bins it; or keeps it and hands it in after Owain's explainer | Plugs it in, or keeps it to look at at home and never hands it in |
 | C13-B2 | Responds to the personal email shortcut | LO2, LO4 | Apply | Asks Owain and works from home through the approved route | Refuses and stays late without asking IT | Sends the pack to a personal address (Developing if they tell IT before the module ends) |
-| C13-B3 | Sends the big file | LO3, LO4 | Apply | Uses the secure transfer tool, to a named recipient, with an expiry | Uses the secure transfer tool but leaves the link open to anyone | Uploads it to the free transfer site |
+| C13-B3 | Sends the big file | LO3, LO4 | Apply | Shares it from the approved file-sharing service with the named recipient and an end date | Uses the approved service but leaves the link open to anyone | Uploads it to the free transfer site |
 | C13-B4 | Handles the posted stick | LO1 | Apply | Doesn't plug it in; checks with Ruth on the directory number or gives it straight to IT | Doesn't plug it in, but checks on the number from the slip, or tells nobody | Plugs it in |
 | C13-B5 | Handles the rota in the free app | LO3, LO5 | Apply | Adds nothing there; tells Kev it needs moving and asks Owain to move it and remove the old access | Doesn't use it, but doesn't flag it either | Adds the slots in the free app, or copies the rota to a personal account |
 | C13-B6 | Reports the friction | LO4 | Apply | Tells Owain the share is slow | Asks Owain for a specific tool without mentioning the share | Never contacts IT |
@@ -55,7 +55,7 @@ A padded envelope arrives "from" a client, with a USB stick and a note: "Survey 
 Your manager hands you a free USB stick from a trade show to carry tomorrow's presentation. What do you do?
 
 - A. Use it: it's brand new. *Feedback: Giveaway sticks have carried malware before. New doesn't mean clean.*
-- **B. Don't plug it in. Open the presentation from the document library on the meeting room screen, or ask IT for an approved stick if the policy allows one.** *Feedback: Right.*
+- **B. Don't plug it in. Open the presentation from Larkspur Files on the meeting room screen, or ask IT for an approved stick if the policy allows one.** *Feedback: Right.*
 - C. Wipe it first, then use it. *Feedback: You'd have to plug it in to wipe it.*
 - D. Use it on your personal laptop instead. *Feedback: That moves the risk, and the work file, onto a device the organisation doesn't protect.*
 
@@ -90,7 +90,7 @@ You need to send a 2GB video to a client by tonight, and email won't take it. Wh
 
 - A. Use a free transfer site: it's quick. *Feedback: The link may never expire, and the site has no agreement with your organisation.*
 - B. Send it to your personal account in pieces and forward them from there. *Feedback: That's two workarounds in one.*
-- **C. Use the organisation's secure transfer tool, or ask IT, and send it to the named person with an expiry.** *Feedback: Right. Named recipient, expiry, and you know when it arrived.*
+- **C. Share it from the organisation's file-sharing service with the named person and an end date, or ask IT.** *Feedback: Right. A named recipient, an end date, and you know when it's been opened.*
 - D. Put it on your own USB stick and post it. *Feedback: Sticks get lost in the post, and yours isn't approved storage.*
 
 ### C13-Q8 (LO4, single choice)
@@ -116,7 +116,7 @@ You realise your team's rota has lived for months in a free app on a former temp
 This morning you forwarded a customer complaint to your personal email to read on the bus. Now you're worried. What do you do?
 
 - A. Delete it from your personal account and say nothing. *Feedback: Copies can remain, and the organisation may need to assess it.*
-- **B. Tell the service desk and the DPO. They'll help make sure it's dealt with properly, and you won't be in trouble for telling them.** *Feedback: Right. Telling them early is what makes it small.*
+- **B. Report it to the security team. With personal data in it, they'll bring in the DPO and make sure it's dealt with properly, and you won't be in trouble for telling them.** *Feedback: Right. Telling them early is what makes it small.*
 - C. Forward it back to your work account so it's in both places. *Feedback: That doesn't remove the personal copy.*
 - D. Wait and see if anything happens. *Feedback: If anything happens, you'd rather it had been reported. Tell them now.*
 

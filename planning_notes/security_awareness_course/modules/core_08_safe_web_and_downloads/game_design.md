@@ -2,7 +2,7 @@
 
 ## Concept
 
-It's a Wednesday morning in Operations, and Lena needs the monthly supplier report by 12:00. One supplier, Calderbrook Catering, has sent its new price list only as a PDF, so the player has to get it into the spreadsheet; the report also needs two suppliers' current delivery charges and Calderbrook's new catalogue. Every one of those jobs sends the player onto the web, and the web is where this module's threats live: the top search result that is an advert for a copy of the real site, the familiar supplier site that has been hacked and now asks visitors to "verify you are human" by pasting something, the handy free extension that wants to read everything, the news page that turns into a full-screen alarm with a number to call.
+It's a Wednesday morning in Operations, and Lena needs the monthly supplier report by 12:00. One supplier, Fernside Catering, has sent its new price list only as a PDF, so the player has to get it into the spreadsheet; the report also needs two suppliers' current delivery charges and Fernside's new catalogue. Every one of those jobs sends the player onto the web, and the web is where this module's threats live: the top search result that is an advert for a copy of the real site, the familiar supplier site that has been hacked and now asks visitors to "verify you are human" by pasting something, the handy free extension that wants to read everything, the news page that turns into a full-screen alarm with a number to call.
 
 None of these arrive by email, so there's no sender to check and no suspicious message to forward. The module teaches the three habits that work on the web: start from a place you trust, never let a page make you do things to your computer, and report. The hook a player will talk about at lunch is the clipboard: when a "verify you are human" box asks you to press three keys, the game can show you what it had quietly copied, and what pasting it would have done.
 
@@ -14,7 +14,7 @@ None of these arrive by email, so there's no sender to check and no suspicious m
 - **Leo Brennan** (desk neighbour) recommends an extension he's used for ages, and later pastes something he shouldn't have and asks what to do.
 - **Kai Murray** (security analyst) shows what the reports achieved.
 - **Lena Fischer** (the player's manager) sets the task by chat only.
-- Fictional suppliers and vendor: Calderbrook Catering, Ashby Cleaning Supplies, and Pagewright, a PDF software vendor. All domains are placeholders to be checked as unregistered before build.
+- Fictional suppliers and vendor: Fernside Catering, Ashby Cleaning Supplies, and Pagewright, a PDF software vendor. All domains are placeholders to be checked as unregistered before build.
 
 ## Structure
 
@@ -22,7 +22,7 @@ The critical path is marked **(CP)**.
 
 ### 1. Hook: "Just need a converter" (1.5 minutes)
 
-- **(CP)** Lena's chat: *"Supplier report by 12, please. Calderbrook's price list only came as a PDF; you'll need it in the spreadsheet."* The browser (MG-02) opens on The Lark's home page, with a bookmarks bar that includes **Larkspur Apps**. The player can search, or not.
+- **(CP)** Lena's chat: *"Supplier report by 12, please. Fernside's price list only came as a PDF; you'll need it in the spreadsheet."* The browser (MG-02) opens on The Lark's home page, with a bookmarks bar that includes **Larkspur Apps**. The player can search, or not.
 - A search for a converter shows:
   1. **Sponsored:** "Pagewright PDF Converter: official free download", `pagewright-download.com`.
   2. "Pagewright: PDF tools for business", `pagewright.co.uk` (the real vendor).
@@ -30,7 +30,7 @@ The critical path is marked **(CP)**.
 - Whatever the player does is the baseline for C08-LO1 (C08-B1):
   - **Downloads from the advert and runs "PagewrightSetup.exe":** Larkspur Protect blocks it (core_07's alert). Owain rings: *"Saw the alert. No harm done, it was caught. Pop over and I'll get you one that doesn't bite."*
   - **Downloads from the real vendor:** the installer asks for an administrator. Owain: *"Right idea checking the address. Wrong shop, though. Come and see ours."*
-  - **Uploads the price list to the free converter:** it works. Owain, passing: *"That works. It also gave a stranger Calderbrook's prices. Come and see what we use."* (One line; the data side is core_13.)
+  - **Uploads the price list to the free converter:** it works. Owain, passing: *"That works. It also gave a stranger Fernside's prices. Come and see what we use."* (One line; the data side is core_13.)
   - **Uses Larkspur Apps or messages the service desk:** Owain: *"You found the portal. Most people never do. The converter's in there. Two clicks."*
 
 ### 2. Learn: "Owain's three habits" (3 minutes)
@@ -48,7 +48,7 @@ The critical path is marked **(CP)**.
 
 - **(CP)** MG-02 in practice mode: ten browser screens, one at a time. For each the player chooses **Carry on**, **Close and report**, or **Go the trusted way** (bookmark, portal or service desk). Feedback is immediate: the giveaway highlighted and one line of why. The ten get harder:
   1. A search results page with a sponsored lookalike above the real supplier. (Go the trusted way: bookmark.)
-  2. Address: `https://calderbrook.co.uk.price-update.net/` (MG-03 inline: the real domain is `price-update.net`).
+  2. Address: `https://fernside.co.uk.price-update.net/` (MG-03 inline: the real domain is `price-update.net`).
   3. A genuine CAPTCHA: "I'm not a robot" tick box and a grid of pictures. (Carry on: real checks happen on the page.)
   4. "Verify you are human: press these three keys." (Close and report.)
   5. A video page: "Click Allow to keep watching." (Close: choose Block.)
@@ -56,29 +56,29 @@ The critical path is marked **(CP)**.
   7. A banner on a news page: "Your browser is out of date. Download the update." (Close and report.)
   8. Address: `https://www.ashby-supplies.co.uk/trade` against the bookmark `ashbysupplies.co.uk` (MG-03 inline: a lookalike).
   9. A red "Deceptive site ahead" page. (Go back.)
-  10. A download bar: "Calderbrook_pricelist.pdf.exe". (Close and report: a program pretending to be a document.)
+  10. A download bar: "Fernside_pricelist.pdf.exe". (Close and report: a program pretending to be a document.)
 - The bank (BE-13) holds more: an extension asking for all-site access, a "Your connection is not private" warning, a fake error with a "Fix it" button, a full-screen alarm, a third MG-03 address.
 - Three wrong in a row brings Owain back with a one-line nudge.
 
 ### 4. Apply: "The 12:00 report" (5 minutes)
 
-- **(CP)** Back at the desk with DocShift installed from Larkspur Apps, the player converts the price list: one satisfying click. The work task bar (BE-18) shows four steps: **Convert Calderbrook's price list** (done), **Check Ashby's and Calderbrook's delivery charges**, **Download Calderbrook's new catalogue**, **Send the report**. Four threats arrive inside the work, one from each slot (BE-13 draws the variant):
+- **(CP)** Back at the desk with DocShift installed from Larkspur Apps, the player converts the price list: one satisfying click. The work task bar (BE-18) shows four steps: **Convert Fernside's price list** (done), **Check Ashby's and Fernside's delivery charges**, **Download Fernside's new catalogue**, **Send the report**. Four threats arrive inside the work, one from each slot (BE-13 draws the variant):
 
 | Slot | What happens | What it tests | Best response |
 |---|---|---|---|
 | **Fake source** | The player needs Ashby's delivery charges. The Lark's bookmarks have Ashby's trade site; a search shows a sponsored "Ashby Supplies: trade login" at `ashby-trade-login.com`, with a sign-in page (pre-filled with the in-game account; never a real password) | Starting from a trusted place; reading the address | Use the bookmark, or skip the advert and check the address of the genuine result |
-| **Fake check** | Calderbrook's real site, reached from the bookmark, has been hacked. Clicking "Download catalogue" brings up "Verify you are human: 1. Press Windows + R. 2. Press Ctrl + V. 3. Press Enter.", shown as text with MG-02's Follow the instructions, Close the page and Report buttons | Never doing what a page says to your computer, even on a site you trust | Close the page and report it (the browser's Report button) |
+| **Fake check** | Fernside's real site, reached from the bookmark, has been hacked. Clicking "Download catalogue" brings up "Verify you are human: 1. Press Windows + R. 2. Press Ctrl + V. 3. Press Enter.", shown as text with MG-02's Follow the instructions, Close the page and Report buttons | Never doing what a page says to your computer, even on a site you trust | Close the page and report it (the browser's Report button) |
 | **Permission grab** | Leo, leaning over: *"Use Free PDF Tools. It's an extension, does it all in the browser. I've had it for ages."* The store page shows 4.8 stars and "2 million users"; Add brings up "It can: Read and change all your data on all websites. Read your browsing history." (The notification variant: a page that says "Click Allow to continue reading") | Judging a permission request | Cancel and use the portal tool, or ask IT about the extension; for notifications, Block |
 | **Fake alarm** | Lena: *"Saw this about Ashby being bought out. Worth a mention?"* The news page loads, then an advert takes over: full screen, with an alarm that is silent by default (the caption reads "This page is trying to play a loud alarm"); with sound on, a calm robotic voice says *"Warning. Your computer has been locked. Do not turn it off. Call support now."* The page shows the organisation's own logo and name, copied from its website (on screen only, from BE-05), and an 0800 number. The close button reopens it | Not calling; finding the safe way out | Press Esc, close the tab or the browser; if it won't close, call the service desk on the number from The Lark; report it |
 
 - **The clipboard reveal.** On the fake check, the browser's own interface (not the scam page) offers **"What did this page copy?"** It opens MG-02's clipboard view: a single line, **"A hidden command that would run a program on your computer."** The command itself is never shown. The player can still choose Follow the instructions: the game then says in words what would have happened (*"The command would have downloaded a program and run it. Nothing would have appeared on screen."*), which is the point. If the player hasn't reported it within two game-minutes, Kai rings: *"Did you just run something from a website? You're not in trouble. Leave the laptop on, unplug the cable, and I'll be over."* (core_07's isolation instruction, voiced in the version the organisation profile picks.)
 - **Escaping the alarm.** The full-screen page is a tiny escape room with no clock: the in-page close button reopens the window; Esc leaves full screen; then the tab's close button works. If the player is stuck for 30 seconds, an on-screen hint appears (*"Try Esc"*), and after another 30, Owain's chat: *"Stuck on a pop-up? Ring me, not them."* If the player calls the 0800 number, a friendly "support agent" asks them to install a remote access tool "so I can fix it for you". They can hang up and report (the call itself is core_02's subject).
-- **Leo's slip.** About two-thirds of the way through, Leo: *"Did that 'verify you're human' thing on Calderbrook's site. Pasted it, hit Enter. Then thought, hang on. Do I ring someone or just restart?"* The player chooses:
-  - *"Ring the service desk now. Don't restart or clear anything."* (Best: Leo is on the phone within the minute.)
+- **Leo's slip.** About two-thirds of the way through, Leo: *"Did that 'verify you're human' thing on Fernside's site. Pasted it, hit Enter. Then thought, hang on. Do I ring someone or just restart?"* The player chooses:
+  - *"Ring the security team now. Don't restart or clear anything."* (Best: Leo is on the phone within the minute.)
   - *"Keep an eye on it and mention it to Owain later."* (Leo mentions it at 16:00.)
   - *"Restart and clear your history. You'll be fine."* (Leo does, then reports the next morning when an MFA prompt wakes him at 02:00.)
 - **(CP)** The player sends the report. The task completes whatever happened with the threats.
-- **What your reports did** (BE-16, 30 seconds, "That afternoon"). Kai's board, as on-screen text: the fake check on Calderbrook's site, reported by the player and by Leo, blocked for everyone at 11:20; Calderbrook told their site had been hacked; the site reported to the NCSC. If the player didn't report it, the board shows it reported by a colleague in Finance two hours later, and three more people who'd seen the box in between. If Leo wasn't told to ring straight away, Kai: *"We caught it at the MFA prompt. Would've been nicer at the paste."*
+- **What your reports did** (BE-16, 30 seconds, "That afternoon"). Kai's board, as on-screen text: the fake check on Fernside's site, reported by the player and by Leo, blocked for everyone at 11:20; Fernside told their site had been hacked; the site reported to the NCSC. If the player didn't report it, the board shows it reported by a colleague in Finance two hours later, and three more people who'd seen the box in between. If Leo wasn't told to ring straight away, Kai: *"We caught it at the MFA prompt. Would've been nicer at the paste."*
 
 ### 5. Debrief (1.5 minutes)
 

@@ -67,8 +67,8 @@ Four tricks cover most of what staff meet. In each one, the giveaway is the inst
 
 ### If you pasted, downloaded, installed, called or allowed
 
-- **Report it straight away** to the service desk: what you did, on which site, and when.
-- **Don't try to fix it yourself:** no restarting to "clear it", no clearing your history, no scanning tools from the web. Do what the service desk says, which may be core_07's isolation instruction.
+- **Report it straight away** to the security team, or the 24/7 service desk out of hours: what you did, on which site, and when (core_04).
+- **Don't try to fix it yourself:** no restarting to "clear it", no clearing your history, no scanning tools from the web. Do what the security team says, which may be the device instruction from core_04: don't switch it off; if they ask, disconnect it and leave it on.
 - **If you typed a password** into a site, change it through the real site and tell IT (core_01, core_03).
 - **If you allowed notifications** or added an extension, tell IT; they'll remove it, or show you where the browser's site settings are.
 
@@ -80,7 +80,7 @@ As the reference card shows it:
 2. **Check the address.** Read the domain from the right-hand end. The padlock doesn't make a site honest.
 3. **If a page tells you to do something to your computer, stop and close it.** Paste, run, install, update, call, allow: no.
 4. **Believe the warning.** Go back. Need the site for work? Ask IT.
-5. **Report it.** Suspicious site: tell the security team. Pasted, downloaded, installed or called: report it now and do what the service desk says.
+5. **Report it.** Suspicious site: tell the security team. Pasted, downloaded, installed or called: report it now (the security team, or the 24/7 service desk out of hours) and do what they say.
 
 ## Misconceptions and outdated advice
 
@@ -117,10 +117,10 @@ Use these as background and inspiration only. Game content uses fictional names 
 | Software portal name and location | "Larkspur Apps", linked from The Lark's home page and the browser's bookmarks bar |
 | How to request software or an extension | The "Request something else" form in Larkspur Apps; answered within one working day |
 | Approved browser and extensions | Larkspur's managed browser; extensions only from the approved list in Larkspur Apps |
-| How to report a website | The Report button on the browser toolbar, the "Report a website" form on The Lark, or the security team on extension 4444 |
+| How to report a website | The Report button on the browser toolbar, the "Report an incident" form on The Lark, or the security team on extension 4444 |
 | Approved document converter | "DocShift", in Larkspur Apps |
 | Bookmarks for key sites | The Lark's "Bookmarks" page: Ledger, supplier portals, the HR system |
-| After pasting, downloading or calling | Call the 24/7 service desk; follow the isolation instruction (core_07) |
+| After pasting, downloading or calling | Call the security team on extension 4444, or the 24/7 service desk out of hours; follow the device instruction (core_04) |
 
 ## Glossary
 

@@ -44,6 +44,9 @@ Priority: **MVP** is needed for the first sellable course (the Induction Essenti
 | BE-25 | Course avatars and inclusive name entry | A workplace avatar set for this course (no hooded hackers), and a name field that accepts accented letters, hyphens and apostrophes | MVP | S (engine), M (art) |
 | BE-26 | Accessibility checks in CI | Automated accessibility tests over the game shell, the minigames' HTML and the text route on every change | MVP | S |
 | BE-27 | Plain English lint | A check over ink and documents for long sentences, jargon without explanation and banned filler words, alongside the dialogue lint | P2 | S |
+| BE-28 | Take an item from the player | An ink tag and action that take an item from the player's inventory (handing a found USB stick to IT, returning a badge); today ink can give items but not take them | P2 | S |
+| BE-29 | NPC guide behaviour | An NPC walks ahead to a destination and waits for the player to catch up (tours, escorting a visitor) | P2 | S |
+| BE-30 | Video call options | A configurable call bar label (today "SECURE VIDEO LINK" is hard-coded) and ink-driven call effects (freeze, blur, audio lag) for deepfake and poor-connection scenes | P2 | S |
 
 ## Minigames (MG)
 
@@ -76,6 +79,8 @@ Priority: **MVP** is needed for the first sellable course (the Induction Essenti
 | MG-25 | Document inspector | Compare a document (an invoice, a letter, an ID, a work order) with a trusted reference and mark what doesn't match | P2 | M |
 | MG-26 | Incident spread map | An office or network map where an incident spreads with game time until someone reports it, then shows what the report contained (core_04's "blast radius"); extends `network-segmentation-map` | MVP | M |
 | MG-27 | Work desktop | The player's computer as one launcher for the inbox, browser, chat, The Lark and settings, with notifications; extends the `container` desktop mode | MVP | S to M |
+| MG-28 | Secure payment line | A keypad overlay for taking a card payment by phone: the adviser sees only masked digits, the recording pauses, and card numbers typed into notes are flagged | P3 | S |
+| MG-29 | Patient record viewer | The existing `ehr-terminal` generalised: configurable header, search, admin and clinical views, a restricted-record warning, a session banner and an event per record opened | P3 | M |
 
 ## Explainers (EX)
 
@@ -120,6 +125,26 @@ Priority: **MVP** is needed for the first sellable course (the Induction Essenti
 | HA-24 | Public API and webhooks | Keyed API access and outgoing webhooks so customers can pull records into HR and GRC systems and react to completions | P2 | M |
 | HA-25 | Partner role | Resellers and managed service providers set up and support several customer organisations, without seeing learners' detailed results | P3 | M |
 | HA-26 | Setup checklist | A go-live checklist for a new organisation (profile, policies, paths, reporting routes, a test learner) that must be done before staff are invited | MVP | S |
+
+## Extensions proposed by the module plans
+
+Smaller additions to existing features that module writers asked for. They are recorded here so the feature owners pick them up; none needs a new id.
+
+| Feature | Extension | Asked for by |
+|---|---|---|
+| BE-02 | A chain view: a timeline of linked moments showing how one decision led to the next | core_17 |
+| BE-02 | A call replay: the call's transcript with the caller's tactics labelled (BE-22) and the player's checks marked | role_06 |
+| BE-04 | A `timers_off` global so scenarios can advance timed events on task steps instead of the clock | core_04 |
+| BE-09 | A software portal page on The Lark: approved tools with an Install button and a "Request something else" form | core_07, core_08, core_13 |
+| MG-07 | A storm chat message that gives away the next prompt's number; a plain Approve or Deny prompt for a second service; options `approved_then_reported` and `unanswered`; with reading pauses on, the next prompt follows the player's answer | core_03 |
+| MG-09 | Match each report to an incident; evidence chips only for facts the player saw; check "what have you done" answers against globals; report speed as before the next event, later, or found late | core_04 |
+| MG-20 | A game show presentation (three answer buzzers, contestants, rounds, "Ask first" scoring) | core_16 |
+| MG-26 | Device and link state driven by globals; reveal rules so an unreported incident never shows; a step-through replay; a list view; a device update-status layer and a files layer | core_04, core_07 |
+| `ransomware-display` | A configurable icon, title, warning text and optional countdown, so the course can drop the skull | core_07 |
+| HA-03, HA-21 | A spotlight recommender: rules that turn a learner's year profile into private practice suggestions and organisation-wide spotlights | core_17 |
+| HA-07 | "I have a question first": holds the acknowledgement open and records the answer | core_16 |
+| HA-13 | An event leaderboard that ranks tables, never people | core_17 |
+| HA-17 | A private year profile: the learner's results by area across the year | core_17 |
 
 ## Dependencies
 

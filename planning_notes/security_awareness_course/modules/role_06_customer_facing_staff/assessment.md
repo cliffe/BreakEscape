@@ -6,8 +6,8 @@ Each row is recorded through BE-01 (MG-17 records which checks happened before w
 
 | Id | Behaviour | Learning outcome | Where it is evidenced | Secure | Developing | Not yet |
 |---|---|---|---|---|---|---|
-| R06-B1 | Handles the "new mobile, send the code" call | LO1, LO2 (baseline) | Hook | Calls back on the number held, or sends the code only to the mobile on file | Asks knowledge questions, then stops to ask Shauna before changing anything | Changes the number and sends the code to the new mobile |
-| R06-B2 | Handles the Fellgate takeover call | LO2, LO1 | Apply | Checks the change history, calls back on the school's number from before the change, then restores, flags and reports | Refuses without checking the history or reporting | Sends a code to the recently changed email, or makes the changes |
+| R06-B1 | Handles the "new mobile, send the reset" call | LO1, LO2 (baseline) | Hook | Calls back on the number held, or lets the portal send its own reset only to the mobile on file | Asks knowledge questions, then stops to ask Shauna before changing anything | Changes the number and sends the reset to the new mobile |
+| R06-B2 | Handles the Fellgate takeover call | LO2, LO1 | Apply | Checks the change history, calls back on the school's number from before the change, then restores, flags and reports | Refuses without checking the history or reporting | Sends an approval to the recently changed email and acts on it, or makes the changes |
 | R06-B3 | Handles the chat asking for documents | LO4 | Apply | Offers the address already on the account, shares no contacts list, reports it | Refuses, with no safe route offered and no report | Sends anything to the free webmail address |
 | R06-B4 | Holds the line with the angry caller | LO3, LO4 | Apply | Stays polite, reads nothing out, offers the written route, escalates to Shauna, reports | Refuses but loses composure, ends the call abruptly, or doesn't report | Reads out any of the details |
 | R06-B5 | Protects Mr Bakshi from the scam | LO5 | Apply | Tells him plainly it wasn't Larkspur, points him to his bank (159) and Report Fraud, and reports it internally | Gives a vague warning, or reports internally without telling him plainly | Misses it |
@@ -20,13 +20,13 @@ Each row is recorded through BE-01 (MG-17 records which checks happened before w
 
 R06-B10 applies only to players whose hook or Fellgate call let a change through. Players for whom it never happened are recorded as "not applicable". R06-B11 applies only where the organisation turns on the front desk scene.
 
-The **before and after** for each learner is R06-B1 against R06-B2: a request to change contact details and send a code, first in the hook and then, harder, in the Apply beat, where the details on file were already changed six days earlier.
+The **before and after** for each learner is R06-B1 against R06-B2: a request to change contact details and send a reset, first in the hook and then, harder, in the Apply beat, where the details on file were already changed six days earlier.
 
 ## Critical behaviours
 
 To complete the module the learner must, at least once:
 
-- **R06-CB1** Not make a change, reset or code to new details for an unverified caller: R06-B2 not at Not yet.
+- **R06-CB1** Not make a change, or send a reset or approval to new details, for an unverified caller: R06-B2 not at Not yet.
 - **R06-CB2** Take card details only through the secure route: R06-B6 not at Not yet.
 - **R06-CB3** Report a suspected fraud attempt: R06-B9 not at Not yet.
 
@@ -41,7 +41,7 @@ Six items per sitting, drawn so that every learning outcome is covered. Stems ar
 A caller gives the account number, the postcode and the business manager's date of birth, and asks you to reset the portal login. What do you do?
 
 - A. Reset it: they passed three checks. *Feedback: All three can be found online or in old data breaches. A reset needs a step-up check.*
-- **B. Check the account's change history, then call back on the number held or send a code to details already on the account.** *Feedback: Right. Changes and money need something only the customer has.*
+- **B. Check the account's change history, then call back on the number held, or let the portal send its own reset to details already on the account.** *Feedback: Right. Changes and money need something only the customer has.*
 - C. Send the reset link to the email address they give you. *Feedback: Then the link goes to whoever is calling.*
 - D. Keep asking personal questions until you're sure. *Feedback: More things anyone could find don't add up to a check.*
 
@@ -62,12 +62,12 @@ Shown: a customer record with its change history. Click the entry that should ma
 
 ### R06-Q4 (LO2, single choice)
 
-A caller says: "My old phone's broken. Please send the code to my new mobile." What do you do?
+A caller says: "My old phone's broken. Please send the portal reset code to my new mobile." What do you do?
 
-- A. Send it to the new mobile; they've explained why. *Feedback: Then the code proves nothing except that the caller has their own phone.*
-- **B. Send codes only to details already on the account, or call back on the number held. Changing the mobile needs that check first.** *Feedback: Right.*
-- C. Read the code out to them instead. *Feedback: That skips the check entirely.*
-- D. Skip the code, as they're in a hurry. *Feedback: Hurry is the pressure the check is for.*
+- A. Send it to the new mobile; they've explained why. *Feedback: Then the reset goes to whoever is calling.*
+- **B. Use only details already on the account: call back on the number held, or let the portal send its reset to the details on file. Changing the mobile needs that check first.** *Feedback: Right.*
+- C. Read the code out to them instead. *Feedback: That hands the account to whoever is calling. Never read a code to anyone.*
+- D. Skip the check, as they're in a hurry. *Feedback: Hurry is the pressure the check is for.*
 
 ### R06-Q5 (LO3, single choice)
 
@@ -170,7 +170,7 @@ See `02_COMPLIANCE_MAPPING.md` for the full references. PCI DSS 12.6.3 also asks
 Outside the course, an organisation can watch:
 
 - **Account takeover attempts stopped and succeeded,** from fraud records. The share stopped should rise.
-- **Step-up checks on high-risk requests,** from call quality reviews: the share of contact detail changes, resets and refunds with a call-back or a code to details already held.
+- **Step-up checks on high-risk requests,** from call quality reviews: the share of contact detail changes, resets and refunds with a call-back, or an approval sent to details already held.
 - **Reported attempts per month,** which should rise at first, and the time from attempt to report, which should fall.
 - **Leading questions** in call quality reviews, which should fall.
 - **Card data where it shouldn't be:** card numbers found in notes, emails, chats or recordings by periodic scans, which should fall to none.

@@ -28,11 +28,11 @@ The critical path is marked **(CP)**. Everything else is optional depth.
 
 - **(CP)** Black screen; caption *Tuesday, 02:13*. The bedroom fades in; a caption reads *[phone buzzing]*. The authenticator (MG-07) opens by itself (BE-19): **"Are you trying to sign in? Larkspur account. Rotterdam, Netherlands (approximate). Enter the number shown on your sign-in screen."** with a two-digit field, **Deny** and **Deny and report**. There is no sign-in screen, so there is no number.
 - Twenty seconds later, a second prompt. Then a chat message from an unknown number with the Larkspur logo: *"Hi, IT Support here. Sorry for the late one! We're fixing a sync fault on your account tonight, so you'll get a few sign-in prompts. To stop them, just enter 47 in the app. Thanks for your patience!"* The third prompt's number is 47.
-- The player can type 47, deny each prompt, deny and report, call the 24/7 service desk from their contacts, reply to "IT Support", or turn the phone face down. Nothing forces a choice: a prompt arrives every 20 seconds up to five, then they stop. The first decisive action is the **baseline** for C03-LO5.
+- The player can type 47, deny each prompt, deny and report, call the 24/7 service desk from their contacts, reply to "IT Support", or turn the phone face down. Nothing forces a choice: a prompt arrives every 20 seconds of game time up to five, then they stop, and after the third a single **Deny all and report** button appears so nobody has to tap through the lot. The first decisive action is the **baseline** for C03-LO5 (recorded against C03-B1).
 - Outcomes:
   - **Reported** (in the app, or by calling): Jas, on the phone or as a text: *"Thanks for letting us know. Someone's got your password, so I've blocked those sign-ins. Owain will sort you out in the morning. Go back to sleep."*
   - **Denied or ignored:** the prompts stop at 02:19. Nothing else happens tonight.
-  - **Typed 47:** *"Approved."* Two minutes later Jas rings: *"Larkspur service desk. We've just seen your account sign in from the Netherlands. Was that you?"* The player can say *"I typed a number IT sent me"* or *"I'm not sure, I was half asleep."* Jas: *"Thanks for telling me. That wasn't us. I'm locking it now."* (The monitoring partner flags the impossible journey; the account is locked within minutes.)
+  - **Typed 47:** *"Approved."* Two minutes later Jas rings: *"Service desk here. We've just seen your account sign in from abroad. Was that you?"* The player can say *"I typed a number IT sent me"* or *"I'm not sure, I was half asleep."* Jas: *"Thanks for telling me. That wasn't us. I'm locking it now."* (The monitoring partner flags the impossible journey; the account is locked within minutes.)
   - **Replied "Is this really IT?":** *"Yes! Ticket INC-4471. Just enter 47 please."* The reply changes nothing; the debrief explains why asking the sender proves nothing.
 - Caption: *The next morning.*
 
@@ -59,7 +59,7 @@ The critical path is marked **(CP)**. Everything else is optional depth.
   1. **The manager's passphrase.** *"The vault needs one good passphrase. Roll some words."* The builder deals three word tiles from the game's word list; the player can re-roll as often as they like or add a fourth word. Then a tempting step, *"Make it more memorable?"*, offers chips: *add your birth year*, *add your dog's name*, *swap o for 0*, *add !*, *add another word*, *no thanks*. The meter and the guesser beside it show what each really adds: personal details and swaps barely move it; another random word moves it a long way. A line stays on screen throughout: *"This game will never ask for a real password. These words are for this game only."*
   2. **Vault health.** The vault opens with the player's (fictional) accounts: work account and email, personal email, a shopping site, a streaming service, the bank, a council parking app. Flags: *Reused on 5 accounts*, *In a known breach (trade show site)*, *Weak*. The player presses **Generate** on each. Before the first, the vault asks *"Which first?"*; email is the answer Owain is hoping for: *"Email first. It can reset everything else."* Ledger, the finance system, is not in the vault, and nobody notices yet.
   3. **Security questions.** The shopping site asks *"Name of your first pet?"* The player can give the true answer, a made-up one the manager generates (`velvet otter crane`), or skip. The made-up answer is stored with the login.
-  4. **Sign-in protection** (MG-07 enrolment). *"How do you want to sign in to Larkspur?"* Three cards in ladder order: **Passkey on this laptop** (recommended), **Authenticator app with number matching**, **Text message**. A passkey runs a test sign-in (fingerprint or PIN, pre-filled). Then Owain's twenty-second demo: a lookalike page, `thelark.larkspur-login.co.uk`, asks for the passkey and the laptop answers *"No passkey for this site."* *"That's the point. It only works on the real one."*
+  4. **Sign-in protection** (MG-07 enrolment). *"How do you want to sign in to Larkspur?"* Three cards in ladder order: **Passkey on this laptop** (recommended), **Authenticator app with number matching**, **Text message**. A passkey runs a test sign-in (fingerprint or PIN, pre-filled). Then Owain's twenty-second demo on a lookalike page, `thelark.larkspur-login.co.uk`: the vault offers nothing (*"No saved sign-ins for this site"*) and the laptop answers *"No passkey for this site."* *"That's the point. They only work on the real one. If your manager goes quiet, look at the address."*
   5. **"Approve or Deny?"** (MG-07 practice). Six phone screens with a line of context each, answered **Approve**, **Deny** or **Deny and report**:
      1. You've just pressed Sign in at your desk; the screen shows 38 and the app asks for a number. *(Type 38.)*
      2. You're in a meeting, not signing in to anything; a prompt arrives. *(Deny and report.)*
@@ -133,6 +133,7 @@ No option shames the player. Typing the number at 02:13 leads to Jas locking the
 | **MG-07 MFA prompts and authenticator** | new (MVP) | The night prompts, enrolment, "Approve or Deny?", the Ledger prompt |
 | **MG-08 Password manager and passphrase builder** | new (MVP) | The passphrase, vault health, security questions, the portal sign-up, Kev's setup |
 | **MG-20 Knowledge check** | new (MVP) | Owain's check question and the spot check |
+| **MG-27 Work desktop** | new (MVP) | The player's laptop as the launcher for the vault, the authenticator set-up and The Lark |
 | `password` | existing | The shared PC's lock. Its post-it option (`postitNote`, `showPostit`) shows the sticky note; a correct entry unlocks the PC and is recorded as "used the note" |
 | `examine` | existing | The note under the keyboard |
 | `container` | existing | The shared PC's desktop with the stock file; Owain's copy in the player's own folder |
@@ -140,26 +141,32 @@ No option shames the player. Typing the number at 02:13 leads to Jas locking the
 | `person-chat` | existing | Owain, Ama and Kev; the night scene's captions over the bedroom background |
 | `notes` | existing | Owain's three-habits card |
 
-### MG-07 build notes (what this module needs)
+### MG-07: what this module needs
 
-- A phone-framed authenticator screen that opens by itself (BE-19) or from the phone.
-- **Prompt types:** a number-matching push (two-digit field); a plain push (Approve and Deny, for Ledger's older app); a six-digit code; a passkey prompt (device unlock, pre-filled); and the "No passkey for this site" result.
-- Every prompt shows the service, the approximate location, the time and the device. **Deny** always offers **Report this**.
-- **Sequences from scenario data:** each prompt is `{ id, service, location, type, number, startsOn (a global or event), delayMs, expected }`; a flood is a list with an interval that stops on approve, on report, or after the last prompt. Scenario `timers[]` with `startOnGlobal` and `cancelOnGlobal` can drive it until the minigame has its own scheduler.
-- **Enrolment mode:** method cards in ladder order, showing only the methods in the organisation profile (BE-05), and a test sign-in.
-- **Practice mode:** a list of situations with a line of context each, three buttons, and immediate feedback.
-- **Records:** each prompt's outcome (approved, denied, reported, unanswered) as a global and a BE-01 event, with the time it was shown and answered.
-- **Accessibility:** no prompt expires before the player can act (an unanswered prompt waits until the next one arrives); buzzing is a caption; reduced motion removes the shake; every control has a keyboard route and a screen reader label.
-- **Never real:** numbers and codes are made up in game; nothing is sent anywhere.
+The catalogue entry (`features/minigames.md`, MG-07) covers enrolment, number matching, codes, the storm and the passkey lookalike. core_03 configures it with `methods` (`push_number_match`, `push_simple` for Ledger's older app, `passkey`) and these `scenes`:
 
-### MG-08 build notes
+| Scene | Kind | When | What is special here | `assess` |
+|---|---|---|---|---|
+| `night_storm` | `storm` | At the cold open (an `open_minigame` action on its timer) | Five prompts, `everyGameSeconds: 20`; the `fake_it_night` chat thread arrives after the second and gives the number for the third, so "approve" means typing the number someone sent; Deny offers Report; **Deny all and report** after the third | C03-B1: `denied_and_reported`, `denied`, `unanswered`, `approved_then_reported`, `approved` |
+| `enrol` | `enrol` | Practise, from Owain's conversation | The organisation's methods only (BE-05), in ladder order, passkey first | C03-B5 |
+| `practice_six` | practice list | Practise | The six "Approve or Deny?" screens, with immediate feedback | C03-B6 |
+| `lookalike` | `passkey_lookalike` | Practise | Shown together with MG-08's fill test on the same page | none |
+| `ledger_prompt` | `unexpected` | `on: "global_variable_changed:portal_signin_started"` | A plain Approve and Deny prompt for **Ledger** from the Netherlands, landing beside the player's own portal sign-in (a passkey prompt on the laptop, or a number-matching prompt on the phone if they chose the app) | C03-B8: `denied_and_reported`, `denied`, `unanswered`, `approved_then_reported` (they report it before Owain rings), `approved` |
 
-- **Vault:** a list of fictional accounts with health flags (reused, weak, in a breach); **Generate** replaces a password with a long random one; a fill view for sign-up forms; stored made-up answers to security questions.
-- **Passphrase builder:** word tiles from a curated list of common, inoffensive words (screened against names, teams, places and offensive words), re-roll, add a word, a choice of separator, and the "memorable" chips that show what personal details and swaps really add. **No free-text password field anywhere:** the game must never collect a real password, so the tiles are the only input.
-- **Meter and guesser:** strength in plain bands (Guessed instantly, Minutes, Days, Years, Centuries), from an established open-source strength estimator that models dictionary words, names, dates and common swaps rather than character-class rules, labelled *Rough guide*. The guesser panel shows a list being tried in order (the commonest passwords, names and teams, the organisation's name plus a year, swaps), striking through any match. It shows the order attackers guess in, never a method or a tool.
-- **Breach check:** "Check this address" against an in-game breach list; the result text comes from scenario data.
-- **Help mode:** the same builder driven by an NPC (Kev), with the player's advice chosen in dialogue.
-- **Records:** the passphrase band and which chips were used; fix order; made-up or true answers; method chosen; whether a passkey was added at sign-up.
+- **Accessibility** as in the catalogue: prompts wait for an answer, and where BE-04's "pause while reading" is on, the next prompt arrives a few seconds after the player answers the last one instead of on the clock; the number to match can be picked from three as well as typed, and the trap still works, because one of the three is the number "IT" sent; the buzz is a caption; no shaking under reduced motion.
+- **Never real:** numbers and codes are made up in game, and nothing typed is stored.
+
+### MG-08: what this module needs
+
+The catalogue entry covers Build, Store, Fill and Fix, the breach check and recovery questions. core_03 configures:
+
+- `wordList` (a curated list of short, common, inoffensive words, screened against names, teams and places) and `wordCount: 3`, with re-roll and "add a word". **No free-text password field anywhere:** the tiles are the only input, so the game can never collect a real password.
+- `meter.bands` in words (*Guessed at once*, *Minutes*, *Days*, *Years*, *Centuries*), labelled *Rough guide*, from an established open-source strength estimator that models dictionary words, names, dates and common swaps rather than character-class rules; `meter.examples` for the guesser panel (the commonest passwords, names and teams, the organisation's name plus a year, swaps), struck through as they fall. It shows the order attackers guess in, never a method or a tool.
+- The module's own **"Make it more memorable?" chips** (birth year, pet's name, swap, "!", another word, no thanks), which show what personal details really add; the record keeps which were used (C03-B2).
+- `vault` with the player's fictional accounts and their reuse flags, and a **"Which first?"** prompt (C03-B3); `breachCheck` with the trade show site; `fillTests` for `thelark.larkspur.co.uk` (fills) and `thelark.larkspur-login.co.uk` (offers nothing).
+- **Recovery questions** in Practise and in the Northbeck sign-up (C03-B4), and a **sign-up view** for the portal with *Use my usual password* (dots only), *Generate* and *Add a passkey*.
+- **Help mode:** the same builder driven by Kev, with the player's advice chosen in dialogue (C03-B9).
+- **Records:** `passphrase_built` (word count and band, never the words), the chips used, fix order, made-up or true answers, and whether a passkey was added at sign-up.
 
 ## Explainers
 
@@ -204,7 +211,7 @@ Shown on BE-02, then spoken by Owain and Ama:
 - **Props:** sticky notes (on the monitor and under the keyboard), a box of security keys on Owain's desk, Kev's key on a keyring, an "Ask us first" poster.
 - **New UI art:** the authenticator screens (MG-07); the vault, word tiles, meter and guesser (MG-08), in the game's pixel style but legible at small sizes.
 - **Characters:** Owain, Ama and Kev (recurring; shared art). Jas is voice only; "IT Support" is text only.
-- **Voice:** about 35 lines for Owain, 8 for Ama, 15 for Kev, 4 for Jas. No voiced line prints a variable: the "47", the location and the counts are on screen only, and Owain says "that number came off their screen", never the number.
+- **Voice:** about 35 lines for Owain, 8 for Ama, 15 for Kev, 4 for Jas. No voiced line prints a variable or the organisation's name: the "47", the location and the counts are on screen only, Owain says "that number came off their screen", never the number, and Jas answers as "Service desk", not by company name, because BE-05 renames the organisation on screen.
 
 ## Pitfalls
 

@@ -30,7 +30,7 @@ Contact centres hold the keys to customers' accounts. An adviser can change an e
 
 After this module, customer-facing staff can:
 
-- **R06-LO1** Verify a caller with checks that match the request, using things the customer has (a call back on the number on the account, a code sent to details already held) rather than things anyone could look up.
+- **R06-LO1** Verify a caller with checks that match the request, using things the customer has (a call back on the number on the account, or an approval or reset sent only to contact details already held) rather than things anyone could look up.
 - **R06-LO2** Recognise an account takeover attempt, especially a recent change of contact details followed by a reset, a new delivery address or a refund.
 - **R06-LO3** Keep to the procedure under pressure (urgency, anger, authority), escalate to a team leader rather than give in, and report the attempt.
 - **R06-LO4** Share personal and account information only with verified, authorised people, and only what is needed, without reading details out to prompt a caller.
@@ -55,7 +55,7 @@ Contributes to (references in `02_COMPLIANCE_MAPPING.md`):
 
 | Beat | What happens | Format | Minutes |
 |---|---|---|---|
-| Hook | The first call of the shift: "Joan from Hollins Lane Primary" has a new mobile and wants the portal code sent to it. The player's handling is the baseline | Game (MG-17, MG-04) | 1 to 2 |
+| Hook | The first call of the shift: "Joan from Linnet Lane Primary" has a new mobile and wants the portal's reset code sent to it. The player's handling is the baseline | Game (MG-17, MG-04) | 1 to 2 |
 | Learn | Shauna at the player's desk: what a good check is, the ladder of checks, the takeover pattern, protecting customers, card payments | NPC explainer with visual aids (EX-01, BE-08) | 3 |
 | Practise | "Verify or Deny?": eight call cards, getting harder, with instant feedback | Minigame drill (MG-17 practice mode) | 3 |
 | Apply | The 10:00 queue: a genuine query, a chat asking for documents, a customer being scammed who then pays by card, an account takeover, an angry "council" caller, and the real Joan | Game (MG-17, MG-04, BE-18) | 7 to 8 |
@@ -73,7 +73,7 @@ Contributes to (references in `02_COMPLIANCE_MAPPING.md`):
 
 ## New features needed
 
-- **MG-17 Caller verification desk** (shared with role_03). This module's needs are listed in `game_design.md`, Minigames: the call and chat queue, a customer record with its change history, a ladder of checks for each kind of request, codes sent only to details already held, call-back through the directory, escalation to the team leader, a fraud report, and an outcome for every contact.
+- **MG-17 Caller verification desk** (shared with role_03). This module's needs are listed in `game_design.md`, Minigames: the call and chat queue, a customer record with its change history, a ladder of checks for each kind of request, approvals and resets sent only to details already held, call-back through the directory, escalation to the team leader, a fraud report, and an outcome for every contact.
 - **MG-04 Voice calls:** the phone, the directory and hold that MG-17 sits on.
 - **MG-20 Knowledge check**, **BE-01 Assessed decisions** and **BE-02 Debrief screen**.
 - **BE-18 Work task and interruptions:** "Clear the 10:00 queue", with contacts arriving on a schedule.
@@ -86,10 +86,11 @@ Contributes to (references in `02_COMPLIANCE_MAPPING.md`):
 - **proposed:** Secure payment line, a keypad overlay through which the customer's card entry reaches the adviser only as masked digits while the recording pauses itself; card-like numbers typed into notes are flagged. Also useful for role_02.
 - **proposed:** Call replay, a debrief panel (BE-02) that replays a call as a transcript timeline with the caller's tactics (from BE-22's list) and the player's checks labelled. Also useful for core_02 and role_03.
 - **MG-25 Document inspector** (optional): the "engineer's" work order in the front desk scene.
+- **EX-08 Printable poster and briefing pack:** the adviser's desk card (the ladder of checks and the five steps for a scammed customer) and a team briefing, which also gives PCI DSS 12.6.3 a second method of communication.
 
 ## Organisation-specific content
 
-- The verification policy: what each kind of request needs, the approved checks, the wording of the code message, call-back rules, and any waiting period after contact details change.
+- The verification policy: what each kind of request needs, the approved checks, call-back rules, whether read-back codes are used at all (and if so, the wording of the code message), and any waiting period after contact details change.
 - The secure payment method (keypad entry, a payment link or an automated line), and whether staff use card terminals (which turns on the front desk scene).
 - The organisation's promise to customers, such as "We will never ask you to pay into a new bank account by phone, text or email."
 - The internal route for suspected fraud, and the team leader escalation.
@@ -99,7 +100,7 @@ Contributes to (references in `02_COMPLIANCE_MAPPING.md`):
 
 ## Open questions
 
-1. **One-time codes.** The course tells everyone never to share a code, yet many contact centres verify callers by asking them to read one back. *Recommendation: allow codes only when the customer has called the organisation, sent only to contact details already on the account, in a message that says what it is for and that "we will never call you to ask for this code". Advisers never ask for a code on a call they made. The module teaches this, and the organisation can switch codes off in favour of approval in the customer portal.*
+1. **One-time codes.** core_02 and core_03 teach everyone never to read a code out to anyone, yet many contact centres verify callers by asking them to read one back. *Recommendation: Larkspur's default never asks a customer to read out a code. Its step-ups are a call back on the number held, or an approval or reset that the system sends only to contact details already held and the customer completes themselves. Organisations that do verify with read-back codes can switch them on; the module then adds the safeguards (only on calls the customer made, only to details already held, a message saying what the code is for and "we will never call you to ask for it", never on a call the adviser made) and explains why their procedure differs from the course-wide rule.*
 2. **MG-17 shared with role_03.** The service desk verifies colleagues; the contact centre verifies customers. *Recommendation: one desk with two record types (staff and customer) and a configurable ladder of checks; the contact centre adds the secure payment line, the chat tab and refund rules.*
 3. **How angry the angry caller gets.** *Recommendation: raised voice, threats to complain and "I'll have your job"; no slurs or threats of violence. A content note on the module card and the option to skip the audio and read the transcript.*
 4. **Business or consumer customers.** *Recommendation: both by default (schools and residents' families); an organisation setting drops the family calls for business-only contact centres and swaps in a second business caller.*

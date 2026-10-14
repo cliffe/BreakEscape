@@ -11,7 +11,7 @@
 | Micro-drill | none (its warm-up draws on the other modules' drills) |
 | Text route | 20 to 25 minutes |
 | Priority | Phase 2 |
-| Build size | L: a full working day across five rooms, twelve threat slots with chains between them, a timeline debrief and year profile, a team event, and a new edition every year (BE-13) |
+| Build size | L: a full working day across five rooms, the Hook and twelve moment slots with chains between them, a timeline debrief and year profile, a team event, and a new edition every year (BE-13) |
 
 ## Why this module
 
@@ -69,7 +69,7 @@ Contributes to (short references from `02_COMPLIANCE_MAPPING.md`):
 | Hook | 08:58, the player's desk, the last working day before the year-end close. The laptop is still starting up when the phone asks them to approve a sign-in they didn't start. What they do is this year's baseline | Game (MG-07) | 1 |
 | Learn | Ama's year-end huddle in the meeting room: three things that changed this year, the organisation's own year in numbers (on screen), and the motto | NPC explainer (EX-01, BE-08) | 3 |
 | Practise | Kai's warm-up on the meeting room screen: five quick items, drawn from the learner's weakest areas last year and this year's new threats, with instant feedback | Minigame (MG-20 drill, BE-07 items) | 2 |
-| Apply | The day, with Ellie, a new apprentice, shadowing: finish the council report, cover reception for twenty minutes, approve the cost centre's invoices before the 14:00 cut-off, hand over to Leo, clear the desk and leave. Twelve threats arrive inside the work, and consequences chain from one task to the next. A checkpoint at lunch | Game (BE-18, most MGs) | 20 |
+| Apply | The day, with Ellie, a new apprentice, shadowing: finish the council report, cover reception for twenty minutes, approve the cost centre's invoices before the 14:00 cut-off, hand over to Leo, clear the desk and leave. Twelve moments arrive inside the work (eleven threats and one genuine request), and consequences chain from one task to the next. A checkpoint at lunch | Game (BE-18, most MGs) | 20 |
 | Debrief | "Your Year End": the day as a timeline with its chains, Jo Fairweather's reveal of her authorised test, the private year profile and up to two spotlights; then "Tuesday", after the long weekend | Debrief screen (BE-02), Ama, Kai, Jo; one time skip (BE-16) | 4 |
 | Check | Ten scenario questions across the year's topics, with feedback at the end | Quiz (MG-20) | 4 |
 | Reference | The Lark: the Year End card (the whole course on one page), the annual policy re-acknowledgement where due, and the learner's profile in the learner home | Intranet (BE-09, HA-07, HA-17) | 1 |
@@ -77,7 +77,7 @@ Contributes to (short references from `02_COMPLIANCE_MAPPING.md`):
 ## Reuse from existing Break Escape content
 
 - **Rooms:** `room_office` (the Operations floor and the player's desk), `room_reception` (the twenty-minute cover), `room_meeting` (Ama's huddle and Kai's warm-up on the wall screen), `room_break` (the kitchen, decorated for the year-end party), `room_security` (the debrief). The car park and smoking shelter (a new room planned for core_10 and core_13) is used for one moment if it exists; otherwise that moment happens at the reception door.
-- **Conversations:** `person-chat` for the cast and the walk-in visitor; `phone-chat` for the team chat, the "printer company" and the voice note; `voice.fx` phone filtering for callers (`README_scenario_design.md`, "Voice FX").
+- **Conversations:** `person-chat` for the cast and the walk-in visitor; `phone-chat` for the team chat, the "kiosk company" and the voice note; `voice.fx` phone filtering for callers (`README_scenario_design.md`, "Voice FX").
 - **The day's timeline:** `command-board` (`minigames/command-board/`, used in sis01 and m07) already stamps timeline entries as globals change, against the game clock. It is the base for Kai's live report board during the day and for the debrief's timeline (the chain view proposed below).
 - **Other minigames:** `examine` (the courier's USB stick, the badge in the car park); `container` (the desk at the end of the day: the printer tray and the desk drawer); `notes` (the visitor list and the supplier record); `forensic-data-platform` (the invoice, the letter and the supplier record in tabs with a gated "hold and report" button, as core_11 uses it until MG-15 exists).
 - **Systems:** `gameClock` and scenario timers for the day; objectives and tasks for the task list (BE-18 builds the work task bar on them); event mappings for the chains; conditional credits as a fallback debrief (sis01's pattern).
@@ -86,7 +86,7 @@ Contributes to (short references from `02_COMPLIANCE_MAPPING.md`):
 
 ## New features needed
 
-- **BE-13 Content banks and randomisation:** editions (`mission.json` `edition`), slot recipes for twelve threats, a personal slot per learner, and organisation weighting.
+- **BE-13 Content banks and randomisation:** editions (`mission.json` `edition`), slot recipes for the Hook and twelve moments, a personal slot per learner, and organisation weighting.
 - **BE-18 Work task and interruptions:** five tasks in one day, with the busy gate so two threats never collide.
 - **BE-01 and BE-02:** the record and the debrief; **BE-12:** the lunchtime checkpoint; **BE-16:** the single "Tuesday" scene; **BE-17** (optional): two or three callbacks to the learner's earlier modules.
 - **BE-15 and HA-13:** the team event (below), with group decisions and individual checks.

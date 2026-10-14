@@ -13,7 +13,7 @@ Questions for the user. Each has a recommendation; the plan follows the recommen
 ### D2. The organisation's name
 
 - **Background:** "Larkspur Group" is a working name. Any plausible company name may belong to a real business.
-- **Recommendation:** keep it as the working name, and run a trademark and domain check before anything is published. Every domain used in the game must be unregistered or reserved.
+- **Recommendation:** keep it as the working name, and run a trademark and domain check before anything is published. Every domain used in the game must be unregistered or reserved. The same check applies to the fictional suppliers, clients and products the modules name (for example Northbeck Supplies, Ridgeway Pallets, Fernside Catering, Ashby Cleaning Supplies, Pagewright, Westmoor Council, Calderbrook Borough Council, Thornby Hygiene Supplies, BoxBounce, TallyGrid, DocShift, ChatHelper, MeetFlow) and to domains such as `thelark.larkspur.co.uk`.
 
 ### D3. The course's name
 

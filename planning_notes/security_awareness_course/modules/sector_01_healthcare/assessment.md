@@ -10,14 +10,14 @@ Each row is recorded through BE-01 (the record viewer records which record and w
 | S01-B2 | Answers "Ros's agent" | LO3 | Apply, 11:00 | Confirms nothing; passes her to the press office | Confirms Ros is on the ward, nothing more | Says how she is or when she'll go home |
 | S01-B3 | Deals with Joy's smartcard | LO2 | Apply, 10:05 | Takes the card out, locks the screen, keeps the card safe, works in their own login | Leaves the session open on the desk but uses their own login elsewhere | Works in Joy's session |
 | S01-B4 | Opens only what's needed in Ros's record | LO1 | Apply, 10:40 | Uses the admin view only, and tells Kayleigh why not | Uses the admin view only and says nothing | Opens the clinical notes without a care reason |
-| S01-B5 | Responds to Kayleigh's admission | LO1, LO6 | Apply, 10:40 | Encourages her to tell Imani or Dev now and offers to go with her, or tells Imani if she won't | Tells her it was wrong but leaves it there | Keeps it quiet |
+| S01-B5 | Responds to Kayleigh's admission | LO1, LO6 | Apply, 10:40 | Encourages her to tell Rodel or Dev now and offers to go with her, or tells Rodel if she won't | Tells her it was wrong but leaves it there | Keeps it quiet |
 | S01-B6 | Handles the phish in the shared mailbox | LO6 | Apply, 10:20 | Reports it and warns the team | Deletes or ignores it | Clicks and signs in |
 | S01-B7 | Responds to the request for a bloods list | LO5 | Apply, 12:30 | Uses the downtime form and takes the list to the doctor | Refuses without offering the paper route | Sends it by a messaging app, or photographs the whiteboard |
 | S01-B8 | Answers the phone charging request | LO5 | Apply, 12:30 | Says no and points to the staff room charger | (not used) | Says yes |
 | S01-B9 | Deals with the man in hi-vis | LO6 | Apply, 12:50 | Challenges politely and checks with IT through the switchboard, or calls security | Asks him to wait outside but neither checks nor reports | Lets him into the office, or ignores him |
 | S01-B10 | Shares with Brindle House | LO4 | Apply, 13:15 | Rings back on the directory number, then sends through the approved route | Refuses to share; or reads the list out without checking | Emails it to the personal address |
 | S01-B11 | Sweeps the ward desk | LO1, LO2 | Practise (BE-10) | Finds 5 of 5 | Finds 3 or 4 | Finds 2 or fewer |
-| S01-B12 | Owns up to their own slip | LO6 | Any beat | Tells Dev or Imani before the debrief | Tells Dev when he asks in the debrief | Doesn't tell anyone |
+| S01-B12 | Owns up to their own slip | LO6 | Any beat | Tells Dev or Rodel before the debrief | Tells Dev when he asks in the debrief | Doesn't tell anyone |
 
 S01-B12 applies only to players who opened Ros's clinical notes, worked in Joy's session, shared Mr Fenwick's details at the hook or signed in through the phish. Players who did none of these are recorded as "not applicable", not as a pass or a fail.
 

@@ -62,11 +62,11 @@ Contributes to (short references from `02_COMPLIANCE_MAPPING.md`, section 2):
 
 | Beat | What happens | Format | Minutes |
 |---|---|---|---|
-| Hook | Monday: Lark Assist goes live. Lena asks for a summary of the schools complaints log. What the player pastes is the baseline: the log contains a pupil's health details and a password a complainant typed into her email | Game (MG-16) | 1.5 |
+| Hook | Monday: Lark Assist goes live. Lena asks for a summary of the schools complaints log. What the player pastes is the baseline: the log contains a pupil's health details and a password a complainant typed into their email | Game (MG-16) | 1.5 |
 | Learn | Ama at the player's desk: approved or public, what goes in, check what comes out. Then a demo she announces: "Ama" on a video call asks for the player's sign-in code, and the real Ama leans round the screen | NPC explainer (EX-01, BE-08) and video call | 3 |
 | Practise | "Paste or Pause?": five snippets to paste, trim or keep out of an approved or a public tool, then three drafts with one wrong claim each to find and check | Minigame (MG-16 practice mode) | 3 |
 | Apply | Tuesday, report due at four: a contract to paste, Lark Assist's draft (an invented figure and an unfair line), a supplier email with hidden instructions, Martin and a free chatbot, a voice note from "Leo", and a video call from "Gillian" and "Hassan" | Game (MG-16, MG-01, video call, `phone-chat`, BE-18) | 5 |
-| Debrief | "Real or fake?": every message and call of the afternoon, stamped real, fake or made up; Kai on where the fakes came from, in a minute and with no how-to | Debrief screen (BE-02) and Ama, Kai | 1.5 |
+| Debrief | "Real or fake?": every message and call of the two days, stamped real, fake or made up; Kai on where the fakes came from, in a minute and with no how-to | Debrief screen (BE-02) and Ama, Kai | 1.5 |
 | Check | Six scenario questions | Quiz (MG-20) | 1.5 |
 | Reference | Reference card on The Lark: what goes in, check what comes out, check another way, report it | Intranet (BE-09) | under 1 |
 

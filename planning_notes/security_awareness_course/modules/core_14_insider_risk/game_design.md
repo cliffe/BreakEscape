@@ -159,15 +159,15 @@ The critical path is marked **(CP)**. Everything else is optional depth.
 
 | Decision | Options | Learning outcome | How the consequence is shown |
 |---|---|---|---|
-| Leo's login (B1) | Ring the service desk with him / say no / log in for him / point to the sticky note | C14-LO2 (baseline) | Owain fixes it in minutes; or Kai's Wednesday question about the HR drive opened under the player's name |
-| Samira's week (B2) | A kind word / a private word to Lena / report her to security as a suspect / ask if she's going with Ross / read the page in the printer tray | C14-LO3, C14-LO6 | Samira's Friday line; Ama's private, kind correction; the debrief notes that the page was her father's discharge plan |
-| Craig's theory (B3) | Add to it / "maybe she's got stuff going on" / "tell Ama or Lena, not the kitchen" / say nothing | C14-LO5, C14-LO6 | The rumour map: six desks, two or none; whether the rumour reaches Samira |
-| Ross's screen (B4) | Note it and go / say something to Ross / search his desk and files / photograph his screen | C14-LO3, C14-LO5 | Searching or photographing is recorded and explained in the debrief (the photo put customer data on the player's own phone) |
-| The offer (B5) | Screenshot and report / reply, then report / block and delete / ask how it works | C14-LO4 | Kai's Thursday thanks; the debrief shows the same message reached other staff |
-| The prompts (B6) | Deny and ring now / deny and report in the morning / approve one | C14-LO4 | Kai's Thursday message: account paused and password reset, or a sign-in to contain |
-| Ross's favour (B7) | Ask Lena what the handover needs / send to his work email / send to his personal email | C14-LO2, C14-LO3 | If sent to his personal email, it becomes part of the "two months later" story |
-| Raising the concern (B8) | Security team, Mei Lin, Lena, Martin, the Lark form or the Speak Up line, by Thursday / on Friday / after the time skip / never; facts or conclusions; or the team chat | C14-LO5 | Friday's discreet resolution, or the school business manager's call two months later |
-| Ross's last-day login (B9) | Say no and point to Mei Lin / say no / log in for him | C14-LO2 | If the player logs in, the debrief shows what Ross opened under the player's name in two minutes |
+| Leo's login (C14-B1) | Ring the service desk with him / say no / log in for him / point to the sticky note | C14-LO2 (baseline) | Owain fixes it in minutes; or Kai's Wednesday question about the HR drive opened under the player's name |
+| Samira's week (C14-B2) | A kind word / a private word to Lena / report her to security as a suspect / ask if she's going with Ross / read the page in the printer tray | C14-LO3, C14-LO6 | Samira's Friday line; Ama's private, kind correction; the debrief notes that the page was her father's discharge plan |
+| Craig's theory (C14-B3) | Add to it / "maybe she's got stuff going on" / "tell Ama or Lena, not the kitchen" / say nothing | C14-LO5, C14-LO6 | The rumour map: six desks, two or none; whether the rumour reaches Samira |
+| Ross's screen (C14-B4) | Note it and go / say something to Ross / search his desk and files / photograph his screen | C14-LO3, C14-LO5 | Searching or photographing is recorded and explained in the debrief (the photo put customer data on the player's own phone) |
+| The offer (C14-B5) | Screenshot and report / reply, then report / block and delete / ask how it works | C14-LO4 | Kai's Thursday thanks; the debrief shows the same message reached other staff |
+| The prompts (C14-B6) | Deny and ring now / deny and report in the morning / approve one | C14-LO4 | Kai's Thursday message: account paused and password reset, or a sign-in to contain |
+| Ross's favour (C14-B7) | Ask Lena what the handover needs / send to his work email / send to his personal email | C14-LO2, C14-LO3 | If sent to his personal email, it becomes part of the "two months later" story |
+| Raising the concern (C14-B8) | Security team, Mei Lin, Lena, Martin, the Lark form or the Speak Up line, by Thursday / on Friday / after the time skip / never; facts or conclusions; or the team chat | C14-LO5 | Friday's discreet resolution, or the school business manager's call two months later |
+| Ross's last-day login (C14-B9) | Say no and point to Mei Lin / say no / log in for him | C14-LO2 | If the player logs in, the debrief shows what Ross opened under the player's name in two minutes |
 
 No option shames the player. Ross isn't a monster and Craig isn't malicious; Samira is never punished for being suspected, and the player is never punished for raising an honest concern that turns out to be nothing. The only behaviours the game marks down are the ones that harm people: sharing access, engaging with criminals, investigating colleagues and spreading rumours.
 

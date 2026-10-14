@@ -51,10 +51,10 @@ The critical path is marked **(CP)**.
 
 - **(CP)** At Owain's counter, eight shortcut cards (MG-20 single-choice items, styled as cards on the board). For each, the player picks the approved swap from three. Feedback is immediate, with one line of why:
   1. "Email it to my personal address to finish at home." (The work laptop and remote access.)
-  2. "Use a free transfer site for a big file." (The secure transfer tool.)
+  2. "Use a free transfer site for a big file." (A link from the file-sharing service, to named people, with an end date.)
   3. "Keep the team rota in a free app on someone's personal account." (A shared space in the company workspace.)
   4. "Found a USB stick." (Hand it to IT.)
-  5. "Put the photos on my own USB stick for the meeting." (Open them from the document library in the meeting room.)
+  5. "Put the photos on my own USB stick for the meeting." (Open them from Larkspur Files on the meeting room screen.)
   6. "Run the team chat on a personal messaging group." (The company chat tool and its phone app.)
   7. "Use a free online form to collect parents' details for the school open day." (Ask IT for the approved forms tool; personal data is core_05.)
   8. "Sync the shared drive to my personal cloud so I can see it on my tablet." (The company's own app on an approved device, or ask IT.)
@@ -69,13 +69,13 @@ The critical path is marked **(CP)**.
 | When | What arrives | What it tests | Best response |
 |---|---|---|---|
 | 15:35 | Martin: *"Share's dying again. Email it to your personal address and finish it on the sofa. Everyone does. I do."* The compose window (MG-01) offers "Me (personal)" in autocomplete | Personal email | Ask Owain for a way to work from home |
-| 15:45 | The kitchen video is 2.4GB, too big for email. Martin: *"Use BoxBounce. Free, no sign-up, two minutes."* | A free transfer site | Ask Owain; send it with the secure transfer tool (MG-11) to Ruth by name, with an expiry |
+| 15:45 | The kitchen video is 2.4GB, too big for email. Martin: *"Use BoxBounce. Free, no sign-up, two minutes."* | A free transfer site | Ask Owain; share it from Larkspur Files (MG-11) with Ruth by name and an end date |
 | 16:00 | A padded envelope on the desk: "From Westmoor Council: survey results for your report. Please add them to the pack." Inside, a USB stick and a compliments slip with a phone number | Posted removable media, and checking another way | Don't plug it in. Call Ruth on the number in the client directory (not the slip), then give the stick to Owain |
 | 16:10 | Kev rings: *"Need the council's new slots on the rota. It's on that TallyGrid thing Callum set up. The temp. Left in March. Still works, mind."* The rota opens in a free spreadsheet app; its sharing panel (MG-11) shows the owner "callum.r (personal)" and "Anyone with the link can edit". The rota has drivers' names and mobile numbers and two schools' gate codes | Shadow IT already in use; access that never ends | Add nothing there. Tell Kev it needs moving into the team space, and ask Owain to move it and deal with Callum's access |
 
 - **How each one plays out in the moment:**
   - **Personal email.** Sending it works instantly, and Martin says *"See? Done."* Asking Owain: *"Take the laptop home. Remote access gets you onto the share from your kitchen table. And let me look at that sync."* Staying late also works, slowly, and the share stays slow for everyone else.
-  - **BoxBounce.** Uploading works and gives a public link that never expires. With Owain's help the player uses Larkspur Send: Ruth by name, seven-day expiry, a notice when she downloads it. Leaving the link open to "anyone with the link" is possible, and the debrief notices.
+  - **BoxBounce.** Uploading works and gives a public link that never expires. With Owain's help the player shares it from Larkspur Files: Ruth by name, a seven-day end date, a notice when she opens it. Leaving the link open to "anyone with the link" is possible, and the debrief notices.
   - **The posted stick.** Plugging it in: Larkspur Protect blocks something on the stick and Owain rings, calm as ever. Calling the number on the slip: a pleasant voice says *"Yes, that's from us"*, which proves nothing (the debrief shows why, pointing to core_02). Calling Ruth on the directory number: *"We didn't post anything. We'd email it, wouldn't we?"* Owain puts the stick into the scanning PC: *"Ooh. Not survey results."*
   - **The rota.** Owain: *"Give me ten minutes. I'll move it into a team space so Kev can carry on, and we'll take the link down."* Adding the slots to the free app works, and nothing visible happens. Copying the rota into the player's own account "to be safe" makes one more copy nobody controls.
 - **(CP) The quick yes.** If the player went to Owain at any point, he also looks at the share: *"Fixed, by the way. A sync job had stuck. Nobody told us."* Martin, reading over the player's shoulder: *"Right. Why did nobody tell me it was this easy?"* Owain: *"We did. In an email. You forwarded it to your personal account."* If the player never went to Owain, Martin is cheerful (*"Told you. Done by five."*) and the consequences wait for the time skip.
@@ -108,7 +108,7 @@ The critical path is marked **(CP)**.
 |---|---|---|---|
 | The car park stick | IT / reception / plug in / take home / leave or bin | LO1 (baseline) | Owain's opening line; Jo's reveal shows the player's own result |
 | Personal email | Ask Owain / stay late / send to personal | LO2, LO4 | The personal-inbox vignette; or remote access and a fixed share |
-| Free transfer site | Secure transfer to a named person with expiry / secure transfer left open / the free site | LO3, LO4 | The breach vignette, or "the link expired, nothing to find" |
+| Free transfer site | Larkspur Files to a named person with an end date / Larkspur Files left open to anyone / the free site | LO3, LO4 | The breach vignette, or "the link expired, nothing to find" |
 | Posted stick | Directory call and IT / straight to IT / call the slip's number / plug it in | LO1 | Ruth's "we didn't post anything"; the scanning PC; the four-suppliers vignette |
 | Kev's rota | Ask Owain to move it and remove access / refuse but say nothing / add the slots there / copy it to a personal account | LO3, LO5 | Owain's ten-minute move; or the vanished-rota vignette |
 | Telling IT about the slow share | Mentions it to Owain / never does | LO4 | The fixed sync job, and Martin's line |
@@ -120,7 +120,7 @@ No option shames the player or Martin. Martin's shortcuts are what most offices 
 | Minigame | Status | Use here |
 |---|---|---|
 | **MG-01 Inbox** | new | Composing the pack email, with "Me (personal)" in autocomplete |
-| **MG-11 Sharing settings** | new | Larkspur Send (recipient, expiry, download notice); the free app's sharing panel, with a departed owner and "anyone with the link" |
+| **MG-11 Sharing settings** | new | The Larkspur Files share (recipient, end date, notice when opened); the free app's sharing panel, with a departed owner and "anyone with the link" |
 | **MG-20 Knowledge check** | new | The Swap Shop cards, Owain's check question and the final spot check |
 | **MG-27 Work desktop** | new | The player's laptop: the pack folder with its sync bar, the compose window, and messages arriving as notifications |
 | **MG-02 Web browser** | new | BoxBounce's upload page and the free app's rota page, if the player opens them |
@@ -171,7 +171,7 @@ Shown on BE-02, then spoken by Jo, Owain and Ama:
 
 - **New room:** the car park and smoking shelter (shared with core_10).
 - **Props:** a USB stick with a printed label (item sprite); a padded envelope with a stick and a compliments slip; the lost-and-found bowl (`usb_bowl1`); the Swap Shop board (`notice_board1`, redressed); the scanning PC on its own little desk with its "Not connected to the network" sign.
-- **UI:** MG-01 compose; MG-11 for Larkspur Send and for the free app's sharing panel; the sync bar; the documentary title cards.
+- **UI:** MG-01 compose; MG-11 for the Larkspur Files share and for the free app's sharing panel; the sync bar; the documentary title cards.
 - **Characters:** Owain, Martin, Kev, Jo, Maureen and Ama have their own art (shared across modules). Ruth Hollis is phone only (voice, no art); Callum Reid never appears.
 - **Voice:** about 22 lines for Owain, 12 for Martin, 6 each for Kev and Jo, 3 for Maureen, 4 for Ama, 3 for Ruth, and 8 for the documentary narrator (a neutral voice, captioned). No voiced line prints a variable: Jo's test figures are fixed in the script, and the player's own result appears only on screen.
 
