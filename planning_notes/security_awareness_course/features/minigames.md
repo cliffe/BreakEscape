@@ -641,4 +641,228 @@ Each step gets one line of feedback. Items get harder: a plain domain; a decorat
 1. **How much of a real spreadsheet?** *Recommendation:* tabs and cells only, no formulas.
 2. **Subject access requests.** *Recommendation:* keep the rule simple in the task text; Tomasz explains the detail in core_05.
 
+### MG-13 Social media profile and OSINT board
+
+**Priority and size:** P3, M.
+
+**Used for:** core_12, the whole module: with Jo, on an authorised test, the player builds a pretext from Leo's public posts on a corkboard, then locks down Leo's profile and their own. Light use in core_14 and role_05 (recruiter approaches, fake profiles).
+
+**What the player does:**
+
+1. **Browses** a fictional social site: Leo's profile and feed, from Jo's side of the desk (EX-06, with BE-11's role switch).
+2. **Pins** posts to the corkboard: a photo with his badge on show, his manager tagged at a leaving do, a job advert naming the new finance system, his holiday dates, his dog's name.
+3. **Connects** pins to the pretext slots with string: who to pretend to be, when he's away, which system to mention, the answer to a security question. Each right connection adds a line to Jo's script.
+4. **Hears** Jo read the finished pretext, then say what would have stopped her.
+5. **Flips sides:** opens the privacy settings for Leo's profile, then the player's own; changes who can see posts, removes location tags, hides the friends list, reviews old posts.
+6. **Spots** risky posts in a feed (as in BE-10) and answers a "recruiter" message (MG-05).
+
+**What it teaches:** small public details add up to a convincing story; how privacy settings help; think before posting about work; how to spot a fake recruiter.
+
+**Configuration:** `profiles[]`, `posts[] {id, text, image, reveals[], risky}`, `board {slots[] {id, label, accepts[]}}`, `privacySettings[] {id, label, state, target}`, `assess`.
+
+**Events and records:** prefix `osint_`: `osint_post_pinned:<postId>`, `osint_link_made:<slotId>`, `osint_board_completed`; prefix `privacy_`: `privacy_setting_changed:<settingId>`, `privacy_post_fixed:<postId>`. Records: the settings fixed and the risky posts found or missed.
+
+**Builds on:** MG-05 for messages; BE-10 and BE-11; the board in the room can use the existing `notice_board1.png` sprite. The corkboard view itself is new.
+
+**Accessibility notes:** connecting uses a "Pin to" menu on each post, and the string is decoration; the board can also be read as a list of slots and what fills them.
+
+**Art:** corkboard, pins, string and photo cards in pixel art; a fictional social network with its own made-up name and look.
+
+**Open questions:** **Photographs in posts?** *Recommendation:* pixel-art posts only; no photographs anywhere in the game content.
+
+### MG-14 Wi-Fi and VPN picker
+
+**Priority and size:** P3 in the catalogue, S. core_09, a P2 module, needs it, so it should be P2, ideally as a panel of MG-23 (section 6).
+
+**Used for:** core_09 (a café with two networks of nearly the same name, the VPN, the phone hotspot); core_17.
+
+**What the player does:**
+
+1. Opens the laptop's list of networks in the café: `LockKeeperCafe_Guest`, `LockKeeperCafe-Guest-FREE`, a printer, and the player's own phone hotspot.
+2. Checks another way: the network name on the card by the till, or a question to the person behind the counter.
+3. Chooses the phone hotspot (best), or the café's real network with the VPN on.
+4. If they join the fake network, it shows a sign-in page asking for their work account (pre-filled, MG-02's renderer); signing in is recorded.
+5. Turns the VPN on with one switch and sees "Connected through the {org.name} VPN".
+
+**What it teaches:** network names can be copied; check the name with the staff or the sign; use your phone's hotspot or the VPN; never sign in with your work account on a public Wi-Fi page.
+
+**Configuration:** `networks[] {ssid, secured, genuine, signal, page}`, `hotspot`, `vpn {required, label}`, `askNpc` (who knows the real name), `assess`.
+
+**Events and records:** prefix `wifi_`: `wifi_joined:<ssid>` (genuine or not), `wifi_hotspot_used`, `wifi_vpn_on`, `wifi_page_signin:<pageId>`. Records: the network chosen, whether the VPN was on before work started, and any sign-in on a portal.
+
+**Builds on:** MG-23's settings frame; the page renderer; `person-chat` for the café staff; the café scene can also use line of sight for shoulder surfing (`JS/systems/npc-los.js`).
+
+**Accessibility notes:** the network list is a list of buttons with signal strength in words; no timing.
+
+**Art:** a generic laptop network list; the café room is new (`03_WORLD_AND_CAST.md`, Places).
+
+**Open questions:** **A minigame of its own or an MG-23 panel?** *Recommendation:* an MG-23 panel.
+
+### MG-15 Payment verification desk
+
+**Priority and size:** P2, M, once MG-25 and MG-04 exist and `dual-auth` has been reworked (section 4).
+
+**Used for:** core_11 ("Northbeck's" new bank details on letterhead, a call back on the directory number, a Confirmation of Payee "no match", a second approver); role_02 (a month-end run of thirty payments with planted anomalies, a supplier change mid-run, pressure from "the chief executive", and the race to recover money after a mistake).
+
+**What the player does** (steps: Request, Record, Call back, Payee check, Approve):
+
+1. **Request:** read the change request (an MG-01 email or a letter) and note what it claims.
+2. **Record:** compare it with the supplier record in Ledger, the finance system, and mark what differs (MG-25's comparison view).
+3. **Call back** on the number already on record (MG-04). Dawn knows nothing about it. Ringing the number on the letter reaches the fraudster, who is very reassuring.
+4. **Payee check:** run Confirmation of Payee on the new details. It answers Match, Close match or No match, with the name the bank holds (wording to check against core_11's concepts file). It helps; it isn't proof.
+5. **Approve or refuse:** approve, hold and escalate, or refuse and report. Payments need a second approver: in core_11 the player gathers the evidence and hands it to Hassan; in role_02 the player is the second approver, challenging a colleague's evidence.
+6. **The run** (role_02): a table of thirty payments; filter and flag the odd ones (a new account, urgent and large; a changed remittance contact; a duplicate invoice).
+7. **If money goes:** a time skip shows the chance of getting it back falling by the hour (BE-16). The right move is to ring the bank at once, then report.
+
+**What it teaches:** never use the contact details in the request; call back on the number already on record; two people approve; urgency plus secrecy plus money means slow down; Confirmation of Payee helps but isn't foolproof; act at once if money has gone.
+
+**Configuration:** `request` (an email id or a document), `record`, `callback {onRecord, inRequest}`, `payeeCheck {result, nameHeld}`, `approval {second, via}`, `run[]` (role_02: payments with `anomalies[]`), `recovery {byHour[]}`, `assess`.
+
+```json
+{
+  "request": { "email": "northbeck_bank_change" },
+  "record": { "supplier": "Northbeck Supplies", "account": "ending 4471", "phone": "0161 496 0450" },
+  "callback": { "onRecord": "0161 496 0450", "inRequest": "0161 496 0991" },
+  "payeeCheck": { "result": "no_match", "nameHeld": "NBK Trading" },
+  "approval": { "second": "hassan_qureshi", "via": "dual_auth" },
+  "assess": { "behaviour": "C11-Bx", "rate": { "called_on_record_and_refused": "secure", "refused_without_call": "developing", "approved": "not_yet" } }
+}
+```
+
+**Events and records:** prefix `payment_`: `payment_request_read:<id>`, `payment_difference_marked:<id>` (field), `payment_callback:<id>` (which number), `payment_payee_checked:<id>` (result), `payment_approved:<id>`, `payment_held:<id>`, `payment_refused:<id>`, `payment_reported:<id>`, `payment_run_flagged:<paymentId>`, `payment_bank_called:<id>` (story time since the payment). Records: which number was used to check, the payee result and what the player did with it, the decision, and the anomalies found in a run.
+
+**Builds on:** `dual-auth` (`JS/minigames/dual-auth/`) for the two-approver panel, reworked (section 4); `forensic-data-platform` for the evidence and a gated confirm; MG-25 for the comparison; MG-04 for the calls; `warranty-checklist` rows for the run; `notes` for the procedure card.
+
+**Accessibility notes:** tables with proper headers, sortable by keyboard; differences marked with checkboxes; the approval panel works from the keyboard (today's keypads take clicks only).
+
+**Art:** Ledger (a generic finance system), letterheads, a payee check result banner, and a generic bank screen with no real bank's look.
+
+**Open questions:** **PINs to approve?** *Recommendation:* no. Approval is a named sign-off with the evidence attached; the lesson is the independent check, not the keypad. Keep `dual-auth`'s two-panel look.
+
+### MG-16 AI assistant chat
+
+**Priority and size:** P2, M. Scripted: no real language model is called, so answers are predictable, safe and free, and nothing a learner does is sent anywhere.
+
+**Used for:** core_15 (Lark Assist: summarising a complaint after removing what shouldn't go in; a draft report with an invented statistic to catch; Martin pasting the pricing model into a free public chatbot; an email with hidden instructions that the assistant picks up); role_04 (an assistant that suggests a package that doesn't exist; secrets in pasted code); core_17.
+
+**What the player does:**
+
+1. **Gets a task** ("Summarise this complaint for the team meeting") and opens Lark Assist, the approved assistant.
+2. **Pastes:** the clipboard shows what is about to go in. The player can remove parts first (names, health details, a client's figures) using the annotated document, or paste it all.
+3. **Reads the answer:** scripted and mostly good. One answer contains a confident statistic with a source that doesn't exist; "Check this" opens the source or The Lark, and the player flags it.
+4. **Chooses the tool:** a public chatbot site (an MG-02 page) sits beside Lark Assist, and the player sorts tasks between them ("rewrite our public job advert" is fine anywhere; "summarise this contract" only in the approved one).
+5. **Spots a trick:** asked to summarise an email, the assistant suggests forwarding a file to an outside address, because the email hid instructions for it. The player doesn't act on it, and reports the email.
+6. **Talks to Martin** about the pricing model in the public tool (spotted as in BE-10, then a `person-chat` scene).
+
+**What it teaches:** use the approved tool; don't paste personal data, confidential or client information, passwords, or code containing secrets; check what it tells you; you're responsible for what you send; AI tools can be steered by the content they read.
+
+**Configuration:** `assistant {name, approved, avatar}`, `tasks[] {id, input, mustRemove[], responses[] {id, text, flags}, checks[]}` (flags: `inventedFact`, `followsHiddenInstruction`), `publicTool {page}`, `sortTasks[]`, `assess`.
+
+```json
+{
+  "assistant": { "name": "Lark Assist", "approved": true, "avatar": "lark_assist" },
+  "tasks": [{
+    "id": "summarise_complaint",
+    "input": "content/complaint_record.json",
+    "mustRemove": ["resident_names", "health_details"],
+    "responses": [{ "id": "r1", "text": "Laundry complaints rose 40% last year (Northern Facilities Index, 2025).", "flags": ["inventedFact"] }],
+    "assess": { "behaviour": "C15-Bx", "rate": { "removed_and_checked": "secure", "removed_only": "developing", "pasted_all": "not_yet" } }
+  }]
+}
+```
+
+**Events and records:** prefix `ai_`: `ai_pasted:<taskId>` (what was left in, what was removed), `ai_answer_checked:<responseId>`, `ai_fact_flagged:<responseId>`, `ai_tool_chosen:<taskId>` (approved or public), `ai_hidden_instruction_noticed:<taskId>`, `ai_output_used:<taskId>` (checked or not). Records: what went into the tool, whether answers were checked, and which tool was used for what.
+
+**Builds on:** the `phone-chat` thread layout for chat bubbles; the annotated document; the page renderer for the public tool; m08's AI receptionist (`scenarios/m08_the_mole/ink/m08_receptionist_ai.ink`) as a tone reference for a helpful machine character.
+
+**Accessibility notes:** the chat log is a live region; paste, remove and check are buttons; prompts are chosen, not typed.
+
+**Art:** Lark Assist as a friendly pixel robot (a bust and a small avatar), a chat window, and a public chatbot site with a fictional name.
+
+**Open questions:** **Let players type prompts?** *Recommendation:* no. Chosen prompts only, so nothing personal is typed and nothing needs moderating.
+
+### MG-17 Caller verification desk
+
+**Priority and size:** P3, M. One minigame with two skins: the service desk (role_03) and the contact centre (role_06).
+
+**Used for:** role_03 ("Gillian" locked out at the airport demanding an MFA reset now; a "new contractor" who needs admin rights today; an app asking for mailbox access); role_06 (school business managers asking for changes; a caller using details from someone else's breach; a relative who seems to be being scammed; a card payment by phone); sector_01 (a "relative" asking about a patient).
+
+**What the player does:**
+
+1. Works a queue of calls, chats and tickets (left), the current contact (centre) and the organisation's verification checklist (right).
+2. Chooses verification steps from a list: strong ones (call back on the number on record, a code sent to the registered device, manager approval, a video check) and weak ones (date of birth, home address, anything public on a social profile).
+3. Watches the caller's pressure rise (NPC influence, `docs/NPC_INFLUENCE.md`); the procedure never needs speed.
+4. Decides: go ahead, call back, refuse politely, or escalate.
+5. Adds ticket notes from a structured list.
+
+**What it teaches:** verification that resists social engineering; questions with public answers verify nobody; call back on the number on record; follow the procedure under pressure; protect customers who are being scammed.
+
+**Configuration:** `skin` (`service_desk`, `contact_centre`), `queue[] {id, channel, npcId, knot, claims, record, pressure}`, `checklist[] {id, text, strength}`, `actions[]`, `assess`.
+
+**Events and records:** prefix `caller_`: `caller_check_used:<contactId>` (step, strength), `caller_verified:<contactId>`, `caller_refused:<contactId>`, `caller_escalated:<contactId>`, `caller_actioned:<contactId>` (reset, change, payment). Records: the strongest check used before each action, and any action taken for a caller who wasn't verified.
+
+**Builds on:** MG-04 for calls; `person-chat` and `phone-chat` ink; `siem` and `log-filter` for role_03's alerts (after the fixes in section 4); NPC influence.
+
+**Accessibility notes:** captions; no timers; the queue length is shown but never counts against the player.
+
+**Art:** a headset desk view, queue cards and a generic customer record panel.
+
+**Open questions:** none.
+
+### MG-18 Access review
+
+**Priority and size:** P3, S.
+
+**Used for:** role_05 (a new starter's access request: pick the minimum; Leo moving to Finance: remove his Operations access; a leaver's checklist; a review table with stale accounts); role_03 (privileged accounts); role_07 (a supplier's accounts still live at the end of the contract); core_14 lightly.
+
+**What the player does:**
+
+1. Reads a table of people, systems and permissions, with role, manager, last sign-in and start or end dates.
+2. Decides each row: keep, remove, reduce, or ask the manager.
+3. For a joiner, picks the smallest set from the role's template.
+4. For a leaver, completes the same-day checklist (account off, devices back, mailbox handed over).
+5. Submits, and sees what was removed, kept and missed.
+
+**What it teaches:** least privilege; movers lose their old access; leavers lose access the same day; review regularly.
+
+**Configuration:** `rows[] {person, role, system, permission, lastUsed, status, expected}`, `joiner {role, template[], minimum[]}`, `leaverChecklist[]`, `assess`.
+
+**Events and records:** prefix `access_`: `access_row_decided:<rowId>`, `access_joiner_granted` (anything beyond the minimum), `access_leaver_item:<itemId>`, `access_review_submitted` (removals missed, removals too many).
+
+**Builds on:** `warranty-checklist`'s rows and verdict buttons, generalised (section 4).
+
+**Accessibility notes:** a real table with row headers; the verdicts are radio groups.
+
+**Art:** a generic admin console.
+
+**Open questions:** none.
+
+### MG-19 Code review
+
+**Priority and size:** P3, M.
+
+**Used for:** role_04 (a code review with an injection and a missing access check; a pull request that includes a cloud key; an assistant-suggested package that doesn't exist; a test database copied from production).
+
+**What the player does:**
+
+1. Reads a short change (10 to 40 lines) in a generic code review view.
+2. Selects a line and picks the problem from a list (injection, missing access check, secret in the code, unknown package, real data in tests, sensitive data in logs).
+3. Picks the fix (a parameterised query; an ownership check; move the secret to the vault and rotate the key; check the package is the real one; use made-up test data).
+4. Approves the change or asks for changes.
+5. For the leaked key, chooses between "delete it in a new commit" and "rotate the key, then clean the history". Rotating is the point.
+
+**What it teaches:** common flaws, at awareness level; a leaked secret must be rotated, not just deleted; check packages before adding them; no real customer data in tests.
+
+**Configuration:** `files[] {path, lines[] {n, text, change}}`, `issues[] {id, lines[], type, fixes[], fix, why}`, `decoys[]`, `assess`.
+
+**Events and records:** prefix `code_review_`: `code_review_flagged:<issueId>`, `code_review_false_flag:<line>`, `code_review_fix_chosen:<issueId>`, `code_review_submitted` (verdict). Records per issue.
+
+**Builds on:** `log-filter`'s row flagging (`JS/minigames/log-filter/log-filter-minigame.js`); `forensic-data-platform`'s tables; links out to Hacktivity's `lab_vulnerabilities` and `lab_exploitation` for depth.
+
+**Accessibility notes:** code shown as a table with line numbers; arrow keys move line by line; each line is read with its change marker ("added", "removed"); colour is never the only marker.
+
+**Art:** a dark code review theme with no real product's look.
+
+**Open questions:** **Which language?** *Recommendation:* one short JavaScript or Python example per edition, plain enough that comments carry the meaning for non-specialists.
+
 <!-- append -->

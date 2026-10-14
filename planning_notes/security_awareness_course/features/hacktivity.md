@@ -431,3 +431,157 @@ The features below are in id order.
 - **Acknowledging isn't understanding.** It is what PCI DSS asks for, but it changes little by itself. The course pairs it with core_16, the reference cards and the optional check question.
 - **Legal weight.** How much a click-through acknowledgement counts in an employment dispute is for the customer's HR and lawyers. The platform records enough to show who acknowledged which exact text, and when.
 - **Long policies.** Staff skim them. Every version needs a plain-English summary, and the summary is what the game shows first.
+
+### HA-08: Question banks
+
+**Priority and size:** P2, M.
+
+**Why:** A retake needs fresh questions, or the check measures memory of the last attempt. Organisations want to add questions about their own policies and procedures. Weak questions should be found from the data and retired. The ICO training toolkit expects an assessment at the end of training, possibly with a pass mark. MG-20 (the knowledge check) needs somewhere to draw its items from.
+
+**What exists today:** nothing. There are no quizzes anywhere: not in Hacktivity, not in the game, not in the lab sheets.
+
+**Design:**
+
+- **Item.** Id; module; learning outcome ids; type (single choice, multiple choice, hotspot with a list alternative, ordering, true or false with a reason); stem; options, each with its own feedback; the answer key (and accepted alternatives, as in core_01's ordering item); difficulty; tags (role, sector, organisation specific); language; status (draft, in review, live, retired); version; author and reviewer; parameters (slots such as a domain name filled per play from BE-13); accessibility notes (text alternatives for images).
+- **Two sources.** The *central bank* is written by the course team with each module (8 to 12 items at launch, at least two per outcome, growing over the first year) and versioned with it (HA-19). *Organisation items* are written by the customer's content editors, mapped to a module outcome or to one of their policies, and reviewed by a second editor before going live.
+- **Drawing a sitting** (MG-20 asks; the bank answers). Six items by default, at least one per outcome, at most two organisation items, none seen in the learner's previous attempt while unseen items remain for that outcome, options shuffled except in ordering items. The rules are in `assessment_and_evidence.md`.
+- **Item statistics** (for the course team and, for organisation items, the organisation): how often it is answered correctly, how well it separates learners who do well on the rest of the check from those who don't, how often each option is chosen, and the median time. Shown once an item has 200 responses; central items pool responses across organisations, anonymously. Flags: correct more than 95% of the time (too easy to tell us anything), less than 30% (too hard, or a wrong key), negative discrimination (probably flawed), an option nobody chooses.
+- **Learner reports.** A "report a problem with this question" link on every item, going to whoever owns it.
+- **Retirement.** A retired item is never drawn again but stays in history, because old records refer to it.
+- **Import and export.** CSV and JSON. 1EdTech's QTI format later, if customers ask.
+
+**Acceptance criteria:**
+
+- A content editor adds a question about the organisation's acceptable use policy, mapped to a core_16 outcome; a second editor approves it; it then appears in at most one slot per sitting.
+- A retake never repeats an item from the previous attempt while unseen items remain for each outcome.
+- Statistics appear after 200 responses, and an item with negative discrimination is flagged for review.
+- Every item has feedback for every option, and passes the accessibility checks (text alternatives, keyboard operation, a list alternative for hotspots).
+
+**Depends on:** MG-20, BE-13, HA-19, HA-05.
+
+**Risks and open questions:**
+
+- **Organisation questions of uneven quality.** Writing guidance, the review step and the statistics help; the course team can't review every customer's items.
+- **Small organisations** never reach 200 responses on their own items. *Recommendation:* show their statistics as "too few responses yet", and rely on review.
+- **MVP.** HA-08 is P2, but MG-20 needs items from the first module. *Recommendation:* in the MVP, the central items ship inside each module version; the editor, organisation items and statistics come with HA-08.
+
+### HA-09: Organisation dashboards
+
+**Priority and size:** MVP, M.
+
+**Why:** Managers and admins chase completion; the ICO training toolkit expects completion monitored at all levels; DSPT 3.2.1 sets a 95% figure for many health and care organisations; boards are asked to gain assurance "using suitable metrics" (Cyber Governance Code C4); NCSC CAF B6.b says measuring only how many people were reached is not enough. Per-outcome results by department show where the next year's effort should go.
+
+The same data can do harm. Decision data for a small team identifies individuals. Used for discipline, it would destroy the reporting culture the course exists to build: the NCSC's phishing guidance says plainly that "blaming users for clicking on links doesn't work" and that "employees who are afraid for their jobs will not report mistakes" ([NCSC, Phishing attacks: defending your organisation](https://www.ncsc.gov.uk/guidance/phishing)). The ICO's guidance on monitoring workers says employers must be clear about the purpose of monitoring and tell workers about it, and lists monitoring that may lead to performance management as an example of processing likely to need a DPIA ([ICO, Employment practices and data protection: monitoring workers](https://ico.org.uk/for-organisations/uk-gdpr-guidance-and-resources/employment/monitoring-workers/)).
+
+**What exists today:** a progress page per course for training staff, with each person's progress per item, inactivity flags and CSV export, built accessibly. No organisation-wide, department or manager views, no overdue or compliance reports, no scheduled reports.
+
+**Design:**
+
+- **Four views.**
+
+| View | Who | Shows | Never shows |
+|---|---|---|---|
+| **Compliance** | Organisation admin, compliance viewer, auditor | Percentage current for each requirement (induction within its window, annual refresher, policy acknowledgements), by department and location; overdue and exempt counts; trends; a "trained in the last 12 months" figure with a target line (for example DSPT's 95%); drill-down to named people for chasing | Outcome ratings or decisions |
+| **My team** | Manager | Each report's assignments with status and due dates; a reminder button | Scores, outcome ratings, decisions, practice assignments |
+| **Learning insight** | Organisation admin (and a security team role the organisation can grant) | Per-outcome distributions (Secure, Developing, Not yet) per module and department; the hook-to-Apply change; the most-missed behaviours; the organisation's own question statistics; all above the privacy threshold | Names, or any group below the threshold |
+| **Board report** | Generated for the organisation admin | A one-page quarterly PDF: completion and overdue, outcome trends, the reporting-culture measures where HA-12 and HA-14 supply them, and a text box for the security lead's commentary | Names |
+
+- **Privacy thresholds** (for learning insight and every other aggregate of learning, survey or simulation data):
+  - **Minimum group size.** A cell is shown only if at least *k* people contributed. Default *k* = 10; an organisation can raise it, or lower it to 5 at the lowest, with a warning. Smaller groups are shown as "fewer than 10 people" or folded into a combined group.
+  - **No working it out by subtraction.** If a department of 40 is shown and a sub-team of 34 is shown, the other 6 can be worked out. The dashboard checks the difference between any two groups a user can see, and suppresses one of them whenever the difference is a group smaller than *k*.
+  - **Filters can't narrow below *k*.** The size check runs on the final group after every filter (department, location, job role, worker type, period), not on each filter alone.
+  - **Small periods widen.** If a month has too few completions, the view switches to the quarter or the year rather than showing a small group.
+  - **Rounding.** Percentages for groups of fewer than 50 are rounded to the nearest 5.
+  - **No route from a cell to names.** Learning insight has no drill-down to individuals, and its exports are aggregates with the same rules.
+  - **Who the threshold protects against.** The ICO's anonymisation guidance asks whether colleagues' own knowledge could be enough to identify someone ([ICO, How do we ensure anonymisation is effective?](https://ico.org.uk/for-organisations/uk-gdpr-guidance-and-resources/data-sharing/anonymisation/how-do-we-ensure-anonymisation-is-effective/)). A manager knows who in their team was on leave in March, so the rules apply to managers' and admins' views alike.
+  - Thresholds don't apply to compliance status, which has to be seen by name to be chased.
+- **Individual learning detail.**
+  - The learner always sees their own.
+  - The organisation can turn on "support access" for named admins. Each view of one person's learning detail needs a reason from a fixed list (the learner asked for help; arranging an adjustment; a subject access request), is written to the audit log, and appears in the learner's "My data" page (HA-17) as "viewed by [admin] on [date] for [reason]".
+- **No discipline from decision data.**
+  - *In the product:* no rankings of individuals, no "worst performers" list, no named list of people who clicked in the game, and managers can't see decisions.
+  - *In the contract:* the order form and the data processing agreement (HA-15) say the customer won't use learning data from the course for disciplinary or performance decisions.
+  - *To learners:* the privacy notice and the first screen of core_00 say the same, in plain words.
+  - Not completing mandatory training by its due date is a different matter: that is compliance data, and how the customer handles it is the customer's policy.
+- **Freshness.** Compliance views update within the hour; learning insight daily.
+- **Scheduled reports.** The weekly manager digest (HA-04), a monthly summary for admins, the quarterly board report.
+- **Accessibility.** Every chart has a table alternative; colour is never the only signal; keyboard and screen reader support follows the existing progress page.
+
+**Acceptance criteria:**
+
+- A manager of four people sees each person's status, and no learning insight for the team. A manager of 30 sees per-outcome distributions for the team and no names.
+- No combination of filters returns learning data for fewer than *k* people; the test suite includes subtraction attempts (a department minus its visible sub-teams) and narrow periods.
+- An admin who opens one person's learning detail must give a reason; the view is logged and appears on the learner's "My data" page.
+- The compliance view's figures for a date match the audit pack (HA-05) for the same date.
+- Every view passes the WCAG 2.2 AA checks in HA-23.
+
+**Depends on:** HA-01, HA-03, HA-05, HA-15, HA-23; BE-01 for learning data.
+
+**Risks and open questions:**
+
+- **Ten or five.** *Recommendation:* 10 by default, because a manager knows their team well; 5 only for organisations that accept the warning.
+- **Small organisations** (under about 30 staff) will see little learning insight. *Recommendation:* offer anonymous benchmarks across organisations of a similar size and sector instead, once there are enough customers.
+- **Customers asking for named lists** ("show me who clicked the phish in the game"). *Recommendation:* decline for course data, and explain why with the NCSC's guidance. Simulation data follows HA-12's rules.
+
+### HA-10: LMS interoperability
+
+**Priority and size:** P2, L.
+
+**Why:** Many customers already run a learning management system (LMS) and want to assign the course there, alongside their other mandatory training, and see completions in the reports they already use. The plan pilots in Hacktivity first and adds LMS delivery before wider sales (`DECISIONS_PENDING.md`, D4).
+
+**What exists today:** none of SCORM, LTI, xAPI or cmi5; no public API.
+
+**What each standard supports.** Checked on 14 October 2026 against the standards bodies' documents where they could be reached:
+
+| | SCORM 1.2 | SCORM 2004 (4th edition) | cmi5 | LTI 1.3 with LTI Advantage |
+|---|---|---|---|---|
+| **Body and date** | ADL, October 2001 | ADL, March 2009 | ADL and the AICC; "Quartz" 1st edition, 1 June 2016 | 1EdTech (formerly IMS Global); final release 16 April 2019 |
+| **How it launches** | A zip package (with an `imsmanifest.xml`) imported into the LMS; content runs in the LMS's browser window and talks to it through a JavaScript API | As SCORM 1.2 | The LMS launches each unit (an "assignable unit") by URL, which can be hosted anywhere; a course structure file describes the units and can be imported without a zip | The tool stays hosted by its provider; the LMS launches it with an OpenID Connect flow and signed tokens (JWTs) |
+| **Completion and success** | One field, `lesson_status`: passed, completed, failed, incomplete, browsed or not attempted | Two fields: `completion_status` (completed, incomplete, not attempted, unknown) and `success_status` (passed, failed, unknown) | Statements with the cmi5 verbs launched, initialized, completed, passed, failed, abandoned, waived, terminated and satisfied; the LMS decides "satisfied" from each unit's moveOn rule (Passed, Completed, CompletedAndPassed, CompletedOrPassed or NotApplicable) | Assignment and Grade Services 2.0: a score (`scoreGiven` out of `scoreMaximum`), a comment, an activity progress (Initialized, Started, InProgress, Submitted, Completed) and a grading progress (FullyGraded, Pending, PendingManual, Failed, NotReady) |
+| **Score** | `score.raw`, with min and max | `score.scaled` (from -1 to 1) and raw; the LMS can pass in a `scaled_passing_score` | In passed or failed statements; the LMS passes a masteryScore | As above |
+| **Detail per outcome** | `objectives` and `interactions` exist, but LMSs vary in what they store and report | `objectives` (each with its own status and score) and `interactions` | Any other xAPI statements ("cmi5 allowed") between initialized and terminated, which the LMS must record and report; objectives can be listed in the course structure | None beyond the comment |
+| **Saved state** | `suspend_data`, 4,096 characters | `suspend_data`, 64,000 characters (4,000 in the 2nd edition) | The xAPI State API | Kept by the tool |
+| **Learner identity** | LMS learner id and name | LMS learner id and name | An xAPI account, not an email address | The platform's user id; name, email and roles if the LMS shares them; class lists through Names and Role Provisioning Services 2.0 |
+| **Other** | The most widely supported ("the industry workhorse") | Adds sequencing and navigation between units | An xAPI profile: the data travels as xAPI statements to the LMS's learning record store | Deep Linking 2.0 lets an LMS administrator pick modules from the tool. 1EdTech ended support for LTI 1.0 to 1.2 and 2.0 on 30 June 2022 |
+
+Sources: [cmi5 specification (Quartz)](https://github.com/AICC/CMI-5_Spec_Current); [LTI Core 1.3](https://www.imsglobal.org/spec/lti/v1p3), [Assignment and Grade Services 2.0](https://www.imsglobal.org/spec/lti-ags/v2p0), [Names and Role Provisioning Services 2.0](https://www.imsglobal.org/spec/lti-nrps/v2p0), [Deep Linking 2.0](https://www.imsglobal.org/spec/lti-dl/v2p0) and [1EdTech's legacy LTI deprecation schedule](https://www.imsglobal.org/lti-security-announcement-and-deprecation-schedule). ADL's SCORM pages (adlnet.gov) didn't respond on 14 October 2026, so the SCORM rows were checked against Rustici Software's [run-time reference](https://scorm.com/scorm-explained/technical-scorm/run-time/run-time-reference/) and [version history](https://scorm.com/scorm-explained/business-of-scorm/scorm-versions/), the usual secondary reference; check them against ADL's documents before quoting them to a customer.
+
+**Design:**
+
+- **One delivery model for every standard: the module always runs from Hacktivity.** The LMS gets a small package or a registration, never the game itself. So updates (HA-19), the organisation profile (HA-11), records (HA-05) and accessibility fixes reach every customer at once; the game's assets and voice files never sit in a customer's LMS; and the text route and resume work the same everywhere.
+- **SCORM 1.2 and SCORM 2004 (4th edition)**, built together:
+  - A per-organisation package containing a small launcher page. The launcher finds the LMS's SCORM API, reads the learner's id and name, opens the module from Hacktivity with a signed launch token (the package's licence key plus the LMS learner id), and passes results back through the API.
+  - *Results sent:* SCORM 1.2 sends `incomplete` until the module is complete, then `passed` with the check score. SCORM 2004 sends `completion_status` completed when the module is complete, `success_status` passed when the check is passed, the scaled score, and the session time.
+  - *Never "failed".* The course never fails anyone: a learner who hasn't passed yet is "incomplete" or "unknown" until they do.
+  - *Per-outcome objectives* in SCORM 2004 are off by default, because LMS reports rarely protect small groups. The thresholded view stays in Hacktivity (HA-09). An organisation can turn them on, knowing that.
+  - *Saved state:* `suspend_data` holds only a pointer; the game's own save stays in Hacktivity.
+- **Identity without a second sign-in.** A learner launched from an LMS never sees a Hacktivity sign-in. Hacktivity creates a learner for each (organisation, LMS learner id), named from the LMS, who counts as a seat and gets records with the source "LMS". An admin can link them to HA-01 people by employee id or email when the LMS passes one.
+- **Licence control.** Each package carries an organisation-specific key; launches with an unknown or revoked key are refused with a clear message; seats are counted as distinct learners per licence year (HA-18).
+- **LTI 1.3:** Hacktivity as an LTI tool, registered per LMS platform; Deep Linking to add modules or paths to an LMS course; Assignment and Grade Services to send the score (0 to 100) with activity progress Completed and grading progress FullyGraded at completion; Names and Role Provisioning Services (optional) to read the class list for reminders.
+- **cmi5:** a course structure file per module, pointing at the unit on Hacktivity, with moveOn CompletedAndPassed and a masteryScore taken from the organisation's pass mark. The launcher meets the unit's obligations (fetch the token, then initialized, completed, passed, terminated). Per-outcome "cmi5 allowed" statements from BE-14 go to the customer's learning record store only if the organisation turns that on, with the same caution as SCORM objectives.
+
+**Recommended order:**
+
+1. **SCORM 1.2 and SCORM 2004 (4th edition) together** (one launcher, two API adapters). This reaches the most workplace LMSs, and completion, pass and score is what their compliance reports use.
+2. **LTI 1.3 with Deep Linking and Assignment and Grade Services, then Names and Role Provisioning.** No package to upload, cleaner identity, and it is how universities (Hacktivity's existing customers) connect tools. It carries less data than SCORM 2004, which matters little because the evidence stays in Hacktivity.
+3. **cmi5, when a customer's LMS supports it and they want the richer data.** It reuses the xAPI statements built for HA-22 and BE-14, so it is cheap once those exist.
+
+Before building, check each pilot customer's LMS and which of these it supports; that can change the order.
+
+**Acceptance criteria:**
+
+- A SCORM 1.2 package for core_01 imports into Moodle and into the LMSs of two pilot customers, launches, resumes after closing the window, and records `passed` with the score after completion (`incomplete` before).
+- The SCORM 2004 package records completion and success separately, and sends per-outcome objectives only when the organisation has turned them on.
+- A learner launched from an LMS never sees a Hacktivity sign-in, and their completion record appears in HA-05 with the source "LMS".
+- Revoking a package's key stops new launches with a clear message.
+- LTI: a Moodle course adds core_01 through Deep Linking, and the score appears in its gradebook after completion.
+- cmi5: a cmi5 LMS marks the unit satisfied under moveOn CompletedAndPassed.
+
+**Depends on:** HA-05, HA-19, HA-18 (licence keys and seats), HA-15 (the data agreement covers LMS data), HA-11, BE-12 (resume); BE-14 and HA-22 for cmi5 and richer data.
+
+**Risks and open questions:**
+
+- **Sessions inside an LMS frame.** Browsers increasingly block cookies set by a site framed inside another site, so a module framed inside an LMS can lose its session. *Recommendation:* launch sessions with tokens rather than cookies, and offer "open in a new window" as a fallback.
+- **LMS quirks.** Every LMS implements SCORM a little differently. Budget testing per LMS, and keep a compatibility list.
+- **Two copies of the truth.** The LMS and Hacktivity both hold a result. *Recommendation:* Hacktivity's record is the evidence; the LMS gets a summary, and the audit pack says so.
+- **Data protection.** Learner ids and names arrive from the LMS. The data processing agreement (HA-15) must cover them, and organisations that switch on per-outcome data in their LMS take on the job of protecting it there.
