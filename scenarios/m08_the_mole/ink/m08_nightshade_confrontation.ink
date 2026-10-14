@@ -167,7 +167,7 @@ Agent 0x47 'Nightshade': The name they stripped off that intercept in the cable 
     ~ asked_bag = true
     Agent 0x47 'Nightshade': Because a man who runs has confessed. I preferred to make you prove it.
     { asked_architect:
-        Agent 0x47 'Nightshade': You have the coordinates now. Montana was always where I was going. I just wanted to see your face first.
+        Agent 0x47 'Nightshade': You have the coordinates now. Montana was always where I was going. It seems you'll get there first.
     - else:
         Agent 0x47 'Nightshade': Montana. Work out what Portland was really for, and where it went, and you'll have your Montana.
     }

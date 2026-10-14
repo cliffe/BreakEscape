@@ -54,6 +54,7 @@ VAR audit_misread = false
 VAR audit_closed = false
 // PASS 5 (alignment C2, J3, J5): the reading HaX takes when the Director is
 // down, and the Director's warning at the second misread.
+VAR asked_really = false
 VAR named_by_hax = false // Synced scenario global: the door audit read to HaX
 VAR audit_warned = false // Synced scenario global
 // Design C1 (D1): punched and left standing (hostile for good). Synced scenario
@@ -88,7 +89,8 @@ So I'm going to be very professional tonight. Bear with me.
 // Alignment C3 (K5): the audit-off-me reply is stale once he's down.
 // Design C1 (D1): or the Director punched and left standing.
 + { (netherton_ko or netherton_hostile) and found_badge_audit and (found_timeline or found_access_logs_hint or found_access_logs) and not mole_identified } [I can name the leak.] -> hax_read_1
-+ { mole_identified and not fate_decided } [It's really Nightshade.]
++ { mole_identified and not fate_decided and not asked_really } [It's really Nightshade.]
+    ~ asked_really = true
     Yeah. It's really Nightshade.
     We did survival training together. He carried me two miles once.
     // Phase 4 dialogue C1 (D8-23): the m03 badge line, moved here from the clone text, after the naming.

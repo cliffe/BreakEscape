@@ -105,7 +105,7 @@ Director Magnus Netherton: Ask me what you need. Then go and prove something.
 === hub ===
 { not hub_quiet:
     { found_access_logs and not mole_identified and not audit_closed:
-        Director Magnus Netherton: You've been in the logs. I can see it on you. A terminal and a time is not a man. Read me the door.
+        Director Magnus Netherton: {&You've been in the logs. I can see it on you. A terminal and a time is not a man. Read me the door.|The door, Agent. Read it to me when you can.}
     - else:
         Director Magnus Netherton: {&Agent. What do you need?|Agent. Go on.}
     }

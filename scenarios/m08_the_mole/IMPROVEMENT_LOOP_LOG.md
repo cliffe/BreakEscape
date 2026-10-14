@@ -642,3 +642,24 @@ Netherton, debrief (`m08_closing_debrief.ink`):
 Voice style (not a line, but a cache key): Netherton's two blocks now open "SAFETYNET's director. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Low, deliberate, unhurried. His own briefing was turned into a weapon; ..." (was "Cinematic thriller. Consistent ... unhurried. SAFETYNET's director, whose own briefing was turned into a weapon; ..."). Every Netherton line re-voices.
 
 Owed on screen at the next browser check (structure changed): re-talk each of the eight person-chats and see the return line once, with no greeting after a goodbye or after a topic; the Director's flag-4 nudge on a re-talk; the debrief's conduct beat after an accusation; HaX's two `Agent HaX:` lines in the debrief in her voice and portrait; the confrontation's walk-out ending on "Then you go." and the reopen line.
+
+### Phase 4 dialogue, cycle 2 (2026-10-14)
+
+Review: `DIALOGUE_REVIEW_P5_C2.md`, 0 blockers, 0 majors, 10 minors (two optional). All ten fixed; all use the review's rewrites unchanged. Ink only; no erb edits. Line numbers are the ink's own (the review's Cipher line numbers were off, so I matched by text).
+
+| # | Outcome | File:line | Old → new |
+|---|---|---|---|
+| D8C2-1 | fixed | `m08_director_netherton.ink:108` | fixed flag-4 nudge → stopping sequence `{&…Read me the door.\|The door, Agent. Read it to me when you can.}` |
+| D8C2-2 | fixed | `m08_suspect_cipher.ink:50-58` | added branch `accused_cipher and not apologised` → "You again. Sorry, or cuffs?" (the inner `{ mole_identified: … - else:` became a multi-branch `{ - …}` block, since ink rejects an extra condition in if/else) |
+| D8C2-3 | fixed | `m08_suspect_cipher.ink:180` | "I heard. Good. Back to the maths." → "Go on. I've a key schedule that won't finish itself." |
+| D8C2-4 | fixed | `m08_suspect_phantom.ink:54`, `:153` | "So the hunt's over, and you came back anyway. Sit." → "The hunt's over, I hear, and you came back anyway. Sit."; "So it's done, and not by me. Tell the Director…" → "Not my collar, then. Tell the Director…" (`:148` untouched) |
+| D8C2-5 | fixed | `m08_suspect_nightshade.ink:129` | "Bring proof next time. It's the only thing worth bringing." → "Close the door gently. The whole floor's listening now." |
+| D8C2-6 | fixed (optional) | `m08_suspect_nightshade.ink:121` | "…It isn't evidence yet." → "…It isn't evidence." |
+| D8C2-7 | fixed | `m08_nightshade_confrontation.ink:170` | "…I just wanted to see your face first." → "…It seems you'll get there first." |
+| D8C2-8 | fixed | `m08_closing_debrief.ink:61` | "Netherton finds you in the corridor, looking older than…ago. Your phone buzzes once. HaX." → "Netherton finds you in the corridor. He looks older than…ago. Your phone buzzes once: HaX." (still one line) |
+| D8C2-9 | fixed | `m08_closing_debrief.ink:129`, `:171` | "Not on the first reading. I noticed, and so will the file." → "Not on the first reading. I noticed."; "…That goes in my report too." → "…That will be in my report as well." |
+| D8C2-10 | fixed (optional) | `m08_phone_agent_0x99.ink:57`, `:92-93` | "[It's really Nightshade.]" now `and not asked_really`, sets `~ asked_really = true` (new `VAR asked_really = false`); the hub exit is unchanged |
+
+Routes updated: r24 (Nightshade leave now "The whole floor's listening now"; Cipher's post-accusation visit now `said "Sorry, or cuffs?"` and `notSaid "Still boring"`), r25 (Cipher leave "a key schedule that won't finish itself", Phantom "Not my collar, then" and "The hunt's over, I hear").
+
+Checks: compile 12/12; all 25 m08 routes end `all expectations met`, longest run 9; dialoguelint 0 errors, 0 warnings; reopencheck 0 problems (m08 phone 1800 reopens, 1165 re-runs); loopcheck on the eight changed states (Netherton flag 4, Cipher accused and named, Phantom named, phone named, debrief with a misread, Nightshade accused, confrontation with the bag lining) clean; tagdiff `--old` against the cycle-1 snapshot: structure unchanged in ten files, phone 4 differences (the `asked_really` VAR, condition and assignment) and Cipher 1 (the new branch), all intended. Browser items from the review still owed.

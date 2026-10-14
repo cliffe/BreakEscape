@@ -51,7 +51,7 @@ Agent 0x88 'Phantom': And yes, I put myself there too. Charmed?
 === hub ===
 { not hub_quiet:
     { mole_identified:
-        Agent 0x88 'Phantom': So the hunt's over, and you came back anyway. Sit.
+        Agent 0x88 'Phantom': The hunt's over, I hear, and you came back anyway. Sit.
     - else:
         Agent 0x88 'Phantom': {&Back again. Either you've cleared me or you've got nothing. Which is it?|You again. Sit. Tell me something I don't know.}
     }
@@ -150,7 +150,7 @@ Agent 0x88 'Phantom': And yes, I put myself there too. Charmed?
     Agent 0x88 'Phantom': Pull the manifest. Then come and apologise, or come and cuff me. Not both.
 // Phase 4 dialogue C1 (D8-15): never accused, and the naming is done.
 - mole_identified:
-    Agent 0x88 'Phantom': So it's done, and not by me. Tell the Director I was right to look.
+    Agent 0x88 'Phantom': Not my collar, then. Tell the Director I was right to look.
 - else:
     Agent 0x88 'Phantom': Go and get onto that repo. When the logs back me, tell the Director I was right to look.
 }

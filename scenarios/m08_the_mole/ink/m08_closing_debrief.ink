@@ -58,7 +58,7 @@ VAR phantom_hostile = false
 // her displayName), and the corridor and the Director share one narrator line so
 // the run before the stance stays within nine with a KO line.
 { not nightshade_ko_before_fate:
-    Narrator: Netherton finds you in the corridor, looking older than he did at the briefing a few hours ago. Your phone buzzes once. HaX.
+    Narrator: Netherton finds you in the corridor. He looks older than he did at the briefing a few hours ago. Your phone buzzes once: HaX.
     Agent HaX: He said it to you? Afterwards, not during. I was taught that line, and I say it to every agent I run.
     Agent HaX: Same classroom, 0x00. Don't ask me whose yet.
 - else:
@@ -126,7 +126,7 @@ Director Magnus Netherton: Say it, Agent. Whatever you think of me tonight. I wo
         Director Magnus Netherton: The box gave me a login. You gave me the man at the keyboard, off a door log. You read the clock, not the face.
     }
     { audit_misread:
-        Director Magnus Netherton: Not on the first reading. I noticed, and so will the file.
+        Director Magnus Netherton: Not on the first reading. I noticed.
     }
 }
 // PASS 3 (impl review M1): audit_closed has its own branch, so the closed-check
@@ -168,7 +168,7 @@ Director Magnus Netherton: Say it, Agent. Whatever you think of me tonight. I wo
 // single player line on every path; it also breaks the debrief's long run.
 === the_box ===
 + [Our own code server let me in without a password, sir.]
-    Director Magnus Netherton: And kept credentials in its history for anyone patient enough to read it, and a sudo rule that handed you the rest. That goes in my report too.
+    Director Magnus Netherton: And kept credentials in its history for anyone patient enough to read it, and a sudo rule that handed you the rest. That will be in my report as well.
     -> disposition
 
 === disposition ===

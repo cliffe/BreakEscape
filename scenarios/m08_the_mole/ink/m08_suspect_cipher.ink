@@ -49,8 +49,11 @@ Agent 0x23 'Cipher': I've run the inference on myself and it's not flattering. A
 
 === hub ===
 { not hub_quiet:
-    { mole_identified:
+    {
+    - mole_identified:
         Agent 0x23 'Cipher': You again. I hear it's over. I'm still doing the maths on how I feel about that.
+    - accused_cipher and not apologised:
+        Agent 0x23 'Cipher': You again. Sorry, or cuffs?
     - else:
         Agent 0x23 'Cipher': {&You again. Come to cross me off, or add me back on?|Back. Still boring, I promise.}
     }
@@ -174,7 +177,7 @@ Agent 0x23 'Cipher': Go and check. Please. Then come back and say sorry, or come
     Agent 0x23 'Cipher': Check the logs. That's all I ask.
 // Phase 4 dialogue C1 (D8-15): never accused, and the naming is done.
 - mole_identified:
-    Agent 0x23 'Cipher': I heard. Good. Back to the maths.
+    Agent 0x23 'Cipher': Go on. I've a key schedule that won't finish itself.
 - else:
     Agent 0x23 'Cipher': {&You'll clear me on the evidence. Good. My face has never once done me a favour.|Back to the maths, then.|The library door log. It's all in there.}
 }

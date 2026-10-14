@@ -118,7 +118,7 @@ Agent 0x47 'Nightshade': Of everyone in this building, they picked the one perso
 ~ accused_nightshade = true
 ~ nightshade_suspected = true
 Narrator: He doesn't blink.
-Agent 0x47 'Nightshade': Do you. On instinct, or on evidence? I know you, and I know which one you're running on. It isn't evidence yet.
+Agent 0x47 'Nightshade': Do you. On instinct, or on evidence? I know you, and I know which one you're running on. It isn't evidence.
 Agent 0x47 'Nightshade': Here's what will happen. You'll leave, because a hunch won't hold me.
 Agent 0x47 'Nightshade': And I'll still be here when you come back. I've nowhere I'd rather be, and nothing I'm afraid of.
 Agent 0x47 'Nightshade': Go and get your proof. Whichever way it points, it'll be worth more than a guess. #set_global:nightshade_suspected:true #set_global:accused_nightshade:true
@@ -126,7 +126,7 @@ Agent 0x47 'Nightshade': Go and get your proof. Whichever way it points, it'll b
 
 === leave ===
 { accused_nightshade:
-    Agent 0x47 'Nightshade': Bring proof next time. It's the only thing worth bringing.
+    Agent 0x47 'Nightshade': Close the door gently. The whole floor's listening now.
 - else:
     Agent 0x47 'Nightshade': Come back when you can prove something. I'll be right here. I always am.
 }
