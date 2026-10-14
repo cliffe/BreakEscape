@@ -80,6 +80,8 @@ Some topics touch. To avoid two modules teaching the same thing differently:
 | Deepfake voice and video | core_15 | core_11, role_01, role_02 |
 | Sharing credentials, leavers taking data | core_14 | core_03, role_05 |
 | Policy acknowledgement | core_16 | every module's reference card |
+| Free online tools (converters, transfer sites, apps) | core_08 asks "is this site or file safe to download?"; core_13 asks "should our data go there?" | core_15 (AI tools are core_15's) |
+| Redaction | core_06 owns the technique (the black-box trap, hidden content); core_05 owns the judgement of what to remove | |
 
 The concepts file for the module that teaches a topic is the source of truth; modules that touch it point to it rather than restating it.
 

@@ -10,15 +10,15 @@ The lunchtime talking points: the record that warns "this record is restricted: 
 
 ## Setting and cast
 
-- **Rooms (the existing hospital set):** Ward 12 (`room_hospital_ward`) with the bays and the side room; the ward's front desk (`room_hospital_reception`, redressed with the ward phone, a shared computer with a smartcard reader, the bed board `hospital_chart_board1` and the red downtime box); the ward corridor (`room_hospital_hall_ward`); the staff-only corridor (`room_hospital_hall`); the staff room (`room_hospital_staff`) with a screen for the video; Imani's office (`room_hospital_office`); the small information governance office (`room_hospital_cto_office`) for the debrief; the relatives' room (`room_hospital_waiting_1x1gu`). No new rooms.
+- **Rooms (the existing hospital set):** Ward 12 (`room_hospital_ward`) with the bays and the side room; the ward's front desk (`room_hospital_reception`, redressed with the ward phone, a shared computer with a smartcard reader, the bed board `hospital_chart_board1` and the red downtime box); the ward corridor (`room_hospital_hall_ward`); the staff-only corridor (`room_hospital_hall`); the staff room (`room_hospital_staff`) with a screen for the video; Rodel's office (`room_hospital_office`); the small information governance office (`room_hospital_cto_office`) for the debrief; the relatives' room (`room_hospital_waiting_1x1gu`). No new rooms.
 - **New characters at the hospital:**
   - **Dev Kapoor**, the trust's Information Governance Manager and the module's mentor. 30s, British Indian, neat beard and glasses, lanyard, a clipboard for his monthly ward walkabouts and trainers because he walks the whole hospital. Calm, friendly, a little nerdy. His line: "Every look is logged."
-  - **Imani Mwangi**, Ward Manager (Sister). 50s, Black British (Kenyan heritage), short grey natural hair, navy uniform, reading glasses on a cord. Brisk and fair; sets the morning's work; handles the conversations a ward manager should.
+  - **Rodel Bautista**, Ward Manager (charge nurse). 50s, Filipino-British, came to the UK as a staff nurse twenty years ago; short greying hair, navy uniform, a fob watch and reading glasses on a cord. Brisk, fair and quick to laugh; sets the morning's work; handles the conversations a ward manager should.
   - **Dr Patrick Mulligan**, consultant physician and the trust's Caldicott Guardian. 60s, white Irish, half-moon glasses, bow tie. Appears in a short video in the staff room and briefly on the ward round.
   - **Joy Okonjo**, staff nurse. 20s, Black British (Nigerian heritage), newly qualified, rushed and kind. Generic sprite `female_nurse2_v2` with a display name.
   - **Kayleigh Rowntree**, healthcare assistant. 20s, white English, chatty and warm; curiosity gets the better of her. Generic sprite `female_nurse1_v2`.
-  - **Patients:** **Mr Arthur Fenwick** (84, bed 4, going home today to Brindle House care home) and **Ros Lindqvist** (70s, a television gardener everyone has seen, admitted to side room 2 after a fall). Bed sprites (`bed1` to `bed6`).
-  - **Voices only:** a man who says he is Mr Fenwick's nephew; a woman who says she is Ros's agent; **Teresa Varga**, deputy manager at Brindle House; the pathology lab; **Dr Sam Quigley**, a foundation doctor, by bleep message.
+  - **Patients:** **Mr Arthur Fenwick** (84, bed 4, going home today to Brindle House care home) and **Ros Fairbairn** (70s, a television gardener everyone has seen, admitted to side room 2 after a fall). Bed sprites (`bed1` to `bed6`).
+  - **Voices only:** a man who says he is Mr Fenwick's nephew; a woman who says she is Ros's agent; **Teresa Varga**, deputy manager at Brindle House; the pathology lab; **Dr Sam Whitlow**, a foundation doctor, by bleep message.
   - **The man in hi-vis:** generic sprite `male_telecom_v2`, no badge, a USB stick in his top pocket.
 - **From Larkspur's recurring cast:** **Zainab Hussain** (Field Service Engineer) comes to fix the ward kitchen's water boiler, the model of a contractor who signs in and expects to be checked.
 - **Not used:** sis01's Northgate General and its named characters, and m02's hospital and its named characters. This is a different hospital in a different story.
@@ -35,7 +35,7 @@ The critical path is marked **(CP)**.
 - Dev Kapoor, on his monthly walkabout, has heard the end of the call:
   - **Took a message:** *"Nicely handled. Mind if I borrow you for five minutes before the round?"*
   - **Confirmed he's here, no details:** *"You didn't say what he's in with. Good. Even saying he's here can matter. Got five minutes?"*
-  - **Shared his condition:** *"No harm meant, and we can put it right. Let's tell Imani, and I'll show you what I'd say next time."* Calm, practical, no blame.
+  - **Shared his condition:** *"No harm meant, and we can put it right. Let's tell Rodel, and I'll show you what I'd say next time."* Calm, practical, no blame.
 
 ### 2. Learn: "Every look is logged" (4 minutes)
 
@@ -65,7 +65,7 @@ The critical path is marked **(CP)**.
 
 ### 4. Apply: "Home by two" (7 to 8 minutes)
 
-- **(CP)** Imani at the desk: *"Three going home today. Bed 4 back to Brindle House, beds 9 and 15 to their families. Can you get them out by two?"* A work task bar appears (BE-18) with four steps: **book transport; print discharge letters; send discharge summaries; update the bed board.** The ward computer (MG-27) launches the record viewer, the ward's shared mailbox and the intranet.
+- **(CP)** Rodel at the desk: *"Three going home today. Bed 4 back to Brindle House, beds 9 and 15 to their families. Can you get them out by two?"* A work task bar appears (BE-18) with four steps: **book transport; print discharge letters; send discharge summaries; update the bed board.** The ward computer (MG-27) launches the record viewer, the ward's shared mailbox and the intranet.
 
 **10:05, Joy's smartcard.**
 
@@ -74,7 +74,7 @@ The critical path is marked **(CP)**.
   - **Take Joy's card out, lock the screen, keep the card safe, and print using their own login.** (Best.)
   - **Leave it all as it is and use the other computer.** (Their own work is fine, but an open session sits on a public desk.)
   - **Print the letter quickly in Joy's session.** (The letter goes on the record as Joy's work.)
-- Joy comes back ten minutes later. If the player kept her card: *"Thank you. That's the third time this month. I'm asking Imani about those tap-in readers."* The debrief picks this up: fix the system, not just the person.
+- Joy comes back ten minutes later. If the player kept her card: *"Thank you. That's the third time this month. I'm asking Rodel about those tap-in readers."* The debrief picks this up: fix the system, not just the person.
 
 **10:20, the shared mailbox.**
 
@@ -87,26 +87,26 @@ The critical path is marked **(CP)**.
 
 **10:40, the famous patient.**
 
-- Ros Lindqvist arrives in side room 2 after a fall. The whole ward recognises her. Kayleigh leans on the desk: *"You'll never guess who's in side room 2. Look her up. What's she in for?"*
+- Ros Fairbairn arrives in side room 2 after a fall. The whole ward recognises her. Kayleigh leans on the desk: *"You'll never guess who's in side room 2. Look her up. What's she in for?"*
 - The player needs Ros's name, date of birth, hospital number and bed for the bed board: the **admin view**. Opening the **clinical notes** brings up the record viewer's warning: **"This record is restricted. Every access is logged and audited. Reason for access: [Direct care] [Cancel]."**
 - The player chooses: update the bed board from the admin view and tell Kayleigh why not (*"It's not our business, and it's logged."*); update the bed board and say nothing; or open the clinical notes.
-- Kayleigh then admits: *"I already had a little look. Is that bad?"* The player chooses: encourage her to tell Imani or Dev now and offer to go with her (*"It's better coming from you, and sooner."*); tell Imani themselves; or keep it to themselves.
+- Kayleigh then admits: *"I already had a little look. Is that bad?"* The player chooses: encourage her to tell Rodel or Dev now and offer to go with her (*"It's better coming from you, and sooner."*); tell Rodel themselves; or keep it to themselves.
 
 **11:00, "Ros's agent".**
 
-- A crisp, friendly woman: *"I'm Ros Lindqvist's agent. How is she, and when's she likely to go home? I need to manage the diary."* This is the **Apply counterpart to the hook**: the same skill, under more pressure.
-- The player chooses: don't confirm anything and pass her to the press office (best); confirm Ros is on the ward but say nothing else; or share how she is and when she might go home. Imani, if told, rings the press office: the "agent" was a reporter.
+- A crisp, friendly woman: *"I'm Ros Fairbairn's agent. How is she, and when's she likely to go home? I need to manage the diary."* This is the **Apply counterpart to the hook**: the same skill, under more pressure.
+- The player chooses: don't confirm anything and pass her to the press office (best); confirm Ros is on the ward but say nothing else; or share how she is and when she might go home. Rodel, if told, rings the press office: the "agent" was a reporter.
 
 **11:30, Mr Fenwick's letter.**
 
-- The player takes Mr Fenwick his discharge letter. In passing: *"Somebody rang about me? My nephew? I haven't spoken to him in ten years. Don't tell him a thing."* If the hook went well, this lands as quiet confirmation. If the player shared at the hook, Imani tells Mr Fenwick what happened, apologises, and logs it with IG; nobody shouts.
+- The player takes Mr Fenwick his discharge letter. In passing: *"Somebody rang about me? My nephew? I haven't spoken to him in ten years. Don't tell him a thing."* If the hook went well, this lands as quiet confirmation. If the player shared at the hook, Rodel tells Mr Fenwick what happened, apologises, and logs it with IG; nobody shouts.
 
 **12:30, pathology goes down.**
 
 - A banner on every screen: **"Pathology results system unavailable. Use downtime procedure DP-3: results by phone with read-back."** The record viewer's results tab shows the offline message (the `ehr_status` global; `customMessage`).
-- Imani opens the red downtime box at the desk: paper request forms, the last printed patient list, DP-3.
+- Rodel opens the red downtime box at the desk: paper request forms, the last printed patient list, DP-3.
 - Three moments, quickly:
-  - Dr Quigley's bleep message: *"System's down. Can you WhatsApp me the list of who needs bloods?"* Best: print or write the list on the downtime form and take it to him. Sending it on a messaging app or photographing the whiteboard are the unsafe workarounds.
+  - Dr Whitlow's bleep message: *"System's down. Can you WhatsApp me the list of who needs bloods?"* Best: print or write the list on the downtime form and take it to him. Sending it on a messaging app or photographing the whiteboard are the unsafe workarounds.
   - The lab rings with a result for bed 6. Best: put the call through to the nurse in charge and fetch the DP-3 form; results are taken and read back by a nurse. (The clerk's job is to route the call, not to take the result.)
   - Kayleigh, phone dead: *"Can I charge my phone off the monitor in bay 3? It's got a USB port."* Best: no, use the charger in the staff room. Never plug anything into medical devices.
 
@@ -130,9 +130,9 @@ The critical path is marked **(CP)**.
 
 ### 5. Debrief (2 minutes)
 
-- **(CP)** In the IG office, Dev opens the audit for Ros Lindqvist's record (`forensic-data-platform` table, EX-05, 30 seconds): seven accesses this morning. Three by her care team (clinical notes, fine); one by the ward clerk (admin view, fine); one by Kayleigh (clinical notes, no care role: flagged); two by staff on other wards (flagged). If the player opened the clinical notes, their own line is there too, and Dev asks calmly: *"Was that for her care?"* The player can tell him then (recorded as a late self-report).
+- **(CP)** In the IG office, Dev opens the audit for Ros Fairbairn's record (`forensic-data-platform` table, EX-05, 30 seconds): seven accesses this morning. Three by her care team (clinical notes, fine); one by the ward clerk (admin view, fine); one by Kayleigh (clinical notes, no care role: flagged); two by staff on other wards (flagged). If the player opened the clinical notes, their own line is there too, and Dev asks calmly: *"Was that for her care?"* The player can tell him then (recorded as a late self-report).
 - **Dev:** *"Every look is logged. We check famous patients' records every day they're here."* (On-screen text names the hospital's policy, BE-05.)
-- **The debrief screen** (BE-02): each moment, what the player did, what good looks like, and what happened: the nephew and Mr Fenwick; the agent who was a reporter; Joy's card and her request for tap-in readers; the phish (reported or not, and how many others clicked); Kayleigh's conversation with Imani; the outage; the man in hi-vis; Brindle House and Mr Fenwick's tablets.
+- **The debrief screen** (BE-02): each moment, what the player did, what good looks like, and what happened: the nephew and Mr Fenwick; the agent who was a reporter; Joy's card and her request for tap-in readers; the phish (reported or not, and how many others clicked); Kayleigh's conversation with Rodel; the outage; the man in hi-vis; Brindle House and Mr Fenwick's tablets.
 - **The before and after:** the nephew call beside the agent call.
 - **Per-outcome results:** Secure, Developing or Not yet (see `assessment.md`).
 - **The line to remember:** *"Look only at what you need. Share what care needs. Check who's asking. Report anything odd."*
@@ -153,7 +153,7 @@ The critical path is marked **(CP)**.
 | Joy's smartcard | Card out, lock, own login / leave it / use her session | LO2 | Joy's thanks and her tap-in request; or a letter on record as Joy's work |
 | Shared mailbox phish | Report and warn / delete / click / ignore | LO6 | IG's count of clicks on the ward; or Dev's call |
 | Ros's record | Admin view only, explain to Kayleigh / admin view, silent / clinical notes | LO1 | The audit list in the debrief |
-| Kayleigh's admission | Encourage her to tell, offer to go with her / tell Imani yourself / keep quiet | LO1, LO6 | Kayleigh's conversation with Imani; or her name alone on the audit with no explanation |
+| Kayleigh's admission | Encourage her to tell, offer to go with her / tell Rodel yourself / keep quiet | LO1, LO6 | Kayleigh's conversation with Rodel; or her name alone on the audit with no explanation |
 | The agent | Press office / confirm only / share | LO3 | The press office's call back: it was a reporter |
 | The bloods list | Downtime form / messaging app / photo | LO5 | The paper list arrives; or a ward list on a personal phone noted in the debrief |
 | The lab's call | Put through to the nurse in charge / take it yourself | LO5 | The read-back done properly by the nurse |
@@ -191,7 +191,7 @@ No option shames the player. Where a choice goes wrong, a colleague helps put it
 
 ## Debrief
 
-Shown on BE-02, then spoken by Dev and Imani:
+Shown on BE-02, then spoken by Dev and Rodel:
 
 1. The audit list for Ros's record.
 2. Each moment, its outcome and any time skip.
@@ -220,9 +220,9 @@ Spoken lines say "the hospital" and "the ward", never the organisation's name, s
 
 - **Rooms:** the existing hospital set, lightly redressed: the ward desk (phone, computer with a smartcard reader, bed board), a "Side room 2" door sign, the red downtime box.
 - **New props:** a smartcard in a reader (small), the downtime box, a phone charger in the staff room.
-- **Characters:** Dev Kapoor (the mentor: new dialogue bust, talk sheet or visemes, eight-direction walk) and Imani Mwangi (new art, on screen and speaking). Dr Mulligan needs a portrait and talk sheet for the video (a walk sprite only if his ward round cameo stays). Joy and Kayleigh use the generic nurse sprites with their existing talk and viseme sheets; the man in hi-vis uses `male_telecom_v2`; Zainab uses her recurring-cast art; patients use bed sprites.
+- **Characters:** Dev Kapoor (the mentor: new dialogue bust, talk sheet or visemes, eight-direction walk) and Rodel Bautista (new art, on screen and speaking). Dr Mulligan needs a portrait and talk sheet for the video (a walk sprite only if his ward round cameo stays). Joy and Kayleigh use the generic nurse sprites with their existing talk and viseme sheets; the man in hi-vis uses `male_telecom_v2`; Zainab uses her recurring-cast art; patients use bed sprites.
 - **Conversation backgrounds:** reuse m02's ward backgrounds if they carry no m02 signage; otherwise new ones through the `room-pov-background` skill after dressing.
-- **Voice:** about 30 lines for Dev, 12 for Imani, 8 for Dr Mulligan, 10 for Kayleigh, 6 for Joy, 4 for Zainab, and about 20 across the callers. No voiced line prints a variable: never the player's name, the organisation's name, a count or a ward number that changes per play.
+- **Voice:** about 30 lines for Dev, 12 for Rodel, 8 for Dr Mulligan, 10 for Kayleigh, 6 for Joy, 4 for Zainab, and about 20 across the callers. No voiced line prints a variable: never the player's name, the organisation's name, a count or a ward number that changes per play.
 - **Sound:** the calm workplace set (BE-21) with soft ward ambience (monitors, trolleys, a distant call bell), kept low and optional (BE-04).
 
 ## Pitfalls
@@ -233,6 +233,6 @@ Spoken lines say "the hospital" and "the ward", never the organisation's name, s
 - **Blaming Joy.** A card left in a reader is often a system problem (too few terminals, slow logins). The debrief says so.
 - **Jargon.** Smartcard, IG, Caldicott Guardian and downtime are explained the first time they come up.
 - **Going out of date.** The DSPT changes every year and NHSmail's reporting route changes too; both are organisation slots, reviewed with each DSPT release.
-- **Real people.** Ros Lindqvist is fictional and must not resemble a real presenter or any real case of record snooping.
+- **Real people.** Ros Fairbairn is fictional and must not resemble a real presenter or any real case of record snooping.
 - **Teaching the wrong thing by showing it.** Unsafe workarounds are offered as choices but never shown in detail (no realistic patient list on a phone screen).
 - **Mixing canons.** No Northgate, no infusion pumps, no SIS crisis framing: the outage is an ordinary, frustrating lunchtime on a ward.

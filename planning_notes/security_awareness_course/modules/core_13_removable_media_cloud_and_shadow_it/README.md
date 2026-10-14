@@ -17,7 +17,7 @@
 
 Most shadow IT (apps, accounts and devices used for work without the organisation knowing) comes from people trying to get their job done. The NCSC describes it as rarely malicious: staff adopt unofficial tools when the approved ones fall short, for example not enough storage, no way to share with outsiders, or a slow request process. But work kept where the organisation doesn't know about it has no contract, no backup, no security the organisation can insist on, and no way to take access back when someone leaves.
 
-- **NHS Lanarkshire, 2020 to 2022.** A team replaced office conversations with a group on a consumer messaging app during the pandemic. At least 533 messages included patients' names, and someone outside the team was added by mistake. Staff had assumed that "encrypted" meant approved, and found it hard to get clear advice on which apps were allowed. The ICO reprimanded the health board in July 2023.
+- **NHS Lanarkshire, 2020 to 2022.** A team replaced office conversations with a group on a consumer messaging app during the pandemic. At least 533 messages included patients' names, and someone outside the team was added by mistake. Staff had assumed that "encrypted" meant approved, and found it hard to get clear advice on which apps were allowed. The Information Commissioner's Office (the ICO, now the Information Commission) reprimanded the health board in July 2023.
 - **Found USB sticks.** When researchers dropped 297 USB sticks around a university campus, files were opened on at least 45% of them, the first within six minutes, mostly by people trying to return them (Tischer and others, 2016). Malware still travels this way: in 2022 Microsoft found one USB-spread worm on nearly 3,000 devices in almost 1,000 organisations in a single month.
 
 The fix is not more rules but a quicker yes: ask IT, who usually have an approved way ready, and tell them when the official way is too slow. All sources are in `concepts.md`.
@@ -75,24 +75,24 @@ Contributes to (references in `02_COMPLIANCE_MAPPING.md`):
 ## New features needed
 
 - **MG-01 Inbox:** composing with a recipient check, where "Me (personal)" appears in autocomplete.
-- **MG-11 Sharing settings:** the approved secure transfer (named recipient, expiry, download notice), and the free app's sharing panel ("Anyone with the link can edit"; an owner who has left).
+- **MG-11 Sharing settings:** a share from the approved file-sharing service (named recipient, an end date, notice when it's opened), as in core_06, and the free app's sharing panel ("Anyone with the link can edit"; an owner who has left).
 - **MG-20 Knowledge check:** the Swap Shop items and the final check.
 - **MG-27 Work desktop:** the player's laptop, where the pack folder and its sync bar live and Martin's and Kev's messages arrive as notifications.
 - **MG-02 Web browser:** BoxBounce's upload page, if the player goes there (a single data-built page).
 - **BE-16 Time skips:** the "Where are they now?" montage.
 - **BE-18 Work task and interruptions:** the Monday pack and its scheduled arrivals.
-- **proposed:** Hand an item to an NPC, an ink tag that takes an item from the player's inventory (synced to the server) and records who received it, for handing the USB stick to Owain or Maureen. Ink can give items today (`#give_item`) but not take them back. core_10 needs the same thing for a found badge.
+- **proposed:** Hand an item to an NPC, an ink tag that takes an item from the player's inventory (synced to the server) and records who received it, for handing the USB stick to Owain or Maureen. Ink can give items today (`#give_item`) but not take them back. Any module where the player hands over a found item (a badge, a phone) could use it.
 - **BE-01**, **BE-02**, **BE-05**, **BE-08**, **BE-09** and **BE-13**, as in core_01. **BE-19** opens Owain's check question and the Swap Shop from his conversation, and the 15:35 compose window from Martin's message (`#trigger_minigame:<minigame>|<configKey>`). **BE-07** for the micro-drill.
 - **EX-01** (Owain), **EX-04** (the Swap Shop board and a notice on The Lark), **EX-05** (the montage).
 - **MG-04 Voice calls** (P2) for calling the council on the directory number; a `phone-chat` conversation works until then.
 
 ## Organisation-specific content
 
-- The approved storage and sharing tools: team drives, the document library, the secure file transfer tool, remote access, the company chat tool and its phone app.
+- The approved storage and sharing tools: team drives, the file-sharing service (shared with core_06) for sending big files outside, remote access, the company chat tool and its phone app.
 - The removable media policy (none at all, or encrypted company sticks issued by IT).
 - Where to hand in found media.
 - How to request a new tool, and how long it takes.
-- The DPO's contact, for personal data that went to a personal account.
+- The reporting route for personal data that went to a personal account (core_04's route, which brings in the DPO).
 - The personal device (BYOD) policy and the approved apps for personal phones.
 
 ## Open questions

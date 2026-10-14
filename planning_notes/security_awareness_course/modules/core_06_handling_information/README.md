@@ -80,7 +80,9 @@ It also supports the organisation's own handling controls, which are not in the 
 - **MG-12 Redaction,** with its Hidden step and both redaction tools ("Redact and remove" and "Draw a box"): find hidden worksheets, comments, tracked changes and covered-up text, remove them properly, and check the result. core_05 uses the same minigame with the mark and remove tools only.
 - **MG-27 Work desktop:** the player's computer, opening the inbox, the file-sharing service, the hidden content check and The Lark, with Martin's messages as notifications.
 - **EX-06 Attacker-view interludes** and **BE-11 Role switch:** the bin audit with Jo.
-- **BE-16 Time skips:** the evening audit and the consequence scenes.
+- **BE-16 Time skips** and **BE-24 Place-player action:** the evening audit (moving the player to the bin store and back) and the consequence scenes.
+- **BE-23 Pause and time scale:** the Friday deadline can be paused or slowed, and the upload happens whatever the player did.
+- **EX-08 Printable poster and briefing pack** (optional): the "Which bin?" poster and the handling card for customers' own print rooms.
 - **BE-18 Work task and interruptions:** the bid checklist and the arrivals.
 - **BE-01**, **BE-02**, **BE-03**, **BE-09** (the handling card), **BE-13** (document and slot banks), **BE-19** (Ama's check question with `#trigger_minigame:knowledge_check|<configKey>`, and the sorter opening from her conversation), **MG-20** (the check), **BE-07** (the "Label It" micro-drill), **EX-01** (Ama).
 - **BE-05 Organisation profile:** the labels, their colours and the handling rules come from the customer's profile.

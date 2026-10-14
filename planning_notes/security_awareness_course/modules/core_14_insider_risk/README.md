@@ -7,7 +7,7 @@
 |---|---|
 | Audience | All staff |
 | Prerequisites | core_00 recommended (introduces the cast and the reporting route) |
-| Full module | 15 minutes |
+| Full module | 15 to 16 minutes |
 | Micro-drill | 3 minutes ("Fact or Feeling?") |
 | Text route | 11 minutes |
 | Priority | Phase 3 |

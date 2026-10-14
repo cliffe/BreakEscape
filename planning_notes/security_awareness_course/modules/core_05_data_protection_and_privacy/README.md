@@ -87,6 +87,7 @@ EU customers cite "EU GDPR Art ..." with the same numbers. The 2025 and 2026 UK 
 - **BE-18 Work task and interruptions:** the queue and its scheduled arrivals.
 - **BE-19 Open minigames from conversations and events:** Tomasz's check questions; the redaction opening from a case.
 - **BE-16 Time skips:** the consequence scenes.
+- **BE-23 Pause and time scale:** the 12:30 queue clock can be paused or slowed, and it can never be failed.
 - **BE-13 Content banks:** callers, request wordings, breach-slot variants and redaction documents.
 - **EX-01 Mentor explainer,** with Tomasz as the explainer for this module.
 - **BE-07 Micro-drill launcher** for "Pass It On?" (P2), and **MG-04 Voice calls** for the calls (P2).
@@ -102,6 +103,7 @@ EU customers cite "EU GDPR Art ..." with the same numbers. The 2025 and 2026 UK 
 - Which personal data front-line staff may update directly (a new phone number, say).
 - Who approves a new use of personal data, such as marketing.
 - Where the retention schedule and the data protection policy live (HA-07).
+- The staff support route (such as an employee assistance service) shown with the content note and on the reference card.
 
 ## Open questions
 

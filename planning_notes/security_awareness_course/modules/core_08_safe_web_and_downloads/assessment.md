@@ -12,7 +12,7 @@ Each row is recorded through BE-01 and shown in the debrief and the learner's re
 | C08-B4 | Handles the full-screen alarm | LO3, LO6 | Apply | Gets out without calling, and reports it | Gets out without reporting, or needs Owain's hint first | Calls the number (Developing if they hang up without installing anything and report it) |
 | C08-B5 | Handles the permission request | LO5 | Apply | Declines, and uses the portal tool or asks IT | Declines without telling anyone | Adds the extension or allows notifications |
 | C08-B6 | Responds to a browser warning | LO4 | Practise (and Apply when the bank draws it) | Goes back | Goes back, then tries the same site another way | Clicks through to the site |
-| C08-B7 | Advises Leo after his slip | LO6 | Apply | "Ring the service desk now. Don't restart or clear anything." | "Keep an eye on it and mention it to Owain later." | "Restart and clear your history." |
+| C08-B7 | Advises Leo after his slip | LO6 | Apply | "Ring the security team now. Don't restart or clear anything." | "Keep an eye on it and mention it to Owain later." | "Restart and clear your history." |
 | C08-B8 | Reads web addresses | LO2 | Practise (MG-03 items), the debrief's address check | 3 of 3 correct | 2 of 3 | 0 or 1 of 3 |
 | C08-B9 | Sorts browser screens | LO3, LO4 | Practise | 9 or 10 of 10 correct | 7 or 8 | 6 or fewer |
 | C08-B10 | Reports their own slip | LO6 | Any beat | Reports within two game-minutes of pasting, downloading, signing in or calling | Reports later in the module | Never reports it |
@@ -122,7 +122,7 @@ A colleague recommends a free browser extension. When you click Add, it says it 
 Your colleague says he pasted a command a website gave him to "verify" himself, and asks if he should just restart. What do you say?
 
 - A. "Restart and clear your history. You'll be fine." *Feedback: That can wipe what the security team needs, and it doesn't undo anything.*
-- **B. "Ring the service desk now, and don't restart or clear anything."** *Feedback: Right. The first minute matters more than the paste.*
+- **B. "Ring the security team now, and don't restart or clear anything."** *Feedback: Right. The first minute matters more than the paste.*
 - C. "Run a free virus scan from the web." *Feedback: Another download from the web is the last thing he needs.*
 - D. "Keep an eye on it for a day." *Feedback: Infostealers work quietly. Report it now.*
 

@@ -20,11 +20,11 @@ The lunchtime talking points: the one-click "same as Des" trap, the candidate wh
 - **Tomasz Wiśniewski** (DPO), by chat or in person, on the data Des exported.
 - **Kai Murray:** only in the branch where the contractor is hired.
 - **New characters:**
-  - **Nadia Ferreira**, 23, Portuguese-British, graduate apprentice scheduler; dark curly hair, a bright yellow cardigan, a new lanyard she keeps checking. Keen and a little overwhelmed.
+  - **Marta Ferreira**, 23, Portuguese-British, graduate apprentice scheduler; dark curly hair, a bright yellow cardigan, a new lanyard she keeps checking. Keen and a little overwhelmed.
   - **Des Harker**, 64, white English from Bradford, retiring scheduler and former school caretaker; walks with a stick, flat cap on the coat peg, a mug that says "Keys? Ask Des". Warm, proud, a bit sad to go.
   - **Farida Haidari**, 30s, British Afghan, the team's most experienced planner; neat, quick, precise. At her last job, people who clicked a test phish were named in a monthly email.
   - **"Daniel Hartwell"**, the remote candidate: seen only as a polished profile photo and a video face that never quite matches the voice. In the branch where he is hired, **the real Daniel Hartwell** (30s, white English, a web developer in Leeds) phones HR at the end.
-  - **Bev Quigley**, a consultant at Brightwell Talent (a fictional recruitment agency): email and phone only. Friendly, persistent, sure "he's a star".
+  - **Bev Quigley**, a consultant at Ellwood Talent (a fictional recruitment agency): email and phone only. Friendly, persistent, sure "he's a star".
   - **Sol Sorensen**, 40s, Danish-British, an agency temp who covers Des's callouts from Thursday. A generic office sprite.
 
 ## Structure
@@ -33,14 +33,14 @@ The critical path is marked **(CP)**. The week runs as six short scenes on a pla
 
 ### 1. Hook: "Same as Des?" (1 to 2 minutes)
 
-- **(CP)** Monday 08:40. The player's computer (MG-27) shows Owain's ticket: **"New starter: Nadia Ferreira, Schools Facilities. Access: [Copy from user: Des Harker] [Choose from role template]."** Des's access sits beside it: twenty-two years of scheduling admin, the school booking portal admin, the shared `ops-scheduling` login, the key safe code list for sixty schools, timesheet approval, read access to Ledger and the old caretakers' mailbox.
-- Nadia appears in the doorway with two coffees: *"Morning! Owain says my logins are waiting on you?"*
+- **(CP)** Monday 08:40. The player's computer (MG-27) shows Owain's ticket: **"New starter: Marta Ferreira, Schools Facilities. Access: [Copy from user: Des Harker] [Choose from role template]."** Des's access sits beside it: twenty-two years of scheduling admin, the school booking portal admin, the shared `ops-scheduling` login, the key safe code list for sixty schools, timesheet approval, read access to Ledger and the old caretakers' mailbox.
+- Marta appears in the doorway with two coffees: *"Morning! Owain says my logins are waiting on you?"*
 - The player chooses in MG-18 request mode: copy Des in one click, build from the role template, or copy then trim. The choice is the **baseline** for R05-LO1.
 - Owain rings or walks over, and his line depends on the choice:
-  - **Copied Des:** *"Done. Quick one, though: does Nadia need the key safe codes for sixty schools on her first morning?"*
+  - **Copied Des:** *"Done. Quick one, though: does Marta need the key safe codes for sixty schools on her first morning?"*
   - **Copied and trimmed:** *"Good instinct, trimming it. The template's quicker next time."*
   - **Template:** *"Nice. Template's the right call. Ama wanted a word about your week anyway."*
-- Whatever the choice, Nadia's account works and her day starts. Nothing bad happens yet; the debrief comes back to it.
+- Whatever the choice, Marta's account works and her day starts. Nothing bad happens yet; the debrief comes back to it.
 
 ### 2. Learn: "Access follows the job" (4 minutes)
 
@@ -70,12 +70,12 @@ The critical path is marked **(CP)**. The week runs as six short scenes on a pla
 
 ### 4. Apply: "The week" (11 to 12 minutes)
 
-- **(CP)** The week planner appears (BE-18): **Mon: Nadia starts. Tue: interview the contractor. Wed: Leo moves; access review due. Thu: temp cover starts. Fri: Des's last day.** Each scene is short; the clock jumps between them. The team pulse board on the whiteboard (`alarm-panel`, reskinned) shows eight lamps, one per team member, that brighten or dim with the player's reactions.
+- **(CP)** The week planner appears (BE-18): **Mon: Marta starts. Tue: interview the contractor. Wed: Leo moves; access review due. Thu: temp cover starts. Fri: Des's last day.** Each scene is short; the clock jumps between them. The team pulse board on the whiteboard (`alarm-panel`, reskinned) shows eight lamps, one per team member, that brighten or dim with the player's reactions.
 
 **Monday afternoon: time for training (1 minute).**
 
 - Lena's chat: *"Three of your team are overdue on the annual security refresher. Can they click through it this week?"* The player chooses: book twenty minutes in Tuesday's huddle and cover the phones; "do it when you can"; or "just click through it".
-- Nadia asks when she should do her induction modules. The player can book Wednesday morning and set her customer-data access to switch on after her training, which the request form allows.
+- Marta asks when she should do her induction modules. The player can book Wednesday morning and set her customer-data access to switch on after her training, which the request form allows.
 
 **Tuesday: the remote candidate (3 minutes).**
 
@@ -84,10 +84,10 @@ The critical path is marked **(CP)**. The week runs as six short scenes on a pla
 - **The candidate file** (MG-25, or `forensic-data-platform` until it exists): a CV claiming six years at "Northern Data Solutions", a firm with no trace before last year; an ID scan that is a photo of a screen, whose photo doesn't match the video face; a home address in Leeds, while the laptop is to go to "my new flat in Leicester"; two references from free email addresses with internet phone numbers; a professional profile created four weeks ago. The player marks what doesn't match.
 - **Decision:**
   - **Offer the job; the agency says checks are done.** The hired branch (below).
-  - **Ask Mei Lin to run the standard checks first:** the original passport seen in person or on a live video call, the right to work check, references rung on numbers HR finds itself. Mei Lin invites Daniel to the Leeds office "or a live call with your passport in your hand". He withdraws by email that evening. Mei Lin reports it to Ama and tells the agency. Ama: *"We'll report it. And the agency's other clients will want to know."*
+  - **Ask Mei Lin to run the standard checks first:** the original passport seen in person or on a live video call, the right to work check, references rung on numbers HR finds itself. Mei Lin invites Daniel to head office "or a live call with your passport in your hand". He withdraws by email that evening. Mei Lin reports it to Ama and tells the agency. Ama: *"We'll report it. And the agency's other clients will want to know."*
   - **Reject him: something feels off.** Mei Lin: *"You might be right. But a quiet no can't be reported, and we might be wrong about the next one. Same checks as everyone."* The player can still choose the checks.
 - **Fairness variant** (drawn from the bank, BE-13): in some plays the candidate is genuine, with a strong regional accent and a juddering picture from rural broadband. The same checks clear her in a day and she's hired. The debrief shows that the checks, not the gut, made the call.
-- **The hired branch:** a time skip (BE-16), "Two weeks later". Kai rings: the contractor's account signs in from three countries overnight, and the laptop has a remote desktop tool installed. Owain locks it; Ama reports it. A month later the phone rings again: the real Daniel Hartwell, puzzled, has a tax letter saying he works for Brightwell Talent on a Larkspur contract. *"I've never heard of you. Who's been using my name?"* Mei Lin takes the call. The damage stops at what the account could reach, which is why least access matters even for good hires.
+- **The hired branch:** a time skip (BE-16), "Two weeks later". Kai rings: the contractor's account signs in from three countries overnight, and the laptop has a remote desktop tool installed. Owain locks it; Ama reports it. A month later the phone rings again: the real Daniel Hartwell, puzzled, has a tax letter saying he works for Ellwood Talent on a Larkspur contract. *"I've never heard of you. Who's been using my name?"* Mei Lin takes the call. The damage stops at what the account could reach, which is why least access matters even for good hires.
 
 **Wednesday morning: Leo moves to Finance (2 minutes).**
 
@@ -114,7 +114,7 @@ The critical path is marked **(CP)**. The week runs as six short scenes on a pla
 | Gillian Marsh, Chief Executive | Scheduling admin; never used | Reduce (a polite note to her office) |
 | Kev Sutcliffe, warehouse | Scheduling edit; used two days ago to plan deliveries | Keep |
 | Leo Brennan | Operations edit and Finance approval, if not removed this morning | Remove the Operations access (toxic combination) |
-| Nadia Ferreira | The role template; or, if the hook copied Des, key safe codes and admin | Keep; or Reduce |
+| Marta Ferreira | The role template; or, if the hook copied Des, key safe codes and admin | Keep; or Reduce |
 | Des Harker | Everything, leaving Friday | Keep until Friday, marked "leaver" |
 | Lena Fischer | Scheduling read | Keep |
 | Farida Haidari | Team absence calendar (dates only), as deputy | Keep |
@@ -159,7 +159,7 @@ The critical path is marked **(CP)**. The week runs as six short scenes on a pla
 - **(CP)** The debrief screen (BE-02), then Ama and Mei Lin in the player's office (or in the conversation panel on the text route).
 - **The team's access on Monday and on Friday,** side by side: who had what, with the player's changes marked as removed, reduced or end-dated, and anything still open in amber.
 - **Each decision:** what happened, what the player did, what good looks like and where it led, including any time skip the player triggered.
-- **The before and after:** Nadia's access in the hook beside Sol's in Thursday's scene.
+- **The before and after:** Marta's access in the hook beside Sol's in Thursday's scene.
 - **The team pulse:** the anonymous end-of-quarter pulse survey for the player's team, built from their reactions. *"I'd tell my manager if I made a security mistake: 7 of 8 agree"* (or 3 of 8). The numbers are on screen only.
 - **Per-outcome results:** Secure, Developing or Not yet (see `assessment.md`).
 - **The line to remember:** *"Right access on day one, gone on the last day, and 'thank you' when someone tells you."*
@@ -176,7 +176,7 @@ The critical path is marked **(CP)**. The week runs as six short scenes on a pla
 
 | Decision | Options | Learning outcome | How the consequence is shown |
 |---|---|---|---|
-| Nadia's access (hook) | Role template / copy then trim / copy Des | LO1 (baseline) | Owain's line; Nadia's row in the review; the debrief's access map |
+| Marta's access (hook) | Role template / copy then trim / copy Des | LO1 (baseline) | Owain's line; Marta's row in the review; the debrief's access map |
 | Training time | Book time and cover / "when you can" / "click through it" | LO5 | Pulse lamps; Lena's reply; completion shown in the debrief |
 | The remote candidate | Standard checks first / reject on a feeling / offer now | LO4 | Withdrawal and a report; or the hired branch with Kai's call and the real Daniel's |
 | Leo's mailbox | Remove today with forwarding / keep a month / leave everything | LO2 | Leo's row in the review; the toxic combination flag |
@@ -220,13 +220,13 @@ Shown on BE-02, then spoken by Ama and Mei Lin:
 
 1. The access map, Monday against Friday.
 2. Each decision, its outcome and any time skip it triggered.
-3. Nadia's access against Sol's: before and after.
+3. Marta's access against Sol's: before and after.
 4. Farida's outcome and the team pulse.
 5. The candidate: withdrew, cleared, or contained.
 6. Per-outcome results.
 7. The line to remember.
 
-Spoken lines stay generic (*"Your team's pulse says a lot about this week"*); the counts and percentages are on screen.
+Spoken lines stay generic (*"Your team's pulse says a lot about this week"*); the counts are on screen.
 
 ## Variants
 
@@ -244,8 +244,8 @@ Spoken lines stay generic (*"Your team's pulse says a lot about this week"*); th
 ## Art and audio
 
 - **Rooms:** existing office, small offices, IT, kitchen and meeting room. Props: a whiteboard reskin for the pulse board; bunting, a cake and a card for the leaving do (new small props); the key cabinet (`key_cabinet1`) and an ID badge (`id_badge`) exist.
-- **Characters:** Ama, Mei Lin, Owain, Leo and Hassan need their recurring-cast art (shared with many modules). New talk sprites for Nadia, Des and Farida (all on screen and speaking). "Daniel" needs a portrait with freeze and blur frames for the video call. Sol, Bev, the real Daniel and Lena need no art (generic sprite, email and phone only).
-- **Voice:** about 25 lines for Ama, 25 for Mei Lin, 10 for Owain, 8 for Leo, 12 for Des, 12 for Farida, 6 for Nadia, 12 for "Daniel" and 4 for the real Daniel (two clearly different voices), and a few for Kai and Tomasz. No voiced line prints a variable: never the player's name, the organisation's name, a count or a percentage. The pulse figures and the access counts are on screen only.
+- **Characters:** Ama, Mei Lin, Owain, Leo and Hassan need their recurring-cast art (shared with many modules). New talk sprites for Marta, Des and Farida (all on screen and speaking). "Daniel" needs a portrait with freeze and blur frames for the video call. Sol, Bev, the real Daniel and Lena need no art (generic sprite, email and phone only).
+- **Voice:** about 25 lines for Ama, 25 for Mei Lin, 10 for Owain, 8 for Leo, 12 for Des, 12 for Farida, 6 for Marta, 12 for "Daniel" and 4 for the real Daniel (two clearly different voices), and a few for Kai and Tomasz. No voiced line prints a variable: never the player's name, the organisation's name, a count or a percentage. The pulse figures and the access counts are on screen only.
 - **Music:** the calm workplace set (BE-21); a quiet sting for each time skip.
 
 ## Pitfalls

@@ -11,11 +11,11 @@
 | Micro-drill | 3 minutes ("Report it or not?") |
 | Text route | 10 minutes |
 | Priority | MVP |
-| Build size | M, driven by the incident report form (MG-09) and the blast radius. The spread itself runs on scenario timers and globals that already exist; Kai's board is the existing `command-board`; the map extends the existing `network-segmentation-map` |
+| Build size | M, driven by the incident report form (MG-09) and the incident spread map (MG-26). The spread itself runs on scenario timers and globals that already exist, Kai's board is the existing `command-board`, and MG-26 extends the existing `network-segmentation-map` |
 
 ## Why this module
 
-Most of the damage in an incident happens between the moment someone notices something odd and the moment someone tells the people who can stop it. Staff are often first to notice: a colleague's account sending emails nobody wrote, files that won't open, a laptop that isn't where it should be, a spreadsheet sent to the wrong person. Many don't report, because they aren't sure, think it's someone else's job, or fear the blame.
+Most of the damage in an incident happens between the moment someone notices something odd and the moment someone tells the people who can stop it. Staff are often first to notice: a colleague's account sending emails nobody wrote, files that won't open, a laptop that isn't where it should be, a spreadsheet sent to the wrong person. Many hold back: they aren't sure, they think it's someone else's job, or they fear the blame. The NCSC warns that where people don't feel safe to speak up, they cover up mistakes.
 
 - **Capita, 2023.** A malicious file was downloaded onto an employee's device on 22 March 2023. A high-priority alert was raised within 10 minutes, but the device was not quarantined for 58 hours, and in that time the attacker gained administrator rights, moved through the network and took nearly a terabyte of data. The personal information of 6.6 million people was stolen. The ICO (since 30 September 2026, the Information Commission) fined Capita £14 million in October 2025. That delay was in the security team, not a missing staff report, but the lesson is the same for everyone: the clock starts at the first sign.
 - **23andMe, 2023.** Login attacks ran from April; a claim of data theft in August was dismissed as a hoax; a full investigation began only in October, when an employee found the stolen data advertised for sale.
@@ -61,8 +61,8 @@ Contributes to (short references as in `02_COMPLIANCE_MAPPING.md`, section 2):
 | Hook | 13:50. Leo says a school has rung to ask why he sent them an invoice link he never sent. What the player tells him, and how fast it gets reported, is the baseline. Leo's account keeps sending while they decide | Game (`person-chat`, timers) | 1 to 2 |
 | Learn | Ama and Kai at the player's desk: Kai's blast radius for Leo's account, then what counts, the signs, how to report and what to include, what not to do, and no blame | NPC explainer with visual aids (EX-01, EX-05, BE-08) | 3 |
 | Practise | "Report it or not?" (eight quick situations), then two practice reports on the form with instant feedback, and one "first moves" ordering item | MG-09 practice mode | 3 |
-| Apply | "The golden hour": the council's monthly report is due at 15:00. Four things go wrong around it (files that won't open, a missing laptop, a sign-in prompt, Martin's wrong attachment) and an optional fifth (a stranger by the comms room). Each spreads until it is reported | Game (BE-18, MG-09, the blast radius) | 5 to 6 |
-| Debrief | Kai's replay of the afternoon on one map: when each sign appeared, when it was reported, and what the report let the team do. Martin is thanked | Debrief screen (BE-02), then Kai and Ama | 2 |
+| Apply | "The golden hour": the council's monthly report is due at 15:00. Four things go wrong around it (files that won't open, a missing laptop, a sign-in prompt, Martin's wrong attachment) and an optional fifth (a stranger by the comms room). Each spreads until it is reported | Game (BE-18, MG-09; the spread runs on timers) | 5 to 6 |
+| Debrief | Kai's replay of the afternoon on one map: when each sign appeared, when it was reported, and what the report let the team do. Martin is thanked | Debrief screen (BE-02), MG-26, then Kai and Ama | 2 |
 | Check | Six scenario questions | Quiz (MG-20) | 2 |
 | Reference | The reference card, with the organisation's own routes and numbers | Intranet (BE-09) | under 1 |
 
@@ -108,7 +108,7 @@ Contributes to (short references as in `02_COMPLIANCE_MAPPING.md`, section 2):
 ## Open questions
 
 1. **How visible is the spread during play?** *Recommendation: only in-world signs (colleagues noticing, more emails, more locked folders) until the player reports; the map appears after a report and in the debrief. A live gauge of unreported incidents would test watching, not noticing.*
-2. **Minutes or story events?** *Recommendation: the spread runs on game time (about a stage a minute, never shown as a countdown) so it feels real, but ratings use the stage an incident had reached when it was reported, which is a story event. BE-04's clock can be paused, slowed or stopped, and with timers off the stages follow the work task's steps, so slow readers are never marked down.*
+2. **Minutes or story events?** *Recommendation: the spread runs on game time (about a stage a minute, never shown as a countdown) so it feels real, but ratings count story events, not minutes: whether a report came before the next stage or interruption after the player noticed the sign. BE-04's clock can be paused, slowed or stopped, and with timers off the stages follow the work task's steps, so slow readers are never marked down.*
 3. **How many incidents?** *Recommendation: four on the critical path and an optional fifth, staggered, each with a second sign for players who missed the first; order and timing randomised between plays (BE-13).*
 4. **The boundary with core_07.** *Recommendation: core_04 shows only the early signs of ransomware (files that won't open, a note) and the first steps. core_07 owns ransomware itself and reuses MG-26 for its own spread.*
 5. **Who presses Cut off?** *Recommendation: the player, on Kai's screen and at Kai's invitation, as a small reward for reporting; Kai says straight away that at their own desk the version is "unplug the cable if we ask you to", which the reference card repeats. It is optional, and Kai does it off-screen if the player doesn't visit.*

@@ -23,6 +23,8 @@ All care homes, people and domains are fictional; names are checked as for Larks
 
 The critical path is marked **(CP)**. Everything else is optional depth.
 
+**(CP)** Before the hook, the module's title screen (BE-20) carries a one-line content note, as `features/accessibility_and_inclusion.md` (5.3) asks: *"This module includes personal information, including health information, being shared by mistake."* The reference card gives the organisation's own support route (BE-05).
+
 ### 1. Hook: "Where's Bernadette?" (1 minute)
 
 - **(CP)** Shauna hands over at the desk: *"Queue's on screen, phones come to you. I'm in the meeting room till half twelve. Shout if you need me."* The cleaners' rota is open on the second monitor (a `notes` document): Bernadette Lyons, Ashgrove Primary, 06:30 to 15:00.
@@ -189,5 +191,6 @@ Shown on BE-02, then spoken by Tomasz at his pinboard:
 - **Sensitive settings.** Care homes, dementia, continence and debt are real parts of people's lives. Show them with dignity; humour comes from Tomasz's dryness and Martin's enthusiasm, never from residents or families.
 - **Implying police can't be trusted.** The lesson is "check through the DPO", not "don't help the police". Tomasz says real requests are dealt with quickly.
 - **Staff deciding breaches.** The game never asks the player whether a breach is "serious enough". That is the DPO's judgement; the player's job is to report.
+- **A clock that stresses.** The 12:30 deadline adds realism, not pressure: the queue can't be failed, and BE-23 lets players pause or slow the clock.
 - **Law changes.** The Data (Use and Access) Act 2025 changed details through 2026. Re-check `concepts.md` before each annual edition.
 - **Real data.** All names, rotas and records are generated; nothing comes from a real organisation.

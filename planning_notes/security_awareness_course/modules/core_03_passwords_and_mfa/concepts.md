@@ -71,7 +71,7 @@ Change it on the real site or app, typed in or from your manager, never through 
 
 ### Security questions and account recovery
 
-Answers to "mother's maiden name" or "name of your first pet" can often be found online or guessed by people who know you. Where a site still asks, give a made-up answer (random words) and store it in your password manager with the login. NIST SP 800-63B-4 tells services not to use security questions at all. Keep your recovery email and phone number up to date, because they are how you get back in.
+Answers to "mother's maiden name" or "name of your first pet" can often be found online or guessed by people who know you. Where a site still asks, give a made-up answer (random words) and store it in your password manager with the login. US guidance (NIST SP 800-63B-4) tells services not to prompt people to use security questions. Keep your recovery email and phone number up to date, because they are how you get back in.
 
 ### Checking whether your details are in a breach
 
@@ -117,7 +117,7 @@ An attacker who has your password, but not your phone, can keep trying to sign i
 The rule is simple and covers every variation:
 
 - **A prompt or code you didn't start means someone has your password** (or is trying to reset your account).
-- **Deny it, report it** (the app's Report option or the service desk), and let the service desk help you change the password. CISA advises organisations to treat denied prompts as a sign the password may be compromised, which only works if people report them.
+- **Deny it, report it** (the app's Report option or the service desk), and let the service desk help you change the password. CISA recommends training users to report "unknown or bulk confirmation requests", and investigating denied prompts, because a denied prompt can mean the password is already compromised (CISA fact sheet, October 2022).
 - **No genuine IT team will ask you to approve a prompt, type a number or read out a code.** They have their own tools.
 
 ### Shared accounts and written-down passwords at work
@@ -161,7 +161,7 @@ Use these as background and inspiration only. Game content uses fictional names.
 
 - **Uber, 2022.** Uber said an attacker likely bought a contractor's corporate password after malware infected the contractor's personal device, then repeatedly tried to sign in; each attempt sent a two-factor approval request, and "eventually, however, the contractor accepted one" (Uber security update, 16 to 19 September 2022). Press reports at the time said the attacker had also messaged the contractor on WhatsApp claiming to be from Uber IT (The Hacker News, 16 September 2022, from the attacker's own account); Uber did not confirm that detail. The game's fake "IT" message is modelled on this report, not on a confirmed fact.
 - **Cisco, 2022.** An attacker got into an employee's personal Google account, where work credentials were saved in the browser and synced, then used voice phishing and repeated push requests until one was accepted, giving VPN access (Cisco Talos, 10 August 2022). The lesson for the module: protect the account that syncs your passwords, and treat floods of prompts and "support" calls together as an attack.
-- **23andMe, 2023.** Between April and September 2023, an attacker used login details stolen in unrelated breaches to get into accounts, exposing data on 155,592 UK residents. The ICO fined the company £2.31 million on 17 June 2025, finding it lacked mandatory MFA and secure password requirements, among other failings. (The ICO has been the Information Commission since 30 September 2026, keeping the "ICO" name.)
+- **23andMe, 2023.** Between April and September 2023, an attacker used login details stolen in unrelated breaches to get into accounts, exposing data on 155,592 UK residents. The UK regulator, now the Information Commission (the ICO; the Information Commissioner until 30 September 2026), fined the company £2.31 million on 17 June 2025, finding it lacked mandatory MFA and secure password requirements, among other failings.
 - **Advanced Computer Software Group, 2022.** In a ransomware attack in August 2022, attackers reached a health and care subsidiary's systems through a customer account that did not have MFA. NHS 111 and social care services were disrupted and 79,404 people's data was put at risk, including details of how to get into the homes of 890 people receiving care at home. The ICO fined the company £3,076,320 on 27 March 2025.
 - **The usual guesses.** An NCSC analysis of breached accounts in 2019 found `123456` used 23.2 million times, with first names, football teams and fictional characters high on the list (NCSC news, 21 April 2019). These old lists are still where guessing starts, which is why the game's guesser tries them first.
 - **UK picture.** In the Cyber Security Breaches Survey 2025, 40% of UK businesses and 35% of charities had any requirement for two-factor authentication (DSIT, April 2025, table 3.1). Check the latest edition before quoting figures.

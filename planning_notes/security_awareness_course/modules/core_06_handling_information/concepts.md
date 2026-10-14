@@ -6,11 +6,11 @@ Boundaries: what personal data is, people's rights, and what counts as a persona
 
 ## Key messages
 
-1. **Every piece of information has a label, and the label tells you how to handle it:** who can see it, how to send it, where to keep it and how to get rid of it. No label? Judge it by what's in it, and ask.
+1. **Every piece of information has a label, and the label tells you how to handle it:** who can see it, how to send it, where to keep it and how to get rid of it. No label? Judge it by what is in it, and ask.
 2. **Need to know.** Share with the named people who need it, only what they need, for as long as they need it.
-3. **Check before it leaves:** every recipient, every link setting, and what's hidden inside the file.
+3. **Check before it leaves:** every recipient, every link setting, and what is hidden inside the file.
 4. **Confidential paper goes in the locked confidential waste, not the recycling. Old devices go back to IT. Collect your printing straight away.**
-5. **If something goes wrong, or you receive something you shouldn't have, report it at once.** If it involves personal data, it may be a personal data breach (core_05).
+5. **If something goes wrong, or you receive something you should not have, report it at once.** If it involves personal data, it may be a personal data breach (core_05).
 
 ## Concepts
 
@@ -46,7 +46,7 @@ Larkspur uses four labels. Customers can rename them and set their own definitio
 ### Sending
 
 - **Check every recipient before you press send.** The usual slips are autocomplete picking the wrong person, reply-all, a long thread with outsiders copied in, and a forwarded chain with old messages underneath.
-- **Use the safety features your mail client has.** The ICO suggests organisations consider turning off autocomplete for recipients, adding a short delay before emails leave so mistakes can be caught, and warning people when they use the CC field. Many mail systems can also flag outside recipients. Where these exist, don't switch them off.
+- **Use the safety features your mail client has.** The Information Commission (the ICO), the UK data protection regulator, suggests organisations consider turning off autocomplete for recipients, adding a short delay before emails leave so mistakes can be caught, and warning people when they use the CC field. Many mail systems can also flag outside recipients. Where these exist, don't switch them off.
 - **Emails to a group.** Addresses in To or CC are visible to everyone. Bcc hides them, but it is easy to forget, and the ICO says it is "not enough on its own" to protect people's information. For mailings to many people, or where being on the list says something about a person (patients of a clinic, families of care home residents), use the bulk email tool or mail merge so each person gets their own email.
 - **Confidential outside Larkspur:** use the "Send securely" option (encryption) or the approved file-sharing service. **Restricted:** only by the approved secure route.
 - **Password-protected files:** send the password another way (a phone call or a text), never in the same email. A key sent with the lock protects nothing; the ICO's encryption guidance makes the same point about keeping keys apart from the data.
@@ -85,8 +85,8 @@ Files carry more than you can see. The ICO's guidance on disclosing documents se
 
 ### Disposal and retention
 
-- **Paper:** everything marked Internal or above goes in the locked confidential waste consoles, which an approved contractor collects and destroys. Never put it in ordinary recycling, which anyone handling the bins can read.
-- **Shredders:** shredded paper can be pieced back together (see the real cases). At Larkspur the strip-cut shredder by the printer is for Internal paper only; Confidential and Restricted paper goes in the locked console.
+- **Paper:** everything marked Internal or above goes in the locked confidential waste consoles, which an approved contractor collects and destroys. Never put it in ordinary recycling, which anyone handling the bins can read. Only Public paper goes in the recycling.
+- **Shredders:** shredded paper can be pieced back together (see the real cases). At Larkspur the strip-cut shredder by the printer may also take Internal paper; Confidential and Restricted paper always goes in the locked console.
 - **Devices:** old laptops, phones, tablets and memory sticks go back to IT, which wipes or destroys them properly. Deleting files isn't enough: the NCSC's guidance on sanitising storage media says "Simply hitting the 'Delete' key isn't enough." Never bin, sell or give away a work device.
 - **Files:** delete what you no longer need when the retention schedule says, including your own copies in downloads, on the desktop and in email attachments.
 - **Whiteboards** in meeting rooms are wiped after use (core_10).
@@ -104,14 +104,14 @@ Report it at once through the usual route: a link set to "anyone", an email to t
 
 As the reference card shows it, with the organisation's own labels and tools filled in:
 
-1. **Label it** when you create it: Public, Internal, Confidential or Restricted. No label on something you've received? Judge it by what's in it, and ask.
-2. **Need to know:** the named people who need it, only what they need, for as long as they need it.
-3. **Check before you send:** every recipient (watch autocomplete and reply-all); a group mailing goes through the bulk email tool or mail merge, not To or CC; Confidential outside Larkspur goes by "Send securely"; a password goes by phone or text, never in the same email; never to a personal account.
-4. **Share with names, not links:** specific people, the lowest permission that works, an end date. Review and remove access when the work ends.
-5. **Is it really gone?** Before a file leaves, check for hidden worksheets, rows and columns, comments and tracked changes, and covered-up text. Redact with the redaction tool, on a copy, and check the result.
-6. **Print and pick up:** secure print, collect at once. Someone else's printout goes back to them unread.
-7. **Dispose properly:** paper marked Internal or above in the locked confidential waste; devices back to IT; files deleted when the retention schedule says.
-8. **Something gone wrong, or received something you shouldn't have?** Don't use or forward it. Report it at once through the usual route.
+1. **Label it** when you create it: Public, Internal, Confidential or Restricted. If something you receive has no label, judge it by what is in it, and ask the owner.
+2. **Need to know.** Share with the named people who need it, only what they need, for as long as they need it.
+3. **Check before you send.** Check every recipient, especially after autocomplete or reply-all. Send group mailings with the bulk email tool or mail merge, not To or CC. Send Confidential information outside Larkspur with "Send securely". Give a password by phone or text, never in the same email. Never send work information to a personal account.
+4. **Share with names, not links.** Choose specific people, the lowest permission that works, and an end date. Remove access when the work ends.
+5. **Check it is really gone.** Before a file leaves, look for hidden worksheets, rows and columns, comments, tracked changes and covered-up text. Redact with the redaction tool, on a copy, and check the result.
+6. **Print and collect.** Use secure print, and collect your printing at once. Return someone else's printout to them unread.
+7. **Dispose of it properly.** Put paper marked Internal or above in the locked confidential waste. Return old devices to IT. Delete files when the retention schedule says.
+8. **Something gone wrong, or received something you should not have?** Do not use it or forward it. Report it at once through the usual route.
 
 ## Misconceptions and outdated advice
 
@@ -184,7 +184,7 @@ Use these as background and inspiration only. Game content uses fictional names,
 - ICO, [Disclosing documents to the public securely](https://ico.org.uk/for-organisations/uk-gdpr-guidance-and-resources/security/disclosing-documents-to-the-public-securely/) (31 July 2025), including [hidden information in documents](https://ico.org.uk/for-organisations/uk-gdpr-guidance-and-resources/security/disclosing-documents-to-the-public-securely/avoid-an-accidental-breach-when-personal-information-is-hidden-in-documents/), the [spreadsheet checklist](https://ico.org.uk/for-organisations/uk-gdpr-guidance-and-resources/security/disclosing-documents-to-the-public-securely/checklist-avoid-an-accidental-breach-when-personal-information-is-hidden-in-spreadsheets/) and [redaction](https://ico.org.uk/for-organisations/uk-gdpr-guidance-and-resources/security/disclosing-documents-to-the-public-securely/how-do-we-avoid-an-accidental-breach-when-redacting-information/).
 - ICO, [Encryption](https://ico.org.uk/for-organisations/uk-gdpr-guidance-and-resources/security/a-guide-to-data-security/encryption/) (keys kept with the data).
 - NCSC, [Secure sanitisation of storage media](https://www.ncsc.gov.uk/guidance/secure-sanitisation-storage-media) (reviewed 5 February 2025).
-- GOV.UK, [Government Security Classifications](https://www.gov.uk/government/publications/government-security-classifications) (policy updated 5 August 2024) and its guidance ["Working at OFFICIAL"](https://www.gov.uk/government/publications/government-security-classifications/guidance-11-working-at-official-html).
+- GOV.UK, [Government Security Classifications](https://www.gov.uk/government/publications/government-security-classifications) (page updated 5 August 2024) and its guidance ["Working at OFFICIAL"](https://www.gov.uk/government/publications/government-security-classifications/guidance-11-working-at-official-html).
 - Procurement Act 2023, [Schedule 7](https://www.legislation.gov.uk/ukpga/2023/54/schedule/7), paragraph 13 (acting improperly in procurement).
 - Wikipedia (secondary): [Afghan Response Route](https://en.wikipedia.org/wiki/Afghan_Response_Route); [Iran hostage crisis](https://en.wikipedia.org/wiki/Iran_hostage_crisis); [DARPA Shredder Challenge 2011](https://en.wikipedia.org/wiki/DARPA_Shredder_Challenge_2011).
 - core_05 `concepts.md` for personal data, breaches and the PSNI case.

@@ -16,7 +16,7 @@ The lunchtime talking points: the two Joans (the caller in the hook and the real
 - **Jo Fairweather** (Northlight Security): an optional sixty-second interlude in Shauna's hub, playing back her authorised test call to the Customer Hub last year.
 - **Kev Sutcliffe** (Warehouse Supervisor): only in the front desk scene.
 - **Callers** (voice only, each a distinct voice):
-  - **Joan Dobson**, business manager at Hollins Lane Primary, 50s, brisk and warm, a Yorkshire voice. Genuine.
+  - **Joan Dobson**, business manager at Linnet Lane Primary, 50s, brisk and warm, a Yorkshire voice. Genuine.
   - **"Joan"**, the impostor in the hook: a different, softer voice, apologetic and in a hurry.
   - **Marcus Pemberton**, catering manager at Brindle House care home, 40s: a genuine query about an engineer visit.
   - **Mr Hari Bakshi**, 78, British Indian, a retired pharmacist who pays for his wife Kamala's Care Extras at Brindle House. Sharp, courteous, a little hard of hearing.
@@ -25,7 +25,7 @@ The lunchtime talking points: the two Joans (the caller in the hook and the real
   - **"Rob Bramley"**, who says he is a contracts manager at Aldbeck Borough Council: loud, then louder.
   - **"Kerry"**, a web chat from "the new office manager at Fellgate Academy": text only.
   - In the front desk scene, a **"terminal engineer"** in a payment provider's polo shirt (a generic sprite, `male_telecom_v2`).
-- All organisations here (Hollins Lane Primary, Fellgate Academy, Brindle House, Aldbeck Borough Council) are fictional.
+- All organisations here (Linnet Lane Primary, Fellgate Academy, Brindle House, Aldbeck Borough Council) are fictional.
 
 ## Structure
 
@@ -33,12 +33,12 @@ The critical path is marked **(CP)**. The desk (MG-17) is the main screen throug
 
 ### 1. Hook: "New phone, who's this?" (1 to 2 minutes)
 
-- **(CP)** 09:05. The player puts on the headset; the first call arrives before any teaching. "Joan from Hollins Lane Primary": *"Sorry to be a pain. I've got a new mobile and I'm locked out of the portal. Can you pop the new number on and send the code to it?"* She has the account number and the postcode, and she sounds lovely.
+- **(CP)** 09:05. The player puts on the headset; the first call arrives before any teaching. "Joan from Linnet Lane Primary": *"Sorry to be a pain. New mobile, and I'm locked out of the portal. Can you pop the number on and send the reset code to it?"* She has the account number and the postcode, and she sounds lovely.
 - The record shows Joan as a named contact with a mobile number on file, unchanged for three years.
-- The player can update the number and send the code to the new mobile, ask more questions and then do it, send a code to the mobile already on file, or say they'll ring the school office on the number held. The choice is the **baseline** for R06-LO1 and R06-LO2.
+- The player can update the number and send the portal reset to the new mobile, ask more questions and then do it, let the portal send its own reset to the mobile already on file, or say they'll ring the school office on the number held. The choice is the **baseline** for R06-LO1 and R06-LO2.
 - **Branches into Learn:**
-  - **Called back or used the number on file:** the school office says Joan is in a meeting and hasn't changed her phone. Shauna, who has been listening in on new starters' first calls: *"That wasn't Joan. And you didn't need me to tell you. Let's talk about why that worked."*
-  - **Sent the code to the new mobile:** two minutes later the record flashes: **portal login changed; delivery address for Thursday's order changed.** Shauna appears at the desk: *"No harm done if we move now."* She shows the player how to lock the account and ring the school on the number held, then sits down to explain. Calm, practical, no blame.
+  - **Called back, or kept to the details on file:** the school office says Joan is in a meeting and hasn't changed her phone. Shauna, who has been listening in on new starters' first calls: *"That wasn't Joan. And you didn't need me to tell you. Let's talk about why that worked."*
+  - **Sent the reset to the new mobile:** two minutes later the record flashes: **portal login changed; delivery address for Thursday's order changed.** Shauna appears at the desk: *"No harm done if we move now."* She shows the player how to lock the account and ring the school on the number held, then sits down to explain. Calm, practical, no blame.
 
 ### 2. Learn: "Know versus have" (3 minutes)
 
@@ -48,9 +48,9 @@ The critical path is marked **(CP)**. The desk (MG-17) is the main screen throug
   3. **The takeover timeline.** A change of contact details, a few quiet days, then a reset, a delivery or a refund. *"Look back before the change. That's where the real customer is."*
   4. **Pressure.** *"Angry is fine. Angry doesn't skip the checks. Put them on hold and wave at me."*
   5. **Protecting customers and card payments.** The five steps for a customer being scammed; the secure payment diagram (keypad, flat tones, a masked number, "approved"). *"Card numbers never come through your ears. Send them to the keypad."*
-- **Check question** (MG-20, opened from Shauna's line with `#trigger_minigame:knowledge_check|<configKey>`, BE-19): *"A caller wants a login reset. The account's email changed four days ago. Where should the code or call go?"* (To the email now on the account; to the number the caller gives; **a call back on the school's number from before the change**; nowhere, they knew the postcode.)
+- **Check question** (MG-20, opened from Shauna's line with `#trigger_minigame:knowledge_check|<configKey>`, BE-19): *"A caller wants a login reset. The account's email changed four days ago. Where should the reset or the call go?"* (To the email now on the account; to the number the caller gives; **a call back on the school's number from before the change**; nowhere, they knew the postcode.)
 - **Skip:** the player can say *"I've done verification training."* Shauna: *"Then you'll fly through this,"* and goes to the check question. A wrong answer brings the chunk back.
-- **Optional topics** in the hub: *"Isn't asking for a code what scammers do?"* (the safe-codes rule, 30 seconds); *"What if they're genuine and I've annoyed them?"* (30 seconds); *"How do they know so much?"*, which plays Jo's interlude (EX-06, 60 seconds): her test call last year, the business manager's name from a school website, an invoice number from a forum post, and the adviser who rang the school back. Jo: *"Ten minutes' homework. What stopped me was one call-back."*
+- **Optional topics** in the hub: *"Why don't we just ask them to read back a code?"* (30 seconds: *"Because that's exactly what scammers ask for. We never want a customer to think it's normal."*); *"What if they're genuine and I've annoyed them?"* (30 seconds); *"How do they know so much?"*, which plays Jo's interlude (EX-06, 60 seconds): her test call last year, the business manager's name from a school website, an invoice number from a forum post, and the adviser who rang the school back. Jo: *"Ten minutes' homework. What stopped me was one call-back."*
 
 ### 3. Practise: "Verify or Deny?" (3 minutes)
 
@@ -109,7 +109,7 @@ The critical path is marked **(CP)**. The desk (MG-17) is the main screen throug
 - The record's change history: **contact email changed six days ago, via the web form.** Ian's name isn't a named contact. He knows the account number, the head teacher's name, the postcode and (if the chat sent them) invoice numbers.
 - The player chooses:
   - **Check the change history, then say they'll call back on the school's number from before the change.** (Best.) Through the directory (MG-04), the player reaches Fellgate's office; Mrs Akhtar, the business manager, knows no Ian, no annexe and nothing about a new email. The player restores the email, flags the account and reports it.
-  - **Send a code to the email on the account.** (It goes to the address changed six days ago. Ian reads it back. The change goes through.)
+  - **Send an approval email to the address on the account.** (It goes to the address changed six days ago. "Ian" approves it within a minute, and the change goes through.)
   - **Refuse, without checking the history or reporting.** (Safe for now; the next adviser gets the same call.)
   - **Make the changes; he knows everything.** (The takeover.)
 - If the change goes through: a time skip (BE-16), "Thursday". Fellgate rings about its missing order. The scrubbers went to a unit that has since been emptied. Kai finds the same web-form change on two other school accounts.
@@ -123,9 +123,9 @@ The critical path is marked **(CP)**. The desk (MG-17) is the main screen throug
   - **Read out the details to calm him down.** (The council's details reach a stranger.)
 - The debrief explains what he wanted: the names and details he'd need to send Aldbeck a convincing "Larkspur has new bank details" letter (core_11 covers that fraud).
 
-**10:55, the real Joan (Hollins Lane).**
+**10:55, the real Joan (Linnet Lane).**
 
-- *"Hi love, Joan at Hollins Lane. The office says somebody rang about my mobile? I haven't changed it in years."*
+- *"Hi love, Joan at Linnet Lane. The office says somebody rang about my mobile? I haven't changed it in years."*
 - If the hook was handled well, it's a two-line thank-you. If the hook's caller got through, this is how the player puts it right: confirm it's Joan (she called the number on her bill; a standard check is enough to talk about it), restore the details, cancel the address change, report it. The queue counter reaches 6 of 6.
 
 **11:15, the front desk (optional, an organisation setting).**
@@ -142,7 +142,7 @@ The critical path is marked **(CP)**. The desk (MG-17) is the main screen throug
 - **Mr Bakshi, a week later** (BE-16): he rings to say thank you; he and his daughter rang the bank together and reported it. If the scam was missed, he rings to ask why his "overdue balance" is still showing as unpaid, and the player helps him ring his bank and report it, then; Shauna: *"Today's better than tomorrow."* No promises are made about getting money back.
 - **The before and after:** the hook call beside the Fellgate call.
 - **Per-outcome results:** Secure, Developing or Not yet (see `assessment.md`).
-- **The line to remember:** *"Same checks every time, especially when they're in a hurry. Codes and call-backs go only to details we already hold."*
+- **The line to remember:** *"Same checks every time, especially when they're in a hurry. Call-backs and resets go only to details we already hold."*
 
 ### 6. Check (2 minutes)
 
@@ -156,12 +156,12 @@ The critical path is marked **(CP)**. The desk (MG-17) is the main screen throug
 
 | Decision | Options | Learning outcome | How the consequence is shown |
 |---|---|---|---|
-| Hook: new mobile, send the code | Call back on the number held or code to details on file / questions then change / change and send to the new mobile | LO1, LO2 (baseline) | Shauna's line; or the record flashes and Shauna helps lock it; the real Joan at 10:55 |
+| Hook: new mobile, send the reset | Call back on the number held, or the portal's own reset to details on file / questions then change / change and send to the new mobile | LO1, LO2 (baseline) | Shauna's line; or the record flashes and Shauna helps lock it; the real Joan at 10:55 |
 | Marcus's engineer visit | Standard check and answer / step up / read details out | LO1 (calibration), LO4 | Marcus's thanks; an over-checking tip; a leak noted in the replay |
 | Kerry's chat | Registered address only and report / refuse only / invoices only / both | LO4 | What "Ian" knows at 10:28; the replay |
 | Mr Bakshi's scam | Tell plainly, 159, Report Fraud, let him check us, report here / vague warning / missed | LO5 | A week later: his thank-you or his question; Kai's board (forty families warned) |
-| Mr Bakshi's payment | Stop him and use the keypad / keypad after he's read it / type it and ask for the code | LO6 | Masked digits on screen; or a note in the replay that the card number was spoken and recorded |
-| Fellgate takeover | History, then call back on the old number / code to the email on file / refuse only / make the changes | LO2, LO1 | Mrs Akhtar's surprise and the fix; or Thursday's missing order |
+| Mr Bakshi's payment | Stop him and use the keypad / keypad after he's read it / type it and ask for the security code | LO6 | Masked digits on screen; or a note in the replay that the card number was spoken and recorded |
+| Fellgate takeover | History, then call back on the old number / approval to the email on file / refuse only / make the changes | LO2, LO1 | Mrs Akhtar's surprise and the fix; or Thursday's missing order |
 | Rob's pressure | Polite, nothing read out, escalate / refuse but rattled, no report / read out | LO3, LO4 | Shauna takes over; Aldbeck warned; or the details lost |
 | Reporting | Each attempt reported or not | LO3 | Kai's board shows what each report did, and what a missing report hid |
 | Front desk (optional) | Check by the known number, keep the terminal, report / refuse only / let him swap it | LO3 | Kev's line; or the swapped terminal in the debrief |
@@ -186,7 +186,7 @@ No option shames the player. The worst branches still end with Shauna or Kai hel
 | Queue | Calls and chats waiting; caller ID shown with a reminder that it can be faked; contacts arrive on a schedule (BE-18); no countdowns (BE-04) | Yes |
 | Record panel | A customer account: named contacts, contact details, **change history with dates and channel** (phone, web form, email), orders, masked payment methods, notes, and a vulnerability note where the customer agreed one | Yes, with a staff record type for role_03 |
 | Request tag and ladder | The adviser tags the request (information, account information, change or money) and the policy's checks appear; the ladder is configurable per organisation (BE-05) | Yes |
-| Checks | Open questions, with leading questions available as recorded distractors; "send code" with a destination picker (details on file, or a number the caller gives, which is recorded as an error); call back through the MG-04 directory or the number on file; "view change history" | Yes |
+| Checks | Open questions, with leading questions available as recorded distractors; "send approval or reset" with a destination picker (details on file, or a number or address the caller gives, which is recorded as an error); an optional read-back code, off by default (see Open questions in `README.md`); call back through the MG-04 directory or the number on file; "view change history" | Yes |
 | Actions | Change contact details, reset a login, add a named contact, change a delivery, refund (original payment method only). Never blocked: the consequence plays out. Hold; escalate (the team leader joins with whisper lines); decline politely; report suspected fraud (a short form, MG-09 style) | Mostly; refunds and deliveries are contact centre only |
 | Secure payment line | The proposed keypad overlay: the customer's entry reaches the adviser as masked digits; the recording pauses itself | Contact centre only |
 | Chat and email tab | Web chats and emails in the same desk, with the sender's display name and address shown; attachments open in `examine` | Contact centre first; role_03 may want it |
@@ -200,10 +200,10 @@ No option shames the player. The worst branches still end with Shauna or Kai hel
 |---|---|---|---|---|
 | Know versus have | Shauna (EX-01) | 40 seconds | Two columns: what anyone can find, what only the customer has | none |
 | The ladder of checks | Shauna (EX-01) | 30 seconds | The ladder table | none |
-| The takeover timeline | Shauna (EX-01) | 30 seconds | Change, quiet days, then the reset or delivery | "Where should the code or call go?" |
+| The takeover timeline | Shauna (EX-01) | 30 seconds | Change, quiet days, then the reset or delivery | "Where should the reset or the call go?" |
 | Holding the line | Shauna (EX-01) | 20 seconds | The three lines to use under pressure | none |
 | Protecting customers and card payments | Shauna (EX-01) | 45 seconds | The five steps; the secure payment diagram | none (assessed in Apply) |
-| Isn't asking for a code what scammers do? (optional) | Shauna | 30 seconds | The code message, with "we will never call you to ask for it" highlighted | none |
+| Why don't we ask for a code? (optional) | Shauna | 30 seconds | core_02's rule, "never read a code to anyone", beside a scam text asking for one | none |
 | How do they know so much? (optional) | Jo (EX-06) | 60 seconds | Her test call's transcript, with the two public sources marked | none |
 | What your reports did | Kai (EX-05, debrief) | 30 seconds | The fraud board | none |
 
@@ -246,7 +246,7 @@ Spoken lines stay generic (*"Your reports joined up three attempts this morning"
 
 - **Training suspicion instead of service.** Genuine callers get warm, quick help, and Marcus's call is easy on purpose. The procedure is explained to callers, never hidden behind.
 - **Unreliable cues.** Accent, background noise, nervousness and pauses are never clues. The impostors are pleasant and confident; the clues are the request, the change history and the failed step-up.
-- **Undermining "never share a code".** An adviser never asks for a code on a call they made, and the code message tells customers so.
+- **Undermining "never read out a code".** Larkspur's advisers never ask customers for a code, so the course-wide rule (core_02, core_03) stays true. Organisations that do use read-back codes get the safeguards, not a contradiction.
 - **Mocking the scammed.** Mr Bakshi is sharp and dignified; the criminals had real details; telling the adviser was the right thing to do.
 - **Too much PCI.** Staff need three rules (the secure route, never write or type card details, never keep the security code), not the standard.
 - **Abuse.** Raised voices and threats to complain only, with a content note and a transcript option.

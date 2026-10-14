@@ -15,7 +15,8 @@ Optional nods for players who know the campaign (a SAFETYNET recruitment poster 
 - **What it does:** facilities, cleaning and supplies for schools, councils, care homes and NHS sites across the North of England. This gives every module a natural reason to exist: public-sector customers with personal data, hundreds of suppliers and invoices, a warehouse, field staff on mobile devices, a contact centre, and a board answerable to clients.
 - **Size:** about 600 staff. Head office about 180, warehouse and distribution about 120, field engineers and cleaning teams about 250 (most on phones and tablets), contact centre about 50.
 - **Head office:** a converted mill on a canal in a northern English city. Reception and visitor area with badge gates; open-plan operations floor; finance and HR behind a badge door; meeting rooms; kitchen; IT service desk; a small comms room; the board room on the top floor; a side door to the smoking shelter and car park that everybody props open.
-- **Systems (generic, no real brands):** a mail client with a **Report suspicious** button; the company chat tool; the intranet, called **The Lark**; the finance system, **Ledger**; the HR system; a customer portal; shared drives and a file-sharing service. Real brand names stay out of the game so customers can map them to their own tools.
+- **Systems (generic, no real brands):** a mail client with a **Report suspicious** button; **Larkspur Chat** (the company chat tool); the intranet, called **The Lark**; the finance system, **Ledger**; the HR system; a customer portal; shared drives and **Larkspur Files** (file sharing); **Larkspur Connect** (the VPN); **Larkspur Vault** (the password manager); **Larkspur Protect** (security software); **Larkspur Apps** (the software portal, where **DocShift** is the approved document converter). Real brand names stay out of the game so customers can map them to their own tools.
+- **Service lines** that modules use: cleaning and facilities management for schools, councils and NHS sites; supplies and deliveries from the warehouse; field maintenance; and **Care Laundry**, which collects and returns care home residents' name-taped clothes (core_05).
 - **Information classes:** Public, Internal, Confidential, Restricted. Customers can rename these (BE-05).
 - **The security team:** Ama Owusu (Information Security Manager), Kai Murray (analyst), and an outsourced 24/7 monitoring partner. Tomasz Wiśniewski is the Data Protection Officer.
 - **Reporting at Larkspur:** the Report suspicious button for messages; the security team on extension 4444 or the 24/7 service desk line; anything involving personal data also goes to the DPO through the same route. The game shows these as defaults and replaces them with the customer's own routes when an organisation profile is set (BE-05).
@@ -29,6 +30,12 @@ Optional nods for players who know the campaign (a SAFETYNET recruitment poster 
 - **Report** anything suspicious, including your own mistakes, straight away. Reporting is never wrong.
 
 Ama says it in core_00 and every module comes back to it. It heads the reference card.
+
+### Rules that hold in every module
+
+- **Nobody at Larkspur ever asks anyone to read out a one-time code**, a password or an MFA approval. The service desk and the contact centre verify by calling back on the number already held, or by sending an approval or reset to details already on record. Any request for a code is therefore a sign of an attack, in every module.
+- **Larkspur staff never approve their own payment changes.** Bank detail changes are verified by a call back on the number already on the supplier record and approved by a second person (core_11, role_02).
+- **Reporting is never wrong.** A report that turns out to be harmless is thanked, every time.
 
 ## The player
 

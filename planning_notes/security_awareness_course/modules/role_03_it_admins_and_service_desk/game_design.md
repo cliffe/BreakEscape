@@ -118,14 +118,15 @@ The critical path is marked **(CP)**.
 
 | Decision | Options | Learning outcome | How the consequence is shown |
 |---|---|---|---|
-| H1 The airport call | Reset after questions / call back / ID check booked / ask the lead | LO1, LO2 (baseline) | Kai's new-device alert within minutes, or the caller hanging up |
-| T1 The contractor | Separate, limited, timed admin account / domain admin on his own account / shared login | LO3 | Bridget's reply; in the debrief, what a phished contractor account could reach in each case |
+| H1 The airport call | Reset after questions / call back / ID check booked / ask the lead | LO1, LO2 (baseline) | Kai's new-device alert, or the caller hanging up |
+| H2 Own slip (if H1 reset) | Tell Owain now / carry on with the queue | LO6 | A quick fix with Kai, or the same fix two tickets later with more to clean up |
+| T1 The contractor | Separate, limited, timed admin account / separate account with domain admin and no end date / domain admin on his own account / shared login | LO3 | Bridget's reply; in the debrief, what a phished contractor account could reach in each case |
 | T2 The app | Refuse and offer the approved tool / approve for one team / approve | LO4 | Three weeks on (debrief card): the app's publisher on a blocklist, and in the approval branches a forwarding rule found in Martin's team's mailboxes |
 | T4 The alert | Escalate / ring the user first / close it | LO5 | What the attacker did in the minutes each option allowed |
-| T4 Rosa | Report together / fix quietly / not my ticket | LO6 | Kai's thanks, or the forwarding rule found two days later and Rosa's worry in the debrief |
+| T4 Rosa | Report together / tell her to report / fix quietly / not my ticket | LO6 | Kai's thanks, or the forwarding rule found two days later and Rosa's worry in the debrief |
 | T5 The supplier's tool | Gateway and removal / whitelist today / leave the PC unlocked | LO4 | Kai's check of the PC; the debrief's note that the same story is used by criminals |
 | T6 The scanner PC | Change and tune / off for a week / nothing | LO4 | Kev's reply; the gap shown on the debrief chain |
-| T7 The real Gillian | In person with ID and a second analyst / caller ID / questions | LO2, LO6 | Gillian's thanks on The Lark |
+| T7 The real Gillian | In person with ID and a second analyst / video with ID / caller ID / questions | LO2, LO6 | Gillian's thanks on The Lark; in the weaker branches, Owain's quiet word afterwards |
 
 No option shames the player. A reset in the hook is reported with Owain and treated as the most useful thing to do after a mistake; Rosa is thanked. The worst branches end with Kai or Owain helping and the debrief showing "this is how the real ones started; this is the link that breaks it".
 

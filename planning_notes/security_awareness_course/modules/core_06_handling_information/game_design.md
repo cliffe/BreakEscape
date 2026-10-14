@@ -26,6 +26,8 @@ All organisations, people and domains are fictional and are checked as for Larks
 
 The critical path is marked **(CP)**. Everything else is optional depth.
 
+**(CP)** Before the hook, the module's title screen (BE-20) carries a one-line content note (`features/accessibility_and_inclusion.md`, 5.3): *"This module includes confidential and personal information being exposed by mistake."*
+
 ### 1. Hook: "Clear your desk" (1 minute)
 
 - **(CP)** Monday, 08:45. Martin at the player's desk: *"Morning! Bid room's ours from nine. Can you clear the old pricing drafts off your desk first? We're on version seven now."* The pile is an object on the desk ("Calderbrook pricing, drafts 3 to 6. CONFIDENTIAL").
@@ -73,7 +75,7 @@ The critical path is marked **(CP)**. Everything else is optional depth.
 
 ### 5. Apply: "Bid week" (5.5 minutes)
 
-- **(CP)** Wednesday to Friday, compressed. A work task bar (BE-18) lists the bid's steps in order: **Glassmere's section; Pricing sign-off; Final checks; Board pack; Clear the decks; Upload by 12:00 Friday.** The tests sit inside the steps, each drawn from a bank slot (BE-13):
+- **(CP)** Wednesday to Friday, compressed. A work task bar (BE-18) lists the bid's steps in order: **Glassmere's section; Pricing sign-off; Final checks; Board pack; Final clear-out; Upload by 12:00 Friday.** The tests sit inside the steps, each drawn from a bank slot (BE-13):
 
 | Step | What happens | What it tests | Best response |
 |---|---|---|---|
@@ -83,7 +85,7 @@ The critical path is marked **(CP)**. Everything else is optional depth.
 | **Martin's train** | Martin by chat: *"Can you send the whole pack to my home email? I'll finish it on the train. Quicker than the VPN."* | Personal accounts | Say no, nicely, and offer the approved way: his laptop and the VPN, which Owain can sort in five minutes |
 | **Final checks** (MG-12, Hidden step) | Before upload: the method statement has a comment (*"we can go to 4% margin if pushed"*), a tracked deletion about a dispute with a former subcontractor, and an appendix where a supervisor's mobile number is covered by a black box. The pricing workbook has a hidden worksheet, "Staff rates (named)" | Hidden content | Find and properly remove all four, then export clean copies |
 | **Board pack** | Print the pack for the 15:00 sign-off. The print dialog defaults to the old desk printer ("last used"); the photocopier holds jobs until a badge is tapped. In the old printer's tray sits last night's printout with a cover sheet: "Mei Lin Zhou. CONFIDENTIAL. Disciplinary outcome" | Printing; information found | Print to the photocopier and release with the badge; take Mei Lin's printout to her unread, and make sure it's reported |
-| **Clear the decks** | Friday, 11:30: the week's drafts (the counterpart to the hook), and in a drawer the 2021 bid team's old laptop | Disposal | Drafts in the grey console; the laptop to Owain at the service desk |
+| **Final clear-out** | Friday, 11:30: the week's drafts (the counterpart to the hook), and in a drawer the 2021 bid team's old laptop | Disposal | Drafts in the grey console; the laptop to Owain at the service desk |
 
 - **How the tests play out:**
   - **The wrong attachment.** If the player hesitates, Martin argues (the sis01 pattern): *"We didn't hack anyone. It landed in our lap."* The player can answer: *"If the council found out we'd used it, we'd be out. And imagine if it were ours."* Martin, after a beat: *"Fine. I'd be livid if it were ours."* When the player reports it, Ama: *"Thank you. I'll ring Glassmere, and we'll tell the council it reached us and nobody opened it. Then nobody can say otherwise."* If the player opens it, Martin reads the bottom line aloud before anyone can stop him, and the consequence follows. Deleting it quietly protects the bid but leaves Larkspur unable to show it never looked.
@@ -198,7 +200,7 @@ Shown on BE-02, then spoken by Jo and Ama in the bid room:
 - **Making labels feel like bureaucracy.** Ama ties every label to a real harm (a lost contract, a burglar's map, a person's privacy), and the module warns against over-labelling.
 - **Blaming the player for following Martin.** Martin is the one under pressure; the player is never punished for his ideas, and saying no nicely is modelled with exact words.
 - **Gotchas.** The autocomplete shows "(personal)" and the warning chip; the hidden content check lists what it finds; the drafts' label is on the cover. Everything is catchable with what Practise taught.
-- **Too many steps.** Seven steps in 5.5 minutes is tight. If playtests run long, move the old CV link and the printout in the tray to the bank as alternatives rather than fixtures.
+- **Too many steps.** Seven steps in 5.5 minutes is tight. If playtests run long, move the old CV link and the printout in the tray to the bank as alternatives rather than fixtures. The Friday deadline can't be failed, and BE-23 lets players pause or slow it.
 - **Overstating shredders.** The point is "use the locked console for Confidential paper", not "shredders are useless"; the default lets strip-cut shredders take Internal paper.
 - **Contradicting core_05 or core_13.** Breach wording and the reporting route must match core_05; personal accounts get one line here and the full treatment in core_13.
 - **Accessibility.** `shredded-document` is drag-and-drop only today; it needs the keyboard fix in `features/minigames.md`, section 4, before this module ships.

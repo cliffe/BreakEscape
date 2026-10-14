@@ -72,7 +72,7 @@ Contributes to (references in `02_COMPLIANCE_MAPPING.md`):
 - **Documents:** `text-file` to show the clipboard's contents in a first version; `notes` for The Lark's bookmarks list; `examine` for the sticky note with the portal's address on Owain's monitor.
 - **Conversations:** `person-chat` for Owain, Ama and Leo; `phone-chat` for Lena's task, the team chat and Kai's thanks.
 - **From core_01:** the method for reading a web address and the MG-03 drill, unchanged, so the course teaches one method.
-- **From core_07:** the "Larkspur Protect" security alert style for the hook's blocked download, and the isolation instruction if the player runs the fake check's command.
+- **From core_07:** the "Larkspur Protect" security alert style for the hook's blocked download, and the device instruction (shared with core_04) if the player runs the fake check's command.
 
 ## New features needed
 
@@ -92,7 +92,7 @@ Contributes to (references in `02_COMPLIANCE_MAPPING.md`):
 - How to report a suspicious website at work.
 - The approved tool for converting documents (or whichever tool fits the task).
 - The bookmarks list on the intranet for key sites (suppliers, the finance system, HR).
-- What to do after pasting, downloading or calling (the service desk, and core_07's isolation instruction).
+- What to do after pasting, downloading or calling (the security team, out of hours the service desk, and core_04's device instruction).
 
 ## Open questions
 

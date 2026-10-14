@@ -5,7 +5,7 @@ This file is the source of truth for the module. The game, the explainers, the k
 ## Key messages
 
 1. **Check every caller the same way, especially the ones in a hurry.** Urgency, anger and authority are reasons to keep to the procedure, not to skip it.
-2. **Good checks use what the customer has, not what anyone can find.** Call back on the number already on the account, or send a code to details already on it. Names, addresses, dates of birth and anything on a website are public or leaked.
+2. **Good checks use what the customer has, not what anyone can find.** Call back on the number already on the account, or let the system send an approval or reset to contact details already held, for the customer to complete themselves. Names, addresses, dates of birth and anything on a website are public or leaked.
 3. **Watch for recent changes.** A new email address or phone number, followed by a reset, a new delivery address or a refund, is how accounts are taken over. Go back to the details from before the change.
 4. **Protect the customer.** Share nothing with someone you haven't verified, never read details out, and if a customer is being scammed, tell them plainly and help them reach their bank.
 5. **Card details only through the secure payment route.** Never write them down, type them, or take them by email or chat. And report every attempt, including the ones that failed.
@@ -23,7 +23,7 @@ This file is the source of truth for the module. The game, the explainers, the k
 ### What makes a good check
 
 - **Things the caller knows** are weak when they are public or leaked: a name, an address, a date of birth, an account number printed on an invoice, the head teacher's name on a school website, a mother's maiden name.
-- **Things the customer has** are stronger: a phone or email already on the account (a code sent to it, or a call back to it), access to the customer portal (approve the request there), or a known person at the customer's organisation reached through its own number.
+- **Things the customer has** are stronger: a phone or email already on the account (a call back to it, or an approval or reset sent to it that the customer completes themselves), access to the customer portal (approve the request there), or a known person at the customer's organisation reached through its own number.
 - **Caller ID is not a check.** The number shown can be faked ("spoofed").
 - **Match the check to the request.** The organisation sets a ladder; Larkspur's default is:
 
@@ -31,10 +31,10 @@ This file is the source of truth for the module. The game, the explainers, the k
 |---|---|---|
 | General information | Opening hours, product details, how to place an order | None |
 | Account information | Order status, delivery date, a copy of an invoice | Standard: the caller gives the account number, the postcode on the account and their name, which must match a named contact. Documents go only to contact details already held |
-| Changes and money | New email or phone, new delivery address, login reset, refund, new named contact, payment details | Step up: check the change history first, then call back on the number on the account (from before any recent change), or send a code to details already held. Refunds go only to the original payment method |
+| Changes and money | New email or phone, new delivery address, login reset, refund, new named contact, payment details | Step up: check the change history first, then call back on the number on the account (from before any recent change), or have the system send an approval or reset to contact details already held, which the customer completes themselves. Refunds go only to the original payment method |
 
 - **Ask, don't tell.** Open questions ("What's the postcode on the account?") check the caller. Leading questions ("Is it still LS6 4QT?") hand them the answer.
-- **One-time codes, used safely.** A code proves the caller has the phone or email on the account, but only if it goes to details already held (never to a number or address the caller gives you) and only on a call the customer made. Scammers ring customers pretending to be the organisation and ask for the code they've just triggered, so the code message says what it's for, and advisers never ask for a code on a call they made themselves.
+- **Don't ask customers to read out codes.** Everyone is taught never to read a code to anyone (core_02, core_03), because scammers ring people pretending to be an organisation and ask for the code they've just triggered. If advisers asked for codes too, customers couldn't tell the difference. So Larkspur's step-ups are a call back, or an approval or reset that the system sends to details already held and the customer completes themselves; nothing secret is ever read to the adviser. Some organisations do verify callers with a read-back code. Where they do, the code goes only to details already held, only on a call the customer made, in a message that says what it's for and that "we will never call you to ask for it", and advisers never ask for a code on a call they made.
 - **Genuine customers usually understand.** "To protect your account, I'll ring you back on the number we hold" is good service, not an accusation.
 
 ### Account takeover
@@ -99,7 +99,7 @@ As the reference card shows it:
 
 1. **What are they asking for?** Information, account information, or a change or money?
 2. **Check to match.** Ask, don't tell. Use what's already on the account.
-3. **Changes and money: step up.** Check the change history, then call back on the number on the account (from before any recent change) or send a code to details already held. Never to a number or address the caller gives you.
+3. **Changes and money: step up.** Check the change history, then call back on the number on the account (from before any recent change), or let the system send an approval or reset to details already held. Never use a number or address the caller gives you, and never ask a customer to read out a code.
 4. **Under pressure?** Keep to the procedure. Put them on hold and ask your team leader.
 5. **Customer being scammed?** Tell them plainly. Point them to their bank (159) and Report Fraud. Report it here.
 6. **Card payments:** the secure route only. Never write, type, email or chat card details.
@@ -111,7 +111,7 @@ As the reference card shows it:
 |---|---|
 | "If they know the account number, postcode and date of birth, they're genuine." | All three can be found or bought. Changes and money need a step-up check using details already held. |
 | "Caller ID shows the school's number, so it's the school." | Numbers can be faked. Call back on the number you hold. |
-| "Send the code to whichever number the caller gives." | Only to details already on the account. Otherwise the code proves nothing. |
+| "Send the reset to whichever number or email the caller gives." | Only to details already on the account. Otherwise it goes straight to whoever is calling. |
 | "Read the details on file and let them confirm." | Leading questions hand the caller the answers. Ask open questions. |
 | "Being strict is bad customer service." | Genuine customers want their accounts protected. Explain the check and make it quick. |
 | "If they're this angry, they must be genuine." | Anger is a common tactic. Treat every caller the same way. |
@@ -119,7 +119,7 @@ As the reference card shows it:
 | "Call recordings are secure, so card details on them are fine." | The security code must not be kept after authorisation, even encrypted. |
 | "A failed attempt isn't worth reporting." | Failed attempts show the pattern, and the next call may reach a colleague who says yes. |
 | "A scammed customer is the bank's problem." | You may be the first to notice. A minute of plain advice can save someone's savings. |
-| "We should never use one-time codes, because customers are told not to share them." | Codes can be used safely: only when the customer called you, sent only to details already held, with a message saying what it's for. Advisers never ask for a code on a call they made. |
+| "It's fine to ask a customer to read back a code; we sent it." | It teaches customers the very habit scammers use. Larkspur's advisers ring back, or let the customer approve the request themselves. Organisations that do use read-back codes keep them to calls the customer made, and never ask for one on a call they made. |
 
 ## Real cases
 
@@ -133,9 +133,9 @@ Use these as background and inspiration only. Game content uses fictional names.
 
 | Slot | Default (Larkspur) |
 |---|---|
-| Ladder of checks | General information: none. Account information: account number, postcode and a named contact's name, asked not read out. Changes and money: change history checked, then a call back on the number held or a code to details held |
+| Ladder of checks | General information: none. Account information: account number, postcode and a named contact's name, asked not read out. Changes and money: change history checked, then a call back on the number held, or an approval or reset sent to details already held |
 | Recent change window | Treat any change of contact details in the last 30 days as a reason to use the details from before it |
-| Code message wording | "Larkspur code: 482913. Give it only to a Larkspur adviser on a call YOU made to us. We will never call you to ask for it." (number generated per play, never voiced) |
+| Read-back codes | Off. If an organisation switches them on, the message reads: "Larkspur code: 482913. Give it only to a Larkspur adviser on a call YOU made to us. We will never call you to ask for it." (number generated per play, never voiced) |
 | Refunds | Only to the original payment method |
 | Secure payment route | Keypad entry with masking for calls; payment links for chats and emails |
 | Card terminals | One terminal at the warehouse trade counter (turns on the front desk scene) |
@@ -148,10 +148,10 @@ Use these as background and inspiration only. Game content uses fictional names.
 ## Glossary
 
 - **Verification:** checking that a caller is who they say they are, and is allowed to ask for what they want.
-- **Step-up check:** a stronger check used for changes and money, such as a call back or a code to details already held.
+- **Step-up check:** a stronger check used for changes and money, such as a call back, or an approval sent to details already held.
 - **Account takeover:** a criminal gaining control of a customer's account, usually by changing its contact details first.
 - **Call back:** ending the call and ringing the customer on a number the organisation already holds.
-- **One-time code:** a short code sent to a phone or email already on the account, to prove the caller has it.
+- **One-time code:** a short code sent to a phone or email, which its owner types in themselves and never reads out to anyone.
 - **Spoofing:** faking the phone number or email address a message appears to come from.
 - **Blagging:** tricking someone into giving out personal data; an offence under the Data Protection Act 2018.
 - **Named contact:** a person the customer has authorised to act on their account.

@@ -59,13 +59,13 @@ Contributes to (references in `02_COMPLIANCE_MAPPING.md`):
 | Learn | Dev Kapoor, the hospital's information governance manager, on his monthly ward walkabout: need to know, your smartcard is you, who's asking, report it; then Dr Mulligan's 60-second video on the duty to share | NPC explainer and video (EX-01, BE-08; EX-02, MG-21) | 4 |
 | Practise | "Share or Don't?" (eight requests, with instant feedback), then Dev's 60-second ward sweep before the consultant's round | Minigame drill (MG-20 items, BE-10) | 3 |
 | Apply | 10:00 to 14:00: get three patients home while a smartcard is left in, a phish lands in the ward mailbox, a well-known patient arrives, a caller says she's her agent, pathology goes down, a stranger walks into the staff corridor and the care home needs the discharge details | Game (BE-18, patient record viewer, MG-01, MG-04) | 7 to 8 |
-| Debrief | "Every look is logged": Dev shows the record access audit for the well-known patient, then each decision and where it led | Debrief screen (BE-02), Dev and Imani (the ward manager) | 2 |
+| Debrief | "Every look is logged": Dev shows the record access audit for the well-known patient, then each decision and where it led | Debrief screen (BE-02), Dev and Rodel (the ward manager) | 2 |
 | Check | Six scenario questions | Quiz (MG-20) | 2 |
 | Reference | The ward card: need to know, smartcards, who's asking, share for care, downtime, report | Intranet (BE-09) | under 1 |
 
 ## Reuse from existing Break Escape content
 
-- **Rooms:** the hospital set: `room_hospital_ward` (Ward 12), `room_hospital_reception` (redressed as the ward's front desk), `room_hospital_hall_ward` (the ward corridor, with its trolley bed), `room_hospital_hall` (the staff-only corridor), `room_hospital_staff` (the staff room, with the screen for the video), `room_hospital_office` (Imani's office), `room_hospital_cto_office` (the small information governance office), `room_hospital_waiting_1x1gu` (the relatives' room). No new rooms.
+- **Rooms:** the hospital set: `room_hospital_ward` (Ward 12), `room_hospital_reception` (redressed as the ward's front desk), `room_hospital_hall_ward` (the ward corridor, with its trolley bed), `room_hospital_hall` (the staff-only corridor), `room_hospital_staff` (the staff room, with the screen for the video), `room_hospital_office` (Rodel's office), `room_hospital_cto_office` (the small information governance office), `room_hospital_waiting_1x1gu` (the relatives' room). No new rooms.
 - **Sprites:** the generic nurse sprites `female_nurse1_v2` and `female_nurse2_v2` with their talk and viseme sheets (m02 gives them display names in the same way); the `female_hospital_staff` talk and viseme sheets for a portrait-only speaker; `male_telecom_v2` for the man in hi-vis; the patient bed sprites `bed1` to `bed6` and `bed_empty`. None of sis01's named characters (Sarah Mitchell, Amy Clarke, Dr Hartley and the rest) and none of m02's.
 - **Props:** `ehr-terminal` (object art), `hospital_chart_board1` (the bed board), `nurse_call_display1`, `clipboard_chart1`, `drug_trolley1`, `monitor_stand1`, `bp_monitor1`, `infusion_pump`, `health_poster1` to `health_poster6`, `handwash_poster1`, `phone1`, `id_badge`.
 - **Minigames:** `ehr-terminal` (`public/break_escape/js/minigames/ehr-terminal/`): a patient list and record panel, with an offline mode driven by the `ehr_status` global and a configurable `customMessage`, as the base for the patient record viewer; `forensic-data-platform` (tabs and tables) for the record access audit; `phone-chat` for ward calls and bleep messages until MG-04 exists; `person-chat`; `notes` for the downtime pack and the phone enquiry sheet; `examine` for the smartcard in the reader and a USB stick.
@@ -86,6 +86,7 @@ Contributes to (references in `02_COMPLIANCE_MAPPING.md`):
 - **EX-02 and MG-21:** Dr Mulligan's video on the staff room screen.
 - **BE-07 Micro-drill launcher:** "Share or Don't?".
 - **MG-17** (optional): a single-call mode with a "Who's asking?" checklist for ward phone enquiries, if the desk is built for role_03 and role_06.
+- **EX-08 Printable poster and briefing pack:** an "Every look is logged" poster for staff areas, the ward card for the desk beside the phone, and a five-minute huddle briefing.
 
 ## Organisation-specific content
 

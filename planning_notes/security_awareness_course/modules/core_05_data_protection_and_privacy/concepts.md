@@ -1,15 +1,15 @@
 # core_05 concepts: Data protection and privacy
 
-This file is the source of truth for the module. The game, the explainers, the knowledge check and the reference card must all match it. Legal detail is kept light on purpose: staff need to know what to do, not article numbers. The law was checked on 14 October 2026 against legislation.gov.uk, the ICO and GOV.UK; it changed in stages through 2025 and 2026, so check it again before each annual edition.
+This file is the source of truth for the module. The game, the explainers, the knowledge check and the reference card must all match it. Legal detail is kept light on purpose: staff need to know what to do, not article numbers. The law was checked on 14 October 2026 against legislation.gov.uk, the regulator's guidance and GOV.UK; it changed in stages through 2025 and 2026, so check it again before each annual edition.
 
 Boundaries: how to send, share, label, print and dispose of information safely (including redaction and hidden content) is taught in core_06, and this file points there. HR data in depth is role_05. General incident reporting is core_04; this module teaches the personal data part of it.
 
 ## Key messages
 
 1. **Personal data is anything about a living person who can be identified,** even without a name. Some of it (health, ethnicity, religion, sexuality and a few more) is special category data and needs extra care. Behind every row in a spreadsheet is a person.
-2. **Use it for the job, and share it only with people who need it.** Check who is asking. If you're not sure, offer to pass a message on, and ask the DPO.
-3. **People have rights over their data, and they don't have to use the right words.** If someone asks to see, correct or delete their data, asks us to stop using it, or complains about how we used it, pass it to the DPO the same day.
-4. **If personal data goes to the wrong place, is lost, or is seen by someone who shouldn't see it, report it at once.** Don't wait to be sure and don't try to fix it alone. The organisation may have only 72 hours to tell the regulator.
+2. **Use it for the job, and share it only with people who need it.** Check who is asking. If you are not sure, offer to pass a message on, and ask the DPO.
+3. **People have rights over their data, and they do not have to use the right words.** If someone asks to see, correct or delete their data, asks us to stop using it, or complains about how we used it, pass it to the DPO the same day.
+4. **If personal data goes to the wrong place, is lost, or is seen by someone who should not see it, report it at once.** Do not wait to be sure, and do not try to fix it alone. The organisation may have only 72 hours to tell the regulator.
 5. **Everyone makes mistakes. Reporting fast is what counts,** and nobody is in trouble for reporting.
 
 ## Concepts
@@ -101,12 +101,12 @@ Mistakes with personal data happen to careful people, usually when they are busy
 
 As the reference card shows it:
 
-1. **Is it personal data?** If it's about a living person who could be identified, yes, even without a name. Health, ethnicity, religion, sexuality, union membership, genetics and biometrics are special category: take extra care.
-2. **Share on a need-to-know basis.** Only with people who need it for their job, and only what they need. Check who is asking. Callers asking about a colleague or a customer get a message passed on, not details. Police and other official requests go to the DPO.
-3. **Spot requests and complaints.** Someone wants to see, correct or delete their data, wants us to stop using it, or is unhappy with how we used it, in any words, by any channel: pass it to the DPO the same day. Don't send anything yourself.
-4. **Report breaches and near misses at once,** through the usual reporting route, and say it involves personal data. Wrong recipient, lost papers or device, data seen by someone who shouldn't, data changed or lost. Don't wait to be sure, don't try to fix it alone, don't delete the evidence. Then do what the DPO asks.
+1. **Is it personal data?** It is if it is about a living person who could be identified, even without a name. Health, ethnicity, religion, sexuality, union membership, genetics and biometrics are special category data. Take extra care with them.
+2. **Share on a need-to-know basis.** Share only with people who need it for their job, and only what they need. Check who is asking. If a caller asks about a colleague or a customer, offer to pass on a message. Send requests from the police and other official bodies to the DPO.
+3. **Spot requests and complaints.** People may ask to see, correct or delete their data, or ask us to stop using it. They may complain about how we used it. They can use any words and any channel. Pass it to the DPO the same day. Do not send any data yourself.
+4. **Report breaches and near misses at once.** Use the usual reporting route and say it involves personal data. For example: the wrong recipient, lost papers or a lost device, data seen by someone who should not see it, data changed or lost. Do not wait to be sure. Do not try to fix it alone, and do not delete anything. Then do what the DPO asks.
 5. **Thinking of a new use for personal data?** Ask the DPO first.
-6. **Finished with it?** Keep it only as long as the retention schedule says, then dispose of it securely (core_06).
+6. **Finished with it?** Keep it only as long as the retention schedule says. Then dispose of it securely (core_06).
 
 ## Misconceptions and outdated advice
 
@@ -151,6 +151,7 @@ The ICO's breach guidance also gives a general picture: human error is the leadi
 | Retention schedule | "Retention schedule" page on The Lark |
 | Data protection policy | Uploaded through HA-07 and acknowledged at the end of the module |
 | Who the organisation acts for | "For some services we handle personal data for our clients. The DPO works out who must be told what." |
+| Support route (with the content note and on the reference card) | The organisation's employee assistance service or other support, as the organisation names it. The course never names a support service it has not checked |
 
 ## Glossary
 
