@@ -91,7 +91,7 @@ Suggested build order for Phase 0: BE-19 and BE-01 first (they unlock the mentor
 }
 ```
 
-`effective` says which record counts when a behaviour is recorded more than once: `first` (baselines such as the hook), `latest` (the default) or `best`. `appliesWhen` is a globals condition in the existing syntax (`JS/utils/conditional-text.js`); when it is false at close time the behaviour is recorded as `not_applicable` (core_01's C01-B7, which only applies to players who clicked). The rating map and `critical` rules are stripped from the bootstrap scenario, like `targetFlags`.
+`effective` says which record counts when a behaviour is recorded more than once: `first` (baselines such as the hook), `latest` (the default) or `best`. An optional `appliesWhen` is a globals condition in the existing syntax (`JS/utils/conditional-text.js`); when it is false at close time the behaviour is recorded as `not_applicable` (core_01's C01-B7, which only applies to players who clicked). The rating map and `critical` rules are stripped from the bootstrap scenario, like `targetFlags`.
 
 *What gets tagged.* Content reports a behaviour id and an option key, never a rating:
 
