@@ -11,6 +11,7 @@
 //   {"set": {...}}                           globals the engine would set; each change raises
 //                                            global_variable_changed:<name>
 //   {"talk": "phone", "knot": "opt", "picks": ["substr", 0, ...], "reload": true|"page"|"wipe"}
+//                                            (a pick may also be a list of substrings: the first choice matching any)
 //   {"enter": "room_id"}                     raises room_entered:<room_id>
 //   {"pickup": "item_id"}                    picks an item up off the floor (no onRead; type looked up)
 //   {"read": "item_id"}                      reads an item (its onRead setVariable)
@@ -108,6 +109,7 @@ function act(npcId, m) {
   if (m.unlockTask) { if (TASKS[m.unlockTask] === 'locked') { TASKS[m.unlockTask] = 'unlocked'; out(`      [task unlocked: ${m.unlockTask}]`); } }
   if (m.unlockAim) out(`      [aim unlocked: ${m.unlockAim}]`);
   if (m.setVisible) out(`      [${npcId} shown]`);
+  if (m.setVisible === false) out(`      [${npcId} hidden]`);
   if (m.sendTimedMessage) {
     const t = m.sendTimedMessage;
     if (t.skipIfGlobal && G[t.skipIfGlobal]) out(`      [text from ${npcId} skipped: ${t.skipIfGlobal}]`);
@@ -221,7 +223,7 @@ for (const step of route.steps) {
       for (const tg of tags) {
         if (tg.startsWith('set_global:')) { const [, k, v] = tg.split(':'); const val = v === 'true' ? true : v === 'false' ? false : (/^-?\d+$/.test(v) ? +v : v); out(`      [set_global ${k}=${v}]`); setGlobal(k, val, true); syncIn(s); }
         if (tg === 'exit_conversation') exited = true;
-        if (tg === 'hostile' || tg.startsWith('hostile:')) { out(`      [engine: ${tg.includes(':') ? tg.split(':')[1] : NPC_OF[name]} hostile]`); emit('npc_hostile_state_changed', { isHostile: true }); }
+        if (tg === 'hostile' || tg.startsWith('hostile:')) { const hid = tg.includes(':') ? tg.split(':')[1] : NPC_OF[name]; out(`      [engine: ${hid} hostile]`); emit('npc_hostile_state_changed', { isHostile: true, data: { npcId: hid, isHostile: true } }); }
         if (tg.startsWith('complete_task:')) { const id = tg.split(':')[1]; TASKS[id] = 'completed'; out(`      [task: ${id}]`); }
         if (tg.startsWith('unlock_task:')) { const id = tg.split(':')[1]; if (TASKS[id] === 'locked') TASKS[id] = 'unlocked'; out(`      [task unlocked: ${id}]`); }
         if (tg.startsWith('give_item:')) { const id = tg.split(':')[2]; receive(id, true); syncIn(s); }
@@ -237,7 +239,7 @@ for (const step of route.steps) {
     const ch = s.currentChoices.map(c => c.text);
     heard.push(...ch.map(c => `[choice] ${c}`));
     if (!picks.length) { ch.forEach((c, j) => out(`     [${j}] ${c}`)); out('  [stopped: no pick]'); break; }
-    const p = picks.shift(); const idx = typeof p === 'number' ? p : ch.findIndex(c => c.toLowerCase().includes(String(p).toLowerCase()));
+    const p = picks.shift(); const idx = typeof p === 'number' ? p : Array.isArray(p) ? ch.findIndex(c => p.some(x => c.toLowerCase().includes(String(x).toLowerCase()))) : ch.findIndex(c => c.toLowerCase().includes(String(p).toLowerCase()));
     if (idx < 0 || idx >= ch.length) { ch.forEach((c, j) => out(`     [${j}] ${c}`)); out(`  [pick not found: ${p}]`); fail(); break; }
     if (ch.length > 1) out(`     (${ch.length} options)`);
     out(' > ' + ch[idx]); stats.choices++; stats.run = 0; exited = false;

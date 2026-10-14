@@ -75,6 +75,7 @@ VAR found_halloran_vetting = false
 VAR named_before_portal = false
 // PASS 5 R2 (B2): a wrong reason was given before the right one
 VAR torres_reason_guessed = false
+VAR torres_called_in = false // Synced scenario global (struggling run A, D1): the player backed off a hostile Torres and HaX sent Security (final_choice "arrest"); set by m05_phone_agent_0x99
 VAR torres_fight_offered = false // Synced scenario global (scenario design R1, m2): Torres turned on the player from the fight line, set in combat_offer; read by the debrief
 VAR door_log_hinted = false // Synced scenario global (puzzle R1, P1/D-D): HaX spelled out the front-door method; bars the early-naming reward
 VAR door_log_reasoned_first = false // Synced scenario global (pass 5 R3-1): the front-door reason given in a reason menu, before the naming; set only in the *log_reason_right knots. The early-naming reward reads this, not door_log_reasoned
@@ -250,6 +251,10 @@ Agent HaX: Let's go through it.
     Agent HaX: The final upload stopped at ninety-nine per cent. Most of the rotation windows were in the last of it, and they never went.
     Agent HaX: One region's did. When Security moved on Dr Halloran, he brought the upload forward, and its window went out before you got there.
     Agent HaX: The Home Office is re-keying the East of England a month early.
+// Struggling run A (D1): Security's breaker stopped it, at 99.
+- torres_called_in:
+    Agent HaX: The final upload stopped at ninety-nine per cent, when the data-centre breaker went. The rotation windows were in the last of it, and they never went.
+    Agent HaX: One per cent from the whole lot. Without it, what they have is a very expensive paperweight.
 - named_before_portal:
     Agent HaX: The final upload stopped at ninety-one per cent. The key material left in pieces over six weeks. The rotation windows were in the last of it, and they never went.
     Agent HaX: Without those, what they have is a very expensive paperweight.
@@ -269,7 +274,14 @@ Agent HaX: Let's go through it.
     Agent HaX: A month of overtime for the Home Office. Nobody dies of it, because they moved first.
     -> the_night
 + {not halloran_accused} [How close was it?]
-    Agent HaX: {named_before_portal: Nine per cent to spare. You bought that yourself.|Three per cent. I'd rather not do that again.}
+    {
+    - torres_called_in:
+        Agent HaX: One per cent. The breaker did what you couldn't.
+    - named_before_portal:
+        Agent HaX: Nine per cent to spare. You bought that yourself.
+    - else:
+        Agent HaX: Three per cent. I'd rather not do that again.
+    }
     -> the_night
 + {not halloran_accused} [Then it worked.]
     Agent HaX: It worked. This time.
@@ -295,6 +307,9 @@ Agent HaX: Let's go through it.
     Agent HaX: Dr Halloran spent hours suspended because of a badge log read halfway. She was in Zurich. She's lodged a complaint, and she's right to.
 - door_log_reasoned and torres_reason_guessed:
     Agent HaX: You got to the front-door times in the end. It took a couple of goes.
+// Struggling run A (D3): a wrong name or reason, without the log reasoning.
+- torres_reason_guessed:
+    Agent HaX: You gave a wrong name or a wrong reason before the right one. Patricia's report says so, and so does mine.
 - door_log_reasoned:
     Agent HaX: You read past her line on the badge log. Her spare on the server hallway, his badge on the front door six minutes before, every night.
 - halloran_questioned:
@@ -410,6 +425,9 @@ Agent HaX: Once you were in, one account was allowed to run far more than its jo
 }
 {final_choice == "combat_nonlethal":
     -> torres_subdued_path
+}
+{torres_called_in:
+    -> torres_called_in_path
 }
 {final_choice == "arrest" and elena_treatment_funded:
     -> torres_arrested_with_treatment_path
@@ -558,6 +576,27 @@ Agent HaX: Elena's treatment is unfunded. He never talked to us, so there's no d
 + [Is there any way back to a cooperation deal?]
     Agent HaX: Not through us. He's in police hands now, and we don't get to walk into their interview rooms.
     -> recruiter_reckoning
+
+// ===========================================
+// PATH 3b: CALLED IN (struggling run A, D1)
+// The player backed off a hostile Torres and HaX sent Security.
+// ===========================================
+
+=== torres_called_in_path ===
+#speaker:agent_0x99
+{patricia_ko:
+    Agent HaX: You backed off and I called it in. The night desk's guards walked him out, and the police were waiting at the side door.
+- else:
+    Agent HaX: You backed off and I called it in. Patricia's guards walked him out, and she handed him to the police.
+}
+Agent HaX: He hasn't said a word since. Nobody talked to him with the upload dead, so there was never a deal to offer.
+Agent HaX: Elena's treatment is unfunded. Sofia and Miguel have a father on remand.
++ [I couldn't win that fight.]
+    Agent HaX: Then backing off was right. It cost us him, and I'd still rather have you back.
+    -> campaign_impact_arrested_no_coop
++ [He'd stopped listening. Talking was over.]
+    Agent HaX: Maybe. We'll never know what he'd have said with the upload dead and his hands empty.
+    -> campaign_impact_arrested_no_coop
 
 // ===========================================
 // PATH 4: ARRESTED (no cooperation)

@@ -24,7 +24,7 @@
 // as in person. phone_who is choices-only; every naming knot re-checks
 // torres_identified and patricia_ko at its top.
 // PASS 4 (dialogue): her own lines carry no prefix (phone convention). The
-// case summary is her reading back her notes, not scripted player lines.
+// case is stated by the player (struggling run A, D3), not read back by her.
 // ===========================================
 
 // Synced from scenario globals
@@ -135,9 +135,12 @@ Go on, then. Who?
 {torres_identified: -> hub}
 + {found_door_log and not halloran_accused} [Dr Ruth Halloran.]
     -> phone_accuse_halloran
+// Struggling run A (D3, M3): a wrong name ends the call; her own facts.
 + {found_door_log} [Ben Ashworth.]
     ~ torres_reason_guessed = true
-    Thursday at eight? The transfers run two till four, and he logged it with Owen. Try again.
+    Ben's on that log one night, at eight on a Thursday evening. The transfers I flagged run between two and four in the morning.
+    Don't throw names at me. Ring back when you're sure.
+    #exit_conversation
     -> hub
 + {found_door_log or torres_suspected or has_motive() or has_exfil()} [David Torres.]
     -> phone_name_torres
@@ -152,7 +155,9 @@ Go on, then. Who?
 {found_halloran_alibi:
     // Puzzle R1 (P2): striking a cleared decoy is a guess too.
     ~ torres_reason_guessed = true
-    Halloran was in Zurich the night that badge first went in. You've seen that. Try again.
+    Halloran was in Zurich the night that badge first went in. You've seen that.
+    Don't throw names at me. Ring back when you're sure.
+    #exit_conversation
     -> hub
 }
 Ruth. Her spare, at two in the morning. All right. I'll suspend her access and keep her in the lab for the police.
@@ -165,8 +170,14 @@ If you're wrong, that's her career. And whoever it really is has just watched Se
 {patricia_ko: -> no_answer}
 {torres_identified: -> hub}
 #speaker:patricia_morgan
+// Struggling run A (D3): with both halves, the player states the case.
 {has_motive() and has_exfil():
-    -> phone_significant_findings
+    {torres_reason_guessed:
+        Again? Fine. I'm writing this down. Why him?
+    - else:
+        David. Slowly, I'm writing this down. Why?
+    }
+    -> phone_case_why
 }
 // PASS 5 R2 (B2): the retry is allowed, and noticed.
 {torres_reason_guessed:
@@ -231,29 +242,52 @@ That's a pattern. It's not a reason, and it's not proof the data's going anywher
 }
 -> hub
 
+// Struggling run A (D3): the full case, stated by the player (see
+// m05_npc_patricia_morgan.ink, case_why). Choices-only knots that re-check
+// state for a re-navigation; a wrong answer ends the call.
+=== phone_case_why ===
+{patricia_ko: -> no_answer}
+{torres_identified: -> hub}
++ [He's the cryptography lead. He'd know how.]
+    ~ torres_reason_guessed = true
+    That's how anyone on that team could. I asked why him.
+    #exit_conversation
+    -> hub
++ {found_medical_bills or found_vetting_file} [Money. His wife's treatment isn't covered, and he's borrowed against the house.]
+    Money. All right. And the proof it's leaving?
+    -> phone_case_proof
++ [He's been distracted for months.]
+    ~ torres_reason_guessed = true
+    So has half this building. That's a mood, not a motive.
+    #exit_conversation
+    -> hub
++ {found_torres_journal} [His own journal. He knows what it costs, and he's doing it anyway.]
+    In his own hand. All right. And the proof it's leaving?
+    -> phone_case_proof
+
+=== phone_case_proof ===
+{patricia_ko: -> no_answer}
+{torres_identified: -> hub}
++ {found_door_log} [His own badge is on the server hallway those nights.]
+    ~ torres_reason_guessed = true
+    Read it again. His badge never touches the server hallway. Hers does.
+    #exit_conversation
+    -> hub
++ {flag3_submitted} [The staging manifest on the research portal. His name's on it.]
+    -> phone_significant_findings
++ {found_manifest} [The staging manifest in the data centre. "Staged by: D. Torres."]
+    -> phone_significant_findings
++ [He's been in late, and nobody else has.]
+    ~ torres_reason_guessed = true
+    Late isn't leaving. I need the data going out, under his name.
+    #exit_conversation
+    -> hub
++ {found_upload_schedule} [The upload schedule. He's the operator, on site, tonight.]
+    -> phone_significant_findings
+
 === phone_significant_findings ===
 {torres_identified: -> hub}
 #speaker:patricia_morgan
-Slowly. I'm writing this down.
-{found_medical_bills or found_vetting_file:
-    Money. His wife's treatment isn't covered, and he's borrowed against the house.
-}
-{found_torres_journal:
-    His own journal. He knows what it costs, and he's doing it anyway.
-}
-{flag3_submitted:
-    The staging manifest on the research portal, in his name.
-- else:
-    {found_manifest:
-        A staging manifest in the data centre. "Staged by: D. Torres."
-    }
-    {found_upload_schedule:
-        The upload schedule names him as operator, on site. Tonight, half past eight.
-    }
-}
-{found_pamphlet:
-    And a firm called TalentStack ringing his desk.
-}
 ...Damn. His kids drew on the tablecloth at our Christmas party.
 {halloran_accused:
     And I'll have Ruth's access back on tonight. You can do your own apologising.

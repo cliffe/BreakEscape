@@ -21,7 +21,7 @@ Infiltrate Quantum Dynamics Corporation to identify and stop an insider threat. 
 
 4 hops through story aims — minimum mandatory sequence to reach mission completion:
 
-**Get Inside Quantum Dynamics → Work Out Who Has Been in the Servers → Prove the Exfiltration on the Server → + → Decide What Happens to Him**
+**Get Inside Quantum Dynamics → Work Out Who Has Been in the Servers → Prove the Exfiltration on the Server → + → Decide the Insider's Fate**
 
 ## How to Read These Diagrams
 
@@ -190,7 +190,7 @@ flowchart TD
   aim_investigate_employees{{"Work Out Who Has Been in the Servers"}}
   aim_gather_evidence{{"Find Out Why"}}
   aim_exploit_infrastructure{{"Prove the Exfiltration on the Server"}}
-  aim_confront_insider{{"Decide What Happens to Him"}}
+  aim_confront_insider{{"Decide the Insider's Fate"}}
   aim_andgate_confront_insider((" + "))
   story_knock_out_patricia_morgan>"Knock out Patricia Morgan"]
   story_knock_out_owen_gallagher>"Knock out Owen Gallagher"]
@@ -298,7 +298,7 @@ flowchart TD
   aim_investigate_employees{{"Work Out Who Has Been in the Servers"}}
   aim_gather_evidence{{"Find Out Why"}}
   aim_exploit_infrastructure{{"Prove the Exfiltration on the Server"}}
-  aim_confront_insider{{"Decide What Happens to Him"}}
+  aim_confront_insider{{"Decide the Insider's Fate"}}
   aim_andgate_confront_insider((" + "))
   story_knock_out_patricia_morgan>"Knock out Patricia Morgan"]
   story_knock_out_owen_gallagher>"Knock out Owen Gallagher"]

@@ -15,8 +15,8 @@
 // for torres_suspected, so her menu never points at him first.
 //
 // PASS 4 (dialogue): hub_quiet gives the hub a re-entry line (m03 pattern),
-// set on every exit. The case summary at significant_findings is Patricia
-// reading back her notes, not scripted player lines. The vetting-file
+// set on every exit. Struggling run A (D3): the full case is stated by the
+// player in case_why and case_proof (she used to read it back from the finds). The vetting-file
 // hand-over no longer says how many files point anywhere.
 // ===========================================
 
@@ -355,10 +355,15 @@ Patricia Morgan: Go on, then. Who?
 {torres_identified: -> hub}
 + {found_door_log and not halloran_accused} [Dr Ruth Halloran.]
     -> accuse_halloran
+// Struggling run A (D3, M3): a wrong name costs her trust and the conversation,
+// and she gives her own facts rather than ones the player may not have seen.
 + {found_door_log} [Ben Ashworth.]
     ~ torres_reason_guessed = true
-    Patricia Morgan: Thursday at eight? The transfers run two till four, and he logged it with Owen. Try again.
-    -> hub
+    ~ patricia_influence -= 1
+    #influence_decreased
+    Patricia Morgan: Ben's on that log one night, at eight on a Thursday evening. The transfers I flagged run between two and four in the morning.
+    Patricia Morgan: Don't throw names at me. Come back when you're sure.
+    -> reason_wrong
 + {found_door_log or torres_suspected or has_motive() or has_exfil()} [David Torres.]
     -> name_torres
 + [I've got a feeling. Nothing I can show you yet.]
@@ -370,8 +375,11 @@ Patricia Morgan: Go on, then. Who?
 {found_halloran_alibi:
     // Puzzle R1 (P2): striking a cleared decoy is a guess too.
     ~ torres_reason_guessed = true
-    Patricia Morgan: Halloran was in Zurich the night that badge first went in. You've seen that. Try again.
-    -> hub
+    ~ patricia_influence -= 1
+    #influence_decreased
+    Patricia Morgan: Halloran was in Zurich the night that badge first went in. You've seen that.
+    Patricia Morgan: Don't throw names at me. Come back when you're sure.
+    -> reason_wrong
 }
 Patricia Morgan: Ruth. Her spare, on the server hallway at two in the morning.
 Patricia Morgan: I've waited three weeks to do something. All right. I'll suspend her access and keep her in the lab until the police can talk to her.
@@ -388,8 +396,15 @@ Patricia Morgan: If you're wrong, that's her career. And whoever it really is ha
 // (person-chat-minigame.js:525-537); never after the naming.
 {torres_identified: -> hub}
 #speaker:patricia_morgan
+// Struggling run A (D3): with both halves in hand, the player states the
+// case (why, then proof); she no longer reads it back from what was found.
 {has_motive() and has_exfil():
-    -> significant_findings
+    {torres_reason_guessed:
+        Patricia Morgan: Again? Fine. I'm writing this down. Why him?
+    - else:
+        Patricia Morgan: David. Slowly, I'm writing this down. Why?
+    }
+    -> case_why
 }
 // PASS 5 R2 (B2): the retry is allowed, and noticed.
 {torres_reason_guessed:
@@ -468,32 +483,47 @@ Patricia Morgan: That's a pattern. It's not a reason, and it's not proof the dat
 }
 -> hub
 
-=== significant_findings ===
+// Struggling run A (D3): the full case, stated by the player. Choices-only
+// knots (a reopened chat re-runs the knot that owns the saved choice). Each
+// menu has the true answers the player holds and two that aren't evidence;
+// a wrong one costs her trust and ends the conversation, as in torres_why.
+=== case_why ===
 {torres_identified: -> hub}
-#speaker:patricia_morgan
++ [He's the cryptography lead. He'd know how.]
+    ~ patricia_influence -= 1
+    #influence_decreased
+    Patricia Morgan: That's how anyone on that team could. I asked why him.
+    -> reason_wrong
++ {found_medical_bills or found_vetting_file} [Money. His wife's treatment isn't covered, and he's borrowed against the house.]
+    Patricia Morgan: Money. All right. And the proof it's leaving?
+    -> case_proof
++ [He's been distracted for months.]
+    ~ patricia_influence -= 1
+    #influence_decreased
+    Patricia Morgan: So has half this building. That's a mood, not a motive.
+    -> reason_wrong
++ {found_torres_journal} [His own journal. He knows what it costs, and he's doing it anyway.]
+    Patricia Morgan: In his own hand. All right. And the proof it's leaving?
+    -> case_proof
 
-Patricia Morgan: Slowly. I'm writing this down.
-{found_medical_bills or found_vetting_file:
-    Patricia Morgan: Money. His wife's treatment isn't covered, and he's borrowed against the house.
-}
-{found_torres_journal:
-    Patricia Morgan: His own journal. He knows what it costs, and he's doing it anyway.
-}
-{flag3_submitted:
-    Patricia Morgan: The staging manifest on the research portal, in his name.
-- else:
-    {found_manifest:
-        Patricia Morgan: A staging manifest in the data centre. "Staged by: D. Torres."
-    }
-    {found_upload_schedule:
-        Patricia Morgan: The upload schedule names him as operator, on site. Tonight, half past eight.
-    }
-}
-{found_pamphlet:
-    Patricia Morgan: And a firm called TalentStack ringing his desk.
-}
-
--> significant_reaction
+=== case_proof ===
+{torres_identified: -> hub}
++ {found_door_log} [His own badge is on the server hallway those nights.]
+    ~ patricia_influence -= 1
+    #influence_decreased
+    Patricia Morgan: Read it again. His badge never touches the server hallway. Hers does.
+    -> reason_wrong
++ {flag3_submitted} [The staging manifest on the research portal. His name's on it.]
+    -> significant_reaction
++ {found_manifest} [The staging manifest in the data centre. "Staged by: D. Torres."]
+    -> significant_reaction
++ [He's been in late, and nobody else has.]
+    ~ patricia_influence -= 1
+    #influence_decreased
+    Patricia Morgan: Late isn't leaving. I need the data going out, under his name.
+    -> reason_wrong
++ {found_upload_schedule} [The upload schedule. He's the operator, on site, tonight.]
+    -> significant_reaction
 
 // Phase 4 dialogue C1 (D5-4): a player beat breaks the run and lands the
 // Christmas-party line. A chat closed on these choices re-runs this knot, so

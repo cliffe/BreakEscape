@@ -69,6 +69,8 @@ VAR owen_refused_password = false // Synced scenario global (puzzle R1 P6): set 
 VAR halloran_ko = false // Synced scenario global (KO): read by the status read (scenario design R1, m5)
 VAR door_log_hinted = false // Synced scenario global (pass 5 puzzle R1, P1/D-D): HaX has spelled out the front-door method; set here only. Bars the early-naming reward
 VAR door_log_reasoned_first = false // Synced scenario global (pass 5 R3-1): the front-door reason given in a reason menu, before the naming; set only in the *log_reason_right knots. The early-naming reward reads this, not door_log_reasoned
+VAR torres_hostile = false // Synced scenario global (struggling run A, D1): Torres has turned on the player; set by the npc_hostile_state_changed mapping
+VAR torres_called_in = false // Synced scenario global (struggling run A, D1): the player backed off and HaX sent Security; set here only. Hides Torres; read by the debrief and credits
 VAR torres_reason_guessed = false // Synced scenario global (pass 5 R2 B2): a wrong reason or a wrong name was tried; also set by Patricia (m05_npc_patricia_morgan, m05_phone_patricia). Excludes the early-naming reward
 
 // Field-guide exposure flags. Each _offered is set by an eventMapping when
@@ -174,7 +176,12 @@ Someone in that building is feeding ENTROPY the keys to the 999 dispatch network
 + {patricia_ko and not torres_identified} [Patricia's down. I'll give you the name instead.]
     -> name_to_hax
 
-+ {torres_identified and final_choice == "" and not confrontation_advice_given} [I'm going in. Soft or hard?]
+// Struggling run A (D1): the way back from a fight. Second, as it is urgent.
++ {torres_hostile and not torres_ko and final_choice == ""} [I can't take him. Send Security.]
+    -> call_in_security
+
+// Not mid-fight: the advice is moot, and Send Security takes its slot (hub cap 9).
++ {torres_identified and final_choice == "" and not confrontation_advice_given and not torres_hostile} [I'm going in. Soft or hard?]
     -> confrontation_advice
 
 + {recruiter_contacted_player and not recruiter_discussed} [The Recruiter just called me.]
@@ -356,7 +363,15 @@ Whatever she offered, she's very good at making a bad trade sound reasonable. It
     ~ flag2_discussed = true
     ~ flag3_discussed = true
     ~ flag4_discussed = true
-    {final_choice == "": Read the number on that sign-off before you face Torres. He's seen it too.|That's the number he read, and kept going.}
+    // Struggling run A (D2): no name until the player has given one.
+    {
+    - final_choice != "":
+        That's the number he read, and kept going.
+    - torres_identified:
+        Read the number on that sign-off before you face Torres. He's seen it too.
+    - else:
+        Read the number on that sign-off. Whoever's been staging this has seen it too.
+    }
 - flag3_submitted and not flag3_discussed:
     ~ flag1_discussed = true
     ~ flag2_discussed = true
@@ -398,9 +413,12 @@ Go on. Who?
 {torres_identified: -> support_hub}
 + {found_door_log and not halloran_accused} [Dr Ruth Halloran.]
     -> hax_accuse_halloran
+// Struggling run A (D3, M3): a wrong name ends the call.
 + {found_door_log} [Ben Ashworth.]
     ~ torres_reason_guessed = true
-    Eight in the evening, logged with IT. The transfers run two till four. Look again.
+    Ben's on that log one evening, at eight. Patricia's transfers run two till four in the morning.
+    Don't guess at me. Call back when you're sure.
+    #exit_conversation
     -> support_hub
 + {found_door_log or torres_suspected or has_motive() or has_exfil()} [David Torres.]
     -> hax_name_torres
@@ -413,7 +431,9 @@ Go on. Who?
 {found_halloran_alibi:
     // Puzzle R1 (P2): striking a cleared decoy is a guess too.
     ~ torres_reason_guessed = true
-    Halloran was in Zurich the night that badge first went in. You know that. Look again.
+    Halloran was in Zurich the night that badge first went in. You know that.
+    Don't guess at me. Call back when you're sure.
+    #exit_conversation
     -> support_hub
 }
 Her spare, on the server hallway at night. All right. I'll have QDC's night desk suspend her access.
@@ -425,33 +445,14 @@ If she's the wrong name, the right one has just watched Security move. Be sure a
 === hax_name_torres ===
 {torres_identified: -> support_hub}
 #speaker:agent_0x99
+// Struggling run A (D3): with both halves, the player states the case.
 {has_motive() and has_exfil():
-    Why, and proof it's leaving. That's enough for me. I'm flagging him now.
-    {halloran_accused:
-        And I'll get Halloran's access back on.
-    }
-    #complete_task:identify_torres
-    ~ torres_identified = true
-    ~ patricia_authorised_office = true
-    His badge just went through the hallway and the vault's logged him in. He's at the upload terminal.
-    {not owen_ko and not office_card_obtained:
-        Owen's been told you can have the spare for his office.
-    }
-    // PASS 4 fix 6: say now, not after the climax, that the portal still matters.
-    {not all_flags_in():
-        Stop him first. But I want every flag off that portal before I pull you out.
-    }
-    // PASS 4 fix 12: the urgency matches what the player is carrying.
-    {
-    - torres_print_collected:
-        You've got his print. The window's close. Go.
-    - not vault_reader_seen:
-        The data centre door reads his fingerprint. Something from his office will carry it.
-        Get it, then get down there. The window's close.
+    {torres_reason_guessed:
+        Second go. Why him? Then the proof.
     - else:
-        You'll need his print first. His office. Then move.
+        Go on. Why him? Then the proof.
     }
-    -> hax_named_close
+    -> hax_case_why
 - else:
     // PASS 5 R2 (B2): the retry is allowed, and noticed.
     {torres_reason_guessed:
@@ -461,6 +462,76 @@ If she's the wrong name, the right one has just watched Security move. Be sure a
     }
     -> hax_torres_why
 }
+
+// Struggling run A (D3): choices-only, as Patricia's case_why; a wrong answer
+// ends the call.
+=== hax_case_why ===
+{torres_identified: -> support_hub}
++ [He's the cryptography lead. He'd know how.]
+    ~ torres_reason_guessed = true
+    That's how anyone on that team could. I asked why him.
+    #exit_conversation
+    -> support_hub
++ {found_medical_bills or found_vetting_file} [Money. His wife's treatment isn't covered, and he's borrowed against the house.]
+    Money. And the proof it's leaving?
+    -> hax_case_proof
++ [He's been distracted for months.]
+    ~ torres_reason_guessed = true
+    That's a mood, not a motive.
+    #exit_conversation
+    -> support_hub
++ {found_torres_journal} [His own journal. He knows what it costs, and he's doing it anyway.]
+    In his own hand. And the proof it's leaving?
+    -> hax_case_proof
+
+=== hax_case_proof ===
+{torres_identified: -> support_hub}
++ {found_door_log} [His own badge is on the server hallway those nights.]
+    ~ torres_reason_guessed = true
+    Read it again. His badge never touches the server hallway. Hers does.
+    #exit_conversation
+    -> support_hub
++ {flag3_submitted} [The staging manifest on the research portal. His name's on it.]
+    -> hax_named
++ {found_manifest} [The staging manifest in the data centre. "Staged by: D. Torres."]
+    -> hax_named
++ [He's been in late, and nobody else has.]
+    ~ torres_reason_guessed = true
+    Late isn't leaving. I need the data going out, under his name.
+    #exit_conversation
+    -> support_hub
++ {found_upload_schedule} [The upload schedule. He's the operator, on site, tonight.]
+    -> hax_named
+
+=== hax_named ===
+{torres_identified: -> support_hub}
+#speaker:agent_0x99
+That's enough for me. I'm flagging him now.
+{halloran_accused:
+    And I'll get Halloran's access back on.
+}
+#complete_task:identify_torres
+~ torres_identified = true
+~ patricia_authorised_office = true
+His badge just went through the hallway and the vault's logged him in. He's at the upload terminal.
+{not owen_ko and not office_card_obtained:
+    Owen's been told you can have the spare for his office.
+}
+// PASS 4 fix 6: say now, not after the climax, that the portal still matters.
+{not all_flags_in():
+    Stop him first. But I want every flag off that portal before I pull you out.
+}
+// PASS 4 fix 12: the urgency matches what the player is carrying.
+{
+- torres_print_collected:
+    You've got his print. The window's close. Go.
+- not vault_reader_seen:
+    The data centre door reads his fingerprint. Something from his office will carry it.
+    Get it, then get down there. The window's close.
+- else:
+    You'll need his print first. His office. Then move.
+}
+-> hax_named_close
 
 === hax_named_close ===
 + {found_door_log and not door_log_reasoned} [And the badge log. He comes in the front door six minutes before her spare.]
@@ -632,6 +703,28 @@ What are you doing with him?
     ...Understood. I'll note the time.
     -> post_ko_safety_net_sweep
 
+// Struggling run A (D1): Torres is hostile and the player backs off. Security
+// (or, with Patricia down, the night desk and the police) takes him; the
+// breaker stops the upload at 99. The cost: nobody talked to him, so no deal
+// and no turn; the debrief and the credits say so. torres_called_in hides him
+// (scenario mappings). Re-checks the fate first, so a reopen replays nothing.
+=== call_in_security ===
+{final_choice != "": -> support_hub}
+#speaker:agent_0x99
+~ torres_called_in = true
+~ torres_arrested = true
+#complete_task:confront_torres
+#complete_task:make_critical_choice
+~ final_choice = "arrest"
+{patricia_ko:
+    Calling QDC's night desk. Two guards, and someone on the data-centre breaker. I'll ring the police from a number that leads nowhere.
+- else:
+    Calling Patricia. Two guards are on their way, and someone's on the data-centre breaker. Stay out of his reach.
+}
+...Power's off down there. The upload got to ninety-nine per cent first. They're walking him out.
+He won't talk to anyone tonight, least of all us. Whatever deal there was, it went with him.
+-> post_ko_safety_net_sweep
+
 // PASS 5 (A2): the phone-fate path gets the same sweep-then-call-in as the
 // person-chat one (whose text comes from the conversation_closed mappings).
 === post_ko_safety_net_sweep ===
@@ -753,8 +846,12 @@ It only works if he wants out.
 -> confrontation_advice_choices
 
 === confrontation_advice_choices ===
+// Struggling run A (D1, M7): something to weigh, not an answer.
 + [Which do you recommend?]
-    I'm not going to answer that. You've seen what he's carrying. It's your call.
+    I won't choose for you. But weigh it like this.
+    Soft gets us his network and keeps his family whole, if he means it. If he doesn't, we've put a liar back inside.
+    Hard is certain tonight, and we learn nothing from him.
+    And if it turns into a fight: he's no fighter. Q switches to fists. If you can't take him, call me.
     -> support_hub
 
 + [I'll decide when I'm standing in front of him.]
@@ -872,6 +969,10 @@ See you at HQ.
     Sweep the vault if you haven't, then tell me to bring you in.
 - torres_ko:
     Torres is down and nobody's decided what happens to him. Get back to the vault.
+// Struggling run A (D1): mid-fight, or after a lost one.
+- torres_hostile:
+    Torres is swinging at anyone near that terminal. Q switches to fists, then E or click when he's in front.
+    Or tell me to send Security. It'll cost us any chance of talking to him.
 - torres_identified and not torres_print_collected:
     He's in the key vault, past the server room. The reader takes one of two prints, and his is on something in his office.
     {not office_card_obtained and not owen_ko:

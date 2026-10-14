@@ -756,7 +756,9 @@
       "door_log_hinted": false,
       "owen_refused_password": false,
       "spare_badge_taken": false,
-      "torres_fight_offered": false
+      "torres_fight_offered": false,
+      "torres_hostile": false,
+      "torres_called_in": false
     },
     "npcs": [
       {

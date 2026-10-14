@@ -877,3 +877,83 @@ Checks: validator schema pass; doors 9/9; routes 38/38. Browser (keyless :3001, 
 
 ### Fresh lighting review follow-up (orchestrator, 2026-10-14)
 `LIGHTING_REVIEW_P5_FRESH.md`: 0/0/4. Applied F1 (`"offAfter": 60` on the pre-naming blocks of server_hallway, server_room, data_center, so the lights-on moment at the naming can be seen) and F2 (red upload-stopped glow: intensity 0.9 → 1.0, floorTint 0.45 → 0.6). Validator passes; not yet seen in a browser (the next playtest should note the server side going dark after a minute and lighting at the naming). Left: F3 (document the corridor's after-hours `#b8bfce` in the plan and log) and F4 (terminal glow keyed on the `pc` prefix; re-key if another `pc*` object is ever added to the vault). Not lighting: Torres stands at (5,7), not at the terminal the confrontation describes — for the next dressing touch.
+
+## Phase 8 playtests: struggling run A fixes
+
+Input: `PASS5_STRUGGLING_A.md` (struggling first-time player, game 2411: 0 blockers, 3 majors, 7 minors; fun 4, pacing 4, clarity 3, openness 4, teaching 3). Worked example: m06's "Phase 8 playtests: struggling run A fixes". Dialogue and lighting are closed, so line changes are kept to what the findings need and listed below. Lighting blocks untouched; no engine code changed.
+
+| # | Sev. | Finding | Outcome |
+|---|---|---|---|
+| D1 | major | The Torres fight couldn't be learned in game; a lost fight left him hostile with no way back to the talk; "Which do you recommend?" was refused | **Fixed, four parts.** (1) **Numbers:** `chaseSpeed` 90 → 75, `attackDamage` 5 → 3 (m06 Kemal's). The first encounter still uses the engine default 10 until D10 lands (DECISIONS D18). (2) **How to fight:** when he turns (fight line or an unprovoked swing; not on a reload's restored hostility), HaX texts the controls and the way out; after a Restart (`game_loaded`, Torres still hostile, no fate) HaX texts again; "Where do I stand?" has a mid-fight line. New synced `torres_hostile`. (3) **A way back:** hub choice "I can't take him. Send Security." (`call_in_security`). Patricia's guards (or, with her down, the night desk and the police) walk him out and the data-centre breaker stops the upload at 99. Fate `arrest` plus new synced `torres_called_in`; Torres hidden by mapping and re-hidden on entering the vault (a hidden NPC's behaviour, chase and attacks are skipped, `npc-behavior.js` update). The cost: nobody talked to him, so no deal and no turn; the bar beat, a new debrief path and a new credit say so. Then the usual sweep and call-in. (4) **The advice:** "Which do you recommend?" now gives the trade-off without choosing, and the fight controls. Respawn location stays an engine item (D18 M1). Engine reset of hostility still recommended (D5) |
+| D2 | major (suspect) | The objectives and Owen's office line hand over Torres before the deduction | **Verified, then neutralised.** Only evidence that names him sets `torres_suspected` (bills, journal, data-centre manifest, upload schedule, flag 3, a reasoned partial naming); in this run flag 3 was harness-supplied unread, which is why it read as a giveaway. The VM manifest names him (DECISIONS D1), so in real play the panel and Owen's "I need into David Torres' office." follow evidence the player has seen; Owen's line is kept. Even so, the task titles now name nobody: "the suspect's office", "Find a motive", aim 5 "Decide the Insider's Fate". The vetting-file tick, which fired on Torres' file at the hand-over, now says what ticks it. HaX's flag-4 reaction no longer names Torres before he is named. D1 now notes what changes if the SecGen manifest change is approved |
+| D3 | major (suspect) | Wrong accusations cost nothing; Patricia assembled "the why and the proof" for the player | **Fixed.** (1) **Costs:** Ben, or Halloran after her alibi, now costs Patricia's trust (in person) and ends the conversation or call, at Patricia in person, by phone and at HaX; `torres_reason_guessed` was already set. The debrief has a new line for a wrong name or reason without the log reasoning, and the credits a new "FALSE START" line. (Halloran without the alibi already suspends her and brings the upload forward.) (2) **The case is the player's:** with both halves, naming Torres now asks why, then proof, in two choices-only menus (in person `case_why`/`case_proof`, phone `phone_case_why`/`phone_case_proof`, HaX `hax_case_why`/`hax_case_proof`). Each holds the true answers the player has found and two that aren't evidence; a wrong one costs trust and ends the chat, as the reason menu already did. Her read-back of the finds is gone. **How Torres is picked** (checked): offered when the player has the door log, a suspicion, a motive or an exfil find; with neither half, the existing reason menu applies |
+| M2 | minor | Credits: "Nobody on staff hurt" after "DAVID TORRES — DEAD" | **Fixed.** That line now needs no knockout of Torres; "Nobody else on staff hurt" when he was knocked out (either fate) |
+| M3 | minor | Patricia rebutted Ben with facts the player may not have seen ("logged it with Owen") | **Fixed.** She now gives her own facts (one night on the log at eight; her flagged transfers run two till four), in all three naming places |
+| M5 | minor | Interact on a hostile Torres gives no feedback | **Engine** (DECISIONS D18). HaX's fight text now tells the player what to press |
+| M6 | minor | No clock in play; phone timestamps don't match "half past four" | **Deferred** (DECISIONS D18): `gameClock` has no rate, so a "Wed 16:30" start would contradict Torres' 20:14 and the lighting's night switch within minutes. Recommend an engine rate |
+| M7 | minor | "I'm not going to answer that" read as withholding help | **Fixed** with D1 (4) |
+| M1 | minor | Reload and Restart respawn in reception | **Engine backlog** (DECISIONS D18; same as m06 S2) |
+| M4 | minor | Stale dusting message | **Engine** (DECISIONS D18) |
+
+Noticed, not acted on: the hub's "Quickly, now. The CEO's prowling." (the run's worst line 4) is one of three cycled lines, so it isn't on every return; left for the dialogue owner. The pre-fight choice text "Drop the philosophy. Step away, or I make you." is unchanged; the HaX text now follows the turn.
+
+#### Decisions taken (with reasons)
+
+- **Torres 75 / 3** (within the brief): a scientist, not a fighter; the struggler lost twice at 90 / 5. m06 Kemal sits at the same numbers.
+- **"Send Security" reuses the hand-over fate** (`arrest`) with a flag rather than a sixth fate value: every NPC reaction to `arrest` (Patricia, Owen, Lisa, Halloran) already fits a man taken out by the police, so only the debrief path, the bar beat and one credit line needed variants.
+- **The breaker stops the upload at 99** so backing off costs something visible in the bar, the debrief and the credits without inventing a new regional loss (that cost stays with the Halloran accusation).
+- **Case menus with distractors, not a free list:** the true answers come only from finds the player holds, so the menu can't name evidence they haven't seen; the distractors are the ones a guesser reaches for ("cryptography lead", "distracted", "in late", his own badge on the hallway).
+- **`gameClock` not set** (see M6).
+
+#### Route driver
+
+`route.js`: a pick may now be a list of substrings (the first choice matching any); the `#hostile` tag now raises `npc_hostile_state_changed` with `data.npcId`, so HaX's fight mapping runs; `setVisible: false` prints "hidden". 26 routes gained the two case picks after a full-case "David Torres" (r16's first naming is a partial one and keeps its reason menu); r10 and r23 quotes updated. New:
+- `r39_wrong_names_cost` (D3, M3): Ben in person and Halloran by phone after the lanyard each end the chat; a wrong why and a wrong proof each end it; the third go names him; the debrief's wrong-name line, "FALSE START", "Nobody on staff hurt".
+- `r40_fight_send_security` (D1, M2, M7): "Which do you recommend?"; the fight line and HaX's controls text; a Restart (`game_loaded`) and the second text; the mid-fight status line; "Send Security", Torres hidden and kept hidden in the vault; no `game_loaded` text after the fate; end music; the call-in; the debrief's 99 and called-in path; "WALKED OUT BY SECURITY".
+
+#### Checks (static; no browser session started)
+
+- Ink compiles (10 files; the two END warnings are the debrief's and the briefing's, as before).
+- Routes r1–r40: all expectations met; longest run without a choice 9.
+- `dialoguelint`: the same two pre-existing findings (Recruiter L86 check, L363 warning); nothing new.
+- `reopencheck` (m05 block: `torres_hostile`, `torres_called_in` added): 0 problems on all three m05 phones.
+- `loopcheck`: HaX mid-fight (all flags in; and with Patricia down), Patricia in person and by phone with both halves, HaX naming with Patricia down, the debrief after a call-in with a false start: no runtime errors.
+- `tagdiff` against HEAD: HaX phone 84, Patricia in person 60, Patricia phone 51, debrief 16 structural differences, all from this round; Torres' scene unchanged.
+- Validator, full: completes; no errors; no new warnings (the list is the existing same-event and toast-spacing notes); dungeon graph regenerated (aim 5 title).
+- `check_door_alignment.py`: 9/9 OK.
+
+#### Spoken lines changed (old → new)
+
+HaX texts (`scenario.json.erb`), new:
+- On Torres turning, two texts (orchestrator's correction: Q cycles open hand, jab, cross in `hud.js`, so it never "stows" the fists, and a hostile chase doesn't leash, so nothing promises that walking away ends it): "He's coming for you. Q switches to fists (again for a harder punch), then E or click when he's in front." then, 4.5 s later, "Keep pressing Q until the open hand shows to walk by clicking. Can't take him? Call me and I'll send Security."
+- After a reload with him still hostile: "Torres is still at that terminal, still angry. Q switches to fists, then E or click when he's in front. Or call me and I'll send Security."
+
+HaX phone:
+- "Which do you recommend?": "I'm not going to answer that. You've seen what he's carrying. It's your call." → "I won't choose for you. But weigh it like this." / "Soft gets us his network and keeps his family whole, if he means it. If he doesn't, we've put a liar back inside." / "Hard is certain tonight, and we learn nothing from him." / "And if it turns into a fight: he's no fighter. Q switches to fists. If you can't take him, call me."
+- New status lines (mid-fight): "Torres is swinging at anyone near that terminal. Q switches to fists, then E or click when he's in front." / "Or tell me to send Security. It'll cost us any chance of talking to him."
+- New `call_in_security`: "Calling Patricia. Two guards are on their way, and someone's on the data-centre breaker. Stay out of his reach." (Patricia down: "Calling QDC's night desk. Two guards, and someone on the data-centre breaker. I'll ring the police from a number that leads nowhere.") / "...Power's off down there. The upload got to ninety-nine per cent first. They're walking him out." / "He won't talk to anyone tonight, least of all us. Whatever deal there was, it went with him."
+- Flag-4 reaction before naming: "Read the number on that sign-off before you face Torres. He's seen it too." → (not yet named) "Read the number on that sign-off. Whoever's been staging this has seen it too."
+- Ben: "Eight in the evening, logged with IT. The transfers run two till four. Look again." → "Ben's on that log one evening, at eight. Patricia's transfers run two till four in the morning." / "Don't guess at me. Call back when you're sure." (call ends)
+- Halloran after the alibi: "... You know that. Look again." → "... You know that." / "Don't guess at me. Call back when you're sure." (call ends)
+- Full-case naming: "Why, and proof it's leaving. That's enough for me. I'm flagging him now." → "Go on. Why him? Then the proof." (retry: "Second go. Why him? Then the proof.") / after the why: "Money. And the proof it's leaving?" or "In his own hand. And the proof it's leaving?" / wrong: "That's how anyone on that team could. I asked why him.", "That's a mood, not a motive.", "Read it again. His badge never touches the server hallway. Hers does.", "Late isn't leaving. I need the data going out, under his name." / right: "That's enough for me. I'm flagging him now."
+
+Patricia (in person; her phone has the same lines without the prefix, "Ring back" for "Come back"):
+- Ben: "Thursday at eight? The transfers run two till four, and he logged it with Owen. Try again." → "Ben's on that log one night, at eight on a Thursday evening. The transfers I flagged run between two and four in the morning." / "Don't throw names at me. Come back when you're sure." (trust −1, chat ends)
+- Halloran after the alibi: "... You've seen that. Try again." → "... You've seen that." / "Don't throw names at me. Come back when you're sure." (trust −1, chat ends)
+- Full-case naming: the read-back ("Slowly. I'm writing this down." / "Money. His wife's treatment isn't covered..." / "His own journal..." / "The staging manifest on the research portal, in his name." / "A staging manifest in the data centre..." / "The upload schedule names him as operator..." / "And a firm called TalentStack ringing his desk.") → "David. Slowly, I'm writing this down. Why?" (retry: "Again? Fine. I'm writing this down. Why him?"), then the player's why ("Money. All right. And the proof it's leaving?" / "In his own hand. All right. And the proof it's leaving?"), then the player's proof, then "...Damn." as before. Wrong answers: "That's how anyone on that team could. I asked why him.", "So has half this building. That's a mood, not a motive.", "Read it again. His badge never touches the server hallway. Hers does.", "Late isn't leaving. I need the data going out, under his name." (trust −1 in person, chat ends). The player's choice texts (not voiced) carry the old read-back facts.
+
+Debrief, new:
+- Bar beat (called in): "The final upload stopped at ninety-nine per cent, when the data-centre breaker went. The rotation windows were in the last of it, and they never went." / "One per cent from the whole lot. Without it, what they have is a very expensive paperweight."
+- "How close was it?" (called in): "One per cent. The breaker did what you couldn't."
+- The night (wrong name or reason, no log reasoning): "You gave a wrong name or a wrong reason before the right one. Patricia's report says so, and so does mine."
+- `torres_called_in_path`: "You backed off and I called it in. Patricia's guards walked him out, and she handed him to the police." (Patricia down: "... The night desk's guards walked him out, and the police were waiting at the side door.") / "He hasn't said a word since. Nobody talked to him with the upload dead, so there was never a deal to offer." / "Elena's treatment is unfunded. Sofia and Miguel have a father on remand." / [I couldn't win that fight.] "Then backing off was right. It cost us him, and I'd still rather have you back." / [He'd stopped listening. Talking was over.] "Maybe. We'll never know what he'd have said with the upload dead and his hands empty."
+
+Credits: new "FALSE START — a wrong name or reason before the right one", "WALKED OUT BY SECURITY — you backed off; nobody talked to him", "Nobody else on staff hurt". Task titles (not voiced): see D2.
+
+#### Browser checks owed (Sonnet)
+
+- The fight at 75 / 3 (and whether the first encounter is still at 10, D10); HaX's text on the turn, and not again on a reload's restored hostility.
+- A KO and Restart: the `game_loaded` text arrives; "Send Security" is in the hub.
+- "Send Security" mid-fight: Torres disappears and stops attacking; whether his health bar or tint lingers on the hidden sprite; he stays gone after a reload and on entering the vault; music goes to the end cue.
+- The case menus in person and by phone, a wrong answer closing the chat, and Patricia's trust toast.
+- The renamed task titles in the objectives panel.

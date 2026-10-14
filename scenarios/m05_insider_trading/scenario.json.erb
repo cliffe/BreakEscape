@@ -180,12 +180,14 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
           { "text": "RECRUITMENT PIPELINE — TalentStack link not documented", "style": "entry", "condition": "!globalVars.found_pamphlet && !globalVars.found_pipeline_list" },
           { "text": "BORROWED BADGE — Halloran's spare traced back to Torres", "style": "entry", "condition": "globalVars.door_log_reasoned && !globalVars.halloran_accused" },
           { "text": "WRONG ACCUSATION — Dr Ruth Halloran suspended, then cleared", "style": "warning", "condition": "globalVars.halloran_accused" },
+          { "text": "FALSE START — a wrong name or reason before the right one", "style": "warning", "_comment": "Struggling run A (D3): wrong names and reasons now cost Patricia's trust and the call; this is the record of it.", "condition": "globalVars.torres_reason_guessed && !globalVars.halloran_accused" },
           { "text": "INSIDER NAMED — David Torres, though not every piece of evidence was recovered", "style": "entry", "_comment": "PASS 4 newcheck: catch-all so THE CASE never prints empty (found_pamphlet false with the pipeline list found matched no other line). Pass 5 m6: the always-true flag4_submitted term dropped (the debrief needs all four flags).", "condition": "!((globalVars.found_medical_bills || globalVars.found_torres_journal || globalVars.found_vetting_file) && globalVars.found_pamphlet) && !(!globalVars.found_pamphlet && !globalVars.found_pipeline_list) && !(globalVars.door_log_reasoned && !globalVars.halloran_accused) && !(globalVars.halloran_accused) && !(globalVars.named_before_portal && globalVars.door_log_reasoned_first && !globalVars.torres_reason_guessed && !globalVars.door_log_hinted)" },
           { "text": "" },
           { "text": "── DAVID TORRES ──",                                  "style": "section-header" },
           { "text": "TURNED — working for SAFETYNET inside ENTROPY's network", "style": "entry", "condition": "globalVars.final_choice === 'turn_double_agent'" },
           { "text": "HANDED TO THE POLICE — talked to SAFETYNET first",    "style": "entry", "condition": "globalVars.final_choice === 'arrest' && globalVars.elena_treatment_funded" },
-          { "text": "HANDED TO THE POLICE — said nothing",                 "style": "entry", "condition": "globalVars.final_choice === 'arrest' && !globalVars.elena_treatment_funded" },
+          { "text": "HANDED TO THE POLICE — said nothing",                 "style": "entry", "condition": "globalVars.final_choice === 'arrest' && !globalVars.elena_treatment_funded && !globalVars.torres_called_in" },
+          { "text": "WALKED OUT BY SECURITY — you backed off; nobody talked to him", "style": "entry", "_comment": "Struggling run A (D1): HaX's Send Security.", "condition": "globalVars.final_choice === 'arrest' && globalVars.torres_called_in" },
           { "text": "DETAINED AFTER A FIGHT — handed to the police",       "style": "entry", "condition": "globalVars.final_choice === 'combat_nonlethal' && globalVars.torres_fight_offered" },
           { "text": "DETAINED AT THE TERMINAL — handed to the police",     "style": "entry", "_comment": "Scenario design browser F2: knocked out without the fight line.", "condition": "globalVars.final_choice === 'combat_nonlethal' && !globalVars.torres_fight_offered" },
           { "text": "DEAD — left injured on the data-centre floor",        "style": "warning", "condition": "globalVars.final_choice === 'combat_lethal'" },
@@ -218,7 +220,8 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
           { "text": "WHO TOLD SECURITY TO STOP — never asked",            "style": "warning", "condition": "!globalVars.found_stand_down_email && !globalVars.found_vetting_file" },
           { "text": "" },
           { "text": "── QUANTUM DYNAMICS STAFF ──",                        "style": "section-header" },
-          { "text": "Nobody on staff hurt",                                "style": "entry", "condition": "!globalVars.patricia_ko && !globalVars.owen_ko && !globalVars.lisa_ko && !globalVars.halloran_ko" },
+          { "text": "Nobody on staff hurt",                                "style": "entry", "condition": "!globalVars.patricia_ko && !globalVars.owen_ko && !globalVars.lisa_ko && !globalVars.halloran_ko && globalVars.final_choice !== 'combat_lethal' && globalVars.final_choice !== 'combat_nonlethal'" },
+          { "text": "Nobody else on staff hurt",                           "style": "entry", "_comment": "Struggling run A (M2): Torres is staff, and a knockout put him on the floor; 'Nobody on staff hurt' after DAVID TORRES — DEAD contradicted itself.", "condition": "!globalVars.patricia_ko && !globalVars.owen_ko && !globalVars.lisa_ko && !globalVars.halloran_ko && (globalVars.final_choice === 'combat_lethal' || globalVars.final_choice === 'combat_nonlethal')" },
           { "text": "PATRICIA MORGAN: A&E, on your account",               "style": "warning", "condition": "globalVars.patricia_ko" },
           { "text": "OWEN GALLAGHER: concussion, on your account",          "style": "warning", "condition": "globalVars.owen_ko" },
           { "text": "LISA PARK: off work with a head injury",              "style": "warning", "condition": "globalVars.lisa_ko" },
@@ -332,7 +335,8 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
         },
         {
           "taskId": "find_vetting_file",
-          "title": "Find out who on the team is under pressure",
+          "_comment": "Struggling run A (D2): was 'Find out who on the team is under pressure', which ticked on the hand-over of Torres' file (both files arrive together) and read as an answer. Now it says what ticks it.",
+          "title": "Get the vetting files on the cryptography team",
           "type": "collect_items",
           "targetCount": 1,
           "targetItemIds": ["torres_vetting_file"],
@@ -361,10 +365,15 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
           torres_suspected mapping on agent_0x99_handler calls unlockAim; the
           server derives the same condition on load (game.rb:1174). %>
       "unlockCondition": { "globalVariable": "torres_suspected", "equals": true },
+      <%# Struggling run A (D2): the task titles name nobody, not even "his". Only
+          evidence that names Torres sets torres_suspected (bills, journal, manifest,
+          upload schedule, flag 3, a reasoned partial naming), but flag 3 is VM
+          content (DECISIONS_PENDING D1) and a harness-supplied flag reads as a
+          giveaway; neutral titles hold whatever the VM shows. %>
       "tasks": [
         {
           "taskId": "obtain_torres_keycard",
-          "title": "Get IT's spare card for his office",
+          "title": "Get IT's spare card for the suspect's office",
           "type": "collect_items",
           "targetCount": 1,
           "targetItemIds": ["torres_office_keycard", "relayed_torres_office_card"],
@@ -372,7 +381,7 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
         },
         {
           "taskId": "access_torres_office",
-          "title": "Get into his office",
+          "title": "Get into the suspect's office",
           "type": "enter_room",
           "targetRoom": "torres_office",
           "status": "active"
@@ -380,13 +389,13 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
         {
           "_comment": "Scenario design R1 (m1): the aim holds until there is a why (case_motive with Torres suspected). Completed by two HaX mappings, not a collect task, so a vetting-file hand-over can't reveal the aim before suspicion.",
           "taskId": "establish_motive",
-          "title": "Find out why he'd do it",
+          "title": "Find a motive",
           "type": "custom",
           "status": "active"
         },
         {
           "taskId": "find_journal",
-          "title": "Find whatever he has been writing",
+          "title": "Find whatever the suspect has been writing",
           "type": "collect_items",
           "targetCount": 1,
           "targetItemIds": ["personal_journal"],
@@ -396,7 +405,7 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
         },
         {
           "taskId": "find_medical_bills",
-          "title": "Get into his briefcase",
+          "title": "Get into the suspect's briefcase",
           "type": "collect_items",
           "targetCount": 1,
           "targetItemIds": ["medical_bills"],
@@ -485,8 +494,8 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
     },
     {
       "aimId": "confront_insider",
-      "title": "Decide What Happens to Him",
-      "description": "Name the insider, confront him and decide his fate",
+      "title": "Decide the Insider's Fate",
+      "description": "Name the insider, then confront them and decide what happens next",
       "status": "locked",
       "order": 4,
       "unlockCondition": { "aimsCompleted": ["gather_evidence", "exploit_infrastructure"] },
@@ -519,7 +528,7 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
         },
         {
           "taskId": "make_critical_choice",
-          "title": "Decide what happens to him",
+          "title": "Decide the insider's fate",
           "type": "custom",
           "status": "active"
         },
@@ -694,7 +703,9 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
     "door_log_hinted": false,
     "owen_refused_password": false,
     "spare_badge_taken": false,
-    "torres_fight_offered": false
+    "torres_fight_offered": false,
+    "torres_hostile": false,
+    "torres_called_in": false
   },
 
   "endGoal": "Identify the insider with both halves of the case (motive and proof of exfiltration), stop the final upload, and decide David Torres' fate: turn him, hand him to the police, expose the programme, or fight.",
@@ -1096,7 +1107,7 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
               "unlockAim": "gather_evidence"
             },
             {
-              "_comment": "Scenario design R1 (m1): 'Find out why he'd do it' completes when a motive and the suspicion are both in, in either order.",
+              "_comment": "Scenario design R1 (m1): 'Find a motive' completes when a motive and the suspicion are both in, in either order.",
               "eventPattern": "global_variable_changed:case_motive",
               "condition": "value === true && globalVars.torres_suspected === true",
               "onceOnly": true,
@@ -1280,6 +1291,33 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
               "targetKnot": "on_owen_ko_office_card"
             },
 <% end %>
+            <%# Struggling run A (D1, M5): when Torres turns on the player (the fight line,
+                or an unprovoked swing), say how to fight and that there is a way out:
+                the hub's "Send Security" (m06 S1/N2 wording). A reload restores him
+                with restored: true, which must not resend it; the game_loaded text
+                below covers a Restart after a lost fight. %>
+            {
+              "eventPattern": "npc_hostile_state_changed",
+              "condition": "data.npcId === 'david_torres' && data.isHostile === true && !data.restored && globalVars.final_choice === ''",
+              "onceOnly": true,
+              "setGlobal": { "torres_hostile": true },
+              "sendTimedMessage": { "delay": 1000, "message": "He's coming for you. Q switches to fists (again for a harder punch), then E or click when he's in front." }
+            },
+            <%# Orchestrator's correction: Q cycles open hand, jab, cross (hud.js), so it
+                never "stows" the fists; and a hostile chase doesn't leash, so no
+                promise that backing off ends it. Split for the 30-word cap. %>
+            {
+              "eventPattern": "npc_hostile_state_changed",
+              "condition": "data.npcId === 'david_torres' && data.isHostile === true && !data.restored && globalVars.final_choice === ''",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 5500, "message": "Keep pressing Q until the open hand shows to walk by clicking. Can't take him? Call me and I'll send Security." }
+            },
+            {
+              "eventPattern": "game_loaded",
+              "condition": "globalVars.torres_hostile === true && globalVars.torres_ko !== true && globalVars.final_choice === ''",
+              "onceOnly": false,
+              "sendTimedMessage": { "delay": 3000, "message": "Torres is still at that terminal, still angry. Q switches to fists, then E or click when he's in front. Or call me and I'll send Security." }
+            },
             {
               "_comment": "PASS 2 review B1 safety net. post_ko_choice is disableClose, but if it is ever lost (a reload mid-choice), npc_ko won't re-fire and a KO'd NPC can't be talked to (interactions.js:1690). Re-entering the data centre with Torres down and no fate set offers the same two choices by phone.",
               "eventPattern": "room_entered:data_center",
@@ -1982,10 +2020,14 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
                 m04 Relay 5, Static 4, guard 4, Voltage 12; m03 Terry 10. Only
                 chaseSpeed and attackDamage reach the engine from here (maxHP and
                 attackCooldown fall back to combat-config.js defaults:
-                npc-hostile.js:121-123); see DECISIONS_PENDING.md. %>
+                npc-hostile.js:121-123); see DECISIONS_PENDING.md.
+                Struggling run A (D1): 90 / 5 -> 75 / 3, m06 Kemal's numbers. A
+                struggler who never found the jab was knocked out twice at 90 / 5;
+                at 3 a hit he needs about 34 hits (over a minute) to win, and he
+                is slow enough to walk away from. %>
             "hostile": {
-              "chaseSpeed": 90,
-              "attackDamage": 5,
+              "chaseSpeed": 75,
+              "attackDamage": 3,
               "pauseToAttack": true
             }
           },
@@ -1998,9 +2040,25 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
             },
             {
               "eventPattern": "room_entered:data_center",
-              "condition": "globalVars.torres_identified === true",
+              "condition": "globalVars.torres_identified === true && globalVars.torres_called_in !== true",
               "onceOnly": false,
               "setVisible": true
+            },
+            <%# Struggling run A (D1): the way back from a fight the player can't or won't
+                finish. HaX's "Send Security" sets torres_called_in; Security walks him
+                out, so he is hidden (a hidden NPC's behaviour, chase and attacks
+                included, is skipped: npc-behavior.js update) and re-hidden after a
+                reload (m06 minder_walked pattern). %>
+            {
+              "eventPattern": "global_variable_changed:torres_called_in",
+              "condition": "value === true",
+              "setVisible": false
+            },
+            {
+              "eventPattern": "room_entered:data_center",
+              "condition": "globalVars.torres_called_in === true",
+              "onceOnly": false,
+              "setVisible": false
             },
             {
               "eventPattern": "npc_ko:david_torres",
