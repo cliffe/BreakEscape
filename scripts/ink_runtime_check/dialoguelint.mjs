@@ -125,7 +125,7 @@ export function lintInk(text, { channel = 'person', names = [], file = '' } = {}
   const findings = [];
   const lengths = [];
   let afterChoice = null; // { line, text }
-  const SPEAKER = /^((?:Narrator|[A-Z][\w.'’()]*(?: [\w.'’()]+){0,3})):\s+(\S.*)$/;
+  const SPEAKER = /^((?:Narrator|[A-Z][\w.'’()-]*(?: [\w.'’()-]+){0,3})):\s+(\S.*)$/;
   for (let i = 0; i < lines.length; i++) {
     const n = i + 1;
     const rawLine = lines[i];
