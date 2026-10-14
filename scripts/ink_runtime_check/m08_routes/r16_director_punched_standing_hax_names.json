@@ -8,7 +8,7 @@
 { "expect": { "netherton_hostile": true, "brief_taken": true, "netherton_ko": false } },
 { "tasks": { "brief_with_netherton": "completed" } },
 { "unlocked": ["work_the_suspects", "get_into_the_repo"] },
-{ "said": ["The Director's coming for you", "He won't talk again tonight, so bring me the door audit instead"], "notSaid": ["Put him down for his card"] },
+{ "said": ["The Director's coming for you", "He won't talk again tonight. Bring me the door audit. He's slower: get clear before you read your phone."], "notSaid": ["Floor him for his card"] },
 { "talk": "phone", "picks": ["How do I get into the server room", "Nothing right now"] },
 { "said": ["He won't let you near him now. The visitor printer at reception"], "notSaid": ["clone the Director's card"] },
 { "talk": "phone", "picks": ["What does the Director need", "Nothing right now"] },

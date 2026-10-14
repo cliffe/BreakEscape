@@ -466,3 +466,57 @@ Nightshade, confrontation (`m08_nightshade_confrontation.ink`), new:
 Not voiced: credits "THE CASE: The door audit read to HaX. The Director would not have you in the room.", "DIRECTOR NETHERTON: Struck in his own office, and left standing. He did not mention it again.", "A JUNIOR ANALYST: Knocked out at her desk. A witness to nothing.", "ATHENA: Her reception avatar, knocked flat. She logged it."; task titles (m2, m8) and the aim title (m9).
 
 Owed on screen at the next browser check: punch the Director before or after the brief and leave him standing (the second text, the brief task ticks, HaX's printer branch, ladder and reading); Phantom's challenge on entering intel analysis after the brief, once, and not before the brief; the archive task ticking only on reading the audit; no action track in an empty suite; a punched off-duty agent catching no pick; E7 (the notepad holds the holdall and the suite code card).
+
+### Stage 2 scenario design, round 2 fix (closing round, 2026-10-14)
+
+Fixer (Opus) on `DESIGN_REVIEW_P5_C2.md` (0 blockers, 0 majors, 3 minors) and `PASS5_DESIGN_R1_BROWSER.md` (all seven items pass; 1 major for a human check, 3 minors, 3 notes). Mission files only: `scenario.json.erb`, four ink files (Netherton, the confrontation, the debrief, a comment in Phantom's), `DECISIONS_PENDING.md`, the m08 routes. No engine edits; no browser session; nothing committed. I opened no SecGen XML and none of the four restricted guides.
+
+#### Scenario design review C2
+
+| # | Sev | Finding | Outcome |
+|---|---|---|---|
+| N1 | minor | A suspect punched and left standing never counts as seen | **Fixed.** `<n>_hostile` added to the globals that latch `<n>_seen` (so the all-three nudge and HaX's server-room topic follow); a brief-gated pair on `<n>_hostile` completes each interview task, as the KO pair does (one ERB loop over `_ko` and `_hostile`); Netherton declares `phantom_hostile` and reads `x_interviewed or x_ko or x_hostile` in `interviews_done()` and the three "You have not seen..." lines. New route r21 (probe p1 inverted) |
+| N2 | minor | Nightshade can give the wrong reason for his tidy | **Fixed.** New global `tipoff_source`. Each tip-off mapping writes its cause in the same `setGlobal` as `nightshade_tipped_off`: `accused_cipher` / `accused_phantom` / `accused_nightshade` (per accusation, finer than the review's single "accused", so a later accusation of Nightshade can't take the credit for an earlier one of Cipher), `locker`, `offduty`, `analyst`, `athena`. Netherton's before-the-box third misread writes `director` only if nobody has tipped him off yet. All setters are gated on `nightshade_tipped_off !== true`, so the first cause is the only one written. The confrontation's tidied branches key on it; a neutral fallback covers an empty source (a game saved before this round); the untidied accusation line is unchanged. Probe p2 passes as written and is now route r22; new r23 (a KO tip-off, then an accusation: the KO is the reason) |
+| N3 | minor | Punched-but-standing suspects go unremarked | **Fixed.** Credits: a "Struck ... and left standing. Innocent." line for Cipher and Phantom on `<n>_hostile && !<n>_ko`, with `!<n>_hostile` on their "Cleared" lines (the accusation line can still print beside it); an ON THE RECORD line for Nightshade on `nightshade_hostile && !nightshade_ko`. Debrief: one Netherton line in `the_hunt` on `cipher_hostile or phantom_hostile` (a KO latches hostility first, so it covers both). Confrontation: a line for a punched, standing Nightshade beside the KO line. r21, r23 |
+| nit | — | The analyst's `_comment` said "Carries no globals" | **Fixed** (it names `analyst_ko` and the tip-off) |
+
+#### Round 1 browser check
+
+| # | Sev | Finding | Outcome |
+|---|---|---|---|
+| F1 | major (human check) | A hostile Director follows through doors; the phone doesn't pause him | **Mission side fixed, engine deferred.** HaX's second text for a punched Director, both variants, now tells the player to get clear before reading the phone (30 words or fewer). Engine: E11 in `DECISIONS_PENDING.md`, against the backlog's `chaseRange` and "A hit closes the phone" items. A human fleeing him is still untested |
+| F2 | minor | The sight challenge opened on entry in one game, about 75 px in on the other | No change: both fired within seconds and once, which is what m1 asked for. The likely cause is where the player stood relative to his 120-degree cone on entry; not investigated further |
+| F3 | minor | "We'll talk again" counts as Phantom's interview | **Withdrawn (kept as is), my call.** His opening answers the stock questions unasked ("Let me save you the first four questions..."), so the interview has happened by the time the hub shows. Cipher and Nightshade latch `_interviewed` at the same point (lesson 44), the task title stays true for all three, and the latch is what keeps the sight challenge to once. Moving it after a hub question would let the challenge fire again on its 20 s cooldown. Comment added at the latch in Phantom's ink |
+| F4 | minor | A reload restores a hostile NPC at full health | **Deferred (engine):** E12 |
+| F5 | note | With a key in hand, "Switch to Lockpicking" still runs the catch | Documented behaviour; logged as E13 so nobody files it |
+| F6 | note | Container notes go to the notepad | Answers E7 (below) |
+| F7 | note | Reload puts the player in `main_lobby` | Known, E10 |
+| E7 | user item | Notes from containers | **Reworded** in `DECISIONS_PENDING.md`: "variants don't reach a note already in the notepad" (browser-confirmed; HaX's text covers the holdall). Engine change dropped |
+
+Counts: C2 3 minors fixed (and the nit). Browser: F1 fixed on the mission side with the engine part deferred (E11); F3 withdrawn; F2 no change; F4 deferred (E12); F5 logged (E13); E7 reworded.
+
+Decisions taken (fixer, reversible, mission-local):
+- N1 treats hostile exactly as a KO in the seen latches and interview tasks: a punched suspect won't talk again tonight, so "seen" is the only true state for him.
+- N2 records the cause per accusation, not one "accused" value (see the table).
+- N3's debrief line reads the hostile globals only, which a KO also sets, so a knocked-out innocent gets the same line ("You hit Cipher on my floor").
+- F3 kept as is (see the table).
+
+Checks (all after the last edit): `scripts/compile-ink.sh m08_the_mole` 12/12. Route driver, 23 routes (r1-r23), all "all expectations met": r13 and r16 updated for the Director's new second text; r21 (p1 inverted), r22 (p2), r23 new. Longest run without a choice 11 (the opening cutscene, unchanged). `dialoguelint` 0 errors, 0 warnings, 8 blank-reentry CHECKs (unchanged); timed texts 37, max 30 words. `reopencheck` m08 phone hub 1800 reopens, 0 problems. Validator (full): exit 0, no errors. Warnings: the known ones (17 hostile-text co-fires on HaX; the confrontation not onceOnly; Phantom's sighting and the off-duty catch with no background) and the `brief_taken` co-fire on `closing_debrief`, now 7 mappings (the three new hostile interview pairs; each completes a different task, so co-firing is intended). The new `tipoff_source` VAR carries its "Synced scenario global" comment, which clears the sync warning. `check_door_alignment.py` on m08: all OK. `tagdiff` vs HEAD: 34 structural differences, all from this round.
+
+Spoken lines changed (old → new), for the TTS stage:
+
+HaX, phone texts (`scenario.json.erb`):
+- second controls text, the Director, before the naming: "He won't talk again tonight, so bring me the door audit instead. Keep away: he's slower. Keep pressing Q until the open hand shows to walk by clicking." → "He won't talk again tonight. Bring me the door audit. He's slower: get clear before you read your phone. Q until the open hand shows to walk by clicking."
+- second controls text, the Director, after the naming: "He won't talk to you again tonight. Put him down for his card, or keep away: he's slower. Keep pressing Q until the open hand shows to walk by clicking." → "He won't talk again tonight. Floor him for his card, or get clear before you read your phone: he's slower. Q until the open hand shows to walk by clicking."
+
+Nightshade, confrontation (`m08_nightshade_confrontation.ink`):
+- new, punched and left standing: "You hit me in my own lab and walked away. I've been deciding ever since whether that was nerves or a message."
+- new, fallback when the tip-off's cause wasn't recorded (old saves only): "Word reached me before you did. So I tidied. Not well enough, it seems."
+- the existing tidy reasons are unchanged in wording; which one plays now follows `tipoff_source`.
+
+Netherton, debrief (`m08_closing_debrief.ink`), new: "You hit {Cipher and Phantom|Cipher|Phantom} on my floor. {Two innocent men.|An innocent man.} That goes in the file beside everything else."
+
+Not voiced, credits, new: "CIPHER: Struck on the ops floor and left standing. Innocent.", "PHANTOM: Struck mid-hunt and left standing. Innocent.", "NIGHTSHADE: Struck in his lab before the evidence was in, and left standing."
+
+### Stage 2 scenario design: CLOSED (fixer, for the orchestrator, 2026-10-14)
+Cycle 2 review 0/0/3; the round-1 browser check passed all seven owed items (D1, m1-m8 and E7). This closing round fixed N1, N2 and N3, put the "get clear before you read your phone" advice into the Director's second text for F1, withdrew F3 with its reason, reworded E7 and logged F1, F4 and F5 as engine items E11-E13. Nothing above minor is open on the mission side. Carried to the next browser check (not blocking the close): a human fleeing a hostile Director across rooms (F1/E11); a suspect punched and left standing, then the nudge, the clone offer and the credits on screen (r21's path).

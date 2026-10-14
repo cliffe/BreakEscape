@@ -186,11 +186,13 @@ backup_plain = "SENT -- To: architect@entropy.onion  From: nightshade_deep_state
           { "text": "── THE SUSPECTS ──", "style": "section-header" },
           { "text": "CIPHER: Accused to his face, then cleared by the logs", "style": "warning", "condition": "globalVars.accused_cipher && !globalVars.cipher_ko" },
           { "text": "CIPHER: Knocked out. Innocent.", "style": "warning", "condition": "globalVars.cipher_ko" },
-          { "text": "CIPHER: Cleared on the evidence. His post-quantum work goes on.", "style": "entry", "condition": "!globalVars.accused_cipher && !globalVars.cipher_ko" },
+          { "text": "CIPHER: Struck on the ops floor and left standing. Innocent.", "style": "warning", "condition": "globalVars.cipher_hostile && !globalVars.cipher_ko" },
+          { "text": "CIPHER: Cleared on the evidence. His post-quantum work goes on.", "style": "entry", "condition": "!globalVars.accused_cipher && !globalVars.cipher_ko && !globalVars.cipher_hostile" },
           { "text": "PHANTOM: Accused to his face, then cleared by a flight manifest", "style": "warning", "condition": "globalVars.accused_phantom && !globalVars.phantom_ko" },
           { "text": "PHANTOM: Knocked out mid-hunt. Innocent, and the only other person looking.", "style": "warning", "condition": "globalVars.phantom_ko" },
-          { "text": "PHANTOM: Cleared. His off-book hunt pointed the right way.", "style": "entry", "condition": "!globalVars.accused_phantom && !globalVars.phantom_ko && globalVars.found_phantom_lead" },
-          { "text": "PHANTOM: Cleared. Innocent, and running his own hunt the whole time.", "style": "entry", "condition": "!globalVars.accused_phantom && !globalVars.phantom_ko && !globalVars.found_phantom_lead" },
+          { "text": "PHANTOM: Struck mid-hunt and left standing. Innocent.", "style": "warning", "condition": "globalVars.phantom_hostile && !globalVars.phantom_ko" },
+          { "text": "PHANTOM: Cleared. His off-book hunt pointed the right way.", "style": "entry", "condition": "!globalVars.accused_phantom && !globalVars.phantom_ko && !globalVars.phantom_hostile && globalVars.found_phantom_lead" },
+          { "text": "PHANTOM: Cleared. Innocent, and running his own hunt the whole time.", "style": "entry", "condition": "!globalVars.accused_phantom && !globalVars.phantom_ko && !globalVars.phantom_hostile && !globalVars.found_phantom_lead" },
           { "text": "YOUR FIRST CALL TO THE DIRECTOR: Nightshade", "style": "entry", "condition": "globalVars.suspect_theory === 'nightshade' && !globalVars.named_on_evidence" },
           { "text": "THE CASE: Named from the door audit, before the root logs", "style": "entry", "condition": "globalVars.named_on_evidence && globalVars.named_before_box && !globalVars.audit_misread" },
           { "text": "THE CASE: Named from the door audit, against the box's minute", "style": "entry", "condition": "globalVars.named_on_evidence && !globalVars.named_before_box && !globalVars.audit_misread" },
@@ -227,6 +229,7 @@ backup_plain = "SENT -- To: architect@entropy.onion  From: nightshade_deep_state
           { "text": "DIRECTOR NETHERTON: Knocked down in his own office. He did not mention it again.", "style": "warning", "condition": "globalVars.netherton_ko" },
           { "text": "DIRECTOR NETHERTON: Struck in his own office, and left standing. He did not mention it again.", "style": "warning", "condition": "globalVars.netherton_hostile && !globalVars.netherton_ko" },
           { "text": "NIGHTSHADE: Knocked down in his lab before the evidence was in.", "style": "warning", "condition": "globalVars.nightshade_ko" },
+          { "text": "NIGHTSHADE: Struck in his lab before the evidence was in, and left standing.", "style": "warning", "condition": "globalVars.nightshade_hostile && !globalVars.nightshade_ko" },
           { "text": "AGENT HAX: Put on the break-room floor by her own agent.", "style": "warning", "condition": "globalVars.hax_ko" },
           { "text": "AN OFF-DUTY AGENT: Knocked out in the break room. A witness, not a suspect.", "style": "warning", "condition": "globalVars.offduty_agent_ko" },
           { "text": "A JUNIOR ANALYST: Knocked out at her desk. A witness to nothing.", "style": "warning", "condition": "globalVars.analyst_ko" },
@@ -923,13 +926,13 @@ CREDITS
               "eventPattern": "npc_hostile_state_changed",
               "condition": "data.npcId === 'director_netherton' && data.isHostile === true && data.restored !== true && globalVars.mole_identified !== true",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 5500, "message": "He won't talk again tonight, so bring me the door audit instead. Keep away: he's slower. Keep pressing Q until the open hand shows to walk by clicking." }
+              "sendTimedMessage": { "delay": 5500, "message": "He won't talk again tonight. Bring me the door audit. He's slower: get clear before you read your phone. Q until the open hand shows to walk by clicking." }
             },
             {
               "eventPattern": "npc_hostile_state_changed",
               "condition": "data.npcId === 'director_netherton' && data.isHostile === true && data.restored !== true && globalVars.mole_identified === true",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 5500, "message": "He won't talk to you again tonight. Put him down for his card, or keep away: he's slower. Keep pressing Q until the open hand shows to walk by clicking." }
+              "sendTimedMessage": { "delay": 5500, "message": "He won't talk again tonight. Floor him for his card, or get clear before you read your phone: he's slower. Q until the open hand shows to walk by clicking." }
             },
 <% else %>
             {
@@ -1020,7 +1023,9 @@ CREDITS
     KO (his card is on the floor then), and not if the player already has a
     way in. %>
 <% %w[cipher phantom nightshade].each do |n| %>
-<%   ["#{n}_interviewed", "#{n}_ko"].each do |g| %>
+<%#  Design C2 (N1): punched and left standing counts as seen, as a KO does
+     (he won't talk again tonight, so the interview can never happen). %>
+<%   ["#{n}_interviewed", "#{n}_ko", "#{n}_hostile"].each do |g| %>
             {
               "eventPattern": "global_variable_changed:<%= g %>",
               "condition": "value === true && globalVars.<%= n %>_seen !== true",
@@ -1041,12 +1046,16 @@ CREDITS
     the floor (the off-duty agent hears everything), with one shared neutral
     text, so accusing is not an oracle: the wrong man costs the same tip-off
     as the right one. Silent once he is already tipped off. %>
+<%# Design C2 (N2): each tip-off setter also records its cause in
+    tipoff_source. They all fire only while nobody has tipped him off, so the
+    first cause is the only one ever written (the Director's, in his ink, is
+    gated the same way), and the confrontation names that cause. %>
 <% %w[accused_cipher accused_phantom accused_nightshade].each do |g| %>
             {
               "eventPattern": "global_variable_changed:<%= g %>",
               "condition": "value === true && globalVars.mole_identified !== true && globalVars.nightshade_tipped_off !== true",
               "onceOnly": true,
-              "setGlobal": { "nightshade_tipped_off": true },
+              "setGlobal": { "nightshade_tipped_off": true, "tipoff_source": "<%= g %>" },
               "sendTimedMessage": { "delay": 2500, "message": "You've said it to someone's face. On this floor, that's said to everyone by midnight. If it's the right man, he knows we're looking." }
             },
 <% end %>
@@ -1057,7 +1066,7 @@ CREDITS
               "eventPattern": "global_variable_changed:locker_seen_picked",
               "condition": "value === true && globalVars.mole_identified !== true && globalVars.nightshade_tipped_off !== true",
               "onceOnly": true,
-              "setGlobal": { "nightshade_tipped_off": true },
+              "setGlobal": { "nightshade_tipped_off": true, "tipoff_source": "locker" },
               "sendTimedMessage": { "delay": 2500, "message": "Someone saw you at the lockers. He'll tell the floor he saw nothing, which here is the same thing. If one's the mole's locker, he knows we're looking." }
             },
 <%# Puzzle chains C2 (N2): knocking the witness out skipped the catch for
@@ -1069,7 +1078,7 @@ CREDITS
               "eventPattern": "npc_ko:background_agent",
               "condition": "globalVars.mole_identified !== true && globalVars.nightshade_tipped_off !== true",
               "onceOnly": true,
-              "setGlobal": { "nightshade_tipped_off": true },
+              "setGlobal": { "nightshade_tipped_off": true, "tipoff_source": "offduty" },
               "sendTimedMessage": { "delay": 2000, "message": "An agent out cold in the break room. That's round the floor by midnight, and if one of those lockers is his, so is he." }
             },
 <%# Design C1 (m6): the junior analyst and ATHENA's avatar, the same way as
@@ -1080,14 +1089,14 @@ CREDITS
               "eventPattern": "npc_ko:background_analyst",
               "condition": "globalVars.mole_identified !== true && globalVars.nightshade_tipped_off !== true",
               "onceOnly": true,
-              "setGlobal": { "nightshade_tipped_off": true },
+              "setGlobal": { "nightshade_tipped_off": true, "tipoff_source": "analyst" },
               "sendTimedMessage": { "delay": 2000, "message": "You've put a junior analyst on the ops floor out cold. The whole floor saw it. If the mole's listening, and he is, he knows we're looking." }
             },
             {
               "eventPattern": "npc_ko:receptionist_ai",
               "condition": "globalVars.mole_identified !== true && globalVars.nightshade_tipped_off !== true",
               "onceOnly": true,
-              "setGlobal": { "nightshade_tipped_off": true },
+              "setGlobal": { "nightshade_tipped_off": true, "tipoff_source": "athena" },
               "sendTimedMessage": { "delay": 2000, "message": "ATHENA's avatar is down, and she logged every second of it. Half this building reads her logs. If the mole's one of them, he knows we're looking." }
             },
 <%# Design C1 (m5): a short brief named no rooms. One pointer as the
@@ -1189,42 +1198,54 @@ CREDITS
               "completeTask": "get_suite_code"
             },
 <% end %>
+<%# Design C2 (N1): punched and left standing completes the interview as a
+    KO does: he won't talk again tonight. %>
+<% %w[_ko _hostile].each do |sfx| %>
             {
-              "eventPattern": "global_variable_changed:cipher_ko",
+              "eventPattern": "global_variable_changed:cipher<%= sfx %>",
               "condition": "value === true && globalVars.brief_taken === true",
               "onceOnly": true,
               "completeTask": "interview_cipher"
             },
             {
               "eventPattern": "global_variable_changed:brief_taken",
-              "condition": "value === true && globalVars.cipher_ko === true",
+              "condition": "value === true && globalVars.cipher<%= sfx %> === true",
               "onceOnly": true,
               "completeTask": "interview_cipher"
             },
+<% end %>
+<%# Design C2 (N1): punched and left standing completes the interview as a
+    KO does: he won't talk again tonight. %>
+<% %w[_ko _hostile].each do |sfx| %>
             {
-              "eventPattern": "global_variable_changed:phantom_ko",
+              "eventPattern": "global_variable_changed:phantom<%= sfx %>",
               "condition": "value === true && globalVars.brief_taken === true",
               "onceOnly": true,
               "completeTask": "interview_phantom"
             },
             {
               "eventPattern": "global_variable_changed:brief_taken",
-              "condition": "value === true && globalVars.phantom_ko === true",
+              "condition": "value === true && globalVars.phantom<%= sfx %> === true",
               "onceOnly": true,
               "completeTask": "interview_phantom"
             },
+<% end %>
+<%# Design C2 (N1): punched and left standing completes the interview as a
+    KO does: he won't talk again tonight. %>
+<% %w[_ko _hostile].each do |sfx| %>
             {
-              "eventPattern": "global_variable_changed:nightshade_ko",
+              "eventPattern": "global_variable_changed:nightshade<%= sfx %>",
               "condition": "value === true && globalVars.brief_taken === true",
               "onceOnly": true,
               "completeTask": "interview_nightshade"
             },
             {
               "eventPattern": "global_variable_changed:brief_taken",
-              "condition": "value === true && globalVars.nightshade_ko === true",
+              "condition": "value === true && globalVars.nightshade<%= sfx %> === true",
               "onceOnly": true,
               "completeTask": "interview_nightshade"
             },
+<% end %>
             {
               "eventPattern": "global_variable_changed:server_room_entered",
               "condition": "value === true && globalVars.brief_taken === true",
@@ -1484,7 +1505,7 @@ CREDITS
           "observations": "Cipher is barricaded behind three monitors of proofs, not making eye contact with anyone. He knows he looks guilty. It is making him look guiltier."
         },
         {
-          "_comment": "Background bark. Carries no globals and no required task.",
+          "_comment": "Background bark. No required task; a KO sets analyst_ko (globalVarOnKO) and, before the naming, tips the mole off.",
           "id": "background_analyst",
           "displayName": "Junior Analyst",
           "npcType": "person",
@@ -2414,6 +2435,7 @@ CREDITS
     "named_by_director": false,
     "named_by_hax": false,
     "nightshade_tipped_off": false,
+    "tipoff_source": "",
     "locker_seen_picked": false,
     "offduty_agent_ko": false,
     "analyst_ko": false,

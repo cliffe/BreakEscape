@@ -51,6 +51,11 @@ VAR athena_ko = false // Synced scenario global (design C1, m6): ATHENA's avatar
 VAR accused_cipher = false
 VAR accused_phantom = false
 VAR go_bag_lining_known = false
+// Design C2 (N2): the first tip-off's cause, recorded when it happened
+// ("accused_cipher", "accused_phantom", "accused_nightshade", "locker",
+// "offduty", "analyst", "athena", "director"). N3: punched in his lab and left standing.
+VAR tipoff_source = "" // Synced scenario global (design C2, N2): the first tip-off's cause
+VAR nightshade_hostile = false
 
 === start ===
 { fate_decided: -> after_choice }
@@ -69,8 +74,12 @@ Agent 0x47 'Nightshade': I could have scrubbed every trace years ago. You're won
 }
 // PASS 3 (impl review M2): after his answer to "Why didn't you?", so the
 // question keeps its meaning.
-{ nightshade_ko:
+{
+- nightshade_ko:
     Agent 0x47 'Nightshade': You put me on the floor of my own lab. I've had worse from people I liked less.
+- nightshade_hostile:
+    // Design C2 (N3): punched and left standing.
+    Agent 0x47 'Nightshade': You hit me in my own lab and walked away. I've been deciding ever since whether that was nerves or a message.
 }
 { named_on_evidence:
     Agent 0x47 'Nightshade': The door log. I walked past that reader every morning for fifteen years and never once thought of it as a witness.
@@ -80,31 +89,33 @@ Agent 0x47 'Nightshade': I could have scrubbed every trace years ago. You're won
 // PASS 5 (M3): a tip-off now has a cost. If the locker was still untouched he
 // cleared it (nightshade_tidied); if the player had been in first, there was
 // nothing left to clear.
+// Design C2 (N2): the tidy's reason is the first tip-off's cause
+// (tipoff_source, written once, when it happened), not a fixed order over
+// globals that can be set later (a KO after the naming, an accusation after a
+// KO). The empty case is a game saved before the source was recorded.
 {
-- accused_nightshade and nightshade_tidied:
+- nightshade_tidied and tipoff_source == "accused_nightshade":
     Agent 0x47 'Nightshade': You said it to my face before you could prove it. So I tidied. The bag, the stick.
     Agent 0x47 'Nightshade': Not well enough, it seems.
-- accused_nightshade:
-    Agent 0x47 'Nightshade': You said it to my face before you could prove it. By then you'd been through my locker, so there was nothing left to tidy.
-- (accused_cipher or accused_phantom) and nightshade_tidied:
+- nightshade_tidied and (tipoff_source == "accused_cipher" or tipoff_source == "accused_phantom"):
     // Alignment C3 (browser R3): both innocents accused.
     Agent 0x47 'Nightshade': You put it on {accused_cipher and accused_phantom:Cipher and Phantom both|{accused_cipher:Cipher|Phantom}} in front of the floor. Walls are thin here. So I tidied. Not well enough, it seems.
-// Puzzle chains C2 (N1, N2): the off-duty agent's catch and his KO are tip-off
-// sources too. Accusations stay first (the louder of the two). If both the
-// catch and the KO happened, the catch came first: the KO tips off only when
-// nothing has yet, and a KO'd watcher catches nobody.
-- locker_seen_picked and nightshade_tidied:
+// Puzzle chains C2 (N1, N2): the off-duty agent's catch and his KO.
+- nightshade_tidied and tipoff_source == "locker":
     Agent 0x47 'Nightshade': Somebody saw you at the lockers in the break room. On this floor that reaches me before the kettle boils. So I tidied. Not well enough, it seems.
-- offduty_agent_ko and nightshade_tidied:
+- nightshade_tidied and tipoff_source == "offduty":
     Agent 0x47 'Nightshade': You left a man out cold in the break room. That was round the building before he woke. So I tidied. Not well enough, it seems.
-// Design C1 (m6): the analyst's and ATHENA's KOs tip him off the same way.
-// If several KOs happened, the order can't be told; the break room comes first.
-- analyst_ko and nightshade_tidied:
+// Design C1 (m6): the analyst's and ATHENA's KOs.
+- nightshade_tidied and tipoff_source == "analyst":
     Agent 0x47 'Nightshade': You knocked a junior analyst out at her desk, in front of the whole floor. So I tidied. Not well enough, it seems.
-- athena_ko and nightshade_tidied:
+- nightshade_tidied and tipoff_source == "athena":
     Agent 0x47 'Nightshade': You put ATHENA's avatar on the floor, and ATHENA logs to everyone with planning access. Including me. So I tidied. Not well enough, it seems.
-- nightshade_tidied:
+- nightshade_tidied and tipoff_source == "director":
     Agent 0x47 'Nightshade': The Director went asking questions on my floor. I can count. So I tidied. Not well enough, it seems.
+- nightshade_tidied:
+    Agent 0x47 'Nightshade': Word reached me before you did. So I tidied. Not well enough, it seems.
+- accused_nightshade:
+    Agent 0x47 'Nightshade': You said it to my face before you could prove it. By then you'd been through my locker, so there was nothing left to tidy.
 }
 // PASS 4 (fix 1): the thumbprint lifted off the USB stick.
 { nightshade_print_lifted:

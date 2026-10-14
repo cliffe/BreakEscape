@@ -68,6 +68,10 @@ VAR all_flags_submitted = false // Synced scenario global
 // can't confirm his row. Synced scenario globals.
 VAR cipher_hostile = false
 VAR nightshade_hostile = false
+// Design C2 (N1): Phantom punched and left standing counts as seen too.
+VAR phantom_hostile = false
+// Design C2 (N2): the first tip-off's cause; set here only if nobody has tipped him off yet.
+VAR tipoff_source = "" // Synced scenario global (design C2, N2): the first tip-off's cause
 
 === start ===
 { met: -> return_visit }
@@ -173,13 +177,13 @@ Director Magnus Netherton: Already? Say it. Not for the file -- for me. Who is y
 === access_request ===
 { interviews_done(): -> access_offer }
 Director Magnus Netherton: Not yet. Talk to all three first. I want them to have seen you on the floor before anyone sees you at the server room.
-{ not (cipher_interviewed or cipher_ko):
+{ not (cipher_interviewed or cipher_ko or cipher_hostile):
     Director Magnus Netherton: You have not seen Cipher. Operations floor.
 }
-{ not (phantom_interviewed or phantom_ko):
+{ not (phantom_interviewed or phantom_ko or phantom_hostile):
     Director Magnus Netherton: You have not seen Phantom. Intelligence analysis, north of the operations floor.
 }
-{ not (nightshade_interviewed or nightshade_ko):
+{ not (nightshade_interviewed or nightshade_ko or nightshade_hostile):
     Director Magnus Netherton: You have not seen Nightshade. The Crypto Lab, west of the lobby.
 }
 -> hub
@@ -347,6 +351,9 @@ Director Magnus Netherton: That audit is Phantom's query, off Phantom's printer.
         ~ named_by_director = true
         ~ told_name = true
     - else:
+        { not nightshade_tipped_off:
+            ~ tipoff_source = "director"
+        }
         ~ nightshade_tipped_off = true
     }
 }
@@ -431,5 +438,6 @@ Director Magnus Netherton: {suite_code}. Commit it to memory this time, Agent.
 -> hub
 
 // PASS 4: true once each suspect has been interviewed or knocked down.
+// Design C2 (N1): or punched and left standing (he won't talk again tonight).
 === function interviews_done() ===
-~ return (cipher_interviewed or cipher_ko) and (phantom_interviewed or phantom_ko) and (nightshade_interviewed or nightshade_ko)
+~ return (cipher_interviewed or cipher_ko or cipher_hostile) and (phantom_interviewed or phantom_ko or phantom_hostile) and (nightshade_interviewed or nightshade_ko or nightshade_hostile)

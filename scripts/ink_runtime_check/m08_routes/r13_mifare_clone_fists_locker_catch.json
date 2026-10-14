@@ -26,7 +26,7 @@
 { "said": ["take it to the men who went through that lab door"] },
 { "notSaid": ["people on it"] },
 { "event": "npc_hostile_state_changed", "data": { "npcId": "director_netherton", "isHostile": true } },
-{ "said": ["The Director's coming for you. Q switches to fists (again for a harder punch)", "He won't talk again tonight, so bring me the door audit instead", "Keep pressing Q until the open hand shows to walk by clicking"], "notSaid": ["Put him down for his card"] },
+{ "said": ["The Director's coming for you. Q switches to fists (again for a harder punch)", "He won't talk again tonight. Bring me the door audit. He's slower: get clear before you read your phone.", "Q until the open hand shows to walk by clicking"], "notSaid": ["Floor him for his card"] },
 { "expect": { "netherton_hostile": true } },
 { "event": "npc_hostile_state_changed", "data": { "npcId": "agent_cipher", "isHostile": true, "restored": true } },
 { "notSaid": ["Cipher's swinging"] },

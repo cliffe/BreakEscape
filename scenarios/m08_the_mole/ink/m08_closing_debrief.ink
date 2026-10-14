@@ -44,6 +44,10 @@ VAR offduty_agent_ko = false // Puzzle chains C2 (N2): the off-duty agent knocke
 VAR netherton_hostile = false
 VAR analyst_ko = false
 VAR athena_ko = false
+// Design C2 (N3): an innocent suspect punched (knocked out or left standing:
+// a KO latches the hostile global too). Synced scenario globals.
+VAR cipher_hostile = false
+VAR phantom_hostile = false
 
 === start ===
 #set_global:debrief_played:true
@@ -88,6 +92,9 @@ Director Magnus Netherton: Say it, Agent. Whatever you think of me tonight. I wo
 { accused_cipher or accused_phantom:
     Director Magnus Netherton: {accused_cipher and accused_phantom:You accused both of the innocent men to their faces.|You accused {accused_cipher:Cipher|Phantom} to his face.} I read the transcripts.
     Director Magnus Netherton: It is in the file now, and it will follow {accused_cipher and accused_phantom:them|him} longer than it follows you.
+}
+{ cipher_hostile or phantom_hostile:
+    Director Magnus Netherton: You hit {cipher_hostile and phantom_hostile:Cipher and Phantom|{cipher_hostile:Cipher|Phantom}} on my floor. {cipher_hostile and phantom_hostile:Two innocent men.|An innocent man.} That goes in the file beside everything else.
 }
 { locker_seen_picked:
     Director Magnus Netherton: You picked a colleague's locker in front of a witness, who then told the whole floor he saw nothing.
