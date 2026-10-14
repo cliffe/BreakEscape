@@ -234,13 +234,13 @@ Narrator: Dead air, then the ordinary hiss of a handset that thinks it has been 
 - projection_revised:
     You've found the discrepancy. Good. Now watch how long it takes you to act on it.
 - else:
-    The beauty of entropy is that it doesn't require me to win. Soon your team won't be yours to move.
+    The beauty of entropy is that it doesn't require me to win. It only requires you to wait.
 }
 {t20_folded and not team_redirected and team_assignment != "trojan_horse":
     {team_assignment == "fracture":
-        You sent your team to Washington. San Francisco and the vendors are on your clock.
+        Washington, then. San Francisco and the vendors are on your clock.
     - else:
-        You sent your team to San Francisco. Washington and the vendors stand open.
+        San Francisco, then. Washington and the vendors stand open.
     }
 }
 
@@ -286,9 +286,9 @@ Narrator: The call ends mid-syllable.
 {not heard_t30:
     ~ heard_t30 = true
     ~ late_first_contact = true
-    Narrator: Five minutes on the display. Your handset lights without ringing. The call is already connected, and has been for some seconds.
+    Narrator: Your handset lights without ringing. The call is already connected, and has been for some seconds.
 - else:
-    Narrator: Five minutes on the display. The handset opens the line without asking.
+    Narrator: The handset opens the line without asking.
 }
 
 // Phase 4 dialogue C1 (D7-16): the player may not know Mercer's name yet.
@@ -312,7 +312,10 @@ The man in your control room would give you his figure and defend it to your fac
 
 // PASS 3 (E13): choices-only, so a re-navigation replays none of the text above.
 === taunt_t5_choices ===
-+ [I made a call. I'll carry it.]
++ {team_assignment != ""} [I made a call. I'll carry it.]
+    Noted.
+    -> t5_close
++ {team_assignment == ""} [I didn't make one. I'll carry that too.]
     Noted.
     -> t5_close
 + [I'm not doing this with you.]
@@ -320,7 +323,7 @@ The man in your control room would give you his figure and defend it to your fac
     -> t5_close
 
 === t5_close ===
-Do you believe in yours enough to name them? You will have to, eventually, to somebody with a tablet.
+{team_assignment == "": You'll have to name all three, eventually, to somebody with a tablet.|Do you believe in yours enough to name them? You will have to, eventually, to somebody with a tablet.}
 {late_first_contact and not architect_echo_heard:
     ~ architect_echo_heard = true
     Let it hurt afterwards, not during. I expect you've been told that.
@@ -345,9 +348,9 @@ Narrator: Static. Then nothing.
     ~ heard_t30 = true
     ~ late_first_contact = true
     ~ t1_first_contact = true
-    Narrator: {countdown_expired:The countdown has run out.|One minute.} Your handset lights without ringing. The call is already connected, and has been for some seconds.
+    Narrator: {countdown_expired:The countdown has run out. }Your handset lights without ringing. The call is already connected, and has been for some seconds.
 - else:
-    Narrator: {countdown_expired:The countdown has run out.|One minute.} The handset is warm in your hand and the line is already open.
+    Narrator: {countdown_expired:The countdown has run out. }The handset is warm in your hand and the line is already open.
 }
 
 {countdown_expired:

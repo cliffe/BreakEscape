@@ -123,7 +123,7 @@ Director Magnus Netherton: Their backup server shared its coordination file with
 // door-order line then answers "How close was it?" on every route.
 + [How close was it?]
 + [It doesn't feel done, sir.]
-    Director Magnus Netherton: It will not, tonight. It is done anyway.
+    Director Magnus Netherton: It will not, tonight. Count it anyway.
 - {logged_in_before_door:
     Director Magnus Netherton: You logged in on their host before the control room door was open. The clock ran while you were on the wrong side of it.
 - else:
@@ -218,7 +218,7 @@ Director Magnus Netherton: I will need an explanation for that in writing. Not t
 // absolves: the answer is deferred to the dark read-out.
 = team_reaction
 + {team_assignment != ""} [Was it worth it?]
-    Director Magnus Netherton: Ask me again when I have read you the other two.
+    Director Magnus Netherton: For the people the team reached, yes. That is the only half I can answer tonight.
 + {team_assignment == ""} [I couldn't choose, sir.]
     Director Magnus Netherton: Then the writing will be short. It will not be easy.
 + [Go on, sir.]
@@ -366,7 +366,7 @@ Director Magnus Netherton: Every figure you were briefed with came from material
 + {not asked_on_me} [How many of those are on me?]
     ~ asked_on_me = true
     Director Magnus Netherton: I will ask you that at the end, in your own words. Hear this one first.
-+ {asked_on_me} [(Say nothing.)]
++ {asked_on_me} [I'm keeping count, sir.]
 + [Go on.]
 - ->->
 
@@ -465,14 +465,14 @@ Director Magnus Netherton: The site, then. Shorter list.
 
 // Phase 4 dialogue C1 (D7-1): every person in the site list gets one line.
 { mercer_told_diversion:
-    Director Magnus Netherton: And you told him he was scenery, there to keep us busy. Whatever that does to a man like him, it is doing it now.
+    Director Magnus Netherton: He also heard from you that he was scenery, there to keep us busy. Whatever that does to a man like him, it is doing it now.
 }
 
 {
     - elena_ko:
     Director Magnus Netherton: Elena Rodriguez came round in the server room, the only one on their side who tried to stop it. Her statement will be an awkward document.
 - elena_outcome == "turned":
-    Director Magnus Netherton: Elena Rodriguez walked out and gave a statement without being asked twice. Analysis wants her. I have not decided.
+    Director Magnus Netherton: Elena Rodriguez gave a statement without being asked twice. Analysis wants her. I have not decided.
 - elena_outcome == "fled":
     Director Magnus Netherton: Elena Rodriguez left before the cordon. She took nothing and broke nothing on her way out, which tells me something.
 // PASS 4 (design review fix 3): met, but neither turned nor pressured.
@@ -490,7 +490,7 @@ Director Magnus Netherton: The site, then. Shorter list.
 - hollis_resolved == "talked":
     // PASS 5 puzzle chains r1 (N1): on the talk route he refuses the police
     // and walks out through the muster door (his deal_take).
-    Director Magnus Netherton: Ray Hollis walked out through the muster door into the police at the gate. He told you more about the vault than he has told us.
+    Director Magnus Netherton: The police picked Ray Hollis up at the gate. He told you more about the vault than he has told us.
 - hollis_resolved == "evaded":
     Director Magnus Netherton: The checkpoint guard is still at his post, and still on their payroll. We know his name. It will keep.
 // PASS 3: nobody dealt with him (never spoken to, or he went for the agent and was left standing).
@@ -548,7 +548,7 @@ Agent HaX: Four targets, simultaneous. 0x00 to Portland. One team uncommitted. T
 Narrator: The Director does not move.
 // Phase 4 dialogue C1 (D7-1, beat 7)
 + [That's my deployment. Word for word.]
-    Agent HaX: Word for word.
+    Agent HaX: Down to the forty minutes.
 + [When was it sent?]
 - Agent HaX: I've checked the time against our tasking order three times. I didn't believe the first two.
 Agent HaX: It predates the deployment order by fifty-one minutes.
@@ -579,7 +579,7 @@ Agent HaX: The variable was you. Something in that building could have shown us 
 // player who found it. Beat 8 before "Look at me".
 = coda_close
 + [Then he got what he came for.]
-+ [(Say nothing.)]
++ [What does he do with a reading?]
 - Director Magnus Netherton: Agent. Look at me.
 {countdown_expired:
     Director Magnus Netherton: Seattle lost power for a while. The rest of three states never did. Nothing either of you has said changes that.
@@ -691,10 +691,11 @@ Director Magnus Netherton: One question, then, and it goes in your file in your 
     Director Magnus Netherton: There is no exchange rate between a vote and a life. Anyone who offers you one is selling something.
     {team_assignment == "":
         Director Magnus Netherton: I will note the refusal. You made it tonight as well, and three operations went dark while you did.
+        Director Magnus Netherton: That one you will have to live with.
     - else:
         Director Magnus Netherton: I will note the refusal. I will also note that you did the sum anyway, tonight, because somebody had to.
+        Director Magnus Netherton: You will live between those two. Most of us do.
     }
-    Director Magnus Netherton: You will live between those two. Most of us do.
     -> handoff
 
 * [I want the numbers before he writes them. Next time.]
@@ -749,7 +750,7 @@ Director Magnus Netherton: So we stop giving them. And we find out who has been 
 {countdown_expired:
     Narrator: Outside, Seattle comes back one substation at a time. Across the rest of three states, people sleep with the lights on.
 - else:
-    Narrator: Outside, across three states, eight point four million people are asleep with the lights on.
+    Narrator: Outside, across three states, people are asleep with the lights on.
 }
 
 Narrator: Somewhere else, a man reads the same figures on the same kind of tablet, and is pleased with them.

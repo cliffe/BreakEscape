@@ -39,6 +39,7 @@ VAR asked_partial = false
 VAR hollis_backed_off = false
 VAR hub_quiet = false
 VAR wary_said = false // Phase 4 dialogue C1 (D7-22): the "There you are" sighting plays once
+VAR clone_sight_said = false // Phase 4 dialogue C2 (D7C2-18): the after-clone "Thought you'd gone" sighting plays once (its own latch: wary_said may already be set from before the clone)
 
 === start ===
 {hollis_ko:
@@ -273,7 +274,8 @@ Ray Hollis: Yeah. Thought so.
 // Phase 4 dialogue C1 (D7-22): after the clone he has just told the player to
 // go; and the sighting plays once, not on every re-talk.
 {
-- hollis_cloned:
+- hollis_cloned and not clone_sight_said:
+    ~ clone_sight_said = true
     Narrator: He looks up from the desk. His hand stays off his belt this time.
     Ray Hollis: Thought you'd gone. Say it or go.
 - wary_said:

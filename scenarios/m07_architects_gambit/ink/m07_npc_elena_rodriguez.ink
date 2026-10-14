@@ -108,7 +108,7 @@ Elena Rodriguez: If you're not one of his, you're law. Either way, let me finish
 // A re-talk re-enters this knot (the owner of the saved choice), so the
 // re-entry line lives here. hub_quiet is false only on a re-talk.
 {not hub_quiet:
-    Elena Rodriguez: {&Still here. Ask.|I haven't moved. Neither has the table.}
+    Elena Rodriguez: {&Ask. I can listen and type.|I haven't moved. Neither have the tables.}
 }
 ~ hub_quiet = false
 + {not asked_told} [What were you told this was?]
@@ -368,8 +368,7 @@ Elena Rodriguez: That's what he did. Put a number in front of me and told me wha
     -> pressure_recover
 + [I don't have time to be gentle with you.]
     -> flee
-+ [Say nothing.]
-    You: ...
++ [(Say nothing.)]
     Narrator: The silence goes on a beat too long, and she reads it.
     -> flee
 

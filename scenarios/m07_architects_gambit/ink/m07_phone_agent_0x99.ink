@@ -123,8 +123,6 @@ The ops room's running four fires tonight. If I go quiet for ten seconds, it isn
 // Phase 4 dialogue C1 (D7-42): commas, not double hyphens.
 The team's logged for {team_assignment == "fracture": Fracture, Washington|{team_assignment == "meltdown": Meltdown, San Francisco|Trojan Horse, Austin}}. It's on the record. It'd take something new to move it.
 
-I can't be in the other two places.
-
 // Phase 4 dialogue C1 (D7-32): "the one place a person on the ground" line cut
 // (Netherton says it twice in the briefing). (D7-30): a late first call.
 {inside_reached: You're past the checkpoint. Ask me where you stand and I'll give you the next step.|Get past the checkpoint to the operations floor.}
@@ -436,7 +434,7 @@ HaX here, Agent. I've got your channel and the board.
 // ===========================================
 
 === function people_news() ===
-~ return ((hollis_resolved != "" or hollis_ko) and not hollis_discussed) or (elena_outcome != "" and not elena_discussed) or (elena_ko and elena_outcome == "" and not elena_discussed) or ((mercer_fate != "" or mercer_ko) and not mercer_discussed) or park_pointer_open()
+~ return ((hollis_resolved != "" or hollis_ko) and not hollis_discussed) or (elena_outcome != "" and not elena_discussed) or (elena_ko and elena_outcome == "" and not elena_discussed) or ((mercer_fate != "" or mercer_ko) and not mercer_discussed)
 
 === function park_pointer_open() ===
 ~ return vault_entered and not casualty_projection_found and not park_ko and park_resolved != "talked" and park_resolved != "ko" and not park_hint_given
@@ -445,7 +443,7 @@ HaX here, Agent. I've got your channel and the board.
 ~ return (found_tomb_gamma and not tomb_discussed) or (found_mole_evidence and not mole_discussed)
 
 === function stuck_news() ===
-~ return vault_hint_open() or (vm_terminal_used and not flag1_submitted and not vm1_hint_given) or (flag1_submitted and not flag2_submitted and not vm2_hint_given) or (flag2_submitted and not flag3_submitted and not vm3_hint_given) or (flag3_submitted and not flag4_submitted and not vm4_hint_given) or guide_waiting()
+~ return vault_hint_open() or (vm_terminal_used and not flag1_submitted and not vm1_hint_given) or (flag1_submitted and not flag2_submitted and not vm2_hint_given) or (flag2_submitted and not flag3_submitted and not vm3_hint_given) or (flag3_submitted and not flag4_submitted and not vm4_hint_given) or guide_waiting() or park_pointer_open()
 
 === function vault_hint_open() ===
 ~ return generator_hall_reached and not vault_entered and not vault_pin_found and not vault_hint_given
@@ -463,9 +461,6 @@ HaX here, Agent. I've got your channel and the board.
     -> topic_elena
 + {(mercer_fate != "" or mercer_ko) and not mercer_discussed} [I've dealt with Mercer.]
     -> topic_mercer
-// PASS 4 round 2 (playtest note 5): the Park pointer, findable again
-+ {park_pointer_open()} [The man in the vault won't stop. What would reach him?]
-    -> topic_park
 + [Never mind.]
     -> hub
 
@@ -474,9 +469,9 @@ HaX here, Agent. I've got your channel and the board.
     -> hub
 }
 ~ submenu_from_hub = false
-+ {found_tomb_gamma and not tomb_discussed} [I found a dossier down in the vault. Tomb Gamma.]
++ {found_tomb_gamma and not tomb_discussed} [A dossier. Tomb Gamma.]
     -> topic_tomb
-+ {found_mole_evidence and not mole_discussed} [The intercept in the vault. They didn't leak the operation. They leaked me.]
++ {found_mole_evidence and not mole_discussed} [An intercept. They didn't leak the operation. They leaked me.]
     -> topic_mole
 + [Never mind.]
     -> hub
@@ -486,6 +481,10 @@ HaX here, Agent. I've got your channel and the board.
     -> hub
 }
 ~ submenu_from_hub = false
+// PASS 4 round 2 (playtest note 5): the Park pointer, findable again.
+// Phase 4 dialogue C2 (D7C2-9): filed under "stuck", where a player in the vault looks.
++ {park_pointer_open()} [The man in the vault won't stop. What would reach him?]
+    -> topic_park
 // PASS 3: stuck at the vault keypad (names the source, never the digits)
 + {vault_hint_open()} [The vault keypad. Where do I get the code?]
     -> vault_hint
@@ -658,7 +657,7 @@ No. I'm sorry. That window's shut.
 
 // Phase 4 dialogue C1 (D7-5): no longer offered after the abort, so the
 // grid_saved branch here is gone.
-You found the numbers were wrong. That goes in the report. Now finish the part that's still yours.
+{not revision_before_commit: You found the numbers were wrong. That goes in the report. }Now finish the part that's still yours.
 
 -> hub
 
@@ -749,7 +748,7 @@ And the Austin row says nine days, not ninety. The brief was cooked.
 He read the projection and signed it. Nobody was talking him down.
 
 // Phase 4 dialogue C1 (D7-36): by fate; a silent KO said nothing to him.
-{mercer_fate == "arrested": He'll talk. He's waited twenty years for a room that has to listen.|{mercer_fate == "escaped": You let him walk. That's in the log, in your words.|He never got to say his piece. He'll mind that more than the cell.}}
+{mercer_fate == "arrested": Good. He's waited twenty years for a room that has to listen.|{mercer_fate == "escaped": You let him walk. That's in the log, in your words.|{mercer_ko: He never got to say his piece. He'll mind that more than the cell.|He came at you instead of saying his piece. Wherever he is, he's still writing it.}}}
 -> hub
 
 === topic_tomb ===

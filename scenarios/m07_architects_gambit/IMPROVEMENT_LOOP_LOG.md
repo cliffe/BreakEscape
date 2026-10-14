@@ -670,3 +670,60 @@ Choices (not voiced) also changed: the debrief beats; "[Nothing on the record, s
 - Not seen on screen: the debrief beats (in particular the bracketed non-verbal choices and the run lengths as the engine paces them), HaX's sub-menus and a reopen on one, Elena's and Mercer's re-entry lines, T-10 with T-20 folded in. Worth a short targeted browser check before the dialogue stage closes.
 - `crowded-hub` stays as a static lint note (14 gates; 9 at runtime).
 - The debrief's one-line VM summary (`m07_closing_debrief.ink:115`) and HaX's VM hints are unchanged; whether they match the VM needs checking against SecGen by the user (U3).
+
+### Phase 4 dialogue, cycle 2 (fixer, 2026-10-14)
+
+Input: `DIALOGUE_REVIEW_P5_C2.md` (0 blockers, 0 majors, 23 minors, D7C2-1 to D7C2-23). All 23 applied with the review's rewrites. Two adjustments, both logged below. Ink recompiled (`scripts/compile-ink.sh m07_architects_gambit`: 8 files, 0 failed; the one END warning in the briefing is the existing `-> END` at the handoff). One erb text edit (D7C2-15), made after re-reading the line; the room-dressing edits were left alone. No browser session. Not committed.
+
+| Id | Outcome | Line (old → new) |
+|---|---|---|
+| D7C2-1 | Fixed | debrief :221 "Ask me again when I have read you the other two." → "For the people the team reached, yes. That is the only half I can answer tonight." |
+| D7C2-2 | Fixed | debrief :126 "It will not, tonight. It is done anyway." → "It will not, tonight. Count it anyway." |
+| D7C2-3 | Fixed | debrief :582 choice "[(Say nothing.)]" → "[What does he do with a reading?]" (the :536 and :742 "(Say nothing.)" stay) |
+| D7C2-4 | Fixed | debrief :369 choice "[(Say nothing.)]" → "[I'm keeping count, sir.]" (gate `asked_on_me` kept; no reply) |
+| D7C2-5 | Fixed | :468 "And you told him he was scenery, there to keep us busy." → "He also heard from you that he was scenery, there to keep us busy."; :475 "Elena Rodriguez walked out and gave a statement without being asked twice." → "Elena Rodriguez gave a statement without being asked twice."; :493 "Ray Hollis walked out through the muster door into the police at the gate." → "The police picked Ray Hollis up at the gate." |
+| D7C2-6 | Fixed | debrief :697 "You will live between those two. Most of us do." moved into the `else` (committed) branch; the uncommitted branch gets "That one you will have to live with." |
+| D7C2-7 | Fixed | debrief :551 HaX "Word for word." → "Down to the forty minutes." |
+| D7C2-8 | Fixed | debrief :752 "Outside, across three states, eight point four million people are asleep with the lights on." → "Outside, across three states, people are asleep with the lights on." |
+| D7C2-9 | Fixed | HaX: the Park pointer choice moved from `people_topics` to the top of `stuck_topics`; `park_pointer_open()` dropped from `people_news()` and added to `stuck_news()` |
+| D7C2-10 | Fixed | HaX :477 "[I found a dossier down in the vault. Tomb Gamma.]" → "[A dossier. Tomb Gamma.]"; :479 "[The intercept in the vault. They didn't leak the operation. They leaked me.]" → "[An intercept. They didn't leak the operation. They leaked me.]" |
+| D7C2-11 | Fixed | HaX topic_mercer: "He'll talk. He's waited twenty years…" → "Good. He's waited twenty years for a room that has to listen."; last branch now gated on `mercer_ko` ("He never got to say his piece. He'll mind that more than the cell."), else "He came at you instead of saying his piece. Wherever he is, he's still writing it." |
+| D7C2-12 | Fixed | HaX first call: "I can't be in the other two places." cut |
+| D7C2-13 | Fixed | HaX redirect_closed: "You found the numbers were wrong. That goes in the report. Now finish…" → "{not revision_before_commit: You found the numbers were wrong. That goes in the report. }Now finish the part that's still yours." |
+| D7C2-14 | Fixed | Architect: barks kept in the erb. T-5 :289 "Five minutes on the display. Your handset lights…" → "Your handset lights…"; :291 "Five minutes on the display. The handset opens…" → "The handset opens the line without asking."; T-1 :348/:350 "{countdown_expired:The countdown has run out.\|One minute.} …" → "{countdown_expired:The countdown has run out. }…" |
+| D7C2-15 | Fixed (one erb edit) | Architect :237 "…Soon your team won't be yours to move." → "…It only requires you to wait."; erb :1481 login bark "You logged in, Agent 0x00. A word about doors." → "A word about doors, Agent 0x00." (text field only; the ink line "You logged in. The door closed behind you." stays) |
+| D7C2-16 | Fixed | Architect :241 "You sent your team to Washington. San Francisco and the vendors are on your clock." → "Washington, then. San Francisco and the vendors are on your clock."; :243 "You sent your team to San Francisco. Washington and the vendors stand open." → "San Francisco, then. Washington and the vendors stand open." |
+| D7C2-17 | Fixed | Architect T-5: "[I made a call. I'll carry it.]" gated `team_assignment != ""`; new "[I didn't make one. I'll carry that too.]" for `== ""` (both "Noted."); close line for no team: "You'll have to name all three, eventually, to somebody with a tablet." (committed unchanged). New route r31 |
+| D7C2-18 | Fixed, adjusted | Hollis `wary_again`: the clone sighting plays once. The review suggested `wary_said`; that flag is already true when the player met him before cloning (r14), which would skip the first post-clone sighting. Used a new latch `clone_sight_said` instead. Later re-talks fall to "Still here. Say it or go." |
+| D7C2-19 | Fixed | Mercer :280 "End it how? While the host in the server hall drives it, this chair takes no abort, and…" → "End it how? This chair takes no abort while the host drives it, and…" |
+| D7C2-20 | Fixed | Mercer :176 "I testified twice, and filed the same submission twice in eight years." → "I testified twice. The same submission went in two times in eight years." |
+| D7C2-21 | Fixed | Elena :111 "{&Still here. Ask.\|I haven't moved. Neither has the table.}" → "{&Ask. I can listen and type.\|I haven't moved. Neither have the tables.}" |
+| D7C2-22 | Fixed | Elena :371 "[Say nothing.]" → "[(Say nothing.)]"; Mercer :110 "[Say nothing. Let him fill the silence.]" → "[(Say nothing. Let him fill the silence.)]"; both `You: ...` lines cut |
+| D7C2-23 | Fixed | Briefing: the Fracture "What can the team actually stop" choice labelled `stop_asked`; the tail line "If the team goes there, the story never runs. The breach does." is skipped when it was asked |
+
+#### Route driver
+
+`scripts/ink_runtime_check/m07_routes/`: r2 (T-10 else line), r3 and r7 (login bark), r24 (T-5 and T-1 narrator lines; the bark asserts stay, T-1 gains "One minute, Agent 0x00."), r28 (renamed choices, Mercer line, Park pointer now asserted under "I'm stuck on something." and not under people), r29 (the "I'm keeping count" and "What does he do with a reading?" picks, "Down to the forty minutes.", the uncommitted refusal line, and `not said` for "You will live between those two."), r30 (new Was-it-worth-it reply; "he was scenery"; `not said` for the old deferral) updated. r14 gains a second re-talk after the clone ("Still here. Say it or go.", not the sighting again). New r31 (uncommitted, logs in, hears T-5: offered "I didn't make one", not "I made a call"; no "yours" question).
+
+#### Checks (static; no browser session started)
+
+- All 31 routes (r1 to r31): every expectation met; longest run without a choice 9 (briefing) in the worst route, never above 9.
+- `dialoguelint` on m07: the `you-after-choice` notes are gone; remaining notes unchanged from cycle 1 (one "however" in the Architect, one "Not to this room. Somewhere without windows." in the debrief, three blank-reentry notes on Hollis and Park, `crowded-hub` on the HaX hub which stays 14 gates, at most 9 at runtime).
+- `reopencheck` (missions.json): 0 problems in total; HaX 1800 reopens, 1280 re-runs; Architect 472 reopens, 316 re-runs.
+- `loopcheck` (200 steps × 6 strategies) on the debrief (two states), HaX hub, `stuck_topics` and `topic_mercer` (escaped and ko), the Architect start and `taunt_t5_choices` (committed and uncommitted), Hollis `wary_again` and start (cloned), Mercer, Elena and the briefing: no runtime errors.
+- `tagdiff` run; `inkcheck.js` needs a state spec I didn't build, so it wasn't run. `validate_scenario.rb` runs clean on the erb.
+- Each touched line grepped in the ink after the edit and reads as intended.
+
+#### Open after cycle 2
+
+- The targeted browser check named in the review (the debrief beats on a committed and an uncommitted route, HaX's three sub-menus including the Park pointer now under "stuck", Elena's and Mercer's re-talk lines, T-10 with T-20 folded in, the T-5 bark then the call) is not yet run.
+- The debrief VM summary and HaX's VM hints still need the user's check against SecGen (U3).
+
+### Stage 4 room dressing (2026-10-14)
+
+Full detail, per room and per finding, in `ROOM_DRESSING.md`; evidence in `build_evidence/dressing_c<N>/`.
+
+| Cycle | Blocker | Major | Minor | Outcome |
+|---|---|---|---|---|
+| 1 (survey, own maps, all six rooms built) | 1 | 5 | 2 | All fixed: six `room_pnw_*` maps (shared maps untouched, U6 cleared for m07), 11 objects onto real fixtures (11 NO SLOT before, 0 after). First room (operations floor) pending sign-off, U13 |
+| 2 (fresh Opus review of cycle 1) | 0 | 3 | 19 | 17 fixed, 1 in part, 2 left with reasons (handover-sheet wording; mimic behind the monitor) |

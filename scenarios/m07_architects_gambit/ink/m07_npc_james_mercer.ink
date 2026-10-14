@@ -107,11 +107,10 @@ Dr. James Mercer: Sit if you like. You've walked a long way through my building.
     Dr. James Mercer: People come away thinking they've found the loose thread. There isn't one. I've looked.
     -> back
 
-+ [Say nothing. Let him fill the silence.]
++ [(Say nothing. Let him fill the silence.)]
     ~ stance_taken = true
     ~ mercer_stance = "silent"
     #set_global:mercer_stance:silent
-    You: ...
     Narrator: The display on the wall behind him hums. He waits as well.
     Dr. James Mercer: All right. It's a decent technique. It won't work on me, but I'll take the invitation.
     Dr. James Mercer: I spent twenty years being listened to politely by people who had already decided. I know what silence in a room means.
@@ -173,7 +172,7 @@ Dr. James Mercer: Sit if you like. You've walked a long way through my building.
 === topic_lesson ===
 ~ heard_the_lesson = true
 
-Dr. James Mercer: I did publish. Four papers, two of them still cited. I testified twice, and filed the same submission twice in eight years.
+Dr. James Mercer: I did publish. Four papers, two of them still cited. I testified twice. The same submission went in two times in eight years.
 Dr. James Mercer: Each time it was costed, deferred and declined by people who couldn't tell you what a phase angle was.
 
 Dr. James Mercer: In 2019 a solar storm came within ninety minutes of taking the western grid down on its own, and nobody wrote a word about it.
@@ -277,7 +276,7 @@ Dr. James Mercer: The lesson stands whether or not somebody else found it conven
     -> resolution_choices
 }
 // Phase 4 dialogue C1 (D7-28): the abort does go in at this console, once root is in.
-Dr. James Mercer: End it how? While the host in the server hall drives it, this chair takes no abort, and the sequence doesn't care what happens to me.
+Dr. James Mercer: End it how? This chair takes no abort while the host drives it, and the sequence doesn't care what happens to me.
 Dr. James Mercer: I built it that way so I couldn't be leaned on.
 
 Dr. James Mercer: You don't need me. That's the part everyone gets wrong. You need the host in the server hall.

@@ -127,7 +127,7 @@ Director Magnus Netherton: The breach makes the lie checkable. The desk projects
     Director Magnus Netherton: Nothing you could put on a casualty board tonight. The deaths come over the week, city by city.
     Director Magnus Netherton: And the records cannot be un-leaked. They will be on darknet markets by the weekend.
     -> brief_fracture_tail
-* [What can the team actually stop at this point?]
+* (stop_asked) [What can the team actually stop at this point?]
     Director Magnus Netherton: Not the exfiltration. Sixty million records are gone before they land.
     Director Magnus Netherton: They can take the cluster before it publishes. A breach without the story is a scandal. With the story, it is a constitutional crisis.
     -> brief_fracture_tail
@@ -139,7 +139,9 @@ Director Magnus Netherton: Cell lead is Michael Reeves, fifteen years an NSA ana
 
 // Phase 4 dialogue C1 (D7-18): every tail says what the team would stop, not
 // only Trojan Horse's.
-Director Magnus Netherton: If the team goes there, the story never runs. The breach does.
+{not brief_fracture.stop_asked:
+    Director Magnus Netherton: If the team goes there, the story never runs. The breach does.
+}
 
 -> delegation_hub
 

@@ -104,6 +104,20 @@
    ]
   },
   {
+   "talk": "hollis",
+   "knot": "start",
+   "picks": []
+  },
+  {
+   "said": [
+    "Still here. Say it or go."
+   ],
+   "notSaid": [
+    "Thought you'd gone",
+    "His hand stays off his belt this time"
+   ]
+  },
+  {
    "creditsSaid": [
     "RAY HOLLIS: Badge copied off his belt"
    ],
