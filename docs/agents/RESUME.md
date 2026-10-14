@@ -2,6 +2,15 @@
 
 Same process and rules as m05/m06 below (user, 2026-10-13: run concurrently, no user input; blocking items go in each mission's `DECISIONS_PENDING.md`). Briefs `docs/agents/M07_PASS_BRIEF.md`, `M08_PASS_BRIEF.md`. Started: stage-1 regression playtest and alignment review cycle 1 for both. m05 is at dialogue cycle 3 review + room dressing; m06 at struggling-run fix browser check.
 
+# Resume note — m05–m08 full passes (pass 5), status 2026-10-14
+
+All four run without the user's input; anything blocked is in each mission's `DECISIONS_PENDING.md`.
+
+- **m05, m06, m07: every unblocked stage done** (alignment → puzzle chains → scenario design → dialogue → dressing → lighting → playtests incl. a blind struggling run and fixes). Each has a "do your best" prompt for the user: `docs/agents/M05_/M06_/M07_BLIND_PLAYTEST_PROMPT.md` (and M04's).
+- **Waiting on the user:** POV chat backgrounds (metered Gemini: m05 D17, m06 D10, m07 D-POV); character picks; first-room sign-offs (m05 D15 Halloran's lab, m07 U13 operations floor, m08 R1 lobby); SecGen checks (each mission's U-items, esp. m08 U1 addenda: whether the VM account names Nightshade); engine items (each file's E/D items; backlog in `docs/IDEAS_BACKLOG.md`).
+- **m08:** alignment, puzzle chains, scenario design, dialogue (pending its browser check) and dressing closed; lighting running; then playtests.
+- Lessons: playtest skill gotcha on NPC combat state (D10 was harness-induced); dressing skill traps on NPC tap frames and top-left reach; never `git stash` in the shared tree (in all briefs).
+
 # Resume note — m05 and m06 full passes (pass 5, started 2026-10-13)
 
 Running alongside m04's pass, without the user's input (user, 2026-10-13): anything needing the user goes in each mission's `DECISIONS_PENDING.md` and work moves on. Briefs `docs/agents/M05_PASS_BRIEF.md`, `M06_PASS_BRIEF.md` (no VM-content summaries: a safety check stopped the orchestrator writing them; reviewers judge only that flags are required and woven in). Stage order as AGENTS.md "Iterating": regression, alignment, puzzle chains, scenario design, dialogue + dressing, lighting, POV, characters (parked for picks), playtests and blind runs. Started: regression A and alignment round 1 for both.
