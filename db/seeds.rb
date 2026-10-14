@@ -121,12 +121,12 @@ if orphaned_missions.any?
 
   prune = if ENV['BREAK_ESCAPE_PRUNE'] == '1'
             true
-          elsif $stdin.tty?
+  elsif $stdin.tty?
             print "  Delete them, with their games and listings? Type 'delete' to confirm: "
             $stdin.gets.to_s.strip == 'delete'
-          else
+  else
             false
-          end
+  end
 
   if prune
     orphaned_missions.each do |mission|

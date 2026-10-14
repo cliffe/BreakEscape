@@ -3414,9 +3414,9 @@ def check_recurring_bugs(json_data, repo_root)
                   end
                   [v.is_a?(Hash) ? v['image'] : nil, "chatBackground[#{i}] image"]
                 end
-              else
+    else
                 [[val, 'chatBackground']]
-              end
+    end
     entries.each do |img, label|
       if !img.is_a?(String) || img.strip.empty?
         issues << "⚠️ WARNING: 'rooms/#{rid}' #{label} should be an image path such as 'assets/backgrounds/rooms/<name>.png'."
