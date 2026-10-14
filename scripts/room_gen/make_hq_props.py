@@ -256,6 +256,32 @@ def evidence_wall():
     c.save(OBJ, "hq_evidence_wall1")
 
 
+def evidence_wall_named(name, verdict, bar):
+    """The evidence wall once 0x47 is named (scenario spriteVariants, in the
+    textVariants' order): one subject card, ringed red and labelled 0X47, the case
+    lines beside it, and a verdict bar (amber PENDING before the relay chain is in,
+    red CONCLUSIVE after). Never shown before the naming."""
+    w, h = 64, 32
+    c = Canvas(w, h)
+    c.rect(0, 0, w - 1, h - 1, (26, 26, 32))
+    c.rect(1, 1, w - 2, h - 2, (16, 24, 40))
+    c.text(3, 3, "CASE FILE", SN_BLUE_LIGHT)
+    x0 = 4
+    c.rect(x0, 10, x0 + 15, 23, (34, 44, 66))
+    c.frame(x0, 10, x0 + 15, 23, RED)
+    c.rect(x0 + 6, 12, x0 + 9, 15, (150, 160, 180))
+    c.rect(x0 + 4, 16, x0 + 11, 21, (150, 160, 180))
+    c.text(x0 + 0, 24, "0X47", (240, 200, 200))
+    n_lines = 5 if verdict == "CONCLUSIVE" else 2
+    for k in range(5):
+        y = 11 + k * 3
+        col = (170, 180, 200) if k < n_lines else (50, 60, 84)
+        c.hline(24, 24 + 22 + (k * 7) % 12, y, col)
+    c.rect(20, 25, w - 3, 30, bar)
+    c.text_centred(20, w - 3, 26, verdict, WHITE)
+    c.save(OBJ, name)
+
+
 def disposition_screen():
     """The detention disposition screen: a small wall terminal, SAFETYNET blue UI,
     blank fields and a signature box."""
@@ -273,6 +299,31 @@ def disposition_screen():
     c.frame(3, 18, w - 4, 23, (170, 176, 186))
     line(c, 6, 22, 12, 20, (120, 126, 140))
     c.save(OBJ, "hq_disposition1")
+
+
+def disposition_entry(name, word, bar, signed):
+    """The disposition screen with an entry (scenario spriteVariants, in the
+    textVariants' order): the fields filled, a status bar (AWAITING blue, HANDOVER
+    red for detention, RETAINED amber for the controlled asset), and the
+    countersignature drawn in once the Director has signed."""
+    w, h = 34, 26
+    c = Canvas(w, h)
+    c.rect(0, 0, w - 1, h - 1, (30, 30, 36))
+    c.rect(1, 1, w - 2, h - 2, (226, 232, 240))
+    c.rect(1, 1, w - 2, 7, SN_BLUE_DARK)
+    seal(c, 5, 4, 2)
+    c.text(10, 2, "DISP", WHITE)
+    c.hline(3, 11, 10, GREY)
+    c.rect(13, 9, w - 4, 11, WHITE)
+    c.hline(14, 26, 10, INK)
+    c.rect(1, 13, w - 2, 19, bar)
+    c.text(2, 14, word, WHITE)
+    c.frame(3, 20, w - 4, 24, (170, 176, 186))
+    if signed:
+        line(c, 6, 23, 10, 21, INK)
+        line(c, 10, 21, 13, 23, INK)
+        line(c, 13, 23, 19, 21, INK)
+    c.save(OBJ, name)
 
 
 def one_way_mirror():
@@ -294,14 +345,27 @@ def one_way_mirror():
 
 
 def recording_lamp():
-    """RECORDING lamp over the interview room door: a red lit box."""
+    """RECORDING lamp on the interview room's back wall, drawn switched off: a dark
+    maroon box, the word in dull rose. The lighting stage lights it (a red `above`
+    glow in the scenario's interrogation_room lighting block) only while the
+    confrontation is on, so the art must read as an unlit lamp the rest of the time."""
     w, h = 48, 11
+    c = Canvas(w, h)
+    c.rect(0, 0, w - 1, h - 1, (30, 26, 28))
+    # Pale letters on a dark box: unlit, they read as a printed sign; under the red
+    # glow the box goes red and the letters pink-white, as a lit lamp does.
+    c.rect(1, 1, w - 2, h - 2, (74, 22, 26))
+    c.rect(3, 4, 5, 6, (176, 150, 150))
+    c.text(8, 3, "RECORDING", (176, 168, 168))
+    c.save(OBJ, "hq_recording1")
+    # The lit face (the dressing stage's original art), for DECISIONS_PENDING L1: used
+    # only if the lamp becomes a scenario object with spriteVariants.
     c = Canvas(w, h)
     c.rect(0, 0, w - 1, h - 1, (30, 26, 28))
     c.rect(1, 1, w - 2, h - 2, (226, 52, 52))
     c.rect(3, 4, 5, 6, (255, 220, 220))
     c.text(8, 3, "RECORDING", WHITE)
-    c.save(OBJ, "hq_recording1")
+    c.save(OBJ, "hq_recording_on1")
 
 
 def badge_reader():
@@ -532,6 +596,15 @@ PROPS = {
     "logo": logo_sign, "logo_small": logo_small, "memorial": memorial, "flowers": flowers,
     "alert": alert_screen, "ops_board": ops_board, "tactical": tactical_board,
     "evidence": evidence_wall, "disposition": disposition_screen, "mirror": one_way_mirror,
+    # Lighting stage: faces per story state, wired as spriteVariants (loaded on demand
+    # by rooms.js, not registered in the shared catalog).
+    "evidence_named": lambda: [
+        evidence_wall_named("hq_evidence_wall_named1", "PENDING", (176, 112, 24)),
+        evidence_wall_named("hq_evidence_wall_closed1", "CONCLUSIVE", RED)],
+    "disposition_entry": lambda: [
+        disposition_entry("hq_disposition_awaiting1", "AWAITING", SN_BLUE, False),
+        disposition_entry("hq_disposition_handover1", "HANDOVER", RED, True),
+        disposition_entry("hq_disposition_retained1", "RETAINED", (196, 128, 24), True)],
     "recording": recording_lamp, "badge_reader": badge_reader,
     "posters": lambda: [poster("hq_poster_postit1", "postit"), poster("hq_poster_ears1", "ears"),
                         poster("hq_poster_red1", "red")],

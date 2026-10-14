@@ -538,10 +538,22 @@ CREDITS
     }
   ],
 
+  <%# Lighting stage (pass 5): the Citadel at night on Level Red. LIGHTING_PLAN.md. %>
+  "lighting": { "enabled": true, "defaultMode": "on", "ambient": "#b8bfce" },
+
   "rooms": {
 
     "main_lobby": {
       "type": "room_hq_lobby",
+      "lighting": {
+        "ambient": "#bcc2ce",
+        "emitters": {
+          "hq_alert_screen": [ { "color": "#ff3a30", "radius": 30, "intensity": 0.6, "effect": "breathe", "offsetY": 16, "floorTint": 0.3, "above": true } ],
+          "hq_memorial": [ { "color": "#ffd890", "radius": 26, "intensity": 0.35, "effect": null, "offsetY": 4, "above": true } ],
+          "hq_badge_reader": [ { "color": "#ff3030", "radius": 6, "intensity": 0.9, "effect": null, "offsetX": -1, "offsetY": 2, "above": true } ],
+          "fire_alarm_point": [ { "intensity": 0 } ]
+        }
+      },
       "door_sign": "SAFETYNET HQ -- The Citadel",
       "connections": {
         "north": "director_office",
@@ -1327,6 +1339,16 @@ CREDITS
 
     "director_office": {
       "type": "room_hq_director",
+      "lighting": {
+        "ambient": "#bab0a4",
+        "panels": false,
+        "lights": [
+          { "x": 5.0, "y": 4.8, "color": "#ffd9a0", "radius": 96, "intensity": 0.7 }
+        ],
+        "emitters": {
+          "exec_laptop": [ { "color": "#9fd4ff", "radius": 22, "intensity": 0.45, "effect": "screen" } ]
+        }
+      },
       "door_sign": "Director M. Netherton",
       "connections": { "south": "main_lobby" },
       "npcs": [
@@ -1448,6 +1470,14 @@ CREDITS
 
     "operations_floor": {
       "type": "room_hq_ops",
+      "lighting": {
+        "ambient": "#b2b8c8",
+        "emitters": {
+          "hq_ops_board": [ { "color": "#a8c0ff", "radius": 56, "intensity": 0.55, "effect": "screen", "offsetY": 24 } ],
+          "hq_badge_reader": [ { "color": "#ff3030", "radius": 6, "intensity": 0.9, "effect": null, "offsetX": -1, "offsetY": 2, "above": true } ],
+          "fire_alarm_point": [ { "intensity": 0 } ]
+        }
+      },
       "door_sign": "Operations Floor",
       "connections": {
         "west": "main_lobby",
@@ -1568,6 +1598,12 @@ CREDITS
 
     "intel_analysis": {
       "type": "room_hq_intel",
+      "lighting": {
+        "ambient": "#b0b8c6",
+        "emitters": {
+          "threat_map": [ { "color": "#6ab4ff", "radius": 40, "intensity": 0.5, "offsetY": 18, "effect": "screen" } ]
+        }
+      },
       "door_sign": "Intelligence Analysis",
       "connections": { "south": "operations_floor" },
       "npcs": [
@@ -1686,6 +1722,16 @@ CREDITS
 
     "server_room": {
       "type": "room_hq_servers",
+      "lighting": {
+        "mode": "motion",
+        "ambient": "#a0b0c0",
+        "darkAmbient": "#0a0f1c",
+        "emitters": {
+          "hq_rack": [ { "color": "#6dffb0", "radius": 40, "intensity": 0.45, "effect": "blink" } ],
+          "suppression_panel": [ { "radius": 18, "intensity": 0.45, "effect": null } ],
+          "hq_badge_reader": [ { "color": "#ff3030", "radius": 6, "intensity": 0.9, "effect": null, "offsetX": -1, "offsetY": 2, "above": true } ]
+        }
+      },
       "locked": true,
       "lockType": "rfid",
       "requires": "server_zone_badge",
@@ -1746,6 +1792,11 @@ CREDITS
 
     "security_archives": {
       "type": "room_hq_archives",
+      "lighting": {
+        "mode": "motion",
+        "ambient": "#bcc0b8",
+        "darkAmbient": "#121828"
+      },
       "locked": true,
       "lockType": "password",
       "requires": "<%= archives_password %>",
@@ -1802,6 +1853,12 @@ CREDITS
 
     "cryptography_lab": {
       "type": "room_hq_crypto",
+      "lighting": {
+        "ambient": "#b4bcca",
+        "emitters": {
+          "hq_badge_reader": [ { "color": "#ff3030", "radius": 6, "intensity": 0.9, "effect": null, "offsetX": -1, "offsetY": 2, "above": true } ]
+        }
+      },
       "door_sign": "Cryptography Lab",
       "connections": {
         "east": "main_lobby",
@@ -1905,6 +1962,29 @@ CREDITS
 
     "interrogation_room": {
       "type": "room_hq_interview",
+      "lighting": {
+        "mode": "motion",
+        "ambient": "#c0c4cc",
+        "emitters": {
+          "laptop": [ { "radius": 30, "intensity": 0.3 } ],
+          "hq_recording": [
+            { "condition": "globalVars.all_flags_submitted && globalVars.mole_identified && !globalVars.fate_decided", "color": "#ff2a20", "radius": 26, "intensity": 1.0, "effect": null, "offsetY": 5, "above": true }
+          ],
+          "hq_recorder": [
+            { "condition": "globalVars.all_flags_submitted && globalVars.mole_identified && !globalVars.fate_decided", "color": "#ff3020", "radius": 5, "intensity": 1.0, "effect": null, "offsetX": 6, "offsetY": -1.5, "above": true }
+          ],
+          "hq_camera_tripod": [
+            { "condition": "globalVars.all_flags_submitted && globalVars.mole_identified && !globalVars.fate_decided", "color": "#ff3020", "radius": 5, "intensity": 1.0, "effect": null, "offsetX": 8, "offsetY": -21, "above": true }
+          ]
+        },
+        "variants": [
+          { "condition": "globalVars.all_flags_submitted && globalVars.mole_identified && !globalVars.fate_decided",
+            "mode": "on", "ambient": "#8c929e", "panels": false,
+            "emitters": { "laptop": [ { "intensity": 0 } ] },
+            "lights": [ { "x": 5.0, "y": 4.7, "color": "#f0f4ff", "radius": 104, "intensity": 0.9 } ] },
+          { "condition": "globalVars.fate_decided", "mode": "on" }
+        ]
+      },
       "locked": true,
       "lockType": "pin",
       "requires": "<%= suite_code %>",
@@ -1968,6 +2048,14 @@ CREDITS
           "id": "evidence_display",
           "name": "Evidence Display",
           "position": "as-type:hq_evidence_wall",
+          <%# Lighting stage: the wall's face follows the case (make_hq_props.py), loaded on demand.
+              "sprite" names the base face: rooms.js falls back to it (else to the type,
+              smartscreen) when a watched global changes and no variant matches. %>
+          "sprite": "hq_evidence_wall1",
+          "spriteVariants": [
+            { "condition": "globalVars.all_flags_submitted && globalVars.mole_identified", "value": "hq_evidence_wall_closed1" },
+            { "condition": "globalVars.mole_identified", "value": "hq_evidence_wall_named1" }
+          ],
           "takeable": false,
           "readable": true,
           "observations": "The interrogation-room evidence wall. It fills in as evidence comes through the relay.",
@@ -1986,6 +2074,14 @@ CREDITS
           "id": "disposition_terminal",
           "name": "Detention Disposition Screen",
           "position": "as-type:hq_disposition",
+          <%# Lighting stage: the screen's face follows the entry, in the textVariants' order.
+              "sprite" names the base face (see evidence_display). %>
+          "sprite": "hq_disposition1",
+          "spriteVariants": [
+            { "condition": "globalVars.nightshade_triple_agent", "value": "hq_disposition_retained1" },
+            { "condition": "globalVars.nightshade_arrested", "value": "hq_disposition_handover1" },
+            { "condition": "globalVars.all_flags_submitted && globalVars.mole_identified", "value": "hq_disposition_awaiting1" }
+          ],
           "takeable": false,
           "readable": true,
           "observations": "SAFETYNET's disposition system. It takes one entry per detainee, and the Director countersigns whatever goes in.",
@@ -2003,6 +2099,9 @@ CREDITS
 
     "break_room": {
       "type": "room_hq_break",
+      "lighting": {
+        "ambient": "#ccc4b8"
+      },
       "door_sign": "Break Room",
       "connections": { "east": "cryptography_lab" },
       "npcs": [
