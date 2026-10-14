@@ -23,7 +23,7 @@
   },
   {
    "notSaid": [
-    "[choice] Keep him on the money"
+    "Keep him on the money"
    ]
   },
   {
@@ -35,7 +35,7 @@
   },
   {
    "notSaid": [
-    "[choice] Keep him on the money"
+    "Keep him on the money"
    ]
   },
   {
@@ -97,10 +97,10 @@
   },
   {
    "said": [
-    "There you are."
+    "Thought you'd gone. Say it or go."
    ],
    "notSaid": [
-    "[choice] Keep him on the money"
+    "Keep him on the money"
    ]
   },
   {
@@ -111,6 +111,12 @@
     "RAY HOLLIS: Evaded",
     "Talked, and handed over"
    ]
+  },
+  {
+   "note": "Phase 4 dialogue C1: no conversation runs more than nine lines without a choice."
+  },
+  {
+   "maxRun": 9
   }
  ]
 }

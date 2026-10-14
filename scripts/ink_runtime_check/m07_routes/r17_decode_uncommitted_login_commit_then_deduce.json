@@ -92,8 +92,18 @@
   {
    "talk": "debrief",
    "picks": [
+    1,
+    0,
+    1,
+    0,
+    1,
+    1,
+    0,
+    1,
+    0,
     "Nothing on the record",
-    "I made the call"
+    "I made the call",
+    1
    ]
   },
   {
@@ -115,7 +125,7 @@
    ]
   },
   {
-   "maxRun": 70
+   "maxRun": 9
   }
  ]
 }

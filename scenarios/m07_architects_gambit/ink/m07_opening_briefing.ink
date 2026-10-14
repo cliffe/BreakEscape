@@ -20,9 +20,8 @@ Narrator: 02:41 Pacific. Rain on the I-5, and the secure tablet on the passenger
 
 Director Magnus Netherton: Agent 0x00. Keep driving. I would rather you heard this from me than read it off a screen.
 
-Director Magnus Netherton: Four ENTROPY operations went live inside the same sixty seconds. Four cells, one schedule.
-
-Director Magnus Netherton: Three days ago you followed one fund paying six cells on one seventy-two-hour clock. Four of them are on that map.
+// Phase 4 dialogue C1 (D7-17): two pairs merged, so the opening runs nine.
+Director Magnus Netherton: Four ENTROPY operations went live inside the same sixty seconds. Three days ago you followed the fund behind them.
 
 // PASS 5 alignment r1 (m13): fate-neutral nod to m06's freeze-or-watch choice
 // (no cross-mission state; DECISIONS_PENDING U2).
@@ -34,9 +33,7 @@ Narrator: The Portland pin stops blinking and goes solid.
 
 Director Magnus Netherton: Pacific Northwest Regional Grid Control. One hundred and forty-seven substations. Eight point four million people in Washington, Oregon and Northern California.
 
-Director Magnus Netherton: A sequence on their SCADA stack takes all of it down in four steps. It is waiting on a start signal from a host inside the building.
-
-Director Magnus Netherton: Nobody stops it from outside that building.
+Director Magnus Netherton: A sequence on their SCADA stack takes it all down in four steps. It waits on a signal from a host inside the building. Nobody stops it from outside.
 
 // PASS 3 (capability arc): the kit, in the one knot every run opens on.
 Director Magnus Netherton: You have your go-bag: picks, the cloner, the print kit. No PIN cracker. Analysis still has it in pieces.
@@ -140,6 +137,10 @@ Director Magnus Netherton: The breach makes the lie checkable. The desk projects
 === brief_fracture_tail ===
 Director Magnus Netherton: Cell lead is Michael Reeves, fifteen years an NSA analyst. He designs operations and reads the results. He does not attend.
 
+// Phase 4 dialogue C1 (D7-18): every tail says what the team would stop, not
+// only Trojan Horse's.
+Director Magnus Netherton: If the team goes there, the story never runs. The breach does.
+
 -> delegation_hub
 
 // ================================================
@@ -204,6 +205,9 @@ Director Magnus Netherton: And ransomware across four thousand two hundred hospi
 Director Magnus Netherton: Cell lead calls himself The Liquidator. Probably Marcus Ashford, a consultant who spent twenty years watching executives take the proceeds.
 
 Director Magnus Netherton: Now he takes value the other way, and he cannot resist making it elegant.
+
+// Phase 4 dialogue C1 (D7-18)
+Director Magnus Netherton: If the team goes there, the ransomware never reaches the hospitals.
 
 -> delegation_hub
 

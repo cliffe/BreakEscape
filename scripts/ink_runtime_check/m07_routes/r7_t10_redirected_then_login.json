@@ -112,8 +112,16 @@
     "You moved them. I had wondered whether you would."
    ],
    "notSaid": [
-    "The door closed behind you"
+    "The door closed behind you",
+    "You've sent your team.",
+    "Almost nobody picks the one with no bodies in the brief"
    ]
+  },
+  {
+   "note": "Phase 4 dialogue C1: no conversation runs more than nine lines without a choice."
+  },
+  {
+   "maxRun": 9
   }
  ]
 }

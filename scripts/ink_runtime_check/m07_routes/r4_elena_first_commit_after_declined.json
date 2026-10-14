@@ -183,8 +183,18 @@
   {
    "talk": "debrief",
    "picks": [
+    0,
+    1,
+    0,
+    1,
+    0,
+    0,
+    1,
+    0,
+    1,
     "Nothing on the record",
-    "Don't ask me to rank them"
+    "Don't ask me to rank them",
+    0
    ]
   },
   {
@@ -207,10 +217,10 @@
    ]
   },
   {
-   "note": "Run-length guard: the debrief's read-out is the longest run (pre-existing; about 4 lines added by the M1 beat). Dialogue stage owns breaking it up."
+   "note": "Run-length guard (Phase 4 dialogue C1, D7-1): no conversation, the debrief included, runs more than nine lines without a choice."
   },
   {
-   "maxRun": 66
+   "maxRun": 9
   }
  ]
 }

@@ -15,5 +15,7 @@
  { "talk": "architect", "knot": "start", "picks": [0] },
  { "talk": "architect", "knot": "start", "picks": [0] },
  { "talk": "architect", "knot": "start", "picks": [0] },
- { "said": ["A carrier tone on a channel"], "notSaid": ["Five minutes on the display", "You've sent your team.", "Your screen wakes on its own", "Don't look for the trace."] }
+ { "said": ["A carrier tone on a channel"], "notSaid": ["Five minutes on the display", "You've sent your team.", "Your screen wakes on its own", "Don't look for the trace."] },
+ { "note": "Phase 4 dialogue C1: no conversation runs more than nine lines without a choice." },
+ { "maxRun": 9 }
 ]}

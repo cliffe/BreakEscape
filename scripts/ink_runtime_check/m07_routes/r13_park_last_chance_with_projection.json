@@ -94,6 +94,12 @@
    "expect": {
     "park_resolved": "talked"
    }
+  },
+  {
+   "note": "Phase 4 dialogue C1: no conversation runs more than nine lines without a choice."
+  },
+  {
+   "maxRun": 9
   }
  ]
 }

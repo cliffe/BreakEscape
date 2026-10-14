@@ -18,9 +18,10 @@
   { "advance": 15 },
   { "expect": { "countdown_expired": true } },
   { "said": ["Seattle's dark. Step one ran. Steps two to four haven't. Root's in, so the console takes the abort now. Go."], "notSaid": ["Get root, put it through the relay"] },
-  { "talk": "phone", "knot": "hub", "picks": ["Remind me of the layout and the clock.", "What's the clock?"] },
-  { "said": ["Step one ran. Seattle's dark. Steps two to four wait on the abort", "The door's north of the server hall.", "The password's in the listener capture"] },
-  { "note": "Browser N2 (PASS 5 design r2): the clock answer returns to the hub, so a reopen lands there." },
+  { "note": "Phase 4 dialogue C1 (D7-5): past the server hall the layout-and-clock choice is gone; Where do I stand? carries the clock." },
+  { "talk": "phone", "knot": "hub", "picks": ["Where do I stand?"] },
+  { "said": ["Step one ran. Seattle's dark. Steps two to four wait on the abort", "The door's north of the server hall.", "The password's in the listener capture"], "notSaid": ["[choice] Remind me of the layout and the clock."] },
+  { "note": "Browser N2 (PASS 5 design r2): the report returns to the hub, so a reopen lands there." },
   { "talk": "phone", "picks": ["I'll call you back"] },
   { "said": ["[choice] Where do I stand?"], "notSaid": ["[choice] Understood. Let's go."] },
   { "enter": "scada_control" },
@@ -28,6 +29,8 @@
   { "said": ["Some of what you took off that host hasn't gone through the relay yet"] },
   { "talk": "phone", "knot": "hub", "picks": ["Where do I stand?", "I'll call you back"] },
   { "said": ["Grid's held. Some of what you took off their host hasn't gone through the relay. Submit the rest, then call me."], "notSaid": ["[choice] Where the team goes", "The team's still waiting on your call", "The plant's south of the server hall"] },
-  { "music": "game_loaded", "expect": "end" }
- ]
+  { "music": "game_loaded", "expect": "end" },
+ { "note": "Phase 4 dialogue C1: no conversation runs more than nine lines without a choice." },
+ { "maxRun": 9 }
+]
 }

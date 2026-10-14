@@ -47,8 +47,15 @@
    ],
    "notSaid": [
     "You logged in",
-    "You still have a door open"
+    "You still have a door open",
+    "You've sent your team."
    ]
+  },
+  {
+   "note": "Phase 4 dialogue C1: no conversation runs more than nine lines without a choice."
+  },
+  {
+   "maxRun": 9
   }
  ]
 }

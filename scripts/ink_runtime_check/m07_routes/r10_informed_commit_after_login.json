@@ -64,7 +64,20 @@
    "talk": "phone",
    "picks": [
     "ready to make the call",
-    "Fracture"
+    "Fracture",
+    "Can I still move the team"
+   ]
+  },
+  {
+   "note": "Phase 4 dialogue C1 (D7-12, C6): the team left a minute ago, so the refusal doesn't say it has been on the ground."
+  },
+  {
+   "said": [
+    "No. I'm sorry. That window's shut.",
+    "You made that call with the numbers in hand. It stands."
+   ],
+   "notSaid": [
+    "The team's on the ground on a live objective"
    ]
   },
   {
@@ -92,8 +105,18 @@
   {
    "talk": "debrief",
    "picks": [
+    0,
+    1,
+    0,
+    1,
+    0,
+    0,
+    1,
+    0,
+    1,
     "Nothing on the record",
-    "I made the call"
+    "I made the call",
+    0
    ]
   },
   {
@@ -118,10 +141,10 @@
    ]
   },
   {
-   "note": "Run-length guard: the debrief read-out is the longest run (pre-existing). Dialogue stage owns breaking it up."
+   "note": "Run-length guard (Phase 4 dialogue C1, D7-1): no conversation, the debrief included, runs more than nine lines without a choice."
   },
   {
-   "maxRun": 70
+   "maxRun": 9
   }
  ]
 }

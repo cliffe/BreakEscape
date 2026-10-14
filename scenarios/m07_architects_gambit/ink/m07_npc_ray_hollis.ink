@@ -38,6 +38,7 @@ VAR asked_partial = false
 // Synced scenario global: set by the ink (back off) and by HaX's card_cloned mapping (clone).
 VAR hollis_backed_off = false
 VAR hub_quiet = false
+VAR wary_said = false // Phase 4 dialogue C1 (D7-22): the "There you are" sighting plays once
 
 === start ===
 {hollis_ko:
@@ -57,7 +58,8 @@ VAR hub_quiet = false
 === challenge ===
 Narrator: He clocks you at thirty feet. His hand goes to his belt before his face moves. The flashlight finds your chest.
 
-Ray Hollis: Building's been evacuated forty minutes. So you're lost, or you're the other thing.
+// Phase 4 dialogue C1 (D7-21): people are still coming out of the doors.
+Ray Hollis: Building's evacuating. So you're lost, or you're the other thing.
 
 -> back
 
@@ -97,7 +99,8 @@ Ray Hollis: Building's been evacuated forty minutes. So you're lost, or you're t
     -> leverage_partial
 // PASS 2: the label said "I'm not here to fight you" and led straight to
 // him panicking; the label now says what the player actually does.
-+ {pressed_once and inside_reached and not hollis_cloned and not badge_obtained} [Keep him on the money. Let the cloner read his belt.]
+// Phase 4 dialogue C1 (D7-23): an action, so in parentheses as Park's are.
++ {pressed_once and inside_reached and not hollis_cloned and not badge_obtained} [(Keep him on the money. Let the cloner read his belt.)]
     -> clone
 + [Walk at him. "I'm not here to fight you, Ray."]
     -> hostile_option
@@ -140,7 +143,8 @@ Ray Hollis: That's not what I meant.
 // and the chat resumes in clone_debrief. A cancelled read leaves hollis_cloned
 // false, so the hub choice comes back as the retry.
 === clone ===
-Narrator: You ask how much again, and step in close while he works out an answer.
+// Phase 4 dialogue C1 (D7-13): true after either stakes choice.
+Narrator: You ask him what it bought, and step in close while he works out an answer.
 #clone_keycard:server_zone_badge
 Narrator: He keeps talking about retainers.
 -> clone_debrief
@@ -266,9 +270,19 @@ Ray Hollis: Yeah. Thought so.
 === wary_again ===
 // PASS 5 alignment r2 (m6): the sight challenge fired because he saw the
 // player, so he isn't searching any more.
-Narrator: He is jumpier now. The flashlight comes up fast, and this time it finds you.
-
-Ray Hollis: There you are. I knew something was in here.
+// Phase 4 dialogue C1 (D7-22): after the clone he has just told the player to
+// go; and the sighting plays once, not on every re-talk.
+{
+- hollis_cloned:
+    Narrator: He looks up from the desk. His hand stays off his belt this time.
+    Ray Hollis: Thought you'd gone. Say it or go.
+- wary_said:
+    Ray Hollis: Still here. Say it or go.
+- else:
+    ~ wary_said = true
+    Narrator: He is jumpier now. The flashlight comes up fast, and this time it finds you.
+    Ray Hollis: There you are. I knew something was in here.
+}
 
 -> back
 

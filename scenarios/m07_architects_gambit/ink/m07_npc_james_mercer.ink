@@ -40,6 +40,9 @@ VAR heard_the_numbers = false
 VAR heard_the_lesson = false
 VAR heard_elena = false
 VAR showed_him_the_page = false
+// Phase 4 dialogue C1 (D7-37): set on every return from inside a conversation,
+// so the "Back." line plays only on a re-talk (a reopen skips start).
+VAR hub_quiet = false
 
 // ================================================
 // START
@@ -50,7 +53,7 @@ VAR showed_him_the_page = false
     -> already_resolved
 }
 {stance_taken:
-    -> returning
+    -> hub
 }
 
 #complete_task:confront_mercer
@@ -93,7 +96,7 @@ Dr. James Mercer: Sit if you like. You've walked a long way through my building.
     Dr. James Mercer: Good. That's clean. I prefer it to the other thing.
     Dr. James Mercer: The other thing is being told I don't really mean it. That underneath I'm frightened, or sorry.
     Dr. James Mercer: It's insulting, and it wastes time.
-    -> hub
+    -> back
 
 + [{grid_saved:I want to understand the reasoning. Talk me through it.|I want to understand the reasoning before I stop it. Talk me through it.}]
     ~ stance_taken = true
@@ -102,7 +105,7 @@ Dr. James Mercer: Sit if you like. You've walked a long way through my building.
     Dr. James Mercer: Then you're the first in eleven years.
     Dr. James Mercer: Understanding it won't change it. I'd rather you didn't expect it to.
     Dr. James Mercer: People come away thinking they've found the loose thread. There isn't one. I've looked.
-    -> hub
+    -> back
 
 + [Say nothing. Let him fill the silence.]
     ~ stance_taken = true
@@ -112,28 +115,36 @@ Dr. James Mercer: Sit if you like. You've walked a long way through my building.
     Narrator: The display on the wall behind him hums. He waits as well.
     Dr. James Mercer: All right. It's a decent technique. It won't work on me, but I'll take the invitation.
     Dr. James Mercer: I spent twenty years being listened to politely by people who had already decided. I know what silence in a room means.
-    -> hub
+    -> back
 
 // ================================================
 // HUB
 // ================================================
 
-=== returning ===
-{grid_saved:
-    Dr. James Mercer: Back. There's nothing left on that console for either of us.
-- else:
-    Dr. James Mercer: Back. The console hasn't changed its mind either.
-}
+// Phase 4 dialogue C1 (D7-37): the old "returning" lines live in the hub,
+// because a re-talk re-enters the hub, not start.
+=== back ===
+~ hub_quiet = true
 -> hub
 
 === hub ===
+{not hub_quiet and stance_taken:
+    {grid_saved:
+        Dr. James Mercer: Back. There's nothing left on that console for either of us.
+    - else:
+        Dr. James Mercer: Back. The console hasn't changed its mind either.
+    }
+}
+~ hub_quiet = false
 + {not heard_the_lesson} [Why the grid? You could have published. You could have testified.]
     -> topic_lesson
 
 + {not heard_the_numbers} [{grid_saved:How many people were going to die tonight?|How many people die tonight?}]
     -> topic_numbers
 
-+ {elena_met and not heard_elena} [Elena Rodriguez thinks this is a six-hour demonstration with nobody hurt.]
+// Phase 4 dialogue C1 (D7-25): a turned Elena sent the player with a question;
+// once she has read the real numbers, she "thought".
++ {elena_met and not heard_elena} [{elena_outcome == "turned":Elena says to ask you what the carve-out page says.|{elena_outcome != "":Elena Rodriguez thought this was a six-hour demonstration with nobody hurt.|Elena Rodriguez thinks this is a six-hour demonstration with nobody hurt.}}]
     -> topic_elena
 
 + {casualty_projection_found and not showed_him_the_page} [I've got your projection here. Read it back to me.]
@@ -151,10 +162,9 @@ Dr. James Mercer: Sit if you like. You've walked a long way through my building.
     - else:
         Dr. James Mercer: Take your time. I'm not going anywhere until the sequence does.
     }
+    ~ hub_quiet = true
     #exit_conversation
     -> hub
-
--> hub
 
 // ================================================
 // TOPICS
@@ -163,7 +173,7 @@ Dr. James Mercer: Sit if you like. You've walked a long way through my building.
 === topic_lesson ===
 ~ heard_the_lesson = true
 
-Dr. James Mercer: I did publish. Four papers, two of them still cited. I testified twice, and filed the same submission three times in eight years.
+Dr. James Mercer: I did publish. Four papers, two of them still cited. I testified twice, and filed the same submission twice in eight years.
 Dr. James Mercer: Each time it was costed, deferred and declined by people who couldn't tell you what a phase angle was.
 
 Dr. James Mercer: In 2019 a solar storm came within ninety minutes of taking the western grid down on its own, and nobody wrote a word about it.
@@ -173,10 +183,10 @@ Dr. James Mercer: So I stopped arguing.
 
 + [That is a very long way to walk to reach murder.]
     Dr. James Mercer: It's a very long way to walk to reach anything. That's what the length is for.
-    -> hub
+    -> back
 + [You wanted to be right more than you wanted to be listened to.]
     Dr. James Mercer: No. I wanted to be listened to for eight years. Being right was what I had left.
-    -> hub
+    -> back
 
 === topic_numbers ===
 ~ heard_the_numbers = true
@@ -189,16 +199,18 @@ Dr. James Mercer: Restoration is four to seven days, because nobody stocks trans
 
 + [You memorised them.]
     Dr. James Mercer: I wrote them. It would be a strange sort of cowardice to write them and then decline to know them.
-    -> hub
+    -> back
 + [{grid_saved:And you would have done it.|And you are going to do it anyway.}]
     Dr. James Mercer: Yes.
-    -> hub
+    -> back
 
 === topic_elena ===
 ~ heard_elena = true
 
 {elena_outcome == "turned":
     Dr. James Mercer: She's told you, then. I did wonder which way she'd go once somebody was kind to her.
+    // Phase 4 dialogue C1 (D7-25): the carve-out page she sent the player to ask about.
+    Dr. James Mercer: Page one of her copy had the carve-out. Mine didn't.
 - else:
     Dr. James Mercer: Elena. Yes.
 }
@@ -209,11 +221,11 @@ Dr. James Mercer: She'd have refused. I needed a substation engineer, not a cons
 + [You lied to her.]
     Dr. James Mercer: I withheld from her. She'd say lied. On the balance of it I'd let her have the word.
     Dr. James Mercer: I don't think worse of her. She can't carry the number. Most people can't. That's why most people don't get to decide.
-    -> hub
+    -> back
 + [She thought nobody would be hurt. You let her believe that.]
     Dr. James Mercer: She thought it because I arranged the documents so she could. Yes.
     Dr. James Mercer: You'll want to make that an accusation. Make it. It's accurate.
-    -> hub
+    -> back
 
 === topic_the_page ===
 ~ showed_him_the_page = true
@@ -225,14 +237,14 @@ Dr. James Mercer: "Twice now the warnings have been costed and declined. This is
 Dr. James Mercer: I was rather pleased with that line. It's still true.
 
 Dr. James Mercer: You brought it to make me look at it. I've looked at it more than you have.
-Dr. James Mercer: I costed the hypothermia column myself. The modeler kept rounding down, and I thought that was dishonest.
+Dr. James Mercer: I costed the hypothermia column myself. The modeller kept rounding down, and I thought that was dishonest.
 
 + [Then you'll say that in a room with a stenographer in it.]
     Dr. James Mercer: Now that is an interesting offer.
-    -> hub
+    -> back
 + [Call it a submission if you like. It's a spreadsheet of the dead.]
     Dr. James Mercer: Those aren't different things. That's what I've been trying to tell you.
-    -> hub
+    -> back
 
 === topic_diversion ===
 ~ mercer_told_diversion = true
@@ -242,7 +254,7 @@ Dr. James Mercer: I'm aware there are other operations. I am nobody's distractio
 
 Narrator: He pulls the coordination window up on the console himself, and reads it.
 
-Dr. James Mercer: This is a scheduling artifact. Cells share infrastructure. It doesn't follow.
+Dr. James Mercer: This is a scheduling artefact. Cells share infrastructure. It doesn't follow.
 
 Narrator: He reads it again.
 
@@ -250,10 +262,10 @@ Dr. James Mercer: The lesson stands whether or not somebody else found it conven
 
 + [It stands. It just isn't yours. You were the noise.]
     Dr. James Mercer: Then he chose well. I'd have been very hard to use for anything small.
-    -> hub
+    -> back
 + [He needed somebody who'd sign the page. That's all you were for.]
     Dr. James Mercer: I'd like you to know that I would have done it regardless.
-    -> hub
+    -> back
 
 // ================================================
 // RESOLUTION
@@ -264,7 +276,8 @@ Dr. James Mercer: The lesson stands whether or not somebody else found it conven
     Dr. James Mercer: End what? You put the abort through while I sat here. There's nothing left running.
     -> resolution_choices
 }
-Dr. James Mercer: End it how? The sequence is local. It takes no abort from this chair, and it doesn't care what happens to me.
+// Phase 4 dialogue C1 (D7-28): the abort does go in at this console, once root is in.
+Dr. James Mercer: End it how? While the host in the server hall drives it, this chair takes no abort, and the sequence doesn't care what happens to me.
 Dr. James Mercer: I built it that way so I couldn't be leaned on.
 
 Dr. James Mercer: You don't need me. That's the part everyone gets wrong. You need the host in the server hall.
@@ -294,7 +307,7 @@ Dr. James Mercer: So. Your decision, not mine.
 
 + [Not yet. I've something else to ask you.]
     Dr. James Mercer: By all means.
-    -> hub
+    -> back
 
 // --- Ending 1: the record --------------------------------------------
 // Requires the signed projection. Fate: arrested.
@@ -379,7 +392,7 @@ Dr. James Mercer: *a long pause* I'm sorry?
 {flag4_submitted or grid_saved:
     Dr. James Mercer: Ah. The host is yours. So I'm a man in a room with a signed piece of paper.
 - else:
-    Dr. James Mercer: Ah. It's decided in the server hall, not here. So I'm a man in a room with a signed piece of paper.
+    Dr. James Mercer: Ah. It's decided on the host in the server hall, not by me. So I'm a man in a room with a signed piece of paper.
 }
 
 Narrator: He takes his jacket from the chair, careful with the sleeves. At the door he stops.

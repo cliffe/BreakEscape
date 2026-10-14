@@ -500,3 +500,173 @@ The Architect (`m07_architect_comms.ink`):
 ### Stage 2 scenario design: CLOSED (fixer's note for the orchestrator, 2026-10-14)
 
 Cycle 2 review 0 blockers / 0 majors / 4 minors; round-1 browser check all six items pass with 3 minors; this closing round fixed N1–N4, browser N2 and N3 and O2, and sent browser N1 to the engine (U12). Nothing above minor is open. Still not seen on screen, for the next browser check: the ladder's debrief states, a reopen of HaX after a guide hand-over and after the clock answer (should land on the hub), the T-5 or T-1 first-contact call, and the door line with root in and the control room unopened. The browser check's "not covered" list (redirect line with the window open, uncommitted ops-floor text, vault and Park states, credits) carries to the dialogue stage. Items for the user unchanged: E1 (engine), E2, U3 (needs checking against SecGen by the user), U11, U12.
+
+### Phase 4 dialogue, cycle 1 (fixer, 2026-10-14)
+
+Review: `DIALOGUE_REVIEW_P5_C1.md` (Opus, read-only, `npc-dialog-review` in full). Counts: 0 blockers, 5 majors, 37 minors (D7-1 to D7-42; two lint warnings withdrawn by the reviewer). Snapshot for `tagdiff --old`: the session scratchpad's `m07-dialogue-reviewer-c1/snapshot/ink/` (commit `8e868ab9`). Every finding was checked against the ink before it was acted on. None was declined or withdrawn; where the fix differs from the reviewer's wording, the reason is given. The review's strengths are kept word for word: the teacher thread (T-30's close, the late-first-contact echo lines, `topic_teacher`), the Architect's register, HaX's voice, "The choice was yours. The menu was his.", "He measured you. He did not beat you." and the debrief's honest read-out of both dark operations by name and number. No m07 audio exists, so none of this costs anything to re-voice.
+
+| # | Sev. | Finding | Outcome |
+|---|---|---|---|
+| D7-1 | major | Debrief read-out ran 59–63 lines without a choice | **Fixed** with the review's beats, plus two the review's count missed: the site list ran on into the coda (13 lines), and the stance reply ran into the handoff (up to 13). Opening narrators merged; beat 1 after the win ("How close was it?" / "It doesn't feel done, sir."), the door line answering both; narrator :131 cut; beat 2 `team_reaction` after every covered result; beat 3 the player can say the twist ("He let us capture it." / "Then whose numbers were they?"); narrator :306 cut and beat 4 ("Read them, sir." / "I know what they were, sir."); beat 5 `between` after every dark read-out but the last; beat 6 at "two of ours"; one line per person in the site list; a coda-turn beat ("Then it's over." / say nothing) before HaX's "one more thing"; beat 7 at the intercept (full and thin); Tomb Gamma moved to `q_tomb`; beat 8 before "Look at me"; a handoff beat at "Somewhere without windows" (fixer's addition). Longest debrief run is now 9 (r30, the worst case by construction). Rewordings: beat 6 is "Is there more, sir?" / "(Wait.)" with the two-of-ours line as the reply, because the review's version left that line on the end of the last read-out (10 lines on a Meltdown route) and its "Not tonight. Their families first." repeated "until the families are told"; beat 5's reply is "I will ask you that at the end, in your own words. Hear this one first." rather than "Ask me that after the next one", because he never answers after the next one and the stance question is where it's asked; beat 2 gives the uncommitted player "I couldn't choose, sir." rather than "Was it worth it?"; the site's Park lines end "A later abort, and that control centre runs on nothing." Non-verbal choices are written `[(Wait.)]`, as Park's are: `+ (Wait.)` is an ink label |
+| D7-2 | major | The debrief reported a week four hours in | **Fixed** as proposed (:198, :335-336, :370, :372, :373) |
+| D7-3 | major | T-20 played straight after T-10, twenty minutes stale | **Fixed** as proposed: T-20 retires on T-10 (`start`, `dead_air_choices`, `parked`) and on T-5; `t20_folded` carries its naming line into T-10 for a team not redirected and not in Austin. r6 and r7 assert T-20 doesn't follow T-10 |
+| D7-4 | major | The stance question assumed a commit for the uncommitted player | **Fixed**: the question names the team never sent; "numbers I had" and "Two operations" gated on a commit; new "[I didn't make the call. Three went dark. That's mine.]"; hardened branch for no team. Reply reworded from "Not choosing was a choice", a stock phrase, to "It is. Leaving the team in the air was the most expensive answer on the board." Fixer's addition: "Don't ask me to rank them" said "I won't do that arithmetic twice" and got "you did the sum anyway, tonight" to a player who never did the sum, so the choice reads "I didn't tonight and I won't now" for that player and the reply "You made it tonight as well, and three operations went dark while you did." (r5, r29) |
+| D7-5 | major | HaX's hub could show 15 choices | **Fixed**: "About the people in here." (Hollis, Elena, Mercer, the Park pointer), "What I found in the vault." (Tomb Gamma, the mole, word for word), "I'm stuck on something." (the vault keypad, the four VM hints, "Send me a field guide." → the guides menu). Each sub-menu is choices-only with a sticky "Never mind." back to the hub. "Where do I stand?" stays at the top level. "Remind me of the layout and the clock" shows only before the server hall; the report carries the clock after that ("The clock's running…" / "Step one ran. Seattle's dark. Steps two to four wait on the abort."), and for root in with an earlier flag missing names the abort itself (r22's state). Two fixer's additions to hold 9: the closed-window question is not offered after the abort (`deduce_right` already tells a late finder the window is shut; its `grid_saved` branch is gone), and a local `submenu_from_hub` sends a reopen that re-runs a sub-menu to the hub, so a reopen still lands on the hub. Most at once: 9 (r28 asserts the review's state; 200,000 sampled states peaked at 8). reopencheck clean |
+| D7-6 | minor | Trojan facts twice on direct routes | **Fixed** as proposed; `revision_payoff`'s Trojan block is HaX's line only |
+| D7-7 | minor | HaX's "separate sentence" before "You knew" | **Fixed** (cut) |
+| D7-8 | minor | "But I'll answer one thing" before the question | **Fixed** |
+| D7-9 | minor | "Good" for a held correction | **Fixed** as proposed (r30) |
+| D7-10 | minor | `coda_thin`'s "the moment you reached the operations floor" | **Fixed** as proposed |
+| D7-11 | minor | T-20 after an early redirect | **Fixed**, reworded to "You moved them already. You read the column nobody reads, and the one you chose first goes dark with the other." so the next line's "So Washington…" doesn't follow another "So". The direct wording kept word for word (m08) |
+| D7-12 | minor | "The team's on the ground" a minute after the commit | **Fixed** as proposed (r10 asserts it) |
+| D7-13 | minor | Clone narrator "You ask how much again" | **Fixed** as proposed |
+| D7-14 | minor | Barks gave away the punch line | **Fixed** as proposed (erb barks; T-10's `else` line). r2 and r24 updated |
+| D7-15 | minor | "I have." then more | **Fixed** ("Nearly.") |
+| D7-16 | minor | T-5 named Mercer before the player might know him | **Fixed**; "even when it's monstrous" to fit the 25-word phone cap |
+| D7-17 | minor | Briefing opened on 11 lines | **Fixed**: now 9. "the fund behind them", not "the fund that paid for them", because :29 already says "paid" twice; the second merge is three sentences to fit the 30-word cap |
+| D7-18 | minor | Only Trojan's tail said what the team would stop | **Fixed** as proposed |
+| D7-19 | minor | The Architect moved Meltdown's deaths to tonight | **Fixed**; :152 ends "dead this week" (the proposed "before the week is out" broke the 25-word phone cap) |
+| D7-20 | minor | "No bodies in the brief" three times on a direct Trojan route | **Fixed** as proposed |
+| D7-21 | minor | Hollis: "evacuated forty minutes" | **Fixed** as proposed |
+| D7-22 | minor | Hollis's sighting on every re-talk and after the clone | **Fixed** as proposed (`wary_said`); r14 updated |
+| D7-23 | minor | Clone choice was an instruction in speech brackets | **Fixed** as proposed; r14's three `notSaid` now check "Keep him on the money" |
+| D7-24 | minor | Elena quoted "your ninety" unprompted; "a name" with no name | **Fixed** as proposed (`told_ninety`) |
+| D7-25 | minor | Mercer offered no carve-out question | **Fixed**; Mercer's added line is "Page one of her copy had the carve-out. Mine didn't.", not "Mine had the annex instead", which would sit next to "She didn't have the human-cost annex" |
+| D7-26 | minor | Elena's voice style described a contractor | **Fixed** as proposed (erb text field only, region re-read first) |
+| D7-27 | minor | Mercer's submission count | **Fixed** as proposed |
+| D7-28 | minor | "It takes no abort from this chair" | **Fixed** as proposed |
+| D7-29 | minor | "modeler", "artifact" | **Fixed** |
+| D7-30 | minor | First call told a late caller to get past the checkpoint | **Fixed** as proposed, in both first-call knots |
+| D7-31 | minor | "three continents" | **Fixed** as proposed |
+| D7-32 | minor | "The one place a person on the ground" four times | **Fixed** (HaX's first-call line cut) |
+| D7-33 | minor | HaX absolved the redirect | **Fixed** (cut) |
+| D7-34 | minor | "didn't read the briefs" after the correction | **Fixed** as proposed (r28) |
+| D7-35 | minor | Hollis topic promised the vault | **Fixed** as proposed |
+| D7-36 | minor | Mercer topic the same for every fate | **Fixed** as proposed (r28) |
+| D7-37 | minor | Elena and Mercer re-talks landed on bare choices | **Fixed** with Hollis's `back`/`hub_quiet` pattern in Elena's hub and post-turn hub and Mercer's hub; Mercer's `returning` knot is gone, its lines in the hub. Lint `blank-reentry` down from 6 to 3 (the three the review explained) |
+| D7-38 | minor | "held three states with one step gone" | **Fixed** as proposed |
+| D7-39 | minor | A hostile Mercer left standing fell to "Blackout…" | **Fixed** as proposed (r30) |
+| D7-40 | minor | Team "stood by in Denver" | **Fixed** (ink and credits) |
+| D7-41 | minor | Intercept "thirty minutes" | **Fixed** in the ink; the intercept document already said "forty minutes" |
+| D7-42 | minor | Double hyphens | **Fixed** as proposed |
+
+#### Decisions taken (with reasons)
+
+- **Two beats beyond the review's eight (D7-1).** Counted against the routes, the site list ran into the coda and the stance reply into the handoff; both broke nine. The coda turn gives the player the moment the debrief seems over; the handoff beat lets the player ask why "without windows", which Netherton's next line answers.
+- **The closed-window question retires at the abort (D7-5).** Otherwise "Bring me in." and it together made ten. The refusal adds nothing after the night is over, and `deduce_right` already says the window is shut.
+- **Sub-menu reopens go to the hub (D7-5).** The brief asks that a reopen land on the hub. A reopen without changed globals still shows the saved sub-menu (the engine doesn't re-run then), the same as `field_guides`; "Never mind." is always there.
+- **The refused stance for the uncommitted player (D7-4).** Same class as the finding: a choice and reply that assumed a sum the player never did.
+
+#### Route driver
+
+All 27 routes updated: the 14 that reach the debrief pick the new beats by index (varied across routes, so both options of every beat are exercised); every route ends with `{"maxRun": 9}` (the old guards of 58–70 are gone). Quotes updated: r2 (T-10's line), r5 (the uncommitted stance), r9 (D7-6: asserts the cut lines are gone), r10 (D7-12, new assertion), r14 (D7-22, D7-23), r21, r22 and r26 (D7-5: the clock in the report, the field guides under "I'm stuck on something."), r24 (D7-14 bark), r6 and r7 (D7-3, new `notSaid`). The compact-format routes (r20–r27) were edited in their own format. New: r28 (D7-5 in the review's 15-choice state: the hub at 9, each sub-menu, Never mind, a reopen landing on the hub, D7-34, D7-36, the clock in the report, the closed-window question gone after the abort), r29 (uncommitted debrief: two between-beats, the full coda with "forty minutes", Tomb Gamma in the hub, the refused stance), r30 (the longest-run debrief: Meltdown covered, held correction, the fullest site list, D7-9, D7-39).
+
+#### Checks (static; no browser session started)
+
+- Recompiled with `scripts/compile-ink.sh m07_architects_gambit` before every route run: 8 files, 0 failed, no loose ends (the briefing's expected END warning).
+- Routes: all 30 end `[result] all expectations met`; longest run anywhere 9 (the briefing's opening, and the debrief on r30).
+- dialoguelint: 0 errors. Left: `transition` ×1 and `not-x-but-y` ×1 (both withdrawn by the review), `you-after-choice` ×2 (non-verbal, allowed), `blank-reentry` ×3 (Hollis `parked`, Park `parked` and `hub`, explained by the review), `crowded-hub` ×1 (a static count of 14 over mutually exclusive gates; the runtime maximum is 9).
+- reopencheck (m07): HaX 1800 reopens, 0 problems; the Architect 390 reopens, 0 problems.
+- tagdiff `--old` against the snapshot: 351 structural differences (debrief 76, HaX 114, Mercer 74, Elena 66, the Architect 16, Hollis 5, briefing and Park none). Every one is from the changes above: the new beats, stitches (`team_reaction`, `between`) and choices; `asked_on_me`, `t20_folded`, `told_ninety`, `wary_said`, `hub_quiet`, `submenu_from_hub`, `revision_before_commit` (declared in HaX; already a scenario global); the T-20 retire conditions; the hub's sub-menus, their news functions and diverts; the `back` stitches; the removed `returning` knot and the debrief's removed Trojan/Tomb conditions.
+- loopcheck (200 steps × 6 strategies) on 21 states across all eight files (the briefing; four debrief states; Elena fresh, turned and at the hub; Mercer fresh, after the abort with Elena turned, and at the hub; Hollis with both documents, backed off, cloned; Park with the projection; HaX fresh, in the 15-choice state and after the abort with the clock expired; the Architect with T-20 and T-10 unheard, all taunts after expiry, and redirected): no runtime errors.
+- Validator (`--skip-ink --no-graph`, the room-dressing agent is editing the erb): schema passes; the same 13 wiring notes, cutscene notes and `object_interacted` timed-text note as the review. Nothing new.
+- AI-tell and UK spelling pass over every changed line.
+
+#### Spoken lines changed (old → new)
+
+No m07 audio is cached, so nothing here costs anything to re-voice. "New" marks an added line.
+
+Briefing (Netherton)
+- "Four ENTROPY operations went live inside the same sixty seconds. Four cells, one schedule." / "Three days ago you followed one fund paying six cells on one seventy-two-hour clock. Four of them are on that map." → "Four ENTROPY operations went live inside the same sixty seconds. Three days ago you followed the fund behind them."
+- "A sequence on their SCADA stack takes all of it down in four steps. It is waiting on a start signal from a host inside the building." / "Nobody stops it from outside that building." → "A sequence on their SCADA stack takes it all down in four steps. It waits on a signal from a host inside the building. Nobody stops it from outside."
+- New: "If the team goes there, the story never runs. The breach does." (Fracture tail); "If the team goes there, the ransomware never reaches the hospitals." (Meltdown tail)
+
+The Architect
+- T-20, redirected before minute 10, new: "You moved them already. You read the column nobody reads, and the one you chose first goes dark with the other."
+- "…Twelve companies. Eighty to a hundred and forty people, tonight, on your clock." → "…Eighty to a hundred and forty people this week, starting on your clock."
+- "…A hundred and eighty-seven million records. Eighty to a hundred and forty dead by morning." → "…Eighty to a hundred and forty dead this week."
+- "I have." → "Nearly."
+- T-10: "You sent them to the one with no bodies in the brief. I'd like to know what you saw." → "You sent them to Austin. I'd like to know what you saw in it."
+- T-10: "The beauty of entropy is that it doesn't require me to win. Ten minutes, and your team is too committed to move." → "…Soon your team won't be yours to move."
+- T-10, new (T-20 unheard): "You sent your team to Washington. San Francisco and the vendors are on your clock." / "You sent your team to San Francisco. Washington and the vendors stand open."
+- T-5: "Mercer would give you his figure and defend it to your face. I respect that, even when the figure is monstrous." → "The man in your control room would give you his figure and defend it to your face. I respect that, even when it's monstrous."
+- Barks (erb, timed texts): "Five minutes. Say the other two out loud." → "Five minutes, Agent 0x00."; "This was never about the power grid." → "One minute, Agent 0x00."
+
+HaX (phone)
+- "The ops room's covering three continents tonight. If I go quiet for ten seconds, it isn't personal." → "The ops room's running four fires tonight. If I go quiet for ten seconds, it isn't personal."
+- "The team's logged for Fracture -- Washington / Meltdown -- San Francisco / Trojan Horse -- Austin. …" → "Fracture, Washington" / "Meltdown, San Francisco" / "Trojan Horse, Austin"
+- Cut: "You're my hands in the one place where a person on the ground still changes the ending."
+- First call, once past the checkpoint, new: "You're past the checkpoint. Ask me where you stand and I'll give you the next step." (in place of "Get past the checkpoint to the operations floor." and, in the uncommitted first call, "…Call me when you hit something you can't open.")
+- Cut: "The ones you couldn't reach are on ENTROPY."
+- "No. I'm sorry -- that window's shut." → "No. I'm sorry. That window's shut."
+- New (correction before the commit): "You made that call with the numbers in hand. It stands."
+- Cut (no longer reachable): "You found the numbers were wrong. That goes in the report. The part that was yours is finished."
+- New (after the correction): "Not on the brief we gave you. He wrote the brief." ("No. That was the design." and "Anyone who says they'd have known…" now only before it)
+- "It's a small version of a bigger question. You'll meet the big one tonight." → "If it missed him, I want to know what else it missed."
+- "What you said is his to live with now." → "He'll talk. He's waited twenty years for a room that has to listen." (arrested) / "You let him walk. That's in the log, in your words." (escaped) / "He never got to say his piece. He'll mind that more than the cell." (KO)
+- "You still held three states with one step gone." → "You still held most of three states, with Seattle gone for a while."
+- Where do I stand?, new: "The clock's running. Fifteen minutes from your login on their host."; "Root's in, so the console in the control room takes the abort now." "Step one ran. Steps two to four haven't." → "Step one ran. Seattle's dark. Steps two to four wait on the abort."
+
+Ray Hollis
+- "Building's been evacuated forty minutes. So you're lost, or you're the other thing." → "Building's evacuating. So you're lost, or you're the other thing."
+- Narrator: "You ask how much again, and step in close while he works out an answer." → "You ask him what it bought, and step in close while he works out an answer."
+- New (re-talk after the clone): Narrator "He looks up from the desk. His hand stays off his belt this time." / "Thought you'd gone. Say it or go."; (later re-talks) "Still here. Say it or go."
+
+Elena Rodriguez
+- "The dormancy field says T plus nine. Nine days. Same table your ninety came out of, one column over." → unchanged when the player told her "ninety"; otherwise "…Nine days. The column next to it says ninety. That's the one somebody wanted read."
+- "And I recognised a name on the vendor manifest. Over a third of the entries are prefixed EHR or CAD." → "And I read the vendor manifest. Over a third of the entries are prefixed EHR or CAD."
+- New (re-talk): "Still here. Ask." / "I haven't moved. Neither has the table."; after turning: "The tables are coming back. Slowly." / "What else?"
+- Voice style (erb): "A contract electrical engineer in her early thirties who worked out an hour ago what her cabling survey was for." → "A grid engineer in her early thirties who helped build tonight's outage believing nobody would be hurt, and has just read otherwise." (the rest unchanged)
+
+Dr. James Mercer
+- "I did publish. Four papers, two of them still cited. I testified twice, and filed the same submission three times in eight years." → "…filed the same submission twice in eight years."
+- New (Elena turned): "Page one of her copy had the carve-out. Mine didn't."
+- "…The modeler kept rounding down…" → "modeller"; "This is a scheduling artifact. …" → "artefact"
+- "End it how? The sequence is local. It takes no abort from this chair, and it doesn't care what happens to me." → "End it how? While the host in the server hall drives it, this chair takes no abort, and the sequence doesn't care what happens to me."
+- "Ah. It's decided in the server hall, not here. So I'm a man in a room with a signed piece of paper." → "Ah. It's decided on the host in the server hall, not by me. So I'm…"
+- "Back. The console hasn't changed its mind either." / "Back. There's nothing left on that console for either of us." unchanged, now heard on a re-talk.
+
+Debrief
+- Narrator: "A borrowed office at the grid site, not long after the abort. The secure link to headquarters, lights down in the room behind the Director." / "Netherton sits down in front of the camera with a tablet, in the suit he briefed you in." → "A borrowed office at the grid site, not long after the abort. On the secure link, Netherton sits down in front of the camera with a tablet, in the suit he briefed you in."
+- New: "It will not, tonight. It is done anyway."
+- Cut: Narrator "He lets that stand for a moment. Then he turns the tablet over."
+- "The manifest was not what the brief said. A third of those keys sign health record and emergency dispatch systems." / "The dormancy field said ninety days. The staged payload was set to wake in nine." → "The manifest was not what the brief said. A third of those keys sign health record and dispatch systems, and the payload wakes in nine days, not ninety."
+- "You found out what you had chosen while they were stopping it." moved into the Trojan result (was "The team was already there. You found out…"); cut on those routes: "Your field notes say the Trojan Horse projection was understated. Nine days, not ninety, and dispatch on the manifest." and "The team was already there. You found it before you chose, and you chose Austin."
+- "Eight of the twelve held clean. Four took damage, mostly money and stolen code. Markets moved three per cent and are recovering." → "…Futures are down three per cent."
+- "There is no tasking record for the tactical team. It stood by in Denver all night and went nowhere." → "…It circled over Denver all night and went nowhere."
+- New (beat 2): "Ask me again when I have read you the other two."; "Then the writing will be short. It will not be easy."
+- Cut: HaX "The team not moving is a separate sentence. I won't pretend otherwise."
+- "Every figure you were briefed with came from material we captured. The Architect let us capture it." / "Our threat desk did not derive one of those numbers." → "Every figure you were briefed with came from material we captured." then "Yes. Our threat desk did not derive one of those numbers." or "His. The Architect let us capture them. Our threat desk did not derive one."
+- Cut: Narrator "He picks the tablet up again and holds it at arm's length, to read rather than say."
+- New (beat 4): "You know the briefs. These are the results."; (beat 5) "I will ask you that at the end, in your own words. Hear this one first."
+- "The Social Fabric package went out ninety minutes later, as designed. It is believable because the breach under it is real." / "Two states have postponed. A third has certified a result that a third of its own population will never accept." → "The Social Fabric package went out ninety minutes later, as designed." / "Two secretaries of state are already talking about postponing. The package is believable because the breach under it is real."
+- "Operation Trojan Horse. Austin. The injection run completed. Forty-seven million systems took a signed backdoor." / "For nine days, nothing will happen at all." → one line, "…took a signed backdoor, and for nine days nothing will happen at all."
+- "Ninety to a hundred and sixty dead over the following month." / "Spread thin enough that no single coroner sees a cluster." → "Ninety to a hundred and sixty dead over the following month, spread thin enough that no single coroner sees a cluster."
+- "Operation Meltdown. Twelve targets, one command. Markets fell fourteen per cent and banking was down for eleven hours." → "…Futures are down fourteen per cent, and banking has been dark since three."
+- "The ransomware landed across four thousand two hundred hospitals. Operations cancelled all week." → "The ransomware is in four thousand two hundred hospitals. Every theatre list from this morning is cancelled."
+- "Eighty to a hundred and forty patients did not survive that week, waiting for operations the hospitals could no longer schedule." → "The desk projects eighty to a hundred and forty patients will not survive the week, waiting for operations nobody can schedule."
+- "And two of ours. Names withheld until the families are told." kept (after "(Wait.)"); new "Two of ours. Names withheld until the families are told." (after "Is there more, sir?"). Cut: Narrator "He stops reading. He does not put the tablet down, and he does not say anything to soften it."
+- "Blackout was still at the master console when you left that room. By the time the police reached it, he was not." → "Dr. James Mercer was still at the master console…"; new (hostile, left standing): "Dr. James Mercer came at you in that control room. By the time the police reached it, he was gone."
+- "And you told him he was only there to keep us busy." / "A fanatic who has been told he was scenery. Whatever that does to a man, it is doing it now." → "And you told him he was scenery, there to keep us busy. Whatever that does to a man like him, it is doing it now."
+- Elena KO: "Elena Rodriguez was found unconscious in the server room. She will be fine." / "She was also the only one on their side trying to stop it. Her statement will be an awkward document." → "Elena Rodriguez came round in the server room, the only one on their side who tried to stop it. Her statement will be an awkward document."
+- Elena turned: "…without being asked twice. She has read what she was really part of." / "Analysis wants her. I have not decided." → "Elena Rodriguez walked out and gave a statement without being asked twice. Analysis wants her. I have not decided."
+- Hollis KO: "The checkpoint guard is in hospital with a head injury. Ray Hollis. Thirty-six, two children." / "He was paid to renew Mercer's credentials in June. The police will talk to him when he can talk." → "The checkpoint guard is in hospital with a head injury. Ray Hollis, thirty-six, two children, paid to renew Mercer's credentials in June."
+- Hollis talked: "Ray Hollis handed over his badge and walked out through the muster door. The police picked him up at the gate. He has given his name and nothing else, yet." / "He told you about the vault and the man on the riser. That is more than he has told us." → "Ray Hollis walked out through the muster door into the police at the gate. He told you more about the vault than he has told us."
+- Park KO: two lines → "Thomas Park was found unconscious in the cable vault, four minutes from cutting the backup power that control centre needed to restart."
+- Park evaded / fought off / in the vault / nobody went down: each pair with "Had the abort come any later, that control centre would have been running on nothing." → one line: "Thomas Park cut the control run to the transfer switch and walked out through our cordon. A later abort, and that control centre runs on nothing." / "Thomas Park came at you in the vault, finished the cut and was gone before the police got down. A later abort, …" / "You were in the vault with Thomas Park. He kept working, and he finished. A later abort, …" / "Nobody reached the cable vault before the police. Tools on a mat, the control run cut. A later abort, …"
+- HaX: "Director. One more thing. It isn't in the reporting yet." kept (after saying nothing); new "Not quite. Director, one more thing. It isn't in the reporting yet." (after "Then it's over.")
+- "…They will have to choose. Window, thirty minutes." → "…Window, forty minutes."; new "Word for word."
+- "Four operations, one clock, one team. He built a problem with no right answer and pointed one agent at it." / "Then he watched what we protect when we can only protect one thing." → "He built a problem with no right answer, pointed one agent at it, and watched what we protect when we can only protect one thing."; cut "How fast we decide. Which numbers we believe. Which of the three we put down first, and how long it takes us."
+- "The calls. He was on your handset the moment you reached the operations floor." → "The calls. He had your handset tonight, and your designation."
+- Tomb Gamma (now in the hub, `q_tomb`): HaX "And from the vault: Tomb Gamma. Active, classed as a workshop. The coordinates were stripped before the copy was made." → "The dossier from the vault says active, classed as a workshop. The coordinates were stripped before the copy was made."; the quote unchanged; Netherton "Not yet. We have a designation, a classification and an empty coordinate field. The outline of a place." → "Not yet. A designation, a classification and the outline of a place."
+- New (no team sent): "Three briefs. One team, and you never sent it. Where do you stand on that?"; "It is. Leaving the team in the air was the most expensive answer on the board." / "Carry it accurately. The menu was his. Leaving it unordered was yours."; "I will note the refusal. You made it tonight as well, and three operations went dark while you did."; "Yes. Next time, make the call while you work it out."
+- New (held correction, defended): "The numbers you had changed while the window was open, and the team stayed where it was. That answer will need more than one sentence in a review room."
+- HaX "Sir?" kept, now after the player says nothing at "Somewhere without windows".
+
+Choices (not voiced) also changed: the debrief beats; "[Nothing on the record, sir.]"; the stance choices' gates and the refused choice's wording; HaX's three sub-menu choices and "[The guard on the checkpoint, Hollis. He was dirty.]", "[The share. Four operations running off one schedule.]"; Hollis's "[(Keep him on the money. Let the cloner read his belt.)]"; Mercer's Elena choice (three wordings).
+
+#### Open after cycle 1
+
+- Not seen on screen: the debrief beats (in particular the bracketed non-verbal choices and the run lengths as the engine paces them), HaX's sub-menus and a reopen on one, Elena's and Mercer's re-entry lines, T-10 with T-20 folded in. Worth a short targeted browser check before the dialogue stage closes.
+- `crowded-hub` stays as a static lint note (14 gates; 9 at runtime).
+- The debrief's one-line VM summary (`m07_closing_debrief.ink:115`) and HaX's VM hints are unchanged; whether they match the VM needs checking against SecGen by the user (U3).

@@ -8,9 +8,10 @@
  { "expect": { "scada_door_reached": false, "scada_password_found": true } },
  { "talk": "phone", "knot": "hub", "picks": ["Where do I stand", "I'll call you back"] },
  { "said": ["Root's in. Put the abort in at the console in the control room.", "The door's north of the server hall.", "The password's in the listener capture in your inventory."], "notSaid": ["You've got the password."] },
- { "talk": "phone", "knot": "hub", "picks": ["Remind me", "What's the clock"] },
- { "said": ["It's running, and root's in. The console in the control room takes the abort now.", "The door's north of the server hall.", "[choice] Where do I stand?"] },
- { "note": "Browser N2: a reopen after the clock answer lands on the hub." },
+ { "note": "Phase 4 dialogue C1 (D7-5): the clock is in the report now; the layout-and-clock choice is gone past the server hall." },
+ { "talk": "phone", "knot": "hub", "picks": ["Where do I stand"] },
+ { "said": ["The clock's running. Fifteen minutes from your login on their host.", "Root's in. Put the abort in at the console in the control room.", "The door's north of the server hall.", "[choice] Where do I stand?"], "notSaid": ["[choice] Remind me of the layout and the clock."] },
+ { "note": "Browser N2: a reopen after the report lands on the hub." },
  { "talk": "phone", "picks": ["Where do I stand", "I'll call you back"] },
  { "said": ["[choice] Where do I stand?", "Root's in."], "notSaid": ["[choice] Understood. Let's go.", "[choice] What's the clock?"] },
  { "enter": "scada_control" },
@@ -22,5 +23,7 @@
  { "advance": 10 },
  { "expect": { "debrief_requested": true } },
  { "talk": "phone", "knot": "hub", "picks": ["Where do I stand", "I'll call you back"] },
- { "said": ["Grid's held. Put the rest of what you took through the relay and he's on straight after."], "notSaid": ["Submit the rest, then call me.", "[choice] Bring me in.", "The plant's south of the server hall"] }
+ { "said": ["Grid's held. Put the rest of what you took through the relay and he's on straight after."], "notSaid": ["Submit the rest, then call me.", "[choice] Bring me in.", "The plant's south of the server hall"] },
+ { "note": "Phase 4 dialogue C1: no conversation runs more than nine lines without a choice." },
+ { "maxRun": 9 }
 ]}

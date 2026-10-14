@@ -16,5 +16,7 @@
  { "said": ["It's done. The grid's holding. Sweep what you want"], "notSaid": ["The plant's south of the server hall", "The team's still waiting on your call"] },
  { "talk": "phone", "knot": "hub", "picks": ["Bring me in"] },
  { "talk": "phone", "knot": "hub", "picks": ["Where do I stand", "I'll call you back"] },
- { "said": ["Next door you go through"], "notSaid": ["The plant's south of the server hall"] }
+ { "said": ["Next door you go through"], "notSaid": ["The plant's south of the server hall"] },
+ { "note": "Phase 4 dialogue C1: no conversation runs more than nine lines without a choice." },
+ { "maxRun": 9 }
 ]}

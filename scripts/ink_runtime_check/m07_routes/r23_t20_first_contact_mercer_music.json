@@ -26,6 +26,8 @@
   { "talk": "mercer", "knot": "hub", "picks": [] },
   { "said": ["[choice] Elena Rodriguez thinks this is a six-hour demonstration"] },
   { "set": { "grid_saved": true } },
-  { "music": "game_loaded", "expect": "end" }
- ]
+  { "music": "game_loaded", "expect": "end" },
+ { "note": "Phase 4 dialogue C1: no conversation runs more than nine lines without a choice." },
+ { "maxRun": 9 }
+]
 }

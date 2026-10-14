@@ -43,6 +43,11 @@ VAR asked_stayed = false
 VAR asked_mercer = false
 VAR revision_heard = false
 VAR gave_keys = false
+// Phase 4 dialogue C1 (D7-24): the player told her the brief said ninety.
+VAR told_ninety = false
+// Phase 4 dialogue C1 (D7-37): set on every return from inside a conversation
+// and on the exits, so the re-entry line plays only on a re-talk (Hollis's pattern).
+VAR hub_quiet = false
 
 === start ===
 {elena_ko:
@@ -78,23 +83,34 @@ Elena Rodriguez: If you're not one of his, you're law. Either way, let me finish
 + [Finish what, exactly?]
     Elena Rodriguez: The load-shed tables. He rewrote them. I'm trying to put back the ones that keep the hospitals on the priority list.
     Elena Rodriguez: Forty minutes I've been at it. It's read-only. Of course it is.
-    -> hub
+    -> back
 
 + [SAFETYNET. Hands where I can see them.]
     Elena Rodriguez: *lifts both hands, unimpressed* There. Now what? You've got as little time as I have, and you're spending it on me.
-    -> hub
+    -> back
 
 + [You're Elena Rodriguez. Critical Mass.]
     Elena Rodriguez: You've read a file about me.
     Elena Rodriguez: Then you know what I did. You don't know what I was told. Nobody asks that.
     ~ asked_who = true
-    -> hub
+    -> back
 
 // ===========================================
 // HUB
 // ===========================================
 
+// Phase 4 dialogue C1 (D7-37): every in-conversation return comes through here.
+=== back ===
+~ hub_quiet = true
+-> hub
+
 === hub ===
+// A re-talk re-enters this knot (the owner of the saved choice), so the
+// re-entry line lives here. hub_quiet is false only on a re-talk.
+{not hub_quiet:
+    Elena Rodriguez: {&Still here. Ask.|I haven't moved. Neither has the table.}
+}
+~ hub_quiet = false
 + {not asked_told} [What were you told this was?]
     -> q_told
 
@@ -124,7 +140,7 @@ Elena Rodriguez: If you're not one of his, you're law. Either way, let me finish
 + [I need to keep moving.]
     Elena Rodriguez: Yes. You do.
     #exit_conversation
-    -> hub
+    -> back
 
 === q_told ===
 ~ asked_told = true
@@ -139,7 +155,7 @@ Elena Rodriguez: Long enough that the committee that's ignored this grid for ele
 
 Elena Rodriguez: That was the plan I agreed to. I have the version I signed off. It's on that laptop.
 
--> hub
+-> back
 
 === q_why ===
 ~ asked_why = true
@@ -156,7 +172,7 @@ Elena Rodriguez: Then somebody read it properly. Asked me about page forty. Nobo
 
 Elena Rodriguez: That's how they get people like me. You'd think it was money.
 
--> hub
+-> back
 
 === q_stayed ===
 ~ asked_stayed = true
@@ -169,7 +185,7 @@ Elena Rodriguez: And there's a small chance. The load-shed tables decide who sta
 
 Elena Rodriguez: It's a thin plan. The other one is feeling bad in a different building.
 
--> hub
+-> back
 
 === q_mercer ===
 ~ asked_mercer = true
@@ -184,7 +200,7 @@ Elena Rodriguez: He's in the control room, through the north door. He won't come
     Elena Rodriguez: Don't ask me for the door. Not yet.
 }
 
--> hub
+-> back
 
 // ===========================================
 // THE REVISION -- two ways in, same document
@@ -196,6 +212,7 @@ Narrator: She stops working. For the first time, both her hands are still.
 Elena Rodriguez: Told? Nothing. I was copied on their schedule. What were you told about Austin?
 
 + [Dormant ninety days. No projected fatalities. That's our brief.]
+    ~ told_ninety = true
     -> revision_beat
 + [Why Austin?]
     -> revision_beat
@@ -219,9 +236,11 @@ Elena Rodriguez: I was copied on the coordination summaries. All four cells, one
 
 Elena Rodriguez: I read the Austin row because it was the boring one.
 
-Elena Rodriguez: The dormancy field says T plus nine. Nine days. Same table your ninety came out of, one column over.
+// Phase 4 dialogue C1 (D7-24): she knows about "ninety" only if told; the
+// manifest line names no name, so it doesn't promise one.
+Elena Rodriguez: The dormancy field says T plus nine. Nine days. {told_ninety: Same table your ninety came out of, one column over.|The column next to it says ninety. That's the one somebody wanted read.}
 
-Elena Rodriguez: And I recognised a name on the vendor manifest. Over a third of the entries are prefixed EHR or CAD.
+Elena Rodriguez: And I read the vendor manifest. Over a third of the entries are prefixed EHR or CAD.
 
 + [Assume I don't know what those prefixes mean.]
     Elena Rodriguez: Electronic health records. And computer-aided dispatch.
@@ -255,7 +274,7 @@ Elena Rodriguez: I spent six months telling myself I was the one operation where
     Elena Rodriguez: If your people are in Austin, they're in the right place. Tell them about dispatch.
 }
 
--> hub
+-> back
 
 // ===========================================
 // OUTCOME: TURNED
@@ -295,35 +314,44 @@ Elena Rodriguez: The trunk runs are down there. That's where the physical half o
 
 Elena Rodriguez: He'll be at the master console. He won't be armed. He'll want to explain.
 
+-> post_turn_back
+
+// Phase 4 dialogue C1 (D7-37): the same re-entry pattern as the hub.
+=== post_turn_back ===
+~ hub_quiet = true
 -> post_turn_hub
 
 === post_turn_hub ===
+{not hub_quiet:
+    Elena Rodriguez: {&The tables are coming back. Slowly.|What else?}
+}
+~ hub_quiet = false
 // PASS 2: was gated on "not gave_keys", which was always true by here, so
 // the repeat could never be offered.
 + [Give me the control room door and the vault code again.]
     Elena Rodriguez: CascadeWindow19. The vault code is the last four of the serial on the transfer switch plate.
-    -> post_turn_hub
+    -> post_turn_back
 
 + [What do I say to him?]
     Elena Rodriguez: Nothing that sounds like a negotiation. He's better at those than you are.
     Elena Rodriguez: Ask him what the carve-out page says. He'll answer, because he can't help it, and then you'll both know.
-    -> post_turn_hub
+    -> post_turn_back
 
 + [What happens to you after tonight?]
     Elena Rodriguez: I tell somebody with a recorder everything I know, for as long as they want. Then I go where they put me.
     Elena Rodriguez: Don't call it brave. It's the only door left I don't have to lie my way through.
-    -> post_turn_hub
+    -> post_turn_back
 
 + [Stay on the load-shed tables. Keep the hospitals lit.]
     Elena Rodriguez: That was the plan anyway. It helps, being told.
     Narrator: She is back on the floor beside the rack before you reach the door.
     #exit_conversation
-    -> post_turn_hub
+    -> post_turn_back
 
 + [Go. Get out of the building.]
     Elena Rodriguez: I'll go when the tables are back. Not before.
     #exit_conversation
-    -> post_turn_hub
+    -> post_turn_back
 
 // ===========================================
 // OUTCOME: FLED
@@ -361,7 +389,7 @@ Elena Rodriguez: Ask me again. Properly. If I say no, you leave me at this rack.
     ~ gave_keys = true
     Elena Rodriguez: Control room door is CascadeWindow19. Vault code is the last four of the serial on the transfer switch plate.
     Elena Rodriguez: That's everything I have. Go.
-    -> post_turn_hub
+    -> post_turn_back
 
 === flee ===
 ~ elena_outcome = "fled"

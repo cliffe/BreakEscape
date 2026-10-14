@@ -23,6 +23,7 @@ VAR countdown_expired = false
 VAR redirect_declined = false
 VAR found_coordination_traffic = false
 VAR decode_read_open = false // Synced scenario global (PASS 5 r2, m3): the decode was read with the window open and the team elsewhere
+VAR revision_before_commit = false // Synced scenario global (Phase 4 dialogue C1, D7-12): the correction was stated before the team was committed
 VAR decode_before_commit = false // Synced scenario global (PASS 5 puzzle chains r1, C2): the decode was read before the team was committed, and the deduction wasn't made
 VAR found_tomb_gamma = false
 VAR found_mole_evidence = false
@@ -84,6 +85,9 @@ VAR vm2_hint_given = false
 VAR vm3_hint_given = false
 VAR vm4_hint_given = false
 VAR vault_hint_given = false
+// Phase 4 dialogue C1 (D7-5): set by the hub choice that opens a sub-menu and
+// cleared inside it, so a reopen that re-runs a sub-menu goes to the hub.
+VAR submenu_from_hub = false
 
 // ===========================================
 // ENTRY POINT
@@ -113,15 +117,17 @@ VAR vault_hint_given = false
 
 HaX here, Agent. I've got your channel and the board.
 
-The ops room's covering three continents tonight. If I go quiet for ten seconds, it isn't personal.
+// Phase 4 dialogue C1 (D7-31): all four operations are in the US.
+The ops room's running four fires tonight. If I go quiet for ten seconds, it isn't personal.
 
-The team's logged for {team_assignment == "fracture": Fracture -- Washington|{team_assignment == "meltdown": Meltdown -- San Francisco|Trojan Horse -- Austin}}. It's on the record. It'd take something new to move it.
+// Phase 4 dialogue C1 (D7-42): commas, not double hyphens.
+The team's logged for {team_assignment == "fracture": Fracture, Washington|{team_assignment == "meltdown": Meltdown, San Francisco|Trojan Horse, Austin}}. It's on the record. It'd take something new to move it.
 
 I can't be in the other two places.
 
-You're my hands in the one place where a person on the ground still changes the ending.
-
-Get past the checkpoint to the operations floor.
+// Phase 4 dialogue C1 (D7-32): "the one place a person on the ground" line cut
+// (Netherton says it twice in the briefing). (D7-30): a late first call.
+{inside_reached: You're past the checkpoint. Ask me where you stand and I'll give you the next step.|Get past the checkpoint to the operations floor.}
 
 -> first_call_committed_choices
 
@@ -168,7 +174,8 @@ Get past the checkpoint to the operations floor.
 // The commit option lives on the hub, gated on the synced team_assigned.
 HaX here, Agent. I've got your channel and the board.
 
-Get past the checkpoint to the operations floor. Call me when you hit something you can't open.
+// Phase 4 dialogue C1 (D7-30): a first call opened late.
+{inside_reached: You're past the checkpoint. Ask me where you stand and I'll give you the next step.|Get past the checkpoint to the operations floor. Call me when you hit something you can't open.}
 
 -> hub
 
@@ -237,22 +244,14 @@ Get past the checkpoint to the operations floor. Call me when you hit something 
     -> redirect_open
 
 // --- The redirect window: closed, refused out loud ---
-+ {projection_revised and team_assigned and team_assignment != "trojan_horse" and not team_redirected and redirect_window_closed and not redirect_closed_discussed} [Can I still move the team to Trojan Horse?]
+// Phase 4 dialogue C1 (D7-5): not after the abort. deduce_right already tells a
+// late finder the window is shut, and the hub has to fit in nine.
++ {projection_revised and team_assigned and team_assignment != "trojan_horse" and not team_redirected and redirect_window_closed and not redirect_closed_discussed and not grid_saved} [Can I still move the team to Trojan Horse?]
     -> redirect_closed
 
 // --- Moral sounding board ---
 + {team_assigned and not moral_discussed} [Talk to me about the two we're not covering.]
     -> moral_soundingboard
-
-// --- Hollis ---
-+ {(hollis_resolved != "" or hollis_ko) and not hollis_discussed} [The guard on the checkpoint -- Hollis. He was dirty.]
-    -> topic_hollis
-
-// --- Elena ---
-+ {elena_outcome != "" and not elena_discussed} [Elena's numbers don't match the brief.]
-    -> topic_elena
-+ {elena_ko and elena_outcome == "" and not elena_discussed} [The engineer in the server hall. Elena Rodriguez. She's down.]
-    -> topic_elena
 
 // --- PASS 5 alignment r1 (M2): the deduction. The decode no longer sets
 // projection_revised and nobody names the row; the player says which operation
@@ -262,48 +261,29 @@ Get past the checkpoint to the operations floor. Call me when you hit something 
 
 // --- The coordination traffic (the player already has the correction, from
 // Elena; deduce_right covers the same ground and sets traffic_discussed) ---
-+ {found_coordination_traffic and projection_revised and not traffic_discussed} [The share -- four operations running off one schedule.]
+// Phase 4 dialogue C1 (D7-42): a full stop, not a double hyphen.
++ {found_coordination_traffic and projection_revised and not traffic_discussed} [The share. Four operations running off one schedule.]
     -> topic_traffic
 
-// --- Mercer ---
-+ {(mercer_fate != "" or mercer_ko) and not mercer_discussed} [I've dealt with Mercer.]
-    -> topic_mercer
+// Phase 4 dialogue C1 (D7-5): the hub could show 15 choices. Hollis, Elena,
+// Mercer and the Park pointer sit on one sub-menu; Tomb Gamma and the mole on
+// another; the vault keypad, the VM hints and the field guides on a third.
+// Each is choices-only and returns to the hub.
++ {people_news()} [About the people in here.]
+    ~ submenu_from_hub = true
+    -> people_topics
 
-// --- Tomb Gamma ---
-+ {found_tomb_gamma and not tomb_discussed} [I found a dossier down in the vault. Tomb Gamma.]
-    -> topic_tomb
++ {vault_news()} [What I found in the vault.]
+    ~ submenu_from_hub = true
+    -> vault_finds
 
 // --- PASS 4 (user decision P6): the Architect used HaX's own line ---
 + {architect_echo_heard and not teacher_discussed} [He used your line. "Let it hurt afterwards."]
     -> topic_teacher
 
-// --- The mole ---
-+ {found_mole_evidence and not mole_discussed} [The intercept in the vault. They didn't leak the operation. They leaked me.]
-    -> topic_mole
-
-// --- PASS 4 round 2 (playtest note 5): the Park pointer, findable again ---
-+ {vault_entered and not casualty_projection_found and not park_ko and park_resolved != "talked" and park_resolved != "ko" and not park_hint_given} [The man in the vault won't stop. What would reach him?]
-    -> topic_park
-
-// --- PASS 3: stuck at the vault keypad (names the source, never the digits) ---
-+ {generator_hall_reached and not vault_entered and not vault_pin_found and not vault_hint_given} [The vault keypad. Where do I get the code?]
-    -> vault_hint
-
-// --- Per-stage VM hints ---
-+ {vm_terminal_used and not flag1_submitted and not vm1_hint_given} [I'm on the Kali box. Where do I start on their host?]
-    -> vm_hint_1
-+ {flag1_submitted and not flag2_submitted and not vm2_hint_given} [I've got the share. What's next on the host?]
-    -> vm_hint_2
-+ {flag2_submitted and not flag3_submitted and not vm3_hint_given} [I've got a username and a password. Now what?]
-    -> vm_hint_3
-+ {flag3_submitted and not flag4_submitted and not vm4_hint_given} [I'm in as their operator. How do I stop the cascade?]
-    -> vm_hint_4
-
-// --- Field guide requests ---
-// PASS 5 scenario design r1 (m15): one choice, m04's pattern; the guides are
-// on a choices-only sub-menu (field_guides).
-+ {guide_waiting()} [Send me a field guide.]
-    -> field_guides
++ {stuck_news()} [I'm stuck on something.]
+    ~ submenu_from_hub = true
+    -> stuck_topics
 
 // --- PASS 5 scenario design r1 (D1): progress-aware status, m04's pattern ---
 + [Where do I stand?]
@@ -311,7 +291,9 @@ Get past the checkpoint to the operations floor. Call me when you hit something 
 
 // --- PASS 4 dialogue (script edit S2): the preload lands in first_call_open, so the
 // layout and clock answers were unreachable. This sticky choice reaches them.
-+ [Remind me of the layout and the clock.]
+// Phase 4 dialogue C1 (D7-5): only until the server hall; after that "Where do
+// I stand?" carries the clock.
++ {not server_hall_reached} [Remind me of the layout and the clock.]
     -> first_call_committed_choices
 
 // --- Sticky exit ---
@@ -331,6 +313,21 @@ Get past the checkpoint to the operations floor. Call me when you hit something 
 // unfinished progress step still follows (the commit isn't in concludeRequires).
 {not team_assigned and not grid_saved:
     The team's still waiting on your call. Make it first, then:
+}
+// Phase 4 dialogue C1 (D7-5): "Remind me of the layout and the clock" goes
+// once the server hall is reached, so the clock lives here.
+{cascade_armed and not grid_saved:
+    {countdown_expired:
+        Step one ran. Seattle's dark. Steps two to four wait on the abort.
+    - else:
+        The clock's running. Fifteen minutes from your login on their host.
+    }
+    // Root in with an earlier flag still missing: the ladder below stops at
+    // that flag, so the abort is named here.
+    {flag4_submitted and not (flag1_submitted and flag2_submitted and flag3_submitted):
+        Root's in, so the console in the control room takes the abort now.
+        -> door_line ->
+    }
 }
 {
 - grid_saved and debrief_requested and flag1_submitted and flag2_submitted and flag3_submitted and flag4_submitted:
@@ -371,9 +368,6 @@ Get past the checkpoint to the operations floor. Call me when you hit something 
         If you mean to move the team, do it before you log in.
     }
 - not flag4_submitted:
-    {countdown_expired:
-        Step one ran. Steps two to four haven't.
-    }
     Get root on their host and put the root flag through the relay. The console opens itself after.
     {not scada_door_reached:
         And you'll need the control room door open for the abort.
@@ -431,6 +425,82 @@ Get past the checkpoint to the operations floor. Call me when you hit something 
     -> guide_ssh
 + {privesc_guide_offered and not privesc_guide_hint_given} [The privilege escalation guide.]
     -> guide_privesc
++ [Never mind.]
+    -> hub
+
+// ===========================================
+// Phase 4 dialogue C1 (D7-5): THE HUB'S SUB-MENUS
+// Choices-only, each with a sticky "Never mind." so it is never empty. The
+// choices are the old hub choices word for word. A reopen that re-runs one
+// (globals changed) goes to the hub, so "Where do I stand?" is in view.
+// ===========================================
+
+=== function people_news() ===
+~ return ((hollis_resolved != "" or hollis_ko) and not hollis_discussed) or (elena_outcome != "" and not elena_discussed) or (elena_ko and elena_outcome == "" and not elena_discussed) or ((mercer_fate != "" or mercer_ko) and not mercer_discussed) or park_pointer_open()
+
+=== function park_pointer_open() ===
+~ return vault_entered and not casualty_projection_found and not park_ko and park_resolved != "talked" and park_resolved != "ko" and not park_hint_given
+
+=== function vault_news() ===
+~ return (found_tomb_gamma and not tomb_discussed) or (found_mole_evidence and not mole_discussed)
+
+=== function stuck_news() ===
+~ return vault_hint_open() or (vm_terminal_used and not flag1_submitted and not vm1_hint_given) or (flag1_submitted and not flag2_submitted and not vm2_hint_given) or (flag2_submitted and not flag3_submitted and not vm3_hint_given) or (flag3_submitted and not flag4_submitted and not vm4_hint_given) or guide_waiting()
+
+=== function vault_hint_open() ===
+~ return generator_hall_reached and not vault_entered and not vault_pin_found and not vault_hint_given
+
+=== people_topics ===
+{not submenu_from_hub:
+    -> hub
+}
+~ submenu_from_hub = false
++ {(hollis_resolved != "" or hollis_ko) and not hollis_discussed} [The guard on the checkpoint, Hollis. He was dirty.]
+    -> topic_hollis
++ {elena_outcome != "" and not elena_discussed} [Elena's numbers don't match the brief.]
+    -> topic_elena
++ {elena_ko and elena_outcome == "" and not elena_discussed} [The engineer in the server hall. Elena Rodriguez. She's down.]
+    -> topic_elena
++ {(mercer_fate != "" or mercer_ko) and not mercer_discussed} [I've dealt with Mercer.]
+    -> topic_mercer
+// PASS 4 round 2 (playtest note 5): the Park pointer, findable again
++ {park_pointer_open()} [The man in the vault won't stop. What would reach him?]
+    -> topic_park
++ [Never mind.]
+    -> hub
+
+=== vault_finds ===
+{not submenu_from_hub:
+    -> hub
+}
+~ submenu_from_hub = false
++ {found_tomb_gamma and not tomb_discussed} [I found a dossier down in the vault. Tomb Gamma.]
+    -> topic_tomb
++ {found_mole_evidence and not mole_discussed} [The intercept in the vault. They didn't leak the operation. They leaked me.]
+    -> topic_mole
++ [Never mind.]
+    -> hub
+
+=== stuck_topics ===
+{not submenu_from_hub:
+    -> hub
+}
+~ submenu_from_hub = false
+// PASS 3: stuck at the vault keypad (names the source, never the digits)
++ {vault_hint_open()} [The vault keypad. Where do I get the code?]
+    -> vault_hint
+// Per-stage VM hints
++ {vm_terminal_used and not flag1_submitted and not vm1_hint_given} [I'm on the Kali box. Where do I start on their host?]
+    -> vm_hint_1
++ {flag1_submitted and not flag2_submitted and not vm2_hint_given} [I've got the share. What's next on the host?]
+    -> vm_hint_2
++ {flag2_submitted and not flag3_submitted and not vm3_hint_given} [I've got a username and a password. Now what?]
+    -> vm_hint_3
++ {flag3_submitted and not flag4_submitted and not vm4_hint_given} [I'm in as their operator. How do I stop the cascade?]
+    -> vm_hint_4
+// PASS 5 scenario design r1 (m15): the guides' own sub-menu
++ {guide_waiting()} [Send me a field guide.]
+    -> field_guides
 + [Never mind.]
     -> hub
 
@@ -567,8 +637,8 @@ And it's now or never. Once you log in on their host, the team stays where it is
     ~ team_assignment = "trojan_horse"
     Redirecting. Austin confirmed, forty minutes out.
     Narrator: One pin swings across the board to Austin. The pin it left behind goes dark and stays dark.
+    // Phase 4 dialogue C1 (D7-33): no absolution after "logged under your name".
     Done. It's logged under your name.
-    The ones you couldn't reach are on ENTROPY.
     -> hub
 
 + [No. Leave them where they are.]
@@ -579,15 +649,16 @@ And it's now or never. Once you log in on their host, the team stays where it is
 
 === redirect_closed ===
 ~ redirect_closed_discussed = true
-No. I'm sorry -- that window's shut.
+// Phase 4 dialogue C1 (D7-42): a full stop, not a double hyphen.
+No. I'm sorry. That window's shut.
 
-The team's on the ground on a live objective. Pull them now and we strand two operations instead of one.
+// Phase 4 dialogue C1 (D7-12): a player who had the correction before the
+// commit isn't told the team has been on the ground for a while.
+{revision_before_commit: You made that call with the numbers in hand. It stands.|The team's on the ground on a live objective. Pull them now and we strand two operations instead of one.}
 
-{grid_saved:
-    You found the numbers were wrong. That goes in the report. The part that was yours is finished.
-- else:
-    You found the numbers were wrong. That goes in the report. Now finish the part that's still yours.
-}
+// Phase 4 dialogue C1 (D7-5): no longer offered after the abort, so the
+// grid_saved branch here is gone.
+You found the numbers were wrong. That goes in the report. Now finish the part that's still yours.
 
 -> hub
 
@@ -614,8 +685,11 @@ ENTROPY built that arithmetic on purpose.
     -> hub
 
 + [Was there a right answer?]
-    No. That was the design.
-    Anyone who says they'd have known is lying, or didn't read the briefs.
+    // Phase 4 dialogue C1 (D7-34): after the correction, one brief was his lie.
+    {projection_revised: Not on the brief we gave you. He wrote the brief.|No. That was the design.}
+    {not projection_revised:
+        Anyone who says they'd have known is lying, or didn't read the briefs.
+    }
     -> hub
 
 // ===========================================
@@ -628,7 +702,8 @@ ENTROPY built that arithmetic on purpose.
 
 That should worry you. Our vetting signed off a man ENTROPY already owned.
 
-It's a small version of a bigger question. You'll meet the big one tonight.
+// Phase 4 dialogue C1 (D7-35): HaX can't promise the vault.
+If it missed him, I want to know what else it missed.
 -> hub
 
 === topic_elena ===
@@ -673,7 +748,8 @@ And the Austin row says nine days, not ninety. The brief was cooked.
 
 He read the projection and signed it. Nobody was talking him down.
 
-What you said is his to live with now.
+// Phase 4 dialogue C1 (D7-36): by fate; a silent KO said nothing to him.
+{mercer_fate == "arrested": He'll talk. He's waited twenty years for a room that has to listen.|{mercer_fate == "escaped": You let him walk. That's in the log, in your words.|He never got to say his piece. He'll mind that more than the cell.}}
 -> hub
 
 === topic_tomb ===
@@ -716,7 +792,8 @@ I'll tell Netherton myself. Not on this line.
     You still saved eight point four million people.
 }
 {grid_saved and countdown_expired:
-    You still held three states with one step gone.
+    // Phase 4 dialogue C1 (D7-38): Seattle went dark.
+    You still held most of three states, with Seattle gone for a while.
 }
 {not grid_saved:
     And the grid's still yours to hold, so hold it first.

@@ -91,8 +91,18 @@
   {
    "talk": "debrief",
    "picks": [
+    0,
+    1,
+    0,
+    1,
+    0,
+    0,
+    1,
+    0,
+    1,
     "Nothing on the record",
-    "I want the numbers"
+    "I want the numbers",
+    0
    ]
   },
   {
@@ -116,10 +126,10 @@
    ]
   },
   {
-   "note": "Run-length guard: the debrief read-out is the longest run (pre-existing). Dialogue stage owns breaking it up."
+   "note": "Run-length guard (Phase 4 dialogue C1, D7-1): no conversation, the debrief included, runs more than nine lines without a choice."
   },
   {
-   "maxRun": 70
+   "maxRun": 9
   }
  ]
 }

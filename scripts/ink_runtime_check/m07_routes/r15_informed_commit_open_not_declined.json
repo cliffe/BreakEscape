@@ -87,8 +87,18 @@
   {
    "talk": "debrief",
    "picks": [
+    1,
+    0,
+    1,
+    0,
+    1,
+    1,
+    0,
+    1,
+    0,
     "Nothing on the record",
-    "I want the numbers"
+    "I want the numbers",
+    1
    ]
   },
   {
@@ -113,7 +123,7 @@
    ]
   },
   {
-   "maxRun": 70
+   "maxRun": 9
   }
  ]
 }
