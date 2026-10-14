@@ -306,7 +306,7 @@ Elena Rodriguez: You know what you're asking. Help you, and there's no version o
 
 Narrator: She flattens a folded worksheet against the rack.
 
-Elena Rodriguez: Control room door: CascadeWindow19. He's too vain to change it twice.
+Elena Rodriguez: Control room door: CascadeWindow19, capitals exactly as I've written them. He's too vain to change it twice.
 
 Elena Rodriguez: Mercer's tech reset the vault keypad after my survey. The plant log's out of date.
 
@@ -331,7 +331,7 @@ Elena Rodriguez: He'll be at the master console. He won't be armed. He'll want t
 // PASS 2: was gated on "not gave_keys", which was always true by here, so
 // the repeat could never be offered.
 + [Give me the control room door and the vault code again.]
-    Elena Rodriguez: CascadeWindow19. The vault code is the last four of the serial on the transfer switch plate.
+    Elena Rodriguez: CascadeWindow19, capitals as written. The vault code is the last four of the serial on the transfer switch plate.
     -> post_turn_back
 
 + [What do I say to him?]
@@ -388,7 +388,7 @@ Elena Rodriguez: Ask me again. Properly. If I say no, you leave me at this rack.
     #set_global:elena_outcome:turned
     #set_global:scada_password_found:true
     ~ gave_keys = true
-    Elena Rodriguez: Control room door is CascadeWindow19. Vault code is the last four of the serial on the transfer switch plate.
+    Elena Rodriguez: Control room door is CascadeWindow19, capitals as written. Vault code is the last four of the serial on the transfer switch plate.
     Elena Rodriguez: That's everything I have. Go.
     -> post_turn_back
 

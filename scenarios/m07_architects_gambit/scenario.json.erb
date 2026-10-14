@@ -1710,6 +1710,7 @@ scada_password = "CascadeWindow19"
           "id": "situation_board",
           "name": "Grid Situation Board",
           "position": "as-type:pnw_video_wall",
+          "sprite": "pnw_video_wall1",
           <%# Blind run A fixes (L1, orchestrator 2026-10-14): when the clock runs out
               before the abort, the Seattle panel goes red (make_pnw_props.py
               video_running) and the board says step 01 ran. Loaded on demand by
@@ -1922,7 +1923,7 @@ scada_password = "CascadeWindow19"
               "takeable": true,
               "readable": true,
               "observations": "What the attack host's listener hands to anyone who connects, saved off by the relay.",
-              "text": "RELAY CAPTURE -- tcp listener on the attack host\n\nThe listener pushes the same block to every connection:\n  - the operator account's password (and a flag)\n  - a line of operator notes it was never meant to carry:\n\n    'ctrl room door changed in March: <%= scada_password %>. M says\n     he won't change it twice.'\n\nWhoever set this up treated the listener as a private channel.\nIt is not one. Anyone on the maintenance VLAN can read it.",
+              "text": "RELAY CAPTURE -- tcp listener on the attack host\n\nThe listener pushes the same block to every connection:\n  - the operator account's password (and a flag)\n  - a line of operator notes it was never meant to carry:\n\n    'ctrl room door changed in March: <%= scada_password %> (capitals as\n     written, the keypad is case-sensitive). M says he won't change it twice.'\n\nWhoever set this up treated the listener as a private channel.\nIt is not one. Anyone on the maintenance VLAN can read it.",
               "puzzle_graph_role": "key",
               "puzzle_graph_unlocks": "scada_control"
             }

@@ -20,6 +20,9 @@ VAR park_greeted = false
 // PASS 5 puzzle chains r1 (F1, closes C5): returns counted in an ink variable,
 // so npcInkVariables carries it over a page reload (visit counts don't survive).
 VAR park_returns = 0
+// Fix-check N4: set while the player is backed off and waiting; a re-talk in
+// the same room re-enters evaded_hold, which counts that as the return.
+VAR park_hold_seen = false
 
 === start ===
 {park_ko:
@@ -128,13 +131,27 @@ Narrator: You back into the dark of the stairwell. He waits, then goes back to t
 ~ park_resolved = "evaded"
 #set_global:park_resolved:evaded
 #exit_conversation
--> hub
+-> evaded_hold
+
+=== evaded_hold ===
+// Fix-check N4: the engine resumes a closed chat by re-entering the knot its
+// choices came from. The first pass (right after backing off) stops at the
+// choice and the chat closes; a re-talk without leaving the room runs the top
+// again, and goes to back_at_it exactly as a room re-entry does.
+{park_hold_seen:
+    -> back_at_it
+}
+~ park_hold_seen = true
++ [(Leave it.)]
+    #exit_conversation
+    -> evaded_hold
 
 === back_at_it ===
 // PASS 5 alignment r1 (M5): the entry chat now opens on every return, so a
 // third visit gets its own line rather than "Second time" again.
 // PASS 5 puzzle chains r1 (F1, C5): branch on park_returns, not visit counts.
 ~ park_returns = park_returns + 1
+~ park_hold_seen = false
 {park_returns <= 1:
     Narrator: He is still at the junction box, working faster. His flashlight finds the door before you're through it.
     Thomas Park: Second time. There isn't a third.

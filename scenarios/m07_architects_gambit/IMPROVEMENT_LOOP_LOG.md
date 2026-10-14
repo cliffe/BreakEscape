@@ -839,3 +839,27 @@ Object text (not voiced): Mission Brief "You decide which." → "and where it go
 - The control-room keypad: the case text arrives as the keypad opens, and is readable over it.
 - With `countdown_expired` set: the video wall shows the red panel, reads RUNNING / 01 EXECUTED, and the wall light is red; after `grid_saved` it is amber again.
 - "I'll call you back": does the phone close (E6)?
+
+## Phase 8 playtests: fix-check follow-ups
+
+Input: `PASS5_BLIND_A_FIXCHECK.md` (game 2490; N1, N2, N4 for the mission, N3 for the engine backlog). Mission files, ink and one new route only; no engine code changed. Not committed.
+
+| # | Sev. | Finding | Outcome |
+|---|---|---|---|
+| N2 | minor | After the abort the video wall turns into the generic `smartscreen` sprite until a reload | **Fixed (mission-side workaround).** `"sprite": "pnw_video_wall1"` on `situation_board`. `rooms.js` takes `scenarioObj.sprite \|\| type` as the variant base key, so the base is now the real wall. Placement unchanged: `position: as-type:pnw_video_wall` has priority over `sprite` when the slot is matched (`rooms.js` ~2196), slot_audit 0 problems, validator clean, wall at 434,16 size 159x42 as before. Browser (game 2503, headless, :3001): texture `pnw_video_wall1` (amber) -> `countdown_expired` -> `pnw_video_wall_running1` (red) -> `grid_saved` -> `pnw_video_wall1` (amber) in the same session; after sync + page reload the wall is `pnw_video_wall1` with both globals still true. No engine item needed |
+| N1 | minor (borderline major) | HaX's "capital C, capital W" text is held while the keypad is open | **Fixed (text where the password is read).** Listener Capture: "...changed in March: CascadeWindow19 (capitals as written, the keypad is case-sensitive). M says he won't change it twice." Elena, all three places she says it: "Control room door: CascadeWindow19, capitals exactly as I've written them." / "CascadeWindow19, capitals as written." / "Control room door is CascadeWindow19, capitals as written." The puzzle is unchanged. HaX's keypad text is **kept** (judgement: it is correct, costs nothing, and still catches the player who reads neither source or lowers the case; it shows after Cancel or lockout). Engine item E4 (barks over a keypad) stays open but is no longer needed |
+| N4 | minor | Talking to Park again in the same room after "(Back off.)" reopens the first-visit hub | **Fixed (ink).** `evade` now ends in a new `evaded_hold` knot. The first pass stops at a "(Leave it.)" choice (the chat has already closed) and sets `park_hold_seen`; the engine resumes a closed chat by re-entering the knot its choices came from, so an in-place re-talk runs the top of `evaded_hold` again, which goes to `back_at_it` exactly as a room re-entry does (count + "Second time. There isn't a third." + the warned choice). `back_at_it` clears `park_hold_seen`. A third in-place talk without the projection is the swing. New route r33 |
+| N3 | minor | Phone hub shows 4 of 6 choices with no scroll cue; keys 1-5 only | **Deferred, engine.** Added to the existing backlog entry "Phone-chat number keys stop at 5" in `docs/IDEAS_BACKLOG.md` |
+
+Counts: 0 blockers, 0 majors, 4 minors (3 fixed, 1 engine deferred).
+
+Checks:
+- `scripts/compile-ink.sh m07_architects_gambit`: 8 compiled, 0 failed.
+- Routes r1-r33: all pass (new `r33_park_retalk_in_place.json`: back off, in-place re-talk plays "Second time" with the warned choice, third in-place talk swings).
+- dialoguelint: 0 errors; the blank-reentry notes now name `evaded_hold` in place of Park's `hub` (same count, 3; it closes at once, so nothing is on screen). reopencheck: 0 problems. tagdiff: no tag changes.
+- Validator: schema passes, graph regenerated; slot_audit on the scenario: 0 problems.
+- Browser: game 2503 (log `tools/playtest/m07-pass5-fixcheck2-game2503.jsonl`, 59 commands), progress shortcuts used and not earned: the DB was seeded with operations_floor unlocked and `hollis_ko`/`team_assigned` set, and `countdown_expired`/`grid_saved` were set through the globals map with their change events emitted. This tests the wall-sprite plumbing only. Session stopped; verify-run: progress recorded (one room beyond the first).
+- Not re-run in the browser: Park's in-place re-talk and the new Listener Capture / Elena wording (covered by r33 and the ERB render; the runtime ink path is the same one reopencheck exercises).
+
+Lines changed (not voiced except Elena): Elena Rodriguez, three password lines gain "capitals as written" (the first "capitals exactly as I've written them"); Listener Capture text (not voiced).
+
