@@ -9,7 +9,7 @@ Infiltrate Quantum Dynamics Corporation to identify and stop an insider threat. 
 | Metric | Value |
 |---|---|
 | Story aims | 5 |
-| Total tasks | 29 (8 optional) |
+| Total tasks | 30 (8 optional) |
 | VM flag challenges | 4 |
 | Physical locks | 6 |
 | AND-gate convergences | 1 |

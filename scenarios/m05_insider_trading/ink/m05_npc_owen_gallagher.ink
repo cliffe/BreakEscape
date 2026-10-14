@@ -280,9 +280,18 @@ Owen Gallagher: After-hours server access gets logged with IT. That's me.
 - else:
     Owen Gallagher: Give me a reason I can write in the log. Or get Patricia to put her name to it.
 }
-+ {found_incident_log} [Patricia's log has a crypto badge in the server hallway at 23:47. Unlogged.]
+-> password_reason
+
+// Blind run B (finding 4): the first visit had no usable reply and no pointer.
+// "What counts as a reason?" says what he wants and where it is, once.
+= password_reason
++ {found_incident_log} [Patricia's log: a crypto badge in the server hallway at 23:47, never logged with you.]
     Owen Gallagher: ...Nobody logged that with me. Right.
     -> password_given
+* {not found_incident_log} [What counts as a reason?]
+    Owen Gallagher: Something on Security's books that never reached mine. A badge where it shouldn't be, at an hour nobody told me about.
+    Owen Gallagher: Patricia keeps an incident log on her desk. Bring me a line out of that and I'll write it up.
+    -> password_reason
 + {patricia_authorised_server} [Security's signed it off. Check your messages.]
     {patricia_ko:
         Owen Gallagher: There's a message from Security. Not from Patricia's phone, though. ...Fine.
@@ -301,6 +310,10 @@ Owen Gallagher: After-hours server access gets logged with IT. That's me.
 ~ password_handed = true
 #give_item:notes:server_password_note
 Owen Gallagher: It's on my monitor. It's been on my monitor for a year. Take it, and please don't put that in your report.
+// Blind run B (finding 6): the note arrived without the player noticing.
+#speaker:narrator
+Narrator: He peels the sticky note off the edge of his monitor and hands it over. The password goes into your notes.
+#speaker:owen_gallagher
 // PASS 5 (A3): both Heisenberg leads are enrolled, so this no longer names
 // the insider before anyone suspects him.
 Owen Gallagher: Past the server room is the key vault. Fingerprint reader. Two thumbs enrolled, Ruth Halloran's and David's, and nobody else's. Don't ask me how you'd get in there.

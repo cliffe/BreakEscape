@@ -352,4 +352,7 @@ Agent HaX: The final upload goes tonight. You have four hours.
 // redundant and relied on dynamic tags.
 #complete_task:receive_mission_briefing
 Agent HaX: Patricia Morgan's expecting you. Go.
--> END
+// Blind run B (finding 10): end on #exit_conversation (m06's briefing) so the
+// cutscene closes, not on "(Conversation ended - press ESC to close)".
+#exit_conversation
+-> DONE

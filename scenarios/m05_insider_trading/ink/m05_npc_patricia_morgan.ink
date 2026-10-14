@@ -149,7 +149,8 @@ Patricia Morgan: Here. Visitor badge. It gets you through the front of the build
 
 Patricia Morgan: Owen Gallagher in IT holds the spare cards. Dr Halloran's badge opens the server side. I can lean on either of them if you need me to.
 
-Patricia Morgan: My log of what's been flagged is on the desk. Take it.
+// Blind run B (finding 5): the log on the desk was easy to leave behind.
+Patricia Morgan: My log of what's been flagged is on the desk, by your hand. Read it before you go. Your who starts there.
 
 + [Where should I start?]
     Patricia Morgan: People. Someone in this building has noticed something and not said it. Then the servers.
@@ -316,8 +317,12 @@ Patricia Morgan: What do you need?
     // conversation's copy stays stale until it reopens; set it here so a
     // naming in the same conversation counts the motive.
     ~ found_vetting_file = true
-    Patricia Morgan: That's what vetting will let me give you.
-    Patricia Morgan: Read them properly. Nobody's file is as tidy as it looks.
+    // Blind run B (findings 3 and 6): say what she hands over and what comes next.
+    #speaker:narrator
+    Narrator: She hands you two folders from the cabinet: vetting aftercare files, one on Ruth Halloran, one on David Torres.
+    #speaker:patricia_morgan
+    Patricia Morgan: Those are the two I'd have pulled anyway. That's as far as vetting lets me go.
+    Patricia Morgan: Read them properly. Nobody's file is as tidy as it looks. Then come back with a name and a reason.
     -> hub
 
 + {torres_suspected and not patricia_authorised_office and not office_card_obtained} [I need into David Torres' office.]

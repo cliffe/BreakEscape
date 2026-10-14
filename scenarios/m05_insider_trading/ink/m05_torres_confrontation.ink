@@ -226,7 +226,9 @@ David Torres: Three months ago I was trying to save my wife.
     #complete_task:confront_torres
     -> arrest_path
 
-+ [Drop the philosophy. Step away, or I make you.]
+// Blind run B (finding 2): the choice says it's a fight (m06's "Sit down.
+// (Make him.)"), and the narration warns before he swings.
++ [Drop the philosophy. Step away, or I make you. (Fight him.)]
     #complete_task:confront_torres
     -> combat_offer
 
@@ -380,7 +382,7 @@ David Torres: You're not taking me. Elena needs me.
 
 #hostile:david_torres
 #speaker:narrator
-Narrator: He shoves the chair back and comes at you.
+Narrator: He shoves the chair back and comes at you with his fists up. This is going to be a fight.
 
 ~ fight_quiet = true
 #exit_conversation

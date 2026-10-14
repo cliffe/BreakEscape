@@ -351,6 +351,13 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
           "targetItemIds": ["entropy_pamphlet"],
           "status": "active",
           "optional": true
+        },
+        {
+          "_comment": "Blind run B (finding 1): the aim used to complete on the server password, before anyone was suspected, leaving only VM tasks on screen and 'Find Out Why' hidden. This required task holds the aim open until the evidence points at someone (torres_suspected: a reasoned naming, or evidence that names him), which is the same beat that opens 'Find Out Why'. Completed by a HaX mapping. Names nobody.",
+          "taskId": "name_a_suspect",
+          "title": "Put a name to it, with a reason",
+          "type": "custom",
+          "status": "active"
         }
       ]
     },
@@ -1107,6 +1114,13 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
               "unlockAim": "gather_evidence"
             },
             {
+              "_comment": "Blind run B (finding 1): the same beat closes aim 2's 'Put a name to it' task, so the who aim completes when there is a who.",
+              "eventPattern": "global_variable_changed:torres_suspected",
+              "condition": "value === true",
+              "onceOnly": true,
+              "completeTask": "name_a_suspect"
+            },
+            {
               "_comment": "Scenario design R1 (m1): 'Find a motive' completes when a motive and the suspicion are both in, in either order.",
               "eventPattern": "global_variable_changed:case_motive",
               "condition": "value === true && globalVars.torres_suspected === true",
@@ -1265,6 +1279,13 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
               "condition": "globalVars.final_choice === 'combat_lethal' && globalVars.flag1_submitted === true && globalVars.flag2_submitted === true && globalVars.flag3_submitted === true && globalVars.flag4_submitted === true",
               "onceOnly": true,
               "sendTimedMessage": { "delay": 2000, "message": "Upload's dead. If you're leaving him there, take what's on that desk and go. Call me." }
+            },
+            {
+              "_comment": "Blind run B (finding 3): after a knockout the cursor is still a fist, and a fist click on the drop-site or a document does nothing. Once the fate is set and his scene closes, a reminder after the fate text.",
+              "eventPattern": "conversation_closed:david_torres",
+              "condition": "globalVars.torres_ko === true && globalVars.final_choice !== ''",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 7000, "message": "Hands down: press Q until the open hand shows. While your fists are up, nothing you click will open." }
             },
             {
               "_comment": "Pass 5 A2: any fate (in person, after the knockout, or by phone) opens the call-in task.",

@@ -969,3 +969,78 @@ Mission-side only, no engine edits. In `call_in_security` (`m05_phone_agent_0x99
 | N3 | minor | `torres_hostile` stays true after the call | **Fixed**: cleared in the knot. The engine's own hostile record for him still reads true, harmless with no sprite |
 
 Checks: compile clean; all 40 m05 routes pass (r40 now also expects `torres_hostile` false); dialoguelint 0 problems (longest timed text 30 words); reopencheck 0; validator passes. Browser game 2426 (headless, keyless :3001, `unlock-all-rooms.rb`, `torres_identified` and the four `flagN_submitted` globals set by hand and `setNPCHostile` called through the bridge, so exercised, not earned; session `tools/playtest/m05-pass5-hostile-remove-g2426.jsonl`): the hub offers "Send Security" while hostile and not after the fate; the upload terminal opens after the reload; "Bring me in" starts the debrief, which plays "You backed off and I called it in. Patricia's guards walked him out..." Credits were not captured this run (observer saw nothing); the credits and conditions are covered by r40 and the earlier game 2422 read.
+
+## Phase 8 playtests: blind run B fixes
+
+Input: `PASS5_BLIND_STRUGGLE_B.md` (blind struggling player, game 2428, credits reached: 0 blockers, 2 majors, 9 minors; fun 4, pacing 4, clarity 3, openness 4, teaching 3). Mission files only; no engine code changed. Dialogue and lighting are closed, so line changes are kept to what the findings need.
+
+| # | Sev. | Finding | Outcome |
+|---|---|---|---|
+| 1 | major | "Work Out Who Has Been in the Servers" ticks on the server password with nobody suspected; only VM tasks show and "Find Out Why" stays hidden | **Fixed.** New required custom task in aim 2, `name_a_suspect` "Put a name to it, with a reason" (names nobody), completed by a HaX mapping on `torres_suspected`, the same beat that opens "Find Out Why". So after the password the panel still shows a non-VM step, and the two aims hand over at once. The VM aim keeps its `aimCompleted` unlock; entering the server room completes its first task (`access_server_room`), which reveals it early (`revealAimForTask`), so the flags are on screen as soon as the player is in, as before |
+| 2 | major | The fight line gives no warning; a masher nearly dies | **Fixed (mission side).** Choice "... Step away, or I make you. (Fight him.)" (m06's "(Make him.)" pattern); narration "He shoves the chair back and comes at you with his fists up. This is going to be a fight." HaX's two controls texts already fire on this path (`npc_hostile_state_changed`, not restored, no fate); run B saw the second, and r41 checks both. The damage itself was the configured 3 (see D10 below): the run lost 96 HP over about 80 s, not 10 s, because the harness's `interact` took 3 to 4 s per punch |
+| 3 | minor | Fist cursor after the KO; clicks do nothing | **Fixed.** HaX text 7 s after Torres's scene closes with him KO'd and a fate set (after the 2 s fate text): "Hands down: press Q until the open hand shows. While your fists are up, nothing you click will open." |
+| 4 | minor | Owen's "give me a reason" has no usable reply on the first visit | **Fixed.** New once-only choice "What counts as a reason?" (shown until the incident log is read), where Owen says what he wants and where it is; the reason choice and "Fair enough" stay |
+| 5 | minor | Patricia's "Take it" (incident log) easy to miss | **Fixed.** Her line now says where it is and why it matters (below). HaX's status ladder already points to it |
+| 6 | minor | Password and vetting files arrive silently | **Fixed.** Narration on both hand-overs (the note going into the notes; two named folders), and Patricia says what comes next |
+| 7 | minor | The clone reply ("Sorry. Habit." / "Better me than them.") has no later consequence | **Not acted on.** The debrief already reflects the borrowed badge ("a colleague's badge", "opened on someone else's trust"); the reply is tone, not a choice that needs a payoff |
+| 8 | minor | Dusting "Find" step hard to see; "Compare" offers two cards | **Engine / minigame**, not mission-side. Left for the engine backlog (same family as D18 M4) |
+| 9 | minor | Mission Brief notes popup opens over the tutorial prompt | **Engine** (UI layering). Not changed here |
+| 10 | minor | Briefing ends on "(Conversation ended - press ESC to close)" | **Fixed.** The briefing now ends `#exit_conversation` / `-> DONE`, as m06's does, so the cutscene closes itself (one fewer END warning) |
+| 11 | minor (harness) | Phone-chat text lag, `enter` failures, pointer-drag minigames | Harness; not mission work |
+| 12 | note | `nearby` lists NPCs from other rooms | Harness scan; not confirmed on screen |
+| — | worst line | HaX "You've got a pattern on that sheet." | **Fixed**: names the hallway badge log |
+| — | worst line | Owen choice "... at 23:47. Unlogged." (fragment) | **Fixed** (15 words, under the choice cap) |
+
+### Decisions taken (with reasons)
+
+- **A new required task rather than moving the password task out of aim 2:** aim 2's title is "who", so it should close on a who. The task fires on `torres_suspected`, which only evidence or a reasoned naming sets (pass 4), so it can't hand over the name, and its title names nobody. The VM aim stays reachable through the early reveal on entering the server room.
+- **"(Fight him.)" in the choice text** rather than a separate confirm: m06 settled the pattern; a confirm would add a beat the struggler skips.
+- **The vetting narration names both files:** the inventory toast and item names already show "D. Torres" and "R. Halloran", so the narration adds nothing the player can't see, and it makes the arrival noticeable.
+- **No browser session** (D10 below): run B's own log answered it.
+
+### D10 (engine, investigated; no engine edit)
+
+Real play gets the configured `attackDamage` on the first encounter. `setNPCHostile` reads the behaviour's `hostile.attackDamage` when it builds the state (`npc-hostile.js:121-126`), and the `#hostile` tag, the bridge and the behaviour all go through it. The default 10 only appears if something calls `getState` first (it creates a default state, `npc-hostile.js:154-160`). The earlier D10 browser check did exactly that in its fight sampler (`m05-r1-game2240.jsonl` line 282). Blind run B, with no probe, lost exactly 3 per hit. The finding and a small hardening fix with its test are in DECISIONS_PENDING D10; the D18 row is updated.
+
+### Route driver
+
+New `r41_blind_b_handoffs_fight`: the briefing closes with "Go."; Patricia's log line; Owen's "What counts as a reason?" before the log, then the shortened reason after it, and the password narration; `name_a_suspect` open after the password, completed when `torres_suspected` lands; HaX's "hallway badge log"; the vetting narration and Patricia's next step; "(Fight him.)", the fight narration and both HaX controls texts; the fate and the open-hand reminder. Updated: r22 (the vetting line), and the "Patricia's log has a crypto badge" pick in the 21 routes that use it ("Patricia's log: a crypto badge").
+
+### Checks (static; no browser session started)
+
+- Ink compiles (10 files; one END warning left, the debrief's).
+- Routes r1–r41: all expectations met; longest run without a choice 9.
+- `dialoguelint`: the two pre-existing findings only (Recruiter L86 check, L363 warning).
+- `reopencheck`: 0 problems on all three m05 phones.
+- `loopcheck`: Owen (door seen, with and without the incident log), Patricia (door log in), Torres (identified), HaX (door log, Patricia met), the briefing: no runtime errors.
+- Validator, full: completes, no errors, no new warning types (the same-event notes for `torres_suspected` and `conversation_closed:david_torres` count one more mapping each; toast spacing unchanged); dungeon graph regenerated.
+
+### Spoken lines changed (old → new)
+
+Briefing: ends after "Patricia Morgan's expecting you. Go." with the conversation closing (no line change).
+
+Patricia (in person):
+- "My log of what's been flagged is on the desk. Take it." → "My log of what's been flagged is on the desk, by your hand. Read it before you go. Your who starts there."
+- Vetting files: "That's what vetting will let me give you." / "Read them properly. Nobody's file is as tidy as it looks." → Narrator: "She hands you two folders from the cabinet: vetting aftercare files, one on Ruth Halloran, one on David Torres." / "Those are the two I'd have pulled anyway. That's as far as vetting lets me go." / "Read them properly. Nobody's file is as tidy as it looks. Then come back with a name and a reason."
+
+Owen:
+- New choice "What counts as a reason?" → "Something on Security's books that never reached mine. A badge where it shouldn't be, at an hour nobody told me about." / "Patricia keeps an incident log on her desk. Bring me a line out of that and I'll write it up."
+- Choice (not voiced): "Patricia's log has a crypto badge in the server hallway at 23:47. Unlogged." → "Patricia's log: a crypto badge in the server hallway at 23:47, never logged with you."
+- After "It's on my monitor...", new narration: "He peels the sticky note off the edge of his monitor and hands it over. The password goes into your notes."
+
+HaX phone ("Where do I stand?"):
+- "You've got a pattern on that sheet. Take it to Patricia, ..." → "You've got a pattern in the hallway badge log. Take it to Patricia, ..." (and the Patricia-down variant).
+
+HaX text, new: "Hands down: press Q until the open hand shows. While your fists are up, nothing you click will open."
+
+Torres:
+- Choice (not voiced): "Drop the philosophy. Step away, or I make you." → "Drop the philosophy. Step away, or I make you. (Fight him.)"
+- Narration: "He shoves the chair back and comes at you." → "He shoves the chair back and comes at you with his fists up. This is going to be a fight."
+
+Task title (not voiced), new: "Put a name to it, with a reason" (aim 2, required).
+
+#### Browser checks owed (Sonnet)
+
+- After Owen's password: the panel shows "Put a name to it, with a reason" under aim 2; entering the server room shows the VM aim; naming Torres with a reason ticks it and opens "Find Out Why".
+- The briefing closes by itself on "Go." and the Mission Brief notes popup still follows.
+- The fight line's narration, both HaX texts on the turn, and the open-hand text after the fate.

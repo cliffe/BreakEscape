@@ -1042,9 +1042,9 @@ See you at HQ.
         Her spare goes in at night. Look at who comes through the front door just before it.
     - found_door_log and not torres_suspected:
         {patricia_ko:
-            You've got a pattern on that sheet. Give me the name and the reason, or read her files. They're on her office floor.
+            You've got a pattern in the hallway badge log. Give me the name and the reason, or read her files. They're on her office floor.
         - else:
-            You've got a pattern on that sheet. Take it to Patricia, or ask her for the vetting files on the names in it.
+            You've got a pattern in the hallway badge log. Take it to Patricia, or ask her for the vetting files on the names in it.
         }
     - found_incident_log and not door_log_held and not torres_suspected:
         Patricia's log has a cryptography badge at 23:47. Owen keeps the reader logs. Ask him whose.
