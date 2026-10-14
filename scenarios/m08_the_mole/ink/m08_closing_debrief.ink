@@ -38,6 +38,7 @@ VAR asked_line = false
 // PASS 5 (alignment C2, n7): the tip-off goes on the record.
 VAR nightshade_tipped_off = false
 VAR locker_seen_picked = false // PASS 5 (puzzle chains C1, m6): seen picking a locker
+VAR offduty_agent_ko = false // Puzzle chains C2 (N2): the off-duty agent knocked out
 
 === start ===
 #set_global:debrief_played:true
@@ -82,6 +83,9 @@ Director Magnus Netherton: Say it, Agent. Whatever you think of me tonight. I wo
 }
 { locker_seen_picked:
     Director Magnus Netherton: You picked a colleague's locker in front of a witness, who then told the whole floor he saw nothing.
+}
+{ offduty_agent_ko:
+    Director Magnus Netherton: You put an off-duty agent on the break-room floor. He was a witness, not a suspect. He'll mend. The floor's opinion of you may not.
 }
 { named_on_evidence:
     { named_before_box:

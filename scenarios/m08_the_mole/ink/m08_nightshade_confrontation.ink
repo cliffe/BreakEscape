@@ -41,6 +41,9 @@ VAR asked_cracker = false
 // PASS 5 (M3, m6): a tipped-off mole tidied his locker; the triple agent's first payment.
 VAR nightshade_tidied = false
 VAR triple_agent_first_payment = false
+// Puzzle chains C2 (N1, N2): why he tidied, when no accusation did it.
+VAR locker_seen_picked = false // Synced scenario global: seen picking a locker
+VAR offduty_agent_ko = false // Synced scenario global: the off-duty agent knocked out
 // PASS 5 (alignment C2, J2, J4): an accusation of either innocent man tips him
 // off too; the go-bag's contents are known only once he is named.
 VAR accused_cipher = false
@@ -84,6 +87,14 @@ Agent 0x47 'Nightshade': I could have scrubbed every trace years ago. You're won
 - (accused_cipher or accused_phantom) and nightshade_tidied:
     // Alignment C3 (browser R3): both innocents accused.
     Agent 0x47 'Nightshade': You put it on {accused_cipher and accused_phantom:Cipher and Phantom both|{accused_cipher:Cipher|Phantom}} in front of the floor. Walls are thin here. So I tidied. Not well enough, it seems.
+// Puzzle chains C2 (N1, N2): the off-duty agent's catch and his KO are tip-off
+// sources too. Accusations stay first (the louder of the two). If both the
+// catch and the KO happened, the catch came first: the KO tips off only when
+// nothing has yet, and a KO'd watcher catches nobody.
+- locker_seen_picked and nightshade_tidied:
+    Agent 0x47 'Nightshade': Somebody saw you at the lockers in the break room. On this floor that reaches me before the kettle boils. So I tidied. Not well enough, it seems.
+- offduty_agent_ko and nightshade_tidied:
+    Agent 0x47 'Nightshade': You left a man out cold in the break room. That was round the building before he woke. So I tidied. Not well enough, it seems.
 - nightshade_tidied:
     Agent 0x47 'Nightshade': The Director went asking questions on my floor. I can count. So I tidied. Not well enough, it seems.
 }

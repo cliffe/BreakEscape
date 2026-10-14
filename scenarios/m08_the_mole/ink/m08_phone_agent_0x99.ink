@@ -72,7 +72,9 @@ So I'm going to be very professional tonight. Bear with me.
 -> hub
 
 === hub ===
-+ [How do I get into the server room?]
+// Puzzle chains R1 browser (P1): retires once the player has been inside;
+// every other step topic goes at its own step.
++ { not server_room_entered } [How do I get into the server room?]
     // Round 2: shorter, action first; the cloned branch says how to use the
     // saved card (after a reload the reader opens the cloner's menu).
     // PASS 5 (puzzle chains C1, m5): his card is MIFARE Classic with custom

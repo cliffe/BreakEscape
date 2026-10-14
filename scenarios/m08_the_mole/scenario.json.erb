@@ -226,6 +226,7 @@ backup_plain = "SENT -- To: architect@entropy.onion  From: nightshade_deep_state
           { "text": "DIRECTOR NETHERTON: Knocked down in his own office. He did not mention it again.", "style": "warning", "condition": "globalVars.netherton_ko" },
           { "text": "NIGHTSHADE: Knocked down in his lab before the evidence was in.", "style": "warning", "condition": "globalVars.nightshade_ko" },
           { "text": "AGENT HAX: Put on the break-room floor by her own agent.", "style": "warning", "condition": "globalVars.hax_ko" },
+          { "text": "AN OFF-DUTY AGENT: Knocked out in the break room. A witness, not a suspect.", "style": "warning", "condition": "globalVars.offduty_agent_ko" },
           { "text": "" },
           { "text": "THE ARCHITECT: At large, with every weakness SAFETYNET ever catalogued.", "style": "warning" },
           { "text": "ENTROPY: Still operational.", "style": "warning" }
@@ -852,7 +853,11 @@ CREDITS
     hostile, m07's two-part wording (Hollis, Park, Mercer) with a per-NPC
     opening. restored !== true so a reload's re-announced hostility repeats
     nothing. ATHENA and HaX in person don't fight back (aggroDistance 1), so
-    each gets one text: how to put the fists away. %>
+    each gets one text: how to put the fists away.
+    Puzzle chains C2 (N3): in m08 hostility never clears (no #hostile:false,
+    no influence recovery) and survives a reload, and clicking a hostile NPC
+    jabs even with the open hand. So the texts say the NPC won't talk again;
+    for the Director, the KO route (his card off the floor) is what's left. %>
 <% [["director_netherton", "The Director's coming for you."],
     ["agent_cipher", "Cipher's swinging."],
     ["agent_phantom", "Phantom's coming at you."],
@@ -870,20 +875,20 @@ CREDITS
               "eventPattern": "npc_hostile_state_changed",
               "condition": "data.npcId === '<%= id %>' && data.isHostile === true && data.restored !== true",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 5500, "message": <%= ("Keep pressing Q until the open hand shows to walk by clicking. " + (id == "background_analyst" ? "She's" : "He's") + " slower than you if you need distance.").to_json %> }
+              "sendTimedMessage": { "delay": 5500, "message": <%= (id == "director_netherton" ? "He won't talk to you again tonight. Put him down for his card, or keep away: he's slower. Keep pressing Q until the open hand shows to walk by clicking." : (id == "background_analyst" ? "She won't talk to you again tonight. Put her down or keep away: she's slower than you. " : "He won't talk to you again tonight. Put him down or keep away: he's slower than you. ") + "Keep pressing Q until the open hand shows to walk by clicking.").to_json %> }
             },
 <% end %>
             {
               "eventPattern": "npc_hostile_state_changed",
               "condition": "data.npcId === 'receptionist_ai' && data.isHostile === true && data.restored !== true",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 1000, "message": "That's ATHENA's reception avatar you're hitting. She won't hit back, and she logs everything. Keep pressing Q until the open hand shows to walk by clicking." }
+              "sendTimedMessage": { "delay": 1000, "message": "That's ATHENA's reception avatar. She won't hit back, or answer you again, and she logs everything. Keep pressing Q until the open hand shows to walk by clicking." }
             },
             {
               "eventPattern": "npc_hostile_state_changed",
               "condition": "data.npcId === 'agent_0x99_person' && data.isHostile === true && data.restored !== true",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 1000, "message": "Ow. I'm not hitting back, 0x00. Keep pressing Q until the open hand shows to walk by clicking." }
+              "sendTimedMessage": { "delay": 1000, "message": "Ow. I'm not hitting back, 0x00, but I'm done talking in person tonight. Ring me. Keep pressing Q until the open hand shows to walk by clicking." }
             },
             {
               "_comment": "PASS 3 (P2): the USB stick from Nightshade's locker is opened (container path fires its onPickup). Offers the CyberChef guide.",
@@ -992,6 +997,18 @@ CREDITS
               "onceOnly": true,
               "setGlobal": { "nightshade_tipped_off": true },
               "sendTimedMessage": { "delay": 2500, "message": "Someone saw you at the lockers. He'll tell the floor he saw nothing, which here is the same thing. If one's the mole's locker, he knows we're looking." }
+            },
+<%# Puzzle chains C2 (N2): knocking the witness out skipped the catch for
+    free (the gate ignores a KO'd watcher). A colleague out cold in the break
+    room is round the floor as fast as a seen pick: the same tip-off, before
+    the naming. The credit and the debrief line read offduty_agent_ko
+    (globalVarOnKO) whenever it happens. %>
+            {
+              "eventPattern": "npc_ko:background_agent",
+              "condition": "globalVars.mole_identified !== true && globalVars.nightshade_tipped_off !== true",
+              "onceOnly": true,
+              "setGlobal": { "nightshade_tipped_off": true },
+              "sendTimedMessage": { "delay": 2000, "message": "An agent out cold in the break room. That's round the floor by midnight, and if one of those lockers is his, so is he." }
             },
 <%# PASS 5 (alignment C2, J4): the go-bag reads as any agent's holdall until
     he is named. Once he is named, a player who read it earlier hears what was
@@ -1896,6 +1913,9 @@ CREDITS
           <%# PASS 5 (puzzle chains C1, m2): a punch makes any NPC hostile; without
               this block he chased at 145 for 10 a hit. Range as m06 Kemal / m07 Hollis. %>
           "behavior": { "hostile": { "chaseSpeed": 80, "attackDamage": 3, "pauseToAttack": true } },
+          <%# Puzzle chains C2 (N2): a KO is on the record (credit, debrief) and,
+              before the naming, tips the mole off (HaX's npc_ko mapping). %>
+          "globalVarOnKO": "offduty_agent_ko",
           <%# PASS 5 (puzzle chains C1, m6): searching an innocent man's locker costs
               something. Picking any of the three lockers where he can see it, before
               the naming, stops the pick and opens his catch (lockpick-catch.js; the
@@ -1908,8 +1928,13 @@ CREDITS
               at once still beats him. Fair warning: his sight is drawn (a 360
               degree, 5-tile circle from his seat, which takes in all three
               lockers; a facing cone would miss 0x23 unless he turned), and his
-              observations say he is watching them. Once only; free with him down,
-              out of his cone, or with the owner's key. %>
+              observations say he is watching them. Once only. Every locker is
+              inside his circle. With him knocked out there is no catch (the gate
+              skips a KO'd watcher, npc-manager.js), but the KO itself tips the
+              mole off (C2, N2). With any key in hand there is no catch either:
+              keys go to the key minigame, which never runs the gate unless the
+              player chooses "Switch to Lockpicking" (unlock-system.js,
+              minigame-starters.js), so the owner's key opens his locker quietly. %>
           "los": { "enabled": true, "range": 160, "angle": 360, "visualize": true },
           "eventMappings": [
             {
@@ -2278,6 +2303,7 @@ CREDITS
     "named_by_hax": false,
     "nightshade_tipped_off": false,
     "locker_seen_picked": false,
+    "offduty_agent_ko": false,
     "nightshade_tidied": false,
     "triple_agent_first_payment": false,
 

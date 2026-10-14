@@ -46,3 +46,9 @@ HaX's phone hub now has a hint for each VM step, shown only for the step in hand
 
 ## E8. Validator: `behavior.facePlayerDistance` reported as unknown (validator, puzzle chains round 1)
 `scripts/validate_scenario.rb:284` lists the known `behavior` fields without `facePlayerDistance` and `personalSpace`, although the engine reads both (`npc-behavior.js:329-362`). m08 no longer uses it (the off-duty agent's catch uses a 360-degree sight circle instead), so nothing is blocked. Recommendation: add the fields `parseConfig` reads to the validator's list.
+
+## E9. The sight circle stays drawn after a one-shot catch, the naming, or a KO (engine, puzzle chains C2 N4)
+`_updateLOSVisualizations` (`npc-manager.js:2098-2125`) draws every NPC with `los.visualize` and checks neither KO nor whether its `lockpick_used_in_view` mapping can still fire. In m08 the off-duty agent's circle stays round him after his one catch, after the naming (when the mapping's condition is off) and while he lies knocked out. It only over-warns, so nothing is lost, but a circle round a man on the floor looks like a bug. Recommendation: skip drawing for `isNPCKO` NPCs, and optionally for NPCs whose only `lockpick_used_in_view` mapping won't fire, using the same `_mappingWouldFire` check the catch gate uses (`npc-manager.js:338`). Dropping `visualize` in m08 would cost more fairness than it gains, so no mission change. Not blocking.
+
+## E10. Reload respawns the player in the start room (engine, puzzle chains round 1 browser P2)
+After a page reload the player stands in `main_lobby`, not the room they left (server room in game 2425; game 2430 too). Inventory, globals and tasks are intact. This is the known backlog item "Resume in the room you left" (`docs/IDEAS_BACKLOG.md:46-47`, P10 in the pass-4 log), not an m08 fault. m08 needs no change: every room the player has opened stays open. Not blocking.

@@ -344,3 +344,56 @@ Off-duty agent (`m08_background_agent.ink`), new: "The magazine comes down." (na
 Item text (not voiced): the access-log excerpt (m3); the off-duty agent's observations.
 
 Owed on screen at the stage's browser check: HaX's hub before flag 1 (after entering the server room) and between flags 1 and 2; the Director's chase speed and the two texts after a punch; ATHENA not hitting back; the MIFARE darkside clone at Netherton returning to his chat, then the saved card at the reader; the off-duty agent's drawn sight circle and the catch at a locker. Carried from alignment: the brief before and after the naming; HaX's post-KO reading needing a clock.
+
+### Stage 2 puzzle chains, round 2 fix (closing round, 2026-10-14)
+
+Fixer (Opus) on `PUZZLE_REVIEW_P5_C2.md` (0 blockers, 0 majors, 4 new minors, 1 carried) and `PASS5_PUZZLE_R1_BROWSER.md` (all five items pass; 3 minors, 2 notes). Mission files only: `scenario.json.erb`, three ink files, `DECISIONS_PENDING.md`, the m08 routes. No engine edits; no browser session; nothing committed. I opened no SecGen XML and none of the four restricted guides.
+
+#### Puzzle chains review C2
+
+| # | Sev | Finding | Outcome |
+|---|---|---|---|
+| N1 | minor | A tidy caused by the locker catch got the audit-closed reason ("The Director went asking questions on my floor") | **Fixed.** Confrontation declares `locker_seen_picked` and `offduty_agent_ko`; two branches after the accusation branches and before the catch-all: the catch line, then the KO line (if both are set the catch came first, since the KO tips off only when nothing has, and a KO'd watcher catches nobody). New route r15 (q6 inverted) |
+| N2 | minor | Knocking out the off-duty agent skipped the catch and nothing recorded it | **Fixed.** `globalVarOnKO: offduty_agent_ko` on `background_agent` and a new global; HaX's onceOnly `npc_ko:background_agent` mapping, before the naming and if not already tipped off, sets `nightshade_tipped_off` and texts. The tidy follows through the existing room-entry latches. Credit in ON THE RECORD and a Netherton line in `the_hunt`, both on `offduty_agent_ko` whenever the KO happened. The erb comment no longer calls the KO free. New route r14 (q2 inverted) |
+| N3 | minor | The controls texts implied a punched NPC could be talked to again | **Fixed (text only).** Hostility never clears in m08 and clicking a hostile NPC jabs (`interactions.js:662-676`), so each second text now says the NPC won't talk again. The Director's names the KO route (his card off the floor). ATHENA's and HaX-in-person's say the same in their one text. The Q wording is unchanged and correct ("Q switches to fists (again for a harder punch)"; "Keep pressing Q until the open hand shows"). All at 30 words or fewer. r13 updated. The optional `netherton_hostile` rung on HaX's ladder was not added: the text names the route |
+| N4 | minor | The sight circle stays drawn after the catch, the naming, a KO | **Deferred (engine):** E9 in `DECISIONS_PENDING.md` |
+| m7 | minor (carried) | The reader opens the cloner with nothing to emulate | Deferred (engine backlog), unchanged |
+
+#### Round 1 browser check
+
+| # | Sev | Finding | Outcome |
+|---|---|---|---|
+| P1 | minor | "How do I get into the server room?" stayed in HaX's hub after the room was open | **Fixed.** Gated `{ not server_room_entered }` (the synced latch set by HaX's room-entry mapping), so it retires on first entry. r15 checks it is gone after entry and after flag 4 |
+| P2 | minor | A reload puts the player in `main_lobby` | **Deferred (engine):** the known backlog item "Resume in the room you left"; E10 in `DECISIONS_PENDING.md` |
+| P3 | minor | Fists up blocks click-to-move; the text covers it | No change (the browser check found the text accurate) |
+| P4 | note | Punched ATHENA and HaX show `isNPCHostile` true though they never fight | No change; not seen on screen. N3's texts now say they won't talk again, which is what hostility does to them |
+| P5 | note | Catch with the owner's key, or with the agent KO'd, untested | **Confirmed in the engine, no change needed.** Any key in the inventory sends a key lock to the key minigame (`unlock-system.js:141-186`), which runs the catch gate only if the player chooses "Switch to Lockpicking" (`minigame-starters.js:419`); the direct-pick gate (`unlock-system.js:194`) runs only with no keys at all. So the owner's key (any suspect locker key, in fact) opens a locker with no catch. The gate skips a KO'd watcher (`npc-manager.js:313`). The erb comment now says both. Still worth one look on screen at the next browser check |
+
+Counts: C2 4 new minors: 3 fixed, 1 deferred to the engine; 1 carried (engine). Browser 3 minors and 2 notes: 1 fixed, 1 deferred to the engine, 1 no change, the notes answered.
+
+Decisions taken (fixer, reversible, mission-local):
+- The off-duty agent's KO tips the mole off (the reviewer's first option), so assaulting the witness costs at least what being seen costs. No separate record-only mapping: the credit and debrief read `offduty_agent_ko` directly, and an extra mapping would only add a co-fire warning.
+- The credit and debrief line call him "a witness, not a suspect" rather than saying why he was hit, since the player may have had no reason.
+- P1 retires the topic on entering the room rather than on the door opening: entry is the latch that already exists, and a player who cloned the card but hasn't gone in still needs the "emulate it" answer.
+
+Checks (all after the last edit): `scripts/compile-ink.sh m08_the_mole` 12/12. Route driver, fifteen routes (r1-r15), all "all expectations met"; r13 updated, r14 and r15 new; longest run without a choice 11 (the opening cutscene, unchanged). Reviewer's probes re-run as written: q1, q3, q4, q5 pass; q6 now passes (it was the failing evidence for N1); q2 fails exactly on the old behaviour it recorded (no tip-off after the KO). `dialoguelint` 0 errors, 0 warnings, 8 blank-reentry CHECKs (unchanged); timed texts max 30 words. `reopencheck` m08 0 problems. `tagdiff` vs HEAD: 8 structural differences, all from this round (the hub gate, the confrontation branches, the debrief condition). Validator (full): no errors; the four known warnings (the 16 hostile-text co-fires on HaX; brief_taken co-fire; confrontation cutscene not onceOnly; the catch person-chat has no background). `check_door_alignment.py` on m08: all OK.
+
+Spoken lines changed (old → new), for the TTS stage:
+
+HaX, phone texts (`scenario.json.erb`):
+- second controls text, the Director: "Keep pressing Q until the open hand shows to walk by clicking. He's slower than you if you need distance." → "He won't talk to you again tonight. Put him down for his card, or keep away: he's slower. Keep pressing Q until the open hand shows to walk by clicking."
+- second controls text, Cipher, Phantom, Nightshade (lab), the confrontation, the off-duty agent (the analyst with "She"/"her"): "Keep pressing Q until the open hand shows to walk by clicking. He's slower than you if you need distance." → "He won't talk to you again tonight. Put him down or keep away: he's slower than you. Keep pressing Q until the open hand shows to walk by clicking."
+- ATHENA: "That's ATHENA's reception avatar you're hitting. She won't hit back, and she logs everything. Keep pressing Q until the open hand shows to walk by clicking." → "That's ATHENA's reception avatar. She won't hit back, or answer you again, and she logs everything. Keep pressing Q until the open hand shows to walk by clicking."
+- HaX in person: "Ow. I'm not hitting back, 0x00. Keep pressing Q until the open hand shows to walk by clicking." → "Ow. I'm not hitting back, 0x00, but I'm done talking in person tonight. Ring me. Keep pressing Q until the open hand shows to walk by clicking."
+- new, the off-duty agent knocked out before the naming: "An agent out cold in the break room. That's round the floor by midnight, and if one of those lockers is his, so is he."
+
+Nightshade, confrontation (`m08_nightshade_confrontation.ink`), new:
+- after a locker catch: "Somebody saw you at the lockers in the break room. On this floor that reaches me before the kettle boils. So I tidied. Not well enough, it seems."
+- after the off-duty agent's KO: "You left a man out cold in the break room. That was round the building before he woke. So I tidied. Not well enough, it seems."
+
+Netherton, debrief (`m08_closing_debrief.ink`), new: "You put an off-duty agent on the break-room floor. He was a witness, not a suspect. He'll mend. The floor's opinion of you may not."
+
+Credit (not voiced), new: "AN OFF-DUTY AGENT: Knocked out in the break room. A witness, not a suspect."
+
+### Stage 2 puzzle chains: CLOSED (fixer, for the orchestrator, 2026-10-14)
+Cycle 2 review 0/0/4 (plus 1 carried engine minor); the round-1 browser check passed all five items with 3 minors. Round 2 fixed N1, N2, N3 and P1, confirmed P5 in the engine, and deferred N4 (E9) and P2 (E10) to the engine. Static confirmation as the cycle-2 reviewer asked: r13 updated, the inverted q2 (r14) and q6 (r15), all fifteen routes clean. Owed on screen, carried to the next browser check: a punched NPC's second text and that clicking them afterwards jabs; the off-duty agent's KO text and the tidy; the catch not firing with a suspect's locker key in hand; HaX's hub without the server-room topic after entry.
