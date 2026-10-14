@@ -99,3 +99,103 @@ Advice on public Wi-Fi has changed, and older training overstates the risk.
 
 - Working in public is normal and allowed. The module teaches how to do it safely, not to avoid it.
 - Bystanders are almost always ordinary people. The passenger who reads your screen isn't a spy; the problem is that client information reached someone with no reason to see it.
+
+## What to do (the procedure)
+
+As the reference card shows it:
+
+**Out of sight, out of earshot**
+
+1. Sit where nobody is behind you. Privacy screen on.
+2. Confidential work waits for a private place.
+3. Looking away? Lock it: Windows key and L.
+4. On a call in public: no names, codes or client details. "I'll call you back."
+
+**With you, or locked away**
+
+5. Never leave devices or papers unattended. Take only what you need, and look round before you leave.
+6. Work devices are for you only.
+
+**Check the network**
+
+7. Ask the venue for the network's name. Accept the terms, then wait for the VPN.
+8. A Wi-Fi page wants your work password? Close it and use your phone's hotspot.
+
+**Lost or stolen?**
+
+9. Call the service desk now, day or night: what it was, when and where you last had it, and what was on it.
+
+**At home**
+
+10. Before a video call, check what's behind you. Blur on, headphones in, door closed, share a window.
+
+## Misconceptions and outdated advice
+
+| Belief | The current position |
+|---|---|
+| "Never use public Wi-Fi." | Overstated for most organisations. With an automatic VPN and the venue's real network it is fine for most work; the risks are fake networks and fake login pages. Organisations may still choose "hotspot only" (the DSPT's line for smaller health and care organisations). |
+| "On public Wi-Fi, anyone can read everything you do." | Mostly out of date: most web and app traffic is now encrypted, and the VPN covers the rest. What still catches people is typing a password into a fake Wi-Fi page. |
+| "The VPN makes it all safe." | The VPN protects data on its way to the company. It doesn't stop you typing your password into a fake page, someone reading your screen, or the laptop being left behind. |
+| "The café's Wi-Fi has a password, so it's private." | Everyone in the café has the same password. Treat it as public. |
+| "It's locked, so I don't need to report it." | Report it anyway. The lock buys time; the service desk can wipe it, sign it out of company services and protect your accounts. |
+| "I'll report it tomorrow if it hasn't turned up." | Report it now. If it turns up, they switch it back on; if it doesn't, the hours matter. |
+| "Public charging points will steal your data." | A widely repeated warning. We have not found a reputable current source documenting real attacks this way, so the module doesn't dramatise it (to verify before any wording goes beyond the habit). The proportionate habit: your own plug and cable or a power bank, and say no if a phone asks to trust a device or share data while charging. |
+| "Headphones mean nobody can hear my call." | They stop others hearing the other person. Everyone nearby still hears you. |
+| "A privacy screen means I can work on anything." | It narrows the viewing angle from the side. Someone directly behind can still see, and it does nothing for calls. |
+| "My hotel room is private." | Cleaners, maintenance staff and anyone with a key can come in. Keep devices with you or locked away. |
+| "The kids know not to touch anything." | Children, partners and friends mean no harm, but a work device used by someone else can lose work, install apps or pick up malware. Offer another device. |
+| "Background blur hides everything." | It helps, but check what the camera shows and what you share before you join. |
+
+## Real cases
+
+Use these as background and inspiration only. Game content uses fictional names.
+
+- **Bob Quick, April 2009.** The Metropolitan Police's head of counter-terrorism arrived at 10 Downing Street carrying a document marked secret about a planned operation, and press photographers captured it. Police brought arrests forward and he resigned the next day. (BBC News, "Police chief quits over blunder", 9 April 2009; The Guardian, 9 April 2009.)
+- **Ministry of Defence papers, June 2021.** Classified papers about HMS Defender's passage through waters off Crimea were found behind a bus stop in Kent and passed to the BBC. The senior official who lost them had his security clearance suspended. (BBC News, 27 June 2021.)
+- **EU defence ministers' video conference, November 2020.** The Dutch defence minister posted a photo on social media that showed the meeting's login and part of its PIN, and a Dutch journalist joined the confidential call. (BBC News, "Dutch journalist gatecrashes EU defence video conference", 21 November 2020.)
+- **NCSC on lost devices.** The NCSC's small business guide (2020) told organisations to make sure lost or stolen devices "can be tracked, locked or wiped", and its 2026 guide for small organisations repeats that phones and tablets are more likely to be lost or stolen because they leave the office.
+
+## Organisation-specific slots
+
+| Slot | Default (Larkspur) |
+|---|---|
+| Lost or stolen device line | The 24/7 service desk line (shown on the reference card and the back of the badge) |
+| What to tell them | What it was, when and where last seen, what was on it or signed in, whether it was locked |
+| Privacy screens | Issued with every laptop; replacements from the service desk |
+| VPN name and behaviour | "Larkspur Connect", connects by itself and shows a padlock in the corner |
+| Public Wi-Fi rule | Venue Wi-Fi with Larkspur Connect, or your phone's hotspot; never type your Larkspur password into a Wi-Fi page |
+| Stricter Wi-Fi rule (optional) | Phone hotspot only |
+| Travel rule | Keep devices with you; if you can't, lock them in the room safe, shut down |
+| Papers out of the office | Only what the job needs; bring them back for confidential waste |
+| Family use of work devices | Not allowed |
+| Printing at home | Avoid for Confidential; bring printouts back for confidential waste |
+| Smart speakers | Mute or move away during confidential calls |
+| Video call background | Blur or the Larkspur background for client calls |
+| Personal devices for work | Larkspur's work app only, with a screen lock |
+| Remote lock and wipe | Every Larkspur laptop, phone and tablet is managed and can be locked or wiped |
+
+## Glossary
+
+- **Shoulder surfing:** reading someone's screen or papers over their shoulder.
+- **Privacy screen (privacy filter):** a film over a screen that makes it hard to read from the side.
+- **Public Wi-Fi:** a wireless network in a café, hotel, station or similar that anyone can join.
+- **Hotspot:** a place offering Wi-Fi; also your phone sharing its mobile data connection with your laptop ("tethering").
+- **Evil twin:** a fake Wi-Fi network named to look like a real one nearby.
+- **Captive portal:** the page a public network shows before you can use it, usually to accept terms.
+- **VPN (virtual private network):** an encrypted connection from your device back to the organisation.
+- **Remote wipe:** erasing a lost device's data from a distance through device management.
+- **Device management:** the system IT uses to set up, update, lock and wipe the organisation's devices.
+- **Encryption:** scrambling data so only someone with the right key (your PIN or password) can read it.
+- **Background blur:** a video call setting that hides what's behind you.
+
+## Sources
+
+- NCSC, "Small organisations guide to cyber security: protecting your devices" (published April 2026, reviewed July 2026): https://www.ncsc.gov.uk/collection/small-organisations-guide-to-cyber-security/protecting-your-devices
+- NCSC, "How to secure your online meetings" (March 2026): https://www.ncsc.gov.uk/guidance/how-to-secure-your-online-meetings
+- NCSC, Device security guidance, "Virtual private networks" (reviewed May 2025): https://www.ncsc.gov.uk/collection/device-security-guidance/infrastructure/virtual-private-networks
+- NCSC, "Small Business Guide" (version 4, 2020), tips on smartphones and tablets and on unknown Wi-Fi hotspots: https://www.ncsc.gov.uk/files/NCSC_A5_Small_Business_Guide_v4_OCT20.pdf
+- CIS Critical Security Controls v8.1, Control 14 (safeguards 14.5 and 14.8): https://www.cisecurity.org/controls/v8-1
+- NHS Data Security and Protection Toolkit (public Wi-Fi guidance for smaller organisations, as recorded in the course compliance mapping; check the current toolkit text before quoting): https://www.dsptoolkit.nhs.uk/
+- Bob Quick: BBC News, "Police chief quits over blunder", 9 April 2009; The Guardian, "Police chief Bob Quick steps down over terror blunder", 9 April 2009.
+- MoD papers: BBC News (Paul Adams), 27 June 2021.
+- EU video conference: BBC News, "Dutch journalist gatecrashes EU defence video conference", 21 November 2020.
