@@ -617,7 +617,7 @@ Each step gets one line of feedback. Items get harder: a plain domain; a decorat
   "document": {
     "kind": "record",
     "spans": [
-      { "id": "s1", "text": "Mrs D. Whitlock, Room 12", "category": "other_resident", "mustRedact": true },
+      { "id": "s1", "text": "Mrs D. Ashby, Room 12", "category": "other_resident", "mustRedact": true },
       { "id": "s2", "text": "the night carer, Sanjay", "category": "staff_name", "mustRedact": true },
       { "id": "s3", "text": "the complaint about the laundry service", "category": "subject", "mayKeep": true }
     ],
