@@ -128,7 +128,8 @@ The critical path is marked **(CP)**. Everything else is optional depth.
 | Final checks | Remove all four properly / some / none, or cover and hide rather than remove | C06-LO4 | The council's question about the margin, or about the named pay rates |
 | Printing the board pack | Secure print and collect / the old printer | C06-LO5 | Jo's haul |
 | Mei Lin's printout | To Mei Lin unread and reported / to Mei Lin only / leave it / recycle it / read it | C06-LO5 | Mei Lin's thanks and Tomasz's note |
-| The week's drafts and the old laptop | Console and Owain / any other bin; keep or bin the laptop | C06-LO5 | Jo's audit report; Owain's thanks |
+| The week's drafts (counterpart to the hook) | Locked console / strip-cut shredder / recycling | C06-LO5 | Jo's audit report a week later |
+| The old laptop | Owain at the service desk / keep it / bin it | C06-LO5 | Owain's thanks; or a line on Jo's clipboard |
 
 No option shames the player. Martin is the one with the bad ideas, and he comes round; when the player slips, the consequence scene ends with the fix they can still make (close the link, report it, tell Tomasz), and the debrief frames each line on Jo's clipboard as "this is how little an outsider needs".
 

@@ -1,10 +1,10 @@
 # Resume note: security awareness course plan (2026-10-14), in progress
 
-Brief `docs/agents/AWARENESS_COURSE_BRIEF.md`, seeds `docs/agents/AWARENESS_MODULE_SEEDS.md`. Plan folder `planning_notes/security_awareness_course/` (README, 00 to 03 course docs, MODULE_TEMPLATE, features/, modules/, research/). Branch ccr-8675a21c-vu1k0k.
-- Done by the orchestrator: research notes, learning design ("game first, not game only"), overview and catalogue (26 modules), world and cast (Larkspur Group), template, feature catalogue (BE-01 to BE-21, MG-01 to MG-25, EX-01 to EX-07, HA-01 to HA-23), model module core_01.
-- Running: 9 module writers (W1 core_00/16/17; W2 core_02/10/12; W3 core_03/04; W4 core_05/06; W5 core_07/08/13; W6 core_09/14/15; W7 core_11, role_02/07; W8 role_01/03/04; W9 role_05/06, sector_01) and 4 feature writers (engine plus accessibility; minigames; Hacktivity plus assessment; explainers). Compliance research agent to write 02_COMPLIANCE_MAPPING.md.
-- Next: review round (accuracy, template, boundaries, feature ids, style), fixes, dash and spelling greps, compile "used by" lists, commit and push.
-- The repo is public and Hacktivity is private: keep Hacktivity plans at feature level, no weaknesses in files.
+Brief `docs/agents/AWARENESS_COURSE_BRIEF.md`, seeds `docs/agents/AWARENESS_MODULE_SEEDS.md`, review brief `docs/agents/AWARENESS_REVIEW_BRIEF.md`. Plan folder `planning_notes/security_awareness_course/`. Branch ccr-8675a21c-vu1k0k (pushed after each step).
+- Done: course docs (README, 00 to 03, MODULE_TEMPLATE, DECISIONS_PENDING), research notes, all six feature documents (engine, minigames, explainers, Hacktivity, assessment and evidence, accessibility), compliance mapping, catalogue (BE-01 to BE-27, MG-01 to MG-27, EX-01 to EX-08, HA-01 to HA-26), core_01 (model), core_02/10/12 (W2, first draft).
+- Running: module writers W1 (core_00/16/17), W3 (core_03/04), W4 (core_05/06), W5 (core_07/08/13), W6 (core_09/14/15), W7 (core_11, role_02/07), W8 (role_01/03/04), W9 (role_05/06, sector_01); reviewer for W2's modules; reviewer for the feature documents.
+- Next: review each writer's batch when it lands (Opus, read-only, AWARENESS_REVIEW_BRIEF.md), send findings back to the same writer, then the checker script (scratchpad orchestrator/check_course.py; recreate if lost: dashes, US spellings, template headings, feature ids), reconcile 02's coverage matrix and the explainer library with the modules, final commit.
+- Public repo: keep Hacktivity at feature level; Hacktivity privacy concerns go to the user in chat only.
 
 # Resume note — m03 pass 2 (2026-10-12): all stages done except the user's blind run
 
