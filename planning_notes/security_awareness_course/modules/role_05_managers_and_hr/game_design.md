@@ -126,6 +126,10 @@ The critical path is marked **(CP)**. The week runs as six short scenes on a pla
   - **Search his mailbox to see what else he's sent.** (Investigating alone, without a lawful reason or the right people. Mei Lin stops it: *"That's not ours to do."*)
   - **Let it go; he's retiring.** (1,400 people's numbers stay on a personal account nobody controls.)
 
+**Thursday morning: the temp (1 minute).**
+
+- Sol Sorensen, an agency temp, starts covering Des's callouts for four weeks. Owain's ticket again offers **[Copy from user: Des Harker]**. The player chooses the role template with a four-week end date, the template with no end date, or Des's access. This is the **Apply counterpart to the hook**: the same decision, now under pressure, with no prompt.
+
 **Thursday 17:50: Farida (2 minutes).**
 
 - **(CP)** A knock at the door. Farida, coat on, phone in hand: *"Have you got a minute? I've done something stupid. Please don't tell anyone."* She clicked a "your payslip is ready" email at the end of a day covering two people's work, and typed her password into the page.
@@ -156,7 +160,7 @@ The critical path is marked **(CP)**. The week runs as six short scenes on a pla
 - **The team's access on Monday and on Friday,** side by side: who had what, with the player's changes marked as removed, reduced or end-dated, and anything still open in amber.
 - **Each decision:** what happened, what the player did, what good looks like and where it led, including any time skip the player triggered.
 - **The before and after:** Nadia's access in the hook beside Sol's in Thursday's scene.
-- **The team pulse:** the anonymous end-of-quarter pulse survey for the player's team, built from their reactions. *"I'd tell my manager if I made a security mistake: 9 out of 10 agree"* (or 4 out of 10). The numbers are on screen only.
+- **The team pulse:** the anonymous end-of-quarter pulse survey for the player's team, built from their reactions. *"I'd tell my manager if I made a security mistake: 7 of 8 agree"* (or 3 of 8). The numbers are on screen only.
 - **Per-outcome results:** Secure, Developing or Not yet (see `assessment.md`).
 - **The line to remember:** *"Right access on day one, gone on the last day, and 'thank you' when someone tells you."*
 
@@ -194,7 +198,7 @@ No option shames the player. The worst branches still end with a colleague helpi
 | **MG-20 Knowledge check** | new | Ama's check question, the "What do you say?" cards and the final spot check |
 | **MG-27 Work desktop** | new | The player's computer: Owain's tickets, MG-18, the team chat and The Lark from one launcher |
 | `person-chat` video-call mode | existing | The interview with "Daniel"; needs the proposed freeze and lag effects and a configurable call bar label |
-| `alarm-panel` | existing | The team pulse board: five lamps bound to globals, title "Team pulse", footer "Anonymous, updated weekly"; needs a whiteboard skin |
+| `alarm-panel` | existing | The team pulse board: eight lamps bound to globals, title "Team pulse", footer "Anonymous, updated weekly"; needs a whiteboard skin |
 | `container` | existing | Des's desk drawer: the key safe code card, the "photos 2009" USB stick, a spare badge |
 | `person-chat`, `phone-chat`, `notes` | existing | Conversations, chats with Lena, Hassan and Bev, the access policy and the leaver checklist as documents |
 

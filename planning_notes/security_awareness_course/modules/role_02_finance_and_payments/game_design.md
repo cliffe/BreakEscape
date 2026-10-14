@@ -118,4 +118,89 @@ The critical path is marked **(CP)**.
 
 - **(CP)** The finance team card on The Lark (BE-09): the change process, the run red flags, approving, payroll and refunds, the first hour, card data; with the organisation's own approval rules, cut-off and card payment route (BE-05).
 
-<!-- continue -->
+## Decisions and consequences
+
+| Decision | Options | Learning outcome | How the consequence is shown |
+|---|---|---|---|
+| "Hassan's" personal email (hook) | Text Hassan's known mobile / ask Eleni / report / reply / add Greyholme to the run / leave it | R02-LO1, R02-LO3 (baseline) | Hassan's "Not me!"; Eleni's answer; or the attacker's reply; or Eleni's question at approval time |
+| The four problem rows | Hold and resolve each / pay | R02-LO2 | Each held row opens its resolution (a call, a check with a budget holder, a security alert); a missed row is shown on Monday with what it cost |
+| The calibration rows | Pay / hold | R02-LO2 | Holding one is thanked and explained, never marked Not yet |
+| Brackenfold's "Paul" | Ring back on the number held / confirm the details / read them out | R02-LO1 | Reporting it lets Kai warn Brackenfold; confirming tells the fraudster the payment is due (the hold still protects it) |
+| The voicemail | Check with Gillian through a channel already held and report / release Greyholme / ignore it | R02-LO3 | The real Gillian's "Not me"; or Eleni stops Greyholme at approval |
+| The card photo | Delete by procedure, reply without the card details, send the payment link / take the payment from the photo / keep it "for next time" | R02-LO6 | Kai thanks the player and clears the mail system; the debrief explains what keeping it would have meant |
+| Kev's pay: the first hour | Bank first, then the rest / the right steps in a slower order / "Kev should ring his bank" / wait for Monday | R02-LO4, R02-LO5 | The command board's timestamps and the illustrative recovery bar; Monday's scene |
+| The approval | Fetch Eleni / hold until Monday / sign in as Hassan / take Bea's leftover access | R02-LO3 | Eleni's sign-off; or suppliers told it's late; or Monday's audit line in Hassan's name |
+
+No option shames the player. Bea's slip is met with thanks for owning up, Hassan's sticky note is his own slip, and the worst approval choice is handled by Hassan with a dry joke and a fix.
+
+## Minigames
+
+| Minigame | Status | Use here |
+|---|---|---|
+| **MG-15 Payment verification desk**, run view | new (P2) | The thirty-row run: columns as above, a Hold per row, the selected row's record and change history, the name check column, and a release step. Configured with `run[]` and `anomalies[]` (its catalogue entry), drawn from BE-13. Practice mode for "Desk Check", with a "second approver" variant that shows a colleague's evidence to challenge |
+| **MG-25 Document inspector** | new (P2) | Invoices against purchase orders and delivery notes (the duplicate), and letters against the record |
+| **MG-04 Voice calls** | new (P2) | The inbound "Paul" call, Gillian's cloned voicemail, Lorna on the set-up number, the bank's fraud team |
+| **MG-27 Work desktop** | new (MVP) | The player's computer: inbox, Ledger, The Lark |
+| **MG-01 Inbox** | new | "Hassan's" email, Hassan's automatic reply, the card photo |
+| **MG-20 Knowledge check** | new | Eleni's check question and the final check |
+| `dual-auth` | existing; not registered or dispatched yet | The approval, after the rework in `features/minigames.md` section 4: two named sign-off panels with checklists, globals from data, no timer. The second panel completes on Eleni's event, or on a sign-off by whichever account is signed in (Hassan's, if the player uses the sticky note), and records which |
+| `password` | existing | Hassan's PC: the temptation to sign in with the password from his drawer |
+| `command-board` | existing | The first-hour timeline, configured through `commandBoard`, stamping entries as the globals for each step are set |
+| `forensic-data-platform` | existing | The recovery pack read to the bank: tabs "Payment", "The email", "Timeline"; `confirmGateTab` on the payment tab; `confirmLabel` "Ring the bank's fraud line with these details"; `confirmedVar` `r02_bank_called`. Its completion actions need the `applyActions` fix in `features/minigames.md` section 4 to send a BE-01 record |
+| `container` | existing | Hassan's drawer: the bank's contact card and the sticky note |
+| `esd-pushbutton` | existing | A guarded **HOLD THIS PAYMENT** button per row in the text route (`authVar`, `activatedVar`, `completionActions`), with the plain office look the catalogue proposes |
+| `notes` / `text-file` | existing | Hassan's handover note, the change procedure, the card data procedure |
+| `phone-chat` / `person-chat` | existing | Hassan's text, the company chat with Gillian, Kai, Tomasz, Mei Lin; Eleni, Bea, Ama and Kev in person |
+
+## Explainers
+
+| Explainer | Who | Length | Aids (BE-08) | Followed by |
+|---|---|---|---|---|
+| Two people, both checking | Eleni (EX-01) | 2 minutes | The annotated hook email and Hassan's automatic reply; the five-step change process; the red-flag card | "The portal change and the no match: what do you do?" |
+| The first hour | Eleni | 45 seconds | The seven steps, bank first | Practise and Apply |
+| Card data and "ring us" | Ama (EX-01) | 1 minute | Do and don't card: email, chat, security codes, the payment link | none (assessed in Apply) |
+| Optional: "What is a poisoned record?" | Eleni | 30 seconds | A change history with the phone number edited nine days before the bank change | Practise item 2 |
+| Optional video: "The month-end fraud in 60 seconds" | Recorded in engine (EX-02) | 60 seconds | Plays on the meeting room screen (MG-21) | Linked from the reference card |
+
+## Debrief
+
+Shown on BE-02, then spoken by Hassan, Eleni and Bea on Monday morning:
+
+1. The four rows, found or missed, each with what it was and what checking looked like; the calibration rows the player held, if any, with why they were fine.
+2. The call, the voicemail and the card photo: what the player did and what good looks like.
+3. Kev's timeline from the command board, and that he was paid on Friday.
+4. The approval: the audit line if someone else's name was used; thanks if the player fetched Eleni or held the run.
+5. The before and after: "Hassan's" email against Gillian's voicemail, both pushing the same Greyholme payment.
+6. Per-outcome results and the line to remember: *"Check the change, not the paperwork. Two people, both checking."*
+
+## Variants
+
+- **Micro-drill:** "Run Review" (BE-07): a ten-row run with one or two problem rows drawn from the bank (a changed account with a first payment, a duplicate, an odd set-up, a shared account, an amount split under a limit, a changed remittance email). About 4 minutes, monthly (HA-21).
+- **Text route:** the run as an accessible table with row headers, filters as buttons and a Hold button per row (`esd-pushbutton`); row details as text; calls and the voicemail as dialogue with transcripts; the first hour as a sequence of choices with the clock shown as text (BE-03).
+- **Facilitated session:** the run on a shared screen, with the team deciding each hold. Pause points: after the hook (*"Would you text a colleague who's off sick? When is that the right call?"*), after the run (*"Which row would we have missed here, and why?"*), after Bea's slip (*"What would make it easy for anyone here to say 'I did that' straight away?"*), after the approval (*"Who here has access they no longer need?"*). About 60 minutes.
+- **Replay and randomisation:** BE-13 draws the run's thirty rows, which supplier carries each anomaly, the anomaly variants, the interruption order, the colleague's slip (a payroll change, a refund, a duplicate already paid) and the voicemail's sender. Suppliers, amounts, names and numbers are generated per game.
+
+## Alternative concepts
+
+1. **The Auditor (investigation).** A payment went wrong last month. Like an air accident investigator, the player rebuilds the timeline from Ledger's logs, emails, call records and the change history (`forensic-data-platform`, `command-board`), finds the three moments a check would have stopped it, and recommends fixes to Hassan and Eleni. Strong on why each control exists; less practice of the habit under time pressure.
+2. **Month End Rush (arcade drill).** In the style of *Papers, Please*: payment requests slide in on a conveyor, the supplier register and the red-flag card are pinned to the wall, and the player stamps PAY or HOLD. It speeds up as the shift goes on. A fun micro-drill, but too far from a real finance screen for the main module.
+3. **Red Team Finance (attacker view, EX-06, BE-11).** Jo Fairweather shows what an outsider can see about Larkspur's finance team: councils' published spending lists, a job advert naming Ledger, an automatic reply naming who covers payments. The player helps plan the authorised test's timing and pretext, then defends against it in a replay of the run. It shows how little a fraudster needs; never a how-to.
+
+## Art and audio
+
+- **Rooms:** the finance office (shared with core_11), the meeting room seen through glass.
+- **Characters:** Eleni and Bea are new and on screen: full sprites and talk sheets. Hassan, Kev, Ama and Gillian need art (shared with other modules). Lorna, "Paul" and the bank's fraud team are voice only, with the `voice.fx` phone filter.
+- **The voicemail** uses Gillian's own course voice, lightly phone-filtered: the lesson is that it sounds exactly like her.
+- **Props:** Ledger's run screen, Hassan's drawer (the sticky note and the bank's contact card), the approval panel (`objects/dual_auth.png`, a placeholder already loaded in `public/break_escape/js/core/game.js:800`), Eleni's red-flag card, a card photo that is plainly fictional and mostly masked.
+- **Voice:** about 40 lines for Eleni, 20 for Bea, 10 for Hassan, 6 for Kev, 5 for Ama, 4 for "Paul", 3 for Lorna and 1 voicemail. No voiced line prints a variable: amounts, payee names, account details and the player's name stay on screen.
+
+## Pitfalls
+
+- **Never use real card or bank numbers,** including published test card numbers: the card photo is a fictional design with most digits masked.
+- **Keep the review fun, not a slog.** Thirty clear rows, filters, Eleni's card and a gentle nudge after four minutes. Every problem row is findable with the red flags taught in Learn (the standing rule: minigames should be fun and educational, not hard).
+- **Late is a good outcome.** Holding the run until Monday is Secure; the game never treats a late payment as a failure.
+- **No blame.** Bea is thanked for owning up, Kev is warm, and Hassan's sticky note is his own slip.
+- **Don't teach voice-spotting.** The voicemail is meant to sound right; the lesson is the process (core_15 covers deepfakes).
+- **Get the recovery facts right:** the paying organisation's bank starts a recall, and the employee's bank can't; the recovery bar is illustrative, never a statistic.
+- **Card data at awareness level:** the organisation's procedure, not a QSA's checklist; phone payments belong to role_06.
+- **Don't let anyone type a real credential.** The only password in the module is Hassan's fictional one on the sticky note.
