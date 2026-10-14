@@ -333,6 +333,35 @@ def countdown():
     c.save(OBJ, "pnw_countdown1")
 
 
+def countdown_face(header, middle, lamps, footer, name, bright=True):
+    """A state face for the countdown display (lighting stage, review c1 M2: the
+    sprite read AWAITING HOST in every state). Drawn on the same 76x32 frame;
+    lamps is four colours, Seattle first. Swapped in by the object's spriteVariants."""
+    w, h = 76, 32
+    c = Canvas(w, h)
+    c.rect(0, 0, w - 1, h - 1, (26, 26, 30))
+    c.rect(2, 2, w - 3, h - 3, (8, 6, 8))
+    hi, lo = ((255, 70, 60), (180, 30, 30)) if bright else ((120, 40, 36), (80, 22, 22))
+    c.text_centred(2, w - 3, 4, header, RED if bright else (130, 40, 36))
+    c.text_centred(2, w - 3, 12, middle, hi)
+    c.text_centred(2, w - 3, 13, middle, lo)
+    for i, col in enumerate(lamps):
+        x = 14 + i * 13
+        c.rect(x, 21, x + 7, 24, col)
+    c.text_centred(2, w - 3, 26, footer, (170, 60, 50) if bright else (100, 40, 36))
+    c.save(OBJ, name)
+
+
+def countdown_states():
+    dim = (90, 20, 20)
+    countdown_face("SEQUENCE ARMED", "PENDING", [RED, RED, RED, RED], "CLOCK RUNNING",
+                   "pnw_countdown_armed1")
+    countdown_face("SEQUENCE RUNNING", "STEP 01", [(150, 150, 150), RED, RED, RED], "01 EXECUTED",
+                   "pnw_countdown_running1")
+    countdown_face("SEQUENCE ABORTED", "--:--", [dim, dim, dim, dim], "STOPPED",
+                   "pnw_countdown_aborted1", bright=False)
+
+
 def mimic_board():
     """A single-line mimic board: the 500 kV bus across the top, feeders dropping to
     breaker squares, green for closed, one red; PNW 147 in the corner."""
@@ -588,7 +617,7 @@ def main():
     jobs = {
         "logo": logo_sign, "evac": evac_board, "nerc": nerc_notice, "muster": muster_sign,
         "ledger": visitor_ledger, "video": video_wall, "map": substation_map, "pos": console_pos,
-        "clip": clip_note, "tag": backup_tag, "countdown": countdown, "mimic": mimic_board,
+        "clip": clip_note, "tag": backup_tag, "countdown": countdown, "countdown_states": countdown_states, "mimic": mimic_board,
         "log": plant_log, "genplates": gen_plates, "ear": ear_sign, "ladder": cable_ladder,
         "splice": splice, "printer": portable_printer, "master": master_desk,
         "badge": badge_printer, "cover": ats_cover, "tucked": tucked_printout,

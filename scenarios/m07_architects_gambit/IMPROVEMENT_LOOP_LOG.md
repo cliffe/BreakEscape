@@ -733,3 +733,16 @@ Cycles 3–5 detail in `ROOM_DRESSING.md`. Cycle 5 fresh review 0/0/4 (`build_ev
 
 ### Phase 4 dialogue: CLOSED (orchestrator, 2026-10-14)
 Cycle 2 review 0/0/23, fixed (ba0308c5); browser check games 2445/2450 all five items pass (`PASS5_DIALOGUE_BROWSER_CHECK.md`). Orchestrator fixed its N3 (Netherton now answers "[What does he do with a reading?]": "Uses it. That is next year's problem, not tonight's.") and N4 (the deduction choice retires after the abort). N1 (number keys 1–5 only) backlogged; N2 sub-menu reopen is known and accepted. Routes 31/31, lint clean.
+
+### Stage 4 room lighting: CLOSED (lighting agent, 2026-10-14)
+Full detail in `LIGHTING_PLAN.md`; evidence in `build_evidence/lighting_c<N>/` (tours of four story states each cycle: start, `cascade_armed`, `countdown_expired`, `grid_saved` + `vault_entered`). Every review by a fresh Opus agent, read-only.
+
+| Cycle | Blocker | Major | Minor | Outcome |
+|---|---|---|---|---|
+| 1 (design, implement, tour) | 0 | 2 | 7 | All fixed but m4 (ATS lamp replacing its green, accepted: matches the text). M1 phase glows bloomed over the north rims; M2 the countdown face never changed, fixed with three new faces as `spriteVariants` |
+| 2 | 0 | 0 | 2 | Wall-end room lights for the video wall; the expired wall light kept amber (board art and text stay amber), L1 pending |
+| 3 | 0 | 0 | 2 | End lights stronger and warmer, armed step |
+| 4 | 0 | 0 | 2 | Armed step deeper; records written |
+| 5 (closing, plus browser check game 2469) | 0 | 0 | 3 | Wording and housekeeping fixed; violet-grey armed ends accepted. Browser A-G pass: strike on entry, state changes, two reloads hold the variants and faces, ATS-1 blinks |
+
+Room modes: checkpoint on, ops on with ceiling pools off (the video wall is the light), server hall motion (lit with Elena), SCADA on with pools off (the countdown is the light), generator hall motion (dark until entered), cable vault on with one faulty fitting. No engine change, no ink or dialogue fields touched; `scenario.json.erb` edits are the seven lighting blocks and the countdown's `spriteVariants`. Dressing minors picked up: c5 m-1 ops chair removed, m-2 ATS cover feet 100 → 90, m-3 trench redrawn, m-4 docstrings; walk F1 mimic raised 8 px. New pending item: L1 (situation board text after step one). Next: POV backgrounds.

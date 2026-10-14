@@ -243,8 +243,17 @@ def paint_walkoff_mat(op, box):
 
 
 def paint_open_trench(op, box):
-    """A trench with its lid off: a dark pit with three black trunk cables along it."""
+    """A trench with its lid off: a dark pit, a shadow under the north edge, a lit
+    lip on the south, and three trunk cables that sag and stop short of the ends,
+    the middle one a thicker orange HV run cut through with copper on both faces
+    (lighting stage, dressing c5 m-3: even, straight cables read as a vent grille)."""
     x0, y0, x1, y1 = box
+    w = x1 - x0
+    cut0, cut1 = x0 + 21, x0 + 24                       # a 4 px gap in the HV run
+
+    def sag(x):                                          # 0 at the ends, 1 px in the middle
+        return 1 if w // 4 <= x - x0 <= w - 1 - w // 4 else 0
+
     for y in range(y0, y1):
         for x in range(x0, x1):
             if not floor_at(x, y):
@@ -252,15 +261,28 @@ def paint_open_trench(op, box):
             d = min(x - x0, y - y0, x1 - 1 - x, y1 - 1 - y)
             ly = y - y0
             c = (40, 40, 42)                                   # the pit
-            if y == y1 - 1:
-                c = (176, 172, 160)                            # lit concrete lip on the south edge
+            if y >= y1 - 2:
+                c = (182, 178, 164) if y == y1 - 2 else (150, 146, 136)   # lit concrete lip, 2 px
             elif d == 0:
                 c = (90, 90, 88)
-            elif ly in (3, 4) or ly in (7, 8) or ly in (10, 11):   # three sheathed cables (cycle 3 m-H)
-                hi = ly in (3, 7, 10)
-                c = (92, 92, 100) if hi else (58, 58, 64)
-                if ly in (7, 8) and x0 + 22 <= x <= x0 + 25:       # one cut: bright copper ends, a gap
-                    c = (40, 40, 42) if x in (x0 + 23, x0 + 24) else (214, 130, 60)
+            elif ly in (1, 2):
+                c = (22, 22, 24)                               # shadow under the north edge
+            else:
+                s = sag(x)
+                # thin grey cable, stops 3 px short of the west end
+                if ly == 3 + s and x >= x0 + 4:
+                    c = (84, 86, 94)
+                # the HV run: 3 px, orange sheath, cut through
+                elif 5 + s <= ly <= 7 + s and x0 + 2 <= x <= x1 - 3:
+                    if cut0 < x < cut1:
+                        c = (30, 30, 32)                       # the gap
+                    elif x in (cut0, cut1):
+                        c = (226, 146, 70) if ly == 6 + s else (184, 104, 44)   # copper faces
+                    else:
+                        c = (232, 112, 40) if ly == 5 + s else ((196, 84, 30) if ly == 6 + s else (140, 58, 22))
+                # thin black cable, stops 5 px short of the east end
+                elif ly in (9 + s, 10 + s) and x <= x1 - 6:
+                    c = (70, 70, 76) if ly == 9 + s else (46, 46, 52)
             op[x, y] = (*c, 255)
 
 

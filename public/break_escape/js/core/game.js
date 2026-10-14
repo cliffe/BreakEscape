@@ -1147,6 +1147,9 @@ export function preload() {
     this.load.image('hq_detector_arch1', 'objects/hq_detector_arch1.png');
     this.load.image('hq_console1', 'objects/hq_console1.png');
     this.load.image('hq_rack1', 'objects/hq_rack1.png');
+    this.load.image('hq_desk_safe1', 'objects/hq_desk_safe1.png');
+    this.load.image('notes_notebook1', 'objects/notes_notebook1.png');
+    this.load.image('hq_recorder1', 'objects/hq_recorder1.png');
     this.load.image('backup_recovery',         'objects/backup_recovery.png');
     this.load.image('dual_auth',               'objects/dual_auth.png');
     this.load.image('ehr-terminal',            'objects/ehr-terminal.png');

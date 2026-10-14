@@ -740,11 +740,22 @@ scada_password = "CascadeWindow19"
     }
   ],
 
+<%# LIGHTING (pass 5): a grid control facility at night, mid-evacuation. Night ambient as m02/m06. Plan: LIGHTING_PLAN.md. %>
+  "lighting": { "enabled": true, "defaultMode": "on", "ambient": "#b8bfce" },
+
   "rooms": {
 
     "security_checkpoint": {
       "type": "room_pnw_checkpoint",
       "door_sign": "Security Checkpoint",
+      <%# LIGHTING (pass 5): front of house at night. Lit (Hollis is here), a little cooler than day. Call point off (a lone red pulse reads as a clue). %>
+      "lighting": {
+        "ambient": "#bcc2ce",
+        "emitters": {
+          "reception_counter": [ { "color": "#6fe0ff", "radius": 40, "intensity": 0.3, "above": true } ],
+          "fire_alarm_point": [ { "intensity": 0 } ]
+        }
+      },
       "connections": {
         "east": "operations_floor"
       },
@@ -1617,6 +1628,30 @@ scada_password = "CascadeWindow19"
     "operations_floor": {
       "type": "room_pnw_ops",
       "door_sign": "Operations Floor",
+      <%# LIGHTING (pass 5): the control room after the evacuation. Ceiling pools off, the amber video wall is the room's light. It breathes once the sequence is armed (cascade_armed), burns deeper when step one runs (countdown_expired; it stays amber because the board's own art and text stay amber), and holds steady amber after the abort. Two room lights under the wall's ends spread it across its width. %>
+      "lighting": {
+        "ambient": "#aab0c2",
+        "panels": false,
+        "emitters": {
+          "situation_board": [
+            { "condition": "globalVars.countdown_expired && !globalVars.grid_saved", "color": "#ff7a1a", "radius": 60, "intensity": 0.95, "effect": "breathe", "offsetY": 30, "floorTint": 0.5, "above": true },
+            { "condition": "globalVars.cascade_armed && !globalVars.grid_saved", "color": "#ff7a1a", "radius": 60, "intensity": 0.8, "effect": "breathe", "offsetY": 30, "floorTint": 0.45, "above": true },
+            { "color": "#ffa030", "radius": 60, "intensity": 0.55, "effect": "screen", "offsetY": 30, "floorTint": 0.35, "above": true }
+          ],
+          "pnw_console": [ { "color": "#8fe0c0", "radius": 30, "intensity": 0.45, "effect": "screen", "offsetY": -10 } ],
+          "fire_alarm_point": [ { "intensity": 0 } ]
+        },
+        "lights": [
+          { "x": 4.2, "y": 2.25, "color": "#ff9020", "radius": 52, "intensity": 0.55 },
+          { "x": 7.9, "y": 2.25, "color": "#ff9020", "radius": 52, "intensity": 0.55 }
+        ],
+        "variants": [
+          { "condition": "globalVars.cascade_armed && !globalVars.grid_saved", "lights": [
+            { "x": 4.2, "y": 2.25, "color": "#ff4a10", "radius": 52, "intensity": 0.7 },
+            { "x": 7.9, "y": 2.25, "color": "#ff4a10", "radius": 52, "intensity": 0.7 }
+          ] }
+        ]
+      },
       "connections": {
         "west": "security_checkpoint",
         "east": "server_room"
@@ -1694,6 +1729,17 @@ scada_password = "CascadeWindow19"
       "requires": "server_zone_badge",
       "difficulty": "medium",
       "door_sign": "Server Hall -- Restricted",
+      <%# LIGHTING (pass 5): server hall on its sensor, m02's server block (cool lit ambient, near-black dark). Elena is in it, so it starts lit; the racks carry it. Suppression panel steady (a pulse reads as an alarm). %>
+      "lighting": {
+        "mode": "motion",
+        "ambient": "#a0b0c0",
+        "darkAmbient": "#0a0f1c",
+        "emitters": {
+          "server_rack": [ { "floorTint": 0.25 } ],
+          "pnw_server_sign": [ { "color": "#e8f0ff", "radius": 12, "intensity": 0.3, "offsetY": 6, "above": true } ],
+          "suppression_panel": [ { "color": "#ffb347", "radius": 18, "intensity": 0.45, "effect": null } ]
+        }
+      },
       "connections": {
         "west": "operations_floor",
         "north": "scada_control",
@@ -1862,6 +1908,28 @@ scada_password = "CascadeWindow19"
       "requires": "<%= scada_password %>",
       "difficulty": "medium",
       "door_sign": "SCADA Control -- Authorised Personnel",
+      <%# LIGHTING (pass 5): restricted plum room, ceiling pools off, the countdown display is the light. Dull red while it waits on the host; breathing red once armed (cascade_armed); steady and bright when step one has run (countdown_expired); dim and steady after the abort (its text: stopped, nobody switched it off). The mimic dims to grey with Seattle (its display text: one region has gone grey). The cascade control screen goes green after the abort. %>
+      "lighting": {
+        "ambient": "#aaa4b6",
+        "panels": false,
+        "emitters": {
+          "cascade_countdown_display": [
+            { "condition": "globalVars.grid_saved", "color": "#ff3b30", "radius": 44, "intensity": 0.35, "effect": null, "offsetY": 12, "above": true },
+            { "condition": "globalVars.countdown_expired", "color": "#ff3b30", "radius": 46, "intensity": 0.9, "effect": null, "offsetY": 14, "floorTint": 0.5, "above": true },
+            { "condition": "globalVars.cascade_armed", "color": "#ff3b30", "radius": 46, "intensity": 0.9, "effect": "breathe", "offsetY": 14, "floorTint": 0.5, "above": true },
+            { "color": "#ff3b30", "radius": 44, "intensity": 0.45, "effect": null, "offsetY": 12, "above": true }
+          ],
+          "pnw_mimic": [
+            { "condition": "globalVars.countdown_expired && !globalVars.grid_saved", "color": "#c8ccd4", "radius": 24, "intensity": 0.12, "offsetY": 6, "above": true },
+            { "color": "#6dff9a", "radius": 24, "intensity": 0.2, "offsetY": 6, "above": true }
+          ],
+          "crisis_control_system": [
+            { "condition": "globalVars.grid_saved", "color": "#6dff9a", "radius": 26, "intensity": 0.55, "effect": "screen", "offsetY": 2, "above": true },
+            { "color": "#9fd4ff", "radius": 26, "intensity": 0.55, "effect": "screen", "offsetY": 2, "above": true }
+          ],
+          "pnw_console": [ { "color": "#8fe0c0", "radius": 30, "intensity": 0.45, "effect": "screen", "offsetY": -10 } ]
+        }
+      },
       "connections": {
         "south": "server_room"
       },
@@ -1942,6 +2010,12 @@ scada_password = "CascadeWindow19"
           "id": "cascade_countdown_display",
           "name": "Cascade Countdown Display",
           "position": "as-type:pnw_countdown",
+          <%# LIGHTING (pass 5, review c1 M2): the display's face follows its textVariants, in the same order, so its light never claims a state the sprite doesn't show. %>
+          "spriteVariants": [
+            { "condition": "globalVars.grid_saved", "value": "pnw_countdown_aborted1" },
+            { "condition": "globalVars.countdown_expired", "value": "pnw_countdown_running1" },
+            { "condition": "globalVars.cascade_armed", "value": "pnw_countdown_armed1" }
+          ],
           "takeable": false,
           "readable": true,
           "observations": "The countdown display, four feet wide. It is not a warning. It is a schedule.",
@@ -1977,6 +2051,20 @@ scada_password = "CascadeWindow19"
       "keyPins": [40, 25, 55, 30],
       "difficulty": "medium",
       "door_sign": "Backup Generation Hall",
+      <%# LIGHTING (pass 5): empty plant hall on its sensor, dark until you walk in. The genset panel reads ready (green). ATS-1's lamp is green (ARMED / AUTO) until its own text says the fault lamp is blinking amber (the same condition as its text variant). Call point off. %>
+      "lighting": {
+        "mode": "motion",
+        "ambient": "#bcc0b8",
+        "darkAmbient": "#121828",
+        "emitters": {
+          "backup_transfer_switch": [
+            { "condition": "globalVars.vault_entered === true && !globalVars.park_ko && globalVars.park_resolved !== 'talked'", "color": "#ffa020", "radius": 10, "intensity": 1.0, "effect": "blink", "offsetX": 1, "offsetY": -20, "above": true },
+            { "color": "#5cff8a", "radius": 8, "intensity": 0.7, "offsetX": -4, "offsetY": -20, "above": true }
+          ],
+          "genset_control_panel": [ { "color": "#5cff8a", "radius": 16, "intensity": 0.5, "offsetY": -6, "above": true } ],
+          "fire_alarm_point": [ { "intensity": 0 } ]
+        }
+      },
       "connections": {
         "north": "server_room",
         "south": "cable_vault"
@@ -2036,6 +2124,15 @@ scada_password = "CascadeWindow19"
       "requires": "<%= vault_pin %>",
       "difficulty": "medium",
       "door_sign": "Underground Cable Vault",
+      <%# LIGHTING (pass 5): underground, cool and damp, temporary fittings. Lit (Park is working here); one faulty fitting flickers. The splice's small device shows a green lamp; the gas detector's screen glows. %>
+      "lighting": {
+        "ambient": "#a8b4b0",
+        "flicker": true,
+        "emitters": {
+          "vault_trunk_runs": [ { "color": "#5cff8a", "radius": 8, "intensity": 0.8, "offsetX": -2, "offsetY": 7, "above": true } ],
+          "aes_gas_detector": [ { "color": "#7dffa0", "radius": 12, "intensity": 0.4, "offsetY": -6, "above": true } ]
+        }
+      },
       "connections": {
         "north": "generator_room"
       },

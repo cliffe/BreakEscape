@@ -711,7 +711,7 @@
      "visible": true,
      "width": 16,
      "x": 156.0,
-     "y": 100.0
+     "y": 90.0
     },
     {
      "gid": 1237,
@@ -3692,7 +3692,7 @@
    "margin": 0,
    "name": "objects/hospital_extras",
    "spacing": 0,
-   "tilecount": 449,
+   "tilecount": 491,
    "tileheight": 60,
    "tiles": [
     {
@@ -6388,6 +6388,258 @@
      "image": "../objects/pnw_desk_return1.png",
      "imageheight": 39,
      "imagewidth": 18
+    },
+    {
+     "id": 459,
+     "image": "../objects/hq_logo_sign1.png",
+     "imageheight": 21,
+     "imagewidth": 82
+    },
+    {
+     "id": 460,
+     "image": "../objects/hq_logo_small1.png",
+     "imageheight": 13,
+     "imagewidth": 30
+    },
+    {
+     "id": 461,
+     "image": "../objects/hq_memorial1.png",
+     "imageheight": 32,
+     "imagewidth": 50
+    },
+    {
+     "id": 462,
+     "image": "../objects/hq_alert_screen1.png",
+     "imageheight": 30,
+     "imagewidth": 48
+    },
+    {
+     "id": 463,
+     "image": "../objects/hq_ops_board1.png",
+     "imageheight": 34,
+     "imagewidth": 98
+    },
+    {
+     "id": 464,
+     "image": "../objects/hq_tactical_board1.png",
+     "imageheight": 32,
+     "imagewidth": 62
+    },
+    {
+     "id": 465,
+     "image": "../objects/hq_evidence_wall1.png",
+     "imageheight": 32,
+     "imagewidth": 64
+    },
+    {
+     "id": 466,
+     "image": "../objects/hq_disposition1.png",
+     "imageheight": 26,
+     "imagewidth": 34
+    },
+    {
+     "id": 467,
+     "image": "../objects/hq_one_way_mirror1.png",
+     "imageheight": 30,
+     "imagewidth": 96
+    },
+    {
+     "id": 468,
+     "image": "../objects/hq_recording1.png",
+     "imageheight": 11,
+     "imagewidth": 48
+    },
+    {
+     "id": 469,
+     "image": "../objects/hq_badge_reader1.png",
+     "imageheight": 12,
+     "imagewidth": 8
+    },
+    {
+     "id": 470,
+     "image": "../objects/hq_poster_postit1.png",
+     "imageheight": 21,
+     "imagewidth": 16
+    },
+    {
+     "id": 471,
+     "image": "../objects/hq_poster_ears1.png",
+     "imageheight": 21,
+     "imagewidth": 16
+    },
+    {
+     "id": 472,
+     "image": "../objects/hq_poster_red1.png",
+     "imageheight": 21,
+     "imagewidth": 16
+    },
+    {
+     "id": 473,
+     "image": "../objects/hq_cipher_board1.png",
+     "imageheight": 30,
+     "imagewidth": 46
+    },
+    {
+     "id": 474,
+     "image": "../objects/hq_ops_sign1.png",
+     "imageheight": 11,
+     "imagewidth": 47
+    },
+    {
+     "id": 475,
+     "image": "../objects/hq_intel_sign1.png",
+     "imageheight": 11,
+     "imagewidth": 55
+    },
+    {
+     "id": 476,
+     "image": "../objects/hq_crypto_sign1.png",
+     "imageheight": 11,
+     "imagewidth": 55
+    },
+    {
+     "id": 477,
+     "image": "../objects/hq_server_sign1.png",
+     "imageheight": 11,
+     "imagewidth": 51
+    },
+    {
+     "id": 478,
+     "image": "../objects/hq_break_sign1.png",
+     "imageheight": 11,
+     "imagewidth": 47
+    },
+    {
+     "id": 479,
+     "image": "../objects/hq_director_sign1.png",
+     "imageheight": 11,
+     "imagewidth": 39
+    },
+    {
+     "id": 480,
+     "image": "../objects/hq_archive_sign1.png",
+     "imageheight": 17,
+     "imagewidth": 67
+    },
+    {
+     "id": 481,
+     "image": "../objects/hq_interview_sign1.png",
+     "imageheight": 11,
+     "imagewidth": 51
+    },
+    {
+     "id": 482,
+     "image": "../objects/hq_flowers1.png",
+     "imageheight": 18,
+     "imagewidth": 16
+    },
+    {
+     "id": 483,
+     "image": "../objects/hq_locker_a1.png",
+     "imageheight": 62,
+     "imagewidth": 20
+    },
+    {
+     "id": 484,
+     "image": "../objects/hq_locker_b1.png",
+     "imageheight": 62,
+     "imagewidth": 20
+    },
+    {
+     "id": 485,
+     "image": "../objects/hq_locker_c1.png",
+     "imageheight": 62,
+     "imagewidth": 20
+    },
+    {
+     "id": 486,
+     "image": "../objects/hq_badge_printer1.png",
+     "imageheight": 16,
+     "imagewidth": 22
+    },
+    {
+     "id": 487,
+     "image": "../objects/hq_confidential_bin1.png",
+     "imageheight": 32,
+     "imagewidth": 22
+    },
+    {
+     "id": 488,
+     "image": "../objects/notes_postit1.png",
+     "imageheight": 9,
+     "imagewidth": 9
+    },
+    {
+     "id": 489,
+     "image": "../objects/notes_legalpad1.png",
+     "imageheight": 16,
+     "imagewidth": 14
+    },
+    {
+     "id": 490,
+     "image": "../objects/hq_interview_table1.png",
+     "imageheight": 41,
+     "imagewidth": 56
+    },
+    {
+     "id": 491,
+     "image": "../objects/hq_xray1.png",
+     "imageheight": 40,
+     "imagewidth": 60
+    },
+    {
+     "id": 492,
+     "image": "../objects/hq_enigma1.png",
+     "imageheight": 61,
+     "imagewidth": 36
+    },
+    {
+     "id": 493,
+     "image": "../objects/hq_mobile_stack1.png",
+     "imageheight": 61,
+     "imagewidth": 42
+    },
+    {
+     "id": 494,
+     "image": "../objects/hq_archive_shelf1.png",
+     "imageheight": 61,
+     "imagewidth": 42
+    },
+    {
+     "id": 495,
+     "image": "../objects/hq_security_container1.png",
+     "imageheight": 59,
+     "imagewidth": 34
+    },
+    {
+     "id": 496,
+     "image": "../objects/hq_green_safe1.png",
+     "imageheight": 60,
+     "imagewidth": 36
+    },
+    {
+     "id": 497,
+     "image": "../objects/hq_camera_tripod1.png",
+     "imageheight": 50,
+     "imagewidth": 24
+    },
+    {
+     "id": 498,
+     "image": "../objects/hq_detector_arch1.png",
+     "imageheight": 60,
+     "imagewidth": 32
+    },
+    {
+     "id": 499,
+     "image": "../objects/hq_console1.png",
+     "imageheight": 41,
+     "imagewidth": 52
+    },
+    {
+     "id": 500,
+     "image": "../objects/hq_rack1.png",
+     "imageheight": 60,
+     "imagewidth": 32
     }
    ],
    "tilewidth": 60

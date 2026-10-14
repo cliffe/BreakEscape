@@ -4426,7 +4426,7 @@ def room_pnw_ops():
     r.table("pnw_console2", 104.0, 236.0, kind="objects")
     r.table("pnw_console1", 200.0, 236.0, kind="objects")
     r.item("chair-grey-1", 60.0, 258.0)
-    r.item("chair-grey-1", 220.0, 258.0)                          # console E's chair is gone (cycle 2: it sat within tap reach of the key)
+    # back-row chair F removed (lighting stage, dressing c5 m-1: it sat half behind the binder shelves); console E's chair went in cycle 2
     # the supervisor's dais (x 96-224, y 248-306 on the sheet)
     sup = r.table("desk1", 118.0, 304.0)                          # x 118-196, top 265 (cycle 2 m1: clear of back-row chair E)
     r.on(sup, "key", 0.14, 0.40, layer="conditional_table_items")       # Plant Maintenance Key
@@ -4455,8 +4455,8 @@ def room_pnw_servers():
     west lane x 32-76 runs clear from door to door and the kit fills the east.
     The generator hall covers the bottom two rows (feet <= 256). Elena (3,7.5)
     stands on clear floor west of the desks.
-    Slots: notes_clip1 (as-type) on rack 4 (Cabling Survey Note), servers4 (SCADA Backup
-    Server), vm-launcher (VM Access Terminal) and flag-station (SAFETYNET Relay
+    Slots: notes_clip1 (as-type) on rack 4 (Cabling Survey Note), pnw_backup_server1
+    (as-type, SCADA Backup Server), vm-launcher (VM Access Terminal) and flag-station (SAFETYNET Relay
     Terminal) on their desks, 60 px+ apart; no chairs (tap candidates).
     """
     r = _Uni()
@@ -4497,7 +4497,7 @@ def room_pnw_scada():
     """
     r = _Uni()
     r.item("pnw_countdown1", 30.0, 46.0)                            # over the operator console, clear of Mercer (cycle 2 M1)
-    r.item("pnw_mimic1", 110.0, 52.0)
+    r.item("pnw_mimic1", 110.0, 44.0)                               # lighting stage (walk F1): up 8 px so the historian monitor no longer hides its lamps
     r.item("pnw_scada_sign1", 212.0, 30.0)                          # decor: Mercer may stand in front of it
     r.table("pnw_console2", 40.0, 100.0, kind="objects")            # x 40-104
     master = r.table("pnw_master_desk1", 112.0, 104.0, kind="objects")   # x 112-190, top 65; charcoal (cycle 2 M2)
@@ -4516,10 +4516,10 @@ def room_pnw_genhall():
     behind a yellow walkway line. Back wall at the west end, in a hatched keep-clear
     box: BACKUP GENERATION HALL, the automatic transfer switch ATS-1, the plant log
     chained to the wall beside it, the genset control panel. Three yellow gensets in
-    hatched boxes across the middle (GEN 1-3 plates over them), starter batteries,
+    hatched boxes across the middle (GEN 1-3 plates on their skids), starter batteries,
     an engine cabinet and a junction box along the back wall; the red fuel day tank
     in its bund at the east end with the hose reel over it; fuel trunking to the sets.
-    A steel trestle (radios) and a tool chest west of GEN 1; ATS-1's cover on the floor; a cable trolley, a transformer, a spill kit
+    A steel trestle (radios) and a tool chest west of GEN 1; ATS-1's cover propped against the wall; a cable trolley, a transformer, a spill kit
     and drums along the south of the east half.
     Doors: N and S (NW and SW corners). The cable vault covers rows 8-9 of the west
     half (feet <= 256 for x < 320).
@@ -4532,7 +4532,7 @@ def room_pnw_genhall():
     r.item("pnw_genhall_sign1", 96.0, 30.0)
     r.solid("pnw_ats1", 100.0, 104.0)                    # ATS-1, top-left 100,50
     r.item("notes_plantlog1", 138.0, 56.0, layer="conditional_items")   # chained beside the switch (cycle 2 m14: clear of the panel)
-    r.item("pnw_ats_cover1", 156.0, 100.0)                          # its cover off, leaning on the wall (cycle 3 m-F)
+    r.item("pnw_ats_cover1", 156.0, 90.0)                           # its cover off, propped on the skirting (cycle 3 m-F; c5 m-2: feet 100 -> 90)
     r.solid("pnw_genset_panel1", 186.0, 104.0)           # x 186-221
     r.item("aes_hv_danger1", 240.0, 52.0)
     # back wall kit east of the box

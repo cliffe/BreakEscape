@@ -195,3 +195,14 @@ Lessons:
 - A glow on one item of a set (one locker in a bank of key safes) reads as "this one matters". Light the whole set or none of it.
 - The resume overlay still makes the harness's `bootstrap` loop after a reload (playtest skill note). For a reload check, click the overlay's "Resume" button by its exact text in an `eval`, then poll for `window.lightingSystem`.
 - Proposal: LEDs for `qdc_*` racks and HSMs (m05 `DECISIONS_PENDING.md` D16, the same limit as m06 D9).
+
+### m07_architects_gambit (2026-10-14, m07 pass 5, lighting cycles 1-5)
+
+Plan and log: `scenarios/m07_architects_gambit/LIGHTING_PLAN.md`. A grid control facility at night in winter, mid-evacuation, on mains all night (scenario ambient `#b8bfce`). Checkpoint on `#bcc2ce`; ops floor on `#aab0c2`, `panels: false`, the amber video wall as its light (emitter r 60 plus two room `lights` under the wall's ends); server hall motion `#a0b0c0` / `#0a0f1c` (Elena keeps it lit); SCADA on `#aaa4b6`, `panels: false`, lit by the countdown display; generator hall motion `#bcc0b8` / dark `#121828`; cable vault on `#a8b4b0` with one faulty fitting. Phases on saved globals: `cascade_armed` (wall breathes orange, end lights step orange through a room variant, countdown breathes red), `countdown_expired` (countdown steady bright red, mimic dims grey; the wall stays orange because its art and text stay amber, L1 pending), `grid_saved` (countdown dim and steady, cascade screen green). ATS-1's lamp blinks amber on the same condition as its text variant. Countdown faces per state through `spriteVariants`. All `pnw_*` glows through per-room emitters; no `EMITTERS` change. Call points off; suppression panel steady. Reviews by a fresh Opus agent each cycle.
+
+Lessons:
+- A room `light` draws into the MULTIPLY light map, so it can only bring the art back up to its unlit colour. On a blue lit ambient it reads warm only by holding blue and green down; pick a variant's colour by what it does to G and B, not by its hue. To brighten past the art, use an emitter with `above` and `floorTint`.
+- A light on a wall of screens needs room lights under its ends, or it lights the floor as one spot.
+- A screen's light can only follow the story if its face does: draw a sprite per state and wire it as `spriteVariants` in the `textVariants` order. Otherwise a red glow round a face saying AWAITING HOST claims something the prop doesn't show.
+- A glow on a lit room's wall item needs a small radius and offsetY of 12-30, or it blooms over the north rim and reads as light outside the building.
+- One object carries one glow: a fault lamp replacing a status lamp is fine when the text says the status changed.
