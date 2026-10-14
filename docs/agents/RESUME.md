@@ -1,8 +1,8 @@
 # Resume note: security awareness course plan (2026-10-14), paused for usage
 
 Plan folder `planning_notes/security_awareness_course/`; **open work is in its `TODO.md`**. Briefs: `docs/agents/AWARENESS_COURSE_BRIEF.md`, `AWARENESS_MODULE_SEEDS.md`, `AWARENESS_REVIEW_BRIEF.md`. Branch ccr-8675a21c-vu1k0k, pushed.
-- Done: course docs, research, compliance mapping, all six feature documents, catalogue (BE-01 to BE-30, MG-01 to MG-29, EX-01 to EX-08, HA-01 to HA-26), first drafts of 23 modules.
-- At the pause: writers still finishing core_11, role_02, role_07 (W7) and role_01, role_03, role_04 (W8). Reviews were stopped by the user to save usage; nothing restarts on its own. Restart from TODO.md section 1.
+- Done: course docs, research, compliance mapping, all six feature documents, catalogue (BE-01 to BE-30, MG-01 to MG-29, EX-01 to EX-08, HA-01 to HA-26), first drafts of all 26 modules.
+- All 26 modules have first drafts (every writer finished). Reviews were stopped by the user to save usage; nothing restarts on its own. Restart from TODO.md section 1.
 - Public repo: keep Hacktivity at feature level; Hacktivity privacy points went to the user in chat only.
 
 # Resume note — m03 pass 2 (2026-10-12): all stages done except the user's blind run

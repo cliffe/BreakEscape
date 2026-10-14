@@ -36,8 +36,11 @@ Each review checks accuracy first (every fact against a primary source), then th
   - Verify: the EU Verification of Payee start date and scope, the SOC 2 Type 1 and Type 2 wording, Kaseya's affected-business figures, the Coop Sweden store closures.
   - Compliance: decide whether to add ISO 27001 A.5.3 and A.5.19 to A.5.23, NCSC CAF A4, and PCI DSS 3.3.1.2, 3.4.1 and 4.2.2 to section 2 of the mapping.
   - Course-wide authoring rule to add: every fictional phone number uses Ofcom's ranges reserved for drama.
-- [ ] **role_01, role_03, role_04** (writer still finishing at the pause)
-  - role_03 must not reuse role_06's "the real one rings later" twist.
+- [ ] **role_01, role_03, role_04** (written; not yet reviewed; role_03's twist already changed so it doesn't repeat role_06's)
+  - Cast needing art and voice: Daniel Kwan, Rosa Delgado, Ines Carvalho, Sunil Mehta; voice only: Leah Brodsky, Gavin Ashworth.
+  - Features: a pull request view around MG-19 (proposed, S); MG-24 needs to move the game clock forward for good (give clock setting to BE-23); MG-17's "code sent to the registered device" check must become an approval or reset sent to details already held (the no-read-back rule); HA-11 needs fields for the customer's incident plan headings, crisis roles and contacts (role_01's own-plan version, Cyber Governance Code D2).
+  - Verify: PCI DSS requirement 8 numbering for identity checks and admin MFA; the date of Birsan's "dependency confusion" write-up; keep the MGM 2023 and M&S 2025 service desk routes described as reported.
+  - Re-check the fictional package names (`papyrus-pdf` and variants) are unregistered on npm and PyPI before release.
 - [ ] **The feature documents**: catalogue against documents, shared definitions, accuracy of the standards cited, engine claims, and that nothing private about Hacktivity is in this public repo.
 - [ ] After fixes: a second, lighter review of the MVP modules (core_00, core_01, core_03, core_04, core_05, core_16).
 
