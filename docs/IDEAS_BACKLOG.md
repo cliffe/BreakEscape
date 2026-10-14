@@ -45,6 +45,8 @@ From the PIN cracker fix (2026-10-10), found but not fixed:
 - **Phone timestamps survive a reload** (m03 dialogue playtest; S). After a reload every message in a thread is re-stamped with the reload minute.
 - **Resume in the room you left** (engine fixer; M). Reload always respawns at `startRoom`; see P10 in the pass-4 log.
   - Also on a KO (m06 struggling run A, 2026-10-13): a knocked-out player respawns in reception, five rooms from the fight, with the hostile NPC still hostile.
+- **RFID reader opens the cloner with nothing to emulate** (m07 puzzle fixer, 2026-10-14; S). The reader starts the flipper minigame even when the player holds no saved card; say so instead.
+- **`chaseRange` is never read** (m07 puzzle fixer; S). Hostile NPCs chase across rooms with no leash (see also m06 D8).
 - **All-optional aims complete on their first task** (m07 fixer, 2026-10-14; S). `objectives-manager.js:847`: an aim whose tasks are all optional is marked complete as soon as one task is, so it folds early. Complete it only when every task is settled. m07 works round it by making the tasks required.
 - **Wall paintings float outside rooms in shared maps** (m07 regression; S). Seen outside m07's scada_control and checkpoint east wall; the maps are shared by m04, m07, m08 and sis02.
 - **Hidden NPCs still draw their vision cone** (m06 fix check, 2026-10-13; S). After Kemal walks out (`minder_walked`, sprite hidden) his cone and range circle stay drawn in the wing, before and after a reload.
