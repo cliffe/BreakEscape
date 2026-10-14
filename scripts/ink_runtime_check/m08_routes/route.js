@@ -160,12 +160,18 @@ for (const step of route.steps) {
     setGlobal(`flag${step.flag}_submitted`, true);
     continue;
   }
-  // m08: {"look": "item_id", "field": "text"|"observations", "has": "substr"} resolves textVariants /
+  // m08: {"look": "item_id", "field": "text"|"observations", "has": "substr", "lacks": "substr"} resolves textVariants /
   // observationVariants as the engine does (first matching variant wins) and checks the shown text.
   if (step.look) {
     const it = ITEMS[step.look]; const field = step.field || 'text';
     const vf = field === 'observations' ? 'observationVariants' : `${field}Variants`;
     let shown = it[field]; for (const v of it[vf] || []) { if (!v.condition || evalCond(v.condition, {})) { shown = v.value; break; } }
+    // Alignment C3: "lacks" asserts a substring is absent (the brief's header before the naming).
+    if (step.lacks !== undefined) {
+      const okL = !String(shown).toLowerCase().includes(String(step.lacks).toLowerCase()); if (!okL) fail();
+      out(`   [${okL ? 'PASS' : 'FAIL'}] ${it.name} ${field} lacks "${step.lacks}"`);
+      if (step.has === undefined) continue;
+    }
     const ok = String(shown).toLowerCase().includes(String(step.has).toLowerCase()); if (!ok) fail();
     out(`   [${ok ? 'PASS' : 'FAIL'}] ${it.name} ${field} shows "${step.has}"${ok ? '' : ` (shows: ${String(shown).slice(0, 80)})`}`);
     continue;

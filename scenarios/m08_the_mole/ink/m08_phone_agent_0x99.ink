@@ -120,6 +120,9 @@ So I'm going to be very professional tonight. Bear with me.
     {
     - netherton_ko and not found_badge_audit:
         He's on his floor, so it's me you read it to. Doors before faces. The archives keep the door audits.
+    // PASS 5 (alignment C3, K2): the KO reading needs a clock source too.
+    - netherton_ko and not (found_timeline or found_access_logs_hint or found_access_logs):
+        You've got the door. Now the clock: when was the plan opened? Somebody in this building wrote it down.
     - netherton_ko:
         He's on his floor, so it's me you read it to. Tell me you can name the leak, and I'll ask you what he would.
     - not found_badge_audit:
@@ -139,9 +142,11 @@ So I'm going to be very professional tonight. Bear with me.
 // PASS 5 (alignment C2, J3): with the Director down, HaX hears the reading.
 // Two of his four steps (the minute, the man); question and choices share a
 // knot so a reopen asks the question again. Free to retry, as his are not:
-// the KO is the cost (credits, debrief).
-+ { netherton_ko and found_badge_audit and not mole_identified } [I can name the leak.] -> hax_read_1
-+ { audit_closed and not mole_identified } [The Director's taken the audit off me.]
+// the KO is the cost (credits, debrief). Alignment C3 (K2): needs a clock
+// source as well as the door, as the Director's reading does.
+// Alignment C3 (K5): the audit-off-me reply is stale once he's down.
++ { netherton_ko and found_badge_audit and (found_timeline or found_access_logs_hint or found_access_logs) and not mole_identified } [I can name the leak.] -> hax_read_1
++ { audit_closed and not netherton_ko and not mole_identified } [The Director's taken the audit off me.]
     He has. He'll put the name to it himself once the box gives him the account. Get root.
     And he's asking questions on the floor now, so don't expect anyone to stay surprised.
     -> hub

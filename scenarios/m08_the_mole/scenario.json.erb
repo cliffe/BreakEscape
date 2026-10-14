@@ -772,7 +772,7 @@ CREDITS
               "eventPattern": "global_variable_changed:found_badge_audit",
               "condition": "value === true && globalVars.netherton_ko === true && globalVars.mole_identified !== true",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 2000, "message": "That's the door audit. With the Director on his floor, read it to me. Call me when you've got it straight." }
+              "sendTimedMessage": { "delay": 2000, "message": "That's the door audit. With the Director on his floor, you read it to me: the door against the minute the plan was opened. Call me when you've got both." }
             },
             {
               "eventPattern": "global_variable_changed:mole_identified",
@@ -846,11 +846,11 @@ CREDITS
               "sendTimedMessage": { "delay": 1500, "message": "That backup file's wrapped twice. Same tricks as your first week. The lab's CyberChef station will take it. Ask me for the guide." }
             },
             {
-              "_comment": "PASS 5 (M3): the stick after a tip-off. The file is wiped; the print on the casing is not.",
+              "_comment": "PASS 5 (M3): the stick after a tip-off. The file is wiped; the print on the casing is not. Alignment C3 (K4): HaX no longer says who wiped it or why.",
               "eventPattern": "global_variable_changed:found_architect_comms_local",
               "condition": "value === true && globalVars.nightshade_tidied === true",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 1500, "message": "Empty. He wiped it after you tipped him off. The print on the casing is still there. Lift it." }
+              "sendTimedMessage": { "delay": 1500, "message": "Empty. Written over tonight, and not by accident. The print on the casing is still there. Lift it." }
             },
 <%# PASS 5 (alignment M5, U4: hedge, no name). Round 2 (browser N2): HaX's
     "Same classroom" text arrived 2.5 s into the debrief, which blocks the
@@ -1952,23 +1952,34 @@ CREDITS
                 "puzzle_graph_role": "clue",
                 "puzzle_graph_reveals": "nightshade_knew_the_cost"
               },
-<% deep_state_text = %q{ENTROPY -- INSIDER THREAT INITIATIVE\n'Deep State' Programme (fragment, p.7)\n\nIdeal candidates are not bought. They are convinced. Look inside intelligence agencies for the disillusioned -- those who have started to believe that defence is a delaying action against an outcome already decided.\n\nRecruit young. During training, before loyalty sets. Place them, then wait years. A convinced asset needs no handler and leaves no financial trail. They will act, when asked, because they believe it is right.\n\nCompensation: none. Belief is the payment.} %>
+<% deep_state_body = %q{'Deep State' Programme (fragment, p.7)\n\nIdeal candidates are not bought. They are convinced. Look inside intelligence agencies for the disillusioned -- those who have started to believe that defence is a delaying action against an outcome already decided.\n\nRecruit young. During training, before loyalty sets. Place them, then wait years. A convinced asset needs no handler and leaves no financial trail. They will act, when asked, because they believe it is right.\n\nCompensation: none. Belief is the payment.}
+   deep_state_text = %q{ENTROPY -- INSIDER THREAT INITIATIVE\n} + deep_state_body
+   deep_state_unnamed = deep_state_body + %q{\n\nNo letterhead. He gave your intake the insider-threat lecture; this could be his reading for it. Or not.} %>
               {
                 "type": "text_file",
                 "id": "deep_state_manual",
                 "name": "Insider Threat Initiative -- 'Deep State' Brief",
                 "takeable": true,
                 "readable": true,
-                "observations": "A slim ENTROPY recruitment document. Page 7 is the one that matters.",
+                <%# PASS 5 (alignment C3, K1): the go-bag pattern. Until he is named
+                    the page has no ENTROPY header and reads as material from his
+                    insider-threat lecture (m08_suspect_nightshade.ink); the header
+                    comes back once he is named. Base observation and text are true in
+                    every state (E5: some panels print the raw fields). %>
+                "observations": "A slim stapled document, cover torn off. Page 7 has been read more than the rest.",
                 "observationDisplay": "gameDisplay",
-                "text": "<%= deep_state_text %>",
+                "text": "<%= deep_state_body %>",
                 <%# PASS 5 (alignment C2, n6): the careful mole takes the brief too,
                     and misses one page. %>
                 "textVariants": [
-                  { "condition": "globalVars.nightshade_tidied", "value": "One torn page, caught at the back of the shelf: page 7 of something he took the rest of.\n\n<%= deep_state_text %>" }
+                  { "condition": "globalVars.nightshade_tidied && !globalVars.mole_identified", "value": "One torn page, caught at the back of the shelf: page 7 of something he took the rest of.\n\n<%= deep_state_unnamed %>" },
+                  { "condition": "globalVars.nightshade_tidied", "value": "One torn page, caught at the back of the shelf: page 7 of something he took the rest of.\n\n<%= deep_state_text %>" },
+                  { "condition": "globalVars.mole_identified", "value": "<%= deep_state_text %>" },
+                  { "condition": "!globalVars.mole_identified", "value": "<%= deep_state_unnamed %>" }
                 ],
                 "observationVariants": [
-                  { "condition": "globalVars.nightshade_tidied", "value": "One torn page at the back of the shelf. The rest of the document has gone." }
+                  { "condition": "globalVars.nightshade_tidied", "value": "One torn page at the back of the shelf. The rest of the document has gone." },
+                  { "condition": "globalVars.mole_identified", "value": "A slim ENTROPY recruitment document. Page 7 is the one that matters." }
                 ],
                 "onPickup": { "setVariable": { "found_deep_state_manual": true } },
                 "puzzle_graph_role": "clue",

@@ -82,7 +82,8 @@ Agent 0x47 'Nightshade': I could have scrubbed every trace years ago. You're won
 - accused_nightshade:
     Agent 0x47 'Nightshade': You said it to my face before you could prove it. By then you'd been through my locker, so there was nothing left to tidy.
 - (accused_cipher or accused_phantom) and nightshade_tidied:
-    Agent 0x47 'Nightshade': You put it on {accused_cipher:Cipher|Phantom} in front of the floor. Walls are thin here. So I tidied. Not well enough, it seems.
+    // Alignment C3 (browser R3): both innocents accused.
+    Agent 0x47 'Nightshade': You put it on {accused_cipher and accused_phantom:Cipher and Phantom both|{accused_cipher:Cipher|Phantom}} in front of the floor. Walls are thin here. So I tidied. Not well enough, it seems.
 - nightshade_tidied:
     Agent 0x47 'Nightshade': The Director went asking questions on my floor. I can count. So I tidied. Not well enough, it seems.
 }

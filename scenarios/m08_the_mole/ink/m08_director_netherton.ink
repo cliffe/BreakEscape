@@ -227,7 +227,8 @@ Director Magnus Netherton: Whatever you are carrying, Agent, I did not see it.
 === audit_case ===
 // PASS 5 (B1): reachable from the box's account alone; a login is not a hand.
 { not found_badge_audit:
-    Director Magnus Netherton: On a login? A login is a key, Agent, not a hand on it. Two of those men badge through that lab door.
+    // Alignment C3 (K3): no narrowing to two; the door audit does that.
+    Director Magnus Netherton: On a login? A login is a key, Agent, not a hand on it.
     Director Magnus Netherton: Doors keep their own records. Bring me the door's.
     -> hub
 }

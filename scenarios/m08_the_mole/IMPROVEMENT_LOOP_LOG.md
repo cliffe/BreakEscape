@@ -235,3 +235,58 @@ Phantom: new narrator "He laughs, and fishes it out of his jacket." / "0x88, the
 Off-duty agent: new "Word is you've been calling people traitors to their faces. Whole floor's heard. If one of them is the mole, so has he."
 
 Open for cycle 3: confirm J1-J5 in the files; judge the J2 residual (only 0x47 is ever tidied); a browser pass of an accusation, the warning at two misreads, the Director-KO reading on the phone and the three lockers (none played in a browser this round); the locker row's look for the dressing stage (the 0x23 sprite rendered without the lock overlay the other two showed in `lockers.png`, probably the in-range highlight; check).
+
+### Stage 2 alignment, round 3 fix (closing round, 2026-10-14)
+
+Fixer (Opus) on `ALIGNMENT_REVIEW_P5_C3.md` (0 blockers, 1 major, 4 minors) and `PASS5_ALIGN_R2_BROWSER.md` (3 minors, 1 note). Mission files only: `scenario.json.erb`, three ink files, `DECISIONS_PENDING.md`, the m08 route driver and routes. No engine edits; no browser session; nothing committed.
+
+#### Alignment review C3
+
+| # | Sev | Finding | Outcome |
+|---|---|---|---|
+| K1 | major | The 0x47 "Deep State" brief confesses before the naming | **Fixed (holdall pattern).** Base observation "A slim stapled document, cover torn off. Page 7 has been read more than the rest." and base text the page without the ENTROPY header, both true in every state (E5). Text variants, first match wins: tidied and not named (torn page, headerless, closing line); tidied (torn page with the header); named (the header back); not named (headerless, plus "No letterhead. He gave your intake the insider-threat lecture; this could be his reading for it. Or not."). Observation variant on `mole_identified` restores "A slim ENTROPY recruitment document. Page 7 is the one that matters." Item name and credit unchanged (E4; credits follow the naming). Route `look` steps before and after the naming in r9 (untidied) and r4 (tidied); `route.js` look gained a `lacks` assertion for the missing header |
+| K2 | minor | HaX's KO reading needs no clock source | **Fixed.** "[I can name the leak.]" now also needs `found_timeline or found_access_logs_hint or found_access_logs`. New KO rung in her ladder: "You've got the door. Now the clock: when was the plan opened? Somebody in this building wrote it down." Retries stay free. The audit-arrived text now mentions the clock too, so "call me" doesn't lead to a hub with no reading (below) |
+| K3 | minor | Netherton narrows the field to two | **Fixed.** "Two of those men badge through that lab door." cut |
+| K4 | minor | HaX draws the tidy's conclusion | **Fixed.** Neutral wiped-stick text (below) |
+| K5 | minor | Stale "[The Director's taken the audit off me.]" after a KO | **Fixed.** `and not netherton_ko` added |
+
+#### Round 2 browser check
+
+| # | Sev | Finding | Outcome |
+|---|---|---|---|
+| R1 | minor | A re-opened hub shows the previous line over the hub choices | **Deferred (engine):** logged as E6 in `DECISIONS_PENDING.md` |
+| R2 | minor | Notes taken from a container can't be re-read | **Deferred (engine):** logged as E7. HaX's "Security searched his holdall" text already covers the holdall; the brief and stick are `text_file` and stay in the inventory, so the brief's header does reach a re-read after the naming |
+| R3 | minor | Tidy line names only one innocent when both were accused | **Fixed:** "Cipher and Phantom both" when both flags are set (order-free, since ink can't tell which came first). New route r11 |
+| R4 | note | Montana-flight choice absent after the tidy | **Confirmed as designed, no change.** The choice (and HaX's "bag packed" line, the "Packed nine days ago" credit) waits on `go_bag_lining_known`, and both latches that set it require `nightshade_tidied` false. The tidy itself can't fire once the holdall has been read (`found_go_bag`), so a tidied run never saw the passport and ticket: he took the bag before the player looked. Asking about a flight the player never learned of would be a leak. Montana still reaches the tidied player through Tomb Gamma in the confrontation and debrief, and the credit reads "GO-BAG: Gone from his locker the night you tipped him off" |
+| HaX controls | check | Fight-controls wording (Q cycles open hand, jab, cross; hostile chases don't leash) | **Nothing to change:** m08 has no fight-controls text (grep for stow, leash, fists, Q in the ink, scenario and mission.json; the only "leash" is Netherton's deal metaphor) |
+
+Counts: C3 1 major and 4 minors, all fixed; browser 3 minors and 1 note: 1 fixed, 2 deferred to the engine, the note confirmed.
+
+Decisions taken (fixer, reversible, mission-local):
+- The brief's base `text` is the headerless page, not the full text the holdall keeps as its base: E5 says some panels print raw fields, and the headerless page is true in every state.
+- HaX's audit-arrived text names the clock rather than being split three ways on the clock sources (the engine's evaluator has no `||`, so "has any clock" would need three mappings).
+- R3 says "both" rather than an order, because ink doesn't record which accusation came first.
+
+Checks (all after the last edit): `scripts/compile-ink.sh m08_the_mole` 12/12. Route driver, eleven routes (r1-r11), all "all expectations met"; r4, r9, r10 updated and r11 new; longest run without a choice 11 (the opening cutscene, unchanged). Reviewer's probes re-run as written: p3 and p5 pass; p1, p2 and p4 fail exactly on the old behaviour they recorded (the reading with no clock, "Two of those men", the header, "He wiped it after you tipped him off"). Inverted probes in the session scratchpad `m08-align-r3/probes/` (q1 K2 no reading and the clock rung until the timeline, then free retries; q2 K3; q3 K5 on p3's state, the hub offers the reading and not the stale reply; q4 K1 and K4 on p4; q5 p5 again): all pass. `dialoguelint` 0 errors, 0 warnings, 8 blank-reentry CHECKs (unchanged). `reopencheck` m08 0 problems. `inkcheck` every file, plus the HaX phone hub under KO/audit/clock/closed combinations and Netherton's `audit_case` and hub with and without the box and audit: clean. `loopcheck` HaX phone hub (KO with audit) and Netherton's hub: clean. `tagdiff` vs HEAD: 6 structural differences, all from this round (the two phone choices, the ladder rung). Validator (full): no errors; the same two known warnings (brief_taken co-fire; confrontation cutscene not onceOnly). `check_door_alignment.py`: m08 all OK.
+
+Spoken lines changed (old → new), for the TTS stage:
+
+HaX, phone texts (`scenario.json.erb`):
+- "Empty. He wiped it after you tipped him off. The print on the casing is still there. Lift it." → "Empty. Written over tonight, and not by accident. The print on the casing is still there. Lift it."
+- "That's the door audit. With the Director on his floor, read it to me. Call me when you've got it straight." → "That's the door audit. With the Director on his floor, you read it to me: the door against the minute the plan was opened. Call me when you've got both."
+
+HaX, phone hub (`m08_phone_agent_0x99.ink`):
+- new ladder rung (Director down, audit in, no clock): "You've got the door. Now the clock: when was the plan opened? Somebody in this building wrote it down."
+
+Netherton (`m08_director_netherton.ink`):
+- "On a login? A login is a key, Agent, not a hand on it. Two of those men badge through that lab door." → "On a login? A login is a key, Agent, not a hand on it."
+
+Nightshade, confrontation (`m08_nightshade_confrontation.ink`):
+- "You put it on {Cipher|Phantom} in front of the floor. ..." → "You put it on {Cipher and Phantom both|Cipher|Phantom} in front of the floor. ..."
+
+Item text (not voiced): the 0x47 brief's observation and text, as K1 above.
+
+Open for the orchestrator: alignment can close on the reviewer's terms (static confirmation: route `look` steps on the brief before and after the naming, r1-r11 and the probes). A browser look at the brief before and after the naming, and the KO reading needing a clock, would confirm them on screen.
+
+### Stage 2 alignment: CLOSED (orchestrator, 2026-10-14)
+Cycle 3 review 0/1/4; round 3 fixed K1–K5, R3, R4 (no change, reasoned), with routes r1–r11 and the reviewer's probes re-run clean (the static confirmation the cycle-3 reviewer asked for). Round-2 browser check passed all six items. Owed on screen, carried to the puzzle-chains browser check: the brief before and after the naming; HaX's post-KO reading needing a clock source.
