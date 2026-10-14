@@ -1,3 +1,11 @@
+# Resume note: security awareness course plan (2026-10-14), in progress
+
+Brief `docs/agents/AWARENESS_COURSE_BRIEF.md`, seeds `docs/agents/AWARENESS_MODULE_SEEDS.md`. Plan folder `planning_notes/security_awareness_course/` (README, 00 to 03 course docs, MODULE_TEMPLATE, features/, modules/, research/). Branch ccr-8675a21c-vu1k0k.
+- Done by the orchestrator: research notes, learning design ("game first, not game only"), overview and catalogue (26 modules), world and cast (Larkspur Group), template, feature catalogue (BE-01 to BE-21, MG-01 to MG-25, EX-01 to EX-07, HA-01 to HA-23), model module core_01.
+- Running: 9 module writers (W1 core_00/16/17; W2 core_02/10/12; W3 core_03/04; W4 core_05/06; W5 core_07/08/13; W6 core_09/14/15; W7 core_11, role_02/07; W8 role_01/03/04; W9 role_05/06, sector_01) and 4 feature writers (engine plus accessibility; minigames; Hacktivity plus assessment; explainers). Compliance research agent to write 02_COMPLIANCE_MAPPING.md.
+- Next: review round (accuracy, template, boundaries, feature ids, style), fixes, dash and spelling greps, compile "used by" lists, commit and push.
+- The repo is public and Hacktivity is private: keep Hacktivity plans at feature level, no weaknesses in files.
+
 # Resume note — m03 pass 2 (2026-10-12): all stages done except the user's blind run
 
 Brief `docs/agents/M03_PASS2_BRIEF.md`; log `scenarios/m03_ghost_in_the_machine/IMPROVEMENT_LOOP_LOG.md` "Pass 2". Later (user): lab sheet, audio, engine triage, SecGen.
