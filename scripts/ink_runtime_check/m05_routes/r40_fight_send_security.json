@@ -243,6 +243,7 @@
 "expect": {
 "final_choice": "arrest",
 "torres_called_in": true,
+"torres_hostile": false,
 "torres_arrested": true,
 "elena_treatment_funded": false
 }

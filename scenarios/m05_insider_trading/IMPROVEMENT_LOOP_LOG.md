@@ -957,3 +957,15 @@ Credits: new "FALSE START — a wrong name or reason before the right one", "WAL
 - "Send Security" mid-fight: Torres disappears and stops attacking; whether his health bar or tint lingers on the hidden sprite; he stays gone after a reload and on entering the vault; music goes to the end cue.
 - The case menus in person and by phone, a wrong answer closing the chat, and Patricia's trust toast.
 - The renamed task titles in the objectives panel.
+
+### Phase 8 follow-up: Send Security leaves Torres's health bar (N1 to N3, `PASS5_STRUGGLE_A_FIXCHECK.md`)
+
+Mission-side only, no engine edits. In `call_in_security` (`m05_phone_agent_0x99.ink`) the call-in now sets `torres_hostile = false` and emits `#remove_npc:david_torres`. `NPCGameBridge.removeNpcFromScene` destroys the sprite, and `npc-health-bars.js update()` drops any bar whose sprite is no longer active, so the bar goes with him; the removal is persisted server-side, so no sprite exists after a reload and `announceRestoredHostile` has nothing to rebuild.
+
+| # | Sev. | Finding | Outcome |
+|---|---|---|---|
+| N1 | major | Torres's red health bar stays after "Send Security" and is rebuilt after every reload | **Fixed** by `#remove_npc:david_torres`. Browser, game 2426 on :3001: bar present while hostile, gone 4 s after the click (`healthBars.get` null, sprite destroyed); after a reload and walking back to the vault, no sprite, no bar (`healthBars.size` 0), no damage in 8 s |
+| N2 | major (suspect) | The call may be interrupted by Torres's hits | **Mitigated, not reproduced.** Opened the phone with Torres about 30 px away: HP held at 73 over 20 s, so he was not in reach at that moment (no minigame guard in `npc-behavior.js`; the engine closes the minigame on damage, `player-damage-interrupt.js`). The second HaX text now says "Can't take him? Step out of his reach, then call me and I'll send Security." (27 words) |
+| N3 | minor | `torres_hostile` stays true after the call | **Fixed**: cleared in the knot. The engine's own hostile record for him still reads true, harmless with no sprite |
+
+Checks: compile clean; all 40 m05 routes pass (r40 now also expects `torres_hostile` false); dialoguelint 0 problems (longest timed text 30 words); reopencheck 0; validator passes. Browser game 2426 (headless, keyless :3001, `unlock-all-rooms.rb`, `torres_identified` and the four `flagN_submitted` globals set by hand and `setNPCHostile` called through the bridge, so exercised, not earned; session `tools/playtest/m05-pass5-hostile-remove-g2426.jsonl`): the hub offers "Send Security" while hostile and not after the fate; the upload terminal opens after the reload; "Bring me in" starts the debrief, which plays "You backed off and I called it in. Patricia's guards walked him out..." Credits were not captured this run (observer saw nothing); the credits and conditions are covered by r40 and the earlier game 2422 read.

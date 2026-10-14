@@ -707,11 +707,13 @@ What are you doing with him?
 // (or, with Patricia down, the night desk and the police) takes him; the
 // breaker stops the upload at 99. The cost: nobody talked to him, so no deal
 // and no turn; the debrief and the credits say so. torres_called_in hides him
-// (scenario mappings). Re-checks the fate first, so a reopen replays nothing.
+// (scenario mappings) and #remove_npc takes his sprite and health bar off the scene for good. Re-checks the fate first, so a reopen replays nothing.
 === call_in_security ===
 {final_choice != "": -> support_hub}
 #speaker:agent_0x99
 ~ torres_called_in = true
+~ torres_hostile = false
+#remove_npc:david_torres
 ~ torres_arrested = true
 #complete_task:confront_torres
 #complete_task:make_critical_choice
