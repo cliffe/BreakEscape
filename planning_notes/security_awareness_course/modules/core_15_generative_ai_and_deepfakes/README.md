@@ -44,17 +44,19 @@ After this module, staff can:
 
 ## Compliance coverage
 
-Contributes to (references in `02_COMPLIANCE_MAPPING.md` when it is written):
+Contributes to (short references from `02_COMPLIANCE_MAPPING.md`, section 2):
 
-- **EU AI Act Article 4** (AI literacy), for customers within the Act's scope. Article 4 has applied since 2 February 2025. It was amended by Regulation (EU) 2026/1744, in force from 27 July 2026, so that providers and deployers take measures to support the AI literacy of staff and others using AI systems on their behalf, without being required to guarantee any particular level for any individual. The European Commission's Q&A says no certificate is needed and that organisations can keep an internal record of training; the module's record (HA-05) is that record.
-- **ISO/IEC 42001** clauses 7.2 and 7.3 (competence and awareness), for customers with an AI management system.
-- **ISO/IEC 27001** clause 7.3 and Annex A 6.3 (awareness), 5.10 (acceptable use), 5.12 (classification) and 5.14 (information transfer).
-- **PCI DSS** 12.6.3.1 (phishing and related attacks and social engineering) and 12.6.3.2 (acceptable use of end-user technologies).
-- **NIST SP 800-53** AT-2(3) (social engineering and mining).
-- **CIS Controls v8.1** 14.2 (recognising social engineering) and 14.4 (data handling best practices).
-- **NIS2** Article 21(2)(g) (basic cyber hygiene practices and training).
-- **NCSC CAF** B6 (staff awareness and training).
-- **UK GDPR** Articles 5(1)(c) and 32 (data minimisation and security), because putting personal data into an AI tool is processing it.
+- **AI Act Art 4** (AI literacy, as amended from 27 July 2026), for customers within the EU AI Act's scope. Article 4 has applied since 2 February 2025. Regulation (EU) 2026/1744 replaced the duty: providers and deployers "shall take measures to support the development of AI literacy" of staff and others using AI systems on their behalf, and the obligation "does not require providers or deployers to guarantee any specific level of AI literacy of any individual" (wording as checked against the Official Journal in the mapping, section 3.11). The European Commission's Q&A says no certificate is needed and organisations can keep an internal record; the module's record (HA-05) is that record.
+- **PCI DSS 12.6.3.1** (phishing and related attacks and social engineering, here the deepfake call and voice note).
+- **NIST AT-2**, **AT-2(3)** (social engineering and mining) and **AT-2(6)** (the current threat environment).
+- **CIS 14.2** (recognising social engineering), **CIS 14.4** (data handling) and **CIS 14.5** (unintentional data exposure, such as pasting into a public tool).
+- **ISO 27001 A.6.3**.
+- **NCSC CAF B6.b**.
+- **NIS2 Art 21(2)(g)** and **DORA Art 13(6)**.
+- **UK GDPR Art 5(1)(f)** and **Art 32(4)**: putting personal data into an AI tool is processing it.
+- **NYDFS 500.14(a)(3)** and the NYDFS industry letter on AI, for New York financial services customers.
+- **DSPT 3.2.1 (categories 3 and 4)**, as part of the annual figure.
+- **PCI DSS 12.6.3.2** (acceptable use of end-user technologies, which here includes AI tools): not yet in the mapping's row for core_15, and should be added when the matrix is reconciled with this plan.
 
 ## Module flow
 
@@ -84,7 +86,9 @@ Contributes to (references in `02_COMPLIANCE_MAPPING.md` when it is written):
 - **MG-04 Voice calls:** ringing Gillian back on the directory number and Leo on his saved number (`phone-chat` contacts until then).
 - **MG-05 Messaging apps:** the unknown-number styling for the voice note.
 - **BE-08 Visual aids, EX-01, EX-05:** Ama's two-window comparison and traffic lights, and Kai's short "where the fakes came from" scene.
-- **BE-18, BE-16, BE-19:** the report deadline, the Thursday consequence, and MG-16 and the video call opening from a chat message or an invite.
+- **BE-18, BE-16, BE-19:** the report deadline, the Thursday consequence, and MG-16 and the video call opening from a chat message or an invite (`#trigger_minigame:<minigame>|<configKey>`, for example `#trigger_minigame:ai_assistant|c15_complaints_summary`).
+- **MG-27 Work desktop:** Lark Assist, the inbox, the chat and the meeting invite on one desktop, with notifications.
+- **BE-22 Tactic spotter card** (optional): the player can tick the pressure tactics heard in the fake call (urgency, authority, secrecy, skipping the process) for the debrief. It never asks the player to spot visual or audio glitches.
 - **BE-01, BE-02, MG-20, BE-09, BE-05:** the record, the debrief, the check, the reference card, and the organisation's own AI rules.
 - **proposed:** Workplace video-call skin. The video-call mode needs these changes before an awareness module can use it:
   1. The status bar's "SECURE VIDEO LINK" label is hard-coded in `initVideoCallOverlay`. Read the call app's name from the event mapping (`callApp`), defaulting to the organisation profile's meeting app (BE-05, "Larkspur Meet"), so a call on an outside platform shows a different name.
@@ -95,6 +99,8 @@ Contributes to (references in `02_COMPLIANCE_MAPPING.md` when it is written):
   6. An in-call chat panel for links ("it's in the chat").
   7. The pulsing LIVE dot respects reduced motion (BE-04); the self-view can show "camera off".
   8. Screen sharing for BE-08, so a document can be shown in the call.
+
+  role_05 proposes freeze, blur and audio-lag effects for the same video-call mode. If they are built, they should be usable as ordinary call quality for any caller, real or fake. core_15's fakes never use them, because glitches are the unreliable cue this module teaches people not to rely on.
 
 ## Organisation-specific content
 
@@ -113,4 +119,4 @@ Contributes to (references in `02_COMPLIANCE_MAPPING.md` when it is written):
 3. **Ama's demo.** Is a fake of the mentor a trick on the player? *Recommendation: keep it, announced in advance ("Kai's going to call you; do whatever you'd normally do"), made with Ama's permission in the story, and explained straight away.*
 4. **Data or money in the fake call?** *Recommendation: data (the customer list), so payment processes stay in core_11. The Arup case, a money transfer, stays in `concepts.md`, and a money version suits role_02.*
 5. **Verification phrases.** *Recommendation: teach call-back and a second person as the core; present a verification phrase as an organisation option, and a family code word for home life.*
-6. **The amended Article 4 wording.** EUR-Lex couldn't be read when this plan was written. *Recommendation: check the Official Journal text before the field guide or any buyer material quotes it.*
+6. **How much of the EU AI Act learners see.** *Recommendation: none of the law in play; Ama says the organisation must help everyone use AI sensibly, and the reference card and field guide carry the Article 4 note for buyers, quoting the wording recorded in `02_COMPLIANCE_MAPPING.md`, section 3.11.*

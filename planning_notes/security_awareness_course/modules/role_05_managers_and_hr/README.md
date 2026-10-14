@@ -15,7 +15,7 @@
 
 ## Why this module
 
-Managers decide who gets access and when it goes, and they decide whether people feel safe to admit a mistake. IT can only act on what managers and HR tell it, so accounts, keys and codes outlive the job when nobody says the job has ended. The NCSC's identity and access management guidance asks every organisation for a "joiners, movers and leavers" policy "so access can be revoked when no longer needed", and for regular reviews of unnecessary privileges.
+Managers decide who gets access and when it goes, and they decide whether people feel safe to admit a mistake. IT can only act on what managers and HR tell it, so accounts, keys and codes outlive the job when nobody says the job has ended. The NCSC's identity and access management guidance recommends a "joiners, movers and leavers" policy "so access can be revoked when no longer needed", and regular reviews for unnecessary privileges.
 
 Recruitment has become a way in as well. In September 2024 the UK's Office of Financial Sanctions Implementation (OFSI) warned that it is "almost certain" UK firms are being targeted by North Korean IT workers posing as remote freelancers under false identities. In the US, the FBI warned in 2022 that applicants for remote IT jobs were using deepfakes and stolen personal details in interviews.
 

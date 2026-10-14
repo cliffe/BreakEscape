@@ -33,10 +33,11 @@ The critical path is marked **(CP)**.
   - Call back: the number on record goes to voicemail, and the caller rings back angrier: *"My phone was stolen. That's the point."* The player chooses again.
   - Holding the line: *"This is absurd. I'll be speaking to Owain about you."* She hangs up.
   - Moving it: the card shows *Authenticator moved to 07700 900461* (a number from Ofcom's range reserved for drama).
-- Owain wheels his chair over either way.
-  - If the player moved it: *"Hang on. Did we just move the chief exec's MFA on a phone call? No blame. Let's tell Kai now."* Three minutes later Kai: *"Her account's just signed in from a new device abroad. Sessions killed. You told me in five minutes, which is why this is small."*
-  - If the player held the line: *"You said no to the chief exec on the phone. Hardest call on this desk. Want to know why it was right?"*
-- The response is the baseline for R03-B1.
+- If the player moved it, the call ends happily and the next ticket appears. The player can turn to Owain (*"I think I've just moved the chief exec's MFA on a phone call"*) or carry on with the queue.
+  - Telling Owain: *"Right. No blame. Let's tell Kai now."* Kai, a moment later: *"Her account's just signed in from a new device abroad. Sessions killed. You told me before they'd done anything, which is why this is small."*
+  - Carrying on: two tickets later Kai's alert arrives on the team chat and Owain wheels over: *"Was that one of ours? Let's look together."* The same fix, a bigger clean-up, still no blame.
+- If the player held the line, Owain wheels over: *"You said no to the chief exec on the phone. Hardest call on this desk. Want to know why it was right?"*
+- The response is the baseline for R03-B1; telling Owain is R03-B2.
 
 ### 2. Learn: "Knowing isn't proving" (4 minutes)
 
@@ -66,7 +67,7 @@ The critical path is marked **(CP)**.
 - **(CP)** The queue board shows fourteen tickets (BE-18). Ordinary work fills the gaps between the tests: a printer in Finance, a shared drive request, a laptop for a new starter, a forgotten password from a registered device that self-service sorts. The tests arrive in this order:
 
 **Test 1 (08:40): the contractor.** An email from Bridget Hennessy, a project manager: *"Sam Reilly starts today on the depot system migration. Please give his normal account domain admin so he isn't blocked. Thanks!!"*
-- *"A separate admin account for Sam, rights on the migration servers only, through the privileged access tool, approved by the system owner, ending with his contract, with a security key."* / *"Add domain admin to his normal account until the migration's done."* / *"Give him the shared admin login for today."*
+- *"A separate admin account for Sam, rights on the migration servers only, through the privileged access tool, approved by the system owner, ending with his contract, with a security key."* / *"A separate admin account with domain admin until the migration's done."* / *"Add domain admin to his normal account until the migration's done."* / *"Give him the shared admin login for today."*
 - Bridget, to the first: *"Didn't know that was a thing. Fine, as long as he's working by ten."* The privileged access tool's approval arrives at 09:50.
 
 **Test 2 (09:10): the app.** A ticket from Martin Fletcher: *"My team need Inbox Genie. It files client emails automatically. It says an admin has to approve it."* The request opens in `forensic-data-platform` with four tabs: the app (unverified publisher, registered last month), its permissions (read and write every mailbox, send mail as any user, read all files), who asked, and the approved alternative (mail rules that already file by client).
@@ -78,7 +79,7 @@ The critical path is marked **(CP)**.
 **Test 4 (10:05): the alert.** Kai, in the team chat: *"Can someone look at Jamie Lowe's sign-ins? The desk reset him at 09:40."* The log opens in `log-filter` (vpn log type): a failed sign-in from Leeds at 08:55 (the real Jamie, locked out), then a successful sign-in at 09:41 with a new MFA device from France through a residential VPN, then two more from the same address. The player can filter and look up the address and the account's history.
 - Flag the 09:41 row and *"Escalate to Kai now"* / *"Ring Jamie on his mobile to ask if he's in France"* / *"Close it. Probably a VPN."*
 - Ringing Jamie on the directory number is allowed after escalating; doing it instead of escalating is rated Developing, because the attacker keeps the account while the player waits.
-- **Decision on Rosa.** Rosa sees the screen: *"That's my reset. Oh no."* *"Come on, we'll tell Kai together. You've caught it in twenty minutes."* / *"Reset it again quietly. Nobody needs to know."* / *"That's your ticket, not mine."*
+- **Decision on Rosa.** Rosa sees the screen: *"That's my reset. Oh no."* *"Come on, we'll tell Kai together. You've caught it in twenty minutes."* / *"You should tell Kai."* / *"Reset it again quietly. Nobody needs to know."* / *"That's your ticket, not mine."*
 - Kai, when they arrive: *"Twenty minutes from reset to report. Sessions killed, the forwarding rule's gone, nothing went out. Thanks, Rosa."* Owain thanks her in the team chat before the end of the shift.
 
 **Test 5 (10:30): the helpful supplier.** A call from Wes Kimber at Brightline Label Systems: *"We've put our remote support tool on the dispatch PC in the warehouse to fix the label printer. Your antivirus keeps closing it. Can you whitelist it?"* The approved tools list and the supplier contract are in `notes`. No change ticket exists.
@@ -90,7 +91,8 @@ The critical path is marked **(CP)**.
 - Kev: *"As long as it's quicker by Friday. You'd not believe how many folk ask me for the warehouse door code."*
 
 **Test 7 (11:20): the real Gillian.** A call from the chief executive's office line: *"Owain tells me someone pretended to be me this morning. Good. Now, I really have got a new phone. Can you move my authenticator? I'm in my office."*
-- *"Owain and I will come up now, check your ID against your HR photo, and set it up with you."* / *"You're on your office line, so that's fine. I'll move it now."* / *"Can I ask you a few security questions?"*
+- *"Owain and I will come up now, check your ID against your HR photo, and set it up with you."* / *"I'll video call you now and check your ID against your HR photo."* / *"You're on your office line, so that's fine. I'll move it now."* / *"Can I ask you a few security questions?"*
+- The video call is better than nothing but is one route on its own; the procedure for an executive asks for a second check and a second analyst, and her office is a two-minute walk.
 - The first sends the player up to `room_ceo` with Owain, the second analyst. Gillian: *"This is a lot of fuss for a phone."* The player can answer: *"It's the fuss that stopped someone getting into your account this morning."* Gillian: *"Fair. Carry on."* As they leave: *"Tell the desk I said thank you. Put it on The Lark."*
 
 - **(CP)** By 11:45 the queue board shows zero, and the handling-time panel shows a note Owain added on Friday: *"Verification time doesn't count."*
@@ -99,7 +101,7 @@ The critical path is marked **(CP)**.
 
 - **(CP)** The debrief screen (BE-02), then Owain and Kai at the desk.
 - **The chain.** A row of links: caller, reset, new device, mailbox, approvals, and for the contractor and the supplier, admin rights and remote tools. Each test lights the link where the player cut it, or shows what came next where they didn't.
-- **Kai's view.** *"Same caller tried three of us this morning. Two said no. One said yes and told me in twenty minutes. That's a good Monday."* Rosa's report is shown as a thank-you, not a mistake.
+- **Kai's view.** The same crew rang the desk three times this morning as three different people: the "chief executive", "Jamie", and a "finance director" who tried the outsourced night desk and was refused. Kai's line depends on the hook. If the player held the line: *"Three calls. Two of you said no. One said yes and told me in twenty minutes. That's a good Monday."* If the player moved Gillian's MFA and told Owain: *"Three calls, two yeses, and both of you told me fast. That's why nothing went out."* Rosa's report, and the player's own if there was one, are shown as thank-yous, not mistakes.
 - The hook beside test 7: the same request from the "same" person, handled two ways.
 - Per-outcome results: Secure, Developing or Not yet.
 - **The line to remember:** *"Knowing isn't proving. Call back on a number they don't control."*

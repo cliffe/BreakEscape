@@ -70,7 +70,7 @@ The critical path is marked **(CP)**. The week runs as six short scenes on a pla
 
 ### 4. Apply: "The week" (11 to 12 minutes)
 
-- **(CP)** The week planner appears (BE-18): **Mon: Nadia starts. Tue: interview the contractor. Wed: Leo moves; access review due. Thu: temp cover starts. Fri: Des's last day.** Each scene is short; the clock jumps between them. The team pulse board on the whiteboard (`alarm-panel`, reskinned) shows five lamps, one per team member, that brighten or dim with the player's reactions.
+- **(CP)** The week planner appears (BE-18): **Mon: Nadia starts. Tue: interview the contractor. Wed: Leo moves; access review due. Thu: temp cover starts. Fri: Des's last day.** Each scene is short; the clock jumps between them. The team pulse board on the whiteboard (`alarm-panel`, reskinned) shows eight lamps, one per team member, that brighten or dim with the player's reactions.
 
 **Monday afternoon: time for training (1 minute).**
 
@@ -139,10 +139,6 @@ The critical path is marked **(CP)**. The week runs as six short scenes on a pla
   - **Password only:** on Monday, Kai finds invoices sent from her mailbox to four schools over the weekend. Farida: *"I thought it was sorted."* Ama helps contain it; it's a bigger job.
   - **Blame or HR:** Farida goes quiet and reports it herself the next morning, late. Three lamps dim. In the debrief's time skip, "Three months later", a phish reaches the whole team and nobody reports it for two days.
 - A follow-up choice for every branch: *"Shall I share what happened at the huddle so others learn?"* The best answer is to ask Farida first, and otherwise share the lesson without her name.
-
-**Thursday afternoon: the temp (1 minute).**
-
-- Sol Sorensen, an agency temp, starts covering Des's callouts for four weeks. Owain's ticket again offers **[Copy from user: Des Harker]**. The player chooses the role template with a four-week end date, the template with no end date, or Des's access. This is the **Apply counterpart to the hook**: the same decision, now under pressure, with no prompt.
 
 **Friday: Des's last day (2 minutes).**
 

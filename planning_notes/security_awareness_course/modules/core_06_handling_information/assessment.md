@@ -15,8 +15,9 @@ Each row is recorded through BE-01 and shown in the debrief and the learner's re
 | C06-B7 | Checks the bid files for hidden content | C06-LO4 | Apply (MG-12) | Removes all four properly | Removes two or three properly, or covers or hides one instead of removing it | Removes one or none, or uploads without checking |
 | C06-B8 | Prints the board pack | C06-LO5 | Apply | Secure print, collected at once | The old printer, collected at once | (not used) |
 | C06-B9 | Deals with Mei Lin's printout | C06-LO5 | Apply | Takes it to Mei Lin unread, and it is reported | Takes it to Mei Lin but it isn't reported | Reads it, leaves it, or puts it in the recycling |
-| C06-B10 | Clears the decks: the week's drafts and the old laptop | C06-LO5 | Apply | Drafts in the console and the laptop to Owain | One of the two done properly | Drafts in the recycling, and the laptop kept or binned |
+| C06-B10 | Disposes of the week's drafts in the clear-out | C06-LO5 | Apply | The locked console | The strip-cut shredder | The paper recycling |
 | C06-B11 | Labels documents | C06-LO1 | Learn check question; Practise (MG-10) | 9 or 10 of 10 in "Label It", and the check question right first time | 7 or 8 of 10 | 6 or fewer |
+| C06-B12 | Deals with the old laptop in the drawer | C06-LO5 | Apply | Takes it to Owain at the service desk | (not used) | Keeps it, or puts it in a bin |
 
 The **before and after** for each learner is C06-B1 against C06-B10: the same decision (where Confidential paper goes) before Jo's bin audit and at the end of the week.
 
@@ -24,7 +25,7 @@ The **before and after** for each learner is C06-B1 against C06-B10: the same de
 
 To complete the module the learner must, at least once, show each of these or be taken back through the practice for it:
 
-- **C06-CB1 Dispose of Confidential paper securely** in the clear-out (C06-B10 not at Not yet).
+- **C06-CB1 Dispose of Confidential paper in the locked confidential waste** in the clear-out (C06-B10 at Secure), after Jo's audit has shown what happens to it anywhere else.
 - **C06-CB2 Share a file only with specific people** (C06-B2 not at Not yet).
 - **C06-CB3 Keep Confidential information out of personal accounts** (C06-B5 and C06-B6 not at Not yet).
 
