@@ -19,7 +19,7 @@ All are saved globals, so a reload keeps them.
 |---|---|---|
 | The sequence waits on the host | (start) | video wall amber, steady; countdown a dull red ("AWAITING HOST") |
 | The clock runs | `cascade_armed` (flag 3, the login) | video wall amber breathes; countdown red breathes, brighter, tints the floor |
-| The clock expired: step one ran | `countdown_expired` | video wall deepest orange, strongest breathe (it stays amber-orange because the board's art and text still say amber and PENDING; L1 would turn it red); countdown steady bright red; the mimic dims grey ("one region of the map has gone grey") |
+| The clock expired: step one ran | `countdown_expired` | video wall red `#ff2a20`, strongest breathe, and the two wall-end lights red (L1, applied in the blind run A fix round: the board's Seattle panel is drawn red and its text says 01 EXECUTED); countdown steady bright red; the mimic dims grey ("one region of the map has gone grey") |
 | The abort | `grid_saved` | video wall back to steady amber (the remote-session incident is still on the board); countdown dim and steady (its text: "The display has stopped. Nobody has thought to switch it off."); the cascade control screen goes green |
 | Park at work below | `vault_entered && !park_ko && park_resolved !== 'talked'` | ATS-1's lamp blinks amber, the same condition as its text variant ("the fault lamp on the control run is blinking amber") |
 

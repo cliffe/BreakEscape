@@ -279,7 +279,9 @@ HaX here, Agent. I've got your channel and the board.
 + {architect_echo_heard and not teacher_discussed} [He used your line. "Let it hurt afterwards."]
     -> topic_teacher
 
+// Blind run A fixes (m4): a line on the pick, so the sub-menu doesn't look like nothing happened.
 + {stuck_news()} [I'm stuck on something.]
+    Tell me where.
     ~ submenu_from_hub = true
     -> stuck_topics
 
@@ -881,7 +883,7 @@ He won't wait for a third look. Have it in your hand when you go back down.
 === guide_rfid ===
 ~ rfid_guide_hint_given = true
 #give_item:lab-workstation:m07_rfid_field_guide
-RFID cloning guide's on your terminal.
+RFID cloning guide's in your kit.
 
 The reader trusts the card and never asks who's holding it.
 
@@ -917,7 +919,7 @@ Go.
 === guide_nfs ===
 ~ nfs_guide_hint_given = true
 #give_item:lab-workstation:m07_nfs_field_guide
-NFS and netcat guide's on your terminal.
+NFS and netcat guide's in your kit.
 
 Read what the host shares, without changing it.
 
@@ -928,7 +930,7 @@ Read, don't touch. Go.
 === guide_ssh ===
 ~ ssh_guide_hint_given = true
 #give_item:lab-workstation:m07_ssh_field_guide
-SSH guide's on your terminal. The worked example's the hospital job. Skip the Hydra half; you already have the pair.
+SSH guide's in your kit. The worked example's the hospital job. Skip the Hydra half; you already have the pair.
 
 You've got a name from the share and a password from the listener. That's one login. Use it and look in the home directory.
 

@@ -66,7 +66,7 @@ badge_pin = "0616"
 scada_password = "CascadeWindow19"
 %>
 {
-  "scenario_brief": "Four ENTROPY operations went live inside the same sixty seconds. SAFETYNET has one agent in range and one tactical team. You are the agent, forty minutes from a grid control facility outside Portland, where a loaded sequence can black out three states in winter. The team can reach one of the other three crises. You decide which. Two go unanswered, and somebody will read out what happened at both.",
+  "scenario_brief": "Four ENTROPY operations went live inside the same sixty seconds. SAFETYNET has one agent in range and one tactical team. You are the agent, forty minutes from a grid control facility outside Portland, where a loaded sequence can black out three states in winter. The team can reach one of the other three crises, and where it goes is your call. Two go unanswered, and somebody will read out what happened at both.",
 
   "show_scenario_brief": "on_resume",
 
@@ -995,7 +995,7 @@ scada_password = "CascadeWindow19"
               "condition": "value === true && !globalVars.grid_saved && globalVars.team_assigned === true",
               "onceOnly": true,
               "setGlobal": { "redirect_window_closed": true, "cascade_armed": true },
-              "sendTimedMessage": { "delay": 1500, "message": "They saw you. Sequence armed: fifteen minutes. The team stays where it is now. A user shell can't kill it. Get root. Privesc guide's yours if you want it." }
+              "sendTimedMessage": { "delay": 1500, "message": "They saw you. Sequence armed: fifteen minutes. The window to move the team just shut. A user shell can't kill it. Get root. Privesc guide's yours if you want it." }
             },
             {
               "_comment": "PASS 3 (r3-m6): the same for a player who never committed the team. They still can (HaX's hub), so don't say it's committed.",
@@ -1117,13 +1117,13 @@ scada_password = "CascadeWindow19"
               "eventPattern": "npc_hostile_state_changed",
               "condition": "data.npcId === 'ray_hollis' && data.isHostile === true && data.restored !== true",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 1000, "message": "He's coming for you. Q switches to fists (again for a harder punch), then E or click when he's in front. Face him squarely." }
+              "sendTimedMessage": { "delay": 1000, "message": "He's coming for you. Fists up, face him, hit him. Q a second time throws the harder punch." }
             },
             {
               "eventPattern": "npc_hostile_state_changed",
               "condition": "data.npcId === 'ray_hollis' && data.isHostile === true && data.restored !== true",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 5500, "message": "Keep pressing Q until the open hand shows to walk by clicking. He's slower than you if you need distance." }
+              "sendTimedMessage": { "delay": 5500, "message": "He's slower than you. If it's going badly, open hand and walk away from him." }
             },
             {
               "eventPattern": "npc_hostile_state_changed",
@@ -1148,6 +1148,35 @@ scada_password = "CascadeWindow19"
               "condition": "data.npcId === 'james_mercer' && data.isHostile === true && data.restored !== true",
               "onceOnly": true,
               "sendTimedMessage": { "delay": 5500, "message": "Keep pressing Q until the open hand shows to walk by clicking. He's slower than you if you need distance." }
+            },
+            <%# Blind run A fixes (M1): the controls before the first possible fight.
+                Hollis is in the start room, so this goes out as the briefing closes
+                (it never replays: skipIfGlobal briefing_played). The in-fight texts
+                above then add what this one doesn't say. %>
+            {
+              "eventPattern": "conversation_closed:opening_briefing_cutscene",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 2500, "message": "The checkpoint guard is bought. If anyone swings at you: Q for fists, E or click to punch, face them squarely. Q until the open hand shows to walk." }
+            },
+            <%# Blind run A fixes (M1, the run's Mercer note): after the first knockout,
+                fists up blocks every click (m05's pattern). Once, on whichever KO is first. %>
+<% %w[ray_hollis thomas_park james_mercer].each do |ko_id| %>
+            {
+              "eventPattern": "npc_ko:<%= ko_id %>",
+              "condition": "!globalVars.hands_down_said",
+              "onceOnly": true,
+              "setGlobal": { "hands_down_said": true },
+              "sendTimedMessage": { "delay": 7000, "message": "Hands down: press Q until the open hand shows. While your fists are up, nothing you click will open." }
+            },
+<% end %>
+            <%# Blind run A fixes (m7): the password keypad says nothing about case.
+                door_unlock_attempt fires as the keypad opens (unlock-system.js), so
+                the hint is there before the first try, once the password is known. %>
+            {
+              "eventPattern": "door_unlock_attempt",
+              "condition": "data.connectedRoom === 'scada_control' && globalVars.scada_password_found === true",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 800, "message": "That keypad is case-sensitive. Capital C, capital W." }
             },
             <%# PASS 5 puzzle chains r1 (F3): Hollis's badge cloned in conversation.
                 card_cloned carries the card's name and is emitted before the chat
@@ -1628,13 +1657,13 @@ scada_password = "CascadeWindow19"
     "operations_floor": {
       "type": "room_pnw_ops",
       "door_sign": "Operations Floor",
-      <%# LIGHTING (pass 5): the control room after the evacuation. Ceiling pools off, the amber video wall is the room's light. It breathes once the sequence is armed (cascade_armed), burns deeper when step one runs (countdown_expired; it stays amber because the board's own art and text stay amber), and holds steady amber after the abort. Two room lights under the wall's ends spread it across its width. %>
+      <%# LIGHTING (pass 5): the control room after the evacuation. Ceiling pools off, the amber video wall is the room's light. It breathes once the sequence is armed (cascade_armed), turns red when step one runs (countdown_expired; blind run A fixes, L1: the board's Seattle panel goes red and its text says EXECUTED), and holds steady amber after the abort. Two room lights under the wall's ends spread it across its width. %>
       "lighting": {
         "ambient": "#aab0c2",
         "panels": false,
         "emitters": {
           "situation_board": [
-            { "condition": "globalVars.countdown_expired && !globalVars.grid_saved", "color": "#ff7a1a", "radius": 60, "intensity": 0.95, "effect": "breathe", "offsetY": 30, "floorTint": 0.5, "above": true },
+            { "condition": "globalVars.countdown_expired && !globalVars.grid_saved", "color": "#ff2a20", "radius": 60, "intensity": 0.95, "effect": "breathe", "offsetY": 30, "floorTint": 0.5, "above": true },
             { "condition": "globalVars.cascade_armed && !globalVars.grid_saved", "color": "#ff7a1a", "radius": 60, "intensity": 0.8, "effect": "breathe", "offsetY": 30, "floorTint": 0.45, "above": true },
             { "color": "#ffa030", "radius": 60, "intensity": 0.55, "effect": "screen", "offsetY": 30, "floorTint": 0.35, "above": true }
           ],
@@ -1646,6 +1675,10 @@ scada_password = "CascadeWindow19"
           { "x": 7.9, "y": 2.25, "color": "#ff9020", "radius": 52, "intensity": 0.55 }
         ],
         "variants": [
+          { "condition": "globalVars.countdown_expired && !globalVars.grid_saved", "lights": [
+            { "x": 4.2, "y": 2.25, "color": "#ff2a20", "radius": 52, "intensity": 0.7 },
+            { "x": 7.9, "y": 2.25, "color": "#ff2a20", "radius": 52, "intensity": 0.7 }
+          ] },
           { "condition": "globalVars.cascade_armed && !globalVars.grid_saved", "lights": [
             { "x": 4.2, "y": 2.25, "color": "#ff4a10", "radius": 52, "intensity": 0.7 },
             { "x": 7.9, "y": 2.25, "color": "#ff4a10", "radius": 52, "intensity": 0.7 }
@@ -1677,11 +1710,27 @@ scada_password = "CascadeWindow19"
           "id": "situation_board",
           "name": "Grid Situation Board",
           "position": "as-type:pnw_video_wall",
+          <%# Blind run A fixes (L1, orchestrator 2026-10-14): when the clock runs out
+              before the abort, the Seattle panel goes red (make_pnw_props.py
+              video_running) and the board says step 01 ran. Loaded on demand by
+              rooms.js, as the countdown faces are. %>
+          "spriteVariants": [
+            { "condition": "globalVars.countdown_expired && !globalVars.grid_saved", "value": "pnw_video_wall_running1" }
+          ],
           "takeable": false,
           "readable": true,
           "observations": "The wall-sized situation board the whole floor works from. Every panel on it is amber.",
+          "observationVariants": [
+            { "condition": "globalVars.countdown_expired && !globalVars.grid_saved", "value": "The wall-sized situation board the whole floor works from. One panel, top left, has gone red. The rest are still amber." }
+          ],
           "observationDisplay": "gameDisplay",
-          "text": "PACIFIC NORTHWEST REGIONAL GRID CONTROL -- LIVE STATUS\n\nSERVED POPULATION .............. 8,412,000  (WA / OR / N.CAL)\nSUBSTATIONS UNDER CONTROL ......       147\nAUTOMATED REBALANCING .......... DISABLED BY OPERATOR (unauthorised)\nBREAKER CONTROL ................ REMOTE SESSION ACTIVE -- SOURCE NOT RECOGNISED\nSITE BACKUP GENERATION ......... ONLINE, 72 HOUR RATING\n\nSCHEDULED SEQUENCE -- PENDING\n  01  SEATTLE METRO      open critical breakers\n  02  PORTLAND          absorb shed load\n  03  OREGON            safety shutdown, sequential\n  04  NORTHERN CAL      load imbalance trip\n\nOUTSIDE TEMPERATURE: 28 F"
+          "text": "PACIFIC NORTHWEST REGIONAL GRID CONTROL -- LIVE STATUS\n\nSERVED POPULATION .............. 8,412,000  (WA / OR / N.CAL)\nSUBSTATIONS UNDER CONTROL ......       147\nAUTOMATED REBALANCING .......... DISABLED BY OPERATOR (unauthorised)\nBREAKER CONTROL ................ REMOTE SESSION ACTIVE -- SOURCE NOT RECOGNISED\nSITE BACKUP GENERATION ......... ONLINE, 72 HOUR RATING\n\nSCHEDULED SEQUENCE -- PENDING\n  01  SEATTLE METRO      open critical breakers\n  02  PORTLAND          absorb shed load\n  03  OREGON            safety shutdown, sequential\n  04  NORTHERN CAL      load imbalance trip\n\nOUTSIDE TEMPERATURE: 28 F",
+          "textVariants": [
+            {
+              "condition": "globalVars.countdown_expired && !globalVars.grid_saved",
+              "value": "PACIFIC NORTHWEST REGIONAL GRID CONTROL -- LIVE STATUS\n\nSERVED POPULATION .............. 8,412,000  (WA / OR / N.CAL)\nSUBSTATIONS UNDER CONTROL ......  124 / 147  (23 TRIPPED)\nAUTOMATED REBALANCING .......... DISABLED BY OPERATOR (unauthorised)\nBREAKER CONTROL ................ REMOTE SESSION ACTIVE -- SOURCE NOT RECOGNISED\nSITE BACKUP GENERATION ......... ONLINE, 72 HOUR RATING\n\nSCHEDULED SEQUENCE -- RUNNING\n  01  SEATTLE METRO      open critical breakers     EXECUTED\n  02  PORTLAND          absorb shed load           PENDING\n  03  OREGON            safety shutdown, sequential PENDING\n  04  NORTHERN CAL      load imbalance trip        PENDING\n\nOUTSIDE TEMPERATURE: 28 F"
+            }
+          ]
         },
         {
           "type": "chart",
@@ -2094,7 +2143,11 @@ scada_password = "CascadeWindow19"
           "position": "as-type:pnw_ats",
           "takeable": false,
           "readable": true,
-          "observations": "The automatic transfer switch -- the thing that moves the building onto its own generators when the grid drops it. Somebody has already had the cover off. The rating plate riveted to the door reads ATS-1, S/N 0098-<%= vault_pin %>.",
+          <%# Blind run A fixes (M3): the plate was at the end of a long caption that the
+              one-line toast cut off, so the serial (the vault PIN) never showed. It now
+              opens as a dialog (readDisplay) with the plate first; a copy goes to notes. %>
+          "readDisplay": "gameDisplay",
+          "observations": "Rating plate riveted to the door: ATS-1, S/N 0098-<%= vault_pin %>. The automatic transfer switch, the thing that moves the building onto its own generators when the grid drops it. Somebody has already had the cover off.",
           "text": "AUTOMATIC TRANSFER SWITCH -- ATS-1\nSTATUS: ARMED / AUTO\nRating plate: ATS-1   S/N 0098-<%= vault_pin %>\n\nThe cover screws are on the floor. There is a fresh jumper across the control terminals and a length of cable coiled underneath it that is not part of the installation. Whoever left it there did not finish, and did not take their tools.",
           "textVariants": [
             {
@@ -2257,6 +2310,7 @@ scada_password = "CascadeWindow19"
     "architect_contact": false,
     "architect_echo_heard": false,
     "hurt_line_said": false,
+    "hands_down_said": false,
     "flags_nag_sent": false,
     "debrief_requested": false,
     "debrief_timer_fired": false,

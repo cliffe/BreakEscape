@@ -13,12 +13,13 @@
   { "talk": "hollis", "knot": "start", "picks": ["Walk at him", "Put it down"] },
   {
    "said": [
-    "Q switches to fists (again for a harder punch)",
-    "Face him squarely",
-    "Keep pressing Q until the open hand shows",
-    "if you need distance"
+    "One more push and this turns into a fight.",
+    "[choice] Put it down. (Fight him.)",
+    "with his fists up. This is going to be a fight.",
+    "Fists up, face him, hit him. Q a second time throws the harder punch.",
+    "He's slower than you. If it's going badly, open hand and walk away from him."
    ],
-   "notSaid": ["stows", "Or walk away"]
+   "notSaid": ["stows", "Or walk away", "Q switches to fists"]
   },
   { "expect": { "hollis_resolved": "ko" } },
   { "enter": "operations_floor" },

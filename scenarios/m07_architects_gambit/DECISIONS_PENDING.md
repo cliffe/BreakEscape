@@ -57,5 +57,19 @@ When the clock expires (`countdown_expired`) HaX says "Seattle's dark. Step one 
 
 **Orchestrator on L1 (2026-10-14):** mission-local and reversible, so going ahead in the next fix round: a video-wall text variant and a one-red-panel sprite for `countdown_expired`, then turn the wall's light red. Overrule if you'd rather keep it amber.
 
+**L1 applied (blind run A fix round, 2026-10-14):** new sprite `pnw_video_wall_running1` (`make_pnw_props.py --only video_running`, same 159x42 frame, drawn at native size: the top-left Seattle map panel dark red with red lines), wired as the `situation_board`'s `spriteVariants`; `textVariants` (SCHEDULED SEQUENCE -- RUNNING, 01 EXECUTED, 02-04 PENDING, 124 / 147 substations) and `observationVariants` ("One panel, top left, has gone red. The rest are still amber.") on `countdown_expired && !grid_saved`. The wall's emitter in that state is now red `#ff2a20`, and a new first room-light variant turns the two wall-end lights red. Lighting tour game 2483 (`--check`: ops floor variant 0) shows the red panel and the red light. After the abort everything returns to amber as before.
+
 ## D-POV. Conversation (POV) backgrounds (parked)
 Lighting closed 2026-10-14, so `room-pov-background` is next. It uses metered Gemini images (about one per room plus retries, six rooms). Needs your go-ahead on the batch. Characters are parked for your picks as usual.
+
+## E3. Engine: no way to heal (blind run A, M2)
+HP never recovers in play: after a fight the player keeps what is left until a KO resets it to 100. The engine has `window.playerHealth.heal(amount)` (`player-health.js:24`, `healPlayer` at :158), but only `utils/combat-debug.js` calls it; no ink tag, event mapping or item action reaches it. A struggling player in m07 met Park at 24 HP and was effectively told to die to heal. **Mission-side (done):** every fight choice is marked "(Fight him.)" with a warning line, Park's way out is marked (and says on the second visit that there won't be another), and HaX gives the controls before the first fight. **Recommendation (engine):** either slow regeneration out of combat (backlog "HP regen") or a `#heal:<n>` ink tag / `heal` event-mapping action, so a mission can give a first-aid kit or a breather. Not invented here.
+
+## E4. Engine: the password keypad doesn't say passwords are case-sensitive (blind run A, m7)
+"Incorrect password. 2 attempts remaining" for `cascadewindow19` against `CascadeWindow19`. The password minigame emits no event on a wrong try, so a mission can't react to it. **Mission-side stopgap (done):** HaX texts "That keypad is case-sensitive. Capital C, capital W." on the first `door_unlock_attempt` at the control-room door once the password is known (fires as the keypad opens). **Recommendation:** the minigame's wrong-password message says "Passwords are case-sensitive" when the entry matches ignoring case, or emits `door_unlock_failed` so missions can respond.
+
+## E5. Restart and reload land at the checkpoint and reopen the Mission Brief (blind run A, m1/m2)
+Same family as U11 and the backlog's "Resume in the room you left": after a KO or a reload the player is back at the start room, four rooms from where they were, with the Mission Brief popup (`show_scenario_brief: on_resume`) over it. **Mission-side (done):** the brief no longer goes stale ("You decide which" → "where it goes is your call"). The respawn position is engine work.
+
+## E6. "I'll call you back" didn't seem to close the phone (blind run A, m4)
+The hub choice does `#exit_conversation`; the blind run reported the phone stayed open. Not reproduced here (no browser session). For the Sonnet check: pick "I'll call you back" and see whether the phone closes or only returns to the contact list. If it only returns to the list, that is the phone UI's design, not a mission bug.

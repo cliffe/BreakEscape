@@ -298,7 +298,8 @@ Dr. James Mercer: So. Your decision, not mine.
 + {casualty_projection_found} [On the record, doctor. Your name, your page, your words.]
     -> ending_record
 
-+ [Away from the console, or I put you on the floor.]
+// Blind run A fixes (M1): marked, with a warning line below.
++ [Away from the console, or I put you on the floor. (Fight him.)]
     -> ending_hostile
 
 + [Go on. Walk out. You're not the emergency tonight.]
@@ -365,7 +366,7 @@ Narrator: He says it on the way out, the way a man checks for his keys.
 ~ mercer_fate = "ko"
 #set_global:mercer_fate:ko
 
-Narrator: He stands. He is fifty-eight and not quick, and he comes towards you anyway.
+Narrator: He stands. He is fifty-eight and not quick, and he comes towards you anyway. This is going to be a fight.
 
 Dr. James Mercer: You've come a very long way to be one more person who won't listen.
 

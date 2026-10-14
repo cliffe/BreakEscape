@@ -50,9 +50,13 @@ Thomas Park: Four minutes and I'd have been out. Four.
     -> projection
 + [Who's paying you to cut the backup?]
     -> paid
-+ [Then finish it and see what happens.]
+// Blind run A fixes (M1, M2): the fight choice is marked, and so is the way out.
+// On the second visit the way out says there won't be another.
++ [Then finish it and see what happens. (Fight him.)]
     -> goes_loud
-+ [Nothing. I was never here.]
++ {park_returns < 1} [Nothing. I was never here. (Back off.)]
+    -> evade
++ {park_returns >= 1} [Nothing. I was never here. (Back off. Next time he swings.)]
     -> evade
 
 === refuse ===
@@ -103,12 +107,12 @@ Thomas Park: Right.
 
 // PASS 5 alignment r2 (m7): the third visit lands here too, without "Right."
 = swing
-Narrator: He comes up off his knees with the crimping tool swinging.
+Narrator: He comes up off his knees with the crimping tool swinging. This is going to be a fight.
 -> turned
 
 // PASS 5 puzzle chains r1 (F1): he is already standing in last_chance.
 = lunge
-Narrator: You give ground. He comes after you with the crimping tool.
+Narrator: You give ground. He comes after you with the crimping tool. This is going to be a fight.
 -> turned
 
 = turned
@@ -151,7 +155,7 @@ Narrator: He comes up off his knees with the crimping tool in his fist, and wait
 Thomas Park: I said there wasn't a third. You've got one sentence.
 + [(Hold up the projection.)]
     -> projection
-+ [(Step back.)]
++ [(Step back. He'll come at you.)]
     -> goes_loud.lunge
 
 === gone ===

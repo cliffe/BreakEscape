@@ -211,7 +211,9 @@ Narrator: She stops working. For the first time, both her hands are still.
 
 Elena Rodriguez: Told? Nothing. I was copied on their schedule. What were you told about Austin?
 
-+ [Dormant ninety days. No projected fatalities. That's our brief.]
+// Blind run A fixes (m3): names the source the player carries (the threat desk
+// summary in the start kit), so a player who skipped the Trojan Horse brief isn't guessing.
++ [The desk summary says ninety days dormant. No deaths projected.]
     ~ told_ninety = true
     -> revision_beat
 + [Why Austin?]

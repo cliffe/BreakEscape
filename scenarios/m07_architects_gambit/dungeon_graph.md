@@ -2,7 +2,7 @@
 
 # m07_architects_gambit — Scenario Graph Reference
 
-Four ENTROPY operations went live inside the same sixty seconds. SAFETYNET has one agent in range and one tactical team. You are the agent, forty minutes from a grid control facility outside Portland, where a loaded sequence can black out three states in winter. The team can reach one of the other three crises. You decide which. Two go unanswered, and somebody will read out what happened at both.
+Four ENTROPY operations went live inside the same sixty seconds. SAFETYNET has one agent in range and one tactical team. You are the agent, forty minutes from a grid control facility outside Portland, where a loaded sequence can black out three states in winter. The team can reach one of the other three crises, and where it goes is your call. Two go unanswered, and somebody will read out what happened at both.
 
 ## Scenario Statistics
 

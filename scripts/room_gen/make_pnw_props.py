@@ -174,11 +174,15 @@ def visitor_ledger():
 
 # --- operations floor ------------------------------------------------------------
 
-def video_wall():
+def video_wall(running=False, name="pnw_video_wall1"):
     """The situation board: a 4x2 wall of screens in a black frame, every panel amber.
     Top row: the regional map (amber lines, nodes); load curve; breaker status grid; an
     alarm list. Bottom row: REMOTE SESSION in red, rebalancing DISABLED, the clock, the
-    population figure as bars."""
+    population figure as bars.
+
+    running=True (blind run A fixes, L1): the face for countdown_expired. Same frame,
+    same panels, but the top-left map panel (Seattle, step 01) has gone red: dark red
+    ground, red lines, bright nodes. Swapped in by the object's spriteVariants."""
     w, h = 159, 42
     c = Canvas(w, h)
     c.rect(0, 0, w - 1, h - 1, (20, 22, 28))
@@ -192,10 +196,14 @@ def video_wall():
             k = order[row * 5 + col]
             if k == 0:   # map
                 pts = [(4, 14), (9, 9), (15, 11), (21, 5), (26, 8), (13, 4), (9, 9)]
+                if running:   # step 01 executed: the Seattle panel goes red
+                    c.rect(x0, y0, x0 + pw - 1, y0 + ph - 1, (70, 10, 14))
+                    c.hline(x0, x0 + pw - 1, y0, (120, 24, 24))
+                lc, nc = (RED, (255, 90, 80)) if running else (AMBER_DIM, AMBER)
                 for a, b in zip(pts, pts[1:]):
-                    line(c, x0 + a[0], y0 + a[1], x0 + b[0], y0 + b[1], AMBER_DIM)
+                    line(c, x0 + a[0], y0 + a[1], x0 + b[0], y0 + b[1], lc)
                 for p in pts:
-                    c.px(x0 + p[0], y0 + p[1], AMBER)
+                    c.px(x0 + p[0], y0 + p[1], nc)
             elif k == 1:  # load curve
                 for i in range(pw - 4):
                     yy = 12 - int(5 * math.sin(i / 4.0)) - i // 6
@@ -229,7 +237,7 @@ def video_wall():
             else:
                 for i, hh in enumerate((6, 9, 12, 8, 11, 7)):
                     c.rect(x0 + 3 + i * 4, y0 + ph - 3 - hh, x0 + 5 + i * 4, y0 + ph - 3, AMBER)
-    c.save(OBJ, "pnw_video_wall1")
+    c.save(OBJ, name)
 
 
 def substation_map():
@@ -616,7 +624,8 @@ def main():
         only = set(sys.argv[sys.argv.index("--only") + 1].split(","))
     jobs = {
         "logo": logo_sign, "evac": evac_board, "nerc": nerc_notice, "muster": muster_sign,
-        "ledger": visitor_ledger, "video": video_wall, "map": substation_map, "pos": console_pos,
+        "ledger": visitor_ledger, "video": video_wall,
+        "video_running": lambda: video_wall(running=True, name="pnw_video_wall_running1"), "map": substation_map, "pos": console_pos,
         "clip": clip_note, "tag": backup_tag, "countdown": countdown, "countdown_states": countdown_states, "mimic": mimic_board,
         "log": plant_log, "genplates": gen_plates, "ear": ear_sign, "ladder": cable_ladder,
         "splice": splice, "printer": portable_printer, "master": master_desk,

@@ -746,3 +746,96 @@ Full detail in `LIGHTING_PLAN.md`; evidence in `build_evidence/lighting_c<N>/` (
 | 5 (closing, plus browser check game 2469) | 0 | 0 | 3 | Wording and housekeeping fixed; violet-grey armed ends accepted. Browser A-G pass: strike on entry, state changes, two reloads hold the variants and faces, ATS-1 blinks |
 
 Room modes: checkpoint on, ops on with ceiling pools off (the video wall is the light), server hall motion (lit with Elena), SCADA on with pools off (the countdown is the light), generator hall motion (dark until entered), cable vault on with one faulty fitting. No engine change, no ink or dialogue fields touched; `scenario.json.erb` edits are the seven lighting blocks and the countdown's `spriteVariants`. Dressing minors picked up: c5 m-1 ops chair removed, m-2 ATS cover feet 100 → 90, m-3 trench redrawn, m-4 docstrings; walk F1 mimic raised 8 px. New pending item: L1 (situation board text after step one). Next: POV backgrounds.
+
+## Phase 8 playtests: blind run A fixes
+
+Input: `PASS5_BLIND_STRUGGLE_A.md` (blind struggling player, game 2473, credits reached: 0 blockers, 3 majors, 10 minors; fun 4, pacing 4, clarity 3, openness 4, teaching 3), plus the orchestrator's L1 decision. Mission files and m07's own prop builder only; no engine code changed. Dialogue and lighting are closed, so line changes are kept to what the findings need. No browser session apart from the scripted lighting tour (game 2483). Not committed.
+
+| # | Sev. | Finding | Outcome |
+|---|---|---|---|
+| M1 | major | Fighting undiscoverable: Hollis's fight starts from a dialogue choice, the controls only arrive as HaX texts mid-fight | **Fixed (mission side).** (a) HaX texts the controls 2.5 s after the briefing closes, before Hollis can see the player: "The checkpoint guard is bought. If anyone swings at you: Q for fists, E or click to punch, face them squarely. Q until the open hand shows to walk." (b) Every choice that starts a fight is marked "(Fight him.)" (Hollis "Put it down.", Park "Then finish it...", Mercer "Away from the console...") and the line after it says "This is going to be a fight." Hollis's `hostile_option` warns a step earlier ("One more push and this turns into a fight."). (c) Hollis's two in-fight texts no longer repeat the early text: they add the harder punch and walking away. Park's and Mercer's in-fight texts stay as they were (the early text is long gone by then). (d) The run's lost minute at the terminal with fists up: a once-only "Hands down" text 7 s after the first KO of the three (m05's pattern, `hands_down_said`) |
+| M2 | major | HP never recovers; Park's vault chat put a 24 HP player into a fight they didn't see coming | **Fixed in part (mission side); engine item E3.** Park's fight choice is marked, his way out is marked "(Back off.)", and on the second visit "(Back off. Next time he swings.)" so the third-visit swing is foreseeable; "(Step back.)" at his last chance now reads "(Step back. He'll come at you.)"; his swing and lunge lines say "This is going to be a fight." The third visit without the projection still turns him hostile (alignment r2 m7, a real cost for backing off twice), now warned twice. No heal hook exists: `playerHealth.heal` is called only by `combat-debug.js`; logged as E3, nothing invented |
+| M3 | major | The rating-plate serial (the vault PIN) sat past the ellipsis of a one-line caption | **Fixed.** The transfer switch now opens as a dialog (`readDisplay: gameDisplay`, as the plant log does), and its observation starts with the plate: "Rating plate riveted to the door: ATS-1, S/N 0098-4703. ..." The text block still carries the plate line in both variants; a copy goes to notes. Same puzzle |
+| L1 | (decision) | Video wall stays amber after step one runs | **Applied** (DECISIONS_PENDING L1): `pnw_video_wall_running1` drawn in `make_pnw_props.py` (`video_running`; same 159x42 frame, front-on, native pixels; the base sprite regenerates byte-identical), `spriteVariants` + `textVariants` + `observationVariants` on `countdown_expired && !grid_saved`, the wall emitter red in that state and a new room-light variant turning the wall-end lights red. Lighting tour game 2483 `--check`: ops floor variant 0, red panel and red light seen |
+| m1 | minor | Restart replays a stale Mission Brief ("You decide which") | **Fixed (mission side):** `scenario_brief` "The team can reach one of the other three crises. You decide which." → "...crises, and where it goes is your call." Respawn at the checkpoint is engine (E5, with U11) |
+| m2 | minor | Reload: title, Resume overlay over the brief, checkpoint start | Engine (E5). Not changed |
+| m3 | minor | Elena's "Dormant ninety days..." choice presupposes the skipped Trojan Horse brief | **Fixed:** the choice names the source the player carries from the start (the Threat Desk Summary says "Dormancy: 90 days" and "NONE PROJECTED"): "[The desk summary says ninety days dormant. No deaths projected.]" Her reply is unchanged (`told_ninety`) |
+| m4 | minor | "I'm stuck on something" opens a sub-menu that looks like nothing happened; "I'll call you back" didn't close the phone | **Fixed in part:** HaX now answers the pick with "Tell me where." before the sub-menu (a choice body, so a reopen doesn't replay it). The phone-close report is logged as E6 for the Sonnet check |
+| m5 | minor | "NFS and netcat guide's on your terminal" but the guide arrives as an inventory item | **Fixed:** the RFID, NFS and SSH hand-overs say "in your kit" (the house wording, m04-m06); the other three already said "uploaded"/"sent" |
+| m6 | minor | The Architect's call holds the phone over HaX | Not acted on: intended (his calls are timed interruptions); the HaX thread is one tap away afterwards |
+| m7 | minor | Password case not hinted | **Stopgap:** HaX text on the first `door_unlock_attempt` at the control-room door once `scada_password_found` is true: "That keypad is case-sensitive. Capital C, capital W." Engine fix E4 |
+| m8 | minor | The redirect window closes with a line that doesn't say so plainly | **Fixed:** the committed flag-3 text "...The team stays where it is now..." → "...The window to move the team just shut..." The run saw no earlier warning because it submitted flag 3 before flag 2 (standalone accepts any order); with the VM, flag 2's "Before you log in: if the team's moving, move it now" text and Elena's verdict text come first |
+| m9 | minor | Hollis's badge hard to spot in a doorway | Not acted on: the KO text says where; position depends on where the fight ends |
+| m10 | minor | Netherton won't recommend | Not acted on: intended (the choice is the player's; Elena is the guidance) |
+| worst line | — | Ray "Try again, and stand still while you do it." (read as a hint) | **Fixed:** "Nice try. Keep your hands where I can see them." |
+
+### Decisions taken (with reasons)
+
+- **The early controls text goes out on the briefing closing**, not on the ops floor: Hollis is in the start room, so the ops floor is after the first possible fight. The briefing never replays (`skipIfGlobal: briefing_played`), so the text can't repeat.
+- **Park's third-visit swing kept:** backing off twice is a designed cost (alignment r2 m7); it is now announced on his second-visit way-out choice as well as in his and HaX's lines. Removing it would take the stakes out of the vault.
+- **Elena's choice cites the desk summary** rather than gating it on a "read the Trojan brief" global: every player carries the summary from the start, so the line is true for all of them and needs no new state.
+- **Case hint as a HaX text** rather than an extra spoken line from Elena: no audio cost, and it reaches a player who got the password from the listener too.
+- **The early text keeps "The checkpoint guard is bought"** as its first clause, so it reads as HaX's warning about this building, not as a tutorial.
+
+### Route driver
+
+New `r32_blind_a_fights_marked`: the briefing-close controls text; Hollis's bluff reply, the `hostile_option` warning, the marked choice and fight line, the two new in-fight texts (and `notSaid` for the old wording); the hands-down text on Hollis's KO and not again on Park's; "Tell me where."; Elena's desk-summary choice; the case hint; Park's marked choices on the first and second visits and the third-visit warning; Mercer's marked choice and fight line; the flag-3 "window just shut" text. Updated: r20 and r3 (Hollis's in-fight texts, r3 also the hands-down text), r21 ("in your kit"), r2 (Elena's choice). Picks match by substring, so the other routes' "Nothing. I was never here." and "Put it down" still select the renamed choices.
+
+### Checks (static, plus the scripted lighting tour)
+
+- Ink compiles (8 files; the one END warning in the briefing is the existing handoff).
+- Routes r1-r32: every expectation met; longest run without a choice 9, never above.
+- `dialoguelint`: unchanged from the dialogue close (one "however", one not-x-but-y, three blank-reentry notes, the crowded-hub note); timed texts max 30 words.
+- `reopencheck` (missions.json): 0 problems on every phone; m07 HaX 1800 reopens, 1279 re-runs; Architect 472/316.
+- `loopcheck` (200 steps x 6 strategies): Hollis start and hub; Park start (fresh, second visit, third visit with the projection); Mercer, Elena, HaX start and hub (`vm_terminal_used`): no runtime errors.
+- Validator, full: completes, schema passes; dungeon graph regenerated. New warnings are only the same-event notes for `npc_ko:ray_hollis`, `npc_ko:thomas_park` and `npc_ko:james_mercer` (the hands-down row beside each KO text, intended, as in m05).
+- `check_door_alignment.py`: all m07 door pairs OK.
+- `lighting-tour.sh ... operations_floor scada_control --close-intro --check --globals cascade_armed=true,countdown_expired=true` (game 2483): ops floor `variant=0`, the red panel and red glow visible (`scratchpad/m07-blindA-fix/tour_expired/`).
+
+### Spoken lines changed (old → new)
+
+Ray Hollis:
+- "Try again, and stand still while you do it." → "Nice try. Keep your hands where I can see them."
+- Narrator (`hostile_option`): "He backs into the turnstile frame. Nowhere left to go." → "... Nowhere left to go. One more push and this turns into a fight."
+- Choice (not voiced): "Put it down." → "Put it down. (Fight him.)"
+- Narrator: "He comes off the frame at you." → "He comes off the frame at you with his fists up. This is going to be a fight."
+
+Thomas Park:
+- Choice: "Then finish it and see what happens." → "Then finish it and see what happens. (Fight him.)"
+- Choice: "Nothing. I was never here." → "Nothing. I was never here. (Back off.)" (first visit) / "Nothing. I was never here. (Back off. Next time he swings.)" (second visit)
+- Choice: "(Step back.)" → "(Step back. He'll come at you.)"
+- Narrator: "He comes up off his knees with the crimping tool swinging." → "... swinging. This is going to be a fight."
+- Narrator: "You give ground. He comes after you with the crimping tool." → "... with the crimping tool. This is going to be a fight."
+
+Dr. James Mercer:
+- Choice: "Away from the console, or I put you on the floor." → "... on the floor. (Fight him.)"
+- Narrator: "He stands. He is fifty-eight and not quick, and he comes towards you anyway." → "... anyway. This is going to be a fight."
+
+Elena Rodriguez:
+- Choice: "Dormant ninety days. No projected fatalities. That's our brief." → "The desk summary says ninety days dormant. No deaths projected."
+
+Agent HaX (phone ink):
+- New, after "I'm stuck on something.": "Tell me where."
+- "RFID cloning guide's on your terminal." → "RFID cloning guide's in your kit."
+- "NFS and netcat guide's on your terminal." → "NFS and netcat guide's in your kit."
+- "SSH guide's on your terminal. The worked example's..." → "SSH guide's in your kit. The worked example's..."
+
+Agent HaX (texts):
+- New, on the briefing closing: "The checkpoint guard is bought. If anyone swings at you: Q for fists, E or click to punch, face them squarely. Q until the open hand shows to walk."
+- Hollis in-fight 1: "He's coming for you. Q switches to fists (again for a harder punch), then E or click when he's in front. Face him squarely." → "He's coming for you. Fists up, face him, hit him. Q a second time throws the harder punch."
+- Hollis in-fight 2: "Keep pressing Q until the open hand shows to walk by clicking. He's slower than you if you need distance." → "He's slower than you. If it's going badly, open hand and walk away from him."
+- New, 7 s after the first KO: "Hands down: press Q until the open hand shows. While your fists are up, nothing you click will open."
+- New, at the control-room keypad: "That keypad is case-sensitive. Capital C, capital W."
+- Flag 3 (committed): "They saw you. Sequence armed: fifteen minutes. The team stays where it is now. A user shell..." → "They saw you. Sequence armed: fifteen minutes. The window to move the team just shut. A user shell..."
+
+Object text (not voiced): Mission Brief "You decide which." → "and where it goes is your call."; Backup Power Transfer Switch observation starts with the plate and opens as a dialog; Grid Situation Board text, observation and sprite variants for `countdown_expired`.
+
+#### Browser checks owed (Sonnet)
+
+- After the briefing closes (tutorial declined), HaX's controls text is in the phone before Hollis's sight challenge; does it collide with the tutorial prompt or the Mission Brief popup?
+- Hollis: "Walk at him" → warning line → "Put it down. (Fight him.)" → fight line; the two in-fight texts; the hands-down text after the KO.
+- The transfer switch opens a dialog with the full serial on screen at 1400x1000.
+- Park's marked choices on the first and second visits; the third-visit swing with its warning.
+- The control-room keypad: the case text arrives as the keypad opens, and is readable over it.
+- With `countdown_expired` set: the video wall shows the red panel, reads RUNNING / 01 EXECUTED, and the wall light is red; after `grid_saved` it is amber again.
+- "I'll call you back": does the phone close (E6)?

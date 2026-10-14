@@ -118,7 +118,7 @@ Narrator: He doesn't check a list. He watches your hands.
 
 Ray Hollis: Contractors came out with everyone else. I walked them out myself.
 
-Ray Hollis: Try again, and stand still while you do it.
+Ray Hollis: Nice try. Keep your hands where I can see them.
 -> back
 
 === stakes ===
@@ -235,11 +235,12 @@ Ray Hollis: No. No, I've thought about that room. I'm not sitting in it.
     -> deal_take
 
 === hostile_option ===
-Narrator: He backs into the turnstile frame. Nowhere left to go.
+// Blind run A fixes (M1): say a fight is one step away, and mark the choice that starts it.
+Narrator: He backs into the turnstile frame. Nowhere left to go. One more push and this turns into a fight.
 
 Ray Hollis: Stay there. STAY THERE.
 
-+ [Put it down.]
++ [Put it down. (Fight him.)]
     -> goes_loud
 + [I'm stepping back. Look at me. I'm stepping back.]
     -> evade
@@ -247,7 +248,7 @@ Ray Hollis: Stay there. STAY THERE.
 === goes_loud ===
 Ray Hollis: I can't afford you. I'm sorry. I mean it.
 
-Narrator: He comes off the frame at you.
+Narrator: He comes off the frame at you with his fists up. This is going to be a fight.
 
 ~ hollis_resolved = "ko"
 #set_global:hollis_resolved:ko
