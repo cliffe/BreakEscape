@@ -1,0 +1,20 @@
+{ "steps": [
+ { "note": "R27 (PASS 5 design r2, N4/N2a/browser N3; inverted from the c2 reviewer's probe pC): the briefing closed uncommitted and the player never commits. After the login the ladder gives the commit as a prefix and still names the next step (root). Elena turned gives the password, so the door line credits her. Then root, the abort and Bring me in with the vault unvisited: no plant line." },
+ { "talk": "briefing", "picks": ["Understood. Talk to me"] },
+ { "enter": "operations_floor" }, { "pickup": "hollis_server_badge" }, { "enter": "server_room" },
+ { "event": "object_interacted", "data": { "objectType": "vm-launcher", "objectName": "Kali" } },
+ { "flag": 1 },
+ { "set": { "elena_outcome": "turned", "scada_password_found": true } },
+ { "flag": 2 },
+ { "talk": "phone", "knot": "hub", "picks": ["Where do I stand", "I'll call you back"] },
+ { "said": ["The team's still waiting on your call. Make it first, then:", "Open the control room door, north of the server hall", "Elena gave you the password."], "notSaid": ["Tell me where it goes", "The password's in the listener capture"] },
+ { "enter": "scada_control" }, { "flag": 3 },
+ { "talk": "phone", "knot": "hub", "picks": ["Where do I stand", "I'll call you back"] },
+ { "said": ["The team's still waiting on your call. Make it first, then:", "Get root on their host and put the root flag through the relay."] },
+ { "flag": 4 }, { "set": { "grid_saved": true } },
+ { "talk": "phone", "knot": "hub", "picks": ["Where do I stand", "I'll call you back"] },
+ { "said": ["It's done. The grid's holding. Sweep what you want"], "notSaid": ["The plant's south of the server hall", "The team's still waiting on your call"] },
+ { "talk": "phone", "knot": "hub", "picks": ["Bring me in"] },
+ { "talk": "phone", "knot": "hub", "picks": ["Where do I stand", "I'll call you back"] },
+ { "said": ["Next door you go through"], "notSaid": ["The plant's south of the server hall"] }
+]}

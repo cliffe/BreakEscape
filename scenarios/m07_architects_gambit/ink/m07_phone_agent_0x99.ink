@@ -132,7 +132,9 @@ Get past the checkpoint to the operations floor.
     North of the server hall, the control room, on a password. The engineer in the server hall knows it, and their own network leaks it.
     South, the plant: keyed door, then a keypad down to the cable vault.
     One checkpoint guard is bought. Assume every reader logs you.
-    -> first_call_committed_choices
+    // PASS 5 design r2 (browser N2): back to the hub, so a reopened thread
+    // lands on "Where do I stand?" and not on this sub-menu.
+    -> hub
 + [What's the clock?]
     {grid_saved:
         No clock now. The abort's in and the grid's holding.
@@ -142,10 +144,12 @@ Get past the checkpoint to the operations floor.
         {
         - countdown_expired and flag4_submitted:
             Step one ran. Seattle's dark. Steps two to four wait on the abort, and the console in the control room will take it now.
+            -> door_line ->
         - countdown_expired:
             Step one ran. The rest waits on the abort. Root first, then the console.
         - cascade_armed and flag4_submitted:
             It's running, and root's in. The console in the control room takes the abort now.
+            -> door_line ->
         - cascade_armed:
             It's running. Fifteen minutes from your login on their host. Get root, then put the abort in at the control room console.
         - else:
@@ -153,7 +157,7 @@ Get past the checkpoint to the operations floor.
             So open the control room door first. The console in there is the only place the abort goes in.
         }
     }
-    -> first_call_committed_choices
+    -> hub
 + [Understood. Let's go.]
     Call me the second you hit something you can't open.
     -> hub
@@ -323,15 +327,22 @@ Get past the checkpoint to the operations floor. Call me when you hit something 
 // capture). Text only, then the hub; owns no choices, so a reopen can't land here.
 // ===========================================
 === report_progress ===
+// PASS 5 design r2 (N4): the commit is a prefix, not a stop; the first
+// unfinished progress step still follows (the commit isn't in concludeRequires).
+{not team_assigned and not grid_saved:
+    The team's still waiting on your call. Make it first, then:
+}
 {
 - grid_saved and debrief_requested and flag1_submitted and flag2_submitted and flag3_submitted and flag4_submitted:
     It's done. Netherton's waiting. Next door you go through, he's on the link.
 - grid_saved and flag1_submitted and flag2_submitted and flag3_submitted and flag4_submitted:
     It's done. The grid's holding. Sweep what you want, then tell me to bring you in.
+// PASS 5 design r2 (N2b): once the debrief is requested (Bring me in, or the
+// fallback timer) "Bring me in" is gone and the debrief opens on the last flag.
+- grid_saved and debrief_requested:
+    Grid's held. Put the rest of what you took through the relay and he's on straight after.
 - grid_saved:
     Grid's held. Some of what you took off their host hasn't gone through the relay. Submit the rest, then call me.
-- not team_assigned:
-    The team's still waiting on your call. Make it first. Tell me where it goes and I'll pass it up.
 - not server_hall_reached:
     {
     - badge_obtained:
@@ -353,7 +364,7 @@ Get past the checkpoint to the operations floor. Call me when you hit something 
     Scan every port on their host. Something answers whoever connects. Its flag goes through the relay.
 - not scada_door_reached and not flag3_submitted:
     Open the control room door, north of the server hall, before you log in on their host.
-    {scada_password_found: You've got the password.|Elena knows the password, and their listener gives it out.}
+    -> password_line ->
 - not flag3_submitted:
     One SSH login: the name from the share, the password from the listener. The flag's in its home directory. The moment you log in, the clock starts.
     {projection_revised and team_assigned and team_assignment != "trojan_horse" and not team_redirected and not redirect_window_closed:
@@ -369,11 +380,37 @@ Get past the checkpoint to the operations floor. Call me when you hit something 
     }
 - else:
     Root's in. Put the abort in at the console in the control room.
+    -> door_line ->
 }
-{not vault_entered and server_hall_reached:
+// PASS 5 design r2 (N2a, browser O2): not after the abort. The plant aim says
+// the building is the police's once the debrief is called, and the sweep line
+// already offers the rest of the building.
+{not vault_entered and server_hall_reached and not grid_saved and not debrief_requested:
     The plant's south of the server hall, if you want to see how they got in. That part's optional.
 }
 -> hub
+
+// PASS 5 design r2 (N3): root in, control room never entered. Tunnel, text only.
+=== door_line ===
+{not scada_door_reached:
+    The door's north of the server hall.
+    -> password_line ->
+}
+->->
+
+// PASS 5 design r2 (browser N3): "You've got the password." keyed on where the
+// player actually has it. scada_password_found is set by flag 2 before the
+// capture is opened, so that branch points at the capture instead.
+=== password_line ===
+{
+- elena_outcome == "turned":
+    Elena gave you the password.
+- scada_password_found:
+    The password's in the listener capture in your inventory.
+- else:
+    Elena knows the password, and their listener gives it out.
+}
+->->
 
 // PASS 5 scenario design r1 (m15): is any field guide offered and not yet sent?
 === function guide_waiting() ===
@@ -552,11 +589,7 @@ The team's on the ground on a live objective. Pull them now and we strand two op
     You found the numbers were wrong. That goes in the report. Now finish the part that's still yours.
 }
 
--> redirect_closed_choices
-
-=== redirect_closed_choices ===
-+ [Understood.]
-    -> hub
+-> hub
 
 // ===========================================
 // MORAL SOUNDING BOARD
@@ -763,6 +796,10 @@ He won't wait for a third look. Have it in your hand when you go back down.
 
 // ===========================================
 // FIELD GUIDES -- delivery half
+// PASS 5 design r2 (browser N2): each hand-over prints and goes to the hub, as
+// m04's do. The one-choice "Got it." knots are gone: a player who closed the
+// phone on one reopened to that single choice, not the hub. The give_item
+// stays safe because the story now rests on the hub, never in this knot.
 // ===========================================
 
 === guide_rfid ===
@@ -774,13 +811,8 @@ The reader trusts the card and never asks who's holding it.
 
 Hollis's badge works, and so does a copy: stand close while he talks and the cloner reads it. Or the badge station behind his desk.
 
--> guide_rfid_choices
-
-// PASS 3 (E13): the #give_item stays in the text half above, so a re-navigation can't replay it.
-=== guide_rfid_choices ===
-+ [Got it.]
-    Quiet and quick. Go.
-    -> hub
+Quiet and quick. Go.
+-> hub
 
 === guide_lockpicking ===
 ~ lockpicking_guide_hint_given = true
@@ -791,13 +823,8 @@ Light tension, find the binding pin, set it, repeat. Don't force it.
 
 You're carrying picks. That keyed door doesn't need its key.
 
--> guide_lockpicking_choices
-
-// PASS 3 (E13): the #give_item stays in the text half above, so a re-navigation can't replay it.
-=== guide_lockpicking_choices ===
-+ [Received.]
-    Patient hands open any of those.
-    -> hub
+Patient hands open any of those.
+-> hub
 
 === guide_recon ===
 ~ recon_guide_hint_given = true
@@ -808,13 +835,8 @@ Know what's on the network before you touch anything.
 
 Their host turns up in a sweep. Find it first.
 
--> guide_recon_choices
-
-// PASS 3 (E13): the #give_item stays in the text half above, so a re-navigation can't replay it.
-=== guide_recon_choices ===
-+ [Understood.]
-    Go.
-    -> hub
+Go.
+-> hub
 
 === guide_nfs ===
 ~ nfs_guide_hint_given = true
@@ -824,13 +846,8 @@ NFS and netcat guide's on your terminal.
 Read what the host shares, without changing it.
 
 Then scan every port, not just the usual ones, and connect to anything that answers. Some services hand over more than a banner.
--> guide_nfs_choices
-
-// PASS 3 (E13): the #give_item stays in the text half above, so a re-navigation can't replay it.
-=== guide_nfs_choices ===
-+ [Copy.]
-    Read, don't touch. Go.
-    -> hub
+Read, don't touch. Go.
+-> hub
 
 === guide_ssh ===
 ~ ssh_guide_hint_given = true
@@ -839,13 +856,8 @@ SSH guide's on your terminal. The worked example's the hospital job. Skip the Hy
 
 You've got a name from the share and a password from the listener. That's one login. Use it and look in the home directory.
 
--> guide_ssh_choices
-
-// PASS 3 (E13): the #give_item stays in the text half above, so a re-navigation can't replay it.
-=== guide_ssh_choices ===
-+ [Copy.]
-    Log in when the control room door's open, not before. Go.
-    -> hub
+Log in when the control room door's open, not before. Go.
+-> hub
 
 === guide_privesc ===
 ~ privesc_guide_hint_given = true
@@ -854,10 +866,5 @@ Privilege escalation guide uploaded.
 
 Look for what they misconfigured before you think about breaking anything. The smallest step to root is the quietest.
 
--> guide_privesc_choices
-
-// PASS 3 (E13): the #give_item stays in the text half above, so a re-navigation can't replay it.
-=== guide_privesc_choices ===
-+ [Received.]
-    Walk through the door they left open. Go.
-    -> hub
+Walk through the door they left open. Go.
+-> hub

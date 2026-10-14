@@ -442,3 +442,61 @@ Not voiced: console description, display variant ("AUTOMATED SEQUENCE -- RUNNING
 - Browser check owed: "Where do I stand?" at two or three stages; the field-guide sub-menu; the console click before flag 4 (HaX text over the lock screen); the ops floor showing one new aim and the server hall two; the clock running out (HaX text, display variant); a reload after the abort (end track).
 - Still owed from puzzle chains: the two-part controls texts at a hostile Hollis; the clone choice on the sighting after the ops floor.
 - Engine: E1 (flag lock with no `requires`). User: E2 (guide titles), S1/U3 (SecGen claims, unchanged).
+
+### Stage 2 scenario design, closing fix round (fixer, 2026-10-14)
+
+Inputs: `DESIGN_REVIEW_P5_C2.md` (N1–N4; probes pA–pC) and `PASS5_DESIGN_R1_BROWSER.md` (N1–N3, O2). No SecGen XML and none of the four restricted guides were opened. No browser session. Nothing committed. Files: the phone and Architect inks (recompiled), `DECISIONS_PENDING.md`, routes r2, r21, r22 changed and r24–r27 new.
+
+| # | Source | Sev. | Finding | Outcome |
+|---|---|---|---|---|
+| N1 | review | minor | A player who ignores the Architect hears his taunts newest first | **Fixed, extended.** T-20 now needs `not architect_t5_played` in `start`, `parked` and `dead_air_choices`, as T-10 already did. T-5 and T-1 (and T-10, which had the same gap) open as first contact when `not heard_t30`, set `heard_t30` and a local `late_first_contact` (was `t20_first_contact`). `taunt_t1` sets `heard_t5`, so T-5 never follows T-1. Each close (T-10, T-5, T-1, as T-20 did) carries the echo line once when its taunt was first contact, so the teacher thread survives. Two additions the probe showed: T-1 as first contact no longer ends "He has hung up first every time.", and T-1 opened after the clock ran out no longer starts "One minute." r24, r25 |
+| N2 | review | minor | After the debrief is requested, the ladder sends the player the wrong way | **Fixed.** (a) The plant line needs `not grid_saved and not debrief_requested` as well, which also covers browser O2 (the line showed after the abort). (b) New row `grid_saved and debrief_requested` (flag missing) above the "Submit the rest, then call me." row. r22, r26, r27 |
+| N3 | review | minor | Root in, control room never entered: nothing mentions the door | **Fixed** with a text-only tunnel `door_line` (`not scada_door_reached` → "The door's north of the server hall." plus the password line), called from the ladder's root-in row and the clock answer's two `flag4_submitted` rows. r22, r26 |
+| N4 | review | minor | The ladder holds on the commit and gives nothing else | **Fixed.** The commit row is now a prefix, `{not team_assigned and not grid_saved: …Make it first, then:}`, and the first unfinished progress step follows. r21, r22, r27 |
+| B-N1 | browser | minor (engine) | A hit closes the phone | **Deferred to the engine.** Already in `docs/IDEAS_BACKLOG.md` ("A hit closes the phone"); pointer logged as U12 in `DECISIONS_PENDING.md` |
+| B-N2 | browser | minor | HaX's thread reopens inside the last sub-menu | **Fixed.** Phone chats reopen at the choices the story is waiting on (`phone-chat-conversation.js` re-navigates to the knot that owns them; gotcha 0b and the phone note under gotcha 2), so every sub-menu answer now ends on the hub. The layout and clock answers divert to `hub`, not back to `first_call_committed_choices`. The six guide hand-overs print and go to the hub, as m04's do; the one-choice "Got it." / "Received." / "Understood." / "Copy." knots are gone and HaX's reply to each is the hand-over's last line. `redirect_closed` lost its one-choice "Understood." the same way. The `#give_item` can't replay, because the story rests on the hub. r21, r22 and r26 reopen with no knot and check the hub's "Where do I stand?" |
+| B-N3 | browser | minor | "You've got the password." shows before the capture is opened | **Fixed by wording,** true either way: a text-only tunnel `password_line`: Elena turned → "Elena gave you the password."; flag 2 in → "The password's in the listener capture in your inventory."; neither → unchanged. Wording was chosen over a new `capture_read` latch, because it needs no scenario change and points a player who hasn't opened the capture at it. r21, r26, r27 |
+| B-O2 | browser | obs. | Plant line after the abort | **Fixed** with N2(a) |
+
+#### Decisions taken (fixer, with reasons)
+
+- **N1 covers T-10 too.** The review named T-5 and T-1; T-10 had the same missing opener (a player held at the checkpoint for thirty minutes). One local latch, `late_first_contact`, drives the opener-and-echo pair for all four late taunts.
+- **T-20 is still not retired by T-10.** A player who ignores both hears T-10 and then T-20. T-20 is the taunt that names the two operations left, and T-10 doesn't, so retiring it would lose that unless T-5 also plays. Left for the dialogue stage to weigh.
+- **`field_guides` itself is still a choices-only sub-menu.** A player who closes the phone with that list open comes back to it, with the sticky "Never mind." to get out. Folding the guides into the hub would bring back the crowding fixed in round 1 (m15).
+- **The plant line is hidden from the abort on,** not only after the debrief is requested. The sweep line ("Sweep what you want…") already offers the building, and the browser check read the line after the win as noise.
+
+#### Route driver
+
+Changed: r2 (exits the redirect-closed answer with "I'll call you back."), r21 (the commit prefix, the guide hand-overs without the acknowledgement, a no-knot reopen after the RFID guide, the password line), r22 (the commit prefix with the next step, the door line in the clock answer, a no-knot reopen after the clock answer, no plant line after the abort). New, from the c2 probes inverted: `r24_architect_ignored_t5_first_contact` (pA at minute 23: T-5 as first contact with the echo line, no T-20, then T-1 in order), `r25_architect_ignored_t1_after_expiry` (pA as probed: only T-1, no "One minute", no "every time", nothing after), `r26_ladder_door_never_opened_fallback` (pB: the door line in the ladder and the clock answer, the reopen lands on the hub, the fallback-timer row), `r27_uncommitted_ladder_then_debrief` (pC: the commit prefix with the next step, Elena's password line, no plant line after the abort or after Bring me in). r1–r27: all 27 pass.
+
+#### Checks
+
+- Ink compiles (8 files, 0 failed; the briefing's END warning as before).
+- Validator, full: schema passed, geometry and door alignment OK, graph regenerated (no change). 13 onceOnly-overlap notes and the person-chat and credits notes, all as before.
+- dialoguelint: 0 errors; totals unchanged (transition 1, not-x-but-y 1, you-after-choice 2, blank-reentry 6).
+- reopencheck: 0 problems (m07 HaX 1800 reopens, the Architect 476).
+- `check_door_alignment.py scenarios/m07_architects_gambit/scenario.json.erb`: all OK, exit 0.
+
+#### Spoken lines changed (old → new)
+
+No m07 audio exists yet; listed for the record.
+
+HaX, phone (`m07_phone_agent_0x99.ink`):
+- Ladder, commit: "The team's still waiting on your call. Make it first. Tell me where it goes and I'll pass it up." → "The team's still waiting on your call. Make it first, then:" followed by the next step's line.
+- Ladder, new (debrief requested, a flag missing): "Grid's held. Put the rest of what you took through the relay and he's on straight after."
+- Ladder, door row: "You've got the password." → "Elena gave you the password." (Elena turned) or "The password's in the listener capture in your inventory." (flag 2 in). "Elena knows the password, and their listener gives it out." unchanged.
+- Ladder root-in row and the clock answer's two root-in rows, new when the control room was never entered: "The door's north of the server hall." plus the password line.
+- "The plant's south of the server hall, if you want to see how they got in. That part's optional." no longer plays from the abort on.
+- Guide hand-overs: the reply lines "Quiet and quick. Go.", "Patient hands open any of those.", "Go.", "Read, don't touch. Go.", "Log in when the control room door's open, not before. Go.", "Walk through the door they left open. Go." now end the hand-over without a player choice before them.
+- Player choices removed (not voiced): "Got it.", "Received." (two), "Understood.", "Copy." (two) after the guides; "Understood." after the redirect-closed answer.
+
+The Architect (`m07_architect_comms.ink`):
+- T-10 as first contact: "Narrator: Your screen wakes on its own. Nothing else on it moves." → "Narrator: Your screen wakes on its own. The call is already connected, and has been for some seconds."
+- T-5 as first contact: "Narrator: Five minutes on the display. The handset opens the line without asking." → "Narrator: Five minutes on the display. Your handset lights without ringing. The call is already connected, and has been for some seconds."
+- T-1: "Narrator: One minute. The handset is warm in your hand and the line is already open." → the same, starting "The countdown has run out." when the clock has run out; as first contact, "Narrator: One minute. Your handset lights without ringing. The call is already connected, and has been for some seconds." (or "The countdown has run out. …").
+- T-10, T-5 and T-1 closes, when that taunt was first contact: add "Let it hurt afterwards, not during. I expect you've been told that."
+- T-1 close as first contact: "Narrator: He hangs up first. He has hung up first every time." → "Narrator: He hangs up first."
+
+### Stage 2 scenario design: CLOSED (fixer's note for the orchestrator, 2026-10-14)
+
+Cycle 2 review 0 blockers / 0 majors / 4 minors; round-1 browser check all six items pass with 3 minors; this closing round fixed N1–N4, browser N2 and N3 and O2, and sent browser N1 to the engine (U12). Nothing above minor is open. Still not seen on screen, for the next browser check: the ladder's debrief states, a reopen of HaX after a guide hand-over and after the clock answer (should land on the hub), the T-5 or T-1 first-contact call, and the door line with root in and the control room unopened. The browser check's "not covered" list (redirect line with the window open, uncommitted ops-floor text, vault and Park states, credits) carries to the dialogue stage. Items for the user unchanged: E1 (engine), E2, U3 (needs checking against SecGen by the user), U11, U12.

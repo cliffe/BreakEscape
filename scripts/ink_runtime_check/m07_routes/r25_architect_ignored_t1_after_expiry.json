@@ -1,0 +1,19 @@
+{ "steps": [
+ { "note": "R25 (PASS 5 design r2, N1; the c2 reviewer's probe pA, inverted): committed, never opens the Architect, logs in at minute 12 and first opens his thread at minute 27, after the clock has run out. Only T-1 plays: first-contact opener, no 'One minute' after expiry, the echo line, no 'every time'. T-5 and T-20 never follow it." },
+ { "talk": "briefing", "picks": ["Understood. Talk to me", "I've made the call", "Meltdown"] },
+ { "talk": "phone", "picks": ["Understood. Let"] },
+ { "enter": "operations_floor" },
+ { "advance": 12 },
+ { "enter": "server_room" },
+ { "flag": 1 }, { "flag": 2 }, { "enter": "scada_control" }, { "flag": 3 },
+ { "advance": 15 },
+ { "expect": { "countdown_expired": true, "architect_t1_played": true, "architect_t5_played": true, "architect_t20_played": true } },
+ { "said": ["Seattle first"] },
+ { "talk": "architect", "knot": "start", "picks": [0] },
+ { "said": ["The countdown has run out. Your handset lights without ringing.", "Late. I did wonder.", "Let it hurt afterwards, not during.", "Narrator: He hangs up first."], "notSaid": ["One minute.", "He has hung up first every time.", "Don't look for the trace."] },
+ { "expect": { "architect_echo_heard": true } },
+ { "talk": "architect", "knot": "start", "picks": [0] },
+ { "talk": "architect", "knot": "start", "picks": [0] },
+ { "talk": "architect", "knot": "start", "picks": [0] },
+ { "said": ["A carrier tone on a channel"], "notSaid": ["Five minutes on the display", "You've sent your team.", "Your screen wakes on its own", "Don't look for the trace."] }
+]}

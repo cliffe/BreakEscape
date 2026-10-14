@@ -38,7 +38,8 @@ VAR heard_t10 = false
 VAR heard_t5 = false
 VAR heard_t1 = false
 VAR heard_signoff = false
-VAR t20_first_contact = false // PASS 5 design r1 (m4): T-20 came before T-30
+VAR late_first_contact = false // PASS 5 design r1 (m4), r2 (N1): a later taunt came before T-30 and opened as first contact
+VAR t1_first_contact = false // PASS 5 design r2 (N1): T-1 was the first call heard
 
 === start ===
 // PASS 2 playtest D2: after the win he is done. Synced global, so a reset
@@ -58,7 +59,9 @@ VAR t20_first_contact = false // PASS 5 design r1 (m4): T-20 came before T-30
 {architect_t10_played and not heard_t10 and not architect_t5_played:
     -> taunt_t10
 }
-{architect_t20_played and not heard_t20:
+// PASS 5 design r2 (N1): T-20 retires once T-5 has played, as T-10 does, so a
+// player who left his calls unread doesn't hear them newest first.
+{architect_t20_played and not heard_t20 and not architect_t5_played:
     -> taunt_t20
 }
 // PASS 2 review M3 (lesson 36): the phone preloads this contact's start knot
@@ -132,7 +135,7 @@ Narrator: The line drops. Your handset reports no call in the log.
 // t20_close carries T-30's echo line, so the teacher thread isn't lost.
 {not heard_t30:
     ~ heard_t30 = true
-    ~ t20_first_contact = true
+    ~ late_first_contact = true
     Narrator: Your handset lights without ringing. The call is already connected, and has been for some seconds.
 - else:
     Narrator: The handset cuts across the facility alarm. Same voice, same absence of hurry.
@@ -170,7 +173,7 @@ You've sent your team.
 // PASS 5 alignment r2 (m9): T-20 needs a commit, so the uncommitted "Choose
 // slowly" branch is gone.
 Answer honestly. I'll know either way. Did you decide with a number, or with your stomach?
-{t20_first_contact and not architect_echo_heard:
+{late_first_contact and not architect_echo_heard:
     ~ architect_echo_heard = true
     Let it hurt afterwards, not during. I expect you've been told that.
 }
@@ -189,7 +192,14 @@ Narrator: Dead air, then the ordinary hiss of a handset that thinks it has been 
 
 === taunt_t10 ===
 ~ heard_t10 = true
-Narrator: Your screen wakes on its own. Nothing else on it moves.
+// PASS 5 design r2 (N1): any taunt can be the first call heard; open as T-30 does.
+{not heard_t30:
+    ~ heard_t30 = true
+    ~ late_first_contact = true
+    Narrator: Your screen wakes on its own. The call is already connected, and has been for some seconds.
+- else:
+    Narrator: Your screen wakes on its own. Nothing else on it moves.
+}
 
 // PASS 5 alignment r2 (A1): the login line keys on cascade_armed, not on the
 // window, because the call can be opened late (after minute 40) by a player
@@ -229,6 +239,11 @@ Stop this, and something else fails. Someone else dies. You simply won't be in t
     You still have a door open. I'd hurry, but that's your business.
 }
 
+{late_first_contact and not architect_echo_heard:
+    ~ architect_echo_heard = true
+    Let it hurt afterwards, not during. I expect you've been told that.
+}
+
 Narrator: The call ends mid-syllable.
 
 #exit_conversation
@@ -240,7 +255,14 @@ Narrator: The call ends mid-syllable.
 
 === taunt_t5 ===
 ~ heard_t5 = true
-Narrator: Five minutes on the display. The handset opens the line without asking.
+// PASS 5 design r2 (N1): first-contact opener if T-30 never played.
+{not heard_t30:
+    ~ heard_t30 = true
+    ~ late_first_contact = true
+    Narrator: Five minutes on the display. Your handset lights without ringing. The call is already connected, and has been for some seconds.
+- else:
+    Narrator: Five minutes on the display. The handset opens the line without asking.
+}
 
 Mercer would give you his figure and defend it to your face. I respect that, even when the figure is monstrous.
 
@@ -271,6 +293,10 @@ Mercer would give you his figure and defend it to your face. I respect that, eve
 
 === t5_close ===
 Do you believe in yours enough to name them? You will have to, eventually, to somebody with a tablet.
+{late_first_contact and not architect_echo_heard:
+    ~ architect_echo_heard = true
+    Let it hurt afterwards, not during. I expect you've been told that.
+}
 
 Narrator: Static. Then nothing.
 
@@ -283,7 +309,18 @@ Narrator: Static. Then nothing.
 
 === taunt_t1 ===
 ~ heard_t1 = true
-Narrator: One minute. The handset is warm in your hand and the line is already open.
+// PASS 5 design r2 (N1): T-1 retires T-5, so T-5 doesn't follow it on the
+// next open; first-contact opener if T-30 never played. The narration no
+// longer says "One minute" when the call is opened after the clock ran out.
+~ heard_t5 = true
+{not heard_t30:
+    ~ heard_t30 = true
+    ~ late_first_contact = true
+    ~ t1_first_contact = true
+    Narrator: {countdown_expired:The countdown has run out.|One minute.} Your handset lights without ringing. The call is already connected, and has been for some seconds.
+- else:
+    Narrator: {countdown_expired:The countdown has run out.|One minute.} The handset is warm in your hand and the line is already open.
+}
 
 {countdown_expired:
     Late. I did wonder.
@@ -305,7 +342,15 @@ But the grid was never the point.
     -> t1_close
 
 === t1_close ===
-Narrator: He hangs up first. He has hung up first every time.
+{late_first_contact and not architect_echo_heard:
+    ~ architect_echo_heard = true
+    Let it hurt afterwards, not during. I expect you've been told that.
+}
+{t1_first_contact:
+    Narrator: He hangs up first.
+- else:
+    Narrator: He hangs up first. He has hung up first every time.
+}
 
 #exit_conversation
 -> parked
@@ -382,7 +427,7 @@ Narrator: A carrier tone on a channel that should not have one. Nobody on it. He
     -> start
 }
 // PASS 3: a taunt that arrived while this menu was open goes through, as parked does.
-{(architect_t1_played and not heard_t1) or (architect_t5_played and not heard_t5) or (architect_t10_played and not heard_t10 and not architect_t5_played) or (architect_t20_played and not heard_t20):
+{(architect_t1_played and not heard_t1) or (architect_t5_played and not heard_t5) or (architect_t10_played and not heard_t10 and not architect_t5_played) or (architect_t20_played and not heard_t20 and not architect_t5_played):
     -> start
 }
 + [Hang up.]
@@ -403,7 +448,7 @@ Narrator: A carrier tone on a channel that should not have one. Nobody on it. He
 {grid_saved:
     -> sign_off
 }
-{(architect_t1_played and not heard_t1) or (architect_t5_played and not heard_t5) or (architect_t10_played and not heard_t10 and not architect_t5_played) or (architect_t20_played and not heard_t20):
+{(architect_t1_played and not heard_t1) or (architect_t5_played and not heard_t5) or (architect_t10_played and not heard_t10 and not architect_t5_played) or (architect_t20_played and not heard_t20 and not architect_t5_played):
     -> start
 }
 + [Check the line.]
