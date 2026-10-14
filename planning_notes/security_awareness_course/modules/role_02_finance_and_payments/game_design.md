@@ -70,7 +70,7 @@ The critical path is marked **(CP)**.
 
 | Row | What the data shows | What it is | Best response |
 |---|---|---|---|
-| Brackenfold Hygiene, £6,240 | Bank details changed on Sunday at 23:12 through the supplier portal; first payment to the new account; name check: no match | A taken-over supplier portal login | Hold it. Ring Brackenfold on the number from the set-up file: Lorna says they've changed nothing. Report it; repair the record |
+| Brackenfold Hygiene, £6,240 | Bank details and contact phone number changed on Sunday at 23:12 through the supplier portal; first payment to the new account; name check: no match | A taken-over supplier portal login | Hold it. Ring Brackenfold on the number from the set-up file, not the new one: Lorna says they've changed nothing. Report it; repair the record |
 | Millrace Uniforms, invoice 20817A, £3,412.50 | Same amount and order as invoice 20817, paid last week | A duplicate | Hold the duplicate; check with the budget holder |
 | Ravensworth Advisory Ltd, £9,800 | Set up yesterday at 19:42 by s.kaur, who is on annual leave; no purchase order; £200 under the Financial Controller's limit | A colleague's account misused | Hold it; tell the security team now: an account may be compromised |
 | Moorgate Print Ltd, £2,150 | New this month; the same bank account as Tarnside Paper Co | One payee is fake | Hold the newer one; check both |

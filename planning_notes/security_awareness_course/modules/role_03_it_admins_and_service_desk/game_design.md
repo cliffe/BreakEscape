@@ -6,18 +6,18 @@ It is Monday morning on Larkspur's service desk, the busiest four hours of the w
 
 The security tests arrive inside that queue, sounding like the rest of it. A chief executive at an airport gate, a contractor who "mustn't be blocked", a director's must-have app, a supplier's helpful engineer, a colleague's slip, an alert that only makes sense if someone connects it to a reset made an hour earlier. The module teaches the habit the NCSC asked every service desk to review in 2025: verify through a route the caller doesn't control, however senior or urgent they are, and escalate what doesn't add up.
 
-The hook a player would talk about at lunch: the fake chief executive knows every answer to every security question, and the real one, two hours later, is the one who has to be talked into the check.
+The hook a player would talk about at lunch: the fake chief executive knows every answer to every security question, and one call back to the number already on record finds the real one upstairs in the board meeting, phone in hand, asking who is in Frankfurt.
 
 ## Setting and cast
 
-- **Rooms:** the service desk (`room_IT`, redressed with headset desks, the queue board and a mug that says "Ask us first"); the security office (`room_security`, Kai's desk); Gillian's office (`room_ceo`) for the in-person check; the open-plan floor (`room_office`) as a walk-through. No new rooms.
+- **Rooms:** the service desk (`room_IT`, redressed with headset desks, the queue board and a mug that says "Ask us first"); the security office (`room_security`, Kai's desk); the open-plan floor (`room_office`) as a walk-through to the project room where the contractor sits. No new rooms.
 - **Owain Jenkins** (IT Service Desk Lead): the mentor for this module. Relaxed, Welsh, backs his analysts every time: *"Nobody on this desk gets in trouble for following the procedure. Not ever."*
 - **Kai Murray** (security analyst): watches the sign-ins and takes the escalations; shows what each catch stopped.
 - **Jo Fairweather** (Northlight Security's ethical social engineer): a one-minute interlude by video, showing where the caller's answers came from.
-- **Gillian Marsh** (chief executive): the real one, at 11:20, impatient with process and won round.
+- **Gillian Marsh** (chief executive): the real one, reached by the call back in the board meeting, puzzled, then delighted; she thanks the desk on The Lark before lunch.
 - **Martin Fletcher** (Sales Director): wants an app for his team. **Kev Sutcliffe** (warehouse supervisor): wants the virus checker off the scanner PC.
 - **New: Rosa Delgado**, service desk analyst. 20s, British Colombian, warm, quick, top of the handling-time board. Resets an account after a caller answers the security questions, sees the alert, and reports it within twenty minutes: the module's "slipped, reported, thanked" colleague. Needs art and a voice.
-- **Voice or text only:** the fake "Gillian" (a different voice from the real Gillian, with airport noise and a phone filter); Bridget Hennessy, a project manager (email); Wes Kimber, an engineer at Brightline Label Systems, a supplier (phone); ordinary callers from the generic voice pool.
+- **Voice or text only:** the fake "Gillian" (a different voice from the real Gillian, with airport noise and a phone filter); Bridget Hennessy, a project manager (email and chat); a caller claiming to be Sam Reilly, the new contractor (phone); Wes Kimber, an engineer at Brightline Label Systems, a supplier (phone); ordinary callers from the generic voice pool. The real Sam appears only as a name in Bridget's reply.
 
 ## Structure
 
@@ -30,13 +30,14 @@ The critical path is marked **(CP)**.
 - "Gillian": *"Move my authenticator to this number, or the payment run doesn't get approved today. Ask me anything you like."*
 - If the player asks the security questions, she answers every one: employee number, date of birth, her assistant's name, the office address, her start date. Each shows "matches HR record" on the card, and a small tag: *findable: yes*.
 - **Decision H1:** *"You've passed the questions. I'll move it now."* / *"I'll call you back on your number on record."* / *"Executive MFA changes need ID in person or on video, plus a second check. I can book it for when you land."* / *"Bear with me, I'll ask my lead."*
-  - Call back: the number on record goes to voicemail, and the caller rings back angrier: *"My phone was stolen. That's the point."* The player chooses again.
+  - Call back: *"My phone was stolen. That's the point!"* The player ends the call politely (*"I'll ring you straight back on the number we hold"*) and dials Gillian's mobile from the HR directory. The real Gillian answers in a whisper: *"I'm in the board meeting. My phone's in my hand. Who's in Frankfurt?"* Then: *"Somebody's being me, then. Tell Kai. And well done."*
   - Holding the line: *"This is absurd. I'll be speaking to Owain about you."* She hangs up.
   - Moving it: the card shows *Authenticator moved to 07700 900461* (a number from Ofcom's range reserved for drama).
 - If the player moved it, the call ends happily and the next ticket appears. The player can turn to Owain (*"I think I've just moved the chief exec's MFA on a phone call"*) or carry on with the queue.
   - Telling Owain: *"Right. No blame. Let's tell Kai now."* Kai, a moment later: *"Her account's just signed in from a new device abroad. Sessions killed. You told me before they'd done anything, which is why this is small."*
   - Carrying on: two tickets later Kai's alert arrives on the team chat and Owain wheels over: *"Was that one of ours? Let's look together."* The same fix, a bigger clean-up, still no blame.
-- If the player held the line, Owain wheels over: *"You said no to the chief exec on the phone. Hardest call on this desk. Want to know why it was right?"*
+- If the player held the line without calling back, Owain wheels over: *"You said no to the chief exec on the phone. Hardest call on this desk. Let's ring her on the number we hold, just to be sure."* He does, on speaker, and the real Gillian answers from the board meeting as above. In the reset branch, Owain makes the same call while Kai cleans up. Every player hears the call back work.
+- No one reads out a code at any point. Larkspur's desk never asks anyone to read out a one-time code; it calls back on the number already held, or sends an approval or reset to details already held.
 - The response is the baseline for R03-B1; telling Owain is R03-B2.
 
 ### 2. Learn: "Knowing isn't proving" (4 minutes)
