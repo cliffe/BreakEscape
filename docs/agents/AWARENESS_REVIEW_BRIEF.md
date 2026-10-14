@@ -18,7 +18,7 @@ For reviewers of the module plans in `planning_notes/security_awareness_course/m
 6. **Consistency.** Cast names and roles match `03_WORLD_AND_CAST.md` (new characters avoid names in `public/break_escape/assets/characters/`). Topic boundaries in `00_COURSE_OVERVIEW.md` are respected, and shared procedures agree across modules (especially "what to do if you clicked" in core_01 and the reporting procedure in core_04, and data breaches in core_05). The motto *Pause. Check. Report.* is used consistently.
 7. **Feasibility against the engine.** Claims about existing minigames, systems, rooms and art are true (check `research/current_state_break_escape.md` and the code). Feature ids exist in `features/README.md`; proposed new features are marked "proposed". Known limits are acknowledged: minigames open only from objects today (BE-19), `dual-auth` isn't registered, `siem` ignores `alertConfig`, the video-call bar and the "Meridian" form headers are hard-coded, the tutorial and title screen are fixed (BE-20).
 8. **Compliance coverage.** References use the short forms in `02_COMPLIANCE_MAPPING.md` and are plausible for the module's content.
-9. **Style.** UK English; "cyber security" as two words in our prose; no em or en dashes (`grep -nP '[\x{2014}\x{2013}]'`); plain writing with no filler.
+9. **Style.** UK English; "cyber security" as two words in our prose; no em or en dashes (`LC_ALL=C.UTF-8 grep -nP '[\x{2014}\x{2013}]'`); plain writing with no filler.
 
 ## How to report
 
