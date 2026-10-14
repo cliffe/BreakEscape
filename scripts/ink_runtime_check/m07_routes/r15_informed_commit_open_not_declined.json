@@ -1,0 +1,119 @@
+{
+ "steps": [
+  {
+   "note": "R15 (puzzle chains r1, C1; was probe q1): no commit in the briefing; flag 1, the decode, the deduction; then Fracture committed on the hub with the window open. A choice, not passivity."
+  },
+  {
+   "talk": "briefing",
+   "picks": [
+    "Understood. Talk to me"
+   ]
+  },
+  {
+   "talk": "phone",
+   "picks": []
+  },
+  {
+   "enter": "operations_floor"
+  },
+  {
+   "read": "shift_handover_sheet"
+  },
+  {
+   "pickup": "printed_contractor_badge"
+  },
+  {
+   "enter": "server_room"
+  },
+  {
+   "event": "object_interacted",
+   "data": {
+    "objectType": "vm-launcher"
+   }
+  },
+  {
+   "flag": 1
+  },
+  {
+   "read": "coordination_extract"
+  },
+  {
+   "talk": "phone",
+   "picks": [
+    "Their schedule doesn't match",
+    "Trojan",
+    "The dormancy"
+   ]
+  },
+  {
+   "talk": "phone",
+   "picks": [
+    "ready to make the call",
+    "Fracture"
+   ]
+  },
+  {
+   "expect": {
+    "revision_found_open": true,
+    "revision_before_commit": true,
+    "decode_read_open": true,
+    "decode_before_commit": false
+   }
+  },
+  {
+   "flag": 2
+  },
+  {
+   "enter": "scada_control"
+  },
+  {
+   "flag": 3
+  },
+  {
+   "flag": 4
+  },
+  {
+   "task": "shut_down_the_cascade"
+  },
+  {
+   "talk": "phone",
+   "picks": [
+    "Bring me in"
+   ]
+  },
+  {
+   "enter": "server_room"
+  },
+  {
+   "talk": "debrief",
+   "picks": [
+    "Nothing on the record",
+    "I want the numbers"
+   ]
+  },
+  {
+   "said": [
+    "You had it before you made the call, and sent the team elsewhere. The window stayed open after that.",
+    "You knew before you sent them, and you sent them somewhere else.",
+    "Yes. You had one of his numbers in your hands tonight."
+   ],
+   "notSaid": [
+    "The team was not moved on it.",
+    "You found it and it did not move",
+    "Above expectations"
+   ]
+  },
+  {
+   "creditsSaid": [
+    "CORRECTION IN HAND BEFORE THE CALL"
+   ],
+   "creditsNotSaid": [
+    "the team was not moved",
+    "CORRECTION FOUND"
+   ]
+  },
+  {
+   "maxRun": 70
+  }
+ ]
+}

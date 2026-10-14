@@ -27,3 +27,12 @@ The orchestrator asked for HaX's sheet, phone avatar and bust as m04/m06 wire th
 **Orchestrator on U5 (2026-10-14):** take the no-engine route for now: drop "(Optional)" from the aim title and make its two tasks required again (the aim gates nothing, so it simply stays open). Engine fix stays in the backlog; overrule if you want the engine change instead.
 
 **U5 applied (alignment round 2 fixer, 2026-10-14):** "Trace How They Got In" no longer says "(Optional)", and `secure_generator_room` and `recover_vault_pin` are required again (`scenario.json.erb`, aim `trace_the_intrusion`). The other three tasks in the aim stay optional. Browser look at the aim not folding on the generator hall still owed. The engine fix stays in the backlog.
+
+## U8. The Fingerprint Kit is carried and unused (puzzle chains cycle 1)
+m04's print kit is in the cumulative start kit and nothing in m07 uses it. Nothing in the building has a reason to sit behind a print (the handover sheet already proves Hollis's login), and inventing one would fail the "would this object exist anyway?" test. **Recommendation (reviewer and fixer):** leave it unused; cumulative kit doesn't mean every tool gets a lock. The cloner now has a use (F3, the clone at Hollis). Overrule if you want a print use found.
+
+## U9. Engine: the RFID reader opens the cloner screen when there is nothing to emulate (puzzle chains F3)
+`unlock-system.js` (rfid case, "PRIORITY 2") opens the cloner minigame whenever a cloner is carried, even with no keycard and no saved clone; it shows "No keycards in inventory" / "No saved cards". F3 gave the cloner a use in m07 (clone Hollis's badge), so the screen is no longer pointless, but a player who hasn't cloned yet still gets it at the first real lock. **Recommendation:** an engine change to show the plain "access denied" toast instead when the cloner holds no saved cards and the player has no keycards. Not urgent; mission-side nothing to do.
+
+## U10. Engine: `combat-config.js` `chaseRange` is read nowhere (puzzle chains F2)
+A hostile NPC chases across rooms with no leash (browser N2: Park followed the player from the vault to the control room door). m07 now tunes `behavior.hostile` so every hostile is slower than the player's walk (Hollis 100, Park 80, Mercer 70 against 150), and HaX says walking away works. **Recommendation:** wire `chaseRange` (or a per-NPC leash) in the engine so a hostile gives up past a distance; keep the mission tuning either way.

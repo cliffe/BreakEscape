@@ -237,7 +237,7 @@
     "[opens thomas_park @start (person-chat)]"
    ],
    "notSaid": [
-    "That'll be their plant man"
+    "briefed on a building, not a body count"
    ]
   },
   {
@@ -260,7 +260,7 @@
   {
    "said": [
     "[opens thomas_park @start (person-chat)]",
-    "That'll be their plant man"
+    "briefed on a building, not a body count"
    ]
   },
   {
@@ -289,10 +289,12 @@
   {
    "said": [
     "I said there wasn't a third.",
-    "crimping tool swinging"
+    "crimping tool swinging",
+    "Park's swinging. Q for fists"
    ],
    "notSaid": [
-    "Step away from the cable"
+    "Step away from the cable",
+    "You've got one sentence"
    ]
   },
   {
@@ -342,7 +344,7 @@
     "ORDER: logged in on the host before",
     "CORRECTION FOUND AFTER THE WINDOW SHUT",
     "Operation Meltdown",
-    "Evaded — still on the checkpoint desk",
+    "Evaded \u2014 still on the checkpoint desk",
     "THOMAS PARK: Fought off, not stopped"
    ],
    "creditsNotSaid": [

@@ -1,0 +1,95 @@
+{
+ "globals": {
+  "team_assigned": true,
+  "team_assignment": "fracture",
+  "hurt_line_said": true
+ },
+ "steps": [
+  {
+   "note": "R14 (puzzle chains r1, F3): the quiet route past Hollis. Once the money rattles him (stakes), the m03 cloner reads his badge off his belt. The clone opens the reader; he stays bought, gives no vault rule and no Park tip, and is recorded as evaded."
+  },
+  {
+   "set": {
+    "briefing_played": true
+   }
+  },
+  {
+   "event": "player_spotted:ray_hollis"
+  },
+  {
+   "talk": "hollis",
+   "knot": "start",
+   "picks": []
+  },
+  {
+   "notSaid": [
+    "[choice] Keep him on the money"
+   ]
+  },
+  {
+   "talk": "hollis",
+   "picks": [
+    "The grid goes down tonight",
+    "How much?",
+    "Keep him on the money"
+   ]
+  },
+  {
+   "said": [
+    "Server Zone Badge - R. Hollis saved",
+    "His badge never left his belt",
+    "He never looks at his belt"
+   ],
+   "notSaid": [
+    "didn't get a clean read",
+    "plate on the transfer switch",
+    "Went down the riser"
+   ]
+  },
+  {
+   "expect": {
+    "hollis_cloned": true,
+    "badge_obtained": true,
+    "hollis_backed_off": true,
+    "hollis_resolved": ""
+   }
+  },
+  {
+   "enter": "operations_floor"
+  },
+  {
+   "notSaid": [
+    "RFID guide?"
+   ]
+  },
+  {
+   "enter": "server_room"
+  },
+  {
+   "expect": {
+    "hollis_resolved": "evaded"
+   }
+  },
+  {
+   "talk": "hollis",
+   "knot": "start",
+   "picks": []
+  },
+  {
+   "said": [
+    "There you are."
+   ],
+   "notSaid": [
+    "[choice] Keep him on the money"
+   ]
+  },
+  {
+   "creditsSaid": [
+    "RAY HOLLIS: Evaded"
+   ],
+   "creditsNotSaid": [
+    "Talked, and handed over"
+   ]
+  }
+ ]
+}

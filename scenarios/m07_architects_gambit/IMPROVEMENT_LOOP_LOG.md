@@ -258,3 +258,76 @@ Credits (`scenario.json.erb`):
 
 ### Stage 2 alignment: CLOSED (orchestrator, 2026-10-14)
 Cycle 3 review 0/0/6 (`ALIGNMENT_REVIEW_P5_C3.md`) and round-2 browser check all six items pass (`PASS5_ALIGN_R2_BROWSER.md`, games 2409/2414). Carried into puzzle chains: C1, C2 (debrief latches), browser N1 (Hollis "talked" debrief line contradicts his refusal; major, pre-existing), N2 (hostile Park chases and KOs a fleeing player; tune like m06's Kemal), N3 (praise after "Nobody put it next to the brief"), m12 (RFID cloner route). C3–C6 to the dialogue stage.
+
+### Stage 2 puzzle chains, round 1 (fixer)
+
+Review: `PUZZLE_REVIEW_P5_C1.md` (0 blockers, 3 majors, 7 minors), with C1 and C2 taken from `ALIGNMENT_REVIEW_P5_C3.md` as written. Each finding was checked against `scenario.json.erb`, the ink and the engine before acting. No SecGen XML and none of the four restricted field guides were opened. No browser session was started.
+
+Counts: 0 blockers, 3 majors, 7 minors. All fixed; none deferred. C5 (alignment cycle 3) closes with F1. C3, C4 and C6 stay with the dialogue stage.
+
+| # | Sev. | Finding | Outcome |
+|---|---|---|---|
+| F1 | major | HaX's return text sends the player for the projection, and the next visit makes Park swing | **Fixed.** `VAR park_returns`, incremented at the top of `back_at_it`; `back_at_it` branches on it, not on its visit count, so the count survives a page reload (closes C5). A third visit carrying the projection goes to a new `last_chance` knot ("…in his fist, and waits." / "I said there wasn't a third. You've got one sentence."), with "(Hold up the projection.)" → `projection` and "(Step back.)" → a new `goes_loud.lunge`. Without the projection the third visit still swings (r2). `goes_loud` now ends in a shared `turned` stitch (the KO tags), reached from `swing` and `lunge`. HaX's return text and `topic_park` say to carry it back. Routes r13 (p1 flipped: talked) and r18 (page reload between visits, then step back: hostile) |
+| F2 | major | Hollis, Park and Mercer fight at engine defaults, with no HaX controls text | **Fixed.** `behavior.hostile` as proposed: Hollis 100 / 4 (beside his patrol), Park 80 / 4, Mercer 70 / 3, all `pauseToAttack`. Three HaX texts on `npc_hostile_state_changed` (m06's pattern, keyed on `data.npcId`, `data.restored !== true` so a reload's restore doesn't repeat them), each with the controls and "Or walk away: he's slower than you." The route driver now passes `npcId` with the hostile event. r2 checks Park's text, r3 Hollis's. Mercer's text has no route (no route turns him hostile); browser check owed |
+| N1 | major | Debrief says Hollis "waited for the police" on the route where he walks out | **Fixed** with the review's two lines (below) |
+| F3 | minor | The RFID Cloner has nothing to clone | **Fixed.** Hollis has `rfidCard` (`server_zone_badge`, EM4100, "Server Zone Badge - R. Hollis"); `card_id` matches the reader's `requires`, so a saved clone opens it (`unlock-system.js` `hasValidClone`). His hub offers "Keep him on the money. Let the cloner read his belt." once `pressed_once` (after the stakes exchange), and not after a clone or with a badge already held. The `clone` knot runs `#clone_keycard:server_zone_badge` (tag on an unvoiced throwaway line, m05 Owen's shape); `clone_debrief` reads the synced `hollis_cloned`. On success he never notices, `hollis_backed_off` is set and the chat closes, so reaching the server hall records `evaded` (credit "Evaded — still on the checkpoint desk"). A cancelled read returns to the hub with the choice still there. A HaX `card_cloned` mapping sets `hollis_cloned` and `badge_obtained` and texts the lesson. Costs: no vault rule, no Park tip, he stays bought. The reader still opens the cloner screen for a player with no card and no clone ("No keycards in inventory"); that is engine behaviour (DECISIONS_PENDING U9), and the screen now has a use. Route r14. The route driver handles `#clone_keycard` (emits `card_cloned` with the NPC's `rfidCard` name) |
+| F4 | minor | HaX's vault hint ignores a rule already given | **Fixed.** `vault_hint` checks `hollis_resolved == "talked" or elena_outcome == "turned"` first |
+| F5 | minor | Elena KO text says the vault code is in the notes | **Fixed** ("How to read the vault code is in their site notes…") |
+| F6 | minor | Stale comments | **Fixed.** The aim-chain and optional-task comments describe `trace_the_intrusion` and U5; Elena's comment says "the rule for reading the vault code"; the kit comment names the clone route and the unused print kit |
+| C1 | minor | Informed commit elsewhere with the window open reads as passivity | **Fixed** as written: a `revision_before_commit and not redirect_declined` branch first in `revision_payoff`'s window-open block; a `dark_trojan` branch (also `not redirect_declined`, so r4's declined player keeps "You knew. You found it and it did not move."); credits: "the team was not moved" excludes `revision_before_commit`, "CORRECTION IN HAND BEFORE THE CALL" drops `!revision_found_open` and gains `!redirect_declined && !team_redirected`. Route r15 (was q1) |
+| C2 | minor | A decode read before the commit isn't latched | **Fixed** as written: new latch `decode_before_commit` (HaX mapping on `team_assigned` with the decode read and no deduction; declared in `globalVariables`, the debrief, the phone and `missions.json`). `covered_trojan_direct` and the found-late block get their branches; `deduce_right`'s late wording also covers it. Credits: a separate neutral line "CORRECTION FOUND LATE: their schedule was read before the call, put against the brief afterwards" rather than widening the window-open one; "AFTER THE WINDOW SHUT" excludes the latch. Routes r16 (q2) and r17 (q3) |
+| N3 | minor | Praise after "Nobody put it next to the brief" | **Fixed.** The handoff gate gains `not (found_coordination_traffic and not projection_revised and team_assignment != "trojan_horse")`; "defended" gets an alternative second line for that player. r8 (already the defended stance) now checks it; r19 is r8 with the hardened stance |
+
+#### Decisions taken (fixer, with reasons)
+
+- **Hostile texts on `npc_hostile_state_changed`, not on the `*_resolved == 'ko'` globals.** The review suggested the globals. The hostile event is the m06 pattern, and its `restored` flag is the engine's own guard against a reload repeating the text. Mercer's ink writes `mercer_fate = "ko"` on hostility, but Hollis and Park would need three different global names; one event covers all three.
+- **Park's "(Step back.)" gets its own narration (`lunge`).** `swing` says "He comes up off his knees", and in `last_chance` he is already standing.
+- **The hardened stance also loses its speed praise for the N3 player** ("Yes. Their schedule was in your hands tonight. Next time it goes next to the brief."). The review named only "defended" and the handoff, but "Almost nobody gets there this quickly" would follow the same line.
+- **C1's HaX line spares a declined redirect,** matching the Netherton branch it sits beside; otherwise r4's established wording changes for a player who made a deliberate call.
+- **C2's late credit is a separate line,** because the existing one says "with the window open", which isn't true for q3.
+- **HaX's Park hint was cut to the 30-word text cap.** "That'll be their plant man" and "Show him that" went; the new text keeps "briefed on a building, not a body count".
+- **The clone choice hides when a badge is already held,** since a second route to an open door is noise.
+
+#### Route driver
+
+New routes, all expectations met: `r13_park_last_chance_with_projection` (was p1), `r14_hollis_clone`, `r15_informed_commit_open_not_declined` (q1), `r16_decode_read_then_trojan_undeduced` (q2), `r17_decode_uncommitted_login_commit_then_deduce` (q3), `r18_park_reload_last_chance_step_back`, `r19_decode_read_hardened`. Changed: r2 (new HaX Park text, Park's hostile controls text, no last chance without the projection), r3 (Hollis's hostile controls text), r8 (N3 defended line, no "Above expectations"). `route.js`: the hostile event carries `npcId`; `#clone_keycard` emits `card_cloned`. r1–r19: all nineteen pass. The longest run is still the debrief read-out (dialogue stage).
+
+#### Checks
+
+- Ink compiles (8 files; the briefing's END warning as before).
+- Validator, full: schema passed, geometry and doors OK. 11 duplicate-mapping notes as before (`team_assigned` now has five independent latches: the commit text, `revision_found_open`, `revision_before_commit`, `decode_read_open`, `decode_before_commit`). The 4 repeatable person-chat warnings (deliberate) and 10 dialogue-lint style notes are unchanged.
+- dialoguelint: 0 errors (three new HaX texts first ran over the 30-word cap and were cut); transition 1, not-x-but-y 1, you-after-choice 2, blank-reentry 6, all pre-existing.
+- reopencheck (`missions.json` m07 globals gain `decode_before_commit`, `hollis_cloned`): 0 problems for both m07 phones.
+- inkcheck over a state matrix (Park fresh, evaded with and without the projection at `park_returns` 0 and 1; Hollis fresh, cloned, with the paperwork; the phone with Hollis talked, Elena turned, `decode_before_commit` with the window shut, Park evaded; the debrief for q2, q3, q1, r8 and Hollis talked): no failing paths, no runaways. loopcheck on Park, Hollis, the phone and the debrief: no runtime errors.
+- tagdiff against HEAD: 58 structural differences, all from the changes above. Briefing, Architect, Elena and Mercer structure unchanged.
+- `check_door_alignment.py`: all doors OK.
+
+#### Spoken lines changed (old → new)
+
+No m07 audio exists yet; listed for the record.
+
+Thomas Park (`m07_npc_thomas_park.ink`), new (third visit carrying the projection): Narrator "He comes up off his knees with the crimping tool in his fist, and waits."; "I said there wasn't a third. You've got one sentence."; Narrator (after "(Step back.)") "You give ground. He comes after you with the crimping tool." Player choices (not voiced): "(Hold up the projection.)", "(Step back.)".
+
+Ray Hollis (`m07_npc_ray_hollis.ink`), new (clone route): Narrator "You ask how much again, and step in close while he works out an answer."; Narrator "He keeps talking about retainers."; Narrator "He's still talking when you step back. He never looks at his belt."; "Are we done? Go on, then."; Narrator (failed read) "The cloner didn't get a clean read. He's watching your hands now." Player choice (not voiced): "Keep him on the money. Let the cloner read his belt."
+
+Debrief (`m07_closing_debrief.ink`):
+- "Ray Hollis walked to the muster point and waited for the police. He is giving a full statement, payment included." / "He did not have to wait." → "Ray Hollis handed over his badge and walked out through the muster door. The police picked him up at the gate. He has given his name and nothing else, yet." / "He told you about the vault and the man on the riser. That is more than he has told us."
+- New (C1): "You had it before you made the call, and sent the team elsewhere. The window stayed open after that."; HaX "You knew before you sent them, and you sent them somewhere else. That's the sentence I'm writing."
+- New (C2): "Their schedule was in your kit when you made the call. Whatever you read in it, you sent them to Austin."; "Their schedule was in your hands before you sent the team anywhere. You put it against the brief afterwards." (HaX follows with the existing "Late is still found. It goes in the report as late.")
+- New (N3): defended "That answer will stand up in a review room. You also had their schedule in your hands tonight, and you didn't put it next to the brief." (replaces "Good. That answer will stand up in any review room you ever sit in." for that player); hardened "Yes. Their schedule was in your hands tonight. Next time it goes next to the brief." (replaces "Yes. Almost nobody gets there this quickly." for that player); "Above expectations…" withheld for that player.
+
+HaX, phone (`m07_phone_agent_0x99.ink`), new: "He won't wait for a third look. Have it in your hand when you go back down." (`topic_park`); "You've been told already. The plate on the transfer switch, in this hall. Last four of the serial." (`vault_hint`). "The window's shut. You had their schedule while it was open. It goes in the report as late." now also plays for `decode_before_commit`.
+
+HaX texts (`scenario.json.erb`):
+- "That'll be their plant man. He was briefed on a building, not a body count. Mercer's signed projection is in the control room. Show him that." → "He was briefed on a building, not a body count. Mercer's projection is in the control room. Carry it back down with you. He won't wait a third time."
+- "She's not talking now. You don't need her. The vault code's in their site notes off the share, and their listener leaks the control room password." → "…How to read the vault code is in their site notes off the share, and their listener leaks the control room password."
+- New: "He's coming for you. Q for fists, then E or click when he's in front. Or walk away: he's slower than you. Q again stows them, then click to walk." (Hollis); "Park's swinging. Q for fists, …" (same tail); "Mercer's coming at you. Q for fists, …" (same tail); "Got it. His badge never left his belt. Anyone who stands that close can walk off with a copy." (clone).
+
+Credits (`scenario.json.erb`), new: "CORRECTION FOUND LATE: their schedule was read before the call, put against the brief afterwards". Conditions changed on "CORRECTION FOUND WITH THE WINDOW OPEN", "CORRECTION IN HAND BEFORE THE CALL" and "CORRECTION FOUND AFTER THE WINDOW SHUT".
+
+#### Open after round 1
+
+- Browser checks owed: Park's return with the projection (last chance) and the step-back chase; the three chase speeds and HaX's controls texts (Hollis at the start spot, Park out of the vault, Mercer at the console); the clone at Hollis (minigame returns to his chat, `clone_debrief` reads the clone, the reader opens on the saved clone, and the clone survives a page reload); the N1 debrief line.
+- For cycle 2: whether four routes to the badge (talk, printer, KO, clone) reads as too many.
+- Engine items to `DECISIONS_PENDING.md`: U9 (cloner screen with nothing to emulate), U10 (`chaseRange` unread). Fingerprint kit carried unused: U8.
+- Needs checking against SecGen by the user (U3, unchanged).

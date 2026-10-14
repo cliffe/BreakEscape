@@ -1,0 +1,121 @@
+{
+ "steps": [
+  {
+   "note": "R17 (puzzle chains r1, C2; was probe q3): decode read with no team, the flag 3 login, Fracture committed, then the deduction. The timing was the player's."
+  },
+  {
+   "talk": "briefing",
+   "picks": [
+    "Understood. Talk to me"
+   ]
+  },
+  {
+   "talk": "phone",
+   "picks": []
+  },
+  {
+   "enter": "operations_floor"
+  },
+  {
+   "read": "shift_handover_sheet"
+  },
+  {
+   "pickup": "printed_contractor_badge"
+  },
+  {
+   "enter": "server_room"
+  },
+  {
+   "event": "object_interacted",
+   "data": {
+    "objectType": "vm-launcher"
+   }
+  },
+  {
+   "flag": 1
+  },
+  {
+   "read": "coordination_extract"
+  },
+  {
+   "flag": 2
+  },
+  {
+   "enter": "scada_control"
+  },
+  {
+   "flag": 3
+  },
+  {
+   "talk": "phone",
+   "picks": [
+    "ready to make the call",
+    "Fracture"
+   ]
+  },
+  {
+   "talk": "phone",
+   "picks": [
+    "Their schedule doesn't match",
+    "Trojan",
+    "The dormancy"
+   ]
+  },
+  {
+   "said": [
+    "The window's shut. You had their schedule while it was open. It goes in the report as late."
+   ]
+  },
+  {
+   "expect": {
+    "decode_read_open": false,
+    "revision_before_commit": false,
+    "revision_found_open": false,
+    "decode_before_commit": true
+   }
+  },
+  {
+   "flag": 4
+  },
+  {
+   "task": "shut_down_the_cascade"
+  },
+  {
+   "talk": "phone",
+   "picks": [
+    "Bring me in"
+   ]
+  },
+  {
+   "enter": "server_room"
+  },
+  {
+   "talk": "debrief",
+   "picks": [
+    "Nothing on the record",
+    "I made the call"
+   ]
+  },
+  {
+   "said": [
+    "Their schedule was in your hands before you sent the team anywhere. You put it against the brief afterwards.",
+    "Late is still found. It goes in the report as late."
+   ],
+   "notSaid": [
+    "The timing was his, not yours"
+   ]
+  },
+  {
+   "creditsSaid": [
+    "CORRECTION FOUND LATE: their schedule was read before the call"
+   ],
+   "creditsNotSaid": [
+    "AFTER THE WINDOW SHUT",
+    "with the window open"
+   ]
+  },
+  {
+   "maxRun": 70
+  }
+ ]
+}

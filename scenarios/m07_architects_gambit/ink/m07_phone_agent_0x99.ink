@@ -23,6 +23,7 @@ VAR countdown_expired = false
 VAR redirect_declined = false
 VAR found_coordination_traffic = false
 VAR decode_read_open = false // Synced scenario global (PASS 5 r2, m3): the decode was read with the window open and the team elsewhere
+VAR decode_before_commit = false // Synced scenario global (PASS 5 puzzle chains r1, C2): the decode was read before the team was committed, and the deduction wasn't made
 VAR found_tomb_gamma = false
 VAR found_mole_evidence = false
 VAR generator_hall_reached = false
@@ -387,7 +388,7 @@ One authority signing for all four. One operation wearing four coats.
     The team's already in Austin. You picked the one that was worse than the brief said.
 - else:
     {
-    - redirect_window_closed and team_assigned and decode_read_open:
+    - redirect_window_closed and team_assigned and (decode_read_open or decode_before_commit):
         The window's shut. You had their schedule while it was open. It goes in the report as late.
     - redirect_window_closed and team_assigned:
         The window's shut. It goes in the report as found, not as ignored.
@@ -642,12 +643,19 @@ Put the root flag through the relay, then give the console in the control room i
 ~ park_hint_given = true
 They told him about a building. Mercer's signed projection is on the console in the control room.
 Put the number in front of him.
+He won't wait for a third look. Have it in your hand when you go back down.
 -> hub
 
 // PASS 3: the player is at the vault door without the code. Prints, then the
 // hub; owns no choices, so a re-navigation can't land here.
 === vault_hint ===
 ~ vault_hint_given = true
+// PASS 5 puzzle chains r1 (F4): Hollis (talk route) and a turned Elena both
+// give the rule already.
+{hollis_resolved == "talked" or elena_outcome == "turned":
+    You've been told already. The plate on the transfer switch, in this hall. Last four of the serial.
+    -> hub
+}
 {found_coordination_traffic:
     OptiGrid reset it, and their site notes say how. Read the Portland block in what the relay pulled.
 - else:

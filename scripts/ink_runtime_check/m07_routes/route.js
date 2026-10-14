@@ -10,6 +10,8 @@
 //   {"note": "..."}                          a heading in the output
 //   {"set": {...}}                           globals the engine would set; each change raises
 //                                            global_variable_changed:<name>
+//   (tags handled in a talk: set_global, hostile (raises npc_hostile_state_changed with data.npcId),
+//    complete_task, give_item, clone_keycard (raises card_cloned with the NPC's rfidCard name))
 //   {"talk": "phone", "knot": "opt", "picks": ["substr", 0, ...], "reload": true|"page"|"wipe"}
 //   {"enter": "room_id"}                     raises room_entered:<room_id>
 //   {"pickup": "item_id"}                    picks an item up (no onRead; type looked up)
@@ -298,7 +300,10 @@ for (const step of route.steps) {
       for (const tg of tags) {
         if (tg.startsWith('set_global:')) { const [, k, v] = tg.split(':'); const val = v === 'true' ? true : v === 'false' ? false : (/^-?\d+$/.test(v) ? +v : v); out(`      [set_global ${k}=${v}]`); setGlobal(k, val, true); syncIn(s); }
         if (tg === 'exit_conversation') exited = true;
-        if (tg === 'hostile' || tg.startsWith('hostile:')) { out(`      [engine: ${tg.includes(':') ? tg.split(':')[1] : NPC_OF[name]} hostile]`); emit('npc_hostile_state_changed', { isHostile: true }); }
+        if (tg === 'hostile' || tg.startsWith('hostile:')) { const hid = tg.includes(':') ? tg.split(':')[1] : NPC_OF[name]; out(`      [engine: ${hid} hostile]`); emit('npc_hostile_state_changed', { isHostile: true, data: { npcId: hid, isHostile: true } }); }
+        // PASS 5 puzzle chains r1 (F3): the RFID minigame saves the NPC's rfidCard; card_cloned
+        // is emitted before the chat resumes (rfid-minigame.js), so sync it back in at once.
+        if (tg.startsWith('clone_keycard:')) { const card = (NPCS[NPC_OF[name]] || {}).rfidCard || {}; out(`      [RFID minigame: ${card.name || tg} saved]`); emit('card_cloned', { data: { cardName: card.name || tg.split(':')[1] } }); syncIn(s); }
         if (tg.startsWith('complete_task:')) { completeTask(tg.split(':')[1]); syncIn(s); }
         if (tg.startsWith('unlock_task:')) { const id = tg.split(':')[1]; if (TASKS[id] === 'locked') TASKS[id] = 'unlocked'; out(`      [task unlocked: ${id}]`); }
         if (tg.startsWith('give_item:')) { const id = tg.split(':')[2]; receive(id, true); syncIn(s); }

@@ -28,6 +28,12 @@
    ]
   },
   {
+   "said": [
+    "He's coming for you. Q for fists",
+    "Or walk away: he's slower than you"
+   ]
+  },
+  {
    "expect": {
     "hollis_resolved": "ko"
    }
@@ -217,7 +223,7 @@
   },
   {
    "creditsSaid": [
-    "Operation Trojan Horse — 840",
+    "Operation Trojan Horse \u2014 840",
     "PROJECTION CORRECTED",
     "RAY HOLLIS: Neutralised on shift"
    ],

@@ -14,6 +14,9 @@
 // handover names his login on Mercer's renewal (the visitor log asks the
 // question; the handover answers it). It costs the player the arrest, and it
 // is the only route where he talks: the vault keypad, and the man on the riser.
+// PASS 5 puzzle chains r1 (F3): the quiet route. Once he's rattled by the
+// money (stakes), the m03 cloner can read his badge off his belt. Cheaper than
+// talking, and it costs more: no vault rule, no Park tip, and he stays bought.
 // ===========================================
 
 VAR hollis_resolved = "" // Synced scenario global: how Hollis was dealt with (talked/ko/evaded); also set to evaded by the server_room mapping
@@ -21,6 +24,9 @@ VAR hollis_ko = false
 VAR visitor_log_read = false
 VAR renewal_signoff_read = false
 VAR badge_obtained = false
+// PASS 5 puzzle chains r1 (F3): synced; set by HaX's card_cloned mapping
+// before the chat resumes (m05 Owen's shape).
+VAR hollis_cloned = false
 VAR team_assigned = false
 
 VAR pressed_once = false
@@ -87,6 +93,8 @@ Ray Hollis: Building's been evacuated forty minutes. So you're lost, or you're t
     -> leverage_partial
 // PASS 2: the label said "I'm not here to fight you" and led straight to
 // him panicking; the label now says what the player actually does.
++ {pressed_once and not hollis_cloned and not badge_obtained} [Keep him on the money. Let the cloner read his belt.]
+    -> clone
 + [Walk at him. "I'm not here to fight you, Ray."]
     -> hostile_option
 + [Back off. I'm leaving.]
@@ -123,6 +131,28 @@ Ray Hollis: That's not what I meant.
 + [How much?]
     Ray Hollis: Enough that I can't give it back. That's the whole trick of it, isn't it.
     -> back
+
+// The tag sits on a throwaway line: the RFID minigame takes over the screen,
+// and the chat resumes in clone_debrief. A cancelled read leaves hollis_cloned
+// false, so the hub choice comes back as the retry.
+=== clone ===
+Narrator: You ask how much again, and step in close while he works out an answer.
+#clone_keycard:server_zone_badge
+Narrator: He keeps talking about retainers.
+-> clone_debrief
+
+=== clone_debrief ===
+{hollis_cloned:
+    Narrator: He's still talking when you step back. He never looks at his belt.
+    Ray Hollis: Are we done? Go on, then.
+    ~ hollis_backed_off = true
+    #set_global:hollis_backed_off:true
+    #exit_conversation
+    -> back
+- else:
+    Narrator: The cloner didn't get a clean read. He's watching your hands now.
+    -> back
+}
 
 === leverage_partial ===
 ~ asked_partial = true

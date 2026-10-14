@@ -194,12 +194,14 @@ scada_password = "CascadeWindow19"
           { "text": "TACTICAL TEAM: Never committed — stood by in Denver for the duration", "style": "warning", "condition": "!globalVars.team_assignment" },
           { "text": "PROJECTION CORRECTED: Trojan Horse dormancy nine days, not ninety — EHR and dispatch keys on the manifest", "style": "entry", "condition": "globalVars.projection_revised" },
           { "text": "REDIRECT OFFERED WITH THE WINDOW OPEN: weighed, and held", "style": "entry", "condition": "globalVars.redirect_declined && !globalVars.team_redirected" },
-          { "text": "CORRECTION FOUND WITH THE WINDOW OPEN: the team was not moved", "style": "warning", "condition": "globalVars.revision_found_open && !globalVars.redirect_declined && !globalVars.team_redirected" },
+          { "text": "CORRECTION FOUND WITH THE WINDOW OPEN: the team was not moved", "style": "warning", "condition": "globalVars.revision_found_open && !globalVars.revision_before_commit && !globalVars.redirect_declined && !globalVars.team_redirected" },
           <%# PASS 5 alignment r2 (m2, m3, A2): held before the commit; read with the
               window open but stated after it shut; read but never stated. %>
-          { "text": "CORRECTION IN HAND BEFORE THE CALL: the team went elsewhere", "style": "warning", "condition": "globalVars.revision_before_commit && !globalVars.revision_found_open && globalVars.team_assigned && globalVars.team_assignment !== 'trojan_horse'" },
+          { "text": "CORRECTION IN HAND BEFORE THE CALL: the team went elsewhere", "style": "warning", "condition": "globalVars.revision_before_commit && !globalVars.redirect_declined && globalVars.team_assigned && globalVars.team_assignment !== 'trojan_horse' && !globalVars.team_redirected" },
           { "text": "CORRECTION FOUND LATE: their schedule was read with the window open, put against the brief after it shut", "style": "warning", "condition": "globalVars.projection_revised && globalVars.decode_read_open && !globalVars.revision_found_open && !globalVars.revision_before_commit && globalVars.team_assigned && globalVars.team_assignment !== 'trojan_horse'" },
-          { "text": "CORRECTION FOUND AFTER THE WINDOW SHUT: on the record as found, not as ignored", "style": "entry", "condition": "globalVars.projection_revised && !globalVars.revision_found_open && !globalVars.revision_before_commit && !globalVars.decode_read_open && globalVars.team_assigned && globalVars.team_assignment !== 'trojan_horse'" },
+          <%# PASS 5 puzzle chains r1 (C2): read before the commit, window already shut by a login. %>
+          { "text": "CORRECTION FOUND LATE: their schedule was read before the call, put against the brief afterwards", "style": "warning", "condition": "globalVars.projection_revised && globalVars.decode_before_commit && !globalVars.decode_read_open && !globalVars.revision_found_open && !globalVars.revision_before_commit && globalVars.team_assigned && globalVars.team_assignment !== 'trojan_horse'" },
+          { "text": "CORRECTION FOUND AFTER THE WINDOW SHUT: on the record as found, not as ignored", "style": "entry", "condition": "globalVars.projection_revised && !globalVars.revision_found_open && !globalVars.revision_before_commit && !globalVars.decode_read_open && !globalVars.decode_before_commit && globalVars.team_assigned && globalVars.team_assignment !== 'trojan_horse'" },
           { "text": "PROJECTION UNCHALLENGED: Two copies of the correction were in the building; neither was read", "style": "warning", "condition": "!globalVars.projection_revised && !globalVars.found_coordination_traffic && globalVars.team_assignment !== 'trojan_horse'" },
           { "text": "PROJECTION UNCHALLENGED: Their schedule was read; the Austin row was never put against the brief", "style": "warning", "condition": "!globalVars.projection_revised && globalVars.found_coordination_traffic === true && globalVars.team_assignment !== 'trojan_horse'" },
           { "text": "" },
@@ -268,10 +270,13 @@ scada_password = "CascadeWindow19"
       "puzzle_graph_unlocks": ["generator_room"],
       "puzzle_graph_optional": true
     },
-    <%# PASS 3 (capability arc): the cumulative kit. Neither is needed here:
-        the one RFID door has three routes (talk, printer, KO) and nothing in
-        the building has a reason to sit behind a print. The briefing's start
-        knot names both. No PIN cracker (rationed after m02). %>
+    <%# PASS 3 (capability arc): the cumulative kit. The briefing's start knot
+        names both. No PIN cracker (rationed after m02).
+        PASS 5 puzzle chains r1 (F3): the cloner is now the quiet fourth route
+        through the server zone reader: Hollis carries an rfidCard, and his hub
+        offers a clone once he is rattled (talk, printer, KO, clone). The print
+        kit stays unused: nothing in the building has a reason to sit behind a
+        print (DECISIONS_PENDING.md). %>
     {
       "type": "rfid_cloner",
       "name": "RFID Cloner",
@@ -320,19 +325,21 @@ scada_password = "CascadeWindow19"
     renamed -- ink packages reference them in #complete_task tags, and taskOnKO
     / concludeRequires reference them here.
 
-    Aim chain: commit_the_team -> reach_the_control_network -> {below_ground
-    (side branch), reach_the_control_room -> take_the_attack_host ->
-    end_the_sequence}. The vault aim hangs off the network aim rather than
-    sitting in the chain, because the vault is optional lore and must never gate
-    the conclusion.
+    Aim chain: commit_the_team -> {reach_the_control_network ->
+    reach_the_control_room -> take_the_attack_host -> end_the_sequence,
+    trace_the_intrusion (side branch)}. trace_the_intrusion unlocks off
+    commit_the_team rather than sitting in the chain. Two of its tasks are
+    required within the aim since alignment round 2 (U5), but no other aim and
+    no concludeRequires entry depends on it, so it never gates the conclusion.
 
     Aim `status: "locked"` is presentation only -- objectives-manager.js:412 and
     :543 auto-reveal a locked parent aim when one of its tasks completes -- so a
     locked aim can never strand a task. Every task therefore ships `active`.
 
-    Anything a player can legitimately walk past (Hollis, Elena, Park, the
-    vault, the lore drops) is `optional: true`, so aim completion never depends
-    on content the player was allowed to skip.
+    The people a player can legitimately walk past (Hollis, Elena, Park) and
+    the lore drops are `optional: true`. The generator hall and the keypad are
+    required within trace_the_intrusion only (U5), which gates nothing, so the
+    ending never depends on content the player was allowed to skip.
 
     mission_complete and grid_saved are set from shut_down_the_cascade's
     onComplete.setGlobal -- the terminal, never a KO-able conversation.
@@ -925,6 +932,13 @@ scada_password = "CascadeWindow19"
               "setGlobal": { "decode_read_open": true }
             },
             {
+              "_comment": "PASS 5 puzzle chains r1 (C2): the decode was read before the team was committed, anywhere and whether or not the window was open, and the deduction wasn't made. The debrief stops telling a Trojan Horse commit that it had no way to know, and a commit after a login that the timing was the Architect's.",
+              "eventPattern": "global_variable_changed:team_assigned",
+              "condition": "value === true && globalVars.found_coordination_traffic === true && !globalVars.projection_revised",
+              "onceOnly": true,
+              "setGlobal": { "decode_before_commit": true }
+            },
+            {
               "_comment": "PASS 5 alignment r1 (M1): the debrief and credits say whether the player logged in on the host before or after opening the control room door.",
               "eventPattern": "room_entered:scada_control",
               "onceOnly": true,
@@ -993,11 +1007,11 @@ scada_password = "CascadeWindow19"
               "sendTimedMessage": { "delay": 1500, "message": "'Don't write it down,' so they riveted it to the door. A code you can read off the room isn't a secret." }
             },
             {
-              "_comment": "PASS 4 (design review fix 7): Park's talk-down needs the casualty projection, which is in the control room. Point at it once, only if the player hasn't read it and Park is still a live problem. A failed condition doesn't spend the onceOnly handler. PASS 5 alignment r1 (m4): it used to arrive 4 s into the first visit, before the player had tried anything. Now on a return after backing away from him; HaX's hub still has it (topic_park).",
+              "_comment": "PASS 4 (design review fix 7): Park's talk-down needs the casualty projection, which is in the control room. Point at it once, only if the player hasn't read it and Park is still a live problem. A failed condition doesn't spend the onceOnly handler. PASS 5 alignment r1 (m4): it used to arrive 4 s into the first visit, before the player had tried anything. Now on a return after backing away from him; HaX's hub still has it (topic_park). PASS 5 puzzle chains r1 (F1): a third visit with the projection gets a last chance (Park's last_chance), so the hint now says to carry it back.",
               "eventPattern": "room_entered:cable_vault",
               "condition": "!globalVars.casualty_projection_found && !globalVars.park_ko && globalVars.park_resolved === 'evaded'",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 4000, "message": "That'll be their plant man. He was briefed on a building, not a body count. Mercer's signed projection is in the control room. Show him that." }
+              "sendTimedMessage": { "delay": 4000, "message": "He was briefed on a building, not a body count. Mercer's projection is in the control room. Carry it back down with you. He won't wait a third time." }
             },
             {
               "_comment": "PASS 3 (P2): the uncommitted player's music turns to noir once, on the first ops-floor entry. Music events can't set globals, so the latch lives here.",
@@ -1014,12 +1028,44 @@ scada_password = "CascadeWindow19"
             {
               "eventPattern": "npc_ko:elena_rodriguez",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 2000, "message": "She's not talking now. You don't need her. The vault code's in their site notes off the share, and their listener leaks the control room password." }
+              "sendTimedMessage": { "delay": 2000, "message": "She's not talking now. You don't need her. How to read the vault code is in their site notes off the share, and their listener leaks the control room password." }
             },
             {
               "eventPattern": "npc_ko:thomas_park",
               "onceOnly": true,
               "sendTimedMessage": { "delay": 2000, "message": "Park's out of it. Whatever he came down to cut, he hadn't finished. The vault's yours to search." }
+            },
+            <%# PASS 5 puzzle chains r1 (F2): when a fight starts, say how to fight and
+                that walking away works (m06 S1 pattern, the tutorial's control words).
+                A reload restores hostility with restored: true, so it doesn't repeat. %>
+            {
+              "eventPattern": "npc_hostile_state_changed",
+              "condition": "data.npcId === 'ray_hollis' && data.isHostile === true && data.restored !== true",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 1000, "message": "He's coming for you. Q for fists, then E or click when he's in front. Or walk away: he's slower than you. Q again stows them, then click to walk." }
+            },
+            {
+              "eventPattern": "npc_hostile_state_changed",
+              "condition": "data.npcId === 'thomas_park' && data.isHostile === true && data.restored !== true",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 1000, "message": "Park's swinging. Q for fists, then E or click when he's in front. Or walk away: he's slower than you. Q again stows them, then click to walk." }
+            },
+            {
+              "eventPattern": "npc_hostile_state_changed",
+              "condition": "data.npcId === 'james_mercer' && data.isHostile === true && data.restored !== true",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 1000, "message": "Mercer's coming at you. Q for fists, then E or click when he's in front. Or walk away: he's slower than you. Q again stows them, then click to walk." }
+            },
+            <%# PASS 5 puzzle chains r1 (F3): Hollis's badge cloned in conversation.
+                card_cloned carries the card's name and is emitted before the chat
+                resumes, so his clone_debrief reads hollis_cloned (m05 Owen). The
+                server-hall mapping then records evaded (hollis_backed_off). %>
+            {
+              "eventPattern": "card_cloned",
+              "condition": "data.cardName === 'Server Zone Badge - R. Hollis'",
+              "onceOnly": true,
+              "setGlobal": { "hollis_cloned": true, "badge_obtained": true },
+              "sendTimedMessage": { "delay": 4000, "message": "Got it. His badge never left his belt. Anyone who stands that close can walk off with a copy." }
             },
             {
               "eventPattern": "npc_ko:james_mercer",
@@ -1230,8 +1276,21 @@ scada_password = "CascadeWindow19"
               "setVisible": false
             }
           ],
+          <%# PASS 5 puzzle chains r1 (F3): the m03 cloner reads this off his belt
+              (#clone_keycard in his clone knot). card_id matches the server zone
+              reader's requires, so a saved clone opens it (unlock-system.js). His
+              itemsHeld badge stays for the KO drop and the talk handover. No
+              parentheses in the name: card_cloned is matched on it. %>
+          "rfidCard": {
+            "card_id": "server_zone_badge",
+            "rfid_protocol": "EM4100",
+            "name": "Server Zone Badge - R. Hollis"
+          },
           "observations": "The guard on the checkpoint desk. He is not watching the doors, he is watching the clock, and he has been doing it for about six months.",
+          <%# PASS 5 puzzle chains r1 (F2): hostile tuned beside the patrol. A guard
+              in his mid-thirties: 100 and 4, a little under m04's guard (110). %>
           "behavior": {
+            "hostile": { "chaseSpeed": 100, "attackDamage": 4, "pauseToAttack": true },
             "patrol": {
               "enabled": true,
               "waypoints": [
@@ -1553,7 +1612,7 @@ scada_password = "CascadeWindow19"
       },
       "npcs": [
         {
-          "_comment": "Elena Rodriguez -- the conflicted one. Source of the revision intel, the vault PIN and the SCADA password, all of which have a redundant second source so a KO does not strand the run.",
+          "_comment": "Elena Rodriguez -- the conflicted one. Source of the revision intel, the rule for reading the vault code and the SCADA password, all of which have a redundant second source so a KO does not strand the run.",
           "id": "elena_rodriguez",
           "displayName": "Elena Rodriguez",
           "npcType": "person",
@@ -1734,6 +1793,12 @@ scada_password = "CascadeWindow19"
           "currentKnot": "start",
           "globalVarOnKO": "mercer_ko",
           "taskOnKO": "confront_mercer",
+          <%# PASS 5 puzzle chains r1 (F2): engine defaults (chase 145 against a
+              walk of 150, 10 a hit, no leash) made every fight a KO. Late fifties:
+              70 and 3, under m06's Kemal (75 / 3). %>
+          "behavior": {
+            "hostile": { "chaseSpeed": 70, "attackDamage": 3, "pauseToAttack": true }
+          },
           "observations": "A man in his late fifties at the master console, working unhurriedly, the way somebody works when they have already decided how the evening ends.",
           <%# PASS 2 (lesson 24): the ink used #remove_npc, which silently fails for
               an NPC in a room loaded after the start. He leaves (detained or
@@ -1896,6 +1961,12 @@ scada_password = "CascadeWindow19"
           "currentKnot": "start",
           "globalVarOnKO": "park_ko",
           "taskOnKO": "neutralise_park",
+          <%# PASS 5 puzzle chains r1 (F2): crimping tool, forties, tied to his job:
+              80 and 4, so walking away from him works (browser N2: he chased a
+              fleeing player from the vault to the control room door at 145). %>
+          "behavior": {
+            "hostile": { "chaseSpeed": 80, "attackDamage": 4, "pauseToAttack": true }
+          },
           <%# PASS 2: talked round, he walks out; hide him (lesson 24), re-applied on re-entry. %>
           "eventMappings": [
             {
@@ -2003,6 +2074,7 @@ scada_password = "CascadeWindow19"
     "revision_found_open": false,
     "revision_before_commit": false,
     "decode_read_open": false,
+    "decode_before_commit": false,
 
 <%# --- The countdown (engine timers, narrative only) ---------------------- %>
     "architect_t20_played": false,
@@ -2017,6 +2089,7 @@ scada_password = "CascadeWindow19"
 <%# --- NPC outcomes ------------------------------------------------------- %>
     "hollis_resolved": "",
     "hollis_backed_off": false,
+    "hollis_cloned": false,
     "elena_outcome": "",
     "elena_met": false,
     "mercer_fate": "",

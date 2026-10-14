@@ -1,0 +1,110 @@
+{
+ "steps": [
+  {
+   "note": "R19 (puzzle chains r1, N3): r8 with the hardened stance. No speed praise and no 'Above expectations' after 'Nobody put it next to the brief'."
+  },
+  {
+   "talk": "briefing",
+   "picks": [
+    "Understood. Talk to me",
+    "I've made the call",
+    "Meltdown"
+   ]
+  },
+  {
+   "talk": "phone",
+   "picks": [
+    "Understood. Let"
+   ]
+  },
+  {
+   "enter": "operations_floor"
+  },
+  {
+   "read": "shift_handover_sheet"
+  },
+  {
+   "pickup": "printed_contractor_badge"
+  },
+  {
+   "enter": "server_room"
+  },
+  {
+   "event": "object_interacted",
+   "data": {
+    "objectType": "vm-launcher"
+   }
+  },
+  {
+   "flag": 1
+  },
+  {
+   "read": "coordination_extract"
+  },
+  {
+   "expect": {
+    "found_coordination_traffic": true,
+    "projection_revised": false,
+    "decode_read_open": true
+   }
+  },
+  {
+   "flag": 2
+  },
+  {
+   "enter": "scada_control"
+  },
+  {
+   "flag": 3
+  },
+  {
+   "flag": 4
+  },
+  {
+   "task": "shut_down_the_cascade"
+  },
+  {
+   "talk": "phone",
+   "picks": [
+    "Bring me in"
+   ]
+  },
+  {
+   "enter": "server_room"
+  },
+  {
+   "talk": "debrief",
+   "picks": [
+    "Nothing on the record",
+    "I want the numbers"
+   ]
+  },
+  {
+   "said": [
+    "Their own schedule was in your hands tonight. The Austin row said nine days. Nobody put it next to the brief.",
+    "It was in your hands. Nine days, in their own table.",
+    "Yes. Their schedule was in your hands tonight. Next time it goes next to the brief."
+   ],
+   "notSaid": [
+    "Two copies. Nobody read them.",
+    "Almost nobody gets there this quickly",
+    "Above expectations"
+   ]
+  },
+  {
+   "creditsSaid": [
+    "Their schedule was read; the Austin row was never put against the brief"
+   ],
+   "creditsNotSaid": [
+    "neither was read",
+    "CORRECTION FOUND"
+   ]
+  },
+  {
+   "note": "Run-length guard: the debrief read-out is the longest run (pre-existing). Dialogue stage owns breaking it up."
+  },
+  {
+   "maxRun": 70
+  }
+ ]
+}

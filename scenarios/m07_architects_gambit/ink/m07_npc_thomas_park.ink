@@ -17,6 +17,9 @@ VAR park_ko = false
 VAR casualty_projection_found = false
 
 VAR park_greeted = false
+// PASS 5 puzzle chains r1 (F1, closes C5): returns counted in an ink variable,
+// so npcInkVariables carries it over a page reload (visit counts don't survive).
+VAR park_returns = 0
 
 === start ===
 {park_ko:
@@ -101,7 +104,14 @@ Thomas Park: Right.
 // PASS 5 alignment r2 (m7): the third visit lands here too, without "Right."
 = swing
 Narrator: He comes up off his knees with the crimping tool swinging.
+-> turned
 
+// PASS 5 puzzle chains r1 (F1): he is already standing in last_chance.
+= lunge
+Narrator: You give ground. He comes after you with the crimping tool.
+-> turned
+
+= turned
 ~ park_resolved = "ko"
 #set_global:park_resolved:ko
 #hostile:thomas_park
@@ -119,17 +129,30 @@ Narrator: You back into the dark of the stairwell. He waits, then goes back to t
 === back_at_it ===
 // PASS 5 alignment r1 (M5): the entry chat now opens on every return, so a
 // third visit gets its own line rather than "Second time" again.
-{back_at_it == 1:
+// PASS 5 puzzle chains r1 (F1, C5): branch on park_returns, not visit counts.
+~ park_returns = park_returns + 1
+{park_returns <= 1:
     Narrator: He is still at the junction box, working faster. His flashlight finds the door before you're through it.
     Thomas Park: Second time. There isn't a third.
-- else:
-    // PASS 5 alignment r2 (m7): the threat was empty. A third visit turns him
-    // hostile, so backing off twice is a real choice.
-    Narrator: He sets the wire down on the mat without looking round.
-    Thomas Park: I said there wasn't a third.
-    -> goes_loud.swing
+    -> hub
 }
--> hub
+// PASS 5 puzzle chains r1 (F1): HaX sends the player back with the projection,
+// so carrying it on the third visit buys one sentence. Without it, he swings
+// (alignment r2 m7: backing off twice is a real choice).
+{casualty_projection_found:
+    -> last_chance
+}
+Narrator: He sets the wire down on the mat without looking round.
+Thomas Park: I said there wasn't a third.
+-> goes_loud.swing
+
+=== last_chance ===
+Narrator: He comes up off his knees with the crimping tool in his fist, and waits.
+Thomas Park: I said there wasn't a third. You've got one sentence.
++ [(Hold up the projection.)]
+    -> projection
++ [(Step back.)]
+    -> goes_loud.lunge
 
 === gone ===
 Narrator: The junction box cover is back on, finger-tight. His flashlight lies on the mat, burning down.

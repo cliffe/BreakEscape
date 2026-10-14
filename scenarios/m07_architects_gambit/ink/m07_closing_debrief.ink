@@ -41,6 +41,9 @@ VAR revision_found_open = false
 VAR found_coordination_traffic = false
 VAR revision_before_commit = false
 VAR decode_read_open = false
+// PASS 5 puzzle chains r1 (C2): the decode was read before the team was
+// committed, and the deduction wasn't made then.
+VAR decode_before_commit = false
 
 // People
 VAR mercer_fate = ""
@@ -168,8 +171,13 @@ Director Magnus Netherton: The dormancy field said ninety days. The staged paylo
 Narrator: He puts the tablet face down on the console.
 // PASS 5 alignment r2 (m1): a player who made the deduction (or heard Elena)
 // before committing knew exactly what they were choosing.
-{revision_before_commit:
+// PASS 5 puzzle chains r1 (C2): the decode was in the player's kit at the
+// commit, read but not put against the brief.
+{
+- revision_before_commit:
     Director Magnus Netherton: You read their schedule before you made the call, and sent the team where the brief said nothing would happen. I would like that noted.
+- decode_before_commit:
+    Director Magnus Netherton: Their schedule was in your kit when you made the call. Whatever you read in it, you sent them to Austin.
 - else:
     Director Magnus Netherton: You had no way to know what you were choosing. I would like it noted that you chose it anyway.
 }
@@ -230,7 +238,12 @@ Director Magnus Netherton: I will need an explanation for that in writing. Not t
     // (40 minutes, or the flag 3 login) is reported as found, not ignored.
     {
     - revision_found_open:
-        {redirect_declined:
+        // PASS 5 puzzle chains r1 (C1): deduced before the commit, then sent
+        // elsewhere with the window open. A choice, not a team left standing.
+        {
+        - revision_before_commit and not redirect_declined:
+            Director Magnus Netherton: You had it before you made the call, and sent the team elsewhere. The window stayed open after that.
+        - redirect_declined:
             Director Magnus Netherton: You weighed moving the team with the window open, and held. That is on the record as a decision.
         - else:
             Director Magnus Netherton: The team was not moved on it.
@@ -249,6 +262,11 @@ Director Magnus Netherton: I will need an explanation for that in writing. Not t
     // the deduction came after it shut.
     - decode_read_open:
         Director Magnus Netherton: Their schedule was in your hands with the window open. You put it against the brief after it shut.
+        Agent HaX: Late is still found. It goes in the report as late.
+    // PASS 5 puzzle chains r1 (C2): read before the commit, the window shut by
+    // a login while the team was still uncommitted. The timing was the player's.
+    - decode_before_commit:
+        Director Magnus Netherton: Their schedule was in your hands before you sent the team anywhere. You put it against the brief afterwards.
         Agent HaX: Late is still found. It goes in the report as late.
     - else:
         Director Magnus Netherton: You found it after the window had closed. That is in the report as found, not as ignored.
@@ -330,6 +348,9 @@ Director Magnus Netherton: Spread thin enough that no single coroner sees a clus
 Director Magnus Netherton: Then the health record systems. Eighteen thousand hospitals rebuild from bare metal.
 // PASS 5 alignment r1 (M3): "You knew" only when the team could still have moved.
 {
+// PASS 5 puzzle chains r1 (C1)
+- revision_found_open and revision_before_commit and not redirect_declined:
+    Agent HaX: You knew before you sent them, and you sent them somewhere else. That's the sentence I'm writing.
 - revision_found_open:
     Agent HaX: You knew. You found it and it did not move.
     Agent HaX: I'm not saying it to punish you. Somebody has to write it down, and it's going to be me.
@@ -425,8 +446,10 @@ Director Magnus Netherton: The site, then. Shorter list.
     // "no connection beyond a bad night" / "social engineering" lines contradicted him.
     Director Magnus Netherton: He was paid to renew Mercer's credentials in June. The police will talk to him when he can talk.
 - hollis_resolved == "talked":
-    Director Magnus Netherton: Ray Hollis walked to the muster point and waited for the police. He is giving a full statement, payment included.
-    Director Magnus Netherton: He did not have to wait.
+    // PASS 5 puzzle chains r1 (N1): on the talk route he refuses the police
+    // and walks out through the muster door (his deal_take).
+    Director Magnus Netherton: Ray Hollis handed over his badge and walked out through the muster door. The police picked him up at the gate. He has given his name and nothing else, yet.
+    Director Magnus Netherton: He told you about the vault and the man on the riser. That is more than he has told us.
 - hollis_resolved == "evaded":
     Director Magnus Netherton: The checkpoint guard is still at his post, and still on their payroll. We know his name. It will keep.
 // PASS 3: nobody dealt with him (never spoken to, or he went for the agent and was left standing).
@@ -576,7 +599,13 @@ Director Magnus Netherton: Three briefs. One team. You sent it where you sent it
 
 * [I made the call on the numbers I had. I'd make it again.]
     #set_global:debrief_stance:defended
-    Director Magnus Netherton: Good. That answer will stand up in any review room you ever sit in.
+    // PASS 5 puzzle chains r1 (N3): not "Good" straight after "Nobody put it
+    // next to the brief" to a player who read the decode and never deduced.
+    {found_coordination_traffic and not projection_revised and team_assignment != "trojan_horse":
+        Director Magnus Netherton: That answer will stand up in a review room. You also had their schedule in your hands tonight, and you didn't put it next to the brief.
+    - else:
+        Director Magnus Netherton: Good. That answer will stand up in any review room you ever sit in.
+    }
     Director Magnus Netherton: It is also the predictable answer. Predictable is what he was shopping for tonight.
     Director Magnus Netherton: Keep the discipline. Change the numbers you trust.
     -> handoff
@@ -601,8 +630,13 @@ Director Magnus Netherton: Three briefs. One team. You sent it where you sent it
     // PASS 5 alignment r2 (N1): no praise for speed straight after "You knew"
     // to a player who held the correction with the window open and let it
     // pass. A redirect weighed and declined is a decision, so it keeps it.
-    {revision_found_open and not team_redirected and not redirect_declined:
+    {
+    - revision_found_open and not team_redirected and not redirect_declined:
         Director Magnus Netherton: Yes. You had one of his numbers in your hands tonight. Next time it moves the team.
+    // PASS 5 puzzle chains r1 (N3, fixer's addition): the same speed praise
+    // would follow "Nobody put it next to the brief".
+    - found_coordination_traffic and not projection_revised and team_assignment != "trojan_horse":
+        Director Magnus Netherton: Yes. Their schedule was in your hands tonight. Next time it goes next to the brief.
     - else:
         Director Magnus Netherton: Yes. Almost nobody gets there this quickly.
     }
@@ -618,7 +652,8 @@ Narrator: Netherton closes the tablet cover and holds it against his chest, whic
 // PASS 5 alignment r1 (m7): not for a night with no team sent or Seattle dark.
 // PASS 5 alignment r2 (N1): nor when the correction was found with the window
 // open and the team left where it was without a declined redirect.
-{team_assignment != "" and not countdown_expired and not (revision_found_open and not team_redirected and not redirect_declined):
+// PASS 5 puzzle chains r1 (N3): nor after "Nobody put it next to the brief".
+{team_assignment != "" and not countdown_expired and not (revision_found_open and not team_redirected and not redirect_declined) and not (found_coordination_traffic and not projection_revised and team_assignment != "trojan_horse"):
     Director Magnus Netherton: Above expectations, Agent. I do not say that often and I am not going to elaborate on it.
 - else:
     Director Magnus Netherton: You finished it, Agent. I will write the rest myself.
