@@ -4,7 +4,7 @@
 // Entry knot: start   Sets: nightshade_interviewed
 // The tell is that nothing rattles him. Warm, not sinister. An attentive player
 // leaves suspicious (nightshade_suspected); accusing him early gets a graceful,
-// chilling deflection -- never a confession. The box makes the case, not this.
+// chilling deflection -- never a confession. The door audit makes the case, not this.
 // ================================================
 
 // PASS 2: task at the top of the first meeting (lesson 44); exits return to

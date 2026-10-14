@@ -27,6 +27,9 @@ VAR cyberchef_guide_hint_given = false
 VAR gitsecrets_guide_offered = false
 VAR gitsecrets_guide_hint_given = false
 VAR found_badge_audit = false
+// PASS 5 (puzzle chains C1, F1): synced scenario global, set by HaX's
+// server-room entry mapping; opens the box topic.
+VAR server_room_entered = false
 
 VAR first_call = true
 VAR all_flags_submitted = false
@@ -72,25 +75,40 @@ So I'm going to be very professional tonight. Bear with me.
 + [How do I get into the server room?]
     // Round 2: shorter, action first; the cloned branch says how to use the
     // saved card (after a reload the reader opens the cloner's menu).
+    // PASS 5 (puzzle chains C1, m5): his card is MIFARE Classic with custom
+    // keys (rfidCard), not the EM4100 of m04-m07; the all-three branch says so
+    // before the clone, since the cloner needs the darkside attack.
     {
     - netherton_card_cloned:
-        Reader's east of the ops floor. Open the cloner, pick his card from Saved, emulate it. EM4100 has no crypto; the reader can't tell.
+        Reader's east of the ops floor. Open the cloner, pick his card from Saved, emulate it.
+        With the keys cracked, the reader can't tell a copy from his own card. Our top card, and it fell in half a minute.
     - netherton_card_taken or badge_cloned:
         Reader's east of the ops floor. You've already got what it wants.
     - netherton_ko:
         His card's on the floor beside him. Or the visitor printer at reception: a badge behind a facilities PIN. Facilities write PINs down.
     - cipher_seen and phantom_seen and nightshade_seen:
         You've seen all three. Back to the Director, and stand close with the cloner. Or the visitor printer at reception.
+        His card isn't the EM4100 you've been reading all year. It's MIFARE Classic with its own keys, so the cloner can't just copy it.
+        Run the darkside attack to crack the keys first, then read it. Half a minute beside him.
     - else:
         See all three suspects, then clone the Director's card. Or try the visitor printer at reception. Facilities write their PINs down.
     }
     -> hub
-+ { found_gitlist_vuln } [What am I looking at on this box?]
+// PASS 5 (puzzle chains C1, F1): the VM ladder shows only the current step.
+// The box topic opens on entering the server room and closes at flag 1; the
+// flag-2 topic covers the gap between flags 1 and 2. Wording follows the
+// in-game framing (launcher, flag texts, guides): needs checking against
+// SecGen by the user.
++ { server_room_entered and not found_gitlist_vuln } [What am I looking at on this box?]
     A GitList instance our own team stood up and never patched.
-    One crafted request gets you code execution with no login at all. That's your first flag.
+    One crafted request gets you code execution with no login at all. Get that working and it's your first flag.
     And our first national embarrassment.
     -> hub
-+ { found_leaked_creds } [I've got credentials. Now what?]
++ { found_gitlist_vuln and not found_leaked_creds } [I'm on the box. Where do I look?]
+    Read the history, not just the files. Then the stash: git keeps what people meant to throw away.
+    Whoever's account it is, they committed something they shouldn't have. Git secrets guide's yours if you want it.
+    -> hub
++ { found_leaked_creds and not found_architect_comms } [I've got credentials. Now what?]
     Log in properly with them. Whoever committed those thought no one would ever read that far.
     Get into the account and let's find out whose it is.
     -> hub

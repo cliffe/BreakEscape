@@ -14,6 +14,10 @@ VAR met = false
 VAR accused_cipher = false
 VAR accused_phantom = false
 VAR accused_nightshade = false
+// PASS 5 (puzzle chains C1, m6): caught picking a locker (lockpick_used_in_view,
+// person-chat, once, before the naming). Synced scenario global; HaX's
+// mapping turns it into the tip-off.
+VAR locker_seen_picked = false
 
 === start ===
 { met: -> return_visit }
@@ -30,6 +34,17 @@ Off-Duty Agent: You didn't hear it from me. Two days before Portland I was in he
 Off-Duty Agent: Went through to the lab for the stapler. Just gone twenty past ten, half past at the latest.
 Off-Duty Agent: Someone at the bench at the far end. Had the build of the nerdy one, Cipher. Or not. I wasn't looking.
 Off-Duty Agent: I'm sitting where I can see the door. You should too.
+-> hub
+
+// PASS 5 (puzzle chains C1, m6): the catch. Sets met so a later talk opens
+// on his return line; returns to the hub, so a reopen lands on a choice.
+=== on_locker_picked ===
+~ met = true
+~ locker_seen_picked = true
+#set_global:locker_seen_picked:true
+Narrator: The magazine comes down.
+Off-Duty Agent: Oi. That's not yours.
+Off-Duty Agent: Don't worry. I didn't see anything. I'll be telling everyone I didn't see anything.
 -> hub
 
 === hub ===

@@ -37,6 +37,7 @@ VAR named_by_hax = false
 VAR asked_line = false
 // PASS 5 (alignment C2, n7): the tip-off goes on the record.
 VAR nightshade_tipped_off = false
+VAR locker_seen_picked = false // PASS 5 (puzzle chains C1, m6): seen picking a locker
 
 === start ===
 #set_global:debrief_played:true
@@ -78,6 +79,9 @@ Director Magnus Netherton: Say it, Agent. Whatever you think of me tonight. I wo
 { accused_cipher or accused_phantom:
     Director Magnus Netherton: {accused_cipher and accused_phantom:You accused both of the innocent men to their faces.|You accused {accused_cipher:Cipher|Phantom} to his face.} I read the transcripts.
     Director Magnus Netherton: It is in the file now, and it will follow {accused_cipher and accused_phantom:them|him} longer than it follows you.
+}
+{ locker_seen_picked:
+    Director Magnus Netherton: You picked a colleague's locker in front of a witness, who then told the whole floor he saw nothing.
 }
 { named_on_evidence:
     { named_before_box:

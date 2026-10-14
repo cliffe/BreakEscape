@@ -35,7 +35,7 @@
 { "said": ["read it without me"] },
 { "expect": { "cipher_audit_confirmed": false } },
 { "talk": "netherton", "picks": ["I can name the leak", "I'm ready"] },
-{ "said": ["take it to the people on it"] },
+{ "said": ["take it to the men who went through that lab door"] },
 { "talk": "cipher", "picks": ["I was wrong to say that", "door audit has you", "That's all"] },
 { "said": ["decent or tactical", "Eight minutes"] },
 { "expect": { "cipher_audit_confirmed": true } },

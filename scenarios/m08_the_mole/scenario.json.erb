@@ -53,14 +53,17 @@
 #   pin      interrogation_room <- suite_code: the code card in director_safe, or Netherton
 #                                  aloud after a correct reading of the door audit (P6).
 #                                  Picks can't open it; the PIN cracker isn't in the kit.
-#   key      nightshade_locker  <- start-kit picks | his key, asked for (P8) or dropped on a KO
+#   key      cipher_locker / nightshade_locker / phantom_locker (break room, 0x23 / 0x47 / 0x88)
+#                               <- start-kit picks | each owner's key after his audit beat, or
+#                                  dropped on a KO (PASS 5: three lockers; 0x47 holds the stick)
 #   (print)  the USB stick in the locker carries Nightshade's thumbprint (PASS 4): the
 #            start-kit fingerprint kit lifts it (optional; confrontation line + credit)
 #
 # CLOCK (PASS 3): the Citadel keeps UTC and SAFETYNET logs print UTC. T-0, the
 # Portland order, is 10:41 UTC (m07). The plan was opened D-2 10:38-11:25 UTC.
 #
-# WIN CONDITION (PASS 2): all four flags in -> the confrontation opens as a
+# WIN CONDITION (PASS 2, PASS 5 Option B): all four flags in AND the mole named
+# (mole_identified) -> the confrontation opens as a
 # disableClose cutscene on entering the interrogation room; the fate choice is
 # made in that ink (nightshade_arrested XOR nightshade_triple_agent, fate_decided,
 # decide_the_fate). The disposition screen on the wall only DISPLAYS the outcome.
@@ -194,6 +197,7 @@ backup_plain = "SENT -- To: architect@entropy.onion  From: nightshade_deep_state
           { "text": "THE CASE: Named from the door audit, not on the first reading", "style": "entry", "condition": "globalVars.named_on_evidence && globalVars.audit_misread" },
           { "text": "THE CASE: The door audit, misread three times. The Director read it himself.", "style": "warning", "condition": "globalVars.audit_closed && !globalVars.named_by_hax" },
           { "text": "THE CASE: The door audit read to HaX, with the Director on his floor", "style": "warning", "condition": "globalVars.named_by_hax" },
+          { "text": "THE LOCKERS: Seen picking one by an off-duty agent who saw nothing", "style": "warning", "condition": "globalVars.locker_seen_picked" },
           { "text": "NIGHTSHADE: Tipped off before he was named", "style": "warning", "condition": "globalVars.nightshade_tipped_off" },
           { "text": "YOUR FIRST CALL TO THE DIRECTOR: Cipher -- wrong, and corrected", "style": "warning", "condition": "globalVars.suspect_theory === 'cipher'" },
           { "text": "YOUR FIRST CALL TO THE DIRECTOR: Phantom -- wrong, and corrected", "style": "warning", "condition": "globalVars.suspect_theory === 'phantom'" },
@@ -263,7 +267,8 @@ CREDITS
       "puzzle_graph_optional": true
     },
     <%# PASS 3 (capability arc): the cumulative kit. ATHENA names it in the
-        opening, and says the PIN cracker is on a bench in Technical Analysis. %>
+        opening, and says the PIN cracker is signed out to 0x47 (withheld; the suite
+    keypad is the wall it would have opened). %>
     {
       "type": "rfid_cloner",
       "name": "RFID Cloner",
@@ -609,6 +614,10 @@ CREDITS
             "language": "en-GB"
           },
           "currentKnot": "start",
+          <%# PASS 5 (puzzle chains C1, m2): she does not fight back. The engine only
+              swings from the chase state, and an aggroDistance of 1 px never lets
+              the chase start (npc-behavior.js:694, :1369); 0 would fall back to 160. %>
+          "behavior": { "hostile": { "chaseSpeed": 70, "attackDamage": 3, "pauseToAttack": true, "aggroDistance": 1 } },
           <%# PASS 5 (alignment C2): ATHENA hosts two latches with no text of their
               own (main_lobby is always loaded, lesson 43), so they don't share
               events with HaX's onceOnly texts on the same NPC. %>
@@ -671,7 +680,8 @@ CREDITS
     - KO reactions were keyed on global_variable_changed:<npc>_ko, which
       globalVarOnKO never emits (lesson 18). Now npc_ko:<id>.
     - the case is "made" only when all four flags are in (all_flags_submitted
-      is latched on closing_debrief); flag 4 alone names him. %>
+      is latched on closing_debrief). PASS 5 (Option B): flag 4 no longer
+      names him; the door audit read to the Director does (see below). %>
           "eventMappings": [
             {
               "_comment": "First contact, after the opening cutscene closes rather than on a wall-clock timer that could open over it.",
@@ -696,15 +706,16 @@ CREDITS
               "sendTimedMessage": { "delay": 1500, "message": "Credentials, committed straight into the repo and never scrubbed. Log in properly with them and let's see whose account it really is." }
             },
             {
-              "_comment": "Flag 3 -- proper login, home-directory flag. The account resolves to a real person. Also opens the privilege-escalation guide.",
+              "_comment": "Flag 3 -- proper login, home-directory flag. The mailbox ties the account to the Portland intercept (an account, not yet a person: PASS 5 Option B). Also opens the privilege-escalation guide.",
               "eventPattern": "global_variable_changed:flag3_submitted",
               "condition": "value === true",
               "onceOnly": true,
               "setGlobal": { "found_architect_comms": true, "privesc_guide_offered": true },
               "sendTimedMessage": { "delay": 1500, "message": "You're in as them. The sent mail goes to architect@entropy.onion, from the sender stripped off the Portland intercept. The logs need root, via that sudo rule. Privesc guide?" }
             },
-<%# Flag 4 -- root. Access logs become readable and name the account's owner.
-    Source of mole_identified. The case is not 'made' until all four are in
+<%# Flag 4 -- root. Access logs become readable: a terminal and a time (PASS 5,
+    Option B; see below for the fallbacks that still set mole_identified).
+    The case is not 'made' until all four are in
     (all_flags_submitted, latched on closing_debrief).
     PASS 4 (fix 7): split on named_on_evidence (disjoint, same setGlobal), so a
     player who already named him from the door audit hears that the box agrees.
@@ -837,6 +848,43 @@ CREDITS
               "onceOnly": true,
               "sendTimedMessage": { "delay": 2000, "message": "That was me you just put on the break-room floor. I'm typing this from it. We'll talk about it after." }
             },
+<%# PASS 5 (puzzle chains C1, m2): controls texts when a punched NPC turns
+    hostile, m07's two-part wording (Hollis, Park, Mercer) with a per-NPC
+    opening. restored !== true so a reload's re-announced hostility repeats
+    nothing. ATHENA and HaX in person don't fight back (aggroDistance 1), so
+    each gets one text: how to put the fists away. %>
+<% [["director_netherton", "The Director's coming for you."],
+    ["agent_cipher", "Cipher's swinging."],
+    ["agent_phantom", "Phantom's coming at you."],
+    ["agent_nightshade", "Nightshade's coming for you."],
+    ["nightshade_confrontation", "He's coming over the table."],
+    ["background_analyst", "The analyst's swinging."],
+    ["background_agent", "The off-duty agent's coming at you."]].each do |id, opener| %>
+            {
+              "eventPattern": "npc_hostile_state_changed",
+              "condition": "data.npcId === '<%= id %>' && data.isHostile === true && data.restored !== true",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 1000, "message": <%= (opener + " Q switches to fists (again for a harder punch), then E or click when he's in front. Face him squarely.").then { |t| id == "background_analyst" ? t.sub("when he's", "when she's").sub("Face him", "Face her") : t }.to_json %> }
+            },
+            {
+              "eventPattern": "npc_hostile_state_changed",
+              "condition": "data.npcId === '<%= id %>' && data.isHostile === true && data.restored !== true",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 5500, "message": <%= ("Keep pressing Q until the open hand shows to walk by clicking. " + (id == "background_analyst" ? "She's" : "He's") + " slower than you if you need distance.").to_json %> }
+            },
+<% end %>
+            {
+              "eventPattern": "npc_hostile_state_changed",
+              "condition": "data.npcId === 'receptionist_ai' && data.isHostile === true && data.restored !== true",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 1000, "message": "That's ATHENA's reception avatar you're hitting. She won't hit back, and she logs everything. Keep pressing Q until the open hand shows to walk by clicking." }
+            },
+            {
+              "eventPattern": "npc_hostile_state_changed",
+              "condition": "data.npcId === 'agent_0x99_person' && data.isHostile === true && data.restored !== true",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 1000, "message": "Ow. I'm not hitting back, 0x00. Keep pressing Q until the open hand shows to walk by clicking." }
+            },
             {
               "_comment": "PASS 3 (P2): the USB stick from Nightshade's locker is opened (container path fires its onPickup). Offers the CyberChef guide.",
               "eventPattern": "global_variable_changed:found_architect_comms_local",
@@ -917,7 +965,7 @@ CREDITS
               "condition": "value === true && globalVars.brief_taken === true && globalVars.cipher_seen === true && globalVars.phantom_seen === true && globalVars.nightshade_seen === true && globalVars.netherton_card_taken !== true && globalVars.badge_cloned !== true && globalVars.netherton_ko !== true && globalVars.access_nudge_sent !== true",
               "onceOnly": true,
               "setGlobal": { "access_nudge_sent": true },
-              "sendTimedMessage": { "delay": 3000, "message": "That's all three. Now go and see the Director about the server room. Take the cloner." }
+              "sendTimedMessage": { "delay": 3000, "message": "That's all three. Now go and see the Director about the server room. Take the cloner, and give it time: his card has proper keys on it." }
             },
 <% end %>
 <%# PASS 4 (fix 10): 'do it quietly' costs something. PASS 5 (M3): the
@@ -935,6 +983,16 @@ CREDITS
               "sendTimedMessage": { "delay": 2500, "message": "You've said it to someone's face. On this floor, that's said to everyone by midnight. If it's the right man, he knows we're looking." }
             },
 <% end %>
+<%# PASS 5 (puzzle chains C1, m6): seen picking a locker by the off-duty
+    agent before the naming is the same tip-off as an accusation. Silent once
+    he is already tipped off. %>
+            {
+              "eventPattern": "global_variable_changed:locker_seen_picked",
+              "condition": "value === true && globalVars.mole_identified !== true && globalVars.nightshade_tipped_off !== true",
+              "onceOnly": true,
+              "setGlobal": { "nightshade_tipped_off": true },
+              "sendTimedMessage": { "delay": 2500, "message": "Someone saw you at the lockers. He'll tell the floor he saw nothing, which here is the same thing. If one's the mole's locker, he knows we're looking." }
+            },
 <%# PASS 5 (alignment C2, J4): the go-bag reads as any agent's holdall until
     he is named. Once he is named, a player who read it earlier hears what was
     in the lining (go_bag_lining_known, latched on receptionist_ai); one who
@@ -1146,7 +1204,7 @@ CREDITS
       "connections": { "south": "main_lobby" },
       "npcs": [
         {
-          "_comment": "Director Magnus Netherton -- mission authority, the familiar SAFETYNET director who ran m07 and vowed to find the mole. Gives the brief. PASS 4 (fixes 1 and 2): he won't hand his all-zones card to anyone tonight; once all three suspects are interviewed (or down) he lets the player stand close enough to clone it (rfidCard + #clone_keycard, clone rule). A KO still drops the physical card (itemsHeld); the badge printer is the earned early route. globalVarOnKO wired. PASS 2: position was pixels (lesson 11); now tiles, on the clear floor south of the desk (desk x3.7-6.1, y2.7-4.6).",
+          "_comment": "Director Magnus Netherton -- mission authority, the familiar SAFETYNET director who ran m07 and vowed to find the mole. Gives the brief. PASS 4 (fixes 1 and 2): he won't hand his all-zones card to anyone tonight; once all three suspects are interviewed (or down) he lets the player stand close enough to clone it (rfidCard + #clone_keycard, clone rule). PASS 5 (puzzle chains C1, m5): the card is MIFARE_Classic_Custom_Keys, as m03's Victoria, so the clone is a darkside attack beside him, against the EM4100 of m04-m07; HaX's hub explains the difference before the clone. A KO still drops the physical card (itemsHeld); the badge printer is the earned early route. globalVarOnKO wired. PASS 2: position was pixels (lesson 11); now tiles, on the clear floor south of the desk (desk x3.7-6.1, y2.7-4.6).",
           "id": "director_netherton",
           "displayName": "Director Magnus Netherton",
           "npcType": "person",
@@ -1163,12 +1221,15 @@ CREDITS
             "language": "en-GB"
           },
           "currentKnot": "start",
+          <%# PASS 5 (puzzle chains C1, m2): a punch makes any NPC hostile; without
+              this block he chased at 145 for 10 a hit. Range as m06 Kemal / m07 Hollis. %>
+          "behavior": { "hostile": { "chaseSpeed": 75, "attackDamage": 3, "pauseToAttack": true } },
           "globalVarOnKO": "netherton_ko",
           "taskOnKO": "brief_with_netherton",
           "observations": "Director Netherton has moved into an inner office with no windows. He stands facing a wall of amber threat maps where a window would be. He does not turn around when the door opens. He already knows it is you.",
           "rfidCard": {
             "card_id": "server_zone_badge",
-            "rfid_protocol": "EM4100",
+            "rfid_protocol": "MIFARE_Classic_Custom_Keys",
             "name": "Director Netherton Keycard"
           },
           "puzzle_graph_actions": [
@@ -1182,6 +1243,7 @@ CREDITS
               "name": "Director's Access Keycard -- All Zones",
               "takeable": true,
               "opens_lock": "server_zone_badge",
+              "rfid_protocol": "MIFARE_Classic_Custom_Keys",
               "observations": "Netherton's own keycard, off his office floor. It opens every badge reader in the Citadel, which is why he would not let it out of his sight.",
               "puzzle_graph_role": "key",
               "puzzle_graph_unlocks": "server_room",
@@ -1267,7 +1329,7 @@ CREDITS
       },
       "npcs": [
         {
-          "_comment": "Agent Cipher -- red herring. Socially awkward crypto genius; the odd hours are a classified project, not treason. globalVarOnKO wired; interview is optional and clears from evidence regardless.",
+          "_comment": "Agent Cipher -- red herring. Socially awkward crypto genius; the odd hours are a classified project, not treason. globalVarOnKO wired; the interview is required for work_the_suspects (pass 3) and a KO completes it; the door audit clears him.",
           "id": "agent_cipher",
           "displayName": "Agent 0x23 'Cipher'",
           "npcType": "person",
@@ -1283,6 +1345,9 @@ CREDITS
             "language": "en-GB"
           },
           "currentKnot": "start",
+          <%# PASS 5 (puzzle chains C1, m2): a punch makes any NPC hostile; without
+              this block he chased at 145 for 10 a hit. Range as m06 Kemal / m07 Hollis. %>
+          "behavior": { "hostile": { "chaseSpeed": 70, "attackDamage": 3, "pauseToAttack": true } },
           "globalVarOnKO": "cipher_ko",
           <%# PASS 5 (alignment C2, J4): his locker key, as Nightshade's: he hands it
               over when asked after the door-audit beat (#give_item); a KO drops it. %>
@@ -1333,6 +1398,9 @@ CREDITS
             "language": "en-GB"
           },
           "currentKnot": "start",
+          <%# PASS 5 (puzzle chains C1, m2): a punch makes any NPC hostile; without
+              this block he chased at 145 for 10 a hit. Range as m06 Kemal / m07 Hollis. %>
+          "behavior": { "hostile": { "chaseSpeed": 70, "attackDamage": 3, "pauseToAttack": true } },
           "observations": "A junior analyst monitoring threat feeds she has read four times without seeing."
         }
       ],
@@ -1373,7 +1441,7 @@ CREDITS
       "connections": { "south": "operations_floor" },
       "npcs": [
         {
-          "_comment": "Agent Phantom -- red herring. The 'suspicious' behaviour is an off-books mole hunt of his own. globalVarOnKO wired; optional; clears from evidence.",
+          "_comment": "Agent Phantom -- red herring. The 'suspicious' behaviour is an off-books mole hunt of his own. globalVarOnKO wired; the interview is required for work_the_suspects (pass 3) and a KO completes it; the door audit clears him (travel desk).",
           "id": "agent_phantom",
           "displayName": "Agent 0x88 'Phantom'",
           "npcType": "person",
@@ -1394,6 +1462,9 @@ CREDITS
             "language": "en-GB"
           },
           "currentKnot": "start",
+          <%# PASS 5 (puzzle chains C1, m2): a punch makes any NPC hostile; without
+              this block he chased at 145 for 10 a hit. Range as m06 Kemal / m07 Hollis. %>
+          "behavior": { "hostile": { "chaseSpeed": 90, "attackDamage": 4, "pauseToAttack": true } },
           "globalVarOnKO": "phantom_ko",
           <%# PASS 5 (alignment C2, J4): his locker key, as Nightshade's: he hands it
               over when asked after the door-audit beat (#give_item); a KO drops it. %>
@@ -1488,9 +1559,11 @@ CREDITS
 <%# flagRewards is INDEX-PARALLEL to flags -- one reward per flag, in order.
     set_global is forwarded to the client untouched. emit_event is NOT usable
     here. The narrative globals (found_gitlist_vuln, found_leaked_creds,
-    found_architect_comms, found_access_logs, all_flags_submitted,
-    mole_identified) hang off these four booleans as eventMappings on
-    agent_0x99, because one flag can carry exactly one reward. %>
+    found_architect_comms, found_access_logs, all_flags_submitted) hang off
+    these four booleans as eventMappings on agent_0x99, because one flag can
+    carry exactly one reward. PASS 5 (Option B): mole_identified comes from the
+    door-audit reading (Netherton's or HaX's ink), or from flag 4 only on the
+    fallbacks (audit closed, Director down). %>
           "flagRewards": [
             { "type": "set_global", "key": "flag1_submitted", "value": true, "description": "GitList argument injection -- RCE on SAFETYNET's own repo browser, no login" },
             { "type": "set_global", "key": "flag2_submitted", "value": true, "description": "Stashed credentials recovered from repository history" },
@@ -1504,9 +1577,9 @@ CREDITS
           "name": "Server Access Log (excerpt)",
           "takeable": true,
           "readable": true,
-          "observations": "A printed excerpt of the auth log, left by the rack. Whoever printed it ran it through the redaction filter first. Only root on the box will tell you whose account this is.",
+          "observations": "A printed excerpt of the auth log, left by the rack. Whoever printed it ran it through the redaction filter first. Only root on the box will show the account behind it, and an account is not a person.",
           "observationDisplay": "gameDisplay",
-          "text": "AUTH LOG -- mission_planning share (UTC)\n\n... routine ...\nUSER [REDACTED]  D-2 10:38 UTC (T-48h)  TERM crypto-lab-04  OPEN pnw_contingency.enc  DURATION 00:47:00\n... routine ...\n\nPencilled underneath: '47 minutes on a file you read in five. Same window ENTROPY started coordinating. Whoever this is, they weren't reading the plan. They were copying it. Need root to unmask the account.'",
+          "text": "AUTH LOG -- mission_planning share (UTC)\n\n... routine ...\nUSER [REDACTED]  D-2 10:38 UTC (T-48h)  TERM crypto-lab-04  OPEN pnw_contingency.enc  DURATION 00:47:00\n... routine ...\n\nPencilled underneath: '47 minutes on a file you read in five. Same window ENTROPY started coordinating. Whoever this is, they weren't reading the plan. They were copying it. Root for the account. The doors for the person.'",
           "onRead": { "setVariable": { "found_access_logs_hint": true } },
           "puzzle_graph_role": "clue",
           "puzzle_graph_reveals": "when_the_plan_was_opened",
@@ -1582,7 +1655,7 @@ CREDITS
       },
       "npcs": [
         {
-          "_comment": "Nightshade -- THE MOLE, pre-reveal. Calm, professional, subtly wrong. globalVarOnKO wired; the interview is optional and the case is made on the box, so a KO here never strands the mission. The revelation and confrontation are separate NPC entries.",
+          "_comment": "Nightshade -- THE MOLE, pre-reveal. Calm, professional, subtly wrong. globalVarOnKO wired; the interview is required for work_the_suspects (pass 3) and a KO completes it; the case is made on the door audit (PASS 5 Option B), so a KO here never strands the mission. The revelation and confrontation are separate NPC entries.",
           "id": "agent_nightshade",
           "displayName": "Agent 0x47 'Nightshade'",
           "npcType": "person",
@@ -1598,6 +1671,9 @@ CREDITS
             "language": "en-GB"
           },
           "currentKnot": "start",
+          <%# PASS 5 (puzzle chains C1, m2): a punch makes any NPC hostile; without
+              this block he chased at 145 for 10 a hit. Range as m06 Kemal / m07 Hollis. %>
+          "behavior": { "hostile": { "chaseSpeed": 100, "attackDamage": 4, "pauseToAttack": true } },
           "globalVarOnKO": "nightshade_ko",
           <%# PASS 3 (P8): the key to his locker in the break room. He hands it over
               when asked after the audit or Okafor beat (#give_item); a KO drops it. %>
@@ -1698,7 +1774,7 @@ CREDITS
             "language": "en-GB"
           },
           "currentKnot": "start",
-          "behavior": { "initiallyHidden": true },
+          "behavior": { "initiallyHidden": true, "hostile": { "chaseSpeed": 100, "attackDamage": 4, "pauseToAttack": true } },
           "taskOnKO": "confront_nightshade",
           "eventMappings": [
             {
@@ -1792,6 +1868,10 @@ CREDITS
             "language": "en-GB"
           },
           "currentKnot": "start",
+          <%# PASS 5 (puzzle chains C1, m2): she does not fight back. The engine only
+              swings from the chase state, and an aggroDistance of 1 px never lets
+              the chase start (npc-behavior.js:694, :1369); 0 would fall back to 160. %>
+          "behavior": { "hostile": { "chaseSpeed": 70, "attackDamage": 3, "pauseToAttack": true, "aggroDistance": 1 } },
           "globalVarOnKO": "hax_ko",
           "observations": "HaX is in the corner with a coffee she has not touched. She has trained, deployed and grieved alongside all three of your suspects. One of them did this. She keeps doing the arithmetic and hating the answer."
         },
@@ -1813,7 +1893,34 @@ CREDITS
             "language": "en-GB"
           },
           "currentKnot": "start",
-          "observations": "An agent holding a magazine he is not reading, listening to every conversation in the room."
+          <%# PASS 5 (puzzle chains C1, m2): a punch makes any NPC hostile; without
+              this block he chased at 145 for 10 a hit. Range as m06 Kemal / m07 Hollis. %>
+          "behavior": { "hostile": { "chaseSpeed": 80, "attackDamage": 3, "pauseToAttack": true } },
+          <%# PASS 5 (puzzle chains C1, m6): searching an innocent man's locker costs
+              something. Picking any of the three lockers where he can see it, before
+              the naming, stops the pick and opens his catch (lockpick-catch.js; the
+              gate covers the key minigame's "Switch to Lockpicking" too). The gate
+              can't tell which locker (the condition evaluator reads one level of
+              data, and the gate passes no lockable), so it is any locker: being
+              seen at 0x47 is the loudest tip-off of all. The cost is the tip-off
+              (HaX's locker_seen_picked mapping), which empties 0x47 on the next
+              entry to another room, so a player caught at 0x47 who picks it again
+              at once still beats him. Fair warning: his sight is drawn (a 360
+              degree, 5-tile circle from his seat, which takes in all three
+              lockers; a facing cone would miss 0x23 unless he turned), and his
+              observations say he is watching them. Once only; free with him down,
+              out of his cone, or with the owner's key. %>
+          "los": { "enabled": true, "range": 160, "angle": 360, "visualize": true },
+          "eventMappings": [
+            {
+              "eventPattern": "lockpick_used_in_view",
+              "targetKnot": "on_locker_picked",
+              "conversationMode": "person-chat",
+              "condition": "!globalVars.mole_identified",
+              "onceOnly": true
+            }
+          ],
+          "observations": "An agent holding a magazine he is not reading, listening to every conversation in the room. His eyes keep drifting to the row of lockers."
         }
       ],
       "objects": [
@@ -2170,6 +2277,7 @@ CREDITS
     "named_by_director": false,
     "named_by_hax": false,
     "nightshade_tipped_off": false,
+    "locker_seen_picked": false,
     "nightshade_tidied": false,
     "triple_agent_first_payment": false,
 

@@ -3,7 +3,8 @@
 // Speaker: Agent 0x88 'Phantom'
 // Entry knot: start   Sets: phantom_interviewed
 // He's running his own off-book mole hunt. Rewards the player who reads his
-// notes (found_phantom_lead) with the Crypto Lab lead -- pointing at Nightshade.
+// notes (found_phantom_lead) with the Crypto Lab lead and the door audit in the
+// archive printer (doors, not a name).
 // ================================================
 
 // PASS 2: the task completes at the top of the first meeting (lesson 44);
@@ -83,7 +84,8 @@ Agent 0x88 'Phantom': And yes, I put myself there too. Charmed?
     ~ phantom_alibi_known = true
     Narrator: He sits back, and for once he doesn't smile.
     Agent 0x88 'Phantom': So it printed. Wheels up 10:09, forty passengers and a manifest. I wanted to see whether you'd check or take my word.
-    Agent 0x88 'Phantom': The archive duty officer walked me out before it finished. I never saw the rest, and I'd rather you didn't tell me. Tell the Director. #set_global:phantom_alibi_known:true
+    Agent 0x88 'Phantom': The archive duty officer walked me out before it finished. I never saw the rest, and I'd rather you didn't tell me.
+    Agent 0x88 'Phantom': And don't take my word for my own printout. Ask the men on the lab door. #set_global:phantom_alibi_known:true
     -> hub
 + { asked_audit and not gave_locker_key } [Your locker in the break room. I want to see inside it.]
     ~ gave_locker_key = true

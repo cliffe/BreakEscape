@@ -244,7 +244,9 @@ Director Magnus Netherton: Then don't give me a suspect. Give me a reading.
         // R3-m3: both men on the audit are down; nobody can confirm it. Three steps.
         ~ audit_skip_step4 = true
     - else:
-        Director Magnus Netherton: Before you read it to me, take it to the people on it. If a man's own row is wrong, he will say so.
+        // PASS 5 (puzzle chains C1, m1): "the men who went through that lab door", so
+        // Phantom's travel-desk row (circular at step 4) is plainly not the one.
+        Director Magnus Netherton: Before you read it to me, take it to the men who went through that lab door. If a man's own row is wrong, he will say so.
         Director Magnus Netherton: Come back when one of them has told you it is right.
         -> hub
     }
