@@ -9,36 +9,84 @@ overview: |
 description: |
   Investigate a cyber attack on a grid-scale battery storage site in the East Midlands, where an attacker moved from the corporate IT network into the SCADA system, falsified sensor data and disabled the automatic safety trips. Learn about industrial control systems, Safety Instrumented Systems and hardwired emergency shutdown, IT/OT segmentation and the IEC 62443 zone and conduit model, IEC 61511 and the problem of patching a certified safety system, safety cases (claim, argument and evidence), and UK regulation of energy operators (the NIS Regulations 2018, with Ofgem and DESNZ jointly the competent authority and the NCSC as the CSIRT). Through this game-based learning scenario you will make incident response decisions where containment, evidence and safety pull in different directions, and coordinate engineers, security staff and a managed service provider who see the same incident differently.
 cybok:
-  - ka: "SIS"
+  - ka: "TGSIS"
     topic: "Language and Concept Alignment"
-    keywords: ["ICS/SCADA terminology", "bridging IT and OT", "Safety Instrumented Systems", "claim, argument and evidence"]
-  - ka: "SIS"
+    keywords: ["SAFETY-CRITICAL SYSTEM", "VOCABULARY"]
+  - ka: "TGSIS"
     topic: "Incident Response and Resilience"
-    keywords: ["OT incident investigation", "emergency shutdown under uncertainty", "evidence preservation versus safety", "safety system integrity verification"]
-  - ka: "SIS"
+    keywords: ["INCIDENT RESPONSE", "RESILIENCE"]
+  - ka: "TGSIS"
     topic: "Requirements Reconciliation"
-    keywords: ["security containment vs operational continuity", "isolation scope", "safety-first prioritisation"]
-  - ka: "SIS"
+    keywords: ["SAFETY REQUIREMENT", "SEGMENTATION"]
+  - ka: "TGSIS"
     topic: "Patching of Systems with Safety Cases"
-    keywords: ["SIS firmware patch deferral", "IEC 61511 modification management", "compensating controls", "risk acceptance and review"]
-  - ka: "SIS"
+    keywords: ["PATCHING", "IEC 61511"]
+  - ka: "TGSIS"
     topic: "Architecture"
-    keywords: ["IEC 62443 zones and conduits", "IT/OT segmentation", "SIS independence", "hardwired emergency shutdown"]
-  - ka: "SIS"
+    keywords: ["PURDUE MODEL", "DEFENCE IN DEPTH", "AIR GAP"]
+  - ka: "TGSIS"
     topic: "Organisational Culture"
-    keywords: ["control room engineers", "OT security", "managed service provider", "accepted risks nobody reviewed"]
-  - ka: "SIS"
+    keywords: ["RISK ACCEPTANCE", "GOVERNANCE OF THIRD-PARTY RELATIONSHIPS"]
+  - ka: "TGSIS"
     topic: "Tools and Standards"
-    keywords: ["IEC 61511", "IEC 62443", "IEC 61508", "NCSC CAF", "Purdue Model"]
+    keywords: ["IEC 61511", "IEC 61508", "IEC 62443", "NCSC CAF"]
+  - ka: "CPS"
+    topic: "Cyber-Physical Systems"
+    keywords: ["protection against natural events and accidents", "SAFETY INSTRUMENTED SYSTEM"]
+  - ka: "CPS"
+    topic: "Cross Cutting Security"
+    keywords: ["detecting attacks", "mitigating attacks", "PHYSICAL-LAW ANOMALIES"]
   - ka: "CPS"
     topic: "Cyber-Physical Systems Domains"
-    keywords: ["industrial control systems", "electric power grids", "battery energy storage"]
+    keywords: ["industrial control systems", "electric power grids", "DATA HISTORIAN", "MODBUS PROTOCOL"]
+  - ka: "CPS"
+    topic: "Policy and Political Aspects"
+    keywords: ["industry practices and standards"]
+  - ka: "SOIM"
+    topic: "Monitor: Data Sources"
+    keywords: ["system and kernel logs"]
+  - ka: "SOIM"
+    topic: "Analyse: Analysis Methods"
+    keywords: ["anomaly detection"]
+  - ka: "SOIM"
+    topic: "Execute: Mitigation and Countermeasures"
+    keywords: ["SOAR: impact and risk assessment"]
+  - ka: "SOIM"
+    topic: "Human Factors: Incident Management"
+    keywords: ["prepare: incident management planning", "handle: actual incident response", "follow up: post incident activities"]
+  - ka: "F"
+    topic: "Main Memory Forensics"
+    keywords: ["challenges of live forensics", "VOLATILE MEMORY", "EVIDENCE COLLECTION"]
   - ka: "RMG"
-    topic: "Risk Assessment and Management Principles"
-    keywords: ["cyber-physical systems", "risk appetite and residual risk", "incident response and recovery planning"]
+    topic: "Risk assessment and management principles"
+    keywords: ["Vulnerability management", "Risk assessment and management in cyber-physical systems and operational technology", "BOW TIE ANALYSIS", "RESIDUAL RISK"]
+  - ka: "RMG"
+    topic: "Risk governance"
+    keywords: ["The human factor and risk communication", "RISK ACCEPTANCE"]
   - ka: "LR"
     topic: "Other Regulatory Matters"
-    keywords: ["NIS Regulations 2018", "operators of essential services", "incident notification to the competent authority"]
+    keywords: ["industry-specific regulations", "NIS Regulations 2018"]
+  - ka: "LR"
+    topic: "Introductory Principles of Legal Research"
+    keywords: ["liability and courts", "DUTY OF CARE"]
+  - ka: "NS"
+    topic: "Network Security Tools"
+    keywords: ["firewalling", "BASTION HOST", "NETWORK SEGMENTATION"]
+  - ka: "AAA"
+    topic: "Authentication"
+    keywords: ["user authentication", "identity management", "PROVISIONING AND DEPROVISIONING"]
+  - ka: "AAA"
+    topic: "Accountability"
+    keywords: ["technical aspects", "AUDIT LOGS"]
+  - ka: "AB"
+    topic: "Characterisation of Adversaries"
+    keywords: ["state actors", "cyber-dependent organised crime"]
+  - ka: "AB"
+    topic: "Elements of a Malicious Operation"
+    keywords: ["infection vectors", "specialised services", "SUPPLY CHAIN ATTACK"]
+  - ka: "MAT"
+    topic: "Malicious Activities by Malware"
+    keywords: ["integrity", "LATERAL MOVEMENT"]
 categories: ["security_informed_safety"]
 tags: ["security-informed-safety", "energy", "battery-storage", "ics", "scada", "operational-technology", "safety-instrumented-systems", "incident-response", "risk-management", "safety-case", "gsn", "purdue-model", "iec-62443", "iec-61511", "nis-regulations", "break-escape"]
 type: ["game-based-learning", "lab-sheet"]

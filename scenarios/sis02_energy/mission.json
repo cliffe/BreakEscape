@@ -21,149 +21,227 @@
   "estimated_duration_minutes": 70,
   "cybok": [
     {
-      "ka": "SIS",
-      "topic": "Security-Informed Safety: Language and Concepts",
+      "ka": "TGSIS",
+      "topic": "Language and Concept Alignment",
       "keywords": [
-        "security-informed safety",
-        "cyber-physical hazard",
-        "sensor data falsification",
-        "independent instrumentation",
-        "defence in depth",
-        "safety case invalidation",
-        "cyber-induced process hazard",
-        "SIL — Safety Integrity Level"
+        "SAFETY-CRITICAL SYSTEM",
+        "VOCABULARY"
       ]
     },
     {
-      "ka": "SIS",
+      "ka": "TGSIS",
+      "topic": "Incident Response and Resilience",
+      "keywords": [
+        "INCIDENT RESPONSE",
+        "RESILIENCE"
+      ]
+    },
+    {
+      "ka": "TGSIS",
+      "topic": "Requirements Reconciliation",
+      "keywords": [
+        "SAFETY REQUIREMENT",
+        "SEGMENTATION"
+      ]
+    },
+    {
+      "ka": "TGSIS",
+      "topic": "Patching of Systems with Safety Cases",
+      "keywords": [
+        "PATCHING",
+        "IEC 61511"
+      ]
+    },
+    {
+      "ka": "TGSIS",
       "topic": "Architecture",
       "keywords": [
-        "SIS independence",
+        "PURDUE MODEL",
+        "DEFENCE IN DEPTH",
+        "AIR GAP"
+      ]
+    },
+    {
+      "ka": "TGSIS",
+      "topic": "Organisational Culture",
+      "keywords": [
+        "RISK ACCEPTANCE",
+        "GOVERNANCE OF THIRD-PARTY RELATIONSHIPS"
+      ]
+    },
+    {
+      "ka": "TGSIS",
+      "topic": "Tools and Standards",
+      "keywords": [
         "IEC 61511",
-        "SIL 2 certification",
-        "IT/OT boundary",
-        "Purdue model",
-        "network segmentation in ICS",
-        "hardwired ESD",
-        "engineering port isolation",
-        "defence in depth — OT"
+        "IEC 61508",
+        "IEC 62443",
+        "NCSC CAF"
       ]
     },
     {
-      "ka": "SIS",
-      "topic": "Patching and Security Updates",
+      "ka": "CPS",
+      "topic": "Cyber-Physical Systems",
       "keywords": [
-        "SIS firmware patching",
-        "recertification cost",
-        "IEC 61511-1 modification procedure (clause 17)",
-        "IEC 61511-1 clause 8.2.4 SIS security risk assessment",
-        "patch deferral risk",
-        "compensating controls",
-        "safety case maintenance",
-        "risk register review",
-        "active patch management vs deferral"
+        "protection against natural events and accidents",
+        "SAFETY INSTRUMENTED SYSTEM"
       ]
     },
     {
-      "ka": "SIS",
-      "topic": "Incident Response in OT Environments",
+      "ka": "CPS",
+      "topic": "Cross Cutting Security",
       "keywords": [
-        "OT incident response",
-        "ICS-specific containment",
-        "network isolation trade-off",
-        "SCADA availability vs security",
-        "historian anomaly detection",
-        "access log analysis — ICS",
-        "emergency shutdown activation",
-        "jump server compromise"
+        "detecting attacks",
+        "mitigating attacks",
+        "PHYSICAL-LAW ANOMALIES"
       ]
     },
     {
-      "ka": "SIS",
-      "topic": "Requirements and Reconciliation",
+      "ka": "CPS",
+      "topic": "Cyber-Physical Systems Domains",
       "keywords": [
-        "safety requirements under cyber threat",
-        "cross-sector dependency",
-        "shared infrastructure risk",
-        "cascading failure pathways",
-        "Trent Water shared file server",
-        "CLAIM-EN-001 IT/OT boundary",
-        "CLAIM-EN-002 SIS network isolation",
-        "CLAIM-EN-008 hardwired ESD"
+        "industrial control systems",
+        "electric power grids",
+        "DATA HISTORIAN",
+        "MODBUS PROTOCOL"
       ]
     },
     {
-      "ka": "SIS",
-      "topic": "Organisational Culture and Safety Management",
+      "ka": "CPS",
+      "topic": "Policy and Political Aspects",
       "keywords": [
-        "normalisation of deviance",
-        "risk register inaction",
-        "compensating control effectiveness",
-        "safety case as living document",
-        "SOC monitoring scope governance",
-        "risk accepted vs risk mitigated",
-        "configuration management failure",
-        "temporary becoming permanent"
+        "industry practices and standards"
       ]
     },
     {
       "ka": "SOIM",
-      "topic": "Monitoring",
+      "topic": "Monitor: Data Sources",
       "keywords": [
-        "OT monitoring scope",
-        "historian trend analysis",
-        "flat-line sensor IoC",
-        "behavioural anomaly detection",
-        "SCADA blind spot",
-        "SOC contract limitations",
-        "ICS visibility gap",
-        "process parameter cross-validation"
+        "system and kernel logs"
+      ]
+    },
+    {
+      "ka": "SOIM",
+      "topic": "Analyse: Analysis Methods",
+      "keywords": [
+        "anomaly detection"
+      ]
+    },
+    {
+      "ka": "SOIM",
+      "topic": "Execute: Mitigation and Countermeasures",
+      "keywords": [
+        "SOAR: impact and risk assessment"
+      ]
+    },
+    {
+      "ka": "SOIM",
+      "topic": "Human Factors: Incident Management",
+      "keywords": [
+        "prepare: incident management planning",
+        "handle: actual incident response",
+        "follow up: post incident activities"
+      ]
+    },
+    {
+      "ka": "F",
+      "topic": "Main Memory Forensics",
+      "keywords": [
+        "challenges of live forensics",
+        "VOLATILE MEMORY",
+        "EVIDENCE COLLECTION"
+      ]
+    },
+    {
+      "ka": "RMG",
+      "topic": "Risk assessment and management principles",
+      "keywords": [
+        "Vulnerability management",
+        "Risk assessment and management in cyber-physical systems and operational technology",
+        "BOW TIE ANALYSIS",
+        "RESIDUAL RISK"
+      ]
+    },
+    {
+      "ka": "RMG",
+      "topic": "Risk governance",
+      "keywords": [
+        "The human factor and risk communication",
+        "RISK ACCEPTANCE"
+      ]
+    },
+    {
+      "ka": "LR",
+      "topic": "Other Regulatory Matters",
+      "keywords": [
+        "industry-specific regulations",
+        "NIS Regulations 2018"
+      ]
+    },
+    {
+      "ka": "LR",
+      "topic": "Introductory Principles of Legal Research",
+      "keywords": [
+        "liability and courts",
+        "DUTY OF CARE"
       ]
     },
     {
       "ka": "NS",
-      "topic": "Network Architecture and Security",
+      "topic": "Network Security Tools",
       "keywords": [
-        "jump server configuration",
-        "historian dual-home",
-        "bidirectional RDP risk",
-        "OT network segmentation",
-        "Modbus proxy exposure",
-        "data diode",
-        "SCADA DMZ",
-        "commissioning configuration debt"
+        "firewalling",
+        "BASTION HOST",
+        "NETWORK SEGMENTATION"
       ]
     },
     {
       "ka": "AAA",
       "topic": "Authentication",
       "keywords": [
-        "dormant account exploitation",
-        "deprovisioning failure",
-        "contractor account lifecycle",
-        "RDP session detection",
-        "unauthenticated SIS engineering protocol",
-        "OT access control",
-        "privileged account management"
+        "user authentication",
+        "identity management",
+        "PROVISIONING AND DEPROVISIONING"
       ]
     },
     {
-      "ka": "LR",
-      "topic": "Cyber and Privacy Law",
+      "ka": "AAA",
+      "topic": "Accountability",
       "keywords": [
-        "NIS Regulations 2018",
-        "Operator of Essential Services (designated, reg 8(3))",
-        "competent authority: DESNZ and Ofgem jointly",
-        "initial notification without undue delay, within 72 hours",
-        "NCSC as CSIRT: support, not regulation",
-        "HSE and fire and rescue after a dangerous occurrence",
-        "NESO and grid frequency events",
-        "duty of care to a non-OES neighbour"
+        "technical aspects",
+        "AUDIT LOGS"
+      ]
+    },
+    {
+      "ka": "AB",
+      "topic": "Characterisation of Adversaries",
+      "keywords": [
+        "state actors",
+        "cyber-dependent organised crime"
+      ]
+    },
+    {
+      "ka": "AB",
+      "topic": "Elements of a Malicious Operation",
+      "keywords": [
+        "infection vectors",
+        "specialised services",
+        "SUPPLY CHAIN ATTACK"
+      ]
+    },
+    {
+      "ka": "MAT",
+      "topic": "Malicious Activities by Malware",
+      "keywords": [
+        "integrity",
+        "LATERAL MOVEMENT"
       ]
     }
   ],
   "prerequisites": [],
-  "unlocks": ["sis03_cyber_insurance"],
+  "unlocks": [
+    "sis03_cyber_insurance"
+  ],
   "campaign_critical": true,
   "narrative_weight": "high",
   "consequences_persist": false,

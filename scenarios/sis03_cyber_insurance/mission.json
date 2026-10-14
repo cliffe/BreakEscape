@@ -5,110 +5,218 @@
   "secgen_scenario": "meridian_insurance",
   "collection": "cybok_sis",
   "branching": true,
-  "branches": ["claim_approved_full", "claim_approved_partial", "claim_rejected_negligence", "coverage_warranty_gap", "policy_exclusion_triggered", "subrogation_path"],
+  "branches": [
+    "claim_approved_full",
+    "claim_approved_partial",
+    "claim_rejected_negligence",
+    "coverage_warranty_gap",
+    "policy_exclusion_triggered",
+    "subrogation_path"
+  ],
   "estimated_duration_minutes": 60,
   "cybok": [
     {
-      "ka": "SIS",
-      "topic": "Security-Informed Safety in Critical Infrastructure",
+      "ka": "TGSIS",
+      "topic": "Language and Concept Alignment",
       "keywords": [
-        "cyber-physical hazard causality",
-        "forensic evidence chain",
-        "incident attribution",
-        "safety case post-breach",
-        "compensating control failure analysis"
+        "VOCABULARY",
+        "LEGAL TERMINOLOGY"
       ]
     },
     {
-      "ka": "SIS",
-      "topic": "Safety Requirements and Risk Management",
+      "ka": "TGSIS",
+      "topic": "Incident Response and Resilience",
       "keywords": [
-        "warranty coverage under cyber threat",
-        "equipment failure vs cyber-induced failure",
-        "risk transfer and residual risk",
-        "contractual safety obligations",
-        "OES operator duty of care"
+        "INCIDENT RESPONSE",
+        "EVIDENCE COLLECTION"
       ]
     },
     {
-      "ka": "SIS",
-      "topic": "Audit and Compliance",
+      "ka": "TGSIS",
+      "topic": "Requirements Reconciliation",
       "keywords": [
-        "IEC 61511 compliance verification",
-        "patch management audit trail",
-        "compensating control documentation",
-        "configuration management records",
-        "safety case maintenance evidence"
+        "SAFETY REQUIREMENT",
+        "PATCHING"
+      ]
+    },
+    {
+      "ka": "TGSIS",
+      "topic": "Patching of Systems with Safety Cases",
+      "keywords": [
+        "PATCHING",
+        "IEC 61511"
+      ]
+    },
+    {
+      "ka": "TGSIS",
+      "topic": "Architecture",
+      "keywords": [
+        "SEGMENTATION",
+        "SAFETY INSTRUMENTED SYSTEM"
+      ]
+    },
+    {
+      "ka": "TGSIS",
+      "topic": "Organisational Culture",
+      "keywords": [
+        "RISK ACCEPTANCE",
+        "SECURITY CULTURE"
+      ]
+    },
+    {
+      "ka": "TGSIS",
+      "topic": "Tools and Standards",
+      "keywords": [
+        "IEC 61511",
+        "IEC 62443",
+        "NCSC CAF",
+        "LMA5567A"
+      ]
+    },
+    {
+      "ka": "LR",
+      "topic": "Contract",
+      "keywords": [
+        "encouraging security standards via contract",
+        "warranties and their exclusion",
+        "limitations of liability and exclusions of liability",
+        "breach of contract and remedies",
+        "effects of contract on non-contracting parties"
+      ]
+    },
+    {
+      "ka": "LR",
+      "topic": "Public International Law",
+      "keywords": [
+        "attributing action to a state under international law",
+        "the law of armed conflict"
+      ]
+    },
+    {
+      "ka": "LR",
+      "topic": "Introductory Principles of Legal Research",
+      "keywords": [
+        "evidence and proof",
+        "liability and courts"
+      ]
+    },
+    {
+      "ka": "LR",
+      "topic": "Other Regulatory Matters",
+      "keywords": [
+        "industry-specific regulations",
+        "NIS Regulations 2018",
+        "Insurance Act 2015"
+      ]
+    },
+    {
+      "ka": "RMG",
+      "topic": "Risk governance",
+      "keywords": [
+        "RISK TRANSFER",
+        "RESIDUAL RISK",
+        "RISK ACCEPTANCE"
+      ]
+    },
+    {
+      "ka": "RMG",
+      "topic": "Risk assessment and management principles",
+      "keywords": [
+        "Vulnerability management",
+        "Risk assessment and management in cyber-physical systems and operational technology"
+      ]
+    },
+    {
+      "ka": "F",
+      "topic": "Definitions and Conceptual Models",
+      "keywords": [
+        "digital (forensic) trace",
+        "CHAIN OF EVIDENCE"
+      ]
+    },
+    {
+      "ka": "F",
+      "topic": "Main Memory Forensics",
+      "keywords": [
+        "challenges of live forensics"
+      ]
+    },
+    {
+      "ka": "F",
+      "topic": "Operating System Analysis",
+      "keywords": [
+        "data acquisition",
+        "TIMELINE ANALYSIS"
       ]
     },
     {
       "ka": "SOIM",
-      "topic": "Incident Forensics",
+      "topic": "Human Factors: Incident Management",
       "keywords": [
-        "digital forensics — OT systems",
-        "attack timeline reconstruction",
-        "log correlation and timing",
-        "root cause vs contributing factors",
-        "evidence preservation in critical infrastructure"
+        "follow up: post incident activities"
       ]
     },
     {
-      "ka": "LR",
-      "topic": "Cyber Insurance and Risk Transfer",
+      "ka": "SOIM",
+      "topic": "Knowledge: Intelligence and Analysis",
       "keywords": [
-        "cyber insurance policy exclusions",
-        "war exclusions and APT coverage",
-        "warranty vs insurance",
-        "subrogation rights",
-        "insured vs insurer interests"
+        "cyber-threat intelligence",
+        "THREAT INTELLIGENCE SHARING"
       ]
     },
     {
-      "ka": "LR",
-      "topic": "Regulation and Liability",
+      "ka": "AB",
+      "topic": "Models",
       "keywords": [
-        "Operator of Essential Services duty",
-        "corporate negligence liability",
-        "regulatory investigation running alongside a claim",
-        "third-party liability exposure",
-        "NIS Regulations 2018 compliance as defence"
+        "attribution"
       ]
     },
     {
-      "ka": "HF",
-      "topic": "Organisational Risk and Culture",
+      "ka": "AB",
+      "topic": "Characterisation of Adversaries",
       "keywords": [
-        "risk register inaction",
-        "cost vs safety trade-offs",
-        "compensating control false confidence",
-        "deferred maintenance debt",
-        "normalisation of deviance — post-incident review"
+        "state actors",
+        "cyber-dependent organised crime"
+      ]
+    },
+    {
+      "ka": "AB",
+      "topic": "Elements of a Malicious Operation",
+      "keywords": [
+        "infection vectors",
+        "specialised services",
+        "SUPPLY CHAIN ATTACK"
       ]
     },
     {
       "ka": "AAA",
-      "topic": "Access Control and Breach Attribution",
+      "topic": "Authentication",
       "keywords": [
-        "contractor deprovisioning failure",
-        "dormant jump server account abuse",
-        "MFA enforcement gaps",
-        "lateral movement attribution",
-        "compromised credential lifecycle"
+        "user authentication",
+        "PROVISIONING AND DEPROVISIONING"
       ]
     },
     {
-      "ka": "MAT",
-      "topic": "APT and Targeted Attacks",
+      "ka": "CPS",
+      "topic": "Cyber-Physical Systems Domains",
       "keywords": [
-        "GREYMANTLE APT group targeting",
-        "supply chain compromise vector",
-        "printer firmware exploitation",
-        "OT-specific APT tactics",
-        "sector-specific threat intelligence"
+        "industrial control systems",
+        "electric power grids"
+      ]
+    },
+    {
+      "ka": "CPS",
+      "topic": "Policy and Political Aspects",
+      "keywords": [
+        "incentives and regulation",
+        "CYBER-INSURANCE",
+        "WAR EXCLUSION"
       ]
     }
   ],
-  "prerequisites": ["sis02_energy"],
+  "prerequisites": [
+    "sis02_energy"
+  ],
   "unlocks": [],
   "campaign_critical": true,
   "narrative_weight": "high",

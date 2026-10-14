@@ -21,7 +21,7 @@ cybok:
   - ka: "SOIM"
     topic: "PENETRATION TESTING"
     keywords: ["PENETRATION TESTING - SOFTWARE TOOLS"]
-  - ka: "OS"
+  - ka: "OSV"
     topic: "Primitives for Isolation and Mediation"
     keywords: ["authentication and identification"]
   - ka: "AAA"

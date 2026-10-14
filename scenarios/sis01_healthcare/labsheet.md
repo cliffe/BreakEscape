@@ -9,39 +9,84 @@ overview: |
 description: |
   Investigate a ransomware attack at Northgate General Hospital where IT systems are encrypted and there are concerns about potential safety implications for connected medical devices. Learn about medical device security, functional safety in healthcare, network segmentation between IT and medical device networks, incident response in clinical environments, safety cases, and the UK regulatory framework (UK GDPR, the NIS Regulations, the MHRA and the NHS Data Security and Protection Toolkit). Through this game-based learning scenario, you will experience how security decisions directly affect patient safety and clinical operations, and coordinate across organisational cultures where IT security, clinical engineering and clinical staff have competing priorities.
 cybok:
-  - ka: "SIS"
+  - ka: "TGSIS"
     topic: "Language and Concept Alignment"
-    keywords: ["medical device security", "bridging IT and clinical terminology", "safety-critical systems"]
-  - ka: "SIS"
+    keywords: ["SAFETY-CRITICAL SYSTEM", "VOCABULARY"]
+  - ka: "TGSIS"
     topic: "Incident Response and Resilience"
-    keywords: ["incident investigation", "forensics", "patient safety impact assessment", "recovery in clinical environments"]
-  - ka: "SIS"
+    keywords: ["INCIDENT RESPONSE", "RESILIENCE"]
+  - ka: "TGSIS"
     topic: "Requirements Reconciliation"
-    keywords: ["security vs operational constraints", "clinical workflow preservation", "regulatory compliance"]
-  - ka: "SIS"
+    keywords: ["SAFETY REQUIREMENT", "AS LOW AS REASONABLY PRACTICABLE"]
+  - ka: "TGSIS"
     topic: "Patching of Systems with Safety Cases"
-    keywords: ["medical device regulation", "safety re-validation", "MHRA and UK MDR implications"]
-  - ka: "SIS"
+    keywords: ["PATCHING", "HAZARD ANALYSIS"]
+  - ka: "TGSIS"
     topic: "Architecture"
-    keywords: ["IT/medical device network segmentation", "defence in depth", "safety isolation"]
-  - ka: "SIS"
+    keywords: ["NETWORK SEGMENTATION", "DEFENCE IN DEPTH"]
+  - ka: "TGSIS"
     topic: "Organisational Culture"
-    keywords: ["IT security teams", "clinical staff", "biomedical engineers", "stakeholder coordination"]
-  - ka: "SIS"
+    keywords: ["SECURITY CULTURE", "STAKEHOLDER ENGAGEMENT"]
+  - ka: "TGSIS"
     topic: "Tools and Standards"
-    keywords: ["IEC 80001-1", "ISO 14971", "IEC 62304", "DCB0129 and DCB0160", "NHS DSPT"]
-  - ka: "CPS"
-    topic: "Cyber-Physical Systems Domains"
-    keywords: ["medical devices", "security and privacy concerns"]
+    keywords: ["IEC 62443", "IEC 80001-1", "ISO 14971", "DCB0129"]
+  - ka: "SOIM"
+    topic: "Monitor: Data Sources"
+    keywords: ["system and kernel logs", "network infrastructure information"]
+  - ka: "SOIM"
+    topic: "Analyse: Analysis Methods"
+    keywords: ["misuse detection", "anomaly detection", "contribution of SIEM to analysis and detection"]
+  - ka: "SOIM"
+    topic: "Plan: Security Information and Event Management"
+    keywords: ["alert correlation"]
+  - ka: "SOIM"
+    topic: "Execute: Mitigation and Countermeasures"
+    keywords: ["SOAR: impact and risk assessment", "RECOVERY POINT OBJECTIVE (RPO)", "RECOVERY - TIME OBJECTIVE (RTO)"]
+  - ka: "SOIM"
+    topic: "Human Factors: Incident Management"
+    keywords: ["prepare: incident management planning", "handle: actual incident response", "follow up: post incident activities"]
   - ka: "RMG"
-    topic: "Risk Assessment and Management Principles"
-    keywords: ["cyber-physical systems", "incident response and recovery planning"]
+    topic: "Risk assessment and management principles"
+    keywords: ["Elements of Risk", "Risk assessment and management in cyber-physical systems and operational technology", "BOW TIE ANALYSIS", "RESIDUAL RISK"]
+  - ka: "RMG"
+    topic: "Risk governance"
+    keywords: ["The human factor and risk communication", "RISK ACCEPTANCE"]
   - ka: "LR"
     topic: "Data Protection"
-    keywords: ["personal data breach notification", "UK GDPR Articles 33 and 34"]
+    keywords: ["personal data breach notification", "UK GDPR"]
   - ka: "LR"
     topic: "Other Regulatory Matters"
-    keywords: ["NIS Regulations 2018", "duty of candour", "healthcare security standards"]
+    keywords: ["industry-specific regulations", "NIS Regulations 2018"]
+  - ka: "CPS"
+    topic: "Cyber-Physical Systems"
+    keywords: ["protection against natural events and accidents", "security and privacy concerns"]
+  - ka: "CPS"
+    topic: "Cyber-Physical Systems Domains"
+    keywords: ["medical devices"]
+  - ka: "NS"
+    topic: "Network Security Tools"
+    keywords: ["firewalling", "NETWORK SEGMENTATION"]
+  - ka: "AAA"
+    topic: "Authentication"
+    keywords: ["user authentication", "MULTI-FACTOR AUTHENTICATION", "USER ACCESS REVIEW"]
+  - ka: "MAT"
+    topic: "Malicious Activities by Malware"
+    keywords: ["integrity", "availability", "RANSOMWARE"]
+  - ka: "AB"
+    topic: "Characterisation of Adversaries"
+    keywords: ["cyber-dependent organised crime"]
+  - ka: "AB"
+    topic: "Elements of a Malicious Operation"
+    keywords: ["infection vectors", "payment methods"]
+  - ka: "HF"
+    topic: "Human Error"
+    keywords: ["ALARM FATIGUE"]
+  - ka: "HF"
+    topic: "Stakeholder Engagement"
+    keywords: ["Employees"]
+  - ka: "F"
+    topic: "Artifact Analysis"
+    keywords: ["cryptographic hashing"]
 categories: ["security_informed_safety"]
 tags: ["security-informed-safety", "healthcare", "medical-devices", "incident-response", "risk-management", "safety-case", "gsn", "network-segmentation", "uk-gdpr", "break-escape"]
 type: ["game-based-learning", "lab-sheet"]

@@ -42,6 +42,9 @@ module BreakEscape
           count += 1
         end
 
+        # Hacktivity listings keep their own copy; bring them in line too
+        sync_game_slots(mission)
+
         count
       end
 
@@ -70,6 +73,12 @@ module BreakEscape
           cybokable_type: 'BreakEscape::Mission',
           cybokable_id: mission.id
         ).destroy_all
+      end
+
+      def sync_game_slots(mission)
+        return unless mission.respond_to?(:game_slots)
+
+        mission.game_slots.find_each(&:sync_cyboks_from_mission)
       end
 
       def create_hacktivity_cybok(mission, ka, topic, keywords_str)
