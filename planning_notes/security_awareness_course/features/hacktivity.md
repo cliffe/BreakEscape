@@ -353,7 +353,7 @@ The features below are in id order.
 - "Status at 31 March" reproduces the figures the dashboard showed on 31 March.
 - A learner can download their own transcript.
 
-**Depends on:** BE-01 (decision records), MG-20 (check results), HA-22 (statements, when built; until then the game's existing saves carry the BE-01 log), HA-19 (versions), HA-03 (assignments), HA-07 (acknowledgements), HA-15 (retention, audit log).
+**Depends on:** BE-01 (the rated records and the per-game summary), MG-20 (check results), HA-19 (versions), HA-03 (assignments), HA-07 (acknowledgements), HA-15 (retention, audit log); HA-22 from P2.
 
 **Risks and open questions:**
 
@@ -1003,23 +1003,23 @@ Before building, check each pilot customer's LMS and which of these it supports;
 
 **Priority and size:** P2, M.
 
-**Why:** The game's evidence (BE-14 xAPI statements) needs somewhere to go. HA-05 builds records from it, cmi5 (HA-10) sends it to customers' LMSs, and some customers want it in their own learning record store.
+**Why:** The game's evidence, as standard xAPI statements (BE-14), needs somewhere to live: for reporting and analysis, for learners launched through cmi5 from a customer's LMS (HA-10), and for customers who want it in their own learning record store.
 
 **What exists today:** nothing. The game saves its state and objective changes to the server (story globals every 30 seconds and when the page is hidden), stored with the game; there is no statement store.
 
 **Design:**
 
-- **A learning record store** for xAPI statements and state documents, separated by organisation, with short-lived credentials issued to each game at launch.
+- **A learning record store** for xAPI statements and state documents, separated by organisation. The statements are generated on the server from BE-01's records (BE-14), so no store credentials ever reach a learner's browser.
 - **Validation** against the course's xAPI profile (the verbs, activity types and extensions for outcome ids, behaviour ids and ratings that BE-14 defines). Malformed statements are rejected; a statement sent twice is stored once.
 - **No names in statements.** The actor is an xAPI account with an opaque learner id per organisation, never an email address; Hacktivity alone holds the link to the person.
-- **Processing.** Statements update the open attempt (HA-05): time, decisions, check answers. Completion triggers the record builder.
+- **Processing.** The store keeps the statements for reporting, forwarding and cmi5; the completion record itself is built from BE-01's summary (HA-05), so the two always agree.
 - **Forwarding** (per organisation, optional): copies of statements to the customer's own learning record store, filtered (module-level only, or everything), with retries. Switching it on shows the same privacy caution as HA-10.
 - **Read access** for the organisation through an API key, for their own analysis.
-- **Versions.** xAPI 2.0 is the current version (ADL's [xAPI specification repository](https://github.com/adlnet/xAPI-Spec) points to it, now published through IEEE; the IEEE standard number is *to verify*). Many learning record stores still speak 1.0.3, so statements should keep to what both versions accept.
+- **Versions.** BE-14 targets the current xAPI base standard, which ADL's [specification repository](https://github.com/adlnet/xAPI-Spec) points to as xAPI 2.0, maintained with IEEE (BE-14 gives the IEEE reference). Many learning record stores still speak version 1.0.3, so statements should keep to what both accept.
 
 **Acceptance criteria:**
 
-- A core_01 attempt's statements are accepted and validated, and produce the same completion record as the MVP route (the game's saved state).
+- A core_01 attempt's statements are accepted and validated, and agree with the completion record built from BE-01's summary.
 - Duplicate statements are ignored.
 - Forwarding to a test learning record store works, with retries after an outage.
 - No statement contains a name or an email address.

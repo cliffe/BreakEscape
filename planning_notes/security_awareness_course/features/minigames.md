@@ -43,7 +43,7 @@ What every new minigame does, so modules can be written against the minigames be
 - sets `requiresKeyboardInput: true` when it has text fields (`minigame-manager.js:29-52`), so typing doesn't walk the player about;
 - registers a launcher with BE-19's registry (`JS/systems/minigame-launchers.js`, proposed in `break_escape_engine.md`), so ink and actions can open it, and hands control back to the conversation that opened it (BE-19's "close, run, return", built on the `window.pendingConversationReturn` pattern in `JS/minigames/rfid/rfid-minigame.js:472-506`);
 - ships an accessible mode for the text route (principle 4);
-- keeps its rules (scoring, draws, rating) in a DOM-free module with node tests in `test/js/`, as `command-board/command-board-timeline.js` does.
+- keeps its rules (draws, the action-to-option rules, practice scoring) in a DOM-free module with node tests in `test/js/`, as `command-board/command-board-timeline.js` does.
 
 **Ways in.** One configuration opens a minigame four ways: clicking an object in the world; from ink or an event (BE-19, which replaces the `#trigger_minigame` stub at `JS/minigames/helpers/chat-helpers.js:185-196`); as a stand-alone drill (BE-07); and as text, through the accessible mode (BE-03). BE-19 keeps named configurations at the scenario level (`"minigameConfigs": { "q_phish_ask": { "minigame": "knowledge_check", "data": { "item": "C01-Q1" } } }`) and opens them with `#trigger_minigame:<minigame>|<configKey>` or an `open_minigame` action. So every new minigame accepts the same keys whether they arrive as an object's `minigameData` or as a named configuration's `data`, and the examples below work in either place.
 
@@ -55,13 +55,13 @@ What every new minigame does, so modules can be written against the minigames be
 
 **Options in data.** An item's `assess` block names the behaviour and maps the minigame's actions to that behaviour's options (`"onAction": { "reported": "reported", "signed_in": "signed_in" }`). Most items need only the map. A few need short sequence rules that turn a run of actions into one option, checked when the behaviour closes (BE-01's `unanswered.closeOn` event): core_01's C01-B1 has "clicks, stops, then reports" (Developing) and "signs in and doesn't report before Ama arrives" (Not yet), and C01-B7 asks whether a click was reported soon after. Windows are defined by story events such as `ama_arrives`, not minutes (principle 5). Where this document says an action is Secure or Not yet, that is what the module's map would say; the minigame only reports the option. MG-01's example in section 3 shows both forms.
 
-**Banks and safe content.** Content lives in bank files per module (BE-13). Each item has a stable id, a version and tags (outcome, slot, lever, difficulty, edition, locale, organisation slot). Draws are seeded and the seed goes into the record, so an auditor can see exactly what a learner was shown (HA-19). Scenarios are ERB templates, so per-game draws already work today (`rand`, `.sample`, the helpers in `app/models/break_escape/mission.rb`). Bank text follows the course writing rules and avoids " -- ", which `JS/utils/display-dashes.js` turns into a dash on screen. Every domain must be on the module's checked list of fictional or reserved names; phone numbers come from Ofcom's ranges reserved for drama (for example 07700 900xxx and 0161 496 0xxx: check the current list before use).
+**Banks and safe content.** Content lives in bank files per module (BE-13); MG-20's items move to the platform with HA-08. Each item has a stable id, a version and tags (outcome, slot, lever, difficulty, edition, locale, organisation slot). Draws are seeded and the seed goes into the record, so an auditor can see exactly what a learner was shown (HA-19). Scenarios are ERB templates, so per-game draws already work today (`rand`, `.sample`, the helpers in `app/models/break_escape/mission.rb`). Bank text follows the course writing rules and avoids " -- ", which `JS/utils/display-dashes.js` turns into a dash on screen. Every domain must be on the module's checked list of fictional or reserved names; phone numbers come from Ofcom's ranges reserved for drama (for example 07700 900xxx and 0161 496 0xxx: check the current list before use).
 
 **Organisation profile.** On-screen text can hold placeholders (`{org.name}`, `{org.reportButton}`, `{org.serviceDesk}`, `{org.labels.confidential}`) filled from BE-05. Voiced lines never contain them.
 
 **Saving.** Each minigame saves its progress as a per-player section in `JS/state-sync.js`, holding ids and flags only, never message bodies (a keepalive sync is capped at about 60 KB, `state-sync.js:4-5`). A reload then restores the inbox, a half-finished check or a video's position.
 
-**Validation.** `minigame-data-schemas.json` checks only top-level key names. The awareness minigames hold nested data (emails, items, pages), so they need nested schemas, plus content checks in the validator: unique item ids, outcome ids that exist in the module, links to pages that exist, domains on the checked list, and no "--" in bank text.
+**Validation.** `minigame-data-schemas.json` checks only top-level key names. The awareness minigames hold nested data (emails, items, pages), so they need nested schemas, plus content checks in the validator: unique item ids, every `assess` block naming a behaviour and option in the module's map (a check BE-01 already plans), links to pages that exist, domains on the checked list, and no "--" in bank text.
 
 **Shared building blocks.** Several minigames need the same parts, so they are built once (in a folder such as `JS/minigames/shared/`), starting with MG-20 and MG-01:
 
@@ -73,7 +73,7 @@ What every new minigame does, so modules can be written against the minigames be
 - **an address reader** that splits a web or email address and finds the real domain, with a small public suffix list for `.co.uk` and the like (MG-01, MG-02, MG-03, MG-05, MG-06, MG-08);
 - **a fake page renderer** for sign-in pages, portals, forms and warnings, built from typed blocks like those in `forensic-data-platform` (MG-01, MG-02, MG-06, MG-14, MG-16);
 - **an annotated document**: text spans and image regions that can be highlighted, marked or clicked, shared with BE-08's visual aids (MG-12, MG-16, MG-20 hotspots, MG-25);
-- **a seeded bank draw** with coverage rules (MG-01 practice, MG-03, MG-20, MG-25).
+- **a seeded bank draw** with coverage rules (MG-01 practice, MG-03, MG-25, and MG-20 until HA-08 draws on the platform).
 
 ## 2. Summary
 
@@ -933,7 +933,7 @@ Each step gets one line of feedback. Items get harder: a plain domain; a decorat
     "draw": { "count": 6, "coverOutcomes": true, "excludeLastAttempt": true, "maxOrgItems": 2 },
     "passMark": { "correct": 5, "of": 6, "orgSetting": "check_pass_mark" },
     "feedback": "after_each",
-    "scoring": "server",
+    "grading": "server",
     "retake": { "freshDraw": true, "mentorAfterAttempts": 2, "mentorEvent": "core01_relearn" },
     "onPass": [{ "type": "complete_task", "taskId": "spot_check" }],
     "onNotPassed": [{ "type": "emit_event", "event_name": "core01_check_not_passed" }]
@@ -1010,7 +1010,7 @@ Other keys: `presentation` (`spot_check`, `mentor`, `game_show`, `drill`); `item
 - `coverage-decision-form` for the choice items: sections of options, a submit gate, and completion actions that write the chosen value or whether it matched (`JS/minigames/coverage-decision-form/coverage-decision-form-minigame.js:22-28`);
 - `warranty-checklist`'s verdict buttons for sort into groups;
 - `shredded-document`'s reordering for ordering items, with keyboard moves added;
-- `flag-station`'s server-side checking (answers validated by `POST /games/:id/flags`) for assessed scoring;
+- `flag-station`'s server-side checking (answers validated by `POST /games/:id/flags`) for grading assessed items;
 - m01 Kevin's five-question "security audit" in ink (`scenarios/m01_first_contact/ink/m01_npc_kevin.ink`), the precedent for a check inside a conversation;
 - the shared feedback panel, seeded draw and annotated document (section 1).
 
@@ -1291,7 +1291,7 @@ File names without a folder are in that minigame's own folder under `JS/minigame
 | `shredded-document` | core_06's attacker view: Jo pieces together a draft from the recycling | Drag and drop only (`shredded-document-minigame.js:216-290`): add Move up and Move down buttons and announce the order (SC 2.5.7) | S |
 | `password` | A weak or written-down password in use (core_03's sticky notes, Kev's shared PC); sign-in moments | None: it is entry only, and MG-08 covers making passwords | none |
 | `pin` | Shoulder-surfed door codes (core_10); MG-07's code entry | The backlog's PIN fixes: lengths other than four when the server keeps the PIN (`JS/systems/minigame-starters.js:535`), the `window.startPinMinigame` clash (`JS/minigames/index.js:202`), Cancel showing "PIN Rejected" | S |
-| `flag-station` | A free-text answer checked on the server, where a role module needs one; its server check is the model for MG-20's scoring | Uses the browser's own `confirm()` box (`flag-station-minigame.js:556`, `:564`), which can't be styled or relabelled: use the shared dialog | S |
+| `flag-station` | A free-text answer checked on the server, where a role module needs one; its server check is the model for MG-20's grading | Uses the browser's own `confirm()` box (`flag-station-minigame.js:556`, `:564`), which can't be styled or relabelled: use the shared dialog | S |
 | `dual-auth` | Two-person approval (core_11, role_02, MG-15) | Not registered in `minigames/index.js`, with no starter and no dispatch. It writes sis01's globals (`itsec_authorised`, `clinical_eng_authorised`, `network_isolation_authorised`, `network_isolated`, `dual_auth_failed`: `dual-auth-minigame.js:203-308`); its PINs are `itsec_pin` and `clinical_pin` (`scripts/minigame-data-schemas.json:110-113`) and sit in the page; a five-minute timer fails the approval (`:20`, `:304-318`); the keypads take clicks only; the title is fixed (`:10`); and the server has no `dual_auth` unlock method (`app/models/break_escape/game.rb:883-892`). Its text is already overridable (`dual-auth-text.js`). For the course: named approver panels with a checklist instead of PINs, globals from data, no timer by default | S to M |
 | `backup-recovery` | "Choose your response" cards: core_07's restore, seen behind the scenes; role_01 | Global names are fixed (`backup_recovery_source`, `recovery_eta_hours`, `backup_restore_initiated`, `backup_reinfected`: `backup-recovery-minigame.js:336-426`) and the default sources are sis01's | S |
 | `esd-pushbutton` | A guarded "stop the payment" or "isolate" button with a confirm step | Already data-driven (`esd-pushbutton-minigame.js:6-25`); add a plain office look | S |
@@ -1321,7 +1321,7 @@ Four waves, following the roadmap in `00_COURSE_OVERVIEW.md`. Within a wave, ite
 ### Wave 0: foundations (phase 0, with BE-01, BE-04 and BE-19)
 
 1. **The shared building blocks** (section 1): first the record and event helpers, the feedback panel, the accessible dialog and the seeded draw, because MG-20 needs them and every later minigame reuses them.
-2. **MG-20 Knowledge check.** Every module needs it. It is the smallest new minigame that runs through the whole evidence chain (a BE-01 record, server-side scoring, HA-05), and it proves BE-19 (Ama's question opens inside her conversation and hands back to it) and BE-03 (the same items as text). Build single choice and multiple select first, then ordering, true or false with reason, hotspot, and sort into groups. The game show look comes last; core_16 can use the spot check look until then.
+2. **MG-20 Knowledge check.** Every module needs it. It is the smallest new minigame that runs through the whole evidence chain (a BE-01 record, server-side grading, HA-05), and it proves BE-19 (Ama's question opens from her conversation and hands back to it) and BE-03 (the same items as text). Build single choice and multiple select first, then ordering, true or false with reason, hotspot, and sort into groups. The game show look comes last; core_16 can use the spot check look until then.
 3. **Small fixes that unblock early modules:** a title that can be set on the `lab-workstation` popup (for The Lark, BE-09), the video-call bar text, and registering `dual-auth` with its globals moved into data.
 
 ### Wave 1: the MVP course (phase 1, Induction Essentials)

@@ -38,3 +38,40 @@ After this module, staff can:
 - **C04-LO4** Take the right first steps: leave things as they are, keep the evidence, don't switch off unless told, and follow the security team's instructions.
 - **C04-LO5** Report their own mistakes, and help a colleague report theirs, kindly and without blame.
 - **C04-LO6** Explain why speed matters and what happens after a report.
+
+## Compliance coverage
+
+Contributes to (references in `02_COMPLIANCE_MAPPING.md` when present; check the short names against it):
+
+- **ISO/IEC 27001:2022** Annex A 6.8 (information security event reporting: staff report observed or suspected events promptly through the right channel), A 5.24 to 5.28 (incident management, including 5.28 on keeping evidence), A 6.3 and clause 7.3. This module is the main staff-facing evidence for A 6.8.
+- **NCSC CAF v4.0** B6 (staff awareness and training), especially B6.a (people know how to raise a concern, and those who report are treated positively), and D1 (response and recovery planning).
+- **CIS Controls v8.1** 14.6 (recognise and report security incidents) and 14.5 (causes of unintentional data exposure, such as mis-delivery and lost devices).
+- **NIST SP 800-53** IR-6 (incident reporting), AT-2 and AT-2(4) (suspicious communications and anomalous system behaviour).
+- **PCI DSS v4.0.1** 12.10 (incident response, which depends on staff raising suspected incidents) and 12.6 (security awareness programme). Check the exact requirement numbers against the mapping.
+- **NIS2** Article 21(2)(g) (cyber hygiene and training) and Article 23 (reporting significant incidents, which starts with staff reporting internally).
+- **UK GDPR** Article 33 (personal data breach notification, and a processor's duty to tell the controller without undue delay): the module gets breaches to the DPO at once.
+- **HIPAA** 164.308(a)(6)(ii) (response and reporting) and 164.308(a)(5)(ii)(C) (log-in monitoring), for US healthcare customers.
+
+## Module flow
+
+| Beat | What happens | Format | Minutes |
+|---|---|---|---|
+| Hook | 13:50. Leo says a school has rung to ask why he sent them an invoice link he never sent. What the player tells him, and how fast it gets reported, is the baseline. Leo's account keeps sending while they decide | Game (`person-chat`, timers) | 1 to 2 |
+| Learn | Ama and Kai at the player's desk: Kai's blast radius for Leo's account, then what counts, the signs, how to report and what to include, what not to do, and no blame | NPC explainer with visual aids (EX-01, EX-05, BE-08) | 3 |
+| Practise | "Report it or not?" (eight quick situations), then two practice reports on the form with instant feedback, and one "first moves" ordering item | MG-09 practice mode | 3 |
+| Apply | "The golden hour": the council's monthly report is due at 15:00. Four things go wrong around it (files that won't open, a missing laptop, a sign-in prompt, Martin's wrong attachment) and an optional fifth (a stranger by the comms room). Each spreads until it is reported | Game (BE-18, MG-09, the blast radius) | 5 to 6 |
+| Debrief | Kai's replay of the afternoon on one map: when each sign appeared, when it was reported, and what the report let the team do. Martin is thanked | Debrief screen (BE-02), then Kai and Ama | 2 |
+| Check | Six scenario questions | Quiz (MG-20) | 2 |
+| Reference | The reference card, with the organisation's own routes and numbers | Intranet (BE-09) | under 1 |
+
+## Reuse from existing Break Escape content
+
+- **Rooms:** `room_office` (the Operations floor), `room_meeting` (Meeting Room 2), `room_security` (Kai's office), `small_office_room3_1x1gu` (the Finance office), `hall_1x2gu` (the corridor to the comms room, with a `room_servers` door), `room_break` (optional).
+- **Conversations:** `person-chat` for Leo, Ama, Kai, Martin, Tomasz and Precious (multi-speaker for Ama and Kai); `phone-chat` for the team chat, Lena, Kai's acknowledgements, and the security team's 4444 line as an ink conversation until MG-04 exists.
+- **Kai's response board:** `command-board`, configured through its `commandBoard` scenario block: timeline entries and status rows driven by global conditions, stamped with game time from the start of the game by the CommandBoardRecorder even while the board is closed (`public/break_escape/js/minigames/command-board/command-board-timeline.js`; wired in `public/break_escape/js/core/game.js` around line 1041). Only sis01 uses it today, with its built-in entries.
+- **The interim spread board:** `alarm-panel`, whose multi-state lamps follow globals live (`public/break_escape/js/minigames/alarm-panel/alarm-panel-minigame.js`).
+- **Kai's isolation:** `network-segmentation-map`, relabelled, for cutting off the laptop that is locking files (see New features for the text that is written for sis01 today).
+- **The report form's starting point:** `coverage-decision-form`, which already shows sections of options, writes globals on submit and reads everything else from scenario data, apart from a hard-coded "Meridian Cyber Insurance" header.
+- **Other minigames:** `container` for the shared drive's folder; `text-file` for the note the locked files leave behind; `examine` for the empty laptop dock.
+- **Systems:** `timers[]` with `startOnGlobal`, `cancelOnGlobal`, `setGlobal` and `actions` for every spread stage (`public/break_escape/js/ui/scenario-timer-dispatcher.js`). sis02's hydrogen build-up is the precedent: timers that escalate until an action cancels them, with `tint_objects` making the hazard visible in the room (`scenarios/sis02_energy/scenario.json.erb`, lines 442 to 477). Also NPC event mappings with `bark` and `sendTimedMessage` on `global_variable_changed:<name>`, and `gameClock` for the afternoon.
+- **Patterns:** sis01's live incident board and its debrief conversation (`scenarios/sis01_healthcare/ink/npc_sharma.ink`); core_01's report board in Kai's office.

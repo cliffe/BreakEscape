@@ -137,3 +137,54 @@ Use these as background and inspiration only. Game content uses fictional names,
 - **The ICO's own email examples.** The ICO's "Email and security" guidance describes two cases it fined, without naming the organisations: in 2019 an NHS trust emailed patients about an art competition with their addresses copied into the To field, and a recall attempt failed; in February 2020 a charity sent an event agenda to 105 members with addresses in CC rather than Bcc, and 65 of the addresses identified the recipients. Source: primary (ICO).
 - **Tehran, 1979.** Shredded documents from the US embassy, seized in November 1979, were painstakingly reconstructed and published in a series of volumes. Source: secondary (Wikipedia, "Iran hostage crisis").
 - **DARPA Shredder Challenge, 2011.** Nearly 9,000 teams competed to rebuild shredded documents; the winning team of eight reconstructed five documents from more than 10,000 pieces, in about 600 hours of work. Lesson: a determined person can rebuild shreds. Source: secondary (Wikipedia, "DARPA Shredder Challenge 2011", citing DARPA's announcement).
+
+## Organisation-specific slots
+
+| Slot | Default (Larkspur) |
+|---|---|
+| Label names, colours and definitions | Public (green), Internal (blue), Confidential (amber), Restricted (red), as in the table above |
+| Where personal data sits | Most personal data Confidential; special category data and large sets of personal data Restricted |
+| Handling rules per label | The handling grid on The Lark (store, send, share, print, dispose for each label) |
+| Approved file-sharing service and default link | "Larkspur Files"; new links default to "specific people, can view" |
+| External sharing | Confidential: specific people with an end date of 30 days at most. Restricted: only with the information owner's approval |
+| Secure send | The "Send securely" button in the mail client, for Confidential and Restricted going outside Larkspur |
+| Group mailings | The bulk email tool (Communications team) or mail merge; Bcc only for small, routine, non-sensitive groups |
+| Mail safety features | External recipient warning on; 30-second send delay on |
+| Printing | Secure print on all multifunction printers; release with your badge |
+| Confidential waste | Locked grey consoles by every printer and in the archive room; emptied weekly by the approved contractor |
+| Office shredders | Strip-cut shredders for Internal paper only |
+| Returning devices | Hand them to the IT service desk, or book a collection on The Lark |
+| Retention schedule | "Retention schedule" page on The Lark |
+| Information received by mistake | Tell the sender; report to the security team on extension 4444 (it reaches the DPO if personal data is involved) |
+| Personal email and cloud accounts | Not allowed for work information (core_13) |
+
+## Glossary
+
+- **Classification:** deciding how sensitive information is and giving it a label.
+- **Label (or marking):** the word on a document or email that says how to handle it: Public, Internal, Confidential, Restricted.
+- **Need to know:** sharing only with people who need the information for their work, and only what they need.
+- **Information owner:** the person responsible for a set of information, who decides who may see it.
+- **Bcc (blind carbon copy):** sends an email to people without showing their addresses to each other. Easy to get wrong; not enough on its own for sensitive mailings.
+- **Mail merge and bulk email tools:** ways to send one email to many people so each gets their own copy.
+- **Secure send:** sending an email or file encrypted, so only the intended recipient can read it.
+- **"Anyone with the link":** a sharing setting that lets anyone who has the link open the file, wherever it was forwarded.
+- **Hidden content:** information in a file that you can't see at a glance: hidden worksheets, rows and columns, comments, tracked changes, metadata, covered-up text.
+- **Metadata:** information about a file, such as its author, earlier titles and when it was edited, or where a photo was taken.
+- **Redaction:** permanently removing information from a copy of a document before it is shared.
+- **Secure print (pull printing):** print jobs wait until you release them at the printer with your badge or PIN.
+- **Confidential waste:** locked bins for paper, emptied and destroyed by an approved contractor.
+- **Strip-cut and cross-cut shredding:** strip-cut cuts paper into long strips; cross-cut cuts it into small pieces. Strips are easier to piece back together.
+- **Sanitisation:** making the data on a device unrecoverable before it is reused or disposed of.
+- **Retention schedule:** the organisation's list of how long each kind of record is kept.
+
+## Sources
+
+- CIS Critical Security Controls v8.1, [Control 14](https://www.cisecurity.org/controls/security-awareness-and-skills-training), safeguards 14.4 and 14.5 (as checked in `02_COMPLIANCE_MAPPING.md`).
+- ICO, [Email and security](https://ico.org.uk/for-organisations/uk-gdpr-guidance-and-resources/security/email-and-security/) (30 August 2023; under review after the Data (Use and Access) Act): Bcc, autocomplete, send delays, bulk email and mail merge, the two anonymised cases.
+- ICO, [Disclosing documents to the public securely](https://ico.org.uk/for-organisations/uk-gdpr-guidance-and-resources/security/disclosing-documents-to-the-public-securely/) (31 July 2025), including [hidden information in documents](https://ico.org.uk/for-organisations/uk-gdpr-guidance-and-resources/security/disclosing-documents-to-the-public-securely/avoid-an-accidental-breach-when-personal-information-is-hidden-in-documents/), the [spreadsheet checklist](https://ico.org.uk/for-organisations/uk-gdpr-guidance-and-resources/security/disclosing-documents-to-the-public-securely/checklist-avoid-an-accidental-breach-when-personal-information-is-hidden-in-spreadsheets/) and [redaction](https://ico.org.uk/for-organisations/uk-gdpr-guidance-and-resources/security/disclosing-documents-to-the-public-securely/how-do-we-avoid-an-accidental-breach-when-redacting-information/).
+- ICO, [Encryption](https://ico.org.uk/for-organisations/uk-gdpr-guidance-and-resources/security/a-guide-to-data-security/encryption/) (keys kept with the data).
+- NCSC, [Secure sanitisation of storage media](https://www.ncsc.gov.uk/guidance/secure-sanitisation-storage-media) (reviewed 5 February 2025).
+- GOV.UK, [Government Security Classifications](https://www.gov.uk/government/publications/government-security-classifications) (policy updated 5 August 2024) and its guidance ["Working at OFFICIAL"](https://www.gov.uk/government/publications/government-security-classifications/guidance-11-working-at-official-html).
+- Procurement Act 2023, [Schedule 7](https://www.legislation.gov.uk/ukpga/2023/54/schedule/7), paragraph 13 (acting improperly in procurement).
+- Wikipedia (secondary): [Afghan Response Route](https://en.wikipedia.org/wiki/Afghan_Response_Route); [Iran hostage crisis](https://en.wikipedia.org/wiki/Iran_hostage_crisis); [DARPA Shredder Challenge 2011](https://en.wikipedia.org/wiki/DARPA_Shredder_Challenge_2011).
+- core_05 `concepts.md` for personal data, breaches and the PSNI case.
