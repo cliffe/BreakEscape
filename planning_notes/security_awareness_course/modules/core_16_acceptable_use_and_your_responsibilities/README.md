@@ -61,7 +61,7 @@ Not yet in the mapping, and requested in the writer's report: ISO 27001 A.5.10 (
 |---|---|---|---|
 | Hook | 12:25 at the desk. Leo: "There's a match on at one. Can I stream it on my work laptop?" The player answers (it's fine, it's not, or let's check) before anyone has told them the rules: the baseline | Game (`person-chat`) | 1 |
 | Learn | In the kitchen, Owain warms up the audience: the small print on one card, the three answers, and why "Ask first" is never wrong | NPC explainer (EX-01, BE-08) | 1 |
-| Practise | The game show, **Allowed, Not Allowed, or Ask First?**, hosted by Ama and Owain: three rounds (Buzz, Why?, Who do you ask?) and Tomasz's "Fact or myth?" on monitoring. Contestants: the player, Leo, Martin and Kev. Every answer comes from the organisation's own policy | Minigame (MG-20, game show mode) | 4 |
+| Practise | The game show, **Allowed, Not Allowed, or Ask First?**, hosted by Ama and Owain: three rounds (Buzz, Why?, Who do you ask?) and Tomasz's "Fact or myth?" on monitoring. Contestants: the player, Leo, Martin and Kev. Every answer comes from the organisation's own policy | Minigame (MG-20, game show presentation) | 4 |
 | Apply | Back at the desk, two things the show didn't cover arrive without warning: a client's meeting invitation that wants an app installed, and Martin asking the player to look up a school contact's mobile number "for a personal thing" | Game (MG-01, `person-chat`) | 1.5 |
 | Debrief | The scoreboard, the reasons, and the player's five responsibilities | Debrief screen (BE-02) and Ama | 0.5 |
 | Check | Five scenario questions, answered from the organisation's policy | Quiz (MG-20) | 1 |
@@ -71,17 +71,16 @@ Not yet in the mapping, and requested in the writer's report: ISO 27001 A.5.10 (
 
 - **Rooms:** `room_break` (the kitchen, dressed as a lunchtime quiz) and `room_office` (the player's desk). No new rooms.
 - **Conversations:** `person-chat` multi-speaker scenes for two hosts, three contestants and an audience, using inline `Name:` prefixes and `Narrator:` lines (`README_ink_best_practices.md`); audience barks through event mappings; `phone-chat` for Lena and the client's message.
-- **A three-verdict pattern:** `warranty-checklist` (sis03, `minigames/warranty-checklist/`) already lays out one row per item with three verdict buttons and a submit. Its labels, globals and alert text are hard-coded for sis03 (Compliant, Arguable, Breached; `warranty_checklist_complete`), so it would need generalising, but it is a working fallback for the Buzz round before MG-20's game show mode exists.
+- **A three-verdict pattern:** `warranty-checklist` (sis03, `minigames/warranty-checklist/`) already lays out one row per item with three verdict buttons and a submit. Its labels, globals and alert text are hard-coded for sis03 (Compliant, Arguable, Breached; `warranty_checklist_complete`), so it would need generalising, but it is a working fallback for the Buzz round before MG-20's game show presentation exists (MG-20's plain "spot check" look is the other fallback, as `features/minigames.md` suggests).
 - **Scoring in ink:** m01's five-question quiz with score variables (`scenarios/m01_first_contact/ink/m01_npc_kevin.ink`) as the fallback scoring pattern.
 - **Documents:** `notes` and a `lab-workstation` object for The Lark's policy page until BE-09.
 - **Props:** kitchen tables and kettle, a whiteboard for the scoreboard, a notice board. Three novelty buzzers are new small props.
 
 ## New features needed
 
-- **MG-20 Knowledge check:** the show's items and the final check, from one bank keyed to the organisation's answers.
-- **proposed:** Game show mode for MG-20, a presentation skin with two hosts' reactions, contestants whose answers are revealed after the player locks in, three coloured buzzers, a whiteboard scoreboard and rounds, with no speed scoring. core_17's annual team event reuses it.
+- **MG-20 Knowledge check:** the show's items and the final check, from one bank keyed to the organisation's answers. `features/minigames.md` already plans MG-20's **game show** presentation and its **sort into groups** item type for this module. What this module needs from them: contestants whose answers are revealed after the player locks in, rounds, a whiteboard scoreboard, an "Ask first" answer that always scores, and no speed scoring. core_17's annual team event reuses the same presentation.
 - **HA-11 Organisation profile:** an answer key for this module's bank (for each item: the answer, a one-line reason, the policy section, who to ask), with Larkspur defaults the organisation confirms or edits, and a small set of locked items it can't change (see `game_design.md`, Pitfalls).
-- **HA-07 Policy library and acknowledgement** and **BE-09 Intranet terminal:** the organisation's policies shown in the game, the acknowledgement recorded with the policy version, re-requested when the policy changes and every 12 months.
+- **HA-07 Policy library and acknowledgement** and **BE-09 Intranet terminal:** the organisation's policies shown in the game (summary first, accessible HTML), the acknowledgement recorded with the policy version, the exact statement and the method "in game", re-requested every 12 months and within 14 days of a significant change.
 - **proposed:** Policy questions, an "I have a question first" button beside the acknowledgement that sends the learner's question to the policy's owner, holds the acknowledgement open and keeps the answer with the policy record (an extension of HA-07).
 - **BE-05:** contacts for each kind of question, the policy names, the monitoring statement.
 - **BE-01, BE-02, BE-19, EX-01, BE-08:** the record, the debrief, the show opened from a conversation, and Owain's warm-up card.
@@ -94,12 +93,12 @@ Not yet in the mapping, and requested in the writer's report: ISO 27001 A.5.10 (
 - The answer key: confirm or edit the Larkspur default for each item in the bank; at least 12 confirmed items before the module can be assigned.
 - Personal use rules; the monitoring statement (what is monitored, why, and how staff are told); the route for requesting software; the rules for personal devices; social media guidance; what happens if the rules are broken.
 - Who to ask about what: service desk, security team, DPO, HR, and a named owner for each policy.
-- The acknowledgement wording and how often it is re-requested (default: every 12 months and whenever the policy changes).
+- The acknowledgement wording and how often it is re-requested (default: every 12 months, and within 14 days of a significant change, as HA-07 sets).
 - A route for saying a rule doesn't work (default: the policy owner, through "I have a question first").
 
 ## Open questions
 
-1. **Acknowledgement wording.** *Recommendation: "I have read and understood this policy and I will follow it." It matches PCI DSS 12.6.3's "read and understood", avoids legalese, and the organisation can edit it.*
+1. **Acknowledgement wording.** *Recommendation: HA-07's default, naming the policy and version: "I have read and understood the Acceptable Use Policy, version 4.2, and I will follow it." It matches PCI DSS 12.6.3's "read and understood", avoids legalese, and the organisation can edit it.*
 2. **Completion and pending questions.** Should the module count as complete before the policy is acknowledged? *Recommendation: no, in line with the course rule that a module isn't complete until any attached policy is acknowledged, but "I have a question first" holds it open without a fail, with reminders (HA-04) until the question is answered.*
 3. **Locked answers.** Which answers can an organisation not change? *Recommendation: six: never share passwords or MFA codes; never use someone else's login; never lend a badge; never look at data you don't need for your job; never switch off security software; always report a suspected incident.*
 4. **A live version.** Should organisations be able to run the show as a real lunchtime quiz for teams, on a presenter screen (BE-15, HA-13)? *Recommendation: yes. It costs little, uses the same bank and answer key, and is the friendliest way to launch a new or changed policy.*

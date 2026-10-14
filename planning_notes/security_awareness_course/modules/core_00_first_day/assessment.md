@@ -6,7 +6,7 @@ Each row is recorded through BE-01 and shown in the debrief and the learner's re
 
 | Id | Behaviour | Learning outcome | Where it is evidenced | Secure | Developing | Not yet |
 |---|---|---|---|---|---|---|
-| C00-B1 | Responds to the "Gillian" text | LO3, LO4 (baseline) | Hook, and Ama's second chance in Learn | Shows Maureen without replying, before she asks | Keeps it to themselves but shows it when Maureen or Ama asks; or replies, then shows it | Replies and goes along with it, and never shows anyone |
+| C00-B1 | Responds to the fake "Lena" message request | LO3, LO4 (baseline) | Hook, and Ama's second chance in Learn | Shows Maureen without sending any details, before she asks | Sends nothing but keeps it to themselves until Maureen or Ama asks; or sends the details, then shows it | Sends the details and never shows anyone |
 | C00-B2 | Finds and uses the Report button | LO1, LO4 | Practise (Owain's test email) | Reports the test unaided | Reports it after Owain points to the button | (not used: practice) |
 | C00-B3 | Handles an MFA prompt they didn't start | LO3 | Practise | Denies it and reports it | Approves it, then denies the next after Owain's tip | (not used: practice; recorded as core_03's baseline) |
 | C00-B4 | Responds to the fake payroll email | LO3, LO4 | Apply | Reports it without confirming the form | Ignores or deletes it; or opens the form, closes it and then reports | Confirms the form |
@@ -23,11 +23,12 @@ The **before and after** for each learner is C00-B1 against C00-B4: an unexpecte
 
 To complete the module the learner must, at least once:
 
-1. **Report a suspicious message through the organisation's route:** C00-B4 at Secure, or C00-B5 at Secure or Developing (owning up to their own slip counts, because it is the same behaviour).
-2. **Find the reporting route on The Lark** (C00-B7).
-3. **Pass the knowledge check** (C00-B8: 4 of 5 by default).
+- **C00-CB1 Report a suspicious message through the organisation's route:** C00-B4 at Secure, or C00-B5 at Secure or Developing (owning up to their own slip counts, because it is the same behaviour).
+- **C00-CB2 Find the reporting route on The Lark** (C00-B7).
 
-A learner who misses one is taken back to it. Ama replays the "How to report here" chunk in thirty seconds, then a fresh message arrives from the bank (for example "Finish your IT induction: sign in here") and the player reports it. They complete the module when they show the behaviour; the record keeps both attempts.
+They must also pass the knowledge check (C00-B8: 4 of 5 by default; see "Completion and pass rules").
+
+A learner who misses C00-CB1 is taken back to it, following the course's remediation loop (`features/assessment_and_evidence.md`, section 4). Ama replays the "How to report here" chunk in thirty seconds, then a fresh message arrives from the bank (for example "Finish your IT induction: sign in here") and the player reports it. If it still isn't shown, a second loop uses a different message and a more direct prompt from Ama. After two loops the learner goes on to the check: the record says "practised, not yet shown", and a private practice drill is scheduled two to four weeks later (HA-03's practice trigger, HA-21). C00-CB2 can't be missed for good: the task stays on the list until the number is found, with The Lark's search hint after a while. Every attempt is kept in the record.
 
 ## Knowledge check bank
 
@@ -87,12 +88,12 @@ Why would criminals want to get into your work account, even in your first week?
 
 ### Q7 (LO2, LO3, multiple select)
 
-*"Hi, it's Gillian. Need a quick favour. I'm in meetings all day. Keep it between us."* Which parts should make you pause? Choose all that apply.
+The day before you start, a message request arrives: *"Welcome to the team! It's Lena, your new manager. Can you send me your personal mobile and email? Keep this between us for now."* Which parts should make you pause? Choose all that apply.
 
-- **A. It's from a number you don't know.** *Feedback: Yes. Unexpected channel.*
-- **B. It asks you to keep it secret.** *Feedback: Yes. Secrecy stops you checking with anyone.*
-- **C. It's from someone senior who says they can't be reached.** *Feedback: Yes. Authority plus "you can't check with me" is a classic pair.*
-- D. It's polite and friendly. *Feedback: Scams are usually polite. Friendliness isn't a sign either way.*
+- **A. It's from someone you've never met, on a site you weren't expecting.** *Feedback: Yes. You can't yet tell a real colleague from a fake one, so check.*
+- **B. It asks for your personal details.** *Feedback: Yes. Those are used for the next scam: texts and calls pretending to be colleagues.*
+- **C. It asks you to keep it quiet.** *Feedback: Yes. Secrecy stops you checking with anyone.*
+- D. It's warm and welcoming. *Feedback: Scams are usually friendly. Friendliness isn't a sign either way.*
 
 ### Q8 (LO3, single choice)
 
@@ -142,14 +143,14 @@ Leo says: "I clicked a dodgy link, but I'm not reporting it. I'll get in trouble
 
 ## Completion and pass rules
 
-- **Complete** when the learner has played through every beat (or the text route), shown each critical behaviour (with remediation if needed), passed the check, and opened the reference card.
+- **Complete** when the learner has played through every beat (or the text route), shown each critical behaviour or been taken back through the practice for it, passed the check, and opened the reference card.
 - **Pass mark:** 4 of 5 (80%, the course default; the organisation can change it). The seed suggested four questions; five are used so that the 80% default doesn't demand a perfect score.
 - **Retakes:** a failed check draws five new items. After two fails, Ama replays her four chunks before the third attempt.
 - **Test-out:** not offered. The module takes ten minutes and is where the learner meets the organisation's own reporting route.
 
 ## Evidence for auditors
 
-The learner's record (HA-05) shows: module id and version, start and completion dates, time on task, route (game or text), each assessed behaviour's rating, critical behaviours shown or remediated, the check score, and that the reference card was opened. Combined with the learner's start date from the organisation's records (HA-01, HA-02), it shows that induction began on hire and within the window the organisation set. This supports:
+The learner's record (HA-05) shows: module id and version, start and completion dates, time on task, route (game or text), each assessed behaviour's rating, critical behaviours shown or remediated, the check score, and that the reference card was opened. Combined with the learner's start date from the organisation's records (HA-01, HA-02), it shows that induction began on hire and within the window the organisation set. Auditors see completion and the check per person, and behaviour and outcome ratings in aggregate unless the organisation chooses otherwise (`features/assessment_and_evidence.md`, section 11). This supports:
 
 - **PCI DSS 12.6.1**, and **PCI DSS 12.6.3** for training on hire (with the rest of the Induction Essentials pathway);
 - **ISO 27001 cl. 7.3** and **ISO 27001 A.6.3**;
@@ -167,7 +168,7 @@ Outside the course, an organisation can watch:
 - **Time to first report** for new starters: days from their start date to their first use of the Report button or the security line. It should be short.
 - **New starters' report rate** for real suspicious emails in their first three months, compared with longer-serving staff.
 - **Welcome-themed simulations** (if the organisation runs HA-12): the share of new starters who report a "welcome" or "payroll" test in their first month.
-- **The Hook across cohorts:** the share of new starters who showed someone the "Gillian" text, compared with their Apply result and with later modules.
+- **The Hook across cohorts:** the share of new starters who showed someone the fake "Lena" message, compared with their Apply result and with later modules.
 - **Confidence and fear of blame:** two survey items before and after (HA-14): "I know how to report a security concern here" and "I would feel comfortable reporting my own mistake". These speak directly to NCSC CAF B6.a.
 - **"Is this genuine?" questions** to the service desk and security team, which should rise at first. That's a good sign.
 

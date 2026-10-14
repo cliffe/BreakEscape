@@ -70,7 +70,7 @@ Contributes to (references in `02_COMPLIANCE_MAPPING.md` when it is written):
 - **Documents and devices:** `container` for the laptop's desktop of files (as PCs work today); `text-file` and `notes` for the survey files, the café's chalkboard and the reference card.
 - **Systems:** the game clock (`gameClock`) and timers for the two days; event mappings, `setGlobal` and `onceOnly`; timed messages for Lena and Ama; objectives and tasks for the work task bar.
 - **Props in `public/break_escape/assets/objects/`:** suitcases, laptops, a tablet, phones, room safes (`safe1` to `safe5`) for the hotel, sofas, the coffee station and cups, a kettle, plants, bins, desk speakers (a stand-in until a smart speaker prop exists), a wall TV (`uni_tv1`).
-- **Rooms:** none of the four places exists. `room_break` (coffee station) and `room_uni_common` (sofa, tables, kitchenette) are the nearest blockouts for the café; `small_room_1x1gu` could be dressed as a cheap hotel room.
+- **Rooms:** none of the four places exists. `room_uni_common` (sofa, tables, kitchenette and a `coffee_station` slot) is the nearest blockout for the café, and `room_break` (the office kitchen) the next; `small_room_1x1gu` could be dressed as a cheap hotel room.
 
 ## New features needed
 

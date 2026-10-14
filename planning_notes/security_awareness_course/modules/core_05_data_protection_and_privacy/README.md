@@ -1,0 +1,110 @@
+# core_05: Data protection and privacy
+
+**Working game title:** Personal Effects
+**Pitch:** Cover the care laundry desk for a morning, where a lost cardigan, a friendly caller and a wrong email address each turn out to be about a real person, and learn the four things the law needs you to do.
+
+| | |
+|---|---|
+| Audience | All staff |
+| Prerequisites | core_00 recommended. Where staff handle personal data, set this module due on day one: the ICO expects induction training before people access personal information and within one month of starting |
+| Full module | 18 minutes |
+| Micro-drill | 4 minutes ("Pass It On?") |
+| Text route | 12 minutes |
+| Priority | MVP |
+| Build size | M, driven by the redaction minigame (MG-12) and the casework queue on the inbox (MG-01); the "Down to One" board is small |
+
+## Why this module
+
+Most personal data breaches are not hacks. They happen when ordinary people do ordinary work: an email to the wrong address, a spreadsheet with more in it than the sender knew, a caller who sounded genuine. The ICO's own guidance says that human error is the leading cause of reported data breaches. Data protection law gives everyone rights over their data and sets deadlines that only work if staff spot a request or a breach and pass it on straight away: usually one month to answer a request, and 72 hours to tell the regulator about a breach that poses a risk.
+
+- **Police Service of Northern Ireland, 2023.** A spreadsheet released in answer to a freedom of information request still held a worksheet that staff didn't know was there. It exposed the names, ranks and roles of all 9,483 officers and staff online for more than two hours. Officers described fear for their families' safety, and some had to move house. The ICO fined the force £750,000 in 2024 (£5.6 million before its public sector reduction).
+- **56 Dean Street, 2015.** A London HIV clinic's newsletter went to nearly 800 patients with every recipient's name and email address visible to all. The NHS trust was fined £180,000 in 2016.
+
+Neither was malicious. Both started with someone doing their job.
+
+## Target behaviours
+
+1. **Reports** a possible personal data breach straight away, including their own mistake, without waiting to be sure it counts.
+2. **Passes on** requests and complaints about personal data to the DPO the same day, whatever words they use and however they arrive.
+3. **Shares** personal data only with people who need it, after checking who is asking: callers get a message passed on, not details, and official requests go to the DPO.
+
+## Learning outcomes
+
+After this module, staff can:
+
+- **C05-LO1** Recognise personal data, including details that identify someone without a name, and recognise special category data.
+- **C05-LO2** Apply the principles as five everyday habits: use data only for the reason we have it, use only what is needed, keep it right, keep it only as long as needed, keep it safe.
+- **C05-LO3** Recognise a request or complaint about someone's personal data in any form and pass it to the DPO the same day.
+- **C05-LO4** Share personal data only on a need-to-know basis, check who is asking, and refer requests from the police and other official bodies to the DPO.
+- **C05-LO5** Recognise a personal data breach, including one they caused or received, and report it at once through the organisation's route.
+
+## Compliance coverage
+
+Contributes to (references in `02_COMPLIANCE_MAPPING.md`):
+
+- **UK GDPR** Art 5(1)(f) and Art 32(4) (staff handle personal data securely and only as instructed); Art 5(2) and Art 24 (the organisation can show its measures, and training is one); Art 33 (internal reporting is what makes the 72-hour deadline possible).
+- **ICO training toolkit:** the all-staff programme topics (handling requests, data sharing, information security, personal data breaches and records management) and induction training before access to personal information and within one month of starting. The completion record also supports the DPO's monitoring of staff training (UK GDPR Art 39(1)(b)).
+- **ISO 27001** A.6.3.
+- **NIST** AT-2.
+- **CIS** 14.4, 14.5 and 14.6.
+- **DSPT** 2.1.1 and 3.2.1 (categories 3 and 4); DSPT B6.b for large NHS bodies on the CAF-aligned toolkit, where information assurance includes information governance.
+
+EU customers cite the same EU GDPR article numbers. The 2025 and 2026 UK changes described in `concepts.md` (the complaints duty, the Information Commission) don't apply to them.
+
+## Module flow
+
+| Beat | What happens | Format | Minutes |
+|---|---|---|---|
+| Hook | A friendly caller asks which school a cleaner is working at today; the player's answer is the baseline | Game (phone call) | 1 |
+| Learn | Tomasz shows the player "your file after one week", then personal data, five habits, requests and complaints, and breaches | NPC explainer with visual aids (EX-01, BE-08) | 3 to 4 |
+| Practise | "Down to One": how a few details single out a person; then "Pass It On?": ten situations to route | Minigames (proposed board; MG-20 practice mode) | 3 |
+| Apply | Clear the Care Laundry queue by 12:30 while a request for "everything", a redaction, a "police" caller, a marketing idea and an email to the wrong Sam arrive among ordinary work | Game (MG-01, MG-12, BE-18) | 6 to 7 |
+| Debrief | The people board: everyone whose data passed through the player's hands, and how each of them fared | Debrief screen (BE-02) and Tomasz | 2 |
+| Check | Six scenario questions | Quiz (MG-20) | 2 |
+| Reference | The personal data card on The Lark, with the organisation's own DPO and reporting route | Intranet (BE-09) | under 1 |
+
+## Reuse from existing Break Escape content
+
+- **Rooms:** `room_office3` redressed as the contact centre floor (headset desks, a "Care Laundry" desk sign); `small_office_room1_1x1gu` as Tomasz's office next door; `room_break` for an optional chat with Shauna.
+- **Conversations:** `person-chat` for Tomasz, Shauna and Martin; `phone-chat` for team chat, Martin's messages and, until MG-04 exists, the two phone calls (as core_01 does for its call-back).
+- **Documents:** `forensic-data-platform` (the tabbed viewer used in sis03) for "your file after one week"; `notes` and `text-file` for the cleaners' rota, case notes and the holding-reply template; `examine` for a name-taped laundry bag.
+- **Patterns:** sis01's credible character voicing a misconception that the player argues down with evidence (`scenarios/sis01_healthcare/ink/npc_helen.ink:104-169`) for Martin's marketing idea; the instructor topic hub from the `lab_*` scenarios for Tomasz's optional topics; m01 Kevin's quiz in ink (`scenarios/m01_first_contact/ink/m01_npc_kevin.ink`) as the precedent for a check question inside a conversation; NPC `timedMessages` for queue arrivals.
+- **Systems:** the game clock and `timers[]` for the 12:30 deadline; objectives and tasks (`objectives-manager.js`) for the queue counter; event mappings to bring Tomasz over after a report.
+- **Art:** `phone1` to `phone5`, laptop sprites, `office-misc-box1`, `bag1` to `bag25` as laundry bags; m01's office conversation backgrounds.
+
+## New features needed
+
+- **MG-12 Redaction** in redact mode: select what to remove, with proper removal and a held-back score. (The fake-redaction check is taught in core_06, so MG-12 can ship in two steps.)
+- **MG-01 Inbox:** the casework queue, and compose with recipient autocomplete and an "external recipient" warning.
+- **MG-20 Knowledge check:** Tomasz's two check questions, "Pass It On?" in practice mode, and the final check.
+- **MG-09 Incident report form,** with a "personal data involved?" field that alerts the DPO.
+- **BE-01 Assessed decisions** and **BE-02 Debrief screen:** every row in `assessment.md`.
+- **BE-08 Visual aids:** "your file", the five habits, the request collage, the 72-hour clock.
+- **BE-09 Intranet terminal:** The Lark, the reference card and the data protection policy.
+- **BE-05 Organisation profile:** the DPO's name and contact, the reporting route, the request route.
+- **BE-18 Work task and interruptions:** the queue and its scheduled arrivals.
+- **BE-19 Open minigames from conversations and events:** Tomasz's check questions; the redaction opening from a case.
+- **BE-16 Time skips:** the consequence scenes.
+- **BE-13 Content banks:** callers, request wordings, breach-slot variants and redaction documents.
+- **EX-01 Mentor explainer,** with Tomasz as the explainer for this module.
+- **BE-07 Micro-drill launcher** for "Pass It On?" (P2), and **MG-04 Voice calls** for the calls (P2).
+- **proposed:** "Down to One" board, a grid of faces that clues rule out one by one, to show how a few ordinary details single out one person.
+- **proposed:** people board, a BE-02 panel that shows the people behind the data the player handled and how each fared.
+
+## Organisation-specific content
+
+- The DPO (or data protection lead): name, contact, and how staff reach them.
+- The route for reporting a personal data breach, and whether it is the same as the security reporting route (Larkspur: the same route, which alerts the DPO).
+- Where rights requests and complaints go, and the holding reply staff may send.
+- How the organisation handles requests from the police and other official bodies.
+- Which personal data front-line staff may update directly (a new phone number, say).
+- Who approves a new use of personal data, such as marketing.
+- Where the retention schedule and the data protection policy live (HA-07).
+
+## Open questions
+
+1. **A Care Laundry service line.** The module needs Larkspur to hold residents' and families' data directly. *Recommendation: add "Care Laundry" to `03_WORLD_AND_CAST.md`: Larkspur collects, washes and returns care home residents' name-taped clothing, and its customer desk handles lost-item claims. It gives the module its people and its title.*
+2. **Can the player avoid the misdirected email?** *Recommendation: yes. The autocomplete is visible and catchable. A player who catches it is thanked, and the breach slot fills with a different breach (personal data received by mistake), so everyone practises reporting one.*
+3. **Who explains?** *Recommendation: Tomasz, the DPO, as the orchestrator asked. Ama appears only on the reference card's reporting route, so the course's two voices don't overlap.*
+4. **How much law on screen?** *Recommendation: none beyond "one month" and "72 hours". Article numbers stay in `concepts.md` for writers and auditors.*
+5. **Recognising a complaint.** Since 19 June 2026, organisations must acknowledge data protection complaints within 30 days. *Recommendation: teach complaints alongside requests (same route, same day) rather than as a separate topic.*
