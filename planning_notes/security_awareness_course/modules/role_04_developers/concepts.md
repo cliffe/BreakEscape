@@ -58,7 +58,7 @@ The OWASP Top 10:2025 lists the most common serious web application risks: A01 B
 | **Broken access control** (A01) | An endpoint fetches a record by its ID once someone is logged in, without checking that this user may see this record | Check permission on the server for every request, against the record's owner or the user's role; deny by default. Hiding a button or an ID is not access control |
 | **Injection** (A05) | Text from a user (a search box, a URL, a form field) is joined into a database query or a command | Parameterised queries or the library's safe calls; validate input as well, but never rely on filtering alone |
 | **Supply chain** (A03) | A new or changed dependency, a lookalike name, an unpinned build component | The dependency checks above |
-| **Logging failures** (A09) | A log line that writes whole requests, passwords, tokens or more personal data than needed; or nothing logged where an investigation would need it | Log the event, not the secret: who, what, when, outcome. In September 2024 Ireland's Data Protection Commission fined Meta €91 million over user passwords stored in plaintext on internal systems |
+| **Logging failures** (A09) | A log line that writes whole requests, passwords, tokens or more personal data than needed; or nothing logged where an investigation would need it | Log the event, not the secret: who, what, when, outcome. In September 2024 Ireland's Data Protection Commission fined Meta 91 million euros over user passwords stored in plaintext on internal systems |
 
 Show patterns and fixes, never attack input. The labs teach how the attacks work for those who want it.
 
@@ -137,7 +137,7 @@ Use these as background only. Game content uses fictional names.
 - **XZ Utils, 2024.** Malicious code in versions 5.6.0 and 5.6.1 of a compression library used across Linux systems (CISA alert, 29 March 2024), inserted by a contributor who had built up trust and maintainer access over a long period (OpenSSF and OpenJS Foundation alert, 15 April 2024).
 - **npm "Shai-Hulud", September 2025.** A self-replicating worm compromised more than 500 packages, harvested developer credentials and published tainted versions using stolen access. (CISA alert, 23 September 2025.)
 - **A third-party build action, March 2025.** A widely used build action was modified so secrets could appear in workflow logs; affected teams had to rotate secrets. (CISA alert, 18 March 2025.)
-- **Meta, 2019 to 2024.** Passwords stored in plaintext on internal systems, reported in 2019; a €91 million fine in September 2024. (Data Protection Commission, 27 September 2024.)
+- **Meta, 2019 to 2024.** Passwords stored in plaintext on internal systems, reported in 2019; a fine of 91 million euros in September 2024. (Data Protection Commission, 27 September 2024.)
 - **Package hallucination.** 576,000 generated code samples, 16 models, 205,474 invented package names. (Spracklen and others, "We Have a Package for You!", USENIX Security 2025.)
 - **Dependency confusion, 2021.** A researcher's report that internal package names could be shadowed by public packages at many large companies. (Alex Birsan, "Dependency Confusion", February 2021; reported by the researcher.)
 
@@ -187,7 +187,7 @@ Use these as background only. Game content uses fictional names.
 - CISA, Widespread supply chain compromise impacting the npm ecosystem (23 September 2025): https://www.cisa.gov/news-events/alerts/2025/09/23/widespread-supply-chain-compromise-impacting-npm-ecosystem
 - CISA, Supply chain compromise of third-party tj-actions/changed-files, CVE-2025-30066 (18 March 2025): https://www.cisa.gov/news-events/alerts/2025/03/18/supply-chain-compromise-third-party-tj-actionschanged-files-cve-2025-30066-and-reviewdogaction
 - US Federal Trade Commission, Uber settlement (12 April 2018): https://www.ftc.gov/news-events/news/press-releases/2018/04/uber-agrees-expanded-settlement-ftc-related-privacy-security-claims
-- Data Protection Commission, fine of €91 million on Meta (27 September 2024): https://www.dataprotection.ie/en/news-media/press-releases/DPC-announces-91-million-fine-of-Meta
+- Data Protection Commission, fine of 91 million euros on Meta (27 September 2024): https://www.dataprotection.ie/en/news-media/press-releases/DPC-announces-91-million-fine-of-Meta
 - European Commission, Cyber Resilience Act: https://digital-strategy.ec.europa.eu/en/policies/cyber-resilience-act
 - UK GDPR Articles 25 and 32: https://www.legislation.gov.uk/eur/2016/679/contents
 - Alex Birsan, "Dependency Confusion" (February 2021), as reported by the researcher on his blog; **to verify** the exact date and URL before quoting (the page could not be fetched while this plan was written).

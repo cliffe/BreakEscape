@@ -92,7 +92,7 @@ The critical path is marked **(CP)**.
 - **(CP)** Friday 15:00: the release goes out with whatever the player let in.
 
 **Three weeks later (BE-16).** Kai comes over with two things.
-- *"Remember `papyrus-pdf-invoices`? It exists now. Published last week by an account nobody knows, with an install script that sends data out. Any build that installed it would have run that script."* If the player had told Kai on Tuesday, the name is already on the proxy's blocklist and Kai thanks them for it.
+- *"Remember that package Lark Assist made up? It exists now. Published last week by an account nobody knows."* Then: *"It runs a script that sends data out. Any build that installed it would have run it."* If the player had told Kai on Tuesday, the name is already on the proxy's blocklist and Kai thanks them for it.
 - An email from Mira Kovacs, forwarded by the service desk. If the ownership check shipped: *"I'm a security researcher. If I change the number in your invoice download link, I can open other schools' invoices. I haven't kept any. How should I report this?"* If it was caught in review, she reports something minor instead: an error page that shows the PDF library's version.
 - **Decision on the report:** *"Thank her, send it to Kai through the disclosure route, and keep her updated."* / *"Fix it quietly myself and say nothing."* / *"Ignore it. She wasn't authorised to test."* / *"Reply that we'll take legal action if she tests again."*
 - Kai, to the first: *"That's exactly how the policy says to do it. She'll get a thank-you on our page when it's fixed."*

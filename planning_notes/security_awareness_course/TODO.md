@@ -30,7 +30,12 @@ Each review checks accuracy first (every fact against a primary source), then th
   - Verify or soften: the public charging point line ("to verify"), insider-risk percentages, NPSA definitions (secondary only), the Arup case (several outlets), the amended AI Act Art 4 wording.
   - Proposals to add or fold in: an "overlooked and overheard" engine check (generalises `lockpick_used_in_view`), a sight-line toggle, MG-09 "raise a concern" mode, MG-26 rumour skin, MG-01 "show hidden text", a fix for the stubbed `#add_note`, MG-14 allowing an always-on VPN, Lark Assist in the world document.
   - Compliance: decide whether to add the ISO 27001 topic controls the writer dropped (A.6.7, A.7.9, A.8.1, A.5.10, A.5.12, A.5.14, A.5.17, A.6.5, A.6.6) and ISO/IEC 42001 cl. 7.2 and 7.3; add PCI DSS 12.6.3.2 to core_09 and core_15, CIS 14.4 to core_15.
-- [ ] **core_11, role_02, role_07** (writer still finishing at the pause)
+- [ ] **core_11, role_02, role_07** (written; not yet reviewed)
+  - Cast: add Eleni Markou (Financial Controller and second approver, 50s, Greek Cypriot British, walks with a stick; needs a full sprite) and Bea Thornton (Payroll Supervisor, 60s, Lancashire); Kev gains role_02. If role_01 has a Finance Director, settle how they relate to Eleni.
+  - `minigames.md`: MG-15's entry says the player is the second approver in role_02 (the plan makes them approver 1) and puts Northbeck in core_11's Apply beat (now the hook); add the `dual-auth` rework (the second panel completes on the approver's own event and records whose account signed at whose keyboard) and MG-22's per-clause counter-offers.
+  - Verify: the EU Verification of Payee start date and scope, the SOC 2 Type 1 and Type 2 wording, Kaseya's affected-business figures, the Coop Sweden store closures.
+  - Compliance: decide whether to add ISO 27001 A.5.3 and A.5.19 to A.5.23, NCSC CAF A4, and PCI DSS 3.3.1.2, 3.4.1 and 4.2.2 to section 2 of the mapping.
+  - Course-wide authoring rule to add: every fictional phone number uses Ofcom's ranges reserved for drama.
 - [ ] **role_01, role_03, role_04** (writer still finishing at the pause)
   - role_03 must not reuse role_06's "the real one rings later" twist.
 - [ ] **The feature documents**: catalogue against documents, shared definitions, accuracy of the standards cited, engine claims, and that nothing private about Hacktivity is in this public repo.
