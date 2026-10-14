@@ -175,7 +175,7 @@ core_01 has eleven items with at least two for every outcome (Q11 is dropped whe
 
 - **Six items** for a core module by default (the capstone, core_17, draws more), with at least one per outcome and at most two organisation items.
 - **Stratified by outcome**, then by difficulty, so every sitting is about as hard as any other.
-- **Options shuffled**, except in ordering and true or false items.
+- **Options shuffled**, except in ordering items.
 - **Parameters filled per play** (domains, names, amounts) from the content banks (BE-13), so colleagues can't pass on answers.
 - **No repeats** within a sitting, and items the learner hasn't seen are preferred across attempts.
 

@@ -313,4 +313,126 @@ The engine does have good foundations to copy: an accessible interaction menu (`
 
 **Test:** 200% text size and 400% zoom on every screen; the text spacing overrides; a 320 pixel wide viewport for every HTML screen.
 
+### 4.6 Contrast and colour
+
+**Requirement:** WCAG 1.4.1 Use of Color, 1.4.3 Contrast (Minimum) at 4.5:1 for text, 1.4.11 Non-text Contrast at 3:1 for controls, focus and meaningful graphics; XAG 102 Contrast; the Game Accessibility Guidelines on colour.
+
+**Today:** several states are shown by colour alone or mainly by colour:
+
+- the scenario timer turns amber, then red and pulsing (`css/hud.css`, lines 382 to 411);
+- the end screen's title is red for failure and green for success (`apply-actions.js`, line 221);
+- the influence popups are green or red, though they also carry a plus or minus sign (`JS/minigames/helpers/chat-helpers.js`, line 654).
+
+The dusting minigame has a high-contrast toggle, the model for the rest.
+
+**Change:**
+
+- Colour tokens with checked contrast for both the dark and light themes.
+- A high-contrast setting that raises every UI colour pair to at least 7:1, thickens outlines and removes background images behind text.
+- Support for Windows forced colours (`forced-colors` media query), so system colours replace ours.
+- Every state carries a word or a shape as well as a colour: ratings in the debrief ("Secure", with a tick), the soft deadline ("about 5 minutes left"), highlights in visual aids (numbered outlines, BE-08).
+- Course art is checked under colour vision simulations: clues never depend on telling red from green.
+
+**Test:** automated contrast checks on tokens and screens; manual checks in forced colours mode and with Chrome DevTools' vision deficiency emulation.
+
+### 4.7 Motion, flashing and photosensitivity
+
+**Requirement:**
+
+- WCAG 2.3.1 Three Flashes or Below Threshold (Level A, applies to all content even where an alternative exists) and 2.2.2 Pause, Stop, Hide;
+- XAG 117 Visual distractions and motion settings, and XAG 118 Photosensitivity;
+- the Game Accessibility Guidelines: "Avoid flickering images and repetitive patterns".
+
+XAG 118 notes that about 1 in 4,000 people can have a seizure triggered by flashing images or patterns, that many don't know until it happens, and that flashing also affects people with migraine, autism or sensory processing differences.
+
+**Today, the lighting system** (`JS/systems/lighting.js`) was built with flashing in mind:
+
+- **Tube strikes:** each ceiling tube flashes twice as it strikes (lines 119 to 126), each panel starting after a random delay of 120 to 500 ms (line 615).
+- **The faulty panel** dips once or twice for 90 ms every 2.5 to 8.5 seconds (lines 704 to 714).
+- **Small LEDs** on racks blink with periods from 150 ms to about 2 seconds (line 576), and indicator lights blink about once a second (lines 937 to 944).
+- **Under `prefers-reduced-motion`:** tubes fade up over 400 ms instead, the faulty panel holds steady and LEDs stay still (lines 699 to 716 and 891). The `lighting_dip` brownout is skipped (`apply-actions.js`, line 141).
+- **But** reduced motion is read once from the browser setting (line 245), with no in-game switch.
+- **Not yet measured:** with several tubes striking in one room within half a second of each other, the combined effect has not been measured against the flash thresholds. It may be fine (each pool of light is small), but it needs testing, not assuming.
+
+**Today, elsewhere:**
+
+- Most CSS animations have no reduced-motion guard (only `css/dusting.css`, `css/tutorial.css` and `css/biometrics-minigame.css` have one).
+- The scenario timer's urgent state pulses twice a second (`css/hud.css`, lines 405 to 411), and the dual-auth panel, which finance modules may reuse for two-person approval, blinks twice a second (`css/dual-auth-minigame.css`, lines 72 and 113).
+- The title screen types the title with a blinking cursor (`title-screen-minigame.js`).
+- The credits visualiser draws falling "matrix" characters (`JS/music/bond-visualiser.js`, line 133).
+- Combat screen flashes and shakes (`JS/systems/screen-effects.js`) are off in this course because attacks are disabled.
+
+**Change:**
+
+- **No flicker in course rooms.** Course scenarios don't set `flicker: true`; mood comes from steady light levels.
+- **A flicker-off setting,** separate from reduced motion (some people who need it don't set reduced motion), which runs the lighting in its still mode: no strikes, no faulty panel, steady LEDs and screens.
+- **A reduced-motion setting** that adds a class the CSS respects as well as the media query, and covers:
+  - every CSS animation and transition (replaced by instant changes or short fades);
+  - the title typing effect;
+  - slide-ins of toasts and barks;
+  - the credits visualiser (not used in the course; BE-02);
+  - camera moves.
+- **Nothing blinks** more than once a second in course UI; urgent states use words, not pulsing.
+- **No high-contrast stripes or busy patterns** across large areas of course art (XAG 118's spatial pattern failure), for example blinds, carpets and screens of scrolling code.
+- **Testing:**
+  - every animated or flashing effect in a course module is recorded and analysed with the Harding FPA test, which XAG 118 names;
+  - the free PEAT tool cannot be used, because its terms prohibit use for assessing material made for gaming (Trace Center, https://trace.umd.edu/peat/).
+- **No warnings instead of fixes.** Warnings are not a substitute for removing flashing (XAG 118). The course has nothing to warn about.
+
+### 4.8 No required fast reactions
+
+**Requirement:** design principle 10; the Game Accessibility Guidelines on adjustable game speed and a choice of difficulty; XAG 108.
+
+**Rules for every module:**
+
+- **Speed is never assessed.** No assessed outcome depends on reading speed, reaction time or dexterity. Where an assessment mentions time ("reported within two game-minutes" in core_01's C01-B7), it is measured in game time, which the time scale stretches. Where timers are off, it is judged by sequence instead ("reported before the next email arrived").
+- **No quick-time events,** no chases, and no failing a module by running out of time.
+- **Line-of-sight challenges** (`JS/systems/npc-sight-challenge.js`), useful for tailgating and shoulder-surfing scenes, are used only as story beats with generous windows, never as a stealth test.
+- **Dexterity minigames** (lockpicking, dusting, RFID) appear only in optional attacker-view interludes, with an assist or a skip, as the dusting minigame's steady-hand assist already shows. They are never assessed.
+- **Walking is never a test.** The places list (4.2) can walk the player anywhere.
+
+### 4.9 Timers that can be extended or turned off
+
+**Requirement:** WCAG 2.2.1 Timing Adjustable and 2.2.2 Pause, Stop, Hide; XAG 116 Time limits. A training deadline is not "essential" in WCAG's sense, so every time limit can be turned off, slowed by at least ten times, or extended.
+
+**Today:**
+
+- **Game clock and timers:** the clock is wall time and never pauses (`JS/systems/game-clock.js`, lines 52 to 66), so scenario timers and timed messages keep running while the learner reads a conversation. The countdown widget can show "Next Event" in amber and red.
+- **Dialogue** advances by itself after 5 seconds, or the length of the voice clip plus half a second (`person-chat-minigame.js`, line 27 and around line 1373). The click-through mode exists but nothing lets the learner choose it.
+- **Toasts:** notifications close after 5 seconds (`notifications.js`, line 13), and barks after 5 to 20 seconds, paused only by hovering a mouse over them (`JS/systems/bark-lifetime.js`).
+- **The title screen** closes itself after two minutes if nobody presses anything (`title-screen-minigame.js`, line 112).
+
+**Change:**
+
+- **Pause and time scale** (a proposed engine feature, listed in `break_escape_engine.md`): game time, timers, timed messages, interruptions and NPC patrols all follow one clock that can be paused or slowed by 2, 5 or 10 times, or stopped for timers altogether. An option pauses game time whenever a conversation, document or minigame is open. Deadlines in course modules are soft (BE-18) and shown as words, never as a red countdown.
+- **Dialogue** advances when the learner presses Continue, by default. Automatic pacing is an opt-in setting.
+- **Toasts that carry information** stay until dismissed (or for at least 20 seconds) and are kept in the message log (4.4). Any toast can be paused with the keyboard as well as by hovering.
+- **The title screen** never closes itself.
+- **Hacktivity sessions** warn before they time out and let the learner extend them (HA-23). Autosave (BE-12) means a timed-out session loses nothing.
+
+**Test:** with timers off, play each module start to finish without any time pressure and check the records match a normal-speed run with the same decisions.
+
+### 4.10 Cognitive load and plain English
+
+**Requirement:**
+
+- WCAG 2.4.6 Headings and Labels, 3.2.6 Consistent Help (A), 3.3.2 Labels or Instructions and 3.3.7 Redundant Entry (A);
+- XAG 109 Objective clarity and XAG 115 Error messages and destructive actions;
+- the Game Accessibility Guidelines on simple language and interactive tutorials;
+- GOV.UK's content guidance: plain English, sentences under 25 words, paragraphs of no more than 5 sentences.
+
+**Rules for every module:**
+
+- **One thing at a time.** The work task (BE-18) shows the current step; interruptions never overlap (BE-18's busy gate and minimum gap).
+- **Always know what to do next.**
+  - The current task is always visible and can be read aloud by a screen reader.
+  - A "What should I do now?" control is always in the same place on every screen, and gives the current task plus the mentor's sticky answer (EX-01). Because it never moves, it meets 3.2.6.
+- **The same frame everywhere.** Every minigame and document opens in the same frame, with Close, Help and the settings button in the same places.
+- **Confirm before anything the learner might regret,** such as leaving a module or resetting settings (XAG 115). Decisions inside the scenario (clicking a link, signing in on a fake page) are not confirmed, because they are the test. They are always recoverable, because reporting afterwards is the behaviour the course rewards.
+- **Never ask twice.** Information the learner has already given is not asked for again in the same module (3.3.7), for example the name typed into the incident form (MG-09).
+- **Memory aids** are always one step away: the notepad, the conversation history (4.4) and the reference card on the intranet (BE-09).
+- **Plain English** to the rules in section 5.5.
+
+**Test:** reading level checks (section 6) and playtests with people with learning disabilities and neurodivergent people (section 6).
+
 <!-- next-section -->

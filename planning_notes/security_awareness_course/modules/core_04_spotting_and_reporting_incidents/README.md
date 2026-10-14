@@ -75,3 +75,37 @@ Contributes to (references in `02_COMPLIANCE_MAPPING.md` when present; check the
 - **Other minigames:** `container` for the shared drive's folder; `text-file` for the note the locked files leave behind; `examine` for the empty laptop dock.
 - **Systems:** `timers[]` with `startOnGlobal`, `cancelOnGlobal`, `setGlobal` and `actions` for every spread stage (`public/break_escape/js/ui/scenario-timer-dispatcher.js`). sis02's hydrogen build-up is the precedent: timers that escalate until an action cancels them, with `tint_objects` making the hazard visible in the room (`scenarios/sis02_energy/scenario.json.erb`, lines 442 to 477). Also NPC event mappings with `bark` and `sendTimedMessage` on `global_variable_changed:<name>`, and `gameClock` for the afternoon.
 - **Patterns:** sis01's live incident board and its debrief conversation (`scenarios/sis01_healthcare/ink/npc_sharma.ink`); core_01's report board in Kai's office.
+
+## New features needed
+
+- **MG-09 Incident report form** (the core of the module): build spec in `game_design.md`. Reused by core_05, core_07 and core_14.
+- **proposed:** Blast radius map, an extension of `network-segmentation-map` whose zones, devices and links take their state (quiet, spreading, contained) from globals and redraw live, with every label from scenario data and the dual-authorisation step optional; shown on Kai's screen after a report and in the debrief replay, and reusable by core_07 (which asks for a spread view of its own).
+- **BE-01 Assessed decisions** and **BE-02 Debrief screen:** every row in `assessment.md`, including the time each sign was first seen and the time it was reported.
+- **BE-04 Accessibility baseline:** a "steady pace" setting that slows the spread timers to half speed (the record notes it), and a map that never relies on colour alone.
+- **BE-08 Visual aids:** the blast radius frames in Learn, the two example reports, Kai's screen share after a report.
+- **BE-09 Intranet terminal:** The Lark's "Report an incident" page, which hosts MG-09, and the reference card.
+- **BE-16 Time skips:** the debrief at 17:30, with each incident's outcome.
+- **BE-18 Work task and interruptions:** the council report and the scheduled signs.
+- **BE-19 Open minigames from conversations and events:** MG-09 from Leo's and Martin's conversations and from the phone; the map from Kai's chat message.
+- **BE-05 Organisation profile:** the reporting routes and numbers, the form's link, the device instruction, the out-of-hours route.
+- **BE-13 Content banks** (P2): the incident bank, so order, timing and details change between plays.
+- **EX-01** (Ama), **EX-05** (Kai behind the scenes), **MG-20** (the check), and light use of **MG-01** (Leo's odd email) and **MG-07** (the sign-in prompt, from core_03).
+- **MG-04 Voice calls** (P2): ringing 4444 as a real call; the `phone-chat` conversation works until then.
+- **BE-07 Micro-drill launcher** (P2): "Report it or not?" as a monthly drill.
+
+## Organisation-specific content
+
+- The reporting routes: the Report button for messages; the security team's number and the incident form for anything else; the 24/7 route out of hours; the route for lost or stolen devices, including personal phones with work email.
+- Who handles personal data breaches (the DPO) and how they are reached (by default, the same route).
+- The instruction for a device that may be infected (by default: don't switch it off; unplug the network cable or turn off Wi-Fi only if asked; wait for instructions).
+- How physical security concerns reach facilities or security.
+- What reporters hear back, and roughly when.
+- Any sector or regulator context the organisation wants on the card (for example NIS2, or a sector regulator).
+
+## Open questions
+
+1. **How visible is the spread during play?** *Recommendation: only in-world signs (colleagues noticing, more emails, more locked folders) until the player reports; the map appears after a report and in the debrief. A live gauge of unreported incidents would test watching, not noticing.*
+2. **Real minutes or compressed time?** *Recommendation: real minutes, a stage every 60 to 75 seconds, with no visible countdown. Attacks really do spread in minutes, so it is honest; "steady pace" halves the speed for anyone who needs it.*
+3. **How many incidents?** *Recommendation: four on the critical path and an optional fifth, staggered, each with a second sign for players who missed the first; order and timing randomised between plays (BE-13).*
+4. **The boundary with core_07.** *Recommendation: core_04 shows only the early signs of ransomware (files that won't open, a note) and the first steps. core_07 owns ransomware itself and reuses the blast radius map for its own spread.*
+5. **Who presses SEVER?** *Recommendation: Kai, on Kai's screen, with the player watching. The player's own version of isolation is "unplug the cable if we ask you to", which the reference card says.*
