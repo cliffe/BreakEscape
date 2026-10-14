@@ -41,6 +41,11 @@ VAR asked_cracker = false
 // PASS 5 (M3, m6): a tipped-off mole tidied his locker; the triple agent's first payment.
 VAR nightshade_tidied = false
 VAR triple_agent_first_payment = false
+// PASS 5 (alignment C2, J2, J4): an accusation of either innocent man tips him
+// off too; the go-bag's contents are known only once he is named.
+VAR accused_cipher = false
+VAR accused_phantom = false
+VAR go_bag_lining_known = false
 
 === start ===
 { fate_decided: -> after_choice }
@@ -76,6 +81,8 @@ Agent 0x47 'Nightshade': I could have scrubbed every trace years ago. You're won
     Agent 0x47 'Nightshade': Not well enough, it seems.
 - accused_nightshade:
     Agent 0x47 'Nightshade': You said it to my face before you could prove it. By then you'd been through my locker, so there was nothing left to tidy.
+- (accused_cipher or accused_phantom) and nightshade_tidied:
+    Agent 0x47 'Nightshade': You put it on {accused_cipher:Cipher|Phantom} in front of the floor. Walls are thin here. So I tidied. Not well enough, it seems.
 - nightshade_tidied:
     Agent 0x47 'Nightshade': The Director went asking questions on my floor. I can count. So I tidied. Not well enough, it seems.
 }
@@ -122,7 +129,7 @@ Agent 0x47 'Nightshade': I could have scrubbed every trace years ago. You're won
     Agent 0x47 'Nightshade': He did. Every word I taught you was true. I just never said where I'd learned it.
     Agent 0x47 'Nightshade': If anyone ever used it on me, I wanted it to be you. Vanity, I know. It's the last one I've got.
     -> hub
-+ { found_go_bag and not nightshade_tidied and not asked_bag } [You had a flight to Montana the morning after Portland. Why are you still here?]
++ { go_bag_lining_known and not nightshade_tidied and not asked_bag } [You had a flight to Montana the morning after Portland. Why are you still here?]
     ~ asked_bag = true
     Agent 0x47 'Nightshade': Because I wanted to see who they would send. I hoped it would be you.
     { asked_architect:

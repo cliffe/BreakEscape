@@ -24,6 +24,8 @@ VAR apologised = false
 // PASS 3 (P7): the door-audit beat.
 VAR found_badge_audit = false
 VAR asked_audit = false
+// PASS 5 (alignment C2, J4): his locker key, after the audit beat.
+VAR gave_locker_key = false
 
 === start ===
 { phantom_interviewed:
@@ -82,6 +84,12 @@ Agent 0x88 'Phantom': And yes, I put myself there too. Charmed?
     Narrator: He sits back, and for once he doesn't smile.
     Agent 0x88 'Phantom': So it printed. Wheels up 10:09, forty passengers and a manifest. I wanted to see whether you'd check or take my word.
     Agent 0x88 'Phantom': The archive duty officer walked me out before it finished. I never saw the rest, and I'd rather you didn't tell me. Tell the Director. #set_global:phantom_alibi_known:true
+    -> hub
++ { asked_audit and not gave_locker_key } [Your locker in the break room. I want to see inside it.]
+    ~ gave_locker_key = true
+    #give_item:key:phantom_locker_key
+    Narrator: He laughs, and fishes it out of his jacket.
+    Agent 0x88 'Phantom': 0x88, the one with the luggage tag. Mind the folded sheet. It took me a week.
     -> hub
 + { accused_phantom and not mole_identified and not apologised } [I was wrong to put it on you. I'm sorry.]
     ~ apologised = true

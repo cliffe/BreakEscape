@@ -27,6 +27,7 @@ VAR cipher_audit_confirmed = false
 VAR asked_audit = false
 // PASS 4 (fix 13): m04's ENTROPY operative also went by "Cipher".
 VAR asked_handle = false
+VAR gave_locker_key = false
 
 === start ===
 { cipher_interviewed:
@@ -55,25 +56,15 @@ Agent 0x23 'Cipher': I've run the inference on myself and it's not flattering. A
     ~ cipher_alibi_known = true
     Agent 0x23 'Cipher': In the crypto library. Alone. The single worst alibi a person can offer, and completely true.
     Agent 0x23 'Cipher': The library logs its own door. And the terminal auth for the leak window will show my account never touched the mission_planning share.
-    Agent 0x23 'Cipher': Whoever opened that plan did it from a Crypto Lab terminal. My desk is on the ops floor. Do the geography. #set_global:cipher_alibi_known:true
+    Agent 0x23 'Cipher': My desk is out on the ops floor. Do the geography. #set_global:cipher_alibi_known:true
     -> hub
 // PASS 5 (alignment M3): a wrong accusation costs his confirmation of his own
 // row (the Director's step-4 check) until the player apologises. Nightshade
 // can still confirm his, so nothing soft-locks.
-+ { found_badge_audit and asked_alibi and not asked_audit } [The door audit has you in the Crypto Lab that morning. You left that out.]
-    { accused_cipher and not apologised:
-        Narrator: His jaw sets.
-        Agent 0x23 'Cipher': You've already decided I did it. I'm not handing you another row to hang me with.
-        Agent 0x23 'Cipher': Apologise, or read it without me.
-        -> hub
-    }
-    ~ asked_audit = true
-    ~ cipher_alibi_known = true
-    ~ cipher_audit_confirmed = true
-    Narrator: The colour goes out of his face.
-    Agent 0x23 'Cipher': Eight minutes. I went in for a hardware token from the token cabinet, and I came out again.
-    Agent 0x23 'Cipher': I left it out because I knew exactly how it would sound. #set_global:cipher_audit_confirmed:true
-    -> hub
+// Alignment C2 (n5): no hidden asked_alibi prerequisite; "You left that out"
+// only when he has given the library alibi.
++ { found_badge_audit and asked_alibi and not asked_audit } [The door audit has you in the Crypto Lab that morning. You left that out.] -> audit_beat
++ { found_badge_audit and not asked_alibi and not asked_audit } [The door audit has you in the Crypto Lab that morning.] -> audit_beat
 + { asked_alibi and found_access_logs and not asked_project } [The logs back you. But your screen's still locked.]
     ~ asked_project = true
     Narrator: Something in his shoulders lets go.
@@ -110,8 +101,35 @@ Agent 0x23 'Cipher': I've run the inference on myself and it's not flattering. A
     ~ cipher_influence += 2
     # influence_increased
     -> hub
++ { asked_audit and not gave_locker_key } [Your locker in the break room. I want to see inside it.] -> locker_key
 + { not mole_identified } [I think it's you, Cipher.] -> accuse
 + [That's all for now.] -> leave
+
+=== audit_beat ===
+{ accused_cipher and not apologised:
+    Narrator: His jaw sets.
+    Agent 0x23 'Cipher': You've already decided I did it. I'm not handing you another row to hang me with.
+    Agent 0x23 'Cipher': Apologise, or read it without me.
+    -> hub
+}
+~ asked_audit = true
+~ cipher_alibi_known = true
+~ cipher_audit_confirmed = true
+Narrator: The colour goes out of his face.
+Agent 0x23 'Cipher': Eight minutes. I went in for a hardware token from the token cabinet, and I came out again.
+Agent 0x23 'Cipher': I left it out because I knew exactly how it would sound. #set_global:cipher_audit_confirmed:true
+-> hub
+
+// PASS 5 (alignment C2, J4): his locker, as Nightshade's: after the audit beat.
+=== locker_key ===
+~ gave_locker_key = true
+#give_item:key:cipher_locker_key
+{ accused_cipher and not apologised:
+    Agent 0x23 'Cipher': Go on, then. Add it to the pile. 0x23, the one with the stickers.
+- else:
+    Agent 0x23 'Cipher': There's a project sheet in there you're not cleared for. Read it anyway. You'll only pick the lock otherwise.
+}
+-> hub
 
 === accuse ===
 ~ accused_cipher = true

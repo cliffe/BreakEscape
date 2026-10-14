@@ -60,6 +60,10 @@ VAR found_access_logs = false // set by the flag-4 mappings: the box's minute an
 VAR named_before_box = false // named on the audit before flag 4 (credits, debrief)
 VAR named_by_director = false // Synced scenario global: three misreads after flag 4: he reads it himself
 VAR nightshade_tipped_off = false // Synced scenario global: three misreads before flag 4: he takes it over, and it gets noticed
+// PASS 5 (alignment C2, J5, N6): the warning at the second misread (read by
+// HaX's ladder), and the relay line after the whole chain is in.
+VAR audit_warned = false // Synced scenario global: he has warned the player once
+VAR all_flags_submitted = false // Synced scenario global
 
 === start ===
 { met: -> return_visit }
@@ -121,13 +125,39 @@ Director Magnus Netherton: Ask me what you need. Then go and prove something.
     -> hub
 + { not netherton_card_taken and not badge_cloned and not access_offered } [I'll need access.] -> access_request
 + { access_offered and not netherton_card_taken } [Step up beside him and let the cloner read his card.] -> clone_card
-+ { interviews_done() and (suspect_theory == "") and not mole_identified } [I have a name forming.] -> name_a_suspect
++ { interviews_done() and (suspect_theory == "") and not mole_identified } [I have a name forming.] -> name_forming
 // PASS 5 (B1): the naming. The root logs no longer name anyone, so the old
 // "[It's Nightshade, sir. The root logs name his account.]" is gone; the name
 // comes only from the door audit.
 + { (found_badge_audit or found_access_logs) and not mole_identified and not audit_closed } [I can name the leak, sir.] -> audit_case
 + { named_on_evidence and not suite_code_found } [The suite code again, sir?] -> repeat_code
 + [I'm ready. Let me work.] -> done
+
+// PASS 5 (round 1 browser N5): the instinct question lives in a stitch of the
+// hub, so a reopen after End Conversation re-navigates to the hub (person-chat
+// returns to the top-level knot of the first choice) instead of asking it again.
+// "[Not yet.]" backs out without committing to a name.
+= name_forming
+Director Magnus Netherton: Already? Say it. Not for the file -- for me. Who is your instinct pointing at?
++ [Cipher. The odd hours, the secrecy.]
+    ~ suspect_theory = "cipher"
+    Director Magnus Netherton: Perhaps. Or perhaps he is the easiest man in the building to suspect, which is not the same thing.
+    Director Magnus Netherton: Prove it, and I will sign it. Guess it, and you hand the real one another week of cover. #set_global:suspect_theory:cipher
+    -> hub
++ [Phantom. The questions, the absences.]
+    ~ suspect_theory = "phantom"
+    Director Magnus Netherton: A man asking too many questions is either the leak or the only other person hunting it.
+    Director Magnus Netherton: I have not decided which, and neither, yet, have you. Bring me the logs. #set_global:suspect_theory:phantom
+    -> hub
++ [Nightshade. It's the man with no marks.]
+    ~ suspect_theory = "nightshade"
+    Narrator: A long pause.
+    Director Magnus Netherton: An instinct is not evidence. And the man with nothing on his file is the second-easiest man in this building to suspect.
+    Director Magnus Netherton: If it is him, he has been careful for years. Careful men leave exactly one mistake. Find it. #set_global:suspect_theory:nightshade
+    -> hub
++ [Not yet, sir.]
+    Director Magnus Netherton: Good. Keep it to yourself until it is more than a feeling.
+    -> hub
 
 // PASS 4 (fixes 1 and 2): he no longer hands the card over. Before the three
 // interviews, "[I'll need access.]" sends the player to the suspects (sticky,
@@ -178,26 +208,6 @@ Director Magnus Netherton: Whatever you are carrying, Agent, I did not see it.
     Director Magnus Netherton: Go.
     #exit_conversation
     -> hub
-
-=== name_a_suspect ===
-Director Magnus Netherton: Already? Say it. Not for the file -- for me. Who is your instinct pointing at?
-+ [Cipher. The odd hours, the secrecy.]
-    ~ suspect_theory = "cipher"
-    Director Magnus Netherton: Perhaps. Or perhaps he is the easiest man in the building to suspect, which is not the same thing.
-    Director Magnus Netherton: Prove it, and I will sign it. Guess it, and you hand the real one another week of cover. #set_global:suspect_theory:cipher
-    -> hub
-+ [Phantom. The questions, the absences.]
-    ~ suspect_theory = "phantom"
-    Director Magnus Netherton: A man asking too many questions is either the leak or the only other person hunting it.
-    Director Magnus Netherton: I have not decided which, and neither, yet, have you. Bring me the logs. #set_global:suspect_theory:phantom
-    -> hub
-+ [Nightshade. It's the man with no marks.]
-    ~ suspect_theory = "nightshade"
-    Narrator: A long pause.
-    Director Magnus Netherton: An instinct is not evidence. And the man with nothing on his file is the second-easiest man in this building to suspect.
-    Director Magnus Netherton: If it is him, he has been careful for years. Careful men leave exactly one mistake. Find it. #set_global:suspect_theory:nightshade
-    -> hub
-
 
 // ================================================
 // PASS 3 (P6): the door-audit check. when -> which of the three -> why not
@@ -319,6 +329,9 @@ Director Magnus Netherton: That audit is Phantom's query, off Phantom's printer.
 // (named_by_director; no suite code aloud). Before flag 4 he takes the audit
 // over, which gets noticed (nightshade_tipped_off: whatever is still in the
 // locker is cleared), and names him when the box comes in (flag-4 mapping B).
+{ audit_misreads == 2:
+    ~ audit_warned = true
+}
 { audit_misreads >= 3:
     ~ audit_closed = true
     { found_access_logs:
@@ -341,6 +354,14 @@ Director Magnus Netherton: That audit is Phantom's query, off Phantom's printer.
 - 8: Director Magnus Netherton: That clears him of the leak, not of the printout.
 - 9: Director Magnus Netherton: Then it agrees with Phantom twice.
 - else: Director Magnus Netherton: Somebody chose the query, Agent, and the window.
+}
+// PASS 5 (alignment C2, J5): the third misread is never a surprise.
+{ audit_misreads == 2:
+    { found_access_logs:
+        Director Magnus Netherton: Once more like that and I read it myself, and the file will say that I had to. #set_global:audit_warned:true
+    - else:
+        Director Magnus Netherton: Once more like that and I take this off you, and I shall have to ask questions on the floor to do it. #set_global:audit_warned:true
+    }
 }
 { audit_closed:
     { named_by_director:
@@ -378,7 +399,12 @@ Director Magnus Netherton: He walked into his own lab twenty-three minutes befor
 }
 Narrator: He puts one hand flat on the desk, as if the floor has moved.
 Director Magnus Netherton: I sealed a warning about him a year ago and told myself it was prudence.
-Director Magnus Netherton: When the whole chain is through the relay, he goes down to the suite. The code is {suite_code}.
+// PASS 5 (round 1 browser N6): "through the relay" only while it isn't.
+{ all_flags_submitted:
+    Director Magnus Netherton: The chain is in. He goes down to the suite now. The code is {suite_code}.
+- else:
+    Director Magnus Netherton: When the whole chain is through the relay, he goes down to the suite. The code is {suite_code}.
+}
 Director Magnus Netherton: The card is in my safe, with Dr Okafor's evaluation. Read hers before you face him.
 -> hub
 

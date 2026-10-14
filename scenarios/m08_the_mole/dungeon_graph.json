@@ -51,8 +51,20 @@
       "optional": true
     },
     {
+      "id": "lock_cipher_locker",
+      "label": "Cipher Locker",
+      "kind": "lock",
+      "optional": false
+    },
+    {
       "id": "lock_nightshade_locker",
       "label": "Nightshade Locker",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "lock_phantom_locker",
+      "label": "Phantom Locker",
       "kind": "lock",
       "optional": false
     },
@@ -147,6 +159,18 @@
       "optional": false
     },
     {
+      "id": "npc_agent_0x23_cipher",
+      "label": "Agent 0x23 'Cipher'",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "cipher_s_locker_key",
+      "label": "Cipher's Locker Key",
+      "kind": "key",
+      "optional": false
+    },
+    {
       "id": "intel_analysis",
       "label": "Intelligence Analysis",
       "kind": "room",
@@ -162,6 +186,18 @@
       "id": "phantom_s_off_book_notes",
       "label": "Phantom's Off-Book Notes",
       "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "npc_agent_0x88_phantom",
+      "label": "Agent 0x88 'Phantom'",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "phantom_s_locker_key",
+      "label": "Phantom's Locker Key",
+      "kind": "key",
       "optional": false
     },
     {
@@ -231,6 +267,18 @@
       "optional": false
     },
     {
+      "id": "token_pouch_locker_0x23",
+      "label": "Token Pouch -- Locker 0x23",
+      "kind": "item",
+      "optional": true
+    },
+    {
+      "id": "staff_locker_0x23",
+      "label": "Staff Locker -- 0x23",
+      "kind": "item",
+      "optional": true
+    },
+    {
       "id": "usb_stick_personal_backup_enc",
       "label": "USB Stick -- PERSONAL_BACKUP.enc",
       "kind": "item",
@@ -243,8 +291,8 @@
       "optional": false
     },
     {
-      "id": "go_bag_locker_0x47",
-      "label": "Go-Bag -- Locker 0x47",
+      "id": "holdall_locker_0x47",
+      "label": "Holdall -- Locker 0x47",
       "kind": "item",
       "optional": false
     },
@@ -253,6 +301,18 @@
       "label": "Staff Locker -- 0x47",
       "kind": "item",
       "optional": false
+    },
+    {
+      "id": "boarding_pass_stub_locker_0x88",
+      "label": "Boarding Pass Stub -- Locker 0x88",
+      "kind": "item",
+      "optional": true
+    },
+    {
+      "id": "staff_locker_0x88",
+      "label": "Staff Locker -- 0x88",
+      "kind": "item",
+      "optional": true
     },
     {
       "id": "vmch_recover_gitlist_exposure",
@@ -326,7 +386,17 @@
     },
     {
       "from": "lock_pick_kit",
+      "to": "lock_cipher_locker",
+      "soft": true
+    },
+    {
+      "from": "lock_pick_kit",
       "to": "lock_nightshade_locker",
+      "soft": true
+    },
+    {
+      "from": "lock_pick_kit",
+      "to": "lock_phantom_locker",
       "soft": true
     },
     {
@@ -420,6 +490,21 @@
       "soft": false
     },
     {
+      "from": "operations_floor",
+      "to": "npc_agent_0x23_cipher",
+      "soft": false
+    },
+    {
+      "from": "npc_agent_0x23_cipher",
+      "to": "cipher_s_locker_key",
+      "soft": false
+    },
+    {
+      "from": "cipher_s_locker_key",
+      "to": "lock_cipher_locker",
+      "soft": false
+    },
+    {
       "from": "intel_analysis",
       "to": "four_site_night_tactical_board",
       "soft": false
@@ -427,6 +512,21 @@
     {
       "from": "intel_analysis",
       "to": "phantom_s_off_book_notes",
+      "soft": false
+    },
+    {
+      "from": "intel_analysis",
+      "to": "npc_agent_0x88_phantom",
+      "soft": false
+    },
+    {
+      "from": "npc_agent_0x88_phantom",
+      "to": "phantom_s_locker_key",
+      "soft": false
+    },
+    {
+      "from": "phantom_s_locker_key",
+      "to": "lock_phantom_locker",
       "soft": false
     },
     {
@@ -491,6 +591,21 @@
     },
     {
       "from": "break_room",
+      "to": "lock_cipher_locker",
+      "soft": false
+    },
+    {
+      "from": "lock_cipher_locker",
+      "to": "token_pouch_locker_0x23",
+      "soft": true
+    },
+    {
+      "from": "break_room",
+      "to": "staff_locker_0x23",
+      "soft": true
+    },
+    {
+      "from": "break_room",
       "to": "lock_nightshade_locker",
       "soft": false
     },
@@ -506,13 +621,28 @@
     },
     {
       "from": "lock_nightshade_locker",
-      "to": "go_bag_locker_0x47",
+      "to": "holdall_locker_0x47",
       "soft": false
     },
     {
       "from": "break_room",
       "to": "staff_locker_0x47",
       "soft": false
+    },
+    {
+      "from": "break_room",
+      "to": "lock_phantom_locker",
+      "soft": false
+    },
+    {
+      "from": "lock_phantom_locker",
+      "to": "boarding_pass_stub_locker_0x88",
+      "soft": true
+    },
+    {
+      "from": "break_room",
+      "to": "staff_locker_0x88",
+      "soft": true
     },
     {
       "from": "vmch_recover_gitlist_exposure",

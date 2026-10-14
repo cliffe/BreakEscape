@@ -10,6 +10,10 @@
 // replaying after a reload; the hub repeats it on request.
 VAR mole_identified = false
 VAR met = false
+// PASS 5 (alignment C2, J2): any accusation before the naming gets around.
+VAR accused_cipher = false
+VAR accused_phantom = false
+VAR accused_nightshade = false
 
 === start ===
 { met: -> return_visit }
@@ -35,6 +39,9 @@ Off-Duty Agent: I'm sitting where I can see the door. You should too.
     { mole_identified:
         Off-Duty Agent: Only that the Director's had the interrogation suite cleared. Nobody's said for who. Nobody needs to.
     - else:
+        { accused_cipher or accused_phantom or accused_nightshade:
+            Off-Duty Agent: Word is you've been calling people traitors to their faces. Whole floor's heard. If one of them is the mole, so has he.
+        }
         Off-Duty Agent: Phantom's stopped being charming. He was off the floor all that morning, two days before Portland, and nobody's said where.
         Off-Duty Agent: Nightshade's the same as ever.
     }

@@ -35,9 +35,17 @@ VAR audit_closed = false
 VAR named_before_box = false
 VAR named_by_hax = false
 VAR asked_line = false
+// PASS 5 (alignment C2, n7): the tip-off goes on the record.
+VAR nightshade_tipped_off = false
 
 === start ===
 #set_global:debrief_played:true
+// PASS 5 (round 1 browser N2): HaX's "Same classroom" text used to arrive as a
+// phone text 2.5 s into this scene, which blocks the phone, and went unseen. It
+// is read here, before Netherton speaks (M5, U4: a hedge, never a name).
+{ not nightshade_ko_before_fate:
+    Narrator: Your phone buzzes once in the corridor. HaX: "He said it to you? 'Afterwards, not during.' I was taught that line, and I say it to every agent I run. Same classroom, 0x00. Don't ask me whose yet."
+}
 Narrator: Netherton finds you, empty-handed. He looks older than he did at the briefing a few hours ago.
 { netherton_ko:
     Director Magnus Netherton: Before anything else. My jaw is fine, thank you for asking. We will not be discussing it.
@@ -86,7 +94,7 @@ Director Magnus Netherton: Say it, Agent. Whatever you think of me tonight. I wo
 // the case" is never said twice.
 {
 - named_by_hax:
-    Director Magnus Netherton: HaX read the door audit against the box while I was on my office floor. The name reached me secondhand.
+    Director Magnus Netherton: You read the door audit to HaX while I was on my office floor. The name reached me secondhand.
     Director Magnus Netherton: Next time, bring the reading to me yourself.
 - audit_closed:
     Director Magnus Netherton: You read me that door log three ways. In the end I read it myself.
@@ -113,6 +121,9 @@ Director Magnus Netherton: Say it, Agent. Whatever you think of me tonight. I wo
         Director Magnus Netherton: You let the box make the case and kept your opinion to yourself until it was proven. Cold, and correct.
         Director Magnus Netherton: That is how the innocent walk out of a mole hunt with their careers intact.
     }
+}
+{ nightshade_tipped_off:
+    Director Magnus Netherton: And he knew we were coming before we came. Whatever he had time to clear, we will never see now.
 }
 -> the_box
 

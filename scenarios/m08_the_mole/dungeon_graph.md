@@ -11,10 +11,10 @@ Nine days ago four ENTROPY operations went live inside the same minute, and the 
 | Story aims | 6 |
 | Total tasks | 15 (1 optional) |
 | VM flag challenges | 4 |
-| Physical locks | 6 |
+| Physical locks | 8 |
 | AND-gate convergences | 1 |
 | Rooms | 9 |
-| Puzzle graph nodes / edges | 50 / 62 |
+| Puzzle graph nodes / edges | 60 / 76 |
 | Story graph nodes / edges | 7 / 7 |
 
 ## Critical Path
@@ -77,7 +77,9 @@ flowchart TD
   interrogation_room("Interrogation -- Recording In Progress")
   main_lobby("SAFETYNET HQ -- The Citadel")
   lock_pick_kit{"Lock Pick Kit"}
+  lock_cipher_locker["Cipher Locker"]
   lock_nightshade_locker["Nightshade Locker"]
+  lock_phantom_locker["Phantom Locker"]
   rfid_cloner{"RFID Cloner"}
   fingerprint_kit{"Fingerprint Kit"}
   lock_badge_printer["Visitor Badge Printer<br/>PIN lock"]
@@ -93,9 +95,13 @@ flowchart TD
   action_read_the_door_audit_to_the_director>"Read the door audit to the Director (suite code aloud)"]
   operations_floor("Operations Floor")
   personnel_print_job_director_s_investigation_request{"Personnel Print Job -- Director's Investigation Request"}
+  npc_agent_0x23_cipher{"Agent 0x23 'Cipher'"}
+  cipher_s_locker_key{"Cipher's Locker Key"}
   intel_analysis("Intelligence Analysis")
   four_site_night_tactical_board{"Four-Site Night Tactical Board"}
   phantom_s_off_book_notes{"Phantom's Off-Book Notes"}
+  npc_agent_0x88_phantom{"Agent 0x88 'Phantom'"}
+  phantom_s_locker_key{"Phantom's Locker Key"}
   gitlist_repository_server["GitList Repository Server"]
   server_access_log_excerpt{"Server Access Log (excerpt)"}
   global_threat_database_catalogue{"Global Threat Database Catalogue"}
@@ -107,10 +113,14 @@ flowchart TD
   break_room("Break Room")
   post_it_on_the_coffee_machine{"Post-It On The Coffee Machine"}
   leak_timeline_someone_s_working_notes{"Leak Timeline (someone's working notes)"}
+  token_pouch_locker_0x23{"Token Pouch -- Locker 0x23"}
+  staff_locker_0x23{"Staff Locker -- 0x23"}
   usb_stick_personal_backup_enc{"USB Stick -- PERSONAL_BACKUP.enc"}
   insider_threat_initiative_deep_state_brief{"Insider Threat Initiative -- 'Deep State' Brief"}
-  go_bag_locker_0x47{"Go-Bag -- Locker 0x47"}
+  holdall_locker_0x47{"Holdall -- Locker 0x47"}
   staff_locker_0x47{"Staff Locker -- 0x47"}
+  boarding_pass_stub_locker_0x88{"Boarding Pass Stub -- Locker 0x88"}
+  staff_locker_0x88{"Staff Locker -- 0x88"}
   vmch_recover_gitlist_exposure["Exploit the repository browser and submit the first flag"]
   vmfl_recover_gitlist_exposure{"Recover Gitlist Exposure Flag"}
   vmch_recover_stashed_credentials["Recover the stashed credentials and submit the second flag"]
@@ -124,7 +134,9 @@ flowchart TD
   door_security_archives --> security_archives
   door_interrogation_room --> interrogation_room
   main_lobby -.-> lock_pick_kit
+  lock_pick_kit -.-> lock_cipher_locker
   lock_pick_kit -.-> lock_nightshade_locker
+  lock_pick_kit -.-> lock_phantom_locker
   main_lobby --> rfid_cloner
   main_lobby --> fingerprint_kit
   main_lobby --> lock_badge_printer
@@ -143,8 +155,14 @@ flowchart TD
   npc_director_magnus_netherton --> action_read_the_door_audit_to_the_director
   operations_floor --> personnel_print_job_director_s_investigation_request
   personnel_print_job_director_s_investigation_request --> lock_director_safe
+  operations_floor --> npc_agent_0x23_cipher
+  npc_agent_0x23_cipher --> cipher_s_locker_key
+  cipher_s_locker_key --> lock_cipher_locker
   intel_analysis --> four_site_night_tactical_board
   intel_analysis --> phantom_s_off_book_notes
+  intel_analysis --> npc_agent_0x88_phantom
+  npc_agent_0x88_phantom --> phantom_s_locker_key
+  phantom_s_locker_key --> lock_phantom_locker
   server_room --> gitlist_repository_server
   server_room --> server_access_log_excerpt
   security_archives --> global_threat_database_catalogue
@@ -157,11 +175,17 @@ flowchart TD
   post_it_on_the_coffee_machine --> door_security_archives
   post_it_on_the_coffee_machine --> lock_badge_printer
   break_room --> leak_timeline_someone_s_working_notes
+  break_room --> lock_cipher_locker
+  lock_cipher_locker -.-> token_pouch_locker_0x23
+  break_room -.-> staff_locker_0x23
   break_room --> lock_nightshade_locker
   lock_nightshade_locker --> usb_stick_personal_backup_enc
   lock_nightshade_locker --> insider_threat_initiative_deep_state_brief
-  lock_nightshade_locker --> go_bag_locker_0x47
+  lock_nightshade_locker --> holdall_locker_0x47
   break_room --> staff_locker_0x47
+  break_room --> lock_phantom_locker
+  lock_phantom_locker -.-> boarding_pass_stub_locker_0x88
+  break_room -.-> staff_locker_0x88
   vmch_recover_gitlist_exposure --> vmfl_recover_gitlist_exposure
   vmch_recover_stashed_credentials --> vmfl_recover_stashed_credentials
   vmfl_recover_gitlist_exposure -.-> vmch_recover_stashed_credentials
@@ -183,16 +207,16 @@ flowchart TD
   action_read_the_door_audit_to_the_director -.-> door_interrogation_room
   leak_timeline_someone_s_working_notes -.-> action_read_the_door_audit_to_the_director
 
-  class door_server_room,door_security_archives,door_interrogation_room,lock_nightshade_locker,lock_badge_printer,lock_director_safe lock
+  class door_server_room,door_security_archives,door_interrogation_room,lock_cipher_locker,lock_nightshade_locker,lock_phantom_locker,lock_badge_printer,lock_director_safe lock
   class server_room,security_archives,interrogation_room,main_lobby,director_office,operations_floor,intel_analysis,cryptography_lab,break_room room
-  class lock_pick_kit,rfid_cloner,fingerprint_kit,sealed_psych_evaluation_agent_0x47,director_s_safe,personnel_print_job_director_s_investigation_request,four_site_night_tactical_board,phantom_s_off_book_notes,server_access_log_excerpt,global_threat_database_catalogue,badge_audit_printout_leak_window,detention_disposition_screen,post_it_on_the_coffee_machine,leak_timeline_someone_s_working_notes,usb_stick_personal_backup_enc,insider_threat_initiative_deep_state_brief,go_bag_locker_0x47,staff_locker_0x47 item
-  class printed_server_zone_badge,interrogation_suite_code_card,npc_director_magnus_netherton,director_s_access_keycard_all_zones,npc_agent_0x47_nightshade,nightshade_s_locker_key key
+  class lock_pick_kit,rfid_cloner,fingerprint_kit,sealed_psych_evaluation_agent_0x47,director_s_safe,personnel_print_job_director_s_investigation_request,four_site_night_tactical_board,phantom_s_off_book_notes,server_access_log_excerpt,global_threat_database_catalogue,badge_audit_printout_leak_window,detention_disposition_screen,post_it_on_the_coffee_machine,leak_timeline_someone_s_working_notes,token_pouch_locker_0x23,staff_locker_0x23,usb_stick_personal_backup_enc,insider_threat_initiative_deep_state_brief,holdall_locker_0x47,staff_locker_0x47,boarding_pass_stub_locker_0x88,staff_locker_0x88 item
+  class printed_server_zone_badge,interrogation_suite_code_card,npc_director_magnus_netherton,director_s_access_keycard_all_zones,npc_agent_0x23_cipher,cipher_s_locker_key,npc_agent_0x88_phantom,phantom_s_locker_key,npc_agent_0x47_nightshade,nightshade_s_locker_key key
   class action_clone_the_director_card,action_read_the_door_audit_to_the_director action
   class gitlist_repository_server,vmch_recover_gitlist_exposure,vmch_recover_stashed_credentials,vmch_recover_home_flag,vmch_escalate_to_root vm
   class vmfl_recover_gitlist_exposure,vmfl_recover_stashed_credentials,vmfl_recover_home_flag,vmfl_escalate_to_root flag
 
   classDef optional stroke-dasharray:5 2
-  class lock_pick_kit,printed_server_zone_badge,director_s_safe,director_s_access_keycard_all_zones optional
+  class lock_pick_kit,printed_server_zone_badge,director_s_safe,director_s_access_keycard_all_zones,token_pouch_locker_0x23,staff_locker_0x23,boarding_pass_stub_locker_0x88,staff_locker_0x88 optional
   class node_start start
 ```
 
@@ -271,7 +295,9 @@ flowchart TD
   interrogation_room("Interrogation -- Recording In Progress")
   main_lobby("SAFETYNET HQ -- The Citadel")
   lock_pick_kit{"Lock Pick Kit"}
+  lock_cipher_locker["Cipher Locker"]
   lock_nightshade_locker["Nightshade Locker"]
+  lock_phantom_locker["Phantom Locker"]
   rfid_cloner{"RFID Cloner"}
   fingerprint_kit{"Fingerprint Kit"}
   lock_badge_printer["Visitor Badge Printer<br/>PIN lock"]
@@ -287,9 +313,13 @@ flowchart TD
   action_read_the_door_audit_to_the_director>"Read the door audit to the Director (suite code aloud)"]
   operations_floor("Operations Floor")
   personnel_print_job_director_s_investigation_request{"Personnel Print Job -- Director's Investigation Request"}
+  npc_agent_0x23_cipher{"Agent 0x23 'Cipher'"}
+  cipher_s_locker_key{"Cipher's Locker Key"}
   intel_analysis("Intelligence Analysis")
   four_site_night_tactical_board{"Four-Site Night Tactical Board"}
   phantom_s_off_book_notes{"Phantom's Off-Book Notes"}
+  npc_agent_0x88_phantom{"Agent 0x88 'Phantom'"}
+  phantom_s_locker_key{"Phantom's Locker Key"}
   gitlist_repository_server["GitList Repository Server"]
   server_access_log_excerpt{"Server Access Log (excerpt)"}
   global_threat_database_catalogue{"Global Threat Database Catalogue"}
@@ -301,10 +331,14 @@ flowchart TD
   break_room("Break Room")
   post_it_on_the_coffee_machine{"Post-It On The Coffee Machine"}
   leak_timeline_someone_s_working_notes{"Leak Timeline (someone's working notes)"}
+  token_pouch_locker_0x23{"Token Pouch -- Locker 0x23"}
+  staff_locker_0x23{"Staff Locker -- 0x23"}
   usb_stick_personal_backup_enc{"USB Stick -- PERSONAL_BACKUP.enc"}
   insider_threat_initiative_deep_state_brief{"Insider Threat Initiative -- 'Deep State' Brief"}
-  go_bag_locker_0x47{"Go-Bag -- Locker 0x47"}
+  holdall_locker_0x47{"Holdall -- Locker 0x47"}
   staff_locker_0x47{"Staff Locker -- 0x47"}
+  boarding_pass_stub_locker_0x88{"Boarding Pass Stub -- Locker 0x88"}
+  staff_locker_0x88{"Staff Locker -- 0x88"}
   vmch_recover_gitlist_exposure["Exploit the repository browser and submit the first flag"]
   vmfl_recover_gitlist_exposure{"Recover Gitlist Exposure Flag"}
   vmch_recover_stashed_credentials["Recover the stashed credentials and submit the second flag"]
@@ -325,7 +359,9 @@ flowchart TD
   door_security_archives --> security_archives
   door_interrogation_room --> interrogation_room
   main_lobby -.-> lock_pick_kit
+  lock_pick_kit -.-> lock_cipher_locker
   lock_pick_kit -.-> lock_nightshade_locker
+  lock_pick_kit -.-> lock_phantom_locker
   main_lobby --> rfid_cloner
   main_lobby --> fingerprint_kit
   main_lobby --> lock_badge_printer
@@ -344,8 +380,14 @@ flowchart TD
   npc_director_magnus_netherton --> action_read_the_door_audit_to_the_director
   operations_floor --> personnel_print_job_director_s_investigation_request
   personnel_print_job_director_s_investigation_request --> lock_director_safe
+  operations_floor --> npc_agent_0x23_cipher
+  npc_agent_0x23_cipher --> cipher_s_locker_key
+  cipher_s_locker_key --> lock_cipher_locker
   intel_analysis --> four_site_night_tactical_board
   intel_analysis --> phantom_s_off_book_notes
+  intel_analysis --> npc_agent_0x88_phantom
+  npc_agent_0x88_phantom --> phantom_s_locker_key
+  phantom_s_locker_key --> lock_phantom_locker
   server_room --> gitlist_repository_server
   server_room --> server_access_log_excerpt
   security_archives --> global_threat_database_catalogue
@@ -358,11 +400,17 @@ flowchart TD
   post_it_on_the_coffee_machine --> door_security_archives
   post_it_on_the_coffee_machine --> lock_badge_printer
   break_room --> leak_timeline_someone_s_working_notes
+  break_room --> lock_cipher_locker
+  lock_cipher_locker -.-> token_pouch_locker_0x23
+  break_room -.-> staff_locker_0x23
   break_room --> lock_nightshade_locker
   lock_nightshade_locker --> usb_stick_personal_backup_enc
   lock_nightshade_locker --> insider_threat_initiative_deep_state_brief
-  lock_nightshade_locker --> go_bag_locker_0x47
+  lock_nightshade_locker --> holdall_locker_0x47
   break_room --> staff_locker_0x47
+  break_room --> lock_phantom_locker
+  lock_phantom_locker -.-> boarding_pass_stub_locker_0x88
+  break_room -.-> staff_locker_0x88
   vmch_recover_gitlist_exposure --> vmfl_recover_gitlist_exposure
   vmch_recover_stashed_credentials --> vmfl_recover_stashed_credentials
   vmfl_recover_gitlist_exposure -.-> vmch_recover_stashed_credentials
@@ -395,10 +443,10 @@ flowchart TD
   vmfl_recover_home_flag -.-> aim_correlate_the_evidence
   vmfl_escalate_to_root -.-> aim_correlate_the_evidence
 
-  class door_server_room,door_security_archives,door_interrogation_room,lock_nightshade_locker,lock_badge_printer,lock_director_safe lock
+  class door_server_room,door_security_archives,door_interrogation_room,lock_cipher_locker,lock_nightshade_locker,lock_phantom_locker,lock_badge_printer,lock_director_safe lock
   class server_room,security_archives,interrogation_room,main_lobby,director_office,operations_floor,intel_analysis,cryptography_lab,break_room room
-  class lock_pick_kit,rfid_cloner,fingerprint_kit,sealed_psych_evaluation_agent_0x47,director_s_safe,personnel_print_job_director_s_investigation_request,four_site_night_tactical_board,phantom_s_off_book_notes,server_access_log_excerpt,global_threat_database_catalogue,badge_audit_printout_leak_window,detention_disposition_screen,post_it_on_the_coffee_machine,leak_timeline_someone_s_working_notes,usb_stick_personal_backup_enc,insider_threat_initiative_deep_state_brief,go_bag_locker_0x47,staff_locker_0x47 item
-  class printed_server_zone_badge,interrogation_suite_code_card,npc_director_magnus_netherton,director_s_access_keycard_all_zones,npc_agent_0x47_nightshade,nightshade_s_locker_key key
+  class lock_pick_kit,rfid_cloner,fingerprint_kit,sealed_psych_evaluation_agent_0x47,director_s_safe,personnel_print_job_director_s_investigation_request,four_site_night_tactical_board,phantom_s_off_book_notes,server_access_log_excerpt,global_threat_database_catalogue,badge_audit_printout_leak_window,detention_disposition_screen,post_it_on_the_coffee_machine,leak_timeline_someone_s_working_notes,token_pouch_locker_0x23,staff_locker_0x23,usb_stick_personal_backup_enc,insider_threat_initiative_deep_state_brief,holdall_locker_0x47,staff_locker_0x47,boarding_pass_stub_locker_0x88,staff_locker_0x88 item
+  class printed_server_zone_badge,interrogation_suite_code_card,npc_director_magnus_netherton,director_s_access_keycard_all_zones,npc_agent_0x23_cipher,cipher_s_locker_key,npc_agent_0x88_phantom,phantom_s_locker_key,npc_agent_0x47_nightshade,nightshade_s_locker_key key
   class action_clone_the_director_card,action_read_the_door_audit_to_the_director action
   class gitlist_repository_server,vmch_recover_gitlist_exposure,vmch_recover_stashed_credentials,vmch_recover_home_flag,vmch_escalate_to_root vm
   class vmfl_recover_gitlist_exposure,vmfl_recover_stashed_credentials,vmfl_recover_home_flag,vmfl_escalate_to_root flag
@@ -406,7 +454,7 @@ flowchart TD
   class aim_work_the_suspects aim
 
   classDef optional stroke-dasharray:5 2
-  class lock_pick_kit,printed_server_zone_badge,director_s_safe,director_s_access_keycard_all_zones optional
+  class lock_pick_kit,printed_server_zone_badge,director_s_safe,director_s_access_keycard_all_zones,token_pouch_locker_0x23,staff_locker_0x23,boarding_pass_stub_locker_0x88,staff_locker_0x88 optional
   class node_start start
 ```
 
@@ -515,31 +563,39 @@ flowchart TD
   rc_nightshade_personnel_record_20{"Personnel Print Job -- Director's Investigation Request"}
   rc_operations_board_21{"Operations Status Board"}
   rc_npc_agent_0x23_cipher_22("Agent 0x23 'Cipher'")
-  rc_npc_junior_analyst_23("Junior Analyst")
-  rc_tactical_board_24{"Four-Site Night Tactical Board"}
-  rc_phantom_notes_25{"Phantom's Off-Book Notes"}
-  rc_npc_agent_0x88_phantom_26("Agent 0x88 'Phantom'")
-  rc_vm_launcher_gitlist_27{"GitList Repository Server"}
-  rc_flag_station_evidence_relay_28{"Evidence Relay Terminal"}
-  rc_server_access_logs_29{"Server Access Log (excerpt)"}
-  rc_database_catalog_30{"Global Threat Database Catalogue"}
-  rc_historical_leaks_31{"Past Leak Investigations"}
-  rc_badge_audit_printout_32{"Badge Audit Printout -- Leak Window"}
-  rc_cyberchef_workstation_33{"CyberChef Workstation"}
-  rc_nightshade_desk_34{"Nightshade's Workstation"}
-  rc_npc_agent_0x47_nightshade_35("Agent 0x47 'Nightshade'")
-  rc_nightshade_locker_key_36{"Nightshade's Locker Key"}
-  rc_evidence_display_37{"Evidence Display"}
-  rc_disposition_terminal_38{"Detention Disposition Screen"}
-  rc_npc_agent_0x47_nightshade_39("Agent 0x47 'Nightshade'")
-  rc_password_sticky_note_40{"Post-It On The Coffee Machine"}
-  rc_timeline_reconstruction_41{"Leak Timeline (someone's working notes)"}
-  rc_nightshade_locker_42[["Staff Locker -- 0x47"]]
-  rc_encrypted_backup_43{"USB Stick -- PERSONAL_BACKUP.enc"}
-  rc_deep_state_manual_44{"Insider Threat Initiative -- 'Deep State' Brief"}
-  rc_nightshade_go_bag_45{"Go-Bag -- Locker 0x47"}
-  rc_npc_agent_hax_46("Agent HaX")
-  rc_npc_off_duty_agent_47("Off-Duty Agent")
+  rc_cipher_locker_key_23{"Cipher's Locker Key"}
+  rc_npc_junior_analyst_24("Junior Analyst")
+  rc_tactical_board_25{"Four-Site Night Tactical Board"}
+  rc_phantom_notes_26{"Phantom's Off-Book Notes"}
+  rc_npc_agent_0x88_phantom_27("Agent 0x88 'Phantom'")
+  rc_phantom_locker_key_28{"Phantom's Locker Key"}
+  rc_vm_launcher_gitlist_29{"GitList Repository Server"}
+  rc_flag_station_evidence_relay_30{"Evidence Relay Terminal"}
+  rc_server_access_logs_31{"Server Access Log (excerpt)"}
+  rc_database_catalog_32{"Global Threat Database Catalogue"}
+  rc_historical_leaks_33{"Past Leak Investigations"}
+  rc_badge_audit_printout_34{"Badge Audit Printout -- Leak Window"}
+  rc_cyberchef_workstation_35{"CyberChef Workstation"}
+  rc_nightshade_desk_36{"Nightshade's Workstation"}
+  rc_npc_agent_0x47_nightshade_37("Agent 0x47 'Nightshade'")
+  rc_nightshade_locker_key_38{"Nightshade's Locker Key"}
+  rc_evidence_display_39{"Evidence Display"}
+  rc_disposition_terminal_40{"Detention Disposition Screen"}
+  rc_npc_agent_0x47_nightshade_41("Agent 0x47 'Nightshade'")
+  rc_password_sticky_note_42{"Post-It On The Coffee Machine"}
+  rc_timeline_reconstruction_43{"Leak Timeline (someone's working notes)"}
+  rc_cipher_locker_44[["Staff Locker -- 0x23"]]
+  rc_cipher_token_pouch_45{"Token Pouch -- Locker 0x23"}
+  rc_cipher_project_sheet_46{"Project Sheet -- Locker 0x23"}
+  rc_nightshade_locker_47[["Staff Locker -- 0x47"]]
+  rc_encrypted_backup_48{"USB Stick -- PERSONAL_BACKUP.enc"}
+  rc_deep_state_manual_49{"Insider Threat Initiative -- 'Deep State' Brief"}
+  rc_nightshade_go_bag_50{"Holdall -- Locker 0x47"}
+  rc_phantom_locker_51[["Staff Locker -- 0x88"]]
+  rc_phantom_boarding_stub_52{"Boarding Pass Stub -- Locker 0x88"}
+  rc_phantom_suspect_wall_53{"Folded Suspect Sheet -- Locker 0x88"}
+  rc_npc_agent_hax_54("Agent HaX")
+  rc_npc_off_duty_agent_55("Off-Duty Agent")
 
   main_lobby --> director_office
   main_lobby --> operations_floor
@@ -571,36 +627,44 @@ flowchart TD
   operations_floor --> rc_nightshade_personnel_record_20
   operations_floor --> rc_operations_board_21
   operations_floor --> rc_npc_agent_0x23_cipher_22
-  operations_floor --> rc_npc_junior_analyst_23
-  intel_analysis --> rc_tactical_board_24
-  intel_analysis --> rc_phantom_notes_25
-  intel_analysis --> rc_npc_agent_0x88_phantom_26
-  server_room --> rc_vm_launcher_gitlist_27
-  server_room --> rc_flag_station_evidence_relay_28
-  server_room --> rc_server_access_logs_29
-  security_archives --> rc_database_catalog_30
-  security_archives --> rc_historical_leaks_31
-  security_archives --> rc_badge_audit_printout_32
-  cryptography_lab --> rc_cyberchef_workstation_33
-  cryptography_lab --> rc_nightshade_desk_34
-  cryptography_lab --> rc_npc_agent_0x47_nightshade_35
-  rc_npc_agent_0x47_nightshade_35 --> rc_nightshade_locker_key_36
-  interrogation_room --> rc_evidence_display_37
-  interrogation_room --> rc_disposition_terminal_38
-  interrogation_room --> rc_npc_agent_0x47_nightshade_39
-  break_room --> rc_password_sticky_note_40
-  break_room --> rc_timeline_reconstruction_41
-  break_room --> rc_nightshade_locker_42
-  rc_nightshade_locker_42 --> rc_encrypted_backup_43
-  rc_nightshade_locker_42 --> rc_deep_state_manual_44
-  rc_nightshade_locker_42 --> rc_nightshade_go_bag_45
-  break_room --> rc_npc_agent_hax_46
-  break_room --> rc_npc_off_duty_agent_47
+  rc_npc_agent_0x23_cipher_22 --> rc_cipher_locker_key_23
+  operations_floor --> rc_npc_junior_analyst_24
+  intel_analysis --> rc_tactical_board_25
+  intel_analysis --> rc_phantom_notes_26
+  intel_analysis --> rc_npc_agent_0x88_phantom_27
+  rc_npc_agent_0x88_phantom_27 --> rc_phantom_locker_key_28
+  server_room --> rc_vm_launcher_gitlist_29
+  server_room --> rc_flag_station_evidence_relay_30
+  server_room --> rc_server_access_logs_31
+  security_archives --> rc_database_catalog_32
+  security_archives --> rc_historical_leaks_33
+  security_archives --> rc_badge_audit_printout_34
+  cryptography_lab --> rc_cyberchef_workstation_35
+  cryptography_lab --> rc_nightshade_desk_36
+  cryptography_lab --> rc_npc_agent_0x47_nightshade_37
+  rc_npc_agent_0x47_nightshade_37 --> rc_nightshade_locker_key_38
+  interrogation_room --> rc_evidence_display_39
+  interrogation_room --> rc_disposition_terminal_40
+  interrogation_room --> rc_npc_agent_0x47_nightshade_41
+  break_room --> rc_password_sticky_note_42
+  break_room --> rc_timeline_reconstruction_43
+  break_room --> rc_cipher_locker_44
+  rc_cipher_locker_44 --> rc_cipher_token_pouch_45
+  rc_cipher_locker_44 --> rc_cipher_project_sheet_46
+  break_room --> rc_nightshade_locker_47
+  rc_nightshade_locker_47 --> rc_encrypted_backup_48
+  rc_nightshade_locker_47 --> rc_deep_state_manual_49
+  rc_nightshade_locker_47 --> rc_nightshade_go_bag_50
+  break_room --> rc_phantom_locker_51
+  rc_phantom_locker_51 --> rc_phantom_boarding_stub_52
+  rc_phantom_locker_51 --> rc_phantom_suspect_wall_53
+  break_room --> rc_npc_agent_hax_54
+  break_room --> rc_npc_off_duty_agent_55
 
   class main_lobby,director_office,operations_floor,intel_analysis,cryptography_lab,break_room room
   class server_room,security_archives,interrogation_room lock
-  class rc_badge_printer_1,rc_director_safe_15,rc_nightshade_locker_42 container
-  class rc_printed_server_badge_2,rc_security_notice_3,rc_m08_recon_field_guide_7,rc_m08_scanning_field_guide_8,rc_m08_gitsecrets_field_guide_9,rc_m08_cyberchef_field_guide_10,rc_m08_vulnanalysis_field_guide_11,rc_m08_privesc_field_guide_12,rc_suspect_dossiers_14,rc_interrogation_suite_code_16,rc_nightshade_profile_17,rc_netherton_keycard_19,rc_nightshade_personnel_record_20,rc_operations_board_21,rc_tactical_board_24,rc_phantom_notes_25,rc_vm_launcher_gitlist_27,rc_flag_station_evidence_relay_28,rc_server_access_logs_29,rc_database_catalog_30,rc_historical_leaks_31,rc_badge_audit_printout_32,rc_cyberchef_workstation_33,rc_nightshade_desk_34,rc_nightshade_locker_key_36,rc_evidence_display_37,rc_disposition_terminal_38,rc_password_sticky_note_40,rc_timeline_reconstruction_41,rc_encrypted_backup_43,rc_deep_state_manual_44,rc_nightshade_go_bag_45 item
-  class rc_npc_athena_4,rc_npc_athena_5,rc_npc_agent_hax_6,rc_npc_director_magnus_netherton_13,rc_npc_director_magnus_netherton_18,rc_npc_agent_0x23_cipher_22,rc_npc_junior_analyst_23,rc_npc_agent_0x88_phantom_26,rc_npc_agent_0x47_nightshade_35,rc_npc_agent_0x47_nightshade_39,rc_npc_agent_hax_46,rc_npc_off_duty_agent_47 npc
+  class rc_badge_printer_1,rc_director_safe_15,rc_cipher_locker_44,rc_nightshade_locker_47,rc_phantom_locker_51 container
+  class rc_printed_server_badge_2,rc_security_notice_3,rc_m08_recon_field_guide_7,rc_m08_scanning_field_guide_8,rc_m08_gitsecrets_field_guide_9,rc_m08_cyberchef_field_guide_10,rc_m08_vulnanalysis_field_guide_11,rc_m08_privesc_field_guide_12,rc_suspect_dossiers_14,rc_interrogation_suite_code_16,rc_nightshade_profile_17,rc_netherton_keycard_19,rc_nightshade_personnel_record_20,rc_operations_board_21,rc_cipher_locker_key_23,rc_tactical_board_25,rc_phantom_notes_26,rc_phantom_locker_key_28,rc_vm_launcher_gitlist_29,rc_flag_station_evidence_relay_30,rc_server_access_logs_31,rc_database_catalog_32,rc_historical_leaks_33,rc_badge_audit_printout_34,rc_cyberchef_workstation_35,rc_nightshade_desk_36,rc_nightshade_locker_key_38,rc_evidence_display_39,rc_disposition_terminal_40,rc_password_sticky_note_42,rc_timeline_reconstruction_43,rc_cipher_token_pouch_45,rc_cipher_project_sheet_46,rc_encrypted_backup_48,rc_deep_state_manual_49,rc_nightshade_go_bag_50,rc_phantom_boarding_stub_52,rc_phantom_suspect_wall_53 item
+  class rc_npc_athena_4,rc_npc_athena_5,rc_npc_agent_hax_6,rc_npc_director_magnus_netherton_13,rc_npc_director_magnus_netherton_18,rc_npc_agent_0x23_cipher_22,rc_npc_junior_analyst_24,rc_npc_agent_0x88_phantom_27,rc_npc_agent_0x47_nightshade_37,rc_npc_agent_0x47_nightshade_41,rc_npc_agent_hax_54,rc_npc_off_duty_agent_55 npc
   class node_start start
 ```

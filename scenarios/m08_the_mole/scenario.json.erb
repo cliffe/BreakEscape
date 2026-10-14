@@ -193,14 +193,15 @@ backup_plain = "SENT -- To: architect@entropy.onion  From: nightshade_deep_state
           { "text": "THE CASE: Named from the door audit, against the box's minute", "style": "entry", "condition": "globalVars.named_on_evidence && !globalVars.named_before_box && !globalVars.audit_misread" },
           { "text": "THE CASE: Named from the door audit, not on the first reading", "style": "entry", "condition": "globalVars.named_on_evidence && globalVars.audit_misread" },
           { "text": "THE CASE: The door audit, misread three times. The Director read it himself.", "style": "warning", "condition": "globalVars.audit_closed && !globalVars.named_by_hax" },
-          { "text": "THE CASE: Read off the door audit by HaX, with the Director on his floor", "style": "warning", "condition": "globalVars.named_by_hax" },
+          { "text": "THE CASE: The door audit read to HaX, with the Director on his floor", "style": "warning", "condition": "globalVars.named_by_hax" },
+          { "text": "NIGHTSHADE: Tipped off before he was named", "style": "warning", "condition": "globalVars.nightshade_tipped_off" },
           { "text": "YOUR FIRST CALL TO THE DIRECTOR: Cipher -- wrong, and corrected", "style": "warning", "condition": "globalVars.suspect_theory === 'cipher'" },
           { "text": "YOUR FIRST CALL TO THE DIRECTOR: Phantom -- wrong, and corrected", "style": "warning", "condition": "globalVars.suspect_theory === 'phantom'" },
           { "text": "" },
           { "text": "── RECOVERED ──", "style": "section-header" },
           { "text": "SEALED PSYCH EVALUATION: Read. The warning was in writing a year ago.", "style": "entry", "condition": "globalVars.found_nightshade_profile" },
           { "text": "'DEEP STATE' RECRUITMENT BRIEF: Recovered from his locker", "style": "entry", "condition": "globalVars.found_deep_state_manual" },
-          { "text": "GO-BAG: Packed nine days ago. Never used.", "style": "entry", "condition": "globalVars.found_go_bag && !globalVars.nightshade_tidied" },
+          { "text": "GO-BAG: Packed nine days ago. Never used.", "style": "entry", "condition": "globalVars.go_bag_lining_known && !globalVars.nightshade_tidied" },
           { "text": "GO-BAG: Gone from his locker the night you tipped him off", "style": "warning", "condition": "globalVars.found_go_bag && globalVars.nightshade_tidied" },
           { "text": "THE USB STICK: His thumbprint on the casing. Nobody planted the mail.", "style": "entry", "condition": "globalVars.nightshade_print_lifted && !globalVars.nightshade_tidied" },
           { "text": "THE USB STICK: Wiped after you tipped him off. His thumbprint survived it.", "style": "warning", "condition": "globalVars.nightshade_print_lifted && globalVars.nightshade_tidied" },
@@ -258,7 +259,7 @@ CREDITS
       "takeable": true,
       "observations": "SAFETYNET field pick kit. You did not expect to need it at headquarters.",
       "puzzle_graph_role": "tool",
-      "puzzle_graph_unlocks": ["nightshade_locker"],
+      "puzzle_graph_unlocks": ["cipher_locker", "nightshade_locker", "phantom_locker"],
       "puzzle_graph_optional": true
     },
     <%# PASS 3 (capability arc): the cumulative kit. ATHENA names it in the
@@ -608,6 +609,43 @@ CREDITS
             "language": "en-GB"
           },
           "currentKnot": "start",
+          <%# PASS 5 (alignment C2): ATHENA hosts two latches with no text of their
+              own (main_lobby is always loaded, lesson 43), so they don't share
+              events with HaX's onceOnly texts on the same NPC. %>
+          "eventMappings": [
+<%# PASS 5 (M3, U3 without an engine change): a tipped-off mole tidies
+    whatever the player has not already taken. The locker keeps its contents
+    (containers cannot change contents on a global); textVariants and
+    observationVariants on the stick, the brief and the go-bag show them
+    wiped and gone, and the credits, HaX and the confrontation read
+    nightshade_tidied.
+    PASS 5 (alignment C2, n6): the tidy takes him time. It latches on the
+    player's next entry into a room other than the Crypto Lab and the break
+    room, so a player who sees the risk and goes straight for the locker
+    beats him to it. Not if anything is already out of the locker (so a
+    variant never rewrites what the player holds), nor if he is down. Not
+    onceOnly: the condition latches itself (nightshade_tidied), and the recon
+    and archives mappings share two of these events. %>
+<% %w[main_lobby director_office operations_floor intel_analysis server_room security_archives interrogation_room].each do |r| %>
+            {
+              "eventPattern": "room_entered:<%= r %>",
+              "condition": "globalVars.nightshade_tipped_off === true && globalVars.nightshade_tidied !== true && globalVars.found_architect_comms_local !== true && globalVars.found_go_bag !== true && globalVars.found_deep_state_manual !== true && globalVars.nightshade_ko !== true",
+              "setGlobal": { "nightshade_tidied": true }
+            },
+<% end %>
+            {
+              "eventPattern": "global_variable_changed:mole_identified",
+              "condition": "value === true && globalVars.found_go_bag === true && globalVars.nightshade_tidied !== true",
+              "onceOnly": true,
+              "setGlobal": { "go_bag_lining_known": true }
+            },
+            {
+              "eventPattern": "global_variable_changed:found_go_bag",
+              "condition": "value === true && globalVars.mole_identified === true && globalVars.nightshade_tidied !== true",
+              "onceOnly": true,
+              "setGlobal": { "go_bag_read_named": true, "go_bag_lining_known": true }
+            }
+          ],
           "observations": "The reception console is lit and awake. ATHENA greets everyone by name now, and logs everyone by name too."
         },
         {
@@ -684,17 +722,27 @@ CREDITS
       C  the Director is down: HaX reads it (named_by_hax).
       D  not named, check open, Director up: terminal and time only.
     Disjoint, &&-only. A pair on netherton_ko covers a KO after flag 4. %>
+<%# PASS 5 (alignment C2, J3): the KO'd Director no longer hands HaX the
+    answer. C splits on the door audit and names nobody; the player reads the
+    audit to HaX on the phone (m08_phone_agent_0x99.ink, hax_reading), which
+    sets named_by_hax. A2: named by that reading before the box. %>
 <% [
      ["globalVars.named_on_evidence === true",
       { "found_access_logs" => true, "database_theft_understood" => true }, nil,
       "Root. Logs agree with your door audit: Crypto Lab terminal, forty-seven minutes. The root file says what that night was for: our threat database. It's Nightshade. You had him first."],
-     ["globalVars.named_on_evidence !== true && globalVars.audit_closed === true && globalVars.netherton_ko !== true",
+     ["globalVars.named_on_evidence !== true && globalVars.mole_identified === true",
+      { "found_access_logs" => true, "database_theft_understood" => true }, nil,
+      "Root. Logs agree with the reading you gave me: Crypto Lab terminal, forty-seven minutes, for our threat database. It's Nightshade. I trained with him."],
+     ["globalVars.named_on_evidence !== true && globalVars.mole_identified !== true && globalVars.audit_closed === true && globalVars.netherton_ko !== true",
       { "found_access_logs" => true, "database_theft_understood" => true, "mole_identified" => true, "named_by_director" => true }, "name_the_mole",
       "Root. Crypto Lab terminal, forty-seven minutes, for our threat database. The Director read the door audit against it himself. It's Nightshade. I trained with him."],
-     ["globalVars.named_on_evidence !== true && globalVars.netherton_ko === true",
-      { "found_access_logs" => true, "database_theft_understood" => true, "mole_identified" => true, "named_by_hax" => true }, "name_the_mole",
-      "Root. Crypto Lab terminal, forty-seven minutes, for our threat database. The Director's down, so I read the door audit against it myself. It's Nightshade. I trained with him."],
-     ["globalVars.named_on_evidence !== true && globalVars.audit_closed !== true && globalVars.netherton_ko !== true",
+     ["globalVars.named_on_evidence !== true && globalVars.mole_identified !== true && globalVars.netherton_ko === true && globalVars.found_badge_audit !== true",
+      { "found_access_logs" => true, "database_theft_understood" => true }, nil,
+      "Root. A terminal and a time, no face: crypto-lab-04, D-2 10:38, forty-seven minutes. The Director's down, and a login isn't a person. Get the door audit from the archives and read it to me."],
+     ["globalVars.named_on_evidence !== true && globalVars.mole_identified !== true && globalVars.netherton_ko === true && globalVars.found_badge_audit === true",
+      { "found_access_logs" => true, "database_theft_understood" => true }, nil,
+      "Root. A terminal and a time, no face: crypto-lab-04, D-2 10:38, forty-seven minutes. The Director's down, so read me the door audit instead. Call me when you've got it."],
+     ["globalVars.named_on_evidence !== true && globalVars.mole_identified !== true && globalVars.audit_closed !== true && globalVars.netherton_ko !== true",
       { "found_access_logs" => true, "database_theft_understood" => true }, nil,
       "Root. A terminal and a time, no face: crypto-lab-04, D-2 10:38, forty-seven minutes. The root file says it was for our threat database. Who was behind that lab door?"]
    ].each do |cond, sets, task, msg| %>
@@ -708,13 +756,23 @@ CREDITS
             },
 <% end %>
             {
-              "_comment": "PASS 5 (B1): the Director knocked down after flag 4, before anyone named the mole. HaX reads the audit against the box.",
+              "_comment": "PASS 5 (B1; alignment C2, J3): the Director knocked down before anyone named the mole. HaX stands in for him as the one the reading goes to, not for the reading: the player reads the door audit to her on the phone (hax_reading). Split on whether the audit is in hand; a third mapping prompts when it turns up later.",
               "eventPattern": "global_variable_changed:netherton_ko",
-              "condition": "value === true && globalVars.flag4_submitted === true && globalVars.mole_identified !== true",
+              "condition": "value === true && globalVars.mole_identified !== true && globalVars.found_badge_audit !== true",
               "onceOnly": true,
-              "setGlobal": { "mole_identified": true, "named_by_hax": true },
-              "completeTask": "name_the_mole",
-              "sendTimedMessage": { "delay": 4500, "message": "With the Director down, I've read the door audit against the box myself. It's Nightshade. I trained with him." }
+              "sendTimedMessage": { "delay": 4500, "message": "With the Director down, I'm who you bring the name to. Get the door audit from the archives first, then read it to me." }
+            },
+            {
+              "eventPattern": "global_variable_changed:netherton_ko",
+              "condition": "value === true && globalVars.mole_identified !== true && globalVars.found_badge_audit === true",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 4500, "message": "With the Director down, I'm who you bring the name to. Read me the door audit when you're ready." }
+            },
+            {
+              "eventPattern": "global_variable_changed:found_badge_audit",
+              "condition": "value === true && globalVars.netherton_ko === true && globalVars.mole_identified !== true",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 2000, "message": "That's the door audit. With the Director on his floor, read it to me. Call me when you've got it straight." }
             },
             {
               "eventPattern": "global_variable_changed:mole_identified",
@@ -754,24 +812,25 @@ CREDITS
               "setGlobal": { "brief_taken": true },
               "sendTimedMessage": { "delay": 2000, "message": "The Director is down. Tell me that wasn't you. His card's on the floor beside him. Or use the reception printer; its PIN is somewhere in the break room." }
             },
+<%# PASS 5 (alignment C2, J1): a KO text never gives the verdict before
+    the naming. Each suspect has a neutral text while mole_identified is
+    unset (one shape for all three) and the original once he is named. %>
+<% [["agent_nightshade", "Nightshade", "You put Nightshade on the floor. The proof's on the server. His face can wait. Get me the flags and we'll have this out in the interrogation room."],
+    ["agent_cipher", "Cipher", "You hit Cipher? He's a mess and a genius and he is not your mole. The odd hours are a classified encryption project. The logs would have cleared him."],
+    ["agent_phantom", "Phantom", "Phantom's down. All that snooping was him running the same hunt you are, off the books. You've just knocked out the only other person here trying to catch the mole."]].each do |id, name, named_msg| %>
             {
-              "_comment": "KO -- Nightshade (suspect entry). The case does not need the interview; it needs the box.",
-              "eventPattern": "npc_ko:agent_nightshade",
+              "eventPattern": "npc_ko:<%= id %>",
+              "condition": "globalVars.mole_identified !== true",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 2000, "message": "You put Nightshade on the floor. The proof's on the server. His face can wait. Get me the flags and we'll have this out in the interrogation room." }
+              "sendTimedMessage": { "delay": 2000, "message": "You put <%= name %> on the floor. Whatever he is, he isn't answering questions tonight. The door logs still can." }
             },
             {
-              "_comment": "KO -- Cipher (innocent). The interview is optional.",
-              "eventPattern": "npc_ko:agent_cipher",
+              "eventPattern": "npc_ko:<%= id %>",
+              "condition": "globalVars.mole_identified === true",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 2000, "message": "You hit Cipher? He's a mess and a genius and he is not your mole. The odd hours are a classified encryption project. The logs would have cleared him." }
+              "sendTimedMessage": { "delay": 2000, "message": <%= named_msg.to_json %> }
             },
-            {
-              "_comment": "KO -- Phantom (innocent). The interview is optional.",
-              "eventPattern": "npc_ko:agent_phantom",
-              "onceOnly": true,
-              "sendTimedMessage": { "delay": 2000, "message": "Phantom's down. All that snooping was him running the same hunt you are, off the books. You've just knocked out the only other person here trying to catch the mole." }
-            },
+<% end %>
             {
               "_comment": "PASS 3 (P9): HaX in person knocked down. globalVarOnKO hax_ko sets the credit.",
               "eventPattern": "npc_ko:agent_0x99_person",
@@ -793,13 +852,10 @@ CREDITS
               "onceOnly": true,
               "sendTimedMessage": { "delay": 1500, "message": "Empty. He wiped it after you tipped him off. The print on the casing is still there. Lift it." }
             },
-            {
-              "_comment": "PASS 5 (alignment M5, U4: hedge, no name). Nightshade's last line is the one HaX was taught and says to every agent she runs (m07 canon). She recognises the classroom, not the teacher.",
-              "eventPattern": "conversation_closed:nightshade_confrontation",
-              "condition": "globalVars.fate_decided === true && globalVars.nightshade_ko_before_fate !== true",
-              "onceOnly": true,
-              "sendTimedMessage": { "delay": 2500, "message": "He said it to you? 'Afterwards, not during.' I was taught that line, and I say it to every agent I run. Same classroom, 0x00. Don't ask me whose yet." }
-            },
+<%# PASS 5 (alignment M5, U4: hedge, no name). Round 2 (browser N2): HaX's
+    "Same classroom" text arrived 2.5 s into the debrief, which blocks the
+    phone, and was never seen. It is now the debrief's first beat (a text read
+    as Netherton reaches you, m08_closing_debrief.ink). %>
             {
               "_comment": "PASS 2 playtest D1 found End Conversation closing the confrontation despite disableClose. PASS 4: that engine gap is fixed (base-minigame.js hides cancel when disableClose is set), so this now only covers a reload mid-scene: the room-entry mapping reopens the scene from the start. Not onceOnly, so it repeats each time.",
               "eventPattern": "conversation_closed:nightshade_confrontation",
@@ -864,20 +920,30 @@ CREDITS
               "sendTimedMessage": { "delay": 3000, "message": "That's all three. Now go and see the Director about the server room. Take the cloner." }
             },
 <% end %>
+<%# PASS 4 (fix 10): 'do it quietly' costs something. PASS 5 (M3): the
+    tip-off empties what is still in his locker.
+    PASS 5 (alignment C2, J2): any accusation before the naming gets around
+    the floor (the off-duty agent hears everything), with one shared neutral
+    text, so accusing is not an oracle: the wrong man costs the same tip-off
+    as the right one. Silent once he is already tipped off. %>
+<% %w[accused_cipher accused_phantom accused_nightshade].each do |g| %>
             {
-              "_comment": "PASS 4 (fix 10): 'do it quietly' costs something. Accusing him before he is named tips him off. PASS 5 (M3): the tip-off now has a cost: nightshade_tipped_off, and the latch below empties what is still in his locker.",
-              "eventPattern": "global_variable_changed:accused_nightshade",
-              "condition": "value === true && globalVars.mole_identified !== true",
+              "eventPattern": "global_variable_changed:<%= g %>",
+              "condition": "value === true && globalVars.mole_identified !== true && globalVars.nightshade_tipped_off !== true",
               "onceOnly": true,
               "setGlobal": { "nightshade_tipped_off": true },
-              "sendTimedMessage": { "delay": 2500, "message": "You told him. He knows now. If he was ever going to tidy up, he's doing it tonight." }
+              "sendTimedMessage": { "delay": 2500, "message": "You've said it to someone's face. On this floor, that's said to everyone by midnight. If it's the right man, he knows we're looking." }
             },
+<% end %>
+<%# PASS 5 (alignment C2, J4): the go-bag reads as any agent's holdall until
+    he is named. Once he is named, a player who read it earlier hears what was
+    in the lining (go_bag_lining_known, latched on receptionist_ai); one who
+    reads it after sees the full text (go_bag_read_named, no text). %>
             {
-              "_comment": "PASS 5 (M3, U3 without an engine change): a tipped-off mole tidies whatever the player has not already taken. The locker keeps its contents (containers cannot change contents on a global); textVariants and observationVariants on the stick and the go-bag show them wiped and gone, and the credits, HaX and the confrontation read nightshade_tidied. Tipped off by an early accusation, or by the Director taking the audit over after three misreads before flag 4.",
-              "eventPattern": "global_variable_changed:nightshade_tipped_off",
-              "condition": "value === true && globalVars.found_architect_comms_local !== true && globalVars.found_go_bag !== true",
+              "eventPattern": "global_variable_changed:go_bag_lining_known",
+              "condition": "value === true && globalVars.go_bag_read_named !== true",
               "onceOnly": true,
-              "setGlobal": { "nightshade_tidied": true }
+              "sendTimedMessage": { "delay": 9000, "message": "Security searched his holdall once you named him. Passport in the lining, his photo, a name I've never heard. A one-way to Helena, Montana, for the morning after Portland." }
             },
 <%# WP6 -- field-guide exposure gates for the two that are not tied to a
     flag. The phone hub surfaces the #give_item choice, gated
@@ -1218,6 +1284,21 @@ CREDITS
           },
           "currentKnot": "start",
           "globalVarOnKO": "cipher_ko",
+          <%# PASS 5 (alignment C2, J4): his locker key, as Nightshade's: he hands it
+              over when asked after the door-audit beat (#give_item); a KO drops it. %>
+          "itemsHeld": [
+            {
+              "type": "key",
+              "id": "cipher_locker_key",
+              "name": "Cipher's Locker Key",
+              "takeable": true,
+              "opens_lock": "cipher_locker_key",
+              "keyPins": [40, 30, 55, 35],
+              "observations": "A small locker key on a plain ring. 0x23 on the tag.",
+              "puzzle_graph_role": "key",
+              "puzzle_graph_unlocks": "cipher_locker"
+            }
+          ],
           <%# PASS 2 review (lesson 27): the interview task completes only once the brief is taken. %>
           "eventMappings": [
             {
@@ -1314,6 +1395,21 @@ CREDITS
           },
           "currentKnot": "start",
           "globalVarOnKO": "phantom_ko",
+          <%# PASS 5 (alignment C2, J4): his locker key, as Nightshade's: he hands it
+              over when asked after the door-audit beat (#give_item); a KO drops it. %>
+          "itemsHeld": [
+            {
+              "type": "key",
+              "id": "phantom_locker_key",
+              "name": "Phantom's Locker Key",
+              "takeable": true,
+              "opens_lock": "phantom_locker_key",
+              "keyPins": [50, 35, 45, 30],
+              "observations": "A small locker key on a plain ring. 0x88 on the tag.",
+              "puzzle_graph_role": "key",
+              "puzzle_graph_unlocks": "phantom_locker"
+            }
+          ],
           <%# PASS 2 review (lesson 27): the interview task completes only once the brief is taken. %>
           "eventMappings": [
             {
@@ -1649,7 +1745,7 @@ CREDITS
             { "condition": "globalVars.all_flags_submitted && globalVars.mole_identified && globalVars.found_nightshade_profile", "value": "CASE FILE -- AGENT 0x47 'NIGHTSHADE'\n\n1. GitList RCE -- SAFETYNET's own repo, exploited without credentials.\n2. Stashed credentials -- committed to history, resolve to nightshade_ops.\n3. Home directory -- sent mail to architect@entropy.onion. Same safetynet.gov account as the stripped sender on the Portland intercept.\n4. Root -- access logs: operations plan open 47 min, T-48h, Crypto Lab terminal.\n5. Psych eval -- ideological drift flagged a year ago. Sealed by the Director.\n\nVERDICT: conclusive." },
             { "condition": "globalVars.all_flags_submitted && globalVars.mole_identified", "value": "CASE FILE -- AGENT 0x47 'NIGHTSHADE'\n\n1. GitList RCE -- SAFETYNET's own repo, exploited without credentials.\n2. Stashed credentials -- committed to history, resolve to nightshade_ops.\n3. Home directory -- sent mail to architect@entropy.onion. Same safetynet.gov account as the stripped sender on the Portland intercept.\n4. Root -- access logs: operations plan open 47 min, T-48h, Crypto Lab terminal.\n\nVERDICT: conclusive." },
             { "condition": "globalVars.all_flags_submitted", "value": "CASE FILE -- PERSONS OF INTEREST (3)\n\nThe chain is in: a Crypto Lab terminal, D-2 10:38 UTC, plan open 47 min, one account. An account is not yet a person.\n\nVERDICT: pending -- awaiting a name the Director can act on." },
-            { "condition": "globalVars.mole_identified", "value": "CASE FILE -- AGENT 0x47 'NIGHTSHADE'\n\nNamed to the Director on the door audit. The rest of the chain has not yet come through the relay.\n\nVERDICT: pending." }
+            { "condition": "globalVars.mole_identified", "value": "CASE FILE -- AGENT 0x47 'NIGHTSHADE'\n\nNamed on the door audit. The rest of the chain has not yet come through the relay.\n\nVERDICT: pending." }
           ]
         },
         {
@@ -1666,7 +1762,7 @@ CREDITS
           "textVariants": [
             { "condition": "globalVars.nightshade_triple_agent", "value": "DISPOSITION SYSTEM\n\nSUBJECT: Agent 0x47 'Nightshade'\nDISPOSITION: RETAINED IN PLACE -- CONTROLLED ASSET\nAUTHORITY: Director M. Netherton (countersigned)\n\nNo record of this entry leaves the building." },
             { "condition": "globalVars.nightshade_arrested", "value": "DISPOSITION SYSTEM\n\nSUBJECT: Agent 0x47 'Nightshade'\nDISPOSITION: DETAINED -- FOR HANDOVER TO POLICE WITH CASE FILE\nAUTHORITY: Director M. Netherton (countersigned)\n\nSAFETYNET retains no claim on the subject after handover." },
-            { "condition": "globalVars.all_flags_submitted", "value": "DISPOSITION SYSTEM\n\nSUBJECT: Agent 0x47 'Nightshade'\nDISPOSITION: AWAITING ENTRY" }
+            { "condition": "globalVars.all_flags_submitted && globalVars.mole_identified", "value": "DISPOSITION SYSTEM\n\nSUBJECT: Agent 0x47 'Nightshade'\nDISPOSITION: AWAITING ENTRY" }
           ]
         }
       ]
@@ -1741,7 +1837,7 @@ CREDITS
           "readable": true,
           "observations": "Someone has been reconstructing the leak timeline on a legal pad. It matches the server logs exactly.",
           "observationDisplay": "gameDisplay",
-          "text": "LEAK TIMELINE (all times UTC; T-0 = deployment order, 10:41)\nT-72h  Pacific Northwest contingency plan finalised\nT-68h  Agent 0x00 pre-positioned, Pacific Northwest\nT-48h  (D-2 10:38-11:25) ANOMALY: operations plan opened, 47 min, Crypto Lab terminal\nT-47h  ENTROPY coordination chatter begins\nT-24h  ENTROPY fully prepared for our response\nT-51m  (09:50) Deployment confirmed to ENTROPY (intercept)\nT-0    Four sites go live. They were already waiting.\n\nThe leak went out just before the 48-hour mark. Full planning access and a Crypto Lab terminal. Three names on the Director's list have that access. Two of them badge through the lab door: Cipher and Nightshade. Get the door logs.",
+          "text": "LEAK TIMELINE (all times UTC; T-0 = deployment order, 10:41)\nT-72h  Pacific Northwest contingency plan finalised\nT-68h  Agent 0x00 pre-positioned, Pacific Northwest\nT-48h  (D-2 10:38-11:25) ANOMALY: operations plan opened, 47 min, Crypto Lab terminal\nT-47h  ENTROPY coordination chatter begins\nT-24h  ENTROPY fully prepared for our response\nT-51m  (09:50) Deployment confirmed to ENTROPY (intercept)\nT-0    Four sites go live. They were already waiting.\n\nThe leak went out just before the 48-hour mark. Full planning access and a Crypto Lab terminal. Find out who could get through the lab door. Get the door logs.",
           "onPickup": { "setVariable": { "found_timeline": true } },
           "puzzle_graph_role": "clue",
           "puzzle_graph_reveals": "when_the_plan_was_opened",
@@ -1750,24 +1846,73 @@ CREDITS
         <%# PASS 3 (P8): Nightshade's staff locker. Picks (start kit), his key
             (asked for after the audit or Okafor beat, or dropped on a KO). Holds
             the signed mail on a USB stick, the recruitment brief and his go-bag.
-            Position (4.4, 7.45) is top-left in tiles: clear of the tables, the
-            chairs, both NPCs, the walls and the east door (checked on a template
-            render with the sprite overlaid, scratchpad/m08_place). %>
+            PASS 5 (alignment C2, J4): one locker per suspect, side by side
+            (0x23, 0x47, 0x88; the picks open all three), so searching is
+            investigation rather than a pointer, and each holds something that
+            looks bad until it is explained. The row sits where the old
+            three-door sprite stood (old top-left 4.4, 7.45), using the single-locker
+            sprite, a little over a tile apart so one click never opens the
+            next (validator rule 6, 32 px interaction range). 0x47 is in the
+            middle, "second from the end" either way. Base observations are
+            true in every state, because the lock screen and the container
+            header show the base field only (round 1 browser N4); variants
+            carry the rest. %>
+        {
+          "type": "safe",
+          "id": "cipher_locker",
+          "name": "Staff Locker -- 0x23",
+          "sprite": "student_locker1",
+          "takeable": false,
+          "locked": true,
+          "lockType": "key",
+          "requires": "cipher_locker_key",
+          "keyPins": [40, 30, 55, 35],
+          "difficulty": "medium",
+          "position": { "x": 3.9, "y": 7.45 },
+          "observations": "A staff locker labelled 0x23, plastered with conference stickers. One says DO NOT ROT13 ME.",
+          "puzzle_graph_role": "container",
+          "puzzle_graph_optional": true,
+          "contents": [
+            {
+              "type": "notes",
+              "id": "cipher_token_pouch",
+              "name": "Token Pouch -- Locker 0x23",
+              "takeable": true,
+              "readable": true,
+              "observations": "A zipped pouch with a hardware token in a tamper bag.",
+              "observationDisplay": "gameDisplay",
+              "text": "A crypto-annex hardware token, still in its tamper bag. The sign-out slip is stapled to it:\n\nTOKEN CABINET -- CRYPTO ANNEX\nIssued to: 0x23\nOut: D-2 10:26 UTC\nReason: (left blank)\n\nTaken out of the cabinet two days before Portland, inside the hour the plan was read. He never wrote down why.",
+              "puzzle_graph_role": "clue",
+              "puzzle_graph_optional": true
+            },
+            {
+              "type": "notes",
+              "id": "cipher_project_sheet",
+              "name": "Project Sheet -- Locker 0x23",
+              "takeable": true,
+              "readable": true,
+              "observations": "One typed sheet, folded small, with no name on it.",
+              "observationDisplay": "gameDisplay",
+              "text": "DO NOT DISCUSS. NOT ON THE ROSTER. NOT WITH THE DIRECTOR'S STAFF.\n\nKey schedule rotates every 72h from D-3.\nWork nights only. Screen locked at all times.\nTokens from the annex cabinet, signed out under 0x23 only.\n\nNo project name. No signature. Whoever wrote it did not want it traced back to them."
+            }
+          ]
+        },
         {
           "type": "safe",
           "id": "nightshade_locker",
           "name": "Staff Locker -- 0x47",
-          "sprite": "staff_lockers1",
+          "sprite": "student_locker1",
           "takeable": false,
           "locked": true,
           "lockType": "key",
           "requires": "nightshade_locker_key",
           "keyPins": [35, 50, 25, 45],
           "difficulty": "medium",
-          "position": { "x": 4.4, "y": 7.45 },
-          "observations": "A row of staff lockers, stickered and dented. One is labelled 0x47 in a neat hand and has nothing on it at all.",
+          "position": { "x": 4.95, "y": 7.45 },
+          "observations": "A staff locker labelled 0x47 in a neat hand.",
           "observationVariants": [
-            { "condition": "globalVars.nightshade_tidied", "value": "A row of staff lockers, stickered and dented. The one labelled 0x47 has fresh scratches round the lock. Someone has been in it tonight." }
+            { "condition": "globalVars.nightshade_tidied", "value": "A staff locker labelled 0x47 in a neat hand. Fresh scratches round the lock. Someone has been in it tonight." },
+            { "condition": "!globalVars.nightshade_tidied", "value": "A staff locker labelled 0x47 in a neat hand, with nothing stuck on it at all." }
           ],
           "puzzle_graph_role": "container",
           "contents": [
@@ -1777,17 +1922,25 @@ CREDITS
                 "name": "USB Stick -- PERSONAL_BACKUP.enc",
                 "takeable": true,
                 "readable": true,
-                "observations": "A black gloss USB stick in an envelope marked 0x47. One file on it, PERSONAL_BACKUP.enc. Lazy, for a cryptographer. Almost as if he wanted it found eventually. There is a clean thumbprint on the casing, worth checking against the locker's owner.",
-                <%# PASS 5 (regression 10): wrapped at 64 characters, like any
-                    Base64 dump, so the dusting panel's quote wraps instead of
-                    running off the frame. CyberChef's From Base64 drops the
-                    newlines by default. %>
-                "text": "<%= rot13(base64_encode(backup_plain)).scan(/.{1,64}/).join('\n') %>",
-                "textVariants": [
-                  { "condition": "globalVars.nightshade_tidied", "value": "PERSONAL_BACKUP.enc -- 0 bytes.\nLast written: tonight.\n\nOverwritten. Whatever was on it is gone." }
-                ],
+                <%# PASS 5 (round 1 browser N1, N3): the dusting panel (the first
+                    thing an inventory click opens, with the kit in the start kit)
+                    prints the base text and observations and ignores variants
+                    (dusting-game.js:395). So the base fields are true in every
+                    state, and the content lives in two variants: wiped after the
+                    tidy, the ciphertext otherwise. The full ciphertext never
+                    appears where "Empty." would contradict it, and no longer
+                    runs out of the dusting frame. Wrapped at 48 characters for
+                    the file viewer; CyberChef's From Base64 drops the newlines
+                    by default. %>
+                "observations": "A black gloss USB stick in an envelope marked 0x47. There is a clean thumbprint on the casing, worth checking against the locker's owner.",
                 "observationVariants": [
-                  { "condition": "globalVars.nightshade_tidied", "value": "A black gloss USB stick in an envelope marked 0x47. One file on it, PERSONAL_BACKUP.enc, and the file is empty: written over tonight. There is still a clean thumbprint on the casing. He wiped the file, not the stick." }
+                  { "condition": "globalVars.nightshade_tidied", "value": "A black gloss USB stick in an envelope marked 0x47. One file on it, PERSONAL_BACKUP.enc, and the file is empty: written over tonight. There is still a clean thumbprint on the casing. He wiped the file, not the stick." },
+                  { "condition": "!globalVars.nightshade_tidied", "value": "A black gloss USB stick in an envelope marked 0x47. One file on it, PERSONAL_BACKUP.enc. Lazy, for a cryptographer. Almost as if he wanted it found eventually. There is a clean thumbprint on the casing, worth checking against the locker's owner." }
+                ],
+                "text": "PERSONAL_BACKUP.enc. One file on the stick.",
+                "textVariants": [
+                  { "condition": "globalVars.nightshade_tidied", "value": "PERSONAL_BACKUP.enc -- 0 bytes.\nLast written: tonight.\n\nOverwritten. Whatever was on it is gone." },
+                  { "condition": "!globalVars.nightshade_tidied", "value": "<%= rot13(base64_encode(backup_plain)).scan(/.{1,48}/).join('\n') %>" }
                 ],
                 "_comment": "PASS 4 (fix 12): the observation no longer names the two encodings; HaX's text and the CyberChef guide carry the hint. PASS 4 (fix 1): a print surface. With the kit, opening it from the inventory starts the dusting panel first ('Use normally' reads the file); fingerprint_collected:nightshade sets nightshade_print_lifted (agent_0x99). The print is on the gloss casing rather than the paper envelope: the kit's surfaces are glossy or textured plastic.",
                 "hasFingerprint": true,
@@ -1799,6 +1952,7 @@ CREDITS
                 "puzzle_graph_role": "clue",
                 "puzzle_graph_reveals": "nightshade_knew_the_cost"
               },
+<% deep_state_text = %q{ENTROPY -- INSIDER THREAT INITIATIVE\n'Deep State' Programme (fragment, p.7)\n\nIdeal candidates are not bought. They are convinced. Look inside intelligence agencies for the disillusioned -- those who have started to believe that defence is a delaying action against an outcome already decided.\n\nRecruit young. During training, before loyalty sets. Place them, then wait years. A convinced asset needs no handler and leaves no financial trail. They will act, when asked, because they believe it is right.\n\nCompensation: none. Belief is the payment.} %>
               {
                 "type": "text_file",
                 "id": "deep_state_manual",
@@ -1807,22 +1961,36 @@ CREDITS
                 "readable": true,
                 "observations": "A slim ENTROPY recruitment document. Page 7 is the one that matters.",
                 "observationDisplay": "gameDisplay",
-                "text": "ENTROPY -- INSIDER THREAT INITIATIVE\n'Deep State' Programme (fragment, p.7)\n\nIdeal candidates are not bought. They are convinced. Look inside intelligence agencies for the disillusioned -- those who have started to believe that defence is a delaying action against an outcome already decided.\n\nRecruit young. During training, before loyalty sets. Place them, then wait years. A convinced asset needs no handler and leaves no financial trail. They will act, when asked, because they believe it is right.\n\nCompensation: none. Belief is the payment.",
+                "text": "<%= deep_state_text %>",
+                <%# PASS 5 (alignment C2, n6): the careful mole takes the brief too,
+                    and misses one page. %>
+                "textVariants": [
+                  { "condition": "globalVars.nightshade_tidied", "value": "One torn page, caught at the back of the shelf: page 7 of something he took the rest of.\n\n<%= deep_state_text %>" }
+                ],
+                "observationVariants": [
+                  { "condition": "globalVars.nightshade_tidied", "value": "One torn page at the back of the shelf. The rest of the document has gone." }
+                ],
                 "onPickup": { "setVariable": { "found_deep_state_manual": true } },
                 "puzzle_graph_role": "clue",
                 "puzzle_graph_reveals": "nightshade_was_an_ideological_recruit"
               },
+            <%# PASS 5 (alignment C2, J4): the go-bag's passport and ticket are a
+                confession, not a clue, so until he is named it reads as any
+                agent's packed holdall. Once he is named, the full text shows on a
+                read, and HaX sends what security found in it to a player who
+                read it earlier (go_bag_lining_known, agent_0x99). %>
             {
               "type": "notes",
               "id": "nightshade_go_bag",
-              "name": "Go-Bag -- Locker 0x47",
+              "name": "Holdall -- Locker 0x47",
               "takeable": true,
               "readable": true,
               "observations": "A packed holdall on the top shelf.",
               "observationDisplay": "gameDisplay",
-              "text": "A packed holdall on the top shelf. Nothing in it is his.\n - A passport in a name you have never heard, with his photograph.\n - An e-ticket, one way, economy, to Helena, Montana, for the morning after Portland. Not used.\n - A change of clothes. No cash. No photographs.\n\nHe packed to leave nine days ago, and he is still at his desk.",
+              "text": "A packed holdall on the top shelf. Nothing in it is his.\n - A passport in a name you have never heard, with his photograph, sewn into the lining.\n - An e-ticket, one way, economy, to Helena, Montana, for the morning after Portland. Not used.\n - A change of clothes. No cash. No photographs.\n\nHe packed to leave nine days ago, and he is still at his desk.",
               "textVariants": [
-                { "condition": "globalVars.nightshade_tidied", "value": "The top shelf is empty. A clean rectangle in the dust where a holdall stood until tonight.\n\nWhatever he packed, he has taken it somewhere you will not find it." }
+                { "condition": "globalVars.nightshade_tidied", "value": "Fresh scratches round the lock on the inside of the door. The top shelf is empty: a clean rectangle in the dust where a holdall stood until tonight.\n\nWhatever he packed, he has taken it somewhere you will not find it." },
+                { "condition": "!globalVars.mole_identified", "value": "A packed holdall on the top shelf. A change of clothes, a wash bag, a paperback with an uncracked spine. Nothing with a name on it.\n\nHalf the agents on this floor keep a bag like this ready. You keep one yourself." }
               ],
               "observationVariants": [
                 { "condition": "globalVars.nightshade_tidied", "value": "The top shelf, where something stood until tonight." }
@@ -1830,6 +1998,46 @@ CREDITS
               "onRead": { "setVariable": { "found_go_bag": true } },
               "puzzle_graph_role": "clue",
               "puzzle_graph_reveals": "he_packed_to_run_and_stayed"
+            }
+          ]
+        },
+        {
+          "type": "safe",
+          "id": "phantom_locker",
+          "name": "Staff Locker -- 0x88",
+          "sprite": "student_locker1",
+          "takeable": false,
+          "locked": true,
+          "lockType": "key",
+          "requires": "phantom_locker_key",
+          "keyPins": [50, 35, 45, 30],
+          "difficulty": "medium",
+          "position": { "x": 6.0, "y": 7.45 },
+          "observations": "A staff locker labelled 0x88, with an airline luggage tag still looped through the handle.",
+          "puzzle_graph_role": "container",
+          "puzzle_graph_optional": true,
+          "contents": [
+            {
+              "type": "notes",
+              "id": "phantom_boarding_stub",
+              "name": "Boarding Pass Stub -- Locker 0x88",
+              "takeable": true,
+              "readable": true,
+              "observations": "Half a boarding pass, torn across the middle.",
+              "observationDisplay": "gameDisplay",
+              "text": "Half a boarding pass. Destination ZRH, seat 14C. The date and the departure time were on the half somebody tore off.\n\nOn the back, in his hand: \"Usual place. Bring the list.\"",
+              "puzzle_graph_role": "clue",
+              "puzzle_graph_optional": true
+            },
+            {
+              "type": "notes",
+              "id": "phantom_suspect_wall",
+              "name": "Folded Suspect Sheet -- Locker 0x88",
+              "takeable": true,
+              "readable": true,
+              "observations": "A sheet of A3, folded into eighths and soft at the creases.",
+              "observationDisplay": "gameDisplay",
+              "text": "Three boxes in biro: CIPHER, NIGHTSHADE, PHANTOM. Lines between them, most of them crossed out and drawn again.\n\nUnder PHANTOM: \"no alibi I'll give them. Make them check.\"\nUnder CIPHER: \"hours? annex?\"\nUnder NIGHTSHADE: \"always in. too easy?\"\n\nAcross the bottom, underlined twice: DOORS, NOT FACES."
             }
           ]
         }
@@ -1952,6 +2160,11 @@ CREDITS
     "named_by_hax": false,
     "nightshade_tipped_off": false,
     "nightshade_tidied": false,
-    "triple_agent_first_payment": false
+    "triple_agent_first_payment": false,
+
+<%# --- PASS 5 alignment round 2: the misread warning, the go-bag lining ------ %>
+    "audit_warned": false,
+    "go_bag_lining_known": false,
+    "go_bag_read_named": false
   }
 }

@@ -140,3 +140,98 @@ Phantom:
 Off-duty agent: "Phantom's stopped being charming. Nightshade's the same as ever." → "Phantom's stopped being charming. He was off the floor all that morning, two days before Portland, and nobody's said where." / "Nightshade's the same as ever."
 
 Open for the next round: a browser check of the naming flow (aimsCompleted unlock, the `netherton` and `agent_hax` sheets in play, the tidied variants in the container and inventory); the blank-reentry CHECKs and the 11-line opening for the dialogue stage; U1 (below in DECISIONS_PENDING).
+
+### Stage 2 alignment, round 2 fix (2026-10-14)
+
+Fixer (Opus) on `ALIGNMENT_REVIEW_P5_C2.md` (0 blockers, 5 majors, 10 minors) and `PASS5_ALIGN_R1_BROWSER.md` (2 majors, 4 minors). Mission files only: `scenario.json.erb`, the ink, `mission.json`, `CONTRACT.md` (pass-5 section), the route driver and routes, the m08 block of `scripts/ink_runtime_check/missions.json`. No engine edits; nothing committed.
+
+#### Alignment review C2
+
+| # | Sev | Finding | Outcome |
+|---|---|---|---|
+| J1 | major | KO texts give the verdict | **Fixed.** Each suspect KO is a pair on `mole_identified`: before the naming one neutral shape for all three ("You put X on the floor. Whatever he is, he isn't answering questions tonight. The door logs still can."), after it the original text. Nightshade's pre-naming text no longer mentions the interrogation room |
+| J2 | major | Accusing is an oracle; herrings cost a click | **Fixed.** Any accusation before the naming (Cipher, Phantom or Nightshade) sets `nightshade_tipped_off` with one shared text; silent once he is already tipped off. Confrontation line for a tidy caused by accusing an innocent ("You put it on Cipher/Phantom in front of the floor..."). The off-duty agent repeats the gossip. Debrief and credits record the tip-off (n7). Cipher's refusal and Phantom's withheld lead stay as the trust beat. Residual for the reviewer: the tidy itself only touches 0x47, so a player who accuses someone and then opens all three lockers finds his scratched. That is the in-world cost (the evidence is gone), but it is a weak pointer |
+| J3 | major | Director KO skips the deduction | **Fixed (option a).** Neither the flag-4 fallback C nor the `netherton_ko` mapping names anyone now. HaX tells the player to bring the reading to her (split on `found_badge_audit`, plus a prompt when the audit turns up). Phone hub "[I can name the leak.]" (`netherton_ko and found_badge_audit and not mole_identified`) runs two of the Director's steps (the minute, the man) in `hax_read_1`/`hax_read_2`; a right answer sets `named_by_hax`, `mole_identified`, completes `name_the_mole`. Free retries; the KO is the cost. New flag-4 text A2 when the HaX reading came before the box. HaX's ladder gets two netherton_ko rungs. The KO still drops his card (the clone gate is skipped, the badge printer was always the other route); the deduction is no longer skipped |
+| J4 | major | One pickable locker confesses at minute one | **Fixed (both parts).** Three lockers in a row on the single-locker sprite `student_locker1` (no new art): 0x23 Cipher (token pouch signed out D-2 10:26, unsigned "do not discuss" sheet), 0x47 Nightshade, 0x88 Phantom (torn ZRH boarding stub "Usual place. Bring the list.", his folded suspect sheet "DOORS, NOT FACES"). Each has a key in its owner's itemsHeld, given after his audit beat (as Nightshade's), dropped on a KO; picks open all three. The go-bag is "Holdall -- Locker 0x47" and reads as any agent's packed bag until `mole_identified`; after the naming a read shows the passport and ticket, and a player who read it earlier gets HaX's text on what security found (`go_bag_lining_known`, latched on ATHENA). The confrontation's Montana choice, HaX's "bag packed" line and the GO-BAG credit wait for it |
+| J5 | major | Third misread is unannounced | **Fixed.** At the second misread Netherton warns ("Once more like that and I take this off you, and I shall have to ask questions on the floor to do it", or after flag 4 "...I read it myself, and the file will say that I had to") and sets `audit_warned`. HaX's ladder names the limit at one misread and repeats the warning after two |
+| n1 | minor | Herring costs that cost nothing | **Fixed** via J2 (the tip-off is the cost) |
+| n2 | minor | HaX's "calm" pointer | **Fixed:** neutral line, no envy, no calm |
+| n3 | minor | "Let the box say it" | **Fixed:** "Let the doors say it." |
+| n4 | minor | Timeline note narrows the field | **Fixed:** ends "Find out who could get through the lab door. Get the door logs." |
+| n5 | minor | Hidden `asked_alibi` prerequisite | **Fixed:** both audit choices open on the audit alone. Cipher has two disjoint choices ("You left that out" only after his alibi) into a new `audit_beat` knot; Nightshade's "I told you" is conditional |
+| n6 | minor | Tidy incomplete and instant | **Fixed (both).** The 'Deep State' brief has a tidied variant (one torn page left). The tidy latches on the next entry into a room other than the Crypto Lab and the break room, and not if he is down or anything is already out of the locker; a sprint from the lab to the locker beats him. The latch lives on `receptionist_ai` (no text) so it shares no events with HaX's onceOnly texts |
+| n7 | minor | Debrief ignores the tip-off | **Fixed:** Netherton line on `nightshade_tipped_off`; credit "NIGHTSHADE: Tipped off before he was named" |
+| n8 | minor | Evidence wall wording | **Fixed:** "Named on the door audit." |
+| n9 | minor | Cipher volunteers the terminal | **Fixed:** "My desk is out on the ops floor. Do the geography." |
+| n10 | minor | route.js crashes with no argument | **Fixed:** prints usage, exit 2 |
+
+#### Round 1 browser check
+
+| # | Sev | Finding | Outcome |
+|---|---|---|---|
+| N1 | major | Dusting panel ignores variants; full ciphertext after "Empty." | **Fixed mission-side, no engine change.** The stick's base `text` and `observations` are now true in every state ("PERSONAL_BACKUP.enc. One file on the stick."); the ciphertext and the wiped file are both `textVariants` (`!nightshade_tidied` / `nightshade_tidied`), likewise the observations. Confirmed in the browser (game 2415): the panel shows the neutral line in both states; "Use normally" shows the ciphertext, then the wiped file once tidied. Engine note E5 logged for other missions |
+| N2 | major | "Same classroom" text unread during the debrief | **Fixed.** The phone mapping is gone; the debrief's first beat is a narrator line reading HaX's text ("Your phone buzzes once in the corridor. HaX: ..."), skipped on the KO-before-fate path as before. Seen in the browser as the debrief opens |
+| N3 | minor | Ciphertext overflows the dusting frame | **Fixed:** the panel no longer prints it (N1), and the file wraps at 48 characters. Panel quote `scrollWidth == clientWidth` in the browser |
+| N4 | minor | Locker header shows "nothing on it at all" after the tidy | **Fixed:** base observations are true in every state; the scratches are in the go-bag's tidied text (seen on opening) and in the locker's variant (seen on hover) |
+| N5 | minor | Instinct question re-asks after End Conversation | **Fixed:** `name_a_suspect` became the stitch `hub.name_forming`, so the reopen lands on the hub (person-chat re-navigates to the first choice's top-level knot); "[Not yet, sir.]" backs out without a name |
+| N6 | minor | "Through the relay" after the chain is in | **Fixed:** "The chain is in. He goes down to the suite now. The code is 5386." when `all_flags_submitted` |
+
+Found while fixing (n11, minor): the disposition screen named Nightshade ("SUBJECT: Agent 0x47") as soon as all four flags were in, before anyone named him, and the suite code is reachable from the safe by then. **Fixed:** that variant also needs `mole_identified`.
+
+Counts this round: 5 majors and 10 minors from C2 fixed; browser N1-N6 fixed; one extra minor fixed. Nothing deferred.
+
+Checks (all after the last edit): `scripts/compile-ink.sh m08_the_mole` 12/12. Route driver, ten routes, all "all expectations met": r1-r7 updated (accusation text, tidy on room entry, neutral go-bag, J5 warnings in r3 and r6, N6 in r2, "Same classroom" in the debrief, r7 rewritten for the HaX reading), new r8 (Cipher accused, tidy on leaving, Phantom KO neutral, N5 reopen and "Not yet", Cipher's audit beat without the alibi, all three lockers and keys, Cipher KO after naming), r9 (Nightshade accused, sprint to the locker beats the tidy, second accusation silent, Phantom's key and locker, go-bag lining after naming), r10 (Director KO before the audit and the box, HaX prompts, HaX reading before the box, A2 flag-4 text, Cipher KO before and Phantom KO after the naming). Longest run without a choice 11 (the opening cutscene; r2's confrontation opening also reaches 11 with the new tidy line). `dialoguelint` 0 errors, 0 warnings, 8 blank-reentry CHECKs (unchanged). `reopencheck` m08 0 problems (HaX's two question knots hold back one line each, as intended). `inkcheck` every file plus a state matrix on Netherton (hub, audit_c1 at one misread with and without the box, audit_c4 with all flags), HaX phone (KO and audit; warned), confrontation (accused Cipher/Phantom tidied), debrief, Cipher, Phantom, Nightshade, HaX in person, off-duty agent: clean. `loopcheck` on every changed hub: clean. `tagdiff` vs HEAD: 153 structural differences, all from this round. Validator (full, graph regenerated): no errors; the same two known warnings (brief_taken co-fire; confrontation cutscene not onceOnly); the new lockers clear rule 6 (pinned a little over a tile apart). `check_door_alignment.py`: m08 all OK. Browser (:3001, game 2415, headless, session stopped): N1, N2, N3 confirmed; screenshots and log in the session scratchpad `m08-align-r2/` (`lockers.png`, `N1_dusting_untidied.png`, `N3_viewer.png`, `N2_debrief_first.png`, `game2415-session.jsonl`). Globals were set by eval to reach the debrief, so that part is plumbing, not play.
+
+Decisions taken (fixer, reversible, mission-local):
+- J3 option (a), as the review preferred; HaX's reading is two steps with free retries, because the KO already costs (credits, debrief) and a third misread fallback with no Director has nowhere to go.
+- Cipher and Phantom get locker keys handed over like Nightshade's, so his key isn't the only one on offer (another asymmetry) and the validator's key-only warnings go away.
+- Single-locker sprite rather than three three-door sprites, so each locker is one object; the dressing stage may want to revisit the look.
+- The go-bag's contents reach a player who read it early through HaX ("security searched it"), rather than requiring a re-read.
+- The tidy latch and go-bag latches sit on ATHENA (main_lobby, always loaded, no texts), keeping HaX's mappings free of intended co-fires.
+- "Same classroom" became a narrator line quoting the text, not an "Agent HaX:" speaker line: the phone NPC isn't a reliable portrait in a person-chat.
+
+Spoken lines changed (old → new), for the TTS stage:
+
+HaX, phone texts (`scenario.json.erb`):
+- KO, before the naming (new, one shape for all three): "You put Cipher/Phantom/Nightshade on the floor. Whatever he is, he isn't answering questions tonight. The door logs still can." (originals now only after the naming)
+- "You told him. He knows now. If he was ever going to tidy up, he's doing it tonight." → "You've said it to someone's face. On this floor, that's said to everyone by midnight. If it's the right man, he knows we're looking." (now on all three accusations)
+- flag 4, Director down: "Root. Crypto Lab terminal, forty-seven minutes, for our threat database. The Director's down, so I read the door audit against it myself. It's Nightshade. I trained with him." → "Root. A terminal and a time, no face: crypto-lab-04, D-2 10:38, forty-seven minutes. The Director's down, and a login isn't a person. Get the door audit from the archives and read it to me." / "Root. A terminal and a time, no face: crypto-lab-04, D-2 10:38, forty-seven minutes. The Director's down, so read me the door audit instead. Call me when you've got it."
+- new, flag 4 after the HaX reading: "Root. Logs agree with the reading you gave me: Crypto Lab terminal, forty-seven minutes, for our threat database. It's Nightshade. I trained with him."
+- "With the Director down, I've read the door audit against the box myself. It's Nightshade. I trained with him." → "With the Director down, I'm who you bring the name to. Get the door audit from the archives first, then read it to me." / "With the Director down, I'm who you bring the name to. Read me the door audit when you're ready."
+- new: "That's the door audit. With the Director on his floor, read it to me. Call me when you've got it straight."
+- new: "Security searched his holdall once you named him. Passport in the lining, his photo, a name I've never heard. A one-way to Helena, Montana, for the morning after Portland."
+- removed as a text: "He said it to you? 'Afterwards, not during.' ... Same classroom, 0x00. Don't ask me whose yet." (now read by the narrator in the debrief, below)
+
+HaX, phone hub (`m08_phone_agent_0x99.ink`):
+- "He's said no once. Before you go back, put every row against the minute the plan opened. Who was still inside?" → "He's said no once. Three misses and {he reads it himself | he takes it off you, and the floor will know}. Every row against the minute. Who stayed inside?"
+- new: "He's warned you. One more miss and {he reads it himself | he takes it off you, and the floor will know}. Every row against the minute. Who stayed inside?"
+- new: "He's on his floor, so it's me you read it to. Doors before faces. The archives keep the door audits." / "He's on his floor, so it's me you read it to. Tell me you can name the leak, and I'll ask you what he would."
+- new reading: "Two questions, the ones he'd ask. When was the plan opened?" / "That's a door moving or the file closing. When did it open? Read it again and call me back." / "Who was behind the lab door at 10:38, and still inside?" / "Read the door against the minute, not the man. Who was still inside at 10:38? Call me back." / "In at 10:15, out at 11:43. Cipher was gone by 10:32, and Phantom was on a plane." / "Nightshade. I trained with him." / "I'll put it in front of the Director when he can stand. You finish the chain."
+
+HaX, in person (`m08_agent_0x99.ink`):
+- "Don't make me say a name." + "I used to envy one of them for how calm he is. Tonight I don't. Go and prove it, so I don't have to guess." → "Don't make me say a name. You've been watching them, I can tell." + "Watch the door log instead. Doors don't have friends."
+- "Get me evidence. Let the box say it." → "Get me evidence. Let the doors say it."
+
+Netherton (`m08_director_netherton.ink`):
+- new: "Once more like that and I take this off you, and I shall have to ask questions on the floor to do it." / "Once more like that and I read it myself, and the file will say that I had to."
+- new (all flags in): "The chain is in. He goes down to the suite now. The code is 5386." (the "through the relay" line stays before that)
+- new: "Good. Keep it to yourself until it is more than a feeling."
+
+Netherton, debrief (`m08_closing_debrief.ink`):
+- new narrator: "Your phone buzzes once in the corridor. HaX: \"He said it to you? 'Afterwards, not during.' I was taught that line, and I say it to every agent I run. Same classroom, 0x00. Don't ask me whose yet.\""
+- "HaX read the door audit against the box while I was on my office floor. The name reached me secondhand." → "You read the door audit to HaX while I was on my office floor. The name reached me secondhand."
+- new: "And he knew we were coming before we came. Whatever he had time to clear, we will never see now."
+
+Nightshade, confrontation: new "You put it on {Cipher|Phantom} in front of the floor. Walls are thin here. So I tidied. Not well enough, it seems."
+
+Nightshade, interview: "Yes. I told you: I'm always here. You've proved I keep long hours, 0x00. Bring me the account." → same, with "I'm always here." when he wasn't asked for an alibi.
+
+Cipher:
+- "Whoever opened that plan did it from a Crypto Lab terminal. My desk is on the ops floor. Do the geography." → "My desk is out on the ops floor. Do the geography."
+- new: "There's a project sheet in there you're not cleared for. Read it anyway. You'll only pick the lock otherwise." / "Go on, then. Add it to the pile. 0x23, the one with the stickers."
+
+Phantom: new narrator "He laughs, and fishes it out of his jacket." / "0x88, the one with the luggage tag. Mind the folded sheet. It took me a week."
+
+Off-duty agent: new "Word is you've been calling people traitors to their faces. Whole floor's heard. If one of them is the mole, so has he."
+
+Open for cycle 3: confirm J1-J5 in the files; judge the J2 residual (only 0x47 is ever tidied); a browser pass of an accusation, the warning at two misreads, the Director-KO reading on the phone and the three lockers (none played in a browser this round); the locker row's look for the dressing stage (the 0x23 sprite rendered without the lock overlay the other two showed in `lockers.png`, probably the in-range highlight; check).

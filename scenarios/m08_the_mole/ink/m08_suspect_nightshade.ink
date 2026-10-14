@@ -89,10 +89,11 @@ Agent 0x47 'Nightshade': Of everyone in this building, they picked the one perso
     ~ nightshade_influence -= 1
     # influence_decreased
     -> hub
-+ { found_badge_audit and asked_alibi and not asked_audit } [The door log has you in this lab from 10:15 to 11:43 that morning.]
+// PASS 5 (alignment C2, n5): no hidden asked_alibi prerequisite.
++ { found_badge_audit and not asked_audit } [The door log has you in this lab from 10:15 to 11:43 that morning.]
     ~ asked_audit = true
     ~ nightshade_audit_confirmed = true
-    Agent 0x47 'Nightshade': Yes. I told you: I'm always here. You've proved I keep long hours, 0x00. Bring me the account. #set_global:nightshade_audit_confirmed:true
+    Agent 0x47 'Nightshade': Yes. {asked_alibi:I told you: I'm always here.|I'm always here.} You've proved I keep long hours, 0x00. Bring me the account. #set_global:nightshade_audit_confirmed:true
     -> hub
 + { (asked_audit or asked_training) and not gave_locker_key } [Your locker in the break room. I want to see inside it.]
     ~ gave_locker_key = true

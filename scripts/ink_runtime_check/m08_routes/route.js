@@ -72,6 +72,8 @@ for (const [roomId, room] of Object.entries(scenario.rooms)) {
 const TASKS = {};
 for (const aim of scenario.objectives || []) for (const t of aim.tasks) TASKS[t.taskId] = t.status === 'locked' ? 'locked' : 'open';
 
+// Alignment C2 (n10): print usage instead of crashing with no argument.
+if (!process.argv[2]) { console.error('usage: node scripts/ink_runtime_check/m08_routes/route.js scripts/ink_runtime_check/m08_routes/<name>.json'); process.exit(2); }
 const route = JSON.parse(fs.readFileSync(process.argv[2], 'utf8'));
 Object.assign(G, route.globals || {});
 const stories = {};

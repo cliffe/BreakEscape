@@ -14,6 +14,8 @@ VAR asked_bag = false
 VAR hax_person_met = false
 // PASS 5 (M3): the go-bag is gone if he was tipped off before the locker was opened.
 VAR nightshade_tidied = false
+// PASS 5 (alignment C2, J4): what was in the go-bag's lining, once he is named.
+VAR go_bag_lining_known = false
 
 === start ===
 { hax_person_met: -> return_visit }
@@ -34,15 +36,17 @@ Agent HaX: Still here. The coffee's still cold.
     Agent HaX: I can't work out which face it was. And I'm frightened of the second I can.
     -> hub
 + [Who's your money on?]
+    // PASS 5 (alignment C2, n2, n3): nothing here narrows the field, and under
+    // Option B the doors give the name, not the box.
     { nightshade_suspected:
-        Agent HaX: Don't make me say a name.
-        Agent HaX: I used to envy one of them for how calm he is. Tonight I don't. Go and prove it, so I don't have to guess.
+        Agent HaX: Don't make me say a name. You've been watching them, I can tell.
+        Agent HaX: Watch the door log instead. Doors don't have friends.
     - else:
         Agent HaX: Don't make me pick. The second I say a name out loud, one of my friends is a murderer.
-        Agent HaX: Get me evidence. Let the box say it.
+        Agent HaX: Get me evidence. Let the doors say it.
     }
     -> hub
-+ { found_go_bag and not nightshade_tidied and not asked_bag } [Nightshade had a bag packed.]
++ { go_bag_lining_known and not nightshade_tidied and not asked_bag } [Nightshade had a bag packed.]
     ~ asked_bag = true
     Agent HaX: Of course he did. Yours has picks in it. His had a passport.
     Agent HaX: And he's still here. Either he's very sure of himself or he's waiting for someone. I don't like either.

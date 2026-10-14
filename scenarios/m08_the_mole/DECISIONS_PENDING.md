@@ -31,3 +31,6 @@ Option B makes the door audit, not the box, name the mole. That holds only if th
 
 ## E4. No `nameVariants` for items (engine, noted while doing M3)
 `textVariants` and `observationVariants` resolve on any object (`utils/conditional-text.js`), but item names don't. After a tip-off the go-bag still lists as "Go-Bag -- Locker 0x47" while its text says the shelf is empty. Recommendation: none needed for m08 (the text carries it); backlog if other missions want it.
+
+## E5. Dusting panel and lock/container headers ignore variants (engine, alignment round 2)
+`dusting-game.js:393-395` prints the item's raw `observations` and `text`, and the lockpick screen and container header print the raw `observations`, so `textVariants`/`observationVariants` never reach them (round 1 browser N1, N4). m08 works around it (base fields true in every state, content in variants); nothing in m08 needs the engine change. Recommendation: resolve both fields with `resolveObjectField` (`utils/conditional-text.js`) in those three places, for other missions. Not blocking.
