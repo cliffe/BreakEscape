@@ -54,3 +54,8 @@ m07 now has its own building, Pacific Northwest Regional Grid Control (six `room
 
 ## L1. Situation board after step one runs (lighting cycle 2, m2)
 When the clock expires (`countdown_expired`) HaX says "Seattle's dark. Step one ran.", the countdown face changes to SEQUENCE RUNNING / STEP 01, but the ops-floor video wall (`situation_board`, `scenario.json.erb`, ops floor objects) still reads "SCHEDULED SEQUENCE -- PENDING" and its observation says "Every panel on it is amber." So the wall's light stays amber in that state (deepest orange, strongest breathe) and only the control room goes red. **Option A (recommended):** add a `textVariants`/`observationVariants` entry on `situation_board` for `countdown_expired && !grid_saved` (e.g. "SCHEDULED SEQUENCE -- RUNNING / 01 SEATTLE METRO -- EXECUTED / 02-04 PENDING"; "One panel on the left has gone red."), plus a sprite variant with one red panel drawn like the countdown faces in `make_pnw_props.py`; the lighting then turns the wall red (one config line). Object text, not spoken, so no audio cost; it is outside the lighting stage's remit, so it waits for the orchestrator. **Option B:** leave as is.
+
+**Orchestrator on L1 (2026-10-14):** mission-local and reversible, so going ahead in the next fix round: a video-wall text variant and a one-red-panel sprite for `countdown_expired`, then turn the wall's light red. Overrule if you'd rather keep it amber.
+
+## D-POV. Conversation (POV) backgrounds (parked)
+Lighting closed 2026-10-14, so `room-pov-background` is next. It uses metered Gemini images (about one per room plus retries, six rooms). Needs your go-ahead on the batch. Characters are parked for your picks as usual.
