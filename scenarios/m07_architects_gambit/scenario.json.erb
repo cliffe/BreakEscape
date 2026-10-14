@@ -197,7 +197,7 @@ scada_password = "CascadeWindow19"
           { "text": "TACTICAL TEAM: Operation Trojan Horse — 840 signing keys burned, no backdoor shipped", "style": "entry", "condition": "globalVars.team_assignment === 'trojan_horse' && !globalVars.team_redirected" },
           { "text": "TACTICAL TEAM: Operation Trojan Horse, redirected mid-flight — injection stopped at 30%, dispatch keys reached first", "style": "entry", "condition": "globalVars.team_redirected" },
           { "text": "TACTICAL TEAM: Operation Meltdown — 4,200 hospitals ran a normal night", "style": "entry", "condition": "globalVars.team_assignment === 'meltdown'" },
-          { "text": "TACTICAL TEAM: Never committed — stood by in Denver for the duration", "style": "warning", "condition": "!globalVars.team_assignment" },
+          { "text": "TACTICAL TEAM: Never committed — held over Denver for the duration", "style": "warning", "condition": "!globalVars.team_assignment" },
           { "text": "PROJECTION CORRECTED: Trojan Horse dormancy nine days, not ninety — EHR and dispatch keys on the manifest", "style": "entry", "condition": "globalVars.projection_revised" },
           { "text": "REDIRECT OFFERED WITH THE WINDOW OPEN: weighed, and held", "style": "entry", "condition": "globalVars.redirect_declined && !globalVars.team_redirected" },
           { "text": "CORRECTION FOUND WITH THE WINDOW OPEN: the team was not moved", "style": "warning", "condition": "globalVars.revision_found_open && !globalVars.revision_before_commit && !globalVars.redirect_declined && !globalVars.team_redirected" },
@@ -743,7 +743,7 @@ scada_password = "CascadeWindow19"
   "rooms": {
 
     "security_checkpoint": {
-      "type": "room_security",
+      "type": "room_pnw_checkpoint",
       "door_sign": "Security Checkpoint",
       "connections": {
         "east": "operations_floor"
@@ -1478,19 +1478,19 @@ scada_password = "CascadeWindow19"
               "eventPattern": "global_variable_changed:architect_t10_played",
               "condition": "value === true && !globalVars.grid_saved && !globalVars.architect_t5_played && globalVars.cascade_armed === true",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 500, "message": "You logged in, Agent 0x00. A word about doors.", "targetKnot": "start" }
+              "sendTimedMessage": { "delay": 500, "message": "A word about doors, Agent 0x00.", "targetKnot": "start" }
             },
             {
               "eventPattern": "global_variable_changed:architect_t5_played",
               "condition": "value === true && !globalVars.grid_saved",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 500, "message": "Five minutes. Say the other two out loud.", "targetKnot": "start" }
+              "sendTimedMessage": { "delay": 500, "message": "Five minutes, Agent 0x00.", "targetKnot": "start" }
             },
             {
               "eventPattern": "global_variable_changed:architect_t1_played",
               "condition": "value === true && !globalVars.grid_saved",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 500, "message": "This was never about the power grid.", "targetKnot": "start" }
+              "sendTimedMessage": { "delay": 500, "message": "One minute, Agent 0x00.", "targetKnot": "start" }
             },
             <%# The sign-off: the grid is saved at the console, whose container is
                 open at that moment. When it closes (minigame_completed, or
@@ -1563,6 +1563,7 @@ scada_password = "CascadeWindow19"
           "type": "pc",
           "id": "badge_printer",
           "name": "Contractor Badge Station",
+          "position": "as-type:pnw_badge_printer",
           "takeable": false,
           "locked": true,
           "lockType": "pin",
@@ -1589,8 +1590,10 @@ scada_password = "CascadeWindow19"
           "type": "notes",
           "id": "visitor_log",
           "name": "Audited Visitor Log",
+          "position": "as-type:notes_ledger",
           "takeable": false,
           "readable": true,
+          "readDisplay": "gameDisplay",
           "observations": "The bound visitor log. NERC compliance requires it, so it is immaculate -- which is exactly why it is worth reading.",
           "observationDisplay": "gameDisplay",
           "text": "PACIFIC NORTHWEST REGIONAL GRID CONTROL -- VISITOR AND CONTRACTOR LOG\n(NERC CIP-006 visitor control. Site retention: 3 years. Do not remove from the desk.)\n\n... entries 1-214 omitted ...\n\n215  14 JUN  J. MERCER          OptiGrid Solutions   SCADA stack -- scheduled maintenance   ESCORT: R. HOLLIS\n216  15 JUN  J. MERCER          OptiGrid Solutions   SCADA stack -- scheduled maintenance   ESCORT: R. HOLLIS\n217  15 JUN  E. RODRIGUEZ       OptiGrid Solutions   Server hall -- cabling survey          ESCORT: R. HOLLIS\n218  16 JUN  J. MERCER          OptiGrid Solutions   SCADA stack -- scheduled maintenance   ESCORT: NONE / CREDENTIALS RENEWED\n219  16 JUN  T. PARK            OptiGrid Solutions   Plant -- keypad service                ESCORT: R. HOLLIS\n\n... entries 220-388 omitted ...\n\nHandwritten in the margin beside 218, in a different pen: \"who signed this off??\"",
@@ -1602,6 +1605,7 @@ scada_password = "CascadeWindow19"
           "type": "smartscreen",
           "id": "checkpoint_evacuation_board",
           "name": "Evacuation Status Board",
+          "position": "as-type:pnw_evac_board",
           "takeable": false,
           "readable": true,
           "observations": "The muster board. Somebody has been crossing names off it in marker, fast, and then stopped partway down.",
@@ -1611,7 +1615,7 @@ scada_password = "CascadeWindow19"
     },
 
     "operations_floor": {
-      "type": "room_office",
+      "type": "room_pnw_ops",
       "door_sign": "Operations Floor",
       "connections": {
         "west": "security_checkpoint",
@@ -1633,11 +1637,11 @@ scada_password = "CascadeWindow19"
           "onPickup": { "setVariable": { "maintenance_key_found": true } }
         },
         {
-          "_comment": "PASS 2: was type command_board, which opens the Major Incident Command Board minigame (interactions.js:970) built for another scenario. Now a readable smartscreen drawn with the same sprite.",
+          "_comment": "PASS 2: was type command_board, which opens the Major Incident Command Board minigame (interactions.js:970) built for another scenario. Now a readable smartscreen drawn with the same sprite. PASS 5 (room dressing): drawn as the ops floor video wall (as-type:pnw_video_wall), sprite override removed.",
           "type": "smartscreen",
-          "sprite": "command_board",
           "id": "situation_board",
           "name": "Grid Situation Board",
+          "position": "as-type:pnw_video_wall",
           "takeable": false,
           "readable": true,
           "observations": "The wall-sized situation board the whole floor works from. Every panel on it is amber.",
@@ -1648,6 +1652,7 @@ scada_password = "CascadeWindow19"
           "type": "chart",
           "id": "substation_map",
           "name": "147-Substation Wall Map",
+          "position": "as-type:pnw_substation_map",
           "takeable": false,
           "readable": true,
           "observations": "The regional substation map, ten feet wide. Twenty-three of the transformer symbols have been circled in red marker by somebody who did not have long.",
@@ -1671,6 +1676,7 @@ scada_password = "CascadeWindow19"
           "type": "pc",
           "id": "ops_floor_workstation",
           "name": "Abandoned Operator Workstation",
+          "position": "as-type:pnw_console_pos",
           "takeable": false,
           "observations": "An operator position, chair pushed back, coffee still warm. The screen is still logged in to the read-only grid view.",
           "readable": true,
@@ -1682,7 +1688,7 @@ scada_password = "CascadeWindow19"
     },
 
     "server_room": {
-      "type": "room_servers",
+      "type": "room_pnw_servers",
       "locked": true,
       "lockType": "rfid",
       "requires": "server_zone_badge",
@@ -1707,7 +1713,7 @@ scada_password = "CascadeWindow19"
           "storyPath": "scenarios/m07_architects_gambit/ink/m07_npc_elena_rodriguez.json",
           "voice": {
             "name": "Leda",
-            "style": "A contract electrical engineer in her early thirties who worked out an hour ago what her cabling survey was for. Consistent Californian American accent with Mexican-American Spanish inflection throughout -- do not shift to any other accent. Mid-range pitch. Frightened and entirely competent at the same time: the technical sentences come out steady and fast, the ones about herself do not.",
+            "style": "A grid engineer in her early thirties who helped build tonight's outage believing nobody would be hurt, and has just read otherwise. Consistent Californian American accent with Mexican-American Spanish inflection throughout -- do not shift to any other accent. Mid-range pitch. Frightened and entirely competent at the same time: the technical sentences come out steady and fast, the ones about herself do not.",
             "language": "en-US"
           },
           "currentKnot": "start",
@@ -1831,6 +1837,7 @@ scada_password = "CascadeWindow19"
           "type": "servers",
           "id": "scada_backup_server",
           "name": "SCADA Backup Server",
+          "position": "as-type:pnw_backup_server",
           "takeable": false,
           "observations": "The backup server for the control stack, and since June the host driving the cascade. Its NFS export is world-readable, which is a configuration nobody chose and everybody inherited, and it is the reason there is anything to find tonight. You reach it from the VM terminal, not from here."
         },
@@ -1838,8 +1845,10 @@ scada_password = "CascadeWindow19"
           "type": "notes",
           "id": "rack_cabling_note",
           "name": "Cabling Survey Note",
+          "position": "as-type:notes_clip",
           "takeable": false,
           "readable": true,
+          "readDisplay": "gameDisplay",
           "observations": "A survey note clipped to the rack door, in a careful engineer's hand.",
           "text": "Rack 4 -- OptiGrid cabling survey, 15 JUN\n\nRun from rack 4 down the plant riser to the cable vault. Vault door is on the plant keypad, not the badge system -- code is on the maintenance log in the generator hall, per site standard.\n\nNote for the file: I was told this survey was for the demonstration outage only. If anything gets left in place after, that is not what I signed for.\n\n-- E.R."
         }
@@ -1847,7 +1856,7 @@ scada_password = "CascadeWindow19"
     },
 
     "scada_control": {
-      "type": "room_control_1x2gu",
+      "type": "room_pnw_scada",
       "locked": true,
       "lockType": "password",
       "requires": "<%= scada_password %>",
@@ -1932,6 +1941,7 @@ scada_password = "CascadeWindow19"
           "type": "smartscreen",
           "id": "cascade_countdown_display",
           "name": "Cascade Countdown Display",
+          "position": "as-type:pnw_countdown",
           "takeable": false,
           "readable": true,
           "observations": "The countdown display, four feet wide. It is not a warning. It is a schedule.",
@@ -1960,7 +1970,7 @@ scada_password = "CascadeWindow19"
     },
 
     "generator_room": {
-      "type": "room_battery_hall",
+      "type": "room_pnw_genhall",
       "locked": true,
       "lockType": "key",
       "requires": "generator_maintenance_key",
@@ -1978,8 +1988,10 @@ scada_password = "CascadeWindow19"
           "type": "notes",
           "id": "maintenance_log",
           "name": "Plant Maintenance Log",
+          "position": "as-type:notes_plantlog",
           "takeable": false,
           "readable": true,
+          "readDisplay": "gameDisplay",
           "observations": "The plant log, chained to the wall beside the transfer switch. Every entry is initialled. The site standard is to write the keypad code in it, because the alternative is an engineer locked out of the vault at three in the morning.",
           "observationDisplay": "gameDisplay",
           "text": "BACKUP GENERATION HALL -- PLANT MAINTENANCE LOG\n\n02 JUN  Weekly load test, gensets 1-3. Pass. -- T.O.\n09 JUN  Weekly load test, gensets 1-3. Pass. -- T.O.\n15 JUN  Cable vault opened for OptiGrid cabling survey. Escorted. -- T.O.\n16 JUN  Transfer switch firmware -- vendor update applied out of window. NOT MY CALL. -- T.O.\n16 JUN  Cable vault keypad reset by OptiGrid after the survey. New code not passed to plant. Chased twice. -- T.O.\n\nSTANDING NOTE (do not remove):\n  Cable vault keypad: 2291   VOID -- see 16 JUN\n  The vault is on the plant keypad, NOT the badge system. If the badge system\n  is down you can still get in. If the keypad is down, phone Facilities and wait.",
@@ -1991,6 +2003,7 @@ scada_password = "CascadeWindow19"
           "type": "batrack",
           "id": "backup_transfer_switch",
           "name": "Backup Power Transfer Switch",
+          "position": "as-type:pnw_ats",
           "takeable": false,
           "readable": true,
           "observations": "The automatic transfer switch -- the thing that moves the building onto its own generators when the grid drops it. Somebody has already had the cover off. The rating plate riveted to the door reads ATS-1, S/N 0098-<%= vault_pin %>.",
@@ -2009,6 +2022,7 @@ scada_password = "CascadeWindow19"
           "type": "servers",
           "id": "genset_control_panel",
           "name": "Genset Control Panel",
+          "position": "as-type:pnw_genset_panel",
           "takeable": false,
           "observations": "Three generators, 72 hours of rating between them, all reading ready. For the moment."
         }
@@ -2016,7 +2030,7 @@ scada_password = "CascadeWindow19"
     },
 
     "cable_vault": {
-      "type": "room_archive_1x2gu",
+      "type": "room_pnw_vault",
       "locked": true,
       "lockType": "pin",
       "requires": "<%= vault_pin %>",
@@ -2088,6 +2102,7 @@ scada_password = "CascadeWindow19"
           "type": "cable",
           "id": "vault_trunk_runs",
           "name": "Trunk Cable Runs",
+          "position": "as-type:pnw_splice",
           "takeable": false,
           "readable": true,
           "observations": "The trunk runs out to the regional substations, and one splice in the middle of them that is six months newer than everything around it.",
@@ -2099,6 +2114,7 @@ scada_password = "CascadeWindow19"
           "type": "notes",
           "id": "tomb_gamma_dossier",
           "name": "Recovered Site Reference -- 'Tomb Gamma'",
+          "position": "as-type:notes_tucked",
           "takeable": true,
           "readable": true,
           "observations": "A printout stuffed behind the splice housing, mostly redacted by whoever printed it.",

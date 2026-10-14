@@ -314,9 +314,9 @@ def room_tilesets(name: str) -> list[dict]:
                 ts["name"] = east
                 ts["image"] = ts["image"].replace("room18.png", f"{east}.png")
     elif name in UNI_FLOOR_SHEETS or name in ZDS_FLOOR_SHEETS or name in AES_FLOOR_SHEETS or name in HCE_FLOOR_SHEETS \
-            or name in QDC_FLOOR_SHEETS:
+            or name in QDC_FLOOR_SHEETS or name in PNW_FLOOR_SHEETS:
         floor = (UNI_FLOOR_SHEETS.get(name) or ZDS_FLOOR_SHEETS.get(name) or AES_FLOOR_SHEETS.get(name)
-                 or HCE_FLOOR_SHEETS.get(name) or QDC_FLOOR_SHEETS[name])
+                 or HCE_FLOOR_SHEETS.get(name) or QDC_FLOOR_SHEETS.get(name) or PNW_FLOOR_SHEETS[name])
         for ts in tilesets:
             if ts.get("name") == "room6":
                 ts["name"] = floor
@@ -402,10 +402,23 @@ QDC_FLOOR_SHEETS = {
     "room_qdc_servers": "room_qdc_servers",          # raised floor, cold aisles
     "room_qdc_vault": "room_qdc_vault",              # dark raised floor, red two-person line
 }
+# Pacific Northwest Regional Grid Control (m07): room6 repainted by
+# room_gen/make_pnw_tileset.py, an evergreen line on every wall: pale grey at the
+# checkpoint, dark slate on the ops floor, teal-graphite in the server hall, plum
+# with a red line in SCADA control, sage blockwork in the generator hall (a wide
+# sheet, AES_WIDE_SHEETS), board-marked concrete with a yellow line in the vault.
+PNW_FLOOR_SHEETS = {
+    "room_pnw_checkpoint": "room_pnw_checkpoint",  # grey terrazzo, fir-and-bolt inlay, walk-off mat
+    "room_pnw_ops": "room_pnw_ops",                # dark blue carpet, lighter aisle, supervisor's dais
+    "room_pnw_servers": "room_pnw_servers",        # raised floor, a perforated cold aisle
+    "room_pnw_scada": "room_pnw_scada",            # dark anti-static tiles
+    "room_pnw_vault": "room_pnw_vault",            # wet concrete, cable trench, sump
+}
 # 20x10 halls whose floor is one 640px sheet cut in two (west half, east half).
 AES_WIDE_SHEETS = {
     "room_aes_hall1": ("room_aes_hall1_w", "room_aes_hall1_e"),
     "room_aes_hall2": ("room_aes_hall2_w", "room_aes_hall2_e"),
+    "room_pnw_genhall": ("room_pnw_genhall_w", "room_pnw_genhall_e"),  # m07 backup generation hall
 }
 
 
@@ -977,6 +990,51 @@ WALL_MOUNTED_EXTRAS = {
     "qdc_it_notice",
     "qdc_whiteboard_keys",
     "qdc_two_person_sign",
+    "pnw_logo_sign",
+    "pnw_evac_board",
+    "pnw_nerc_notice",
+    "pnw_muster_sign",
+    "pnw_video_wall",
+    "pnw_substation_map",
+    "pnw_countdown",
+    "pnw_mimic",
+    "notes_plantlog",
+    "pnw_genplate_one",
+    "pnw_genplate_two",
+    "pnw_genplate_three",
+    "pnw_ear_sign",
+    "pnw_cable_ladder",
+    "pnw_splice",
+    "pnw_ops_sign",
+    "pnw_server_sign",
+    "pnw_scada_sign",
+    "pnw_genhall_sign",
+    "pnw_vault_sign",
+    "pnw_security_sign",
+    "pnw_hose_reel",
+    "hq_logo_sign",
+    "hq_logo_small",
+    "hq_memorial",
+    "hq_alert_screen",
+    "hq_ops_board",
+    "hq_tactical_board",
+    "hq_evidence_wall",
+    "hq_disposition",
+    "hq_one_way_mirror",
+    "hq_recording",
+    "hq_badge_reader",
+    "hq_poster_postit",
+    "hq_poster_ears",
+    "hq_poster_red",
+    "hq_cipher_board",
+    "hq_ops_sign",
+    "hq_intel_sign",
+    "hq_crypto_sign",
+    "hq_server_sign",
+    "hq_break_sign",
+    "hq_director_sign",
+    "hq_archive_sign",
+    "hq_interview_sign",
 }
 
 
@@ -4274,6 +4332,274 @@ def room_qdc_vault():
     return r.build("room_qdc_vault")
 
 
+# ---------------------------------------------------------------------------
+# Pacific Northwest Regional Grid Control (m07 "The Architect's Gambit"): a public
+# utility's grid control facility outside Portland, at night, mid-evacuation.
+# Walls and floors: room_gen/make_pnw_tileset.py; hand-drawn signs, boards, screens,
+# the plant log, the cable ladder and the splice: room_gen/make_pnw_props.py
+# (pnw_*, notes_*); gensets, transfer switch, control cabinets, consoles, x-ray,
+# arch, batteries, day tank: PixelLab (pnw_*). These maps are m07's own, so the
+# shared room_security, room_office, room_servers, room_control_1x2gu,
+# room_battery_hall and room_archive_1x2gu are untouched.
+# Coordinates: x = left edge, y = feet.
+# ---------------------------------------------------------------------------
+
+def room_pnw_checkpoint():
+    """
+    2×2 GU security checkpoint, the start room: grey terrazzo with the PNW
+    fir-and-bolt inlay at the spawn, a walk-off mat in the east door mouth
+    (room_pnw_checkpoint). Back wall: the PACIFIC NORTHWEST REGIONAL GRID CONTROL
+    wordmark over the guard counter, the NERC escort notice and the muster sign under
+    it, the evacuation muster board (clear floor under it), the CCTV monitors, a
+    camera. The guard counter NW with the badge station, a phone, the radio charger
+    and the open visitor ledger; a drinks machine below the E door; two plastic waiting
+    seats on the west wall; the screening lane along the south (x-ray, the arch standing
+    on the yellow queue line, stanchions); grey lockers SE; extinguisher and call point.
+    Doors: E (row 2). The spawn (the inlay, about 160,160) and Hollis's patrol
+    (x 96-224, feet 208-245) are clear floor; the E-door mouth (x 232-288,
+    y 64-112) is clear.
+    Slots (as-type): pnw_badge_printer1 (Contractor Badge Station: a card printer with
+    the uncollected badge in its tray) and notes_ledger1 (Audited Visitor Log) on the
+    counter, 50 px+ apart; pnw_evac_board1 (as-type, Evacuation Status Board).
+    """
+    r = _Uni()
+    r.item("pnw_logo_sign1", 36.0, 34.0)
+    r.item("pnw_nerc_notice1", 38.0, 56.0)
+    r.item("pnw_muster_sign1", 110.0, 58.0)
+    r.item("pnw_evac_board1", 156.0, 56.0)
+    r.item("cctv_monitors1", 214.0, 54.0)
+    r.item("cctv_camera1", 264.0, 34.0)
+    desk = r.table("reception_counter1", 34.0, 122.0, kind="objects")   # x 34-144, top 78
+    r.on(desk, "pnw_badge_printer1", 0.20, 0.36, layer="conditional_table_items")   # Contractor Badge Station (as-type; cycle 2 m10)
+    r.on(desk, "phone1", 0.44, 0.34)
+    r.on(desk, "aes_radio_charger1", 0.58, 0.34)
+    r.on(desk, "notes_ledger1", 0.84, 0.36, layer="conditional_table_items")  # Audited Visitor Log
+    r.solid("drinks_vending1", 244.0, 174.0)                         # below the E door mouth (cycle 2 m11: not the ops floor's cooler)
+    r.item("hospital_chair2", 36.0, 200.0)                           # two plastic waiting seats facing east (static)
+    r.item("hospital_chair2", 36.0, 232.0)
+    r.item("fire_alarm_point1", 14.0, 140.0)
+    r.item("fire_extinguisher1", 14.0, 176.0)
+    # the screening lane along the south wall
+    r.solid("pnw_xray1", 36.0, 300.0, depth=12)
+    r.solid("pnw_arch1", 108.0, 262.0, depth=8)                      # standing in the lane on the queue line (cycle 2 m12)
+    r.solid("stanchions1", 142.0, 296.0, depth=8)
+    r.solid("aes_lockers_grey1", 224.0, 302.0, depth=12)
+    r.item("aes_ppe_cabinet1", 290.0, 166.0)                        # PPE cabinet on the east wall below the door
+    r.solid("coat_stand1", 262.0, 244.0, depth=6)                   # (cycle 3 m-G)
+    r.item("bin1", 196.0, 300.0)
+    return r.build("room_pnw_checkpoint")
+
+
+def room_pnw_ops():
+    """
+    2×2 GU operations floor, the setting's signature room: dark blue carpet tiles, a
+    lighter aisle door to door along the top, a raised grey dais at the back for the
+    shift supervisor (room_pnw_ops). Back wall: the 147-substation wall map (red
+    rings) and the amber situation video wall, five screens wide. Two rows
+    of three operator consoles facing the wall, a 32 px gangway between the second
+    and third in each row; position 3 (front row, east) is the abandoned workstation,
+    its chair pushed back. On the dais the supervisor's desk with the plant key and
+    the handover sheet in the tray, a laptop and a phone, his chair shoved aside.
+    Coffee station and water cooler SW, binder shelves SE, sanitiser and call point west,
+    extinguisher east.
+    Doors: W and E (row 2): the aisle y 64-112 runs clear door to door.
+    Slots: pnw_substation_map1 (as-type, 147-Substation Wall Map), pnw_video_wall1
+    (as-type, Grid Situation Board), pnw_console_pos1 (as-type, Abandoned Operator
+    Workstation), key and notes3 on the supervisor's desk (Plant Maintenance Key,
+    Shift Handover Sheet) 40 px+ apart. Only the static, angled chair stands near
+    position 3 (rolling chairs are tap candidates).
+    """
+    r = _Uni()
+    r.item("pnw_substation_map1", 36.0, 56.0)
+    r.item("pnw_video_wall1", 114.0, 58.0)                          # x 114-273: wall-sized (cycle 2 m4)
+    # front row (feet 156): A, B, gangway, position 3
+    con_a = r.table("pnw_console2", 40.0, 156.0, kind="objects")
+    r.table("pnw_console1", 104.0, 156.0, kind="objects")
+    r.solid("pnw_console_pos1", 200.0, 156.0, depth=12)        # Abandoned Operator Workstation (items layer: as-type only searches item layers)
+    r.item("chair-grey-1", 60.0, 178.0)
+    r.item("chair-grey-1", 124.0, 178.0)
+    r.item("aes_office_chair1", 236.0, 204.0)                    # pushed well back; static, one of the room's two angled pieces
+    # position 3's mug is drawn into pnw_console_pos1 (a separate sprite drew behind the console: cycle 3 m-A)
+    r.on(con_a, "office-misc-headphones", 0.30, 0.55)              # a headset dropped on console A
+    # back row (feet 236)
+    r.table("pnw_console1", 40.0, 236.0, kind="objects")
+    r.table("pnw_console2", 104.0, 236.0, kind="objects")
+    r.table("pnw_console1", 200.0, 236.0, kind="objects")
+    r.item("chair-grey-1", 60.0, 258.0)
+    r.item("chair-grey-1", 220.0, 258.0)                          # console E's chair is gone (cycle 2: it sat within tap reach of the key)
+    # the supervisor's dais (x 96-224, y 248-306 on the sheet)
+    sup = r.table("desk1", 118.0, 304.0)                          # x 118-196, top 265 (cycle 2 m1: clear of back-row chair E)
+    r.on(sup, "key", 0.14, 0.40, layer="conditional_table_items")       # Plant Maintenance Key
+    r.on(sup, "laptop1", 0.46, 0.36)
+    r.on(sup, "phone2", 0.64, 0.34)
+    r.on(sup, "notes3", 0.86, 0.40, layer="conditional_table_items")    # Shift Handover Sheet
+    r.item("pnw_office_chair_m1", 86.0, 306.0)                      # shoved aside; static, so it never rolls into the tray (cycle 2 m1)
+    r.solid("coffee_station1", 34.0, 300.0)
+    r.solid("water_cooler1", 60.0, 300.0)
+    r.solid("binder_shelves1", 238.0, 300.0)                     # front-on (the photocopier was three-quarter: cycle 3 m-B)
+    r.item("sanitiser_dispenser1", 14.0, 204.0)
+    r.item("fire_alarm_point1", 14.0, 150.0)
+    r.item("fire_extinguisher1", 292.0, 170.0)
+    return r.build("room_pnw_ops")
+
+
+def room_pnw_servers():
+    """
+    2×2 GU server hall: raised floor with a perforated cold aisle, teal-graphite
+    walls with the evergreen line (room_pnw_servers). Back wall: a cable tray over a
+    row of seven racks (rack 4 has the cabling survey note clipped to its door),
+    SERVER HALL / RESTRICTED. A middle row of racks ending in the SCADA backup server
+    (its own blue rack with a red BKP tag). Two desks to the south: the VM terminal
+    and the SAFETYNET relay. Extinguisher and suppression panel on the west wall.
+    Doors: W (row 2), N (NW corner) and S (SW corner): all on the west side, so the
+    west lane x 32-76 runs clear from door to door and the kit fills the east.
+    The generator hall covers the bottom two rows (feet <= 256). Elena (3,7.5)
+    stands on clear floor west of the desks.
+    Slots: notes_clip1 (as-type) on rack 4 (Cabling Survey Note), servers4 (SCADA Backup
+    Server), vm-launcher (VM Access Terminal) and flag-station (SAFETYNET Relay
+    Terminal) on their desks, 60 px+ apart; no chairs (tap candidates).
+    """
+    r = _Uni()
+    r.item("cable_tray1", 80.0, 26.0)
+    r.item("pnw_server_sign1", 236.0, 32.0)
+    for i, rack in enumerate(("server_rack1", "server_rack2", "storage_array1", "server_rack1",
+                              "tape_library1", "ups_cabinet1", "server_rack2")):
+        r.solid(rack, 76.0 + 30 * i, 94.0 if rack != "ups_cabinet1" else 92.0)
+    r.item("notes_clip1", 172.0, 96.0, layer="conditional_items")    # clipped to rack 4's door (x 166-196): paper at y 70-84, feet in front of the rack
+    for i in range(5):
+        r.solid("server_rack1", 106.0 + 30 * i, 170.0)
+    r.solid("pnw_backup_server1", 256.0, 170.0)                     # SCADA Backup Server (as-type; front-on, cycle 3 M-1)
+    r.solid("kvm_cart1", 110.0, 200.0, depth=10)                    # Elena's rack terminal, pulled up to the row (cycle 2 M3)
+    r.item("pnw_backup_tag1", 259.0, 171.0)
+    r.item("aes_toolbox1", 232.0, 194.0)                            # left in the aisle when the alarm went (cycle 3 m-I)
+    term = r.table("zds_desk3", 140.0, 248.0, kind="objects")       # x 140-191, 36 px from Elena (cycle 2)
+    r.on(term, "vm-launcher", 0.36, 0.42)                           # standing terminal, no chair
+    relay = r.table("zds_desk1", 208.0, 248.0, kind="objects")      # x 208-286
+    r.on(relay, "flag-station", 0.30, 0.40)
+    r.on(relay, "office-misc-hdd2", 0.78, 0.36)
+    r.item("fire_extinguisher1", 14.0, 150.0)
+    r.item("suppression_panel1", 14.0, 206.0)
+    return r.build("room_pnw_servers")
+
+
+def room_pnw_scada():
+    """
+    2×1 GU (10×6) SCADA control: dark anti-static tiles, plum-slate walls with a red
+    line (room_pnw_scada). Back wall: the countdown display over the operator console
+    (west, so Mercer no longer hides it: cycle 2), the PNW 147 mimic board, SCADA
+    CONTROL / AUTHORISED ONLY behind Mercer. The charcoal master desk with the cascade
+    control position and the signed projection at its east end, beside Mercer. No
+    chair (it stood in the walk-in band).
+    Doors: S (SW corner, x 32-64). The server room covers rows 4-5, so the floor is
+    y 64-128; the band y 104-128 runs clear from the door to Mercer (7,3).
+    Slots: scada_historian (via the object's sprite, Cascade Control System) and
+    notes3 (Signed Casualty Projection) on the master desk; centre taps unique; pnw_countdown1 (as-type, Cascade Countdown Display).
+    """
+    r = _Uni()
+    r.item("pnw_countdown1", 30.0, 46.0)                            # over the operator console, clear of Mercer (cycle 2 M1)
+    r.item("pnw_mimic1", 110.0, 52.0)
+    r.item("pnw_scada_sign1", 212.0, 30.0)                          # decor: Mercer may stand in front of it
+    r.table("pnw_console2", 40.0, 100.0, kind="objects")            # x 40-104
+    master = r.table("pnw_master_desk1", 112.0, 104.0, kind="objects")   # x 112-190, top 65; charcoal (cycle 2 M2)
+    r.on(master, "scada_historian", 0.34, 0.50, layer="conditional_table_items")
+    r.solid("pnw_desk_return1", 190.0, 104.0)                       # the desk reaches Mercer's spot (cycle 3 m-D)
+    r.on(master, "notes3", 0.97, 0.42, layer="conditional_table_items")   # clear of the historian's bounds (cycle 2 m6)
+    r.item("fire_extinguisher1", 14.0, 112.0)
+    r.item("alarm_panel", 290.0, 104.0)
+    return r.build("room_pnw_scada", "10x6_hall")
+
+
+def room_pnw_genhall():
+    """
+    4×2 GU (20×10) backup generation hall: blue-grey epoxy, sage blockwork with the
+    evergreen line (room_pnw_genhall_w/_e). West: the N-door to S-door lane x 32-84
+    behind a yellow walkway line. Back wall at the west end, in a hatched keep-clear
+    box: BACKUP GENERATION HALL, the automatic transfer switch ATS-1, the plant log
+    chained to the wall beside it, the genset control panel. Three yellow gensets in
+    hatched boxes across the middle (GEN 1-3 plates over them), starter batteries,
+    an engine cabinet and a junction box along the back wall; the red fuel day tank
+    in its bund at the east end with the hose reel over it; fuel trunking to the sets.
+    A steel trestle (radios) and a tool chest west of GEN 1; ATS-1's cover on the floor; a cable trolley, a transformer, a spill kit
+    and drums along the south of the east half.
+    Doors: N and S (NW and SW corners). The cable vault covers rows 8-9 of the west
+    half (feet <= 256 for x < 320).
+    Slots (as-type): pnw_ats (Backup Power Transfer Switch), pnw_genset_panel (Genset
+    Control Panel), notes_plantlog (Plant Maintenance Log). rooms.js reads notes_* as
+    its own base type, not notes, so each needs as-type. Top-lefts 36 px+ from
+    each other's centres.
+    """
+    r = _Uni()
+    r.item("pnw_genhall_sign1", 96.0, 30.0)
+    r.solid("pnw_ats1", 100.0, 104.0)                    # ATS-1, top-left 100,50
+    r.item("notes_plantlog1", 138.0, 56.0, layer="conditional_items")   # chained beside the switch (cycle 2 m14: clear of the panel)
+    r.item("pnw_ats_cover1", 156.0, 100.0)                          # its cover off, leaning on the wall (cycle 3 m-F)
+    r.solid("pnw_genset_panel1", 186.0, 104.0)           # x 186-221
+    r.item("aes_hv_danger1", 240.0, 52.0)
+    # back wall kit east of the box
+    r.solid("pnw_batteries1", 270.0, 100.0)
+    r.solid("pnw_engine_cabinet1", 330.0, 100.0)
+    r.solid("pnw_batteries1", 376.0, 100.0)
+    r.solid("pnw_junction_box1", 436.0, 96.0)
+    r.solid("pnw_batteries1", 480.0, 100.0)
+    r.item("aes_hivis_hook1", 300.0, 44.0)                          # a hi-vis vest left on its hook
+    r.item("pnw_ear_sign1", 412.0, 44.0)
+    # the gensets in their hatched boxes (x 240-320, 344-424, 448-528; y 140-214)
+    for x, plate in ((249.0, "pnw_genplate_one1"), (353.0, "pnw_genplate_two1"), (457.0, "pnw_genplate_three1")):
+        r.solid("pnw_genset1", x, 206.0, depth=14)
+        r.item(plate, x + 18.0, 207.0)                              # on the set's skid (cycle 3 m-E: they hung over the batteries)
+    # fuel day tank in its bund (536-604, 66-140), the hose reel on the wall above
+    r.solid("pnw_day_tank1", 541.0, 126.0, depth=12)
+    r.item("pnw_hose_reel1", 566.0, 56.0)
+    # west of GEN 1: a steel bench with the radio charger
+    bench = r.table("aes_trestle2", 116.0, 226.0, kind="objects")   # x 116-168, a steel trestle (cycle 2 m16)
+    r.solid("aes_tool_chest1", 180.0, 230.0)
+    r.on(bench, "aes_radio_charger1", 0.30, 0.34)
+    r.on(bench, "office-misc-cup", 0.70, 0.40)
+    # south of the east half (visible down to y 306)
+    r.solid("pnw_cable_trolley1", 372.0, 298.0)
+    r.solid("pnw_transformer1", 470.0, 300.0, depth=12)
+    r.item("aes_spill_kit1", 540.0, 296.0)
+    r.item("aes_drum1", 572.0, 298.0)
+    r.item("aes_drum1", 588.0, 300.0)
+    r.item("fire_alarm_point1", 14.0, 140.0)
+    r.item("fire_extinguisher1", 14.0, 176.0)
+    return r.build("room_pnw_genhall", "20x10_wide")
+
+
+def room_pnw_vault():
+    """
+    2×1 GU (10×6) underground cable vault: wet concrete with damp patches, a
+    chequer-plate cable trench along the back wall, a sump grate (room_pnw_vault).
+    Board-marked concrete walls with a yellow line. Back wall: CABLE VAULT /
+    CONFINED SPACE, a cable ladder loaded with the trunk runs across the wall, the
+    splice on it (resin joint, site tape, a small grey device nobody registered), a
+    gas detector. The Tomb Gamma printout is wedged in the cable ladder by the
+    splice; Park's trestle east with a battery printer and the intercept; one trench
+    plate lifted where Park works (laid on the floor, cones beside it); a ladder, a
+    cable drum, a ventilation air mover.
+    Doors: N (NW corner): the lane x 32-72, y 64-112 is clear. Nothing to the south;
+    floor y 64-180. Park (4.5,4.5) stands on clear floor between the splice and his
+    trestle.
+    Slots: pnw_splice1 (as-type, Trunk Cable Runs); notes_tucked1 (as-type, Tomb Gamma)
+    in the ladder and notes1 on the trestle (Intercepted Mail); centre taps unique.
+    """
+    r = _Uni()
+    r.item("pnw_vault_sign1", 72.0, 30.0)
+    r.item("pnw_cable_ladder1", 80.0, 54.0)
+    r.item("pnw_splice1", 150.0, 58.0)                   # top-left 150,34
+    r.item("aes_gas_detector2", 262.0, 44.0)
+    r.item("notes_tucked1", 104.0, 52.0, layer="conditional_items")   # wedged in the cable ladder by the splice (cycle 2 m17)
+    r.solid("aes_cones1", 96.0, 102.0, depth=6)                     # round the lifted trench plate
+    bench = r.table("aes_trestle1", 200.0, 120.0, kind="objects")   # x 200-252
+    r.on(bench, "pnw_portable_printer1", 0.28, 0.30)
+    r.on(bench, "notes1", 0.76, 0.34, layer="conditional_table_items")
+    r.item("aes_ladder1", 266.0, 112.0)
+    r.solid("aes_cable_drum1", 196.0, 176.0)
+    r.solid("aes_air_mover1", 84.0, 172.0, depth=8)                 # confined-space ventilation (cycle 2 m19)
+    r.item("fire_extinguisher1", 14.0, 150.0)
+    return r.build("room_pnw_vault", "10x6_hall")
+
+
 def main():
     # Hand-maintained (do not regenerate — edit .tmj in Tiled, then export JSON):
     #   room_hospital_office, room_hospital_cto_office, room_hospital_meeting
@@ -4339,7 +4665,17 @@ def main():
         "room_qdc_security": room_qdc_security,
         "room_qdc_servers": room_qdc_servers,
         "room_qdc_vault": room_qdc_vault,
+        "room_pnw_checkpoint": room_pnw_checkpoint,
+        "room_pnw_ops": room_pnw_ops,
+        "room_pnw_servers": room_pnw_servers,
+        "room_pnw_scada": room_pnw_scada,
+        "room_pnw_genhall": room_pnw_genhall,
+        "room_pnw_vault": room_pnw_vault,
     }
+    # m08's SAFETYNET HQ rooms (room_hq_*) live in room_gen/hq_rooms.py.
+    sys.path.insert(0, str(REF_DIR))
+    import hq_rooms
+    builders.update(hq_rooms.register(sys.modules[__name__]))
     # Optionally restrict to specific rooms (argv) so already-updated rooms are
     # not clobbered, e.g.  python3 scripts/generate_rooms.py room_hospital_hall
     requested = sys.argv[1:]

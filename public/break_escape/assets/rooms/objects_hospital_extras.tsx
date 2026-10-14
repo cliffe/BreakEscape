@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<tileset version="1.10" tiledversion="1.11.2" name="objects/hospital_extras" tilewidth="60" tileheight="60" tilecount="401" columns="0">
+<tileset version="1.10" tiledversion="1.11.2" name="objects/hospital_extras" tilewidth="60" tileheight="60" tilecount="491" columns="0">
  <grid orientation="orthogonal" width="1" height="1"/>
  <tile id="0">
   <image source="../objects/iv_stand1.png" width="25" height="60"/>
@@ -1203,5 +1203,275 @@
  </tile>
  <tile id="410">
   <image source="../objects/qdc_hsm1.png" width="32" height="58"/>
+ </tile>
+ <tile id="411">
+  <image source="../objects/pnw_logo_sign1.png" width="103" height="19"/>
+ </tile>
+ <tile id="412">
+  <image source="../objects/pnw_evac_board1.png" width="52" height="34"/>
+ </tile>
+ <tile id="413">
+  <image source="../objects/pnw_nerc_notice1.png" width="67" height="17"/>
+ </tile>
+ <tile id="414">
+  <image source="../objects/pnw_muster_sign1.png" width="30" height="23"/>
+ </tile>
+ <tile id="415">
+  <image source="../objects/pnw_video_wall1.png" width="159" height="42"/>
+ </tile>
+ <tile id="416">
+  <image source="../objects/pnw_substation_map1.png" width="72" height="38"/>
+ </tile>
+ <tile id="417">
+  <image source="../objects/pnw_countdown1.png" width="76" height="32"/>
+ </tile>
+ <tile id="418">
+  <image source="../objects/pnw_mimic1.png" width="96" height="30"/>
+ </tile>
+ <tile id="419">
+  <image source="../objects/notes_plantlog1.png" width="16" height="26"/>
+ </tile>
+ <tile id="420">
+  <image source="../objects/pnw_genplate_one1.png" width="25" height="9"/>
+ </tile>
+ <tile id="421">
+  <image source="../objects/pnw_genplate_two1.png" width="25" height="9"/>
+ </tile>
+ <tile id="422">
+  <image source="../objects/pnw_genplate_three1.png" width="25" height="9"/>
+ </tile>
+ <tile id="423">
+  <image source="../objects/pnw_ear_sign1.png" width="24" height="22"/>
+ </tile>
+ <tile id="424">
+  <image source="../objects/pnw_cable_ladder1.png" width="200" height="22"/>
+ </tile>
+ <tile id="425">
+  <image source="../objects/pnw_splice1.png" width="30" height="24"/>
+ </tile>
+ <tile id="426">
+  <image source="../objects/pnw_ops_sign1.png" width="47" height="11"/>
+ </tile>
+ <tile id="427">
+  <image source="../objects/pnw_server_sign1.png" width="51" height="17"/>
+ </tile>
+ <tile id="428">
+  <image source="../objects/pnw_scada_sign1.png" width="67" height="17"/>
+ </tile>
+ <tile id="429">
+  <image source="../objects/pnw_genhall_sign1.png" width="67" height="17"/>
+ </tile>
+ <tile id="430">
+  <image source="../objects/pnw_vault_sign1.png" width="63" height="17"/>
+ </tile>
+ <tile id="431">
+  <image source="../objects/pnw_security_sign1.png" width="39" height="11"/>
+ </tile>
+ <tile id="432">
+  <image source="../objects/pnw_hose_reel1.png" width="36" height="39"/>
+ </tile>
+ <tile id="433">
+  <image source="../objects/pnw_genset1.png" width="62" height="48"/>
+ </tile>
+ <tile id="434">
+  <image source="../objects/pnw_ats1.png" width="34" height="54"/>
+ </tile>
+ <tile id="435">
+  <image source="../objects/pnw_switch_cabinet1.png" width="33" height="59"/>
+ </tile>
+ <tile id="436">
+  <image source="../objects/pnw_genset_panel1.png" width="35" height="58"/>
+ </tile>
+ <tile id="437">
+  <image source="../objects/pnw_engine_cabinet1.png" width="38" height="56"/>
+ </tile>
+ <tile id="438">
+  <image source="../objects/pnw_day_tank1.png" width="58" height="48"/>
+ </tile>
+ <tile id="439">
+  <image source="../objects/pnw_console1.png" width="64" height="49"/>
+ </tile>
+ <tile id="440">
+  <image source="../objects/pnw_console2.png" width="64" height="49"/>
+ </tile>
+ <tile id="441">
+  <image source="../objects/pnw_console_pos1.png" width="64" height="49"/>
+ </tile>
+ <tile id="442">
+  <image source="../objects/pnw_xray1.png" width="60" height="54"/>
+ </tile>
+ <tile id="443">
+  <image source="../objects/pnw_arch1.png" width="30" height="58"/>
+ </tile>
+ <tile id="444">
+  <image source="../objects/pnw_batteries1.png" width="52" height="53"/>
+ </tile>
+ <tile id="445">
+  <image source="../objects/pnw_cable_trolley1.png" width="40" height="46"/>
+ </tile>
+ <tile id="446">
+  <image source="../objects/pnw_transformer1.png" width="51" height="55"/>
+ </tile>
+ <tile id="447">
+  <image source="../objects/pnw_junction_box1.png" width="35" height="52"/>
+ </tile>
+ <tile id="448">
+  <image source="../objects/notes_ledger1.png" width="20" height="12"/>
+ </tile>
+ <tile id="449">
+  <image source="../objects/notes_clip1.png" width="11" height="26"/>
+ </tile>
+ <tile id="450">
+  <image source="../objects/pnw_backup_tag1.png" width="23" height="7"/>
+ </tile>
+ <tile id="451">
+  <image source="../objects/pnw_portable_printer1.png" width="16" height="11"/>
+ </tile>
+ <tile id="452">
+  <image source="../objects/pnw_master_desk1.png" width="78" height="39"/>
+ </tile>
+ <tile id="453">
+  <image source="../objects/pnw_badge_printer1.png" width="28" height="20"/>
+ </tile>
+ <tile id="454">
+  <image source="../objects/pnw_ats_cover1.png" width="16" height="30"/>
+ </tile>
+ <tile id="455">
+  <image source="../objects/notes_tucked1.png" width="12" height="14"/>
+ </tile>
+ <tile id="456">
+  <image source="../objects/pnw_backup_server1.png" width="30" height="55"/>
+ </tile>
+ <tile id="457">
+  <image source="../objects/pnw_office_chair_m1.png" width="33" height="54"/>
+ </tile>
+ <tile id="458">
+  <image source="../objects/pnw_desk_return1.png" width="18" height="39"/>
+ </tile>
+ <tile id="459">
+  <image source="../objects/hq_logo_sign1.png" width="82" height="21"/>
+ </tile>
+ <tile id="460">
+  <image source="../objects/hq_logo_small1.png" width="30" height="13"/>
+ </tile>
+ <tile id="461">
+  <image source="../objects/hq_memorial1.png" width="50" height="32"/>
+ </tile>
+ <tile id="462">
+  <image source="../objects/hq_alert_screen1.png" width="48" height="30"/>
+ </tile>
+ <tile id="463">
+  <image source="../objects/hq_ops_board1.png" width="98" height="34"/>
+ </tile>
+ <tile id="464">
+  <image source="../objects/hq_tactical_board1.png" width="62" height="32"/>
+ </tile>
+ <tile id="465">
+  <image source="../objects/hq_evidence_wall1.png" width="64" height="32"/>
+ </tile>
+ <tile id="466">
+  <image source="../objects/hq_disposition1.png" width="34" height="26"/>
+ </tile>
+ <tile id="467">
+  <image source="../objects/hq_one_way_mirror1.png" width="96" height="30"/>
+ </tile>
+ <tile id="468">
+  <image source="../objects/hq_recording1.png" width="48" height="11"/>
+ </tile>
+ <tile id="469">
+  <image source="../objects/hq_badge_reader1.png" width="8" height="12"/>
+ </tile>
+ <tile id="470">
+  <image source="../objects/hq_poster_postit1.png" width="16" height="21"/>
+ </tile>
+ <tile id="471">
+  <image source="../objects/hq_poster_ears1.png" width="16" height="21"/>
+ </tile>
+ <tile id="472">
+  <image source="../objects/hq_poster_red1.png" width="16" height="21"/>
+ </tile>
+ <tile id="473">
+  <image source="../objects/hq_cipher_board1.png" width="46" height="30"/>
+ </tile>
+ <tile id="474">
+  <image source="../objects/hq_ops_sign1.png" width="47" height="11"/>
+ </tile>
+ <tile id="475">
+  <image source="../objects/hq_intel_sign1.png" width="55" height="11"/>
+ </tile>
+ <tile id="476">
+  <image source="../objects/hq_crypto_sign1.png" width="55" height="11"/>
+ </tile>
+ <tile id="477">
+  <image source="../objects/hq_server_sign1.png" width="51" height="11"/>
+ </tile>
+ <tile id="478">
+  <image source="../objects/hq_break_sign1.png" width="47" height="11"/>
+ </tile>
+ <tile id="479">
+  <image source="../objects/hq_director_sign1.png" width="39" height="11"/>
+ </tile>
+ <tile id="480">
+  <image source="../objects/hq_archive_sign1.png" width="67" height="17"/>
+ </tile>
+ <tile id="481">
+  <image source="../objects/hq_interview_sign1.png" width="51" height="11"/>
+ </tile>
+ <tile id="482">
+  <image source="../objects/hq_flowers1.png" width="16" height="18"/>
+ </tile>
+ <tile id="483">
+  <image source="../objects/hq_locker_a1.png" width="20" height="62"/>
+ </tile>
+ <tile id="484">
+  <image source="../objects/hq_locker_b1.png" width="20" height="62"/>
+ </tile>
+ <tile id="485">
+  <image source="../objects/hq_locker_c1.png" width="20" height="62"/>
+ </tile>
+ <tile id="486">
+  <image source="../objects/hq_badge_printer1.png" width="22" height="16"/>
+ </tile>
+ <tile id="487">
+  <image source="../objects/hq_confidential_bin1.png" width="22" height="32"/>
+ </tile>
+ <tile id="488">
+  <image source="../objects/notes_postit1.png" width="9" height="9"/>
+ </tile>
+ <tile id="489">
+  <image source="../objects/notes_legalpad1.png" width="14" height="16"/>
+ </tile>
+ <tile id="490">
+  <image source="../objects/hq_interview_table1.png" width="56" height="41"/>
+ </tile>
+ <tile id="491">
+  <image source="../objects/hq_xray1.png" width="60" height="40"/>
+ </tile>
+ <tile id="492">
+  <image source="../objects/hq_enigma1.png" width="36" height="61"/>
+ </tile>
+ <tile id="493">
+  <image source="../objects/hq_mobile_stack1.png" width="42" height="61"/>
+ </tile>
+ <tile id="494">
+  <image source="../objects/hq_archive_shelf1.png" width="42" height="61"/>
+ </tile>
+ <tile id="495">
+  <image source="../objects/hq_security_container1.png" width="34" height="59"/>
+ </tile>
+ <tile id="496">
+  <image source="../objects/hq_green_safe1.png" width="36" height="60"/>
+ </tile>
+ <tile id="497">
+  <image source="../objects/hq_camera_tripod1.png" width="24" height="50"/>
+ </tile>
+ <tile id="498">
+  <image source="../objects/hq_detector_arch1.png" width="32" height="60"/>
+ </tile>
+ <tile id="499">
+  <image source="../objects/hq_console1.png" width="52" height="41"/>
+ </tile>
+ <tile id="500">
+  <image source="../objects/hq_rack1.png" width="32" height="60"/>
  </tile>
 </tileset>

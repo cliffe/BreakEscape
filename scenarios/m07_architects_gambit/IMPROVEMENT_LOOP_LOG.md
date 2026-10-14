@@ -727,3 +727,6 @@ Full detail, per room and per finding, in `ROOM_DRESSING.md`; evidence in `build
 |---|---|---|---|---|
 | 1 (survey, own maps, all six rooms built) | 1 | 5 | 2 | All fixed: six `room_pnw_*` maps (shared maps untouched, U6 cleared for m07), 11 objects onto real fixtures (11 NO SLOT before, 0 after). First room (operations floor) pending sign-off, U13 |
 | 2 (fresh Opus review of cycle 1) | 0 | 3 | 19 | 17 fixed, 1 in part, 2 left with reasons (handover-sheet wording; mimic behind the monitor) |
+
+### Stage 4 room dressing: CLOSED (orchestrator, 2026-10-14)
+Cycles 3–5 detail in `ROOM_DRESSING.md`. Cycle 5 fresh review 0/0/4 (`build_evidence/dressing_c5/review_c5.md`): m-1 ops back-row chair behind shelves, m-2 ATS cover should lean on the wall, m-3 open trench reads as a grille, m-4 stale builder docstrings — all optional, to pick up during lighting. Interaction walk game 2443 (`build_evidence/dressing_c5/walk_game2443.md`): 0/0/5, no pick-one menus, doors and lanes clear, fixtures persist after read and reload; F1 SCADA monitor hides the mimic's left lights (minor). Top-left taps on the five takeables untested (they vanish on first take). First room (operations floor) pending sign-off, U13. Next: lighting.

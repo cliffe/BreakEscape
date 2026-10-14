@@ -4675,6 +4675,546 @@
       "w": 32,
       "h": 58,
       "gid": 1211
+    },
+    "pnw_logo_sign1": {
+      "id": 411,
+      "w": 103,
+      "h": 19,
+      "gid": 1212
+    },
+    "pnw_evac_board1": {
+      "id": 412,
+      "w": 52,
+      "h": 34,
+      "gid": 1213
+    },
+    "pnw_nerc_notice1": {
+      "id": 413,
+      "w": 67,
+      "h": 17,
+      "gid": 1214
+    },
+    "pnw_muster_sign1": {
+      "id": 414,
+      "w": 30,
+      "h": 23,
+      "gid": 1215
+    },
+    "pnw_video_wall1": {
+      "id": 415,
+      "w": 159,
+      "h": 42,
+      "gid": 1216
+    },
+    "pnw_substation_map1": {
+      "id": 416,
+      "w": 72,
+      "h": 38,
+      "gid": 1217
+    },
+    "pnw_countdown1": {
+      "id": 417,
+      "w": 76,
+      "h": 32,
+      "gid": 1218
+    },
+    "pnw_mimic1": {
+      "id": 418,
+      "w": 96,
+      "h": 30,
+      "gid": 1219
+    },
+    "notes_plantlog1": {
+      "id": 419,
+      "w": 16,
+      "h": 26,
+      "gid": 1220
+    },
+    "pnw_genplate_one1": {
+      "id": 420,
+      "w": 25,
+      "h": 9,
+      "gid": 1221
+    },
+    "pnw_genplate_two1": {
+      "id": 421,
+      "w": 25,
+      "h": 9,
+      "gid": 1222
+    },
+    "pnw_genplate_three1": {
+      "id": 422,
+      "w": 25,
+      "h": 9,
+      "gid": 1223
+    },
+    "pnw_ear_sign1": {
+      "id": 423,
+      "w": 24,
+      "h": 22,
+      "gid": 1224
+    },
+    "pnw_cable_ladder1": {
+      "id": 424,
+      "w": 200,
+      "h": 22,
+      "gid": 1225
+    },
+    "pnw_splice1": {
+      "id": 425,
+      "w": 30,
+      "h": 24,
+      "gid": 1226
+    },
+    "pnw_ops_sign1": {
+      "id": 426,
+      "w": 47,
+      "h": 11,
+      "gid": 1227
+    },
+    "pnw_server_sign1": {
+      "id": 427,
+      "w": 51,
+      "h": 17,
+      "gid": 1228
+    },
+    "pnw_scada_sign1": {
+      "id": 428,
+      "w": 67,
+      "h": 17,
+      "gid": 1229
+    },
+    "pnw_genhall_sign1": {
+      "id": 429,
+      "w": 67,
+      "h": 17,
+      "gid": 1230
+    },
+    "pnw_vault_sign1": {
+      "id": 430,
+      "w": 63,
+      "h": 17,
+      "gid": 1231
+    },
+    "pnw_security_sign1": {
+      "id": 431,
+      "w": 39,
+      "h": 11,
+      "gid": 1232
+    },
+    "pnw_hose_reel1": {
+      "id": 432,
+      "w": 36,
+      "h": 39,
+      "gid": 1233
+    },
+    "pnw_genset1": {
+      "id": 433,
+      "w": 62,
+      "h": 48,
+      "gid": 1234
+    },
+    "pnw_ats1": {
+      "id": 434,
+      "w": 34,
+      "h": 54,
+      "gid": 1235
+    },
+    "pnw_switch_cabinet1": {
+      "id": 435,
+      "w": 33,
+      "h": 59,
+      "gid": 1236
+    },
+    "pnw_genset_panel1": {
+      "id": 436,
+      "w": 35,
+      "h": 58,
+      "gid": 1237
+    },
+    "pnw_engine_cabinet1": {
+      "id": 437,
+      "w": 38,
+      "h": 56,
+      "gid": 1238
+    },
+    "pnw_day_tank1": {
+      "id": 438,
+      "w": 58,
+      "h": 48,
+      "gid": 1239
+    },
+    "pnw_console1": {
+      "id": 439,
+      "w": 64,
+      "h": 49,
+      "gid": 1240
+    },
+    "pnw_console2": {
+      "id": 440,
+      "w": 64,
+      "h": 49,
+      "gid": 1241
+    },
+    "pnw_console_pos1": {
+      "id": 441,
+      "w": 64,
+      "h": 49,
+      "gid": 1242
+    },
+    "pnw_xray1": {
+      "id": 442,
+      "w": 60,
+      "h": 54,
+      "gid": 1243
+    },
+    "pnw_arch1": {
+      "id": 443,
+      "w": 30,
+      "h": 58,
+      "gid": 1244
+    },
+    "pnw_batteries1": {
+      "id": 444,
+      "w": 52,
+      "h": 53,
+      "gid": 1245
+    },
+    "pnw_cable_trolley1": {
+      "id": 445,
+      "w": 40,
+      "h": 46,
+      "gid": 1246
+    },
+    "pnw_transformer1": {
+      "id": 446,
+      "w": 51,
+      "h": 55,
+      "gid": 1247
+    },
+    "pnw_junction_box1": {
+      "id": 447,
+      "w": 35,
+      "h": 52,
+      "gid": 1248
+    },
+    "notes_ledger1": {
+      "id": 448,
+      "w": 20,
+      "h": 12,
+      "gid": 1249
+    },
+    "notes_clip1": {
+      "id": 449,
+      "w": 11,
+      "h": 26,
+      "gid": 1250
+    },
+    "pnw_backup_tag1": {
+      "id": 450,
+      "w": 23,
+      "h": 7,
+      "gid": 1251
+    },
+    "pnw_portable_printer1": {
+      "id": 451,
+      "w": 16,
+      "h": 11,
+      "gid": 1252
+    },
+    "pnw_master_desk1": {
+      "id": 452,
+      "w": 78,
+      "h": 39,
+      "gid": 1253
+    },
+    "pnw_badge_printer1": {
+      "id": 453,
+      "w": 28,
+      "h": 20,
+      "gid": 1254
+    },
+    "pnw_ats_cover1": {
+      "id": 454,
+      "w": 16,
+      "h": 30,
+      "gid": 1255
+    },
+    "notes_tucked1": {
+      "id": 455,
+      "w": 12,
+      "h": 14,
+      "gid": 1256
+    },
+    "pnw_backup_server1": {
+      "id": 456,
+      "w": 30,
+      "h": 55,
+      "gid": 1257
+    },
+    "pnw_office_chair_m1": {
+      "id": 457,
+      "w": 33,
+      "h": 54,
+      "gid": 1258
+    },
+    "pnw_desk_return1": {
+      "id": 458,
+      "w": 18,
+      "h": 39,
+      "gid": 1259
+    },
+    "hq_logo_sign1": {
+      "id": 459,
+      "w": 82,
+      "h": 21,
+      "gid": 1260
+    },
+    "hq_logo_small1": {
+      "id": 460,
+      "w": 30,
+      "h": 13,
+      "gid": 1261
+    },
+    "hq_memorial1": {
+      "id": 461,
+      "w": 50,
+      "h": 32,
+      "gid": 1262
+    },
+    "hq_alert_screen1": {
+      "id": 462,
+      "w": 48,
+      "h": 30,
+      "gid": 1263
+    },
+    "hq_ops_board1": {
+      "id": 463,
+      "w": 98,
+      "h": 34,
+      "gid": 1264
+    },
+    "hq_tactical_board1": {
+      "id": 464,
+      "w": 62,
+      "h": 32,
+      "gid": 1265
+    },
+    "hq_evidence_wall1": {
+      "id": 465,
+      "w": 64,
+      "h": 32,
+      "gid": 1266
+    },
+    "hq_disposition1": {
+      "id": 466,
+      "w": 34,
+      "h": 26,
+      "gid": 1267
+    },
+    "hq_one_way_mirror1": {
+      "id": 467,
+      "w": 96,
+      "h": 30,
+      "gid": 1268
+    },
+    "hq_recording1": {
+      "id": 468,
+      "w": 48,
+      "h": 11,
+      "gid": 1269
+    },
+    "hq_badge_reader1": {
+      "id": 469,
+      "w": 8,
+      "h": 12,
+      "gid": 1270
+    },
+    "hq_poster_postit1": {
+      "id": 470,
+      "w": 16,
+      "h": 21,
+      "gid": 1271
+    },
+    "hq_poster_ears1": {
+      "id": 471,
+      "w": 16,
+      "h": 21,
+      "gid": 1272
+    },
+    "hq_poster_red1": {
+      "id": 472,
+      "w": 16,
+      "h": 21,
+      "gid": 1273
+    },
+    "hq_cipher_board1": {
+      "id": 473,
+      "w": 46,
+      "h": 30,
+      "gid": 1274
+    },
+    "hq_ops_sign1": {
+      "id": 474,
+      "w": 47,
+      "h": 11,
+      "gid": 1275
+    },
+    "hq_intel_sign1": {
+      "id": 475,
+      "w": 55,
+      "h": 11,
+      "gid": 1276
+    },
+    "hq_crypto_sign1": {
+      "id": 476,
+      "w": 55,
+      "h": 11,
+      "gid": 1277
+    },
+    "hq_server_sign1": {
+      "id": 477,
+      "w": 51,
+      "h": 11,
+      "gid": 1278
+    },
+    "hq_break_sign1": {
+      "id": 478,
+      "w": 47,
+      "h": 11,
+      "gid": 1279
+    },
+    "hq_director_sign1": {
+      "id": 479,
+      "w": 39,
+      "h": 11,
+      "gid": 1280
+    },
+    "hq_archive_sign1": {
+      "id": 480,
+      "w": 67,
+      "h": 17,
+      "gid": 1281
+    },
+    "hq_interview_sign1": {
+      "id": 481,
+      "w": 51,
+      "h": 11,
+      "gid": 1282
+    },
+    "hq_flowers1": {
+      "id": 482,
+      "w": 16,
+      "h": 18,
+      "gid": 1283
+    },
+    "hq_locker_a1": {
+      "id": 483,
+      "w": 20,
+      "h": 62,
+      "gid": 1284
+    },
+    "hq_locker_b1": {
+      "id": 484,
+      "w": 20,
+      "h": 62,
+      "gid": 1285
+    },
+    "hq_locker_c1": {
+      "id": 485,
+      "w": 20,
+      "h": 62,
+      "gid": 1286
+    },
+    "hq_badge_printer1": {
+      "id": 486,
+      "w": 22,
+      "h": 16,
+      "gid": 1287
+    },
+    "hq_confidential_bin1": {
+      "id": 487,
+      "w": 22,
+      "h": 32,
+      "gid": 1288
+    },
+    "notes_postit1": {
+      "id": 488,
+      "w": 9,
+      "h": 9,
+      "gid": 1289
+    },
+    "notes_legalpad1": {
+      "id": 489,
+      "w": 14,
+      "h": 16,
+      "gid": 1290
+    },
+    "hq_interview_table1": {
+      "id": 490,
+      "w": 56,
+      "h": 41,
+      "gid": 1291
+    },
+    "hq_xray1": {
+      "id": 491,
+      "w": 60,
+      "h": 40,
+      "gid": 1292
+    },
+    "hq_enigma1": {
+      "id": 492,
+      "w": 36,
+      "h": 61,
+      "gid": 1293
+    },
+    "hq_mobile_stack1": {
+      "id": 493,
+      "w": 42,
+      "h": 61,
+      "gid": 1294
+    },
+    "hq_archive_shelf1": {
+      "id": 494,
+      "w": 42,
+      "h": 61,
+      "gid": 1295
+    },
+    "hq_security_container1": {
+      "id": 495,
+      "w": 34,
+      "h": 59,
+      "gid": 1296
+    },
+    "hq_green_safe1": {
+      "id": 496,
+      "w": 36,
+      "h": 60,
+      "gid": 1297
+    },
+    "hq_camera_tripod1": {
+      "id": 497,
+      "w": 24,
+      "h": 50,
+      "gid": 1298
+    },
+    "hq_detector_arch1": {
+      "id": 498,
+      "w": 32,
+      "h": 60,
+      "gid": 1299
+    },
+    "hq_console1": {
+      "id": 499,
+      "w": 52,
+      "h": 41,
+      "gid": 1300
+    },
+    "hq_rack1": {
+      "id": 500,
+      "w": 32,
+      "h": 60,
+      "gid": 1301
     }
   }
 }

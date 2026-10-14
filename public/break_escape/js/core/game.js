@@ -140,7 +140,22 @@ export function preload() {
     this.load.tilemapTiledJSON('room_qdc_security', 'rooms/room_qdc_security.json'); // m05 QDC security office (Patricia): CCTV wall, suspects board, filing (2x2 GU)
     this.load.tilemapTiledJSON('room_qdc_servers', 'rooms/room_qdc_servers.json'); // m05 QDC server room: rack rows, research terminal, drop-site bench (2x2 GU)
     this.load.tilemapTiledJSON('room_qdc_vault', 'rooms/room_qdc_vault.json'); // m05 QDC key vault: key safes, HSM racks, upload terminal (2x2 GU)
+    this.load.tilemapTiledJSON('room_hq_lobby', 'rooms/room_hq_lobby.json'); // m08 SAFETYNET HQ lobby: reception, alert screen, memorial wall, security line (2x2 GU)
+    this.load.tilemapTiledJSON('room_hq_director', 'rooms/room_hq_director.json'); // m08 SAFETYNET Director's office: desk on a rug, safe, bookcase, credenza (2x2 GU)
+    this.load.tilemapTiledJSON('room_hq_ops', 'rooms/room_hq_ops.json'); // m08 SAFETYNET operations floor: status wall, desks, print tray (2x2 GU)
+    this.load.tilemapTiledJSON('room_hq_intel', 'rooms/room_hq_intel.json'); // m08 SAFETYNET intelligence analysis: tactical board, console, desk (2x1 GU, 10x6)
+    this.load.tilemapTiledJSON('room_hq_servers', 'rooms/room_hq_servers.json'); // m08 SAFETYNET server room: two rack rows, GitList and relay desks (2x2 GU)
+    this.load.tilemapTiledJSON('room_hq_archives', 'rooms/room_hq_archives.json'); // m08 SAFETYNET security archives: shelves, mobile stack, desks (2x1 GU, 10x6)
+    this.load.tilemapTiledJSON('room_hq_crypto', 'rooms/room_hq_crypto.json'); // m08 SAFETYNET cryptography lab: key cabinet, cipher board, Enigma, desks (2x2 GU)
+    this.load.tilemapTiledJSON('room_hq_interview', 'rooms/room_hq_interview.json'); // m08 SAFETYNET interrogation suite: table, mirror, evidence wall (2x2 GU)
+    this.load.tilemapTiledJSON('room_hq_break', 'rooms/room_hq_break.json'); // m08 SAFETYNET staff room: kitchenette, coffee machine, three lockers, tables (2x2 GU)
     this.load.tilemapTiledJSON('room_qdc_lab', 'rooms/room_qdc_lab.json'); // m05 QDC Heisenberg lab: cryostat, laser bench, glovebox, lab bench (2x2 GU)
+    this.load.tilemapTiledJSON('room_pnw_checkpoint', 'rooms/room_pnw_checkpoint.json'); // m07 PNW Grid security checkpoint: guard counter, muster board, screening lane (2x2 GU)
+    this.load.tilemapTiledJSON('room_pnw_ops', 'rooms/room_pnw_ops.json'); // m07 PNW Grid operations floor: video wall, substation map, console rows, supervisor's dais (2x2 GU)
+    this.load.tilemapTiledJSON('room_pnw_servers', 'rooms/room_pnw_servers.json'); // m07 PNW Grid server hall: rack rows, SCADA backup server, VM terminal, relay (2x2 GU)
+    this.load.tilemapTiledJSON('room_pnw_scada', 'rooms/room_pnw_scada.json'); // m07 PNW Grid SCADA control: mimic board, countdown, master desk (2x1 GU, 10x6)
+    this.load.tilemapTiledJSON('room_pnw_genhall', 'rooms/room_pnw_genhall.json'); // m07 PNW Grid backup generation hall: ATS-1, gensets, day tank (4x2 GU, 20x10)
+    this.load.tilemapTiledJSON('room_pnw_vault', 'rooms/room_pnw_vault.json'); // m07 PNW Grid cable vault: cable ladder, splice, trench (2x1 GU, 10x6)
 
     // Load room images (now using smaller 32px scale images)
     this.load.image('room_reception', 'tiles/rooms/room1.png');
@@ -197,7 +212,23 @@ export function preload() {
     this.load.image('room_qdc_security', 'tiles/rooms/room_qdc_security.png'); // m05 Quantum Dynamics: plum carpet
     this.load.image('room_qdc_servers', 'tiles/rooms/room_qdc_servers.png'); // m05 Quantum Dynamics: raised floor, cold aisles
     this.load.image('room_qdc_vault', 'tiles/rooms/room_qdc_vault.png'); // m05 Quantum Dynamics: dark raised floor, red two-person line
+    this.load.image('room_hq_lobby', 'tiles/rooms/room_hq_lobby.png'); // m08 SAFETYNET HQ: dark granite, SAFETYNET seal
+    this.load.image('room_hq_director', 'tiles/rooms/room_hq_director.png'); // m08 SAFETYNET HQ: walnut parquet, navy rug
+    this.load.image('room_hq_ops', 'tiles/rooms/room_hq_ops.png'); // m08 SAFETYNET HQ: charcoal carpet, walkways
+    this.load.image('room_hq_intel', 'tiles/rooms/room_hq_intel.png'); // m08 SAFETYNET HQ: dark navy carpet
+    this.load.image('room_hq_servers', 'tiles/rooms/room_hq_servers.png'); // m08 SAFETYNET HQ: raised floor, cold aisles
+    this.load.image('room_hq_archives', 'tiles/rooms/room_hq_archives.png'); // m08 SAFETYNET HQ: sealed concrete, aisle lines
+    this.load.image('room_hq_crypto', 'tiles/rooms/room_hq_crypto.png'); // m08 SAFETYNET HQ: grey anti-static tiles, hatched box
+    this.load.image('room_hq_interview', 'tiles/rooms/room_hq_interview.png'); // m08 SAFETYNET HQ: worn grey vinyl
+    this.load.image('room_hq_break', 'tiles/rooms/room_hq_break.png'); // m08 SAFETYNET HQ: wood-effect vinyl, kitchen strip
     this.load.image('room_qdc_lab', 'tiles/rooms/room_qdc_lab.png'); // m05 Quantum Dynamics: white anti-static tiles, hatched boxes
+    this.load.image('room_pnw_checkpoint', 'tiles/rooms/room_pnw_checkpoint.png'); // m07 PNW Grid: grey terrazzo, fir-and-bolt inlay
+    this.load.image('room_pnw_ops', 'tiles/rooms/room_pnw_ops.png'); // m07 PNW Grid: dark blue carpet, aisle, dais
+    this.load.image('room_pnw_servers', 'tiles/rooms/room_pnw_servers.png'); // m07 PNW Grid: raised floor, cold aisle
+    this.load.image('room_pnw_scada', 'tiles/rooms/room_pnw_scada.png'); // m07 PNW Grid: dark anti-static tiles
+    this.load.image('room_pnw_genhall_w', 'tiles/rooms/room_pnw_genhall_w.png'); // m07 PNW Grid: generation hall epoxy, west half
+    this.load.image('room_pnw_genhall_e', 'tiles/rooms/room_pnw_genhall_e.png'); // m07 PNW Grid: generation hall epoxy, east half
+    this.load.image('room_pnw_vault', 'tiles/rooms/room_pnw_vault.png'); // m07 PNW Grid: wet concrete, cable trench
     this.load.image('room14', 'tiles/rooms/room14.png');
     this.load.image('room19', 'tiles/rooms/room19.png');
     this.load.image('door_32', 'tiles/door_32.png');
@@ -1026,6 +1057,96 @@ export function preload() {
     this.load.image('qdc_filing_steel1', 'objects/qdc_filing_steel1.png');
     this.load.image('filing_cabinet_locked2', 'objects/filing_cabinet_locked2.png');
     this.load.image('qdc_hsm1', 'objects/qdc_hsm1.png');
+    this.load.image('pnw_logo_sign1', 'objects/pnw_logo_sign1.png');
+    this.load.image('pnw_evac_board1', 'objects/pnw_evac_board1.png');
+    this.load.image('pnw_nerc_notice1', 'objects/pnw_nerc_notice1.png');
+    this.load.image('pnw_muster_sign1', 'objects/pnw_muster_sign1.png');
+    this.load.image('pnw_video_wall1', 'objects/pnw_video_wall1.png');
+    this.load.image('pnw_substation_map1', 'objects/pnw_substation_map1.png');
+    this.load.image('pnw_countdown1', 'objects/pnw_countdown1.png');
+    this.load.image('pnw_mimic1', 'objects/pnw_mimic1.png');
+    this.load.image('notes_plantlog1', 'objects/notes_plantlog1.png');
+    this.load.image('pnw_genplate_one1', 'objects/pnw_genplate_one1.png');
+    this.load.image('pnw_genplate_two1', 'objects/pnw_genplate_two1.png');
+    this.load.image('pnw_genplate_three1', 'objects/pnw_genplate_three1.png');
+    this.load.image('pnw_ear_sign1', 'objects/pnw_ear_sign1.png');
+    this.load.image('pnw_cable_ladder1', 'objects/pnw_cable_ladder1.png');
+    this.load.image('pnw_splice1', 'objects/pnw_splice1.png');
+    this.load.image('pnw_ops_sign1', 'objects/pnw_ops_sign1.png');
+    this.load.image('pnw_server_sign1', 'objects/pnw_server_sign1.png');
+    this.load.image('pnw_scada_sign1', 'objects/pnw_scada_sign1.png');
+    this.load.image('pnw_genhall_sign1', 'objects/pnw_genhall_sign1.png');
+    this.load.image('pnw_vault_sign1', 'objects/pnw_vault_sign1.png');
+    this.load.image('pnw_security_sign1', 'objects/pnw_security_sign1.png');
+    this.load.image('pnw_hose_reel1', 'objects/pnw_hose_reel1.png');
+    this.load.image('pnw_genset1', 'objects/pnw_genset1.png');
+    this.load.image('pnw_ats1', 'objects/pnw_ats1.png');
+    this.load.image('pnw_switch_cabinet1', 'objects/pnw_switch_cabinet1.png');
+    this.load.image('pnw_genset_panel1', 'objects/pnw_genset_panel1.png');
+    this.load.image('pnw_engine_cabinet1', 'objects/pnw_engine_cabinet1.png');
+    this.load.image('pnw_day_tank1', 'objects/pnw_day_tank1.png');
+    this.load.image('pnw_console1', 'objects/pnw_console1.png');
+    this.load.image('pnw_console2', 'objects/pnw_console2.png');
+    this.load.image('pnw_console_pos1', 'objects/pnw_console_pos1.png');
+    this.load.image('pnw_xray1', 'objects/pnw_xray1.png');
+    this.load.image('pnw_arch1', 'objects/pnw_arch1.png');
+    this.load.image('pnw_batteries1', 'objects/pnw_batteries1.png');
+    this.load.image('pnw_cable_trolley1', 'objects/pnw_cable_trolley1.png');
+    this.load.image('pnw_transformer1', 'objects/pnw_transformer1.png');
+    this.load.image('pnw_junction_box1', 'objects/pnw_junction_box1.png');
+    this.load.image('notes_ledger1', 'objects/notes_ledger1.png');
+    this.load.image('notes_clip1', 'objects/notes_clip1.png');
+    this.load.image('pnw_backup_tag1', 'objects/pnw_backup_tag1.png');
+    this.load.image('pnw_portable_printer1', 'objects/pnw_portable_printer1.png');
+    this.load.image('pnw_master_desk1', 'objects/pnw_master_desk1.png');
+    this.load.image('pnw_badge_printer1', 'objects/pnw_badge_printer1.png');
+    this.load.image('pnw_ats_cover1', 'objects/pnw_ats_cover1.png');
+    this.load.image('notes_tucked1', 'objects/notes_tucked1.png');
+    this.load.image('pnw_backup_server1', 'objects/pnw_backup_server1.png');
+    this.load.image('pnw_office_chair_m1', 'objects/pnw_office_chair_m1.png');
+    this.load.image('pnw_desk_return1', 'objects/pnw_desk_return1.png');
+    this.load.image('hq_logo_sign1', 'objects/hq_logo_sign1.png');
+    this.load.image('hq_logo_small1', 'objects/hq_logo_small1.png');
+    this.load.image('hq_memorial1', 'objects/hq_memorial1.png');
+    this.load.image('hq_alert_screen1', 'objects/hq_alert_screen1.png');
+    this.load.image('hq_ops_board1', 'objects/hq_ops_board1.png');
+    this.load.image('hq_tactical_board1', 'objects/hq_tactical_board1.png');
+    this.load.image('hq_evidence_wall1', 'objects/hq_evidence_wall1.png');
+    this.load.image('hq_disposition1', 'objects/hq_disposition1.png');
+    this.load.image('hq_one_way_mirror1', 'objects/hq_one_way_mirror1.png');
+    this.load.image('hq_recording1', 'objects/hq_recording1.png');
+    this.load.image('hq_badge_reader1', 'objects/hq_badge_reader1.png');
+    this.load.image('hq_poster_postit1', 'objects/hq_poster_postit1.png');
+    this.load.image('hq_poster_ears1', 'objects/hq_poster_ears1.png');
+    this.load.image('hq_poster_red1', 'objects/hq_poster_red1.png');
+    this.load.image('hq_cipher_board1', 'objects/hq_cipher_board1.png');
+    this.load.image('hq_ops_sign1', 'objects/hq_ops_sign1.png');
+    this.load.image('hq_intel_sign1', 'objects/hq_intel_sign1.png');
+    this.load.image('hq_crypto_sign1', 'objects/hq_crypto_sign1.png');
+    this.load.image('hq_server_sign1', 'objects/hq_server_sign1.png');
+    this.load.image('hq_break_sign1', 'objects/hq_break_sign1.png');
+    this.load.image('hq_director_sign1', 'objects/hq_director_sign1.png');
+    this.load.image('hq_archive_sign1', 'objects/hq_archive_sign1.png');
+    this.load.image('hq_interview_sign1', 'objects/hq_interview_sign1.png');
+    this.load.image('hq_flowers1', 'objects/hq_flowers1.png');
+    this.load.image('hq_locker_a1', 'objects/hq_locker_a1.png');
+    this.load.image('hq_locker_b1', 'objects/hq_locker_b1.png');
+    this.load.image('hq_locker_c1', 'objects/hq_locker_c1.png');
+    this.load.image('hq_badge_printer1', 'objects/hq_badge_printer1.png');
+    this.load.image('hq_confidential_bin1', 'objects/hq_confidential_bin1.png');
+    this.load.image('notes_postit1', 'objects/notes_postit1.png');
+    this.load.image('notes_legalpad1', 'objects/notes_legalpad1.png');
+    this.load.image('hq_interview_table1', 'objects/hq_interview_table1.png');
+    this.load.image('hq_xray1', 'objects/hq_xray1.png');
+    this.load.image('hq_enigma1', 'objects/hq_enigma1.png');
+    this.load.image('hq_mobile_stack1', 'objects/hq_mobile_stack1.png');
+    this.load.image('hq_archive_shelf1', 'objects/hq_archive_shelf1.png');
+    this.load.image('hq_security_container1', 'objects/hq_security_container1.png');
+    this.load.image('hq_green_safe1', 'objects/hq_green_safe1.png');
+    this.load.image('hq_camera_tripod1', 'objects/hq_camera_tripod1.png');
+    this.load.image('hq_detector_arch1', 'objects/hq_detector_arch1.png');
+    this.load.image('hq_console1', 'objects/hq_console1.png');
+    this.load.image('hq_rack1', 'objects/hq_rack1.png');
     this.load.image('backup_recovery',         'objects/backup_recovery.png');
     this.load.image('dual_auth',               'objects/dual_auth.png');
     this.load.image('ehr-terminal',            'objects/ehr-terminal.png');
