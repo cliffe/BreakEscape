@@ -62,7 +62,7 @@ The shape is a topic hub with short chunks hanging off it. In ink terms:
 - **A short hub knot.** It offers the chunks as choices, each gated so a covered chunk drops off the list (the `{not chunk_x_seen}` pattern the lab instructors already use). The hub is deliberately small: a module's mentor explainer has three to five chunks, not the fifteen a lab instructor offers. The hub names what is on offer in one line, not a paragraph.
 - **One chunk per thing worth knowing.** Each chunk is 60 to 90 seconds of spoken lines (roughly 6 to 10 short lines at speaking pace), sets its own `#visual_aid` once, ends with one check question, sets its "seen" variable, and diverts back to the hub. A chunk teaches one idea; if it needs two aids or two checks, it is two chunks.
 - **One visual aid per chunk (BE-08).** A tag at the top of the chunk shows the aid, and later tags step the highlight through it as the lines play. Proposed syntax, for BE-19 and BE-08 to settle: `#visual_aid: <path-or-id>` to show it, `#aid_step: <n>` to move the highlight. One aid per chunk keeps the panel from turning into a slideshow.
-- **A check question (BE-19 + MG-20).** At the end of the chunk, a tag opens one MG-20 item: proposed `#trigger_minigame: knowledge_check#<item_id>`. The item is scored and recorded (BE-01). A wrong answer returns a one-line correction in Ama's voice and offers the chunk again; it never lectures.
+- **A check question (BE-19 + MG-20).** At the end of the chunk, a tag opens one MG-20 item: proposed `#trigger_minigame:knowledge_check|<item_id>` (the separator is `|` because `#` would start a new ink tag; see BE-19). The item is scored and recorded (BE-01). A wrong answer returns a one-line correction in Ama's voice and offers the chunk again; it never lectures.
 - **An "I know this" skip that still checks.** Each chunk's choice has a sibling that routes straight past the lines to the same check question. A pass counts the chunk as covered; a miss drops the player into the full chunk. This respects experienced staff (design principle 6) without letting anyone skip the evidence.
 - **A sticky "What should I do?" choice.** The hub always offers one choice that gives the procedure, phrased from the player's progress. It reads the module's globals (what the player did in the Hook, which chunks they have seen) and answers accordingly: before any teaching it gives the short version of the motto; after the relevant chunk it confirms the player already has it. It is "sticky" because it never drops off the hub, so the one answer a worried learner wants ("what do I actually do?") is always one click away.
 - **An exit.** When every chunk is covered, or the player chooses to leave, the hub offers "I think I've got it", which sets the Learn-beat-complete global and ends the conversation (`#exit_conversation`). Leaving early is allowed; the beat completes on the check passes, not on hearing every line.
@@ -149,7 +149,7 @@ Ama: That hurry is the trick. Real IT doesn't work like that.
 -> check_ask
 
 === check_ask ===
-#trigger_minigame: knowledge_check#q_phish_ask
+#trigger_minigame:knowledge_check|q_phish_ask
 ~ chunk_ask_seen = true
 -> anatomy_hub
 
@@ -163,7 +163,7 @@ Ama: Lookalike, isn't it. One letter off, and it's not us.
 -> check_sender
 
 === check_sender ===
-#trigger_minigame: knowledge_check#q_phish_sender
+#trigger_minigame:knowledge_check|q_phish_sender
 ~ chunk_sender_seen = true
 -> anatomy_hub
 
@@ -177,7 +177,7 @@ Ama: A padlock just means it's encrypted. Scammers have padlocks too.
 -> check_link
 
 === check_link ===
-#trigger_minigame: knowledge_check#q_phish_domain
+#trigger_minigame:knowledge_check|q_phish_domain
 ~ chunk_link_seen = true
 -> anatomy_hub
 
@@ -204,7 +204,7 @@ Notes on the example:
 - Three chunks (the ask and the feeling, the sender, the link), each one aid and one check, each 60 to 90 seconds. The defence (the motto) is the fourth, sticky, choice, not a lecture chunk.
 - The opening reacts to the Hook (`signed_in_hook`, `clicked_hook`) with fixed strings, so it stays cacheable and never blames.
 - Each check has a matching "I know this" entry that routes straight to the same check knot and still sets the "seen" variable on a pass.
-- `#trigger_minigame: knowledge_check#q_phish_domain` reuses the same MG-20 items the end-of-module check draws from (`modules/core_01_phishing_email/assessment.md`), so the single check and the final check share a bank.
+- `#trigger_minigame:knowledge_check|q_phish_domain` reuses the same MG-20 items the end-of-module check draws from (`modules/core_01_phishing_email/assessment.md`), so the single check and the final check share a bank.
 - The visual aid for "the link" is the same address-reading aid the reference card uses, so the learner sees one consistent picture of the idea.
 
 ## EX-02 In-engine recorded videos
@@ -354,7 +354,7 @@ Every video in the course, however it was made (EX-02 or EX-03), meets the same 
 - **No autoplay with sound.** A video never plays automatically with sound; the learner presses play. This meets WCAG 2.2 success criterion 1.4.2 Audio Control (Level A), which applies to any audio that "plays automatically for more than 3 seconds", and it fits the calm, no-jump-scare tone (`03_WORLD_AND_CAST.md`). An in-world screen may loop a silent, captioned preview, but sound starts only on a deliberate play.
 - **No flashing, reduced motion honoured.** Nothing flashes more than three times a second (WCAG 2.2 success criterion 2.3.1, Level A: "Web pages do not contain anything that flashes more than three times in any one second period"), and any looping preview respects a reduced-motion preference (BE-04).
 - **Chapters.** A video long enough to need navigation carries a chapters track (WebVTT, `kind="chapters"`), so a learner can jump to the part they want. Most 60 to 120 second videos need only one or two.
-- **A watched record.** MG-21 records that a learner watched the video, and the record (HA-05) keeps it, so a module can note the video was seen. Watching is never gated behind a timer the learner cannot turn off, and the course never forces a learner to sit through a video with no skip: that would fail the accessibility baseline (no required waits, BE-04) and annoy experienced staff. "Watched" means the player opened and played it, not that they were made to endure it.
+- **A watched record.** MG-21 records that a learner watched the video, and the record (HA-05) keeps it, so a module can note the video was seen. Watching is never gated behind a timer the learner cannot turn off, and the course never forces a learner to sit through a video with no skip: that would fail the accessibility baseline (no required waits, BE-04) and annoy experienced staff. "Watched" follows HA-20's rule: 90% played or the transcript opened, so reading counts the same as watching. It is evidence, never a gate.
 - **Hosting (HA-20), with the caption file, transcript and audio description.** Videos are hosted through HA-20, which holds the video, its WebVTT captions and chapters, its transcript and any audio description, on UK or EU infrastructure (HA-15). The in-world player (MG-21) and the intranet page (BE-09) play from there.
 - **Versioning (HA-19).** Every video has a version. When a video is re-rendered or re-edited (new facts, new art, a new annual edition), the version changes, and the learner record keeps which version each learner watched, the same way it keeps the module version. A video's version is noted in its hosting entry and its release notes.
 
@@ -564,7 +564,7 @@ Open points this draft leaves for the module plans:
 For the orchestrator and the user. None of these should hold up the module plans, which can use EX-01 and EX-04 today.
 
 1. **EX-02 needs a proof of concept before any module depends on it.** The whole engine-recording pipeline, and especially muxing the TTS audio onto Playwright's silent video at line timings, is unproven here. Build one short video end to end, show the user, and only then let modules schedule engine-recorded videos. Until then, a module wanting a video uses the mentor plus a visual aid, or a produced video (EX-03). EX-02 is sized M in `features/README.md`; that looks right for a first version, but the audio-sync step is the risk, so a short spike is worth doing first.
-2. **The BE-08 and BE-19 ink tags are proposed, not settled.** The worked example uses `#visual_aid`, `#aid_step` and `#trigger_minigame: knowledge_check#<id>`. The exact syntax belongs to BE-08 and BE-19; this document assumes a working `#trigger_minigame` (today a stub) and a way to show and step a visual aid in the conversation panel. The feature owners should confirm the tag names.
+2. **The BE-08 and BE-19 ink tags are proposed, not settled.** The worked example uses `#visual_aid`, `#aid_step` and `#trigger_minigame:knowledge_check|<id>`. The exact syntax belongs to BE-08 and BE-19; this document assumes a working `#trigger_minigame` (today a stub) and a way to show and step a visual aid in the conversation panel. The feature owners should confirm the tag names.
 3. **Keep engine videos generic across customers.** The recommendation is that EX-02 and EX-03 videos carry no organisation-specific values in the spoken track or the frame, so one render serves every customer; the customer's own details live on the intranet page and reference card around the video (BE-05). Per-customer branding on a video should be a template overlay added at edit time, treated as an exception. The user should confirm this is acceptable for the compliance story, or ask for per-customer rendering (which would be far more expensive).
 4. **The project lead's real-person cameo (EX-03) needs a decision and consent.** The game character cliffe_schreuders can present as an EX-02 engine video cheaply and safely. Filming the real Dr Schreuders is a produced video and needs his agreement and a plan to keep it evergreen. The user should say whether a real-person "face of the course" is wanted at all.
 5. **sector_01's mentor is undecided** (see the explainer library). Ama in a client hospital, or a new named clinical information-governance lead, keeping the SIS healthcare canon separate. This is a cast decision for `03_WORLD_AND_CAST.md`.

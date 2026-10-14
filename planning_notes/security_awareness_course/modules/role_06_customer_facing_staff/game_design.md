@@ -133,3 +133,122 @@ The critical path is marked **(CP)**. The desk (MG-17) is the main screen throug
 - Kev asks the player to cover the warehouse trade counter for ten minutes. A man in a payment provider's polo shirt arrives: *"Terminal swap. Firmware recall. Five minutes and I'm out of your hair."* He has a work order on letterhead.
 - The player can check the work order against the provider's details on the contract sheet (MG-25: the phone number and reference don't match), ring the provider on the number on the contract sheet (no visit booked), keep the terminal where it is and report it. Kev, back from the loading bay: *"We didn't book anyone. Good."* The terminal (`examine`) has its seal intact.
 - Letting him take or swap the terminal is the Not yet branch; the debrief shows a skimmer-fitted replacement, without technical detail.
+
+### 5. Debrief (2 minutes)
+
+- **(CP)** The debrief screen (BE-02), then Shauna at the huddle board and Kai in the security office (or the conversation panel on the text route).
+- **Call replays** (the proposed call replay panel): each contact as a transcript timeline, with the caller's tactics labelled where they happened (URGENCY, AUTHORITY, ANGER, SECRECY, NEW DETAILS, ASKS FOR A CODE) and the player's checks marked (CHANGE HISTORY CHECKED, CALLED BACK, ESCALATED, SECURE PAYMENT, REPORTED). This is the module's "aha": seeing "Ian" and "Rob" use the same levers with opposite moods.
+- **Kai's fraud board** (EX-05, 30 seconds): what each report let the team do. Fellgate's web-form change was found on two more school accounts and reversed; forty Care Extras families were warned by letter, and Brindle House found its office email had been taken over, which is where the room numbers came from; Aldbeck's finance team was warned to expect fake "new bank details" letters; the hook caller's number matched the Fellgate attempt. The counts are on screen.
+- **Mr Bakshi, a week later** (BE-16): he rings to say thank you; he and his daughter rang the bank together and reported it. If the scam was missed, he rings to ask why his "overdue balance" is still showing as unpaid, and the player helps him ring his bank and report it, then; Shauna: *"Today's better than tomorrow."* No promises are made about getting money back.
+- **The before and after:** the hook call beside the Fellgate call.
+- **Per-outcome results:** Secure, Developing or Not yet (see `assessment.md`).
+- **The line to remember:** *"Same checks every time, especially when they're in a hurry. Codes and call-backs go only to details we already hold."*
+
+### 6. Check (2 minutes)
+
+- **(CP)** Shauna's "quality check" on The Lark (MG-20): six items from the bank in `assessment.md`, at least one per learning outcome.
+
+### 7. Reference
+
+- **(CP)** The adviser's card on The Lark (BE-09): the ladder of checks, the takeover signs, the five steps for a customer being scammed, the payment rules and the reporting route, filled in from the organisation profile (BE-05).
+
+## Decisions and consequences
+
+| Decision | Options | Learning outcome | How the consequence is shown |
+|---|---|---|---|
+| Hook: new mobile, send the code | Call back on the number held or code to details on file / questions then change / change and send to the new mobile | LO1, LO2 (baseline) | Shauna's line; or the record flashes and Shauna helps lock it; the real Joan at 10:55 |
+| Marcus's engineer visit | Standard check and answer / step up / read details out | LO1 (calibration), LO4 | Marcus's thanks; an over-checking tip; a leak noted in the replay |
+| Kerry's chat | Registered address only and report / refuse only / invoices only / both | LO4 | What "Ian" knows at 10:28; the replay |
+| Mr Bakshi's scam | Tell plainly, 159, Report Fraud, let him check us, report here / vague warning / missed | LO5 | A week later: his thank-you or his question; Kai's board (forty families warned) |
+| Mr Bakshi's payment | Stop him and use the keypad / keypad after he's read it / type it and ask for the code | LO6 | Masked digits on screen; or a note in the replay that the card number was spoken and recorded |
+| Fellgate takeover | History, then call back on the old number / code to the email on file / refuse only / make the changes | LO2, LO1 | Mrs Akhtar's surprise and the fix; or Thursday's missing order |
+| Rob's pressure | Polite, nothing read out, escalate / refuse but rattled, no report / read out | LO3, LO4 | Shauna takes over; Aldbeck warned; or the details lost |
+| Reporting | Each attempt reported or not | LO3 | Kai's board shows what each report did, and what a missing report hid |
+| Front desk (optional) | Check by the known number, keep the terminal, report / refuse only / let him swap it | LO3 | Kev's line; or the swapped terminal in the debrief |
+
+No option shames the player. The worst branches still end with Shauna or Kai helping, and the debrief frames them as "this is how it usually happens; this is the check that would have caught it".
+
+## Minigames
+
+| Minigame | Status | Use here |
+|---|---|---|
+| **MG-17 Caller verification desk** | new (shared with role_03) | The whole module. Contact centre needs are below |
+| **MG-04 Voice calls** | new (P2) | The phone underneath MG-17: ringing, answer, hold, transfer, and the directory used for call-backs. Until it exists, calls run as `phone-chat` phone NPCs with TTS voice messages |
+| **MG-20 Knowledge check** | new | Shauna's check question, the "Which question?" items and the final check |
+| **MG-25 Document inspector** | new (optional) | The terminal engineer's work order against the provider's contract sheet |
+| `person-chat`, `phone-chat` | existing | Shauna, Kai, Jo and Kev in person; the web chat as a `phone-chat` thread with a chat skin until MG-05 |
+| `notes`, `text-file`, `examine` | existing | The ladder of checks and the anti-fraud script; call notes; the card terminal |
+
+**What MG-17 needs from the contact centre side** (role_03 designs the service desk side in parallel; the shared parts should be built once):
+
+| Element | Contact centre need | Shared with role_03? |
+|---|---|---|
+| Queue | Calls and chats waiting; caller ID shown with a reminder that it can be faked; contacts arrive on a schedule (BE-18); no countdowns (BE-04) | Yes |
+| Record panel | A customer account: named contacts, contact details, **change history with dates and channel** (phone, web form, email), orders, masked payment methods, notes, and a vulnerability note where the customer agreed one | Yes, with a staff record type for role_03 |
+| Request tag and ladder | The adviser tags the request (information, account information, change or money) and the policy's checks appear; the ladder is configurable per organisation (BE-05) | Yes |
+| Checks | Open questions, with leading questions available as recorded distractors; "send code" with a destination picker (details on file, or a number the caller gives, which is recorded as an error); call back through the MG-04 directory or the number on file; "view change history" | Yes |
+| Actions | Change contact details, reset a login, add a named contact, change a delivery, refund (original payment method only). Never blocked: the consequence plays out. Hold; escalate (the team leader joins with whisper lines); decline politely; report suspected fraud (a short form, MG-09 style) | Mostly; refunds and deliveries are contact centre only |
+| Secure payment line | The proposed keypad overlay: the customer's entry reaches the adviser as masked digits; the recording pauses itself | Contact centre only |
+| Chat and email tab | Web chats and emails in the same desk, with the sender's display name and address shown; attachments open in `examine` | Contact centre first; role_03 may want it |
+| Notes guard | Card-like numbers typed into notes trigger a warning and are recorded | Contact centre only |
+| Record of play | Every contact ends with an outcome; events for BE-01 record which checks happened before which actions, in order | Yes |
+| Pressure | Caller lines escalate through an ink influence variable; a "hand up" button brings the team leader; the hold button gives thinking time | Yes |
+
+## Explainers
+
+| Explainer | Who | Length | Aids (BE-08) | Followed by |
+|---|---|---|---|---|
+| Know versus have | Shauna (EX-01) | 40 seconds | Two columns: what anyone can find, what only the customer has | none |
+| The ladder of checks | Shauna (EX-01) | 30 seconds | The ladder table | none |
+| The takeover timeline | Shauna (EX-01) | 30 seconds | Change, quiet days, then the reset or delivery | "Where should the code or call go?" |
+| Holding the line | Shauna (EX-01) | 20 seconds | The three lines to use under pressure | none |
+| Protecting customers and card payments | Shauna (EX-01) | 45 seconds | The five steps; the secure payment diagram | none (assessed in Apply) |
+| Isn't asking for a code what scammers do? (optional) | Shauna | 30 seconds | The code message, with "we will never call you to ask for it" highlighted | none |
+| How do they know so much? (optional) | Jo (EX-06) | 60 seconds | Her test call's transcript, with the two public sources marked | none |
+| What your reports did | Kai (EX-05, debrief) | 30 seconds | The fraud board | none |
+
+## Debrief
+
+Shown on BE-02, then spoken by Shauna and Kai:
+
+1. The call replays, with tactics and checks labelled.
+2. Kai's fraud board: what each report did.
+3. Mr Bakshi a week later.
+4. The before and after: the hook against Fellgate.
+5. Per-outcome results.
+6. The line to remember.
+
+Spoken lines stay generic (*"Your reports joined up three attempts this morning"*); names of organisations, counts and amounts are on screen.
+
+## Variants
+
+- **Micro-drill:** "Verify or Deny?" (BE-07): eight call cards drawn from a bank of about forty, two "Which question?" items, and an optional streak counter. Monthly (HA-21), with the year's new scam types added (BE-13). About 4 minutes.
+- **Text route:** each contact as a transcript, the record as an accessible table, the checks and actions as buttons; the secure payment line as a described step (BE-03). The same decisions, replays and debrief, as text. About 12 minutes.
+- **Facilitated session:** a team huddle of about 45 minutes (BE-15, HA-13). The desk on a shared screen; the team decides each step. Pause points: after the hook (*"What do our customers know that a stranger could find in ten minutes?"*); after Fellgate (*"What did the change history tell you, and how often do we look at it?"*); after Rob (*"What do you need from your team leader in that moment?"*); after Mr Bakshi (*"What would you say to a customer who's embarrassed?"*).
+- **Replay and randomisation:** each contact is drawn from a bank (BE-13): the takeover's request (a reset, a delivery, a refund, a new named contact), the scam story (care fees, a fake refund, a courier), the angry caller's story (a council audit, an MP's office, a solicitor). Mr Bakshi has paid or hasn't. Account numbers, postcodes and amounts are generated per play (ERB templates), so colleagues can't pass on answers. The front desk scene appears only where the organisation uses card terminals.
+
+## Alternative concepts
+
+1. **Mystery Caller (attacker view).** Northlight Security has been hired to test the Customer Hub, and Jo Fairweather lets the player sit in (EX-06, BE-11). The player listens to five of her authorised test calls, marks the moment each adviser held or slipped, and then writes the one line that would have stopped her. In the second half the roles flip and the player takes calls from a new tester. It teaches the levers by hearing them used on others; it stays at "how little she needed", never how to do it.
+2. **Switchboard.** An arcade drill: a wall of lines lights up, each with a request card and the record's flags, and the player routes each one to the right check (answer, standard, step up, decline and report) as the morning speeds up. Streaks, a calm meter and no fail state. Fun and quick, best as the micro-drill rather than the main module.
+3. **Anatomy of a Scam.** One fraud followed from start to finish: the criminal's ten minutes of research, the web-form change, the call to the contact centre, the call to the customer, the money moving. At each step the player sees where a Larkspur colleague could break the chain (an adviser checking the change history, a team leader backing a refusal, a customer told plainly), and chooses where to intervene. It teaches the chain rather than the single call, and suits account managers who rarely take calls.
+
+## Art and audio
+
+- **Rooms:** the redressed office (headsets, desk phones, a whiteboard), the security office and, optionally, reception redressed as a trade counter.
+- **New props:** a card payment terminal (and a tampered look-alike for the drill), a "calls waiting" wall display.
+- **New UI:** the MG-17 desk and the secure payment overlay, legible at small sizes, with no real brand.
+- **Characters:** Shauna (recurring art; the mentor here), Kai, Jo and Kev (recurring); generic office sprites with headsets as other advisers; `male_telecom_v2` for the terminal engineer. All callers are voices only.
+- **Voice:** about 30 lines for Shauna, 8 for Kai, 6 for Jo, 4 for Kev, and about 45 caller lines across eight distinct voices. The impostor "Joan" must sound clearly different from the real Joan: this module is about procedure, not voice-matching, which is core_15's ground. No voiced line prints a variable: account numbers, amounts and codes are on screen only, and codes are never spoken.
+- **Music:** the calm workplace set (BE-21); a soft phone ring that can be turned down.
+
+## Pitfalls
+
+- **Training suspicion instead of service.** Genuine callers get warm, quick help, and Marcus's call is easy on purpose. The procedure is explained to callers, never hidden behind.
+- **Unreliable cues.** Accent, background noise, nervousness and pauses are never clues. The impostors are pleasant and confident; the clues are the request, the change history and the failed step-up.
+- **Undermining "never share a code".** An adviser never asks for a code on a call they made, and the code message tells customers so.
+- **Mocking the scammed.** Mr Bakshi is sharp and dignified; the criminals had real details; telling the adviser was the right thing to do.
+- **Too much PCI.** Staff need three rules (the secure route, never write or type card details, never keep the security code), not the standard.
+- **Abuse.** Raised voices and threats to complain only, with a content note and a transcript option.
+- **Speed as pressure.** No timers or handling-time targets; the queue counter can be hidden (BE-04).
+- **Anger as the clue.** "Rob" is angry and "Ian" is charming, and both are fraudsters; the real Joan is brisk and genuine. The procedure is the same for all three.

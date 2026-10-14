@@ -100,19 +100,19 @@ The record keeps the module version, dates, time on task, the per-outcome result
 
 Engine: BE-01 assessed decisions, BE-02 debrief screen, BE-03 text route, BE-04 accessibility baseline, BE-05 organisation profile, BE-08 visual aids, BE-09 intranet terminal, BE-12 short sessions, BE-18 work task and interruptions, BE-19 minigames opened from conversations, BE-20 authorable tutorial and title screen, MG-20 knowledge check, EX-01 mentor explainer, EX-04 in-world documents.
 
-Platform: HA-01 organisations, HA-03 assignments, HA-05 records, HA-06 certificates, HA-07 policy acknowledgement, HA-09 dashboards, HA-11 organisation profile, HA-15 data protection, HA-17 learner home, HA-23 accessibility pass.
+Platform: HA-01 organisations, HA-03 assignments, HA-04 due-soon and overdue emails, HA-05 records, HA-06 certificates, HA-07 policy acknowledgement, HA-09 dashboards, HA-11 organisation profile, HA-15 data protection, HA-17 learner home, HA-19 version stamp on records, HA-23 accessibility pass, HA-26 setup checklist.
 
 ### Phase 1: the MVP course (Induction Essentials)
 
-core_00, core_01, core_03, core_04, core_05, core_16, with MG-01 inbox, MG-07 MFA prompts, MG-08 password manager, MG-09 incident report form and MG-12 redaction. This is enough to sell to an organisation as its induction training and to pilot with real staff.
+core_00, core_01, core_03, core_04, core_05, core_16, with MG-01 inbox (built in slices, so core_00 and core_01 aren't held up by compose), MG-03 domain drill (inline), MG-07 MFA prompts, MG-08 password manager, MG-09 incident report form, MG-12 redaction, MG-26 incident spread map and MG-27 work desktop. This is enough to sell to an organisation as its induction training and to pilot with real staff.
 
 ### Phase 2: the core library and first role paths
 
-core_02, core_06 to core_11, core_15, core_17; role_01, role_02. Platform: HA-02 single sign-on, HA-04 reminders, HA-08 question banks, HA-10 LMS interoperability, HA-13 facilitated sessions, HA-19 versioning, HA-20 video hosting, HA-21 and BE-07 monthly drills, HA-22 and BE-14 xAPI. Engine-recorded videos (EX-02, MG-21) arrive here.
+core_02, core_06 to core_11, core_15, core_17; role_01, role_02. Platform: HA-02 single sign-on, HA-04 reminders and escalation, HA-08 question banks, HA-24 API and webhooks, HA-10 LMS interoperability, HA-13 facilitated sessions, HA-19 versioning, HA-20 video hosting, HA-21 and BE-07 monthly drills, HA-22 and BE-14 xAPI. Engine-recorded videos (EX-02, MG-21) arrive here.
 
 ### Phase 3: everything else
 
-core_12 to core_14; role_03 to role_07; sector_01; localisation (BE-06, HA-16); phishing simulation and report-button data (HA-12); evaluation (HA-14); licensing (HA-18).
+core_12 to core_14; role_03 to role_07; sector_01; localisation (BE-06, HA-16); simulation and report-button data import (HA-12); evaluation (HA-14); licensing (HA-18); the partner role for resellers (HA-25).
 
 ## How each module was planned
 

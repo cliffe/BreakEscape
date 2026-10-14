@@ -46,7 +46,7 @@ Priority: **MVP** is needed for the first sellable course (the Induction Essenti
 |---|---|---|---|---|
 | MG-01 | Inbox | A mail client: read, hover links, inspect senders, open attachments, reply, forward, compose with recipient checks, and Report | MVP | L |
 | MG-02 | Web browser | An address bar and simple fake sites: logins, downloads, search ads, warnings, extension prompts, fake CAPTCHA instructions | P2 | L |
-| MG-03 | Link and domain drill | Read a web address and pick out the real domain, at speed | P2 | S |
+| MG-03 | Link and domain drill | Read a web address and pick out the real domain, with an optional timer (the inline version used by core_01 is MVP) | MVP | S |
 | MG-04 | Voice calls | Incoming and outgoing calls with a ringing phone, a directory for calling back, hold and transfer | P2 | M |
 | MG-05 | Messaging apps | SMS and chat-app skins on the existing phone chat, with links and unknown numbers | P2 | S |
 | MG-06 | QR code scanner | Scan a code in the world, see where it really goes, choose to open it or not | P2 | S |
@@ -57,7 +57,7 @@ Priority: **MVP** is needed for the first sellable course (the Induction Essenti
 | MG-11 | Sharing settings | Choose who can see a file or link, and spot over-shared ones | P2 | S |
 | MG-12 | Redaction | Remove personal data before sending, including the fake redaction that only hides the text | MVP | M |
 | MG-13 | Social media profile and OSINT board | Connect public posts into an attacker's picture of a person, then fix the privacy settings | P3 | M |
-| MG-14 | Wi-Fi and VPN picker | Choose a network, spot the evil twin, connect the VPN | P3 | S |
+| MG-14 | Wi-Fi and VPN picker | Choose a network, spot the lookalike, connect the VPN; best built as a panel of MG-23 | P2 | S |
 | MG-15 | Payment verification desk | Compare a change request with the supplier record, call back on the known number, approve or refuse with a second approver | P2 | M |
 | MG-16 | AI assistant chat | Decide what is safe to paste into an AI tool, and check its answers | P2 | M |
 | MG-17 | Caller verification desk | A queue of callers and a verification checklist, for service desks and contact centres | P3 | M |
@@ -66,9 +66,11 @@ Priority: **MVP** is needed for the first sellable course (the Induction Essenti
 | MG-20 | Knowledge check | Scenario questions (single and multiple choice, hotspot, ordering) from a bank, with feedback and a recorded result | MVP | M |
 | MG-21 | Video player | Plays a video on an in-world screen with captions, transcript, chapters and a watched record | P2 | M |
 | MG-22 | Supplier assessment | Review a supplier's security answers and evidence, and spot the gaps | P3 | S |
-| MG-23 | Device settings | A phone or laptop settings panel: screen lock, updates, encryption, backups, app permissions | P2 | S |
-| MG-24 | Crisis decision board | Extends the existing command board for timed board-level decisions with injects | P2 | M |
+| MG-23 | Device settings | A phone or laptop settings panel: screen lock, updates, encryption, backups, app permissions, pop-up triage | P2 | S to M |
+| MG-24 | Crisis decision board | Extends the existing command board for board-level decisions with injects and an optional timer | P2 | M to L |
 | MG-25 | Document inspector | Compare a document (an invoice, a letter, an ID, a work order) with a trusted reference and mark what doesn't match | P2 | M |
+| MG-26 | Incident spread map | An office or network map where an incident spreads with game time until someone reports it, then shows what the report contained (core_04's "blast radius"); extends `network-segmentation-map` | MVP | M |
+| MG-27 | Work desktop | The player's computer as one launcher for the inbox, browser, chat, The Lark and settings, with notifications; extends the `container` desktop mode | MVP | S to M |
 
 ## Explainers (EX)
 
@@ -90,26 +92,29 @@ Priority: **MVP** is needed for the first sellable course (the Induction Essenti
 | HA-01 | Organisations, departments and roles | Customer organisations with departments, and org admin, manager, learner and auditor roles | MVP | L |
 | HA-02 | Single sign-on and provisioning | SAML and OIDC sign-in, SCIM or scheduled CSV provisioning, leavers removed automatically | P2 | L |
 | HA-03 | Learning paths and assignments | Role-based paths, due dates, automatic assignment on joining and on role change, annual recertification, exemptions | MVP | L |
-| HA-04 | Reminders and escalation | Email (and later chat) reminders before and after due dates, escalation to managers | P2 | M |
-| HA-05 | Completion records and audit evidence | An append-only record of who completed which version of what, when, with what result, exportable as an audit pack | MVP | M |
+| HA-04 | Reminders and escalation | Email (and later chat) reminders before and after due dates, escalation to managers; the due-soon and overdue emails are MVP | P2 (part MVP) | M |
+| HA-05 | Completion records and audit evidence | An append-only record of who completed which version of what, when, with what result, exportable as an audit pack; the tamper-evident chain and framework views come in P2 | MVP (part P2) | L |
 | HA-06 | Certificates and badges | Completion certificates with a verification link, and optional open badges | MVP | S |
 | HA-07 | Policy library and acknowledgement | Upload versioned policies, require acknowledgement, re-request on change, keep the record | MVP | M |
-| HA-08 | Question banks | Manage knowledge check banks, add organisation questions, retire weak items | P2 | M |
+| HA-08 | Question banks | Manage knowledge check banks, add organisation questions, retire weak items; for the MVP each module ships its own items | P2 | M |
 | HA-09 | Organisation dashboards | Completion, overdue and per-outcome results by department, with privacy thresholds | MVP | M |
 | HA-10 | LMS interoperability | SCORM 1.2 and 2004 packages, cmi5, and LTI 1.3 so customers can assign modules from their own LMS | P2 | L |
 | HA-11 | Organisation profile and branding | The values the game and reference cards use (BE-05), plus logo, colours, module selection and custom content | MVP | M |
-| HA-12 | Phishing simulation and report-button data | Optional simulated phishing linked to the course, and reporting rates from the customer's mail system | P3 | L |
+| HA-12 | Phishing simulation and report-button data | Import the customer's own simulation results and report-button data, behind an ethics checklist; no sending engine | P3 | M |
 | HA-13 | Facilitated sessions | Run a module as a team session with a facilitator console and debrief slides | P2 | M |
 | HA-14 | Evaluation and surveys | Reaction and confidence surveys, before and after measures, behaviour metrics | P3 | M |
-| HA-15 | Data protection and platform trust | Processor terms, retention, deletion, data export, audit log, UK and EU hosting | MVP | M |
+| HA-15 | Data protection and platform trust | Processor terms, retention, deletion, data export, audit log, UK and EU hosting | MVP | L |
 | HA-16 | Platform localisation | Translatable Hacktivity UI for learners and admins | P3 | M |
 | HA-17 | Learner home | "My training": what is due, progress, resume, certificates, reference cards | MVP | M |
 | HA-18 | Licensing and billing | Per-seat organisation licences, trials, renewals | P3 | M |
-| HA-19 | Content versioning and release notes | Version every module, record which version each learner took, publish what changed | P2 | S |
+| HA-19 | Content versioning and release notes | Version every module, record which version each learner took, publish what changed; the version stamp on records is MVP | P2 (part MVP) | S |
 | HA-20 | Video hosting, captions and transcripts | Host explainer videos with caption files, transcripts and audio description | P2 | S |
 | HA-21 | Microlearning schedule | Send a short drill each month, spaced through the year | P2 | M |
 | HA-22 | Learning record store | Receive and store xAPI statements from the game (BE-14) and forward them | P2 | M |
 | HA-23 | Accessible platform and lab sheet theme | A WCAG 2.2 AA pass over Hacktivity's learner pages and the HacktivityLabSheets theme | MVP | M |
+| HA-24 | Public API and webhooks | Keyed API access and outgoing webhooks so customers can pull records into HR and GRC systems and react to completions | P2 | M |
+| HA-25 | Partner role | Resellers and managed service providers set up and support several customer organisations, without seeing learners' detailed results | P3 | M |
+| HA-26 | Setup checklist | A go-live checklist for a new organisation (profile, policies, paths, reporting routes, a test learner) that must be done before staff are invited | MVP | S |
 
 ## Dependencies
 

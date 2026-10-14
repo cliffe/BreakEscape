@@ -55,7 +55,7 @@ Organisations also have legal and contractual clocks, which start when the organ
 
 These are the organisation's duties, not the individual's. The individual's part is to get the report to the right people at once, so the people who decide have the time to decide well.
 
-Reports from staff are also the organisation's fastest sensor. In a large, long-term study of phishing in one organisation, staff reports detected campaigns quickly and reliably (Lain, Kostiainen and Čapkun, 2022; see core_01).
+Reports from staff are also one of the organisation's fastest sensors. In a large, long-term study of phishing in one company, staff reports allowed fast detection of new phishing campaigns (Lain, Kostiainen and Čapkun, 2022; see core_01).
 
 ### How to report
 
@@ -97,3 +97,115 @@ Don't hold back a report to fill in every detail. Send what you know; the team w
 - **Don't contact the attacker or pay anything.**
 - **Keep it confidential** until you're told otherwise: no posts, no telling customers. The organisation decides who needs to know.
 - **Note down what you saw and did,** with times, while it's fresh.
+
+### Your own mistakes
+
+Report your own slip exactly as you would anything else, and straight away. A misdirected email reported in five minutes can often be contained (the recipient deletes it, the client is told properly); the same email discovered by a customer a week later becomes a complaint, a breach report and a loss of trust. Hiding a mistake is what turns it into a serious incident.
+
+Organisations that want reports have to make reporting safe. The NCSC's cyber security culture principles (June 2025) ask for "quick, easy and accessible routes for people to ask questions or report security issues", and say that "incidents are investigated with a view to learn and improve, not to blame" and that "people involved in an incident are treated fairly, with no punishment for innocent mistakes". The NCSC's Cyber Assessment Framework (v4.0, B6.a) expects a culture in which people know how to raise a concern and those who report are treated positively. The game shows this every time: people who report, including their own mistakes, are thanked.
+
+### When a colleague makes a mistake
+
+1. **Encourage them to report it now,** and offer to do it with them: "Let's do it together. It'll take two minutes."
+2. **Be kind.** They're probably embarrassed or worried. Remind them that fast reporting is what's thanked.
+3. **If they won't, report it yourself,** and tell them you have. It isn't telling tales: it protects them, the customers and everyone else.
+
+### What happens after a report
+
+The security team (and, out of hours, its monitoring partner):
+
+1. **Triages:** how serious is it, and what's at risk?
+2. **Contains:** locks accounts, signs out sessions, pulls emails from inboxes, cuts a device off the network, locks and wipes a lost laptop remotely, asks a wrong recipient to delete an email.
+3. **Investigates:** what happened, when, and how far it went.
+4. **Recovers:** restores files from backup, resets passwords, checks nothing was left behind.
+5. **Notifies, where needed:** the DPO decides with the organisation's leaders whether to tell the Information Commission (the ICO), the people affected and clients; the team may also report to the police (Report Fraud in England, Wales and Northern Ireland; Police Scotland on 101 in Scotland), to the NCSC, or to a sector regulator.
+6. **Learns:** fixes the gap that let it happen, without hunting for someone to blame.
+
+The person who reported is thanked, may be asked a few questions, is told what to do next, and, where possible, hears how it ended.
+
+### Personal data breaches
+
+A personal data breach is a security problem that leads to personal data being lost, destroyed, changed, disclosed or accessed when it shouldn't be: an email to the wrong person, a lost laptop with customer records, a spreadsheet with a hidden tab, a stranger reading a screen. Report it straight away through the same route; the DPO decides whether it must go to the Information Commission (the ICO) within the 72 hours and whether the people affected must be told. The law and the details are in core_05.
+
+### Ransomware and malware: the signs only
+
+Files that suddenly won't open or have strange names, a note or screen demanding payment, or a security warning are reasons to report at once and follow the instructions. Don't pay, don't reply, don't restore anything yourself. How malware gets in, and the rest of the story, is in core_07.
+
+## What to do (the procedure)
+
+As the reference card shows it:
+
+1. **Notice it.** Odd accounts, devices, files, data or people? It might be an incident.
+2. **Leave it.** Don't investigate, fix, delete, forward or switch off.
+3. **Report it now.** Messages: the Report button. Anything else: the security team on 4444, or the form on The Lark. Out of hours: the 24/7 service desk.
+4. **Say what, when, where, who, and what you've done.** Not sure? Say so.
+5. **Follow instructions**, and keep it to yourself until you're told otherwise.
+6. **Your mistake, or a colleague's?** Report it the same way. You'll be thanked.
+
+## Misconceptions and outdated advice
+
+| Belief | The current position |
+|---|---|
+| "I should be sure before I report." | Report suspicions. The security team decides what it is; a false alarm costs minutes, a missed incident can cost months. |
+| "It's IT's job to notice." | Tools miss human signs: a misdirected email, a missing laptop, a stranger in the corridor. Staff often notice first. |
+| "Reporting a colleague is telling tales." | It protects them and everyone else. Help them report it; if they won't, report it kindly yourself. |
+| "I'll get in trouble for my mistake." | Good practice, and the NCSC, says innocent mistakes aren't punished. Hiding a mistake is what makes it serious. |
+| "Turn it off and on again." | Switching off or restarting can destroy evidence and, sometimes, make things worse. Follow the service desk's instructions. |
+| "Delete the dodgy email so nobody clicks it." | It's evidence. Use the Report button, which removes it safely. |
+| "If personal data's involved, I should tell the ICO or the customer myself." | Report it internally. The DPO and the organisation decide who must be told, and do it properly. |
+| "A near miss isn't worth reporting." | Near misses show where the gaps are, before something worse comes through them. |
+| "It's the weekend, it can wait until Monday." | There's a 24/7 route. Lost devices, especially, should be reported straight away. |
+| "The report has to be complete." | Send what you know now. The team will ask for the rest. |
+
+## Real cases
+
+Use these as background and inspiration only. Game content uses fictional names.
+
+- **Capita, 2023.** A malicious file was unintentionally downloaded onto an employee device on 22 March 2023. A high-priority security alert was raised within 10 minutes, but Capita did not quarantine the device for 58 hours, during which the attacker deployed malware, gained administrator permissions and moved through the network; nearly one terabyte of data was taken on 29 and 30 March. The personal information of 6.6 million people was stolen. The ICO fined Capita £14 million on 15 October 2025. The lesson used in the module: the first sign starts the clock, and every hour of delay is an hour the attacker keeps.
+- **23andMe, 2023.** Credential stuffing began in April 2023, with an intense wave in May; the company looked into isolated unauthorised activity in July; a claim in August that data on more than 10 million users had been stolen was dismissed as a hoax; a full investigation started only in October, when an employee found the stolen data advertised for sale online. The ICO found the response inadequate and fined the company £2.31 million on 17 June 2025 (core_03 uses the same case for password reuse). The lesson: early signs, taken seriously, would have shortened the incident by months.
+- **Staff reports as an early warning.** In a 15-month study with more than 14,000 employees of a large company, staff reports through a button in the mail client allowed fast detection of new phishing campaigns, at a workload the organisation could manage, and employees kept reporting over long periods (Lain, Kostiainen and Čapkun, IEEE Symposium on Security and Privacy, 2022; arXiv:2112.07498). core_01 builds on the same study.
+- **UK picture.** In the Cyber Security Breaches Survey 2025, 23% of UK businesses had a formal incident response plan, and 32% had guidance on when to report a breach externally (DSIT, April 2025). In most organisations, staff knowing to report at once is the plan. Check the latest edition before quoting figures.
+
+## Organisation-specific slots
+
+| Slot | Default (Larkspur) |
+|---|---|
+| Report button for messages | "Report suspicious" in the mail toolbar; in the mobile app under "..." |
+| Security team route | Extension 4444, or the "Report an incident" form on The Lark |
+| Out of hours | The 24/7 service desk line |
+| Lost or stolen devices | The 24/7 service desk, straight away, any time, including personal phones with work email |
+| Personal data involved | The same route; it reaches the DPO, Tomasz Wiśniewski |
+| Physical security | The same route; facilities (Precious Adeyemi) is brought in |
+| Device instruction | "Don't switch it off. If we ask, unplug the network cable or turn off Wi-Fi, leave it on, and wait for instructions." |
+| What reporters hear back | "A reply within 15 minutes in working hours, and a note when it's closed" |
+| Thank-you practice | "Reports and owned-up mistakes are thanked, never punished, in line with our just culture statement" |
+
+## Glossary
+
+- **Incident:** something that has harmed, or might harm, information, systems, money or people.
+- **Event:** something odd that staff notice and report; the security team decides whether it's an incident.
+- **Near miss:** a mistake or attack caught before it did harm.
+- **Personal data breach:** a security problem that leads to personal data being lost, changed, disclosed or accessed when it shouldn't be (core_05).
+- **Containment:** stopping an incident spreading: locking an account, cutting a device off the network.
+- **Isolate:** cut a device off from the network so whatever is on it can't spread.
+- **Remote wipe:** erasing a lost or stolen device's data over the internet.
+- **Evidence:** the emails, files, messages and logs that show what happened; keep them as they are.
+- **Triage:** the security team's first quick look to judge how serious something is.
+- **DPO (Data Protection Officer):** the person who handles personal data questions and breaches.
+- **The Information Commission (the ICO):** the UK's data protection regulator; the Information Commissioner until 30 September 2026.
+- **Report Fraud:** the national fraud and cyber crime reporting service for England, Wales and Northern Ireland, which replaced Action Fraud in December 2025.
+- **Just culture:** treating people fairly after an incident, learning rather than blaming, so they keep reporting.
+
+## Sources
+
+- GOV.UK, "Report a cyber incident" (published 13 May 2022): https://www.gov.uk/report-cyber
+- NCSC, "Cyber security culture principles: Principle 2" (4 June 2025): https://www.ncsc.gov.uk/collection/cyber-security-culture-principles/principle-2
+- NCSC Cyber Assessment Framework v4.0 (August 2025), principle B6 (staff awareness and training), indicator B6.a: https://www.ncsc.gov.uk/collection/cyber-assessment-framework
+- NCSC, "Mitigating malware and ransomware attacks" (reporting to the NCSC and to Report Fraud): https://www.ncsc.gov.uk/guidance/mitigating-malware-and-ransomware-attacks
+- UK GDPR, Article 33 (notification of a personal data breach), as amended to 30 September 2026: https://www.legislation.gov.uk/eur/2016/679/article/33
+- ICO, "Capita fined £14m for data breach affecting over 6m people" (15 October 2025): https://ico.org.uk/about-the-ico/media-centre/news-and-blogs/2025/10/capita-fined-14m-for-data-breach-affecting-over-6m-people/
+- ICO, "23andMe fined £2.31 million for failing to protect UK users' genetic data" (17 June 2025), via the ICO newsroom: https://ico-newsroom.prgloo.com/news/ico-fines-23andme-gbp-2-31-million-for-failing-to-protect-uk-users-genetic-data
+- Directive (EU) 2022/2555 (NIS2), Article 23 (reporting obligations): https://eur-lex.europa.eu/eli/dir/2022/2555/oj
+- ISO/IEC 27001:2022, Annex A 5.24 to 5.28 and 6.8 (incident management and event reporting).
+- DSIT, Cyber Security Breaches Survey 2025: https://www.gov.uk/government/statistics/cyber-security-breaches-survey-2025
+- Lain, D., Kostiainen, K. and Čapkun, S. (2022) "Phishing in organizations: findings from a large-scale and long-term study", IEEE Symposium on Security and Privacy.

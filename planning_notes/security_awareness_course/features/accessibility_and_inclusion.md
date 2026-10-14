@@ -435,4 +435,209 @@ XAG 118 notes that about 1 in 4,000 people can have a seizure triggered by flash
 
 **Test:** reading level checks (section 6) and playtests with people with learning disabilities and neurodivergent people (section 6).
 
+## 5. Inclusive content rules
+
+These apply to every module's writing, art, voice and examples. Reviewers check them alongside the design principles.
+
+### 5.1 A diverse cast without stereotypes
+
+The recurring cast in `03_WORLD_AND_CAST.md` is deliberately varied in age, ethnicity, gender, faith and disability, and `AGENTS.md` makes cast diversity a standing rule. Variety on paper isn't enough; how characters are written matters more.
+
+1. **Spread competence and mistakes.** Every kind of person in the cast both catches things and slips up. Nobody's group is always the victim, the one who errs, or the expert. The cast already does this: Leo, young and online all the time, is the role model for reporting fast; Hassan, the finance manager, nearly got caught out and tells the story; Gillian, the chief executive, is impatient with process.
+2. **Attackers are ordinary and varied,** and never coded by ethnicity, accent, nationality, religion, disability or class. A scam caller is not given a foreign accent as the clue; the clue is always the request. Attacker voices come from as wide a range of accents as staff voices, including local ones.
+3. **Voices describe people, not stereotypes.** Voice styles in the voice bible describe personality and role (warm, brisk, precise), never an accent played for laughs.
+4. **Disability is ordinary.** Precious, a wheelchair user, runs facilities; Kev wears hearing aids. Neither is a plot point, an inspiration story or an object of pity, and both can be right or wrong like anyone else. Some characters can have invisible conditions shown matter-of-factly (someone who uses captions on calls, someone who takes notes because it helps them remember).
+5. **Names are spelled properly,** with their accents (Tomasz Wiśniewski), and players can do the same with their own names (5.6).
+6. **Pronouns:**
+   - Kai uses they/them, consistently, in every line and document;
+   - the player is never gendered: characters say "you" and use the player's job, never "he" or "she" about the player;
+   - groups are addressed as "everyone" or "all", not "guys".
+7. **Culture and faith:** examples don't assume one religion's calendar (not only Christmas parties); social events include non-drinkers; dress, fasting or prayer appear matter-of-factly when they appear at all.
+8. **All kinds of work:** warehouse staff, cleaners and field engineers have their own security moments and are shown as capable, not only office staff.
+9. **Art:** concept prompts for new characters state age, ethnicity and look, as the character pipeline requires (`AGENTS.md`).
+
+### 5.2 No victim blaming
+
+People are the organisation's best detection system, not its weakest link (design principle 3; Adams and Sasse, 1999). The campaign's universe bible takes the opposite stance ("Humans are weakest link", `story_design/universe_bible/05_world_building/society.md`, quoted in `research/existing_content_reuse.md`); nothing from it is ported.
+
+| Don't write | Write |
+|---|---|
+| "You fell for it." / "You failed." | "That one fooled lots of people. Here's how to spot the next one." |
+| "Human error was to blame." / "People are the weakest link." | "It was built to look normal. Reporting it fast is what made the difference." |
+| "Careless", "should have known" | Describe the situation: "busy, and expecting that email" |
+| Any hint of discipline for reporting | "Thanks for telling me." (Ama's first words, `03_WORLD_AND_CAST.md`) |
+
+In the story, the person who reports their own mistake is thanked. Outcomes turn on how fast something was reported, not on the click. Over-reporting is never marked down (core_01's C01-B9 has no "Not yet").
+
+### 5.3 No fear appeals
+
+Every threat is paired with a doable action, because fear without a clear response makes people avoid the topic (design principle 2; Witte and Allen, 2000).
+
+- **No sirens, skulls or jump scares.** No countdown sirens, skulls or "you've been hacked" moments (`03_WORLD_AND_CAST.md`, "Tone").
+- **Consequence scenes end on the action,** not the damage (BE-16).
+- **The ransom screen,** if a module reuses it (`ransomware-display`, with its countdown, in core_07), is shown briefly, without flashing, and is followed at once by what to do.
+- **Figures inform, they don't frighten:** one sourced figure where it helps, never a stack of them.
+- **Content notes.** Some learners have lost money to scams or had their data exposed. A module that deals with money lost or personal data exposed opens with a one-line note of what it covers. The reference card gives the organisation's own support route, such as an employee assistance service, as a BE-05 value; the course never names a support service it hasn't checked.
+
+### 5.4 Avoiding the "hooded hacker" image
+
+The OpenIDEO Cybersecurity Visuals Challenge, run with the William and Flora Hewlett Foundation in 2019, set out to replace the stock imagery of cyber security (padlocks, white men in hoodies, and green ones and zeros), which its brief said reflects a surface-level picture of the field shaped by sensationalist media. Its shortlisted images were to be released under Creative Commons CC BY 4.0 (check the licence of each image before any reuse).
+
+For this course:
+
+- **Ordinary attackers.** Attackers are shown as ordinary and businesslike, mostly as voices, messages and websites (`03_WORLD_AND_CAST.md`, "Attackers"). Jo Fairweather, the ethical tester, is a funny, candid professional.
+- **No villain imagery:** no hoodies, balaclavas, skulls, green code, falling "matrix" characters or glowing padlocks anywhere in a module, its posters (EX-04, EX-08) or its videos. The visual language is people, offices, phones and emails.
+- **Engine defaults to change:**
+  - the avatar menu previews `female_hacker_hood_v2` before a player has chosen (`app/models/break_escape/player_preference.rb`, line 44);
+  - retired avatars fall back to `male_hacker_hood_v2` (line 40), and so does the game page's default sprite (`show.html.erb`, line 188);
+  - the avatar list includes hooded hackers, a spy and a "nerd" (lines 10 to 25).
+
+  Course scenarios limit avatars with `validSprites` to office avatars, and a course avatar set is proposed in `break_escape_engine.md`.
+- **The credits visualiser's matrix mode** and the `cyber` theme's padlock logo (`README_scenario_design.md`, line 206) are replaced by the workplace style (BE-02, BE-20).
+- **Generic sprites:** the "hooded hacker" and "spy" character sprites are not used for anyone in the course (`research/current_state_break_escape.md`, "Art").
+
+### 5.5 Reading age and plain English
+
+- **Target:** a reading age of about 11 to 12 in core modules (design principle 9). WCAG's AAA criterion 3.1.5 (lower secondary education, 7 to 9 years of school) is the outer limit for any text.
+- **GOV.UK's content rules,** which the course follows:
+  - "Plain English is mandatory for all of GOV.UK";
+  - split sentences over 25 words;
+  - no more than 5 sentences a paragraph.
+- **Negative contractions.** GOV.UK also notes that many users misread negative contractions ("shouldn't", "can't"), so instructions and reference cards say "do not" and "cannot"; natural contractions are fine in speech.
+- **Spoken lines stay under 30 words.** The dialogue lint flags longer ones.
+- **Explain or avoid jargon.** Explain a technical term the first time, or avoid it; one definition per term across the course (EX-07, with tooltips that work by keyboard and touch, WCAG 1.4.13).
+- **Instructions are literal:** no idioms, metaphors or sarcasm. Characters can joke; the instruction is always plain (British Dyslexia Association, advice on dyslexia-friendly training).
+- **Inclusive terms:**
+  - "allow list" and "deny list", as the NCSC adopted in 2020 ("Terminology: it's not black and white");
+  - no ableist idioms ("blind spot", "falling on deaf ears", "crazy").
+- **How it is checked:** the proposed plain English lint flags long sentences and hard words for a human to judge, and playtests include people with low literacy (section 6).
+
+### 5.6 Player identity: avatars and names
+
+- **Avatars:** a course set of 8 to 12 office avatars:
+  - ages from 20s to 60s, a range of skin tones;
+  - head coverings (hijab, turban), a wheelchair user, hearing aids, glasses;
+  - described by appearance, not labelled "male" or "female";
+  - no default that is a hooded hacker.
+- **Names:**
+  - The name field accepts only `[a-zA-Z0-9_ ]`, 1 to 20 characters (`player_preference.rb`, lines 61 to 62), so Siobhán, O'Neill, Anne-Marie and Wiśniewski can't be typed.
+  - Allow letters from any script, apostrophes, hyphens and spaces, and a longer limit.
+  - The name never appears in a voiced line (`AGENTS.md`).
+- **Gender:** the course never asks for it, and has no need to, because nobody refers to the player in the third person (5.1).
+
+### 5.7 Neurodivergent learners
+
+- **Literal and predictable:** literal instructions, a predictable structure (the seven beats are always in the same order), and a clear end to each beat.
+- **No trick questions** ("no gotchas" is already a design rule).
+- **Sensory controls:** music, ambience, voice and motion, with no sudden loud sounds (BE-21).
+- **The text route** for anyone who finds a busy 2D world tiring.
+
+### 5.8 Reviews
+
+Every module's game design, ink and art brief is reviewed against this section. Recommendation: add a short inclusion check to `docs/agents/AWARENESS_REVIEW_BRIEF.md` (a course-level change for the orchestrator).
+
+## 6. Testing
+
+Three layers: automated checks on every change, manual checks on every module, and testing with disabled people at set points. GOV.UK's Service Manual is blunt about the first: "you'll miss some issues if you only do automated testing" ("Testing for accessibility", updated 29 October 2024).
+
+### 6.1 Automated checks, on every change
+
+- **axe-core with Playwright** on every HTML surface: the game shell, every course minigame (opened through the test bridge, `window.__test`, which is available outside production), the text route, the debrief, the intranet, settings, the title and end screens, and Hacktivity's learner pages. Run the WCAG 2.0, 2.1 and 2.2 A and AA rules, and fail the build on any violation. This is the proposed "Accessibility checks in CI" item in `break_escape_engine.md`.
+- **Contrast** of every colour token in the dark, light and high-contrast themes, as a node test.
+- **CSS lint:** no `outline: none` without a replacement focus style, and every animation or transition under a reduced-motion guard.
+- **Content checks:**
+  - the dialogue lint (voiced variables, spoken line length);
+  - the proposed plain English lint;
+  - the BE-03 route parity check;
+  - validator checks that every visual aid has alt text and step descriptions, every information-carrying sound has caption text, and every page sets `lang`.
+- **Flash analysis:** a screen recording of each animated or flashing effect used in a course module (tube strikes in the room with the most panels, rack LEDs, title and screen transitions), analysed with the Harding FPA test, re-run when lighting or effects change.
+
+### 6.2 Manual checks, on every module
+
+- **Keyboard:** a full run with the keyboard only, in both routes.
+- **Screen readers:** the GOV.UK Service Manual's minimum combinations ("Testing with assistive technologies", reviewed 24 May 2022):
+
+  | Assistive technology | Browser |
+  |---|---|
+  | JAWS | Chrome or Edge |
+  | NVDA | Chrome, Firefox or Edge |
+  | VoiceOver on iOS | Safari |
+  | TalkBack | Chrome |
+  | Windows Magnifier or Apple Zoom | Any |
+  | Dragon | Chrome |
+
+  Plus the Manual's further suggestions: VoiceOver on macOS with Safari, ZoomText, and Windows High Contrast mode. The text route gets the full matrix; the game gets the shell, conversations, minigames and places list.
+- **Zoom and spacing:** 200% text size, 400% browser zoom, a 320 CSS pixel viewport, and the WCAG text spacing overrides.
+- **Motion and colour:** reduced motion and flicker off; forced colours mode; colour vision deficiency emulation.
+- **Sound:** sound off (captions only) and voices off.
+- **Time:** timers off, and the slowest time scale.
+- **Touch:** touch only, on a phone, with large text.
+- **Plain English:** a read-through of every instruction against section 5.5 by someone who did not write it.
+
+### 6.3 Testing with disabled people
+
+The same Service Manual page says to "test the service with disabled users and with older users". Automated and expert checks find barriers; only users find out whether the course works for them.
+
+- **Who:**
+  - screen reader users; people with low vision who use magnification;
+  - Deaf and hard of hearing people, including British Sign Language users;
+  - people with motor impairments who use switches, voice control or one hand;
+  - people with dyslexia and with learning disabilities;
+  - autistic people and people with ADHD; people with anxiety, since mandatory training can be stressful;
+  - older staff; people with low literacy; people reading English as an additional language.
+
+  Photosensitive epilepsy is never tested on people; it is covered by analysis (6.1), as XAG 118 recommends.
+- **When:**
+  1. the text route prototype and the BE-04 shell, with core_00 and core_01, before the MVP is built out;
+  2. the MVP modules before the first pilot;
+  3. each new kind of minigame (MG-01, MG-20 and the rest);
+  4. every year with the annual edition.
+- **How:**
+  - small rounds, about five to eight people per round across different needs, repeated rather than one large study;
+  - recruitment through disability organisations or a specialist recruiter, and participants paid for their time;
+  - informed consent and data protection, and materials in accessible formats;
+  - participants use their own devices and settings;
+  - sessions of an hour at most, with breaks;
+  - observe rather than help, record each finding against the WCAG criterion or guideline it breaks and its severity, fix it, and retest.
+- **Afterwards:** an accessibility feedback link in settings and in the statement keeps the conversation going (Game Accessibility Guidelines: "Solicit accessibility feedback").
+
+### 6.4 Independent audit
+
+Before the MVP is sold, an independent WCAG 2.2 AA audit of the platform's learner pages, the text route and the game shell for the MVP modules. It feeds the conformance report and the statement (section 7). Repeat it every year and after any major change to the interface.
+
+### 6.5 In the existing review loops
+
+Add the automated checks to the verification steps in `AGENTS.md` for course modules, add a keyboard-only persona and a text-route persona to the playtest skill's runs, and log accessibility findings in the pass log like any other finding. Browser agents can check structure, names and focus through the test bridge; they cannot replace people using real assistive technology (6.3).
+
+## 7. Accessibility statement
+
+A public accessibility statement, written in plain English, kept current, and easy to find. Public sector customers must publish their own statements (regulation 8); ours gives them what they need for theirs.
+
+**Where it appears:**
+
+- the footer of every Hacktivity page;
+- the game's settings panel and title screen;
+- the text route page;
+- the footer of the HacktivityLabSheets site;
+- the course's public pages.
+
+**What it says,** following GOV.UK's sample statement (updated 30 September 2024) and the W3C's guidance on statements:
+
+1. **What it covers** (Hacktivity's learner pages, the course modules and their text routes, the lab sheet pages) and a commitment to accessibility.
+2. **The standard:** WCAG 2.2 AA, with EN 301 549 and Section 508 for EU and US buyers.
+3. **The compliance status,** in the wording the GOV.UK sample sets out (fully, partially or not compliant), so public sector customers can reuse it.
+4. **What learners can do,** in plain words: change text size, fonts, contrast, motion, captions and timers; use the text route; play without sound; take as long as they need. This answers the Game Accessibility Guidelines' "Provide details of accessibility features ... on packaging and/or website" and XAG 121.
+5. **Known limitations,** each named by WCAG criterion with a date for the fix. For example: "The 2D game world is only partly usable with a screen reader; every module has a text version with the same content and the same record."
+6. **Disproportionate burden:** none claimed. The plan is to fix, not to claim.
+7. **Getting content in another format, and reporting a problem:** a contact address, what to include, and a stated response time.
+8. **The enforcement procedure,** for customers' UK public sector statements, worded as in the GOV.UK sample.
+9. **How it was tested:** the browsers and assistive technology covered, the methods (automated, manual, user testing, independent audit), when, and by whom.
+10. **The date** it was prepared and last reviewed. Review at least once a year and with every release that changes the interface.
+
+**Alongside the statement:**
+
+- **An Accessibility Conformance Report** on the INT edition of VPAT 2.5Rev, which covers Section 508, EN 301 549 and WCAG 2.2 in one document, updated with each major release.
+- **A one-page accessibility features guide** for learners and administrators.
+- **A customer pack:** suggested wording for the customer's own statement, and how to grant individual adjustments such as extra time, an exemption from a timed element, or a facilitated session (HA-03, HA-13).
+
 <!-- next-section -->
