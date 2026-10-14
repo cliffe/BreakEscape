@@ -225,8 +225,10 @@ scada_password = "CascadeWindow19"
           { "text": "ELENA RODRIGUEZ: Spoken to, left at the rack — still there when the police came down", "style": "warning", "condition": "!globalVars.elena_outcome && !globalVars.elena_ko && globalVars.elena_met" },
           { "text": "RAY HOLLIS: Talked, and handed over the zone badge", "style": "entry", "condition": "globalVars.hollis_resolved === 'talked'" },
           { "text": "RAY HOLLIS: Neutralised on shift", "style": "warning", "condition": "globalVars.hollis_ko" },
-          { "text": "RAY HOLLIS: Evaded — still on the checkpoint desk, still on their payroll", "style": "warning", "condition": "globalVars.hollis_resolved === 'evaded' && !globalVars.hollis_ko" },
-          { "text": "RAY HOLLIS: Left at his post — still on their payroll", "style": "warning", "condition": "!globalVars.hollis_ko && globalVars.hollis_resolved !== 'talked' && globalVars.hollis_resolved !== 'evaded'" },
+          { "text": "RAY HOLLIS: Badge copied off his belt — he never knew, still on their payroll", "style": "warning", "condition": "globalVars.hollis_cloned && globalVars.hollis_resolved === 'evaded' && !globalVars.hollis_ko" },
+          { "text": "RAY HOLLIS: Evaded — still on the checkpoint desk, still on their payroll", "style": "warning", "condition": "globalVars.hollis_resolved === 'evaded' && !globalVars.hollis_cloned && !globalVars.hollis_ko" },
+          { "text": "RAY HOLLIS: Went for you, left standing — still on their payroll", "style": "warning", "condition": "globalVars.hollis_resolved === 'ko' && !globalVars.hollis_ko" },
+          { "text": "RAY HOLLIS: Left at his post — still on their payroll", "style": "warning", "condition": "!globalVars.hollis_ko && globalVars.hollis_resolved !== 'talked' && globalVars.hollis_resolved !== 'evaded' && globalVars.hollis_resolved !== 'ko'" },
           { "text": "THOMAS PARK: Talked — the transfer switch was left intact", "style": "entry", "condition": "globalVars.park_resolved === 'talked'" },
           { "text": "THOMAS PARK: Neutralised in the vault", "style": "warning", "condition": "globalVars.park_ko" },
           { "text": "THOMAS PARK: Evaded — finished the cut and walked out", "style": "warning", "condition": "globalVars.park_resolved === 'evaded' && !globalVars.park_ko" },
@@ -1038,23 +1040,44 @@ scada_password = "CascadeWindow19"
             <%# PASS 5 puzzle chains r1 (F2): when a fight starts, say how to fight and
                 that walking away works (m06 S1 pattern, the tutorial's control words).
                 A reload restores hostility with restored: true, so it doesn't repeat. %>
+            <%# PASS 5 puzzle chains closing round (F8/N1): Q cycles open hand, jab, cross
+                (hud.js), so it never "stows" the fists, and the chase has no leash, so no
+                promise that walking away ends it. Same wording as m05; split for the 30-word cap. %>
             {
               "eventPattern": "npc_hostile_state_changed",
               "condition": "data.npcId === 'ray_hollis' && data.isHostile === true && data.restored !== true",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 1000, "message": "He's coming for you. Q for fists, then E or click when he's in front. Or walk away: he's slower than you. Q again stows them, then click to walk." }
+              "sendTimedMessage": { "delay": 1000, "message": "He's coming for you. Q switches to fists (again for a harder punch), then E or click when he's in front. Face him squarely." }
+            },
+            {
+              "eventPattern": "npc_hostile_state_changed",
+              "condition": "data.npcId === 'ray_hollis' && data.isHostile === true && data.restored !== true",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 5500, "message": "Keep pressing Q until the open hand shows to walk by clicking. He's slower than you if you need distance." }
             },
             {
               "eventPattern": "npc_hostile_state_changed",
               "condition": "data.npcId === 'thomas_park' && data.isHostile === true && data.restored !== true",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 1000, "message": "Park's swinging. Q for fists, then E or click when he's in front. Or walk away: he's slower than you. Q again stows them, then click to walk." }
+              "sendTimedMessage": { "delay": 1000, "message": "Park's swinging. Q switches to fists (again for a harder punch), then E or click when he's in front. Face him squarely." }
+            },
+            {
+              "eventPattern": "npc_hostile_state_changed",
+              "condition": "data.npcId === 'thomas_park' && data.isHostile === true && data.restored !== true",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 5500, "message": "Keep pressing Q until the open hand shows to walk by clicking. He's slower than you if you need distance." }
             },
             {
               "eventPattern": "npc_hostile_state_changed",
               "condition": "data.npcId === 'james_mercer' && data.isHostile === true && data.restored !== true",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 1000, "message": "Mercer's coming at you. Q for fists, then E or click when he's in front. Or walk away: he's slower than you. Q again stows them, then click to walk." }
+              "sendTimedMessage": { "delay": 1000, "message": "Mercer's coming at you. Q switches to fists (again for a harder punch), then E or click when he's in front. Face him squarely." }
+            },
+            {
+              "eventPattern": "npc_hostile_state_changed",
+              "condition": "data.npcId === 'james_mercer' && data.isHostile === true && data.restored !== true",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 5500, "message": "Keep pressing Q until the open hand shows to walk by clicking. He's slower than you if you need distance." }
             },
             <%# PASS 5 puzzle chains r1 (F3): Hollis's badge cloned in conversation.
                 card_cloned carries the card's name and is emitted before the chat
@@ -1064,7 +1087,7 @@ scada_password = "CascadeWindow19"
               "eventPattern": "card_cloned",
               "condition": "data.cardName === 'Server Zone Badge - R. Hollis'",
               "onceOnly": true,
-              "setGlobal": { "hollis_cloned": true, "badge_obtained": true },
+              "setGlobal": { "hollis_cloned": true, "badge_obtained": true, "hollis_backed_off": true },
               "sendTimedMessage": { "delay": 4000, "message": "Got it. His badge never left his belt. Anyone who stands that close can walk off with a copy." }
             },
             {

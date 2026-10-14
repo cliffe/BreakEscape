@@ -27,11 +27,15 @@ VAR badge_obtained = false
 // PASS 5 puzzle chains r1 (F3): synced; set by HaX's card_cloned mapping
 // before the chat resumes (m05 Owen's shape).
 VAR hollis_cloned = false
+// PASS 5 puzzle chains closing round (F7): synced; set once on the first ops-floor
+// entry. The clone is offered only after the player has seen the server-hall reader.
+VAR inside_reached = false
 VAR team_assigned = false
 
 VAR pressed_once = false
 VAR bluff_burned = false
 VAR asked_partial = false
+// Synced scenario global: set by the ink (back off) and by HaX's card_cloned mapping (clone).
 VAR hollis_backed_off = false
 VAR hub_quiet = false
 
@@ -93,7 +97,7 @@ Ray Hollis: Building's been evacuated forty minutes. So you're lost, or you're t
     -> leverage_partial
 // PASS 2: the label said "I'm not here to fight you" and led straight to
 // him panicking; the label now says what the player actually does.
-+ {pressed_once and not hollis_cloned and not badge_obtained} [Keep him on the money. Let the cloner read his belt.]
++ {pressed_once and inside_reached and not hollis_cloned and not badge_obtained} [Keep him on the money. Let the cloner read his belt.]
     -> clone
 + [Walk at him. "I'm not here to fight you, Ray."]
     -> hostile_option

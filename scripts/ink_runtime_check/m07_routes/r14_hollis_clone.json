@@ -6,7 +6,7 @@
  },
  "steps": [
   {
-   "note": "R14 (puzzle chains r1, F3): the quiet route past Hollis. Once the money rattles him (stakes), the m03 cloner reads his badge off his belt. The clone opens the reader; he stays bought, gives no vault rule and no Park tip, and is recorded as evaded."
+   "note": "R14 (puzzle chains r1 F3, closing round F7): the quiet route past Hollis. The clone choice is hidden until the player has seen the server-hall reader (inside_reached). First chat: stakes, then back off; HaX offers the RFID guide on the ops floor; the next sighting offers the clone, which reads his badge off his belt. The clone opens the reader; he stays bought, gives no vault rule and no Park tip, and is recorded as evaded with its own credit."
   },
   {
    "set": {
@@ -30,7 +30,35 @@
    "talk": "hollis",
    "picks": [
     "The grid goes down tonight",
-    "How much?",
+    "How much?"
+   ]
+  },
+  {
+   "notSaid": [
+    "[choice] Keep him on the money"
+   ]
+  },
+  {
+   "talk": "hollis",
+   "picks": [
+    "Back off"
+   ]
+  },
+  {
+   "enter": "operations_floor"
+  },
+  {
+   "said": [
+    "RFID guide?"
+   ]
+  },
+  {
+   "event": "player_spotted:ray_hollis"
+  },
+  {
+   "talk": "hollis",
+   "knot": "start",
+   "picks": [
     "Keep him on the money"
    ]
   },
@@ -55,14 +83,6 @@
    }
   },
   {
-   "enter": "operations_floor"
-  },
-  {
-   "notSaid": [
-    "RFID guide?"
-   ]
-  },
-  {
    "enter": "server_room"
   },
   {
@@ -85,9 +105,10 @@
   },
   {
    "creditsSaid": [
-    "RAY HOLLIS: Evaded"
+    "RAY HOLLIS: Badge copied off his belt"
    ],
    "creditsNotSaid": [
+    "RAY HOLLIS: Evaded",
     "Talked, and handed over"
    ]
   }

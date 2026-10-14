@@ -1,0 +1,30 @@
+{
+ "globals": {
+  "team_assigned": true,
+  "team_assignment": "fracture",
+  "hurt_line_said": true
+ },
+ "steps": [
+  {
+   "note": "R20 (puzzle chains closing round, F9): Hollis goes hostile and the player walks away, as HaX's text advises. HaX gives both fight-controls texts (Q cycles hand, jab, cross; walking is by clicking in the open-hand mode). He is neither talked round nor knocked out, so the credits say he went for the player and was left standing, not 'Left at his post'."
+  },
+  { "set": { "briefing_played": true } },
+  { "event": "player_spotted:ray_hollis" },
+  { "talk": "hollis", "knot": "start", "picks": ["Walk at him", "Put it down"] },
+  {
+   "said": [
+    "Q switches to fists (again for a harder punch)",
+    "Face him squarely",
+    "Keep pressing Q until the open hand shows",
+    "if you need distance"
+   ],
+   "notSaid": ["stows", "Or walk away"]
+  },
+  { "expect": { "hollis_resolved": "ko" } },
+  { "enter": "operations_floor" },
+  {
+   "creditsSaid": ["RAY HOLLIS: Went for you, left standing"],
+   "creditsNotSaid": ["Left at his post", "Neutralised on shift", "Evaded"]
+  }
+ ]
+}

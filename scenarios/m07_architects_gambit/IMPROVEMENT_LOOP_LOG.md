@@ -331,3 +331,39 @@ Credits (`scenario.json.erb`), new: "CORRECTION FOUND LATE: their schedule was r
 - For cycle 2: whether four routes to the badge (talk, printer, KO, clone) reads as too many.
 - Engine items to `DECISIONS_PENDING.md`: U9 (cloner screen with nothing to emulate), U10 (`chaseRange` unread). Fingerprint kit carried unused: U8.
 - Needs checking against SecGen by the user (U3, unchanged).
+
+### Stage 2 puzzle chains, closing fix round (fixer, 2026-10-14)
+
+Review: `PUZZLE_REVIEW_P5_C2.md` (F7, F8, F9; F10 stays with the dialogue stage) and `PASS5_PUZZLE_R1_BROWSER.md` (N1, N3). No SecGen XML and none of the four restricted guides were opened. No browser session. Nothing committed.
+
+| # | Sev. | Finding | Outcome |
+|---|---|---|---|
+| F7 | minor | The clone is offered before the player has seen the reader, and its record matches the printer's | **Fixed.** `VAR inside_reached` added to `m07_npc_ray_hollis.ink` (line 32, synced global set at erb:1020); the clone choice at ink:99 (was :96) now needs `pressed_once and inside_reached and ...`. The `card_cloned` mapping (erb:1087-1092) also sets `hollis_backed_off: true`, so a reload between Save and the chat resuming still records `evaded`. New credit "RAY HOLLIS: Badge copied off his belt — he never knew, still on their payroll" (erb:228), and the plain Evaded line (erb:229, was :228) now has `!hollis_cloned`. A comment on `VAR hollis_backed_off` marks it as a synced global (the validator asked). `inside_reached` was already in `missions.json` for m07 (line 1079). Route r14 rewritten: the choice is hidden after the stakes exchange, the player backs off, HaX offers "RFID guide?" on the ops floor, the next sighting offers the clone, the credit is the new one |
+| F8 / N1 | minor | HaX's controls texts say "Q again stows them" and promise that walking away works | **Fixed.** Three texts (Hollis erb:1050, Park erb:1062, Mercer erb:1074; were 1045, 1051, 1057) now read "<opener> Q switches to fists (again for a harder punch), then E or click when he's in front. Face him squarely." (24 words), each followed by a second text at 5.5 s (erb:1056, 1068, 1080): "Keep pressing Q until the open hand shows to walk by clicking. He's slower than you if you need distance." (20 words). Same wording as m05's Torres texts. No promise that walking away ends the chase. Routes r2, r3, r18 quotes updated |
+| F9 | minor | A hostile Hollis who was walked away from is credited "Left at his post" | **Fixed.** New credit "RAY HOLLIS: Went for you, left standing — still on their payroll" for `hollis_resolved === 'ko' && !hollis_ko` (erb:230); the "Left at his post" condition (erb:231, was :229) now also excludes `ko`. New route r20 (the review's probe p6) |
+| N3 | minor | After a Restart the player respawns 31 px from a still-hostile Hollis | **Deferred, engine.** No mission-side action can move an NPC or clear hostility (event mappings have `setVisible`, `setGlobal`, messages, `targetKnot`; nothing repositions). Moving his patrol or start point would not help while he is chasing, and the start room is the respawn room. Logged as U11 in `DECISIONS_PENDING.md` with the backlog link |
+
+Counts: 0 blockers, 0 majors, 4 minors (F7, F8/N1, F9 fixed; N3 deferred to the engine backlog).
+
+#### Spoken lines changed (old → new)
+
+HaX texts (`scenario.json.erb`), no audio exists:
+- "He's coming for you. Q for fists, then E or click when he's in front. Or walk away: he's slower than you. Q again stows them, then click to walk." → "He's coming for you. Q switches to fists (again for a harder punch), then E or click when he's in front. Face him squarely." + "Keep pressing Q until the open hand shows to walk by clicking. He's slower than you if you need distance."
+- "Park's swinging. …" and "Mercer's coming at you. …": same change, with their own openers.
+- Debrief and ink prose: no change. F10 ("You ask how much again") untouched for the dialogue stage.
+
+#### Checks
+
+- All 20 routes (r1-r20) pass "all expectations met".
+- `dialoguelint`: 0 errors; totals unchanged (transition 1, not-x-but-y 1, you-after-choice 2, blank-reentry 6); timed texts max 30 words.
+- `reopencheck`: 0 problems (m07 HaX 1800 reopens, the_architect 476).
+- `validate_scenario.rb`: no errors; the same onceOnly-overlap warnings and credits-fallback suggestions as before; the `hollis_backed_off` sync warning raised by the new mapping is cleared by the comment.
+- `check_door_alignment.py scenarios/m07_architects_gambit/scenario.json.erb`: all OK. `tagdiff` on the Hollis ink: 3 structural differences (the new VAR, the choice condition, a comment).
+- Ink recompiled: 8 files, 0 failed.
+
+#### Open
+
+- Browser check owed (a single short one): the two-part controls texts at a hostile Hollis, and the clone choice appearing on the sighting after the ops floor.
+
+### Stage 2 puzzle chains: CLOSED (orchestrator, 2026-10-14)
+Cycle 2 review 0/0/4, round-1 browser check all four items pass, closing round fixed F7, F8/N1, F9 (N3 to U11, engine). Owed on screen, carried to the next browser check: the two-part controls texts at a hostile Hollis; the clone choice appearing on the sighting after the ops floor. F10 to the dialogue stage.
