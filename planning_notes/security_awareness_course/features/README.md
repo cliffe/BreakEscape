@@ -118,4 +118,5 @@ Priority: **MVP** is needed for the first sellable course (the Induction Essenti
 - **BE-05** and **HA-11** are two halves of one feature: the platform stores the organisation profile, the game reads it.
 - **HA-10** (LMS interoperability) and **HA-22** (LRS) depend on **BE-14** (xAPI statements) for anything richer than complete and score.
 - **BE-07** (micro-drills) and **HA-21** (schedule) go together, and depend on **BE-13** (content banks) so a monthly drill isn't the same drill every month.
-- **EX-02** (engine-recorded video) depends on **MG-21** (video player) or **HA-20** (hosting) to be shown anywhere.
+- **EX-02** (engine-recorded video) depends on **MG-21** (video player) or **HA-20** (hosting) to be shown anywhere. Its main risk is that Playwright records video without sound, so the voice clips have to be laid onto the recording at the logged line times: prove that with a short spike before any module schedules an engine-recorded video.
+- **EX-01** (the mentor explainer) is small as an authoring pattern, but it only works as designed once **BE-08** (visual aids), **BE-19** (opening the check question from the conversation) and **MG-20** (the knowledge check) exist. Budget those with it.

@@ -40,6 +40,7 @@ Questions for the user. Each has a recommendation; the plan follows the recommen
 - **Background:** videos can be recorded from the engine with the course's own characters and voices (EX-02), or produced outside it (EX-03). There is an existing character set for the project lead (`assets/characters/cliffe_schreuders*`).
 - **Question:** would you like to front the course introduction, either as your existing pixel character or on camera?
 - **Recommendation:** engine-recorded videos first (cheap, consistent, easy to update); one presenter-led introduction if you're willing.
+- **Related:** videos stay the same for every customer, with the organisation's own details shown on the page and the reference card around them (as with voiced lines). Rendering a version per customer would multiply the cost. Confirm this is acceptable.
 
 ### D8. Test-out for experienced staff
 
