@@ -364,6 +364,18 @@
      "width": 56,
      "x": 132.0,
      "y": 200.0
+    },
+    {
+     "gid": 109,
+     "height": 41,
+     "id": 12,
+     "name": "",
+     "rotation": 0,
+     "type": "",
+     "visible": true,
+     "width": 50,
+     "x": 214.0,
+     "y": 286.0
     }
    ],
    "opacity": 1,
@@ -426,9 +438,21 @@
      "y": 54.0
     },
     {
+     "gid": 317,
+     "height": 32,
+     "id": 7,
+     "name": "",
+     "rotation": 0,
+     "type": "",
+     "visible": true,
+     "width": 16,
+     "x": 152.0,
+     "y": 172.0
+    },
+    {
      "gid": 316,
      "height": 26,
-     "id": 6,
+     "id": 8,
      "name": "",
      "rotation": 0,
      "type": "",
@@ -440,7 +464,7 @@
     {
      "gid": 1298,
      "height": 50,
-     "id": 7,
+     "id": 9,
      "name": "",
      "rotation": 0,
      "type": "",
@@ -450,15 +474,39 @@
      "y": 170.0
     },
     {
+     "gid": 195,
+     "height": 15,
+     "id": 11,
+     "name": "",
+     "rotation": 0,
+     "type": "",
+     "visible": true,
+     "width": 11,
+     "x": 16.0,
+     "y": 120.0
+    },
+    {
+     "gid": 914,
+     "height": 40,
+     "id": 15,
+     "name": "",
+     "rotation": 0,
+     "type": "",
+     "visible": true,
+     "width": 29,
+     "x": 62.0,
+     "y": 300.0
+    },
+    {
      "gid": 126,
      "height": 19,
-     "id": 9,
+     "id": 17,
      "name": "",
      "rotation": 0,
      "type": "",
      "visible": true,
      "width": 18,
-     "x": 270.0,
+     "x": 40.0,
      "y": 300.0
     }
    ],
@@ -494,7 +542,44 @@
    "draworder": "topdown",
    "id": 12,
    "name": "table_items",
-   "objects": [],
+   "objects": [
+    {
+     "gid": 1304,
+     "height": 9,
+     "id": 6,
+     "name": "",
+     "rotation": 0,
+     "type": "",
+     "visible": true,
+     "width": 16,
+     "x": 152.0,
+     "y": 169.25
+    },
+    {
+     "gid": 333,
+     "height": 18,
+     "id": 13,
+     "name": "",
+     "rotation": 0,
+     "type": "",
+     "visible": true,
+     "width": 24,
+     "x": 219.5,
+     "y": 257.3
+    },
+    {
+     "gid": 181,
+     "height": 14,
+     "id": 14,
+     "name": "",
+     "rotation": 0,
+     "type": "",
+     "visible": true,
+     "width": 14,
+     "x": 247.0,
+     "y": 257.3
+    }
+   ],
    "opacity": 1,
    "type": "objectgroup",
    "visible": true,
@@ -508,7 +593,7 @@
    "objects": [
     {
      "height": 6,
-     "id": 8,
+     "id": 10,
      "name": "collision",
      "rotation": 0,
      "type": "",
@@ -516,6 +601,17 @@
      "width": 20,
      "x": 238.0,
      "y": 164.0
+    },
+    {
+     "height": 10,
+     "id": 16,
+     "name": "collision",
+     "rotation": 0,
+     "type": "",
+     "visible": true,
+     "width": 25,
+     "x": 64.0,
+     "y": 290.0
     }
    ],
    "opacity": 1,
@@ -526,7 +622,7 @@
   }
  ],
  "nextlayerid": 14,
- "nextobjectid": 10,
+ "nextobjectid": 18,
  "orientation": "orthogonal",
  "renderorder": "right-down",
  "tiledversion": "1.11.2",
@@ -2959,7 +3055,7 @@
    "margin": 0,
    "name": "objects/hospital_extras",
    "spacing": 0,
-   "tilecount": 491,
+   "tilecount": 494,
    "tileheight": 60,
    "tiles": [
     {
@@ -5803,19 +5899,19 @@
     {
      "id": 483,
      "image": "../objects/hq_locker_a1.png",
-     "imageheight": 62,
+     "imageheight": 52,
      "imagewidth": 20
     },
     {
      "id": 484,
      "image": "../objects/hq_locker_b1.png",
-     "imageheight": 62,
+     "imageheight": 52,
      "imagewidth": 20
     },
     {
      "id": 485,
      "image": "../objects/hq_locker_c1.png",
-     "imageheight": 62,
+     "imageheight": 52,
      "imagewidth": 20
     },
     {
@@ -5907,6 +6003,24 @@
      "image": "../objects/hq_rack1.png",
      "imageheight": 60,
      "imagewidth": 32
+    },
+    {
+     "id": 501,
+     "image": "../objects/hq_desk_safe1.png",
+     "imageheight": 30,
+     "imagewidth": 24
+    },
+    {
+     "id": 502,
+     "image": "../objects/notes_notebook1.png",
+     "imageheight": 12,
+     "imagewidth": 14
+    },
+    {
+     "id": 503,
+     "image": "../objects/hq_recorder1.png",
+     "imageheight": 9,
+     "imagewidth": 16
     }
    ],
    "tilewidth": 60

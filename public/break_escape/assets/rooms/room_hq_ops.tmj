@@ -380,14 +380,26 @@
     {
      "gid": 1034,
      "height": 39,
-     "id": 13,
+     "id": 14,
      "name": "",
      "rotation": 0,
      "type": "",
      "visible": true,
      "width": 51,
      "x": 236.0,
-     "y": 184.0
+     "y": 170.0
+    },
+    {
+     "gid": 1033,
+     "height": 39,
+     "id": 17,
+     "name": "",
+     "rotation": 0,
+     "type": "",
+     "visible": true,
+     "width": 78,
+     "x": 127.0,
+     "y": 254.0
     }
    ],
    "opacity": 1,
@@ -462,9 +474,21 @@
      "y": 54.0
     },
     {
+     "gid": 1130,
+     "height": 54,
+     "id": 13,
+     "name": "",
+     "rotation": 0,
+     "type": "",
+     "visible": true,
+     "width": 33,
+     "x": 200.0,
+     "y": 166.0
+    },
+    {
      "gid": 1209,
      "height": 60,
-     "id": 16,
+     "id": 20,
      "name": "",
      "rotation": 0,
      "type": "",
@@ -474,21 +498,9 @@
      "y": 256.0
     },
     {
-     "gid": 1209,
-     "height": 60,
-     "id": 18,
-     "name": "",
-     "rotation": 0,
-     "type": "",
-     "visible": true,
-     "width": 29,
-     "x": 120.0,
-     "y": 256.0
-    },
-    {
      "gid": 806,
      "height": 47,
-     "id": 20,
+     "id": 22,
      "name": "",
      "rotation": 0,
      "type": "",
@@ -498,21 +510,21 @@
      "y": 256.0
     },
     {
-     "gid": 126,
-     "height": 19,
-     "id": 22,
+     "gid": 828,
+     "height": 20,
+     "id": 24,
      "name": "",
      "rotation": 0,
      "type": "",
      "visible": true,
-     "width": 18,
-     "x": 192.0,
-     "y": 256.0
+     "width": 16,
+     "x": 14.0,
+     "y": 210.0
     },
     {
      "gid": 1270,
      "height": 12,
-     "id": 23,
+     "id": 25,
      "name": "",
      "rotation": 0,
      "type": "",
@@ -524,7 +536,7 @@
     {
      "gid": 1270,
      "height": 12,
-     "id": 24,
+     "id": 26,
      "name": "",
      "rotation": 0,
      "type": "",
@@ -536,7 +548,7 @@
     {
      "gid": 818,
      "height": 28,
-     "id": 25,
+     "id": 27,
      "name": "",
      "rotation": 0,
      "type": "",
@@ -643,26 +655,50 @@
     {
      "gid": 372,
      "height": 24,
-     "id": 14,
+     "id": 15,
      "name": "",
      "rotation": 0,
      "type": "",
      "visible": true,
      "width": 31,
      "x": 238.86,
-     "y": 160.6
+     "y": 146.6
     },
     {
      "gid": 221,
      "height": 17,
-     "id": 15,
+     "id": 16,
      "name": "",
      "rotation": 0,
      "type": "",
      "visible": true,
      "width": 19,
      "x": 268.32,
-     "y": 157.48
+     "y": 143.48
+    },
+    {
+     "gid": 372,
+     "height": 24,
+     "id": 18,
+     "name": "",
+     "rotation": 0,
+     "type": "",
+     "visible": true,
+     "width": 31,
+     "x": 131.0,
+     "y": 230.6
+    },
+    {
+     "gid": 372,
+     "height": 24,
+     "id": 19,
+     "name": "",
+     "rotation": 0,
+     "type": "",
+     "visible": true,
+     "width": 31,
+     "x": 166.1,
+     "y": 230.6
     }
    ],
    "opacity": 1,
@@ -678,7 +714,7 @@
    "objects": [
     {
      "height": 10,
-     "id": 17,
+     "id": 21,
      "name": "collision",
      "rotation": 0,
      "type": "",
@@ -689,18 +725,7 @@
     },
     {
      "height": 10,
-     "id": 19,
-     "name": "collision",
-     "rotation": 0,
-     "type": "",
-     "visible": true,
-     "width": 25,
-     "x": 122.0,
-     "y": 246.0
-    },
-    {
-     "height": 10,
-     "id": 21,
+     "id": 23,
      "name": "collision",
      "rotation": 0,
      "type": "",
@@ -718,7 +743,7 @@
   }
  ],
  "nextlayerid": 14,
- "nextobjectid": 26,
+ "nextobjectid": 28,
  "orientation": "orthogonal",
  "renderorder": "right-down",
  "tiledversion": "1.11.2",
@@ -3151,7 +3176,7 @@
    "margin": 0,
    "name": "objects/hospital_extras",
    "spacing": 0,
-   "tilecount": 491,
+   "tilecount": 494,
    "tileheight": 60,
    "tiles": [
     {
@@ -6099,6 +6124,24 @@
      "image": "../objects/hq_rack1.png",
      "imageheight": 60,
      "imagewidth": 32
+    },
+    {
+     "id": 501,
+     "image": "../objects/hq_desk_safe1.png",
+     "imageheight": 30,
+     "imagewidth": 24
+    },
+    {
+     "id": 502,
+     "image": "../objects/notes_notebook1.png",
+     "imageheight": 12,
+     "imagewidth": 14
+    },
+    {
+     "id": 503,
+     "image": "../objects/hq_recorder1.png",
+     "imageheight": 9,
+     "imagewidth": 16
     }
    ],
    "tilewidth": 60

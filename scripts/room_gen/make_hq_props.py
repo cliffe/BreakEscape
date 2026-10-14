@@ -369,43 +369,48 @@ def cipher_board():
 
 
 def locker(name, label, kind):
-    """A tall steel staff locker, front on, 20x62: a vented door, a key cylinder, a
-    printed label plate with the agent's hex number. 'stickers' (0x23: conference
-    stickers all over the door), 'plain' (0x47: the neat label and nothing else),
-    'tag' (0x88: an airline luggage tag looped through the handle)."""
-    w, h = 20, 62
+    """A steel staff locker, front on, 20x52: a vented door, a key cylinder, a printed
+    label plate with the agent's hex number. 'stickers' (0x23: conference stickers all
+    over the door), 'plain' (0x47: the neat label and nothing else), 'tag' (0x88: an
+    airline luggage tag looped through the handle).
+
+    52 px tall, not 62 (confirmation walk L3): the engine measures interaction range
+    (32 px) from a map sprite's top-left, and a player standing at the foot of a wall
+    locker has their centre about 26 px above its feet, so a taller locker can't be
+    reached from the floor in front of it."""
+    w, h = 20, 52
     c = Canvas(w, h)
     body, hi, dark = (96, 108, 126), (124, 136, 154), (60, 70, 86)
     c.rect(0, 0, w - 1, h - 1, OUTLINE)
-    c.rect(1, 1, w - 2, 7, hi)                       # the top cap
-    c.hline(1, w - 2, 8, dark)
-    c.rect(1, 9, w - 2, h - 3, body)
-    c.frame(2, 10, w - 3, h - 4, dark)               # the door
+    c.rect(1, 1, w - 2, 5, hi)                       # the top cap
+    c.hline(1, w - 2, 6, dark)
+    c.rect(1, 7, w - 2, h - 3, body)
+    c.frame(2, 8, w - 3, h - 4, dark)                # the door
     c.hline(1, w - 2, h - 2, (40, 44, 54))           # plinth
-    for y in (14, 16, 18):                           # vents
+    for y in (11, 13):                               # vents
         c.hline(5, w - 6, y, dark)
-    for y in (h - 12, h - 10, h - 8):
+    for y in (h - 10, h - 8):
         c.hline(5, w - 6, y, dark)
     # label plate
-    c.rect(2, 21, 18, 27, PAPER)
-    c.frame(2, 21, 18, 27, (150, 150, 156))
-    c.text(3, 22, label, INK)
+    c.rect(2, 16, 18, 22, PAPER)
+    c.frame(2, 16, 18, 22, (150, 150, 156))
+    c.text(3, 17, label, INK)
     # key cylinder and handle
-    c.rect(14, 32, 16, 37, (60, 64, 72))
-    c.rect(15, 33, 15, 34, (200, 170, 70))
-    c.px(15, 36, (30, 30, 36))
+    c.rect(14, 26, 16, 31, (60, 64, 72))
+    c.rect(15, 27, 15, 28, (200, 170, 70))
+    c.px(15, 30, (30, 30, 36))
     if kind == "stickers":
-        for (x, y, col, sw, sh) in ((4, 30, (220, 60, 60), 4, 3), (9, 33, (250, 210, 60), 3, 3),
-                                    (4, 37, (70, 170, 90), 3, 4), (8, 40, (140, 80, 200), 5, 3),
-                                    (5, 44, WHITE, 6, 3), (12, 46, (60, 140, 220), 3, 3)):
+        for (x, y, col, sw, sh) in ((4, 25, (220, 60, 60), 4, 3), (9, 27, (250, 210, 60), 3, 3),
+                                    (4, 30, (70, 170, 90), 3, 4), (8, 33, (140, 80, 200), 5, 3),
+                                    (5, 37, WHITE, 6, 3), (12, 38, (60, 140, 220), 3, 3)):
             c.rect(x, y, x + sw - 1, y + sh - 1, col)
-        c.hline(6, 9, 45, INK)                       # DO NOT ROT13 ME, too small to read
+        c.hline(6, 9, 38, INK)                       # DO NOT ROT13 ME, too small to read
     elif kind == "tag":
-        c.px(13, 38, (230, 230, 220))
-        c.px(13, 39, (230, 230, 220))
-        c.rect(10, 40, 14, 47, (230, 120, 40))
-        c.rect(11, 41, 13, 43, PAPER)
-        c.px(12, 45, INK)
+        c.px(13, 32, (230, 230, 220))
+        c.px(13, 33, (230, 230, 220))
+        c.rect(10, 34, 14, 41, (230, 120, 40))
+        c.rect(11, 35, 13, 37, PAPER)
+        c.px(12, 39, INK)
     c.save(OBJ, name)
 
 
@@ -480,6 +485,49 @@ def sign_set():
     plate("INTERVIEW 1", (226, 228, 232), INK, "hq_interview_sign1", rim=(150, 154, 160))
 
 
+def desk_safe():
+    """The Director's biometric safe, tucked against the desk's end: a squat steel
+    box front on, a fingerprint reader glowing green, a keypad below it, a handle."""
+    w, h = 24, 30
+    c = Canvas(w, h)
+    c.rect(0, 0, w - 1, h - 1, OUTLINE)
+    c.rect(1, 1, w - 2, h - 2, (112, 118, 130))
+    c.rect(1, 1, w - 2, 3, (140, 146, 158))
+    c.frame(3, 5, w - 4, h - 4, (80, 86, 98))
+    c.rect(6, 8, 11, 12, (20, 40, 30))             # the reader
+    c.rect(7, 9, 10, 11, (70, 220, 120))
+    for j in range(3):                              # the keypad fallback
+        for i in range(3):
+            c.px(6 + i * 2, 15 + j * 2, (220, 224, 232))
+    c.rect(15, 12, 17, 20, (60, 64, 74))           # handle
+    c.hline(1, w - 2, h - 2, (60, 64, 74))
+    c.save(OBJ, "hq_desk_safe1")
+
+
+def notebook():
+    """Phantom's private notebook: a black hardback with an elastic band and a pencil."""
+    w, h = 14, 12
+    c = Canvas(w, h)
+    c.rect(0, 1, 10, h - 1, (30, 30, 36))
+    c.rect(1, 2, 9, h - 2, (46, 46, 54))
+    c.rect(8, 1, 8, h - 1, (180, 60, 50))          # the band
+    c.hline(1, 9, h - 1, (230, 226, 210))          # page edges
+    line(c, 11, 2, 13, 10, (200, 170, 60))
+    c.save(OBJ, "notes_notebook1")
+
+
+def recorder():
+    """A digital interview recorder on the table: a black twin-deck box, red light."""
+    w, h = 16, 9
+    c = Canvas(w, h)
+    c.rect(0, 1, w - 1, h - 1, (30, 30, 36))
+    c.rect(1, 2, w - 2, h - 2, (56, 58, 66))
+    c.rect(2, 3, 6, 6, (20, 20, 24))
+    c.rect(8, 3, 12, 6, (20, 20, 24))
+    c.px(14, 3, (240, 60, 60))
+    c.save(OBJ, "hq_recorder1")
+
+
 PROPS = {
     "logo": logo_sign, "logo_small": logo_small, "memorial": memorial, "flowers": flowers,
     "alert": alert_screen, "ops_board": ops_board, "tactical": tactical_board,
@@ -492,6 +540,7 @@ PROPS = {
                         locker("hq_locker_c1", "0X88", "tag")],
     "badge_printer": badge_printer, "bin": confidential_bin, "postit": postit, "pad": legal_pad,
     "signs": sign_set,
+    "desk_safe": desk_safe, "notebook": notebook, "recorder": recorder,
 }
 
 

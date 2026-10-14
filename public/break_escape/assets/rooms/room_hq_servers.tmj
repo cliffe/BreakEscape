@@ -368,7 +368,7 @@
     {
      "gid": 1034,
      "height": 39,
-     "id": 31,
+     "id": 29,
      "name": "",
      "rotation": 0,
      "type": "",
@@ -380,7 +380,7 @@
     {
      "gid": 1034,
      "height": 39,
-     "id": 33,
+     "id": 31,
      "name": "",
      "rotation": 0,
      "type": "",
@@ -434,7 +434,7 @@
      "type": "",
      "visible": true,
      "width": 31,
-     "x": 98.0,
+     "x": 93.0,
      "y": 98.0
     },
     {
@@ -446,7 +446,7 @@
      "type": "",
      "visible": true,
      "width": 32,
-     "x": 131.0,
+     "x": 126.0,
      "y": 98.0
     },
     {
@@ -458,7 +458,7 @@
      "type": "",
      "visible": true,
      "width": 30,
-     "x": 165.0,
+     "x": 160.0,
      "y": 98.0
     },
     {
@@ -470,7 +470,7 @@
      "type": "",
      "visible": true,
      "width": 32,
-     "x": 197.0,
+     "x": 192.0,
      "y": 98.0
     },
     {
@@ -482,7 +482,7 @@
      "type": "",
      "visible": true,
      "width": 30,
-     "x": 231.0,
+     "x": 226.0,
      "y": 98.0
     },
     {
@@ -494,7 +494,7 @@
      "type": "",
      "visible": true,
      "width": 30,
-     "x": 263.0,
+     "x": 258.0,
      "y": 98.0
     },
     {
@@ -558,21 +558,9 @@
      "y": 222.0
     },
     {
-     "gid": 867,
-     "height": 55,
-     "id": 27,
-     "name": "",
-     "rotation": 0,
-     "type": "",
-     "visible": true,
-     "width": 30,
-     "x": 230.0,
-     "y": 222.0
-    },
-    {
      "gid": 870,
      "height": 63,
-     "id": 29,
+     "id": 27,
      "name": "",
      "rotation": 0,
      "type": "",
@@ -584,7 +572,7 @@
     {
      "gid": 1270,
      "height": 12,
-     "id": 35,
+     "id": 33,
      "name": "",
      "rotation": 0,
      "type": "",
@@ -596,7 +584,7 @@
     {
      "gid": 818,
      "height": 28,
-     "id": 36,
+     "id": 34,
      "name": "",
      "rotation": 0,
      "type": "",
@@ -654,7 +642,7 @@
     {
      "gid": 382,
      "height": 23,
-     "id": 32,
+     "id": 30,
      "name": "",
      "rotation": 0,
      "type": "",
@@ -666,7 +654,7 @@
     {
      "gid": 387,
      "height": 19,
-     "id": 34,
+     "id": 32,
      "name": "",
      "rotation": 0,
      "type": "",
@@ -688,73 +676,73 @@
    "name": "Object Layer 1",
    "objects": [
     {
-     "height": 10,
+     "height": 34,
      "id": 4,
      "name": "collision",
      "rotation": 0,
      "type": "",
      "visible": true,
      "width": 27,
-     "x": 100.0,
-     "y": 88.0
+     "x": 95.0,
+     "y": 64.0
     },
     {
-     "height": 10,
+     "height": 34,
      "id": 6,
      "name": "collision",
      "rotation": 0,
      "type": "",
      "visible": true,
      "width": 28,
-     "x": 133.0,
-     "y": 88.0
+     "x": 128.0,
+     "y": 64.0
     },
     {
-     "height": 10,
+     "height": 34,
      "id": 8,
      "name": "collision",
      "rotation": 0,
      "type": "",
      "visible": true,
      "width": 26,
-     "x": 167.0,
-     "y": 88.0
+     "x": 162.0,
+     "y": 64.0
     },
     {
-     "height": 10,
+     "height": 34,
      "id": 10,
      "name": "collision",
      "rotation": 0,
      "type": "",
      "visible": true,
      "width": 28,
-     "x": 199.0,
-     "y": 88.0
+     "x": 194.0,
+     "y": 64.0
     },
     {
-     "height": 10,
+     "height": 34,
      "id": 12,
      "name": "collision",
      "rotation": 0,
      "type": "",
      "visible": true,
      "width": 26,
-     "x": 233.0,
-     "y": 88.0
+     "x": 228.0,
+     "y": 64.0
     },
     {
-     "height": 10,
+     "height": 34,
      "id": 14,
      "name": "collision",
      "rotation": 0,
      "type": "",
      "visible": true,
      "width": 26,
-     "x": 265.0,
-     "y": 88.0
+     "x": 260.0,
+     "y": 64.0
     },
     {
-     "height": 10,
+     "height": 50,
      "id": 18,
      "name": "collision",
      "rotation": 0,
@@ -762,10 +750,10 @@
      "visible": true,
      "width": 28,
      "x": 66.0,
-     "y": 212.0
+     "y": 172.0
     },
     {
-     "height": 10,
+     "height": 50,
      "id": 20,
      "name": "collision",
      "rotation": 0,
@@ -773,10 +761,10 @@
      "visible": true,
      "width": 26,
      "x": 100.0,
-     "y": 212.0
+     "y": 172.0
     },
     {
-     "height": 10,
+     "height": 50,
      "id": 22,
      "name": "collision",
      "rotation": 0,
@@ -784,10 +772,10 @@
      "visible": true,
      "width": 28,
      "x": 132.0,
-     "y": 212.0
+     "y": 172.0
     },
     {
-     "height": 10,
+     "height": 50,
      "id": 24,
      "name": "collision",
      "rotation": 0,
@@ -795,10 +783,10 @@
      "visible": true,
      "width": 26,
      "x": 166.0,
-     "y": 212.0
+     "y": 172.0
     },
     {
-     "height": 10,
+     "height": 50,
      "id": 26,
      "name": "collision",
      "rotation": 0,
@@ -806,22 +794,11 @@
      "visible": true,
      "width": 28,
      "x": 198.0,
-     "y": 212.0
+     "y": 172.0
     },
     {
      "height": 10,
      "id": 28,
-     "name": "collision",
-     "rotation": 0,
-     "type": "",
-     "visible": true,
-     "width": 26,
-     "x": 232.0,
-     "y": 212.0
-    },
-    {
-     "height": 10,
-     "id": 30,
      "name": "collision",
      "rotation": 0,
      "type": "",
@@ -839,7 +816,7 @@
   }
  ],
  "nextlayerid": 14,
- "nextobjectid": 37,
+ "nextobjectid": 35,
  "orientation": "orthogonal",
  "renderorder": "right-down",
  "tiledversion": "1.11.2",
@@ -3272,7 +3249,7 @@
    "margin": 0,
    "name": "objects/hospital_extras",
    "spacing": 0,
-   "tilecount": 491,
+   "tilecount": 494,
    "tileheight": 60,
    "tiles": [
     {
@@ -6220,6 +6197,24 @@
      "image": "../objects/hq_rack1.png",
      "imageheight": 60,
      "imagewidth": 32
+    },
+    {
+     "id": 501,
+     "image": "../objects/hq_desk_safe1.png",
+     "imageheight": 30,
+     "imagewidth": 24
+    },
+    {
+     "id": 502,
+     "image": "../objects/notes_notebook1.png",
+     "imageheight": 12,
+     "imagewidth": 14
+    },
+    {
+     "id": 503,
+     "image": "../objects/hq_recorder1.png",
+     "imageheight": 9,
+     "imagewidth": 16
     }
    ],
    "tilewidth": 60

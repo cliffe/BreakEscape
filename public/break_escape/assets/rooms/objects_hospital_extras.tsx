@@ -1421,13 +1421,13 @@
   <image source="../objects/hq_flowers1.png" width="16" height="18"/>
  </tile>
  <tile id="483">
-  <image source="../objects/hq_locker_a1.png" width="20" height="62"/>
+  <image source="../objects/hq_locker_a1.png" width="20" height="52"/>
  </tile>
  <tile id="484">
-  <image source="../objects/hq_locker_b1.png" width="20" height="62"/>
+  <image source="../objects/hq_locker_b1.png" width="20" height="52"/>
  </tile>
  <tile id="485">
-  <image source="../objects/hq_locker_c1.png" width="20" height="62"/>
+  <image source="../objects/hq_locker_c1.png" width="20" height="52"/>
  </tile>
  <tile id="486">
   <image source="../objects/hq_badge_printer1.png" width="22" height="16"/>

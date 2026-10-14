@@ -541,7 +541,7 @@ CREDITS
   "rooms": {
 
     "main_lobby": {
-      "type": "room_reception",
+      "type": "room_hq_lobby",
       "door_sign": "SAFETYNET HQ -- The Citadel",
       "connections": {
         "north": "director_office",
@@ -612,8 +612,10 @@ CREDITS
           "npcType": "person",
           <%# PASS 2 (lesson 11): positions are tiles, not pixels. 300,300 put her
               hundreds of tiles outside the 10x10 lobby. Clear floor in front of
-              the desk (desk x2.4-7.8, y1.3-2.8; chairs from y5.7). %>
-          "position": { "x": 4.5, "y": 3.8 },
+              the desk. PASS 5 (room dressing): room_hq_lobby's counter is x 100-210,
+              feet 104; at x 5.6 her 80x80 tap frame (x 139-219) stays off the
+              badge printer at the counter's west end (x 104-126). %>
+          "position": { "x": 5.6, "y": 3.8 },
           "spriteSheet": "female_office_worker_v2",
           "spriteTalk": "assets/characters/female_office_worker_talk.png",
           "spriteVisemes": "assets/characters/female_office_worker_visemes.png",
@@ -700,7 +702,7 @@ CREDITS
               "_comment": "First contact, after the opening cutscene closes rather than on a wall-clock timer that could open over it.",
               "eventPattern": "conversation_closed:opening_briefing_cutscene",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 2500, "message": "I'm on the wire. Director's office, north of the lobby. Get the brief before you spook anyone. And 0x00... one of the three is a friend of mine." }
+              "sendTimedMessage": { "delay": 2500, "message": "I'm on the wire. Get the Director's brief before you spook anyone. And 0x00... whichever of the three it is, it's a friend of mine." }
             },
             {
               "_comment": "Flag 1 -- GitList argument injection. First foothold; SAFETYNET's own repo browser is exploitable without a login. PASS 4 (fix 19): offers the secrets-in-git-history guide here, before the step it teaches (flag 2); the vulnerability-analysis guide moved to the launcher.",
@@ -1003,7 +1005,7 @@ CREDITS
               "condition": "data.cardName === 'Director Netherton Keycard'",
               "onceOnly": true,
               "setGlobal": { "netherton_card_cloned": true, "netherton_card_taken": true },
-              "sendTimedMessage": { "delay": 2500, "message": "You cloned the Director. Nightshade said it once: one day it'll be our badge somebody clones. At the reader, emulate it from the cloner's Saved list." }
+              "sendTimedMessage": { "delay": 2500, "message": "You cloned the Director. At the reader, emulate it from the cloner's Saved list." }
             },
             {
               "_comment": "PASS 4 (fix 1): the thumbprint on the USB stick from his locker (fingerprintOwner Nightshade -> event slug nightshade). Any lift gets HaX's hedged text; round 2 (re-review m1): only a MATCH (fingerprint_identified, emitted on the first identification, biometrics.js:97-99) sets nightshade_print_lifted, which the credit and the confrontation line read.",
@@ -1162,7 +1164,7 @@ CREDITS
           "storyPath": "scenarios/m08_the_mole/ink/m08_closing_debrief.json",
           "voice": {
             "name": "Charon",
-            "style": "Cinematic thriller. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Low, deliberate, unhurried. SAFETYNET's director, whose own briefing was turned into a weapon; he does not raise his voice and he does not soften anything, and under the control is a cold fury that this came from inside his house.",
+            "style": "SAFETYNET's director. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Low, deliberate, unhurried. His own briefing was turned into a weapon; he does not raise his voice and he does not soften anything, and under the control is a cold fury that this came from inside his house.",
             "language": "en-GB"
           },
           "currentKnot": "start",
@@ -1289,6 +1291,7 @@ CREDITS
           "type": "pc",
           "id": "badge_printer",
           "name": "Visitor Badge Printer",
+          "position": "as-type:hq_badge_printer",
           "takeable": false,
           "locked": true,
           "lockType": "pin",
@@ -1313,6 +1316,7 @@ CREDITS
           "type": "smartscreen",
           "id": "security_notice",
           "name": "Security Alert Board",
+          "position": "as-type:hq_alert_screen",
           "takeable": false,
           "readable": true,
           "observations": "The lobby notice board, cycling one message on a red background.",
@@ -1322,7 +1326,7 @@ CREDITS
     },
 
     "director_office": {
-      "type": "room_ceo",
+      "type": "room_hq_director",
       "door_sign": "Director M. Netherton",
       "connections": { "south": "main_lobby" },
       "npcs": [
@@ -1340,7 +1344,7 @@ CREDITS
           "storyPath": "scenarios/m08_the_mole/ink/m08_director_netherton.json",
           "voice": {
             "name": "Charon",
-            "style": "Cinematic thriller. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Low, deliberate, unhurried. SAFETYNET's director, whose own briefing was turned into a weapon; he does not raise his voice and he does not soften anything, and under the control is a cold fury that this came from inside his house.",
+            "style": "SAFETYNET's director. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Low, deliberate, unhurried. His own briefing was turned into a weapon; he does not raise his voice and he does not soften anything, and under the control is a cold fury that this came from inside his house.",
             "language": "en-GB"
           },
           "currentKnot": "start",
@@ -1398,6 +1402,7 @@ CREDITS
           "type": "safe",
           "id": "director_safe",
           "name": "Director's Safe",
+          "position": "as-type:hq_desk_safe",
           "takeable": false,
           "locked": true,
           "lockType": "pin",
@@ -1442,7 +1447,7 @@ CREDITS
     },
 
     "operations_floor": {
-      "type": "room_office",
+      "type": "room_hq_ops",
       "door_sign": "Operations Floor",
       "connections": {
         "west": "main_lobby",
@@ -1509,7 +1514,7 @@ CREDITS
           "id": "background_analyst",
           "displayName": "Junior Analyst",
           "npcType": "person",
-          "position": { "x": 8.0, "y": 8.0 },
+          "position": { "x": 8.2, "y": 7.0 },
           "spriteSheet": "female_office_worker_v2",
           "spriteTalk": "assets/characters/female_office_worker_talk.png",
           "spriteVisemes": "assets/characters/female_office_worker_visemes.png",
@@ -1551,6 +1556,7 @@ CREDITS
           "type": "smartscreen",
           "id": "operations_board",
           "name": "Operations Status Board",
+          "position": "as-type:hq_ops_board",
           "takeable": false,
           "readable": true,
           "observations": "The floor's wall board. Every active operation reads the same word.",
@@ -1561,7 +1567,7 @@ CREDITS
     },
 
     "intel_analysis": {
-      "type": "room_control_1x2gu",
+      "type": "room_hq_intel",
       "door_sign": "Intelligence Analysis",
       "connections": { "south": "operations_floor" },
       "npcs": [
@@ -1570,7 +1576,7 @@ CREDITS
           "id": "agent_phantom",
           "displayName": "Agent 0x88 'Phantom'",
           "npcType": "person",
-          "position": { "x": 5.0, "y": 4.3 },
+          "position": { "x": 5.2, "y": 3.95 },
           <%# PASS 4 (fix 16): was male_spy_v2, the Director's sprite. In a
               whodunit a suspect shouldn't look like the man running it.
               Round 2 (playtest): male_telecom's hi-vis vest read as
@@ -1652,6 +1658,7 @@ CREDITS
           "type": "chart",
           "id": "tactical_board",
           "name": "Four-Site Night Tactical Board",
+          "position": "as-type:hq_tactical_board",
           "takeable": false,
           "readable": true,
           "observations": "The tactical board from the night of the four attacks, still up. Somebody could not bring themselves to take it down.",
@@ -1664,6 +1671,7 @@ CREDITS
           "type": "notes",
           "id": "phantom_notes",
           "name": "Phantom's Off-Book Notes",
+          "position": "as-type:notes_notebook",
           "takeable": true,
           "readable": true,
           "observations": "A private notebook Phantom did not quite hide.",
@@ -1677,7 +1685,7 @@ CREDITS
     },
 
     "server_room": {
-      "type": "room_servers",
+      "type": "room_hq_servers",
       "locked": true,
       "lockType": "rfid",
       "requires": "server_zone_badge",
@@ -1737,7 +1745,7 @@ CREDITS
     },
 
     "security_archives": {
-      "type": "room_archive_1x2gu",
+      "type": "room_hq_archives",
       "locked": true,
       "lockType": "password",
       "requires": "<%= archives_password %>",
@@ -1778,8 +1786,7 @@ CREDITS
           "name": "Badge Audit Printout -- Leak Window",
           "takeable": true,
           "readable": true,
-          "position": { "x": 4.6, "y": 3.4 },
-          "observations": "A door-audit query, printed and never collected, slid off the desk onto the floor. The header carries Phantom's account.",
+                    "observations": "A door-audit query, printed and never collected, slid off the desk onto the floor. The header carries Phantom's account.",
           "observationDisplay": "gameDisplay",
           "text": "BADGE AUDIT -- QUERY RESULTS (all times UTC)\nRun by: 0x88 (PHANTOM). Printed. Not collected.\nWindow: D-2 07:00 to 13:00 (D-2 = two days before the Portland order)\n\nCL-1 -- Crypto Lab door. The only way into the lab, the break room\n        and the interrogation suite.\n  07:52  IN   0x3C  OFF-SHIFT\n  08:12  IN   0x61  FACILITIES (clean)\n  08:58  OUT  0x61\n  10:15  IN   0x47  NIGHTSHADE\n  10:24  IN   0x23  CIPHER\n  10:32  OUT  0x23  CIPHER\n  11:43  OUT  0x47  NIGHTSHADE\n  (next event: 13:10 OUT 0x3C)\n\nLIB-2 -- Crypto library door\n  10:35  IN   0x23  CIPHER\n  (next event: 13:40 OUT 0x23)\n\nTRAVEL DESK\n  0x88  PHANTOM  Zurich handover. Wheels up 10:09, down 11:54. Manifest on file.",
           "onRead": { "setVariable": { "found_badge_audit": true } },
@@ -1794,7 +1801,7 @@ CREDITS
     },
 
     "cryptography_lab": {
-      "type": "room_lab",
+      "type": "room_hq_crypto",
       "door_sign": "Cryptography Lab",
       "connections": {
         "east": "main_lobby",
@@ -1807,7 +1814,7 @@ CREDITS
           "id": "agent_nightshade",
           "displayName": "Agent 0x47 'Nightshade'",
           "npcType": "person",
-          "position": { "x": 5.3, "y": 5.8 },
+          "position": { "x": 5.45, "y": 5.8 },
           "spriteSheet": "nightshade",
           "spriteTalk": "assets/characters/nightshade_talk.png",
           "spriteVisemes": "assets/characters/nightshade_visemes.png",
@@ -1897,7 +1904,7 @@ CREDITS
     },
 
     "interrogation_room": {
-      "type": "room_security",
+      "type": "room_hq_interview",
       "locked": true,
       "lockType": "pin",
       "requires": "<%= suite_code %>",
@@ -1960,6 +1967,7 @@ CREDITS
           "type": "smartscreen",
           "id": "evidence_display",
           "name": "Evidence Display",
+          "position": "as-type:hq_evidence_wall",
           "takeable": false,
           "readable": true,
           "observations": "The interrogation-room evidence wall. It fills in as evidence comes through the relay.",
@@ -1977,6 +1985,7 @@ CREDITS
           "type": "smartscreen",
           "id": "disposition_terminal",
           "name": "Detention Disposition Screen",
+          "position": "as-type:hq_disposition",
           "takeable": false,
           "readable": true,
           "observations": "SAFETYNET's disposition system. It takes one entry per detainee, and the Director countersigns whatever goes in.",
@@ -1993,7 +2002,7 @@ CREDITS
     },
 
     "break_room": {
-      "type": "room_break",
+      "type": "room_hq_break",
       "door_sign": "Break Room",
       "connections": { "east": "cryptography_lab" },
       "npcs": [
@@ -2027,7 +2036,7 @@ CREDITS
           "id": "background_agent",
           "displayName": "Off-Duty Agent",
           "npcType": "person",
-          "position": { "x": 7.5, "y": 7.8 },
+          "position": { "x": 6.6, "y": 5.3 },
           <%# Round 2: off duty, so a hoodie (male_hacker_hood_v2 has no
               viseme sheet; the talk sheet carries him, as in m06). Frees the
               shirt-and-tie sprite for Phantom. %>
@@ -2088,6 +2097,7 @@ CREDITS
           "type": "notes",
           "id": "password_sticky_note",
           "name": "Post-It On The Coffee Machine",
+          "position": "as-type:notes_postit",
           "takeable": true,
           "readable": true,
           "observations": "A yellow sticky note stuck to the coffee machine, exactly where the security posters say it should never be.",
@@ -2099,6 +2109,7 @@ CREDITS
           "type": "notes",
           "id": "timeline_reconstruction",
           "name": "Leak Timeline (someone's working notes)",
+          "position": "as-type:notes_legalpad",
           "takeable": true,
           "readable": true,
           "observations": "Someone has been reconstructing the leak timeline on a legal pad. It matches the server logs exactly.",
@@ -2115,9 +2126,10 @@ CREDITS
             PASS 5 (alignment C2, J4): one locker per suspect, side by side
             (0x23, 0x47, 0x88; the picks open all three), so searching is
             investigation rather than a pointer, and each holds something that
-            looks bad until it is explained. The row sits where the old
-            three-door sprite stood (old top-left 4.4, 7.45), using the single-locker
-            sprite, a little over a tile apart so one click never opens the
+            looks bad until it is explained. PASS 5 (room dressing): the row
+            stands against the back wall on m08's own locker sprites
+            (hq_locker_a1/b1/c1, as-type), 34 px apart, each top-left 32 px
+            or more from the next one's top-left and centre so one click never opens the
             next (validator rule 6, 32 px interaction range). 0x47 is in the
             middle, "second from the end" either way. Base observations are
             true in every state, because the lock screen and the container
@@ -2127,14 +2139,13 @@ CREDITS
           "type": "safe",
           "id": "cipher_locker",
           "name": "Staff Locker -- 0x23",
-          "sprite": "student_locker1",
           "takeable": false,
           "locked": true,
           "lockType": "key",
           "requires": "cipher_locker_key",
           "keyPins": [40, 30, 55, 35],
           "difficulty": "medium",
-          "position": { "x": 3.9, "y": 7.45 },
+          "position": "as-type:hq_locker_a",
           "observations": "A staff locker labelled 0x23, plastered with conference stickers. One says DO NOT ROT13 ME.",
           "puzzle_graph_role": "container",
           "puzzle_graph_optional": true,
@@ -2167,14 +2178,13 @@ CREDITS
           "type": "safe",
           "id": "nightshade_locker",
           "name": "Staff Locker -- 0x47",
-          "sprite": "student_locker1",
           "takeable": false,
           "locked": true,
           "lockType": "key",
           "requires": "nightshade_locker_key",
           "keyPins": [35, 50, 25, 45],
           "difficulty": "medium",
-          "position": { "x": 4.95, "y": 7.45 },
+          "position": "as-type:hq_locker_b",
           "observations": "A staff locker labelled 0x47 in a neat hand.",
           "observationVariants": [
             { "condition": "globalVars.nightshade_tidied", "value": "A staff locker labelled 0x47 in a neat hand. Fresh scratches round the lock. Someone has been in it tonight." },
@@ -2282,14 +2292,13 @@ CREDITS
           "type": "safe",
           "id": "phantom_locker",
           "name": "Staff Locker -- 0x88",
-          "sprite": "student_locker1",
           "takeable": false,
           "locked": true,
           "lockType": "key",
           "requires": "phantom_locker_key",
           "keyPins": [50, 35, 45, 30],
           "difficulty": "medium",
-          "position": { "x": 6.0, "y": 7.45 },
+          "position": "as-type:hq_locker_c",
           "observations": "A staff locker labelled 0x88, with an airline luggage tag still looped through the handle.",
           "puzzle_graph_role": "container",
           "puzzle_graph_optional": true,

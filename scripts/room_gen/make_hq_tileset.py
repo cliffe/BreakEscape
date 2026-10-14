@@ -171,14 +171,15 @@ def paint_seal(op, cx, cy, r):
 
 
 def paint_mat(op, box):
-    """A dark ribbed walk-off mat."""
+    """A flat walk-off mat: charcoal-blue with a lighter rubber border and faint
+    horizontal ribs, low contrast so it reads as matting, not a cabinet (c2 C2-10)."""
     x0, y0, x1, y1 = box
     for y in range(y0, y1):
         for x in range(x0, x1):
             if not is_floor(x, y):
                 continue
             edge = x in (x0, x1 - 1) or y in (y0, y1 - 1)
-            c = (26, 28, 34) if edge else ((40, 42, 50) if (y - y0) % 3 else (32, 34, 42))
+            c = (86, 92, 118) if edge else ((58, 64, 92) if (y - y0) % 4 else (52, 58, 86))
             op[x, y] = (*c, 255)
 
 
@@ -217,8 +218,8 @@ def main():
     lobby = paint_floor(lobby, granite_pixel, shadow=0.95)
     op = lobby.load()
     paint_seal(op, 160, 206, 22)
-    paint_mat(op, (32, 68, 60, 124))      # at the west door
-    paint_mat(op, (260, 68, 288, 124))    # at the east door
+    paint_mat(op, (32, 74, 56, 114))      # at the west door
+    paint_mat(op, (264, 74, 288, 114))    # at the east door
     sheets["room_hq_lobby"] = lobby
 
     director = base_walls(DIRECTOR_WALLS)

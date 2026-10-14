@@ -236,7 +236,7 @@
     {
      "gid": 109,
      "height": 41,
-     "id": 7,
+     "id": 8,
      "name": "",
      "rotation": 0,
      "type": "",
@@ -294,9 +294,21 @@
      "y": 98.0
     },
     {
+     "gid": 1037,
+     "height": 64,
+     "id": 5,
+     "name": "",
+     "rotation": 0,
+     "type": "",
+     "visible": true,
+     "width": 38,
+     "x": 88.0,
+     "y": 126.0
+    },
+    {
      "gid": 1265,
      "height": 32,
-     "id": 5,
+     "id": 6,
      "name": "",
      "rotation": 0,
      "type": "",
@@ -308,7 +320,7 @@
     {
      "gid": 1004,
      "height": 35,
-     "id": 6,
+     "id": 7,
      "name": "",
      "rotation": 0,
      "type": "",
@@ -320,7 +332,7 @@
     {
      "gid": 1209,
      "height": 60,
-     "id": 10,
+     "id": 11,
      "name": "",
      "rotation": 0,
      "type": "",
@@ -353,15 +365,15 @@
    "name": "conditional_table_items",
    "objects": [
     {
-     "gid": 212,
-     "height": 11,
-     "id": 8,
+     "gid": 1303,
+     "height": 12,
+     "id": 9,
      "name": "",
      "rotation": 0,
      "type": "",
      "visible": true,
      "width": 14,
-     "x": 209.5,
+     "x": 233.0,
      "y": 71.3
     }
    ],
@@ -379,13 +391,13 @@
     {
      "gid": 333,
      "height": 18,
-     "id": 9,
+     "id": 10,
      "name": "",
      "rotation": 0,
      "type": "",
      "visible": true,
      "width": 24,
-     "x": 227.0,
+     "x": 207.0,
      "y": 71.3
     }
    ],
@@ -413,7 +425,7 @@
     },
     {
      "height": 10,
-     "id": 11,
+     "id": 12,
      "name": "collision",
      "rotation": 0,
      "type": "",
@@ -431,7 +443,7 @@
   }
  ],
  "nextlayerid": 14,
- "nextobjectid": 12,
+ "nextobjectid": 13,
  "orientation": "orthogonal",
  "renderorder": "right-down",
  "tiledversion": "1.11.2",
@@ -2864,7 +2876,7 @@
    "margin": 0,
    "name": "objects/hospital_extras",
    "spacing": 0,
-   "tilecount": 491,
+   "tilecount": 494,
    "tileheight": 60,
    "tiles": [
     {
@@ -5708,19 +5720,19 @@
     {
      "id": 483,
      "image": "../objects/hq_locker_a1.png",
-     "imageheight": 62,
+     "imageheight": 52,
      "imagewidth": 20
     },
     {
      "id": 484,
      "image": "../objects/hq_locker_b1.png",
-     "imageheight": 62,
+     "imageheight": 52,
      "imagewidth": 20
     },
     {
      "id": 485,
      "image": "../objects/hq_locker_c1.png",
-     "imageheight": 62,
+     "imageheight": 52,
      "imagewidth": 20
     },
     {
@@ -5812,6 +5824,24 @@
      "image": "../objects/hq_rack1.png",
      "imageheight": 60,
      "imagewidth": 32
+    },
+    {
+     "id": 501,
+     "image": "../objects/hq_desk_safe1.png",
+     "imageheight": 30,
+     "imagewidth": 24
+    },
+    {
+     "id": 502,
+     "image": "../objects/notes_notebook1.png",
+     "imageheight": 12,
+     "imagewidth": 14
+    },
+    {
+     "id": 503,
+     "image": "../objects/hq_recorder1.png",
+     "imageheight": 9,
+     "imagewidth": 16
     }
    ],
    "tilewidth": 60
