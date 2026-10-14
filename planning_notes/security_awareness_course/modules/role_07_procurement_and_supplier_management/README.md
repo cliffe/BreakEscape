@@ -22,7 +22,7 @@ Suppliers are part of an organisation's attack surface and of its single points 
 - **Synnovis, 2024.** A ransomware attack on 3 June 2024 hit almost all of Synnovis's systems and interrupted the pathology services it runs for London NHS trusts; stolen data was published on 20 June, and services weren't fully restored until late autumn (Synnovis).
 - **CrowdStrike, 2024.** No attacker at all: a faulty content update for a security product, released at 04:09 UTC on 19 July 2024 and pulled 78 minutes later, crashed an estimated 8.5 million Windows devices (CrowdStrike; Microsoft).
 
-The UK government expects buyers to manage this: central government departments, their agencies and NHS bodies must take a risk-based approach and require Cyber Essentials, Cyber Essentials Plus or equivalent controls in higher-risk contracts (PPN 014, Cabinet Office, February 2025). Larkspur's own NHS and council customers ask the same of Larkspur, and Larkspur should ask it of the suppliers that hold its data.
+The UK government expects buyers to manage this: central government departments, their agencies and NHS bodies must apply proportionate cyber controls to their contracts, and for higher-risk contracts the note's answer is to require Cyber Essentials, Cyber Essentials Plus or equivalent controls (PPN 014, Cabinet Office, February 2025). Larkspur's own NHS and council customers ask the same of Larkspur, and Larkspur should ask it of the suppliers that hold its data.
 
 ## Target behaviours
 

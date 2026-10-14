@@ -6,7 +6,7 @@ This file is the source of truth for the module. It assumes core_11's concepts (
 
 1. **Every change is a claim until you've checked it.** Verify every new payee and every change of bank details on a number held before the request, with a second person, before any money moves.
 2. **Read the run, not just the total.** A first payment to recently changed details, a no match, a payee nobody ordered from, a duplicate, two suppliers sharing an account: hold it, even at the cut-off.
-3. **Two people, both checking.** Never approve your own work, never use anyone else's code or leftover access, never split or rush a payment to get round a control. Late is better than lost.
+3. **Two people, both checking.** Never approve your own work, never use anyone else's login or leftover access, never split or rush a payment to get round a control. Late is better than lost.
 4. **If a payment goes wrong, the first call is the bank's fraud line.** Then the evidence, the security team, the person or supplier affected, and Report Fraud.
 5. **Card numbers never travel by email or chat, and security codes are never kept.**
 
@@ -25,7 +25,7 @@ This file is the source of truth for the module. It assumes core_11's concepts (
 - **The request is real:** the person asking to add the supplier is known, and there is a purchase order or contract behind it.
 - **The bank details come through a checked route:** confirm them by phone with the supplier on a number from an independent source (the contract, their official website, a known contact), not from the email that sent them.
 - **Confirmation of Payee at set-up:** run the name check before the first payment and resolve any no match.
-- **Separate the roles:** the person who sets the supplier up isn't the person who approves it or pays it (ISO/IEC 27001 Annex A 5.3).
+- **Separate the roles:** the person who sets the supplier up isn't the person who approves it or pays it (ISO 27001 A.5.3).
 
 ### Changing bank details: the process
 
@@ -49,7 +49,7 @@ The Local Government Transparency Code's Annex B suggests the same core controls
 ### Dual control and segregation of duties
 
 - **Two people, both checking.** The preparer checks the payments; the approver checks the preparer's work. Each assumes the other has checked unless they say what they checked.
-- **Your approval code is yours.** A system can't tell who typed a code. Using someone else's code, or access left over from covering a role last year, removes the second person while the record says there were two.
+- **Your login is yours.** A system can't tell who typed a password. Signing in as someone else, or using access left over from covering a role last year, removes the second person while the record says there were two.
 - **No splitting** a payment to bring it under an approval limit, and no "pay now, approve later".
 - **No urgent manual payments outside the run** on someone's say-so, however senior.
 - **Late is recoverable; fraud often isn't.** If the second approver can't be reached before the cut-off, the run waits and suppliers are told it will be late.
@@ -136,7 +136,7 @@ As the finance team's reference card shows it:
 
 **Reviewing a run:** hold anything with recently changed details and a first payment; a no match or unexplained close match; no order or no delivery; a duplicate; a shared account; a payee set up at an odd time or by someone away; an amount shaped to dodge a limit.
 
-**Approving:** two people, both checking. Your code is yours. Late is better than lost.
+**Approving:** two people, both checking. Your login is yours. Late is better than lost.
 
 **Payroll and refunds:** staff change their own details in the HR system; payroll confirms with the person directly. Refunds go back the way the money came.
 
@@ -155,7 +155,7 @@ As the finance team's reference card shows it:
 | "Confirmation of Payee matched, so the change is verified." | A match confirms only the name on the account. |
 | "The approver will check it." / "The preparer will have checked it." | Each assumes the other has. Both check, and each says what they checked. |
 | "It's month end: everything has to go today." | A late payment can be explained to a supplier; a fraudulent one may never come back. |
-| "Using my manager's approval code is fine when they're off sick." | It removes the second person while the record says there were two. Reach the delegated approver or pay later. |
+| "Signing in with my manager's login is fine when they're off sick." | It removes the second person while the record says there were two. Reach the delegated approver or pay later. |
 | "Splitting the payment keeps it within my limit." | Splitting to get round a limit is a classic fraud pattern, whoever asks for it. |
 | "If an employee's pay is diverted, they should ring their bank." | The paying organisation's bank starts the recovery. Ring it now, and make sure the employee is paid. |
 | "We can keep the security code for repeat customers if they agree." | Never after authorisation, even with consent (PCI SSC FAQ 1574). |

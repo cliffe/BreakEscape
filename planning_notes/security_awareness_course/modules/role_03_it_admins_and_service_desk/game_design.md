@@ -68,7 +68,7 @@ The critical path is marked **(CP)**.
 - **(CP)** The queue board shows fourteen tickets (BE-18). Ordinary work fills the gaps between the tests: a printer in Finance, a shared drive request, a laptop for a new starter, a forgotten password from a registered device that self-service sorts. The tests arrive in this order:
 
 **Test 1 (08:40): the contractor.** An email from Bridget Hennessy, a project manager: *"Sam Reilly starts today on the depot system migration. Please give his normal account domain admin so he isn't blocked. Thanks!!"*
-- *"A separate admin account for Sam, rights on the migration servers only, through the privileged access tool, approved by the system owner, ending with his contract, with a security key."* / *"A separate admin account with domain admin until the migration's done."* / *"Add domain admin to his normal account until the migration's done."* / *"Give him the shared admin login for today."*
+- *"A separate admin account for Sam: migration servers only, approved by the system owner, ending with his contract, with a security key."* / *"A separate admin account with domain admin until the migration's done."* / *"Add domain admin to his normal account until the migration's done."* / *"Give him the shared admin login for today."*
 - Bridget, to the first: *"Didn't know that was a thing. Fine, as long as he's working by ten."* The privileged access tool's approval arrives at 09:50.
 
 **Test 2 (09:10): the app.** A ticket from Martin Fletcher: *"My team need Inbox Genie. It files client emails automatically. It says an admin has to approve it."* The request opens in `forensic-data-platform` with four tabs: the app (unverified publisher, registered last month), its permissions (read and write every mailbox, send mail as any user, read all files), who asked, and the approved alternative (mail rules that already file by client).
@@ -91,10 +91,11 @@ The critical path is marked **(CP)**.
 - *"I can't turn it off, but I'll raise a change so the security team can tune it, and I'll look at the scanner settings today."* / *"Off for the week, then back on."* / *"Nothing we can do, sorry."*
 - Kev: *"As long as it's quicker by Friday. You'd not believe how many folk ask me for the warehouse door code."*
 
-**Test 7 (11:20): the real Gillian.** A call from the chief executive's office line: *"Owain tells me someone pretended to be me this morning. Good. Now, I really have got a new phone. Can you move my authenticator? I'm in my office."*
-- *"Owain and I will come up now, check your ID against your HR photo, and set it up with you."* / *"I'll video call you now and check your ID against your HR photo."* / *"You're on your office line, so that's fine. I'll move it now."* / *"Can I ask you a few security questions?"*
-- The video call is better than nothing but is one route on its own; the procedure for an executive asks for a second check and a second analyst, and her office is a two-minute walk.
-- The first sends the player up to `room_ceo` with Owain, the second analyst. Gillian: *"This is a lot of fuss for a phone."* The player can answer: *"It's the fuss that stopped someone getting into your account this morning."* Gillian: *"Fair. Carry on."* As they leave: *"Tell the desk I said thank you. Put it on The Lark."*
+**Test 7 (11:20): the new contractor.** A call to the desk: *"Hi, it's Sam Reilly, the contractor on the depot migration. My security key's not working on the new laptop."* Then: *"Can you reset the MFA on my admin account? Bridget said you'd sort it. I'm losing the whole morning."* He knows the project, Bridget's name, the migration servers and the new admin account's name, all from this morning's email chain. The record in MG-17 shows the account set up in test 1: in the best branch a separate admin account created at 09:50, MFA enrolled on a security key at 09:55, with the contractor's mobile and line manager on record. In the weaker branches it is his normal account carrying domain admin, which makes this call worth even more to an attacker, and the debrief says so.
+- *"I'll check with Bridget on chat first."* / *"I'll call you back on the mobile in your contractor record."* / *"It's a privileged account, so it needs ID in person or on video plus a second check. Where are you sitting?"* / *"You know the project and Bridget's name. I'll reset it."* / *"Can I ask you a few security questions?"*
+- Bridget, on chat: *"Sam's sat next to me with his security key in. He hasn't rung anyone. Who's asking?"* The call back reaches the real Sam in the project room, who says the same. Asking where he is sitting gets *"Working from home today"*, which Bridget's reply contradicts.
+- The right ending is a polite refusal and an escalation: Kai locks the new admin account's MFA changes for the day and checks its sign-ins. Kai: *"Brand-new admin account, nobody on the desk knows his voice yet. That's exactly who they'd pretend to be."*
+- The real Gillian's message appears on The Lark as the player finishes: *"Someone pretended to be me to our service desk this morning. Our desk checked, and it stopped them. Thank you. If the desk checks with you, that's them doing their job."*
 
 - **(CP)** By 11:45 the queue board shows zero, and the handling-time panel shows a note Owain added on Friday: *"Verification time doesn't count."*
 
@@ -102,8 +103,8 @@ The critical path is marked **(CP)**.
 
 - **(CP)** The debrief screen (BE-02), then Owain and Kai at the desk.
 - **The chain.** A row of links: caller, reset, new device, mailbox, approvals, and for the contractor and the supplier, admin rights and remote tools. Each test lights the link where the player cut it, or shows what came next where they didn't.
-- **Kai's view.** The same crew rang the desk three times this morning as three different people: the "chief executive", "Jamie", and a "finance director" who tried the outsourced night desk and was refused. Kai's line depends on the hook. If the player held the line: *"Three calls. Two of you said no. One said yes and told me in twenty minutes. That's a good Monday."* If the player moved Gillian's MFA and told Owain: *"Three calls, two yeses, and both of you told me fast. That's why nothing went out."* Rosa's report, and the player's own if there was one, are shown as thank-yous, not mistakes.
-- The hook beside test 7: the same request from the "same" person, handled two ways.
+- **Kai's view.** The same crew rang the desk three times this morning as three different people: the "chief executive", "Jamie" and "Sam". Kai's line depends on the player's choices. If the player held the line twice: *"Three calls. You said no twice. Rosa said yes and told me in twenty minutes. That's a good Monday."* If the player moved Gillian's MFA and told Owain: *"Two yeses this morning, and both of you told me fast. That's why nothing went out."* Rosa's report, and the player's own if there was one, are shown as thank-yous, not mistakes.
+- The hook beside test 7: the same request (an MFA reset on a high-value account, by phone, under time pressure) from a chief executive at a gate and from a contractor nobody knows yet.
 - Per-outcome results: Secure, Developing or Not yet.
 - **The line to remember:** *"Knowing isn't proving. Call back on a number they don't control."*
 
@@ -127,7 +128,7 @@ The critical path is marked **(CP)**.
 | T4 Rosa | Report together / tell her to report / fix quietly / not my ticket | LO6 | Kai's thanks, or the forwarding rule found two days later and Rosa's worry in the debrief |
 | T5 The supplier's tool | Gateway and removal / whitelist today / leave the PC unlocked | LO4 | Kai's check of the PC; the debrief's note that the same story is used by criminals |
 | T6 The scanner PC | Change and tune / off for a week / nothing | LO4 | Kev's reply; the gap shown on the debrief chain |
-| T7 The real Gillian | In person with ID and a second analyst / video with ID / caller ID / questions | LO2, LO6 | Gillian's thanks on The Lark; in the weaker branches, Owain's quiet word afterwards |
+| T7 The "contractor" | Check with Bridget / call back on his record / ask for ID in person or on video / reset on what he knows / questions | LO2, LO6 | Bridget's reply and Kai's lock on the new admin account, or Kai finding the new MFA device an hour later |
 
 No option shames the player. A reset in the hook is reported with Owain and treated as the most useful thing to do after a mistake; Rosa is thanked. The worst branches end with Kai or Owain helping and the debrief showing "this is how the real ones started; this is the link that breaks it".
 
@@ -135,14 +136,14 @@ No option shames the player. A reset in the hook is reported with Owain and trea
 
 | Minigame | Status | Use here |
 |---|---|---|
-| **MG-17 Caller verification desk** | new (shared with role_06) | The hook, Practise and tests 1 and 7, with `skin: "service_desk"`. `queue[]` entries carry the caller's claims, the HR directory record (role, account type, number on record, manager, registered devices, recent changes) and a pressure level driven by NPC influence (shown, never timed). `checklist[]` steps by strength: strong (call back on the directory number, prompt to the registered device, manager on chat, in-person or video ID check, second-analyst approval) and weak (date of birth, employee number, address, anything public: always "matches", always tagged findable). Outcomes: go ahead, call back, refuse politely, escalate. Events: `caller_check_used`, `caller_verified`, `caller_refused`, `caller_escalated`, `caller_actioned`, recording the strongest check used before each action |
+| **MG-17 Caller verification desk** | new (shared with role_06) | The hook, Practise and tests 1 and 7, with `skin: "service_desk"`. `queue[]` entries carry the caller's claims, the HR directory record (role, account type, number on record, manager, registered devices, recent changes) and a pressure level driven by NPC influence (shown, never timed). `checklist[]` steps by strength: strong (call back on the directory number, prompt to the registered device, manager on chat, in-person or video ID check, second-analyst approval) and weak (date of birth, employee number, address, anything public: always "matches", always tagged findable). No step asks the caller to read out a code: device checks are approval prompts or reset links sent to details already held. Outcomes: go ahead, call back, refuse politely, escalate. Events: `caller_check_used`, `caller_verified`, `caller_refused`, `caller_escalated`, `caller_actioned`, recording the strongest check used before each action |
 | MG-04 Voice calls | new (P2) | The phone under MG-17; `phone-chat` calls until it exists |
 | MG-27 Work desktop | new | The analyst's PC: queue, log view, chat and The Lark in one launcher, with BE-18's notifications |
 | `log-filter` | existing | Test 4, `logType: "vpn"`, with scenario `logEntries`, an `anomaly` row at 09:41, `threatIntel` for the address and `accountHistory` for Jamie, opened from Kai's message with `#trigger_minigame:log_filter|r03_jamie_signins`. Its country filter only offers UK, RO, US, DE and FR, so the anomaly uses FR; its synthetic timestamps carry a fixed 2025 date, so the module supplies its own `logEntries` |
 | `siem` | existing, **bug** | Not used until `startSiemMinigame` passes `alertConfig` (or an inline alert list): today it always shows sis01's hospital alerts (`features/minigames.md`, section 4) |
 | `forensic-data-platform` | existing (fix in `features/minigames.md`, section 4) | Test 2's app request; `confirmLabel` "Send to security review", gated on the permissions tab; approving is an ink choice so the record captures it |
 | `phone-chat` | existing | Team chat with Kai and Owain; Bridget's follow-up |
-| `person-chat` | existing | Owain, Rosa, Kev at the hatch, Gillian in her office; Jo's interlude in video-call mode |
+| `person-chat` | existing | Owain, Rosa and Kev at the hatch; Jo's interlude in video-call mode |
 | `notes` / `text-file` | existing | The reset procedure, the approved tools list, the supplier contract extract, ticket histories |
 | MG-20 Knowledge check | new | Owain's check question and the final check |
 
@@ -182,10 +183,10 @@ Shown on BE-02, then spoken by Owain and Kai:
 
 ## Art and audio
 
-- **Rooms:** `room_IT` redressed as the desk (headsets, queue board, handling-time screen, the "Ask us first" mug); `room_ceo` and `room_security` as they are.
+- **Rooms:** `room_IT` redressed as the desk (headsets, queue board, handling-time screen, the "Ask us first" mug); `room_security` and `room_office` as they are.
 - **Characters:** Owain, Kai, Jo, Gillian, Martin and Kev use their course art. New: Rosa Delgado (art and voice).
 - **UI:** MG-17's caller card and actions; the queue board; Jo's corkboard as a BE-08 image.
-- **Voice:** about 40 lines for Owain, 15 for Kai, 10 for Rosa, 8 for Jo, 8 for the real Gillian, 6 for the fake one (a different voice, airport ambience, phone filter through voice FX), 4 each for Martin, Kev and Wes, and about 15 generic callers. No voiced line prints a variable: names, numbers and account details are on the caller card, not in speech. Phone numbers on screen come from Ofcom's drama range (07700 900000 to 07700 900999).
+- **Voice:** about 40 lines for Owain, 15 for Kai, 10 for Rosa, 8 for Jo, 4 for the real Gillian (the whispered call back), 6 for the fake one (a different voice, airport ambience, phone filter through voice FX), 5 for the fake Sam, 4 each for Martin, Kev and Wes, and about 15 generic callers. No voiced line prints a variable: names, numbers and account details are on the caller card, not in speech. Phone numbers on screen come from Ofcom's drama range (07700 900000 to 07700 900999).
 
 ## Pitfalls
 

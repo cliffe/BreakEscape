@@ -66,6 +66,8 @@ Match the check to the risk. The account type and the request decide the minimum
 
 After every change: revoke existing sessions where the change was for a suspected compromise, notify the user on their known contact routes (email and phone on record), record what was checked, and watch the account for sign-ins from unexpected places. Video checks help, but a face and a voice can be faked (core_15), so pair them with a second route.
 
+**Never ask anyone to read out a one-time code.** Larkspur's desk, like every Larkspur team, never asks a caller to read back a code (core_02 teaches staff never to read one out, to anyone). Codes read over the phone are exactly what attackers ask for, so a desk that asks for them teaches the wrong habit. The desk verifies by calling back on the number already held, or by sending an approval or a reset link to details already held, which the person then completes themselves.
+
 ### Privileged access hygiene
 
 - **Separate admin accounts, used only for admin.** Cyber Essentials (v3.3, April 2026) requires organisations to "use separate accounts to perform administrative activities only (no emailing, web browsing or other standard user activities that may expose administrative privileges to avoidable risks)", and to remove special access privileges when they're no longer needed.
@@ -123,7 +125,7 @@ Restores depend on backups the attacker couldn't reach and on restores that have
 As the service desk's reset card shows it:
 
 1. **Stop and look at the account.** Standard, privileged or executive? What's being asked: a password, MFA, a new device, new access?
-2. **Don't use anything the caller gives you.** No call-back numbers they offer, no security questions, no "my manager says it's fine".
+2. **Don't use anything the caller gives you.** No call-back numbers they offer, no security questions, no "my manager says it's fine". Never ask anyone to read out a code: send an approval or reset to details already held instead.
 3. **Verify through a route they don't control,** using the ladder for that account and request.
 4. **Privileged or executive account?** In person or video with ID, plus a second check, and a second analyst approves.
 5. **Make the change,** revoke sessions where needed, and **notify the user** on their contact details of record.
@@ -144,6 +146,7 @@ And for admins:
 | "Executives shouldn't be made to wait." | Executive accounts are the ones attackers most want. The strongest check, done quickly and politely, protects the executive. |
 | "The caller ID shows an internal number, so it's internal." | Caller ID can be faked (core_02). Call back on the directory number. |
 | "Seeing them on video proves who they are." | Faces and voices can be faked (core_15). Pair video with a second route. |
+| "Text them a code and ask them to read it back." | Larkspur never asks anyone to read out a code: it's the habit attackers exploit (core_02). Send an approval or reset to details already held, and let the person complete it. |
 | "A reset is safe because the account has MFA." | Resetting MFA is the attack: it moves the second factor to the attacker. |
 | "Admins need admin rights all day." | Give rights when needed, for a set time, on a separate account (Cyber Essentials v3.3; NCSC secure system administration). |
 | "Approving an app is like installing software: low risk." | An app with mail or file permissions keeps that access until it's removed, even after a password reset. |

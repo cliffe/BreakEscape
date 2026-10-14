@@ -15,17 +15,17 @@ Each row is recorded through BE-01 and shown in the debrief and the learner's re
 | R03-B7 | Supports a colleague's report | LO6 | Apply, test 4 | "We'll tell Kai together" | Tells Rosa she should report it, but leaves her to it | "Fix it quietly", or "not my ticket" |
 | R03-B8 | Handles the supplier's remote tool | LO4 | Apply, test 5 | Refuses to whitelist, books the approved route, has the tool removed and reported | Refuses, but leaves the tool in place and unreported | Whitelists it, or asks for the PC to be left unlocked |
 | R03-B9 | Handles the request to switch protection off | LO4 | Apply, test 6 | Raises a change to tune it and offers a fix | "Nothing we can do" (safe, unhelpful) | Turns it off |
-| R03-B10 | Handles the real chief executive's request | LO2, LO6 | Apply, test 7 | In person with ID, a second analyst, notification afterwards | Video call with ID as the only check | Trusts the office line, or asks security questions |
+| R03-B10 | Handles the "contractor's" MFA reset on a privileged account | LO2, LO6 | Apply, test 7 | Verifies through a route the caller doesn't control (Bridget on chat, a call back on the number in his record, or ID in person), then refuses politely and escalates to Kai | Refuses because it's a privileged account but neither verifies nor escalates; or verifies but doesn't tell Kai | Resets it on what he knows, or on security questions |
 
 R03-B2 applies only to players who moved the authenticator in the hook. Players who didn't are recorded as "not applicable", not as a pass or a fail.
 
-The **before and after** is R03-B1 against R03-B10: the same request (move an executive's authenticator to a new phone) from the "same" person, first under airport pressure, then from a real, impatient chief executive on her office line.
+The **before and after** is R03-B1 against R03-B10: the same request (an MFA reset on a high-value account, by phone, under time pressure), first from a "chief executive" at an airport gate before any teaching, then from a "contractor" nobody on the desk knows yet.
 
 ## Critical behaviours
 
 To complete the module the learner must show each of these, or be taken back through the practice for it:
 
-- **R03-CB1 Never changes an executive's or administrator's MFA on knowledge questions or caller ID alone** (R03-B10 not at Not yet; the hook is a baseline and never counts against it).
+- **R03-CB1 Never changes MFA on a privileged or executive account on what the caller knows, or on caller ID, alone** (R03-B10 not at Not yet; the hook is a baseline and never counts against it).
 - **R03-CB2 Escalates a suspicious sign-in after a reset** (R03-B6 not at Not yet).
 - **R03-CB3 Doesn't approve an app with organisation-wide mail and file access** (R03-B5 not at Not yet).
 

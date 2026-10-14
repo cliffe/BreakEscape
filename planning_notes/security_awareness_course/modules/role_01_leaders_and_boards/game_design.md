@@ -85,7 +85,7 @@ The critical path is marked **(CP)**. Times in brackets are crisis time; the min
 - As in sis01's Helen scene, Gillian holds her view until the player brings evidence: Tomasz's advice, or Faisal's clock card from Learn. Tomasz: *"Seventy-two hours where feasible. They'd rather have a first report now and the detail later."* Gillian: *"Fine. Early and honest. Send it."*
 - The ICO clock row shows NOTIFIED with the time, or keeps counting down. Waiting until Friday notifies just inside 72 hours in the log and returns in the debrief; "no notification" misses it.
 
-**Inject 4 (11:00): the demand.** Ama brings a printout of the attackers' portal: *"412 GB of your files. Proof attached. Pay within 7 days or we publish."* The samples are HR spreadsheets. The ransom screen (`ransomware-display`) is shown on Ama's laptop, seen and not played. A countdown appears on the board. Daniel: *"If this leaks, it's on social media within the hour."*
+**Inject 4 (11:00): the demand.** Ama brings a printout of the attackers' portal: *"412 GB of your files. Proof attached. Pay by 14:00 tomorrow or we publish."* The samples are HR spreadsheets. The ransom screen (`ransomware-display`) is shown on Ama's laptop, seen and not played. A countdown appears on the board. Daniel: *"If this leaks, it's on social media within the hour."*
 - The board's resolution in `coverage-decision-form` (three sections): **Engage?** No direct contact / only through the insurer's specialist, to learn what they hold / directly, to negotiate. **Payment?** No, under our stance / kept open as a last resort, subject to checks / pay now to stop publication. **Before any exception** (choose all that apply): legal and sanctions advice; insurer told; NCSC and police told; full board agreement; reasons minuted.
 - Last year's board minute is in the board pack on the table (`notes`). Faisal answers questions but doesn't decide.
 - Assessment follows the process, not the verdict (see `assessment.md`). Consequences shown later: in every branch the leak deadline still arrives; in the "pay now" branch the attackers send a decryptor that is slow and partial, and three weeks later part of the data appears on another forum anyway.
@@ -103,7 +103,7 @@ The critical path is marked **(CP)**. Times in brackets are crisis time; the min
 - Kai logs it and reports it. Ama: *"They're watching the news too. A crisis is perfect cover."*
 
 **Inject 7 (day two, 09:00): restoration.** Owain at the `backup-recovery` console, three cards:
-- **Clean rebuild, lifeline first:** the rota and ordering systems from Sunday's offline backup onto rebuilt servers, about 14 hours; Monday's changes re-keyed from paper.
+- **Clean rebuild, lifeline first:** the rota and ordering systems from Sunday night's offline backup onto rebuilt servers, about 14 hours; Monday's and Tuesday's changes re-keyed from paper.
 - **Fast restore:** everything from last night's online snapshots, about 4 hours. The snapshots were taken while the attackers were inside.
 - **Finance first:** payroll and finance first because Friday is payday; rotas in three days.
 - Hassan: *"If payroll's not back, we pay everyone last month's amount by bank file and correct it next month."*

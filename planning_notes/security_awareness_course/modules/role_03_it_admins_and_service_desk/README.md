@@ -63,22 +63,22 @@ The content also follows ISO 27001 A.5.17, A.5.18, A.8.2, A.8.5 and A.8.16, NCSC
 
 | Beat | What happens | Format | Minutes |
 |---|---|---|---|
-| Hook | 08:02, the first call of the shift: "Gillian Marsh", at an airport gate with a stolen phone, needs her authenticator moved to a new number now. She knows all the answers. The player's handling is the baseline | Game (MG-17, MG-04) | 2 |
+| Hook | 08:02, the first call of the shift: "Gillian Marsh", at an airport gate with a stolen phone, needs her authenticator moved to a new number now. She knows all the answers. The player's handling is the baseline, and one call back on the number already on record finds the real Gillian in the board meeting upstairs | Game (MG-17, MG-04) | 2 |
 | Learn | Owain: "Knowing isn't proving", what a reset hands over, and the verification ladder. Jo Fairweather's minute on where the caller's answers came from | NPC explainer with visual aids (EX-01, BE-08); attacker view (EX-06) | 4 |
 | Practise | "Prove It": six callers and tickets; pick the check that fits the risk | Minigame (MG-17 practice mode) | 4 |
-| Apply | The rest of the shift: a queue of ordinary tickets with six security tests inside it, a colleague's slip, and the real Gillian | Game (MG-17, BE-18, `log-filter`) | 10 |
+| Apply | The rest of the shift: a queue of ordinary tickets with six security tests inside it, a colleague's slip, and a call from the brand-new contractor that isn't him | Game (MG-17, BE-18, `log-filter`) | 10 |
 | Debrief | The attack chain the player broke, link by link, and Kai's view of the same caller trying three analysts | Debrief screen (BE-02) and NPCs | 2 |
 | Check | Six scenario questions | Quiz (MG-20) | 2 |
 | Reference | The service desk's reset card and the admin rules on The Lark | Intranet (BE-09) | under 1 |
 
 ## Reuse from existing Break Escape content
 
-- **Rooms:** `room_IT` redressed as the service desk (headset desks, the queue board, an "average handling time" screen); `room_security` for Kai; `room_ceo` for the in-person check with the real Gillian; `room_office` for walking to a colleague's desk.
+- **Rooms:** `room_IT` redressed as the service desk (headset desks, the queue board, an "average handling time" screen); `room_security` for Kai; `room_office` for walking to a colleague's desk and to the project room.
 - **Minigames:**
   - `log-filter` (`public/break_escape/js/minigames/log-filter/`): its `vpn` log type already has timestamp, user, IP, country, MFA and result columns, filters, threat and account lookups, and a single flaggable anomaly row, all from scenario data. It suits the "sign-in from somewhere unexpected after a reset" alert. Its synthetic log dates are fixed to 2025-11-03, and its country filter list is fixed.
   - `siem` (`siem/siem-dashboard-minigame.js`): **has a bug that blocks reuse.** `startSiemMinigame` in `systems/minigame-starters.js` passes only `timeLimitSec`, so the minigame never receives `alertConfig` and always shows its built-in hospital alerts. Fix that, and add the inline `alerts` array its own TODO describes, before using it here; until then the module uses `log-filter` alone.
   - `forensic-data-platform`: tabbed evidence with a gated confirm button, for the app consent request (the app, its publisher, the permissions it asks for, who asked).
-  - `phone-chat` (team chat with Owain and Kai), `person-chat` (desk conversations, Jo's interlude, the real Gillian), `notes` (the reset procedure, the approved remote tools list, the contractor access policy), `text-file` (a ticket's history).
+  - `phone-chat` (team chat with Owain and Kai), `person-chat` (desk conversations and Jo's interlude), `notes` (the reset procedure, the approved remote tools list, the contractor access policy), `text-file` (a ticket's history).
 - **Patterns and props:**
   - sis02's managed SOC refuses an unverified change and rings back on the number it holds (`scenarios/sis02_energy/ink/npc_tom_hadley.ink:136-171`): the model for every call-back in this module.
   - "What not to do" props already in the campaign: m03's helpdesk slip giving a house default password ("Surname plus the year the firm was founded", `scenarios/m03_ghost_in_the_machine/scenario.json.erb:1686`); m05's IT ticket printing a temporary password (`scenarios/m05_insider_trading/scenario.json.erb:771`); sis02's contractor who left 14 months earlier with a working default password (`scenarios/sis02_energy/scenario.json.erb:1546`).
@@ -87,7 +87,7 @@ The content also follows ISO 27001 A.5.17, A.5.18, A.8.2, A.8.5 and A.8.16, NCSC
 
 ## New features needed
 
-- **MG-17 Caller verification desk** (the core, shared with role_06), with the `service_desk` skin. This module's needs: a queue of calls and tickets; a staff record from the HR directory (role, account type, number on record, manager, registered devices, recent changes); a checklist whose strong steps are the call back on the directory number, a prompt to the registered device, the manager on a known channel and an in-person or video ID check, and whose weak steps (date of birth, employee number, anything public) visibly prove nothing; a second-analyst approval for privileged and executive accounts; the outcomes go ahead, call back, refuse politely or escalate; caller pressure through NPC influence that never needs speed; and the `caller_` events (`caller_check_used`, `caller_verified`, `caller_refused`, `caller_escalated`, `caller_actioned`), which record the strongest check used before each action.
+- **MG-17 Caller verification desk** (the core, shared with role_06), with the `service_desk` skin. This module's needs: a queue of calls and tickets; a staff record from the HR directory (role, account type, number on record, manager, registered devices, recent changes); a checklist whose strong steps are the call back on the directory number, a prompt to the registered device, the manager on a known channel and an in-person or video ID check, and whose weak steps (date of birth, employee number, anything public) visibly prove nothing; a second-analyst approval for privileged and executive accounts; the outcomes go ahead, call back, refuse politely or escalate; caller pressure through NPC influence that never needs speed; and the `caller_` events (`caller_check_used`, `caller_verified`, `caller_refused`, `caller_escalated`, `caller_actioned`), which record the strongest check used before each action. Under the course rule that nobody is asked to read out a code, MG-17's "code sent to the registered device" step becomes an approval prompt or reset link sent to details already held, which the person completes themselves.
 - **MG-04 Voice calls:** the phone, the directory and hold that MG-17 sits on.
 - **BE-18 Work task and interruptions:** the queue counter and the scheduled arrivals.
 - **MG-27 Work desktop:** the analyst's PC, opening the ticket queue, the log view, chat and The Lark from one place.

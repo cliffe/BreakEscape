@@ -52,7 +52,7 @@ Spotting differences (a mobile number where the record has a landline, a bank th
 
 ### Two people, every time
 
-- **Dual control** means one person sets up or changes a payment and another person approves it. **Segregation of duties** means nobody can both make a change and approve it (ISO/IEC 27001 Annex A 5.3).
+- **Dual control** means one person sets up or changes a payment and another person approves it. **Segregation of duties** means nobody can both make a change and approve it (ISO 27001 A.5.3).
 - It only works if nobody goes round it: no sharing approval codes, no splitting a payment to get under an approval limit, no "pay it now and we'll approve it after", no adding a payment because someone senior said so in an email.
 - **Approving an invoice is a check too.** A budget holder who approves an invoice is confirming that the goods or service was ordered and received. If you aren't sure, don't approve it: ask.
 - Senior people are not exceptions. Good leaders want the check, and a request to skip it is itself a warning sign.

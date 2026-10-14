@@ -39,7 +39,7 @@ The critical path is marked **(CP)**.
 
 - **(CP)** Harjit and Ama at the procurement desk (EX-01), with visual aids stepped through (BE-08):
   1. **Four ways a supplier can hurt you,** as fictional stories (the real cases are named in the field guide): they hold your data (a payroll firm's file-transfer tool was broken into, and its customers' staff details were taken); they connect to you (an IT support firm's management tool was used to push ransomware to its customers); you depend on them (a lab's systems were down for months, and hospitals couldn't get test results); and sometimes nobody attacks at all (a faulty update from a trusted security product crashed millions of computers in a morning). Ama: *"Every one of those was somebody's trusted supplier."*
-  2. **The four questions** (hold, reach, run, who else) and the tier grid. The rostering system lands in "high" on all four.
+  2. **The four questions** (hold, reach, run, who else) and the tier grid, with two suppliers from the register as worked examples: the window cleaner (low on everything) and Northbeck Supplies (no Larkspur data, but deliveries depend on it, so high on dependency). The rostering system lands in "high" on all four.
   3. **The evidence ladder:** a claim ("we're secure"), then a document ("here's our certificate"), then evidence that is independent, in scope and in date. Harjit: *"Who checked it, what did they check, and when?"*
   4. **The clause cards:** the eight from `concepts.md`.
   5. **Supplier access:** named, MFA, least privilege, time-limited, logged; and removed at the end.
