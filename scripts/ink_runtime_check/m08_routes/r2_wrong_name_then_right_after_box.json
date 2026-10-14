@@ -56,11 +56,11 @@
 { "talk": "confront", "picks": ["Tell me why", "What happens to you now", "No cell"] },
 { "expect": { "nightshade_triple_agent": true, "triple_agent_first_payment": true, "tomb_gamma_location_known": true } },
 { "said": ["You put it on Cipher in front of the floor", "First payment, then", "You never asked about The Architect"] },
-{ "talk": "debrief", "picks": ["Own the gap", "code server", "Nothing more"] },
+{ "talk": "debrief", "picks": ["Own the gap", "It was wrong", "code server", "Nothing more"] },
 { "said": ["Same classroom, 0x00", "You accused Cipher to his face", "The box gave me a login", "He knew we were coming before we came", "Not on the first reading", "Montana in seventy-two hours"] },
 { "expect": { "debrief_stance": "owned" } },
 { "credits": true },
 { "said": ["NIGHTSHADE: Tipped off before he was named", "HIS FIRST PAYMENT", "Named from the door audit, not on the first reading", "CIPHER: Accused to his face", "Own the gap"] },
-{ "maxRun": 11 }
+{ "maxRun": 9 }
 ]
 }

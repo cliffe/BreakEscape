@@ -19,11 +19,9 @@ ATHENA: You are wondering what happened here. Portland happened. Four sites in o
 
 ATHENA: Then someone read the after-action report and realised the enemy had the deployment before we did.
 
-ATHENA: The leak came from inside this building. Director Netherton is waiting for you with three names.
-ATHENA: One of them got two of your colleagues killed.
+ATHENA: The leak came from inside this building. Director Netherton has three names, and one of them got two of your colleagues killed.
 
-ATHENA: A word of advice, from the only voice in here with no stake in the outcome.
-ATHENA: Whoever it is has planning access and years of practice. The moment they know you are hunting, they vanish. Be quiet. Be quick.
+ATHENA: A word of advice, from the only voice here with no stake in the outcome. The moment they know you are hunting, they vanish. Be quiet. Be quick.
 
 ATHENA: The Director's office is north of this lobby. Do try not to trust anyone on the way.
 #exit_conversation

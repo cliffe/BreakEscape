@@ -72,9 +72,13 @@ VAR nightshade_hostile = false
 VAR phantom_hostile = false
 // Design C2 (N2): the first tip-off's cause; set here only if nobody has tipped him off yet.
 VAR tipoff_source = "" // Synced scenario global (design C2, N2): the first tip-off's cause
+// Phase 4 dialogue C1 (D8-2): the m03/m07 quiet flag. Every return from inside
+// the conversation and every exit comes through back, so the hub's re-entry
+// line (the old return_visit) plays only on a re-talk: a reopen lands on hub.
+VAR hub_quiet = false
 
 === start ===
-{ met: -> return_visit }
+{ met: -> hub }
 ~ met = true
 #complete_task:brief_with_netherton
 ~ brief_taken = true
@@ -92,45 +96,49 @@ Director Magnus Netherton: Two of ours are dead at the sites the team could not 
 Director Magnus Netherton: I have run field operations for five years. I have never had to say the next sentence.
 Director Magnus Netherton: There is a mole in SAFETYNET. I am reasonably certain they are within a hundred metres of where you are standing.
 Director Magnus Netherton: Ask me what you need. Then go and prove something.
--> hub
+-> back
 
-=== return_visit ===
-{ found_access_logs and not mole_identified and not audit_closed:
-    Director Magnus Netherton: You've been in the logs. I can see it on you. A terminal and a time is not a man. Read me the door.
-- else:
-    Director Magnus Netherton: Agent. What do you need?
-}
+=== back ===
+~ hub_quiet = true
 -> hub
 
 === hub ===
+{ not hub_quiet:
+    { found_access_logs and not mole_identified and not audit_closed:
+        Director Magnus Netherton: You've been in the logs. I can see it on you. A terminal and a time is not a man. Read me the door.
+    - else:
+        Director Magnus Netherton: {&Agent. What do you need?|Agent. Go on.}
+    }
+}
+~ hub_quiet = false
 + { not asked_why_me } [Why me, sir? I'm the one they compromised.]
     ~ asked_why_me = true
     Director Magnus Netherton: Precisely because they compromised you. Yours was the name they were selling. You are the one person in this building I can clear without a log.
     Director Magnus Netherton: You are also, forgive me, angry. I have found that useful before. Do not let it choose the suspect for you.
-    -> hub
+    -> back
 + { not asked_cipher } [Tell me about Cipher.]
     ~ asked_cipher = true
     Director Magnus Netherton: Agent 0x23. Signals and cryptography, on the operations floor. Brilliant, friendless, keeps hours that make the roster clerk nervous.
     Director Magnus Netherton: He carries a crypto annex badge and keeps a locked screen, and he has never once explained either. I should like to know why.
-    -> hub
+    -> back
 + { not asked_phantom } [Tell me about Phantom.]
     ~ asked_phantom = true
     Director Magnus Netherton: Agent 0x88. Field coordinator, in intelligence analysis, north of the operations floor. Charming, connected, and lately asking questions that are not his to ask.
     Director Magnus Netherton: He has unlogged absences I cannot account for. Either he is running his own errand, or he is running the enemy's.
-    -> hub
+    -> back
 + { not asked_nightshade } [Tell me about Nightshade.]
     ~ asked_nightshade = true
     Director Magnus Netherton: Agent 0x47. Cryptographic-hardware analyst, in the Crypto Lab. Planning access, like the other two. He taught your intake.
     Director Magnus Netherton: He has stood beside me at most of your briefings. He helps write the plans ENTROPY seemed to be reading.
     Director Magnus Netherton: If it is him, I have stood beside him for years and noticed nothing. I do not enjoy that thought.
-    -> hub
+    -> back
 + { not asked_rules } [What are the rules of engagement, sir?]
     ~ asked_rules = true
     Director Magnus Netherton: Quiet. The instant the mole knows the net is out, they burn their access and walk. We lose the thread to The Architect with them.
     Director Magnus Netherton: Interview all three as if none of them is guilty. Get onto our own systems and bring me proof I can act on. A hunch is not proof.
     Director Magnus Netherton: And Agent. If you are certain before you are sure, come and tell me the name.
     Director Magnus Netherton: I would rather talk you out of a mistake than read about it.
-    -> hub
+    -> back
 + { not netherton_card_taken and not badge_cloned and not access_offered } [I'll need access.] -> access_request
 + { access_offered and not netherton_card_taken } [Step up beside him and let the cloner read his card.] -> clone_card
 + { interviews_done() and (suspect_theory == "") and not mole_identified } [I have a name forming.] -> name_forming
@@ -146,26 +154,25 @@ Director Magnus Netherton: Ask me what you need. Then go and prove something.
 // returns to the top-level knot of the first choice) instead of asking it again.
 // "[Not yet.]" backs out without committing to a name.
 = name_forming
-Director Magnus Netherton: Already? Say it. Not for the file -- for me. Who is your instinct pointing at?
+Director Magnus Netherton: Already? Say it. Not for the file. For me. Who is your instinct pointing at?
 + [Cipher. The odd hours, the secrecy.]
     ~ suspect_theory = "cipher"
     Director Magnus Netherton: Perhaps. Or perhaps he is the easiest man in the building to suspect, which is not the same thing.
     Director Magnus Netherton: Prove it, and I will sign it. Guess it, and you hand the real one another week of cover. #set_global:suspect_theory:cipher
-    -> hub
+    -> back
 + [Phantom. The questions, the absences.]
     ~ suspect_theory = "phantom"
     Director Magnus Netherton: A man asking too many questions is either the leak or the only other person hunting it.
     Director Magnus Netherton: I have not decided which, and neither, yet, have you. Bring me the door log. #set_global:suspect_theory:phantom
-    -> hub
+    -> back
 + [Nightshade. It's the man with no marks.]
     ~ suspect_theory = "nightshade"
-    Narrator: A long pause.
     Director Magnus Netherton: An instinct is not evidence. And the man with nothing on his file is the second-easiest man in this building to suspect.
     Director Magnus Netherton: If it is him, he has been careful for years. Careful men leave exactly one mistake. Find it. #set_global:suspect_theory:nightshade
-    -> hub
+    -> back
 + [Not yet, sir.]
     Director Magnus Netherton: Good. Keep it to yourself until it is more than a feeling.
-    -> hub
+    -> back
 
 // PASS 4 (fixes 1 and 2): he no longer hands the card over. Before the three
 // interviews, "[I'll need access.]" sends the player to the suspects (sticky,
@@ -186,14 +193,14 @@ Director Magnus Netherton: Not yet. Talk to all three first. I want them to have
 { not (nightshade_interviewed or nightshade_ko or nightshade_hostile):
     Director Magnus Netherton: You have not seen Nightshade. The Crypto Lab, west of the lobby.
 }
--> hub
+-> back
 
 === access_offer ===
 ~ access_offered = true
 Director Magnus Netherton: Then, access. I am not handing my card to anyone tonight. The mole reads this building's paperwork, and a hand-over is paperwork.
 Narrator: He turns back to the maps. His lanyard hangs at his chest, card outward, well inside a cloner's reach.
 Director Magnus Netherton: Stand where you like, Agent. I shall be looking at the maps.
--> hub
+-> back
 
 === clone_card ===
 Narrator: You step up beside him, as if to read the maps. The cloner in your jacket comes within an inch of his lanyard.
@@ -207,7 +214,7 @@ Narrator: He does not look down.
 === clone_debrief ===
 { not netherton_card_taken:
     Narrator: The cloner did not get a clean read. He has not moved.
-    -> hub
+    -> back
 }
 Director Magnus Netherton: The server room is east of the operations floor. The archives take a passphrase, and the suite takes a code from my safe.
 Director Magnus Netherton: The safe you can work out. Everyone here has the same bad habit, myself included.
@@ -215,7 +222,7 @@ Director Magnus Netherton: Whatever you are carrying, Agent, I did not see it.
 + [Understood, Director.]
     Director Magnus Netherton: Go.
     #exit_conversation
-    -> hub
+    -> back
 
 // ================================================
 // PASS 3 (P6): the door-audit check. when -> which of the three -> why not
@@ -238,13 +245,13 @@ Director Magnus Netherton: Whatever you are carrying, Agent, I did not see it.
     // Alignment C3 (K3): no narrowing to two; the door audit does that.
     Director Magnus Netherton: On a login? A login is a key, Agent, not a hand on it.
     Director Magnus Netherton: Doors keep their own records. Bring me the door's.
-    -> hub
+    -> back
 }
 Director Magnus Netherton: Then don't give me a suspect. Give me a reading.
 // The box's minute stands in for the timeline (step 1).
 { not (found_timeline or found_access_logs_hint or found_access_logs):
     Director Magnus Netherton: You've brought me a door. Bring me a clock. When was the plan opened? Somebody in this building has written it down.
-    -> hub
+    -> back
 }
 ~ audit_skip_step4 = false
 { not (cipher_audit_confirmed or nightshade_audit_confirmed):
@@ -257,7 +264,7 @@ Director Magnus Netherton: Then don't give me a suspect. Give me a reading.
         // Phantom's travel-desk row (circular at step 4) is plainly not the one.
         Director Magnus Netherton: Before you read it to me, take it to the men who went through that lab door. If a man's own row is wrong, he will say so.
         Director Magnus Netherton: Come back when one of them has told you it is right.
-        -> hub
+        -> back
     }
 }
 -> audit_c1
@@ -277,7 +284,7 @@ Director Magnus Netherton: When was the plan opened?
     ~ audit_reply = 2
     -> audit_wrong
 + [Let me read it again.]
-    -> hub
+    -> back
 
 === audit_c2 ===
 { mole_identified or audit_closed or named_on_evidence: -> hub }
@@ -294,7 +301,7 @@ Director Magnus Netherton: Which of the three was behind that door at 10:38?
     ~ audit_reply = 4
     -> audit_wrong
 + [Let me read it again.]
-    -> hub
+    -> back
 
 === audit_c3 ===
 { mole_identified or audit_closed or named_on_evidence: -> hub }
@@ -314,7 +321,7 @@ Director Magnus Netherton: Cipher badged through the same door that morning. Why
     ~ audit_reply = 7
     -> audit_wrong
 + [Let me read it again.]
-    -> hub
+    -> back
 
 === audit_c4 ===
 { mole_identified or audit_closed or named_on_evidence: -> hub }
@@ -331,7 +338,7 @@ Director Magnus Netherton: That audit is Phantom's query, off Phantom's printer.
     ~ audit_reply = 10
     -> audit_wrong
 + [Let me read it again.]
-    -> hub
+    -> back
 
 === audit_wrong ===
 ~ audit_misreads = audit_misreads + 1
@@ -389,7 +396,7 @@ Director Magnus Netherton: That audit is Phantom's query, off Phantom's printer.
         Director Magnus Netherton: People will notice. If he did not know we were looking, he will soon. Bring me the account, and I will put the name to it.
     }
 }
--> hub
+-> back
 
 === audit_right ===
 // PASS 5 (B1): this is now where the mole is named (mole_identified moved
@@ -410,7 +417,7 @@ Director Magnus Netherton: He walked into his own lab twenty-three minutes befor
 { found_access_logs:
     Director Magnus Netherton: And the box has an account on that terminal for the same forty-seven minutes. A door and a login, at the same minute. That I can act on.
 - else:
-    Director Magnus Netherton: That is a door, not an account. A man may sit in his own lab. Get me the account from the box, and I will move.
+    Director Magnus Netherton: A door is not an account, and a court will want both. Get me the account from the box.
 }
 Narrator: He puts one hand flat on the desk, as if the floor has moved.
 Director Magnus Netherton: I sealed a warning about him a year ago and told myself it was prudence.
@@ -420,12 +427,12 @@ Director Magnus Netherton: I sealed a warning about him a year ago and told myse
 - else:
     Director Magnus Netherton: When the whole chain is through the relay, he goes down to the suite. The code is {suite_code}.
 }
-Director Magnus Netherton: The card is in my safe, with Dr Okafor's evaluation. Read hers before you face him.
--> hub
+Director Magnus Netherton: The code card is in my safe as well, with Dr Okafor's evaluation. Read hers before you face him.
+-> back
 
 === repeat_code ===
 Director Magnus Netherton: {suite_code}. Commit it to memory this time, Agent.
--> hub
+-> back
 
 === done ===
 // PASS 5 (B1): the naming can now happen here, so the sign-off follows it.
@@ -435,7 +442,7 @@ Director Magnus Netherton: {suite_code}. Commit it to memory this time, Agent.
     Director Magnus Netherton: Go. Whoever it is was one of us this morning. Bring me a name I can prove.
 }
 #exit_conversation
--> hub
+-> back
 
 // PASS 4: true once each suspect has been interviewed or knocked down.
 // Design C2 (N1): or punched and left standing (he won't talk again tonight).

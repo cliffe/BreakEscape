@@ -56,10 +56,10 @@
 { "talk": "confront", "picks": ["Tell me why", "What happens to you now", "No deals"] },
 { "said": ["You put it on Cipher in front of the floor. Walls are thin here. So I tidied"] },
 { "notSaid": ["The Director went asking questions"] },
-{ "talk": "debrief", "picks": ["He's the crime", "code server", "Nothing more"] },
+{ "talk": "debrief", "picks": ["He's the crime", "It was wrong", "code server", "Nothing more"] },
 { "said": ["He knew we were coming before we came", "You accused Cipher to his face"] },
 { "credits": true },
 { "said": ["NIGHTSHADE: Tipped off before he was named", "CIPHER: Knocked out", "PHANTOM: Knocked out mid-hunt"] },
-{ "maxRun": 11 }
+{ "maxRun": 9 }
 ]
 }

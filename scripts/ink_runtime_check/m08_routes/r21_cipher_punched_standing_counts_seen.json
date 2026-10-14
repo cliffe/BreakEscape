@@ -27,7 +27,7 @@
 { "enter": "interrogation_room" },
 { "talk": "confront", "picks": ["Tell me why", "What happens to you now", "No deals"] },
 { "expect": { "fate_decided": true } },
-{ "talk": "debrief", "picks": ["He's the crime", "code server", "Nothing more"] },
+{ "talk": "debrief", "picks": ["He's the crime", "It was wrong", "code server", "Nothing more"] },
 { "said": ["You hit Cipher on my floor. An innocent man."], "notSaid": ["Cipher and Phantom"] },
 { "credits": true },
 { "said": ["CIPHER: Struck on the ops floor and left standing. Innocent."], "notSaid": ["CIPHER: Cleared on the evidence", "CIPHER: Knocked out", "PHANTOM: Struck"] }

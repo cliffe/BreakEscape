@@ -40,6 +40,6 @@
 { "credits": true },
 { "said": ["misread three times. The Director read it himself.", "SEALED PSYCH EVALUATION"] },
 { "notSaid": ["Named from the door audit"] },
-{ "maxRun": 11 }
+{ "maxRun": 9 }
 ]
 }

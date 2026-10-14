@@ -520,3 +520,125 @@ Not voiced, credits, new: "CIPHER: Struck on the ops floor and left standing. In
 
 ### Stage 2 scenario design: CLOSED (fixer, for the orchestrator, 2026-10-14)
 Cycle 2 review 0/0/3; the round-1 browser check passed all seven owed items (D1, m1-m8 and E7). This closing round fixed N1, N2 and N3, put the "get clear before you read your phone" advice into the Director's second text for F1, withdrew F3 with its reason, reworded E7 and logged F1, F4 and F5 as engine items E11-E13. Nothing above minor is open on the mission side. Carried to the next browser check (not blocking the close): a human fleeing a hostile Director across rooms (F1/E11); a suspect punched and left standing, then the nudge, the clone offer and the credits on screen (r21's path).
+
+### Stage 4 room dressing, cycle 1 (2026-10-14)
+Full record: `ROOM_DRESSING.md` (cycle 1). Survey and critique: 1 blocker (every map shared with other scenarios), 3 majors (nothing says SAFETYNET HQ; 8 objects with no slot, landing at random; the lockers in open floor on a keypad sprite, HaX within a tile of 0x23), 2 minors (the analyst and Phantom standing in rows covered by the room to the south). All six fixed by building nine m08-only maps (`room_hq_*`, builders in `scripts/room_gen/hq_rooms.py`, sheets `make_hq_tileset.py`, props `make_hq_props.py`, one PixelLab call 1757 → 1747). Scenario edits are layout only: room types, as-type positions, one explicit position removed, three NPC positions moved (off-duty agent, analyst, Phantom). First room (the lobby) logged for sign-off as R1 in `DECISIONS_PENDING.md`. Checks: validator no errors, doors OK, walls 64, `slot_audit` 0 problems (12 before), tap check 0 hits, game 2444 loads every room with no missing slot or request.
+
+### Phase 4 dialogue, cycle 1 (2026-10-14)
+
+Fixer (Opus) on `DIALOGUE_REVIEW_P5_C1.md` (0 blockers, 4 majors, 21 minors). Files: all twelve m08 ink files, three text fields in `scenario.json.erb` (HaX's first text, the clone text, Netherton's two voice styles; re-read before each edit, nothing else touched while the room-dressing agent works in the file), `DECISIONS_PENDING.md` (U1 addendum 3), the m08 routes. No engine edits, no browser session, nothing committed. I opened no SecGen XML and none of the four restricted guides.
+
+#### Dialogue review C1
+
+| # | Sev | Finding | Outcome |
+|---|---|---|---|
+| D8-1 | major | Nightshade confesses before the evidence | **Fixed.** The three lines rewritten so an innocent man could say each: Okafor "was right" → "you've read Okafor"; "Closer than is comfortable for either of us" → "A sealed file makes a very tidy suspect. Tidy isn't the same as right."; "I'd rather you found me than guessed me" → "Whichever way it points, it'll be worth more than a guess" (my wording; the review's "I'd rather it was proof" read flat). Tags kept. r24 checks the accusation line |
+| D8-2 | major | Re-talks never print their return lines (8 blank-reentry) | **Fixed, m07 Elena pattern.** All eight person-chats: `VAR hub_quiet`, a `back` knot (`~ hub_quiet = true`, `-> hub`), the return line at the top of `hub` under `{ not hub_quiet: }` then `~ hub_quiet = false`; every in-conversation return and every exit goes through `back`; `start`'s met guard goes straight to `hub` (a page reload greets too); the old `return_visit` knots are gone. **Changed from the review:** exits divert through `back` instead of setting `hub_quiet = false`, because the flow after `#exit_conversation` runs through the hub once, and a false flag there would put the greeting at the end of the farewell batch (README_ink_best_practices "Common ink bugs" 2). Netherton keeps his flag-4 nudge as the first branch. Netherton's `audit_c1`-`c4` re-entry guards still divert to `hub` (only reached on a reopen, where the greeting is right). Return lines vary (`{&a|b}`); Cipher and Phantom also get a post-naming greeting. The analyst and ATHENA gain a `met` guard so a reload doesn't replay their openers. r13 drops `"knot": "start"` and still hears "Still here"; new r24 covers every NPC's reopen, a page reload, no repeat after a topic, and no greeting in a farewell |
+| D8-3 | major | HaX in person goes stale after the naming | **Fixed as written.** "How are you holding up?" splits on `mole_identified`; "Who's your money on?" retires at the naming; "It's Nightshade." once (`told_her`); new "[It's done.]" once after the fate (`told_fate`), split on `nightshade_triple_agent` (declared, synced). r25 |
+| D8-4 | major | The teacher-line payoff read by the narrator | **Fixed, with one change.** HaX's text is two `Agent HaX:` lines (resolves to her displayName; validator ink check clean). To keep the run before the stance within 9 when a Director KO/punch line plays (the review's split alone makes 10 there), the corridor and the Director's entrance share one narrator line: "Netherton finds you in the corridor, looking older than he did at the briefing a few hours ago. Your phone buzzes once. HaX." The old Director line stays for the KO-before-fate branch (no text). r1, r2, r7, r25 keep "Your phone buzzes once" and "Same classroom, 0x00" |
+| D8-5 | minor | 11-line opening cutscene | **Fixed as written.** Two merges, 9 lines; the PIN-cracker line untouched |
+| D8-6 | minor | HaX's first text repeats ATHENA and misreads "one of the three" | **Fixed as written** (erb) |
+| D8-7 | minor | The off-duty agent's promised locker gossip | **Fixed**, without the review's leading "And" (it can be the first line of the answer): "Somebody's been at the lockers in here. I've told everyone I didn't see who. Very convincingly." r13 |
+| D8-8 | minor | Confrontation opening up to 11 | **Fixed as written.** Worst state (KO'd, named, accused and tidied, printed) now 9 by `play.js` |
+| D8-9 | minor | Triple-agent ending 10-11 | **Fixed differently.** Cut the "A long pause." as asked. Declined the coordinates merge: as written it keeps three lines as three, so it saves nothing. Instead `after_choice`'s "Go on..." is now a re-entry line behind a quiet flag (`after_quiet`), so the walk-out batch ends on "Then you go." and a reopen still gets it. Worst case 9; r25 checks both halves |
+| D8-10 | minor | "I wanted it to be you" three times | **Fixed as written** (`:161`, `:165`); the first, with "My student", kept |
+| D8-11 | minor | A punched Director countersigns instantly | **Fixed as written.** `netherton_hostile` declared in the confrontation; the disposition line and `aftermath` have a hostile branch. r25 |
+| D8-12 | minor | Netherton's pause marks the right name | **Fixed.** Cut |
+| D8-13 | minor | Netherton doubts and believes at once; "The card" | **Fixed as written.** r1 still hears "Get me the account from the box" |
+| D8-14 | minor | Double hyphens | **Fixed as written.** Cipher's stammer kept |
+| D8-15 | minor | Leave lines don't know about the naming | **Fixed as written.** r25 |
+| D8-16 | minor | The accusation stays on offer once made | **Fixed as written**, all three suspects. r24 (Cipher, Nightshade) |
+| D8-17 | minor | The choice asserts whose account the box shows | **Fixed**, reworded shorter than the review's to clear the 15-word choice cap: "[The root logs put a Crypto Lab terminal on the Portland plan. Forty-seven minutes.]". His reply still fits. r6's pick updated. VM note added to U1 (addendum 3) |
+| D8-18 | minor | Debrief charge sheet up to 14 with no beat | **Fixed as written** (`conduct_beat` tunnel, two stance picks, `->->`). Worst state (every conduct flag, Director punched, owned stance) runs 9 / 9 / 5 by `play.js`. Picks added to r2, r8, r11, r19, r21, r23 ("It was wrong") and r7, r9, r14, r20, r22 ("It was the job"). r13 and r15 don't play the debrief, so they needed none; r9 did (it accuses Phantom) |
+| D8-19 | minor | "Lawyer" twice; "two good officers" for one name | **Fixed as written.** r2 keeps "Not on the first reading" |
+| D8-20 | minor | "Turned it round" said to the player who handed him over | **Fixed**, keeping the original first sentence: "...pointing it at the rest of us. {Tonight you turned it round.\|Tonight you took it off them.}". r1 (arrested), r25 (triple) |
+| D8-21 | minor | The debrief's box line covers flags 1-2 only | **Fixed, 28-word version** (keeps r1's "history for anyone patient"). VM note in U1 addendum 3 |
+| D8-22 | minor | First call not progress-gated; suite topic after the fate | **Fixed as written.** r18 and r25 |
+| D8-23 | minor (optional) | The clone text names Nightshade before the naming | **Fixed (my call: the review is right that it reads as a wink).** The clone text keeps only the instruction; the m03 line moves to "[It's really Nightshade.]", gated on `netherton_card_cloned` (a printer or KO route never cloned anything): "He told you once it'd be our badge somebody clones. You cloned the Director's tonight." ("your intake" changed to "you": Nightshade said it in the player's m03 briefing). r25 |
+| D8-24 | minor (optional) | Netherton's style opening isn't canonical | **Fixed.** Both blocks open with the voice-bible identity part, as m04-m07 do; the m08 colour follows. Discards any m08 Netherton clips (4 m08 clips exist in all) |
+| D8-25 | minor | Misquoted m05 line; "the battery hall" | **Fixed as written** |
+
+Counts: 4 majors and 21 minors fixed (D8-4, D8-9, D8-17 and D8-18's route list with the changes above); nothing declined outright. The D8-9 coordinates merge is the only part of a proposal not taken, with the reason given.
+
+Decisions taken (fixer, reversible, mission-local):
+- Exits go through `back` (above). Under the review's version every goodbye would end with the NPC's greeting.
+- New return-line variants of my own: Netherton "Agent. Go on."; Cipher "Back. Still boring, I promise." and, after the naming, "You again. I hear it's over. I'm still doing the maths on how I feel about that."; Phantom "You again. Sit. Tell me something I don't know." and, after the naming, "So the hunt's over, and you came back anyway. Sit."; Nightshade "Still here, as promised. Ask." The others are the review's.
+- The analyst and ATHENA get `met` guards (two local VARs) so a reload greets instead of replaying the opener.
+- The off-duty agent's and HaX's greetings both start "Still here" on the first return; they're in the same room but are separate chats, and the second visits differ ("Back again. People will talk." / "You came back. Sit, if you want.").
+
+Checks (all after the last edit): `scripts/compile-ink.sh m08_the_mole` 12/12, no warnings. Routes: all 25 (r1-r23 plus new r24 reopen greetings and r25 after the naming and the fate) "all expectations met"; longest run without a choice 9 on every route (the briefing; Netherton's opening 9; confrontation 8-9; debrief 8-9); the `maxRun` assertions in r1, r2, r3, r4, r6, r8, r11 tightened from 11 to 9, plus new ones in r24 and r25. Hand-built worst states by `play.js`: debrief with every conduct flag 9, confrontation opening 9, triple-agent ending 9, Netherton opening 9. `dialoguelint`: no findings (blank-reentry 8 → 0; one choice-len warning on the first D8-17 wording, fixed). `reopencheck`: m08 phone 1800 reopens, 0 problems; all missions 0. `tagdiff --old` against the reviewer's snapshot: briefing structure unchanged; every other difference is this round's (the `hub_quiet`/`back` rewiring, `return_visit` removed, the new VARs, the D8-16 and D8-22 conditions, `conduct_beat`, the new branches for D8-3, D8-7, D8-11, D8-15, D8-19, D8-20, D8-23, `after_quiet`). `loopcheck` 200 steps x 6 strategies on 33 state sets across all twelve files (each NPC fresh and on re-talk, post-naming, post-fate, KO and hostile Director, every-conduct debrief, triple and arrested): no runtime errors, no runaways. `ruby scripts/validate_scenario.rb ... --skip-ink --no-graph`: no errors, only the known warnings; with ink (`--no-graph`): all ink valid, speakers resolve, lint clean.
+
+Spoken lines changed (old → new), for the TTS stage:
+
+ATHENA, briefing (`m08_opening_briefing.ink`):
+- "The leak came from inside this building. Director Netherton is waiting for you with three names." / "One of them got two of your colleagues killed." → "The leak came from inside this building. Director Netherton has three names, and one of them got two of your colleagues killed."
+- "A word of advice, from the only voice in here with no stake in the outcome." / "Whoever it is has planning access and years of practice. The moment they know you are hunting, they vanish. Be quiet. Be quick." → "A word of advice, from the only voice here with no stake in the outcome. The moment they know you are hunting, they vanish. Be quiet. Be quick."
+
+ATHENA, console (`m08_receptionist_ai.ink`), new re-entry: "Reception. Still discreet." / "Agent. How may I help?"
+
+HaX, phone texts (`scenario.json.erb`):
+- first text: "I'm on the wire. Director's office, north of the lobby. Get the brief before you spook anyone. And 0x00... one of the three is a friend of mine." → "I'm on the wire. Get the Director's brief before you spook anyone. And 0x00... whichever of the three it is, it's a friend of mine."
+- clone text: "You cloned the Director. Nightshade said it once: one day it'll be our badge somebody clones. At the reader, emulate it from the cloner's Saved list." → "You cloned the Director. At the reader, emulate it from the cloner's Saved list."
+
+HaX, phone hub (`m08_phone_agent_0x99.ink`):
+- first call: "...a SAFETYNET lanyard and a name I probably know." → "...a SAFETYNET lanyard and {a name I know|a name I probably know}."
+- new, "[It's really Nightshade.]" with the card cloned: "He told you once it'd be our badge somebody clones. You cloned the Director's tonight."
+- guide: "Credentials in commit history -- classic, and exactly what he did. Read the log, then check the stash." → "Credentials in commit history. Classic. Read the log, then check the stash."
+
+HaX, in person (`m08_agent_0x99.ink`):
+- re-entry: "Still here. The coffee's still cold." (was `return_visit`, now in the hub) plus new "You came back. Sit, if you want."
+- new, after the naming: "Worse, now I know which face. He stood next to me at the Portland debrief and handed me a tissue." / "Ask me tomorrow."
+- new, after the fate: "You kept him. Then I'll be the one reading every word he sends us." / "Good. I'll visit him once. Then never again."
+
+Director Netherton (`m08_director_netherton.ink`):
+- re-entry: the two `return_visit` lines unchanged in wording, now in the hub; new variant "Agent. Go on."
+- "Already? Say it. Not for the file -- for me. Who is your instinct pointing at?" → "Already? Say it. Not for the file. For me. Who is your instinct pointing at?"
+- cut: Narrator "A long pause." (name_forming, Nightshade)
+- "That is a door, not an account. A man may sit in his own lab. Get me the account from the box, and I will move." → "A door is not an account, and a court will want both. Get me the account from the box."
+- "The card is in my safe, with Dr Okafor's evaluation. Read hers before you face him." → "The code card is in my safe as well, with Dr Okafor's evaluation. Read hers before you face him."
+
+Cipher (`m08_suspect_cipher.ink`):
+- re-entry: "You again. Come to cross me off, or add me back on?" (now in the hub) plus new "Back. Still boring, I promise." and, after the naming, "You again. I hear it's over. I'm still doing the maths on how I feel about that."
+- new leave line, never accused, after the naming: "I heard. Good. Back to the maths."
+- choice (not voiced): "[Cipher. Same handle as the ENTROPY operative at the battery hall.]" → "[... in Battery Hall 1.]"
+
+Phantom (`m08_suspect_phantom.ink`):
+- re-entry: "Back again. Either you've cleared me or you've got nothing. Which is it?" (now in the hub) plus new "You again. Sit. Tell me something I don't know." and, after the naming, "So the hunt's over, and you came back anyway. Sit."
+- new leave line, never accused, after the naming: "So it's done, and not by me. Tell the Director I was right to look."
+
+Nightshade, lab (`m08_suspect_nightshade.ink`):
+- re-entry: "Back so soon. You must be enjoying my company, or getting nowhere. I hope it's the first." (now in the hub) plus new "Still here, as promised. Ask."
+- "You've been in the Director's safe. Good. Then you know Okafor was right, and you know he buried it." → "You've been in the Director's safe. Good. Then you've read Okafor, and you know he buried it."
+- "Careful, 0x00. You're close to something now. Closer than is comfortable for either of us." → "Careful, 0x00. A sealed file makes a very tidy suspect. Tidy isn't the same as right."
+- "Go and get your proof. I'd rather you found me than guessed me." → "Go and get your proof. Whichever way it points, it'll be worth more than a guess."
+- choices (not voiced): "[Your insider briefing. "...the rules don't apply."]" → "[... "...the rules don't apply to them."]"; "[The root logs have your account on the Portland plan. Forty-seven minutes.]" → "[The root logs put a Crypto Lab terminal on the Portland plan. Forty-seven minutes.]"
+
+Off-duty agent (`m08_background_agent.ink`):
+- re-entry: "Still here. Still not reading this." (now in the hub) plus new "Back again. People will talk."
+- new gossip: "Somebody's been at the lockers in here. I've told everyone I didn't see who. Very convincingly."
+
+Junior analyst (`m08_background_analyst.ink`), new re-entry: "Still here. Still reading the same paragraph." / "Yes?"
+
+Nightshade, confrontation (`m08_nightshade_confrontation.ink`):
+- "The name they stripped off that intercept in the cable vault was mine." / "I could have scrubbed every trace years ago. You're wondering why I didn't." → "The name they stripped off that intercept in the cable vault was mine. I could have scrubbed it years ago."
+- "Because you'd already decided. I watched you do it, across my desk in the lab." → "You're wondering why I didn't. Because you'd already decided. I watched you do it, across my desk in the lab."
+- "Because some part of me wanted to be caught by someone who'd understand. I misjudged that, I think." → "You're wondering why I didn't. Some part of me wanted to be caught by someone who'd understand. I misjudged that, I think."
+- "You said it to my face before you could prove it. So I tidied. The bag, the stick." / "Not well enough, it seems." → "You said it to my face before you could prove it. So I tidied the bag and the stick. Not well enough, it seems."
+- "If anyone ever used it on me, I wanted it to be you. Vanity, I know. It's the last one I've got." → "I'm glad it was my own lesson that caught me. Vanity, I know. It's the last one I've got."
+- "Because I wanted to see who they would send. I hoped it would be you." → "Because a man who runs has confessed. I preferred to make you prove it."
+- Narrator, the disposition screen: new hostile alternative "...and the Director, who will not see you tonight, countersigns whatever goes in. Nightshade is watching you."
+- new Narrator, `aftermath`, Director hostile: "You type the entry. The countersignature arrives a minute later, from an office that won't open its door to you."
+- cut: Narrator "A long pause." (triple agent)
+- "Go on. They'll be expecting you upstairs." / "Go on. I'll still be here when the police come." unchanged; now skipped once at the end of the walk-out and played on a reopen.
+
+Netherton, debrief (`m08_closing_debrief.ink`):
+- Narrator "Your phone buzzes once in the corridor. HaX: "He said it to you? 'Afterwards, not during.' I was taught that line, and I say it to every agent I run. Same classroom, 0x00. Don't ask me whose yet."" and Narrator "Netherton finds you, empty-handed. He looks older than he did at the briefing a few hours ago." → Narrator "Netherton finds you in the corridor, looking older than he did at the briefing a few hours ago. Your phone buzzes once. HaX." / Agent HaX "He said it to you? Afterwards, not during. I was taught that line, and I say it to every agent I run." / Agent HaX "Same classroom, 0x00. Don't ask me whose yet." (the old Director narrator line stays, unchanged, for the KO-before-fate branch)
+- new conduct beat replies: "It was. Now the case." / "Some of it. Not all of it. Now the case." (choices "[It was wrong, sir.]" / "[It was the job, sir.]")
+- "Not on the first reading. I noticed. So would a lawyer." → "Not on the first reading. I noticed, and so will the file."
+- "Two good officers spent a night under a suspicion they did not earn. Buy them a drink. The service won't." → "{Cipher|Phantom} spent a night under a suspicion he did not earn. Buy him a drink. The service won't." (only when neither was accused)
+- "And kept credentials in its history for anyone patient enough to read it. That goes in my report too." → "And kept credentials in its history for anyone patient enough to read it, and a sudo rule that handed you the rest. That goes in my report too."
+- "They spent fifteen years turning one of ours into a weapon and pointing it at the rest of us. Tonight you turned it round." → "...pointing it at the rest of us. {Tonight you turned it round.|Tonight you took it off them.}"
+
+Voice style (not a line, but a cache key): Netherton's two blocks now open "SAFETYNET's director. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Low, deliberate, unhurried. His own briefing was turned into a weapon; ..." (was "Cinematic thriller. Consistent ... unhurried. SAFETYNET's director, whose own briefing was turned into a weapon; ..."). Every Netherton line re-voices.
+
+Owed on screen at the next browser check (structure changed): re-talk each of the eight person-chats and see the return line once, with no greeting after a goodbye or after a topic; the Director's flag-4 nudge on a re-talk; the debrief's conduct beat after an accusation; HaX's two `Agent HaX:` lines in the debrief in her voice and portrait; the confrontation's walk-out ending on "Then you go." and the reopen line.

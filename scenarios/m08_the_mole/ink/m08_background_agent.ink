@@ -18,23 +18,23 @@ VAR accused_nightshade = false
 // person-chat, once, before the naming). Synced scenario global; HaX's
 // mapping turns it into the tip-off.
 VAR locker_seen_picked = false
+// Phase 4 dialogue C1 (D8-2): the m03/m07 quiet flag. Every return from inside
+// the conversation and every exit comes through back, so the hub's re-entry
+// line (the old return_visit) plays only on a re-talk: a reopen lands on hub.
+VAR hub_quiet = false
 
 === start ===
-{ met: -> return_visit }
+{ met: -> hub }
 ~ met = true
 Narrator: He doesn't look up from the magazine.
 -> testimony
-
-=== return_visit ===
-Off-Duty Agent: Still here. Still not reading this.
--> hub
 
 === testimony ===
 Off-Duty Agent: You didn't hear it from me. Two days before Portland I was in here from before eight.
 Off-Duty Agent: Went through to the lab for the stapler. Just gone twenty past ten, half past at the latest.
 Off-Duty Agent: Someone at the bench at the far end. Had the build of the nerdy one, Cipher. Or not. I wasn't looking.
 Off-Duty Agent: I'm sitting where I can see the door. You should too.
--> hub
+-> back
 
 // PASS 5 (puzzle chains C1, m6): the catch. Sets met so a later talk opens
 // on his return line; returns to the hub, so a reopen lands on a choice.
@@ -45,9 +45,17 @@ Off-Duty Agent: I'm sitting where I can see the door. You should too.
 Narrator: The magazine comes down.
 Off-Duty Agent: Oi. That's not yours.
 Off-Duty Agent: Don't worry. I didn't see anything. I'll be telling everyone I didn't see anything.
+-> back
+
+=== back ===
+~ hub_quiet = true
 -> hub
 
 === hub ===
+{ not hub_quiet:
+    Off-Duty Agent: {&Still here. Still not reading this.|Back again. People will talk.}
+}
+~ hub_quiet = false
 + [What did you see that morning?]
     -> testimony
 + [Heard anything new?]
@@ -57,11 +65,15 @@ Off-Duty Agent: Don't worry. I didn't see anything. I'll be telling everyone I d
         { accused_cipher or accused_phantom or accused_nightshade:
             Off-Duty Agent: Word is you've been calling people traitors to their faces. Whole floor's heard. If one of them is the mole, so has he.
         }
+        // Phase 4 dialogue C1 (D8-7): the gossip he promised.
+        { locker_seen_picked:
+            Off-Duty Agent: Somebody's been at the lockers in here. I've told everyone I didn't see who. Very convincingly.
+        }
         Off-Duty Agent: Phantom's stopped being charming. He was off the floor all that morning, two days before Portland, and nobody's said where.
         Off-Duty Agent: Nightshade's the same as ever.
     }
-    -> hub
+    -> back
 + [I'll leave you to it.]
     Off-Duty Agent: Mind the door.
     #exit_conversation
-    -> hub
+    -> back

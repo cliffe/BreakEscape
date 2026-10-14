@@ -54,10 +54,16 @@ VAR phantom_hostile = false
 // PASS 5 (round 1 browser N2): HaX's "Same classroom" text used to arrive as a
 // phone text 2.5 s into this scene, which blocks the phone, and went unseen. It
 // is read here, before Netherton speaks (M5, U4: a hedge, never a name).
+// Phase 4 dialogue C1 (D8-4): HaX's words in her own voice (Agent HaX resolves to
+// her displayName), and the corridor and the Director share one narrator line so
+// the run before the stance stays within nine with a KO line.
 { not nightshade_ko_before_fate:
-    Narrator: Your phone buzzes once in the corridor. HaX: "He said it to you? 'Afterwards, not during.' I was taught that line, and I say it to every agent I run. Same classroom, 0x00. Don't ask me whose yet."
+    Narrator: Netherton finds you in the corridor, looking older than he did at the briefing a few hours ago. Your phone buzzes once. HaX.
+    Agent HaX: He said it to you? Afterwards, not during. I was taught that line, and I say it to every agent I run.
+    Agent HaX: Same classroom, 0x00. Don't ask me whose yet.
+- else:
+    Narrator: Netherton finds you, empty-handed. He looks older than he did at the briefing a few hours ago.
 }
-Narrator: Netherton finds you, empty-handed. He looks older than he did at the briefing a few hours ago.
 {
 - netherton_ko:
     Director Magnus Netherton: Before anything else. My jaw is fine, thank you for asking. We will not be discussing it.
@@ -108,6 +114,11 @@ Director Magnus Netherton: Say it, Agent. Whatever you think of me tonight. I wo
 { athena_ko:
     Director Magnus Netherton: And ATHENA logged you putting her reception avatar on the floor. Facilities would like a word.
 }
+// Phase 4 dialogue C1 (D8-18): a player beat after the charge sheet, so the
+// conduct lines and the case don't run on as one speech.
+{ accused_cipher or accused_phantom or cipher_hostile or phantom_hostile or locker_seen_picked or offduty_agent_ko or analyst_ko or athena_ko:
+    -> conduct_beat ->
+}
 { named_on_evidence:
     { named_before_box:
         Director Magnus Netherton: You named him to me before the box did, on something I could put in front of a lawyer. You read the clock, not the face.
@@ -115,7 +126,7 @@ Director Magnus Netherton: Say it, Agent. Whatever you think of me tonight. I wo
         Director Magnus Netherton: The box gave me a login. You gave me the man at the keyboard, off a door log. You read the clock, not the face.
     }
     { audit_misread:
-        Director Magnus Netherton: Not on the first reading. I noticed. So would a lawyer.
+        Director Magnus Netherton: Not on the first reading. I noticed, and so will the file.
     }
 }
 // PASS 3 (impl review M1): audit_closed has its own branch, so the closed-check
@@ -130,7 +141,10 @@ Director Magnus Netherton: Say it, Agent. Whatever you think of me tonight. I wo
     Director Magnus Netherton: Next time, read it once, and read it right.
 - suspect_theory == "cipher" || suspect_theory == "phantom":
     Director Magnus Netherton: Your first name for me was the wrong one. You came back and corrected it, which is worth more than being right first.
-    Director Magnus Netherton: Two good officers spent a night under a suspicion they did not earn. Buy them a drink. The service won't.
+    // Phase 4 dialogue C1 (D8-19): one man named, and not stacked on an accusation line.
+    { not (accused_cipher or accused_phantom):
+        Director Magnus Netherton: {suspect_theory == "cipher":Cipher|Phantom} spent a night under a suspicion he did not earn. Buy him a drink. The service won't.
+    }
 - named_on_evidence:
     Director Magnus Netherton: That, more than any instinct, is the reason you're still useful to me after they burned you.
 // Design C1 (m10): the old else branch ("You let the box make the case") is
@@ -143,11 +157,18 @@ Director Magnus Netherton: Say it, Agent. Whatever you think of me tonight. I wo
 }
 -> the_box
 
+=== conduct_beat ===
++ [It was wrong, sir.]
+    Director Magnus Netherton: It was. Now the case.
++ [It was the job, sir.]
+    Director Magnus Netherton: Some of it. Not all of it. Now the case.
+- ->->
+
 // PASS 5 (alignment M4): the VM chain, from what HaX said at each flag. A
 // single player line on every path; it also breaks the debrief's long run.
 === the_box ===
 + [Our own code server let me in without a password, sir.]
-    Director Magnus Netherton: And kept credentials in its history for anyone patient enough to read it. That goes in my report too.
+    Director Magnus Netherton: And kept credentials in its history for anyone patient enough to read it, and a sudo rule that handed you the rest. That goes in my report too.
     -> disposition
 
 === disposition ===
@@ -211,7 +232,8 @@ Director Magnus Netherton: Say it, Agent. Whatever you think of me tonight. I wo
 
 === close ===
 Narrator: Netherton stops at the door.
-Director Magnus Netherton: They spent fifteen years turning one of ours into a weapon and pointing it at the rest of us. Tonight you turned it round.
+// Phase 4 dialogue C1 (D8-20): "turned it round" only for the triple agent.
+Director Magnus Netherton: They spent fifteen years turning one of ours into a weapon and pointing it at the rest of us. {nightshade_triple_agent:Tonight you turned it round.|Tonight you took it off them.}
 // Script edit round (S8, approved): the hook to the next mission plays on every path.
 { not asked_next:
     { tomb_gamma_location_known:

@@ -40,7 +40,7 @@
 { "enter": "interrogation_room" },
 { "talk": "confront", "picks": ["Tell me why", "What happens to you now", "No deals"] },
 { "said": ["You knocked a junior analyst out at her desk"], "notSaid": ["The Director went asking questions on my floor", "ATHENA logs to everyone"] },
-{ "talk": "debrief", "picks": ["He's the crime", "code server", "Nothing more"] },
+{ "talk": "debrief", "picks": ["He's the crime", "It was wrong", "code server", "Nothing more"] },
 { "said": ["You knocked out a junior analyst at her desk", "ATHENA logged you putting her reception avatar on the floor"] },
 { "credits": true },
 { "said": ["A JUNIOR ANALYST: Knocked out at her desk", "ATHENA: Her reception avatar, knocked flat", "NIGHTSHADE: Tipped off before he was named"], "notSaid": ["THE LOCKERS", "AN OFF-DUTY AGENT"] }

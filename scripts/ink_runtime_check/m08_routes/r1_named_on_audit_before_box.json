@@ -51,12 +51,12 @@
 { "expect": { "nightshade_arrested": true, "fate_decided": true, "tomb_gamma_location_known": true } },
 { "said": ["The door log", "Let it hurt afterwards, not during", "[opens closing_debrief"], "notSaid": ["tidied", "Same classroom"] },
 { "talk": "debrief", "picks": ["He's the crime", "code server", "He used HaX's line", "Then what now", "Nothing more"] },
-{ "said": ["Your phone buzzes once", "Same classroom, 0x00", "Netherton finds you", "before the box did", "history for anyone patient", "Beyond what he gave freely", "whoever taught her taught him"] },
+{ "said": ["Your phone buzzes once", "Same classroom, 0x00", "Netherton finds you", "before the box did", "history for anyone patient", "a sudo rule that handed you the rest", "Beyond what he gave freely", "whoever taught her taught him", "Tonight you took it off them"] },
 { "expect": { "debrief_stance": "defended", "mission_complete": true } },
 { "credits": true },
 { "said": ["THE BOX", "Named from the door audit, before the root logs", "He's the crime, not you"] },
 { "notSaid": ["Gone from his locker", "misread", "Tipped off"] },
-{ "note": "The opening cutscene is 11 lines with no choice (unchanged this round; for the dialogue stage). Everything else stays at 9 or under." },
-{ "maxRun": 11 }
+{ "note": "Phase 4 dialogue C1 (D8-5, D8-8, D8-9, D8-18): every conversation, the opening cutscene included, stays at 9 lines or under without a choice." },
+{ "maxRun": 9 }
 ]
 }

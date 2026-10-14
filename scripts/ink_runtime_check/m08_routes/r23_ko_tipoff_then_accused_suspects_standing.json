@@ -31,7 +31,7 @@
 { "enter": "interrogation_room" },
 { "talk": "confront", "picks": ["Tell me why", "What happens to you now", "No deals"] },
 { "said": ["You hit me in my own lab and walked away", "You left a man out cold in the break room"], "notSaid": ["You said it to my face", "You put me on the floor of my own lab"] },
-{ "talk": "debrief", "picks": ["He's the crime", "code server", "Nothing more"] },
+{ "talk": "debrief", "picks": ["He's the crime", "It was wrong", "code server", "Nothing more"] },
 { "said": ["You hit Phantom on my floor. An innocent man.", "You put an off-duty agent on the break-room floor"] },
 { "credits": true },
 { "said": ["PHANTOM: Struck mid-hunt and left standing. Innocent.", "NIGHTSHADE: Struck in his lab before the evidence was in, and left standing.", "CIPHER: Cleared on the evidence"], "notSaid": ["PHANTOM: Cleared", "NIGHTSHADE: Knocked down in his lab"] }

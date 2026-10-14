@@ -72,7 +72,7 @@ VAR nightshade_hostile = false
 -> hub
 
 === first_call_text ===
-Line's open. Same as Portland, except this time the target has a SAFETYNET lanyard and a name I probably know.
+Line's open. Same as Portland, except this time the target has a SAFETYNET lanyard and {mole_identified:a name I know|a name I probably know}.
 So I'm going to be very professional tonight. Bear with me.
 -> hub
 
@@ -91,6 +91,10 @@ So I'm going to be very professional tonight. Bear with me.
 + { mole_identified and not fate_decided } [It's really Nightshade.]
     Yeah. It's really Nightshade.
     We did survival training together. He carried me two miles once.
+    // Phase 4 dialogue C1 (D8-23): the m03 badge line, moved here from the clone text, after the naming.
+    { netherton_card_cloned:
+        He told you once it'd be our badge somebody clones. You cloned the Director's tonight.
+    }
     // Design C1 (m4): true before the flags are in (the room is empty) and after a reload mid-scene.
     {all_flags_submitted:Get in there. He's waiting at the table.|Finish the chain first.} I'll be fine. I'll be fine after.
     -> hub
@@ -137,7 +141,8 @@ So I'm going to be very professional tonight. Bear with me.
     Keypad, south of the Crypto Lab. The code's in the Director's safe.
     How his safe opens is the building's worst-kept secret. Ask ATHENA, or look at what he signs.
     -> hub
-+ { mole_identified } [How do I get into the interrogation suite?]
+// Phase 4 dialogue C1 (D8-22): retires once the fate is entered.
++ { mole_identified and not fate_decided } [How do I get into the interrogation suite?]
     Keypad, south of the Crypto Lab. The code's in the Director's office safe.
     The safe combination is his service number. Everyone in this building uses their own.
     He signs it on anything he pulls from personnel. There's one of those printouts in the ops-floor tray.
@@ -256,7 +261,7 @@ Course. Which one.
     ~ scanning_guide_hint_given = true
     -> guides_menu
 + { gitsecrets_guide_offered and not gitsecrets_guide_hint_given } [Secrets in git history.]
-    Credentials in commit history -- classic, and exactly what he did. Read the log, then check the stash. #give_item:lab-workstation:m08_gitsecrets_field_guide
+    Credentials in commit history. Classic. Read the log, then check the stash. #give_item:lab-workstation:m08_gitsecrets_field_guide
     ~ gitsecrets_guide_hint_given = true
     -> guides_menu
 + { cyberchef_guide_offered and not cyberchef_guide_hint_given } [Decoding with CyberChef.]

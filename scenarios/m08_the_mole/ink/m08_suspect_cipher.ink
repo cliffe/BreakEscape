@@ -28,21 +28,34 @@ VAR asked_audit = false
 // PASS 4 (fix 13): m04's ENTROPY operative also went by "Cipher".
 VAR asked_handle = false
 VAR gave_locker_key = false
+// Phase 4 dialogue C1 (D8-2): the m03/m07 quiet flag. Every return from inside
+// the conversation and every exit comes through back, so the hub's re-entry
+// line plays only on a re-talk (a reopen lands on hub, not start).
+VAR hub_quiet = false
 
 === start ===
-{ cipher_interviewed:
-    Agent 0x23 'Cipher': You again. Come to cross me off, or add me back on?
-    -> hub
-}
+{ cipher_interviewed: -> hub }
 // PASS 2 review: set first; a brief-gated mapping completes interview_cipher (lesson 27).
 ~ cipher_interviewed = true
 Narrator: Cipher does not look up until you are right on top of him, and then he looks up too fast, knocking a stylus off the desk.
 
 Agent 0x23 'Cipher': I know how it looks. The hours, the locked screen, me flinching just now.
 Agent 0x23 'Cipher': I've run the inference on myself and it's not flattering. Ask your questions, so I can watch you decide I'm boring.
+-> back
+
+=== back ===
+~ hub_quiet = true
 -> hub
 
 === hub ===
+{ not hub_quiet:
+    { mole_identified:
+        Agent 0x23 'Cipher': You again. I hear it's over. I'm still doing the maths on how I feel about that.
+    - else:
+        Agent 0x23 'Cipher': {&You again. Come to cross me off, or add me back on?|Back. Still boring, I promise.}
+    }
+}
+~ hub_quiet = false
 + { not asked_hours } [Why the odd hours, then?]
     ~ asked_hours = true
     Agent 0x23 'Cipher': Because the work is classified above the clerk who writes the roster.
@@ -50,14 +63,14 @@ Agent 0x23 'Cipher': I've run the inference on myself and it's not flattering. A
     Agent 0x23 'Cipher': I am. It's just a very boring something, with a great deal of maths in it.
     ~ cipher_influence += 1
     # influence_increased
-    -> hub
+    -> back
 + { not asked_alibi } [Where were you when the Portland plan leaked?]
     ~ asked_alibi = true
     ~ cipher_alibi_known = true
     Agent 0x23 'Cipher': In the crypto library. Alone. The single worst alibi a person can offer, and completely true.
     Agent 0x23 'Cipher': The library logs its own door. And the terminal auth for the leak window will show my account never touched the mission_planning share.
     Agent 0x23 'Cipher': My desk is out on the ops floor. Do the geography. #set_global:cipher_alibi_known:true
-    -> hub
+    -> back
 // PASS 5 (alignment M3): a wrong accusation costs his confirmation of his own
 // row (the Director's step-4 check) until the player apologises. Nightshade
 // can still confirm his, so nothing soft-locks.
@@ -73,18 +86,18 @@ Agent 0x23 'Cipher': I've run the inference on myself and it's not flattering. A
     Agent 0x23 'Cipher': That's the whole guilty secret. I've been working nights to protect the people who suspect me.
     ~ cipher_influence += 2
     # influence_increased
-    -> hub
+    -> back
 + { not asked_others } [Who do you think it is?]
     ~ asked_others = true
     Narrator: He lowers his voice.
     Agent 0x23 'Cipher': Phantom reads logs he isn't cleared for. I've watched him do it over people's shoulders.
     Agent 0x23 'Cipher': But I'm frightened and pattern-matching in the dark, so weight that accordingly.
-    -> hub
-+ { not asked_handle } [Cipher. Same handle as the ENTROPY operative at the battery hall.]
+    -> back
++ { not asked_handle } [Cipher. Same handle as the ENTROPY operative in Battery Hall 1.]
     ~ asked_handle = true
     Narrator: His jaw sets.
     Agent 0x23 'Cipher': I had it first. Eleven years first. Then one of theirs turned up wearing it, and I'd love to know who told them it was mine.
-    -> hub
+    -> back
 // PASS 5 (M3): the apology is open before the evidence too, because the
 // accusation now costs his row.
 + { accused_cipher and not mole_identified and not apologised } [I was wrong to say that. I'm sorry.]
@@ -92,7 +105,7 @@ Agent 0x23 'Cipher': I've run the inference on myself and it's not flattering. A
     Narrator: He looks at you for a long second, as if checking the sum.
     Agent 0x23 'Cipher': Before you've proved anything either way. That's either decent or tactical.
     Agent 0x23 'Cipher': I'll take it. People don't usually come back at all.
-    -> hub
+    -> back
 + { accused_cipher and mole_identified and not apologised } [The logs cleared you. I was wrong to say it.]
     ~ apologised = true
     Narrator: He takes his glasses off and cleans them on his shirt for longer than they need.
@@ -100,9 +113,10 @@ Agent 0x23 'Cipher': I've run the inference on myself and it's not flattering. A
     Agent 0x23 'Cipher': They just stop looking at you, and you're meant to work out that you've been forgiven for something you didn't do.
     ~ cipher_influence += 2
     # influence_increased
-    -> hub
+    -> back
 + { asked_audit and not gave_locker_key } [Your locker in the break room. I want to see inside it.] -> locker_key
-+ { not mole_identified } [I think it's you, Cipher.] -> accuse
+// Phase 4 dialogue C1 (D8-16): once said, it isn't on offer again.
++ { not mole_identified and not accused_cipher } [I think it's you, Cipher.] -> accuse
 + [That's all for now.] -> leave
 
 === audit_beat ===
@@ -110,7 +124,7 @@ Agent 0x23 'Cipher': I've run the inference on myself and it's not flattering. A
     Narrator: His jaw sets.
     Agent 0x23 'Cipher': You've already decided I did it. I'm not handing you another row to hang me with.
     Agent 0x23 'Cipher': Apologise, or read it without me.
-    -> hub
+    -> back
 }
 ~ asked_audit = true
 ~ cipher_alibi_known = true
@@ -118,7 +132,7 @@ Agent 0x23 'Cipher': I've run the inference on myself and it's not flattering. A
 Narrator: The colour goes out of his face.
 Agent 0x23 'Cipher': Eight minutes. I went in for a hardware token from the token cabinet, and I came out again.
 Agent 0x23 'Cipher': I left it out because I knew exactly how it would sound. #set_global:cipher_audit_confirmed:true
--> hub
+-> back
 
 // PASS 5 (alignment C2, J4): his locker, as Nightshade's: after the audit beat.
 === locker_key ===
@@ -129,7 +143,7 @@ Agent 0x23 'Cipher': I left it out because I knew exactly how it would sound. #s
 - else:
     Agent 0x23 'Cipher': There's a project sheet in there you're not cleared for. Read it anyway. You'll only pick the lock otherwise.
 }
--> hub
+-> back
 
 === accuse ===
 ~ accused_cipher = true
@@ -148,7 +162,7 @@ Agent 0x23 'Cipher': I left it out because I knew exactly how it would sound. #s
     # influence_decreased
 }
 Agent 0x23 'Cipher': Go and check. Please. Then come back and say sorry, or come back with cuffs. Just don't leave it hanging.
--> hub
+-> back
 
 === leave ===
 {
@@ -158,8 +172,11 @@ Agent 0x23 'Cipher': Go and check. Please. Then come back and say sorry, or come
     Agent 0x23 'Cipher': The logs have caught up with the right man, then. I'll be here, behind my monitors, being boring.
 - accused_cipher:
     Agent 0x23 'Cipher': Check the logs. That's all I ask.
+// Phase 4 dialogue C1 (D8-15): never accused, and the naming is done.
+- mole_identified:
+    Agent 0x23 'Cipher': I heard. Good. Back to the maths.
 - else:
     Agent 0x23 'Cipher': {&You'll clear me on the evidence. Good. My face has never once done me a favour.|Back to the maths, then.|The library door log. It's all in there.}
 }
 #exit_conversation
--> hub
+-> back

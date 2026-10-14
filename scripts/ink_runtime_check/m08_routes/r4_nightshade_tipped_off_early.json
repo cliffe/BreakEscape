@@ -50,12 +50,12 @@
 { "look": "deep_state_manual", "has": "ENTROPY -- INSIDER THREAT INITIATIVE", "lacks": "No letterhead" },
 { "look": "deep_state_manual", "has": "One torn page" },
 { "talk": "confront", "picks": ["Tell me why", "What happens to you now", "No deals"] },
-{ "said": ["So I tidied. The bag, the stick", "I wiped the file and forgot my own thumb"] },
+{ "said": ["So I tidied the bag and the stick", "I wiped the file and forgot my own thumb"] },
 { "notSaid": ["flight to Montana the morning after"] },
 { "talk": "debrief", "picks": ["He's the crime", "code server", "Nothing more"] },
 { "credits": true },
 { "said": ["GO-BAG: Gone from his locker the night you tipped him off", "Wiped after you tipped him off. His thumbprint survived it."] },
 { "notSaid": ["Packed nine days ago", "Nobody planted the mail"] },
-{ "maxRun": 11 }
+{ "maxRun": 9 }
 ]
 }
