@@ -98,7 +98,7 @@ The record keeps the module version, dates, time on task, the per-outcome result
 
 ### Phase 0: foundations
 
-Engine: BE-01 assessed decisions, BE-02 debrief screen, BE-03 text route, BE-04 accessibility baseline, BE-05 organisation profile, BE-08 visual aids, BE-09 intranet terminal, BE-12 short sessions, BE-18 work task and interruptions, BE-19 minigames opened from conversations, BE-20 authorable tutorial and title screen, MG-20 knowledge check, EX-01 mentor explainer, EX-04 in-world documents.
+Engine: BE-01 assessed decisions, BE-02 debrief screen, BE-03 text route, BE-04 accessibility baseline, BE-05 organisation profile, BE-08 visual aids, BE-09 intranet terminal, BE-12 short sessions, BE-18 work task and interruptions, BE-19 minigames opened from conversations, BE-20 authorable tutorial and title screen, BE-23 pause, BE-25 course avatars and inclusive name entry, BE-26 accessibility checks in CI, MG-20 knowledge check, EX-01 mentor explainer, EX-04 in-world documents.
 
 Platform: HA-01 organisations, HA-03 assignments, HA-04 due-soon and overdue emails, HA-05 records, HA-06 certificates, HA-07 policy acknowledgement, HA-09 dashboards, HA-11 organisation profile, HA-15 data protection, HA-17 learner home, HA-19 version stamp on records, HA-23 accessibility pass, HA-26 setup checklist.
 

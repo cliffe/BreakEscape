@@ -42,16 +42,21 @@ After this module, leaders can:
 
 ## Compliance coverage
 
-Contributes to (short forms until `02_COMPLIANCE_MAPPING.md` is written):
+Training requirements this module contributes to (short names from `02_COMPLIANCE_MAPPING.md`):
 
-- **UK Cyber Governance Code of Practice (2025, voluntary):** C.3 (directors' own training), D.1 to D.4 (plan, exercise at least annually, regulatory obligations in an incident, post-incident review), A.3 (risk appetite), A.4 (suppliers), E.2 (formal reporting at least quarterly). A facilitated session run against the organisation's own plan can serve as the D.2 exercise.
-- **NIS2** Article 20(2) (members of management bodies must follow training) and 20(1) (approve and oversee risk-management measures); Article 23 (incident reporting), for EU entities in scope.
-- **DORA** Article 5(4) (management body knowledge and regular training on ICT risk) and Article 13(6) (training for all staff and senior management), for EU financial entities.
-- **ISO/IEC 27001** clause 5.1 (leadership and commitment) and 7.3 (awareness); Annex A 5.24 and 5.26 (incident management planning and response) and 5.29 (security during disruption).
-- **NCSC CAF** A1 (governance) and D1 (response and recovery planning).
-- **PCI DSS** 12.10.2 (the incident response plan reviewed and tested at least once every 12 months), where leaders take part in the test.
-- **NIST CSF 2.0** Govern function (GV.RR: roles, responsibilities and authorities).
-- **UK GDPR** Articles 33 and 34 (notifying the regulator and the people affected), for the people who make the call.
+- **Cyber Governance Code C1, C3 and C4**: directors' own training (C3), and the culture and training assurance the board leads (C1, C4).
+- **Cyber Governance Code D2**: supported only when the facilitated session is run against the organisation's own incident plan, with its headings, roles and contacts loaded from the organisation profile (BE-05, HA-11) and an action list recorded (see `game_design.md`, Variants). Played as Larkspur's crisis, the module is training, not the board's exercise of its own plan.
+- **NIS2 Art 20(2)**: training for members of management bodies, for EU entities in scope; **NIS2 IR 8.1** and **NIS2 IR 10.1** where the Implementing Regulation applies (management bodies included in awareness, and understanding their roles).
+- **DORA Art 5(4)** and **DORA Art 13(6)**: management body knowledge and regular training on ICT risk, and senior management in the training scheme, for EU financial entities. The module also gives the board a view of what it is funding under **DORA Art 5(2)(g)**.
+- **ISO 27001 cl. 7.2** (competence for a role with security responsibilities) and **ISO 27001 cl. 7.3**.
+- **NIST AT-3** (role-based training), **NIST AT-2** (literacy training for managers and senior executives) and, through the optional "Who's behind it?" explainer, **NIST AT-2(5)** in part.
+- **CIS 14.9** (role-specific training).
+- **NCSC CAF B6.a** and **NCSC CAF B6.b** (executives on a training path; leaders who treat reporters positively).
+- **DSPT 3.4.1**, for NHS customers.
+- **UK GDPR Art 24** (the controller's responsibility, exercised by leaders).
+- US customers: **NYDFS 500.4(d)(1)** (the board's understanding of cyber risk) and **HIPAA 164.308(a)(5)** (training that includes management).
+
+The content also follows ISO 27001 cl. 5.1 and ISO 27001 A.5.24, A.5.26 and A.5.29 (incident management and security during disruption), NCSC CAF A1 and D1, UK GDPR Art 33 and Art 34, NIS2 Art 23 and the NIST CSF 2.0 Govern function (GV.RR). A facilitated session that tests the organisation's own plan can also count towards PCI DSS 12.10.2 (the incident response plan tested at least once every 12 months); that is a test of the plan, not training.
 
 ## Module flow
 
@@ -87,13 +92,13 @@ The facilitated session runs the same beats with the board as one team, discussi
 
 ## New features needed
 
-- **MG-24 Crisis decision board** (the core): extends `command-board` with timed injects, decision cards (options, the advice given, and whose call it is), a pressure strip (press, client and staff queries), countdowns for the ICO clock and the leak deadline, and a reason prompt on every decision for the log. Includes a practice mode for "Whose call? Which clock?".
-- **BE-16 Time skips:** 02:13, 06:00, 08:15, 09:30, 11:00, 13:00, 18:40, day two 09:00 and 14:00, then three weeks later. `systems/game-clock.js` runs at real time today, so the clock must jump with each skip for the board's stamps to show crisis time.
-- **BE-15 Facilitated group mode** and **HA-13 Facilitated sessions**: the main way the module is used.
-- **BE-01**, **BE-02** (with the decision log on the debrief screen), **BE-08**, **BE-09**, **BE-19** (the board, forms and check opened from conversations), **BE-20**, **MG-20**, **EX-01**.
+- **MG-24 Crisis decision board** (the core; M, or L with the facilitated group vote): extends `command-board` with injects, decision cards (options, advisers' views, and whose call it is), status rows, and the optional timer left off. This module also needs: a reason prompt on every decision that writes the decision log (the board already takes typed entries); a pressure strip (press, client and staff queries); countdowns for the ICO clock and the leak deadline that move with crisis time, never real time; and a practice mode for "Whose call? Which clock?". MG-24's "Go to 06:00" must move the in-game clock forward for good, so the board's stamps and phone messages show crisis time. `systems/game-clock.js` runs on wall time with no way to set it today, which ties this to the proposed pause and time scale feature in `features/break_escape_engine.md`.
+- **BE-16 Time skips** for the two flash-forwards: the reinfection scene on day three (if the fast restore was chosen) and "three weeks later", each returning to the board afterwards.
+- **BE-15 Facilitated group mode** and **HA-13 Facilitated sessions**: the main way the module is used, including the facilitator's console to pause, swap or skip injects and enter the room's choice.
+- **BE-05 and HA-11 Organisation profile:** the organisation's own regulators, insurer hotline, reporting routes and ransom stance on screen and on the crisis card; and, for the facilitated version, the headings, roles and contacts of the customer's own incident plan, so a board exercises its own plan (Cyber Governance Code D2).
+- **BE-01**, **BE-02** (with the decision log on the debrief screen), **BE-08**, **BE-09**, **BE-19** (the board, forms and check opened from conversations with `#trigger_minigame:<minigame>|<configKey>`), **BE-20**, **MG-20**, **EX-01**.
 - **MG-04 Voice calls** for the 02:13 call, the insurer and the client; `phone-chat` calls work until then.
-- **BE-05 Organisation profile**: the organisation's own regulators, insurer hotline, reporting routes and ransom stance on screen and on the reference card.
-- **A small reuse task**: make the hard-coded "Meridian" headers in `coverage-decision-form`, `warranty-checklist` and `claims-management-system`, the "TLP:AMBER" bar in `ncsc-brief` and the "SECURE VIDEO LINK" bar in `person-chat-ui.js` configurable.
+- **Reuse fixes** listed in `features/minigames.md`, section 4: `coverage-decision-form`, `warranty-checklist` and `claims-management-system` (Meridian titles, sis03 globals and gates), `ncsc-brief` (agency labels must come from data, never presented as a real agency's document), `backup-recovery` (fixed global names, sis01's default sources), `ransomware-display` (opens only when `ransomware_deployed` is true; check the art suits the calm tone), `esd-pushbutton` (a plain office look) and the video-call bar in `person-chat-ui.js` ("Larkspur Meet").
 
 ## Organisation-specific content
 
@@ -103,7 +108,8 @@ The facilitated session runs the same beats with the board as one team, discussi
 - The insurer, its incident line, its panel firms and the policy's notification conditions.
 - Regulators and clocks: the ICO, any sector regulator or NIS competent authority, client contract clauses, and law enforcement routes.
 - The lifeline services to keep running or restore first, and the paper fallback for each.
-- The board's regular cyber reporting: who reports, how often, and which measures (Code action E.2).
+- The board's regular cyber reporting: who reports, how often, and which measures (Code action E2).
+- For the facilitated version run as the board's own exercise: the headings of the organisation's incident plan, its crisis roles and contacts, and where the exercise report and action list should go.
 
 ## Open questions
 

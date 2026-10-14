@@ -4,7 +4,7 @@ This file is the source of truth for the module. The game, the explainers, the k
 
 ## Key messages
 
-1. **Insider risk is mostly ordinary.** Anyone with access is an insider, including you. Most of the harm comes from mistakes and shortcuts by good people; occasionally someone does it on purpose.
+1. **Insider risk is mostly ordinary.** Anyone with access is an insider, including you. Most incidents come from mistakes and shortcuts by good people; occasionally someone does harm on purpose.
 2. **Your login is you.** Never share your password, codes or sign-in prompts, and never use anyone else's. Locked out? The service desk sorts it in minutes.
 3. **If anyone offers you money or favours for access or data, don't reply.** Screenshot it and report it to the security team. You won't be in trouble for being asked.
 4. **Notice it, note the facts, pass it on.** Tell the security team, your manager, HR, the Speak Up line or the DPO what you saw: what, when and where. Don't investigate, confront or gossip. You don't have to be sure; you do have to be fair.

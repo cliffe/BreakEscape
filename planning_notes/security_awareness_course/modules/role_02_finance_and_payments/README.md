@@ -11,7 +11,7 @@
 | Micro-drill | 4 minutes ("Run Review": find the problem rows in a ten-line payment run) |
 | Text route | 15 minutes |
 | Priority | Phase 2 |
-| Build size | M, driven by MG-15's payment-run view and the generalised `dual-auth` panel; the rest reuses core_11's desk and existing minigames |
+| Build size | M, driven by MG-15's payment-run view and the reworked `dual-auth` panel; the rest reuses core_11's desk and existing minigames |
 
 ## Why this module
 
@@ -26,7 +26,7 @@ The risks cluster where finance work is busiest: month end, holiday cover and si
 ## Target behaviours
 
 1. **Verifies** every new payee and every change of bank details independently: a call to a number held before the request, a second person, and no action on an email, letter, portal change or phone call alone.
-2. **Reviews the run and holds** anything that doesn't add up, even at the cut-off, and **never bypasses dual control** (no approving your own work, no one else's code or leftover access, no splitting, no "pay now, approve later").
+2. **Reviews the run and holds** anything that doesn't add up, even at the cut-off, and **never bypasses dual control** (no approving your own work, no one else's login or leftover access, no splitting, no "pay now, approve later").
 3. **Starts recovery at once** when a payment may have gone wrong, with the bank's fraud line first, and **handles card data safely**.
 
 ## Learning outcomes
@@ -42,20 +42,23 @@ After this module, finance staff can:
 
 ## Compliance coverage
 
-Contributes to (short references follow core_01; `02_COMPLIANCE_MAPPING.md` was not yet present):
+Contributes to (short references from `02_COMPLIANCE_MAPPING.md`, section 2; this matches the module's row in its coverage matrix, plus PCI DSS 9.5.1.3):
 
-- **PCI DSS v4.0.1** 12.6.3 and 12.6.3.1 (training on hire and every 12 months, covering phishing and social engineering), with role-specific depth; and, for staff who handle card data, the behaviours behind 3.3.1.2 (card verification codes not kept after authorisation), 3.4.1 (card numbers masked when displayed), 4.2.2 (no unprotected card numbers by email, chat or text) and 9.5.1.3 (training to spot tampering with card terminals, where staff use them). Training supports these requirements; it doesn't meet the technical ones on its own.
-- **ISO/IEC 27001** Annex A 5.3 (segregation of duties), Annex A 6.3 and clause 7.3.
-- **NIST SP 800-53** AT-3 (role-based training) and AT-2(3).
-- **CIS Controls v8.1** Control 14, including 14.2 (social engineering, including business email compromise) and role-specific training.
-- **NIS2** Article 21(2)(g); **NCSC CAF** B6.
-- For council customers, the payment controls in Annex B of the **Local Government Transparency Code 2015**.
+- **ISO 27001 cl. 7.2** (competence for people whose work affects information security) and **ISO 27001 A.6.3**.
+- **NIST AT-3** (role-based training) and **NIST AT-2(3)** (social engineering, including impersonation and thread-jacking).
+- **CIS 14.9** (role-specific awareness and skills training; IG2 and IG3), building on CIS 14.2 from core_11.
+- **PCI DSS 12.6.1** (staff aware of their role in protecting card data) and **PCI DSS 12.6.3.1**; **PCI DSS 9.5.1.3** in part, for staff who use card terminals.
+- **NCSC CAF B6.b.**
+- **NIS2 IR 8.2** (role training, for the digital entity types the Implementing Regulation covers); **DORA Art 13(6)** (training that fits the role, for EU financial entities).
+- US customers: **NYDFS 500.14(a)(3)**; **SOC 2 CC1.4**.
+
+The card data beat teaches the staff behaviours behind three technical requirements: card security codes not kept after authorisation (PCI DSS 3.3.1.2), card numbers masked when displayed (PCI DSS 3.4.1) and no unprotected card numbers sent by end-user messaging (PCI DSS 4.2.2). Training supports these; it doesn't meet them, and they aren't training requirements, so they aren't in the mapping. The same goes for segregation of duties (ISO 27001 A.5.3). For council customers, the module teaches the payment controls in Annex B of the Local Government Transparency Code 2015.
 
 ## Module flow
 
 | Beat | What happens | Format | Minutes |
 |---|---|---|---|
-| Hook | Friday 14:20, month end. "Hassan", off sick, emails from his personal address: add a new supplier's invoice to today's run, "I've approved it", "don't ring, I've lost my voice". The player's response is the baseline | Game (MG-01) | 2 |
+| Hook | Friday 14:20, month end. "Hassan", off sick, emails from his personal address: add a new supplier's invoice to today's run, "I've approved it", "don't ring, I've lost my voice". The player's response is the baseline | Game (MG-27, MG-01) | 2 |
 | Learn | Eleni (Financial Controller) takes the email apart, with Hassan's out-of-office reply that told the fraudster whom to target; the change process, red flags in a run, dual control, Confirmation of Payee in a run, the first hour; Ama on card data | NPC explainer with visual aids (EX-01, BE-08) | 4 |
 | Practise | "Desk Check": eight requests at the verification desk, including a "poisoned" supplier record, a refund to a new account and a payroll change | Minigame (MG-15, MG-25) | 4 |
 | Apply | The month-end run: thirty payments, four that mustn't go. A "supplier" rings to check today's payment; a voicemail "from the chief executive"; a customer emails a photo of a card; Bea realises Kev's pay went to a fraudster; Eleni is in a meeting as the 16:00 cut-off nears | Game (BE-18, MG-15 run view, MG-04, `dual-auth`, `command-board`) | 10 |
@@ -66,12 +69,13 @@ Contributes to (short references follow core_01; `02_COMPLIANCE_MAPPING.md` was 
 ## Reuse from existing Break Escape content
 
 - **Rooms:** the finance office (`small_office_room2_1x1gu`, redressed as in core_11); `room_meeting` seen through glass, where Eleni's board pre-meeting runs over.
-- **`dual-auth`** (`public/break_escape/js/minigames/dual-auth/`): the run's two-person approval. The player types their own code on the first pad; the second pad belongs to the delegated approver. It is not registered (`minigames/index.js` has no export), writes sis01's globals and runs a fixed five-minute countdown (see New features). sis01's scenario already makes the point the module needs: each approver's code must be distinct "so the dual-auth panel cannot be solved with one shared code" (`scenarios/sis01_healthcare/scenario.json.erb`, line 123).
+- **The existing `dual-auth` minigame** (`public/break_escape/js/minigames/dual-auth/`): the run's two-person approval. It exists but is not registered in `minigames/index.js` or dispatched; today it takes PINs, writes sis01's globals and runs a fixed five-minute countdown. After the rework in `features/minigames.md` section 4, each panel is a named sign-off by whoever is signed in to Ledger, with a short checklist: the player signs the first; the delegated approver signs the second. sis01's scenario already states the principle the module tests: two approvers only count if they are two different people (its codes "must be distinct so the dual-auth panel cannot be solved with one shared code", `scenarios/sis01_healthcare/scenario.json.erb`, line 123).
+- **`password`**: Hassan's PC. The sticky note in his drawer holds his Ledger password; typing it would sign the player in as Hassan, and the second panel would then show his name.
 - **`log-filter`**: the nearest existing pattern for the payment-run table: filter chips, a table, and lookups that follow the selected row (`threatIntel` and `accountHistory`, which here become the supplier record and its change history). Today its columns are fixed (`vpn`, `ics_rdp`) and only one anomaly row can be flagged, so MG-15's run view extends rather than reuses it.
-- **`command-board`**: the recovery hour as a timeline that stamps entries when globals change ("15:02 bank fraud line called", "15:09 security told"), with its title set through `params.title`.
+- **`command-board`**: the recovery hour as a timeline that stamps entries when globals change ("15:02 bank fraud line called", "15:09 security told"). Its defaults are sis01's, overridden through the scenario's `commandBoard` key; no injects or decision cards are needed here, so this doesn't wait for MG-24.
 - **`esd-pushbutton`**: a guarded **HOLD THIS PAYMENT** button with a confirm modal (`authVar`, `activatedVar`, `completionActions`) for the row holds in the text route.
 - **`forensic-data-platform`**: the "recovery pack" Bea and the player read to the bank (payment, email and timeline tabs), with a gated confirm.
-- **`container`**: Hassan's desk drawer, where a sticky note with his approval code waits as a temptation.
+- **`container`**: Hassan's desk drawer, holding the bank's contact card (needed for the recovery hour) and a sticky note with his Ledger password (a temptation, and a finding to report).
 - **`notes`** and **`text-file`**: Hassan's handover note, the change procedure, the emails.
 - **Patterns:** sis02's call-back refusal (`scenarios/sis02_energy/ink/npc_tom_hadley.ink:136-171`); core_11's verification desk and characters.
 - **Systems:** the game clock (`systems/game-clock.js`) and `timers[]` for the 16:00 cut-off and the scheduled interruptions; objectives for the work task.
@@ -83,8 +87,9 @@ Contributes to (short references follow core_01; `02_COMPLIANCE_MAPPING.md` was 
 - **MG-04 Voice calls:** the inbound "supplier" call, the voicemail, ringing record numbers, ringing the bank's fraud line.
 - **MG-01 Inbox**, **MG-20 Knowledge check**, **BE-01** and **BE-02**.
 - **BE-08 Visual aids:** the annotated hook email, the change process, the run red flags.
-- **BE-09 Intranet terminal**, **BE-05 Organisation profile** (approval rules, cut-offs, the card payment route), **BE-13 Content banks** (run data, anomalies, requests), **BE-16 Time skips** (Monday), **BE-18 Work task and interruptions**, **BE-19 Open minigames from conversations and events**, **BE-07 Micro-drill launcher** ("Run Review").
-- **proposed:** Dual authorisation panel (as in core_11): register and generalise `dual-auth`, with configurable globals and texts, an optional countdown that is off under BE-04, approver keys renamed, and the second pad completed by the approver's event. Here the second pad must also accept a typed code, so the module can record whether the player used someone else's.
+- **MG-27 Work desktop:** the player's computer, launching the inbox, Ledger and The Lark.
+- **BE-09 Intranet terminal**, **BE-05 Organisation profile** (approval rules, cut-offs, the card payment route), **BE-13 Content banks** (run data, anomalies, requests), **BE-16 Time skips** (Monday), **BE-18 Work task and interruptions**, **BE-19 Open minigames from conversations and events** (Eleni's check question, `#trigger_minigame:knowledge_check|r02_q_portal_change`, and the drill), **BE-07 Micro-drill launcher** ("Run Review").
+- **The `dual-auth` rework** (`features/minigames.md` section 4; no id): register and dispatch it, named approver panels with a checklist instead of PINs, globals from data, no timer by default. This module also needs the second panel to complete on the approver's own event (Eleni signing off), and to record which account signed each panel and at whose keyboard, so the debrief can show a sign-off made in someone else's name.
 
 ## Organisation-specific content
 
@@ -97,9 +102,11 @@ Contributes to (short references follow core_01; `02_COMPLIANCE_MAPPING.md` was 
 - Whether the organisation takes card payments, the approved route (for example a payment link or terminal), and the procedure for card details received by email.
 - Who holds the bank's fraud line details; the security team, DPO and HR contacts for an incident; the police route by nation.
 
+These go in the organisation's HA-26 setup checklist alongside core_11's slots.
+
 ## Open questions
 
-1. **Using someone else's code.** Should the player be able to type Hassan's code from the sticky note, or use Bea's leftover access? *Recommendation: yes, as an ethical choice with a consequence; the panel can't tell who typed a code, which is the lesson.*
+1. **Signing off in someone else's name.** Should the player be able to sign in as Hassan with the password from the sticky note, or accept Bea's leftover approver access? *Recommendation: yes, as an ethical choice with a consequence; Ledger can't tell who was at the keyboard, which is the lesson.*
 2. **Card data beat.** *Recommendation: on by default, with an organisation switch (HA-11) for organisations that take no card payments, which swaps in a second refund or payroll item.*
 3. **Thirty rows on small screens.** *Recommendation: thirty on desktop; fifteen on small screens with the same four problem rows.*
 4. **Kev as the payroll victim.** Kev Sutcliffe is recurring cast. *Recommendation: yes: he is warm about it, and it shows the human cost without anyone being the villain.*

@@ -77,10 +77,12 @@ Contributes to (references in `02_COMPLIANCE_MAPPING.md`):
 - **MG-01 Inbox:** composing with a recipient check, where "Me (personal)" appears in autocomplete.
 - **MG-11 Sharing settings:** the approved secure transfer (named recipient, expiry, download notice), and the free app's sharing panel ("Anyone with the link can edit"; an owner who has left).
 - **MG-20 Knowledge check:** the Swap Shop items and the final check.
+- **MG-27 Work desktop:** the player's laptop, where the pack folder and its sync bar live and Martin's and Kev's messages arrive as notifications.
+- **MG-02 Web browser:** BoxBounce's upload page, if the player goes there (a single data-built page).
 - **BE-16 Time skips:** the "Where are they now?" montage.
 - **BE-18 Work task and interruptions:** the Monday pack and its scheduled arrivals.
 - **proposed:** Hand an item to an NPC, an ink tag that takes an item from the player's inventory (synced to the server) and records who received it, for handing the USB stick to Owain or Maureen. Ink can give items today (`#give_item`) but not take them back. core_10 needs the same thing for a found badge.
-- **BE-01**, **BE-02**, **BE-05**, **BE-08**, **BE-09**, **BE-13** and **BE-19**, as in core_01; **BE-07** for the micro-drill.
+- **BE-01**, **BE-02**, **BE-05**, **BE-08**, **BE-09** and **BE-13**, as in core_01. **BE-19** opens Owain's check question and the Swap Shop from his conversation, and the 15:35 compose window from Martin's message (`#trigger_minigame:<minigame>|<configKey>`). **BE-07** for the micro-drill.
 - **EX-01** (Owain), **EX-04** (the Swap Shop board and a notice on The Lark), **EX-05** (the montage).
 - **MG-04 Voice calls** (P2) for calling the council on the directory number; a `phone-chat` conversation works until then.
 

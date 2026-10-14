@@ -56,10 +56,10 @@ Contributes to (references in `02_COMPLIANCE_MAPPING.md`):
 | Beat | What happens | Format | Minutes |
 |---|---|---|---|
 | Hook | 08:05. The ward phone rings: "I'm Mr Fenwick's nephew. How's he doing?" The player's answer is the baseline | Game (MG-04) | 1 to 2 |
-| Learn | Imani at the ward desk: need to know, your smartcard is you, who's asking, report it; then Dr Mulligan's 60-second video on the duty to share | NPC explainer and video (EX-01, BE-08; EX-02, MG-21) | 4 |
-| Practise | "Share or Don't?" (eight requests, with instant feedback), then a 60-second ward sweep before the consultant's round | Minigame drill (MG-20 items, BE-10) | 3 |
+| Learn | Dev Kapoor, the hospital's information governance manager, on his monthly ward walkabout: need to know, your smartcard is you, who's asking, report it; then Dr Mulligan's 60-second video on the duty to share | NPC explainer and video (EX-01, BE-08; EX-02, MG-21) | 4 |
+| Practise | "Share or Don't?" (eight requests, with instant feedback), then Dev's 60-second ward sweep before the consultant's round | Minigame drill (MG-20 items, BE-10) | 3 |
 | Apply | 10:00 to 14:00: get three patients home while a smartcard is left in, a phish lands in the ward mailbox, a well-known patient arrives, a caller says she's her agent, pathology goes down, a stranger walks into the staff corridor and the care home needs the discharge details | Game (BE-18, patient record viewer, MG-01, MG-04) | 7 to 8 |
-| Debrief | "Every look is logged": the record access audit for the well-known patient, then each decision and where it led | Debrief screen (BE-02), Imani and Dev | 2 |
+| Debrief | "Every look is logged": Dev shows the record access audit for the well-known patient, then each decision and where it led | Debrief screen (BE-02), Dev and Imani (the ward manager) | 2 |
 | Check | Six scenario questions | Quiz (MG-20) | 2 |
 | Reference | The ward card: need to know, smartcards, who's asking, share for care, downtime, report | Intranet (BE-09) | under 1 |
 
@@ -81,7 +81,8 @@ Contributes to (references in `02_COMPLIANCE_MAPPING.md`):
 - **BE-10 Spot-the-risk mode:** the ward sweep.
 - **BE-18 Work task and interruptions:** "Get them home by 14:00".
 - **BE-16 Time skips:** the afternoon after, and a week later.
-- **BE-08 Visual aids**, **BE-09 Intranet**, **BE-05 Organisation profile**, and **BE-19** (the phone ringing on its own at the hook; Imani's check question).
+- **BE-08 Visual aids**, **BE-09 Intranet**, **BE-05 Organisation profile**, and **BE-19** (the phone ringing on its own at the hook; Dev's check question through `#trigger_minigame:knowledge_check|<configKey>`).
+- **MG-27 Work desktop:** the ward computer as one launcher for the record viewer, the shared mailbox and the intranet, with the name of whoever is logged in across the top.
 - **EX-02 and MG-21:** Dr Mulligan's video on the staff room screen.
 - **BE-07 Micro-drill launcher:** "Share or Don't?".
 - **MG-17** (optional): a single-call mode with a "Who's asking?" checklist for ward phone enquiries, if the desk is built for role_03 and role_06.

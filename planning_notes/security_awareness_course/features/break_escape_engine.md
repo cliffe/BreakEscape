@@ -1,6 +1,6 @@
 # Break Escape engine features (BE)
 
-The engine and in-game UI work the awareness course needs, one section per feature in `features/README.md` (BE-01 to BE-21). The ids are fixed. Each section says why the course needs the feature, what the engine already has (with paths), a design concrete enough to estimate, acceptance criteria, dependencies, and risks.
+The engine and in-game UI work the awareness course needs, one section per feature in `features/README.md` (BE-01 to BE-22). The ids are fixed. Each section says why the course needs the feature, what the engine already has (with paths), a design concrete enough to estimate, acceptance criteria, dependencies, and risks.
 
 Paths: `JS/` is `public/break_escape/js/`. `game.rb` is `app/models/break_escape/game.rb`, `mission.rb` is `app/models/break_escape/mission.rb`, and "the controller" is `app/controllers/break_escape/games_controller.rb`. Line numbers are as found in October 2026.
 
@@ -38,6 +38,7 @@ Paths: `JS/` is `public/break_escape/js/`. `game.rb` is `app/models/break_escape
 | BE-19 | Open minigames from conversations and events | MVP | S | none | core_01 hook and check question; every EX-01 check |
 | BE-20 | Authorable tutorial, title screen and end screen | MVP | M | BE-05, BE-02, BE-04 | Every module; core_00 carries the full tutorial |
 | BE-21 | Workplace music and sound | P2 | S | BE-04 (sound captions) | Every module |
+| BE-22 | Tactic spotter card | P2 | S | BE-01, BE-02, BE-18 | core_02 (the social engineer bingo card) |
 
 Suggested build order for Phase 0: BE-19 and BE-01 first (they unlock the mentor's check question and every record), then BE-05, BE-08 and BE-09 (the Learn and Reference beats), BE-20 and BE-18 (the opening and the Apply beat), BE-12 and BE-02, with BE-03 and BE-04 running alongside from the start because every new screen has to work in both routes.
 
@@ -72,15 +73,13 @@ Suggested build order for Phase 0: BE-19 and BE-01 first (they unlock the mentor
       "outcomes": ["C01-LO1", "C01-LO3", "C01-LO5"],
       "beat": "apply",
       "options": { "reported": "secure", "ignored": "developing", "signed_in": "not_yet" },
-      "unanswered": { "option": "ignored", "closeOn": "global_variable_changed:apply_done" },
-      "effective": "latest"
+      "unanswered": { "option": "ignored", "closeOn": "global_variable_changed:apply_done" }
     },
     "C01-B6": {
       "title": "Advises Leo after his slip",
       "outcomes": ["C01-LO5", "C01-LO6"],
       "beat": "apply",
-      "options": { "report_and_call": "secure", "change_password": "developing", "keep_quiet": "not_yet" },
-      "effective": "latest"
+      "options": { "report_and_call": "secure", "change_password": "developing", "keep_quiet": "not_yet" }
     }
   },
   "critical": [
@@ -91,7 +90,7 @@ Suggested build order for Phase 0: BE-19 and BE-01 first (they unlock the mentor
 }
 ```
 
-`effective` says which record counts when a behaviour is recorded more than once: `first` (baselines such as the hook), `latest` (the default) or `best`. An optional `appliesWhen` is a globals condition in the existing syntax (`JS/utils/conditional-text.js`); when it is false at close time the behaviour is recorded as `not_applicable` (core_01's C01-B7, which only applies to players who clicked). The rating map and `critical` rules are stripped from the bootstrap scenario, like `targetFlags`.
+Each behaviour is recorded once per beat in each attempt. If content records it twice in the same beat, the first record stands and later ones are kept as notes, so modules resolve compound actions into one option (core_01's "clicks, stops, then reports" is its own option of C01-B1). Remediation loops write new records with the beat `remediation`. An optional `appliesWhen` is a globals condition in the existing syntax (`JS/utils/conditional-text.js`); when it is false at close time the behaviour is recorded as `not_applicable` (core_01's C01-B7, which only applies to players who clicked). The rating map and `critical` rules are stripped from the bootstrap scenario, like `targetFlags`.
 
 *What gets tagged.* Content reports a behaviour id and an option key, never a rating:
 
@@ -110,6 +109,7 @@ Suggested build order for Phase 0: BE-19 and BE-01 first (they unlock the mentor
 | `milestone` | A beat starts or ends, a checkpoint is reached, the reference card is opened | `reference_opened` |
 | `remediation` | A critical behaviour loop starts or ends | C01-CB2, started |
 | `policy_ack` | A policy is acknowledged on the intranet (BE-09) | acceptable use policy, version 3 |
+| `tactic_used`, `tactic_tick` | A caller uses a tactic; the player ticks it on the tactic spotter card (BE-22) | "urgency" on the IT Security call; ticked |
 
 *The record sent by the client.*
 
@@ -129,7 +129,7 @@ Suggested build order for Phase 0: BE-19 and BE-01 first (they unlock the mentor
 }
 ```
 
-No free text is ever recorded (an MG-09 report records which fields were completed, not what was typed), which keeps the record small and avoids storing personal data the learner types.
+Records never carry free text (`assessment_and_evidence.md`, section 11, rule 8): an MG-09 report records which fields were completed, not what was typed. Where the debrief needs the typed text, it stays in the game's state and is deleted with the attempt.
 
 *Sync.* The client recorder (`JS/systems/assessment-recorder.js`, new) queues records, mirrors the queue to `localStorage` inside try/catch so a crash or a dropped connection loses nothing, and posts batches to a new endpoint, `POST /games/:id/records`, within about a second. The endpoint is idempotent on `clientId`, so retries are safe. On page hide it flushes with `fetch` and `keepalive: true` and the CSRF header, as `StateSync.flush()` does (`JS/state-sync.js`, line 323). The bootstrap scenario carries the highest `seq` the server holds so a reloaded page continues the sequence.
 
@@ -146,11 +146,30 @@ No free text is ever recorded (an MG-09 report records which fields were complet
 | `route` | `game`, `text`, `facilitated` or `test_out` |
 | `source` (json), `game_time_ms`, `client_ts`, `received_at` | Evidence of when and where |
 
-The model is read-only after create. A per-game summary (`assessment_summary`, a jsonb column on `break_escape_games`) is recomputed after each insert: the effective rating per behaviour, the result per learning outcome, the status of each critical behaviour, the check score, time on task (from milestones and an active-time counter sent with them) and the route. `GET /games/:id/assessment` returns it to BE-02, and `on_game_complete` hands it to Hacktivity for HA-05.
+The model is read-only after create. Records are kept with the attempt for as long as HA-15's schedule allows for learning detail (by default two years from the attempt, or 90 days after the person leaves, whichever is sooner; `assessment_and_evidence.md`, section 11), and deletion and retention are handled by HA-15.
 
-*From behaviours to learning outcomes.* The default rule, to be confirmed in `assessment_and_evidence.md`: an outcome is **Secure** when every applicable behaviour mapped to it is Secure (after any remediation) and every check item mapped to it was answered correctly; **Not yet** when a mapped behaviour is Not yet and was never remediated, or when most of its check items were wrong; **Developing** otherwise. Remediation never deletes the first record; the summary shows "Not yet, then Secure after practice", which is what `assessment.md` asks for.
+A per-game summary (`assessment_summary`, a jsonb column on `break_escape_games`) is recomputed after each insert. It holds:
 
-*Mirror into ink.* After each decision the engine sets a global `assess_<behaviour>` (for C01-B6, `assess_c01_b6`) to the effective option key. The ink debrief and later scenes branch on it the way sis01 branches on its story globals, without the author keeping a second set of flags. The engine declares these globals itself from the `assessment` block.
+- the rating of each behaviour;
+- the result for each learning outcome;
+- the status of each critical behaviour (shown, shown after practice, practised but not yet shown, or not applicable);
+- the knowledge check score;
+- time on task, counted while the module is in focus with a long idle limit, so screen reader users who listen without pressing keys are not under-counted, and never used as a pass condition (`assessment_and_evidence.md`, open question 6);
+- the route.
+
+`GET /games/:id/assessment` returns it to BE-02, and `on_game_complete` hands it to Hacktivity for the completion record (HA-05).
+
+*From behaviours to learning outcomes.* The engine implements the rule in `assessment_and_evidence.md`, section 3, and does not define its own:
+
+- each piece of evidence scores Secure 2, Developing 1, Not yet 0, and a check item right 2, wrong 0;
+- evidence is weighted by beat: the Apply beat 2, Practise and the mentor's check question 1, each knowledge check item 1 (latest attempt only), and the hook 0;
+- an outcome is Secure at a weighted average of 1.5 or more with no Not yet in the Apply beat, Not yet below 0.6, and Developing otherwise;
+- an outcome whose critical behaviour was shown only after practice is at most Developing for this sitting;
+- with fewer than two pieces of evidence, or none from play, the outcome is "not rated".
+
+The weights and cut-offs are read from the module's `assessment` block, so a module's `assessment.md` can change them for one outcome, with a reason, as that section allows. Remediation follows section 4 of the same document: at most two loops, every attempt kept, and "practised, not yet shown" after the second.
+
+*Mirror into ink.* After each decision the engine sets a global `assess_<behaviour>` (for C01-B6, `assess_c01_b6`) to the option recorded for it (the remediation record, once there is one). The ink debrief and later scenes branch on it the way sis01 branches on its story globals, without the author keeping a second set of flags. The engine declares these globals itself from the `assessment` block.
 
 *Validator.* `scripts/validate_scenario.rb` and an ink scan check that every `#assess:` tag and every `assess` block names a behaviour and option in the map, that every option in the map can be reached by some tag or config (a warning), that every behaviour maps to at least one outcome and every outcome has evidence, and that `critical` rules name real behaviours.
 
@@ -159,7 +178,8 @@ The model is read-only after create. A per-game summary (`assessment_summary`, a
 - Playing core_01's Apply beat with a scripted route produces exactly one `decision` record per behaviour per attempt, with the option that route took, and `not_applicable` for C01-B7 when the player never clicked.
 - A record posted with a rating, or with an option not in the map, is stored with the server's rating or rejected with a reason.
 - Killing the network for a minute and reloading the page loses no records, and the server holds no duplicates.
-- `GET /games/:id/assessment` returns Secure, Developing or Not yet for every learning outcome, and the result matches a hand calculation for at least five fixture routes (node and Rails tests, run against fixtures, not live content).
+- `GET /games/:id/assessment` returns Secure, Developing, Not yet or "not rated" for every learning outcome. The four worked examples for C01-LO4 in `assessment_and_evidence.md`, section 3, come out exactly as that table says, and at least five further fixture routes match a hand calculation (node and Rails tests, run against fixtures, not live content).
+- A critical behaviour missed twice ends as "practised, not yet shown" after the second loop, and the learner moves on to the check.
 - A `#assess` tag with an unknown behaviour fails the validator.
 - The same choices made in the text route (BE-03) produce records identical apart from `route`, `clientId` and timestamps.
 - `reset` starts attempt 2; attempt 1's records are kept and marked superseded.
@@ -168,10 +188,10 @@ The model is read-only after create. A per-game summary (`assessment_summary`, a
 
 **Risks and open questions:**
 
-- The game runs in the learner's browser, so a determined learner could forge records from the console. Server-side ratings, server-side grading of check items and plausibility checks limit this. The record is evidence of training, not an invigilated exam, and the accessibility statement and audit pack should say so.
-- Records describe how individual staff behaved. They must be used for training, not discipline, and the organisation dashboard needs privacy thresholds (HA-09). Deleting a learner must delete their records (Hacktivity does not yet remove a user's games, `research/current_state_hacktivity.md`).
-- Open: should each record carry a hash of the previous one, so an edit to the table is detectable? Recommendation: yes in P2, as part of the HA-05 audit pack.
-- Open: how much of the summary rule belongs in the engine versus Hacktivity. Recommendation: the engine computes per-module results; Hacktivity combines modules into pathways.
+- The game runs in the learner's browser, so a determined learner could forge records from the console. Server-side ratings, server-side grading of check items and plausibility checks limit this. The record is evidence of training, not an invigilated exam, and the audit pack should say so.
+- Records describe how individual staff behaved. They are for learning, never discipline; managers never see them, and organisations see them only in aggregate above HA-09's thresholds (`assessment_and_evidence.md`, section 11). Deletion and retention of game records are handled by HA-15.
+- Integrity: completion records are fingerprinted and chained by HA-05 (`assessment_and_evidence.md`, section 7). Per-decision records are short-lived learning detail and are not chained; the read-only model and server-side rating protect them.
+- Open: how much of the rule belongs in the engine versus Hacktivity. Recommendation: the engine computes per-module results, as above; Hacktivity combines modules into pathways and writes the completion record.
 
 ### BE-02: Debrief screen
 
@@ -213,11 +233,11 @@ Lines that are not tied to one behaviour use the credits shape with one new cond
 
 1. **What happened:** one card per assessed behaviour in arrival order: thumbnail with alt text (from BE-08), what it was, the clue, what you did (rating as a word and an icon, never colour alone), what good looks like, and what happened next.
 2. **Before and after:** the `pairs` from the assessment block side by side (core_01: the hook and the expected-sender phish).
-3. **How you did:** each learning outcome with Secure, Developing or Not yet and one plain sentence; critical behaviours shown or still to practise.
+3. **How you did:** each learning outcome as a sentence tied to what the learner did ("You rang Northbeck on the directory number before doing anything. That's exactly it."), with Secure, Developing or Not yet in words and an icon. For Developing and Not yet, the one thing to do differently and a link to practise. No numbers except the knowledge check score, as `assessment_and_evidence.md`, section 3, "What each person sees", sets out. An outcome the module couldn't rate says so plainly. Critical behaviours are shown as done or still to practise.
 4. **The line to remember:** the module's key message.
-5. **Next:** "Talk it through with Ama", "Go to the spot check" (MG-20), and, when a critical behaviour is missing, "One more thing to practise", which fires the module's remediation event (`assessment.critical[].remediation`).
+5. **Next:** "Talk it through with Ama", "Go to the spot check" (MG-20), and, when a critical behaviour is missing, "One more thing to practise", which starts the module's remediation loop (`assessment.critical[].remediation`; at most two loops, `assessment_and_evidence.md`, section 4).
 
-*Data.* The screen renders `GET /games/:id/assessment` (BE-01), the same summary the server stores and Hacktivity shows, so the learner sees exactly what an auditor sees. Opening it writes a `debrief_viewed` milestone. After remediation the summary is fetched again and the card shows "Not yet, then Secure after practice".
+*Data.* The screen renders `GET /games/:id/assessment` (BE-01), the same summary the server stores and Hacktivity shows, so the learner sees exactly what is recorded. Opening it writes a `debrief_viewed` milestone. After a remediation loop the summary is fetched again: the critical behaviour shows "shown after practice", and the outcomes it links to are at most Developing for this sitting (section 3, rule 5 of that document).
 
 *The spoken debrief stays ink.* Ama and Kai walk through the highlights in an ink conversation that branches on the `assess_*` globals BE-01 mirrors, asks one reflective question per section and confirms or corrects the answer, then sets `debrief_complete`, as sis01 does. Voiced lines never print a count: "You reported both of those" is chosen with an inline conditional, never "You reported {n}".
 
@@ -241,7 +261,7 @@ Lines that are not tied to one behaviour use the credits shape with one new cond
 
 - A long module could produce a long screen. Keep to the assessed behaviours (four to eight per module) and collapse the detail of Secure items by default.
 - The spoken debrief and the screen could drift apart. The `assess_*` globals come from the same records, and the scripted check above catches drift.
-- Open: should learners see per-outcome results or only the threats? Recommendation: show both; transparency helps learning, and the wording keeps it from feeling like a report card.
+- Settled in `assessment_and_evidence.md`: learners see their per-outcome results as sentences, and the words "fail" and "failed" appear nowhere a learner or a manager can see them (principle 4).
 
 ### BE-03: Text route player
 
@@ -311,7 +331,7 @@ The spine sets the same globals the game's events and timers set (for example `a
 - Equivalence: reading an email as text can make a clue easier or harder to spot. The text versions show the same information in the same order (the sender's display name first, the address on request, the link destination behind a "check where this goes" action, as core_01's variant describes), never a hint the game route lacks.
 - Dexterity minigames (lockpicking, dusting) have no fair text equivalent. In this course they appear only in optional attacker-view interludes (EX-06), which the text route narrates and does not assess.
 - Long transcripts are tiring with a screen reader; collapsing finished scenes and keeping lines short (the dialogue lint flags spoken lines over 30 words) helps.
-- Open: should the text route be offered to everyone or only on request? Recommendation: to everyone, at the start, as an equal option. Some people simply prefer it, and offering it openly avoids anyone having to disclose a disability.
+- Open: should the text route be offered to everyone or only on request? Recommendation: to everyone, at the start, as an equal option. Some people simply prefer it, and offering it openly avoids anyone having to disclose a disability. For the same reason the route is visible to the learner, organisation admins and auditors, but never to managers (`assessment_and_evidence.md`, section 11).
 
 ### BE-04: Accessibility baseline
 
@@ -388,7 +408,7 @@ The spine sets the same globals the game's events and timers set (for example `a
 | `phishSim.enabled`, `externalBanner.text`, `access.route` | Not set until the organisation says (items that need them are left out, as core_01 does with Q11) | core_01 items and the knowledge check bank |
 | `jurisdiction` | England | Fraud reporting wording (Police Scotland on 101 in Scotland) |
 
-*Getting it in.* The host supplies the profile through a new configuration hook, `BreakEscape.configuration.org_profile_for_game` (beside `on_game_complete` in `lib/break_escape.rb`), which Hacktivity answers from HA-11; standalone mode uses the Larkspur defaults. At game creation the engine snapshots the profile and its version into the game (so a running module never changes under the learner, and the record can say which profile it ran with), and exposes it three ways:
+*Getting it in.* The host supplies the profile through a new configuration hook, `BreakEscape.configuration.org_profile_for_game` (beside `on_game_complete` in `lib/break_escape.rb`), which Hacktivity answers from HA-11; standalone mode uses the Larkspur defaults. An organisation fills in its profile as part of the go-live checklist (HA-26), which includes playing a module as a test learner to see the values in place before staff are invited; a partner who runs several organisations (HA-25) sets each one's profile separately. At game creation the engine snapshots the profile and its version into the game (so a running module never changes under the learner, and the record can say which profile it ran with), and exposes it three ways:
 
 1. **ERB helpers** in `ScenarioBinding` (and the validator's copy): `org_text('report.buttonName')` returns the value escaped for use inside a JSON string, `org_json('classification.labels')` returns JSON. Used in documents, intranet pages, minigame configs, objectives text and phone texts that are not voiced.
 2. **Runtime:** `window.breakEscapeConfig.org`, for minigame UIs and the title screen.
@@ -402,7 +422,7 @@ The spine sets the same globals the game's events and timers set (for example `a
 
 - The validator renders each scenario twice with two different fake profiles and fails if any voiced field differs between the renders (NPC `voice` strings, eventMapping `bark` and `sendTimedMessage.message`, `timedMessages` of voiced NPCs). This catches a value slipped into a bark, which the ink lint cannot see.
 - A unit test confirms `org_text` escapes quotes, backslashes and line breaks.
-- A rendering test fills every key with a long value (60 characters) to catch layouts that break.
+- A rendering test fills every slot to the maximum length HA-11 allows for it, to catch layouts that break.
 
 **Acceptance criteria:**
 
@@ -412,12 +432,12 @@ The spine sets the same globals the game's events and timers set (for example `a
 - An organisation in Scotland sees the Scotland wording for reporting fraud wherever the module shows it.
 - Every profile value that appears on screen is real text (never baked into an image), so it can be resized, translated and read by a screen reader; the logo has the organisation's name as its alt text.
 
-**Depends on:** HA-11 (the profile store and its admin screens); BE-08 (cards); BE-09 (intranet).
+**Depends on:** HA-11 (the profile store and its admin screens); HA-26 (the go-live checklist that makes sure a profile is complete); BE-08 (cards); BE-09 (intranet).
 
 **Risks and open questions:**
 
 - A customer may ask for their name in the spoken lines. The answer is no by default: it would mean generating and storing a full set of audio per customer. If it is ever sold, it is a separate paid option with its own voice cache per customer.
-- Long or unusual values (a 40-character button name, a non-Latin script) can break layouts; test with long values.
+- Long or unusual values (a long button name, a non-Latin script) can break layouts. HA-11's per-slot maximum lengths limit this, and the rendering test above checks it.
 - Open: should customers be able to edit key messages as well as values? Recommendation: values only at first. Free text from customers needs review for accuracy and accessibility before it reaches learners.
 
 ### BE-06: Localisation
@@ -793,26 +813,28 @@ Highlights are drawn as a thick outline with a numbered marker and the step labe
 - **Generated on the server**, in a background job, from BE-01 records and milestones, never in the browser, so learning record store credentials never reach the client. Statement ids are derived from record ids (UUID version 5), so a retry never duplicates a statement.
 - **Standard:** xAPI as standardised in IEEE 9274.1.1-2023 (published 6 October 2023; an active standard based on xAPI 1.0.3; https://standards.ieee.org/ieee/9274.1.1/7321/).
 - **Actor:** an `account` whose `homePage` is the organisation's Hacktivity address and whose `name` is an opaque learner id. Never an email address.
-- **Activities:** the module (`https://<host>/xapi/activities/awareness/core_01`), each behaviour (`.../core_01/behaviours/C01-B2`), each check item (`.../core_01/check/Q1`) and each beat.
-- **Verbs** from the ADL vocabulary:
+- **Activities:** the module (`https://<host>/xapi/activities/awareness/core_01`), each behaviour (`.../core_01/behaviours/C01-B2`), each check item (`.../core_01/check/C01-Q1`) and each beat, using the module item ids from the template (`C01-LO1`, `C01-B1`, `C01-CB1`, `C01-Q1`).
+- **Verbs** from the ADL vocabulary, matching the outline in `assessment_and_evidence.md`, section 8:
   - `initialized`, `suspended`, `resumed` and `terminated` for the session;
-  - `interacted` for an assessed decision, with `response` set to the option key and a `rating` extension;
+  - `interacted` for an assessed decision, with `response` set to the option key, a `rating` extension and the outcome ids;
   - `answered` for a check item, with `success` and `response`;
-  - `passed` or `failed` for the knowledge check, with a scaled score;
+  - `passed` for a knowledge check that reaches the pass mark, with a scaled score;
   - `completed` when the module's completion rule is met;
   - `experienced` for a video watched (MG-21) or the reference card opened.
+- **No "failed" outside Hacktivity.** An attempt below the pass mark may be recorded as `failed` inside Hacktivity's own store, but no statement that leaves Hacktivity uses `failed`: to a customer's store or LMS, that attempt is simply not passed yet (`assessment_and_evidence.md`, principle 4 and section 8).
 - **Context:** `registration` is a UUID per game attempt; the parent activity is the module; the grouping is the learner's pathway (HA-03); extensions carry the module version, edition, route, locale and organisation id.
-- **Destinations:** Hacktivity's own store (HA-22), which forwards to a customer's store where configured. For an LMS launch through cmi5 (HA-10), Hacktivity sends the statements cmi5 defines in the order it requires, and the rest go as additional statements where the customer's LMS accepts them.
+- **Destinations:** Hacktivity's own store (HA-22), which keeps raw statements for 12 months (`assessment_and_evidence.md`, section 11) and forwards a filtered copy to a customer's store where configured. For an LMS launch through cmi5 (HA-10), Hacktivity sends the statements cmi5 defines in the order it requires; per-decision statements go only if the organisation turns them on. Customers who would rather pull results into HR or GRC systems use the public API and webhooks (HA-24), which carry the same completion data.
 - **A published xAPI profile** describes the activity types, verbs and extensions, so a customer's data team can read the data.
 
 **Acceptance criteria:**
 
-- A completed core_01 run sends `initialized`, one `interacted` per assessed behaviour, one `answered` per check item, `passed` or `failed`, `completed` and `terminated` to a test store, all valid against the xAPI statement schema.
+- A completed core_01 run sends `initialized`, one `interacted` per assessed behaviour, one `answered` per check item, `passed`, `completed` and `terminated` to a test store, all valid against the xAPI statement schema.
+- A run with a check attempt below the pass mark forwards no `failed` statement to an external store or LMS.
 - Re-running the job sends no duplicates.
 - No statement contains an email address or a name.
 - All statements for one attempt share a registration.
 
-**Depends on:** BE-01; HA-22 and HA-10; HA-15 for the data processing terms that cover forwarding.
+**Depends on:** BE-01; HA-22 and HA-10; HA-24 for the pull alternative; HA-15 for the data processing terms that cover forwarding.
 
 **Risks and open questions:**
 
@@ -966,8 +988,8 @@ Steps complete from globals or objective tasks, so the bar adds no new state. Th
 ]
 ```
 
-- Types: `email` (MG-01), `chat` (phone-chat), `call` (MG-04, or a phone NPC conversation until MG-04 exists), `visitor` (an NPC walks to the player and opens a conversation), `notice` (an intranet page or desk note).
-- Times are game time, which the BE-04 time scale slows or stops.
+- Types: `email` (MG-01), `chat` (phone-chat), `call` (MG-04, or a phone NPC conversation until MG-04 exists), `visitor` (an NPC walks to the player and opens a conversation), `notice` (an intranet page or desk note). Emails and chats arrive as notifications on the work desktop (MG-27), the player's computer, which launches the inbox, browser, chat and The Lark.
+- Times are game time, which the BE-04 time scale slows or stops. Anything else that moves with game time follows the same clock, such as an incident spreading on core_04's incident spread map (MG-26) until someone reports it.
 - **Busy gate:** an interruption that falls due while a conversation, a minigame or a dialog is open waits until it closes, and there is a minimum gap between interruptions (default 20 seconds of game time) so two never collide. This extends the logic barks already use.
 - **Assessment:** an interruption can carry an `assess` link, so ignoring it is recorded by BE-01's close rule rather than by the author.
 - **Text route:** BE-03 orders the same interruptions by sequence instead of time.
@@ -980,7 +1002,7 @@ Steps complete from globals or objective tasks, so the bar adds no new state. Th
 - The soft deadline passing changes the text ("a bit late, still worth sending") and nothing else.
 - A reload mid-Apply keeps fired interruptions fired and pending ones pending.
 
-**Depends on:** BE-01 (assess links), BE-13 (bank draws), BE-19 (opening the inbox or a call from a timer); the proposed pause and time scale feature; MG-01 and MG-04.
+**Depends on:** BE-01 (assess links), BE-13 (bank draws), BE-19 (opening the inbox or a call from a timer); the proposed pause and time scale feature; MG-01, MG-04 and MG-27.
 
 **Risks and open questions:**
 
@@ -991,7 +1013,7 @@ Steps complete from globals or objective tasks, so the bar adds no new state. Th
 
 **Priority and size:** MVP, S, for the "close, run, return" behaviour that covers almost every use. Showing a single knowledge check question on top of a conversation without closing it is best built into MG-20 and adds a few days there.
 
-**Why:** Almost every module needs this (`features/README.md`, "Dependencies"): the inbox opening by itself at core_01's hook, the mentor's check question inside her explanation (EX-01), a colleague handing over a form (MG-09), a timer that makes the phone ring (BE-18), the debrief screen opened at the end of a conversation (BE-02).
+**Why:** Almost every module needs this (`features/README.md`, "Dependencies"): the inbox opening by itself at core_01's hook, the mentor's check question inside her explanation (EX-01), a colleague handing over a form (MG-09), a timer that makes the phone ring (BE-18), the debrief screen opened at the end of a conversation (BE-02). The work desktop (MG-27) is a launcher for other minigames, so it needs the same registry to open the inbox or The Lark from its icons and notifications.
 
 **What exists today:**
 
@@ -1016,7 +1038,7 @@ registerLauncher('forensic_data_platform', (config) => ({ scene: 'forensic-data-
 
 *Configs live in the scenario* under `"minigameConfigs": { "q_phish_ask": { "minigame": "knowledge_check", "data": { "item": "C01-Q1" } } }`, validated by the same schemas file. For banked content (MG-20 items, BE-13) the config key can name an item or a set.
 
-*The tag replaces the stub:* `#trigger_minigame:<minigame>|<configKey>`, for example `#trigger_minigame:knowledge_check|q_phish_ask`. The separator is `|`, not `#`: inside an ink line `#` starts a new tag, so the form `knowledge_check#q_phish_ask` proposed in `features/explainers_video_and_npc.md` would reach the engine as two tags.
+*The tag replaces the stub:* `#trigger_minigame:<minigame>|<configKey>`, for example `#trigger_minigame:knowledge_check|q_phish_ask`. The separator is `|`, not `#`, because inside an ink line `#` starts a new tag. `features/explainers_video_and_npc.md` uses the same form.
 
 *Close, run, return:*
 
@@ -1168,6 +1190,76 @@ All new text comes from the locale files (BE-06).
 
 **Risks and open questions:** music during reading distracts some people. Keep it quiet, mute it easily, and let the learner turn it off for every module at once.
 
+### BE-22: Tactic spotter card
+
+**Priority and size:** P2, S.
+
+**Why:** core_02 (The Caller) teaches the levers behind calls, texts, chat messages, QR codes and visitors (C02-LO1: authority, urgency, fear, helpfulness, flattery, insider jargon). In its Learn beat Ama hands the player a "social engineer bingo card": a grid of tactics including "new number", "wants a code", "wants remote access", "wants a payment", "QR code" and "keep it quiet". The player ticks each one as they hear it in the Apply beat, and the debrief shows the tactics spotted against the tactics actually used (`modules/core_02_social_engineering_beyond_email/game_design.md`, Learn and Debrief). Naming a lever while it is being used on you is what makes it easier to resist next time. The card could serve later modules about pressure too (core_11 payment fraud, role_06 callers), but core_02 is the only one that plans it today.
+
+**What exists today:**
+
+- Nothing like it. The nearest pieces:
+  - the objectives panel, a collapsible HUD panel with a labelled toggle that stays open during play (`JS/ui/objectives-panel.js`, line 41);
+  - the interaction menu's accessible list of buttons (`JS/ui/interaction-menu.js`);
+  - the notes minigame, which core_02 suggests for a first prototype (`modules/core_02_social_engineering_beyond_email/README.md`, open question 2).
+- Ink tags are processed line by line as they are shown (`person-chat-minigame.js`, `displayAccumulatedDialogue`), so a tag can mark the line where a caller uses a tactic.
+
+**Design:**
+
+*The card* is defined in the scenario and handed over in ink (`#tactic_card:c02_bingo`, usually shown first as a BE-08 aid while Ama explains it):
+
+```json
+"tacticCards": {
+  "c02_bingo": {
+    "title": "Social engineer bingo",
+    "tactics": [
+      { "id": "authority", "label": "Authority", "hint": "They say they're someone important" },
+      { "id": "urgency", "label": "Urgency", "hint": "It has to happen now" },
+      { "id": "wants_code", "label": "Wants a code", "hint": "They ask you to read out a code" },
+      { "id": "keep_quiet", "label": "Keep it quiet", "hint": "They ask you not to tell anyone" }
+    ],
+    "assess": { "behaviour": "C02-B10", "outcomes": ["C02-LO1"] }
+  }
+}
+```
+
+The behaviour id is illustrative: core_02's `assessment.md` would add a row for spotting tactics.
+
+*Marking tactics in content.* The line where a caller uses a tactic carries `#tactic:urgency` (ink), and scripted contacts that are not ink (an MG-04 call, an MG-05 text) list `"tactics": ["authority", "wants_code"]`. The engine records a tactic as used only when the player actually meets it: a caller who is hung up on before asking for the code never used "wants a code".
+
+*Using the card:*
+
+- A HUD button and a key open the card as a small panel beside the game. It doesn't pause play and never covers the conversation's choices.
+- Each tactic is a labelled checkbox with its hint. Ticking it is announced politely, and the tick is linked to the contact that is open or just ended.
+- Ticking live is optional. When a contact ends, the card can ask "Anything you noticed?" with the same checkboxes, and BE-18's busy gate holds the next interruption until it is answered or closed. Nobody has to listen, read and tick at once, which matters for people using screen readers, people with ADHD or dyslexia, and anyone working in a second language.
+- No timer, and no penalty for ticking late.
+
+*Records and score:*
+
+- Each tick and each tactic used is a BE-01 record (`tactic_tick` and `tactic_used`, with the tactic and contact ids). At the end of the Apply beat the server works out each tactic as spotted, missed or ticked on a contact that didn't use it, and rates the card's behaviour against thresholds in the module's assessment map, for example Secure when three quarters or more of the tactics used were spotted.
+- A tick on a genuine caller (Priya in a hurry) is never Not yet. The debrief says real callers can be urgent too, and checking back is still fine.
+- The card counts as evidence for C02-LO1. Recommendation: weight it like Practise (1), not like an Apply decision (2), because ticking a tactic is recognition, not the behaviour under pressure. `assessment_and_evidence.md`, section 3, lets a module set this with a reason.
+
+*Debrief* (BE-02): the grid with each tactic marked used or not used, the contacts it appeared in, and whether the player spotted it. The card always closes on the procedure, "the request decides, not the tactic: check back on a number you already have", so it supports design principle 5 (process over cues) rather than turning into a buzzword hunt.
+
+*Text route* (BE-03): after each contact the card appears as a checklist, "Which of these did you notice?", producing the same records.
+
+**Acceptance criteria:**
+
+- In core_02's Apply beat every tactic tagged in content is recorded as used only when the player meets it, and each tick is linked to the right contact.
+- The debrief grid matches the records for at least five fixture routes, including one where the player hangs up early.
+- The card works by keyboard and screen reader, ticks are announced, and live ticking can be skipped in favour of the after-contact checklist without changing the score.
+- No tick on a genuine caller produces a Not yet.
+- The text route's checklist produces the same score as the game for the same ticks.
+
+**Depends on:** BE-01 (records and server rating), BE-02 (the debrief grid), BE-18 (the busy gate and contact ids), BE-08 (handing the card over in the Learn beat); MG-04 and MG-05 for tactics in calls and messages.
+
+**Risks and open questions:**
+
+- A tick box can teach people to hunt for buzzwords. Keep its weight low and always end on the check-back procedure.
+- Tagging tactics is writing work that is easy to get wrong. The validator checks that every `#tactic` id exists on the module's card, and the script editor reviews where each tag sits.
+- Open, from core_02: build the card as its own overlay or prototype it with the notes or knowledge check UI? Recommendation: prototype with the existing UI for the first core_02 playtests, then build the overlay, which is small once BE-01 and BE-18 exist.
+
 ## Proposed additions to the catalogue
 
 These came out of the designs above. They have no ids yet; the orchestrator decides whether to add them to `features/README.md`.
@@ -1184,11 +1276,11 @@ Sizing notes on existing items: BE-04 is L only if scoped to the shell and the m
 
 ## Notes for the other feature documents
 
-- **`explainers_video_and_npc.md`:** the proposed `#trigger_minigame: knowledge_check#<item_id>` must use `|` as the separator (`#trigger_minigame:knowledge_check|q_phish_ask`), because `#` inside a line starts a new ink tag. `#visual_aid` and `#aid_step` are adopted as proposed (BE-08). Check questions should sit after a short handover line, with the result read in the next knot (BE-19).
+- **`explainers_video_and_npc.md`:** its `#trigger_minigame:knowledge_check|<item_id>` form, and the `#visual_aid` and `#aid_step` tags, are the syntax BE-19 and BE-08 implement. Check questions should sit after a short handover line, with the result read in the next knot (BE-19).
 - **`minigames.md`:** every new minigame needs:
   - an accessible DOM mode that also runs inline in the text route (BE-03);
   - `assess` hooks for BE-01, with server-side grading where there is a right answer;
   - a launcher registered with BE-19;
   - a config schema in `scripts/minigame-data-schemas.json`.
-- **`assessment_and_evidence.md`:** please confirm the default per-outcome rule, the record kinds and the `effective` rules in BE-01, and the wording of results on the BE-02 screen.
+- **`assessment_and_evidence.md`:** BE-01 implements its section 3 rule and section 4 loop as written, and BE-14 follows its section 8 rule that no statement leaving Hacktivity uses "failed". Two small additions for that document to consider: the record kinds in BE-01 (`decision`, `check_item`, `check_result`, `milestone`, `remediation`, `policy_ack`, and the tactic card's records in BE-22), and the rule that a behaviour recorded twice in one beat keeps its first record.
 - **`hacktivity.md`:** the engine needs three host hooks beside `on_game_complete`: `org_profile_for_game` (HA-11 to BE-05), `on_policy_acknowledged` (BE-09 to HA-07) and the assessment summary passed with completion (BE-01 to HA-05). HA-17 needs links to both routes and to drills.

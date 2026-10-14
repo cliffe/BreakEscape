@@ -133,7 +133,7 @@ https://gameaccessibilityguidelines.com/ is "a collaborative effort between a gr
 | "Ensure no essential information is conveyed by a fixed colour alone" | Words and icons with every colour (4.6) |
 | "Provide subtitles for all important speech" and "If any subtitles / captions are used, present them in a clear, easy to read way" | Captions and transcript (4.4) |
 | "Ensure no essential information is conveyed by sounds alone" | Sound captions with visual cues (4.4, BE-21) |
-| "Provide separate volume controls or mutes for effects, speech and background / music" | Exists (Music, SFX, Voice, Master); labels to fix (4.2) |
+| "Provide separate volume controls or mutes for effects, speech and background / music" | Exists (Music, SFX, Voice, Master); the sliders' labels need fixing (section 4, "What the engine lacks today") |
 | "Ensure that all settings are saved/remembered" | Settings stored per player on the server (4.1) |
 | "Provide details of accessibility features in-game" and "on packaging and/or website" | Settings help and the accessibility statement (section 7) |
 | "Solicit accessibility feedback" | Feedback link in settings and the statement (section 7) |
@@ -178,7 +178,8 @@ The text route (BE-03) is how every module conforms to WCAG 2.2 AA, as a conform
 - **It is the same module, not a summary.** It runs the same ink files and the same minigames in their accessible modes, offers the same decisions, and writes the same BE-01 records with `route: "text"`. A parity check in CI proves every assessed behaviour and every option is reachable in it (`routeparity.mjs`, BE-03).
 - **It is as up to date as the game** because it is built from the same content. A module cannot ship unless its text route passes the parity check.
 - **It is easy to find.** The title screen (BE-20), the settings, the pause menu and Hacktivity's launch page (HA-17) all offer it, with equal weight. Nobody has to explain why they chose it.
-- **It counts the same.** Completion, the knowledge check, certificates and dashboards treat the text route exactly as the game. The record shows the route only so the organisation can see how the course is taken.
+- **It counts the same.** Completion, the knowledge check, certificates and dashboards treat the text route exactly as the game. The route is in the record for the learner, organisation admins and auditors, but managers never see it, because choosing the text route can hint at a disability (`assessment_and_evidence.md`, section 11).
+- **Time is counted fairly.** Time on task is counted while the module is in focus, with a long idle limit, so a screen reader user listening without pressing keys is not counted as idle, and time is never a pass condition (`assessment_and_evidence.md`, open question 6).
 - **It meets WCAG 2.2 AA on its own:**
   - semantic headings and landmarks, choices as buttons, focus moved to new content;
   - no time limits, no auto-advance and nothing that moves;
@@ -404,7 +405,7 @@ XAG 118 notes that about 1 in 4,000 people can have a seizure triggered by flash
 
 **Change:**
 
-- **Pause and time scale** (a proposed engine feature, listed in `break_escape_engine.md`): game time, timers, timed messages, interruptions and NPC patrols all follow one clock that can be paused or slowed by 2, 5 or 10 times, or stopped for timers altogether. An option pauses game time whenever a conversation, document or minigame is open. Deadlines in course modules are soft (BE-18) and shown as words, never as a red countdown.
+- **Pause and time scale** (a proposed engine feature, listed in `break_escape_engine.md`): game time, timers, timed messages, interruptions and NPC patrols all follow one clock that can be paused or slowed by 2, 5 or 10 times, or stopped for timers altogether. Anything else that moves with game time follows the same clock, such as an incident spreading on core_04's incident spread map (MG-26). An option pauses game time whenever a conversation, document or minigame is open. Deadlines in course modules are soft (BE-18) and shown as words, never as a red countdown.
 - **Dialogue** advances when the learner presses Continue, by default. Automatic pacing is an opt-in setting.
 - **Toasts that carry information** stay until dismissed (or for at least 20 seconds) and are kept in the message log (4.4). Any toast can be paused with the keyboard as well as by hovering.
 - **The title screen** never closes itself.
@@ -423,7 +424,7 @@ XAG 118 notes that about 1 in 4,000 people can have a seizure triggered by flash
 
 **Rules for every module:**
 
-- **One thing at a time.** The work task (BE-18) shows the current step; interruptions never overlap (BE-18's busy gate and minimum gap).
+- **One thing at a time.** The work task (BE-18) shows the current step; interruptions never overlap (BE-18's busy gate and minimum gap). Nothing asks the learner to listen, read and act at once: core_02's tactic spotter card (BE-22) can be filled in after each contact instead of live, with the same score.
 - **Always know what to do next.**
   - The current task is always visible and can be read aloud by a screen reader.
   - A "What should I do now?" control is always in the same place on every screen, and gives the current task plus the mentor's sticky answer (EX-01). Because it never moves, it meets 3.2.6.
@@ -640,4 +641,76 @@ A public accessibility statement, written in plain English, kept current, and ea
 - **A one-page accessibility features guide** for learners and administrators.
 - **A customer pack:** suggested wording for the customer's own statement, and how to grant individual adjustments such as extra time, an exemption from a timed element, or a facilitated session (HA-03, HA-13).
 
-<!-- next-section -->
+## 8. Platform and lab sheet fixes (HA-23)
+
+HA-23 is the WCAG 2.2 AA pass over Hacktivity's learner pages and the HacktivityLabSheets theme. The lab sheet pages matter to this course because the reference cards' longer field guides and the facilitator notes live there, and The Lark can open them inside the game (BE-09).
+
+### 8.1 HacktivityLabSheets theme
+
+The issues listed in `research/current_state_lab_sheets.md`, confirmed in the HacktivityLabSheets repository in October 2026:
+
+| Problem | Where | Fix | WCAG |
+|---|---|---|---|
+| Focus outlines removed from links and buttons | `assets/css/hacktivity-theme.scss`, lines 498 to 502 (`outline: none !important` on `a:focus` and `button`) | Remove the rule; add a `:focus-visible` outline at least 2 CSS pixels thick with 3:1 contrast in both themes | 2.4.7 |
+| The theme toggle has no accessible name (an icon only) | `_layouts/lab.html`, lines 7 to 9 | A label that says what it does ("Switch to light theme"), updated when the theme changes; the icon hidden from assistive technology. The contents toggle beside it already does this right (line 11) | 4.1.2 |
+| YouTube iframes have no title | `_layouts/lab.html`, lines 688 to 696 | Set the iframe's `title` from the link text, and keep a plain link to the video below it | 4.1.2 |
+| Callout labels removed on render, leaving only an emoji or a colour | Inline callouts (`==tip: ...==` and the others) become an emoji and the text, `_layouts/lab.html`, lines 326 to 332; blockquote callouts lose "Tip:", "Action:", "Warning:" and "Note:", lines 389 to 420 | Keep the word as visible text ("Tip:"), and hide the emoji from assistive technology; the icon and colour stay as extras | 1.1.1, 1.3.1, 1.4.1 |
+| No skip link | `_layouts/default.html` | A "Skip to content" link as the first focusable element | 2.4.1 |
+| No reduced-motion handling | Transitions and a hover zoom on embedded videos in `_layouts/lab.html` (for example line 274, and line 713) | A `prefers-reduced-motion: reduce` block that removes transitions and transforms | Course commitment (4.7) |
+| Most images have no alt text: 321 images in `_labs` use `![]`, 66 have alt text | `_labs/**/*.md` | Alt text for every informative image (step screenshots, diagrams); decorative images stay empty on purpose; a check that fails new awareness pages with an unexplained `![]` | 1.1.1 |
+| Collapsible sections are unstyled | `<details>` in lab pages | A styled summary with a visible focus and an open or closed marker that is not colour alone | 2.4.7, 1.4.1 |
+| Print styles are minimal | Theme stylesheet | Print styles so a reference card or field guide prints cleanly | Course need (BE-09) |
+
+Two smaller points: the site sets `lang="en"` (`_layouts/default.html`, line 2), which meets WCAG; `en-GB` is better for UK English pages. When the game opens a lab sheet it should add `?embedded`, so the sheet's own header doesn't appear inside the game's popup (BE-09).
+
+### 8.2 Hacktivity's learner pages
+
+A feature-level summary of what HA-23 covers on the platform, as found in October 2026 (details are for `features/hacktivity.md`):
+
+- **Page basics:** set the page language, and add a skip link to the main layout.
+- **Sign-in:**
+  - give the one-time token field a visible label, not only placeholder text;
+  - mark the token field and the password field so browsers and password managers can fill them;
+  - allow pasting;
+  - WCAG 3.3.8 names password manager support and copy and paste as ways to make a sign-in test accessible, and single sign-on (HA-02) removes the test for most staff.
+- **Session timeouts:** warn before a session times out and offer to extend it (WCAG 2.2.1).
+- **Learner home and course pages** (HA-17): the same keyboard, focus, contrast and reduced-motion standard as the per-event progress page, which `research/current_state_hacktivity.md` notes is already well built (screen reader labels, focus handling, AA contrast and reduced motion). That page is the model for the rest.
+- **The accessibility statement** linked from every page (section 7).
+
+## Sources
+
+All checked in October 2026.
+
+**Law and regulation**
+
+- Equality Act 2010, sections 20, 29 and 39, Schedule 2 paragraph 2 and Schedule 8 paragraph 2: https://www.legislation.gov.uk/ukpga/2010/15/contents
+- The Public Sector Bodies (Websites and Mobile Applications) (No. 2) Accessibility Regulations 2018 (SI 2018/952), regulations 1, 3, 4, 6, 9 and 12: https://www.legislation.gov.uk/uksi/2018/952/contents
+- GOV.UK, "Understanding accessibility requirements for public sector bodies" (updated 30 September 2024): https://www.gov.uk/guidance/accessibility-requirements-for-public-sector-websites-and-apps
+- GOV.UK, "Sample accessibility statement" (updated 30 September 2024): https://www.gov.uk/government/publications/sample-accessibility-statement
+- US Access Board, ICT accessibility standards (Section 508): https://www.access-board.gov/ict/
+- Information Technology Industry Council, VPAT (version 2.5Rev, April 2025): https://www.itic.org/policy/accessibility/vpat
+
+**Standards and guidelines**
+
+- W3C, Web Content Accessibility Guidelines (WCAG) 2.2, W3C Recommendation, 12 December 2024: https://www.w3.org/TR/WCAG22/
+- W3C, Understanding 1.4.10 Reflow: https://www.w3.org/WAI/WCAG22/Understanding/reflow.html
+- W3C, Understanding 3.1.5 Reading Level: https://www.w3.org/WAI/WCAG22/Understanding/reading-level.html
+- W3C WAI, "Developing an Accessibility Statement": https://www.w3.org/WAI/planning/statements/
+- CEN, CENELEC and ETSI, EN 301 549 V4.1.1 (2026-09), "Accessibility requirements for ICT products and services": https://www.etsi.org/deliver/etsi_en/301500_301599/301549/04.01.01_60/en_301549v040101p.pdf
+- Game Accessibility Guidelines (basic guidelines): https://gameaccessibilityguidelines.com/basic/
+- Microsoft, Xbox Accessibility Guidelines, version 3.2 (8 June 2023): https://learn.microsoft.com/en-us/gaming/accessibility/guidelines; XAG 104, subtitles and captions: https://learn.microsoft.com/en-us/gaming/accessibility/xbox-accessibility-guidelines/104; XAG 118, photosensitivity: https://learn.microsoft.com/en-us/gaming/accessibility/xbox-accessibility-guidelines/118
+- Trace Center, Photosensitive Epilepsy Analysis Tool (PEAT), including its terms of use: https://trace.umd.edu/peat/
+
+**Testing and writing**
+
+- GOV.UK Service Manual, "Testing for accessibility" (updated 29 October 2024): https://www.gov.uk/service-manual/helping-people-to-use-your-service/testing-for-accessibility
+- GOV.UK Service Manual, "Testing with assistive technologies" (reviewed 24 May 2022): https://www.gov.uk/service-manual/technology/testing-with-assistive-technologies
+- GOV.UK content guidance, "Use clear language": https://guidance.publishing.service.gov.uk/writing-to-gov-uk-standards/writing-guidelines/clear-language/
+- British Dyslexia Association, "Dyslexia friendly training": https://www.bdadyslexia.org.uk/advice/employers/creating-a-dyslexia-friendly-workplace/dyslexia-friendly-training
+
+**Who the course serves, and inclusive content**
+
+- Department for Work and Pensions, Family Resources Survey 2024 to 2025 (published 26 March 2026): https://www.gov.uk/government/statistics/family-resources-survey-financial-year-2024-to-2025/family-resources-survey-financial-year-2024-to-2025
+- Colour Blind Awareness, "Colour blindness": https://www.colourblindawareness.org/colour-blindness/
+- OpenIDEO with the William and Flora Hewlett Foundation, Cybersecurity Visuals Challenge (2019): https://www.openideo.com/challenge-briefs/cybersecurity-visuals
+- NCSC, "Terminology: it's not black and white" (30 April 2020): https://www.ncsc.gov.uk/blog-post/terminology-its-not-black-and-white

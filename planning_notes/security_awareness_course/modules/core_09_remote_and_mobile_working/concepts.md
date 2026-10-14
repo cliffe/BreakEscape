@@ -45,6 +45,7 @@ A phone call in a queue, on a platform or in a café is a broadcast to everyone 
 - **Cars:** avoid leaving devices in a car. If you have no choice, lock them in the boot before you set off rather than when you've parked, so nobody sees you do it.
 - **Hotel rooms:** other people have keys. Keep devices with you, or locked away out of sight (in the room safe if there is one). If you'll be away from a laptop for a while, shut it down rather than leaving it asleep: device encryption protects a laptop best when it is switched off. (Organisation setting: check how your laptops are set up.)
 - **Take only what you need.** Leave the full client archive at the office. View documents on the laptop rather than printing them, and don't carry a USB stick of everything "just in case".
+- **Travelling abroad with a work device:** ask first (your manager, then the service desk). Some countries and some data need extra care, and the organisation may lend a clean device for the trip (organisation setting; core_16 covers asking first).
 - **Collect everything when you leave:** the tablet on the café table, the charger, the papers under the coffee cup. Plenty of "lost" devices were simply left behind; a last look round the table stops it.
 - **Charging:** use your own plug and cable, or a power bank. If your phone asks whether to trust a connected device or allow access to its data while charging, say no. (See the misconceptions table on public charging points.)
 

@@ -141,7 +141,7 @@ The ICO's breach guidance also gives a general picture: human error is the leadi
 | Slot | Default (Larkspur) |
 |---|---|
 | DPO (or data protection lead) | Tomasz Wiśniewski, Data Protection Officer; the DPO mailbox on The Lark |
-| Breach reporting route | The usual route: the security team on extension 4444 or the 24/7 service desk; say it involves personal data and it reaches the DPO. Or the Report form on The Lark (MG-09) |
+| Breach reporting route | The usual route: the security team on extension 4444 or the 24/7 service desk; say it involves personal data and it reaches the DPO. Or the "Report an incident" form on The Lark (MG-09) |
 | Where requests and complaints go | The DPO mailbox, the same day; phone and in-person requests noted on the "Request received" form on The Lark |
 | Holding reply staff may send | "Thank you. I've passed your request to our Data Protection Officer, who will be in touch." |
 | Requests from the police and other official bodies | "Take the caller's name, organisation and switchboard number; tell them our DPO handles these requests; pass it to the DPO. Nothing is given out by phone." |

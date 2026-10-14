@@ -62,7 +62,7 @@ Four tricks cover most of what staff meet. In each one, the giveaway is the inst
 
 ### What happens when you report a website
 
-- **At work:** the security team can block the site for everyone, check whether anyone else visited it, warn the site's owner if it was a genuine site that has been hacked, and report it on. Use the organisation's route (core_04).
+- **At work:** the security team can block the site for everyone, check whether anyone else visited it, warn the site's owner if it was a genuine site that has been hacked, and report it on. Use the organisation's route: a Report button in the browser where the organisation provides one, or the security team (core_04).
 - **At home:** report scam websites to the NCSC (free, about a minute). The NCSC analyses what's reported and may work with hosting companies to remove malicious links. If you lost money, contact your bank and Report Fraud (England, Wales and Northern Ireland) or Police Scotland on 101.
 
 ### If you pasted, downloaded, installed, called or allowed
@@ -117,7 +117,7 @@ Use these as background and inspiration only. Game content uses fictional names 
 | Software portal name and location | "Larkspur Apps", linked from The Lark's home page and the browser's bookmarks bar |
 | How to request software or an extension | The "Request something else" form in Larkspur Apps; answered within one working day |
 | Approved browser and extensions | Larkspur's managed browser; extensions only from the approved list in Larkspur Apps |
-| How to report a website | The "Report a website" form on The Lark, or the security team on extension 4444 |
+| How to report a website | The Report button on the browser toolbar, the "Report a website" form on The Lark, or the security team on extension 4444 |
 | Approved document converter | "DocShift", in Larkspur Apps |
 | Bookmarks for key sites | The Lark's "Bookmarks" page: Ledger, supplier portals, the HR system |
 | After pasting, downloading or calling | Call the 24/7 service desk; follow the isolation instruction (core_07) |

@@ -51,6 +51,16 @@ From the PIN cracker fix (2026-10-10), found but not fixed:
 - **Person-chat resume** (pass 3; M). When a face-to-face conversation reopens, the engine goes back to the knot of the first saved choice, so a resumed check can show its choices without the question that led to them (seen with Netherton in m08). Phone chat had the same problem and now replays nothing already seen (E10/E13); person-chat could get the same treatment.
 - **Sync globals when a conversation closes** (sis02 D6, 2026-10-09; S). Globals reach the server every 30 s or on pagehide (`state-sync.js`), so a crash or killed tab within 30 s of a conversation loses flags like `helen_briefed` and the NPC replays its scene. Call `window.stateSync?.sync()` after `conversation_closed` in person-chat and phone-chat. Normal reloads aren't affected.
 
+From the security awareness course planning (2026-10-14; details in `planning_notes/security_awareness_course/features/break_escape_engine.md` and `research/current_state_break_escape.md`), found but not fixed:
+- **Ink choice tags are dropped** (S). `ink-engine.js:69` discards tags on choices, so a tag on a choice line never fires.
+- **Space on a focused choice continues instead of choosing** (S). `person-chat-minigame.js:298-303`: keyboard users can pick the wrong thing.
+- **Auto-advance with no visible click-through setting** (S). Dialogue moves on after 5 s; the click-through option exists but players are never shown it.
+- **No page language** (S). No engine page sets `lang`, so screen readers guess the language.
+- **The game clock can't be paused** (M). Timers keep running in menus; an accessibility problem (WCAG 2.2.1) as well as a convenience one.
+- **Name entry rejects accented letters, hyphens and apostrophes** (S). Players called Wiśniewski or Anne-Marie can't type their names.
+- **Lighting flicker hasn't been checked against flash thresholds** (S to M). Several flickering lights in one room may exceed the general flash limits; test before relying on flicker in any mission.
+- **Hard-coded mission text in shared minigames** (S each): `warranty-checklist` globals and alert, `ncsc-brief` labels, the "Meridian" form headers, the video-call bar, the "Lab Sheet" popup title, the tutorial greeting.
+
 ## Story and missions
 
 - **Carry m03's Sterling and Danny threads forward** (m03 pass-2 dialogue review, 2026-10-12; M). No mission from m04 to m08 mentions Victoria Sterling or Danny Foster. A recruited Sterling could turn up as an asset or a liability later, and the debrief's "Somebody has to tell him she's walking. It should be you." could be paid off. Depends on "Carry choices between missions".

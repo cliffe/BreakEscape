@@ -27,7 +27,7 @@ The module teaches through the people around you. Every place has bystanders who
 
 | Id | Name | Who | Age and look | Appears |
 |---|---|---|---|---|
-| `marcus_bell` | Marcus Bell | Student nurse on placement, the passenger in the row behind | 20s, Black British, earbuds round his neck, NHS lanyard tucked away, rucksack | Train (person-chat and walk sprite) |
+| `jerome_bell` | Jerome Bell | Student nurse on placement, the passenger in the row behind | 20s, Black British, earbuds round his neck, NHS lanyard tucked away, rucksack | Train (person-chat and walk sprite) |
 | `bryony_walsh` | Bryony Walsh | Freelance illustrator at the next café table | 30s, white English, short purple hair, sketchbook | Café |
 | `grace_mwangi` | Grace Mwangi | Estates Manager, Wrenfield Care (the client) | 50s, Black British (Kenyan heritage), glasses pushed up on her head, client lanyard | Phone call and video call |
 | `ellis` | Ellis | The player's nephew, staying for half-term | 11, white and South Asian heritage, glasses, football shirt, uses a hearing aid | Home |
@@ -40,14 +40,14 @@ The critical path is marked **(CP)**. Everything else is optional depth.
 
 ### 1. Hook: "The 07:42" (1.5 minutes)
 
-- **(CP)** Title card: *Tuesday, 07:42. Train to Haverbridge.* The player boards with Zainab, who drops into a window seat at a table of four. Two seats are free: **seat A**, the aisle seat at Zainab's table, and **seat B**, a single seat with its back to the bulkhead by the luggage rack. Marcus sits in the row behind seat A, across the aisle, facing forward: his sight cone (`los`, range 140, angle 90) covers seat A's screen at an angle.
+- **(CP)** Title card: *Tuesday, 07:42. Train to Haverbridge.* The player boards with Zainab, who drops into a window seat at a table of four. Two seats are free: **seat A**, the aisle seat at Zainab's table, and **seat B**, a single seat with its back to the bulkhead by the luggage rack. Jerome sits in the row behind seat A, across the aisle, facing forward: his sight cone (`los`, range 140, angle 90) covers seat A's screen at an angle.
 - Lena's chat arrives (`phone-chat`): *"Morning both! Wrenfield have sent the updated residents list for the infection-control cleans. Could you give the survey a once-over before you get there? Ta. L"*
-- The laptop (`container` desktop) shows two files: **Wrenfield survey: rooms and schedule (INTERNAL)** and **Wrenfield residents: infection control notes (CONFIDENTIAL)**, which lists residents by name and room with notes such as "barrier clean". A privacy screen sits in the laptop bag (an inventory item; using it sets `privacy_screen_on`).
-- **Baseline (C09-B1):** nothing tells the player what to do. If they open the Confidential file in seat A without the privacy screen, the overlooked check fires (proposed feature; until it exists, `challengeOnSight` with `requireGlobal: "confidential_on_screen"` and `skipIfGlobal: "privacy_screen_on"`). When the document view closes, Marcus leans forward:
-  - Marcus: *"Sorry, not being nosy. Is that Wrenfield House? My gran's in there."*
-  - Marcus: *"Is she on that list? What's a barrier clean?"*
+- The laptop (the MG-27 work desktop, or today's `container` desktop until it exists) shows two files: **Wrenfield survey: rooms and schedule (INTERNAL)** and **Wrenfield residents: infection control notes (CONFIDENTIAL)**, which lists residents by name and room with notes such as "barrier clean". A privacy screen sits in the laptop bag (an inventory item; using it sets `privacy_screen_on`).
+- **Baseline (C09-B1):** nothing tells the player what to do. If they open the Confidential file in seat A without the privacy screen, the overlooked check fires (proposed feature; until it exists, `challengeOnSight` with `requireGlobal: "confidential_on_screen"` and `skipIfGlobal: "privacy_screen_on"`). When the document view closes, Jerome leans forward:
+  - Jerome: *"Sorry, not being nosy. Is that Wrenfield House? My gran's in there."*
+  - Jerome: *"Is she on that list? What's a barrier clean?"*
   - The player chooses a reply: *"Sorry, I can't talk about that."* (right, and recorded) or *"It's just for the cleaning rota."* (says more than it should).
-- If the player opens only the Internal file, sits in seat B, or uses the privacy screen first, Marcus stays in his music and Zainab notices.
+- If the player opens only the Internal file, sits in seat B, or uses the privacy screen first, Jerome stays in his music and Zainab notices.
 
 ### 2. Learn: "Zainab's road rules" (2 minutes)
 
@@ -60,7 +60,7 @@ The critical path is marked **(CP)**. Everything else is optional depth.
   3. **Networks.** Two Wi-Fi pages side by side: one asks you to accept terms, one asks for your work email and password. *"Ask staff for the network's name. Wait for the padlock. If a Wi-Fi page wants your password, it isn't the café. Use your hotspot."*
   4. **Devices.** *"It's with you, or it's locked away. Look round before you leave. Lose something? Ring the service desk straight away. Any hour."*
 - Ama's chat message follows, as on-screen text: *"Zainab's right about lost devices. Ring the service desk any time, day or night. Nobody's ever in trouble for reporting one. A."* The organisation's number appears with it (BE-05).
-- Check question (MG-20 hotspot on the carriage diagram): *"Where could you open the residents list without anyone reading it?"*
+- Check question (MG-20 hotspot on the carriage diagram, opened from Zainab's conversation with `#trigger_minigame:knowledge_check|c09_q_safe_seat`, BE-19): *"Where could you open the residents list without anyone reading it?"*
 - **Skip:** *"I'm on trains all the time."* Zainab: *"Then this'll be quick."* Straight to the check question; a wrong answer brings the rules back.
 - **Optional topics** in Zainab's hub, each under a minute: *"Can I charge my phone on the train?"* (your own plug; say no if it asks to trust a device), *"The train Wi-Fi wants me to sign in"* (accept the terms, nothing more), *"Before you travel"* (a 30-second device check in MG-23: screen lock, find my device, updates waiting).
 
@@ -104,7 +104,7 @@ The critical path is marked **(CP)**. Everything else is optional depth.
   - If `tablet_left_at_cafe`: the player unpacks. No tablet.
   - Otherwise Zainab messages: *"Have you seen my tablet? I think I left it on the café table. I'm an idiot."*
   - The player chooses: *"Ring the service desk now"*, *"Ring the café first, and the service desk if they haven't got it"* (the café closed at six; the time skip passes the evening), or *"It's locked. Report it in the morning."*
-  - Ringing the service desk (MG-04, or a `phone-chat` contact until then) reaches Owain on call. He asks what it was, when and where it was last seen, and what's on it; the player picks the answers. Owain: *"Locked. If the café hasn't got it by nine, I'll wipe it. Thanks for ringing tonight."*
+  - Ringing the service desk (MG-04, or a `phone-chat` contact until then) reaches Owain on call; the service desk's online form (MG-09, opened from the laptop) is the other route, and the one the text route uses. He asks what it was, when and where it was last seen, and what's on it; the player picks the answers. Owain: *"Locked. If the café hasn't got it by nine, I'll wipe it. Thanks for ringing tonight."*
 
 #### 4c. Home, Wednesday 08:50 (2 minutes)
 
@@ -131,16 +131,16 @@ The critical path is marked **(CP)**. Everything else is optional depth.
 
 | Decision | Options | Learning outcome | How the consequence is shown |
 |---|---|---|---|
-| Hook: the residents list on the train (B1) | Open it in seat A / open only the Internal file / move to seat B / privacy screen first | LO1 (baseline) | Marcus asks about his gran, or doesn't; Zainab's opening line differs; the debrief shows Marcus's view |
-| Café network (B2) | Real network and VPN / hotspot / fake network, page closed / fake network, signed in | LO3 | Photos upload; or at 15:10 Kai's chat: *"Someone signed in to your account from a network in Haverbridge at 12:46. Was that you? We've reset your password and signed you out everywhere."* The player can still report, and the debrief credits it |
-| Grace's call (B3) | Call back from outside / send through the portal / rooms now and code in the portal / read it all out | LO2 | If read out, the debrief's earshot panel shows who heard; Wrenfield changes the side-door code on Wednesday and every agency cleaner needs the new one |
-| Minding the laptop (B4) | Take it / lock it and leave it with Bryony / leave it open | LO4, LO1 | Nothing is taken; the debrief shows the inbox the couple at the next table could read while the player was out |
-| Leaving the café (B5) | Pick up the tablet / leave it | LO4 | Whose tablet goes missing at the hotel |
-| Leaving the hotel room (B6) | Take the laptop / safe and shut down / locked on the desk / open on the bed | LO4 | The 20:05 turndown shot shows what was in view |
-| The missing tablet (B7) | Ring the service desk now / ring the café first / report in the morning | LO5 | Owain's device console: lock sent at 21:04, wipe at 09:00, then the café finds it behind a sofa cushion at 10:30 and it's re-enrolled. Reported in the morning, the console shows the hours it sat signed in to the survey app |
-| Ellis and the laptop (B8) | Offer another device / log him in and watch / five minutes alone | LO4 | If the work laptop was used: a "free maths games" site asked to install a helper and Ellis clicked yes; the security software blocked it and Owain asks *"Something tried to install on your laptop at 09:02. Was that you?"* The player explains; Owain thanks them |
-| Camera check (B9) | Fixes found before joining (whiteboard, printout, speaker, door) | LO6, LO1 | Grace sees the code, or doesn't; Wrenfield changes the code; the debrief shows the camera's view |
-| Screen share (B10) | Share the survey window / share the whole screen | LO6 | Whole screen shows Leo's chat pop-up and, in the window behind, another client's price list |
+| Hook: the residents list on the train (B1) | Open it in seat A / open only the Internal file / move to seat B / privacy screen first | C09-LO1 (baseline) | Jerome asks about his gran, or doesn't; Zainab's opening line differs; the debrief shows Jerome's view |
+| Café network (B2) | Real network and VPN / hotspot / fake network, page closed / fake network, signed in | C09-LO3 | Photos upload; or at 15:10 Kai's chat: *"Someone signed in to your account from a network in Haverbridge at 12:46. Was that you? We've reset your password and signed you out everywhere."* The player can still report, and the debrief credits it |
+| Grace's call (B3) | Call back from outside / send through the portal / rooms now and code in the portal / read it all out | C09-LO2 | If read out, the debrief's earshot panel shows who heard; Wrenfield changes the side-door code on Wednesday and every agency cleaner needs the new one |
+| Minding the laptop (B4) | Take it / lock it and leave it with Bryony / leave it open | C09-LO4, C09-LO1 | Nothing is taken; the debrief shows the inbox the couple at the next table could read while the player was out |
+| Leaving the café (B5) | Pick up the tablet / leave it | C09-LO4 | Whose tablet goes missing at the hotel |
+| Leaving the hotel room (B6) | Take the laptop / safe and shut down / locked on the desk / open on the bed | C09-LO4 | The 20:05 turndown shot shows what was in view |
+| The missing tablet (B7) | Ring the service desk now / ring the café first / report in the morning | C09-LO5 | Owain's device console: lock sent at 21:04, wipe at 09:00, then the café finds it behind a sofa cushion at 10:30 and it's re-enrolled. Reported in the morning, the console shows the hours it sat signed in to the survey app |
+| Ellis and the laptop (B8) | Offer another device / log him in and watch / five minutes alone | C09-LO4 | If the work laptop was used: a "free maths games" site asked to install a helper and Ellis clicked yes; the security software blocked it and Owain asks *"Something tried to install on your laptop at 09:02. Was that you?"* The player explains; Owain thanks them |
+| Camera check (B9) | Fixes found before joining (whiteboard, printout, speaker, door) | C09-LO6, C09-LO1 | Grace sees the code, or doesn't; Wrenfield changes the code; the debrief shows the camera's view |
+| Screen share (B10) | Share the survey window / share the whole screen | C09-LO6 | Whole screen shows Leo's chat pop-up and, in the window behind, another client's price list |
 
 No option shames the player. Bystanders are never shown stealing or misusing anything; the harm is shown as client information reaching people who had no reason to see it, and as the work it causes (a door code changed, a password reset, a tablet wiped). The worst branch for the tablet still ends with Owain thanking the player for ringing.
 
@@ -148,13 +148,14 @@ No option shames the player. Bystanders are never shown stealing or misusing any
 
 | Minigame | Status | Use here |
 |---|---|---|
-| **MG-14 Wi-Fi and VPN picker** | new | Practise round 3 and the café. Config per situation: the list of networks (name, signal, open or password), the venue's sign text, the login page type (terms only, terms and email, asks for work password, none), whether the VPN connects, a hotspot option and a Report button. Records the network chosen, anything typed into a page (pre-filled, never real), whether the player waited for the VPN, and any report |
+| **MG-14 Wi-Fi and VPN picker** | new (P2), a panel of MG-23 | Practise round 3 and the café. Config per situation, following its spec: `networks[] {ssid, secured, genuine, signal, page}` (the page is "terms only", "terms and email", "asks for work password" or none), `hotspot`, `vpn {required, label}` (Larkspur's connects by itself), and `askNpc` (the barista knows the real name; the chalkboard shows it too). Events `wifi_joined:<ssid>`, `wifi_hotspot_used`, `wifi_vpn_on` and `wifi_page_signin:<pageId>` set C09-B2; anything typed is pre-filled, never real. A Report button sends the fake network to Kai |
 | **BE-10 Spot-the-risk** | new | Practise round 2 (café table), the hotel room before dinner, and the camera preview before the video call. Each has risks, harmless details and a found and missed summary; timer off by default |
-| **Sight cones** (`systems/npc-los.js`) | existing | The hook (Marcus's cone, via the sight challenge or the proposed overlooked check) and Coach C (`los.visualize: true`, a patrolling trolley attendant) |
-| `person-chat` | existing | Zainab, Marcus, Bryony, Ellis; the video call in its video-call mode with the proposed workplace skin |
+| **Sight cones** (`systems/npc-los.js`) | existing | The hook (Jerome's cone, via the sight challenge or the proposed overlooked check) and Coach C (`los.visualize: true`, a patrolling trolley attendant) |
+| `person-chat` | existing | Zainab, Jerome, Bryony, Ellis; the video call in its video-call mode with the proposed workplace skin |
 | `phone-chat` | existing | Lena, Ama, Kai, Zainab's message about her tablet; Grace's call and the service desk until MG-04 exists |
-| `container`, `text-file` | existing | The laptop's desktop and the survey files |
+| **MG-27 Work desktop** (`container` and `text-file` until it exists) | new (MVP) | The laptop: the survey files, network settings (MG-23 and MG-14), chat and The Lark from one desktop, with notifications that can show over the player's shoulder |
 | **MG-04 Voice calls** | new (P2) | Grace's call (with the call-back option) and ringing the service desk |
+| **MG-09 Incident report form** | new (MVP) | The lost-device report through the service desk's online form: category "lost or stolen device", evidence chips (last seen at the café at 13:10; signed in to the survey app), the time noticed |
 | **MG-23 Device settings** | new (P2) | The optional pre-trip check; the micro-drill |
 | **MG-20 Knowledge check** | new | The Learn check question and the final spot check |
 
@@ -173,7 +174,7 @@ No option shames the player. Bystanders are never shown stealing or misusing any
 
 Shown on BE-02, then talked through by Ama and Zainab:
 
-1. **Through their eyes.** One panel per place, drawn from the bystander's position with their cone or earshot shown: what Marcus could read on the train, what the café heard and saw, what the housekeeper saw at 20:05, what Ellis did, what Grace could see behind the player. Each panel says what good looked like.
+1. **Through their eyes.** One panel per place, drawn from the bystander's position with their cone or earshot shown: what Jerome could read on the train, what the café heard and saw, what the housekeeper saw at 20:05, what Ellis did, what Grace could see behind the player. Each panel says what good looked like.
 2. **The tablet.** Owain's device console: when it was last used, when it was reported, when it was locked and wiped, and the gap between them.
 3. **Before and after.** The hook (who could read the residents list on the train) beside the camera check (who could see client details behind the player).
 4. **Per-outcome results:** Secure, Developing or Not yet (see `assessment.md`).
@@ -196,14 +197,14 @@ Shown on BE-02, then talked through by Ama and Zainab:
 
 - **New rooms:** the train carriage (with seat collision so cones and seats line up), the café, the hotel room and the home office, each with a conversation background (`room-pov-background`, after room dressing and lighting). The train needs a lighting pass for morning light; the hotel an evening one (`mission-room-lighting`).
 - **New props:** a privacy screen (inventory icon), the survey tablet, the café chalkboard with a readable Wi-Fi name, a hotel bed (today's beds are hospital beds), a "Do not disturb" hanger, a smart speaker, a home router, a wall whiteboard with two states (written and wiped), a train seat set and a luggage rack. Existing: suitcases, laptops, phones, room safes, the coffee station, cups, kettle, plants and sofas.
-- **Characters:** Zainab, Ama, Owain and Grace need dialogue busts and talk sheets (Grace appears on the video call); Marcus needs a walk sprite and a bust; Bryony can use a generic v2 sprite with her own bust; Ellis needs a new child sprite (none exists). Extras use generic sprites.
-- **Voice:** about 30 lines for Zainab, 6 for Marcus, 4 for Bryony, 8 for Grace, 5 for Ellis, 6 for Ama and 5 for Owain. No voiced line prints a variable: codes, network names, room numbers, times and counts are on-screen text only, and the player's own lines (including any code they read out) are shown, not spoken.
+- **Characters:** Zainab, Ama, Owain and Grace need dialogue busts and talk sheets (Grace appears on the video call); Jerome needs a walk sprite and a bust; Bryony can use a generic v2 sprite with her own bust; Ellis needs a new child sprite (none exists). Extras use generic sprites.
+- **Voice:** about 30 lines for Zainab, 6 for Jerome, 4 for Bryony, 8 for Grace, 5 for Ellis, 6 for Ama and 5 for Owain. No voiced line prints a variable: codes, network names, room numbers, times and counts are on-screen text only, and the player's own lines (including any code they read out) are shown, not spoken.
 - **Ambience** (BE-21): train rumble and announcements, café chatter and the coffee machine, a quiet hotel corridor, a kitchen radio.
 
 ## Pitfalls
 
 - **Don't frighten people off public Wi-Fi.** The advice is proportionate and follows the organisation's setting; the fake network is caught by what its page asks for, not by fear of all Wi-Fi.
-- **Don't make bystanders villains.** Marcus, Bryony and the housekeeper are kind and ordinary. The harm is where the information went.
+- **Don't make bystanders villains.** Jerome, Bryony and the housekeeper are kind and ordinary. The harm is where the information went.
 - **No gotchas.** The hook is a baseline. Everything in Apply was taught in Learn and practised in Practise. The tablet goes missing through the player's own play or through Zainab's, so everyone meets the reporting decision fairly.
 - **Spatial play needs an equal alternative.** The seat round and the cones must work by keyboard, and the text route describes positions in words (BE-04, BE-03). Colour is never the only cue in the cones.
 - **Don't assume a private home office.** Many people work at a kitchen table or in a shared flat; the module offers headphones, blur and timing as answers, not "get a study".

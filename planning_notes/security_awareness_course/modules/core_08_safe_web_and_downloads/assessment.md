@@ -19,24 +19,25 @@ Each row is recorded through BE-01 and shown in the debrief and the learner's re
 
 C08-B10 applies only to players who slipped. Players who never did are recorded as "not applicable", not as a pass or a fail.
 
+Every outcome has evidence from play and from the check: C08-LO1 from B2 (with B1 as the baseline) and C08-Q1, Q2 and Q12; C08-LO2 from B2 and B8 and Q2 to Q4; C08-LO3 from B3, B4 and B9 and Q5 to Q7; C08-LO4 from B6 and B9 and Q8; C08-LO5 from B5 and Q9; C08-LO6 from B3, B4, B7 and B10 and Q7, Q10 and Q11.
+
 The **before and after** for each learner is C08-B1 against C08-B2: the same habit (starting from a trusted place rather than a search result) before the explainer and after it.
 
 ## Critical behaviours
 
 To complete the module the learner must, at least once:
 
-1. **Not run the fake check's command**, or report it within two game-minutes if they did (C08-B3 not at Not yet).
-2. **Start from a trusted place** (C08-B1 or C08-B2 at Secure).
-3. **Not call the number on a scam page**, or hang up without installing anything and report it (C08-B4 not at Not yet).
-4. **Report any slip of their own** before the module ends (C08-B10 not at Not yet), where it applies.
+- **C08-CB1 Never let a page drive the computer:** don't run the fake check's command or call the scam page's number, or report it straight away if they did (C08-B3 and C08-B4 not at Not yet).
+- **C08-CB2 Start from a trusted place** (C08-B1 or C08-B2 at Secure).
+- **C08-CB3 Report a slip of their own** before the module ends (C08-B10 not at Not yet), where it applies.
 
-A learner who misses a critical behaviour is taken back to it: Owain replays the matching Learn chunk ("Four tricks" or "Where software comes from") and the related Practise screens, then a fresh page of the same kind appears in a short replay of the Apply beat (a fake check in a new style, a new lookalike, a new alarm). They complete the module when they show the behaviour; the record keeps both attempts.
+A learner who misses a critical behaviour goes through the remediation loop (`features/assessment_and_evidence.md`, section 4). Owain says what happened without blame, replays the matching Learn chunk ("Four tricks" or "Where software comes from") with the related Practise screens, and a fresh page of the same kind appears in a short replay of the Apply beat: a fake check in a new style, a new lookalike, a new alarm. Shown: recorded as "shown after practice", and the linked outcome is capped at Developing for this sitting. Not shown: a second loop with a different page and a more direct prompt. After two loops the learner goes on to the check; the record says "practised, not yet shown", a private practice drill is scheduled two to four weeks later (HA-03, HA-21), and the learner is offered help from the organisation's training contact. Nobody else is told by name. Every attempt is kept in the record.
 
 ## Knowledge check bank
 
 Six items per sitting, drawn so that every learning outcome is covered. Stems are short workplace situations.
 
-### Q1 (LO1, single choice)
+### C08-Q1 (LO1, single choice)
 
 You need a free tool to shrink a large file before sending it. What's the right first step?
 
@@ -45,7 +46,7 @@ You need a free tool to shrink a large file before sending it. What's the right 
 - **C. Look in the company software portal, and ask the service desk if it isn't there.** *Feedback: Right. Portal tools are checked, licensed and kept updated.*
 - D. Use a free online tool, since you won't be installing anything. *Feedback: You'd be uploading the file to a stranger (core_13), and the download could carry malware.*
 
-### Q2 (LO1, LO2, single choice)
+### C08-Q2 (LO1, LO2, single choice)
 
 You search for a supplier's website. The first result says "Sponsored" and its address is `ashby-trade-login.com`. The intranet's bookmark for the supplier is `ashbysupplies.co.uk`. What do you do?
 
@@ -54,7 +55,7 @@ You search for a supplier's website. The first result says "Sponsored" and its a
 - C. Click it, but check for the padlock first. *Feedback: Lookalike sites have padlocks too.*
 - D. Search again with different words. *Feedback: You might get the real one, or another advert. The bookmark is quicker and safer.*
 
-### Q3 (LO2, single choice)
+### C08-Q3 (LO2, single choice)
 
 Which website does this address really go to?
 `https://pagewright.co.uk.get-installer.com/setup`
@@ -64,14 +65,14 @@ Which website does this address really go to?
 - C. `setup`. *Feedback: That's a page on the site, not the site itself.*
 - D. It's safe because it starts with `https`. *Feedback: That means the connection is encrypted, not that the site is genuine.*
 
-### Q4 (LO2, true or false with reason)
+### C08-Q4 (LO2, true or false with reason)
 
 "If there's a padlock in the address bar, the site is genuine."
 
 - A. True: the padlock is a security check on the site. *Feedback: It's a check on the connection, not on who runs the site.*
 - **B. False: the padlock means the connection is private, and scam sites have one too. Check the address.** *Feedback: Right.*
 
-### Q5 (LO3, single choice)
+### C08-Q5 (LO3, single choice)
 
 A supplier's website you use every month shows: "Verify you are human. Press Windows+R, then Ctrl+V, then Enter." What do you do?
 
@@ -80,7 +81,7 @@ A supplier's website you use every month shows: "Verify you are human. Press Win
 - **C. Close the page and report it. No real check asks you to paste anything into your computer.** *Feedback: Right. Your report lets the security team block it and tell the supplier.*
 - D. Email the supplier to ask whether it's genuine. *Feedback: Telling them helps, but close it first and report it to your security team, who will contact the supplier.*
 
-### Q6 (LO3, multiple select)
+### C08-Q6 (LO3, multiple select)
 
 Which of these should make you close the page? Choose all that apply.
 
@@ -89,7 +90,7 @@ Which of these should make you close the page? Choose all that apply.
 - C. A tick box saying "I'm not a robot" on a form you're filling in. *Feedback: That's an ordinary check, done on the page.*
 - **D. "Your computer is locked. Call 0800 ..."** *Feedback: Genuine error messages never include phone numbers.*
 
-### Q7 (LO3, LO6, single choice)
+### C08-Q7 (LO3, LO6, single choice)
 
 A page goes full screen, says your computer is infected and gives a number to call. The close button keeps reopening it. What do you do?
 
@@ -98,7 +99,7 @@ A page goes full screen, says your computer is infected and gives a number to ca
 - C. Switch the computer off at the wall. *Feedback: There's no need. If you can't get out, call the service desk.*
 - D. Pay for the "support" so it goes away. *Feedback: Never. Close it, and report it.*
 
-### Q8 (LO4, single choice)
+### C08-Q8 (LO4, single choice)
 
 You click a link to a site you need for work and get a red page: "Deceptive site ahead". What do you do?
 
@@ -107,7 +108,7 @@ You click a link to a site you need for work and get a red page: "Deceptive site
 - C. Try the same link in a different browser. *Feedback: Getting round the warning doesn't make the site safe.*
 - D. Carry on: warnings are usually wrong. *Feedback: They're occasionally wrong, rarely. Ask IT instead.*
 
-### Q9 (LO5, single choice)
+### C08-Q9 (LO5, single choice)
 
 A colleague recommends a free browser extension. When you click Add, it says it can "Read and change all your data on all websites". What do you do?
 
@@ -116,7 +117,7 @@ A colleague recommends a free browser extension. When you click Add, it says it 
 - C. Add it, use it once, then remove it. *Feedback: Once is enough for it to read what you do.*
 - D. Add it to your personal browser and do the work there. *Feedback: That moves the work outside the organisation's protection.*
 
-### Q10 (LO6, single choice)
+### C08-Q10 (LO6, single choice)
 
 Your colleague says he pasted a command a website gave him to "verify" himself, and asks if he should just restart. What do you say?
 
@@ -125,7 +126,7 @@ Your colleague says he pasted a command a website gave him to "verify" himself, 
 - C. "Run a free virus scan from the web." *Feedback: Another download from the web is the last thing he needs.*
 - D. "Keep an eye on it for a day." *Feedback: Infostealers work quietly. Report it now.*
 
-### Q11 (LO6, single choice)
+### C08-Q11 (LO6, single choice)
 
 You saw a fake "verify you are human" box on a supplier's website, but you didn't follow its steps. Is it worth reporting?
 
@@ -134,7 +135,7 @@ You saw a fake "verify you are human" box on a supplier's website, but you didn'
 - C. Only if you're sure it's fake. *Feedback: You don't need to be sure. Report it and let them check.*
 - D. Just warn the colleague next to you. *Feedback: Kind, but the whole organisation needs to know.*
 
-### Q12 (LO1, single choice)
+### C08-Q12 (LO1, single choice)
 
 You need to convert a confidential PDF into a spreadsheet. A free online converter would take a minute. What's the problem?
 
@@ -150,7 +151,7 @@ You need to convert a confidential PDF into a spreadsheet. A free online convert
 
 ## Completion and pass rules
 
-- **Complete** when the learner has played through all beats (or the text route), shown each critical behaviour (with remediation if needed), passed the knowledge check, and opened the reference card.
+- **Complete** when the learner has played through all beats (or the text route), shown each critical behaviour or been taken through the remediation loop for it (at most two loops), passed the knowledge check, and opened the reference card.
 - **Pass mark:** 5 of 6 (the organisation can change it; 80% is the default).
 - **Retakes:** a failed check draws six new items. After two fails, Owain replays the Learn beat before the third attempt.
 - **Test-out** (where the organisation allows it): the Apply beat and the check without Learn and Practise. Passing records the module as complete; missing a critical behaviour sends the learner through the full module.

@@ -25,22 +25,23 @@ R01-B7 deliberately rates the process, not the verdict. A board that decides, wi
 
 ## Critical behaviours
 
-To complete the module the learner must, at least once:
+To complete the module the learner must show each of these, or be taken back through the practice for it:
 
-1. **Notify the regulator on time with incomplete facts** (R01-B6 not at Not yet).
-2. **Put the ransom decision through a proper process** (R01-B7 not at Not yet).
-3. **Check an urgent instruction through a known channel** (R01-B9 not at Not yet).
-4. **Record decisions with their reasons** (R01-B3 not at Not yet).
+- **R01-CB1 Notify the regulator on time with incomplete facts** (R01-B6 not at Not yet).
+- **R01-CB2 Put the ransom decision through a proper process** (R01-B7 not at Not yet).
+- **R01-CB3 Check an urgent instruction through a known channel** (R01-B9 not at Not yet).
 
-A learner who misses a critical behaviour is taken back to it. Faisal replays the matching Learn chunk, then a fresh inject of the same kind arrives in a short replay: a different breach and clock (a client file sent to the wrong school at 16:00 on a Friday), a different demand (a second group claiming to hold the same data), a different urgent instruction (a video call "from Anne-Marie" asking for a quiet transfer), or a short scene with three decisions to log. They complete the module when they show the behaviour; the record keeps both attempts.
+Recording decisions with reasons (R01-B3) matters as much, but it is built across the whole module and reflected in the debrief rather than made a gate.
 
-In a facilitated session the critical behaviours are discussed at the pause points and recorded in the group record. Individuals complete through the check and the reflection, and the facilitator can mark any critical behaviour the group missed for a follow-up solo replay.
+**The remediation loop** follows `features/assessment_and_evidence.md`, section 4. If a critical behaviour wasn't shown, the debrief says what happened without blame, Faisal replays the matching Learn chunk (one to two minutes), and a fresh inject of the same kind arrives in a short replay of the board (one to three minutes): a different breach and clock for R01-CB1 (a client file sent to the wrong school at 16:00 on a Friday), a different demand for R01-CB2 (a second group claiming to hold the same data), a different urgent instruction for R01-CB3 (a video call "from Anne-Marie" asking for a quiet transfer). Shown: recorded as "shown after practice", and the linked outcome is capped at Developing for this sitting. Not shown: a second loop with another fresh inject and a more direct prompt from Faisal. After two loops the learner goes on to the check anyway; the record says "practised, not yet shown", a private follow-up drill is scheduled two to four weeks later (HA-03, HA-21), and nobody else is told by name. Every attempt is kept.
+
+In a facilitated session the critical behaviours are discussed at the pause points and recorded in the group record. Individuals complete through the check and the reflection; the facilitator can flag any critical behaviour the group missed, which schedules the same private follow-up drill for each participant.
 
 ## Knowledge check bank
 
-Six items per sitting, drawn so that every learning outcome is covered. Stems are short situations a director would recognise.
+Six items per sitting, drawn so that every learning outcome is covered. Stems are short situations a director would recognise. Every outcome has at least two items: LO1 (R01-Q4, Q9, Q12), LO2 (R01-Q5, Q8, Q9), LO3 (R01-Q3, Q10), LO4 (R01-Q1, Q2), LO5 (R01-Q2, Q8, Q11), LO6 (R01-Q6, Q7).
 
-### Q1 (LO4, single choice)
+### R01-Q1 (LO4, single choice)
 
 At 22:00 on Friday your DPO confirms that staff records were copied in an attack. When should the ICO hear from you?
 
@@ -49,7 +50,7 @@ At 22:00 on Friday your DPO confirms that staff records were copied in an attack
 - C. Once the investigation confirms exactly what was taken. *Feedback: The clock runs from awareness. A first report can say what you don't know yet.*
 - D. Within a month, with the full report. *Feedback: A month is for answering a subject access request, not for reporting a breach.*
 
-### Q2 (LO5, multiple select)
+### R01-Q2 (LO5, LO4, multiple select)
 
 The attackers say they'll delete the stolen files once you pay. Which of these are true? Choose all that apply.
 
@@ -59,7 +60,7 @@ The attackers say they'll delete the stolen files once you pay. Which of these a
 - **D. Paying doesn't meet any of your duties to notify.** *Feedback: Right. The clocks run whatever you decide about paying.*
 - **E. You can't rely on a promise to delete stolen data.** *Feedback: Right. Plan for the data being published whatever you decide.*
 
-### Q3 (LO3, single choice)
+### R01-Q3 (LO3, single choice)
 
 It's 03:00. Your security lead wants to cut the network off now, which will stop deliveries in the morning. The chief executive is on a plane. The plan names you as the deputy. What do you do?
 
@@ -68,7 +69,7 @@ It's 03:00. Your security lead wants to cut the network off now, which will stop
 - C. Ask for a full written report before deciding. *Feedback: The facts won't be complete for days. Decide on the advice you have.*
 - D. Leave it entirely to IT and stay out of it. *Feedback: The cost to clients is a business decision. Leaders own it, even when the plan lets IT act first.*
 
-### Q4 (LO1, multiple select)
+### R01-Q4 (LO1, multiple select)
 
 Which of these are decisions for leaders rather than the technical team? Choose all that apply.
 
@@ -78,7 +79,7 @@ Which of these are decisions for leaders rather than the technical team? Choose 
 - **D. Which service to restore first.** *Feedback: Right. It depends on what the organisation can't do without.*
 - E. Resetting administrator passwords. *Feedback: A technical task. Leaders make sure it happens, not how.*
 
-### Q5 (LO2, single choice)
+### R01-Q5 (LO2, single choice)
 
 Your quarterly cyber report shows backups as "green". Which question tells the board most?
 
@@ -87,7 +88,7 @@ Your quarterly cyber report shows backups as "green". Which question tells the b
 - C. "How much do the backups cost?" *Feedback: A budget question, not a readiness one.*
 - D. "Who supplies the backup software?" *Feedback: It matters for supplier risk, but it doesn't test recovery.*
 
-### Q6 (LO6, single choice)
+### R01-Q6 (LO6, single choice)
 
 A major client has heard rumours about your incident. Which first message is best?
 
@@ -96,7 +97,7 @@ A major client has heard rumours about your incident. Which first message is bes
 - C. "We can't comment until the investigation is finished." *Feedback: Silence invites the worst guess, and your contract may require you to tell them.*
 - D. "We've been attacked by criminals and all your data has been stolen." *Feedback: Don't speculate. Say what you know.*
 
-### Q7 (LO6, single choice)
+### R01-Q7 (LO6, single choice)
 
 During an incident, your finance manager gets a voice note in the chief executive's voice: "The board has agreed to pay. Send the first instalment tonight and keep it off email." What should happen?
 
@@ -105,7 +106,7 @@ During an incident, your finance manager gets a voice note in the chief executiv
 - C. Pay it: the chief executive has the authority. *Feedback: Authority doesn't skip the checks, and a crisis is perfect cover for fraud.*
 - D. Listen again for signs of a fake voice. *Feedback: Fakes can be very good. Checking another way works even when you can't tell.*
 
-### Q8 (LO5, LO2, single choice)
+### R01-Q8 (LO5, LO2, single choice)
 
 Your insurer asks whether MFA was on all remote access, as the policy requires. You know one supplier's server didn't have it. What do you say?
 
@@ -113,15 +114,15 @@ Your insurer asks whether MFA was on all remote access, as the policy requires. 
 - B. Say yes: it was nearly everywhere. *Feedback: A misstatement can put the whole claim at risk.*
 - C. Say nothing until the claim is settled. *Feedback: The insurer will find out in the investigation.*
 
-### Q9 (LO1, LO2, single choice)
+### R01-Q9 (LO1, LO2, single choice)
 
 The chief executive says the incident plan was exercised two years ago, so it's fine. What does the Cyber Governance Code of Practice ask boards to gain assurance of?
 
 - A. That the plan exists and is approved. *Feedback: Necessary, but a plan nobody has practised fails on the night.*
-- **B. That the plan is exercised at least annually with internal and external stakeholders, and the lessons fed back.** *Feedback: Right. That's action D.2.*
+- **B. That the plan is exercised at least annually with internal and external stakeholders, and the lessons fed back.** *Feedback: Right. That's action D2.*
 - C. That the plan is exercised whenever there's a major incident. *Feedback: A real incident is not the time for the first rehearsal.*
 
-### Q10 (LO3, single choice)
+### R01-Q10 (LO3, single choice)
 
 Day two. The quickest restore uses snapshots taken last night, while the attackers were still inside. The clean backup is two days old and takes ten hours longer. What do you choose?
 
@@ -129,20 +130,20 @@ Day two. The quickest restore uses snapshots taken last night, while the attacke
 - B. The snapshots: getting back quickly matters most. *Feedback: You may restore the attackers with your data and lose everything again.*
 - C. Wait until every system can be restored at once. *Feedback: Restore in order of what matters most.*
 
-### Q11 (LO5, true or false with reason)
+### R01-Q11 (LO5, true or false with reason)
 
 "Paying a ransom is banned for all UK organisations."
 
 - A. True: the government banned ransom payments in 2025. *Feedback: Not so. In 2025 the government proposed a ban for public sector bodies and critical national infrastructure, and it isn't yet in force.*
 - **B. False: it isn't generally unlawful, though a payment can be if it reaches a sanctioned person or area. Proposals for public bodies and critical national infrastructure are not yet law.** *Feedback: Right. Check the current position before any decision, and take legal advice.*
 
-(Q11 carries a "checked on" date and is reviewed in every edition.)
+(R01-Q11 carries a "checked on" date and is reviewed in every edition.)
 
-### Q12 (LO1, single choice)
+### R01-Q12 (LO1, single choice)
 
 A new trustee asks what's expected of them personally on cyber security. What do you tell them?
 
-- **A. Take training to build your own understanding, know the incident plan and your role in it, and ask the questions that test whether we're ready.** *Feedback: Right. That's Code action C.3, and the board's oversight role.*
+- **A. Take training to build your own understanding, know the incident plan and your role in it, and ask the questions that test whether we're ready.** *Feedback: Right. That's Code action C3, and the board's oversight role.*
 - B. Nothing: the IT team handles it. *Feedback: The Code asks every director to build their own cyber literacy.*
 - C. Learn to configure the firewall. *Feedback: Boards need the right questions, not technical skills.*
 
@@ -154,7 +155,7 @@ A new trustee asks what's expected of them personally on cyber security. What do
 
 ## Completion and pass rules
 
-- **Complete (solo)** when the learner has played all beats (or the text route), shown each critical behaviour (with remediation if needed), passed the knowledge check, and opened the crisis card.
+- **Complete (solo)** when the learner has played all beats (or the text route), shown each critical behaviour or been taken back through the practice for it (two loops at most), passed the knowledge check, and opened the crisis card.
 - **Complete (facilitated)** when the facilitator has confirmed attendance on the HA-13 console, the group record is saved, and the participant has passed the check and submitted the reflection on their own device.
 - **Pass mark:** 5 of 6 (the organisation can change it; 80% is the default).
 - **Retakes:** a failed check draws six new items. After two fails, Faisal's Learn beat replays before the third attempt.
@@ -162,15 +163,18 @@ A new trustee asks what's expected of them personally on cyber security. What do
 
 ## Evidence for auditors
 
-The learner's record (HA-05) shows: module id and version, start and completion dates, time on task, route (solo, text, or facilitated with the session id), each behaviour's rating or the session's group record, critical behaviours shown or remediated, the check score, the reflection, and whether the crisis card was opened. This supports:
+The learner's record (HA-05) shows: module id and version, start and completion dates, time on task, route (solo, text, or facilitated with the session id), each behaviour's rating or the session's group record, critical behaviours shown, shown after practice, or practised and not yet shown, the check score, the reflection, and whether the crisis card was opened. This supports:
 
-- Cyber Governance Code of Practice C.3 (directors' training) and, where the session is run against the organisation's own plan with an action list, D.2 (annual exercise) and D.4 (lessons fed back);
-- NIS2 Article 20(2) and DORA Articles 5(4) and 13(6), where they apply;
-- ISO/IEC 27001 clause 5.1, clause 7.3 and Annex A 5.24;
-- PCI DSS 12.10.2, where the session tests the incident response plan;
-- NCSC CAF A1 and D1.
+- Cyber Governance Code C3 (each director's training) and C1 and C4 (the board's lead on culture and training);
+- Cyber Governance Code D2, only for the own-plan facilitated version, with the action list and exercise report attached;
+- NIS2 Art 20(2), and NIS2 IR 8.1 and IR 10.1 where the Implementing Regulation applies;
+- DORA Art 5(4) and DORA Art 13(6), for EU financial entities;
+- ISO 27001 cl. 7.2 and ISO 27001 cl. 7.3;
+- NIST AT-3 and NIST AT-2 (managers and senior executives), and NIST AT-2(5) in part where the optional explainer was opened;
+- CIS 14.9; NCSC CAF B6.a and NCSC CAF B6.b; DSPT 3.4.1 for NHS customers;
+- NYDFS 500.4(d)(1) and HIPAA 164.308(a)(5) for US customers.
 
-The record shows that leaders were trained and took part. It is not evidence that the organisation's plan is adequate; that comes from the exercise's own report and actions.
+The record shows that leaders were trained and took part. It is not evidence that the organisation's plan is adequate, and a session played with Larkspur's plan is not the board's exercise of its own; that comes from the own-plan version's report and actions (and, where the plan is tested that way, it can also count towards PCI DSS 12.10.2).
 
 ## Measuring effect
 
@@ -180,7 +184,7 @@ Outside the course, an organisation can watch:
 - **Annual exercises with leaders in the room**, and the share of actions closed before the next one.
 - **Time to convene the crisis team**, in exercises and real incidents.
 - **Notifications on time**: ICO reports within 72 hours where feasible, and contract notifications within their terms.
-- **Quarterly cyber reporting to the board** with agreed measures (Code E.2).
+- **Quarterly cyber reporting to the board** with agreed measures (Code E2).
 - **Directors trained**: this module and the NCSC's Cyber Governance Training.
 - **Supplier remote access with MFA**, from the risk register.
 - **The board's answers to the ten questions**, repeated each year.

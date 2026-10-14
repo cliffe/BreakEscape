@@ -83,6 +83,7 @@ Contributes to (short references from `02_COMPLIANCE_MAPPING.md`):
 - **BE-20 Authorable tutorial, title screen and end screen** (the dependency that sets this module's date): the course's own title screen with the customer's logo in place of today's Hacktivity logo and terminal-style typing; tutorial steps written into the scenario and tied to the story (walk to the desk, talk to Maureen, open the inventory to see the badge, read a text, open the task list, use The Lark) in place of the fixed "Welcome to Hacktivity Games!" steps; and an end screen that shows the course map.
 - **BE-09 Intranet terminal:** The Lark's home page, reference card, contacts, who's who and course map; the knowledge check opens here.
 - **BE-05 Organisation profile in game:** the organisation's name and logo on the badge and The Lark, the Report button's name, the reporting contacts and the real payroll process, all on screen.
+- **MG-27 Work desktop:** the laptop Owain hands over, as one launcher for the inbox, chat, The Lark and settings, with notifications. The tutorial's "open your inbox" and "open The Lark" steps run on it, so every later module's desktop is already familiar.
 - **MG-01 Inbox** (minimal use): three messages, the Report button, and a pre-filled form behind the fake payroll link.
 - **MG-07 and MG-08** (light previews of core_03): one MFA prompt to approve with number matching, one to refuse; a passphrase built from word tiles.
 - **MG-20 Knowledge check:** Ama's check question and the five-item quiz.
@@ -91,6 +92,7 @@ Contributes to (short references from `02_COMPLIANCE_MAPPING.md`):
 - **EX-01, EX-04 and BE-08:** Ama's chunks with visual aids; the motto poster and The Lark's pages.
 - **BE-03 and BE-04:** the text route and the settings, both offered in the first minute, because this is where every learner starts.
 - **HA-03 and HA-17:** the course map shows the learner's own assigned modules and due dates.
+- **HA-26 Setup checklist:** the reporting routes, the payroll process and the organisation's "honest mistakes reported quickly are not disciplined" statement must be filled in before core_00 can be assigned, because the module is pointless with a generic route.
 - **proposed:** Workplace avatar set, a diverse set of office-appropriate player avatars (age, ethnicity, disability, religious dress) for the course's `validSprites`; today's 14 choices include hooded hackers and a spy.
 - **proposed:** NPC guide behaviour, an NPC who walks ahead to the next waypoint and waits until the player is close; Precious's tour can be built from event mappings without it, but it would be tidier and reusable (core_10's floor walk).
 

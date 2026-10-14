@@ -81,8 +81,10 @@ Contributes to (references in `02_COMPLIANCE_MAPPING.md`):
 - **BE-08 Visual aids:** the ladder of checks, "know versus have", the takeover timeline, the scam signs card, the secure payment diagram.
 - **BE-09 Intranet** and **BE-05 Organisation profile:** the adviser's card with the customer's own verification rules, payment method and routes.
 - **BE-07 Micro-drill launcher:** "Verify or Deny?".
+- **BE-19:** the first call arriving on its own at the hook; Shauna's check question, opened from conversation with `#trigger_minigame:knowledge_check|<configKey>`.
+- **BE-22 Tactic spotter card:** its list of tactics labels the call replays in the debrief; the card itself can be switched on in the facilitated session, where the room ticks tactics as they hear them.
 - **proposed:** Secure payment line, a keypad overlay through which the customer's card entry reaches the adviser only as masked digits while the recording pauses itself; card-like numbers typed into notes are flagged. Also useful for role_02.
-- **proposed:** Call replay, a debrief panel that replays a call as a transcript timeline with the caller's tactics and the player's checks labelled. Also useful for core_02 and role_03.
+- **proposed:** Call replay, a debrief panel (BE-02) that replays a call as a transcript timeline with the caller's tactics (from BE-22's list) and the player's checks labelled. Also useful for core_02 and role_03.
 - **MG-25 Document inspector** (optional): the "engineer's" work order in the front desk scene.
 
 ## Organisation-specific content

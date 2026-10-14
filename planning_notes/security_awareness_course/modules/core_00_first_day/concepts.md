@@ -106,6 +106,8 @@ The first report protects everyone else who got the same message. In a large lon
 
 At Larkspur the team is Ama Owusu (Information Security Manager) and Kai Murray (analyst), with an outsourced monitoring partner out of hours; Tomasz Wiśniewski is the DPO (`03_WORLD_AND_CAST.md`).
 
+**Authorised tests.** Many organisations hire testers to check their defences: test phishing emails, test calls, someone trying the doors (at Larkspur, Jo Fairweather of Northlight Security, who appears in several modules). Treat anything suspicious the same way, test or not: report it. If a test catches you out, that's the organisation learning where to improve, not you failing (whether and how the organisation tests is an organisation slot; see core_01 for simulated phishing).
+
 ### Three previews (taught properly elsewhere)
 
 One line each in this module, no more. Match these words exactly so the later modules don't contradict them.

@@ -32,11 +32,11 @@ The five principles, with the actions this module draws on (summarised; read the
 
 | Principle | Actions this module uses |
 |---|---|
-| **A. Risk management** | A.1 identify the technology, information and services critical to the organisation's objectives; A.2 agree senior ownership of cyber risks and integrate them with enterprise risk management; A.3 define and communicate the cyber risk appetite; A.4 gain assurance that supplier risk is assessed in proportion to the risk; A.5 regular risk assessments that reflect changes in the organisation, technology, regulation and threats |
-| **B. Strategy** | B.1 to B.4: a cyber strategy aligned with the organisation's strategy and risk appetite, resourced and checked for delivery |
-| **C. People** | C.1 promote a culture of positive behaviours and accountability at all levels; C.2 clear policies that support that culture; C.3 **undertake training to improve your own cyber literacy**; C.4 gain assurance, using suitable metrics, that the organisation's training, education and awareness programme is effective |
-| **D. Incident planning, response and recovery** | D.1 a plan to respond to and recover from an incident affecting critical technology, information and services; D.2 **exercise the plan at least annually** with internal and external stakeholders, and feed the lessons back; D.3 in an incident, take responsibility for regulatory obligations such as reporting, and support critical decisions and external communications; D.4 a post-incident review whose lessons feed future risk assessments, plans and exercises |
-| **E. Assurance and oversight** | E.1 a cyber governance structure inside the wider governance; E.2 formal reporting at least quarterly, with metrics and agreed tolerances; E.3 regular two-way dialogue with senior executives, including the chief information security officer or equivalent; E.4 integration with existing audit and assurance; E.5 assurance that senior executives know the regulatory obligations and good practice |
+| **A. Risk management** | A1 identify the technology, information and services critical to the organisation's objectives; A2 agree senior ownership of cyber risks and integrate them with enterprise risk management; A3 define and communicate the cyber risk appetite; A4 gain assurance that supplier risk is assessed in proportion to the risk; A5 regular risk assessments that reflect changes in the organisation, technology, regulation and threats |
+| **B. Strategy** | B1 to B4: a cyber strategy aligned with the organisation's strategy and risk appetite, resourced and checked for delivery |
+| **C. People** | C1 promote a culture of positive behaviours and accountability at all levels; C2 clear policies that support that culture; C3 **undertake training to improve your own cyber literacy**; C4 gain assurance, using suitable metrics, that the organisation's training, education and awareness programme is effective |
+| **D. Incident planning, response and recovery** | D1 a plan to respond to and recover from an incident affecting critical technology, information and services; D2 **exercise the plan at least annually** with internal and external stakeholders, and feed the lessons back; D3 in an incident, take responsibility for regulatory obligations such as reporting, and support critical decisions and external communications; D4 a post-incident review whose lessons feed future risk assessments, plans and exercises |
+| **E. Assurance and oversight** | E1 a cyber governance structure inside the wider governance; E2 formal reporting at least quarterly, with metrics and agreed tolerances; E3 regular two-way dialogue with senior executives, including the chief information security officer or equivalent; E4 integration with existing audit and assurance; E5 assurance that senior executives know the regulatory obligations and good practice |
 
 The NCSC's **Cyber Governance Training** covers the same five principles: an introduction and five modules of about 20 minutes each, free, each with a short scenario video and five multiple-choice questions. This module is built to sit beside it. The NCSC training covers the board's role in general; Crisis Room practises the incident decisions, and can be run against the organisation's own plan.
 
@@ -54,7 +54,7 @@ The NCSC's **Cyber Governance Training** covers the same five principles: an int
 - **Pre-authorised containment.** When an attack is spreading, waiting for a meeting to approve a shutdown costs hours. A good plan lets the technical lead isolate systems at once and tell leaders straight away; leaders then own the business impact.
 - **A way to talk when email can't be trusted.** Assume email and chat may be down or read by the attackers. Agree an out-of-band channel in advance: a separate messaging group, backup phones, printed contact lists.
 - **Help on call.** A retained incident response firm (Co-op "brought in our pre-agreed forensics teams, which we had on contract"), legal advice, the insurer's incident line and, for significant incidents, the NCSC.
-- **Exercise it.** The Code asks for the plan to be exercised at least annually (D.2). The NCSC's **Exercise in a Box** is free, offers tabletop (group discussion) and micro exercises, and lists ransomware among its topics. Co-op told MPs its leadership war-gaming "definitely paid dividends through the crisis".
+- **Exercise it.** The Code asks for the plan to be exercised at least annually (D2). The NCSC's **Exercise in a Box** is free, offers tabletop (group discussion) and micro exercises, and lists ransomware among its topics. Co-op told MPs its leadership war-gaming "definitely paid dividends through the crisis".
 
 ### The first hours: decisions only leaders can take
 
@@ -98,7 +98,7 @@ The clock starts at awareness, not when the picture is complete. A first report 
 
 ### Suppliers
 
-Many attacks arrive through a supplier's access. The British Library's most likely entry point was a server used for remote access by third parties without MFA; M&S said its point of entry "also involved a third party". Boards should know which suppliers can reach their systems, how, and whether every route has MFA (Code A.4). Due diligence and contracts are role_07; service desk and remote tools are role_03.
+Many attacks arrive through a supplier's access. The British Library's most likely entry point was a server used for remote access by third parties without MFA; M&S said its point of entry "also involved a third party". Boards should know which suppliers can reach their systems, how, and whether every route has MFA (Code A4). Due diligence and contracts are role_07; service desk and remote tools are role_03.
 
 ### Communications
 
@@ -112,15 +112,19 @@ Many attacks arrive through a supplier's access. The British Library's most like
 
 Leaders' names, voices and authority are the ones criminals most like to borrow: chief executive fraud, whaling, and cloned voices and faces (core_11 and core_15 teach these). A crisis makes it easier, because everyone expects unusual instructions. The defence is the same as for any member of staff: check another way, through the crisis group or a number you already have, and never act on an urgent instruction to pay or skip the process because of who it seems to come from. Leaders help most by saying, often and publicly: "I will never ask you to skip the checks."
 
+### Who's behind it (optional explainer)
+
+Most attacks on organisations like Larkspur come from criminals after money, using common weaknesses. Some come from an "advanced persistent threat": NIST describes "an adversary with sophisticated levels of expertise and significant resources" that pursues its objectives repeatedly over a long period, adapts to defenders' countermeasures and stays committed to its goals (NIST SP 800-30 Rev. 1, citing SP 800-39). Such groups often want quiet, lasting access or information rather than a quick payment. For a board the questions are the same ones, asked with a longer view: which of our information or access (for a supplier, its connections into clients' sites and systems) would interest a well-resourced attacker, and would we notice someone who stayed quiet for months? This short explainer covers NIST AT-2(5) at awareness level.
+
 ### People and culture
 
-- **No blame.** Attacks are designed to exploit normal, helpful behaviour. Blaming the person who clicked, reset or approved stops the next person reporting (core_04). The Code asks boards to promote a culture of positive behaviours and accountability (C.1).
+- **No blame.** Attacks are designed to exploit normal, helpful behaviour. Blaming the person who clicked, reset or approved stops the next person reporting (core_04). The Code asks boards to promote a culture of positive behaviours and accountability (C1).
 - **Wellbeing.** The British Library's review says incident plans should include staff and user wellbeing, because attacks are "deeply upsetting". Long incidents need shifts, rest and thanks.
-- **Leaders' own literacy.** The British Library's lessons include cyber-risk awareness at senior level, and recommend "the recruitment of a Board member or Board-level adviser with cyber expertise". The Code asks every director to train (C.3).
+- **Leaders' own literacy.** The British Library's lessons include cyber-risk awareness at senior level, and recommend "the recruitment of a Board member or Board-level adviser with cyber expertise". The Code asks every director to train (C3).
 
 ### After the incident
 
-- **Post-incident review** (Code D.4): what happened, which decisions were made and why, what to change in the risk register, the plan and the next exercise. The British Library published its review so others could learn from it.
+- **Post-incident review** (Code D4): what happened, which decisions were made and why, what to change in the risk register, the plan and the next exercise. The British Library published its review so others could learn from it.
 - **Add up the small risks.** The British Library's risk process escalated out-of-appetite risks well but was "less effective in modelling the amount of low-level risks being carried in aggregate". Ask to see the accepted risks together.
 - **Expect another attempt.** "Once you have had one cyber-attack, you are more likely to have another" (M&S chairman to MPs).
 
@@ -139,7 +143,7 @@ As the board's crisis card shows it.
 7. What does our insurance cover, what does it require of us, and what is the incident line?
 8. What is our ransom stance, and where is it written down?
 9. Which risks have we accepted, added together?
-10. How do we hear about cyber risk, and how often? (At least quarterly, under Code action E.2.)
+10. How do we hear about cyber risk, and how often? (At least quarterly, under Code action E2.)
 
 **In the first hour**
 
@@ -247,3 +251,4 @@ Use these as background only. Game content uses fictional names.
 - DSIT, Cyber Security Breaches Survey 2025/2026 (30 April 2026): https://www.gov.uk/government/statistics/cyber-security-breaches-survey-20252026/cyber-security-breaches-survey-20252026
 - British Library, Learning lessons from the cyber-attack (8 March 2024): https://www.bl.uk/home/british-library-cyber-incident-review-8-march-2024.pdf
 - House of Commons Business and Trade Sub-Committee, oral evidence, UK economic security (HC 835), 8 July 2025: M&S, https://committees.parliament.uk/oralevidence/16268/html/ ; Co-op, https://committees.parliament.uk/oralevidence/16269/html/
+- NIST glossary, "advanced persistent threat" (from SP 800-30 Rev. 1 and SP 800-39): https://csrc.nist.gov/glossary/term/advanced_persistent_threat
