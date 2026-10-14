@@ -173,4 +173,74 @@ The model is read-only after create. A per-game summary (`assessment_summary`, a
 - Open: should each record carry a hash of the previous one, so an edit to the table is detectable? Recommendation: yes in P2, as part of the HA-05 audit pack.
 - Open: how much of the summary rule belongs in the engine versus Hacktivity. Recommendation: the engine computes per-module results; Hacktivity combines modules into pathways.
 
+### BE-02: Debrief screen
+
+**Priority and size:** MVP, M.
+
+**Why:** The Debrief beat is where a simulation's learning is made explicit (`01_LEARNING_DESIGN.md`). core_01's debrief shows each threat with a thumbnail, what it was, the clue, what the player did, what checking another way would have looked like and what happened, then the hook and the expected-sender phish side by side as a before and after, then per-outcome results, then the line to remember, before Ama and Kai talk it through (`modules/core_01_phishing_email/game_design.md`, "5. Debrief"). Every module repeats that shape, and the facilitated version needs it on a shared screen.
+
+**What exists today:**
+
+- **Conditional credits.** A music event can carry a `credits` list of `{ text, style, condition }` lines, each shown only when its globals condition holds. sis01 uses them as an outcome debrief (`scenarios/sis01_healthcare/scenario.json.erb`, the `debrief_complete` music event around line 548). `README_scenario_design.md` already sets two rules that carry over: credit lines must match what the player did (around line 1660) and every section needs a line that always prints (around line 1663).
+- **The credits visualiser** (`JS/music/bond-visualiser.js`, themed by `JS/music/credits-theme.js`). The `cyber` theme is the non-spy option (`README_scenario_design.md`, line 206), but it still draws a "matrix" canvas of falling characters (`bond-visualiser.js`, line 133), which is the green-code imagery this course avoids (see `accessibility_and_inclusion.md`, inclusive content).
+- **The debrief conversation.** sis01's Priya S. (`scenarios/sis01_healthcare/ink/npc_sharma.ink`) gives state-driven verdicts from globals, asks one question per section, confirms or corrects the answer, completes `attend_debrief` (line 75) and sets `debrief_complete` (line 427), which ends the mission.
+- **End screens.** `show_end_screen` (`JS/systems/apply-actions.js`, line 162) and `conclusionScreen` (`README_scenario_design.md`, around line 1327) show a title, a body and a button; they hold no structured results.
+
+**Design:** extend these patterns rather than replace them. The screen shows the structured summary; the conversation stays ink; the credits, if a module uses them, come from the same lines.
+
+*Content.* Each behaviour in the BE-01 `assessment` block gains a `debrief` entry, all on-screen text (so it may include counts and organisation values):
+
+```json
+"C01-B2": {
+  "debrief": {
+    "order": 2,
+    "thumbnail": "aid:core01_expected_sender",
+    "whatItWas": "A fake Northbeck email from a lookalike address, sent while you were waiting for the real one.",
+    "clue": "northbeck-supplies.co is not northbeck.co.uk.",
+    "good": "Report it, then wait for the real file or ask Dawn by phone.",
+    "options": {
+      "reported":  { "youDid": "You reported it.", "next": "Kai pulled it from 38 inboxes." },
+      "ignored":   { "youDid": "You left it alone.", "next": "It stayed in other people's inboxes." },
+      "signed_in": { "youDid": "You signed in on the fake page.", "next": "Your account sent the same email to colleagues until it was reported." }
+    }
+  }
+}
+```
+
+Lines that are not tied to one behaviour use the credits shape with one new condition type, `"when": { "behaviour": "C01-B2", "option": "reported" }`, alongside the existing globals `condition`. An author who has written credits can write a debrief.
+
+*Screen.* A new DOM component, registered as the minigame scene `debrief` so ink and events can open it through BE-19 (`#trigger_minigame:debrief`) and return to the conversation afterwards. Sections, each a heading:
+
+1. **What happened:** one card per assessed behaviour in arrival order: thumbnail with alt text (from BE-08), what it was, the clue, what you did (rating as a word and an icon, never colour alone), what good looks like, and what happened next.
+2. **Before and after:** the `pairs` from the assessment block side by side (core_01: the hook and the expected-sender phish).
+3. **How you did:** each learning outcome with Secure, Developing or Not yet and one plain sentence; critical behaviours shown or still to practise.
+4. **The line to remember:** the module's key message.
+5. **Next:** "Talk it through with Ama", "Go to the spot check" (MG-20), and, when a critical behaviour is missing, "One more thing to practise", which fires the module's remediation event (`assessment.critical[].remediation`).
+
+*Data.* The screen renders `GET /games/:id/assessment` (BE-01), the same summary the server stores and Hacktivity shows, so the learner sees exactly what an auditor sees. Opening it writes a `debrief_viewed` milestone. After remediation the summary is fetched again and the card shows "Not yet, then Secure after practice".
+
+*The spoken debrief stays ink.* Ama and Kai walk through the highlights in an ink conversation that branches on the `assess_*` globals BE-01 mirrors, asks one reflective question per section and confirms or corrects the answer, then sets `debrief_complete`, as sis01 does. Voiced lines never print a count: "You reported both of those" is chosen with an inline conditional, never "You reported {n}".
+
+*Credits.* A module that wants closing credits builds them from the same debrief lines, with a new `creditsTheme: "workplace"` that has no matrix mode, stamp or threat map. Most modules will not need credits at all.
+
+*Tone.* No "FAIL", no red screen, no score as a headline. Not yet is phrased as "not yet shown, and here's what to do", following the no-blame principle.
+
+**Acceptance criteria:**
+
+- For each of five fixture routes through core_01, every assessed behaviour appears once, with the text for the option that route took, in arrival order.
+- The outcome results on screen equal the server summary for the same game (a test compares them).
+- The screen works with keyboard alone, opens with focus on its first heading, uses headings and lists that a screen reader announces, shows no colour-only information, and reflows at 320 CSS pixels wide.
+- No line on the screen contradicts the spoken debrief for the same route (checked by a scripted run that reads both).
+- A missing critical behaviour shows the practise action, and completing remediation updates the screen without a reload.
+- The same component renders in the text route (BE-03) and in the presenter view (BE-15).
+- Printing the screen gives a readable one or two pages.
+
+**Depends on:** BE-01; BE-08 for thumbnails; BE-05 for organisation values on the cards; BE-19 to open it from ink; MG-20 for the spot check that follows.
+
+**Risks and open questions:**
+
+- A long module could produce a long screen. Keep to the assessed behaviours (four to eight per module) and collapse the detail of Secure items by default.
+- The spoken debrief and the screen could drift apart. The `assess_*` globals come from the same records, and the scripted check above catches drift.
+- Open: should learners see per-outcome results or only the threats? Recommendation: show both; transparency helps learning, and the wording keeps it from feeling like a report card.
+
 <!-- next-section -->
