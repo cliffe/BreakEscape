@@ -109,7 +109,7 @@ Full design in `features/assessment_and_evidence.md`. In short:
 - Each learning outcome is evidenced by in-game behaviour (the hook, practice and mission decisions) and by knowledge check items.
 - Results are reported per outcome as Secure, Developing or Not yet, not as one score.
 - A module is complete when the learner has played it through, passed the knowledge check (default 80%, set by the organisation) and either shown each critical behaviour or been taken back through it. Nobody is failed and left; they are looped back to practise.
-- The record shows who completed what, when, which version, the score and time on task, which is what ISO 27001, PCI DSS, the NCSC Cyber Assessment Framework and the ICO's data protection audit framework expect to see. (On 30 September 2026 the Information Commission replaced the Information Commissioner; it keeps the ICO name.)
+- The record shows who completed what, when, which version and with what result, which is what ISO 27001, PCI DSS, the NCSC Cyber Assessment Framework and the ICO's data protection audit framework expect to see. Time on task is kept too, for the organisation's own use. (On 30 September 2026 the Information Commission replaced the Information Commissioner; it keeps the ICO name.)
 
 ## References
 

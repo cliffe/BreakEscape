@@ -89,7 +89,7 @@ Contributes to (references in `02_COMPLIANCE_MAPPING.md`):
 - The name and location of the Report button, on desktop and mobile.
 - The service desk contact for "I clicked".
 - What to do after opening a suspicious attachment.
-- Whether the organisation runs simulated phishing and how clicks are treated (drops Q11 if not).
+- Whether the organisation runs simulated phishing and how clicks are treated (drops C01-Q11 if not).
 - The external sender banner wording, if any.
 - The approved way to reach company systems (bookmarks, an app, a portal).
 

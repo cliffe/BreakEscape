@@ -22,7 +22,7 @@ Key: **exists**, **partly**, **not found**.
 | Organisations | exists | Name, seats, subscription end date; an organisation page lists training staff, members and historical members |
 | Departments, groups, cohorts | not found | Each event (a copy of a course) acts as a cohort. Teams exist but are site-wide and admin-managed |
 | Who can manage whom | partly | Training staff and account managers see only their own organisation's members, and only on events they are enrolled in. They can't create events or mission listings |
-| Tenant separation | partly | One shared database filtered by organisation. Some things are visible across organisations (public profiles, the handle list, the team list) |
+| Tenant separation | partly | One shared database filtered by organisation. Some profile information is visible across organisations, which suits a public training community but not an employer's staff |
 | Course templates | exists | "Pool" courses can be copied into an organisation's own course with a date offset |
 | Seats and subscriptions | exists | Seats set by an admin or bought through Stripe; access is cut when a seat is removed |
 | Branding per customer | not found | No organisation logo, colours, domain or email sender |
@@ -112,7 +112,7 @@ Key: **exists**, **partly**, **not found**.
 | Area | State | Notes |
 |---|---|---|
 | Retention schedule in code | not found | |
-| Deletion | partly | Admin only; a user's Break Escape games are not removed with them |
+| Deletion | partly | Admin only; doesn't yet cover every related record |
 | Export of a person's data | not found | |
 | Audit log | not found | |
 

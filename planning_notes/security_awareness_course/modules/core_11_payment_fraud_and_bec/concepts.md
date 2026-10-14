@@ -47,6 +47,7 @@ Spotting differences (a mobile number where the record has a landline, a bank th
 - **Speak to someone you know** there if you can. Ask them to confirm what they sent, rather than reading your details out to them.
 - **If the number on record was itself changed recently,** treat it with suspicion and use an older one (role_02 goes deeper).
 - **Don't vouch.** If you're not in Finance, pass the request to Finance as it is, say what you checked and how, and let the process do the rest. "It's genuine, I know Dawn" is how a fraud gets past the people who would have caught it.
+- The UK government's Stop! Think Fraud campaign advises businesses to "always confirm both old and new account details using a known phone number, not one provided in the message", and to treat any request to change bank details with caution, because businesses rarely change bank accounts.
 - Take Five's advice for businesses: always confirm a supplier's bank details directly with the company before paying, query any change because companies rarely change bank details, and for a first payment to a new payee send a small amount and check with the company that it arrived.
 
 ### Two people, every time
@@ -164,6 +165,7 @@ Use these as background and inspiration only. Game content uses fictional names.
 - Pay.UK, Confirmation of Payee: https://www.wearepay.uk/what-we-do/overlay-services/confirmation-of-payee/
 - NatWest, "What is Confirmation of Payee and how does it work?" (result types): https://www.natwest.com/support-centre/banking-from-home/make-payments/what-is-confirmation-of-payee-cop-and-how-does-it-work.html
 - Take Five to Stop Fraud (UK Finance), invoice and mandate scams: https://www.takefive-stopfraud.org.uk/protect-yourself/invoice-and-mandate/
+- Stop! Think Fraud (UK government), "Protect your business from fraud": https://stopthinkfraud.campaign.gov.uk/protect-yourself-from-fraud/protecting-your-business/
 - NCSC, business payment fraud: https://www.ncsc.gov.uk/section/respond-recover/business-payment-fraud
 - NCSC, cyber security advice for small to medium sized organisations: https://www.ncsc.gov.uk/guidance/business-email-compromise-defending-your-organisation
 - GOV.UK, "Report Fraud: new service from City of London Police", 4 December 2025: https://www.gov.uk/government/news/report-fraud-new-service-from-city-of-london-police

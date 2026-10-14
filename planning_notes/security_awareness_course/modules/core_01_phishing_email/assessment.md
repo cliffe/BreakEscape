@@ -24,17 +24,17 @@ The **before and after** for each learner is C01-B1 against C01-B2: the same kin
 
 To complete the module the learner must, at least once:
 
-1. **Report a phishing email** using the Report button (C01-B1, B2, B4 or B5 at Secure).
-2. **Not sign in through the hijacked thread without checking** (C01-B3 not at Not yet).
-3. **Report any click or sign-in of their own** before the module ends (C01-B7 not at Not yet), where it applies.
+1. **C01-CB1: Report a phishing email** using the Report button (C01-B1, B2, B4 or B5 at Secure).
+2. **C01-CB2: Not sign in through the hijacked thread without checking** (C01-B3 not at Not yet).
+3. **C01-CB3: Report any click or sign-in of their own** before the module ends (C01-B7 not at Not yet), where it applies.
 
-A learner who misses a critical behaviour is taken back to it: Ama replays the relevant Practise items with the explanation, then a fresh threat of the same kind arrives in a short replay of the Apply beat. They complete the module when they show the behaviour; the record keeps both attempts.
+A learner who misses a critical behaviour is taken back to it: Ama replays the relevant Practise items with the explanation, then a fresh threat of the same kind arrives in a short replay of the Apply beat. They complete the module when they show the behaviour. The loop runs at most twice; after that the module completes with that outcome capped at Developing and a private follow-up drill is scheduled (`features/assessment_and_evidence.md`). The record keeps every attempt.
 
 ## Knowledge check bank
 
 Six items per sitting, drawn so that every learning outcome is covered. Stems are short workplace situations.
 
-### Q1 (LO2, single choice)
+### C01-Q1 (LO2, single choice)
 
 Which website does this link really go to?
 `https://larkspur.co.uk.secure-login.info/mail`
@@ -44,7 +44,7 @@ Which website does this link really go to?
 - C. `mail`. *Feedback: That is the page on the site, not the site itself.*
 - D. It's safe because it starts with `https`. *Feedback: https means the connection is encrypted, not that the site is genuine.*
 
-### Q2 (LO3, LO4, single choice)
+### C01-Q2 (LO3, LO4, single choice)
 
 You're expecting a delivery note from a supplier. An email arrives from their usual contact's real address, in your existing conversation, asking you to sign in to "our new portal" to see it. What do you do?
 
@@ -53,7 +53,7 @@ You're expecting a delivery note from a supplier. An email arrives from their us
 - **C. Call the supplier on the number in the supplier directory, then report it if they didn't send it.** *Feedback: Right. Check through a route the attacker doesn't control.*
 - D. Forward it to colleagues to see if they got it too. *Feedback: Forwarding spreads it. Use the Report button.*
 
-### Q3 (LO1, multiple select)
+### C01-Q3 (LO1, multiple select)
 
 An email says: "From the Chief Executive. Complete the staff survey by 12:00. Most of your team already has." Which pressures is it using? Choose all that apply.
 
@@ -62,7 +62,7 @@ An email says: "From the Chief Executive. Complete the staff survey by 12:00. Mo
 - **C. Social proof.** *Feedback: "Most of your team already has."*
 - D. Reward. *Feedback: Nothing is offered here.*
 
-### Q4 (LO6, ordering)
+### C01-Q4 (LO6, ordering)
 
 You typed your password into a page from an email link, then realised it was fake. Put these steps in order.
 
@@ -73,7 +73,7 @@ You typed your password into a page from an email link, then realised it was fak
 
 *Feedback: Telling the service desk first matters most: they can lock the attacker out while you change the password. (Accept 1 and 2 in either order.)*
 
-### Q5 (LO5, single choice)
+### C01-Q5 (LO5, single choice)
 
 You're not sure whether an email is phishing. It might be genuine. What should you do?
 
@@ -82,14 +82,14 @@ You're not sure whether an email is phishing. It might be genuine. What should y
 - C. Delete it so nobody clicks it by accident. *Feedback: Deleting protects you but nobody else.*
 - D. Click the link carefully to find out. *Feedback: Don't test a suspicious link. Check another way or report it.*
 
-### Q6 (LO3, true or false with reason)
+### C01-Q6 (LO3, true or false with reason)
 
 "If an email has no spelling mistakes and the logo looks right, it's probably genuine."
 
 - A. True: phishing emails are usually badly written. *Feedback: Not any more. Attackers use translation and AI tools.*
 - **B. False: well-made phishing can look perfect, so judge what it asks for and check another way.** *Feedback: Right.*
 
-### Q7 (LO6, single choice)
+### C01-Q7 (LO6, single choice)
 
 A colleague tells you they clicked a link in a suspicious email and typed their password, but they don't want to make a fuss. What do you say?
 
@@ -97,7 +97,7 @@ A colleague tells you they clicked a link in a suspicious email and typed their 
 - B. "Just change your password and forget about it." *Feedback: Changing the password helps, but the attacker may already be signed in. The service desk needs to know.*
 - C. "Delete the email. No harm done." *Feedback: The harm may already be happening. Report it.*
 
-### Q8 (LO3, LO4, single choice)
+### C01-Q8 (LO3, LO4, single choice)
 
 An email says your software subscription has renewed for £399 and gives a number to call to cancel. You don't remember the subscription. What's the safest move?
 
@@ -105,13 +105,13 @@ An email says your software subscription has renewed for £399 and gives a numbe
 - **B. Report it, and if you're worried, check your real subscriptions through the service desk or the supplier's website, typed in yourself.** *Feedback: Right.*
 - C. Reply asking for more details. *Feedback: Replying tells them your address is live.*
 
-### Q9 (LO2, hotspot)
+### C01-Q9 (LO2, hotspot)
 
 Shown: an email header with a display name "Larkspur IT Service Desk" and the address `servicedesk@larkspur-support.net`. Click the part that shows it isn't from Larkspur.
 
 - **Correct hotspot:** the domain `larkspur-support.net`. *Feedback: Anyone can set the display name. The address shows where it really came from.*
 
-### Q10 (LO1, single choice)
+### C01-Q10 (LO1, single choice)
 
 What is a phishing email usually trying to get you to do?
 
@@ -120,7 +120,7 @@ What is a phishing email usually trying to get you to do?
 - C. Forward it. *Feedback: Sometimes, but that isn't usually the goal.*
 - D. Unsubscribe. *Feedback: Not the usual aim.*
 
-### Q11 (LO5, single choice)
+### C01-Q11 (LO5, single choice)
 
 Your organisation sends you a test phishing email and you report it. What happens?
 
@@ -128,7 +128,7 @@ Your organisation sends you a test phishing email and you report it. What happen
 - B. You get in trouble for wasting the security team's time. *Feedback: No. Reports are always welcome.*
 - C. Nothing: tests should be ignored. *Feedback: Treat every suspicious email the same way: report it.*
 
-(Q11 uses the organisation's simulated phishing slot; drop it from the bank where the organisation doesn't run simulations.)
+(C01-Q11 uses the organisation's simulated phishing slot; drop it from the bank where the organisation doesn't run simulations.)
 
 ## Reflection prompt
 
@@ -144,7 +144,7 @@ Your organisation sends you a test phishing email and you report it. What happen
 
 ## Evidence for auditors
 
-The learner's record (HA-05) shows: module id and version, start and completion dates, time on task, route (game, text, test-out), each assessed behaviour's rating, critical behaviours shown or remediated, the check score, and whether the reference card was opened. This supports:
+The learner's record (HA-05) shows: module id and version, start and completion dates, time on task, route (game, text, test-out), each assessed behaviour's rating, critical behaviours shown or remediated, the check score, and whether the reference card was opened. Auditors see completion, version, dates and the check result as standard; per-person behaviour ratings are included only if the organisation turns that on (`features/assessment_and_evidence.md`). This supports:
 
 - PCI DSS 12.6.3.1 (training covering phishing and related attacks and social engineering);
 - ISO 27001 cl. 7.2 (records of competence), cl. 7.3 and A.6.3;

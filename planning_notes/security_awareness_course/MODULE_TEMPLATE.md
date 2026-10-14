@@ -12,7 +12,7 @@ modules/<id>_<short_name>/
 
 `concepts.md` plays the part the information pack plays for the Security-Informed Safety games: it is the source of truth. If the game and the concepts file disagree, the concepts file wins and the game is fixed.
 
-Ids: core modules are `core_NN`, role modules `role_NN`, sector modules `sector_NN`. Learning outcomes are numbered within the module (`C01-LO1`, `R02-LO3`, `S01-LO2`). Feature references use the ids in `features/README.md` (`BE-01`, `MG-01`, `EX-01`, `HA-05`). Compliance references use the short names in `02_COMPLIANCE_MAPPING.md`.
+Ids: core modules are `core_NN`, role modules `role_NN`, sector modules `sector_NN`. Within a module, use the prefix `CNN`, `RNN` or `SNN` (`C01`, `R02`, `S01`) for: learning outcomes (`C01-LO1`), assessed behaviours (`C01-B1`), critical behaviours (`C01-CB1`) and knowledge check items (`C01-Q1`). BE-01 tags decisions with these ids, so keep them stable once a module is built. Feature references use the ids in `features/README.md` (`BE-01`, `MG-01`, `EX-01`, `HA-05`). Compliance references use the short names in `02_COMPLIANCE_MAPPING.md`.
 
 ---
 
