@@ -6,15 +6,15 @@ Each row is recorded through BE-01 and shown in the debrief and the learner's re
 
 | Id | Behaviour | Learning outcome | Where it is evidenced | Secure | Developing | Not yet |
 |---|---|---|---|---|---|---|
-| C05-B1 | Responds to Carol's request for a cleaner's whereabouts | LO4 (baseline) | Hook | Gives nothing and offers to pass a message, or checks with Shauna first | Refuses without offering a message | Gives the school or the finishing time |
-| C05-B2 | Responds to "DC Hendry" | LO4 | Apply | Gives nothing, takes his details and refers the request to the DPO | Gives nothing but doesn't refer it; or confirms that Lee works here | Gives the number or the route, with or without a "warrant number" |
-| C05-B3 | Handles Gareth's request for "everything" | LO3 | Apply | Passes it to the DPO before the queue is cleared, with the holding reply | Passes it to Shauna instead; or asks why he wants it, then passes it on; or passes it on only after the queue | Replies with the notes themselves, or never passes it on |
-| C05-B4 | Prepares the incident report for Gareth | LO1, LO2 | Apply (MG-12) | Removes all four items (two other residents, the care note, the driver's mobile) and keeps what Gareth needs | Removes the care note and at least one other item; or also removes Edna's own details | Leaves the care note in, or sends the report unredacted |
-| C05-B5 | Responds to Martin's marketing idea | LO2 | Apply | Asks Tomasz first, with or without arguing the point with Martin | Says no but doesn't involve Tomasz | Exports the list, in full or "just the happy ones" |
-| C05-B6 | Reports a personal data breach (the wrong Sam, or the Kestrel Court attachment) | LO5 | Apply | Reports within two game-minutes of Sam's reply or of opening the attachment | Reports later in the module; or only after asking for deletion and waiting | Never reports it (deletion request only, recall, or leaves it) |
-| C05-B7 | Checks the recipient before sending the overtime sheet | LO5 (prevention) | Apply (MG-01) | Sends it to Sam Whitaker | Picks the external Sam, sees the "External recipient" chip and corrects it before sending | (not used: a slip is not a failure; the response to it is B6) |
-| C05-B8 | Recognises personal data and special category data | LO1 | Learn check question; final check | Correct first time | Correct after the chunk replays | (not used) |
-| C05-B9 | Routes situations in "Pass It On?" | LO3, LO4, LO5 | Practise | 9 or 10 of 10, including the three "help them" items | 7 or 8 of 10 | 6 or fewer |
+| C05-B1 | Responds to Carol's request for a cleaner's whereabouts | C05-LO4 (baseline) | Hook | Gives nothing and offers to pass a message, or checks with Shauna first | Refuses without offering a message | Gives the school or the finishing time |
+| C05-B2 | Responds to "DC Hendry" | C05-LO4 | Apply | Gives nothing, takes his details and refers the request to the DPO | Gives nothing but doesn't refer it; or confirms that Lee works here | Gives the number or the route, with or without a "warrant number" |
+| C05-B3 | Handles Gareth's request for "everything" | C05-LO3 | Apply | Passes it to the DPO before the queue is cleared, with the holding reply | Passes it to Shauna instead; or asks why he wants it, then passes it on; or passes it on only after the queue | Replies with the notes themselves, or never passes it on |
+| C05-B4 | Prepares the incident report for Gareth | C05-LO1, C05-LO2 | Apply (MG-12) | Removes all four items (two other residents, the care note, the driver's mobile) and keeps what Gareth needs | Removes the care note and at least one other item; or also removes Edna's own details | Leaves the care note in, or sends the report unredacted |
+| C05-B5 | Responds to Martin's marketing idea | C05-LO2 | Apply | Asks Tomasz first, with or without arguing the point with Martin | Says no but doesn't involve Tomasz | Exports the list, in full or "just the happy ones" |
+| C05-B6 | Reports a personal data breach (the wrong Sam, or the Kestrel Court attachment) | C05-LO5 | Apply | Reports within two game-minutes of Sam's reply or of opening the attachment | Reports later in the module; or only after asking for deletion and waiting | Never reports it (deletion request only, recall, or leaves it) |
+| C05-B7 | Checks the recipient before sending the overtime sheet | C05-LO5 (prevention) | Apply (MG-01) | Sends it to Sam Whitaker | Picks the external Sam, sees the "External recipient" chip and corrects it before sending | (not used: a slip is not a failure; the response to it is C05-B6) |
+| C05-B8 | Recognises special category data | C05-LO1 | Learn (Tomasz's first check question) | Correct first time | Correct after the chunk replays | Wrong again after the replay |
+| C05-B9 | Routes situations in "Pass It On?" | C05-LO3, C05-LO4, C05-LO5 | Practise | 9 or 10 of 10, including the three "help them" items | 7 or 8 of 10 | 6 or fewer |
 
 The **before and after** for each learner is C05-B1 against C05-B2: the same behaviour (giving out a person's whereabouts or contact details to a caller) under a friendly voice in the hook and an official one in the mission.
 
@@ -22,19 +22,19 @@ C05-B6 is always assessed: players who send the overtime sheet to the right Sam 
 
 ## Critical behaviours
 
-To complete the module the learner must, at least once:
+To complete the module the learner must, at least once, show each of these or be taken back through the practice for it:
 
-1. **Pass a request to the DPO** (C05-B3 not at Not yet).
-2. **Report a personal data breach** before the module ends (C05-B6 not at Not yet).
-3. **Not give a caller someone's personal data** in the mission (C05-B2 not at Not yet).
+- **C05-CB1 Pass a request to the DPO** (C05-B3 not at Not yet).
+- **C05-CB2 Report a personal data breach** before the module ends (C05-B6 not at Not yet).
+- **C05-CB3 Not give a caller someone's personal data** in the mission (C05-B2 not at Not yet).
 
-A learner who misses a critical behaviour is taken back to it. Tomasz replays the matching "Pass It On?" items with the explanation, then a fresh instance of the same slot arrives from the bank in a short replay of the Apply beat (a different request wording, a different breach, a different caller). They complete the module when they show the behaviour; the record keeps both attempts.
+The remediation loop follows `features/assessment_and_evidence.md`, section 4. If a critical behaviour wasn't shown, the debrief says so without blame and Tomasz offers to go over it (*"That one catches a lot of people. Let's try it once more."*). He replays the matching "Pass It On?" items with the explanation, then a fresh instance of the same slot arrives from the bank in a short replay of the Apply beat: a different request wording, a different breach, a different caller (BE-13). Shown after practice, the linked outcome is capped at Developing for this sitting. Not shown, a second loop follows with a more direct prompt. After two loops the learner goes on to the check anyway: the record says "practised, not yet shown", a private "Pass It On?" drill is scheduled two to four weeks later (HA-03, HA-21), and the organisation's training contact offers help. Nobody else is told by name, and every attempt is kept.
 
 ## Knowledge check bank
 
 Six items per sitting, drawn so that every learning outcome is covered. Stems are short workplace situations.
 
-### Q1 (LO1, multiple select)
+### C05-Q1 (C05-LO1, multiple select)
 
 Which of these are personal data? Choose all that apply.
 
@@ -43,7 +43,7 @@ Which of these are personal data? Choose all that apply.
 - **C. `sam.whitaker@larkspur.example`.** *Feedback: Right. A name in a work email address is personal data.*
 - **D. A case note saying "Mr Hale can be difficult".** *Feedback: Right. Opinions about someone are personal data about them, and he could ask to see it.*
 
-### Q2 (LO1, single choice)
+### C05-Q2 (C05-LO1, single choice)
 
 Which of these is special category data?
 
@@ -52,7 +52,7 @@ Which of these is special category data?
 - C. A customer's home address. *Feedback: Personal data, but not special category.*
 - D. A resident's date of birth. *Feedback: Personal data, but not special category.*
 
-### Q3 (LO3, single choice)
+### C05-Q3 (C05-LO3, single choice)
 
 You're looking after Larkspur's social media page this week. A woman posts: "I want copies of every recording of my calls with you." What do you do?
 
@@ -61,7 +61,7 @@ You're looking after Larkspur's social media page this week. A woman posts: "I w
 - **C. Pass it to the DPO today, and reply that it has been passed on.** *Feedback: Right.*
 - D. Ask her why she wants the recordings. *Feedback: Her reason doesn't affect whether the request is valid.*
 
-### Q4 (LO3, single choice)
+### C05-Q4 (C05-LO3, single choice)
 
 A caller says: "I'm not happy you gave my phone number to the care home. Sort it out." What is this?
 
@@ -70,7 +70,7 @@ A caller says: "I'm not happy you gave my phone number to the care home. Sort it
 - C. A request to delete his number: delete it now. *Feedback: Don't act on your own. The DPO will look into it and reply.*
 - D. Something for the care home to deal with. *Feedback: It's about what we did, so it goes to our DPO.*
 
-### Q5 (LO4, single choice)
+### C05-Q5 (C05-LO4, single choice)
 
 A caller says he's a police officer and needs a colleague's mobile number urgently. What do you say?
 
@@ -79,7 +79,7 @@ A caller says he's a police officer and needs a colleague's mobile number urgent
 - **C. "Our Data Protection Officer handles police requests and can be quick. Can I take your name, collar number and force switchboard number?"** *Feedback: Right. Helpful, and nothing given out.*
 - D. Hang up. *Feedback: Your colleague is protected, but the DPO needs to know about the request.*
 
-### Q6 (LO4, single choice)
+### C05-Q6 (C05-LO4, single choice)
 
 A Care Laundry driver asks for a resident's room number so he can return her missing cardigan. What do you do?
 
@@ -88,7 +88,7 @@ A Care Laundry driver asks for a resident's room number so he can return her mis
 - C. Ask the DPO first. *Feedback: Not needed for routine work like this.*
 - D. Send him the full residents' list so he has it for next time. *Feedback: Only what he needs.*
 
-### Q7 (LO5, single choice)
+### C05-Q7 (C05-LO5, single choice)
 
 You emailed a sheet of colleagues' overtime and health notes to the wrong person. She has replied that she's deleted it. What now?
 
@@ -97,7 +97,7 @@ You emailed a sheet of colleagues' overtime and health notes to the wrong person
 - C. Recall the message and move on. *Feedback: Recall may not work, and the DPO still needs to know.*
 - D. Wait and see if anyone complains. *Feedback: The organisation may have only 72 hours to tell the ICO.*
 
-### Q8 (LO5, multiple select)
+### C05-Q8 (C05-LO5, multiple select)
 
 Which of these are personal data breaches? Choose all that apply.
 
@@ -106,7 +106,7 @@ Which of these are personal data breaches? Choose all that apply.
 - **C. A colleague looks up a neighbour's claim out of curiosity.** *Feedback: Right. Access without a work reason counts.*
 - D. You send the right file to the right person. *Feedback: That's just work.*
 
-### Q9 (LO5, single choice)
+### C05-Q9 (C05-LO5, single choice)
 
 A care home emails you its full residents' care summary by mistake. What do you do?
 
@@ -115,7 +115,7 @@ A care home emails you its full residents' care summary by mistake. What do you 
 - **C. Tell the sender, report it to our DPO, don't forward it, and delete it when the DPO says so.** *Feedback: Right. Their mistake is our problem too: we now hold data we shouldn't.*
 - D. Delete it straight away and say nothing. *Feedback: The sender needs to know so they can deal with their breach, and our DPO needs to know we received it.*
 
-### Q10 (LO2, single choice)
+### C05-Q10 (C05-LO2, single choice)
 
 Martin wants to email a discount to the families who made laundry claims. What's the right next step?
 
@@ -124,14 +124,14 @@ Martin wants to email a discount to the families who made laundry claims. What's
 - **C. Check with the DPO first.** *Feedback: Right. A new purpose needs checking, and marketing emails to individuals usually need their consent.*
 - D. Send it with Bcc so nobody sees the other addresses. *Feedback: Bcc hides addresses; it doesn't make the use fair or lawful.*
 
-### Q11 (LO2, true or false with reason)
+### C05-Q11 (C05-LO2, true or false with reason)
 
 "We should keep personal data in case we need it one day."
 
 - A. True: you never know what you'll need. *Feedback: Keeping data "just in case" breaks the storage limitation principle and adds risk.*
 - **B. False: keep it only as long as the retention schedule says, then dispose of it securely.** *Feedback: Right.*
 
-### Q12 (LO5, single choice)
+### C05-Q12 (C05-LO5, single choice)
 
 It's 16:50 on a Friday. You realise an attachment you sent at lunchtime had other customers' details in it. When do you report it?
 
@@ -147,10 +147,10 @@ It's 16:50 on a Friday. You realise an attachment you sent at lunchtime had othe
 
 ## Completion and pass rules
 
-- **Complete** when the learner has played through all beats (or the text route), shown each critical behaviour (with remediation if needed), passed the knowledge check, opened the reference card, and acknowledged the organisation's data protection policy if one is attached (HA-07).
+- **Complete** when the learner has played through all beats (or the text route), shown each critical behaviour or been taken back through the practice for it (at most two loops), passed the knowledge check, opened the reference card, and acknowledged the organisation's data protection policy if one is attached (HA-07).
 - **Pass mark:** 5 of 6 (the organisation can change it; 80% is the default). The ICO's training toolkit suggests an end-of-training assessment, possibly with a minimum pass mark; this check is that assessment.
 - **Retakes:** a failed check draws six new items. After two fails, Tomasz replays the Learn beat before the third attempt.
-- **Test-out** (where the organisation allows it): the Apply beat and the check without Learn and Practise. Passing records the module as complete; missing a critical behaviour sends the learner through the full module.
+- **Test-out** (where the organisation allows it): the Apply beat and the check without Learn and Practise. Passing (the check passed and every critical behaviour shown first time) records the module as complete; otherwise the learner goes through the full module, with no "failed" label. Because this is an induction module, test-out is recommended only for annual renewals, not for a new starter's first sitting.
 - **Timing:** for staff who will handle personal data, the organisation should set this module due before they get access, and within one month of starting at the latest (the ICO's expectation; see `02_COMPLIANCE_MAPPING.md`, section 5). The default Induction Essentials window (the first two weeks) sits inside that month.
 
 ## Evidence for auditors

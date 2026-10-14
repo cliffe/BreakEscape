@@ -45,7 +45,7 @@ The critical path is marked **(CP)**.
   2. **Knowing isn't proving.** The caller's five answers, each linked to where it can be found. Jo Fairweather drops in by video (EX-06, about 60 seconds) with a corkboard of four cards: the leadership page on Larkspur's website, a conference speaker biography, a birthday post, and a press release naming the chief executive's assistant. *"None of that is hacking. It's reading. What stops me? You ringing back on a number I don't control."*
   3. **The ladder.** The table from `concepts.md` as a picture: account type down the side, request along the top, the minimum check in each square, and the second analyst on everything privileged.
   4. **Pressure is a signal.** The lever cards (seniority, urgency, anger, sympathy, jargon, "your colleague did it last time"). *"The harder someone pushes, the slower we go. And I'll back you, every time."*
-- Check question (MG-20 single item): *"The caller knows your employee number, your date of birth and your manager's name. How sure can you be it's you?"* Not at all, all of it can be found (correct) / fairly sure, that's three facts / certain, if the employee number is right.
+- Check question (MG-20 single item, `#trigger_minigame:knowledge_check|r03_knowing_check`): *"The caller knows your employee number, your date of birth and your manager's name. How sure can you be it's you?"* Not at all, all of it can be found (correct) / fairly sure, that's three facts / certain, if the employee number is right.
 - **Skip:** *"I've done the procedure training."* Owain: *"Tidy. One question, then."* A wrong answer brings back chunk 2.
 - **Optional topics** in Owain's hub: *"What about video calls?"* (useful, but faces and voices can be faked, so pair them with a second check; core_15), *"Why can't I just use caller ID?"* (it can be faked; core_02), *"What's phishing-resistant MFA?"* (keys and passkeys only work on the real site; core_03).
 
@@ -61,4 +61,135 @@ The critical path is marked **(CP)**.
 - Feedback is one line, for example on item 6: *"Be kind and still check. If it's real, the call back takes two minutes."*
 - Two wrong in a row bring Owain back with the ladder.
 
-<!-- continue -->
+### 4. Apply: "The Monday queue" (10 minutes)
+
+- **(CP)** The queue board shows fourteen tickets (BE-18). Ordinary work fills the gaps between the tests: a printer in Finance, a shared drive request, a laptop for a new starter, a forgotten password from a registered device that self-service sorts. The tests arrive in this order:
+
+**Test 1 (08:40): the contractor.** An email from Bridget Hennessy, a project manager: *"Sam Reilly starts today on the depot system migration. Please give his normal account domain admin so he isn't blocked. Thanks!!"*
+- *"A separate admin account for Sam, rights on the migration servers only, through the privileged access tool, approved by the system owner, ending with his contract, with a security key."* / *"Add domain admin to his normal account until the migration's done."* / *"Give him the shared admin login for today."*
+- Bridget, to the first: *"Didn't know that was a thing. Fine, as long as he's working by ten."* The privileged access tool's approval arrives at 09:50.
+
+**Test 2 (09:10): the app.** A ticket from Martin Fletcher: *"My team need Inbox Genie. It files client emails automatically. It says an admin has to approve it."* The request opens in `forensic-data-platform` with four tabs: the app (unverified publisher, registered last month), its permissions (read and write every mailbox, send mail as any user, read all files), who asked, and the approved alternative (mail rules that already file by client).
+- *"Don't approve it. Offer the approved filing rules, and send the request to the security team for review."* / *"Approve it for Martin's team only."* / *"Approve it. He's a director."*
+- Martin, to the first: *"Fine. Can your approved thing do colour coding?"* It can.
+
+**Test 3 (09:40): Rosa's reset.** Rosa, cheerfully, between calls: *"Just reset a lad in Finance, Jamie Lowe. Locked out after his holiday. Knew everything, bless him."* The player can ask whether she called him back (*"Said his phone was dead. Queue's at fourteen."*). Nothing is assessed here; it's the setup for test 4.
+
+**Test 4 (10:05): the alert.** Kai, in the team chat: *"Can someone look at Jamie Lowe's sign-ins? The desk reset him at 09:40."* The log opens in `log-filter` (vpn log type): a failed sign-in from Leeds at 08:55 (the real Jamie, locked out), then a successful sign-in at 09:41 with a new MFA device from France through a residential VPN, then two more from the same address. The player can filter and look up the address and the account's history.
+- Flag the 09:41 row and *"Escalate to Kai now"* / *"Ring Jamie on his mobile to ask if he's in France"* / *"Close it. Probably a VPN."*
+- Ringing Jamie on the directory number is allowed after escalating; doing it instead of escalating is rated Developing, because the attacker keeps the account while the player waits.
+- **Decision on Rosa.** Rosa sees the screen: *"That's my reset. Oh no."* *"Come on, we'll tell Kai together. You've caught it in twenty minutes."* / *"Reset it again quietly. Nobody needs to know."* / *"That's your ticket, not mine."*
+- Kai, when they arrive: *"Twenty minutes from reset to report. Sessions killed, the forwarding rule's gone, nothing went out. Thanks, Rosa."* Owain thanks her in the team chat before the end of the shift.
+
+**Test 5 (10:30): the helpful supplier.** A call from Wes Kimber at Brightline Label Systems: *"We've put our remote support tool on the dispatch PC in the warehouse to fix the label printer. Your antivirus keeps closing it. Can you whitelist it?"* The approved tools list and the supplier contract are in `notes`. No change ticket exists.
+- *"I can't whitelist it. Let's book a session through the supplier gateway with a change ticket, and I'll have the tool taken off that PC."* / *"Whitelist it for today only."* / *"Ask Kev to leave the PC unlocked so they can get on."*
+- Wes: *"Fair enough. That's what your contract says anyway."* He is genuine and in a hurry, which is the point: criminals use the same tools and the same story, so the procedure has to work on both. Kai removes the tool and checks the PC.
+
+**Test 6 (10:55): the scanner PC.** Kev at the desk hatch: *"That virus checker on the scanner PC slows everything down. Turn it off, would you? Just on that one."*
+- *"I can't turn it off, but I'll raise a change so the security team can tune it, and I'll look at the scanner settings today."* / *"Off for the week, then back on."* / *"Nothing we can do, sorry."*
+- Kev: *"As long as it's quicker by Friday. You'd not believe how many folk ask me for the warehouse door code."*
+
+**Test 7 (11:20): the real Gillian.** A call from the chief executive's office line: *"Owain tells me someone pretended to be me this morning. Good. Now, I really have got a new phone. Can you move my authenticator? I'm in my office."*
+- *"Owain and I will come up now, check your ID against your HR photo, and set it up with you."* / *"You're on your office line, so that's fine. I'll move it now."* / *"Can I ask you a few security questions?"*
+- The first sends the player up to `room_ceo` with Owain, the second analyst. Gillian: *"This is a lot of fuss for a phone."* The player can answer: *"It's the fuss that stopped someone getting into your account this morning."* Gillian: *"Fair. Carry on."* As they leave: *"Tell the desk I said thank you. Put it on The Lark."*
+
+- **(CP)** By 11:45 the queue board shows zero, and the handling-time panel shows a note Owain added on Friday: *"Verification time doesn't count."*
+
+### 5. Debrief (2 minutes)
+
+- **(CP)** The debrief screen (BE-02), then Owain and Kai at the desk.
+- **The chain.** A row of links: caller, reset, new device, mailbox, approvals, and for the contractor and the supplier, admin rights and remote tools. Each test lights the link where the player cut it, or shows what came next where they didn't.
+- **Kai's view.** *"Same caller tried three of us this morning. Two said no. One said yes and told me in twenty minutes. That's a good Monday."* Rosa's report is shown as a thank-you, not a mistake.
+- The hook beside test 7: the same request from the "same" person, handled two ways.
+- Per-outcome results: Secure, Developing or Not yet.
+- **The line to remember:** *"Knowing isn't proving. Call back on a number they don't control."*
+
+### 6. Check (2 minutes)
+
+- **(CP)** Six questions on The Lark (MG-20), drawn from the bank in `assessment.md`.
+
+### 7. Reference
+
+- **(CP)** The Lark opens the reset card (BE-09): the seven steps, the ladder, the admin rules, and the organisation's own procedure names and contacts (BE-05).
+
+## Decisions and consequences
+
+| Decision | Options | Learning outcome | How the consequence is shown |
+|---|---|---|---|
+| H1 The airport call | Reset after questions / call back / ID check booked / ask the lead | LO1, LO2 (baseline) | Kai's new-device alert within minutes, or the caller hanging up |
+| T1 The contractor | Separate, limited, timed admin account / domain admin on his own account / shared login | LO3 | Bridget's reply; in the debrief, what a phished contractor account could reach in each case |
+| T2 The app | Refuse and offer the approved tool / approve for one team / approve | LO4 | Three weeks on (debrief card): the app's publisher on a blocklist, and in the approval branches a forwarding rule found in Martin's team's mailboxes |
+| T4 The alert | Escalate / ring the user first / close it | LO5 | What the attacker did in the minutes each option allowed |
+| T4 Rosa | Report together / fix quietly / not my ticket | LO6 | Kai's thanks, or the forwarding rule found two days later and Rosa's worry in the debrief |
+| T5 The supplier's tool | Gateway and removal / whitelist today / leave the PC unlocked | LO4 | Kai's check of the PC; the debrief's note that the same story is used by criminals |
+| T6 The scanner PC | Change and tune / off for a week / nothing | LO4 | Kev's reply; the gap shown on the debrief chain |
+| T7 The real Gillian | In person with ID and a second analyst / caller ID / questions | LO2, LO6 | Gillian's thanks on The Lark |
+
+No option shames the player. A reset in the hook is reported with Owain and treated as the most useful thing to do after a mistake; Rosa is thanked. The worst branches end with Kai or Owain helping and the debrief showing "this is how the real ones started; this is the link that breaks it".
+
+## Minigames
+
+| Minigame | Status | Use here |
+|---|---|---|
+| **MG-17 Caller verification desk** | new (shared with role_06) | The hook, Practise and tests 1 and 7, with `skin: "service_desk"`. `queue[]` entries carry the caller's claims, the HR directory record (role, account type, number on record, manager, registered devices, recent changes) and a pressure level driven by NPC influence (shown, never timed). `checklist[]` steps by strength: strong (call back on the directory number, prompt to the registered device, manager on chat, in-person or video ID check, second-analyst approval) and weak (date of birth, employee number, address, anything public: always "matches", always tagged findable). Outcomes: go ahead, call back, refuse politely, escalate. Events: `caller_check_used`, `caller_verified`, `caller_refused`, `caller_escalated`, `caller_actioned`, recording the strongest check used before each action |
+| MG-04 Voice calls | new (P2) | The phone under MG-17; `phone-chat` calls until it exists |
+| MG-27 Work desktop | new | The analyst's PC: queue, log view, chat and The Lark in one launcher, with BE-18's notifications |
+| `log-filter` | existing | Test 4, `logType: "vpn"`, with scenario `logEntries`, an `anomaly` row at 09:41, `threatIntel` for the address and `accountHistory` for Jamie, opened from Kai's message with `#trigger_minigame:log_filter|r03_jamie_signins`. Its country filter only offers UK, RO, US, DE and FR, so the anomaly uses FR; its synthetic timestamps carry a fixed 2025 date, so the module supplies its own `logEntries` |
+| `siem` | existing, **bug** | Not used until `startSiemMinigame` passes `alertConfig` (or an inline alert list): today it always shows sis01's hospital alerts (`features/minigames.md`, section 4) |
+| `forensic-data-platform` | existing (fix in `features/minigames.md`, section 4) | Test 2's app request; `confirmLabel` "Send to security review", gated on the permissions tab; approving is an ink choice so the record captures it |
+| `phone-chat` | existing | Team chat with Kai and Owain; Bridget's follow-up |
+| `person-chat` | existing | Owain, Rosa, Kev at the hatch, Gillian in her office; Jo's interlude in video-call mode |
+| `notes` / `text-file` | existing | The reset procedure, the approved tools list, the supplier contract extract, ticket histories |
+| MG-20 Knowledge check | new | Owain's check question and the final check |
+
+## Explainers
+
+| Explainer | Who | Length | Aids (BE-08) | Followed by |
+|---|---|---|---|---|
+| What a reset is worth | Owain (EX-01) | 30 seconds | The key ring | none |
+| Knowing isn't proving | Owain, with Jo (EX-06) | 90 seconds | Jo's four-card board | "How sure can you be it's you?" |
+| The ladder | Owain | 45 seconds | Account type by request grid | none (Practise uses it) |
+| Pressure is a signal | Owain | 30 seconds | The lever cards | none |
+| Optional: video, caller ID, phishing-resistant MFA | Owain | 30 seconds each | One card each | none |
+| What a report stops | Kai (EX-05 scene) | 45 seconds | Jamie's sign-ins before and after the report | none |
+
+## Debrief
+
+Shown on BE-02, then spoken by Owain and Kai:
+
+1. The chain, with each test's link and what the player did.
+2. The before and after: the hook against test 7.
+3. Rosa's report and what twenty minutes saved.
+4. Per-outcome results.
+5. The line to remember: *"Knowing isn't proving. Call back on a number they don't control."*
+
+## Variants
+
+- **Micro-drill:** "Prove It" on its own (BE-07): five callers drawn from a bank of about forty (BE-13), varied by account type, lever and what's on record, with a streak counter and one new pretext each month (HA-21). About 4 minutes.
+- **Text route:** each call as a transcript with the caller card as a table; the verification actions as a list of buttons with their results described in text; the log as an accessible table with a "flag this row" action. Same decisions and record (BE-03).
+- **Facilitated session:** a 45-minute service desk team meeting on one screen. Pause points: after the hook (*"Would we have moved it? What does our procedure actually say for executives?"*); after Jo (*"What could someone find about our executives in ten minutes?"*); after Rosa (*"What makes people skip checks here: targets, queues, fear of senior callers?"*); at the end (*"One change to our procedure, and who'll make it."*). The organisation's own procedure replaces Larkspur's on the cards (BE-05).
+- **Replay and randomisation:** callers, pretexts and records come from the bank; the colleague who slips varies; the alert's details change; an outsourced-desk version adds a "client approval" step for privileged accounts. The annual edition adds the year's reported service desk techniques at awareness level.
+
+## Alternative concepts
+
+1. **The Long Con.** The attacker view first (EX-06, BE-11): the player sits with Jo Fairweather on an authorised test as she builds a caller's "answers" from public information, pinning cards to a board (no technique beyond reading). Then the roles flip, the player goes back to the desk, and the next call in the queue is Jo's. Strong lunchtime story; shorter on admin hygiene.
+2. **Keys to the Castle.** A puzzle about access design rather than calls. The player rebuilds Larkspur's admin model on a board: tiers, separate accounts, time limits, break-glass, approved tools. A time skip then replays one phished account against their design and shows how far it gets. Good for system administrators; less for the desk.
+3. **Desk Wars.** A team game show for service desk away-days (HA-13): teams take the same callers in turn on a shared screen, and the scoreboard rewards correct verification over speed, with a bonus for a polite refusal Owain would put on a poster.
+
+## Art and audio
+
+- **Rooms:** `room_IT` redressed as the desk (headsets, queue board, handling-time screen, the "Ask us first" mug); `room_ceo` and `room_security` as they are.
+- **Characters:** Owain, Kai, Jo, Gillian, Martin and Kev use their course art. New: Rosa Delgado (art and voice).
+- **UI:** MG-17's caller card and actions; the queue board; Jo's corkboard as a BE-08 image.
+- **Voice:** about 40 lines for Owain, 15 for Kai, 10 for Rosa, 8 for Jo, 8 for the real Gillian, 6 for the fake one (a different voice, airport ambience, phone filter through voice FX), 4 each for Martin, Kev and Wes, and about 15 generic callers. No voiced line prints a variable: names, numbers and account details are on the caller card, not in speech. Phone numbers on screen come from Ofcom's drama range (07700 900000 to 07700 900999).
+
+## Pitfalls
+
+- **Don't train obstruction.** Every "no" comes with the fast route: the call back, the booking, the approved tool. Callers are colleagues.
+- **Don't make the desk the villain.** Rosa is good at her job; the targets and the queue pushed her. The fix is the procedure and the backing, not blame.
+- **Keep the procedure doable.** Every correct route must finish inside game time, or players learn that doing it right means failing the shift.
+- **Don't teach unreliable cues.** The fake Gillian has no slip in her story; the voice, the answers and the airport noise prove nothing either way.
+- **Awareness level only.** No detail on how callers spoof numbers, bypass MFA or abuse tools. The module shows what the desk sees and what stops it.
+- **No real products.** "Inbox Genie", "Brightline Label Systems" and the remote tool are fictional; check names before release.
+- **Don't let the bug ship.** If the `siem` dashboard is used, fix the `alertConfig` pass-through first, or players see hospital alerts on a facilities company's desk.
+- **Video isn't proof.** Every video check in the module is paired with a second route.

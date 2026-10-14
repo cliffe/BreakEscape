@@ -21,7 +21,7 @@ The web is now one of the main ways malware and fraud reach people at work, with
 - **Fake "verify you are human" pages**, known in the industry as ClickFix. The page copies a command to the visitor's clipboard and tells them to press a few keys and paste it, which installs malware, most often a password-stealing infostealer. Microsoft saw these campaigns targeting thousands of devices every day (August 2025); ESET found they rose more than fivefold in the first half of 2025, to become the second most common attack it blocked after phishing. 2026 variants ask people to paste into a terminal, including on Macs.
 - **Scam pop-ups** take over the screen, say the computer is infected and give a number to call.
 
-There is no Report button inside a web page, and the padlock in the address bar says nothing about honesty. The habits that work are simple: start from a place you trust, never let a web page make you do things to your computer, and report. All figures and sources are in `concepts.md`.
+Unlike an email, a web page has no sender to check, and the padlock in the address bar says nothing about honesty. The habits that work are simple: start from a place you trust, never let a web page make you do things to your computer, and report. All figures and sources are in `concepts.md`.
 
 ## Target behaviours
 
@@ -76,7 +76,8 @@ Contributes to (references in `02_COMPLIANCE_MAPPING.md`):
 
 ## New features needed
 
-- **MG-02 Web browser** (the core of the module). Needs: an address bar showing the full address; a search results page with "Sponsored" results; simple fake sites built from templates (a software vendor, two suppliers, a news site, an extension store); a download shelf showing file names and types; a browser warning page with a "details" route; an extension permission prompt using real-style wording ("Read and change all your data on all websites"); a notification permission prompt; a full-screen scam page that resists closing and has a safe way out; a "verify you are human" overlay that writes to an in-game clipboard, on-screen keys and an in-game Run box that shows what was pasted. It must never touch the learner's real clipboard or ask them to press real system shortcuts.
+- **MG-02 Web browser** (the core of the module), as specified in `features/minigames.md`: an address bar with the domain emphasised; a search results page with "Sponsored" results; data-built fake sites (a software vendor, two suppliers, a news site, an extension store, the portal); a download bar showing file names and types; a browser warning page with a "details" route; an extension permission prompt using real-style wording ("Read and change all your data on all websites"); a notification permission prompt; a full-screen scam page whose alarm is silent by default (captioned), with a safe way out; the "verify you are human" page with its instructions shown as text, a view of what it put on the clipboard, and Follow the instructions, Close the page and Report buttons; a toolbar Report button that uses the organisation's route. It never needs real key presses and never touches the learner's real clipboard.
+- **MG-27 Work desktop:** the player's laptop, from which the browser, chat and The Lark open, and where Lena's and Owain's messages arrive as notifications.
 - **MG-03 Link and domain drill**, inline in the Practise screens.
 - **MG-20 Knowledge check.**
 - **proposed:** Software portal page, a page on The Lark (BE-09 content) listing approved tools with an Install button and a "Request something else" form, showing the organisation's request turnaround (BE-05).
@@ -96,6 +97,7 @@ Contributes to (references in `02_COMPLIANCE_MAPPING.md`):
 ## Open questions
 
 1. **How close should the browser look to a real one?** *Recommendation: generic and brand-free but modern, with an address bar, site information icon and warning pages close enough to real browsers that the habits transfer.*
-2. **How far can the player go with the fake check?** *Recommendation: all the way, inside the game: on-screen keys, an in-game Run box and an in-game clipboard. If they "run" it, Kai calls. Never ask learners to press real keys, and never write to their real clipboard.*
+2. **How far can the player go with the fake check?** *Recommendation: all the way, inside the game, through MG-02's Follow the instructions button, which shows in words what would have happened; then Kai calls. Never ask learners to press real keys, and never write to their real clipboard.*
 3. **Does the hook's fake download run?** *Recommendation: no. Larkspur Protect blocks it, so the hook is safe whatever the player does; Owain says how close it was.*
 4. **Leo's slip: does the player advise him, or does he model reporting?** *Recommendation: he asks for advice (as in core_01), and the best answer has him on the phone within the minute. Poorer advice still ends with a report, later, so the debrief can show what the minutes cost.*
+5. **What does the player do if the scam page won't close?** *Recommendation: call the service desk on the number they already have, as `concepts.md` says. MG-02's draft says "restart if it won't close"; the module recommends the call instead, to stay consistent with core_07's "don't try to fix it yourself". The orchestrator should settle one wording for both.*

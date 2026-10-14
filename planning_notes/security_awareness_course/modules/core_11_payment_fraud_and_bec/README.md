@@ -43,20 +43,23 @@ After this module, staff can:
 
 ## Compliance coverage
 
-Contributes to (short references follow core_01; `02_COMPLIANCE_MAPPING.md` was not yet present when this was written):
+Contributes to (short references from `02_COMPLIANCE_MAPPING.md`, section 2; this matches the module's row in its coverage matrix):
 
-- **PCI DSS v4.0.1** 12.6.3.1 (awareness of phishing and related attacks and social engineering) and 12.6.3 (training on hire and at least every 12 months). PCI notes that training does not meet the technical anti-phishing requirement in 5.4.1.
-- **ISO/IEC 27001** clause 7.3 and Annex A 6.3; Annex A 5.3 (segregation of duties) at awareness level.
-- **NIST SP 800-53** AT-2 and AT-2(3) (social engineering).
-- **CIS Controls v8.1** 14.2 (recognise social engineering attacks, which since v8.1 names business email compromise).
-- **NIS2** Article 21(2)(g) (basic cyber hygiene practices and training).
-- **NCSC CAF** B6 (staff awareness and training).
+- **PCI DSS 12.6.3.1** (phishing and related attacks, and social engineering), alongside core_01 and core_02, which together meet it. Training doesn't satisfy the technical anti-phishing control in PCI DSS 5.4.1, and the control doesn't satisfy the training.
+- **CIS 14.2** (recognise social engineering attacks; business email compromise was added in v8.1).
+- **NIST AT-2 and AT-2(3)** (social engineering and mining, including impersonation and thread-jacking).
+- **ISO 27001 A.6.3.**
+- **NCSC CAF B6.b**; **DSPT 3.2.1** (categories 3 and 4).
+- **NIS2 Art 21(2)(g)**; **NIS2 IR 8.1** (only for the digital entity types the Implementing Regulation covers); **DORA Art 13(6)** (EU financial entities).
+- US customers: **NYDFS 500.14(a)(3)** (annual training including social engineering); **FTC 314.4(e)**.
+
+The module also gives staff outside Finance awareness of the organisation's segregation of duties (ISO 27001 A.5.3). That is a control, not a training requirement, so it is not listed in the mapping.
 
 ## Module flow
 
 | Beat | What happens | Format | Minutes |
 |---|---|---|---|
-| Hook | At the player's Operations desk, "Dawn at Northbeck" emails new bank details and asks the player to pass them to accounts before this week's run. Their response is the baseline | Game (MG-01, MG-04) | 1 to 2 |
+| Hook | At the player's Operations desk, "Dawn at Northbeck" emails new bank details and asks the player to pass them to accounts before this week's run. Their response is the baseline | Game (MG-27, MG-01, MG-04) | 1 to 2 |
 | Learn | Hassan takes the email apart, tells his near miss, and gives the rule: call back on the number on record, two people approve, report; Confirmation of Payee; if money's gone, ring the bank | NPC explainer with visual aids (EX-01, BE-08) | 2 to 3 |
 | Practise | "Change or No Change?": six requests at the verification desk, getting harder | Minigame (MG-15, MG-25) | 2 to 3 |
 | Apply | Holiday cover in Finance: prepare the afternoon's payment list while another supplier's bank change, an urgent "chief executive" payment and Lena's message about an invoice she shouldn't have approved arrive | Game (BE-18, MG-01, MG-15, MG-25, MG-04) | 5 to 6 |
@@ -69,7 +72,7 @@ Contributes to (short references follow core_01; `02_COMPLIANCE_MAPPING.md` was 
 - **Rooms:** `room_office` (the Operations desk, shared with core_01); `small_office_room2_1x1gu` redressed as the finance office (behind the badge door described in `03_WORLD_AND_CAST.md`), shared with role_02; `room_ceo` seen through the glass, empty, because the chief executive is at a conference.
 - **Conversations:** `person-chat` for Hassan, Ama and Lena; `phone-chat` for the team chat, Lena's message and the company chat with the chief executive; `person-chat` video-call mode (`person-chat-ui.js`) for Eleni approving remotely and the real Gillian's thank-you. Its status bar says "SECURE VIDEO LINK" (hard-coded at `person-chat-ui.js:253`) and needs to read "Larkspur Meet" or similar.
 - **Documents:** `notes` and `text-file` for the supplier directory, Hassan's desk card, the payment list and the delivery notes.
-- **`dual-auth`** (`public/break_escape/js/minigames/dual-auth/`): two named PIN pads and an AUTHORISE button, used here as the run's two-person approval, which the player watches Hassan and Eleni complete. It exists but is not exported or registered in `minigames/index.js`, sis01's object is commented out (`scenarios/sis01_healthcare/scenario.json.erb`, the "DISABLED" block after the MG-11 note), and on AUTHORISE it writes sis01's globals (`network_isolation_authorised`, `network_isolated`) and runs a fixed five-minute countdown. Its labels can already be set through `minigameData` (`dual-auth-text.js`). See New features needed.
+- **The existing `dual-auth` minigame** (`public/break_escape/js/minigames/dual-auth/`): two named approver panels and an AUTHORISE button, used here as the payment run's two-person approval, which the player watches Hassan and Eleni complete. It exists but is not registered in `minigames/index.js` or dispatched, and sis01's only object for it is commented out. Today it takes a PIN on each panel, writes sis01's globals (`network_isolation_authorised`, `network_isolated` and others) and runs a fixed five-minute countdown; its labels can already be set through `minigameData` (`dual-auth-text.js`). This module relies on the rework in `features/minigames.md` section 4 (see New features needed).
 - **`forensic-data-platform`**: tabs of typed blocks with a gated confirm (`confirmGateTab`, `confirmLabel`, `confirmedVar`). Until MG-15 exists it can show a change request as "The email", "The letter", "Supplier record" and "Change history" tabs, with "Hold this change and report it" enabled once the record tab has been read.
 - **Patterns:** sis02's managed security provider refusing a change on someone's say-so and ringing back on the number it holds (`scenarios/sis02_energy/ink/npc_tom_hadley.ink:136-171`), the model for Hassan's rule; timed arrivals as in `scenarios/timed_messages_example`; event mappings for Lena's message.
 - **Systems:** the game clock (`systems/game-clock.js`) for the 15:30 payment run; objectives (`systems/objectives-manager.js`) for the work task bar; `voice.fx` phone filtering (`README_scenario_design.md`, "Voice FX") for callers.
@@ -87,9 +90,10 @@ Contributes to (short references follow core_01; `02_COMPLIANCE_MAPPING.md` was 
 - **BE-13 Content banks:** request variants, real-domain and lookalike plays, Confirmation of Payee results, per-game names and domains.
 - **BE-16 Time skips:** the next morning, if Lena's invoice is paid.
 - **BE-18 Work task and interruptions:** the payment list and its timed arrivals.
-- **BE-19 Open minigames from conversations and events:** Hassan opens the drill from his explanation.
+- **BE-19 Open minigames from conversations and events:** Hassan opens his check question (`#trigger_minigame:knowledge_check|c11_q_which_number`) and the drill (the same tag naming MG-15's scene) from his explanation.
 - **BE-07 Micro-drill launcher:** "Change or No Change?" (P2).
-- **proposed:** Dual authorisation panel, register and generalise the existing `dual-auth` minigame: export and dispatch it, make the globals it writes and its status texts configurable (today they are sis01's), make the countdown optional and off under BE-04, rename the `itsec`/`clinical` keys to first and second approver, and add a mode where the second panel is completed by an event (a remote approver) rather than typed in by the player. A small task; role_02 needs the same.
+- **MG-27 Work desktop:** the player's computer at both desks, launching the inbox, Ledger (MG-15), the company chat and The Lark.
+- **The `dual-auth` rework** (`features/minigames.md` section 4; it has no id): register and dispatch the existing minigame, named approver panels with a checklist instead of PINs, globals from data, and no timer by default. This module also needs the second panel to complete on the approver's own event (Eleni signing off on her video call), since the player never approves here.
 
 ## Organisation-specific content
 
@@ -100,6 +104,8 @@ Contributes to (short references follow core_01; `02_COMPLIANCE_MAPPING.md` was 
 - Whether staff ever buy gift cards for work, and how (Larkspur: never because of an email or message; only through procurement).
 - Who can approve invoices, and what they must check (Larkspur: the budget holder confirms the goods or service was ordered and received).
 - The reporting route (Report suspicious button; security team on 4444) and the police route by nation: Report Fraud in England, Wales and Northern Ireland; Police Scotland on 101.
+
+These belong in the organisation's HA-26 setup checklist, so the reference card never shows Larkspur's defaults to a customer's staff by mistake.
 
 ## Open questions
 

@@ -41,16 +41,18 @@ After this module, staff can:
 
 ## Compliance coverage
 
-Contributes to (references in `02_COMPLIANCE_MAPPING.md` when present; check the short names against it):
+Contributes to (short references as in `02_COMPLIANCE_MAPPING.md`, section 2):
 
-- **ISO/IEC 27001:2022** Annex A 6.8 (information security event reporting: staff report observed or suspected events promptly through the right channel), A 5.24 to 5.28 (incident management, including 5.28 on keeping evidence), A 6.3 and clause 7.3. This module is the main staff-facing evidence for A 6.8.
-- **NCSC CAF v4.0** B6 (staff awareness and training), especially B6.a (people know how to raise a concern, and those who report are treated positively), and D1 (response and recovery planning).
-- **CIS Controls v8.1** 14.6 (recognise and report security incidents) and 14.5 (causes of unintentional data exposure, such as mis-delivery and lost devices).
-- **NIST SP 800-53** IR-6 (incident reporting), AT-2 and AT-2(4) (suspicious communications and anomalous system behaviour).
-- **PCI DSS v4.0.1** 12.10 (incident response, which depends on staff raising suspected incidents) and 12.6 (security awareness programme). Check the exact requirement numbers against the mapping.
-- **NIS2** Article 21(2)(g) (cyber hygiene and training) and Article 23 (reporting significant incidents, which starts with staff reporting internally).
-- **UK GDPR** Article 33 (personal data breach notification, and a processor's duty to tell the controller without undue delay): the module gets breaches to the DPO at once.
-- **HIPAA** 164.308(a)(6)(ii) (response and reporting) and 164.308(a)(5)(ii)(C) (log-in monitoring), for US healthcare customers.
+- **ISO 27001 cl. 7.3**, **ISO 27001 A.6.3** and **ISO 27001 A.6.8** (a route for staff to report observed or suspected security events quickly). This module is the main staff-facing evidence for A.6.8. **ISO 27002 6.3** names "basic procedures such as reporting security events".
+- **NIST AT-2** (what users do to respond to suspected incidents) and **NIST AT-2(4)** (suspicious communications and anomalous system behaviour).
+- **CIS 14.6** (recognising and reporting security incidents). It touches **CIS 14.5** (sending data to the wrong person, losing a device) as things to report; core_05 and core_06 teach those.
+- **PCI DSS 12.6.1** (all personnel aware of their role) and, as good practice, **PCI DSS 12.6.3.1** (how to spot, react to and report attacks).
+- **NCSC CAF B6.a** (people know how to raise a concern, and those who report are treated positively) and **NCSC CAF B6.b**.
+- **NIS2 Art 21(2)(g)** and **NIS2 IR 8.1** (the awareness programme covers contact points and resources).
+- **DORA Art 13(6)** and **DORA RTS Art 19**, for EU financial entities.
+- **UK GDPR Art 32** and **UK GDPR Art 33** (internal reporting, so the organisation can notify within 72 hours and a processor can tell the controller without undue delay); the **ICO training toolkit** (personal data breaches in the all-staff programme).
+- **DSPT 2.1.1, 3.2.1 (categories 3 and 4)**, for NHS customers.
+- **HIPAA 164.308(a)(5)(ii)(B) and (C)** (reporting malicious software and log-in discrepancies), **CMMC AT.L2-3.2.1** and **SOC 2 CC2.2** (how to report failures, incidents and concerns), for US customers.
 
 ## Module flow
 
@@ -70,7 +72,7 @@ Contributes to (references in `02_COMPLIANCE_MAPPING.md` when present; check the
 - **Conversations:** `person-chat` for Leo, Ama, Kai, Martin, Tomasz and Precious (multi-speaker for Ama and Kai); `phone-chat` for the team chat, Lena, Kai's acknowledgements, and the security team's 4444 line as an ink conversation until MG-04 exists.
 - **Kai's response board:** `command-board`, configured through its `commandBoard` scenario block: timeline entries and status rows driven by global conditions, stamped with game time from the start of the game by the CommandBoardRecorder even while the board is closed (`public/break_escape/js/minigames/command-board/command-board-timeline.js`; wired in `public/break_escape/js/core/game.js` around line 1041). Only sis01 uses it today, with its built-in entries.
 - **The interim spread board:** `alarm-panel`, whose multi-state lamps follow globals live (`public/break_escape/js/minigames/alarm-panel/alarm-panel-minigame.js`).
-- **Kai's isolation:** `network-segmentation-map`, relabelled, for cutting off the laptop that is locking files (see New features for the text that is written for sis01 today).
+- **Kai's isolation:** `network-segmentation-map`, relabelled, for cutting off the laptop that is locking files. Its badge, legend and confirm dialog are written for sis01's hospital today; MG-26 makes them scenario data.
 - **The report form's starting point:** `coverage-decision-form`, which already shows sections of options, writes globals on submit and reads everything else from scenario data, apart from a hard-coded "Meridian Cyber Insurance" header.
 - **Other minigames:** `container` for the shared drive's folder; `text-file` for the note the locked files leave behind; `examine` for the empty laptop dock.
 - **Systems:** `timers[]` with `startOnGlobal`, `cancelOnGlobal`, `setGlobal` and `actions` for every spread stage (`public/break_escape/js/ui/scenario-timer-dispatcher.js`). sis02's hydrogen build-up is the precedent: timers that escalate until an action cancels them, with `tint_objects` making the hazard visible in the room (`scenarios/sis02_energy/scenario.json.erb`, lines 442 to 477). Also NPC event mappings with `bark` and `sendTimedMessage` on `global_variable_changed:<name>`, and `gameClock` for the afternoon.
@@ -79,14 +81,15 @@ Contributes to (references in `02_COMPLIANCE_MAPPING.md` when present; check the
 ## New features needed
 
 - **MG-09 Incident report form** (the core of the module): build spec in `game_design.md`. Reused by core_05, core_07 and core_14.
-- **proposed:** Blast radius map, an extension of `network-segmentation-map` whose zones, devices and links take their state (quiet, spreading, contained) from globals and redraw live, with every label from scenario data and the dual-authorisation step optional; shown on Kai's screen after a report and in the debrief replay, and reusable by core_07 (which asks for a spread view of its own).
+- **MG-26 Incident spread map** (the blast radius): devices and links whose state (quiet, spreading, contained) follows globals live, every label from scenario data, the dual-authorisation step optional, reveal rules and a step-through replay; shown on Kai's screen after a report and in the debrief. core_04's configuration is in `game_design.md`; core_07 can reuse it for its ransomware spread.
+- **MG-27 Work desktop:** the player's PC as one launcher for The Lark's "Report an incident" tile, the inbox, the shared drive and chat.
 - **BE-01 Assessed decisions** and **BE-02 Debrief screen:** every row in `assessment.md`, including the time each sign was first seen and the time it was reported.
-- **BE-04 Accessibility baseline:** a "steady pace" setting that slows the spread timers to half speed (the record notes it), and a map that never relies on colour alone.
+- **BE-04 Accessibility baseline:** the proposed pause and time scale, which the spread follows (with timers off, stages follow the work task's steps instead), a `timers_off` global the scenario can read, and a map that never relies on colour alone.
 - **BE-08 Visual aids:** the blast radius frames in Learn, the two example reports, Kai's screen share after a report.
 - **BE-09 Intranet terminal:** The Lark's "Report an incident" page, which hosts MG-09, and the reference card.
 - **BE-16 Time skips:** the debrief at 17:30, with each incident's outcome.
 - **BE-18 Work task and interruptions:** the council report and the scheduled signs.
-- **BE-19 Open minigames from conversations and events:** MG-09 from Leo's and Martin's conversations and from the phone; the map from Kai's chat message.
+- **BE-19 Open minigames from conversations and events:** MG-09 from Leo's and Martin's conversations (`#trigger_minigame:incident_report|report_leo`) and from the phone; MG-26 from Kai's chat message (`open_minigame`).
 - **BE-05 Organisation profile:** the reporting routes and numbers, the form's link, the device instruction, the out-of-hours route.
 - **BE-13 Content banks** (P2): the incident bank, so order, timing and details change between plays.
 - **EX-01** (Ama), **EX-05** (Kai behind the scenes), **MG-20** (the check), and light use of **MG-01** (Leo's odd email) and **MG-07** (the sign-in prompt, from core_03).
@@ -105,7 +108,7 @@ Contributes to (references in `02_COMPLIANCE_MAPPING.md` when present; check the
 ## Open questions
 
 1. **How visible is the spread during play?** *Recommendation: only in-world signs (colleagues noticing, more emails, more locked folders) until the player reports; the map appears after a report and in the debrief. A live gauge of unreported incidents would test watching, not noticing.*
-2. **Real minutes or compressed time?** *Recommendation: real minutes, a stage every 60 to 75 seconds, with no visible countdown. Attacks really do spread in minutes, so it is honest; "steady pace" halves the speed for anyone who needs it.*
+2. **Minutes or story events?** *Recommendation: the spread runs on game time (about a stage a minute, never shown as a countdown) so it feels real, but ratings use the stage an incident had reached when it was reported, which is a story event. BE-04's clock can be paused, slowed or stopped, and with timers off the stages follow the work task's steps, so slow readers are never marked down.*
 3. **How many incidents?** *Recommendation: four on the critical path and an optional fifth, staggered, each with a second sign for players who missed the first; order and timing randomised between plays (BE-13).*
-4. **The boundary with core_07.** *Recommendation: core_04 shows only the early signs of ransomware (files that won't open, a note) and the first steps. core_07 owns ransomware itself and reuses the blast radius map for its own spread.*
-5. **Who presses SEVER?** *Recommendation: Kai, on Kai's screen, with the player watching. The player's own version of isolation is "unplug the cable if we ask you to", which the reference card says.*
+4. **The boundary with core_07.** *Recommendation: core_04 shows only the early signs of ransomware (files that won't open, a note) and the first steps. core_07 owns ransomware itself and reuses MG-26 for its own spread.*
+5. **Who presses Cut off?** *Recommendation: the player, on Kai's screen and at Kai's invitation, as a small reward for reporting; Kai says straight away that at their own desk the version is "unplug the cable if we ask you to", which the reference card repeats. It is optional, and Kai does it off-screen if the player doesn't visit.*

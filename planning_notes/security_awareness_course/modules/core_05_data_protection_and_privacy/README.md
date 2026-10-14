@@ -40,16 +40,17 @@ After this module, staff can:
 
 ## Compliance coverage
 
-Contributes to (references in `02_COMPLIANCE_MAPPING.md`):
+Contributes to (short references from `02_COMPLIANCE_MAPPING.md`, section 2):
 
-- **UK GDPR** Art 5(1)(f) and Art 32(4) (staff handle personal data securely and only as instructed); Art 5(2) and Art 24 (the organisation can show its measures, and training is one); Art 33 (internal reporting is what makes the 72-hour deadline possible).
-- **ICO training toolkit:** the all-staff programme topics (handling requests, data sharing, information security, personal data breaches and records management) and induction training before access to personal information and within one month of starting. The completion record also supports the DPO's monitoring of staff training (UK GDPR Art 39(1)(b)).
-- **ISO 27001** A.6.3.
-- **NIST** AT-2.
-- **CIS** 14.4, 14.5 and 14.6.
-- **DSPT** 2.1.1 and 3.2.1 (categories 3 and 4); DSPT B6.b for large NHS bodies on the CAF-aligned toolkit, where information assurance includes information governance.
+- UK GDPR Art 5(1)(f), Art 5(2), Art 24, Art 32(4) and Art 33: staff handle personal data securely and only as instructed, the organisation can show training as one of its measures, and internal reporting is what makes the 72-hour duty possible.
+- UK GDPR Art 39(1)(b): the completion record supports the DPO's monitoring of staff training.
+- ICO training toolkit: the all-staff programme topics (handling requests, data sharing, information security, personal data breaches, records management), induction before access to personal information and within one month of starting, and an end-of-training assessment.
+- ISO 27001 A.6.3.
+- NIST AT-2.
+- CIS 14.4, 14.5 and 14.6 (14.6 for recognising and reporting a breach; the matrix lists 14.4 and 14.5).
+- DSPT 2.1.1 and 3.2.1 (categories 3 and 4); DSPT B6.b for large NHS bodies on the CAF-aligned toolkit, where information assurance includes information governance.
 
-EU customers cite the same EU GDPR article numbers. The 2025 and 2026 UK changes described in `concepts.md` (the complaints duty, the Information Commission) don't apply to them.
+EU customers cite "EU GDPR Art ..." with the same numbers. The 2025 and 2026 UK changes described in `concepts.md` (the complaints duty, the Information Commission) don't apply to them.
 
 ## Module flow
 
@@ -74,9 +75,10 @@ EU customers cite the same EU GDPR article numbers. The 2025 and 2026 UK changes
 
 ## New features needed
 
-- **MG-12 Redaction** in redact mode: select what to remove, with proper removal and a held-back score. (The fake-redaction check is taught in core_06, so MG-12 can ship in two steps.)
+- **MG-12 Redaction,** configured with the mark and remove tools only: the player decides what to remove, the tool removes it properly, and the score is held back. The "draw a box" trap and the hidden content step are used in core_06, which teaches the technique.
 - **MG-01 Inbox:** the casework queue, and compose with recipient autocomplete and an "external recipient" warning.
-- **MG-20 Knowledge check:** Tomasz's two check questions, "Pass It On?" in practice mode, and the final check.
+- **MG-27 Work desktop:** the Care Laundry desk computer, opening the inbox, the rota, the claims notes and The Lark, and showing the queue's arrivals as notifications.
+- **MG-20 Knowledge check:** Tomasz's two check questions (opened from his conversation with `#trigger_minigame:knowledge_check|<configKey>`, BE-19), "Pass It On?" in practice mode as sort-into-groups items, and the final check.
 - **MG-09 Incident report form,** with a "personal data involved?" field that alerts the DPO.
 - **BE-01 Assessed decisions** and **BE-02 Debrief screen:** every row in `assessment.md`.
 - **BE-08 Visual aids:** "your file", the five habits, the request collage, the 72-hour clock.
@@ -88,7 +90,7 @@ EU customers cite the same EU GDPR article numbers. The 2025 and 2026 UK changes
 - **BE-13 Content banks:** callers, request wordings, breach-slot variants and redaction documents.
 - **EX-01 Mentor explainer,** with Tomasz as the explainer for this module.
 - **BE-07 Micro-drill launcher** for "Pass It On?" (P2), and **MG-04 Voice calls** for the calls (P2).
-- **proposed:** "Down to One" board, a grid of faces that clues rule out one by one, to show how a few ordinary details single out one person.
+- **proposed:** "Down to One" board, a grid of faces that clues rule out one by one, to show how a few ordinary details single out one person. (`features/minigames.md`, section 6, suggests building it as a variant of MG-13's board or MG-20's sort into groups, S to M.)
 - **proposed:** people board, a BE-02 panel that shows the people behind the data the player handled and how each fared.
 
 ## Organisation-specific content
@@ -105,6 +107,6 @@ EU customers cite the same EU GDPR article numbers. The 2025 and 2026 UK changes
 
 1. **A Care Laundry service line.** The module needs Larkspur to hold residents' and families' data directly. *Recommendation: add "Care Laundry" to `03_WORLD_AND_CAST.md`: Larkspur collects, washes and returns care home residents' name-taped clothing, and its customer desk handles lost-item claims. It gives the module its people and its title.*
 2. **Can the player avoid the misdirected email?** *Recommendation: yes. The autocomplete is visible and catchable. A player who catches it is thanked, and the breach slot fills with a different breach (personal data received by mistake), so everyone practises reporting one.*
-3. **Who explains?** *Recommendation: Tomasz, the DPO, as the orchestrator asked. Ama appears only on the reference card's reporting route, so the course's two voices don't overlap.*
+3. **Who explains?** Ama is the course's usual mentor, but data protection is Tomasz's field. *Recommendation: Tomasz explains here and Ama doesn't appear. The reporting route he gives is the same one Ama teaches in core_04, so the two voices never disagree.*
 4. **How much law on screen?** *Recommendation: none beyond "one month" and "72 hours". Article numbers stay in `concepts.md` for writers and auditors.*
 5. **Recognising a complaint.** Since 19 June 2026, organisations must acknowledge data protection complaints within 30 days. *Recommendation: teach complaints alongside requests (same route, same day) rather than as a separate topic.*

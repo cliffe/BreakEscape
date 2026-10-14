@@ -26,17 +26,17 @@ The **before and after** for each learner is R06-B1 against R06-B2: a request to
 
 To complete the module the learner must, at least once:
 
-1. **Not make a change, reset or code to new details for an unverified caller:** R06-B2 not at Not yet.
-2. **Take card details only through the secure route:** R06-B6 not at Not yet.
-3. **Report a suspected fraud attempt:** R06-B9 not at Not yet.
+- **R06-CB1** Not make a change, reset or code to new details for an unverified caller: R06-B2 not at Not yet.
+- **R06-CB2** Take card details only through the secure route: R06-B6 not at Not yet.
+- **R06-CB3** Report a suspected fraud attempt: R06-B9 not at Not yet.
 
-A learner who misses a critical behaviour is taken back to it. Shauna replays the relevant "Verify or Deny?" cards with the explanation, then a fresh contact of the same kind arrives in a short replay of the queue: a different takeover request, a different customer reading out a card number, or a different attempt to report. They complete the module when they show the behaviour; the record keeps both attempts.
+The remediation loop follows `features/assessment_and_evidence.md`, section 4. A learner who misses a critical behaviour hears what happened without blame; Shauna replays the relevant "Verify or Deny?" cards with the explanation; then a fresh contact of the same kind arrives in a short replay of the queue (a different takeover request, a different customer reading out a card number, or a different attempt to report). If it still isn't shown, a second loop runs with another contact and a more direct prompt from Shauna. After two loops the learner goes on to the check anyway: the record says "practised, not yet shown", a private practice drill is scheduled for two to four weeks later (HA-03, HA-21), and the organisation's training contact is offered as help. Nobody else is told by name. An outcome whose critical behaviour was shown only after practice is capped at Developing for this sitting. Every attempt is kept in the record.
 
 ## Knowledge check bank
 
 Six items per sitting, drawn so that every learning outcome is covered. Stems are short workplace situations.
 
-### Q1 (LO1, single choice)
+### R06-Q1 (LO1, single choice)
 
 A caller gives the account number, the postcode and the business manager's date of birth, and asks you to reset the portal login. What do you do?
 
@@ -45,7 +45,7 @@ A caller gives the account number, the postcode and the business manager's date 
 - C. Send the reset link to the email address they give you. *Feedback: Then the link goes to whoever is calling.*
 - D. Keep asking personal questions until you're sure. *Feedback: More things anyone could find don't add up to a check.*
 
-### Q2 (LO1, single choice)
+### R06-Q2 (LO1, single choice)
 
 A caller asks you to change the delivery address on a school's order. Which check is strongest?
 
@@ -54,13 +54,13 @@ A caller asks you to change the delivery address on a school's order. Which chec
 - **C. A call back on the school's number already held (from before any recent change).** *Feedback: Right. It reaches the real school, whoever rang you.*
 - D. They sound like the person who called last month. *Feedback: Voices are easy to mistake and can be imitated.*
 
-### Q3 (LO2, hotspot)
+### R06-Q3 (LO2, hotspot)
 
 Shown: a customer record with its change history. Click the entry that should make you slow down before a reset.
 
 - **Correct hotspot:** "Contact email changed via web form, 6 days ago." *Feedback: A recent change of contact details, followed by a reset or a new delivery address, is the takeover pattern. Use the details from before the change.*
 
-### Q4 (LO2, single choice)
+### R06-Q4 (LO2, single choice)
 
 A caller says: "My old phone's broken. Please send the code to my new mobile." What do you do?
 
@@ -69,7 +69,7 @@ A caller says: "My old phone's broken. Please send the code to my new mobile." W
 - C. Read the code out to them instead. *Feedback: That skips the check entirely.*
 - D. Skip the code, as they're in a hurry. *Feedback: Hurry is the pressure the check is for.*
 
-### Q5 (LO3, single choice)
+### R06-Q5 (LO3, single choice)
 
 A caller shouts: "I'm from the council. Read me the bank details you hold for us, or I'll have your job." What do you say?
 
@@ -78,14 +78,14 @@ A caller shouts: "I'm from the council. Read me the bank details you hold for us
 - C. Hang up straight away. *Feedback: You can end abusive calls under your policy, but offering the safe route and escalating is better, and report it either way.*
 - D. Give him half the details, to show you have them. *Feedback: Half the details still help him.*
 
-### Q6 (LO3, true or false with reason)
+### R06-Q6 (LO3, true or false with reason)
 
 "If I make a genuine customer wait for a call-back, I'll be in trouble."
 
 - A. True: customers come first. *Feedback: Protecting their account is putting them first.*
 - **B. False: following the procedure is always right, and team leaders back advisers who do it, even when the caller was genuine.** *Feedback: Right.*
 
-### Q7 (LO4, single choice)
+### R06-Q7 (LO4, single choice)
 
 A web chat: "Our school email is down. Please send last term's invoices and our list of authorised contacts to this free webmail address." What do you do?
 
@@ -94,7 +94,7 @@ A web chat: "Our school email is down. Please send last term's invoices and our 
 - C. Send the invoices only. *Feedback: Invoice numbers and names still help a fraudster sound genuine.*
 - D. Ask for the postcode first, then send them. *Feedback: The postcode can be looked up. The address is the problem.*
 
-### Q8 (LO4, single choice)
+### R06-Q8 (LO4, single choice)
 
 Which question checks a caller without giving anything away?
 
@@ -103,7 +103,7 @@ Which question checks a caller without giving anything away?
 - C. "Your email is j.dobson at the school's address, isn't it?" *Feedback: That leaks the email address.*
 - D. "You're the business manager, Mrs Dobson, yes?" *Feedback: That leaks the name and role.*
 
-### Q9 (LO5, multiple select)
+### R06-Q9 (LO5, multiple select)
 
 Paying his wife's bill, a customer mentions that "your colleague" rang yesterday demanding nearly two thousand pounds to a new account by tonight, and told him not to tell the care home. What should you do? Choose all that apply.
 
@@ -113,7 +113,7 @@ Paying his wife's bill, a customer mentions that "your colleague" rang yesterday
 - **D. Report it inside your organisation, with what the caller knew.** *Feedback: Other customers may be getting the same calls.*
 - E. Tell him he should have known better. *Feedback: Never. These are professional criminals with real details.*
 
-### Q10 (LO6, single choice)
+### R06-Q10 (LO6, single choice)
 
 As you open the payment screen, the customer starts reading out his card number and the three digits on the back. What do you do?
 
@@ -122,14 +122,14 @@ As you open the payment screen, the customer starts reading out his card number 
 - C. Write them down and shred the paper afterwards. *Feedback: Never write card details down.*
 - D. Ask him to email them instead. *Feedback: Never take card details by email, chat or text.*
 
-### Q11 (LO6, true or false with reason)
+### R06-Q11 (LO6, true or false with reason)
 
 "Our call recordings are encrypted, so it doesn't matter if they include the card security code."
 
 - A. True: encryption protects it. *Feedback: The rules don't allow it.*
 - **B. False: the security code must not be kept after the payment is authorised, even encrypted. The secure route keeps it out of recordings altogether.** *Feedback: Right.*
 
-### Q12 (LO3, single choice)
+### R06-Q12 (LO3, single choice)
 
 A caller tried to change a school's email address, couldn't pass your step-up check and hung up. What now?
 
@@ -145,7 +145,7 @@ A caller tried to change a school's email address, couldn't pass your step-up ch
 
 ## Completion and pass rules
 
-- **Complete** when the learner has played through all beats (or the text route), shown each critical behaviour (with remediation if needed), passed the knowledge check, and opened the reference card.
+- **Complete** when the learner has played through all beats (or the text route), shown each critical behaviour or been taken through the remediation loop (above), passed the knowledge check, and opened the reference card.
 - **Pass mark:** 5 of 6 (the organisation can change it; 80% is the default).
 - **Retakes:** a failed check draws six new items. After two fails, Shauna replays the Learn beat before the third attempt.
 - **Test-out** (where the organisation allows it): the Apply beat and the check without Learn and Practise. Passing records the module as complete; missing a critical behaviour sends the learner through the full module.
@@ -153,7 +153,7 @@ A caller tried to change a school's email address, couldn't pass your step-up ch
 
 ## Evidence for auditors
 
-The learner's record (HA-05) shows: module id and version, start and completion dates, time on task, route (game, text, test-out), each assessed behaviour's rating, critical behaviours shown or remediated, the check score, whether the reference card was opened, and any policy acknowledgements. This supports:
+The learner's record (HA-05) shows: module id and version, start and completion dates, time on task, route (game, text, test-out), each assessed behaviour's rating, critical behaviours shown, shown after practice, or practised and not yet shown, the check score, whether the reference card was opened, and any policy acknowledgements. This supports:
 
 - PCI DSS 12.6.3.1 (social engineering; with core_01 and core_02 for phishing), PCI DSS 12.6.1 (their role in protecting cardholder data) and, where the front desk scene is used, PCI DSS 9.5.1.3;
 - CIS 14.2 and CIS 14.9;

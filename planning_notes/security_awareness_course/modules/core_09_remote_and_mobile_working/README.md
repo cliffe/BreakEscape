@@ -40,16 +40,18 @@ After this module, staff can:
 
 ## Compliance coverage
 
-Contributes to (references in `02_COMPLIANCE_MAPPING.md` when it is written):
+Contributes to (short references from `02_COMPLIANCE_MAPPING.md`, section 2):
 
-- **ISO/IEC 27001** clause 7.3 and Annex A 6.3 (awareness), 6.7 (remote working), 7.9 (security of assets off-premises), 8.1 (user endpoint devices), and 7.7 (clear screen) in part.
-- **CIS Controls v8.1** 14.5 (causes of unintentional data exposure, which names losing a portable device), 14.8 (the dangers of connecting to and sending data over insecure networks, including home networks), and 14.6 (recognising and reporting incidents).
-- **PCI DSS** 12.6.3.2 (training on the acceptable use of end-user technologies, which 12.2.1 says include remote access and wireless technologies, laptops, tablets and phones).
-- **NIST SP 800-53** AT-2.
-- **NIS2** Article 21(2)(g) (basic cyber hygiene practices and training).
-- **NCSC CAF** B6 (staff awareness and training).
-- **UK GDPR** Article 32 (appropriate security for personal data): the lost tablet and the overheard call both carry personal data.
-- **NHS Data Security and Protection Toolkit**, for health and care customers: its guidance for smaller organisations asks them to tell staff that public Wi-Fi is unsafe. The organisation profile can switch the module to that stricter rule (Open question 2).
+- **CIS 14.5** (causes of unintentional data exposure, which names losing a portable device) and **CIS 14.8** (the dangers of connecting to and sending data over insecure networks, including securing home networks).
+- **DSPT 6.3.2 (categories 3 and 4)**: staff are told that public Wi-Fi is unsafe for work. Customers in these categories switch the module to its "phone hotspot only" rule (Open question 2). Also **DSPT 3.2.1 (categories 3 and 4)**, the annual training figure.
+- **ISO 27001 A.6.3**.
+- **NIST AT-2**.
+- **NCSC CAF B6.b**.
+- **NIS2 Art 21(2)(g)** and **NIS2 IR 8.1**; **NIS2 IR recital 20** names secure remote working among its examples of cyber hygiene.
+- **DORA Art 13(6)**.
+- **UK GDPR Art 5(1)(f)** and **UK GDPR Art 32**: the lost tablet and the overheard call both carry personal data.
+- **FTC 314.4(e)**, for US customers under the Safeguards Rule.
+- **PCI DSS 12.6.3.2** (acceptable use of end-user technologies, which include laptops, tablets, phones and wireless networks). It is not yet in the mapping's row for core_09, and should be added when the matrix is reconciled with this plan.
 
 ## Module flow
 
@@ -67,22 +69,24 @@ Contributes to (references in `02_COMPLIANCE_MAPPING.md` when it is written):
 
 - **Line of sight:** `public/break_escape/js/systems/npc-los.js` (`isInLineOfSight`, a cone with `range` and `angle`, and `drawLOSCone` for visible cones) and the sight challenge in `systems/npc-sight-challenge.js` (`los.challengeOnSight` with `requireGlobal` and `skipIfGlobal`, emitting `player_spotted:<npcId>`). Terry Mott's `los` block in `scenarios/m03_ghost_in_the_machine/scenario.json.erb` is a working example. The lockpick catch gate (`systems/lockpick-catch.js`), which checks line of sight at the moment an action starts, is the pattern for the proposed overlooked check below. Visible cones (`los.visualize: true`) are already used in `scenarios/npc-patrol-lockpick/`.
 - **Conversations:** `person-chat` for Zainab, the passenger, the café stranger and Ellis; its video-call mode (`public/break_escape/js/minigames/person-chat/person-chat-ui.js`, opened by an event mapping with `conversationMode: "video-call"`) for the home call with Ama and the client; `phone-chat` for Lena's and Ama's messages, the client's call (until MG-04) and the service desk.
-- **Documents and devices:** `container` for the laptop's desktop of files (as PCs work today); `text-file` and `notes` for the survey files, the café's chalkboard and the reference card.
+- **Documents and devices:** `container` for the laptop's desktop of files (as PCs work today, and the base MG-27 extends); `text-file` and `notes` for the survey files, the café's chalkboard and the reference card.
 - **Systems:** the game clock (`gameClock`) and timers for the two days; event mappings, `setGlobal` and `onceOnly`; timed messages for Lena and Ama; objectives and tasks for the work task bar.
 - **Props in `public/break_escape/assets/objects/`:** suitcases, laptops, a tablet, phones, room safes (`safe1` to `safe5`) for the hotel, sofas, the coffee station and cups, a kettle, plants, bins, desk speakers (a stand-in until a smart speaker prop exists), a wall TV (`uni_tv1`).
 - **Rooms:** none of the four places exists. `room_uni_common` (sofa, tables, kitchenette and a `coffee_station` slot) is the nearest blockout for the café, and `room_break` (the office kitchen) the next; `small_room_1x1gu` could be dressed as a cheap hotel room.
 
 ## New features needed
 
-- **MG-14 Wi-Fi and VPN picker:** the module's main new minigame, in the Practise drill and at the café. The catalogue lists it as P3; this module is P2, so it needs moving up.
+- **MG-14 Wi-Fi and VPN picker** (P2), built as a panel of MG-23: the module's main new minigame, in the Practise drill and at the café. Its VPN step needs both behaviours: "connects by itself" (Larkspur's default) and "switch it on" (organisations without an automatic VPN).
+- **MG-27 Work desktop:** the player's laptop as one launcher (the survey files, network settings, chat, The Lark), in place of the `container` desktop.
 - **BE-10 Spot-the-risk mode:** the café table snapshot, the hotel room before dinner, and the camera view before the video call.
 - **BE-16 Time skips:** the train journey, the hotel turndown, the tablet's lock and wipe, the next morning.
 - **BE-18 Work task and interruptions:** the survey, the café tasks, the morning call.
 - **BE-08 Visual aids:** Zainab's carriage diagram, the two Wi-Fi pages side by side, the reference card.
 - **MG-04 Voice calls:** calling the client back and ringing the service desk (a `phone-chat` contact until then).
-- **MG-23 Device settings:** the optional pre-trip check (screen lock, find my device, updates) and the micro-drill.
+- **MG-09 Incident report form:** the service desk's online form as a second way to report the lost tablet, and the text route's version of the call.
+- **MG-23 Device settings:** the optional pre-trip check (screen lock, find my device, updates), the frame for MG-14, and the micro-drill.
 - **BE-01, BE-02, MG-20, BE-09, BE-05, EX-01:** the record, the debrief, the check, the intranet, the organisation's own numbers and the explainer pattern.
-- **BE-19 Open minigames from events:** the Wi-Fi picker opening when the player opens the laptop at the café.
+- **BE-19 Open minigames from events:** the Wi-Fi picker opening when the player opens the laptop at the café, and Zainab's check question (`#trigger_minigame:<minigame>|<configKey>`, for example `#trigger_minigame:knowledge_check|c09_q_safe_seat`).
 - **proposed:** Overlooked and overheard check, a gate that runs when the player opens a document or starts a call marked sensitive: each person NPC in the room whose sight cone (or a short, all-round earshot range) covers the player emits an event, skipped while a mitigating global is set (privacy screen on, call taken outside). It generalises `lockpick_used_in_view`. Until it exists, `challengeOnSight` with `requireGlobal: "confidential_on_screen"` covers the train, firing when the document view closes with the file still open on the laptop, because the sight check pauses while any minigame is open.
 - **proposed:** Sight-line toggle, an action and ink tag that show or hide NPC sight cones during play (today `los.visualize` is fixed per NPC when the room loads), so Zainab can switch them on mid-explanation and the debrief can replay them.
 - **proposed:** Workplace video-call skin (shared with core_15, specified there): the call app's name from the organisation profile in place of the hard-coded "SECURE VIDEO LINK" bar, no scanline frame, and a name for each participant.

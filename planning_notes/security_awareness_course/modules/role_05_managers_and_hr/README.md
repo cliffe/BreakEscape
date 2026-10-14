@@ -81,7 +81,8 @@ The module also supports the organisation's own access, screening and leaver con
 - **MG-20 Knowledge check**, **BE-01 Assessed decisions** and **BE-02 Debrief screen**.
 - **BE-18 Work task and interruptions:** the Monday to Friday planner, with the clock jumping between scenes.
 - **BE-16 Time skips:** the "three months later" consequences.
-- **BE-19:** MG-18 opening from Owain's ticket; Ama's check question.
+- **BE-19:** MG-18 opening from Owain's ticket; Ama's check question and the "What do you say?" cards, opened from conversation with `#trigger_minigame:knowledge_check|<configKey>`.
+- **MG-27 Work desktop:** the player's computer as one launcher for Owain's tickets, MG-18, the team chat and The Lark.
 - **BE-08 Visual aids:** the two access lists side by side, the access lifecycle diagram, the hiring red flags card, the "thank, act, support, learn" card.
 - **BE-09 Intranet** and **BE-05 Organisation profile:** the manager's card with the customer's own leaver process, screening policy and reporting routes.
 - **proposed:** Video call effects, freeze, blur and audio lag in `person-chat` video-call mode, set by ink tags, plus a configurable label for the call bar (today "SECURE VIDEO LINK" is hard-coded). Likely shared with core_15.

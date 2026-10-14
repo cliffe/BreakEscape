@@ -45,7 +45,7 @@ After this module, staff can:
 Contributes to (short references from `02_COMPLIANCE_MAPPING.md`):
 
 - **PCI DSS 12.6.3.2** (training covers acceptable use of end-user technologies, in line with the organisation's own policies): **meets** it when the organisation's acceptable use policy is loaded through HA-07 and its answer key is set (HA-11).
-- **PCI DSS 12.6.3** (the acknowledgement, at least every 12 months, that the policy and procedures have been read and understood), with HA-07 re-requesting it each year; and **PCI DSS 12.6.1**.
+- **PCI DSS 12.6.3** (the acknowledgement, at least every 12 months, that the policy and procedures have been read and understood), with HA-07 re-requesting it each year, alongside **ISO 27001 A.5.1** (policies communicated to and acknowledged by relevant personnel); and **PCI DSS 12.6.1**.
 - **ISO 27001 cl. 7.3** (aware of the policy, their contribution and the consequences of not following it) and **ISO 27001 A.6.3**.
 - **UK GDPR Art 24** and **UK GDPR Art 32(4)** (people with access to personal data use it only on the organisation's instructions); the **ICO training toolkit** (induction).
 - **NCSC CAF B6.b**; **NIST AT-2**; **CIS 14.1**.
@@ -53,7 +53,7 @@ Contributes to (short references from `02_COMPLIANCE_MAPPING.md`):
 - **DSPT 2.1.1** and **DSPT 3.2.1** (categories 3 and 4), with the rest of the induction pathway.
 - **CMMC AT.L2-3.2.1** (aware of the policies and procedures that apply), **FTC 314.4(e)** and **SOC 2 CC2.2**, for US customers.
 
-Not yet in the mapping, and requested in the writer's report: ISO 27001 A.5.10 (rules for acceptable use) and NIST PL-4 (rules of behaviour, with a documented acknowledgement before access and again when the rules change) also fit this module.
+Not yet in the mapping, and requested in the writer's report: ISO/IEC 27001:2022 Annex A control 5.10 (rules for acceptable use) and NIST SP 800-53 PL-4 (rules of behaviour, with a documented acknowledgement before access and again when the rules change) also fit this module.
 
 ## Module flow
 
@@ -85,6 +85,8 @@ Not yet in the mapping, and requested in the writer's report: ISO 27001 A.5.10 (
 - **BE-05:** contacts for each kind of question, the policy names, the monitoring statement.
 - **BE-01, BE-02, BE-19, EX-01, BE-08:** the record, the debrief, the show opened from a conversation, and Owain's warm-up card.
 - **HA-04 and HA-17:** reminders for an acknowledgement left pending, and re-acknowledging from the learner home without replaying the module.
+- **HA-26 Setup checklist:** the confirmed answer key (at least 12 cards), an accessible policy with its summary, and the contacts for each kind of question, all before the module can be assigned.
+- **MG-27 Work desktop:** the player's laptop at the desk in the Apply beat, from which the inbox (Anjali's email), the customer portal (Martin's favour) and The Lark open.
 
 ## Organisation-specific content
 
@@ -102,4 +104,4 @@ Not yet in the mapping, and requested in the writer's report: ISO 27001 A.5.10 (
 2. **Completion and pending questions.** Should the module count as complete before the policy is acknowledged? *Recommendation: no, in line with the course rule that a module isn't complete until any attached policy is acknowledged, but "I have a question first" holds it open without a fail, with reminders (HA-04) until the question is answered.*
 3. **Locked answers.** Which answers can an organisation not change? *Recommendation: six: never share passwords or MFA codes; never use someone else's login; never lend a badge; never look at data you don't need for your job; never switch off security software; always report a suspected incident.*
 4. **A live version.** Should organisations be able to run the show as a real lunchtime quiz for teams, on a presenter screen (BE-15, HA-13)? *Recommendation: yes. It costs little, uses the same bank and answer key, and is the friendliest way to launch a new or changed policy.*
-5. **A policy that is only a long PDF.** *Recommendation: require an accessible version (HTML or a tagged PDF) and the five-point summary before the module can be assigned; flag it in the organisation's setup checklist.*
+5. **A policy that is only a long PDF.** *Recommendation: require an accessible version (HTML, as HA-07 already does) and the five-point summary before the module can be assigned, as items on the setup checklist (HA-26), alongside the confirmed answer key.*

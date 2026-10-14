@@ -74,7 +74,7 @@ The critical path is marked **(CP)**.
 | 16:10 | Kev rings: *"Need the council's new slots on the rota. It's on that TallyGrid thing Callum set up. The temp. Left in March. Still works, mind."* The rota opens in a free spreadsheet app; its sharing panel (MG-11) shows the owner "callum.r (personal)" and "Anyone with the link can edit". The rota has drivers' names and mobile numbers and two schools' gate codes | Shadow IT already in use; access that never ends | Add nothing there. Tell Kev it needs moving into the team space, and ask Owain to move it and deal with Callum's access |
 
 - **How each one plays out in the moment:**
-  - **Personal email.** Sending it works instantly, and Martin says *"See? Done."* Asking Owain: *"Take the laptop home. Larkspur Connect gets you onto the share from your kitchen table. And let me look at that sync."* Staying late also works, slowly, and the share stays slow for everyone else.
+  - **Personal email.** Sending it works instantly, and Martin says *"See? Done."* Asking Owain: *"Take the laptop home. Remote access gets you onto the share from your kitchen table. And let me look at that sync."* Staying late also works, slowly, and the share stays slow for everyone else.
   - **BoxBounce.** Uploading works and gives a public link that never expires. With Owain's help the player uses Larkspur Send: Ruth by name, seven-day expiry, a notice when she downloads it. Leaving the link open to "anyone with the link" is possible, and the debrief notices.
   - **The posted stick.** Plugging it in: Larkspur Protect blocks something on the stick and Owain rings, calm as ever. Calling the number on the slip: a pleasant voice says *"Yes, that's from us"*, which proves nothing (the debrief shows why, pointing to core_02). Calling Ruth on the directory number: *"We didn't post anything. We'd email it, wouldn't we?"* Owain puts the stick into the scanning PC: *"Ooh. Not survey results."*
   - **The rota.** Owain: *"Give me ten minutes. I'll move it into a team space so Kev can carry on, and we'll take the link down."* Adding the slots to the free app works, and nothing visible happens. Copying the rota into the player's own account "to be safe" makes one more copy nobody controls.
@@ -85,7 +85,7 @@ The critical path is marked **(CP)**.
   - **BoxBounce.** The free site was breached in July. Old public links, including the kitchen video with two Elmfield House residents in the background, turned up in search results.
   - **The posted stick.** The same envelope reached four other suppliers to the council. One plugged it in, and its systems were down for nine days (core_07).
   - **The rota.** Anyone with the link could still edit it, and so could Callum. In September the free app closed Callum's unused account, and the rota went with it, the week before half-term deliveries.
-  - For each approved route the player took, the calm version: *"The Larkspur Send link expired after seven days. There was nothing to find."* *"The rota lives in the team space. Kev added the half-term slots in October."*
+  - For each approved route the player took, the calm version: *"The secure link expired after seven days. There was nothing to find."* *"The rota lives in the team space. Kev added the half-term slots in October."*
 
 ### 5. Debrief (1.5 minutes)
 
@@ -122,11 +122,15 @@ No option shames the player or Martin. Martin's shortcuts are what most offices 
 | **MG-01 Inbox** | new | Composing the pack email, with "Me (personal)" in autocomplete |
 | **MG-11 Sharing settings** | new | Larkspur Send (recipient, expiry, download notice); the free app's sharing panel, with a departed owner and "anyone with the link" |
 | **MG-20 Knowledge check** | new | The Swap Shop cards, Owain's check question and the final spot check |
+| **MG-27 Work desktop** | new | The player's laptop: the pack folder with its sync bar, the compose window, and messages arriving as notifications |
+| **MG-02 Web browser** | new | BoxBounce's upload page and the free app's rota page, if the player opens them |
 | `examine` | existing | The car park stick's label; the envelope and compliments slip |
 | `person-chat` | existing | Owain, Martin, Jo, Maureen, Ama |
 | `phone-chat` | existing | Kev's call, Martin's messages, Ruth on the directory number (MG-04 later) |
 | `notes` | existing | The client directory with Ruth's number; the Swap Shop board text |
-| `container` | existing | The pack folder on the share, with its sync bar shown as a status note |
+| `container` | existing | The pack folder on the share, with its sync bar shown as a status note, until MG-27 (which extends it) exists |
+
+Minigames that open without the player clicking an object (Owain's check question, the Swap Shop, the compose window from Martin's message) use BE-19's `#trigger_minigame:<minigame>|<configKey>` tag.
 
 ## Explainers
 

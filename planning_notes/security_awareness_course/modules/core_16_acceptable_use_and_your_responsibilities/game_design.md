@@ -197,7 +197,7 @@ Shown on BE-02, then one line from Ama:
 
 ## Pitfalls
 
-- **Teaching a rule the organisation doesn't have.** Only cards the organisation has confirmed are drawn, and at least 12 must be confirmed before the module can be assigned. The Larkspur defaults are suggestions, not answers.
+- **Teaching a rule the organisation doesn't have.** Only cards the organisation has confirmed are drawn, and at least 12 must be confirmed before the module can be assigned (an item on the setup checklist, HA-26). The Larkspur defaults are suggestions, not answers.
 - **Letting an organisation teach something harmful.** Seven cards are locked, covering the six locked rules in `README.md` (open question 3): S17 and S22 (passwords and codes), S16 (someone else's login), S04 (badges), S19 (data without a work reason), S18 (security software) and S21 (reporting). No organisation can make any of these "Allowed", or make reporting optional.
 - **Policy trivia.** Cards are everyday situations, never "what does section 4.3 say?". The policy section is shown as a pointer, not asked for.
 - **Punishing caution.** "Ask first" always scores. People who are afraid of being wrong stop asking.

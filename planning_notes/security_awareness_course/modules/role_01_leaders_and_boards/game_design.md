@@ -8,7 +8,7 @@ The module compresses thirty-six hours into thirty minutes on a crisis board in 
 
 The hook a board member will talk about at lunch: their own decision log comes back at the end, when the chair plays the regulator and asks, "Show me where you wrote down why."
 
-Boards prefer a workshop, so the facilitated session is the main mode: the board plays together around one screen with a facilitator, pausing to discuss (see Variants). The solo version gives each director the same decisions, a personal record and a certificate for Code action C.3.
+Boards prefer a workshop, so the facilitated session is the main mode: the board plays together around one screen with a facilitator, pausing to discuss (see Variants). The solo version gives each director the same decisions, a personal record and a certificate for Code action C3.
 
 ## Setting and cast
 
@@ -53,9 +53,9 @@ The critical path is marked **(CP)**. Times in brackets are crisis time; the min
   3. **Write it down.** A decision log entry, annotated: time, decision, who, advice, reason, review. *"If it isn't written down, we'll argue about it in three weeks."*
   4. **If they ask for money.** Four facts on one card: no guarantee of a working key; no way to make stolen data safe; it doesn't meet or reduce our duties to the regulator; it may be unlawful. *"And we agreed our stance at last year's exercise. It's in the board pack."*
   5. **Say what you know.** The six-part message formula. *"People forgive 'we don't know yet'. They don't forgive 'all fine' followed by the truth."*
-- Check question (MG-20 single item): *"When did the ICO's seventy-two hours start?"* At 02:13, when we became aware (correct) / when forensics confirms what was taken / when the board meets at 09:30.
+- Check question (MG-20 single item, opened from the conversation with `#trigger_minigame:knowledge_check|r01_clock_check`): *"When did the ICO's seventy-two hours start?"* At 02:13, when we became aware (correct) / when forensics confirms what was taken / when the board meets at 09:30.
 - **Skip:** *"I've been through a real one."* Faisal: *"Then you know the first day disappears. One question, humour me."* A wrong answer brings back the chunk it tests.
-- **Optional topics** in Faisal's hub: *"What does the Code actually ask of us?"* (the five principles on one slide, 45 seconds), *"What does our insurance cover?"* (the NCSC's seven questions), *"What's the government doing about ransom payments?"* (the proposals and their status, 30 seconds).
+- **Optional topics** in Faisal's hub: *"What does the Code actually ask of us?"* (the five principles on one slide, 45 seconds), *"What does our insurance cover?"* (the NCSC's seven questions), *"What's the government doing about ransom payments?"* (the proposals and their status, 30 seconds), *"Who's behind attacks like this?"* (criminals after money, and the rarer well-resourced groups who want quiet, lasting access; 40 seconds, covering NIST AT-2(5) at awareness level: *"Most want a quick payday. A few want to sit quietly for months. The same basics stop both."*).
 
 ### 3. Practise: "Whose call? Which clock?" (3 minutes)
 
@@ -69,7 +69,7 @@ The critical path is marked **(CP)**. Times in brackets are crisis time; the min
 
 ### 4. Apply: "Thirty-six hours" (14 minutes)
 
-- **(CP)** The crisis board (MG-24) fills the wall screen. A task bar (BE-18) shows the board's four objectives in order: **Keep lifeline services going. Meet the clocks. Decide and record. Restore safely.** Status rows: Lifeline services, Email (untrusted), Personal data, ICO clock (a countdown), Leak deadline (from inject 4), Press. Each inject arrives as a time skip (BE-16) with the board's stamp jumping forward; each ends with a decision card and a reason prompt for the log.
+- **(CP)** The crisis board (MG-24) fills the wall screen. A task bar (BE-18) shows the board's four objectives in order: **Keep lifeline services going. Meet the clocks. Decide and record. Restore safely.** Status rows: Lifeline services, Email (untrusted), Personal data, ICO clock (a countdown in crisis time), Leak deadline (from inject 4), Press. Time moves by injects, never in real time: the player presses "Go to 06:30" and the board's clock, stamps and countdowns jump forward (MG-24's `crisis_time_moved`). Each inject ends with a decision card, the advisers' views and a reason prompt for the log. The optional timer stays off; a facilitator can run one in a live session.
 
 **Inject 1 (06:30): the depots.** Lena on the phone: *"The rota system's dark. Kirkmoor's wards need cleaning teams by half seven. What do I tell the depots?"*
 - *"Use the printed rotas in the depot folders and ring the site managers."* / *"Hold the teams until Owain has the system back."* / *"Ask team leaders to share rotas from their personal email."*
@@ -153,13 +153,13 @@ No option shames the player. The worst branch (waiting, saying nothing, paying o
 
 | Minigame | Status | Use here |
 |---|---|---|
-| **MG-24 Crisis decision board** | new (extends `command-board`) | The spine of the module. Config: title "LARKSPUR GROUP: CRISIS BOARD"; pre-seed "02:13 RANSOMWARE DETECTED: FILE SERVERS"; timeline entries keyed to globals (`isolation_authorised`, `crisis_team_convened`, `insurer_notified`, `ico_notified`, `ransom_resolution`, `client_briefed`, `voice_note_verified`, `restore_choice`, `individuals_notified`); status rows for lifeline services, email, personal data, press; countdowns for the ICO clock and the leak deadline; decision cards with options, advice and "whose call"; a reason prompt that writes each decision to the log; the practice mode for "Whose call? Which clock?" |
-| `command-board` | existing | Already does the scenario title, pre-seeded entries, entries that stamp themselves when globals change, status rows and typed entries. MG-24 adds the cards, countdowns and injects |
+| **MG-24 Crisis decision board** | new (extends `command-board`) | The spine of the module. Config (the `commandBoard` block with MG-24's `injects[]`, `principles[]`, `facilitated` and `assess`): title "LARKSPUR GROUP: CRISIS BOARD"; pre-seed "02:13 RANSOMWARE DETECTED: FILE SERVERS"; one inject per Apply decision, each with its advisers (`faisal_karim`, `ama_owusu`, `tomasz_wisniewski`, `hassan_qureshi`, `daniel_kwan`) and options tagged with a Code principle; timeline entries keyed to globals (`isolation_authorised`, `crisis_team_convened`, `insurer_notified`, `ico_notified`, `ransom_resolution`, `client_briefed`, `voice_note_verified`, `restore_choice`, `individuals_notified`); status rows for lifeline services, email, personal data and press; crisis-time countdowns for the ICO clock and the leak deadline; a reason prompt on each decision that writes the log; the practice mode. Events: `crisis_inject_shown`, `crisis_adviser_asked`, `crisis_decision`, `crisis_time_moved`, `crisis_completed` |
+| `command-board` | existing | Already does the scenario title, pre-seeded entries, entries that stamp themselves when globals change, status rows and typed entries. MG-24 adds the injects, cards, advisers and countdowns |
 | `esd-pushbutton` | existing | "ISOLATE NETWORK" in Ama's incident room: `authVar` set by H1, confirm modal, `completionActions` set `network_isolated` |
-| `warranty-checklist` | existing (header fix needed) | The insurer's four conditions with compliant, arguable or breached verdicts (D2) |
-| `coverage-decision-form` | existing (header fix needed) | The board's ransom resolution (D4); `completionActions` write `ransom_engage`, `ransom_payment`, `ransom_checks_complete` |
-| `backup-recovery` | existing | The three restoration cards (D7), with `whenAvailable` text once Owain confirms the offline backup is clean |
-| `ransomware-display` | existing | The ransom screen on Ama's laptop, seen not played |
+| `warranty-checklist` | existing (fixes in `features/minigames.md`, section 4) | The insurer's four conditions with compliant, arguable or breached verdicts (D2), opened from Leah's call with `#trigger_minigame:warranty_checklist|r01_policy_conditions` |
+| `coverage-decision-form` | existing (fixes as above) | The board's ransom resolution (D4); `completionActions` write `ransom_engage`, `ransom_payment`, `ransom_checks_complete` |
+| `backup-recovery` | existing (fixes as above) | The three restoration cards (D7), with `whenAvailable` text once Owain confirms the offline backup is clean; its fixed global names need to become data |
+| `ransomware-display` | existing (fixes as above) | The ransom screen on Ama's laptop, seen not played; its art checked for the calm tone |
 | `phone-chat` | existing | The crisis group, the attackers' portal message as a screenshot, Hassan's voice note (TTS voice message) |
 | `person-chat` | existing | Board scenes; video-call mode for Gillian at 09:30 (the "SECURE VIDEO LINK" bar must read "Larkspur Meet") |
 | `notes` | existing | The incident plan, last year's board minute, the risk register entry, Daniel's drafts |
@@ -177,6 +177,7 @@ No option shames the player. The worst branch (waiting, saying nothing, paying o
 | Say what you know | Faisal | 30 seconds | The six-part message formula | none |
 | Optional: what the Code asks | Faisal | 45 seconds | The five principles, one line each | none |
 | Optional: the government's proposals | Faisal | 30 seconds | Three proposals and their status, dated | none |
+| Optional: who's behind it | Faisal | 40 seconds | Two cards: criminals after money; well-resourced groups after lasting access | none (NIST AT-2(5) at awareness level) |
 | The regulator's questions | Anne-Marie (debrief) | 90 seconds | The player's own decision log | Three questions answered from the log |
 | Optional video: "The first hour" | Recorded in engine (EX-02) | 90 seconds | Plays on the board room screen (MG-21) | Linked from the reference card |
 
@@ -203,7 +204,7 @@ Shown on BE-02, then spoken by Anne-Marie and Faisal:
   5. After the demand: *"What is our ransom stance? If we don't have one, what would it be, and who must be in the room?"*
   6. After the voice note: *"How would our finance team check an instruction from one of us?"*
   7. After restoration: *"What are our lifeline services, and how long could each run on paper?"*
-  The session ends with each director writing one commitment, which the facilitator collects as the exercise's action list (Code D.2 and D.4). A **reverse seniority** rule in the facilitator notes asks the most junior person to answer first at each pause. Printable inject cards give a paper fallback if the screen fails. Organisations can swap Larkspur's plan, stance and clocks for their own (BE-05), which turns the session into their annual exercise.
+  The session ends with each director writing one commitment, which the facilitator collects as the exercise's action list (Code D2 and D4). A **reverse seniority** rule in the facilitator notes asks the most junior person to answer first at each pause. Printable inject cards give a paper fallback if the screen fails. **Own-plan version:** the organisation's incident plan headings, crisis roles, contacts, ransom stance, insurer and clocks load from the organisation profile (BE-05, HA-11) in place of Larkspur's, the injects keep their shape, and the facilitator's console saves the action list and a short exercise report. Run that way, the session is the board's annual exercise of its own plan (Cyber Governance Code D2); run with Larkspur's plan, it is training only.
 - **Replay and randomisation:** the entry route (a supplier's remote access without MFA; a service desk reset after a phone call, linking to role_03; a phishing link, linking to core_01); whether the chief executive can be reached; which data was taken (HR files, residents' details, school contacts); which client calls (a hospital trust, a council, a schools trust); and how the fake instruction arrives (voice note, video call or email). The annual edition updates the law cards (UK ransomware measures, the Cyber Security and Resilience Bill) and swaps in the year's lessons from published reviews.
 
 ## Alternative concepts

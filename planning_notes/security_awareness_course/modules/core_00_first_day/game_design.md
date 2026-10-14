@@ -70,7 +70,7 @@ The critical path is marked **(CP)**. Everything else is optional depth.
 ### 4. Practise: Owain's desk (1.5 minutes)
 
 - **(CP)** At the service desk: *"Laptop, charger, and one rule: ask us first. We'd rather help than clean up."*
-- **(CP)** **The Report button.** *"I've sent you a test email. Find the Report button and give it a go."* The inbox (MG-01) opens with one message, "Test: please report me". Reporting it brings Kai's chat: *"Got your test. Button works!"* Owain: *"That's all reporting is. One click."* If the player can't find it, Owain points (Developing).
+- **(CP)** **The Report button.** The laptop's work desktop (MG-27) shows four icons: the inbox, chat, The Lark and Settings; the tutorial step is *"Open your inbox from the desktop."* Owain: *"I've sent you a test email. Find the Report button and give it a go."* The inbox (MG-01) opens with one message, "Test: please report me". Reporting it brings Kai's chat: *"Got your test. Button works!"* Owain: *"That's all reporting is. One click."* If the player can't find it, Owain points (Developing).
 - **(CP)** **A passphrase** (MG-08, light). *"Your password manager needs one good passphrase. Three random words. Roll some."* The builder deals random word tiles from a game word list (no free typing); the player can re-roll until they like it, and a meter shows how long it would take to guess. *"Long beats clever. The manager remembers everything else."* Nothing typed leaves the game.
 - **(CP)** **MFA** (MG-07, light). The player signs in on a pre-filled page; their phone shows a prompt asking for the two-digit number on screen. They enter it and approve. Owain: *"Only approve when you've just signed in yourself. Now I'll send one you didn't ask for."* A second prompt arrives with no sign-in. **Deny** offers **Report this**. Owain: *"Spot on. Out of the blue means no."* If they approve it: *"That's the one to say no to. Deny it and tell us."* Immediate feedback; recorded for core_03's baseline.
 - **Settings.** Owain: *"Display settings, while I'm here. Bigger text? Captions?"* Opens the game's settings (BE-04). Optional.
@@ -123,6 +123,7 @@ No option shames the player. The worst branch (sending the fake "Lena" their det
 |---|---|---|
 | `person-chat` | existing | Maureen, Precious, Ama, Kai, Owain, Leo; Ama's chunks use BE-08 aids |
 | `phone-chat` | existing | The fake "Lena" message request (a contact with `timedMessages`) and the team chat with the real Lena, Kai and Gillian. MG-05's chat-app skins later |
+| MG-27 Work desktop | new (MVP) | The laptop as one launcher for the inbox, chat, The Lark and Settings; the tutorial's desktop steps |
 | MG-01 Inbox | new (MVP) | Minimal use: the test email, then three messages and a pre-filled form behind the fake link |
 | MG-08 Password manager and passphrase builder | new (MVP) | Light: word tiles, re-roll, a guess-time meter, store in the manager |
 | MG-07 MFA prompts | new (MVP) | Light: one prompt to approve with number matching, one to deny and report |
@@ -177,8 +178,8 @@ Shown on BE-02 as "Your first morning", then one closing line from Ama:
 - **Turning day one into a lecture.** Every topic except the motto and the route is a one-line preview. If a line is teaching phishing or passwords in depth, cut it and point to core_01 or core_03.
 - **A gotcha in the first minute.** Answering a friendly message from your new "manager" is common and human. Maureen's warmth, the second chance from Ama and the debrief's framing make sure nobody's first experience of the course is being caught out.
 - **The wrong tone on screen.** The title screen, tutorial and avatars must not say "Hacktivity Games", type terminal-style, or offer hooded hackers and spies (BE-20, proposed avatar set). This is the first impression for staff who may never have played a game.
-- **A generic reporting route.** The module is pointless if the route on screen isn't the organisation's own. Make a filled-in reporting slot (BE-05, HA-11) a launch check before the module can be assigned.
-- **Promising what the organisation won't deliver.** The no-blame message is only credible if the organisation backs it. HA-11 should ask the organisation to confirm a short statement ("honest mistakes reported quickly are not disciplined"), shown on The Lark; if it won't, Ama's chunk 4 needs rewording with the organisation.
+- **A generic reporting route.** The module is pointless if the route on screen isn't the organisation's own. A filled-in reporting slot (BE-05, HA-11) is an item on the setup checklist (HA-26), so the module can't be assigned without it.
+- **Promising what the organisation won't deliver.** The no-blame message is only credible if the organisation backs it. The setup checklist (HA-26) should ask the organisation to confirm a short statement ("honest mistakes reported quickly are not disciplined"), shown on The Lark; if it won't, Ama's chunk 4 needs rewording with the organisation.
 - **Asking for anything real.** The passphrase is built from game word tiles; sign-in pages and the payroll form are pre-filled with made-up details. Say so on the title screen.
 - **Locking anyone out.** As the first module, it must work fully by keyboard and as the text route, with settings visible from the first screen and no timer that matters.
 - **Making the security team look like police.** Ama and Kai thank, help and explain. The notice before the first scene and The Lark's "About your training record" page say plainly what is recorded, who sees it, and that choices are never used for discipline.

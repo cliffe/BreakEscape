@@ -43,15 +43,21 @@ After this module, IT staff can:
 
 ## Compliance coverage
 
-Contributes to (short forms until `02_COMPLIANCE_MAPPING.md` is written):
+Training requirements this module contributes to (short names from `02_COMPLIANCE_MAPPING.md`):
 
-- **PCI DSS** 12.6.3.1 (awareness of phishing and social engineering); the requirement that user identity is verified before any authentication factor is modified, and MFA for administrative access to the cardholder data environment (requirement 8; **numbering to verify** against v4.0.1).
-- **ISO/IEC 27001** Annex A 5.17 (authentication information), 5.18 (access rights), 8.2 (privileged access rights), 8.5 (secure authentication), 8.16 (monitoring activities) and 6.3 (awareness, education and training).
-- **NIST SP 800-53** AT-3 (role-based training) and AT-2(3) (social engineering).
-- **CIS Controls v8.1** 14.9 (role-specific training), 5.4 (dedicated administrator accounts) and 6.5 (MFA for administrative access).
-- **NCSC CAF** B2 (identity and access control) and B6 (staff awareness and training).
-- **Cyber Essentials** (requirements v3.3, April 2026): user access control, including separate accounts used only for administrative activities, MFA, and removing privileges no longer needed.
-- **NIS2** Article 21(2)(g) (cyber hygiene and training), (i) (access control) and (j) (multi-factor authentication).
+- **NIST AT-3** (role-based training) and **NIST AT-2(3)** (social engineering, here aimed at the service desk).
+- **CIS 14.9** (role-specific training, including for system administrators).
+- **ISO 27001 cl. 7.2** (competence for roles with security duties) and **ISO 27001 A.6.3**.
+- **NCSC CAF B6.b** (training defined for every role); **DSPT 3.3.1** for NHS customers.
+- **PCI DSS 12.6.3.1** (social engineering, alongside core_01 and core_02) and **PCI DSS 12.10.4**, in part: the service desk's first steps in an incident.
+- **NIS2 IR 8.2** (training for roles that need security skills) and **NIS2 IR 10.1** (privileged users understand their roles), where the Implementing Regulation applies.
+- **DORA Art 13(6)** (training at a level that fits the role), for EU financial entities.
+- **UK GDPR Art 32** (security of processing, including staff who control access to personal data).
+- US customers: **NYDFS 500.10(a)(2)**, **FTC 314.4(e)(3)**, **CMMC AT.L2-3.2.2** and **SOC 2 CC1.4**.
+
+**What it doesn't meet on its own.** The module is awareness level. It doesn't replace training for incident response staff (PCI DSS 12.10.4) or the technical skills of system administration. Point those staff to Hacktivity's technical labs: the HacktivityLabSheets labs on log management and SIEM (`_labs/response_and_investigation/9_siem.md`), backups and recovery (`3_backups_and_recovery.md`), and authentication, access controls and directory services (`_labs/systems_security/1_authentication.md`, `4_access_controls.md`, `3_network_authentication.md`), and the incident response practice in the Security-Informed Safety games (`scenarios/sis01_healthcare`).
+
+The content also follows ISO 27001 A.5.17, A.5.18, A.8.2, A.8.5 and A.8.16, NCSC CAF B2, NIS2 Art 21(2)(i) and (j), and PCI DSS requirement 8 (identity verified before any authentication factor is changed, and MFA for administrative access; **check the exact numbering against v4.0.1**). Its admin rules match the user access control requirements of Cyber Essentials v3.3, which is a technical scheme with no training requirement and is not claimed here.
 
 ## Module flow
 
@@ -81,13 +87,14 @@ Contributes to (short forms until `02_COMPLIANCE_MAPPING.md` is written):
 
 ## New features needed
 
-- **MG-17 Caller verification desk** (the core, shared with role_06). This module's needs: a queue of calls and tickets; a staff record from the HR directory (role, account type, number on record, manager, registered devices, recent changes); verification actions that call back on the directory number, send a prompt to the registered device, ask the manager on a known channel, or book an in-person or video ID check; "security questions" offered as an action that visibly proves nothing; a second-analyst approval for privileged accounts; outcomes (do it, refuse, park, escalate to security); and an event for every action. One desk with two record types (staff for role_03, customers for role_06), as role_06 recommends.
+- **MG-17 Caller verification desk** (the core, shared with role_06), with the `service_desk` skin. This module's needs: a queue of calls and tickets; a staff record from the HR directory (role, account type, number on record, manager, registered devices, recent changes); a checklist whose strong steps are the call back on the directory number, a prompt to the registered device, the manager on a known channel and an in-person or video ID check, and whose weak steps (date of birth, employee number, anything public) visibly prove nothing; a second-analyst approval for privileged and executive accounts; the outcomes go ahead, call back, refuse politely or escalate; caller pressure through NPC influence that never needs speed; and the `caller_` events (`caller_check_used`, `caller_verified`, `caller_refused`, `caller_escalated`, `caller_actioned`), which record the strongest check used before each action.
 - **MG-04 Voice calls:** the phone, the directory and hold that MG-17 sits on.
 - **BE-18 Work task and interruptions:** the queue counter and the scheduled arrivals.
-- **BE-01**, **BE-02**, **BE-08**, **BE-09**, **BE-19**, **BE-20**, **MG-20**, **EX-01**.
+- **MG-27 Work desktop:** the analyst's PC, opening the ticket queue, the log view, chat and The Lark from one place.
+- **BE-01**, **BE-02**, **BE-08**, **BE-09**, **BE-19** (the check question and the alert opened from conversations with `#trigger_minigame:<minigame>|<configKey>`), **BE-20**, **MG-20**, **EX-01**.
 - **EX-06 Attacker-view interludes:** Jo's one-minute "where the answers came from" board.
 - **BE-07 Micro-drill launcher** and **BE-13 Content banks** for "Prove It".
-- **A bug fix before reuse:** pass `alertConfig` (or an inline `alerts` array) through `startSiemMinigame`, if the siem dashboard is wanted.
+- **Reuse fixes** from `features/minigames.md`, section 4: `siem` (the starter passes only `timeLimitSec`, so `alertConfig` never arrives; support inline alerts and an optional timer) if the dashboard is wanted; `forensic-data-platform` (completion actions through `applyActions`, and a BE-01 record on confirm); the video-call bar in `person-chat-ui.js` for Jo's interlude.
 
 ## Organisation-specific content
 
@@ -101,7 +108,7 @@ Contributes to (short forms until `02_COMPLIANCE_MAPPING.md` is written):
 
 ## Open questions
 
-1. **Real company names in the "why" section.** *Recommendation: keep Co-op, M&S and MGM in `concepts.md` only, with "confirmed" and "reported" kept apart as above; the game uses Larkspur.*
+1. **Real companies.** *Recommendation: name Co-op, M&S and MGM only in this README and `concepts.md`, always keeping "confirmed" and "reported" apart; the game uses Larkspur and fictional callers.*
 2. **How hard to make the fake Gillian.** *Recommendation: she knows every security answer and sounds plausible, so only the procedure catches her, never a slip in her story. The debrief says so.*
 3. **Outsourced service desks.** Many customers outsource the desk. *Recommendation: let the organisation profile switch the player to "service desk partner" with Larkspur as the client, the same procedure and an extra "client approval" step for privileged accounts.*
 4. **Video checks and deepfakes.** *Recommendation: allow video with ID for high-risk resets, always paired with a second check (manager confirmation or a call back), and point to core_15.*

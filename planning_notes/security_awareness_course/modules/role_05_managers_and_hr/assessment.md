@@ -26,17 +26,17 @@ On the fairness variant of the interview (a genuine candidate), R05-B5 is rated 
 
 To complete the module the learner must, at least once:
 
-1. **Remove access that is no longer needed in a live situation:** R05-B3 at Secure, or R05-B11 at Secure, or R05-B4 at Secure or Developing.
-2. **Respond to a reported mistake without blame:** R05-B7 not at Not yet.
-3. **Not hire without the standard checks:** R05-B5 not at Not yet.
+- **R05-CB1** Remove access that is no longer needed in a live situation: R05-B3 at Secure, or R05-B11 at Secure, or R05-B4 at Secure or Developing.
+- **R05-CB2** Respond to a reported mistake without blame: R05-B7 not at Not yet.
+- **R05-CB3** Not hire without the standard checks: R05-B5 not at Not yet.
 
-A learner who misses a critical behaviour is taken back to it. Ama or Mei Lin replays the relevant Practise cards with the explanation, then a fresh scene of the same kind runs as a short replay of the Apply beat: a different mover, a different confession (a misdirected email or a lost phone), or a different candidate. They complete the module when they show the behaviour; the record keeps both attempts.
+The remediation loop follows `features/assessment_and_evidence.md`, section 4. A learner who misses a critical behaviour hears what happened without blame; Ama or Mei Lin replays the relevant Practise cards with the explanation; then a fresh scene of the same kind runs as a short replay of the Apply beat (a different mover, a different confession such as a misdirected email or a lost phone, or a different candidate). If it still isn't shown, a second loop runs with another scene and a more direct prompt. After two loops the learner goes on to the check anyway: the record says "practised, not yet shown", a private practice drill is scheduled for two to four weeks later (HA-03, HA-21), and the organisation's training contact is offered as help. Nobody else is told by name. An outcome whose critical behaviour was shown only after practice is capped at Developing for this sitting. Every attempt is kept in the record.
 
 ## Knowledge check bank
 
 Six items per sitting, drawn so that every learning outcome is covered. Stems are short workplace situations.
 
-### Q1 (LO1, single choice)
+### R05-Q1 (LO1, single choice)
 
 A new starter is replacing someone who has been with you fifteen years. The access form offers "Copy access from the leaver". What do you do?
 
@@ -45,7 +45,7 @@ A new starter is replacing someone who has been with you fifteen years. The acce
 - C. Copy it and ask IT to remove anything odd later. *Feedback: "Later" rarely comes, and IT can't tell what's odd for your team.*
 - D. Give her read-only access to everything so she can learn. *Feedback: Read access to everything still exposes everything.*
 
-### Q2 (LO1, multiple select)
+### R05-Q2 (LO1, multiple select)
 
 An agency temp starts on Monday for four weeks. What should they get? Choose all that apply.
 
@@ -55,7 +55,7 @@ An agency temp starts on Monday for four weeks. What should they get? Choose all
 - D. Admin rights, to save bothering IT for four weeks. *Feedback: Admin rights are for people who administer systems.*
 - **E. Induction training before they handle personal data.** *Feedback: Right. Training comes before access.*
 
-### Q3 (LO2, single choice)
+### R05-Q3 (LO2, single choice)
 
 A colleague moves to Finance on Wednesday and asks to keep her old team mailbox "for a month, in case customers email". What's the best response?
 
@@ -64,7 +64,7 @@ A colleague moves to Finance on Wednesday and asks to keep her old team mailbox 
 - C. Keep it until the next access review. *Feedback: That could be months, and it can break separation of duties in the meantime.*
 - D. Let her decide when she's finished with it. *Feedback: The manager owns the request; people rarely ask for access to be taken away.*
 
-### Q4 (LO2, multiple select)
+### R05-Q4 (LO2, multiple select)
 
 A long-serving scheduler retires on Friday. Which belong on the leaver checklist? Choose all that apply.
 
@@ -74,7 +74,7 @@ A long-serving scheduler retires on Friday. Which belong on the leaver checklist
 - D. Leave their email on for a month so they can say goodbye. *Feedback: Send the goodbye before they go and set an automatic reply.*
 - **E. Collect their laptop, phone, badge and keys.** *Feedback: Right.*
 
-### Q5 (LO3, single choice)
+### R05-Q5 (LO3, single choice)
 
 During an access review you find an account called `backup-sync` that you don't recognise. It's used every night. What do you do?
 
@@ -83,14 +83,14 @@ During an access review you find an account called `backup-sync` that you don't 
 - **C. Ask the owner or the service desk before deciding.** *Feedback: Right. Ask about anything you don't recognise.*
 - D. Leave it out of the review. *Feedback: Unknown accounts are exactly what reviews are for.*
 
-### Q6 (LO3, true or false with reason)
+### R05-Q6 (LO3, true or false with reason)
 
 "If nobody has complained, everyone's access must be right, so the access review is a formality."
 
 - A. True: problems would have shown up. *Feedback: Extra access causes no complaints until it's misused.*
 - **B. False: reviews find leavers, movers, shared logins and unused admin rights that nobody notices day to day.** *Feedback: Right.*
 
-### Q7 (LO4, multiple select)
+### R05-Q7 (LO4, multiple select)
 
 You're interviewing a remote candidate for a contractor role. Which of these should you pass to HR as warning signs? Choose all that apply.
 
@@ -100,7 +100,7 @@ You're interviewing a remote candidate for a contractor role. Which of these sho
 - **D. They won't show their original ID on a live video call.** *Feedback: The check needs the original document, in person or on live video.*
 - E. Their broadband is slow and the picture judders. *Feedback: Common and innocent. The same checks will clear a genuine candidate.*
 
-### Q8 (LO4, single choice)
+### R05-Q8 (LO4, single choice)
 
 The agency says, "References and checks are done; he can start Monday." Nobody at your organisation has seen his original ID. What do you do?
 
@@ -109,7 +109,7 @@ The agency says, "References and checks are done; he can start Monday." Nobody a
 - C. Start him, but give him no access for a week. *Feedback: He'd still be paid and on the payroll under an identity nobody has checked.*
 - D. Reject him to be safe. *Feedback: A quiet rejection can't be reported, and it may be unfair to a genuine candidate.*
 
-### Q9 (LO5, single choice)
+### R05-Q9 (LO5, single choice)
 
 It's 17:50. A team member says: "I typed my password into a fake payslip page. Please don't tell anyone." What do you say first?
 
@@ -118,7 +118,7 @@ It's 17:50. A team member says: "I typed my password into a fake payslip page. P
 - C. "How did that get past you? We did the training." *Feedback: Blame teaches people to hide the next one.*
 - D. "I'll have to let HR know." *Feedback: A reported mistake is a security matter, not a disciplinary one.*
 
-### Q10 (LO5, ordering)
+### R05-Q10 (LO5, ordering)
 
 Someone in your team owns up to a security mistake. Put your steps in order.
 
@@ -129,7 +129,7 @@ Someone in your team owns up to a security mistake. Put your steps in order.
 
 *Feedback: Thanks comes first because it decides whether they keep talking. Reporting fast limits the damage. (Accept 2 and 3 in either order.)*
 
-### Q11 (LO6, single choice)
+### R05-Q11 (LO6, single choice)
 
 A colleague's new manager asks you: "Anything I should know about his health? He was off for a while last year." What do you say?
 
@@ -138,7 +138,7 @@ A colleague's new manager asks you: "Anything I should know about his health? He
 - C. Forward her his absence record. *Feedback: That's HR's to share, and only what she needs.*
 - D. "I can't say anything about him at all." *Feedback: You can talk about his work. It's the health details that go through HR.*
 
-### Q12 (LO6, single choice)
+### R05-Q12 (LO6, single choice)
 
 Reviewing your team's access, you see that a colleague who leaves on Friday emailed a spreadsheet of 1,400 contacts to a personal address. What do you do?
 
@@ -154,7 +154,7 @@ Reviewing your team's access, you see that a colleague who leaves on Friday emai
 
 ## Completion and pass rules
 
-- **Complete** when the learner has played through all beats (or the text route), shown each critical behaviour (with remediation if needed), passed the knowledge check, and opened the reference card.
+- **Complete** when the learner has played through all beats (or the text route), shown each critical behaviour or been taken through the remediation loop (above), passed the knowledge check, and opened the reference card.
 - **Pass mark:** 5 of 6 (the organisation can change it; 80% is the default).
 - **Retakes:** a failed check draws six new items. After two fails, Ama and Mei Lin replay the Learn beat before the third attempt.
 - **Test-out** (where the organisation allows it): the Apply beat and the check without Learn and Practise. Passing records the module as complete; missing a critical behaviour sends the learner through the full module.
@@ -162,7 +162,7 @@ Reviewing your team's access, you see that a colleague who leaves on Friday emai
 
 ## Evidence for auditors
 
-The learner's record (HA-05) shows: module id and version, start and completion dates, time on task, route (game, text, test-out), each assessed behaviour's rating, critical behaviours shown or remediated, the check score, whether the reference card was opened, and any policy acknowledgements. This supports:
+The learner's record (HA-05) shows: module id and version, start and completion dates, time on task, route (game, text, test-out), each assessed behaviour's rating, critical behaviours shown, shown after practice, or practised and not yet shown, the check score, whether the reference card was opened, and any policy acknowledgements. This supports:
 
 - NCSC CAF B6.a (people who report are treated positively) and NCSC CAF B6.b (a training path for each role, tracked per person); DSPT B6.a and B6.b for NHS customers;
 - ISO 27001 cl. 7.2 and ISO 27001 A.6.3;

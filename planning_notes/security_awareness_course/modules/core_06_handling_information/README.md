@@ -11,7 +11,7 @@
 | Micro-drill | 4 minutes ("Label It") |
 | Text route | 10 minutes |
 | Priority | Phase 2 |
-| Build size | M, driven by the classification sorter (MG-10), sharing settings (MG-11) and MG-12's inspect mode; the attacker view reuses the existing `shredded-document` minigame |
+| Build size | M, driven by the classification sorter (MG-10), sharing settings (MG-11) and MG-12's Hidden step; the attacker view reuses the existing `shredded-document` minigame |
 
 ## Why this module
 
@@ -39,15 +39,15 @@ After this module, staff can:
 
 ## Compliance coverage
 
-Contributes to (references in `02_COMPLIANCE_MAPPING.md`):
+Contributes to (short references from `02_COMPLIANCE_MAPPING.md`, section 2):
 
-- **CIS** 14.4 (identifying, storing, transferring, archiving and destroying sensitive data) and 14.5 (causes of unintentional data exposure).
-- **ISO 27001** A.6.3.
-- **NIST** AT-2.
-- **NIS2** Art 21(2)(g) and IR 8.1; **DORA** Art 13(6).
-- **UK GDPR** Art 5(1)(f), Art 32 and Art 32(4); **ICO training toolkit** (data sharing, information security and records management topics).
-- **NCSC CAF** B6.b; **DSPT** 3.2.1.
-- **FTC** 314.4(e), for US customers.
+- CIS 14.4 and 14.5: identifying, storing, transferring, archiving and destroying sensitive data, and the causes of unintentional data exposure.
+- ISO 27001 A.6.3.
+- NIST AT-2.
+- NIS2 Art 21(2)(g) and IR 8.1; DORA Art 13(6).
+- UK GDPR Art 5(1)(f), Art 32 and Art 32(4); ICO training toolkit (the data sharing, information security and records management topics).
+- NCSC CAF B6.b; DSPT 3.2.1.
+- FTC 314.4(e), for US customers.
 
 It also supports the organisation's own handling controls, which are not in the mapping yet. **Proposed additions** for `02_COMPLIANCE_MAPPING.md` (wording to verify against the standards): ISO 27001 A.5.12 (classification of information), A.5.13 (labelling of information), A.5.14 (information transfer), A.7.10 (storage media), A.7.14 (secure disposal or re-use of equipment) and A.8.10 (information deletion); PCI DSS 9.4.6 (destroying hard-copy materials that hold card data).
 
@@ -55,7 +55,7 @@ It also supports the organisation's own handling controls, which are not in the 
 
 | Beat | What happens | Format | Minutes |
 |---|---|---|---|
-| Hook | Martin asks the player to clear last year's draft pricing off their desk; which bin they use is the baseline | Game | 1 |
+| Hook | Martin asks the player to clear the old drafts of the bid pricing off their desk; which bin they use is the baseline | Game | 1 |
 | Learn | That evening, the player joins Jo Fairweather's authorised bin audit and rebuilds a shredded page; next morning Ama explains the four labels, need to know and the handling grid | Attacker view (EX-06, BE-11), then NPC explainer (EX-01, BE-08) | 3 |
 | Practise | "Label It": ten documents to label and route, and two over-shared links to fix | Minigames (MG-10, MG-11) | 2.5 |
 | Apply | Bid week: share with a partner, a competitor's price list arrives by mistake, pricing sign-off with a tricky autocomplete, Martin's personal email, final checks for hidden content, printing, and the clear-out | Game (MG-11, MG-01, MG-12, BE-18) | 5.5 |
@@ -77,14 +77,15 @@ It also supports the organisation's own handling controls, which are not in the 
 - **MG-10 Classification sorter:** "Label It", with the organisation's labels from BE-05 and a "how would you send it?" follow-up on some items.
 - **MG-11 Sharing settings:** a share dialog (who, permission, end date), the access list, and a "Shared by you" view for spotting over-shared links.
 - **MG-01 Inbox:** compose with recipient autocomplete, an "External recipient" chip, a prompt when a Confidential attachment goes outside, a "Send securely" option, and attachment previews.
-- **MG-12 Redaction,** inspect mode: find hidden worksheets, comments, tracked changes and covered-up text, and remove them properly. It builds on the redact mode core_05 needs.
+- **MG-12 Redaction,** with its Hidden step and both redaction tools ("Redact and remove" and "Draw a box"): find hidden worksheets, comments, tracked changes and covered-up text, remove them properly, and check the result. core_05 uses the same minigame with the mark and remove tools only.
+- **MG-27 Work desktop:** the player's computer, opening the inbox, the file-sharing service, the hidden content check and The Lark, with Martin's messages as notifications.
 - **EX-06 Attacker-view interludes** and **BE-11 Role switch:** the bin audit with Jo.
 - **BE-16 Time skips:** the evening audit and the consequence scenes.
 - **BE-18 Work task and interruptions:** the bid checklist and the arrivals.
-- **BE-01**, **BE-02**, **BE-03**, **BE-09** (the handling card), **BE-13** (document and slot banks), **BE-19** (Ama opening the sorter), **MG-20** (the check), **BE-07** (the "Label It" micro-drill), **EX-01** (Ama).
+- **BE-01**, **BE-02**, **BE-03**, **BE-09** (the handling card), **BE-13** (document and slot banks), **BE-19** (Ama's check question with `#trigger_minigame:knowledge_check|<configKey>`, and the sorter opening from her conversation), **MG-20** (the check), **BE-07** (the "Label It" micro-drill), **EX-01** (Ama).
 - **BE-05 Organisation profile:** the labels, their colours and the handling rules come from the customer's profile.
 - **BE-10 Spot-the-risk mode** (optional): a print room sweep in the facilitated version.
-- **proposed:** shredded-document keyboard controls, move-up, move-down and flip buttons with screen reader labels for each strip, because the minigame is drag-and-drop only today and the attacker view must meet the BE-04 baseline.
+- **The `shredded-document` keyboard fix** listed in `features/minigames.md`, section 4 (Move up and Move down buttons, with the order announced): the minigame is drag-and-drop only today, and the attacker view must meet the BE-04 baseline. The flip button needs a screen reader label too.
 
 ## Organisation-specific content
 

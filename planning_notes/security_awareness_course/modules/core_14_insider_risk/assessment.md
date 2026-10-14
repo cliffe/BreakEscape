@@ -6,16 +6,16 @@ Each row is recorded through BE-01 and shown in the debrief and the learner's re
 
 | Id | Behaviour | Learning outcome | Where it is evidenced | Secure | Developing | Not yet |
 |---|---|---|---|---|---|---|
-| C14-B1 | Responds to Leo's request for their login | LO2 (baseline) | Hook | Says no and helps him reach the service desk | Says no without helping | Logs in for him or tells him where the password is |
-| C14-B2 | Responds to Nadia's week | LO3, LO6 | Apply (Tuesday and Thursday) | A kind word, or a private word to Lena about her wellbeing | Reports her to the security team on the strength of the rumour, or keeps away from her | Reads the page in her printer tray, or asks her whether she's going with Ross |
-| C14-B3 | Responds to Wes's theory | LO5, LO6 | Apply (Tuesday) | Declines to speculate, with or without pointing Wes to the right route | Says nothing and leaves | Adds to the rumour |
-| C14-B4 | Handles what they saw on Ross's screen | LO3, LO5 | Apply (Tuesday) | Notes the facts, with or without a word to Ross | (not used) | Searches his desk or files, or photographs his screen |
-| C14-B5 | Responds to the "talent partner" offer | LO4 | Apply (Wednesday) | Screenshots it and reports it without replying | Replies to refuse and then reports it, or blocks and deletes it without reporting | Asks how it would work |
-| C14-B6 | Responds to the night-time prompts | LO4 | Apply (Wednesday) | Denies them all and rings the service desk straight away | Denies them and reports in the morning | Approves one |
-| C14-B7 | Responds to Ross's favour | LO2, LO3 | Apply (Thursday) | Declines and checks with Lena what the handover needs | Sends the export to his work email | Sends it to his personal email |
-| C14-B8 | Raises the concern about Ross | LO5 | Apply (Tuesday to Friday, or after the time skip) | Raises it through a proper route by Thursday, as facts | Raises it on Friday or after the time skip; or raises it on time but as conclusions | Never raises it, or only posts it in the team chat |
-| C14-B9 | Responds to Ross's last-day login request | LO2 | Apply (Friday) | Says no and points him to Mei Lin | Says no | Logs in for him |
-| C14-B10 | "Fact or Feeling?" | LO1, LO3, LO5 | Practise | 8 or 9 of 9, including the fairness card | 6 or 7 of 9 | 5 or fewer |
+| C14-B1 | Responds to Leo's request for their login | C14-LO2 (baseline) | Hook | Says no and helps him reach the service desk | Says no without helping | Logs in for him or tells him where the password is |
+| C14-B2 | Responds to Samira's week | C14-LO3, C14-LO6 | Apply (Tuesday and Thursday) | A kind word, or a private word to Lena about her wellbeing | Reports her to the security team on the strength of the rumour, or keeps away from her | Reads the page in her printer tray, or asks her whether she's going with Ross |
+| C14-B3 | Responds to Craig's theory | C14-LO5, C14-LO6 | Apply (Tuesday) | Declines to speculate, with or without pointing Craig to the right route | Says nothing and leaves | Adds to the rumour |
+| C14-B4 | Handles what they saw on Ross's screen | C14-LO3, C14-LO5 | Apply (Tuesday) | Notes the facts, with or without a word to Ross | (not used) | Searches his desk or files, or photographs his screen |
+| C14-B5 | Responds to the "talent partner" offer | C14-LO4 | Apply (Wednesday) | Screenshots it and reports it without replying | Replies to refuse and then reports it, or blocks and deletes it without reporting | Asks how it would work |
+| C14-B6 | Responds to the night-time prompts | C14-LO4 | Apply (Wednesday) | Denies them all and rings the service desk straight away | Denies them and reports in the morning | Approves one |
+| C14-B7 | Responds to Ross's favour | C14-LO2, C14-LO3 | Apply (Thursday) | Declines and checks with Lena what the handover needs | Sends the export to his work email | Sends it to his personal email |
+| C14-B8 | Raises the concern about Ross | C14-LO5 | Apply (Tuesday to Friday, or after the time skip) | Raises it through a proper route by Thursday, as facts | Raises it on Friday or after the time skip; or raises it on time but as conclusions | Never raises it, or only posts it in the team chat |
+| C14-B9 | Responds to Ross's last-day login request | C14-LO2 | Apply (Friday) | Says no and points him to Mei Lin | Says no | Logs in for him |
+| C14-B10 | "Fact or Feeling?" | C14-LO1, C14-LO3, C14-LO5 | Practise | 8 or 9 of 9, including the fairness card | 6 or 7 of 9 | 5 or fewer |
 
 C14-B6 records "Developing" rather than "Not yet" for reporting in the morning, because denying every prompt already stops the attack; the call that night lets the security team act sooner.
 
@@ -23,20 +23,27 @@ The **before and after** for each learner is C14-B1 against C14-B9: the same req
 
 ## Critical behaviours
 
-To complete the module the learner must, at least once:
+To complete the module the learner must show each of these, or be taken back through the practice for it:
 
-1. **Not share their login** (C14-B9 not at Not yet).
-2. **Report the outside offer** (C14-B5 not at Not yet).
-3. **Raise the concern about Ross through a proper route without investigating** (C14-B8 and C14-B4 not at Not yet).
-4. **Not spread a rumour about a colleague** (C14-B3 not at Not yet).
+- **C14-CB1 Not share their login** (C14-B9 not at Not yet).
+- **C14-CB2 Report the outside offer** (C14-B5 not at Not yet).
+- **C14-CB3 Raise a concern fairly:** raise the concern about Ross through a proper route, without investigating him or spreading the rumour about Samira (C14-B8, C14-B4 and C14-B3 all not at Not yet).
 
-A learner who misses a critical behaviour is taken back to it: Mei Lin or Ama replays the relevant explainer chunk and two matching "Fact or Feeling?" cards, then a fresh situation of the same kind arrives in a short replay (a different colleague asking for a login, a different offer, a different rumour). They complete the module when they show the behaviour; the record keeps both attempts.
+**The remediation loop** (`features/assessment_and_evidence.md`, section 4):
+
+1. Mei Lin (for C14-CB3) or Ama (for C14-CB1 and C14-CB2) says what happened without blame, replays the matching explainer chunk and two matching "Fact or Feeling?" cards (one to two minutes).
+2. A fresh situation of the same kind arrives in a short replay: a temp asking to borrow a login, a different offer through a networking site, a new rumour in the kitchen with one fact the player saw.
+3. Shown: recorded as "shown after practice", and the linked outcome is capped at Developing for this sitting.
+4. Not shown: a second loop, with a different situation and a more direct prompt.
+5. After two loops the learner goes on to the check anyway. The record says "practised, not yet shown", a private practice drill is scheduled for two to four weeks later (HA-21), and the learner is offered help from the organisation's training contact. Nobody else is told by name.
+
+Every attempt is kept in the record.
 
 ## Knowledge check bank
 
 Six items per sitting, drawn so that every learning outcome is covered. Stems are short workplace situations.
 
-### Q1 (LO1, multiple select)
+### C14-Q1 (C14-LO1, multiple select, medium)
 
 Which of these count as insider risk? Choose all that apply.
 
@@ -45,7 +52,7 @@ Which of these count as insider risk? Choose all that apply.
 - **C. A leaver copies the customer list to take to a new job.** *Feedback: Yes. The deliberate end of the spectrum.*
 - D. A criminal in another country guesses a password nobody shared. *Feedback: That's an outside attack. It becomes insider risk if someone inside helps, even by accident.*
 
-### Q2 (LO2, single choice)
+### C14-Q2 (C14-LO2, single choice, easy)
 
 Your colleague's account is locked and their report is due in twenty minutes. They ask to use your login "just for this". What do you do?
 
@@ -54,14 +61,14 @@ Your colleague's account is locked and their report is due in twenty minutes. Th
 - C. Write your password down so they can log in while you're at lunch. *Feedback: Now your password is on paper and in someone else's head.*
 - D. Say no, and leave them to it. *Feedback: Right about the login. Helping them to the service desk is better still.*
 
-### Q3 (LO2, true or false with reason)
+### C14-Q3 (C14-LO1, true or false with reason, easy)
 
-"It's fine to let a trusted colleague use my account as long as I'm watching."
+"Insider risk is about people who set out to harm the company. It doesn't apply to me."
 
-- A. True: you can see what they're doing. *Feedback: You can't see everything they open, and anything that goes wrong is recorded as you.*
-- **B. False: your login is you. Get them their own access through the service desk.** *Feedback: Right.*
+- A. True: it's about spies, thieves and saboteurs. *Feedback: They're the rare end. Most insider incidents are mistakes and shortcuts by ordinary people with access.*
+- **B. False: anyone with access is an insider, and mistakes and shortcuts count, so my own habits matter.** *Feedback: Right. "If you have people, you have insider risk."*
 
-### Q4 (LO4, single choice)
+### C14-Q4 (C14-LO4, single choice, easy)
 
 A stranger messages you on a messaging app: "We pay staff at companies like yours a share of what we make for remote access. Totally anonymous." What do you do?
 
@@ -70,7 +77,7 @@ A stranger messages you on a messaging app: "We pay staff at companies like your
 - **C. Don't reply. Screenshot it and send it to the security team.** *Feedback: Right. You won't be in trouble; you'll probably be thanked.*
 - D. Reply "No thanks" and block them. *Feedback: Polite, but report it too: the same message often goes to several people.*
 
-### Q5 (LO4, single choice)
+### C14-Q5 (C14-LO4, single choice, medium)
 
 You turned down an offer like that yesterday. At 2 am your phone starts buzzing with sign-in prompts you didn't start. What do you do?
 
@@ -78,7 +85,7 @@ You turned down an offer like that yesterday. At 2 am your phone starts buzzing 
 - **B. Deny them all and ring the 24/7 service desk now.** *Feedback: Right. The security team can lock things down before morning.*
 - C. Turn the phone off and deal with it tomorrow. *Feedback: Denying is right, but the security team should know tonight.*
 
-### Q6 (LO3, multiple select)
+### C14-Q6 (C14-LO3, multiple select, hard)
 
 Which of these are worth passing on to the security team or a manager? Choose all that apply.
 
@@ -88,7 +95,7 @@ Which of these are worth passing on to the security team or a manager? Choose al
 - **D. A colleague's login being used on the shared PC while they're on holiday.** *Feedback: Yes: someone may be using an account that isn't theirs.*
 - E. A colleague who seems upset and distracted. *Feedback: That calls for a kind word, and their manager or HR if you're worried about them.*
 
-### Q7 (LO5, single choice)
+### C14-Q7 (C14-LO5, single choice, medium)
 
 You've seen something that worries you about how a colleague is handling customer data. What do you do?
 
@@ -97,7 +104,7 @@ You've seen something that worries you about how a colleague is handling custome
 - C. Ask around the team to see if anyone else has noticed. *Feedback: That spreads a story about someone who may have done nothing wrong.*
 - D. Tell them you've seen it and that they should stop. *Feedback: They may stop, or they may just hide it. Pass it on to the right person.*
 
-### Q8 (LO5, single choice)
+### C14-Q8 (C14-LO5, single choice, medium)
 
 Which is the fairest way to describe a concern?
 
@@ -106,14 +113,14 @@ Which is the fairest way to describe a concern?
 - **C. "On Tuesday at 17:40, Jordan's screen showed a file called 'Customer master' copying to a folder called 'personal'."** *Feedback: Right. What, when and where, so the right people can check it.*
 - D. "Everyone thinks Jordan is up to something." *Feedback: That's a rumour, not something you saw.*
 
-### Q9 (LO5, true or false with reason)
+### C14-Q9 (C14-LO5, true or false with reason, easy)
 
 "If I'm not sure, it's better not to say anything, in case I'm wrong."
 
 - A. True: a wrong concern could get someone into trouble. *Feedback: Concerns are looked into fairly and confidentially. Nobody is in trouble because of an honest concern that turns out to be nothing.*
 - **B. False: raise what you actually saw, in good faith, with the right person. You don't have to be sure.** *Feedback: Right.*
 
-### Q10 (LO6, single choice)
+### C14-Q10 (C14-LO6, single choice, medium)
 
 A colleague has been tearful and distracted all week. In the kitchen, someone says she's "definitely up to something". What do you do?
 
@@ -122,7 +129,7 @@ A colleague has been tearful and distracted all week. In the kitchen, someone sa
 - C. Report her to the security team as a suspect. *Feedback: Raise facts if you've seen something. Being upset isn't one.*
 - D. Keep an eye on what she's printing. *Feedback: That's watching a colleague, not helping her.*
 
-### Q11 (LO6, single choice)
+### C14-Q11 (C14-LO6, single choice, hard)
 
 A colleague believes the company is ignoring a serious health and safety problem at a client site. They're thinking of posting internal documents online. What's the better route?
 
@@ -131,7 +138,7 @@ A colleague believes the company is ignoring a serious health and safety problem
 - C. Say nothing: it isn't their job. *Feedback: Danger to health and safety is exactly what whistleblowing protection is for.*
 - D. Send the documents to a journalist they know. *Feedback: Disclosures to the media are protected only in narrow circumstances. Start with the protected routes.*
 
-### Q12 (LO2, LO3, single choice)
+### C14-Q12 (C14-LO2, C14-LO3, single choice, medium)
 
 On his last day, a leaver asks you to send him "his" customer contacts, because his access has already ended. What do you do?
 
@@ -146,23 +153,27 @@ On his last day, a leaver asks you to send him "his" customer contacts, because 
 
 ## Completion and pass rules
 
-- **Complete** when the learner has played through all beats (or the text route), shown each critical behaviour (with remediation if needed), passed the knowledge check, and opened the reference card.
+- **Complete** when the learner has played through all beats (or the text route), shown each critical behaviour or been taken through the remediation loop for it, passed the knowledge check, and opened the reference card.
 - **Pass mark:** 5 of 6 (the organisation can change it; 80% is the default).
 - **Retakes:** a failed check draws six new items. After two fails, Mei Lin replays the Learn beat before the third attempt.
-- **Test-out** (where the organisation allows it): the Apply beat and the check without Learn and Practise. Passing records the module as complete; missing a critical behaviour sends the learner through the full module.
+- **Test-out** (where the organisation allows it, off by default): the Apply beat and the check without Learn and Practise. It passes when the check is passed and every critical behaviour is shown first time; otherwise the learner goes through the full module, with no "failed" label. Recommended for annual renewals rather than a first sitting.
 
 ## Evidence for auditors
 
-The learner's record (HA-05) shows: module id and version, start and completion dates, time on task, route (game, text, test-out), each assessed behaviour's rating, critical behaviours shown or remediated, the check score, and whether the reference card was opened. This supports:
+The learner's record (HA-05) shows: module id and version, start and completion dates, time on task, route (game, text, test-out), each assessed behaviour's rating, critical behaviours shown, shown after practice or practised and not yet shown, the check score, and whether the reference card was opened. Using the short references in `02_COMPLIANCE_MAPPING.md`, section 2, this supports:
 
-- NIST SP 800-53 AT-2(2) (insider threat awareness, including recognising and reporting potential indicators) and CMMC AT.L2-3.2.3;
-- ISO/IEC 27001 clause 7.3 and Annex A 6.3, 5.17, 6.5, 6.6 and 6.8;
-- CIS Controls v8.1 14.3 and 14.6;
-- NIS2 Article 21(2)(g) and (i);
-- NCSC CAF B6;
-- PCI DSS 12.6.1.
+- NIST AT-2 and AT-2(2) (insider threat: recognising and reporting potential indicators);
+- CMMC AT.L2-3.2.3, where the mapping records that this module meets the awareness content;
+- ISO 27001 cl. 7.3, A.6.3 and A.6.8;
+- CIS 14.3 and CIS 14.6;
+- NCSC CAF B6.a (people know how to raise a concern and reporting is treated positively) and B6.b;
+- NIS2 Art 21(2)(g) and NIS2 IR 10.1;
+- DORA Art 13(6) and DORA RTS Art 19 (staff know the channels for reporting anomalous behaviour, including whistleblowing channels);
+- UK GDPR Art 32(4);
+- SOC 2 CC2.2;
+- PCI DSS 12.6.1 and DSPT 3.2.1 (categories 3 and 4), as part of the wider programme.
 
-See `02_COMPLIANCE_MAPPING.md` for the full references. Individual decisions in this module (for example, about Nadia or the rumour) are learning records, not conduct records: the organisation sees them only in aggregate, and they are never used to judge an individual's character.
+Individual decisions in this module (for example, about Samira or the rumour) are learning records, not conduct records: the organisation sees them only in aggregate, and they are never used to judge an individual's character.
 
 ## Measuring effect
 

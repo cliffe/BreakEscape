@@ -39,6 +39,11 @@ Priority: **MVP** is needed for the first sellable course (the Induction Essenti
 | BE-20 | Authorable tutorial, title screen and end screen | Scenario-defined tutorial steps, the course's own title screen (with the customer's logo) and a non-spy end screen; today these are fixed | MVP | M |
 | BE-21 | Workplace music and sound | A music and ambience set for the workplace tone; today's playlists are spy-styled | P2 | S |
 | BE-22 | Tactic spotter card | A light overlay listing manipulation tactics (urgency, authority, flattery and so on) that the player ticks off as they hear them in play; becomes part of the debrief score | P2 | S |
+| BE-23 | Pause and time scale | Pause the whole game (clock, timers, timed messages) from a menu or a minigame, and slow or stop timed pressure for players who need it; today the game clock can't be paused | MVP | M |
+| BE-24 | Place-player action | A scenario action that moves the player to a room and spot, for time skips, role switches and resumes | P2 | S |
+| BE-25 | Course avatars and inclusive name entry | A workplace avatar set for this course (no hooded hackers), and a name field that accepts accented letters, hyphens and apostrophes | MVP | S (engine), M (art) |
+| BE-26 | Accessibility checks in CI | Automated accessibility tests over the game shell, the minigames' HTML and the text route on every change | MVP | S |
+| BE-27 | Plain English lint | A check over ink and documents for long sentences, jargon without explanation and banned filler words, alongside the dialogue lint | P2 | S |
 
 ## Minigames (MG)
 

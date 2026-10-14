@@ -1,7 +1,7 @@
 # core_14: Insider risk
 
 **Working game title:** Notice Period
-**Pitch:** Ross from Sales leaves on Friday, Nadia from Operations is having a strange week, and the office already has a theory. Spend the week noticing, staying fair, and passing what you see to the people whose job it is.
+**Pitch:** Ross from Sales leaves on Friday, Samira from Operations is having a strange week, and the office already has a theory. Spend the week noticing, staying fair, and passing what you see to the people whose job it is.
 
 | | |
 |---|---|
@@ -41,16 +41,18 @@ After this module, staff can:
 
 ## Compliance coverage
 
-Contributes to (references in `02_COMPLIANCE_MAPPING.md` when it is written):
+Contributes to (short references from `02_COMPLIANCE_MAPPING.md`, section 2):
 
-- **NIST SP 800-53** AT-2(2) (literacy training and awareness: insider threat, including recognising and reporting potential indicators).
-- **CMMC** AT.L2-3.2.3 (awareness training on recognising and reporting potential indicators of insider threat), for US defence supply chain customers.
-- **ISO/IEC 27001** clause 7.3 and Annex A 6.3 (awareness), 5.17 (authentication information), 6.5 (responsibilities after termination or change of employment), 6.6 (confidentiality agreements) and 6.8 (information security event reporting).
-- **CIS Controls v8.1** 14.3 (authentication best practices, including credential handling) and 14.6 (recognising and reporting incidents).
-- **NIS2** Article 21(2)(g) (basic cyber hygiene practices and training) and 21(2)(i) (human resources security).
-- **NCSC CAF** B6 (staff awareness and training).
-- **PCI DSS** 12.6.1 (a security awareness programme that makes staff aware of the policy and their role).
-- **UK GDPR and the Data Protection Act 2018**: staff awareness that taking personal data without the employer's consent can be a criminal offence (section 170).
+- **NIST AT-2** and **NIST AT-2(2)** (recognising and reporting potential signs of insider threat).
+- **CMMC AT.L2-3.2.3** (awareness training on recognising and reporting potential indicators of insider threat), for US defence supply chain customers. The mapping records that this module meets the awareness content.
+- **ISO 27001 cl. 7.3**, **ISO 27001 A.6.3** and **ISO 27001 A.6.8** (a route for reporting what you observe).
+- **CIS 14.3** (authentication best practices, including credential handling) and **CIS 14.6** (recognising and reporting incidents).
+- **NCSC CAF B6.a** (people know how to raise a concern, and those who report are treated positively) and **NCSC CAF B6.b**.
+- **NIS2 Art 21(2)(g)** and **NIS2 IR 10.1** (human resources security).
+- **DORA Art 13(6)** and **DORA RTS Art 19** (staff know the channels for reporting anomalous behaviour, including whistleblowing channels).
+- **UK GDPR Art 32(4)** (people with access to personal data process it only on instructions); the module also tells staff that taking personal data without the employer's consent can be an offence under section 170 of the Data Protection Act 2018.
+- **SOC 2 CC2.2**.
+- **PCI DSS 12.6.1** and **DSPT 3.2.1 (categories 3 and 4)**, as part of the wider programme.
 - The organisation's **whistleblowing policy**: the module explains the routes it offers; it does not replace the policy or legal advice.
 
 ## Module flow
@@ -60,14 +62,14 @@ Contributes to (references in `02_COMPLIANCE_MAPPING.md` when it is written):
 | Hook | Monday 08:55. Leo's password has expired, the reset link won't work, and his client report is due at ten: "Can I just use yours?" Whatever the player does is the baseline | Game | 1.5 |
 | Learn | "Coffee with Security" in the kitchen: Ama on what insider risk really looks like, logins and outside offers; Mei Lin on noticing, noting the facts and passing them on, and on a kind word first | NPC explainer (EX-01, BE-08) | 2.5 |
 | Practise | "Fact or Feeling?": Ama's card game of eight short situations; pick the facts, then the right response (security team, manager or HR, a kind word, help them to the proper route, or nothing to report) | Minigame (MG-20 practice mode) | 2.5 |
-| Apply | Tuesday to Friday of Ross's notice period: Nadia's strange week and Wes's theory, a copy running on Ross's screen, a "talent partner" with an offer and a night of sign-in prompts, Ross's favour, and his last-day request for the player's login | Game (BE-16, BE-18, MG-05, MG-07, MG-09) | 6 |
+| Apply | Tuesday to Friday of Ross's notice period: Samira's strange week and Craig's theory, a copy running on Ross's screen, a "talent partner" with an offer and a night of sign-in prompts, Ross's favour, and his last-day request for the player's login | Game (BE-16, BE-18, MG-05, MG-07, MG-09) | 6 |
 | Debrief | "Seen, said, true": for each thread, what the player saw, what the office said, what was really happening, what they did and what followed; the rumour map | Debrief screen (BE-02) and Ama, Mei Lin, Tomasz | 1.5 |
 | Check | Six scenario questions | Quiz (MG-20) | 1.5 |
 | Reference | Reference card on The Lark: your login is you; report offers; facts to the right person; a kind word first | Intranet (BE-09) | under 1 |
 
 ## Reuse from existing Break Escape content
 
-- **Rooms:** `room_office` (Operations and a Sales pod), `room_break` (the kitchen, for the coffee session, Wes's theory and the leaving drinks), `room_meeting` (Mei Lin's quiet room), `hall_1x2gu` (the stairwell where Nadia takes calls). The Wednesday night scene is phone-only, or uses core_09's home office if it has been built.
+- **Rooms:** `room_office` (Operations and a Sales pod), `room_break` (the kitchen, for the coffee session, Craig's theory and the leaving drinks), `room_meeting` (Mei Lin's quiet room), `hall_1x2gu` (the stairwell where Samira takes calls). The Wednesday night scene is phone-only, or uses core_09's home office if it has been built.
 - **Conversations:** `person-chat` for the cast; `phone-chat` for the "talent partner" (until the MG-05 messaging skin), Kai's messages and Lena's tasks. The pattern of an outsider messaging the player's phone with an offer has a precedent in `scenarios/m05_insider_trading/ink/m05_phone_recruiter.ink`; its tone (a thriller villain) is not reused.
 - **Ideas, not tone, from the campaign's insider missions:**
   - m05's red herring and the cost of a wrong accusation: a scientist suspended on a misread badge log and later cleared (`halloran_accused` in `scenarios/m05_insider_trading/scenario.json.erb`).
@@ -75,7 +77,7 @@ Contributes to (references in `02_COMPLIANCE_MAPPING.md` when it is written):
   - m08's note that every earlier leak "was an accident or an outsider" (the prior leak investigations sheet).
   - m05's recruiter leaflet ("Feeling undervalued?"), as the idea of an approach that targets people who feel unappreciated.
   - The campaign's art doesn't suit an ordinary office (spy headquarters and a research lab), so no rooms are borrowed.
-- **Systems:** the game clock (`gameClock`) and timers for the week; event mappings, `setGlobal` and `onceOnly`; NPC influence (`docs/NPC_INFLUENCE.md`) for how Nadia and Ross feel about the player; the Notepad (`notes`) for the player's own record of facts.
+- **Systems:** the game clock (`gameClock`) and timers for the week; event mappings, `setGlobal` and `onceOnly`; NPC influence (`docs/NPC_INFLUENCE.md`) for how Samira and Ross feel about the player; the Notepad (`notes`) for the player's own record of facts.
 
 ## New features needed
 
@@ -86,9 +88,10 @@ Contributes to (references in `02_COMPLIANCE_MAPPING.md` when it is written):
 - **MG-05 Messaging apps:** the "talent partner" message from an unknown contact.
 - **MG-07 MFA prompts and authenticator:** the 02:10 prompt storm (one short decision; core_03 teaches it in full).
 - **BE-01, BE-02, BE-08, BE-09, BE-05, EX-01:** the record, the debrief board, the visual aids, The Lark's "Raise a concern" page, the organisation's own routes, and the explainer pattern.
-- **BE-19 Open minigames from conversations:** Mei Lin opening the concern form with the player.
+- **MG-27 Work desktop:** the player's PC, with The Lark, the customer portal's export screen and the team chat in one place.
+- **BE-19 Open minigames from conversations:** Mei Lin opening the concern form with the player (`#trigger_minigame:incident_report|c14_concern`), and Mei Lin's check question in Learn.
 - **Fix the `#add_note` ink tag** (stubbed today, per `research/current_state_break_escape.md`) so a conversation can add a dated fact to the player's Notepad.
-- **proposed:** Rumour map, a debrief panel that lights up the desks a piece of gossip reached, driven by globals set in conversations (the same view could show core_04's spreading incidents).
+- **MG-26 Incident spread map**, in a rumour skin: the office floor with the desks that Craig's theory reached lit up day by day, driven by globals set in conversations, then the truth beside it. It needs a mode where the spread is driven by the player's choices rather than game time.
 
 ## Organisation-specific content
 
@@ -103,7 +106,7 @@ Contributes to (references in `02_COMPLIANCE_MAPPING.md` when it is written):
 ## Open questions
 
 1. **How much to say about monitoring.** Tools such as data loss prevention may have spotted Ross's copy too. *Recommendation: one line from Ama ("our tools see files moving, but not why; people see the why"), with the organisation's own monitoring notice on the reference card. Never imply staff are watched covertly.*
-2. **Nadia's reason.** A parent in hospital is gentle but sensitive. *Recommendation: keep it, told lightly and with no medical detail; the bank holds other innocent reasons for replays (a second job cleared with HR, planning Ross's leaving collection, a medical appointment).*
+2. **Samira's reason.** A parent in hospital is gentle but sensitive. *Recommendation: keep it, told lightly and with no medical detail; the bank holds other innocent reasons for replays (a second job cleared with HR, planning Ross's leaving collection, a medical appointment).*
 3. **How much the player learns about the outcome.** HR matters are confidential. *Recommendation: a short, discreet resolution ("it's been dealt with; the copies are gone"), which models the confidentiality staff should expect when they raise a concern.*
 4. **The prompt storm.** It repeats core_03. *Recommendation: keep it as a single decision, because it is exactly what happened after the 2025 BBC approach, and link to core_03.*
 5. **Real cases in the game.** *Recommendation: none named in dialogue; Ama says "it happens to people at big companies". The field guide, generated from `concepts.md`, names them.*

@@ -33,7 +33,7 @@ The critical path is marked **(CP)**. The week runs as six short scenes on a pla
 
 ### 1. Hook: "Same as Des?" (1 to 2 minutes)
 
-- **(CP)** Monday 08:40. The player's PC shows Owain's ticket: **"New starter: Nadia Ferreira, Schools Facilities. Access: [Copy from user: Des Harker] [Choose from role template]."** Des's access sits beside it: twenty-two years of scheduling admin, the school booking portal admin, the shared `ops-scheduling` login, the key safe code list for sixty schools, timesheet approval, read access to Ledger and the old caretakers' mailbox.
+- **(CP)** Monday 08:40. The player's computer (MG-27) shows Owain's ticket: **"New starter: Nadia Ferreira, Schools Facilities. Access: [Copy from user: Des Harker] [Choose from role template]."** Des's access sits beside it: twenty-two years of scheduling admin, the school booking portal admin, the shared `ops-scheduling` login, the key safe code list for sixty schools, timesheet approval, read access to Ledger and the old caretakers' mailbox.
 - Nadia appears in the doorway with two coffees: *"Morning! Owain says my logins are waiting on you?"*
 - The player chooses in MG-18 request mode: copy Des in one click, build from the role template, or copy then trim. The choice is the **baseline** for R05-LO1.
 - Owain rings or walks over, and his line depends on the choice:
@@ -50,7 +50,7 @@ The critical path is marked **(CP)**. The week runs as six short scenes on a pla
   3. **Mei Lin, hiring checks.** The red flags card drawn from the official advisories (inconsistent details, camera refused, equipment to a different address, pay to someone else's account) and the fairness rule. *"A video call isn't an identity check. We see the original document, every candidate, every time."*
   4. **Mei Lin, HR information.** *"Absence dates, yes. Diagnoses, no. That stays with HR."*
   5. **Ama, when someone owns up.** The four-step card: Thank, Act, Support, Learn. *"How you react when someone owns up decides whether the next person does."*
-- **Check question** (MG-20): *"Leo moves to Finance on Wednesday. When should his Operations access go?"* (On Wednesday; at the next review; when he says he's finished with it; never, in case he needs it.)
+- **Check question** (MG-20, opened from Ama's line with `#trigger_minigame:knowledge_check|<configKey>`, BE-19): *"Leo moves to Finance on Wednesday. When should his Operations access go?"* (On Wednesday; at the next review; when he says he's finished with it; never, in case he needs it.)
 - **Skip:** the player can say *"I sort out access all the time."* Ama: *"Then this'll be quick,"* and goes straight to the check question. A wrong answer brings the chunk back.
 - **Optional topics** in the hub, each under a minute: *"What about contractors?"*, *"Why can't I look into a worry myself?"*, *"What if the person who made the mistake is senior to me?"*
 
@@ -196,6 +196,7 @@ No option shames the player. The worst branches still end with a colleague helpi
 | **MG-18 Access review** | new, built from `warranty-checklist` (`public/break_escape/js/minigames/warranty-checklist/`) | Request mode for the hook and Sol (role template, copy user, end date); practice mode for "Access or Excess?" (one card at a time, instant feedback); review mode for the twelve rows (Keep, Reduce, Remove, Ask the owner); checklist mode for Des's last day. `warranty-checklist` already has rows, verdict buttons, saved state and a gated submit; it needs a configurable title and letterhead, configurable verdict labels, per-row expected verdicts for BE-01, and its hard-coded globals made configurable |
 | **MG-25 Document inspector** | new | The candidate file: CV, ID scan, right to work result, references and profile, each with mismatches to mark. Until it exists, `forensic-data-platform` shows the same evidence in tabs with a confirm step |
 | **MG-20 Knowledge check** | new | Ama's check question, the "What do you say?" cards and the final spot check |
+| **MG-27 Work desktop** | new | The player's computer: Owain's tickets, MG-18, the team chat and The Lark from one launcher |
 | `person-chat` video-call mode | existing | The interview with "Daniel"; needs the proposed freeze and lag effects and a configurable call bar label |
 | `alarm-panel` | existing | The team pulse board: five lamps bound to globals, title "Team pulse", footer "Anonymous, updated weekly"; needs a whiteboard skin |
 | `container` | existing | Des's desk drawer: the key safe code card, the "photos 2009" USB stick, a spare badge |

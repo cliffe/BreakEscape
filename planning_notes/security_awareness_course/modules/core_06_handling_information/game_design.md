@@ -51,23 +51,23 @@ The critical path is marked **(CP)**. Everything else is optional depth.
 - Ama explains (EX-01) with two visual aids (BE-08):
   1. **Four labels** (45 seconds): four coloured cards with examples. *"The label tells everyone how to handle it, without a meeting."*
   2. **The handling grid** (45 seconds): the four labels against store, send, share, print and dispose. *"Underneath it all is need to know. Named people, only what they need."*
-- **Check question** (MG-20): *"The bid pricing: which label?"* Answer: Confidential, as the grid shows. Feedback on Restricted: *"Close. At Larkspur, Restricted is for things like board papers on a takeover."*
+- **Check question** (MG-20, opened from the conversation with `#trigger_minigame:knowledge_check|<configKey>`, BE-19): *"The bid pricing: which label?"* Answer: Confidential, as the grid shows. Feedback on Restricted: *"Close. At Larkspur, Restricted is for things like board papers on a takeover."*
 - **Skip:** *"I know the labels."* Ama: *"Then label this for me,"* and the check question runs.
 - **Optional topics** in Ama's hub, each under a minute: *"What if there's no label?"*; *"Isn't Bcc enough?"* (*"Not on its own. For big or sensitive mailings, use the bulk email tool."*); *"What about personal data?"* (one line pointing to Personal Effects and Tomasz); *"Why can't I just use my own email?"* (one line pointing to core_13).
 
 ### 4. Practise: "Label It" (2.5 minutes)
 
-- **(CP)** The classification sorter (MG-10). Ten documents slide in one at a time; the player drops each on a label, and three of them ask a follow-up. Feedback is instant: the right label, and one line of why.
+- **(CP)** The classification sorter (MG-10). Ten documents slide in one at a time; the player drops each on a label, and four of them ask a follow-up. Feedback is instant: the right label, and one line of why.
   1. The canteen menu: Internal.
   2. The company brochure: Public.
   3. The council's published tender notice: Public.
   4. Staff CVs for the bid: Confidential. Follow-up: *"Nadia at Glassmere asks for them. Send?"* No: she doesn't need them for her section.
   5. The pricing workbook: Confidential. Follow-up: *"How does it reach the council?"* Through the tender portal, not by email.
-  6. A board paper about buying a rival firm: Restricted.
+  6. A board paper about buying a rival firm: Restricted. Follow-up: *"You need a copy for the meeting. Print it?"* Only if it must be on paper: secure print, collected straight away.
   7. A council site plan marked OFFICIAL-SENSITIVE: Confidential at least, and follow the council's handling instructions.
   8. The internal phone list: Internal.
   9. A spreadsheet of care home residents' laundry care notes: Restricted (special category data).
-  10. A notice to 200 care home families about a new collection day: Internal. Follow-up: *"How do you send it?"* The bulk email tool, so each family gets its own email; not To, CC or Bcc.
+  10. A notice to 200 care home families about a new collection day: the notice itself is Public (it's approved to go out), but the list of families is Confidential. Follow-up: *"How do you send it?"* The bulk email tool, so each family gets its own email; not To, CC or Bcc.
 - **(CP)** Two sharing fixes (MG-11): a method statement shared as "Anyone with the link: can edit" (change it to specific people, can comment, with an end date); and a folder shared with Glassmere that also holds the staff CVs (move the CVs out, or share a narrower folder).
 - Two wrong answers in a row bring Ama back with a one-line nudge.
 
@@ -77,22 +77,22 @@ The critical path is marked **(CP)**. Everything else is optional depth.
 
 | Step | What happens | What it tests | Best response |
 |---|---|---|---|
-| **Glassmere's section** (MG-11) | Share the method statement folder with Nadia. The dialog opens on "Anyone with the link: can edit". The "Shared by you" list also shows "Bid 2021: CVs", open to anyone with the link for five years | Sharing with names; spotting over-sharing | Nadia only, can comment, ends Friday 17:00; close the old CV link and report it |
+| **Glassmere's section** (MG-11) | Share the method statement folder with Nadia. The dialog opens on "Anyone with the link: can edit". The "Shared by you" list, under a banner reading "1 link open to anyone", also shows "Bid 2021: CVs", open to anyone with the link for five years | Sharing with names; spotting over-sharing | Nadia only, can comment, ends Friday 17:00; close the old CV link and report it |
 | **The wrong attachment** | Nadia's reply carries her section and a second file: "Brightwell_Calderbrook_pricing_FINAL". Martin, reading over the player's shoulder: *"Well, well. Open that."* | Information received by mistake | Don't open it; tell Martin it can't be used; tell Nadia; report it to the security team |
 | **Pricing sign-off** (MG-01) | Send the pricing workbook to Martin. Typing "Mar" offers "Martin Fletcher (personal)" first, because Martin emailed himself from home last night, then "Martin Fletcher" | Checking recipients | Pick the work address. The personal one shows "External recipient" and *"This attachment is labelled Confidential"* |
 | **Martin's train** | Martin by chat: *"Can you send the whole pack to my home email? I'll finish it on the train. Quicker than the VPN."* | Personal accounts | Say no, nicely, and offer the approved way: his laptop and the VPN, which Owain can sort in five minutes |
-| **Final checks** (MG-12 inspect) | Before upload: the method statement has a comment (*"we can go to 4% margin if pushed"*), a tracked deletion about a dispute with a former subcontractor, and an appendix where a supervisor's mobile number is covered by a black box. The pricing workbook has a hidden worksheet, "Staff rates (named)" | Hidden content | Find and properly remove all four, then export clean copies |
+| **Final checks** (MG-12, Hidden step) | Before upload: the method statement has a comment (*"we can go to 4% margin if pushed"*), a tracked deletion about a dispute with a former subcontractor, and an appendix where a supervisor's mobile number is covered by a black box. The pricing workbook has a hidden worksheet, "Staff rates (named)" | Hidden content | Find and properly remove all four, then export clean copies |
 | **Board pack** | Print the pack for the 15:00 sign-off. The print dialog defaults to the old desk printer ("last used"); the photocopier holds jobs until a badge is tapped. In the old printer's tray sits last night's printout with a cover sheet: "Mei Lin Zhou. CONFIDENTIAL. Disciplinary outcome" | Printing; information found | Print to the photocopier and release with the badge; take Mei Lin's printout to her unread, and make sure it's reported |
 | **Clear the decks** | Friday, 11:30: the week's drafts (the counterpart to the hook), and in a drawer the 2021 bid team's old laptop | Disposal | Drafts in the grey console; the laptop to Owain at the service desk |
 
 - **How the tests play out:**
   - **The wrong attachment.** If the player hesitates, Martin argues (the sis01 pattern): *"We didn't hack anyone. It landed in our lap."* The player can answer: *"If the council found out we'd used it, we'd be out. And imagine if it were ours."* Martin, after a beat: *"Fine. I'd be livid if it were ours."* When the player reports it, Ama: *"Thank you. I'll ring Glassmere, and we'll tell the council it reached us and nobody opened it. Then nobody can say otherwise."* If the player opens it, Martin reads the bottom line aloud before anyone can stop him, and the consequence follows. Deleting it quietly protects the bid but leaves Larkspur unable to show it never looked.
   - **Martin's train.** Martin takes no for an answer: *"Fair. The VPN's fine. I'm just lazy on a Wednesday."*
-  - **Final checks.** MG-12 lists what it finds, and for each the player picks how to deal with it: delete the comment or leave it; accept the change or leave it tracked; use **Redact** (removes the text) or **Draw box** (covers it); **Delete worksheet** or **Hide worksheet**. A "check the result" view (the file as plain text) is there for players who want to be sure.
+  - **Final checks.** MG-12 lists what it finds, and for each the player picks how to deal with it: delete the comment or leave it; accept the change or leave it tracked; use **Redact and remove** (deletes the text) or **Draw a box** (only covers it); **Delete worksheet** or **Hide worksheet**. A "check the result" view (the file as plain text) is there for players who want to be sure.
   - **Mei Lin's printout.** The player can read it, leave it, put it in the recycling, or take it to Mei Lin unread. Mei Lin: *"Oh no. That went to the wrong printer last night. Thank you for not reading it."* The player then picks: *"Will you tell Tomasz, or shall I?"* Either way it is reported, and Tomasz's chat follows: *"Thanks both. A night in an open tray is worth a note. I'll take it from here."*
   - **The laptop.** Owain: *"Ta. We'll wipe it properly. You'd be amazed what's still on these."*
 - **Consequences** play out as short time skips (BE-16), each followed straight away by the fix:
-  - **"Anyone with the link":** Friday morning. Nadia forwarded the link to her whole team and a freelance estimator who also prices for Brightwell. The access list shows nine viewers. Martin: *"Nine people have seen our method statement. Who are they?"* The player can still close the link and report it.
+  - **"Anyone with the link":** Friday morning. Nadia forwarded the link to her whole team and a freelance estimator who also prices for Brightwell. The access list shows nine viewers. Martin: *"People we've never heard of have opened our method statement. Who are they?"* The player can still close the link and report it.
   - **The rival's pricing opened:** three weeks later the council's procurement officer emails. Glassmere has told the council where Brightwell's pricing went, and asks whether Larkspur used it. Martin and Ama have an uncomfortable call; the debrief explains that a public body can exclude a supplier that accessed confidential information to gain an advantage.
   - **The pack in Martin's personal email:** Thursday morning. Martin left his own tablet on the train, signed in to his personal email. Owain can't wipe a personal account; all he can do is help Martin change his password.
   - **The comment uploaded:** at clarification the council asks whether Larkspur could "go to 4%". Martin: *"They knew our floor. Lovely."*
@@ -119,16 +119,16 @@ The critical path is marked **(CP)**. Everything else is optional depth.
 
 | Decision | Options | Learning outcome | How the consequence is shown |
 |---|---|---|---|
-| The old drafts (hook) | Recycling / strip-cut shredder / locked console | LO5 (baseline) | What Jo finds that evening |
-| Sharing with Glassmere | Specific people, comment, end date / specific people with edit and no end / anyone with the link | LO3 | The nine-viewer scene, or nothing |
-| The old "Bid 2021: CVs" link | Close it and report it / close it only / leave it | LO3 | Jo's haul; Tomasz's thanks if reported |
-| The rival's price list | Leave it unopened, tell Martin no, tell Nadia, report / delete quietly / open it | LO5 | Ama's call to the council; or the procurement officer's email three weeks later |
-| Pricing to Martin | Work address / personal address (with the chance to correct it at the warning) | LO2 | The warning chip; Jo's haul |
-| Martin's train | No, with the approved way / no / send it | LO2 | Martin agrees; or the tablet left on the train |
-| Final checks | Remove all four properly / some / none, or cover and hide rather than remove | LO4 | The council's question about the margin, or about the named pay rates |
-| Printing the board pack | Secure print and collect / the old printer | LO5 | Jo's haul |
-| Mei Lin's printout | To Mei Lin unread and reported / to Mei Lin only / leave it / recycle it / read it | LO5 | Mei Lin's thanks and Tomasz's note |
-| The week's drafts and the old laptop | Console and Owain / any other bin; keep or bin the laptop | LO5 | Jo's audit report; Owain's thanks |
+| The old drafts (hook) | Recycling / strip-cut shredder / locked console | C06-LO5 (baseline) | What Jo finds that evening |
+| Sharing with Glassmere | Specific people, comment, end date / specific people with edit and no end / anyone with the link | C06-LO3 | The nine-viewer scene, or nothing |
+| The old "Bid 2021: CVs" link | Close it and report it / close it only / leave it | C06-LO3 | Jo's haul; Tomasz's thanks if reported |
+| The rival's price list | Leave it unopened, tell Martin no, tell Nadia, report / delete quietly / open it | C06-LO5 | Ama's call to the council; or the procurement officer's email three weeks later |
+| Pricing to Martin | Work address / personal address (with the chance to correct it at the warning) | C06-LO2 | The warning chip; Jo's haul |
+| Martin's train | No, with the approved way / no / send it | C06-LO2 | Martin agrees; or the tablet left on the train |
+| Final checks | Remove all four properly / some / none, or cover and hide rather than remove | C06-LO4 | The council's question about the margin, or about the named pay rates |
+| Printing the board pack | Secure print and collect / the old printer | C06-LO5 | Jo's haul |
+| Mei Lin's printout | To Mei Lin unread and reported / to Mei Lin only / leave it / recycle it / read it | C06-LO5 | Mei Lin's thanks and Tomasz's note |
+| The week's drafts and the old laptop | Console and Owain / any other bin; keep or bin the laptop | C06-LO5 | Jo's audit report; Owain's thanks |
 
 No option shames the player. Martin is the one with the bad ideas, and he comes round; when the player slips, the consequence scene ends with the fix they can still make (close the link, report it, tell Tomasz), and the debrief frames each line on Jo's clipboard as "this is how little an outsider needs".
 
@@ -136,13 +136,14 @@ No option shames the player. Martin is the one with the bad ideas, and he comes 
 
 | Minigame | Status | Use here |
 |---|---|---|
-| `shredded-document` | existing | The attacker view: 12 strips from a `content` string, `allowRotation: true`, `stateWrites.onComplete` set to a global the debrief reads. Needs keyboard controls (proposed) for BE-04 |
+| `shredded-document` | existing | The attacker view: 12 strips from a `content` string, `allowRotation: true`, `stateWrites.onComplete` set to a global the debrief reads. Needs the keyboard fix in `features/minigames.md`, section 4, for BE-04 |
+| **MG-27 Work desktop** | new (MVP) | The player's computer: the inbox, the file-sharing service (MG-11), the hidden content check (MG-12) and The Lark, with Martin's messages as notifications |
 | `container` | existing | The recycling sacks; the drawer with the old laptop |
 | `examine` | existing | The locked console; the drafts on the desk; Mei Lin's cover sheet (the sheet only, never the letter) |
 | **MG-10 Classification sorter** | new (P2) | "Label It": ten documents, the organisation's labels from BE-05, optional follow-up questions per item, instant feedback |
 | **MG-11 Sharing settings** | new (P2) | The share dialog (who, permission, end date); the "Shared by you" list with access counts; two practice items and the Glassmere share |
 | **MG-01 Inbox** | new (MVP) | Nadia's reply with two attachments (the second shows only its name and a preview line until opened); compose with autocomplete, the "External recipient" chip, the label prompt and "Send securely" |
-| **MG-12 Redaction** | new (MVP; inspect mode for this module) | "Check for hidden content" on a document and a workbook; four findings, each with a right and a wrong way to deal with it; a plain-text "check the result" view |
+| **MG-12 Redaction** | new (MVP) | The Hidden step ("Check for hidden content") on a document and a workbook, with both tools ("Redact and remove", "Draw a box") and the Check step; four findings, each with a right and a wrong way to deal with it; a plain-text "check the result" view |
 | MG-20 Knowledge check | new (MVP) | Ama's check question and the final spot check |
 | `person-chat` | existing | Martin, Ama, Jo, Precious, Mei Lin and Owain |
 | `phone-chat` | existing | Martin's messages, Tomasz's note, the team chat |
@@ -199,4 +200,4 @@ Shown on BE-02, then spoken by Jo and Ama in the bid room:
 - **Too many steps.** Seven steps in 5.5 minutes is tight. If playtests run long, move the old CV link and the printout in the tray to the bank as alternatives rather than fixtures.
 - **Overstating shredders.** The point is "use the locked console for Confidential paper", not "shredders are useless"; the default lets strip-cut shredders take Internal paper.
 - **Contradicting core_05 or core_13.** Breach wording and the reporting route must match core_05; personal accounts get one line here and the full treatment in core_13.
-- **Accessibility.** `shredded-document` is drag-and-drop only today; it needs the proposed keyboard controls before this module ships.
+- **Accessibility.** `shredded-document` is drag-and-drop only today; it needs the keyboard fix in `features/minigames.md`, section 4, before this module ships.
