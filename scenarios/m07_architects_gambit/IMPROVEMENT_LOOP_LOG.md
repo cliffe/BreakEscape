@@ -255,3 +255,6 @@ Credits (`scenario.json.erb`):
 - Browser checks still owed: the U5 aim no longer folding on the generator hall; Park's third visit turning him hostile in the vault, and his KO and talked-down outcomes; the T-10 late open after minute 40; the new deduction menu wording on the phone; the debrief branches above.
 - Needs checking against SecGen by the user (U3, unchanged): the three-doors line and the ATTACK HOST credit, one host, the CyBOK NS/OSV keywords, and whether flag 4 can be reached before flag 3.
 - U4 (NFS guide URL), U6 (shared-map pictures), U7 (HaX phone spriteSheet) unchanged. No new engine items.
+
+### Stage 2 alignment: CLOSED (orchestrator, 2026-10-14)
+Cycle 3 review 0/0/6 (`ALIGNMENT_REVIEW_P5_C3.md`) and round-2 browser check all six items pass (`PASS5_ALIGN_R2_BROWSER.md`, games 2409/2414). Carried into puzzle chains: C1, C2 (debrief latches), browser N1 (Hollis "talked" debrief line contradicts his refusal; major, pre-existing), N2 (hostile Park chases and KOs a fleeing player; tune like m06's Kemal), N3 (praise after "Nobody put it next to the brief"), m12 (RFID cloner route). C3–C6 to the dialogue stage.
