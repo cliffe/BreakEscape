@@ -179,3 +179,4 @@ Use these as background and inspiration only. Game content uses fictional names.
 - Lain, D., Kostiainen, K. and Čapkun, S. (2022) "Phishing in organizations: findings from a large-scale and long-term study", IEEE Symposium on Security and Privacy.
 - Ho, G. and others (2025) "Understanding the efficacy of phishing training in practice", IEEE Symposium on Security and Privacy.
 - Sheng, S. and others (2007) "Anti-Phishing Phil: the design and evaluation of a game that teaches people not to fall for phish", SOUPS.
+- Chothia, T., Paiu, S.-I. and Oultram, M. (2018) "Phishing attacks: learning by doing", USENIX Workshop on Advances in Security Education (ASE '18). The basis for the optional attacker-view beat: learners who build a convincing pretext stop believing that only careless people are fooled. We use the pretext-and-psychology half at awareness level, not the paper's technical payload work.

@@ -65,6 +65,13 @@ Questions for the user. Each has a recommendation; the plan follows the recommen
 3. **Exercising the customer's own incident plan.** Cyber Governance Code D2 asks boards to exercise their own plan at least annually; role_01 exercises Larkspur's. *Recommendation:* let the facilitated version of role_01 load the customer's plan headings and contacts from the organisation profile.
 4. **Advanced persistent threats.** NIST AT-2(5) isn't covered (it sits in no NIST baseline, so few customers will ask). *Recommendation:* a short optional explainer in role_01 or role_03, not a module.
 
+### D12. A technical, hands-on-keyboard phishing lab for specialists?
+
+- **Background:** the "learning by doing" research (Chothia, Paiu and Oultram, 2018) has learners build spear-phishing attacks end to end against a simulated company in an isolated VM, including crafting payloads with offensive tooling and capturing flags. That changed learners' understanding more than being shown examples, but it was run with computer science and penetration-testing students, not all staff. The awareness course takes only the pretext-and-psychology half, at awareness level, in the optional attacker-view beat (MG-30).
+- **Question:** should the full technical version exist as well, as a Hacktivity technical lab for developers, security staff and penetration-testing learners (role_04 and the existing technical labs), separate from the awareness course?
+- **Options:** (a) keep it out of scope, point specialist audiences at Hacktivity's existing technical labs; (b) build a dedicated sandboxed technical phishing lab as a Hacktivity lab, reusing the labs' existing isolation, and keep it entirely separate from the all-staff awareness course; (c) partner for it.
+- **Recommendation:** (a) for now. The awareness course's goal is behaviour change for everyone, and MG-30 already carries the paper's key lesson safely. A technical lab is a different product for a different, consenting, technical audience; if there is demand, scope it as a Hacktivity lab under option (b), never as part of a mandatory all-staff path, and keep the awareness/technical line clear so the course stays safe to assign to anyone. This is a product-scope decision, not a change to any awareness module.
+
 ## Decided
 
 (None yet.)

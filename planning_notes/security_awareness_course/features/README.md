@@ -81,6 +81,7 @@ Priority: **MVP** is needed for the first sellable course (the Induction Essenti
 | MG-27 | Work desktop | The player's computer as one launcher for the inbox, browser, chat, The Lark and settings, with notifications; extends the `container` desktop mode | MVP | S to M |
 | MG-28 | Secure payment line | A keypad overlay for taking a card payment by phone: the adviser sees only masked digits, the recording pauses, and card numbers typed into notes are flagged | P3 | S |
 | MG-29 | Patient record viewer | The existing `ehr-terminal` generalised: configurable header, search, admin and clinical views, a restricted-record warning, a session banner and an event per record opened | P3 | M |
+| MG-30 | Pretext workshop (attacker view) | A sandboxed, optional exercise where the learner plays an authorised tester and assembles a spear-phishing pretext from fictional public details and a vetted fragment bank; a readable rules-based judge rates how convincing the pretext is and why, then it flips into the learner's own inbox (MG-01) to catch. Pretext and psychology only: no payloads, no free-typed content, nothing can be sent | P3 | M |
 
 ## Explainers (EX)
 
