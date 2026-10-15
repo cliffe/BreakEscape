@@ -59,7 +59,7 @@ cybok:
     keywords: ["challenges of live forensics", "VOLATILE MEMORY", "EVIDENCE COLLECTION"]
   - ka: "RMG"
     topic: "Risk assessment and management principles"
-    keywords: ["Vulnerability management", "Risk assessment and management in cyber-physical systems and operational technology", "BOW TIE ANALYSIS", "RESIDUAL RISK"]
+    keywords: ["Vulnerability management", "Risk assessment and management in cyber-physical systems and operational technology", "RESIDUAL RISK"]
   - ka: "RMG"
     topic: "Risk governance"
     keywords: ["The human factor and risk communication", "RISK ACCEPTANCE"]

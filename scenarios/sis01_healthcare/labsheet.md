@@ -16,9 +16,6 @@ cybok:
     topic: "Incident Response and Resilience"
     keywords: ["INCIDENT RESPONSE", "RESILIENCE"]
   - ka: "TGSIS"
-    topic: "Requirements Reconciliation"
-    keywords: ["SAFETY REQUIREMENT", "AS LOW AS REASONABLY PRACTICABLE"]
-  - ka: "TGSIS"
     topic: "Patching of Systems with Safety Cases"
     keywords: ["PATCHING", "HAZARD ANALYSIS"]
   - ka: "TGSIS"
@@ -37,20 +34,14 @@ cybok:
     topic: "Analyse: Analysis Methods"
     keywords: ["misuse detection", "anomaly detection", "contribution of SIEM to analysis and detection"]
   - ka: "SOIM"
-    topic: "Plan: Security Information and Event Management"
-    keywords: ["alert correlation"]
-  - ka: "SOIM"
-    topic: "Execute: Mitigation and Countermeasures"
-    keywords: ["SOAR: impact and risk assessment", "RECOVERY POINT OBJECTIVE (RPO)", "RECOVERY - TIME OBJECTIVE (RTO)"]
-  - ka: "SOIM"
     topic: "Human Factors: Incident Management"
     keywords: ["prepare: incident management planning", "handle: actual incident response", "follow up: post incident activities"]
   - ka: "RMG"
     topic: "Risk assessment and management principles"
-    keywords: ["Elements of Risk", "Risk assessment and management in cyber-physical systems and operational technology", "BOW TIE ANALYSIS", "RESIDUAL RISK"]
+    keywords: ["Elements of Risk", "Risk assessment and management in cyber-physical systems and operational technology", "RESIDUAL RISK"]
   - ka: "RMG"
     topic: "Risk governance"
-    keywords: ["The human factor and risk communication", "RISK ACCEPTANCE"]
+    keywords: ["The human factor and risk communication"]
   - ka: "LR"
     topic: "Data Protection"
     keywords: ["personal data breach notification", "UK GDPR"]
@@ -78,9 +69,6 @@ cybok:
   - ka: "AB"
     topic: "Elements of a Malicious Operation"
     keywords: ["infection vectors", "payment methods"]
-  - ka: "HF"
-    topic: "Human Error"
-    keywords: ["ALARM FATIGUE"]
   - ka: "HF"
     topic: "Stakeholder Engagement"
     keywords: ["Employees"]

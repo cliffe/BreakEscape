@@ -35,14 +35,6 @@
     },
     {
       "ka": "TGSIS",
-      "topic": "Requirements Reconciliation",
-      "keywords": [
-        "SAFETY REQUIREMENT",
-        "AS LOW AS REASONABLY PRACTICABLE"
-      ]
-    },
-    {
-      "ka": "TGSIS",
       "topic": "Patching of Systems with Safety Cases",
       "keywords": [
         "PATCHING",
@@ -94,22 +86,6 @@
     },
     {
       "ka": "SOIM",
-      "topic": "Plan: Security Information and Event Management",
-      "keywords": [
-        "alert correlation"
-      ]
-    },
-    {
-      "ka": "SOIM",
-      "topic": "Execute: Mitigation and Countermeasures",
-      "keywords": [
-        "SOAR: impact and risk assessment",
-        "RECOVERY POINT OBJECTIVE (RPO)",
-        "RECOVERY - TIME OBJECTIVE (RTO)"
-      ]
-    },
-    {
-      "ka": "SOIM",
       "topic": "Human Factors: Incident Management",
       "keywords": [
         "prepare: incident management planning",
@@ -123,7 +99,6 @@
       "keywords": [
         "Elements of Risk",
         "Risk assessment and management in cyber-physical systems and operational technology",
-        "BOW TIE ANALYSIS",
         "RESIDUAL RISK"
       ]
     },
@@ -131,8 +106,7 @@
       "ka": "RMG",
       "topic": "Risk governance",
       "keywords": [
-        "The human factor and risk communication",
-        "RISK ACCEPTANCE"
+        "The human factor and risk communication"
       ]
     },
     {
@@ -205,13 +179,6 @@
       "keywords": [
         "infection vectors",
         "payment methods"
-      ]
-    },
-    {
-      "ka": "HF",
-      "topic": "Human Error",
-      "keywords": [
-        "ALARM FATIGUE"
       ]
     },
     {
