@@ -77,7 +77,7 @@ Some topics touch. To avoid two modules teaching the same thing differently:
 | Software updates | core_07 | core_08, core_09 |
 | Downloads, fake sites, browser warnings | core_08 | core_07 |
 | Devices outside the office | core_09 | core_10 |
-| Deepfake voice and video | core_15 | core_11, role_01, role_02 |
+| Deepfake voice and video | core_15 | core_11, role_01, role_02, role_05 |
 | Sharing credentials, leavers taking data | core_14 | core_03, role_05 |
 | Policy acknowledgement | core_16 | every module's reference card |
 | Free online tools (converters, transfer sites, apps) | core_08 asks "is this site or file safe to download?"; core_13 asks "should our data go there?" | core_15 (AI tools are core_15's) |
