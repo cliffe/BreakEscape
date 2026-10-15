@@ -21,9 +21,9 @@ The **before and after** for each learner is C10-B1 (holding the door at the hoo
 
 To complete the module the learner must, at least once:
 
-1. **Not let an unknown person through a secure door or into a secure area** (C10-B1, B2 or B3 not at Not yet).
-2. **Keep their badge to themselves** (C10-B5 not at Not yet).
-3. **Report at least one concern or their own slip** (C10-B8 not at Not yet).
+- **C10-CB1 Not let an unknown person through a secure door or into a secure area** (C10-B1, B2 or B3 not at Not yet).
+- **C10-CB2 Keep their badge to themselves** (C10-B5 not at Not yet).
+- **C10-CB3 Report at least one concern or their own slip** (C10-B8 not at Not yet).
 
 A learner who misses a critical behaviour is taken back to it: Precious replays the relevant spot-the-risk items with the explanation, then a fresh moment of the same kind arrives in a short replay of the Apply beat. The record keeps both attempts.
 
@@ -31,7 +31,7 @@ A learner who misses a critical behaviour is taken back to it: Precious replays 
 
 Six items per sitting, covering every learning outcome. Stems are short workplace situations.
 
-### Q1 (LO1, single choice)
+### C10-Q1 (LO1, single choice)
 
 Someone you do not recognise is following you towards the badge door, carrying a laptop and smiling. What is the best thing to do?
 
@@ -40,7 +40,7 @@ Someone you do not recognise is following you towards the badge door, carrying a
 - C. Say nothing and badge in quickly so they cannot follow. *Feedback: Better to offer help; if you would rather not challenge, report it to reception instead.*
 - D. Ask to see their badge and let them through if they have one. *Feedback: A badge can be faked. Take them to reception to sign in.*
 
-### Q2 (LO2, single choice)
+### C10-Q2 (LO2, single choice)
 
 A visitor in a hi-vis jacket says he is here for the annual check of the comms room and asks you to let him in so he can get on. What do you check?
 
@@ -49,14 +49,14 @@ A visitor in a hi-vis jacket says he is here for the annual check of the comms r
 - C. Let him in but stay nearby. *Feedback: Do not grant access to a secure area on a story. Verify first.*
 - D. Give him the door code so he can come and go. *Feedback: Never share a door code, especially to a secure area.*
 
-### Q3 (LO3, true or false with reason)
+### C10-Q3 (LO3, true or false with reason)
 
 "It's fine to lend my badge to a colleague who has lost theirs, just for the day."
 
 - A. True: they work here, so it is not a problem. *Feedback: The door record would then say you went where they went, and it encourages tailgating.*
 - **B. False: everyone badges in for themselves; help them report the loss and get a temporary pass.** *Feedback: Right.*
 
-### Q4 (LO3, single choice)
+### C10-Q4 (LO3, single choice)
 
 Why does it matter if you leave your badge on the canteen table while you get a coffee?
 
@@ -65,7 +65,7 @@ Why does it matter if you leave your badge on the canteen table while you get a 
 - C. Only if it has your photo on it. *Feedback: The risk is the access it gives, not the photo.*
 - D. Only in a public place, not at work. *Feedback: Keep it with you inside too; do not leave it lying around.*
 
-### Q5 (LO4, single choice)
+### C10-Q5 (LO4, single choice)
 
 You are stepping away from your desk for two minutes to grab a document. What should you do with your screen?
 
@@ -74,7 +74,7 @@ You are stepping away from your desk for two minutes to grab a document. What sh
 - C. Turn the monitor off. *Feedback: Turning it off does not lock your session; lock the screen.*
 - D. Only lock it if there is a visitor about. *Feedback: Lock it every time, visitor or not.*
 
-### Q6 (LO5, single choice)
+### C10-Q6 (LO5, single choice)
 
 It is a warm day and someone has wedged the fire door open with a fire extinguisher. What should you do?
 
@@ -83,7 +83,7 @@ It is a warm day and someone has wedged the fire door open with a fire extinguis
 - C. Prop it more safely with a doorstop. *Feedback: Do not prop a fire door at all; use the proper hold-open device.*
 - D. Report it but leave it open meanwhile. *Feedback: Close it as well as reporting it.*
 
-### Q7 (LO4, multiple select)
+### C10-Q7 (LO4, multiple select)
 
 At the end of the day, which of these should you deal with before you leave? Choose all that apply.
 
@@ -92,7 +92,7 @@ At the end of the day, which of these should you deal with before you leave? Cho
 - **C. A USB stick and a notebook on your desk.** *Feedback: Lock them away.*
 - D. Your (empty) coffee mug. *Feedback: Not a security risk, though the kitchen would thank you.*
 
-### Q8 (LO6, single choice)
+### C10-Q8 (LO6, single choice)
 
 You realise you held the side door open this morning for someone who turned out not to work here. What now?
 
@@ -101,7 +101,7 @@ You realise you held the side door open this morning for someone who turned out 
 - C. Wait and see if anything happens. *Feedback: Waiting gives an intruder time. Report it now.*
 - D. Tell only your own manager, quietly. *Feedback: Use the reporting route so security can act, not just your manager.*
 
-### Q9 (LO1, LO2, ordering)
+### C10-Q9 (LO1, LO2, ordering)
 
 A visitor arrives at reception to see a colleague. Put the steps in order.
 
@@ -112,16 +112,16 @@ A visitor arrives at reception to see a colleague. Put the steps in order.
 
 *Feedback: Visitors are signed in, badged, escorted, and signed out. They are not left to wander.*
 
-### Q10 (LO4, single choice)
+### C10-Q10 (LO4, single choice)
 
 You find a printout with staff bank details left on the shared printer. What is the best action?
 
 - A. Leave it; whoever printed it will collect it. *Feedback: Confidential printouts should not be left in the tray.*
 - **B. Pick it up, hand it back to the owner or secure it, and use secure release next time.** *Feedback: Right. Collect printing straight away (see core_06).*
-- C. Recycle it so nobody sees it. *Feedback: Confidential waste goes in the confidential bin or shredder, not ordinary recycling, and the owner may still need it.*
+- C. Recycle it so nobody sees it. *Feedback: Confidential paper goes in the locked confidential waste, not the shredder or the recycling (see core_06), and the owner may still need it.*
 - D. Photograph it and message the owner. *Feedback: Do not photograph confidential data; hand it back or secure it.*
 
-### Q11 (LO2, single choice)
+### C10-Q11 (LO2, single choice)
 
 You take card payments at a reception desk. At the start of your shift the card reader has an extra attachment you do not remember. What should you do?
 
@@ -130,7 +130,7 @@ You take card payments at a reception desk. At the start of your shift the card 
 - C. Remove the attachment yourself and carry on. *Feedback: Do not tamper with it; report it and let it be checked.*
 - D. Only worry if customers complain. *Feedback: Check and report proactively.*
 
-(Q11 applies only where the organisation takes card payments on site; drop it otherwise.)
+(C10-Q11 applies only where the organisation takes card payments on site; drop it otherwise.)
 
 ## Reflection prompt
 
