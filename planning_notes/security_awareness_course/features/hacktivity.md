@@ -73,18 +73,18 @@ Today each account has one site-wide role (free user, paid seat holder, training
 | HA-01 | Organisations, departments and roles | MVP | L | Partly: organisations and seats; no departments, managers or scoped roles | HA-15, HA-23 |
 | HA-02 | Single sign-on and provisioning | P2 | L | None: email and password accounts, invitations | HA-01, HA-03, HA-15 |
 | HA-03 | Learning paths and assignments | MVP | L | Partly: courses, release dates, enrolment; no per-person due dates, recurrence or exemptions | HA-01, HA-05, HA-19 |
-| HA-04 | Reminders and escalation | P2 | M | Partly: email and a daily scheduler; no due-date reminders | HA-01, HA-03, HA-11, HA-17 |
-| HA-05 | Completion records and audit evidence | MVP | M | Partly: status, score and times per game; no version, outcomes, sealed records or audit pack | BE-01, MG-20, HA-03, HA-15, HA-19 |
+| HA-04 | Reminders and escalation | P2 (part MVP) | M | Partly: email and a daily scheduler; no due-date reminders | HA-01, HA-03, HA-11, HA-17 |
+| HA-05 | Completion records and audit evidence | MVP (part P2) | L | Partly: status, score and times per game; no version, outcomes, sealed records or audit pack | BE-01, MG-20, HA-03, HA-15, HA-19 |
 | HA-06 | Certificates and badges | MVP | S | None | HA-05, HA-11, HA-23 |
 | HA-07 | Policy library and acknowledgement | MVP | M | None | HA-01, HA-03, HA-05, BE-09 |
 | HA-08 | Question banks | P2 | M | None | MG-20, BE-13, HA-19 |
 | HA-09 | Organisation dashboards | MVP | M | Partly: a progress page per course | HA-01, HA-03, HA-05, HA-15 |
 | HA-10 | LMS interoperability | P2 | L | None | HA-05, HA-18, HA-19, BE-14, HA-22 |
 | HA-11 | Organisation profile and branding | MVP | M | None | BE-05, BE-09, BE-20, HA-07 |
-| HA-12 | Phishing simulation and report-button data | P3 | L | None | HA-09, HA-14, HA-15, BE-07 |
+| HA-12 | Phishing simulation and report-button data | P3 | M | None | HA-09, HA-14, HA-15, BE-07 |
 | HA-13 | Facilitated sessions | P2 | M | None | BE-15, HA-01, HA-05 |
 | HA-14 | Evaluation and surveys | P3 | M | Partly: ratings and comments after a mission | HA-09, HA-12, HA-15 |
-| HA-15 | Data protection and platform trust | MVP | M | Partly: MFA, UK hosting | HA-01, HA-05, HA-09 |
+| HA-15 | Data protection and platform trust | MVP | L | Partly: MFA, UK hosting | HA-01, HA-05, HA-09 |
 | HA-16 | Platform localisation | P3 | M | None: English only | BE-06, HA-04, HA-06, HA-11 |
 | HA-17 | Learner home | MVP | M | Partly: a dashboard with "continue where you left off" | HA-03, HA-05, HA-06, HA-07 |
 | HA-18 | Licensing and billing | P3 | M | Mostly: Stripe seats, trials, renewals | HA-01, HA-10, HA-15 |
@@ -93,6 +93,9 @@ Today each account has one site-wide role (free user, paid seat holder, training
 | HA-21 | Microlearning schedule | P2 | M | None | BE-07, BE-13, HA-03, HA-04 |
 | HA-22 | Learning record store | P2 | M | None | BE-14, HA-05, HA-15 |
 | HA-23 | Accessible platform and lab sheet theme | MVP | M | Partly: the progress page is accessible | BE-04 |
+| HA-24 | Public API and webhooks | P2 | M | None: records leave only as files | HA-01, HA-05, HA-09, HA-15 |
+| HA-25 | Partner role | P3 | M | None: roles are scoped to one organisation | HA-01, HA-09, HA-11, HA-15, HA-18 |
+| HA-26 | Setup checklist | MVP | S | None | HA-01, HA-03, HA-05, HA-06, HA-07, HA-11, HA-15 |
 
 The features below are in id order.
 
@@ -596,7 +599,7 @@ Before building, check each pilot customer's LMS and which of these it supports;
 
 **Design:**
 
-- **Profile slots.** A typed list built from every module's "Organisation-specific slots" table in its `concepts.md`. Each slot has an id, a label, help text, a type (text, phone number, email, link, image, choice, short rich text), the Larkspur default, validation (phone format, secure links only), a maximum length (so it fits on screen), whether it is required, and the modules that use it. Examples: the Report button's name and where it is on desktop and mobile; the security team's contact; the service desk number and hours; how to report a lost device; the payment verification rule; whether the organisation runs simulated phishing, and its policy text; the external sender banner wording; the approved way to sign in to company systems; the password manager's name; the DPO's contact.
+- **Profile slots.** A typed list built from every module's "Organisation-specific slots" table in its `concepts.md`. Each slot has an id, a label, help text, a type (text, phone number, email, link, image, choice, short rich text), the Larkspur default, validation (phone format, secure links only), a maximum length (so it fits on screen), whether it is required, and the modules that use it. Examples: the Report button's name and where it is on desktop and mobile; the security team's contact; the service desk number and hours; how to report a lost device; the payment verification rule; whether the organisation runs simulated phishing, and its policy text; the external sender banner wording; the approved way to sign in to company systems; the password manager's name; the DPO's contact; and the customer's own incident-plan headings, crisis roles and contacts (role_01's own-plan version, Cyber Governance Code D2), held as short rich-text slots.
 - **Voiced lines stay generic.** Slot values appear on screen, in documents, on the intranet and on reference cards, never in voiced lines (the voice cache is keyed on exact text; see `01_LEARNING_DESIGN.md` and BE-05).
 - **Branding.** Logo (with alt text), one accent colour (checked for AA contrast before it is accepted), display name, the email sender name, a welcome message, and the logo on the course's title screen (BE-20).
 - **Module selection.** Which modules and paths are offered, and switches for optional parts (dropping core_01's simulation question when the organisation runs no simulations).
@@ -689,6 +692,7 @@ Before building, check each pilot customer's LMS and which of these it supports;
 - **Attendance** by ticking names, by attendees scanning a code on their phones, or by uploading a signed sheet.
 - **Completion for attendees.** Each attendee who stays to the end and passes the knowledge check gets a completion record with the route "facilitated", linked to the session. The check is done individually, on phones or on paper (the facilitator enters paper answers). Where someone can't take the check at all, the organisation can record the session as an alternative arrangement (HA-03), and the record says so.
 - **Debrief slides** generated from the group's decisions (BE-02 data) for the discussion.
+- **Own-plan exercise output.** For a board or team exercise that works through the organisation's own incident plan (role_01, Cyber Governance Code D2), the facilitator console stores and can export an action list (who will do what, by when) and an exercise report (what was decided, and what the plan is missing). This pairs with BE-15 in `break_escape_engine.md`.
 - **Session record** in HA-05: facilitator, attendees, length, version, group decisions.
 
 **Acceptance criteria:**
@@ -1061,6 +1065,100 @@ Before building, check each pilot customer's LMS and which of these it supports;
 
 - **Older pages outside the journey** (labs, student features) will lag. *Recommendation:* fix the course journey first, list the rest in the accessibility statement with dates.
 
+### HA-24: Public API and webhooks
+
+**Priority and size:** P2, M.
+
+**Why:** Larger customers run HR, governance, risk and compliance (GRC) and identity systems that want the training record without someone exporting a file every month. They also want to act the moment something changes: open a case when a module goes overdue, or hold access when a refresher lapses (the open question at the end of HA-03). Keyed access the customer's own systems can read, and events they can subscribe to, make the training record something the rest of their tooling can use.
+
+**What exists today:** nothing. Records leave only as CSV, PDF transcripts and audit packs (HA-05), downloaded by hand.
+
+**Design:**
+
+- **Read access.** Keyed, read-only access to the compliance data a customer already sees in the dashboards and exports: people, assignments and due dates, completion records, certificates, exemptions and policy acknowledgements. Scoped to the one organisation the key belongs to, never to another customer's data. Learning data stays out, or comes only as the same above-threshold aggregates HA-09 shows, so decision data can't be pulled out by name.
+- **Events (webhooks).** The customer registers where to send events and chooses which to receive: assignment created, completed, overdue, exemption decided, certificate issued, policy acknowledged. Each event carries the identifiers and compliance fields a receiving system needs, never learning detail. Deliveries are signed so the receiver can tell they came from Hacktivity, retried if the receiver is down, and listed with their delivery result.
+- **Scope and roles.** A key is issued by an organisation admin, carries a role no wider than compliance viewer, can be limited to parts of the organisation, and can be rotated or revoked. Every key, and every change to one, is in the audit log (HA-15).
+- **Use it to hold access.** The overdue event lets a customer's identity system react (the HA-03 open question): Hacktivity reports who is overdue; what the customer does about access is the customer's to decide in their own systems.
+- **Screens.** A page to issue, name, scope, rotate and revoke keys; a list of registered event destinations with their recent deliveries and failures; a description of the data each call and event returns, for the customer's own developers.
+
+**Acceptance criteria:**
+
+- An organisation admin issues a scoped read key, pulls the current assignments and completion records for their organisation, and can reach no other organisation's data.
+- A completion and an overdue each fire a signed event to a registered destination within a few minutes; a failed delivery is retried and shown in the delivery list.
+- No API call or event returns a named individual's outcome ratings or decisions.
+- Issuing, rotating and revoking a key is in the audit log.
+
+**Depends on:** HA-01, HA-05, HA-09, HA-15.
+
+**Risks and open questions:**
+
+- **Another way out for personal data.** Keyed access makes it easier to move staff records. *Recommendation:* read-only, compliance data only, scoped and logged, with the same aggregate rules as HA-09 for anything drawn from learning data.
+- **Customers asking for write access.** Creating assignments or people this way. *Recommendation:* read and events first; provisioning already has its own path (HA-02), so writing can wait until a customer needs it.
+
+### HA-25: Partner role
+
+**Priority and size:** P3, M.
+
+**Why:** Resellers and managed service providers (MSPs) run the course for several client organisations and want one place to set them up and support them, without a separate sign-in per client and without seeing each client's staff by name. HA-01 keeps every customer's data apart; a partner role lets one trusted outside party work across several of them within limits the customer sets. HA-01 already notes this as a P3 extension.
+
+**What exists today:** nothing. Roles are scoped to one organisation (HA-01); account managers are the operator's own staff, not an outside partner.
+
+**Design:**
+
+- **Partner.** An organisation marked as a partner, with its own people, holding a relationship to each client organisation it looks after. A client admits a partner, and can end the relationship at any time.
+- **What a partner can do, by default.** Set a client up and support it: build the profile (HA-11), load policies (HA-07), draft paths and assignment rules (HA-03), run the setup checklist (HA-26), and see compliance status in aggregate to show the client is on track. A partner does not see learners' learning detail, individual outcome ratings or decisions, and sees named compliance data only where the client turns that on for the people the partner supports.
+- **What the client controls.** Which partner, over which parts of the organisation, with which role (from a setup-only role up to compliance viewer), and for how long. The grant can be narrowed or withdrawn, and the client always keeps its own admin.
+- **Billing.** A partner can hold seats across its clients (HA-18), so it can buy in bulk and assign seats to each client.
+- **Screens.** For the partner: a list of its client organisations with each one's setup state and headline compliance figures, and a way into each client within the granted scope. For the client: who at the partner can act for them, over what, until when, and when they last did.
+- **Logging.** Everything a partner does in a client organisation is in that client's audit log (HA-15), attributed to the partner's person.
+
+**Acceptance criteria:**
+
+- A partner sets up three client organisations from one sign-in, and sees no learner's learning detail in any of them.
+- A client narrows a partner's scope to one division, and the partner can then act only there.
+- A client ends the relationship and the partner loses all access at once, while the client keeps every record.
+- Every partner action in a client organisation is in that client's audit log, named as the partner's.
+
+**Depends on:** HA-01, HA-09, HA-11, HA-15, HA-18.
+
+**Risks and open questions:**
+
+- **A partner is another processor.** A partner acting on staff data sits under the customer's data processing agreement (HA-15). *Recommendation:* the relationship is admitted in writing, scoped, time-boxed and logged, and the DPA covers partners as it covers the operator.
+- **Scope creep.** Partners will ask for more than setup. *Recommendation:* start at setup and aggregate status, and widen only with the client's explicit grant.
+
+### HA-26: Organisation setup checklist
+
+**Priority and size:** MVP, S.
+
+**Why:** The first time an organisation goes live, several things must be in place before staff are invited, or the first learners meet an empty profile, a missing policy or a rule that assigns the wrong people. A short go-live checklist that holds invitations until each step is done stops a botched launch, and gives the admin (or the partner in HA-25) one page that says what is left.
+
+**What exists today:** nothing. An admin sets each piece up on its own screen, with nothing joining them and nothing holding staff invitations until it is ready.
+
+**Design:**
+
+- **The steps**, each linking to the screen that completes it, each either done or not:
+  - the data processing agreement is signed and the hosting region chosen (HA-15);
+  - the organisation profile is complete, with every required slot filled and the reporting routes set, previewed as a learner (HA-11);
+  - the policies the chosen paths need are loaded as accessible versions (HA-07);
+  - the paths and assignment rules are chosen and previewed, so the admin has seen who would be assigned what and when (HA-03);
+  - people are imported and spot-checked (HA-01), with the reminder sender and working days set (HA-04);
+  - a test learner has run the first module end to end, and a completion record and certificate came back (HA-05, HA-06).
+- **It holds the right thing.** Inviting staff is held until the steps that must come first are done; the admin can still preview and run the test learner. What is missing is listed, as HA-11 lists empty required slots.
+- **Reusable.** The checklist is run again for a new path, a new department going live, or the annual refresher, as a lighter list.
+- **Screens.** One checklist page with each step's state, a link to finish it, and a single "ready to invite" state that turns on only when the holding steps are done.
+
+**Acceptance criteria:**
+
+- With the profile incomplete or no policy loaded, staff can't be invited, and the checklist shows exactly what is missing.
+- A test learner completes the first module, and the checklist shows the completion record and certificate came back.
+- When every holding step is done, the checklist turns to "ready to invite" and invitations can go out.
+
+**Depends on:** HA-01, HA-03, HA-05, HA-06, HA-07, HA-11, HA-15.
+
+**Risks and open questions:**
+
+- **Too rigid.** A hard hold can frustrate a customer who knows what they are doing. *Recommendation:* hold only the few steps that cause real harm if skipped (no profile, no policy, no test run), and let the rest be warnings.
+
 ## Build order
 
 The MVP slice that lets a first customer run Induction Essentials with real staff:
@@ -1070,17 +1168,14 @@ The MVP slice that lets a first customer run Induction Essentials with real staf
 3. **HA-05** (records, with a version stamp from HA-19) alongside the engine's BE-01 and MG-20, since nothing else can be checked without them.
 4. **HA-03** (rules and due dates), with the basic emails from HA-04 brought forward.
 5. **HA-17**, **HA-07**, **HA-06** and **HA-09**, so learners, managers and auditors each have their view.
-6. **HA-23** throughout, with an audit before the pilot.
+6. **HA-26** (the go-live checklist), so a first customer can't invite staff before the profile, policies, paths, records and a test learner are in place.
+7. **HA-23** throughout, with an audit before the pilot.
 
 Then, for wider sales (P2): HA-02, HA-10, HA-04 in full, HA-19, HA-08, HA-22, HA-20, HA-21 and HA-13. Then P3: HA-12, HA-14, HA-16, HA-18.
 
 ## Proposed additions to the catalogue
 
-Not yet in `README.md`; for the orchestrator to number if wanted.
-
-- **proposed:** Public API and webhooks, read-only access to people, assignments and records, and an event on completion or overdue, so customers can feed HR, GRC and identity systems (for example to hold access until training is done).
-- **proposed:** Partner organisations, a role scoped to several customer organisations, for managed service providers and resellers who run the course for their clients.
-- **proposed:** Organisation setup checklist, a guided go-live list (DPA signed, profile complete, people imported, rules previewed, test learner run) that blocks inviting staff until each step is done.
+Public API and webhooks, a partner role and the organisation setup checklist are now catalogued as HA-24, HA-25 and HA-26 above.
 
 ## Sources
 
