@@ -6,6 +6,8 @@ It is Monday morning in the player's second week at Larkspur. Their manager need
 
 The module teaches through that tension. The phishing that works in real life arrives when you are expecting something like it: a "Northbeck" email when you are waiting for Northbeck, a "service desk" email in your second week when everything is new. The player learns to pause, check another way and report while still getting the schedule out on time, which is the habit we want them to take back to their own desk.
 
+It works three lenses on the same threat (`01_LEARNING_DESIGN.md`, principle 12): **detect** it (the Practise drill, "Phish or Fine?"), **behave** well (the Apply beat and the reporting habit), and **understand the attacker** (an optional attacker-view beat where the player briefly builds a pretext in a sandbox). The third lens is what breaks the "I would never fall for this" reflex: once a learner has assembled a convincing lure from a colleague's public details, a convincing lure stops looking like something only a careless person clicks. It is optional, it is sandboxed, and it always ends back on the defence.
+
 ## Setting and cast
 
 - **Rooms:** the Operations area of the open-plan office (`room_office`), the player's desk with a monitor, the kitchen (`room_break`) for an optional chat, and the security office (`room_security`) for Kai's behind-the-scenes scene. No new rooms.
@@ -58,6 +60,15 @@ The critical path is marked **(CP)**. Everything else is optional depth.
   10. A reply inside a real thread with a known supplier, asking you to sign in to a "secure portal" to see a document.
 - Three items include the link and domain drill inline (MG-03): pick the real domain out of the address.
 - Getting several wrong in a row brings Ama back for a one-line nudge, never a lecture.
+
+### 3b. Attacker view, optional: "The Phish Tank" (3 to 4 minutes)
+
+- **Optional, never on the critical path.** Offered after Practise, skippable in one tap; the module is complete without it. It exists to break the "I would never fall for this" reflex before the Apply beat.
+- Jo Fairweather, Larkspur's authorised tester, invites the player to help design this year's test (MG-30, EX-06, BE-11), at a bench that cannot send anything.
+- **(Pretext only)** From Leo's public details on the OSINT board (MG-13), the player picks who to pretend to be, what expected thing to reference, and one lever (authority, urgency, familiarity, curiosity), then orders a short note from a bank of pre-written fragments. No free typing, no links, no attachments, nothing sent.
+- Jo's readable judge rates how convincing the *pretext* is and says why, and names which colleagues would probably be fooled and why that is not foolishness.
+- **The flip:** the pretext the player built lands in their own inbox and they catch it with the procedure. Jo closes with the defence for the lever used, then points back to locking down the public details that made it work.
+- Tone and rails: always an authorised test, always ends on the defence, fully sandboxed. See MG-30 for the safety rails. If an organisation turns the attacker view off (BE-05 setting), the beat is simply absent and nothing else changes.
 
 ### 4. Apply: "The 10:00 deadline" (6 to 8 minutes)
 
@@ -120,6 +131,7 @@ No option shames the player. The worst branch (signing in and saying nothing) st
 | **MG-01 Inbox** | new | The whole module. Needs: message list with unread state, reading pane with sender name and address visible on click, link hover showing the real destination, attachments, a built-in browser panel for fake sign-in pages (pre-filled, never real credentials), Report button, reply and forward, scheduled arrivals, events emitted for every action |
 | **MG-03 Link and domain drill** | new | Inline in three practice emails |
 | **MG-20 Knowledge check** | new | Ama's check question and the final spot check |
+| **MG-30 Pretext workshop** | new (P3) | The optional attacker-view beat (3b). Sandboxed, pretext-only; builds on MG-13 and MG-01. Absent if the organisation turns the attacker view off |
 | `phone-chat` | existing | Team chat with Lena, Leo and Kai (or a chat-app skin from MG-05 later) |
 | `person-chat` | existing | Ama at the desk, Leo leaning over, Kai in the security office |
 | MG-04 Voice calls | new (P2) | Calling Northbeck on the directory number; calling the callback number. Until MG-04 exists, these can run as phone NPC conversations in `phone-chat` |
@@ -154,7 +166,7 @@ Shown on BE-02, then spoken by Ama and Kai:
 
 ## Alternative concepts
 
-1. **The Phish Tank (attacker view).** Jo Fairweather has been hired to run Larkspur's authorised phishing test and asks the player to help design it (EX-06, BE-11). The player picks a pretext from public information about a team, chooses levers (authority, urgency, curiosity) and sees which characters would probably fall for each and why. Then the roles flip: the test lands in the player's own inbox. Teaches the levers by using them. Kept at the level of pretexts and psychology; no technical delivery.
+1. **The Phish Tank (attacker view).** Now adopted as the optional beat 3b, realised through MG-30. Jo Fairweather has been hired to run Larkspur's authorised phishing test and asks the player to help design it (EX-06, BE-11). The player picks a pretext from public information about a team, chooses levers (authority, urgency, curiosity) and sees which characters would probably fall for each and why. Then the roles flip: the test lands in the player's own inbox. Teaches the levers by using them. Kept at the level of pretexts and psychology; no technical delivery. (It stayed in this list as the fuller write-up; the beat above is its place in the flow.)
 2. **Post Room.** An arcade take for the micro-drill, in the style of *Papers, Please*: emails arrive as envelopes on a conveyor in the post room, and the player stamps them DELIVER or REPORT, checking each against the supplier directory and the staff list pinned to the wall. Speeds up as the shift goes on. Fun and quick, but further from a real inbox, so better as a drill than as the main module.
 3. **Inbox Defence (team mode).** A facilitated competition for a team-building session: small groups each play the Apply beat on their own screen, and Kai's report board shows which team reported first and with the fewest misses. Good for security champions' events in Hacktivity (HA-13).
 

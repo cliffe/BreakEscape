@@ -1,6 +1,6 @@
 # Minigames (MG)
 
-New minigames for the awareness course, and how the existing Break Escape minigames are reused. The ids MG-01 to MG-25 come from `features/README.md` and are fixed: modules cite them. This document says what each one is, how it plays, how it is configured, what it records and what it builds on.
+New minigames for the awareness course, and how the existing Break Escape minigames are reused. The ids (MG-01 to MG-30) come from `features/README.md` and are fixed: modules cite them. This document says what each one is, how it plays, how it is configured, what it records and what it builds on.
 
 Read it with `features/README.md` (the catalogue), `01_LEARNING_DESIGN.md` (the seven beats), `modules/core_01_phishing_email/` (the model module, which uses MG-01, MG-03 and MG-20), `research/current_state_break_escape.md` and the framework in `public/break_escape/js/minigames/framework/`. Here `JS/` means `public/break_escape/js/`.
 
@@ -1272,6 +1272,39 @@ Other keys: `presentation` (`spot_check`, `mentor`, `game_show`, `drill`); `item
 
 **Open questions:** **Image-based or field-based documents?** *Recommendation:* field-based with an image skin, so documents are cheap to write and accessible. Forged documents stay non-instructional: the lesson is "check against what you hold", never how forgeries are made.
 
+### MG-30 Pretext workshop (attacker view)
+
+**Priority and size:** P3, M. Depth, never on an MVP path. Always optional, and never shown before the learner has done the detect and behave beats.
+
+**Used for:** core_01 (an optional attacker-view beat and a facilitated "red team" variant, realising the "Phish Tank" alternative concept). Offered later as a shared block to core_02 (a pretext for a call rather than an email), core_11 and role_02 (a payment-change pretext) and core_15 (how a generative tool speeds a pretext up). It is always paired with the defence and always hands back to it.
+
+**The idea it borrows.** A university exercise had learners build spear-phishing lures themselves against a simulated company in an isolated VM, and found that writing a convincing lure, not just being shown one, is what changed the belief that "I would never fall for this" (Chothia, Paiu and Oultram, 2018; `01_LEARNING_DESIGN.md`, principle 12). MG-30 takes that lesson at awareness level: the learner builds the *pretext* (who to be, what to reference, which lever to lean on), not an attack. It deliberately leaves out the paper's technical half (crafting payloads with offensive tooling, Office macros, getting a shell, capturing a flag); that belongs in a technical lab for specialist audiences, not all-staff awareness (`DECISIONS_PENDING.md`, D12).
+
+**What the player does** (cast as an authorised tester sitting with Jo Fairweather, EX-06 and BE-11, at a bench that cannot send anything):
+
+1. **Picks a fictional target** from the OSINT board (reuses MG-13): a colleague with a few public details already pinned.
+2. **Chooses the angle and the lever** from menus built out of those public details: who to appear to be, what expected thing to reference, and one persuasion lever (authority, urgency, familiarity, curiosity). Choices are picked from lists, never typed.
+3. **Assembles a short message** from a vetted bank of pre-written fragments (greeting, hook, the ask, sign-off), reordered into a believable note. No free text, no links, no attachments.
+4. **Reads the judge's verdict.** A readable, rules-based judge (the awareness-level cousin of the paper's rule script, scoring only the *plausibility* of the pretext) shows a labelled plausibility meter and a plain-language "why": did it address the target by name, did it match something they would expect this week, did it use the lever well? It names which fictional colleagues would probably be fooled, and why that is not foolishness.
+5. **Flips sides.** The pretext the player built now lands in their own inbox (MG-01), and they catch it with the procedure: pause, check another way, report.
+6. **Hears Jo close** with the defence for the lever used and "what would have stopped this", then a pointer to locking down the public details that made it work (back to MG-13).
+
+**What it teaches:** a convincing phish is easy to write and hard to spot, so being fooled is not a character flaw (the paper's central lesson); the small set of levers attackers lean on; that the public details which make a pretext work are the ones worth locking down; and, once more, that the dependable defence is the process, not spotting mistakes.
+
+**Safety rails (non-negotiable).** Fully sandboxed: nothing can be sent, and the bench has no outbound route. No payload, macro, executable, attachment or real link is ever created or shown. Message text is assembled only from a vetted fragment bank, never free-typed, so nothing a learner produces could be lifted out and used. Every person, company, domain and detail is fictional. The activity is always optional, always framed by Jo as an authorised test, and always ends on the defence. If a module cannot carry all of that, it uses EX-06's lighter "watch the tester" interlude instead.
+
+**Configuration:** `targets[]` (drawn from MG-13 `profiles`), `levers[]`, `fragments {greeting[], hook[], ask[], signoff[]}`, `judge {rules[]}` (each rule a readable condition and the line it triggers), `flipTo` (which MG-01 bank item the built pretext maps to on the flip), `assess`.
+
+**Events and records:** prefix `pretext_`: `pretext_target_chosen:<id>`, `pretext_lever_chosen:<lever>`, `pretext_built`, `pretext_judged:<band>`, then `pretext_caught_on_flip` or `pretext_missed_on_flip`. Records: whether the learner engaged with the judge's reasons (understanding of the levers) and whether they then caught the flipped phish.
+
+**Builds on:** MG-13 (the profiles and board), MG-01 (the flip into the inbox), EX-06 and BE-11 (the tester role), BE-01 (the record).
+
+**Accessibility notes:** every choice is a menu and the message is a reorderable list of fragments, so no free drag is required (SC 2.5.7); the judge's verdict is text in a polite live region; the plausibility meter carries a text label and is never signalled by colour alone.
+
+**Art:** reuses MG-13's corkboard and MG-01's inbox; one new "tester's bench" framing, in the game's pixel style.
+
+**Open questions:** **Any free text at all?** *Recommendation:* no. A fragment bank keeps the exercise sandboxed, keeps the judge readable, and stops a learner typing something that should not leave the game. The learning (the levers and the flip) survives without free typing. **Which modules get it?** *Recommendation:* core_01 first; add the others only once the core_01 version has been playtested, since the attacker view is the part most likely to be misread if it drifts from "how little an attacker needs".
+
 ## 4. Existing minigames: reuse and fixes
 
 File names without a folder are in that minigame's own folder under `JS/minigames/`; other paths start from `JS/` or the repository root. Size is the work to make each one reusable in the course, not to build it.
@@ -1348,7 +1381,7 @@ Four waves, following the roadmap in `00_COURSE_OVERVIEW.md`. Within a wave, ite
 
 ### Wave 3: the rest (phase 3)
 
-14. **MG-13** (core_12); **MG-17,** built on MG-04 (role_03, role_06, sector_01); **MG-18** (role_05); **MG-19** (role_04); **MG-22,** built on MG-25 (role_07).
+14. **MG-13** (core_12); **MG-17,** built on MG-04 (role_03, role_06, sector_01); **MG-18** (role_05); **MG-19** (role_04); **MG-22,** built on MG-25 (role_07); **MG-30,** built on MG-13 and MG-01 (core_01's optional attacker-view beat; it can only be built once both exist, so it lands last).
 
 ### Why this order
 

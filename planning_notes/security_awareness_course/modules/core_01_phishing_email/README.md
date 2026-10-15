@@ -81,6 +81,7 @@ Contributes to (references in `02_COMPLIANCE_MAPPING.md`):
 - **BE-19 Open minigames from conversations and events**: the inbox opening by itself at the hook, and Ama's check question inside her explanation. Today a minigame only opens when the player clicks an object.
 - **BE-20 Authorable tutorial and title screen**: the course's own opening rather than the campaign's.
 - **BE-07 Micro-drill launcher** for "Phish or Fine?" (P2).
+- **MG-30 Pretext workshop** for the optional attacker-view beat 3b (P3; builds on MG-13 and MG-01, so it arrives after both). Optional, sandboxed, pretext-only.
 - **MG-04 Voice calls** for the Northbeck call-back (P2; a phone NPC conversation works until then).
 - **EX-02 and MG-21** for the optional sixty-second video (P2).
 
@@ -90,6 +91,7 @@ Contributes to (references in `02_COMPLIANCE_MAPPING.md`):
 - The service desk contact for "I clicked".
 - What to do after opening a suspicious attachment.
 - Whether the organisation runs simulated phishing and how clicks are treated (drops C01-Q11 if not).
+- Whether the optional attacker-view beat (3b, MG-30) is on. Off by default; on when the organisation wants it. When off, the beat is simply absent and nothing else changes.
 - The external sender banner wording, if any.
 - The approved way to reach company systems (bookmarks, an app, a portal).
 
