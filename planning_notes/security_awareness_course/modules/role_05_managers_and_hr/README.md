@@ -85,7 +85,7 @@ The module also supports the organisation's own access, screening and leaver con
 - **MG-27 Work desktop:** the player's computer as one launcher for Owain's tickets, MG-18, the team chat and The Lark.
 - **BE-08 Visual aids:** the two access lists side by side, the access lifecycle diagram, the hiring red flags card, the "thank, act, support, learn" card.
 - **BE-09 Intranet** and **BE-05 Organisation profile:** the manager's card with the customer's own leaver process, screening policy and reporting routes.
-- **proposed:** Video call effects, freeze, blur and audio lag in `person-chat` video-call mode, set by ink tags, plus a configurable label for the call bar (today "SECURE VIDEO LINK" is hard-coded). Likely shared with core_15.
+- **proposed:** Video call connection effects (freeze, blur and audio lag) in `person-chat` video-call mode, set by ink tags, plus a configurable label for the call bar (today "SECURE VIDEO LINK" is hard-coded). These are ordinary call-quality dressing that can appear for any caller, not a deepfake tell (core_15 teaches that fakes don't reliably glitch); the candidate is caught by the identity and process checks, never by the video. Likely shared with core_15.
 - **MG-04 Voice calls** (P2) for ringing a referee on an independently found number; a `phone-chat` conversation works until then.
 
 ## Organisation-specific content

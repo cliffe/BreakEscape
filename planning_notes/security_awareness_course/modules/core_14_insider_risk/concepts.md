@@ -19,6 +19,7 @@ The UK's National Protective Security Authority (NPSA, formerly CPNI) changed it
 - An **insider** is anyone who has, or previously had, authorised access to or knowledge of an organisation's resources (people, processes, information, technology and buildings): employees, contractors, temporary staff, partners.
 - **Insider risk** is the likelihood of harm or loss to the organisation, and its impact, because of the action or inaction of an insider, whether intended or not.
 - **Insider threat** is the narrower term for an insider who intends to cause harm, or is likely to.
+- An **insider event** (the term NPSA introduced in May 2023) is an action or inaction by an insider that causes harm, or has the potential to, whether that insider meant harm or not.
 
 NPSA's 2026 principles for a shared approach to insider risk describe a "spectrum of intent" from unintentional to intentional, note that warning signs are often visible early enough to intervene, and put the message simply: "If you have people, you have insider risk."
 

@@ -208,6 +208,6 @@ Shown on BE-02, then talked through by Ama and Zainab:
 - **No gotchas.** The hook is a baseline. Everything in Apply was taught in Learn and practised in Practise. The tablet goes missing through the player's own play or through Zainab's, so everyone meets the reporting decision fairly.
 - **Spatial play needs an equal alternative.** The seat round and the cones must work by keyboard, and the text route describes positions in words (BE-04, BE-03). Colour is never the only cue in the cones.
 - **Don't assume a private home office.** Many people work at a kitchen table or in a shared flat; the module offers headphones, blur and timing as answers, not "get a study".
-- **Don't over-teach.** Working in public is normal and allowed. Public charging stays a one-line habit, not a scare.
+- **Don't over-teach.** Working in public is normal and allowed. Public charging stays a one-line habit, not a scare (the FBI and FCC issued advisories in 2023, but neither cited a documented case).
 - **Never ask for real credentials.** The fake Wi-Fi page is pre-filled with the in-game account.
 - **Keep each place tight.** Four places in six minutes means one or two decisions each; anything more goes to the micro-drill bank.
