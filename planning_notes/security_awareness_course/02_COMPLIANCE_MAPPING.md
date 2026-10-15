@@ -22,17 +22,33 @@ Write the framework's short name before every number ("PCI DSS 12.6.3.1", never 
 | ISO/IEC 27001:2022 | ISO 27001 cl. 7.2 | Clause 7.2 Competence |
 | | ISO 27001 cl. 7.3 | Clause 7.3 Awareness |
 | | ISO 27001 A.5.1 | Annex A control 5.1 Policies for information security (communicated to and acknowledged by relevant personnel) |
+| | ISO 27001 A.5.3 | Annex A control 5.3 Segregation of duties |
+| | ISO 27001 A.5.10 | Annex A control 5.10 Acceptable use of information and other associated assets |
+| | ISO 27001 A.5.12 | Annex A control 5.12 Classification of information |
+| | ISO 27001 A.5.13 | Annex A control 5.13 Labelling of information |
+| | ISO 27001 A.5.14 | Annex A control 5.14 Information transfer |
+| | ISO 27001 A.5.19 to A.5.23 | Annex A controls 5.19 to 5.23 Supplier relationships (5.19 information security in supplier relationships, 5.20 addressing security within supplier agreements, 5.21 the ICT supply chain, 5.22 monitoring and change management of supplier services, 5.23 use of cloud services) |
 | | ISO 27001 A.6.3 | Annex A control 6.3 Information security awareness, education and training |
+| | ISO 27001 A.6.7 | Annex A control 6.7 Remote working |
 | | ISO 27001 A.6.8 | Annex A control 6.8 Information security event reporting |
+| | ISO 27001 A.7.9 | Annex A control 7.9 Security of assets off-premises |
+| | ISO 27001 A.7.10 | Annex A control 7.10 Storage media |
+| | ISO 27001 A.7.14 | Annex A control 7.14 Secure disposal or re-use of equipment |
+| | ISO 27001 A.8.1 | Annex A control 8.1 User endpoint devices |
+| | ISO 27001 A.8.10 | Annex A control 8.10 Information deletion |
 | ISO/IEC 27002:2022 | ISO 27002 6.3 | Implementation guidance for control 6.3 |
+| ISO/IEC 42001:2023 | ISO 42001 cl. 7.2 | Clause 7.2 Competence (AI management system) |
+| | ISO 42001 cl. 7.3 | Clause 7.3 Awareness (AI management system) |
 | NIST SP 800-53 Rev. 5 | NIST AT-2 | AT-2 Literacy Training and Awareness |
 | | NIST AT-2(1) to NIST AT-2(6) | AT-2 enhancements: (1) Practical Exercises, (2) Insider Threat, (3) Social Engineering and Mining, (4) Suspicious Communications and Anomalous System Behavior, (5) Advanced Persistent Threat, (6) Cyber Threat Environment |
 | | NIST AT-3, NIST AT-3(5) | Role-based Training; AT-3(5) Processing Personally Identifiable Information |
 | | NIST AT-4 | Training Records |
+| | NIST PL-4 | PL-4 Rules of Behaviour (acknowledged before access and again when the rules change) |
 | NIST SP 800-50 Rev. 1 | NIST SP 800-50r1 | Building a Cybersecurity and Privacy Learning Program (guidance) |
 | CIS Critical Security Controls v8.1 | CIS 14.1 to CIS 14.9 | Control 14 Security Awareness and Skills Training, safeguards 14.1 to 14.9 |
 | PCI DSS v4.0.1 | PCI DSS 12.6.1, 12.6.2, 12.6.3, 12.6.3.1, 12.6.3.2 | The security awareness programme requirements |
 | | PCI DSS 6.2.2, 8.3.8, 9.5.1.3, 12.10.4 | Related role training and communication requirements |
+| | PCI DSS 3.3.1.2, 3.4.1, 4.2.2, 9.4.6 | Technical card data controls the course supports through staff behaviour, not training requirements: 3.3.1.2 sensitive authentication data not retained after authorisation; 3.4.1 PAN masked when displayed; 4.2.2 PAN secured if sent by end-user messaging; 9.4.6 hard-copy card data destroyed when no longer needed |
 | NIS2 Directive (EU) 2022/2555 | NIS2 Art 20(2), NIS2 Art 21(2)(d), NIS2 Art 21(2)(g) | Management body training; supply chain security; cyber hygiene and training |
 | | NIS2 recital 89 | Examples of cyber hygiene and training (context, not a requirement) |
 | NIS2 Implementing Regulation (EU) 2024/2690 | NIS2 IR 5.1.4, IR 8.1, IR 8.2, IR 10.1, IR 10.2 | Points in the Annex (supplier contracts, awareness, security training, human resources security, background checks) |
@@ -41,7 +57,8 @@ Write the framework's short name before every number ("PCI DSS 12.6.3.1", never 
 | DORA RTS (EU) 2024/1774 | DORA RTS Art 19 | Human resources policy |
 | UK GDPR | UK GDPR Art 5(1)(f), Art 5(2), Art 24, Art 28, Art 32, Art 32(4), Art 33, Art 39(1)(b), Art 47(2)(n) | Security, accountability, controller responsibility, processors, security of processing, breach notification, DPO tasks, binding corporate rules. EU customers: "EU GDPR Art ..." with the same numbers |
 | ICO | ICO training toolkit | The "Training and awareness" control measures in the ICO's data protection audit framework (Accountability toolkit) |
-| NCSC Cyber Assessment Framework v4.0 | NCSC CAF B6, NCSC CAF B6.a, NCSC CAF B6.b | Principle B6 Staff awareness and training; B6.a Cyber Security Culture; B6.b Cyber Security Training |
+| NCSC Cyber Assessment Framework v4.0 | NCSC CAF A4 | Principle A4 Supply chain (a control the course supports, not a training requirement) |
+| | NCSC CAF B6, NCSC CAF B6.a, NCSC CAF B6.b | Principle B6 Staff awareness and training; B6.a Cyber Security Culture; B6.b Cyber Security Training |
 | NHS DSPT 2026-27 (v9) | DSPT 2.1.1, 3.2.1, 3.3.1, 3.4.1, 6.3.2, 10.2.1 | Evidence items for categories 3 and 4 (add the category when it matters: "DSPT 3.2.1 (categories 3 and 4)") |
 | | DSPT 3.1.1 to 3.1.3 | Evidence items for category 2 (IT suppliers) |
 | | DSPT B6.a, DSPT B6.b | The CAF-aligned DSPT used by large NHS organisations |
@@ -314,26 +331,26 @@ How to read it:
 | core_02 Social engineering beyond email | cl. 7.3, A.6.3 | AT-2, AT-2(3) | 14.2, 14.6 | 12.6.3.1 (meets, with core_01) | B6.b | 3.2.1 |
 | core_03 Passwords and MFA | A.6.3 | AT-2 | 14.3 | 8.3.8 | B6.b | 2.1.1, 3.2.1 |
 | core_04 Spotting and reporting incidents | cl. 7.3, A.6.3, A.6.8 | AT-2, AT-2(4) | 14.6 | 12.6.1 | B6.a, B6.b | 2.1.1, 3.2.1 |
-| core_05 Data protection and privacy | A.6.3 | AT-2 | 14.4, 14.5 | | B6.b (DSPT form only) | 2.1.1, 3.2.1 |
-| core_06 Handling information | A.6.3 | AT-2 | 14.4, 14.5 | | B6.b | 3.2.1 |
+| core_05 Data protection and privacy | A.6.3 | AT-2 | 14.4, 14.5, 14.6 | | B6.b (DSPT form only) | 2.1.1, 3.2.1 |
+| core_06 Handling information | A.6.3, A.5.12, A.5.13, A.5.14, A.7.10, A.7.14, A.8.10 (ISO 27002 wording to verify) | AT-2 | 14.4, 14.5 | 9.4.6 | B6.b | 3.2.1 |
 | core_07 Malware, ransomware and updates | A.6.3 | AT-2, AT-2(4), AT-2(6) | 14.6, 14.7 | 12.6.3.1 | B6.b | 3.2.1 |
-| core_08 Safe web and downloads | A.6.3 | AT-2, AT-2(4) | 14.2, 14.6 | 12.6.3.1 | B6.b | 3.2.1 |
-| core_09 Remote and mobile working | A.6.3 | AT-2 | 14.5, 14.8 | | B6.b | 3.2.1, 6.3.2 |
+| core_08 Safe web and downloads | A.6.3 | AT-2, AT-2(4) | 14.2, 14.6 | 12.6.3.1, 12.6.3.2 | B6.b | 3.2.1 |
+| core_09 Remote and mobile working | A.6.3, A.6.7, A.7.9, A.8.1 | AT-2 | 14.5, 14.8 | 12.6.3.2 | B6.b | 3.2.1, 6.3.2 |
 | core_10 Physical security | A.6.3 | AT-2, AT-2(3) | 14.2, 14.4 | 12.6.3.1; 9.5.1.3 (in part) | B6.b | 3.2.1 |
-| core_11 Payment fraud and BEC | A.6.3 | AT-2, AT-2(3) | 14.2 | 12.6.3.1 | B6.b | 3.2.1 |
+| core_11 Payment fraud and BEC | A.6.3, A.5.3 (context) | AT-2, AT-2(3) | 14.2 | 12.6.3.1 | B6.b | 3.2.1 |
 | core_12 Social media and oversharing | A.6.3 | AT-2, AT-2(3) | 14.2, 14.5 | 12.6.3.1 | B6.b | 3.2.1 |
 | core_13 Removable media, cloud and shadow IT | A.6.3 | AT-2 | 14.4, 14.5 | 12.6.3.2 | B6.b | 3.2.1 |
 | core_14 Insider risk | cl. 7.3, A.6.3 | AT-2, AT-2(2) | 14.6 | | B6.a, B6.b | 3.2.1 |
-| core_15 Generative AI and deepfakes | A.6.3 | AT-2, AT-2(3), AT-2(6) | 14.2, 14.5 | 12.6.3.1 | B6.b | 3.2.1 |
-| core_16 Acceptable use and your responsibilities | cl. 7.3, A.6.3 | AT-2 | 14.1 | 12.6.1; 12.6.3.2 (meets, with the organisation's own policy loaded through HA-07); 12.6.3 acknowledgement (with HA-07) | B6.b | 2.1.1, 3.2.1 |
-| core_17 Capstone: the annual assessment | cl. 7.2, cl. 7.3, A.6.3 | AT-2, AT-2(1) | 14.1 | 12.6.3, 12.6.3.1 | B6.b | 3.2.1 |
+| core_15 Generative AI and deepfakes | A.6.3 | AT-2, AT-2(3), AT-2(6) | 14.2, 14.4, 14.5 | 12.6.3.1, 12.6.3.2 | B6.b | 3.2.1 |
+| core_16 Acceptable use and your responsibilities | cl. 7.3, A.6.3, A.5.1, A.5.10 | AT-2, PL-4 | 14.1 | 12.6.1; 12.6.3.2 (meets, with the organisation's own policy loaded through HA-07); 12.6.3 acknowledgement (with HA-07) | B6.b | 2.1.1, 3.2.1 |
+| core_17 Capstone: the annual assessment | cl. 7.2, cl. 7.3, A.6.3 | AT-2, AT-2(1), AT-2(6) | 14.1 | 12.6.2, 12.6.3, 12.6.3.1 | B6.b | 3.2.1 |
 | role_01 Leaders and boards | cl. 7.2 | AT-3 | 14.9 | | B6.a, B6.b | 3.4.1 |
-| role_02 Finance and payments | cl. 7.2, A.6.3 | AT-3, AT-2(3) | 14.9 | 12.6.1, 12.6.3.1 | B6.b | |
+| role_02 Finance and payments | cl. 7.2, A.6.3, A.5.3 (context) | AT-3, AT-2(3) | 14.9 | 12.6.1, 12.6.3.1, 9.5.1.3 (in part), 3.3.1.2, 3.4.1, 4.2.2 (supports) | B6.b | |
 | role_03 IT administrators and service desk | cl. 7.2 | AT-3, AT-2(3) | 14.9 | 12.10.4 (in part) | B6.b | 3.3.1 |
 | role_04 Developers | cl. 7.2 | AT-3 | 14.9 | 6.2.2 (in part) | B6.b | 3.3.1 |
 | role_05 People managers and HR | cl. 7.2, A.6.3 | AT-3, AT-2(2) | 14.9 | | B6.a, B6.b | |
 | role_06 Customer-facing and contact centre | cl. 7.2, A.6.3 | AT-3, AT-2(3) | 14.9 | 12.6.1, 12.6.3.1 | B6.b | |
-| role_07 Procurement and supplier management | cl. 7.2 | AT-3 | 14.9 | | B6.b | 10.2.1 (supports) |
+| role_07 Procurement and supplier management | cl. 7.2, A.5.19 to A.5.23 (context) | AT-3 | 14.9 | | B6.b, A4 (context) | 10.2.1 (supports) |
 | sector_01 Healthcare | A.6.3 | AT-2 | 14.4, 14.6 | | B6.a, B6.b | 2.1.1, 3.2.1 |
 
 ### Part 2: EU law, UK data protection, board guidance and US rules
@@ -353,9 +370,9 @@ How to read it:
 | core_10 Physical security | Art 21(2)(g); IR 8.1 | Art 13(6) | Art 5(1)(f), Art 32 | | | FTC 314.4(e) |
 | core_11 Payment fraud and BEC | Art 21(2)(g); IR 8.1 | Art 13(6) | | | | NYDFS 500.14(a)(3); FTC 314.4(e) |
 | core_12 Social media and oversharing | Art 21(2)(g) | Art 13(6) | Art 5(1)(f) | | | NYDFS 500.14(a)(3) |
-| core_13 Removable media, cloud and shadow IT | Art 21(2)(g); IR 8.1 | Art 13(6) | Art 5(1)(f), Art 32, Art 32(4) | | | HIPAA 164.308(a)(5)(ii)(B); FTC 314.4(e) |
+| core_13 Removable media, cloud and shadow IT | Art 21(2)(g); IR 8.1 | Art 13(6) | Art 5(1)(f), Art 32, Art 32(4); Art 28 (context) | | | HIPAA 164.308(a)(5)(ii)(B); FTC 314.4(e) |
 | core_14 Insider risk | Art 21(2)(g); IR 10.1 | Art 13(6); RTS Art 19 | Art 32(4) | | | CMMC AT.L2-3.2.3 (meets the awareness content); SOC 2 CC2.2 |
-| core_15 Generative AI and deepfakes | Art 21(2)(g) | Art 13(6) | Art 5(1)(f), Art 32(4) | | Art 4 | NYDFS 500.14(a)(3) and the NYDFS industry letter on AI |
+| core_15 Generative AI and deepfakes | Art 21(2)(g) | Art 13(6) | Art 5(1)(f), Art 32(4) | | Art 4; ISO 42001 cl. 7.2 and 7.3 | NYDFS 500.14(a)(3) and the NYDFS industry letter on AI |
 | core_16 Acceptable use and your responsibilities | Art 21(2)(g); IR 10.1 | RTS Art 19 | Art 24, Art 32(4); ICO training toolkit (induction) | | | CMMC AT.L2-3.2.1; FTC 314.4(e); SOC 2 CC2.2 |
 | core_17 Capstone: the annual assessment | Art 21(2)(g); IR 8.1 | Art 13(6) | ICO training toolkit (refresher) | C4 (supports, through the results) | Art 4 (when the year's edition includes AI) | NYDFS 500.14(a)(3); CMMC AT.L3-3.2.1e, AT.L3-3.2.2e |
 | role_01 Leaders and boards | Art 20(2); IR 8.1, IR 10.1 | Art 5(2)(g), Art 5(4), Art 13(6) | Art 24 | C1, C3, C4; D2 (supports) | | NYDFS 500.4(d)(1); HIPAA 164.308(a)(5) (management) |
