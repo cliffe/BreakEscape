@@ -647,17 +647,17 @@ HA-23 is the WCAG 2.2 AA pass over Hacktivity's learner pages and the Hacktivity
 
 ### 8.1 HacktivityLabSheets theme
 
-The issues listed in `research/current_state_lab_sheets.md`, confirmed in the HacktivityLabSheets repository in October 2026:
+The issues listed in `research/current_state_lab_sheets.md`, confirmed in the HacktivityLabSheets theme in October 2026 (described here at the level of the defect, not the internal source location):
 
 | Problem | Where | Fix | WCAG |
 |---|---|---|---|
-| Focus outlines removed from links and buttons | `assets/css/hacktivity-theme.scss`, lines 498 to 502 (`outline: none !important` on `a:focus` and `button`) | Remove the rule; add a `:focus-visible` outline at least 2 CSS pixels thick with 3:1 contrast in both themes | 2.4.7 |
-| The theme toggle has no accessible name (an icon only) | `_layouts/lab.html`, lines 7 to 9 | A label that says what it does ("Switch to light theme"), updated when the theme changes; the icon hidden from assistive technology. The contents toggle beside it already does this right (line 11) | 4.1.2 |
-| YouTube iframes have no title | `_layouts/lab.html`, lines 688 to 696 | Set the iframe's `title` from the link text, and keep a plain link to the video below it | 4.1.2 |
-| Callout labels removed on render, leaving only an emoji or a colour | Inline callouts (`==tip: ...==` and the others) become an emoji and the text, `_layouts/lab.html`, lines 326 to 332; blockquote callouts lose "Tip:", "Action:", "Warning:" and "Note:", lines 389 to 420 | Keep the word as visible text ("Tip:"), and hide the emoji from assistive technology; the icon and colour stay as extras | 1.1.1, 1.3.1, 1.4.1 |
-| No skip link | `_layouts/default.html` | A "Skip to content" link as the first focusable element | 2.4.1 |
-| No reduced-motion handling | Transitions and a hover zoom on embedded videos in `_layouts/lab.html` (for example line 274, and line 713) | A `prefers-reduced-motion: reduce` block that removes transitions and transforms | Course commitment (4.7) |
-| Most images have no alt text: 321 images in `_labs` use `![]`, 66 have alt text | `_labs/**/*.md` | Alt text for every informative image (step screenshots, diagrams); decorative images stay empty on purpose; a check that fails new awareness pages with an unexplained `![]` | 1.1.1 |
+| Focus outlines removed from links and buttons | The lab theme stylesheet (an `outline: none` reset on focused links and buttons) | Remove the rule; add a `:focus-visible` outline at least 2 CSS pixels thick with 3:1 contrast in both themes | 2.4.7 |
+| The theme toggle has no accessible name (an icon only) | The lab page header's theme toggle | A label that says what it does ("Switch to light theme"), updated when the theme changes; the icon hidden from assistive technology. The contents toggle beside it already does this right | 4.1.2 |
+| YouTube iframes have no title | The lab page's embedded video iframes | Set the iframe's `title` from the link text, and keep a plain link to the video below it | 4.1.2 |
+| Callout labels removed on render, leaving only an emoji or a colour | The lab layout's callout rendering: inline callouts (`==tip: ...==` and the others) become an emoji and the text, and blockquote callouts lose "Tip:", "Action:", "Warning:" and "Note:" | Keep the word as visible text ("Tip:"), and hide the emoji from assistive technology; the icon and colour stay as extras | 1.1.1, 1.3.1, 1.4.1 |
+| No skip link | The default page layout | A "Skip to content" link as the first focusable element | 2.4.1 |
+| No reduced-motion handling | Transitions and a hover zoom on embedded videos in the lab layout | A `prefers-reduced-motion: reduce` block that removes transitions and transforms | Course commitment (4.7) |
+| Most images have no alt text (most lab images use an empty `![]`, a minority have alt text) | The lab content pages | Alt text for every informative image (step screenshots, diagrams); decorative images stay empty on purpose; a check that fails new awareness pages with an unexplained `![]` | 1.1.1 |
 | Collapsible sections are unstyled | `<details>` in lab pages | A styled summary with a visible focus and an open or closed marker that is not colour alone | 2.4.7, 1.4.1 |
 | Print styles are minimal | Theme stylesheet | Print styles so a reference card or field guide prints cleanly | Course need (BE-09) |
 
