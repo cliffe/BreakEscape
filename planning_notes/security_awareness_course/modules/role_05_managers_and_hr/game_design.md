@@ -6,7 +6,7 @@ The player runs the Schools Facilities team in Larkspur's Operations department:
 
 None of it looks like security work, and that is the point. A manager's security decisions arrive as tickets, favours and conversations: "just give her the same as Des", "can I keep my old mailbox?", "he's a star, start him Monday", "please don't tell anyone". The module shows that each small answer either closes a door or leaves it open, and that the way a manager reacts to a confession decides whether the team tells them anything next time.
 
-The lunchtime talking points: the one-click "same as Des" trap, the candidate whose video freezes whenever the question goes off-script, the access list full of ghosts (a contractor who left in March, a summer temp, the Chief Executive's unused admin rights), and the team pulse board on the office whiteboard that moves with every reaction the player has.
+The lunchtime talking points: the one-click "same as Des" trap, the candidate who can't produce an original photo ID on a live check and whose paperwork never quite lines up, the access list full of ghosts (a contractor who left in March, a summer temp, the Chief Executive's unused admin rights), and the team pulse board on the office whiteboard that moves with every reaction the player has.
 
 ## Setting and cast
 
@@ -23,7 +23,7 @@ The lunchtime talking points: the one-click "same as Des" trap, the candidate wh
   - **Marta Ferreira**, 23, Portuguese-British, graduate apprentice scheduler; dark curly hair, a bright yellow cardigan, a new lanyard she keeps checking. Keen and a little overwhelmed.
   - **Des Harker**, 64, white English from Bradford, retiring scheduler and former school caretaker; walks with a stick, flat cap on the coat peg, a mug that says "Keys? Ask Des". Warm, proud, a bit sad to go.
   - **Farida Haidari**, 30s, British Afghan, the team's most experienced planner; neat, quick, precise. At her last job, people who clicked a test phish were named in a monthly email.
-  - **"Daniel Hartwell"**, the remote candidate: seen only as a polished profile photo and a video face that never quite matches the voice. In the branch where he is hired, **the real Daniel Hartwell** (30s, white English, a web developer in Leeds) phones HR at the end.
+  - **"Daniel Hartwell"**, the remote candidate: seen only as a polished profile photo and a reluctant camera, with paperwork that never quite lines up and no original ID he will show on a live check. In the branch where he is hired, **the real Daniel Hartwell** (30s, white English, a web developer in Leeds) phones HR at the end.
   - **Bev Quigley**, a consultant at Ellwood Talent (a fictional recruitment agency): email and phone only. Friendly, persistent, sure "he's a star".
   - **Sol Sorensen**, 40s, Danish-British, an agency temp who covers Des's callouts from Thursday. A generic office sprite.
 
@@ -80,7 +80,7 @@ The critical path is marked **(CP)**. The week runs as six short scenes on a pla
 **Tuesday: the remote candidate (3 minutes).**
 
 - Bev emails: *"Daniel's a star. References done, he can start Monday. He'll need the laptop sent to his new flat."* Lena chats: *"Need someone by Monday for the bookings rush."*
-- **The interview** (`person-chat` video-call mode). "Daniel" says his camera is broken and shows a profile photo. Asked again, he turns it on: the face is smooth and well lit, but the picture freezes whenever the player asks something unexpected (*"What was the best thing about your last manager?"*), and the voice runs half a second behind the lips. His answers about his last job are fluent and vague. Near the end he asks to be paid through a payments app "in my business partner's name, for tax reasons".
+- **The interview** (`person-chat` video-call mode). "Daniel" says his camera is broken and shows a profile photo. Asked again, he turns it on: the call quality is patchy, with the odd freeze and the sound dropping for a moment. Mei Lin, watching, says plainly that none of that proves anything either way, since it looks the same as any ordinary call on a poor connection, and the checks are what settle it. What does stand out is what he will and won't do: asked to hold his passport up to the camera there and then, he says it is packed away for the move; his answers about his last job are fluent and vague; and near the end he asks to be paid through a payments app "in my business partner's name, for tax reasons".
 - **The candidate file** (MG-25, or `forensic-data-platform` until it exists): a CV claiming six years at "Northern Data Solutions", a firm with no trace before last year; an ID scan that is a photo of a screen, whose photo doesn't match the video face; a home address in Leeds, while the laptop is to go to "my new flat in Leicester"; two references from free email addresses with internet phone numbers; a professional profile created four weeks ago. The player marks what doesn't match.
 - **Decision:**
   - **Offer the job; the agency says checks are done.** The hired branch (below).
@@ -197,7 +197,7 @@ No option shames the player. The worst branches still end with a colleague helpi
 | **MG-25 Document inspector** | new | The candidate file: CV, ID scan, right to work result, references and profile, each with mismatches to mark. Until it exists, `forensic-data-platform` shows the same evidence in tabs with a confirm step |
 | **MG-20 Knowledge check** | new | Ama's check question, the "What do you say?" cards and the final spot check |
 | **MG-27 Work desktop** | new | The player's computer: Owain's tickets, MG-18, the team chat and The Lark from one launcher |
-| `person-chat` video-call mode | existing | The interview with "Daniel"; needs the proposed freeze and lag effects and a configurable call bar label |
+| `person-chat` video-call mode | existing | The interview with "Daniel"; needs a configurable call bar label. Any connection effects (freeze, blur, lag) are ordinary call-quality dressing that can appear for any caller, never a deepfake tell |
 | `alarm-panel` | existing | The team pulse board: eight lamps bound to globals, title "Team pulse", footer "Anonymous, updated weekly"; needs a whiteboard skin |
 | `container` | existing | Des's desk drawer: the key safe code card, the "photos 2009" USB stick, a spare badge |
 | `person-chat`, `phone-chat`, `notes` | existing | Conversations, chats with Lena, Hassan and Bev, the access policy and the leaver checklist as documents |
@@ -231,7 +231,7 @@ Spoken lines stay generic (*"Your team's pulse says a lot about this week"*); th
 ## Variants
 
 - **Micro-drill:** none in the catalogue. "Access or Excess?" (eight request cards, BE-07) could become a quarterly drill timed with each access review later (see Open questions in `README.md`).
-- **Text route:** the week as a text story (BE-03). The tickets and the access review are accessible tables with radio buttons; the interview is a transcript with the video described ("The picture freezes. The voice carries on for a moment."); the candidate file is a list of documents, each with "Mark a mismatch". The same decisions, chats, time skips and debrief, as text. About 15 minutes.
+- **Text route:** the week as a text story (BE-03). The tickets and the access review are accessible tables with radio buttons; the interview is a transcript with the call described ("The picture freezes for a moment; on a poor line it means nothing. He won't hold his passport up to the camera, and he asks to be paid into someone else's account."); the candidate file is a list of documents, each with "Mark a mismatch". The same decisions, chats, time skips and debrief, as text. About 15 minutes.
 - **Facilitated session:** a managers' workshop of 45 to 60 minutes (BE-15, HA-13). The week on a shared screen; the room votes at each decision. Pause points: after the hook (*"Who has copied someone's access to save time? Why is it so tempting?"*); after the interview (*"The agency says start Monday. What do you say to your own manager?"*); after Farida (*"What did your best manager say when you got something wrong?"*); after the access review (*"Which account would you be nervous to remove, and who would you ask?"*). HR teams can run it with the HR-only setting (see Open questions in `README.md`).
 - **Replay and randomisation:** the candidate is drawn from a bank (BE-13) of three fake profiles and two genuine ones with awkward circumstances (bad broadband, a career break, a strong accent), so the lesson is always "run the checks", never "spot the type". The access review rows are drawn from a bank of about twenty, keeping the shared login, the service account and a senior person's access in every draw. The Thursday confession rotates between a clicked phish, a misdirected email and a lost phone. Des's hidden items vary (supplier portals, alarm lists, a vehicle fuel card). Annual editions can add the year's recruitment scams.
 
@@ -244,7 +244,7 @@ Spoken lines stay generic (*"Your team's pulse says a lot about this week"*); th
 ## Art and audio
 
 - **Rooms:** existing office, small offices, IT, kitchen and meeting room. Props: a whiteboard reskin for the pulse board; bunting, a cake and a card for the leaving do (new small props); the key cabinet (`key_cabinet1`) and an ID badge (`id_badge`) exist.
-- **Characters:** Ama, Mei Lin, Owain, Leo and Hassan need their recurring-cast art (shared with many modules). New talk sprites for Marta, Des and Farida (all on screen and speaking). "Daniel" needs a portrait with freeze and blur frames for the video call. Sol, Bev, the real Daniel and Lena need no art (generic sprite, email and phone only).
+- **Characters:** Ama, Mei Lin, Owain, Leo and Hassan need their recurring-cast art (shared with many modules). New talk sprites for Marta, Des and Farida (all on screen and speaking). "Daniel" needs a portrait for the video call (a profile photo plus a plain on-camera frame); any freeze or blur is generic call-quality dressing, not specific to him. Sol, Bev, the real Daniel and Lena need no art (generic sprite, email and phone only).
 - **Voice:** about 25 lines for Ama, 25 for Mei Lin, 10 for Owain, 8 for Leo, 12 for Des, 12 for Farida, 6 for Marta, 12 for "Daniel" and 4 for the real Daniel (two clearly different voices), and a few for Kai and Tomasz. No voiced line prints a variable: never the player's name, the organisation's name, a count or a percentage. The pulse figures and the access counts are on screen only.
 - **Music:** the calm workplace set (BE-21); a quiet sting for each time skip.
 

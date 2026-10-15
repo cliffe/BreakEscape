@@ -140,7 +140,7 @@ As the reference card shows it:
 | "The café's Wi-Fi has a password, so it's private." | Everyone in the café has the same password. Treat it as public. |
 | "It's locked, so I don't need to report it." | Report it anyway. The lock buys time; the service desk can wipe it, sign it out of company services and protect your accounts. |
 | "I'll report it tomorrow if it hasn't turned up." | Report it now. If it turns up, they switch it back on; if it doesn't, the hours matter. |
-| "Public charging points will steal your data." | A widely repeated warning. We have not found a reputable current source documenting real attacks this way, so the module doesn't dramatise it (to verify before any wording goes beyond the habit). The proportionate habit: your own plug and cable or a power bank, and say no if a phone asks to trust a device or share data while charging. |
+| "Public charging points will steal your data." | A widely repeated warning. The FBI and FCC issued advisories in 2023, but neither cited a documented case, so the module doesn't dramatise it. The proportionate habit: your own plug and cable or a power bank, and say no if a phone asks to trust a device or share data while charging. |
 | "Headphones mean nobody can hear my call." | They stop others hearing the other person. Everyone nearby still hears you. |
 | "A privacy screen means I can work on anything." | It narrows the viewing angle from the side. Someone directly behind can still see, and it does nothing for calls. |
 | "My hotel room is private." | Cleaners, maintenance staff and anyone with a key can come in. Keep devices with you or locked away. |
