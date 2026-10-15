@@ -1,0 +1,92 @@
+{
+  "scenario": "crypto4_encoding_encryption",
+  "start_room": "room_reception",
+  "nodes": [
+    {
+      "id": "door_room_office",
+      "label": "Room Office<br/>Password lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "room_office",
+      "label": "Room Office",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "door_room_servers",
+      "label": "Room Servers<br/>Password lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "room_servers",
+      "label": "Room Servers",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "door_room_closet",
+      "label": "Room Closet<br/>Password lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "room_closet",
+      "label": "Room Closet",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "door_room_ceo",
+      "label": "Room Ceo<br/>Password lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "room_ceo",
+      "label": "Room Ceo",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "lock_final_recipe_vault",
+      "label": "Final Recipe Vault<br/>Password lock",
+      "kind": "lock",
+      "optional": false
+    }
+  ],
+  "edges": [
+    {
+      "from": "door_room_office",
+      "to": "room_office",
+      "soft": false
+    },
+    {
+      "from": "door_room_servers",
+      "to": "room_servers",
+      "soft": false
+    },
+    {
+      "from": "door_room_closet",
+      "to": "room_closet",
+      "soft": false
+    },
+    {
+      "from": "door_room_ceo",
+      "to": "room_ceo",
+      "soft": false
+    },
+    {
+      "from": "room_ceo",
+      "to": "lock_final_recipe_vault",
+      "soft": false
+    },
+    {
+      "from": "room_ceo",
+      "to": "lock_final_recipe_vault",
+      "soft": false
+    }
+  ]
+}

@@ -1,0 +1,22 @@
+
+scenarios/lab_tesseract_trials/ink/closing_debrief.ink  [person]  lines=35 median=12 p90=19 max=26
+
+scenarios/lab_tesseract_trials/ink/npc_cliffe.ink  [person]  lines=0 median=0 p90=0 max=0
+
+scenarios/lab_tesseract_trials/ink/npc_jordan.ink  [person]  lines=0 median=0 p90=0 max=0
+
+scenarios/lab_tesseract_trials/ink/npc_megan.ink  [person]  lines=0 median=0 p90=0 max=0
+
+scenarios/lab_tesseract_trials/ink/npc_sidhu.ink  [person]  lines=0 median=0 p90=0 max=0
+
+scenarios/lab_tesseract_trials/ink/npc_tom.ink  [person]  lines=0 median=0 p90=0 max=0
+
+scenarios/lab_tesseract_trials/ink/opening_briefing.ink  [person]  lines=18 median=15 p90=21 max=22
+
+scenarios/lab_tesseract_trials/ink/phone_agent_0x99.ink  [phone]  lines=44 median=9 p90=13 max=25
+
+scenarios/lab_tesseract_trials/ink/phone_ghost.ink  [phone]  lines=48 median=9 p90=21 max=25
+
+scenarios/lab_tesseract_trials/scenario.json.erb  [timed texts]  texts=28 median=15 p90=22 max=24
+
+Totals by rule: none

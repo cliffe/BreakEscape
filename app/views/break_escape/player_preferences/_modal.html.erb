@@ -1,0 +1,263 @@
+<%# Player Preferences Modal - Rendered inline in game view %>
+<div id="player-preferences-modal" class="modal-overlay" style="display: none;">
+  <div class="player-preferences-modal-content">
+    <div class="modal-header">
+      <h2>Character Configuration</h2>
+      <button id="player-preferences-close-btn" class="modal-close-button">×</button>
+    </div>
+
+    <%= form_with model: @player_preference,
+                  url: configuration_path,
+                  method: :patch,
+                  local: false,
+                  id: 'preference-form-modal',
+                  data: { turbo: false } do |f| %>
+
+      <!-- In-Game Name -->
+      <div class="form-group">
+        <%= f.label :in_game_name, "Your Code Name" %>
+        <%= f.text_field :in_game_name,
+                         value: suggested_in_game_name(@player_preference),
+                         class: 'form-control',
+                         maxlength: 20,
+                         placeholder: 'Zero' %>
+        <small>1-20 characters (letters, numbers, spaces, underscores only)</small>
+      </div>
+
+      <!-- Sprite Selection -->
+      <div class="form-group">
+        <%= f.label :selected_sprite, "Select Your Character" %>
+        <% if @player_preference.selected_sprite.blank? %>
+          <p class="selection-required">⚠️ Character selection required</p>
+        <% end %>
+
+        <div class="sprite-selection-layout">
+          <!-- 160x160 animated preview of selected sprite -->
+          <div class="sprite-preview-large">
+            <div id="sprite-preview-canvas-container-modal"></div>
+            <p class="preview-label">Selected character</p>
+          </div>
+
+          <!-- Grid of static headshots -->
+          <div class="sprite-grid" id="sprite-selection-grid-modal">
+            <% @available_sprites.each_with_index do |sprite, index| %>
+              <%
+                is_valid = @game.nil? || sprite_valid_for_scenario?(sprite, @game.scenario_data)
+                is_selected = @player_preference.selected_sprite == sprite
+              %>
+
+              <label for="sprite_modal_<%= sprite %>"
+                     class="sprite-card <%= 'invalid' unless is_valid %> <%= 'selected' if is_selected %>"
+                     data-sprite="<%= sprite %>">
+
+                <div class="sprite-headshot-container">
+                  <%= image_tag sprite_headshot_path(sprite),
+                                class: 'sprite-headshot',
+                                alt: sprite_label(sprite),
+                                loading: 'lazy' %>
+                  <span class="headshot-fallback headshot-fallback-hidden"><%= sprite_label(sprite) %></span>
+                </div>
+
+                <% unless is_valid %>
+                  <div class="sprite-lock-overlay">
+                    <%= image_tag '/break_escape/assets/icons/padlock_32.png',
+                                  class: 'lock-icon',
+                                  alt: 'Locked' %>
+                  </div>
+                <% end %>
+
+                <div class="sprite-info">
+                  <%= f.radio_button :selected_sprite,
+                                     sprite,
+                                     id: "sprite_modal_#{sprite}",
+                                     disabled: !is_valid,
+                                     class: 'sprite-radio' %>
+                  <span class="sprite-label"><%= sprite_label(sprite) %></span>
+                </div>
+              </label>
+            <% end %>
+          </div>
+        </div>
+      </div>
+
+      <!-- Submit Buttons -->
+      <div class="form-actions modal-footer">
+        <%= f.submit 'Save Configuration', class: 'btn btn-primary', id: 'save-preferences-btn' %>
+        <button type="button" id="player-preferences-cancel-btn" class="btn btn-secondary">Cancel</button>
+      </div>
+    <% end %>
+
+    <div class="modal-tutorial-section">
+      <button type="button" id="relaunch-tutorial-btn" class="btn btn-secondary">Relaunch Tutorial</button>
+    </div>
+  </div>
+</div>
+
+<script type="module" nonce="<%= content_security_policy_nonce %>">
+  import { initializeSpritePreview } from '<%= be_asset_path('/break_escape/js/ui/sprite-grid.js') %>';
+  import { getTutorialManager } from '<%= be_asset_path('/break_escape/js/systems/tutorial-manager.js') %>';
+
+  // Initialize sprite preview when modal is shown
+  window.initPlayerPreferencesModal = function() {
+    const sprites = <%= raw @available_sprites.to_json %>;
+    // Use current sprite or default
+    let selectedSprite = '<%= @player_preference.selected_sprite.presence || BreakEscape::PlayerPreference::DEFAULT_SPRITE %>';
+
+    initializeSpritePreview(sprites, selectedSprite, 'sprite-preview-canvas-container-modal');
+
+    // Click on headshot selects radio and updates selected class
+    const grid = document.getElementById('sprite-selection-grid-modal');
+    if (grid) {
+      grid.addEventListener('click', function(e) {
+        const label = e.target.closest('label.sprite-card');
+        if (!label) return;
+        const radio = label.querySelector('input[type="radio"]');
+        if (radio && !radio.disabled) {
+          radio.checked = true;
+          radio.dispatchEvent(new Event('change', { bubbles: true }));
+          // Remove selected from all, add to clicked
+          document.querySelectorAll('#sprite-selection-grid-modal label.sprite-card').forEach(l => l.classList.remove('selected'));
+          label.classList.add('selected');
+        }
+      });
+
+      // Headshot image fallback (replaces inline onerror — CSP: unsafe-inline blocked)
+      grid.querySelectorAll('.sprite-headshot').forEach(function(img) {
+        img.addEventListener('error', function() {
+          this.style.display = 'none';
+          const n = this.nextElementSibling;
+          if (n) n.classList.remove('headshot-fallback-hidden');
+        });
+      });
+    }
+  };
+
+  // Close modal on overlay click or close/cancel buttons (replaces inline onclick — CSP: unsafe-inline blocked)
+  const modal = document.getElementById('player-preferences-modal');
+  if (modal) {
+    modal.addEventListener('click', function(e) {
+      if (e.target === modal && window.playerHUD) window.playerHUD.closePlayerPreferences();
+    });
+  }
+  const closeBtn = document.getElementById('player-preferences-close-btn');
+  if (closeBtn) {
+    closeBtn.addEventListener('click', function() {
+      if (window.playerHUD) window.playerHUD.closePlayerPreferences();
+    });
+  }
+  const cancelBtn = document.getElementById('player-preferences-cancel-btn');
+  if (cancelBtn) {
+    cancelBtn.addEventListener('click', function() {
+      if (window.playerHUD) window.playerHUD.closePlayerPreferences();
+    });
+  }
+
+  const relaunchBtn = document.getElementById('relaunch-tutorial-btn');
+  if (relaunchBtn) {
+    relaunchBtn.addEventListener('click', function() {
+      if (window.playerHUD) window.playerHUD.closePlayerPreferences();
+      getTutorialManager().relaunch();
+    });
+  }
+
+  // Handle ESC key to close modal
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+      const modal = document.getElementById('player-preferences-modal');
+      if (modal && modal.style.display !== 'none') {
+        if (window.playerHUD) {
+          window.playerHUD.closePlayerPreferences();
+        }
+      }
+    }
+  });
+
+  // Handle form submission via AJAX
+  const form = document.getElementById('preference-form-modal');
+  if (form) {
+    form.addEventListener('submit', async function(e) {
+      e.preventDefault();
+      
+      const formData = new FormData(form);
+      const submitButton = document.getElementById('save-preferences-btn');
+      
+      // Disable submit button during request
+      submitButton.disabled = true;
+      submitButton.textContent = 'Saving...';
+      
+      try {
+        const response = await fetch(form.action, {
+          method: 'PATCH',
+          body: formData,
+          headers: {
+            'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').content,
+            'Accept': 'application/json'
+          },
+          credentials: 'same-origin'
+        });
+        
+        if (response.ok) {
+          // Success - get the saved values from server response
+          const result = await response.json();
+          const newSprite = result.data?.selected_sprite;
+          const newName = result.data?.in_game_name;
+          
+          console.log('✅ Configuration saved to server:', { sprite: newSprite, name: newName });
+          
+          // Update breakEscapeConfig
+          if (window.breakEscapeConfig) {
+            window.breakEscapeConfig.playerSprite = newSprite;
+          }
+          
+          // Update HUD avatar
+          if (window.playerHUD) {
+            window.playerHUD.updateAvatarSprite(newSprite);
+          }
+          
+          // Update player sprite in game using the player module's update function
+          if (window.updatePlayerSprite) {
+            try {
+              await window.updatePlayerSprite(newSprite);
+              
+              // Close modal after successful update
+              if (window.playerHUD) {
+                window.playerHUD.closePlayerPreferences();
+              }
+              
+              // Show success notification including name if it was changed
+              if (window.NotificationManager) {
+                const message = newName 
+                  ? `Configuration saved! Code name: ${newName}` 
+                  : 'Configuration saved successfully!';
+                window.NotificationManager.show(message, 'success');
+              }
+            } catch (error) {
+              console.error('Failed to update player sprite:', error);
+              alert('Sprite changed but display update failed. Please reload the page.');
+            }
+          } else {
+            console.warn('updatePlayerSprite not available, closing modal');
+            if (window.playerHUD) {
+              window.playerHUD.closePlayerPreferences();
+            }
+          }
+          
+          // Re-enable submit button
+          submitButton.disabled = false;
+          submitButton.textContent = 'Save Configuration';
+        } else {
+          // Error - show message
+          const data = await response.json();
+          alert(data.error || 'Failed to save configuration. Please try again.');
+          submitButton.disabled = false;
+          submitButton.textContent = 'Save Configuration';
+        }
+      } catch (error) {
+        console.error('Error saving preferences:', error);
+        alert('Failed to save configuration. Please try again.');
+        submitButton.disabled = false;
+        submitButton.textContent = 'Save Configuration';
+      }
+    });
+  }
+</script>

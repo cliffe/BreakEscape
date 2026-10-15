@@ -1,0 +1,13 @@
+{
+  "key": "4237d0c0466f9acef9536ccb17338161",
+  "npc": "sidhu_selvarajan",
+  "text": "For noticing change. Any input, a short fingerprint out, and you cannot run it backwards.",
+  "voice": "Enceladus",
+  "style": "Cyber security researcher, blockchain developer and journal editor. Consistent Indian English accent throughout. Calm, precise, courteous, warm.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "lab_tesseract_trials",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

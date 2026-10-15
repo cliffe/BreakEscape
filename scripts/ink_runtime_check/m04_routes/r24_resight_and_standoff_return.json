@@ -1,0 +1,25 @@
+{
+"steps": [
+{
+"note": "R24 (phase 4 dialogue C1, D5-15/D5-6/D5-25/D5-20): the guard's sight challenge fires twice before he admits the player (the repeat doesn't replay his opener); admitted, a re-talk gets a fresh idle line. Vance's commit exit answers 'I'm going.'. Voltage's standoff narration plays once, and a backed-off player coming back doesn't hear it again."
+},
+{"talk": "guard", "knot": "on_sighted", "picks": []},
+{"said": ["The guard looks up from the desk", "Bit early for visitors"]},
+{"talk": "guard", "knot": "on_sighted", "picks": ["regulator", "Where do I find Mr Vance"]},
+{"said": ["Still need you at the desk first, my lover", "Regulator, is it.", "Go on through"], "notSaid": ["The guard looks up from the desk", "This early?"]},
+{"talk": "guard", "picks": ["Anything unusual", "Nothing. Carry on"]},
+{"said": ["That OptiGrid lot came through late on the ninth"]},
+{"talk": "guard", "picks": ["Nothing. Carry on"]},
+{"said": ["Security Guard: You again."]},
+{"set": {"briefing_played": true, "vance_provided_keycard": true}},
+{"talk": "vance", "picks": ["Just doing the job", "maintenance work", "access logs", "something you need to know", "deserve the truth", "Deadly serious", "need your help", "I'm going"]},
+{"said": ["Go. I'll be on the desk."]},
+{"set": {"anomaly_detected": true, "attack_mechanism_known": true, "plant_room_entered": true, "operative_static_defeated": true}},
+{"talk": "voltage", "picks": ["It's over", "take that laptop", "Back off"]},
+{"said": ["You cannot reach both", "You got past my people"]},
+{"talk": "voltage", "picks": ["Then let's finish this", "coming with me", "check your sums"]},
+{"notSaid": ["The laptop is open on the plant-room bench"]},
+{"talk": "voltage", "picks": ["Nothing you want to tell me"]},
+{"said": ["Still counting?"]}
+]
+}

@@ -1,0 +1,13 @@
+{
+  "key": "5c77c2ae3e7961a3b1cdf7aa8ab53d34",
+  "npc": "bed5_patient",
+  "text": "I know they are. But there's a reason they invented that screen.",
+  "voice": "Aoede",
+  "style": "Polish-born woman in her early eighties, bed-bound, alert, anxious but trying to stay calm. Speak with a consistent northern English with a Polish lilt accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis01_healthcare",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

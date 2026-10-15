@@ -1,0 +1,14 @@
+{"steps":[
+{"note":"R4 KO'd receptionist; Victoria and Danny knocked out at night"},
+{"talk":"briefing","picks":["Remind me","This sounds more serious","traces back here","take the supplier","That's everything","move fast","I'll get the evidence"]},
+{"set":{"briefing_played":true,"receptionist_ko":true,"reception_badge_cloned":false}},
+{"talk":"victoria","picks":["cutting-edge","fair pay","What is Zero Day","buyers do with these","what the buyer wanted","found my own way","whiteboard","impressive training","How do you determine","Skills are cheap","exactly the kind"]},
+{"talk":"night"},
+{"set":{"mission_phase":"act2_infiltration","clone_call_done":true}},
+{"talk":"terry","picks":["Building maintenance","Emergency call","Big place","What's in the exec","let you get on"]},
+{"set":{"exec_wing_entered":true,"exec_office_entered":true,"usb_seen":true,"flag_scan_submitted":true,"flag_ftp_submitted":true,"flag_http_submitted":true,"flag_distcc_submitted":true,"danny_fate":"ko","danny_ko":true,"night_confrontation_ready":true}},
+{"talk":"victoria","picks":["need to talk"]},
+{"set":{"victoria_fate":"ko","victoria_ko":true}},
+{"talk":"victoria","picks":[]},
+{"talk":"debrief","picks":["Unconscious, she tells","One hand","map to their whole","lost my temper","Ransomware Incorporated, Critical"]}
+]}

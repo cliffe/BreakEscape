@@ -1,0 +1,13 @@
+{
+  "key": "457f70b1879a124d82688e69c927727f",
+  "npc": "agent_nightshade",
+  "text": "Each answer narrows the field. Mastermind, in silicon.",
+  "voice": "Enceladus",
+  "style": "SAFETYNET's cryptographic-hardware analyst. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Calm, precise, technically fluent, quietly pleased by an interesting device; a colleague you trust.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

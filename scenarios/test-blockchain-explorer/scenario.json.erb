@@ -1,0 +1,228 @@
+{
+  "scenario_brief": "A ransom payment has been traced to a known cryptocurrency address. Use the chain analysis terminal to follow the funds across multiple hops, identify the mixing service used to obscure the transaction trail, and pinpoint the final destination wallet linked to the ENTROPY threat actor.",
+  "endGoal": "Identify the mixing service and the ENTROPY destination wallet.",
+  "startRoom": "analysis_room",
+  "startItemsInInventory": [],
+  "globalVariables": {
+    "entropy_mixer_identified": false,
+    "entropy_wallet_identified": false
+  },
+  "objectives": [
+    {
+      "aimId": "trace_payment",
+      "title": "Trace the Payment Chain",
+      "description": "Use the chain analysis terminal to follow the ransom payment through the blockchain.",
+      "status": "active",
+      "order": 0,
+      "tasks": [
+        {
+          "taskId": "identify_mixer",
+          "title": "Identify the mixing service",
+          "type": "set_global",
+          "targetGlobal": "entropy_mixer_identified",
+          "targetValue": true,
+          "status": "active"
+        },
+        {
+          "taskId": "identify_destination",
+          "title": "Identify the ENTROPY destination wallet",
+          "type": "set_global",
+          "targetGlobal": "entropy_wallet_identified",
+          "targetValue": true,
+          "status": "active"
+        }
+      ]
+    }
+  ],
+  "rooms": {
+    "analysis_room": {
+      "name": "Chain Analysis Suite",
+      "type": "room_office",
+      "connections": {},
+      "objects": [
+        {
+          "type": "pc",
+          "id": "chain_terminal",
+          "name": "Chain Analysis Terminal",
+          "takeable": false,
+          "interactable": true,
+          "active": true,
+          "observations": "A forensic workstation running a blockchain trace tool. The screen shows an incoming transaction flagged by the threat intel team.",
+          "scenarioData": {
+            "id": "chain_terminal",
+            "type": "pc",
+            "name": "Chain Analysis Terminal",
+            "interactionType": "blockchain_explorer",
+            "minigameData": {
+              "title": "ENTROPY Chain Tracer",
+              "caseRef": "CASE-2024-0891",
+              "currency": "BTC",
+              "seedTransaction": "tx_ransom_001",
+              "mixerFanOutThreshold": 4,
+              "targetWalletAddress": "addr_entropy_final",
+              "stateWrites": {
+                "onMixerFlagged": "entropy_mixer_identified",
+                "onDestinationFlagged": "entropy_wallet_identified"
+              },
+              "wallets": [
+                {
+                  "address": "addr_victim_001",
+                  "displayName": "Victim Organisation",
+                  "balance": 0.0010
+                },
+                {
+                  "address": "addr_ransom_001",
+                  "displayName": "Unknown Wallet",
+                  "balance": 0
+                },
+                {
+                  "address": "addr_mixer_001",
+                  "displayName": "Unknown Wallet",
+                  "balance": 0
+                },
+                {
+                  "address": "addr_wash_001",
+                  "displayName": "Unknown Wallet",
+                  "balance": 0.0706
+                },
+                {
+                  "address": "addr_wash_002",
+                  "displayName": "Unknown Wallet",
+                  "balance": 0.0706
+                },
+                {
+                  "address": "addr_wash_003",
+                  "displayName": "Unknown Wallet",
+                  "balance": 0.0706
+                },
+                {
+                  "address": "addr_wash_004",
+                  "displayName": "Unknown Wallet",
+                  "balance": 0.0706
+                },
+                {
+                  "address": "addr_wash_005",
+                  "displayName": "Unknown Wallet",
+                  "balance": 0.0706
+                },
+                {
+                  "address": "addr_wash_006",
+                  "displayName": "Unknown Wallet",
+                  "balance": 0.0706
+                },
+                {
+                  "address": "addr_relay_001",
+                  "displayName": "Unknown Wallet",
+                  "balance": 0
+                },
+                {
+                  "address": "addr_noise_001",
+                  "displayName": "Unknown Wallet",
+                  "balance": 0.0230
+                },
+                {
+                  "address": "addr_noise_002",
+                  "displayName": "Unknown Wallet",
+                  "balance": 0.0230
+                },
+                {
+                  "address": "addr_collect_001",
+                  "displayName": "Unknown Wallet",
+                  "balance": 0
+                },
+                {
+                  "address": "addr_dust_001",
+                  "displayName": "Unknown Wallet",
+                  "balance": 0.0030
+                },
+                {
+                  "address": "addr_entropy_final",
+                  "displayName": "Unknown Wallet",
+                  "balance": 0.0196,
+                  "threatIntelMatch": "Address appears in CISA Advisory AA24-089A as ENTROPY ransomware collection infrastructure. Previously observed receiving ransom payments in 3 confirmed incidents (2023–2024). Associated cluster: ENTROPY / DEV-0569."
+                }
+              ],
+              "transactions": [
+                {
+                  "hash": "tx_ransom_001",
+                  "timestamp": "2024-03-15 14:22:11 UTC",
+                  "blockHeight": 834521,
+                  "confirmations": 2847,
+                  "inputs": [
+                    { "wallet": "addr_victim_001", "amount": 0.5000 }
+                  ],
+                  "outputs": [
+                    { "wallet": "addr_ransom_001", "amount": 0.4990 },
+                    { "wallet": "addr_victim_001", "amount": 0.0010 }
+                  ],
+                  "fee": 0.0000
+                },
+                {
+                  "hash": "tx_stage_001",
+                  "timestamp": "2024-03-15 17:08:22 UTC",
+                  "blockHeight": 834537,
+                  "confirmations": 2831,
+                  "inputs": [
+                    { "wallet": "addr_ransom_001", "amount": 0.4990 }
+                  ],
+                  "outputs": [
+                    { "wallet": "addr_mixer_001", "amount": 0.4975 }
+                  ],
+                  "fee": 0.0015
+                },
+                {
+                  "hash": "tx_mix_001",
+                  "timestamp": "2024-03-15 19:44:53 UTC",
+                  "blockHeight": 834549,
+                  "confirmations": 2819,
+                  "inputs": [
+                    { "wallet": "addr_mixer_001", "amount": 0.4975 }
+                  ],
+                  "outputs": [
+                    { "wallet": "addr_wash_001", "amount": 0.0706 },
+                    { "wallet": "addr_wash_002", "amount": 0.0706 },
+                    { "wallet": "addr_wash_003", "amount": 0.0706 },
+                    { "wallet": "addr_wash_004", "amount": 0.0706 },
+                    { "wallet": "addr_wash_005", "amount": 0.0706 },
+                    { "wallet": "addr_wash_006", "amount": 0.0706 },
+                    { "wallet": "addr_relay_001", "amount": 0.0706 }
+                  ],
+                  "fee": 0.0033
+                },
+                {
+                  "hash": "tx_relay_001",
+                  "timestamp": "2024-03-17 11:15:09 UTC",
+                  "blockHeight": 834892,
+                  "confirmations": 2476,
+                  "inputs": [
+                    { "wallet": "addr_relay_001", "amount": 0.0706 }
+                  ],
+                  "outputs": [
+                    { "wallet": "addr_noise_001", "amount": 0.0230 },
+                    { "wallet": "addr_noise_002", "amount": 0.0230 },
+                    { "wallet": "addr_collect_001", "amount": 0.0236 }
+                  ],
+                  "fee": 0.0010
+                },
+                {
+                  "hash": "tx_final_001",
+                  "timestamp": "2024-03-18 00:28:41 UTC",
+                  "blockHeight": 834971,
+                  "confirmations": 2397,
+                  "inputs": [
+                    { "wallet": "addr_collect_001", "amount": 0.0236 }
+                  ],
+                  "outputs": [
+                    { "wallet": "addr_dust_001", "amount": 0.0030 },
+                    { "wallet": "addr_entropy_final", "amount": 0.0196 }
+                  ],
+                  "fee": 0.0010
+                }
+              ]
+            }
+          }
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,93 @@
+{
+  "scenario": "test_complex_multidirection",
+  "start_room": "reception",
+  "nodes": [
+    {
+      "id": "door_office2",
+      "label": "Office2<br/>Key lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "office2",
+      "label": "Office2",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "door_office1",
+      "label": "Office1<br/>Key lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "office1",
+      "label": "Office1",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "door_storage",
+      "label": "Storage<br/>Key lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "storage",
+      "label": "Storage",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "door_servers",
+      "label": "Servers<br/>Key lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "servers",
+      "label": "Servers",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "door_ceo",
+      "label": "Ceo<br/>Key lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "ceo",
+      "label": "Ceo",
+      "kind": "room",
+      "optional": false
+    }
+  ],
+  "edges": [
+    {
+      "from": "door_office2",
+      "to": "office2",
+      "soft": false
+    },
+    {
+      "from": "door_office1",
+      "to": "office1",
+      "soft": false
+    },
+    {
+      "from": "door_storage",
+      "to": "storage",
+      "soft": false
+    },
+    {
+      "from": "door_servers",
+      "to": "servers",
+      "soft": false
+    },
+    {
+      "from": "door_ceo",
+      "to": "ceo",
+      "soft": false
+    }
+  ]
+}

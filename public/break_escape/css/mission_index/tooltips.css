@@ -1,0 +1,76 @@
+/*
+ * BreakEscape Tooltip Styles
+ * Mirrors Hacktivity's Tippy.js tooltip theming
+ */
+
+/* Hacktivity-style theme for Tippy tooltips */
+.tippy-box[data-theme~='break-escape'] {
+  border: 2px solid grey;
+  box-shadow: inset 0px 0px 0px 1px grey;
+  background-color: #2a2a2a;
+  color: #ffffff;
+}
+
+.tippy-box[data-theme~='break-escape'][data-placement^='top'] > .tippy-arrow::before {
+  border-top-color: grey;
+}
+
+.tippy-box[data-theme~='break-escape'][data-placement^='bottom'] > .tippy-arrow::before {
+  border-bottom-color: grey;
+}
+
+.tippy-box[data-theme~='break-escape'][data-placement^='left'] > .tippy-arrow::before {
+  border-left-color: grey;
+}
+
+.tippy-box[data-theme~='break-escape'][data-placement^='right'] > .tippy-arrow::before {
+  border-right-color: grey;
+}
+
+/* Dark theme variant */
+.tippy-box[data-theme~='break-escape-dark'] {
+  border: 2px solid #333333;
+  background-color: #333333;
+  box-shadow: inset 0px 0px 0px 1px #333333;
+  color: white;
+}
+
+.tippy-box[data-theme~='break-escape-dark'][data-placement^='top'] > .tippy-arrow::before {
+  border-top-color: #333333;
+}
+
+.tippy-box[data-theme~='break-escape-dark'][data-placement^='bottom'] > .tippy-arrow::before {
+  border-bottom-color: #333333;
+}
+
+.tippy-box[data-theme~='break-escape-dark'][data-placement^='left'] > .tippy-arrow::before {
+  border-left-color: #333333;
+}
+
+.tippy-box[data-theme~='break-escape-dark'][data-placement^='right'] > .tippy-arrow::before {
+  border-right-color: #333333;
+}
+
+/* Green accent theme matching BreakEscape branding */
+.tippy-box[data-theme~='break-escape-green'] {
+  border: 2px solid #00ff00;
+  background-color: #1a1a1a;
+  box-shadow: inset 0px 0px 0px 1px #00ff00;
+  color: #ffffff;
+}
+
+.tippy-box[data-theme~='break-escape-green'][data-placement^='top'] > .tippy-arrow::before {
+  border-top-color: #00ff00;
+}
+
+.tippy-box[data-theme~='break-escape-green'][data-placement^='bottom'] > .tippy-arrow::before {
+  border-bottom-color: #00ff00;
+}
+
+.tippy-box[data-theme~='break-escape-green'][data-placement^='left'] > .tippy-arrow::before {
+  border-left-color: #00ff00;
+}
+
+.tippy-box[data-theme~='break-escape-green'][data-placement^='right'] > .tippy-arrow::before {
+  border-right-color: #00ff00;
+}

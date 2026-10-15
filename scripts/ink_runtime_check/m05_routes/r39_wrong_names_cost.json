@@ -1,0 +1,335 @@
+{
+"steps": [
+{
+"note": "R39 (struggling run A, D3/M3): wrong names and wrong reasons cost something. Ben in person: her own facts, trust down, the chat ends. Halloran by phone after the lanyard: the call ends. Then a full-case naming the player must state (why, then proof): a wrong why and a wrong proof each end the chat; the third go names him. The debrief and the credits record the false start."
+},
+{
+"talk": "briefing",
+"picks": [
+"find out who sold",
+"damage so far",
+"Who's this going to",
+"What's the mission",
+"And the third",
+"my cover",
+"Who else will I meet",
+"I'm ready",
+"Methodically",
+"Any last advice"
+]
+},
+{
+"set": {
+"briefing_played": true
+}
+},
+{
+"talk": "patricia",
+"picks": [
+"Fill me in",
+"Who has access",
+"without tipping",
+"Where should I start"
+]
+},
+{
+"read": "security_incident_log"
+},
+{
+"talk": "owen",
+"picks": [
+"What can you tell me",
+"That's useful",
+"Lean over",
+"Sorry. Habit",
+"23:47. Whose",
+"That's everything"
+]
+},
+{
+"enter": "server_hallway"
+},
+{
+"read": "it_access_notice"
+},
+{
+"event": "door_unlock_attempt",
+"data": {
+"connectedRoom": "server_room"
+}
+},
+{
+"talk": "owen",
+"picks": [
+"wants a password",
+"Patricia's log: a crypto badge",
+"That's everything"
+]
+},
+{
+"talk": "halloran",
+"picks": [
+"I need to talk to everyone",
+"I'm not here to judge",
+"Your spare badge",
+"That's all for now"
+]
+},
+{
+"read": "zurich_lanyard"
+},
+{
+"talk": "patricia",
+"picks": [
+"I think I know who it is",
+"Ben Ashworth"
+]
+},
+{
+"said": [
+"Ben's on that log one night",
+"Don't throw names at me",
+"[chat closes]"
+],
+"notSaid": [
+"logged it with Owen",
+"Try again"
+]
+},
+{
+"expect": {
+"torres_reason_guessed": true,
+"torres_identified": false
+}
+},
+{
+"talk": "patricia_phone",
+"picks": [
+"I know who it is",
+"Dr Ruth Halloran"
+]
+},
+{
+"said": [
+"in Zurich",
+"Ring back when you're sure",
+"[chat closes]"
+]
+},
+{
+"expect": {
+"halloran_accused": false
+}
+},
+{
+"enter": "server_room"
+},
+{
+"set": {
+"flag1_submitted": true
+}
+},
+{
+"set": {
+"flag2_submitted": true
+}
+},
+{
+"set": {
+"flag3_submitted": true
+}
+},
+{
+"set": {
+"flag4_submitted": true
+}
+},
+{
+"expect": {
+"torres_suspected": true
+}
+},
+{
+"tasks": {
+"establish_motive": "open"
+}
+},
+{
+"talk": "patricia_phone",
+"picks": [
+"David Torres' office",
+"Just checking in"
+]
+},
+{
+"talk": "owen",
+"picks": [
+"David Torres' office",
+"That's everything"
+]
+},
+{
+"enter": "torres_office"
+},
+{
+"read": "personal_journal"
+},
+{
+"tasks": {
+"establish_motive": "completed"
+}
+},
+{
+"talk": "patricia",
+"picks": [
+"I think I know who it is",
+"David Torres",
+"distracted for months"
+]
+},
+{
+"said": [
+"Again? Fine. I'm writing this down. Why him?",
+"a mood, not a motive",
+"[chat closes]"
+],
+"notSaid": [
+"His wife's treatment isn't covered, and he's borrowed against the house.\n"
+]
+},
+{
+"talk": "patricia",
+"picks": [
+"I think I know who it is",
+"David Torres",
+"His own journal",
+"in late"
+]
+},
+{
+"said": [
+"Again? Fine. I'm writing this down. Why him?",
+"And the proof it's leaving?",
+"Late isn't leaving",
+"[chat closes]"
+]
+},
+{
+"expect": {
+"torres_identified": false
+}
+},
+{
+"talk": "patricia",
+"picks": [
+"I think I know who it is",
+"David Torres",
+"His own journal",
+"research portal. His name",
+"You knew him",
+"I'll stop him"
+]
+},
+{
+"said": [
+"...Damn.",
+"Right. Your call from here."
+],
+"notSaid": [
+"Patricia Morgan: His own journal. He knows"
+]
+},
+{
+"expect": {
+"torres_identified": true
+}
+},
+{
+"event": "fingerprint_collected:david_torres",
+"data": {
+"identified": true
+}
+},
+{
+"enter": "data_center"
+},
+{
+"talk": "torres",
+"picks": [
+"It's over, David",
+"They lied to you",
+"You knew people would die",
+"staying here until the police",
+"Someone who stopped this",
+"not a social worker",
+"Pull the drive myself"
+]
+},
+{
+"expect": {
+"final_choice": "arrest"
+}
+},
+{
+"talk": "phone",
+"picks": [
+"Bring me in",
+"Bring me in",
+"On my way"
+]
+},
+{
+"expect": {
+"mission_complete": true
+}
+},
+{
+"talk": "debrief",
+"picks": [
+0,
+0,
+0,
+0,
+0,
+0,
+0,
+0,
+0,
+0,
+0,
+0,
+0,
+0,
+0,
+0,
+0,
+0,
+0,
+0
+]
+},
+{
+"said": [
+"You gave a wrong name or a wrong reason before the right one."
+]
+},
+{
+"credits": true
+},
+{
+"said": [
+"FALSE START — a wrong name or reason",
+"HANDED TO THE POLICE — said nothing",
+"Nobody on staff hurt"
+],
+"notSaid": [
+"WRONG ACCUSATION",
+"Nobody else on staff hurt",
+"NAMED ON THE EVIDENCE"
+]
+},
+{
+"maxRun": 9
+}
+]
+}

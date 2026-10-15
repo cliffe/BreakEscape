@@ -1,0 +1,13 @@
+{
+  "key": "d0926555b2040ca6953e102c678a8814",
+  "npc": "closing_debrief",
+  "text": "The catalogue goes out as an anonymous advisory, and every buyer on it learns we've read it.",
+  "voice": "Aoede",
+  "style": "Intelligence handler giving a mission debrief in person. Speak with a consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Use a steady, mid-range pitch. A seasoned professional who has done this a hundred times. Quick, clipped and businesslike because time is short, yet completely unflustered; the urgency is in the pace, never in the voice.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m03_ghost_in_the_machine",
+  "source": "generate",
+  "generated": "2026-10-13",
+  "recorded_at": "2026-10-13T01:12:16Z"
+}

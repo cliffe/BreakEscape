@@ -1,0 +1,13 @@
+{
+  "key": "9a21c066dbd0650491270a321fd04f01",
+  "npc": "sarah_mitchell",
+  "text": "When she's safe, you're telling me exactly what went into that pump.",
+  "voice": "Kore",
+  "style": "Black British charge nurse in her mid-40s, calm, tired but professional. Speak with a consistent Leeds, West Yorkshire accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis01_healthcare",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

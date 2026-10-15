@@ -1,0 +1,192 @@
+/**
+ * Flag Station Minigame Styles
+ */
+
+.flag-station {
+    padding: 20px;
+    font-family: 'GNF', 'Courier New', monospace;
+}
+
+.flag-station-header {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.flag-station-icon {
+    font-size: 48px;
+    margin-bottom: 10px;
+}
+
+.flag-station-description {
+    color: #888;
+    font-size: 14px;
+    line-height: 1.4;
+}
+
+.flag-input-container {
+    margin: 20px 0;
+}
+
+.flag-input-label {
+    display: block;
+    color: #00ff00;
+    margin-bottom: 8px;
+    font-size: 14px;
+}
+
+.flag-input-wrapper {
+    display: flex;
+    gap: 10px;
+}
+
+.flag-input {
+    flex: 1;
+    background: #000;
+    border: 2px solid #333;
+    color: #00ff00;
+    padding: 12px 15px;
+    font-family: 'Courier New', monospace;
+    font-size: 16px;
+    outline: none;
+}
+
+.flag-input:focus {
+    border-color: #00ff00;
+}
+
+.flag-input::placeholder {
+    color: #444;
+}
+
+.flag-submit-btn {
+    background: #00aa00;
+    color: #fff;
+    border: 2px solid #000;
+    padding: 12px 20px;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 11px;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.flag-submit-btn:hover:not(:disabled) {
+    background: #00cc00;
+}
+
+.flag-submit-btn:disabled {
+    background: #333;
+    color: #666;
+    cursor: not-allowed;
+}
+
+.flag-result {
+    margin-top: 15px;
+    padding: 15px;
+    text-align: center;
+    font-size: 14px;
+    display: none;
+}
+
+.flag-result.success {
+    display: block;
+    background: rgba(0, 170, 0, 0.2);
+    border: 2px solid #00aa00;
+    color: #00ff00;
+}
+
+.flag-result.error {
+    display: block;
+    background: rgba(170, 0, 0, 0.2);
+    border: 2px solid #aa0000;
+    color: #ff4444;
+}
+
+.flag-result.loading {
+    display: block;
+    background: rgba(255, 170, 0, 0.2);
+    border: 2px solid #ffaa00;
+    color: #ffaa00;
+}
+
+.flag-history {
+    margin-top: 30px;
+    border-top: 1px solid #333;
+    padding-top: 20px;
+}
+
+.flag-history-title {
+    color: #888;
+    font-size: 12px;
+    margin-bottom: 10px;
+    text-transform: uppercase;
+}
+
+.flag-history-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    max-height: 150px;
+    overflow-y: auto;
+}
+
+.flag-history-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 12px;
+    margin: 5px 0;
+    background: rgba(0, 255, 0, 0.05);
+    border-left: 3px solid #00aa00;
+}
+
+.flag-value {
+    font-family: 'Courier New', monospace;
+    color: #00ff00;
+    font-size: 13px;
+}
+
+.flag-check {
+    color: #00aa00;
+}
+
+.reward-notification {
+    margin-top: 15px;
+    padding: 15px;
+    background: rgba(0, 136, 255, 0.1);
+    border: 2px solid #0088ff;
+    border-radius: 0;
+}
+
+.reward-notification h4 {
+    color: #0088ff;
+    margin: 0 0 10px 0;
+    font-size: 14px;
+}
+
+.reward-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: #ccc;
+    font-size: 13px;
+    margin: 5px 0;
+}
+
+.reward-icon {
+    font-size: 18px;
+}
+
+.no-flags-yet {
+    color: #666;
+    font-style: italic;
+    font-size: 13px;
+}
+
+
+
+
+
+
+
+
+

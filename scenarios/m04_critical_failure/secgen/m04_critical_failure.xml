@@ -1,0 +1,198 @@
+<?xml version="1.0"?>
+
+<scenario xmlns="http://www.github/cliffe/SecGen/scenario"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.github/cliffe/SecGen/scenario">
+
+  <name>Break Escape SAFETYNET: Mission 4 — Critical Failure VMs</name>
+  <author>Z. Cliffe Schreuders</author>
+  <description>
+# Break Escape SAFETYNET Mission 4: Critical Failure
+
+Virtual machines for the Break Escape SAFETYNET mission 4 narrative experience. These VMs
+represent the OT-side network at Albion Energy Storage, which ENTROPY's Critical Mass cell
+reached through a fake maintenance contract (OptiGrid Solutions) and used to falsify the
+BMS/SCADA thermal telemetry.
+
+## Included Systems
+
+**bms_jump_server**
+- Debian 12 system sitting between the corporate LAN and the BMS/SCADA segment
+- Exposed web service carrying the falsified rack status page
+- ProFTPD service holding OptiGrid's transferred operational intelligence
+- Legacy distccd (CVE-2004-2687) left behind by the "maintenance" crew — remote command execution
+- sudoedit (CVE-2023-22809) for local privilege escalation
+
+**kali**
+- Kali Linux platform for reconnaissance and exploitation against the jump server
+
+## Integration with Break Escape
+
+Provisioned by the Break Escape engine via SecGen integration. The player reaches this
+network from the engineering workshop terminal and submits recovered flags at the
+SAFETYNET drop-site terminal in the same room.
+
+IMPORTANT — flag ordering. `Mission#flags_by_vm` (app/models/break_escape/mission.rb:129-139)
+keys flags by `system_name` and takes them in document order from the generated
+flag_hints.xml. scenario.json.erb therefore expects exactly four flags on
+`bms_jump_server`, in this declared order:
+
+  flag_1  parameterised_website     -> submit_network_scan_flag
+  flag_2  proftpd_133c_backdoor     -> submit_ftp_intel_flag
+  flag_3  sudoedit                  -> submit_privesc_flag
+  flag_4  distcc_exec               -> submit_distcc_exploit_flag
+
+If a SecGen build emits a different order or count, update `targetFlags` in
+scenario.json.erb to match — do not renumber here.
+
+## CyBOK Coverage
+
+- Network Security: scanning, service enumeration
+- Systems Security: vulnerability exploitation, privilege escalation
+- Cyber-Physical Systems: SCADA/ICS exposure via an OT jump host
+  </description>
+  <lab_sheet_url>https://cliffe.github.io/HacktivityLabSheets/labs/safetynet/vulnerability-analysis-and-attack-surface/</lab_sheet_url>
+  <type>ctf-lab</type>
+  <type>lab-sheet</type>
+  <difficulty>medium</difficulty>
+
+  <CyBOK KA="NS" topic="Network Protocols and Vulnerability">
+    <keyword>common network attacks</keyword>
+  </CyBOK>
+  <CyBOK KA="SOIM" topic="PENETRATION TESTING">
+    <keyword>PENETRATION TESTING - SOFTWARE TOOLS</keyword>
+    <keyword>VULNERABILITY ANALYSIS / VULNERABILITY SCANNING</keyword>
+  </CyBOK>
+  <CyBOK KA="MAT" topic="Attacks and exploitation">
+    <keyword>EXPLOITATION</keyword>
+  </CyBOK>
+  <CyBOK KA="SS" topic="Categories of Vulnerabilities">
+    <keyword>CVEs and CWEs</keyword>
+  </CyBOK>
+
+  <system>
+    <system_name>bms_jump_server</system_name>
+
+    <base distro="Debian 12" type="desktop" name="KDE"/>
+
+    <input into_datastore="IP_addresses">
+      <!-- 0 bms jump server -->
+      <network_ip system="bms_jump_server"/>
+      <!-- 1 kali -->
+      <network_ip system="kali"/>
+    </input>
+
+    <!-- FLAG 1 (submit_network_scan_flag)
+         The falsified rack status page. Reachable as soon as a scan turns up the
+         web service, which is the point: the SCADA screens in the control room are
+         being fed from here. -->
+    <service module_path=".*/parameterised_website">
+      <input into="organisation">
+        <value>Albion Energy Storage — BMS Status</value>
+      </input>
+      <input into="main_page_paragraph_content">
+        <value>RACK BANK STATUS -- AUTOMATED FEED
+
+Bank A: 28.0 C  NOMINAL
+Bank B: 27.9 C  NOMINAL
+Bank C: 28.1 C  NOMINAL
+
+Hydrogen detection: NOMINAL
+Emergency shutdown interlocks: ARMED
+
+Feed source: bms-historian. Values published to the control room SCADA HMI.
+Last integrity check: PASSED</value>
+      </input>
+      <input into="strings_to_leak">
+        <generator type="flag_generator"/>
+      </input>
+    </service>
+
+    <!-- FLAG 2 (submit_ftp_intel_flag)
+         OptiGrid's transfer channel, left running with the backdoored ProFTPD the
+         "maintenance crew" installed. Holds the cross-cell coordination intel. -->
+    <vulnerability module_path=".*/proftpd_133c_backdoor">
+      <input into="organisation">
+        <value>OptiGrid Solutions</value>
+      </input>
+      <input into="strings_to_leak">
+        <generator type="flag_generator"/>
+      </input>
+      <input into="leaked_filenames">
+        <value>optigrid_transfer/coordination_notes</value>
+      </input>
+    </vulnerability>
+
+    <!-- FLAG 3 (submit_privesc_flag)
+         sudoedit (CVE-2023-22809). sudo_baron was swapped out: it conflicts with every
+         base except Debian 10 Buster, and this system is Debian 12. The maintenance account can become root, which is how
+         the crew rewrote the telemetry the control room trusts. -->
+    <vulnerability module_path=".*/sudoedit">
+      <input into="strings_to_leak">
+        <generator type="flag_generator"/>
+      </input>
+      <input into="leaked_filenames">
+        <value>root_only/bms_calibration_override</value>
+      </input>
+    </vulnerability>
+
+    <!-- FLAG 4 (submit_distcc_exploit_flag)
+         Legacy distccd on a high port — runs compile jobs for anyone who can reach
+         it. This is the route onto the jump server. -->
+    <vulnerability cve="CVE-2004-2687">
+      <input into="strings_to_leak">
+        <generator type="flag_generator"/>
+      </input>
+      <input into="leaked_filenames">
+        <value>optigrid_toolkit/operator_notes</value>
+      </input>
+    </vulnerability>
+
+    <utility module_path=".*/handy_cli_tools"/>
+
+    <network type="private_network">
+      <input into="IP_address">
+        <datastore access="0">IP_addresses</datastore>
+      </input>
+    </network>
+
+    <input into_datastore="spoiler_admin_pass">
+      <generator type="strong_password_generator"/>
+    </input>
+    <build type="cleanup">
+      <input into="root_password">
+        <datastore>spoiler_admin_pass</datastore>
+      </input>
+    </build>
+
+  </system>
+
+  <system>
+    <system_name>kali</system_name>
+    <base distro="Kali" name="MSF"/>
+
+    <utility module_path=".*/parameterised_accounts">
+      <input into="accounts">
+        <value>{"username":"kali","password":"kali","super_user":"true","strings_to_leak":[],"leaked_filenames":[]}</value>
+      </input>
+    </utility>
+
+    <utility module_path=".*/kali_pwtools"/>
+    <utility module_path=".*/metasploit_framework"/>
+    <utility module_path=".*/handy_cli_tools"/>
+    <utility module_path=".*/nmap"/>
+
+    <network type="private_network">
+      <input into="IP_address">
+        <datastore access="1">IP_addresses</datastore>
+      </input>
+    </network>
+    <build type="cleanup">
+      <input into="root_password">
+        <datastore>spoiler_admin_pass</datastore>
+      </input>
+    </build>
+
+  </system>
+
+</scenario>

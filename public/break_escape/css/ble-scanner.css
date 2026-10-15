@@ -1,0 +1,559 @@
+/* BLE Scanner Minigame Styles */
+
+.ble-scanner-minigame-container {
+    position: fixed !important;
+    top: 5vh !important;
+    right: 2vw !important;
+    width: 380px !important;
+    height: auto !important;
+    max-height: 80vh !important;
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%) !important;
+    box-shadow: 0 0 20px rgba(0, 188, 212, 0.3), inset 0 0 10px rgba(0, 188, 212, 0.1) !important;
+    border: 4px solid #00bcd4 !important;
+    clip-path: polygon(
+      0px calc(100% - 10px),
+      2px calc(100% - 10px),
+      2px calc(100% - 6px),
+      4px calc(100% - 6px),
+      4px calc(100% - 4px),
+      6px calc(100% - 4px),
+      6px calc(100% - 2px),
+      10px calc(100% - 2px),
+      10px 100%,
+      calc(100% - 10px) 100%,
+      calc(100% - 10px) calc(100% - 2px),
+      calc(100% - 6px) calc(100% - 2px),
+      calc(100% - 6px) calc(100% - 4px),
+      calc(100% - 4px) calc(100% - 4px),
+      calc(100% - 4px) calc(100% - 6px),
+      calc(100% - 2px) calc(100% - 6px),
+      calc(100% - 2px) calc(100% - 10px),
+      100% calc(100% - 10px),
+      100% 10px,
+      calc(100% - 2px) 10px,
+      calc(100% - 2px) 6px,
+      calc(100% - 4px) 6px,
+      calc(100% - 4px) 4px,
+      calc(100% - 6px) 4px,
+      calc(100% - 6px) 2px,
+      calc(100% - 10px) 2px,
+      calc(100% - 10px) 0px,
+      10px 0px,
+      10px 2px,
+      6px 2px,
+      6px 4px,
+      4px 4px,
+      4px 6px,
+      2px 6px,
+      2px 10px,
+      0px 10px
+    ) !important;
+    font-family: 'GNF', monospace !important;
+    color: #e0e0e0 !important;
+    overflow: hidden !important;
+    transition: width 0.3s ease, max-height 0.3s ease !important;
+    overflow-y: auto !important;
+}
+
+
+.ble-scanner-minigame-game-container {
+    width: 100% !important;
+    height: 100% !important;
+    max-width: none !important;
+    background: transparent !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    position: relative !important;
+    display: flex !important;
+    flex-direction: column !important;
+    padding: 15px 15px 55px 15px !important;
+    box-sizing: border-box !important;
+}
+
+/* Header */
+.ble-scanner-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+    padding: 8px 10px;
+    background: rgba(0, 188, 212, 0.1);
+    border: 1px solid #00bcd4;
+    box-shadow: 0 0 10px rgba(0, 188, 212, 0.2);
+}
+
+/* push status to the far right */
+.ble-scanner-header .ble-scanner-status {
+    margin-left: auto;
+}
+
+.ble-scanner-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 18px;
+    font-weight: bold;
+    color: #00bcd4;
+    text-shadow: 0 0 5px rgba(0, 188, 212, 0.5);
+}
+
+.ble-scanner-icon {
+    height: 24px;
+    filter: drop-shadow(0 0 3px rgba(0, 188, 212, 0.5));
+    image-rendering: pixelated;
+}
+
+.ble-scanner-status {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 18px;
+    color: #4caf50;
+}
+
+.ble-scanner-indicator {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #4caf50;
+    box-shadow: 0 0 6px rgba(76, 175, 80, 0.8);
+    animation: ble-pulse 2s infinite;
+}
+
+@keyframes ble-pulse {
+    0%   { opacity: 1; transform: scale(1); }
+    50%  { opacity: 0.5; transform: scale(1.2); }
+    100% { opacity: 1; transform: scale(1); }
+}
+
+
+/* Controls */
+.ble-scanner-controls {
+    margin-bottom: 10px;
+}
+
+.ble-search-container {
+    margin-bottom: 8px;
+}
+
+.ble-search-input {
+    width: 100%;
+    padding: 8px 12px;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid #00bcd4;
+    color: #e0e0e0;
+    font-family: 'GNF', monospace;
+    font-size: 18px;
+    box-sizing: border-box;
+}
+
+.ble-search-input:focus {
+    outline: none;
+    border-color: #4caf50;
+    box-shadow: 0 0 10px rgba(76, 175, 80, 0.3);
+}
+
+.ble-search-input::placeholder {
+    color: #888;
+}
+
+.ble-categories {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.ble-category {
+    padding: 4px 10px;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid #555;
+    cursor: pointer;
+    font-size: 16px;
+    color: #ccc;
+    user-select: none;
+}
+
+.ble-category:hover {
+    background: rgba(0, 188, 212, 0.2);
+    border-color: #00bcd4;
+    color: #00bcd4;
+}
+
+.ble-category.active {
+    background: rgba(0, 188, 212, 0.3);
+    border-color: #00bcd4;
+    color: #00bcd4;
+    box-shadow: 0 0 8px rgba(0, 188, 212, 0.3);
+}
+
+/* Device List */
+.ble-device-list-container {
+    display: flex;
+    flex-direction: column;
+}
+
+.ble-device-list-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+    padding: 6px 10px;
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid #444;
+    font-size: 18px;
+    font-weight: bold;
+    color: #00bcd4;
+}
+
+.ble-device-count {
+    font-size: 16px;
+    color: #4caf50;
+    background: rgba(76, 175, 80, 0.2);
+    padding: 2px 6px;
+    border: 1px solid #4caf50;
+}
+
+.ble-device-list {
+    overflow-y: auto;
+    padding: 6px;
+    background: rgba(0, 0, 0, 0.1);
+    border: 1px solid #333;
+    max-height: 220px;
+}
+
+.ble-device-list::-webkit-scrollbar { width: 6px; }
+.ble-device-list::-webkit-scrollbar-track { background: rgba(0,0,0,0.2); }
+.ble-device-list::-webkit-scrollbar-thumb { background: #00bcd4; }
+.ble-device-list::-webkit-scrollbar-thumb:hover { background: #4caf50; }
+
+/* Device rows */
+.ble-device {
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid #444;
+    margin-bottom: 5px;
+    padding: 8px 10px;
+    cursor: pointer;
+    transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.ble-device:hover {
+    background: rgba(0, 188, 212, 0.1);
+    border-color: #00bcd4;
+}
+
+.ble-device--targeted {
+    border-left: 4px solid #00bcd4 !important;
+    background: rgba(0, 188, 212, 0.08) !important;
+}
+
+.ble-device--paired {
+    border-left: 4px solid #4caf50 !important;
+    background: rgba(76, 175, 80, 0.06) !important;
+}
+
+.ble-device-name {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 18px;
+    font-weight: bold;
+    color: #e0e0e0;
+    margin-bottom: 3px;
+}
+
+.ble-device-icons {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.ble-device-icon {
+    font-size: 14px;
+}
+
+.ble-save-btn {
+    background: transparent;
+    border: 1px solid #555;
+    color: #555;
+    font-size: 13px;
+    padding: 1px 4px;
+    cursor: pointer;
+    line-height: 1;
+    font-family: inherit;
+    opacity: 0.5;
+    transition: opacity 0.2s ease, border-color 0.2s ease;
+}
+
+.ble-save-btn:hover {
+    opacity: 1;
+    border-color: #00bcd4;
+}
+
+.ble-save-btn--saved {
+    opacity: 1;
+    border-color: #00bcd4;
+    color: #00bcd4;
+}
+
+/* Signal bars — identical geometry to bluetooth scanner */
+.ble-signal-bar-container {
+    display: flex;
+    align-items: center;
+}
+
+.ble-signal-bars {
+    display: flex;
+    align-items: flex-end;
+    gap: 1px;
+    height: 16px;
+}
+
+.ble-signal-bar {
+    width: 3px;
+    background: #666;
+    transition: background 0.3s ease;
+}
+
+.ble-signal-bar:nth-child(1) { height: 3px; }
+.ble-signal-bar:nth-child(2) { height: 6px; }
+.ble-signal-bar:nth-child(3) { height: 9px; }
+.ble-signal-bar:nth-child(4) { height: 12px; }
+.ble-signal-bar:nth-child(5) { height: 16px; }
+
+.ble-signal-bar.active {
+    background: currentColor;
+    box-shadow: 0 0 4px currentColor;
+}
+
+.ble-device-mac {
+    font-size: 16px;
+    color: #aaa;
+    margin-bottom: 3px;
+}
+
+.ble-device-timestamp {
+    font-size: 14px;
+    color: #666;
+    font-style: italic;
+}
+
+/* UUID chips */
+.ble-uuid-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin: 3px 0;
+}
+
+.ble-uuid-chip {
+    font-size: 12px;
+    padding: 1px 5px;
+    border: 1px solid #00bcd4;
+    color: #00bcd4;
+    font-family: 'GNF', monospace;
+    cursor: default;
+}
+
+/* Action panel */
+.ble-action-panel {
+    margin-top: 8px;
+    border-top: 2px solid #00bcd4;
+    padding: 10px;
+    background: rgba(0, 0, 0, 0.25);
+}
+
+.ble-action-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+    font-size: 16px;
+    color: #00bcd4;
+    font-weight: bold;
+}
+
+.ble-clear-target-btn {
+    background: transparent;
+    border: 1px solid #555;
+    color: #aaa;
+    font-family: 'GNF', monospace;
+    font-size: 16px;
+    cursor: pointer;
+    padding: 2px 8px;
+}
+
+.ble-clear-target-btn:hover {
+    border-color: #cc3333;
+    color: #cc3333;
+}
+
+.ble-action-target-info {
+    margin-bottom: 8px;
+    font-size: 15px;
+    color: #aaa;
+}
+
+.ble-action-mac {
+    margin-bottom: 3px;
+}
+
+.ble-action-section {
+    border-top: 1px solid #333;
+    padding-top: 8px;
+    margin-top: 8px;
+}
+
+.ble-action-section-label {
+    font-size: 16px;
+    color: #888;
+    margin-bottom: 6px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.ble-attempts-remaining {
+    font-size: 16px;
+    color: #cccc00;
+    margin-bottom: 6px;
+}
+
+.ble-pin-entry {
+    display: flex;
+    gap: 8px;
+}
+
+.ble-pin-input {
+    flex: 1;
+    padding: 6px 10px;
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid #00bcd4;
+    color: #e0f7fa;
+    font-family: 'GNF', monospace;
+    font-size: 18px;
+    outline: none;
+}
+
+.ble-pin-input:focus {
+    border-color: #80deea;
+    box-shadow: 0 0 6px rgba(0, 188, 212, 0.4);
+}
+
+.ble-pin-btn {
+    padding: 6px 14px;
+    background: rgba(0, 188, 212, 0.15);
+    border: 1px solid #00bcd4;
+    color: #00bcd4;
+    font-family: 'GNF', monospace;
+    font-size: 18px;
+    cursor: pointer;
+    transition: background 0.2s ease;
+    white-space: nowrap;
+}
+
+.ble-pin-btn:hover:not(:disabled) {
+    background: rgba(0, 188, 212, 0.3);
+    box-shadow: 0 0 8px rgba(0, 188, 212, 0.4);
+}
+
+.ble-btn--disabled,
+.ble-pin-btn:disabled {
+    opacity: 0.35;
+    pointer-events: none;
+    cursor: default;
+}
+
+.ble-handshake-input {
+    width: 100%;
+    min-height: 60px;
+    resize: vertical;
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid #555;
+    color: #ccc;
+    font-family: 'GNF', monospace;
+    font-size: 16px;
+    padding: 6px 8px;
+    box-sizing: border-box;
+    margin-bottom: 6px;
+}
+
+.ble-handshake-input:focus {
+    outline: none;
+    border-color: #00bcd4;
+}
+
+.ble-replay-btn {
+    width: 100%;
+    padding: 6px;
+    background: rgba(0, 188, 212, 0.15);
+    border: 1px solid #00bcd4;
+    color: #00bcd4;
+    font-family: 'GNF', monospace;
+    font-size: 18px;
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+
+.ble-replay-btn:hover {
+    background: rgba(0, 188, 212, 0.3);
+}
+
+/* Feedback */
+.ble-action-feedback {
+    min-height: 22px;
+    margin-top: 8px;
+    font-size: 17px;
+    font-weight: bold;
+}
+
+.ble-feedback--success { color: #00cc00; }
+.ble-feedback--failure { color: #cc3333; }
+.ble-feedback--info    { color: #cccc00; }
+
+/* Shake animation on failure */
+@keyframes ble-shake {
+    0%   { transform: translateX(0); }
+    20%  { transform: translateX(-6px); }
+    40%  { transform: translateX(6px); }
+    60%  { transform: translateX(-4px); }
+    80%  { transform: translateX(4px); }
+    100% { transform: translateX(0); }
+}
+
+.ble-action-panel--shake {
+    animation: ble-shake 0.4s ease;
+}
+
+/* Hint panel */
+.ble-hint-panel {
+    margin-top: 8px;
+    border-top: 1px solid #333;
+    padding-top: 8px;
+}
+
+.ble-hint-text {
+    font-size: 16px;
+    color: #888;
+    font-style: italic;
+    line-height: 1.4;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .ble-scanner-minigame-container {
+        top: 2vh !important;
+        right: 2vw !important;
+        left: 2vw !important;
+        width: 96vw !important;
+        max-width: 420px !important;
+    }
+    .ble-scanner-minigame-container.expanded {
+        max-width: 520px !important;
+    }
+    .ble-categories {
+        gap: 4px;
+    }
+    .ble-category {
+        font-size: 14px;
+        padding: 3px 7px;
+    }
+}

@@ -1,0 +1,14 @@
+Make portrait for Mr Pryce
+A sixty-seven year old man, white or Middle-Eastern with olive skin, a critically ill hospital patient on a ventilator in an intensive care bed, weak but conscious. A full head of grey hair against a pale green pillow, a weathered lined face, heavy-lidded eyes barely open. A clear transparent plastic non-invasive ventilation face mask over his nose and mouth on a thin head strap, his mouth visible through it, a smooth hose leading down from the mask, plus monitoring leads. Lying still and flat, a green hospital blanket drawn up over his chest.
+Head resting on the pillow, face angled in a three-quarter view toward the camera.
+Dialog view of character
+Dramatic lighting
+In the style of a detailed vector graphics illustration. the portrait shows the patient lying in a hospital bed, upper body and head on the pillow with a green hospital blanket drawn up over the chest, against a solid plain background, in a game art design, realism and digital art aesthetic. Dialog character. Gritty realism. Smooth vector linework, NOT pixel art.
+Slightly anime. Neutral expression.
+Square aspect ratio
+solid plain background, no gradient, no pattern
+
+# Post: reframe_portrait.py --flip (character faces right, cast convention). Background solid dark slate-grey.
+# Bedridden patient: in-bed framing. Bed sprite (objects/bed4.png) used as a DESCRIPTION guide only, NOT as a Gemini reference image (a pixel sprite reference pixelates the whole render).
+
+# Revised Sep 2026: gemini_edit_image on the wip concept replaced the oral tube with a clear NIV mask and opened the eyes a crack (he speaks in the ink), saved as wip/mr_pryce_mask_nonpixelart.png.

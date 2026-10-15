@@ -1,0 +1,13 @@
+{
+  "key": "68e239ca1045272132ce4fb3d6314f90",
+  "npc": "ward_nurse",
+  "text": "I said I'd seen nobody. That's a lie, and I don't tell them for fun.",
+  "voice": "Kore",
+  "style": "Ward sister, twenty years on the wards. Consistent Belfast / Northern Irish accent throughout. Exhausted, dry, absolutely unsentimental about everything except her patients. Quiet controlled urgency, never raises her voice.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

@@ -1,0 +1,14 @@
+Make portrait for Bernie Nwosu
+A Black British woman of Nigerian heritage in her fifties, a hospital night reception coordinator who has held the front desk together for eleven years. Warm but unbudgeable, no-nonsense. She wears an NHS reception staff UNIFORM: a branded teal-blue uniform polo shirt with a small NHS logo on the chest, and a hospital reception staff ID on a lanyard. Over the uniform polo she has an open soft grey cardigan for the cold night shift. Hair in a neat short natural style. A pair of reading glasses hanging on a chain around her neck. Kind, tired, steady eyes. She is clearly hospital staff, but NON-clinical -- NOT scrubs, NOT a nurse.
+Body angled slightly to the side in a three-quarter turn, head turned toward the camera.
+Dialog view of character
+Dramatic lighting
+In the style of a detailed vector graphics illustration. the portrait shows the body from the hips up, including the waistline, belt, pockets and top of the trousers, against a solid plain background, in a game art design, realism and digital art aesthetic. Dialog character. Gritty realism.
+Slightly anime. Neutral expression.
+Square aspect ratio
+solid plain background, no gradient, no pattern
+
+# Post: reframe_portrait.py --flip (character faces right, cast convention). Background was solid warm grey/taupe.
+# Note: NHS reception staff dress varies by trust -- some issue a branded polo/tunic (this design), others just a smart dress code. Uniform chosen for in-game role readability.
+
+# Saved 2026-10-12 from tmp/pixellab/bernie_nwosu/concept.png (the concept the pipeline used)

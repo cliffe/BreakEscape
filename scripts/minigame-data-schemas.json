@@ -1,0 +1,114 @@
+{
+  "_comment": "Schema definitions for minigameData on scenario objects. Validated by validate_scenario.rb. The validator resolves schemas by checking the object's 'type', then 'lockType', then 'id' (for objects whose dispatch is id-based). Entries with '_dispatch':'lockType' or '_dispatch':'id' document which key is used at runtime.",
+
+  "alarm_panel": {
+    "required": ["lamps"],
+    "optional": ["panelTitle", "footer"]
+  },
+
+  "emergency-button": {
+    "required": ["authVar", "activatedVar", "completionActions"],
+    "optional": ["interactionType", "label", "confirmDesc", "unauthorizedText", "unauthorizedTextVariants", "alreadyActiveText", "confirmedText", "conditionalActions"]
+  },
+
+  "sis_config_panel": {
+    "required": ["rows"],
+    "optional": ["title", "compareTitle", "confirmLabel"]
+  },
+
+  "scada_historian": {
+    "required": ["racks"],
+    "optional": ["minigameId", "title", "subtitle", "injectionTimestamp", "injectedValue", "lastRealTimestamp", "lastRealValue", "thermalTrendStartTime", "thermalTrendRate", "historianStartTime", "historianEndTime", "sampleIntervalMinutes", "defaultTimeRangeHours", "reportVariable", "hintText", "completionActions", "progressActions"]
+  },
+
+  "log_filter_terminal": {
+    "required": ["logEntries"],
+    "optional": ["minigameId", "title", "logType", "anomaly", "threatIntel", "accountHistory", "flagActionLabel", "flagConfirmTitle", "flagConfirmBody", "additionalTabs", "requireAllTabs", "stateOverrides", "flagActions", "completionActions", "progressActions"]
+  },
+
+  "siem_dashboard": {
+    "required": ["alertConfig"],
+    "optional": ["systemName", "timeLimitSec", "onSuccessVar", "onFailVar"]
+  },
+
+  "vpn_log_terminal": {
+    "required": ["anomaly"],
+    "optional": ["consoleTitle", "consoleSubtitle", "logFilePath", "entryCount", "noise", "contractorAccounts", "threatIntel", "impossibleTravel", "completionActions", "progressActions"]
+  },
+
+  "ehr_terminal": {
+    "_dispatch": "id",
+    "optional": ["customMessage", "patients", "onOpenVar"]
+  },
+
+  "infusion_pump": {
+    "required": ["drug_name", "correct_dose"],
+    "optional": ["rate_display", "patient", "ward_bed", "consultant", "prescriber", "duration", "allergies", "library_min", "library_max", "restored_min", "restored_max", "library_ok_global", "conflict_title", "conflict_prompt", "hold_label", "reenter_label", "pharmacy_mismatch_text", "pharmacy_hold_text", "programmed_at_global"]
+  },
+
+  "drug_library_terminal": {
+    "required": ["drugLibrary", "tamperedEntry"],
+    "optional": ["consoleTitle", "consoleSubtitle", "libraryFile", "backupFile", "hashFile", "verificationSources", "fleetReport", "onCompromisedDetected", "completionActions", "progressActions"]
+  },
+
+  "network_architecture": {
+    "required": ["zones", "nodes"],
+    "optional": ["title", "reviewedVar", "viewBox", "attackPaths", "externalOrgs", "lines", "completionActions"]
+  },
+
+  "network-segmentation-map": {
+    "required": ["zones"],
+    "optional": ["title", "onOpenVar", "severButtonLabel", "severVar", "rulesReviewedVar", "auth", "rules", "modalConsequences", "defaultConsequences", "severConsequences", "severLockedHint", "severReadyHint"]
+  },
+
+  "ncsc_brief": {
+    "required": ["reviewedVar", "caseRef"],
+    "optional": ["openableStatusBadge", "briefTitle", "briefMeta", "sections"]
+  },
+
+  "checklist": {
+    "required": ["warranties"],
+    "optional": ["title"]
+  },
+
+  "coverage_decision_form": {
+    "required": ["sections", "completionActions"],
+    "optional": ["headerRef", "claimsManager", "openVar", "formTitle", "outcomeSpeaker", "outcomeQuoteSection", "outcomeQuotes"]
+  },
+
+  "claims_management_system": {
+    "_dispatch": "id",
+    "required": ["sections"],
+    "optional": ["stateWrites", "printEnabled", "title"]
+  },
+
+  "forensic_data_platform": {
+    "required": [],
+    "optional": ["tabs", "tabSet", "title", "caseRef", "reviewedVar", "confirmedVar", "confirmGateTab", "confirmLabel", "confirmHint", "confirmReadyHint", "confirmSuccessText"]
+  },
+
+  "notes": {
+    "optional": ["timerRef"]
+  },
+
+  "tablet": {
+    "optional": ["timerRef"]
+  },
+
+  "ransomware_display": {
+    "_dispatch": "lockType",
+    "required": ["organisation", "ransomAmount", "groupName"],
+    "optional": ["encryptedSystems", "ransomBitcoin", "walletAddress", "timerHours", "supportPortal", "extraLines"]
+  },
+
+  "backup_recovery": {
+    "_dispatch": "lockType",
+    "required": ["backupRecoverySources"],
+    "optional": ["consoleTitle", "keySlots"]
+  },
+
+  "dual_auth": {
+    "_dispatch": "lockType",
+    "required": ["itsec_pin", "clinical_pin"]
+  }
+}

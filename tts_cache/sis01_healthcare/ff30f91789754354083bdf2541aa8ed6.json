@@ -1,0 +1,13 @@
+{
+  "key": "ff30f91789754354083bdf2541aa8ed6",
+  "npc": "helen_carver",
+  "text": "And I want that pump console back the minute the restore's done. Every hour on paper carries its own risk.",
+  "voice": "Pulcherrima",
+  "style": "NHS chief information officer in her mid-fifties, decisive and under pressure, clipped and authoritative. Speak with a consistent well-spoken North Yorkshire (Harrogate) accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis01_healthcare",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

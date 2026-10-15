@@ -1,0 +1,253 @@
+{
+ "steps": [
+  {
+   "note": "R3: Trojan Horse from the briefing. Hollis challenges, the player walks at him, he goes loud and is knocked out (sight challenge then stops). Decode read; two wrong picks (Fracture, then the key count) then the manifest: 'already in Austin', no redirect offer, no HUD window. Login at minute 22, after the door: the window shuts early. T-10 at 30 plays the closed line. Abort with time left. A fight after the abort leaves the end track alone. Debrief: Trojan direct."
+  },
+  {
+   "talk": "briefing",
+   "picks": [
+    "Understood. Talk to me",
+    "I've made the call",
+    "Trojan Horse"
+   ]
+  },
+  {
+   "talk": "phone",
+   "picks": [
+    "Understood. Let"
+   ]
+  },
+  {
+   "event": "player_spotted:ray_hollis"
+  },
+  {
+   "talk": "hollis",
+   "picks": [
+    "Walk at him",
+    "Put it down"
+   ]
+  },
+  {
+   "said": [
+    "He's coming for you. Fists up, face him, hit him.",
+    "He's slower than you. If it's going badly"
+   ]
+  },
+  {
+   "expect": {
+    "hollis_resolved": "ko"
+   }
+  },
+  {
+   "music": "npc_hostile_state_changed",
+   "isHostile": true,
+   "expect": "threat"
+  },
+  {
+   "ko": "ray_hollis"
+  },
+  {
+   "said": [
+    "Hollis is down",
+    "Hands down: press Q until the open hand shows."
+   ]
+  },
+  {
+   "pickup": "hollis_server_badge"
+  },
+  {
+   "enter": "operations_floor"
+  },
+  {
+   "enter": "server_room"
+  },
+  {
+   "event": "object_interacted",
+   "data": {
+    "objectType": "vm-launcher"
+   }
+  },
+  {
+   "flag": 1
+  },
+  {
+   "read": "coordination_extract"
+  },
+  {
+   "hud": null
+  },
+  {
+   "talk": "phone",
+   "picks": [
+    "Their schedule doesn't match",
+    "Fracture"
+   ]
+  },
+  {
+   "said": [
+    "That isn't what I'm reading. Look again."
+   ]
+  },
+  {
+   "talk": "phone",
+   "picks": [
+    "Their schedule doesn't match",
+    "Trojan Horse",
+    "The key count"
+   ]
+  },
+  {
+   "said": [
+    "Still not what I'm reading"
+   ]
+  },
+  {
+   "expect": {
+    "projection_revised": false
+   }
+  },
+  {
+   "talk": "phone",
+   "picks": [
+    "Their schedule doesn't match",
+    "Trojan Horse",
+    "The manifest"
+   ]
+  },
+  {
+   "said": [
+    "The team's already in Austin. You picked the one that was worse"
+   ],
+   "notSaid": [
+    "I want the team moved",
+    "Can I still move the team"
+   ]
+  },
+  {
+   "expect": {
+    "projection_revised": true,
+    "revision_found_open": false
+   }
+  },
+  {
+   "hud": null
+  },
+  {
+   "flag": 2
+  },
+  {
+   "notSaid": [
+    "Before you log in"
+   ]
+  },
+  {
+   "enter": "scada_control"
+  },
+  {
+   "advance": 22
+  },
+  {
+   "flag": 3
+  },
+  {
+   "expect": {
+    "redirect_window_closed": true,
+    "logged_in_before_door": false
+   }
+  },
+  {
+   "advance": 8
+  },
+  {
+   "said": [
+    "A word about doors, Agent 0x00."
+   ]
+  },
+  {
+   "talk": "architect",
+   "knot": "start",
+   "picks": [
+    "Then I'll be in this one"
+   ]
+  },
+  {
+   "said": [
+    "You logged in. The door closed behind you.",
+    "Doors close."
+   ],
+   "notSaid": [
+    "You still have a door open"
+   ]
+  },
+  {
+   "flag": 4
+  },
+  {
+   "task": "shut_down_the_cascade"
+  },
+  {
+   "music": "npc_hostile_state_changed",
+   "isHostile": true,
+   "expect": null
+  },
+  {
+   "music": "all_hostiles_ko",
+   "expect": null
+  },
+  {
+   "talk": "phone",
+   "picks": [
+    "Bring me in"
+   ]
+  },
+  {
+   "enter": "operations_floor"
+  },
+  {
+   "talk": "debrief",
+   "picks": [
+    1,
+    0,
+    1,
+    0,
+    1,
+    1,
+    0,
+    1,
+    0,
+    "Nothing on the record",
+    "I made the call",
+    1
+   ]
+  },
+  {
+   "said": [
+    "Eight hundred and forty signing keys burned",
+    "You found out what you had chosen while they were stopping it",
+    "Above expectations",
+    "That is the order that kept it clean"
+   ],
+   "notSaid": [
+    "You knew. You found it",
+    "after the window"
+   ]
+  },
+  {
+   "creditsSaid": [
+    "Operation Trojan Horse — 840",
+    "PROJECTION CORRECTED",
+    "RAY HOLLIS: Neutralised on shift"
+   ],
+   "creditsNotSaid": [
+    "CORRECTION FOUND",
+    "ORDER: logged in"
+   ]
+  },
+  {
+   "note": "Run-length guard (Phase 4 dialogue C1, D7-1): no conversation, the debrief included, runs more than nine lines without a choice."
+  },
+  {
+   "maxRun": 9
+  }
+ ]
+}

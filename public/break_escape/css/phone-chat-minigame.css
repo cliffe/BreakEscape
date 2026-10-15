@@ -1,0 +1,815 @@
+/* Phone Chat Minigame - Ink-based NPC conversations */
+/* Includes all necessary phone structure styles */
+
+/* Phone Container (outer shell) */
+.phone-messages-container {
+    display: flex;
+    flex-direction: column;
+    height: 70vh;
+    max-height: 700px;
+    width: 100%;
+    max-width: 400px;
+    margin: 0 auto;
+    background: #a0a0ad;
+    clip-path: polygon(
+      0px calc(100% - 10px),
+      2px calc(100% - 10px),
+      2px calc(100% - 6px),
+      4px calc(100% - 6px),
+      4px calc(100% - 4px),
+      6px calc(100% - 4px),
+      6px calc(100% - 2px),
+      10px calc(100% - 2px),
+      10px 100%,
+      calc(100% - 10px) 100%,
+      calc(100% - 10px) calc(100% - 2px),
+      calc(100% - 6px) calc(100% - 2px),
+      calc(100% - 6px) calc(100% - 4px),
+      calc(100% - 4px) calc(100% - 4px),
+      calc(100% - 4px) calc(100% - 6px),
+      calc(100% - 2px) calc(100% - 6px),
+      calc(100% - 2px) calc(100% - 10px),
+      100% calc(100% - 10px),
+      100% 10px,
+      calc(100% - 2px) 10px,
+      calc(100% - 2px) 6px,
+      calc(100% - 4px) 6px,
+      calc(100% - 4px) 4px,
+      calc(100% - 6px) 4px,
+      calc(100% - 6px) 2px,
+      calc(100% - 10px) 2px,
+      calc(100% - 10px) 0px,
+      10px 0px,
+      10px 2px,
+      6px 2px,
+      6px 4px,
+      4px 4px,
+      4px 6px,
+      2px 6px,
+      2px 10px,
+      0px 10px
+    );
+    box-shadow: 0 0 20px rgba(0, 255, 0, 0.3);
+    font-family: 'GNF', monospace;
+}
+
+/* Phone Screen (green LCD display) */
+.phone-screen {
+    flex: 1;
+    background: #5fcf69;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    color: #000;
+    margin: 10px;
+    overflow: hidden;
+    clip-path: polygon(0px calc(100% - 10px), 2px calc(100% - 10px), 2px calc(100% - 6px), 4px calc(100% - 6px), 4px calc(100% - 4px), 6px calc(100% - 4px), 6px calc(100% - 2px), 10px calc(100% - 2px), 10px 100%, calc(100% - 10px) 100%, calc(100% - 10px) calc(100% - 2px), calc(100% - 6px) calc(100% - 2px), calc(100% - 6px) calc(100% - 4px), calc(100% - 4px) calc(100% - 4px), calc(100% - 4px) calc(100% - 6px), calc(100% - 2px) calc(100% - 6px), calc(100% - 2px) calc(100% - 10px), 100% calc(100% - 10px), 100% 10px, calc(100% - 2px) 10px, calc(100% - 2px) 6px, calc(100% - 4px) 6px, calc(100% - 4px) 4px, calc(100% - 6px) 4px, calc(100% - 6px) 2px, calc(100% - 10px) 2px, calc(100% - 10px) 0px, 10px 0px, 10px 2px, 6px 2px, 6px 4px, 4px 4px, 4px 6px, 2px 6px, 2px 10px, 0px 10px) !important;
+}
+
+/* Phone Header (signal, battery) */
+.phone-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 15px;
+    background: rgba(0, 0, 0, 0.1);
+    border-bottom: 2px solid #333;
+    color: #000;
+    flex-shrink: 0;
+}
+
+.signal-bars {
+    display: flex;
+    gap: 2px;
+    align-items: end;
+}
+
+.signal-bars .bar {
+    width: 3px;
+    background: #000;
+}
+
+.signal-bars .bar:nth-child(1) { height: 4px; }
+.signal-bars .bar:nth-child(2) { height: 6px; }
+.signal-bars .bar:nth-child(3) { height: 8px; }
+.signal-bars .bar:nth-child(4) { height: 10px; }
+
+.battery {
+    color: #000;
+    font-family: 'GNF', monospace;
+    font-weight: bold;
+}
+
+/* Contact List View */
+.contact-list-view {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.contact-list-header {
+    padding: 12px 15px;
+    background: rgba(0, 0, 0, 0.1);
+    border-bottom: 2px solid #333;
+}
+
+.contact-list-header h3 {
+    margin: 0;
+    font-family: 'GNF', monospace;
+    font-size: 20px;
+    color: #000;
+    font-weight: normal;
+}
+
+.contact-list {
+    flex: 1;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: #000 rgba(0, 0, 0, 0.1);
+}
+
+.contact-list::-webkit-scrollbar {
+    width: 8px;
+}
+
+.contact-list::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.1);
+    border-left: 2px solid #333;
+}
+
+.contact-list::-webkit-scrollbar-thumb {
+    background: #000;
+    border: 2px solid #5fcf69;
+}
+
+.contact-list::-webkit-scrollbar-thumb:hover {
+    background: #333;
+}
+
+.contact-item {
+    display: flex;
+    align-items: center;
+    padding: 12px 15px;
+    border-bottom: 2px solid rgba(0, 0, 0, 0.1);
+    cursor: pointer;
+    transition: background 0.1s;
+    position: relative;
+}
+
+.contact-item:hover {
+    background: rgba(0, 0, 0, 0.05);
+}
+
+.contact-item:active {
+    background: rgba(0, 0, 0, 0.1);
+}
+
+.contact-avatar {
+    width: 64px;
+    height: 64px;
+    background: rgba(0, 0, 0, 0.2);
+    border: 2px solid #000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    margin-right: 12px;
+    image-rendering: pixelated;
+}
+
+.contact-avatar img {
+    width: 64px;
+    height: 64px;
+    object-fit: cover;
+    image-rendering: pixelated;
+}
+
+.contact-details {
+    flex: 1;
+    min-width: 0;
+}
+
+.contact-name {
+    font-family: 'GNF', monospace;
+    font-size: 18px;
+    color: #000;
+    font-weight: bold;
+    margin-bottom: 4px;
+}
+
+.contact-preview {
+    font-family: 'GNF', monospace;
+    font-size: 14px;
+    color: rgba(0, 0, 0, 0.6);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.contact-time {
+    font-family: 'GNF', monospace;
+    font-size: 12px;
+    color: rgba(0, 0, 0, 0.5);
+    margin-left: 8px;
+}
+
+.unread-badge {
+    background: #e74c3c;
+    color: #fff;
+    font-family: 'GNF', monospace;
+    font-size: 12px;
+    padding: 2px 6px;
+    border: 2px solid #000;
+    min-width: 20px;
+    text-align: center;
+    font-weight: bold;
+}
+
+.no-contacts {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: rgba(0, 0, 0, 0.5);
+    font-family: 'GNF', monospace;
+    font-size: 16px;
+    padding: 20px;
+    text-align: center;
+}
+
+/* Conversation View */
+.conversation-view {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.conversation-header {
+    display: flex;
+    align-items: center;
+    padding: 10px 15px;
+    background: rgba(0, 0, 0, 0.1);
+    border-bottom: 2px solid #333;
+    gap: 12px;
+}
+
+.back-button {
+    background: transparent;
+    border: 2px solid #000;
+    color: #000;
+    font-family: 'GNF', monospace;
+    font-size: 24px;
+    padding: 4px 12px;
+    cursor: pointer;
+    line-height: 1;
+    transition: background 0.1s;
+}
+
+.back-button:hover {
+    background: rgba(0, 0, 0, 0.1);
+}
+
+.back-button:active {
+    background: rgba(0, 0, 0, 0.2);
+}
+
+.conversation-info {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.conversation-avatar,
+.conversation-avatar-placeholder {
+    width: 64px;
+    height: 64px;
+    border: 2px solid #000;
+    image-rendering: pixelated;
+    flex-shrink: 0;
+}
+
+.conversation-avatar {
+    object-fit: cover;
+}
+
+.conversation-avatar-placeholder {
+    background: rgba(0, 0, 0, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+}
+
+.npc-name {
+    font-family: 'GNF', monospace;
+    font-size: 20px;
+    color: #000;
+}
+
+/* Messages Container */
+.messages-container {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    scrollbar-width: thin;
+    scrollbar-color: #000 rgba(0, 0, 0, 0.1);
+}
+
+.messages-container::-webkit-scrollbar {
+    width: 8px;
+}
+
+.messages-container::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.1);
+    border-left: 2px solid #333;
+}
+
+.messages-container::-webkit-scrollbar-thumb {
+    background: #000;
+    border: 2px solid #5fcf69;
+}
+
+.messages-container::-webkit-scrollbar-thumb:hover {
+    background: #333;
+}
+
+.message-bubble {
+    padding: 10px 14px;
+    border: 2px solid #000;
+    font-family: 'GNF', monospace;
+    font-size: 16px;
+    line-height: 1.4;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    max-width: 75%;
+    animation: messageSlideIn 0.2s ease-out;
+}
+
+@keyframes messageSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(5px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.message-bubble.npc {
+    align-self: flex-start;
+    background: rgba(0, 0, 0, 0.2);
+    color: #000;
+}
+
+.message-bubble.player {
+    align-self: flex-end;
+    background: rgba(0, 0, 0, 0.3);
+    color: #000;
+    font-weight: bold;
+}
+
+.message-narration {
+    align-self: center;
+    max-width: 85%;
+    text-align: center;
+    font-family: 'GNF', monospace;
+    font-size: 14px;
+    font-style: italic;
+    line-height: 1.4;
+    color: rgba(0, 0, 0, 0.68);
+    padding: 2px 6px;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+}
+
+.message-time {
+    font-size: 10px;
+    color: rgba(0, 0, 0, 0.5);
+    margin-top: 4px;
+    font-family: 'GNF', monospace;
+}
+
+/* Typing Indicator */
+.typing-indicator {
+    display: flex;
+    gap: 4px;
+    padding: 10px 14px;
+    align-self: flex-start;
+    max-width: 60px;
+}
+
+.typing-indicator span {
+    width: 8px;
+    height: 8px;
+    background: rgba(0, 0, 0, 0.4);
+    border: 2px solid #000;
+    animation: typingBounce 1.4s infinite;
+}
+
+.typing-indicator span:nth-child(1) {
+    animation-delay: 0s;
+}
+
+.typing-indicator span:nth-child(2) {
+    animation-delay: 0.2s;
+}
+
+.typing-indicator span:nth-child(3) {
+    animation-delay: 0.4s;
+}
+
+@keyframes typingBounce {
+    0%, 60%, 100% {
+        transform: translateY(0);
+    }
+    30% {
+        transform: translateY(-8px);
+    }
+}
+
+/* Choices Container */
+.choices-container {
+    padding: 12px;
+    background: rgba(0, 0, 0, 0.05);
+    border-top: 2px solid rgba(0, 0, 0, 0.2);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-height: 200px;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: #000 rgba(0, 0, 0, 0.1);
+}
+
+.choices-container::-webkit-scrollbar {
+    width: 8px;
+}
+
+.choices-container::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.1);
+    border-left: 2px solid rgba(0, 0, 0, 0.3);
+}
+
+.choices-container::-webkit-scrollbar-thumb {
+    background: #000;
+    border: 2px solid #5fcf69;
+}
+
+.choices-container::-webkit-scrollbar-thumb:hover {
+    background: #333;
+}
+
+.choice-button {
+    background: rgba(0, 0, 0, 0.1);
+    color: #000;
+    border: 2px solid #000;
+    padding: 10px 14px;
+    font-family: 'GNF', monospace;
+    font-size: 16px;
+    text-align: left;
+    cursor: pointer;
+    transition: all 0.1s;
+    line-height: 1.4;
+}
+
+.choice-button:hover {
+    background: rgba(0, 0, 0, 0.2);
+    transform: translateX(2px);
+}
+
+.choice-button:active {
+    background: rgba(0, 0, 0, 0.3);
+}
+
+/* Voice Message Styles */
+.voice-message-display {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+}
+
+.audio-controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    transition: transform 0.2s ease;
+    padding: 5px;
+}
+
+.audio-controls:hover {
+    /* transform: scale(1.5); */
+    background: rgba(0, 0, 0, 0.1);
+}
+
+.audio-sprite {
+    height: 32px;
+    width: auto;
+    flex-shrink: 0;
+    image-rendering: pixelated !important;
+    image-rendering: -moz-crisp-edges;
+    image-rendering: crisp-edges;
+    image-rendering: -webkit-optimize-contrast;
+}
+
+.play-button {
+    color: #000;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-family: 'GNF', monospace;
+    flex-shrink: 0;
+}
+
+.play-button img {
+    height: 32px;
+    width: auto;
+    display: block;
+    image-rendering: pixelated !important;
+    image-rendering: -moz-crisp-edges;
+    image-rendering: crisp-edges;
+    image-rendering: -webkit-optimize-contrast;
+}
+
+.transcript {
+    /* text-align: center; */
+    padding: 10px;
+    width: 100%;
+    font-family: 'GNF', monospace;
+    line-height: 1.4;
+}
+
+.transcript strong {
+    color: #000;
+    font-weight: bold;
+}
+
+/* ── Terminal Theme ───────────────────────────────────────────────────────────
+   Applied when params.theme === 'terminal'. Scoped entirely under
+   .phone-terminal-theme — zero impact on the default green LCD variant.
+   ─────────────────────────────────────────────────────────────────────────── */
+
+.phone-terminal-theme {
+    background: #000;
+    box-shadow: 0 0 30px rgba(0, 255, 65, 0.4);
+}
+
+.phone-terminal-theme .phone-screen {
+    background: #000;
+    color: #00ff41;
+}
+
+/* CRT scanlines — same technique as bond-visualiser.css */
+.phone-terminal-theme .phone-screen::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 2px,
+        rgba(0, 0, 0, 0.18) 2px,
+        rgba(0, 0, 0, 0.18) 4px
+    );
+    pointer-events: none;
+    z-index: 100;
+}
+
+/* CRT vignette */
+.phone-terminal-theme .phone-screen::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse at center, transparent 60%, rgba(0,0,0,0.85) 100%);
+    pointer-events: none;
+    z-index: 99;
+}
+
+/* Header: replace signal/battery chrome with a status line */
+.phone-terminal-theme .phone-header {
+    background: #000;
+    border-bottom: 1px solid rgba(0, 255, 65, 0.3);
+}
+
+.phone-terminal-theme .phone-header .signal-bars,
+.phone-terminal-theme .phone-header .battery {
+    display: none;
+}
+
+.phone-terminal-theme .phone-header::after {
+    content: 'SECURE CHANNEL ESTABLISHED';
+    font-family: 'GNF', monospace;
+    font-size: 14px;
+    color: rgba(0, 255, 65, 0.7);
+    letter-spacing: 0.1em;
+}
+
+/* Messages: strip bubbles, left-aligned text */
+.phone-terminal-theme .messages-container {
+    background: #000;
+    padding: 16px;
+    gap: 4px;
+    scrollbar-color: rgba(0, 255, 65, 0.3) #000;
+}
+
+.phone-terminal-theme .messages-container::-webkit-scrollbar-thumb {
+    background: rgba(0, 255, 65, 0.3);
+    border: none;
+}
+
+.phone-terminal-theme .messages-container::-webkit-scrollbar-track {
+    background: #000;
+    border: none;
+}
+
+.phone-terminal-theme .message-bubble {
+    background: transparent !important;
+    border: none !important;
+    max-width: 100%;
+    padding: 2px 0;
+    font-size: 18px;
+    line-height: 1.5;
+    animation: none;
+}
+
+.phone-terminal-theme .message-bubble.npc {
+    color: #00ff41;
+    align-self: stretch;
+}
+
+.phone-terminal-theme .message-bubble.player {
+    color: #7ec8ff;
+    align-self: stretch;
+    font-weight: normal;
+}
+
+.phone-terminal-theme .message-bubble.npc .message-text::before {
+    content: '> ';
+    opacity: 0.5;
+}
+
+.phone-terminal-theme .message-bubble.npc .message-text.has-own-prompt::before {
+    content: none;
+}
+
+.phone-terminal-theme .message-bubble.player .message-text::before {
+    content: '$ ';
+    opacity: 0.5;
+}
+
+.phone-terminal-theme .message-narration {
+    align-self: stretch;
+    color: #5f8f6a;
+    font-size: 16px;
+}
+
+.phone-terminal-theme .message-time {
+    display: none;
+}
+
+/* Typewriter cursor */
+@keyframes terminalBlink {
+    0%, 100% { opacity: 1; }
+    50%       { opacity: 0; }
+}
+
+.terminal-cursor {
+    display: inline;
+    color: #00ff41;
+}
+
+.terminal-cursor.blink {
+    animation: terminalBlink 0.7s step-end infinite;
+}
+
+/* Typing indicator: replace bouncing dots with receiving_ text */
+.phone-terminal-theme .typing-indicator {
+    padding: 4px 16px;
+    background: #000;
+    gap: 0;
+}
+
+.phone-terminal-theme .typing-indicator span {
+    display: none;
+}
+
+.phone-terminal-theme .typing-indicator::after {
+    content: 'receiving_';
+    font-family: 'GNF', monospace;
+    font-size: 18px;
+    color: rgba(0, 255, 65, 0.6);
+    animation: terminalBlink 0.7s step-end infinite;
+}
+
+/* Choices: terminal-style prompts */
+.phone-terminal-theme .choices-container {
+    background: #000;
+    border-top: 1px solid rgba(0, 255, 65, 0.3);
+    padding: 8px 16px;
+}
+
+.phone-terminal-theme .choice-button {
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid rgba(0, 255, 65, 0.15);
+    color: #00ff41;
+    text-align: left;
+    padding: 6px 0;
+    font-size: 17px;
+}
+
+.phone-terminal-theme .choice-button::before {
+    content: '[ ';
+    opacity: 0.6;
+}
+
+.phone-terminal-theme .choice-button::after {
+    content: ' ]';
+    opacity: 0.6;
+}
+
+.phone-terminal-theme .choice-button:hover {
+    background: rgba(0, 255, 65, 0.08);
+    transform: none;
+    color: #fff;
+}
+
+/* Contact list */
+.phone-terminal-theme .contact-list-header,
+.phone-terminal-theme .contact-list {
+    background: #000;
+}
+
+.phone-terminal-theme .contact-list-header h3 {
+    color: #00ff41;
+}
+
+.phone-terminal-theme .contact-item {
+    background: transparent;
+    border-bottom: 1px solid rgba(0, 255, 65, 0.15);
+    color: #00ff41;
+}
+
+.phone-terminal-theme .contact-item:hover {
+    background: rgba(0, 255, 65, 0.06);
+}
+
+.phone-terminal-theme .contact-avatar {
+    display: none;
+}
+
+.phone-terminal-theme .contact-item::before {
+    content: '// ';
+    font-family: 'GNF', monospace;
+    color: rgba(0, 255, 65, 0.4);
+    font-size: 18px;
+    flex-shrink: 0;
+}
+
+.phone-terminal-theme .contact-name {
+    color: #00ff41;
+}
+
+.phone-terminal-theme .contact-preview,
+.phone-terminal-theme .contact-time {
+    color: rgba(0, 255, 65, 0.5);
+}
+
+/* Conversation header */
+.phone-terminal-theme .conversation-header {
+    background: #000;
+    border-bottom: 1px solid rgba(0, 255, 65, 0.3);
+}
+
+.phone-terminal-theme .conversation-avatar,
+.phone-terminal-theme .conversation-avatar-placeholder {
+    display: none;
+}
+
+.phone-terminal-theme .npc-name {
+    color: #00ff41;
+    font-size: 16px;
+    letter-spacing: 0.08em;
+}
+
+.phone-terminal-theme .back-button {
+    border-color: rgba(0, 255, 65, 0.5);
+    color: #00ff41;
+    background: transparent;
+}
+
+.phone-terminal-theme .back-button:hover {
+    background: rgba(0, 255, 65, 0.08);
+}

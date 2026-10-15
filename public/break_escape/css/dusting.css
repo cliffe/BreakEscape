@@ -1,0 +1,137 @@
+/* Fingerprint dusting minigame. House style: dark panel, Press Start 2P headings, phosphor-green accent. */
+
+.dusting-container {
+    --d-accent: #00ff41;
+    --d-bg: #0b0f0c;
+    --d-panel: #121a14;
+    --d-line: #1f3a27;
+    --d-text: #d8e6dc;
+    --d-dim: #93a899;
+    overflow-y: auto;
+    justify-content: flex-start;
+    padding: 12px 0;
+}
+
+.dusting-container .minigame-close-button { z-index: 5; }
+
+.dusting-game-container {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    margin: auto 0;
+    height: auto;
+    flex: 0 0 auto;
+}
+
+.dusting-root {
+    align-self: center;
+    width: min(960px, 96vw);
+    background: var(--d-bg);
+    border: 2px solid var(--d-accent);
+    box-shadow: 0 0 18px rgba(0, 255, 65, 0.25);
+    color: var(--d-text);
+    font-family: 'VT323', 'GNF', monospace;
+    font-size: 20px;
+    padding: 12px 16px;
+    box-sizing: border-box;
+}
+
+.dusting-title { display: flex; align-items: baseline; gap: 16px; flex-wrap: wrap; margin-bottom: 8px; }
+.dusting-title h2 { font-family: 'Press Start 2P', monospace; font-size: 14px; margin: 0; color: var(--d-accent); font-weight: normal; }
+.dusting-object { color: var(--d-dim); }
+
+.dusting-steps { list-style: none; display: flex; gap: 4px; margin: 0 0 10px; padding: 0; flex-wrap: wrap; }
+.dusting-steps li {
+    flex: 1 1 90px; text-align: center; padding: 4px 6px; border: 1px solid var(--d-line);
+    color: var(--d-dim); font-size: 18px; background: var(--d-panel);
+}
+.dusting-steps li.done { color: var(--d-text); border-color: #2f6b43; }
+.dusting-steps li.done::after { content: ' \2713'; }
+.dusting-steps li.active { color: #000; background: var(--d-accent); border-color: var(--d-accent); }
+.dusting-step-num { font-family: 'Press Start 2P', monospace; font-size: 10px; margin-right: 4px; }
+
+.dusting-main { display: flex; gap: 16px; align-items: flex-start; flex-wrap: wrap; }
+.dusting-stage { flex: 0 0 auto; }
+.dusting-canvas {
+    display: block; image-rendering: pixelated; border: 2px solid var(--d-line); background: #000;
+    cursor: crosshair; touch-action: none; outline: none;
+}
+.dusting-canvas:focus-visible { border-color: var(--d-accent); box-shadow: 0 0 0 2px var(--d-accent); }
+.dusting-panel { flex: 1 1 280px; min-width: 260px; }
+.dusting-panel h3 { font-family: 'Press Start 2P', monospace; font-size: 12px; margin: 0 0 10px; color: var(--d-accent); font-weight: normal; line-height: 1.5; }
+.dusting-panel p { margin: 0 0 8px; line-height: 1.2; }
+.dusting-note, .dusting-dim { color: var(--d-dim); }
+.dusting-quote { border-left: 3px solid var(--d-line); padding-left: 8px; font-style: italic; }
+.dusting-feedback { min-height: 1.2em; color: #ffd75e; }
+.dusting-feedback.good { color: var(--d-accent); }
+.dusting-estimate { color: var(--d-text); }
+.dusting-result strong { color: var(--d-accent); }
+
+.dusting-buttons { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+.dusting-btn, .dusting-jar, .dusting-pattern, .dusting-ref {
+    font-family: inherit; font-size: 20px; color: var(--d-text); background: var(--d-panel);
+    border: 2px solid var(--d-line); border-radius: 0; cursor: pointer; min-height: 40px; padding: 6px 12px; text-align: left;
+}
+.dusting-btn:hover:not(:disabled), .dusting-jar:hover, .dusting-pattern:hover, .dusting-ref:hover:not(:disabled) { border-color: var(--d-accent); }
+.dusting-btn:focus-visible, .dusting-jar:focus-visible, .dusting-pattern:focus-visible, .dusting-ref:focus-visible,
+.dusting-options input:focus-visible { outline: 3px solid var(--d-accent); outline-offset: 2px; }
+.dusting-btn:disabled, .dusting-ref[data-rejected] { opacity: 0.55; cursor: not-allowed; }
+.dusting-ref:disabled:not([data-rejected]) { cursor: default; border-color: var(--d-accent); }
+.dusting-primary { background: #0e3b1b; border-color: var(--d-accent); color: #eaffef; }
+.dusting-btn[aria-pressed="true"], .dusting-jar[aria-pressed="true"] { border-color: var(--d-accent); background: #0e3b1b; }
+.dusting-btn[aria-pressed="true"]::before { content: '\25CF '; color: var(--d-accent); }
+.dusting-tools { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; }
+.dusting-tool { display: inline-flex; align-items: center; gap: 6px; }
+.dusting-art { image-rendering: pixelated; display: block; }
+/* Tool icons are drawn at their own pixel size (32x64 canvas, shown 1:1). Halving them with CSS threw pixels away. */
+.dusting-tool { min-height: 72px; }
+.dusting-btn [data-slot] { vertical-align: middle; flex: 0 0 auto; }
+.dusting-btn:has([data-slot]) { display: inline-flex; align-items: center; gap: 6px; }
+[data-slot] { display: inline-block; line-height: 0; }
+
+.dusting-jars { display: grid; gap: 8px; }
+.dusting-jar { display: flex; align-items: center; gap: 12px; width: 100%; }
+.dusting-jar-text { line-height: 1.15; }
+
+.dusting-hint { animation: dusting-pulse 1.1s ease-in-out infinite; }
+@keyframes dusting-pulse { 50% { box-shadow: 0 0 0 4px rgba(0, 255, 65, 0.4); } }
+
+.dusting-meters { margin: 8px 0; }
+.dusting-meter { margin-bottom: 6px; }
+.dusting-meter label { display: block; }
+.dusting-meter b { font-weight: normal; color: var(--d-accent); }
+.dusting-bar { position: relative; height: 12px; border: 2px solid var(--d-line); background: #050806; }
+.dusting-bar i { display: block; height: 100%; width: 0; background: var(--d-accent); }
+.dusting-bar u { position: absolute; top: -4px; bottom: -4px; width: 2px; background: #fff; }
+
+.dusting-patterns { display: grid; gap: 8px; }
+.dusting-pattern { display: flex; gap: 12px; align-items: center; width: 100%; line-height: 1.15; }
+.dusting-pattern-art svg { width: 48px; height: 48px; color: var(--d-accent); display: block; }
+
+.dusting-refs { display: flex; flex-wrap: wrap; gap: 10px; margin: 8px 0; }
+.dusting-ref { display: flex; flex-direction: column; gap: 4px; padding: 6px; max-width: 100%; }
+.dusting-ref-canvas { image-rendering: pixelated; display: block; background: #f2f0ea; }
+
+.dusting-forensic { margin: 10px 0 4px; color: var(--d-dim); font-size: 18px; line-height: 1.15; border-top: 1px solid var(--d-line); padding-top: 8px; }
+.dusting-status { min-height: 1.2em; color: var(--d-text); font-size: 18px; }
+.dusting-options { display: flex; gap: 18px; flex-wrap: wrap; align-items: center; font-size: 18px; color: var(--d-dim); }
+.dusting-options label { display: inline-flex; align-items: center; gap: 6px; min-height: 40px; cursor: pointer; }
+.dusting-options input { width: 20px; height: 20px; accent-color: var(--d-accent); }
+
+/* High contrast: white on black, thick borders */
+.dusting-hc { --d-bg: #000; --d-panel: #000; --d-line: #fff; --d-text: #fff; --d-dim: #e0e0e0; border-color: #fff; box-shadow: none; }
+.dusting-hc .dusting-canvas { border-color: #fff; }
+.dusting-hc .dusting-steps li.active, .dusting-hc .dusting-primary { background: #fff; color: #000; }
+.dusting-hc .dusting-feedback { color: #fff; text-decoration: underline; }
+
+/* Reduced motion: no pulses or transitions */
+@media (prefers-reduced-motion: reduce) {
+    .dusting-hint { animation: none; outline: 3px dashed var(--d-accent); }
+}
+.dusting-reduced-motion .dusting-hint { animation: none; outline: 3px dashed var(--d-accent); }
+
+@media (max-width: 760px) {
+    .dusting-root { font-size: 18px; padding: 8px; }
+    .dusting-main { flex-direction: column; align-items: center; }
+    .dusting-panel { width: 100%; }
+}

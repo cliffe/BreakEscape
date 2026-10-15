@@ -1,0 +1,11 @@
+Make portrait for Danny Foster
+A British security consultant in his late thirties, light skin tone, exhausted and frightened, who has been sleeping in his office for days: dark shadows under his eyes, a grown-out dark brown beard gone untidy, short dark brown hair unwashed and flattened on one side, black rectangular glasses. Wearing a crumpled pale blue oxford shirt with the top button undone and no tie, under an open dark olive-green parka coat he has kept on, a staff ID badge on a lanyard, dark grey chinos with a brown belt.
+Body angled slightly to the side in a three-quarter turn, head turned toward the camera.
+Dialog view of character
+Dramatic lighting
+In the style of a detailed vector graphics illustration. the portrait shows the body from the hips up, including the waistline, belt, pockets and top of the trousers, against a plain background, in a game art design, realism and digital art aesthetic. Dialog character. Gritty realism.
+Slightly anime. Neutral expression.
+Square aspect ratio
+
+# Post: reframe_portrait.py --flip (character faces right, cast convention). Background near-black (21,21,18).
+# No reference image (walk sprite male_nerd_v2 is pixel art). Face kept from it: brown hair, dark beard, black glasses. Coat on, per m03_danny_choice.ink ("sitting in the dark with his coat on").

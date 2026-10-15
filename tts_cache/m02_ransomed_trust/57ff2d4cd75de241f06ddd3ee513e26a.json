@@ -1,0 +1,13 @@
+{
+  "key": "57ff2d4cd75de241f06ddd3ee513e26a",
+  "npc": "ward_nurse",
+  "text": "Bed two. Mrs Hargreaves, on ECMO. That's her heart and her lungs, both, in a box beside the bed.",
+  "voice": "Kore",
+  "style": "Ward sister, twenty years on the wards. Consistent Belfast / Northern Irish accent throughout. Exhausted, dry, absolutely unsentimental about everything except her patients. Quiet controlled urgency, never raises her voice.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

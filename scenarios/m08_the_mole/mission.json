@@ -1,0 +1,308 @@
+{
+  "display_name": "The Mole",
+  "description": "Someone inside SAFETYNET handed ENTROPY the Portland deployment before it was signed. Two agents are dead. Go back to headquarters and find the traitor among your own colleagues, quietly, before they vanish.",
+  "difficulty_level": 2,
+  "secgen_scenario": "m08_the_mole",
+  "collection": "season_1",
+  "id": "m08_the_mole",
+  "title": "Mission 8: The Mole",
+  "subtitle": "Internal Investigation",
+  "difficulty": 2,
+  "tier": "Intermediate",
+  "estimatedDuration": "60-75 minutes",
+  "season": 1,
+  "episodeNumber": 8,
+  "requiredPrecedingMissions": [],
+  "recommendedPrecedingMissions": [
+    "m07_architects_gambit"
+  ],
+  "campaignEnhanced": true,
+  "standalonePlayable": true,
+  "primaryCell": "Insider Threat Initiative",
+  "secondaryCells": [],
+  "location": "SAFETYNET Headquarters (The Citadel)",
+  "missionType": "Internal Investigation",
+  "narrativeThemes": [
+    "Betrayal",
+    "Paranoia",
+    "Trust vs. Suspicion",
+    "Internal Threats",
+    "Organizational Failure"
+  ],
+  "cybok": [
+    {
+      "ka": "AAA",
+      "topic": "Authentication",
+      "keywords": [
+        "user authentication",
+        "Credentials in a repository",
+        "RFID authentication",
+        "PIN-based authentication"
+      ]
+    },
+    {
+      "ka": "AAA",
+      "topic": "Authorisation",
+      "keywords": [
+        "access control",
+        "Elevated privileges",
+        "Vulnerabilities and attacks on access control misconfigurations"
+      ]
+    },
+    {
+      "ka": "NS",
+      "topic": "PENETRATION TESTING",
+      "keywords": [
+        "SECURE SHELL (SSH)"
+      ]
+    },
+    {
+      "ka": "MAT",
+      "topic": "Attacks and exploitation",
+      "keywords": [
+        "EXPLOITATION",
+        "EXPLOITATION FRAMEWORKS",
+        "GitList CVE-2018-1000533"
+      ]
+    },
+    {
+      "ka": "WAM",
+      "topic": "Web & Mobile Security",
+      "keywords": [
+        "Unauthenticated remote code execution",
+        "Unpatched web application"
+      ]
+    },
+    {
+      "ka": "SS",
+      "topic": "Categories of Vulnerabilities",
+      "keywords": [
+        "CVEs and CWEs",
+        "Version control security",
+        "Secret management failures",
+        "Configuration vulnerabilities",
+        "Credential leakage in repositories"
+      ]
+    },
+    {
+      "ka": "SOIM",
+      "topic": "PENETRATION TESTING",
+      "keywords": [
+        "PENETRATION TESTING - SOFTWARE TOOLS",
+        "PENETRATION TESTING - ACTIVE PENETRATION",
+        "Internal threat hunting",
+        "Evidence correlation"
+      ]
+    },
+    {
+      "ka": "OSV",
+      "topic": "Primitives for Isolation and Mediation",
+      "keywords": [
+        "Access controls and operating systems",
+        "Linux security model",
+        "Attacks against SUDO"
+      ]
+    },
+    {
+      "ka": "HF",
+      "topic": "Human Factors",
+      "keywords": [
+        "Insider threat psychology",
+        "Behavioral indicators",
+        "Trust exploitation"
+      ]
+    },
+    {
+      "ka": "F",
+      "topic": "Forensics",
+      "keywords": [
+        "Log analysis",
+        "Timeline reconstruction",
+        "Physical access logs",
+        "Fingerprint evidence"
+      ]
+    },
+    {
+      "ka": "F",
+      "topic": "Artifact Analysis",
+      "keywords": [
+        "Encoding and alternative data formats"
+      ]
+    },
+    {
+      "ka": "CPS",
+      "topic": "Physical Security",
+      "keywords": [
+        "Physical access control",
+        "RFID cloning",
+        "PIN code systems",
+        "Lock picking"
+      ]
+    }
+  ],
+  "secgen": {
+    "scenario": "m08_the_mole (Break Escape SAFETYNET: Mission 8 — The Mole VMs)",
+    "vulnerabilities": [
+      "GitList CVE-2018-1000533 (argument injection)",
+      "Leaked credentials in repository",
+      "Sudo misconfiguration",
+      "Access log analysis"
+    ],
+    "flags": 4,
+    "difficulty": "Intermediate",
+    "integrationMethod": "Evidence relay terminal; flags set story globals that drive the confrontation"
+  },
+  "mechanics": {
+    "new": [
+      "Naming the mole from a door audit read against the leak's timestamp",
+      "Suspects who confirm or refuse their own audit rows",
+      "Tip-off costs (any accusation before the naming gets around the floor, and the mole clears his locker)",
+      "Triple agent mechanics (conditional)",
+      "Non-hostile social engineering"
+    ],
+    "reinforced": [
+      "Lockpicking",
+      "RFID cloning",
+      "Social engineering (maximum emotional complexity)",
+      "Fingerprint lifting",
+      "CyberChef puzzles"
+    ]
+  },
+  "keyNPCs": [
+    {
+      "name": "Director Magnus Netherton",
+      "role": "SAFETYNET Director",
+      "affiliation": "SAFETYNET",
+      "firstAppearance": false,
+      "significance": "Mission authority; the familiar director from m07, hunting the leak that burned his agent"
+    },
+    {
+      "name": "Agent 0x99 'Haxolottle'",
+      "role": "Handler",
+      "affiliation": "SAFETYNET",
+      "recurring": true,
+      "significance": "Emotional devastation, personal connections to suspects"
+    },
+    {
+      "name": "Agent 0x47 'Nightshade'",
+      "role": "Cryptographic-Hardware Analyst / ENTROPY Mole",
+      "affiliation": "ENTROPY (Insider Threat Initiative)",
+      "significance": "The traitor, ideological convert, central antagonist"
+    },
+    {
+      "name": "Agent 0x23 'Cipher'",
+      "role": "Intelligence Analyst",
+      "affiliation": "SAFETYNET",
+      "significance": "Red herring suspect"
+    },
+    {
+      "name": "Agent 0x88 'Phantom'",
+      "role": "Field Coordinator",
+      "affiliation": "SAFETYNET",
+      "significance": "Red herring suspect"
+    }
+  ],
+  "moralChoices": [
+    {
+      "choicePoint": "Nightshade's Fate",
+      "options": [
+        {
+          "choice": "Detain and hand over to police (no deal)",
+          "consequence": "He answers in court; SAFETYNET keeps no claim on him and gets no ongoing intelligence",
+          "variable": "nightshade_arrested = true"
+        },
+        {
+          "choice": "Keep him in place as a triple agent",
+          "consequence": "Intelligence access and a first payment owed at Tomb Gamma; risk of double-cross, on the Director's signature",
+          "variable": "nightshade_triple_agent = true"
+        }
+      ],
+      "impactOnFutureMissions": [
+        "m09_digital_archaeology",
+        "m10_final_cipher"
+      ]
+    },
+    {
+      "choicePoint": "The debrief: what you tell the Director about the sealed warning",
+      "options": [
+        {
+          "choice": "He's the crime, not you",
+          "consequence": "Netherton carries it privately; the credits record that you defended him",
+          "variable": "debrief_stance = \"defended\""
+        },
+        {
+          "choice": "Own the gap",
+          "consequence": "Netherton puts his own name in the report beside Nightshade's",
+          "variable": "debrief_stance = \"owned\""
+        }
+      ]
+    }
+  ],
+  "loreCollectibles": [
+    {
+      "name": "Insider Threat Initiative 'Deep State' Brief",
+      "location": "Nightshade's staff locker, break room",
+      "significance": "How ENTROPY recruits convinced insiders during training"
+    },
+    {
+      "name": "Nightshade's Sent Mail to The Architect",
+      "location": "USB stick in his locker, decoded at the Crypto Lab's CyberChef station",
+      "significance": "His own account of the trade, in his words"
+    },
+    {
+      "name": "SAFETYNET's Global Threat Database Catalogue",
+      "location": "Security Archives",
+      "significance": "Scope of what The Architect stole in M7"
+    },
+    {
+      "name": "Dr Okafor's Sealed Psych Evaluation",
+      "location": "Director's safe",
+      "significance": "The warning SAFETYNET had in writing a year ago, and sealed"
+    },
+    {
+      "name": "Tomb Gamma Coordinates",
+      "location": "Nightshade provides during interrogation",
+      "significance": "Sets up Mission 9 and Mission 10"
+    }
+  ],
+  "campaignConnections": {
+    "fromMission7": [
+      "Leak enabled The Architect's coordination",
+      "Failed operations partly due to Nightshade's intelligence",
+      "True objective (database theft) revealed"
+    ],
+    "toMission9": [
+      "Tomb Gamma location discovered",
+      "Nightshade's intel aids Tomb Beta exploration (if triple agent)",
+      "The Architect's identity narrowed"
+    ],
+    "toMission10": [
+      "Nightshade provides Tomb Gamma defensive layout (if triple agent)",
+      "SAFETYNET vulnerability status affects finale difficulty",
+      "Personal stakes: betrayal must be avenged"
+    ]
+  },
+  "successMetrics": {
+    "fullSuccess": [
+      "Mole named to the Director from the door audit on the first reading",
+      "All 4 VM flags submitted",
+      "All 5 LORE collectibles found",
+      "No innocent suspect accused, and Nightshade not tipped off",
+      "Tomb Gamma location secured"
+    ],
+    "partialSuccess": [
+      "Mole named after a misread, or an innocent accused and then apologised to",
+      "All 4 VM flags submitted",
+      "Some LORE collectibles found"
+    ],
+    "minimalSuccess": [
+      "The Director (or HaX) had to read the door audit for you",
+      "All 4 VM flags submitted",
+      "Nightshade tipped off before he was named"
+    ]
+  },
+  "developmentStatus": "Feature-complete Draft",
+  "version": "0.3.0",
+  "estimated_duration_minutes": 70,
+  "lastUpdated": "2026-10-13"
+}

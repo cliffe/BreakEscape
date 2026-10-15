@@ -1,0 +1,13 @@
+{
+  "key": "7ba3917bc40c01c3766e7b912fd746b3",
+  "npc": "ffion_rees",
+  "text": "Site visits, mostly. Hospitals, loads of them this year. Came back from one and sat in his car for an hour.",
+  "voice": "Kore",
+  "style": "Front-desk receptionist at a smart tech firm, mid-twenties. Speak with a consistent South Wales (Cardiff) accent throughout -- do not shift to any other accent. Bright, slightly high pitch; quick, chatty pace. Genuinely friendly, a little in awe of her boss and not remotely suspicious of visitors.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m03_ghost_in_the_machine",
+  "source": "generate",
+  "generated": "2026-10-13",
+  "recorded_at": "2026-10-13T01:00:00Z"
+}

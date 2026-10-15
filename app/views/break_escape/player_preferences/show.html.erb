@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Character Configuration - BreakEscape</title>
+  <%= csrf_meta_tags %>
+  <%= csp_meta_tag %>
+
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <%# All fonts are self-hosted in /break_escape/assets/fonts/ via fonts.css %>
+
+  <%# Load configuration CSS %>
+  <link rel="stylesheet" href="<%= be_asset_path('/break_escape/css/fonts.css') %>">
+  <link rel="stylesheet" href="<%= be_asset_path('/break_escape/css/player_preferences.css') %>">
+  <%= break_escape_import_map %>
+</head>
+<body>
+  <div class="configuration-container">
+    <h1>Character Configuration</h1>
+
+    <% if params[:game_id].present? %>
+      <p class="config-prompt">⚠️ Please select your character before starting the mission.</p>
+    <% end %>
+
+    <%= form_with model: @player_preference,
+                  url: configuration_path,
+                  method: :patch,
+                  local: true,
+                  id: 'preference-form' do |f| %>
+
+      <!-- In-Game Name -->
+      <div class="form-group">
+        <%= f.label :in_game_name, "Your Code Name" %>
+        <%= f.text_field :in_game_name,
+                         value: suggested_in_game_name(@player_preference),
+                         class: 'form-control',
+                         maxlength: 20,
+                         placeholder: 'Zero' %>
+        <small>1-20 characters (letters, numbers, spaces, underscores only)</small>
+      </div>
+
+      <!-- Sprite Selection -->
+      <div class="form-group">
+        <%= f.label :selected_sprite, "Select Your Character" %>
+        <% if @player_preference.selected_sprite.blank? %>
+          <p class="selection-required">⚠️ Character selection required</p>
+        <% end %>
+
+        <div class="sprite-selection-layout">
+          <!-- 160x160 animated preview of selected sprite -->
+          <div class="sprite-preview-large">
+            <div id="sprite-preview-canvas-container"></div>
+            <p class="preview-label">Selected character</p>
+          </div>
+
+          <!-- Grid of static headshots -->
+          <div class="sprite-grid" id="sprite-selection-grid">
+            <% @available_sprites.each_with_index do |sprite, index| %>
+              <%
+                is_valid = @scenario.nil? || sprite_valid_for_scenario?(sprite, @scenario)
+                is_selected = @player_preference.selected_sprite == sprite
+              %>
+
+              <label for="sprite_<%= sprite %>"
+                     class="sprite-card <%= 'invalid' unless is_valid %> <%= 'selected' if is_selected %>"
+                     data-sprite="<%= sprite %>">
+
+                <div class="sprite-headshot-container">
+                  <%= image_tag sprite_headshot_path(sprite),
+                                class: 'sprite-headshot',
+                                alt: sprite_label(sprite),
+                                loading: 'lazy' %>
+                  <span class="headshot-fallback headshot-fallback-hidden"><%= sprite_label(sprite) %></span>
+                </div>
+
+                <% unless is_valid %>
+                  <div class="sprite-lock-overlay">
+                    <%= image_tag '/break_escape/assets/icons/padlock_32.png',
+                                  class: 'lock-icon',
+                                  alt: 'Locked' %>
+                  </div>
+                <% end %>
+
+                <div class="sprite-info">
+                  <%= f.radio_button :selected_sprite,
+                                     sprite,
+                                     id: "sprite_#{sprite}",
+                                     disabled: !is_valid,
+                                     class: 'sprite-radio' %>
+                  <span class="sprite-label"><%= sprite_label(sprite) %></span>
+                </div>
+              </label>
+            <% end %>
+          </div>
+        </div>
+      </div>
+
+      <!-- Hidden field for game_id if validating -->
+      <% if params[:game_id].present? %>
+        <%= hidden_field_tag :game_id, params[:game_id] %>
+      <% end %>
+
+      <!-- Submit -->
+      <div class="form-actions">
+        <%= f.submit 'Save Configuration', class: 'btn btn-primary' %>
+
+        <% if params[:game_id].blank? %>
+          <%= link_to 'Cancel', root_path, class: 'btn btn-secondary' %>
+        <% end %>
+      </div>
+    <% end %>
+  </div>
+
+  <!-- Load Phaser for 160x160 animated preview only -->
+  <script src="https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser.min.js" nonce="<%= content_security_policy_nonce %>"></script>
+  <script type="module" nonce="<%= content_security_policy_nonce %>">
+    import { initializeSpritePreview } from '<%= be_asset_path('/break_escape/js/ui/sprite-grid.js') %>';
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const sprites = <%= raw @available_sprites.to_json %>;
+      // Use preferred sprite for Mission 1 if none selected
+      let selectedSprite = '<%= @player_preference.selected_sprite.presence || BreakEscape::PlayerPreference::DEFAULT_SPRITE %>';
+
+      initializeSpritePreview(sprites, selectedSprite);
+
+      const grid = document.getElementById('sprite-selection-grid');
+
+      // Click on headshot selects radio and updates selected class
+      grid.addEventListener('click', function(e) {
+        const label = e.target.closest('label.sprite-card');
+        if (!label) return;
+        const radio = label.querySelector('input[type="radio"]');
+        if (radio && !radio.disabled) {
+          radio.checked = true;
+          radio.dispatchEvent(new Event('change', { bubbles: true }));
+          // Remove selected from all, add to clicked
+          document.querySelectorAll('label.sprite-card').forEach(l => l.classList.remove('selected'));
+          label.classList.add('selected');
+        }
+      });
+
+      // Headshot image fallback (replaces inline onerror — CSP: unsafe-inline blocked)
+      grid.querySelectorAll('.sprite-headshot').forEach(function(img) {
+        img.addEventListener('error', function() {
+          this.style.display = 'none';
+          const n = this.nextElementSibling;
+          if (n) n.classList.remove('headshot-fallback-hidden');
+        });
+      });
+    });
+  </script>
+</body>
+</html>

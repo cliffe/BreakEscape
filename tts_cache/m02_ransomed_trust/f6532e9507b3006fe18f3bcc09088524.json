@@ -1,0 +1,13 @@
+{
+  "key": "f6532e9507b3006fe18f3bcc09088524",
+  "npc": "patient_bed2",
+  "text": "*fainter now* ...it's harder... to see the numbers, love.",
+  "voice": "Sulafat",
+  "style": "Woman in her seventies on ECMO life support. Consistent Lancashire accent -- flat, warm, entirely matter-of-fact about her own situation. Speaks in fragments and only just above a whisper, because the machine is doing the work of her heart and lungs and she has no breath spare for anything decorative.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "generate",
+  "generated": "2026-10-10",
+  "recorded_at": "2026-10-10T10:43:57Z"
+}

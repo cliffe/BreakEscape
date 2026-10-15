@@ -1,0 +1,13 @@
+{
+  "key": "b95f568d7fc50cb7841e77f18db7f144",
+  "npc": "sidhu_selvarajan",
+  "text": "Each block keeps the hash of the block before it. That's the chain.",
+  "voice": "Enceladus",
+  "style": "Cyber security researcher, blockchain developer and journal editor. Consistent Indian English accent throughout. Calm, precise, courteous, warm.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "lab_tesseract_trials",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

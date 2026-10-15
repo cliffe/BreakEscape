@@ -1,0 +1,39 @@
+{
+  "display_name": "CEO Exfiltration",
+  "description": "A corporate espionage scenario where you must navigate executive offices to extract sensitive data. Test your skills in data exfiltration and covert operations while avoiding detection.",
+  "difficulty_level": 4,
+  "secgen_scenario": null,
+  "collection": "escape_room",
+  "cybok": [
+    {
+      "ka": "AB",
+      "topic": "Adversarial Behaviours",
+      "keywords": ["Corporate espionage", "Data theft", "Covert operations", "Insider threat"]
+    },
+    {
+      "ka": "MAT",
+      "topic": "Malware & Attack Technologies",
+      "keywords": ["Data exfiltration techniques", "Covert channels"]
+    },
+    {
+      "ka": "F",
+      "topic": "Forensics",
+      "keywords": ["Anti-forensics", "Evidence handling", "Data recovery"]
+    },
+    {
+      "ka": "HF",
+      "topic": "Human Factors",
+      "keywords": ["Physical security", "Access control bypass"]
+    },
+    {
+      "ka": "CPS",
+      "topic": "Physical Security",
+      "keywords": ["Lockpicking", "Physical access control", "Lock bypass"]
+    },
+    {
+      "ka": "AAA",
+      "topic": "Authentication",
+      "keywords": ["Access control bypass", "Physical authentication"]
+    }
+  ]
+}

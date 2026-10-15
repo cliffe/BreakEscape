@@ -1,0 +1,13 @@
+{
+  "key": "8188b5998282165923c1bcb313ff87a9",
+  "npc": "derek_lawson",
+  "text": "We're teaching them—all of them—that trust is dangerous. Verify everything. Question everything. Or die.",
+  "voice": "Algieba",
+  "style": "Confident, slightly menacing corporate executive in his late forties. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a deep, authoritative voice at a measured pace.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m01_first_contact",
+  "source": "batch",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:10:01Z"
+}

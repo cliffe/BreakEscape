@@ -1,0 +1,13 @@
+{
+  "key": "3b4f3ce65929ec6957a7858663e8de0d",
+  "npc": "security_guard_patrol",
+  "text": "Here's where I've got to. Either you're a wrong 'un with a stolen pass, or somebody's had my control room told a lie about you.",
+  "voice": "Leda",
+  "style": "Hospital security officer on nights. Consistent Liverpool / Scouse accent throughout. Warm and quick with a joke until the moment she isn't -- then completely immovable. Not stupid, not a jobsworth, genuinely believes the corridor is her responsibility.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

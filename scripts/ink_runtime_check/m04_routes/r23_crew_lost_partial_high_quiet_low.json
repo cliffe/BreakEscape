@@ -1,0 +1,47 @@
+{
+"steps": [
+{
+"note": "R23 (phase 4 dialogue C1, D5-2/D5-5): the attack is mapped before the dial, so HaX's mapped-attack call says the button won't arm yet. Ally Vance at trust 75, crew never warned, bank B vents. Partial disclosure with Vance's high-trust crew-lost line. Then a reload of the debrief at trust 40 with quiet disclosure for the low-trust crew-lost line."
+},
+{
+"set": {
+"briefing_played": true, "guard_admitted": true, "vance_met": true, "vance_spoken": true,
+"vance_provided_keycard": true, "vance_card_cloned": true, "vance_is_ally": true,
+"vance_trust_level": 75
+}
+},
+{
+"set": {
+"server_room_reached": true, "plant_reader_seen": true, "fingerprint_kit_found": true,
+"flag_network_scan_submitted": true, "flag_ftp_intel_submitted": true,
+"flag_distcc_exploit_submitted": true, "flag_privesc_submitted": true,
+"all_flags_in": true, "attack_mechanism_known": true, "server_room_advice_given": true
+}
+},
+{"talk": "phone", "picks": ["attack mechanism mapped", "software's theirs", "attack comes first", "Ready"]},
+{
+"said": ["It won't arm till grid control has a real reading", "Copy. Then the button's your job and he's a bonus.", "The button won't arm till grid control has a real reading"],
+"notSaid": ["Press it and the attack's dead", "Right priorities"]
+},
+{"talk": "vance_phone", "picks": ["shut this down safely", "That's everything"]},
+{"said": ["It won't arm until grid control has a real reading. The dial in Hall 1."], "notSaid": ["That's the mission", "very thing you're stopping"]},
+{"set": {"anomaly_detected": true}},
+{"advance": 15},
+{"expect": {"crew_lost": true}},
+{"set": {"plant_room_entered": true, "operative_static_defeated": true}},
+{"ko": "voltage"},
+{"set": {"esd_authorized": true, "attack_prevented": true}},
+{"talk": "phone", "picks": ["Bring me in", "Bring me in", "On my way"]},
+{
+"talk": "debrief",
+"picks": ["Bank B went", "Tell me we came out", "how did they get in", "And the network", "goes in the report", "How far", "I'm in", "Say there was an incident", "sorry about your people"]
+},
+{"said": ["Something, not everything. I'll answer the rest at the inquest."], "notSaid": ["I can live with that"]},
+{"set": {"vance_trust_level": 40}},
+{
+"talk": "debrief", "reload": "page",
+"picks": ["Bank B went", "Tell me we came out", "how did they get in", "fix first", "goes in the report", "How far", "I'm in", "Keep it classified", "all going in the report"]
+},
+{"said": ["An accident. Aye. That's what the inquiry will call it."], "notSaid": ["One more headline"]}
+]
+}

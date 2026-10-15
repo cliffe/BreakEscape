@@ -1,0 +1,499 @@
+/* Bluetooth Scanner Minigame Styles */
+
+.bluetooth-scanner-minigame-container {
+    /* Much smaller, compact interface */
+    position: fixed !important;
+    top: 5vh !important;
+    right: 2vw !important;
+    width: 350px !important;
+    height: auto !important;
+    max-height: 60vh !important;
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%) !important;
+    box-shadow: 0 0 20px rgba(0, 188, 212, 0.3), inset 0 0 10px rgba(0, 188, 212, 0.1) !important;
+    border: 4px solid #00bcd4 !important;
+    clip-path: polygon(
+      0px calc(100% - 10px),
+      2px calc(100% - 10px),
+      2px calc(100% - 6px),
+      4px calc(100% - 6px),
+      4px calc(100% - 4px),
+      6px calc(100% - 4px),
+      6px calc(100% - 2px),
+      10px calc(100% - 2px),
+      10px 100%,
+      calc(100% - 10px) 100%,
+      calc(100% - 10px) calc(100% - 2px),
+      calc(100% - 6px) calc(100% - 2px),
+      calc(100% - 6px) calc(100% - 4px),
+      calc(100% - 4px) calc(100% - 4px),
+      calc(100% - 4px) calc(100% - 6px),
+      calc(100% - 2px) calc(100% - 6px),
+      calc(100% - 2px) calc(100% - 10px),
+      100% calc(100% - 10px),
+      100% 10px,
+      calc(100% - 2px) 10px,
+      calc(100% - 2px) 6px,
+      calc(100% - 4px) 6px,
+      calc(100% - 4px) 4px,
+      calc(100% - 6px) 4px,
+      calc(100% - 6px) 2px,
+      calc(100% - 10px) 2px,
+      calc(100% - 10px) 0px,
+      10px 0px,
+      10px 2px,
+      6px 2px,
+      6px 4px,
+      4px 4px,
+      4px 6px,
+      2px 6px,
+      2px 10px,
+      0px 10px
+    ) !important;
+    font-family: 'GNF', monospace !important;
+    color: #e0e0e0 !important;
+    overflow: hidden !important;
+    transition: all 0.3s ease !important;
+}
+
+.bluetooth-scanner-minigame-container.expanded {
+    width: 450px !important;
+    max-height: 70vh !important;
+}
+
+.bluetooth-scanner-minigame-game-container {
+    width: 100% !important;
+    height: 100% !important;
+    max-width: none !important;
+    background: transparent !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    position: relative !important;
+    overflow: visible !important;
+    display: flex !important;
+    flex-direction: column !important;
+    padding: 15px !important;
+    box-sizing: border-box !important;
+}
+
+/* Scanner Header */
+.bluetooth-scanner-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+    padding: 10px;
+    background: rgba(0, 188, 212, 0.1);
+    border: 1px solid #00bcd4;
+    /* border-radius: 6px; */
+    box-shadow: 0 0 10px rgba(0, 188, 212, 0.2);
+}
+
+.bluetooth-scanner-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 18px;
+    font-weight: bold;
+    color: #00bcd4;
+    text-shadow: 0 0 5px rgba(0, 188, 212, 0.5);
+}
+
+.scanner-icon {
+    height: 24px;
+    filter: drop-shadow(0 0 3px rgba(0, 188, 212, 0.5));
+    image-rendering: pixelated;
+}
+
+.bluetooth-scanner-status {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 18px;
+    color: #4caf50;
+}
+
+.scanner-indicator {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #4caf50;
+    box-shadow: 0 0 6px rgba(76, 175, 80, 0.8);
+    animation: pulse 2s infinite;
+}
+
+.scanner-indicator.active {
+    background: #4caf50;
+}
+
+.scanner-indicator.inactive {
+    background: #f44336;
+    animation: none;
+}
+
+@keyframes pulse {
+    0% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(1.2); }
+    100% { opacity: 1; transform: scale(1); }
+}
+
+/* Expand/Collapse Toggle */
+.bluetooth-scanner-expand-toggle {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    width: 24px;
+    height: 24px;
+    background: rgba(0, 188, 212, 0.2);
+    border: 1px solid #00bcd4;
+    /* border-radius: 4px; */
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    color: #00bcd4;
+    transition: all 0.3s ease;
+    z-index: 10;
+}
+
+.bluetooth-scanner-expand-toggle:hover {
+    background: rgba(0, 188, 212, 0.3);
+    box-shadow: 0 0 8px rgba(0, 188, 212, 0.4);
+}
+
+.bluetooth-scanner-expand-toggle.expanded {
+    transform: rotate(180deg);
+}
+
+/* Controls */
+.bluetooth-scanner-controls {
+    margin-bottom: 10px;
+    transition: all 0.3s ease;
+    max-height: 200px;
+    overflow: hidden;
+}
+
+.bluetooth-scanner-minigame-container:not(.expanded) .bluetooth-scanner-controls {
+    max-height: 0;
+    margin-bottom: 0;
+    opacity: 0;
+}
+
+.bluetooth-search-container {
+    margin-bottom: 10px;
+}
+
+.bluetooth-search-input {
+    width: 100%;
+    padding: 8px 12px;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid #00bcd4;
+    /* border-radius: 6px; */
+    color: #e0e0e0;
+    font-family: 'GNF', monospace;
+    font-size: 18px;
+    box-shadow: 0 0 8px rgba(0, 188, 212, 0.2);
+    transition: all 0.3s ease;
+}
+
+.bluetooth-search-input:focus {
+    outline: none;
+    border-color: #4caf50;
+    box-shadow: 0 0 15px rgba(76, 175, 80, 0.4);
+    background: rgba(0, 0, 0, 0.5);
+}
+
+.bluetooth-search-input::placeholder {
+    color: #888;
+}
+
+.bluetooth-categories {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.bluetooth-category {
+    padding: 6px 12px;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid #555;
+    /* border-radius: 4px; */
+    cursor: pointer;
+    font-size: 18px;
+    color: #ccc;
+    transition: all 0.3s ease;
+    user-select: none;
+}
+
+.bluetooth-category:hover {
+    background: rgba(0, 188, 212, 0.2);
+    border-color: #00bcd4;
+    color: #00bcd4;
+}
+
+.bluetooth-category.active {
+    background: rgba(0, 188, 212, 0.3);
+    border-color: #00bcd4;
+    color: #00bcd4;
+    box-shadow: 0 0 10px rgba(0, 188, 212, 0.3);
+}
+
+/* Device List */
+.bluetooth-device-list-container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    transition: all 0.3s ease;
+}
+
+.bluetooth-scanner-minigame-container:not(.expanded) .bluetooth-device-list-container {
+    max-height: 200px;
+}
+
+.bluetooth-device-list-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+    padding: 8px 12px;
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid #444;
+    /* border-radius: 6px; */
+    font-size: 18px;
+    font-weight: bold;
+    color: #00bcd4;
+}
+
+.device-count {
+    font-size: 18px;
+    color: #4caf50;
+    background: rgba(76, 175, 80, 0.2);
+    padding: 2px 6px;
+    /* border-radius: 3px; */
+    border: 1px solid #4caf50;
+}
+
+.bluetooth-device-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 8px;
+    background: rgba(0, 0, 0, 0.1);
+    border: 1px solid #333;
+    /* border-radius: 6px; */
+    max-height: 300px;
+}
+
+.bluetooth-device-list::-webkit-scrollbar {
+    width: 8px;
+}
+
+.bluetooth-device-list::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.2);
+    /* border-radius: 4px; */
+}
+
+.bluetooth-device-list::-webkit-scrollbar-thumb {
+    background: #00bcd4;
+    /* border-radius: 4px; */
+}
+
+.bluetooth-device-list::-webkit-scrollbar-thumb:hover {
+    background: #4caf50;
+}
+
+/* Device Items */
+.bluetooth-device {
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid #444;
+    /* border-radius: 6px; */
+    margin-bottom: 6px;
+    padding: 10px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.bluetooth-device:hover {
+    background: rgba(0, 188, 212, 0.1);
+    border-color: #00bcd4;
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0, 188, 212, 0.2);
+}
+
+.bluetooth-device.expanded {
+    background: rgba(0, 188, 212, 0.15);
+    border-color: #00bcd4;
+    box-shadow: 0 0 20px rgba(0, 188, 212, 0.3);
+}
+
+.bluetooth-device-name {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+    font-size: 18px;
+    font-weight: bold;
+    color: #e0e0e0;
+}
+
+.bluetooth-device-icons {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.bluetooth-device-icon {
+    font-size: 18px;
+    opacity: 0.8;
+}
+
+/* Signal Strength Bars */
+.bluetooth-signal-bar-container {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+}
+
+.bluetooth-signal-bars {
+    display: flex;
+    align-items: flex-end;
+    gap: 1px;
+    height: 16px;
+}
+
+.bluetooth-signal-bar {
+    width: 3px;
+    background: #666;
+    /* border-radius: 1px; */
+    transition: all 0.3s ease;
+}
+
+.bluetooth-signal-bar:nth-child(1) { height: 3px; }
+.bluetooth-signal-bar:nth-child(2) { height: 6px; }
+.bluetooth-signal-bar:nth-child(3) { height: 9px; }
+.bluetooth-signal-bar:nth-child(4) { height: 12px; }
+.bluetooth-signal-bar:nth-child(5) { height: 16px; }
+
+.bluetooth-signal-bar.active {
+    background: currentColor;
+    box-shadow: 0 0 5px currentColor;
+}
+
+.bluetooth-device-details {
+    font-size: 18px;
+    color: #aaa;
+    white-space: pre-line;
+    margin-bottom: 6px;
+    line-height: 1.3;
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease;
+}
+
+.bluetooth-device.expanded .bluetooth-device-details {
+    max-height: 200px;
+}
+
+.bluetooth-device-timestamp {
+    font-size: 18px;
+    color: #666;
+    font-style: italic;
+}
+
+/* Instructions */
+.bluetooth-scanner-instructions {
+    margin-top: 10px;
+    padding: 10px;
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid #444;
+    /* border-radius: 6px; */
+    font-size: 18px;
+    line-height: 1.4;
+    color: #ccc;
+    transition: all 0.3s ease;
+}
+
+.bluetooth-scanner-minigame-container:not(.expanded) .bluetooth-scanner-instructions {
+    display: none;
+}
+
+.instruction-text {
+    color: #aaa;
+}
+
+.instruction-text strong {
+    color: #00bcd4;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .bluetooth-scanner-minigame-container {
+        top: 2vh !important;
+        right: 2vw !important;
+        left: 2vw !important;
+        width: 96vw !important;
+        max-width: 400px !important;
+    }
+    
+    .bluetooth-scanner-minigame-container.expanded {
+        width: 96vw !important;
+        max-width: 500px !important;
+    }
+    
+    .bluetooth-scanner-title {
+        font-size: 18px;
+    }
+    
+    .bluetooth-categories {
+        flex-direction: column;
+        gap: 5px;
+    }
+    
+    .bluetooth-category {
+        text-align: center;
+        padding: 4px 8px;
+        font-size: 18px;
+    }
+    
+    .bluetooth-device-name {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 4px;
+    }
+    
+    .bluetooth-device-icons {
+        align-self: flex-end;
+    }
+    
+    .bluetooth-scanner-expand-toggle {
+        width: 20px;
+        height: 20px;
+        font-size: 18px;
+    }
+}
+
+/* Animation for new devices */
+@keyframes deviceAppear {
+    0% {
+        opacity: 0;
+        transform: translateX(-20px);
+    }
+    100% {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+.bluetooth-device.new-device {
+    animation: deviceAppear 0.5s ease-out;
+}
+
+/* Hover preservation for smooth updates */
+.bluetooth-device.hover-preserved {
+    background: rgba(0, 188, 212, 0.1);
+    border-color: #00bcd4;
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0, 188, 212, 0.2);
+}

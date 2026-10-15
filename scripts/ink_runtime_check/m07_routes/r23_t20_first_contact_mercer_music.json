@@ -1,0 +1,33 @@
+{
+ "steps": [
+  { "note": "R23 (PASS 5 design r1, m3/m4/m6/m8): the drive now happens before the delegation (m3). Committed, held at the checkpoint for ten minutes: T-20 opens as first contact and carries the echo line; the ops-floor contact then has nothing to replay (m4). Mercer can't quote Elena until she's been met (m8). A reload after the abort plays the end track (m6)." },
+  { "talk": "briefing", "picks": ["Understood. Talk to me", "I've made the call", "Meltdown"] },
+  { "said": ["He keeps the line open while the desk pulls the other three together", "03:24 by the dashboard clock", "Chain-link, a lowered barrier"] },
+  { "music": "game_loaded", "expect": "noir" },
+  { "talk": "phone", "picks": ["Understood. Let"] },
+  { "advance": 10 },
+  { "said": ["A word, Agent 0x00."] },
+  { "talk": "architect", "picks": ["Say what you want"] },
+  { "said": ["Your handset lights without ringing", "You've sent your team.", "Let it hurt afterwards, not during. I expect you've been told that."], "notSaid": ["Same voice, same absence of hurry", "Don't look for the trace"] },
+  { "expect": { "architect_echo_heard": true } },
+  { "enter": "operations_floor" },
+  { "notSaid": ["Agent 0x00."] },
+  { "expect": { "architect_contact": false } },
+  { "talk": "architect", "knot": "start", "picks": [] },
+  { "notSaid": ["Don't look for the trace", "Your handset lights without ringing"] },
+  { "talk": "phone", "knot": "hub", "picks": [] },
+  { "said": ["[choice] He used your line"] },
+  { "note": "m8: Mercer, Elena never met." },
+  { "enter": "server_room" },
+  { "enter": "scada_control" },
+  { "talk": "mercer", "picks": ["Say nothing"] },
+  { "notSaid": ["[choice] Elena Rodriguez thinks"] },
+  { "set": { "elena_met": true } },
+  { "talk": "mercer", "knot": "hub", "picks": [] },
+  { "said": ["[choice] Elena Rodriguez thinks this is a six-hour demonstration"] },
+  { "set": { "grid_saved": true } },
+  { "music": "game_loaded", "expect": "end" },
+ { "note": "Phase 4 dialogue C1: no conversation runs more than nine lines without a choice." },
+ { "maxRun": 9 }
+]
+}

@@ -1,0 +1,13 @@
+{
+  "key": "cd0ed4dab641c09a405fc521647c4de7",
+  "npc": "receptionist",
+  "text": "Forget the money. This place has forgotten everybody in it.",
+  "voice": "Despina",
+  "style": "Night reception coordinator, eleven years on this desk. South London / Multicultural London English accent throughout -- warm, quick, dry. Unflappable on the surface, running on fumes underneath.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

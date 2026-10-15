@@ -1,0 +1,1 @@
+{"inkVersion":21,"root":[[["done",{"#n":"g-0"}],null],"done",{"test_nurse":["#","^Nurse for patrol override test","/#",{"->":"patrol_idle"},null],"patrol_idle":["^I'm on patrol, monitoring the ward.","\n","end",null],"emergency_response":["^Emergency response engaged. I'm diverting to the emergency station immediately.","\n","end",null]}],"listDefs":{}}

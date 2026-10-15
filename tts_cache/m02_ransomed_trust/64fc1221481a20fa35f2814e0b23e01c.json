@@ -1,0 +1,13 @@
+{
+  "key": "64fc1221481a20fa35f2814e0b23e01c",
+  "npc": "narrator",
+  "text": "He pushes it across the desk without looking at you.",
+  "voice": "Algenib",
+  "style": "Cinematic, tense clinical thriller narrator. Measured and grave -- a hospital in crisis.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

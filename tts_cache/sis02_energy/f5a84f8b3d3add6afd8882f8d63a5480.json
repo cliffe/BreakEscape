@@ -1,0 +1,13 @@
+{
+  "key": "f5a84f8b3d3add6afd8882f8d63a5480",
+  "npc": "priya_s",
+  "text": "You told Tom that Marcus had signed it off before he had. Tom rang him to check. That check stops a stranger talking a supplier into opening your firewall.",
+  "voice": "Leda",
+  "style": "NCSC incident manager in her early forties, calm, forensic, unhurried. Speak with a consistent neutral southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis02_energy",
+  "source": "generate",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:20:59Z"
+}

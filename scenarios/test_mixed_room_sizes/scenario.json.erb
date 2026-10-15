@@ -1,0 +1,96 @@
+{
+  "scenario_brief": "Test Scenario: Mixed Room Sizes\n\nThis scenario demonstrates the grid system's ability to handle rooms of different sizes and properly align doors between them.\n\nRoom Sizes Used:\n- 1×1 GU (Closet): 5×6 tiles = 160×192px (small_room_1x1gu)\n- 2×1 GU (Hall): 10×6 tiles = 320×192px (hall_1x2gu)\n- 2×2 GU (Standard): 10×10 tiles = 320×320px (room_reception, room_ceo)\n\nLayout:\n    [Closet-1×1] [CEO-2×2]\n           ↑        ↑\n      [Wide Hall-2×1]\n             ↑\n      [Reception-2×2]\n\nTests:\n- Different room sizes in same scenario\n- Door alignment between different-sized rooms\n- Centering of smaller rooms on larger rooms\n- Wide horizontal hallway (2×1 GU)\n- Grid-based positioning with varied dimensions",
+  "startRoom": "reception",
+  "rooms": {
+    "reception": {
+      "type": "room_reception",
+      "connections": {
+        "north": "hall"
+      },
+      "objects": [
+        {
+          "type": "notes",
+          "name": "Size Guide",
+          "takeable": true,
+          "readable": true,
+          "text": "Mixed Room Sizes Test\n\nRoom Size Reference:\n- 1x1 GU (Closet): 5×6 tiles = 160×192px\n- 1x2 GU (Hall): 5×10 tiles = 160×320px  \n- 2x2 GU (Standard): 10×10 tiles = 320×320px\n- 4x1 GU (Wide Hall): 20×6 tiles = 640×192px\n\nValid heights follow: 2 + (N × 4)\nValid: 6, 10, 14, 18, 22, 26...\nInvalid: 7, 8, 9, 11, 12, 13...\n\nAll widths must be multiples of 5 tiles."
+        },
+        {
+          "type": "key",
+          "name": "Hall Key",
+          "takeable": true,
+          "observations": "Key to the hallway"
+        }
+      ]
+    },
+    "hall": {
+      "type": "hall_1x2gu",
+      "locked": true,
+      "lockType": "key",
+      "requires": "hall_key",
+      "connections": {
+        "south": "reception",
+        "north": ["closet", "ceo"]
+      },
+      "objects": [
+        {
+          "type": "notes",
+          "name": "Hallway Note",
+          "takeable": true,
+          "readable": true,
+          "text": "Wide Hallway - 2×1 GU (10×6 tiles)\n\nThis is a horizontal hallway room demonstrating:\n- 2 grid units wide × 1 grid unit tall\n- 320×192 pixels (10×6 tiles at 32px/tile)\n- Connects to two different sized rooms to the north\n\nThe hall connects to:\n- Closet (1×1 GU) to the northwest\n- CEO Office (2×2 GU) to the northeast\n\nDoors should align properly despite size differences."
+        },
+        {
+          "type": "key",
+          "name": "Closet Key",
+          "takeable": true,
+          "observations": "Key to storage closet"
+        },
+        {
+          "type": "key",
+          "name": "CEO Key",
+          "takeable": true,
+          "observations": "Golden CEO office key"
+        }
+      ]
+    },
+    "closet": {
+      "type": "small_room_1x1gu",
+      "locked": true,
+      "lockType": "key",
+      "requires": "closet_key",
+      "connections": {
+        "south": "hall"
+      },
+      "objects": [
+        {
+          "type": "notes",
+          "name": "Closet Info",
+          "takeable": true,
+          "readable": true,
+          "text": "Storage Closet - 1×1 GU (5×6 tiles)\n\nThis is the smallest valid room size:\n- 5 tiles wide (1 GU)\n- 6 tiles tall (2 + 1×4)\n- 160×192 pixels\n\nPerfect for closets, small storage, or utility rooms.\n\nThis demonstrates door alignment between a 1×1 GU room and the 2×1 GU hallway below."
+        }
+      ]
+    },
+    "ceo": {
+      "type": "room_ceo",
+      "locked": true,
+      "lockType": "key",
+      "requires": "ceo_key",
+      "connections": {
+        "south": "hall"
+      },
+      "objects": [
+        {
+          "type": "notes",
+          "name": "Success!",
+          "takeable": true,
+          "readable": true,
+          "text": "CEO Office - Mixed Sizes Test Complete!\n\nThis scenario successfully demonstrates:\n- Multiple room sizes in one layout:\n  • 1×1 GU closet (5×6 tiles)\n  • 2×1 GU wide hall (10×6 tiles)\n  • 2×2 GU standard rooms (10×10 tiles)\n- Door alignment between different-sized rooms\n- Grid-based positioning system\n- Proper centering of smaller rooms on larger rooms\n- Horizontal hallway connector\n\nRoom Size Formula:\nWidth: Must be multiple of 5 tiles\nHeight: Must be 2 + (N × 4) where N ≥ 1\n\nValidated Examples:\n- 5×6 (1×1 GU) ✓ Closet\n- 10×6 (2×1 GU) ✓ Wide Hall\n- 10×10 (2×2 GU) ✓ Standard\n- 10×8 ✗ (8 is invalid: not 2+4N)\n- 7×6 ✗ (7 not multiple of 5)",
+          "important": true,
+          "isEndGoal": true
+        }
+      ]
+    }
+  }
+}

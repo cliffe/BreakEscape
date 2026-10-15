@@ -1,0 +1,552 @@
+/* ============================================================
+   Blockchain Explorer Minigame (bce-)
+   Cyberpunk chain-forensics terminal aesthetic
+   ============================================================ */
+
+.bce-container {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden;
+}
+
+.bce-game-container {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    overflow: hidden;
+    margin: 0 !important;
+}
+
+.bce-container .minigame-close-button {
+    top: 0;
+    right: 0;
+}
+
+/* ── Panel ─────────────────────────────────────────────────── */
+
+.bce-panel {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    background: #0d1117;
+    font-family: 'Press Start 2P', monospace;
+    color: #c9d1d9;
+}
+
+/* ── Header ────────────────────────────────────────────────── */
+
+.bce-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 40px 8px 16px;
+    border-bottom: 2px solid #21262d;
+    background: #080d12;
+    flex-shrink: 0;
+}
+
+.bce-title-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.bce-title-icon {
+    font-family: 'GNF', monospace;
+    font-size: 22px;
+    color: #58a6ff;
+    line-height: 1;
+}
+
+.bce-title {
+    font-size: 7px;
+    color: #58a6ff;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+}
+
+.bce-case-ref {
+    font-family: 'GNF', monospace;
+    font-size: 15px;
+    color: #8b949e;
+    letter-spacing: 1px;
+}
+
+/* ── Body ──────────────────────────────────────────────────── */
+
+.bce-body {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+}
+
+/* ── Graph pane (left) ─────────────────────────────────────── */
+
+.bce-graph-pane {
+    width: 42%;
+    min-width: 280px;
+    border-right: 2px solid #21262d;
+    overflow: auto;
+    background: #080d12;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 14px 16px;
+    flex-shrink: 0;
+    gap: 8px;
+}
+
+.bce-graph-section-label {
+    font-size: 6px;
+    color: #3d444d;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    flex-shrink: 0;
+}
+
+.bce-graph-empty {
+    font-size: 6px;
+    color: #8b949e;
+    margin: auto;
+}
+
+.bce-graph-svg {
+    display: block;
+    flex-shrink: 0;
+}
+
+/* ── SVG graph: edges ──────────────────────────────────────── */
+
+.bce-edge {
+    fill: none;
+    stroke: #2a3240;
+    stroke-width: 1.5;
+}
+
+
+.bce-arrow-marker {
+    fill: #2a3240;
+}
+
+/* ── SVG graph: nodes ──────────────────────────────────────── */
+
+.bce-gnode {
+    cursor: pointer;
+}
+
+.bce-gnode:hover .bce-gn-rect {
+    filter: brightness(1.5);
+}
+
+/* Rect base */
+.bce-gn-rect {
+    transition: filter 0.1s;
+}
+
+/* Node type variants */
+.bce-gnode-tx .bce-gn-rect {
+    fill: #0c1e35;
+    stroke: #1d4a8a;
+    stroke-width: 1.5;
+}
+.bce-gnode-wallet .bce-gn-rect {
+    fill: #0d1117;
+    stroke: #2d3742;
+    stroke-width: 1.5;
+}
+.bce-gnode-mixer .bce-gn-rect {
+    fill: #1a1400;
+    stroke: #7a5e00;
+    stroke-width: 1.5;
+}
+.bce-gnode-target .bce-gn-rect {
+    fill: #0a1a10;
+    stroke: #1e5035;
+    stroke-width: 1.5;
+}
+.bce-gnode-mixer-flagged .bce-gn-rect {
+    fill: #1a1400;
+    stroke: #f0c040;
+    stroke-width: 2;
+}
+.bce-gnode-target-flagged .bce-gn-rect {
+    fill: #0a2018;
+    stroke: #3fb950;
+    stroke-width: 2;
+}
+
+/* Active (currently selected) */
+.bce-gnode-active.bce-gnode-tx .bce-gn-rect {
+    fill: #142e55;
+    stroke: #58a6ff;
+    stroke-width: 2.5;
+}
+.bce-gnode-active.bce-gnode-wallet .bce-gn-rect {
+    fill: #141e2e;
+    stroke: #79c0ff;
+    stroke-width: 2.5;
+}
+.bce-gnode-active.bce-gnode-mixer .bce-gn-rect,
+.bce-gnode-active.bce-gnode-mixer-flagged .bce-gn-rect {
+    fill: #2a2000;
+    stroke: #f0c040;
+    stroke-width: 2.5;
+}
+.bce-gnode-active.bce-gnode-target .bce-gn-rect,
+.bce-gnode-active.bce-gnode-target-flagged .bce-gn-rect {
+    fill: #0a2a18;
+    stroke: #3fb950;
+    stroke-width: 2.5;
+}
+
+/* Node text */
+.bce-gn-type {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 5px;
+    fill: #3d444d;
+}
+.bce-gn-id {
+    font-family: 'GNF', monospace;
+    font-size: 17px;
+    fill: #8b949e;
+}
+.bce-gnode-tx .bce-gn-id         { fill: #4a8fd6; }
+.bce-gnode-wallet .bce-gn-id     { fill: #8b949e; }
+.bce-gnode-mixer .bce-gn-id,
+.bce-gnode-mixer-flagged .bce-gn-id   { fill: #d4a820; }
+.bce-gnode-target .bce-gn-id,
+.bce-gnode-target-flagged .bce-gn-id  { fill: #3a9e4a; }
+
+.bce-gnode-active .bce-gn-id  { fill: #ffffff !important; }
+.bce-gnode-active .bce-gn-type { fill: #8b949e !important; }
+
+.bce-gn-sublabel {
+    font-family: 'GNF', monospace;
+    font-size: 18px;
+    fill: #4a5568;
+}
+
+/* ── Detail pane (right) ───────────────────────────────────── */
+
+.bce-detail {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px 20px;
+}
+
+.bce-detail-empty {
+    font-size: 6px;
+    color: #8b949e;
+    text-align: center;
+    padding: 32px 0;
+    line-height: 2.5;
+}
+
+/* ── View header ───────────────────────────────────────────── */
+
+.bce-view-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+}
+
+.bce-view-icon {
+    font-family: 'GNF', monospace;
+    font-size: 26px;
+    color: #58a6ff;
+    line-height: 1;
+    flex-shrink: 0;
+}
+
+.bce-view-title {
+    font-size: 7px;
+    color: #58a6ff;
+    letter-spacing: 2px;
+}
+
+.bce-divider {
+    height: 1px;
+    background: #21262d;
+    margin: 12px 0;
+}
+
+/* ── Meta grid (key-value pairs) ───────────────────────────── */
+
+.bce-meta-grid {
+    display: grid;
+    grid-template-columns: 76px 1fr;
+    row-gap: 8px;
+    column-gap: 12px;
+    margin-bottom: 14px;
+}
+
+.bce-meta-label {
+    font-size: 7px;
+    color: #8b949e;
+    align-self: center;
+}
+
+.bce-meta-value {
+    font-family: 'GNF', monospace;
+    font-size: 17px;
+    color: #c9d1d9;
+    line-height: 1;
+}
+
+.bce-meta-subtle {
+    font-family: 'GNF', monospace;
+    font-size: 14px;
+    color: #6a7280;
+    line-height: 1;
+}
+
+/* ── IO sections ───────────────────────────────────────────── */
+
+.bce-io-section {
+    margin-bottom: 16px;
+}
+
+.bce-io-heading {
+    font-size: 6px;
+    color: #8b949e;
+    letter-spacing: 1px;
+    margin-bottom: 8px;
+    padding-bottom: 4px;
+    border-bottom: 1px solid #21262d;
+    text-transform: uppercase;
+}
+
+/* Base io row — 2 col (link | amount) */
+.bce-io-row {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 0;
+    border-bottom: 1px solid #161b22;
+}
+
+/* 3-col variant for wallet tx list (link | amount | time) */
+.bce-io-row-3col {
+    grid-template-columns: 1fr auto auto;
+}
+
+.bce-io-cell {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    min-width: 0;
+    overflow: hidden;
+}
+
+.bce-io-empty {
+    font-family: 'GNF', monospace;
+    font-size: 14px;
+    color: #8b949e;
+    padding: 6px 0;
+}
+
+/* ── Clickable links ───────────────────────────────────────── */
+
+.bce-link {
+    display: inline-block;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    text-align: left;
+    color: #4a8fd6;
+    font-family: 'GNF', monospace;
+    font-size: 17px;
+    line-height: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+}
+
+.bce-link:hover {
+    color: #79c0ff;
+    text-decoration: underline;
+}
+
+.bce-link-sublabel {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 6px;
+    color: #6a7280;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+/* ── Amounts ───────────────────────────────────────────────── */
+
+.bce-amount {
+    font-family: 'GNF', monospace;
+    font-size: 17px;
+    line-height: 1;
+    flex-shrink: 0;
+    white-space: nowrap;
+}
+
+.bce-amount-in  { color: #3fb950; }
+.bce-amount-out { color: #f85149; }
+
+/* ── Direction badges ──────────────────────────────────────── */
+
+.bce-badge {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 5px;
+    padding: 2px 5px;
+    border-radius: 2px;
+    flex-shrink: 0;
+    white-space: nowrap;
+    line-height: 1.4;
+}
+
+.bce-badge-in     { background: #0d2b1a; color: #3fb950; border: 1px solid #1a4a2a; }
+.bce-badge-out    { background: #2b0d0d; color: #f85149; border: 1px solid #4a1a1a; }
+
+.bce-tx-time {
+    font-family: 'GNF', monospace;
+    font-size: 14px;
+    color: #6a7280;
+    flex-shrink: 0;
+    white-space: nowrap;
+    line-height: 1;
+}
+
+/* ── Mixer callout ─────────────────────────────────────────── */
+
+.bce-callout {
+    border-radius: 2px;
+    padding: 10px 14px;
+    margin: 12px 0 8px;
+}
+
+.bce-callout-mixer {
+    background: #1a1400;
+    border: 1px solid #6e5500;
+    border-left: 3px solid #f0c040;
+}
+
+.bce-callout-threat {
+    background: #0e1a2a;
+    border: 1px solid #1a3d6e;
+    border-left: 3px solid #e05252;
+}
+
+.bce-no-intel {
+    font-family: 'GNF', monospace;
+    font-size: 14px;
+    color: #3d444d;
+    padding: 8px 0 4px;
+    letter-spacing: 0.5px;
+}
+
+.bce-callout-title {
+    font-size: 6px;
+    margin-bottom: 6px;
+    letter-spacing: 1px;
+}
+
+.bce-callout-mixer .bce-callout-title  { color: #f0c040; }
+.bce-callout-threat .bce-callout-title { color: #e05252; }
+
+.bce-callout-body {
+    font-family: 'GNF', monospace;
+    font-size: 15px;
+    line-height: 1.5;
+}
+
+.bce-callout-mixer .bce-callout-body  { color: #c8b060; }
+.bce-callout-threat .bce-callout-body { color: #a08080; }
+
+/* ── Flag buttons ──────────────────────────────────────────── */
+
+.bce-flag-btn {
+    display: block;
+    margin: 8px 0 4px auto;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 10px;
+    padding: 10px 16px;
+    background: #0d1f3e;
+    color: #58a6ff;
+    border: 2px solid #1f6feb;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+}
+
+.bce-flag-btn:hover {
+    background: #1f6feb;
+    color: #ffffff;
+}
+
+.bce-flagged-badge {
+    display: block;
+    margin: 8px 0 4px auto;
+    font-size: 6px;
+    color: #3fb950;
+    text-align: right;
+    letter-spacing: 1px;
+}
+
+/* ── Footer ────────────────────────────────────────────────── */
+
+.bce-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 16px;
+    border-top: 2px solid #21262d;
+    background: #080d12;
+    flex-shrink: 0;
+    gap: 12px;
+}
+
+.bce-status-bar {
+    display: flex;
+    gap: 20px;
+    flex: 1;
+}
+
+.bce-status-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 7px;
+    letter-spacing: 1px;
+}
+
+.bce-status-icon {
+    font-family: 'GNF', monospace;
+    font-size: 16px;
+    line-height: 1;
+}
+
+.bce-status-pending { color: #6a7280; }
+.bce-status-ok      { color: #3fb950; }
+.bce-status-ok .bce-status-icon { color: #3fb950; }
+.bce-status-pending .bce-status-icon { color: #4a5568; }
+
+/* ── Close button ──────────────────────────────────────────── */
+
+.bce-close-btn {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 10px;
+    padding: 8px 14px;
+    background: #0d1117;
+    color: #6a7280;
+    border: 2px solid #21262d;
+    cursor: pointer;
+    white-space: nowrap;
+    flex-shrink: 0;
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.bce-close-btn:hover {
+    background: #161b22;
+    color: #c9d1d9;
+    border-color: #444d58;
+}

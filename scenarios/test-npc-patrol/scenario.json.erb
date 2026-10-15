@@ -1,0 +1,286 @@
+{
+  "scenario_brief": "Test scenario for NPC patrol behavior - Phase 3",
+  "endGoal": "Test NPCs patrolling with various configurations and constraints",
+  "startRoom": "test_patrol",
+
+  "player": {
+    "id": "player",
+    "displayName": "Test Agent",
+    "spriteSheet": "hacker",
+    "spriteTalk": "assets/characters/hacker-talk.png",
+    "spriteConfig": {
+      "idleFrameStart": 20,
+      "idleFrameEnd": 23
+    }
+  },
+
+  "rooms": {
+    "test_patrol": {
+      "type": "room_office",
+      "connections": {},
+      "npcs": [
+        {
+          "id": "patrol_basic",
+          "displayName": "Basic Patrol (Large Area)",
+          "npcType": "person",
+          "position": { "x": 3, "y": 3 },
+          "spriteSheet": "hacker",
+          "spriteConfig": {
+            "idleFrameStart": 20,
+            "idleFrameEnd": 23
+          },
+          "storyPath": "scenarios/ink/test-npc.json",
+          "currentKnot": "start",
+          "behavior": {
+            "facePlayer": false,
+            "patrol": {
+              "enabled": true,
+              "speed": 100,
+              "changeDirectionInterval": 3000,
+              "bounds": {
+                "x": 64,
+                "y": 64,
+                "width": 192,
+                "height": 192
+              }
+            }
+          },
+          "_comment": "Patrols large 6x6 tile area, changes direction every 3s, speed 100px/s"
+        },
+
+        {
+          "id": "patrol_fast",
+          "displayName": "Fast Patrol",
+          "npcType": "person",
+          "position": { "x": 8, "y": 3 },
+          "spriteSheet": "hacker-red",
+          "spriteConfig": {
+            "idleFrameStart": 20,
+            "idleFrameEnd": 23
+          },
+          "storyPath": "scenarios/ink/test-npc.json",
+          "currentKnot": "start",
+          "behavior": {
+            "facePlayer": false,
+            "patrol": {
+              "enabled": true,
+              "speed": 200,
+              "changeDirectionInterval": 2000,
+              "bounds": {
+                "x": 224,
+                "y": 64,
+                "width": 128,
+                "height": 128
+              }
+            }
+          },
+          "_comment": "Fast patrol (200px/s), quick direction changes (2s)"
+        },
+
+        {
+          "id": "patrol_slow",
+          "displayName": "Slow Patrol",
+          "npcType": "person",
+          "position": { "x": 3, "y": 8 },
+          "spriteSheet": "hacker",
+          "spriteConfig": {
+            "idleFrameStart": 20,
+            "idleFrameEnd": 23
+          },
+          "storyPath": "scenarios/ink/test-npc.json",
+          "currentKnot": "start",
+          "behavior": {
+            "facePlayer": false,
+            "patrol": {
+              "enabled": true,
+              "speed": 50,
+              "changeDirectionInterval": 5000,
+              "bounds": {
+                "x": 64,
+                "y": 224,
+                "width": 128,
+                "height": 96
+              }
+            }
+          },
+          "_comment": "Slow patrol (50px/s), long direction changes (5s)"
+        },
+
+        {
+          "id": "patrol_small",
+          "displayName": "Small Area Patrol",
+          "npcType": "person",
+          "position": { "x": 8, "y": 8 },
+          "spriteSheet": "hacker-red",
+          "spriteConfig": {
+            "idleFrameStart": 20,
+            "idleFrameEnd": 23
+          },
+          "storyPath": "scenarios/ink/test-npc.json",
+          "currentKnot": "start",
+          "behavior": {
+            "facePlayer": false,
+            "patrol": {
+              "enabled": true,
+              "speed": 80,
+              "changeDirectionInterval": 2000,
+              "bounds": {
+                "x": 224,
+                "y": 224,
+                "width": 64,
+                "height": 64
+              }
+            }
+          },
+          "_comment": "Small 2x2 tile area, frequent direction changes"
+        },
+
+        {
+          "id": "patrol_with_face",
+          "displayName": "Patrol + Face Player",
+          "npcType": "person",
+          "position": { "x": 5, "y": 5 },
+          "spriteSheet": "hacker",
+          "spriteConfig": {
+            "idleFrameStart": 20,
+            "idleFrameEnd": 23
+          },
+          "storyPath": "scenarios/ink/test-npc.json",
+          "currentKnot": "start",
+          "behavior": {
+            "facePlayer": true,
+            "facePlayerDistance": 96,
+            "patrol": {
+              "enabled": true,
+              "speed": 100,
+              "changeDirectionInterval": 4000,
+              "bounds": {
+                "x": 128,
+                "y": 128,
+                "width": 128,
+                "height": 128
+              }
+            }
+          },
+          "_comment": "Patrols normally, but stops to face player when within 3 tiles"
+        },
+
+        {
+          "id": "patrol_narrow_horizontal",
+          "displayName": "Narrow Horizontal Patrol",
+          "npcType": "person",
+          "position": { "x": 2, "y": 2 },
+          "spriteSheet": "hacker-red",
+          "spriteConfig": {
+            "idleFrameStart": 20,
+            "idleFrameEnd": 23
+          },
+          "storyPath": "scenarios/ink/test-npc.json",
+          "currentKnot": "start",
+          "behavior": {
+            "facePlayer": false,
+            "patrol": {
+              "enabled": true,
+              "speed": 100,
+              "changeDirectionInterval": 3000,
+              "bounds": {
+                "x": 0,
+                "y": 0,
+                "width": 256,
+                "height": 32
+              }
+            }
+          },
+          "_comment": "Patrols horizontal corridor (8 tiles wide, 1 tile tall)"
+        },
+
+        {
+          "id": "patrol_narrow_vertical",
+          "displayName": "Narrow Vertical Patrol",
+          "npcType": "person",
+          "position": { "x": 2, "y": 5 },
+          "spriteSheet": "hacker",
+          "spriteConfig": {
+            "idleFrameStart": 20,
+            "idleFrameEnd": 23
+          },
+          "storyPath": "scenarios/ink/test-npc.json",
+          "currentKnot": "start",
+          "behavior": {
+            "facePlayer": false,
+            "patrol": {
+              "enabled": true,
+              "speed": 100,
+              "changeDirectionInterval": 3000,
+              "bounds": {
+                "x": 0,
+                "y": 128,
+                "width": 32,
+                "height": 160
+              }
+            }
+          },
+          "_comment": "Patrols vertical corridor (1 tile wide, 5 tiles tall)"
+        },
+
+        {
+          "id": "patrol_initially_disabled",
+          "displayName": "Initially Disabled Patrol",
+          "npcType": "person",
+          "position": { "x": 8, "y": 5 },
+          "spriteSheet": "hacker-red",
+          "spriteConfig": {
+            "idleFrameStart": 20,
+            "idleFrameEnd": 23
+          },
+          "storyPath": "scenarios/ink/test-patrol-toggle.json",
+          "currentKnot": "start",
+          "behavior": {
+            "facePlayer": true,
+            "patrol": {
+              "enabled": false,
+              "speed": 100,
+              "changeDirectionInterval": 3000,
+              "bounds": {
+                "x": 288,
+                "y": 128,
+                "width": 96,
+                "height": 96
+              }
+            }
+          },
+          "_comment": "Starts with patrol disabled, can be enabled via Ink tag #patrol_mode:on"
+        },
+
+        {
+          "id": "patrol_stuck_test",
+          "displayName": "Stuck Detection Test",
+          "npcType": "person",
+          "position": { "x": 6, "y": 2 },
+          "spriteSheet": "hacker",
+          "spriteConfig": {
+            "idleFrameStart": 20,
+            "idleFrameEnd": 23
+          },
+          "storyPath": "scenarios/ink/test-npc.json",
+          "currentKnot": "start",
+          "behavior": {
+            "facePlayer": false,
+            "patrol": {
+              "enabled": true,
+              "speed": 120,
+              "changeDirectionInterval": 4000,
+              "bounds": {
+                "x": 160,
+                "y": 0,
+                "width": 96,
+                "height": 96
+              }
+            }
+          },
+          "_comment": "Patrol area with potential obstacles to test stuck detection (500ms timeout)"
+        }
+      ]
+    }
+  }
+}

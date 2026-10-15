@@ -1,0 +1,13 @@
+{
+  "key": "9e9ba36aa7511299e3d06bc57f4c67cf",
+  "npc": "narrator",
+  "text": "The cloner buzzes once against your leg. Card read. Now run Darkside on it.",
+  "voice": "Algenib",
+  "style": "Cinematic noir detective voice over narrator.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m03_ghost_in_the_machine",
+  "source": "generate",
+  "generated": "2026-10-13",
+  "recorded_at": "2026-10-13T01:20:35Z"
+}

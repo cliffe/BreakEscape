@@ -1,0 +1,253 @@
+{
+"steps": [
+{
+"note": "R24 (scenario design R1, M1, m4, m6): Halloran met before the accusation (no reload), then accused to Patricia; talking to her again opens on the suspension. Later the Recruiter's deal refused, then rung again: no 'Still deciding?'. Owen told about David once only."
+},
+{
+"talk": "briefing",
+"picks": [
+"find out who sold",
+"damage so far",
+"Who's this going to",
+"What's the mission",
+"And the third",
+"my cover",
+"Who else will I meet",
+"I'm ready",
+"Methodically",
+"Any last advice"
+]
+},
+{
+"set": {
+"briefing_played": true
+}
+},
+{
+"talk": "patricia",
+"picks": [
+"Fill me in",
+"Who has access",
+"without tipping",
+"Where should I start"
+]
+},
+{
+"read": "security_incident_log"
+},
+{
+"talk": "owen",
+"picks": [
+"What can you tell me",
+"That's useful",
+"Lean over",
+"Sorry. Habit",
+"23:47. Whose",
+"That's everything"
+]
+},
+{
+"talk": "halloran",
+"picks": [
+"I need to talk to everyone",
+"I'm not here to judge",
+"That's all for now"
+]
+},
+{
+"talk": "patricia",
+"picks": [
+"I think I know who it is",
+"Dr Ruth Halloran"
+]
+},
+{
+"expect": {
+"halloran_accused": true
+}
+},
+{
+"said": []
+},
+{
+"talk": "halloran",
+"picks": [
+"That's all for now"
+]
+},
+{
+"said": [
+"Security have suspended my access"
+],
+"notSaid": [
+"What else?"
+]
+},
+{
+"enter": "server_hallway"
+},
+{
+"read": "it_access_notice"
+},
+{
+"event": "door_unlock_attempt",
+"data": {
+"connectedRoom": "server_room"
+}
+},
+{
+"talk": "owen",
+"picks": [
+"wants a password",
+"Patricia's log: a crypto badge",
+"That's everything"
+]
+},
+{
+"talk": "patricia_phone",
+"picks": [
+"I know who it is",
+"David Torres",
+"front door",
+"Just checking in"
+]
+},
+{
+"expect": {
+"torres_suspected": true
+}
+},
+{
+"enter": "server_room"
+},
+{
+"set": {
+"flag1_submitted": true
+}
+},
+{
+"set": {
+"flag2_submitted": true
+}
+},
+{
+"set": {
+"flag3_submitted": true
+}
+},
+{
+"set": {
+"flag4_submitted": true
+}
+},
+{
+"talk": "owen",
+"picks": [
+"David Torres' office",
+"That's everything"
+]
+},
+{
+"enter": "torres_office"
+},
+{
+"read": "personal_journal"
+},
+{
+"event": "fingerprint_collected:david_torres",
+"data": {
+"identified": true
+}
+},
+{
+"event": "door_unlock_attempt",
+"data": {
+"connectedRoom": "data_center"
+}
+},
+{
+"enter": "data_center"
+},
+{
+"talk": "patricia_phone",
+"picks": [
+"I know who it is",
+"David Torres",
+[
+"His own journal",
+"Money. His wife"
+],
+[
+"research portal. His name",
+"Staged by: D. Torres",
+"upload schedule. He's"
+],
+"On my way"
+]
+},
+{
+"expect": {
+"torres_identified": true
+}
+},
+{
+"talk": "recruiter",
+"picks": [
+"How many more",
+"What were you actually after",
+"Why does ENTROPY want",
+"That number was known",
+"Not interested"
+]
+},
+{
+"expect": {
+"recruiter_deal_decided": true,
+"recruiter_deal_accepted": false
+}
+},
+{
+"said": []
+},
+{
+"talk": "recruiter",
+"picks": [
+"Ring the TalentStack number back"
+]
+},
+{
+"said": [
+"You said no once. I heard you.",
+"She hangs up first."
+],
+"notSaid": [
+"Still deciding?",
+"Think it over"
+]
+},
+{
+"talk": "owen",
+"picks": [
+"It's David",
+"Keep it to yourself"
+]
+},
+{
+"said": []
+},
+{
+"talk": "owen",
+"picks": [
+"That's everything"
+]
+},
+{
+"notSaid": [
+"[choice] It's David. He's the one."
+]
+},
+{
+"maxRun": 9
+}
+]
+}

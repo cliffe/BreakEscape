@@ -1,0 +1,13 @@
+{
+  "key": "50999c4d0c6a6db64f7aa0a5e7a7f332",
+  "npc": "victoria_sterling",
+  "text": "Not immunity. At least you're honest. Most of your people lead with a promise they can't keep.",
+  "voice": "Despina",
+  "style": "CEO and former conference speaker, late forties. Speak with a consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Smooth, low-to-mid pitch; unhurried, polished pace. Cool, precise and amused; never raises her voice, because she has never needed to.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m03_ghost_in_the_machine",
+  "source": "generate",
+  "generated": "2026-10-13",
+  "recorded_at": "2026-10-13T01:25:12Z"
+}

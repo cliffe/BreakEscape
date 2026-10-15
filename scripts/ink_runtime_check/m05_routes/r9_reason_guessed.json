@@ -1,0 +1,246 @@
+{
+"steps": [
+{
+"note": "R9 (round 2, B2): Ben named to Patricia in person, then a wrong Torres reason on her mobile, then the right one on the retry, which she notices. Named before flag 3, but the reward is excluded; the debrief says it took a couple of goes."
+},
+{
+"talk": "briefing",
+"picks": [
+"Bought with what",
+"damage so far",
+"Who's this going to",
+"What's the mission",
+"And the third",
+"my cover",
+"Who else will I meet",
+"I'm ready",
+"Methodically",
+"Any last advice"
+]
+},
+{
+"set": {
+"briefing_played": true
+}
+},
+{
+"talk": "patricia",
+"picks": [
+"Fill me in",
+"Who has access",
+"without tipping",
+"Where should I start"
+]
+},
+{
+"read": "security_incident_log"
+},
+{
+"talk": "owen",
+"picks": [
+"What can you tell me",
+"That's useful",
+"Lean over",
+"Sorry. Habit",
+"23:47. Whose",
+"That's everything"
+]
+},
+{
+"talk": "patricia",
+"picks": [
+"I think I know who it is",
+"Ben Ashworth"
+]
+},
+{
+"expect": {
+"torres_reason_guessed": true
+}
+},
+{
+"talk": "patricia_phone",
+"picks": [
+"I know who it is",
+"David Torres",
+"under strain"
+]
+},
+{
+"talk": "patricia_phone",
+"picks": [
+"I know who it is",
+"David Torres",
+"front door",
+"Just checking in"
+]
+},
+{
+"said": [
+"Again? Fine. Convince me this time."
+]
+},
+{
+"expect": {
+"door_log_reasoned": true,
+"torres_suspected": true
+}
+},
+{
+"enter": "server_hallway"
+},
+{
+"read": "it_access_notice"
+},
+{
+"event": "door_unlock_attempt",
+"data": {
+"connectedRoom": "server_room"
+}
+},
+{
+"talk": "owen",
+"picks": [
+"wants a password",
+"Patricia's log: a crypto badge",
+"That's everything"
+]
+},
+{
+"talk": "owen",
+"picks": [
+"David Torres' office",
+"That's everything"
+]
+},
+{
+"enter": "torres_office"
+},
+{
+"read": "personal_journal"
+},
+{
+"event": "fingerprint_collected:david_torres",
+"data": {
+"identified": true
+}
+},
+{
+"event": "door_unlock_attempt",
+"data": {
+"connectedRoom": "data_center"
+}
+},
+{
+"enter": "data_center"
+},
+{
+"read": "upload_schedule"
+},
+{
+"read": "data_package_manifest"
+},
+{
+"talk": "patricia",
+"picks": [
+"I think I know who it is",
+"David Torres",
+[
+"His own journal",
+"Money. His wife"
+],
+[
+"research portal. His name",
+"Staged by: D. Torres",
+"upload schedule. He's"
+],
+"You knew him",
+"I'll stop him"
+]
+},
+{
+"expect": {
+"named_before_portal": true
+}
+},
+{
+"talk": "torres",
+"picks": [
+"It's over, David",
+"They lied to you",
+"You knew people would die",
+"staying here until the police",
+"It doesn't matter",
+"social worker"
+]
+},
+{
+"enter": "server_room"
+},
+{
+"set": {
+"flag1_submitted": true
+}
+},
+{
+"set": {
+"flag2_submitted": true
+}
+},
+{
+"set": {
+"flag3_submitted": true
+}
+},
+{
+"set": {
+"flag4_submitted": true
+}
+},
+{
+"talk": "phone",
+"picks": [
+"Bring me in",
+"Bring me in",
+"On my way"
+]
+},
+{
+"expect": {
+"mission_complete": true
+}
+},
+{
+"talk": "debrief",
+"picks": [
+0,
+"And the research portal",
+"Whose job",
+"He did this",
+"Same hand",
+"Did I get him right"
+]
+},
+{
+"said": [
+"It took a couple of goes"
+],
+"notSaid": [
+"You read past her line on the badge log"
+]
+},
+{
+"credits": true
+},
+{
+"notSaid": [
+"NAMED ON THE EVIDENCE",
+"You had him before the server did",
+"Somebody read Owen's sheet"
+]
+},
+{
+"maxRun": 9
+}
+]
+}

@@ -1,0 +1,13 @@
+{
+  "key": "c6854ba8b7e454acd2edfa4a7be69fde",
+  "npc": "narrator",
+  "text": "She unlocks the office door and stands aside.",
+  "voice": "Algenib",
+  "style": "Cinematic, tense clinical thriller narrator. Measured and grave -- a hospital in crisis.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

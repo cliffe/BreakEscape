@@ -1,0 +1,13 @@
+{
+  "key": "f53af5a4c65a59d9453a4dd609a5cd8b",
+  "npc": "sarah_mitchell",
+  "text": "Mr Ahmed's six-thirty obs were borderline, and his monitor's been alarming since. I've bleeped outreach.",
+  "voice": "Kore",
+  "style": "Black British charge nurse in her mid-40s, calm, tired but professional. Speak with a consistent Leeds, West Yorkshire accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis01_healthcare",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

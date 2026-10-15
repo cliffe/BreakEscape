@@ -1,0 +1,28 @@
+ceo_exfil:
+  name: ceo_exfil
+  display_name: CEO Exfiltration
+  description: Test scenario
+  published: true
+  difficulty_level: 3
+  created_at: <%= Time.now %>
+  updated_at: <%= Time.now %>
+
+unpublished:
+  name: test_unpublished
+  display_name: Unpublished Test
+  description: Not visible
+  published: false
+  difficulty_level: 1
+  created_at: <%= Time.now %>
+  updated_at: <%= Time.now %>
+
+secgen_vm_lab:
+  name: secgen_vm_lab
+  display_name: SecGen VM Lab - Linux Introduction
+  description: Test VM and flag integration with SecGen scenario
+  published: true
+  difficulty_level: 2
+  secgen_scenario: labs/introducing_attacks/1_intro_linux.xml
+  collection: vm_labs
+  created_at: <%= Time.now %>
+  updated_at: <%= Time.now %>

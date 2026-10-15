@@ -1,0 +1,10 @@
+{
+  "scenario": "test-network-architecture",
+  "start_room": "control_room",
+  "nodes": [
+
+  ],
+  "edges": [
+
+  ]
+}

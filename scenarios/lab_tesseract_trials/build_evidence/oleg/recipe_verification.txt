@@ -1,0 +1,3 @@
+PASS Encode text (Windows-1251 Cyrillic (1251)) -> Decode text (UTF-8): "Олег Ілляшенко"
+FAIL Encode text (Windows-1252 Latin (1252)) -> Decode text (UTF-8): "\u0000\u0000\u0000ۀՀ\u0000 \u0000ƀۀۀ\u0000\u0000\u0000Հ\u0000\u0000\u0000\u0000\u0000"
+FAIL Encode text (Windows-1252 Latin (1252)) -> Decode text (UTF-8): "Олег Іллршенко"

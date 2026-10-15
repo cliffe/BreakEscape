@@ -1,0 +1,13 @@
+{
+  "key": "1c5d4dfaf24dad48c072885dc331255c",
+  "npc": "tom_shaw",
+  "text": "I've put a key pair on it. Have a read of the README; you'll want the private one before the week's out.",
+  "voice": "Fenrir",
+  "style": "University lecturer running first-year induction, keen on practical hacking challenges. Consistent West Yorkshire (Huddersfield) accent throughout. Warm, encouraging, quick, a bit dry.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "lab_tesseract_trials",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

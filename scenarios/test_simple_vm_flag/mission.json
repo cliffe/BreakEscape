@@ -1,0 +1,9 @@
+{
+  "display_name": "Test: Simple VM Flag",
+  "description": "Minimal 1-room scenario: launch a desktop VM and submit the captured flag at the flag station. Used for testing the VM launcher, flag station, and submit_flags task type.",
+  "difficulty_level": 1,
+  "collection": "test_scenarios",
+  "estimated_duration_minutes": 2,
+  "test_type": "simple_vm_flag",
+  "test_objective": "Verify that vm-launcher, flag-station, and submit_flags task completion work correctly in a minimal 1-room scenario"
+}

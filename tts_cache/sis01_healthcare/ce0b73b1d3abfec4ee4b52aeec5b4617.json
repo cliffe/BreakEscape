@@ -1,0 +1,13 @@
+{
+  "key": "ce0b73b1d3abfec4ee4b52aeec5b4617",
+  "npc": "sarah_mitchell",
+  "text": "I've got no one free. You set it from the paper chart, and read every digit back to me before it runs.",
+  "voice": "Kore",
+  "style": "Black British charge nurse in her mid-40s, calm, tired but professional. Speak with a consistent Leeds, West Yorkshire accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis01_healthcare",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

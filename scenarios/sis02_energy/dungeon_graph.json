@@ -1,0 +1,425 @@
+{
+  "scenario": "sis02_energy",
+  "start_room": "scada_control_room",
+  "nodes": [
+    {
+      "id": "door_battery_hall_1",
+      "label": "BATTERY HALL 1. RESTRICTED ACCESS. PPE REQUIRED<br/>RFID lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "battery_hall_1",
+      "label": "BATTERY HALL 1. RESTRICTED ACCESS. PPE REQUIRED",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "door_engineering_workshop",
+      "label": "Engineering Workshop. Authorised Access Only<br/>RFID lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "engineering_workshop",
+      "label": "Engineering Workshop. Authorised Access Only",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "scada_control_room",
+      "label": "SCADA Control Room",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "scada_live_status",
+      "label": "SCADA Live Status",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "export_plc_bms_register_table",
+      "label": "Export PLC-BMS Register Table",
+      "kind": "item",
+      "optional": true
+    },
+    {
+      "id": "historian_trend_viewer",
+      "label": "Historian Trend Viewer",
+      "kind": "vm",
+      "optional": false
+    },
+    {
+      "id": "incident_response_folder",
+      "label": "Incident Response Folder",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "engineering_workshop_rfid_key",
+      "label": "Engineering Workshop RFID Key",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "duty_officer_desk",
+      "label": "Duty Officer Desk",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "nis_notification_form",
+      "label": "NIS Notification Form",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "esd_station_battery_hall_1_hall_door",
+      "label": "ESD Station: Battery Hall 1 (Hall Door)",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "esd_station_control_room_console",
+      "label": "ESD Station: Control Room Console",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "network_architecture_diagram",
+      "label": "Network Architecture Diagram",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "npc_helen_marsh",
+      "label": "Helen Marsh",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "battery_hall_access_badge",
+      "label": "Battery Hall Access Badge",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "action_talk_to_helen",
+      "label": "Get briefing from Helen Marsh",
+      "kind": "action",
+      "optional": false
+    },
+    {
+      "id": "npc_priya_s",
+      "label": "Priya S.",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "action_talk_to_priya_s",
+      "label": "Post-incident debrief — Priya S. (NCSC)",
+      "kind": "action",
+      "optional": false
+    },
+    {
+      "id": "npc_marcus_webb",
+      "label": "Marcus Webb",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "action_call_marcus_initial",
+      "label": "Message Marcus Webb",
+      "kind": "action",
+      "optional": false
+    },
+    {
+      "id": "npc_tom_hadley",
+      "label": "Tom Hadley",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "action_contact_castletech",
+      "label": "Message CastleTech SOC: isolate the enterprise side",
+      "kind": "action",
+      "optional": false
+    },
+    {
+      "id": "local_dial_gauge_rack_a2",
+      "label": "Local Dial Gauge: Rack A2",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "esd_station_inside_battery_hall_1",
+      "label": "ESD Station: Inside Battery Hall 1",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "hmi_eng_02_engineering_workstation",
+      "label": "HMI-ENG-02 Engineering Workstation",
+      "kind": "vm",
+      "optional": false
+    },
+    {
+      "id": "jump_server_rack_js_albion_01",
+      "label": "Jump Server Rack (JS-ALBION-01)",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "jump_server_ethernet_cable",
+      "label": "Jump Server Ethernet Cable",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "sis_configuration_panel",
+      "label": "SIS Configuration Panel",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "lock_engineering_filing_cabinet",
+      "label": "Filing Cabinet: ICS Documentation<br/>Key lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "sis_safety_requirements_specification_extract",
+      "label": "SIS Safety Requirements Specification (extract)",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "lock_sis_config_panel",
+      "label": "Sis Config Panel",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "deferred_patch_risk_assessment",
+      "label": "Deferred Patch Risk Assessment",
+      "kind": "item",
+      "optional": true
+    },
+    {
+      "id": "filing_cabinet_key",
+      "label": "Filing Cabinet Key",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "it_ot_boundary_rules_document",
+      "label": "IT/OT Boundary Rules Document",
+      "kind": "item",
+      "optional": true
+    },
+    {
+      "id": "shared_file_server_access_extract_albion_trent_water",
+      "label": "Shared File Server Access Extract (Albion / Trent Water)",
+      "kind": "item",
+      "optional": true
+    }
+  ],
+  "edges": [
+    {
+      "from": "door_battery_hall_1",
+      "to": "battery_hall_1",
+      "soft": false
+    },
+    {
+      "from": "door_engineering_workshop",
+      "to": "engineering_workshop",
+      "soft": false
+    },
+    {
+      "from": "scada_control_room",
+      "to": "scada_live_status",
+      "soft": false
+    },
+    {
+      "from": "scada_control_room",
+      "to": "export_plc_bms_register_table",
+      "soft": true
+    },
+    {
+      "from": "scada_control_room",
+      "to": "historian_trend_viewer",
+      "soft": false
+    },
+    {
+      "from": "scada_control_room",
+      "to": "incident_response_folder",
+      "soft": false
+    },
+    {
+      "from": "scada_control_room",
+      "to": "engineering_workshop_rfid_key",
+      "soft": false
+    },
+    {
+      "from": "engineering_workshop_rfid_key",
+      "to": "door_engineering_workshop",
+      "soft": false
+    },
+    {
+      "from": "scada_control_room",
+      "to": "duty_officer_desk",
+      "soft": false
+    },
+    {
+      "from": "duty_officer_desk",
+      "to": "door_engineering_workshop",
+      "soft": false
+    },
+    {
+      "from": "scada_control_room",
+      "to": "nis_notification_form",
+      "soft": false
+    },
+    {
+      "from": "scada_control_room",
+      "to": "esd_station_battery_hall_1_hall_door",
+      "soft": false
+    },
+    {
+      "from": "scada_control_room",
+      "to": "esd_station_control_room_console",
+      "soft": false
+    },
+    {
+      "from": "scada_control_room",
+      "to": "network_architecture_diagram",
+      "soft": false
+    },
+    {
+      "from": "scada_control_room",
+      "to": "npc_helen_marsh",
+      "soft": false
+    },
+    {
+      "from": "npc_helen_marsh",
+      "to": "battery_hall_access_badge",
+      "soft": false
+    },
+    {
+      "from": "battery_hall_access_badge",
+      "to": "door_battery_hall_1",
+      "soft": false
+    },
+    {
+      "from": "npc_helen_marsh",
+      "to": "action_talk_to_helen",
+      "soft": false
+    },
+    {
+      "from": "scada_control_room",
+      "to": "npc_priya_s",
+      "soft": false
+    },
+    {
+      "from": "npc_priya_s",
+      "to": "action_talk_to_priya_s",
+      "soft": false
+    },
+    {
+      "from": "scada_control_room",
+      "to": "npc_marcus_webb",
+      "soft": false
+    },
+    {
+      "from": "npc_marcus_webb",
+      "to": "action_call_marcus_initial",
+      "soft": false
+    },
+    {
+      "from": "scada_control_room",
+      "to": "npc_tom_hadley",
+      "soft": false
+    },
+    {
+      "from": "npc_tom_hadley",
+      "to": "action_contact_castletech",
+      "soft": false
+    },
+    {
+      "from": "battery_hall_1",
+      "to": "local_dial_gauge_rack_a2",
+      "soft": false
+    },
+    {
+      "from": "local_dial_gauge_rack_a2",
+      "to": "historian_trend_viewer",
+      "soft": false
+    },
+    {
+      "from": "battery_hall_1",
+      "to": "esd_station_inside_battery_hall_1",
+      "soft": false
+    },
+    {
+      "from": "engineering_workshop",
+      "to": "hmi_eng_02_engineering_workstation",
+      "soft": false
+    },
+    {
+      "from": "engineering_workshop",
+      "to": "jump_server_rack_js_albion_01",
+      "soft": false
+    },
+    {
+      "from": "engineering_workshop",
+      "to": "jump_server_ethernet_cable",
+      "soft": false
+    },
+    {
+      "from": "engineering_workshop",
+      "to": "sis_configuration_panel",
+      "soft": false
+    },
+    {
+      "from": "engineering_workshop",
+      "to": "lock_engineering_filing_cabinet",
+      "soft": false
+    },
+    {
+      "from": "lock_engineering_filing_cabinet",
+      "to": "sis_safety_requirements_specification_extract",
+      "soft": false
+    },
+    {
+      "from": "sis_safety_requirements_specification_extract",
+      "to": "lock_sis_config_panel",
+      "soft": false
+    },
+    {
+      "from": "lock_engineering_filing_cabinet",
+      "to": "deferred_patch_risk_assessment",
+      "soft": true
+    },
+    {
+      "from": "engineering_workshop",
+      "to": "filing_cabinet_key",
+      "soft": false
+    },
+    {
+      "from": "filing_cabinet_key",
+      "to": "lock_engineering_filing_cabinet",
+      "soft": false
+    },
+    {
+      "from": "engineering_workshop",
+      "to": "it_ot_boundary_rules_document",
+      "soft": true
+    },
+    {
+      "from": "engineering_workshop",
+      "to": "shared_file_server_access_extract_albion_trent_water",
+      "soft": true
+    }
+  ]
+}

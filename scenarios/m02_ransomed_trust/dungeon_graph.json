@@ -1,0 +1,1268 @@
+{
+  "scenario": "m02_ransomed_trust",
+  "start_room": "reception_lobby",
+  "nodes": [
+    {
+      "id": "door_it_department",
+      "label": "IT Department<br/>Key lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "it_department",
+      "label": "IT Department",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "door_server_room",
+      "label": "Server Room<br/>RFID lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "server_room",
+      "label": "Server Room",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "door_conference_room",
+      "label": "Boardroom<br/>PIN lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "conference_room",
+      "label": "Boardroom",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "door_security_office",
+      "label": "Security Office<br/>Key lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "security_office",
+      "label": "Security Office",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "reception_lobby",
+      "label": "Reception",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "lock_pick_kit",
+      "label": "Lock Pick Kit",
+      "kind": "item",
+      "optional": true
+    },
+    {
+      "id": "lock_it_filing_cabinet",
+      "label": "It Filing Cabinet",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "reception_desk_visitor_log",
+      "label": "Reception Desk Visitor Log",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "hospital_founding_plaque",
+      "label": "Hospital Founding Plaque",
+      "kind": "item",
+      "optional": true
+    },
+    {
+      "id": "lock_emergency_storage_safe",
+      "label": "Emergency Storage Safe",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "crisis_protocol_notice",
+      "label": "Crisis Protocol Notice",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "lock_reception_terminal",
+      "label": "Reception Workstation (Encrypted)<br/>Ransomware terminal",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "reception_workstation_encrypted",
+      "label": "Reception Workstation (Encrypted)",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "lock_reception_kiosk_1",
+      "label": "Self Check-in Kiosk<br/>Ransomware terminal",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "lock_reception_kiosk_2",
+      "label": "Self Check-in Kiosk<br/>Ransomware terminal",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "npc_bernie_nwosu",
+      "label": "Bernie Nwosu",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "it_department_override_key",
+      "label": "IT Department Override Key",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "action_sign_in_at_reception",
+      "label": "Social engineer Bernie for the IT override key",
+      "kind": "action",
+      "optional": false
+    },
+    {
+      "id": "hospital_ward",
+      "label": "Patient Ward",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "lock_ehr_terminal_ward",
+      "label": "EHR Terminal (Offline)<br/>Ransomware terminal",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "ehr_terminal_offline",
+      "label": "EHR Terminal (Offline)",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "npc_sister_doyle",
+      "label": "Sister Doyle",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "bank_staff_lanyard",
+      "label": "Bank Staff Lanyard",
+      "kind": "key",
+      "optional": true
+    },
+    {
+      "id": "action_talk_to_ward_nurse",
+      "label": "Hear from Sister Doyle what the outage costs -- and earn the safe code",
+      "kind": "action",
+      "optional": false
+    },
+    {
+      "id": "lock_infected_terminal",
+      "label": "Infected Terminal<br/>Ransomware terminal",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "infected_terminal",
+      "label": "Infected Terminal",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "lock_gary_workstation",
+      "label": "Gary's Workstation<br/>Password lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "backup_server_ssh_notes",
+      "label": "Backup Server SSH Notes",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "gary_s_workstation",
+      "label": "Gary's Workstation",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "printouts_on_gary_s_desk",
+      "label": "Printouts on Gary's Desk",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "gary_s_password_sticky_note",
+      "label": "Gary's Password Sticky Note",
+      "kind": "item",
+      "optional": true
+    },
+    {
+      "id": "lock_vm_launcher_rooting_for_a_win",
+      "label": "Vm Launcher Rooting For A Win",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "photo_frame_emma_s_birthday",
+      "label": "Photo Frame - Emma's Birthday",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "gary_s_email_archive_warning_7_of_7",
+      "label": "Gary's Email Archive -- Warning 7 of 7",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "dr_kim_s_reply_12_november",
+      "label": "Dr. Kim's Reply -- 12 November",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "network_diagram_whiteboard",
+      "label": "Network Diagram Whiteboard",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "planted_network_device",
+      "label": "Planted Network Device",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "npc_gary_whitlock",
+      "label": "Gary Whitlock",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "server_room_keycard",
+      "label": "Server Room Keycard",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "spare_contractor_lanyard",
+      "label": "Spare Contractor Lanyard",
+      "kind": "key",
+      "optional": true
+    },
+    {
+      "id": "action_social_engineer_gary",
+      "label": "Win Gary over -- rapport, leverage, theft, or force",
+      "kind": "action",
+      "optional": false
+    },
+    {
+      "id": "vm_access_terminal",
+      "label": "VM Access Terminal",
+      "kind": "vm",
+      "optional": false
+    },
+    {
+      "id": "cyberchef_workstation",
+      "label": "CyberChef Workstation",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "lock_hospital_recovery_console",
+      "label": "Hospital Recovery Console",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "handwritten_note_taped_inside_the_rack",
+      "label": "Handwritten Note, Taped Inside the Rack",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "lock_entropy_field_case",
+      "label": "Sealed Equipment Case<br/>Key lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "pin_cracker",
+      "label": "PIN Cracker",
+      "kind": "item",
+      "optional": true
+    },
+    {
+      "id": "entropy_asset_tag",
+      "label": "ENTROPY Asset Tag",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "sealed_equipment_case",
+      "label": "Sealed Equipment Case",
+      "kind": "lock",
+      "optional": true
+    },
+    {
+      "id": "lock_entropy_staging_cache",
+      "label": "ENTROPY Staging Cache<br/>Flag lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "entropy_key_material",
+      "label": "ENTROPY Key Material",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "ghost_s_operational_manifesto",
+      "label": "Ghost's Operational Manifesto",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "affiliate_handling_note",
+      "label": "Affiliate Handling Note",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "entropy_staging_cache",
+      "label": "ENTROPY Staging Cache",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "emergency_equipment_storage",
+      "label": "Emergency Storage",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "offline_backup_encryption_keys",
+      "label": "Offline Backup Encryption Keys",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "pin_locked_safe",
+      "label": "PIN-Locked Safe",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "dr_kim_office",
+      "label": "CTO Office",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "lock_kim_office_terminal",
+      "label": "CTO Workstation (Encrypted)<br/>Ransomware terminal",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "cto_workstation_encrypted",
+      "label": "CTO Workstation (Encrypted)",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "dr_kim_s_desk_diary",
+      "label": "Dr. Kim's Desk Diary",
+      "kind": "item",
+      "optional": true
+    },
+    {
+      "id": "lock_dr_kim_safe",
+      "label": "Dr. Kim's Safe<br/>PIN lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "zero_day_syndicate_invoice",
+      "label": "Zero Day Syndicate Invoice",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "npc_dr_sarah_kim",
+      "label": "Dr. Sarah Kim",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "dr_kim_s_signed_statement",
+      "label": "Dr. Kim's Signed Statement",
+      "kind": "item",
+      "optional": true
+    },
+    {
+      "id": "action_meet_dr_kim",
+      "label": "Get Kim's verbal authorisation and the boardroom code",
+      "kind": "action",
+      "optional": false
+    },
+    {
+      "id": "ransomware_incorporated_proposal",
+      "label": "Ransomware Incorporated Proposal",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "night_security_post_log",
+      "label": "Night Security Post Log",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "lock_press_terminal",
+      "label": "Hospital Communications Terminal",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "lock_security_desk_terminal",
+      "label": "Security Desk Terminal (Encrypted)<br/>Ransomware terminal",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "security_desk_terminal_encrypted",
+      "label": "Security Desk Terminal (Encrypted)",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "key_cabinet_empty",
+      "label": "Key Cabinet (Empty)",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "night_rota",
+      "label": "Night Rota",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "office_corridor",
+      "label": "Main Corridor",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "ward_board",
+      "label": "Ward Board",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "npc_val_okonkwo",
+      "label": "Val Okonkwo",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "security_office_key",
+      "label": "Security Office Key",
+      "kind": "key",
+      "optional": true
+    },
+    {
+      "id": "val_s_pocket_notebook",
+      "label": "Val's Pocket Notebook",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "action_val_opens_office",
+      "label": "Get Val to open the security office -- a lanyard, Bernie's word, or her own judgement",
+      "kind": "action",
+      "optional": false
+    },
+    {
+      "id": "staff_room",
+      "label": "Night Handover",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "night_handover_board",
+      "label": "Night Handover Board",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "estates_audit_snag_list",
+      "label": "Estates Audit Snag List",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "staff_noticeboard",
+      "label": "Staff Noticeboard",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "ward_clerk_s_laptop",
+      "label": "Ward Clerk's Laptop",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "wrapped_contractor_lanyard",
+      "label": "Wrapped Contractor Lanyard",
+      "kind": "key",
+      "optional": true
+    },
+    {
+      "id": "ward_vestibule",
+      "label": "Ward Vestibule",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "appointment_card_on_the_chairs",
+      "label": "Appointment Card on the Chairs",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "ward_approach",
+      "label": "Ward Approach",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "nurse_s_handwritten_note",
+      "label": "Nurse's Handwritten Note",
+      "kind": "item",
+      "optional": true
+    },
+    {
+      "id": "vmch_submit_ssh_flag",
+      "label": "Get a foothold on the backup server and submit the SSH flag",
+      "kind": "vm",
+      "optional": false
+    },
+    {
+      "id": "vmfl_submit_ssh_flag",
+      "label": "Ssh Flag",
+      "kind": "flag",
+      "optional": false
+    },
+    {
+      "id": "lock_proftpd_exploitation_unlocked",
+      "label": "Proftpd Exploitation Unlocked",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "vmch_submit_proftpd_flag",
+      "label": "Exploit the ProFTPD backdoor and submit the flag",
+      "kind": "vm",
+      "optional": false
+    },
+    {
+      "id": "vmfl_submit_proftpd_flag",
+      "label": "Proftpd Flag",
+      "kind": "flag",
+      "optional": false
+    },
+    {
+      "id": "lock_database_backup_accessible",
+      "label": "Database Backup Accessible",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "vmch_submit_database_flag",
+      "label": "Locate the encrypted database backup and submit the flag",
+      "kind": "vm",
+      "optional": false
+    },
+    {
+      "id": "vmfl_submit_database_flag",
+      "label": "Database Flag",
+      "kind": "flag",
+      "optional": false
+    },
+    {
+      "id": "vmch_submit_ghost_log_flag",
+      "label": "Recover Ghost's operational log and submit the flag",
+      "kind": "vm",
+      "optional": false
+    },
+    {
+      "id": "vmfl_submit_ghost_log_flag",
+      "label": "Ghost Log Flag",
+      "kind": "flag",
+      "optional": false
+    },
+    {
+      "id": "lock_ghost_lore_unlocked",
+      "label": "Ghost Lore Unlocked",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "ward_hall",
+      "label": "Ward Link",
+      "kind": "room",
+      "optional": false
+    }
+  ],
+  "edges": [
+    {
+      "from": "door_it_department",
+      "to": "it_department",
+      "soft": false
+    },
+    {
+      "from": "door_server_room",
+      "to": "server_room",
+      "soft": false
+    },
+    {
+      "from": "door_conference_room",
+      "to": "conference_room",
+      "soft": false
+    },
+    {
+      "from": "door_security_office",
+      "to": "security_office",
+      "soft": false
+    },
+    {
+      "from": "reception_lobby",
+      "to": "lock_pick_kit",
+      "soft": true
+    },
+    {
+      "from": "lock_pick_kit",
+      "to": "door_it_department",
+      "soft": true
+    },
+    {
+      "from": "lock_pick_kit",
+      "to": "lock_it_filing_cabinet",
+      "soft": true
+    },
+    {
+      "from": "lock_pick_kit",
+      "to": "door_security_office",
+      "soft": true
+    },
+    {
+      "from": "reception_lobby",
+      "to": "reception_desk_visitor_log",
+      "soft": false
+    },
+    {
+      "from": "reception_lobby",
+      "to": "hospital_founding_plaque",
+      "soft": true
+    },
+    {
+      "from": "hospital_founding_plaque",
+      "to": "lock_emergency_storage_safe",
+      "soft": true
+    },
+    {
+      "from": "reception_lobby",
+      "to": "crisis_protocol_notice",
+      "soft": false
+    },
+    {
+      "from": "reception_lobby",
+      "to": "lock_reception_terminal",
+      "soft": false
+    },
+    {
+      "from": "reception_lobby",
+      "to": "reception_workstation_encrypted",
+      "soft": false
+    },
+    {
+      "from": "reception_lobby",
+      "to": "lock_reception_kiosk_1",
+      "soft": false
+    },
+    {
+      "from": "reception_lobby",
+      "to": "lock_reception_kiosk_2",
+      "soft": false
+    },
+    {
+      "from": "reception_lobby",
+      "to": "npc_bernie_nwosu",
+      "soft": false
+    },
+    {
+      "from": "npc_bernie_nwosu",
+      "to": "it_department_override_key",
+      "soft": false
+    },
+    {
+      "from": "it_department_override_key",
+      "to": "door_it_department",
+      "soft": false
+    },
+    {
+      "from": "npc_bernie_nwosu",
+      "to": "action_sign_in_at_reception",
+      "soft": false
+    },
+    {
+      "from": "hospital_ward",
+      "to": "lock_ehr_terminal_ward",
+      "soft": false
+    },
+    {
+      "from": "hospital_ward",
+      "to": "ehr_terminal_offline",
+      "soft": false
+    },
+    {
+      "from": "hospital_ward",
+      "to": "npc_sister_doyle",
+      "soft": false
+    },
+    {
+      "from": "npc_sister_doyle",
+      "to": "bank_staff_lanyard",
+      "soft": true
+    },
+    {
+      "from": "bank_staff_lanyard",
+      "to": "door_security_office",
+      "soft": true
+    },
+    {
+      "from": "npc_sister_doyle",
+      "to": "action_talk_to_ward_nurse",
+      "soft": false
+    },
+    {
+      "from": "it_department",
+      "to": "lock_infected_terminal",
+      "soft": false
+    },
+    {
+      "from": "it_department",
+      "to": "infected_terminal",
+      "soft": false
+    },
+    {
+      "from": "it_department",
+      "to": "lock_gary_workstation",
+      "soft": false
+    },
+    {
+      "from": "lock_gary_workstation",
+      "to": "backup_server_ssh_notes",
+      "soft": false
+    },
+    {
+      "from": "it_department",
+      "to": "gary_s_workstation",
+      "soft": false
+    },
+    {
+      "from": "it_department",
+      "to": "printouts_on_gary_s_desk",
+      "soft": false
+    },
+    {
+      "from": "it_department",
+      "to": "gary_s_password_sticky_note",
+      "soft": true
+    },
+    {
+      "from": "gary_s_password_sticky_note",
+      "to": "lock_vm_launcher_rooting_for_a_win",
+      "soft": true
+    },
+    {
+      "from": "it_department",
+      "to": "photo_frame_emma_s_birthday",
+      "soft": false
+    },
+    {
+      "from": "it_department",
+      "to": "lock_it_filing_cabinet",
+      "soft": false
+    },
+    {
+      "from": "lock_it_filing_cabinet",
+      "to": "gary_s_email_archive_warning_7_of_7",
+      "soft": false
+    },
+    {
+      "from": "lock_it_filing_cabinet",
+      "to": "dr_kim_s_reply_12_november",
+      "soft": false
+    },
+    {
+      "from": "it_department",
+      "to": "network_diagram_whiteboard",
+      "soft": false
+    },
+    {
+      "from": "network_diagram_whiteboard",
+      "to": "lock_vm_launcher_rooting_for_a_win",
+      "soft": false
+    },
+    {
+      "from": "it_department",
+      "to": "planted_network_device",
+      "soft": false
+    },
+    {
+      "from": "it_department",
+      "to": "npc_gary_whitlock",
+      "soft": false
+    },
+    {
+      "from": "npc_gary_whitlock",
+      "to": "server_room_keycard",
+      "soft": false
+    },
+    {
+      "from": "server_room_keycard",
+      "to": "door_server_room",
+      "soft": false
+    },
+    {
+      "from": "npc_gary_whitlock",
+      "to": "spare_contractor_lanyard",
+      "soft": true
+    },
+    {
+      "from": "spare_contractor_lanyard",
+      "to": "door_security_office",
+      "soft": true
+    },
+    {
+      "from": "npc_gary_whitlock",
+      "to": "action_social_engineer_gary",
+      "soft": false
+    },
+    {
+      "from": "server_room",
+      "to": "vm_access_terminal",
+      "soft": false
+    },
+    {
+      "from": "server_room",
+      "to": "cyberchef_workstation",
+      "soft": false
+    },
+    {
+      "from": "server_room",
+      "to": "lock_hospital_recovery_console",
+      "soft": false
+    },
+    {
+      "from": "server_room",
+      "to": "handwritten_note_taped_inside_the_rack",
+      "soft": false
+    },
+    {
+      "from": "server_room",
+      "to": "lock_entropy_field_case",
+      "soft": false
+    },
+    {
+      "from": "lock_entropy_field_case",
+      "to": "pin_cracker",
+      "soft": true
+    },
+    {
+      "from": "pin_cracker",
+      "to": "lock_emergency_storage_safe",
+      "soft": true
+    },
+    {
+      "from": "lock_entropy_field_case",
+      "to": "entropy_asset_tag",
+      "soft": false
+    },
+    {
+      "from": "server_room",
+      "to": "sealed_equipment_case",
+      "soft": true
+    },
+    {
+      "from": "server_room",
+      "to": "lock_entropy_staging_cache",
+      "soft": false
+    },
+    {
+      "from": "lock_entropy_staging_cache",
+      "to": "entropy_key_material",
+      "soft": false
+    },
+    {
+      "from": "entropy_key_material",
+      "to": "lock_hospital_recovery_console",
+      "soft": false
+    },
+    {
+      "from": "lock_entropy_staging_cache",
+      "to": "ghost_s_operational_manifesto",
+      "soft": false
+    },
+    {
+      "from": "lock_entropy_staging_cache",
+      "to": "affiliate_handling_note",
+      "soft": false
+    },
+    {
+      "from": "server_room",
+      "to": "entropy_staging_cache",
+      "soft": false
+    },
+    {
+      "from": "emergency_equipment_storage",
+      "to": "lock_emergency_storage_safe",
+      "soft": false
+    },
+    {
+      "from": "lock_emergency_storage_safe",
+      "to": "offline_backup_encryption_keys",
+      "soft": false
+    },
+    {
+      "from": "offline_backup_encryption_keys",
+      "to": "lock_hospital_recovery_console",
+      "soft": false
+    },
+    {
+      "from": "emergency_equipment_storage",
+      "to": "pin_locked_safe",
+      "soft": false
+    },
+    {
+      "from": "dr_kim_office",
+      "to": "lock_kim_office_terminal",
+      "soft": false
+    },
+    {
+      "from": "dr_kim_office",
+      "to": "cto_workstation_encrypted",
+      "soft": false
+    },
+    {
+      "from": "dr_kim_office",
+      "to": "dr_kim_s_desk_diary",
+      "soft": true
+    },
+    {
+      "from": "dr_kim_s_desk_diary",
+      "to": "lock_emergency_storage_safe",
+      "soft": true
+    },
+    {
+      "from": "dr_kim_s_desk_diary",
+      "to": "door_conference_room",
+      "soft": true
+    },
+    {
+      "from": "dr_kim_office",
+      "to": "lock_dr_kim_safe",
+      "soft": false
+    },
+    {
+      "from": "lock_dr_kim_safe",
+      "to": "zero_day_syndicate_invoice",
+      "soft": false
+    },
+    {
+      "from": "dr_kim_office",
+      "to": "npc_dr_sarah_kim",
+      "soft": false
+    },
+    {
+      "from": "npc_dr_sarah_kim",
+      "to": "dr_kim_s_signed_statement",
+      "soft": true
+    },
+    {
+      "from": "npc_dr_sarah_kim",
+      "to": "action_meet_dr_kim",
+      "soft": false
+    },
+    {
+      "from": "conference_room",
+      "to": "ransomware_incorporated_proposal",
+      "soft": false
+    },
+    {
+      "from": "conference_room",
+      "to": "night_security_post_log",
+      "soft": false
+    },
+    {
+      "from": "conference_room",
+      "to": "lock_press_terminal",
+      "soft": false
+    },
+    {
+      "from": "security_office",
+      "to": "lock_security_desk_terminal",
+      "soft": false
+    },
+    {
+      "from": "security_office",
+      "to": "security_desk_terminal_encrypted",
+      "soft": false
+    },
+    {
+      "from": "security_office",
+      "to": "key_cabinet_empty",
+      "soft": false
+    },
+    {
+      "from": "security_office",
+      "to": "night_rota",
+      "soft": false
+    },
+    {
+      "from": "office_corridor",
+      "to": "ward_board",
+      "soft": false
+    },
+    {
+      "from": "office_corridor",
+      "to": "npc_val_okonkwo",
+      "soft": false
+    },
+    {
+      "from": "npc_val_okonkwo",
+      "to": "security_office_key",
+      "soft": true
+    },
+    {
+      "from": "security_office_key",
+      "to": "door_security_office",
+      "soft": true
+    },
+    {
+      "from": "npc_val_okonkwo",
+      "to": "val_s_pocket_notebook",
+      "soft": false
+    },
+    {
+      "from": "npc_val_okonkwo",
+      "to": "action_val_opens_office",
+      "soft": false
+    },
+    {
+      "from": "staff_room",
+      "to": "night_handover_board",
+      "soft": false
+    },
+    {
+      "from": "staff_room",
+      "to": "estates_audit_snag_list",
+      "soft": false
+    },
+    {
+      "from": "estates_audit_snag_list",
+      "to": "lock_emergency_storage_safe",
+      "soft": false
+    },
+    {
+      "from": "staff_room",
+      "to": "staff_noticeboard",
+      "soft": false
+    },
+    {
+      "from": "staff_room",
+      "to": "ward_clerk_s_laptop",
+      "soft": false
+    },
+    {
+      "from": "staff_room",
+      "to": "wrapped_contractor_lanyard",
+      "soft": true
+    },
+    {
+      "from": "wrapped_contractor_lanyard",
+      "to": "door_security_office",
+      "soft": true
+    },
+    {
+      "from": "ward_vestibule",
+      "to": "appointment_card_on_the_chairs",
+      "soft": false
+    },
+    {
+      "from": "ward_approach",
+      "to": "nurse_s_handwritten_note",
+      "soft": true
+    },
+    {
+      "from": "nurse_s_handwritten_note",
+      "to": "lock_emergency_storage_safe",
+      "soft": true
+    },
+    {
+      "from": "vmch_submit_ssh_flag",
+      "to": "vmfl_submit_ssh_flag",
+      "soft": false
+    },
+    {
+      "from": "vmfl_submit_ssh_flag",
+      "to": "lock_proftpd_exploitation_unlocked",
+      "soft": false
+    },
+    {
+      "from": "vmch_submit_proftpd_flag",
+      "to": "vmfl_submit_proftpd_flag",
+      "soft": false
+    },
+    {
+      "from": "vmfl_submit_ssh_flag",
+      "to": "vmch_submit_proftpd_flag",
+      "soft": true
+    },
+    {
+      "from": "vmfl_submit_proftpd_flag",
+      "to": "lock_database_backup_accessible",
+      "soft": false
+    },
+    {
+      "from": "vmch_submit_database_flag",
+      "to": "vmfl_submit_database_flag",
+      "soft": false
+    },
+    {
+      "from": "vmfl_submit_proftpd_flag",
+      "to": "vmch_submit_database_flag",
+      "soft": true
+    },
+    {
+      "from": "vmfl_submit_database_flag",
+      "to": "lock_emergency_storage_safe",
+      "soft": false
+    },
+    {
+      "from": "vmch_submit_ghost_log_flag",
+      "to": "vmfl_submit_ghost_log_flag",
+      "soft": false
+    },
+    {
+      "from": "vmfl_submit_database_flag",
+      "to": "vmch_submit_ghost_log_flag",
+      "soft": true
+    },
+    {
+      "from": "vmfl_submit_ghost_log_flag",
+      "to": "lock_ghost_lore_unlocked",
+      "soft": false
+    },
+    {
+      "from": "vmfl_submit_ghost_log_flag",
+      "to": "lock_entropy_staging_cache",
+      "soft": false
+    },
+    {
+      "from": "lock_vm_launcher_rooting_for_a_win",
+      "to": "vm_access_terminal",
+      "soft": false
+    },
+    {
+      "from": "vm_access_terminal",
+      "to": "vmch_submit_ssh_flag",
+      "soft": false
+    },
+    {
+      "from": "reception_lobby",
+      "to": "ward_vestibule",
+      "soft": false
+    },
+    {
+      "from": "hospital_ward",
+      "to": "ward_approach",
+      "soft": false
+    },
+    {
+      "from": "hospital_ward",
+      "to": "ward_hall",
+      "soft": false
+    },
+    {
+      "from": "hospital_ward",
+      "to": "emergency_equipment_storage",
+      "soft": false
+    },
+    {
+      "from": "dr_kim_office",
+      "to": "staff_room",
+      "soft": false
+    },
+    {
+      "from": "office_corridor",
+      "to": "ward_hall",
+      "soft": false
+    },
+    {
+      "from": "office_corridor",
+      "to": "staff_room",
+      "soft": false
+    },
+    {
+      "from": "ward_vestibule",
+      "to": "ward_approach",
+      "soft": false
+    },
+    {
+      "from": "vmfl_submit_database_flag",
+      "to": "lock_hospital_recovery_console",
+      "soft": false
+    },
+    {
+      "from": "action_meet_dr_kim",
+      "to": "conference_room",
+      "soft": false
+    },
+    {
+      "from": "action_meet_dr_kim",
+      "to": "it_department",
+      "soft": true
+    },
+    {
+      "from": "vmfl_submit_ghost_log_flag",
+      "to": "lock_press_terminal",
+      "soft": false
+    },
+    {
+      "from": "lock_hospital_recovery_console",
+      "to": "lock_press_terminal",
+      "soft": false
+    }
+  ]
+}

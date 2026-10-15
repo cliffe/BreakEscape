@@ -1,0 +1,232 @@
+{
+  "display_name": "Meridian Cyber Insurance: Coverage Determination",
+  "description": "May 2026, seven weeks after the Albion Battery Hall incident and two days after Albion filed its claim. As the Meridian Claims Team, you must verify the forensic causal chain of the £8.2M cyber insurance claim, assess warranty compliance, and navigate the tension between technical forensics and insurance policy coverage — all while pressured to minimise payout.",
+  "difficulty_level": 4,
+  "secgen_scenario": "meridian_insurance",
+  "collection": "cybok_sis",
+  "branching": true,
+  "branches": [
+    "claim_approved_full",
+    "claim_approved_partial",
+    "claim_rejected_negligence",
+    "coverage_warranty_gap",
+    "policy_exclusion_triggered",
+    "subrogation_path"
+  ],
+  "estimated_duration_minutes": 60,
+  "cybok": [
+    {
+      "ka": "TGSIS",
+      "topic": "Language and Concept Alignment",
+      "keywords": [
+        "VOCABULARY",
+        "LEGAL TERMINOLOGY"
+      ]
+    },
+    {
+      "ka": "TGSIS",
+      "topic": "Incident Response and Resilience",
+      "keywords": [
+        "INCIDENT RESPONSE",
+        "EVIDENCE COLLECTION"
+      ]
+    },
+    {
+      "ka": "TGSIS",
+      "topic": "Requirements Reconciliation",
+      "keywords": [
+        "SAFETY REQUIREMENT",
+        "PATCHING"
+      ]
+    },
+    {
+      "ka": "TGSIS",
+      "topic": "Patching of Systems with Safety Cases",
+      "keywords": [
+        "PATCHING",
+        "IEC 61511"
+      ]
+    },
+    {
+      "ka": "TGSIS",
+      "topic": "Architecture",
+      "keywords": [
+        "SEGMENTATION",
+        "SAFETY INSTRUMENTED SYSTEM"
+      ]
+    },
+    {
+      "ka": "TGSIS",
+      "topic": "Organisational Culture",
+      "keywords": [
+        "RISK ACCEPTANCE",
+        "SECURITY CULTURE"
+      ]
+    },
+    {
+      "ka": "TGSIS",
+      "topic": "Tools and Standards",
+      "keywords": [
+        "IEC 61511",
+        "IEC 62443",
+        "NCSC CAF",
+        "LMA5567A"
+      ]
+    },
+    {
+      "ka": "LR",
+      "topic": "Contract",
+      "keywords": [
+        "encouraging security standards via contract",
+        "warranties and their exclusion",
+        "limitations of liability and exclusions of liability",
+        "breach of contract and remedies",
+        "effects of contract on non-contracting parties"
+      ]
+    },
+    {
+      "ka": "LR",
+      "topic": "Public International Law",
+      "keywords": [
+        "attributing action to a state under international law",
+        "the law of armed conflict"
+      ]
+    },
+    {
+      "ka": "LR",
+      "topic": "Introductory Principles of Legal Research",
+      "keywords": [
+        "evidence and proof",
+        "liability and courts"
+      ]
+    },
+    {
+      "ka": "LR",
+      "topic": "Other Regulatory Matters",
+      "keywords": [
+        "industry-specific regulations",
+        "NIS Regulations 2018",
+        "Insurance Act 2015"
+      ]
+    },
+    {
+      "ka": "RMG",
+      "topic": "Risk governance",
+      "keywords": [
+        "RISK TRANSFER",
+        "RESIDUAL RISK",
+        "RISK ACCEPTANCE"
+      ]
+    },
+    {
+      "ka": "RMG",
+      "topic": "Risk assessment and management principles",
+      "keywords": [
+        "Vulnerability management",
+        "Risk assessment and management in cyber-physical systems and operational technology"
+      ]
+    },
+    {
+      "ka": "F",
+      "topic": "Definitions and Conceptual Models",
+      "keywords": [
+        "digital (forensic) trace",
+        "CHAIN OF EVIDENCE"
+      ]
+    },
+    {
+      "ka": "F",
+      "topic": "Main Memory Forensics",
+      "keywords": [
+        "challenges of live forensics"
+      ]
+    },
+    {
+      "ka": "F",
+      "topic": "Operating System Analysis",
+      "keywords": [
+        "data acquisition",
+        "TIMELINE ANALYSIS"
+      ]
+    },
+    {
+      "ka": "SOIM",
+      "topic": "Human Factors: Incident Management",
+      "keywords": [
+        "follow up: post incident activities"
+      ]
+    },
+    {
+      "ka": "SOIM",
+      "topic": "Knowledge: Intelligence and Analysis",
+      "keywords": [
+        "cyber-threat intelligence",
+        "THREAT INTELLIGENCE SHARING"
+      ]
+    },
+    {
+      "ka": "AB",
+      "topic": "Models",
+      "keywords": [
+        "attribution"
+      ]
+    },
+    {
+      "ka": "AB",
+      "topic": "Characterisation of Adversaries",
+      "keywords": [
+        "state actors",
+        "cyber-dependent organised crime"
+      ]
+    },
+    {
+      "ka": "AB",
+      "topic": "Elements of a Malicious Operation",
+      "keywords": [
+        "infection vectors",
+        "specialised services",
+        "SUPPLY CHAIN ATTACK"
+      ]
+    },
+    {
+      "ka": "AAA",
+      "topic": "Authentication",
+      "keywords": [
+        "user authentication",
+        "PROVISIONING AND DEPROVISIONING"
+      ]
+    },
+    {
+      "ka": "CPS",
+      "topic": "Cyber-Physical Systems Domains",
+      "keywords": [
+        "industrial control systems",
+        "electric power grids"
+      ]
+    },
+    {
+      "ka": "CPS",
+      "topic": "Policy and Political Aspects",
+      "keywords": [
+        "incentives and regulation",
+        "CYBER-INSURANCE",
+        "WAR EXCLUSION"
+      ]
+    }
+  ],
+  "prerequisites": [
+    "sis02_energy"
+  ],
+  "unlocks": [],
+  "campaign_critical": true,
+  "narrative_weight": "high",
+  "consequences_persist": false,
+  "lore_reveals": [
+    "How APT groups use printer firmware as a beachhead — harder to patch than endpoints and often trusted on engineering networks",
+    "The insurance industry's struggle with cyber coverage for critical infrastructure — most policies were written before OT-specific attacks",
+    "How a technical win (thermal runaway prevented, nobody hurt) can still become a contested financial loss when viewed through the insurance lens",
+    "Why compensating controls must be documented, tested, and audited — not just assumed to work because they exist on paper",
+    "The downstream impact of deferred maintenance debt: every day a patch is delayed multiplies the forensic liability"
+  ],
+  "facilitator_notes": "Designed for 2–4 players split across claims assessment, technical forensics, and policy/compliance roles. Suggested split: 1 player as Claims Manager (leads final recommendation, faces upper management pressure), 1–2 players as Technical Forensic Reviewers (focus on FDP terminal, VM challenge, forensic evidence), 1 player as Policy/Compliance Officer (focus on warranty, coverage exclusions, regulatory duties).\n\nThis scenario is a natural sequel to Case 2 (Albion Battery Hall: Code Red), set seven weeks later. Nothing carries over from a Case 2 playthrough: the evidence is the same whatever players did there. Facilitators can still ask players who played Case 2 to compare what they saw on the morning with what the forensic record shows.\n\nKey decision points to facilitate:\n1. TECHNICAL vs POLICY: Players who focus only on technical attribution may miss the policy question: 'Is this a covered peril?' A thorough forensics report is worthless if the policy excludes it.\n2. DUTY OF CARE DILEMMA: Albion has duties as an Operator of Essential Services under the NIS Regulations (Ofgem's to judge, not Meridian's). Does meeting or missing them affect insurance coverage? Separately, what does Albion owe its neighbour Trent Water, whose workstation opened a file the attacker planted on the shared server?\n3. SUBROGATION PATH: If the claim is approved, can Meridian pursue the APT group (impossible), CastleTech (whose service account and SOC scope are in the evidence) or the printer vendor's supply chain? Let players debate liability assignment.\n\nPhysical props and game board:\n- Meridian claims office: desk with FDP terminal (laptop or phone interface), filing cabinet (PIN-locked), evidence folders\n- Digital forensics challenge: FDP interface shows the forensic timeline, jump server log, historian data and SIS findings; players trace the causal chain\n- Claim form paperwork: printed £8.2M claim summary, coverage schedule, warranty clause excerpts (highlight exclusions)\n- Decision board: three recommendation boxes (APPROVE FULL / APPROVE PARTIAL / REJECT) with evidence slots so players can build their case\n\nTiming: Expect 60 minutes for a thorough run. If players focus only on forensics, 45 minutes. If they debate policy and subrogation, 75 minutes."
+}

@@ -1,0 +1,25 @@
+{
+  "scenario": "ransomware-test",
+  "start_room": "office",
+  "nodes": [
+    {
+      "id": "lock_infected_workstation",
+      "label": "Infected Workstation<br/>Ransomware terminal",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "office",
+      "label": "Office",
+      "kind": "room",
+      "optional": false
+    }
+  ],
+  "edges": [
+    {
+      "from": "office",
+      "to": "lock_infected_workstation",
+      "soft": false
+    }
+  ]
+}

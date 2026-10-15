@@ -1,0 +1,48 @@
+{
+  "scenario_brief": "Example scenario demonstrating timed messages",
+  "endGoal": "Test timed message arrivals",
+  "startRoom": "reception",
+  
+  "timedMessages": [
+    {
+      "npcId": "alice",
+      "text": "Hey, I just got into the office. How's it going?",
+      "triggerTime": 0,
+      "phoneId": "player_phone"
+    },
+    {
+      "npcId": "alice",
+      "text": "BTW, I found something interesting in the security logs...",
+      "triggerTime": 30000,
+      "phoneId": "player_phone"
+    },
+    {
+      "npcId": "bob",
+      "text": "Morning! Server maintenance is scheduled for 10 AM.",
+      "triggerTime": 60000,
+      "phoneId": "player_phone"
+    },
+    {
+      "npcId": "alice",
+      "text": "Can you check the biometrics lab? Something seems off.",
+      "triggerTime": 120000,
+      "phoneId": "player_phone"
+    },
+    {
+      "npcId": "bob",
+      "text": "Heads up - I'm seeing unusual network traffic from Lab 2.",
+      "triggerTime": 180000,
+      "phoneId": "player_phone"
+    }
+  ],
+  
+  "rooms": {
+    "reception": {
+      "type": "room_reception",
+      "connections": {
+        "north": "office1"
+      },
+      "objects": []
+    }
+  }
+}

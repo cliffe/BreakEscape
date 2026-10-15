@@ -1,0 +1,68 @@
+{
+  "scenario_brief": "TEST: Simple Success\n\nThis is a minimal 1-room scenario for testing basic objective completion and end-screen display.\n\nInteract with the Mission Terminal to complete the objective and trigger the success screen.",
+  "endGoal": "Interact with the Mission Terminal to complete the mission.",
+  "startRoom": "test_room",
+
+  "objectives": [
+    {
+      "aimId": "complete_mission",
+      "title": "Complete the Mission",
+      "description": "Interact with the Mission Terminal.",
+      "status": "active",
+      "order": 0,
+      "missionConclusion": true,
+      "conclusionScreen": { "type": "end_screen" },
+      "tasks": [
+        {
+          "taskId": "activate_terminal",
+          "title": "Activate the Mission Terminal",
+          "type": "custom",
+          "status": "active"
+        }
+      ]
+    }
+  ],
+
+  "rooms": {
+    "test_room": {
+      "type": "room_office",
+      "door_sign": "Test Room",
+      "connections": {},
+      "objects": [
+        {
+          "type": "notes",
+          "name": "Instructions",
+          "position": { "x": 2, "y": 2 },
+          "takeable": false,
+          "readable": true,
+          "text": "TEST: Simple Success\n\nInteract with the MISSION TERMINAL (centre of room) to:\n  1. Complete the 'Activate the Mission Terminal' task\n  2. Trigger the success end screen\n\nExpected result: task completes, aim completes, success screen appears.",
+          "observations": "A note with test instructions."
+        },
+        {
+          "type": "pc",
+          "id": "success_terminal",
+          "name": "Mission Terminal",
+          "position": { "x": 5, "y": 4 },
+          "takeable": false,
+          "interactable": true,
+          "active": true,
+          "observations": "The Mission Terminal. Interacting with it will complete the mission.",
+          "locked": false,
+          "triggerOnInteract": [
+            {
+              "type": "complete_task",
+              "taskId": "activate_terminal"
+            },
+            {
+              "type": "show_end_screen",
+              "outcome": "success",
+              "title": "MISSION COMPLETE",
+              "body": "You activated the Mission Terminal. Test passed — objective completion and success end screen are working correctly.",
+              "buttonText": "Return to Missions"
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

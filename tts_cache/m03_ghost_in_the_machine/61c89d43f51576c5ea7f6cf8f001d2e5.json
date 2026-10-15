@@ -1,0 +1,13 @@
+{
+  "key": "61c89d43f51576c5ea7f6cf8f001d2e5",
+  "npc": "narrator",
+  "text": "Victoria Sterling rises as you come in, composed and sure of herself.",
+  "voice": "Algenib",
+  "style": "Cinematic noir detective voice over narrator.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m03_ghost_in_the_machine",
+  "source": "generate",
+  "generated": "2026-10-13",
+  "recorded_at": "2026-10-13T01:14:01Z"
+}

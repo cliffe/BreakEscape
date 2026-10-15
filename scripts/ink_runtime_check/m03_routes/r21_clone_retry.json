@@ -1,0 +1,8 @@
+{"steps":[
+{"note":"R21 (pass 2 blind fixes, B F2): a suspicious player drops Sterling's card read, closes the chat, reloads and comes back. 'Drift back to the whiteboard' must be on offer straight after the drop and again after the reload, without the walk-back line first, and the retry must complete the read."},
+{"talk":"briefing","picks":["Skip the background","That's everything","move fast","I'm ready"]},
+{"set":{"briefing_played":true,"reception_badge_cloned":true}},
+{"talk":"victoria","picks":["Why am I here","advocating selling","What is Zero Day","wilful ignorance","what the buyer wanted","whiteboard","How do students access","taken enough of your time"]},
+{"note":"Reload, then talk to her again."},
+{"talk":"victoria","reload":true,"picks":["Drift back to the whiteboard","hardest","How do you determine","Skills are cheap","Let me think"]}
+]}
