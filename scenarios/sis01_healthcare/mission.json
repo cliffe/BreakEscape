@@ -35,6 +35,14 @@
     },
     {
       "ka": "TGSIS",
+      "topic": "Requirements Reconciliation",
+      "keywords": [
+        "SAFETY REQUIREMENT",
+        "AS LOW AS REASONABLY PRACTICABLE"
+      ]
+    },
+    {
+      "ka": "TGSIS",
       "topic": "Patching of Systems with Safety Cases",
       "keywords": [
         "PATCHING",
@@ -71,7 +79,6 @@
       "ka": "SOIM",
       "topic": "Monitor: Data Sources",
       "keywords": [
-        "system and kernel logs",
         "network infrastructure information"
       ]
     },
@@ -129,8 +136,7 @@
       "ka": "CPS",
       "topic": "Cyber-Physical Systems",
       "keywords": [
-        "protection against natural events and accidents",
-        "security and privacy concerns"
+        "protection against natural events and accidents"
       ]
     },
     {
@@ -153,8 +159,7 @@
       "topic": "Authentication",
       "keywords": [
         "user authentication",
-        "MULTI-FACTOR AUTHENTICATION",
-        "USER ACCESS REVIEW"
+        "MULTI-FACTOR AUTHENTICATION"
       ]
     },
     {

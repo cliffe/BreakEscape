@@ -11,13 +11,13 @@ description: |
 cybok:
   - ka: "TGSIS"
     topic: "Language and Concept Alignment"
-    keywords: ["SAFETY-CRITICAL SYSTEM", "VOCABULARY"]
+    keywords: ["SAFETY-CRITICAL SYSTEM"]
   - ka: "TGSIS"
     topic: "Incident Response and Resilience"
     keywords: ["INCIDENT RESPONSE", "RESILIENCE"]
   - ka: "TGSIS"
     topic: "Requirements Reconciliation"
-    keywords: ["SAFETY REQUIREMENT", "SEGMENTATION"]
+    keywords: ["SAFETY REQUIREMENT"]
   - ka: "TGSIS"
     topic: "Patching of Systems with Safety Cases"
     keywords: ["PATCHING", "IEC 61511"]
@@ -39,18 +39,9 @@ cybok:
   - ka: "CPS"
     topic: "Cyber-Physical Systems Domains"
     keywords: ["industrial control systems", "electric power grids", "DATA HISTORIAN", "MODBUS PROTOCOL"]
-  - ka: "CPS"
-    topic: "Policy and Political Aspects"
-    keywords: ["industry practices and standards"]
-  - ka: "SOIM"
-    topic: "Monitor: Data Sources"
-    keywords: ["system and kernel logs"]
   - ka: "SOIM"
     topic: "Analyse: Analysis Methods"
     keywords: ["anomaly detection"]
-  - ka: "SOIM"
-    topic: "Execute: Mitigation and Countermeasures"
-    keywords: ["SOAR: impact and risk assessment"]
   - ka: "SOIM"
     topic: "Human Factors: Incident Management"
     keywords: ["prepare: incident management planning", "handle: actual incident response", "follow up: post incident activities"]
@@ -68,13 +59,13 @@ cybok:
     keywords: ["industry-specific regulations", "NIS Regulations 2018"]
   - ka: "LR"
     topic: "Introductory Principles of Legal Research"
-    keywords: ["liability and courts", "DUTY OF CARE"]
+    keywords: ["DUTY OF CARE"]
   - ka: "NS"
     topic: "Network Security Tools"
     keywords: ["firewalling", "BASTION HOST", "NETWORK SEGMENTATION"]
   - ka: "AAA"
     topic: "Authentication"
-    keywords: ["user authentication", "identity management", "PROVISIONING AND DEPROVISIONING"]
+    keywords: ["user authentication", "PROVISIONING AND DEPROVISIONING"]
   - ka: "AAA"
     topic: "Accountability"
     keywords: ["technical aspects", "AUDIT LOGS"]
@@ -83,7 +74,7 @@ cybok:
     keywords: ["state actors", "cyber-dependent organised crime"]
   - ka: "AB"
     topic: "Elements of a Malicious Operation"
-    keywords: ["infection vectors", "specialised services", "SUPPLY CHAIN ATTACK"]
+    keywords: ["infection vectors"]
   - ka: "MAT"
     topic: "Malicious Activities by Malware"
     keywords: ["integrity", "LATERAL MOVEMENT"]

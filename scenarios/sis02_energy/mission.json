@@ -24,8 +24,7 @@
       "ka": "TGSIS",
       "topic": "Language and Concept Alignment",
       "keywords": [
-        "SAFETY-CRITICAL SYSTEM",
-        "VOCABULARY"
+        "SAFETY-CRITICAL SYSTEM"
       ]
     },
     {
@@ -40,8 +39,7 @@
       "ka": "TGSIS",
       "topic": "Requirements Reconciliation",
       "keywords": [
-        "SAFETY REQUIREMENT",
-        "SEGMENTATION"
+        "SAFETY REQUIREMENT"
       ]
     },
     {
@@ -107,31 +105,10 @@
       ]
     },
     {
-      "ka": "CPS",
-      "topic": "Policy and Political Aspects",
-      "keywords": [
-        "industry practices and standards"
-      ]
-    },
-    {
-      "ka": "SOIM",
-      "topic": "Monitor: Data Sources",
-      "keywords": [
-        "system and kernel logs"
-      ]
-    },
-    {
       "ka": "SOIM",
       "topic": "Analyse: Analysis Methods",
       "keywords": [
         "anomaly detection"
-      ]
-    },
-    {
-      "ka": "SOIM",
-      "topic": "Execute: Mitigation and Countermeasures",
-      "keywords": [
-        "SOAR: impact and risk assessment"
       ]
     },
     {
@@ -181,7 +158,6 @@
       "ka": "LR",
       "topic": "Introductory Principles of Legal Research",
       "keywords": [
-        "liability and courts",
         "DUTY OF CARE"
       ]
     },
@@ -199,7 +175,6 @@
       "topic": "Authentication",
       "keywords": [
         "user authentication",
-        "identity management",
         "PROVISIONING AND DEPROVISIONING"
       ]
     },
@@ -223,9 +198,7 @@
       "ka": "AB",
       "topic": "Elements of a Malicious Operation",
       "keywords": [
-        "infection vectors",
-        "specialised services",
-        "SUPPLY CHAIN ATTACK"
+        "infection vectors"
       ]
     },
     {

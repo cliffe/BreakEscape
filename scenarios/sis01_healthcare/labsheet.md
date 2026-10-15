@@ -16,6 +16,9 @@ cybok:
     topic: "Incident Response and Resilience"
     keywords: ["INCIDENT RESPONSE", "RESILIENCE"]
   - ka: "TGSIS"
+    topic: "Requirements Reconciliation"
+    keywords: ["SAFETY REQUIREMENT", "AS LOW AS REASONABLY PRACTICABLE"]
+  - ka: "TGSIS"
     topic: "Patching of Systems with Safety Cases"
     keywords: ["PATCHING", "HAZARD ANALYSIS"]
   - ka: "TGSIS"
@@ -29,7 +32,7 @@ cybok:
     keywords: ["IEC 62443", "IEC 80001-1", "ISO 14971", "DCB0129"]
   - ka: "SOIM"
     topic: "Monitor: Data Sources"
-    keywords: ["system and kernel logs", "network infrastructure information"]
+    keywords: ["network infrastructure information"]
   - ka: "SOIM"
     topic: "Analyse: Analysis Methods"
     keywords: ["misuse detection", "anomaly detection", "contribution of SIEM to analysis and detection"]
@@ -50,7 +53,7 @@ cybok:
     keywords: ["industry-specific regulations", "NIS Regulations 2018"]
   - ka: "CPS"
     topic: "Cyber-Physical Systems"
-    keywords: ["protection against natural events and accidents", "security and privacy concerns"]
+    keywords: ["protection against natural events and accidents"]
   - ka: "CPS"
     topic: "Cyber-Physical Systems Domains"
     keywords: ["medical devices"]
@@ -59,7 +62,7 @@ cybok:
     keywords: ["firewalling", "NETWORK SEGMENTATION"]
   - ka: "AAA"
     topic: "Authentication"
-    keywords: ["user authentication", "MULTI-FACTOR AUTHENTICATION", "USER ACCESS REVIEW"]
+    keywords: ["user authentication", "MULTI-FACTOR AUTHENTICATION"]
   - ka: "MAT"
     topic: "Malicious Activities by Malware"
     keywords: ["integrity", "availability", "RANSOMWARE"]
