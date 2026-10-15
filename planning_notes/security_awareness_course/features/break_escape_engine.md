@@ -1,6 +1,6 @@
 # Break Escape engine features (BE)
 
-The engine and in-game UI work the awareness course needs, one section per feature in `features/README.md` (BE-01 to BE-22). The ids are fixed. Each section says why the course needs the feature, what the engine already has (with paths), a design concrete enough to estimate, acceptance criteria, dependencies, and risks.
+The engine and in-game UI work the awareness course needs, one section per feature in `features/README.md` (BE-01 to BE-30). The ids are fixed. Each section says why the course needs the feature, what the engine already has (with paths), a design concrete enough to estimate, acceptance criteria, dependencies, and risks.
 
 Paths: `JS/` is `public/break_escape/js/`. `game.rb` is `app/models/break_escape/game.rb`, `mission.rb` is `app/models/break_escape/mission.rb`, and "the controller" is `app/controllers/break_escape/games_controller.rb`. Line numbers are as found in October 2026.
 
@@ -20,27 +20,35 @@ Paths: `JS/` is `public/break_escape/js/`. `game.rb` is `app/models/break_escape
 | BE-01 | Assessed decisions | MVP | M | none (MG-20 for check items) | Every module; the model is core_01's C01-B1 to C01-B9 |
 | BE-02 | Debrief screen | MVP | M | BE-01 | Every module; core_01's threat-by-threat debrief |
 | BE-03 | Text route player | MVP | L | BE-01, BE-19, BE-08, BE-12 | Every module (10 to 15 minute text route) |
-| BE-04 | Accessibility baseline | MVP | L | proposed pause and time scale | Every module |
+| BE-04 | Accessibility baseline | MVP | L | BE-23 | Every module |
 | BE-05 | Organisation profile in game | MVP | M | HA-11 | core_00, core_01, core_04, core_05, core_06, core_16 and every reference card |
 | BE-06 | Localisation | P3 | L | BE-05, BE-13 | All modules, later |
 | BE-07 | Micro-drill launcher | P2 | M | BE-01, BE-13, BE-19, BE-03 shell | core_01 "Phish or Fine?" and every micro-drill in the catalogue |
 | BE-08 | Visual aids in conversations | MVP | M | BE-05 (cards) | EX-01 in every module; core_01's annotated hook email |
 | BE-09 | Intranet terminal | MVP | M | BE-05, BE-01, HA-07 | core_00, core_01, core_16, every Reference beat |
 | BE-10 | Spot-the-risk mode | P2 | M | BE-01, BE-04 | core_10, core_06, core_09, sector_01 |
-| BE-11 | Role switch | P2 | M | proposed place-player action | EX-06 interludes: core_01 alternative, core_02, core_10, core_12 |
-| BE-12 | Short sessions and resume | MVP | M | BE-01, proposed place-player action | Every module; field staff on phones |
+| BE-11 | Role switch | P2 | M | BE-24 | EX-06 interludes: core_01 alternative, core_02, core_10, core_12 |
+| BE-12 | Short sessions and resume | MVP | M | BE-01, BE-24 | Every module; field staff on phones |
 | BE-13 | Content banks and randomisation | P2 | M | BE-01 | core_01 email bank, core_17 annual edition, MG-20 banks, BE-07 |
 | BE-14 | xAPI statements | P2 | M | BE-01 | HA-10, HA-22 |
-| BE-15 | Facilitated group mode | P2 | M | BE-01, proposed pause and time scale | Every facilitated version; role_01 |
-| BE-16 | Time skips and consequence scenes | P2 | S | proposed pause and time scale | core_01, core_07, core_11 |
+| BE-15 | Facilitated group mode | P2 | M | BE-01, BE-23 | Every facilitated version; role_01 |
+| BE-16 | Time skips and consequence scenes | P2 | S | BE-23 | core_01, core_07, core_11 |
 | BE-17 | Cross-module memory | P3 | M | BE-01 | core_17, core_04 |
 | BE-18 | Work task and interruptions | MVP | M | BE-01, BE-19, BE-13 | core_01 (10:00 schedule), core_02, core_09, core_11, role_02 |
 | BE-19 | Open minigames from conversations and events | MVP | S | none | core_01 hook and check question; every EX-01 check |
 | BE-20 | Authorable tutorial, title screen and end screen | MVP | M | BE-05, BE-02, BE-04 | Every module; core_00 carries the full tutorial |
 | BE-21 | Workplace music and sound | P2 | S | BE-04 (sound captions) | Every module |
 | BE-22 | Tactic spotter card | P2 | S | BE-01, BE-02, BE-18 | core_02 (the social engineer bingo card) |
+| BE-23 | Pause and time scale | MVP | M | none | BE-04, BE-15, BE-16, BE-18; every module with timed pressure |
+| BE-24 | Place-player action | P2 | S | none | BE-11, BE-12, BE-16 |
+| BE-25 | Course avatars and inclusive name entry | MVP | S (engine), M (art) | none | Every module (inclusive content) |
+| BE-26 | Accessibility checks in CI | MVP | S | BE-03, BE-04, HA-23 | Every module |
+| BE-27 | Plain English lint | P2 | S | none | Every module |
+| BE-28 | Take an item from the player | P2 | S | none (BE-19 for handovers) | core_07 and physical-security beats |
+| BE-29 | NPC guide behaviour | P2 | S | BE-23, BE-24 | core_00 tour; escorting visitors |
+| BE-30 | Video call options | P2 | S | BE-08 | core_15 deepfake call; role_01 briefings |
 
-Suggested build order for Phase 0: BE-19 and BE-01 first (they unlock the mentor's check question and every record), then BE-05, BE-08 and BE-09 (the Learn and Reference beats), BE-20 and BE-18 (the opening and the Apply beat), BE-12 and BE-02, with BE-03 and BE-04 running alongside from the start because every new screen has to work in both routes.
+Suggested build order for Phase 0: BE-19 and BE-01 first (they unlock the mentor's check question and every record), then BE-05, BE-08 and BE-09 (the Learn and Reference beats), BE-20 and BE-18 (the opening and the Apply beat), BE-12 and BE-02, with BE-03 and BE-04 running alongside from the start because every new screen has to work in both routes. BE-23 (pause and time scale) comes with BE-04, because BE-04, BE-15, BE-16 and BE-18 all depend on it, and BE-24 (place-player) comes with BE-12. BE-25, BE-26 and BE-27 run alongside as course-wide groundwork: the office avatar set, the CI accessibility gate and the plain English lint. BE-28, BE-29 and BE-30 land with the modules that need them: BE-28 and BE-29 for first-day and physical-security beats, BE-30 for the core_15 deepfake call.
 
 ### BE-01: Assessed decisions
 
@@ -356,7 +364,7 @@ The spine sets the same globals the game's events and timers set (for example `a
 5. **Captions and transcript:** speaker names on every line, captions for sounds that carry information (phone ringing, email arriving, door buzzer), a conversation history panel, and a transcript the learner can download at the end.
 6. **Text and contrast:** rem-based sizing, a readable sans-serif option replacing the pixel fonts for body text, 4.5:1 text and 3:1 interface contrast, no information by colour alone.
 7. **Motion and flashing:** one reduced-motion switch covering CSS animations, the title typing effect, slide-ins and the credits visualiser; a separate flicker-off switch; no flashing content in course modules.
-8. **Time:** a pausable game clock with a time scale (a proposed new feature; see "Proposed additions to the catalogue" at the end): pause whenever a dialog, conversation or minigame is open if the learner chooses, slow timers down by 2, 5 or 10 times, or turn timers off. Nothing in the course requires a fast reaction.
+8. **Time:** a pausable game clock with a time scale (BE-23): pause whenever a dialog, conversation or minigame is open if the learner chooses, slow timers down by 2, 5 or 10 times, or turn timers off. Nothing in the course requires a fast reaction.
 9. **Cognitive support:** the current task always visible and repeatable ("What should I do now?"), consistent help in the same place, confirmation before anything irreversible, plain English.
 
 **Acceptance criteria:**
@@ -369,7 +377,7 @@ The spine sets the same globals the game's events and timers set (for example `a
 - axe-core reports no violations on the game's DOM surfaces (game shell, every course minigame opened through the test bridge, the debrief), and the manual matrix in the accessibility plan passes.
 - Settings chosen in one module are in force in the next.
 
-**Depends on:** the proposed pause and time scale feature; BE-20 (settings offered before the game starts); `features/minigames.md` (every new minigame meets the same standard).
+**Depends on:** BE-23 (pause and time scale); BE-20 (settings offered before the game starts); `features/minigames.md` (every new minigame meets the same standard).
 
 **Risks and open questions:**
 
@@ -680,7 +688,7 @@ Highlights are drawn as a thick outline with a numbered marker and the step labe
 
 - **Roles in the scenario:** `"roles": { "tester": { "label": "Authorised test: you are working with Jo", "sprite": "<tester sprite>", "displayName": "Test team", "inventory": [ ... ], "aims": ["phish_tank"], "place": { "room": "car_park", "tile": { "x": 4, "y": 6 } } } }`.
 - **Switching:** `#switch_role:tester` (ink) or `{ "type": "switch_role", "role": "tester" }` (actions) stores the player's own sprite, inventory, active aims and position, applies the role, and shows a persistent banner with the role's label. `#switch_role:self` restores everything.
-- **Moving the player:** this needs the proposed **place-player action**, which moves the player to a room and tile with a fade (or a plain cut under reduced motion) and records where they are.
+- **Moving the player:** this needs **BE-24 (the place-player action)**, which moves the player to a room and tile with a fade (or a plain cut under reduced motion) and records where they are.
 - **Records:** BE-01 records written during the interlude carry `"role": "tester"`, so dashboards can separate attacker-view decisions from staff decisions.
 - **Framing in content:** Jo always introduces the interlude as an authorised test and closes it with what would have stopped her (`03_WORLD_AND_CAST.md`), and the interlude stays at the level of pretexts and psychology, never a how-to (`AWARENESS_COURSE_BRIEF.md`).
 - **Text route:** a narrated interlude with the same choices and records.
@@ -692,7 +700,7 @@ Highlights are drawn as a thick outline with a numbered marker and the step labe
 - The role banner is visible and announced for the whole interlude.
 - Records written in the interlude carry the role.
 
-**Depends on:** the proposed place-player action; BE-01; EX-06 for content rules.
+**Depends on:** BE-24 (the place-player action); BE-01; EX-06 for content rules.
 
 **Risks and open questions:**
 
@@ -725,7 +733,7 @@ Highlights are drawn as a thick outline with a numbered marker and the step labe
   ```
 
   Reaching one (ink `#checkpoint:learn_start`, an event, or a task) writes a BE-01 milestone and stores the checkpoint id in the game.
-- **Resume** offers "Continue from: Ama explains what gave it away", places the player at the checkpoint's room and tile with the proposed place-player action, applies the checkpoint's `apply` actions so the world is in a known state, and shows a short "So far" card built from BE-01 records (on-screen text only, for example "You reported the 'mailbox full' email").
+- **Resume** offers "Continue from: Ama explains what gave it away", places the player at the checkpoint's room and tile with BE-24 (the place-player action), applies the checkpoint's `apply` actions so the world is in a known state, and shows a short "So far" card built from BE-01 records (on-screen text only, for example "You reported the 'mailbox full' email").
 - **Explicit save and exit** in the pause menu, so stopping feels safe. Hacktivity's learner home shows "Resume, about 8 minutes left", estimated from the beats still to do (HA-17).
 - **Time budget:** the scenario declares a target minutes figure for each beat, and BE-01 milestones measure the real times. A playtest report compares them, and the evaluation (HA-14) tracks them in live use.
 - **Both routes:** checkpoints are the points where a learner can switch between the game and the text route (BE-03).
@@ -737,7 +745,7 @@ Highlights are drawn as a thick outline with a numbered marker and the step labe
 - Median playtest times per beat are within 25% of the targets, or the targets are revised.
 - Switching between the game and the text route at a checkpoint keeps a consistent state.
 
-**Depends on:** BE-01; the proposed place-player action; BE-03.
+**Depends on:** BE-01; BE-24 (the place-player action); BE-03.
 
 **Risks and open questions:**
 
@@ -857,10 +865,11 @@ Highlights are drawn as a thick outline with a numbered marker and the step labe
 **Design:**
 
 - **Pause points in the scenario:** `"pausePoints": [ { "id": "after_hook", "when": "global_variable_changed:hook_done", "title": "Would you have clicked?", "prompts": ["Who would have clicked? Be honest. Why?"], "notes": "Let people admit it. Nobody is marked down.", "revisitInDebrief": true } ]`. Each module's game design lists them under "Facilitated session".
-- **Facilitated route:** set by HA-13 when a session starts. At a pause point the game pauses (using the proposed pause and time scale feature) and shows a discussion card with the prompts; the facilitator presses Resume.
+- **Facilitated route:** set by HA-13 when a session starts. At a pause point the game pauses (using BE-23 (pause and time scale)) and shows a discussion card with the prompts; the facilitator presses Resume.
 - **Presenter view:** a BE-04 settings preset (text at 150%, captions on, dialogue advances only on Continue, timers off) and a minimal HUD.
 - **Facilitator console:** a second window opened from the game and kept in step through a BroadcastChannel. It shows the notes, the next pause point and the vote panel.
 - **Group decisions:** at an assessed choice the facilitator can open a vote, enter the counts from a show of hands, and apply the group's choice. Records carry `route: "facilitated"` and `group: { "size": 9, "votes": { "report_and_call": 7, "change_password": 2 } }`. They belong to the session, never to individuals.
+- **Own-plan exercises (role_01):** for a board working through its own incident plan (the Cyber Governance Code's D2, "plan your response"), the facilitated session can build and store an **action list** as the group decides who does what by when, and an **exercise report** at the end that summarises the decisions, the actions and who owns them. Both are on-screen text, built from the session's group decisions, so they can carry BE-05 organisation values and never appear in a voiced line. They are session artefacts, not individual evidence, and the facilitator console (HA-13) holds and exports them.
 - **Individual evidence:** each participant still takes the knowledge check on their own device, and HA-13 records attendance. Whether attendance plus a passed check completes the module is the organisation's setting.
 - **Debrief:** BE-02 in presenter mode shows the group's decisions and returns to each pause point's prompt.
 
@@ -871,7 +880,7 @@ Highlights are drawn as a thick outline with a numbered marker and the step labe
 - A group vote is recorded with counts and the applied option, and no individual record is created for it.
 - The presenter view meets the BE-04 baseline at its preset settings.
 
-**Depends on:** the proposed pause and time scale feature; BE-01; BE-02; HA-13.
+**Depends on:** BE-23 (pause and time scale); BE-01; BE-02; HA-13.
 
 **Risks and open questions:**
 
@@ -896,7 +905,7 @@ Highlights are drawn as a thick outline with a numbered marker and the step labe
 - **Definitions** in the scenario: `"timeSkips": { "invoice_3w": { "card": "Three weeks later", "subtitle": "Northbeck's accounts office", "clockOffset": "21d", "scene": { "npc": "dawn_northbeck", "knot": "three_weeks_later", "mode": "video-call" }, "returnCard": "Back to Monday morning" } }`.
 - **Triggers:** `#time_skip:invoice_3w` in ink, or `{ "type": "time_skip", "id": "invoice_3w" }` as an action (timers, event mappings).
 - **Sequence:**
-  1. Game time pauses (the proposed pause and time scale feature).
+  1. Game time pauses (BE-23 (pause and time scale)).
   2. A full-screen title card appears, with real text as a heading that receives focus. It waits for Continue; it never times out, and it fades only when reduced motion is off.
   3. Clocks show the offset time during the scene.
   4. The scene plays.
@@ -912,7 +921,7 @@ Highlights are drawn as a thick outline with a numbered marker and the step labe
 - A reload during the scene resumes at the start of the scene.
 - The text route shows the same scene.
 
-**Depends on:** the proposed pause and time scale feature; BE-03.
+**Depends on:** BE-23 (pause and time scale); BE-03.
 
 **Risks and open questions:** consequence scenes are powerful and easy to overuse. Recommendation: at most one per module, always tied to a decision the learner made.
 
@@ -1002,7 +1011,7 @@ Steps complete from globals or objective tasks, so the bar adds no new state. Th
 - The soft deadline passing changes the text ("a bit late, still worth sending") and nothing else.
 - A reload mid-Apply keeps fired interruptions fired and pending ones pending.
 
-**Depends on:** BE-01 (assess links), BE-13 (bank draws), BE-19 (opening the inbox or a call from a timer); the proposed pause and time scale feature; MG-01, MG-04 and MG-27.
+**Depends on:** BE-01 (assess links), BE-13 (bank draws), BE-19 (opening the inbox or a call from a timer); BE-23 (pause and time scale); MG-01, MG-04 and MG-27.
 
 **Risks and open questions:**
 
@@ -1260,19 +1269,258 @@ The behaviour id is illustrative: core_02's `assessment.md` would add a row for 
 - Tagging tactics is writing work that is easy to get wrong. The validator checks that every `#tactic` id exists on the module's card, and the script editor reviews where each tag sits.
 - Open, from core_02: build the card as its own overlay or prototype it with the notes or knowledge check UI? Recommendation: prototype with the existing UI for the first core_02 playtests, then build the overlay, which is small once BE-01 and BE-18 exist.
 
-## Proposed additions to the catalogue
+### BE-23: Pause and time scale
 
-These came out of the designs above. They have no ids yet; the orchestrator decides whether to add them to `features/README.md`.
+**Priority and size:** MVP, M.
 
-| Proposed feature | One line | Size | Needed by | Evidence |
-|---|---|---|---|---|
-| **Pause and time scale** | A game-wide pause and a time scale (normal, half, a fifth, a tenth, stopped) for game time, timers, timed messages, interruptions and NPC patrols | M | BE-04, BE-15, BE-16, BE-18 | `GameClock` is wall time minus the time the page was closed and has no pause (`JS/systems/game-clock.js`, lines 52 to 66); timers and timed texts count from it |
-| **Place-player action** | Move the player to a room and tile from an action, an ink tag or a checkpoint, with a fade or, under reduced motion, a cut | S | BE-11, BE-12, BE-16 | The player always starts and respawns in the start room (`JS/core/game.js`, around lines 1267 to 1332); only side doors move the player |
-| **Course avatars and name entry** | Avatars for office staff of varied age, ethnicity, gender expression and visible disability, limited to the course with `validSprites`; player names that allow accents, apostrophes and hyphens | S engine, M art | Inclusive content (`accessibility_and_inclusion.md`) | The 14 avatars include hooded hackers and a spy, labelled male and female; the menu previews `female_hacker_hood_v2` and falls back to `male_hacker_hood_v2` (`app/models/break_escape/player_preference.rb`); names must match `[a-zA-Z0-9_ ]` |
-| **Accessibility checks in CI** | axe-core through Playwright and the test bridge on every course screen and minigame, a lint for removed focus outlines and unguarded animations, and the BE-03 route parity check, run on every change | S | BE-03, BE-04, HA-23 | No accessibility tooling in the repo today |
-| **Plain English lint** | Reading level, sentence length and banned-word checks on spoken lines, documents and bank items, as flags for human review | S | Every module | The dialogue lint checks spoken line length only |
+**Why:** Several features need one clock they can stop or slow. BE-04 promises timers that can be turned off and no required fast reactions; BE-18's interruptions, BE-15's pause points and BE-16's time skips all have to stop game time cleanly; and anything else that moves with game time (an incident spreading on core_04's map, MG-26) has to follow the same clock. Today the game clock is wall time and cannot be paused, so timers and timed messages keep running while a learner reads a conversation, which is unfair to anyone who reads slowly or listens with a screen reader. This is the engine feature the accessibility baseline leans on most, so it must have an estimable design of its own rather than sit as a dependency the others assume.
 
-Sizing notes on existing items: BE-04 is L only if scoped to the shell and the minigames this course uses. BE-15 is M only while phone voting stays out. BE-19 is S for close, run and return; overlay questions belong in MG-20.
+**What exists today:**
+
+- The game clock is wall time minus the time the page was closed, with no pause (`JS/systems/game-clock.js`, lines 52 to 66). Scenario timers and timed messages count from it (`JS/ui/scenario-timer-dispatcher.js`).
+- The engine already branches on an accessibility state for motion: `lighting_dip` is skipped under reduced motion (`apply-actions.js`, line 141).
+- There is no time scale, no global pause, and no way to pause from a menu or a minigame.
+
+**Design:**
+
+- **One clock.** Game time, scenario timers, timed messages, interruptions (BE-18), NPC patrols and anything else that moves with game time read from a single clock that can be paused, run at a scale (normal, half, a fifth, a tenth) or run with timers stopped altogether.
+- **Pause** from the pause menu, from a minigame or dialog, and automatically whenever a conversation, document or minigame is open if the learner chooses that setting (BE-04).
+- **Time scale and timers off** are BE-04 settings, stored per player, so they follow the learner across modules, with the scale applied to every timed element together so their order never changes.
+- **Resume** continues from where the clock stopped, so a timer that had 90 seconds left still has 90 seconds left after a pause or a reload.
+- Deadlines in course modules stay soft (BE-18) and are shown as words, never as a red countdown.
+
+**Acceptance criteria:**
+
+- With timers off, a module can be completed with no time pressure, and the records match a normal-speed run with the same decisions.
+- Pausing from a conversation, a minigame or the menu stops game time, timers, timed messages, interruptions and patrols together, and resuming continues them from the same point.
+- A reload while paused keeps the paused state and the time remaining on every timer.
+- Changing the time scale rescales every timed element together, so their relative order is unchanged.
+
+**Depends on:** none. Depended on by BE-04, BE-15, BE-16 and BE-18.
+
+**Risks and open questions:**
+
+- Shared engine code: the clock drives the campaign and SIS games too, so the change needs the regression playtests in `AGENTS.md`.
+- Open: should pause-while-reading be on by default? Recommendation: off in the game, because the busy gate (BE-18) already holds interruptions, but offered as an easy setting.
+
+### BE-24: Place-player action
+
+**Priority and size:** P2, S.
+
+**Why:** Time skips (BE-16), role switches (BE-11) and resumes (BE-12) all need to put the player in a particular room and spot, but today the player only ever starts or respawns in the start room. A small, shared action gives all three a reliable way to move the player and set a start position.
+
+**What exists today:**
+
+- The player always starts and respawns in the start room (`JS/core/game.js`, around lines 1267 to 1332); only side doors move the player between rooms.
+- Pathfinding to a point exists (`movePlayerToPoint`, `JS/core/player.js`, line 717).
+- There is no scenario action, ink tag or checkpoint field that sets the player's room and tile.
+
+**Design:**
+
+- **An action** `{ "type": "place_player", "room": "operations", "tile": { "x": 7, "y": 5 } }` in `applyActions`, an ink tag `#place_player:operations:7,5`, and a `place` field on checkpoints (BE-12) and roles (BE-11).
+- **The move** fades out, places the player and fades in, or cuts with no animation under reduced motion.
+- **It records** where the player is, so a reload straight afterwards puts them back in the same spot.
+- **In the text route** (BE-03) it is narrated by the scene it belongs to and otherwise has no visible effect.
+
+**Acceptance criteria:**
+
+- A `place_player` action, tag or checkpoint moves the player to the named room and tile, and a reload immediately afterwards keeps them there.
+- Under reduced motion the move is a cut with no fade.
+- The start position can be set from a checkpoint on resume (BE-12) and from a role on switch (BE-11).
+
+**Depends on:** none. Depended on by BE-11, BE-12 and BE-16.
+
+**Risks and open questions:**
+
+- A tile that is out of bounds or blocked must fail safe to the room's default spot; the validator checks that every `place_player` names a real room and a walkable tile.
+
+### BE-25: Course avatars and inclusive name entry
+
+**Priority and size:** MVP, S for the engine and the name field, M for the art.
+
+**Why:** The player is a member of staff, not a hooded hacker, and staff have names the game must accept. The inclusive content rules (`accessibility_and_inclusion.md`, section 5.6) ask for a workplace avatar set and a name field that accepts accented letters, hyphens and apostrophes, so Siobhán, O'Neill, Anne-Marie and Wiśniewski can be typed.
+
+**What exists today:**
+
+- The 14 built-in avatars include hooded hackers, a spy and a "nerd", labelled male and female; the menu previews `female_hacker_hood_v2` before a choice and falls back to `male_hacker_hood_v2` (`app/models/break_escape/player_preference.rb`, lines 40 to 44).
+- `validSprites` already limits the avatar choices per scenario.
+- The name field accepts only `[a-zA-Z0-9_ ]`, 1 to 20 characters (`player_preference.rb`, lines 61 to 62), so accented letters, apostrophes and hyphens are rejected.
+- The name never appears in a voiced line (`AGENTS.md`).
+
+**Design:**
+
+- **A course avatar set** of 8 to 12 office avatars: ages from 20s to 60s, a range of skin tones, head coverings (hijab, turban), a wheelchair user, hearing aids and glasses, described by appearance rather than labelled male or female, with no hooded-hacker default (`accessibility_and_inclusion.md`, section 5.6). Course scenarios list them in `validSprites`, and the pre-choice preview and every fallback use a course avatar, not a hacker.
+- **The name field** accepts letters from any script, apostrophes, hyphens and spaces, with a longer limit, validated and trimmed, and still never printed in a voiced line.
+- **The course never asks for gender,** because nobody refers to the player in the third person (section 5.1).
+
+**Acceptance criteria:**
+
+- A course module shows only office avatars, and the pre-choice preview and every fallback are office avatars.
+- Siobhán, O'Neill, Anne-Marie and Wiśniewski can all be entered and are shown correctly on screen.
+- No voiced line changes with the player's name.
+
+**Depends on:** none for the engine. The art is a separate deliverable, and BE-20 shows the avatars on the title and player screens.
+
+**Risks and open questions:**
+
+- The art is the long pole (M). The engine change (the name field and `validSprites`) is small and can land first with a placeholder set.
+
+### BE-26: Accessibility checks in CI
+
+**Priority and size:** MVP, S.
+
+**Why:** The course commits to WCAG 2.2 AA and to keeping it (`accessibility_and_inclusion.md`, section 6). Automated checks on every change catch regressions that manual passes would miss between releases, and they are the first of the three testing layers that document promises.
+
+**What exists today:**
+
+- No accessibility tooling in the repo.
+- A test bridge, `window.__test`, is available outside production and can open any minigame (`accessibility_and_inclusion.md`, section 6.1).
+- The dialogue lint checks voiced variables and spoken line length (`scripts/ink_runtime_check/dialoguelint.mjs`); the validator checks scenario structure.
+
+**Design:**
+
+- **axe-core through Playwright** on every course HTML surface: the game shell, every course minigame opened through the test bridge, the text route (BE-03), the debrief (BE-02), the intranet (BE-09), settings, the title and end screens (BE-20) and Hacktivity's learner pages (HA-23), running the WCAG 2.0, 2.1 and 2.2 A and AA rules and failing the build on any violation.
+- **A contrast test** over every colour token in the dark, light and high-contrast themes.
+- **A CSS lint:** no `outline: none` without a replacement focus style, and every animation or transition under a reduced-motion guard.
+- **The BE-03 route parity check** (`routeparity.mjs`) and the validator's accessibility checks (alt text on every aid, caption text for every information-carrying sound, `lang` on every page) run in the same job.
+
+**Acceptance criteria:**
+
+- A new axe-core violation on any covered surface fails the build and names the surface and the rule.
+- A removed focus outline or an unguarded animation fails the CSS lint.
+- The job runs on every change and completes within the CI budget.
+
+**Depends on:** BE-03 (the route parity check and the text-route pages), BE-04 (the DOM surfaces it tests), HA-23 (the platform pages).
+
+**Risks and open questions:**
+
+- Automated checks find only part of what is wrong; they sit alongside the manual and user testing in `accessibility_and_inclusion.md`, section 6, never instead of it.
+- Flaky bridge timing can make the job unreliable; stabilise the test bridge before turning the gate on.
+
+### BE-27: Plain English lint
+
+**Priority and size:** P2, S.
+
+**Why:** The course writes to a reading age of about 11 to 12 (`accessibility_and_inclusion.md`, section 5.5), following GOV.UK's rules on sentence length, paragraph length and plain words. A lint flags the sentences and words a human should look at, across ink, documents and bank items, alongside the dialogue lint that already runs.
+
+**What exists today:**
+
+- The dialogue lint checks spoken line length (30 words) and voiced variables only (`scripts/ink_runtime_check/dialoguelint.mjs`).
+- Nothing checks reading level, sentences over 25 words, paragraph length, or banned filler and jargon.
+
+**Design:**
+
+- **A lint over ink, documents and bank items** (BE-13) that flags sentences over 25 words, paragraphs over five sentences, reading level above the target, negative contractions in instructions and reference cards (section 5.5), banned filler and ableist idioms, and jargon used without a first-time explanation.
+- **Flags, not failures:** the lint reports for a human to judge, because plain English is a judgement, not a rule a machine can settle.
+- It runs beside the dialogue lint and the accessibility checks (BE-26).
+
+**Acceptance criteria:**
+
+- A spoken line or document sentence over the limits, a banned word, or an unexplained jargon term is flagged with its location.
+- The lint runs over a module's ink, documents and bank items in one pass.
+- Natural contractions in speech are allowed; negative contractions in instructions are flagged.
+
+**Depends on:** none to start; it reads the same content BE-13's banks and the modules' documents hold.
+
+**Risks and open questions:**
+
+- Reading-level scores are rough and can misjudge technical terms the course explains on purpose; keep the lint advisory.
+
+### BE-28: Take an item from the player
+
+**Priority and size:** P2, S.
+
+**Why:** Some beats hand something back: giving a found USB stick to IT rather than plugging it in (core_07), returning a visitor's badge, handing over a form. Today ink can give the player an item but cannot take one, so these actions cannot be completed in the world.
+
+**What exists today:**
+
+- Ink can give items (`#give_item`, and `#give_npc_inventory_items` through `JS/systems/npc-game-bridge.js`, around line 381), and the inventory system tracks what the player holds (`JS/systems/inventory.js`).
+- There is no tag or action that removes an item from the player's inventory.
+
+**Design:**
+
+- **An ink tag** `#take_item:<id>` and an action `{ "type": "take_item", "item": "<id>" }` in `applyActions`, which remove the named item from the player's inventory and update saved state so a reload reflects it.
+- **A missing item fails safe:** taking an item the player does not hold is a no-op.
+- **In the text route** (BE-03) the item is removed from the saved inventory the same way, narrated by the scene.
+- Pairs with BE-19, so a colleague's conversation can take the item as part of a handover.
+
+**Acceptance criteria:**
+
+- Handing a found USB stick to IT removes it from the inventory, in both routes, and a reload keeps it gone.
+- Taking an item the player does not hold does nothing and is reported by the validator as a warning.
+
+**Depends on:** none. Works with BE-19 for conversation handovers.
+
+**Risks and open questions:**
+
+- Removing an item a later beat still needs would strand the player; the validator checks that a taken item is not required afterwards.
+
+### BE-29: NPC guide behaviour
+
+**Priority and size:** P2, S.
+
+**Why:** Some beats need an NPC to lead: a tour of the office on the first day (core_00), escorting a visitor to a meeting room, walking a learner over to The Lark. The NPC should walk ahead to a destination and wait for the player to catch up.
+
+**What exists today:**
+
+- NPCs can walk to the player (`navigateToPlayer`, `JS/systems/npc-manager.js`, around line 581) and follow scripted movement.
+- Pathfinding exists (`movePlayerToPoint`, `JS/core/player.js`, line 717).
+- There is no "walk ahead and wait" behaviour.
+
+**Design:**
+
+- **An action** that sends an NPC to a room and tile and has them wait there for the player, resuming the beat when the player arrives: `{ "type": "npc_guide", "npc": "leo_brennan", "room": "operations", "tile": { "x": 7, "y": 5 }, "waitFor": "player" }`, with an ink tag equivalent.
+- **The NPC paces itself** to the player, pausing if the player stops, so nobody is left behind, and follows the BE-23 clock so a pause stops the guide too.
+- **In the text route** (BE-03) the guide becomes a narrated move ("Leo walks you over to the notice board") with the same records.
+
+**Acceptance criteria:**
+
+- An NPC walks ahead to the destination, waits for the player, and the beat continues when the player arrives.
+- Pausing the game (BE-23) pauses the guide, and resuming continues it.
+- The text route narrates the same move.
+
+**Depends on:** BE-23 (so the guide follows the one clock). Pairs with BE-24 for placing the player at the destination.
+
+**Risks and open questions:**
+
+- A player who wanders off must not soft-lock the beat; the NPC waits indefinitely and the "What should I do now?" answer points to the destination.
+
+### BE-30: Video call options
+
+**Priority and size:** P2, S.
+
+**Why:** Video-call scenes need two things the engine hard-codes today: a call bar label that can change (the deepfake call in core_15, the board briefings in role_01), and call effects for deepfake and poor-connection scenes. Today the call bar always reads "SECURE VIDEO LINK" and there are no call effects.
+
+**What exists today:**
+
+- Video-call mode frames a conversation as a call with a self-view (`JS/minigames/person-chat/person-chat-ui.js`, around line 236); its status bar text "SECURE VIDEO LINK" is hard-coded (line 253).
+- Conversation backgrounds and `Narrator[none]:` lines already set a scene's mood.
+- There is no way to freeze, blur or lag a call from ink.
+
+**Design:**
+
+- **A configurable call bar label,** set per call (default "Video call"), so a scene can name the service it is meant to be, which BE-08's share-screen call also uses.
+- **Ink-driven call effects** `#call_effect:freeze`, `#call_effect:blur`, `#call_effect:audio_lag` and `#call_effect:clear`, which apply ordinary call-quality texture to the call for poor-connection and deepfake scenes.
+- **A firm rule, per core_15:** these connection effects are ordinary call-quality texture that can happen to any caller, genuine or not, and must NEVER be used as a deepfake detection tell. The lesson of core_15 is that you cannot tell a deepfake from how glitchy the call looks; the check is always to verify the caller through a route you already trust. No course content or debrief ever says "it froze, so it was fake".
+- **Accessibility:** effects are visual texture only, never carry information, respect reduced motion (no motion under the setting) and never flash; the spoken lines and captions carry the scene whatever the effect does.
+- **In the text route** (BE-03) the label is shown and an effect, if mentioned at all, is one neutral line ("the picture freezes for a moment"), again never as a tell.
+
+**Acceptance criteria:**
+
+- The call bar shows the configured label, and "SECURE VIDEO LINK" appears nowhere unless a scene asks for it.
+- `#call_effect` tags freeze, blur or lag the call and clear it, with no flashing and nothing animating under reduced motion.
+- No course content or debrief uses a connection effect as evidence that a caller is a deepfake, checked in review against core_15's rule.
+
+**Depends on:** BE-08 (the video call's shared-screen and visual-aid handling).
+
+**Risks and open questions:**
+
+- The effects are easy to misread as a detection cue; the core_15 rule above and a review check keep them as texture only.
+- Open: should blur and freeze be available outside deepfake scenes? Yes, for any poor-connection moment, which is the point: they are not special to fakes.
+
+## Sizing notes on existing items
+
+BE-04 is L only if scoped to the shell and the minigames this course uses. BE-15 is M only while phone voting stays out. BE-19 is S for close, run and return; overlay questions belong in MG-20.
 
 ## Notes for the other feature documents
 
