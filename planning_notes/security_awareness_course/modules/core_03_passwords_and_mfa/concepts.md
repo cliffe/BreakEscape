@@ -164,7 +164,7 @@ Use these as background and inspiration only. Game content uses fictional names.
 - **23andMe, 2023.** Between April and September 2023, an attacker used login details stolen in unrelated breaches to get into accounts, exposing data on 155,592 UK residents. The UK regulator, now the Information Commission (the ICO; the Information Commissioner until 30 September 2026), fined the company £2.31 million on 17 June 2025, finding it lacked mandatory MFA and secure password requirements, among other failings.
 - **Advanced Computer Software Group, 2022.** In a ransomware attack in August 2022, attackers reached a health and care subsidiary's systems through a customer account that did not have MFA. NHS 111 and social care services were disrupted and 79,404 people's data was put at risk, including details of how to get into the homes of 890 people receiving care at home. The ICO fined the company £3,076,320 on 27 March 2025.
 - **The usual guesses.** An NCSC analysis of breached accounts in 2019 found `123456` used 23.2 million times, with first names, football teams and fictional characters high on the list (NCSC news, 21 April 2019). These old lists are still where guessing starts, which is why the game's guesser tries them first.
-- **UK picture.** In the Cyber Security Breaches Survey 2025, 40% of UK businesses and 35% of charities had any requirement for two-factor authentication (DSIT, April 2025, table 3.1). Check the latest edition before quoting figures.
+- **UK picture.** In the Cyber Security Breaches Survey 2025, 40% of UK businesses and 35% of charities used two-factor authentication (DSIT, April 2025, table 3.1). Check the latest edition before quoting figures.
 
 ## Organisation-specific slots
 

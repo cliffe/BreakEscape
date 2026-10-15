@@ -21,7 +21,7 @@ A password is the key to everything an account can open: email, payroll, custome
 - **Uber, 2022.** An attacker had a contractor's password. The contractor received repeated approval requests and eventually accepted one, and the attacker was in (Uber's own account of the incident). Press reports said the attacker had also messaged the contractor pretending to be Uber IT.
 - **Advanced, 2022.** Attackers got into a supplier of NHS and social care software through a customer account without MFA; NHS 111 services were disrupted and 79,404 people's data was put at risk. The ICO fined the company £3.07 million in March 2025.
 
-In the UK government's Cyber Security Breaches Survey 2025, only 40% of businesses had any requirement for two-factor authentication. The fixes are cheap and well understood: a different password for every account, kept in a password manager; MFA everywhere, with passkeys where offered; and never approving a prompt or sharing a code you didn't ask for. Sources are in `concepts.md`.
+In the UK government's Cyber Security Breaches Survey 2025, only 40% of businesses used two-factor authentication. The fixes are cheap and well understood: a different password for every account, kept in a password manager; MFA everywhere, with passkeys where offered; and never approving a prompt or sharing a code you didn't ask for. Sources are in `concepts.md`.
 
 ## Target behaviours
 
