@@ -1,62 +1,47 @@
 # To do
 
-Deferred work on the course plan (paused 14 October 2026 to save usage). Reviews use `docs/agents/AWARENESS_REVIEW_BRIEF.md`: a fresh read-only reviewer per batch, findings back to a writer, then the checks below.
+## Status
 
-## 1. Reviews (none run to completion yet)
+**Review and reconciliation pass complete (15 October 2026).** Every module (26) and every feature document was reviewed by a fresh read-only reviewer against `docs/agents/AWARENESS_REVIEW_BRIEF.md`, accuracy checked against primary sources, and the agreed fixes applied. No blockers and no surviving factual errors were found; all modules were "ready" or "ready after minor fixes". The style and structure checker passes (no em or en dashes, UK spelling, "cyber security", all template headings present, every feature id in `features/README.md`).
 
-Each review checks accuracy first (every fact against a primary source), then the template, teaching quality, the game, assessment, consistency, engine feasibility, compliance references, inclusion and style. Known items to include are listed under each batch.
+## 1. Reviews: done
 
-- [ ] **core_02, core_10, core_12**
-  - Rename the one-off character "Priya Oduya" in core_02 ("Priya" is an existing Break Escape character).
-  - Cite BE-22 (tactic spotter card) instead of "proposed"; add the card's row to core_02's assessment.
-  - core_10 `concepts.md` (about line 50) says confidential waste goes in "the confidential bin or the shredder"; align with core_06, which owns disposal (strip-cut shredders take Internal paper only by default).
-  - Check lockpicking has a skip or assist option, since it sits on core_10's critical path.
-  - Rename ids to the template convention (C02-B1, C02-CB1, C02-Q1 and so on).
-  - Resolve the "to verify" cases: NPSA "Think Before You Link" figures, the 2020 EU defence ministers' video call, Robin Sage (2010), Yujing Zhang (2019), the Coalfire courthouse arrest (2019), the NY DFS Twitter report wording.
-- [ ] **core_05, core_06** (core_05 is MVP: check every legal statement)
-  - Verify or remove the Ministry of Defence 2021 Afghan relocation email and its fine; check 56 Dean Street against the ICO's own notice.
-- [ ] **core_07, core_08, core_13**
-  - Verify or remove the FBI Denver warning on free file converters (2025) and Heathrow's 2018 fine for a lost USB stick.
-  - Settle the scam page that won't close: core_08 says call the service desk; make MG-02 match.
-- [ ] **core_00, core_16, core_17**
-  - Verify or remove the claim that scams target new starters, and the ICO position on covert monitoring.
-  - core_17: check its mapping to every other module's outcome ids (some modules were written after it).
-- [ ] **core_03, core_04**
-  - Verify NIS2 Article 23's 24-hour early warning; keep the Uber 2022 WhatsApp detail marked as reported, not confirmed.
-- [ ] **role_05, role_06, sector_01**
-  - Verify PCI DSS 3.3.1's numbering, the £92m WannaCry cost, and the NHS smartcard terms.
-- [ ] **core_09, core_14, core_15** (written; not yet reviewed)
-  - **Clash with role_05:** role_05's deepfake job candidate is given away by video freezes and lip-sync lag. core_15 owns deepfakes and teaches that the fakes never glitch: check another way instead. Rework role_05's tell into an identity-check failure, and narrow BE-30 to the call bar label and a workplace skin, with connection effects never used as a deepfake tell.
-  - Verify or soften: the public charging point line ("to verify"), insider-risk percentages, NPSA definitions (secondary only), the Arup case (several outlets), the amended AI Act Art 4 wording.
-  - Proposals to add or fold in: an "overlooked and overheard" engine check (generalises `lockpick_used_in_view`), a sight-line toggle, MG-09 "raise a concern" mode, MG-26 rumour skin, MG-01 "show hidden text", a fix for the stubbed `#add_note`, MG-14 allowing an always-on VPN, Lark Assist in the world document.
-  - Compliance: decide whether to add the ISO 27001 topic controls the writer dropped (A.6.7, A.7.9, A.8.1, A.5.10, A.5.12, A.5.14, A.5.17, A.6.5, A.6.6) and ISO/IEC 42001 cl. 7.2 and 7.3; add PCI DSS 12.6.3.2 to core_09 and core_15, CIS 14.4 to core_15.
-- [ ] **core_11, role_02, role_07** (written; not yet reviewed)
-  - Cast: add Eleni Markou (Financial Controller and second approver, 50s, Greek Cypriot British, walks with a stick; needs a full sprite) and Bea Thornton (Payroll Supervisor, 60s, Lancashire); Kev gains role_02. If role_01 has a Finance Director, settle how they relate to Eleni.
-  - `minigames.md`: MG-15's entry says the player is the second approver in role_02 (the plan makes them approver 1) and puts Northbeck in core_11's Apply beat (now the hook); add the `dual-auth` rework (the second panel completes on the approver's own event and records whose account signed at whose keyboard) and MG-22's per-clause counter-offers.
-  - Verify: the EU Verification of Payee start date and scope, the SOC 2 Type 1 and Type 2 wording, Kaseya's affected-business figures, the Coop Sweden store closures.
-  - Compliance: decide whether to add ISO 27001 A.5.3 and A.5.19 to A.5.23, NCSC CAF A4, and PCI DSS 3.3.1.2, 3.4.1 and 4.2.2 to section 2 of the mapping.
-  - Course-wide authoring rule to add: every fictional phone number uses Ofcom's ranges reserved for drama.
-- [ ] **role_01, role_03, role_04** (written; not yet reviewed; role_03's twist already changed so it doesn't repeat role_06's)
-  - Cast needing art and voice: Daniel Kwan, Rosa Delgado, Ines Carvalho, Sunil Mehta; voice only: Leah Brodsky, Gavin Ashworth.
-  - Features: a pull request view around MG-19 (proposed, S); MG-24 needs to move the game clock forward for good (give clock setting to BE-23); MG-17's "code sent to the registered device" check must become an approval or reset sent to details already held (the no-read-back rule); HA-11 needs fields for the customer's incident plan headings, crisis roles and contacts (role_01's own-plan version, Cyber Governance Code D2).
-  - Verify: PCI DSS requirement 8 numbering for identity checks and admin MFA; the date of Birsan's "dependency confusion" write-up; keep the MGM 2023 and M&S 2025 service desk routes described as reported.
-  - Re-check the fictional package names (`papyrus-pdf` and variants) are unregistered on npm and PyPI before release.
-- [ ] **MG-30 and the attacker-view beat (added after the paper review).** Check the new MG-30 section in `minigames.md`, core_01's beat 3b and the three-lens framing against: the safety rails holding (sandboxed, fragment bank only, nothing sent, no payloads, always optional, always ends on the defence); consistency with EX-06, MG-13, MG-01 and BE-11; the Chothia, Paiu and Oultram (2018) citation and that only the pretext-and-psychology half is used; and principle 12 in `01_LEARNING_DESIGN.md`. Verify the paper's full citation (venue, year) against a primary source. Confirm MG-30's build-order placement (after MG-13 and MG-01) is reflected everywhere it is cited. Decide D12 with the user before any technical lab work.
-- [ ] **The feature documents**: catalogue against documents, shared definitions, accuracy of the standards cited, engine claims, and that nothing private about Hacktivity is in this public repo.
-- [ ] After fixes: a second, lighter review of the MVP modules (core_00, core_01, core_03, core_04, core_05, core_16).
+All batches reviewed and fixed:
 
-## 2. Reconciliation
+- [x] **core_02, core_10, core_12** (Priya renamed to Bisi Adewale; BE-22 cited; id conventions; core_10 disposal aligned to core_06; lockpicking/rfid assist-or-cutscene on the critical path; cases verified).
+- [x] **core_05, core_06** (MoD ARAP and PSNI verified; Procurement Act Schedule 7 citation generalised; redaction/disposal boundary confirmed).
+- [x] **core_07, core_08, core_13** (FBI Denver and Heathrow verified; scam-page exit settled in MG-02).
+- [x] **core_00, core_16, core_17** (new-starter pattern cited to the FTC; ICO covert-monitoring verified; capstone LO mapping confirmed correct).
+- [x] **core_03, core_04** (NIS2 Article 23 three-stage clock verified; CSBS wording; hotspot text-route equivalent).
+- [x] **role_05, role_06, sector_01** (role_05 deepfake tell reworked to an identity/process failure to agree with core_15; PCI DSS 3.3.1, WannaCry GBP 92m and NHS CIS smartcard terms verified).
+- [x] **core_09, core_14, core_15** (juice-jacking softened; insider-risk figures and NPSA definitions handled; Arup attributed; AI Act Article 4 verified).
+- [x] **core_11, role_02, role_07** (EU Verification of Payee dates; Kaseya and SOC 2 verified; MG-15/dual-auth/MG-22 fixed in the catalogue).
+- [x] **role_01, role_03, role_04** (BE-23 named; PCI DSS 8.2.4/8.4.1 pinned; Birsan dated; package names flagged for a release-time check).
+- [x] **The feature documents** (catalogue vs documents reconciled; standards verified; no private Hacktivity detail in this public repo).
 
-- [ ] **Feature documents behind the catalogue.** Give full sections to ids added after the documents were written: BE-23 to BE-30 in `break_escape_engine.md` (BE-23 to BE-27 are only in its "proposed additions"), MG-26 to MG-29 in `minigames.md` (MG-26 and MG-27 are only proposals there), HA-24 to HA-26 in `hacktivity.md`. Check every document's priorities and sizes against `features/README.md`.
-- [ ] **`minigames.md` "Used for" fixes:** MG-02 (drop the transcription tool under core_13; it moved to core_15; the scam page wording); MG-12 (core_06 owns the redaction technique, core_05 the judgement); MG-20 (core_00 now has five check items; core_16's game show needs three buzzers, contestants, rounds and "Ask first" scoring); MG-07 (the 02:13 storm is core_03's cold open, not a time skip); MG-17 (the contact centre's additions from role_06).
-- [ ] **Compliance mapping:** add ISO 27001 A.5.10, A.5.12, A.5.13, A.5.14, A.7.10, A.7.14, A.8.10, NIST PL-4 and PCI DSS 9.4.6 to the short references; then rebuild the coverage matrix from every module's "Compliance coverage" section (known additions: core_05 CIS 14.6; core_08 PCI DSS 12.6.3.2; core_13 UK GDPR Art 28 as context; core_16 ISO 27001 A.5.1 and A.5.10; core_17 NIST AT-2(6) and PCI DSS 12.6.2).
-- [ ] **World and cast:** update the "Main modules" column for the recurring cast from the modules; add a names register (one-off characters, clients, suppliers and products per module) so future modules don't clash; add sector_01's cast (Dev Kapoor, information governance manager and mentor; Rodel Bautista, ward manager); list new on-screen characters that need art (Reena Solanki, Ellie Nguyen, Dev Kapoor, Rodel Bautista and others named in the game designs); note that Precious needs a wheelchair movement set.
-- [ ] **Explainer library** in `explainers_video_and_npc.md`: reconcile with each module's "Explainers" section.
-- [ ] **Open questions:** gather the module-level questions most worth the user's time into `DECISIONS_PENDING.md` (for example core_13's USB test reveal, core_05's avoidable misdirected email, core_03's night-time cold open, core_04's optional "Cut off" button, who sees core_17's year profile, whether Jo's test reveals are fair).
-- [ ] **Checks:** run the style and structure checker over everything (no em or en dashes, UK spelling, "cyber security", template headings, known feature ids) and fix what it finds. The checker lived in the session scratchpad; recreate it if needed (it is about 80 lines of Python: a dash scan, a US spelling list, the template's headings per file, and feature ids checked against `features/README.md`).
-- [ ] **README status** and the final commit.
+## 2. Reconciliation: done
 
-## 3. For the user, outside this repo
+- [x] **Feature documents brought up to the catalogue:** full sections for BE-23 to BE-30 (`break_escape_engine.md`), MG-26 to MG-30 (`minigames.md`), HA-24 to HA-26 (`hacktivity.md`); priorities and sizes aligned with `features/README.md`.
+- [x] **`minigames.md` fixes:** MG-15 (Brackenfold in Apply, player is approver 1, Northbeck is the hook), the `dual-auth` own-event completion and account-at-keyboard record, MG-22 per-clause counter-offers, MG-17 no-read-back wording, MG-02 scam-page exit, the stale "watched" cross-reference.
+- [x] **Compliance mapping:** short references added (ISO 27001 A.5.3/A.5.10/A.5.12 to A.5.14/A.5.19 to A.5.23/A.6.7/A.7.9/A.7.10/A.7.14/A.8.1/A.8.10, ISO/IEC 42001 7.2 and 7.3, NIST PL-4, PCI DSS 3.3.1.2/3.4.1/4.2.2/9.4.6, NCSC CAF A4); coverage matrix reconciled per module.
+- [x] **World and cast:** new characters added (Eleni Markou, Bea Thornton, Reena Solanki, Dev Kapoor, Rodel Bautista, Jas and the role and sector cast); main-module columns updated; art and voice needs noted; Precious wheelchair set noted.
+- [x] **Explainer library** reconciled with each module's Explainers section.
+- [x] **Open questions** gathered into `DECISIONS_PENDING.md` (the module-level open-questions table).
+- [x] **Checks:** style and structure checker run over everything and clean.
+- [x] **Topic boundaries:** role_05 added as a deepfake toucher.
+
+## 3. Remaining follow-ups (minor; not blocking)
+
+- [ ] **World and cast names register.** A per-module register of one-off characters, clients, suppliers and products would still help future modules avoid clashes; the recurring and minor cast are done, the full register table was not added.
+- [ ] **role_01 explainer id.** The explainer library lists the leader opening as EX-03; role_01's module shows it as an EX-02 engine-recorded video. Reconcile to one id.
+- [ ] **Currency re-checks before a customer pilot or release** (each already hedged in the text): the M&S and JLR cost figures (core_07, core_17); the August 2026 Microsoft citations (core_07, core_08); the NCSC page titles and dates (core_09); the British Library Cyber Essentials Plus dates and the CSBS 2025/2026 board figures (role_01); the Software Security Code of Practice revision date (role_04); the PCI SSC FAQ numbers (role_02); the UK Finance 2026 fraud figures (core_11); the right-to-work 2026 change date (role_05).
+- [ ] **Release-time check:** confirm the fictional package names (`papyrus-pdf` and variants) are still unregistered on npm and PyPI (role_04); confirm the trademark and domain check in `DECISIONS_PENDING.md` D2.
+- [ ] **Course-wide authoring rule:** every fictional phone number uses Ofcom's ranges reserved for drama (already committed to in core_11 and role_02; apply everywhere).
+- [ ] **Decisions for the user:** D1 to D12 and the module-level open-questions table in `DECISIONS_PENDING.md`.
+- [ ] **Optional:** a second, lighter review of the MVP modules after these fixes; and decide whether core_01 should move from the CSBS 2025 to the 2025/2026 edition for consistency with core_00 and core_17.
+
+## 4. For the user, outside this repo
 
 - Hacktivity privacy points found while reading its code were reported in the session chat, not written here, because this repo is public.
 - Engine bugs found during planning are in `docs/IDEAS_BACKLOG.md` ("From the security awareness course planning").
+- The technical "learning by doing" phishing lab (Chothia, Paiu and Oultram, 2018) already exists adapted to SecGen and Hacktivity; see `DECISIONS_PENDING.md` D12 for how it relates to the awareness course's optional attacker-view beat (MG-30).
