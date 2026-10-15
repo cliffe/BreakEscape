@@ -1,6 +1,6 @@
 # Explainers: NPCs, video and the other ways the course explains things
 
-How the awareness course tells people the things they must simply be told, and shows them the things that are better shown. This is the full design behind the "Explaining things" summary in `01_LEARNING_DESIGN.md`. It covers the EX features in `features/README.md`: EX-01 mentor explainer, EX-02 engine-recorded video, EX-03 produced video, EX-04 in-world documents, EX-05 demonstration scenes, EX-06 attacker-view interludes and EX-07 shared glossary and tooltips. It also leans on BE-08 (visual aids in conversations), BE-19 (open a minigame from a conversation or event), MG-20 (knowledge check), MG-21 (video player) and HA-20 (video hosting, captions and transcripts).
+How the awareness course tells people the things they must simply be told, and shows them the things that are better shown. This is the full design behind the "Explaining things" summary in `01_LEARNING_DESIGN.md`. It covers the EX features in `features/README.md`: EX-01 mentor explainer, EX-02 engine-recorded video, EX-03 produced video, EX-04 in-world documents, EX-05 demonstration scenes, EX-06 attacker-view interludes, EX-07 shared glossary and tooltips and EX-08 printable poster and briefing pack. It also leans on BE-08 (visual aids in conversations), BE-19 (open a minigame from a conversation or event), MG-20 (knowledge check), MG-21 (video player) and HA-20 (video hosting, captions and transcripts).
 
 Read `AWARENESS_COURSE_BRIEF.md` first; its writing rules apply here. This file is a feature design, not a module. Module writers refer to the EX ids and reuse the patterns below; they do not restate them.
 
@@ -519,13 +519,14 @@ Lengths: an EX-01 chunk is 60 to 90 seconds; a module's Learn beat is usually 2 
 | core_01 | "Can't MFA stop this?" (session-stealing, in one breath) | EX-01, BE-08 | 30 s | Ama |
 | core_01 | "What happens to a report" (the report queue, pulled from inboxes) | EX-05 | 45 s | Kai |
 | core_01 | Optional "Sixty-second phish" on the meeting room screen | EX-02 | 60 s | Ama (recorded) |
+| core_01 | Optional "The Phish Tank": build a pretext in a sandbox, then catch it in your own inbox | EX-06, BE-11, MG-30 | 3 to 4 min | Jo Fairweather |
 | core_02 The Caller | The levers and the defence (hang up, call back, never share codes) | EX-01, BE-10 | 2 to 3 min | Ama |
 | core_02 | Jo's recorded authorised test call to reception, unpicked | EX-06 | 1 to 2 min | Jo Fairweather, Maureen |
 | core_03 Keys to the Kingdom | Passwords, passphrases, MFA, prompt bombing | EX-01, BE-08 | 2 to 4 min | Owain and Ama |
 | core_03 | Optional "guessing rig": common passwords fall, a passphrase holds (no how-to) | EX-06 or EX-05 | 30 to 60 s | Ama (demonstration) |
 | core_04 The Golden Hour | What counts as an incident, how and what to report, why minutes matter | EX-01 | 2 to 3 min | Ama |
 | core_04 | Incidents spreading on the blast-radius map; what each report enabled | EX-05 | 1 to 2 min | Kai |
-| core_05 Personal Effects | UK GDPR for staff, in short chunks; recognising a request; breaches | EX-01, BE-08 | 3 to 4 min | Tomasz |
+| core_05 Personal Effects | UK GDPR for staff, in short chunks; recognising a request; breaches | EX-01, BE-08 | 3 to 4 min | Tomasz Wiśniewski |
 | core_06 Need to Know | Classification, sending, sharing, printing, disposal | EX-01 | 2 to 3 min | Ama and Tomasz |
 | core_06 | Jo rebuilds a draft from the ordinary recycling (shredded-document) | EX-06 | 1 to 2 min | Jo Fairweather |
 | core_07 Zero Hour | Malware and ransomware, updates, what to do | EX-01 | 2 to 3 min | Ama |
@@ -542,22 +543,27 @@ Lengths: an EX-01 chunk is 60 to 90 seconds; a module's Learn beat is usually 2 
 | core_14 Notice Period | Insider risk (mostly accidental), raising a concern fairly | EX-01 | 2 to 3 min | Mei Lin, Ama, Tomasz |
 | core_15 The Assistant | Safe use of AI tools; verification beats detection | EX-01, BE-08 | 2 to 3 min | Ama (with Lark Assist) |
 | core_15 | The deepfake video and voice calls (check another way) | EX-05 | 1 to 2 min | Ama |
+| core_15 | "The Clone": how public a leader is, then take the fake call and verify (no glitch tell) | EX-06, BE-11 | 1 to 2 min | Jo Fairweather |
 | core_16 Small Print | "Allowed, Not Allowed, or Ask First?" game show; policy acknowledgement | EX-01 (light), EX-04 | 1 to 2 min | Ama and Owain |
 | core_17 Year End | Capstone; the competency profile and what to do next | EX-01 (light) | 2 to 3 min | Ama |
 | role_01 Crisis Room | Cyber risk as business risk; the board's questions; an opening piece | EX-01, EX-03 (leader opening) | 2 to 3 min | Faisal, Anne-Marie |
 | role_02 Payment Run | Finance controls against payment fraud, in depth | EX-01 | 3 to 4 min | Hassan |
 | role_03 Reset Request | Verifying identity for resets; privileged access hygiene | EX-01 | 3 to 4 min | Owain and Kai |
+| role_03 | "Knowing isn't proving": Jo shows where a caller's answers come from | EX-06 | 1 to 2 min | Jo Fairweather (with Owain) |
 | role_04 Ship It | Secrets, dependencies, AI coding assistants, review | EX-01 | 3 to 4 min | Darius |
-| role_05 Joiners, Movers, Leavers | Access on joining, moving and leaving; recruitment fraud | EX-01 | 3 to 4 min | Mei Lin |
+| role_05 Joiners, Movers, Leavers | Access on joining, moving and leaving; recruitment fraud | EX-01 | 3 to 4 min | Ama and Mei Lin |
+| role_05 | "The Leaver's Shadow": play the leaver who still has access, then close each gap | EX-06, BE-11 | 2 to 3 min | Jo Fairweather |
 | role_06 Who's Calling? | Verifying callers under pressure; spotting a scammed customer | EX-01 | 2 to 3 min | Shauna |
+| role_06 | Optional "How do they know so much?": Jo's test call and its two public sources | EX-06 | 1 min | Jo Fairweather |
 | role_07 Due Diligence | Suppliers as a route in; proportionate due diligence; the clauses | EX-01 | 2 to 3 min | Harjit |
-| sector_01 Ward Round | Smartcards, shared workstations, confidentiality, downtime | EX-01 | 2 to 3 min | a clinical lead (to decide; Ama, or a new named character) |
+| sector_01 Ward Round | Smartcards, shared workstations, confidentiality, downtime | EX-01 | 2 to 3 min | Dev Kapoor |
+| sector_01 | "The duty to share" on the staff room screen | EX-02 | 60 s | Dr Mulligan (recorded) |
 
 Open points this draft leaves for the module plans:
 
-- **sector_01's mentor** is undecided. The seed keeps the SIS healthcare canon separate and uses hospital staff only as extras, so sector_01 needs either Ama in a client hospital or a new named clinical information-governance lead. Flagged in the open questions below.
-- **Which concepts become a video.** The table marks only core_01's optional "Sixty-second phish" and role_01's leader opening as video. Whether core_15 (deepfakes) or core_07 (ransomware spread) also want an EX-02 video, rather than the mentor plus a visual aid, is for those module plans to decide once EX-02 has a proof of concept.
-- **Attacker-view interludes** are drafted for core_01, core_02, core_06, core_10 and core_12, matching Jo Fairweather's listed modules. If a module plan adds or drops one, update this table and Jo's entry in `03_WORLD_AND_CAST.md`.
+- **sector_01's mentor** is now decided: Dev Kapoor, the trust's Information Governance Manager, a new named clinical information-governance lead who keeps the SIS healthcare canon separate (the module uses hospital staff only as extras). The seed's other option, Ama in a client hospital, was not taken.
+- **Which concepts become a video.** The table marks core_01's optional "Sixty-second phish", role_01's leader opening and sector_01's "The duty to share" as video. Whether core_15 (deepfakes) or core_07 (ransomware spread) also want an EX-02 video, rather than the mentor plus a visual aid, is for those module plans to decide once EX-02 has a proof of concept.
+- **Attacker-view interludes (EX-06)** are now drafted for core_01 (the optional "Phish Tank", built on MG-30), core_02, core_06 (the bin audit), core_10, core_12, core_15 ("The Clone"), role_03, role_05 ("The Leaver's Shadow") and role_06, all led by Jo Fairweather. If a module plan adds or drops one, update this table and Jo's entry in `03_WORLD_AND_CAST.md`. Note that core_15's and role_05's interludes do not rely on a video-glitch tell: the fake call is caught by identity and process checks (verify through a trusted channel), not by spotting artefacts, consistent with core_15.
 
 ## Open questions and proposals
 
@@ -567,7 +573,7 @@ For the orchestrator and the user. None of these should hold up the module plans
 2. **The BE-08 and BE-19 ink tags are proposed, not settled.** The worked example uses `#visual_aid`, `#aid_step` and `#trigger_minigame:knowledge_check|<id>`. The exact syntax belongs to BE-08 and BE-19; this document assumes a working `#trigger_minigame` (today a stub) and a way to show and step a visual aid in the conversation panel. The feature owners should confirm the tag names.
 3. **Keep engine videos generic across customers.** The recommendation is that EX-02 and EX-03 videos carry no organisation-specific values in the spoken track or the frame, so one render serves every customer; the customer's own details live on the intranet page and reference card around the video (BE-05). Per-customer branding on a video should be a template overlay added at edit time, treated as an exception. The user should confirm this is acceptable for the compliance story, or ask for per-customer rendering (which would be far more expensive).
 4. **The project lead's real-person cameo (EX-03) needs a decision and consent.** The game character cliffe_schreuders can present as an EX-02 engine video cheaply and safely. Filming the real Dr Schreuders is a produced video and needs his agreement and a plan to keep it evergreen. The user should say whether a real-person "face of the course" is wanted at all.
-5. **sector_01's mentor is undecided** (see the explainer library). Ama in a client hospital, or a new named clinical information-governance lead, keeping the SIS healthcare canon separate. This is a cast decision for `03_WORLD_AND_CAST.md`.
+5. **sector_01's mentor is decided** (see the explainer library): Dev Kapoor, a new named clinical information-governance lead (the trust's Information Governance Manager), keeping the SIS healthcare canon separate rather than placing Ama in a client hospital. This still needs picking up as a cast entry in `03_WORLD_AND_CAST.md`.
 6. **EX-01's size understates its true cost.** It is listed MVP, S, which is right for the authoring pattern, but a working mentor explainer needs BE-08 (M), BE-19 (S) and MG-20 (M) first. The dependency is already noted in `features/README.md`; worth repeating so the MVP plan budgets for those three, not just for EX-01.
 
 ## Sources
