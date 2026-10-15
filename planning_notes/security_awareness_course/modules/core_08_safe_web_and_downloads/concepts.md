@@ -108,7 +108,7 @@ Use these as background and inspiration only. Game content uses fictional names 
 - **A fake check inside a phishing campaign, 2024 to 2025.** From December 2024, emails impersonating a well-known hotel booking site were sent to staff at hospitality organisations. The link led to a fake CAPTCHA over a faded copy of the booking site, which told them to open the Windows Run box and paste a command it had already copied (Microsoft, 13 March 2025). The email side of this belongs to core_01.
 - **Lumma infostealer, 2025.** Before its disruption in May 2025, Microsoft counted more than 394,000 infected Windows computers in two months; it spread through phishing, malicious adverts and fake CAPTCHA pages (Microsoft, 21 May 2025).
 - **The padlock, 2023.** Google's research found only 11% of study participants understood what Chrome's padlock meant, and Chrome replaced it with a neutral icon in Chrome 117 (Chromium blog, 2 May 2023).
-- **Free online file converters, 2025** (to verify): the FBI's Denver field office warned in March 2025 that criminals were using free online document converters to deliver malware and collect personal information. Check the FBI's own release before quoting it.
+- **Free online file converters, 2025.** The FBI's Denver field office warned on 7 March 2025 that criminals are using free online file and document converter tools to deliver malware and to harvest the data people submit through them.
 
 ## Organisation-specific slots
 

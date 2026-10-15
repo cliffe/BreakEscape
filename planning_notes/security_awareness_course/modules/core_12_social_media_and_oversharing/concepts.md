@@ -88,9 +88,9 @@ As the reference card shows it:
 Use as background and inspiration only. Game content uses fictional names.
 
 - **Strava heatmap, 2017 to 2018.** A public fitness-app heatmap, published in November 2017, was found in January 2018 to trace the layouts and routes of military bases worldwide, including forward bases overseas, because individuals' location data added up to something sensitive. The company then simplified its privacy settings. (Reported by The Guardian and others, January 2018.)
-- **"Think Before You Link".** A UK government and security-services campaign warning that fake profiles on professional networking sites are used to approach and recruit people; it followed findings that large numbers of UK users had been targeted this way. (NPSA and MI5; the specific figure, around 10,000 approaches, is to verify against the current campaign page.)
-- **A leaked login on a video call, 2020.** A journalist was reportedly able to join a confidential EU defence ministers' video meeting after a minister posted a photo on social media that showed part of the joining details. (Widely reported, November 2020; details to verify.) A reminder that a screen or a sign-in in a photo is sensitive.
-- **The "Robin Sage" experiment, 2010.** A security researcher created a fictitious profile of an attractive cyber analyst and connected with hundreds of real defence and security professionals, who shared work details and contacts. (Presented at a 2010 security conference; details to verify.) An illustration of how readily a fake profile is trusted.
+- **"Think Before You Link".** A UK government and security-services campaign warning that fake profiles on professional networking sites are used to approach and recruit people. MI5 reported that over 10,000 disguised approaches had been made to UK nationals on professional networking sites. (NPSA campaign and app, 2022.)
+- **A leaked login on a video call, 2020.** On 20 November 2020, a Dutch journalist joined a confidential EU defence ministers' video meeting after the Dutch defence minister tweeted a photo that showed the meeting ID and most of the PIN. A reminder that a screen or a sign-in in a photo is sensitive.
+- **The "Robin Sage" experiment, 2010.** A security researcher created a fictitious profile of a cyber analyst, which several hundred real defence and security professionals connected to, sharing work details and contacts. (Presented at Black Hat 2010.) An illustration of how readily a fake profile is trusted.
 
 ## Organisation-specific slots
 
@@ -121,4 +121,4 @@ Use as background and inspiration only. Game content uses fictional names.
 - NIST SP 800-53 Rev 5, AT-2(3) (social media exploitation).
 - CIS Controls v8.1, safeguards 14.2 and 14.6.
 - ISO/IEC 27001:2022, Annex A 5.10 and 6.3.
-- Think Before You Link figure, the EU video-call incident (2020) and the Robin Sage experiment (2010): to verify against primary sources before quoting.
+- Think Before You Link (NPSA, 2022), the EU video-call incident (20 November 2020) and the Robin Sage experiment (Black Hat 2010).

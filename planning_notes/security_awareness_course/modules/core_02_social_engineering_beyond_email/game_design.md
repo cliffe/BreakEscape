@@ -14,7 +14,7 @@ The hook is a cold open with a twist the player can see: "Owain from IT" rings a
 - **Owain Jenkins** (IT) is the impersonated caller at the hook, and is cheerfully findable in the kitchen.
 - **Jo Fairweather** (ethical social engineer, Northlight Security) gives the attacker view: a recording of an authorised test call she made to reception last year. Authorised test only; she always says what would have stopped her; nothing is a how-to.
 - **Gillian Marsh** (Chief Executive) is impersonated by a chat message from a new number.
-- **New minor characters (voice and generic sprite only):** Priya Oduya, a genuine school business manager who rings about a real delivery; Dawn at Northbeck, by phone, who confirms she sent nothing. Lena Fischer sets the task by chat.
+- **New minor characters (voice and generic sprite only):** Bisi Adewale, a genuine school business manager who rings about a real delivery; Dawn at Northbeck, by phone, who confirms she sent nothing. Lena Fischer sets the task by chat.
 
 ## Structure
 
@@ -67,7 +67,7 @@ The critical path is marked **(CP)**. Everything else is optional depth.
 | **Quishing** | A sticker on the coffee machine: "Join the free coffee club, scan here." MG-06 shows the real destination is a sign-in page on a lookalike domain. | Judging a QR code before scanning | Do not sign in; report the sticker to facilities |
 | **Pretext at the door** | A friendly visitor at the side door "from the printer company, here for the quarterly service", name-dropping and using jargon, who wants to be pointed to the print room and left to it. | A believable story and insider jargon | Direct them to reception to sign in and be escorted (point to core_10); report if pushy |
 
-- **A genuine call mid-way:** Priya, a school business manager, rings with a real query and a real deadline. Handling her well (politely, taking the details, not over-interrogating) is scored as calibration (C02-B7). The directory confirms her school if the player checks.
+- **A genuine call mid-way:** Bisi, a school business manager, rings with a real query and a real deadline. Handling her well (politely, taking the details, not over-interrogating) is scored as calibration (C02-B7). The directory confirms her school if the player checks.
 - **The "Northbeck accounts" call:** a caller chasing a payment and offering "updated bank details". This belongs to core_11, so keep it light: the right move is not to action any change by phone, to say it goes through the finance process, and to verify Northbeck on the directory number (Dawn confirms she called about nothing). A line points the player to core_11 in the debrief.
 - **Consequences** play out inside the module:
   - Each report earns a thank-you in the team chat from Kai or Ama, with what it achieved ("warned the floor about the fake IT caller", "facilities pulled three of those stickers").
@@ -155,9 +155,9 @@ Shown on BE-02, then spoken by Ama, Maureen and Jo:
 ## Art and audio
 
 - **Rooms:** existing office, kitchen, reception and security office.
-- **Characters:** Ama, Maureen, Owain and Jo need their own art (shared across modules). Gillian appears by chat only. Priya and Dawn are voice and generic-sprite only. Jo's look: 40s, mixed heritage (white British and Black Caribbean), ex-police, relaxed and funny.
+- **Characters:** Ama, Maureen, Owain and Jo need their own art (shared across modules). Gillian appears by chat only. Bisi and Dawn are voice and generic-sprite only. Jo's look: 40s, mixed heritage (white British and Black Caribbean), ex-police, relaxed and funny.
 - **New UI art:** MG-04 the calling screen and directory; MG-05 the message and chat skins; MG-06 the QR scanner and a reveal panel; the bingo card overlay.
-- **Voice:** about 30 lines for Ama, 12 for Maureen, 10 for Owain, 10 for Jo, plus short lines for Priya and Dawn. No voiced line prints a variable (player name, organisation name, counts): the reporting numbers and the "pulled three stickers" counts are on-screen text, not speech. Jo's recorded test call is a fixed script.
+- **Voice:** about 30 lines for Ama, 12 for Maureen, 10 for Owain, 10 for Jo, plus short lines for Bisi and Dawn. No voiced line prints a variable (player name, organisation name, counts): the reporting numbers and the "pulled three stickers" counts are on-screen text, not speech. Jo's recorded test call is a fixed script.
 
 ## Pitfalls
 

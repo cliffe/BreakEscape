@@ -47,7 +47,7 @@ Some areas (the comms room, server room, finance, HR) are restricted because of 
 
 ### Printing and post
 
-Collect printing straight away, especially from shared printers, and use secure release (where you print only when you are at the machine) for confidential documents. Do not leave printouts in the tray. Confidential waste goes in the confidential bin or the shredder, not the ordinary recycling. The detail of classification, sending and disposal is core_06; here the point is simply: do not leave confidential paper lying around, and dispose of it properly.
+Collect printing straight away, especially from shared printers, and use secure release (where you print only when you are at the machine) for confidential documents. Do not leave printouts in the tray. Confidential paper goes in the locked confidential waste, not the shredder or the recycling (see core_06). The detail of classification, sending and disposal is core_06; here the point is simply: do not leave confidential paper lying around, and dispose of it properly.
 
 ### Doors, codes and keys
 
@@ -94,8 +94,8 @@ As the reference card shows it:
 Use as background and inspiration only. Game content uses fictional names.
 
 - **Classified papers at a bus stop, June 2021.** Classified Ministry of Defence documents about a Royal Navy ship's passage were found at a bus stop in Kent and handed to the BBC. (Reported 27 June 2021.) A reminder that handling and clear desk are part of physical security.
-- **Authorised physical penetration testing.** Security firms are hired to test buildings by tailgating, talking past reception and trying doors; their reports repeatedly conclude that a single polite challenge would have ended the test. In one widely discussed US case in 2019, two testers were briefly arrested during an authorised job after a dispute over the scope of their written authorisation, which is why testers carry a signed permission letter. (Details to verify; use only as inspiration for Jo's "authorised test" framing.)
-- **Opportunistic building access.** Reporting on trespass at high-profile sites (for example a 2019 incident at a US resort where a visitor talked past security with devices in a bag) shows how far a confident story and poor challenge can carry someone. (Details to verify.) In the game, the equivalent is a fictional "inspector" who wants the comms room.
+- **Authorised physical penetration testing.** Security firms are hired to test buildings by tailgating, talking past reception and trying doors; their reports repeatedly conclude that a single polite challenge would have ended the test. In September 2019, two Coalfire testers, Gary DeMercurio and Justin Wynn, were arrested during an authorised job at the Dallas County Courthouse in Adel, Iowa, after a dispute over the scope of their written authorisation; the charges were later dropped. It is why testers carry a signed permission letter. Use only as inspiration for Jo's "authorised test" framing.
+- **Opportunistic building access.** On 30 March 2019, Yujing Zhang talked her way into Mar-a-Lago while carrying a USB thumb drive containing malware, showing how far a confident story and poor challenge can carry someone. In the game, the equivalent is a fictional "inspector" who wants the comms room.
 - **Tailgating in the wild.** Industry surveys of physical social engineering consistently find tailgating among the easiest ways into an office. (Use generically; cite a current source before quoting a figure.)
 
 ## Organisation-specific slots

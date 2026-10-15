@@ -20,9 +20,9 @@ The **before and after** for each learner is C12-B1 (judging Leo's post at the h
 
 To complete the module the learner must, at least once:
 
-1. **Tighten the key privacy settings on a profile** (C12-B4 not at Not yet).
-2. **Decline a stranger's request for information about the organisation's systems or people, and report it** (C12-B5 not at Not yet).
-3. **Correctly hold or tweak a clearly risky post** (C12-B3 not at Not yet).
+- **C12-CB1 Tighten the key privacy settings on a profile** (C12-B4 not at Not yet).
+- **C12-CB2 Decline a stranger's request for information about the organisation's systems or people, and report it** (C12-B5 not at Not yet).
+- **C12-CB3 Correctly hold or tweak a clearly risky post** (C12-B3 not at Not yet).
 
 A learner who misses a critical behaviour is taken back to it: Ama replays the relevant "Post or Not?" items or the settings step with the explanation, then a fresh item of the same kind appears. The record keeps both attempts.
 
@@ -30,7 +30,7 @@ A learner who misses a critical behaviour is taken back to it: Ama replays the r
 
 Five items per sitting, covering every learning outcome. Stems are short workplace situations.
 
-### Q1 (LO1, LO2, multiple select)
+### C12-Q1 (LO1, LO2, multiple select)
 
 A colleague posts a public "first day!" photo. Which parts could help an attacker? Choose all that apply.
 
@@ -39,7 +39,7 @@ A colleague posts a public "first day!" photo. Which parts could help an attacke
 - **C. A whiteboard behind them reads "Ledger go-live Dec".** *Feedback: A system name and a date are a gift for a pretext.*
 - D. They look happy. *Feedback: Looking happy is not a security risk.*
 
-### Q2 (LO1, single choice)
+### C12-Q2 (LO1, single choice)
 
 How does an attacker usually turn someone's public posts into an attack?
 
@@ -48,7 +48,7 @@ How does an attacker usually turn someone's public posts into an attack?
 - C. By posting comments on the person's photos. *Feedback: That is not the usual route.*
 - D. They cannot, if the person has lots of followers. *Feedback: More followers does not make posts safer.*
 
-### Q3 (LO3, single choice)
+### C12-Q3 (LO3, single choice)
 
 You want to keep using social media but reduce the risk. What is the most useful first step?
 
@@ -57,7 +57,7 @@ You want to keep using social media but reduce the risk. What is the most useful
 - C. Stop posting photos of your pets. *Feedback: Pets are fine; just keep them out of your security answers.*
 - D. Set a stronger password only. *Feedback: A strong password and MFA help, but review your privacy settings too.*
 
-### Q4 (LO4, single choice)
+### C12-Q4 (LO4, single choice)
 
 A recruiter messages you about an exciting role and, "to tailor the application", asks for an overview of your company's systems and who runs IT. What do you do?
 
@@ -66,14 +66,14 @@ A recruiter messages you about an exciting role and, "to tailor the application"
 - C. Share a little to keep them interested. *Feedback: Even a little helps build a pretext. Share nothing.*
 - D. Ask colleagues to send it instead. *Feedback: Do not pass the request on; decline and report it.*
 
-### Q5 (LO3, true or false with reason)
+### C12-Q5 (LO3, true or false with reason)
 
 "Using my dog's real name as a security-question answer is fine, because only I know it."
 
 - A. True: a pet's name is private. *Feedback: Pets' names are often posted publicly, so they are easy to find.*
 - **B. False: use a made-up answer kept in your password manager, because real pet names are often public.** *Feedback: Right.*
 
-### Q6 (LO2, single choice)
+### C12-Q6 (LO2, single choice)
 
 You are about to post a team photo taken in the office. What should you check first?
 
@@ -82,7 +82,7 @@ You are about to post a team photo taken in the office. What should you check fi
 - C. Whether you have enough followers to make it worthwhile. *Feedback: Not relevant to the risk.*
 - D. Nothing; office photos are always fine. *Feedback: Office photos often catch screens and whiteboards.*
 
-### Q7 (LO5, single choice)
+### C12-Q7 (LO5, single choice)
 
 A news site asks you, as an employee, to comment on a story about your company. What should you do?
 
@@ -91,7 +91,7 @@ A news site asks you, as an employee, to comment on a story about your company. 
 - C. Post your own view online instead. *Feedback: Posting as if you speak for the organisation is not your call; refer it on.*
 - D. Ignore it entirely and tell no one. *Feedback: Pass it to communications so they can respond.*
 
-### Q8 (LO4, single choice)
+### C12-Q8 (LO4, single choice)
 
 You get a connection request from a profile in your CEO's name, but the account is new and has few connections. What is the best response?
 
@@ -100,7 +100,7 @@ You get a connection request from a profile in your CEO's name, but the account 
 - C. Message them to ask if it is really them. *Feedback: Check through a known channel, and report the profile.*
 - D. Accept it but do not message them. *Feedback: Do not accept a likely fake; report it.*
 
-### Q9 (LO1, single choice)
+### C12-Q9 (LO1, single choice)
 
 Why can a "we're away for two weeks" holiday post be a problem for work?
 

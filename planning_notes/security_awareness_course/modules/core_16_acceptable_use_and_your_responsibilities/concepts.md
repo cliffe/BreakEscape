@@ -73,7 +73,7 @@ Footer of the card: **Not sure? Ask first.** and the contacts (organisation slot
   - check that the monitoring is necessary and that no less intrusive way would do;
   - consider a data protection impact assessment, and complete one where the risk is high;
   - look at the content of emails and messages only in exceptional circumstances, telling workers in advance.
-  Commentary on the guidance reads covert monitoring as justified only in exceptional cases, such as suspected crime (secondary sources; to verify against the guidance text before quoting).
+  Covert monitoring is justified only in exceptional circumstances, such as a suspected crime: it needs senior authorisation and a data protection impact assessment, and must be targeted and time-limited (ICO guidance on monitoring workers).
 - **Intercepting communications** on an organisation's own systems is governed by the Investigatory Powers Act 2016 and the business monitoring regulations made under it (SI 2018/356), which allow monitoring or recording of business-relevant communications on the business's own system, under conditions. Keep this to one line in the game; it's background for writers.
 - **The limits are real.** In February 2024 the ICO ordered Serco Leisure and related trusts to stop using face and fingerprint scans to check staff attendance at 38 leisure centres: the employers hadn't shown it was necessary or proportionate, and staff weren't offered an alternative.
 - **What this means for staff:** expect work systems to be monitored for security, and expect to be told how (The Lark's monitoring page). It isn't someone reading messages for fun. If something about monitoring worries you, ask the DPO.

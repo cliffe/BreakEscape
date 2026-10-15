@@ -15,6 +15,7 @@ Each row is recorded through BE-01 and shown in the debrief and the learner's re
 | C02-B7 | Serves genuine callers (calibration) | LO3 | Practise and Apply | Helps real callers, checking where a quick check exists, without being rude | Over-interrogates or refuses a genuine caller | (not used: caution is never "Not yet") |
 | C02-B8 | Reports their own slip | LO6 | Any beat | Reports within two game-minutes of sharing a code or installing a tool | Reports later in the module | Never reports it |
 | C02-B9 | Picks the check-back route | LO3 | Learn check, Practise | Chooses a trusted route every time (directory, card, 159) | Mixed | Uses the number or link from the message |
+| C02-B10 | Spots the tactics on the bingo card (BE-22) | LO1 | Apply and Debrief | Ticks most tactics as they are used, closely matching the debrief's actual set | Ticks some, misses several | Ticks few or none, or marks tactics that were not used |
 
 C02-B8 applies only to players who shared something. Players who did not are recorded as "not applicable".
 
@@ -24,9 +25,9 @@ The **before and after** for each learner is C02-B1 (the hook "IT" call) against
 
 To complete the module the learner must, at least once:
 
-1. **Refuse to share a one-time code or grant remote access** to a caller or messenger (C02-B1, B2 or B3 not at Not yet).
-2. **Check back through a trusted route** before acting on at least one request (C02-B1, B5 or B9 at Secure).
-3. **Report any code they shared or tool they installed** before the module ends (C02-B8 not at Not yet), where it applies.
+- **C02-CB1 Refuse to share a one-time code or grant remote access** to a caller or messenger (C02-B1, B2 or B3 not at Not yet).
+- **C02-CB2 Check back through a trusted route** before acting on at least one request (C02-B1, B5 or B9 at Secure).
+- **C02-CB3 Report any code they shared or tool they installed** before the module ends (C02-B8 not at Not yet), where it applies.
 
 A learner who misses a critical behaviour is taken back to it: Ama replays the relevant Practise contacts with the explanation, then a fresh threat of the same kind arrives in a short replay of the Apply beat. The record keeps both attempts.
 
@@ -34,7 +35,7 @@ A learner who misses a critical behaviour is taken back to it: Ama replays the r
 
 Six items per sitting, covering every learning outcome. Stems are short workplace situations.
 
-### Q1 (LO1, LO4, single choice)
+### C02-Q1 (LO1, LO4, single choice)
 
 Someone calls, says they are from IT, and asks you to read back the six-digit code that just arrived on your phone "to confirm it's really you". What do you do?
 
@@ -43,7 +44,7 @@ Someone calls, says they are from IT, and asks you to read back the six-digit co
 - C. Read it back but ask for their name first. *Feedback: A name is easy to give and easy to fake. Still do not share the code.*
 - D. Put them on hold and wait. *Feedback: End the call and report it; holding achieves nothing.*
 
-### Q2 (LO3, single choice)
+### C02-Q2 (LO3, single choice)
 
 A caller says they are from your bank's fraud team, there has been suspicious activity, and you should move your money to a "safe account" now. The number on your phone matches your bank's. What is safest?
 
@@ -52,7 +53,7 @@ A caller says they are from your bank's fraud team, there has been suspicious ac
 - C. Ask them security questions to test them. *Feedback: A convincing scammer may answer. Hang up and call back instead.*
 - D. Give them one detail to check if they are genuine. *Feedback: Share nothing. Hang up and call back.*
 
-### Q3 (LO1, multiple select)
+### C02-Q3 (LO1, multiple select)
 
 A caller is pushing you to act. Which of these are pressure tactics to be wary of? Choose all that apply.
 
@@ -61,7 +62,7 @@ A caller is pushing you to act. Which of these are pressure tactics to be wary o
 - **C. "You'd really be helping me out of a jam."** *Feedback: Helpfulness used against you.*
 - D. "Take your time and check with a colleague." *Feedback: A genuine request; the opposite of pressure.*
 
-### Q4 (LO2, LO3, single choice)
+### C02-Q4 (LO2, LO3, single choice)
 
 You get a chat message from your manager on a number you don't recognise: "Lost my phone, on this number now. Can you buy some gift cards for a client, quietly? I'll expense it." What do you do?
 
@@ -70,7 +71,7 @@ You get a chat message from your manager on a number you don't recognise: "Lost 
 - C. Reply on the new number to ask if it is really them. *Feedback: The scammer will say yes. Use a number you already have.*
 - D. Buy a smaller amount to be safe. *Feedback: Do not buy anything. Check back first.*
 
-### Q5 (LO5, single choice)
+### C02-Q5 (LO5, single choice)
 
 There is a QR code sticker on the office coffee machine: "Join the free coffee club, scan here." What is the best move?
 
@@ -79,7 +80,7 @@ There is a QR code sticker on the office coffee machine: "Join the free coffee c
 - C. Scan it just to see where it goes. *Feedback: Better not. If you do and it asks you to sign in or pay, stop.*
 - D. Scan it with a QR app you downloaded. *Feedback: Use your phone's built-in scanner, and still be wary of where it leads.*
 
-### Q6 (LO4, single choice)
+### C02-Q6 (LO4, single choice)
 
 A caller says your laptop is "sending error reports" and offers to fix it if you install a support tool so they can take a look. What do you do?
 
@@ -88,7 +89,7 @@ A caller says your laptop is "sending error reports" and offers to fix it if you
 - C. Install it but watch what they do. *Feedback: Do not install it. End the call and report.*
 - D. Ask them to email instructions instead. *Feedback: Do not follow them. This is a scam; report it.*
 
-### Q7 (LO6, single choice)
+### C02-Q7 (LO6, single choice)
 
 You realise you read a code out to a caller twenty minutes ago. What is the best thing to do now?
 
@@ -97,14 +98,14 @@ You realise you read a code out to a caller twenty minutes ago. What is the best
 - C. Change your password and move on. *Feedback: Changing the password helps, but the team needs to know an attacker may already be in.*
 - D. Wait to see if anything happens. *Feedback: Waiting gives the attacker time. Report now.*
 
-### Q8 (LO1, true or false with reason)
+### C02-Q8 (LO1, true or false with reason)
 
 "The call showed my bank's real number, so I can trust it."
 
 - A. True: the number is proof it came from the bank. *Feedback: Numbers can be spoofed to show any name or number.*
 - **B. False: a number can be faked, so check back on a number you already have.** *Feedback: Right.*
 
-### Q9 (LO3, ordering)
+### C02-Q9 (LO3, ordering)
 
 A supplier phones asking you to change their bank details for the next payment. Put these steps in the right order.
 
@@ -115,7 +116,7 @@ A supplier phones asking you to change their bank details for the next payment. 
 
 *Feedback: Never change payment details on an inbound call. Bank-detail fraud is covered in core_11.*
 
-### Q10 (LO6, single choice)
+### C02-Q10 (LO6, single choice)
 
 At home, you get a scam text pretending to be a delivery company. Besides deleting it, what can you do?
 
@@ -124,7 +125,7 @@ At home, you get a scam text pretending to be a delivery company. Besides deleti
 - C. Tap the link to unsubscribe. *Feedback: Do not tap links in a scam text.*
 - D. Nothing can be done about texts. *Feedback: Forward it to 7726.*
 
-### Q11 (LO2, single choice)
+### C02-Q11 (LO2, single choice)
 
 A visitor at the side door says they are from the printer company, here for the quarterly service, and asks you to point them to the print room so they can get on. What is the right response?
 
@@ -133,7 +134,7 @@ A visitor at the side door says they are from the printer company, here for the 
 - C. Let them in but ask to see an ID badge. *Feedback: A badge can be forged. Sign them in at reception.*
 - D. Tell them to come back later. *Feedback: Help them the right way: reception and an escort.*
 
-(Q11 overlaps with core_10; keep it here as the "conversation" version and point to core_10 for the building rules.)
+(C02-Q11 overlaps with core_10; keep it here as the "conversation" version and point to core_10 for the building rules.)
 
 ## Reflection prompt
 

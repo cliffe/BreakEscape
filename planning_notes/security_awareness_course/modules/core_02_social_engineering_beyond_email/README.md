@@ -17,7 +17,7 @@
 
 Attacks do not only arrive by email. The same fraud lands as a phone call (vishing), a text (smishing), a message on a chat app ("Hi, it's me, I've got a new number"), a QR code on a poster or sticker (quishing), or a friendly stranger at the door with a story (pretexting). The aim is almost always the same as a phishing email: a password, a one-time code, a payment, information, or remote control of a device. Calls and messages feel more personal and more urgent than email, so people act before they think. Criminals know this, and they have learned to ask a human to do the one thing a computer cannot be tricked into: read out a code, or install a tool, or hold a door.
 
-Two recent cases show the pattern. In 2023 the software firm Retool was breached after an employee got a text claiming to be from IT about a payroll account, signed in on a fake page, and was then telephoned by an "IT" caller who talked them into sharing a one-time code. The cybercrime group tracked as Scattered Spider, described in a joint US advisory first published in November 2023 and updated to July 2025, repeatedly phoned or texted staff and help desks posing as IT to collect passwords, get remote-access tools installed, or have staff read out MFA codes. The defence against all of it is one habit: stop, and check through a route you already trust before you act.
+Two recent cases show the pattern. In 2023 the software firm Retool was breached after an employee got a text claiming to be from IT about an HR benefits (open enrolment) problem, signed in on a fake page, and was then telephoned by an "IT" caller who talked them into sharing a one-time code. The cybercrime group tracked as Scattered Spider, described in a joint US advisory first published in November 2023 and updated to July 2025, repeatedly phoned or texted staff and help desks posing as IT to collect passwords, get remote-access tools installed, or have staff read out MFA codes. The defence against all of it is one habit: stop, and check through a route you already trust before you act.
 
 ## Target behaviours
 
@@ -76,7 +76,7 @@ Contributes to (with core_01, meets the social-engineering training expectation)
 - **EX-06 Attacker-view interlude** and **EX-05 Demonstration**: Jo's recorded authorised test call, unpicked by Maureen.
 - **BE-08 Visual aids**: the levers diagram and the bingo card in the conversation panel.
 - **BE-02 Debrief**, **BE-01 Assessed decisions**, **MG-20 Knowledge check**, **BE-09 Intranet terminal**, **BE-05 Organisation profile** (reporting routes and service desk number), **BE-13 Content banks** (the caller and message bank).
-- **proposed: BE-22 Tactic bingo/spotter card**, a light overlay listing social engineering tactics that the player ticks off as they hear them in play, and which becomes the debrief score. (A simpler build could reuse the knowledge-check tally; flagged for the orchestrator.)
+- **BE-22 Tactic spotter card**, the catalogued light overlay listing social engineering tactics that the player ticks off as they hear them in play, and which becomes the debrief score. (A simpler build could reuse the knowledge-check tally; flagged for the orchestrator.)
 
 ## Organisation-specific content
 
