@@ -83,7 +83,7 @@ Wave is the build wave in section 5 (0 foundations, 1 the MVP course, 2 the core
 |---|---|---|---|---|---|---|
 | MG-01 | Inbox | MVP | L | core_00, core_01, core_04, core_05, core_06, core_07, core_11, core_13, core_16, core_17, role_02, sector_01 | `phone-chat` threads and timed messages, scenario timers, `notes` markdown, `container` desktop | 1 |
 | MG-02 | Web browser | P2 | L | core_08; pages for core_01, core_07, core_09, core_13 | MG-01's page renderer, `forensic-data-platform` blocks, `lab-workstation` | 2 |
-| MG-03 | Link and domain drill | P2 (inline part MVP) | S | core_01, core_08, core_02, drills | address reader, MG-20 hotspot, dusting step list | 1 inline, 2 drill |
+| MG-03 | Link and domain drill | MVP inline, P2 drill | S | core_01, core_08, core_02, drills | address reader, MG-20 hotspot, dusting step list | 1 inline, 2 drill |
 | MG-04 | Voice calls | P2 | M | core_02, core_11, core_15, core_01, core_05, core_07, core_08, core_09, role_01, role_02, role_03, role_05, role_06, sector_01 | `phone-chat`, `person-chat`, TTS | 2 |
 | MG-05 | Messaging apps | P2 | S | core_02, core_00, core_01, core_03, core_04, core_09, core_11, core_12, core_14, core_15, role_06 | `phone-chat` | 2 |
 | MG-06 | QR code scanner | P2 | S | core_02, core_17 | `examine`, MG-05, page renderer | 2 |
@@ -94,7 +94,7 @@ Wave is the build wave in section 5 (0 foundations, 1 the MVP course, 2 the core
 | MG-11 | Sharing settings | P2 | S | core_06, core_13 | `coverage-decision-form`, `warranty-checklist` | 2 |
 | MG-12 | Redaction | MVP | M | core_05, core_06 | annotated document, `text-file`, `notes` | 1 |
 | MG-13 | Social media profile and OSINT board | P3 | M | core_12; the board in core_11's alternative concept | MG-05, BE-10, BE-11 | 3 |
-| MG-14 | Wi-Fi and VPN picker | P3 (P2 proposed) | S | core_09 | MG-23, page renderer | 2 |
+| MG-14 | Wi-Fi and VPN picker | P2 | S | core_09 | MG-23, page renderer | 2 |
 | MG-15 | Payment verification desk | P2 | M | core_11, role_02 | MG-25, MG-04, `dual-auth`, `forensic-data-platform` | 2 |
 | MG-16 | AI assistant chat | P2 | M | core_15, role_04 | `phone-chat` layout, annotated document, page renderer | 2 |
 | MG-17 | Caller verification desk | P3 | M | role_03, role_06, sector_01 | MG-04, `siem`, `log-filter` | 3 |
@@ -103,9 +103,14 @@ Wave is the build wave in section 5 (0 foundations, 1 the MVP course, 2 the core
 | MG-20 | Knowledge check | MVP | M | every module | `coverage-decision-form`, `flag-station` server checks, m01's ink quiz | 0 |
 | MG-21 | Video player | P2 | M (first version S) | EX-02 and EX-03 videos: so far core_00, core_01, core_03, core_05, core_07, core_09, core_11, role_01 | `lab-workstation`, `person-chat` frame | 2 |
 | MG-22 | Supplier assessment | P3 | S | role_07 | `warranty-checklist`, `forensic-data-platform`, MG-25 | 3 |
-| MG-23 | Device settings | P2 | S | core_07, core_09, core_17 | `container` desktop, `phone-chat` phone frame | 2 |
-| MG-24 | Crisis decision board | P2 | M | role_01, core_17 team mode | `command-board`, `backup-recovery` | 2 |
+| MG-23 | Device settings | P2 | S to M | core_07, core_09, core_17 | `container` desktop, `phone-chat` phone frame | 2 |
+| MG-24 | Crisis decision board | P2 | M to L | role_01, core_17 team mode | `command-board`, `backup-recovery` | 2 |
 | MG-25 | Document inspector | P2 | M | core_10, core_11, role_02, role_05, role_06, role_07 | `forensic-data-platform`, `examine`, dusting compare step | 2 |
+| MG-26 | Incident spread map | MVP | M | core_04, core_07 | `network-segmentation-map`, MG-09, game clock | 1 |
+| MG-27 | Work desktop | MVP | S to M | every module | `container` desktop, MG-01, BE-18, BE-19 | 1 |
+| MG-28 | Secure payment line | P3 | S | role_06, role_02 | `pin`, MG-04 | 3 |
+| MG-29 | Patient record viewer | P3 | M | sector_01 | `ehr-terminal` | 3 |
+| MG-30 | Pretext workshop (attacker view) | P3 | M | core_01; later core_02, core_11, role_02, core_15 | MG-13, MG-01, EX-06, BE-11 | 3 |
 
 ## 3. The new minigames
 
@@ -251,7 +256,7 @@ The `assess` block reports options; core_01's `assessment` map rates them (`repo
 3. Visits sites: the lookalike, the real vendor, the company software portal. Downloads show a bar with the file name and type, and an unexpected type gets a plain warning.
 4. Meets interruptions, each a small decision:
    - **"Verify you are human"** tells them to press keys and paste. The game never asks for real key presses: it shows the instructions as text and what is on the clipboard ("a hidden command that would run a program on your computer"), with Follow the instructions, Close the page and Report as buttons. The clipboard text is a harmless placeholder, never a working command.
-   - **A full-screen "virus detected" page** with a phone number. Its alarm is silent by default, with a caption ("This page is trying to play a loud alarm"). The player learns the way out: close the tab, restart if it won't close, then report. Calling the number leads to a short MG-04 call with a friendly "technician" who wants remote access.
+   - **A full-screen "virus detected" page** with a phone number. Its alarm is silent by default, with a caption ("This page is trying to play a loud alarm"). The player learns the way out (as core_08 teaches it): close the tab or the browser; if it won't close, call the service desk on a number they already have, and don't try to fix it themselves. Calling the number on the page leads to a short MG-04 call with a friendly "technician" who wants remote access.
    - **An extension prompt** listing its permissions in plain words.
    - **A notification prompt**: Allow or Block.
    - **A browser warning page** ("Deceptive site ahead") with "Back to safety" and a small Details link that lets them carry on.
@@ -302,7 +307,7 @@ The `assess` block reports options; core_01's `assessment` map rates them (`repo
 
 ### MG-03 Link and domain drill
 
-**Priority and size:** P2 in the catalogue, S. The inline version inside MG-01's practice mode is needed by core_01, an MVP module, so that part is built in wave 1 (sections 5 and 6). It is an MG-20 item type plus a drill wrapper rather than a separate app.
+**Priority and size:** MVP for the inline part, P2 for the full drill, S. The inline version inside MG-01's practice mode is needed by core_01, an MVP module, so that part is built in wave 1 (sections 5 and 6). It is an MG-20 item type plus a drill wrapper rather than a separate app.
 
 **Used for:** core_01 (three practice emails and Ama's check question: C01-LO2, C01-B8); core_08 (its practice beat); core_02 (links in texts, QR destinations); monthly drills (BE-07).
 
@@ -679,7 +684,7 @@ Each step gets one line of feedback. Items get harder: a plain domain; a decorat
 
 ### MG-14 Wi-Fi and VPN picker
 
-**Priority and size:** P3 in the catalogue, S. core_09, a P2 module, needs it, so it should be P2, ideally as a panel of MG-23 (section 6).
+**Priority and size:** P2, S. core_09, a P2 module, needs it, and it is built as a panel of MG-23 (section 6).
 
 **Used for:** core_09 (a café with two networks of nearly the same name, the VPN, the phone hotspot); core_17.
 
@@ -709,7 +714,7 @@ Each step gets one line of feedback. Items get harder: a plain domain; a decorat
 
 **Priority and size:** P2, M, once MG-25 and MG-04 exist and `dual-auth` has been reworked (section 4).
 
-**Used for:** core_11 ("Northbeck's" new bank details on letterhead, a call back on the directory number, a Confirmation of Payee "no match", a second approver); role_02 (a month-end run of thirty payments with planted anomalies, a supplier change mid-run, pressure from "the chief executive", and the race to recover money after a mistake).
+**Used for:** core_11 (Brackenfold's letter at the verification desk in the Apply beat: compare it against the supplier record, call back on the directory number, and report; plus the watched 15:30 dual-auth run with a Confirmation of Payee check. Northbeck is the module's hook, handled in MG-01 and MG-04, not here); role_02 (a month-end run of thirty payments with planted anomalies, a supplier change mid-run, pressure from "the chief executive", and the race to recover money after a mistake).
 
 **What the player does** (steps: Request, Record, Call back, Payee check, Approve):
 
@@ -717,7 +722,7 @@ Each step gets one line of feedback. Items get harder: a plain domain; a decorat
 2. **Record:** compare it with the supplier record in Ledger, the finance system, and mark what differs (MG-25's comparison view).
 3. **Call back** on the number already on record (MG-04). Dawn knows nothing about it. Ringing the number on the letter reaches the fraudster, who is very reassuring.
 4. **Payee check:** run Confirmation of Payee on the new details. It answers Match, Close match or No match, with the name the bank holds (wording to check against core_11's concepts file). It helps; it isn't proof.
-5. **Approve or refuse:** approve, hold and escalate, or refuse and report. Payments need a second approver: in core_11 the player gathers the evidence and watches Hassan and a colleague approve or refuse on it (core_11's plan); in role_02 the player is the second approver, challenging a colleague's evidence.
+5. **Approve or refuse:** approve, hold and escalate, or refuse and report. Payments need a second approver, and the dual-auth panel is reworked for the course (section 4): the second approval completes on the signing approver's own sign-off event, not on the player clicking the second panel, and the panel records which account signed on which device, so a module can teach that the system believed whoever's password was at the keyboard. In core_11 the player gathers the evidence and watches the 15:30 dual-auth run with the Confirmation of Payee result in front of them (core_11's plan). In role_02's climactic Apply run the player is approver 1 and Eleni is the delegated second approver, signing off on her own from a video call; some Practise items instead cast the player as the second approver, challenging a colleague's evidence.
 6. **The run** (role_02): a table of thirty payments; filter and flag the odd ones (a large, urgent payment to a new account; a changed remittance contact; a duplicate invoice).
 7. **If money goes:** a time skip shows the chance of getting it back falling by the hour (BE-16). The right move is to ring the bank at once, then report.
 
@@ -797,7 +802,7 @@ Each step gets one line of feedback. Items get harder: a plain domain; a decorat
 **What the player does:**
 
 1. Works a queue of calls, chats and tickets (left), the current contact (centre) and the organisation's verification checklist (right).
-2. Chooses verification steps from a list: strong ones (call back on the number on record, a code sent to the registered device, manager approval, a video check) and weak ones (date of birth, home address, anything public on a social profile).
+2. Chooses verification steps from a list: strong ones (call back on the number on record; an approval prompt or a reset link sent to the details already held and completed by the person, never a code read back over the phone; manager approval; a video check) and weak ones (date of birth, home address, anything public on a social profile).
 3. Watches the caller's pressure rise (NPC influence, `docs/NPC_INFLUENCE.md`); the procedure never needs speed.
 4. Decides: go ahead, call back, refuse politely, or escalate.
 5. Adds ticket notes from a structured list.
@@ -1118,7 +1123,7 @@ Other keys: `presentation` (`spot_check`, `mentor`, `game_show`, `drill`); `item
 1. **Where the first version's pages live.** *Recommendation:* Hacktivity's video hosting (HA-20), so a later version can post "watched" back to the game.
 2. **Making a video required.** *Recommendation:* never. Where a video is the Learn beat, a skip leads to the mentor's short version and the check question, so the evidence still comes from the learner's answers.
 3. **Public video platforms.** *Recommendation:* no, for learners' privacy (HA-15) and a dependable record.
-4. **One definition of "watched".** `explainers_video_and_npc.md` says watched means opened and played; HA-20 says 90% played or the transcript opened. *Recommendation:* HA-20's rule, which an auditor can rely on, with the explainers plan's promise kept: nothing waits on it and Skip is always there. MG-21 records enough for either rule.
+4. **One definition of "watched".** All three documents (`explainers_video_and_npc.md`, `hacktivity.md` and this one) now agree on HA-20's rule: a video counts as watched at 90% played or when the transcript is opened, so reading counts the same as watching. *Recommendation:* keep that rule, which an auditor can rely on, with the explainers plan's promise kept: nothing waits on it and Skip is always there. MG-21 records enough to support it.
 
 ### MG-22 Supplier assessment
 
@@ -1131,13 +1136,14 @@ Other keys: `presentation` (`spot_check`, `mentor`, `game_show`, `drill`); `item
 1. Reads a questionnaire grid: the questions (MFA on remote access? Cyber Essentials? What does the ISO 27001 certificate cover? How soon are breaches reported? Subcontractors? Data deleted at the end?) against three bidders' answers.
 2. Opens the evidence (a certificate and its scope, an assurance report extract with an exception, a policy) and judges each answer: evidenced, claimed only, a gap, or a red flag.
 3. Picks the contract clauses to ask for (breach notice within a set time, audit rights, MFA on supplier access, data returned and deleted, approval of subcontractors).
-4. Sees a summary for each bidder and makes a recommendation: evidence beats claims, and the cheapest bid isn't always the riskiest.
+4. **Negotiates the clauses:** the chosen bidder counters on three or four of them (a longer breach-notice window, no audit rights, subcontractors "as needed"), and the player holds firm or trades each, seeing what each concession would cost. Holding the clauses that matter is the point.
+5. Sees a summary for each bidder and makes a recommendation: evidence beats claims, and the cheapest bid isn't always the riskiest.
 
 **What it teaches:** proportionate due diligence; evidence over claims; check what a certificate actually covers; the contract clauses that matter.
 
-**Configuration:** `questions[]`, `bidders[] {name, answers{} {text, evidence, verdict}}`, `documents{}`, `clauses[] {id, text, importance}`, `assess`.
+**Configuration:** `questions[]`, `bidders[] {name, answers{} {text, evidence, verdict}}`, `documents{}`, `clauses[] {id, text, importance}`, `counterOffers{}` (per bidder and clause: the bidder's counter, and whether it is safe to trade), `assess`.
 
-**Events and records:** prefix `supplier_`: `supplier_answer_judged:<bidderId>` (question, verdict), `supplier_evidence_opened:<docId>`, `supplier_clause_chosen:<clauseId>`, `supplier_assessment_submitted` (gaps found and missed, the recommendation).
+**Events and records:** prefix `supplier_`: `supplier_answer_judged:<bidderId>` (question, verdict), `supplier_evidence_opened:<docId>`, `supplier_clause_chosen:<clauseId>`, `supplier_clause_held:<clauseId>`, `supplier_clause_traded:<clauseId>`, `supplier_assessment_submitted` (gaps found and missed, clauses held or traded, the recommendation).
 
 **Builds on:** `warranty-checklist` (a verdict per row behind an evidence gate); `forensic-data-platform` and `claims-management-system` for the evidence documents; MG-25 to check a certificate's scope.
 
@@ -1272,6 +1278,117 @@ Other keys: `presentation` (`spot_check`, `mentor`, `game_show`, `drill`); `item
 
 **Open questions:** **Image-based or field-based documents?** *Recommendation:* field-based with an image skin, so documents are cheap to write and accessible. Forged documents stay non-instructional: the lesson is "check against what you hold", never how forgeries are made.
 
+### MG-26 Incident spread map
+
+**Priority and size:** MVP, M, as an extension of `network-segmentation-map`. It is needed for the MVP because core_04 is.
+
+**Used for:** core_04, the module's main mechanic: an incident (a taken-over account, a ransomware infection) spreads from device to device with game time until someone reports it, and the report then contains it (the "blast radius"). core_07 (ransomware spreading across the shared systems). core_07's scene status panel and core_14's rumour map propose views that could share it.
+
+**What the player does:**
+
+1. Sees a floor plan or a simple network map: devices, people and the links between them, each a node with a plain state (well, at risk, affected, contained).
+2. Watches the incident spread along the links as game time passes: an unreported account take-over reaches more mailboxes, a ransomware infection jumps to the next shared drive. Spread is driven by globals, never by real-time pressure, and nothing is lost while the player reads.
+3. Reports (MG-09) or acts, which freezes the spread and begins containment; the map then shows what the report contained and what was already affected.
+4. Can step through a replay of how it spread, or read the same thing as a list.
+
+Reveal rules keep an unreported incident off the map until the story has shown it, so the map never spoils what the player has not yet found.
+
+**What it teaches:** an incident spreads while nobody reports it; reporting early contains it; a good report (who, what, when) decides how much can be saved; the cost of waiting is more devices, not a lost game.
+
+**Configuration:** `map {nodes[] {id, kind: device|person|system, label, position, state}, links[] {from, to}}`, `spread {steps[] {at|on, affects[], condition}}` (driven by globals, as in `JS/utils/global-condition.js`), `revealRules[]` (so an unreported incident never shows), `containOn` (the event that freezes spread), `report {contained[], alreadyAffected[]}`, `layers[]` (a device update-status layer, a files layer), `view` (`map`, `list`), `replay`, `assess`.
+
+**Events and records:** prefix `spread_`: `spread_step:<nodeId>` (what became affected, and when in story time), `spread_contained` (story events since it began), `spread_node_opened:<nodeId>`, `spread_replay_viewed`. Records: how far it spread before the report, and the story time between the first sign and the report.
+
+**Builds on:** `network-segmentation-map` (`JS/minigames/network-segmentation-map/`), with its four fixed zone slots and "ACTIVE INCIDENT" badge made data (section 4); MG-09 for the report that contains it; the game clock and BE-16 for the passage of time; globals for node state.
+
+**Accessibility notes:** the map is also a list of nodes and their state, so nobody has to read a picture; state is shown in words and with a pattern, never colour alone; the spread is announced politely as it happens and never times the player; the replay steps on a key press, not a clock.
+
+**Art:** a simple floor plan and a node-and-link network view in the game's palette; status shown by a small icon and a label, with no alarming imagery (section 4's note on the calm tone).
+
+**Open questions:** **A floor plan, a network map, or both?** *Recommendation:* both as skins of one map, so core_04 can show an office and a network module a network; the node-and-link model is the same.
+
+### MG-27 Work desktop
+
+**Priority and size:** MVP, S to M, as an extension of the `container` desktop mode. Built alongside MG-01.
+
+**Used for:** every module that uses the player's computer. It is the one place the inbox (MG-01), the browser (MG-02), the chat (MG-05), The Lark (BE-09) and the settings (MG-23) open from, so "your computer" is the same across the course, and it gives BE-18's interruptions (new mail, a chat, a reminder) somewhere to appear.
+
+**What the player does:**
+
+1. Clicks the PC or laptop and sees a generic desktop: a taskbar or a set of icons for Mail, Browser, Chat, The Lark and Settings, a clock, and a lock button.
+2. Opens an app, which launches the matching minigame (BE-19), and comes back to the desktop when it closes.
+3. Gets notifications in a corner: "New email", "Kai messaged you", a reminder about the work task (BE-18); a notification opens the right app.
+4. Locks the screen when stepping away, which core_09 and core_10 can check.
+
+**What it teaches:** no security lesson of its own; it is the frame the other minigames live in, and the place where interruptions arrive while the player is doing the work task.
+
+**Configuration:** `apps[] {id, label, icon, minigame, configKey, badge}`, `notifications[] {id, app, text, at|on, opens}`, `lock {enabled, onLock}`, `wallpaper`, `clock` (from the game clock), `assess` (rarely; most assessment is in the app that opens).
+
+**Events and records:** prefix `desktop_`: `desktop_opened`, `desktop_app_opened:<appId>`, `desktop_notification_shown:<notificationId>`, `desktop_notification_opened:<notificationId>`, `desktop_locked`, `desktop_unlocked`. Records: usually none of its own; the apps it opens carry the assessment.
+
+**Builds on:** the `container` desktop mode (`JS/minigames/container/container-minigame.js:17-23`) for the desktop and icons; BE-19's launcher registry to open each app and hand back; BE-18 for the work task and interruptions; MG-01, MG-02, MG-05, MG-23 and BE-09 as the apps; the game clock for the clock and timed notifications.
+
+**Accessibility notes:** the desktop is a list of labelled app buttons in a sensible tab order; notifications go to a polite live region and never steal focus or cover the focused control (SC 2.4.11); nothing moves without a way to stop it; the clock is text.
+
+**Art:** a generic desktop with pixel-art app icons in the game's palette, a taskbar and a lock screen, framed by the PC and laptop sprites (`assets/objects/pc*.png`, `laptop*.png`), shared with MG-01.
+
+**Open questions:** **One desktop or a phone home screen too?** *Recommendation:* the desktop first; the phone's home screen is MG-05's and MG-23's phone frame, which can reuse this launcher model.
+
+### MG-28 Secure payment line
+
+**Priority and size:** P3, S. A keypad overlay built on `pin`.
+
+**Used for:** role_06 (taking a card payment from a customer by phone the secure way); also useful for role_02, and for sector_01 where payments are taken by phone.
+
+**What the player does:**
+
+1. Takes a card payment during a call (MG-04): the customer is ready to give their card number while the adviser stays on the line.
+2. Starts the secure line, which pauses the call recording and masks the digits: the adviser sees only `**** **** **** 1234` as the customer keys them in, never the full number.
+3. Meets the wrong ways to do it, each offered and each the wrong move: writing the number on a notepad, typing it into the call notes, or asking the customer to read it out while the recording runs.
+4. Finishes the payment and confirms the recording has resumed; any card number typed into the notes is flagged and cannot be saved.
+
+**What it teaches:** never write down or type a full card number; use the secure line so digits stay masked and the recording pauses; the customer keys the number in, the adviser does not hear or see it; PCI DSS in plain terms for front-line staff.
+
+**Configuration:** `payment {amount, maskedTail}`, `secureLine {pausesRecording: true, masks: true}`, `wrongRoutes[] {id, label, why}` (write it down, type into notes, read aloud on the record), `notesFlag {pattern: card, action: block}`, `assess`.
+
+**Events and records:** prefix `payment_line_`: `payment_line_started`, `payment_line_recording_paused`, `payment_line_digits_masked`, `payment_line_card_in_notes_flagged`, `payment_line_completed` (the secure route or a wrong route). Records: whether the payment was taken on the secure line, and any attempt to capture the full number.
+
+**Builds on:** `pin` (`JS/minigames/pin/pin-minigame.js`) for the keypad, with the masking and the paused-recording banner added; MG-04 for the call the payment happens on; the shared feedback panel for the "why" on a wrong route.
+
+**Accessibility notes:** the keypad is buttons with labels; masked digits are announced as "masked" rather than read out; the recording state ("Recording paused") is shown in words and announced; no timing.
+
+**Art:** a generic card-payment keypad overlay with a masked-digit display and a "Recording paused" banner, with no real payment brand.
+
+**Open questions:** **Full card-length entry?** *Recommendation:* a short masked entry that stands for the full number; the lesson is the masking and the paused recording, not keying sixteen digits.
+
+### MG-29 Patient record viewer
+
+**Priority and size:** P3, M. The existing `ehr-terminal` generalised.
+
+**Used for:** sector_01 ("only open the records you need"): looking up a patient, meeting a restricted record, and the session banner that says who is signed in. It generalises so other record systems (a customer database, a case management system) can reuse it.
+
+**What the player does:**
+
+1. Signs in to a records terminal with a session banner showing who is logged in and a reminder that every record opened is logged.
+2. Searches for the record the task needs, and opens only that one. Opening a record the task does not need is the thing to avoid.
+3. Meets a restricted record (a colleague's, a public figure's, a relative's) with a warning that says access is monitored and asks for a reason; the right move is not to open it without a work reason.
+4. Switches between an admin view and a clinical view where the role allows, seeing only the fields that role needs.
+5. Signs out or locks the terminal when finished.
+
+**What it teaches:** open only the records your work needs; access is logged and audited; a restricted-record warning is there for a reason; curiosity is not a work reason; sign out when you step away.
+
+**Configuration:** `header {title, organisation}` (from BE-05), `session {user, role, banner}`, `records[] {id, name, restricted, reason, fields{}}`, `views[] {id: admin|clinical, fields[]}`, `search {by[]}`, `task {needs[]}` (which records the work needs), `restrictedWarning {text, asksReason}`, `assess`.
+
+**Events and records:** prefix `record_`: `record_searched`, `record_opened:<recordId>` (whether the task needed it, and the view), `record_restricted_warning_shown:<recordId>`, `record_restricted_opened:<recordId>` (reason given or not), `record_view_switched`, `record_session_locked`. Records: an event per record opened, whether each was needed, and any restricted record opened without a work reason.
+
+**Builds on:** `ehr-terminal` (`JS/minigames/ehr-terminal/`), with its header, session banner, search and views made data (section 4 notes the fit is to be checked when sector_01 is planned); the shared feedback panel; BE-05 for the organisation header.
+
+**Accessibility notes:** the record list and fields are a proper table with headers; the session banner and the restricted-record warning are read out; search is a labelled field; no timing.
+
+**Art:** a generic records terminal in the organisation's colours, a session banner, and a restricted-record warning panel, with no real health system's look.
+
+**Open questions:** **How much clinical detail?** *Recommendation:* fictional, minimal fields that carry the lesson ("only open what you need"), never realistic medical content; confirm the fit when sector_01 is planned.
+
 ### MG-30 Pretext workshop (attacker view)
 
 **Priority and size:** P3, M. Depth, never on an MVP path. Always optional, and never shown before the learner has done the detect and behave beats.
@@ -1325,7 +1442,7 @@ File names without a folder are in that minigame's own folder under `JS/minigame
 | `password` | A weak or written-down password in use (core_03's sticky notes, Kev's shared PC); sign-in moments | None: it is entry only, and MG-08 covers making passwords | none |
 | `pin` | Shoulder-surfed door codes (core_10); MG-07's code entry | The backlog's PIN fixes: lengths other than four when the server keeps the PIN (`JS/systems/minigame-starters.js:535`), the `window.startPinMinigame` clash (`JS/minigames/index.js:202`), Cancel showing "PIN Rejected" | S |
 | `flag-station` | A free-text answer checked on the server, where a role module needs one; its server check is the model for MG-20's grading | Uses the browser's own `confirm()` box (`flag-station-minigame.js:556`, `:564`), which can't be styled or relabelled: use the shared dialog | S |
-| `dual-auth` | Two-person approval (core_11, role_02, MG-15) | Not registered in `minigames/index.js`, with no starter and no dispatch. It writes sis01's globals (`itsec_authorised`, `clinical_eng_authorised`, `network_isolation_authorised`, `network_isolated`, `dual_auth_failed`: `dual-auth-minigame.js:203-308`); its PINs are `itsec_pin` and `clinical_pin` (`scripts/minigame-data-schemas.json:110-113`) and sit in the page; a five-minute timer fails the approval (`:20`, `:304-318`); the keypads take clicks only; the title is fixed (`:10`); and the server has no `dual_auth` unlock method (`app/models/break_escape/game.rb:883-892`). Its text is already overridable (`dual-auth-text.js`). For the course: named approver panels with a checklist instead of PINs, globals from data, no timer by default | S to M |
+| `dual-auth` | Two-person approval (core_11, role_02, MG-15) | Not registered in `minigames/index.js`, with no starter and no dispatch. It writes sis01's globals (`itsec_authorised`, `clinical_eng_authorised`, `network_isolation_authorised`, `network_isolated`, `dual_auth_failed`: `dual-auth-minigame.js:203-308`); its PINs are `itsec_pin` and `clinical_pin` (`scripts/minigame-data-schemas.json:110-113`) and sit in the page; a five-minute timer fails the approval (`:20`, `:304-318`); the keypads take clicks only; the title is fixed (`:10`); and the server has no `dual_auth` unlock method (`app/models/break_escape/game.rb:883-892`). Its text is already overridable (`dual-auth-text.js`). For the course: named approver panels with a checklist instead of PINs, globals from data, no timer by default; the second approval completes on the signing approver's own sign-off event (for example Eleni's from her video call), not on the player clicking the second panel; and the panel records which account signed on which device, so a module can teach that the system believed whoever's password was at the keyboard | S to M |
 | `backup-recovery` | "Choose your response" cards: core_07's restore, seen behind the scenes; role_01 | Global names are fixed (`backup_recovery_source`, `recovery_eta_hours`, `backup_restore_initiated`, `backup_reinfected`: `backup-recovery-minigame.js:336-426`) and the default sources are sis01's | S |
 | `esd-pushbutton` | A guarded "stop the payment" or "isolate" button with a confirm step | Already data-driven (`esd-pushbutton-minigame.js:6-25`); add a plain office look | S |
 | `command-board` | The base of MG-24 (role_01); Kai's incident timeline (core_04) | Defaults are sis01's (`command-board-timeline.js:30-39`) but overridable through `commandBoard` (`:14-25`), a different key from every other minigame's `minigameData`; it needs injects and decision cards (MG-24) | M, as MG-24 |
@@ -1397,8 +1514,7 @@ For the orchestrator. Nothing here changes an id.
 
 **Not in the catalogue:**
 
-- **proposed:** Incident spread map, a floor or network map on which an incident spreads with game time until someone reports it, and is then contained. It is core_04's main mechanic (the "blast radius") and suits core_07's ransomware spread. It could extend `network-segmentation-map` (M). It is needed for the MVP, because core_04 is. core_07's plan (a scene status panel) and core_14's (a rumour map) propose views that could share it.
-- **proposed:** Work desktop, the player's PC as a generic desktop that opens the inbox, browser, chat, The Lark and settings, and shows new-mail and chat notifications. It extends the `container` desktop mode (S to M, MVP with MG-01), makes "your computer" one consistent place across modules, and gives BE-18's interruptions somewhere to appear.
+- **now catalogued:** the Incident spread map and the Work desktop, proposed here first, are now MG-26 and MG-27 with full sections above. The one open proposal here is the tactic card below.
 - **proposed:** Tactic card, a bingo-style card of persuasion tactics (authority, urgency, fear, helpfulness, flattery, insider jargon) that the player ticks off as they hear them, scored in the debrief, for core_02 (S, P2). core_02's README proposes the same card as an overlay under an id of its own (BE-22); it needs one catalogue id, as an MG or a BE.
 
 **Minigame proposals in the module plans so far,** and where each fits:
@@ -1406,7 +1522,7 @@ For the orchestrator. Nothing here changes an id.
 - core_07's "pop-up triage": a feed mode of MG-23, S on top of it.
 - core_16's game show mode: MG-20's game show presentation (above).
 - core_05's "Down to One" board (a grid of faces that clues rule out one by one): a variant of MG-13's board or MG-20's sort into groups, S to M.
-- role_06's secure payment line (card digits reach the adviser masked while the recording pauses): a keypad overlay built on `pin`, S, also useful for role_02.
+- role_06's secure payment line (card digits reach the adviser masked while the recording pauses): now MG-28, a keypad overlay built on `pin`, S, also useful for role_02.
 - core_06's keyboard controls for `shredded-document`, core_11's `dual-auth` rework, and core_09's and role_05's video-call bar label are the fixes in section 4.
 
 **Priority and size:**
