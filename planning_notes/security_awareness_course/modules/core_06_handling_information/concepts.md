@@ -65,7 +65,7 @@ Larkspur uses four labels. Customers can rename them and set their own definitio
 
 Files carry more than you can see. The ICO's guidance on disclosing documents securely lists the main traps:
 
-- **Spreadsheets:** hidden worksheets, rows and columns; worksheets whose tabs are simply out of view (the PSNI case in core_05); active filters; pivot tables, which keep a copy of their source data; links to other workbooks. Hiding something isn't removing it, and the ICO advises against hiding rows, columns or worksheets as a way to protect information.
+- **Spreadsheets:** hidden worksheets, rows and columns; worksheets whose tabs are simply out of view; active filters; pivot tables, which keep a copy of their source data even when the source worksheet is hidden (the PSNI case in core_05); links to other workbooks. Hiding something isn't removing it, and the ICO advises against hiding rows, columns or worksheets as a way to protect information.
 - **Documents:** comments, tracked changes, hidden text (white on white, or under a shape), metadata such as the author and earlier titles, embedded files, and photos that record where they were taken.
 - **Redaction done wrongly:** a black box or highlight drawn over text leaves the text underneath, ready to copy; changing the font colour hides nothing; blurring can be reversed; black marker on paper can sometimes be read against the light.
 - **The checks:** work on a copy; use the redaction tool, which removes the text; use the document inspection tool, then look yourself (tools miss some things, such as colour-hidden text); unhide everything; save as a simpler format (CSV or plain text) to see what's really there, remembering that converting to PDF alone isn't enough; check the file size is what you'd expect; for anything important, ask a colleague to check it too.
@@ -94,7 +94,7 @@ Files carry more than you can see. The ICO's guidance on disclosing documents se
 ### Information you shouldn't have
 
 - A misdirected email, a competitor's document, someone else's personal data, a confidential printout on a shared printer: don't open it further, don't use it and don't forward it. Tell the sender, report it (to the security team, and to the DPO if it involves personal data), and delete it when you're told to.
-- In public tenders it matters even more. Under the Procurement Act 2023 a public body can exclude a supplier that has acted improperly in a procurement, including by accessing confidential information that gives it an unfair advantage (Schedule 7, paragraph 13).
+- In public tenders it matters even more. Under the Procurement Act 2023 a public body can exclude a supplier that has acted improperly in a procurement, including by accessing confidential information that gives it an unfair advantage (Schedule 7, discretionary exclusion grounds).
 
 ### When it goes wrong
 
@@ -127,7 +127,7 @@ As the reference card shows it, with the organisation's own labels and tools fil
 | "'Anyone with the link' only means the people I sent it to." | It means anyone who ever gets the link, including everyone it's forwarded to. Share with specific people. |
 | "If in doubt, label it Restricted." | Over-labelling makes labels meaningless and pushes people to work around them. Label by what's in it, and ask the owner. |
 | "It's internal email, so it doesn't matter what I attach." | Internal recipients still need a reason to see it: need to know applies inside the organisation too. |
-| "If it came to me by mistake, it's not my problem." | You now hold information you shouldn't. Don't use or forward it; tell the sender and report it (and in a tender, using it can get the bid excluded: Procurement Act 2023, Schedule 7, paragraph 13). |
+| "If it came to me by mistake, it's not my problem." | You now hold information you shouldn't. Don't use or forward it; tell the sender and report it (and in a tender, using it can get the bid excluded: Procurement Act 2023, Schedule 7). |
 
 ## Real cases
 
@@ -185,6 +185,6 @@ Use these as background and inspiration only. Game content uses fictional names,
 - ICO, [Encryption](https://ico.org.uk/for-organisations/uk-gdpr-guidance-and-resources/security/a-guide-to-data-security/encryption/) (keys kept with the data).
 - NCSC, [Secure sanitisation of storage media](https://www.ncsc.gov.uk/guidance/secure-sanitisation-storage-media) (reviewed 5 February 2025).
 - GOV.UK, [Government Security Classifications](https://www.gov.uk/government/publications/government-security-classifications) (page updated 5 August 2024) and its guidance ["Working at OFFICIAL"](https://www.gov.uk/government/publications/government-security-classifications/guidance-11-working-at-official-html).
-- Procurement Act 2023, [Schedule 7](https://www.legislation.gov.uk/ukpga/2023/54/schedule/7), paragraph 13 (acting improperly in procurement).
+- Procurement Act 2023, [Schedule 7](https://www.legislation.gov.uk/ukpga/2023/54/schedule/7) (discretionary exclusion grounds, acting improperly in procurement).
 - Wikipedia (secondary): [Afghan Response Route](https://en.wikipedia.org/wiki/Afghan_Response_Route); [Iran hostage crisis](https://en.wikipedia.org/wiki/Iran_hostage_crisis); [DARPA Shredder Challenge 2011](https://en.wikipedia.org/wiki/DARPA_Shredder_Challenge_2011).
 - core_05 `concepts.md` for personal data, breaches and the PSNI case.

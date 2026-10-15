@@ -107,7 +107,7 @@ EU customers cite "EU GDPR Art ..." with the same numbers. The 2025 and 2026 UK 
 
 ## Open questions
 
-1. **A Care Laundry service line.** The module needs Larkspur to hold residents' and families' data directly. *Recommendation: add "Care Laundry" to `03_WORLD_AND_CAST.md`: Larkspur collects, washes and returns care home residents' name-taped clothing, and its customer desk handles lost-item claims. It gives the module its people and its title.*
+1. **A Care Laundry service line.** *Resolved:* Care Laundry is already in `03_WORLD_AND_CAST.md` (service lines): Larkspur collects, washes and returns care home residents' name-taped clothing, and its customer desk handles lost-item claims. It gives the module its people and its title.
 2. **Can the player avoid the misdirected email?** *Recommendation: yes. The autocomplete is visible and catchable. A player who catches it is thanked, and the breach slot fills with a different breach (personal data received by mistake), so everyone practises reporting one.*
 3. **Who explains?** Ama is the course's usual mentor, but data protection is Tomasz's field. *Recommendation: Tomasz explains here and Ama doesn't appear. The reporting route he gives is the same one Ama teaches in core_04, so the two voices never disagree.*
 4. **How much law on screen?** *Recommendation: none beyond "one month" and "72 hours". Article numbers stay in `concepts.md` for writers and auditors.*
