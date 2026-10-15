@@ -33,7 +33,7 @@ Developers hold keys (cloud credentials, deploy tokens, signing keys), choose wh
 Every package you add brings its own code, its own dependencies and its maintainers' security habits into your build.
 
 - **Lookalike names.** A package one letter away from a popular one, waiting for a typo.
-- **Internal-name confusion.** If a build can fetch an internal package name from a public registry as well as the internal one, a public package with the same name can be installed instead. A researcher showed in 2021 that this worked against many large companies ("Dependency Confusion", Alex Birsan, February 2021, as reported by the researcher). The defence is a private registry or proxy that fixes where each name comes from, and reserved internal names.
+- **Internal-name confusion.** If a build can fetch an internal package name from a public registry as well as the internal one, a public package with the same name can be installed instead. A researcher showed in 2021 that this worked against many large companies ("Dependency Confusion", Alex Birsan, 9 February 2021, as reported by the researcher). The defence is a private registry or proxy that fixes where each name comes from, and reserved internal names.
 - **Takeovers and poisoned updates.** A trusted package can turn bad: a maintainer's account is phished or its credentials stolen (the npm "Shai-Hulud" worm compromised more than 500 packages in September 2025 by stealing developer credentials and publishing tainted versions; CISA), or a newcomer earns maintainer rights over years and then inserts malicious code (XZ Utils, 2024).
 - **Names an AI assistant made up.** Assistants sometimes suggest packages that don't exist. In a study of 576,000 code samples from 16 models, at least 5.2% of packages suggested by commercial models and about 21.7% by open-source models were made up, with 205,474 different invented names (Spracklen and others, USENIX Security 2025). Germany's BSI and France's ANSSI describe the attack this invites: someone registers the invented name with malicious code in it ("package confusion attacks through package hallucination").
 - **What to do before adding one:** check the name exactly against the project's official site or repository; check it exists in the approved registry; look at its age, maintainers, release history and whether it runs scripts when installed; ask before adding anything new; keep lock files and pinned versions; and keep an inventory of what's in the software (the Software Security Code of Practice, principle 1.2, asks vendors to understand the composition of their software).
@@ -139,7 +139,7 @@ Use these as background only. Game content uses fictional names.
 - **A third-party build action, March 2025.** A widely used build action was modified so secrets could appear in workflow logs; affected teams had to rotate secrets. (CISA alert, 18 March 2025.)
 - **Meta, 2019 to 2024.** Passwords stored in plaintext on internal systems, reported in 2019; a fine of 91 million euros in September 2024. (Data Protection Commission, 27 September 2024.)
 - **Package hallucination.** 576,000 generated code samples, 16 models, 205,474 invented package names. (Spracklen and others, "We Have a Package for You!", USENIX Security 2025.)
-- **Dependency confusion, 2021.** A researcher's report that internal package names could be shadowed by public packages at many large companies. (Alex Birsan, "Dependency Confusion", February 2021; reported by the researcher.)
+- **Dependency confusion, 2021.** A researcher's report that internal package names could be shadowed by public packages at many large companies. (Alex Birsan, "Dependency Confusion", 9 February 2021; reported by the researcher.)
 
 ## Organisation-specific slots
 
@@ -178,7 +178,7 @@ Use these as background only. Game content uses fictional names.
 - NCSC, Secure development and deployment guidance (principles, including "Protect your code repository"): https://www.ncsc.gov.uk/collection/developers-collection
 - NCSC, Vulnerability Disclosure Toolkit: https://www.ncsc.gov.uk/information/vulnerability-disclosure-toolkit
 - RFC 9116, A File Format to Aid in Security Vulnerability Disclosure (security.txt): https://www.rfc-editor.org/rfc/rfc9116
-- DSIT, Software Security Code of Practice (2025, updated January 2026): https://www.gov.uk/government/publications/software-security-code-of-practice/software-security-code-of-practice
+- DSIT, Software Security Code of Practice (2025, updated in early 2026): https://www.gov.uk/government/publications/software-security-code-of-practice/software-security-code-of-practice
 - OWASP Top 10:2025: https://owasp.org/Top10/2025/
 - BSI and ANSSI, *AI Coding Assistants* (September 2024): https://www.bsi.bund.de/SharedDocs/Downloads/EN/BSI/KI/ANSSI_BSI_AI_Coding_Assistants.pdf
 - Spracklen, J. and others (2025) "We Have a Package for You! A Comprehensive Analysis of Package Hallucinations by Code Generating LLMs", USENIX Security Symposium: https://arxiv.org/abs/2406.10279
@@ -190,4 +190,4 @@ Use these as background only. Game content uses fictional names.
 - Data Protection Commission, fine of 91 million euros on Meta (27 September 2024): https://www.dataprotection.ie/en/news-media/press-releases/DPC-announces-91-million-fine-of-Meta
 - European Commission, Cyber Resilience Act: https://digital-strategy.ec.europa.eu/en/policies/cyber-resilience-act
 - UK GDPR Articles 25 and 32: https://www.legislation.gov.uk/eur/2016/679/contents
-- Alex Birsan, "Dependency Confusion" (February 2021), as reported by the researcher on his blog; **to verify** the exact date and URL before quoting (the page could not be fetched while this plan was written).
+- Alex Birsan, "Dependency Confusion" (9 February 2021), published by the researcher on his blog.

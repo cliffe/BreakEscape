@@ -57,7 +57,7 @@ Training requirements this module contributes to (short names from `02_COMPLIANC
 
 **What it doesn't meet on its own.** The module is awareness level. It doesn't replace training for incident response staff (PCI DSS 12.10.4) or the technical skills of system administration. Point those staff to Hacktivity's technical labs: the HacktivityLabSheets labs on log management and SIEM (`_labs/response_and_investigation/9_siem.md`), backups and recovery (`3_backups_and_recovery.md`), and authentication, access controls and directory services (`_labs/systems_security/1_authentication.md`, `4_access_controls.md`, `3_network_authentication.md`), and the incident response practice in the Security-Informed Safety games (`scenarios/sis01_healthcare`).
 
-The content also follows ISO 27001 A.5.17, A.5.18, A.8.2, A.8.5 and A.8.16, NCSC CAF B2, NIS2 Art 21(2)(i) and (j), and PCI DSS requirement 8 (identity verified before any authentication factor is changed, and MFA for administrative access; **check the exact numbering against v4.0.1**). Its admin rules match the user access control requirements of Cyber Essentials v3.3, which is a technical scheme with no training requirement and is not claimed here.
+The content also follows ISO 27001 A.5.17, A.5.18, A.8.2, A.8.5 and A.8.16, NCSC CAF B2, NIS2 Art 21(2)(i) and (j), and PCI DSS requirement 8 (changes to any authentication factor authorised before the change, 8.2.4; and MFA for administrative, non-console access to the cardholder data environment, 8.4.1). Its admin rules match the user access control requirements of Cyber Essentials v3.3, which is a technical scheme with no training requirement and is not claimed here.
 
 ## Module flow
 

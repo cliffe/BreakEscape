@@ -64,7 +64,7 @@ Spotting differences (a mobile number where the record has a landline, a bank th
 - **No match means stop.** Check the details with the payee on a number you know is theirs, and never let anyone pressure you to pay while the name doesn't match.
 - **Close match means look.** It is often a "Ltd" or a full registered name; if the suggested name isn't clearly the same organisation, check before paying.
 - **Match isn't proof.** It means only that the name you typed is the name on that account. It can't tell you whether the request to pay that account was genuine.
-- **Elsewhere:** the EU's Instant Payments Regulation brings a similar Verification of Payee check for euro transfers (to verify the start date and scope before quoting).
+- **Elsewhere:** the EU's Instant Payments Regulation (Regulation (EU) 2024/886) brings a similar Verification of Payee check for euro credit transfers: euro-area payment providers must offer it from 9 October 2025, and providers in non-euro member states from 9 July 2027.
 
 ### If money may have gone
 

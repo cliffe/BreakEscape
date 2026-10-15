@@ -65,7 +65,7 @@ The critical path is marked **(CP)**.
 
 ### 4. Apply: "Find the four" (10 minutes)
 
-- **(CP)** 14:35. A work task bar appears (BE-18): **Review the run**, then **Resolve the holds**, then **Two approvals by 16:00**. Ledger's run view (MG-15) on the desk computer (MG-27) lists thirty payments with columns for payee, amount, invoice, purchase order, bank details last changed (when, how and by whom), name check result and notes. Selecting a row opens the supplier record, its change history and the invoice (MG-25). Each row has a **Hold** button. Eleni's red-flag card sits beside the keyboard.
+- **(CP)** 14:35. A work task bar appears (BE-18): **Review the run**, then **Resolve the holds**, then **Two approvals by 16:00**. Ledger's run view (MG-15) on the desk computer (MG-27) lists thirty payments with columns for payee, amount, invoice, purchase order, bank details last changed (when, how and by whom), name check result and notes. Selecting a row opens the supplier record, its change history and the invoice (MG-25). Each row has a **Hold** button. Eleni's red-flag card sits beside the keyboard. Hassan prepared this run in Ledger before he went off sick on Wednesday; the player's job today is to review it and hold anything wrong, not to prepare it.
 - **The four that mustn't go** (BE-13 draws variants each play; the four shapes stay):
 
 | Row | What the data shows | What it is | Best response |
@@ -95,7 +95,7 @@ The critical path is marked **(CP)**.
   - **Report Fraud,** and note the reference for the bank.
   - Choices that look sensible and aren't: *"Kev should ring his own bank"* (his bank can't recall Larkspur's payment); *"Wait for Hassan on Monday"*; *"Delete the email so nobody else falls for it."*
   - A recovery bar labelled "illustrative" falls with game time: ringing the bank first, and fast, keeps more of it. Bea: *"Thank you for not making it worse."* One of the player's lines: *"You told us straight away. That's what gives Kev a chance."*
-- **The approval** (15:45 to 16:00). The player signs the first panel of the reworked `dual-auth` panel ("Approver 1: accounts payable", with a checklist: holds resolved, name checks reviewed). The second panel reads "Approver 2: Financial Controller (delegate)". The choices:
+- **The approval** (15:45 to 16:00). The player signs the first panel of the reworked `dual-auth` panel ("Approver 1: accounts payable", with a checklist: holds resolved, name checks reviewed). Because Hassan prepared the run and the player only reviewed it and held the bad rows, signing as Approver 1 is approving someone else's work, not self-approval, and stays true to "never approve your own work"; a second, independent approver still has to sign. The second panel reads "Approver 2: Financial Controller (delegate)". The choices:
   - **Message Eleni:** *"Run's ready. Two minutes?"* She steps out at 15:52, looks at the holds and signs. *Best.*
   - **Hold the run until Monday** and email the suppliers that payment will be a day late. *Also right: late is better than lost.*
   - **Sign in as Hassan** on his PC with the password from the sticky note in his drawer (`password`) and sign the second panel in his name. Ledger accepts it. *Not yet.*
