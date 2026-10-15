@@ -50,7 +50,7 @@ The security team can stop each of these within minutes, but only from the momen
 Organisations also have legal and contractual clocks, which start when the organisation becomes aware:
 
 - **Personal data breaches:** under UK GDPR Article 33, an organisation must tell the Information Commission (the ICO) about a reportable breach without undue delay and, where feasible, within 72 hours of becoming aware of it. An organisation handling data for a client (a processor, as Larkspur often is for councils, schools and care homes) must tell that client without undue delay. The 72-hour duty was unchanged when the Information Commissioner became the Information Commission on 30 September 2026.
-- **Regulated sectors:** in the EU, NIS2 requires organisations in many sectors to give their national authority an early warning of a significant incident (within 24 hours of becoming aware; to verify against Article 23 of the Directive before quoting).
+- **Regulated sectors:** in the EU, NIS2 (Directive (EU) 2022/2555, Article 23) puts a three-stage clock on organisations in many sectors, all counted from becoming aware of a significant incident: an early warning within 24 hours, a fuller incident notification within 72 hours, and a final report within one month. At awareness level, the point for staff is only that the organisation's own clock starts the moment someone reports, which is why reporting early matters.
 - **Contracts:** customers' contracts often require prompt notice of incidents affecting their data.
 
 These are the organisation's duties, not the individual's. The individual's part is to get the report to the right people at once, so the people who decide have the time to decide well.
@@ -206,6 +206,6 @@ Use these as background and inspiration only. Game content uses fictional names.
 - ICO, "Capita fined £14m for data breach affecting over 6m people" (15 October 2025): https://ico.org.uk/about-the-ico/media-centre/news-and-blogs/2025/10/capita-fined-14m-for-data-breach-affecting-over-6m-people/
 - ICO, "23andMe fined £2.31 million for failing to protect UK users' genetic data" (17 June 2025), via the ICO newsroom: https://ico-newsroom.prgloo.com/news/ico-fines-23andme-gbp-2-31-million-for-failing-to-protect-uk-users-genetic-data
 - Directive (EU) 2022/2555 (NIS2), Article 23 (reporting obligations): https://eur-lex.europa.eu/eli/dir/2022/2555/oj
-- ISO/IEC 27001:2022, Annex A 5.24 to 5.28 and 6.8 (incident management and event reporting).
+- ISO/IEC 27001:2022, Annex A controls A.5.24 to A.5.28 and A.6.8 (incident management and event reporting).
 - DSIT, Cyber Security Breaches Survey 2025: https://www.gov.uk/government/statistics/cyber-security-breaches-survey-2025
 - Lain, D., Kostiainen, K. and Čapkun, S. (2022) "Phishing in organizations: findings from a large-scale and long-term study", IEEE Symposium on Security and Privacy.

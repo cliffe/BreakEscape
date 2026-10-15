@@ -130,6 +130,7 @@ You need a file from a shared PC. Its password is on a sticky note on the monito
 Shown: a warehouse office desk with a monitor, a keyboard, a kettle, a wall planner and a hi-vis jacket. Click the risk.
 
 - **Correct hotspot:** the sticky note on the monitor reading `WAREHOUSE / Stock2024!`. *Feedback: A password where others can see it is a password for everyone. Ask for your own account, or a shared vault.*
+- **Text route and keyboard or screen reader:** the same item is offered as a labelled list of what is on the desk (monitor and sticky note, keyboard, kettle, wall planner, hi-vis jacket), each selectable without a pointer, so the choice is identical to the hotspot (MG-20 accessible equivalent; `features/accessibility_and_inclusion.md`).
 
 ### C03-Q12 (LO1, LO3, multiple select)
 
