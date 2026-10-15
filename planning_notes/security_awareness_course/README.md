@@ -2,7 +2,7 @@
 
 A plan for a cyber security awareness course for all staff, built from short Break Escape games and hosted in Hacktivity, designed to meet the training requirements of the common standards and laws while being something people would choose to play.
 
-**Status (October 2026):** planning. Nothing here is built yet.
+**Status (October 2026):** planning, reviewed. All 26 module plans and the feature documents have been through a full accuracy and design review and reconciliation (see `TODO.md`); no blockers were found. Nothing here is built yet.
 
 ## Start here
 
