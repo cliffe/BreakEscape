@@ -1655,6 +1655,7 @@ These are the mistakes that most often leave a mission unfinishable or silently 
 ### Event mappings
 
 - **`&&` is the only operator in an eventMapping `condition`.** `||` and parentheses always evaluate false, so the handler is silently dead. Write one mapping per alternative and guard duplicates with a global.
+- **The same goes for lighting, torch, `chatBackground`, timer and text/sprite/observation variant conditions.** Their evaluator splits on `&&` only and reads the first `globalVars` name of each term, so `globalVars.a || globalVars.b` is just `globalVars.a`. Use one variant per alternative. Only music events and credits (run as JavaScript) and command-board `timeline`/`statusRows` (which take `||` but no parentheses) accept `||`. The validator flags `||` and parentheses in all of these.
 - **Use `npc_ko:<id>` to react to a KO.** `globalVarOnKO` sets its global without emitting `global_variable_changed`, so a mapping on that global never fires. Use a dedicated `<npc>_ko` global, not a story global another outcome must exclude.
 - **Scenes opened by `npc_ko:<id>` need `disableClose: true`.** A KO'd NPC cannot be talked to again and the event does not re-fire.
 - **An NPC's mappings register only after its room loads.** A `setVisible` on an event that fires earlier is lost. Reveal on `room_entered:<the NPC's own room>`, or put the mapping on an always-loaded NPC such as HaX.

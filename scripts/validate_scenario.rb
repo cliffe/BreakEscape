@@ -4265,6 +4265,64 @@ def check_engine_limits(json_data)
   end
   walk.call(json_data.reject { |k, _| k == 'objectives' }, '', nil)
 
+  issues.concat(check_or_in_global_conditions(json_data))
+  issues
+end
+
+# '||' (and parentheses) in the conditions the &&-only evaluators read, beyond the
+# eventMappings, timers and text/sprite/observation variants checked above (m04 L3):
+# lighting (scenario and room blocks, their variants, emitter variants), NPC
+# behavior.torch and chatBackground views all go through conditional-text.js
+# evaluateGlobalCondition, which splits on '&&' only and reads the first globalVars
+# name of a term, so "globalVars.a || globalVars.b" is just "globalVars.a".
+# Skipped: music events and credits (run as JS by scenario-music-events.js) and
+# command-board timeline/statusRows (global-condition.js, which supports '||').
+# Any other condition with '||' gets a softer warning naming its path.
+def check_or_in_global_conditions(json_data)
+  issues = []
+  checked_elsewhere = /(\A|\/)(eventMappings|timers|observationVariants|spriteVariants|textVariants)(\[|\/|\z)/
+  walk = nil
+  walk = lambda do |node, path, ctx|
+    case node
+    when Array
+      node.each_with_index { |v, i| walk.call(v, "#{path}[#{i}]", ctx) }
+    when Hash
+      cond = node['condition']
+      if cond.is_a?(String) && !path.match?(checked_elsewhere)
+        case ctx
+        when :lighting, :torch, :chat_background
+          if (bad = unsupported_condition_syntax(cond, allow_includes: false))
+            where = { lighting: 'lighting', torch: 'NPC torch', chat_background: 'chatBackground' }[ctx]
+            issues << "❌ INVALID: '#{path}' #{where} condition \"#{cond}\" uses #{bad}. conditional-text.js " \
+                      "evaluateGlobalCondition supports only '&&'-joined terms, so '||' is mis-read (each term " \
+                      "reads its first globalVars name: \"globalVars.a || globalVars.b\" is just globalVars.a). " \
+                      "Use one variant per '||' branch, or a global that the story sets for either case."
+          end
+        when :js, :or_ok
+          if ctx == :or_ok && cond.match?(/[()]/)
+            issues << "⚠️ WARNING: '#{path}' condition \"#{cond}\" uses parentheses. global-condition.js " \
+                      "supports '&&' and '||' (|| binds looser) but not parentheses."
+          end
+        else
+          if cond.include?('||')
+            issues << "⚠️ WARNING: '#{path}' condition \"#{cond}\" uses '||'. Most scenario condition " \
+                      "evaluators support only '&&' (music events, credits and command-board timelines are the " \
+                      "exceptions). Check which evaluator reads this field before relying on '||'."
+          end
+        end
+      end
+      node.each do |k, v|
+        child_ctx = ctx
+        child_ctx = :js if path.empty? && k == 'music'
+        child_ctx = :lighting if k == 'lighting' && ctx.nil?
+        child_ctx = :torch if k == 'torch' && ctx.nil?
+        child_ctx = :chat_background if k == 'chatBackground' && ctx.nil?
+        child_ctx = :or_ok if %w[timeline statusRows].include?(k) && ctx.nil?
+        walk.call(v, path.empty? ? k.to_s : "#{path}/#{k}", child_ctx)
+      end
+    end
+  end
+  walk.call(json_data.reject { |k, _| k == 'objectives' }, '', nil)
   issues
 end
 
