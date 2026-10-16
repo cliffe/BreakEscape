@@ -239,7 +239,8 @@ export class RFIDMinigame extends MinigameScene {
                 });
             }
 
-            this._showDenial('Access Denied', () => this.ui.showSavedCards(), 'wrong_card');
+            // The clone ran; this reader just doesn't take that card
+            this._showDenial('Card not accepted', () => this.ui.showSavedCards(), 'wrong_card');
         } else {
             // When just browsing, show card info instead of error
             this.ui.showSuccess(`Card Info: ${savedCard.name} (${protocol})`);

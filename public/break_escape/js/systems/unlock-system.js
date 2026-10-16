@@ -515,6 +515,13 @@ export function handleUnlock(lockable, type) {
                     window.gameAlert('Access denied', 'error', 'Error', 3000);
                 });
             }
+            // A cloner with nothing to offer (no keycards to tap, no saved clones): the
+            // reader just refuses, rather than opening an empty cloner screen (m07 U9)
+            else if (hasCloner && keycards.length === 0 && savedCards.length === 0) {
+                console.log('RFID CLONER EMPTY: no keycards, no saved cards');
+                window.gameAlert('Access denied. No keycard, and nothing saved on the cloner.', 'error', 'Access Denied', 4000);
+                emitDoorUnlockFailed('no_card');
+            }
             // PRIORITY 2: If player has RFID cloner, open minigame to emulate or read cards
             else if (hasCloner) {
                 // Start RFID minigame in unlock mode

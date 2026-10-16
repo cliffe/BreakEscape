@@ -155,3 +155,21 @@ test('unlock-system wires the reader to door_unlock_failed, and reports no card 
     assert.match(unlockSrc, /emit\('door_unlock_failed', payload\)/);
     assert.match(unlockSrc, /emit\(`door_unlock_failed:\$\{doorAttemptData\.connectedRoom\}`, payload\)/);
 });
+
+// Pass 5, approved item 7.4c (m07 U9, m06 D8)
+test('an emulated card the reader refuses says "Card not accepted"', () => {
+    const { m, calls } = setup();
+    m.handleEmulate({ name: 'CTO Access Badge', card_id: 'cto_badge', rfid_protocol: 'EM4100' });
+    assert.deepEqual(calls, [['error', 'Card not accepted']]);
+});
+
+test('an empty cloner (no keycards, no saved cards) gets a plain refusal, not the cloner screen', () => {
+    const rfid = unlockSrc.slice(unlockSrc.indexOf("case 'rfid':"), unlockSrc.indexOf('export function getLockRequirementsForDoor'));
+    const empty = rfid.indexOf('else if (hasCloner && keycards.length === 0 && savedCards.length === 0)');
+    const cloner = rfid.indexOf('else if (hasCloner) {');
+    assert.ok(empty > 0 && cloner > empty, 'empty-cloner branch comes before the cloner screen');
+    const branch = rfid.slice(empty, cloner);
+    assert.match(branch, /Access Denied/);
+    assert.match(branch, /emitDoorUnlockFailed\('no_card'\)/);
+    assert.doesNotMatch(branch, /startRFIDMinigame/);
+});
