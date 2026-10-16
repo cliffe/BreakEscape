@@ -148,7 +148,39 @@ export class NPCHealthBars {
     this.healthBars.delete(npcId);
   }
 
+  /**
+   * Hostile, standing NPCs that should carry a bar but have none: the hostile
+   * event found no sprite yet, or the sprite was rebuilt (m07 blind M4: Park
+   * fought with no bar). Pure, for tests.
+   * @param {Object} record - npcHostileSystem.exportHostility()
+   * @param {Set|Map} existing - ids that already have a bar
+   */
+  static missingBars(record, existing) {
+    return Object.entries(record || {})
+      .filter(([id, e]) => e && e.hostile === true && e.ko !== true && !existing.has(id))
+      .map(([id]) => id);
+  }
+
+  _findSpriteQuiet(npcId) {
+    for (const room of Object.values(window.rooms || {})) {
+      const sprite = (room.npcSprites || []).find(s => s.npcId === npcId);
+      if (sprite) return sprite;
+    }
+    return null;
+  }
+
   update() {
+    // Twice a second, give any hostile NPC without a bar its bar
+    const now = this.scene?.time?.now ?? Date.now();
+    if (!this._lastMissingCheck || now - this._lastMissingCheck > 500) {
+      this._lastMissingCheck = now;
+      const record = window.npcHostileSystem?.exportHostility?.();
+      for (const npcId of NPCHealthBars.missingBars(record, this.healthBars)) {
+        const sprite = this._findSpriteQuiet(npcId);
+        if (sprite && sprite.active && sprite.visible !== false) this.createHealthBar(npcId);
+      }
+    }
+
     // Update positions to follow NPCs
     this.healthBars.forEach((healthBar, npcId) => {
       if (!healthBar.npcSprite || !healthBar.npcSprite.active) {
