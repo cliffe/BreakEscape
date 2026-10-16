@@ -108,3 +108,29 @@ Persisted game record: `status = "completed"`, `completed_at = 2026-10-16 19:50:
 - Cover was deliberately strained (two wrong console slots) so Kemal's FCA line fails and the fight, pick and evidence routes get exercised. The cover-held talk-past route ("The FCA. Mr Nakamoto's compliance file has my name on it.") was not run this round.
 - Irina was recruited, the fund frozen. Detain, watch and the KO routes were not run.
 - The reload was taken after Irina and the badge, before the executive wing, so the knockout was the second page load.
+
+## Fixes (2026-10-17)
+
+Scenario/ink fixer for m06. Ink and routes are in d45eb5fa. The `scenario.json.erb` changes are in the working tree and not committed: the lead commits them with the sprite work. Checks: ink compiles; `validate_scenario.rb --no-graph` passes the schema with no errors (the warnings were already there); dialoguelint finds nothing; tagdiff differences are all in the new Priya knot and the debrief branch; loopcheck is clean on Priya; all 35 m06 routes pass (r33 to r35 are new; the driver gained `restart` and `event` steps).
+
+| # | Source | Severity | Outcome |
+| -- | ------ | -------- | ------- |
+| R1 | regression | major | **Fixed (erb, uncommitted; route r33 in d45eb5fa).** A new HaX mapping clears `minder_hostile` on `npc_hostile_state_changed {isHostile:false, reset:true}`, the event the engine's Restart emits before it saves. Kemal's own `minder_hostile` setter is no longer `onceOnly` (that kind of handler is saved, so a second fight after a Restart would not have been recorded). r33 runs fight, Restart, casualty line: Satoshi says "Kemal walked out", the debrief says "read the casualty line and walked out", and the credits say "Read the casualty line and walked out". None of the three describe a fight. |
+| R2 | regression | minor | **Deferred.** Satoshi's faceless bust: the PixelLab run replacing the m05/m06 cast is handling it, and this pass doesn't touch sprites. |
+| R3 | regression | minor | **Deferred to the engine fixer** (phone choice number labels). |
+| R4 | regression | minor | **Deferred to the engine fixer** (knockback leaves the feet in the door frame). |
+| R5 | regression | minor | **Deferred to the engine fixer** (vision cone drawn through the wall). |
+| R6 | regression | minor | **Deferred to the engine fixer** (cone drawn while hostile). |
+| R7 | regression | minor | **Deferred.** The garbled plaque is baked into `m06_blockchain_lab_blended.png`: there is no text overlay, and the POV notes already say lettering garbles at 400 px. A fix means a Gemini or PixelLab edit, which needs the user's go-ahead. It is logged in `docs/agents/DECISIONS_PENDING.md`. Kemal's tight bust framing is sprite art and is left alone. |
+| A-R1 | blind A | major | **Withdrawn.** A reload puts the player back in the start room by design (`docs/agents/RESOLVED_DECISIONS.md`, "No resume in the room you left"). |
+| A-R2 | blind A | major | **Fixed (erb).** A refusal at the executive-wing reader (`door_unlock_failed:executive_wing`) now gets a HaX text naming who holds the spare. Before the fund is found, it points at the door export's DC-03 note and says to find the fund first. After the fund, it says "Volkova has it". If Irina is KO'd, it says to check where she went down or ask HaX for a copy. Each text has a 60 s cooldown and goes quiet once she has handed the badge over. Route r34. |
+| A-R3 | blind A | minor | **Fixed (d45eb5fa, erb global `analyst_told`).** After the confrontation, Priya's hub offers "It's over upstairs. You should know what you've been drawing.", once. It leads to a short scene with two replies. When `analyst_told` is set, the debrief replaces "I'd rather it was you" with "You went back and told Raghavan what she'd been drawing." Routes r34 and r35. |
+| A-R4 | blind A | minor | **Fixed (d45eb5fa).** After "she lent you her office badge", HaX adds "You never gave it back, by the way. Leave it at the front desk. Evidence will want it." Route r35. |
+| A-R5 | blind A | minor | **Fixed (erb).** HaX's first data-centre texts (both variants) and the console's observations now say it takes one number per try and logs each one. The pad's own attempt counter is engine UI and is left to the engine fixer. |
+| A-R6 | blind A | minor | **Fixed (d45eb5fa).** Satoshi's line is now "So you'd save the people on the projection and risk whoever my martyrdom recruits. That's human. Wrong, but human." Route r34. |
+| A-R7 | blind A | minor | **Withdrawn.** The credits do carry the outcomes in their labels (freeze, Irina, Priya, Kemal, cover), as this regression run read them from `#bv-cr-label`. The visualiser behind the labels is generic by design. |
+| A-R8 | blind A | minor | **Deferred.** HaX's phone portrait and debrief portrait don't match. That is avatar art, which this pass doesn't touch. |
+| A-R9 | blind A | minor | **Deferred.** The debrief background's window reads as daylight against "four in the morning". It is background art, logged with R7. |
+| A-R10 | blind A | minor | **Deferred to the engine fixer.** The "streaky sheen" text is in `dusting-game.js`. |
+| A-R11 | blind A | minor | **Fixed (erb).** In `custody_index.csv`, slot 4471 now shows opened 2025-05 and slot 5093 (which had the same clash) 2025-04, both before the July credits. Neither date is used by the puzzle. |
+| — | ruling | — | **Done (erb).** `gender` is added to Netherton, the checkpoint guard, Irina, Dani, Priya, Kemal and Satoshi (from the voice notes), so the past-talking toast says "He's" or "She's". |

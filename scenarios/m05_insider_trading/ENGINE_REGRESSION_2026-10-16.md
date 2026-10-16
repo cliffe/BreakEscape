@@ -135,3 +135,32 @@ MISSION COMPLETE; INSIDER TRADING; OPERATION SCHRÖDINGER: STOPPED; CIVILIAN LIV
 - Dusting needed wide strokes (about ±30 px around `printCentre`) to pass 40 per cent coverage; narrow strokes plateau at 37 per cent.
 - Notes read in the world (incident log, badge log, notices, password note) show in the Notepad, not the harness inventory list, though `verify-run.rb` lists them as inventory.
 - Another playtest-session.js process was running on the machine when I finished; both of mine were stopped.
+
+## Fixes (2026-10-17)
+
+Scenario/ink fixer for m05. Ink and routes are in 6831444f. The `scenario.json.erb` changes are in the working tree and not committed: the lead commits them with the sprite work. r40's credits expectation and the new r42 depend on those erb changes, so they pass only against the working tree until that commit. Checks: ink compiles (the debrief's END warning was already there); `validate_scenario.rb --no-graph` passes the schema; dialoguelint shows only two Recruiter lines that were already there; tagdiff differences are all explained below; loopcheck is clean on Owen, Patricia, HaX and the Recruiter; reopencheck finds 0 problems; all 42 m05 routes pass.
+
+| # | Source | Severity | Outcome |
+| -- | ------ | -------- | ------- |
+| E1 | regression | minor | **Fixed (erb).** The server-hallway text is now skipped at delivery once Owen's badge is cloned (`skipIfGlobal: server_badge_obtained`). The vault "Use it" text has moved from `door_unlock_attempt` to `door_unlock_failed:data_center`: the attempt event fires before the reader opens, and `data_center_entered` only lands once the player walks in. So it now arrives only when the reader turns the player away with his print already lifted. Route r42. |
+| E2 | regression | minor | **Deferred to the engine fixer** (phone choice number labels). |
+| E3 | regression | minor | **Deferred to the engine fixer** (seeded timestamps). |
+| E4 | regression | minor | **Fixed (erb).** The new `torres_fought` latch is set whenever Torres turns hostile and cleared by a Restart reset. "Nobody on staff hurt" needs it false; "Nobody else on staff hurt" shows when it is true. `torres_hostile` was set only by the onceOnly fight text, so a second fight after a Restart left it false. It now has its own handler that runs every time. Routes r40 and r42. |
+| E5 | regression | minor | **Fixed (6831444f).** The HaX hub choice is now "The Recruiter rang me.", which stays true at any time after the call. Route r42. |
+| E6 | regression | minor | **Deferred to the engine fixer** (reload heal). |
+| E7 | regression | minor | **Deferred to the engine fixer** (fists click-to-walk and knockback). |
+| E8 | regression | minor | **Deferred to the engine fixer** (toasts, resume overlay). |
+| E9 | regression | minor | **Fixed (erb and 6831444f).** The chain survives the change: the upload schedule in the same room still says "Operator on site: D. Torres", and the door log ties #4471 to his swipe. The printed manifest now reads "Staged by: badge #4471" (observations reworded to match). In Patricia, Patricia's phone and HaX, the manifest proof is merged with flag 3's into one choice, "The staging manifest. Badge 4471 staged it, and his swipe lets that spare in.", which needs the door log. `has_exfil()` and the erb latch now pair the manifest with `door_log_reasoned`, as flag 3 already was. |
+| A-M1 | blind A | major | **Partly fixed (6831444f), the rest logged.** Before `torres_suspected`, HaX's casualty-projection topic says "above whoever's staging it here" and "Then the insider is the only thread", not Torres (route r42). Lisa naming Torres early is a design call, logged in `docs/agents/DECISIONS_PENDING.md` with options. |
+| A-M2 | blind A | major | **Fixed (6831444f).** Once Owen has said he holds the spares, his hub offers "What about the server room?". It leads to the same password menu as before, including "What counts as a reason?", which points at Patricia's incident log. It never shows at the same time as the existing password choice. Route r42. |
+| A-m1 | blind A | minor | **Fixed (6831444f).** Patricia no longer says "call me" when the game has no control for it. She now says "keep him there and tell him the police are coming. I'll ring them", which matches the confrontation's arrest beat ("So Patricia's ringing them"). "Down there, you're on your own" is replaced. |
+| A-m2 | blind A | minor | **Fixed (6831444f).** After her last word, the ring-back choice is replaced by "Ring the number again.", which gets "It rings out. Nobody's answering that number tonight." It no longer replays a call the phone already shows. Route r42. |
+| A-m3 | blind A | minor | **Withdrawn.** Reload to the start room is by design (RESOLVED_DECISIONS). |
+| A-m4 | blind A | minor | **Deferred to the engine.** The RFID Flipper stays open after a clone (minigame UI). |
+| A-m5 | blind A | minor | **Withdrawn.** `owen_refused_password` means "asked, and he wanted a reason" (see its VAR comment); Patricia's sign-off waits for it. He always asks for a reason first, so the flag is correct. |
+| A-m6 | blind A | minor | **Withdrawn.** "INTEL CIPHER TIDE · VICTORY" is the now-playing track ("Cipher Tide", victory playlist, `music-config.js`), not another mission's name. |
+| A-m7 | blind A | minor | **Deferred.** Portraits vs narration: the PixelLab cast replacement is in progress, and this pass doesn't touch sprites. |
+| A-m8 | blind A | minor | **Deferred to the engine fixer** (dusting sheen). |
+| A-m9 | blind A | minor | **Fixed (6831444f).** "*runs a finger down the sheet*" is now a narrator line. |
+| A-m10 | blind A | minor | **Already fixed (b2a394da).** The m05 `gameClock` (Wed 16:30, rate 2.5, anchored to 20:02/20:14) landed after this run, which ended at 19:51 UTC. |
+| — | ruling | — | **Done (erb).** `gender` is added to Netherton, Lisa, Owen, Halloran, Patricia and Torres. |
