@@ -15,6 +15,12 @@ export function attacksDisabled() {
   return window.gameScenario?.disableAttacks === true;
 }
 
+/** Half-angle of the punch cone in degrees (combat-config.js, 7.1h). */
+export function punchConeHalfAngle() {
+  const a = COMBAT_CONFIG.player.punchConeHalfAngle;
+  return (typeof a === 'number' && a > 0 && a <= 90) ? a : 40;
+}
+
 export class PlayerCombat {
   constructor(scene) {
     this.scene = scene;
@@ -376,7 +382,8 @@ export class PlayerCombat {
 
   /**
    * Check if a target falls inside the player's punch cone.
-   * The cone extends `range` px from the punch origin and spans ±45° around the
+   * The cone extends `range` px from the punch origin and spans
+   * ±COMBAT_CONFIG.player.punchConeHalfAngle (40°) around the
    * facing direction.  All 8 movement directions are supported.
    *
    * @param {number} originX  - Punch origin X (foot centre)
@@ -412,7 +419,7 @@ export class PlayerCombat {
     let diff = Math.abs(targetDeg - facingDeg);
     if (diff > 180) diff = 360 - diff;
 
-    return diff <= 30; // ±30° half-angle = 60° total cone
+    return diff <= punchConeHalfAngle(); // ±40° by default (7.1h)
   }
 
   /**
@@ -486,7 +493,7 @@ export class PlayerCombat {
 
     const facingDeg = facingAngles[direction] ?? 90;
     const facingRad = facingDeg * (Math.PI / 180);
-    const halfAngle = 30 * (Math.PI / 180); // ±30° cone
+    const halfAngle = punchConeHalfAngle() * (Math.PI / 180); // same cone as isInCone
     const steps = 24;
 
     // --- Filled cone ---

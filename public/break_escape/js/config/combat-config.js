@@ -38,6 +38,9 @@ export const COMBAT_CONFIG = {
     punchDamage: 20,
     punchRange: 32,
     punchCooldown: 1000,
+    // Half-angle of the punch cone either side of the facing direction (7.1h:
+    // widened from 30°, which missed an attacker standing a little off-axis)
+    punchConeHalfAngle: 40,
     punchAnimationDuration: 500
   },
   npc: {
