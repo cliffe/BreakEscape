@@ -43,6 +43,15 @@
       "enum": ["safetynet", "cyber"],
       "description": "Theme of the end-of-mission credits visualiser (public/break_escape/js/music/credits-theme.js). 'safetynet' (the default) is the SAFETYNET campaign debrief. 'cyber' is a generic cyber security incident review: the mission name and first subtitle credit line as headings, SIEM and matrix modes but no threat map, agency panel, classified stamp or track title. Each theme sets which visualiser modes are enabled."
     },
+    "creditsOverlay": {
+      "type": "object",
+      "description": "Optional mission words for the safetynet credits overlay, replacing its generic filler. operation: the name in the header's OPERTN: row (stops the rotating operation names). ticker: the footer ticker, a string or an array of lines joined with the ██ separators. Either may be left out.",
+      "properties": {
+        "operation": { "type": "string" },
+        "ticker": { "type": ["string", "array"], "items": { "type": "string" } }
+      },
+      "additionalProperties": false
+    },
     "gameClock": {
       "type": ["object", "string"],
       "description": "Optional in-game clock: { \"start\": \"Tue 07:30\" } (or just the string). Clock displays (phone, command board, SIEM) then show this start time plus elapsed game time instead of the real wall clock. Elapsed game time resumes after a reload. rate: game minutes per real minute (default 1). anchors: [{ condition, time }] jump the clock forward when the condition first holds.",

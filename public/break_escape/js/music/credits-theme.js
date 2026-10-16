@@ -101,6 +101,29 @@ export const CREDITS_THEMES = {
     },
 };
 
+/**
+ * A scenario's own words for the safetynet credits overlay (m07 E7: every mission
+ * showed "OPERATION: IRONSEAL" and "ENTROPY CONTAINED ... WELL PLAYED"). Both are
+ * optional; without them the overlay keeps its built-in text.
+ *   "creditsOverlay": { "operation": "SCHRODINGER", "ticker": ["LINE", "LINE"] }
+ * operation fills the header's OPERTN: row (no rotation); ticker replaces the
+ * footer ticker (an array is joined with the ██ separators).
+ * @returns {{operation: string|null, ticker: string|null}}
+ */
+export function scenarioCreditsOverlay(scenario) {
+    const cfg = scenario?.creditsOverlay;
+    const clean = (v) => (typeof v === 'string' && v.trim() ? v.trim() : null);
+    const operation = clean(cfg?.operation);
+    let ticker = null;
+    if (Array.isArray(cfg?.ticker)) {
+        const lines = cfg.ticker.map(clean).filter(Boolean);
+        if (lines.length) ticker = `██ ${lines.join(' ██ ')} ██`;
+    } else {
+        ticker = clean(cfg?.ticker);
+    }
+    return { operation, ticker };
+}
+
 export function resolveCreditsTheme(scenario) {
     const name = scenario?.creditsTheme;
     return Object.prototype.hasOwnProperty.call(CREDITS_THEMES, name) ? name : DEFAULT_CREDITS_THEME;

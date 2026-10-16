@@ -77,3 +77,14 @@ test('schema enum lists exactly the themes in the table', () => {
     const schema = JSON.parse(readFileSync(join(here, '../../scripts/scenario-schema.json'), 'utf8'));
     assert.deepEqual([...schema.properties.creditsTheme.enum].sort(), Object.keys(T.CREDITS_THEMES).sort());
 });
+
+// m07 E7 (blind A M3): the safetynet overlay's filler named the wrong operation
+// and outcome for every mission. A scenario can now give its own (creditsOverlay).
+test('creditsOverlay: optional operation name and ticker, defaults untouched', () => {
+    assert.deepEqual(T.scenarioCreditsOverlay({}), { operation: null, ticker: null });
+    assert.deepEqual(T.scenarioCreditsOverlay(null), { operation: null, ticker: null });
+    assert.deepEqual(T.scenarioCreditsOverlay({ creditsOverlay: { operation: ' GAMBIT ', ticker: ['A', ' ', 'B'] } }),
+        { operation: 'GAMBIT', ticker: '██ A ██ B ██' });
+    assert.deepEqual(T.scenarioCreditsOverlay({ creditsOverlay: { ticker: 'plain text' } }),
+        { operation: null, ticker: 'plain text' });
+});

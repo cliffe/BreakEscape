@@ -23,7 +23,7 @@
 
 import MusicController from './music-controller.js';
 import { displayDashes } from '../utils/display-dashes.js';
-import { resolveCreditsTheme, getCreditsTheme, trackInfoLabel, DEFAULT_CREDITS_THEME } from './credits-theme.js';
+import { resolveCreditsTheme, getCreditsTheme, trackInfoLabel, DEFAULT_CREDITS_THEME, scenarioCreditsOverlay } from './credits-theme.js';
 
 // ── Constants ─────────────────────────────────────────────────────────────
 const PIX = 4; // pixel block size for all drawing
@@ -1354,7 +1354,7 @@ function _updateStats(data, audio) {
         const fd = document.getElementById('bv-freq-disp'); if (fd) fd.textContent=freq.toFixed(1).padStart(7,' ');
     }
 
-    if (_themeDef.rotateOps && kickHit && Math.random() > 0.85) {
+    if (_themeDef.rotateOps && !_fixedOperation && kickHit && Math.random() > 0.85) {
         _opIdx = (_opIdx + 1) % OPERATIONS.length;
         const on = document.getElementById('bv-op-name'); if (on) on.textContent=OPERATIONS[_opIdx];
     }
@@ -1494,7 +1494,22 @@ function _applyTheme(opts) {
         credits:     _lastCredits,
     });
     if (t) _applyOverlayText(t);
+    _applyScenarioOverlay(scenarioCreditsOverlay(window.gameScenario));
     _themeApplied = _theme;
+}
+
+// The scenario's own operation name and ticker (creditsOverlay), over the theme's
+let _fixedOperation = false;
+function _applyScenarioOverlay({ operation, ticker }) {
+    _fixedOperation = !!operation;
+    if (operation) {
+        const op = _overlay.querySelector('#bv-op-name');
+        if (op) op.textContent = operation;
+    }
+    if (ticker) {
+        const el = _overlay.querySelector('.bv-ticker-inner');
+        if (el) el.textContent = ticker;
+    }
 }
 
 function _applyOverlayText(t) {
