@@ -57,13 +57,17 @@ test('a hurt hostile that is not KO is calm and at full health after the reset',
 
     assert.equal(sys.isNPCKO('park'), true, 'a KO stays down');
     assert.deepEqual(sys.exportHostility().park, { hostile: true, ko: true });
-    assert.equal(emitted.length, 0, 'no events: the page reloads');
+    assert.deepEqual(emitted, [
+        { name: 'npc_hostile_state_changed', data: { npcId: 'hollis', isHostile: false, reset: true } }
+    ], 'one calm event for the NPC that was reset; none for the KO or the calm clerk');
 });
 
 test('an NPC the scenario starts hostile goes back to hostile, at full health', () => {
     behaviors.set('sentry', { config: { hostile: { startHostile: true } }, hostile: true });
     quiet(() => { sys.setNPCHostile('sentry', true); sys.damageNPC('sentry', 30); });
+    emitted.length = 0;
     quiet(() => sys.resetHostilesForRespawn());
+    assert.equal(emitted.some((e) => e.data.npcId === 'sentry'), false, 'still hostile: no event');
     assert.equal(sys.isNPCHostile('sentry'), true);
     assert.deepEqual(sys.exportHostility().sentry, { hostile: true, ko: false });
 });

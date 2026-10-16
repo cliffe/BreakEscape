@@ -97,7 +97,10 @@ export function initNPCHostileSystem() {
  * hostile again if the scenario starts it hostile) and at full health. The
  * reload that follows puts it back at its post. A KO'd NPC stays down, so
  * what it dropped stays dropped; nothing here touches an NPC's itemsHeld, so
- * one that wasn't KO'd still holds its items. No events: the page reloads.
+ * one that wasn't KO'd still holds its items. An NPC that goes hostile -> calm
+ * emits NPC_HOSTILE_CHANGED { npcId, isHostile: false, reset: true } before it
+ * is saved, so missions' mappings clear their hostile flags. No event when it
+ * returns to hostile (startHostile): that is no change for a mapping to see.
  * @returns {string[]} the NPCs reset
  */
 export function resetHostilesForRespawn() {
@@ -108,6 +111,9 @@ export function resetHostilesForRespawn() {
     state.isHostile = behavior?.config?.hostile?.startHostile === true;
     state.currentHP = state.maxHP;
     if (behavior) behavior.hostile = state.isHostile;
+    if (!state.isHostile) {
+      window.eventDispatcher?.emit(CombatEvents.NPC_HOSTILE_CHANGED, { npcId, isHostile: false, reset: true });
+    }
     recordHostility(npcId, state);
     reset.push(npcId);
   }
