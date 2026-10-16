@@ -9,6 +9,7 @@
 import { generateKeyCutsForLock, doesKeyMatchLock, PREDEFINED_LOCK_CONFIGS } from './key-lock-system.js';
 import KeyCutCalculator from '../utils/key-cut-calculator.js';
 import { catchLockpickInView } from './lockpick-catch.js';
+import { keypadTitle } from '../utils/lock-titles.js';
 
 // Maps Phaser texture keys to their actual filenames (where key !== filename stem)
 const TEXTURE_KEY_TO_FILE = {
@@ -528,7 +529,7 @@ export function startPinMinigame(lockable, type, correctPin, callback) {
     
     // Start the PIN minigame
     window.MinigameFramework.startMinigame('pin', null, {
-        title: `Enter PIN for ${type}`,
+        title: keypadTitle('Enter PIN', lockable, type),
         correctPin: correctPin,
         // Scenario option (doors keep it on doorProperties), default 3
         maxAttempts: lockable?.maxAttempts || lockable?.scenarioData?.maxAttempts || lockable?.doorProperties?.maxAttempts || undefined, // undefined: the minigame default (5), or no limit with a PIN cracker
@@ -580,7 +581,7 @@ export function startPasswordMinigame(lockable, type, correctPassword, callback,
     
     // Start the password minigame
     window.MinigameFramework.startMinigame('password', null, {
-        title: `Enter password for ${type}`,
+        title: keypadTitle('Enter password', lockable, type),
         password: correctPassword,
         passwordHint: options.passwordHint || '',
         showHint: options.showHint || false,
