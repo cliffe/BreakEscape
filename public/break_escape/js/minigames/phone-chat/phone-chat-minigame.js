@@ -102,7 +102,7 @@ export class PhoneChatMinigame extends MinigameScene {
                 choices: choiceButtons.map((btn, i) => ({
                     number: i + 1,
                     index: i,
-                    text: (btn.innerText || '').trim().slice(0, 300)
+                    text: (btn.dataset.text ?? btn.innerText ?? '').trim().slice(0, 300)
                 })),
                 awaitingChoice: choiceButtons.length > 0,
                 ended: !!this.conversation?.storyEnded
@@ -754,7 +754,8 @@ export class PhoneChatMinigame extends MinigameScene {
             return;
         }
 
-        const choiceText = choiceButton.textContent;
+        // Without the "1." number label the button shows
+        const choiceText = choiceButton.dataset.text ?? choiceButton.textContent;
 
         console.log(`👆 Player chose: ${choiceText}`);
 

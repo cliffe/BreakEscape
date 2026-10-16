@@ -13,7 +13,7 @@ import MusicController from '../../music/music-controller.js';
 import { displayPhoneLine } from './phone-chat-speaker.js';
 import { displayDashes } from '../../utils/display-dashes.js';
 import { messageClockText } from '../../systems/game-clock.js';
-import { hasHiddenChoicesBelow } from './phone-chat-choices.js';
+import { hasHiddenChoicesBelow, numberedChoiceText } from './phone-chat-choices.js';
 
 export default class PhoneChatUI {
     /**
@@ -109,6 +109,7 @@ export default class PhoneChatUI {
                         <div class="choices-container" id="choices-container">
                             <!-- Choice buttons will be added here -->
                         </div>
+                        <div class="choices-more-cue" id="choices-more-cue" aria-hidden="true">▼ more choices</div>
                     </div>
                 </div>
             </div>
@@ -129,8 +130,16 @@ export default class PhoneChatUI {
             backButton: document.getElementById('back-button'),
             messagesContainer: document.getElementById('messages-container'),
             typingIndicator: document.getElementById('typing-indicator'),
-            choicesContainer: document.getElementById('choices-container')
+            choicesContainer: document.getElementById('choices-container'),
+            choicesMoreCue: document.getElementById('choices-more-cue')
         };
+
+        // The cue sits below the list, not over it (m08 R4: it covered the fourth choice)
+        this.elements.choicesMoreCue?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const box = this.elements.choicesContainer;
+            box?.scrollBy?.({ top: box.clientHeight, behavior: 'smooth' });
+        });
         
         // Show or hide the "more choices" cue as the player scrolls the list
         this.elements.choicesContainer?.addEventListener('scroll', () => this.updateChoicesScrollCue());
@@ -749,7 +758,7 @@ export default class PhoneChatUI {
      */
     addChoices(choices) {
         if (!choices || choices.length === 0) {
-            this.elements.choicesContainer.innerHTML = '';
+            this.clearChoices();
             return;
         }
         
@@ -759,22 +768,13 @@ export default class PhoneChatUI {
             const choiceButton = document.createElement('button');
             choiceButton.className = 'choice-button';
             choiceButton.dataset.index = index;
-            choiceButton.textContent = displayDashes(choice.text);
+            // Number prefix for choices 1-9, as person-chat shows (keys 1-9 pick them)
+            // The plain text is kept for the player's message bubble
+            choiceButton.dataset.text = displayDashes(choice.text);
+            choiceButton.textContent = numberedChoiceText(choiceButton.dataset.text, index);
             
             this.elements.choicesContainer.appendChild(choiceButton);
         });
-
-        // Cue shown while some choices sit below the visible part of the list
-        const cue = document.createElement('div');
-        cue.className = 'choices-more-cue';
-        cue.setAttribute('aria-hidden', 'true');
-        cue.textContent = '▼ more choices';
-        cue.addEventListener('click', (e) => {
-            e.stopPropagation();
-            const box = this.elements.choicesContainer;
-            box.scrollBy?.({ top: box.clientHeight, behavior: 'smooth' });
-        });
-        this.elements.choicesContainer.appendChild(cue);
 
         this.scrollToBottom();
         this.updateChoicesScrollCue();
@@ -790,8 +790,8 @@ export default class PhoneChatUI {
      */
     updateChoicesScrollCue() {
         const box = this.elements?.choicesContainer;
-        const cue = box?.querySelector('.choices-more-cue');
-        if (!cue) return;
+        const cue = this.elements?.choicesMoreCue;
+        if (!box || !cue) return;
         cue.classList.toggle('visible', hasHiddenChoicesBelow(box));
     }
 
@@ -800,6 +800,7 @@ export default class PhoneChatUI {
      */
     clearChoices() {
         this.elements.choicesContainer.innerHTML = '';
+        this.elements.choicesMoreCue?.classList.remove('visible');
     }
     
     /**

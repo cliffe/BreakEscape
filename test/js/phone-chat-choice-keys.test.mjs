@@ -44,3 +44,23 @@ test('the minigame uses the shared key mapping, not a hard-coded 1-5 list', () =
     assert.match(handler, /choiceIndexFromKey\(event\.key, choices\.length\)/);
     assert.doesNotMatch(handler, /case '5':/);
 });
+
+// Engine regression 2026-10-16 (m05 E2, m06 R3): the phone buttons had no number
+// labels, so the keys could not be found from the screen. Same "1." as person-chat.
+test('phone choices carry the person-chat number labels for keys 1-9', async () => {
+    const { numberedChoiceText } =
+        await import(dataUrl(readFileSync(join(dir, 'phone-chat-choices.js'), 'utf8')));
+    assert.equal(numberedChoiceText('Hello', 0), '1. Hello');
+    assert.equal(numberedChoiceText('Bye', 8), '9. Bye');
+    assert.equal(numberedChoiceText('Tenth', 9), 'Tenth');
+});
+
+// m08 R4: the cue was sticky inside the list and sat over the fourth choice.
+test('the more-choices cue is a row below the list, not inside it', () => {
+    const ui = readFileSync(join(dir, 'phone-chat-ui.js'), 'utf8');
+    const css = readFileSync(join(here, '../../public/break_escape/css/phone-chat-minigame.css'), 'utf8');
+    assert.match(ui, /<\/div>\s*<div class="choices-more-cue" id="choices-more-cue"/);
+    assert.doesNotMatch(ui, /choicesContainer\.appendChild\(cue\)/);
+    const rule = css.slice(css.indexOf('.choices-more-cue {'), css.indexOf('}', css.indexOf('.choices-more-cue {')));
+    assert.doesNotMatch(rule, /sticky/);
+});

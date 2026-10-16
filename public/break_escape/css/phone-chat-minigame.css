@@ -490,11 +490,10 @@
 }
 
 /* "More choices" cue: pinned to the bottom of the list while choices are hidden below */
+/* A row of its own below the choice list, so it never covers a choice (m08 R4) */
 .choices-more-cue {
     display: none;
-    position: sticky;
-    bottom: -12px;
-    margin: 0 -12px -12px;
+    flex-shrink: 0;
     padding: 4px 12px;
     background: #5fcf69;
     border-top: 2px solid #000;
@@ -519,8 +518,6 @@
     background: #000;
     color: #00ff41;
     border-top: 1px solid rgba(0, 255, 65, 0.5);
-    margin: 0 -16px -8px;
-    bottom: -8px;
 }
 
 /* Voice Message Styles */

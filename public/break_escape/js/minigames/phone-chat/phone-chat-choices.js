@@ -20,6 +20,16 @@ export function choiceIndexFromKey(key, choiceCount) {
 }
 
 /**
+ * Button text for a choice: "1. text" for the nine number-key choices, the same
+ * labels person-chat shows, so the keys can be found from the screen.
+ * @param {string} text - choice text (already display-formatted)
+ * @param {number} index - zero-based position in the list
+ */
+export function numberedChoiceText(text, index) {
+    return index < MAX_QUICK_CHOICE ? `${index + 1}. ${text}` : text;
+}
+
+/**
  * True when part of the choice list is hidden below the visible area.
  * @param {{scrollTop:number, clientHeight:number, scrollHeight:number}} el
  */
