@@ -23,6 +23,8 @@
 
 import { TILE_SIZE } from '../utils/constants.js';
 import { NPCPathfindingManager } from './npc-pathfinding.js';
+import { COMBAT_CONFIG } from '../config/combat-config.js';
+import { hostileMayChase, resolveChaseRange } from './npc-chase-leash.js';
 
 /**
  * NPCBehaviorManager - Manages all NPC behaviors
@@ -220,6 +222,8 @@ class NPCBehavior {
         } else {
             this.roomId = npcData.roomId;
         }
+        // The room the NPC belongs to: a stationary NPC's chase leash is tied to it (7.1a)
+        this.homeRoomId = this.roomId;
 
         // Verify sprite reference matches stored sprite
         if (npcData && npcData._sprite && npcData._sprite !== this.sprite) {
@@ -254,6 +258,9 @@ class NPCBehavior {
         this.lastPlayerPosition = null;  // Track player position for path recalculation
         this.chasePathPending = false;   // True while EasyStar is computing a path (prevents flood)
         this.chaseDebugGraphics = null;  // Graphics overlay showing current chase path
+        this._chaseAnchor = null;        // The post the chase leash is measured from (7.1a)
+        this._lastChaseAt = 0;           // When the NPC last chased (ms)
+        this._gaveUpChase = false;       // Past the leash: logged once per give-up
 
         // Patrol debug visualization
         this.patrolDebugGraphics = null; // Graphics overlay showing patrol path and waypoints
@@ -363,6 +370,10 @@ class NPCBehavior {
                 maxHP: config.hostile?.maxHP,
                 attackCooldown: config.hostile?.attackCooldown,
                 attackRange: config.hostile?.attackRange,
+                // Chase leash (7.1a): px from the NPC's post, and whether it
+                // follows the player out of its room (npc-chase-leash.js)
+                chaseRange: resolveChaseRange(config.hostile?.chaseRange, COMBAT_CONFIG.npc.chaseRange),
+                chaseAcrossRooms: config.hostile?.chaseAcrossRooms === true,
                 pauseToAttack: config.hostile?.pauseToAttack !== undefined ? config.hostile.pauseToAttack : true
             }
         };
@@ -695,9 +706,36 @@ class NPCBehavior {
             return 'idle';
         }
 
-        // Priority 5: Chase (hostile + in range)
+        // Priority 5: Chase (hostile + in range), on a leash (7.1a): past
+        // chaseRange from its post, or once the player leaves its room, the NPC
+        // gives up and falls through to going home or its patrol
         if (isHostile && distanceSq < this.config.hostile.aggroDistanceSq) {
-            return 'chase';
+            if (!this._chaseAnchor) this._chaseAnchor = this._chasePost();
+            if (hostileMayChase({
+                playerPos,
+                playerRoomId: window.currentPlayerRoom || null,
+                anchor: this._chaseAnchor,
+                chaseRange: this.config.hostile.chaseRange,
+                acrossRooms: this.config.hostile.chaseAcrossRooms
+            })) {
+                this._lastChaseAt = Date.now();
+                this._gaveUpChase = false;
+                return 'chase';
+            }
+            if (!this._gaveUpChase) {
+                this._gaveUpChase = true;
+                this.chasePath = [];
+                this.chasePathIndex = 0;
+                console.log(`🪢 [${this.npcId}] Gave up the chase (past its leash), returning to its post`);
+            }
+        } else {
+            this._releaseChaseAnchor(isHostile);
+        }
+
+        // A hostile that gave up walks back (home or patrol) rather than
+        // stopping to stare at the player across the door
+        if (isHostile && this._gaveUpChase && this.config.patrol.enabled) {
+            return 'patrol';
         }
 
         // Priority 3: Maintain Personal Space
@@ -723,6 +761,28 @@ class NPCBehavior {
 
         // Priority 0: Idle
         return 'idle';
+    }
+
+    /**
+     * Where the chase leash is measured from (7.1a): a stationary NPC's home
+     * spot in its own room; for a patroller, where it was when the chase began.
+     */
+    _chasePost() {
+        const stationary = !this.config.patrol.enabled || this.returningHome;
+        if (stationary && this.homePosition) {
+            return { x: this.homePosition.x, y: this.homePosition.y, roomId: this.homeRoomId };
+        }
+        const { x, y } = this.npcBodyPos();
+        return { x, y, roomId: this.roomId };
+    }
+
+    /** Forget the leash post once the NPC is calm, or has stopped chasing for a while. */
+    _releaseChaseAnchor(isHostile) {
+        if (!this._chaseAnchor) return;
+        if (!isHostile || Date.now() - this._lastChaseAt > 8000) {
+            this._chaseAnchor = null;
+            this._gaveUpChase = false;
+        }
     }
 
     executeState(state, time, delta, playerPos) {
