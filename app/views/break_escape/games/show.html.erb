@@ -297,14 +297,18 @@
   </div>
   <script nonce="<%= content_security_policy_nonce %>">
     document.addEventListener('DOMContentLoaded', function() {
-      if (!window.breakEscapeConfig || !window.breakEscapeConfig.hasProgress) return;
+      // Strip skip_resume on every load, progress or not. It used to be stripped
+      // only when the game had progress, so a fresh session kept it in the URL and
+      // its first reload skipped the overlay while later reloads showed it
+      // (m05 E8, m08 R8).
       var skipParams = new URLSearchParams(window.location.search);
-      if (skipParams.get('skip_resume')) {
+      var skipResume = !!skipParams.get('skip_resume');
+      if (skipResume) {
         skipParams.delete('skip_resume');
         var cleanUrl = window.location.pathname + (skipParams.toString() ? '?' + skipParams.toString() : '');
         history.replaceState(null, '', cleanUrl);
-        return;
       }
+      if (skipResume || !window.breakEscapeConfig || !window.breakEscapeConfig.hasProgress) return;
 
       var overlay = document.getElementById('session-resume-overlay');
       var newSessionBtn = document.getElementById('session-new-btn');
