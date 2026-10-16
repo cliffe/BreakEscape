@@ -15,6 +15,7 @@ import { isRemoteFlagLock, remoteFlagLockMessage } from '../utils/flag-lock.js';
 import { npcReachDistSq } from './npc-reach.js';
 import { shouldExamine, startExamine } from './examine.js';
 import { showPastTalkingToast } from './combat-input.js';
+import { shouldConsumeOnInteract, useConsumable } from './consumables.js';
 
 let gameRef = null;
 
@@ -716,6 +717,13 @@ export function handleObjectInteraction(sprite) {
     if (Array.isArray(sprite.scenarioData.triggerOnInteract)) {
         console.log('[Interaction] triggerOnInteract firing for:', sprite.scenarioData.name || sprite.objectId);
         applyActions(sprite.scenarioData.triggerOnInteract, { source: 'object_interact' });
+        return;
+    }
+
+    // Consumables (coffee, snacks, a first aid kit) heal the player and are used
+    // up (7.1c). A takeable one is picked up first and used from the inventory.
+    if (shouldConsumeOnInteract(sprite, window.inventory?.items)) {
+        useConsumable(sprite);
         return;
     }
 
