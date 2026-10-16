@@ -22,7 +22,8 @@
  *       "alarm_panel": [                   // first variant whose condition holds wins; none: the EMITTERS entry
  *         { "condition": "globalVars.alarm", "color": "#ff5050", "radius": 24, "intensity": 0.5, "effect": "pulse" },
  *         { "color": "#7dffa0" }
- *       ]                                  // also: offsetX, offsetY (px from the object's centre), ledColor, ledAlpha (0 hides LEDs), floorTint (0-1: tint
+ *       ]                                  // also: offsetX, offsetY (px from the object's centre), ledColor, ledAlpha (0 hides LEDs),
+ *                                          // leds (rack-style blinking status LEDs on the object's face, 0-1 density; 0 none), floorTint (0-1: tint
  *                                          // a lit floor with the glow's colour), above (true: stays above the light
  *                                          // map in a lit room, for small indicators); effect null|screen|blink|pulse|breathe
  *     },
@@ -187,6 +188,7 @@ function normaliseVariant(v) {
   const out = { ...v };
   if ('color' in out) out.color = parseColor(out.color, 0xffffff);
   if ('ledColor' in out) out.ledColor = parseColor(out.ledColor, null);
+  if ('leds' in out) out.leds = Math.max(0, Math.min(1, Number(out.leds) || 0));
   return out;
 }
 
@@ -495,10 +497,14 @@ export class LightingSystem {
       const glow = this.scene.add.image(0, 0, LIGHT_TEX)
         .setBlendMode(Phaser.BlendModes.ADD)
         .setVisible(false);
+      // LEDs for the densest setting any state asks for (a room emitter can give a
+      // mission's own rack art `leds`); the current state's `leds` shows a share of them.
+      const ledsMax = Math.max(base?.leds || 0, ...variants.map(v => Number(v.leds) || 0));
       state.emitters.push({
         obj, key, base, variants, def: null, variantIdx: -2, glow,
         phase: Math.random() * Math.PI * 2,
-        leds: base ? this.createLeds(obj, base) : [],
+        leds: ledsMax > 0 ? this.createLeds(obj, { leds: ledsMax }) : [],
+        ledsMax,
         glowK: 1, stampK: 1,
       });
     }
@@ -924,9 +930,11 @@ export class LightingSystem {
         const left = obj.x - obj.displayWidth * obj.originX;
         const top = obj.y - obj.displayHeight * obj.originY;
         const ledA = ledLevel * (def.ledAlpha ?? 1);
-        for (const l of e.leds) {
+        const ledsShown = e.ledsMax > 0 ? Math.round(e.leds.length * Math.min(1, (def.leds || 0) / e.ledsMax)) : 0;
+        for (let li = 0; li < e.leds.length; li++) {
+          const l = e.leds[li];
           const lx = left + l.dx, ly = top + l.dy;
-          const lit = ledA > 0.01 && (still || ((time + l.offset) % l.period) / l.period < l.duty)
+          const lit = li < ledsShown && ledA > 0.01 && (still || ((time + l.offset) % l.period) / l.period < l.duty)
             && !this.hiddenByFigure(lx, ly, obj.depth, figures);
           l.img.setPosition(lx, ly).setVisible(lit).setAlpha(ledA);
         }

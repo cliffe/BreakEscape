@@ -57,6 +57,8 @@ Rooms with people in them start lit automatically, even in `motion` mode. Phone 
 
 ## Step 4 — light sources the engine doesn't know
 
+**A mission's own art first goes through the room's `emitters`, not `EMITTERS`.** An entry keyed on the object id or a texture-key prefix (`"qdc_rack_black": { "color": "#6dffb0", "radius": 40, "intensity": 0.45, "effect": "blink", "leds": 0.6 }`) gives it a glow, and `leds` (density 0–1) scatters rack-style blinking status LEDs over its face like the stock racks. A variant can set `"leds": 0` (power cut) or `ledColor`.
+
 If the lookup lists a "light-looking" object that really gives off light, add it to `EMITTERS` in `systems/lighting.js`. Match on texture key: screens are cool blue, lamps warm, racks green with `leds`, alarms red `pulse`. This changes every lit mission, so log it and check one other lit mission still looks right. Leave false positives (magazine racks, cylinder racks) alone.
 
 ## Step 5 — validate and render
