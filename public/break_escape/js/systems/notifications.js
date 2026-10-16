@@ -1,5 +1,6 @@
 import { displayDashes } from '../utils/display-dashes.js';
 import { registerModal } from '../ui/modal-stack.js';
+import { fullScreenPanelOpen } from '../utils/overlay-open.js';
 // Notification System
 // Handles showing and managing notifications in the game
 
@@ -9,8 +10,38 @@ export function initializeNotifications() {
     console.log('Notification system initialized');
 }
 
+// Info and success toasts ("Task Complete", "Item Acquired", new aims) raised while
+// a conversation, another minigame or a workstation popup is open wait until it
+// closes: they stacked over the NPC portrait, the close button and the CyberChef
+// panel (engine regression 2026-10-16: m04 F7, m05 E8, m08 R5). Warnings and
+// errors are feedback on what the player just did, so they still show at once.
+const HOLDABLE_TYPES = new Set(['info', 'success']);
+const HOLD_POLL_MS = 300;
+const heldNotifications = [];
+let holdTimer = null;
+
+export function shouldHoldNotification(type, panelOpen) {
+    return !!panelOpen && HOLDABLE_TYPES.has(type);
+}
+
+function releaseHeldNotifications() {
+    if (fullScreenPanelOpen()) return;
+    clearInterval(holdTimer);
+    holdTimer = null;
+    heldNotifications.splice(0).forEach((args) => renderNotification(...args));
+}
+
 // Show a notification instead of using alert()
 export function showNotification(message, type = 'info', title = '', duration = 5000) {
+    if (shouldHoldNotification(type, fullScreenPanelOpen())) {
+        heldNotifications.push([message, type, title, duration]);
+        if (!holdTimer) holdTimer = setInterval(releaseHeldNotifications, HOLD_POLL_MS);
+        return null;
+    }
+    return renderNotification(message, type, title, duration);
+}
+
+function renderNotification(message, type, title, duration) {
     const notificationContainer = document.getElementById('notification-container');
     
     // Create notification element

@@ -52,6 +52,9 @@ export function closeLabWorkstation() {
         window.game.input.mouse.enabled = true;
         window.game.input.keyboard.enabled = true;
     }
+
+    // Barks held while the popup was open (npc-barks.js _shouldDefer)
+    window.barkSystem?.drainDeferredBarks?.();
 }
 
 // Open the lab workstation iframe in a new tab

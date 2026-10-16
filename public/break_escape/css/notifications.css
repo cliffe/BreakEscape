@@ -1,8 +1,10 @@
 /* Notification System Styles */
 
+/* Starts below the music/VM buttons at the top right (music-widget.css: top 14px,
+   58px tall), so a toast never runs under them (m07 flag-lock toast) */
 #notification-container {
     position: fixed;
-    top: 20px;
+    top: 86px;
     right: 20px;
     width: 600px;
     max-width: 90%;

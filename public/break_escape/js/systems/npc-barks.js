@@ -8,6 +8,7 @@ import TTSManager from './tts-manager.js';
 import { phoneBarkText } from '../minigames/phone-chat/phone-chat-speaker.js';
 import { displayDashes } from '../utils/display-dashes.js';
 import { releaseHeldBarks } from './bark-release-policy.js';
+import { workstationPopupOpen } from '../utils/overlay-open.js';
 import { barkLifetimeMs, barksToTrim, BARK_RESUME_MIN_MS } from './bark-lifetime.js';
 
 export default class NPCBarkSystem {
@@ -165,6 +166,9 @@ export default class NPCBarkSystem {
 
   _shouldDefer() {
     if (window.currentConversationMinigameType === 'person-chat') return true;
+    // The CyberChef and lab-sheet popups aren't minigames; a bark covered the
+    // workstation's operations list (m04 F7). They drain the queue on close.
+    if (workstationPopupOpen()) return true;
     return !!window.MinigameFramework?.holdsBarks?.();
   }
 
