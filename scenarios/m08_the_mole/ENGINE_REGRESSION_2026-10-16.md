@@ -112,3 +112,28 @@ Credits read from the DOM (game 2592): MISSION COMPLETE; THE MOLE; THE LEAK: Age
 - Attack pause during a cutscene: only the phone was tested.
 - Back-to-back optional route: badge printer route, accusation before flag 4, Netherton KO, Phantom's locker, CyberChef, Vector's audit beat, triple-agent fate.
 - After the credits, a reload brings back the bond visualiser (terminal state, as documented); the game cannot be played on, so the remaining checks used game 2599.
+
+## Fixes (2026-10-17)
+
+Scenario and ink fix pass for this report and `PASS5_BLIND_A.md` (game 2596). Code commit **6b72b469**. Checks: ink compiled, validator with no dialoguelint findings, tagdiff explained (new `vector_apologised`/`phantom_apologised` tags and the debrief's conditions on them), loopcheck on every changed conversation, reopencheck 0 problems, all 27 m08 routes pass (new r27: Restart reset, apology, no maps, Nightshade's intro).
+
+Also done from the lead's rulings: `gender` on all eleven person NPCs (ATHENA x2 and the junior analyst and HaX in person female; the rest male), from the voice notes and ink.
+
+| # | Severity | Finding | Outcome |
+|---|---|---|---|
+| R1 | minor | "maps" in the Director's access beat and the credits | **Fixed (6b72b469).** He parts the blind and watches the window; the player steps up "as if to look out through the slats"; credits "while he watched the window". |
+| R2 | minor | Restart calms Vector but `vector_hostile` stays true | **Fixed (6b72b469).** For Netherton, Vector, Phantom, Nightshade and the off-duty agent, the `<npc>_hostile` latch moved into its own non-onceOnly mapping (so a second fight after a Restart sets it again) and a `reset: true` calm clears it. HaX's texts now say "won't talk to you while he's like this", which reads right either way. KO latches stay (a KO'd NPC isn't reset). Route r27. |
+| R3 | minor | HaX "Keep pressing Q until the open hand shows to walk by clicking" | **Fixed (6b72b469).** "To get clear, click open floor and walk." ATHENA's and in-person HaX's texts now say the open hand is for using things. |
+| R4 | minor | "more choices" cue over the fourth choice | Engine fixer's (phone choice labels and cue). |
+| R5 | minor | Toasts over the portrait in conversations | Engine fixer's (toasts). |
+| R6 | minor | Nightshade's first line over his face; "looks up from a clean, bare desk" while he stands mid-lab | **Fixed, caption side (6b72b469).** Intro: "Nightshade turns as you come in… His desk behind him is bare"; observation: "stands in the middle of the lab, his desk bare behind him". Position not moved (his desk's slot comes from the map). Text over the 128-wide portrait is layout, left to the engine side. |
+| R7 | minor | Dusting panel taller than 1400x1000 | Engine fixer's (dusting panel). |
+| R8 | minor | Resume overlay inconsistent; HaX's coarse break-room bust | Overlay: engine fixer's (resume overlay). Bust: sprite, not touched (art being replaced). |
+| A-D1 | major | The mole is signposted before it is earned | Partly fixed (6b72b469): the narrator's two tells ("holds your eye a moment longer than a colleague would", "keeps hold of it a second longer") and the second "I'd genuinely encourage it" are cut. Whether to go further is logged as DECISIONS_PENDING U5 (recommendation: leave it; the credits reward naming on evidence, not guessing). |
+| A-M1 | minor | Apology to Vector not remembered | **Fixed (6b72b469).** Apologies set `vector_apologised`/`phantom_apologised`; the debrief adds "So is the apology you went back to make…", the credits read "…cleared by the logs. You went back and apologised." Route r27. |
+| A-M2 | minor | Green circle and line in the break room | Engine fixer's (vision cones). |
+| A-M3 | minor | Fingerprint reference cards near-identical; the Director on the list | Partly fixed (6b72b469): "Director Netherton" is off the stick's candidates. Near-identical cards come from the easy difficulty always using a same-class decoy (`dusting-model.js`); deferred to engine, DECISIONS_PENDING E16. |
+| A-M4 | minor | Reload returns to the lobby; concluded game shows a Resume overlay | Withdrawn for the respawn (resolved decision). Overlay: engine fixer's (resume overlay). |
+| A-M5 | minor | Overwritten lines | Partly fixed (6b72b469): the two "moment longer" tells and the repeated "genuinely encourage" cut. "Order is a candle in a hurricane" kept: a script-edit line the user approved (S1). The confrontation's "You hold his eye a moment longer than you mean to" kept: it is the player's beat after the reveal, not a tell. |
+| A-M6 | minor | Vector's role differs between dossier and Director | **Fixed (6b72b469).** The Director now says "Intelligence analyst, signals and cryptography", matching the dossier and personnel print. |
+| A-M7 | minor | Credits miss the Director choice and the locker break-ins | Withdrawn: "ON THE RECORD: AGENT 0x00 TO THE DIRECTOR" carries the stance ("Own the gap" / "He's the crime, not you") whenever it was chosen, and "THE LOCKERS" carries a pick that was seen. An unwitnessed pick stays off the record by design. |

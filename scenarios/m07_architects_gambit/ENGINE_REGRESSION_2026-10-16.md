@@ -94,3 +94,33 @@ VERDICT: progress recorded — 5 rooms beyond the first, 1 objects unlocked, 4 f
 ```
 
 Session 2590 was stopped; no other sessions were started.
+
+## Fixes (2026-10-17)
+
+Scenario and ink fix pass for this report and `PASS5_BLIND_A.md` (game 2594). Code commit **0cd2823a**. Engine items listed below went to the engine fixer working at the same time. Checks: ink compiled, validator clean of new findings (two old dialoguelint warnings remain), tagdiff explained (one new tag and assign: `redirect_declined` clears on a move), loopcheck on every changed conversation, reopencheck 0 problems, all 35 m07 routes pass (new r34 Restart reset, r35 decline then move).
+
+Also done from the lead's rulings: `gender` on the five person NPCs (Netherton x2, Hollis, Mercer, Park male; Elena female), and the HaX fight hints rewritten for the fists-mode click ("To get clear, click open floor and walk, fists up or not"; briefing-close text now says the open hand is for using things; Hollis's "open hand and walk" is now "walk out of his reach").
+
+| # | Severity | Finding | Outcome |
+|---|---|---|---|
+| R3 | minor | Restart leaves `park_resolved`/`hollis_resolved` at "ko" | **Fixed (0cd2823a).** HaX-side mappings on `npc_hostile_state_changed {isHostile:false, reset:true}` clear `hollis_resolved`, `park_resolved` and `mercer_fate` when they read "ko". Park speaks first on entry again; credits/debrief no longer record a reset fight. Route r34. |
+| R4 | minor | Mercer KO text "Finish the host" after root | **Fixed (0cd2823a).** Now `!grid_saved && !flag4_submitted`; a third row for root-in, abort-pending says the abort goes in at the console behind him. |
+| R5 | minor | Password dialog title | Engine fixer's (password dialog title). |
+| R6 | minor | "as the relay note wrote it" before the player has the note | **Fixed (0cd2823a).** "Right word, wrong case. Capital C, capital W." |
+| R7 | cosmetic | Toast under the clock icon | Engine fixer's (toasts). |
+| R8 | minor, known | Reload/Restart lands in the start room | Withdrawn: resolved decision (RESOLVED_DECISIONS 2026-10-16, no resume in the room you left). |
+| R9 | note | Tester's `getState` call | No action (disclosure). |
+| A-M1 | major | Credits Close hidden ~12 min, right panel clipped | Withdrawn in part: `disableClose` on the credits is by design in every mission (they are the end of play) and Close shows when the track ends. Panel clipping at 1400 px deferred to engine (DECISIONS_PENDING E7). |
+| A-M2 | major | Redirect "now or never, once you log in" contradicts the window staying open | **Fixed (0cd2823a).** HaX: "The window stays open until you log in as their operator, or the timer on screen runs out. Then the team stays put." The decline reply says it can change until the operator login. Route r35. |
+| A-M3 | major | Credits header/ticker say IRONSEAL, CONTAINED, NOMINAL, VICTORY | Deferred, engine: the text is hard-coded in `bond-visualiser.js` for every SAFETYNET mission, not scenario data (DECISIONS_PENDING E7). The scenario's credit lines read right. |
+| A-M4 | major | Park fight unreadable for a first-timer | Already fixed in part (b2a394da: first aid kit in the generator hall before Park; HaX controls text as the briefing closes). The rest (no health bar over the NPC, damage popup over the player) is engine; deferred. |
+| A-M5 | major | Position resets on reload and Restart | Withdrawn: resolved decision (as R8). |
+| A-m1 | minor | Fists up silently blocks object use | Already handled by HaX's "Hands down" text after the first KO (seen in the run, after the fact). The block itself is engine design; no change. |
+| A-m2 | minor | Park's talk options loop with identical replies; nothing reflects the splice | **Fixed (0cd2823a).** Repeats of "Step away" and "Who's paying you" get short varied answers; once the splice is read, a one-off question about it gets its own reply (and his stand-down line no longer repeats it as news). |
+| A-m3 | minor | Mercer's "Not yet. I've something else to ask you." returns to the same two options | **Fixed (0cd2823a).** Offered only while a topic is left (`topics_left()`); otherwise "Not yet. (Leave him for now.)" exits. |
+| A-m4 | minor | Elena repeats "Give me the control room door and the vault code again" | **Fixed (0cd2823a).** The reminder goes once both the control room and the vault have been reached. |
+| A-m5 | minor | Ray's "Back off. I'm leaving." reuses the cornered narration | **Fixed (0cd2823a).** From the hub he gets "You step back out of his flashlight…"; the corner line stays on the cornered route. |
+| A-m6 | minor | Harness `bootstrap` times out on the briefing | Withdrawn: harness, not the game. |
+| A-m7 | minor | `redirect_declined` and `team_redirected` both true after decline then move | **Fixed (0cd2823a).** The move clears `redirect_declined`. Route r35. |
+| A-m8 | minor | Debrief "The other three operations went ahead on schedule" | **Fixed (0cd2823a).** With a team committed: "started on schedule. One of them ran into our team."; uncommitted keeps "went ahead". |
+| A-m9 | minor | Garbled sign in Ray's conversation background | Deferred: background art; not touched in this pass. |
