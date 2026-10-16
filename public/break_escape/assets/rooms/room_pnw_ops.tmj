@@ -354,7 +354,7 @@
    "name": "tables",
    "objects": [
     {
-     "gid": 1241,
+     "gid": 1307,
      "height": 49,
      "id": 3,
      "name": "",
@@ -366,7 +366,7 @@
      "y": 156.0
     },
     {
-     "gid": 1240,
+     "gid": 1308,
      "height": 49,
      "id": 4,
      "name": "",
@@ -378,7 +378,7 @@
      "y": 156.0
     },
     {
-     "gid": 1240,
+     "gid": 1309,
      "height": 49,
      "id": 11,
      "name": "",
@@ -390,7 +390,7 @@
      "y": 236.0
     },
     {
-     "gid": 1241,
+     "gid": 1310,
      "height": 49,
      "id": 12,
      "name": "",
@@ -402,7 +402,7 @@
      "y": 236.0
     },
     {
-     "gid": 1240,
+     "gid": 1311,
      "height": 49,
      "id": 13,
      "name": "",
@@ -3198,7 +3198,7 @@
    "margin": 0,
    "name": "objects/hospital_extras",
    "spacing": 0,
-   "tilecount": 491,
+   "tilecount": 501,
    "tileheight": 60,
    "tiles": [
     {
@@ -6042,19 +6042,19 @@
     {
      "id": 483,
      "image": "../objects/hq_locker_a1.png",
-     "imageheight": 62,
+     "imageheight": 52,
      "imagewidth": 20
     },
     {
      "id": 484,
      "image": "../objects/hq_locker_b1.png",
-     "imageheight": 62,
+     "imageheight": 52,
      "imagewidth": 20
     },
     {
      "id": 485,
      "image": "../objects/hq_locker_c1.png",
-     "imageheight": 62,
+     "imageheight": 52,
      "imagewidth": 20
     },
     {
@@ -6146,6 +6146,66 @@
      "image": "../objects/hq_rack1.png",
      "imageheight": 60,
      "imagewidth": 32
+    },
+    {
+     "id": 501,
+     "image": "../objects/hq_desk_safe1.png",
+     "imageheight": 30,
+     "imagewidth": 24
+    },
+    {
+     "id": 502,
+     "image": "../objects/notes_notebook1.png",
+     "imageheight": 12,
+     "imagewidth": 14
+    },
+    {
+     "id": 503,
+     "image": "../objects/hq_recorder1.png",
+     "imageheight": 9,
+     "imagewidth": 16
+    },
+    {
+     "id": 504,
+     "image": "../objects/qdc_safety_shower1.png",
+     "imageheight": 48,
+     "imagewidth": 21
+    },
+    {
+     "id": 505,
+     "image": "../objects/qdc_first_aid_cabinet1.png",
+     "imageheight": 22,
+     "imagewidth": 19
+    },
+    {
+     "id": 506,
+     "image": "../objects/pnw_console2_p1.png",
+     "imageheight": 49,
+     "imagewidth": 64
+    },
+    {
+     "id": 507,
+     "image": "../objects/pnw_console1_p2.png",
+     "imageheight": 49,
+     "imagewidth": 64
+    },
+    {
+     "id": 508,
+     "image": "../objects/pnw_console1_p4.png",
+     "imageheight": 49,
+     "imagewidth": 64
+    },
+    {
+     "id": 509,
+     "image": "../objects/pnw_console2_p5.png",
+     "imageheight": 49,
+     "imagewidth": 64
+    },
+    {
+     "id": 510,
+     "image": "../objects/pnw_console1_p6.png",
+     "imageheight": 49,
+     "imagewidth": 64
     }
    ],
    "tilewidth": 60

@@ -5233,6 +5233,54 @@
       "w": 16,
       "h": 9,
       "gid": 1304
+    },
+    "qdc_safety_shower1": {
+      "id": 504,
+      "w": 21,
+      "h": 48,
+      "gid": 1305
+    },
+    "qdc_first_aid_cabinet1": {
+      "id": 505,
+      "w": 19,
+      "h": 22,
+      "gid": 1306
+    },
+    "pnw_console2_p1": {
+      "id": 506,
+      "w": 64,
+      "h": 49,
+      "gid": 1307
+    },
+    "pnw_console1_p2": {
+      "id": 507,
+      "w": 64,
+      "h": 49,
+      "gid": 1308
+    },
+    "pnw_console1_p4": {
+      "id": 508,
+      "w": 64,
+      "h": 49,
+      "gid": 1309
+    },
+    "pnw_console2_p5": {
+      "id": 509,
+      "w": 64,
+      "h": 49,
+      "gid": 1310
+    },
+    "pnw_console1_p6": {
+      "id": 510,
+      "w": 64,
+      "h": 49,
+      "gid": 1311
+    },
+    "planter-fig1-top-ani1": {
+      "id": 511,
+      "w": 40,
+      "h": 61,
+      "gid": 1312
     }
   }
 }

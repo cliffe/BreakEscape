@@ -1056,3 +1056,16 @@ Lines changed (HaX phone, text only, not voiced):
 Checked and left alone: flag 1 handover note, flag 2 authenticated upload, flag 4 root through a sudo rule (all confirmed); the sudo guide's name (the root route is a sudo rule).
 
 Checks: `scripts/compile-ink.sh m05_insider_trading` 10/10; all 41 m05 routes meet their expectations; dialoguelint: no new findings (two pre-existing notes in other files); reopencheck 0 problems; `validate_scenario.rb --skip-ink --no-graph` no errors, known warnings only.
+
+## User review 2026-10-16 (pending-decisions form 2.2): lab eyewash, wheeled kit
+
+- **Eyewash/safety shower** ("strange, should be on a wall"): the free-standing qdc_eyewash1 was a wall fixture standing loose on the floor. The back wall was full and the east wall holds the door, so the sprite was split by cropping (no rescale): `qdc_safety_shower1` (shower and eyewash basin, 21x48) is plumbed into the NE corner of the back wall (feet y 72, no collision so the E door row stays open), and `qdc_first_aid_cabinet1` (19x22) hangs on the east wall below the door (x 289, feet 176). The whiteboard and LAB RULES moved 4-6 px left to make room (Lab Rules keeps clear floor under it). The first-aid kit from the old sprite was dropped.
+- **Wheeled items** ("should have 8-direction rotation and collisions like chairs and hospital beds"): the lab's instrument trolley, the server hall's tool trolley, Torres' book trolley and the office chairs (chair-darkgray-1, chair-grey-1) now roll, spin and collide. The lab stools stay static on purpose (cycle 5: a rolling stool shoved along the bench raised a menu on the lanyard). In game (game 2554): pushed left, the lab trolley moved 24 px, stopped against the optical bench and spun through all 8 frames.
+
+Engine and asset changes shared with the other missions (they need the user's approval before commit, see the report):
+- `rooms.js` `STATIC_SWIVEL_PROPS`: instrument_trolley1, aes_tool_trolley1, book_trolley1, chair-grey-4, chair-darkgray-1 and chair-grey-1 now roll, spin through 8 frames and collide, like the hospital trolleys and beds. Frames are PixelLab 8-rotation output at the prop's own size on a padded canvas (40 px chairs, 32/48/56 px trolleys), reordered to the engine's S, SW, W ... order, with the original sprite kept as its own frame. Preloaded in `game.js`. A swivel prop placed as a table (m08's server-room tool trolley holds a printout) stays put.
+- `object-physics.js`: pushed chairs and trolleys now collide with the map's furniture collision boxes (Object Layer 1). They were player-only, so a trolley rolled straight over the lab bench.
+- `game.js` tap gather: a swivel prop joins the pick-one menu only when the tap is on its own sprite. Without this, tapping the PC on the desk in front of a chair raised a chair menu (checked in game: m04's BMS terminal opens directly).
+- Builders: trolleys that were `r.solid` (a static box under them that pinned them) are now plain items: m05 lab and Torres' office, m04 workshop, m06 office.
+
+Checks: slot_audit 0 problems; check_room_walls all 64; validator no errors; doors OK. Evidence: `build_evidence/user_review_2026-10-16/`. PixelLab: 60 generations for the six 8-rotation sets (all missions).

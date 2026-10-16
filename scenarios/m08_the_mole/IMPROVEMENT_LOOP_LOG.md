@@ -755,3 +755,18 @@ Lines changed. Voiced: the Narrator and Phantom lines marked (V); the rest are t
 Left alone: "Crypto Lab" where it names the room (door sign "Cryptography Lab"); the debrief's "credentials in its history ... a sudo rule" (confirmed); the mail's `From: nightshade_deep_state` (game and payload agree; it is a mail alias, not the login); "logs" for the root payload's log text.
 
 Checks: `scripts/compile-ink.sh m08_the_mole` 12/12; all 26 m08 routes meet their expectations; dialoguelint no findings (one line-len on a first wording, shortened); reopencheck 0 problems; `validate_scenario.rb --skip-ink --no-graph` no errors, known warnings only.
+
+## User review 2026-10-16 (pending-decisions form 2.5): lobby approved; the fig on both sides, with movement frames
+
+- The fig in the grey planter (planter_fig1) now stands on both sides of the south wall: SW where plant-large12 was (x 36), and SE (x 252). `hq_rooms.py` room_hq_lobby.
+- Movement frames: `planter-fig1-top-ani1..7`, a 7-frame sway made by shifting the foliage rows sideways by whole pixels (up to 3 px at the crown, the pot fixed, last frame back at rest). Nothing rescaled, no PixelLab spend. Registered as an animated plant like plant-large11/12/13 (`rooms.js` detection, `game.js` preload and the `planter-fig1-bump` animation, 10 fps) and counted as a floor plant in `generate_rooms.py`. Both figs are plain items with no collision: the player brushes through them.
+- In game (game 2556): walking down through the SW fig played all 7 frames and the player passed through.
+- The server room's tool trolley is a table holding a scenario printout, so it stays static (the new table guard in `rooms.js`).
+
+Engine and asset changes shared with the other missions (they need the user's approval before commit, see the report):
+- `rooms.js` `STATIC_SWIVEL_PROPS`: instrument_trolley1, aes_tool_trolley1, book_trolley1, chair-grey-4, chair-darkgray-1 and chair-grey-1 now roll, spin through 8 frames and collide, like the hospital trolleys and beds. Frames are PixelLab 8-rotation output at the prop's own size on a padded canvas (40 px chairs, 32/48/56 px trolleys), reordered to the engine's S, SW, W ... order, with the original sprite kept as its own frame. Preloaded in `game.js`. A swivel prop placed as a table (m08's server-room tool trolley holds a printout) stays put.
+- `object-physics.js`: pushed chairs and trolleys now collide with the map's furniture collision boxes (Object Layer 1). They were player-only, so a trolley rolled straight over the lab bench.
+- `game.js` tap gather: a swivel prop joins the pick-one menu only when the tap is on its own sprite. Without this, tapping the PC on the desk in front of a chair raised a chair menu (checked in game: m04's BMS terminal opens directly).
+- Builders: trolleys that were `r.solid` (a static box under them that pinned them) are now plain items: m05 lab and Torres' office, m04 workshop, m06 office.
+
+Checks: slot_audit 0 problems; check_room_walls all 64; validator no errors; doors OK. Evidence: `build_evidence/user_review_2026-10-16/` (fig_sway.gif shows the frames).

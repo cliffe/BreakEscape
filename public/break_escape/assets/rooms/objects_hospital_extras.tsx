@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<tileset version="1.10" tiledversion="1.11.2" name="objects/hospital_extras" tilewidth="60" tileheight="60" tilecount="494" columns="0">
+<tileset version="1.10" tiledversion="1.11.2" name="objects/hospital_extras" tilewidth="60" tileheight="60" tilecount="502" columns="0">
  <grid orientation="orthogonal" width="1" height="1"/>
  <tile id="0">
   <image source="../objects/iv_stand1.png" width="25" height="60"/>
@@ -1482,5 +1482,29 @@
  </tile>
  <tile id="503">
   <image source="../objects/hq_recorder1.png" width="16" height="9"/>
+ </tile>
+ <tile id="504">
+  <image source="../objects/qdc_safety_shower1.png" width="21" height="48"/>
+ </tile>
+ <tile id="505">
+  <image source="../objects/qdc_first_aid_cabinet1.png" width="19" height="22"/>
+ </tile>
+ <tile id="506">
+  <image source="../objects/pnw_console2_p1.png" width="64" height="49"/>
+ </tile>
+ <tile id="507">
+  <image source="../objects/pnw_console1_p2.png" width="64" height="49"/>
+ </tile>
+ <tile id="508">
+  <image source="../objects/pnw_console1_p4.png" width="64" height="49"/>
+ </tile>
+ <tile id="509">
+  <image source="../objects/pnw_console2_p5.png" width="64" height="49"/>
+ </tile>
+ <tile id="510">
+  <image source="../objects/pnw_console1_p6.png" width="64" height="49"/>
+ </tile>
+ <tile id="511">
+  <image source="../objects/planter-fig1-top-ani1.png" width="40" height="61"/>
  </tile>
 </tileset>

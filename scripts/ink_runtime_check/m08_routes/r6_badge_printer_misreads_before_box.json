@@ -41,7 +41,7 @@
 { "talk": "phantom", "picks": ["Where were you", "audit was in the archive printer", "We'll talk"] },
 { "expect": { "phantom_alibi_known": true } },
 { "said": ["Wheels up 10:09", "The archive duty officer"] },
-{ "talk": "nightshade", "picks": ["The root logs put a Crypto Lab terminal", "We're done"] },
+{ "talk": "nightshade", "picks": ["The root logs put Cryptography Lab terminal 03", "We're done"] },
 { "unlocked": ["confront_the_mole"] },
 { "read": "nightshade_personnel_record" },
 { "read": "interrogation_suite_code" },

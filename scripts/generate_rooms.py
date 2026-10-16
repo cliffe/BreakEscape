@@ -147,6 +147,7 @@ def is_floor_plant(name: str) -> bool:
         name.startswith("plant-large11")
         or name.startswith("plant-large12")
         or name.startswith("plant-large13")
+        or name.startswith("planter-fig1-top-ani")   # fig with sway frames (m08 lobby, 2026-10-16)
     )
 
 
@@ -1035,6 +1036,7 @@ WALL_MOUNTED_EXTRAS = {
     "hq_director_sign",
     "hq_archive_sign",
     "hq_interview_sign",
+    "qdc_first_aid_cabinet",
 }
 
 
@@ -3305,7 +3307,7 @@ def room_aes_workshop():
     r.collision(252.0, 258.0, 33.0, 12.0)
     r.solid("aes_lockers_grey1", 34.0, 300.0, depth=12)
     r.solid("supply_shelves1", 34.0, 222.0, depth=12)
-    r.solid("aes_tool_trolley1", 92.0, 300.0)
+    r.item("aes_tool_trolley1", 92.0, 300.0)       # rolls and spins when pushed (2026-10-16): no static box under it
     r.solid("aes_cable_drum1", 124.0, 300.0)
     r.item("fire_extinguisher1", 14.0, 140.0)
     r.item("briefcase-yellow-1", 180.0, 186.0, layer="conditional_items")  # a yellow hard case by the bench's end, 32 px+ from the drop-site terminal  # OptiGrid Tool Case, under the bench's end
@@ -3375,16 +3377,18 @@ def room_aes_ops():
     noticeboard (Facility Layout Map).
     """
     r = _Uni()
-    r.item("notice_board1", 104.0, 50.0)              # noticeboard, the layout map pinned on it
-    r.item("year_planner1", 204.0, 52.0)              # shift rota, over the kitchenette
-    counter = r.table("kitchen_counter_sink1", 196.0, 104.0, kind="objects")
-    fridge = r.table("undercounter_fridge1", 243.0, 104.0, kind="objects")
-    r.collision(198.0, 92.0, 66.0, 12.0)
+    r.item("notice_board1", 104.0, 45.0)              # noticeboard, the layout map pinned on it (raised to match the POV, user 2026-10-16)
+    r.item("year_planner1", 204.0, 44.0)              # shift rota, over the kitchenette (raised clear of the kettle)
+    # kitchenette back against the wall, as in the POV background (user 2026-10-16)
+    counter = r.table("kitchen_counter_sink1", 196.0, 92.0, kind="objects")
+    fridge = r.table("undercounter_fridge1", 243.0, 92.0, kind="objects")
+    r.collision(198.0, 80.0, 66.0, 12.0)
     desk = r.table("desk1", 196.0, 176.0)             # Vance's desk, x 196-274
     r.item("chair-grey-1", 226.0, 200.0)             # in front of the desk, facing it
     desk2 = r.table("desk3", 60.0, 176.0)             # the day engineer's desk, x 60-111
-    r.solid("filing_cabinet", 66.0, 96.0, depth=12)
-    r.solid("filing_cabinet", 152.0, 96.0, depth=12)
+    # cabinets stand against the back wall, base just below the wall foot (POV, user 2026-10-16)
+    r.solid("filing_cabinet", 66.0, 70.0, depth=12)
+    r.solid("filing_cabinet", 152.0, 70.0, depth=12)
     r.solid("coat_stand1", 262.0, 150.0)
     r.solid("uni_sofa2", 210.0, 252.0, depth=12)     # the night-shift sofa
     r.solid("bin8", 114.0, 176.0)
@@ -3395,7 +3399,7 @@ def room_aes_ops():
     r.on(desk, "notes1", 0.90, 0.45, layer="conditional_table_items")
     r.on(desk, "office-misc-cup", 0.62, 0.40)
     # array order decides which paper lands where (scenario order: Work Orders, Layout Map, Budget Memo)
-    r.conditional_table_items.append(make_obj("objects", "notes4", 112.0, 44.0, r._next()))  # pinned on the noticeboard
+    r.conditional_table_items.append(make_obj("objects", "notes4", 112.0, 39.0, r._next()))  # pinned on the noticeboard
     r.on(desk2, "notes3", 0.50, 0.42, layer="conditional_table_items")
     r.on(desk2, "binders1", 0.12, 0.30)
     return r.build("room_aes_ops")
@@ -3696,7 +3700,7 @@ def room_hce_office():
     r.solid("bin2", 64.0, 172.0)
     r.item("chair-grey-4", 128.0, 208.0)             # two visitor chairs facing her desk (c3 OFF-2)
     r.item("chair-grey-4", 160.0, 208.0)
-    r.solid("book_trolley1", 136.0, 296.0)           # the room's one angled prop
+    r.item("book_trolley1", 136.0, 296.0)            # the room's one angled prop; rolls when pushed (2026-10-16)
     r.solid("journal_stack1", 178.0, 296.0)          # (c3 OFF-3: was caught behind the shelves)
     r.solid("magazine_rack2", 120.0, 254.0)          # journals by the reading corner
     # reading corner, SW
@@ -3931,8 +3935,9 @@ def room_qdc_lab():
     cryostat prototype (a hatched keep-clear box round it, a helium dewar beside),
     its control rack under a LASER warning, a fume hood, the lattice whiteboard and
     the laminated LAB RULES notice by the door end of the wall. The laser bench
-    (QKD optics) on its own hatched box west, a trolley of optics; an eyewash
-    station and a glovebox east; the long lab bench along the south (an instrument
+    (QKD optics) on its own hatched box west, a trolley of optics (rolls and spins
+    when pushed); the safety shower and eyewash plumbed into the NE corner, the
+    first-aid cabinet on the east wall and a glovebox east; the long lab bench along the south (an instrument
     bench and a steel desk, gloves boxes on it, stools tucked in) and Halloran's
     own small desk below where she stands; the visitor-badge hook on the east wall by the door, empty (a
     prop only: the visitor spare is Halloran's to hand over, never a pickup here).
@@ -3952,13 +3957,16 @@ def room_qdc_lab():
     r.solid("qdc_instrument_rack1", 96.0, 90.0)      # its control electronics
     r.solid("qdc_dewar1", 100.0, 128.0, depth=12)    # helium for the fridge
     r.solid("qdc_fume_hood1", 134.0, 88.0)
-    r.item("qdc_whiteboard_lattice1", 196.0, 54.0)
-    r.item("qdc_lab_rules1", 248.0, 54.0)            # Lab Rules, readable from the door row
+    r.item("qdc_whiteboard_lattice1", 192.0, 54.0)
+    r.item("qdc_lab_rules1", 242.0, 54.0)            # Lab Rules, readable from the door row
+    # safety shower and eyewash plumbed into the NE corner of the back wall (user 2026-10-16: the
+    # free-standing station looked strange); a plain item, no collision, so the E door row stays open
+    r.item("qdc_safety_shower1", 268.0, 72.0)
     # west: the laser bench on its hatched box (x 34-124, y 140-188), a trolley of optics
     r.solid("qdc_optical_bench1", 50.0, 180.0, depth=14)
-    r.solid("instrument_trolley1", 124.0, 190.0)
-    # east: eyewash by the door, the glovebox, clear of Halloran
-    r.solid("qdc_eyewash1", 244.0, 150.0, depth=8)  # below the door row (c3 Q7)
+    r.item("instrument_trolley1", 124.0, 190.0)      # rolls and spins when pushed (user 2026-10-16): no static box
+    # east: the first-aid cabinet on the east wall below the door, the glovebox, clear of Halloran
+    r.item("qdc_first_aid_cabinet1", 289.0, 176.0)
     r.solid("qdc_glovebox1", 232.0, 214.0, depth=12)
     r.item("qdc_badge_hook1", 292.0, 136.0)          # the empty visitor-badge hook, by the door
     r.item("fire_extinguisher1", 292.0, 210.0)
@@ -4197,7 +4205,7 @@ def room_qdc_torres():
     r.item("chair-darkgray-1", 150.0, 222.0)         # visitor chairs, facing the desk, 32 px+ from the
     r.item("chair-darkgray-1", 184.0, 222.0)         # Mug and the briefcase (chairs are tap candidates)
     r.solid("sideboard1", 36.0, 150.0)
-    r.solid("book_trolley1", 214.0, 150.0)
+    r.item("book_trolley1", 214.0, 150.0)            # rolls when pushed (2026-10-16)
     r.solid("sofa1", 36.0, 252.0)                    # the reading armchair
     r.solid("journal_stack1", 92.0, 252.0)
     r.solid("bin2", 120.0, 252.0)
@@ -4413,8 +4421,9 @@ def room_pnw_ops():
     r.item("pnw_substation_map1", 36.0, 56.0)
     r.item("pnw_video_wall1", 114.0, 58.0)                          # x 114-273: wall-sized (cycle 2 m4)
     # front row (feet 156): A, B, gangway, position 3
-    con_a = r.table("pnw_console2", 40.0, 156.0, kind="objects")
-    r.table("pnw_console1", 104.0, 156.0, kind="objects")
+    # every console carries a muted position plate 1-6 (user review 2026-10-16: a lone "3" read as a marker)
+    con_a = r.table("pnw_console2_p1", 40.0, 156.0, kind="objects")
+    r.table("pnw_console1_p2", 104.0, 156.0, kind="objects")
     r.solid("pnw_console_pos1", 200.0, 156.0, depth=12)        # Abandoned Operator Workstation (items layer: as-type only searches item layers)
     r.item("chair-grey-1", 60.0, 178.0)
     r.item("chair-grey-1", 124.0, 178.0)
@@ -4422,9 +4431,9 @@ def room_pnw_ops():
     # position 3's mug is drawn into pnw_console_pos1 (a separate sprite drew behind the console: cycle 3 m-A)
     r.on(con_a, "office-misc-headphones", 0.30, 0.55)              # a headset dropped on console A
     # back row (feet 236)
-    r.table("pnw_console1", 40.0, 236.0, kind="objects")
-    r.table("pnw_console2", 104.0, 236.0, kind="objects")
-    r.table("pnw_console1", 200.0, 236.0, kind="objects")
+    r.table("pnw_console1_p4", 40.0, 236.0, kind="objects")
+    r.table("pnw_console2_p5", 104.0, 236.0, kind="objects")
+    r.table("pnw_console1_p6", 200.0, 236.0, kind="objects")
     r.item("chair-grey-1", 60.0, 258.0)
     # back-row chair F removed (lighting stage, dressing c5 m-1: it sat half behind the binder shelves); console E's chair went in cycle 2
     # the supervisor's dais (x 96-224, y 248-306 on the sheet)

@@ -46,7 +46,7 @@
   { "enter": "scada_control" },
   { "set": { "projection_revised": true } },
   { "talk": "phone", "knot": "hub", "picks": ["Where do I stand?", "I'll call you back"] },
-  { "said": ["One SSH login: the name from the share", "If you mean to move the team, do it before you log in."] },
+  { "said": ["One login: the name from the share", "If you mean to move the team, do it before you log in."] },
   { "flag": 3 },
   { "talk": "phone", "knot": "hub", "picks": ["Where do I stand?", "I'll call you back"] },
   { "said": ["Get root on their host and put the root flag through the relay. The console opens itself after."], "notSaid": ["Step one ran", "If you mean to move the team", "you'll need the control room door open"] },

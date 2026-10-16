@@ -14,12 +14,15 @@
 # leak was the agent." M08 finds out who. The traitor is Agent 0x47 Nightshade,
 # an ideological convert who traded the lives lost in m07 for ENTROPY's cause.
 #
-# VM: which SecGen scenario is built is UNCONFIRMED (pass 5, U1 in
-# DECISIONS_PENDING.md): mission.json says m08_the_mole; this note used to say
-# "Such a git" (ctf/such_a_git.xml). Needs checking against SecGen by the user.
-# The chain as the game describes it: GitList 0.4.0
-# argument-injection RCE (no creds) -> stashed username/password -> proper login
-# for a home-directory flag -> sudo apt-get -> root. SecGen system_name for the
+# VM: the built scenario is break_escape/safetynet/m08_the_mole.xml, as
+# mission.json says (U1 closed by docs/agents/SECGEN_CLAIMS_CHECK.md,
+# 2026-10-16; ctf/such_a_git.xml is a different scenario). The chain:
+# GitList 0.4.0 argument-injection RCE (no creds) -> credentials committed in
+# the repository history -> proper login for the account's flag (the mail
+# sits in a file in its home directory) -> sudo apt-get -> root. The root
+# payload names "Cryptography Lab terminal 03" and 00:47:00; every in-game
+# reference to the terminal uses that name. The login name is random per
+# build, so no game text names the account. SecGen system_name for the
 # target is `safetynet_gitlist_server`. Four flags; the fallback strings below are placeholders
 # for standalone/dev render -- the real per-build flags arrive via vm_context in
 # Hacktivity mode. FLAG ORDER against flags_by_vm['safetynet_gitlist_server'] STILL NEEDS
@@ -221,7 +224,7 @@ backup_plain = "SENT -- To: architect@entropy.onion  From: nightshade_deep_state
           { "text": "THE REPOSITORY BROWSER: Ours, never patched, open without a password", "style": "entry" },
           { "text": "THE HISTORY: Credentials committed and never scrubbed", "style": "entry" },
           { "text": "THE ACCOUNT: Logged in as its owner. The mail to the Architect was in it.", "style": "entry" },
-          { "text": "ROOT: Through a sudo rule. The logs put the plan on a Crypto Lab terminal for forty-seven minutes.", "style": "entry" },
+          { "text": "ROOT: Through a sudo rule. The logs put the plan on Cryptography Lab terminal 03 for forty-seven minutes.", "style": "entry" },
           { "text": "" },
           { "text": "── ON THE RECORD ──", "style": "section-header" },
           { "text": "AGENT 0x00 TO THE DIRECTOR: He's the crime, not you", "style": "entry", "condition": "globalVars.debrief_stance === 'defended'" },
@@ -420,7 +423,7 @@ CREDITS
         },
         {
           "taskId": "recover_stashed_credentials",
-          "title": "Recover the stashed credentials and submit the second flag",
+          "title": "Recover the credentials left in the repository history and submit the second flag",
           "type": "submit_flags",
           "targetFlags": ["flag_station_evidence_relay:safetynet_gitlist_server-flag2"],
           "targetCount": 1,
@@ -722,7 +725,7 @@ CREDITS
               "condition": "value === true",
               "onceOnly": true,
               "setGlobal": { "found_gitlist_vuln": true, "gitsecrets_guide_offered": true },
-              "sendTimedMessage": { "delay": 1500, "message": "On the box already? Our own code server, no password. That's a report nobody will enjoy. Now read: the history and the stash. Want the git secrets guide?" }
+              "sendTimedMessage": { "delay": 1500, "message": "On the box already? Our own code server, no password. That's a report nobody will enjoy. Now read the history, not just the files. Want the git secrets guide?" }
             },
             {
               "_comment": "Flag 2 -- stashed credentials. The mole's opsec failure: creds committed to the repo. PASS 4 (fix 19): its guide is now offered at flag 1.",
@@ -771,28 +774,28 @@ CREDITS
 <% [
      ["globalVars.named_on_evidence === true",
       { "found_access_logs" => true, "database_theft_understood" => true }, nil,
-      "Root. Logs agree with your door audit: Crypto Lab terminal, forty-seven minutes. The root file says what that night was for: our threat database. It's Nightshade. You had him first."],
+      "Root. Logs agree with your door audit: Cryptography Lab terminal 03, forty-seven minutes. The root file says what that night was for: our threat database. It's Nightshade. You had him first."],
      ["globalVars.named_on_evidence !== true && globalVars.mole_identified === true",
       { "found_access_logs" => true, "database_theft_understood" => true }, nil,
-      "Root. Logs agree with the reading you gave me: Crypto Lab terminal, forty-seven minutes, for our threat database. It's Nightshade. I trained with him."],
+      "Root. Logs agree with the reading you gave me: Cryptography Lab terminal 03, forty-seven minutes, for our threat database. It's Nightshade. I trained with him."],
      ["globalVars.named_on_evidence !== true && globalVars.mole_identified !== true && globalVars.audit_closed === true && globalVars.netherton_ko !== true && globalVars.netherton_hostile !== true",
       { "found_access_logs" => true, "database_theft_understood" => true, "mole_identified" => true, "named_by_director" => true }, "name_the_mole",
-      "Root. Crypto Lab terminal, forty-seven minutes, for our threat database. The Director read the door audit against it himself. It's Nightshade. I trained with him."],
+      "Root. Cryptography Lab terminal 03, forty-seven minutes, for our threat database. The Director read the door audit against it himself. It's Nightshade. I trained with him."],
      ["globalVars.named_on_evidence !== true && globalVars.mole_identified !== true && globalVars.netherton_ko === true && globalVars.found_badge_audit !== true",
       { "found_access_logs" => true, "database_theft_understood" => true }, nil,
-      "Root. A terminal and a time, no face: crypto-lab-04, D-2 10:38, forty-seven minutes. The Director's down, and a login isn't a person. Get the door audit from the archives and read it to me."],
+      "Root. A terminal and a time, no face: Cryptography Lab terminal 03, D-2 10:38, forty-seven minutes. The Director's down, and a login isn't a person. Get the door audit from the archives and read it to me."],
      ["globalVars.named_on_evidence !== true && globalVars.mole_identified !== true && globalVars.netherton_ko === true && globalVars.found_badge_audit === true",
       { "found_access_logs" => true, "database_theft_understood" => true }, nil,
-      "Root. A terminal and a time, no face: crypto-lab-04, D-2 10:38, forty-seven minutes. The Director's down, so read me the door audit instead. Call me when you've got it."],
+      "Root. A terminal and a time, no face: Cryptography Lab terminal 03, D-2 10:38, forty-seven minutes. The Director's down, so read me the door audit instead. Call me when you've got it."],
      ["globalVars.named_on_evidence !== true && globalVars.mole_identified !== true && globalVars.netherton_hostile === true && globalVars.netherton_ko !== true && globalVars.found_badge_audit !== true",
       { "found_access_logs" => true, "database_theft_understood" => true }, nil,
-      "Root. A terminal and a time, no face: crypto-lab-04, D-2 10:38, forty-seven minutes. The Director won't hear it from you now. Get the door audit from the archives and read it to me."],
+      "Root. A terminal and a time, no face: Cryptography Lab terminal 03, D-2 10:38, forty-seven minutes. The Director won't hear it from you now. Get the door audit from the archives and read it to me."],
      ["globalVars.named_on_evidence !== true && globalVars.mole_identified !== true && globalVars.netherton_hostile === true && globalVars.netherton_ko !== true && globalVars.found_badge_audit === true",
       { "found_access_logs" => true, "database_theft_understood" => true }, nil,
-      "Root. A terminal and a time, no face: crypto-lab-04, D-2 10:38, forty-seven minutes. The Director won't hear it from you now, so read me the door audit instead. Call me when you've got it."],
+      "Root. A terminal and a time, no face: Cryptography Lab terminal 03, D-2 10:38, forty-seven minutes. The Director won't hear it from you now, so read me the door audit instead. Call me when you've got it."],
      ["globalVars.named_on_evidence !== true && globalVars.mole_identified !== true && globalVars.audit_closed !== true && globalVars.netherton_ko !== true && globalVars.netherton_hostile !== true",
       { "found_access_logs" => true, "database_theft_understood" => true }, nil,
-      "Root. A terminal and a time, no face: crypto-lab-04, D-2 10:38, forty-seven minutes. The root file says it was for our threat database. Who was behind that lab door?"]
+      "Root. A terminal and a time, no face: Cryptography Lab terminal 03, D-2 10:38, forty-seven minutes. The root file says it was for our threat database. Who was behind that lab door?"]
    ].each do |cond, sets, task, msg| %>
             {
               "eventPattern": "global_variable_changed:flag4_submitted",
@@ -1735,7 +1738,7 @@ CREDITS
           "readable": true,
           "observations": "A private notebook Phantom did not quite hide.",
           "observationDisplay": "gameDisplay",
-          "text": "MINE. Not for the file.\n\nThe leak had planning access + timing + the agent's ID. That's a very short list.\nTracked server auth: someone's been in mission_planning from a Crypto Lab terminal, for forty-seven minutes, on a file you read in five.\nPulled a door audit for the window on the archive terminal. The archive duty officer walked in before I could get it off the printer. Doors tell you who was in a room, not whose account. Match it to when the plan was opened.\nNetherton won't give me the suspect list, so I'm building my own. If I'm on it -- fine. I'd put me on it too.\n\nWhoever it is: they didn't do it for money. Money leaves a trail. This is someone who thinks they were RIGHT.",
+          "text": "MINE. Not for the file.\n\nThe leak had planning access + timing + the agent's ID. That's a very short list.\nTracked server auth: someone's been in mission_planning from Cryptography Lab terminal 03, for forty-seven minutes, on a file you read in five.\nPulled a door audit for the window on the archive terminal. The archive duty officer walked in before I could get it off the printer. Doors tell you who was in a room, not whose account. Match it to when the plan was opened.\nNetherton won't give me the suspect list, so I'm building my own. If I'm on it -- fine. I'd put me on it too.\n\nWhoever it is: they didn't do it for money. Money leaves a trail. This is someone who thinks they were RIGHT.",
           "onPickup": { "setVariable": { "found_phantom_lead": true } },
           "puzzle_graph_role": "clue",
           "puzzle_graph_reveals": "the_leak_came_from_the_crypto_lab"
@@ -1791,7 +1794,7 @@ CREDITS
     fallbacks (audit closed, Director down). %>
           "flagRewards": [
             { "type": "set_global", "key": "flag1_submitted", "value": true, "description": "GitList argument injection -- RCE on SAFETYNET's own repo browser, no login" },
-            { "type": "set_global", "key": "flag2_submitted", "value": true, "description": "Stashed credentials recovered from repository history" },
+            { "type": "set_global", "key": "flag2_submitted", "value": true, "description": "Credentials recovered from repository history" },
             { "type": "set_global", "key": "flag3_submitted", "value": true, "description": "Logged in properly -- home directory holds the ENTROPY correspondence" },
             { "type": "set_global", "key": "flag4_submitted", "value": true, "description": "Root via sudo apt-get -- access logs place the mole" }
           ]
@@ -1804,7 +1807,7 @@ CREDITS
           "readable": true,
           "observations": "A printed excerpt of the auth log, left by the rack. Whoever printed it ran it through the redaction filter first. Only root on the box will show the account behind it, and an account is not a person.",
           "observationDisplay": "gameDisplay",
-          "text": "AUTH LOG -- mission_planning share (UTC)\n\n... routine ...\nUSER [REDACTED]  D-2 10:38 UTC (T-48h)  TERM crypto-lab-04  OPEN pnw_contingency.enc  DURATION 00:47:00\n... routine ...\n\nPencilled underneath: '47 minutes on a file you read in five. Same window ENTROPY started coordinating. Whoever this is, they weren't reading the plan. They were copying it. Root for the account. The doors for the person.'",
+          "text": "AUTH LOG -- mission_planning share (UTC)\n\n... routine ...\nUSER [REDACTED]  D-2 10:38 UTC (T-48h)  SOURCE Cryptography Lab terminal 03  OPEN pnw_contingency.enc  DURATION 00:47:00\n... routine ...\n\nPencilled underneath: '47 minutes on a file you read in five. Same window ENTROPY started coordinating. Whoever this is, they weren't reading the plan. They were copying it. Root for the account. The doors for the person.'",
           "onRead": { "setVariable": { "found_access_logs_hint": true } },
           "puzzle_graph_role": "clue",
           "puzzle_graph_reveals": "when_the_plan_was_opened",
@@ -2101,9 +2104,9 @@ CREDITS
           "observationDisplay": "gameDisplay",
           "text": "CASE FILE -- PERSONS OF INTEREST (3)\n\nAwaiting evidence from the server-room relay.\n\nVERDICT: none.",
           "textVariants": [
-            { "condition": "globalVars.all_flags_submitted && globalVars.mole_identified && globalVars.found_nightshade_profile", "value": "CASE FILE -- AGENT 0x47 'NIGHTSHADE'\n\n1. GitList RCE -- SAFETYNET's own repo, exploited without credentials.\n2. Stashed credentials -- committed to history, resolve to nightshade_ops.\n3. Home directory -- sent mail to architect@entropy.onion. Same safetynet.gov account as the stripped sender on the Portland intercept.\n4. Root -- access logs: operations plan open 47 min, T-48h, Crypto Lab terminal.\n5. Psych eval -- ideological drift flagged a year ago. Sealed by the Director.\n\nVERDICT: conclusive." },
-            { "condition": "globalVars.all_flags_submitted && globalVars.mole_identified", "value": "CASE FILE -- AGENT 0x47 'NIGHTSHADE'\n\n1. GitList RCE -- SAFETYNET's own repo, exploited without credentials.\n2. Stashed credentials -- committed to history, resolve to nightshade_ops.\n3. Home directory -- sent mail to architect@entropy.onion. Same safetynet.gov account as the stripped sender on the Portland intercept.\n4. Root -- access logs: operations plan open 47 min, T-48h, Crypto Lab terminal.\n\nVERDICT: conclusive." },
-            { "condition": "globalVars.all_flags_submitted", "value": "CASE FILE -- PERSONS OF INTEREST (3)\n\nThe chain is in: a Crypto Lab terminal, D-2 10:38 UTC, plan open 47 min, one account. An account is not yet a person.\n\nVERDICT: pending -- awaiting a name the Director can act on." },
+            { "condition": "globalVars.all_flags_submitted && globalVars.mole_identified && globalVars.found_nightshade_profile", "value": "CASE FILE -- AGENT 0x47 'NIGHTSHADE'\n\n1. GitList RCE -- SAFETYNET's own repo, exploited without credentials.\n2. Credentials -- committed to the repository history. They open one account.\n3. Home directory -- sent mail to architect@entropy.onion. Same safetynet.gov account as the stripped sender on the Portland intercept.\n4. Root -- access logs: operations plan open 47 min, T-48h, Cryptography Lab terminal 03.\n5. Psych eval -- ideological drift flagged a year ago. Sealed by the Director.\n\nVERDICT: conclusive." },
+            { "condition": "globalVars.all_flags_submitted && globalVars.mole_identified", "value": "CASE FILE -- AGENT 0x47 'NIGHTSHADE'\n\n1. GitList RCE -- SAFETYNET's own repo, exploited without credentials.\n2. Credentials -- committed to the repository history. They open one account.\n3. Home directory -- sent mail to architect@entropy.onion. Same safetynet.gov account as the stripped sender on the Portland intercept.\n4. Root -- access logs: operations plan open 47 min, T-48h, Cryptography Lab terminal 03.\n\nVERDICT: conclusive." },
+            { "condition": "globalVars.all_flags_submitted", "value": "CASE FILE -- PERSONS OF INTEREST (3)\n\nThe chain is in: Cryptography Lab terminal 03, D-2 10:38 UTC, plan open 47 min, one account. An account is not yet a person.\n\nVERDICT: pending -- awaiting a name the Director can act on." },
             { "condition": "globalVars.mole_identified", "value": "CASE FILE -- AGENT 0x47 'NIGHTSHADE'\n\nNamed on the door audit. The rest of the chain has not yet come through the relay.\n\nVERDICT: pending." }
           ]
         },
@@ -2252,7 +2255,7 @@ CREDITS
           "readable": true,
           "observations": "Someone has been reconstructing the leak timeline on a legal pad. It matches the server logs exactly.",
           "observationDisplay": "gameDisplay",
-          "text": "LEAK TIMELINE (all times UTC; T-0 = deployment order, 10:41)\nT-72h  Pacific Northwest contingency plan finalised\nT-68h  Agent 0x00 pre-positioned, Pacific Northwest\nT-48h  (D-2 10:38-11:25) ANOMALY: operations plan opened, 47 min, Crypto Lab terminal\nT-47h  ENTROPY coordination chatter begins\nT-24h  ENTROPY fully prepared for our response\nT-51m  (09:50) Deployment confirmed to ENTROPY (intercept)\nT-0    Four sites go live. They were already waiting.\n\nThe leak went out just before the 48-hour mark. Full planning access and a Crypto Lab terminal. Find out who could get through the lab door. Get the door logs.",
+          "text": "LEAK TIMELINE (all times UTC; T-0 = deployment order, 10:41)\nT-72h  Pacific Northwest contingency plan finalised\nT-68h  Agent 0x00 pre-positioned, Pacific Northwest\nT-48h  (D-2 10:38-11:25) ANOMALY: operations plan opened, 47 min, Cryptography Lab terminal 03\nT-47h  ENTROPY coordination chatter begins\nT-24h  ENTROPY fully prepared for our response\nT-51m  (09:50) Deployment confirmed to ENTROPY (intercept)\nT-0    Four sites go live. They were already waiting.\n\nThe leak went out just before the 48-hour mark. Full planning access and a terminal in the Cryptography Lab. Find out who could get through the lab door. Get the door logs.",
           "onPickup": { "setVariable": { "found_timeline": true } },
           "puzzle_graph_role": "clue",
           "puzzle_graph_reveals": "when_the_plan_was_opened",

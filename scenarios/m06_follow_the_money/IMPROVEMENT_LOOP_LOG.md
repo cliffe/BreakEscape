@@ -1177,3 +1177,15 @@ Lines changed (text only, not voiced):
 Left alone: the guide item's name "SAFETYNET Field Guide: Privilege Escalation via Sudo" (D6 says it was set to the sheet's own title; the sheet wasn't opened here). Whether that guide fits a route with no declared sudo rule stays with the user (D6 S5).
 
 Checks: `scripts/compile-ink.sh m06_follow_the_money` 9/9; all 32 m06 routes meet their expectations; dialoguelint 0 problems; reopencheck 0 problems; `validate_scenario.rb --skip-ink --no-graph` no errors, known warnings only.
+
+## User review 2026-10-16 (pending-decisions form 2.3): trading floor approved; chairs rotate and collide
+
+The trading floor's chairs (chair-grey-4) now use the rotating chair behaviour: 8 PixelLab rotation frames (40 px, original sprite as the south frame) and an entry in `STATIC_SWIVEL_PROPS`. The same sprite rolls in the office, server room and vault too. In game (game 2553): pushed from the east, a chair rolled about 170 px, shunting its neighbours along, and spun through all 8 frames. The office's book trolley lost its static box (`r.solid` → item) so it can roll as well.
+
+Engine and asset changes shared with the other missions (they need the user's approval before commit, see the report):
+- `rooms.js` `STATIC_SWIVEL_PROPS`: instrument_trolley1, aes_tool_trolley1, book_trolley1, chair-grey-4, chair-darkgray-1 and chair-grey-1 now roll, spin through 8 frames and collide, like the hospital trolleys and beds. Frames are PixelLab 8-rotation output at the prop's own size on a padded canvas (40 px chairs, 32/48/56 px trolleys), reordered to the engine's S, SW, W ... order, with the original sprite kept as its own frame. Preloaded in `game.js`. A swivel prop placed as a table (m08's server-room tool trolley holds a printout) stays put.
+- `object-physics.js`: pushed chairs and trolleys now collide with the map's furniture collision boxes (Object Layer 1). They were player-only, so a trolley rolled straight over the lab bench.
+- `game.js` tap gather: a swivel prop joins the pick-one menu only when the tap is on its own sprite. Without this, tapping the PC on the desk in front of a chair raised a chair menu (checked in game: m04's BMS terminal opens directly).
+- Builders: trolleys that were `r.solid` (a static box under them that pinned them) are now plain items: m05 lab and Torres' office, m04 workshop, m06 office.
+
+Checks: slot_audit 0 problems; check_room_walls all 64; validator no errors; doors OK. Evidence: `build_evidence/user_review_2026-10-16/`.

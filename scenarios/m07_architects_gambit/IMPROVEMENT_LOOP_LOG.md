@@ -882,3 +882,15 @@ Lines changed (HaX phone and a task title, text only, not voiced):
 Left alone: the SSH field guide is still offered at flag 2 ("want the SSH guide?") and its menu line. Offering a guide doesn't claim the box runs SSH, but if a build shows no SSH, the offer should point at another sheet (user item). The debrief's "that account could make itself root" already matches the XML.
 
 Checks: `scripts/compile-ink.sh m07_architects_gambit` 8/8; all 33 m07 routes meet their expectations (r21 after its quote update); dialoguelint: no new findings (the six pre-existing notes are in other files); reopencheck 0 problems; `validate_scenario.rb --skip-ink --no-graph` no errors, known warnings only.
+
+## User review 2026-10-16 (pending-decisions form 2.4): operations floor approved; the orange "3"
+
+The "3" was a tag drawn on console position 3 (the abandoned workstation, whose screen reads "OPERATOR POSITION 3"). Alone and in amber, it read as an unexplained marker. **Call: keep the numbering and make it read as numbering.** Every console now has a muted slate position plate, 1-3 in the front row and 4-6 at the back (`make_pnw_props.py` `_console_plate`, new sprites pnw_console2_p1, pnw_console1_p2/_p4/_p6, pnw_console2_p5; pnw_console_pos1 redrawn with the same plate and its mug). Position 3 now stands out only through its mug and pushed-back chair. Removing the tag was the other option, but a real control room numbers its positions and the screen text refers to one. Plates 1, 2 and 4 sit behind the chairs, which now roll aside (chair-grey-1 swivels: see the engine note).
+
+Engine and asset changes shared with the other missions (they need the user's approval before commit, see the report):
+- `rooms.js` `STATIC_SWIVEL_PROPS`: instrument_trolley1, aes_tool_trolley1, book_trolley1, chair-grey-4, chair-darkgray-1 and chair-grey-1 now roll, spin through 8 frames and collide, like the hospital trolleys and beds. Frames are PixelLab 8-rotation output at the prop's own size on a padded canvas (40 px chairs, 32/48/56 px trolleys), reordered to the engine's S, SW, W ... order, with the original sprite kept as its own frame. Preloaded in `game.js`. A swivel prop placed as a table (m08's server-room tool trolley holds a printout) stays put.
+- `object-physics.js`: pushed chairs and trolleys now collide with the map's furniture collision boxes (Object Layer 1). They were player-only, so a trolley rolled straight over the lab bench.
+- `game.js` tap gather: a swivel prop joins the pick-one menu only when the tap is on its own sprite. Without this, tapping the PC on the desk in front of a chair raised a chair menu (checked in game: m04's BMS terminal opens directly).
+- Builders: trolleys that were `r.solid` (a static box under them that pinned them) are now plain items: m05 lab and Torres' office, m04 workshop, m06 office.
+
+Checks: slot_audit 0 problems; check_room_walls all 64; validator no errors; doors OK. In-game render game 2528. Evidence: `build_evidence/user_review_2026-10-16/`.

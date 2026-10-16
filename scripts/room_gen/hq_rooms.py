@@ -59,8 +59,8 @@ def room_hq_lobby():
     visitor badge printer, a monitor, a phone), the memorial wall on the slats beside
     it with white lilies at its foot, the Level Red alert screen in the NE corner.
     The security line west of the spawn: the X-ray scanner and the walk-through arch.
-    A waiting area SE (a black leather sofa, a glass table, a club chair), a fig and
-    a plant along the south. Badge readers by every door, each LED red.
+    A waiting area SE (a black leather sofa, a glass table, a club chair), a pair of
+    swaying figs along the south. Badge readers by every door, each LED red.
     Doors: N (x 32-64; lane x 32-72 clear to y 140), W and E on row 2 (mouths
     x 32-92 and 230-288, y 64-118 clear). Nothing to the south.
     NPC: ATHENA at (5.6,3.8): frame x 139-219, y 51-131, feet ~118, in front of the
@@ -92,8 +92,10 @@ def room_hq_lobby():
     r.solid("leather_sofa1", 210.0, 254.0)
     r.table("glass_coffee_table1", 214.0, 290.0, kind="objects")
     r.solid("club_chair_e1", 172.0, 296.0)            # facing the table (c2 C2-9)
-    r.solid("planter_fig1", 256.0, 302.0)
-    r.solid("plant-large12", 40.0, 300.0)
+    # a matching pair of figs, south-west and south-east, with sway frames: no collision, the
+    # player brushes through and the leaves move (user review 2026-10-16)
+    r.item("planter-fig1-top-ani1", 252.0, 302.0)     # 40 px canvas, the plant itself x 256-288
+    r.item("planter-fig1-top-ani1", 36.0, 302.0)      # plant x 40-72
     r.solid("brochure_rack1", 84.0, 300.0)
     # side walls
     r.item("hq_badge_reader1", 16.0, 140.0)           # W door

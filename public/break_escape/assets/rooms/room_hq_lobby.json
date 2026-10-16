@@ -214,34 +214,34 @@
                  "y":296
                 }, 
                 {
-                 "gid":1024,
+                 "gid":1312,
                  "height":61,
                  "id":22,
                  "name":"",
                  "rotation":0,
                  "type":"",
                  "visible":true,
-                 "width":32,
-                 "x":256,
+                 "width":40,
+                 "x":252,
                  "y":302
                 },
             
                 {
-                 "gid":353,
-                 "height":79,
-                 "id":24,
+                 "gid":1312,
+                 "height":61,
+                 "id":23,
                  "name":"",
                  "rotation":0,
                  "type":"",
                  "visible":true,
-                 "width":44,
-                 "x":40,
-                 "y":300
+                 "width":40,
+                 "x":36,
+                 "y":302
                 }, 
                 {
                  "gid":1025,
                  "height":48,
-                 "id":26,
+                 "id":24,
                  "name":"",
                  "rotation":0,
                  "type":"",
@@ -253,7 +253,7 @@
                 {
                  "gid":1270,
                  "height":12,
-                 "id":28,
+                 "id":26,
                  "name":"",
                  "rotation":0,
                  "type":"",
@@ -265,7 +265,7 @@
                 {
                  "gid":1270,
                  "height":12,
-                 "id":29,
+                 "id":27,
                  "name":"",
                  "rotation":0,
                  "type":"",
@@ -277,7 +277,7 @@
                 {
                  "gid":828,
                  "height":20,
-                 "id":30,
+                 "id":28,
                  "name":"",
                  "rotation":0,
                  "type":"",
@@ -289,7 +289,7 @@
                 {
                  "gid":818,
                  "height":28,
-                 "id":31,
+                 "id":29,
                  "name":"",
                  "rotation":0,
                  "type":"",
@@ -301,7 +301,7 @@
                 {
                  "gid":1273,
                  "height":21,
-                 "id":32,
+                 "id":30,
                  "name":"",
                  "rotation":0,
                  "type":"",
@@ -470,29 +470,7 @@
                 }, 
                 {
                  "height":10,
-                 "id":23,
-                 "name":"collision",
-                 "rotation":0,
-                 "type":"",
-                 "visible":true,
-                 "width":28,
-                 "x":258,
-                 "y":292
-                }, 
-                {
-                 "height":10,
                  "id":25,
-                 "name":"collision",
-                 "rotation":0,
-                 "type":"",
-                 "visible":true,
-                 "width":40,
-                 "x":42,
-                 "y":290
-                }, 
-                {
-                 "height":10,
-                 "id":27,
                  "name":"collision",
                  "rotation":0,
                  "type":"",
@@ -508,7 +486,7 @@
          "y":0
         }],
  "nextlayerid":14,
- "nextobjectid":33,
+ "nextobjectid":31,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.11.2",
@@ -2980,7 +2958,7 @@
          "margin":0,
          "name":"objects\/hospital_extras",
          "spacing":0,
-         "tilecount":494,
+         "tilecount":502,
          "tileheight":64,
          "tiles":[
                 {
@@ -5995,6 +5973,55 @@
                  "image":"..\/objects\/hq_recorder1.png",
                  "imageheight":9,
                  "imagewidth":16
+                }, 
+                {
+                 "id":504,
+                 "image":"..\/objects\/qdc_safety_shower1.png",
+                 "imageheight":48,
+                 "imagewidth":21
+                }, 
+                {
+                 "id":505,
+                 "image":"..\/objects\/qdc_first_aid_cabinet1.png",
+                 "imageheight":22,
+                 "imagewidth":19
+                }, 
+                {
+                 "id":506,
+                 "image":"..\/objects\/pnw_console2_p1.png",
+                 "imageheight":49,
+                 "imagewidth":64
+                }, 
+                {
+                 "id":507,
+                 "image":"..\/objects\/pnw_console1_p2.png",
+                 "imageheight":49,
+                 "imagewidth":64
+                }, 
+                {
+                 "id":508,
+                 "image":"..\/objects\/pnw_console1_p4.png",
+                 "imageheight":49,
+                 "imagewidth":64
+                }, 
+                {
+                 "id":509,
+                 "image":"..\/objects\/pnw_console2_p5.png",
+                 "imageheight":49,
+                 "imagewidth":64
+                },
+            
+                {
+                 "id":510,
+                 "image":"..\/objects\/pnw_console1_p6.png",
+                 "imageheight":49,
+                 "imagewidth":64
+                }, 
+                {
+                 "id":511,
+                 "image":"..\/objects\/planter-fig1-top-ani1.png",
+                 "imageheight":61,
+                 "imagewidth":40
                 }],
          "tilewidth":252
         }],

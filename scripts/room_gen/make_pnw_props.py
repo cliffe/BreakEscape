@@ -8,9 +8,9 @@ the cable vault's cable ladder and the splice, small labels. Drawn pixel by pixe
 native size with the Canvas and 3x5 font from make_uni_props.py (extended by
 make_aes_props.py and make_hce_props.py). Nothing is rescaled.
 
-pnw_console_pos1 is PixelLab's pnw_console1 with a POS 3 tag added (the Abandoned
-Operator Workstation claims it with as-type:pnw_console_pos), so the frame is read,
-not redrawn.
+pnw_console_pos1 is PixelLab's pnw_console1 with a position-3 plate and a mug added (the
+Abandoned Operator Workstation claims it with as-type:pnw_console_pos); the other five
+consoles get the same muted plate as pnw_console{1,2}_p<n>. The frames are read, not redrawn.
 
 Writes PNGs into public/break_escape/assets/objects/; register new names with
 register_object.py (--wall for wall items).
@@ -272,25 +272,42 @@ def substation_map():
     c.save(OBJ, "pnw_substation_map1")
 
 
-def console_pos():
-    """pnw_console1 (PixelLab) with an amber position-3 tag on the desk front."""
-    im = Image.open(OBJ / "pnw_console1.png").convert("RGBA")
+PLATE_EDGE = (30, 30, 36)
+PLATE_FILL = (74, 80, 92)
+PLATE_DIGIT = (222, 224, 230)
+
+
+def _console_plate(base, n, name, mug=False):
+    """A console sprite with a small slate position plate (n) on the desk front.
+    User review 2026-10-16: a lone amber "3" read as an unexplained marker, so every
+    operations-floor console carries a muted plate 1-6 and none stands out."""
+    im = Image.open(OBJ / f"{base}.png").convert("RGBA")
     c = Canvas(im.width, im.height)
     c.img.paste(im, (0, 0))
     c.p = c.img.load()
     x0, y0 = im.width // 2 - 5, im.height - 16
-    c.rect(x0, y0, x0 + 8, y0 + 8, (30, 30, 36))
-    c.rect(x0 + 1, y0 + 1, x0 + 7, y0 + 7, AMBER)
-    c.text(x0 + 3, y0 + 2, "3", INK)
-    # coffee still warm, left by the keyboard (cycle 3: a separate mug sprite drew behind the console)
-    mx, my = im.width - 15, 22
-    c.rect(mx, my, mx + 4, my + 5, WHITE)
-    c.rect(mx + 1, my, mx + 3, my, (110, 70, 40))
-    c.px(mx + 5, my + 2, WHITE)
-    c.px(mx + 5, my + 3, WHITE)
-    c.px(mx + 2, my - 2, (200, 200, 200))
-    c.px(mx + 3, my - 3, (200, 200, 200))
-    c.save(OBJ, "pnw_console_pos1")
+    c.rect(x0, y0, x0 + 8, y0 + 8, PLATE_EDGE)
+    c.rect(x0 + 1, y0 + 1, x0 + 7, y0 + 7, PLATE_FILL)
+    c.text(x0 + 3, y0 + 2, str(n), PLATE_DIGIT)
+    if mug:
+        # coffee still warm, left by the keyboard (cycle 3: a separate mug sprite drew behind the console)
+        mx, my = im.width - 15, 22
+        c.rect(mx, my, mx + 4, my + 5, WHITE)
+        c.rect(mx + 1, my, mx + 3, my, (110, 70, 40))
+        c.px(mx + 5, my + 2, WHITE)
+        c.px(mx + 5, my + 3, WHITE)
+        c.px(mx + 2, my - 2, (200, 200, 200))
+        c.px(mx + 3, my - 3, (200, 200, 200))
+    c.save(OBJ, name)
+
+
+def console_pos():
+    """Position 3, the abandoned workstation (claimed as-type:pnw_console_pos), plus the
+    other five consoles' plates: front row 1-3 west to east, back row 4-6."""
+    _console_plate("pnw_console1", 3, "pnw_console_pos1", mug=True)
+    for base, n in (("pnw_console2", 1), ("pnw_console1", 2), ("pnw_console1", 4),
+                    ("pnw_console2", 5), ("pnw_console1", 6)):
+        _console_plate(base, n, f"{base}_p{n}")
 
 
 # --- server hall -------------------------------------------------------------------

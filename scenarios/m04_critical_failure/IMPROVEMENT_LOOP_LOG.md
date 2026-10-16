@@ -1104,3 +1104,19 @@ Not voiced:
 - The go-bag card decodes in the workstation (M2).
 - The clock text lands on mapping without covering a conversation, and the new HUD labels fit the widget (M3).
 - The Relay-KO call lands on the hub with the guides (m4).
+
+## User review 2026-10-16 (pending-decisions form 2.1): operations office matches its POV background
+
+The user asked for the room to follow its conversation background (`docs/agents/pending_review/m04_pov_first_room.png`). Builder `room_aes_ops` (generate_rooms.py):
+- Filing cabinets stand against the back wall: feet y 96 → 70, base just below the wall foot, as in the POV.
+- Kitchenette back against the wall: counter and fridge feet y 104 → 92 (the front face now starts at the floor line, worktop on the wall face), collision box moved with them. The kettle and microwave follow the counter.
+- Noticeboard ("poster") up: feet 50 → 45, its pinned Layout Map note 44 → 39. The rota board went up too (52 → 44) so the kettle and microwave no longer cover it.
+- Vance's chair (chair-grey-1) now rolls and spins (see below); tapping the BMS terminal still opens it directly, no menu.
+
+Engine and asset changes shared with the other missions (they need the user's approval before commit, see the report):
+- `rooms.js` `STATIC_SWIVEL_PROPS`: instrument_trolley1, aes_tool_trolley1, book_trolley1, chair-grey-4, chair-darkgray-1 and chair-grey-1 now roll, spin through 8 frames and collide, like the hospital trolleys and beds. Frames are PixelLab 8-rotation output at the prop's own size on a padded canvas (40 px chairs, 32/48/56 px trolleys), reordered to the engine's S, SW, W ... order, with the original sprite kept as its own frame. Preloaded in `game.js`. A swivel prop placed as a table (m08's server-room tool trolley holds a printout) stays put.
+- `object-physics.js`: pushed chairs and trolleys now collide with the map's furniture collision boxes (Object Layer 1). They were player-only, so a trolley rolled straight over the lab bench.
+- `game.js` tap gather: a swivel prop joins the pick-one menu only when the tap is on its own sprite. Without this, tapping the PC on the desk in front of a chair raised a chair menu (checked in game: m04's BMS terminal opens directly).
+- Builders: trolleys that were `r.solid` (a static box under them that pinned them) are now plain items: m05 lab and Torres' office, m04 workshop, m06 office.
+
+Checks: slot_audit 0 problems; check_room_walls all 64; validator (--skip-ink --no-graph) no errors; check_door_alignment OK. In game (keyless :3001, game 2540 render, 2558 tap). Evidence: `build_evidence/user_review_2026-10-16/`.

@@ -73,7 +73,7 @@ scada_password = "CascadeWindow19"
   "startRoom": "security_checkpoint",
 
   "flags": {
-    "scada_attack_host": <%= vm_flags_json('scada_attack_host', ['flag{nfs_coordination_traffic}', 'flag{netcat_c2_intercepted}', 'flag{root_on_attack_host}', 'flag{cascade_scripts_terminated}']) %>
+    "scada_attack_host": <%= vm_flags_json('scada_attack_host', ['flag{nfs_coordination_traffic}', 'flag{netcat_c2_intercepted}', 'flag{operator_account_login}', 'flag{root_on_attack_host}']) %>
   },
 
 <%# WP9 -- Narrator voice. Every ink file in this mission carries Narrator: scene
@@ -538,14 +538,15 @@ scada_password = "CascadeWindow19"
       "order": 4,
       "unlockCondition": { "aimCompleted": "reach_the_control_room" },
       "tasks": [
-        <%# PASS 2: flag 3 is the operator login (the user flag in the account's
-            home directory, reached with the NFS username + the listener's
-            password) and flag 4 is root via sudo. The old titles promised a
+        <%# PASS 2: flag 3 is the operator login (the user account's flag,
+            reached with the NFS username + the listener's password) and
+            flag 4 is root via sudo. SecGen alignment 2026-10-16: the XML
+            confirms the account and the sudo rule, not SSH or a home path. The old titles promised a
             "kill the processes" flag the VM does not have. Task ids are kept
             (CONTRACT.md S8). %>
         {
           "taskId": "escalate_on_attack_host",
-          "title": "Log in to the attack host with the recovered account; submit the flag in its home directory at the relay",
+          "title": "Log in to the attack host with the recovered account; submit that account's flag at the relay",
           "type": "submit_flags",
           "targetFlags": ["flag_station_safetynet_relay:scada_attack_host-flag3"],
           "targetCount": 1,
@@ -747,6 +748,10 @@ scada_password = "CascadeWindow19"
 
     "security_checkpoint": {
       "type": "room_pnw_checkpoint",
+      "chatBackground": [
+        { "x": [0, 0.5], "image": "assets/backgrounds/rooms/m07_security_checkpoint_left_blended.png" },
+        { "x": [0.5, 1], "image": "assets/backgrounds/rooms/m07_security_checkpoint_blended.png" }
+      ],
       "door_sign": "Security Checkpoint",
       <%# LIGHTING (pass 5): front of house at night. Lit (Hollis is here), a little cooler than day. Call point off (a lone red pulse reads as a clue). %>
       "lighting": {
@@ -1656,6 +1661,7 @@ scada_password = "CascadeWindow19"
 
     "operations_floor": {
       "type": "room_pnw_ops",
+      "chatBackground": "assets/backgrounds/rooms/m07_operations_floor_blended.png",
       "door_sign": "Operations Floor",
       <%# LIGHTING (pass 5): the control room after the evacuation. Ceiling pools off, the amber video wall is the room's light. It breathes once the sequence is armed (cascade_armed), turns red when step one runs (countdown_expired; blind run A fixes, L1: the board's Seattle panel goes red and its text says EXECUTED), and holds steady amber after the abort. Two room lights under the wall's ends spread it across its width. %>
       "lighting": {
@@ -1774,6 +1780,10 @@ scada_password = "CascadeWindow19"
 
     "server_room": {
       "type": "room_pnw_servers",
+      "chatBackground": [
+        { "x": [0, 0.5], "image": "assets/backgrounds/rooms/m07_server_room_left_blended.png" },
+        { "x": [0.5, 1], "image": "assets/backgrounds/rooms/m07_server_room_blended.png" }
+      ],
       "locked": true,
       "lockType": "rfid",
       "requires": "server_zone_badge",
@@ -1864,7 +1874,7 @@ scada_password = "CascadeWindow19"
     items, so the relay the flag is submitted at carries the annotation. %>
           "puzzle_graph_unlocks": "scada_control",
           "acceptsVms": ["scada_attack_host"],
-          "flags": <%= flags_for_vm('scada_attack_host', ['flag{nfs_coordination_traffic}', 'flag{netcat_c2_intercepted}', 'flag{root_on_attack_host}', 'flag{cascade_scripts_terminated}']) %>,
+          "flags": <%= flags_for_vm('scada_attack_host', ['flag{nfs_coordination_traffic}', 'flag{netcat_c2_intercepted}', 'flag{operator_account_login}', 'flag{root_on_attack_host}']) %>,
 <%# flagRewards is INDEX-PARALLEL to flags (games_controller.rb:1748) -- one
     reward object per flag, in order. set_global and unlock_object are
     forwarded to the client and applied by applyActions(); give_item is pulled
@@ -1953,6 +1963,7 @@ scada_password = "CascadeWindow19"
 
     "scada_control": {
       "type": "room_pnw_scada",
+      "chatBackground": "assets/backgrounds/rooms/m07_scada_control_blended.png",
       "locked": true,
       "lockType": "password",
       "requires": "<%= scada_password %>",
@@ -2095,6 +2106,7 @@ scada_password = "CascadeWindow19"
 
     "generator_room": {
       "type": "room_pnw_genhall",
+      "chatBackground": "assets/backgrounds/rooms/m07_generator_room_blended.png",
       "locked": true,
       "lockType": "key",
       "requires": "generator_maintenance_key",
@@ -2173,6 +2185,7 @@ scada_password = "CascadeWindow19"
 
     "cable_vault": {
       "type": "room_pnw_vault",
+      "chatBackground": "assets/backgrounds/rooms/m07_cable_vault_blended.png",
       "locked": true,
       "lockType": "pin",
       "requires": "<%= vault_pin %>",
