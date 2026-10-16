@@ -401,6 +401,29 @@ module BreakEscape
       assert @game.validate_unlock('object', 'reward_cache', nil, 'flag_reward')
     end
 
+    test "a flag lock with no requires is marked as opened remotely, naming its station" do
+      scenario = lock_matrix_scenario
+      scenario['rooms']['hall']['objects'].find { |o| o['id'] == 'station' }['name'] = 'Drop-Site Terminal'
+      @game.scenario_data = scenario
+
+      room = @game.filtered_room_data('hall')
+      cache = room['objects'].find { |o| o['id'] == 'reward_cache' }
+      assert_equal true, cache['flagUnlockedRemotely']
+      assert_equal 'Drop-Site Terminal', cache['flagUnlockedAt']
+
+      # A flag lock that takes its flag in place keeps the prompt, and its answer stays hidden
+      safe = room['objects'].find { |o| o['id'] == 'safe_flag' }
+      assert_nil safe['flagUnlockedRemotely']
+      assert_nil safe['requires']
+
+      # No station pays it: still marked, with no place named
+      scenario['rooms']['hall']['objects'].reject! { |o| o['id'] == 'station' }
+      @game.scenario_data = scenario
+      cache = @game.filtered_room_data('hall')['objects'].find { |o| o['id'] == 'reward_cache' }
+      assert_equal true, cache['flagUnlockedRemotely']
+      assert_nil cache['flagUnlockedAt']
+    end
+
     test "npc unlocks still work regardless of lockType, and need the NPC's permission" do
       @game.scenario_data = lock_matrix_scenario
 

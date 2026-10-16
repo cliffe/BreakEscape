@@ -11,6 +11,7 @@ import { addToInventory, createItemIdentifier } from './inventory.js';
 import { playUISound, playGameSound } from './ui-sounds.js';
 import { applyActions } from './apply-actions.js';
 import { resolveObjectField } from '../utils/conditional-text.js';
+import { isRemoteFlagLock, remoteFlagLockMessage } from '../utils/flag-lock.js';
 import { npcReachDistSq } from './npc-reach.js';
 import { shouldExamine, startExamine } from './examine.js';
 
@@ -1287,6 +1288,14 @@ export function handleObjectInteraction(sprite) {
     
     const data = sprite.scenarioData;
     
+    // Flag lock opened by a flag-station reward elsewhere: say where, rather than
+    // opening a prompt that would reject every flag typed into it
+    if (isRemoteFlagLock(data)) {
+        playUISound('reject');
+        window.gameAlert(remoteFlagLockMessage(data), 'info', data.name || 'Locked', 6000);
+        return;
+    }
+
     // Flag-locked items: submit a flag to unlock, validated server-side via /unlock endpoint
     if (data.locked === true && data.lockType === 'flag') {
         window.MinigameFramework.startMinigame('flag-station', null, {
