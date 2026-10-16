@@ -4170,7 +4170,7 @@ def check_engine_limits(json_data)
       mp = "#{holder_path}/eventMappings[#{i}]"
       if (bad = unsupported_condition_syntax(m['condition'], allow_includes: true))
         issues << "❌ INVALID: '#{mp}' condition \"#{m['condition']}\" uses #{bad}. npc-manager.js " \
-                  "safeEvaluateCondition supports only '&&'-joined simple terms (value/data.x/globalVars.x " \
+                  "safeEvaluateCondition supports only '&&'-joined simple terms (value/data.x[.y]/globalVars.x " \
                   "with ===, !==, >, <, >=, <=, '!' or .includes('…')), so this evaluates to false and the " \
                   "mapping never fires. Split it into simpler mappings, one per '||' branch."
       end

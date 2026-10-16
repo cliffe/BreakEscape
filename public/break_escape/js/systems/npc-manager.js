@@ -11,6 +11,7 @@ import { classifyPhoneLine, phoneStepLines } from '../minigames/phone-chat/phone
  *   "value >= 4"
  *   "data.prop === 'string'"
  *   "data.prop && data.prop.includes('substring')"
+ *   "data.result.maxAttemptsReached === true"   (dotted paths; a missing link is undefined)
  */
 function safeEvaluateCondition(conditionStr, eventData) {
   const value = eventData?.value;
@@ -30,15 +31,26 @@ function safeEvaluateCondition(conditionStr, eventData) {
     return t;
   }
 
-  // Helper: resolve "value", "data.prop", or "globalVars.prop" from eventData
+  // Helper: follow a dotted path ("result.maxAttemptsReached") into an object.
+  // Any missing link gives undefined rather than throwing.
+  function dig(root, path) {
+    let cur = root;
+    for (const key of path.split('.')) {
+      if (cur === null || cur === undefined) return undefined;
+      cur = cur[key];
+    }
+    return cur;
+  }
+
+  // Helper: resolve "value", "data.prop[.sub...]", or "globalVars.prop[.sub...]" from eventData
   function resolveLHS(token) {
     const t = token.trim();
     if (t === 'value') return value;
     if (t === 'name')  return name;
-    const propMatch = t.match(/^data\.(\w+)$/);
-    if (propMatch) return eventData?.[propMatch[1]];
-    const globalMatch = t.match(/^globalVars\.(\w+)$/);
-    if (globalMatch) return window.gameState?.globalVariables?.[globalMatch[1]];
+    const propMatch = t.match(/^data\.(\w+(?:\.\w+)*)$/);
+    if (propMatch) return dig(eventData, propMatch[1]);
+    const globalMatch = t.match(/^globalVars\.(\w+(?:\.\w+)*)$/);
+    if (globalMatch) return dig(window.gameState?.globalVariables, globalMatch[1]);
     return undefined;
   }
 
@@ -69,20 +81,20 @@ function safeEvaluateCondition(conditionStr, eventData) {
     }
 
     // "<lhs>.includes('substring')"
-    const includesMatch = expr.match(/^(value|data\.\w+|globalVars\.\w+)\.includes\(['"]([^'"]*)['"]\)$/);
+    const includesMatch = expr.match(/^(value|data(?:\.\w+)+|globalVars(?:\.\w+)+)\.includes\(['"]([^'"]*)['"]\)$/);
     if (includesMatch) {
       const lhs = resolveLHS(includesMatch[1]);
       return !!(lhs && typeof lhs === 'string' && lhs.includes(includesMatch[2]));
     }
 
     // "<lhs> OP literal"
-    const compareMatch = expr.match(/^(value|name|data\.\w+|globalVars\.\w+)\s*(===|!==|>=|<=|>|<)\s*(.+)$/);
+    const compareMatch = expr.match(/^(value|name|data(?:\.\w+)+|globalVars(?:\.\w+)+)\s*(===|!==|>=|<=|>|<)\s*(.+)$/);
     if (compareMatch) {
       return applyOp(resolveLHS(compareMatch[1]), compareMatch[2], parseLiteral(compareMatch[3]));
     }
 
     // Bare truthy check on a recognised operand
-    if (/^(value|name|data\.\w+|globalVars\.\w+)$/.test(expr)) {
+    if (/^(value|name|data(?:\.\w+)+|globalVars(?:\.\w+)+)$/.test(expr)) {
       return !!resolveLHS(expr);
     }
 

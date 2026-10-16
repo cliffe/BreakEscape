@@ -1112,6 +1112,8 @@ Common event patterns:
 - `"attack_aborted"` / `"attack_launched"` — fires from launch-device
 - `"player_spotted:npc_id"` — fires when an NPC with `los.challengeOnSight` sees the player (see [Guards who challenge on sight](#guards-who-challenge-on-sight-loschallengeonsight))
 
+A mapping `condition` is one or more terms joined with `&&` (no `||`, no parentheses): `value`, `name`, `data.<field>` or `globalVars.<name>`, compared with `===`, `!==`, `>`, `<`, `>=`, `<=`, negated with `!`, tested bare for truth, or `.includes('…')`. `data.` and `globalVars.` operands can be dotted paths into nested objects, such as `data.result.maxAttemptsReached === true` on a `minigame_completed` event; a missing link along the path reads as `undefined`, so the term is simply false.
+
 Event mapping actions (can be combined):
 
 | Action | Description |
