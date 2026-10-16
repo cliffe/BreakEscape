@@ -157,15 +157,15 @@ So I'm going to be very professional tonight. Bear with me.
 // PASS 5 (puzzle chains C1, F1): the VM ladder shows only the current step.
 // The box topic opens on entering the server room and closes at flag 1; the
 // flag-2 topic covers the gap between flags 1 and 2. Wording follows the
-// in-game framing (launcher, flag texts, guides): needs checking against
-// SecGen by the user.
+// in-game framing (launcher, flag texts, guides): checked against SecGen
+// 2026-10-16 (docs/agents/SECGEN_CLAIMS_CHECK.md): history, not stash.
 + { server_room_entered and not found_gitlist_vuln } [What am I looking at on this box?]
     A GitList instance our own team stood up and never patched.
     One crafted request gets you code execution with no login at all. Get that working and it's your first flag.
     And our first national embarrassment.
     -> hub
 + { found_gitlist_vuln and not found_leaked_creds } [I'm on the box. Where do I look?]
-    Read the history, not just the files. Then the stash: git keeps what people meant to throw away.
+    Read the history, not just the files. Git keeps what people meant to throw away.
     Whoever's account it is, they committed something they shouldn't have. Git secrets guide's yours if you want it.
     -> hub
 + { found_leaked_creds and not found_architect_comms } [I've got credentials. Now what?]
@@ -173,7 +173,7 @@ So I'm going to be very professional tonight. Bear with me.
     Get into the account and let's find out whose it is.
     -> hub
 + { found_architect_comms and not found_access_logs } [The mail's real. How do I make it stick?]
-    You need root. A user shell shows you the mailbox. Root shows you the logs, and logs put an account at a terminal.
+    You need root. A user shell shows you the mail file. Root shows you the logs, and logs put an account at a terminal.
     There's a sudo rule on that box begging to be abused. Take it.
     -> hub
 // Puzzle chains R1 browser (P1): retires once the player has been inside;
@@ -263,7 +263,7 @@ Course. Which one.
     ~ scanning_guide_hint_given = true
     -> guides_menu
 + { gitsecrets_guide_offered and not gitsecrets_guide_hint_given } [Secrets in git history.]
-    Credentials in commit history. Classic. Read the log, then check the stash. #give_item:lab-workstation:m08_gitsecrets_field_guide
+    Credentials in commit history. Classic. Read the log, every commit of it. #give_item:lab-workstation:m08_gitsecrets_field_guide
     ~ gitsecrets_guide_hint_given = true
     -> guides_menu
 + { cyberchef_guide_offered and not cyberchef_guide_hint_given } [Decoding with CyberChef.]

@@ -81,7 +81,7 @@ Agent 0x47 'Nightshade': Of everyone in this building, they picked the one perso
     Agent 0x47 'Nightshade': Don't rule anyone out because they wrote the list. #set_global:nightshade_suspected:true
     Narrator: He holds your eye a moment longer than a colleague would.
     -> back
-+ { mole_identified and found_access_logs and not asked_logs } [The root logs put a Crypto Lab terminal on the Portland plan. Forty-seven minutes.]
++ { mole_identified and found_access_logs and not asked_logs } [The root logs put Cryptography Lab terminal 03 on the Portland plan. Forty-seven minutes.]
     ~ asked_logs = true
     ~ nightshade_suspected = true
     Agent 0x47 'Nightshade': Then you have root on our own repository. I'm genuinely impressed. Nobody's touched that box in years.

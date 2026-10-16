@@ -728,3 +728,30 @@ Routes: every confrontation talk now picks "Face him" first (r1 "Read the wall",
 Checks (after the last edit): `scripts/compile-ink.sh m08_the_mole` 12/12. Routes 26/26 "all expectations met", 0 FAILs, longest run 9 on every route (the briefing; the confrontation opening is now 8 at most). dialoguelint: no findings (one line-len and one "however" transition on the first wordings, fixed). reopencheck: 0 problems (m08 phone 1800 reopens). loopcheck 200 steps x 6 strategies on ten state sets across the eight changed files (confrontation with Okafor's file and with an accusation tidy, Nightshade with the audit, Cipher, Phantom, Director at the reading and at the second misread, phone, briefing, off-duty agent): no runtime errors. Validator (`--no-graph`, with ink): schema valid, all ink valid, lint clean, only the known warnings. `check_door_alignment.py`: all OK. `slot_audit.py`: 0 problems, `recording_lamp` on `hq_recording1` at 70,24.
 
 Owed at the Sonnet browser check: the lamp's unlit face before the confrontation, lit during it, dark after the fate (and after a reload in each state); the door sign; the wall beat both ways; the safe's three files; the reworded accusation choices fit their buttons.
+
+## SecGen alignment (2026-10-16)
+
+Source: `docs/agents/SECGEN_CLAIMS_CHECK.md`. Settled there: the built scenario is `break_escape/safetynet/m08_the_mole.xml` (U1 closed); GitList 0.4.0 with no credentials, CVE-2018-1000533, credentials in the repository history (no stash), mail to architect@entropy.onion, root through a sudo rule. Corrected here: no git stash; the mail sits in a file in the home directory; the root payload names "Cryptography Lab terminal 03" and 00:47:00; the login name is random per build, so no account called `nightshade_ops` exists. Option B is kept: the box gives a terminal and a time, never a person. The deduction is unchanged (terminal 03 is in the Cryptography Lab, and the CL-1 door audit still decides who was inside).
+
+Header: the erb's U1 note now says the built scenario is m08_the_mole.xml and records the terminal name and the random login.
+
+Lines changed. Voiced: the Narrator and Phantom lines marked (V); the rest are texts, documents or player choices.
+- erb, HaX text on flag 1: "... Now read: the history and the stash. Want the git secrets guide?" → "... Now read the history, not just the files. Want the git secrets guide?"
+- `m08_phone_agent_0x99.ink`, VM step hint: "Read the history, not just the files. Then the stash: git keeps what people meant to throw away." → "Read the history, not just the files. Git keeps what people meant to throw away."
+- `m08_phone_agent_0x99.ink`, git secrets guide: "Credentials in commit history. Classic. Read the log, then check the stash." → "Credentials in commit history. Classic. Read the log, every commit of it."
+- `m08_phone_agent_0x99.ink`, flag 3 to 4 hint: "You need root. A user shell shows you the mailbox. Root shows you the logs, ..." → "You need root. A user shell shows you the mail file. Root shows you the logs, ..."
+- erb task `recover_stashed_credentials` title (id kept): "Recover the stashed credentials and submit the second flag" → "Recover the credentials left in the repository history and submit the second flag"; flag 2 reward description "Stashed credentials recovered from repository history" → "Credentials recovered from repository history".
+- erb, Server Access Log excerpt: "TERM crypto-lab-04" → "SOURCE Cryptography Lab terminal 03".
+- erb, HaX flag 4 texts (five unnamed variants): "A terminal and a time, no face: crypto-lab-04, D-2 10:38, ..." → "A terminal and a time, no face: Cryptography Lab terminal 03, D-2 10:38, ..."; the three named variants "Crypto Lab terminal, forty-seven minutes" → "Cryptography Lab terminal 03, forty-seven minutes".
+- erb credits: "ROOT: Through a sudo rule. The logs put the plan on a Crypto Lab terminal for forty-seven minutes." → "... on Cryptography Lab terminal 03 for forty-seven minutes."
+- erb evidence wall (both named variants): "2. Stashed credentials -- committed to history, resolve to nightshade_ops." → "2. Credentials -- committed to the repository history. They open one account."; "4. Root -- access logs: ... Crypto Lab terminal." → "... Cryptography Lab terminal 03."; the unnamed variant "The chain is in: a Crypto Lab terminal, D-2 10:38 UTC" → "The chain is in: Cryptography Lab terminal 03, D-2 10:38 UTC".
+- erb Leak Timeline: "ANOMALY: operations plan opened, 47 min, Crypto Lab terminal" → "... Cryptography Lab terminal 03"; "Full planning access and a Crypto Lab terminal." → "Full planning access and a terminal in the Cryptography Lab."
+- erb, Phantom's notes: "from a Crypto Lab terminal, for forty-seven minutes" → "from Cryptography Lab terminal 03, for forty-seven minutes".
+- `m08_suspect_phantom.ink` choice: "[I read your notes. The Crypto Lab terminal.]" → "[I read your notes. Terminal 03 in the Cryptography Lab.]"; (V) Phantom: "Someone's been in mission_planning from a Crypto Lab terminal." → "... from Cryptography Lab terminal 03."
+- `m08_suspect_nightshade.ink` choice: "[The root logs put a Crypto Lab terminal on the Portland plan. Forty-seven minutes.]" → "[The root logs put Cryptography Lab terminal 03 on the Portland plan. Forty-seven minutes.]"
+- (V) `m08_nightshade_confrontation.ink` Narrator: "Root, and forty-seven minutes on the Portland plan from a Crypto Lab terminal." → "... from Cryptography Lab terminal 03."
+- Route `r6_badge_printer_misreads_before_box.json`: its pick follows the new Nightshade choice.
+
+Left alone: "Crypto Lab" where it names the room (door sign "Cryptography Lab"); the debrief's "credentials in its history ... a sudo rule" (confirmed); the mail's `From: nightshade_deep_state` (game and payload agree; it is a mail alias, not the login); "logs" for the root payload's log text.
+
+Checks: `scripts/compile-ink.sh m08_the_mole` 12/12; all 26 m08 routes meet their expectations; dialoguelint no findings (one line-len on a first wording, shortened); reopencheck 0 problems; `validate_scenario.rb --skip-ink --no-graph` no errors, known warnings only.

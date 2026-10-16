@@ -380,7 +380,7 @@ Whatever she offered, she's very good at making a bad trade sound reasonable. It
 - flag2_submitted and not flag2_discussed:
     ~ flag1_discussed = true
     ~ flag2_discussed = true
-    You're on the box. Their home directory will tell you who's been living on it.
+    You're on the box. Its user accounts will tell you who's been living on it.
 - else:
     ~ flag1_discussed = true
     Now use it. The upload flaw needs you logged in, and you are.
@@ -814,7 +814,7 @@ Cloning guide's in your kit. Prox badges like theirs shout the same number at an
 
 Recon guide's on its way.
 
-Map what's alive on that subnet before you touch anything. The Bludit box won't be the only thing listening.
+Map what's alive on that subnet before you touch anything. Then find out everything the research box is running, not just the website.
 
 -> request_recon_guide_choices
 

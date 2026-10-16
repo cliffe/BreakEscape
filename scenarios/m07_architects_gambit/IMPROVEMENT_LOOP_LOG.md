@@ -863,3 +863,22 @@ Checks:
 
 Lines changed (not voiced except Elena): Elena Rodriguez, three password lines gain "capitals as written" (the first "capitals exactly as I've written them"); Listener Capture text (not voiced).
 
+
+## SecGen alignment (2026-10-16)
+
+Source: `docs/agents/SECGEN_CLAIMS_CHECK.md`. Confirmed: flag 1 NFS export, flag 2 a netcat listener on a high port, flag 3 the user account, flag 4 root through a sudo rule, one target host. Not confirmed: SSH (neither the XML nor the module sets it up), a home-directory path, a Kali IP (none is stated in the game text).
+
+Flag labels: the placeholder flag strings at positions 3 and 4 had root at 3. Gameplay already treated 3 as the login and 4 as root (tasks, flagRewards, HaX), so only the labels moved.
+- erb `flags` and the relay's `flags_for_vm` (both lists): `flag{root_on_attack_host}`, `flag{cascade_scripts_terminated}` → `flag{operator_account_login}`, `flag{root_on_attack_host}`. These are dev/standalone placeholders; in Hacktivity the real flags come from the build.
+- `CONTRACT.md` flag table rows 3 and 4 updated to match.
+
+Lines changed (HaX phone and a task title, text only, not voiced):
+- `m07_phone_agent_0x99.ink`, "Where do I stand?" ladder: "One SSH login: the name from the share, the password from the listener. The flag's in its home directory. The moment you log in, the clock starts." → "One login: the name from the share, the password from the listener. That account holds the next flag. The moment you log in, the clock starts."
+- `vm_hint_3`: "You've got a name from the share and a password from the listener. That's one SSH login. The flag's in its home directory." → "You've got a name from the share and a password from the listener. That's one login, and that account holds the next flag."
+- `guide_ssh`: "You've got a name from the share and a password from the listener. That's one login. Use it and look in the home directory." → "... That's one login. Use it and look through what that account holds."
+- erb task `escalate_on_attack_host` title: "Log in to the attack host with the recovered account; submit the flag in its home directory at the relay" → "Log in to the attack host with the recovered account; submit that account's flag at the relay"
+- Route `r21_where_do_i_stand_ladder.json`: its quote follows the new ladder line.
+
+Left alone: the SSH field guide is still offered at flag 2 ("want the SSH guide?") and its menu line. Offering a guide doesn't claim the box runs SSH, but if a build shows no SSH, the offer should point at another sheet (user item). The debrief's "that account could make itself root" already matches the XML.
+
+Checks: `scripts/compile-ink.sh m07_architects_gambit` 8/8; all 33 m07 routes meet their expectations (r21 after its quote update); dialoguelint: no new findings (the six pre-existing notes are in other files); reopencheck 0 problems; `validate_scenario.rb --skip-ink --no-graph` no errors, known warnings only.

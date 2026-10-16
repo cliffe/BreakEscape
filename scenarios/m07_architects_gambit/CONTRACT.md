@@ -208,8 +208,10 @@ multi-stage.
 |---|---|---|---|---|
 | 1 | `scada_attack_host:flag_1` | `flag{nfs_coordination_traffic}` | Mount the misconfigured NFS export, recover the attack timeline | **The coordination traffic** — four operations, one schedule, one authority. Carries the Trojan Horse dormancy field (`T+9d`) and the `EHR-`/`CAD-` vendor manifest |
 | 2 | `scada_attack_host:flag_2` | `flag{netcat_c2_intercepted}` | Service enumeration, netcat C2 channel | Override codes **and the SCADA password** — the redundant route past Elena |
-| 3 | `scada_attack_host:flag_3` | `flag{root_on_attack_host}` | Privilege escalation to root | Control of the host running the countdown |
-| 4 | `scada_attack_host:flag_4` | `flag{cascade_scripts_terminated}` | Terminate the attack processes, lock out remote access | The grid holds; unlocks `crisis_control_system` |
+| 3 | `scada_attack_host:flag_3` | `flag{operator_account_login}` | Log in to the user account (name from the share, password from the listener) | The host notices; the countdown arms |
+| 4 | `scada_attack_host:flag_4` | `flag{root_on_attack_host}` | Root via a sudo rule | The grid holds; unlocks `crisis_control_system` |
+
+(SecGen alignment 2026-10-16: position 3 is the user account and position 4 is root, per the SecGen XML. The old placeholder slugs had root at 3.)
 
 **WP2 owns `flagRewards`.** Required `set_global` writes, at minimum:
 

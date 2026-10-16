@@ -80,7 +80,7 @@ Agent 0x88 'Phantom': And yes, I put myself there too. Charmed?
     # influence_increased
     -> back
 // PASS 5 (M3): a wrong accusation costs his lead until the player apologises.
-+ { found_phantom_lead and not asked_help } [I read your notes. The Crypto Lab terminal.]
++ { found_phantom_lead and not asked_help } [I read your notes. Terminal 03 in the Cryptography Lab.]
     { accused_phantom and not apologised:
         Agent 0x88 'Phantom': You put it on me to my face. You don't get my notes as well.
         Agent 0x88 'Phantom': Apologise, or work it out on your own.
@@ -88,7 +88,7 @@ Agent 0x88 'Phantom': And yes, I put myself there too. Charmed?
     }
     ~ asked_help = true
     Narrator: He leans in, and all the charm goes out of his face.
-    Agent 0x88 'Phantom': Then you're further than I got. Someone's been in mission_planning from a Crypto Lab terminal.
+    Agent 0x88 'Phantom': Then you're further than I got. Someone's been in mission_planning from Cryptography Lab terminal 03.
     Agent 0x88 'Phantom': Forty-seven minutes, on a file you'd read in five.
     Agent 0x88 'Phantom': I couldn't get root on the repo to prove whose account it was. You've got the Director's blessing. I've got a reprimand pending.
     Agent 0x88 'Phantom': My door audit's still in the archive printer, if nobody's binned it. Doors tell you who was in the room. The box tells you when.

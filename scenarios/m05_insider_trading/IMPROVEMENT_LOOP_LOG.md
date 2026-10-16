@@ -1044,3 +1044,15 @@ Task title (not voiced), new: "Put a name to it, with a reason" (aim 2, required
 - After Owen's password: the panel shows "Put a name to it, with a reason" under aim 2; entering the server room shows the VM aim; naming Torres with a reason ticks it and opens "Find Out Why".
 - The briefing closes by itself on "Go." and the Mission Brief notes popup still follows.
 - The fight line's narration, both HaX texts on the turn, and the open-hand text after the fate.
+
+## SecGen alignment (2026-10-16)
+
+Source: `docs/agents/SECGEN_CLAIMS_CHECK.md` (fact check of the game's VM text against the SecGen XML; no SecGen files opened here). The manifest's naming of Torres (D1) is left as it is: that is a SecGen change for the user.
+
+Lines changed (HaX phone, text only, not voiced):
+- `m05_phone_agent_0x99.ink`, flag news after flag 2: "You're on the box. Their home directory will tell you who's been living on it." → "You're on the box. Its user accounts will tell you who's been living on it." (The check found the manifest written into the manager account's files, but the module's path is Windows-style, so "home directory" is unconfirmed.)
+- `m05_phone_agent_0x99.ink`, `request_recon_guide`: "Map what's alive on that subnet before you touch anything. The Bludit box won't be the only thing listening." → "Map what's alive on that subnet before you touch anything. Then find out everything the research box is running, not just the website." (The XML has one target server and no other services, D12 S5.)
+
+Checked and left alone: flag 1 handover note, flag 2 authenticated upload, flag 4 root through a sudo rule (all confirmed); the sudo guide's name (the root route is a sudo rule).
+
+Checks: `scripts/compile-ink.sh m05_insider_trading` 10/10; all 41 m05 routes meet their expectations; dialoguelint: no new findings (two pre-existing notes in other files); reopencheck 0 problems; `validate_scenario.rb --skip-ink --no-graph` no errors, known warnings only.

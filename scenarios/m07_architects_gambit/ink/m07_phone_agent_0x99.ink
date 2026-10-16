@@ -363,7 +363,7 @@ HaX here, Agent. I've got your channel and the board.
     Open the control room door, north of the server hall, before you log in on their host.
     -> password_line ->
 - not flag3_submitted:
-    One SSH login: the name from the share, the password from the listener. The flag's in its home directory. The moment you log in, the clock starts.
+    One login: the name from the share, the password from the listener. That account holds the next flag. The moment you log in, the clock starts.
     {projection_revised and team_assigned and team_assignment != "trojan_horse" and not team_redirected and not redirect_window_closed:
         If you mean to move the team, do it before you log in.
     }
@@ -826,7 +826,7 @@ Submit its flag and the relay hands you the capture. The control room password's
 
 === vm_hint_3 ===
 ~ vm3_hint_given = true
-You've got a name from the share and a password from the listener. That's one SSH login. The flag's in its home directory.
+You've got a name from the share and a password from the listener. That's one login, and that account holds the next flag.
 
 But open the control room door first. The moment you log in, assume they see you and start the clock.
 {projection_revised and team_assigned and team_assignment != "trojan_horse" and not team_redirected and not redirect_window_closed:
@@ -932,7 +932,7 @@ Read, don't touch. Go.
 #give_item:lab-workstation:m07_ssh_field_guide
 SSH guide's in your kit. The worked example's the hospital job. Skip the Hydra half; you already have the pair.
 
-You've got a name from the share and a password from the listener. That's one login. Use it and look in the home directory.
+You've got a name from the share and a password from the listener. That's one login. Use it and look through what that account holds.
 
 Log in when the control room door's open, not before. Go.
 -> hub
