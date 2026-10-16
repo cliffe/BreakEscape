@@ -23,6 +23,9 @@ VAR asked_database = false
 VAR asked_next = false
 VAR accused_vector = false
 VAR accused_phantom = false
+// Blind A (M1): the apology is remembered.
+VAR vector_apologised = false
+VAR phantom_apologised = false
 VAR netherton_ko = false
 // Round 2 (re-review m5): set only by the KO safety net before the fate.
 VAR nightshade_ko_before_fate = false
@@ -98,6 +101,9 @@ Director Magnus Netherton: Say it, Agent. Whatever you think of me tonight. I wo
 { accused_vector or accused_phantom:
     Director Magnus Netherton: {accused_vector and accused_phantom:You accused both of the innocent men to their faces.|You accused {accused_vector:Vector|Phantom} to his face.} I read the transcripts.
     Director Magnus Netherton: It is in the file now, and it will follow {accused_vector and accused_phantom:them|him} longer than it follows you.
+    { (accused_vector and vector_apologised) or (accused_phantom and phantom_apologised):
+        Director Magnus Netherton: So is the apology you went back to make{accused_vector and accused_phantom and not (vector_apologised and phantom_apologised): to {vector_apologised:Vector|Phantom}}. It does not unsay the accusation. It sits beside it.
+    }
 }
 { vector_hostile or phantom_hostile:
     Director Magnus Netherton: You hit {vector_hostile and phantom_hostile:Vector and Phantom|{vector_hostile:Vector|Phantom}} on my floor. {vector_hostile and phantom_hostile:Two innocent men.|An innocent man.} That goes in the file beside everything else.

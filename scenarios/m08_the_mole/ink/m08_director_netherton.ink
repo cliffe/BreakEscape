@@ -118,7 +118,7 @@ Director Magnus Netherton: Ask me what you need. Then go and prove something.
     -> back
 + { not asked_vector } [Tell me about Vector.]
     ~ asked_vector = true
-    Director Magnus Netherton: Agent 0x23. Signals and cryptography, on the operations floor. Brilliant, friendless, keeps hours that make the roster clerk nervous.
+    Director Magnus Netherton: Agent 0x23. Intelligence analyst, signals and cryptography, on the operations floor. Brilliant, friendless, keeps hours that make the roster clerk nervous.
     Director Magnus Netherton: He carries a crypto annex badge and keeps a locked screen, and he has never once explained either. I should like to know why.
     -> back
 + { not asked_phantom } [Tell me about Phantom.]
@@ -198,12 +198,13 @@ Director Magnus Netherton: Not yet. Talk to all three first. I want them to have
 === access_offer ===
 ~ access_offered = true
 Director Magnus Netherton: Then, access. I am not handing my card to anyone tonight. The mole reads this building's paperwork, and a hand-over is paperwork.
-Narrator: He turns back to the maps. His lanyard hangs at his chest, card outward, well inside a cloner's reach.
-Director Magnus Netherton: Stand where you like, Agent. I shall be looking at the maps.
+// Engine regression fixes (2026-10-17, R1): the office has blinds, a globe and a desk, no maps.
+Narrator: He turns back to the window and parts two slats of the blind with a finger. His lanyard hangs at his chest, card outward, well inside a cloner's reach.
+Director Magnus Netherton: Stand where you like, Agent. I shall be looking out of the window.
 -> back
 
 === clone_card ===
-Narrator: You step up beside him, as if to read the maps. The cloner in your jacket comes within an inch of his lanyard.
+Narrator: You step up beside him, as if to look out through the slats. The cloner in your jacket comes within an inch of his lanyard.
 #clone_keycard:server_zone_badge
 Narrator: He does not look down.
 -> clone_debrief

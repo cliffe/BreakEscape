@@ -39,7 +39,8 @@ VAR hub_quiet = false
 { nightshade_interviewed: -> hub }
 // PASS 2 review: set first; a brief-gated mapping completes interview_nightshade (lesson 27).
 ~ nightshade_interviewed = true
-Narrator: The Crypto Lab is quiet. Nightshade looks up from a desk with nothing on it, no photographs, no mug, and smiles as if the last nine days never happened.
+// Engine regression fixes (2026-10-17, R6): he stands mid-lab, not at his desk, so he turns rather than looks up.
+Narrator: The Crypto Lab is quiet. Nightshade turns as you come in and smiles as if the last nine days never happened. His desk behind him is bare: no photographs, no mug.
 
 Agent 0x47 'Nightshade': There you are. I wondered when they'd send you.
 Agent 0x47 'Nightshade': Of everyone in this building, they picked the one person who knows my tells. A compliment, or very poor planning. Ask me anything.
@@ -78,8 +79,8 @@ Agent 0x47 'Nightshade': Of everyone in this building, they picked the one perso
     ~ nightshade_suspected = true
     Agent 0x47 'Nightshade': I did. The access a little too broad, the hours a little too odd, and the calm. Good. You were listening.
     Agent 0x47 'Nightshade': I'd add one thing now, if I were giving that briefing again.
+    // Blind A (D1, M5): the narrator's "holds your eye" tell cut; the line does the work.
     Agent 0x47 'Nightshade': Don't rule anyone out because they wrote the list. #set_global:nightshade_suspected:true
-    Narrator: He holds your eye a moment longer than a colleague would.
     -> back
 + { mole_identified and found_access_logs and not asked_logs } [The root logs put Cryptography Lab terminal 03 on the Portland plan. Forty-seven minutes.]
     ~ asked_logs = true
@@ -108,8 +109,9 @@ Agent 0x47 'Nightshade': Of everyone in this building, they picked the one perso
 + { (asked_audit or asked_training) and not gave_locker_key } [Your locker in the break room. I want to see inside it.]
     ~ gave_locker_key = true
     #give_item:key:nightshade_locker_key
-    Narrator: He holds it out, and keeps hold of it a second longer than he needs to.
-    Agent 0x47 'Nightshade': Take it. 0x47, second from the end. I'd genuinely encourage it.
+    // Blind A (D1, M5): no second tell on the hand-over, and no second "genuinely encourage".
+    Narrator: He takes it off his ring without hesitating and holds it out.
+    Agent 0x47 'Nightshade': Take it. 0x47, second from the end.
     -> back
 // Phase 4 dialogue C1 (D8-16): once said, it isn't on offer again.
 + { not mole_identified and not accused_nightshade } [I think it's you, Nightshade. (Out loud. The whole floor will hear.)] -> accuse

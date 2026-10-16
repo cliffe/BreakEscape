@@ -111,10 +111,12 @@ Agent 0x88 'Phantom': And yes, I put myself there too. Charmed?
     -> back
 + { accused_phantom and not mole_identified and not apologised } [I was wrong to put it on you. I'm sorry.]
     ~ apologised = true
+    #set_global:phantom_apologised:true
     Agent 0x88 'Phantom': An apology before the evidence. Either you've found something, or you've got manners. I'll take either.
     -> back
 + { accused_phantom and mole_identified and not apologised } [You were right. I was wrong to put it on you.]
     ~ apologised = true
+    #set_global:phantom_apologised:true
     Agent 0x88 'Phantom': Accepted, and I'll be insufferable about it for a week. Then I'll stop, because you'll have earned that too.
     Agent 0x88 'Phantom': For what it's worth, I'd have accused me. Go and finish it.
     ~ phantom_influence += 2

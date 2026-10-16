@@ -5,7 +5,7 @@
 { "talk": "netherton", "picks": ["I'm ready"] },
 { "enter": "operations_floor" },
 { "event": "npc_hostile_state_changed", "data": { "npcId": "background_analyst", "isHostile": true } },
-{ "said": ["The analyst's swinging", "She won't talk to you again tonight"] },
+{ "said": ["The analyst's swinging", "She won't talk to you while she's like this"] },
 { "ko": "background_analyst" },
 { "expect": { "analyst_ko": true, "nightshade_tipped_off": true, "nightshade_tidied": false } },
 { "said": ["You've put a junior analyst on the ops floor out cold"] },

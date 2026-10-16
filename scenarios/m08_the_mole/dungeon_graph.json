@@ -28,13 +28,13 @@
     },
     {
       "id": "door_interrogation_room",
-      "label": "Interrogation -- Recording In Progress<br/>PIN lock",
+      "label": "Interrogation Suite<br/>PIN lock",
       "kind": "lock",
       "optional": false
     },
     {
       "id": "interrogation_room",
-      "label": "Interrogation -- Recording In Progress",
+      "label": "Interrogation Suite",
       "kind": "room",
       "optional": false
     },
@@ -51,8 +51,8 @@
       "optional": true
     },
     {
-      "id": "lock_cipher_locker",
-      "label": "Cipher Locker",
+      "id": "lock_vector_locker",
+      "label": "Vector Locker",
       "kind": "lock",
       "optional": false
     },
@@ -117,6 +117,18 @@
       "optional": false
     },
     {
+      "id": "sealed_vetting_query_agent_0x23",
+      "label": "Sealed Vetting Query -- Agent 0x23",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "sealed_standards_referral_agent_0x88",
+      "label": "Sealed Standards Referral -- Agent 0x88",
+      "kind": "item",
+      "optional": false
+    },
+    {
       "id": "director_s_safe",
       "label": "Director's Safe",
       "kind": "item",
@@ -159,14 +171,14 @@
       "optional": false
     },
     {
-      "id": "npc_agent_0x23_cipher",
-      "label": "Agent 0x23 'Cipher'",
+      "id": "npc_agent_0x23_vector",
+      "label": "Agent 0x23 'Vector'",
       "kind": "key",
       "optional": false
     },
     {
-      "id": "cipher_s_locker_key",
-      "label": "Cipher's Locker Key",
+      "id": "vector_s_locker_key",
+      "label": "Vector's Locker Key",
       "kind": "key",
       "optional": false
     },
@@ -328,7 +340,7 @@
     },
     {
       "id": "vmch_recover_stashed_credentials",
-      "label": "Recover the stashed credentials and submit the second flag",
+      "label": "Recover the credentials left in the repository history and submit the second flag",
       "kind": "vm",
       "optional": false
     },
@@ -386,7 +398,7 @@
     },
     {
       "from": "lock_pick_kit",
-      "to": "lock_cipher_locker",
+      "to": "lock_vector_locker",
       "soft": true
     },
     {
@@ -445,6 +457,16 @@
       "soft": false
     },
     {
+      "from": "lock_director_safe",
+      "to": "sealed_vetting_query_agent_0x23",
+      "soft": false
+    },
+    {
+      "from": "lock_director_safe",
+      "to": "sealed_standards_referral_agent_0x88",
+      "soft": false
+    },
+    {
       "from": "director_office",
       "to": "director_s_safe",
       "soft": true
@@ -491,17 +513,17 @@
     },
     {
       "from": "operations_floor",
-      "to": "npc_agent_0x23_cipher",
+      "to": "npc_agent_0x23_vector",
       "soft": false
     },
     {
-      "from": "npc_agent_0x23_cipher",
-      "to": "cipher_s_locker_key",
+      "from": "npc_agent_0x23_vector",
+      "to": "vector_s_locker_key",
       "soft": false
     },
     {
-      "from": "cipher_s_locker_key",
-      "to": "lock_cipher_locker",
+      "from": "vector_s_locker_key",
+      "to": "lock_vector_locker",
       "soft": false
     },
     {
@@ -591,11 +613,11 @@
     },
     {
       "from": "break_room",
-      "to": "lock_cipher_locker",
+      "to": "lock_vector_locker",
       "soft": false
     },
     {
-      "from": "lock_cipher_locker",
+      "from": "lock_vector_locker",
       "to": "token_pouch_locker_0x23",
       "soft": true
     },

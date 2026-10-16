@@ -105,12 +105,14 @@ Agent 0x23 'Vector': I've run the inference on myself and it's not flattering. A
 // accusation now costs his row.
 + { accused_vector and not mole_identified and not apologised } [I was wrong to say that. I'm sorry.]
     ~ apologised = true
+    #set_global:vector_apologised:true
     Narrator: He looks at you for a long second, as if checking the sum.
     Agent 0x23 'Vector': Before you've proved anything either way. That's either decent or tactical.
     Agent 0x23 'Vector': I'll take it. People don't usually come back at all.
     -> back
 + { accused_vector and mole_identified and not apologised } [The logs cleared you. I was wrong to say it.]
     ~ apologised = true
+    #set_global:vector_apologised:true
     Narrator: He takes his glasses off and cleans them on his shirt for longer than they need.
     Agent 0x23 'Vector': Thank you. People don't usually come back to say that.
     Agent 0x23 'Vector': They just stop looking at you, and you're meant to work out that you've been forgiven for something you didn't do.

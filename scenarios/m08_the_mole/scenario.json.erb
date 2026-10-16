@@ -187,11 +187,13 @@ backup_plain = "SENT -- To: architect@entropy.onion  From: nightshade_deep_state
           { "text": "TOMB GAMMA: Named, not located -- the coordinate is still in Nightshade's head", "style": "warning", "condition": "!globalVars.tomb_gamma_location_known" },
           { "text": "" },
           { "text": "── THE SUSPECTS ──", "style": "section-header" },
-          { "text": "VECTOR: Accused to his face, then cleared by the logs", "style": "warning", "condition": "globalVars.accused_vector && !globalVars.vector_ko" },
+          { "text": "VECTOR: Accused to his face, then cleared by the logs", "style": "warning", "condition": "globalVars.accused_vector && !globalVars.vector_apologised && !globalVars.vector_ko" },
+          { "text": "VECTOR: Accused to his face, cleared by the logs. You went back and apologised.", "style": "warning", "condition": "globalVars.accused_vector && globalVars.vector_apologised && !globalVars.vector_ko" },
           { "text": "VECTOR: Knocked out. Innocent.", "style": "warning", "condition": "globalVars.vector_ko" },
           { "text": "VECTOR: Struck on the ops floor and left standing. Innocent.", "style": "warning", "condition": "globalVars.vector_hostile && !globalVars.vector_ko" },
           { "text": "VECTOR: Cleared on the evidence. His post-quantum work goes on.", "style": "entry", "condition": "!globalVars.accused_vector && !globalVars.vector_ko && !globalVars.vector_hostile" },
-          { "text": "PHANTOM: Accused to his face, then cleared by a flight manifest", "style": "warning", "condition": "globalVars.accused_phantom && !globalVars.phantom_ko" },
+          { "text": "PHANTOM: Accused to his face, then cleared by a flight manifest", "style": "warning", "condition": "globalVars.accused_phantom && !globalVars.phantom_apologised && !globalVars.phantom_ko" },
+          { "text": "PHANTOM: Accused to his face, cleared by a flight manifest. You went back and apologised.", "style": "warning", "condition": "globalVars.accused_phantom && globalVars.phantom_apologised && !globalVars.phantom_ko" },
           { "text": "PHANTOM: Knocked out mid-hunt. Innocent, and the only other person looking.", "style": "warning", "condition": "globalVars.phantom_ko" },
           { "text": "PHANTOM: Struck mid-hunt and left standing. Innocent.", "style": "warning", "condition": "globalVars.phantom_hostile && !globalVars.phantom_ko" },
           { "text": "PHANTOM: Cleared. His off-book hunt pointed the right way.", "style": "entry", "condition": "!globalVars.accused_phantom && !globalVars.phantom_ko && !globalVars.phantom_hostile && globalVars.found_phantom_lead" },
@@ -215,7 +217,7 @@ backup_plain = "SENT -- To: architect@entropy.onion  From: nightshade_deep_state
           { "text": "GO-BAG: Gone from his locker the night you tipped him off", "style": "warning", "condition": "globalVars.found_go_bag && globalVars.nightshade_tidied" },
           { "text": "THE USB STICK: His thumbprint on the casing. Nobody planted the mail.", "style": "entry", "condition": "globalVars.nightshade_print_lifted && !globalVars.nightshade_tidied" },
           { "text": "THE USB STICK: Wiped after you tipped him off. His thumbprint survived it.", "style": "warning", "condition": "globalVars.nightshade_print_lifted && globalVars.nightshade_tidied" },
-          { "text": "THE SERVER ROOM: The Director's card, cloned off his lanyard while he studied the maps", "style": "entry", "condition": "globalVars.netherton_card_cloned" },
+          { "text": "THE SERVER ROOM: The Director's card, cloned off his lanyard while he watched the window", "style": "entry", "condition": "globalVars.netherton_card_cloned" },
           { "text": "THE SERVER ROOM: A badge off SAFETYNET's own visitor printer", "style": "entry", "condition": "globalVars.badge_cloned" },
           { "text": "THE SERVER ROOM: The Director's own card, picked up off his office floor", "style": "warning", "condition": "globalVars.netherton_card_taken && !globalVars.netherton_card_cloned" },
           { "text": "GLOBAL THREAT DATABASE: Confirmed stolen during the four-site night", "style": "warning", "condition": "globalVars.database_theft_understood" },
@@ -570,6 +572,7 @@ CREDITS
           "id": "opening_briefing_cutscene",
           "displayName": "ATHENA",
           "npcType": "person",
+          "gender": "female",
           "position": { "x": 500, "y": 400 },
           "spriteSheet": "female_office_worker_v2",
           "spriteTalk": "assets/characters/female_office_worker_talk.png",
@@ -626,6 +629,7 @@ CREDITS
           "id": "receptionist_ai",
           "displayName": "ATHENA",
           "npcType": "person",
+          "gender": "female",
           <%# PASS 2 (lesson 11): positions are tiles, not pixels. 300,300 put her
               hundreds of tiles outside the 10x10 lobby. Clear floor in front of
               the desk. PASS 5 (room dressing): room_hq_lobby's counter is x 100-210,
@@ -930,13 +934,34 @@ CREDITS
     ["nightshade_confrontation", "He's coming over the table."],
     ["background_analyst", "The analyst's swinging."],
     ["background_agent", "The off-duty agent's coming at you."]].each do |id, opener| %>
+<%# Engine regression fixes (2026-10-17, R2): the <npc>_hostile latch moved out
+    of the onceOnly text into its own mapping, so a second fight after a Restart
+    sets it again. A Restart after a knockout calms a non-KO'd NPC and emits
+    npc_hostile_state_changed {isHostile:false, reset:true} (engine 7.1d): that
+    undoes the fight, so the latch clears and he can be talked to again (HaX's
+    ladder, the Director's interview count, the debrief and credits then read
+    as if he was never struck). The *_ko latches stay: a KO'd NPC isn't reset.
+    The texts below say "while he's like this", which stays true either way. %>
+<% if hostile_latch[id] %>
+            {
+              "eventPattern": "npc_hostile_state_changed",
+              "condition": "data.npcId === '<%= id %>' && data.isHostile === true",
+              "cooldown": 0,
+              "setGlobal": { "<%= hostile_latch[id] %>": true }
+            },
+            {
+              "eventPattern": "npc_hostile_state_changed",
+              "condition": "data.npcId === '<%= id %>' && data.isHostile === false && data.reset === true",
+              "cooldown": 0,
+              "setGlobal": { "<%= hostile_latch[id] %>": false }
+            },
+<% end %>
             {
               "eventPattern": "npc_hostile_state_changed",
               "condition": "data.npcId === '<%= id %>' && data.isHostile === true && data.restored !== true",
               "onceOnly": true,
-<% if id == "director_netherton" %>              "setGlobal": { "netherton_hostile": true, "brief_taken": true },
+<% if id == "director_netherton" %>              "setGlobal": { "brief_taken": true },
               "completeTask": "brief_with_netherton",
-<% elsif hostile_latch[id] %>              "setGlobal": { "<%= hostile_latch[id] %>": true },
 <% end %>              "sendTimedMessage": { "delay": 1000, "message": <%= (opener + " Q switches to fists (again for a harder punch), then E or click when he's in front. Face him squarely.").then { |t| id == "background_analyst" ? t.sub("when he's", "when she's").sub("Face him", "Face her") : t }.to_json %> }
             },
 <% if id == "director_netherton" %>
@@ -944,20 +969,20 @@ CREDITS
               "eventPattern": "npc_hostile_state_changed",
               "condition": "data.npcId === 'director_netherton' && data.isHostile === true && data.restored !== true && globalVars.mole_identified !== true",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 5500, "message": "He won't talk again tonight. Bring me the door audit. He's slower and won't follow you out of his office. Q until the open hand shows to walk by clicking." }
+              "sendTimedMessage": { "delay": 5500, "message": "He won't talk while he's like this. Bring me the door audit. He's slower and stays in his office. To get clear, click open floor and walk." }
             },
             {
               "eventPattern": "npc_hostile_state_changed",
               "condition": "data.npcId === 'director_netherton' && data.isHostile === true && data.restored !== true && globalVars.mole_identified === true",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 5500, "message": "He won't talk again tonight. Floor him for his card, or walk out: he's slower and won't leave his office. Q until the open hand shows to walk by clicking." }
+              "sendTimedMessage": { "delay": 5500, "message": "He won't talk while he's like this. Floor him for his card, or walk out: he's slower and stays in his office. Click open floor to walk." }
             },
 <% else %>
             {
               "eventPattern": "npc_hostile_state_changed",
               "condition": "data.npcId === '<%= id %>' && data.isHostile === true && data.restored !== true",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 5500, "message": <%= ((id == "background_analyst" ? "She won't talk to you again tonight. Put her down or keep away: she's slower than you. " : "He won't talk to you again tonight. Put him down or keep away: he's slower than you. ") + "Keep pressing Q until the open hand shows to walk by clicking.").to_json %> }
+              "sendTimedMessage": { "delay": 5500, "message": <%= ((id == "background_analyst" ? "She won't talk to you while she's like this. Put her down or keep away: she's slower than you. " : "He won't talk to you while he's like this. Put him down or keep away: he's slower than you. ") + "To get clear, click open floor and walk.").to_json %> }
             },
 <% end %>
 <% end %>
@@ -965,13 +990,13 @@ CREDITS
               "eventPattern": "npc_hostile_state_changed",
               "condition": "data.npcId === 'receptionist_ai' && data.isHostile === true && data.restored !== true",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 1000, "message": "That's ATHENA's reception avatar. She won't hit back, or answer you again, and she logs everything. Keep pressing Q until the open hand shows to walk by clicking." }
+              "sendTimedMessage": { "delay": 1000, "message": "That's ATHENA's reception avatar. She won't hit back, or answer you now, and she logs everything. Q until the open hand shows to use anything." }
             },
             {
               "eventPattern": "npc_hostile_state_changed",
               "condition": "data.npcId === 'agent_0x99_person' && data.isHostile === true && data.restored !== true",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 1000, "message": "Ow. I'm not hitting back, 0x00, but I'm done talking in person tonight. Ring me. Keep pressing Q until the open hand shows to walk by clicking." }
+              "sendTimedMessage": { "delay": 1000, "message": "Ow. I'm not hitting back, 0x00, but I'm done talking in person tonight. Ring me. Q until the open hand shows to use anything." }
             },
             {
               "_comment": "PASS 3 (P2): the USB stick from Nightshade's locker is opened (container path fires its onPickup). Offers the CyberChef guide.",
@@ -1171,6 +1196,7 @@ CREDITS
           "id": "closing_debrief",
           "displayName": "Director Magnus Netherton",
           "npcType": "person",
+          "gender": "male",
           "position": { "x": 500, "y": 500 },
           "spriteSheet": "netherton",
           "spriteTalk": "assets/characters/netherton_talk.png",
@@ -1362,6 +1388,7 @@ CREDITS
           "id": "director_netherton",
           "displayName": "Director Magnus Netherton",
           "npcType": "person",
+          "gender": "male",
           "position": { "x": 6.8, "y": 6.2 },
           "spriteSheet": "netherton",
           "spriteTalk": "assets/characters/netherton_talk.png",
@@ -1520,6 +1547,7 @@ CREDITS
           "id": "agent_vector",
           "displayName": "Agent 0x23 'Vector'",
           "npcType": "person",
+          "gender": "male",
           "position": { "x": 5.2, "y": 4.8 },
           "spriteSheet": "male_nerd_v2",
           "spriteTalk": "assets/characters/male_nerd_talk.png",
@@ -1573,6 +1601,7 @@ CREDITS
           "id": "background_analyst",
           "displayName": "Junior Analyst",
           "npcType": "person",
+          "gender": "female",
           "position": { "x": 8.2, "y": 7.0 },
           "spriteSheet": "female_office_worker_v2",
           "spriteTalk": "assets/characters/female_office_worker_talk.png",
@@ -1642,6 +1671,7 @@ CREDITS
           "id": "agent_phantom",
           "displayName": "Agent 0x88 'Phantom'",
           "npcType": "person",
+          "gender": "male",
           "position": { "x": 5.2, "y": 3.95 },
           <%# PASS 4 (fix 16): was male_spy_v2, the Director's sprite. In a
               whodunit a suspect shouldn't look like the man running it.
@@ -1904,6 +1934,7 @@ CREDITS
           "id": "agent_nightshade",
           "displayName": "Agent 0x47 'Nightshade'",
           "npcType": "person",
+          "gender": "male",
           "position": { "x": 5.45, "y": 5.8 },
           "spriteSheet": "nightshade",
           "spriteTalk": "assets/characters/nightshade_talk.png",
@@ -1976,7 +2007,7 @@ CREDITS
               "setGlobal": { "in_suite": false }
             }
           ],
-          "observations": "Nightshade looks up from a clean, bare desk and smiles the way he did when he taught your intake."
+          "observations": "Nightshade stands in the middle of the lab, his desk bare behind him, and smiles the way he did when he taught your intake."
         }
       ],
       "objects": [
@@ -2038,6 +2069,7 @@ CREDITS
           "id": "nightshade_confrontation",
           "displayName": "Agent 0x47 'Nightshade'",
           "npcType": "person",
+          "gender": "male",
           "position": { "x": 5.0, "y": 4.2 },
           "spriteSheet": "nightshade",
           "spriteTalk": "assets/characters/nightshade_talk.png",
@@ -2179,6 +2211,7 @@ CREDITS
           "id": "agent_0x99_person",
           "displayName": "Agent HaX",
           "npcType": "person",
+          "gender": "female",
           "position": { "x": 3.0, "y": 7.6 },
           <%# PASS 5 (regression finding 1): HaX's own sheet, bust and visemes, as m01-m07. %>
           "spriteSheet": "agent_hax",
@@ -2204,6 +2237,7 @@ CREDITS
           "id": "background_agent",
           "displayName": "Off-Duty Agent",
           "npcType": "person",
+          "gender": "male",
           "position": { "x": 6.6, "y": 5.3 },
           <%# Round 2: off duty, so a hoodie (male_hacker_hood_v2 has no
               viseme sheet; the talk sheet carries him, as in m06). Frees the
@@ -2389,7 +2423,7 @@ CREDITS
                 "_comment": "PASS 4 (fix 12): the observation no longer names the two encodings; HaX's text and the CyberChef guide carry the hint. PASS 4 (fix 1): a print surface. With the kit, opening it from the inventory starts the dusting panel first ('Use normally' reads the file); fingerprint_collected:nightshade sets nightshade_print_lifted (agent_0x99). The print is on the gloss casing rather than the paper envelope: the kit's surfaces are glossy or textured plastic.",
                 "hasFingerprint": true,
                 "fingerprintOwner": "Nightshade",
-                "fingerprintCandidates": ["Vector", "Phantom", "Director Netherton", "Facilities"],
+                "fingerprintCandidates": ["Vector", "Phantom", "Facilities"],
                 "fingerprintDifficulty": "easy",
                 "fingerprintSurface": "glossy_dark",
                 "onPickup": { "setVariable": { "found_architect_comms_local": true } },
@@ -2526,6 +2560,8 @@ CREDITS
     "nightshade_suspected": false,
     "accused_vector": false,
     "accused_phantom": false,
+    "vector_apologised": false,
+    "phantom_apologised": false,
     "accused_nightshade": false,
 
 <%# --- Evidence latches (redundant sources; hub gating) ------------------- %>
