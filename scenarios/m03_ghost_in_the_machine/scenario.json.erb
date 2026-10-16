@@ -1218,7 +1218,7 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
               "setGlobal": { "guard_attacking": true }
             },
             {
-              "_comment": "Post-engine follow-ups (2026-10-16): a Restart after a knockout resets a non-KO'd Terry calm (engine 7.1d) and emits nothing, so guard_attacking would stay true: no challenges, no lockpick catches, and HaX saying he's after you. Cleared on every load; Terry isn't in the start room, so a still-hostile Terry is re-announced (restored) when his hallway loads, after game_loaded, and the mapping above sets it again. Also cleared if he is ever calmed in play.",
+              "_comment": "Post-engine follow-ups (2026-10-16): a Restart after a knockout resets a non-KO'd Terry calm (engine 7.1d); since 0c599e80 the reset emits npc_hostile_state_changed {isHostile: false, reset: true}, which the isHostile === false mapping uses to clear guard_attacking. Also cleared on every load as a backstop; Terry isn't in the start room, so a still-hostile Terry is re-announced (restored) when his hallway loads, after game_loaded, and the mapping above sets it again. Also cleared if he is ever calmed in play.",
               "eventPattern": "game_loaded",
               "cooldown": 0,
               "setGlobal": { "guard_attacking": false }
