@@ -733,6 +733,21 @@ const STATIC_SWIVEL_PROPS = {
     // ward drug trolley: 34x47 sprite, frames 48x48 with the south view bottom-centred
     drug_trolley1: { base: 'drug-trolley-rotate', frameNumber: 1, offsetX: -7, offsetY: -1,
         body: { w: 30, h: 12, x: 9, y: 35 } },
+    // user, 2026-10-16: wheeled kit and office chairs rotate and collide like the hospital set.
+    // PixelLab 8-rotation frames on a padded canvas, the original sprite kept as its own frame
+    // (the offsets undo the padding, so the starting frame sits on the static image's pixels).
+    instrument_trolley1: { base: 'instrument-trolley-rotate', frameNumber: 2, offsetX: -9, offsetY: -14,
+        body: { w: 30, h: 12, x: 13, y: 42 } },
+    aes_tool_trolley1: { base: 'tool-trolley-rotate', frameNumber: 1, offsetX: -3, offsetY: -8,
+        body: { w: 22, h: 8, x: 5, y: 23 } },
+    book_trolley1: { base: 'book-trolley-rotate', frameNumber: 1, offsetX: -5, offsetY: -4,
+        body: { w: 32, h: 10, x: 8, y: 37 } },
+    'chair-grey-4': { base: 'chair-grey-4-rotate', frameNumber: 1, offsetX: -8, offsetY: -3,
+        body: { w: 18, h: 8, x: 11, y: 31 } },
+    'chair-darkgray-1': { base: 'chair-darkgray-1-rotate', frameNumber: 1, offsetX: -8, offsetY: -2,
+        body: { w: 18, h: 8, x: 11, y: 31 } },
+    'chair-grey-1': { base: 'chair-grey-1-rotate', frameNumber: 1, offsetX: -8, offsetY: -1,
+        body: { w: 18, h: 8, x: 11, y: 31 } },
 };
 
 // Define scale factors for different object types
@@ -2467,7 +2482,9 @@ export function createRoom(roomId, roomData, position) {
                     // swivel props too: they swap to an 8-direction sheet at runtime, so
                     // every existing placement rolls and spins like a chair.
                     const rotateMatch = imageName.match(/^(.*)-rotate(\d+)$/);
-                    const staticSwivel = STATIC_SWIVEL_PROPS[imageName];
+                    // A swivel prop placed as a table (things set on it, e.g. m08's server-room
+                    // tool trolley with a printout) stays put, so its items don't float.
+                    const staticSwivel = type === 'table' ? null : STATIC_SWIVEL_PROPS[imageName];
                     if ((imageName.startsWith('chair-') && !imageName.startsWith('chair-waiting')) || rotateMatch || staticSwivel) {
                         sprite.hasWheels = true;
 
@@ -2514,7 +2531,8 @@ export function createRoom(roomId, roomData, position) {
                     // Check if this is an animated plant
                     if (imageName.startsWith('plant-large11-top-ani') || 
                         imageName.startsWith('plant-large12-top-ani') || 
-                        imageName.startsWith('plant-large13-top-ani')) {
+                        imageName.startsWith('plant-large13-top-ani') ||
+                        imageName.startsWith('planter-fig1-top-ani')) {
                         
                         sprite.isAnimatedPlant = true;
                         sprite.originalScaleX = sprite.scaleX;
@@ -2531,6 +2549,8 @@ export function createRoom(roomId, roomData, position) {
                             sprite.animationKey = 'plant-large12-bump';
                         } else if (imageName.startsWith('plant-large13-top-ani')) {
                             sprite.animationKey = 'plant-large13-bump';
+                        } else if (imageName.startsWith('planter-fig1-top-ani')) {
+                            sprite.animationKey = 'planter-fig1-bump';
                         }
                         
                         // Ensure the sprite is positioned on pixel boundaries

@@ -351,7 +351,10 @@ export function preload() {
         this.load.image(`wheelchair-rotate${i}`, `objects/wheelchair-rotate${i}.png`);
     }
     // Linen cart, corridor IV stand, empty trolley bed and ward drug trolley: 8-direction frames for the same swap.
-    for (const base of ['linen-cart-rotate', 'iv-stand-rotate', 'bed-empty-rotate', 'drug-trolley-rotate']) {
+    for (const base of ['linen-cart-rotate', 'iv-stand-rotate', 'bed-empty-rotate', 'drug-trolley-rotate',
+                        // wheeled props and office chairs that roll and spin (user, 2026-10-16)
+                        'instrument-trolley-rotate', 'tool-trolley-rotate', 'book-trolley-rotate',
+                        'chair-grey-4-rotate', 'chair-darkgray-1-rotate', 'chair-grey-1-rotate']) {
         for (let i = 1; i <= 8; i++) {
             this.load.image(`${base}${i}`, `objects/${base}${i}.png`);
         }
@@ -616,6 +619,10 @@ export function preload() {
     this.load.image('plant-large13-top-ani2', 'objects/plant-large13-top-ani2.png');
     this.load.image('plant-large13-top-ani3', 'objects/plant-large13-top-ani3.png');
     this.load.image('plant-large13-top-ani4', 'objects/plant-large13-top-ani4.png');
+    // fiddle-leaf fig in a grey planter (planter_fig1) with a 7-frame sway, m08 lobby (user, 2026-10-16)
+    for (let i = 1; i <= 7; i++) {
+        this.load.image(`planter-fig1-top-ani${i}`, `objects/planter-fig1-top-ani${i}.png`);
+    }
     this.load.image('pc1', 'objects/pc1.png');
     this.load.image('pc3', 'objects/pc3.png');
     this.load.image('pc4', 'objects/pc4.png');
@@ -1172,6 +1179,13 @@ export function preload() {
     this.load.image('hq_desk_safe1', 'objects/hq_desk_safe1.png');
     this.load.image('notes_notebook1', 'objects/notes_notebook1.png');
     this.load.image('hq_recorder1', 'objects/hq_recorder1.png');
+    this.load.image('qdc_safety_shower1', 'objects/qdc_safety_shower1.png');
+    this.load.image('qdc_first_aid_cabinet1', 'objects/qdc_first_aid_cabinet1.png');
+    this.load.image('pnw_console2_p1', 'objects/pnw_console2_p1.png');
+    this.load.image('pnw_console1_p2', 'objects/pnw_console1_p2.png');
+    this.load.image('pnw_console1_p4', 'objects/pnw_console1_p4.png');
+    this.load.image('pnw_console2_p5', 'objects/pnw_console2_p5.png');
+    this.load.image('pnw_console1_p6', 'objects/pnw_console1_p6.png');
     this.load.image('backup_recovery',         'objects/backup_recovery.png');
     this.load.image('dual_auth',               'objects/dual_auth.png');
     this.load.image('ehr-terminal',            'objects/ehr-terminal.png');
@@ -1580,6 +1594,13 @@ export async function create() {
             { key: 'plant-large13-top-ani4' }
         ],
         frameRate: 8,
+        repeat: 0
+    });
+
+    this.anims.create({
+        key: 'planter-fig1-bump',
+        frames: [1, 2, 3, 4, 5, 6, 7].map(i => ({ key: `planter-fig1-top-ani${i}` })),
+        frameRate: 10,
         repeat: 0
     });
     
@@ -2228,7 +2249,10 @@ function gatherInteractablesNearClick(worldX, worldY) {
             Object.values(room.objects).forEach(obj => {
                 if (!obj.active || !obj.interactable || !obj.visible) return;
                 if (!isObjectInInteractionRange(obj)) return;
-                if (!tapHits(obj.x, obj.y, obj)) return;
+                // Swivel props (rolling chairs, trolleys) count only when the tap is on their own
+                // sprite: the radial slop round their top-left put a chair into the menu for
+                // the PC on the desk in front of it (user review 2026-10-16, more chairs swivel).
+                if (obj.isSwivelChair ? !tapHits(Infinity, Infinity, obj) : !tapHits(obj.x, obj.y, obj)) return;
                 const data = obj.scenarioData || {};
                 const name = data.name || obj.name || 'Item';
                 const detail = resolveObjectField(data, 'observations', obj.observations || null);
