@@ -766,10 +766,17 @@ export default class PhoneChatConversation {
         // player opened it), that run already showed the opening
         if (npcManager.getConversationHistory(npc.id).length > 0) return 0;
 
+        // Without an in-game clock the intro reads as sent an hour ago (wall time).
+        // With one, it is stamped now: an hour back put the first texts before the
+        // story's start time (m05 E3: 15:30 above a 16:30 start).
+        const clock = window.gameClock;
+        const preloadStamp = clock?.configured
+            ? { timestamp: Date.now(), gameTime: clock.elapsedMs() }
+            : { timestamp: Date.now() - 3600000 };
         allMessages.forEach(message => {
             npcManager.addMessage(npc.id, 'npc', message.trim(), {
                 preloaded: true,
-                timestamp: Date.now() - 3600000 // 1 hour ago
+                ...preloadStamp
             });
         });
 
