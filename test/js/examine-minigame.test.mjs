@@ -38,7 +38,9 @@ const stubs = {
     '../utils/conditional-text.js': dataUrl(readFileSync(join(js, 'utils/conditional-text.js'), 'utf8')),
     '../utils/flag-lock.js': dataUrl(readFileSync(join(js, 'utils/flag-lock.js'), 'utf8')),
     './npc-reach.js': dataUrl('export function npcReachDistSq() { return 0; }'),
-    './examine.js': examineUrl
+    './examine.js': examineUrl,
+    './combat-input.js': dataUrl(readFileSync(join(js, 'systems/combat-input.js'), 'utf8')),
+    './consumables.js': dataUrl(readFileSync(join(js, 'systems/consumables.js'), 'utf8'))
 };
 
 const started = [];

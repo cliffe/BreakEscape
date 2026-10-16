@@ -34,7 +34,10 @@ test('takeable consumables have a default per type; healAmount overrides it', ()
     assert.equal(consumableHealAmount({ type: 'first_aid_kit', takeable: true }), 40);
     assert.equal(consumableHealAmount({ type: 'coffee', takeable: true, healAmount: 30 }), 30);
     assert.equal(consumableHealAmount({ type: 'coffee', takeable: true, healAmount: 0 }), 0, 'opt out');
+    assert.equal(consumableHealAmount({ type: 'coffee_cups1', takeable: true }), 15);
     assert.equal(consumableHealAmount({ type: 'key', takeable: true }), 0);
+    assert.equal(consumableHealAmount({ type: 'mug', takeable: true }), 0, 'a plain mug is not coffee');
+    assert.equal(consumableHealAmount({ type: 'mug', takeable: true, consumable: true }), 15);
 });
 
 test('in the inventory (takeable is set false there) the type default still applies', () => {

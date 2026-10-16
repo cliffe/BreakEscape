@@ -20,8 +20,10 @@
  */
 
 // Default heal per consumable type, matched on the start of the type name.
+// A plain mug or cup (often evidence, or empty) is not a consumable unless the
+// scenario says so with healAmount or consumable: true.
 export const DEFAULT_HEAL_BY_TYPE = [
-  [/^(coffee|mug|tea|office-misc-cup)/, 15],
+  [/^(coffee|tea)/, 15],
   [/^(energy|soda|cola|drink_can)/, 20],
   [/^water_bottle/, 10],
   [/^(sandwich|lunch)/, 25],
