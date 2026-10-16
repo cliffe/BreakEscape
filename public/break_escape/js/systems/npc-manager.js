@@ -1,7 +1,7 @@
 // NPCManager with event → knot auto-mapping and conversation history
 // OPTIMIZED: InkEngine caching, event listener cleanup, debug logging
 // default export NPCManager
-import { isInLineOfSight, drawLOSCone, clearLOSCone, getNPCFacingDirection } from './npc-los.js';
+import { isInLineOfSight, drawLOSCone, clearLOSCone, getNPCFacingDirection, losVisualSuppressed } from './npc-los.js';
 import { classifyPhoneLine, phoneStepLines } from '../minigames/phone-chat/phone-chat-speaker.js';
 
 /**
@@ -2164,8 +2164,10 @@ export default class NPCManager {
         continue;
       }
       
-      if (!npc.los || !npc.los.enabled || (!this.losVisualizeAll && npc.los.visualize !== true)) {
-        // console.log(`   Skip "${npc.id}" - no LOS config, disabled, or not flagged for visualization`);
+      // Hidden and knocked-out NPCs draw no cone or sight circle (7.1j)
+      const suppressed = losVisualSuppressed(npc, window.npcHostileSystem?.isNPCKO?.(npc.id) === true);
+      if (suppressed || !npc.los || !npc.los.enabled || (!this.losVisualizeAll && npc.los.visualize !== true)) {
+        // console.log(`   Skip "${npc.id}" - hidden or KO, no LOS config, disabled, or not flagged for visualization`);
         if (this.losVisualizations.has(npc.id)) {
           clearLOSCone(this.losVisualizations.get(npc.id));
           this.losVisualizations.delete(npc.id);

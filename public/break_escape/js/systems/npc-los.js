@@ -209,6 +209,23 @@ function shortestAngularDistance(from, to) {
  * @param {number} color - Hex color for cone (default 0x00ff00)
  * @param {number} alpha - Alpha value for cone (default 0.2)
  */
+/**
+ * True when an NPC's vision cone or sight circle should not be drawn (7.1j;
+ * m06, m08 E9): the NPC is hidden (isVisible: false, or its sprite is hidden,
+ * inactive or destroyed) or knocked out. A cone round a man on the floor, or
+ * round someone who isn't there yet, looked like a bug.
+ * @param {object} npc - NPC entry from the NPC manager
+ * @param {boolean} [isKO=false] - npcHostileSystem.isNPCKO(npc.id)
+ */
+export function losVisualSuppressed(npc, isKO = false) {
+  if (!npc) return true;
+  if (isKO) return true;
+  if (npc.isVisible === false) return true;
+  const sprite = npc._sprite || npc.sprite;
+  if (sprite && (sprite.visible === false || sprite.active === false || sprite.destroyed)) return true;
+  return false;
+}
+
 export function drawLOSCone(scene, npc, losConfig = {}, color = 0x00ff00, alpha = 0.2) {
   const {
     range = 200,
