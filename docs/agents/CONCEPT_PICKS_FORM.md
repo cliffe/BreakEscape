@@ -10,7 +10,7 @@ Open in VS Code's Markdown preview (Ctrl+Shift+V) to see the images side by side
 
 ## Quick option
 
-- [ ] Accept every recommended pick (marked ★ below), except any character where I've ticked something else
+- [x] Accept every recommended pick (marked ★ below), except any character where I've ticked something else
 
 **Overall comments:**
 
@@ -192,7 +192,7 @@ Open in VS Code's Markdown preview (Ctrl+Shift+V) to see the images side by side
 **Recommended: 3.** Only one with the right hair and age; risk: black blazer on a dark background.
 
 - [ ] 1
-- [ ] 2
+- [x] 2
 - [ ] 3
 - [ ] Regenerate (say what to change)
 
@@ -280,7 +280,7 @@ Open in VS Code's Markdown preview (Ctrl+Shift+V) to see the images side by side
 
 **Comments:**
 
->
+> This character will appear in person in later missions, so generate the full person also
 
 ---
 
@@ -396,7 +396,7 @@ Open in VS Code's Markdown preview (Ctrl+Shift+V) to see the images side by side
 **Recommended: 1.** Anxious, notes hugged to his chest. Concept 3 reads stern and older, too like the real mole. Shares cords and a checked collar with the off-duty agent.
 
 - [ ] 1
-- [ ] 2
+- [x] 2
 - [ ] 3
 - [ ] Regenerate (say what to change)
 
