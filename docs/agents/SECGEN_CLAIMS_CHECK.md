@@ -133,3 +133,31 @@ d. **m06/m07 notation and labels.**
    - m06: the XML description writes the flags as `hackme_crack_me_lab:flag_1..4`; the game's `targetFlags` use `hackme_crack_me_lab-flag1` to `-flag4` (`m06_follow_the_money.xml:35-38`). Notation only; align the description if it's shown to students. Separately, the vault route's account is `super_user`, which `parameterised_accounts` maps to Windows group names, and no sudo rule is declared, though the XML comment says "via sudo" (line 131). Either add the sudo rule the comment describes or reword the comment; the game now says "administrator rights".
    - m07: the XML comment says the flag 3 account is reachable over SSH (lines 151-171), but nothing configures SSH. Either add SSH to the build or reword the comment. The game no longer claims SSH, but still offers the SSH field guide at flag 2; if the box has no SSH, that offer should point at another sheet. The game's placeholder flag labels have been fixed (3 = user account, 4 = root).
    - m05, m07, m08: `parameterised_accounts` writes its leaked file to a Windows-style path (`account.pp:42-46`). A Linux build check would confirm where flag 3 lands on each box.
+
+## Applied 2026-10-16
+
+Edits made in the SecGen repo (uncommitted; the user commits). Line numbers are the pre-edit lines.
+
+- `scenarios/break_escape/safetynet/m05_insider_trading.xml:203` (item a): `Staged by: D. Torres (Cryptography Lead)` → `Staged by: badge #4471`.
+- `m05_insider_trading.xml:289-291` (item b): removed the `<input into="strings_to_pre_leak">` block with its extra `flag_generator` from `sudo_root_less`. The "four primary flags" text needed no change.
+- `m08_the_mole.xml:198` (item c): `RECOVERED FROM ~/.local/share/mail/sent` → `RECOVERED FROM ~/flag`. The module writes the leaked file `flag` to `/home/<user>/` (`parameterised_accounts/manifests/account.pp`, `leak_files` with `storage_directory => "/home/$username/"`).
+- `m08_the_mole.xml:201` (item c): `From:    nightshade_deep_state` → `From:    deep_state_drop`.
+- `m08_the_mole.xml:249` (item c): `user nightshade_ops  T-48h before M7` → `user svc-planning  T-48h before M7`. This matches the "Service account (ops)" and "planning sync job" text at lines 159-162.
+
+XML check: both files parse with Python `xml.dom.minidom`. `xmllint` is not installed on this machine.
+
+Clashes found:
+- Badge #4471 against m02's SC-4471. The prefixes differ (`#` against `SC-`), but the digits match, and m02's SC-4471 is Graham Reeves's badge. A player who has finished m02 could read the two as the same badge.
+- Stronger clash inside m05 itself: the game's door log (`m05_insider_trading/scenario.json.erb:86`) lists #4471 as R. Halloran's visitor spare and #4408 as D. Torres. The manifest now attributes staging to #4471, so the clue points at the spare and not at Torres's badge. The game's deduction logic needs to be checked against this.
+
+Still naming the mole or Torres (not changed, outside the three edits):
+- `m05_insider_trading.xml:223` ("Torres's own notes", flag 3 staged text), `:249` ("Source: D. Torres, Cryptography Lead ...") and `:257-261` (Torres's financial and personal details), both in the flag-4 payload.
+- `m08_the_mole.xml:12` (Agent 0x47 "Nightshade") and `:238` (codename NIGHTSHADE) in the flag-4 payload.
+- XML comments that name Torres or the mole are not shown in game and were left as they were.
+
+Refused: nothing. All reads and edits succeeded.
+
+Follow-up edit (m05 D1, approved by the user): flag 3 must not name Torres.
+
+- `scenarios/break_escape/safetynet/m05_insider_trading.xml:223`: `Torres's own notes, found alongside the manifest:` → `The owner's own notes, found alongside the manifest:`. This matches the manifest's `Staged by: badge #4471`. Flag 4 (lines 249, 257-261) and XML comments (195, 198) were left unchanged, so Torres is still named in flag 4.
+- XML check: `xml.dom.minidom` parses the file.
