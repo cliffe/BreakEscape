@@ -1278,7 +1278,17 @@ function _startCredits(lines) {
 
     function showNext() {
         if (!_creditsActive || idx >= items.length) {
+            const finished = _creditsActive && idx >= items.length;
             _stopCredits();
+            // A forced (disableClose) credits screen waits for the track to end, which
+            // a muted or headless browser may never report: the close control stayed
+            // hidden for 12 minutes (m07 blind M1). Once the last line has shown, let
+            // the player close it.
+            if (finished && _disableClose) {
+                _disableClose = false;
+                const closeBtn = document.getElementById('bv-close-btn');
+                if (closeBtn) closeBtn.style.display = '';
+            }
             return;
         }
         const item = items[idx++];

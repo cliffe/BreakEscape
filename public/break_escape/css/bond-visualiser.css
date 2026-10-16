@@ -79,6 +79,10 @@
   height: 100vh;
   display: grid;
   grid-template-rows: auto 1fr auto;
+  /* minmax(0, ...): a wide child (the ticker, the canvas) can't widen the page
+     past the window and push the right-hand panel off it (m06, m07 at 1400 px) */
+  grid-template-columns: minmax(0, 1fr);
+  box-sizing: border-box;
   padding: 16px;
   gap: 12px;
 }
@@ -167,7 +171,7 @@
 
 #bond-vis-overlay .bv-stage {
   display: grid;
-  grid-template-columns: 180px 1fr 180px;
+  grid-template-columns: 180px minmax(0, 1fr) 180px;
   gap: 12px;
   min-height: 0;
 }
