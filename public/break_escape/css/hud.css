@@ -289,10 +289,14 @@
     font-size: 10px;
     color: #ffffff;
     text-align: center;
-    white-space: nowrap;
-    max-width: calc(100vw - 32px);
-    overflow: hidden;
-    text-overflow: ellipsis;
+    /* Short captions stay on one line; long ones wrap onto more lines rather than
+       being cut off with an ellipsis (a clue sat past the cut at 1400x1000) */
+    white-space: normal;
+    overflow-wrap: anywhere;
+    text-wrap: balance;
+    line-height: 1.6;
+    width: max-content;
+    max-width: min(720px, calc(100vw - 32px));
 
     background: rgba(0, 0, 0, 0.72);
     border: 2px solid rgba(255, 255, 255, 0.18);
