@@ -281,8 +281,11 @@ def check_unknown_fields(json_data)
 
   # Known NPC behavior fields
   known_behavior_fields = %w[
-    initiallyHidden immovable hostile facePlayer patrol staticSprite collisionBox _comment torch
+    initiallyHidden immovable hostile facePlayer facePlayerDistance personalSpace patrol staticSprite
+    collisionBox _comment torch
   ]
+  # behavior.personalSpace sub-fields (npc-behavior.js parseConfig)
+  known_personal_space_fields = %w[enabled distance backAwaySpeed backAwayDistance _comment]
 
   # Known eventMapping fields
   known_event_mapping_fields = %w[
@@ -409,6 +412,28 @@ def check_unknown_fields(json_data)
           npc['behavior'].each_key do |key|
             unless known_behavior_fields.include?(key)
               warnings << "⚠️ WARNING: '#{npc_path}/behavior' has unknown field '#{key}' — this field will be ignored by the game engine."
+            end
+          end
+          fpd = npc['behavior']['facePlayerDistance']
+          if npc['behavior'].key?('facePlayerDistance') && !(fpd.is_a?(Numeric) && fpd > 0)
+            warnings << "⚠️ WARNING: '#{npc_path}/behavior/facePlayerDistance' should be a positive number of pixels " \
+                        "(default 96); #{fpd.inspect} falls back to the default."
+          end
+          ps = npc['behavior']['personalSpace']
+          if npc['behavior'].key?('personalSpace')
+            if ps.is_a?(Hash)
+              ps.each_key do |key|
+                next if known_personal_space_fields.include?(key)
+                warnings << "⚠️ WARNING: '#{npc_path}/behavior/personalSpace' has unknown field '#{key}' — " \
+                            "known: #{(known_personal_space_fields - ['_comment']).join(', ')}."
+              end
+              if !ps.key?('enabled') && ps.keys.any? { |k| %w[distance backAwaySpeed backAwayDistance].include?(k) }
+                warnings << "⚠️ WARNING: '#{npc_path}/behavior/personalSpace' sets distances but not \"enabled\": true, " \
+                            "so the NPC never backs away."
+              end
+            else
+              warnings << "⚠️ WARNING: '#{npc_path}/behavior/personalSpace' should be an object " \
+                          "{ enabled, distance, backAwaySpeed, backAwayDistance }; #{ps.inspect} is ignored."
             end
           end
         end

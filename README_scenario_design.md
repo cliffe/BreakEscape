@@ -947,6 +947,8 @@ In-world characters with sprites that the player can walk up to and interact wit
 | `behavior.patrol` | Patrol configuration (see Patrol Behaviour below) |
 | `behavior.immovable` | `true` — NPC cannot be pushed or displaced by collisions (e.g. a patient in a bed) |
 | `behavior.initiallyHidden` | `true` hides NPC at spawn — use `setVisible` in an event mapping to reveal them later |
+| `behavior.facePlayer` / `facePlayerDistance` | The NPC turns to face the player within `facePlayerDistance` pixels (default `true` and `96`); a patrolling NPC with `pauseForPlayer` also stops there |
+| `behavior.personalSpace` | `{ "enabled": true, "distance": 48, "backAwaySpeed": 30, "backAwayDistance": 5 }` — the NPC backs away when the player comes closer than `distance` pixels. Off unless `enabled` |
 
 #### Casting voices
 

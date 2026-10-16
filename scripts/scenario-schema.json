@@ -636,6 +636,23 @@
                 }
               ]
             },
+            "facePlayerDistance": {
+              "type": "number",
+              "exclusiveMinimum": 0,
+              "description": "Pixels within which the NPC turns to face the player (and a patrolling NPC with pauseForPlayer stops). Default 96; needs facePlayer (default true)."
+            },
+            "personalSpace": {
+              "type": "object",
+              "description": "The NPC backs away when the player comes closer than distance. Off unless enabled.",
+              "properties": {
+                "enabled": { "type": "boolean" },
+                "distance": { "type": "number", "description": "Pixels (default 48)" },
+                "backAwaySpeed": { "type": "number", "description": "Pixels per second (default 30)" },
+                "backAwayDistance": { "type": "number", "description": "Pixels per step back (default 5)" },
+                "_comment": { "type": "string" }
+              },
+              "additionalProperties": false
+            },
             "collisionBox": {
               "type": "string",
               "enum": ["bottom_half"],
