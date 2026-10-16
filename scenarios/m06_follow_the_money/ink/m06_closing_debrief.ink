@@ -48,6 +48,7 @@ VAR satoshi_spoken = false // Scenario design R1 (m8): Satoshi spoke to the play
 VAR console_tripped = false // Puzzle chains R2 (M-R2-2): a console lockout before the fund
 VAR signing_record_found = false // Puzzle chains D2: Satoshi's signing case opened on his own print
 VAR minder_challenged = false // Round 2 (R2-m7)
+VAR analyst_told = false // Blind run A (2026-10-16, R3): synced; the player told Priya what she drew
 VAR analyst_walked_through = false // Dialogue C1 (D6-31): Priya walked the player through her graph
 VAR minder_walked = false // Struggling run A (S1): Kemal read the casualty line and walked out
 VAR minder_vouched = false // Dialogue C2 (D6-63): Kemal let the player in on Volkova's word
@@ -284,6 +285,8 @@ Agent HaX: The Crypto Anarchists have lost their best cryptographer. Replacing h
 - else:
     {irina_badge_obtained:
         Agent HaX: And she lent you her office badge. People don't do that for a regulator they've just met.
+        // Blind run A (2026-10-16, R4): her "Bring it back" gets an answer.
+        Agent HaX: You never gave it back, by the way. Leave it at the front desk. Evidence will want it.
     }
 }
 {read_irina_notes:
@@ -385,7 +388,11 @@ Agent HaX: The Crypto Anarchists have lost their best cryptographer. Replacing h
     Agent HaX: None of them were in on it.
 }
 // Dialogue C1 (D6-31): Priya asked what she'd been drawing.
-{analyst_walked_through and not analyst_ko:
+// Blind run A (2026-10-16, R3): the player can now keep the promise.
+{
+- analyst_told and not analyst_ko:
+    Agent HaX: You went back and told Raghavan what she'd been drawing. Better from you than from a police statement.
+- analyst_walked_through and not analyst_ko:
     Agent HaX: Raghavan will want to know what she was drawing. Somebody from the police will tell her. I'd rather it was you.
 }
 -> password_cracking_discussion

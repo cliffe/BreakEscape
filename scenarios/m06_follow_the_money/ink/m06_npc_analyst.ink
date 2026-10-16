@@ -23,6 +23,10 @@ VAR player_name = "Agent 0x00"
 // Dialogue C1 (D6-5): synced; Priya is next door to the trading floor
 VAR irina_arrested = false
 VAR irina_ko = false
+// Blind run A (2026-10-16, R3): synced. After Satoshi, the player can keep the
+// promise and tell her what she was drawing; the debrief reads analyst_told.
+VAR satoshi_confronted = false
+VAR analyst_told = false
 
 // ===========================================
 // INITIAL MEETING
@@ -136,6 +140,9 @@ Priya Raghavan: Big money through our mixer. Big round sums, always late in the 
 
 + [How would you follow money through a mixer?]
     -> mixer_matching
+
++ {satoshi_confronted and not analyst_told} [It's over upstairs. You should know what you've been drawing.]
+    -> told_what_she_drew
 
 + [Thanks for your time.]
     #speaker:analyst
@@ -436,5 +443,30 @@ Priya Raghavan: And I think Satoshi cares more about his ideas than what they co
 
 ~ hub_quiet = true
 
+#exit_conversation
+-> hub
+
+// ===========================================
+// THE PROMISE KEPT (blind run A, R3)
+// ===========================================
+
+=== told_what_she_drew ===
+#speaker:analyst
+~ analyst_told = true
+
+Priya Raghavan: Go on, then.
+
+Narrator: You tell her what the round sums were: ENTROPY's money, washed through the mixer and out to their cells.
+
+Priya Raghavan: The big round sums. Every evening. I drew them as dots and gave them nice colours.
+
+Priya Raghavan: And Irina signed every one off.
+
++ [Your graph is how we found it.]
+    Priya Raghavan: Doesn't feel like much, from this side. Ta for telling me yourself, though.
++ [You flagged it. She buried it.]
+    Priya Raghavan: I flagged it to the one person paid to bury it. I'll be thinking about that for a while.
+-
+~ hub_quiet = true
 #exit_conversation
 -> hub

@@ -397,7 +397,7 @@ Satoshi Nakamoto II: The balances, sure. The advances went out a week ago, and n
 
 Satoshi Nakamoto II: At least you're honest about the trade-off.
 
-Satoshi Nakamoto II: The names on that page over whoever my martyrdom recruits. That's human. Wrong, but human.
+Satoshi Nakamoto II: So you'd save the people on the projection and risk whoever my martyrdom recruits. That's human. Wrong, but human.
 
 -> arrest_finale
 

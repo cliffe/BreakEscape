@@ -11,6 +11,9 @@
 //                                           or a cancel; the erb's real minigame_failed mappings
 //                                           are evaluated (scoped by at_console)
 //   {"room": "x"} also evaluates the erb's literal room_entered:x mappings (setGlobal, texts)
+//   {"event": "door_unlock_failed:executive_wing", "data": {...}}  any engine event, through the erb's mappings
+//   {"restart": true}                       Restart after a knockout: the reset events for every
+//                                           hostile NPC not KO'd, then game_loaded (regression R1)
 //   {"ko": "trader_npc"}                    a KO, with the scenario's npc_ko / globalVarOnKO effects
 //   {"expect": {"global": value, ...}}      assert globals; prints PASS/FAIL and fails the run
 //   {"maxRun": 9}                          assert the longest run without a choice so far is <= 9
@@ -119,8 +122,10 @@ function engine() {
   }
   if (G.start_debrief_cutscene && !G.debrief_played && !debriefOpened) { debriefOpened = true; out('      [engine: start_debrief_cutscene -> the debrief opens]'); }
 }
+const hostileNow = new Set();
 function hostile(npc) {
   out(`      [engine: ${npc} hostile]`);
+  hostileNow.add(npc);
   if (npc === 'satoshi_minder') G.minder_hostile = true;
   // Struggling run A: the erb's real npc_hostile_state_changed mappings (HaX's fight texts).
   fire('npc_hostile_state_changed', { npcId: npc, isHostile: true });
@@ -192,8 +197,29 @@ for (const step of route.steps) {
     fire('minigame_failed', { minigameName: 'PinMinigame', success: false, result: wrong ? { success: false, attempts: 1, maxAttemptsReached: true } : null });
     engine(); continue;
   }
+  if (step.event) {
+    // Any engine event, evaluated against the erb's literal mappings (blind run A, R2).
+    out(`   {event ${step.event}}`);
+    fire(step.event, step.data || {});
+    engine(); continue;
+  }
+  if (step.restart) {
+    // Regression fix R1 (2026-10-17): Restart after a knockout (engine 7.1d). Every
+    // hostile NPC that isn't KO'd calms and emits npc_hostile_state_changed
+    // { isHostile: false, reset: true }; then the page reloads (game_loaded).
+    out('   {Restart after a knockout}');
+    const koVar = { satoshi_minder: 'minder_ko', satoshi_nakamoto: 'satoshi_ko' };
+    for (const id of [...hostileNow]) {
+      if (koVar[id] && G[koVar[id]]) continue;
+      hostileNow.delete(id);
+      fire('npc_hostile_state_changed', { npcId: id, isHostile: false, reset: true });
+    }
+    fire('game_loaded', {});
+    engine(); continue;
+  }
   if (step.ko) {
     const id = step.ko; out(`   {ko ${id}}`);
+    hostileNow.delete(id);
     const map = { checkpoint_guard: 'guard_ko', trader_npc: 'trader_ko', blockchain_analyst: 'analyst_ko', irina_volkova: 'irina_ko', satoshi_nakamoto: 'satoshi_ko', satoshi_minder: 'minder_ko' };
     if (map[id]) G[map[id]] = true;
     if (['checkpoint_guard', 'trader_npc', 'blockchain_analyst', 'irina_volkova'].includes(id) && !G.cover_strained) {
