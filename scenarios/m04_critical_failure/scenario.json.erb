@@ -509,6 +509,18 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
       "name": "Grid Regulator Credentials",
       "takeable": true,
       "observations": "Forged credentials identifying you as an Ofgem / grid-safety regulator conducting an early audit"
+    },
+    <%# Blind run A (M2): the go-bag's Base64 card had no decoder anywhere in the
+        mission (no workstation item; the CyberChef guide is only a lab sheet), so
+        the decode the debrief refers to couldn't be played. Field kit, as m01/m03. %>
+    {
+      "type": "workstation",
+      "id": "cyberchef_workstation",
+      "name": "CyberChef Workstation",
+      "takeable": true,
+      "puzzle_graph_role": "tool",
+      "puzzle_graph_note": "Decoding tool for the go-bag's encoded safehouse card",
+      "observations": "Your SAFETYNET field laptop, with CyberChef loaded. Paste in anything that looks like gibberish."
     }
   ],
 
@@ -945,14 +957,14 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
               "condition": "value === true && globalVars.attack_mechanism_known !== true && globalVars.voltage_neutralised !== true",
               "onceOnly": true,
               "setGlobal": { "clock_started": true, "crew_warned_early": true },
-              "sendTimedMessage": { "delay": 8000, "message": "That's the evacuation. Good. But Voltage heard it too, and he won't wait for eight now. You've about half an hour.", "skipIfGlobal": "attack_prevented" }
+              "sendTimedMessage": { "delay": 8000, "message": "That's the evacuation. Good. But Voltage heard it too, and he won't wait for eight now. You've about half an hour. The clock's on your screen.", "skipIfGlobal": "attack_prevented" }
             },
             {
               "eventPattern": "global_variable_changed:crew_warned",
               "condition": "value === true && globalVars.attack_mechanism_known === true && globalVars.voltage_neutralised !== true",
               "onceOnly": true,
               "setGlobal": { "clock_started": true },
-              "sendTimedMessage": { "delay": 8000, "message": "That's the evacuation. Nine out of Hall 2. Voltage knows we're here now. Keep moving.", "skipIfGlobal": "attack_prevented" }
+              "sendTimedMessage": { "delay": 8000, "message": "That's the evacuation. Nine out of Hall 2. Voltage knows we're here now, but your clock was already running. It cost you no time.", "skipIfGlobal": "attack_prevented" }
             },
             <%# Round 4 (review M2): with Voltage already down nobody fires early, so
                 the alarm is free whenever it comes: no alarm clock, and no music
@@ -1073,7 +1085,7 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
               "condition": "value === true",
               "onceOnly": true,
               "setGlobal": { "cyberchef_guide_offered": true },
-              "sendTimedMessage": { "delay": 2000, "message": "That card in the go-bag is Base64. I can send you the decoding guide if you'd rather not eyeball it." }
+              "sendTimedMessage": { "delay": 2000, "message": "That card in the go-bag is Base64. Paste it into the CyberChef workstation in your kit. Decoding guide on request." }
             },
             <%# operatives_defeated counter, keyed on npc_ko:<id>. History: in pass 2
                 globalVarOnKO wrote operative_*_defeated without emitting
@@ -1250,6 +1262,16 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
               "onceOnly": true,
               "sendTimedMessage": { "delay": 1500, "message": "Their route in, proven. They pushed the charge-ceiling override from that box, and the bypass modules hide it. The trigger is in the plant room. Get to the ESD.", "skipIfGlobal": "voltage_neutralised" }
             },
+            <%# Blind run A (M3): the HUD clock starts here, and nothing said what it
+                counts down to; a player who had asked HaX earlier remembered "about
+                half an hour". This names the clock and what zero does. Nightshade's
+                briefing line ("I'll tell you how much time we actually have") pays off. %>
+            {
+              "eventPattern": "objective_aim_completed:map_the_attack",
+              "condition": "globalVars.voltage_neutralised !== true && globalVars.attack_prevented !== true && globalVars.hydrogen_alarm !== true && globalVars.racks_vented !== true",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 6000, "message": "Nightshade's run the numbers off that box. Bank B won't last till eight. The clock on your screen is when its hydrogen alarm goes.", "skipIfGlobal": "attack_prevented" }
+            },
             <%# Puzzle chains R3-5: the disjoint twin, so the root beat (what the flags
                 showed) still lands when Voltage was dealt with first. 1.5 s, before the
                 2.5 s ESD-live text from the attack_mechanism_known mapping. %>
@@ -1333,8 +1355,14 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
           ]
         },
         {
+          <%# Blind run A (M1): this contact shared the display name "Robert Vance" with
+              the person NPC and registers first (phone NPCs load at start), so every
+              "Robert Vance:" prefix in his person-chat ink and the debrief resolved to
+              this artless phone NPC: a coarse hooded fallback portrait. A distinct
+              name keeps the prefixes on robert_vance. (Engine item E3: prefer the
+              conversation's own or a person NPC on a display-name tie.) %>
           "id": "robert_vance_phone",
-          "displayName": "Robert Vance",
+          "displayName": "Robert Vance (ops desk)",
           "npcType": "phone",
           "voice": {
             "name": "Orus",
@@ -2450,7 +2478,7 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
             { "from": "vmfl_submit_privesc_flag", "to": "lock_esd_pushbutton" },
             { "from": "action_deal_with_voltage", "to": "lock_esd_pushbutton" }
           ],
-          "observations": "A large red mushroom-head button in a yellow housing on the plant-room wall. Labelled: EMERGENCY SHUTDOWN — RACK BANKS A-C. This is the hardwired kill switch ENTROPY couldn't disable from SCADA. Pressing it isolates the banks and forces ventilation — stopping the thermal runaway.",
+          "observations": "A large red mushroom-head button in a yellow housing on the plant-room wall. Labelled: EMERGENCY SHUTDOWN — RACK BANKS A-C. This is the hardwired kill switch ENTROPY couldn't disable from SCADA. Pressing it isolates the banks and forces ventilation — stopping the thermal runaway. A hinged safety flap covers it: lift the flap, then press.",
           "minigameData": {
             "interactionType": "esd_button",
             "label": "EMERGENCY SHUTDOWN - RACK BANKS A-C",
@@ -2642,7 +2670,7 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
     after-state (voltage_after_trigger). %>
     {
       "id": "trigger_race",
-      "label": "Voltage \u2014 the laptop",
+      "label": "Voltage reaches the laptop in",
       "startOnGlobal": "voltage_fight_started",
       "delayMs": 25000,
       "cancelOnGlobal": "voltage_neutralised",
@@ -2667,7 +2695,7 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
     },
     {
       "id": "h2_advisory_alarm",
-      "label": "H\u2082 Advisory \u2014 rack bank B",
+      "label": "Bank B hydrogen alarm in",
       "startOnGlobal": "crew_warned_early",
       "delayMs": 1440000,
       "cancelOnGlobal": "attack_prevented",
@@ -2692,7 +2720,7 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
     },
     {
       "id": "h2_advisory",
-      "label": "H\u2082 Advisory \u2014 rack bank B",
+      "label": "Bank B hydrogen alarm in",
       "startOnGlobal": "attack_mechanism_known",
       "delayMs": 480000,
       "cancelOnGlobal": "attack_prevented",

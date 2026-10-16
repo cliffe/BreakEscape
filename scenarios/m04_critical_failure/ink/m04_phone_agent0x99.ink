@@ -478,12 +478,10 @@ See you at HQ.
 #speaker:agent_0x99
 #give_item:keycard:relayed_workshop_keycard
 Relay's down. I've pulled her Level 2 number off the reader logs and pushed you a copy. That's the workshop.
--> on_relay_ko_card_choices
-
-=== on_relay_ko_card_choices ===
-+ [On it.]
-    #exit_conversation
-    -> support_hub
+// Blind run A (m4): this event call used to end on a lone "On it." menu. Later
+// texts landed under it, so the hub (field guides included) looked gone until
+// the chat was closed and reopened. Straight to the hub instead.
+-> support_hub
 
 // ===========================================
 // THE 61°C TURN (round 2, re-review M2)

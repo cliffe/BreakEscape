@@ -227,9 +227,10 @@ Agent HaX: Read him first. Hard evidence will do the persuading for you.
 === mission_stakes ===
 #speaker:agent_0x99
 
-Agent HaX: Remember the directive from the Zero Day job? "Zero Day supplies, Critical Mass executes. Grid storage, this winter."
+// Blind run A (worst line 3): the directive recap read as written, not spoken.
+Agent HaX: The Zero Day job left us one line. "Zero Day supplies, Critical Mass executes. Grid storage, this winter."
 
-Agent HaX: We said it was coming. It's tonight, and it's this hall.
+Agent HaX: Well, it's winter, and this is the site.
 
 Agent HaX: Social Fabric are standing by to amplify the panic. Strikes across the region, all timed to 0800.
 
@@ -250,19 +251,20 @@ Agent HaX: One mind behind it, the one the directive named: The Architect. Volta
 === mission_objectives ===
 #speaker:agent_0x99
 
-Agent HaX: Four things, then.
+// Blind run A (worst line 3, m6): the numbered orders list read as written, and
+// "Nightshade's reading" was never explained. Spoken order, and the reading tied
+// to the racks; Nightshade asked for it at the top of the briefing.
+Agent HaX: So. Get in on the regulator cover and find Vance.
 
-Agent HaX: One. Get in on the regulator cover and find Vance.
+Agent HaX: Then prove how they took the control network. Their jump server's in the engineering workshop. Whatever you pull off it goes into the drop-site terminal.
 
-Agent HaX: Two. Prove how they took the control network. Their jump server's in the engineering workshop, and anything you pull off it goes into the drop-site terminal.
+Agent HaX: The plant room has a hardwired Emergency Shutdown button, the ESD. No network path, so it's the one control they couldn't take.
 
-Agent HaX: Three. The plant room has a hardwired Emergency Shutdown button, the ESD. No network path, so it's the one control they couldn't take.
+Agent HaX: Press it and the banks isolate, once grid control believes you. They'll believe Nightshade, if you get a real reading off those racks.
 
-Agent HaX: Press it and the banks isolate, once grid control believes you. That's what Nightshade's reading is for.
+Agent HaX: And the operatives. Voltage alive, if you can.
 
-Agent HaX: Four. The operatives. Voltage alive, if you can.
-
-Agent HaX: Kit: your picks, and the cloner from the WhiteHat job. No PIN cracker. We have one, it's ENTROPY's, and it isn't leaving the lab.
+Agent HaX: Kit: your picks, the cloner from the WhiteHat job, and a laptop with CyberChef on it. No PIN cracker. We have one, it's ENTROPY's, and it isn't leaving the lab.
 
 * [Got it. I'm on my way.]
     Agent HaX: Go carefully. They've had three days to get ready for you.

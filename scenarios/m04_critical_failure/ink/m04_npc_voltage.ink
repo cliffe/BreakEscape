@@ -377,7 +377,11 @@ Narrator: He moves for the bench, Static comes off the wall at you, and the plan
 Narrator: He looks at your hands, then at the door behind you.
 
 // PASS 3 P11a: only reachable with Static down.
-Voltage: Nobody left to stop you. All right.
+// Blind run A (worst line 2): "Nobody left to stop you. All right." folded in one
+// beat. He weighs the keystroke now, and the player's line gives him his reason:
+// a court reads his casualty model out loud, which is what he says he wants.
+Voltage: You're between me and the dock. I could still make that keystroke before you reached me.
+Voltage: So give me a reason not to.
 
 // PASS 4 fix 21: the optional second print gives the arrest line its evidence.
 + {voltage_print_on_bypass} [Your thumb's on the bypass module. Explain that to a court.]

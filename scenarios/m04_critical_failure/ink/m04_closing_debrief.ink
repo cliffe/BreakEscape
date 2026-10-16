@@ -407,9 +407,9 @@ He'll call when he's ready. Not tonight.
 - else:
     // Eleven on site: the nine night crew, Vance and the gate guard.
     {security_guard_ko or robert_vance_ko:
-        Agent HaX: Everyone on site got out alive tonight, not all of them on their own feet. Two hundred and forty thousand on that feed never knew they were on it.
+        Agent HaX: Everyone on site got out alive tonight, not all of them on their own feet. Two hundred and forty thousand people kept their lights on and never knew why.
     - else:
-        Agent HaX: Eleven people walked out of there tonight. Two hundred and forty thousand on that feed never knew they were on it.
+        Agent HaX: Eleven people walked out of there tonight. Two hundred and forty thousand people kept their lights on and never knew why.
     }
     // Round 2 (review m1): "started your clock early" only when it did.
     {

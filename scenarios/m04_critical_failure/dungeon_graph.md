@@ -2,7 +2,7 @@
 
 # m04_critical_failure — Scenario Graph Reference
 
-Infiltrate the Albion Energy Storage facility — 200 MWh of grid-scale lithium-ion battery storage — to investigate a suspected ENTROPY operation. The Critical Mass cell has weaponised the BMS and SCADA systems to drive the battery racks into thermal runaway, threatening a catastrophic fire and a grid blackout for 240,000 people. Confirm the infiltration, expose the attack mechanism, and trigger Emergency Shutdown before the 0800 trigger time.
+Infiltrate the Albion Energy Storage facility — 200 MWh of grid-scale lithium-ion battery storage — to investigate a suspected ENTROPY operation. The Critical Mass cell has weaponised the BMS and SCADA systems to drive the battery racks into thermal runaway, threatening a catastrophic fire and a grid blackout for 240,000 people. Confirm the falsified telemetry against a real instrument and prove how they took control: the Emergency Shutdown arms only once grid control has both. Keep the trigger holder away from his laptop, then press the shutdown before the 0800 trigger time.
 
 ## Scenario Statistics
 
@@ -14,7 +14,7 @@ Infiltrate the Albion Energy Storage facility — 200 MWh of grid-scale lithium-
 | Physical locks | 7 |
 | AND-gate convergences | 0 |
 | Rooms | 9 |
-| Puzzle graph nodes / edges | 44 / 55 |
+| Puzzle graph nodes / edges | 45 / 56 |
 | Story graph nodes / edges | 6 / 5 |
 
 ## Critical Path
@@ -81,6 +81,7 @@ flowchart TD
   lock_security_equipment_locker["Security Equipment Locker"]
   lock_optigrid_tool_case["Optigrid Tool Case"]
   lock_extraction_gobag["Extraction Gobag"]
+  cyberchef_workstation{"CyberChef Workstation"}
   operations_office("Operations Office")
   maintenance_work_orders{"Maintenance Work Orders"}
   npc_robert_vance{"Robert Vance"}
@@ -124,6 +125,7 @@ flowchart TD
   lock_pick_kit --> lock_security_equipment_locker
   lock_pick_kit --> lock_optigrid_tool_case
   lock_pick_kit --> lock_extraction_gobag
+  main_entrance --> cyberchef_workstation
   operations_office --> maintenance_work_orders
   operations_office --> npc_robert_vance
   npc_robert_vance -.-> facility_access_keycard_level_1
@@ -172,7 +174,7 @@ flowchart TD
 
   class door_engineering_workshop,door_battery_hall_2,door_plant_room,lock_security_equipment_locker,lock_optigrid_tool_case,lock_extraction_gobag,lock_esd_pushbutton lock
   class engineering_workshop,battery_hall_2,plant_room,main_entrance,operations_office,scada_control_room,security_office,battery_hall_1,loading_dock room
-  class rfid_cloner,lock_pick_kit,maintenance_work_orders,scada_hmi_main_display,fingerprint_kit,optigrid_job_card_4782_back_page,access_control_export_hv_plant_room,analogue_thermometer_rack_bank_c_wall,h_gas_detector_panel,duty_round_panel,social_fabric_safehouse_card_encoded item
+  class rfid_cloner,lock_pick_kit,cyberchef_workstation,maintenance_work_orders,scada_hmi_main_display,fingerprint_kit,optigrid_job_card_4782_back_page,access_control_export_hv_plant_room,analogue_thermometer_rack_bank_c_wall,h_gas_detector_panel,duty_round_panel,social_fabric_safehouse_card_encoded item
   class npc_robert_vance,facility_access_keycard_level_1,spare_keycard_level_1,npc_entropy_operative_relay,workshop_keycard_level_2,npc_voltage_critical_mass key
   class action_meet_robert_vance,action_deal_with_voltage action
   class bms_jump_server_terminal,vmch_submit_network_scan_flag,vmch_submit_ftp_intel_flag,vmch_submit_distcc_exploit_flag,vmch_submit_privesc_flag vm
@@ -259,6 +261,7 @@ flowchart TD
   lock_security_equipment_locker["Security Equipment Locker"]
   lock_optigrid_tool_case["Optigrid Tool Case"]
   lock_extraction_gobag["Extraction Gobag"]
+  cyberchef_workstation{"CyberChef Workstation"}
   operations_office("Operations Office")
   maintenance_work_orders{"Maintenance Work Orders"}
   npc_robert_vance{"Robert Vance"}
@@ -308,6 +311,7 @@ flowchart TD
   lock_pick_kit --> lock_security_equipment_locker
   lock_pick_kit --> lock_optigrid_tool_case
   lock_pick_kit --> lock_extraction_gobag
+  main_entrance --> cyberchef_workstation
   operations_office --> maintenance_work_orders
   operations_office --> npc_robert_vance
   npc_robert_vance -.-> facility_access_keycard_level_1
@@ -371,7 +375,7 @@ flowchart TD
 
   class door_engineering_workshop,door_battery_hall_2,door_plant_room,lock_security_equipment_locker,lock_optigrid_tool_case,lock_extraction_gobag,lock_esd_pushbutton lock
   class engineering_workshop,battery_hall_2,plant_room,main_entrance,operations_office,scada_control_room,security_office,battery_hall_1,loading_dock room
-  class rfid_cloner,lock_pick_kit,maintenance_work_orders,scada_hmi_main_display,fingerprint_kit,optigrid_job_card_4782_back_page,access_control_export_hv_plant_room,analogue_thermometer_rack_bank_c_wall,h_gas_detector_panel,duty_round_panel,social_fabric_safehouse_card_encoded item
+  class rfid_cloner,lock_pick_kit,cyberchef_workstation,maintenance_work_orders,scada_hmi_main_display,fingerprint_kit,optigrid_job_card_4782_back_page,access_control_export_hv_plant_room,analogue_thermometer_rack_bank_c_wall,h_gas_detector_panel,duty_round_panel,social_fabric_safehouse_card_encoded item
   class npc_robert_vance,facility_access_keycard_level_1,spare_keycard_level_1,npc_entropy_operative_relay,workshop_keycard_level_2,npc_voltage_critical_mass key
   class action_meet_robert_vance,action_deal_with_voltage action
   class bms_jump_server_terminal,vmch_submit_network_scan_flag,vmch_submit_ftp_intel_flag,vmch_submit_distcc_exploit_flag,vmch_submit_privesc_flag vm
@@ -483,7 +487,7 @@ flowchart TD
   rc_safetynet_field_guide_privesc_14{"SAFETYNET Field Guide: Privilege Escalation via Sudo"}
   rc_safetynet_field_guide_proftpd_15{"SAFETYNET Field Guide: ProFTPD Exploitation Workflow"}
   rc_relayed_workshop_keycard_16{"Workshop Keycard (relayed copy)"}
-  rc_npc_robert_vance_17("Robert Vance")
+  rc_npc_robert_vance_ops_desk_17("Robert Vance (ops desk)")
   rc_npc_agent_hax_18("Agent HaX")
   rc_obj19_19{"Vance's BMS Monitoring Terminal"}
   rc_obj20_20{"Maintenance Work Orders"}
@@ -556,7 +560,7 @@ flowchart TD
   rc_npc_agent_hax_7 --> rc_safetynet_field_guide_privesc_14
   rc_npc_agent_hax_7 --> rc_safetynet_field_guide_proftpd_15
   rc_npc_agent_hax_7 --> rc_relayed_workshop_keycard_16
-  main_entrance --> rc_npc_robert_vance_17
+  main_entrance --> rc_npc_robert_vance_ops_desk_17
   main_entrance --> rc_npc_agent_hax_18
   operations_office --> rc_obj19_19
   operations_office --> rc_obj20_20
@@ -608,7 +612,7 @@ flowchart TD
   class main_entrance,operations_office,scada_control_room,security_office,battery_hall_1,loading_dock room
   class engineering_workshop,battery_hall_2,plant_room lock
   class rc_obj1_1,rc_obj2_2,rc_safetynet_field_guide_rfid_cloning_8,rc_safetynet_field_guide_lockpicking_9,rc_safetynet_field_guide_recon_network_mapping_10,rc_safetynet_field_guide_vuln_analysis_11,rc_safetynet_field_guide_distcc_12,rc_safetynet_field_guide_cyberchef_13,rc_safetynet_field_guide_privesc_14,rc_safetynet_field_guide_proftpd_15,rc_relayed_workshop_keycard_16,rc_obj19_19,rc_obj20_20,rc_obj21_21,rc_obj22_22,rc_vance_level1_keycard_24,rc_scada_hmi_display_25,rc_obj26_26,rc_obj27_27,rc_vm_launcher_bms_jump_server_28,rc_flag_station_dropsite_29,rc_obj30_30,rc_obj31_31,rc_obj33_33,rc_obj34_34,rc_obj35_35,rc_obj36_36,rc_obj37_37,rc_security_spare_keycard_l1_39,rc_obj40_40,rc_analog_thermometer_41,rc_rack_status_panel_42,rc_hydrogen_detector_43,rc_obj44_44,rc_hall1_round_panel_45,rc_obj47_47,rc_obj48_48,rc_bms_bypass_module_49,rc_obj50_50,rc_obj52_52,rc_obj53_53,rc_esd_pushbutton_54,rc_obj55_55,rc_obj56_56,rc_obj57_57,rc_obj58_58,rc_obj61_61,rc_obj62_62,rc_obj64_64 item
-  class rc_npc_agent_hax_3,rc_npc_director_magnus_netherton_4,rc_npc_agent_0x47_nightshade_5,rc_npc_security_guard_6,rc_npc_agent_hax_7,rc_npc_robert_vance_17,rc_npc_agent_hax_18,rc_npc_robert_vance_23,rc_npc_entropy_operative_cipher_46,rc_npc_entropy_operative_relay_51,rc_npc_voltage_critical_mass_59,rc_npc_entropy_operative_static_60 npc
+  class rc_npc_agent_hax_3,rc_npc_director_magnus_netherton_4,rc_npc_agent_0x47_nightshade_5,rc_npc_security_guard_6,rc_npc_agent_hax_7,rc_npc_robert_vance_ops_desk_17,rc_npc_agent_hax_18,rc_npc_robert_vance_23,rc_npc_entropy_operative_cipher_46,rc_npc_entropy_operative_relay_51,rc_npc_voltage_critical_mass_59,rc_npc_entropy_operative_static_60 npc
   class rc_optigrid_tool_case_32,rc_security_equipment_locker_38,rc_extraction_gobag_63 container
   class node_start start
 ```

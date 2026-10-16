@@ -403,8 +403,15 @@ This place is mine to answer for. I'd rather hear it from you than from the fire
 + {vance_is_ally and crew_discussed and not crew_warned and not racks_vented and not attack_prevented} [Sound the evacuation. Get the night crew out.]
     -> vance_crew_sound
 
-+ {vance_is_ally} [Stay on the ops desk. I'll call if I need the engineering side.]
++ {vance_is_ally and not attack_prevented} [Stay on the ops desk. I'll call if I need the engineering side.]
     Robert Vance: I'm not going anywhere. Call the moment you're moving.
+    ~ vance_quiet = true
+    #exit_conversation
+    -> vance_hub
+
+// Blind run A (m1): after the shutdown the line above still sent the player in.
++ {vance_is_ally and attack_prevented} [I'm sweeping the site before I call it in. Stay on the desk.]
+    Robert Vance: Aye. I'll sit here and watch that needle come down.
     ~ vance_quiet = true
     #exit_conversation
     -> vance_hub

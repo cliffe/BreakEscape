@@ -75,6 +75,12 @@
       "optional": false
     },
     {
+      "id": "cyberchef_workstation",
+      "label": "CyberChef Workstation",
+      "kind": "item",
+      "optional": false
+    },
+    {
       "id": "operations_office",
       "label": "Operations Office",
       "kind": "room",
@@ -316,6 +322,11 @@
     {
       "from": "lock_pick_kit",
       "to": "lock_extraction_gobag",
+      "soft": false
+    },
+    {
+      "from": "main_entrance",
+      "to": "cyberchef_workstation",
       "soft": false
     },
     {

@@ -1030,3 +1030,77 @@ Report: `PASS5_FINAL_CHECK.md` (the earlier fixes confirmed). Three items for th
 #### Spoken lines changed (old → new)
 
 All new, HaX phone: "Not with Relay still on you. Lose her or put her down, then call." / "Not with Cipher still on you. Lose him or put him down, then call." / "Not with Static still on you. Lose him or put him down, then call." / "Not with the gate guard still after you. Lose him or put him down, then call." / "Not with Voltage still on his feet. Put him down, then call." Not voiced (choices): "[I'm well clear of them. Bring me in.]", "[Understood.]".
+
+## Pass 5: user blind run A fixes
+
+Report: `PASS5_BLIND_A.md` (the user's "do your best" blind run, game 2513; 0 blockers, 3 majors, 9 minors). Fixed without asking, per the user's standing instruction. Weighed against the report's own deviations: DOM clicks on visible controls, one DOM `eval` (M2), harness combat (`interact` doesn't punch; three `debugKO`), and briefs read straight after a KO. No browser session in this fix pass.
+
+| # | Sev. | Finding | Outcome |
+|---|---|---|---|
+| M1 | major | Vance's chat portrait is a coarse hooded figure from the alarm onward and in the debrief | **Fixed (cause found; the final-check F5 diagnosis was wrong).** The phone contact `robert_vance_phone` had the same `displayName`, "Robert Vance", as the person NPC. Phone NPCs register at game start, and `normalizeSpeakerId` (`person-chat-minigame.js`) takes the first display-name match, so every `Robert Vance:` prefix resolved to the phone NPC, which has no sprite or talk art. That covers his hub, the crew offer and the evacuation (the knots with prefixes; the early tagged knots are unprefixed), and his debrief replies. The phone contact is now "Robert Vance (ops desk)". Ids as prefixes were rejected because dialoguelint and the TTS line extractor only read capitalised `Name:` prefixes. Engine item E3 (DECISIONS_PENDING) covers the general fix, which m05's Patricia also needs |
+| M2 | major | No way to reach CyberChef for the go-bag's Base64 card | **Fixed.** m04 had no `workstation` item at all. The CyberChef guide is a lab sheet, and the "Crypto Workstation" frame the tester found is the engine's hidden modal. A CyberChef Workstation is now in the starting kit (as m01 and m03 give one). HaX's go-bag text points to it, and the briefing's kit line names it |
+| M3 | major | The H2 advisory clock contradicts "about half an hour" and doesn't say what zero does | **Fixed (partly a misread).** The tester asked HaX about the alarm before mapping the attack ("about half an hour" is right for an early alarm), then sounded it after mapping, which costs no time. The clock on screen was the 8-minute one that starts when the attack is mapped, and nothing said so. Changes: (1) a new HaX text when the attack is mapped with Voltage still up: "Nightshade's run the numbers off that box. Bank B won't last till eight. The clock on your screen is when its hydrogen alarm goes." It is skipped once a bank has gone or the shutdown is in, and it pays off Nightshade's briefing promise. (2) The late-alarm text says the alarm cost no time. (3) The early-alarm text adds "The clock's on your screen." (4) HUD labels: "Bank B hydrogen alarm in" (both advisory timers; was "H₂ Advisory — rack bank B") and "Voltage reaches the laptop in" (was "Voltage — the laptop") |
+| m1 | minor | Vance after the shutdown: "Call the moment you're moving." | **Fixed.** That choice now needs `not attack_prevented`. After the shutdown: "[I'm sweeping the site before I call it in. Stay on the desk.]" / "Aye. I'll sit here and watch that needle come down." |
+| m2 | minor | Hall 2 chat opens on a black frame; garbled sign text | **Engine and art, logged.** The background config and files are present, so the black frame is the image loading after a `room_entered` chat opens (E5). The garbled signs ("PETION", "RACK BAKK 1") are in the background image itself (A1, a metered Gemini edit, so it's the user's call) |
+| m3 | minor | A reload returns the player to the entrance | **Declined.** Settled by the user on 2026-10-16 (`docs/agents/RESOLVED_DECISIONS.md`: no "resume in the room you left") |
+| m4 | minor | After HaX's last message only "On it." shows, which hides the guide menu | **Fixed.** The Relay-KO event call (`on_relay_ko_card`) ended on a lone "On it." menu, and later texts landed under it. It now goes straight to the hub, so the field guides and "Nothing right now." are there at once. `on_relay_ko_card_choices` was removed |
+| m5 | minor | Map lighting doesn't read as night in most rooms | **Deferred** to one lighting round after the current room-dressing work (L4). It needs renders and a visual review, and the ops office map is changing under another agent |
+| m6 | minor | "Nightshade's reading" is never explained | **Fixed** in the briefing ("They'll believe Nightshade, if you get a real reading off those racks."). The new clock text and HaX's existing "Nightshade's got your reading" text after the dial now name Nightshade in play too |
+| m7 | minor | "neutralize_operative_cipher (opt)" stayed in the task list | **Withdrawn.** The session log shows the task leaving the open list by line 915. The brief at 903 was taken 0.1 s after the `debugKO`, before the KO handler ran |
+| m8 | minor | All four flags are accepted in any order | **Declined (by design).** Each flag is its own task at the drop-site terminal, and the aim completes on all four. The VM's own sequencing is SecGen's: needs checking against SecGen by the user if the order should be enforced |
+| m9 | minor | The ESD flap is only described as "Flip guard" | **Partly fixed.** The ESD's observations now say "A hinged safety flap covers it: lift the flap, then press." The minigame's own status text is engine (E4) |
+| W2 | worst line | Voltage: "Nobody left to stop you. All right." gives in in one beat | **Fixed.** "You're between me and the dock. I could still make that keystroke before you reached me." / "So give me a reason not to." The player's court line is the reason, and his existing reply ("...A court. Fine. Let them read the casualty model. I signed it.") now reads as a choice he makes |
+| W3 | worst line | The briefing's directive recap and numbered orders read as written | **Fixed:** the directive is quoted as a line the Zero Day job left, and the One–Four list became spoken order |
+| W4 | worst line | "Two hundred and forty thousand on that feed never knew they were on it." | **Fixed:** "Two hundred and forty thousand people kept their lights on and never knew why." (both debrief variants) |
+| D | decision notes | The Cipher cover bluff always fails; Relay's persuasion doesn't change her | **Declined, deliberate.** Cipher has a separate talk-down route (interrupt the radio, then the night crew); the bluff failing is the cover meeting the cell. Relay is the operative who did the modelling and can't be talked round; her quiet route is the clone |
+
+Engine items covered by the agents building form section 7 (not duplicated): the tester's punching problem (7.1i, 7.1h).
+
+#### Routes
+
+- New `r34_blind_a_fixes.json`: the Relay-KO call reaches the hub and a field guide at once (no "On it."); Voltage's new arrest beat and capture; Vance's line after the shutdown.
+- `r25` updated for the new Nightshade line.
+- 34 of 34 routes: all expectations met.
+
+#### Checks (static; no browser session)
+
+- Ink compiles (10 files, 0 failed).
+- Full validator: schema passed, all ink valid, 12 issues (unchanged in count; the `map_the_attack` overlap warning now lists 5 handlers, and the new text is meant to fire alongside the others). Dungeon graph regenerated.
+- dialoguelint: 0 errors, 0 warnings, plus the 2 withdrawn blank-reentry checks. Timed texts max 30 words.
+- reopencheck: 0 problems (HaX phone 1800 reopens, Vance phone 1800).
+- check_door_alignment: all OK.
+- loopcheck: HaX phone at `on_relay_ko_card`, Vance's hub after the shutdown, Voltage at `confrontation_choice` with Static down: clean.
+- tagdiff against HEAD: 15 differences, all from the list above. Vance: the stay-on-desk choice condition and the new post-shutdown choice (hub 13 → 14 choices). HaX phone: `on_relay_ko_card` diverts to `support_hub`, and `on_relay_ko_card_choices` (its "On it." and `#exit_conversation`) was removed. Briefing, Voltage and debrief: prose only.
+
+#### Spoken lines changed (old → new)
+
+- HaX, briefing: "Remember the directive from the Zero Day job? "Zero Day supplies, Critical Mass executes. Grid storage, this winter."" → "The Zero Day job left us one line. "Zero Day supplies, Critical Mass executes. Grid storage, this winter.""
+- HaX, briefing: "We said it was coming. It's tonight, and it's this hall." → "Well, it's winter, and this is the site."
+- HaX, briefing: "Four things, then." → (cut)
+- HaX, briefing: "One. Get in on the regulator cover and find Vance." → "So. Get in on the regulator cover and find Vance."
+- HaX, briefing: "Two. Prove how they took the control network. Their jump server's in the engineering workshop, and anything you pull off it goes into the drop-site terminal." → "Then prove how they took the control network. Their jump server's in the engineering workshop. Whatever you pull off it goes into the drop-site terminal."
+- HaX, briefing: "Three. The plant room has a hardwired Emergency Shutdown button, the ESD. …" → "The plant room has a hardwired Emergency Shutdown button, the ESD. …"
+- HaX, briefing: "Press it and the banks isolate, once grid control believes you. That's what Nightshade's reading is for." → "Press it and the banks isolate, once grid control believes you. They'll believe Nightshade, if you get a real reading off those racks."
+- HaX, briefing: "Four. The operatives. Voltage alive, if you can." → "And the operatives. Voltage alive, if you can."
+- HaX, briefing: "Kit: your picks, and the cloner from the WhiteHat job. No PIN cracker. …" → "Kit: your picks, the cloner from the WhiteHat job, and a laptop with CyberChef on it. No PIN cracker. …"
+- Voltage: "Nobody left to stop you. All right." → "You're between me and the dock. I could still make that keystroke before you reached me." + "So give me a reason not to."
+- Vance: new "Aye. I'll sit here and watch that needle come down."
+- HaX, debrief (two variants): "… Two hundred and forty thousand on that feed never knew they were on it." → "… Two hundred and forty thousand people kept their lights on and never knew why."
+
+Not voiced:
+- Texts: go-bag "…I can send you the decoding guide if you'd rather not eyeball it." → "…Paste it into the CyberChef workstation in your kit. Decoding guide on request."; early alarm adds "The clock's on your screen."; late alarm "…Voltage knows we're here now. Keep moving." → "…Voltage knows we're here now, but your clock was already running. It cost you no time."; new clock text (M3).
+- Choice: new Vance "[I'm sweeping the site before I call it in. Stay on the desk.]"; HaX's "[On it.]" after the Relay-KO call removed.
+- HUD labels, ESD observations, the phone contact name "Robert Vance (ops desk)", the new CyberChef Workstation item.
+
+#### Browser check (short, game 2517, keyless :3001, headless)
+
+- M2: the CyberChef Workstation is in the starting inventory, and clicking it opens the Crypto Workstation popup with CyberChef loading.
+- M1: on a re-talk Vance's hub opens on the prefixed line "Robert Vance: Something else?" and shows his own portrait (glasses, lanyard, ops-office background). The registry now holds `robert_vance_phone` = "Robert Vance (ops desk)" and `robert_vance` = "Robert Vance".
+- verify-run: progress recorded (ops office reached; the workstation in the server inventory). Session stopped; log in the session scratchpad (`m04-blindA-fixes/session-2517.jsonl`).
+
+#### Browser checks still owed
+
+- Vance's evacuation lines and his debrief replies (M1, same mechanism as the hub line checked), and the phone contact's new name in the phone list.
+- The go-bag card decodes in the workstation (M2).
+- The clock text lands on mapping without covering a conversation, and the new HUD labels fit the widget (M3).
+- The Relay-KO call lands on the hub with the guides (m4).
