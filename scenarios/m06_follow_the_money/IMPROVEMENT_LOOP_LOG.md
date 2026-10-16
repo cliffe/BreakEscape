@@ -1164,3 +1164,16 @@ Changes (old to new):
 Checks: compile 9/9; all 32 m06 routes meet their expectations; dialoguelint 0 problems; reopencheck 0 problems; `validate_scenario.rb --skip-ink --no-graph` completes with no errors (warnings only, none new from this edit).
 
 Owed: a browser look that the trophy-cabinet spot reads as the place the check measured.
+
+## SecGen alignment (2026-10-16)
+
+Source: `docs/agents/SECGEN_CLAIMS_CHECK.md`. The check confirms the build-service foothold with no flag, flags 1 to 4 (cracked password, reuse, financial database, vault) and their order. "Root via sudo" is unclear: the vault route's account is marked as a super user, which the module maps to an administrators group, and the XML declares no sudo rule. The game's wording is softened to administrator rights.
+
+Lines changed (text only, not voiced):
+- erb, HaX text on flag 1: "First account's yours. People here reuse passwords, so that one opens more than one door. When you need root, I've a guide." → "... When you need administrator rights, I've a guide."
+- erb, privilege-escalation guide `observations`: "Taking an ordinary account up to root, once you have a foothold" → "Taking an ordinary account up to administrator rights, once you have a foothold"
+- `m06_phone_agent_0x99.ink`, guides menu choice: "[Privilege escalation via sudo.]" → "[Privilege escalation.]"
+
+Left alone: the guide item's name "SAFETYNET Field Guide: Privilege Escalation via Sudo" (D6 says it was set to the sheet's own title; the sheet wasn't opened here). Whether that guide fits a route with no declared sudo rule stays with the user (D6 S5).
+
+Checks: `scripts/compile-ink.sh m06_follow_the_money` 9/9; all 32 m06 routes meet their expectations; dialoguelint 0 problems; reopencheck 0 problems; `validate_scenario.rb --skip-ink --no-graph` no errors, known warnings only.

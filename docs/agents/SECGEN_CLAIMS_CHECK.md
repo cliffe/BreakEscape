@@ -114,3 +114,22 @@ Field guide note: the m08 XML lab sheet URL points to `scanning-and-exploitation
 - m06: the description's flag notation (`hackme_crack_me_lab:flag_1..4`) differs from the game's `targetFlags` notation (`-flag1` to `-flag4`).
 
 Items marked "unclear" depend on how the Linux build treats `parameterised_accounts` (home path, sudo group, SSH) and on the Kali IP, which SecGen assigns at build time. A build would settle them.
+
+## Game text aligned (2026-10-16)
+
+The game side has been changed to match this check: m05, m06, m07 and m08 each have a "SecGen alignment (2026-10-16)" section in their `IMPROVEMENT_LOOP_LOG.md` listing every line (old → new), and their `DECISIONS_PENDING.md` items are marked where this check settled them. The m07 flag labels now put the user account at 3 and root at 4. m08 uses "Cryptography Lab terminal 03" everywhere, has no stash and no `nightshade_ops` account, and the U1 note is closed.
+
+## SecGen-side changes for the user
+
+These need an edit in the SecGen repo. Nothing here was changed.
+
+a. **m05 D1: the manifest names "D. Torres"** (`m05_insider_trading.xml:201-203`). The game wants the deduction to name him, so the VM shouldn't. Proposed: the manifest shows badge #4471 only, with no name (SC-4471 already appears in the m02 XML, lines 321 and 329; check it is the same badge before reusing it). Once that's in, the game's flag-3 mapping should stop latching `torres_suspected`/`case_exfil` and HaX's two flag-3 lines that name him need rewording (`m05_insider_trading/DECISIONS_PENDING.md`, D1).
+
+b. **m05: a fifth flag.** `sudo_root_less` carries a `strings_to_pre_leak` flag generator (`m05_insider_trading.xml:289-291`) that the game doesn't list, so the server has five primary flags against the game's four (plus the bonus archive flag), while the XML text says "four primary flags". Either drop that input in the XML (proposed, simplest) or add a fifth flag to the game's `flags_for_vm` list, flagRewards and tasks.
+
+c. **m08: the root payload hard-codes "nightshade_ops"** (`m08_the_mole.xml:249`), and the mail's From line hard-codes "nightshade_deep_state" (line 201). The login name is random per build, so neither matches the box. Under Option B the box gives a terminal and a time, never a person, and the payload's "nightshade_ops" names the mole at root. Proposed: neutral wording in the root payload (for example "account: [the login used]" or no account at all, keeping "source: Cryptography Lab terminal 03" and "duration 00:47:00"). The mail's From line can stay, since the game's own copy of the mail (the USB stick in his locker) uses the same alias, but it does point at him at flag 3; drop or neutralise it if the audit is meant to carry the naming alone. Also worth a look: the text says the mail came from `~/.local/share/mail/sent`, but the module writes a file named `flag` in the home directory (line 192); the game now says only "a file in the home directory".
+
+d. **m06/m07 notation and labels.**
+   - m06: the XML description writes the flags as `hackme_crack_me_lab:flag_1..4`; the game's `targetFlags` use `hackme_crack_me_lab-flag1` to `-flag4` (`m06_follow_the_money.xml:35-38`). Notation only; align the description if it's shown to students. Separately, the vault route's account is `super_user`, which `parameterised_accounts` maps to Windows group names, and no sudo rule is declared, though the XML comment says "via sudo" (line 131). Either add the sudo rule the comment describes or reword the comment; the game now says "administrator rights".
+   - m07: the XML comment says the flag 3 account is reachable over SSH (lines 151-171), but nothing configures SSH. Either add SSH to the build or reword the comment. The game no longer claims SSH, but still offers the SSH field guide at flag 2; if the box has no SSH, that offer should point at another sheet. The game's placeholder flag labels have been fixed (3 = user account, 4 = root).
+   - m05, m07, m08: `parameterised_accounts` writes its leaked file to a Windows-style path (`account.pp:42-46`). A Linux build check would confirm where flag 3 lands on each box.

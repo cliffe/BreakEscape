@@ -640,7 +640,7 @@ Which one?
     -> request_distcc_guide
 + {cracking_guide_offered and not cracking_guide_hint_given} [Offline password cracking.]
     -> request_cracking_guide
-+ {privesc_guide_offered and not privesc_guide_hint_given} [Privilege escalation via sudo.]
++ {privesc_guide_offered and not privesc_guide_hint_given} [Privilege escalation.]
     -> request_privesc_guide
 + [Never mind.]
     -> hub

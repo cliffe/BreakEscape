@@ -734,6 +734,7 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
   "rooms": {
     "reception_lobby": {
       "type": "room_hce_lobby",
+      "chatBackground": "assets/backgrounds/rooms/m06_reception_lobby_blended.png",
       "lighting": {
         "ambient": "#c4b8a6",
         "emitters": {
@@ -859,7 +860,7 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
               "name": "SAFETYNET Field Guide: Privilege Escalation via Sudo",
               "takeable": true,
               "labUrl": "https://cliffe.github.io/HacktivityLabSheets/labs/safetynet/privilege-escalation/",
-              "observations": "Taking an ordinary account up to root, once you have a foothold"
+              "observations": "Taking an ordinary account up to administrator rights, once you have a foothold"
             },
             {
               "type": "lab-workstation",
@@ -1074,7 +1075,7 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
               "eventPattern": "objective_task_completed:submit_flag1",
               "onceOnly": true,
               "setGlobal": { "flag1_submitted": true, "privesc_guide_offered": true },
-              "sendTimedMessage": { "delay": 1200, "message": "First account's yours. People here reuse passwords, so that one opens more than one door. When you need root, I've a guide.", "skipIfGlobal": "flag2_submitted" }
+              "sendTimedMessage": { "delay": 1200, "message": "First account's yours. People here reuse passwords, so that one opens more than one door. When you need administrator rights, I've a guide.", "skipIfGlobal": "flag2_submitted" }
             },
             {
               "eventPattern": "objective_task_completed:submit_flag2",
@@ -1558,6 +1559,10 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
 
     "security_checkpoint": {
       "type": "room_hce_hall",
+      "chatBackground": [
+        { "x": [0, 0.55], "image": "assets/backgrounds/rooms/m06_security_checkpoint_left_blended.png" },
+        { "x": [0.55, 1], "image": "assets/backgrounds/rooms/m06_security_checkpoint_blended.png" }
+      ],
       "lighting": {
         "emitters": {
           "aes_security_desk": [{ "color": "#9fd4ff", "radius": 40, "intensity": 0.5, "effect": "screen", "offsetX": -15, "offsetY": -20 }],
@@ -1641,6 +1646,10 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
 
     "trading_floor": {
       "type": "room_hce_trading",
+      "chatBackground": [
+        { "x": [0, 0.65], "image": "assets/backgrounds/rooms/m06_trading_floor_left_blended.png" },
+        { "x": [0.65, 1], "image": "assets/backgrounds/rooms/m06_trading_floor_blended.png" }
+      ],
       "lighting": {
         "ambient": "#b2b8c8",
         "emitters": {
@@ -1798,6 +1807,7 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
 
     "server_room": {
       "type": "room_hce_servers",
+      "chatBackground": "assets/backgrounds/rooms/m06_server_room_blended.png",
       "lighting": {
         "mode": "motion",
         "ambient": "#a8c2ce",
@@ -1911,6 +1921,7 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
 
     "data_center": {
       "type": "room_hce_vault",
+      "chatBackground": "assets/backgrounds/rooms/m06_data_center_blended.png",
       "lighting": {
         "mode": "motion",
         "ambient": "#a2bac8",
@@ -2045,6 +2056,7 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
 
     "blockchain_lab": {
       "type": "room_hce_lab",
+      "chatBackground": "assets/backgrounds/rooms/m06_blockchain_lab_blended.png",
       "lighting": {
         "ambient": "#b0b8c6",
         "emitters": {
@@ -2124,6 +2136,7 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
 
     "irina_office": {
       "type": "room_hce_office",
+      "chatBackground": "assets/backgrounds/rooms/m06_irina_office_blended.png",
       "lighting": {
         "mode": "motion",
         "ambient": "#bcb6aa",
@@ -2176,6 +2189,7 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
 
     "executive_wing": {
       "type": "room_hce_exec_hall",
+      "chatBackground": "assets/backgrounds/rooms/m06_executive_wing_blended.png",
       "lighting": {
         "ambient": "#bcb6b0",
         "panels": false,
@@ -2327,6 +2341,7 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
           bottom half clear; the objects are pinned clear of the door column.
           Room dressing: room_hce_ceo keeps room_ceo's desk and the door lane x 256-288. %>
       "type": "room_hce_ceo",
+      "chatBackground": "assets/backgrounds/rooms/m06_satoshi_office_blended.png",
       "lighting": {
         "ambient": "#b6aea6",
         "emitters": {
