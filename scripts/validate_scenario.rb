@@ -4297,7 +4297,7 @@ end
 # '||' (and parentheses) in the conditions the &&-only evaluators read, beyond the
 # eventMappings, timers and text/sprite/observation variants checked above (m04 L3):
 # lighting (scenario and room blocks, their variants, emitter variants), NPC
-# behavior.torch and chatBackground views all go through conditional-text.js
+# behavior.torch, chatBackground views and gameClock anchors all go through conditional-text.js
 # evaluateGlobalCondition, which splits on '&&' only and reads the first globalVars
 # name of a term, so "globalVars.a || globalVars.b" is just "globalVars.a".
 # Skipped: music events and credits (run as JS by scenario-music-events.js) and
@@ -4315,9 +4315,9 @@ def check_or_in_global_conditions(json_data)
       cond = node['condition']
       if cond.is_a?(String) && !path.match?(checked_elsewhere)
         case ctx
-        when :lighting, :torch, :chat_background
+        when :lighting, :torch, :chat_background, :clock
           if (bad = unsupported_condition_syntax(cond, allow_includes: false))
-            where = { lighting: 'lighting', torch: 'NPC torch', chat_background: 'chatBackground' }[ctx]
+            where = { lighting: 'lighting', torch: 'NPC torch', chat_background: 'chatBackground', clock: 'gameClock anchor' }[ctx]
             issues << "❌ INVALID: '#{path}' #{where} condition \"#{cond}\" uses #{bad}. conditional-text.js " \
                       "evaluateGlobalCondition supports only '&&'-joined terms, so '||' is mis-read (each term " \
                       "reads its first globalVars name: \"globalVars.a || globalVars.b\" is just globalVars.a). " \
@@ -4339,6 +4339,7 @@ def check_or_in_global_conditions(json_data)
       node.each do |k, v|
         child_ctx = ctx
         child_ctx = :js if path.empty? && k == 'music'
+        child_ctx = :clock if path.empty? && k == 'gameClock'
         child_ctx = :lighting if k == 'lighting' && ctx.nil?
         child_ctx = :torch if k == 'torch' && ctx.nil?
         child_ctx = :chat_background if k == 'chatBackground' && ctx.nil?

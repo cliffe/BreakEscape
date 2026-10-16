@@ -204,9 +204,29 @@ These layouts demonstrate the flexibility of the new grid system for creating en
 | `show_scenario_brief` | When to pop up the brief: `"on_start"` (every load), `"on_resume"` (only when resuming a game with progress), `"once"` (first start only, after any opening cutscene; recorded in the save so a reload doesn't reopen it), or omit (as `"on_start"`). The brief is always in the Notepad. |
 | `disableAttacks` | `true` turns off player attacks: no punching, no Interact/Jab/Cross toggle in the HUD (Q does nothing), and no combat step in the tutorial. NPCs can't be knocked out, so the validator skips its KO-resilience check. Used by the SIS serious games. |
 | `creditsTheme` | Theme of the end-of-mission credits visualiser, from the table in `public/break_escape/js/music/credits-theme.js`. `"safetynet"` (the default when omitted) is the SAFETYNET campaign debrief: classified stamp, global threat map, agency panel, S/N shield, track title. `"cyber"` is a generic cyber security incident review for standalone exercises such as the SIS games: "INCIDENT REVIEW", the mission's display name, the first `subtitle` credit line as the setting, a review log that echoes the credits, a padlock logo, SIEM and matrix modes but no threat map or stamps, and "MUSIC: CLOSING THEME" instead of the track title. Each theme lists which visualiser modes it enables. |
-| `gameClock` | Optional in-game time: `{ "start": "Tue 07:30" }`. The command board and SIEM clocks show the start plus elapsed game time instead of the real wall clock, and board entries are stamped with it. Game time (and every scenario timer) resumes after a reload. |
+| `gameClock` | Optional in-game time: `{ "start": "Tue 07:30" }`. Phone message times, the command board and SIEM clocks show the start plus elapsed game time instead of the real wall clock, and board entries are stamped with it. Game time (and every scenario timer) resumes after a reload. Add `rate` and `anchors` to keep the clock in step with the story (see [The in-game clock](#the-in-game-clock-gameclock)). |
 | `music` | Dynamic music event system. See Music System section. |
 
+
+### The in-game clock (`gameClock`)
+
+With only a `start`, the in-game clock runs at wall speed, so after 25 minutes of play a phone reads 16:55 however much story has passed. Two optional fields keep it with the story:
+
+```json
+"gameClock": {
+  "start": "Wed 16:30",
+  "rate": 6,
+  "anchors": [
+    { "condition": "globalVars.torres_scene_started === true", "time": "20:10" },
+    { "condition": "globalVars.debrief_started === true", "time": "Thu 08:00" }
+  ]
+}
+```
+
+- **`rate`**: game minutes per real minute (default `1`). At `6`, ten minutes of play is an hour of story. Only the shown time is scaled: scenario timers, `delay`s and `delayMs` stay in real time.
+- **`anchors`**: when an anchor's `condition` (globalVars syntax, `&&` only) first holds, the clock jumps forward to its `time` and runs on at `rate` from there. It never goes back: an anchor the clock has already passed is just marked reached. A `time` with no day means that time on the current game day; with a day (`"Thu 08:00"`) it is that day. Key anchors on a global set behind a scene change, so the jump happens out of sight.
+- A message keeps the time it arrived at, before or after a jump, and reached anchors are saved with the clock, so a reload shows the same times. A text preloaded as sent before the game started keeps its written gap at 1:1.
+- Pick the rate from the story's own clock: the time the opening names, the time a late scene names, and how long a typical run takes to get there. Anchors then pin the scenes whose time the dialogue states, so a slow player doesn't see 18:00 when the ink says "gone eight".
 ### Available Room Types
 
 The `type` field of each room must match a file in `public/break_escape/assets/rooms/`. Available types:

@@ -11,6 +11,7 @@ const root = join(dirname(fileURLToPath(import.meta.url)), '../..');
 const ruby = spawnSync('ruby', ['--version']);
 
 const scenario = {
+  gameClock: { start: 'Wed 16:30', rate: 6, anchors: [{ condition: 'globalVars.a || globalVars.b', time: '20:10' }] },
   lighting: { enabled: true, variants: [{ condition: 'globalVars.a || globalVars.b', mode: 'dark' }] },
   music: { events: [{ trigger: 'game_loaded', condition: 'globalVars.a || globalVars.b', playlist: 'x' }] },
   rooms: {
@@ -38,6 +39,7 @@ test("'||' is flagged in lighting, torch and chatBackground, not in music or com
     const issues = JSON.parse(r.stdout.trim().split('\n').pop());
     const where = issues.map(s => [s.match(/'([^']+)'/)[1], s.startsWith('❌') ? 'error' : 'warn']).sort();
     assert.deepEqual(where, [
+      ['gameClock/anchors[0]', 'error'],
       ['lighting/variants[0]', 'error'],
       ['rooms/lab/chatBackground[0]', 'error'],
       ['rooms/lab/lighting/emitters/rack1[0]', 'error'],          // parentheses

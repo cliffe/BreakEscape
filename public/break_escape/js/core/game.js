@@ -7,7 +7,7 @@ import { initializeInventory, processInitialInventoryItems } from '../systems/in
 import { checkObjectInteractions, setGameInstance, isObjectInInteractionRange } from '../systems/interactions.js';
 import { createInfoLabel, updateInfoLabel } from '../ui/info-label.js';
 import { showInteractionMenu, isInteractionMenuOpen, closeInteractionMenu } from '../ui/interaction-menu.js';
-import { resolveObjectField } from '../utils/conditional-text.js';
+import { resolveObjectField, evaluateGlobalCondition } from '../utils/conditional-text.js';
 import { introduceScenario } from '../utils/helpers.js';
 import '../minigames/index.js';
 import SoundManager from '../systems/sound-manager.js';
@@ -40,6 +40,27 @@ import { fistsClickPunches } from '../systems/combat-input.js';  // 7.1i: fists 
 
 // Global variables that will be set by main.js
 let gameScenario;
+
+/**
+ * gameClock.anchors: jump the in-game clock when an anchor's condition first holds.
+ * Checked as soon as a global the condition names changes (so a text sent right after
+ * is stamped after the jump), and once a second for globals set without an event.
+ */
+function watchGameClockAnchors(clock) {
+    const prev = window._gameClockAnchorWatch;
+    if (prev) {
+        clearInterval(prev.timer);
+        prev.subs.forEach(([name, fn]) => window.eventDispatcher?.off?.(name, fn));
+        window._gameClockAnchorWatch = null;
+    }
+    if (!clock?.anchors?.length) return;
+    const check = () => clock.checkAnchors(c => evaluateGlobalCondition(c, window.gameState?.globalVariables || {}));
+    const names = new Set(clock.anchors.flatMap(a => Array.from(a.condition.matchAll(/globalVars\.(\w+)/g), m => m[1])));
+    const subs = [...names].map(n => [`global_variable_changed:${n}`, check]);
+    subs.forEach(([name, fn]) => window.eventDispatcher?.on?.(name, fn));
+    window._gameClockAnchorWatch = { timer: setInterval(check, 1000), subs };
+    check();
+}
 
 // Preload function - loads all game assets
 export function preload() {
@@ -1392,6 +1413,7 @@ export async function create() {
         config: gameScenario.gameClock || null,
         saved: gameScenario.savedScenarioClock || null
     });
+    watchGameClockAnchors(window.gameClock);
 
     // Scenarios with a command board (the server sends its config as commandBoard): record
     // its entries from game start, each stamped with the game time it happened, even while

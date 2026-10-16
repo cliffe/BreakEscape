@@ -611,6 +611,24 @@ module BreakEscape
       assert_equal({}, clock['timers']['started'])
     end
 
+    test 'gameClock anchors reached are saved, the first record wins, bad ones are dropped (7.5f)' do
+      game = create_game
+      put sync_state_game_url(game), params: { scenarioClock: {
+        elapsedMs: 600_000, anchors: { '0' => { atMs: 540_000, gameSec: 72_600 } }
+      } }, as: :json
+      put sync_state_game_url(game), params: { scenarioClock: {
+        elapsedMs: 700_000,
+        anchors: { '0' => { atMs: 690_000, gameSec: 80_000 }, '1' => { atMs: 650_000, gameSec: 75_000 },
+                   'x' => { atMs: 1, gameSec: 1 }, '2' => { atMs: 'soon', gameSec: 1 } }
+      } }, as: :json
+      assert_response :success
+
+      clock = scenario_json(game)['savedScenarioClock']
+      assert_equal 700_000, clock['elapsedMs']
+      assert_equal({ '0' => { 'atMs' => 540_000, 'gameSec' => 72_600 }, '1' => { 'atMs' => 650_000, 'gameSec' => 75_000 } },
+                   clock['anchors'])
+    end
+
     test 'command board log: earliest stamp wins, settled entries kept, sent only with a board' do
       game = create_game
       put sync_state_game_url(game), params: { commandBoardLog: [{ id: 'ncsc_notified', t: 42_000 }, { id: 'pump_dose_error_caught', t: -1 }] }, as: :json

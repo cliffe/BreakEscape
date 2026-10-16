@@ -1575,6 +1575,7 @@ module BreakEscape
     MAX_SCENARIO_CLOCK_ELAPSED_MS = 7.days.in_milliseconds
     MAX_SCENARIO_TIMERS = 200
     MAX_CLOCK_KEY_LENGTH = 200
+    MAX_CLOCK_ANCHORS = 50
 
     # Merge the client's game clock: elapsed game time and the scenario timers' state
     # (fired / cancelled ids, and how long each started startOnGlobal timer has run).
@@ -1613,6 +1614,25 @@ module BreakEscape
           timers_elapsed = [timers_elapsed, timers['elapsedMs'].to_i.clamp(0, MAX_SCENARIO_CLOCK_ELAPSED_MS)].max
         end
         saved['timers'] = { 'elapsedMs' => timers_elapsed, 'fired' => fired, 'cancelled' => cancelled, 'started' => started }
+      end
+
+      # gameClock.anchors reached ({ index => { atMs, gameSec } }): the first record of
+      # an anchor wins, so a reload keeps the time each message was shown at
+      anchors = incoming['anchors']
+      if anchors.is_a?(Hash)
+        saved_anchors = saved['anchors'].is_a?(Hash) ? saved['anchors'].dup : {}
+        anchors.each do |idx, rec|
+          key = idx.to_s
+          next unless key.match?(/\A\d{1,3}\z/) && rec.is_a?(Hash) && !saved_anchors.key?(key)
+          at_ms = rec['atMs']
+          game_sec = rec['gameSec']
+          next unless at_ms.is_a?(Numeric) && game_sec.is_a?(Numeric)
+          next if saved_anchors.size >= MAX_CLOCK_ANCHORS
+
+          saved_anchors[key] = { 'atMs' => at_ms.to_i.clamp(0, MAX_SCENARIO_CLOCK_ELAPSED_MS),
+                                 'gameSec' => game_sec.to_i.clamp(0, 7 * 86_400 * 52) }
+        end
+        saved['anchors'] = saved_anchors
       end
 
       player_state['scenarioClock'] = saved

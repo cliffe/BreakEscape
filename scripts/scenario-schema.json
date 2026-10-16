@@ -45,7 +45,25 @@
     },
     "gameClock": {
       "type": ["object", "string"],
-      "description": "Optional in-game clock: { \"start\": \"Tue 07:30\" } (or just the string). Clock displays (command board, SIEM) then show this start time plus elapsed game time instead of the real wall clock. Elapsed game time resumes after a reload."
+      "description": "Optional in-game clock: { \"start\": \"Tue 07:30\" } (or just the string). Clock displays (phone, command board, SIEM) then show this start time plus elapsed game time instead of the real wall clock. Elapsed game time resumes after a reload. rate: game minutes per real minute (default 1). anchors: [{ condition, time }] jump the clock forward when the condition first holds.",
+      "properties": {
+        "start": { "type": "string" },
+        "rate": { "type": "number", "exclusiveMinimum": 0, "maximum": 1440 },
+        "anchors": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["condition", "time"],
+            "properties": {
+              "condition": { "type": "string" },
+              "time": { "type": "string" },
+              "_comment": { "type": "string" }
+            },
+            "additionalProperties": false
+          }
+        },
+        "_comment": { "type": "string" }
+      }
     },
     "flags": {
       "type": "object",
