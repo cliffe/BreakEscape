@@ -27,7 +27,7 @@
 #   The engine assigns setVariable values literally, so the old
 #   "evidence_level + 1" strings never counted anything.
 #   Motive:  found_medical_bills | found_torres_journal | found_vetting_file
-#   Exfil:   found_manifest | found_upload_schedule | flag3_submitted & door_log_reasoned (flag 3 shows badge #4471 only: D1, 2026-10-16)
+#   Exfil:   found_upload_schedule | flag3_submitted & door_log_reasoned | found_manifest & door_log_reasoned (flag 3 and the printed manifest show badge #4471 only: D1, E9)
 #   Patricia will act on a name only when the player has one of each.
 #
 # THE LOCKS (pass 3, PUZZLE_CHAINS_PLAN.md):
@@ -220,8 +220,8 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
           { "text": "WHO TOLD SECURITY TO STOP — never asked",            "style": "warning", "condition": "!globalVars.found_stand_down_email && !globalVars.found_vetting_file" },
           { "text": "" },
           { "text": "── QUANTUM DYNAMICS STAFF ──",                        "style": "section-header" },
-          { "text": "Nobody on staff hurt",                                "style": "entry", "condition": "!globalVars.patricia_ko && !globalVars.owen_ko && !globalVars.lisa_ko && !globalVars.halloran_ko && globalVars.final_choice !== 'combat_lethal' && globalVars.final_choice !== 'combat_nonlethal'" },
-          { "text": "Nobody else on staff hurt",                           "style": "entry", "_comment": "Struggling run A (M2): Torres is staff, and a knockout put him on the floor; 'Nobody on staff hurt' after DAVID TORRES — DEAD contradicted itself.", "condition": "!globalVars.patricia_ko && !globalVars.owen_ko && !globalVars.lisa_ko && !globalVars.halloran_ko && (globalVars.final_choice === 'combat_lethal' || globalVars.final_choice === 'combat_nonlethal')" },
+          { "text": "Nobody on staff hurt",                                "style": "entry", "_comment": "Engine regression 2026-10-16 (E4): not after a fight with Torres (torres_fought), KO or not.", "condition": "!globalVars.patricia_ko && !globalVars.owen_ko && !globalVars.lisa_ko && !globalVars.halloran_ko && !globalVars.torres_fought && globalVars.final_choice !== 'combat_lethal' && globalVars.final_choice !== 'combat_nonlethal'" },
+          { "text": "Nobody else on staff hurt",                           "style": "entry", "_comment": "Struggling run A (M2): Torres is staff, and a knockout put him on the floor; 'Nobody on staff hurt' after DAVID TORRES — DEAD contradicted itself.", "condition": "!globalVars.patricia_ko && !globalVars.owen_ko && !globalVars.lisa_ko && !globalVars.halloran_ko && (globalVars.torres_fought || globalVars.final_choice === 'combat_lethal' || globalVars.final_choice === 'combat_nonlethal')" },
           { "text": "PATRICIA MORGAN: A&E, on your account",               "style": "warning", "condition": "globalVars.patricia_ko" },
           { "text": "OWEN GALLAGHER: concussion, on your account",          "style": "warning", "condition": "globalVars.owen_ko" },
           { "text": "LISA PARK: off work with a head injury",              "style": "warning", "condition": "globalVars.lisa_ko" },
@@ -731,6 +731,7 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
     "spare_badge_taken": false,
     "torres_fight_offered": false,
     "torres_hostile": false,
+    "torres_fought": false,
     "torres_called_in": false
   },
 
@@ -799,6 +800,7 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
           "id": "director_netherton",
           "displayName": "Director Magnus Netherton",
           "npcType": "person",
+          "gender": "male",
           "position": { "x": 480, "y": 500 },
           "spriteSheet": "male_spy_v2",
           "spriteTalk": "assets/characters/male_spy_talk.png",
@@ -1122,7 +1124,11 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
     case_exfil or torres_suspected. SecGen's flag-3 manifest now reads "Staged
     by: badge #4471" (Halloran's visitor spare) with no name, so the door log
     and the spare decide who it is (the pair below). %>
-<% %w[found_manifest found_upload_schedule].each do |g| %>
+<%# Engine regression 2026-10-16 (E9): the data-centre printout now reads
+    "Staged by: badge #4471" as the VM's does, so found_manifest pairs with the
+    reasoned door log as flag 3 does (below). The upload schedule still names
+    him outright ("Operator on site: D. Torres"), in the same room. %>
+<% %w[found_upload_schedule].each do |g| %>
             {
               "eventPattern": "global_variable_changed:<%= g %>",
               "condition": "value === true",
@@ -1132,7 +1138,7 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
 <% end %>
 <%# D1: flag 3 plus the reasoned door log is the exfil half (case_exfil only;
     the reasoning already set torres_suspected). Either order. %>
-<% [%w[flag3_submitted door_log_reasoned], %w[door_log_reasoned flag3_submitted]].each do |g, other| %>
+<% [%w[flag3_submitted door_log_reasoned], %w[door_log_reasoned flag3_submitted], %w[found_manifest door_log_reasoned], %w[door_log_reasoned found_manifest]].each do |g, other| %>
             {
               "eventPattern": "global_variable_changed:<%= g %>",
               "condition": "value === true && globalVars.<%= other %> === true",
@@ -1212,7 +1218,8 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
               "condition": "data.connectedRoom === 'server_hallway'",
               "onceOnly": true,
               "setGlobal": { "rfid_guide_offered": true },
-              "sendTimedMessage": { "delay": 1500, "message": "Staff prox reader. Your cloner will take a card off anyone who carries one. Owen's lanyard is the nearest. I've a cloning guide if you want it." }
+              "_comment": "Engine regression 2026-10-16 (E1): door_unlock_attempt fires before the check, so with Owen's badge already cloned this arrived as the door opened. Skipped at delivery once the clone is in (server_badge_obtained, set by card_cloned).",
+              "sendTimedMessage": { "delay": 1500, "message": "Staff prox reader. Your cloner will take a card off anyone who carries one. Owen's lanyard is the nearest. I've a cloning guide if you want it.", "skipIfGlobal": "server_badge_obtained" }
             },
             {
               "eventPattern": "door_unlock_attempt",
@@ -1249,8 +1256,14 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
               "condition": "data.connectedRoom === 'data_center' && globalVars.torres_print_collected === true && globalVars.vault_reader_seen !== true",
               "onceOnly": true,
               "setGlobal": { "vault_reader_seen": true },
-              "_comment": "Pass 5 regression M4: skipped (checked at delivery, npc-manager.js:863) once the vault is open.",
-              "sendTimedMessage": { "delay": 1500, "message": "That's the vault reader. You've already lifted his print. Use it.", "skipIfGlobal": "data_center_entered" }
+              "_comment": "Engine regression 2026-10-16 (E1): no text here any more. The attempt fires before the reader opens, and data_center_entered only lands once the player walks in, so 'Use it' arrived after the vault had opened. The pointer is on a refusal instead (below)."
+            },
+            {
+              "_comment": "Engine regression 2026-10-16 (E1): only when the reader turns the player away with his print already lifted (wrong lift, a partial read, or no lift chosen).",
+              "eventPattern": "door_unlock_failed:data_center",
+              "condition": "globalVars.torres_print_collected === true",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 1500, "message": "That's the vault reader. You've already lifted his print. Present that lift.", "skipIfGlobal": "data_center_entered" }
             },
             {
               "_comment": "PASS 3 P6, re-keyed by the fingerprint redesign: fires on a lift of Torres' print. Lifted prints are saved with the game, so torres_print_collected is safe to read.",
@@ -1355,8 +1368,26 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
               "eventPattern": "npc_hostile_state_changed",
               "condition": "data.npcId === 'david_torres' && data.isHostile === true && !data.restored && globalVars.final_choice === ''",
               "onceOnly": true,
-              "setGlobal": { "torres_hostile": true },
               "sendTimedMessage": { "delay": 1000, "message": "He's coming for you. Q switches to fists (again for a harder punch), then E or click when he's in front." }
+            },
+            <%# Engine regression 2026-10-16 (E4, and the Restart ruling): torres_hostile
+                was set only by the onceOnly text above, so a second fight after a
+                Restart left it false. It is set on every turn now. torres_fought is
+                the record for the credits ("Nobody on staff hurt" can't follow a
+                fight with him); a Restart (reset: true) undoes the fight and clears
+                it. %>
+            {
+              "eventPattern": "npc_hostile_state_changed",
+              "condition": "data.npcId === 'david_torres' && data.isHostile === true && globalVars.final_choice === ''",
+              "onceOnly": false,
+              "cooldown": 0,
+              "setGlobal": { "torres_hostile": true, "torres_fought": true }
+            },
+            {
+              "eventPattern": "npc_hostile_state_changed",
+              "condition": "data.npcId === 'david_torres' && data.isHostile === false && data.reset === true",
+              "cooldown": 0,
+              "setGlobal": { "torres_fought": false }
             },
             <%# Orchestrator's correction: Q cycles open hand, jab, cross (hud.js), so it
                 never "stows" the fists. Split for the 30-word cap. Since engine 7.1a a
@@ -1561,6 +1592,7 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
           "id": "lisa_park",
           "displayName": "Lisa Park",
           "npcType": "person",
+          "gender": "female",
           "voice": {
             "name": "Laomedeia",
             "style": "Marketing coordinator in her early thirties, British-Korean, raised in New Malden. Speak with a consistent south-west London accent throughout — do not shift to any other accent. Bright, mid-to-high pitch; quick, chatty pace. Warm and observant; she gossips because she cares about people.",
@@ -1611,6 +1643,7 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
           "id": "owen_gallagher",
           "displayName": "Owen Gallagher",
           "npcType": "person",
+          "gender": "male",
           "voice": {
             "name": "Puck",
             "style": "Systems administrator in his late twenties. Speak with a consistent Manchester accent throughout — do not shift to any other accent. Mid-range pitch; quick, energetic pace. Friendly and a bit frazzled, sardonic about the state of the network, relieved someone competent has turned up.",
@@ -1867,6 +1900,7 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
           "id": "dr_halloran",
           "displayName": "Dr Ruth Halloran",
           "npcType": "person",
+          "gender": "female",
           "voice": {
             "name": "Erinome",
             "style": "Cryptography research lead in her mid-forties. Speak with a consistent educated Irish (Dublin) accent throughout — do not shift to any other accent. Clear, mid-range pitch; measured, precise pace. Sharp, protective of her team and impatient with sloppy reasoning.",
@@ -1946,6 +1980,7 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
           "id": "patricia_morgan",
           "displayName": "Patricia Morgan",
           "npcType": "person",
+          "gender": "female",
           "voice": {
             "name": "Kore",
             "style": "Chief Security Officer, early fifties, ex-military. Speak with a consistent South Wales (Cardiff) accent throughout — do not shift to any other accent. Firm, low-to-mid pitch; brisk, economical pace. Direct, dry and steady under pressure; her warmth shows only in what she chooses to notice.",
@@ -2083,6 +2118,7 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
           "id": "david_torres",
           "displayName": "David Torres",
           "npcType": "person",
+          "gender": "male",
           "voice": {
             "name": "Schedar",
             "style": "Senior engineer in his late forties, born in Madrid and twenty years in England. Speak with a consistent light Castilian Spanish accent in fluent British English throughout — do not shift to any other accent. Low, soft pitch; slow, worn pace. Exhausted and grieving, past the point of lying; quietly desperate rather than angry.",
@@ -2214,8 +2250,8 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
           "puzzle_graph_role": "item",
           "takeable": true,
           "readable": true,
-          "text": "PROJECT HEISENBERG - PACKAGE CONTENTS\nStaged by: D. Torres\n\n- quantum-safe_key_material_v3.tar.gpg - lattice-based key exchange parameters, production candidate set\n- dispatch_network_rollout_schedule.xlsx - National Emergency-Services Dispatch Network (999 call routing), phased cutover dates by region including key-rotation windows\n- handover_note.txt - sloppy admin credential note from the research portal\n\nImpact assessment (ENTROPY copy):\n- Hold the dispatch network's key material through a rotation window\n- Force a degraded routing path for ambulance, fire and police dispatch\n- Retain the capability. Not for resale.\n\nProjected casualties: 30-45 excess civilian deaths, first rollout wave",
-          "observations": "Manifest showing what Torres is staging and the projected casualties",
+          "text": "PROJECT HEISENBERG - PACKAGE CONTENTS\nStaged by: badge #4471\n\n- quantum-safe_key_material_v3.tar.gpg - lattice-based key exchange parameters, production candidate set\n- dispatch_network_rollout_schedule.xlsx - National Emergency-Services Dispatch Network (999 call routing), phased cutover dates by region including key-rotation windows\n- handover_note.txt - sloppy admin credential note from the research portal\n\nImpact assessment (ENTROPY copy):\n- Hold the dispatch network's key material through a rotation window\n- Force a degraded routing path for ambulance, fire and police dispatch\n- Retain the capability. Not for resale.\n\nProjected casualties: 30-45 excess civilian deaths, first rollout wave",
+          "observations": "Manifest of what badge #4471 is staging for upload, with the projected casualties",
           "onRead": { "setVariable": { "found_manifest": true } }
         }
       ]

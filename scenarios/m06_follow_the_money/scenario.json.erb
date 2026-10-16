@@ -73,7 +73,7 @@ settlement_log_text = "hc-mixer-01 :: SETTLEMENTS TO CUSTODY\n(mixer output cred
 
 mixer_config_text = "# hc-mixer-01 -- pool configuration\n# author: i.volkova\n# WARNING: production. Do not edit without change control.\n\npool_depth: 512\nfee_percent: 1.5          # taken off every output\nmin_dwell_hours: 6        # nothing leaves the pool sooner than this\nconversion_chain:\n  - BTC -> XMR\n  - XMR -> XMR (3 hops)\n  - XMR -> BTC\noutput: BTC credit to a custody slot (see settlement log)\n\ncompliance_reporting: disabled\n# disabled 2023-11-04 at CEO request. I.V. objected in writing. Objection is in the\n# change ticket, which is the only reason it still exists."
 
-custody_index_text = "hashchain :: custody_index.csv (cold slots)\n\nslot,label,opened_by,opened\n2207,OTC desk settlement,CEO,2023-02\n3815,customer reserve B,CEO,2022-09\n#{fund_slot},client escrow,ops,2025-11\n5093,client escrow,CEO,2025-10\n6120,\"client escrow -- do not reconcile\",CEO,2024-06\n7302,dormant (legacy),ops,2021-01\n8846,market-maker float,ops,2024-02\n\n# The custody console opens a slot's file by its number.\n# Labels are whatever the account manager typed. Trust the money, not the label. -- I.V."
+custody_index_text = "hashchain :: custody_index.csv (cold slots)\n\nslot,label,opened_by,opened\n2207,OTC desk settlement,CEO,2023-02\n3815,customer reserve B,CEO,2022-09\n#{fund_slot},client escrow,ops,2025-05\n5093,client escrow,CEO,2025-04\n6120,\"client escrow -- do not reconcile\",CEO,2024-06\n7302,dormant (legacy),ops,2021-01\n8846,market-maker float,ops,2024-02\n\n# The custody console opens a slot's file by its number.\n# Labels are whatever the account manager typed. Trust the money, not the label. -- I.V."
 
 architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTODY: cold slot #{fund_slot} (1ARCHITECT9FUND)\nAUTHORISED: Satoshi's Ghost (Crypto Anarchists), for The Architect\n\nAdvances paid (4 August): $3.2M\nBalance pending: $12.8M USD (BTC equivalent)\nRelease: pre-signed by Satoshi's Ghost. Goes out on its own in 72 hours unless the wallet is moved first.\n\nPER CELL (advance paid / balance pending):\n- Critical Mass: $0.8M / $3.2M. Pacific Northwest grid control\n- Ghost Protocol: $0.4M / $1.5M. Operation Fracture (election data centre)\n- Social Fabric: $0.5M / $2.1M. Operation Fracture, with Ghost Protocol\n- Supply Chain Saboteurs: $0.3M / $1.3M. Operation Trojan Horse\n- Digital Vanguard: $0.5M / $1.9M. Operation Meltdown (hospitals)\n- Zero Day Syndicate: $0.7M / $2.8M. Operation Meltdown, ordnance\n\nOPERATION: The Architect's Masterpiece\nCOORDINATOR: The Architect\n\nSuccess probability: 94%\nProjected casualties (cells' own estimates, all operations): 350-600"
 %>
@@ -679,6 +679,7 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
     "trader_heard_out": false,
     "analyst_spoken": false,
     "analyst_walked_through": false,
+    "analyst_told": false,
     "analyst_ko": false,
 
     "cover_strained": false,
@@ -793,6 +794,7 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
           "id": "director_netherton",
           "displayName": "Director Magnus Netherton",
           "npcType": "person",
+          "gender": "male",
           "position": { "x": 480, "y": 500 },
           "spriteSheet": "male_spy_v2",
           "spriteTalk": "assets/characters/male_spy_talk.png",
@@ -1111,7 +1113,7 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
               "condition": "globalVars.found_architects_fund !== true && globalVars.irina_recruited !== true",
               "onceOnly": true,
               "setGlobal": { "entered_data_center": true },
-              "sendTimedMessage": { "delay": 2000, "message": "That console opens one cold slot's file by number. The fund is one of them. The transaction server has the other half of Priya's write-up." }
+              "sendTimedMessage": { "delay": 2000, "message": "That console opens one cold slot's file by number. One number per try, and it logs each. The transaction server has the other half of Priya's write-up." }
             },
             {
               "_comment": "PASS 4 round 2 (m4): the turned-Irina variant. She narrows and confirms; HaX doesn't restate the method.",
@@ -1119,7 +1121,7 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
               "condition": "globalVars.found_architects_fund !== true && globalVars.irina_recruited === true",
               "onceOnly": true,
               "setGlobal": { "entered_data_center": true },
-              "sendTimedMessage": { "delay": 2000, "message": "That console opens one cold slot's file by number. Read the settlement log, then run your slot past Volkova." }
+              "sendTimedMessage": { "delay": 2000, "message": "That console opens one cold slot's file by number. One number per try, and it logs each. Read the settlement log, then run your slot past Volkova." }
             },
             {
               "_comment": "PASS 4 fix 5: the vault keys should be in hand before the confrontation. No hard gate; the defer route stays as the backstop.",
@@ -1168,6 +1170,31 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
               "onceOnly": true,
               "setGlobal": { "fund_debrief_available": true },
               "sendTimedMessage": { "delay": 1500, "message": "$12.8M in the wallet, six cells, seventy-two hours. Call me about it. The spare executive badge was Volkova's. Check where she went down, or ask me for a copy." }
+            },
+            <%# Blind run A (2026-10-16, R2): a refusal at the executive wing reader
+                says who holds the spare, on the spot, so a player who hasn't read the
+                fund text or the door export's DC-03 note isn't left at the door.
+                Split on the fund and on irina_ko (&&-only conditions). %>
+            {
+              "eventPattern": "door_unlock_failed:executive_wing",
+              "condition": "globalVars.irina_exec_badge_given !== true && globalVars.found_architects_fund !== true",
+              "onceOnly": false,
+              "cooldown": 60000,
+              "sendTimedMessage": { "delay": 800, "message": "That reader wants Satoshi's spare badge. Your door export says ops signed it out to Volkova. Find the fund first, then you've a reason to ask her for it." }
+            },
+            {
+              "eventPattern": "door_unlock_failed:executive_wing",
+              "condition": "globalVars.irina_exec_badge_given !== true && globalVars.found_architects_fund === true && globalVars.irina_ko !== true",
+              "onceOnly": false,
+              "cooldown": 60000,
+              "sendTimedMessage": { "delay": 800, "message": "That reader wants Satoshi's spare badge, and Volkova has it. Ask her on the trading floor." }
+            },
+            {
+              "eventPattern": "door_unlock_failed:executive_wing",
+              "condition": "globalVars.irina_exec_badge_given !== true && globalVars.found_architects_fund === true && globalVars.irina_ko === true",
+              "onceOnly": false,
+              "cooldown": 60000,
+              "sendTimedMessage": { "delay": 800, "message": "That reader wants Satoshi's spare badge. Volkova had it on her. Check where she went down, or ask me for a copy." }
             },
             {
               "_comment": "PASS 3 playtest: was a forced phone-chat open (conversationMode phone-chat) that took over the screen after the KO, and its text ignored a fate already settled. Now three timed texts split on her fate (conditions are &&-only); each sets the same globals the relay knot used to. meet_irina comes from taskOnKO. The debrief opens on the next UI close or room entry, as before.",
@@ -1391,12 +1418,22 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
               "setGlobal": { "at_console": false }
             },
             <%# Post-engine follow-ups (2026-10-16): a Restart after a knockout resets
-                a non-KO'd Kemal calm (engine 7.1d) and emits nothing, and his ink
-                goes back to the challenge, so the talk routes return. minder_hostile
-                stays as the record (credits, Satoshi, the debrief); minder_fighting
-                is "hostile right now" and gates his sighting, his lockpick catch and
-                HaX's pointers. Cleared on every load and set again when a still-
-                hostile Kemal is restored (the wing loads after game_loaded). %>
+                a non-KO'd Kemal calm (engine 7.1d), and his ink goes back to the
+                challenge, so the talk routes return. minder_fighting is "hostile
+                right now" and gates his sighting, his lockpick catch and HaX's
+                pointers. Cleared on every load and set again when a still-hostile
+                Kemal is restored (the wing loads after game_loaded).
+                Regression fix (2026-10-17, R1): the Restart undoes the fight. The
+                reset emits npc_hostile_state_changed { isHostile: false, reset: true }
+                before the save, so minder_hostile (the credits, Satoshi and debrief
+                record) is cleared too; it is set again if he turns on the player a
+                second time (his own mapping is no longer onceOnly). %>
+            {
+              "eventPattern": "npc_hostile_state_changed",
+              "condition": "data.npcId === 'satoshi_minder' && data.isHostile === false && data.reset === true",
+              "cooldown": 0,
+              "setGlobal": { "minder_hostile": false }
+            },
             {
               "eventPattern": "npc_hostile_state_changed",
               "condition": "data.npcId === 'satoshi_minder' && data.isHostile === true",
@@ -1606,6 +1643,7 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
           "id": "checkpoint_guard",
           "displayName": "Checkpoint Guard",
           "npcType": "person",
+          "gender": "male",
           "position": { "x": 4, "y": 4 },
           "spriteSheet": "male_security_guard_v2",
           "spriteTalk": "assets/characters/male_security_guard_talk.png",
@@ -1707,6 +1745,7 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
           "id": "irina_volkova",
           "displayName": "Dr. Irina Volkova",
           "npcType": "person",
+          "gender": "female",
           "position": { "x": 5, "y": 5 },
           "spriteSheet": "female_scientist_v2",
           "spriteTalk": "assets/characters/female_scientist_talk.png",
@@ -1788,6 +1827,7 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
           "id": "trader_npc",
           "displayName": "Dani Okonkwo",
           "npcType": "person",
+          "gender": "male",
           "position": { "x": 5, "y": 7 },
           "spriteSheet": "male_office_worker_v2",
           "spriteTalk": "assets/characters/male_office_worker_talk.png",
@@ -2047,7 +2087,7 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
           "requires": "<%= fund_slot %>",
           "difficulty": "easy",
           "maxAttempts": 1,
-          "observations": "The custody console for the exchange's cold wallets. Key in a four-digit slot number and it opens that slot's custody file. The slots are listed on the transaction server. It logs every opening to the exchange's on-call phone.",
+          "observations": "The custody console for the exchange's cold wallets. Key in a four-digit slot number and it opens that slot's custody file: one number per try, and a wrong one shuts the pad. The slots are listed on the transaction server. It logs every opening to the exchange's on-call phone.",
           "puzzle_graph_role": "lock",
           "puzzle_graph_note": "Follow the money: Priya's mixer deposits (amount, time) + the pool's fee and minimum hold + the settlement log's credits to slots -> slot <%= fund_slot %>. A turned Irina narrows it and confirms a slot the player names.",
           "contents": [
@@ -2101,6 +2141,7 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
           "id": "blockchain_analyst",
           "displayName": "Priya Raghavan",
           "npcType": "person",
+          "gender": "female",
           "position": { "x": 6, "y": 4 },
           "spriteSheet": "female_office_worker_v2",
           "spriteTalk": "assets/characters/female_office_worker_talk.png",
@@ -2240,6 +2281,7 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
           "id": "satoshi_minder",
           "displayName": "Kemal Aydin",
           "npcType": "person",
+          "gender": "male",
           "position": { "x": 6, "y": 4 },
           "spriteSheet": "kemal_aydin",
           "spriteTalk": "assets/characters/kemal_aydin_talk.png",
@@ -2314,8 +2356,10 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
             },
             {
               "eventPattern": "npc_hostile_state_changed",
+              "_comment": "Regression fix (2026-10-17, R1): not onceOnly, so a second fight after a Restart (which clears minder_hostile) records it again.",
               "condition": "data.npcId === 'satoshi_minder' && data.isHostile === true",
-              "onceOnly": true,
+              "onceOnly": false,
+              "cooldown": 0,
               "setGlobal": { "minder_hostile": true }
             },
             <%# Struggling run A (S1): shown the casualty line, he unlocks the door and
@@ -2399,6 +2443,7 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
           "id": "satoshi_nakamoto",
           "displayName": "Satoshi Nakamoto II",
           "npcType": "person",
+          "gender": "male",
           "_comment": "Pass-4 dialogue playtest: at (5,5) his body sat against the desk and blocked the east approach (stopped at 36 px, range 32). (5,6) is open floor in front of the desk.",
           "position": { "x": 5, "y": 6 },
           "spriteSheet": "male_hacker_hood_v2",
