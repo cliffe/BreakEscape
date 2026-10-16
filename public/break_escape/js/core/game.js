@@ -36,6 +36,7 @@ import { sightChallengeWatcher } from '../systems/npc-sight-challenge.js';  // O
 import { CommandBoardRecorder } from '../minigames/command-board/command-board-timeline.js';  // Board entries stamped as they happen
 import { initLighting } from '../systems/lighting.js';
 import { collectCharacterSprites, queueCharacterAtlases, ensureCharacterTexture } from '../systems/character-textures.js';
+import { fistsClickPunches } from '../systems/combat-input.js';  // 7.1i: fists mode still walks on open floor
 
 // Global variables that will be set by main.js
 let gameScenario;
@@ -1715,6 +1716,19 @@ export async function create() {
             if (currentMode === 'jab' || currentMode === 'cross') {
                 // Calculate direction from player to click point
                 const player = window.player;
+                // A click on open floor, away from the player and any NPC, walks
+                // there instead of punching the air (7.1i)
+                if (player && !fistsClickPunches({
+                    dx: worldX - player.x,
+                    dy: worldY - player.y,
+                    onNPC: !!findNPCAtPosition(worldX, worldY)
+                })) {
+                    if (!window.preventPlayerMovement) {
+                        movePlayerToPoint(worldX, worldY);
+                        startHoldWalk();
+                    }
+                    return;
+                }
                 if (player) {
                     const dx = worldX - player.x;
                     const dy = worldY - player.y;

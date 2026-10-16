@@ -14,6 +14,7 @@ import { resolveObjectField } from '../utils/conditional-text.js';
 import { isRemoteFlagLock, remoteFlagLockMessage } from '../utils/flag-lock.js';
 import { npcReachDistSq } from './npc-reach.js';
 import { shouldExamine, startExamine } from './examine.js';
+import { showPastTalkingToast } from './combat-input.js';
 
 let gameRef = null;
 
@@ -669,6 +670,7 @@ export function handleObjectInteraction(sprite) {
             
             if (wasInteractMode) {
                 console.log('👊 Hostile NPC in interact mode - auto-jabbing');
+                showPastTalkingToast(sprite.npcId); // 7.1i: say why there's no conversation
                 window.playerCombat.setInteractionMode('jab');
             }
             
@@ -1791,6 +1793,9 @@ export function tryInteractWithNPC(npcSprite) {
         if (npcId && window.npcHostileSystem && window.npcHostileSystem.isNPCHostile(npcId)) {
             // Hostile NPC - punch instead of talk
             if (window.playerCombat) {
+                if (window.playerCombat.getInteractionMode?.() === 'interact') {
+                    showPastTalkingToast(npcId); // 7.1i: say why there's no conversation
+                }
                 window.playerCombat.punch();
             }
             return true;
