@@ -18,6 +18,25 @@ function recordHostility(npcId, state) {
   hostilityRecord.set(npcId, { hostile: !!state.isHostile, ko: !!state.isKO });
 }
 
+// The combat numbers a scenario can set per NPC in behavior.hostile (7.1e).
+// Missing values fall back to combat-config.js in createHostileState.
+const HOSTILE_STAT_KEYS = ['attackDamage', 'maxHP', 'attackCooldown', 'attackRange'];
+
+/**
+ * The NPC's configured combat numbers: its behavior's hostile config first
+ * (npc-behavior.js parseConfig), then the config passed to setNPCHostile.
+ * Only positive numbers count; anything else is left out.
+ */
+function configuredHostileStats(npcId, config) {
+  const fromBehavior = window.npcBehaviorManager?.getBehavior?.(npcId)?.config?.hostile || {};
+  const stats = {};
+  for (const key of HOSTILE_STAT_KEYS) {
+    const value = [fromBehavior[key], config?.[key]].find(v => typeof v === 'number' && v > 0);
+    if (value !== undefined) stats[key] = value;
+  }
+  return stats;
+}
+
 function createHostileState(npcId, config = {}) {
   return {
     isHostile: false,
@@ -117,10 +136,9 @@ function setNPCHostile(npcId, isHostile, config) {
   // Get or create state with config
   let state = npcHostileStates.get(npcId);
   if (!state) {
-    // Get attack damage from NPC behavior config if available
-    const npcBehavior = window.npcBehaviorManager?.getBehavior(npcId);
-    const attackDamage = npcBehavior?.config?.hostile?.attackDamage || config?.attackDamage;
-    state = createHostileState(npcId, { attackDamage });
+    // Combat numbers from the NPC's behavior.hostile (or the passed config):
+    // attackDamage, maxHP, attackCooldown and attackRange (7.1e)
+    state = createHostileState(npcId, configuredHostileStats(npcId, config));
     npcHostileStates.set(npcId, state);
   }
 

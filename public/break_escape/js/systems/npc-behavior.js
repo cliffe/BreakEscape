@@ -358,6 +358,11 @@ class NPCBehavior {
                 fleeSpeed: config.hostile?.fleeSpeed || 180,
                 aggroDistance: config.hostile?.aggroDistance || 160,
                 attackDamage: config.hostile?.attackDamage || 10,
+                // Optional per-NPC combat numbers (7.1e); undefined falls back to
+                // combat-config.js in npc-hostile.js createHostileState
+                maxHP: config.hostile?.maxHP,
+                attackCooldown: config.hostile?.attackCooldown,
+                attackRange: config.hostile?.attackRange,
                 pauseToAttack: config.hostile?.pauseToAttack !== undefined ? config.hostile.pauseToAttack : true
             }
         };
