@@ -3,6 +3,7 @@ import { MinigameScene } from '../framework/base-minigame.js';
 import { addToInventory, removeFromInventory } from '../../systems/inventory.js';
 import { makeDraggable } from '../../utils/helpers.js';
 import { displayDashes } from '../../utils/display-dashes.js';
+import { resolveObjectField } from '../../utils/conditional-text.js';
 
 export class ContainerMinigame extends MinigameScene {
     constructor(container, params) {
@@ -78,6 +79,11 @@ export class ContainerMinigame extends MinigameScene {
             })),
             takeHint: 'take("<item name>") — handles both container and desktop markup.'
         };
+    }
+
+    /** The header's observations, with observationVariants resolved (m08 E5). */
+    headerObservations() {
+        return resolveObjectField(this.containerItem?.scenarioData, 'observations', '') || '';
     }
 
     getContainerImageUrl() {
@@ -179,7 +185,7 @@ export class ContainerMinigame extends MinigameScene {
         if (this.headerElement) {
             this.headerElement.innerHTML = `
                 <h3>${displayDashes(this.containerItem.scenarioData.name)}</h3>
-                <p>${displayDashes(this.containerItem.scenarioData.observations || '')}</p>
+                <p>${displayDashes(this.headerObservations())}</p>
             `;
         }
 
@@ -259,7 +265,7 @@ export class ContainerMinigame extends MinigameScene {
                          class="container-image">
                     <div class="container-info">
                         <h4>${displayDashes(this.containerItem.scenarioData.name)}</h4>
-                        <p>${displayDashes(this.containerItem.scenarioData.observations || '')}</p>
+                        <p>${displayDashes(this.headerObservations())}</p>
                     </div>
                 </div>
 
@@ -285,7 +291,7 @@ export class ContainerMinigame extends MinigameScene {
                         class="container-image">
                 <div class="container-info">
                     <h4>${displayDashes(this.containerItem.scenarioData.name)}</h4>
-                    <p>${displayDashes(this.containerItem.scenarioData.observations || '')}</p>
+                    <p>${displayDashes(this.headerObservations())}</p>
                 </div>
             </div>
             <div class="container-minigame desktop-mode">

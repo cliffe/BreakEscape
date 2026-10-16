@@ -61,7 +61,7 @@
 .dusting-panel h3 { font-family: 'Press Start 2P', monospace; font-size: 12px; margin: 0 0 10px; color: var(--d-accent); font-weight: normal; line-height: 1.5; }
 .dusting-panel p { margin: 0 0 8px; line-height: 1.2; }
 .dusting-note, .dusting-dim { color: var(--d-dim); }
-.dusting-quote { border-left: 3px solid var(--d-line); padding-left: 8px; font-style: italic; }
+.dusting-quote { border-left: 3px solid var(--d-line); padding-left: 8px; font-style: italic; overflow-wrap: anywhere; }
 .dusting-feedback { min-height: 1.2em; color: #ffd75e; }
 .dusting-feedback.good { color: var(--d-accent); }
 .dusting-estimate { color: var(--d-text); }

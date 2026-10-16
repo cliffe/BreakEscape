@@ -19,6 +19,7 @@ import {
 import { ART_SLOTS, SURFACE_SLOT, preloadArt, onArtLoaded, drawSlot, artRect, hasArt, slotCanvas, refreshSlotCanvases } from './dusting-art.js';
 import { displayNameForOwner, bestLiftFromObject } from '../../systems/biometric-samples.js';
 import { displayDashes } from '../../utils/display-dashes.js';
+import { resolveObjectField } from '../../utils/conditional-text.js';
 
 // Load dusting-specific CSS
 if (!document.getElementById('dusting-css')) {
@@ -389,10 +390,13 @@ export class DustingMinigame extends MinigameScene {
         const d = this.data;
         const best = this.objectId ? bestLiftFromObject(this.objectId) : null;
         const prior = best ? `<p class="dusting-note">Lifted before: ${Math.round(best.quality * 100)}%. Dust again for a cleaner lift?</p>` : '';
+        // textVariants / observationVariants apply here as everywhere else (m08 E5)
+        const observations = resolveObjectField(d, 'observations', null);
+        const text = resolveObjectField(d, 'text', null);
         return `
             <h3>${escapeHtml(d.name || 'Surface')}</h3>
-            ${d.observations ? `<p>${escapeHtml(d.observations)}</p>` : ''}
-            ${d.text ? `<p class="dusting-quote">${escapeHtml(d.text)}</p>` : ''}
+            ${observations ? `<p>${escapeHtml(observations)}</p>` : ''}
+            ${text ? `<p class="dusting-quote">${escapeHtml(text)}</p>` : ''}
             <p class="dusting-surface-line"><strong>Surface:</strong> ${escapeHtml(this.surface.description)}</p>
             ${prior}
             <div class="dusting-buttons">
@@ -597,6 +601,8 @@ export class DustingMinigame extends MinigameScene {
         const actual = this.print.pattern;
         if (pt === actual) {
             this.patternOk = true;
+            // Drop the last wrong guess's "Not a whorl..." before the candidate list opens (m05 M4)
+            this.message = '';
             this._buildCandidates();
             this._renderPanel();
             this._drawCard();

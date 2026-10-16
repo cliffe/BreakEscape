@@ -10,6 +10,7 @@ import { generateKeyCutsForLock, doesKeyMatchLock, PREDEFINED_LOCK_CONFIGS } fro
 import KeyCutCalculator from '../utils/key-cut-calculator.js';
 import { catchLockpickInView } from './lockpick-catch.js';
 import { keypadTitle } from '../utils/lock-titles.js';
+import { resolveObjectField } from '../utils/conditional-text.js';
 
 // Maps Phaser texture keys to their actual filenames (where key !== filename stem)
 const TEXTURE_KEY_TO_FILE = {
@@ -117,7 +118,8 @@ export function startLockpickingMinigame(lockable, scene, difficulty = 'medium',
         // This is a regular item - use scenarioData
         itemName = lockable?.scenarioData?.name || lockable?.name || 'Locked Item';
         itemImage = resolveObjectImageUrl(lockable?.texture?.key);
-        itemObservations = lockable?.scenarioData?.observations || '';
+        // observationVariants apply here too (m08 E5)
+        itemObservations = resolveObjectField(lockable?.scenarioData, 'observations', '') || '';
     }
 
     // Start the lockpicking minigame (Phaser version)
@@ -393,7 +395,8 @@ export function startKeySelectionMinigame(lockable, type, playerKeys, requiredKe
         // This is a regular item - use scenarioData
         itemName = lockable?.scenarioData?.name || lockable?.name || 'Locked Item';
         itemImage = resolveObjectImageUrl(lockable?.texture?.key);
-        itemObservations = lockable?.scenarioData?.observations || '';
+        // observationVariants apply here too (m08 E5)
+        itemObservations = resolveObjectField(lockable?.scenarioData, 'observations', '') || '';
     }
 
     // Start the key selection minigame
