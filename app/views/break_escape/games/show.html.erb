@@ -1,5 +1,7 @@
 <!DOCTYPE html>
-<html>
+<%# HUD skin: mission.json "ui_theme", or ?ui_theme= to preview another one %>
+<% ui_theme = BreakEscape::Mission.normalise_ui_theme(params[:ui_theme]) || @mission.ui_theme %>
+<html data-ui-theme="<%= ui_theme %>">
 <head>
   <title><%= @mission.display_name %> - BreakEscape</title>
   <%= csrf_meta_tags %>
@@ -67,6 +69,20 @@
   <link rel="stylesheet" href="<%= be_asset_path('/break_escape/css/network-segmentation-map-minigame.css') %>">
   <link rel="stylesheet" href="<%= be_asset_path('/break_escape/css/music-widget.css') %>">
   <link rel="stylesheet" href="<%= be_asset_path('/break_escape/css/bond-visualiser.css') %>">
+  <%# Loaded last so a theme's rules win over the base HUD styles %>
+  <link rel="stylesheet" href="<%= be_asset_path('/break_escape/css/game-menu.css') %>">
+  <link rel="stylesheet" href="<%= be_asset_path('/break_escape/css/ui-themes.css') %>">
+  <%# A theme the player picked in the menu (Display) beats the mission's, but not a
+      ?ui_theme= preview; set it before first paint %>
+  <script nonce="<%= content_security_policy_nonce %>">
+    try {
+      var beTheme = JSON.parse(localStorage.getItem('be_display_settings') || '{}').theme;
+      if (!/[?&]ui_theme=/.test(location.search) &&
+          <%= raw BreakEscape::Mission::UI_THEMES.to_json %>.indexOf(beTheme) !== -1) {
+        document.documentElement.dataset.uiTheme = beTheme;
+      }
+    } catch (e) {}
+  </script>
   <%= break_escape_import_map %>
 </head>
 <body>
@@ -197,6 +213,7 @@
       missionConcludedAt: <%= raw(@game.mission_concluded_at&.iso8601.to_json) %>,
       missionId: <%= @game.mission_id %>,
       missionDisplayName: <%= raw(@mission.display_name.to_json) %>,
+      uiTheme: '<%= ui_theme %>',
       // Dev-only Playwright/agent test bridge (window.__test). Never true in
       // production, so main.js never imports the bridge code there.
       testBridge: <%= Rails.env.production? ? 'false' : 'true' %>

@@ -91,7 +91,9 @@ export const MinigameFramework = {
             container.className = 'minigame-container';
             document.body.appendChild(container);
         }
-        
+        // Lets the UI themes (css/ui-themes.css) frame the generic tool windows
+        container.dataset.minigame = sceneType;
+
         // Show the popup overlay to darken the background
         const popupOverlay = document.querySelector('.popup-overlay');
         if (popupOverlay) {

@@ -4,6 +4,7 @@
   "difficulty_level": 2,
   "secgen_scenario": "m04_critical_failure",
   "collection": "season_1",
+  "ui_theme": "spy",
   "cybok": [
     {
       "ka": "SOIM",

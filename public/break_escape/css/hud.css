@@ -1,6 +1,55 @@
 /* HUD (Heads-Up Display) System Styles */
 /* Combines Inventory, Health UI, Avatar, and Mode Toggle */
 
+/* ===== HUD SCALE =====
+ * main.js sets --hud-zoom from the game's pixel scale, so the HUD grows with
+ * the game rather than staying a fixed size on large monitors. Positions are
+ * zoomed too, so elements keep their spacing from each other. */
+#inventory-container,
+#health-ui-container,
+#hud-info-label,
+#scenario-timer-display,
+.objectives-panel,
+#music-widget-btn-anchor,
+#music-widget-panel,
+#npc-bark-container,
+.phone-access-button,
+#notification-container,
+.npc-interaction-prompt,
+.tutorial-prompt-modal,
+.tutorial-panel,
+.game-confirm-dialog,
+.password-modal-content,
+.player-preferences-modal-content {
+  zoom: var(--hud-zoom, 1);
+}
+
+/* zoom multiplies viewport and percentage sizes too, so dialogs sized against
+   the window divide those limits back down ('html' outranks the dialogs' own
+   stylesheets, some of which load after this one) */
+html .player-preferences-modal-content {
+  max-width: min(1000px, calc(100vw / var(--hud-zoom, 1) - 32px));
+  max-height: calc(90vh / var(--hud-zoom, 1));
+}
+
+html .tutorial-prompt-modal,
+html .tutorial-panel,
+html .game-confirm-dialog {
+  max-width: min(var(--be-dialog-max, 650px), calc(100vw / var(--hud-zoom, 1) - 32px));
+}
+
+.tutorial-prompt-modal { --be-dialog-max: 500px; }
+.game-confirm-dialog { --be-dialog-max: 460px; }
+.game-confirm-dialog.game-display-dialog { --be-dialog-max: 600px; }
+
+html .tutorial-panel {
+  max-height: calc((100vh - 120px) / var(--hud-zoom, 1));
+}
+
+html .game-display-dialog {
+  max-height: calc(80vh / var(--hud-zoom, 1));
+}
+
 /* ===== PLAYER HUD BUTTONS (inside inventory) ===== */
 
 #player-hud-buttons {

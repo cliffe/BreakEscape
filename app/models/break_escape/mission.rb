@@ -64,6 +64,19 @@ module BreakEscape
       load_mission_metadata&.dig('lab_sheet_url').presence
     end
 
+    # HUD skins, styled in public/break_escape/css/ui-themes.css. A mission picks
+    # one with "ui_theme" in mission.json; anything else falls back to the default.
+    UI_THEMES = %w[general spy cyberpunk crt].freeze
+    DEFAULT_UI_THEME = 'general'.freeze
+
+    def self.normalise_ui_theme(theme)
+      UI_THEMES.include?(theme.to_s) ? theme.to_s : nil
+    end
+
+    def ui_theme
+      self.class.normalise_ui_theme(load_mission_metadata&.dig('ui_theme')) || DEFAULT_UI_THEME
+    end
+
     # Get all CyBOK entries. Always returns break_escape_cyboks — these are the
     # authoritative source for the mission regardless of host mode. In Hacktivity,
     # the GameSlot syncs these into the host's cyboks table on save so that the

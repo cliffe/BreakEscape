@@ -1,0 +1,783 @@
+/* UI skins
+ *
+ * The game page sets <html data-ui-theme="..."> from the mission's mission.json
+ * ("ui_theme": "general" | "spy" | "cyberpunk" | "crt"; ?ui_theme= previews
+ * another). The player can override it in the menu's Display page
+ * (js/ui/display-settings.js). Each theme below only sets variables; the rules
+ * after them draw the HUD, buttons, dialogs and minigame chrome from those
+ * variables, so a new theme is one more block plus its art.
+ *
+ * Art is PixelLab UI panels in assets/ui/themes/<theme>/, used as 9-slice
+ * border images at whole pixel scales only (never downscaled):
+ *   frame.png    panels, slots and HUD buttons  (--ui-frame-*)
+ *   button.png   buttons                        (--ui-button-*)
+ *   portrait.png the player portrait ring with its action badge
+ * Crop new ones with tools/crop_ui_frame.py. A slice is the art's border in
+ * source pixels (unitless, as border-image-slice wants); the -px variable is the
+ * same at the drawn scale.
+ */
+
+/* ===== Theme: general (the default) ===== */
+:root,
+[data-ui-theme="general"] {
+  --ui-frame-image: url('/break_escape/assets/ui/themes/general/frame.png');
+  --ui-frame-slice: 9;
+  --ui-frame-px: 9px;
+  --ui-button-image: url('/break_escape/assets/ui/themes/general/button.png');
+  --ui-button-slice: 6;
+  --ui-button-px: 6px;
+  --ui-portrait-image: url('/break_escape/assets/ui/themes/general/portrait.png');
+
+  --ui-surface: rgba(24, 30, 48, 0.94);
+  --ui-surface-raised: rgba(38, 48, 74, 0.96);
+  --ui-surface-hover: rgba(50, 62, 94, 0.96);
+  --ui-slot-bg: rgba(66, 80, 118, 0.88);
+  --ui-line: #4c5b80;
+  --ui-text: #eef1f8;
+  --ui-text-dim: #a8b2c8;
+  --ui-text-faint: #6f7a94;
+  --ui-button-text: #ffffff;
+  --ui-accent: #ffcc44;
+  --ui-success: #6ee08f;
+  --ui-danger: #ff7a6b;
+  --ui-glow-filter: drop-shadow(0 0 4px rgba(160, 190, 255, 0.6));
+  --ui-text-glow: none;
+  --ui-heading-font: 'GNF', 'Courier New', monospace;
+  --ui-heading-transform: none;
+  --ui-heading-spacing: 0;
+  --ui-bar-bg: linear-gradient(to top, rgba(10, 13, 22, 0.9), rgba(10, 13, 22, 0));
+  --ui-backdrop: rgba(6, 8, 16, 0.78);
+}
+
+/* ===== Theme: spy (SAFETYNET campaign) =====
+ * Gunmetal steel with brass trim: agency field kit. */
+[data-ui-theme="spy"] {
+  --ui-frame-image: url('/break_escape/assets/ui/themes/spy/frame.png');
+  --ui-frame-slice: 9;
+  --ui-frame-px: 9px;
+  --ui-button-image: url('/break_escape/assets/ui/themes/spy/button.png');
+  --ui-button-slice: 6;
+  --ui-button-px: 6px;
+  --ui-portrait-image: url('/break_escape/assets/ui/themes/spy/portrait.png');
+
+  --ui-surface: rgba(29, 30, 32, 0.95);
+  --ui-surface-raised: rgba(44, 45, 47, 0.96);
+  --ui-surface-hover: rgba(58, 58, 56, 0.96);
+  --ui-slot-bg: rgba(52, 54, 57, 0.9);
+  --ui-line: #5a5246;
+  --ui-text: #ece4d0;
+  --ui-text-dim: #b8ad94;
+  --ui-text-faint: #7a7262;
+  --ui-button-text: #f4ead2;
+  --ui-accent: #d8bf86;
+  --ui-success: #9cc98a;
+  --ui-danger: #e0826f;
+  --ui-glow-filter: drop-shadow(0 0 4px rgba(216, 191, 134, 0.7));
+  --ui-text-glow: none;
+  --ui-heading-font: 'GNF', 'Courier New', monospace;
+  --ui-heading-transform: uppercase;
+  --ui-heading-spacing: 2px;
+  --ui-bar-bg: linear-gradient(to top, rgba(8, 8, 8, 0.92), rgba(8, 8, 8, 0));
+  --ui-backdrop: rgba(4, 4, 4, 0.8);
+}
+
+/* ===== Theme: cyberpunk =====
+ * Neon cyan and magenta on violet-black. */
+[data-ui-theme="cyberpunk"] {
+  --ui-frame-image: url('/break_escape/assets/ui/themes/cyberpunk/frame.png');
+  --ui-frame-slice: 14;
+  --ui-frame-px: 14px;
+  --ui-button-image: url('/break_escape/assets/ui/themes/cyberpunk/button.png');
+  --ui-button-slice: 7;
+  --ui-button-px: 7px;
+  --ui-portrait-image: url('/break_escape/assets/ui/themes/cyberpunk/portrait.png');
+
+  --ui-surface: rgba(14, 6, 26, 0.92);
+  --ui-surface-raised: rgba(30, 10, 50, 0.95);
+  --ui-surface-hover: rgba(48, 14, 74, 0.95);
+  --ui-slot-bg: rgba(30, 12, 54, 0.85);
+  --ui-line: #7a2a9e;
+  --ui-text: #dffcff;
+  --ui-text-dim: #8fd6e6;
+  --ui-text-faint: #5b6f9a;
+  --ui-button-text: #5ff4ff;
+  --ui-accent: #ff4fd0;
+  --ui-success: #3dffa8;
+  --ui-danger: #ff5577;
+  --ui-glow-filter: drop-shadow(0 0 5px rgba(40, 230, 255, 0.8));
+  --ui-text-glow: 0 0 6px currentColor;
+  --ui-heading-font: 'Press Start 2P', 'Courier New', monospace;
+  --ui-heading-transform: uppercase;
+  --ui-heading-spacing: 1px;
+  --ui-bar-bg: linear-gradient(to top, rgba(20, 0, 34, 0.92), rgba(20, 0, 34, 0));
+  --ui-backdrop: rgba(10, 0, 20, 0.8);
+}
+
+/* ===== Theme: crt =====
+ * Phosphor green on black, the look the tutorial and dialogs started with. */
+[data-ui-theme="crt"] {
+  --ui-frame-image: url('/break_escape/assets/ui/themes/crt/frame.png');
+  --ui-frame-slice: 8;
+  --ui-frame-px: 8px;
+  --ui-button-image: url('/break_escape/assets/ui/themes/crt/button.png');
+  --ui-button-slice: 4;
+  --ui-button-px: 4px;
+  --ui-portrait-image: url('/break_escape/assets/ui/themes/crt/portrait.png');
+
+  --ui-surface: rgba(2, 12, 4, 0.95);
+  --ui-surface-raised: rgba(8, 30, 12, 0.96);
+  --ui-surface-hover: rgba(14, 46, 20, 0.96);
+  --ui-slot-bg: rgba(6, 26, 10, 0.88);
+  --ui-line: #1f7a34;
+  --ui-text: #c8ffd0;
+  --ui-text-dim: #6fd884;
+  --ui-text-faint: #3f8a50;
+  --ui-button-text: #6dff8a;
+  --ui-accent: #66ff88;
+  --ui-success: #b8ff5a;
+  --ui-danger: #ffb347;
+  --ui-glow-filter: drop-shadow(0 0 5px rgba(100, 255, 130, 0.7));
+  --ui-text-glow: 0 0 6px rgba(100, 255, 130, 0.55);
+  --ui-heading-font: 'Press Start 2P', 'Courier New', monospace;
+  --ui-heading-transform: uppercase;
+  --ui-heading-spacing: 1px;
+  --ui-bar-bg: linear-gradient(to top, rgba(0, 10, 2, 0.92), rgba(0, 10, 2, 0));
+  --ui-backdrop: rgba(0, 6, 0, 0.82);
+}
+
+
+/* ===================================================================
+   HUD boxes: inventory slots, music, VM and menu buttons.
+   The frame (with its own filled centre) sits behind the content, so the
+   rounded corners stay rounded and the item draws over it.
+   =================================================================== */
+
+[data-ui-theme] .inventory-slot,
+[data-ui-theme] #music-widget-btn,
+[data-ui-theme] .vm-controls-hud-btn,
+[data-ui-theme] #hud-menu-button {
+  position: relative;
+  isolation: isolate;
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
+}
+
+[data-ui-theme] .inventory-slot::before,
+[data-ui-theme] #music-widget-btn::before,
+[data-ui-theme] .vm-controls-hud-btn::before,
+[data-ui-theme] #hud-menu-button::before {
+  content: '';
+  position: absolute;
+  inset: -2px; /* cover the 2px base border too */
+  z-index: -1;
+  pointer-events: none;
+  border-style: solid;
+  border-width: var(--ui-frame-px);
+  border-image-source: var(--ui-frame-image);
+  border-image-slice: var(--ui-frame-slice) fill;
+  border-image-width: var(--ui-frame-px);
+  border-image-repeat: stretch;
+  image-rendering: pixelated;
+  transition: filter 0.15s ease;
+}
+
+[data-ui-theme] .inventory-slot:hover::before,
+[data-ui-theme] #music-widget-btn:hover::before,
+[data-ui-theme] #music-widget-btn.panel-open::before,
+[data-ui-theme] .vm-controls-hud-btn:hover::before,
+[data-ui-theme] #hud-menu-button:hover::before,
+[data-ui-theme] #hud-menu-button.panel-open::before {
+  filter: brightness(1.3) var(--ui-glow-filter);
+}
+
+[data-ui-theme] #music-widget-btn:hover,
+[data-ui-theme] #music-widget-btn.panel-open {
+  border-color: transparent;
+  box-shadow: none;
+}
+
+/* VM state shows as a coloured glow around the frame */
+[data-ui-theme] .vm-controls-hud-btn.vm-activated::before { filter: drop-shadow(0 0 4px rgba(0, 220, 80, 0.9)); }
+[data-ui-theme] .vm-controls-hud-btn.vm-deactivated::before { filter: drop-shadow(0 0 4px rgba(230, 40, 0, 0.8)); }
+
+/* Menu button: three bars in the theme's text colour */
+#hud-menu-button {
+  order: 99;
+  width: 58px;
+  height: 58px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  user-select: none;
+  border: 2px solid #444;
+  background: rgba(20, 20, 20, 0.7);
+}
+
+.hud-menu-icon {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.hud-menu-icon i {
+  display: block;
+  width: 24px;
+  height: 4px;
+  background: var(--ui-text, #fff);
+  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.6);
+}
+
+#hud-menu-button:active {
+  transform: translateY(2px);
+}
+
+/* Inventory strip: a soft backing so slots read against any room */
+[data-ui-theme] #inventory-container {
+  background: var(--ui-bar-bg);
+}
+
+
+/* ===================================================================
+   Player portrait: avatar in a ring, the action (hand) badge attached at its
+   lower right, a gap, then the inventory. portrait.png holds both rings and
+   is drawn 1:1; the positions below match that art.
+   =================================================================== */
+
+[data-ui-theme] #player-hud-buttons {
+  position: relative;
+  flex: 0 0 auto;
+  width: var(--ui-portrait-w, 104px);
+  height: var(--ui-portrait-h, 80px);
+  margin-right: 22px;
+  gap: 0;
+  display: block;
+  background: var(--ui-portrait-image) no-repeat 0 0;
+  image-rendering: pixelated;
+}
+
+[data-ui-theme] #player-hud-buttons .hud-button {
+  position: absolute;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  border-radius: 50%;
+  overflow: hidden;
+}
+
+/* Portrait: the 32px headshot at 2x */
+[data-ui-theme] #hud-avatar-button.hud-button {
+  left: var(--ui-avatar-x, 6px);
+  top: var(--ui-avatar-y, 6px);
+  width: var(--ui-avatar-d, 64px);
+  height: var(--ui-avatar-d, 64px);
+}
+
+[data-ui-theme] #hud-avatar-img {
+  display: block;
+  width: 64px;
+  height: 64px;
+  max-width: none;
+  object-fit: fill;
+  /* centre the 64px headshot in the ring's opening, which clips its edge */
+  margin: calc((var(--ui-avatar-d, 64px) - 64px) / 2);
+}
+
+/* Action badge: the 32px hand at 1x */
+[data-ui-theme] #hud-mode-toggle-button.hud-button {
+  left: var(--ui-badge-x, 66px);
+  top: var(--ui-badge-y, 44px);
+  width: var(--ui-badge-d, 32px);
+  height: var(--ui-badge-d, 32px);
+  overflow: visible;
+}
+
+[data-ui-theme] #hud-hand-canvas {
+  width: 32px;
+  height: 32px;
+}
+
+[data-ui-theme] #player-hud-buttons .hud-button:hover {
+  filter: brightness(1.15) var(--ui-glow-filter);
+}
+
+/* Ring geometry per theme, measured from each portrait.png. The general
+   block comes first: its :root selector ties with the theme selectors on
+   <html>, so whichever is later wins */
+:root,
+[data-ui-theme="general"] {
+  --ui-portrait-w: 104px; --ui-portrait-h: 105px;
+  --ui-avatar-x: 17px; --ui-avatar-y: 17px; --ui-avatar-d: 56px;
+  --ui-badge-x: 67px; --ui-badge-y: 67px;
+}
+[data-ui-theme="spy"] {
+  --ui-portrait-w: 101px; --ui-portrait-h: 104px;
+  --ui-avatar-x: 11px; --ui-avatar-y: 11px; --ui-avatar-d: 60px;
+  --ui-badge-x: 63px; --ui-badge-y: 66px;
+}
+[data-ui-theme="cyberpunk"] {
+  --ui-portrait-w: 99px; --ui-portrait-h: 99px;
+  --ui-avatar-x: 11px; --ui-avatar-y: 12px; --ui-avatar-d: 58px;
+  --ui-badge-x: 61px; --ui-badge-y: 61px;
+}
+[data-ui-theme="crt"] {
+  --ui-portrait-w: 95px; --ui-portrait-h: 95px;
+  --ui-avatar-x: 6px; --ui-avatar-y: 6px; --ui-avatar-d: 60px;
+  --ui-badge-x: 57px; --ui-badge-y: 57px;
+}
+
+/* The portrait is taller than the old 80px strip, so the strip and the
+   things stacked above it move up together */
+[data-ui-theme] #inventory-container { height: 108px; }
+[data-ui-theme] #health-ui-container { bottom: 98px; }
+[data-ui-theme] #hud-info-label { bottom: 148px; }
+[data-ui-theme] #npc-bark-container { bottom: 108px; }
+
+/* The current mode tints the badge */
+[data-ui-theme] #hud-mode-toggle-button.mode-jab { filter: drop-shadow(0 0 4px rgba(0, 204, 255, 0.9)); }
+[data-ui-theme] #hud-mode-toggle-button.mode-cross { filter: drop-shadow(0 0 4px rgba(255, 40, 0, 0.9)); }
+
+
+/* ===================================================================
+   Panels and windows: the frame is the panel's own border
+   =================================================================== */
+
+[data-ui-theme] .objectives-panel,
+[data-ui-theme] #scenario-timer-display,
+[data-ui-theme] #hud-info-label,
+[data-ui-theme] #music-widget-panel,
+[data-ui-theme] .tutorial-prompt-modal,
+[data-ui-theme] .tutorial-panel,
+[data-ui-theme] .game-confirm-dialog,
+[data-ui-theme] .password-modal-content,
+[data-ui-theme] .modal-content,
+[data-ui-theme] .player-preferences-modal-content,
+[data-ui-theme] .game-menu-panel {
+  border-style: solid;
+  border-width: var(--ui-frame-px);
+  border-image-source: var(--ui-frame-image);
+  border-image-slice: var(--ui-frame-slice);
+  border-image-width: var(--ui-frame-px);
+  border-image-repeat: stretch;
+  background: var(--ui-surface);
+  background-clip: padding-box;
+  image-rendering: pixelated;
+  color: var(--ui-text);
+}
+
+[data-ui-theme] .tutorial-prompt-modal,
+[data-ui-theme] .tutorial-panel {
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.7);
+}
+
+[data-ui-theme] .tutorial-prompt-modal::before,
+[data-ui-theme] .tutorial-panel::before {
+  display: none;
+}
+
+[data-ui-theme] .tutorial-prompt-modal h2,
+[data-ui-theme] .tutorial-title,
+[data-ui-theme] .game-display-title,
+[data-ui-theme] .password-modal-title,
+[data-ui-theme] .modal-header,
+[data-ui-theme] .player-preferences-modal-content .modal-header h2,
+[data-ui-theme] .minigame-header {
+  color: var(--ui-accent);
+  text-shadow: var(--ui-text-glow);
+}
+
+[data-ui-theme] .tutorial-prompt-modal p,
+[data-ui-theme] .tutorial-instruction,
+[data-ui-theme] .game-confirm-message,
+[data-ui-theme] .game-display-body {
+  color: var(--ui-text);
+}
+
+[data-ui-theme] .player-preferences-modal-content .modal-header,
+[data-ui-theme] .player-preferences-modal-content .modal-footer {
+  background: var(--ui-surface-raised);
+  border-color: var(--ui-line);
+}
+
+[data-ui-theme] .player-preferences-modal-content {
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.7);
+}
+
+[data-ui-theme] .player-preferences-modal-content .form-group label {
+  color: var(--ui-accent);
+  text-shadow: var(--ui-text-glow);
+}
+
+[data-ui-theme] .player-preferences-modal-content #sprite-preview-canvas-container-modal {
+  border-color: var(--ui-line);
+  background: var(--ui-surface-raised);
+}
+
+[data-ui-theme] .player-preferences-modal-content .form-control:focus {
+  border-color: var(--ui-accent);
+  box-shadow: none;
+}
+
+[data-ui-theme] .player-preferences-modal-content .sprite-card {
+  background: var(--ui-surface-raised);
+  border-color: var(--ui-line);
+}
+
+[data-ui-theme] .player-preferences-modal-content .sprite-card:hover:not(.invalid) {
+  border-color: var(--ui-text-dim);
+}
+
+[data-ui-theme] .player-preferences-modal-content .sprite-card.selected {
+  border-color: var(--ui-accent);
+  box-shadow: 0 0 0 2px var(--ui-accent);
+}
+
+[data-ui-theme] .player-preferences-modal-content .preview-label,
+[data-ui-theme] .player-preferences-modal-content .sprite-label,
+[data-ui-theme] .player-preferences-modal-content .selection-required {
+  color: var(--ui-text-dim);
+}
+
+[data-ui-theme] #hud-info-label {
+  color: var(--ui-text);
+}
+
+/* Form controls inside themed windows */
+[data-ui-theme] .game-menu-panel select,
+[data-ui-theme] #music-widget-panel .mw-select,
+[data-ui-theme] #password-modal-input,
+[data-ui-theme] .player-preferences-modal-content .form-control {
+  background: var(--ui-surface-raised);
+  color: var(--ui-text);
+  border: 2px solid var(--ui-line);
+  border-radius: 0;
+}
+
+[data-ui-theme] .game-menu-panel select:focus,
+[data-ui-theme] #music-widget-panel .mw-select:focus,
+[data-ui-theme] #password-modal-input:focus {
+  outline: none;
+  border-color: var(--ui-accent);
+}
+
+/* Music panel */
+[data-ui-theme] #music-widget-panel .mw-header,
+[data-ui-theme] #music-widget-panel .mw-passive-notice {
+  background: var(--ui-surface-raised);
+  border-color: var(--ui-line);
+}
+
+[data-ui-theme] #music-widget-panel .mw-header-title,
+[data-ui-theme] #music-widget-panel .mw-status-pill {
+  color: var(--ui-accent);
+  font-family: var(--ui-heading-font);
+  text-shadow: var(--ui-text-glow);
+}
+
+[data-ui-theme] #music-widget-panel .mw-track-title { color: var(--ui-text); }
+[data-ui-theme] #music-widget-panel .mw-np-label,
+[data-ui-theme] #music-widget-panel .mw-track-count,
+[data-ui-theme] #music-widget-panel .mw-section-label,
+[data-ui-theme] #music-widget-panel .mw-vol-label,
+[data-ui-theme] #music-widget-panel .mw-vol-value { color: var(--ui-text-dim); }
+[data-ui-theme] #music-widget-panel .mw-section,
+[data-ui-theme] #music-widget-panel .mw-now-playing,
+[data-ui-theme] #music-widget-panel .mw-controls { border-color: var(--ui-line); }
+
+[data-ui-theme] #music-widget-panel .mw-vol-slider {
+  background: var(--ui-surface-raised);
+  accent-color: var(--ui-accent);
+}
+
+[data-ui-theme] #music-widget-panel .mw-vol-slider::-webkit-slider-thumb { background: var(--ui-accent); }
+[data-ui-theme] #music-widget-panel .mw-vol-slider::-moz-range-thumb { background: var(--ui-accent); }
+
+
+/* ===================================================================
+   Buttons: button.png as a filled 9-slice
+   =================================================================== */
+
+[data-ui-theme] .minigame-button,
+[data-ui-theme] .tutorial-btn,
+[data-ui-theme] .tutorial-skip,
+[data-ui-theme] .game-confirm-btn,
+[data-ui-theme] .password-modal-button,
+[data-ui-theme] .modal-button,
+[data-ui-theme] .player-preferences-modal-content .btn,
+[data-ui-theme] #music-widget-panel .mw-btn,
+[data-ui-theme] #music-widget-panel .mw-takeover-btn,
+[data-ui-theme] .game-menu-item,
+[data-ui-theme] .game-menu-reset,
+[data-ui-theme] #password-modal-ok,
+[data-ui-theme] #password-modal-cancel {
+  border-style: solid;
+  border-width: var(--ui-button-px);
+  border-image-source: var(--ui-button-image);
+  border-image-slice: var(--ui-button-slice) fill;
+  border-image-width: var(--ui-button-px);
+  border-image-repeat: stretch;
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+  color: var(--ui-button-text);
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.7);
+  image-rendering: pixelated;
+  cursor: pointer;
+  transition: filter 0.12s ease, transform 0.08s ease;
+}
+
+[data-ui-theme="cyberpunk"] .tutorial-btn,
+[data-ui-theme="cyberpunk"] .minigame-button,
+[data-ui-theme="cyberpunk"] .game-menu-item,
+[data-ui-theme="crt"] .tutorial-btn,
+[data-ui-theme="crt"] .minigame-button,
+[data-ui-theme="crt"] .game-menu-item {
+  text-shadow: var(--ui-text-glow);
+}
+
+[data-ui-theme] .minigame-button:hover,
+[data-ui-theme] .tutorial-btn:hover,
+[data-ui-theme] .tutorial-skip:hover,
+[data-ui-theme] .game-confirm-btn:hover,
+[data-ui-theme] .password-modal-button:hover,
+[data-ui-theme] .modal-button:hover,
+[data-ui-theme] .player-preferences-modal-content .btn:hover,
+[data-ui-theme] #music-widget-panel .mw-btn:hover,
+[data-ui-theme] #music-widget-panel .mw-takeover-btn:hover,
+[data-ui-theme] .game-menu-item:hover,
+[data-ui-theme] .game-menu-reset:hover {
+  background: none;
+  box-shadow: none;
+  color: var(--ui-button-text);
+  filter: brightness(1.25) var(--ui-glow-filter);
+  transform: translateY(-1px);
+}
+
+[data-ui-theme] .minigame-button:active,
+[data-ui-theme] .tutorial-btn:active,
+[data-ui-theme] .game-confirm-btn:active,
+[data-ui-theme] .game-menu-item:active,
+[data-ui-theme] #music-widget-panel .mw-btn:active {
+  background: none;
+  transform: translateY(1px);
+  filter: brightness(0.9);
+}
+
+/* Primary actions read in the accent colour; secondary ones are muted */
+[data-ui-theme] .tutorial-btn-primary,
+[data-ui-theme] .game-confirm-ok,
+[data-ui-theme] #password-modal-ok,
+[data-ui-theme] .modal-button.primary,
+[data-ui-theme] .player-preferences-modal-content .btn-primary,
+[data-ui-theme] .game-menu-item.active,
+[data-ui-theme] .game-menu-resume {
+  color: var(--ui-accent);
+}
+
+[data-ui-theme] .tutorial-btn-primary:hover,
+[data-ui-theme] .game-confirm-ok:hover,
+[data-ui-theme] .player-preferences-modal-content .btn-primary:hover {
+  color: var(--ui-accent);
+}
+
+[data-ui-theme] .tutorial-btn-secondary,
+[data-ui-theme] .game-confirm-cancel,
+[data-ui-theme] #password-modal-cancel,
+[data-ui-theme] .modal-button.secondary,
+[data-ui-theme] .player-preferences-modal-content .btn-secondary {
+  color: var(--ui-text-dim);
+  filter: saturate(0.6) brightness(0.85);
+}
+
+[data-ui-theme] .player-preferences-modal-content .btn:disabled,
+[data-ui-theme] #music-widget-panel .mw-btn:disabled {
+  filter: grayscale(1) brightness(0.6);
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Close (✕) buttons: small framed squares */
+[data-ui-theme] .minigame-close-button,
+[data-ui-theme] .game-modal-close,
+[data-ui-theme] .modal-close-button,
+[data-ui-theme] #music-widget-panel .mw-close-btn,
+[data-ui-theme] .game-menu-close {
+  border-style: solid;
+  border-width: var(--ui-button-px);
+  border-image-source: var(--ui-button-image);
+  border-image-slice: var(--ui-button-slice) fill;
+  border-image-width: var(--ui-button-px);
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+  color: var(--ui-danger);
+  image-rendering: pixelated;
+  cursor: pointer;
+}
+
+[data-ui-theme] .minigame-close-button:hover,
+[data-ui-theme] .game-modal-close:hover,
+[data-ui-theme] .modal-close-button:hover,
+[data-ui-theme] #music-widget-panel .mw-close-btn:hover,
+[data-ui-theme] .game-menu-close:hover {
+  background: none;
+  color: var(--ui-danger);
+  filter: brightness(1.3) var(--ui-glow-filter);
+}
+
+[data-ui-theme] .minigame-success-message { color: var(--ui-success); border-color: var(--ui-success); }
+[data-ui-theme] .minigame-failure-message { color: var(--ui-danger); border-color: var(--ui-danger); }
+
+
+/* ===================================================================
+   Objectives and timer text
+   =================================================================== */
+
+[data-ui-theme] .objectives-panel.collapsed {
+  max-height: calc(40px + 2 * var(--ui-frame-px));
+}
+
+[data-ui-theme] .objectives-header {
+  background: var(--ui-surface-raised);
+  border-bottom: 2px solid var(--ui-line);
+}
+
+[data-ui-theme] .objectives-header:hover {
+  background: var(--ui-surface-hover);
+}
+
+[data-ui-theme] .objectives-title {
+  color: var(--ui-text);
+  font-family: var(--ui-heading-font);
+  text-transform: var(--ui-heading-transform);
+  letter-spacing: var(--ui-heading-spacing);
+  text-shadow: var(--ui-text-glow);
+}
+
+[data-ui-theme="cyberpunk"] .objectives-title,
+[data-ui-theme="crt"] .objectives-title {
+  font-size: 11px;
+}
+
+[data-ui-theme] .objectives-toggle { color: var(--ui-text-dim); }
+[data-ui-theme] .objectives-toggle:hover { color: var(--ui-text); }
+[data-ui-theme] .aim-header { color: var(--ui-accent); text-shadow: var(--ui-text-glow); }
+[data-ui-theme] .aim-toggle { color: var(--ui-text-faint); }
+[data-ui-theme] .aim-header:hover .aim-toggle { color: var(--ui-text-dim); }
+[data-ui-theme] .aim-tasks { border-left-color: var(--ui-line); }
+[data-ui-theme] .objective-task { color: var(--ui-text-dim); }
+[data-ui-theme] .task-icon { color: var(--ui-text-faint); }
+[data-ui-theme] .task-required-mark { color: var(--ui-accent); }
+[data-ui-theme] .aim-completed .aim-header,
+[data-ui-theme] .task-completed,
+[data-ui-theme] .task-completed .task-icon { color: var(--ui-success); }
+
+/* Timer: urgency shows as a glow, since the frame replaces the border colour */
+[data-ui-theme] .scenario-timer-label { color: var(--ui-text-dim); }
+[data-ui-theme] .scenario-timer-clock { color: var(--ui-text); text-shadow: var(--ui-text-glow); }
+[data-ui-theme] #scenario-timer-display.scenario-timer--amber { box-shadow: 0 0 12px rgba(255, 180, 0, 0.6); }
+[data-ui-theme] #scenario-timer-display.scenario-timer--red { box-shadow: 0 0 14px rgba(255, 0, 0, 0.8); }
+
+[data-ui-theme="cyberpunk"] .objectives-panel,
+[data-ui-theme="cyberpunk"] .game-menu-panel {
+  box-shadow: 0 0 14px rgba(40, 230, 255, 0.25);
+}
+
+[data-ui-theme="crt"] .objectives-panel,
+[data-ui-theme="crt"] .game-menu-panel,
+[data-ui-theme="crt"] .tutorial-prompt-modal {
+  box-shadow: 0 0 18px rgba(80, 255, 120, 0.25);
+}
+
+
+/* ===================================================================
+   Minigame tool windows: the generic ones (examine, flag station, VM
+   launcher, container, locks, fingerprint kit and reader) take the theme's
+   frame. In-world devices (notebook, keypad, monitors, scanners, phone,
+   documents, sector consoles) keep their own look. The framework tags each
+   window with data-minigame (minigame-manager.js).
+   =================================================================== */
+
+[data-ui-theme] .examine-minigame .minigame-game-container,
+[data-ui-theme] .minigame-container[data-minigame="flag-station"] > .minigame-game-container,
+[data-ui-theme] .minigame-container[data-minigame="vm-launcher"] > .minigame-game-container,
+[data-ui-theme] .minigame-container[data-minigame="container"] > .minigame-game-container:not(:has(.desktop-mode)),
+[data-ui-theme] .minigame-container[data-minigame="combination"] > .minigame-game-container,
+[data-ui-theme] .minigame-container[data-minigame="cryptex"] > .minigame-game-container,
+[data-ui-theme] .minigame-container[data-minigame="lockpicking"] > .minigame-game-container,
+[data-ui-theme] .dusting-root,
+[data-ui-theme] .fpr-panel {
+  border-style: solid;
+  border-width: var(--ui-frame-px);
+  border-image-source: var(--ui-frame-image);
+  border-image-slice: var(--ui-frame-slice);
+  border-image-width: var(--ui-frame-px);
+  border-image-repeat: stretch;
+  background-color: var(--ui-surface);
+  background-clip: padding-box;
+  box-sizing: border-box;
+  box-shadow: none;
+  image-rendering: pixelated;
+}
+
+/* Examine */
+[data-ui-theme] .examine-image-box,
+[data-ui-theme] .examine-text {
+  border-color: var(--ui-line);
+  background: var(--ui-surface-raised);
+}
+[data-ui-theme] .examine-name { color: var(--ui-accent); text-shadow: var(--ui-text-glow); }
+[data-ui-theme] .examine-observations,
+[data-ui-theme] .examine-text { color: var(--ui-text); }
+
+/* Flag station */
+[data-ui-theme] .flag-station-description,
+[data-ui-theme] .flag-history-title { color: var(--ui-text-dim); }
+[data-ui-theme] .flag-input-label,
+[data-ui-theme] .flag-value { color: var(--ui-accent); text-shadow: var(--ui-text-glow); }
+[data-ui-theme] .flag-input {
+  background: var(--ui-surface-raised);
+  border-color: var(--ui-line);
+  color: var(--ui-text);
+}
+[data-ui-theme] .flag-input:focus { border-color: var(--ui-accent); }
+[data-ui-theme] .flag-input::placeholder { color: var(--ui-text-faint); }
+[data-ui-theme] .flag-check { color: var(--ui-success); }
+[data-ui-theme] .flag-submit-btn {
+  border-style: solid;
+  border-width: var(--ui-button-px);
+  border-image-source: var(--ui-button-image);
+  border-image-slice: var(--ui-button-slice) fill;
+  border-image-width: var(--ui-button-px);
+  background: none;
+  color: var(--ui-accent);
+  image-rendering: pixelated;
+}
+[data-ui-theme] .flag-submit-btn:hover:not(:disabled) {
+  background: none;
+  filter: brightness(1.25) var(--ui-glow-filter);
+}
+[data-ui-theme] .flag-submit-btn:disabled {
+  background: none;
+  color: var(--ui-text-faint);
+  filter: grayscale(1) brightness(0.6);
+}
+
+/* VM launcher */
+[data-ui-theme] .vm-launcher-description { color: var(--ui-text-dim); }
+[data-ui-theme] .vm-card {
+  background: var(--ui-surface-raised);
+  border-color: var(--ui-line);
+}
+[data-ui-theme] .vm-card:hover,
+[data-ui-theme] .vm-card.selected { border-color: var(--ui-accent); }
+
+/* Fingerprint dusting kit: its own colour variables follow the theme */
+[data-ui-theme] .dusting-container {
+  --d-accent: var(--ui-accent);
+  --d-panel: var(--ui-surface-raised);
+  --d-line: var(--ui-line);
+  --d-text: var(--ui-text);
+  --d-dim: var(--ui-text-dim);
+}

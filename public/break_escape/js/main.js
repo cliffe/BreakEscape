@@ -39,6 +39,8 @@ import MusicController from './music/music-controller.js';
 import { wirePhaserGameSoundToBreakEscape } from './music/phaser-audio-bus.js';
 import { createMusicWidget } from './music/music-widget.js';
 import { createVmControlsWidget } from './ui/vm-controls-widget.js';
+import { getDisplaySettings, applyTheme } from './ui/display-settings.js';
+import { createGameMenu } from './ui/game-menu.js';
 
 // Global game variables
 window.game = null;
@@ -180,6 +182,12 @@ function initializeGame() {
     // Mount music widget — retries internally until #player-hud-buttons is ready
     window.musicWidget = createMusicWidget();
 
+    // Player's theme override (Display settings) over the mission's theme
+    applyTheme();
+
+    // Pause menu: Esc or the menu button in the top-right corner
+    window.gameMenu = createGameMenu();
+
     // Mount VM controls widget — only renders when vmSetPanelUrl is set (VM-backed missions)
     window.vmControlsWidget = createVmControlsWidget();
 
@@ -208,6 +216,10 @@ function initializeGame() {
 
     const applyPixelPerfectScale = () => {
         const container = document.getElementById('game-container');
+        // core/game.js later sets window.game to the main scene; its .game is the
+        // Phaser.Game, which owns the canvas. Without this every resize after
+        // load returned here and the scale never changed.
+        const game = window.game?.game || window.game;
         if (!game?.scale || !game.canvas || !container) return;
 
         const dpr = window.devicePixelRatio || 1;
@@ -215,8 +227,13 @@ function initializeGame() {
         const deviceHeight = Math.round(container.clientHeight * dpr);
         if (!deviceWidth || !deviceHeight) return;
 
-        // Integer scale closest to covering a 640x480 view (what ENVELOP used to show)
-        const scale = Math.max(1, Math.round(Math.max(deviceWidth / BASE_WIDTH, deviceHeight / BASE_HEIGHT)));
+        // Integer scale closest to fitting a 640x480 view. Fitting (the smaller
+        // ratio) rather than covering keeps wide screens from zooming in on width
+        // alone: a 2560x1080 window ran at 4x and showed only 270 game pixels of
+        // height. The player can step it up or down in the menu's Display page.
+        const { zoomStep, hudStep } = getDisplaySettings();
+        const autoScale = Math.max(1, Math.round(Math.min(deviceWidth / BASE_WIDTH, deviceHeight / BASE_HEIGHT)));
+        const scale = Math.max(1, autoScale + zoomStep);
         const gameWidth = Math.ceil(deviceWidth / scale);
         const gameHeight = Math.ceil(deviceHeight / scale);
 
@@ -234,6 +251,13 @@ function initializeGame() {
         // CSS size = gameSize * zoom = exactly gameSize * scale device pixels.
         // setZoom also refreshes the input bounds for the new canvas rect.
         game.scale.setZoom(scale / dpr);
+
+        // The HUD was drawn for a 2x game. Grow it in whole device pixels as the
+        // game's pixel scale grows (a 4K screen runs at 6x), so it keeps its size
+        // relative to the game and its pixel art stays crisp; never shrink it.
+        const hudDevicePixels = Math.max(1, Math.floor(scale / 2) + hudStep);
+        const hudZoom = Math.max(hudStep < 0 ? 1 / dpr : 1, hudDevicePixels / dpr);
+        document.documentElement.style.setProperty('--hud-zoom', hudZoom);
 
         console.log(`Pixel scale ${scale}x (dpr ${dpr}): game ${gameWidth}x${gameHeight}`);
     };
@@ -257,6 +281,7 @@ function initializeGame() {
 
     // Add event listeners
     window.addEventListener('resize', handleResize);
+    window.addEventListener('be:display-settings-changed', handleResize);
     window.addEventListener('orientationchange', handleOrientationChange);
     document.addEventListener('fullscreenchange', handleOrientationChange);
     

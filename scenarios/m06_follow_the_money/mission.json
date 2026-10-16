@@ -4,6 +4,7 @@
   "difficulty_level": 2,
   "secgen_scenario": "m06_follow_the_money",
   "collection": "season_1",
+  "ui_theme": "spy",
   "cybok": [
     {
       "ka": "NS",

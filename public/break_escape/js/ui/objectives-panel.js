@@ -9,6 +9,10 @@
  */
 import { displayDashes } from '../utils/display-dashes.js';
 
+// Pixel-art arrow (assets/icons/chevron-down.png), drawn as a mask in the text
+// colour; a toggle with .is-collapsed turns it to point right
+const CHEVRON = '<i class="obj-chevron" aria-hidden="true"></i>';
+
 export class ObjectivesPanel {
   constructor(objectivesManager) {
     this.manager = objectivesManager;
@@ -36,9 +40,9 @@ export class ObjectivesPanel {
     const header = document.createElement('div');
     header.className = 'objectives-header';
     header.innerHTML = `
-      <span class="objectives-title">📋 Objectives</span>
+      <span class="objectives-title"><i class="objectives-clipboard" aria-hidden="true"></i>Objectives</span>
       <div class="objectives-controls">
-        <button class="objectives-toggle" aria-label="Toggle objectives" title="Collapse/Expand">▼</button>
+        <button class="objectives-toggle" aria-label="Toggle objectives" title="Collapse/Expand">${CHEVRON}</button>
       </div>
     `;
     
@@ -67,7 +71,7 @@ export class ObjectivesPanel {
       this.aimCollapsed[aimId] = !this.aimCollapsed[aimId];
       aimEl.classList.toggle('aim-collapsed', this.aimCollapsed[aimId]);
       const toggle = aimHeader.querySelector('.aim-toggle');
-      if (toggle) toggle.textContent = this.aimCollapsed[aimId] ? '▶' : '▼';
+      if (toggle) toggle.classList.toggle('is-collapsed', this.aimCollapsed[aimId]);
     });
 
     this.container.appendChild(header);
@@ -79,7 +83,7 @@ export class ObjectivesPanel {
     this.isCollapsed = !this.isCollapsed;
     this.container.classList.toggle('collapsed', this.isCollapsed);
     const toggle = this.container.querySelector('.objectives-toggle');
-    toggle.textContent = this.isCollapsed ? '▶' : '▼';
+    toggle.classList.toggle('is-collapsed', this.isCollapsed);
     if (window.getTutorialManager) window.getTutorialManager().notifyObjectivesToggled();
   }
   
@@ -134,12 +138,11 @@ export class ObjectivesPanel {
           if (!aimEl) return;
           aimEl.classList.add('aim-collapsed');
           const toggle = aimEl.querySelector('.aim-toggle');
-          if (toggle) toggle.textContent = '▶';
+          if (toggle) toggle.classList.add('is-collapsed');
         }, 800);
       }
       this.aimStatus[aim.aimId] = aim.status;
       const collapsed = this.aimCollapsed[aim.aimId];
-      const toggleIcon = collapsed ? '▶' : '▼';
       const markedIds = ObjectivesPanel.requiredMarkerTaskIds(aim);
       const requiredKey = markedIds.size > 0 && !isCompleted ? ObjectivesPanel.requiredKeyHtml() : '';
 
@@ -148,7 +151,7 @@ export class ObjectivesPanel {
           <div class="aim-header">
             <span class="aim-icon">${aimIcon}</span>
             <span class="aim-title">${this.escapeHtml(aim.title)}</span>${requiredKey}
-            <span class="aim-toggle">${toggleIcon}</span>
+            <span class="aim-toggle${collapsed ? ' is-collapsed' : ''}">${CHEVRON}</span>
           </div>
           <div class="aim-tasks">
       `;

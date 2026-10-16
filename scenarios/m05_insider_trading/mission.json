@@ -4,6 +4,7 @@
   "difficulty_level": 2,
   "secgen_scenario": "m05_insider_trading",
   "collection": "season_1",
+  "ui_theme": "spy",
   "scenarioId": "m05_insider_trading",
   "title": "Insider Trading",
   "difficulty": 2,

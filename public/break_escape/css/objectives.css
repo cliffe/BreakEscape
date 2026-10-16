@@ -46,6 +46,42 @@
   flex-shrink: 0;
 }
 
+/* Pixel-art clipboard (10x12, drawn at 2x) */
+.objectives-clipboard {
+  display: inline-block;
+  width: 20px;
+  height: 24px;
+  margin-right: 8px;
+  vertical-align: middle;
+  background: url('/break_escape/assets/icons/objectives-clipboard.png') 0 0 / 20px 24px no-repeat;
+  image-rendering: pixelated;
+}
+
+/* Pixel-art arrow (7x4, drawn at 2x) as a mask, so it takes the text colour.
+   Points down when open; a collapsed toggle turns it to point right. */
+.obj-chevron {
+  display: inline-block;
+  width: 14px;
+  height: 8px;
+  vertical-align: middle;
+  background-color: currentColor;
+  -webkit-mask: url('/break_escape/assets/icons/chevron-down.png') 0 0 / 14px 8px no-repeat;
+  mask: url('/break_escape/assets/icons/chevron-down.png') 0 0 / 14px 8px no-repeat;
+  transition: transform 0.15s ease;
+}
+
+.is-collapsed > .obj-chevron {
+  transform: rotate(-90deg);
+}
+
+.objectives-toggle,
+.aim-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 0;
+}
+
 .objectives-controls {
   display: flex;
   gap: 4px;

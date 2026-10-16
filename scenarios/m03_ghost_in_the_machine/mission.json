@@ -4,6 +4,7 @@
   "difficulty_level": 2,
   "secgen_scenario": "m03_ghost_in_the_machine",
   "collection": "season_1",
+  "ui_theme": "spy",
   "lab_sheet_url": "https://cliffe.github.io/HacktivityLabSheets/labs/introducing_attacks/m03-ghost-in-the-machine/",
   "cybok": [
     {

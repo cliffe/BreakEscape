@@ -85,8 +85,9 @@ export class PlayerHUD {
     
     this.handCanvas = document.createElement('canvas');
     this.handCanvas.id = 'hud-hand-canvas';
-    this.handCanvas.width = 64;
-    this.handCanvas.height = 64;
+    // The hand sits in the small action badge on the portrait ring, at 1x
+    this.handCanvas.width = 32;
+    this.handCanvas.height = 32;
     this.handCanvas.style.imageRendering = 'pixelated';
     this.handCanvas.style.imageRendering = '-moz-crisp-edges';
     this.handCanvas.style.imageRendering = 'crisp-edges';
@@ -286,10 +287,9 @@ export class PlayerHUD {
       }
 
       create() {
-        // Create hand sprite in center of canvas - scale 2x for pixel-perfect rendering
-        const handSprite = this.add.sprite(32, 32, 'hand_frames', 0);
+        // Hand sprite at 1x (32px frames) in the centre of the 32px badge canvas
+        const handSprite = this.add.sprite(16, 16, 'hand_frames', 0);
         handSprite.setOrigin(0.5);
-        handSprite.setScale(2); // Exact 2x scale: 32px → 64px (pixel-perfect)
         
         // Create animations for transitions
         this.createHandAnimations();
@@ -342,8 +342,8 @@ export class PlayerHUD {
     const config = {
       type: Phaser.CANVAS,
       canvas: this.handCanvas,
-      width: 64,
-      height: 64,
+      width: 32,
+      height: 32,
       transparent: true,
       scene: [HUDHandScene],
       scale: {
