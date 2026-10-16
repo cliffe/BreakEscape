@@ -31,113 +31,49 @@
   ],
   "cybok": [
     {
-      "ka": "AAA",
-      "topic": "Authentication",
-      "keywords": [
-        "user authentication",
-        "Credentials in a repository",
-        "RFID authentication",
-        "PIN-based authentication"
-      ]
-    },
-    {
-      "ka": "AAA",
-      "topic": "Authorisation",
-      "keywords": [
-        "access control",
-        "Elevated privileges",
-        "Vulnerabilities and attacks on access control misconfigurations"
-      ]
-    },
-    {
       "ka": "NS",
-      "topic": "PENETRATION TESTING",
-      "keywords": [
-        "SECURE SHELL (SSH)"
-      ]
-    },
-    {
-      "ka": "MAT",
-      "topic": "Attacks and exploitation",
-      "keywords": [
-        "EXPLOITATION",
-        "EXPLOITATION FRAMEWORKS",
-        "GitList CVE-2018-1000533"
-      ]
+      "topic": "Networking Applications",
+      "keywords": ["NMAP", "PORT SCANNING", "SECURE SHELL (SSH)"]
     },
     {
       "ka": "WAM",
-      "topic": "Web & Mobile Security",
-      "keywords": [
-        "Unauthenticated remote code execution",
-        "Unpatched web application"
-      ]
+      "topic": "Server-Side Vulnerabilities and Mitigations",
+      "keywords": ["injection vulnerabilities", "server-side misconfiguration and vulnerable components"]
     },
     {
       "ka": "SS",
       "topic": "Categories of Vulnerabilities",
-      "keywords": [
-        "CVEs and CWEs",
-        "Version control security",
-        "Secret management failures",
-        "Configuration vulnerabilities",
-        "Credential leakage in repositories"
-      ]
+      "keywords": ["CVES AND CWES", "HARD-CODED PASSWORD"]
     },
     {
       "ka": "SOIM",
-      "topic": "PENETRATION TESTING",
-      "keywords": [
-        "PENETRATION TESTING - SOFTWARE TOOLS",
-        "PENETRATION TESTING - ACTIVE PENETRATION",
-        "Internal threat hunting",
-        "Evidence correlation"
-      ]
+      "topic": "Fundamental Concepts",
+      "keywords": ["PENETRATION TESTING - SOFTWARE TOOLS", "VULNERABILITY ANALYSIS"]
     },
     {
       "ka": "OSV",
       "topic": "Primitives for Isolation and Mediation",
-      "keywords": [
-        "Access controls and operating systems",
-        "Linux security model",
-        "Attacks against SUDO"
-      ]
+      "keywords": ["physical access and secure deletion", "authentication and identification", "PRIVILEGE ESCALATION"]
     },
     {
-      "ka": "HF",
-      "topic": "Human Factors",
-      "keywords": [
-        "Insider threat psychology",
-        "Behavioral indicators",
-        "Trust exploitation"
-      ]
+      "ka": "AAA",
+      "topic": "Authentication",
+      "keywords": ["user authentication", "BIOMETRICS", "SMART CARDS", "PERSONAL IDENTIFICATION NUMBER AND MEMORABLE INFORMATION"]
+    },
+    {
+      "ka": "AB",
+      "topic": "Characterisation of Adversaries",
+      "keywords": ["THE INSIDER THREAT", "state actors"]
     },
     {
       "ka": "F",
-      "topic": "Forensics",
-      "keywords": [
-        "Log analysis",
-        "Timeline reconstruction",
-        "Physical access logs",
-        "Fingerprint evidence"
-      ]
+      "topic": "Definitions and Conceptual Models",
+      "keywords": ["digital (forensic) trace", "AUDIT TRAIL"]
     },
     {
-      "ka": "F",
-      "topic": "Artifact Analysis",
-      "keywords": [
-        "Encoding and alternative data formats"
-      ]
-    },
-    {
-      "ka": "CPS",
-      "topic": "Physical Security",
-      "keywords": [
-        "Physical access control",
-        "RFID cloning",
-        "PIN code systems",
-        "Lock picking"
-      ]
+      "ka": "C",
+      "topic": "Symmetric Cryptography",
+      "keywords": ["ENCODING", "CAESAR CIPHER"]
     }
   ],
   "secgen": {

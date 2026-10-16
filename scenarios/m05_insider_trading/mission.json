@@ -16,48 +16,33 @@
   "cybok": [
     {
       "ka": "NS",
-      "topic": "Network Protocols and Vulnerability",
-      "keywords": ["common network attacks"]
+      "topic": "Networking Applications",
+      "keywords": ["NMAP", "PORT SCANNING"]
+    },
+    {
+      "ka": "WAM",
+      "topic": "Server-Side Vulnerabilities and Mitigations",
+      "keywords": ["injection vulnerabilities", "server-side misconfiguration and vulnerable components"]
     },
     {
       "ka": "SOIM",
-      "topic": "PENETRATION TESTING",
-      "keywords": ["PENETRATION TESTING - SOFTWARE TOOLS", "Insider threat detection"]
+      "topic": "Fundamental Concepts",
+      "keywords": ["PENETRATION TESTING - SOFTWARE TOOLS", "PENETRATION TESTING - ACTIVE PENETRATION"]
     },
     {
       "ka": "OSV",
       "topic": "Primitives for Isolation and Mediation",
-      "keywords": ["Privilege escalation"]
-    },
-    {
-      "ka": "HF",
-      "topic": "Human Factors",
-      "keywords": ["Social engineering", "Insider threat psychology", "Behavioral indicators", "Trust exploitation"]
-    },
-    {
-      "ka": "AC",
-      "topic": "Applied Cryptography",
-      "keywords": ["Key management and rotation"]
-    },
-    {
-      "ka": "MAT",
-      "topic": "Attacks and exploitation",
-      "keywords": ["Data Exfiltration", "CVE-2019-16113", "Bludit CMS exploitation", "EXPLOITATION"]
-    },
-    {
-      "ka": "WAM",
-      "topic": "Web & Mobile Security",
-      "keywords": ["Leaked credentials", "Authenticated file upload", "CMS vulnerabilities"]
-    },
-    {
-      "ka": "CPS",
-      "topic": "Physical Security",
-      "keywords": ["Physical access control", "Lock picking", "Badge authentication systems"]
+      "keywords": ["physical access and secure deletion", "authentication and identification", "PRIVILEGE ESCALATION"]
     },
     {
       "ka": "AAA",
       "topic": "Authentication",
-      "keywords": ["RFID authentication", "Biometric authentication", "Access control bypass", "Credential theft"]
+      "keywords": ["user authentication", "facets of authentication", "BIOMETRICS", "SMART CARDS"]
+    },
+    {
+      "ka": "AB",
+      "topic": "Characterisation of Adversaries",
+      "keywords": ["THE INSIDER THREAT", "interpersonal crimes", "SOCIAL ENGINEERING"]
     }
   ],
 

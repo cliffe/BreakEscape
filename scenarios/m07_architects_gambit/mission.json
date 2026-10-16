@@ -7,49 +7,44 @@
   "estimated_duration_minutes": 90,
   "cybok": [
     {
-      "ka": "SOIM",
-      "topic": "PENETRATION TESTING",
-      "keywords": ["PENETRATION TESTING - NETWORK MAPPING - RECONNAISSANCE", "PENETRATION TESTING - SOFTWARE TOOLS", "Incident Response", "Crisis response", "Incident triage", "Resource allocation under time pressure"]
-    },
-    {
       "ka": "NS",
-      "topic": "PENETRATION TESTING",
-      "keywords": ["PENETRATION TESTING - NETWORK MAPPING - FINGERPRINTING", "PENETRATION TESTING - NETWORK MAPPING - NMAP", "Network file systems (NFS)", "Service enumeration", "SECURE SHELL (SSH)"]
+      "topic": "Networking Applications",
+      "keywords": ["NMAP", "PORT SCANNING", "NFS (NETWORK FILE SYSTEM)", "SECURE SHELL (SSH)"]
     },
     {
-      "ka": "MAT",
-      "topic": "Attacks and exploitation",
-      "keywords": ["EXPLOITATION", "Multi-stage attack chains"]
+      "ka": "SOIM",
+      "topic": "Fundamental Concepts",
+      "keywords": ["PENETRATION TESTING - SOFTWARE TOOLS", "PENETRATION TESTING - ACTIVE PENETRATION"]
     },
     {
-      "ka": "SS",
-      "topic": "Categories of Vulnerabilities",
-      "keywords": ["Misconfiguration", "Information leakage"]
-    },
-    {
-      "ka": "AB",
-      "topic": "Models",
-      "keywords": ["Coordinated attacks", "Attack synchronization"]
+      "ka": "SOIM",
+      "topic": "Human Factors: Incident Management",
+      "keywords": ["handle: actual incident response", "SECURITY EVENT TRIAGE", "CRISIS MANAGEMENT"]
     },
     {
       "ka": "OSV",
       "topic": "Primitives for Isolation and Mediation",
-      "keywords": ["Access controls and operating systems", "Linux security model", "Attacks against SUDO", "Privilege escalation"]
+      "keywords": ["physical access and secure deletion", "authentication and identification", "PRIVILEGE ESCALATION"]
     },
     {
       "ka": "AAA",
       "topic": "Authentication",
-      "keywords": ["Access control bypass", "RFID authentication", "PIN and password authentication"]
+      "keywords": ["user authentication", "BIOMETRICS", "SMART CARDS", "PERSONAL IDENTIFICATION NUMBER AND MEMORABLE INFORMATION"]
     },
     {
       "ka": "CPS",
-      "topic": "Physical Security",
-      "keywords": ["Critical infrastructure protection", "Physical access control", "Lock bypass"]
+      "topic": "Cyber-Physical Systems Domains",
+      "keywords": ["industrial control systems", "electric power grids"]
     },
     {
-      "ka": "HF",
-      "topic": "Human Factors",
-      "keywords": ["Professional judgment under pressure", "Ethical decision making", "Moral complexity in security", "Triage on incomplete information"]
+      "ka": "CPS",
+      "topic": "Cross Cutting Security",
+      "keywords": ["detecting attacks", "mitigating attacks"]
+    },
+    {
+      "ka": "AB",
+      "topic": "Models",
+      "keywords": ["attack trees", "kill chains"]
     }
   ],
   "prerequisites": ["m06_follow_the_money"],
