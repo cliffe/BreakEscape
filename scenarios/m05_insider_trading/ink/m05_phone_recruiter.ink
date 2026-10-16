@@ -20,6 +20,9 @@ VAR recruiter_deal_accepted = false
 VAR player_name = "Agent 0x00"
 VAR torres_identified = false
 VAR found_pipeline_list = false
+// Blind run A (2026-10-16, m2): after her last word the ring-back is gone, so
+// choosing it again doesn't replay a call the phone already shows.
+VAR recruiter_line_dead = false
 
 // PASS 2: never reaches DONE (lesson 21). Every exit goes to `idle`,
 // whose sticky choices let the player ring her back. Return-contact
@@ -364,6 +367,7 @@ That's not a defence. It's the part nobody wants to hear: the price was real, an
 
 Forty-seven names, agent. The clock on those didn't stop because you found one of mine.
 
+~ recruiter_line_dead = true
 #speaker:narrator
 Narrator: The line goes dead.
 
@@ -377,6 +381,7 @@ Narrator: The line goes dead.
 #speaker:recruiter
 Agent. Torres is dealt with, and we never did talk terms. Pity.
 There was an envelope under his keyboard I'd have liked back. Whatever you did with it, the next one will cost me more.
+~ recruiter_line_dead = true
 #speaker:narrator
 Narrator: The line goes dead.
 #exit_conversation
@@ -406,8 +411,12 @@ Narrator: She hangs up first.
 
 === idle ===
 #speaker:narrator
-+ [Ring the TalentStack number back.]
++ {not recruiter_line_dead} [Ring the TalentStack number back.]
     -> return_contact
++ {recruiter_line_dead} [Ring the number again.]
+    Narrator: It rings out. Nobody's answering that number tonight.
+    #exit_conversation
+    -> idle
 + [Leave it.]
     #exit_conversation
     -> idle

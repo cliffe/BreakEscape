@@ -69,7 +69,7 @@ VAR torres_reason_guessed = false // Synced scenario global (pass 5 R2 B2): a wr
 // Post-engine follow-ups (2026-10-16, D1): the VM's flag-3 manifest now shows
 // only badge #4471, so flag 3 counts only once the door log has tied that spare
 // to his front-door swipe (door_log_reasoned): the deduction, not the VM, names him.
-~ return found_manifest or found_upload_schedule or (flag3_submitted and door_log_reasoned)
+~ return found_upload_schedule or ((flag3_submitted or found_manifest) and door_log_reasoned) // E9 (2026-10-17): the printed manifest shows badge #4471, not his name
 
 === function all_flags_in()
 ~ return flag1_submitted and flag2_submitted and flag3_submitted and flag4_submitted
@@ -281,9 +281,7 @@ I sign that log off every Monday. I never once read the front door.
     Read it again. His badge never touches the server hallway. Hers does.
     #exit_conversation
     -> hub
-+ {flag3_submitted and found_door_log} [The portal's staging manifest. Badge 4471 staged it, and his swipe lets that spare in.]
-    -> phone_significant_findings
-+ {found_manifest} [The staging manifest in the data centre. "Staged by: D. Torres."]
++ {(flag3_submitted or found_manifest) and found_door_log} [The staging manifest. Badge 4471 staged it, and his swipe lets that spare in.]
     -> phone_significant_findings
 + [He's been in late, and nobody else has.]
     ~ torres_reason_guessed = true

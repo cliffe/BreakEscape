@@ -158,6 +158,11 @@ Owen Gallagher: I thought it was remote work at first. It's too tidy for that. S
 + {(server_door_seen or it_notice_read) and not server_password_obtained and not password_handed} [The server room wants a password.]
     -> request_password
 
+// Blind run A (2026-10-16, M2): once he has said he holds the spares, the
+// server room can be asked about before the player has seen its door.
++ {asked_access and not (server_door_seen or it_notice_read) and not server_password_obtained and not password_handed} [What about the server room?]
+    -> request_password
+
 + {torres_suspected and not office_card_obtained and not card_handed} [I need into David Torres' office.]
     -> request_office_card
 

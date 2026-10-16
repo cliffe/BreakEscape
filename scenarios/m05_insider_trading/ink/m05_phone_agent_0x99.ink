@@ -110,7 +110,7 @@ VAR confrontation_advice_given = false
 // Post-engine follow-ups (2026-10-16, D1): the VM's flag-3 manifest now shows
 // only badge #4471, so flag 3 counts only once the door log has tied that spare
 // to his front-door swipe (door_log_reasoned): the deduction, not the VM, names him.
-~ return found_manifest or found_upload_schedule or (flag3_submitted and door_log_reasoned)
+~ return found_upload_schedule or ((flag3_submitted or found_manifest) and door_log_reasoned) // E9 (2026-10-17): the printed manifest shows badge #4471, not his name
 
 === function all_flags_in()
 ~ return flag1_submitted and flag2_submitted and flag3_submitted and flag4_submitted
@@ -187,7 +187,8 @@ Someone in that building is feeding ENTROPY the keys to the 999 dispatch network
 + {torres_identified and final_choice == "" and not confrontation_advice_given and not torres_hostile} [I'm going in. Soft or hard?]
     -> confrontation_advice
 
-+ {recruiter_contacted_player and not recruiter_discussed} [The Recruiter just called me.]
+// Engine regression 2026-10-16 (E5): not "just", which read wrong long after the call.
++ {recruiter_contacted_player and not recruiter_discussed} [The Recruiter rang me.]
     -> topic_recruiter
 
 // Phase 4 dialogue C1 (D5-2, P10): the hub is capped at nine choices. The
@@ -320,17 +321,31 @@ Read it twice. A casualty projection, reviewed, and signed off as an acceptable 
 
 No rogue cell improvised that. Someone priced human lives and approved the invoice.
 
-It's the strongest thing you'll find tonight. It puts this above Torres.
+// Blind run A (2026-10-16, M1): HaX doesn't name Torres before the player
+// has something on him (torres_suspected).
+{torres_suspected:
+    It's the strongest thing you'll find tonight. It puts this above Torres.
+- else:
+    It's the strongest thing you'll find tonight. It puts this above whoever's staging it here.
+}
 
 -> topic_architect_choices
 
 === topic_architect_choices ===
 + [This is bigger than one insider.]
-    It always was. Torres is the delivery. The Architect is the decision. Keep both in the file.
+    {torres_suspected:
+        It always was. Torres is the delivery. The Architect is the decision. Keep both in the file.
+    - else:
+        It always was. Your insider is the delivery. The Architect is the decision. Keep both in the file.
+    }
     -> support_hub
 
-+ [Then Torres is the only thread we've got to it.]
++ {torres_suspected} [Then Torres is the only thread we've got to it.]
     For tonight, yes. Bear that in mind when you decide what happens to him.
+    -> support_hub
+
++ {not torres_suspected} [Then the insider is the only thread we've got to it.]
+    For tonight, yes. Find them first. Then bear it in mind when you decide what happens to them.
     -> support_hub
 
 === topic_recruiter ===
@@ -494,9 +509,7 @@ If she's the wrong name, the right one has just watched Security move. Be sure a
     Read it again. His badge never touches the server hallway. Hers does.
     #exit_conversation
     -> support_hub
-+ {flag3_submitted and found_door_log} [The portal's staging manifest. Badge 4471 staged it, and his swipe lets that spare in.]
-    -> hax_named
-+ {found_manifest} [The staging manifest in the data centre. "Staged by: D. Torres."]
++ {(flag3_submitted or found_manifest) and found_door_log} [The staging manifest. Badge 4471 staged it, and his swipe lets that spare in.]
     -> hax_named
 + [He's been in late, and nobody else has.]
     ~ torres_reason_guessed = true

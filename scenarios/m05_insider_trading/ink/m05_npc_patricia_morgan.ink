@@ -70,7 +70,7 @@ VAR final_choice = "" // Synced scenario global: Torres' fate; set by m05_torres
 // Post-engine follow-ups (2026-10-16, D1): the VM's flag-3 manifest now shows
 // only badge #4471, so flag 3 counts only once the door log has tied that spare
 // to his front-door swipe (door_log_reasoned): the deduction, not the VM, names him.
-~ return found_manifest or found_upload_schedule or (flag3_submitted and door_log_reasoned)
+~ return found_upload_schedule or ((flag3_submitted or found_manifest) and door_log_reasoned) // E9 (2026-10-17): the printed manifest shows badge #4471, not his name
 
 === function all_flags_in()
 ~ return flag1_submitted and flag2_submitted and flag3_submitted and flag4_submitted
@@ -472,7 +472,11 @@ Patricia Morgan: If you're wrong, that's her career. And whoever it really is ha
 ~ door_log_reasoned_first = true
 // Phase 4 dialogue C1 (D5-3): the player has said the pattern; she checks it
 // and admits what she missed.
-Patricia Morgan: *runs a finger down the sheet* ...Every night. And Ruth's own badge never comes in after seven.
+// Blind run A (2026-10-16, m9): the action is narration, not part of the spoken line.
+#speaker:narrator
+Narrator: She runs a finger down the sheet.
+#speaker:patricia_morgan
+Patricia Morgan: ...Every night. And Ruth's own badge never comes in after seven.
 Patricia Morgan: I sign that log off every Monday. I never once read the front door.
 {halloran_accused:
     Patricia Morgan: And Ruth's sitting in her lab, suspended on your word. That's on both of us now.
@@ -526,9 +530,7 @@ Patricia Morgan: I sign that log off every Monday. I never once read the front d
     #influence_decreased
     Patricia Morgan: Read it again. His badge never touches the server hallway. Hers does.
     -> reason_wrong
-+ {flag3_submitted and found_door_log} [The portal's staging manifest. Badge 4471 staged it, and his swipe lets that spare in.]
-    -> significant_reaction
-+ {found_manifest} [The staging manifest in the data centre. "Staged by: D. Torres."]
++ {(flag3_submitted or found_manifest) and found_door_log} [The staging manifest. Badge 4471 staged it, and his swipe lets that spare in.]
     -> significant_reaction
 + [He's been in late, and nobody else has.]
     ~ patricia_influence -= 1
@@ -584,9 +586,11 @@ Patricia Morgan: His badge just went through the hallway and the vault's logged 
     Patricia Morgan: You'll need his print for that door. His office first.
 }
 
-Patricia Morgan: When you've got him, keep him there and call me. I'll bring the police. They get him, and your evidence, without your name on it.
+// Blind run A (2026-10-16, m1): there's no "call Patricia" control; the arrest
+// is a choice in the confrontation ("So Patricia's ringing them").
+Patricia Morgan: When you've got him, keep him there and tell him the police are coming. I'll ring them. They get him, and your evidence, without your name on it.
 
-Patricia Morgan: Be careful. Down there, you're on your own.
+Patricia Morgan: Be careful. He's never been cornered before, and nobody knows what he does then.
 -> significant_close
 
 === significant_close ===
