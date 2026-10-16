@@ -31,6 +31,16 @@
 }
 
 /* Digital Display */
+.pin-minigame-title {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 12px;
+    line-height: 1.6;
+    color: #00ff00;
+    text-align: center;
+    overflow-wrap: anywhere;
+    max-width: 100%;
+}
+
 .pin-minigame-display-container {
     width: 100%;
     display: flex;

@@ -109,6 +109,15 @@ export class PinMinigame extends MinigameScene {
         const interfaceContainer = document.createElement('div');
         interfaceContainer.className = 'pin-minigame-interface';
         
+        // Which lock this keypad opens ("Enter PIN: Director's Safe"); the header is
+        // cleared above, so the title shows here (m08 E2)
+        if (this.params.title && this.params.title !== 'PIN Entry') {
+            const titleElement = document.createElement('div');
+            titleElement.className = 'pin-minigame-title';
+            titleElement.textContent = this.params.title.replace(/ -- /g, ' \u2013 ');
+            interfaceContainer.appendChild(titleElement);
+        }
+
         // Create digital display
         const displayContainer = document.createElement('div');
         displayContainer.className = 'pin-minigame-display-container';

@@ -39,3 +39,9 @@ test('the starters no longer build "for ${type}" titles', () => {
     assert.doesNotMatch(src, /Enter password for \$\{type\}/);
     assert.match(src, /keypadTitle\('Enter PIN', lockable, type\)/);
 });
+
+test('the PIN pad shows the title on screen (its header is cleared)', () => {
+    const pin = readFileSync(join(js, 'minigames/pin/pin-minigame.js'), 'utf8');
+    assert.match(pin, /titleElement\.className = 'pin-minigame-title'/);
+    assert.match(pin, /this\.params\.title !== 'PIN Entry'/);
+});
