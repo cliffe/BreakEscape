@@ -140,3 +140,28 @@ test('turning hostile applies the configured damage even if a state already exis
         window.npcBehaviorManager = saved;
     }
 });
+
+// 7.1g (m08 E12): a hurt hostile NPC came back at full health after a reload.
+// Its HP is now saved with the hostility record and restored with it.
+test('a hurt NPC saves its HP with its hostility, and a reload restores it', () => {
+    sys.setNPCHostile('agent_off_duty', true);
+    sys.damageNPC('agent_off_duty', 70);
+    assert.deepEqual(sys.exportHostility().agent_off_duty, { hostile: true, ko: false, hp: 30, maxHP: 100 });
+
+    sys.restoreHostility({
+        hurt_on_load: { hostile: true, ko: false, hp: 25, maxHP: 60 },
+        bad_hp: { hostile: true, ko: false, hp: 90, maxHP: 60 },
+        ko_with_hp: { hostile: true, ko: true, hp: 10, maxHP: 100 }
+    });
+    assert.equal(sys.getState('hurt_on_load').currentHP, 25);
+    assert.equal(sys.getState('hurt_on_load').maxHP, 60);
+    assert.deepEqual(sys.exportHostility().hurt_on_load, { hostile: true, ko: false, hp: 25, maxHP: 60 });
+    assert.equal(sys.getState('bad_hp').currentHP, 100, 'an impossible HP is ignored');
+    assert.equal(sys.getState('ko_with_hp').currentHP, 0);
+    assert.deepEqual(sys.exportHostility().ko_with_hp, { hostile: true, ko: true });
+
+    // The behavior's numbers don't put a restored NPC back to full health
+    sys.takeRestoredHostility('hurt_on_load');
+    sys.announceRestoredHostile('hurt_on_load', { attackDamage: 4, maxHP: 60 });
+    assert.equal(sys.getState('hurt_on_load').currentHP, 25);
+});

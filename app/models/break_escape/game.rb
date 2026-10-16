@@ -933,6 +933,24 @@ module BreakEscape
       end
     end
 
+    # Flag stations (objects, or items NPCs hold) with an unlock_object reward
+    # for this object, whichever flag pays it.
+    def flag_reward_stations_targeting(object)
+      object_refs = [object['id'], object['name']].compact.map(&:to_s)
+      return [] if object_refs.empty?
+
+      targets_object = ->(reward) { reward.is_a?(Hash) && reward['type'] == 'unlock_object' && object_refs.include?(reward['objectId'].to_s) }
+      stations = []
+      scenario_data['rooms']&.each_value do |room|
+        room['objects']&.each { |o| stations << o if o['flagRewards'] }
+        room['npcs']&.each { |n| n['itemsHeld']&.each { |i| stations << i if i['flagRewards'] } }
+      end
+      stations.select do |station|
+        rewards = station['flagRewards']
+        (rewards.is_a?(Hash) ? rewards.values : Array(rewards)).any?(&targets_object)
+      end
+    end
+
     # Unlock validation
     def validate_unlock(target_type, target_id, attempt, method)
       Rails.logger.info "[BreakEscape] validate_unlock: type=#{target_type}, id=#{target_id}, attempt=#{attempt}, method=#{method}"
@@ -1646,8 +1664,10 @@ module BreakEscape
       player_state['npcVisibility'] = merged
     end
 
+    MAX_NPC_HP = 100_000
+
     # Merge NPC hostility and KO sent by the client ({ npcId => { hostile, ko } },
-    # npc-hostile.js exportHostility), so an NPC that turned on the player is
+    # with hp and maxHP for a hurt NPC; npc-hostile.js exportHostility), so an NPC that turned on the player is
     # still hostile after a reload (E-B). Only NPCs the scenario has are kept.
     # A KO is never undone: once down, an NPC stays down. Does not save!; the
     # caller does.
@@ -1665,7 +1685,16 @@ module BreakEscape
         next unless [true, false].include?(hostile) && [true, false].include?(ko)
 
         ko ||= merged.dig(npc_id, 'ko') == true
-        merged[npc_id] = { 'hostile' => hostile, 'ko' => ko }
+        record = { 'hostile' => hostile, 'ko' => ko }
+        # A hurt NPC's HP (7.1g), so a reload doesn't restore it at full health
+        hp = entry['hp']
+        max_hp = entry['maxHP']
+        if !ko && hp.is_a?(Numeric) && max_hp.is_a?(Numeric) &&
+           hp.positive? && hp <= max_hp && max_hp <= MAX_NPC_HP
+          record['hp'] = hp
+          record['maxHP'] = max_hp
+        end
+        merged[npc_id] = record
       end
       return if merged.size > MAX_NPC_VISIBILITY
 
@@ -2176,6 +2205,17 @@ module BreakEscape
         # - bluetooth: requires device MAC/name (e.g., "00:11:22:33:44:55")
         # - rfid: requires card IDs (e.g., ["master_keycard"])
         lock_type = obj['lockType']
+
+        # A flag lock with no 'requires' can't take a flag where it stands: a
+        # flag-station reward opens it. Tell the client so it can say where,
+        # instead of a prompt that rejects every flag. Must run before 'requires'
+        # is stripped below.
+        if lock_type == 'flag' && obj['locked'] && obj['requires'].blank?
+          obj['flagUnlockedRemotely'] = true
+          station = flag_reward_stations_targeting(obj).first
+          obj['flagUnlockedAt'] = station['name'] if station && station['name'].present?
+        end
+
         if lock_type && !%w[biometric bluetooth rfid].include?(lock_type)
           obj.delete('requires')
         end

@@ -687,6 +687,27 @@ module BreakEscape
                    game.reload.player_state['npcHostility'], 'A KO is never undone; an unknown NPC is dropped')
     end
 
+    # 7.1g (m08 E12): a hurt hostile NPC came back at full health after a reload.
+    test 'NPC hostility keeps a hurt NPC HP, and drops bad or KO HP' do
+      game = create_game
+      game.scenario_data['rooms']['lobby']['npcs'] = [{ 'id' => 'guard', 'npcType' => 'person' },
+                                                     { 'id' => 'clerk', 'npcType' => 'person' },
+                                                     { 'id' => 'boxer', 'npcType' => 'person' }]
+      game.save!
+
+      put sync_state_game_url(game), params: { npcHostility: {
+        'guard' => { hostile: true, ko: false, hp: 30, maxHP: 60 },
+        'clerk' => { hostile: true, ko: false, hp: 90, maxHP: 60 },
+        'boxer' => { hostile: true, ko: true, hp: 10, maxHP: 100 }
+      } }, as: :json
+      assert_response :success
+
+      assert_equal({ 'guard' => { 'hostile' => true, 'ko' => false, 'hp' => 30, 'maxHP' => 60 },
+                     'clerk' => { 'hostile' => true, 'ko' => false },
+                     'boxer' => { 'hostile' => true, 'ko' => true } },
+                   scenario_json(game)['savedNpcHostility'])
+    end
+
     test 'no savedNpcHostility when nothing has turned' do
       assert_nil scenario_json(create_game)['savedNpcHostility']
     end

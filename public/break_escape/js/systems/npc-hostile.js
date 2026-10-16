@@ -14,8 +14,15 @@ const hostilityRecord = new Map();
 // sprite exists (takeRestoredHostility), so its tint and health bar come back.
 const restoredPending = new Map();
 
+// A hurt NPC (not KO'd) also records its HP, so a reload doesn't bring it back
+// at full health (7.1g, m08 E12): { hostile, ko, hp, maxHP }.
 function recordHostility(npcId, state) {
-  hostilityRecord.set(npcId, { hostile: !!state.isHostile, ko: !!state.isKO });
+  const entry = { hostile: !!state.isHostile, ko: !!state.isKO };
+  if (!state.isKO && state.currentHP > 0 && state.currentHP < state.maxHP) {
+    entry.hp = state.currentHP;
+    entry.maxHP = state.maxHP;
+  }
+  hostilityRecord.set(npcId, entry);
 }
 
 // The combat numbers a scenario can set per NPC in behavior.hostile (7.1e).
@@ -83,7 +90,7 @@ export function initNPCHostileSystem() {
   };
 }
 
-/** { npcId: { hostile, ko } } for the server (state-sync.js). */
+/** { npcId: { hostile, ko, hp?, maxHP? } } for the server (state-sync.js). */
 export function exportHostility() {
   return Object.fromEntries(hostilityRecord);
 }
@@ -94,7 +101,7 @@ export function exportHostility() {
  * (npc-sprites.js reads isNPCKO, npc-behavior.js reads takeRestoredHostility).
  * A change made this session wins. No event is emitted here: the NPC's
  * behavior announces a restored hostile once its sprite exists.
- * @param {Object} saved - { npcId: { hostile: bool, ko: bool } }
+ * @param {Object} saved - { npcId: { hostile: bool, ko: bool, hp?, maxHP? } }
  */
 export function restoreHostility(saved) {
   if (!saved || typeof saved !== 'object') return 0;
@@ -109,6 +116,9 @@ export function restoreHostility(saved) {
     if (ko) {
       state.isKO = true;
       state.currentHP = 0;
+    } else if (validSavedHP(entry)) {
+      state.maxHP = entry.maxHP;
+      state.currentHP = entry.hp;
     }
     recordHostility(npcId, state);
     restoredPending.set(npcId, { hostile, ko });
@@ -116,6 +126,11 @@ export function restoreHostility(saved) {
   }
   if (restored) console.log(`⚔️ Restored hostility for ${restored} NPC(s)`);
   return restored;
+}
+
+function validSavedHP(entry) {
+  const { hp, maxHP } = entry;
+  return Number.isFinite(hp) && Number.isFinite(maxHP) && hp > 0 && maxHP > 0 && hp <= maxHP;
 }
 
 /**
@@ -213,6 +228,7 @@ function damageNPC(npcId, amount) {
   state.currentHP = Math.max(0, state.currentHP - amount);
 
   console.log(`NPC ${npcId} HP: ${oldHP} → ${state.currentHP}`);
+  if (state.currentHP > 0) recordHostility(npcId, state); // saved with hostility (7.1g)
 
   // Check for KO
   if (state.currentHP <= 0) {
