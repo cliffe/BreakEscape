@@ -99,7 +99,9 @@ export const POWDERS = {
  *   decoySamePattern:'never'|'one'|'all', findHintVisible:boolean, partial:'never'|'maybe'|'always', sheenScale:number}>}
  */
 export const DIFFICULTY = {
-    easy: { pfog: 7, minCoverage: 0.40, residueStrength: 1.0, candidates: 2, decoySamePattern: 'one', findHintVisible: true, partial: 'never', sheenScale: 1.0 },
+    // easy: the decoy has a different pattern class, so the compare is by class; near-identical
+    // whorls on easy were not a fair comparison (m08 E16). Medium and hard keep the minutiae test.
+    easy: { pfog: 7, minCoverage: 0.40, residueStrength: 1.0, candidates: 2, decoySamePattern: 'never', findHintVisible: true, partial: 'never', sheenScale: 1.0 },
     medium: { pfog: 6, minCoverage: 0.45, residueStrength: 1.0, candidates: 3, decoySamePattern: 'one', findHintVisible: false, partial: 'maybe', sheenScale: 1.0 },
     hard: { pfog: 5, minCoverage: 0.55, residueStrength: 0.9, candidates: 3, decoySamePattern: 'all', findHintVisible: false, partial: 'always', sheenScale: 0.7 }
 };
