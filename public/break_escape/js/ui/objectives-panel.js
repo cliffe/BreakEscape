@@ -38,7 +38,6 @@ export class ObjectivesPanel {
     header.innerHTML = `
       <span class="objectives-title">📋 Objectives</span>
       <div class="objectives-controls">
-        <span class="objectives-key" title="Tasks marked * are required. Unmarked tasks are optional." hidden><span class="task-required-mark">*</span> required</span>
         <button class="objectives-toggle" aria-label="Toggle objectives" title="Collapse/Expand">▼</button>
       </div>
     `;
@@ -71,8 +70,6 @@ export class ObjectivesPanel {
       if (toggle) toggle.textContent = this.aimCollapsed[aimId] ? '▶' : '▼';
     });
 
-    this.keyEl = header.querySelector('.objectives-key');
-
     this.container.appendChild(header);
     this.container.appendChild(this.content);
     document.body.appendChild(this.container);
@@ -100,20 +97,23 @@ export class ObjectivesPanel {
       .map(t => t.taskId));
   }
 
-  /** Show the "* required" key only while a '*' is on screen */
-  setKeyVisible(visible) {
-    if (this.keyEl) this.keyEl.hidden = !visible;
+  /**
+   * The "* required" key sits in the header of each aim that shows a '*', not
+   * in the panel header: a panel-wide key read as if unmarked tasks were
+   * optional in every aim, including aims with no optional tasks (m08 E1).
+   */
+  static requiredKeyHtml() {
+    return '<span class="aim-required-key" title="In this aim, tasks marked * are required; unmarked tasks are optional.">'
+      + '<span class="task-required-mark" aria-hidden="true">*</span> required</span>';
   }
 
   render(aims) {
     if (!aims || aims.length === 0) {
       this.content.innerHTML = '<div class="no-objectives">No active objectives</div>';
-      this.setKeyVisible(false);
       return;
     }
     
     let html = '';
-    let anyMarker = false;
     
     aims.forEach(aim => {
       const isCompleted = aim.status === 'completed';
@@ -140,20 +140,19 @@ export class ObjectivesPanel {
       this.aimStatus[aim.aimId] = aim.status;
       const collapsed = this.aimCollapsed[aim.aimId];
       const toggleIcon = collapsed ? '▶' : '▼';
+      const markedIds = ObjectivesPanel.requiredMarkerTaskIds(aim);
+      const requiredKey = markedIds.size > 0 && !isCompleted ? ObjectivesPanel.requiredKeyHtml() : '';
 
       html += `
         <div class="objective-aim ${aimClass}${collapsed ? ' aim-collapsed' : ''}" data-aim-id="${aim.aimId}">
           <div class="aim-header">
             <span class="aim-icon">${aimIcon}</span>
-            <span class="aim-title">${this.escapeHtml(aim.title)}</span>
+            <span class="aim-title">${this.escapeHtml(aim.title)}</span>${requiredKey}
             <span class="aim-toggle">${toggleIcon}</span>
           </div>
           <div class="aim-tasks">
       `;
       
-      const markedIds = ObjectivesPanel.requiredMarkerTaskIds(aim);
-      if (markedIds.size > 0 && !isCompleted) anyMarker = true;
-
       aim.tasks.forEach(task => {
         if (task.status === 'locked') return; // Don't show locked tasks
         
@@ -187,7 +186,6 @@ export class ObjectivesPanel {
     });
     
     this.content.innerHTML = html;
-    this.setKeyVisible(anyMarker);
   }
   
   /**

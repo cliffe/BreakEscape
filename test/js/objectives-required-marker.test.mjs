@@ -3,7 +3,9 @@
 // as required, which in m04 pushed them into needless fights. The marker only
 // appears in aims that also have an optional task, is purely presentational
 // (task.title is unchanged, so toasts, the server and notes are unaffected),
-// and a small "* required" key shows in the header only while a '*' is on screen.
+// and a small "* required" key shows in the header of each aim that shows a '*'
+// (not in the panel header, which read as if unmarked tasks were optional in
+// every aim: 7.5d, m08 E1).
 // Run with: node --test test/js/objectives-required-marker.test.mjs
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -50,7 +52,7 @@ function manager(aims = scenario()) {
 function panelFor(m) {
     const panel = Object.create(ObjectivesPanel.prototype);
     Object.assign(panel, { content: { innerHTML: '', querySelector: () => null },
-                           keyEl: { hidden: true }, aimCollapsed: {}, aimStatus: {}, manager: m });
+                           aimCollapsed: {}, aimStatus: {}, manager: m });
     panel.escapeHtml = (s) => String(s);
     return panel;
 }
@@ -58,8 +60,15 @@ function panelFor(m) {
 function render(m) {
     const panel = panelFor(m);
     panel.render(m.getActiveAims());
-    return { html: panel.content.innerHTML, keyShown: !panel.keyEl.hidden };
+    const html = panel.content.innerHTML;
+    return { html, keyShown: html.includes(KEY), keyIn: (aimId) => aimHeader(html, aimId).includes(KEY) };
 }
+
+const KEY = 'class="aim-required-key"';
+const aimHeader = (html, aimId) => {
+    const start = html.indexOf(`data-aim-id="${aimId}"`);
+    return start < 0 ? '' : html.slice(start, html.indexOf('</div>', html.indexOf('class="aim-header"', start)));
+};
 
 const row = (html, id) => {
     const start = html.lastIndexOf('<div', html.indexOf(`data-task-id="${id}"`));
@@ -75,6 +84,14 @@ test('required tasks get a * in an aim with an optional task; optional tasks are
     assert.match(row(html, 'opt_a'), /task-active task-optional"/);
     assert.doesNotMatch(row(html, 'req_a'), /task-optional/);
     assert.equal(keyShown, true, 'key explains the *');
+});
+
+test('the key sits beside the aim that uses the marker, not beside aims without optional tasks', () => {
+    const { html, keyIn } = render(manager());
+    assert.equal(keyIn('mixed'), true);
+    assert.equal(keyIn('plain'), false);
+    assert.equal(html.split(KEY).length - 1, 1, 'one key, for the one marked aim');
+    assert.match(aimHeader(html, 'mixed'), /aim-title">Mixed aim<\/span><span class="aim-required-key" title="In this aim/);
 });
 
 test('an aim with no optional tasks looks as before: no marker', () => {
@@ -129,17 +146,17 @@ test('the key hides again once no * is on screen', async () => {
           tasks: [task('a'), task('o', { optional: true })] }]);
     const panel = panelFor(m);
     panel.render(m.getActiveAims());
-    assert.equal(panel.keyEl.hidden, false);
+    assert.ok(panel.content.innerHTML.includes(KEY));
     await m.completeTask('a'); // aim completes; only the optional task was left
     panel.render(m.getActiveAims());
-    assert.equal(panel.keyEl.hidden, true);
+    assert.ok(!panel.content.innerHTML.includes(KEY));
     panel.render([]);
-    assert.equal(panel.keyEl.hidden, true);
+    assert.ok(!panel.content.innerHTML.includes(KEY));
 });
 
 test('the stylesheet styles the marker, the dimmer optional text and the key', () => {
     const css = readFileSync(join(here, '../../public/break_escape/css/objectives.css'), 'utf8');
     assert.match(css, /\.task-required-mark\s*\{/);
     assert.match(css, /\.task-active\.task-optional\s*\{[^}]*color:/);
-    assert.match(css, /\.objectives-key\s*\{/);
+    assert.match(css, /\.aim-required-key\s*\{/);
 });

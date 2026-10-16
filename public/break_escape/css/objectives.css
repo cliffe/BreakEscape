@@ -218,14 +218,16 @@
 }
 
 /* "* required" key in the header, shown only while a '*' is on screen */
-.objectives-key {
-  align-self: center;
+/* "* required" key, in the header of an aim that marks its required tasks */
+.aim-required-key {
+  margin-left: auto;
   color: #aaa;
   font-size: 11px;
   white-space: nowrap;
+  flex-shrink: 0;
 }
-.objectives-key[hidden] {
-  display: none;
+.aim-required-key + .aim-toggle {
+  margin-left: 0;
 }
 
 .task-progress {
