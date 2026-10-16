@@ -25,7 +25,9 @@
  *       ]                                  // also: offsetX, offsetY (px from the object's centre), ledColor, ledAlpha (0 hides LEDs),
  *                                          // leds (rack-style blinking status LEDs on the object's face, 0-1 density; 0 none), floorTint (0-1: tint
  *                                          // a lit floor with the glow's colour), above (true: stays above the light
- *                                          // map in a lit room, for small indicators); effect null|screen|blink|pulse|breathe
+ *                                          // map in a lit room, for small indicators); effect null|screen|blink|pulse|breathe|fire
+ *                                          // (fire: an irregular warm flicker plus small rising flame tongues; flames: tongue
+ *                                          // count, default 6, 0 none; steady under prefers-reduced-motion)
  *     },
  *     "variants": [                        // the room block changes with game state (e.g. day and night):
  *       { "condition": "globalVars.night === true", "mode": "dark", "ambient": "#808aa0" }
@@ -125,6 +127,39 @@ const STRIKE_SEQUENCE = [[0, 0], [60, 0.7], [160, 0.12], [420, 0.12], [460, 1]];
 const FADE_MS = 400;
 const DIP_MS = 90;
 const DIP_LEVEL = 0.55;
+
+// Fire (effect "fire"): the glow flickers irregularly and shifts towards yellow, and
+// small flame tongues rise and fade across its width. Flash-safe: the glow's only
+// large swing is under 1 Hz, the faster wobble stays under a 10% change, each tongue
+// rises once per FIRE_TONGUE_MIN_MS or slower, and everything holds still under
+// prefers-reduced-motion.
+const FIRE_FLAMES = 6;
+const FIRE_MAX_FLAMES = 12;
+const FIRE_TONGUE_MIN_MS = 650;
+const FIRE_TONGUE_MAX_MS = 1250;
+const FIRE_YELLOW = 0xffc84a;
+
+/**
+ * The fire glow at a moment: k scales its intensity, mix how far its colour leans
+ * towards yellow. Slow swell (0.83 Hz) plus a small, quicker wobble.
+ */
+export function fireFlicker(time, phase = 0) {
+  const s = time / 1000;
+  const k = 0.84 + 0.1 * Math.sin(2 * Math.PI * 0.83 * s + phase)
+    + 0.03 * Math.sin(2 * Math.PI * 2.1 * s + phase * 1.7)
+    + 0.015 * Math.sin(2 * Math.PI * 2.7 * s + phase * 2.3);
+  const mix = 0.25 + 0.2 * Math.sin(2 * Math.PI * 0.55 * s + phase * 0.5);
+  return { k, mix };
+}
+
+/**
+ * One flame tongue's place in its cycle: it rises `rise` (0..1 of its travel) while
+ * it swells and fades, once per `period` ms. `still` freezes it part-way up.
+ */
+export function fireTongue(time, period, offset, still = false) {
+  const t = still ? 0.4 : ((time + offset) % period) / period;
+  return { rise: t, alpha: Math.sin(Math.PI * t), scale: 1 - 0.55 * t };
+}
 
 function prefersReducedMotion() {
   try { return window.matchMedia?.('(prefers-reduced-motion: reduce)').matches === true; } catch (e) { return false; }
@@ -485,7 +520,7 @@ export class LightingSystem {
   }
 
   buildEmitters(state, objs) {
-    state.emitters.forEach(e => { e.glow?.destroy(); e.leds?.forEach(l => l.img.destroy()); });
+    state.emitters.forEach(e => { e.glow?.destroy(); e.leds?.forEach(l => l.img.destroy()); e.flames?.forEach(f => f.img.destroy()); });
     state.emitters = [];
     for (const obj of objs) {
       const key = obj?.texture?.key;
@@ -505,6 +540,7 @@ export class LightingSystem {
         phase: Math.random() * Math.PI * 2,
         leds: ledsMax > 0 ? this.createLeds(obj, { leds: ledsMax }) : [],
         ledsMax,
+        flames: this.createFlames([base, ...variants]),
         glowK: 1, stampK: 1,
       });
     }
@@ -558,6 +594,29 @@ export class LightingSystem {
       e.glowK = 1 / n;
       e.stampK = 1 / Math.sqrt(n);
     });
+  }
+
+  /** Flame tongues for an emitter any of whose states uses the fire effect. */
+  createFlames(defs) {
+    const fire = defs.filter(d => d && d.effect === 'fire');
+    if (!fire.length) return [];
+    const count = Math.max(...fire.map(d => Math.max(0, Math.min(FIRE_MAX_FLAMES,
+      Math.round(Number(d.flames ?? FIRE_FLAMES)) || 0))));
+    const flames = [];
+    for (let i = 0; i < count; i++) {
+      const img = this.scene.add.image(0, 0, LIGHT_TEX)
+        .setBlendMode(Phaser.BlendModes.ADD)
+        .setVisible(false);
+      flames.push({
+        img,
+        // Spread evenly across the fire's width, with a little jitter
+        dx: count === 1 ? 0 : (i / (count - 1) - 0.5) + (Math.random() - 0.5) * 0.12,
+        period: FIRE_TONGUE_MIN_MS + Math.random() * (FIRE_TONGUE_MAX_MS - FIRE_TONGUE_MIN_MS),
+        offset: Math.random() * FIRE_TONGUE_MAX_MS,
+        size: 0.8 + Math.random() * 0.4,
+      });
+    }
+    return flames;
   }
 
   /** Status LEDs scattered over the face of a rack, each blinking at its own rate. */
@@ -867,7 +926,7 @@ export class LightingSystem {
       this.refreshEmitters(state, time);
       state.level = this.roomLevel(state);
       if (rx > view.right || ry > view.bottom || rx + rw < view.x || ry + rh < view.y) {
-        state.emitters.forEach(e => { e.glow.setVisible(false); e.leds.forEach(l => l.img.setVisible(false)); });
+        state.emitters.forEach(e => { e.glow.setVisible(false); e.leds.forEach(l => l.img.setVisible(false)); e.flames.forEach(f => f.img.setVisible(false)); });
         continue;
       }
       visible.push(state);
@@ -926,7 +985,7 @@ export class LightingSystem {
         const obj = e.obj;
         const def = e.def;
         const alive = obj?.active && obj.visible && def;
-        if (!alive) { e.glow.setVisible(false); e.leds.forEach(l => l.img.setVisible(false)); continue; }
+        if (!alive) { e.glow.setVisible(false); e.leds.forEach(l => l.img.setVisible(false)); e.flames.forEach(f => f.img.setVisible(false)); continue; }
         const left = obj.x - obj.displayWidth * obj.originX;
         const top = obj.y - obj.displayHeight * obj.originY;
         const ledA = ledLevel * (def.ledAlpha ?? 1);
@@ -951,8 +1010,15 @@ export class LightingSystem {
           else if (def.effect === 'pulse') k = 0.4 + 0.6 * (0.5 + 0.5 * Math.sin(time / 300 + e.phase));
           else if (def.effect === 'breathe') k = 0.75 + 0.25 * Math.sin(time / 700 + e.phase);
         }
+        let glowColor = def.color;
+        if (def.effect === 'fire') {
+          const f = still ? { k: 0.9, mix: 0.25 } : fireFlicker(time, e.phase);
+          k = f.k;
+          glowColor = lerpColor(def.color, FIRE_YELLOW, f.mix);
+          e.glow.setTint(glowColor);
+        }
         const radius = def.ransom ? def.radius + (RANSOM_LIT_RADIUS - def.radius) * state.level : def.radius;
-        stamp(x, y, radius, def.color, def.intensity * k * e.stampK);
+        stamp(x, y, radius, glowColor, def.intensity * k * e.stampK);
         // In a dark room (and for ransom screens) the glow draws above the light map so
         // it blooms, and fades when a character stands in front of it: screens when the
         // figure covers their centre (so the screen you're using stays lit), racks when
@@ -971,6 +1037,19 @@ export class LightingSystem {
         const fade = (def.ransom || def.above) ? 0.6 : glowFade;
         e.glow.setPosition(x, y).setDepth(above ? LIGHT_DEPTH + 1 : obj.depth + 0.01).setVisible(true)
           .setAlpha(Math.min(1, def.intensity * k * e.glowK * fade * (above ? e.fade : GLOW_BOOST)));
+        // Flame tongues: small yellow-orange blooms rising across the fire's width
+        const burning = def.effect === 'fire';
+        for (const fl of e.flames) {
+          if (!burning) { fl.img.setVisible(false); continue; }
+          const tg = fireTongue(time, fl.period, fl.offset, still);
+          const tr = radius * 0.22 * fl.size * tg.scale;
+          fl.img.setPosition(x + fl.dx * radius * 0.9, y + radius * 0.15 - tg.rise * radius * 0.45)
+            .setTint(lerpColor(FIRE_YELLOW, def.color, tg.rise))
+            .setScale(tr / (LIGHT_TEX_SIZE / 2))
+            .setDepth(above ? LIGHT_DEPTH + 1 : obj.depth + 0.02)
+            .setAlpha(Math.min(1, def.intensity * 0.9 * tg.alpha * (above ? e.fade : GLOW_BOOST)))
+            .setVisible(true);
+        }
         // ADD can't colour a near-white light map, so in a lit room an emitter with
         // floorTint (ransom screens; racks in a server room) also multiplies its colour
         // into the map: red round a ransom screen, green on the floor in front of a rack.
@@ -1148,7 +1227,7 @@ export class LightingSystem {
   destroy() {
     this.lightMap?.destroy();
     for (const state of this.rooms.values()) {
-      state.emitters.forEach(e => { e.glow?.destroy(); e.leds?.forEach(l => l.img.destroy()); });
+      state.emitters.forEach(e => { e.glow?.destroy(); e.leds?.forEach(l => l.img.destroy()); e.flames?.forEach(f => f.img.destroy()); });
     }
     this.rooms.clear();
   }
