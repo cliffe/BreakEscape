@@ -195,6 +195,9 @@
     flex: 0 1 auto;
     align-items: stretch;
     min-width: 180px;
+    /* At most half the row, so a long choice can't push the choices onto a row of
+       their own and stretch the caption across the NPC's face (m08 R6) */
+    max-width: 48%;
 }
 
 /* Choices container - displayed in controls area */
@@ -216,9 +219,9 @@
     cursor: pointer;
     text-align: left;
     transition: all 0.1s ease;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    /* Wraps inside the half-width column rather than widening it (m08 R6) */
+    white-space: normal;
+    overflow-wrap: anywhere;
     min-width: 180px;
 }
 
