@@ -477,6 +477,22 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
     }
   ],
 
+  <%# Fix pass 2026-10-17 (engine regression F4): phone timestamps showed the real
+      wall clock (7:23 ... 8:29, so "it's set for 0800" was sent at 8:29). The night
+      is 12 Jan (the plant reader log: Vance's card in at 03:35, a print match at
+      03:58), and Vance calls the audit "four in the morning", so the clock starts at
+      04:05. Rate 1: the on-screen countdowns (8 and 14 minutes, the 24-minute
+      advisory) are real minutes, so the phone clock keeps step with them and a long
+      run still ends well before the 0800 trigger. The debrief is at HQ in the
+      morning light, after the shutdown, so it jumps to 08:40. %>
+  "gameClock": {
+    "start": "04:05",
+    "rate": 1,
+    "anchors": [
+      { "condition": "globalVars.debrief_started === true", "time": "08:40" }
+    ]
+  },
+
   "startRoom": "main_entrance",
 
   "startItemsInInventory": [
@@ -594,6 +610,7 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
           "id": "director_netherton",
           "displayName": "Director Magnus Netherton",
           "npcType": "person",
+          "gender": "male",
           "position": { "x": 480, "y": 500 },
           "spriteSheet": "netherton",
           "spriteTalk": "assets/characters/netherton_talk.png",
@@ -629,6 +646,7 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
           "id": "security_guard",
           "displayName": "Security Guard",
           "npcType": "person",
+          "gender": "male",
           "voice": {
             "name": "Schedar",
             "style": "Site security guard on the early shift, mid-fifties. Speak with a consistent West Country (Bristol) accent throughout -- do not shift to any other accent. Low, even pitch; unhurried pace. Polite and a little grumpy about the hour, then firmly by-the-book once pushed.",
@@ -1185,6 +1203,32 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
               "onceOnly": true,
               "sendTimedMessage": { "delay": 1500, "message": "Fight's on. Don't let him reach that bench.", "skipIfGlobal": "voltage_neutralised" }
             },
+            <%# Fix pass 2026-10-17 (the lead's Restart ruling): a Restart that calms an
+                operative (engine reset event, reset: true) undoes that fight, so the
+                "hostile and up" latches go: HaX's call-in no longer says he's still
+                on you, and Cipher can challenge on sight again (his ink opens on the
+                standoff, since his radio call stands). cell_alerted and the Voltage
+                trigger race are story events, not the fight, and are kept (the race
+                is forfeit by design, see trigger_race). On this always-registered
+                phone NPC so the reset is caught wherever the player went down. %>
+            {
+              "eventPattern": "npc_hostile_state_changed",
+              "condition": "data.npcId === 'operative_cipher' && data.reset === true",
+              "cooldown": 0,
+              "setGlobal": { "cipher_engaged": false }
+            },
+            {
+              "eventPattern": "npc_hostile_state_changed",
+              "condition": "data.npcId === 'operative_relay' && data.reset === true",
+              "cooldown": 0,
+              "setGlobal": { "relay_engaged": false }
+            },
+            {
+              "eventPattern": "npc_hostile_state_changed",
+              "condition": "data.npcId === 'operative_static' && data.reset === true",
+              "cooldown": 0,
+              "setGlobal": { "static_engaged": false }
+            },
             <%# Playtest D7: the three optional methodology tasks never ticked.
                 Each is completed by the flag its step produces: the scan finds the
                 exposed status page (flag 1), enumeration finds the FTP drop (flag
@@ -1494,6 +1538,7 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
           "id": "robert_vance",
           "displayName": "Robert Vance",
           "npcType": "person",
+          "gender": "male",
           "position": { "x": 5, "y": 7 },
           <%# Dialogue portrait fix (m04 confirmation playtest): robert_vance was
               on the "hacker" sheet with no talk/headshot/visemes, so his dialogue
@@ -1902,6 +1947,7 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
           "id": "operative_cipher",
           "displayName": "ENTROPY Operative 'Cipher'",
           "npcType": "person",
+          "gender": "male",
           "voice": {
             "name": "Fenrir",
             "style": "ENTROPY operative posing as a maintenance contractor, late twenties. Speak with a consistent Dutch-accented English (Rotterdam) throughout, fluent with slightly clipped consonants -- do not shift to any other accent. Mid-to-high pitch; fast, sharp pace. Jumpy and aggressive, covering nerves with bluster.",
@@ -1974,7 +2020,8 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
             {
               "eventPattern": "npc_hostile_state_changed",
               "condition": "data.npcId === 'operative_cipher' && data.isHostile === true",
-              "onceOnly": true,
+              "onceOnly": false,
+              "cooldown": 0,
               "setGlobal": { "cipher_engaged": true }
             },
             {
@@ -2160,6 +2207,7 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
           "id": "operative_relay",
           "displayName": "ENTROPY Operative 'Relay'",
           "npcType": "person",
+          "gender": "female",
           "voice": {
             "name": "Pulcherrima",
             "style": "ENTROPY operative, late thirties. Speak with a consistent Scottish (Edinburgh) accent throughout -- do not shift to any other accent. Cool, mid-range pitch; measured, unhurried pace. Confident and almost friendly; she costed this and came anyway, and nothing about it frightens her.",
@@ -2223,7 +2271,8 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
             {
               "eventPattern": "npc_hostile_state_changed",
               "condition": "data.npcId === 'operative_relay' && data.isHostile === true",
-              "onceOnly": true,
+              "onceOnly": false,
+              "cooldown": 0,
               "setPatrolSpeed": 70,
               <%# Phase 8 final check (F1): HaX's call-in waits while she's hostile and up. %>
               "setGlobal": { "relay_engaged": true }
@@ -2342,6 +2391,7 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
               the bible). Voltage is his field lead on site. %>
           "displayName": "Voltage (Critical Mass)",
           "npcType": "person",
+          "gender": "male",
           "voice": {
             "name": "Alnilam",
             "style": "Critical Mass field lieutenant, a former grid engineer in his mid-forties. Speak with a consistent South African English (Johannesburg) accent throughout -- do not shift to any other accent. Low, flat pitch; slow, clipped pace. Detached and contemptuous, barely looking up from his laptop; nothing anyone says is new to him.",
@@ -2400,6 +2450,7 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
           "id": "operative_static",
           "displayName": "ENTROPY Operative 'Static'",
           "npcType": "person",
+          "gender": "male",
           "voice": {
             "name": "Umbriel",
             "style": "ENTROPY operative and Voltage's last line of defence, early thirties. Speak with a consistent Polish-accented English throughout, ten years in Britain -- do not shift to any other accent. Deep, low pitch; slow pace, very few words. Terse, loyal and immovable.",
@@ -2434,7 +2485,8 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
             {
               "eventPattern": "npc_hostile_state_changed",
               "condition": "data.npcId === 'operative_static' && data.isHostile === true",
-              "onceOnly": true,
+              "onceOnly": false,
+              "cooldown": 0,
               "setGlobal": { "static_engaged": true }
             },
             <%# Round 2 (review m8): on the button route Static stood aside, and when
@@ -2476,7 +2528,7 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
           "type": "emergency-button",
           "id": "esd_pushbutton",
           "name": "Emergency Shutdown Pushbutton — Rack Banks A-C",
-          <%# Room dressing c3: fixed on the plant room's back wall under the EMERGENCY SHUTDOWN plate, a red-hatched keep-clear box on the floor in front (room_aes_plant, aes_esd_station1, top-left 160,33). It landed at random before (regression M4). %>
+          <%# Room dressing c3: fixed on the plant room's back wall under the EMERGENCY SHUTDOWN plate, a red-hatched keep-clear box on the floor in front (room_aes_plant, aes_esd_station1, top-left 160,33). It landed at random before (regression M4). Fix pass 2026-10-17 (engine regression F5): on the wall its centre sat on the Hall 2 / plant room line, so it could be reached (and approached) from Hall 2, where Relay waits. The station now stands on the floor inside the keep-clear box (room_aes_plant object 2, top-left 161,65, was 160,33), its centre about 46 px below the nearest Hall 2 standing point, so only the plant room reaches it. %>
           "position": "as-type:aes_esd_station",
           "takeable": false,
           "locked": false,
@@ -2622,7 +2674,7 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
               "name": "Social Fabric Safehouse Card (Encoded)",
               "takeable": true,
               "readable": true,
-              "text": "<%= base64_encode('SOCIAL FABRIC — REGIONAL SAFEHOUSE\nUnit 14, Calder Wharf, Salford\nKnock pattern: 2-1-3\nAsk for \"Loom\". Burn this after reading.') %>",
+              "text": "<%= base64_encode("SOCIAL FABRIC — REGIONAL SAFEHOUSE\nUnit 14, Calder Wharf, Salford\nKnock pattern: 2-1-3\nAsk for \"Loom\". Burn this after reading.") %>",
               "observations": "An encoded card from the go-bag — the next thread to pull on Social Fabric",
               "puzzle_graph_role": "clue",
               "puzzle_graph_reveals": "social_fabric_safehouse_address_lead",

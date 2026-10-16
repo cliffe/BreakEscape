@@ -788,6 +788,11 @@
           "type": "boolean",
           "description": "Default true: an NPC whose ink story has ended (-> END / -> DONE) restarts at its start knot when talked to again. Set false for one-shot scenes (final choices, confrontations, debriefs) that must not replay."
         },
+        "gender": {
+          "type": "string",
+          "enum": ["male", "female", "m", "f"],
+          "description": "Optional. Picks the pronoun in the engine's hostile-NPC toast (\"He's / She's past talking.\", combat-input.js pastTalkingMessage). Without it the engine uses a male_/female_ sprite-sheet prefix, else \"They're\"."
+        },
         "globalVarOnKO": {
           "type": "string",
           "description": "Name of global variable to set to true when this NPC is knocked out. Must be defined in scenario.globalVariables."

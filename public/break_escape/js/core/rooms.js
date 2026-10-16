@@ -80,8 +80,11 @@ import NPCSpriteManager from '../systems/npc-sprites.js';
 import { resolveObjectField } from '../utils/conditional-text.js';
 
 // Default hover text for decor: "drug_trolley1" -> "A drug trolley."
+// The site-set prefix on an asset name is dropped, so "aes_tool_trolley1" reads
+// "A tool trolley.", not "An aes tool trolley." (m04 engine regression F6).
+const DECOR_SET_PREFIX = /^(aes|pnw|hq|qdc|hce|uni|zds)_/i;
 function describeDecor(name) {
-    const words = String(name).replace(/\d+$/, '').replace(/[_-]+/g, ' ').trim();
+    const words = String(name).replace(DECOR_SET_PREFIX, '').replace(/\d+$/, '').replace(/[_-]+/g, ' ').trim();
     return `${/^[aeiou]/i.test(words) ? 'An' : 'A'} ${words}.`;
 }
 

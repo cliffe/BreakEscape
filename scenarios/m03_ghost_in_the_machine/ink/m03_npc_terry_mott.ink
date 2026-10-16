@@ -30,6 +30,11 @@ VAR excuse_given = false
 VAR excuse_menu_quiet = false
 // A4 fix pass: quiet flag for route_reply, so a reopen there re-asks his question.
 VAR route_quiet = false
+// Fix pass 2026-10-17 (regression F4): synced. Set by the scenario when a Restart
+// calms him (npc_hostile_state_changed reset:true). fight_reset drops the fight
+// memory and clears it; fight_was_reset picks his one wary line on the way back in.
+VAR terry_fight_reset = false
+VAR fight_was_reset = false
 
 // Root divert. When a conversation has ended (-> DONE), the engine restores only
 // its variables on the next talk and continues from the root (npc-conversation-
@@ -39,6 +44,9 @@ VAR route_quiet = false
 
 === start ===
 #speaker:npc
+{ terry_fight_reset:
+    -> fight_reset
+}
 { guard_hostile:
     #display:guard-hostile
     // Pass 2 blind fixes 2: after a lockpick catch he never told them to leave.
@@ -89,8 +97,13 @@ VAR route_quiet = false
 }
 { (player_warned && not guard_hostile) && not bribe_accepted:
     #display:guard-suspicious
-    // D3-20: varied re-entry.
-    Terry Mott: {&You again.|Still here, then.|You're making my night very long.}
+    { fight_was_reset:
+        ~ fight_was_reset = false
+        Terry Mott: Back on your feet, then. One wrong move and I'm on the radio.
+    - else:
+        // D3-20: varied re-entry.
+        Terry Mott: {&You again.|Still here, then.|You're making my night very long.}
+    }
     ~ hub_quiet = true
     -> hub
 }
@@ -102,6 +115,9 @@ VAR route_quiet = false
 // and a player he already threatened with the police.
 === on_sighted ===
 #speaker:npc
+{ terry_fight_reset:
+    -> fight_reset
+}
 { mission_phase != "act2_infiltration":
     -> guard_idle
 }
@@ -119,6 +135,20 @@ VAR route_quiet = false
     Terry Mott: I told you to leave. You didn't.
     -> hostile_count
 }
+-> start
+
+// Fix pass 2026-10-17 (regression F4, the Restart ruling): a Restart that calmed him
+// undid the fight, so his "I warned you" memory goes with it. The challenge and the
+// excuse he heard stay; the detection count stays for the debrief. Choice-free, so a
+// reopen can't run it twice; start then routes as if the fight never happened.
+=== fight_reset ===
+~ guard_hostile = false
+~ ordered_out = false
+~ terry_fight_reset = false
+#set_global:terry_fight_reset:false
+// Only when start will land on the "You again." re-entry; a first challenge or the
+// excuse question already reads right after a reset.
+~ fight_was_reset = mission_phase == "act2_infiltration" and player_warned and excuse_given and not bribe_accepted
 -> start
 
 === daytime ===
@@ -633,6 +663,9 @@ Terry Mott: Picks. Right. We're done talking.
 { idle_quiet:
     ~ idle_quiet = false
 - else:
+    { terry_fight_reset:
+        -> fight_reset
+    }
     // D4-8: the first night meeting goes straight to his challenge (one torch, no
     // extra click). Inside the else, so it runs on a reopen, never on an exit.
     { mission_phase == "act2_infiltration" and (not player_warned or not excuse_given) and not guard_hostile and not bribe_accepted:

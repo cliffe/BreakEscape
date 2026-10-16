@@ -124,7 +124,13 @@ Narrator: He says it too fast.
 // global is set last, because its mapping hides him at once.
 === cipher_walks ===
 ENTROPY Operative 'Cipher': If you're lying, I'm coming back for you.
-Narrator: He clips the handset back on his belt, unradioed, and walks for the Hall 2 door without looking at you again.
+// Fix pass 2026-10-17 (regression F2): after a Restart his radio call still
+// stands (cell_alerted), so "unradioed" only when the call never got out.
+{ cell_alerted:
+    Narrator: He clips the handset back on his belt and walks for the Hall 2 door without looking at you again.
+- else:
+    Narrator: He clips the handset back on his belt, unradioed, and walks for the Hall 2 door without looking at you again.
+}
 #complete_task:neutralize_operative_cipher
 ~ cipher_walked = true
 #exit_conversation
