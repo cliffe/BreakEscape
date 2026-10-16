@@ -362,7 +362,7 @@ export class DustingMinigame extends MinigameScene {
         if (['find', 'dust', 'lift'].includes(step)) this.canvas.focus({ preventScroll: true });
         this.announce({
             examine: 'Examine the surface.',
-            find: 'Step 1, find the print. Sweep the light across the surface and mark the sheen.',
+            find: 'Step 1, find the print. Sweep the light across the surface and mark the patch of curved ridges.',
             powder: 'Step 2, choose a powder.',
             dust: 'Step 3, dust. Brush over the print to bring up the ridges.',
             lift: 'Step 4, lift. Press the tape down, then peel and mount.',
@@ -409,8 +409,9 @@ export class DustingMinigame extends MinigameScene {
     _htmlFind() {
         return `
             <h3>Find the print</h3>
-            <p>Hold the light low across the surface. Where residue catches the light you will see a streaky sheen.
-            Click on it, or move the light with the arrow keys and press Space.</p>
+            <p>Hold the light low across the surface. Where residue catches the light you will see a small patch
+            of fine curved ridges. Long straight streaks are only reflections.
+            Click on the patch, or move the light with the arrow keys and press Space.</p>
             <p class="dusting-feedback" data-dyn="feedback"></p>
             <div class="dusting-buttons">
                 <button class="dusting-btn dusting-hint" data-action="hint" ${this.hintReady ? '' : 'hidden'}>Hint</button>
@@ -849,7 +850,7 @@ export class DustingMinigame extends MinigameScene {
             }
         }
         if (!hit) {
-            this.message = 'Nothing there. Keep the light low and look for a streaky sheen.';
+            this.message = 'Nothing there. Keep the light low and look for a small patch of curved ridges, not a straight reflection.';
             this._refreshDynamic();
             this.announce(this.message);
             return;
@@ -996,7 +997,9 @@ export class DustingMinigame extends MinigameScene {
                 const dim = 0.5 + 0.5 * Math.min(1, lit * 2.2);
                 r *= dim; g *= dim; b *= dim;
                 let s = lit > 0 ? p.ridges[i] * p.mask[i] * res * lit * 0.8 : 0;
-                if (easy && ((x + y) & 1) === 0) s = Math.max(s, p.mask[i] * 0.16);
+                // easy: a faint dotted outline of the print shows even before the light reaches it
+                // (0.16 was too faint to see on some surfaces: m05 blind A m8, m06 A-R10)
+                if (easy && ((x + y) & 1) === 0) s = Math.max(s, p.mask[i] * 0.24);
                 if (s > 0) {
                     r += (glint[0] - r) * s; g += (glint[1] - g) * s; b += (glint[2] - b) * s;
                 }
