@@ -37,6 +37,23 @@ function configuredHostileStats(npcId, config) {
   return stats;
 }
 
+/**
+ * Apply configured combat numbers to a state that already exists (7.1f): a
+ * getState() read before the NPC turned builds a default state, which used to
+ * keep the default 10 damage. An unhurt NPC takes the new maxHP as its HP; a
+ * hurt one keeps its HP, capped at the new maximum.
+ */
+function applyHostileStats(state, stats) {
+  if (stats.attackDamage) state.attackDamage = stats.attackDamage;
+  if (stats.attackCooldown) state.attackCooldown = stats.attackCooldown;
+  if (stats.attackRange) state.attackRange = stats.attackRange;
+  if (stats.maxHP && stats.maxHP !== state.maxHP && !state.isKO) {
+    const unhurt = state.currentHP >= state.maxHP;
+    state.maxHP = stats.maxHP;
+    state.currentHP = unhurt ? stats.maxHP : Math.min(state.currentHP, stats.maxHP);
+  }
+}
+
 function createHostileState(npcId, config = {}) {
   return {
     isHostile: false,
@@ -116,13 +133,14 @@ export function takeRestoredHostility(npcId) {
 /**
  * A restored hostile NPC's sprite now exists: tell the rest of the game, as
  * setNPCHostile does when an NPC turns, so its health bar, the threat music
- * and hostility eventMappings come back. Picks up the behavior's attackDamage,
- * which wasn't known when the state was restored.
+ * and hostility eventMappings come back. Picks up the behavior's combat numbers
+ * (attackDamage, maxHP, attackCooldown, attackRange), which weren't known when
+ * the state was restored.
  */
 export function announceRestoredHostile(npcId, config) {
   const state = npcHostileStates.get(npcId);
   if (!state || !state.isHostile || state.isKO) return false;
-  if (config?.attackDamage) state.attackDamage = config.attackDamage;
+  applyHostileStats(state, configuredHostileStats(npcId, config));
   window.eventDispatcher?.emit(CombatEvents.NPC_HOSTILE_CHANGED, { npcId, isHostile: true, restored: true });
   return true;
 }
@@ -140,6 +158,10 @@ function setNPCHostile(npcId, isHostile, config) {
     // attackDamage, maxHP, attackCooldown and attackRange (7.1e)
     state = createHostileState(npcId, configuredHostileStats(npcId, config));
     npcHostileStates.set(npcId, state);
+  } else if (isHostile) {
+    // A state can exist before the turn (any getState() call creates one with
+    // defaults): turning hostile still applies the configured numbers (7.1f)
+    applyHostileStats(state, configuredHostileStats(npcId, config));
   }
 
   const wasHostile = state.isHostile;

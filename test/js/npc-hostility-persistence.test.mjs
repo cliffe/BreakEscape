@@ -107,3 +107,36 @@ test('wiring: state sync saves it, game.js restores it, the behavior applies it'
     assert.match(ctor, /announceRestoredHostile/);
     assert.match(ctor, /else if \(this\.config\.hostile\.startHostile\)/);
 });
+
+// 7.1f (m05 D10): a getState() read before the turn built a default state, and
+// setNPCHostile then kept its default 10 damage. Turning hostile now always
+// applies the configured numbers.
+test('turning hostile applies the configured damage even if a state already exists', () => {
+    const saved = window.npcBehaviorManager;
+    window.npcBehaviorManager = {
+        getBehavior: (id) => (id === 'probe_npc' || id === 'control_npc')
+            ? { config: { hostile: { attackDamage: 3, maxHP: 60, attackCooldown: 3000 } } }
+            : null
+    };
+    try {
+        assert.equal(sys.getState('probe_npc').attackDamage, 10, 'a read before the turn builds the default');
+        sys.setNPCHostile('probe_npc', true);
+        const probe = sys.getState('probe_npc');
+        assert.equal(probe.attackDamage, 3);
+        assert.equal(probe.attackCooldown, 3000);
+        assert.equal(probe.maxHP, 60);
+        assert.equal(probe.currentHP, 60, 'an unhurt NPC takes the new maximum');
+
+        sys.setNPCHostile('control_npc', true);
+        assert.equal(sys.getState('control_npc').attackDamage, 3, 'no prior read: same numbers');
+
+        // A hurt NPC keeps its HP (capped at the new maximum)
+        sys.getState('hurt_npc').currentHP = 45;
+        window.npcBehaviorManager.getBehavior = () => ({ config: { hostile: { maxHP: 80 } } });
+        sys.setNPCHostile('hurt_npc', true);
+        assert.equal(sys.getState('hurt_npc').maxHP, 80);
+        assert.equal(sys.getState('hurt_npc').currentHP, 45);
+    } finally {
+        window.npcBehaviorManager = saved;
+    }
+});
