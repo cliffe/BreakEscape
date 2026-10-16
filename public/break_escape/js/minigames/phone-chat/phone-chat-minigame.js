@@ -14,6 +14,7 @@ import PhoneChatHistory from './phone-chat-history.js';
 import InkEngine from '../../systems/ink/ink-engine.js';
 import { processGameActionTags } from '../helpers/chat-helpers.js';
 import { classifyPhoneLine, displayPhoneLine, phoneStepLines } from './phone-chat-speaker.js';
+import { choiceIndexFromKey } from './phone-chat-choices.js';
 
 export class PhoneChatMinigame extends MinigameScene {
     /**
@@ -233,21 +234,17 @@ export class PhoneChatMinigame extends MinigameScene {
                 }
                 break;
                 
-            case '1':
-            case '2':
-            case '3':
-            case '4':
-            case '5':
-                // Quick choice selection (1-5)
-                if (this.ui.getCurrentView() === 'conversation') {
-                    const choiceIndex = parseInt(event.key) - 1;
-                    const choices = this.ui.elements.choicesContainer.querySelectorAll('.choice-button');
-                    if (choices[choiceIndex]) {
-                        event.preventDefault();
-                        this.handleChoice(choiceIndex);
-                    }
+            default: {
+                // Quick choice selection: number keys 1-9
+                if (this.ui.getCurrentView() !== 'conversation') break;
+                const choices = this.ui.elements.choicesContainer.querySelectorAll('.choice-button');
+                const choiceIndex = choiceIndexFromKey(event.key, choices.length);
+                if (choiceIndex >= 0) {
+                    event.preventDefault();
+                    this.handleChoice(choiceIndex);
                 }
                 break;
+            }
         }
     }
     

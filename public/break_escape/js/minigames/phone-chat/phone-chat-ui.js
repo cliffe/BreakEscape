@@ -13,6 +13,7 @@ import MusicController from '../../music/music-controller.js';
 import { displayPhoneLine } from './phone-chat-speaker.js';
 import { displayDashes } from '../../utils/display-dashes.js';
 import { messageClockText } from '../../systems/game-clock.js';
+import { hasHiddenChoicesBelow } from './phone-chat-choices.js';
 
 export default class PhoneChatUI {
     /**
@@ -131,6 +132,9 @@ export default class PhoneChatUI {
             choicesContainer: document.getElementById('choices-container')
         };
         
+        // Show or hide the "more choices" cue as the player scrolls the list
+        this.elements.choicesContainer?.addEventListener('scroll', () => this.updateChoicesScrollCue());
+
         console.log('✅ Phone UI rendered');
     }
     
@@ -759,11 +763,38 @@ export default class PhoneChatUI {
             
             this.elements.choicesContainer.appendChild(choiceButton);
         });
-        
+
+        // Cue shown while some choices sit below the visible part of the list
+        const cue = document.createElement('div');
+        cue.className = 'choices-more-cue';
+        cue.setAttribute('aria-hidden', 'true');
+        cue.textContent = '▼ more choices';
+        cue.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const box = this.elements.choicesContainer;
+            box.scrollBy?.({ top: box.clientHeight, behavior: 'smooth' });
+        });
+        this.elements.choicesContainer.appendChild(cue);
+
         this.scrollToBottom();
+        this.updateChoicesScrollCue();
+        // Measure again once the buttons have laid out
+        if (typeof requestAnimationFrame === 'function') {
+            requestAnimationFrame(() => this.updateChoicesScrollCue());
+        }
         console.log(`🔘 Added ${choices.length} choices`);
     }
     
+    /**
+     * Show the "more choices" cue only while choices are hidden below the fold
+     */
+    updateChoicesScrollCue() {
+        const box = this.elements?.choicesContainer;
+        const cue = box?.querySelector('.choices-more-cue');
+        if (!cue) return;
+        cue.classList.toggle('visible', hasHiddenChoicesBelow(box));
+    }
+
     /**
      * Clear all choice buttons
      */

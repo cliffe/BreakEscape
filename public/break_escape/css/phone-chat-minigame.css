@@ -489,6 +489,40 @@
     background: rgba(0, 0, 0, 0.3);
 }
 
+/* "More choices" cue: pinned to the bottom of the list while choices are hidden below */
+.choices-more-cue {
+    display: none;
+    position: sticky;
+    bottom: -12px;
+    margin: 0 -12px -12px;
+    padding: 4px 12px;
+    background: #5fcf69;
+    border-top: 2px solid #000;
+    color: #000;
+    font-family: 'GNF', monospace;
+    font-size: 14px;
+    text-align: center;
+    cursor: pointer;
+    animation: choicesCuePulse 1.2s ease-in-out infinite;
+}
+
+.choices-more-cue.visible {
+    display: block;
+}
+
+@keyframes choicesCuePulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.6; }
+}
+
+.phone-terminal-theme .choices-more-cue {
+    background: #000;
+    color: #00ff41;
+    border-top: 1px solid rgba(0, 255, 65, 0.5);
+    margin: 0 -16px -8px;
+    bottom: -8px;
+}
+
 /* Voice Message Styles */
 .voice-message-display {
     display: flex;
