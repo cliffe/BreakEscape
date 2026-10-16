@@ -111,3 +111,44 @@ Counts: **0 blockers, 0 majors, 7 minors**, plus 3 notes. I did not classify any
 - `Restart` reloads the page onto the title screen (Enter needed); the first reload showed no Mission Brief this time.
 - Debrief read cleanly end to end (transcript in `debrief_run1.txt`): bank B and the nine crew named, Cipher "picked up on the access road", Task Force Null, public disclosure choice, Vance's lines carry his name. "Voltage is in custody" and the safehouse line matched what I had done.
 - Hall 2 Relay: after the clone she stayed in her room while I crossed to the plant door both times without being hit (HP stayed 100 over both crossings).
+
+## Fixes (2026-10-17)
+
+Scenario/ink fixer, covering this report and `PASS5_BLIND_A.md` (game 2513). Engine items (knockback, toasts, vision cones, phone choice labels, dialog titles, seeded timestamps) went to the engine fixer at the same time.
+
+### Engine regression (game 2587)
+
+| # | Severity | Finding | Outcome |
+|---|---|---|---|
+| F1 | minor | "They're past talking." for the guard (no m04 NPC set `gender`) | **Fixed (231a7be6).** `gender` added: guard, Vance, Cipher, Voltage, Static, Netherton male; Relay female. The validator and schema now accept the field |
+| F2 | minor | Cipher's talk-out narration says "unradioed" after his radio call got out (Restart) | **Fixed (231a7be6).** `cipher_walks` drops "unradioed" when `cell_alerted`. Same commit, under the Restart ruling: a reset (`reset: true`) now clears `cipher_engaged`, `relay_engaged` and `static_engaged`, through new mappings on the always-registered HaX phone NPC. So HaX's call-in no longer says a calm operative is "still on you", and Cipher can challenge on sight again (his ink opens on the standoff). The three set-mappings are no longer `onceOnly`, so a second fight sets them again. `cell_alerted` and the Voltage trigger race are kept on purpose. The radio call happened before the fight, and the race is forfeit by design (`trigger_race` comment). Route r35 |
+| F3 | minor | Go-bag safehouse card decodes with literal `\n` and `\"` | **Fixed (231a7be6).** The ERB string was single-quoted Ruby. It is now double-quoted, so real newlines are encoded (checked by rendering the ERB and decoding) |
+| F4 | minor | Phone timestamps show the real wall clock (8:29 for "it's set for 0800") | **Fixed (231a7be6).** `gameClock` `{start "04:05", rate 1, anchor debrief_started -> 08:40}`. The story times: 12 Jan, Vance's card in at 03:35 and a plant-reader match at 03:58, "a grid-safety audit at four in the morning", trigger at 0800. Rate 1 keeps the phone clock in step with the on-screen countdowns, which are real minutes. The debrief jumps to the morning at HQ |
+| F5 | minor | ESD centre on the Hall 2 / plant room wall line, so it could be reached from Hall 2 | **Fixed (231a7be6).** `room_aes_plant` (.json and .tmj) object 2 (`aes_esd_station1`) moved from top-left (160,33) to (161,65). It now stands on the floor inside the red keep-clear box, under the EMERGENCY SHUTDOWN plate. Its centre is about 46 px below the nearest Hall 2 standing point (range 32, plus the 16 px facing offset), so only the plant room reaches it. Preview render looked right (scratchpad `esd/cmp.png`). In-game look still owed |
+| F6 | minor | Trolley examine text "An aes tool trolley." | **Fixed in the engine's decor text (231a7be6).** `describeDecor` (`core/rooms.js`) drops the site-set prefix (`aes_`, `pnw_`, `hq_`, `qdc_`, `hce_`, `uni_`, `zds_`), so it reads "A tool trolley.". That covers the other 300-odd prefixed decor images, which a rename of one PNG wouldn't |
+| F7 | minor | HaX toast stacks over the CyberChef panel | **Engine (toasts), handed to the engine fixer** |
+| N1 | note | `cipher_engaged` survives a Restart | **Changed** under F2: the reset now clears it |
+| N2 | note | HUD skin differs per load | **Withdrawn for m04.** It's the uncommitted player-preferences work in the tree, not the mission |
+| N3 | note | Dusting live-region text lags the display | **Deferred (engine accessibility).** `dusting-game.js` announce timing; not scenario data |
+
+### Blind run A (game 2513): confirmed against the current code
+
+| # | Severity | Finding | Outcome |
+|---|---|---|---|
+| M1 | major | Vance's portrait a hooded placeholder from the alarm on | **Already fixed (dc8a5b89).** Phone contact is "Robert Vance (ops desk)" (erb). Regression run 2587 saw the contact list and Vance's own portrait. Engine item E3 stays logged |
+| M2 | major | No CyberChef workstation | **Already fixed (dc8a5b89).** `workstation` item in the kit (erb line 533). Run 2587 decoded the card in it |
+| M3 | major | H2 advisory clock vs "half an hour" | **Already fixed (dc8a5b89).** HUD labels "Bank B hydrogen alarm in" and "Voltage reaches the laptop in"; HaX's mapping text "Bank B won't last till eight. The clock on your screen…" (erb) |
+| m1 | minor | Vance "Call the moment you're moving." after the shutdown | **Already fixed (dc8a5b89).** That choice needs `not attack_prevented`; the post-shutdown "watch that needle come down" choice is there |
+| m2 | minor | Hall 2 chat black first frame, garbled sign text | **Deferred (engine E5, art A1, the user's call on Gemini cost).** Unchanged |
+| m3 | minor | Reload returns to the entrance | **Declined** (RESOLVED_DECISIONS, 2026-10-16) |
+| m4 | minor | Only "On it." after the Relay-KO call | **Already fixed (dc8a5b89).** `on_relay_ko_card` diverts to `support_hub` |
+| m5 | minor | Night lighting doesn't read | **Deferred** to a lighting round (L4) |
+| m6 | minor | "Nightshade's reading" unexplained | **Already fixed (dc8a5b89).** Briefing line "They'll believe Nightshade, if you get a real reading off those racks." |
+| m7 | minor | Cipher task left in the list | **Withdrawn** (dc8a5b89: the brief was read before the KO handler ran) |
+| m8 | minor | Flags accepted in any order | **Declined, by design** (dc8a5b89) |
+| m9 | minor | ESD flap not shown as clickable | **Already partly fixed (dc8a5b89).** The observations say "lift the flap, then press". The minigame text is engine item E4 |
+| W2-W4 | worst lines | Voltage's quick surrender, the briefing recap, "on that feed" | **Already fixed (dc8a5b89).** All three new lines confirmed in the ink |
+
+Checks: ink compiles (10 files). m04 routes 35 of 35, with r35 new. dialoguelint: only the 2 withdrawn blank-reentry checks. tagdiff on Cipher: 2 structural differences (the new condition). Validator: schema passed, 0 errors, 12 issues (unchanged). `rooms.js` syntax checked.
+
+Browser checks still owed: the ESD station's look in game, and that it can't be reached from Hall 2. A Restart after a Cipher fight, then the talk-out and the call-in. The phone timestamps reading 04:xx.

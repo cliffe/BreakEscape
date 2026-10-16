@@ -121,3 +121,20 @@ Repro: night, Terry hostile (see F4), stand at the east edge of the executive wi
 - Engine items exercised: 15. Passed: 13 (leash, phone pause, restart reset, `guard_attacking` clear, KO'd no cone, number keys, more-choices cue, PIN title, case-sensitive hint, RFID deny, per-NPC numbers, wrap, required key). Partly: 1 (conversation pause). Wording difference: 1 (toast).
 - Not exercised: 8 (listed above).
 - Findings: 0 blocker, 0 major, 4 minor (one unconfirmed harness-suspect).
+
+## Fixes (2026-10-17)
+
+Scenario/ink fixer. Engine items (knockback, toasts, vision cones, phone choice labels, dialog titles, seeded timestamps) went to the engine fixer at the same time and are not repeated here.
+
+| # | Severity | Finding | Outcome |
+|---|---|---|---|
+| F1 | minor | Empty dark `.minigame-container` after saving the receptionist clone, first attempt only | **Deferred.** Suspect harness race (the `converse` 60-turn run left a second clone queued; the clean attempt had no overlay). No scenario cause found: the clone is one choice in Ffion's hub with one `#clone_keycard` tag. Re-check if a human reproduces it by double-triggering the choice |
+| F2 | minor | Player pushed west by Terry's hits into `main_hallway` | **Engine (knockback), handed to the engine fixer.** Not scenario data |
+| F3 | minor | "They're past talking." for Terry | **Fixed (231a7be6).** The engine reads `gender` (`combat-input.js` `pastTalkingMessage`). Added to Terry, Danny, Netherton (male) and Ffion, Victoria (female), from the ink's pronouns and voice notes. HaX, Nightshade and the narrators have none. The validator's NPC field list and the schema now know `gender` |
+| F4 | minor | After a Restart Terry says "Right. I warned you." and is hostile again at once | **Fixed (231a7be6), the lead's Restart ruling.** The reset event (`npc_hostile_state_changed` with `reset: true`) now sets a new global, `terry_fight_reset`. Terry's ink checks it at `start`, `on_sighted` and the `guard_idle` re-entry, and diverts to a choice-free `fight_reset` knot. That knot clears his `guard_hostile` and `ordered_out` memory and the global, then routes through `start` as if the fight never happened. The challenge he made and the excuse he heard stay. `guard_detection_count` stays too, so the debrief still knows he caught the player. A player who had answered him gets one wary line ("Back on your feet, then. One wrong move and I'm on the radio."), then his hub. A player caught at a lock with no challenge first gets the first challenge ("You. The one with the picks."). `guard_attacking` already cleared on the reset (b2a394da), so HaX's hostile-guard hint and the lockpick catch follow the cleared latch. Route `r26_restart_resets_terry` covers both cases |
+
+Checks: ink compiles (8 files); all 28 m03 routes run, r26 new and clean. r2's two "pick not found" misses (Victoria) predate this change; I checked against the stashed ink. dialoguelint: 2 warnings, both in Victoria's ink and unchanged. loopcheck: Terry at `start`, `on_sighted` and `guard_idle` with `terry_fight_reset=true` is clean. tagdiff on Terry: 18 structural differences, all from F4. Validator: schema passed, 0 errors, 9 issues (unchanged).
+
+Browser check still owed: one Restart after a fight with Terry, then walk into his cone. Expect the wary line and no punches.
+
+New spoken line (not voiced yet): Terry, "Back on your feet, then. One wrong move and I'm on the radio."
