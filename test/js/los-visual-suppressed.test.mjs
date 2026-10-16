@@ -40,3 +40,18 @@ test('npc-manager clears the cone of a suppressed NPC', () => {
     assert.match(body, /losVisualSuppressed\(npc, window\.npcHostileSystem\?\.isNPCKO\?\.\(npc\.id\) === true\)/);
     assert.match(body, /if \(suppressed \|\|[\s\S]*?clearLOSCone\(this\.losVisualizations\.get\(npc\.id\)\)/);
 });
+
+// m06 R5 / m08 blind M2: the checkpoint guard's cone was drawn across the next room
+// through the wall. Cones of NPCs outside the player's room are hidden; hostile
+// chasers keep theirs (m06 R6, not a bug).
+test('an NPC in another room draws no cone unless hostile', async () => {
+    const { losVisualOutOfRoom } = await import(pathToFileURL(join(dir, 'npc-los.mjs')).href);
+    const guard = { id: 'guard', roomId: 'checkpoint' };
+    assert.equal(losVisualOutOfRoom(guard, 'trading_floor'), true);
+    assert.equal(losVisualOutOfRoom(guard, 'checkpoint'), false);
+    assert.equal(losVisualOutOfRoom(guard, 'trading_floor', true), false, 'hostile chaser keeps it');
+    assert.equal(losVisualOutOfRoom(guard, null), false, 'player room unknown: no change');
+    assert.equal(losVisualOutOfRoom({ id: 'x' }, 'lobby'), false, 'NPC with no room: no change');
+    const mgr = readFileSync(join(sys, 'npc-manager.js'), 'utf8');
+    assert.match(mgr, /losVisualOutOfRoom\(npc, this\._losPlayerRoom, window\.npcHostileSystem\?\.isNPCHostile\?\.\(npc\.id\) === true\)/);
+});

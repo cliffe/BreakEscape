@@ -1,7 +1,7 @@
 // NPCManager with event → knot auto-mapping and conversation history
 // OPTIMIZED: InkEngine caching, event listener cleanup, debug logging
 // default export NPCManager
-import { isInLineOfSight, drawLOSCone, clearLOSCone, getNPCFacingDirection, losVisualSuppressed } from './npc-los.js';
+import { isInLineOfSight, drawLOSCone, clearLOSCone, getNPCFacingDirection, losVisualSuppressed, losVisualOutOfRoom } from './npc-los.js';
 import { classifyPhoneLine, phoneStepLines } from '../minigames/phone-chat/phone-chat-speaker.js';
 
 /**
@@ -2156,6 +2156,8 @@ export default class NPCManager {
   _updateLOSVisualizations(scene) {
     // console.log(`🎯 Updating LOS visualizations for ${this.npcs.size} NPCs`);
     let visualizedCount = 0;
+    // The player's room, held over a doorway crossing (currentPlayerRoom is null there)
+    if (window.currentPlayerRoom) this._losPlayerRoom = window.currentPlayerRoom;
     
     for (const npc of this.npcs.values()) {
       // Only visualize person-type NPCs with LOS config
@@ -2165,7 +2167,9 @@ export default class NPCManager {
       }
       
       // Hidden and knocked-out NPCs draw no cone or sight circle (7.1j)
-      const suppressed = losVisualSuppressed(npc, window.npcHostileSystem?.isNPCKO?.(npc.id) === true);
+      const suppressed = losVisualSuppressed(npc, window.npcHostileSystem?.isNPCKO?.(npc.id) === true)
+        // and NPCs in another room, unless hostile (m06 R5)
+        || losVisualOutOfRoom(npc, this._losPlayerRoom, window.npcHostileSystem?.isNPCHostile?.(npc.id) === true);
       if (suppressed || !npc.los || !npc.los.enabled || (!this.losVisualizeAll && npc.los.visualize !== true)) {
         // console.log(`   Skip "${npc.id}" - hidden or KO, no LOS config, disabled, or not flagged for visualization`);
         if (this.losVisualizations.has(npc.id)) {

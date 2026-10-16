@@ -226,6 +226,20 @@ export function losVisualSuppressed(npc, isKO = false) {
   return false;
 }
 
+/**
+ * True when an NPC's cone should not be drawn because the NPC stands in a room
+ * other than the player's: the cone isn't clipped at walls, so a checkpoint
+ * guard's cone was painted across the next room (m06 R5, m08 blind M2). A
+ * hostile NPC keeps its cone wherever it is (the player needs to see a chaser).
+ * @param {object} npc - NPC entry (npc.roomId)
+ * @param {string|null} playerRoomId - the player's room (last known)
+ * @param {boolean} [isHostile=false]
+ */
+export function losVisualOutOfRoom(npc, playerRoomId, isHostile = false) {
+  if (isHostile || !npc || !npc.roomId || !playerRoomId) return false;
+  return npc.roomId !== playerRoomId;
+}
+
 export function drawLOSCone(scene, npc, losConfig = {}, color = 0x00ff00, alpha = 0.2) {
   const {
     range = 200,
