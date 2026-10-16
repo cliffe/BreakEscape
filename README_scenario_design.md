@@ -1106,7 +1106,8 @@ Common event patterns:
 - `"npc_attacked:npc_id"` — fires when an NPC is attacked
 - `"item_picked_up:item_type"` — fires when an item is picked up
 - `"door_unlock_attempt"` — fires on any door unlock attempt (`condition: "data.connectedRoom === 'room_id'"`)
-- `"door_unlock_failed"` / `"door_unlock_failed:room_id"` — fires when a door refuses the player: no key (`reason: "no_key"`), a fingerprint reader refusal, an RFID reader refusing a card or clone (`"wrong_card"`, `"uid_only"`), or a card reader with no card or cloner at all (`"no_card"`). `data.lockType` says which kind of lock
+- `"door_unlock_failed"` / `"door_unlock_failed:room_id"` — fires when a door refuses the player: no key (`reason: "no_key"`), a fingerprint reader refusal, an RFID reader refusing a card or clone (`"wrong_card"`, `"uid_only"`), or a card reader with no card or cloner at all (`"no_card"`), a wrong password at a password door (`"wrong_password"`, or `"wrong_password_case"` when the entry was right apart from letter case). `data.lockType` says which kind of lock
+- `"password_failed"` / `"password_failed:target_id"` — fires on every wrong password at a password keypad, door or object (`target_id` is the door's room id or the object's id). `data.caseMismatch` is true when the entry matched apart from letter case (the keypad then says passwords are case-sensitive); `data.attemptsRemaining`, `data.targetType`, `data.name`
 - `"object_interacted"` — fires when object interacted with (`condition: "data.objectType === 'vm-launcher'"`)
 - `"conversation_closed:npc_id"` — fires when a conversation closes
 - `"attack_aborted"` / `"attack_launched"` — fires from launch-device

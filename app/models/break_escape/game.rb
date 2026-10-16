@@ -1140,6 +1140,18 @@ module BreakEscape
       self.class.mastermind_feedback(lock['requires'].to_s, attempt.to_s)
     end
 
+    # A wrong password that matches the real one ignoring case. The keypad then says
+    # passwords are case-sensitive (m07 E4: cascadewindow19 for CascadeWindow19).
+    # It tells the player only that their own entry was right apart from case.
+    def password_case_mismatch?(target_type, target_id, attempt)
+      lock = target_type == 'door' ? room_data(target_id) : find_scenario_object(target_id)
+      return false unless lock && lock['lockType'] == 'password'
+
+      secret = lock['requires'].to_s
+      guess = attempt.to_s
+      secret.present? && guess != secret && guess.casecmp?(secret)
+    end
+
     def self.mastermind_feedback(secret, guess)
       secret_digits = secret.chars
       guess_digits = guess.chars

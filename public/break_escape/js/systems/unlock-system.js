@@ -282,7 +282,10 @@ export function handleUnlock(lockable, type) {
                 showKeyboard: lockable.showKeyboard || lockable.scenarioData?.showKeyboard || pwDoor.showKeyboard || false,
                 maxAttempts: lockable.maxAttempts || lockable.scenarioData?.maxAttempts || pwDoor.maxAttempts || 3,
                 postitNote: lockable.postitNote || lockable.scenarioData?.postitNote || pwDoor.postitNote || '',
-                showPostit: lockable.showPostit || lockable.scenarioData?.showPostit || pwDoor.showPostit || false
+                showPostit: lockable.showPostit || lockable.scenarioData?.showPostit || pwDoor.showPostit || false,
+                // A wrong password at a door: door_unlock_failed (reason wrong_password,
+                // or wrong_password_case when only the letter case was wrong)
+                onRefused: emitDoorUnlockFailed
             };
 
             // Pass null for required password - will be validated server-side

@@ -590,6 +590,7 @@ export function startPasswordMinigame(lockable, type, correctPassword, callback,
         showPostit: options.showPostit || false,
         lockable: lockable,
         type: type, // Pass type for server validation
+        onRefused: options.onRefused, // door_unlock_failed for a wrong password at a door
         requiresKeyboardInput: true, // Password minigame needs keyboard for text input
         onComplete: (success, result) => {
             if (success) {

@@ -242,6 +242,21 @@ module BreakEscape
       assert_nil JSON.parse(@response.body)['feedback']
     end
 
+    test 'a wrong password that differs only in case is flagged caseMismatch' do
+      office = @game.scenario_data['rooms']['office']
+      office['lockType'] = 'password'
+      office['requires'] = 'CascadeWindow19'
+      @game.save!
+
+      post unlock_game_url(@game), params: { targetType: 'door', targetId: 'office', attempt: 'cascadewindow19', method: 'password' }
+      assert_response :unprocessable_entity
+      assert_equal true, JSON.parse(@response.body)['caseMismatch']
+
+      post unlock_game_url(@game), params: { targetType: 'door', targetId: 'office', attempt: 'cascadewindow20', method: 'password' }
+      assert_response :unprocessable_entity
+      assert_nil JSON.parse(@response.body)['caseMismatch']
+    end
+
     test 'mastermind scoring counts each PIN digit once' do
       score = ->(secret, guess) { Game.mastermind_feedback(secret, guess) }
       assert_equal({ rightPlace: 0, rightNumber: 2 }, score.('0417', '1234'))

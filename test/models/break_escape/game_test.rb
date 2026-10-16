@@ -424,6 +424,18 @@ module BreakEscape
       assert_nil cache['flagUnlockedAt']
     end
 
+    test "password_case_mismatch? spots an entry that is right apart from letter case" do
+      @game.scenario_data = lock_matrix_scenario
+
+      assert @game.password_case_mismatch?('object', 'safe_password', 'HUNTER2')
+      assert @game.password_case_mismatch?('door', 'door_password', 'OpenSesame')
+      assert_not @game.password_case_mismatch?('object', 'safe_password', 'hunter2'), "the right password is no near miss"
+      assert_not @game.password_case_mismatch?('object', 'safe_password', 'hunter3')
+      assert_not @game.password_case_mismatch?('object', 'safe_password', '')
+      assert_not @game.password_case_mismatch?('object', 'safe_pin', '4321'), "PIN locks are not password locks"
+      assert_not @game.password_case_mismatch?('object', 'no_such_object', 'x')
+    end
+
     test "npc unlocks still work regardless of lockType, and need the NPC's permission" do
       @game.scenario_data = lock_matrix_scenario
 

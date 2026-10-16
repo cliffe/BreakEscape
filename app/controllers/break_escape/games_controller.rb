@@ -838,6 +838,10 @@ module BreakEscape
           feedback = @game.pin_cracker_feedback(target_type, target_id, attempt)
           body[:feedback] = feedback if feedback
         end
+        # Right apart from letter case: the keypad says passwords are case-sensitive
+        if method == 'password' && @game.password_case_mismatch?(target_type, target_id, attempt)
+          body[:caseMismatch] = true
+        end
         return render json: body, status: :unprocessable_entity
       end
 
