@@ -161,3 +161,24 @@ Follow-up edit (m05 D1, approved by the user): flag 3 must not name Torres.
 
 - `scenarios/break_escape/safetynet/m05_insider_trading.xml:223`: `Torres's own notes, found alongside the manifest:` → `The owner's own notes, found alongside the manifest:`. This matches the manifest's `Staged by: badge #4471`. Flag 4 (lines 249, 257-261) and XML comments (195, 198) were left unchanged, so Torres is still named in flag 4.
 - XML check: `xml.dom.minidom` parses the file.
+
+Flag 4 wording (approved by the user, 2026-10-16): the payload no longer names Torres, his wife, his children or his family details. The insider is referred to by badge #4471. Story content and the casualty figures are unchanged. Line count is unchanged (8 lines replaced by 8).
+
+- `scenarios/break_escape/safetynet/m05_insider_trading.xml:249`: `Source: D. Torres, Cryptography Lead, Quantum Dynamics Corporation (recruited asset)` → `Source: insider, badge #4471, Quantum Dynamics Corporation (recruited asset)`.
+- `m05_insider_trading.xml:257-264` (recruiter's assessment): the 8-line block now reads:
+  - Old: `Torres was identified via financial distress screening. Wife's medical debt ($380,000, non-negotiable, insurer denied trial coverage) made him a high-probability convert. Two dependents (ages 11 and 8) increase compliance and reduce flight risk. Our operating philosophy holds: every person has a price. Torres's was cheaper than most -- debt relief and a standing consultancy retainer. He is a line item, not a partner. Expect him to be unusable within 18 months; plan disposal accordingly.`
+  - New: `The asset was identified via financial distress screening. Serious medical debt (insurer denied trial coverage) made the asset a high-probability convert. Dependants increase compliance and reduce flight risk. Our operating philosophy holds: every person has a price. The asset's price was cheaper than most -- debt relief and a standing consultancy retainer. The asset is a line item, not a partner. Expect the asset to be unusable within 18 months; plan disposal accordingly.`
+
+XML check: `xml.dom.minidom` parses the file.
+
+Still naming him after this edit (not changed):
+- `m05_insider_trading.xml:195`, `:198` (XML comments, left as they were by instruction).
+- `m05_insider_trading.xml:225-228` (flag 3 owner's notes): the wife's name (Elena), the children's names and ages (Sofia 11, Miguel 8), and the $380,000 debt. This is the flag-3 payload, which was outside this approval.
+
+Follow-up edit (flag 3 owner's notes, 2026-10-16, approved by the user): the notes no longer name the insider's wife, children, the debt figure or any ages.
+
+- `scenarios/break_escape/safetynet/m05_insider_trading.xml:225-228` (old → new):
+  - Old: `"Elena's bills are $380,000 and climbing. The insurer won't cover the trial. Two kids. ... Sofia is eleven. Miguel is eight. I don't know how to stop."`
+  - New: `"My wife's treatment has left us with debt we can't clear, and it keeps climbing. The insurer won't cover the trial. The kids. ... They're too young to understand any of this. I don't know how to stop."`
+- XML check: `xml.dom.minidom` parses the file.
+- The flag-3 notes now carry no names, ages or figures. The "Still naming him" entry above for lines 225-228 is out of date.
