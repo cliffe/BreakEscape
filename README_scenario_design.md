@@ -1133,6 +1133,7 @@ Event mapping actions (can be combined):
 | `unlockTask: "task_id"` | Unlock a locked task |
 | `unlockAim: "aim_id"` | Unlock a locked objective aim |
 | `onceOnly: true` | Ensure mapping only fires once |
+| `delayMs: ms` | Run the whole mapping this long after the event instead of at once (e.g. `8000` on `room_entered:` so the player can look round before a scene opens). The checks run at the event (nothing is scheduled if the condition fails then) and again when the delay is up, so a `globalVars` term that has stopped holding cancels it. One delay per mapping is pending at a time; if a minigame or conversation is open when it is up, it waits for that to close. A pending delay is not saved, so a reload before it fires leaves the mapping to fire on the next event. Not for `lockpick_used_in_view` (the pick is stopped at once regardless). |
 
 #### Guards who challenge on sight (`los.challengeOnSight`)
 

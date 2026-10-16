@@ -121,6 +121,8 @@ export default class NPCManager {
 
   // Limits on what a phone thread saves (exportPhoneState)
   static PHONE_HISTORY_MAX_MESSAGES = 150;
+  // A delayMs mapping whose delay is up while a minigame is open checks again this often
+  static DELAYED_MAPPING_RETRY_MS = 500;
   static PHONE_MESSAGE_MAX_CHARS = 4000;
   static PHONE_STORY_STATE_MAX_CHARS = 60000;
   // gameTime: elapsed game ms when the message arrived (window.gameClock), so its
@@ -140,6 +142,7 @@ export default class NPCManager {
     this.timerInterval = null; // Timer for checking timed messages
     this._timedMessageSeq = 0; // ids for mapping texts (see exportTimedMessages)
     this._savedPhoneState = new Map(); // npcId -> saved phone thread, applied when the NPC registers
+    this._delayedMappings = new Map(); // npcId -> Map(eventKey -> timer id) for mappings with delayMs
     this._restoredTimedPending = new Map(); // id -> { triggerTime } for NPC-level texts not yet re-registered
     this._restoredTimedDelivered = new Set(); // ids of NPC-level texts delivered before a reload
     this._phoneStateSent = new Map(); // npcId -> JSON last confirmed saved (markPhoneStateSynced)
@@ -533,6 +536,10 @@ export default class NPCManager {
       console.log(`  📌 Registering listener for event: ${eventPattern} → ${config.knot}`);
 
       const listener = (eventData) => {
+        if (config.delayMs > 0) {
+          this._scheduleDelayedMapping(npcId, eventPattern, config, eventData);
+          return;
+        }
         this._handleEventMapping(npcId, eventPattern, config, eventData);
       };
 
@@ -549,8 +556,48 @@ export default class NPCManager {
     console.log(`✅ Registered ${mappingsArray.length} event mappings for ${npcId}`);
   }
 
+  /**
+   * A mapping with `delayMs` fires that long after its event, not at once (m08 E15:
+   * let the player look round a room before the scene opens). The checks run twice:
+   * now, so a handler that couldn't fire schedules nothing, and again when the delay
+   * is up (_handleEventMapping), so a condition that has stopped holding (a
+   * `globalVars.x` term) cancels it. One delay per handler is pending at a time; a
+   * repeat of the event meanwhile is ignored. When the delay is up while a minigame
+   * or conversation is open, it waits for that to close rather than cutting it off.
+   */
+  _scheduleDelayedMapping(npcId, eventPattern, config, eventData) {
+    const check = this._mappingWouldFire(npcId, eventPattern, config, eventData);
+    if (!check.fire) {
+      console.log(`⏭️ Not scheduling ${eventPattern} for ${npcId}: ${check.reason}`);
+      return;
+    }
+    if (!this._delayedMappings.has(npcId)) this._delayedMappings.set(npcId, new Map());
+    const pending = this._delayedMappings.get(npcId);
+    if (pending.has(check.eventKey)) return;
+
+    const fire = () => {
+      if (window.MinigameFramework?.currentMinigame) {
+        pending.set(check.eventKey, setTimeout(fire, NPCManager.DELAYED_MAPPING_RETRY_MS));
+        return;
+      }
+      pending.delete(check.eventKey);
+      this._handleEventMapping(npcId, eventPattern, config, eventData);
+    };
+    pending.set(check.eventKey, setTimeout(fire, config.delayMs));
+    console.log(`⏳ ${eventPattern} for ${npcId} fires in ${config.delayMs}ms (condition re-checked then)`);
+  }
+
+  /** Cancel an NPC's pending delayMs mappings. */
+  _cancelDelayedMappings(npcId) {
+    const pending = this._delayedMappings.get(npcId);
+    if (!pending) return;
+    for (const timer of pending.values()) clearTimeout(timer);
+    this._delayedMappings.delete(npcId);
+  }
+
   /** Remove the event-mapping listeners registered for an NPC (see registerNPC). */
   _removeEventMappingListeners(npcId) {
+    this._cancelDelayedMappings(npcId);
     const listeners = this.eventListeners.get(npcId);
     if (!listeners) return;
     if (this.eventDispatcher) {
@@ -573,6 +620,7 @@ export default class NPCManager {
         once: mapping.onceOnly || mapping.once,
         cooldown: mapping.cooldown,
         condition: mapping.condition,
+        delayMs: Number(mapping.delayMs) > 0 ? Number(mapping.delayMs) : 0,  // fire this long after the event, re-checking then
         maxTriggers: mapping.maxTriggers,  // Add max trigger limit
         conversationMode: mapping.conversationMode,  // Add conversation mode (e.g., 'person-chat')
         changeStoryPath: mapping.changeStoryPath,  // Change the NPC's story file
@@ -2164,6 +2212,7 @@ export default class NPCManager {
   destroy() {
     this._clearLOSVisualizations();
     this.stopTimedMessages();
+    for (const npcId of [...this._delayedMappings.keys()]) this._cancelDelayedMappings(npcId);
     
     // Clear all event listeners
     for (const listeners of this.eventListeners.values()) {

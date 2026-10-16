@@ -834,6 +834,11 @@
         "onceOnly": { "type": "boolean" },
         "maxTriggers": { "type": "integer" },
         "cooldown": { "type": "integer" },
+        "delayMs": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Run the whole mapping this many ms after the event. Checks run at the event and again when the delay is up (a condition that stopped holding cancels it); waits for an open minigame or conversation to close."
+        },
         "fireOnlyWhenLoaded": {
           "type": "boolean",
           "description": "Validator opt-out, no effect in the game. An NPC outside the start room only listens once its room has loaded, so a global change, pickup, KO or objective event that fires earlier passes unheard, and the validator warns. Set true when missing the event is acceptable (a reaction that only matters if the player is in the room)."
