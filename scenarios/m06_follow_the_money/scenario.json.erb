@@ -201,7 +201,7 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
               from Priya's graph conversation, pass-4 dialogue playtest); a player who only
               said hello, or only asked the method, gets the neutral line. %>
           { "text": "DANI OKONKWO (TRADER): Flagged the wallets first — left alone", "style": "entry",   "condition": "globalVars.trader_heard_out && !globalVars.trader_ko" },
-          { "text": "DANI OKONKWO (TRADER): Kept their head down — left alone", "style": "entry",   "condition": "globalVars.trader_spoken && !globalVars.trader_heard_out && !globalVars.trader_ko" },
+          { "text": "DANI OKONKWO (TRADER): Kept his head down — left alone", "style": "entry",   "condition": "globalVars.trader_spoken && !globalVars.trader_heard_out && !globalVars.trader_ko" },
           { "text": "DANI OKONKWO (TRADER): Knocked out — had done nothing wrong", "style": "entry",   "condition": "globalVars.trader_ko" },
           { "text": "PRIYA RAGHAVAN (ANALYST): Drew the graph — left alone",       "style": "entry",   "condition": "globalVars.analyst_walked_through && !globalVars.analyst_ko" },
           { "text": "PRIYA RAGHAVAN (ANALYST): Never knew what her graph proved — left alone", "style": "entry", "condition": "globalVars.analyst_spoken && !globalVars.analyst_walked_through && !globalVars.analyst_ko" },
@@ -1325,9 +1325,10 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
                 opening (pin-minigame.js:57), so round 3 (M-R3-1) counts across openings
                 in globals instead. The console has maxAttempts 1: every wrong slot
                 closes the pad and emits minigame_failed with a non-null result; a
-                cancel emits result: null (base-minigame.js:12, 99-104), so a bare
-                data.result tells them apart. Mapping conditions read only one level of
-                data.<name> (browser follow-up F1; engine item D5), and the event has
+                cancel emits result: null (base-minigame.js:12, 99-104). Since engine
+                7.5a, dotted paths work, so the mappings test
+                data.result.maxAttemptsReached === true (post-engine follow-ups,
+                2026-10-16; it was a bare data.result before). The event has
                 no object id, so the place is scoped by at_console (set on entering the
                 data centre, cleared on leaving it for the server room or the wing),
                 which keeps the CEO's safe out (m-R3-1).
@@ -1343,27 +1344,27 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
                 cover_strained before the strain mapping could set it. %>
             {
               "eventPattern": "minigame_failed",
-              "condition": "data.minigameName === 'PinMinigame' && data.result && globalVars.at_console === true && globalVars.found_architects_fund !== true && globalVars.console_warned === true && globalVars.console_tripped !== true && globalVars.cover_strained === true",
+              "condition": "data.minigameName === 'PinMinigame' && data.result.maxAttemptsReached === true && globalVars.at_console === true && globalVars.found_architects_fund !== true && globalVars.console_warned === true && globalVars.console_tripped !== true && globalVars.cover_strained === true",
               "onceOnly": true,
               "sendTimedMessage": { "delay": 2500, "message": "Another wrong slot, and it's logged. They already know we're inside. Now they know where we're looking.", "skipIfGlobal": "assets_decided" }
             },
             {
               "eventPattern": "minigame_failed",
-              "condition": "data.minigameName === 'PinMinigame' && data.result && globalVars.at_console === true && globalVars.found_architects_fund !== true && globalVars.console_warned === true",
+              "condition": "data.minigameName === 'PinMinigame' && data.result.maxAttemptsReached === true && globalVars.at_console === true && globalVars.found_architects_fund !== true && globalVars.console_warned === true",
               "onceOnly": false,
               "cooldown": 0,
               "setGlobal": { "console_tripped": true }
             },
             {
               "eventPattern": "minigame_failed",
-              "condition": "data.minigameName === 'PinMinigame' && data.result && globalVars.at_console === true && globalVars.found_architects_fund !== true && globalVars.console_warned === true && globalVars.cover_strained !== true",
+              "condition": "data.minigameName === 'PinMinigame' && data.result.maxAttemptsReached === true && globalVars.at_console === true && globalVars.found_architects_fund !== true && globalVars.console_warned === true && globalVars.cover_strained !== true",
               "onceOnly": true,
               "setGlobal": { "cover_strained": true },
               "sendTimedMessage": { "delay": 2500, "message": "That console logs every slot it opens. Somebody's phone just buzzed.", "skipIfGlobal": "assets_decided" }
             },
             {
               "eventPattern": "minigame_failed",
-              "condition": "data.minigameName === 'PinMinigame' && data.result && globalVars.at_console === true && globalVars.found_architects_fund !== true && globalVars.console_warned !== true",
+              "condition": "data.minigameName === 'PinMinigame' && data.result.maxAttemptsReached === true && globalVars.at_console === true && globalVars.found_architects_fund !== true && globalVars.console_warned !== true",
               "onceOnly": true,
               "setGlobal": { "console_warned": true },
               "sendTimedMessage": { "delay": 2000, "message": "That console just logged a slot that wasn't the fund. One more and somebody's phone goes.", "skipIfGlobal": "found_architects_fund" }
@@ -1620,7 +1621,6 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
               "eventPattern": "lockpick_used_in_view",
               "targetKnot": "on_lockpick_seen",
               "conversationMode": "person-chat",
-              "background": "assets/backgrounds/background1.png",
               "onceOnly": false,
               "cooldown": 250
             }
@@ -1774,7 +1774,7 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
           },
           "voice": {
             "name": "Puck",
-            "style": "Young cryptocurrency trader in their early twenties, British-Nigerian, jittery on caffeine and increasingly frightened by what they have noticed. Speak with a consistent south-east London (Peckham) accent throughout — do not shift to any other accent. Mid-to-high pitch; fast, nervy pace, over-explaining.",
+            "style": "Young man, a cryptocurrency trader in his early twenties, British-Nigerian, jittery on caffeine and increasingly frightened by what he has noticed. Speak with a consistent south-east London (Peckham) accent throughout — do not shift to any other accent. Mid-to-high pitch; fast, nervy pace, over-explaining.",
             "language": "en-GB"
           },
           "storyPath": "scenarios/m06_follow_the_money/ink/m06_npc_trader.json",
@@ -1817,7 +1817,7 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
           "servers": [{ "color": "#5cd8ff", "floorTint": 0.25 }],
           "network_rack": [{ "color": "#5cd8ff" }],
           "storage_array": [{ "color": "#5cd8ff" }],
-          "hce_comms_cabinet": [{ "color": "#5cd8ff", "radius": 36, "intensity": 0.45, "effect": "blink" }],
+          "hce_comms_cabinet": [{ "color": "#5cd8ff", "radius": 36, "intensity": 0.45, "effect": "blink", "leds": 0.6 }],
           "aes_ups": [{ "color": "#8dff9a", "radius": 20, "intensity": 0.4, "effect": "screen", "above": true }],
           "aircon_unit": [{ "color": "#9fe8ff", "radius": 22, "intensity": 0.2, "offsetY": -20, "above": true }],
           "hce_server_sign": [{ "color": "#5ce1ff", "radius": 24, "intensity": 0.4, "offsetY": 4, "above": true }],
@@ -1935,7 +1935,7 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
           ],
           "hce_cage_door": [{ "color": "#d6f2ff", "radius": 72, "intensity": 0.5, "offsetY": 28, "floorTint": 0.35, "above": true }],
           "hce_cage_panel": [{ "color": "#cfefff", "radius": 52, "intensity": 0.35, "above": true }],
-          "hce_hsm": [{ "color": "#5cff8a", "radius": 22, "intensity": 0.35, "above": true }],
+          "hce_hsm": [{ "color": "#5cff8a", "radius": 22, "intensity": 0.35, "above": true, "leds": 0.4 }],
           "hce_wallet_cabinet": [{ "color": "#ffb347", "radius": 22, "intensity": 0.4, "above": true }],
           "hce_custody_sign": [{ "color": "#ff5a4a", "radius": 24, "intensity": 0.25, "offsetY": 4, "above": true }],
           "hce_exec_sign": [{ "color": "#ffb040", "radius": 24, "intensity": 0.35, "offsetY": 4, "above": true }],
@@ -2060,9 +2060,9 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
       "lighting": {
         "ambient": "#b0b8c6",
         "emitters": {
-          "hce_mining_rig2": [{ "color": "#5cff8a", "radius": 48, "intensity": 0.55, "effect": "breathe", "above": true }],
-          "hce_mining_rig1": [{ "color": "#c070ff", "radius": 48, "intensity": 0.7, "effect": "breathe", "above": true }],
-          "hce_node_shelf": [{ "color": "#5ce1ff", "radius": 30, "intensity": 0.25, "effect": "breathe", "above": true }],
+          "hce_mining_rig2": [{ "color": "#5cff8a", "radius": 48, "intensity": 0.55, "effect": "breathe", "above": true, "leds": 0.7 }],
+          "hce_mining_rig1": [{ "color": "#c070ff", "radius": 48, "intensity": 0.7, "effect": "breathe", "above": true, "leds": 0.7 }],
+          "hce_node_shelf": [{ "color": "#5ce1ff", "radius": 30, "intensity": 0.25, "effect": "breathe", "above": true, "leds": 0.5 }],
           "hce_chart_screen": [{ "color": "#8fd8ff", "radius": 34, "intensity": 0.45, "effect": "screen" }],
           "threat_map": [{ "color": "#7fb4ff", "radius": 34, "intensity": 0.4, "effect": "screen" }]
         }
@@ -2216,10 +2216,10 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
           "displayName": "Kemal Aydin",
           "npcType": "person",
           "position": { "x": 6, "y": 4 },
-          "spriteSheet": "male_hacker_hood_down_v2",
-          "spriteTalk": "assets/characters/male_hacker_hood_down_v2_talk.png",
-          "spriteVisemes": "assets/characters/male_hacker_hood_down_v2_visemes.png",
-          "avatar": "assets/characters/male_hacker_hood_down_v2_headshot.png",
+          "spriteSheet": "kemal_aydin",
+          "spriteTalk": "assets/characters/kemal_aydin_talk.png",
+          "spriteVisemes": "assets/characters/kemal_aydin_visemes.png",
+          "avatar": "assets/characters/kemal_aydin_headshot.png",
           "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 },
           "voice": {
             "name": "Iapetus",
@@ -2276,7 +2276,6 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
               "eventPattern": "player_spotted:satoshi_minder",
               "targetKnot": "on_sighted",
               "conversationMode": "person-chat",
-              "background": "assets/backgrounds/background1.png",
               "cooldown": 0
             },
             {
@@ -2285,7 +2284,6 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
               "condition": "globalVars.minder_hostile !== true && globalVars.minder_ko !== true && globalVars.minder_walked !== true",
               "targetKnot": "on_lockpick_seen",
               "conversationMode": "person-chat",
-              "background": "assets/backgrounds/background1.png",
               "onceOnly": false,
               "cooldown": 250
             },
