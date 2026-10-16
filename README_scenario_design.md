@@ -1260,6 +1260,8 @@ Objectives structure the mission with `aims` (groups) containing `tasks` (indivi
 ]
 ```
 
+**Optional tasks.** An aim completes when every task that isn't `"optional": true` is completed or skipped; its optional tasks don't hold it open. An aim whose tasks are **all** optional (a side aim such as "Trace How They Got In (Optional)") completes only once every one of its tasks is completed or skipped, not on the first. The client (`objectives-manager.js` `checkAimCompletion`) and the server (`Game#check_aim_completion`) agree on this.
+
 ### Task Types
 
 | `type` | Required fields | Notes |

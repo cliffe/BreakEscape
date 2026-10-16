@@ -2172,9 +2172,14 @@ module BreakEscape
       # past 100%.
       return if player_state.dig('objectivesState', 'aims', aim_id, 'status') == 'completed'
 
-      all_complete = aim['tasks'].all? do |task|
+      # Optional tasks don't hold the aim open, unless every task is optional:
+      # then it completes only once each one is settled, not on the first
+      # (m07 U5). Mirrors checkAimCompletion in objectives-manager.js.
+      tasks = aim['tasks'] || []
+      has_required = tasks.any? { |task| task['optional'] != true }
+      all_complete = tasks.all? do |task|
         # skipped: closed off by the story (skip_task!); the aim completes with a gap
-        task['optional'] == true || %w[completed skipped].include?(task_status(task['taskId']))
+        (has_required && task['optional'] == true) || %w[completed skipped].include?(task_status(task['taskId']))
       end
 
       if all_complete

@@ -843,8 +843,12 @@ export class ObjectivesManager {
     // (any other locked aim was revealed by its task before this runs)
     if (aim.status === 'locked' && this.isStoryGated(aim)) return;
     
-    // Skipped tasks don't block the aim (it completes with a gap; see skipTask)
-    const allComplete = aim.tasks.every(task => task.optional || this.isTaskSettled(task));
+    // Skipped tasks don't block the aim (it completes with a gap; see skipTask).
+    // Optional tasks don't block it either, unless every task is optional: then
+    // the aim completes only once each one is settled, not on the first (m07 U5).
+    // Mirrors Game#check_aim_completion on the server.
+    const hasRequired = aim.tasks.some(task => !task.optional);
+    const allComplete = aim.tasks.every(task => (hasRequired && task.optional) || this.isTaskSettled(task));
     
     if (allComplete && aim.status !== 'completed') {
       aim.status = 'completed';

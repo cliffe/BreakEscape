@@ -1004,6 +1004,72 @@ module BreakEscape
     end
   end
 
+  # 7.5c (m07 U5): an aim whose tasks are all optional completes only when every
+  # task is settled, not on the first one; mixed aims are unchanged.
+  class AllOptionalAimTest < ActiveSupport::TestCase
+    SCENARIO = {
+      "startRoom" => "room1",
+      "rooms" => {},
+      "objectives" => [
+        {
+          "aimId" => "side_aim", "title" => "Trace How They Got In (Optional)", "status" => "active", "order" => 0,
+          "tasks" => [
+            { "taskId" => "opt_a", "title" => "A", "type" => "custom", "status" => "active", "optional" => true },
+            { "taskId" => "opt_b", "title" => "B", "type" => "custom", "status" => "active", "optional" => true },
+            { "taskId" => "opt_c", "title" => "C", "type" => "custom", "status" => "active", "optional" => true }
+          ]
+        },
+        {
+          "aimId" => "mixed_aim", "title" => "Mixed", "status" => "active", "order" => 1,
+          "tasks" => [
+            { "taskId" => "req", "title" => "Required", "type" => "custom", "status" => "active" },
+            { "taskId" => "opt", "title" => "Optional", "type" => "custom", "status" => "active", "optional" => true }
+          ]
+        }
+      ]
+    }.freeze
+
+    setup do
+      @game = BreakEscape::Game.create!(
+        mission: break_escape_missions(:ceo_exfil),
+        player: break_escape_demo_users(:test_user),
+        scenario_data: SCENARIO.deep_dup,
+        player_state: {
+          "currentRoom" => "room1", "unlockedRooms" => ["room1"], "unlockedObjects" => [], "inventory" => [],
+          "encounteredNPCs" => [], "globalVariables" => {}, "biometricSamples" => [], "biometricUnlocks" => [],
+          "bluetoothDevices" => [], "notes" => [], "health" => 100
+        }
+      )
+    end
+
+    def aim_status(id)
+      @game.player_state.dig('objectivesState', 'aims', id, 'status')
+    end
+
+    test "an all-optional aim stays open until its last task is settled" do
+      @game.complete_task!('opt_a')
+      assert_not_equal 'completed', aim_status('side_aim'), 'must not complete on the first optional task'
+      @game.complete_task!('opt_b')
+      assert_not_equal 'completed', aim_status('side_aim')
+      @game.complete_task!('opt_c')
+      assert_equal 'completed', aim_status('side_aim')
+      assert_equal 1, @game.objectives_completed
+    end
+
+    test "a skipped task counts as settled in an all-optional aim" do
+      @game.complete_task!('opt_a')
+      @game.skip_task!('opt_b')
+      assert_not_equal 'completed', aim_status('side_aim')
+      @game.complete_task!('opt_c')
+      assert_equal 'completed', aim_status('side_aim')
+    end
+
+    test "a mixed aim still completes on its required tasks alone" do
+      @game.complete_task!('req')
+      assert_equal 'completed', aim_status('mixed_aim')
+    end
+  end
+
   # E3: task onComplete.setGlobal is applied server-side as well as on the client.
   class TaskSetGlobalModelTest < ActiveSupport::TestCase
     SCENARIO = {
