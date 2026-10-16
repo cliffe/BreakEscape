@@ -67,7 +67,10 @@ VAR final_choice = "" // Synced scenario global: Torres' fate; set by m05_torres
 ~ return found_medical_bills or found_torres_journal or found_vetting_file
 
 === function has_exfil()
-~ return flag3_submitted or found_manifest or found_upload_schedule
+// Post-engine follow-ups (2026-10-16, D1): the VM's flag-3 manifest now shows
+// only badge #4471, so flag 3 counts only once the door log has tied that spare
+// to his front-door swipe (door_log_reasoned): the deduction, not the VM, names him.
+~ return found_manifest or found_upload_schedule or (flag3_submitted and door_log_reasoned)
 
 === function all_flags_in()
 ~ return flag1_submitted and flag2_submitted and flag3_submitted and flag4_submitted
@@ -444,7 +447,7 @@ Patricia Morgan: If you're wrong, that's her career. And whoever it really is ha
 + {has_motive()} [Money. He's hiding how much he owes.]
     Patricia Morgan: That's why he might. It isn't proof that he did. Show me it leaving the building.
     -> partial_naming
-+ {has_exfil()} [The staging is under his name.]
++ {has_exfil()} [The staging traces back to him.]
     Patricia Morgan: That's how. I need why. People don't do this for nothing.
     -> partial_naming
 + [He's the cryptography lead. He'd know how.]
@@ -474,7 +477,12 @@ Patricia Morgan: I sign that log off every Monday. I never once read the front d
 {halloran_accused:
     Patricia Morgan: And Ruth's sitting in her lab, suspended on your word. That's on both of us now.
 }
-Patricia Morgan: That's a pattern. It's not a reason, and it's not proof the data's going anywhere.
+// D1 (2026-10-16): with flag 3 in, the pattern ties the manifest's badge 4471 to him.
+{flag3_submitted:
+    Patricia Morgan: That's a pattern, and the portal manifest says that spare staged the package. Now I need a reason.
+- else:
+    Patricia Morgan: That's a pattern. It's not a reason, and it's not proof the data's going anywhere.
+}
 -> partial_naming
 
 // Some evidence, not both halves: she won't act on him yet, but she'll
@@ -518,7 +526,7 @@ Patricia Morgan: That's a pattern. It's not a reason, and it's not proof the dat
     #influence_decreased
     Patricia Morgan: Read it again. His badge never touches the server hallway. Hers does.
     -> reason_wrong
-+ {flag3_submitted} [The staging manifest on the research portal. His name's on it.]
++ {flag3_submitted and found_door_log} [The portal's staging manifest. Badge 4471 staged it, and his swipe lets that spare in.]
     -> significant_reaction
 + {found_manifest} [The staging manifest in the data centre. "Staged by: D. Torres."]
     -> significant_reaction

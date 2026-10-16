@@ -15,7 +15,7 @@
 VAR player_name = "Agent 0x00"
 VAR mole_identified = false // Synced scenario global: set here on a correct naming, or by the flag-4 fallback mappings
 VAR suspect_theory = ""
-VAR asked_cipher = false
+VAR asked_vector = false
 VAR asked_phantom = false
 VAR asked_nightshade = false
 VAR asked_why_me = false
@@ -32,9 +32,9 @@ VAR netherton_card_taken = false
 VAR found_badge_audit = false
 VAR found_timeline = false
 VAR found_access_logs_hint = false
-VAR cipher_audit_confirmed = false
+VAR vector_audit_confirmed = false
 VAR nightshade_audit_confirmed = false
-VAR cipher_ko = false
+VAR vector_ko = false
 VAR nightshade_ko = false
 VAR named_on_evidence = false
 VAR audit_misread = false
@@ -43,7 +43,7 @@ VAR suite_code_found = false
 // PASS 4 (fixes 1 and 2): the card waits for the three interviews, then he lets
 // the player clone it. netherton_card_taken is set by the card_cloned mapping
 // (and by picking up his card after a KO); badge_cloned by the printer route.
-VAR cipher_interviewed = false
+VAR vector_interviewed = false
 VAR phantom_interviewed = false
 VAR nightshade_interviewed = false
 VAR phantom_ko = false
@@ -66,7 +66,7 @@ VAR audit_warned = false // Synced scenario global: he has warned the player onc
 VAR all_flags_submitted = false // Synced scenario global
 // Design C1 (D1): a lab-door witness punched and left standing won't talk, so
 // can't confirm his row. Synced scenario globals.
-VAR cipher_hostile = false
+VAR vector_hostile = false
 VAR nightshade_hostile = false
 // Design C2 (N1): Phantom punched and left standing counts as seen too.
 VAR phantom_hostile = false
@@ -82,7 +82,7 @@ VAR hub_quiet = false
 ~ met = true
 #complete_task:brief_with_netherton
 ~ brief_taken = true
-Narrator: An inner office with no windows. Netherton stands facing a wall of amber threat maps, his back to the door. He does not turn round.
+Narrator: The Director's office, blinds drawn against the night. Netherton stands at the window, his back to the door. He does not turn round.
 
 Director Magnus Netherton: Agent. Nine days ago I sent you to Portland, the one site where a person in the building could change the outcome. That was true.
 
@@ -116,8 +116,8 @@ Director Magnus Netherton: Ask me what you need. Then go and prove something.
     Director Magnus Netherton: Precisely because they compromised you. Yours was the name they were selling. You are the one person in this building I can clear without a log.
     Director Magnus Netherton: You are also, forgive me, angry. I have found that useful before. Do not let it choose the suspect for you.
     -> back
-+ { not asked_cipher } [Tell me about Cipher.]
-    ~ asked_cipher = true
++ { not asked_vector } [Tell me about Vector.]
+    ~ asked_vector = true
     Director Magnus Netherton: Agent 0x23. Signals and cryptography, on the operations floor. Brilliant, friendless, keeps hours that make the roster clerk nervous.
     Director Magnus Netherton: He carries a crypto annex badge and keeps a locked screen, and he has never once explained either. I should like to know why.
     -> back
@@ -155,10 +155,10 @@ Director Magnus Netherton: Ask me what you need. Then go and prove something.
 // "[Not yet.]" backs out without committing to a name.
 = name_forming
 Director Magnus Netherton: Already? Say it. Not for the file. For me. Who is your instinct pointing at?
-+ [Cipher. The odd hours, the secrecy.]
-    ~ suspect_theory = "cipher"
++ [Vector. The odd hours, the secrecy.]
+    ~ suspect_theory = "vector"
     Director Magnus Netherton: Perhaps. Or perhaps he is the easiest man in the building to suspect, which is not the same thing.
-    Director Magnus Netherton: Prove it, and I will sign it. Guess it, and you hand the real one another week of cover. #set_global:suspect_theory:cipher
+    Director Magnus Netherton: Prove it, and I will sign it. Guess it, and you hand the real one another week of cover. #set_global:suspect_theory:vector
     -> back
 + [Phantom. The questions, the absences.]
     ~ suspect_theory = "phantom"
@@ -184,8 +184,8 @@ Director Magnus Netherton: Already? Say it. Not for the file. For me. Who is you
 === access_request ===
 { interviews_done(): -> access_offer }
 Director Magnus Netherton: Not yet. Talk to all three first. I want them to have seen you on the floor before anyone sees you at the server room.
-{ not (cipher_interviewed or cipher_ko or cipher_hostile):
-    Director Magnus Netherton: You have not seen Cipher. Operations floor.
+{ not (vector_interviewed or vector_ko or vector_hostile):
+    Director Magnus Netherton: You have not seen Vector. Operations floor.
 }
 { not (phantom_interviewed or phantom_ko or phantom_hostile):
     Director Magnus Netherton: You have not seen Phantom. Intelligence analysis, north of the operations floor.
@@ -226,7 +226,7 @@ Director Magnus Netherton: Whatever you are carrying, Agent, I did not see it.
 
 // ================================================
 // PASS 3 (P6): the door-audit check. when -> which of the three -> why not
-// Cipher -> why trust Phantom's printout. Rules (plan P6, R2-M5, R3-M1):
+// Vector -> why trust Phantom's printout. Rules (plan P6, R2-M5, R3-M1):
 // - person-chat re-navigates to the TOP-LEVEL knot of the first choice's
 //   sourcePath, so each step's choices live in their own top-level knot that
 //   opens with the state check. PASS 4 (fix 3): the question now sits in that
@@ -254,8 +254,8 @@ Director Magnus Netherton: Then don't give me a suspect. Give me a reading.
     -> back
 }
 ~ audit_skip_step4 = false
-{ not (cipher_audit_confirmed or nightshade_audit_confirmed):
-    { (cipher_ko or cipher_hostile) and (nightshade_ko or nightshade_hostile):
+{ not (vector_audit_confirmed or nightshade_audit_confirmed):
+    { (vector_ko or vector_hostile) and (nightshade_ko or nightshade_hostile):
         // R3-m3: both men on the audit are down; nobody can confirm it. Three steps.
         // Design C1 (D1): or hostile (punched, standing, won't talk): the same.
         ~ audit_skip_step4 = true
@@ -289,7 +289,7 @@ Director Magnus Netherton: When was the plan opened?
 === audit_c2 ===
 { mole_identified or audit_closed or named_on_evidence: -> hub }
 Director Magnus Netherton: Which of the three was behind that door at 10:38?
-+ [Cipher.]
++ [Vector.]
     ~ audit_reply = 3
     -> audit_wrong
 + [Nightshade.]
@@ -305,7 +305,7 @@ Director Magnus Netherton: Which of the three was behind that door at 10:38?
 
 === audit_c3 ===
 { mole_identified or audit_closed or named_on_evidence: -> hub }
-Director Magnus Netherton: Cipher badged through the same door that morning. Why not him?
+Director Magnus Netherton: Vector badged through the same door that morning. Why not him?
 + [The door log has him out of the lab at 10:32.]
     { audit_skip_step4:
         -> audit_right
@@ -448,4 +448,4 @@ Director Magnus Netherton: {suite_code}. Commit it to memory this time, Agent.
 // PASS 4: true once each suspect has been interviewed or knocked down.
 // Design C2 (N1): or punched and left standing (he won't talk again tonight).
 === function interviews_done() ===
-~ return (cipher_interviewed or cipher_ko or cipher_hostile) and (phantom_interviewed or phantom_ko or phantom_hostile) and (nightshade_interviewed or nightshade_ko or nightshade_hostile)
+~ return (vector_interviewed or vector_ko or vector_hostile) and (phantom_interviewed or phantom_ko or phantom_hostile) and (nightshade_interviewed or nightshade_ko or nightshade_hostile)

@@ -66,7 +66,10 @@ VAR torres_reason_guessed = false // Synced scenario global (pass 5 R2 B2): a wr
 ~ return found_medical_bills or found_torres_journal or found_vetting_file
 
 === function has_exfil()
-~ return flag3_submitted or found_manifest or found_upload_schedule
+// Post-engine follow-ups (2026-10-16, D1): the VM's flag-3 manifest now shows
+// only badge #4471, so flag 3 counts only once the door log has tied that spare
+// to his front-door swipe (door_log_reasoned): the deduction, not the VM, names him.
+~ return found_manifest or found_upload_schedule or (flag3_submitted and door_log_reasoned)
 
 === function all_flags_in()
 ~ return flag1_submitted and flag2_submitted and flag3_submitted and flag4_submitted
@@ -211,7 +214,7 @@ If you're wrong, that's her career. And whoever it really is has just watched Se
 + {has_motive()} [Money. He's hiding how much he owes.]
     That's why he might. It isn't proof that he did. Show me it leaving the building.
     -> phone_partial_naming
-+ {has_exfil()} [The staging is under his name.]
++ {has_exfil()} [The staging traces back to him.]
     That's how. I need why. People don't do this for nothing.
     -> phone_partial_naming
 + [He's the cryptography lead. He'd know how.]
@@ -231,7 +234,12 @@ I sign that log off every Monday. I never once read the front door.
 {halloran_accused:
     And Ruth's sitting in her lab, suspended on your word. That's on both of us now.
 }
-That's a pattern. It's not a reason, and it's not proof the data's going anywhere.
+// D1 (2026-10-16): with flag 3 in, the pattern ties the manifest's badge 4471 to him.
+{flag3_submitted:
+    That's a pattern, and the portal manifest says that spare staged the package. Now I need a reason.
+- else:
+    That's a pattern. It's not a reason, and it's not proof the data's going anywhere.
+}
 -> phone_partial_naming
 
 === phone_partial_naming ===
@@ -273,7 +281,7 @@ That's a pattern. It's not a reason, and it's not proof the data's going anywher
     Read it again. His badge never touches the server hallway. Hers does.
     #exit_conversation
     -> hub
-+ {flag3_submitted} [The staging manifest on the research portal. His name's on it.]
++ {flag3_submitted and found_door_log} [The portal's staging manifest. Badge 4471 staged it, and his swipe lets that spare in.]
     -> phone_significant_findings
 + {found_manifest} [The staging manifest in the data centre. "Staged by: D. Torres."]
     -> phone_significant_findings

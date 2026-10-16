@@ -1,3 +1,5 @@
+> **Rename (2026-10-16):** Agent 0x23 'Cipher' is now 'Vector' (user's decision). Ids, globals, the ink file and routes were renamed with him (`agent_vector`, `accused_vector`, `vector_*`, `m08_suspect_vector.ink`). This file predates the rename and still says Cipher.
+
 # m08 room dressing
 
 Skill: `.claude/skills/mission-room-dressing/`. Brief: `docs/agents/M08_PASS_BRIEF.md`, stage 4. Up to ten design → implement → review cycles while each still improves the rooms; close when a fresh review finds nothing above minor and a Sonnet interaction walk on :3001 finds no pick-one menus or stuck spots. Evidence lives in `build_evidence/dressing_c<N>/`; in-game shots come from `tools/playtest/lighting-tour.sh` on the keyless :3001 server (every room unlocked, HUD hidden), in fresh games of my own. m05's dressing log is the worked example.

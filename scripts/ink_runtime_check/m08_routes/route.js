@@ -38,10 +38,10 @@ const inkjs = require(path.join(REPO, 'public/break_escape/assets/vendor/ink.js'
 const MISSION = 'scenarios/m08_the_mole';
 const DIR = path.join(REPO, MISSION, 'ink');
 const FILES = { briefing: 'm08_opening_briefing', phone: 'm08_phone_agent_0x99', hax: 'm08_agent_0x99', athena: 'm08_receptionist_ai',
-  netherton: 'm08_director_netherton', cipher: 'm08_suspect_cipher', phantom: 'm08_suspect_phantom', nightshade: 'm08_suspect_nightshade',
+  netherton: 'm08_director_netherton', vector: 'm08_suspect_vector', phantom: 'm08_suspect_phantom', nightshade: 'm08_suspect_nightshade',
   offduty: 'm08_background_agent', analyst: 'm08_background_analyst', confront: 'm08_nightshade_confrontation', debrief: 'm08_closing_debrief' };
 const NPC_OF = { briefing: 'opening_briefing_cutscene', phone: 'agent_0x99', hax: 'agent_0x99_person', athena: 'receptionist_ai',
-  netherton: 'director_netherton', cipher: 'agent_cipher', phantom: 'agent_phantom', nightshade: 'agent_nightshade',
+  netherton: 'director_netherton', vector: 'agent_vector', phantom: 'agent_phantom', nightshade: 'agent_nightshade',
   offduty: 'background_agent', analyst: 'background_analyst', confront: 'nightshade_confrontation', debrief: 'closing_debrief' };
 
 // ---- render the scenario (validator stubs: no VM context) ----

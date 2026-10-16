@@ -770,3 +770,19 @@ Engine and asset changes shared with the other missions (they need the user's ap
 - Builders: trolleys that were `r.solid` (a static box under them that pinned them) are now plain items: m05 lab and Torres' office, m04 workshop, m06 office.
 
 Checks: slot_audit 0 problems; check_room_walls all 64; validator no errors; doors OK. Evidence: `build_evidence/user_review_2026-10-16/` (fig_sway.gif shows the frames).
+
+## Post-engine follow-ups (2026-10-16)
+
+| Item | Change |
+|---|---|
+| Cipher → Vector (user) | Agent 0x23 'Cipher' is now 'Vector' everywhere in m08: display name, ink speaker prefixes and tags, task titles, credits, debrief, notes and the evidence wall, locker labels, HaX lines, `suspect_theory` "vector", and every id and global (`agent_vector`, `accused_vector`, `vector_hostile`, `vector_ko`, `vector_interviewed`, `vector_seen`, `vector_locker`, `vector_locker_key`, `vector_vetting_query`, …). File renamed `ink/m08_suspect_cipher.ink` → `m08_suspect_vector.ink` (old JSON deleted, new compiled); routes `r8_…` and `r21_…` renamed, all route quotes and `route.js` ids converted; the m08 block of `missions.json`; `mission.json` cast name. "ciphertext" and `mission.json`'s "CAESAR CIPHER" keyword and `m10_final_cipher` are untouched. m04's ENTROPY operative Cipher is untouched. `TESTING_WALKTHROUGH.md` and `DECISIONS_PENDING.md` converted; the other m08 docs carry a dated rename note at the top. Also `CAST_PROPOSALS.md` (sprite key `agent_vector`), `voice_bible.md`, `PASS3_VOICE_AUDIT.md` (note). |
+| Phone wording (attacks pause while the phone is open) | The Director's two in-fight texts no longer say "get clear before you read your phone": "He won't talk again tonight. Bring me the door audit. He's slower and won't follow you out of his office. …" and "… Floor him for his card, or walk out: he's slower and won't leave his office. …" |
+| Confrontation delay (engine 7.3d) | The confrontation's `room_entered:interrogation_room` mapping has `delayMs: 6000`, so the player sees the lit suite, Nightshade at the table and the wall first. A new synced `in_suite` (set by a mapping before it on entering the suite, cleared on entering the lab, the suite's only neighbour) cancels it if they step back out. The ink's "(Read the wall first.)" beat stays: it is the case recap, which the delay doesn't give. Browser (game 2586): the scene opened 6.3–6.8 s after entry; leaving for the lab at 1.5 s cancelled it; re-entering opened it again. |
+| LEDs (7.6a, E14) | `"leds": 0.6` on the server room's `hq_rack` emitter. `lighting-tour.sh --check server_room` (game 2584): LEDs scattered over both rack rows. |
+| Orchestrator: the Director's office | Narration "An inner office with no windows… a wall of amber threat maps" → "The Director's office, blinds drawn against the night. Netherton stands at the window, his back to the door. He does not turn round." His `observations` reworded the same way, to match the dressed room and its background. |
+
+Stale-hostility sweep: `netherton_hostile`, `vector_hostile`, `phantom_hostile`, `nightshade_hostile` and `offduty_agent_hostile` are records of a punch (credits, debrief, "interviewed or struck"), so they stay true after a Restart. One wording mismatch is left for a decision: after a Restart a struck Director is calm and his ink hub talks normally (it never checks `netherton_hostile`), while HaX still says "He won't hear it from you now". Both reading routes still work, so nothing blocks.
+
+Spoken lines changed: every line that says "Cipher" (now "Vector"; m08 has 4 cached files), the Director's opening narration. The 11 `chatBackground` lines the POV agent added are intact.
+
+Checks: compile 12/12; 26/26 routes; dialoguelint no findings; reopencheck 0; validator no errors.

@@ -1,20 +1,20 @@
 {
 "steps": [
-{ "note": "R21 (design C2, N1; reviewer probe p1 inverted). Cipher is punched before his interview and left standing. He won't talk again tonight, so he counts as seen, as a KO does: cipher_seen latches, his interview task completes, the all-three nudge fires once the other two are seen, the Director lets the player clone his card instead of sending them back to Cipher, and HaX's server-room topic says all three are seen. N3: the debrief and the credits say he was hit, and the credits don't call him cleared unqualified." },
+{ "note": "R21 (design C2, N1; reviewer probe p1 inverted). Vector is punched before his interview and left standing. He won't talk again tonight, so he counts as seen, as a KO does: vector_seen latches, his interview task completes, the all-three nudge fires once the other two are seen, the Director lets the player clone his card instead of sending them back to Vector, and HaX's server-room topic says all three are seen. N3: the debrief and the credits say he was hit, and the credits don't call him cleared unqualified." },
 { "talk": "briefing" }, { "set": { "briefing_played": true } },
 { "talk": "netherton", "picks": ["I'm ready"] },
-{ "event": "npc_hostile_state_changed", "data": { "npcId": "agent_cipher", "isHostile": true } },
-{ "expect": { "cipher_hostile": true, "cipher_seen": true, "cipher_ko": false, "cipher_interviewed": false } },
-{ "tasks": { "interview_cipher": "completed" } },
-{ "said": ["Cipher's swinging", "He won't talk to you again tonight"] },
+{ "event": "npc_hostile_state_changed", "data": { "npcId": "agent_vector", "isHostile": true } },
+{ "expect": { "vector_hostile": true, "vector_seen": true, "vector_ko": false, "vector_interviewed": false } },
+{ "tasks": { "interview_vector": "completed" } },
+{ "said": ["Vector's swinging", "He won't talk to you again tonight"] },
 { "talk": "phantom", "picks": ["Where were you", "We'll talk"] },
 { "talk": "nightshade", "picks": ["Where were you", "We're done"] },
-{ "tasks": { "interview_cipher": "completed", "interview_phantom": "completed", "interview_nightshade": "completed" } },
+{ "tasks": { "interview_vector": "completed", "interview_phantom": "completed", "interview_nightshade": "completed" } },
 { "said": ["That's all three. Now go and see the Director about the server room"] },
 { "talk": "phone", "picks": ["How do I get into the server room", "Nothing right now"] },
 { "said": ["You've seen all three. Back to the Director"], "notSaid": ["See all three suspects, then clone"] },
 { "talk": "netherton", "picks": ["I'll need access", "Step up beside him", "Understood"] },
-{ "said": ["Stand where you like"], "notSaid": ["You have not seen Cipher"] },
+{ "said": ["Stand where you like"], "notSaid": ["You have not seen Vector"] },
 { "read": "password_sticky_note" },
 { "enter": "security_archives" },
 { "read": "badge_audit_printout" },
@@ -28,8 +28,8 @@
 { "talk": "confront", "picks": ["Face him", "Tell me why", "What happens to you now", "No deals"] },
 { "expect": { "fate_decided": true } },
 { "talk": "debrief", "picks": ["He's the crime", "It was wrong", "code server", "Nothing more"] },
-{ "said": ["You hit Cipher on my floor. An innocent man."], "notSaid": ["Cipher and Phantom"] },
+{ "said": ["You hit Vector on my floor. An innocent man."], "notSaid": ["Vector and Phantom"] },
 { "credits": true },
-{ "said": ["CIPHER: Struck on the ops floor and left standing. Innocent."], "notSaid": ["CIPHER: Cleared on the evidence", "CIPHER: Knocked out", "PHANTOM: Struck"] }
+{ "said": ["VECTOR: Struck on the ops floor and left standing. Innocent."], "notSaid": ["VECTOR: Cleared on the evidence", "VECTOR: Knocked out", "PHANTOM: Struck"] }
 ]
 }

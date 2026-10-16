@@ -56,7 +56,7 @@
 #   pin      interrogation_room <- suite_code: the code card in director_safe, or Netherton
 #                                  aloud after a correct reading of the door audit (P6).
 #                                  Picks can't open it; the PIN cracker isn't in the kit.
-#   key      cipher_locker / nightshade_locker / phantom_locker (break room, 0x23 / 0x47 / 0x88)
+#   key      vector_locker / nightshade_locker / phantom_locker (break room, 0x23 / 0x47 / 0x88)
 #                               <- start-kit picks | each owner's key after his audit beat, or
 #                                  dropped on a KO (PASS 5: three lockers; 0x47 holds the stick)
 #   (print)  the USB stick in the locker carries Nightshade's thumbprint (PASS 4): the
@@ -97,7 +97,7 @@ end
 safe_pin = "2407"
 nightshade_service_no = "4719"
 # PASS 5 (M1): the printout lists all three suspects.
-cipher_service_no = "3318"
+vector_service_no = "3318"
 phantom_service_no = "5562"
 
 # Security Archives door. On the break-room post-it only; ATHENA hints at where
@@ -187,10 +187,10 @@ backup_plain = "SENT -- To: architect@entropy.onion  From: nightshade_deep_state
           { "text": "TOMB GAMMA: Named, not located -- the coordinate is still in Nightshade's head", "style": "warning", "condition": "!globalVars.tomb_gamma_location_known" },
           { "text": "" },
           { "text": "── THE SUSPECTS ──", "style": "section-header" },
-          { "text": "CIPHER: Accused to his face, then cleared by the logs", "style": "warning", "condition": "globalVars.accused_cipher && !globalVars.cipher_ko" },
-          { "text": "CIPHER: Knocked out. Innocent.", "style": "warning", "condition": "globalVars.cipher_ko" },
-          { "text": "CIPHER: Struck on the ops floor and left standing. Innocent.", "style": "warning", "condition": "globalVars.cipher_hostile && !globalVars.cipher_ko" },
-          { "text": "CIPHER: Cleared on the evidence. His post-quantum work goes on.", "style": "entry", "condition": "!globalVars.accused_cipher && !globalVars.cipher_ko && !globalVars.cipher_hostile" },
+          { "text": "VECTOR: Accused to his face, then cleared by the logs", "style": "warning", "condition": "globalVars.accused_vector && !globalVars.vector_ko" },
+          { "text": "VECTOR: Knocked out. Innocent.", "style": "warning", "condition": "globalVars.vector_ko" },
+          { "text": "VECTOR: Struck on the ops floor and left standing. Innocent.", "style": "warning", "condition": "globalVars.vector_hostile && !globalVars.vector_ko" },
+          { "text": "VECTOR: Cleared on the evidence. His post-quantum work goes on.", "style": "entry", "condition": "!globalVars.accused_vector && !globalVars.vector_ko && !globalVars.vector_hostile" },
           { "text": "PHANTOM: Accused to his face, then cleared by a flight manifest", "style": "warning", "condition": "globalVars.accused_phantom && !globalVars.phantom_ko" },
           { "text": "PHANTOM: Knocked out mid-hunt. Innocent, and the only other person looking.", "style": "warning", "condition": "globalVars.phantom_ko" },
           { "text": "PHANTOM: Struck mid-hunt and left standing. Innocent.", "style": "warning", "condition": "globalVars.phantom_hostile && !globalVars.phantom_ko" },
@@ -205,7 +205,7 @@ backup_plain = "SENT -- To: architect@entropy.onion  From: nightshade_deep_state
           { "text": "THE CASE: The door audit read to HaX. The Director would not have you in the room.", "style": "warning", "condition": "globalVars.named_by_hax && !globalVars.netherton_ko" },
           { "text": "THE LOCKERS: Seen picking one by an off-duty agent who saw nothing", "style": "warning", "condition": "globalVars.locker_seen_picked" },
           { "text": "NIGHTSHADE: Tipped off before he was named", "style": "warning", "condition": "globalVars.nightshade_tipped_off" },
-          { "text": "YOUR FIRST CALL TO THE DIRECTOR: Cipher -- wrong, and corrected", "style": "warning", "condition": "globalVars.suspect_theory === 'cipher'" },
+          { "text": "YOUR FIRST CALL TO THE DIRECTOR: Vector -- wrong, and corrected", "style": "warning", "condition": "globalVars.suspect_theory === 'vector'" },
           { "text": "YOUR FIRST CALL TO THE DIRECTOR: Phantom -- wrong, and corrected", "style": "warning", "condition": "globalVars.suspect_theory === 'phantom'" },
           { "text": "" },
           { "text": "── RECOVERED ──", "style": "section-header" },
@@ -274,7 +274,7 @@ CREDITS
       "takeable": true,
       "observations": "SAFETYNET field pick kit. You did not expect to need it at headquarters.",
       "puzzle_graph_role": "tool",
-      "puzzle_graph_unlocks": ["cipher_locker", "nightshade_locker", "phantom_locker"],
+      "puzzle_graph_unlocks": ["vector_locker", "nightshade_locker", "phantom_locker"],
       "puzzle_graph_optional": true
     },
     <%# PASS 3 (capability arc): the cumulative kit. ATHENA names it in the
@@ -350,8 +350,8 @@ CREDITS
           one on brief_taken for an activity done earlier. %>
       "tasks": [
         {
-          "taskId": "interview_cipher",
-          "title": "Interview Agent Cipher on the operations floor",
+          "taskId": "interview_vector",
+          "title": "Interview Agent Vector on the operations floor",
           "type": "custom",
           "status": "active"
         },
@@ -548,6 +548,7 @@ CREDITS
 
     "main_lobby": {
       "type": "room_hq_lobby",
+      "chatBackground": "assets/backgrounds/rooms/m08_main_lobby_blended.png",
       "lighting": {
         "ambient": "#bcc2ce",
         "emitters": {
@@ -884,7 +885,7 @@ CREDITS
     the naming. Each suspect has a neutral text while mole_identified is
     unset (one shape for all three) and the original once he is named. %>
 <% [["agent_nightshade", "Nightshade", "You put Nightshade on the floor. The proof's on the server. His face can wait. Get me the flags and we'll have this out in the interrogation room."],
-    ["agent_cipher", "Cipher", "You hit Cipher? He's a mess and a genius and he is not your mole. The odd hours are a classified encryption project. The logs would have cleared him."],
+    ["agent_vector", "Vector", "You hit Vector? He's a mess and a genius and he is not your mole. The odd hours are a classified encryption project. The logs would have cleared him."],
     ["agent_phantom", "Phantom", "Phantom's down. All that snooping was him running the same hunt you are, off the books. You've just knocked out the only other person here trying to catch the mole."]].each do |id, name, named_msg| %>
             {
               "eventPattern": "npc_ko:<%= id %>",
@@ -921,9 +922,9 @@ CREDITS
     Phantom (no sight challenge) and the off-duty agent (no locker catch).
     A reload's restored hostility needs no latch: the global is saved. The
     Director's second text names the naming before he is named (D1b). %>
-<% hostile_latch = { "director_netherton" => "netherton_hostile", "agent_cipher" => "cipher_hostile", "agent_phantom" => "phantom_hostile", "agent_nightshade" => "nightshade_hostile", "background_agent" => "offduty_agent_hostile" } %>
+<% hostile_latch = { "director_netherton" => "netherton_hostile", "agent_vector" => "vector_hostile", "agent_phantom" => "phantom_hostile", "agent_nightshade" => "nightshade_hostile", "background_agent" => "offduty_agent_hostile" } %>
 <% [["director_netherton", "The Director's coming for you."],
-    ["agent_cipher", "Cipher's swinging."],
+    ["agent_vector", "Vector's swinging."],
     ["agent_phantom", "Phantom's coming at you."],
     ["agent_nightshade", "Nightshade's coming for you."],
     ["nightshade_confrontation", "He's coming over the table."],
@@ -943,13 +944,13 @@ CREDITS
               "eventPattern": "npc_hostile_state_changed",
               "condition": "data.npcId === 'director_netherton' && data.isHostile === true && data.restored !== true && globalVars.mole_identified !== true",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 5500, "message": "He won't talk again tonight. Bring me the door audit. He's slower: get clear before you read your phone. Q until the open hand shows to walk by clicking." }
+              "sendTimedMessage": { "delay": 5500, "message": "He won't talk again tonight. Bring me the door audit. He's slower and won't follow you out of his office. Q until the open hand shows to walk by clicking." }
             },
             {
               "eventPattern": "npc_hostile_state_changed",
               "condition": "data.npcId === 'director_netherton' && data.isHostile === true && data.restored !== true && globalVars.mole_identified === true",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 5500, "message": "He won't talk again tonight. Floor him for his card, or get clear before you read your phone: he's slower. Q until the open hand shows to walk by clicking." }
+              "sendTimedMessage": { "delay": 5500, "message": "He won't talk again tonight. Floor him for his card, or walk out: he's slower and won't leave his office. Q until the open hand shows to walk by clicking." }
             },
 <% else %>
             {
@@ -1039,7 +1040,7 @@ CREDITS
     one latched text fires on whichever latch lands last. Not after a Director
     KO (his card is on the floor then), and not if the player already has a
     way in. %>
-<% %w[cipher phantom nightshade].each do |n| %>
+<% %w[vector phantom nightshade].each do |n| %>
 <%#  Design C2 (N1): punched and left standing counts as seen, as a KO does
      (he won't talk again tonight, so the interview can never happen). %>
 <%   ["#{n}_interviewed", "#{n}_ko", "#{n}_hostile"].each do |g| %>
@@ -1051,7 +1052,7 @@ CREDITS
 <%   end %>
             {
               "eventPattern": "global_variable_changed:<%= n %>_seen",
-              "condition": "value === true && globalVars.brief_taken === true && globalVars.cipher_seen === true && globalVars.phantom_seen === true && globalVars.nightshade_seen === true && globalVars.netherton_card_taken !== true && globalVars.badge_cloned !== true && globalVars.netherton_ko !== true && globalVars.netherton_hostile !== true && globalVars.access_nudge_sent !== true",
+              "condition": "value === true && globalVars.brief_taken === true && globalVars.vector_seen === true && globalVars.phantom_seen === true && globalVars.nightshade_seen === true && globalVars.netherton_card_taken !== true && globalVars.badge_cloned !== true && globalVars.netherton_ko !== true && globalVars.netherton_hostile !== true && globalVars.access_nudge_sent !== true",
               "onceOnly": true,
               "setGlobal": { "access_nudge_sent": true },
               "sendTimedMessage": { "delay": 3000, "message": "That's all three. Now go and see the Director about the server room. Take the cloner, and give it time: his card has proper keys on it." }
@@ -1067,7 +1068,7 @@ CREDITS
     tipoff_source. They all fire only while nobody has tipped him off, so the
     first cause is the only one ever written (the Director's, in his ink, is
     gated the same way), and the confrontation names that cause. %>
-<% %w[accused_cipher accused_phantom accused_nightshade].each do |g| %>
+<% %w[accused_vector accused_phantom accused_nightshade].each do |g| %>
             {
               "eventPattern": "global_variable_changed:<%= g %>",
               "condition": "value === true && globalVars.mole_identified !== true && globalVars.nightshade_tipped_off !== true",
@@ -1120,9 +1121,9 @@ CREDITS
     Director's door closes, only if no suspect has been seen yet. %>
             {
               "eventPattern": "conversation_closed:director_netherton",
-              "condition": "globalVars.brief_taken === true && globalVars.cipher_seen !== true && globalVars.phantom_seen !== true && globalVars.nightshade_seen !== true",
+              "condition": "globalVars.brief_taken === true && globalVars.vector_seen !== true && globalVars.phantom_seen !== true && globalVars.nightshade_seen !== true",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 2000, "message": "Three names, three rooms. Cipher on the ops floor, Phantom north of it, Nightshade in the Crypto Lab. See all three before the server room." }
+              "sendTimedMessage": { "delay": 2000, "message": "Three names, three rooms. Vector on the ops floor, Phantom north of it, Nightshade in the Crypto Lab. See all three before the server room." }
             },
 <%# PASS 5 (alignment C2, J4): the go-bag reads as any agent's holdall until
     he is named. Once he is named, a player who read it earlier hears what was
@@ -1219,16 +1220,16 @@ CREDITS
     KO does: he won't talk again tonight. %>
 <% %w[_ko _hostile].each do |sfx| %>
             {
-              "eventPattern": "global_variable_changed:cipher<%= sfx %>",
+              "eventPattern": "global_variable_changed:vector<%= sfx %>",
               "condition": "value === true && globalVars.brief_taken === true",
               "onceOnly": true,
-              "completeTask": "interview_cipher"
+              "completeTask": "interview_vector"
             },
             {
               "eventPattern": "global_variable_changed:brief_taken",
-              "condition": "value === true && globalVars.cipher<%= sfx %> === true",
+              "condition": "value === true && globalVars.vector<%= sfx %> === true",
               "onceOnly": true,
-              "completeTask": "interview_cipher"
+              "completeTask": "interview_vector"
             },
 <% end %>
 <%# Design C2 (N1): punched and left standing completes the interview as a
@@ -1342,6 +1343,7 @@ CREDITS
 
     "director_office": {
       "type": "room_hq_director",
+      "chatBackground": "assets/backgrounds/rooms/m08_director_office_blended.png",
       "lighting": {
         "ambient": "#bab0a4",
         "panels": false,
@@ -1378,7 +1380,7 @@ CREDITS
           "behavior": { "hostile": { "chaseSpeed": 75, "attackDamage": 3, "pauseToAttack": true } },
           "globalVarOnKO": "netherton_ko",
           "taskOnKO": "brief_with_netherton",
-          "observations": "Director Netherton has moved into an inner office with no windows. He stands facing a wall of amber threat maps where a window would be. He does not turn around when the door opens. He already knows it is you.",
+          "observations": "Director Netherton stands at his window, blinds drawn against the night, his back to the door. He does not turn around when it opens. He already knows it is you.",
           "rfidCard": {
             "card_id": "server_zone_badge",
             "rfid_protocol": "MIFARE_Classic_Custom_Keys",
@@ -1420,7 +1422,7 @@ CREDITS
             { "from": "fingerprint_kit", "to": "usb_stick_personal_backup_enc", "dashed": true }
           ],
           "observationDisplay": "gameDisplay",
-          "text": "INTERNAL INVESTIGATION -- PERSONS OF INTEREST\n\nAgent 0x23 'CIPHER' -- Intelligence Analyst\n  Access: signals intelligence, cryptography, mission planning (crypto annex).\n  Service: eleven years.\n  Flag: works odd hours, secretive about a personal project. Withdrawn.\n\nAgent 0x47 'NIGHTSHADE' -- Cryptographic-Hardware Analyst (seconded to mission planning)\n  Access: mission planning, operational security.\n  Service: fifteen years. Taught tradecraft to Agent 0x00's intake.\n  Flag: a PIN device signed out since St. Catherine's, never returned. In the lab most nights, alone.\n\nAgent 0x88 'PHANTOM' -- Field Coordinator\n  Access: team movements, tactical planning, mission planning.\n  Service: sixteen years.\n  Flag: asking questions outside remit. Unlogged absences, including the morning of D-2.\n\nNetherton, handwritten: 'All three had the plan. I need the one who had the room, at the minute.'"
+          "text": "INTERNAL INVESTIGATION -- PERSONS OF INTEREST\n\nAgent 0x23 'VECTOR' -- Intelligence Analyst\n  Access: signals intelligence, cryptography, mission planning (crypto annex).\n  Service: eleven years.\n  Flag: works odd hours, secretive about a personal project. Withdrawn.\n\nAgent 0x47 'NIGHTSHADE' -- Cryptographic-Hardware Analyst (seconded to mission planning)\n  Access: mission planning, operational security.\n  Service: fifteen years. Taught tradecraft to Agent 0x00's intake.\n  Flag: a PIN device signed out since St. Catherine's, never returned. In the lab most nights, alone.\n\nAgent 0x88 'PHANTOM' -- Field Coordinator\n  Access: team movements, tactical planning, mission planning.\n  Service: sixteen years.\n  Flag: asking questions outside remit. Unlogged absences, including the morning of D-2.\n\nNetherton, handwritten: 'All three had the plan. I need the one who had the room, at the minute.'"
         },
         {
           "_comment": "Biometric safe. PIN is the Director's own service number, printed in the Requested-by line of the ops-floor personnel printout; ATHENA and HaX point at the printout (neither reads it out). PASS 3 (P4): holds the interrogation-suite code card (the suite is now a keypad, so the start-kit picks can't skip this chain) and Okafor's evaluation. Netherton also gives the code aloud after a correct reading of the door audit (P6).",
@@ -1467,15 +1469,15 @@ CREDITS
               "puzzle_graph_reveals": "netherton_buried_the_warning"
             },
             {
-              "_comment": "Blind run A fixes (finding 7): the Director sealed a file on each of the three, so Okafor's evaluation isn't the only motive file in the safe. Both are explained later by their subjects (Cipher's unrostered key-schedule project; Phantom's off-book hunt and reprimand).",
+              "_comment": "Blind run A fixes (finding 7): the Director sealed a file on each of the three, so Okafor's evaluation isn't the only motive file in the safe. Both are explained later by their subjects (Vector's unrostered key-schedule project; Phantom's off-book hunt and reprimand).",
               "type": "text_file",
-              "id": "cipher_vetting_query",
+              "id": "vector_vetting_query",
               "name": "Sealed Vetting Query -- Agent 0x23",
               "takeable": true,
               "readable": true,
               "observations": "A vetting query, sealed by the Director's own order.",
               "observationDisplay": "gameDisplay",
-              "text": "CLASSIFIED -- VETTING QUERY\nSubject: Agent 0x23 'Cipher'\nRaised by: Security Vetting Office\n\nSubject holds a crypto annex badge issued outside this office's chain; the issuing authority will not confirm it. Signs hardware tokens out of the annex cabinet at night, alone. Declined to explain either to two reviewers.\n\nRECOMMENDATION: suspend annex access pending interview.\nACTION TAKEN: [DEFERRED BY ORDER OF THE DIRECTOR -- M.N.]\n\nNetherton, appended: 'The annex says he is theirs. I have asked twice.'",
+              "text": "CLASSIFIED -- VETTING QUERY\nSubject: Agent 0x23 'Vector'\nRaised by: Security Vetting Office\n\nSubject holds a crypto annex badge issued outside this office's chain; the issuing authority will not confirm it. Signs hardware tokens out of the annex cabinet at night, alone. Declined to explain either to two reviewers.\n\nRECOMMENDATION: suspend annex access pending interview.\nACTION TAKEN: [DEFERRED BY ORDER OF THE DIRECTOR -- M.N.]\n\nNetherton, appended: 'The annex says he is theirs. I have asked twice.'",
               "puzzle_graph_role": "clue"
             },
             {
@@ -1496,6 +1498,7 @@ CREDITS
 
     "operations_floor": {
       "type": "room_hq_ops",
+      "chatBackground": "assets/backgrounds/rooms/m08_operations_floor_blended.png",
       "lighting": {
         "ambient": "#b2b8c8",
         "emitters": {
@@ -1513,16 +1516,16 @@ CREDITS
       },
       "npcs": [
         {
-          "_comment": "Agent Cipher -- red herring. Socially awkward crypto genius; the odd hours are a classified project, not treason. globalVarOnKO wired; the interview is required for work_the_suspects (pass 3) and a KO completes it; the door audit clears him.",
-          "id": "agent_cipher",
-          "displayName": "Agent 0x23 'Cipher'",
+          "_comment": "Agent Vector -- red herring. Socially awkward crypto genius; the odd hours are a classified project, not treason. globalVarOnKO wired; the interview is required for work_the_suspects (pass 3) and a KO completes it; the door audit clears him.",
+          "id": "agent_vector",
+          "displayName": "Agent 0x23 'Vector'",
           "npcType": "person",
           "position": { "x": 5.2, "y": 4.8 },
           "spriteSheet": "male_nerd_v2",
           "spriteTalk": "assets/characters/male_nerd_talk.png",
           "spriteVisemes": "assets/characters/male_nerd_visemes.png",
           "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 },
-          "storyPath": "scenarios/m08_the_mole/ink/m08_suspect_cipher.json",
+          "storyPath": "scenarios/m08_the_mole/ink/m08_suspect_vector.json",
           "voice": {
             "name": "Iapetus",
             "style": "A brilliant, socially anxious cryptographer in his early thirties being questioned about treason. Consistent educated Scottish (Glasgow) accent throughout -- do not shift to any other accent. Mid-to-high pitch; fast, over-explains, corrects your terminology. Terrified of being misunderstood -- which reads as guilt to anyone not listening properly.",
@@ -1532,38 +1535,38 @@ CREDITS
           <%# PASS 5 (puzzle chains C1, m2): a punch makes any NPC hostile; without
               this block he chased at 145 for 10 a hit. Range as m06 Kemal / m07 Hollis. %>
           "behavior": { "hostile": { "chaseSpeed": 70, "attackDamage": 3, "pauseToAttack": true } },
-          "globalVarOnKO": "cipher_ko",
+          "globalVarOnKO": "vector_ko",
           <%# PASS 5 (alignment C2, J4): his locker key, as Nightshade's: he hands it
               over when asked after the door-audit beat (#give_item); a KO drops it. %>
           "itemsHeld": [
             {
               "type": "key",
-              "id": "cipher_locker_key",
-              "name": "Cipher's Locker Key",
+              "id": "vector_locker_key",
+              "name": "Vector's Locker Key",
               "takeable": true,
-              "opens_lock": "cipher_locker_key",
+              "opens_lock": "vector_locker_key",
               "keyPins": [40, 30, 55, 35],
               "observations": "A small locker key on a plain ring. 0x23 on the tag.",
               "puzzle_graph_role": "key",
-              "puzzle_graph_unlocks": "cipher_locker"
+              "puzzle_graph_unlocks": "vector_locker"
             }
           ],
           <%# PASS 2 review (lesson 27): the interview task completes only once the brief is taken. %>
           "eventMappings": [
             {
-              "eventPattern": "global_variable_changed:cipher_interviewed",
+              "eventPattern": "global_variable_changed:vector_interviewed",
               "condition": "value === true && globalVars.brief_taken === true",
               "onceOnly": true,
-              "completeTask": "interview_cipher"
+              "completeTask": "interview_vector"
             },
             {
               "eventPattern": "global_variable_changed:brief_taken",
-              "condition": "value === true && globalVars.cipher_interviewed === true",
+              "condition": "value === true && globalVars.vector_interviewed === true",
               "onceOnly": true,
-              "completeTask": "interview_cipher"
+              "completeTask": "interview_vector"
             }
           ],
-          "observations": "Cipher is barricaded behind three monitors of proofs, not making eye contact with anyone. He knows he looks guilty. It is making him look guiltier."
+          "observations": "Vector is barricaded behind three monitors of proofs, not making eye contact with anyone. He knows he looks guilty. It is making him look guiltier."
         },
         {
           "_comment": "Background bark. No required task; a KO sets analyst_ko (globalVarOnKO) and, before the naming, tips the mole off.",
@@ -1603,7 +1606,7 @@ CREDITS
           <%# PASS 5 (alignment M1): an investigation copy of all three, so the
               Director hasn't visibly singled one out. The safe deduction is
               unchanged: the Requested-by line plus the margin note. %>
-          "text": "SAFETYNET PERSONNEL SUMMARY -- INVESTIGATION COPY (3 RECORDS)\nRequested by: Director M. Netherton (svc no. <%= safe_pin %>)\n\nAgent 0x23 'Cipher' -- Intelligence Analyst\n  Service number: <%= cipher_service_no %>. Commissioned eleven years ago. Clearance: planning\n\nAgent 0x47 'Nightshade' -- Cryptographic-Hardware Analyst\n  Service number: <%= nightshade_service_no %>. Commissioned fifteen years ago. Clearance: planning\n\nAgent 0x88 'Phantom' -- Field Coordinator\n  Service number: <%= phantom_service_no %>. Commissioned sixteen years ago. Clearance: planning\n\nPersonal safe codes: service number, all three (POLICY VIOLATION -- flagged, never changed)\n\nNote in the margin, facilities' handwriting: 'Every safe in this building opens on its owner's service number. Nobody has ever made anyone fix it.'",
+          "text": "SAFETYNET PERSONNEL SUMMARY -- INVESTIGATION COPY (3 RECORDS)\nRequested by: Director M. Netherton (svc no. <%= safe_pin %>)\n\nAgent 0x23 'Vector' -- Intelligence Analyst\n  Service number: <%= vector_service_no %>. Commissioned eleven years ago. Clearance: planning\n\nAgent 0x47 'Nightshade' -- Cryptographic-Hardware Analyst\n  Service number: <%= nightshade_service_no %>. Commissioned fifteen years ago. Clearance: planning\n\nAgent 0x88 'Phantom' -- Field Coordinator\n  Service number: <%= phantom_service_no %>. Commissioned sixteen years ago. Clearance: planning\n\nPersonal safe codes: service number, all three (POLICY VIOLATION -- flagged, never changed)\n\nNote in the margin, facilities' handwriting: 'Every safe in this building opens on its owner's service number. Nobody has ever made anyone fix it.'",
           "puzzle_graph_role": "clue",
           "puzzle_graph_unlocks": "director_safe"
         },
@@ -1624,6 +1627,7 @@ CREDITS
 
     "intel_analysis": {
       "type": "room_hq_intel",
+      "chatBackground": "assets/backgrounds/rooms/m08_intel_analysis_blended.png",
       "lighting": {
         "ambient": "#b0b8c6",
         "emitters": {
@@ -1748,12 +1752,13 @@ CREDITS
 
     "server_room": {
       "type": "room_hq_servers",
+      "chatBackground": "assets/backgrounds/rooms/m08_server_room_blended.png",
       "lighting": {
         "mode": "motion",
         "ambient": "#a0b0c0",
         "darkAmbient": "#0a0f1c",
         "emitters": {
-          "hq_rack": [ { "color": "#6dffb0", "radius": 40, "intensity": 0.45, "effect": "blink" } ],
+          "hq_rack": [ { "color": "#6dffb0", "radius": 40, "intensity": 0.45, "effect": "blink", "leds": 0.6 } ],
           "suppression_panel": [ { "radius": 18, "intensity": 0.45, "effect": null } ],
           "hq_badge_reader": [ { "color": "#ff3030", "radius": 6, "intensity": 0.9, "effect": null, "offsetX": -1, "offsetY": 2, "above": true } ]
         }
@@ -1818,6 +1823,7 @@ CREDITS
 
     "security_archives": {
       "type": "room_hq_archives",
+      "chatBackground": "assets/backgrounds/rooms/m08_security_archives_blended.png",
       "lighting": {
         "mode": "motion",
         "ambient": "#bcc0b8",
@@ -1865,7 +1871,7 @@ CREDITS
           "readable": true,
                     "observations": "A door-audit query, printed and never collected, slid off the desk onto the floor. The header carries Phantom's account.",
           "observationDisplay": "gameDisplay",
-          "text": "BADGE AUDIT -- QUERY RESULTS (all times UTC)\nRun by: 0x88 (PHANTOM). Printed. Not collected.\nWindow: D-2 07:00 to 13:00 (D-2 = two days before the Portland order)\n\nCL-1 -- Crypto Lab door. The only way into the lab, the break room\n        and the interrogation suite.\n  07:52  IN   0x3C  OFF-SHIFT (break room; no planning clearance)\n  08:12  IN   0x61  FACILITIES (clean)\n  08:58  OUT  0x61\n  10:15  IN   0x47  NIGHTSHADE\n  10:24  IN   0x23  CIPHER\n  10:32  OUT  0x23  CIPHER\n  11:43  OUT  0x47  NIGHTSHADE\n  (next event: 13:10 OUT 0x3C)\n\nLIB-2 -- Crypto library door\n  10:35  IN   0x23  CIPHER\n  (next event: 13:40 OUT 0x23)\n\nTRAVEL DESK\n  0x88  PHANTOM  Zurich handover. Wheels up 10:09, down 11:54. Manifest on file.",
+          "text": "BADGE AUDIT -- QUERY RESULTS (all times UTC)\nRun by: 0x88 (PHANTOM). Printed. Not collected.\nWindow: D-2 07:00 to 13:00 (D-2 = two days before the Portland order)\n\nCL-1 -- Crypto Lab door. The only way into the lab, the break room\n        and the interrogation suite.\n  07:52  IN   0x3C  OFF-SHIFT (break room; no planning clearance)\n  08:12  IN   0x61  FACILITIES (clean)\n  08:58  OUT  0x61\n  10:15  IN   0x47  NIGHTSHADE\n  10:24  IN   0x23  VECTOR\n  10:32  OUT  0x23  VECTOR\n  11:43  OUT  0x47  NIGHTSHADE\n  (next event: 13:10 OUT 0x3C)\n\nLIB-2 -- Crypto library door\n  10:35  IN   0x23  VECTOR\n  (next event: 13:40 OUT 0x23)\n\nTRAVEL DESK\n  0x88  PHANTOM  Zurich handover. Wheels up 10:09, down 11:54. Manifest on file.",
           "onRead": { "setVariable": { "found_badge_audit": true } },
           "puzzle_graph_role": "clue",
           "puzzle_graph_reveals": "who_was_behind_the_lab_door",
@@ -1879,6 +1885,7 @@ CREDITS
 
     "cryptography_lab": {
       "type": "room_hq_crypto",
+      "chatBackground": "assets/backgrounds/rooms/m08_cryptography_lab_blended.png",
       "lighting": {
         "ambient": "#b4bcca",
         "emitters": {
@@ -1960,6 +1967,13 @@ CREDITS
               "eventPattern": "room_entered:cryptography_lab",
               "condition": "globalVars.all_flags_submitted === true && globalVars.mole_identified === true",
               "setVisible": false
+            },
+            {
+              "_comment": "Post-engine follow-ups (2026-10-16): the confrontation opens on a delay (delayMs), so it must know the player is still in the suite when the delay is up. The lab is the suite's only neighbour.",
+              "eventPattern": "room_entered:cryptography_lab",
+              "onceOnly": false,
+              "cooldown": 0,
+              "setGlobal": { "in_suite": false }
             }
           ],
           "observations": "Nightshade looks up from a clean, bare desk and smiles the way he did when he taught your intake."
@@ -1988,6 +2002,7 @@ CREDITS
 
     "interrogation_room": {
       "type": "room_hq_interview",
+      "chatBackground": "assets/backgrounds/rooms/m08_interrogation_room_blended.png",
       "lighting": {
         "mode": "motion",
         "ambient": "#c0c4cc",
@@ -2039,9 +2054,17 @@ CREDITS
           "taskOnKO": "confront_nightshade",
           "eventMappings": [
             {
-              "_comment": "Reveal + open the confrontation when the player enters the interrogation room with the case already made. onceOnly keeps it to a single scene.",
+              "_comment": "Post-engine follow-ups (2026-10-16): in_suite is set first (listeners run in array order), so the delayed scene below sees it at the event and when the delay is up.",
               "eventPattern": "room_entered:interrogation_room",
-              "condition": "globalVars.all_flags_submitted === true && globalVars.mole_identified === true && !globalVars.fate_decided",
+              "onceOnly": false,
+              "cooldown": 0,
+              "setGlobal": { "in_suite": true }
+            },
+            {
+              "_comment": "Reveal + open the confrontation when the player enters the interrogation room with the case already made. Not onceOnly (see the NPC comment); the ink skips to the aftermath once the fate is set. Post-engine follow-ups (2026-10-16): delayMs 6000 gives the player a few seconds to take in the lit suite, Nightshade at the table and the evidence wall before the scene opens; in_suite cancels it if they step back out to the lab first. The ink's (Read the wall first.) choice stays: it is the case recap, which the delay alone doesn't give.",
+              "eventPattern": "room_entered:interrogation_room",
+              "condition": "globalVars.all_flags_submitted === true && globalVars.mole_identified === true && !globalVars.fate_decided && globalVars.in_suite === true",
+              "delayMs": 6000,
               "conversationMode": "person-chat",
               "targetKnot": "start",
               "background": "assets/backgrounds/hq2.png",
@@ -2141,6 +2164,10 @@ CREDITS
 
     "break_room": {
       "type": "room_hq_break",
+      "chatBackground": [
+        { "x": [0, 0.5], "image": "assets/backgrounds/rooms/m08_break_room_left_blended.png" },
+        { "x": [0.5, 1], "image": "assets/backgrounds/rooms/m08_break_room_blended.png" }
+      ],
       "lighting": {
         "ambient": "#ccc4b8"
       },
@@ -2278,12 +2305,12 @@ CREDITS
             carry the rest. %>
         {
           "type": "safe",
-          "id": "cipher_locker",
+          "id": "vector_locker",
           "name": "Staff Locker -- 0x23",
           "takeable": false,
           "locked": true,
           "lockType": "key",
-          "requires": "cipher_locker_key",
+          "requires": "vector_locker_key",
           "keyPins": [40, 30, 55, 35],
           "difficulty": "medium",
           "position": "as-type:hq_locker_a",
@@ -2293,7 +2320,7 @@ CREDITS
           "contents": [
             {
               "type": "notes",
-              "id": "cipher_token_pouch",
+              "id": "vector_token_pouch",
               "name": "Token Pouch -- Locker 0x23",
               "takeable": true,
               "readable": true,
@@ -2305,7 +2332,7 @@ CREDITS
             },
             {
               "type": "notes",
-              "id": "cipher_project_sheet",
+              "id": "vector_project_sheet",
               "name": "Project Sheet -- Locker 0x23",
               "takeable": true,
               "readable": true,
@@ -2362,7 +2389,7 @@ CREDITS
                 "_comment": "PASS 4 (fix 12): the observation no longer names the two encodings; HaX's text and the CyberChef guide carry the hint. PASS 4 (fix 1): a print surface. With the kit, opening it from the inventory starts the dusting panel first ('Use normally' reads the file); fingerprint_collected:nightshade sets nightshade_print_lifted (agent_0x99). The print is on the gloss casing rather than the paper envelope: the kit's surfaces are glossy or textured plastic.",
                 "hasFingerprint": true,
                 "fingerprintOwner": "Nightshade",
-                "fingerprintCandidates": ["Cipher", "Phantom", "Director Netherton", "Facilities"],
+                "fingerprintCandidates": ["Vector", "Phantom", "Director Netherton", "Facilities"],
                 "fingerprintDifficulty": "easy",
                 "fingerprintSurface": "glossy_dark",
                 "onPickup": { "setVariable": { "found_architect_comms_local": true } },
@@ -2464,7 +2491,7 @@ CREDITS
               "readable": true,
               "observations": "A sheet of A3, folded into eighths and soft at the creases.",
               "observationDisplay": "gameDisplay",
-              "text": "Three boxes in biro: CIPHER, NIGHTSHADE, PHANTOM. Lines between them, most of them crossed out and drawn again.\n\nUnder PHANTOM: \"no alibi I'll give them. Make them check.\"\nUnder CIPHER: \"hours? annex?\"\nUnder NIGHTSHADE: \"always in. too easy?\"\n\nAcross the bottom, underlined twice: DOORS, NOT FACES."
+              "text": "Three boxes in biro: VECTOR, NIGHTSHADE, PHANTOM. Lines between them, most of them crossed out and drawn again.\n\nUnder PHANTOM: \"no alibi I'll give them. Make them check.\"\nUnder VECTOR: \"hours? annex?\"\nUnder NIGHTSHADE: \"always in. too easy?\"\n\nAcross the bottom, underlined twice: DOORS, NOT FACES."
             }
           ]
         }
@@ -2488,16 +2515,16 @@ CREDITS
     "debrief_played": false,
 
 <%# --- Investigation progress --------------------------------------------- %>
-    "cipher_interviewed": false,
+    "vector_interviewed": false,
     "phantom_interviewed": false,
     "nightshade_interviewed": false,
 
 <%# --- Investigation / player theory (autonomy layer) --------------------- %>
     "suspect_theory": "",
-    "cipher_alibi_known": false,
+    "vector_alibi_known": false,
     "phantom_alibi_known": false,
     "nightshade_suspected": false,
-    "accused_cipher": false,
+    "accused_vector": false,
     "accused_phantom": false,
     "accused_nightshade": false,
 
@@ -2507,6 +2534,7 @@ CREDITS
     "found_architect_comms": false,
     "found_access_logs": false,
     "found_nightshade_profile": false,
+    "in_suite": false,
     "found_deep_state_manual": false,
     "database_theft_understood": false,
     "found_phantom_lead": false,
@@ -2539,7 +2567,7 @@ CREDITS
 <%# --- Knockout latches (globalVarOnKO targets) --------------------------- %>
     "netherton_ko": false,
     "nightshade_ko": false,
-    "cipher_ko": false,
+    "vector_ko": false,
     "phantom_ko": false,
 
 <%# --- Field guide gating (WP6 offers; two latches per guide) ------------- %>
@@ -2563,7 +2591,7 @@ CREDITS
     "named_on_evidence": false,
     "audit_misread": false,
     "audit_closed": false,
-    "cipher_audit_confirmed": false,
+    "vector_audit_confirmed": false,
     "nightshade_audit_confirmed": false,
     "found_go_bag": false,
     "hax_ko": false,
@@ -2575,7 +2603,7 @@ CREDITS
     "netherton_card_cloned": false,
     "nightshade_print_lifted": false,
     "access_nudge_sent": false,
-    "cipher_seen": false,
+    "vector_seen": false,
     "phantom_seen": false,
     "nightshade_seen": false,
     "nightshade_ko_before_fate": false,
@@ -2600,7 +2628,7 @@ CREDITS
 
 <%# --- Design C1: punched but standing (hostile for good; latched with HaX's controls text) --- %>
     "netherton_hostile": false,
-    "cipher_hostile": false,
+    "vector_hostile": false,
     "phantom_hostile": false,
     "nightshade_hostile": false,
     "offduty_agent_hostile": false

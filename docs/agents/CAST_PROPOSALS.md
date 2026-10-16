@@ -12,8 +12,8 @@ Written 2026-10-16 after the user approved the character-stage prep: a look for 
 
 - m05 and m06 still give Netherton the generic `male_spy_v2` sheet, talk and visemes (m05 erb `director_netherton`, m06 erb `director_netherton`), and use `male_spy_headshot.png` as his phone avatar (m05 :786, m06 :798). m07 and m08 use `netherton`. Point m05/m06 at `netherton` too (mission-local, sprite fields only, no spoken line changes).
 - m05's `patricia_phone` should use her new headshot once it exists (it now uses `female_security_guard_headshot.png`, :1400).
-- **Codename clash:** m04's ENTROPY operative "Cipher" has the sprite `operative_cipher`, and m08's SAFETYNET suspect is "Agent 0x23 'Cipher'". They're different people with the same codename. This proposal gives the m08 agent the key `agent_cipher` so the files don't collide. Whether the codename should change is a story question for the user.
-- **Dani's gender** (m06): the ink and the erb comment say "she", the voice style says "their", a review doc says "his", and the voice (Puck) and stand-in sprite (`male_office_worker_v2`) are male. The proposal below follows the voice and sprite. Settle it before the concept, because the voice decides what the player hears.
+- **Codename clash (settled 2026-10-16):** m04's ENTROPY operative "Cipher" (sprite `operative_cipher`) keeps the name. The user renamed m08's SAFETYNET suspect to "Agent 0x23 'Vector'"; his ids, globals, ink file and routes were renamed with him (`agent_vector`, `m08_suspect_vector.ink`), and his sprite key is `agent_vector`.
+- **Dani's gender** (m06): settled by the user on 2026-10-16: Dani is a young man. The ink comment, the credits line and the voice style now say "he"/"his", matching the voice (Puck) and the stand-in sprite (`male_office_worker_v2`).
 
 ## m05 Insider Trading (6 NPCs, one with a second portrait)
 
@@ -38,7 +38,7 @@ Written 2026-10-16 after the user approved the character-stage prep: a look for 
 - **Voice:** Schedar; "late forties, born in Madrid and twenty years in England … light Castilian Spanish accent … low, soft … exhausted and grieving, past the point of lying."
 - **Look for the concept prompt:** a Spanish man of about 48 with light olive skin, dark curly hair going grey and in need of a cut, two days of salt-and-pepper stubble, tired dark eyes with heavy shadows. He wears a creased pale blue Oxford shirt with the sleeves rolled and the collar open, a loosened dark tie, a lanyard with a blank staff card, navy chinos and a brown belt. A man who hasn't slept for a week.
 - **Second portrait (`david_torres_ko`):** the same man, same clothes, slumped and seated on the floor with his back against a server rack. His tie is pulled askew, a cut at the hairline with blood running down to the brow, and one hand is pressed to his ribs. His eyes are open and his mouth closed (frame 0 has to be closed). He still speaks in the post-KO knot, so it needs visemes too. **Wiring needs an engine change** (the user approves engine work): no person-chat tag swaps or hides the bust today (D6, checked against `chat-helpers.js`). The options are a new `#portrait:` tag, or a mission-local second NPC (`david_torres_down`) shown after the KO that carries the alternative bust and the post-KO knot. The second option needs no engine work but does mean moving ink.
-- **Stand-in now:** `male_nerd_v2` (shared with m08's Cipher).
+- **Stand-in now:** `male_nerd_v2` (shared with m08's Vector).
 - **Recommended sprite keys:** `david_torres`, plus `david_torres_ko` (bust, visemes and headshot only, no walk character).
 
 **Decision:**
@@ -152,10 +152,10 @@ My pick: **3**, then 1. 3 matches "courteous and immovable" best and is the safe
 
 **Comments:**
 
-### M06-4: Dani Okonkwo (`trader_npc`) — gender to settle first (see the wiring notes)
+### M06-4: Dani Okonkwo (`trader_npc`) — a young man (user, 2026-10-16)
 
-- **Who he is:** a young crypto trader, wired on caffeine and frightened by what he has noticed. He holds the executive keycard and hands it over once the fund is in front of him.
-- **Voice:** Puck; "early twenties, British-Nigerian, jittery on caffeine and increasingly frightened … south-east London (Peckham) accent … mid-to-high … fast, nervy, over-explaining."
+- **Who he is:** a young crypto trader, wired on caffeine and frightened by what he has noticed. He flagged the ENTROPY wallets before anyone else did, and is scared of what that means.
+- **Voice:** Puck; "young man … in his early twenties, British-Nigerian, jittery on caffeine and increasingly frightened … south-east London (Peckham) accent … mid-to-high … fast, nervy, over-explaining."
 - **Look for the concept prompt:** a British-Nigerian man of about 23 with deep brown skin, short twists on top with a skin fade, a thin moustache, wide anxious eyes. He wears a slim navy gilet over a pale grey Oxford shirt with the top button undone, a smartwatch, a lanyard with a blank card, black slim trousers and a black belt. He has an energy-drink can in one hand (no label).
 - **Stand-in now:** `male_office_worker_v2` (also m07's Mercer and m08's Phantom).
 - **Recommended sprite key:** `dani_okonkwo`.
@@ -262,7 +262,7 @@ My pick: **3**, then 1. 3 matches "courteous and immovable" best and is the safe
 
 ## m08 The Mole (5 NPCs)
 
-**Cast balance.** The voices set Phantom as British-Ghanaian (early forties) and the junior analyst as British-Indian from Leicester (mid-twenties). Cipher is Glaswegian and the off-duty agent a Geordie, neither with an ethnicity given. The proposal makes Cipher British-Chinese (Glasgow has a long-standing Chinese community) and the off-duty agent white. With the regulars present (Netherton, Black British of Caribbean heritage; Nightshade, an older white man; HaX, light tan), the mission's people cover Caribbean, West African, South Asian, East Asian and white British, aged mid-twenties to late fifties. Phantom and Netherton are both Black British men; Phantom is twenty years younger, Ghanaian-raised, in civilian clothes and loose where Netherton is upright, so they won't read alike. ATHENA is an AI, so her look is designed as a hologram, not a person. Today ATHENA and the analyst share one sheet with m05's Lisa and m06's Priya (`female_office_worker_v2`), a look-alike the design review flagged (DESIGN_REVIEW_P5_C1 "Look-alikes").
+**Cast balance.** The voices set Phantom as British-Ghanaian (early forties) and the junior analyst as British-Indian from Leicester (mid-twenties). Vector (renamed from Cipher, 2026-10-16) is Glaswegian and the off-duty agent a Geordie, neither with an ethnicity given. The proposal makes Vector British-Chinese (Glasgow has a long-standing Chinese community) and the off-duty agent white. With the regulars present (Netherton, Black British of Caribbean heritage; Nightshade, an older white man; HaX, light tan), the mission's people cover Caribbean, West African, South Asian, East Asian and white British, aged mid-twenties to late fifties. Phantom and Netherton are both Black British men; Phantom is twenty years younger, Ghanaian-raised, in civilian clothes and loose where Netherton is upright, so they won't read alike. ATHENA is an AI, so her look is designed as a hologram, not a person. Today ATHENA and the analyst share one sheet with m05's Lisa and m06's Priya (`female_office_worker_v2`), a look-alike the design review flagged (DESIGN_REVIEW_P5_C1 "Look-alikes").
 
 ### M08-1: ATHENA (`receptionist_ai`, and `opening_briefing_cutscene`)
 
@@ -278,13 +278,13 @@ My pick: **3**, then 1. 3 matches "courteous and immovable" best and is the safe
 
 **Comments:**
 
-### M08-2: Agent 0x23 'Cipher' (`agent_cipher`)
+### M08-2: Agent 0x23 'Vector' (`agent_vector`; was 'Cipher' until 2026-10-16)
 
 - **Who he is:** a red herring, a socially anxious crypto genius whose odd hours are a classified project, not treason. Over-explains, which reads as guilt.
 - **Voice:** Iapetus; "early thirties … educated Scottish (Glasgow) accent … mid-to-high … fast, over-explains, corrects your terminology. Terrified of being misunderstood."
 - **Look for the concept prompt:** a British-Chinese man of about 32 with light skin, untidy straight black hair falling over his forehead, thin wire-framed glasses, a nervous half-frown. He wears a slightly too-big oatmeal cable-knit jumper over a checked shirt collar, a SAFETYNET lanyard with a blank card, corduroy trousers and a brown belt, and clutches a printed sheaf of notes to his chest.
 - **Stand-in now:** `male_nerd_v2` (also m05's Torres).
-- **Recommended sprite key:** `agent_cipher` (not `cipher`: m04's ENTROPY operative is `operative_cipher`; see the codename note at the top).
+- **Recommended sprite key:** `agent_vector` (see the codename note at the top).
 
 **Decision:**
 - [ ] Approve  - [ ] Change

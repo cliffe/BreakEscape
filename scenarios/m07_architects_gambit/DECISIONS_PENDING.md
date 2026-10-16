@@ -17,6 +17,8 @@ From alignment review cycle 1 (`ALIGNMENT_REVIEW_P5_C1.md`): where each flag sit
 A permission check refused the reviewer's look at the guide's front matter; not pursued. Please confirm `.../labs/safetynet/nfs-and-netcat-leaks/` is live before the blind playtest.
 
 ## U5. Engine: an all-optional aim completes on its first task (from alignment round 1, regression M-3)
+**Resolved 2026-10-16 (engine 7.5c):** an all-optional aim now completes only when every task is settled, so "Trace How They Got In (Optional)" is back with all five tasks optional (post-engine follow-ups in the log).
+
 To stop the required `*` showing inside "Trace How They Got In (Optional)", every task in that aim is now `optional: true` (`scenario.json.erb`, aim `trace_the_intrusion`). The panel then marks none of them, as intended. Side effect: `objectives-manager.js:847` (and `game.rb` `check_aim_completion`) treat optional tasks as settled, so an aim whose tasks are all optional completes the first time any task settles: entering the generator hall now shows "Aim complete" and folds the aim, with the vault tasks still to do (the same family as regression m-13). **Recommendation:** engine change so an aim with no required tasks completes only when every task is settled (or the conclusion fires). Alternative without engine work: drop "(Optional)" from the aim title and put the two tasks back to required, so `*` means "required for this aim". The mission-local choice stands until the user picks.
 
 ## U6. Shared room maps: wall pictures outside the walls (regression m-10)
@@ -36,9 +38,13 @@ m04's print kit is in the cumulative start kit and nothing in m07 uses it. Nothi
 `unlock-system.js` (rfid case, "PRIORITY 2") opens the cloner minigame whenever a cloner is carried, even with no keycard and no saved clone; it shows "No keycards in inventory" / "No saved cards". F3 gave the cloner a use in m07 (clone Hollis's badge), so the screen is no longer pointless, but a player who hasn't cloned yet still gets it at the first real lock. **Recommendation:** an engine change to show the plain "access denied" toast instead when the cloner holds no saved cards and the player has no keycards. Not urgent; mission-side nothing to do.
 
 ## U10. Engine: `combat-config.js` `chaseRange` is read nowhere (puzzle chains F2)
+**Resolved 2026-10-16 (engine 7.1a):** hostiles give up at their room's door; the in-fight texts now say so.
+
 A hostile NPC chases across rooms with no leash (browser N2: Park followed the player from the vault to the control room door). m07 now tunes `behavior.hostile` so every hostile is slower than the player's walk (Hollis 100, Park 80, Mercer 70 against 150), and HaX says walking away works. **Recommendation:** wire `chaseRange` (or a per-NPC leash) in the engine so a hostile gives up past a distance; keep the mission tuning either way.
 
 ## U11. Engine: a Restart after a KO respawns the player beside a still-hostile NPC (puzzle chains N3)
+**Resolved 2026-10-16 (engine 7.1d):** a Restart resets non-KO'd hostiles calm. m07 has no hostility latch globals to go stale.
+
 After a KNOCKED OUT, Restart puts the player back at the start-room checkpoint at full HP, about 31 px from Hollis, who is restored as hostile at 100 HP, so the first seconds are spent being hit (browser game 2423). Walking east escapes him and nothing soft-locks. No mission-side fix is clean: event mappings can't reposition an NPC or clear hostility, and moving his patrol or start point does nothing once he is chasing from where he stands. **Recommendation:** an engine change so a respawn after a KO resets hostile NPCs to their start state (not hostile, back on their patrol, or at their start position) or moves the respawn out of their reach. It belongs with "Resume in the room you left" and the KO-respawn note in `docs/IDEAS_BACKLOG.md` (line 46-47). Same trap exists in m05/m06 for their hostile NPCs.
 
 ## U12. Engine: a hit closes the phone (design round 1 browser check, N1)
@@ -65,6 +71,8 @@ When the clock expires (`countdown_expired`) HaX says "Seattle's dark. Step one 
 Approved by the user on 2026-10-16 (whole mission, cap 20 Gemini calls). All six rooms done with 12 Gemini calls; Hollis and Elena get a left view each. Wired as `chatBackground` in `scenario.json.erb`. Rooms, calls and accepted faults in `POV_BACKGROUNDS.md`; evidence in `build_evidence/pov/`. Characters are parked for your picks as usual.
 
 ## E3. Engine: no way to heal (blind run A, M2)
+**Resolved 2026-10-16 (engine 7.1c):** a first aid kit in the generator hall before Park's fight (heals 40; browser-checked).
+
 HP never recovers in play: after a fight the player keeps what is left until a KO resets it to 100. The engine has `window.playerHealth.heal(amount)` (`player-health.js:24`, `healPlayer` at :158), but only `utils/combat-debug.js` calls it; no ink tag, event mapping or item action reaches it. A struggling player in m07 met Park at 24 HP and was effectively told to die to heal. **Mission-side (done):** every fight choice is marked "(Fight him.)" with a warning line, Park's way out is marked (and says on the second visit that there won't be another), and HaX gives the controls before the first fight. **Recommendation (engine):** either slow regeneration out of combat (backlog "HP regen") or a `#heal:<n>` ink tag / `heal` event-mapping action, so a mission can give a first-aid kit or a breather. Not invented here.
 
 ## E4. Engine: the password keypad doesn't say passwords are case-sensitive (blind run A, m7)

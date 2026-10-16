@@ -4,14 +4,14 @@
 // re-talk opens on a choice rather than "(End of conversation)".
 // PASS 3 (P7, R2-M4, R3-m7): he was behind the lab door all morning on D-2
 // (0x3C on the door audit, IN 07:52). He saw someone at the bench at about
-// 10:20-10:30: Nightshade was in from 10:15 and Cipher from 10:24, so it could
+// 10:20-10:30: Nightshade was in from 10:15 and Vector from 10:24, so it could
 // be either, and it was before the plan was opened at 10:38. No "propped"
 // door, so the audit stays a complete record. A met guard stops the testimony
 // replaying after a reload; the hub repeats it on request.
 VAR mole_identified = false
 VAR met = false
 // PASS 5 (alignment C2, J2): any accusation before the naming gets around.
-VAR accused_cipher = false
+VAR accused_vector = false
 VAR accused_phantom = false
 VAR accused_nightshade = false
 // PASS 5 (puzzle chains C1, m6): caught picking a locker (lockpick_used_in_view,
@@ -32,7 +32,7 @@ Narrator: He doesn't look up from the magazine.
 === testimony ===
 Off-Duty Agent: You didn't hear it from me. Two days before Portland I was in here from before eight.
 Off-Duty Agent: Went through to the lab for the stapler. Just gone twenty past ten, half past at the latest.
-Off-Duty Agent: Someone at the bench at the far end. Had the build of the nerdy one, Cipher. Or not. I wasn't looking.
+Off-Duty Agent: Someone at the bench at the far end. Had the build of the nerdy one, Vector. Or not. I wasn't looking.
 Off-Duty Agent: And before you ask, I'm off-shift with no planning clearance. I couldn't open that share if I wanted to.
 Off-Duty Agent: I'm sitting where I can see the door. You should too.
 -> back
@@ -63,7 +63,7 @@ Off-Duty Agent: Don't worry. I didn't see anything. I'll be telling everyone I d
     { mole_identified:
         Off-Duty Agent: Only that the Director's had the interrogation suite cleared. Nobody's said for who. Nobody needs to.
     - else:
-        { accused_cipher or accused_phantom or accused_nightshade:
+        { accused_vector or accused_phantom or accused_nightshade:
             Off-Duty Agent: Word is you've been calling people traitors to their faces. Whole floor's heard. If one of them is the mole, so has he.
         }
         // Phase 4 dialogue C1 (D8-7): the gossip he promised.

@@ -1,3 +1,5 @@
+> **Rename (2026-10-16):** Agent 0x23 'Cipher' is now 'Vector' (user's decision). Ids, globals, the ink file and routes were renamed with him (`agent_vector`, `accused_vector`, `vector_*`, `m08_suspect_vector.ink`). This file predates the rename and still says Cipher.
+
 # m08 The Mole: dialogue review, pass 5 cycle 1
 
 Reviewer: fresh Opus, read-only, 2026-10-14. Skill: `npc-dialog-review`, run in full. Aim: a SAFETYNET campaign mission and the season finale, judged as a TV spy thriller turned inward. The traitor is one of the player's own colleagues. Deduction must not be handed over by a task title, toast or NPC. Suspects should each be plausible, and red herrings should cost something. The season's threads get paid off: the teacher line, Nightshade (`docs/agents/M08_PASS_BRIEF.md`). Format and depth follow `scenarios/m07_architects_gambit/DIALOGUE_REVIEW_P5_C1.md`. Alignment, puzzle chains and scenario design are closed, and I don't reopen their decisions unless a line has gone wrong.

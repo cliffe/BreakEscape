@@ -1,3 +1,5 @@
+> **Rename (2026-10-16):** Agent 0x23 'Cipher' is now 'Vector' (user's decision). Ids, globals, the ink file and routes were renamed with him (`agent_vector`, `accused_vector`, `vector_*`, `m08_suspect_vector.ink`). This file predates the rename and still says Cipher.
+
 # m08 The Mole: lighting plan and log
 
 Lighting stage of pass 5, 2026-10-14. Skill: `.claude/skills/mission-room-lighting/`. Brief: `docs/agents/M08_PASS_BRIEF.md` (stage 4). Worked example: `scenarios/m07_architects_gambit/LIGHTING_PLAN.md`. Rooms are the nine `room_hq_*` maps from the dressing stage (`ROOM_DRESSING.md`, closed after cycle 5). In `scenario.json.erb` only lighting blocks and `spriteVariants` (with their base `sprite`) on two lit screens changed (no ink, tags, NPC or dialogue fields). No engine change.

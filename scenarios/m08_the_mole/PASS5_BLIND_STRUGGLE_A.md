@@ -1,3 +1,5 @@
+> **Rename (2026-10-16):** Agent 0x23 'Cipher' is now 'Vector' (user's decision). Ids, globals, the ink file and routes were renamed with him (`agent_vector`, `accused_vector`, `vector_*`, `m08_suspect_vector.ink`). This file predates the rename and still says Cipher.
+
 # m08 The Mole: pass 5 blind playtest, "struggling player" (A)
 
 Blind, struggling-player persona. Reached the credits and read them through. Game 2510, mission id 52, keyless server :3001, headless (load was 0.6, no display assumed). Machine time 08:00 to 08:31, about 30 minutes.

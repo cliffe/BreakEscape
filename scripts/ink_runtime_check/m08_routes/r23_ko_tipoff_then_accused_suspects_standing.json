@@ -12,7 +12,7 @@
 { "notSaid": ["You've said it to someone's face"] },
 { "enter": "main_lobby" },
 { "expect": { "nightshade_tidied": true } },
-{ "talk": "cipher", "picks": ["Where were you", "That's all"] },
+{ "talk": "vector", "picks": ["Where were you", "That's all"] },
 { "talk": "phantom", "picks": ["Where were you", "We'll talk"] },
 { "event": "npc_hostile_state_changed", "data": { "npcId": "agent_phantom", "isHostile": true } },
 { "event": "npc_hostile_state_changed", "data": { "npcId": "agent_nightshade", "isHostile": true } },
@@ -25,7 +25,7 @@
 { "read": "timeline_reconstruction" },
 { "enter": "server_room" },
 { "flag": 1 }, { "flag": 2 }, { "flag": 3 }, { "flag": 4 },
-{ "talk": "cipher", "picks": ["door audit has you", "That's all"] },
+{ "talk": "vector", "picks": ["door audit has you", "That's all"] },
 { "talk": "netherton", "picks": ["I can name the leak", "10:38", "Nightshade.", "out of the lab at 10:32", "confirm their own rows", "I'm ready"] },
 { "expect": { "mole_identified": true } },
 { "enter": "interrogation_room" },
@@ -34,6 +34,6 @@
 { "talk": "debrief", "picks": ["He's the crime", "It was wrong", "code server", "Nothing more"] },
 { "said": ["You hit Phantom on my floor. An innocent man.", "You put an off-duty agent on the break-room floor"] },
 { "credits": true },
-{ "said": ["PHANTOM: Struck mid-hunt and left standing. Innocent.", "NIGHTSHADE: Struck in his lab before the evidence was in, and left standing.", "CIPHER: Cleared on the evidence"], "notSaid": ["PHANTOM: Cleared", "NIGHTSHADE: Knocked down in his lab"] }
+{ "said": ["PHANTOM: Struck mid-hunt and left standing. Innocent.", "NIGHTSHADE: Struck in his lab before the evidence was in, and left standing.", "VECTOR: Cleared on the evidence"], "notSaid": ["PHANTOM: Cleared", "NIGHTSHADE: Knocked down in his lab"] }
 ]
 }

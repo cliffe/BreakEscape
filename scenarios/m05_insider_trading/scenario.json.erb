@@ -27,7 +27,7 @@
 #   The engine assigns setVariable values literally, so the old
 #   "evidence_level + 1" strings never counted anything.
 #   Motive:  found_medical_bills | found_torres_journal | found_vetting_file
-#   Exfil:   flag3_submitted | found_manifest | found_upload_schedule
+#   Exfil:   found_manifest | found_upload_schedule | flag3_submitted & door_log_reasoned (flag 3 shows badge #4471 only: D1, 2026-10-16)
 #   Patricia will act on a name only when the player has one of each.
 #
 # THE LOCKS (pass 3, PUZZLE_CHAINS_PLAN.md):
@@ -175,7 +175,7 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
           { "text": "ROTATION WINDOW LOST — the East of England re-keyed a month early", "style": "warning", "condition": "globalVars.halloran_accused" },
           { "text": "" },
           { "text": "── THE CASE ──",                                      "style": "section-header" },
-          { "text": "NAMED ON THE EVIDENCE — before the server confirmed it", "style": "entry", "_comment": "Pass 5 R2 B1/B2/m1, R3-1: the reward needs the badge-log reasoning given in a reason menu before the naming (not the post-naming disclosure click), no guessed reason and no accusation, not only the timing.", "condition": "globalVars.named_before_portal && globalVars.door_log_reasoned_first && !globalVars.torres_reason_guessed && !globalVars.halloran_accused && !globalVars.door_log_hinted" },
+          { "text": "NAMED ON THE EVIDENCE — before the portal's manifest was in", "style": "entry", "_comment": "Pass 5 R2 B1/B2/m1, R3-1: the reward needs the badge-log reasoning given in a reason menu before the naming (not the post-naming disclosure click), no guessed reason and no accusation, not only the timing.", "condition": "globalVars.named_before_portal && globalVars.door_log_reasoned_first && !globalVars.torres_reason_guessed && !globalVars.halloran_accused && !globalVars.door_log_hinted" },
           { "text": "MOTIVE, MEANS AND AUTHORISATION — all on file",       "style": "entry", "condition": "(globalVars.found_medical_bills || globalVars.found_torres_journal || globalVars.found_vetting_file) && globalVars.found_pamphlet" },
           { "text": "RECRUITMENT PIPELINE — TalentStack link not documented", "style": "entry", "condition": "!globalVars.found_pamphlet && !globalVars.found_pipeline_list" },
           { "text": "BORROWED BADGE — Halloran's spare traced back to Torres", "style": "entry", "condition": "globalVars.door_log_reasoned && !globalVars.halloran_accused" },
@@ -562,6 +562,25 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
     }
   ],
 
+  <%# Post-engine follow-ups (2026-10-16, M6): the in-game clock. HaX's briefing
+      says "Wednesday afternoon, half past four"; Torres' scene says 20:14 (20:02
+      when he was named before the portal flag, unless Halloran was accused);
+      the debrief is Thursday at nine. Rate 2.5: a typical 60-75 minutes of play
+      before the naming reaches about 19:00-19:40. Anchors pin the naming (19:50)
+      and the scene's stated time on entering the data centre once he is named,
+      so a slow player's phone doesn't run past the window before the scene. %>
+  "gameClock": {
+    "start": "Wed 16:30",
+    "rate": 2.5,
+    "anchors": [
+      { "condition": "globalVars.torres_identified === true", "time": "19:50" },
+      { "condition": "globalVars.torres_identified === true && globalVars.data_center_entered === true && globalVars.named_before_portal === true && globalVars.halloran_accused !== true", "time": "20:02" },
+      { "condition": "globalVars.torres_identified === true && globalVars.data_center_entered === true && globalVars.halloran_accused === true", "time": "20:14" },
+      { "condition": "globalVars.torres_identified === true && globalVars.data_center_entered === true && globalVars.named_before_portal !== true", "time": "20:14" },
+      { "condition": "globalVars.debrief_played === true", "time": "Thu 09:00" }
+    ]
+  },
+
   "startRoom": "reception_lobby",
 
   "startItemsInInventory": [
@@ -728,6 +747,7 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
   "rooms": {
     "reception_lobby": {
       "type": "room_qdc_lobby",
+      "chatBackground": "assets/backgrounds/rooms/m05_reception_lobby_blended.png",
       "lighting": {
         "ambient": "#d2d0d0",
         "emitters": {
@@ -1010,7 +1030,7 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
               "onceOnly": true,
               "setGlobal": { "privesc_guide_offered": true },
               "completeTask": "access_bludit_vm",
-              "sendTimedMessage": { "delay": 1500, "message": "Manifest flag verified. His staging manifest, under his own name. The authorisation behind it sits where only root can read. Sudo guide's yours if you want it." }
+              "sendTimedMessage": { "delay": 1500, "message": "Manifest flag verified. Staged by badge 4471, no name on it. Find who carries that spare. The authorisation sits where only root can read. Sudo guide's yours." }
             },
             {
               "_comment": "PASS 3 (E11 audit): with the fate already set, the debrief follows at once and this 'call me' would land after it.",
@@ -1098,12 +1118,26 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
               "setGlobal": { "case_motive": true, "torres_suspected": true }
             },
 <% end %>
-<% %w[flag3_submitted found_manifest found_upload_schedule].each do |g| %>
+<%# Post-engine follow-ups (2026-10-16, D1): flag 3 no longer latches
+    case_exfil or torres_suspected. SecGen's flag-3 manifest now reads "Staged
+    by: badge #4471" (Halloran's visitor spare) with no name, so the door log
+    and the spare decide who it is (the pair below). %>
+<% %w[found_manifest found_upload_schedule].each do |g| %>
             {
               "eventPattern": "global_variable_changed:<%= g %>",
               "condition": "value === true",
               "onceOnly": true,
               "setGlobal": { "case_exfil": true, "torres_suspected": true }
+            },
+<% end %>
+<%# D1: flag 3 plus the reasoned door log is the exfil half (case_exfil only;
+    the reasoning already set torres_suspected). Either order. %>
+<% [%w[flag3_submitted door_log_reasoned], %w[door_log_reasoned flag3_submitted]].each do |g, other| %>
+            {
+              "eventPattern": "global_variable_changed:<%= g %>",
+              "condition": "value === true && globalVars.<%= other %> === true",
+              "onceOnly": true,
+              "setGlobal": { "case_exfil": true }
             },
 <% end %>
             {
@@ -1325,18 +1359,39 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
               "sendTimedMessage": { "delay": 1000, "message": "He's coming for you. Q switches to fists (again for a harder punch), then E or click when he's in front." }
             },
             <%# Orchestrator's correction: Q cycles open hand, jab, cross (hud.js), so it
-                never "stows" the fists; and a hostile chase doesn't leash, so no
-                promise that backing off ends it. Split for the 30-word cap. %>
+                never "stows" the fists. Split for the 30-word cap. Since engine 7.1a a
+                hostile gives up at its own room's door, so stepping out does end it. %>
             {
               "eventPattern": "npc_hostile_state_changed",
               "condition": "data.npcId === 'david_torres' && data.isHostile === true && !data.restored && globalVars.final_choice === ''",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 5500, "message": "Keep pressing Q until the open hand shows to walk by clicking. Can't take him? Step out of his reach, then call me and I'll send Security." }
+              "sendTimedMessage": { "delay": 5500, "message": "Keep pressing Q until the open hand shows to walk by clicking. Can't take him? Leave the data centre: he won't follow. Call me and I'll send Security." }
             },
+            <%# Post-engine follow-ups (2026-10-16): a Restart after a knockout now
+                resets a Torres who isn't KO'd to calm (engine 7.1d), so game_loaded
+                can no longer assume he is still hostile. A plain reload restores a
+                still-hostile Torres with npc_hostile_state_changed restored: true
+                (when his room loads), so the reminder keys on that instead.
+                torres_hostile follows the same rule: cleared on every load (the
+                data centre isn't the start room, so the restore comes after
+                game_loaded) and set again by the restore. %>
             {
               "eventPattern": "game_loaded",
-              "condition": "globalVars.torres_hostile === true && globalVars.torres_ko !== true && globalVars.final_choice === ''",
+              "cooldown": 0,
+              "setGlobal": { "torres_hostile": false }
+            },
+            {
+              "eventPattern": "npc_hostile_state_changed",
+              "condition": "data.npcId === 'david_torres' && data.isHostile === false",
+              "cooldown": 0,
+              "setGlobal": { "torres_hostile": false }
+            },
+            {
+              "eventPattern": "npc_hostile_state_changed",
+              "condition": "data.npcId === 'david_torres' && data.isHostile === true && data.restored === true && globalVars.torres_ko !== true && globalVars.final_choice === ''",
               "onceOnly": false,
+              "cooldown": 0,
+              "setGlobal": { "torres_hostile": true },
               "sendTimedMessage": { "delay": 3000, "message": "Torres is still at that terminal, still angry. Q switches to fists, then E or click when he's in front. Or call me and I'll send Security." }
             },
             {
@@ -1464,6 +1519,7 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
 
     "main_corridor": {
       "type": "room_qdc_hall",
+      "chatBackground": "assets/backgrounds/rooms/m05_main_corridor_blended.png",
       "lighting": {
         "variants": [
           { "condition": "globalVars.torres_identified === true", "mode": "motion", "offAfter": 75, "ambient": "#b8bfce", "darkAmbient": "#161c30" }
@@ -1492,6 +1548,10 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
 
     "break_room": {
       "type": "room_qdc_break",
+      "chatBackground": [
+        { "x": [0, 0.6], "image": "assets/backgrounds/rooms/m05_break_room_left_blended.png" },
+        { "x": [0.6, 1], "image": "assets/backgrounds/rooms/m05_break_room_blended.png" }
+      ],
       "lighting": { "ambient": "#ccc4b8" },
       "connections": {
         "east": "main_corridor"
@@ -1534,6 +1594,7 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
 
     "open_office_area": {
       "type": "room_qdc_open",
+      "chatBackground": "assets/backgrounds/rooms/m05_open_office_area_blended.png",
       "lighting": {
         "emitters": {
           "fire_alarm_point": [{ "intensity": 0 }]
@@ -1610,6 +1671,7 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
 
     "server_hallway": {
       "type": "room_qdc_server_hall",
+      "chatBackground": "assets/backgrounds/rooms/m05_server_hallway_blended.png",
       "lighting": {
         "mode": "motion", "offAfter": 60,
         "ambient": "#b4b6c6",
@@ -1644,12 +1706,13 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
 
     "server_room": {
       "type": "room_qdc_servers",
+      "chatBackground": "assets/backgrounds/rooms/m05_server_room_blended.png",
       "lighting": {
         "mode": "motion", "offAfter": 60,
         "ambient": "#b2b2c8",
         "darkAmbient": "#0a0f1c",
         "emitters": {
-          "qdc_rack_black": [{ "color": "#6dffb0", "radius": 40, "intensity": 0.45, "effect": "blink" }],
+          "qdc_rack_black": [{ "color": "#6dffb0", "radius": 40, "intensity": 0.45, "effect": "blink", "leds": 0.6 }],
           "qdc_server_sign": [{ "color": "#b090ff", "radius": 12, "intensity": 0.35, "offsetY": 8, "above": true }],
           "suppression_panel": [{ "radius": 18, "intensity": 0.45, "effect": null }],
           "aircon_unit": [{ "color": "#9fe8ff", "radius": 18, "intensity": 0.2, "offsetY": -20, "above": true }]
@@ -1719,6 +1782,7 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
 
     "torres_office": {
       "type": "room_qdc_torres",
+      "chatBackground": "assets/backgrounds/rooms/m05_torres_office_blended.png",
       "lighting": {
         "mode": "motion",
         "ambient": "#c4bcb0",
@@ -1788,6 +1852,7 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
 
     "research_lab": {
       "type": "room_qdc_lab",
+      "chatBackground": "assets/backgrounds/rooms/m05_research_lab_blended.png",
       "lighting": {
         "ambient": "#ccd2dc",
         "emitters": {
@@ -1862,6 +1927,10 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
 
     "patricia_office": {
       "type": "room_qdc_security",
+      "chatBackground": [
+        { "x": [0, 0.55], "image": "assets/backgrounds/rooms/m05_patricia_office_left_blended.png" },
+        { "x": [0.55, 1], "image": "assets/backgrounds/rooms/m05_patricia_office_blended.png" }
+      ],
       "lighting": {
         "ambient": "#c4bec4",
         "emitters": {
@@ -1975,6 +2044,7 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
 
     "data_center": {
       "type": "room_qdc_vault",
+      "chatBackground": "assets/backgrounds/rooms/m05_data_center_blended.png",
       "lighting": {
         "mode": "motion", "offAfter": 60,
         "ambient": "#b0b2c2",
@@ -1984,8 +2054,8 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
             { "condition": "globalVars.final_choice !== ''", "color": "#ff4a3a", "radius": 40, "intensity": 1.0, "effect": null, "offsetY": 0, "above": true, "floorTint": 0.6 },
             { "condition": "globalVars.torres_identified === true", "color": "#ff8a1a", "radius": 44, "intensity": 1.0, "effect": "breathe", "offsetY": 0, "above": true, "floorTint": 0.65 }
           ],
-          "qdc_rack_black": [{ "color": "#6dffb0", "radius": 40, "intensity": 0.45, "effect": "blink" }],
-          "qdc_hsm": [{ "color": "#5cff8a", "radius": 22, "intensity": 0.35, "above": true }],
+          "qdc_rack_black": [{ "color": "#6dffb0", "radius": 40, "intensity": 0.45, "effect": "blink", "leds": 0.6 }],
+          "qdc_hsm": [{ "color": "#5cff8a", "radius": 22, "intensity": 0.35, "above": true, "leds": 0.4 }],
           "qdc_vault_sign": [{ "color": "#ff4a3a", "radius": 18, "intensity": 0.35, "offsetY": 6, "above": true }],
           "qdc_two_person_sign": [{ "color": "#ff4a3a", "radius": 14, "intensity": 0.3, "offsetY": 6, "above": true }],
           "suppression_panel": [{ "radius": 18, "intensity": 0.45, "effect": null }]
@@ -2045,10 +2115,16 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
                 Struggling run A (D1): 90 / 5 -> 75 / 3, m06 Kemal's numbers. A
                 struggler who never found the jab was knocked out twice at 90 / 5;
                 at 3 a hit he needs about 34 hits (over a minute) to win, and he
-                is slow enough to walk away from. %>
+                is slow enough to walk away from.
+                Post-engine follow-ups (2026-10-16, D4): maxHP and attackCooldown
+                now reach the combat state (engine 7.1e, and 7.1f on a first turn),
+                so the scientist gets 60 HP (six jabs, about 3 s) and swings every
+                3 s, not 2: about 100 s for him to win at 3 a hit. %>
             "hostile": {
               "chaseSpeed": 75,
               "attackDamage": 3,
+              "maxHP": 60,
+              "attackCooldown": 3000,
               "pauseToAttack": true
             }
           },
@@ -2087,7 +2163,6 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
               "onceOnly": true,
               "conversationMode": "person-chat",
               "targetKnot": "post_ko_choice",
-              "background": "assets/backgrounds/background1.png",
               "disableClose": true
             }
           ]

@@ -1189,3 +1189,25 @@ Engine and asset changes shared with the other missions (they need the user's ap
 - Builders: trolleys that were `r.solid` (a static box under them that pinned them) are now plain items: m05 lab and Torres' office, m04 workshop, m06 office.
 
 Checks: slot_audit 0 problems; check_room_walls all 64; validator no errors; doors OK. Evidence: `build_evidence/user_review_2026-10-16/`.
+
+## Post-engine follow-ups (2026-10-16)
+
+After the engine work (7.1a–j, 7.3a–d, 7.4a–e, 7.5a–f, 7.6a–c) and the user's answers on the decisions form.
+
+| Item | Change |
+|---|---|
+| Dani's pronouns (user: Dani is a young man) | The ink comment (`m06_npc_trader.ink:10`, "his first chat"), the credits line ("Kept his head down — left alone") and the voice style ("Young man, a cryptocurrency trader in his early twenties … what he has noticed") now say he/his. Also `voice_bible.md` (Dani row), `docs/agents/CAST_PROPOSALS.md` (wiring note and M06-4, which also wrongly said Dani holds the executive keycard: it's Irina's) and `DECISIONS_PENDING.md` C1. No spoken line changes. **The voice style wording changed, so Dani's cached TTS keys change** (re-voice cost on the next audio run). |
+| Console lockout (engine 7.5a) | The four custody-console `minigame_failed` mappings test `data.result.maxAttemptsReached === true` again, not a bare `data.result`. The erb comment says why. The m06 route driver's condition evaluator now follows dotted paths like the engine (`m06_routes/route.js`); before that r14, r16, r17 and r19 failed on the new condition. |
+| Room backgrounds on caught/spotted scenes | The three `background1.png` pins are gone (the guard's lockpick scene, Kemal's `player_spotted` and lockpick scenes), so the checkpoint's and the executive wing's `chatBackground` show. |
+| D8 (engine) | Closed. Hostiles stop at their own room's door (7.1a), so Kemal no longer follows the player into the data centre; S3 closed as wording only (a refused emulated card says "Card not accepted", 7.4c). |
+| D9, LEDs (engine 7.6a) | `leds` on the room emitters: `hce_comms_cabinet` 0.6 (server room), `hce_hsm` 0.4 (data centre), `hce_mining_rig1/2` 0.7 and `hce_node_shelf` 0.5 (blockchain lab). |
+
+Checks: compile 9/9; all 32 m06 routes meet their expectations; dialoguelint 0 problems; reopencheck 0 problems; `validate_scenario.rb --skip-ink --no-graph` no errors (known warnings); `lighting-tour.sh --check` on server_room, data_center, blockchain_lab (game 2561; redraws advancing; LEDs visible on the comms cabinet and HSMs in the dark shots, the lab's rigs unchanged in the lit shot).
+
+Addendum, same day (stale hostility after a Restart):
+
+| Item | Change |
+|---|---|
+| Kemal after a Restart (engine 7.1d) | A Restart now resets a non-KO'd Kemal calm, and his ink goes back to the challenge, so the talk routes return. `minder_hostile` stayed true, which skipped his sighting and his lockpick catch and hid HaX's minder pointer. New synced `minder_fighting` ("hostile right now"): set on any `npc_hostile_state_changed` for him (including a reload's restore), cleared on `isHostile: false` and on every `game_loaded` (the wing loads after `game_loaded`, so a still-hostile Kemal sets it again). It now gates `challengeOnSight.skipIfGlobal`, the lockpick-catch condition, HaX's stand-off pointer text and the HaX ink pointer. `minder_hostile` stays as the record for the credits, Satoshi's opener and the debrief. The HaX ink's now-unused `VAR minder_hostile` is removed. |
+
+Checks after the addendum: compile 9/9; 32/32 routes; dialoguelint 0; reopencheck 0; validator no errors.

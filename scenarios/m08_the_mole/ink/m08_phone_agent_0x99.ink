@@ -39,16 +39,16 @@ VAR netherton_ko = false
 VAR netherton_card_taken = false
 VAR netherton_card_cloned = false
 // Playtest round: latched in the scenario when each suspect is interviewed or KO'd.
-VAR cipher_seen = false
+VAR vector_seen = false
 VAR phantom_seen = false
 VAR nightshade_seen = false
 // PASS 5 (alignment B1): the naming hint ladder. Synced scenario globals; the
 // ladder checks whether each step of the door-audit reading is done, never how.
 VAR found_timeline = false
 VAR found_access_logs_hint = false
-VAR cipher_audit_confirmed = false
+VAR vector_audit_confirmed = false
 VAR nightshade_audit_confirmed = false
-VAR cipher_ko = false
+VAR vector_ko = false
 VAR nightshade_ko = false
 VAR audit_misread = false
 VAR audit_closed = false
@@ -60,7 +60,7 @@ VAR audit_warned = false // Synced scenario global
 // Design C1 (D1): punched and left standing (hostile for good). Synced scenario
 // globals, latched with HaX's controls texts.
 VAR netherton_hostile = false
-VAR cipher_hostile = false
+VAR vector_hostile = false
 VAR nightshade_hostile = false
 
 // PASS 3 (impl review m5): start prints nothing after the first call, as in
@@ -123,7 +123,7 @@ So I'm going to be very professional tonight. Bear with me.
     - not (found_timeline or found_access_logs_hint or found_access_logs):
         You've got the door. Now you need the clock: when was the plan opened? Somebody in this building wrote it down.
     // Design C1 (D1): both lab-door men down or hostile skips the confirmation, as in his audit_case.
-    - not (cipher_audit_confirmed or nightshade_audit_confirmed or ((cipher_ko or cipher_hostile) and (nightshade_ko or nightshade_hostile))):
+    - not (vector_audit_confirmed or nightshade_audit_confirmed or ((vector_ko or vector_hostile) and (nightshade_ko or nightshade_hostile))):
         Door and clock. He'll want someone on that audit to stand behind their own row. Ask the men who badge through the lab door.
     - audit_warned:
         He's warned you. One more miss and {found_access_logs:he reads it himself|he takes it off you, and the floor will know}. Every row against the minute. Who stayed inside?
@@ -195,7 +195,7 @@ So I'm going to be very professional tonight. Bear with me.
     // Design C1 (D1): punched and left standing, he won't talk, so no clone.
     - netherton_hostile:
         He won't let you near him now. The visitor printer at reception, or put him down for his card. Facilities write PINs down.
-    - cipher_seen and phantom_seen and nightshade_seen:
+    - vector_seen and phantom_seen and nightshade_seen:
         You've seen all three. Back to the Director, and stand close with the cloner. Or the visitor printer at reception.
         His card isn't the EM4100 you've been reading all year. It's MIFARE Classic with its own keys, so the cloner can't just copy it.
         Run the darkside attack to crack the keys first, then read it. Half a minute beside him.
@@ -226,7 +226,7 @@ That's a door moving or the file closing. When did it open? Read it again and ca
 === hax_read_2 ===
 { mole_identified: -> hub }
 Who was behind the lab door at 10:38, and still inside?
-+ [Cipher.] -> hax_read_wrong_who
++ [Vector.] -> hax_read_wrong_who
 + [Nightshade.] -> hax_read_right
 + [Phantom.] -> hax_read_wrong_who
 + [None of them.] -> hax_read_wrong_who
@@ -242,7 +242,7 @@ Read the door against the minute, not the man. Who was still inside at 10:38? Ca
 #complete_task:name_the_mole
 #set_global:named_by_hax:true
 #set_global:mole_identified:true
-In at 10:15, out at 11:43. Cipher was gone by 10:32, and Phantom was on a plane.
+In at 10:15, out at 11:43. Vector was gone by 10:32, and Phantom was on a plane.
 Nightshade. I trained with him.
 {netherton_ko:I'll put it in front of the Director when he can stand.|I'll put it in front of the Director myself. He won't take it from you tonight.} You finish the chain.
 -> hub

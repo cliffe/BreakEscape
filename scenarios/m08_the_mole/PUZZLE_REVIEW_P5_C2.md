@@ -1,3 +1,5 @@
+> **Rename (2026-10-16):** Agent 0x23 'Cipher' is now 'Vector' (user's decision). Ids, globals, the ink file and routes were renamed with him (`agent_vector`, `accused_vector`, `vector_*`, `m08_suspect_vector.ink`). This file predates the rename and still says Cipher.
+
 # m08 The Mole: puzzle-chains review, pass 5, cycle 2
 
 Stage 2, `mission-puzzle-chains` rubric. A fresh reviewer, read-only, on 2026-10-14. This cycle reviews the round-1 fixes (commit `0a877afa`) against `PUZZLE_REVIEW_P5_C1.md` and the "Stage 2 puzzle chains, round 1 fix" section of `IMPROVEMENT_LOOP_LOG.md`.

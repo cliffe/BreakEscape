@@ -48,11 +48,11 @@ VAR analyst_ko = false // Synced scenario global (design C1, m6): the junior ana
 VAR athena_ko = false // Synced scenario global (design C1, m6): ATHENA's avatar knocked out
 // PASS 5 (alignment C2, J2, J4): an accusation of either innocent man tips him
 // off too; the go-bag's contents are known only once he is named.
-VAR accused_cipher = false
+VAR accused_vector = false
 VAR accused_phantom = false
 VAR go_bag_lining_known = false
 // Design C2 (N2): the first tip-off's cause, recorded when it happened
-// ("accused_cipher", "accused_phantom", "accused_nightshade", "locker",
+// ("accused_vector", "accused_phantom", "accused_nightshade", "locker",
 // "offduty", "analyst", "athena", "director"). N3: punched in his lab and left standing.
 VAR tipoff_source = "" // Synced scenario global (design C2, N2): the first tip-off's cause
 VAR nightshade_hostile = false
@@ -62,8 +62,9 @@ VAR netherton_hostile = false // Synced scenario global
 // walk-out batch skips it once (the quiet-flag pattern).
 VAR after_quiet = false
 // Blind run A fixes (finding 4): the scene opens on entering the suite, so the
-// evidence wall gets an optional beat here (the engine has no delay on a
-// room-entry mapping). Synced scenario global, the wall's own condition.
+// evidence wall gets an optional beat here. Since the post-engine follow-ups
+// (2026-10-16) the scene opens 6 s after entry (delayMs), and this beat stays
+// as the case recap. Synced scenario global, the wall's own condition.
 VAR found_nightshade_profile = false
 
 === start ===
@@ -117,9 +118,9 @@ Agent 0x47 'Nightshade': The name they stripped off that intercept in the cable 
 {
 - nightshade_tidied and tipoff_source == "accused_nightshade":
     Agent 0x47 'Nightshade': You said it to my face before you could prove it. So I tidied the bag and the stick. Not well enough, it seems.
-- nightshade_tidied and (tipoff_source == "accused_cipher" or tipoff_source == "accused_phantom"):
+- nightshade_tidied and (tipoff_source == "accused_vector" or tipoff_source == "accused_phantom"):
     // Alignment C3 (browser R3): both innocents accused.
-    Agent 0x47 'Nightshade': You put it on {accused_cipher and accused_phantom:Cipher and Phantom both|{accused_cipher:Cipher|Phantom}} in front of the floor. Walls are thin here. So I tidied. Not well enough, it seems.
+    Agent 0x47 'Nightshade': You put it on {accused_vector and accused_phantom:Vector and Phantom both|{accused_vector:Vector|Phantom}} in front of the floor. Walls are thin here. So I tidied. Not well enough, it seems.
 // Puzzle chains C2 (N1, N2): the off-duty agent's catch and his KO.
 - nightshade_tidied and tipoff_source == "locker":
     Agent 0x47 'Nightshade': Somebody saw you at the lockers in the break room. On this floor that reaches me before the kettle boils. So I tidied. Not well enough, it seems.

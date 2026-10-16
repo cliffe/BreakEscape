@@ -34,7 +34,7 @@
 { "talk": "hax", "picks": ["Any advice for the room", "I'll come back"] },
 { "said": ["Whoever's across that table will explain", "They've had years to polish it"] },
 { "notSaid": ["fifteen years", "Nightshade had a bag packed"] },
-{ "talk": "cipher", "picks": ["That's all"] },
+{ "talk": "vector", "picks": ["That's all"] },
 { "talk": "phantom", "picks": ["We'll talk"] },
 { "talk": "netherton", "picks": ["I'll need access", "Step up beside him", "Understood"] },
 { "read": "password_sticky_note" },

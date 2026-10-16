@@ -2144,3 +2144,13 @@ No audio exists for m03. Player choices aren't listed.
 - **M4, the drive found in the desk:** left as intended.
 
 Checks: compile 8/8, validator 0 errors, dialoguelint the 2 known Victoria warnings, reopencheck 0 problems, all 27 routes clean.
+
+## Post-engine follow-ups (2026-10-16)
+
+Sweep for globals that track "X is hostile" and go stale after a Restart (engine 7.1d resets a non-KO'd hostile NPC calm and emits no event).
+
+| Item | Change |
+|---|---|
+| `guard_attacking` (Terry Mott) | It stayed true after a Restart: no night challenges, no lockpick catches, and HaX's report saying "The guard's after you". Two mappings on `closing_debrief` (always loaded): clear it on every `game_loaded`, and on `npc_hostile_state_changed` with `isHostile: false`. Terry isn't in the start room, so a still-hostile Terry's restore comes after `game_loaded` and the existing mapping sets it again. No ink or spoken line changes (m03 has cached audio). |
+
+Checks: m03 routes 27/27 with no FAILs; validator (`--skip-ink --no-graph`) no errors. Not browser-checked.

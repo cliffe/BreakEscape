@@ -343,18 +343,18 @@ scada_password = "CascadeWindow19"
     calls unlockAim), so the ops floor announces one aim, not three, and each
     branch is announced where its door is. Neither aim has a task that can
     complete before the server hall; an early one would be recorded and shown
-    on unlock (revealAimForTask). Two of its tasks are
-    required within the aim since alignment round 2 (U5), but no other aim and
-    no concludeRequires entry depends on it, so it never gates the conclusion.
+    on unlock (revealAimForTask). Every task in it is optional again
+    (post-engine follow-ups, 2026-10-16: engine 7.5c completes an all-optional
+    aim only when every task is settled), and no other aim and no
+    concludeRequires entry depends on it, so it never gates the conclusion.
 
     Aim `status: "locked"` is presentation only -- objectives-manager.js:412 and
     :543 auto-reveal a locked parent aim when one of its tasks completes -- so a
     locked aim can never strand a task. Every task therefore ships `active`.
 
     The people a player can legitimately walk past (Hollis, Elena, Park) and
-    the lore drops are `optional: true`. The generator hall and the keypad are
-    required within trace_the_intrusion only (U5), which gates nothing, so the
-    ending never depends on content the player was allowed to skip.
+    the lore drops are `optional: true`, as is all of trace_the_intrusion, so
+    the ending never depends on content the player was allowed to skip.
 
     mission_complete and grid_saved are set from shut_down_the_cascade's
     onComplete.setGlobal -- the terminal, never a KO-able conversation.
@@ -454,29 +454,30 @@ scada_password = "CascadeWindow19"
         land on the ops floor two rooms early. %>
     {
       "aimId": "trace_the_intrusion",
-      "title": "Trace How They Got In",
+      "title": "Trace How They Got In (Optional)",
       "description": "The control stack did not reach the breakers by wishing. Something physical was put in this building months ago. Follow it down through the plant, before the abort or after it. Once you call HaX for the debrief, the building belongs to the police.",
       "status": "locked",
       "order": 2,
       "unlockCondition": { "globalVariable": "server_hall_reached" },
       "tasks": [
-        <%# U5 (orchestrator, 2026-10-14): required again so the aim doesn't
-            complete on the generator hall; it gates nothing. The engine fix (an
-            all-optional aim completing on its first settled task) stays in the
-            backlog. %>
+        <%# U5: optional again (post-engine follow-ups, 2026-10-16). Engine 7.5c
+            completes an all-optional aim only when every task is settled, so the
+            aim no longer folds on the generator hall. %>
         {
           "taskId": "secure_generator_room",
           "title": "Get into the backup generator hall",
           "type": "enter_room",
           "targetRoom": "generator_room",
-          "status": "active"
+          "status": "active",
+          "optional": true
         },
         {
           "taskId": "recover_vault_pin",
           "title": "Work out the plant keypad code",
           "type": "unlock_room",
           "targetRoom": "cable_vault",
-          "status": "active"
+          "status": "active",
+          "optional": true
         },
         {
           "taskId": "neutralise_park",
@@ -1128,7 +1129,7 @@ scada_password = "CascadeWindow19"
               "eventPattern": "npc_hostile_state_changed",
               "condition": "data.npcId === 'ray_hollis' && data.isHostile === true && data.restored !== true",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 5500, "message": "He's slower than you. If it's going badly, open hand and walk away from him." }
+              "sendTimedMessage": { "delay": 5500, "message": "He's slower than you, and he won't leave the checkpoint. If it's going badly, open hand and walk out of his reach." }
             },
             {
               "eventPattern": "npc_hostile_state_changed",
@@ -1140,7 +1141,7 @@ scada_password = "CascadeWindow19"
               "eventPattern": "npc_hostile_state_changed",
               "condition": "data.npcId === 'thomas_park' && data.isHostile === true && data.restored !== true",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 5500, "message": "Keep pressing Q until the open hand shows to walk by clicking. He's slower than you if you need distance." }
+              "sendTimedMessage": { "delay": 5500, "message": "Keep pressing Q until the open hand shows to walk by clicking. He's slower than you, and he won't follow you out of the vault." }
             },
             {
               "eventPattern": "npc_hostile_state_changed",
@@ -1152,7 +1153,7 @@ scada_password = "CascadeWindow19"
               "eventPattern": "npc_hostile_state_changed",
               "condition": "data.npcId === 'james_mercer' && data.isHostile === true && data.restored !== true",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 5500, "message": "Keep pressing Q until the open hand shows to walk by clicking. He's slower than you if you need distance." }
+              "sendTimedMessage": { "delay": 5500, "message": "Keep pressing Q until the open hand shows to walk by clicking. He's slower than you, and he won't follow you out of the control room." }
             },
             <%# Blind run A fixes (M1): the controls before the first possible fight.
                 Hollis is in the start room, so this goes out as the briefing closes
@@ -1174,14 +1175,16 @@ scada_password = "CascadeWindow19"
               "sendTimedMessage": { "delay": 7000, "message": "Hands down: press Q until the open hand shows. While your fists are up, nothing you click will open." }
             },
 <% end %>
-            <%# Blind run A fixes (m7): the password keypad says nothing about case.
-                door_unlock_attempt fires as the keypad opens (unlock-system.js), so
-                the hint is there before the first try, once the password is known. %>
+            <%# Blind run A fixes (m7) added a case hint as the keypad opened. Since
+                engine 7.4b the keypad itself says passwords are case-sensitive on a
+                near miss, and the door emits door_unlock_failed with reason
+                wrong_password_case, so HaX now speaks only after a near miss, with
+                the specific capitals (post-engine follow-ups, 2026-10-16). %>
             {
-              "eventPattern": "door_unlock_attempt",
-              "condition": "data.connectedRoom === 'scada_control' && globalVars.scada_password_found === true",
+              "eventPattern": "door_unlock_failed:scada_control",
+              "condition": "data.reason === 'wrong_password_case'",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 800, "message": "That keypad is case-sensitive. Capital C, capital W." }
+              "sendTimedMessage": { "delay": 800, "message": "Right word, wrong case. Capital C, capital W, as the relay note wrote it." }
             },
             <%# PASS 5 puzzle chains r1 (F3): Hollis's badge cloned in conversation.
                 card_cloned carries the card's name and is emitted before the chat
@@ -2133,6 +2136,18 @@ scada_password = "CascadeWindow19"
       },
       "npcs": [],
       "objects": [
+        <%# Post-engine follow-ups (2026-10-16, m07 E3): a consumable before Park's
+            fight. Consumables heal since engine 7.1c; a takeable first_aid_kit1
+            heals 40 by type. On the floor under the west-wall fire point, the
+            room's safety station, on the way to the vault stairs. %>
+        {
+          "type": "first_aid_kit1",
+          "id": "genhall_first_aid_kit",
+          "name": "First Aid Kit",
+          "position": { "x": 1.15, "y": 6.1 },
+          "takeable": true,
+          "observations": "A green plant-room first aid kit, seal intact: dressings, cold packs, painkillers. Use it from your inventory if you get hurt."
+        },
         {
           "_comment": "PASS 3 (P6): no longer the vault code. It says the code was reset and the old one is void; the rule comes from the flag-1 decode or Hollis, the digits from the ATS-1 plate in this room.",
           "type": "notes",

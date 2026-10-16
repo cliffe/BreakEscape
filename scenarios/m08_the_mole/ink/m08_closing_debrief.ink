@@ -21,7 +21,7 @@ VAR debrief_stance = ""
 VAR asked_how = false
 VAR asked_database = false
 VAR asked_next = false
-VAR accused_cipher = false
+VAR accused_vector = false
 VAR accused_phantom = false
 VAR netherton_ko = false
 // Round 2 (re-review m5): set only by the KO safety net before the fate.
@@ -46,7 +46,7 @@ VAR analyst_ko = false
 VAR athena_ko = false
 // Design C2 (N3): an innocent suspect punched (knocked out or left standing:
 // a KO latches the hostile global too). Synced scenario globals.
-VAR cipher_hostile = false
+VAR vector_hostile = false
 VAR phantom_hostile = false
 
 === start ===
@@ -95,12 +95,12 @@ Director Magnus Netherton: Say it, Agent. Whatever you think of me tonight. I wo
     -> the_hunt
 
 === the_hunt ===
-{ accused_cipher or accused_phantom:
-    Director Magnus Netherton: {accused_cipher and accused_phantom:You accused both of the innocent men to their faces.|You accused {accused_cipher:Cipher|Phantom} to his face.} I read the transcripts.
-    Director Magnus Netherton: It is in the file now, and it will follow {accused_cipher and accused_phantom:them|him} longer than it follows you.
+{ accused_vector or accused_phantom:
+    Director Magnus Netherton: {accused_vector and accused_phantom:You accused both of the innocent men to their faces.|You accused {accused_vector:Vector|Phantom} to his face.} I read the transcripts.
+    Director Magnus Netherton: It is in the file now, and it will follow {accused_vector and accused_phantom:them|him} longer than it follows you.
 }
-{ cipher_hostile or phantom_hostile:
-    Director Magnus Netherton: You hit {cipher_hostile and phantom_hostile:Cipher and Phantom|{cipher_hostile:Cipher|Phantom}} on my floor. {cipher_hostile and phantom_hostile:Two innocent men.|An innocent man.} That goes in the file beside everything else.
+{ vector_hostile or phantom_hostile:
+    Director Magnus Netherton: You hit {vector_hostile and phantom_hostile:Vector and Phantom|{vector_hostile:Vector|Phantom}} on my floor. {vector_hostile and phantom_hostile:Two innocent men.|An innocent man.} That goes in the file beside everything else.
 }
 { locker_seen_picked:
     Director Magnus Netherton: You picked a colleague's locker in front of a witness, who then told the whole floor he saw nothing.
@@ -116,7 +116,7 @@ Director Magnus Netherton: Say it, Agent. Whatever you think of me tonight. I wo
 }
 // Phase 4 dialogue C1 (D8-18): a player beat after the charge sheet, so the
 // conduct lines and the case don't run on as one speech.
-{ accused_cipher or accused_phantom or cipher_hostile or phantom_hostile or locker_seen_picked or offduty_agent_ko or analyst_ko or athena_ko:
+{ accused_vector or accused_phantom or vector_hostile or phantom_hostile or locker_seen_picked or offduty_agent_ko or analyst_ko or athena_ko:
     -> conduct_beat ->
 }
 { named_on_evidence:
@@ -139,11 +139,11 @@ Director Magnus Netherton: Say it, Agent. Whatever you think of me tonight. I wo
 - audit_closed:
     Director Magnus Netherton: You read me that door log three ways. In the end I read it myself.
     Director Magnus Netherton: Next time, read it once, and read it right.
-- suspect_theory == "cipher" || suspect_theory == "phantom":
+- suspect_theory == "vector" || suspect_theory == "phantom":
     Director Magnus Netherton: Your first name for me was the wrong one. You came back and corrected it, which is worth more than being right first.
     // Phase 4 dialogue C1 (D8-19): one man named, and not stacked on an accusation line.
-    { not (accused_cipher or accused_phantom):
-        Director Magnus Netherton: {suspect_theory == "cipher":Cipher|Phantom} spent a night under a suspicion he did not earn. Buy him a drink. The service won't.
+    { not (accused_vector or accused_phantom):
+        Director Magnus Netherton: {suspect_theory == "vector":Vector|Phantom} spent a night under a suspicion he did not earn. Buy him a drink. The service won't.
     }
 - named_on_evidence:
     Director Magnus Netherton: That, more than any instinct, is the reason you're still useful to me after they burned you.

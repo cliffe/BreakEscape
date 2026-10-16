@@ -72,16 +72,16 @@ function out(t) { console.log(t); heard.push(t); }
 const cond = c => { try { return !!(new Function('globalVars', `return (${c});`))(G); } catch (e) { out(`   [condition error: ${c}]`); return false; } };
 // ---- real mappings (puzzle chains R3): the erb's literal eventMappings for a pattern,
 // in file order, evaluated with the engine's condition rules (npc-manager.js
-// safeEvaluateCondition: &&-terms; value / name / data.<one name> / globalVars.<name>;
+// safeEvaluateCondition: &&-terms; value / name / data.<dotted path> / globalVars.<dotted path>;
 // negation; comparison with a literal; bare truthiness). ERB-generated mappings
 // (<%= %> patterns) are not included: the driver models those itself.
 function engineCond(str, data) {
   const lit = t => { t = t.trim(); if (t === 'true') return true; if (t === 'false') return false; if (t === 'null') return null; if (t === 'undefined') return undefined; const n = Number(t); if (!isNaN(n) && t !== '') return n; const m = t.match(/^['"](.*)['"]$/); return m ? m[1] : t; };
-  const lhs = t => { t = t.trim(); if (t === 'value') return data.value; if (t === 'name') return data.name; let m = t.match(/^data\.(\w+)$/); if (m) return data[m[1]]; m = t.match(/^globalVars\.(\w+)$/); if (m) return G[m[1]]; return undefined; };
+  const lhs = t => { t = t.trim(); if (t === 'value') return data.value; if (t === 'name') return data.name; const walk = (obj, path) => path.split('.').reduce((o, k) => (o == null ? undefined : o[k]), obj); let m = t.match(/^data\.([\w.]+)$/); if (m) return walk(data, m[1]); m = t.match(/^globalVars\.([\w.]+)$/); if (m) return walk(G, m[1]); return undefined; };
   const one = e => { e = e.trim(); if (e.startsWith('!')) return !one(e.slice(1));
-    let m = e.match(/^(value|name|data\.\w+|globalVars\.\w+)\s*(===|!==|>=|<=|>|<)\s*(.+)$/);
+    let m = e.match(/^(value|name|data\.[\w.]+|globalVars\.[\w.]+)\s*(===|!==|>=|<=|>|<)\s*(.+)$/);
     if (m) { const a = lhs(m[1]), b = lit(m[3]); return { '===': a === b, '!==': a !== b, '>=': a >= b, '<=': a <= b, '>': a > b, '<': a < b }[m[2]]; }
-    if (/^(value|name|data\.\w+|globalVars\.\w+)$/.test(e)) return !!lhs(e);
+    if (/^(value|name|data\.[\w.]+|globalVars\.[\w.]+)$/.test(e)) return !!lhs(e);
     out(`   [engine: unsupported condition term "${e}" -> false]`); return false; };
   return str.split('&&').every(one);
 }

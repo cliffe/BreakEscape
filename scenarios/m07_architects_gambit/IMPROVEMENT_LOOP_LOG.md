@@ -894,3 +894,18 @@ Engine and asset changes shared with the other missions (they need the user's ap
 - Builders: trolleys that were `r.solid` (a static box under them that pinned them) are now plain items: m05 lab and Torres' office, m04 workshop, m06 office.
 
 Checks: slot_audit 0 problems; check_room_walls all 64; validator no errors; doors OK. In-game render game 2528. Evidence: `build_evidence/user_review_2026-10-16/`.
+
+## Post-engine follow-ups (2026-10-16)
+
+| Item | Change |
+|---|---|
+| U5: all-optional aim (engine 7.5c) | "Trace How They Got In (Optional)" is back, with `secure_generator_room` and `recover_vault_pin` optional again (all five tasks optional). The aim now completes only when every task is settled, so it no longer folds on the generator hall. Header comments and `DECISIONS_PENDING.md` U5 updated. Browser: entering the hall ticked "Get into the backup generator hall" with no aim-complete toast (game 2585). |
+| Keypad case hint (engine 7.4b) | HaX's hint moved from `door_unlock_attempt` (as the keypad opened) to `door_unlock_failed:scada_control` with `data.reason === 'wrong_password_case'`, so it comes only after a near miss, alongside the keypad's own case-sensitive message: "Right word, wrong case. Capital C, capital W, as the relay note wrote it." Kept rather than dropped because it names the letters. |
+| Hostiles stop at their room's door (7.1a) | No line claimed a hostile follows between rooms. The second in-fight texts now say so: Hollis "He's slower than you, and he won't leave the checkpoint. If it's going badly, open hand and walk out of his reach."; Park and Mercer "… He's slower than you, and he won't follow you out of the vault / the control room." |
+| A consumable before Park's fight (7.1c, E3) | `genhall_first_aid_kit` (`first_aid_kit1`, takeable, heals 40 by type) on the generator hall floor under the west-wall fire point, on the way to the vault stairs. Browser (game 2585): it lands at room 37,195 beside the extinguisher, picks up, and from 50 HP heals to 90 and is used up. |
+
+Spoken lines changed: none (HaX's timed texts aren't voiced).
+
+Routes updated: r32 (the hint after a near miss only, not on opening or a plain wrong password), r18, r20, r3 (the new in-fight quotes).
+
+Checks: compile 8/8 (the opening briefing's known END warning); 33/33 routes; dialoguelint unchanged (six pre-existing notes); reopencheck 0; validator no errors.

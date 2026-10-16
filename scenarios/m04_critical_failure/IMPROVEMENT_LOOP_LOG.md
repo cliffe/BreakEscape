@@ -1120,3 +1120,12 @@ Engine and asset changes shared with the other missions (they need the user's ap
 - Builders: trolleys that were `r.solid` (a static box under them that pinned them) are now plain items: m05 lab and Torres' office, m04 workshop, m06 office.
 
 Checks: slot_audit 0 problems; check_room_walls all 64; validator (--skip-ink --no-graph) no errors; check_door_alignment OK. In game (keyless :3001, game 2540 render, 2558 tap). Evidence: `build_evidence/user_review_2026-10-16/`.
+
+## Post-engine follow-ups (2026-10-16)
+
+| Item | Change |
+|---|---|
+| Bank B's vented glow (engine 7.6b) | The `aes_hv_danger` variant under `racks_vented` (the big warm glow over bank B in battery hall 2) is now `"effect": "fire"` (was `breathe`). The post-shutdown variant stays a `breathe` smoulder. Re-checked by eye with `lighting-tour.sh --check --globals racks_vented=true,hydrogen_alarm=true battery_hall_2` (game 2576): bank B reads as hot spots with flame tongues; the gas detector's red stays red and the inverter greens stay green (7.6c hue keep). |
+| `guard_hostile` after a Restart | The set mapping is no longer `onceOnly`, and a new mapping clears it on `npc_hostile_state_changed` with `isHostile: false`. A Restart (7.1d) still leaves it stale: the guard is in the start room, so a `game_loaded` clear would race his restore, and the reset emits no event. Logged for the engine: emit `npc_hostile_state_changed` `{ isHostile: false, reset: true }` from the Restart reset before its save; the new mapping then clears it. Effect meanwhile: after a Restart a calm guard doesn't challenge, and HaX may say he's hostile. |
+
+Checks: m04 routes 34/34; validator no errors.

@@ -1218,6 +1218,18 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
               "setGlobal": { "guard_attacking": true }
             },
             {
+              "_comment": "Post-engine follow-ups (2026-10-16): a Restart after a knockout resets a non-KO'd Terry calm (engine 7.1d) and emits nothing, so guard_attacking would stay true: no challenges, no lockpick catches, and HaX saying he's after you. Cleared on every load; Terry isn't in the start room, so a still-hostile Terry is re-announced (restored) when his hallway loads, after game_loaded, and the mapping above sets it again. Also cleared if he is ever calmed in play.",
+              "eventPattern": "game_loaded",
+              "cooldown": 0,
+              "setGlobal": { "guard_attacking": false }
+            },
+            {
+              "eventPattern": "npc_hostile_state_changed",
+              "condition": "data.npcId === 'terry_mott' && data.isHostile === false",
+              "cooldown": 0,
+              "setGlobal": { "guard_attacking": false }
+            },
+            {
               "_comment": "Pass 3, P6: Perfect Stealth needs the player to have got past the guard into Sterling's office. Kept on this always-loaded NPC rather than HaX so it doesn't share a room_entered pattern with HaX's hear_debrief backstop.",
               "eventPattern": "room_entered:executive_office",
               "onceOnly": true,

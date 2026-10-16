@@ -14,7 +14,7 @@
 { "said": ["Either you've found something, or you've got manners", "still in the archive printer"] },
 { "enter": "operations_floor" },
 { "expect": { "nightshade_tidied": true } },
-{ "talk": "cipher", "picks": ["That's all"] },
+{ "talk": "vector", "picks": ["That's all"] },
 { "talk": "nightshade", "picks": ["We're done"] },
 { "talk": "offduty", "picks": ["Heard anything new", "I'll leave you to it"] },
 { "said": ["calling people traitors to their faces", "off the floor all that morning"] },

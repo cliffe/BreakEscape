@@ -689,6 +689,7 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
     "minder_vouched": false,
     "minder_walked": false,
     "minder_hostile": false,
+    "minder_fighting": false,
     "minder_ko": false,
     "minder_challenged": false,
     "signing_record_found": false,
@@ -1389,11 +1390,35 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
               "cooldown": 0,
               "setGlobal": { "at_console": false }
             },
+            <%# Post-engine follow-ups (2026-10-16): a Restart after a knockout resets
+                a non-KO'd Kemal calm (engine 7.1d) and emits nothing, and his ink
+                goes back to the challenge, so the talk routes return. minder_hostile
+                stays as the record (credits, Satoshi, the debrief); minder_fighting
+                is "hostile right now" and gates his sighting, his lockpick catch and
+                HaX's pointers. Cleared on every load and set again when a still-
+                hostile Kemal is restored (the wing loads after game_loaded). %>
+            {
+              "eventPattern": "npc_hostile_state_changed",
+              "condition": "data.npcId === 'satoshi_minder' && data.isHostile === true",
+              "cooldown": 0,
+              "setGlobal": { "minder_fighting": true }
+            },
+            {
+              "eventPattern": "npc_hostile_state_changed",
+              "condition": "data.npcId === 'satoshi_minder' && data.isHostile === false",
+              "cooldown": 0,
+              "setGlobal": { "minder_fighting": false }
+            },
+            {
+              "eventPattern": "game_loaded",
+              "cooldown": 0,
+              "setGlobal": { "minder_fighting": false }
+            },
             <%# Scenario design R1 (m2): after Kemal's stand-off with the cover
                 strained and no turned Irina, HaX points at the pick. %>
             {
               "eventPattern": "conversation_closed:satoshi_minder",
-              "condition": "globalVars.cover_strained === true && globalVars.minder_challenged === true && globalVars.minder_passed !== true && globalVars.minder_hostile !== true && globalVars.minder_ko !== true && globalVars.minder_walked !== true && globalVars.satoshi_confronted !== true",
+              "condition": "globalVars.cover_strained === true && globalVars.minder_challenged === true && globalVars.minder_passed !== true && globalVars.minder_fighting !== true && globalVars.minder_ko !== true && globalVars.minder_walked !== true && globalVars.satoshi_confronted !== true",
               "onceOnly": true,
               "sendTimedMessage": { "delay": 2500, "message": "He won't take the FCA now. Wait by the trophy cabinet, unseen. When he's at the data-centre end, you've seconds at that door. Or show him the casualty line." }
             },
@@ -2268,7 +2293,7 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
             "visualize": true,
             "challengeOnSight": {
               "cooldown": 20000,
-              "skipIfGlobal": ["minder_passed", "minder_hostile", "minder_ko", "minder_walked", "satoshi_confronted"]
+              "skipIfGlobal": ["minder_passed", "minder_fighting", "minder_ko", "minder_walked", "satoshi_confronted"]
             }
           },
           "eventMappings": [
@@ -2281,7 +2306,7 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
             {
               "_comment": "Round 2 (R2-M3): he sees the picks on Satoshi's door. Repeatable, cooldown 250 ms, as the checkpoint guard's (see his comment). Not while he is hostile or down.",
               "eventPattern": "lockpick_used_in_view",
-              "condition": "globalVars.minder_hostile !== true && globalVars.minder_ko !== true && globalVars.minder_walked !== true",
+              "condition": "globalVars.minder_fighting !== true && globalVars.minder_ko !== true && globalVars.minder_walked !== true",
               "targetKnot": "on_lockpick_seen",
               "conversationMode": "person-chat",
               "onceOnly": false,

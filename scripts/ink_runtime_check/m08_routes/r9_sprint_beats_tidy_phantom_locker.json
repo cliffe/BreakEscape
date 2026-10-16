@@ -27,7 +27,7 @@
 { "expect": { "accused_phantom": true } },
 { "notSaid": ["You've said it to someone's face"] },
 { "talk": "phantom", "picks": ["I was wrong to put it on you", "We'll talk"] },
-{ "talk": "cipher", "picks": ["That's all"] },
+{ "talk": "vector", "picks": ["That's all"] },
 { "talk": "netherton", "picks": ["I'll need access", "Step up beside him", "Understood"] },
 { "read": "password_sticky_note" },
 { "enter": "security_archives" },

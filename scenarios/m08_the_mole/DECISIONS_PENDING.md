@@ -69,13 +69,15 @@ After a page reload the player stands in `main_lobby`, not the room they left (s
 **Addendum (blind run A finding 5):** a reload also shows the title screen ("Continue?") and then the Mission Brief note again. The brief is `show_scenario_brief: "on_resume"`, the m01 standard (skip on a fresh start, recap on every resume); "once" would show the popup after the opening cutscene on a fresh start, so m08 keeps it. Both belong with the respawn item: a resume that puts the player back where they were could skip the recap too, or show it once per session.
 
 ## E11. A hostile NPC follows the player through doors, and the phone doesn't pause him (engine, design round 1 browser F1)
+**Resolved 2026-10-16 (engine 7.1a and the phone pause):** HaX's "get clear before you read your phone" wording is gone (post-engine follow-ups in the log).
+
 Game 2434: the punched Director followed the player into the lobby and kept hitting (3 HP about every 2 s), so a player who stops to read HaX's texts or use the phone dies in about 65 s. Two backlog items cover it: "`chaseRange` is never read" (`docs/IDEAS_BACKLOG.md`, hostile NPCs chase across rooms with no leash) and "A hit closes the phone" (the phone neither pauses NPC attacks nor stays open on damage); the room leash under "Combat tuning for missions" is the same fix. **Mission side (design round 2 fix):** HaX's second text for a punched Director now says to get clear before reading the phone ("He's slower: get clear before you read your phone." before the naming; "...or get clear before you read your phone: he's slower." after), within the 30-word cap. A human fleeing him has not been tested on screen. Recommendation: the leash (stop at the NPC's own door, or a `chaseRange` in tiles), which also makes "leave him standing" a real option in m08. Needs the orchestrator's approval as an engine change.
 
 ## E12. A reload restores a hostile NPC at full health (engine, design round 1 browser F4)
 Game 2438: the off-duty agent had 30 HP before the player's death and 100 after the "Restart" reload (read through `getState`); he stood idle until approached. Hostility is saved, NPC HP isn't. In m08 this only makes a second attempt at a KO longer; nothing is stranded (a KO is never required). Recommendation: save NPC HP with the hostility record in the state-sync snapshot. Not blocking.
 
 ## E13. With a locker key in hand, "Switch to Lockpicking" still runs the catch (engine note, design round 1 browser F5)
-Game 2437: holding Cipher's key and choosing "Switch to Lockpicking" on locker 0x47 ran the off-duty agent's catch. That is the documented behaviour (the key minigame runs the catch gate only on the switch, `minigame-starters.js:419`) and reads as "picking any locker in front of him is seen". No mission change; noted so nobody files it as a bug. Not blocking.
+Game 2437: holding Vector's key and choosing "Switch to Lockpicking" on locker 0x47 ran the off-duty agent's catch. That is the documented behaviour (the key minigame runs the catch gate only on the switch, `minigame-starters.js:419`) and reads as "picking any locker in front of him is seen". No mission change; noted so nobody files it as a bug. Not blocking.
 
 ## R1. First-room sign-off: the Citadel lobby (room dressing, 2026-10-14)
 m08's rooms are a new setting (SAFETYNET headquarters), so the first room needs your sign-off. The lobby (start room) was built first: dark granite with the SAFETYNET seal at the spawn, slate walls with walnut slats behind a black reception counter (ATHENA's desk, the badge printer on it), the SAFETYNET / THE CITADEL wordmark, the LEVEL RED alert screen, a memorial wall of gold stars with lilies at its foot, an X-ray scanner and walk-through arch, a waiting area, a red-LED badge reader at every door. Render: `tmp/review/m08_dressing_first_room.png` (also `build_evidence/dressing_c1/first_room_lobby.png`; refreshed as cycles change it). Details: `ROOM_DRESSING.md`, cycle 1.
@@ -88,6 +90,8 @@ Recommendation: promote it. The tally lights stay either way.
 Also noted: the suite's `door_sign` says "Interrogation -- Recording In Progress" at all times, which now disagrees with the lamp before the confrontation. Recommendation: "Interrogation Suite" (one room field; outside the lighting remit).
 
 ## E14. `hq_rack1` racks get no status LEDs (engine, lighting 2026-10-14)
+**Resolved 2026-10-16 (engine 7.6a):** `"leds": 0.6` on the server room's `hq_rack` emitter.
+
 LEDs only come from a built-in `EMITTERS` match (`lighting.js` `buildEmitters`: `leds: base ? ... : []`), and the rack regex is anchored on `^(server|...|rack|...)`, so `hq_rack1` gets a green glow through m08's room emitters but no LEDs, while the stock racks beside it blink. Same limit as m05 D16 and m06 D9. Recommendation: add `hq_rack` to the rack regex in a separate engine commit (it only matches m08's maps), or let room emitters set `leds`. Not blocking.
 
 **Done (blind run A fix round, 2026-10-14):** `recording_lamp` in `interrogation_room` (smartscreen, `as-type:hq_recording`, base `sprite: hq_recording1`, `spriteVariants` to `hq_recording_on1` on `all_flags_submitted && mole_identified && !fate_decided`, an `observationVariants` line for the lit state); the red emitter stays as spill. `slot_audit.py`: it takes the map's `hq_recording1` slot at 70,24, 0 problems. Door sign: "Interrogation Suite". Owed: a browser look at the lit and unlit faces (the Sonnet check).
@@ -95,7 +99,10 @@ LEDs only come from a built-in `EMITTERS` match (`lighting.js` `buildEmitters`: 
 **Orchestrator on lighting L1 (2026-10-14):** mission-local and reversible, so going ahead in the playtest fix round: the RECORDING lamp becomes a scenario object (`as-type:hq_recording`, base `sprite` plus `spriteVariants` to `hq_recording_on1`), and the suite's door sign reads "Interrogation Suite".
 
 ## E15. No delay on an event mapping (engine idea, blind run A finding 4)
+**Resolved 2026-10-16 (engine 7.3d):** the confrontation opens 6 s after entering the suite (`delayMs`), cancelled by `in_suite` if the player steps out; the wall beat stays.
+
 The confrontation opens on `room_entered:interrogation_room`, so the player can't look round the suite first. Event mappings have no `delay` field (`npc-manager.js` `_setupEventMappings`; only timed messages and timed conversations take one), and a timed conversation can't carry the scene's three-global condition. **Mission side (done):** the scene's first beat is a choice, "(Read the wall first.)" (a narrated recap of the evidence wall, then "(Turn back to him.)") or "(Face him.)". Recommendation if other missions want it: a `delayMs` on conversation mappings, re-checking the condition when it fires. Not blocking.
 
-## D-POV. Conversation (POV) backgrounds (parked)
+## D-POV. Conversation (POV) backgrounds (DONE 2026-10-16)
+**Done 2026-10-16** under the user's approval of metered Gemini (whole mission, cap 30): all nine rooms, plus a left view for HaX in the break room. 19 Gemini calls, 14 PixelLab generations. Log, faults accepted and evidence: `POV_BACKGROUNDS.md`, `build_evidence/pov/`. Open from it: the Director's opening narration ("no windows", "a wall of amber threat maps", `ink/m08_director_netherton.ink:85`) doesn't match his dressed office.
 Lighting closed 2026-10-14, so `room-pov-background` is next. It uses metered Gemini images (about one per room plus retries, nine rooms). Needs your go-ahead on the batch. Characters are parked for your picks as usual.

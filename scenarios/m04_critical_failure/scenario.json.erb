@@ -668,11 +668,24 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
               "conversationMode": "person-chat",
               "cooldown": 0
             },
+            <%# Post-engine follow-ups (2026-10-16): guard_hostile means "hostile right
+                now" (his challenge, HaX's fight lines), so it can be set again and is
+                cleared when he calms. A Restart reset (engine 7.1d) emits no event
+                and he is in the start room, so a game_loaded clear would race his
+                restore: an engine follow-up (an event on the reset) is logged. %>
             {
               "eventPattern": "npc_hostile_state_changed",
               "condition": "data.npcId === 'security_guard' && data.isHostile === true",
-              "onceOnly": true,
+              "onceOnly": false,
+              "cooldown": 0,
               "setGlobal": { "guard_hostile": true }
+            },
+            {
+              "eventPattern": "npc_hostile_state_changed",
+              "condition": "data.npcId === 'security_guard' && data.isHostile === false",
+              "onceOnly": false,
+              "cooldown": 0,
+              "setGlobal": { "guard_hostile": false }
             }
           ]
         },
@@ -2112,7 +2125,7 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
           "aes_hv_danger": [
             { "condition": "globalVars.attack_prevented === true && globalVars.racks_vented === true", "color": "#ff7a3c", "radius": 56, "intensity": 0.4, "effect": "breathe", "offsetY": 130, "above": true, "floorTint": 0.3 },
             { "condition": "globalVars.attack_prevented === true", "intensity": 0 },
-            { "condition": "globalVars.racks_vented === true", "color": "#ff6a2c", "radius": 105, "intensity": 1.0, "effect": "breathe", "offsetX": -12, "offsetY": 115, "above": true, "floorTint": 0.4 }
+            { "condition": "globalVars.racks_vented === true", "color": "#ff6a2c", "radius": 105, "intensity": 1.0, "effect": "fire", "offsetX": -12, "offsetY": 115, "above": true, "floorTint": 0.4 }
           ],
           "aes_inverter1": { "color": "#7dffa0", "radius": 8, "intensity": 0.45, "offsetY": -10, "above": true },
           "aes_inverter2": { "color": "#7dffa0", "radius": 8, "intensity": 0.45, "offsetY": -10, "above": true },

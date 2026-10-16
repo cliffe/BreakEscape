@@ -1,3 +1,5 @@
+> **Rename (2026-10-16):** Agent 0x23 'Cipher' is now 'Vector' (user's decision). Ids, globals, the ink file and routes were renamed with him (`agent_vector`, `accused_vector`, `vector_*`, `m08_suspect_vector.ink`). This file predates the rename and still says Cipher.
+
 # m08 The Mole — design review (pass 4)
 
 Reviewed 2026-10-02 against `scenario.json.erb`, the twelve inks, the engine and m01_first_contact. Method: `.claude/skills/scenario-design-review/SKILL.md`, then the wider questions in the pass-4 brief. Read-only: nothing in the mission was changed. Line numbers are `scenario.json.erb` (erb) unless another file is named.

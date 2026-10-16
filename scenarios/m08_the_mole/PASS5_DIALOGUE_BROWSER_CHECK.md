@@ -1,3 +1,5 @@
+> **Rename (2026-10-16):** Agent 0x23 'Cipher' is now 'Vector' (user's decision). Ids, globals, the ink file and routes were renamed with him (`agent_vector`, `accused_vector`, `vector_*`, `m08_suspect_vector.ink`). This file predates the rename and still says Cipher.
+
 # m08 pass 5, dialogue stage: browser check (cycles 1-2)
 
 Date 2026-10-14. Keyless server :3001 only, headless (load 1-2), checked-in harness scripts only. No mission files edited, nothing committed. Every session started here was stopped with `session-stop.sh` (2482, 2494, 2495, 2501). Rooms were re-dressed (`room_hq_*`) and lighting was being tuned concurrently; layout notes only, lighting not judged. No SecGen XML or restricted exploit guide opened.

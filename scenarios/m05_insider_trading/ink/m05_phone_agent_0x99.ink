@@ -107,7 +107,10 @@ VAR confrontation_advice_given = false
 ~ return found_medical_bills or found_torres_journal or found_vetting_file
 
 === function has_exfil()
-~ return flag3_submitted or found_manifest or found_upload_schedule
+// Post-engine follow-ups (2026-10-16, D1): the VM's flag-3 manifest now shows
+// only badge #4471, so flag 3 counts only once the door log has tied that spare
+// to his front-door swipe (door_log_reasoned): the deduction, not the VM, names him.
+~ return found_manifest or found_upload_schedule or (flag3_submitted and door_log_reasoned)
 
 === function all_flags_in()
 ~ return flag1_submitted and flag2_submitted and flag3_submitted and flag4_submitted
@@ -376,7 +379,7 @@ Whatever she offered, she's very good at making a bad trade sound reasonable. It
     ~ flag1_discussed = true
     ~ flag2_discussed = true
     ~ flag3_discussed = true
-    His name's on the manifest. Root's the last door. Start with what that account is allowed to run.
+    Badge 4471 staged that manifest. No name. Whoever carries that spare is your insider. Root's last: see what that account can run.
 - flag2_submitted and not flag2_discussed:
     ~ flag1_discussed = true
     ~ flag2_discussed = true
@@ -491,7 +494,7 @@ If she's the wrong name, the right one has just watched Security move. Be sure a
     Read it again. His badge never touches the server hallway. Hers does.
     #exit_conversation
     -> support_hub
-+ {flag3_submitted} [The staging manifest on the research portal. His name's on it.]
++ {flag3_submitted and found_door_log} [The portal's staging manifest. Badge 4471 staged it, and his swipe lets that spare in.]
     -> hax_named
 + {found_manifest} [The staging manifest in the data centre. "Staged by: D. Torres."]
     -> hax_named
@@ -580,8 +583,8 @@ His badge just went through the hallway and the vault's logged him in. He's at t
 + {has_motive()} [Money. He's hiding how much he owes.]
     You've got why. I need proof it's leaving the building: the server room, the portal, the data centre.
     -> hax_partial_naming
-+ {has_exfil()} [The staging is under his name.]
-    You can see it leaving, under his name. Now find me why.
++ {has_exfil()} [The staging traces back to him.]
+    You can see it leaving, and it's his. Now find me why.
     -> hax_partial_naming
 + [He's the cryptography lead. He'd know how.]
     ~ torres_reason_guessed = true
@@ -594,7 +597,12 @@ His badge just went through the hallway and the vault's logged him in. He's at t
 ~ door_log_reasoned = true
 ~ door_log_reasoned_first = true
 Checked. All four nights.
-Now find me why, and proof it's leaving.
+// D1 (2026-10-16): with flag 3 in, that spare staged the manifest.
+{flag3_submitted:
+    And that spare staged the portal manifest. Now find me why.
+- else:
+    Now find me why, and proof it's leaving.
+}
 -> hax_partial_naming
 
 // ===========================================
@@ -973,7 +981,7 @@ See you at HQ.
     Torres is down and nobody's decided what happens to him. Get back to the vault.
 // Struggling run A (D1): mid-fight, or after a lost one.
 - torres_hostile:
-    Torres is swinging at anyone near that terminal. Q switches to fists, then E or click when he's in front.
+    Torres went for you at that terminal. He's past talking. If he swings: Q for fists, then E or click when he's in front.
     Or tell me to send Security. It'll cost us any chance of talking to him.
 - torres_identified and not torres_print_collected:
     He's in the key vault, past the server room. The reader takes one of two prints, and his is on something in his office.
@@ -1054,9 +1062,9 @@ See you at HQ.
     - torres_suspected and not has_motive() and not has_exfil():
         You've a pattern on him, not a case. His office for why, then the vault past the server room for proof.
     - torres_suspected and not has_motive():
-        You can see it leaving under his name. Now find out why: what he keeps in his office, or Patricia's vetting files.
+        You can see it leaving, and it's his. Now find out why: what he keeps in his office, or Patricia's vetting files.
     - torres_suspected and not has_exfil():
-        You know why he might. Now the proof it's leaving: the vault past the server room has it, and so does the research server.
+        You know why he might. Now the proof it's leaving: the vault past the server room, or tie the manifest's badge to him.
     - server_password_obtained and not torres_suspected:
         The vault takes one of two prints, Halloran's or Torres'. Don't go hunting until you know whose door you'll be knocking on.
     }

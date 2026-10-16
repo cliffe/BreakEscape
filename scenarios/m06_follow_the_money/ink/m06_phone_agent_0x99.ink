@@ -90,7 +90,7 @@ VAR lockpick_guide_offered = false
 VAR lockpick_guide_hint_given = false
 VAR minder_passed = false        // Synced scenario global (round 2, R2-m10)
 VAR minder_ko = false            // Synced scenario global (round 2, R2-m10)
-VAR minder_hostile = false       // Synced scenario global (round 2, R2-m10)
+VAR minder_fighting = false      // Synced scenario global (post-engine follow-ups, 2026-10-16): Kemal hostile right now; a Restart clears it
 VAR console_warned = false       // Synced scenario global (scenario design R1, m10)
 VAR console_tripped = false      // Synced scenario global (scenario design R1, m10)
 VAR minder_walked = false        // Synced scenario global (struggling run A, S1)
@@ -345,7 +345,7 @@ Try the other way first.
     You've the badge. The wing's east of the data centre; his office is north of that.
     // Round 2 (R2-m10, R2-M3): only while the minder still stands in the way.
     // Puzzle chains m5: and not once the player has been through his door.
-    {not minder_passed and not minder_ko and not minder_hostile and not minder_walked and not resolve_aim_open:
+    {not minder_passed and not minder_ko and not minder_fighting and not minder_walked and not resolve_aim_open:
         He keeps a minder on that corridor, and the minder has the key to Satoshi's door.
         {cover_strained:
             With your cover strained, he won't take the FCA line.

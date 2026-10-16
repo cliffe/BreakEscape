@@ -48,7 +48,7 @@ Agent HaX: Don't say anything kind, I'll come apart. Sit if you want. Don't, if 
         Agent HaX: Worse, now I know which face. He stood next to me at the Portland debrief and handed me a tissue.
         Agent HaX: Ask me tomorrow.
     - else:
-        Agent HaX: I keep running the roster in my head. Cipher, Phantom, Nightshade. I've bled with all three.
+        Agent HaX: I keep running the roster in my head. Vector, Phantom, Nightshade. I've bled with all three.
         Agent HaX: One of them stood at the Portland debrief and let me grieve people they'd helped kill.
         Agent HaX: I can't work out which face it was. And I'm frightened of the second I can.
     }

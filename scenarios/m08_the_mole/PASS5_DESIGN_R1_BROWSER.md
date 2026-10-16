@@ -1,3 +1,5 @@
+> **Rename (2026-10-16):** Agent 0x23 'Cipher' is now 'Vector' (user's decision). Ids, globals, the ink file and routes were renamed with him (`agent_vector`, `accused_vector`, `vector_*`, `m08_suspect_vector.ink`). This file predates the rename and still says Cipher.
+
 # m08 pass 5, scenario design round 1: browser check
 
 Date 2026-10-14. Keyless server :3001 only (:3000 untouched), headless (load under 2), speed fast, checked-in harness scripts only. No mission file edited, nothing committed. Every session started here was stopped (`session-stop.sh` for 2434, 2436, 2437, 2438).

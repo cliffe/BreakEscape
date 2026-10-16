@@ -1,3 +1,5 @@
+> **Rename (2026-10-16):** Agent 0x23 'Cipher' is now 'Vector' (user's decision). Ids, globals, the ink file and routes were renamed with him (`agent_vector`, `accused_vector`, `vector_*`, `m08_suspect_vector.ink`). This file predates the rename and still says Cipher.
+
 # CyBOK mapping — m08 The Mole
 
 Rebuilt 2026-10-16 with the `hacktivity-cybok-map` skill (CyBOK Mapper repo). This

@@ -1,6 +1,6 @@
 {
 "steps": [
-{ "note": "R6: the badge-printer route, no interviews first. Post-it, printer badge, server room, flags 1-3. Door audit and timeline read, Cipher confirms his row. Three misreads before flag 4: the Director takes the audit over and tips Nightshade off (locker untouched, so he tidies). Flag 4 names him through the Director (fallback B). Confront stays locked until the three interviews are done. A page reload on the phone mid-route." },
+{ "note": "R6: the badge-printer route, no interviews first. Post-it, printer badge, server room, flags 1-3. Door audit and timeline read, Vector confirms his row. Three misreads before flag 4: the Director takes the audit over and tips Nightshade off (locker untouched, so he tidies). Flag 4 names him through the Director (fallback B). Confront stays locked until the three interviews are done. A page reload on the phone mid-route." },
 { "talk": "briefing" },
 { "set": { "briefing_played": true } },
 { "talk": "netherton", "picks": ["I'm ready"] },
@@ -15,8 +15,8 @@
 { "enter": "security_archives" },
 { "read": "badge_audit_printout" },
 { "read": "timeline_reconstruction" },
-{ "talk": "cipher", "picks": ["Where were you", "door audit has you", "That's all"] },
-{ "expect": { "cipher_audit_confirmed": true } },
+{ "talk": "vector", "picks": ["Where were you", "door audit has you", "That's all"] },
+{ "expect": { "vector_audit_confirmed": true } },
 { "talk": "phone", "reload": "page", "picks": ["What does the Director need", "Nothing right now"] },
 { "said": ["Take it to him"] },
 { "talk": "netherton", "picks": ["I can name the leak", "10:15", "I can name the leak", "10:38", "Phantom.", "I'm ready"] },
@@ -37,7 +37,7 @@
 { "said": ["The Director read the door audit against it himself. It's Nightshade"] },
 { "tasks": { "name_the_mole": "completed" } },
 { "lockedAims": ["confront_the_mole"] },
-{ "tasks": { "interview_cipher": "completed", "interview_phantom": "open", "interview_nightshade": "open" } },
+{ "tasks": { "interview_vector": "completed", "interview_phantom": "open", "interview_nightshade": "open" } },
 { "talk": "phantom", "picks": ["Where were you", "audit was in the archive printer", "We'll talk"] },
 { "expect": { "phantom_alibi_known": true } },
 { "said": ["Wheels up 10:09", "The archive duty officer"] },

@@ -37,7 +37,7 @@ VAR hub_quiet = false
 // PASS 2 review: set first; a brief-gated mapping completes interview_phantom (lesson 27).
 // Design C2 (browser F3): kept here. His opening answers the stock questions
 // unasked, so the interview has happened even if the player leaves at once;
-// Cipher and Nightshade latch the same way, and it keeps the sight challenge to one.
+// Vector and Nightshade latch the same way, and it keeps the sight challenge to one.
 ~ phantom_interviewed = true
 Agent 0x88 'Phantom': Agent 0x00. The Director's own bloodhound. Sit.
 Agent 0x88 'Phantom': Let me save you the first four questions. Yes, I ask too much. Yes, I disappear for hours. Yes, I'm on your little list.

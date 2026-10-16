@@ -1,3 +1,5 @@
+> **Rename (2026-10-16):** Agent 0x23 'Cipher' is now 'Vector' (user's decision). Ids, globals, the ink file and routes were renamed with him (`agent_vector`, `accused_vector`, `vector_*`, `m08_suspect_vector.ink`). This file predates the rename and still says Cipher.
+
 # m08 The Mole: pass 5 stage 1, regression run
 
 Date 2026-10-13. Keyless server :3001 (already up; :3000 untouched). Headless, speed fast (load average about 21 when the run started, so headless as the skill advises). Regression run, not blind: the tester knew the route. It answers the "plumbing" question plus the engine-regression checks in `docs/agents/M08_PASS_BRIEF.md` stage 1. Source of steps: `PASS4_PLAYTEST.md` and `TESTING_WALKTHROUGH.md`.

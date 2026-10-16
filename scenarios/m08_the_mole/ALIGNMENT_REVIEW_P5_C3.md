@@ -1,3 +1,5 @@
+> **Rename (2026-10-16):** Agent 0x23 'Cipher' is now 'Vector' (user's decision). Ids, globals, the ink file and routes were renamed with him (`agent_vector`, `accused_vector`, `vector_*`, `m08_suspect_vector.ink`). This file predates the rename and still says Cipher.
+
 # m08 The Mole: alignment review, pass 5, cycle 3 (confirmation)
 
 Reviewer: stage-2 alignment (mission-alignment-plan rubric), fresh eyes, read-only, 2026-10-14. Reviewed at HEAD `35e3b05a`, with no uncommitted m08 changes.

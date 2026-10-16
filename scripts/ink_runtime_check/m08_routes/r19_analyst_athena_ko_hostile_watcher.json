@@ -21,7 +21,7 @@
 { "event": "lockpick_used_in_view", "data": { "npcId": "background_agent", "roomId": "break_room" } },
 { "notSaid": ["opens background_agent @on_locker_picked"] },
 { "expect": { "locker_seen_picked": false } },
-{ "talk": "cipher", "picks": ["That's all"] },
+{ "talk": "vector", "picks": ["That's all"] },
 { "talk": "phantom", "picks": ["We'll talk"] },
 { "talk": "nightshade", "picks": ["We're done"] },
 { "talk": "netherton", "picks": ["I'll need access", "Step up beside him", "Understood"] },

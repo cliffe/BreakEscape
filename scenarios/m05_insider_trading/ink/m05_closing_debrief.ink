@@ -298,7 +298,7 @@ Agent HaX: Let's go through it.
 // R2 (B1, B2), R3-1: only when it came from reading the log, first time
 // (a reason-menu answer before the naming, not the post-naming disclosure).
 {named_before_portal and door_log_reasoned_first and not torres_reason_guessed and not halloran_accused and not door_log_hinted:
-    Agent HaX: You had him before the server did. The research portal only confirmed a name you'd already given us.
+    Agent HaX: You had him before the server did. The research portal only showed a badge; you'd already put his name to it.
 }
 
 // PASS 4 (whodunnit): how the player read the badge log.

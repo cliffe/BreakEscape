@@ -16,7 +16,7 @@
 { "expect": { "nightshade_tidied": false } },
 { "talk": "hax", "picks": ["I'll come back"] },
 { "notSaid": ["Nightshade had a bag packed"] },
-{ "talk": "cipher", "picks": ["That's all"] },
+{ "talk": "vector", "picks": ["That's all"] },
 { "talk": "phantom", "picks": ["We'll talk"] },
 { "talk": "netherton", "picks": ["I'll need access", "Step up beside him", "Understood"] },
 { "read": "password_sticky_note" },

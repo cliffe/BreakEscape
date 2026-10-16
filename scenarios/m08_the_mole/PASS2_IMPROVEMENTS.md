@@ -1,3 +1,5 @@
+> **Rename (2026-10-16):** Agent 0x23 'Cipher' is now 'Vector' (user's decision). Ids, globals, the ink file and routes were renamed with him (`agent_vector`, `accused_vector`, `vector_*`, `m08_suspect_vector.ink`). This file predates the rename and still says Cipher.
+
 # m08 The Mole — Pass 2 improvements
 
 > This is the m02-standard pass. Sources: `scenario.json.erb`, the twelve `.ink` files, the engine (`public/`, `app/`), m07's debrief and PASS2 notes, the m02–m06 Nightshade seed lines, the universe bible, and the SecGen XML (read-only). Nothing has been committed and no browser playtest has been run. The old ALIGNMENT_PLAN, README, SOLUTION_GUIDE and DEVELOPMENT_STATUS were treated as untrusted and have since been deleted. `CONTRACT.md` ends with a "PASS 2 amendments" section; the design rationale is kept in "Design rationale" below.

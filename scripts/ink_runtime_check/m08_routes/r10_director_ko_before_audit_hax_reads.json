@@ -1,6 +1,6 @@
 {
 "steps": [
-{ "note": "R10: the Director knocked down early, before the door audit and before the box (J3). HaX sends the player to the archives first; the audit's arrival brings her prompt; the player reads it to her on the phone before the box (named_by_hax). Flag 4 then agrees with that reading. Cipher knocked down before the naming draws the neutral KO text, Phantom after it the original (J1)." },
+{ "note": "R10: the Director knocked down early, before the door audit and before the box (J3). HaX sends the player to the archives first; the audit's arrival brings her prompt; the player reads it to her on the phone before the box (named_by_hax). Flag 4 then agrees with that reading. Vector knocked down before the naming draws the neutral KO text, Phantom after it the original (J1)." },
 { "talk": "briefing" },
 { "set": { "briefing_played": true } },
 { "talk": "netherton", "picks": ["I'm ready"] },
@@ -10,8 +10,8 @@
 { "talk": "phone", "picks": ["What does the Director need", "Nothing right now"] },
 { "said": ["it's me you read it to. Doors before faces"] },
 { "notSaid": ["I can name the leak"] },
-{ "ko": "agent_cipher" },
-{ "said": ["You put Cipher on the floor. Whatever he is"] },
+{ "ko": "agent_vector" },
+{ "said": ["You put Vector on the floor. Whatever he is"] },
 { "notSaid": ["not your mole"] },
 { "talk": "nightshade", "picks": ["We're done"] },
 { "read": "password_sticky_note" },
@@ -42,7 +42,7 @@
 { "said": ["My jaw is fine", "You read the door audit to HaX while I was on my office floor"] },
 { "notSaid": ["He knew we were coming"] },
 { "credits": true },
-{ "said": ["The door audit read to HaX", "CIPHER: Knocked out", "PHANTOM: Knocked out mid-hunt", "DIRECTOR NETHERTON: Knocked down"] },
+{ "said": ["The door audit read to HaX", "VECTOR: Knocked out", "PHANTOM: Knocked out mid-hunt", "DIRECTOR NETHERTON: Knocked down"] },
 { "notSaid": ["Tipped off"] }
 ]
 }

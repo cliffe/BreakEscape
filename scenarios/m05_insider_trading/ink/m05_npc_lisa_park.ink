@@ -42,7 +42,7 @@ VAR final_choice = "" // Synced scenario global: Torres' fate; set by m05_torres
 }
 ~ first_meeting = false
 #speaker:narrator
-Narrator: A woman in her early thirties by the break room window. Coffee going cold, a collection tin at her elbow.
+Narrator: A woman in her early thirties by the break room counter. Coffee going cold, a collection tin at her elbow.
 
 #speaker:lisa_park
 Lisa Park: Hi. You're the security person, right? Everyone's been whispering.

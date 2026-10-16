@@ -1,3 +1,5 @@
+> Note (2026-10-16): m08's Agent 0x23 'Cipher' (`agent_cipher`) is now 'Vector' (`agent_vector`); this audit predates the rename. m04's operative 'Cipher' is unchanged.
+
 # Break Escape voice audit (m01–m08)
 
 > **Rename note (2026-10-12, m03 pass 2 dialogue round 2):** m03's receptionist is now Ffion Rees (id `ffion_rees`, ink `m03_npc_ffion_rees.ink`; was `receptionist_npc` / `m03_npc_receptionist.ink`) and the night guard is Terry Mott (id `terry_mott`, ink `m03_npc_terry_mott.ink`; was `night_guard` / `m03_npc_guard.ink`). Old ids below are historical.
