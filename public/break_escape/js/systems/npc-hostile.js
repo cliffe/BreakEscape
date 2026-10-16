@@ -86,8 +86,33 @@ export function initNPCHostileSystem() {
     exportHostility: () => exportHostility(),
     restoreHostility: (saved) => restoreHostility(saved),
     takeRestoredHostility: (npcId) => takeRestoredHostility(npcId),
-    announceRestoredHostile: (npcId, config) => announceRestoredHostile(npcId, config)
+    announceRestoredHostile: (npcId, config) => announceRestoredHostile(npcId, config),
+    resetHostilesForRespawn: () => resetHostilesForRespawn()
   };
+}
+
+/**
+ * The player chose Restart after a knockout (7.1d; m05 D5, m07 U11): every
+ * hostile NPC that isn't knocked out goes back to its start state, calm (or
+ * hostile again if the scenario starts it hostile) and at full health. The
+ * reload that follows puts it back at its post. A KO'd NPC stays down, so
+ * what it dropped stays dropped; nothing here touches an NPC's itemsHeld, so
+ * one that wasn't KO'd still holds its items. No events: the page reloads.
+ * @returns {string[]} the NPCs reset
+ */
+export function resetHostilesForRespawn() {
+  const reset = [];
+  for (const [npcId, state] of npcHostileStates) {
+    if (!state.isHostile || state.isKO) continue;
+    const behavior = window.npcBehaviorManager?.getBehavior?.(npcId);
+    state.isHostile = behavior?.config?.hostile?.startHostile === true;
+    state.currentHP = state.maxHP;
+    if (behavior) behavior.hostile = state.isHostile;
+    recordHostility(npcId, state);
+    reset.push(npcId);
+  }
+  if (reset.length) console.log(`⚔️ Respawn: reset hostility for ${reset.join(', ')}`);
+  return reset;
 }
 
 /** { npcId: { hostile, ko, hp?, maxHP? } } for the server (state-sync.js). */

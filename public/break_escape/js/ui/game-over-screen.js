@@ -153,7 +153,22 @@ export class GameOverScreen {
     }
   }
 
-  restart() {
+  async restart() {
+    // Hostile NPCs that aren't knocked out calm down and go back to their posts
+    // (7.1d): the reset is saved before the reload, so the player doesn't wake
+    // up beside an NPC still swinging at them
+    try {
+      const reset = window.npcHostileSystem?.resetHostilesForRespawn?.() || [];
+      if (reset.length && window.stateSync?.sync) {
+        await Promise.race([
+          window.stateSync.sync(),
+          new Promise(resolve => setTimeout(resolve, 2000))
+        ]);
+      }
+    } catch (err) {
+      console.warn('Respawn hostility reset failed:', err);
+    }
+
     // Reset player health
     if (window.playerHealth) {
       window.playerHealth.reset();
