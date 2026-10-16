@@ -14,6 +14,15 @@ export function incorrectPasswordMessage(attemptsRemaining, caseMismatch = false
         : `Incorrect password. ${left}`;
 }
 
+/**
+ * The line over the password field: the keypad title when it names the lock
+ * ("Enter password: SCADA Control"), else the plain "Password:".
+ */
+export function passwordFieldLabel(title) {
+    const t = typeof title === 'string' ? title.trim() : '';
+    return t && t !== 'Enter password' && t !== 'Password Entry' ? t : 'Password:';
+}
+
 export class PasswordMinigame extends MinigameScene {
     constructor(container, params) {
         super(container, params);
@@ -100,6 +109,10 @@ export class PasswordMinigame extends MinigameScene {
         };
         
         const imageData = getImageData();
+
+        // Name the lock over the field, as the PIN keypad does ("Enter PIN: Cable
+        // Vault"); the framework hides the header, so it read just "Password:" (m07 #5)
+        const fieldLabel = passwordFieldLabel(this.params.title);
         
         this.gameContainer.innerHTML = `
             <div class="password-minigame-area">
@@ -117,7 +130,7 @@ export class PasswordMinigame extends MinigameScene {
                 <div class="monitor-bezel">
                     <div class="monitor-screen">
                         <div class="password-input-container">
-                            <label for="password-field">Password:</label>
+                            <label for="password-field">${displayDashes(fieldLabel)}</label>
                             <div class="password-field-wrapper">
                                 <input type="${this.gameData.showPassword ? 'text' : 'password'}" 
                                        id="password-field" 

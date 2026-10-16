@@ -45,3 +45,17 @@ test('the PIN pad shows the title on screen (its header is cleared)', () => {
     assert.match(pin, /titleElement\.className = 'pin-minigame-title'/);
     assert.match(pin, /this\.params\.title !== 'PIN Entry'/);
 });
+
+// m07 #5 (engine regression 2026-10-16): the password dialog read just "Password:"
+// while the PIN keypad named its lock. The field label now carries the title.
+test('the password field is labelled with the lock it opens', () => {
+    const src = readFileSync(join(js, 'minigames/password/password-minigame.js'), 'utf8');
+    const start = src.indexOf('export function passwordFieldLabel');
+    const fnSrc = src.slice(start, src.indexOf('\n}\n', start) + 3);
+    const { passwordFieldLabel } = { passwordFieldLabel: new Function(`${fnSrc.replace('export ', '')}; return passwordFieldLabel;`)() };
+    assert.equal(passwordFieldLabel(keypadTitle('Enter password', { doorProperties: { door_sign: 'SCADA Control' } }, 'door')),
+        'Enter password: SCADA Control');
+    assert.equal(passwordFieldLabel('Enter password'), 'Password:');
+    assert.equal(passwordFieldLabel(undefined), 'Password:');
+    assert.match(src, /<label for="password-field">\$\{displayDashes\(fieldLabel\)\}<\/label>/);
+});
