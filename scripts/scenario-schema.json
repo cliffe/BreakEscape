@@ -197,6 +197,7 @@
         "ledAlpha": { "type": "number", "minimum": 0, "maximum": 1 },
         "leds": { "type": "number", "minimum": 0, "maximum": 1, "description": "Rack-style blinking status LEDs on the object's face (density 0-1; 0 none). Lets a mission's own rack art blink like the stock racks" },
         "above": { "type": "boolean", "description": "Draw the glow above the light map in a lit room too (small indicators that must stay visible)" },
+        "hueKeep": { "type": "boolean", "description": "above glows only: false turns off the multiply under the glow that keeps its hue in a lit room (default on)" },
         "floorTint": { "type": "number", "minimum": 0, "maximum": 1, "description": "In a lit room, tint the floor in front of the object with its glow colour (0 = off)" }
       },
       "additionalProperties": false

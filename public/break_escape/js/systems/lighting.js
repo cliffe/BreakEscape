@@ -25,7 +25,8 @@
  *       ]                                  // also: offsetX, offsetY (px from the object's centre), ledColor, ledAlpha (0 hides LEDs),
  *                                          // leds (rack-style blinking status LEDs on the object's face, 0-1 density; 0 none), floorTint (0-1: tint
  *                                          // a lit floor with the glow's colour), above (true: stays above the light
- *                                          // map in a lit room, for small indicators); effect null|screen|blink|pulse|breathe|fire
+ *                                          // map in a lit room, for small indicators, keeping its hue there unless
+ *                                          // hueKeep: false); effect null|screen|blink|pulse|breathe|fire
  *                                          // (fire: an irregular warm flicker plus small rising flame tongues; flames: tongue
  *                                          // count, default 6, 0 none; steady under prefers-reduced-motion)
  *     },
@@ -98,6 +99,13 @@ const FLOOR_TINT_MIX = 0.45;
 const PANEL_HEADROOM = 0.8;
 // Ceiling light: the lit ambient's hue, blended this far towards white.
 const PANEL_WHITE_MIX = 0.35;
+// Hue-preserving `above` glows in a lit room: ADD alone turns a red glow on pale art
+// pink-white, so the glow's own hue (this far from white) is first multiplied into the
+// light map under it, holding the other channels down, and the ADD then reads as its
+// colour. Scales with the room's light level; saturated colours only change much.
+const HUE_KEEP_MIX = 0.7;
+// The multiply patch covers this share of the glow's radius.
+const HUE_KEEP_RADIUS = 0.75;
 
 function luma(c) {
   return (0.2126 * ((c >> 16) & 255) + 0.7152 * ((c >> 8) & 255) + 0.0722 * (c & 255)) / 255;
@@ -1037,6 +1045,14 @@ export class LightingSystem {
         const fade = (def.ransom || def.above) ? 0.6 : glowFade;
         e.glow.setPosition(x, y).setDepth(above ? LIGHT_DEPTH + 1 : obj.depth + 0.01).setVisible(true)
           .setAlpha(Math.min(1, def.intensity * k * e.glowK * fade * (above ? e.fade : GLOW_BOOST)));
+        // Keep an `above` glow's hue in a lit room (reds stayed red, not pink): multiply
+        // its colour into the map under it first. Ransom screens have their own tint.
+        if (def.above && !def.ransom && def.hueKeep !== false && this.preserveHue !== false && state.level > 0.05) {
+          multOpts.tint = lerpColor(0xffffff, lightColorFor(glowColor), HUE_KEEP_MIX);
+          multOpts.alpha = Math.min(1, state.level * Math.min(1, def.intensity * k) * e.fade);
+          multOpts.scale = (radius * HUE_KEEP_RADIUS * RES) / (LIGHT_TEX_SIZE / 2);
+          rt.stamp(LIGHT_TEX, null, (x - ox) * RES, (y - oy) * RES, multOpts);
+        }
         // Flame tongues: small yellow-orange blooms rising across the fire's width
         const burning = def.effect === 'fire';
         for (const fl of e.flames) {

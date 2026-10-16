@@ -61,6 +61,8 @@ Rooms with people in them start lit automatically, even in `motion` mode. Phone 
 
 **Fire**: `"effect": "fire"` on an emitter gives an irregular warm flicker that leans towards yellow, plus small flame tongues rising across the glow's width (`"flames"`: how many, default 6, 0 none). It is flash-safe (one slow swell under 1 Hz, a quicker wobble under a 10% change, each tongue at most about 1.5 a second) and holds still under `prefers-reduced-motion`. Pair it with `above` and a small `floorTint` in a lit room (m04's vented bank B).
 
+**`above` glows keep their hue in a lit room.** The glow's colour is multiplied into the light map under it before the additive bloom, so a red indicator on pale art reads red, not pink-white. Only saturated colours change much. Set `"hueKeep": false` on a variant to get the old plain additive look.
+
 If the lookup lists a "light-looking" object that really gives off light, add it to `EMITTERS` in `systems/lighting.js`. Match on texture key: screens are cool blue, lamps warm, racks green with `leds`, alarms red `pulse`. This changes every lit mission, so log it and check one other lit mission still looks right. Leave false positives (magazine racks, cylinder racks) alone.
 
 ## Step 5 — validate and render
@@ -109,3 +111,4 @@ To see the strike or the torch, drive a session yourself (`tools/playtest/sessio
 - Light crosses side walls into the next room.
 - Glows and LEDs draw over an NPC standing in front of them.
 - Emitters match on texture key only, so an object with a scenario `sprite` override is matched on the override.
+- A room `light` (and an ADD glow without `above`) can't colour a near-white lit floor; use an emitter with `above` (its hue is kept) or `floorTint`. Lifted 2026-10-16: red `above` glows no longer wash pink in lit rooms, and a mission's own rack art can have blinking LEDs (`leds`).
