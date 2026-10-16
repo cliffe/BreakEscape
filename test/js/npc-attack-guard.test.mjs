@@ -28,7 +28,7 @@ test('no health system yet: attacks are not blocked', () => {
 
 test('npc-combat checks the guard before a windup and before it lands', () => {
     const combat = readFileSync(join(here, '../../public/break_escape/js/systems/npc-combat.js'), 'utf8');
-    assert.match(combat, /import \{ playerCanBeAttacked \} from '\.\/npc-attack-guard\.js'/);
+    assert.match(combat, /import \{ playerCanBeAttacked\b[^}]*\} from '\.\/npc-attack-guard\.js'/);
     const canAttack = combat.slice(combat.indexOf('canAttack(npcId) {'), combat.indexOf('attemptAttack('));
     assert.match(canAttack, /playerCanBeAttacked\(\)/);
     const land = combat.slice(combat.indexOf('startAttackAnimation(npcId, npcSprite, state) {'));

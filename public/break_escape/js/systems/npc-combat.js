@@ -6,13 +6,14 @@
 import { COMBAT_CONFIG } from '../config/combat-config.js';
 import { applyKnockback } from '../utils/knockback.js';
 import { getNPCDirection } from './npc-sprites.js';
-import { playerCanBeAttacked } from './npc-attack-guard.js';
+import { playerCanBeAttacked, attacksPausedByUI, ATTACK_RESUME_GRACE_MS } from './npc-attack-guard.js';
 
 export class NPCCombat {
   constructor(scene) {
     this.scene = scene;
     this.npcAttackTimers = new Map(); // npcId -> last attack time
     this.npcAttacking = new Set(); // Track NPCs currently in attack animation
+    this.lastMinigameOpenAt = 0; // When a minigame was last seen open (7.1b grace)
 
     console.log('✅ NPC combat system initialized');
   }
@@ -45,8 +46,13 @@ export class NPCCombat {
       return false;
     }
 
-    // Don't attack while a minigame is active (conversation, combat, etc.)
+    // Don't attack while a minigame is active (conversation, combat, etc.),
+    // nor for a moment after it closes, so the player can step away (7.1b)
     if (window.MinigameFramework && window.MinigameFramework.currentMinigame) {
+      this.lastMinigameOpenAt = Date.now();
+      return false;
+    }
+    if (Date.now() - this.lastMinigameOpenAt < ATTACK_RESUME_GRACE_MS) {
       return false;
     }
 
@@ -147,6 +153,16 @@ export class NPCCombat {
       return;
     }
 
+    // The phone, a conversation or a cutscene opened during the windup: the
+    // swing doesn't land, so the hit doesn't close it (7.1b)
+    if (attacksPausedByUI()) {
+      if (window.attackTelegraph && typeof window.attackTelegraph.hide === 'function') {
+        window.attackTelegraph.hide(npcId);
+      }
+      this.npcAttacking.delete(npcId);
+      return;
+    }
+
     // Check if NPC became KO during windup
     if (window.npcHostileSystem && window.npcHostileSystem.isNPCKO(npcId)) {
       console.log(`${npcId} became KO during attack windup`);
@@ -204,6 +220,12 @@ export class NPCCombat {
 
     if (distance > state.attackRange * 1.5) { // 1.5x range for leniency during animation
       console.log(`${npcId} attack missed - player moved away during animation`);
+      return;
+    }
+
+    // The phone, a conversation or a cutscene opened mid-swing: no damage (7.1b)
+    if (attacksPausedByUI()) {
+      console.log(`${npcId} attack held - phone, conversation or cutscene open`);
       return;
     }
 
