@@ -83,3 +83,6 @@ Same family as U11 and the backlog's "Resume in the room you left": after a KO o
 
 ## E6. "I'll call you back" didn't seem to close the phone (blind run A, m4)
 The hub choice does `#exit_conversation`; the blind run reported the phone stayed open. Not reproduced here (no browser session). For the Sonnet check: pick "I'll call you back" and see whether the phone closes or only returns to the contact list. If it only returns to the list, that is the phone UI's design, not a mission bug.
+
+## E7. Credits visualiser text is generic SAFETYNET filler (engine, blind run A M1/M3, 2026-10-17)
+The credits overlay's header and ticker come from `bond-visualiser.js` (rotating `OPERATIONS` list, "ENTROPY CONTAINED", "THREAT ASSESSMENT: NOMINAL", "WELL PLAYED, AGENT"), not from the scenario, so every SAFETYNET mission shows them, and in m07 they contradict a debrief that ends on a mole and a free Architect. The scenario's credit lines are correct. Separately, the Close button is hidden by design (`disableClose` on every mission's credits: the credits are the end of play) until the track ends, and the right panel clips at 1400 px wide. Recommendation (engine): let the safetynet credits theme take the mission name and a neutral ticker (as the other themes' `overlay()` do), and check the panel at 1400 px.

@@ -31,7 +31,7 @@ VAR grid_saved = false
 
 // Written back with #set_global
 VAR mercer_stance = ""
-VAR mercer_fate = ""
+VAR mercer_fate = "" // Synced scenario global (a Restart clears "ko": scenario.json.erb)
 VAR mercer_told_diversion = false
 
 // Local bookkeeping
@@ -305,9 +305,19 @@ Dr. James Mercer: So. Your decision, not mine.
 + [Go on. Walk out. You're not the emergency tonight.]
     -> ending_walks
 
-+ [Not yet. I've something else to ask you.]
+// Blind A m3: offered only while a topic is left; otherwise the player can still leave.
++ {topics_left()} [Not yet. I've something else to ask you.]
     Dr. James Mercer: By all means.
     -> back
+
++ {not topics_left()} [Not yet. (Leave him for now.)]
+    Dr. James Mercer: {grid_saved:Take your time. There's nothing left for either of us to hurry for.|Take your time. I'm not going anywhere until the sequence does.}
+    ~ hub_quiet = true
+    #exit_conversation
+    -> hub
+
+=== function topics_left() ===
+~ return (not heard_the_lesson) or (not heard_the_numbers) or (elena_met and not heard_elena) or (casualty_projection_found and not showed_him_the_page) or (found_coordination_traffic and not mercer_told_diversion)
 
 // --- Ending 1: the record --------------------------------------------
 // Requires the signed projection. Fate: arrested.

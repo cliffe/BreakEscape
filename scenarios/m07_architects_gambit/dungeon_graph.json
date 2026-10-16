@@ -232,7 +232,7 @@
     },
     {
       "id": "vmch_escalate_on_attack_host",
-      "label": "Log in to the attack host with the recovered account; submit the flag in its home directory at the relay",
+      "label": "Log in to the attack host with the recovered account; submit that account's flag at the relay",
       "kind": "vm",
       "optional": false
     },

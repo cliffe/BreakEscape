@@ -12,7 +12,7 @@
 // briefed on a building and not on a number.
 // ===========================================
 
-VAR park_resolved = ""
+VAR park_resolved = "" // Synced scenario global (a Restart clears "ko": scenario.json.erb)
 VAR park_ko = false
 VAR casualty_projection_found = false
 
@@ -23,6 +23,8 @@ VAR park_returns = 0
 // Fix-check N4: set while the player is backed off and waiting; a re-talk in
 // the same room re-enters evaded_hold, which counts that as the return.
 VAR park_hold_seen = false
+// Blind A m2: the splice is in this room; reading it gives the player one more thing to put to him.
+VAR splice_found = false
 
 === start ===
 {park_ko:
@@ -53,6 +55,8 @@ Thomas Park: Four minutes and I'd have been out. Four.
     -> projection
 + [Who's paying you to cut the backup?]
     -> paid
+* {splice_found} [The north trunk's spliced. Someone's been listening to this building for months.]
+    -> splice
 // Blind run A fixes (M1, M2): the fight choice is marked, and so is the way out.
 // On the second visit the way out says there won't be another.
 + [Then finish it and see what happens. (Fight him.)]
@@ -62,7 +66,12 @@ Thomas Park: Four minutes and I'd have been out. Four.
 + {park_returns >= 1} [Nothing. I was never here. (Back off. Next time he swings.)]
     -> evade
 
+// Blind A m2: a repeat gets a shorter answer, not the same speech again.
 === refuse ===
+{refuse > 1:
+    Thomas Park: {&Still no.|You heard me the first time.|Words aren't going to move this wire.}
+    -> hub
+}
 Thomas Park: No.
 
 Narrator: He doesn't look up. The stripped wire in his hand stays a finger's width from the terminal.
@@ -71,8 +80,21 @@ Thomas Park: I lean four inches and this building goes to candles. Talk quieter.
 -> hub
 
 === paid ===
+{paid > 1:
+    Thomas Park: {&Same answer. A building.|I told you. I don't ask.}
+    -> hub
+}
 Thomas Park: Job's a building. Cut the backup, walk out, get paid. I don't ask about the rest.
 Thomas Park: Asking is how you end up in a room with someone like you.
+-> hub
+
+=== splice ===
+Narrator: For the first time his hands stop.
+
+Thomas Park: That's not mine. I cut wires. I don't listen in.
+Thomas Park: If somebody's had a tap on that run for months, they didn't need me for the building. They needed me for the dark.
+
+Narrator: He goes back to the junction box, slower than before.
 -> hub
 
 === projection ===
@@ -97,7 +119,11 @@ Narrator: He lays the wire down on the mat and puts his hands on his knees.
 
 Thomas Park: I'm not helping you. Put that on record. I'm just not doing this one.
 
-Thomas Park: The north trunk run's tapped. Months ago. Not me.
+{splice:
+    Thomas Park: That tap on the north run. Find who put it in. It wasn't me.
+- else:
+    Thomas Park: The north trunk run's tapped. Months ago. Not me.
+}
 
 Narrator: He picks up his bag and walks out past you, unhurried.
 

@@ -621,7 +621,10 @@ Health record and dispatch keys are late in the Austin run. Even a late team kee
 
 You pay for it with the operation you abandon. Your call.
 
-And it's now or never. Once you log in on their host, the team stays where it is.
+// Engine regression fixes (2026-10-17, blind A M2): "now or never" read as
+// "decide before you read anything". The window shuts on the operator login
+// (flag 3) or the forty-minute timer, so say which.
+The window stays open until you log in as their operator, or the timer on screen runs out. Then the team stays put.
 
 -> redirect_open_choices
 
@@ -636,6 +639,9 @@ And it's now or never. Once you log in on their host, the team stays where it is
     #set_global:team_assignment:trojan_horse
     ~ team_redirected = true
     ~ team_assignment = "trojan_horse"
+    // Blind A m7: a decline followed by a move leaves only the move on record.
+    #set_global:redirect_declined:false
+    ~ redirect_declined = false
     Redirecting. Austin confirmed, forty minutes out.
     Narrator: One pin swings across the board to Austin. The pin it left behind goes dark and stays dark.
     // Phase 4 dialogue C1 (D7-33): no absolution after "logged under your name".
@@ -645,7 +651,7 @@ And it's now or never. Once you log in on their host, the team stays where it is
 + [No. Leave them where they are.]
     #set_global:redirect_declined:true
     ~ redirect_declined = true
-    Then they stay. I'll log that you weighed it and held. That's a decision too.
+    Then they stay. I'll log that you weighed it and held. If that changes before you log in as their operator, tell me.
     -> hub
 
 === redirect_closed ===

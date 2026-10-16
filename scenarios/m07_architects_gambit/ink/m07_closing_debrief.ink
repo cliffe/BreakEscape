@@ -134,7 +134,12 @@ Director Magnus Netherton: Their backup server shared its coordination file with
     }
 }
 
-Director Magnus Netherton: The other three operations went ahead on schedule. I have the first reporting from all of them.
+// Blind A m8: the team stopped (or cut short) one of the three, so they didn't all "go ahead".
+{team_assignment == "":
+    Director Magnus Netherton: The other three operations went ahead on schedule. Nobody was waiting for any of them. I have the first reporting from all of them.
+- else:
+    Director Magnus Netherton: The other three operations started on schedule. One of them ran into our team. I have the first reporting from all of them.
+}
 
 -> covered_operation
 

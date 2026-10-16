@@ -771,6 +771,7 @@ scada_password = "CascadeWindow19"
           "id": "opening_briefing_cutscene",
           "displayName": "Director Magnus Netherton",
           "npcType": "person",
+          "gender": "male",
           "position": { "x": 500, "y": 500 },
           "spriteSheet": "netherton",
           "spriteTalk": "assets/characters/netherton_talk.png",
@@ -1129,7 +1130,7 @@ scada_password = "CascadeWindow19"
               "eventPattern": "npc_hostile_state_changed",
               "condition": "data.npcId === 'ray_hollis' && data.isHostile === true && data.restored !== true",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 5500, "message": "He's slower than you, and he won't leave the checkpoint. If it's going badly, open hand and walk out of his reach." }
+              "sendTimedMessage": { "delay": 5500, "message": "He's slower than you, and he won't leave the checkpoint. If it's going badly, walk out of his reach." }
             },
             {
               "eventPattern": "npc_hostile_state_changed",
@@ -1141,7 +1142,7 @@ scada_password = "CascadeWindow19"
               "eventPattern": "npc_hostile_state_changed",
               "condition": "data.npcId === 'thomas_park' && data.isHostile === true && data.restored !== true",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 5500, "message": "Keep pressing Q until the open hand shows to walk by clicking. He's slower than you, and he won't follow you out of the vault." }
+              "sendTimedMessage": { "delay": 5500, "message": "To get clear, click open floor and walk, fists up or not. He's slower than you, and he won't follow you out of the vault." }
             },
             {
               "eventPattern": "npc_hostile_state_changed",
@@ -1153,8 +1154,23 @@ scada_password = "CascadeWindow19"
               "eventPattern": "npc_hostile_state_changed",
               "condition": "data.npcId === 'james_mercer' && data.isHostile === true && data.restored !== true",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 5500, "message": "Keep pressing Q until the open hand shows to walk by clicking. He's slower than you, and he won't follow you out of the control room." }
+              "sendTimedMessage": { "delay": 5500, "message": "To get clear, click open floor and walk, fists up or not. He's slower than you, and he won't follow you out of the control room." }
             },
+            <%# Engine regression fixes (2026-10-17, finding 3): a Restart after a
+                knockout calms a non-KO'd Hollis, Park or Mercer and emits
+                npc_hostile_state_changed {isHostile:false, reset:true} (engine 7.1d).
+                The Restart undoes that fight, so its "ko" resolution is cleared: Park
+                speaks first on entry again, the talk routes come back, and the debrief
+                and credits don't record a fight that was reset (m03/m05/m06 pattern).
+                A KO'd NPC is never reset, so the *_ko latches stay. %>
+<% [%w[ray_hollis hollis_resolved], %w[thomas_park park_resolved], %w[james_mercer mercer_fate]].each do |npc, latch| %>
+            {
+              "eventPattern": "npc_hostile_state_changed",
+              "condition": "data.npcId === '<%= npc %>' && data.isHostile === false && data.reset === true && globalVars.<%= latch %> === 'ko'",
+              "cooldown": 0,
+              "setGlobal": { "<%= latch %>": "" }
+            },
+<% end %>
             <%# Blind run A fixes (M1): the controls before the first possible fight.
                 Hollis is in the start room, so this goes out as the briefing closes
                 (it never replays: skipIfGlobal briefing_played). The in-fight texts
@@ -1162,7 +1178,7 @@ scada_password = "CascadeWindow19"
             {
               "eventPattern": "conversation_closed:opening_briefing_cutscene",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 2500, "message": "The checkpoint guard is bought. If anyone swings at you: Q for fists, E or click to punch, face them squarely. Q until the open hand shows to walk." }
+              "sendTimedMessage": { "delay": 2500, "message": "The checkpoint guard is bought. If anyone swings at you: Q for fists, E or click to punch, face them squarely. Q until the open hand shows to use anything." }
             },
             <%# Blind run A fixes (M1, the run's Mercer note): after the first knockout,
                 fists up blocks every click (m05's pattern). Once, on whichever KO is first. %>
@@ -1184,7 +1200,7 @@ scada_password = "CascadeWindow19"
               "eventPattern": "door_unlock_failed:scada_control",
               "condition": "data.reason === 'wrong_password_case'",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 800, "message": "Right word, wrong case. Capital C, capital W, as the relay note wrote it." }
+              "sendTimedMessage": { "delay": 800, "message": "Right word, wrong case. Capital C, capital W." }
             },
             <%# PASS 5 puzzle chains r1 (F3): Hollis's badge cloned in conversation.
                 card_cloned carries the card's name and is emitted before the chat
@@ -1199,9 +1215,16 @@ scada_password = "CascadeWindow19"
             },
             {
               "eventPattern": "npc_ko:james_mercer",
-              "condition": "!globalVars.grid_saved",
+              "condition": "!globalVars.grid_saved && !globalVars.flag4_submitted",
               "onceOnly": true,
               "sendTimedMessage": { "delay": 2000, "message": "Mercer's on the floor. The sequence never needed him awake. Finish the host." }
+            },
+            {
+              "_comment": "Engine regression fixes (2026-10-17, finding 4): root in, abort not yet put through. 'Finish the host' was stale here too. The three rows are disjoint on grid_saved and flag4_submitted.",
+              "eventPattern": "npc_ko:james_mercer",
+              "condition": "!globalVars.grid_saved && globalVars.flag4_submitted === true",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 2000, "message": "Mercer's on the floor. The host's finished. The abort goes in at the console behind him. Go." }
             },
             {
               "_comment": "PASS 4 round 2 (playtest 3b): after the abort 'Finish the host' was stale. The two rows are disjoint on grid_saved.",
@@ -1372,6 +1395,7 @@ scada_password = "CascadeWindow19"
           "id": "ray_hollis",
           "displayName": "Ray Hollis",
           "npcType": "person",
+          "gender": "male",
           "position": { "x": 3.5, "y": 6.3 },
           "spriteSheet": "male_security_guard_v2",
           "spriteTalk": "assets/characters/male_security_guard_talk.png",
@@ -1570,6 +1594,7 @@ scada_password = "CascadeWindow19"
           "id": "closing_debrief",
           "displayName": "Director Magnus Netherton",
           "npcType": "person",
+          "gender": "male",
           "position": { "x": 500, "y": 500 },
           "spriteSheet": "netherton",
           "spriteTalk": "assets/characters/netherton_talk.png",
@@ -1814,6 +1839,7 @@ scada_password = "CascadeWindow19"
           "id": "elena_rodriguez",
           "displayName": "Elena Rodriguez",
           "npcType": "person",
+          "gender": "female",
           "position": { "x": 3, "y": 7.5 },
           "spriteSheet": "female_scientist_v2",
           "spriteTalk": "assets/characters/female_scientist_talk.png",
@@ -2003,6 +2029,7 @@ scada_password = "CascadeWindow19"
           "id": "james_mercer",
           "displayName": "Dr. James Mercer",
           "npcType": "person",
+          "gender": "male",
           "position": { "x": 7, "y": 3 },
           "spriteSheet": "male_office_worker_v2",
           "spriteTalk": "assets/characters/male_office_worker_talk.png",
@@ -2224,6 +2251,7 @@ scada_password = "CascadeWindow19"
           "id": "thomas_park",
           "displayName": "Thomas Park",
           "npcType": "person",
+          "gender": "male",
           "position": { "x": 4.5, "y": 4.5 },
           "spriteSheet": "male_telecom_v2",
           "spriteTalk": "assets/characters/male_telecom_talk.png",

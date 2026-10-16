@@ -105,8 +105,9 @@ Ray Hollis: Building's evacuating. So you're lost, or you're the other thing.
     -> clone
 + [Walk at him. "I'm not here to fight you, Ray."]
     -> hostile_option
+// Blind A m5: from the hub he was never cornered, so the corner line doesn't fit.
 + [Back off. I'm leaving.]
-    -> evade
+    -> evade_hub
 
 === bluff ===
 {bluff_burned:
@@ -256,9 +257,15 @@ Narrator: He comes off the frame at you with his fists up. This is going to be a
 #exit_conversation
 -> parked
 
+=== evade_hub ===
+Narrator: You step back out of his flashlight. He keeps the beam on you a long moment, then lets it drop.
+-> evade.away
+
 === evade ===
 Narrator: You give him the corner, and the corner gives you his blind side. His flashlight sweeps the turnstiles twice and finds nothing.
+-> away
 
+= away
 Ray Hollis: Yeah. Thought so.
 
 // PASS 3 (playtest s1): backing off is walking away for now, not getting

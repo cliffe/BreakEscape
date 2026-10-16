@@ -48,6 +48,9 @@ VAR told_ninety = false
 // Phase 4 dialogue C1 (D7-37): set on every return from inside a conversation
 // and on the exits, so the re-entry line plays only on a re-talk (Hollis's pattern).
 VAR hub_quiet = false
+// Blind A m4: the reminder goes once both doors it answers have been reached.
+VAR scada_door_reached = false
+VAR vault_entered = false
 
 === start ===
 {elena_ko:
@@ -330,7 +333,7 @@ Elena Rodriguez: He'll be at the master console. He won't be armed. He'll want t
 ~ hub_quiet = false
 // PASS 2: was gated on "not gave_keys", which was always true by here, so
 // the repeat could never be offered.
-+ [Give me the control room door and the vault code again.]
++ {not (scada_door_reached and vault_entered)} [Give me the control room door and the vault code again.]
     Elena Rodriguez: CascadeWindow19, capitals as written. The vault code is the last four of the serial on the transfer switch plate.
     -> post_turn_back
 

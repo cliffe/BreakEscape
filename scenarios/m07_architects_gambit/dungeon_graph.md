@@ -9,7 +9,7 @@ Four ENTROPY operations went live inside the same sixty seconds. SAFETYNET has o
 | Metric | Value |
 |---|---|
 | Story aims | 6 |
-| Total tasks | 18 (5 optional) |
+| Total tasks | 18 (7 optional) |
 | VM flag challenges | 4 |
 | Physical locks | 8 |
 | AND-gate convergences | 1 |
@@ -107,7 +107,7 @@ flowchart TD
   vmfl_recover_coordination_traffic{"Recover Coordination Traffic Flag"}
   vmch_intercept_c2_channel["Find the listener on the attack host, read what it sends and submit its flag at the relay"]
   vmfl_intercept_c2_channel{"Intercept C2 Channel Flag"}
-  vmch_escalate_on_attack_host["Log in to the attack host with the recovered account; submit the flag in its home directory at the relay"]
+  vmch_escalate_on_attack_host["Log in to the attack host with the recovered account; submit that account's flag at the relay"]
   vmfl_escalate_on_attack_host{"Escalate On Attack Host Flag"}
   vmch_terminate_cascade_scripts["Escalate to root on the attack host and submit the root flag at the relay"]
   vmfl_terminate_cascade_scripts{"Terminate Cascade Scripts Flag"}
@@ -200,7 +200,7 @@ flowchart TD
 
   aim_commit_the_team{{"Commit The Team And Get Inside"}}
   aim_reach_the_control_network{{"Get Onto The Control Network"}}
-  aim_trace_the_intrusion{{"Trace How They Got In"}}
+  aim_trace_the_intrusion{{"Trace How They Got In (Optional)"}}
   aim_reach_the_control_room{{"Get Into The Control Room"}}
   aim_take_the_attack_host{{"Take The Attack Host Off The Board"}}
   aim_end_the_sequence{{"Stop The Sequence And Report"}}
@@ -279,13 +279,13 @@ flowchart TD
   vmfl_recover_coordination_traffic{"Recover Coordination Traffic Flag"}
   vmch_intercept_c2_channel["Find the listener on the attack host, read what it sends and submit its flag at the relay"]
   vmfl_intercept_c2_channel{"Intercept C2 Channel Flag"}
-  vmch_escalate_on_attack_host["Log in to the attack host with the recovered account; submit the flag in its home directory at the relay"]
+  vmch_escalate_on_attack_host["Log in to the attack host with the recovered account; submit that account's flag at the relay"]
   vmfl_escalate_on_attack_host{"Escalate On Attack Host Flag"}
   vmch_terminate_cascade_scripts["Escalate to root on the attack host and submit the root flag at the relay"]
   vmfl_terminate_cascade_scripts{"Terminate Cascade Scripts Flag"}
   aim_commit_the_team{{"Commit The Team And Get Inside"}}
   aim_reach_the_control_network{{"Get Onto The Control Network"}}
-  aim_trace_the_intrusion{{"Trace How They Got In"}}
+  aim_trace_the_intrusion{{"Trace How They Got In (Optional)"}}
   aim_reach_the_control_room{{"Get Into The Control Room"}}
   aim_take_the_attack_host{{"Take The Attack Host Off The Board"}}
   aim_end_the_sequence{{"Stop The Sequence And Report"}}
@@ -478,13 +478,14 @@ flowchart TD
   rc_cascade_countdown_display_29{"Cascade Countdown Display"}
   rc_casualty_projection_30{"Signed Casualty Projection"}
   rc_npc_dr_james_mercer_31("Dr. James Mercer")
-  rc_maintenance_log_32{"Plant Maintenance Log"}
-  rc_backup_transfer_switch_33{"Backup Power Transfer Switch"}
-  rc_genset_control_panel_34{"Genset Control Panel"}
-  rc_vault_trunk_runs_35{"Trunk Cable Runs"}
-  rc_tomb_gamma_dossier_36{"Recovered Site Reference -- 'Tomb Gamma'"}
-  rc_mole_intercept_evidence_37{"Intercepted Mail -- Deployment Confirmed"}
-  rc_npc_thomas_park_38("Thomas Park")
+  rc_genhall_first_aid_kit_32{"First Aid Kit"}
+  rc_maintenance_log_33{"Plant Maintenance Log"}
+  rc_backup_transfer_switch_34{"Backup Power Transfer Switch"}
+  rc_genset_control_panel_35{"Genset Control Panel"}
+  rc_vault_trunk_runs_36{"Trunk Cable Runs"}
+  rc_tomb_gamma_dossier_37{"Recovered Site Reference -- 'Tomb Gamma'"}
+  rc_mole_intercept_evidence_38{"Intercepted Mail -- Deployment Confirmed"}
+  rc_npc_thomas_park_39("Thomas Park")
 
   security_checkpoint --> operations_floor
   operations_floor --> server_room
@@ -522,18 +523,19 @@ flowchart TD
   scada_control --> rc_cascade_countdown_display_29
   scada_control --> rc_casualty_projection_30
   scada_control --> rc_npc_dr_james_mercer_31
-  generator_room --> rc_maintenance_log_32
-  generator_room --> rc_backup_transfer_switch_33
-  generator_room --> rc_genset_control_panel_34
-  cable_vault --> rc_vault_trunk_runs_35
-  cable_vault --> rc_tomb_gamma_dossier_36
-  cable_vault --> rc_mole_intercept_evidence_37
-  cable_vault --> rc_npc_thomas_park_38
+  generator_room --> rc_genhall_first_aid_kit_32
+  generator_room --> rc_maintenance_log_33
+  generator_room --> rc_backup_transfer_switch_34
+  generator_room --> rc_genset_control_panel_35
+  cable_vault --> rc_vault_trunk_runs_36
+  cable_vault --> rc_tomb_gamma_dossier_37
+  cable_vault --> rc_mole_intercept_evidence_38
+  cable_vault --> rc_npc_thomas_park_39
 
   class security_checkpoint,operations_floor room
   class server_room,scada_control,generator_room,cable_vault lock
   class rc_badge_printer_1,rc_crisis_control_system_27 container
-  class rc_printed_contractor_badge_2,rc_visitor_log_3,rc_checkpoint_evacuation_board_4,rc_m07_rfid_field_guide_7,rc_m07_lockpicking_field_guide_8,rc_m07_recon_field_guide_9,rc_m07_nfs_field_guide_10,rc_m07_ssh_field_guide_11,rc_m07_privesc_field_guide_12,rc_hollis_server_badge_14,rc_generator_maintenance_key_17,rc_situation_board_18,rc_substation_map_19,rc_shift_handover_sheet_20,rc_ops_floor_workstation_21,rc_vm_launcher_attack_terminal_22,rc_flag_station_safetynet_relay_23,rc_scada_backup_server_24,rc_rack_cabling_note_25,rc_obj28_28,rc_cascade_countdown_display_29,rc_casualty_projection_30,rc_maintenance_log_32,rc_backup_transfer_switch_33,rc_genset_control_panel_34,rc_vault_trunk_runs_35,rc_tomb_gamma_dossier_36,rc_mole_intercept_evidence_37 item
-  class rc_npc_director_magnus_netherton_5,rc_npc_agent_hax_6,rc_npc_ray_hollis_13,rc_npc_the_architect_15,rc_npc_director_magnus_netherton_16,rc_npc_elena_rodriguez_26,rc_npc_dr_james_mercer_31,rc_npc_thomas_park_38 npc
+  class rc_printed_contractor_badge_2,rc_visitor_log_3,rc_checkpoint_evacuation_board_4,rc_m07_rfid_field_guide_7,rc_m07_lockpicking_field_guide_8,rc_m07_recon_field_guide_9,rc_m07_nfs_field_guide_10,rc_m07_ssh_field_guide_11,rc_m07_privesc_field_guide_12,rc_hollis_server_badge_14,rc_generator_maintenance_key_17,rc_situation_board_18,rc_substation_map_19,rc_shift_handover_sheet_20,rc_ops_floor_workstation_21,rc_vm_launcher_attack_terminal_22,rc_flag_station_safetynet_relay_23,rc_scada_backup_server_24,rc_rack_cabling_note_25,rc_obj28_28,rc_cascade_countdown_display_29,rc_casualty_projection_30,rc_genhall_first_aid_kit_32,rc_maintenance_log_33,rc_backup_transfer_switch_34,rc_genset_control_panel_35,rc_vault_trunk_runs_36,rc_tomb_gamma_dossier_37,rc_mole_intercept_evidence_38 item
+  class rc_npc_director_magnus_netherton_5,rc_npc_agent_hax_6,rc_npc_ray_hollis_13,rc_npc_the_architect_15,rc_npc_director_magnus_netherton_16,rc_npc_elena_rodriguez_26,rc_npc_dr_james_mercer_31,rc_npc_thomas_park_39 npc
   class node_start start
 ```
