@@ -185,6 +185,8 @@ Fix with the cheapest method that works, and show the user the before/after shee
 
 - `reroll` is non-destructive. Each take is generated in a temporary group, downloaded, and the temporary group deleted, so the character's original animation is untouched. It prints a sheet of the current strip against every take. On Val's south idle, take 1 had one frame flipped to a back view, and take 2 was clean.
 - `fix` and `reroll --accept` write frames to `tools/pixellab_overrides/<key>/<template>/<direction>/`, which is **committed** and reapplied by every `import`. Rebuild with `import <key> --offline --force`.
+- **Never paint straight onto `assets/characters/<key>.png`.** An online `import` rebuilds the atlas from the PixelLab ZIP plus the overrides, so a direct edit is silently lost (e.g. when adding an animation). Hand edits go in as `fix ... --use file:` or straight into the overrides folder. Before any online `import --force` of an existing key, run `python3 tools/pixellab_drift_audit.py <key>`: it rebuilds offline and lists frames that differ from the committed atlas; `--adopt` saves them as overrides. Audit on 2026-10-17: every atlas clean after adopting nurse2's stethoscope fix and Sarah's (female_office_worker_v2) south-idle nose; agent_hax and nightshade had no local export to check against.
+- Overrides are keyed by template/direction/frame number. If a strip is regenerated on PixelLab itself (not via `reroll`), its old overrides still get pasted onto the new frames: check the strip after import and delete stale override files.
 
 ## Stage 6: import into the game
 
