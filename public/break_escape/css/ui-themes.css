@@ -1004,8 +1004,8 @@
 
 /* ===================================================================
    Minigame tool windows: the generic ones (examine, flag station, VM
-   launcher, container, locks, fingerprint kit and reader) take the theme's
-   frame. In-world devices (notebook, keypad, monitors, scanners, phone,
+   launcher, container, combination and cryptex locks, fingerprint kit and
+   reader) take the theme's frame. Lockpicking stays unframed. In-world devices (notebook, keypad, monitors, scanners, phone,
    documents, sector consoles) keep their own look. The framework tags each
    window with data-minigame (minigame-manager.js).
    =================================================================== */
@@ -1016,7 +1016,6 @@
 [data-ui-theme] .minigame-container[data-minigame="container"] > .minigame-game-container:not(:has(.desktop-mode)),
 [data-ui-theme] .minigame-container[data-minigame="combination"] > .minigame-game-container,
 [data-ui-theme] .minigame-container[data-minigame="cryptex"] > .minigame-game-container,
-[data-ui-theme] .minigame-container[data-minigame="lockpicking"] > .minigame-game-container,
 [data-ui-theme] .dusting-root,
 [data-ui-theme] .fpr-panel {
   border-style: solid;
@@ -1091,4 +1090,228 @@
   --d-line: var(--ui-line);
   --d-text: var(--ui-text);
   --d-dim: var(--ui-text-dim);
+}
+
+
+/* ===================================================================
+   Other game UI: conversations, messages, menus, title and game over.
+   In-world devices (phone, notebook, documents, monitors) keep their look.
+   =================================================================== */
+
+/* --- Conversations (person-chat): the portrait stays full-bleed and the
+       caption fade stays; the names and buttons take the theme --- */
+[data-ui-theme] .person-chat-speaker-name.npc-speaker {
+  color: var(--ui-accent);
+  text-shadow: var(--ui-text-glow);
+}
+
+[data-ui-theme] .person-chat-speaker-name.player-speaker {
+  color: var(--ui-button-text);
+  text-shadow: var(--ui-text-glow);
+}
+
+[data-ui-theme] .person-chat-choice-button,
+[data-ui-theme] .person-chat-continue-button {
+  border-style: solid;
+  border-width: var(--ui-button-px);
+  border-image-source: var(--ui-button-image);
+  border-image-slice: var(--ui-button-slice) fill;
+  border-image-width: var(--ui-button-px);
+  background: none;
+  color: var(--ui-text);
+  image-rendering: pixelated;
+  transition: filter 0.1s ease;
+}
+
+[data-ui-theme] .person-chat-continue-button {
+  color: var(--ui-accent);
+}
+
+[data-ui-theme] .person-chat-choice-button:hover,
+[data-ui-theme] .person-chat-choice-button:focus,
+[data-ui-theme] .person-chat-continue-button:hover,
+[data-ui-theme] .person-chat-continue-button:focus {
+  background: none;
+  border-color: transparent;
+  color: var(--ui-accent);
+  filter: brightness(1.2) var(--ui-glow-filter);
+}
+
+[data-ui-theme] .person-chat-choice-button:active,
+[data-ui-theme] .person-chat-continue-button:active {
+  background: none;
+  color: var(--ui-accent);
+  filter: brightness(0.9);
+}
+
+[data-ui-theme] .person-chat-continue-button:disabled {
+  filter: grayscale(1) brightness(0.6);
+}
+
+/* --- Toasts: the theme's small frame; the message type shows as a stripe --- */
+[data-ui-theme] .notification {
+  border-style: solid;
+  border-width: var(--ui-square-px);
+  border-image-source: var(--ui-square-image);
+  border-image-slice: var(--ui-square-slice) fill;
+  border-image-width: var(--ui-square-px);
+  background: none;
+  color: var(--ui-text);
+  image-rendering: pixelated;
+}
+
+[data-ui-theme] .notification.info    { box-shadow: inset 4px 0 0 #3498db; }
+[data-ui-theme] .notification.success { box-shadow: inset 4px 0 0 var(--ui-success); }
+[data-ui-theme] .notification.warning { box-shadow: inset 4px 0 0 #f39c12; }
+[data-ui-theme] .notification.error   { box-shadow: inset 4px 0 0 var(--ui-danger); }
+[data-ui-theme] .notification-title { color: var(--ui-accent); font-family: var(--ui-heading-font); }
+[data-ui-theme] .notification-close { color: var(--ui-text-dim); }
+
+/* --- NPC message bubbles (barks): theme frame instead of phone green --- */
+[data-ui-theme] .npc-bark {
+  border-style: solid;
+  border-width: var(--ui-square-px);
+  border-image-source: var(--ui-square-image);
+  border-image-slice: var(--ui-square-slice) fill;
+  border-image-width: var(--ui-square-px);
+  background: none;
+  color: var(--ui-text);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+  image-rendering: pixelated;
+}
+
+[data-ui-theme] .npc-bark:hover {
+  filter: brightness(1.15);
+}
+
+[data-ui-theme] .npc-bark-dismiss { color: var(--ui-text-dim); }
+[data-ui-theme] .npc-bark-dismiss:hover { color: var(--ui-text); }
+
+[data-ui-theme] .npc-bark-clear-all {
+  border-style: solid;
+  border-width: var(--ui-small-button-px);
+  border-image-source: var(--ui-small-button-image);
+  border-image-slice: var(--ui-small-button-slice) fill;
+  border-image-width: var(--ui-small-button-px);
+  background: none;
+  color: var(--ui-button-text);
+  box-shadow: none;
+  image-rendering: pixelated;
+}
+
+/* --- Interaction choice menu (several things under the pointer); its own
+       styles are injected at run time, hence the id in each selector --- */
+[data-ui-theme] #be-interaction-menu {
+  border-style: solid;
+  border-width: var(--ui-square-px);
+  border-image-source: var(--ui-square-image);
+  border-image-slice: var(--ui-square-slice) fill;
+  border-image-width: var(--ui-square-px);
+  background: none;
+  image-rendering: pixelated;
+}
+
+[data-ui-theme] #be-interaction-menu .be-im-title { color: var(--ui-accent); text-shadow: var(--ui-text-glow); }
+[data-ui-theme] #be-interaction-menu .be-im-label { color: var(--ui-text); }
+[data-ui-theme] #be-interaction-menu .be-im-detail { color: var(--ui-text-dim); }
+
+[data-ui-theme] #be-interaction-menu .be-im-item:hover,
+[data-ui-theme] #be-interaction-menu .be-im-item:focus {
+  background: var(--ui-surface-hover);
+  border-color: var(--ui-line);
+}
+
+[data-ui-theme] #be-interaction-menu .be-im-item:active {
+  background: var(--ui-surface-raised);
+}
+
+/* --- Workstation pop-ups (crypto, lab) and the VM console: window chrome --- */
+[data-ui-theme] #laptop-popup .laptop-screen,
+[data-ui-theme] #lab-popup .laptop-screen,
+[data-ui-theme] #vm-controls-modal {
+  border-style: solid;
+  border-width: var(--ui-frame-px);
+  border-image-source: var(--ui-frame-image);
+  border-image-slice: var(--ui-frame-slice);
+  border-image-width: var(--ui-frame-px);
+  border-image-repeat: var(--ui-frame-repeat, stretch);
+  background: var(--ui-surface);
+  background-clip: padding-box;
+  box-sizing: border-box;
+  image-rendering: pixelated;
+}
+
+[data-ui-theme] #laptop-popup .title-bar,
+[data-ui-theme] #lab-popup .title-bar,
+[data-ui-theme] #vm-controls-modal-header {
+  background: var(--ui-surface-raised);
+  border-bottom: 2px solid var(--ui-line);
+  color: var(--ui-accent);
+  font-family: var(--ui-heading-font);
+  text-transform: var(--ui-heading-transform);
+  letter-spacing: var(--ui-heading-spacing);
+}
+
+/* --- Title screen: the theme's accent and glow instead of fixed green --- */
+[data-ui-theme] .title-screen-title,
+[data-ui-theme] .title-screen-cursor,
+[data-ui-theme] .title-screen-prompt {
+  color: var(--ui-accent);
+  text-shadow: var(--ui-text-glow);
+}
+
+[data-ui-theme] .title-screen-prompt-hint {
+  color: var(--ui-text-dim);
+}
+
+/* --- Game over and the resume-session overlay set their colours inline
+       (game-over-screen.js, games/show.html.erb), so these need !important --- */
+[data-ui-theme] #game-over-screen {
+  background: var(--ui-backdrop) !important;
+}
+
+[data-ui-theme] #game-over-screen h1 {
+  color: var(--ui-danger) !important;
+  text-shadow: var(--ui-text-glow) !important;
+}
+
+[data-ui-theme] #game-over-screen p {
+  color: var(--ui-text) !important;
+}
+
+[data-ui-theme] #game-over-screen button,
+[data-ui-theme] #session-resume-overlay .session-overlay-btn {
+  border-style: solid !important;
+  border-width: var(--ui-button-px) !important;
+  border-image-source: var(--ui-button-image) !important;
+  border-image-slice: var(--ui-button-slice) fill !important;
+  border-image-width: var(--ui-button-px) !important;
+  background: none !important;
+  color: var(--ui-button-text) !important;
+  box-shadow: none !important;
+  image-rendering: pixelated;
+}
+
+[data-ui-theme] #game-over-screen button:first-of-type,
+[data-ui-theme] #session-resume-btn {
+  color: var(--ui-accent) !important;
+}
+
+[data-ui-theme] #game-over-screen button:hover,
+[data-ui-theme] #session-resume-overlay .session-overlay-btn:hover:not(:disabled) {
+  filter: brightness(1.2) var(--ui-glow-filter);
+}
+
+[data-ui-theme] #session-resume-overlay {
+  /* the theme's tint over solid black: the title screen must not show through */
+  background: linear-gradient(var(--ui-backdrop), var(--ui-backdrop)), #000 !important;
+}
+
+[data-ui-theme] #session-resume-overlay h1 {
+  color: var(--ui-accent) !important;
+  text-shadow: var(--ui-text-glow);
+}
+
+[data-ui-theme] #session-resume-overlay p {
+  color: var(--ui-text-dim) !important;
 }
