@@ -35,6 +35,15 @@
     },
     "imported": "2026-10-06"
   },
+  "dani_okonkwo": {
+    "character_id": "767f499f-074f-4067-bdb4-6f2b84789e48",
+    "name": "Make portrait for Dani Okonkwo\nA lean British-Nige...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-10-17"
+  },
   "danny_foster": {
     "character_id": "c0b52964-6a42-4be3-b9b0-2bb2da39ab0d",
     "name": "Make portrait for Danny Foster\nA British security ...",
@@ -189,6 +198,15 @@
     },
     "imported": "2026-10-03"
   },
+  "hashchain_guard": {
+    "character_id": "429ff98c-3927-4eb8-9d37-0b2abd2c30f5",
+    "name": "Make portrait for the Checkpoint Guard\nA stocky Br...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-10-17"
+  },
   "helen_carver": {
     "character_id": "588ca268-fa48-4c24-84a8-54772f85dc83",
     "name": "Make portrait for Helen Carver\nA white British wom...",
@@ -197,6 +215,15 @@
       "height": 60
     },
     "imported": "2026-10-03"
+  },
+  "irina_volkova": {
+    "character_id": "95fc9762-3a9d-4bff-9892-b1876aa69c95",
+    "name": "Make portrait for Dr Irina Volkova\nA slender white...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-10-17"
   },
   "kemal_aydin": {
     "character_id": "4a3ac519-2fe1-41b1-a8fd-ba5f0541a5ad",
@@ -334,6 +361,33 @@
     },
     "imported": "2026-10-13"
   },
+  "owen_gallagher": {
+    "character_id": "cae53036-8a55-4ec4-9bbe-2a4123c78ed0",
+    "name": "Make portrait for Owen Gallagher\nA stocky mixed-ra...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-10-17"
+  },
+  "patricia_morgan": {
+    "character_id": "40f5666b-9824-4288-893d-1f812ff34ace",
+    "name": "Make portrait for Patricia Morgan\nA solidly built ...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-10-17"
+  },
+  "priya_raghavan": {
+    "character_id": "33cfa6c3-2dcf-448e-a7a0-7576078b32ce",
+    "name": "Make portrait for Priya Raghavan\nA British-Indian ...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-10-17"
+  },
   "priya_s": {
     "character_id": "eb263472-5d6d-43c9-9aa3-bf613f2983b3",
     "name": "Make portrait for Priya S.\nA British Indian woman ...",
@@ -361,6 +415,15 @@
     },
     "imported": "2026-10-13"
   },
+  "ruth_halloran": {
+    "character_id": "95250c5f-3ff8-4987-9900-1367ad0c2a23",
+    "name": "Make portrait for Dr Ruth Halloran\nA white Irish w...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-10-17"
+  },
   "sarah_kim": {
     "character_id": "1792c7b7-4189-4a22-857e-4a0a738bd83d",
     "name": "An East Asian (Korean) woman in her forties, the C...",
@@ -378,6 +441,15 @@
       "height": 60
     },
     "imported": "2026-10-03"
+  },
+  "satoshi_nakamoto": {
+    "character_id": "9ea1972f-67d1-420e-b81e-138c247e58df",
+    "name": "Make portrait for Satoshi Nakamoto II\nA lean white...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-10-17"
   },
   "security_guard": {
     "character_id": "29efd3e6-40d7-4ca9-a30e-9d8a21bf2d3f",
