@@ -581,6 +581,13 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
     ["irina_recruited", "irina_arrested"]
   ],
 
+  <%# Carry-over (docs/agents/CARRY_OVER_PLAN.md): the story outcomes later
+      missions may import as read-only globals. m07 reads assets_seized,
+      monitoring_enabled and architect_identity_found. Renaming one of these
+      breaks the importing mission; the validator says which. %>
+  "exportGlobals": ["assets_seized", "monitoring_enabled", "asset_decision_deferred",
+                    "irina_recruited", "irina_arrested", "architect_identity_found"],
+
   "startRoom": "reception_lobby",
 
   "startItemsInInventory": [
