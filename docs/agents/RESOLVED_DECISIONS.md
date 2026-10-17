@@ -2,6 +2,21 @@
 
 Decisions the user has settled, so nobody reopens them. Newest first.
 
+## 2026-10-17 (decisions form, docs/agents/DECISIONS_FORM_2026-10-17.md)
+
+- **ATHENA:** make her translucent in the engine (an optional NPC sprite setting, e.g. alpha with a soft glow or flicker, reusable for future holograms). No AI redraw of her frames.
+- **Resume overlay:** Enter = Resume while it's showing; other keys do nothing; clicks work for all three buttons.
+- **m01's eight over-long lines:** fix all eight. Split the four voiced debrief lines at natural breaks; trim the four phone texts.
+- **TTS top-up:** run it now for m01–m08.
+- **Push:** the user pushes themselves. Don't push.
+- **Optional polish, all approved:**
+  - the last browser check;
+  - the off-duty agent's north idle brightness;
+  - more takes for Park's "round" mouth;
+  - Phantom's mustard north punch coat;
+  - another try at the Recruiter's headshot.
+  - The user, on colour edits: "consider hand editing them" (scripted recolours saved as overrides, not AI edits).
+
 ## 2026-10-17 (carry-over: follow-up answers)
 
 - **Hacktivity events:** earlier runs carry in. **No host switch** ("No need for a switch").

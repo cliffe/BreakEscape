@@ -47,7 +47,7 @@ The cast proposal expected this risk and said a solid cyan figure still sets her
 ### Options
 
 - [ ] **A. Leave her solid.** The flat cyan already marks her as not human, and the portrait carries the hologram look in conversation. Cost: nothing.
-- [ ] **B. Make her translucent in the engine (recommended).** Add an optional NPC sprite setting, e.g. `"spriteAlpha": 0.8` with a soft glow or flicker, and set it on her two entries. No new art, so the frames stay exactly as they are, and any future hologram or ghost NPC can reuse it. Cost: a small engine change plus a browser check.
+- [x] **B. Make her translucent in the engine (recommended).** Add an optional NPC sprite setting, e.g. `"spriteAlpha": 0.8` with a soft glow or flicker, and set it on her two entries. No new art, so the frames stay exactly as they are, and any future hologram or ghost NPC can reuse it. Cost: a small engine change plus a browser check.
 - [ ] **C. Redraw the frames with AI.** Edit her idle, walk and fall strips with PixelLab to add scan lines and a fragmenting hem. Cost: roughly 160–320 generations (4,525 are left), with a risk of jitter between frames that then needs fixing.
 - [ ] **D. B and C together.**
 
@@ -61,7 +61,7 @@ The cast proposal expected this risk and said a solid cyan figure still sets her
 
 When you reload a game in progress, a Resume / Restart / New Session overlay appears on top of the title screen. It doesn't block keys: pressing Enter while it's showing also moves the title screen on underneath. The overlay stays up and you still have to click Resume. It isn't harmful, but it's confusing. Found by the round-4 engine check.
 
-- [ ] **A. Enter = Resume (recommended).** While the overlay is up, Enter resumes and other keys do nothing. Clicking still works for all three buttons.
+- [x] **A. Enter = Resume (recommended).** While the overlay is up, Enter resumes and other keys do nothing. Clicking still works for all three buttons.
 - [ ] **B. Block keys only.** The overlay swallows key presses, so only clicks work.
 - [ ] **C. Leave it as it is.**
 
@@ -86,7 +86,7 @@ The validator reports 8 lines in m01 over the 30-word cap. They were there befor
 
 **Four are HaX phone texts** in m01's scenario file (lockpick acquired, the Kali terminal, Derek's password list, the password list hint, at 31–46 words). Phone texts aren't voiced, so trimming them costs nothing.
 
-- [ ] **A. Fix all eight (recommended).** Split the debrief lines in two at a natural break (most already have one), so the words barely change. Trim the phone texts. The four debrief clips go into the TTS top-up below.
+- [x] **A. Fix all eight (recommended).** Split the debrief lines in two at a natural break (most already have one), so the words barely change. Trim the phone texts. The four debrief clips go into the TTS top-up below.
 - [ ] **B. Phone texts only.** Leave the voiced lines as they are and accept the four validator errors.
 - [ ] **C. Leave all eight.**
 
@@ -109,7 +109,7 @@ Today's work added or changed about 80 voiced lines across m01–m08. Each needs
 
 The tts-audio skill's process: generate per mission (`tts:batch_generate`), listen to a sample of the clips, then commit them to `tts_cache/`. It also prunes clips that no line uses any more.
 
-- [ ] **A. Run the top-up for m01–m08 now (recommended).** Metered Gemini TTS, about 80 short clips. I'll report the count and any failed clips, and check a sample against the voice bible.
+- [x] **A. Run the top-up for m01–m08 now (recommended).** Metered Gemini TTS, about 80 short clips. I'll report the count and any failed clips, and check a sample against the voice bible.
 - [ ] **B. Run it, but play me a few clips per voice first.**
 - [ ] **C. Not yet.**
 
@@ -132,7 +132,7 @@ The working tree is clean.
 
 - [ ] **A. Push `main` now.**
 - [ ] **B. Push after the TTS top-up and the last browser check.**
-- [ ] **C. Not yet. I'll push myself.**
+- [x] **C. Not yet. I'll push myself.**
 
 **Comments:**
 
@@ -142,18 +142,18 @@ The working tree is clean.
 
 ## Optional polish (tick any you want)
 
-- [ ] **Browser check for the last round.** A short Sonnet run covering:
+- [x] **Browser check for the last round.** A short Sonnet run covering:
   - round 4: the phone hit warning, the m06 debrief page error and the 422, and m08's text-viewer icons;
   - the two carry-over debrief lines (m02, m04);
   - Restart m06 without finishing, then a New Session of m07.
-- [ ] **The off-duty agent (m08):** his north idle is a shade brighter than his other frames. One AI edit, about 10–20 generations.
-- [ ] **Park (m07):** his "round" (o/u/w) mouth is a small slot. Two or three more takes, about 3 generations.
-- [ ] **Phantom (m08):** his north punch coat reads slightly more mustard than the rest. One AI edit, about 10 generations.
-- [ ] **The Recruiter (m05):** her phone avatar is still a stand-in (Helen Carver's headshot). Four 32px attempts failed. Options: try again with a different method, or wait until she gets a walk sprite in a later mission, which makes the headshot automatically.
+- [x] **The off-duty agent (m08):** his north idle is a shade brighter than his other frames. One AI edit, about 10–20 generations.
+- [x] **Park (m07):** his "round" (o/u/w) mouth is a small slot. Two or three more takes, about 3 generations.
+- [x] **Phantom (m08):** his north punch coat reads slightly more mustard than the rest. One AI edit, about 10 generations.
+- [x] **The Recruiter (m05):** her phone avatar is still a stand-in (Helen Carver's headshot). Four 32px attempts failed. Options: try again with a different method, or wait until she gets a walk sprite in a later mission, which makes the headshot automatically.
 
 **Comments:**
 
->
+> For the colour edits, consider hand editting them.
 
 ---
 
