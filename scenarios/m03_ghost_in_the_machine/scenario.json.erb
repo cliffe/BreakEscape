@@ -491,6 +491,21 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
     }
   ],
 
+  <%# Round 2 (2026-10-17, confirmation run N2): the phone showed the real time on a
+      12-hour clock. The story's clock: Ffion greets "the three o'clock", the night
+      scene says "Eleven o'clock that night" (clone_call_done is set when it
+      closes), and the debrief is "the morning after" (debrief_played, set on its
+      first line; Netherton "signed off at six this morning"). Days are named so the
+      morning anchor moves forward past midnight. m04's shape (231a7be6). %>
+  "gameClock": {
+    "start": "Thu 14:55",
+    "rate": 1,
+    "anchors": [
+      { "condition": "globalVars.clone_call_done === true", "time": "23:00" },
+      { "condition": "globalVars.debrief_played === true", "time": "Fri 08:30" }
+    ]
+  },
+
   "startRoom": "reception_lobby",
 
   "startItemsInInventory": [

@@ -669,6 +669,15 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
               signed the player in (guard_admitted, synced from his ink), turned
               hostile or been knocked out. The 20 s cooldown lets a player who
               closes the chat walk off before he calls again. %>
+          <%# Round 2 (2026-10-17, confirmation run N4): he had no hostile block,
+              so he hit for the engine default (10, chase 145) and put a 60 HP
+              player down in about 6 hits, harder than any operative. He's a
+              mid-fifties bystander the debrief scolds you for hitting, so he
+              gets the operatives' numbers (Cipher/Static 4 damage) and a slower
+              chase than any of them. %>
+          "behavior": {
+            "hostile": { "chaseSpeed": 100, "attackDamage": 4, "pauseToAttack": true }
+          },
           "los": {
             "enabled": true,
             "range": 150,

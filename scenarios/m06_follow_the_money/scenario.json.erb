@@ -95,6 +95,17 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
   "scenario_brief": "Track cryptocurrency payments from previous ENTROPY operations to the Crypto Anarchists' HashChain Exchange. Get in as a visiting FCA supervisor, map the financial network funding every ENTROPY cell, and find out what The Architect is buying with it.",
   "show_scenario_brief": "on_resume",
 
+  <%# Round 2 (2026-10-17): the safetynet credits overlay's header and ticker. True in every ending: frozen or watched, turned or detained, Satoshi is always handed to the police. %>
+  "creditsOverlay": {
+    "operation": "LEDGER",
+    "ticker": [
+      "ENTROPY'S MONEY: FOLLOWED TO HASHCHAIN",
+      "'SATOSHI NAKAMOTO II': IN CUSTODY",
+      "SIX CELLS. SEVENTY-TWO HOURS.",
+      "THE ARCHITECT REMAINS AT LARGE"
+    ]
+  },
+
   <%# Pass 5 alignment A2 (m03/m04 phase pattern): one condition per story phase,
       so a reload (game_loaded) and the end of a fight (all_hostiles_ko) return to
       the phase's own playlist. Mutually exclusive once the briefing has played. %>
@@ -1465,13 +1476,13 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
               "eventPattern": "npc_hostile_state_changed",
               "condition": "data.npcId === 'satoshi_minder' && data.isHostile === true",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 1000, "message": "He's coming for you. Q for fists, then E or click when he's in front. Step back between swings. Press Q till the open hand shows to walk by clicking." }
+              "sendTimedMessage": { "delay": 1000, "message": "He's coming for you, and he won't wait while you read this. Q for fists, then E or click. Q till the open hand shows to walk away." }
             },
             {
               "eventPattern": "npc_hostile_state_changed",
               "condition": "data.npcId === 'satoshi_nakamoto' && data.isHostile === true",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 1000, "message": "He's fighting. Q for your fists, then E or click when he's in front of you." }
+              "sendTimedMessage": { "delay": 1000, "message": "He's fighting, and he won't wait while you read this. Q for your fists, then E or click when he's in front of you." }
             },
             <%# Puzzle chains R2 (M-R2-1): a turned Irina checks one slot per visit, and
                 a visit is a trip back to the console. slot_checked_visit is synced
@@ -1645,10 +1656,10 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
           "npcType": "person",
           "gender": "male",
           "position": { "x": 4, "y": 4 },
-          "spriteSheet": "male_security_guard_v2",
-          "spriteTalk": "assets/characters/male_security_guard_talk.png",
-          "spriteVisemes": "assets/characters/male_security_guard_visemes.png",
-          "avatar": "assets/characters/male_security_guard_v2_headshot.png",
+          "spriteSheet": "hashchain_guard",
+          "spriteTalk": "assets/characters/hashchain_guard_talk.png",
+          "spriteVisemes": "assets/characters/hashchain_guard_visemes.png",
+          "avatar": "assets/characters/hashchain_guard_headshot.png",
           "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 },
           "voice": {
             "name": "Alnilam",
@@ -1747,10 +1758,10 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
           "npcType": "person",
           "gender": "female",
           "position": { "x": 5, "y": 5 },
-          "spriteSheet": "female_scientist_v2",
-          "spriteTalk": "assets/characters/female_scientist_talk.png",
-          "spriteVisemes": "assets/characters/female_scientist_visemes.png",
-          "avatar": "assets/characters/female_scientist_headshot.png",
+          "spriteSheet": "irina_volkova",
+          "spriteTalk": "assets/characters/irina_volkova_talk.png",
+          "spriteVisemes": "assets/characters/irina_volkova_visemes.png",
+          "avatar": "assets/characters/irina_volkova_headshot.png",
           "spriteConfig": {
             "idleFrameRate": 6,
             "walkFrameRate": 10
@@ -1829,10 +1840,10 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
           "npcType": "person",
           "gender": "male",
           "position": { "x": 5, "y": 7 },
-          "spriteSheet": "male_office_worker_v2",
-          "spriteTalk": "assets/characters/male_office_worker_talk.png",
-          "spriteVisemes": "assets/characters/male_office_worker_visemes.png",
-          "avatar": "assets/characters/male_office_worker_headshot.png",
+          "spriteSheet": "dani_okonkwo",
+          "spriteTalk": "assets/characters/dani_okonkwo_talk.png",
+          "spriteVisemes": "assets/characters/dani_okonkwo_visemes.png",
+          "avatar": "assets/characters/dani_okonkwo_headshot.png",
           "spriteConfig": {
             "idleFrameRate": 6,
             "walkFrameRate": 10
@@ -2143,10 +2154,10 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
           "npcType": "person",
           "gender": "female",
           "position": { "x": 6, "y": 4 },
-          "spriteSheet": "female_office_worker_v2",
-          "spriteTalk": "assets/characters/female_office_worker_talk.png",
-          "spriteVisemes": "assets/characters/female_office_worker_visemes.png",
-          "avatar": "assets/characters/female_office_worker_headshot.png",
+          "spriteSheet": "priya_raghavan",
+          "spriteTalk": "assets/characters/priya_raghavan_talk.png",
+          "spriteVisemes": "assets/characters/priya_raghavan_visemes.png",
+          "avatar": "assets/characters/priya_raghavan_headshot.png",
           "spriteConfig": {
             "idleFrameRate": 6,
             "walkFrameRate": 10
@@ -2446,9 +2457,10 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
           "gender": "male",
           "_comment": "Pass-4 dialogue playtest: at (5,5) his body sat against the desk and blocked the east approach (stopped at 36 px, range 32). (5,6) is open floor in front of the desk.",
           "position": { "x": 5, "y": 6 },
-          "spriteSheet": "male_hacker_hood_v2",
-          "spriteTalk": "assets/characters/male_hacker_hood_talk.png",
-          "avatar": "assets/characters/male_hacker_hood_headshot.png",
+          "spriteSheet": "satoshi_nakamoto",
+          "spriteTalk": "assets/characters/satoshi_nakamoto_talk.png",
+          "spriteVisemes": "assets/characters/satoshi_nakamoto_visemes.png",
+          "avatar": "assets/characters/satoshi_nakamoto_headshot.png",
           "spriteConfig": {
             "idleFrameRate": 6,
             "walkFrameRate": 10

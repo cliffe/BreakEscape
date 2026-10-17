@@ -101,6 +101,18 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
 
   "show_scenario_brief": "once",
 
+  <%# Round 2 (2026-10-17): the safetynet credits overlay's header and ticker. True in every ending: the fate always stops the upload, and the Recruiter is never caught. %>
+  "creditsOverlay": {
+    "operation": "SCHRODINGER",
+    "ticker": [
+      "OPERATION SCHRODINGER: STOPPED",
+      "999 DISPATCH KEYS: FINAL UPLOAD HALTED",
+      "QUANTUM DYNAMICS: INSIDER FOUND",
+      "INSIDER THREAT INITIATIVE: STILL RECRUITING",
+      "THE ARCHITECT REMAINS AT LARGE"
+    ]
+  },
+
   <%# Pass 5 alignment A1 (m04 A2 pattern): one condition per story phase, so a
       reload (game_loaded) and the end of a fight (all_hostiles_ko) return to the
       phase's own playlist instead of the opening noir. The three are mutually
@@ -732,7 +744,8 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
     "torres_fight_offered": false,
     "torres_hostile": false,
     "torres_fought": false,
-    "torres_called_in": false
+    "torres_called_in": false,
+    "heard_tin_story": false
   },
 
   "endGoal": "Identify the insider with both halves of the case (motive and proof of exfiltration), stop the final upload, and decide David Torres' fate: turn him, hand him to the police, expose the programme, or fight.",
@@ -1396,7 +1409,7 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
               "eventPattern": "npc_hostile_state_changed",
               "condition": "data.npcId === 'david_torres' && data.isHostile === true && !data.restored && globalVars.final_choice === ''",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 5500, "message": "Keep pressing Q until the open hand shows to walk by clicking. Can't take him? Leave the data centre: he won't follow. Call me and I'll send Security." }
+              "sendTimedMessage": { "delay": 5500, "message": "Press Q till the open hand shows to walk by clicking. Can't take him? Leave the data centre, then call me for Security: he swings while you're on the phone." }
             },
             <%# Post-engine follow-ups (2026-10-16): a Restart after a knockout now
                 resets a Torres who isn't KO'd to calm (engine 7.1d), so game_loaded
@@ -1423,7 +1436,7 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
               "onceOnly": false,
               "cooldown": 0,
               "setGlobal": { "torres_hostile": true },
-              "sendTimedMessage": { "delay": 3000, "message": "Torres is still at that terminal, still angry. Q switches to fists, then E or click when he's in front. Or call me and I'll send Security." }
+              "sendTimedMessage": { "delay": 3000, "message": "Torres is still at that terminal, still angry. Q switches to fists, then E or click when he's in front. Or get clear and call me for Security." }
             },
             {
               "_comment": "PASS 2 review B1 safety net. post_ko_choice is disableClose, but if it is ever lost (a reload mid-choice), npc_ko won't re-fire and a KO'd NPC can't be talked to (interactions.js:1690). Re-entering the data centre with Torres down and no fate set offers the same two choices by phone.",
@@ -1457,6 +1470,8 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
               helen_carver_headshot.png is used by no scenario; the character
               stage gives the Recruiter art of her own. %>
           "avatar": "assets/characters/helen_carver_headshot.png",
+          "spriteTalk": "assets/characters/the_recruiter_talk.png",
+          "spriteVisemes": "assets/characters/the_recruiter_visemes.png",
           "phoneId": "player_phone",
           "currentKnot": "start",
           "_comment": "PASS 2 review B2: not in the phone's npcIds. Listed contacts get their start knot preloaded the first time the phone opens (phone-chat-minigame.js:283-380), which played her first call -- and set recruiter_contacted_player -- before Torres was named. She now appears only once a mapping gives her history (phone-chat-ui.js:373-384), and her start knot also guards on torres_identified.",
@@ -1483,7 +1498,7 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
             "language": "en-GB"
           },
           "storyPath": "scenarios/m05_insider_trading/ink/m05_phone_patricia.json",
-          "avatar": "assets/characters/female_security_guard_headshot.png",
+          "avatar": "assets/characters/patricia_morgan_headshot.png",
           "phoneId": "player_phone",
           "currentKnot": "start",
           "eventMappings": [
@@ -1570,7 +1585,7 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
           "name": "Noticeboard Flyer",
           "takeable": true,
           "readable": true,
-          "_comment": "PASS 4 (whodunnit): no names. Lisa says whose family it is if asked. Room dressing (pass 5): pinned on the corridor noticeboard (notes4 slot), no floor position.",
+          "_comment": "PASS 4 (whodunnit): no names. Lisa says only 'someone on the crypto team' (round 2, 2026-10-17) and confirms David once the player has the vetting files or a suspicion. Room dressing (pass 5): pinned on the corridor noticeboard (notes4 slot), no floor position.",
           "text": "COLLECTION FOR A COLLEAGUE'S FAMILY\n\nSome of you know that one of our colleagues has a family member who is very unwell. The treatment that might help isn't available here, and the insurer has said no.\n\nIf you'd like to chip in, the tin is in the break room. Every bit helps. Please be discreet.\n\nThank you - Lisa (Marketing)\n\n[Someone has written underneath in biro: \"Raised so far: £2,140. Target: don't ask.\"]",
           "observations": "A handwritten flyer pinned to the corridor noticeboard"
         }
@@ -1599,10 +1614,10 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
             "language": "en-GB"
           },
           "position": { "x": 4, "y": 4 },
-          "spriteSheet": "female_office_worker_v2",
-          "spriteTalk": "assets/characters/female_office_worker_talk.png",
-          "spriteVisemes": "assets/characters/female_office_worker_visemes.png",
-          "avatar": "assets/characters/female_office_worker_headshot.png",
+          "spriteSheet": "lisa_park",
+          "spriteTalk": "assets/characters/lisa_park_talk.png",
+          "spriteVisemes": "assets/characters/lisa_park_visemes.png",
+          "avatar": "assets/characters/lisa_park_headshot.png",
           "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 },
           "storyPath": "scenarios/m05_insider_trading/ink/m05_npc_lisa_park.json",
           "currentKnot": "start",
@@ -1650,10 +1665,10 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
             "language": "en-GB"
           },
           "position": { "x": 6, "y": 4 },
-          "spriteSheet": "male_telecom_v2",
-          "spriteTalk": "assets/characters/male_telecom_talk.png",
-          "spriteVisemes": "assets/characters/male_telecom_visemes.png",
-          "avatar": "assets/characters/male_telecom_headshot.png",
+          "spriteSheet": "owen_gallagher",
+          "spriteTalk": "assets/characters/owen_gallagher_talk.png",
+          "spriteVisemes": "assets/characters/owen_gallagher_visemes.png",
+          "avatar": "assets/characters/owen_gallagher_headshot.png",
           "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 },
           "storyPath": "scenarios/m05_insider_trading/ink/m05_npc_owen_gallagher.json",
           "currentKnot": "start",
@@ -1908,10 +1923,10 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
           },
           "_comment": "Playtest round: moved one tile south, off the chair row, so the player can reach her from the open floor (was 6,5; 35 px against the 32 px reach). Not browser-checked.",
           "position": { "x": 6, "y": 6 },
-          "spriteSheet": "female_scientist_v2",
-          "spriteTalk": "assets/characters/female_scientist_talk.png",
-          "spriteVisemes": "assets/characters/female_scientist_visemes.png",
-          "avatar": "assets/characters/female_scientist_headshot.png",
+          "spriteSheet": "ruth_halloran",
+          "spriteTalk": "assets/characters/ruth_halloran_talk.png",
+          "spriteVisemes": "assets/characters/ruth_halloran_visemes.png",
+          "avatar": "assets/characters/ruth_halloran_headshot.png",
           "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 },
           "storyPath": "scenarios/m05_insider_trading/ink/m05_npc_dr_halloran.json",
           "currentKnot": "start",
@@ -1987,10 +2002,10 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
             "language": "en-GB"
           },
           "position": { "x": 3, "y": 3 },
-          "spriteSheet": "female_security_guard_v2",
-          "spriteTalk": "assets/characters/female_security_guard_talk.png",
-          "spriteVisemes": "assets/characters/female_security_guard_visemes.png",
-          "avatar": "assets/characters/female_security_guard_headshot.png",
+          "spriteSheet": "patricia_morgan",
+          "spriteTalk": "assets/characters/patricia_morgan_talk.png",
+          "spriteVisemes": "assets/characters/patricia_morgan_visemes.png",
+          "avatar": "assets/characters/patricia_morgan_headshot.png",
           "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 },
           "storyPath": "scenarios/m05_insider_trading/ink/m05_npc_patricia_morgan.json",
           "currentKnot": "start",
@@ -2125,15 +2140,23 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
             "language": "en-GB"
           },
           "position": { "x": 5, "y": 7 },
-          "spriteSheet": "male_nerd_v2",
-          "spriteTalk": "assets/characters/male_nerd_talk.png",
-          "spriteVisemes": "assets/characters/male_nerd_visemes.png",
-          "avatar": "assets/characters/male_nerd_headshot.png",
+          "spriteSheet": "david_torres",
+          "spriteTalk": "assets/characters/david_torres_talk.png",
+          "spriteVisemes": "assets/characters/david_torres_visemes.png",
+          "avatar": "assets/characters/david_torres_headshot.png",
           "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 },
           "storyPath": "scenarios/m05_insider_trading/ink/m05_torres_confrontation.json",
           "currentKnot": "start",
           "globalVarOnKO": "torres_ko",
           "taskOnKO": "confront_torres",
+          "portraitVariants": [
+            {
+              "name": "ko",
+              "ko": true,
+              "spriteTalk": "assets/characters/david_torres_ko_talk.png",
+              "spriteVisemes": "assets/characters/david_torres_ko_visemes.png"
+            }
+          ],
           "puzzle_graph_actions": [
             { "id": "confront_torres", "label": "Confront Torres and decide his fate" }
           ],
