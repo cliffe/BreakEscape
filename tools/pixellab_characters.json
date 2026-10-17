@@ -35,6 +35,15 @@
     },
     "imported": "2026-10-03"
   },
+  "athena": {
+    "character_id": "ddf2599c-c2e8-41f3-a023-18aa2e74561b",
+    "name": "Make portrait for ATHENA\nA holographic AI receptio...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-10-17"
+  },
   "bernie_nwosu": {
     "character_id": "923f3e6c-10c0-4f2e-afe9-4d65cbc9c55e",
     "name": "A Black British woman of Nigerian heritage in her ...",
