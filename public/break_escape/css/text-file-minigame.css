@@ -249,6 +249,20 @@
     margin: 0;
 }
 
+/* copy-sm.png is pure white, so on the light buttons and the cream observations
+   bar it all but vanished (m08 confirmation R3 N-8-2). Darkened to sit with the
+   label beside it; the dark scheme below puts it back to white. */
+.action-btn .icon-small,
+.file-observations h4 .icon-small {
+    filter: brightness(0) opacity(0.75);
+    margin-right: 4px;
+    vertical-align: -2px;
+}
+
+.file-observations h4 .icon-small {
+    filter: brightness(0) opacity(0.6);
+}
+
 /* Text Selection Styling */
 .file-content ::selection {
     background: #3b82f6;
@@ -436,6 +450,11 @@
     
     .file-observations h4 {
         color: #fbbf24;
+    }
+
+    .action-btn .icon-small,
+    .file-observations h4 .icon-small {
+        filter: none;
     }
     
     .file-observations p {

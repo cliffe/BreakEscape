@@ -668,6 +668,11 @@ export class PhoneChatMinigame extends MinigameScene {
             tags: accumulatedTags
         });
 
+        // pendingNpcMessages is what has not reached the history yet: if the phone is closed
+        // mid-typeout, _flushPendingMessages() keeps it (see there). Set before the tags,
+        // since a tag can close the phone (a cutscene's set_global, m06 N-6-1).
+        this._pendingNpcMessages = accumulatedMessages.filter(m => m.trim()).map(m => m.trim());
+
         if (accumulatedTags.length > 0) {
             console.log('✅ Processing tags:', accumulatedTags);
             processGameActionTags(accumulatedTags, this.ui);
@@ -676,9 +681,6 @@ export class PhoneChatMinigame extends MinigameScene {
         }
 
         // Display accumulated NPC messages one at a time with typing indicator.
-        // pendingNpcMessages is what has not reached the history yet: if the phone is closed
-        // mid-typeout, _flushPendingMessages() keeps it (see there).
-        this._pendingNpcMessages = accumulatedMessages.filter(m => m.trim()).map(m => m.trim());
         for (let i = 0; i < accumulatedMessages.length; i++) {
             const message = accumulatedMessages[i];
             if (!message.trim()) continue;
@@ -714,6 +716,9 @@ export class PhoneChatMinigame extends MinigameScene {
         // this typeout's: its untyped lines were flushed to the right history on close
         const run = this._typeoutRun;
         const stillOurs = () => this.isConversationActive && run === this._typeoutRun;
+        // Tags are processed before the typeout, and one can close the phone (a
+        // cutscene's set_global): nothing left to type into (m06 N-6-1)
+        if (!stillOurs()) return false;
         const line = classifyPhoneLine('npc', raw.trim());
         if (line.type === 'npc') {
             this.ui.showTypingIndicator();
@@ -820,6 +825,11 @@ export class PhoneChatMinigame extends MinigameScene {
             tags: accumulatedTags
         });
 
+        // As in _presentOutput, lines not yet typed are kept in _pendingNpcMessages, so
+        // closing the phone mid-typeout puts them in the thread rather than losing them.
+        // Set before the tags, which can close the phone themselves (m06 N-6-1).
+        this._pendingNpcMessages = accumulatedMessages.filter(m => m.trim()).map(m => m.trim());
+
         if (accumulatedTags.length > 0) {
             console.log('✅ Processing tags after choice:', accumulatedTags);
             processGameActionTags(accumulatedTags, this.ui);
@@ -827,10 +837,7 @@ export class PhoneChatMinigame extends MinigameScene {
             console.log('⚠️ No tags to process after choice');
         }
 
-        // Display accumulated NPC messages one at a time with typing indicator. As in
-        // _presentOutput, lines not yet typed are kept in _pendingNpcMessages, so closing
-        // the phone mid-typeout puts them in the thread rather than losing them.
-        this._pendingNpcMessages = accumulatedMessages.filter(m => m.trim()).map(m => m.trim());
+        // Display accumulated NPC messages one at a time with typing indicator.
         for (let i = 0; i < accumulatedMessages.length; i++) {
             const message = accumulatedMessages[i];
             if (!message.trim()) continue;

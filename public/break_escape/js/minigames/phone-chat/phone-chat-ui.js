@@ -810,7 +810,11 @@ export default class PhoneChatUI {
      * Show typing indicator (NPC is "typing")
      */
     showTypingIndicator() {
-        this.elements.typingIndicator.style.display = 'flex';
+        // The phone can be torn down under a typeout: a tag on the chosen line
+        // (start_debrief_cutscene) closes it before the reply is typed (m06 N-6-1)
+        const el = this.elements?.typingIndicator;
+        if (!el) return;
+        el.style.display = 'flex';
         this.scrollToBottom();
     }
     
@@ -818,7 +822,8 @@ export default class PhoneChatUI {
      * Hide typing indicator
      */
     hideTypingIndicator() {
-        this.elements.typingIndicator.style.display = 'none';
+        const el = this.elements?.typingIndicator;
+        if (el) el.style.display = 'none';
     }
     
     /**
@@ -826,7 +831,7 @@ export default class PhoneChatUI {
      * @param {boolean} smooth - Whether to use smooth scrolling
      */
     scrollToBottom(smooth = true) {
-        const container = this.elements.messagesContainer;
+        const container = this.elements?.messagesContainer;
         if (container) {
             container.scrollTo({
                 top: container.scrollHeight,

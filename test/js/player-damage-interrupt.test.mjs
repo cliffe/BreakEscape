@@ -107,23 +107,33 @@ test('key, PIN and password failure toasts check minigameClosedByDamage', () => 
 
 // m07 U12 (2026-10-17): a hit leaves the phone open, so HaX's fight texts can be
 // read. Attacks carry on (npc-attack-pause.test.mjs), so the phone is no shield.
-test('a hit leaves the phone open, with one HP notice per few seconds', async () => {
+test('a hit leaves the phone open, with an HP notice that every hit refreshes', async () => {
     const { PHONE_HIT_NOTICE_MS } = await import(pathToFileURL(join(dir, 'interrupt.mjs')).href);
     const fw = makeFramework();
     fw.currentMinigame._sceneType = 'phone-chat';
     fw.currentMinigame.params = {};
+    // A stand-in toast column: notify() returns the toast element, as showNotification does
+    const column = { children: [], removeChild(el) { this.children.splice(this.children.indexOf(el), 1); el.parentNode = null; } };
     const notes = [];
-    const notify = (...a) => notes.push(a);
-    assert.equal(closeMinigameOnDamage(4, { framework: fw, notify, now: 5_000_000, hp: 52, maxHP: 100 }), false);
+    const notify = (...a) => { notes.push(a); const el = { text: a[0], parentNode: column }; column.children.push(el); return el; };
+    assert.equal(closeMinigameOnDamage(4, { framework: fw, notify, hp: 52, maxHP: 100 }), false);
     assert.ok(fw.currentMinigame, 'still open');
     assert.deepEqual(fw.ended, []);
     assert.equal(notes.length, 1);
-    assert.match(notes[0][0], /52\/100/);
+    assert.match(notes[0][0], /You're being hit! HP 52\/100\. Close the phone \(Esc\) to fight back\./);
     assert.equal(notes[0][1], 'warning', 'warnings are not held behind an open minigame');
-    closeMinigameOnDamage(4, { framework: fw, notify, now: 5_000_000 + 1000, hp: 48, maxHP: 100 });
-    assert.equal(notes.length, 1, 'throttled');
-    closeMinigameOnDamage(4, { framework: fw, notify, now: 5_000_000 + PHONE_HIT_NOTICE_MS + 1, hp: 44, maxHP: 100 });
-    assert.equal(notes.length, 2);
+    assert.equal(notes[0][3], PHONE_HIT_NOTICE_MS);
+    assert.ok(PHONE_HIT_NOTICE_MS > 2000, 'outlasts the gap between hits (default cooldown 2 s)');
+    // The next hit, a second later: a new notice with the new HP replaces the old one
+    closeMinigameOnDamage(4, { framework: fw, notify, hp: 48, maxHP: 100 });
+    assert.equal(notes.length, 2, 'not throttled');
+    assert.equal(column.children.length, 1, 'one notice at a time');
+    assert.match(column.children[0].text, /48\/100/);
+    // A notify that holds the toast (returns null) doesn't break the next hit
+    closeMinigameOnDamage(4, { framework: fw, notify: () => null, hp: 44, maxHP: 100 });
+    assert.equal(column.children.length, 0, 'the last shown notice is removed');
+    closeMinigameOnDamage(4, { framework: fw, notify, hp: 40, maxHP: 100 });
+    assert.equal(column.children.length, 1);
 });
 
 test('a knockout or a phone cutscene still closes the phone', () => {

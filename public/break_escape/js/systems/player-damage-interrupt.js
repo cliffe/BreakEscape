@@ -78,21 +78,26 @@ export function closeMinigameOnDamage(amount, deps = {}) {
   return true;
 }
 
-// The phone notice repeats at most this often (hits come every ~2 s).
-export const PHONE_HIT_NOTICE_MS = 3000;
-let lastPhoneNoticeAt = -Infinity;
+// The phone notice stays up this long after the latest hit. One notice at a time:
+// each hit replaces the last with the new HP, so under a beating it stays on screen.
+// It used to show for 2.5 s at most once every 3 s, so it was missing for about a
+// third of a fight and a screenshot could easily miss it (m06 confirmation R3 N-6-2).
+export const PHONE_HIT_NOTICE_MS = 4000;
+let lastPhoneToast = null;
 
 function notifyPhoneHit(notify, deps) {
-  const now = typeof deps.now === 'number' ? deps.now : Date.now();
-  if (now - lastPhoneNoticeAt < PHONE_HIT_NOTICE_MS) return;
-  lastPhoneNoticeAt = now;
   const health = deps.playerHealth ?? (typeof window !== 'undefined' ? window.playerHealth : null);
   const hp = deps.hp ?? health?.getHP?.();
   const maxHP = deps.maxHP ?? health?.getMaxHP?.();
   const left = Number.isFinite(hp) && Number.isFinite(maxHP) ? ` HP ${hp}/${maxHP}.` : '';
   try {
+    if (lastPhoneToast?.parentNode) lastPhoneToast.parentNode.removeChild(lastPhoneToast);
+  } catch (err) { /* already gone */ }
+  lastPhoneToast = null;
+  try {
     if (typeof notify === 'function') {
-      notify(`You're being hit!${left} Close the phone (Esc) to fight back.`, 'warning', '', 2500);
+      const el = notify(`You're being hit!${left} Close the phone (Esc) to fight back.`, 'warning', '', PHONE_HIT_NOTICE_MS);
+      lastPhoneToast = el && typeof el === 'object' ? el : null;
     }
   } catch (err) {
     console.warn('Damage notice failed:', err);
