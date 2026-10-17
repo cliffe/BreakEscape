@@ -211,7 +211,7 @@ Agent HaX: Yes. ENTROPY. The same network that ran Social Fabric out of Viral Dy
 // the spreadsheet; the else branch is the original line, word for word.
 {
 - m01_player_launched_attack:
-    Agent HaX: Derek Lawson kept casualty projections. You let Operation Shatter launch, and the count is landing inside his range.
+    Agent HaX: Derek Lawson kept casualty projections. You let Operation Shatter launch, and people died, near enough the number on his spreadsheet.
 - m01_found_casualty_projections:
     Agent HaX: Derek Lawson kept casualty projections. You found the spreadsheet yourself: how many Operation Shatter would kill, signed off in advance.
 - else:
