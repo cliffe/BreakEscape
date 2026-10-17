@@ -2,6 +2,14 @@
 
 Decisions the user has settled, so nobody reopens them. Newest first.
 
+## 2026-10-17 (carry-over: follow-up answers)
+
+- **Hacktivity events:** earlier runs carry in. **No host switch** ("No need for a switch").
+- **`consequences_persist`:** "Doesn't sound like the clearest way to represent variables that save for later. Use your best judgement to make it clear and maintainable." The lead's call: retire it. `exportGlobals` (source) and `importGlobals` (reader) are the one way to say a variable carries forward, so the field is removed from the scenarios, the schema and the validator, and its documentation points to the carry-over section instead.
+- **m01 exports:** the lead's call: yes. m01 lists `exportGlobals` (JSON only, no ink or audio change), because m01→m02 needs it.
+- **Next links: build them all:** m01→m02, m02→m03, m03→m04, m04→m05, m05→m06 (plan section 4), done by subagents, with the same rule that a carried-over line names what the player did.
+- **Ideas backlog:** ink-triggered action visemes (e.g. `give_item`), added under "Action frames in talk sprites".
+
 ## 2026-10-17 (carry-over: build answers)
 
 - **Carrying choices between missions: build now**, m06 → m07 first, then m07 → m08. The other first uses come later. Built: `docs/agents/CARRY_OVER_PLAN.md` "Built", engine commit 6ed3caa7.

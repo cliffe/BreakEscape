@@ -117,6 +117,9 @@ From the PIN cracker fix (2026-10-10), found but not fixed:
 
 - **Open sprites and opening animations for every container** (user, 2026-10-10; M–L). Each container sprite gets an open version and a short transition that plays when the player opens it: the safe door swings open, the bin lid lifts. A per-object attribute says whether it closes again afterwards.
 - **Action frames in talk sprites** (user, 2026-10-10; M). Add action frames alongside the visemes, such as `action_give_item` showing the character handing something to the player. The ink names the action where the script needs it.
+  - **Detail (user, 2026-10-17):** custom visemes triggered from ink, e.g. a `give_item` frame with the NPC's hand held out towards the player. Make each one as an edit of the NPC's init image (`<key>_talk_init.png`). The pose changes the whole bust, not just the mouth, so it can only show in a short pause between voiced lines, never while lip sync runs.
+  - **Scope:** generate them only where an NPC's ink would benefit from an action or emotion shown on screen (handing over a card, a shrug, a flinch, a laugh). Don't make a standard set for every NPC.
+  - Engine side: a tag such as `# action:give_item` shows the frame for a set time, or until the next line's audio starts, then returns to `rest`. The viseme sheet's JSON lists the extra frames.
 
 - **Align voice style text when audio is generated** (style guide; S). m03–m06 Nightshade identity text and m06 HaX briefing/debrief text differ slightly from the canonical wording in the voice bible.
 
