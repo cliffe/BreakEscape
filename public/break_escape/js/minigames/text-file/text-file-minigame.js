@@ -42,7 +42,7 @@ export class TextFileMinigame extends MinigameScene {
         
         // Customize the header
         this.headerElement.innerHTML = `
-            <h3><img src="/break_escape/assets/icons/text-file.png" alt="Document" class="icon"> ${displayDashes(this.textFileData.fileName)}</h3>
+            <h3><img src="/break_escape/assets/icons/notes.png" alt="Document" class="icon"> ${displayDashes(this.textFileData.fileName)}</h3>
             <p>Viewing text file contents</p>
         `;
         

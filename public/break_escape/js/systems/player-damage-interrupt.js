@@ -99,6 +99,49 @@ function notifyPhoneHit(notify, deps) {
   }
 }
 
+/**
+ * True while the player is knocked out. MinigameFramework.startMinigame refuses
+ * to open anything then (m04 confirmation R2 N1): the KO screen comes up a second
+ * after the knockout and movement is only locked then, so a phone opened in that
+ * second, or by a delayed reopen (bark click, return from the notepad), sat
+ * under the KNOCKED OUT screen. Restart resets HP before it reloads.
+ * @param {object} [deps] - overridable for tests
+ */
+export function playerIsKnockedOut(deps = {}) {
+  const health = deps.playerHealth ?? (typeof window !== 'undefined' ? window.playerHealth : null);
+  try {
+    return !!health?.isKO?.();
+  } catch (err) {
+    return false;
+  }
+}
+
+/**
+ * Close whatever minigame is open when the KO screen shows, whatever it is and
+ * however it opened (the knockout hit closes the one open at that moment, but
+ * one can open in the second before the screen). Same close path as a hit.
+ * @param {object} [deps] - overridable for tests
+ * @returns {boolean} true if a minigame was closed
+ */
+export function closeMinigameForKnockout(deps = {}) {
+  const framework = deps.framework ?? (typeof window !== 'undefined' ? window.MinigameFramework : null);
+  const current = framework?.currentMinigame;
+  if (!current || current._ending) return false;
+  try {
+    if (typeof current.complete === 'function') current.complete(false);
+    else framework.forceCloseMinigame();
+  } catch (err) {
+    console.error('Failed to close minigame on knockout:', err);
+  }
+  // complete() can leave it open (an override that waits, or throws): force it
+  if (framework.currentMinigame === current && !current._ending) {
+    try { framework.forceCloseMinigame(); } catch (e) { /* nothing more to do */ }
+  }
+  return true;
+}
+
 if (typeof window !== 'undefined') {
   window.minigameClosedByDamage = minigameClosedByDamage;
+  window.playerIsKnockedOut = playerIsKnockedOut;
+  window.closeMinigameForKnockout = closeMinigameForKnockout;
 }

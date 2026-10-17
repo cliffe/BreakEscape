@@ -34,11 +34,28 @@ export function fistsClickPunches({ dx, dy, onNPC, radius = FISTS_PUNCH_CLICK_RA
  * @param {object|null} npc - NPC entry from the NPC manager
  */
 export function pastTalkingMessage(npc) {
+  return `${subjectContraction(npc)} past talking.`;
+}
+
+/** "He's", "She's" or "They're", by the same rule as pastTalkingMessage. */
+function subjectContraction(npc) {
   const gender = String(npc?.gender || '').toLowerCase();
   const sheet = String(npc?.spriteSheet || '');
-  if (gender === 'female' || gender === 'f' || (!gender && sheet.startsWith('female_'))) return "She's past talking.";
-  if (gender === 'male' || gender === 'm' || (!gender && sheet.startsWith('male_'))) return "He's past talking.";
-  return "They're past talking.";
+  if (gender === 'female' || gender === 'f' || (!gender && sheet.startsWith('female_'))) return "She's";
+  if (gender === 'male' || gender === 'm' || (!gender && sheet.startsWith('male_'))) return "He's";
+  return "They're";
+}
+
+/**
+ * Toast text for an NPC turning hostile from an ink #hostile tag:
+ * "Kemal Aydin turns on you. He's coming for you!" Uses the display name, never the raw id
+ * (the id is only the last fallback when the NPC can't be found).
+ * @param {object|null} npc - NPC entry from the NPC manager
+ * @param {string} npcId
+ */
+export function hostileTurnMessage(npc, npcId) {
+  const name = npc?.displayName || npc?.name || npcId;
+  return `${name} turns on you. ${subjectContraction(npc)} coming for you!`;
 }
 
 let lastToastAt = -Infinity;

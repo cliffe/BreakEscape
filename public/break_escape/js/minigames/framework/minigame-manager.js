@@ -17,6 +17,13 @@ export const MinigameFramework = {
             console.error(`Minigame scene '${sceneType}' not registered`);
             return null;
         }
+
+        // Nothing opens while the player is knocked out: it would sit under the
+        // KNOCKED OUT screen (player-damage-interrupt.js; m04 confirmation R2 N1)
+        if (window.playerIsKnockedOut?.()) {
+            console.log(`Not starting minigame '${sceneType}': the player is knocked out`);
+            return null;
+        }
         
         // If there's already a minigame running, end it first
         // (a minigame already mid-end, i.e. we were called from its onComplete, is

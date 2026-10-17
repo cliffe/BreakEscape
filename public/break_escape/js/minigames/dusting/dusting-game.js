@@ -49,6 +49,19 @@ const BRUSH_BOOST = 1.3;
 // UI-side only: extra haze drawn over fogged furrows so over-brushing is visible (the model's scores are unchanged).
 const FOG_HAZE = 1.4;
 
+// m05 blind B #7: the fine brush lays a ~5 px strip per pass (the feather ~14 px), so sweeps a
+// little apart leave stripes and coverage stalls at 23 to 36% against easy's 40%. It is the
+// default tool for black and silver. After this many fine strokes below the lift threshold the
+// coach suggests the feather brush.
+export const FINE_SWITCH_AFTER_STROKES = 6;
+
+/** True when the coach should suggest swapping the fine brush for the feather brush. */
+export function shouldSuggestFeather({ tool, strokes, coverage, minCoverage, tools }) {
+    return tool === 'fine' && Array.isArray(tools) && tools.includes('broad')
+        && strokes >= FINE_SWITCH_AFTER_STROKES && coverage < minCoverage;
+}
+export const FEATHER_SUGGESTION = 'The fine brush lays a narrow line, so gaps stay between your strokes. Try the feather brush (B) to cover the print, then the fine brush for any gaps.';
+
 const FORENSIC = {
     examine: 'Latent prints are left by sweat and skin oils. A light held low across the surface makes the residue catch the light.',
     find: 'Latent prints are left by sweat and skin oils. A light held low across the surface makes the residue catch the light.',
@@ -168,6 +181,7 @@ export class DustingMinigame extends MinigameScene {
         this.step = 'examine';
         this.powder = null;
         this.tool = null;
+        this.toolStrokes = 0;
         this.reticle = { x: N / 2, y: N / 2 };
         this.pointerInside = false;
         this.pointerDown = false;
@@ -551,6 +565,7 @@ export class DustingMinigame extends MinigameScene {
         if (this.powder !== id) { this.field.clear(); this.lastBand = 0; }
         this.powder = id;
         this.tool = POWDERS[id].tools[0];
+        this.toolStrokes = 0;
         this.puffMode = false;
         this._setStep('dust');
         this._refreshMetrics(true);
@@ -560,6 +575,7 @@ export class DustingMinigame extends MinigameScene {
 
     _chooseTool(t) {
         if (!TOOLS[t] || !POWDERS[this.powder].tools.includes(t)) return;
+        if (this.tool !== t) this.toolStrokes = 0;
         this.tool = t; this.puffMode = false;
         if (this.step === 'dust') this._renderPanel();
         this.announce(`${TOOLS[t].label} selected.`);
@@ -737,6 +753,7 @@ export class DustingMinigame extends MinigameScene {
         this.reticle = pos; this.pointerInside = true; this.pointerDown = true;
         try { this.canvas.setPointerCapture(e.pointerId); } catch (err) { /* synthetic pointers can't be captured */ }
         this.canvas.focus({ preventScroll: true });
+        this._countStroke();
         this._act(pos, null);
         this.lastPt = pos;
         this.dirty = true;
@@ -755,6 +772,20 @@ export class DustingMinigame extends MinigameScene {
     _onPointerUp() {
         this.pointerDown = false;
         this.lastPt = null;
+    }
+
+    /** A brush stroke starts (pointer down, Space held, Enter brushing on): feeds the feather suggestion. */
+    _countStroke() {
+        if (this.step !== 'dust' || this.puffMode) return;
+        this.toolStrokes = (this.toolStrokes || 0) + 1;
+        if (this.toolStrokes === FINE_SWITCH_AFTER_STROKES && this._suggestFeather()) this.announce(FEATHER_SUGGESTION);
+    }
+
+    _suggestFeather() {
+        return shouldSuggestFeather({
+            tool: this.tool, strokes: this.toolStrokes || 0, coverage: this.metrics.coverage,
+            minCoverage: this.diff.minCoverage, tools: POWDERS[this.powder] && POWDERS[this.powder].tools
+        });
     }
 
     /** One brush/press/mark at pos; with `from`, a continuous stroke from there. */
@@ -800,12 +831,13 @@ export class DustingMinigame extends MinigameScene {
             e.preventDefault();
             if (this.step === 'find') { if (!e.repeat) this._attemptFind(this.reticle); return; }
             if (this.step === 'dust' && k === 'Enter') {
-                if (!e.repeat) { this.stickyBrush = !this.stickyBrush; this.announce(this.stickyBrush ? 'Brushing on. Arrow keys now brush. Press Enter to stop.' : 'Brushing off.'); }
+                if (!e.repeat) { this.stickyBrush = !this.stickyBrush; if (this.stickyBrush) this._countStroke(); this.announce(this.stickyBrush ? 'Brushing on. Arrow keys now brush. Press Enter to stop.' : 'Brushing off.'); }
                 return;
             }
             if (this.step === 'dust' || this.step === 'lift') {
                 if (!this.spaceHeld) {
                     this.spaceHeld = true;
+                    this._countStroke();
                     this._act(this.reticle, null);
                     clearInterval(this._keyTimer);
                     this._keyTimer = setInterval(() => this._act(this.reticle, null), KEY_TICK_MS);
@@ -943,6 +975,7 @@ export class DustingMinigame extends MinigameScene {
         if (why && m.coverage > 0.03) return `${why} Change powder to see the difference.`;
         if (m.foggy > 0.08) return 'Powder is filling the furrows between ridges in places and the lines are blurring. Use Puff to clear it, or lift now.';
         if (m.coverage < 0.03) return 'Brush over the print. Ridges appear where the powder clings.';
+        if (this._suggestFeather()) return FEATHER_SUGGESTION;
         if (m.coverage < this.diff.minCoverage) return 'Ridges are coming up. Keep sweeping across the print.';
         if (m.clarity < 0.75) return 'Good start. Cover the rest of the print with light strokes, then lift.';
         return 'The ridges are clear. Lift when you are happy, or fill any gaps first.';

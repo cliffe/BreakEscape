@@ -13,6 +13,14 @@
     pointer-events: none;
 }
 
+/* The phone (400px, centred) keeps warnings such as "You're being hit!" on top. A
+   600px toast ran over the unread badge in its header (m06 confirmation F3), so
+   while the phone is open the column stops 12px right of the phone's edge. zoom
+   scales vw too, hence the divide. */
+body:has([data-minigame="phone-chat"]) #notification-container {
+    width: max(240px, calc((50vw - 212px) / var(--hud-zoom, 1) - 20px));
+}
+
 .notification {
     background-color: rgba(0, 0, 0, 0.8);
     color: white;

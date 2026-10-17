@@ -139,6 +139,10 @@ export class GameOverScreen {
       this.overlay.style.display = 'flex';
       this.isShowing = true;
 
+      // Close anything opened in the second since the knockout, so nothing
+      // runs under this screen (m04 confirmation R2 N1)
+      window.closeMinigameForKnockout?.();
+
       // Disable player movement
       if (window.player) {
         window.player.disableMovement = true;

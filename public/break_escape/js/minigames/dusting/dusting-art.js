@@ -3,7 +3,8 @@
  *
  * Every slot has a fixed size and a fixed path. If a PNG exists at that path it is used (nearest-neighbour,
  * so pixel art stays crisp); otherwise the slot is drawn procedurally, so the minigame is complete without
- * any image files. Drop a PNG of the right size at the path and it replaces the fallback on the next open.
+ * any image files. Drop a PNG of the right size at the path and add its name to PRESENT_ART to replace the
+ * fallback.
  *
  * Paths are under /break_escape/assets/minigames/fingerprint/<name>.png.
  *
@@ -158,6 +159,13 @@ export const ART_SLOTS = {
     'backing-card': { w: 128, h: 128, draw: drawBackingCard }
 };
 
+/**
+ * Slots that have a PNG in assets/minigames/fingerprint/. Only these are requested: probing the others
+ * logged a 404 for each on every page (the surfaces and the backing card are procedural for now). Add a
+ * slot's name here when its PNG is added.
+ */
+export const PRESENT_ART = new Set(['jar-black', 'jar-silver', 'jar-magnetic', 'brush-fine', 'brush-feather', 'wand', 'tape-roll']);
+
 /** Surface id -> slot name. */
 export const SURFACE_SLOT = { glossy_light: 'surface-ceramic', glossy_dark: 'surface-bezel', textured: 'surface-keypad' };
 
@@ -172,6 +180,7 @@ export function preloadArt() {
     if (typeof Image === 'undefined') return;
     for (const name of Object.keys(ART_SLOTS)) {
         if (name in cache || pending.has(name)) continue;
+        if (!PRESENT_ART.has(name)) { cache[name] = false; continue; }
         pending.add(name);
         const img = new Image();
         img.onload = () => {

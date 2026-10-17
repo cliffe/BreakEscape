@@ -10,10 +10,15 @@
  *   lift-card.png        the backing card a lifted print sits on
  *   reference-card.png   the card a reference print (field notes, compare step) sits on
  *
- * A missing file is not an error: the CSS fallback stays. Each name is probed once per page.
+ * A missing file is not an error: the CSS fallback stays. Only names in PRESENT_ART are probed,
+ * once per page.
  */
 
 export const ART_SLOTS = ['reader-bezel', 'lift-card', 'reference-card'];
+
+// Slots whose PNG exists. Only these are probed, so the missing reader-bezel.png isn't a 404 on
+// every page. Add a name here when its PNG is added.
+export const PRESENT_ART = new Set(['lift-card', 'reference-card']);
 
 const cache = new Map(); // name -> Promise<string|null>
 
@@ -24,7 +29,7 @@ export function artUrl(name) {
 
 /** Resolves to the image URL if the PNG exists, otherwise null. */
 export function loadArtSlot(name) {
-    if (!ART_SLOTS.includes(name)) return Promise.resolve(null);
+    if (!ART_SLOTS.includes(name) || !PRESENT_ART.has(name)) return Promise.resolve(null);
     if (!cache.has(name)) {
         cache.set(name, new Promise(resolve => {
             if (typeof Image === 'undefined') { resolve(null); return; }

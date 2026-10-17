@@ -10,6 +10,7 @@
 
 import { getRoomDisplayName } from '../../utils/room-display-name.js';
 import { parsePortraitTag } from '../../utils/portrait-variants.js';
+import { hostileTurnMessage } from '../../systems/combat-input.js';
 
 /**
  * Process game action tags from Ink story
@@ -262,7 +263,8 @@ export async function processGameActionTags(tags, ui) {
                         if (window.npcHostileSystem) {
                             window.npcHostileSystem.setNPCHostile(npcId, true);
                             result.success = true;
-                            result.message = `⚠️ ${npcId} is now hostile!`;
+                            const hostileNpc = window.npcManager?.getNPC?.(npcId) || null;
+                            result.message = hostileTurnMessage(hostileNpc, npcId);
                             if (ui) ui.showNotification(result.message, 'warning');
                         } else {
                             result.message = '⚠️ Hostile system not initialized';

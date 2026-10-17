@@ -16,9 +16,11 @@ const copy = (src, name, fix = s => s) => writeFileSync(join(dir, name), fix(rea
 copy('utils/global-condition.js', 'global-condition.mjs');
 copy('utils/portrait-variants.js', 'portrait-variants.mjs', s => s.replace("'./global-condition.js'", "'./global-condition.mjs'"));
 copy('utils/room-display-name.js', 'room-display-name.mjs');
+copy('systems/combat-input.js', 'combat-input.mjs');
 copy('minigames/helpers/chat-helpers.js', 'chat-helpers.mjs',
     s => s.replace("'../../utils/room-display-name.js'", "'./room-display-name.mjs'")
-        .replace("'../../utils/portrait-variants.js'", "'./portrait-variants.mjs'"));
+        .replace("'../../utils/portrait-variants.js'", "'./portrait-variants.mjs'")
+        .replace("'../../systems/combat-input.js'", "'./combat-input.mjs'"));
 
 globalThis.window = { gameState: { globalVariables: {} } };
 const pv = await import(pathToFileURL(join(dir, 'portrait-variants.mjs')).href);

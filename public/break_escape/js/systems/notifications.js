@@ -34,9 +34,17 @@ function releaseHeldNotifications() {
 // A toast raised just before a minigame opens (the task that completes on an unlock,
 // then the container opening 500 ms later) slipped past the hold and sat over the
 // panel (m07 confirmation N1, Cascade Control). When a minigame starts, info and
-// success toasts younger than RECENT_TOAST_MS go back into the held queue; older
-// ones have been on screen long enough to read and are left to fade.
+// success toasts younger than RECENT_TOAST_MS go back into the held queue. Older
+// ones have been on screen long enough to read, so they are dismissed at once:
+// left to fade, a room's task and objective toasts sat over the portrait of a
+// conversation opened 1.5 to 2 s after entering (m06 confirmation F2, Satoshi).
 export const RECENT_TOAST_MS = 1500;
+
+/** Shown info/success toasts too old to hold again: dismissed when a panel opens. */
+export function pickStaleHoldable(entries, now, windowMs = RECENT_TOAST_MS) {
+    return entries.filter((e) => e && HOLDABLE_TYPES.has(e.type)
+        && typeof e.shownAt === 'number' && now - e.shownAt >= windowMs);
+}
 
 /** Which shown toasts to pull back when a panel opens. entries: [{ type, shownAt }] */
 export function pickRecentHoldable(entries, now, windowMs = RECENT_TOAST_MS) {
@@ -58,6 +66,10 @@ export function holdRecentNotifications(now = Date.now()) {
         heldNotifications.push([message, type, title, duration]);
     });
     if (pulled.length && !holdTimer) holdTimer = setInterval(releaseHeldNotifications, HOLD_POLL_MS);
+    pickStaleHoldable(shown, now).forEach(({ el }) => {
+        el._toast.pulled = true;
+        removeNotification(el);
+    });
     return pulled.length;
 }
 if (typeof window !== 'undefined') window.holdRecentNotifications = holdRecentNotifications;

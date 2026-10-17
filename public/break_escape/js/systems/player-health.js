@@ -82,13 +82,18 @@ function damagePlayer(amount) {
     });
   }
 
+  // Mark the knockout before closing the open minigame: its onComplete can open
+  // another (the notepad returns to the phone), and startMinigame refuses only
+  // once isKO is set (m04 confirmation R2 N1)
+  const knockedOut = state.currentHP <= 0 && !state.isKO;
+  if (knockedOut) state.isKO = true;
+
   // Taking damage closes any open minigame so the player can respond (the
   // phone stays open unless the hit is a knockout: player-damage-interrupt.js)
   closeMinigameOnDamage(amount, { ko: state.currentHP <= 0 });
 
   // Check for KO
-  if (state.currentHP <= 0 && !state.isKO) {
-    state.isKO = true;
+  if (knockedOut) {
 
     // Play death animation
     if (window.player) {
