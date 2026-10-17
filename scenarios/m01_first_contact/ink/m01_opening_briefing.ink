@@ -83,7 +83,9 @@ Agent HaX: Your job is to get inside and find out what they're actually planning
 // ================================================
 
 === mission_objectives ===
-Agent HaX: Infiltrate Viral Dynamics and identify what ENTROPY is planning. Gather evidence of their operations and identify all operatives... And Report back with actionable intelligence so we can stop whatever they're building.
+Agent HaX: Infiltrate Viral Dynamics and identify what ENTROPY is planning. Gather evidence of their operations and identify all operatives.
+
+Agent HaX: Then report back with actionable intelligence so we can stop whatever they're building.
 
 + [How do I get inside?]
     -> cover_story

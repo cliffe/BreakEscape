@@ -243,7 +243,9 @@ Kevin Park: Is it about the name-filing thing? Because I've been trying to figur
 === warn_kevin_details ===
 Kevin Park: Say that again.
 
-Player: I found a contingency plan in Derek's files. Fake logs, forged emails — all pointing to you. If this investigation closes in on him, he activates it. You get arrested. He walks.
+Player: I found a contingency plan in Derek's files. Fake logs, forged emails — all pointing to you.
+
+Player: If this investigation closes in on him, he activates it. You get arrested. He walks.
 
 Kevin Park: *quietly* Patricia.
 
@@ -584,7 +586,9 @@ Kevin Park: So what do I do? Do I just go back to my desk and pretend everything
 #set_variable:kevin_accused=true
 Kevin Park: The report has a "HEADER MISMATCH DETECTED" flag. That's not me questioning it — that's the mail server's own forensic system flagging a forgery.
 
-Kevin Park: And the anomaly report itself says my workstation was active at the same time the server room was being accessed. That means two sessions running simultaneously. That means someone else was using my credentials.
+Kevin Park: And the anomaly report itself says my workstation was active at the same time the server room was being accessed.
+
+Kevin Park: That means two sessions running simultaneously. That means someone else was using my credentials.
 
 Kevin Park: You're a security professional. You know what those flags mean.
 
