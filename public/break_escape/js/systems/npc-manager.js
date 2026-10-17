@@ -1,7 +1,7 @@
 // NPCManager with event → knot auto-mapping and conversation history
 // OPTIMIZED: InkEngine caching, event listener cleanup, debug logging
 // default export NPCManager
-import { isInLineOfSight, drawLOSCone, clearLOSCone, getNPCFacingDirection, losVisualSuppressed, losVisualOutOfRoom } from './npc-los.js';
+import { isInLineOfSight, drawLOSCone, clearLOSCone, getNPCFacingDirection, losVisualSuppressed, losVisualOutOfRoom, losCatchSpent } from './npc-los.js';
 import { classifyPhoneLine, phoneStepLines } from '../minigames/phone-chat/phone-chat-speaker.js';
 
 /**
@@ -2170,7 +2170,12 @@ export default class NPCManager {
       const suppressed = losVisualSuppressed(npc, window.npcHostileSystem?.isNPCKO?.(npc.id) === true)
         // and NPCs in another room, unless hostile (m06 R5)
         || losVisualOutOfRoom(npc, this._losPlayerRoom, window.npcHostileSystem?.isNPCHostile?.(npc.id) === true);
-      if (suppressed || !npc.los || !npc.los.enabled || (!this.losVisualizeAll && npc.los.visualize !== true)) {
+      // and NPCs whose only lockpick catch can't fire any more (m08 E9); not in debug show-all
+      const catchSpent = () => !this.losVisualizeAll && losCatchSpent(npc, (mapping, index) =>
+        this._mappingWouldFire(npc.id, 'lockpick_used_in_view', this._buildMappingConfig(mapping, index),
+          { npcId: npc.id, roomId: npc.roomId, timestamp: Date.now() }),
+        window.npcHostileSystem?.isNPCHostile?.(npc.id) === true);
+      if (suppressed || !npc.los || !npc.los.enabled || (!this.losVisualizeAll && npc.los.visualize !== true) || catchSpent()) {
         // console.log(`   Skip "${npc.id}" - hidden or KO, no LOS config, disabled, or not flagged for visualization`);
         if (this.losVisualizations.has(npc.id)) {
           clearLOSCone(this.losVisualizations.get(npc.id));

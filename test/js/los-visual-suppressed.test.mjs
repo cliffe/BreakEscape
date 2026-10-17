@@ -55,3 +55,32 @@ test('an NPC in another room draws no cone unless hostile', async () => {
     const mgr = readFileSync(join(sys, 'npc-manager.js'), 'utf8');
     assert.match(mgr, /losVisualOutOfRoom\(npc, this\._losPlayerRoom, window\.npcHostileSystem\?\.isNPCHostile\?\.\(npc\.id\) === true\)/);
 });
+
+// m08 E9: an NPC whose sight only serves a lockpick catch draws no circle once
+// that catch can't fire again (once-only spent, max reached, condition off).
+// A catch on cooldown still counts as live.
+test('a spent lockpick catch hides the sight circle', async () => {
+    const { losCatchSpent } = await import(pathToFileURL(join(dir, 'npc-los.mjs')).href);
+    const catchMap = { eventPattern: 'lockpick_used_in_view', conversationMode: 'person-chat' };
+    const agent = { id: 'agent', los: { enabled: true, visualize: true }, eventMappings: [catchMap] };
+    const says = (fire, reason) => () => ({ fire, reason });
+    assert.equal(losCatchSpent(agent, says(true)), false, 'live catch: keep');
+    assert.equal(losCatchSpent(agent, says(false, 'once-only handler already fired')), true);
+    assert.equal(losCatchSpent(agent, says(false, 'max triggers (1) reached')), true);
+    assert.equal(losCatchSpent(agent, says(false, 'condition not met: !globalVars.named')), true);
+    assert.equal(losCatchSpent(agent, says(false, 'on cooldown (900ms remaining)')), false, 'cooldown: keep');
+    assert.equal(losCatchSpent(agent, says(false, 'once-only handler already fired'), true), false, 'hostile: keep');
+    // Two catches: hidden only when both are spent
+    const two = { ...agent, eventMappings: [catchMap, { ...catchMap }] };
+    let n = 0;
+    assert.equal(losCatchSpent(two, () => (n++ === 0 ? { fire: false, reason: 'once-only handler already fired' } : { fire: true })), false);
+    // Sight used for something else, or no catch at all: keep
+    assert.equal(losCatchSpent({ ...agent, los: { enabled: true, challengeOnSight: true } }, says(false, 'once-only handler already fired')), false);
+    assert.equal(losCatchSpent({ id: 'plain', los: { enabled: true }, eventMappings: [] }, says(false, 'x')), false);
+    assert.equal(losCatchSpent({ id: 'phone', eventMappings: [{ ...catchMap, conversationMode: 'phone-chat' }] }, says(false, 'x')), false);
+    const mgr = readFileSync(join(sys, 'npc-manager.js'), 'utf8');
+    const fn = mgr.slice(mgr.indexOf('_updateLOSVisualizations(scene) {'));
+    const body = fn.slice(0, fn.indexOf('drawLOSCone('));
+    assert.match(body, /losCatchSpent\(npc,[\s\S]*?_mappingWouldFire\(npc\.id, 'lockpick_used_in_view'/);
+    assert.match(body, /\|\| catchSpent\(\)\) \{/);
+});

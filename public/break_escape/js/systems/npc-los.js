@@ -240,6 +240,35 @@ export function losVisualOutOfRoom(npc, playerRoomId, isHostile = false) {
   return npc.roomId !== playerRoomId;
 }
 
+/**
+ * True when an NPC's sight circle has nothing left to warn about (m08 E9): its
+ * only use of sight is catching a lockpick (one or more lockpick_used_in_view
+ * person-chat mappings, no los.challengeOnSight), and none of those mappings
+ * would fire now: a once-only catch already spent, maxTriggers reached, or its
+ * condition off (m08's off-duty agent after the naming). A mapping that is only
+ * on cooldown still counts as live. Hostile NPCs keep their cone.
+ * @param {object} npc - NPC entry (eventMappings, los)
+ * @param {Function} wouldFire - (mapping, index) => { fire, reason } from npc-manager _mappingWouldFire
+ * @param {boolean} [isHostile=false]
+ */
+export function losCatchSpent(npc, wouldFire, isHostile = false) {
+  if (isHostile || !npc || typeof wouldFire !== 'function') return false;
+  if (npc.los?.challengeOnSight) return false;
+  const maps = Array.isArray(npc.eventMappings) ? npc.eventMappings : [];
+  const catches = [];
+  maps.forEach((mapping, index) => {
+    if (mapping?.eventPattern === 'lockpick_used_in_view' && mapping.conversationMode === 'person-chat') {
+      catches.push({ mapping, index });
+    }
+  });
+  if (catches.length === 0) return false;
+  return catches.every(({ mapping, index }) => {
+    const r = wouldFire(mapping, index) || {};
+    if (r.fire) return false;
+    return !(typeof r.reason === 'string' && r.reason.startsWith('on cooldown'));
+  });
+}
+
 export function drawLOSCone(scene, npc, losConfig = {}, color = 0x00ff00, alpha = 0.2) {
   const {
     range = 200,
