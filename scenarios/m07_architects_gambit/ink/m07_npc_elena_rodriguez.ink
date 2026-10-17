@@ -251,7 +251,7 @@ Elena Rodriguez: And I read the vendor manifest. Over a third of the entries are
     Elena Rodriguez: Electronic health records. And computer-aided dispatch.
     -> revision_dispatch
 + [Dispatch. As in 911 call routing.]
-    Elena Rodriguez: As in 911 call routing.
+    Elena Rodriguez: Yes. Where every nine-one-one call goes first.
     -> revision_dispatch
 
 === revision_dispatch ===

@@ -172,7 +172,7 @@ Dr. James Mercer: Sit if you like. You've walked a long way through my building.
 === topic_lesson ===
 ~ heard_the_lesson = true
 
-Dr. James Mercer: I did publish. Four papers, two of them still cited. I testified twice. The same submission went in two times in eight years.
+Dr. James Mercer: I did publish. Four papers, two of them still cited. I gave evidence to two committees. The same submission went in twice in eight years.
 Dr. James Mercer: Each time it was costed, deferred and declined by people who couldn't tell you what a phase angle was.
 
 Dr. James Mercer: In 2019 a solar storm came within ninety minutes of taking the western grid down on its own, and nobody wrote a word about it.

@@ -21,7 +21,7 @@ VAR m06_completed = false          // Imported (read-only): a finished m06 run e
 // ================================================
 
 === start ===
-Narrator: 02:41 Pacific. Rain on the I-5, and the secure tablet on the passenger seat lights up. Behind the Director, a wall map with four red pins.
+Narrator: Two forty-one in the morning, Pacific time. Rain on the I-5, and the secure tablet on the passenger seat lights up. Behind the Director, a wall map with four red pins.
 
 Director Magnus Netherton: Agent 0x00. Keep driving. I would rather you heard this from me than read it off a screen.
 
@@ -93,7 +93,7 @@ Director Magnus Netherton: You have your go-bag: picks, the cloner, the print ki
 // still on the line, so the commit is made at the gate. The window (40 min from
 // the commit), T-10 and "before you are through the gate" then agree with the
 // story clock. The handoff keeps the building.
-Narrator: He keeps the line open while the desk pulls the other three together. Forty minutes of rain and empty interstate. Then an industrial park outside Portland, 03:24 by the dashboard clock.
+Narrator: He keeps the line open while the desk pulls the other three together. Forty minutes of rain and empty interstate. Then an industrial park outside Portland, three twenty-four by the dashboard clock.
 
 Director Magnus Netherton: We have one tactical team airborne and uncommitted. One. It can reach one of the other three in time to matter.
 
@@ -235,11 +235,11 @@ Director Magnus Netherton: If the team goes there, the ransomware never reaches 
 === compare_operations ===
 Director Magnus Netherton: Side by side, then. I will read it flat.
 
-Director Magnus Netherton: Fracture: an election nobody believes in. Twenty to forty dead over a week. The records never come back.
+Director Magnus Netherton: Fracture. An election nobody believes in. Twenty to forty dead over a week. The records never come back.
 
-Director Magnus Netherton: Trojan Horse: access to forty-seven million systems. No projected fatalities. A decade to rebuild.
+Director Magnus Netherton: Trojan Horse. Access to forty-seven million systems. No projected fatalities. A decade to rebuild.
 
-Director Magnus Netherton: Meltdown: eighty to a hundred and forty dead this week. The markets recover inside a year. The patients do not.
+Director Magnus Netherton: Meltdown. Eighty to a hundred and forty dead this week. The markets recover inside a year. The patients do not.
 
 * [So Meltdown. It's the only one killing people tonight.]
     Director Magnus Netherton: That is the reading the numbers invite.

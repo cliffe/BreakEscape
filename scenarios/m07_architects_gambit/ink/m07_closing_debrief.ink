@@ -87,7 +87,7 @@ VAR asked_on_me = false
 // PASS 2 review minor 10: the debrief is the same night, over the secure
 // link (the text says "tonight" and "four hours ago" throughout).
 // Phase 4 dialogue C1 (D7-1): the two opening narrator lines merged.
-Narrator: A borrowed office at the grid site, not long after the abort. On the secure link, Netherton sits down in front of the camera with a tablet, in the suit he briefed you in.
+Narrator: A borrowed office at the grid site, not long after the abort. On the secure link, Netherton sits down with a tablet, in the suit he briefed you in.
 
 Director Magnus Netherton: Agent. Sit down. You have earned that much.
 
@@ -173,7 +173,7 @@ Director Magnus Netherton: Three Ghost Protocol operatives are in custody. Their
 
 = covered_trojan_direct
 Director Magnus Netherton: The team reached TechForge before the run started. Eight hundred and forty signing keys burned. No backdoor went anywhere.
-Director Magnus Netherton: Two thousand four hundred vendors are having a miserable fortnight.
+Director Magnus Netherton: Twenty-four hundred vendors are having a miserable fortnight.
 Narrator: He scrolls. He reads the next part more slowly than the rest.
 // Phase 4 dialogue C1 (D7-6): manifest and dormancy merged into one line.
 Director Magnus Netherton: The manifest was not what the brief said. A third of those keys sign health record and dispatch systems, and the payload wakes in nine days, not ninety.
@@ -210,7 +210,7 @@ Director Magnus Netherton: The team took TechCore's twenty-fourth floor and push
 Director Magnus Netherton: The hospitals first, because that is what you were buying. Four thousand two hundred hospitals had an ordinary night.
 // Phase 4 dialogue C1 (D7-2): four hours in, nothing has recovered yet.
 Director Magnus Netherton: Eight of the twelve held clean. Four took damage, mostly money and stolen code. Futures are down three per cent.
-Director Magnus Netherton: Two Digital Vanguard insiders were detained in the SOC. Ashford was not with them. Ashford is never with them.
+Director Magnus Netherton: Two Digital Vanguard insiders were detained on the twenty-fourth floor. Ashford was not with them. Ashford is never with them.
 -> team_reaction
 
 = covered_none
@@ -741,7 +741,7 @@ Narrator: Netherton closes the tablet cover and holds it against his chest, whic
     Director Magnus Netherton: You finished it, Agent. I will write the rest myself.
 }
 
-Director Magnus Netherton: Report to headquarters when your leave ends. Not to this room. Somewhere without windows.
+Director Magnus Netherton: When your leave ends, report to headquarters. I will find us a room without windows.
 
 // Phase 4 dialogue C1 (D7-1, fixer's addition): the stance reply and the
 // handoff ran 13 lines without a choice.
