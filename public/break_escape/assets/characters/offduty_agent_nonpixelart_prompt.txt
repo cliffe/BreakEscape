@@ -1,0 +1,10 @@
+Make portrait for Off-Duty Agent
+A lanky white Geordie man of about 46 with fair, ruddy skin and freckles, thinning sandy hair combed back, a few days of ginger-grey stubble, and reading glasses slipped down his nose, his eyes peering over the rims with a knowing, conspiratorial look, an off-duty intelligence agent on his break who hears everything. He wears a rumpled plain forest-green crew-neck jumper with the sleeves shoved up to the forearms, a pale checked shirt collar out over the neckline and the shirt tail showing at the hem, a lanyard with a blank white ID card, brown corduroy trousers and a brown belt. He holds a rolled-up magazine with no visible text tucked under one arm, both hands hanging relaxed. No hood, no hoodie. Standing alone against an empty plain backdrop, no room or furniture behind him. No text, no writing and no logos anywhere.
+Body angled slightly to the side in a three-quarter turn, head turned toward the camera.
+Dialog view of character
+Dramatic lighting
+In the style of a detailed vector graphics illustration. the portrait shows the body from the hips up, including the waistline, belt, pockets and top of the trousers, against a plain background, in a game art design, realism and digital art aesthetic. Dialog character. Gritty realism.
+Slightly anime. Neutral expression.
+Square aspect ratio
+
+# Gemini (nanobanana), 2026-10-16, no reference images. Reframed with reframe_portrait.py --flip; unflipped original is offduty_agent_concept_3_raw.png.
