@@ -126,6 +126,18 @@ backup_plain = "SENT -- To: architect@entropy.onion  From: nightshade_deep_state
 
   "show_scenario_brief": "on_resume",
 
+  <%# Round 2 (2026-10-17): the safetynet credits overlay's header and ticker. True in every ending: Nightshade is named whether he is arrested or left in place, and the database is gone either way. %>
+  "creditsOverlay": {
+    "operation": "LOOKING GLASS",
+    "ticker": [
+      "THE LEAK: TRACED AND NAMED",
+      "RECRUITED IN TRAINING. FIFTEEN YEARS WAITING.",
+      "EVERY CATALOGUED WEAKNESS: IN ENTROPY'S HANDS",
+      "THE ARCHITECT: AT LARGE",
+      "ENTROPY: STILL OPERATIONAL"
+    ]
+  },
+
   "startRoom": "main_lobby",
 
   "flags": {
@@ -574,9 +586,10 @@ CREDITS
           "npcType": "person",
           "gender": "female",
           "position": { "x": 500, "y": 400 },
-          "spriteSheet": "female_office_worker_v2",
-          "spriteTalk": "assets/characters/female_office_worker_talk.png",
-          "spriteVisemes": "assets/characters/female_office_worker_visemes.png",
+          "spriteSheet": "athena",
+          "spriteTalk": "assets/characters/athena_talk.png",
+          "spriteVisemes": "assets/characters/athena_visemes.png",
+          "avatar": "assets/characters/athena_headshot.png",
           "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 },
           "storyPath": "scenarios/m08_the_mole/ink/m08_opening_briefing.json",
           "voice": {
@@ -636,9 +649,10 @@ CREDITS
               feet 104; at x 5.6 her 80x80 tap frame (x 139-219) stays off the
               badge printer at the counter's west end (x 104-126). %>
           "position": { "x": 5.6, "y": 3.8 },
-          "spriteSheet": "female_office_worker_v2",
-          "spriteTalk": "assets/characters/female_office_worker_talk.png",
-          "spriteVisemes": "assets/characters/female_office_worker_visemes.png",
+          "spriteSheet": "athena",
+          "spriteTalk": "assets/characters/athena_talk.png",
+          "spriteVisemes": "assets/characters/athena_visemes.png",
+          "avatar": "assets/characters/athena_headshot.png",
           "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 },
           "storyPath": "scenarios/m08_the_mole/ink/m08_receptionist_ai.json",
           "voice": {
@@ -969,20 +983,20 @@ CREDITS
               "eventPattern": "npc_hostile_state_changed",
               "condition": "data.npcId === 'director_netherton' && data.isHostile === true && data.restored !== true && globalVars.mole_identified !== true",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 5500, "message": "He won't talk while he's like this. Bring me the door audit. He's slower and stays in his office. To get clear, click open floor and walk." }
+              "sendTimedMessage": { "delay": 5500, "message": "He won't talk like this. Bring me the door audit. He's slower and stays in his office: get clear before you read your phone. Click open floor to walk." }
             },
             {
               "eventPattern": "npc_hostile_state_changed",
               "condition": "data.npcId === 'director_netherton' && data.isHostile === true && data.restored !== true && globalVars.mole_identified === true",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 5500, "message": "He won't talk while he's like this. Floor him for his card, or walk out: he's slower and stays in his office. Click open floor to walk." }
+              "sendTimedMessage": { "delay": 5500, "message": "He won't talk like this. Floor him for his card, or click open floor and walk out: he's slower and stays put. Get clear before reading your phone." }
             },
 <% else %>
             {
               "eventPattern": "npc_hostile_state_changed",
               "condition": "data.npcId === '<%= id %>' && data.isHostile === true && data.restored !== true",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 5500, "message": <%= ((id == "background_analyst" ? "She won't talk to you while she's like this. Put her down or keep away: she's slower than you. " : "He won't talk to you while he's like this. Put him down or keep away: he's slower than you. ") + "To get clear, click open floor and walk.").to_json %> }
+              "sendTimedMessage": { "delay": 5500, "message": <%= ((id == "background_analyst" ? "She won't talk to you while she's like this. Put her down or keep away: she's slower than you. " : "He won't talk to you while he's like this. Put him down or keep away: he's slower than you. ") + "Click open floor to get clear before you read your phone.").to_json %> }
             },
 <% end %>
 <% end %>
@@ -1549,9 +1563,10 @@ CREDITS
           "npcType": "person",
           "gender": "male",
           "position": { "x": 5.2, "y": 4.8 },
-          "spriteSheet": "male_nerd_v2",
-          "spriteTalk": "assets/characters/male_nerd_talk.png",
-          "spriteVisemes": "assets/characters/male_nerd_visemes.png",
+          "spriteSheet": "agent_vector",
+          "spriteTalk": "assets/characters/agent_vector_talk.png",
+          "spriteVisemes": "assets/characters/agent_vector_visemes.png",
+          "avatar": "assets/characters/agent_vector_headshot.png",
           "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 },
           "storyPath": "scenarios/m08_the_mole/ink/m08_suspect_vector.json",
           "voice": {
@@ -1603,9 +1618,10 @@ CREDITS
           "npcType": "person",
           "gender": "female",
           "position": { "x": 8.2, "y": 7.0 },
-          "spriteSheet": "female_office_worker_v2",
-          "spriteTalk": "assets/characters/female_office_worker_talk.png",
-          "spriteVisemes": "assets/characters/female_office_worker_visemes.png",
+          "spriteSheet": "junior_analyst",
+          "spriteTalk": "assets/characters/junior_analyst_talk.png",
+          "spriteVisemes": "assets/characters/junior_analyst_visemes.png",
+          "avatar": "assets/characters/junior_analyst_headshot.png",
           "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 },
           "storyPath": "scenarios/m08_the_mole/ink/m08_background_analyst.json",
           "voice": {
@@ -1678,9 +1694,10 @@ CREDITS
               Round 2 (playtest): male_telecom's hi-vis vest read as
               facilities; shirt and tie reads as an analyst. The break room's
               off-duty agent moved off this sprite to a hoodie. %>
-          "spriteSheet": "male_office_worker_v2",
-          "spriteTalk": "assets/characters/male_office_worker_talk.png",
-          "spriteVisemes": "assets/characters/male_office_worker_visemes.png",
+          "spriteSheet": "agent_phantom",
+          "spriteTalk": "assets/characters/agent_phantom_talk.png",
+          "spriteVisemes": "assets/characters/agent_phantom_visemes.png",
+          "avatar": "assets/characters/agent_phantom_headshot.png",
           "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 },
           "storyPath": "scenarios/m08_the_mole/ink/m08_suspect_phantom.json",
           "voice": {
@@ -2040,7 +2057,7 @@ CREDITS
         "emitters": {
           "laptop": [ { "radius": 30, "intensity": 0.3 } ],
           "hq_recording": [
-            { "condition": "globalVars.all_flags_submitted && globalVars.mole_identified && !globalVars.fate_decided", "color": "#ff2a20", "radius": 26, "intensity": 1.0, "effect": null, "offsetY": 5, "above": true }
+            { "condition": "globalVars.all_flags_submitted && globalVars.mole_identified && !globalVars.fate_decided", "color": "#ff2a20", "radius": 30, "intensity": 0.45, "effect": null, "offsetY": 14 }
           ],
           "hq_recorder": [
             { "condition": "globalVars.all_flags_submitted && globalVars.mole_identified && !globalVars.fate_decided", "color": "#ff3020", "radius": 5, "intensity": 1.0, "effect": null, "offsetX": 6, "offsetY": -1.5, "above": true }
@@ -2242,8 +2259,10 @@ CREDITS
           <%# Round 2: off duty, so a hoodie (male_hacker_hood_v2 has no
               viseme sheet; the talk sheet carries him, as in m06). Frees the
               shirt-and-tie sprite for Phantom. %>
-          "spriteSheet": "male_hacker_hood_v2",
-          "spriteTalk": "assets/characters/male_hacker_hood_talk.png",
+          "spriteSheet": "offduty_agent",
+          "spriteTalk": "assets/characters/offduty_agent_talk.png",
+          "spriteVisemes": "assets/characters/offduty_agent_visemes.png",
+          "avatar": "assets/characters/offduty_agent_headshot.png",
           "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 },
           "storyPath": "scenarios/m08_the_mole/ink/m08_background_agent.json",
           "voice": {
@@ -2532,6 +2551,19 @@ CREDITS
       ]
     }
   },
+
+<%# ---------------------------------------------------------------------------
+    CARRY-OVER (docs/agents/CARRY_OVER_PLAN.md; CONTRACT.md "Imported globals").
+    Where the player sent the tactical team in their last finished m07 run,
+    read-only and fixed when the game is created. ATHENA's "Portland happened"
+    line names it. A player who never finished m07 gets the defaults and today's
+    neutral line.
+%>
+  "importGlobals": [
+    { "from": "m07_architects_gambit", "var": "team_assignment", "default": "" },
+    { "from": "m07_architects_gambit", "var": "team_redirected", "default": false },
+    { "from": "m07_architects_gambit", "completed": "m07_completed" }
+  ],
 
 <%# ---------------------------------------------------------------------------
     STATE CONTRACT. CONTRACT.md (WP2) is the authority; this block must match it.
