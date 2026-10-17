@@ -352,6 +352,15 @@
     },
     "imported": "2026-09-30"
   },
+  "offduty_agent": {
+    "character_id": "fdc09fe1-86ce-4314-b660-884ac8216284",
+    "name": "Make portrait for Off-Duty Agent\nA lanky white Geo...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-10-17"
+  },
   "oleg_illiashenko": {
     "character_id": "6bddfcaa-7589-4411-88b1-b2aaee551c0c",
     "name": "Make portrait for a university lecturer character\n...",
@@ -433,6 +442,15 @@
     },
     "imported": "2026-10-02"
   },
+  "ray_hollis": {
+    "character_id": "e2cc0216-9fcd-4d39-bc1f-6212b29c2f9b",
+    "name": "Make portrait for Ray Hollis\nA lean, tired-looking...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-10-17"
+  },
   "robert_vance": {
     "character_id": "6edbd770-785c-4f56-91ea-45953f7d1594",
     "name": "Make portrait for Robert Vance\nA British Pakistani...",
@@ -504,6 +522,15 @@
       "height": 60
     },
     "imported": "2026-10-12"
+  },
+  "the_architect": {
+    "character_id": "53bd1c77-eaad-4877-82fc-cd649cb0f0ef",
+    "name": "Make portrait for The Architect\nA man in his sixti...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-10-17"
   },
   "tom_shaw": {
     "character_id": "e0906801-40c7-4260-a098-c95dac9cdddc",
