@@ -351,13 +351,13 @@ He's calling it Task Force Null. Your name's on his list.
 // m03's debrief told it. Never played (or never found him): no line.
 {
 - m03_danny_ko or m03_danny_fate == "ko":
-    Danny Foster's statement goes in Task Force Null's first file. You knocked him out at WhiteHat. He talked once he came round.
+    The task force has a file open already, and Danny Foster's statement is in it. You knocked him out at WhiteHat. He talked once he came round.
 - m03_danny_fate == "protected":
-    Danny Foster's statement goes in Task Force Null's first file. You gave him a way in at WhiteHat, and he hasn't stopped talking since.
+    The task force has a file open already, and Danny Foster's statement is in it. You gave him a way in at WhiteHat, and he hasn't stopped talking since.
 - m03_danny_fate == "exposed":
-    Danny Foster's statement goes in Task Force Null's first file. You named him in full at WhiteHat, and he's been talking ever since.
+    The task force has a file open already, and Danny Foster's statement is in it. You named him in full at WhiteHat, and he's been talking ever since.
 - m03_danny_fate == "left":
-    Danny Foster isn't in Task Force Null's first file. You left the choice with him at WhiteHat, and his phone is still off.
+    The task force has a file open already. Danny Foster isn't in it. You left the choice with him at WhiteHat, and his phone is still off.
 }
 
 * [What would Task Force Null do?]

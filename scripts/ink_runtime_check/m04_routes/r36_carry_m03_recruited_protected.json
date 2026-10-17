@@ -62,12 +62,13 @@
   {
    "said": [
     "He's calling it Task Force Null. Your name's on his list.",
+    "The task force has a file open already, and Danny Foster's statement is in it.",
     "You gave him a way in at WhiteHat, and he hasn't stopped talking since"
    ],
    "notSaid": [
     "You knocked him out at WhiteHat. He talked once he came round",
     "You named him in full at WhiteHat",
-    "Danny Foster isn't in Task Force Null's first file"
+    "The task force has a file open already. Danny Foster isn't in it"
    ]
   },
   {
