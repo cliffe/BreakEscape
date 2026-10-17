@@ -207,6 +207,15 @@
     },
     "imported": "2026-10-16"
   },
+  "lisa_park": {
+    "character_id": "d652c8a0-906c-4762-9679-b0ac0af08855",
+    "name": "Make portrait for Lisa Park\nA petite British-Korea...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-10-17"
+  },
   "male_hacker_hood_down_v2": {
     "character_id": "fa5a8818-00da-475c-87fb-4b21d84e39b2",
     "name": "Make portrait for Hacker\nMan, light skin tone, hac...",
