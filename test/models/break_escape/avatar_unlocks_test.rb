@@ -117,13 +117,15 @@ module BreakEscape
 
     test 'the catalogue reads the published missions, real templates included' do
       Mission.create!(name: 'm08_the_mole', display_name: 'The Mole', published: true)
+      Mission.create!(name: 'm01_first_contact', display_name: 'First Contact', published: true)
       catalogue = AvatarUnlocks.catalogue
       assert_includes catalogue.keys, 'nightshade'
       assert_includes catalogue['nightshade']['missions'], 'The Mole'
-      # Starter sprites are characters too, named after the NPC who wears them
+      # Starter sprites are characters too, named after the NPC who wears them.
+      # (m01's Sarah O'Brien; m08's analyst got her own sprite on 2026-10-17.)
       assert_includes catalogue.keys, 'male_hacker_hood_v2'
       refute_equal 'Female office worker', catalogue['female_office_worker_v2']['name']
-      assert_includes catalogue['female_office_worker_v2']['missions'], 'The Mole'
+      assert_includes catalogue['female_office_worker_v2']['missions'], 'First Contact'
     end
 
     CATALOGUE = {
