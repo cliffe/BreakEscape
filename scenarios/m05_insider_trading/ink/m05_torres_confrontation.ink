@@ -75,13 +75,13 @@ VAR torres_reason_guessed = false
 #speaker:narrator
 {
 - halloran_accused:
-    Narrator: 20:14. The data centre. The racks roar.
+    Narrator: Eight-fourteen. The data centre. The racks roar.
     Narrator: David Torres sits alone at the terminal, a USB drive in the front port. The transfer bar reads 99 per cent. He brought the window forward.
 - named_before_portal:
-    Narrator: 20:02. The data centre. The racks roar.
+    Narrator: Eight-oh-two. The data centre. The racks roar.
     Narrator: David Torres sits alone at the terminal, a USB drive in the front port. The transfer bar reads 88 per cent. Twenty-eight minutes to the window.
 - else:
-    Narrator: 20:14. The data centre. The racks roar.
+    Narrator: Eight-fourteen. The data centre. The racks roar.
     Narrator: David Torres sits alone at the terminal, a USB drive in the front port. The transfer bar reads 94 per cent. Sixteen minutes to the window.
 }
 

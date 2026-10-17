@@ -65,7 +65,7 @@ VAR owen_refused_password = false // Synced scenario global (pass 5 puzzle R1, P
 }
 ~ first_meeting = false
 #speaker:narrator
-Narrator: A bearded man in his late twenties at a workstation, three terminals of logs scrolling past, a staff badge on a lanyard round his neck. He swivels round.
+Narrator: A bearded man in his late twenties at a workstation, three terminals of logs scrolling past, a staff badge on a lanyard round his neck. He swivels to face you.
 
 #speaker:owen_gallagher
 Owen Gallagher: Alright. You're the security consultant? Owen Gallagher, sysadmin.
@@ -173,7 +173,7 @@ Owen Gallagher: I thought it was remote work at first. It's too tidy for that. S
 // nobody, once.
 + {not torres_suspected and not office_card_obtained and not office_rule_heard} [Do you keep spare cards for the offices?]
     ~ office_rule_heard = true
-    Owen Gallagher: One for every office. Whose? Doesn't matter, actually. A spare means going through someone's desk, and that's not my call.
+    Owen Gallagher: One for every office. Don't tell me whose. A spare means going through someone's desk, and that's not my call.
     Owen Gallagher: Tell Patricia who you think it is, and why. If she buys it, she messages me and the card's yours.
     -> hub
 

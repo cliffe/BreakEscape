@@ -87,7 +87,7 @@ Agent HaX: Someone on the inside is stealing it.
 === damage_assessment ===
 #speaker:agent_0x99
 
-Agent HaX: Project Heisenberg. Quantum-safe key material for the national emergency dispatch network. The system that routes 999 calls.
+Agent HaX: Project Heisenberg. Quantum-safe key material for the national emergency dispatch network. The system that routes nine-nine-nine calls.
 
 Agent HaX: Seventy-three per cent of the package is already staged to go. The rest goes out within four hours unless we stop it.
 

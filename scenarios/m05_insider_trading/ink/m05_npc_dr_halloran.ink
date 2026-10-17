@@ -93,7 +93,7 @@ Dr Ruth Halloran: Find whoever did this, and quickly. And I hope to God you're w
 ~ halloran_influence += 5
 #influence_increased
 
-Dr Ruth Halloran: Heisenberg is quantum-safe key exchange for the new national emergency dispatch network. The system that routes 999 calls.
+Dr Ruth Halloran: Heisenberg is quantum-safe key exchange for the new national emergency dispatch network. The system that routes nine-nine-nine calls.
 
 Dr Ruth Halloran: Lattice-based, built to survive a quantum computer. That's a problem for the 2030s. Tonight's problem is simpler.
 

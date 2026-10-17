@@ -319,7 +319,7 @@ Agent HaX: Let's go through it.
 }
 
 {patricia_ko:
-    Agent HaX: Patricia Morgan spent the night in A&E. She's the one who got you into that building. She wants to know why, and so do I.
+    Agent HaX: Patricia Morgan spent the night in hospital. She's the one who got you into that building. She wants to know why, and so do I.
 }
 {owen_ko:
     Agent HaX: Owen Gallagher has a concussion. He'd have given you anything you asked for.
@@ -592,7 +592,7 @@ Agent HaX: Elena's treatment is unfunded. He never talked to us, so there's no d
 Agent HaX: He hasn't said a word since. Nobody talked to him with the upload dead, so there was never a deal to offer.
 Agent HaX: Elena's treatment is unfunded. Sofia and Miguel have a father on remand.
 + [I couldn't win that fight.]
-    Agent HaX: Then backing off was right. It cost us him, and I'd still rather have you back.
+    Agent HaX: Then backing off was right. It cost us whatever he knew, and I'd still rather have you back.
     -> campaign_impact_arrested_no_coop
 + [He'd stopped listening. Talking was over.]
     Agent HaX: Maybe. We'll never know what he'd have said with the upload dead and his hands empty.

@@ -154,7 +154,7 @@ Patricia Morgan: Here. Visitor badge. It gets you through the front of the build
 Patricia Morgan: Owen Gallagher in IT holds the spare cards. Dr Halloran's badge opens the server side. I can lean on either of them if you need me to.
 
 // Blind run B (finding 5): the log on the desk was easy to leave behind.
-Patricia Morgan: My log of what's been flagged is on the desk, by your hand. Read it before you go. Your who starts there.
+Patricia Morgan: My log of what's been flagged is on the desk, by your hand. Read it before you go. The who starts in there.
 
 + [Where should I start?]
     Patricia Morgan: People. Someone in this building has noticed something and not said it. Then the servers.
@@ -418,7 +418,7 @@ Patricia Morgan: If you're wrong, that's her career. And whoever it really is ha
     {torres_reason_guessed:
         Patricia Morgan: Again? Fine. I'm writing this down. Why him?
     - else:
-        Patricia Morgan: David. Slowly, I'm writing this down. Why?
+        Patricia Morgan: David. Go slowly. I'm writing this down. Why?
     }
     -> case_why
 }

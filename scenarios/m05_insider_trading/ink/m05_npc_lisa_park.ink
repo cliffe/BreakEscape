@@ -88,7 +88,7 @@ Lisa Park: He's been borrowing to cover it, I think. He's lost weight. Looks lik
 + [That's rough. Thanks for telling me.]
     ~ lisa_influence += 10
     #influence_increased
-    Lisa Park: He'd hate that I told you even that much. He hates a fuss.
+    Lisa Park: He'd hate that I told you even that much. He can't stand a fuss.
     ~ hub_quiet = true
     -> hub
 
@@ -170,8 +170,8 @@ Lisa Park: He's been borrowing to cover it, I think. He's lost weight. Looks lik
 ~ lisa_influence += 5
 #influence_increased
 {heard_tin_story:
-    Lisa Park: I didn't tell you that. You didn't get it from me.
     Lisa Park: Yes. It's David. His wife's called Elena.
+    Lisa Park: I didn't tell you that. You didn't get it from me.
 - else:
     Lisa Park: David? Keep this to yourself, yeah? The collection tin's for him.
     Lisa Park: His wife Elena's got cancer. A trial in the States, and the insurer won't touch it.
