@@ -32,3 +32,33 @@ Checks run after the last commit: every `test/js/*.test.mjs` passes, `bin/rails 
 | m05 E7: in fists mode, 2 of 5 click-to-walk attempts didn't move the player | **Not reproduced, left open.** It wasn't isolated (Torres was in contact with the player and the targets were beside furniture). The m04 and m08 regression runs saw fists clicks walk. Worth a targeted check in the next browser run. | — |
 | m03 F1: empty dark overlay after an RFID save | **Withdrawn (harness race).** The tester's own note: not reproduced on a clean attempt, and the harness `converse` call probably double-triggered the clone. | — |
 | Reload or Restart puts the player in the start room (m05 blind m3, m06 blind R1, m07 blind M5, m07 #8, m08 blind M4) | **Withdrawn.** This is the 2026-10-16 ruling in `RESOLVED_DECISIONS.md` ("No resume in the room you left"). | — |
+
+## Round 2
+
+Engine agent B, from the 2026-10-17 resolved decisions ("engine backlog approved", the credits default) and the m04, m07 and m08 confirmation runs. Most of the approved backlog had already landed on 2026-10-16 as items 7.4a–e, 7.5d–e and 7.1j. This round confirmed those against the code and did what was left.
+
+Checks: `node --test test/js/` gives 688 tests with 1 failure, `engine-fixes-pass3.test.mjs`. That is the Node runner failing to read the child's output ("Unable to deserialize cloned data"). The file's six tests pass when run alone, and the same failure shows on a clean worktree at HEAD, so it is older than this round. `bin/rails test`: 632 runs, 0 failures. No browser checks were run this round.
+
+| Item | Outcome | Commit |
+| --- | --- | --- |
+| m07 U9: RFID reader with an empty cloner and no keycards | **Already done.** "Access denied. No keycard, and nothing saved on the cloner." and `door_unlock_failed` (`no_card`), not the empty cloner screen. | bada1e42 |
+| m07 E1: flag lock with no `requires` | **Already done.** An info toast names the flag station that opens it (`flagUnlockedAt`), or says it opens from a flag station, instead of a flag prompt. | ea8e4a5b |
+| m07 E4: case-only wrong password | **Already done.** The keypad says passwords are case-sensitive, and emits `password_failed`. At doors it also emits `door_unlock_failed` (`wrong_password_case` / `wrong_password`). | 4d986e56 |
+| m08 E2: PIN keypad title | **Already done.** "Enter PIN: Director's Safe", shown above the display. | 7bc2ce7f, 7afd52c4 |
+| m08 E5: variants in the dusting panel and the lock and container headers | **Already done.** All three use `resolveObjectField`. | 1db41281 |
+| m08 E3: `overflow-wrap: anywhere` on `.dusting-quote` | **Already done.** | 1db41281 |
+| m08 E1: objectives key wording | **Already done.** The "* required" key sits in the header of each aim that marks its tasks, not the panel header. | 724c9cec |
+| m08 E6: reopened hub repeats its last line | **Not done**, as the user declined it. | — |
+| m08 E8: validator knows `facePlayerDistance` and `personalSpace` | **Already done**, with value and sub-field checks. | 83e0d9d4 |
+| m08 E9: sight circles after a KO or a spent catch | **KO half already done** (b7af8c4f). **Spent-catch half done now.** An NPC whose sight is only for lockpick catches (`lockpick_used_in_view` person-chat mappings, no `los.challengeOnSight`) draws no circle once none of those mappings can fire. That covers a spent once-only catch, `maxTriggers` reached, or a condition that is off (m08's off-duty agent after the naming). A catch that is only on cooldown still counts as live. Hostile NPCs and the debug show-all view keep their cones. It uses the same `_mappingWouldFire` check as the catch gate, so the circle and the catch can't disagree. | b7af8c4f, 92650e93 |
+| Credits fallback | **Done.** With no `creditsOverlay.operation`, the OPERTN row shows the mission's display name in capitals (`missionDisplayName`, else `scenario_name`) and stops rotating. A scenario's own value still wins. README updated. | 5a207d9a |
+| m04 confirmation N1: HaX bark beside the open phone chat | **Fixed.** The phone keeps barks on top on purpose, because there a bark flags another contact's thread (`holdsBarks` excludes phone-chat). That stays. A bark from the contact whose thread is open now waits until the player leaves the thread or closes the phone, then plays through the normal held-bark release. Info toasts were already held behind the phone, since it is a minigame. One side effect: while such a bark waits, later barks from other contacts queue behind it to keep the order. | 20e5aecf |
+| m07 confirmation N1: "Task Complete" over the Cascade Control container | **Fixed.** When any minigame starts, info and success toasts shown in the last 1.5 s are taken down and go back in the hold, so they show after the minigame closes. Older toasts are left to fade, and warnings and errors are never moved. "Successfully picked the lock!" is caught the same way when a container opens after the pick, so it now shows after the container closes. | 20e5aecf |
+| m08 confirmation N1: dusting Compare step 21 px below a 1000 px window | **Fixed.** On easy, the two reference cards draw at 2x (256 px) in the wide layout. They now drop to 1x when the panel and its 24 px of padding don't fit the window height. Taller windows keep 2x. | 394c8ebd |
+
+Browser checks owed (keyless :3001 server, 1400x1000):
+- m08: after the naming, and after the off-duty agent's one catch, his sight circle is gone. Before the naming it is there.
+- m04: open HaX's phone thread while a HaX bark is due. No toast shows beside the chat, and it shows on Back or close. A bark from another contact still shows on top.
+- m07: submit flag 4 and open Cascade Control. No "Task Complete" over the container, and it shows after closing.
+- m08 easy dusting at Compare: the whole panel is inside the window, and the cards are 1x at 1000 px tall and 2x at about 1100 px or more.
+- Credits on a mission with no `creditsOverlay` (m01): OPERTN shows the mission name and doesn't rotate.

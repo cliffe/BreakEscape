@@ -19,6 +19,7 @@ May HaX hedge-recognise "Let it hurt afterwards, not during" in m08 ("Same class
 **Orchestrator went ahead with yes** (one line, easy to remove).
 
 ## E1. Required-task key wording (engine, from regression run 1)
+**Resolved 2026-10-17:** the "* required" key now sits in the header of each aim that marks its tasks (724c9cec; confirmed in round 2).
 `objectives-panel.js` marks required tasks with `*` only in aims that have a visible optional task (by design), but the panel's key reads as if every unmarked task is optional. Recommendation: show the key only beside aims that use the marker, or word it "* required (in aims with optional tasks)". Backlogged; not blocking.
 
 ## U1 addendum (alignment fix round 1, 2026-10-14)
@@ -26,15 +27,18 @@ May HaX hedge-recognise "Let it hurt afterwards, not during" in m08 ("Same class
 Option B makes the door audit, not the box, name the mole. That holds only if the VM itself doesn't show a person's name. The evidence wall (shown after he is named) still says the committed credentials "resolve to nightshade_ops". If the VM's account or home directory is literally named after Nightshade, a player reads the answer off the box and the audit becomes a formality. Needs checking against SecGen by the user. Recommendation: if it is, either rename the account on the VM to something neutral (a service login), which turns Option B into Option A, or accept it and treat the audit as corroboration.
 
 ## E2. PIN keypad title (engine, from regression finding 12)
+**Resolved 2026-10-17:** "Enter PIN: Director's Safe", from the lockable's name (7bc2ce7f, 7afd52c4; confirmed in round 2).
 `minigame-starters.js:531` titles every PIN keypad `Enter PIN for ${type}`, so the Director's safe reads "Enter PIN for item". No scenario field overrides it. Recommendation: use the lockable's `name` when it has one ("Enter PIN: Director's Safe"). Small, shared; not blocking.
 
 ## E3. Dusting panel long text (engine, from regression finding 10)
+**Resolved 2026-10-17:** `.dusting-quote` has `overflow-wrap: anywhere` (1db41281; confirmed in round 2).
 `.dusting-quote` (`css/dusting.css:64`) has no `overflow-wrap`, so any unbroken string runs off the panel. m08 now wraps its ciphertext at 64 characters, which fixes it here. Recommendation: add `overflow-wrap: anywhere` to the class for other missions. Not blocking.
 
 ## E4. No `nameVariants` for items (engine, noted while doing M3)
 `textVariants` and `observationVariants` resolve on any object (`utils/conditional-text.js`), but item names don't. After a tip-off the go-bag still lists as "Go-Bag -- Locker 0x47" while its text says the shelf is empty. Recommendation: none needed for m08 (the text carries it); backlog if other missions want it.
 
 ## E5. Dusting panel and lock/container headers ignore variants (engine, alignment round 2)
+**Resolved 2026-10-17:** the dusting panel and the lockpick and container headers resolve both fields with `resolveObjectField` (1db41281; confirmed in round 2).
 `dusting-game.js:393-395` prints the item's raw `observations` and `text`, and the lockpick screen and container header print the raw `observations`, so `textVariants`/`observationVariants` never reach them (round 1 browser N1, N4). m08 works around it (base fields true in every state, content in variants); nothing in m08 needs the engine change. Recommendation: resolve both fields with `resolveObjectField` (`utils/conditional-text.js`) in those three places, for other missions. Not blocking.
 
 ## E6. A re-opened hub shows the previous line above the hub choices (engine, alignment round 2 browser R1)
@@ -59,9 +63,11 @@ Recommendation: check both with the U1 list; each is a one-line reword if the VM
 **Does root give an account name in-game?** Blind run A (`PASS5_BLIND_STRUGGLE_A.md` finding 1) rooted the box with supplied flags and the printed auth log stayed `USER [REDACTED]`; Nightshade then said "Bring me the account" and the player never had one. Needs checking against SecGen by the user: once root is reached on the VM, is there an account name the player can read (the root-only log, a home directory, a mail header)? Mission side, nothing now asks the player to bring an account: Nightshade's audit line, the Director's two "account from the box" lines and HaX's "the box gives him the account" now ask for root and its logs (Option B kept: the account must not name him). If the VM does show a name, see the first addendum (the audit becomes corroboration).
 
 ## E8. Validator: `behavior.facePlayerDistance` reported as unknown (validator, puzzle chains round 1)
+**Resolved 2026-10-17:** the validator and schema know both fields, with value checks (83e0d9d4; confirmed in round 2).
 `scripts/validate_scenario.rb:284` lists the known `behavior` fields without `facePlayerDistance` and `personalSpace`, although the engine reads both (`npc-behavior.js:329-362`). m08 no longer uses it (the off-duty agent's catch uses a 360-degree sight circle instead), so nothing is blocked. Recommendation: add the fields `parseConfig` reads to the validator's list.
 
 ## E9. The sight circle stays drawn after a one-shot catch, the naming, or a KO (engine, puzzle chains C2 N4)
+**Resolved 2026-10-17:** no circle for KO'd or hidden NPCs (b7af8c4f), and none for an NPC whose only lockpick catch can no longer fire: spent once-only, max reached or condition off; cooldown still counts as live (92650e93).
 `_updateLOSVisualizations` (`npc-manager.js:2098-2125`) draws every NPC with `los.visualize` and checks neither KO nor whether its `lockpick_used_in_view` mapping can still fire. In m08 the off-duty agent's circle stays round him after his one catch, after the naming (when the mapping's condition is off) and while he lies knocked out. It only over-warns, so nothing is lost, but a circle round a man on the floor looks like a bug. Recommendation: skip drawing for `isNPCKO` NPCs, and optionally for NPCs whose only `lockpick_used_in_view` mapping won't fire, using the same `_mappingWouldFire` check the catch gate uses (`npc-manager.js:338`). Dropping `visualize` in m08 would cost more fairness than it gains, so no mission change. Not blocking.
 
 ## E10. Reload respawns the player in the start room (engine, puzzle chains round 1 browser P2)
