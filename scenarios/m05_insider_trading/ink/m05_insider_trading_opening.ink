@@ -38,7 +38,7 @@ Director Magnus Netherton: I have brought Nightshade in because catching a mole 
 // PASS 5 (A5): m04's debrief set up Task Force Null; this is its first word
 // since. Nothing promised about later missions.
 // Carry-over (2026-10-17): a player who finished m04 hears Voltage's fate named
-// (m04_closing_debrief: "Voltage is in a room now" / "Voltage is out there").
+// (m04_closing_debrief: "Voltage is in a room now" / "Voltage is gone").
 // The else branch is the original line, word for word (cached audio).
 {
 - m04_voltage_captured:

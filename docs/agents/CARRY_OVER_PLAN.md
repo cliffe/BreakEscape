@@ -1,6 +1,6 @@
 # Carrying choices between missions: plan
 
-Status: **built for m06 → m07 and m07 → m08** (2026-10-17, engine commit 6ed3caa7; see "Built" at the end). The other first uses in section 4 are not built yet. The proposal below is kept as written; where "Built" differs, "Built" wins.
+Status: **built for m06 → m07 and m07 → m08** (2026-10-17, engine commit 6ed3caa7; see "Built" at the end). m04 → m05 and m05 → m06 are built too ("Built", last subsection). The other first uses in section 4 are not built yet. The proposal below is kept as written; where "Built" differs, "Built" wins.
 
 The user's idea, verbatim: "should we just feed in previous completed mission states as read only global variables? for example: m01-scenario-path-variable-1 which is assigned the state from the most recent completed matching mission? Some simple way of defining in the scenario.json what variables to feed in from previous missions?"
 
@@ -294,7 +294,7 @@ The player's choice line in Danny's scene, `m03_danny_choice.ink:34` ("People di
 
 **m04 → m05.** `m05_insider_trading_opening.ink:33`: "Task Force Null is three people and a whiteboard so far." Import `m04_voltage_captured` and `m04_voltage_escaped`, and add a branch for each ("…and Voltage, who has given us one number" or "…and Voltage is still out there"). Else: the current line alone. This also settles the backlog item at `IDEAS_BACKLOG.md:102`, which asks for an m04 thread in m05's briefing.
 
-**m05 → m06.** `m06_opening_briefing.ink:43`: "Out: $847,000 to the Insider Threat Initiative for the Quantum Dynamics job, through TalentStack's wallet." Import `m05_final_choice`. On `turn_double_agent`, a follow-on line says Torres is still feeding them, now on SAFETYNET's script, and that that is how the wallet was traced. On `public_exposure`, the line says the exposure made the payment traceable. Else: nothing added.
+**m05 → m06.** `m06_opening_briefing.ink:43`: "Out: $847,000 to the Insider Threat Initiative for the Quantum Dynamics job, through TalentStack's wallet." Import `m05_final_choice`. On `turn_double_agent`, a follow-on line says Torres is still feeding them, now on SAFETYNET's script, and that that is how the wallet was traced. On `public_exposure`, the line says the exposure made the payment traceable. Else: nothing added. (Built differently: every m05 ending is named, in a line before the first choice; see "Built".)
 
 **m06 → m07 (the fate-neutral line written for this).** `m07_opening_briefing.ink:26-28`, whose comment reads "fate-neutral nod to m06's freeze-or-watch choice (no cross-mission state; DECISIONS_PENDING U2)": "Frozen or watched, the advances had already been paid. Tonight is what they paid for." Import `m06_assets_seized` and `m06_monitoring_enabled`; the ink sketch is in 2.11. A second use: HaX's `topic_teacher` (`m07_phone_agent_0x99.ink:769-785`) was written to "work with or without m06". Importing `m06_architect_identity_found` lets her say "you read Satoshi's page" to a player who did.
 
@@ -525,3 +525,62 @@ Round 2 (Opus, read-only, confirmation): 0 blockers, 0 majors, 3 minors. Round-1
 - Browser checks (5.2): finish m06 to the credits, create m07 with `--imports=latest` and hear the branch; Restart m07 (same branch); Restart m06 without finishing, then a New Session of m07 (the old run's value); `--imports=none` (neutral line); the same for m07 → m08. And a console check that an ink write to an import is refused.
 - TTS top-up for the new lines above (3 Netherton, 1 HaX, 5 ATHENA).
 - The other first uses in section 4, one mission at a time.
+
+### m04 → m05 and m05 → m06 (2026-10-17)
+
+**Declarations.**
+- m04 `exportGlobals`: `voltage_captured`, `voltage_escaped`, `casualties_occurred`, `disclosure_choice`, `crew_lost` (each set in play).
+- m05 imports `m04_voltage_captured` and `m04_voltage_escaped`. No `completed` import: m04's debrief opens only after the shutdown (`attack_prevented`), which needs `esd_authorized`, which needs `voltage_neutralised`, set only when Voltage is captured or escapes. Every finished m04 run sets one of the two.
+- m05 `exportGlobals`: `final_choice`, `torres_turned`, `torres_arrested`, `elena_treatment_funded`, `entropy_program_exposed`, `recruiter_deal_accepted`.
+- m06 imports `m05_final_choice` (default `""`) and `m05_elena_treatment_funded`. No `completed` import: m05's call-in needs a `final_choice`, so every finished run has one. m06's own exports to m07 are unchanged.
+
+**Content.**
+- m05 briefing, Netherton's Task Force Null line:
+  - captured → "Task Force Null is three people and a whiteboard. Voltage is in custody, because you took him alive. Every cell we've hit bought something. This time, a person.";
+  - escaped → "Task Force Null is three people and a whiteboard. Voltage is at large. You chose the button over him. Every cell we've hit bought something. This time, a person.";
+  - else the original line.
+- m06 briefing, one HaX line after "Two payments we've traced so far…" and before the first choice, so both "Which payments?" and "Which exchange?" hear it. One line per m05 ending (the lead's call on review finding 4: name every consequence):
+  - turned → "You turned Torres, so he's still taking their money, on our script now. That's how we traced the one going out.";
+  - public exposure → "You put the Initiative on the front pages, and TalentStack's accounts came out with it. That's how we traced the one going out.";
+  - arrest, treatment funded (he talked) → "You handed Torres to the police after he talked, for Elena's treatment. He knew who paid him. That's how we traced the one going out.";
+  - arrest, no deal (also the called-in Security ending) → "The police took Torres with no deal from you, and he hasn't said a word since. We traced the one going out without him.";
+  - knocked out → "You knocked Torres out and stayed with him till the ambulance came. He hasn't said a word since. We traced the one going out the slow way.";
+  - killed → "You left Torres on that floor and he died. What he knew went with him. We traced the one going out without him.";
+  - never played: nothing added.
+- tagdiff against the commit before this work: 0 old lines unmatched in both files.
+- Route drivers: m05's and m06's take `"imports"` and fail on any write to one (ink, tag, mapping, or an m06 `set` step). m06's parses `importGlobals` from the comment-stripped erb with a bracket-depth scan.
+- Routes:
+  - m05: r45 captured, r46 escaped, r47 never played.
+  - m06: r36 turned, r37 exposure (via "Which exchange?"), r38 arrest no deal, r39 never played, r40 turned via "Which exchange?", r41 arrest with treatment, r42 knocked out, r43 killed.
+  - All m05 (47) and m06 (43) routes pass. The longest run without a choice is 8.
+- `new-game.rb --imports=none|latest|<file>` checked for m05 and m06.
+
+**Implementation review.**
+
+Round 1 (Opus, read-only): 0 blockers, 1 major, 4 minors.
+
+| # | Finding | Outcome |
+|---|---|---|
+| 1 | Major: the m06 line sat in the optional "Which payments?" knot, so "Which exchange?" players never heard it. | Fixed: moved before the first choice; r40. |
+| 2 | `m04_completed` could never be true. | Confirmed; import, branch and route removed, comments say why. |
+| 3 | The captured line made Voltage a task-force member. | Reworded as above. |
+| 4 | Arrest and combat endings added nothing in m06. | The lead's call: name every ending (four lines added, r41–r43). |
+| 5 | The m06 driver let a `set` step write an import; fragile erb parse. | Fixed. |
+
+Round 2 (the round-1 reviewer, on the state before finding 4's lines): 0 blockers. It found that m04's `exportGlobals` is not committed while m05's import is (the lead commits m04's erb with the m01→m04 work), a stale duplicate route m05 r48 (deleted), and a debrief misquote in a comment (fixed).
+
+Round 2 (fresh Opus, read-only, everything as it stood): 0 blockers, 2 majors, 4 minors. It checked every new line against m05's endings, including the called-in and phone-fight paths. All fixed except the optional one:
+- Major: "You put Torres down" reads as killed in UK English. Now "You knocked Torres out and stayed with him till the ambulance came."
+- Major: "Torres went to the police" reads as handing himself in. Now "The police took Torres with no deal from you".
+- The lethal line didn't name the walk-away. Now "You left Torres on that floor and he died."
+- A stale ink comment, and this section, which was missing.
+- Optional, not done: export `torres_called_in` to name the Security call-in outright. The no-deal line is true for that run.
+
+**Still owed.**
+- Commit m04's `exportGlobals` (lead).
+- TTS top-up: 2 Netherton (m05) and 6 HaX (m06) lines above.
+- Browser checks:
+  - finish m04, then a new m05 game with `--imports=latest`;
+  - finish m05 on each ending, then a new m06 game, on both choice routes;
+  - `--imports=none` (today's lines);
+  - a Restart of the reading mission keeps its branch.

@@ -15,6 +15,7 @@ VAR player_name = "Agent 0x00"
 // Imported (read-only) from m05 (docs/agents/CARRY_OVER_PLAN.md): "" when the
 // player never finished m05. Never assign it here.
 VAR m05_final_choice = "" // Imported (read-only) from m05 final_choice: turn_double_agent / arrest / combat_nonlethal / combat_lethal / public_exposure
+VAR m05_elena_treatment_funded = false // Imported (read-only) from m05 elena_treatment_funded: with "arrest", Torres talked for the treatment
 
 // ================================================
 // START: BRIEFING BEGINS
@@ -32,15 +33,25 @@ Agent 0x47 'Nightshade': Money's just another protocol, and this one leaks. Foll
 
 Agent HaX: Two payments we've traced so far. One came in, one went out, and both went through the same exchange.
 
-// Carry-over (2026-10-17): a player who turned Torres or went public in m05
-// hears how that choice found the outgoing payment. Before the first choice, so
-// both routes ("Which payments?" / "Which exchange?") hear it. Every other m05
-// ending, and never played, adds nothing (the briefing stays as it was).
+// Carry-over (2026-10-17): a player who finished m05 hears how Torres' ending
+// bore on the outgoing payment, one line per ending of m05_closing_debrief's
+// torres_outcome. Before the first choice, so both routes ("Which payments?" /
+// "Which exchange?") hear it. Never played adds nothing. "arrest" covers the
+// hand-over and the called-in Security ending (no deal); with the treatment
+// funded he talked first (m05 debrief: "Torres knows where his came from").
 {
 - m05_final_choice == "turn_double_agent":
     Agent HaX: You turned Torres, so he's still taking their money, on our script now. That's how we traced the one going out.
 - m05_final_choice == "public_exposure":
     Agent HaX: You put the Initiative on the front pages, and TalentStack's accounts came out with it. That's how we traced the one going out.
+- m05_final_choice == "arrest" and m05_elena_treatment_funded:
+    Agent HaX: You handed Torres to the police after he talked, for Elena's treatment. He knew who paid him. That's how we traced the one going out.
+- m05_final_choice == "arrest":
+    Agent HaX: The police took Torres with no deal from you, and he hasn't said a word since. We traced the one going out without him.
+- m05_final_choice == "combat_nonlethal":
+    Agent HaX: You knocked Torres out and stayed with him till the ambulance came. He hasn't said a word since. We traced the one going out the slow way.
+- m05_final_choice == "combat_lethal":
+    Agent HaX: You left Torres on that floor and he died. What he knew went with him. We traced the one going out without him.
 }
 
 + [Which payments?]

@@ -1,0 +1,40 @@
+{
+ "imports": {
+  "m05_final_choice": "arrest",
+  "m05_elena_treatment_funded": true
+ },
+ "steps": [
+  {
+   "note": "R41 (carry-over, 2026-10-17): m05 arrest after Torres talked for Elena's treatment. HaX names the deal; 'Which exchange?' route."
+  },
+  {
+   "talk": "briefing",
+   "picks": [
+    "Which exchange",
+    "Why would Volkova",
+    "I'm ready"
+   ]
+  },
+  {
+   "said": [
+    "You handed Torres to the police after he talked, for Elena's treatment. He knew who paid him. That's how we traced the one going out.",
+    "HashChain Exchange"
+   ],
+   "notSaid": [
+    "You turned Torres, so he's sti",
+    "You put the Initiative on the ",
+    "The police took Torres with nh",
+    "You knocked Torres out and sta",
+    "You left Torres on that floor,"
+   ]
+  },
+  {
+   "set": {
+    "briefing_played": true
+   }
+  },
+  {
+   "maxRun": 9
+  }
+ ]
+}

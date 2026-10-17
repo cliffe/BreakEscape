@@ -4,7 +4,7 @@
  },
  "steps": [
   {
-   "note": "R38 (carry-over, 2026-10-17): m05 finished with Torres handed to the police. No branch for this ending: the briefing is today's."
+   "note": "R38 (carry-over, 2026-10-17): m05 finished with Torres handed over with no deal (also the called-in Security ending). HaX names it before the first choice."
   },
   {
    "talk": "briefing",
@@ -16,12 +16,15 @@
   },
   {
    "said": [
-    "Out: $847,000 to the Insider Threat Initiative for the Quantum Dynamics job, through TalentStack's wallet.",
-    "Somebody is keeping the books"
+    "The police took Torres with no deal from you, and he hasn't said a word since. We traced the one going out without him.",
+    "Out: $847,000 to the Insider Threat Initiative for the Quantum Dynamics job, through TalentStack's wallet."
    ],
    "notSaid": [
-    "You turned Torres",
-    "You put the Initiative"
+    "You turned Torres, so he's sti",
+    "You put the Initiative on the ",
+    "You handed Torres to the polic",
+    "You knocked Torres out and sta",
+    "You left Torres on that floor,"
    ]
   },
   {
