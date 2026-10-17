@@ -1454,6 +1454,7 @@ A mission can read what the player chose in an earlier mission (full design: `do
 - Values come from the player's most recent **finished** run of the source (the credits reached; a Restart of the source doesn't erase it; Hacktivity's Finish button doesn't count). They are fixed when the game is created: a Restart keeps them, a New Session looks them up again.
 - Imports are **read-only**. Declare a `VAR` in each ink that reads one; never assign it. The validator errors on any write, on an import used in `concludeRequires` or an `unlockCondition` (the mission must be finishable with every import at its default), on a source that doesn't export the variable, and on a type mismatch.
 - **Authoring rule:** the default branch (never played) is the line the mission had before, word for word, so its audio still works. Each carried-over branch makes the consequence obvious: a character names what the player did in the earlier mission.
+- These two keys are the only place that says what carries forward. mission.json has no switch for it: the old `consequences_persist` field was never read and was retired on 2026-10-17.
 - Playtests: `tools/playtest/new-game.rb <mission> --imports=none|latest|<file.json>` (default `none`, because every local playtest shares one demo player). Route drivers take `"imports": {...}`.
 
 ---

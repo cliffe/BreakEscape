@@ -205,7 +205,6 @@
   "unlocks": [],
   "campaign_critical": false,
   "narrative_weight": "high",
-  "consequences_persist": true,
   "lore_reveals": [
     "DarkVault ransomware group's healthcare targeting methodology",
     "The tension between security incident response and clinical governance",

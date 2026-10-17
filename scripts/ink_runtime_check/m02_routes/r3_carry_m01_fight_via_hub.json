@@ -1,0 +1,52 @@
+{
+ "imports": {
+  "m01_completed": true,
+  "m01_final_choice": "fight"
+ },
+ "steps": [
+  {
+   "note": "R3: m01 fight, spreadsheet not found. The Derek line comes in the hub answer (q_entropy_link) instead; the debrief keeps the original line."
+  },
+  {
+   "talk": "briefing",
+   "picks": [
+    "Who did this?",
+    "How can you be sure",
+    "Enough background"
+   ]
+  },
+  {
+   "said": [
+    "Same signature we flagged in Derek's material",
+    "You put Derek on the floor at Viral Dynamics"
+   ],
+   "notSaid": [
+    "You had Derek taken in by the book",
+    "You offered Derek a deal and he turned you down",
+    "You put Derek's casualty projections on every front page",
+    "Derek put the launch device down for you",
+    "You put Derek down before he'd said his piece"
+   ]
+  },
+  {
+   "talk": "debrief",
+   "picks": [
+    "You mean Derek",
+    "This was ENTROPY again",
+    "So the cells"
+   ]
+  },
+  {
+   "said": [
+    "Derek Lawson kept casualty projections. A spreadsheet of how many Operation Shatter would kill"
+   ],
+   "notSaid": [
+    "You let Operation Shatter launch, and the count is landing inside his range",
+    "You found the spreadsheet yourself"
+   ]
+  },
+  {
+   "maxRun": 8
+  }
+ ]
+}

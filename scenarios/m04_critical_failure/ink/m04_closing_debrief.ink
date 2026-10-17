@@ -58,6 +58,10 @@ VAR crew_warned = false
 // at its end), so a player who cloned his card mid-meeting and walked off still met him.
 VAR vance_spoken = false
 VAR vance_is_ally = false
+// Imported (read-only) from m03 (docs/agents/CARRY_OVER_PLAN.md): defaults when
+// the player never finished m03. Never assign these here.
+VAR m03_danny_fate = ""    // Imported (read-only) from m03 danny_fate: protected / exposed / left / ko
+VAR m03_danny_ko = false   // Imported (read-only) from m03 danny_ko: knocked out, before or after his decision
 VAR voltage_six_cities = false
 VAR crew_lost = false
 // Round 2 (review M1, m1): the alarm came before the attack was mapped (it
@@ -342,6 +346,19 @@ We've never seen it run this tight.
 Netherton wants a standing team on The Architect. Hunt the coordination, not the cells.
 
 He's calling it Task Force Null. Your name's on his list.
+
+// Carry-over (2026-10-17): what the player did with Danny Foster in m03, as
+// m03's debrief told it. Never played (or never found him): no line.
+{
+- m03_danny_ko or m03_danny_fate == "ko":
+    Danny Foster's statement goes in Task Force Null's first file. You knocked him out at WhiteHat. He talked once he came round.
+- m03_danny_fate == "protected":
+    Danny Foster's statement goes in Task Force Null's first file. You gave him a way in at WhiteHat, and he hasn't stopped talking since.
+- m03_danny_fate == "exposed":
+    Danny Foster's statement goes in Task Force Null's first file. You named him in full at WhiteHat, and he's been talking ever since.
+- m03_danny_fate == "left":
+    Danny Foster isn't in Task Force Null's first file. You left the choice with him at WhiteHat, and his phone is still off.
+}
 
 * [What would Task Force Null do?]
     -> task_force_mission_explanation

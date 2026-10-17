@@ -1,0 +1,52 @@
+{
+ "imports": {
+  "m01_completed": true,
+  "m01_final_choice": "arrest",
+  "m01_found_casualty_projections": true
+ },
+ "steps": [
+  {
+   "note": "R2: m01 finished with an arrest and the spreadsheet found. HaX names the arrest (why_us) and the spreadsheet."
+  },
+  {
+   "talk": "briefing",
+   "picks": [
+    "Why is SAFETYNET",
+    "Enough background"
+   ]
+  },
+  {
+   "said": [
+    "Derek Lawson's cell, Social Fabric. That material gave us our first real map",
+    "You had Derek taken in by the book"
+   ],
+   "notSaid": [
+    "You put Derek on the floor at Viral Dynamics",
+    "You offered Derek a deal and he turned you down",
+    "You put Derek's casualty projections on every front page",
+    "Derek put the launch device down for you",
+    "You put Derek down before he'd said his piece"
+   ]
+  },
+  {
+   "talk": "debrief",
+   "picks": [
+    "You mean Derek",
+    "This was ENTROPY again",
+    "So the cells"
+   ]
+  },
+  {
+   "said": [
+    "You found the spreadsheet yourself"
+   ],
+   "notSaid": [
+    "You let Operation Shatter launch, and the count is landing inside his range",
+    "Derek Lawson kept casualty projections. A spreadsheet of how many Operation Shatter would kill"
+   ]
+  },
+  {
+   "maxRun": 8
+  }
+ ]
+}

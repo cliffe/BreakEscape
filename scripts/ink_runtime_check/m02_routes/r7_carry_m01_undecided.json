@@ -1,0 +1,50 @@
+{
+ "imports": {
+  "m01_completed": true
+ },
+ "steps": [
+  {
+   "note": "R7: m01 finished with Derek knocked down before the confrontation choice (final_choice \"\"), spreadsheet not found."
+  },
+  {
+   "talk": "briefing",
+   "picks": [
+    "Why is SAFETYNET",
+    "Enough background"
+   ]
+  },
+  {
+   "said": [
+    "Derek Lawson's cell, Social Fabric. That material gave us our first real map",
+    "You put Derek down before he'd said his piece"
+   ],
+   "notSaid": [
+    "You put Derek on the floor at Viral Dynamics",
+    "You had Derek taken in by the book",
+    "You offered Derek a deal and he turned you down",
+    "You put Derek's casualty projections on every front page",
+    "Derek put the launch device down for you"
+   ]
+  },
+  {
+   "talk": "debrief",
+   "picks": [
+    "You mean Derek",
+    "This was ENTROPY again",
+    "So the cells"
+   ]
+  },
+  {
+   "said": [
+    "Derek Lawson kept casualty projections. A spreadsheet of how many Operation Shatter would kill"
+   ],
+   "notSaid": [
+    "You let Operation Shatter launch, and the count is landing inside his range",
+    "You found the spreadsheet yourself"
+   ]
+  },
+  {
+   "maxRun": 8
+  }
+ ]
+}

@@ -1,0 +1,53 @@
+{
+ "imports": {
+  "m01_completed": true,
+  "m01_final_choice": "expose",
+  "m01_found_casualty_projections": true
+ },
+ "steps": [
+  {
+   "note": "R5: m01 public exposure."
+  },
+  {
+   "talk": "briefing",
+   "picks": [
+    "Who did this?",
+    "How can you be sure",
+    "Enough background"
+   ]
+  },
+  {
+   "said": [
+    "Same signature we flagged in Derek's material",
+    "You put Derek's casualty projections on every front page"
+   ],
+   "notSaid": [
+    "You put Derek on the floor at Viral Dynamics",
+    "You had Derek taken in by the book",
+    "You offered Derek a deal and he turned you down",
+    "Derek put the launch device down for you",
+    "You put Derek down before he'd said his piece"
+   ]
+  },
+  {
+   "talk": "debrief",
+   "picks": [
+    "You mean Derek",
+    "This was ENTROPY again",
+    "So the cells"
+   ]
+  },
+  {
+   "said": [
+    "You found the spreadsheet yourself"
+   ],
+   "notSaid": [
+    "You let Operation Shatter launch, and the count is landing inside his range",
+    "Derek Lawson kept casualty projections. A spreadsheet of how many Operation Shatter would kill"
+   ]
+  },
+  {
+   "maxRun": 8
+  }
+ ]
+}

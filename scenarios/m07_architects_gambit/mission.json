@@ -52,7 +52,6 @@
   "unlocks": ["m08_the_mole"],
   "campaign_critical": true,
   "narrative_weight": "high",
-  "consequences_persist": true,
   "lore_reveals": [
     "The Architect addresses the player directly for the first time, over comms only",
     "The Architect's philosophy: 'Entropy is inevitable. Systems decay. I merely publish the schedule.'",

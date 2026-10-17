@@ -44,6 +44,9 @@
 //   #hostile[:id]             -> the npc_hostile_state_changed mappings (cipher_engaged, relay_engaged,
 //                                static_engaged, guard_hostile, voltage_fight_started)
 // Everything else the engine does is a {"set"} step in the route.
+// Carry-over (2026-10-17, docs/agents/CARRY_OVER_PLAN.md): a route may give "imports": {...} for a
+// finished m03 run; every other import starts at its default (never played m03). Imports are
+// read-only: a write to one (ink, #set_global or a "set" step) fails the route.
 const path = require('path'); const fs = require('fs');
 const REPO = path.resolve(__dirname, '../../..');
 const inkjs = require(path.join(REPO, 'public/break_escape/assets/vendor/ink.js'));
@@ -73,10 +76,34 @@ const G = Object.assign({}, gv, route.globals || {});
 const stories = {};
 const stats = { lines: 0, choices: 0, maxRun: 0, run: 0, runs: [], fails: 0 };
 function syncIn(s) { for (const k of Object.keys(G)) { if (s.variablesState.GlobalVariableExistsWithName(k)) s.variablesState[k] = G[k]; } }
-function syncOut(s) { for (const k of Object.keys(G)) { if (s.variablesState.GlobalVariableExistsWithName(k)) G[k] = s.variablesState[k]; } }
+function syncOut(s) {
+  for (const k of Object.keys(G)) {
+    if (!s.variablesState.GlobalVariableExistsWithName(k)) continue;
+    if (IMPORTED.has(k) && s.variablesState[k] !== G[k]) { out(`   [FAIL: ink wrote imported read-only global ${k}=${JSON.stringify(s.variablesState[k])}]`); stats.fails++; s.variablesState[k] = G[k]; continue; }
+    G[k] = s.variablesState[k];
+  }
+}
 function knotOfChoices(s) { const c = s.currentChoices[0]; if (!c) return null; const p = c.sourcePath || (c.targetPath && c.targetPath.toString()); return p ? p.split('.')[0] : null; }
 let heard = [];
 function out(t) { console.log(t); heard.push(t); }
+// ---- carry-over imports: the erb's "importGlobals" array (between [ and its matching ]) ----
+const IMPORTED = new Set();
+const imAt = erb.indexOf('"importGlobals"');
+if (imAt >= 0) {
+  const at = erb.indexOf('[', imAt); let depth = 0, end = at;
+  for (let i = at; i < erb.length; i++) { if (erb[i] === '[') depth++; if (erb[i] === ']') { depth--; if (!depth) { end = i; break; } } }
+  for (const e of JSON.parse(stripErb(erb.slice(at, end + 1)))) {
+    const isCompleted = Object.prototype.hasOwnProperty.call(e, 'completed');
+    const prefix = (String(e.from).match(/^((?:m|sis)\d\d)_/) || [])[1];
+    const name = isCompleted ? e.completed : (e.as || `${prefix}_${e.var}`);
+    IMPORTED.add(name); G[name] = isCompleted ? false : e.default;
+  }
+}
+for (const [k, v] of Object.entries(route.imports || {})) {
+  if (!IMPORTED.has(k)) { out(`   [FAIL: route imports ${k}, which the scenario does not import]`); stats.fails++; }
+  G[k] = v;
+}
+if (route.imports) out(`   [imports: ${JSON.stringify(route.imports)}]`);
 // ---- clock model ----
 function timersFromErb() {
   const at = erb.indexOf('[', erb.indexOf('"timers"'));
@@ -135,7 +162,7 @@ function hostile(npc) {
 }
 function load(f) { const s = new inkjs.Story(fs.readFileSync(path.join(DIR, f + '.json'), 'utf8').replace(/^﻿/, '')); try { s.BindExternalFunction('player_name', () => 'Agent'); } catch (e) {} return s; }
 for (const step of route.steps) {
-  if (step.set) { Object.assign(G, step.set); out(`   {set ${JSON.stringify(step.set)}}`); engine(); continue; }
+  if (step.set) { for (const k of Object.keys(step.set)) if (IMPORTED.has(k)) { out(`   [FAIL: write to imported read-only global ${k}]`); stats.fails++; } Object.assign(G, step.set); out(`   {set ${JSON.stringify(step.set)}}`); engine(); continue; }
   if (step.note) { console.log(`\n## ${step.note}`); continue; }  // notes stay out of said/notSaid
   // Phase 4 dialogue C3: {"maxRun": 9} asserts the longest run without a choice so far.
   if (step.maxRun !== undefined) { const ok = stats.maxRun <= step.maxRun; if (!ok) stats.fails++; console.log(`   [${ok ? 'PASS' : 'FAIL'}] longest run ${stats.maxRun} <= ${step.maxRun}`); continue; }
@@ -215,6 +242,7 @@ for (const step of route.steps) {
     while (s.canContinue) {
       const t = s.Continue().trim(); const tags = s.currentTags;
       for (const tg of tags) {
+        if (tg.startsWith('set_global:') && IMPORTED.has(tg.split(':')[1])) { out(`   [FAIL: #${tg} writes an imported read-only global]`); stats.fails++; continue; }
         if (tg.startsWith('set_global:')) { const [, k, v] = tg.split(':'); G[k] = v === 'true' ? true : v === 'false' ? false : (/^-?\d+$/.test(v) ? +v : v); if (s.variablesState.GlobalVariableExistsWithName(k)) s.variablesState[k] = G[k]; out(`      [set_global ${k}=${v}]`); }
         if (tg === 'exit_conversation') exited = true;
         if (tg === 'hostile' || tg.startsWith('hostile:')) { syncOut(s); hostile(tg.includes(':') ? tg.split(':')[1] : NPC_OF[name]); syncIn(s); }

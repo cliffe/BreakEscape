@@ -38,6 +38,11 @@ VAR insider_ambushed = false
 VAR cover_burned = false
 VAR cover_restored = false
 VAR bernie_vouched = false
+
+// Imported (read-only) from m01 (docs/agents/CARRY_OVER_PLAN.md): false when the
+// player never finished m01. Never assign these here.
+VAR m01_found_casualty_projections = false // Imported (read-only) from m01 found_casualty_projections: the player found Derek's spreadsheet
+VAR m01_player_launched_attack = false     // Imported (read-only) from m01 player_launched_attack: the player let Operation Shatter launch
 VAR staff_lanyard_obtained = false
 VAR insider_method_confirmed = false
 
@@ -202,7 +207,16 @@ Agent HaX: To Ghost, the patients were the argument.
 
 Agent HaX: Yes. ENTROPY. The same network that ran Social Fabric out of Viral Dynamics.
 
-Agent HaX: Derek Lawson kept casualty projections. A spreadsheet of how many Operation Shatter would kill, approved before he pulled the trigger.
+// Carry-over (2026-10-17): a player who finished m01 hears what they did with
+// the spreadsheet; the else branch is the original line, word for word.
+{
+- m01_player_launched_attack:
+    Agent HaX: Derek Lawson kept casualty projections. You let Operation Shatter launch, and the count is landing inside his range.
+- m01_found_casualty_projections:
+    Agent HaX: Derek Lawson kept casualty projections. You found the spreadsheet yourself: how many Operation Shatter would kill, signed off in advance.
+- else:
+    Agent HaX: Derek Lawson kept casualty projections. A spreadsheet of how many Operation Shatter would kill, approved before he pulled the trigger.
+}
 
 // Round 2 (CF-E): only quote the manifesto if the player found it.
 {lore_ghosts_manifesto_found:

@@ -1,6 +1,6 @@
 # Carrying choices between missions: plan
 
-Status: **built for m06 → m07 and m07 → m08** (2026-10-17, engine commit 6ed3caa7; see "Built" at the end). m04 → m05 and m05 → m06 are built too ("Built", last subsection). The other first uses in section 4 are not built yet. The proposal below is kept as written; where "Built" differs, "Built" wins.
+Status: **built for m06 → m07 and m07 → m08** (2026-10-17, engine commit 6ed3caa7; see "Built" at the end). m04 → m05 and m05 → m06 are built too ("Built", last subsection), and so are m01 → m02, m02 → m03 and m03 → m04 ("Built", subsection "m01 → m02, m02 → m03, m03 → m04"). Every link in section 4 except sis02 → sis03 is now built. The proposal below is kept as written; where "Built" differs, "Built" wins.
 
 The user's idea, verbatim: "should we just feed in previous completed mission states as read only global variables? for example: m01-scenario-path-variable-1 which is assigned the state from the most recent completed matching mission? Some simple way of defining in the scenario.json what variables to feed in from previous missions?"
 
@@ -14,7 +14,7 @@ Line numbers are from the working tree on 2026-10-17, after commit a73b1175 (pla
 
 ### 1.1 Missions, games and players
 
-- **Mission** (`break_escape_missions`): one row per scenario folder. `name` is the folder name and is unique (`test/dummy/db/schema.rb:77`). `Mission#generate_scenario_data` renders `scenarios/<name>/scenario.json.erb` through ERB with a `ScenarioBinding` that knows only random values and the VM context (`app/models/break_escape/mission.rb:123-134`, `:228-236`). `mission.json` is separate metadata (`mission.rb:42-58`). `consequences_persist` sits there (`scenarios/m07_architects_gambit/mission.json:55`), but nothing in the engine reads it (a grep for it in `app/`, `lib/` and `public/` finds nothing).
+- **Mission** (`break_escape_missions`): one row per scenario folder. `name` is the folder name and is unique (`test/dummy/db/schema.rb:77`). `Mission#generate_scenario_data` renders `scenarios/<name>/scenario.json.erb` through ERB with a `ScenarioBinding` that knows only random values and the VM context (`app/models/break_escape/mission.rb:123-134`, `:228-236`). `mission.json` is separate metadata (`mission.rb:42-58`). `consequences_persist` sat there (`scenarios/m07_architects_gambit/mission.json:55`; retired 2026-10-17, see "Built"), but nothing in the engine reads it (a grep for it in `app/`, `lib/` and `public/` finds nothing).
 - **Player** is polymorphic (`game.rb:6`). Mounted in Hacktivity it is the `User` (`application_controller.rb:9-17`). Standalone, every visitor is the same `DemoUser` with handle `demo_player` (`application_controller.rb:12`). That matters for playtests (section 5.4).
 - **Game** (`break_escape_games`, `db/migrate/20251120155358_create_break_escape_games.rb`): one row per play session. It holds:
   - `scenario_data`: the rendered scenario, fixed when the row is created (`game.rb:25`; `generate_scenario_data` `:2340`);
@@ -273,7 +273,7 @@ Credits and other JSON conditions read `globalVars.m06_assets_seized`. Voiced li
 
 The proposal snapshots everything and validates against `exportGlobals`, which gets both benefits.
 
-**A `consequences_persist` switch in mission.json.** It is set to `true` on m07 and sis01 and to `false` on sis02 and sis03 (`sis02_energy/mission.json:219`, `sis03_cyber_insurance/mission.json:223`), and nothing reads it. The sis pair says false, the very pair the backlog most wants connected. It could gate imports, but the declarations already say what carries, so a second switch only adds a way for the two to disagree. Proposal: leave it as documentation and say so in `README_scenario_design.md`. Q4 asks the user.
+**A `consequences_persist` switch in mission.json.** It is set to `true` on m07 and sis01 and to `false` on sis02 and sis03 (`sis02_energy/mission.json:219`, `sis03_cyber_insurance/mission.json:223`), and nothing reads it. The sis pair says false, the very pair the backlog most wants connected. It could gate imports, but the declarations already say what carries, so a second switch only adds a way for the two to disagree. Proposal: leave it as documentation and say so in `README_scenario_design.md`. Q4 asks the user. (Settled 2026-10-17: the field is retired and removed from all four mission.json files; see "Built".)
 
 ---
 
@@ -476,7 +476,7 @@ Verdict: ready to hand to the user.
 
 ## Built (2026-10-17)
 
-The user's answers (`docs/agents/RESOLVED_DECISIONS.md`, 2026-10-17): build now, m06 → m07 first, then m07 → m08; storage on the existing Game rows (Q1: B); sources declare `exportGlobals` (Q2); Hacktivity runs carry in by default, **no** host switch (Q3); a never-concluded run doesn't count (Q7); a Restart of the reader keeps its imports (Q8). Q4 (`consequences_persist`), Q5 (m01 exports) and Q9 were not needed for these two links and stay open.
+The user's answers (`docs/agents/RESOLVED_DECISIONS.md`, 2026-10-17): build now, m06 → m07 first, then m07 → m08; storage on the existing Game rows (Q1: B); sources declare `exportGlobals` (Q2); Hacktivity runs carry in by default, **no** host switch (Q3); a never-concluded run doesn't count (Q7); a Restart of the reader keeps its imports (Q8). Q4 (`consequences_persist`), Q5 (m01 exports) and Q9 were not needed for these two links. Q4 and Q5 were settled later the same day (RESOLVED_DECISIONS, "follow-up answers"): `consequences_persist` is retired, and m01 exports.
 
 **Is the snapshot needed?** Yes. A Restart has to reset a concluded game's globals, or the replay starts from a finished story, and it never clears `mission_concluded_at`. Without a kept copy, the newest concluded row would hand the reader a half-played replay's values. Hacktivity's Finish needs no snapshot: the `mission_concluded_at` test excludes it. The only addition to `player_state` is `storySnapshot` (`{at, globals}`) on the source, plus the reader's `importedGlobalNames` list (needed because `sync_state` doesn't load `scenario_data`).
 
@@ -584,3 +584,80 @@ Round 2 (fresh Opus, read-only, everything as it stood): 0 blockers, 2 majors, 4
   - finish m05 on each ending, then a new m06 game, on both choice routes;
   - `--imports=none` (today's lines);
   - a Restart of the reading mission keeps its branch.
+
+### m01 → m02, m02 → m03, m03 → m04 (2026-10-17)
+
+**Declarations** (in the erbs, left for the lead to commit).
+- m01 `exportGlobals`: `final_choice`, `kevin_choice`, `found_casualty_projections`, `player_aborted_attack`, `player_launched_attack`. JSON only; m01's ink and audio are unchanged (Q5).
+- m02 imports `m01_final_choice` (""), `m01_found_casualty_projections`, `m01_player_launched_attack`, `m01_completed`. It exports `paid_ransom`, `ghost_keys_used`, `ward_recovering`, `bed4_manually_stabilised`, `patient_bed4_deceased`, `exposed_hospital`, `ghost_deal_accepted`, `insider_asset_arrested` and `insider_asset_escaped`.
+- m03 imports `m02_paid_ransom`, `m02_ghost_keys_used`, `m02_ward_recovering`, `m02_bed4_manually_stabilised`, `m02_completed`. It exports `victoria_fate`, `danny_fate`, `danny_ko`, `directive_decoded` and `guard_bribed`.
+- m04 imports `m03_victoria_fate` (""), `m03_danny_fate` (""), `m03_danny_ko`. It has no `completed` import: never played and "finished with no call" both stay silent.
+
+**Content.** Every line is additive except m02's projections line. Never played means no extra line. The projections line's else branch is the HEAD line word for word. tagdiff: 0 old lines unmatched.
+- **m02 briefing** (`derek_outcome`, a tunnel run once, from whichever of `why_us` and `q_entropy_link` comes first). HaX names how m01 ended:
+  - fight: "You put Derek on the floor at Viral Dynamics. His lawyers are still shouting about it. His files don't care."
+  - arrest: "You had Derek taken in by the book, and he hasn't said a word since. His files have done the talking."
+  - recruit: "You offered Derek a deal and he turned you down. He'd rather be a martyr. His files weren't so loyal."
+  - expose: "You put Derek's casualty projections on every front page. ENTROPY read them too, so they know what we know."
+  - surrender: "Derek put the launch device down for you and came quietly. He still hasn't told us why."
+  - finished with Derek knocked out before he chose: "You put Derek down before he'd said his piece. He's been saying it to his lawyers ever since."
+  - The plan's sketch had a recruited Derek "talking to us". In m01 he refuses, so the recruit line says so.
+- **m02 debrief** (`q_entropy_link`):
+  - launched: "Derek Lawson kept casualty projections. You let Operation Shatter launch, and the count is landing inside his range."
+  - found: "Derek Lawson kept casualty projections. You found the spreadsheet yourself: how many Operation Shatter would kill, signed off in advance."
+  - else: the original line.
+- **m03 briefing** (`st_catherines_connection`, after "You worked St. Catherine's last month."). The branches follow the same order and death counts as m02's `patient_outcomes`:
+  - paid: "You paid the ransom and had the wards back inside the hour. Two died. Ghost's cell is spending the money now."
+  - Ghost's keys: "You took Ghost's keys and had the wards back inside the hour. One died. Ghost can still walk back into that network."
+  - combined: "You ran the combined restore and paid Ghost nothing. Two died, both critical before it started. The wards held."
+  - offline, Pryce saved: "You restored from the offline keys and bagged Mr Pryce by hand. Five died in those eleven hours. He wasn't one of them."
+  - offline, or no restore chosen (m02's debrief tells that as the offline route): "You restored from the offline keys. Eleven and a half hours, and six people died in that window."
+  - The plan's "everyone lived" branch was dropped: no m02 route has no deaths. The branches read the booleans, not `backup_recovery_source`, because a minigame writes that string and the validator can't see it being set.
+- **m04 briefing** (`mission_stakes`, after the directive quote, a mandatory knot; moved from the plan's debrief spot because `debrief_intelligence_gathered` already reaches a 9-line run):
+  - recruited: "You turned Victoria Sterling, and she gave us the window. She also warned that some of what she sold was already installed."
+  - custody: "You had Victoria Sterling taken into custody, and her client records are still talking. Critical Mass are in them, buying."
+  - escaped: "You let Victoria Sterling walk out of WhiteHat. She sold the kit for tonight, and she's still out there selling."
+  - ko: "You put Victoria Sterling in a hospital bed, and she hasn't said a word since. That line came off the drive in her desk."
+- **m04 debrief** (`debrief_task_force_announcement`):
+  - KO, before or after his choice: "Danny Foster's statement goes in Task Force Null's first file. You knocked him out at WhiteHat. He talked once he came round."
+  - protected: "Danny Foster's statement goes in Task Force Null's first file. You gave him a way in at WhiteHat, and he hasn't stopped talking since."
+  - exposed: "Danny Foster's statement goes in Task Force Null's first file. You named him in full at WhiteHat, and he's been talking ever since."
+  - left: "Danny Foster isn't in Task Force Null's first file. You left the choice with him at WhiteHat, and his phone is still off."
+- Canon: no new line says "arrest", because SAFETYNET detains and hands over.
+
+**Routes.**
+- m02 had no driver. `scripts/ink_runtime_check/m02_routes/route.js` is new: conversations, imports, said/notSaid/expect/maxRun, and no eventMappings. Routes r1–r7 cover never played, each `final_choice`, the undecided finish, found and launched, and both entry knots.
+- The m03 driver gained imports, said/notSaid/expect/maxRun and an exit code. Its output on the 26 old routes is byte-identical. Routes r27–r33 cover each recovery outcome, never played, and the skip-background route (silent).
+- The m04 driver gained imports and read-only checks. Its output on the 35 old routes is identical. Routes r36–r40 cover every Victoria and Danny fate and never played.
+- All routes pass. Longest runs are unchanged (m02 8, m03 8, m04 9). The Task Force Null run goes from 5 to 6.
+- `new-game.rb --imports=none` and `--imports=<file>` both work for m02, m03 and m04 (games 2642–2647).
+
+**`consequences_persist` retired** (Q4): it was removed from the m07, sis01, sis02 and sis03 mission.json files. Nothing read it: there is no schema or validator entry, and nothing in Hacktivity uses it. README_scenario_design.md and IDEAS_BACKLOG point to `exportGlobals` / `importGlobals`.
+
+**Implementation review** (Opus, read-only, one round): 0 blockers, 1 major, 11 minors.
+
+| # | Finding | Outcome |
+|---|---|---|
+| 1 | Major: the fight line put Derek "on the floor of his own office", but the fight is in m01's break room. | Fixed: "on the floor at Viral Dynamics". |
+| 2 | "walked out quietly" read as Derek going free. | Fixed: "came quietly". |
+| 3 | The launched line was clumsy. | Fixed. |
+| 4 | The found line kept "before he pulled the trigger", which is false for an abort run. | Fixed: "signed off in advance". |
+| 5 | m01's own debrief tells a KO'd-Derek player "You chose arrest". m02's undecided line is the accurate one. | No change; m01 is frozen. |
+| 6 | "its first file" read as Netherton's list. | Fixed: "Task Force Null's first file". |
+| 7 | "You got him out" overstates: Danny rang in himself. | Fixed: "You gave him a way in". |
+| 8 | Awkward clause order in the KO line. | Fixed. |
+| 9 | Reachability: m02's lines sit behind optional choices; m03's skip route misses its line. | Accepted. m02's briefing line is on both ENTROPY-link answers. The skip route is the player asking to skip the background. |
+| 10 | "How many died came down to a recovery call" is slightly redundant after the new line. | Accepted: it is the never-played line. |
+| 11 | This plan's status and Built were stale. | Fixed: this section. |
+| 12 | TTS owed. | Below. |
+
+Round 2 (fresh Opus, read-only, confirmation): 0 blockers, 0 majors, 3 minors. Round-1 fixes confirmed, every line rechecked against its source mission, all 82 routes and tagdiff clean. Fixed: the Victoria KO line said "That line is all she's given us", but the directive came off her desk drive (now "That line came off the drive in her desk."). Not changed: "Viral Dynamics" twice on the why_us route (kept, it is two lines apart); the launched line after m01's "Right. Derek. Of course." (HaX knows).
+
+**Still owed.**
+- TTS top-up, 20 HaX lines: m02 briefing 6, m02 debrief 2, m03 5, m04 briefing 4, m04 debrief 4.
+- Commit the four erbs' declarations (lead).
+- Browser checks:
+  - finish m01, then a new m02 game with `--imports=latest`. Hear the Derek line via "Why is SAFETYNET…" and the projections line in the debrief;
+  - the same for m02 → m03 (the briefing's St. Catherine's beat) and m03 → m04 (the stakes line and Task Force Null);
+  - `--imports=none` on each (no extra line);
+  - a Restart of the reader keeps its branch.

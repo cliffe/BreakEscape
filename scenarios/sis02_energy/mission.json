@@ -216,7 +216,6 @@
   ],
   "campaign_critical": true,
   "narrative_weight": "high",
-  "consequences_persist": false,
   "lore_reveals": [
     "The GREYMANTLE APT used a printer firmware supply chain compromise as initial access — a technique that bypasses most endpoint monitoring",
     "Battery Hall 1 reached 51°C with the SIS trip moved from 55°C to 85°C and the hydrogen alarm from 1.0% to 3.8% by volume: the safety margin was removed overnight",

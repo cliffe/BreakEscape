@@ -1,0 +1,53 @@
+{
+ "imports": {
+  "m01_completed": true,
+  "m01_final_choice": "surrender",
+  "m01_found_casualty_projections": true,
+  "m01_player_launched_attack": true
+ },
+ "steps": [
+  {
+   "note": "R6: m01 surrender, then the player launched Operation Shatter. The launch outranks the spreadsheet in the debrief."
+  },
+  {
+   "talk": "briefing",
+   "picks": [
+    "Why is SAFETYNET",
+    "Enough background"
+   ]
+  },
+  {
+   "said": [
+    "Derek Lawson's cell, Social Fabric. That material gave us our first real map",
+    "Derek put the launch device down for you"
+   ],
+   "notSaid": [
+    "You put Derek on the floor at Viral Dynamics",
+    "You had Derek taken in by the book",
+    "You offered Derek a deal and he turned you down",
+    "You put Derek's casualty projections on every front page",
+    "You put Derek down before he'd said his piece"
+   ]
+  },
+  {
+   "talk": "debrief",
+   "picks": [
+    "You mean Derek",
+    "This was ENTROPY again",
+    "So the cells"
+   ]
+  },
+  {
+   "said": [
+    "You let Operation Shatter launch, and the count is landing inside his range"
+   ],
+   "notSaid": [
+    "You found the spreadsheet yourself",
+    "Derek Lawson kept casualty projections. A spreadsheet of how many Operation Shatter would kill"
+   ]
+  },
+  {
+   "maxRun": 8
+  }
+ ]
+}

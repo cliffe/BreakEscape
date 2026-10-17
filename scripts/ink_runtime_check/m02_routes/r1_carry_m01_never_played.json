@@ -1,0 +1,47 @@
+{
+ "steps": [
+  {
+   "note": "R1 (carry-over, 2026-10-17): m01 never finished, so every import is at its default. No Derek line in the briefing; the debrief has the original projections line, word for word (cached audio)."
+  },
+  {
+   "talk": "briefing",
+   "picks": [
+    "Why is SAFETYNET",
+    "Enough background"
+   ]
+  },
+  {
+   "said": [
+    "Derek Lawson's cell, Social Fabric. That material gave us our first real map"
+   ],
+   "notSaid": [
+    "You put Derek on the floor at Viral Dynamics",
+    "You had Derek taken in by the book",
+    "You offered Derek a deal and he turned you down",
+    "You put Derek's casualty projections on every front page",
+    "Derek put the launch device down for you",
+    "You put Derek down before he'd said his piece"
+   ]
+  },
+  {
+   "talk": "debrief",
+   "picks": [
+    "You mean Derek",
+    "This was ENTROPY again",
+    "So the cells"
+   ]
+  },
+  {
+   "said": [
+    "Derek Lawson kept casualty projections. A spreadsheet of how many Operation Shatter would kill"
+   ],
+   "notSaid": [
+    "You let Operation Shatter launch, and the count is landing inside his range",
+    "You found the spreadsheet yourself"
+   ]
+  },
+  {
+   "maxRun": 8
+  }
+ ]
+}

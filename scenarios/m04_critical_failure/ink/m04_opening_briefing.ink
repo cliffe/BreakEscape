@@ -12,6 +12,9 @@ VAR knows_entropy_cell = false    // Did player ask about Critical Mass?
 VAR asked_timeline = false        // Did player ask about the attack timeline?
 VAR asked_cover = false           // Did player ask about their cover story?
 VAR combat_ready = false          // Player acknowledged combat risk
+// Imported (read-only) from m03 (docs/agents/CARRY_OVER_PLAN.md): "" when the
+// player never finished m03 or never made her call. Never assign it here.
+VAR m03_victoria_fate = ""        // Imported (read-only) from m03 victoria_fate: recruited / arrested / escaped / ko
 
 // External variables (set by game)
 EXTERNAL player_name()
@@ -229,6 +232,19 @@ Agent HaX: Read him first. Hard evidence will do the persuading for you.
 
 // Blind run A (worst line 3): the directive recap read as written, not spoken.
 Agent HaX: The Zero Day job left us one line. "Zero Day supplies, Critical Mass executes. Grid storage, this winter."
+
+// Carry-over (2026-10-17): what the player did with Victoria Sterling in m03,
+// said where her directive is quoted. Never played (or no call made): no line.
+{
+- m03_victoria_fate == "recruited":
+    Agent HaX: You turned Victoria Sterling, and she gave us the window. She also warned that some of what she sold was already installed.
+- m03_victoria_fate == "arrested":
+    Agent HaX: You had Victoria Sterling taken into custody, and her client records are still talking. Critical Mass are in them, buying.
+- m03_victoria_fate == "escaped":
+    Agent HaX: You let Victoria Sterling walk out of WhiteHat. She sold the kit for tonight, and she's still out there selling.
+- m03_victoria_fate == "ko":
+    Agent HaX: You put Victoria Sterling in a hospital bed, and she hasn't said a word since. That line came off the drive in her desk.
+}
 
 Agent HaX: Well, it's winter, and this is the site.
 

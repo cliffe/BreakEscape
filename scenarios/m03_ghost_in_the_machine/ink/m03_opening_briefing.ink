@@ -16,6 +16,14 @@ VAR asked_network = false
 VAR asked_cover = false
 // D2-10: the short route. Local; replaces the dead player_approach "direct" write.
 VAR skipped_background = false
+// Imported (read-only) from m02 (docs/agents/CARRY_OVER_PLAN.md): false when the
+// player never finished m02. Never assign these here. Read in the same order as
+// m02's own debrief (m02_closing_debrief.ink patient_outcomes).
+VAR m02_paid_ransom = false              // Imported (read-only) from m02 paid_ransom
+VAR m02_ghost_keys_used = false          // Imported (read-only) from m02 ghost_keys_used
+VAR m02_ward_recovering = false          // Imported (read-only) from m02 ward_recovering: a fast restore (here: the combined one)
+VAR m02_bed4_manually_stabilised = false // Imported (read-only) from m02 bed4_manually_stabilised: the player bagged Mr Pryce by hand
+VAR m02_completed = false                // Imported (read-only): a finished m02 run exists (here: the slow offline restore)
 
 // Root divert. When a conversation has ended (-> DONE), the engine restores only
 // its variables on the next talk and continues from the root (npc-conversation-
@@ -77,6 +85,20 @@ Agent HaX: They don't run the attacks. They arm the cells that do.
 === st_catherines_connection ===
 #speaker:agent_0x99
 Agent HaX: You worked St. Catherine's last month. The hospital that went dark.
+// Carry-over (2026-10-17): a player who finished m02 hears their recovery call
+// and what it cost, as m02's debrief told it. Never played: no extra line.
+{
+- m02_paid_ransom:
+    Agent HaX: You paid the ransom and had the wards back inside the hour. Two died. Ghost's cell is spending the money now.
+- m02_ghost_keys_used:
+    Agent HaX: You took Ghost's keys and had the wards back inside the hour. One died. Ghost can still walk back into that network.
+- m02_ward_recovering:
+    Agent HaX: You ran the combined restore and paid Ghost nothing. Two died, both critical before it started. The wards held.
+- m02_bed4_manually_stabilised:
+    Agent HaX: You restored from the offline keys and bagged Mr Pryce by hand. Five died in those eleven hours. He wasn't one of them.
+- m02_completed:
+    Agent HaX: You restored from the offline keys. Eleven and a half hours, and six people died in that window.
+}
 Agent HaX: The ransomware ran on a ProFTPD backdoor. That exploit didn't come from the crew who deployed it.
 * [Did Zero Day sell Ghost the way in?]
     ~ knows_m2_connection = true
