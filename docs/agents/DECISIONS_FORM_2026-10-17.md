@@ -94,6 +94,8 @@ The validator reports 8 lines in m01 over the 30-word cap. They were there befor
 
 >
 
+**Resolved 2026-10-17:** a2c7d0ff. The form's count was low: the validator lists only four findings per rule, so m01 had 16 lines over the cap. Fixed 15: the four debrief lines, Kevin's two (one a Player line) and the briefing objectives line split at natural breaks; eight HaX phone texts trimmed (facts and VM paths unchanged). Left: m01_npc_maya.ink:95 (37 words, voiced), for the lead to split by hand.
+
 ---
 
 ## 4. The voice top-up (TTS)
@@ -116,6 +118,8 @@ The tts-audio skill's process: generate per mission (`tts:batch_generate`), list
 **Comments:**
 
 >
+
+**Resolved 2026-10-17 (m01–m03 only):** d72ca612, 504bdb69, 524f9b72: 12 + 10 + 7 clips, coverage complete. m04–m08 were never voiced on the current model (0 clips against about 2,500 expected lines), so a top-up there means voicing them for the first time. That's held for the user to approve the cost and the prep edits (m04: 5 `{player_name}` lines and the old HaX style; m05: the old HaX style; m07: 1 `{player_name}` line).
 
 ---
 
