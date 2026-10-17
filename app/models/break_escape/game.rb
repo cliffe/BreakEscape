@@ -26,6 +26,7 @@ module BreakEscape
     before_create :initialize_player_state
     before_create :set_started_at
     before_create :set_scoring_totals
+    before_save :record_avatar_unlocks, if: :avatar_unlocks_changed?
     after_commit :fire_completion_callback, if: :status_previously_changed_to_completed?
     after_commit :fire_completion_callback, if: :task_progress_previously_changed?
     after_commit :fire_completion_callback, if: :mission_conclusion_previously_changed?
@@ -74,7 +75,8 @@ module BreakEscape
 
     # Resets player_state to initial values, preserving mission context (VM/flags)
     def reset_player_state!
-      preserved_keys = %w[vm_set_id vm_ips flags_by_vm standalone_flags]
+      # unlockedAvatars: a reset must not take back avatars a completed run earned.
+      preserved_keys = %w[vm_set_id vm_ips flags_by_vm standalone_flags] + [AvatarUnlocks::STATE_KEY]
       new_state = player_state.slice(*preserved_keys)
       self.player_state = new_state
       initialize_player_state
@@ -510,6 +512,25 @@ module BreakEscape
       self.vm_set_id ||= state&.dig('vm_set_id')&.to_i
     rescue JSON::ParserError
       nil
+    end
+
+    # Recorded on completion, and again when a completed game meets more NPCs.
+    # Partial loads (sync_state selects a few columns and never changes these)
+    # are skipped, because reading a column that wasn't loaded raises.
+    def avatar_unlocks_changed?
+      return false unless %w[status mission_concluded_at scenario_data player_state].all? { |a| has_attribute?(a) }
+      return false unless mission_completed? && player_state.is_a?(Hash)
+
+      new_record? || will_save_change_to_player_state? || will_save_change_to_status? ||
+        will_save_change_to_mission_concluded_at?
+    end
+
+    # Grow-only: what a completed run unlocked stays unlocked.
+    def record_avatar_unlocks
+      key = AvatarUnlocks::STATE_KEY
+      existing = Array(player_state[key]).select { |e| e.is_a?(Hash) }
+      merged = (existing + AvatarUnlocks.for_game(self)).uniq { |e| e['sprite'] }
+      player_state[key] = merged unless merged == player_state[key]
     end
 
     def status_previously_changed_to_completed?

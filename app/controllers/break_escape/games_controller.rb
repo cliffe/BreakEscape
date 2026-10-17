@@ -177,7 +177,8 @@ module BreakEscape
 
       # Load player preference data for the in-game modal
       @player_preference = current_player_preference || create_default_preference
-      @available_sprites = PlayerPreference::AVAILABLE_SPRITES
+      @player_preference.scenario_context = @game.scenario_data
+      @avatar_menu = @player_preference.avatar_menu
 
       # Guard: player must have selected a valid sprite before entering the game
       if !@player_preference.sprite_selected?

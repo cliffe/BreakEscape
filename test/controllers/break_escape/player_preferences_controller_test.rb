@@ -42,6 +42,99 @@ module BreakEscape
       assert_match(/TestAgent/, response.body)
     end
 
+    test 'show lists an avatar unlocked by a completed mission, and update accepts it' do
+      game = Game.create!(
+        mission: break_escape_missions(:ceo_exfil), player: @player,
+        scenario_data: { 'startRoom' => 'lobby', 'rooms' => { 'lobby' => { 'npcs' => [
+          { 'id' => 'mole', 'displayName' => 'Nightshade', 'npcType' => 'person', 'spriteSheet' => 'nightshade' }
+        ] } } },
+        player_state: { 'encounteredNPCs' => ['mole'] }
+      )
+      game.update!(status: 'completed', mission_concluded_at: Time.current)
+
+      get configuration_url
+      assert_response :success
+      assert_match(/nightshade_headshot/, response.body)
+      assert_match(/Nightshade/, response.body)
+      assert_match(/avatar-unlocked/, response.body)
+
+      patch configuration_url,
+            params: { player_preference: { selected_sprite: 'nightshade', in_game_name: 'TestAgent' } },
+            headers: { 'Accept' => 'application/json' }
+      assert_response :success
+      assert_equal 'nightshade', @preference.reload.selected_sprite
+    ensure
+      game&.destroy
+    end
+
+    test 'show draws locked characters as disabled cards' do
+      Mission.create!(name: 'm08_the_mole', display_name: 'The Mole', published: true)
+      get configuration_url
+      assert_response :success
+      assert_match(/avatar-locked/, response.body)
+      assert_match(/Complete The Mole to unlock/, response.body)
+      assert_match(/id="sprite_nightshade"[^>]*disabled|disabled[^>]*id="sprite_nightshade"/, response.body)
+    end
+
+    test 'update accepts a validSprites character only with that game' do
+      Mission.create!(name: 'm08_the_mole', display_name: 'The Mole', published: true)
+      game = Game.create!(
+        mission: break_escape_missions(:ceo_exfil), player: @player,
+        scenario_data: { 'startRoom' => 'lobby', 'rooms' => {}, 'validSprites' => ['netherton'] },
+        player_state: {}
+      )
+      patch configuration_url,
+            params: { player_preference: { selected_sprite: 'netherton', in_game_name: 'TestAgent' } },
+            headers: { 'Accept' => 'application/json' }
+      assert_response :unprocessable_entity
+
+      patch configuration_url,
+            params: { game_id: game.id, player_preference: { selected_sprite: 'netherton', in_game_name: 'TestAgent' } },
+            headers: { 'Accept' => 'application/json' }
+      assert_response :success
+      assert_equal 'netherton', @preference.reload.selected_sprite
+    ensure
+      game&.destroy
+    end
+
+    test 'an unlocked character is selectable in a game with a validSprites list' do
+      done = Game.create!(
+        mission: break_escape_missions(:ceo_exfil), player: @player,
+        scenario_data: { 'startRoom' => 'lobby', 'rooms' => { 'lobby' => { 'npcs' => [
+          { 'id' => 'mole', 'displayName' => 'Nightshade', 'npcType' => 'person', 'spriteSheet' => 'nightshade' }
+        ] } } },
+        player_state: { 'encounteredNPCs' => ['mole'] }
+      )
+      done.update!(status: 'completed', mission_concluded_at: Time.current)
+      game = Game.create!(
+        mission: break_escape_missions(:ceo_exfil), player: @player,
+        scenario_data: { 'startRoom' => 'lobby', 'rooms' => {}, 'validSprites' => %w[female_hacker_hood] },
+        player_state: {}
+      )
+
+      get configuration_url(game_id: game.id)
+      assert_response :success
+      assert_select 'label.sprite-card.avatar-mission[data-sprite="female_hacker_hood_v2"]', count: 1
+      assert_select 'label.sprite-card.avatar-unlocked[data-sprite="nightshade"]:not(.invalid)', count: 1
+      assert_select 'input#sprite_nightshade:not([disabled])', count: 1
+      assert_select 'label.sprite-card.avatar-locked[data-sprite="male_spy_v2"]', count: 1
+
+      patch configuration_url,
+            params: { game_id: game.id, player_preference: { selected_sprite: 'nightshade', in_game_name: 'TestAgent' } },
+            headers: { 'Accept' => 'application/json' }
+      assert_response :success
+    ensure
+      game&.destroy
+      done&.destroy
+    end
+
+    test 'update refuses a character avatar that is not unlocked' do
+      patch configuration_url,
+            params: { player_preference: { selected_sprite: 'nightshade', in_game_name: 'TestAgent' } },
+            headers: { 'Accept' => 'application/json' }
+      assert_response :unprocessable_entity
+    end
+
     # ─── PATCH /configuration — JSON ─────────────────────────────────────────
 
     test 'update with valid sprite and name returns JSON success' do

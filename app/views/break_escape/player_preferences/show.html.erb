@@ -56,41 +56,8 @@
 
           <!-- Grid of static headshots -->
           <div class="sprite-grid" id="sprite-selection-grid">
-            <% @available_sprites.each_with_index do |sprite, index| %>
-              <%
-                is_valid = @scenario.nil? || sprite_valid_for_scenario?(sprite, @scenario)
-                is_selected = @player_preference.selected_sprite == sprite
-              %>
-
-              <label for="sprite_<%= sprite %>"
-                     class="sprite-card <%= 'invalid' unless is_valid %> <%= 'selected' if is_selected %>"
-                     data-sprite="<%= sprite %>">
-
-                <div class="sprite-headshot-container">
-                  <%= image_tag sprite_headshot_path(sprite),
-                                class: 'sprite-headshot',
-                                alt: sprite_label(sprite),
-                                loading: 'lazy' %>
-                  <span class="headshot-fallback headshot-fallback-hidden"><%= sprite_label(sprite) %></span>
-                </div>
-
-                <% unless is_valid %>
-                  <div class="sprite-lock-overlay">
-                    <%= image_tag '/break_escape/assets/icons/padlock_32.png',
-                                  class: 'lock-icon',
-                                  alt: 'Locked' %>
-                  </div>
-                <% end %>
-
-                <div class="sprite-info">
-                  <%= f.radio_button :selected_sprite,
-                                     sprite,
-                                     id: "sprite_#{sprite}",
-                                     disabled: !is_valid,
-                                     class: 'sprite-radio' %>
-                  <span class="sprite-label"><%= sprite_label(sprite) %></span>
-                </div>
-              </label>
+            <% @avatar_menu.each do |entry| %>
+              <%= render 'break_escape/player_preferences/sprite_card', entry: entry, f: f, id_prefix: 'sprite_' %>
             <% end %>
           </div>
         </div>
@@ -118,7 +85,7 @@
     import { initializeSpritePreview } from '<%= be_asset_path('/break_escape/js/ui/sprite-grid.js') %>';
 
     document.addEventListener('DOMContentLoaded', () => {
-      const sprites = <%= raw @available_sprites.to_json %>;
+      const sprites = <%= raw @avatar_menu.reject { |e| e['status'] == 'locked' }.map { |e| e['sprite'] }.to_json %>;
       // Use preferred sprite for Mission 1 if none selected
       let selectedSprite = '<%= @player_preference.selected_sprite.presence || BreakEscape::PlayerPreference::DEFAULT_SPRITE %>';
 

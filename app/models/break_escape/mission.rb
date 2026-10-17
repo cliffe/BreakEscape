@@ -154,6 +154,29 @@ module BreakEscape
       {}
     end
 
+    # NPCs in this mission whose sprites can be unlocked as player avatars
+    # ([{ 'sprite', 'name' }], see AvatarUnlocks.candidates). Feeds the avatar
+    # menu's catalogue of locked characters. Cached per template mtime like
+    # current_voice_configs; NPC sprites don't depend on vm_context.
+    def avatar_candidates
+      template_path = scenario_path.join('scenario.json.erb')
+      mtime = File.mtime(template_path)
+      cached = self.class.avatar_candidate_cache[name]
+      return cached[:candidates] if cached && cached[:mtime] == mtime
+
+      candidates = AvatarUnlocks.candidates(generate_scenario_data({})).freeze
+      self.class.avatar_candidate_cache[name] = { mtime: mtime, candidates: candidates }
+      candidates
+    rescue => e
+      Rails.logger.warn "[BreakEscape] Could not read avatar candidates for #{name}: #{e.message}"
+      self.class.avatar_candidate_cache[name] = { mtime: mtime, candidates: [].freeze } if mtime
+      []
+    end
+
+    def self.avatar_candidate_cache
+      @avatar_candidate_cache ||= Concurrent::Map.new
+    end
+
     # Voice configs by speaker id from rendered scenario data (see current_voice_configs).
     # Shared with TtsLineExtractor, so the batch voices each line as the endpoint will.
     def self.voice_configs_from(data)

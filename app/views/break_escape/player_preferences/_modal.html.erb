@@ -40,45 +40,17 @@
 
           <!-- Grid of static headshots -->
           <div class="sprite-grid" id="sprite-selection-grid-modal">
-            <% @available_sprites.each_with_index do |sprite, index| %>
-              <%
-                is_valid = @game.nil? || sprite_valid_for_scenario?(sprite, @game.scenario_data)
-                is_selected = @player_preference.selected_sprite == sprite
-              %>
-
-              <label for="sprite_modal_<%= sprite %>"
-                     class="sprite-card <%= 'invalid' unless is_valid %> <%= 'selected' if is_selected %>"
-                     data-sprite="<%= sprite %>">
-
-                <div class="sprite-headshot-container">
-                  <%= image_tag sprite_headshot_path(sprite),
-                                class: 'sprite-headshot',
-                                alt: sprite_label(sprite),
-                                loading: 'lazy' %>
-                  <span class="headshot-fallback headshot-fallback-hidden"><%= sprite_label(sprite) %></span>
-                </div>
-
-                <% unless is_valid %>
-                  <div class="sprite-lock-overlay">
-                    <%= image_tag '/break_escape/assets/icons/padlock_32.png',
-                                  class: 'lock-icon',
-                                  alt: 'Locked' %>
-                  </div>
-                <% end %>
-
-                <div class="sprite-info">
-                  <%= f.radio_button :selected_sprite,
-                                     sprite,
-                                     id: "sprite_modal_#{sprite}",
-                                     disabled: !is_valid,
-                                     class: 'sprite-radio' %>
-                  <span class="sprite-label"><%= sprite_label(sprite) %></span>
-                </div>
-              </label>
+            <% @avatar_menu.each do |entry| %>
+              <%= render 'break_escape/player_preferences/sprite_card', entry: entry, f: f, id_prefix: 'sprite_modal_' %>
             <% end %>
           </div>
         </div>
       </div>
+
+      <%# The game's own characters (validSprites) are accepted only with its id %>
+      <% if @game %>
+        <%= hidden_field_tag :game_id, @game.id, id: 'preference-modal-game-id' %>
+      <% end %>
 
       <!-- Submit Buttons -->
       <div class="form-actions modal-footer">
@@ -99,7 +71,7 @@
 
   // Initialize sprite preview when modal is shown
   window.initPlayerPreferencesModal = function() {
-    const sprites = <%= raw @available_sprites.to_json %>;
+    const sprites = <%= raw @avatar_menu.reject { |e| e['status'] == 'locked' }.map { |e| e['sprite'] }.to_json %>;
     // Use current sprite or default
     let selectedSprite = '<%= @player_preference.selected_sprite.presence || BreakEscape::PlayerPreference::DEFAULT_SPRITE %>';
 

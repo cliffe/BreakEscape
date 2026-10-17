@@ -5,9 +5,10 @@ module BreakEscape
     # Associations
     belongs_to :player, polymorphic: true
 
-    # Constants - Available sprite sheets (must match game.js preload and assets on disk).
-    # These are the avatar menu choices. A <key>_v2 entry is a redrawn version of <key>;
-    # it counts as <key> for validSprites.
+    # Starter characters: always available outside a game and in a mission that
+    # declares no validSprites. Every other character comes from a mission's
+    # validSprites or is unlocked by completing a mission (see AvatarUnlocks).
+    # A <key>_v2 entry is a redrawn version of <key>; it counts as <key> for validSprites.
     AVAILABLE_SPRITES = %w[
       female_hacker_hood_v2
       female_hacker_hood_down_v2
@@ -57,7 +58,7 @@ module BreakEscape
 
     # Validations
     validates :player, presence: true
-    validates :selected_sprite, inclusion: { in: AVAILABLE_SPRITES }, allow_nil: true
+    validate :selected_sprite_available
     validates :in_game_name, presence: true, length: { in: 1..20 }, format: {
       with: /\A[a-zA-Z0-9_ ]+\z/,
       message: 'only allows letters, numbers, spaces, and underscores'
@@ -66,20 +67,40 @@ module BreakEscape
     # Callbacks
     before_validation :set_defaults, on: :create
 
+    # Avatars this player has unlocked by completing missions (see AvatarUnlocks):
+    # { sprite => { 'sprite', 'name', 'missions' } }. Memoised per instance;
+    # reload or a new instance picks up later unlocks.
+    def unlocked_avatars
+      @unlocked_avatars ||= AvatarUnlocks.for_player(player)
+    end
+
+    # Scenario of the game the player is choosing for, when there is one: its
+    # validSprites decide which characters are always available. Set by the
+    # controllers before an update so validation sees the menu the player saw.
+    attr_accessor :scenario_context
+
+    # Sprites the player can choose: the mission's own characters (see
+    # AvatarUnlocks.mission_sprites) and every character they have unlocked.
+    def available_sprites(scenario_data = scenario_context)
+      (AvatarUnlocks.mission_sprites(scenario_data) + unlocked_avatars.keys).uniq
+    end
+
+    # The full menu, locked characters included (see AvatarUnlocks.menu).
+    def avatar_menu(scenario_data = scenario_context)
+      AvatarUnlocks.menu(unlocked_avatars, scenario_data)
+    end
+
+    def reload(*)
+      @unlocked_avatars = nil
+      super
+    end
+
     # Check if selected sprite is valid for a given scenario
     def sprite_valid_for_scenario?(scenario_data)
       # If no sprite selected, invalid (player must choose)
       return false if selected_sprite.blank?
 
-      # If scenario has no restrictions, any sprite is valid
-      return true unless scenario_data['validSprites'].present?
-
-      valid_sprites = Array(scenario_data['validSprites'])
-
-      # Check if sprite matches any pattern
-      valid_sprites.any? do |pattern|
-        self.class.sprite_matches_pattern?(selected_sprite, pattern)
-      end
+      available_sprites(scenario_data).include?(selected_sprite)
     end
 
     # Pattern matching for sprite validation
@@ -114,6 +135,15 @@ module BreakEscape
     end
 
     private
+
+    # Checked only when the sprite changes, so renaming outside a game keeps a
+    # character that only the previous mission made available.
+    def selected_sprite_available
+      return if selected_sprite.nil? || !will_save_change_to_selected_sprite?
+      return if available_sprites.include?(selected_sprite)
+
+      errors.add(:selected_sprite, 'is not available')
+    end
 
     def set_defaults
       # Seed in_game_name from player.handle if available
