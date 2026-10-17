@@ -181,11 +181,11 @@ module BreakEscape
           next if state[:in_str]
 
           begin
-            if (alternatives = sequence_alternatives(item))
+            if (alternatives = sequence_alternatives(item, ink_path("#{path}[#{i}]")))
               state[:buf] << alternatives
               next
             end
-            if (group = conditional_group(container, i))
+            if (group = conditional_group(container, i, ink_path(path)))
               state[:buf] << group[:options]
               skip_to = group[:resume]
               next
@@ -342,7 +342,7 @@ module BreakEscape
     # content that rejoins the line straight after it: each branch is a line
     # the client can show, so all are returned. Anything else (branches that
     # divert elsewhere or hold logic) returns nil and is left to the caller.
-    def sequence_alternatives(container)
+    def sequence_alternatives(container, absolute = nil)
       named = container.last
       return nil unless named.is_a?(Hash)
 
@@ -354,7 +354,8 @@ module BreakEscape
       last_content = container.length - 2
       return nil unless last_content >= 0 && container[last_content] == 'nop'
 
-      back = ".^.^.#{last_content}"
+      back = [".^.^.#{last_content}"]
+      back << "#{absolute}.#{last_content}" if absolute
       options = []
       branches.keys.sort_by { |k| k[1..].to_i }.each do |key|
         body = branches[key]
@@ -373,11 +374,16 @@ module BreakEscape
     # ended by a "nop" that every branch diverts back to. Returns every
     # branch's text (plus "" when no branch is unconditional) and the index
     # to resume at, or nil when the shape isn't that.
-    def conditional_group(container, index)
+    #
+    # inklecate writes the divert back either relative (".^.^.^.8") or, when
+    # that is shorter, absolute ("close.8"), so `absolute` is the container's
+    # own ink path when the walker knows it.
+    def conditional_group(container, index, absolute = nil)
       nop = conditional_end(container, index)
       return nil unless nop
 
-      back = ".^.^.^.#{nop}"
+      back = [".^.^.^.#{nop}"]
+      back << "#{absolute}.#{nop}" if absolute
       options = []
       has_else = false
       (index...nop).each do |j|
@@ -391,6 +397,12 @@ module BreakEscape
       end
       options << '' unless has_else
       { options: check_variants!(options.uniq), resume: nop + 1 }
+    end
+
+    # The ink runtime's absolute path for a walker path: "root.close[6]" ->
+    # "close.6", "root[0][3]" -> "0.3".
+    def ink_path(path)
+      path.sub(/\Aroot\.?/, '').gsub(/\[(\d+)\]/, '.\\1').sub(/\A\./, '')
     end
 
     # Index of the "nop" closing a run of conditional branch containers that
@@ -410,12 +422,12 @@ module BreakEscape
     end
 
     # The texts one branch can produce: inline content (text, nested
-    # sequences and conditionals) followed by a divert back to `back`.
+    # sequences and conditionals) followed by a divert back to one of `back`.
     def branch_options(body, back)
       items = body.dup
       items.pop while items.last.nil? && !items.empty?
       divert = items.pop
-      return nil unless divert.is_a?(Hash) && divert.keys == ['->'] && divert['->'] == back
+      return nil unless divert.is_a?(Hash) && divert.keys == ['->'] && Array(back).include?(divert['->'])
 
       inline_options(items)
     end

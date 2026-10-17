@@ -174,12 +174,13 @@ module BreakEscape
       assert_equal MAYA_VOICE, maya.voice
     end
 
-    test "skips a co-speaker line the endpoint would refuse" do
+    test "lists a co-speaker line under the co-speaker even when their own story lacks it" do
       extractor = TtsLineExtractor.new('walker_test', scenario(maya_story: MAYA_STORY))
       entries = extractor.entries.map { |e| [e.npc_id, e.text] }
-      refute(entries.any? { |_, text| text == "I'm the co-speaker here." })
+      assert_includes entries, ['maya_chen', "I'm the co-speaker here."]
       assert_includes entries, ['maya_chen', 'Something else entirely.']
-      assert(extractor.notes.any? { |n| n.reason.include?('endpoint refuses') })
+      refute(extractor.notes.any? { |n| n.reason.include?('endpoint refuses') })
+      assert_equal MAYA_VOICE, extractor.entries.find { |e| e.text == "I'm the co-speaker here." }.voice
     end
 
     test "drops narrator lines when the scenario has no narrator voice" do
@@ -188,6 +189,60 @@ module BreakEscape
       extractor = TtsLineExtractor.new('walker_test', data)
       refute(extractor.entries.any? { |e| e.npc_id == 'narrator' })
       assert(extractor.notes.any? { |n| n.reason.include?('no voice config for narrator') })
+    end
+  end
+
+  # Vance speaks in HaX's debrief (m04): by prefix and by #speaker tag, while
+  # his own story holds other lines.
+  class TtsLineExtractorCoSpeakerTest < ActiveSupport::TestCase
+    HOST = 'test/fixtures/files/ink_line_walker/cospeaker_host.json'.freeze
+    VANCE_OWN = 'test/fixtures/files/ink_line_walker/cospeaker_vance_own.json'.freeze
+    HAX_VOICE = { 'name' => 'Aoede', 'style' => 'Calm handler.', 'language' => 'en-GB' }.freeze
+    VANCE_VOICE = { 'name' => 'Charon', 'style' => 'Tired engineer.', 'language' => 'en-GB' }.freeze
+
+    def scenario
+      {
+        'rooms' => {
+          'control' => {
+            'npcs' => [
+              { 'id' => 'agent_0x99_debrief', 'displayName' => 'Agent HaX', 'npcType' => 'person',
+                'voice' => HAX_VOICE, 'storyPath' => HOST },
+              { 'id' => 'robert_vance', 'displayName' => 'Robert Vance', 'npcType' => 'person',
+                'voice' => VANCE_VOICE, 'storyPath' => VANCE_OWN }
+            ]
+          }
+        }
+      }
+    end
+
+    test "attributes prefixed and #speaker-tagged co-speaker lines to the co-speaker's voice" do
+      extractor = TtsLineExtractor.new('walker_test', scenario)
+      service = TtsService.new
+      ['Nobody gets to call it an accident.', "It'll hurt us. People should still know."].each do |text|
+        entry = extractor.entries.find { |e| e.text == text }
+        assert entry, "missing: #{text}"
+        assert_equal 'robert_vance', entry.npc_id
+        assert_equal VANCE_VOICE, entry.voice
+        assert_equal service.cache_key_for(text, 'Charon', 'Tired engineer.', 'en-GB'), entry.key
+      end
+      assert_equal 'agent_0x99_debrief', extractor.entries.find { |e| e.text == 'You made the disclosure call.' }.npc_id
+    end
+
+    test "spoken_by? matches a line only for the speaker it is attributed to" do
+      extractor = TtsLineExtractor.new('walker_test', scenario)
+      assert extractor.spoken_by?('robert_vance', 'Nobody gets to call it an accident.')
+      assert extractor.spoken_by?('robert_vance', "it'll hurt us people should still know")
+      refute extractor.spoken_by?('robert_vance', 'You made the disclosure call.')
+      refute extractor.spoken_by?('agent_0x99_debrief', 'Nobody gets to call it an accident.')
+      refute extractor.spoken_by?('robert_vance', 'Words nobody wrote.')
+    end
+
+    test "expands an inline conditional whose rejoin divert is an absolute path" do
+      walker = InkLineWalker.from_file(Engine.root.join(HOST).to_s)
+      raws = walker.lines.map(&:raw)
+      assert_includes raws, 'Agent HaX: They spent years on this. Tonight you turned it round.'
+      assert_includes raws, 'Agent HaX: They spent years on this. Tonight you took it off them.'
+      assert_empty walker.unresolved
     end
   end
 end

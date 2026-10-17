@@ -1,5 +1,6 @@
 require 'json'
 require 'erb'
+require 'digest'
 
 module BreakEscape
   # The TTS requests a scenario's client can make: each spoken line with the
@@ -125,11 +126,65 @@ module BreakEscape
 
       own_name = characters.dig(host_id, 'displayName')
       other = characters[speaker]
-      if speaker != host_id && other && other['voice'] && other['displayName'] != own_name
+      # person-chat sends the conversation's own id when the speaker shares its
+      # display name (m05's Patricia in person and on the phone).
+      same_name = own_name && other && other['displayName'] == own_name
+      if speaker != host_id && other && other['voice'] && !same_name
         [speaker, text]
       else
         [host_id, text]
       end
+    end
+
+    # True when some host story has a line the client voices as npc_id with
+    # this text: how the endpoint accepts a co-speaker's line from another
+    # NPC's story (Vance in HaX's debrief, HaX in Netherton's). Matching is on
+    # the whole line as the client sends it, so only text that is in the
+    # scenario's ink for that speaker is accepted.
+    def spoken_by?(npc_id, text)
+      wanted = self.class.normalize(text)
+      return false if wanted.empty?
+
+      spoken_lines.include?("#{npc_id}|#{wanted}")
+    end
+
+    # "npc_id|normalised text" for every voiced line of every host story.
+    def spoken_lines
+      @spoken_lines ||= begin
+        set = Set.new
+        each_host_line { |_host, _path, _line, npc_id, text| set << "#{npc_id}|#{self.class.normalize(text)}" }
+        set
+      end
+    end
+
+    # One extractor per scenario render and story edit, for the endpoint.
+    # Keyed on the stories' paths and mtimes and the speaker-relevant fields of
+    # every character, so a story edit or a recast rebuilds it.
+    def self.cached(scenario_name, scenario_data)
+      extractor = new(scenario_name, scenario_data, tts_service: nil)
+      stamp = extractor.cache_stamp
+      cached = endpoint_cache[scenario_name]
+      return cached[:extractor] if cached && cached[:stamp] == stamp
+
+      extractor.spoken_lines
+      endpoint_cache[scenario_name] = { stamp: stamp, extractor: extractor }
+      extractor
+    end
+
+    def self.endpoint_cache
+      @endpoint_cache ||= Concurrent::Map.new
+    end
+
+    def cache_stamp
+      people = characters.map do |id, c|
+        [id, c['displayName'], c['voice'].present?, c['storyPath'], c['npcType']]
+      end
+      stories = characters.values.map { |c| c['storyPath'] }.compact.uniq.sort.map do |story|
+        path = resolve_ink_path(story)
+        [story, path && File.exist?(path) ? [File.mtime(path).to_f, File.size(path)] : nil]
+      end
+      hosts_ids = hosts.map { |h| [h['id'], h['storyPath']] }
+      Digest::MD5.hexdigest(Marshal.dump([people, stories, hosts_ids, @variables.to_a.sort_by { |k, _| k.to_s }]))
     end
 
     private
@@ -138,6 +193,19 @@ module BreakEscape
       @entries = []
       seen = {}
 
+      each_host_line do |host_id, ink_path, line, npc_id, text|
+        add_entry(seen, npc_id, text, host_id, "#{File.basename(ink_path)}:#{line.path}")
+      end
+
+      each_room_object do |obj|
+        next unless obj['ttsVoice'].is_a?(Hash) && obj['voice'].is_a?(String)
+        add_entry(seen, obj['id'], obj['voice'], obj['id'], 'object.voice')
+      end
+    end
+
+    # Every voiced line of every host story, with the speaker the client asks
+    # for and the text it sends. Notes unreadable stories and unresolved lines.
+    def each_host_line
       hosts.each do |npc|
         host_id = npc['id']
         ink_path = resolve_ink_path(npc['storyPath'])
@@ -154,16 +222,8 @@ module BreakEscape
 
         lines.each do |line|
           npc_id, text = resolve(line, host_id)
-          next unless npc_id
-          next if refused_by_endpoint?(npc_id, host_id, text, line)
-
-          add_entry(seen, npc_id, text, host_id, "#{File.basename(ink_path)}:#{line.path}")
+          yield host_id, ink_path, line, npc_id, text if npc_id
         end
-      end
-
-      each_room_object do |obj|
-        next unless obj['ttsVoice'].is_a?(Hash) && obj['voice'].is_a?(String)
-        add_entry(seen, obj['id'], obj['voice'], obj['id'], 'object.voice')
       end
     end
 
@@ -193,24 +253,6 @@ module BreakEscape
 
       seen[key] = true
       @entries << Entry.new(npc_id: npc_id, text: text, voice: voice, source: source, path: path, key: key)
-    end
-
-    # A co-speaker with its own ink story is validated against that story at the
-    # endpoint, so a line it speaks in another NPC's story is refused (403)
-    # unless it is also in its own. Generating that clip would be waste.
-    def refused_by_endpoint?(npc_id, host_id, text, line)
-      return false if npc_id == host_id || npc_id == 'narrator'
-
-      story = characters.dig(npc_id, 'storyPath')
-      return false unless story
-
-      own_path = resolve_ink_path(story)
-      return false if own_path && InkTextValidator.validate(own_path.to_s, text)
-      return false if ScenarioBarkValidator.validate(characters[npc_id], text)
-
-      @notes << Note.new(source: host_id, path: line.path, text: line.raw,
-                         reason: "spoken by #{npc_id}, whose own story doesn't contain it; the endpoint refuses it")
-      true
     end
 
     def speaker_id_for(prefix, host_id)
