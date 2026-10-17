@@ -8,7 +8,7 @@ import TTSManager from './tts-manager.js';
 import { phoneBarkText } from '../minigames/phone-chat/phone-chat-speaker.js';
 import { displayDashes } from '../utils/display-dashes.js';
 import { releaseHeldBarks } from './bark-release-policy.js';
-import { workstationPopupOpen } from '../utils/overlay-open.js';
+import { workstationPopupOpen, phoneThreadOpenFor } from '../utils/overlay-open.js';
 import { barkLifetimeMs, barksToTrim, BARK_RESUME_MIN_MS } from './bark-lifetime.js';
 
 export default class NPCBarkSystem {
@@ -150,7 +150,7 @@ export default class NPCBarkSystem {
     // (payload.stillValid) and stale ones dropped; one every ~2.5 s; more than 3 waiting drops
     // the oldest ones that also sit in a phone thread. Drops are logged with console.debug.
     // A bark arriving mid-release joins the end of the line, so it can't jump the queue.
-    if (this._shouldDefer() || this.isDrainingDeferred || this.deferredBarkQueue.length > 0) {
+    if (this._shouldDefer(payload) || this.isDrainingDeferred || this.deferredBarkQueue.length > 0) {
       console.log('💬 conversation/minigame open — deferring bark:', payload.text || payload.message);
       this.deferredBarkQueue.push(payload);
       if (!this._shouldDefer()) this.drainDeferredBarks();
@@ -164,12 +164,17 @@ export default class NPCBarkSystem {
     return null; // Return null since we're processing async
   }
 
-  _shouldDefer() {
+  _shouldDefer(payload) {
     if (window.currentConversationMinigameType === 'person-chat') return true;
     // The CyberChef and lab-sheet popups aren't minigames; a bark covered the
     // workstation's operations list (m04 F7). They drain the queue on close.
     if (workstationPopupOpen()) return true;
-    return !!window.MinigameFramework?.holdsBarks?.();
+    if (window.MinigameFramework?.holdsBarks?.()) return true;
+    // The phone keeps other contacts' barks on top, but a bark from the contact whose
+    // thread is open waits until the phone closes (m04 confirmation N1). With no
+    // payload (the drain's check), hold while any queued bark is from that contact.
+    if (payload) return phoneThreadOpenFor(payload.npcId);
+    return this.deferredBarkQueue.some(p => phoneThreadOpenFor(p && p.npcId));
   }
 
   /**

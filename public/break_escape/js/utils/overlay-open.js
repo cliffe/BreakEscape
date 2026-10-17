@@ -20,3 +20,18 @@ export function fullScreenPanelOpen(win = (typeof window !== 'undefined' ? windo
     if (m && !m._ending) return true;
     return workstationPopupOpen(doc);
 }
+
+/**
+ * True while the phone is open on this NPC's own thread (m04 confirmation N1: HaX's
+ * bark toast sat beside HaX's open chat). The phone otherwise keeps barks on top,
+ * since a bark there flags another contact's thread; a bark from the open thread's
+ * contact is held until the phone closes instead.
+ */
+export function phoneThreadOpenFor(npcId, win = (typeof window !== 'undefined' ? window : {})) {
+    if (!npcId) return false;
+    const m = win.MinigameFramework?.currentMinigame;
+    if (!m || m._ending || m._sceneType !== 'phone-chat') return false;
+    if (m.currentNPCId !== npcId) return false;
+    const view = m.ui?.getCurrentView?.();
+    return view === undefined || view === 'conversation';
+}

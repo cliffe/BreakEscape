@@ -943,6 +943,8 @@ export class PhoneChatMinigame extends MinigameScene {
         
         // Show contact list
         this.ui.showContactList(this.phoneId);
+        // A bark held because its contact's thread was open can show now (npc-barks.js)
+        window.barkSystem?.drainDeferredBarks?.();
     }
     
     /**

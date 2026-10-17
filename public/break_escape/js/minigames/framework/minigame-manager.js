@@ -105,6 +105,9 @@ export const MinigameFramework = {
         this.currentMinigame = new MinigameClass(container, params);
         this.currentMinigame._sceneType = sceneType;
         this._updateBarkLayer();
+        // A task or pickup toast raised just before this opened waits for it to close
+        // (notifications.js; m07 confirmation N1)
+        window.holdRecentNotifications?.();
         this.currentMinigame.init();
         this.currentMinigame.start();
         

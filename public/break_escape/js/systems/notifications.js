@@ -31,6 +31,37 @@ function releaseHeldNotifications() {
     heldNotifications.splice(0).forEach((args) => renderNotification(...args));
 }
 
+// A toast raised just before a minigame opens (the task that completes on an unlock,
+// then the container opening 500 ms later) slipped past the hold and sat over the
+// panel (m07 confirmation N1, Cascade Control). When a minigame starts, info and
+// success toasts younger than RECENT_TOAST_MS go back into the held queue; older
+// ones have been on screen long enough to read and are left to fade.
+export const RECENT_TOAST_MS = 1500;
+
+/** Which shown toasts to pull back when a panel opens. entries: [{ type, shownAt }] */
+export function pickRecentHoldable(entries, now, windowMs = RECENT_TOAST_MS) {
+    return entries.filter((e) => e && HOLDABLE_TYPES.has(e.type)
+        && typeof e.shownAt === 'number' && now - e.shownAt < windowMs);
+}
+
+export function holdRecentNotifications(now = Date.now()) {
+    if (typeof document === 'undefined') return 0;
+    const container = document.getElementById('notification-container');
+    if (!container) return 0;
+    const shown = [...container.querySelectorAll('.notification')]
+        .filter((el) => el._toast && !el._toast.pulled)
+        .map((el) => ({ el, ...el._toast }));
+    const pulled = pickRecentHoldable(shown, now);
+    pulled.forEach(({ el, message, type, title, duration }) => {
+        el._toast.pulled = true;
+        if (el.parentNode) el.parentNode.removeChild(el);
+        heldNotifications.push([message, type, title, duration]);
+    });
+    if (pulled.length && !holdTimer) holdTimer = setInterval(releaseHeldNotifications, HOLD_POLL_MS);
+    return pulled.length;
+}
+if (typeof window !== 'undefined') window.holdRecentNotifications = holdRecentNotifications;
+
 // Show a notification instead of using alert()
 export function showNotification(message, type = 'info', title = '', duration = 5000) {
     if (shouldHoldNotification(type, fullScreenPanelOpen())) {
@@ -61,6 +92,7 @@ function renderNotification(message, type, title, duration) {
     }
     
     notification.innerHTML = notificationContent;
+    notification._toast = { message, type, title, duration, shownAt: Date.now() };
     
     // Add to container
     notificationContainer.appendChild(notification);

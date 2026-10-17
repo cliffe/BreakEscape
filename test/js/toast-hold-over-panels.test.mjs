@@ -69,3 +69,40 @@ test('a held toast renders once the panel closes', async () => {
     assert.equal(appended.length, 2, 'the task toast follows when the conversation closes');
     assert.match(appended[1].html, /Task Complete/);
 });
+
+// m07 confirmation N1: "Task Complete" raised on the unlock, ~500 ms before the
+// container opened, stayed over the container. Opening a minigame pulls back info and
+// success toasts shown in the last RECENT_TOAST_MS; older ones and warnings stay.
+test('toasts raised just before a minigame opens go back in the hold', async () => {
+    const T = await import(dataUrl(notifSrc));
+    const now = 10_000;
+    const picked = T.pickRecentHoldable([
+        { type: 'success', shownAt: now - 400 },
+        { type: 'info', shownAt: now - 3000 },
+        { type: 'warning', shownAt: now - 100 },
+        { type: 'info' }
+    ], now);
+    assert.deepEqual(picked.map((e) => e.type), ['success']);
+    assert.equal(T.RECENT_TOAST_MS, 1500);
+    const mgr = readFileSync(join(js, 'minigames/framework/minigame-manager.js'), 'utf8');
+    const start = mgr.slice(mgr.indexOf('startMinigame(sceneType'), mgr.indexOf('holdsBarks()'));
+    assert.match(start, /this\.currentMinigame\._sceneType = sceneType;[\s\S]*?window\.holdRecentNotifications\?\.\(\)/);
+});
+
+// m04 confirmation N1: a HaX bark showed beside HaX's own open phone thread. The phone
+// still keeps other contacts' barks on top (they flag another thread).
+test('a bark from the open phone thread waits; other contacts still show', async () => {
+    const { phoneThreadOpenFor } = await import(dataUrl(overlaySrc));
+    const phone = (npcId, view = 'conversation', extra = {}) => ({ MinigameFramework: { currentMinigame: {
+        _sceneType: 'phone-chat', currentNPCId: npcId, ui: { getCurrentView: () => view }, ...extra } } });
+    assert.equal(phoneThreadOpenFor('agent_0x99', phone('agent_0x99')), true);
+    assert.equal(phoneThreadOpenFor('robert_vance_phone', phone('agent_0x99')), false, 'other contact: on top');
+    assert.equal(phoneThreadOpenFor('agent_0x99', phone('agent_0x99', 'contact-list')), false, 'list view');
+    assert.equal(phoneThreadOpenFor('agent_0x99', phone('agent_0x99', 'conversation', { _ending: true })), false);
+    assert.equal(phoneThreadOpenFor('agent_0x99', { MinigameFramework: { currentMinigame: { _sceneType: 'rfid' } } }), false);
+    assert.equal(phoneThreadOpenFor(null, phone(null)), false);
+    const barks = readFileSync(join(js, 'systems/npc-barks.js'), 'utf8');
+    assert.match(barks, /this\._shouldDefer\(payload\) \|\|/);
+    assert.match(barks, /if \(payload\) return phoneThreadOpenFor\(payload\.npcId\);/);
+    assert.match(barks, /this\.deferredBarkQueue\.some\(p => phoneThreadOpenFor\(p && p\.npcId\)\)/);
+});
