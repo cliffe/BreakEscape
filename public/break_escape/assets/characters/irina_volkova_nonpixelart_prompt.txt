@@ -1,0 +1,10 @@
+Make portrait for Dr Irina Volkova
+A slender white Russian woman of about 35 with pale skin, sharp high cheekbones and a narrow jaw, ash-blonde hair pulled straight back without a strand loose into a low, tight bun at the nape, cool grey-blue eyes behind thin rectangular silver-rimmed glasses, an academic cryptographer with ten years in British academia, guarded and precise. She wears a fitted black single-button blazer over a high-necked ivory silk blouse, a thin silver chain at the throat, slim charcoal trousers and a narrow black belt. Arms folded tightly across her body, one hand resting on the opposite elbow. No text, no writing and no logos anywhere.
+Body angled slightly to the side in a three-quarter turn, head turned toward the camera.
+Dialog view of character
+Dramatic lighting
+In the style of a detailed vector graphics illustration. the portrait shows the body from the hips up, including the waistline, belt, pockets and top of the trousers, against a plain background, in a game art design, realism and digital art aesthetic. Dialog character. Gritty realism.
+Slightly anime. Neutral expression.
+Square aspect ratio
+
+# Gemini (nanobanana), 2026-10-16, no reference images. Reframed with reframe_portrait.py, not flipped (the render already faced right); original is irina_volkova_concept_2_raw.png.
