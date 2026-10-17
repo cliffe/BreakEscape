@@ -1,13 +1,13 @@
 ---
 name: pixellab-character-animations
-description: Brings one or more existing PixelLab characters up to the project's standard animation set — six stock template animations in all 8 directions — via the PixelLab MCP. Handles the 8-slot concurrency cap, backfills directions that fail under load, and verifies the result. Trigger when the user asks to "add animations to these characters", "give X the standard animations", "animate these characters", "make sure these have all 8 directions", or pastes pixellab.ai character URLs and asks for animations.
+description: Brings one or more existing PixelLab characters up to the project's standard animation set — six stock template animations in all 8 directions — via the PixelLab MCP. Handles the 8-slot concurrency cap, backfills directions that fail under load, and verifies the result. Trigger when the user asks to "add animations to these characters", "give X the standard animations", "animate these characters", "make sure these have all 8 directions", or pastes pixellab.ai character URLs and asks for animations. Hand edits to sprites must live in tools/pixellab_overrides (never paint on the atlas PNG): `import` refuses to replace an atlas with untracked edits, and tools/pixellab_drift_audit.py --adopt saves them.
 ---
 
 # PixelLab — standard character animation set
 
 Adds the project's six stock animations, in all 8 directions, to characters that **already exist** in the PixelLab account. This does not create characters; it only animates existing ones.
 
-**Prefer the scripted route:** `python3 tools/pixellab_pipeline.py animate <url|id> [--dry-run]` (see the pixellab-character-pipeline skill) does everything below over the REST API. It finds the gaps, extends existing groups, keeps the 8 slots full, retries failures and verifies the result, in one command, without the MCP's large `get_character` replies. Then `import` brings the character into the game. The MCP procedure below is the fallback, and the reference for why the scripted route behaves as it does.
+**Prefer the scripted route:** `python3 tools/pixellab_pipeline.py animate <url|id> [--dry-run]` (see the pixellab-character-pipeline skill) does everything below over the REST API. It finds the gaps, extends existing groups, keeps the 8 slots full, retries failures and verifies the result, in one command, without the MCP's large `get_character` replies. Then `import` brings the character into the game; it first checks the existing atlas for hand edits not saved as overrides and stops if it finds any (adopt them with `tools/pixellab_drift_audit.py <key> --adopt`). The MCP procedure below is the fallback, and the reference for why the scripted route behaves as it does.
 
 ## The standard set
 

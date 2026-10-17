@@ -5,7 +5,10 @@
 frame overrides, so an edit painted straight onto public/.../characters/<key>.png is lost on
 the next import (e.g. after adding an animation). This rebuilds each atlas offline from the
 local export (tmp/pixellab/_export/<key>) and the overrides, then diffs it frame by frame
-against the committed atlas. Any frame that differs is an untracked hand edit.
+against the committed atlas. Any frame that differs is an untracked hand edit. Frames that
+have an override file are skipped (a `fix` not yet rebuilt into the atlas differs on purpose),
+so an edit painted over an already-overridden frame is not caught. `pixellab_pipeline.py
+import` runs this check itself before replacing an existing atlas.
 
     python3 tools/pixellab_drift_audit.py                 # every key in pixellab_characters.json
     python3 tools/pixellab_drift_audit.py female_nurse2_v2
@@ -80,8 +83,12 @@ def audit(key):
     rebuilt = frames(out / f"{key}.png", out / f"{key}.json")
     drift = {}
     for n in sorted(set(committed) | set(rebuilt)):
-        if n not in committed or n not in rebuilt:
-            drift[n] = "missing in " + ("committed atlas" if n not in committed else "rebuild")
+        anim, rest = n.split("_", 1)
+        direction, fr = rest.rsplit("_frame_", 1)
+        if (ov / anim / direction / f"frame_{fr}.png").exists() or n not in committed:
+            continue  # a fix or a new animation not yet built into the atlas: expected
+        if n not in rebuilt:
+            drift[n] = "missing in rebuild"
         elif committed[n].size != rebuilt[n].size:
             drift[n] = "frame size differs"
         elif px := changed(committed[n], rebuilt[n]):
