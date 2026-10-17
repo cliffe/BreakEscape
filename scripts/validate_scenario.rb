@@ -271,7 +271,7 @@ def check_unknown_fields(json_data)
     voice behavior globalVarOnKO restartOnRetalk taskOnKO storyPath currentKnot avatar
     phoneId phoneTheme unlockable externalVariables persistentVariables
     timedMessages timedConversation eventMappings itemsHeld puzzle_graph_actions
-    observations disableClose los rfidCard chatBackground gender portraitVariants _comment
+    observations disableClose los rfidCard chatBackground spriteStyle gender portraitVariants _comment
   ]
 
   # Known NPC los fields, and those of the opt-in los.challengeOnSight
@@ -3531,6 +3531,53 @@ def check_recurring_bugs(json_data, repo_root)
     end
     portrait_names[npc['id']] = names
   end
+  # NPC spriteStyle: a see-through / glowing / flickering look over the frames, e.g. m08's ATHENA
+  # hologram (systems/npc-sprite-style.js). The engine clamps values; flag what it would ignore.
+  known_style_fields = %w[alpha glow glowStrength flicker light _comment]
+  all_npcs.each do |rid, i, npc|
+    next unless npc.key?('spriteStyle')
+    where = "'rooms/#{rid}/npcs[#{i}]' (#{npc['id']}) spriteStyle"
+    st = npc['spriteStyle']
+    unless st.is_a?(Hash)
+      issues << "⚠️ WARNING: #{where} should be an object such as { \"alpha\": 0.8, \"glow\": \"#7fe8ff\", \"flicker\": true }."
+      next
+    end
+    (st.keys - known_style_fields).each do |k|
+      issues << "⚠️ WARNING: #{where} has unknown field '#{k}' (known: #{known_style_fields.join(', ')})."
+    end
+    if st.key?('alpha') && (!st['alpha'].is_a?(Numeric) || st['alpha'] < 0.3 || st['alpha'] > 1)
+      issues << "⚠️ WARNING: #{where} alpha should be a number from 0.3 to 1 (lower is clamped to 0.3, so the NPC stays visible and clickable)."
+    end
+    hex = /\A#?[0-9a-fA-F]{6}\z/
+    if st.key?('glow') && !(st['glow'].is_a?(String) && st['glow'] =~ hex)
+      issues << "⚠️ WARNING: #{where} glow should be a colour such as \"#7fe8ff\"; anything else draws no glow."
+    end
+    if st.key?('glowStrength') && (!st['glowStrength'].is_a?(Numeric) || st['glowStrength'] < 0.5 || st['glowStrength'] > 6)
+      issues << "⚠️ WARNING: #{where} glowStrength should be a number from 0.5 to 6."
+    end
+    if st.key?('flicker') && ![true, false].include?(st['flicker'])
+      issues << "⚠️ WARNING: #{where} flicker should be true or false."
+    end
+    if st.key?('light')
+      l = st['light']
+      if !st.key?('glow')
+        issues << "⚠️ WARNING: #{where} light has no effect without a glow colour."
+      elsif l.is_a?(Hash)
+        (l.keys - %w[radius intensity color]).each do |k|
+          issues << "⚠️ WARNING: #{where} light has unknown field '#{k}' (known: radius, intensity, color)."
+        end
+        if l.key?('color') && !(l['color'].is_a?(String) && l['color'] =~ hex)
+          issues << "⚠️ WARNING: #{where} light color should be a colour such as \"#7fe8ff\"."
+        end
+      elsif ![true, false].include?(l)
+        issues << "⚠️ WARNING: #{where} light should be true, false or { radius, intensity, color }."
+      end
+    end
+    if (st.keys - ['_comment']).empty? || (st['alpha'].nil? || st['alpha'] == 1) && !st.key?('glow') && st['flicker'] != true
+      issues << "⚠️ WARNING: #{where} changes nothing (set alpha below 1, a glow colour or flicker)."
+    end
+  end
+
   # `# portrait:<name>` / `# portrait:<npc_id>:<name>` in an NPC's ink must name one of the variants.
   all_npcs.each do |rid, i, npc|
     sp = npc['storyPath']

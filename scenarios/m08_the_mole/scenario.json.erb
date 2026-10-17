@@ -591,6 +591,11 @@ CREDITS
           "spriteVisemes": "assets/characters/athena_visemes.png",
           "avatar": "assets/characters/athena_headshot.png",
           "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 },
+          <%# Decisions form 2026-10-17 (1B): ATHENA is a projection, so the engine
+              draws her see-through with a cyan glow and a rare flicker
+              (npc-sprite-style.js). This entry's sprite stays hidden (the briefing is
+              a person-chat cutscene); set here too so both ATHENAs match if shown. %>
+          "spriteStyle": { "alpha": 0.8, "glow": "#7fe8ff", "flicker": true },
           "storyPath": "scenarios/m08_the_mole/ink/m08_opening_briefing.json",
           "voice": {
             "name": "Kore",
@@ -654,6 +659,10 @@ CREDITS
           "spriteVisemes": "assets/characters/athena_visemes.png",
           "avatar": "assets/characters/athena_headshot.png",
           "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 },
+          <%# Decisions form 2026-10-17 (1B): the reception hologram. See-through, a
+              soft cyan glow that also lights the floor round her, and a rare flicker
+              (npc-sprite-style.js). It holds through her punch and fall. %>
+          "spriteStyle": { "alpha": 0.8, "glow": "#7fe8ff", "flicker": true },
           "storyPath": "scenarios/m08_the_mole/ink/m08_receptionist_ai.json",
           "voice": {
             "name": "Kore",

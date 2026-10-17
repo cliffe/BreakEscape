@@ -15,7 +15,9 @@ writeFileSync(join(dir, 'constants.mjs'), readFileSync(join(js, 'utils/constants
 writeFileSync(join(dir, 'conditional-text.mjs'), readFileSync(join(js, 'utils/conditional-text.js'), 'utf8'));
 writeFileSync(join(dir, 'lighting.mjs'), readFileSync(join(js, 'systems/lighting.js'), 'utf8')
   .replace("'../utils/constants.js'", "'./constants.mjs'")
-  .replace("'../utils/conditional-text.js'", "'./conditional-text.mjs'"));
+  .replace("'../utils/conditional-text.js'", "'./conditional-text.mjs'")
+  .replace("'./npc-sprite-style.js'", "'./npc-sprite-style.mjs'"));
+writeFileSync(join(dir, 'npc-sprite-style.mjs'), readFileSync(join(js, 'systems/npc-sprite-style.js'), 'utf8'));
 
 globalThis.Phaser = { AUTO: 0, Scale: { NONE: 0, CENTER_BOTH: 0, FIT: 0 }, BlendModes: { ADD: 1, MULTIPLY: 2 }, Math: { Clamp: (v, a, b) => Math.max(a, Math.min(b, v)), DegToRad: (d) => d * Math.PI / 180, Vector2: class { constructor() { this.x = 0; this.y = 0; } } } };
 globalThis.window = { gameState: { globalVariables: {} } };

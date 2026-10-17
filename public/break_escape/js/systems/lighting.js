@@ -50,6 +50,7 @@
 
 import { TILE_SIZE, LIGHT_DEPTH, SPRITE_PADDING_BOTTOM_ATLAS, SPRITE_PADDING_BOTTOM_LEGACY } from '../utils/constants.js';
 import { evaluateGlobalCondition } from '../utils/conditional-text.js';
+import { spriteStyleLight } from './npc-sprite-style.js';
 
 const LIGHT_TEX = 'be_light_soft';
 const LIGHT_TEX_SIZE = 128;
@@ -1079,6 +1080,7 @@ export class LightingSystem {
       }
       if (state === here) this.stampTorch(rt, stamp, ox, oy, here, player);
       this.stampNpcTorches(rt, stamp, ox, oy, state, ambient, time);
+      this.stampNpcGlows(stamp, state);
     }
     // Spill goes on after every fill, since it is meant to cross the doorway.
     for (const state of visible) this.stampDoorSpill(state, stamp);
@@ -1152,6 +1154,30 @@ export class LightingSystem {
       angles.set(npc.id, angle);
       const color = parseColor(typeof torch === 'object' ? torch.color : null, 0xfff0d8);
       this.stampBeam(rt, stamp, ox, oy, room, sp.x, fy - 4, angle, k * 0.85, color);
+    }
+  }
+
+  /**
+   * NPCs with a glowing spriteStyle (npc-sprite-style.js, e.g. ATHENA's hologram) light
+   * the map round them in their glow colour. The ADD lifts the MULTIPLY map over the
+   * figure, so a hologram isn't darkened in a dim room, and casts a soft pool on the
+   * floor. Drawn with their room, like torches, so darker neighbours cover any leak.
+   */
+  stampNpcGlows(stamp, state) {
+    const npcs = window.npcManager?.npcs;
+    if (!npcs) return;
+    let areas = null;
+    for (const npc of npcs.values()) {
+      const sp = npc._sprite;
+      if (!sp?._spriteStyle) continue;
+      const l = spriteStyleLight(sp, { knockedOut: !!window.npcHostileSystem?.isNPCKO?.(npc.id) });
+      if (!l) continue;
+      areas = areas || this.fillAreas(state.roomId);
+      if (!areas.some(a => l.x >= a.x && l.x <= a.x + a.w && l.y >= a.y && l.y <= a.y + a.h)) continue;
+      stamp(l.x, l.y, l.radius, l.color, l.intensity);
+      // A tighter, brighter core over the figure itself, so in a dark room she reads
+      // clearly while the wider pool stays soft on the floor.
+      stamp(l.x, l.y - 12, l.radius * 0.6, l.color, Math.min(1, l.intensity * 1.6));
     }
   }
 

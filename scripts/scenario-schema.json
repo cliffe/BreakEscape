@@ -612,6 +612,25 @@
           },
           "additionalProperties": true
         },
+        "spriteStyle": {
+          "type": "object",
+          "description": "Optional look laid over the NPC's world sprite (systems/npc-sprite-style.js), for holograms and ghosts such as m08's ATHENA. It holds through every animation and a knockout. alpha multiplies the engine's own alpha; glow is a postFX outline (WebGL) that, with light, also lights the room's light map round the NPC so dim rooms don't darken it; flicker is a rare flash-safe two-step dip, off under prefers-reduced-motion.",
+          "properties": {
+            "alpha": { "type": "number", "minimum": 0.3, "maximum": 1, "description": "See-through amount, 0.3-1 (default 1)." },
+            "glow": { "type": "string", "pattern": "^#?[0-9a-fA-F]{6}$", "description": "Glow colour, e.g. \"#7fe8ff\"." },
+            "glowStrength": { "type": "number", "minimum": 0.5, "maximum": 6, "description": "Outer glow strength (default 2)." },
+            "flicker": { "type": "boolean", "description": "true: a brief flicker every few seconds and a slow shimmer of the glow." },
+            "light": {
+              "description": "With a glow: true (default) lights the floor round the NPC in the glow colour; false turns it off; or set radius (px, default 40), intensity (0-1, default 0.45) and color.",
+              "oneOf": [
+                { "type": "boolean" },
+                { "type": "object", "properties": { "radius": { "type": "number" }, "intensity": { "type": "number", "minimum": 0, "maximum": 1 }, "color": { "type": "string" } }, "additionalProperties": false }
+              ]
+            },
+            "_comment": { "type": "string" }
+          },
+          "additionalProperties": false
+        },
         "spriteVisemes": { "type": "string", "description": "Optional lip-sync sheet (assets/characters/<key>_visemes.png, one row of mouth shapes) with a matching .json beside it naming each column. Falls back to spriteTalk when absent or unloadable." },
         "portraitVariants": {
           "type": "array",

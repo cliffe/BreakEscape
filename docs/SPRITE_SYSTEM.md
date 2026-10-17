@@ -212,6 +212,25 @@ The code is `js/utils/portrait-variants.js`. The validator checks field names, t
 exist, that condition globals are declared, and that each `# portrait:` tag in the NPC's ink
 names one of its entries.
 
+## Holograms and ghosts (`spriteStyle`)
+
+An NPC can be drawn see-through, glowing and flickering without new art. The engine lays the look over the normal frames (`systems/npc-sprite-style.js`), so it holds through idle, walk, `taking-punch` and `falling-back-death`, and through a knockout and a reload.
+
+```json
+"spriteSheet": "athena",
+"spriteStyle": { "alpha": 0.8, "glow": "#7fe8ff", "flicker": true }
+```
+
+| Key | Default | Effect |
+| --- | --- | --- |
+| `alpha` | 1 | See-through amount, 0.3-1 (lower is clamped so the NPC stays visible and clickable). It multiplies the alpha the engine sets itself (0 when hidden, 1 when revealed, any fade), so it never fights those. |
+| `glow` | none | Outline glow colour. Phaser `postFX.addGlow` on the sprite (WebGL only; the Canvas renderer gets alpha and flicker only). |
+| `glowStrength` | 2 | Outer glow strength, 0.5-6. |
+| `flicker` | false | Every 2.5-7 s a 170 ms two-step dip (to 50% then 70%), plus a slow shimmer of the glow strength. At most two flashes in any second, and none under `prefers-reduced-motion`. |
+| `light` | true with a glow | The NPC lights the room's light map in the glow colour: a soft pool on the floor and a brighter core over the figure. |
+
+**Lighting.** Room lighting (`systems/lighting.js`) multiplies a light map over the whole world, so a sprite drawn under it, glow included, is darkened in a dim room. `light` handles that: `stampNpcGlows` adds the glow colour into the map round the NPC (in their own room only, like an NPC torch), so the figure stays bright in the dark and casts a cyan pool. In a lit room the map is already near white there, so the light only adds a faint tint. A knocked-out hologram still glows at half strength; a hidden one gives no light.
+
 ## Adding New Characters
 
 ### From PixelLab (API, preferred)

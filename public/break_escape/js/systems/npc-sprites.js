@@ -9,6 +9,7 @@
 
 import { TILE_SIZE, SPRITE_PADDING_BOTTOM_ATLAS, SPRITE_PADDING_BOTTOM_LEGACY } from '../utils/constants.js';
 import { directionFromAnimKey, koPoseAnimKey, KO_ORIGIN_SHIFT } from './npc-direction.js';
+import { applySpriteStyle } from './npc-sprite-style.js';
 
 /**
  * Create an NPC sprite in the game world
@@ -237,6 +238,10 @@ export function createNPCSprite(scene, npc, roomData) {
             console.log(`👻 NPC ${npc.id} initially hidden (behavior.initiallyHidden: true)`);
         }
         
+        // Optional look over the frames (holograms, ghosts): npc-sprite-style.js.
+        // Applied last, so it starts from the alpha the KO / hidden checks above left.
+        if (npc.spriteStyle) applySpriteStyle(scene, sprite, npc.spriteStyle);
+
         console.log(`✅ NPC sprite created: ${npc.id} at (${worldPos.x}, ${worldPos.y})`);
         
         return sprite;
