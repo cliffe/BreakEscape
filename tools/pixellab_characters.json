@@ -8,6 +8,15 @@
     },
     "imported": "2026-09-29"
   },
+  "agent_phantom": {
+    "character_id": "35cd6b16-d62c-431d-81fe-4e0b2194fb1b",
+    "name": "Make portrait for Agent Phantom\nA tall, easy-going...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-10-17"
+  },
   "agent_vector": {
     "character_id": "0daaefa6-72b4-4113-a736-248c00d8f44e",
     "name": "Make portrait for Agent Vector\nA slim, slightly hu...",
