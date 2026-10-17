@@ -31,8 +31,11 @@ copy('systems/ink/ink-engine.js', 'ink-engine.mjs');
 copy('minigames/phone-chat/phone-chat-conversation.js', 'phone-chat-conversation.mjs',
     s => s.replace("'./phone-chat-speaker.js'", "'./phone-chat-speaker.mjs'"));
 copy('utils/room-display-name.js', 'room-display-name.mjs');
+copy('utils/global-condition.js', 'global-condition.mjs');
+copy('utils/portrait-variants.js', 'portrait-variants.mjs', s => s.replace("'./global-condition.js'", "'./global-condition.mjs'"));
 copy('minigames/helpers/chat-helpers.js', 'chat-helpers.mjs',
-    s => s.replace("'../../utils/room-display-name.js'", "'./room-display-name.mjs'"));
+    s => s.replace("'../../utils/room-display-name.js'", "'./room-display-name.mjs'")
+        .replace("'../../utils/portrait-variants.js'", "'./portrait-variants.mjs'"));
 copy('systems/npc-conversation-state.js', 'npc-conversation-state.mjs');
 
 globalThis.window = { gameState: { globalVariables: {} } };

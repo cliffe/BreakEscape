@@ -9,6 +9,7 @@
  */
 
 import { getRoomDisplayName } from '../../utils/room-display-name.js';
+import { parsePortraitTag } from '../../utils/portrait-variants.js';
 
 /**
  * Process game action tags from Ink story
@@ -505,6 +506,26 @@ export async function processGameActionTags(tags, ui) {
                         console.warn(result.message);
                     }
                     break;
+
+                case 'portrait': {
+                    // Format: portrait:<variant name> (the conversation's NPC) or
+                    // portrait:<npc_id>:<variant name>; 'base' goes back to the NPC's own
+                    // fields. Names one of the NPC's portraitVariants (utils/portrait-variants.js)
+                    // for the rest of this person-chat. Phone chats have no portrait, so it is a no-op there.
+                    const parsed = parsePortraitTag(param);
+                    if (!parsed) {
+                        result.message = '⚠️ portrait tag needs a variant name';
+                        console.warn(result.message);
+                    } else if (typeof ui?.setPortraitVariant === 'function') {
+                        ui.setPortraitVariant(parsed.npcId, parsed.name);
+                        result.success = true;
+                        result.message = `🖼️ Portrait: ${parsed.npcId ? parsed.npcId + ' → ' : ''}${parsed.name}`;
+                    } else {
+                        result.success = true;
+                        result.message = '🖼️ portrait tag ignored (no portrait in this chat)';
+                    }
+                    break;
+                }
 
                 case 'lighting_dip': {
                     // Format: lighting_dip or lighting_dip:0.5 (how far the lights sag).

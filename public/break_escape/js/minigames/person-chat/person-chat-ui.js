@@ -13,6 +13,7 @@
 
 import PersonChatPortraits from './person-chat-portraits.js';
 import { displayDashes } from '../../utils/display-dashes.js';
+import { portraitFor } from '../../utils/portrait-variants.js';
 
 export default class PersonChatUI {
     /**
@@ -63,6 +64,8 @@ export default class PersonChatUI {
         // Notification stack container (created on first use)
         this._notificationContainer = null;
         this.charactersWithParallax = new Set(); // Track which characters have already had parallax animation
+        // `# portrait:<name>` choices for this conversation, by NPC id (utils/portrait-variants.js)
+        this.portraitOverrides = new Map();
         // The portrait opens hidden while the story loads, so a conversation that
         // opens on a scene shot (Background[...] / Narrator[none]) doesn't flash the
         // NPC first. The first line or choices bring the character in (revealPortrait).
@@ -217,7 +220,7 @@ export default class PersonChatUI {
             // Pass the actual NPC object so it has all properties including spriteTalk
             this.portraitRenderer = new PersonChatPortraits(
                 this.game,
-                this.npc,
+                this.resolvePortraitCharacter(this.npc),
                 this.elements.portraitContainer,
                 this.background // Optional background image path
             );
@@ -458,8 +461,8 @@ export default class PersonChatUI {
                     spriteConfig: character.spriteConfig || {}
                 };
             } else {
-                // Use NPC character object
-                this.portraitRenderer.npc = character;
+                // Use NPC character object, with any portraitVariants that hold now
+                this.portraitRenderer.npc = this.resolvePortraitCharacter(character);
             }
             
             this.portraitRenderer.setupSpriteInfo();
@@ -477,6 +480,42 @@ export default class PersonChatUI {
         }
     }
     
+    /**
+     * The NPC as its portrait should look now: the first of its portraitVariants whose
+     * condition / KO gate holds, or the one a `# portrait:` tag picked, laid over its
+     * spriteTalk / spriteVisemes / avatar (utils/portrait-variants.js).
+     * @param {Object} character - NPC data
+     * @returns {Object} the same object, or a shallow copy with the variant's fields
+     */
+    resolvePortraitCharacter(character) {
+        if (!character || character.id === 'player') return character;
+        try {
+            return portraitFor(character, this.portraitOverrides.get(character.id) ?? null);
+        } catch (error) {
+            console.warn('⚠️ portraitVariants failed, using the base portrait:', error);
+            return character;
+        }
+    }
+
+    /**
+     * `# portrait:<name>` / `# portrait:<npc_id>:<name>`: use that variant for the rest of
+     * this conversation ('base' = the NPC's own fields). Redraws at once if that NPC is showing.
+     * @param {string|null} npcId - null for the conversation's NPC
+     * @param {string} name
+     */
+    setPortraitVariant(npcId, name) {
+        const id = npcId || this.npc?.id;
+        if (!id || !name) return;
+        this.portraitOverrides.set(id, name);
+        const shown = this.portraitRenderer?.npc;
+        if (!shown || shown.id !== id) return;
+        const base = this.characters[id] || (id === this.npc?.id ? this.npc : null);
+        if (!base) return;
+        this.portraitRenderer.npc = this.resolvePortraitCharacter(base);
+        this.portraitRenderer.setupSpriteInfo();
+        this.portraitRenderer.render();
+    }
+
     /**
      * Display choice buttons
      * @param {Array} choices - Array of choice objects {text, index}

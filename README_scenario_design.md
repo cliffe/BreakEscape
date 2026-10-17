@@ -958,6 +958,7 @@ In-world characters with sprites that the player can walk up to and interact wit
 | `spriteSheet` | Character sprite name (see `public/break_escape/assets/characters/`) |
 | `spriteTalk` | Portrait image for dialogue box. Optional — defaults to `assets/characters/{spriteSheet}_talk.png`, then `{spriteSheet}_headshot.png`. Only set it for off-convention filenames. |
 | `spriteVisemes` | Optional lip-sync portrait: `assets/characters/<key>_visemes.png` (one row of 128px mouth-shape cells) with `<key>_visemes.json` beside it naming each column. While TTS plays, mouth shapes follow the line's text; falls back to `spriteTalk` if absent or unloadable. See `docs/SPRITE_SYSTEM.md`. |
+| `portraitVariants` | Optional alternative portraits: `[{ "name": "ko", "ko": true, "spriteTalk": "...", "spriteVisemes": "...", "avatar": "..." }]`. The first entry whose `condition` (globalVars syntax, `&&` and `||`) and/or `ko` (NPC knocked out) holds replaces those fields in person-chat and the phone avatar; ink `# portrait:<name>` / `# portrait:base` forces one for the rest of a conversation. See `docs/SPRITE_SYSTEM.md`. |
 | `storyPath` | Path to compiled Ink `.json` story file |
 | `currentKnot` | Starting Ink knot (usually `"start"`) |
 | `voice` | TTS voice for dialogue and barks: `{ "name": "...", "style": "...", "language": "en-GB" }`. Optional `fx` subfield applies Web Audio distortion — see Casting Voices and Voice FX below |

@@ -270,7 +270,7 @@ def check_unknown_fields(json_data)
     voice behavior globalVarOnKO restartOnRetalk taskOnKO storyPath currentKnot avatar
     phoneId phoneTheme unlockable externalVariables persistentVariables
     timedMessages timedConversation eventMappings itemsHeld puzzle_graph_actions
-    observations disableClose los rfidCard chatBackground gender _comment
+    observations disableClose los rfidCard chatBackground gender portraitVariants _comment
   ]
 
   # Known NPC los fields, and those of the opt-in los.challengeOnSight
@@ -3464,6 +3464,89 @@ def check_recurring_bugs(json_data, repo_root)
     end
   end
 
+  # NPC portraitVariants: alternative dialogue portraits (utils/portrait-variants.js), e.g. m05 Torres
+  # knocked out. Each picks by a globalVars condition and/or ko, or by name from a `# portrait:` tag.
+  declared_globals = (json_data['globalVariables'] || {}).keys
+  portrait_names = {}   # npc id => variant names, for the ink tag check below
+  known_variant_fields = %w[name condition ko spriteTalk spriteVisemes avatar _comment]
+  all_npcs.each do |rid, i, npc|
+    next unless npc.key?('portraitVariants')
+    path = "rooms/#{rid}/npcs[#{i}]"
+    list = npc['portraitVariants']
+    unless list.is_a?(Array)
+      issues << "⚠️ WARNING: '#{path}' (#{npc['id']}) portraitVariants should be a list of { condition/ko, spriteTalk, spriteVisemes, avatar }."
+      next
+    end
+    names = []
+    list.each_with_index do |v, j|
+      where = "'#{path}' (#{npc['id']}) portraitVariants[#{j}]"
+      unless v.is_a?(Hash)
+        issues << "⚠️ WARNING: #{where} should be an object."
+        next
+      end
+      (v.keys - known_variant_fields).each do |k|
+        issues << "⚠️ WARNING: #{where} has unknown field '#{k}' (known: #{known_variant_fields.join(', ')})."
+      end
+      if v.key?('name')
+        if !v['name'].is_a?(String) || v['name'] !~ /\A\w+\z/
+          issues << "⚠️ WARNING: #{where} name should be a word such as \"ko\" (letters, digits, _), so a # portrait:<name> tag can name it."
+        elsif v['name'] == 'base'
+          issues << "⚠️ WARNING: #{where} name 'base' is reserved: # portrait:base means the NPC's own fields."
+        elsif names.include?(v['name'])
+          issues << "⚠️ WARNING: #{where} name '#{v['name']}' is used twice; a # portrait tag picks the first."
+        else
+          names << v['name']
+        end
+      end
+      if v.key?('ko') && ![true, false].include?(v['ko'])
+        issues << "⚠️ WARNING: #{where} ko should be true (knocked out) or false."
+      end
+      cond = v['condition']
+      unless cond.nil?
+        if !cond.is_a?(String) || cond !~ /globalVars\.\w+/
+          issues << "⚠️ WARNING: #{where} condition should be a string such as \"globalVars.torres_ko === true\"."
+        else
+          cond.scan(/globalVars\.(\w+)/).flatten.uniq.each do |gv|
+            next if declared_globals.include?(gv)
+            issues << "⚠️ WARNING: #{where} condition uses globalVars.#{gv}, which is not in globalVariables, so the variant never shows."
+          end
+        end
+      end
+      if cond.nil? && !v.key?('ko') && !v.key?('name')
+        issues << "⚠️ WARNING: #{where} has no condition, ko or name, so nothing can ever select it."
+      end
+      fields = %w[spriteTalk spriteVisemes avatar].select { |f| v.key?(f) }
+      if fields.empty?
+        issues << "⚠️ WARNING: #{where} sets none of spriteTalk, spriteVisemes or avatar, so it changes nothing."
+      end
+      fields.each do |f|
+        val = v[f]
+        if !val.is_a?(String) || val.strip.empty?
+          issues << "⚠️ WARNING: #{where} #{f} should be an image path under public/break_escape/."
+        elsif !asset_exists.call(val)
+          issues << "⚠️ WARNING: #{where} #{f} '#{val}' does not exist under public/break_escape/, so the portrait falls back."
+        end
+      end
+    end
+    portrait_names[npc['id']] = names
+  end
+  # `# portrait:<name>` / `# portrait:<npc_id>:<name>` in an NPC's ink must name one of the variants.
+  all_npcs.each do |rid, i, npc|
+    sp = npc['storyPath']
+    next unless sp.is_a?(String)
+    ink_path = File.join(repo_root, sp.sub(/\.json\z/, '.ink'))
+    next unless File.exist?(ink_path)
+    code = File.readlines(ink_path).reject { |l| l.strip.start_with?('//') }.join
+    code.scan(/#\s*portrait:\s*([\w:]+)/).flatten.uniq.each do |arg|
+      parts = arg.split(':')
+      target, name = parts.size == 2 ? parts : [npc['id'], parts[0]]
+      next if name == 'base'
+      next if (portrait_names[target] || []).include?(name)
+      issues << "⚠️ WARNING: #{sp.sub(/\.json\z/, '.ink')}: # portrait:#{arg} names no portraitVariants entry " \
+                "#{name.inspect} on #{target}, so the tag does nothing."
+    end
+  end
+
   # --- 5. different characters sharing one sprite sheet (m04 guard/operatives, m08 Phantom/Netherton)
   player = json_data['player'].is_a?(Hash) ? json_data['player'] : {}
   by_sheet = Hash.new { |h, k| h[k] = [] }
@@ -4301,7 +4384,7 @@ end
 # evaluateGlobalCondition, which splits on '&&' only and reads the first globalVars
 # name of a term, so "globalVars.a || globalVars.b" is just "globalVars.a".
 # Skipped: music events and credits (run as JS by scenario-music-events.js) and
-# command-board timeline/statusRows (global-condition.js, which supports '||').
+# command-board timeline/statusRows and NPC portraitVariants (global-condition.js, which supports '||').
 # Any other condition with '||' gets a softer warning naming its path.
 def check_or_in_global_conditions(json_data)
   issues = []
@@ -4343,7 +4426,7 @@ def check_or_in_global_conditions(json_data)
         child_ctx = :lighting if k == 'lighting' && ctx.nil?
         child_ctx = :torch if k == 'torch' && ctx.nil?
         child_ctx = :chat_background if k == 'chatBackground' && ctx.nil?
-        child_ctx = :or_ok if %w[timeline statusRows].include?(k) && ctx.nil?
+        child_ctx = :or_ok if %w[timeline statusRows portraitVariants].include?(k) && ctx.nil?
         walk.call(v, path.empty? ? k.to_s : "#{path}/#{k}", child_ctx)
       end
     end

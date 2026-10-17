@@ -197,6 +197,7 @@ Use `#` tags to trigger game effects:
 **Available Action Tags**:
 - `# unlock_door:doorId` - Unlocks a specific door
 - `# give_item:itemType` - Adds item to player's inventory
+- `# portrait:<name>` - Person-chat: shows the NPC's named `portraitVariants` entry for the rest of the conversation (`# portrait:base` goes back); see `docs/SPRITE_SYSTEM.md`
 
 ### Conditional Choices
 

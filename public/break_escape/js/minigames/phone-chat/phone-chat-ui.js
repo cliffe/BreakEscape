@@ -14,6 +14,7 @@ import { displayPhoneLine } from './phone-chat-speaker.js';
 import { displayDashes } from '../../utils/display-dashes.js';
 import { messageClockText } from '../../systems/game-clock.js';
 import { hasHiddenChoicesBelow, numberedChoiceText } from './phone-chat-choices.js';
+import { portraitFor } from '../../utils/portrait-variants.js';
 
 export default class PhoneChatUI {
     /**
@@ -451,19 +452,20 @@ export default class PhoneChatUI {
             lastMessageTime = this.formatTimestamp(lastMessage.timestamp);
         }
         
-        // Resolve avatar path to full URL if relative
-        let avatarSrc = npc.avatar;
-        if (npc.avatar && !npc.avatar.startsWith('/') && !npc.avatar.startsWith('http')) {
-            if (npc.avatar.startsWith('assets/')) {
-                avatarSrc = `/break_escape/${npc.avatar}`;
+        // Resolve avatar path to full URL if relative (portraitVariants may swap it)
+        const avatar = portraitFor(npc)?.avatar;
+        let avatarSrc = avatar;
+        if (avatar && !avatar.startsWith('/') && !avatar.startsWith('http')) {
+            if (avatar.startsWith('assets/')) {
+                avatarSrc = `/break_escape/${avatar}`;
             } else {
-                avatarSrc = `${ASSETS_PATH}/${npc.avatar}`;
+                avatarSrc = `${ASSETS_PATH}/${avatar}`;
             }
         }
 
         contactItem.innerHTML = `
             <div class="contact-avatar">
-                ${npc.avatar ? `<img src="${avatarSrc}" alt="${npc.displayName}">` : '👤'}
+                ${avatar ? `<img src="${avatarSrc}" alt="${npc.displayName}">` : '👤'}
             </div>
             <div class="contact-info">
                 <div class="contact-name">${npc.displayName || npc.id}</div>
@@ -517,7 +519,8 @@ export default class PhoneChatUI {
      * @param {string} npcId - NPC identifier
      */
     updateHeader(npcName, npcId) {
-        const npc = this.npcManager.getNPC(npcId);
+        // portraitVariants may swap the avatar (a knocked-out headshot, say)
+        const npc = portraitFor(this.npcManager.getNPC(npcId));
         
         // Clear and rebuild header content
         const conversationInfo = this.elements.conversationHeader.querySelector('.conversation-info');

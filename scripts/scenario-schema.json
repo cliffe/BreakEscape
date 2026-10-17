@@ -613,6 +613,23 @@
           "additionalProperties": true
         },
         "spriteVisemes": { "type": "string", "description": "Optional lip-sync sheet (assets/characters/<key>_visemes.png, one row of mouth shapes) with a matching .json beside it naming each column. Falls back to spriteTalk when absent or unloadable." },
+        "portraitVariants": {
+          "type": "array",
+          "description": "Optional alternative dialogue portraits (utils/portrait-variants.js), e.g. a knocked-out bust. Checked each time person-chat draws this NPC, and for the phone avatar: the first entry whose gates hold replaces spriteTalk / spriteVisemes / avatar (fields it leaves out keep the base value); none holding gives the base fields. An ink '# portrait:<name>' (or '# portrait:<npc_id>:<name>') forces a named entry for the rest of the conversation; '# portrait:base' forces the base fields.",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": { "type": "string", "pattern": "^\\w+$", "description": "Name for a '# portrait:<name>' tag. 'base' is reserved." },
+              "condition": { "type": "string", "description": "globalVars condition (global-condition.js: !, ===, !==, <, >, &&, ||; no parentheses), e.g. \"globalVars.torres_ko === true\"." },
+              "ko": { "type": "boolean", "description": "true: only while this NPC is knocked out (combat state, or its globalVarOnKO global); false: only while it is not. With condition, both must hold. An entry with neither is reached only by name." },
+              "spriteTalk": { "type": "string" },
+              "spriteVisemes": { "type": "string" },
+              "avatar": { "type": "string" },
+              "_comment": { "type": "string" }
+            },
+            "additionalProperties": false
+          }
+        },
         "spriteConfig": {
           "type": "object",
           "properties": {
