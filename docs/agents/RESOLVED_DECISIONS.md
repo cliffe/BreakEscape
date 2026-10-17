@@ -2,6 +2,12 @@
 
 Decisions the user has settled, so nobody reopens them. Newest first.
 
+## 2026-10-18 (voice follow-ups)
+
+- **m04–m08 voicing: not yet.** They have never been voiced on the current TTS model (~2,500 lines). Their prep edits are also on hold: m04's 5 `{player_name}` lines and HaX's old style, m05's HaX style, m07's 1 `{player_name}` line. m01–m03 are fully voiced (d72ca612, 504bdb69, 524f9b72).
+- **Kevin Park's accent (m01):** leave it. His clips sound British, though the voice is configured Australian. Accept them as they are.
+- **m01_npc_maya.ink:95** (37 words, voiced) is left for the user to split by hand. A safety check stopped an agent's edit, and it's not to be re-tasked.
+
 ## 2026-10-17 (decisions form, docs/agents/DECISIONS_FORM_2026-10-17.md)
 
 - **ATHENA:** make her translucent in the engine (an optional NPC sprite setting, e.g. alpha with a soft glow or flicker, reusable for future holograms). No AI redraw of her frames.
