@@ -70,6 +70,8 @@ When the clock expires (`countdown_expired`) HaX says "Seattle's dark. Step one 
 
 **L1 applied (blind run A fix round, 2026-10-14):** new sprite `pnw_video_wall_running1` (`make_pnw_props.py --only video_running`, same 159x42 frame, drawn at native size: the top-left Seattle map panel dark red with red lines), wired as the `situation_board`'s `spriteVariants`; `textVariants` (SCHEDULED SEQUENCE -- RUNNING, 01 EXECUTED, 02-04 PENDING, 124 / 147 substations) and `observationVariants` ("One panel, top left, has gone red. The rest are still amber.") on `countdown_expired && !grid_saved`. The wall's emitter in that state is now red `#ff2a20`, and a new first room-light variant turns the two wall-end lights red. Lighting tour game 2483 (`--check`: ops floor variant 0) shows the red panel and the red light. After the abort everything returns to amber as before.
 
+**Resolved 2026-10-17:** re-checked against the user's approval, nothing more to do: the board's sprite, text and observation variants and the red emitter and room-light variant are all in place (commit 12f4048e). Lighting tour `--check`: ops floor variant 1 (amber) with `cascade_armed`, variant 0 (red panel, red light) with `countdown_expired`. Renders in `docs/agents/pending_review/m07_situation_board_before.png` / `_after.png`.
+
 ## D-POV. Conversation (POV) backgrounds: DONE (2026-10-16)
 Approved by the user on 2026-10-16 (whole mission, cap 20 Gemini calls). All six rooms done with 12 Gemini calls; Hollis and Elena get a left view each. Wired as `chatBackground` in `scenario.json.erb`. Rooms, calls and accepted faults in `POV_BACKGROUNDS.md`; evidence in `build_evidence/pov/`. Characters are parked for your picks as usual.
 

@@ -104,6 +104,8 @@ LEDs only come from a built-in `EMITTERS` match (`lighting.js` `buildEmitters`: 
 
 **Done (blind run A fix round, 2026-10-14):** `recording_lamp` in `interrogation_room` (smartscreen, `as-type:hq_recording`, base `sprite: hq_recording1`, `spriteVariants` to `hq_recording_on1` on `all_flags_submitted && mole_identified && !fate_decided`, an `observationVariants` line for the lit state); the red emitter stays as spill. `slot_audit.py`: it takes the map's `hq_recording1` slot at 70,24, 0 problems. Door sign: "Interrogation Suite". Owed: a browser look at the lit and unlit faces (the Sonnet check).
 
+**Resolved 2026-10-17:** the lamp object was already in place (commit d01f232d and the 2026-10-14 fix round). The last part was open: the red `above` glow (radius 26, intensity 1.0) sat as a round blob over the lit sign. It is now a soft spill on the wall round the sign, drawn under the light map (no `above`, radius 30, intensity 0.45, offsetY 14), so the lit face reads as the light source. `slot_audit.py`: 0 problems; lighting tour `--check`: suite variant 0 in the confrontation. Renders in `docs/agents/pending_review/m08_recording_lamp_before.png` / `_after.png`. The scenario.json.erb change is left for the lead's commit.
+
 **Orchestrator on lighting L1 (2026-10-14):** mission-local and reversible, so going ahead in the playtest fix round: the RECORDING lamp becomes a scenario object (`as-type:hq_recording`, base `sprite` plus `spriteVariants` to `hq_recording_on1`), and the suite's door sign reads "Interrogation Suite".
 
 ## E15. No delay on an event mapping (engine idea, blind run A finding 4)
