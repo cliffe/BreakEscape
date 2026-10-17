@@ -12,6 +12,17 @@ that uses it. A name that exists in ink but not in this file is a bug.
 
 ---
 
+## Imported globals (carry-over, 2026-10-17) — supersede everything below where they differ
+
+Source: `docs/agents/CARRY_OVER_PLAN.md` ("Built"). Declared in `scenario.json.erb` `importGlobals`, not in `globalVariables`; the server writes them into the game's globals when it is created. **Read-only:** no ink, tag, mapping or task may assign them (the validator errors, the server drops the write).
+
+- `m06_assets_seized` (bool, from m06 `assets_seized`): the player froze the fund. Read by `m07_opening_briefing` `start`.
+- `m06_monitoring_enabled` (bool, from m06 `monitoring_enabled`): the fund was left running under watch. Read by `m07_opening_briefing` `start`.
+- `m06_architect_identity_found` (bool, from m06 `architect_identity_found`): the player opened Satoshi's safe. Read by HaX's `topic_teacher`.
+- `m06_completed` (bool): a finished m06 run exists. Read by `m07_opening_briefing` `start`; tells "finished without choosing" apart from "never played".
+- All four are `false` for a player who never finished m06; those players hear the original lines.
+- **Exports** (`exportGlobals`, for m08 and later): `team_assignment`, `team_redirected`, `grid_saved`, `mercer_fate`, `elena_outcome`, `architect_echo_heard`. Renaming one breaks m08; the validator says so.
+
 ## PASS 4 amendments (2026-10-02) — these supersede everything below where they differ
 
 Source: `DESIGN_REVIEW.md`, "Changes made (pass 4 design)".

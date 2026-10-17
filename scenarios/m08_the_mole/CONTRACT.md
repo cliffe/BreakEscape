@@ -16,6 +16,17 @@ ENTROPY's **Insider Threat Initiative** (see
 
 ---
 
+## Imported globals (carry-over, 2026-10-17)
+
+Source: `docs/agents/CARRY_OVER_PLAN.md` ("Built"). Declared in `scenario.json.erb` `importGlobals`, not in `globalVariables`; the server writes them into the game's globals when it is created. **Read-only:** no ink, tag, mapping or task may assign them.
+
+- `m07_team_assignment` (string, from m07 `team_assignment`: `fracture` / `trojan_horse` / `meltdown` / `""`).
+- `m07_team_redirected` (bool, from m07 `team_redirected`).
+- `m07_completed` (bool): a finished m07 run exists. Tells "sent nobody" apart from "never played".
+- Read by `m08_opening_briefing` `start` (ATHENA's "Portland happened" line). A player who never finished m07 hears the original line.
+
+---
+
 ## 1. NPCs
 
 | id | displayName | type | room | sprite | voice | role |

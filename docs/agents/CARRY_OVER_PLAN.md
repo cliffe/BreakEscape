@@ -1,6 +1,6 @@
 # Carrying choices between missions: plan
 
-Status: **proposal, not built** (user, 2026-10-17, `docs/agents/RESOLVED_DECISIONS.md`: "plan it and propose it, but don't build it yet"). Backlog: "Carry choices between missions" (`docs/IDEAS_BACKLOG.md:44`), with the follow-ons at `:90` (m03's Sterling and Danny threads) and `:162` (sis02 → sis03). m07 `DECISIONS_PENDING.md` U2.
+Status: **built for m06 → m07 and m07 → m08** (2026-10-17, engine commit 6ed3caa7; see "Built" at the end). The other first uses in section 4 are not built yet. The proposal below is kept as written; where "Built" differs, "Built" wins.
 
 The user's idea, verbatim: "should we just feed in previous completed mission states as read only global variables? for example: m01-scenario-path-variable-1 which is assigned the state from the most recent completed matching mission? Some simple way of defining in the scenario.json what variables to feed in from previous missions?"
 
@@ -470,3 +470,58 @@ All 23 earlier items were confirmed closed. Round 2's #9 was the exception: the 
 | m7 | An old concluded game restarted before shipping falls back to its replay's values. | Noted in 2.4 and accepted: a small case, with no error. |
 
 Verdict: ready to hand to the user.
+
+
+---
+
+## Built (2026-10-17)
+
+The user's answers (`docs/agents/RESOLVED_DECISIONS.md`, 2026-10-17): build now, m06 → m07 first, then m07 → m08; storage on the existing Game rows (Q1: B); sources declare `exportGlobals` (Q2); Hacktivity runs carry in by default, **no** host switch (Q3); a never-concluded run doesn't count (Q7); a Restart of the reader keeps its imports (Q8). Q4 (`consequences_persist`), Q5 (m01 exports) and Q9 were not needed for these two links and stay open.
+
+**Is the snapshot needed?** Yes. A Restart has to reset a concluded game's globals, or the replay starts from a finished story, and it never clears `mission_concluded_at`. Without a kept copy, the newest concluded row would hand the reader a half-played replay's values. Hacktivity's Finish needs no snapshot: the `mission_concluded_at` test excludes it. The only addition to `player_state` is `storySnapshot` (`{at, globals}`) on the source, plus the reader's `importedGlobalNames` list (needed because `sync_state` doesn't load `scenario_data`).
+
+**Engine (commit 6ed3caa7).**
+- `app/models/break_escape/carry_over.rb` (new, included in `Game`): `resolve_imported_globals` (`before_create`, between `generate_scenario_data` and `initialize_player_state`), the lookup (one query per creation, `requires_new` savepoint, fails open to the defaults), the in-memory fallback for rows concluded before snapshots, the run-time type check, `write_story_snapshot` (own globals minus imports), `apply_imported_globals_to_state` (called from `initialize_player_state`, so Restart restores the same values with no lookup).
+- `game.rb`: snapshot on both conclude paths; refresh on an already-concluded `/conclude` when `concludeRequires.globals` are met (never refuses the credits, changes only `player_state`); `reset_player_state!` keeps `storySnapshot` and snapshots an old concluded game first; `merge_global_variables!` and `apply_task_set_globals!` drop writes to imported names (the warning is logged only when the value differs).
+- Client: `setReadOnlyGlobals` / `isReadOnlyGlobal` in `npc-conversation-state.js`; the ink observer reverts and warns, `syncGlobalVariablesFromStory` skips imports, `#set_global` and `#set_variable` refuse them (`chat-helpers.js`); `core/game.js` marks them and re-applies them over the saved globals; the test bridge exposes `importedGlobals`; `concludeMission()` syncs twice before `/conclude` (the 5.3 stale-sync mitigation).
+- Validator: `prepare_carry_over_globals` (imports join the declared globals before every other check) and `check_carry_over` (both ends, every rule in 2.6 and 2.8; colliding imports are reported once and skipped).
+- Tooling: `tools/playtest/new-game.rb --imports=none|latest|<file.json>` (default `none`, via `player_state['importOverrides']`, removed once read); the m07 and m08 route drivers take `"imports"` and fail on any write to one.
+- Tests: `test/models/break_escape/carry_over_test.rb` (23), one controller test in `conclude_mission_test.rb`, item 4 of `test/js/global-sync-declared.test.mjs`, `test/js/validator-carry-over.test.mjs` with fixtures in `test/js/fixtures/carry_over/`.
+- Not built: the `carry_over_allowed` hook (Q3), the playtest-scenario skill note (skills were outside this task; the README section says how to use `--imports`).
+
+**Content.**
+- m06 `exportGlobals`: `assets_seized`, `monitoring_enabled`, `asset_decision_deferred`, `irina_recruited`, `irina_arrested`, `architect_identity_found`.
+- m07 imports `m06_assets_seized`, `m06_monitoring_enabled`, `m06_architect_identity_found` and `m06_completed`; exports `team_assignment`, `team_redirected`, `grid_saved`, `mercer_fate`, `elena_outcome`, `architect_echo_heard`.
+  - Briefing (`m07_opening_briefing.ink`, the "Frozen or watched" line): froze → "You froze it before the payout, and not one more coin reached the cells. The advances had already been paid. Tonight is what they paid for."; watched → "You left it running so we could see where it went. We watched the payout reach every cell on our map. Tonight is what it paid for."; finished without choosing → "You never froze that fund. The advances had already been paid, and tonight is what they paid for."; else the original line.
+  - HaX `topic_teacher`: safe opened → "I didn't make it up. You opened Satoshi's safe, so you've read the name. The man it names taught it to me."; else the original line.
+- m08 imports `m07_team_assignment`, `m07_team_redirected`, `m07_completed`. ATHENA's "Portland happened" line has one branch per outcome (Fracture, Meltdown, Trojan Horse direct, redirected, no team) naming the player's tasking order and what it meant on day nine; else the original line. One line per branch, so the briefing still runs nine lines.
+- Every else branch is the HEAD line word for word (tagdiff: 0 old lines unmatched).
+- Routes: m07 r36 (froze, safe opened), r37 (watched, safe shut), r38 (never played), r39 (finished undecided); m08 r28–r33 (each outcome and never played). All m07 (39) and m08 (33) routes pass.
+
+**Implementation review.**
+
+Round 1 (Opus, read-only):
+
+| Severity | Count |
+|---|---|
+| Blocker | 0 |
+| Major | 2 |
+| Minor | 6 |
+
+| # | Finding | Outcome |
+|---|---|---|
+| 1 | Major: the watched line said the fund "paid the advances", which m06 has paid before the choice. | Fixed: "We watched the payout reach every cell on our map." |
+| 2 | Major: two-line m08 branches made a 10-line run. | Fixed: one line per branch; routes assert 9. |
+| 3 | "Day nine of the clean-up" against m07's "starting Monday". | Fixed: "Nine days on, those counties are still answering." |
+| 4 | The fail-open test raised in Ruby, not SQL. | Fixed: a real PostgreSQL error inside the savepoint. |
+| 5 | Validator write paths and declaration errors without fixtures. | Fixed: fixtures and assertions added. |
+| 6 | A finished-but-undecided m06 run heard the neutral line. | Fixed: `m06_completed` imported, a branch and route r39 added. |
+| 7 | A warning per import on every page load. | Fixed: warns only on a changed value. |
+| 8 | Plan status and the playtest skill note. | Plan: this section. Skill note: deferred (skills outside this task). |
+
+Round 2 (Opus, read-only, confirmation): 0 blockers, 0 majors, 3 minors. Round-1 items 1–7 confirmed closed. Minors fixed: HaX's "He taught it to me" read as Satoshi (now "The man it names taught it to me"); m07 CONTRACT.md missed `m06_completed`; a stale route note (r30).
+
+**Still owed.**
+- Browser checks (5.2): finish m06 to the credits, create m07 with `--imports=latest` and hear the branch; Restart m07 (same branch); Restart m06 without finishing, then a New Session of m07 (the old run's value); `--imports=none` (neutral line); the same for m07 → m08. And a console check that an ink write to an import is refused.
+- TTS top-up for the new lines above (3 Netherton, 1 HaX, 5 ATHENA).
+- The other first uses in section 4, one mission at a time.

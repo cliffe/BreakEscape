@@ -2,6 +2,16 @@
 
 Decisions the user has settled, so nobody reopens them. Newest first.
 
+## 2026-10-17 (carry-over: build answers)
+
+- **Carrying choices between missions: build now**, m06 → m07 first, then m07 → m08. The other first uses come later. Built: `docs/agents/CARRY_OVER_PLAN.md` "Built", engine commit 6ed3caa7.
+- **Storage:** the user asked, "Don't we already have everything we need? player state and completeness per game slot?" Use the existing Game rows (`player_state`, `status`/`mission_concluded_at`), no new table, no migration. The one addition is `storySnapshot` in `player_state`, because a Restart wipes a concluded game's globals and Hacktivity's Finish marks unconcluded games completed. (Checked during the build: the snapshot is needed, because a Restart must reset globals for the replay to work.)
+- **Sources must declare `exportGlobals`:** yes.
+- **Runs ended with Hacktivity's Finish button (never concluded) don't count:** yes.
+- **A Restart of the reading mission keeps its imports;** a New Session looks them up again: yes.
+- **Hacktivity events:** still open. Built the default (a player's earlier concluded runs carry in, defaults otherwise); the host "force defaults" switch is not built.
+- **Story telling** (user, verbatim): "call out as clearly as possible when something is a consequence of a previous mission — it is great story telling and give the player feel of autonomy". Every carried-over branch has a character name what the player did in the earlier mission. The never-played branch stays today's neutral line word for word, so its audio still works.
+
 ## 2026-10-17 (from the decisions questions)
 
 - **m05, Lisa names Torres too early:** make Lisa vaguer ("someone on the crypto team" with money worries) and leave the name to the vetting files and the door log. The user: "Make sure the challenge is fun and not too hard to figure out, but if the aim is deduction, make the choice that is most fun."

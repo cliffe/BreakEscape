@@ -7,6 +7,7 @@ m07's briefing has the intercept for six hours; m08 has Nightshade reading the P
 **Orchestrator went ahead with** the m07-side fix: one "contingency board since Thursday" line in the briefing, no m08 edit.
 
 ## U2. Cross-mission state (engine; backlog "Carry choices between missions")
+**Resolved 2026-10-17:** built (engine 6ed3caa7; content and docs in the following commit). m07 imports m06's fund choice and the safe; m08 imports where the team went. See `docs/agents/CARRY_OVER_PLAN.md` "Built".
 m08's "nine days ago" matches the day m07's Trojan Horse backdoor wakes. Recommendation: defer the engine work; use fate-neutral lines meanwhile, including one acknowledging m06's freeze-or-watch choice.
 
 ## U3. SecGen checks (needs the user, outside the session)

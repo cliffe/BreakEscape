@@ -78,6 +78,7 @@ VAR mercer_discussed = false
 VAR tomb_discussed = false
 VAR mole_discussed = false
 VAR teacher_discussed = false
+VAR m06_architect_identity_found = false // Imported (read-only) from m06 architect_identity_found: the player opened Satoshi's safe and read his guess at the Architect (CARRY_OVER_PLAN.md)
 VAR park_hint_given = false
 VAR deduce_wrong_count = 0
 VAR vm1_hint_given = false
@@ -770,6 +771,8 @@ Bag it. That's what we work from next.
 // m06: a player who read Satoshi's file knows who taught her; one who didn't
 // learns only that the Architect knows something about SAFETYNET's own people.
 // No name. m08 and later can build on it.
+// Carry-over (2026-10-17): a player whose finished m06 run opened Satoshi's
+// safe is told so; the else branch is the original line, word for word.
 === topic_teacher ===
 ~ teacher_discussed = true
 ...Read me that again.
@@ -781,7 +784,11 @@ Narrator: You read it back to her. The line stays quiet for longer than she usua
 - else:
     That's something I say. To every agent I run.
 }
-I didn't make it up. Somebody taught it to me, a long time ago. Somebody who taught a lot of us.
+{m06_architect_identity_found:
+    I didn't make it up. You opened Satoshi's safe, so you've read the name. The man it names taught it to me.
+- else:
+    I didn't make it up. Somebody taught it to me, a long time ago. Somebody who taught a lot of us.
+}
 Leave it with me. And keep it out of your notes for now.
 -> hub
 

@@ -8,6 +8,11 @@
 VAR player_name = "Agent 0x00"
 VAR team_assignment = ""
 VAR team_assigned = false
+// Imported (read-only) from m06 (docs/agents/CARRY_OVER_PLAN.md): false when
+// the player never finished m06. Never assign these here.
+VAR m06_assets_seized = false      // Imported (read-only) from m06 assets_seized: the fund was frozen
+VAR m06_monitoring_enabled = false // Imported (read-only) from m06 monitoring_enabled: the fund was left running and watched
+VAR m06_completed = false          // Imported (read-only): a finished m06 run exists (here: finished without choosing)
 
 // ================================================
 // BEAT 1 - SECURE LINK FROM HQ. The agent is in a car on the I-5,
@@ -23,9 +28,19 @@ Director Magnus Netherton: Agent 0x00. Keep driving. I would rather you heard th
 // Phase 4 dialogue C1 (D7-17): two pairs merged, so the opening runs nine.
 Director Magnus Netherton: Four ENTROPY operations went live inside the same sixty seconds. Three days ago you followed the fund behind them.
 
-// PASS 5 alignment r1 (m13): fate-neutral nod to m06's freeze-or-watch choice
-// (no cross-mission state; DECISIONS_PENDING U2).
-Director Magnus Netherton: Frozen or watched, the advances had already been paid. Tonight is what they paid for.
+// PASS 5 alignment r1 (m13): nod to m06's freeze-or-watch choice. Carry-over
+// (2026-10-17): a player who finished m06 hears their own choice named; the
+// else branch is the original fate-neutral line, word for word (cached audio).
+{
+- m06_assets_seized:
+    Director Magnus Netherton: You froze it before the payout, and not one more coin reached the cells. The advances had already been paid. Tonight is what they paid for.
+- m06_monitoring_enabled:
+    Director Magnus Netherton: You left it running so we could see where it went. We watched the payout reach every cell on our map. Tonight is what it paid for.
+- m06_completed:
+    Director Magnus Netherton: You never froze that fund. The advances had already been paid, and tonight is what they paid for.
+- else:
+    Director Magnus Netherton: Frozen or watched, the advances had already been paid. Tonight is what they paid for.
+}
 
 Director Magnus Netherton: Washington. Austin. San Francisco. And a grid control facility outside Portland, Oregon.
 
