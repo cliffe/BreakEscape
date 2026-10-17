@@ -1,17 +1,25 @@
 /* UI skins
  *
  * The game page sets <html data-ui-theme="..."> from the mission's mission.json
- * ("ui_theme": "general" | "spy" | "cyberpunk" | "crt"; ?ui_theme= previews
+ * ("ui_theme": "general" | "spy" | "cyberpunk" | "crt" | "eldritch" | "circuit" |
+ * "secops"; ?ui_theme= previews
  * another). The player can override it in the menu's Display page
  * (js/ui/display-settings.js). Each theme below only sets variables; the rules
  * after them draw the HUD, buttons, dialogs and minigame chrome from those
  * variables, so a new theme is one more block plus its art.
  *
- * Art is PixelLab UI panels in assets/ui/themes/<theme>/, used as 9-slice
- * border images at whole pixel scales only (never downscaled):
- *   frame.png    panels, slots and HUD buttons  (--ui-frame-*)
- *   button.png   buttons                        (--ui-button-*)
- *   portrait.png the player portrait ring with its action badge
+ * All art is drawn at 2x, like the game world, so a UI pixel is the same size
+ * as a game pixel; each -px variable is twice its slice. Two sets per theme:
+ *   assets/ui/themes/<theme>/          PixelLab art, thick bezels
+ *     frame.png    panels, dialogs, minigame windows  (--ui-frame-*)
+ *     button.png   wide buttons                       (--ui-button-*)
+ *   assets/ui/themes/<theme>/thin/     drawn by tools/ui_theme_thin.py in
+ *                                      colours sampled from the PixelLab art
+ *     frame.png    inventory slots, HUD buttons       (--ui-square-*)
+ *     button.png   close buttons                      (--ui-small-button-*)
+ *     portrait.png the player portrait ring with its action badge
+ * Small squares take the thin set: thick bezels left no room inside them.
+ * Used as 9-slice border images:
  * Crop new ones with tools/crop_ui_frame.py. A slice is the art's border in
  * source pixels (unitless, as border-image-slice wants); the -px variable is the
  * same at the drawn scale.
@@ -22,11 +30,17 @@
 [data-ui-theme="general"] {
   --ui-frame-image: url('/break_escape/assets/ui/themes/general/frame.png');
   --ui-frame-slice: 9;
-  --ui-frame-px: 9px;
+  --ui-frame-px: 18px;
   --ui-button-image: url('/break_escape/assets/ui/themes/general/button.png');
   --ui-button-slice: 6;
-  --ui-button-px: 6px;
-  --ui-portrait-image: url('/break_escape/assets/ui/themes/general/portrait.png');
+  --ui-button-px: 12px;
+  --ui-square-image: url('/break_escape/assets/ui/themes/general/thin/frame.png');
+  --ui-square-slice: 4;
+  --ui-square-px: 8px;
+  --ui-small-button-image: url('/break_escape/assets/ui/themes/general/thin/button.png');
+  --ui-small-button-slice: 3;
+  --ui-small-button-px: 6px;
+  --ui-portrait-image: url('/break_escape/assets/ui/themes/general/thin/portrait.png');
 
   --ui-surface: rgba(24, 30, 48, 0.94);
   --ui-surface-raised: rgba(38, 48, 74, 0.96);
@@ -54,11 +68,17 @@
 [data-ui-theme="spy"] {
   --ui-frame-image: url('/break_escape/assets/ui/themes/spy/frame.png');
   --ui-frame-slice: 9;
-  --ui-frame-px: 9px;
+  --ui-frame-px: 18px;
   --ui-button-image: url('/break_escape/assets/ui/themes/spy/button.png');
   --ui-button-slice: 6;
-  --ui-button-px: 6px;
-  --ui-portrait-image: url('/break_escape/assets/ui/themes/spy/portrait.png');
+  --ui-button-px: 12px;
+  --ui-square-image: url('/break_escape/assets/ui/themes/spy/thin/frame.png');
+  --ui-square-slice: 4;
+  --ui-square-px: 8px;
+  --ui-small-button-image: url('/break_escape/assets/ui/themes/spy/thin/button.png');
+  --ui-small-button-slice: 3;
+  --ui-small-button-px: 6px;
+  --ui-portrait-image: url('/break_escape/assets/ui/themes/spy/thin/portrait.png');
 
   --ui-surface: rgba(29, 30, 32, 0.95);
   --ui-surface-raised: rgba(44, 45, 47, 0.96);
@@ -86,11 +106,17 @@
 [data-ui-theme="cyberpunk"] {
   --ui-frame-image: url('/break_escape/assets/ui/themes/cyberpunk/frame.png');
   --ui-frame-slice: 14;
-  --ui-frame-px: 14px;
+  --ui-frame-px: 28px;
   --ui-button-image: url('/break_escape/assets/ui/themes/cyberpunk/button.png');
   --ui-button-slice: 7;
-  --ui-button-px: 7px;
-  --ui-portrait-image: url('/break_escape/assets/ui/themes/cyberpunk/portrait.png');
+  --ui-button-px: 14px;
+  --ui-square-image: url('/break_escape/assets/ui/themes/cyberpunk/thin/frame.png');
+  --ui-square-slice: 5;
+  --ui-square-px: 10px;
+  --ui-small-button-image: url('/break_escape/assets/ui/themes/cyberpunk/thin/button.png');
+  --ui-small-button-slice: 3;
+  --ui-small-button-px: 6px;
+  --ui-portrait-image: url('/break_escape/assets/ui/themes/cyberpunk/thin/portrait.png');
 
   --ui-surface: rgba(14, 6, 26, 0.92);
   --ui-surface-raised: rgba(30, 10, 50, 0.95);
@@ -118,11 +144,17 @@
 [data-ui-theme="crt"] {
   --ui-frame-image: url('/break_escape/assets/ui/themes/crt/frame.png');
   --ui-frame-slice: 8;
-  --ui-frame-px: 8px;
+  --ui-frame-px: 16px;
   --ui-button-image: url('/break_escape/assets/ui/themes/crt/button.png');
   --ui-button-slice: 4;
-  --ui-button-px: 4px;
-  --ui-portrait-image: url('/break_escape/assets/ui/themes/crt/portrait.png');
+  --ui-button-px: 8px;
+  --ui-square-image: url('/break_escape/assets/ui/themes/crt/thin/frame.png');
+  --ui-square-slice: 4;
+  --ui-square-px: 8px;
+  --ui-small-button-image: url('/break_escape/assets/ui/themes/crt/thin/button.png');
+  --ui-small-button-slice: 3;
+  --ui-small-button-px: 6px;
+  --ui-portrait-image: url('/break_escape/assets/ui/themes/crt/thin/portrait.png');
 
   --ui-surface: rgba(2, 12, 4, 0.95);
   --ui-surface-raised: rgba(8, 30, 12, 0.96);
@@ -145,6 +177,125 @@
   --ui-backdrop: rgba(0, 6, 0, 0.82);
 }
 
+
+/* ===== Theme: eldritch =====
+ * Weathered carved stone with glowing green runes. The panel edges tile at
+ * their own size rather than stretching, so the runes keep their shape. */
+[data-ui-theme="eldritch"] {
+  --ui-frame-image: url('/break_escape/assets/ui/themes/eldritch/frame.png');
+  --ui-frame-slice: 12;
+  --ui-frame-px: 24px;
+  --ui-frame-repeat: repeat;
+  --ui-button-image: url('/break_escape/assets/ui/themes/eldritch/button.png');
+  --ui-button-slice: 6;
+  --ui-button-px: 12px;
+  --ui-square-image: url('/break_escape/assets/ui/themes/eldritch/thin/frame.png');
+  --ui-square-slice: 4;
+  --ui-square-px: 8px;
+  --ui-small-button-image: url('/break_escape/assets/ui/themes/eldritch/thin/button.png');
+  --ui-small-button-slice: 3;
+  --ui-small-button-px: 6px;
+  --ui-portrait-image: url('/break_escape/assets/ui/themes/eldritch/thin/portrait.png');
+
+  --ui-surface: rgba(20, 14, 28, 0.95);
+  --ui-surface-raised: rgba(37, 29, 47, 0.96);
+  --ui-surface-hover: rgba(52, 42, 64, 0.96);
+  --ui-slot-bg: rgba(37, 29, 47, 0.9);
+  --ui-line: #4a5a48;
+  --ui-text: #dfe6d2;
+  --ui-text-dim: #a4b39c;
+  --ui-text-faint: #66705f;
+  --ui-button-text: #b4f0a8;
+  --ui-accent: #8ee07e;
+  --ui-success: #c8f07a;
+  --ui-danger: #ff6f8e;
+  --ui-glow-filter: drop-shadow(0 0 5px rgba(142, 215, 129, 0.7));
+  --ui-text-glow: 0 0 6px rgba(142, 215, 129, 0.5);
+  --ui-heading-font: 'Pixelify Sans', 'GNF', monospace;
+  --ui-heading-transform: uppercase;
+  --ui-heading-spacing: 2px;
+  --ui-bar-bg: linear-gradient(to top, rgba(6, 3, 10, 0.92), rgba(6, 3, 10, 0));
+  --ui-backdrop: rgba(4, 2, 8, 0.85);
+}
+
+/* ===== Theme: circuit =====
+ * Green circuit board with copper traces; edges tile like the board. */
+[data-ui-theme="circuit"] {
+  --ui-frame-image: url('/break_escape/assets/ui/themes/circuit/frame.png');
+  --ui-frame-slice: 12;
+  --ui-frame-px: 24px;
+  --ui-frame-repeat: repeat;
+  --ui-button-image: url('/break_escape/assets/ui/themes/circuit/button.png');
+  --ui-button-slice: 6;
+  --ui-button-px: 12px;
+  --ui-square-image: url('/break_escape/assets/ui/themes/circuit/thin/frame.png');
+  --ui-square-slice: 4;
+  --ui-square-px: 8px;
+  --ui-small-button-image: url('/break_escape/assets/ui/themes/circuit/thin/button.png');
+  --ui-small-button-slice: 3;
+  --ui-small-button-px: 6px;
+  --ui-portrait-image: url('/break_escape/assets/ui/themes/circuit/thin/portrait.png');
+
+  --ui-surface: rgba(10, 40, 24, 0.95);
+  --ui-surface-raised: rgba(23, 71, 59, 0.96);
+  --ui-surface-hover: rgba(32, 90, 70, 0.96);
+  --ui-slot-bg: rgba(23, 71, 59, 0.9);
+  --ui-line: #b8893f;
+  --ui-text: #f1f6ec;
+  --ui-text-dim: #a8cdb0;
+  --ui-text-faint: #63907a;
+  --ui-button-text: #ffe2a0;
+  --ui-accent: #f2c063;
+  --ui-success: #8dffb8;
+  --ui-danger: #ff8466;
+  --ui-glow-filter: drop-shadow(0 0 4px rgba(242, 192, 99, 0.7));
+  --ui-text-glow: none;
+  --ui-heading-font: 'Press Start 2P', 'Courier New', monospace;
+  --ui-heading-transform: uppercase;
+  --ui-heading-spacing: 1px;
+  --ui-bar-bg: linear-gradient(to top, rgba(3, 18, 10, 0.92), rgba(3, 18, 10, 0));
+  --ui-backdrop: rgba(2, 12, 6, 0.82);
+}
+
+/* ===== Theme: secops =====
+ * Security operations console: gunmetal, electric blue light strips, amber
+ * status lights. The button's right edge is sliced wider to keep its amber
+ * light round. */
+[data-ui-theme="secops"] {
+  --ui-frame-image: url('/break_escape/assets/ui/themes/secops/frame.png');
+  --ui-frame-slice: 8;
+  --ui-frame-px: 16px;
+  --ui-button-image: url('/break_escape/assets/ui/themes/secops/button.png');
+  --ui-button-slice: 5 10 5 5;
+  --ui-button-px: 10px 20px 10px 10px;
+  --ui-square-image: url('/break_escape/assets/ui/themes/secops/thin/frame.png');
+  --ui-square-slice: 4;
+  --ui-square-px: 8px;
+  --ui-small-button-image: url('/break_escape/assets/ui/themes/secops/thin/button.png');
+  --ui-small-button-slice: 3;
+  --ui-small-button-px: 6px;
+  --ui-portrait-image: url('/break_escape/assets/ui/themes/secops/thin/portrait.png');
+
+  --ui-surface: rgba(12, 18, 36, 0.95);
+  --ui-surface-raised: rgba(21, 29, 53, 0.96);
+  --ui-surface-hover: rgba(30, 42, 74, 0.96);
+  --ui-slot-bg: rgba(21, 29, 53, 0.9);
+  --ui-line: #2f5f9e;
+  --ui-text: #e6eeff;
+  --ui-text-dim: #93b2dc;
+  --ui-text-faint: #58719a;
+  --ui-button-text: #8fd8ff;
+  --ui-accent: #ffb03a;
+  --ui-success: #52ffbe;
+  --ui-danger: #ff5c5c;
+  --ui-glow-filter: drop-shadow(0 0 5px rgba(95, 190, 240, 0.75));
+  --ui-text-glow: 0 0 5px rgba(95, 190, 240, 0.45);
+  --ui-heading-font: 'GNF', 'Courier New', monospace;
+  --ui-heading-transform: uppercase;
+  --ui-heading-spacing: 2px;
+  --ui-bar-bg: linear-gradient(to top, rgba(4, 7, 16, 0.92), rgba(4, 7, 16, 0));
+  --ui-backdrop: rgba(3, 5, 12, 0.82);
+}
 
 /* ===================================================================
    HUD boxes: inventory slots, music, VM and menu buttons.
@@ -173,10 +324,10 @@
   z-index: -1;
   pointer-events: none;
   border-style: solid;
-  border-width: var(--ui-frame-px);
-  border-image-source: var(--ui-frame-image);
-  border-image-slice: var(--ui-frame-slice) fill;
-  border-image-width: var(--ui-frame-px);
+  border-width: var(--ui-square-px);
+  border-image-source: var(--ui-square-image);
+  border-image-slice: var(--ui-square-slice) fill;
+  border-image-width: var(--ui-square-px);
   border-image-repeat: stretch;
   image-rendering: pixelated;
   transition: filter 0.15s ease;
@@ -253,7 +404,7 @@
   margin-right: 22px;
   gap: 0;
   display: block;
-  background: var(--ui-portrait-image) no-repeat 0 0;
+  background: var(--ui-portrait-image) no-repeat 0 0 / var(--ui-portrait-w) var(--ui-portrait-h);
   image-rendering: pixelated;
 }
 
@@ -284,47 +435,33 @@
   margin: calc((var(--ui-avatar-d, 64px) - 64px) / 2);
 }
 
-/* Action badge: the 32px hand at 1x */
+/* Action badge: the 32px hand at 2x */
 [data-ui-theme] #hud-mode-toggle-button.hud-button {
   left: var(--ui-badge-x, 66px);
   top: var(--ui-badge-y, 44px);
   width: var(--ui-badge-d, 32px);
   height: var(--ui-badge-d, 32px);
-  overflow: visible;
 }
 
+/* The 32px hand canvas at 2x, centred in the badge opening, which clips it */
 [data-ui-theme] #hud-hand-canvas {
-  width: 32px;
-  height: 32px;
+  width: 64px;
+  height: 64px;
+  flex-shrink: 0;
+  margin: calc((var(--ui-badge-d, 64px) - 64px) / 2);
 }
 
 [data-ui-theme] #player-hud-buttons .hud-button:hover {
   filter: brightness(1.15) var(--ui-glow-filter);
 }
 
-/* Ring geometry per theme, measured from each portrait.png. The general
-   block comes first: its :root selector ties with the theme selectors on
-   <html>, so whichever is later wins */
-:root,
-[data-ui-theme="general"] {
-  --ui-portrait-w: 104px; --ui-portrait-h: 105px;
-  --ui-avatar-x: 17px; --ui-avatar-y: 17px; --ui-avatar-d: 56px;
-  --ui-badge-x: 67px; --ui-badge-y: 67px;
-}
-[data-ui-theme="spy"] {
-  --ui-portrait-w: 101px; --ui-portrait-h: 104px;
-  --ui-avatar-x: 11px; --ui-avatar-y: 11px; --ui-avatar-d: 60px;
-  --ui-badge-x: 63px; --ui-badge-y: 66px;
-}
-[data-ui-theme="cyberpunk"] {
-  --ui-portrait-w: 99px; --ui-portrait-h: 99px;
-  --ui-avatar-x: 11px; --ui-avatar-y: 12px; --ui-avatar-d: 58px;
-  --ui-badge-x: 61px; --ui-badge-y: 61px;
-}
-[data-ui-theme="crt"] {
-  --ui-portrait-w: 95px; --ui-portrait-h: 95px;
-  --ui-avatar-x: 6px; --ui-avatar-y: 6px; --ui-avatar-d: 60px;
-  --ui-badge-x: 57px; --ui-badge-y: 57px;
+/* Ring geometry, from PORTRAIT in tools/ui_theme_thin.py at 2x: the 64x52
+   art is 128x104 here, the avatar opening 32 art px (the headshot at 2x) and
+   the badge opening 28 art px (the hand frames at 2x) */
+[data-ui-theme] {
+  --ui-portrait-w: 128px; --ui-portrait-h: 104px;
+  --ui-avatar-x: 8px; --ui-avatar-y: 8px; --ui-avatar-d: 64px;
+  --ui-badge-x: 64px; --ui-badge-y: 40px; --ui-badge-d: 56px;
 }
 
 /* The portrait is taller than the old 80px strip, so the strip and the
@@ -359,7 +496,7 @@
   border-image-source: var(--ui-frame-image);
   border-image-slice: var(--ui-frame-slice);
   border-image-width: var(--ui-frame-px);
-  border-image-repeat: stretch;
+  border-image-repeat: var(--ui-frame-repeat, stretch);
   background: var(--ui-surface);
   background-clip: padding-box;
   image-rendering: pixelated;
@@ -532,7 +669,13 @@
 [data-ui-theme="cyberpunk"] .game-menu-item,
 [data-ui-theme="crt"] .tutorial-btn,
 [data-ui-theme="crt"] .minigame-button,
-[data-ui-theme="crt"] .game-menu-item {
+[data-ui-theme="crt"] .game-menu-item,
+[data-ui-theme="eldritch"] .tutorial-btn,
+[data-ui-theme="eldritch"] .minigame-button,
+[data-ui-theme="eldritch"] .game-menu-item,
+[data-ui-theme="secops"] .tutorial-btn,
+[data-ui-theme="secops"] .minigame-button,
+[data-ui-theme="secops"] .game-menu-item {
   text-shadow: var(--ui-text-glow);
 }
 
@@ -604,10 +747,10 @@
 [data-ui-theme] #music-widget-panel .mw-close-btn,
 [data-ui-theme] .game-menu-close {
   border-style: solid;
-  border-width: var(--ui-button-px);
-  border-image-source: var(--ui-button-image);
-  border-image-slice: var(--ui-button-slice) fill;
-  border-image-width: var(--ui-button-px);
+  border-width: var(--ui-small-button-px);
+  border-image-source: var(--ui-small-button-image);
+  border-image-slice: var(--ui-small-button-slice) fill;
+  border-image-width: var(--ui-small-button-px);
   border-radius: 0;
   background: none;
   box-shadow: none;
@@ -656,7 +799,8 @@
 }
 
 [data-ui-theme="cyberpunk"] .objectives-title,
-[data-ui-theme="crt"] .objectives-title {
+[data-ui-theme="crt"] .objectives-title,
+[data-ui-theme="circuit"] .objectives-title {
   font-size: 11px;
 }
 
@@ -690,6 +834,18 @@
   box-shadow: 0 0 18px rgba(80, 255, 120, 0.25);
 }
 
+[data-ui-theme="eldritch"] .objectives-panel,
+[data-ui-theme="eldritch"] .game-menu-panel,
+[data-ui-theme="eldritch"] .tutorial-prompt-modal {
+  box-shadow: 0 0 18px rgba(142, 215, 129, 0.18);
+}
+
+[data-ui-theme="secops"] .objectives-panel,
+[data-ui-theme="secops"] .game-menu-panel,
+[data-ui-theme="secops"] .tutorial-prompt-modal {
+  box-shadow: 0 0 14px rgba(95, 190, 240, 0.22);
+}
+
 
 /* ===================================================================
    Minigame tool windows: the generic ones (examine, flag station, VM
@@ -713,7 +869,7 @@
   border-image-source: var(--ui-frame-image);
   border-image-slice: var(--ui-frame-slice);
   border-image-width: var(--ui-frame-px);
-  border-image-repeat: stretch;
+  border-image-repeat: var(--ui-frame-repeat, stretch);
   background-color: var(--ui-surface);
   background-clip: padding-box;
   box-sizing: border-box;

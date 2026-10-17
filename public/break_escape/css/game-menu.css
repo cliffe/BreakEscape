@@ -20,6 +20,9 @@
   zoom: var(--hud-zoom, 1);
   width: min(640px, calc(100vw / var(--hud-zoom, 1) - 32px));
   max-height: calc(100vh / var(--hud-zoom, 1) - 32px);
+  /* Tall enough for the Audio page, so switching pages doesn't resize and
+     re-centre the panel under the pointer */
+  min-height: min(470px, calc(100vh / var(--hud-zoom, 1) - 32px));
   display: flex;
   flex-direction: column;
   overflow: hidden;

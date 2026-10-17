@@ -85,7 +85,8 @@ export class PlayerHUD {
     
     this.handCanvas = document.createElement('canvas');
     this.handCanvas.id = 'hud-hand-canvas';
-    // The hand sits in the small action badge on the portrait ring, at 1x
+    // The hand sits in the action badge on the portrait ring: drawn at 1x here,
+    // shown at 2x by ui-themes.css like the rest of the HUD art
     this.handCanvas.width = 32;
     this.handCanvas.height = 32;
     this.handCanvas.style.imageRendering = 'pixelated';

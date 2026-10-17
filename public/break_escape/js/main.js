@@ -252,11 +252,12 @@ function initializeGame() {
         // setZoom also refreshes the input bounds for the new canvas rect.
         game.scale.setZoom(scale / dpr);
 
-        // The HUD was drawn for a 2x game. Grow it in whole device pixels as the
-        // game's pixel scale grows (a 4K screen runs at 6x), so it keeps its size
-        // relative to the game and its pixel art stays crisp; never shrink it.
-        const hudDevicePixels = Math.max(1, Math.floor(scale / 2) + hudStep);
-        const hudZoom = Math.max(hudStep < 0 ? 1 / dpr : 1, hudDevicePixels / dpr);
+        // The HUD's pixel art is drawn at 2x, the game's scale at 1080p. Zoom it so
+        // one art pixel covers as many device pixels as one game pixel (a whole
+        // number, so it stays crisp), keeping UI and world pixels the same size.
+        // The HUD size setting steps that up or down; it never shrinks unasked.
+        const hudDevicePixels = Math.max(1, scale + hudStep);
+        const hudZoom = Math.max(hudStep < 0 ? 1 / dpr : 1, hudDevicePixels / 2 / dpr);
         document.documentElement.style.setProperty('--hud-zoom', hudZoom);
 
         console.log(`Pixel scale ${scale}x (dpr ${dpr}): game ${gameWidth}x${gameHeight}`);

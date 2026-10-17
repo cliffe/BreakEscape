@@ -16,6 +16,9 @@ export const UI_THEMES = [
     { id: 'spy', label: 'Spy' },
     { id: 'cyberpunk', label: 'Cyberpunk' },
     { id: 'crt', label: 'CRT terminal' },
+    { id: 'eldritch', label: 'Eldritch runes' },
+    { id: 'circuit', label: 'Circuit board' },
+    { id: 'secops', label: 'Security ops' },
 ];
 
 // Steps either side of the automatic choice, in whole pixel-scale units

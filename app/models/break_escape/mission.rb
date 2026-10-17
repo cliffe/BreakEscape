@@ -66,7 +66,7 @@ module BreakEscape
 
     # HUD skins, styled in public/break_escape/css/ui-themes.css. A mission picks
     # one with "ui_theme" in mission.json; anything else falls back to the default.
-    UI_THEMES = %w[general spy cyberpunk crt].freeze
+    UI_THEMES = %w[general spy cyberpunk crt eldritch circuit secops].freeze
     DEFAULT_UI_THEME = 'general'.freeze
 
     def self.normalise_ui_theme(theme)
