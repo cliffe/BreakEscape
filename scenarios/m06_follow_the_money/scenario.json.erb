@@ -1596,14 +1596,16 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
               in" (extract_go) sets start_debrief_cutscene. It can only be asked for
               once both decisions and all four flags are in (ready_to_extract, set by
               HaX's mappings), so the concludeRequires gate still holds.
-              debrief_played (set on the debrief's first line) stops a replay. %>
+              debrief_played (set on the debrief's first line) stops a replay.
+              Art fix 2026-10-17: m06_hq_night.png is hq1.png with the windows at night
+              (four in the morning); hq1.png stays for the other missions' daytime HQ. %>
           "eventMappings": [
             {
               "eventPattern": "global_variable_changed:start_debrief_cutscene",
               "condition": "value === true && globalVars.debrief_played !== true",
               "conversationMode": "person-chat",
               "targetKnot": "start",
-              "background": "assets/backgrounds/hq1.png",
+              "background": "assets/backgrounds/m06_hq_night.png",
               "onceOnly": true,
               "disableClose": true
             }<% %w[reception_lobby security_checkpoint trading_floor server_room data_center blockchain_lab irina_office executive_wing satoshi_office].each do |r| %>,

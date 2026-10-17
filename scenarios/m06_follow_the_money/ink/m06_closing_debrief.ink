@@ -74,7 +74,7 @@ VAR fca_right = 0
 
 === debrief_location ===
 #speaker:narrator
-Narrator: SAFETYNET headquarters. The handler's office, three floors below street level, at four in the morning.
+Narrator: SAFETYNET headquarters. The handler's office at four in the morning, the city still lit beyond the glass.
 
 #speaker:agent_0x99
 
