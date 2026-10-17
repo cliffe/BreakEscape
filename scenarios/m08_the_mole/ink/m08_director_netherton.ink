@@ -417,7 +417,7 @@ Director Magnus Netherton: That audit is Phantom's query, off Phantom's printer.
 #set_global:mole_identified:true
 Director Magnus Netherton: He walked into his own lab twenty-three minutes before that plan opened, and out again eighteen minutes after it closed.
 { found_access_logs:
-    Director Magnus Netherton: And the box has an account on that terminal for the same forty-seven minutes. A door and a login, at the same minute. That I can act on.
+    Director Magnus Netherton: And the box has an account on that terminal for those forty-seven minutes. A door and a login, at the same minute. That I can act on.
 - else:
     Director Magnus Netherton: A door is not a login, and a court will want both. Get root on the box and bring me its logs.
 }

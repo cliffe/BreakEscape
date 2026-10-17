@@ -40,7 +40,8 @@ VAR hub_quiet = false
 // PASS 2 review: set first; a brief-gated mapping completes interview_nightshade (lesson 27).
 ~ nightshade_interviewed = true
 // Engine regression fixes (2026-10-17, R6): he stands mid-lab, not at his desk, so he turns rather than looks up.
-Narrator: The Crypto Lab is quiet. Nightshade turns as you come in and smiles as if the last nine days never happened. His desk behind him is bare: no photographs, no mug.
+Narrator: The Crypto Lab is quiet. Nightshade turns as you come in and smiles as if the last nine days never happened.
+Narrator: His desk behind him is bare: no photographs, no mug.
 
 Agent 0x47 'Nightshade': There you are. I wondered when they'd send you.
 Agent 0x47 'Nightshade': Of everyone in this building, they picked the one person who knows my tells. A compliment, or very poor planning. Ask me anything.
@@ -85,7 +86,7 @@ Agent 0x47 'Nightshade': Of everyone in this building, they picked the one perso
 + { mole_identified and found_access_logs and not asked_logs } [The root logs put Cryptography Lab terminal 03 on the Portland plan. Forty-seven minutes.]
     ~ asked_logs = true
     ~ nightshade_suspected = true
-    Agent 0x47 'Nightshade': Then you have root on our own repository. I'm genuinely impressed. Nobody's touched that box in years.
+    Agent 0x47 'Nightshade': Then you have root on our own repository. I'm impressed. Nobody's touched that box in years.
     Agent 0x47 'Nightshade': Finish putting it through the relay. When it's all in, the Director will want this conversation in a room with a recorder.
     Agent 0x47 'Nightshade': I'll walk down myself. I'm not going to make anyone chase me. #set_global:nightshade_suspected:true
     -> back

@@ -71,7 +71,7 @@ Agent 0x23 'Vector': I've run the inference on myself and it's not flattering. A
     ~ asked_alibi = true
     ~ vector_alibi_known = true
     Agent 0x23 'Vector': In the crypto library. Alone. The single worst alibi a person can offer, and completely true.
-    Agent 0x23 'Vector': The library logs its own door. And the terminal auth for the leak window will show my account never touched the mission_planning share.
+    Agent 0x23 'Vector': The library logs its own door. And the terminal auth for the leak window will show my account never touched the mission-planning share.
     Agent 0x23 'Vector': My desk is out on the ops floor. Do the geography. #set_global:vector_alibi_known:true
     -> back
 // PASS 5 (alignment M3): a wrong accusation costs his confirmation of his own

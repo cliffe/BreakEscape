@@ -2,7 +2,7 @@
 "steps": [
 { "note": "R26: the pass-5 blind run A fixes. ATHENA's kit line covers all three; the accusations carry their warning on the choice; HaX's archives hint says where to look; the off-duty agent and the audit both rule out 0x3C; Nightshade confirms his row without asking for an account; the 'printout' answer to the trust question fails with a reason; the confrontation offers the evidence wall first." },
 { "talk": "briefing" },
-{ "said": ["signed out to Agent 0x47", "Agent 0x23 has a hardware token out tonight"] },
+{ "said": ["signed out to Agent 0x47", "Vector has a hardware token out tonight"] },
 { "set": { "briefing_played": true } },
 { "talk": "netherton", "picks": ["I'm ready"] },
 { "talk": "vector", "picks": ["Where were you", "That's all"] },

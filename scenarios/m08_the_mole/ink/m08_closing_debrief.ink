@@ -239,7 +239,13 @@ Director Magnus Netherton: Say it, Agent. Whatever you think of me tonight. I wo
 === close ===
 Narrator: Netherton stops at the door.
 // Phase 4 dialogue C1 (D8-20): "turned it round" only for the triple agent.
-Director Magnus Netherton: They spent fifteen years turning one of ours into a weapon and pointing it at the rest of us. {nightshade_triple_agent:Tonight you turned it round.|Tonight you took it off them.}
+// Pre-voicing (2026-10-18): a block, not an inline conditional, so the TTS
+// walker and the endpoint's validator can see the whole line.
+{ nightshade_triple_agent:
+    Director Magnus Netherton: They spent fifteen years turning one of ours into a weapon and pointing it at the rest of us. Tonight you turned it round.
+- else:
+    Director Magnus Netherton: They spent fifteen years turning one of ours into a weapon and pointing it at the rest of us. Tonight you took it off them.
+}
 // Script edit round (S8, approved): the hook to the next mission plays on every path.
 { not asked_next:
     { tomb_gamma_location_known:

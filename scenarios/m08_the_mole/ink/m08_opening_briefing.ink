@@ -18,8 +18,8 @@ Narrator: SAFETYNET headquarters, the Citadel. Every badge reader blinks red. No
 ATHENA: Welcome back, Agent 0x00. Security posture is Level Red. I have logged your entry, your route, and the precise time you crossed the threshold. Everyone's, actually. It's rather the point.
 
 ATHENA: I have also logged your kit. One pick set, one RFID cloner, one fingerprint kit.
-ATHENA: The PIN device you are thinking of is still signed out to Agent 0x47, as it has been since St. Catherine's.
-ATHENA: Read nothing into it. Agent 0x23 has a hardware token out tonight, and Agent 0x88 a travel pack. Everyone on the planning list keeps something they shouldn't.
+ATHENA: The PIN device you are thinking of is still signed out to Agent 0x47, Nightshade, as it has been since St. Catherine's.
+ATHENA: Read nothing into it. Vector has a hardware token out tonight, and Phantom a travel pack. Everyone on the planning list keeps something they shouldn't.
 
 // Carry-over (2026-10-17): a player who finished m07 hears where they sent the
 // team, and what that means nine days on. One line per branch, as HEAD had, so
@@ -28,7 +28,7 @@ ATHENA: Read nothing into it. Agent 0x23 has a hardware token out tonight, and A
 // reached Austin. The else branch is the original line, word for word.
 {
 - m07_team_assignment == "trojan_horse" and m07_team_redirected:
-    ATHENA: Portland happened. You moved the one team to Austin with the clock running, and it reached the dispatch keys first. Nine days on, those counties are still answering.
+    ATHENA: Portland happened. You moved the one team to Austin with the clock running, and it reached the dispatch keys first. Nine days on, dispatch in eleven counties is still answering.
 - m07_team_assignment == "trojan_horse":
     ATHENA: Portland happened. Your tasking order sent the one team to Austin, so no backdoor went anywhere. Today is day nine, and dispatch in eleven counties is still answering.
 - m07_team_assignment == "fracture":

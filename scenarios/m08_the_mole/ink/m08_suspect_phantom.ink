@@ -88,7 +88,7 @@ Agent 0x88 'Phantom': And yes, I put myself there too. Charmed?
     }
     ~ asked_help = true
     Narrator: He leans in, and all the charm goes out of his face.
-    Agent 0x88 'Phantom': Then you're further than I got. Someone's been in mission_planning from Cryptography Lab terminal 03.
+    Agent 0x88 'Phantom': Then you're further than I got. Someone's been in the mission-planning share from Cryptography Lab terminal 03.
     Agent 0x88 'Phantom': Forty-seven minutes, on a file you'd read in five.
     Agent 0x88 'Phantom': I couldn't get root on the repo to prove whose account it was. You've got the Director's blessing. I've got a reprimand pending.
     Agent 0x88 'Phantom': My door audit's still in the archive printer, if nobody's binned it. Doors tell you who was in the room. The box tells you when.
