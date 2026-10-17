@@ -1,6 +1,8 @@
 /**
  * Health UI System
- * Displays player health as hearts above the inventory
+ * Player health as hearts or a bar (the player picks in the menu's Display
+ * page; css/ui-themes.css shows one). Both sit at the bottom right of the
+ * player portrait, inside #player-hud-buttons, once the HUD has built it.
  */
 
 import { COMBAT_CONFIG } from '../config/combat-config.js';
@@ -42,11 +44,32 @@ export class HealthUI {
       this.hearts.push(heart);
     }
 
+    // The bar alternative: a track with a fill whose width is the HP
+    this.bar = document.createElement('div');
+    this.bar.className = 'health-bar';
+    this.bar.setAttribute('role', 'meter');
+    this.bar.setAttribute('aria-label', 'Health');
+    this.bar.setAttribute('aria-valuemin', '0');
+    this.bar.innerHTML = '<div class="health-bar-track"><div class="health-bar-fill"></div></div>';
+    this.barFill = this.bar.querySelector('.health-bar-fill');
+
     this.container.appendChild(heartsContainer);
+    this.container.appendChild(this.bar);
     document.body.appendChild(this.container);
+    this.mountBesidePortrait();
 
     // Always show hearts (changed from MVP requirement)
     this.show();
+  }
+
+  /** Move into the portrait group once the HUD has created it. */
+  mountBesidePortrait(tries = 0) {
+    const group = document.getElementById('player-hud-buttons');
+    if (group) {
+      group.appendChild(this.container);
+    } else if (tries < 100) {
+      setTimeout(() => this.mountBesidePortrait(tries + 1), 100);
+    }
   }
 
   setupEventListeners() {
@@ -74,12 +97,20 @@ export class HealthUI {
     // Always keep hearts visible (changed from MVP requirement)
     this.show();
 
-    // Heartbeat sound when HP <= 25%
-    if (hp > 0 && hp / maxHP <= 0.25) {
+    // At a quarter health or less: heartbeat, and the hearts or bar pulse
+    const low = hp > 0 && hp / maxHP <= 0.25;
+    this.container.classList.toggle('health-low', low);
+    if (low) {
       this.startHeartbeat();
     } else {
       this.stopHeartbeat();
     }
+
+    // Bar
+    const percent = maxHP > 0 ? Math.max(0, Math.min(100, (hp / maxHP) * 100)) : 0;
+    this.barFill.style.width = `${percent}%`;
+    this.bar.setAttribute('aria-valuemax', String(maxHP));
+    this.bar.setAttribute('aria-valuenow', String(hp));
 
     // Update heart visuals
     const heartsPerHP = maxHP / COMBAT_CONFIG.ui.maxHearts; // 20 HP per heart (100 / 5)

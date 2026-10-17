@@ -41,6 +41,7 @@
   --ui-small-button-slice: 3;
   --ui-small-button-px: 6px;
   --ui-portrait-image: url('/break_escape/assets/ui/themes/general/thin/portrait.png');
+  --ui-badge-image: url('/break_escape/assets/ui/themes/general/thin/badge.png');
 
   --ui-surface: rgba(24, 30, 48, 0.94);
   --ui-surface-raised: rgba(38, 48, 74, 0.96);
@@ -61,6 +62,12 @@
   --ui-heading-spacing: 0;
   --ui-bar-bg: linear-gradient(to top, rgba(10, 13, 22, 0.9), rgba(10, 13, 22, 0));
   --ui-backdrop: rgba(6, 8, 16, 0.78);
+  /* health gauges: NPC bars in the world (js/ui/theme-colours.js) */
+  --ui-bar-outline: #0e0d17;
+  --ui-bar-frame: #6d7c8e;
+  --ui-bar-track: #1b253e;
+  --ui-bar-fill: #e04848;
+  --ui-bar-fill-hi: #ff8a7a;
 }
 
 /* ===== Theme: spy (SAFETYNET campaign) =====
@@ -79,6 +86,7 @@
   --ui-small-button-slice: 3;
   --ui-small-button-px: 6px;
   --ui-portrait-image: url('/break_escape/assets/ui/themes/spy/thin/portrait.png');
+  --ui-badge-image: url('/break_escape/assets/ui/themes/spy/thin/badge.png');
 
   --ui-surface: rgba(29, 30, 32, 0.95);
   --ui-surface-raised: rgba(44, 45, 47, 0.96);
@@ -99,6 +107,12 @@
   --ui-heading-spacing: 2px;
   --ui-bar-bg: linear-gradient(to top, rgba(8, 8, 8, 0.92), rgba(8, 8, 8, 0));
   --ui-backdrop: rgba(4, 4, 4, 0.8);
+  /* health gauges: NPC bars in the world (js/ui/theme-colours.js) */
+  --ui-bar-outline: #0a080a;
+  --ui-bar-frame: #d4bc8a;
+  --ui-bar-track: #212325;
+  --ui-bar-fill: #c0392b;
+  --ui-bar-fill-hi: #e8705f;
 }
 
 /* ===== Theme: cyberpunk =====
@@ -117,6 +131,7 @@
   --ui-small-button-slice: 3;
   --ui-small-button-px: 6px;
   --ui-portrait-image: url('/break_escape/assets/ui/themes/cyberpunk/thin/portrait.png');
+  --ui-badge-image: url('/break_escape/assets/ui/themes/cyberpunk/thin/badge.png');
 
   --ui-surface: rgba(14, 6, 26, 0.92);
   --ui-surface-raised: rgba(30, 10, 50, 0.95);
@@ -137,6 +152,12 @@
   --ui-heading-spacing: 1px;
   --ui-bar-bg: linear-gradient(to top, rgba(20, 0, 34, 0.92), rgba(20, 0, 34, 0));
   --ui-backdrop: rgba(10, 0, 20, 0.8);
+  /* health gauges: NPC bars in the world (js/ui/theme-colours.js) */
+  --ui-bar-outline: #030a1c;
+  --ui-bar-frame: #41f0fb;
+  --ui-bar-track: #120629;
+  --ui-bar-fill: #ff3ec8;
+  --ui-bar-fill-hi: #ff9be6;
 }
 
 /* ===== Theme: crt =====
@@ -155,6 +176,7 @@
   --ui-small-button-slice: 3;
   --ui-small-button-px: 6px;
   --ui-portrait-image: url('/break_escape/assets/ui/themes/crt/thin/portrait.png');
+  --ui-badge-image: url('/break_escape/assets/ui/themes/crt/thin/badge.png');
 
   --ui-surface: rgba(2, 12, 4, 0.95);
   --ui-surface-raised: rgba(8, 30, 12, 0.96);
@@ -175,6 +197,12 @@
   --ui-heading-spacing: 1px;
   --ui-bar-bg: linear-gradient(to top, rgba(0, 10, 2, 0.92), rgba(0, 10, 2, 0));
   --ui-backdrop: rgba(0, 6, 0, 0.82);
+  /* health gauges: NPC bars in the world (js/ui/theme-colours.js) */
+  --ui-bar-outline: #000902;
+  --ui-bar-frame: #6ef77a;
+  --ui-bar-track: #031006;
+  --ui-bar-fill: #ffb347;
+  --ui-bar-fill-hi: #ffd89a;
 }
 
 
@@ -196,6 +224,7 @@
   --ui-small-button-slice: 3;
   --ui-small-button-px: 6px;
   --ui-portrait-image: url('/break_escape/assets/ui/themes/eldritch/thin/portrait.png');
+  --ui-badge-image: url('/break_escape/assets/ui/themes/eldritch/thin/badge.png');
 
   --ui-surface: rgba(20, 14, 28, 0.95);
   --ui-surface-raised: rgba(37, 29, 47, 0.96);
@@ -216,6 +245,12 @@
   --ui-heading-spacing: 2px;
   --ui-bar-bg: linear-gradient(to top, rgba(6, 3, 10, 0.92), rgba(6, 3, 10, 0));
   --ui-backdrop: rgba(4, 2, 8, 0.85);
+  /* health gauges: NPC bars in the world (js/ui/theme-colours.js) */
+  --ui-bar-outline: #05040a;
+  --ui-bar-frame: #8ee07e;
+  --ui-bar-track: #160f1e;
+  --ui-bar-fill: #b3264f;
+  --ui-bar-fill-hi: #ff6f8e;
 }
 
 /* ===== Theme: circuit =====
@@ -235,6 +270,7 @@
   --ui-small-button-slice: 3;
   --ui-small-button-px: 6px;
   --ui-portrait-image: url('/break_escape/assets/ui/themes/circuit/thin/portrait.png');
+  --ui-badge-image: url('/break_escape/assets/ui/themes/circuit/thin/badge.png');
 
   --ui-surface: rgba(10, 40, 24, 0.95);
   --ui-surface-raised: rgba(23, 71, 59, 0.96);
@@ -255,6 +291,12 @@
   --ui-heading-spacing: 1px;
   --ui-bar-bg: linear-gradient(to top, rgba(3, 18, 10, 0.92), rgba(3, 18, 10, 0));
   --ui-backdrop: rgba(2, 12, 6, 0.82);
+  /* health gauges: NPC bars in the world (js/ui/theme-colours.js) */
+  --ui-bar-outline: #090e11;
+  --ui-bar-frame: #eab65b;
+  --ui-bar-track: #17473b;
+  --ui-bar-fill: #ff4a3a;
+  --ui-bar-fill-hi: #ff9a80;
 }
 
 /* ===== Theme: secops =====
@@ -275,6 +317,7 @@
   --ui-small-button-slice: 3;
   --ui-small-button-px: 6px;
   --ui-portrait-image: url('/break_escape/assets/ui/themes/secops/thin/portrait.png');
+  --ui-badge-image: url('/break_escape/assets/ui/themes/secops/thin/badge.png');
 
   --ui-surface: rgba(12, 18, 36, 0.95);
   --ui-surface-raised: rgba(21, 29, 53, 0.96);
@@ -295,6 +338,12 @@
   --ui-heading-spacing: 2px;
   --ui-bar-bg: linear-gradient(to top, rgba(4, 7, 16, 0.92), rgba(4, 7, 16, 0));
   --ui-backdrop: rgba(3, 5, 12, 0.82);
+  /* health gauges: NPC bars in the world (js/ui/theme-colours.js) */
+  --ui-bar-outline: #020206;
+  --ui-bar-frame: #5fbedf;
+  --ui-bar-track: #151d35;
+  --ui-bar-fill: #ff5c5c;
+  --ui-bar-fill-hi: #ffa0a0;
 }
 
 /* ===================================================================
@@ -384,6 +433,11 @@
   transform: translateY(2px);
 }
 
+/* Slots sit two game pixels apart (hud.css spaces them 10px) */
+[data-ui-theme] .inventory-slot {
+  margin: 0 2px;
+}
+
 /* Inventory strip: a soft backing so slots read against any room */
 [data-ui-theme] #inventory-container {
   background: var(--ui-bar-bg);
@@ -391,38 +445,61 @@
 
 
 /* ===================================================================
-   Player portrait: avatar in a ring, the action (hand) badge attached at its
-   lower right, a gap, then the inventory. portrait.png holds both rings and
-   is drawn 1:1; the positions below match that art.
+   Player portrait group, left of the inventory:
+   - the avatar in its ring (portrait.png, 40x40 art at 2x);
+   - the action badge (the hand) at its upper right, ringed by badge.png drawn
+     on the button itself, so the ring hides with the button on missions that
+     disable combat;
+   - health joined at its bottom right, as hearts or a bar (Display settings,
+     html[data-health-style]). The bar's left end tucks under the avatar ring:
+     the ring is a layer above the bar and below the portrait.
+   The group is as wide as the health display, so it pushes the inventory over.
    =================================================================== */
 
 [data-ui-theme] #player-hud-buttons {
   position: relative;
+  isolation: isolate;
   flex: 0 0 auto;
-  width: var(--ui-portrait-w, 104px);
-  height: var(--ui-portrait-h, 80px);
-  margin-right: 22px;
+  width: 252px;
+  height: 104px;
   gap: 0;
   display: block;
-  background: var(--ui-portrait-image) no-repeat 0 0 / var(--ui-portrait-w) var(--ui-portrait-h);
+}
+
+[data-ui-theme][data-health-style="bar"] #player-hud-buttons {
+  width: 218px;
+}
+
+/* Avatar ring */
+[data-ui-theme] #player-hud-buttons::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 22px;
+  width: 80px;
+  height: 80px;
+  z-index: 1;
+  pointer-events: none;
+  background: var(--ui-portrait-image) no-repeat 0 0 / 80px 80px;
   image-rendering: pixelated;
 }
 
 [data-ui-theme] #player-hud-buttons .hud-button {
   position: absolute;
+  z-index: 2;
   background: transparent;
   border: 0;
   box-shadow: none;
   border-radius: 50%;
-  overflow: hidden;
 }
 
-/* Portrait: the 32px headshot at 2x */
+/* Portrait: the 32px headshot at 2x in the ring's 64px opening */
 [data-ui-theme] #hud-avatar-button.hud-button {
-  left: var(--ui-avatar-x, 6px);
-  top: var(--ui-avatar-y, 6px);
-  width: var(--ui-avatar-d, 64px);
-  height: var(--ui-avatar-d, 64px);
+  left: 8px;
+  top: 30px;
+  width: 64px;
+  height: 64px;
+  overflow: hidden;
 }
 
 [data-ui-theme] #hud-avatar-img {
@@ -431,45 +508,123 @@
   height: 64px;
   max-width: none;
   object-fit: fill;
-  /* centre the 64px headshot in the ring's opening, which clips its edge */
-  margin: calc((var(--ui-avatar-d, 64px) - 64px) / 2);
 }
 
-/* Action badge: the 32px hand at 2x */
+/* Action badge: the 32px hand at 2x in a 56px opening, upper right */
 [data-ui-theme] #hud-mode-toggle-button.hud-button {
-  left: var(--ui-badge-x, 66px);
-  top: var(--ui-badge-y, 44px);
-  width: var(--ui-badge-d, 32px);
-  height: var(--ui-badge-d, 32px);
+  left: 64px;
+  top: 8px;
+  width: 56px;
+  height: 56px;
+  overflow: visible;
+  isolation: isolate;
 }
 
-/* The 32px hand canvas at 2x, centred in the badge opening, which clips it */
+[data-ui-theme] #hud-mode-toggle-button.hud-button::before {
+  content: '';
+  position: absolute;
+  inset: -6px;
+  z-index: -1;
+  pointer-events: none;
+  background: var(--ui-badge-image) no-repeat 0 0 / 68px 68px;
+  image-rendering: pixelated;
+}
+
+/* The 32px hand canvas at 2x, centred and clipped to the opening */
 [data-ui-theme] #hud-hand-canvas {
   width: 64px;
   height: 64px;
   flex-shrink: 0;
-  margin: calc((var(--ui-badge-d, 64px) - 64px) / 2);
+  margin: -4px;
+  clip-path: circle(28px at 50% 50%);
 }
 
 [data-ui-theme] #player-hud-buttons .hud-button:hover {
   filter: brightness(1.15) var(--ui-glow-filter);
 }
 
-/* Ring geometry, from PORTRAIT in tools/ui_theme_thin.py at 2x: the 64x52
-   art is 128x104 here, the avatar opening 32 art px (the headshot at 2x) and
-   the badge opening 28 art px (the hand frames at 2x) */
-[data-ui-theme] {
-  --ui-portrait-w: 128px; --ui-portrait-h: 104px;
-  --ui-avatar-x: 8px; --ui-avatar-y: 8px; --ui-avatar-d: 64px;
-  --ui-badge-x: 64px; --ui-badge-y: 40px; --ui-badge-d: 56px;
-}
-
-/* The portrait is taller than the old 80px strip, so the strip and the
-   things stacked above it move up together */
+/* The portrait group is taller than the old 80px strip, so the strip and
+   the things stacked above it move up together */
 [data-ui-theme] #inventory-container { height: 108px; }
-[data-ui-theme] #health-ui-container { bottom: 98px; }
 [data-ui-theme] #hud-info-label { bottom: 148px; }
 [data-ui-theme] #npc-bark-container { bottom: 108px; }
+
+/* Health, inside the portrait group (health-ui.js moves it there) */
+[data-ui-theme] #player-hud-buttons #health-ui-container {
+  position: absolute;
+  zoom: 1; /* the inventory strip around it is already zoomed */
+  left: 78px;
+  top: 68px;
+  bottom: auto;
+  transform: none;
+  z-index: 0;
+}
+
+[data-ui-theme] #player-hud-buttons .health-ui-display {
+  gap: 2px;
+  padding: 0;
+}
+
+[data-ui-theme] .health-bar {
+  display: none;
+}
+
+[data-ui-theme][data-health-style="bar"] #player-hud-buttons .health-ui-display {
+  display: none;
+}
+
+[data-ui-theme][data-health-style="bar"] #player-hud-buttons #health-ui-container {
+  left: 60px;
+  top: 72px;
+}
+
+/* The bar: thin bezel, the theme's gauge colours (shared with the NPC bars),
+   notches every fifth like the hearts. The fill starts clear of the ring. */
+[data-ui-theme][data-health-style="bar"] .health-bar {
+  display: block;
+  position: relative;
+  width: 154px;
+  height: 28px;
+  box-sizing: border-box;
+  border-style: solid;
+  border-width: var(--ui-square-px);
+  border-image-source: var(--ui-square-image);
+  border-image-slice: var(--ui-square-slice);
+  border-image-width: var(--ui-square-px);
+  background: var(--ui-bar-track);
+  background-clip: padding-box;
+  image-rendering: pixelated;
+}
+
+.health-bar-track {
+  position: absolute;
+  inset: 0 0 0 10px;
+}
+
+.health-bar-fill {
+  height: 100%;
+  width: 100%;
+  background: linear-gradient(var(--ui-bar-fill-hi) 0 2px, var(--ui-bar-fill) 2px);
+  transition: width 0.25s steps(8, end);
+}
+
+.health-bar-track::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to right, transparent calc(100% - 2px), var(--ui-bar-track) calc(100% - 2px)) 0 0 / 20% 100% repeat-x;
+  pointer-events: none;
+}
+
+/* At a quarter health or less the hearts or bar pulse in the danger colour */
+[data-ui-theme] #health-ui-container.health-low {
+  animation: health-low-pulse 0.9s ease-in-out infinite;
+}
+
+@keyframes health-low-pulse {
+  0%, 100% { filter: none; }
+  50% { filter: drop-shadow(0 0 4px var(--ui-danger)); }
+}
 
 /* The current mode tints the badge */
 [data-ui-theme] #hud-mode-toggle-button.mode-jab { filter: drop-shadow(0 0 4px rgba(0, 204, 255, 0.9)); }

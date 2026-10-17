@@ -1,5 +1,6 @@
 /**
- * Player display settings: UI theme override, HUD size and game zoom.
+ * Player display settings: UI theme override, HUD size, game zoom and how
+ * player health is shown (hearts or a bar).
  *
  * Kept in localStorage, so they belong to this browser rather than the player
  * account. The mission's own theme (breakEscapeConfig.uiTheme, from its
@@ -29,7 +30,12 @@ export const SIZE_STEPS = [
     { value: 2, label: 'Largest' },
 ];
 
-const DEFAULTS = { theme: null, hudStep: 0, zoomStep: 0 };
+export const HEALTH_STYLES = [
+    { value: 'hearts', label: 'Hearts' },
+    { value: 'bar', label: 'Health bar' },
+];
+
+const DEFAULTS = { theme: null, hudStep: 0, zoomStep: 0, healthStyle: 'hearts' };
 
 function read() {
     try {
@@ -63,7 +69,10 @@ export function effectiveTheme() {
 }
 
 export function applyTheme() {
-    document.documentElement.dataset.uiTheme = effectiveTheme();
+    const root = document.documentElement;
+    root.dataset.uiTheme = effectiveTheme();
+    root.dataset.healthStyle = HEALTH_STYLES.some(h => h.value === settings.healthStyle)
+        ? settings.healthStyle : DEFAULTS.healthStyle;
 }
 
 export function updateDisplaySettings(changes) {

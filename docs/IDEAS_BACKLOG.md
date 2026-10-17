@@ -27,6 +27,7 @@ From the PIN cracker fix (2026-10-10), found but not fixed:
 - **Unrouted `api/games_controller.rb#unlock`** (S). Dead code with its own unlock logic; remove it or route it.
 - **Cancelling the PIN pad shows "PIN Rejected"** (S). Cancel should close quietly.
 
+- **Remove the unused `systems/npc-health-bar.js`** (UI themes work, 2026-10-17; S). Nothing imports it; the game's NPC health bars are `ui/npc-health-bars.js` (`core/game.js:23`). Delete it, or fold anything useful from it into the live module.
 - **A "VM launched" event** (m05 fixer; S). Tasks like "Get into the research portal" could complete on real use instead of on flag 1.
 - **`object_unlock_failed` event** (m06 re-review; S). The engine emits nothing when a PIN or password is wrong, so a handler can't react to repeated wrong guesses.
 - **Combat tuning for missions** (m04 playtest; S–M). A heal item or slow regen missions can place; a room leash so a chasing NPC gives up at her own door; pass `maxHP` and `attackCooldown` through from a scenario's hostile config (`parseConfig` drops them today). Fights in sequence are currently hard to survive.

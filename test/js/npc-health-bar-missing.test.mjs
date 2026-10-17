@@ -16,7 +16,8 @@ globalThis.window = {};
 const src = read('ui/npc-health-bars.js')
     .split("'../config/combat-config.js'").join(`'${dataUrl('export const COMBAT_CONFIG = { ui: {} };')}'`)
     .split("'../utils/constants.js'").join(`'${dataUrl('export const overlayDepth = (d) => d;')}'`)
-    .split("'../events/combat-events.js'").join(`'${dataUrl('export const CombatEvents = {};')}'`);
+    .split("'../events/combat-events.js'").join(`'${dataUrl('export const CombatEvents = {};')}'`)
+    .split("'./theme-colours.js'").join(`'${dataUrl('export const healthBarColours = () => ({});')}'`);
 const { NPCHealthBars } = await import(dataUrl(src));
 
 test('hostile NPCs without a bar are found; calm, KO and barred ones are not', () => {

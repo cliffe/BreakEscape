@@ -15,7 +15,7 @@ import MusicController from '../music/music-controller.js';
 import { setHudLabel, clearHudLabel } from './info-label.js';
 import { attacksDisabled } from '../systems/player-combat.js';
 import {
-    UI_THEMES, SIZE_STEPS, getDisplaySettings, updateDisplaySettings, missionTheme,
+    UI_THEMES, SIZE_STEPS, HEALTH_STYLES, getDisplaySettings, updateDisplaySettings, missionTheme,
 } from './display-settings.js';
 
 const PAGES = [
@@ -122,6 +122,10 @@ export class GameMenu {
                 <select data-setting="theme">${optionList(themeOptions, s.theme || '')}</select>
             </label>
             <label class="game-menu-field">
+                <span>Player health</span>
+                <select data-setting="healthStyle">${optionList(HEALTH_STYLES, s.healthStyle)}</select>
+            </label>
+            <label class="game-menu-field">
                 <span>HUD size</span>
                 <select data-setting="hudStep">${optionList(SIZE_STEPS, s.hudStep)}</select>
             </label>
@@ -135,12 +139,14 @@ export class GameMenu {
         page.querySelectorAll('select[data-setting]').forEach(sel => {
             sel.addEventListener('change', () => {
                 const key = sel.dataset.setting;
-                const value = key === 'theme' ? (sel.value || null) : parseInt(sel.value, 10);
+                const value = key === 'theme' ? (sel.value || null)
+                    : key === 'healthStyle' ? sel.value
+                    : parseInt(sel.value, 10);
                 updateDisplaySettings({ [key]: value });
             });
         });
         page.querySelector('.game-menu-reset').addEventListener('click', () => {
-            updateDisplaySettings({ theme: null, hudStep: 0, zoomStep: 0 });
+            updateDisplaySettings({ theme: null, hudStep: 0, zoomStep: 0, healthStyle: 'hearts' });
             this._renderDisplay();
         });
     }

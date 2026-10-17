@@ -6,13 +6,21 @@
 import { COMBAT_CONFIG } from '../config/combat-config.js';
 import { overlayDepth } from '../utils/constants.js';
 import { CombatEvents } from '../events/combat-events.js';
+import { healthBarColours } from './theme-colours.js';
 
 export class NPCHealthBars {
   constructor(scene) {
     this.scene = scene;
-    this.healthBars = new Map(); // npcId -> { background, bar, npcSprite }
+    this.healthBars = new Map(); // npcId -> { graphics, npcSprite, drawnHP }
+    this.colours = healthBarColours();
 
     this.setupEventListeners();
+
+    // The player can change theme from the menu; redraw in the new colours
+    window.addEventListener('be:display-settings-changed', () => {
+      this.colours = healthBarColours();
+      this.healthBars.forEach(hb => { hb.drawnHP = null; });
+    });
 
     console.log('✅ NPC health bars initialized');
   }
@@ -69,35 +77,17 @@ export class NPCHealthBars {
 
     console.log(`🏥 Creating health bar for ${npcId}, state:`, state);
 
-    const width = COMBAT_CONFIG.ui.healthBarWidth;
-    const height = COMBAT_CONFIG.ui.healthBarHeight;
     const offsetY = COMBAT_CONFIG.ui.healthBarOffsetY;
 
-    // Create background (dark gray)
-    const background = this.scene.add.rectangle(
-      npcSprite.x,
-      npcSprite.y + offsetY,
-      width,
-      height,
-      0x333333
-    );
-    background.setDepth(overlayDepth(850));
-    background.setStrokeStyle(1, 0x000000);
-
-    // Create health bar (red to green gradient based on HP)
-    const bar = this.scene.add.rectangle(
-      npcSprite.x,
-      npcSprite.y + offsetY,
-      width,
-      height,
-      0x00ff00
-    );
-    bar.setDepth(overlayDepth(851));
+    // One pixel-art gauge in game pixels, drawn around (0, 0) and moved with the NPC
+    const graphics = this.scene.add.graphics();
+    graphics.setDepth(overlayDepth(850));
+    graphics.setPosition(Math.round(npcSprite.x), Math.round(npcSprite.y + offsetY));
 
     this.healthBars.set(npcId, {
-      background,
-      bar,
-      npcSprite
+      graphics,
+      npcSprite,
+      drawnHP: null
     });
 
     // Initial update
@@ -124,21 +114,41 @@ export class NPCHealthBars {
       console.log(`🏥 Updating ${npcId}: HP=${state.currentHP}/${state.maxHP} (${Math.round(hpPercent * 100)}%)`);
     }
 
-    // Update bar width - shrinks from right side, stays anchored to left
-    const maxWidth = COMBAT_CONFIG.ui.healthBarWidth;
-    const currentWidth = maxWidth * hpPercent;
-    healthBar.bar.setSize(currentWidth, COMBAT_CONFIG.ui.healthBarHeight);
+    if (healthBar.drawnHP === state.currentHP) return;
+    healthBar.drawnHP = state.currentHP;
+    NPCHealthBars.drawGauge(healthBar.graphics, hpPercent, this.colours);
+  }
 
-    // Position bar so it stays left-aligned with background
-    // Background is centered at its position, so offset the bar by half the difference
-    const bgX = healthBar.background.x;
-    const bgLeftEdge = bgX - (maxWidth / 2);
-    const barCenterX = bgLeftEdge + (currentWidth / 2);
-    
-    healthBar.bar.setPosition(barCenterX, healthBar.background.y);
+  /**
+   * The gauge, in the theme's colours (css/ui-themes.css --ui-bar-*): a dark
+   * outline with its corners knocked off, a 1px rim in the theme's accent, the
+   * track, and the fill (shrinking from the right) with a lighter top row.
+   * Drawn around (0, 0) in whole game pixels.
+   */
+  static drawGauge(g, hpPercent, c) {
+    const w = COMBAT_CONFIG.ui.healthBarWidth;
+    const h = COMBAT_CONFIG.ui.healthBarHeight;
+    const x0 = -Math.round(w / 2) - 2;
+    const y0 = -Math.round(h / 2) - 2;
+    const W = w + 4;
+    const H = h + 4;
 
-    // Always use red for NPC health bar
-    healthBar.bar.setFillStyle(0xff0000); // Red
+    g.clear();
+    g.fillStyle(c.outline, 1);
+    g.fillRect(x0 + 1, y0, W - 2, H);
+    g.fillRect(x0, y0 + 1, W, H - 2);
+    g.fillStyle(c.frame, 1);
+    g.fillRect(x0 + 1, y0 + 1, W - 2, H - 2);
+    g.fillStyle(c.track, 1);
+    g.fillRect(x0 + 2, y0 + 2, w, h);
+
+    const fillW = Math.round(w * hpPercent);
+    if (fillW > 0) {
+      g.fillStyle(c.fill, 1);
+      g.fillRect(x0 + 2, y0 + 2, fillW, h);
+      g.fillStyle(c.fillHi, 1);
+      g.fillRect(x0 + 2, y0 + 2, fillW, 1);
+    }
   }
 
   removeHealthBar(npcId) {
@@ -146,8 +156,7 @@ export class NPCHealthBars {
     if (!healthBar) return;
 
     // Destroy graphics
-    if (healthBar.background) healthBar.background.destroy();
-    if (healthBar.bar) healthBar.bar.destroy();
+    if (healthBar.graphics) healthBar.graphics.destroy();
 
     this.healthBars.delete(npcId);
   }
@@ -195,13 +204,13 @@ export class NPCHealthBars {
 
       const offsetY = COMBAT_CONFIG.ui.healthBarOffsetY;
 
-      // Update positions
-      healthBar.background.setPosition(
-        healthBar.npcSprite.x,
-        healthBar.npcSprite.y + offsetY
+      // Follow the NPC, on whole game pixels so the gauge stays crisp
+      healthBar.graphics.setPosition(
+        Math.round(healthBar.npcSprite.x),
+        Math.round(healthBar.npcSprite.y + offsetY)
       );
 
-      // Update health bar (it will recalculate position)
+      // Redraws only when the HP (or theme) changed
       this.updateHealthBar(npcId);
     });
   }

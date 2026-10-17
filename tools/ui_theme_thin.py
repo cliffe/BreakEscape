@@ -14,10 +14,10 @@ screen (the HUD draws these at 2x, the scale the game world uses at 1080p).
 
 frame.png    16x16 9-slice, border FRAME_SLICE[theme] px
 button.png   12x12 9-slice with a filled face, border 3 px
-portrait.png the avatar ring (32 px opening, fits the 32 px headshot) with the
-             action badge ring (28 px opening, fits the hand frames) attached
-             at its lower right; geometry in PORTRAIT below, mirrored in
-             ui-themes.css
+portrait.png the avatar ring, 40x40 (32 px opening, fits the 32 px headshot)
+badge.png    the action badge ring, 34x34 (28 px opening, fits the hand frames).
+             It is a separate image so it hides with the action button on
+             missions that disable combat. Placement is in ui-themes.css.
 """
 import math
 from pathlib import Path
@@ -70,9 +70,8 @@ THEMES = {
 FRAME_SLICE = {'spy': 4, 'cyberpunk': 5, 'general': 4, 'crt': 4, 'eldritch': 4, 'circuit': 4, 'secops': 4}
 
 # Art-pixel geometry of portrait.png (CSS uses twice these)
-PORTRAIT = dict(w=64, h=52,
-                avatar=dict(cx=20, cy=20, opening=32, ring=4),
-                badge=dict(cx=46, cy=34, opening=28, ring=3))
+PORTRAIT = dict(avatar=dict(opening=32, ring=4),
+                badge=dict(opening=28, ring=3))
 
 
 def rgba(c, a=255):
@@ -180,12 +179,10 @@ def draw_ring(im, theme, cx, cy, opening, ring):
             im.putpixel((x, y), rgba(c))
 
 
-def draw_portrait(theme):
-    g = PORTRAIT
-    im = Image.new('RGBA', (g['w'], g['h']), CLEAR)
-    a, b = g['avatar'], g['badge']
-    draw_ring(im, theme, a['cx'], a['cy'], a['opening'], a['ring'])
-    draw_ring(im, theme, b['cx'], b['cy'], b['opening'], b['ring'])
+def draw_ring_image(theme, opening, ring):
+    size = opening + 2 * ring
+    im = Image.new('RGBA', (size, size), CLEAR)
+    draw_ring(im, theme, size / 2, size / 2, opening, ring)
     return im
 
 
@@ -195,8 +192,10 @@ def main(names=None):
         d.mkdir(parents=True, exist_ok=True)
         draw_frame(theme).save(d / 'frame.png')
         draw_button(theme).save(d / 'button.png')
-        draw_portrait(theme).save(d / 'portrait.png')
-        print(f'{d}: frame slice {FRAME_SLICE[theme]}, button slice 3, portrait {PORTRAIT["w"]}x{PORTRAIT["h"]}')
+        a, b = PORTRAIT['avatar'], PORTRAIT['badge']
+        draw_ring_image(theme, a['opening'], a['ring']).save(d / 'portrait.png')
+        draw_ring_image(theme, b['opening'], b['ring']).save(d / 'badge.png')
+        print(f'{d}: frame slice {FRAME_SLICE[theme]}, button slice 3, portrait and badge rings')
 
 
 if __name__ == '__main__':
