@@ -107,13 +107,18 @@ export const CREDITS_THEMES = {
  * optional; without them the overlay keeps its built-in text.
  *   "creditsOverlay": { "operation": "SCHRODINGER", "ticker": ["LINE", "LINE"] }
  * operation fills the header's OPERTN: row (no rotation); ticker replaces the
- * footer ticker (an array is joined with the ██ separators).
+ * footer ticker (an array is joined with the ██ separators). With no operation,
+ * the row takes the mission's display name in capitals when one is given
+ * (fallbackName), so it never shows another mission's code name (2026-10-17).
+ * @param {object} scenario
+ * @param {string} [fallbackName] - the mission's display name
  * @returns {{operation: string|null, ticker: string|null}}
  */
-export function scenarioCreditsOverlay(scenario) {
+export function scenarioCreditsOverlay(scenario, fallbackName) {
     const cfg = scenario?.creditsOverlay;
     const clean = (v) => (typeof v === 'string' && v.trim() ? v.trim() : null);
-    const operation = clean(cfg?.operation);
+    const fallback = clean(fallbackName);
+    const operation = clean(cfg?.operation) || (fallback ? fallback.toUpperCase() : null);
     let ticker = null;
     if (Array.isArray(cfg?.ticker)) {
         const lines = cfg.ticker.map(clean).filter(Boolean);

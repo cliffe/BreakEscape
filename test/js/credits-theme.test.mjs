@@ -88,3 +88,15 @@ test('creditsOverlay: optional operation name and ticker, defaults untouched', (
     assert.deepEqual(T.scenarioCreditsOverlay({ creditsOverlay: { ticker: 'plain text' } }),
         { operation: null, ticker: 'plain text' });
 });
+
+// 2026-10-17: with no creditsOverlay.operation the OPERTN row takes the mission's
+// display name (capitals), so the rotation never names another operation.
+test('creditsOverlay: operation falls back to the mission display name', () => {
+    assert.deepEqual(T.scenarioCreditsOverlay({}, "The Architect's Gambit"),
+        { operation: "THE ARCHITECT'S GAMBIT", ticker: null });
+    assert.deepEqual(T.scenarioCreditsOverlay({ creditsOverlay: { operation: 'GAMBIT' } }, 'The Mole'),
+        { operation: 'GAMBIT', ticker: null }, 'scenario value wins');
+    assert.deepEqual(T.scenarioCreditsOverlay({}, '  '), { operation: null, ticker: null });
+    const bv = readFileSync(join(here, '../../public/break_escape/js/music/bond-visualiser.js'), 'utf8');
+    assert.match(bv, /scenarioCreditsOverlay\(window\.gameScenario, missionName\)/);
+});

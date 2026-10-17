@@ -1489,12 +1489,13 @@ function _applyTheme(opts) {
     const stamp = _overlay.querySelector('.bv-classified');
     if (stamp) stamp.style.display = _themeDef.stamp ? '' : 'none';
 
+    const missionName = window.breakEscapeConfig?.missionDisplayName || window.gameScenario?.scenario_name;
     const t = _themeDef.overlay({
-        missionName: window.breakEscapeConfig?.missionDisplayName || window.gameScenario?.scenario_name,
+        missionName,
         credits:     _lastCredits,
     });
     if (t) _applyOverlayText(t);
-    _applyScenarioOverlay(scenarioCreditsOverlay(window.gameScenario));
+    _applyScenarioOverlay(scenarioCreditsOverlay(window.gameScenario, missionName));
     _themeApplied = _theme;
 }
 
