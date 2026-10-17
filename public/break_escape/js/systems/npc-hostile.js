@@ -3,6 +3,7 @@ import { CombatEvents } from '../events/combat-events.js';
 import { getNPCDirection } from './npc-sprites.js';
 
 const npcHostileStates = new Map();
+const KO_FACINGS = new Set(['down', 'up', 'left', 'right', 'down-left', 'down-right', 'up-left', 'up-right']);
 
 // Hostility and KO set this session or saved before a reload (E-B), so an NPC
 // that turned on the player is still hostile after a reload and a knocked-out
@@ -18,6 +19,9 @@ const restoredPending = new Map();
 // at full health (7.1g, m08 E12): { hostile, ko, hp, maxHP }.
 function recordHostility(npcId, state) {
   const entry = { hostile: !!state.isHostile, ko: !!state.isKO };
+  // The way it fell, so a reload lays it in that death animation's last frame
+  // rather than facing down (m08 confirmation R4: ATHENA fell right, came back down)
+  if (state.isKO && KO_FACINGS.has(state.koFacing)) entry.facing = state.koFacing;
   if (!state.isKO && state.currentHP > 0 && state.currentHP < state.maxHP) {
     entry.hp = state.currentHP;
     entry.maxHP = state.maxHP;
@@ -83,6 +87,7 @@ export function initNPCHostileSystem() {
     getState: (npcId) => getNPCHostileState(npcId),
     damageNPC: (npcId, amount) => damageNPC(npcId, amount),
     isNPCKO: (npcId) => isNPCKO(npcId),
+    getKOFacing: (npcId) => getKOFacing(npcId),
     exportHostility: () => exportHostility(),
     restoreHostility: (saved) => restoreHostility(saved),
     takeRestoredHostility: (npcId) => takeRestoredHostility(npcId),
@@ -121,7 +126,13 @@ export function resetHostilesForRespawn() {
   return reset;
 }
 
-/** { npcId: { hostile, ko, hp?, maxHP? } } for the server (state-sync.js). */
+/** The direction a knocked-out NPC fell facing, or null if not known. */
+export function getKOFacing(npcId) {
+  const state = npcHostileStates.get(npcId);
+  return state?.isKO && KO_FACINGS.has(state.koFacing) ? state.koFacing : null;
+}
+
+/** { npcId: { hostile, ko, hp?, maxHP?, facing? } } for the server (state-sync.js). */
 export function exportHostility() {
   return Object.fromEntries(hostilityRecord);
 }
@@ -147,6 +158,7 @@ export function restoreHostility(saved) {
     if (ko) {
       state.isKO = true;
       state.currentHP = 0;
+      if (KO_FACINGS.has(entry.facing)) state.koFacing = entry.facing;
     } else if (validSavedHP(entry)) {
       state.maxHP = entry.maxHP;
       state.currentHP = entry.hp;
@@ -264,11 +276,15 @@ function damageNPC(npcId, amount) {
   // Check for KO
   if (state.currentHP <= 0) {
     state.isKO = true;
-    recordHostility(npcId, state);
 
     // Get NPC reference for death animation and server sync
     const npc = window.npcManager?.getNPC(npcId);
     const sprite = npc?._sprite || npc?.sprite;
+    // The facing playNPCDeathAnimation reads below, saved with the KO
+    if (sprite) {
+      try { state.koFacing = getNPCDirection(npcId, sprite); } catch (e) { /* no facing */ }
+    }
+    recordHostility(npcId, state);
     
     // Sync NPC KO state to server for persistence
     if (window.RoomStateSync && npc?.roomId) {

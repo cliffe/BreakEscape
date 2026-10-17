@@ -8,7 +8,7 @@ import TTSManager from './tts-manager.js';
 import { phoneBarkText } from '../minigames/phone-chat/phone-chat-speaker.js';
 import { displayDashes } from '../utils/display-dashes.js';
 import { releaseHeldBarks } from './bark-release-policy.js';
-import { workstationPopupOpen, phoneThreadOpenFor } from '../utils/overlay-open.js';
+import { workstationPopupOpen, phoneThreadOpenFor, openPhoneThread, threadTextKey } from '../utils/overlay-open.js';
 import { barkLifetimeMs, barksToTrim, BARK_RESUME_MIN_MS } from './bark-lifetime.js';
 
 export default class NPCBarkSystem {
@@ -144,6 +144,13 @@ export default class NPCBarkSystem {
   showBark(payload = {}) {
     if (!this.container) this.init();
 
+    // A bark repeating a line the open phone thread already shows adds nothing
+    // (m06 confirmation R4 M2)
+    if (this._shownInOpenThread(payload)) {
+      console.debug('[barks] dropped, already in the open thread:', payload.text || payload.message);
+      return null;
+    }
+
     // HOLD POLICY (code in bark-release-policy.js; README_scenario_design.md "Bark notifications").
     // While a person-chat or another full-screen minigame is open, hold the bark (it covered
     // the panel, D5). On release: first in, first out; each bark's conditions are re-checked
@@ -181,6 +188,42 @@ export default class NPCBarkSystem {
    * Is this bark's text also in a phone thread the player can reopen? Only phone NPCs'
    * threads are saved and shown; a person NPC's bark has no copy that outlasts the toast.
    */
+  /** True when the bark's text is a line drawn in the open phone thread. */
+  _shownInOpenThread(payload, thread = openPhoneThread()) {
+    if (!thread || thread.keys.size === 0) return false;
+    const raw = String(payload?.text || payload?.message || '');
+    const contact = (payload?.npcId && this.npcManager?.getNPC?.(payload.npcId))
+      || { id: payload?.npcId, displayName: payload?.npcName };
+    let stripped = raw;
+    try { stripped = phoneBarkText(raw, contact); } catch (e) { /* keep raw */ }
+    return [raw, stripped].some(t => {
+      const k = threadTextKey(t);
+      return !!k && thread.keys.has(k);
+    });
+  }
+
+  /**
+   * Close toasts already on screen that point at the thread just opened: any from
+   * that contact, and any whose text the thread now shows. HaX's fight text barked
+   * before the phone opened stayed beside her open thread (m06 confirmation R4 M2):
+   * the hold only covers barks that arrive while the thread is open.
+   */
+  dismissBarksForOpenThread() {
+    if (!this.container) return 0;
+    const thread = openPhoneThread();
+    if (!thread) return 0;
+    let n = 0;
+    for (const el of this.container.querySelectorAll('.npc-bark')) {
+      if (el._removing) continue;
+      if (el._npcId === thread.npcId
+          || this._shownInOpenThread({ text: el._barkText, npcId: el._npcId }, thread)) {
+        this._removeBark(el);
+        n++;
+      }
+    }
+    return n;
+  }
+
   _hasPersistentCopy(payload) {
     // main.js builds the bark system before the NPC manager and never links them back,
     // so fall back to the global manager rather than waking the other this.npcManager paths
@@ -326,6 +369,11 @@ export default class NPCBarkSystem {
     const contact = (npcId && this.npcManager?.getNPC?.(npcId)) || { id: npcId, displayName: npcName };
     const text = phoneBarkText(payload.text || payload.message || '', contact);
     if (!text) return null;
+    // Checked again here: a queued or released bark can reach this after its thread opened
+    if (this._shownInOpenThread(payload)) {
+      console.debug('[barks] dropped, already in the open thread:', text);
+      return null;
+    }
     const duration = ('duration' in payload) ? payload.duration : 5000;
     const playSound = payload.playSound !== false; // Default true
     
@@ -385,6 +433,8 @@ export default class NPCBarkSystem {
     this._addSwipeGesture(el);
 
     if (typeof payload.stillValid === 'function') el._stillValid = payload.stillValid;
+    el._npcId = npcId || null;
+    el._barkText = payload.text || payload.message || '';
 
     this.container.appendChild(el);
     this.activeBarkCount++;

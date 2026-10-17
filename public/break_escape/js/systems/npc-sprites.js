@@ -194,7 +194,8 @@ export function createNPCSprite(scene, npc, roomData) {
             // "npc-<id>-idle" key, which has no direction: getNPCDirection used to read
             // "idle" from it, found no "death-idle" animation and hid the NPC, so a
             // knocked-out NPC vanished after a reload while its drops stayed.
-            const direction = getNPCDirection(npc.id, sprite);
+            // The way it fell, saved with the KO (npc-hostile.js); older saves have none
+            const direction = window.npcHostileSystem.getKOFacing?.(npc.id) || getNPCDirection(npc.id, sprite);
             const deathAnimKey = koPoseAnimKey(npc.id, direction, (k) => scene.anims.exists(k));
             
             if (deathAnimKey) {

@@ -42,6 +42,10 @@ export function minigameClosedByDamage(withinMs = 1500, now = Date.now()) {
 export function closeMinigameOnDamage(amount, deps = {}) {
   if (typeof amount !== 'number' || !(amount > 0)) return false;
 
+  // The knockout hit: the last "You're being hit! HP 1/100" notice goes now, not
+  // 4 s later over the KO screen (m06 confirmation R4 M1)
+  if (deps.ko === true) dismissPhoneHitNotice();
+
   const framework = deps.framework ?? (typeof window !== 'undefined' ? window.MinigameFramework : null);
   const current = framework?.currentMinigame;
   if (!current || current._ending) return false;
@@ -84,6 +88,24 @@ export function closeMinigameOnDamage(amount, deps = {}) {
 // third of a fight and a screenshot could easily miss it (m06 confirmation R3 N-6-2).
 export const PHONE_HIT_NOTICE_MS = 4000;
 let lastPhoneToast = null;
+
+/**
+ * Take down the phone hit notice, if one is showing. Called when the phone closes
+ * (Esc to fight, or the knockout closing it) and when the KO screen shows: it said
+ * "Close the phone to fight back", which is no longer true then (m06 R4 M1).
+ * @returns {boolean} true if a notice was taken down
+ */
+export function dismissPhoneHitNotice() {
+  const el = lastPhoneToast;
+  lastPhoneToast = null;
+  if (!el) return false;
+  try {
+    el.classList?.remove?.('show');
+    const drop = () => { try { el.parentNode?.removeChild(el); } catch (e) { /* gone */ } };
+    if (typeof setTimeout === 'function') setTimeout(drop, 300); else drop();
+  } catch (err) { /* already gone */ }
+  return true;
+}
 
 function notifyPhoneHit(notify, deps) {
   const health = deps.playerHealth ?? (typeof window !== 'undefined' ? window.playerHealth : null);
@@ -129,6 +151,7 @@ export function playerIsKnockedOut(deps = {}) {
  * @returns {boolean} true if a minigame was closed
  */
 export function closeMinigameForKnockout(deps = {}) {
+  dismissPhoneHitNotice();
   const framework = deps.framework ?? (typeof window !== 'undefined' ? window.MinigameFramework : null);
   const current = framework?.currentMinigame;
   if (!current || current._ending) return false;
@@ -149,4 +172,5 @@ if (typeof window !== 'undefined') {
   window.minigameClosedByDamage = minigameClosedByDamage;
   window.playerIsKnockedOut = playerIsKnockedOut;
   window.closeMinigameForKnockout = closeMinigameForKnockout;
+  window.dismissPhoneHitNotice = dismissPhoneHitNotice;
 }

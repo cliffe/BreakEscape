@@ -35,3 +35,31 @@ export function phoneThreadOpenFor(npcId, win = (typeof window !== 'undefined' ?
     const view = m.ui?.getCurrentView?.();
     return view === undefined || view === 'conversation';
 }
+
+/** Text reduced to lower-case letters and digits, so dashes, quotes and spacing don't matter. */
+export function threadTextKey(text) {
+    return String(text ?? '').toLowerCase().replace(/[^a-z0-9]+/g, '');
+}
+
+/**
+ * The open phone thread: { npcId, keys } where keys is a Set of threadTextKey() for
+ * every line drawn in it, or null when the phone isn't open on a conversation.
+ * Reads the drawn thread (not the stored history), so a text that arrived while
+ * the thread was open, and isn't drawn in it, doesn't count (m06 confirmation R4 M2).
+ */
+export function openPhoneThread(win = (typeof window !== 'undefined' ? window : {}),
+    doc = (typeof document !== 'undefined' ? document : null)) {
+    const m = win.MinigameFramework?.currentMinigame;
+    if (!m || m._ending || m._sceneType !== 'phone-chat' || !m.currentNPCId) return null;
+    const view = m.ui?.getCurrentView?.();
+    if (view !== undefined && view !== 'conversation') return null;
+    const box = m.ui?.elements?.messagesContainer || doc?.getElementById?.('messages-container');
+    const keys = new Set();
+    if (box && typeof box.querySelectorAll === 'function') {
+        for (const el of box.querySelectorAll('.message-text, .transcript, .message-narration')) {
+            const k = threadTextKey(el.textContent);
+            if (k) keys.add(k);
+        }
+    }
+    return { npcId: m.currentNPCId, keys };
+}

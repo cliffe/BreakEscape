@@ -1737,9 +1737,11 @@ module BreakEscape
     end
 
     MAX_NPC_HP = 100_000
+    # Directions a knocked-out NPC can have fallen facing (its death animation's suffix)
+    NPC_FACINGS = %w[down up left right down-left down-right up-left up-right].freeze
 
     # Merge NPC hostility and KO sent by the client ({ npcId => { hostile, ko } },
-    # with hp and maxHP for a hurt NPC; npc-hostile.js exportHostility), so an NPC that turned on the player is
+    # with hp and maxHP for a hurt NPC and facing for a KO'd one; npc-hostile.js exportHostility), so an NPC that turned on the player is
     # still hostile after a reload (E-B). Only NPCs the scenario has are kept.
     # A KO is never undone: once down, an NPC stays down. Does not save!; the
     # caller does.
@@ -1765,6 +1767,13 @@ module BreakEscape
            hp.positive? && hp <= max_hp && max_hp <= MAX_NPC_HP
           record['hp'] = hp
           record['maxHP'] = max_hp
+        end
+        # The way a KO'd NPC fell, so a reload lays it in the same pose (m08 R4).
+        # The first fall's facing is kept.
+        if ko
+          facing = merged.dig(npc_id, 'facing')
+          facing = entry['facing'] unless NPC_FACINGS.include?(facing)
+          record['facing'] = facing if NPC_FACINGS.include?(facing)
         end
         merged[npc_id] = record
       end

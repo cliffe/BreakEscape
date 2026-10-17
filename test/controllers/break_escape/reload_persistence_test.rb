@@ -726,6 +726,30 @@ module BreakEscape
                    scenario_json(game)['savedNpcHostility'])
     end
 
+    # m08 confirmation R4: a KO'd NPC came back lying facing down whichever way it fell.
+    test 'NPC hostility keeps the facing a KO fell in, the first one, and only a known direction' do
+      game = create_game
+      game.scenario_data['rooms']['lobby']['npcs'] = [{ 'id' => 'athena', 'npcType' => 'person' },
+                                                     { 'id' => 'guard', 'npcType' => 'person' },
+                                                     { 'id' => 'clerk', 'npcType' => 'person' }]
+      game.save!
+
+      put sync_state_game_url(game), params: { npcHostility: {
+        'athena' => { hostile: true, ko: true, facing: 'down-right' },
+        'guard' => { hostile: true, ko: true, facing: 'sideways' },
+        'clerk' => { hostile: true, ko: false, facing: 'left' }
+      } }, as: :json
+      put sync_state_game_url(game), params: { npcHostility: {
+        'athena' => { hostile: true, ko: true, facing: 'up' }
+      } }, as: :json
+      assert_response :success
+
+      assert_equal({ 'athena' => { 'hostile' => true, 'ko' => true, 'facing' => 'down-right' },
+                     'guard' => { 'hostile' => true, 'ko' => true },
+                     'clerk' => { 'hostile' => true, 'ko' => false } },
+                   scenario_json(game)['savedNpcHostility'])
+    end
+
     test 'no savedNpcHostility when nothing has turned' do
       assert_nil scenario_json(create_game)['savedNpcHostility']
     end

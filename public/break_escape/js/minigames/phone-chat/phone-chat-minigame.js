@@ -138,7 +138,7 @@ export class PhoneChatMinigame extends MinigameScene {
             const notebookBtn = document.createElement('button');
             notebookBtn.className = 'minigame-button';
             notebookBtn.id = 'minigame-notebook';
-            notebookBtn.innerHTML = '<img src="/break_escape/assets/icons/notes-sm.png" alt="Notepad" class="icon-small"> Add to Notepad';
+            notebookBtn.innerHTML = '<img src="/break_escape/assets/icons/notes.png" alt="Notepad" class="icon-small notepad-btn-icon"> Add to Notepad';
             // Insert before the cancel/close button
             const cancelBtn = this.controlsElement.querySelector('#minigame-cancel');
             if (cancelBtn) {
@@ -384,6 +384,9 @@ export class PhoneChatMinigame extends MinigameScene {
             this.history.markAllRead();
             if (window.updatePhoneBadge && this.phoneId) window.updatePhoneBadge(this.phoneId);
         }
+        // A toast from this contact, or repeating a line now drawn here, is done with
+        // (m06 confirmation R4 M2: HaX's fight text barked before the phone opened)
+        window.barkSystem?.dismissBarksForOpenThread?.();
         
         // Load and start Ink story
         // Prefer Rails API endpoint if storyPath exists (ensures fresh story after path changes)
@@ -572,6 +575,11 @@ export class PhoneChatMinigame extends MinigameScene {
         console.log('🎬 continueStory() called');
         console.trace('Call stack'); // This will show us where continueStory is being called from
 
+        // Held locally: an ink global set mid-continue can open a cutscene that closes
+        // the phone inside continue() (see _keepOutputAfterTeardown)
+        const conversation = this.conversation;
+        const npcId = this.currentNPCId;
+
         // Accumulate messages and tags until we hit choices or end
         const accumulatedMessages = [];
         const accumulatedTags = [];
@@ -579,7 +587,7 @@ export class PhoneChatMinigame extends MinigameScene {
 
         // Keep reading lines until we get choices or the story ends
         while (true) {
-            const result = this.conversation.continue();
+            const result = conversation.continue();
             lastResult = result;
 
             console.log('📖 Story continue result:', {
@@ -624,6 +632,11 @@ export class PhoneChatMinigame extends MinigameScene {
         console.log('📖 Accumulated messages:', accumulatedMessages.length);
         console.log('🏷️ Accumulated tags:', accumulatedTags);
         console.log('📝 Messages detail:', accumulatedMessages);
+
+        if (this.conversation !== conversation) {
+            this._keepOutputAfterTeardown(npcId, conversation, accumulatedMessages, accumulatedTags);
+            return;
+        }
 
         await this._presentOutput(accumulatedMessages, accumulatedTags, lastResult);
     }
@@ -771,11 +784,19 @@ export class PhoneChatMinigame extends MinigameScene {
         // Clear choices
         this.ui.clearChoices();
 
+        // Held locally: the choice's own output can close the phone. An ink line such as
+        // ~ start_debrief_cutscene = true fires the global's event synchronously inside
+        // makeChoice(), its mapping opens the debrief, and the phone is torn down before
+        // makeChoice() returns. this.conversation was then null, so the state wasn't saved
+        // and a reopen offered the taken choice again (m06 confirmation R4 M3).
+        const conversation = this.conversation;
+        const npcId = this.currentNPCId;
+
         // Make choice in Ink story (this also continues and returns the first line)
-        const firstResult = this.conversation.makeChoice(choiceIndex);
+        const firstResult = conversation.makeChoice(choiceIndex);
 
         // Save state immediately so closing mid-animation doesn't allow replaying the choice
-        this.saveStoryState();
+        this._saveStoryStateFor(npcId, conversation);
 
         // Accumulate messages and tags until we hit choices or end
         const accumulatedMessages = [];
@@ -790,7 +811,7 @@ export class PhoneChatMinigame extends MinigameScene {
 
         // Keep reading lines until we get choices or the story ends
         while (lastResult.canContinue && (!lastResult.choices || lastResult.choices.length === 0)) {
-            const result = this.conversation.continue();
+            const result = conversation.continue();
             lastResult = result;
 
             console.log('📖 Story continue after choice:', {
@@ -812,6 +833,11 @@ export class PhoneChatMinigame extends MinigameScene {
             if (result.hasEnded) {
                 break;
             }
+        }
+
+        if (this.conversation !== conversation) {
+            this._keepOutputAfterTeardown(npcId, conversation, accumulatedMessages, accumulatedTags);
+            return;
         }
 
         // Process accumulated game action tags BEFORE the typing animation, for
@@ -888,19 +914,43 @@ export class PhoneChatMinigame extends MinigameScene {
      * Save the current Ink story state to NPC data
      */
     saveStoryState() {
-        if (!this.conversation || !this.currentNPCId) {
+        this._saveStoryStateFor(this.currentNPCId, this.conversation);
+    }
+
+    /** saveStoryState for a given contact and story, usable after the phone has closed. */
+    _saveStoryStateFor(npcId, conversation) {
+        if (!conversation || !npcId) {
             return;
         }
         
-        const npc = this.npcManager.getNPC(this.currentNPCId);
+        const npc = this.npcManager?.getNPC(npcId);
         if (npc) {
-            const state = this.conversation.saveState();
-            npc.storyState = state;
+            const state = conversation.saveState();
+            if (state) npc.storyState = state;
             // Only once the player has opened the chat (not at preload), so an
             // intro's deferred tags have run before its flags reach the server
-            window.npcConversationStateManager?.recordInkVariables?.(this.currentNPCId, this.conversation.engine?.story);
-            console.log('💾 Saved story state for', this.currentNPCId);
+            window.npcConversationStateManager?.recordInkVariables?.(npcId, conversation.engine?.story);
+            console.log('💾 Saved story state for', npcId);
         }
+    }
+
+    /**
+     * The story closed the phone while it was being read: an ink global assignment
+     * fires its global_variable_changed event synchronously inside continue(), and a
+     * mapping on it can open a cutscene, which ends this minigame there and then
+     * (m06: "On my way." -> ~ start_debrief_cutscene = true). Cleanup ran before this
+     * batch's lines were known, so keep them here instead: the lines go to the thread
+     * unread, the story position is saved (so the taken choice isn't offered again),
+     * and the batch's tags still run, with no UI to report to (m06 confirmation R4 M3).
+     */
+    _keepOutputAfterTeardown(npcId, conversation, messages, tags) {
+        console.log(`📱 Phone closed by the story's own output; keeping ${messages.length} line(s) for ${npcId}`);
+        if (npcId && this.npcManager) {
+            messages.filter(m => m && m.trim()).forEach(m => this.npcManager.addMessage(npcId, 'npc', m.trim()));
+        }
+        this._saveStoryStateFor(npcId, conversation);
+        if (window.updatePhoneBadge && this.phoneId) window.updatePhoneBadge(this.phoneId);
+        if (tags && tags.length > 0) processGameActionTags(tags, null);
     }
     
     /**
@@ -1137,6 +1187,10 @@ export class PhoneChatMinigame extends MinigameScene {
         if (this.ui) {
             this.ui.cleanup();
         }
+
+        // "Close the phone to fight back" is done with once the phone is closed
+        // (m06 confirmation R4 M1)
+        window.dismissPhoneHitNotice?.();
         
         this.isConversationActive = false;
         this.conversation = null;
