@@ -1754,6 +1754,23 @@ module BreakEscape
       player_state['npcHostility'] = merged
     end
 
+    MAX_PLAYER_HP = 100_000
+
+    # Save the player's HP sent by the client ({ hp, maxHP }; player-health.js
+    # exportPlayerHealth), so a reload mid-fight isn't a free full heal (m05 E6).
+    # 0 HP (a knockout) is kept as sent; the scenario endpoint doesn't send it
+    # back, so the player wakes at full health. Does not save!; the caller does.
+    def merge_player_health!(incoming)
+      return unless incoming.is_a?(Hash)
+
+      hp = incoming['hp']
+      max_hp = incoming['maxHP']
+      return unless hp.is_a?(Numeric) && max_hp.is_a?(Numeric)
+      return unless max_hp.positive? && max_hp <= MAX_PLAYER_HP && hp >= 0 && hp <= max_hp
+
+      player_state['playerHealth'] = { 'hp' => hp, 'maxHP' => max_hp }
+    end
+
     # Every NPC id the game can have in a room: the scenario's, plus any added
     # to a room during play.
     def scenario_npc_ids

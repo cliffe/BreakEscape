@@ -104,3 +104,42 @@ test('key, PIN and password failure toasts check minigameClosedByDamage', () => 
         assert.match(starters.slice(i - 220, i), /minigameClosedByDamage/, `${msg}: toast guarded`);
     }
 });
+
+// m07 U12 (2026-10-17): a hit leaves the phone open, so HaX's fight texts can be
+// read. Attacks carry on (npc-attack-pause.test.mjs), so the phone is no shield.
+test('a hit leaves the phone open, with one HP notice per few seconds', async () => {
+    const { PHONE_HIT_NOTICE_MS } = await import(pathToFileURL(join(dir, 'interrupt.mjs')).href);
+    const fw = makeFramework();
+    fw.currentMinigame._sceneType = 'phone-chat';
+    fw.currentMinigame.params = {};
+    const notes = [];
+    const notify = (...a) => notes.push(a);
+    assert.equal(closeMinigameOnDamage(4, { framework: fw, notify, now: 5_000_000, hp: 52, maxHP: 100 }), false);
+    assert.ok(fw.currentMinigame, 'still open');
+    assert.deepEqual(fw.ended, []);
+    assert.equal(notes.length, 1);
+    assert.match(notes[0][0], /52\/100/);
+    assert.equal(notes[0][1], 'warning', 'warnings are not held behind an open minigame');
+    closeMinigameOnDamage(4, { framework: fw, notify, now: 5_000_000 + 1000, hp: 48, maxHP: 100 });
+    assert.equal(notes.length, 1, 'throttled');
+    closeMinigameOnDamage(4, { framework: fw, notify, now: 5_000_000 + PHONE_HIT_NOTICE_MS + 1, hp: 44, maxHP: 100 });
+    assert.equal(notes.length, 2);
+});
+
+test('a knockout or a phone cutscene still closes the phone', () => {
+    const fw = makeFramework();
+    fw.currentMinigame._sceneType = 'phone-chat';
+    fw.currentMinigame.params = {};
+    assert.equal(closeMinigameOnDamage(10, { framework: fw, notify: () => {}, ko: true }), true);
+    assert.deepEqual(fw.ended, [false]);
+
+    const fw2 = makeFramework();
+    fw2.currentMinigame._sceneType = 'phone-chat';
+    fw2.currentMinigame.params = { cutscene: true };
+    assert.equal(closeMinigameOnDamage(10, { framework: fw2, notify: () => {} }), true);
+});
+
+test('player-health tells the interrupt when a hit is a knockout', () => {
+    const src = readFileSync(join(here, '../../public/break_escape/js/systems/player-health.js'), 'utf8');
+    assert.match(src, /closeMinigameOnDamage\(amount, \{ ko: state\.currentHP <= 0 \}\)/);
+});

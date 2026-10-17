@@ -344,6 +344,13 @@ module BreakEscape
           filtered['savedNpcHostility'] = @game.player_state['npcHostility']
         end
 
+        # The player's HP, so a reload mid-fight isn't a free full heal (m05 E6).
+        # A save at 0 HP (a knockout) isn't sent: the player wakes at full.
+        saved_hp = @game.player_state['playerHealth']
+        if saved_hp.is_a?(Hash) && saved_hp['hp'].is_a?(Numeric) && saved_hp['hp'].positive?
+          filtered['savedPlayerHealth'] = saved_hp
+        end
+
         # Phone threads (texts, read state, story position) per phone contact.
         if @game.player_state['phoneState'].present?
           filtered['savedPhoneState'] = @game.player_state['phoneState']
@@ -1387,8 +1394,8 @@ module BreakEscape
     # values over newer ones, so they are skipped for it. npcVisibility and
     # phoneState are here too: visibility is latest-wins per NPC (it can be
     # set back to hidden), and a phone entry replaces the saved one whole, so
-    # an older thread would drop newer texts. npcHostility likewise. Returns a
-    # refusal message, or nil.
+    # an older thread would drop newer texts. npcHostility and playerHealth
+    # likewise. Returns a refusal message, or nil.
     def merge_last_write_wins_sections
       if params[:currentRoom]
         room = params[:currentRoom]
@@ -1423,6 +1430,11 @@ module BreakEscape
       # Hostility is latest-wins per NPC (a KO is kept by the merge itself)
       if params[:npcHostility].respond_to?(:to_unsafe_h)
         @game.merge_npc_hostility!(params[:npcHostility].to_unsafe_h)
+      end
+
+      # The player's HP (m05 E6): latest wins, so a stale flush can't undo a hit
+      if params[:playerHealth].respond_to?(:to_unsafe_h)
+        @game.merge_player_health!(params[:playerHealth].to_unsafe_h)
       end
 
       # Notes merge by id, so an edit overwrites the saved copy and a new note

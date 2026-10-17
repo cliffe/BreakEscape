@@ -13,8 +13,15 @@
  *
  * Kept free of imports so it can be tested in isolation.
  *
+ * The phone is the exception (m07 U12, 2026-10-17): a hit leaves it open, with
+ * a notice giving the HP left, so HaX's fight texts can be read mid-fight.
+ * Hostile NPCs keep attacking while it is open (npc-attack-guard.js), so it is
+ * no shield: the player pays for reading in hits, and Esc closes it to fight.
+ * A knockout still closes it, so the KO screen isn't under the phone.
+ *
  * @param {number} amount - damage dealt (only amount > 0 counts)
- * @param {object} [deps] - overridable for tests
+ * @param {object} [deps] - overridable for tests; deps.ko: this hit knocked
+ *   the player out; deps.hp / deps.maxHP: HP left, for the phone notice
  * @returns {boolean} true if a minigame was closed
  */
 // When the last damage close happened (ms). Read by minigameClosedByDamage() so the
@@ -41,6 +48,11 @@ export function closeMinigameOnDamage(amount, deps = {}) {
 
   const notify = deps.notify ?? (typeof window !== 'undefined' ? window.showNotification : null);
 
+  if (current._sceneType === 'phone-chat' && current.params?.cutscene !== true && deps.ko !== true) {
+    notifyPhoneHit(notify, deps);
+    return false;
+  }
+
   // Mark before closing: the failure callbacks run inside complete(false).
   lastDamageCloseAt = typeof deps.now === 'number' ? deps.now : Date.now();
 
@@ -64,6 +76,27 @@ export function closeMinigameOnDamage(amount, deps = {}) {
     console.warn('Damage notice failed:', err);
   }
   return true;
+}
+
+// The phone notice repeats at most this often (hits come every ~2 s).
+export const PHONE_HIT_NOTICE_MS = 3000;
+let lastPhoneNoticeAt = -Infinity;
+
+function notifyPhoneHit(notify, deps) {
+  const now = typeof deps.now === 'number' ? deps.now : Date.now();
+  if (now - lastPhoneNoticeAt < PHONE_HIT_NOTICE_MS) return;
+  lastPhoneNoticeAt = now;
+  const health = deps.playerHealth ?? (typeof window !== 'undefined' ? window.playerHealth : null);
+  const hp = deps.hp ?? health?.getHP?.();
+  const maxHP = deps.maxHP ?? health?.getMaxHP?.();
+  const left = Number.isFinite(hp) && Number.isFinite(maxHP) ? ` HP ${hp}/${maxHP}.` : '';
+  try {
+    if (typeof notify === 'function') {
+      notify(`You're being hit!${left} Close the phone (Esc) to fight back.`, 'warning', '', 2500);
+    }
+  } catch (err) {
+    console.warn('Damage notice failed:', err);
+  }
 }
 
 if (typeof window !== 'undefined') {

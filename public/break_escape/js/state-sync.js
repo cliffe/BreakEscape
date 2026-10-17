@@ -13,7 +13,7 @@ const CLOCK_ONLY_INTERVAL_MS = 5 * 60 * 1000;
 const KEYED_SECTIONS = ['globalVariables', 'npcVisibility', 'npcHostility', 'triggeredEvents', 'npcInkVariables'];
 
 // Lists replaced whole when they change
-const WHOLE_SECTIONS = ['commandBoardLog', 'biometricSamples'];
+const WHOLE_SECTIONS = ['commandBoardLog', 'biometricSamples', 'playerHealth'];
 
 const json = v => JSON.stringify(v);
 
@@ -28,7 +28,8 @@ const json = v => JSON.stringify(v);
  *   shared by the team:  globalVariables, npcVisibility, npcHostility, scenarioClock,
  *                        commandBoardLog, triggeredEvents
  *   per player:          currentRoom, notes, phoneState, npcInkVariables,
- *                        biometricSamples, timedMessages, scenarioBriefShown
+ *                        biometricSamples, timedMessages, scenarioBriefShown,
+ *                        playerHealth
  * buildPayload() builds the two groups separately, in that order.
  *
  * Every request carries clientTs, which only increases within a page. The
@@ -128,6 +129,10 @@ export class StateSync {
 
     // show_scenario_brief "once": the brief popup has been shown in this game
     if (window.gameState?.scenarioBriefShown) out.scenarioBriefShown = true;
+
+    // The player's HP, so a reload mid-fight isn't a free full heal (m05 E6)
+    const playerHealth = window.playerHealth?.exportState?.();
+    if (playerHealth) out.playerHealth = playerHealth;
 
     // Lifted fingerprints, plain fields only, so they survive a reload.
     const biometricSamples = (window.gameState?.biometricSamples || []).map(s => ({
@@ -329,10 +334,10 @@ export class StateSync {
       if (body.length > KEEPALIVE_BODY_LIMIT) {
         // Keep the reload-critical parts: globals, fired one-shot handlers, the timed
         // texts they scheduled, and the phone threads changed since the last sync
-        const { globalVariables, triggeredEvents, timedMessages, phoneState, scenarioClock, npcVisibility, npcHostility, commandBoardLog, clientTs } = payload;
-        body = JSON.stringify({ globalVariables, triggeredEvents, timedMessages, phoneState, scenarioClock, npcVisibility, npcHostility, commandBoardLog, clientTs });
+        const { globalVariables, triggeredEvents, timedMessages, phoneState, scenarioClock, npcVisibility, npcHostility, commandBoardLog, playerHealth, clientTs } = payload;
+        body = JSON.stringify({ globalVariables, triggeredEvents, timedMessages, phoneState, scenarioClock, npcVisibility, npcHostility, commandBoardLog, playerHealth, clientTs });
         if (body.length > KEEPALIVE_BODY_LIMIT) {
-          body = JSON.stringify({ globalVariables, triggeredEvents, timedMessages, scenarioClock, npcVisibility, npcHostility, commandBoardLog, clientTs });
+          body = JSON.stringify({ globalVariables, triggeredEvents, timedMessages, scenarioClock, npcVisibility, npcHostility, commandBoardLog, playerHealth, clientTs });
           if (body.length > KEEPALIVE_BODY_LIMIT) return;
         }
       }

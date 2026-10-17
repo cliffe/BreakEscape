@@ -1637,6 +1637,10 @@ export async function create() {
     // Initialize combat systems
     COMBAT_CONFIG.validate();
     window.playerHealth = initPlayerHealth();
+    // HP saved before a reload (m05 E6); a save at 0 HP comes back as full
+    if (gameScenario?.savedPlayerHealth) {
+        window.playerHealth.restore(gameScenario.savedPlayerHealth);
+    }
     window.npcHostileSystem = initNPCHostileSystem();
     // NPCs that turned hostile or were knocked out before a reload (E-B), before
     // any room's NPCs load; each behavior announces its restored hostility.
@@ -1654,6 +1658,10 @@ export async function create() {
 
     // Initialize UI systems
     window.healthUI = new HealthUI();
+    // Show restored HP (the hearts start full)
+    if (window.playerHealth.getHP() < window.playerHealth.getMaxHP()) {
+        window.healthUI.updateHP(window.playerHealth.getHP(), window.playerHealth.getMaxHP());
+    }
     window.npcHealthBars = new NPCHealthBars(this);
     window.gameOverScreen = new GameOverScreen();
     

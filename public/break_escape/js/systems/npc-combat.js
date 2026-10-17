@@ -6,7 +6,7 @@
 import { COMBAT_CONFIG } from '../config/combat-config.js';
 import { applyKnockback } from '../utils/knockback.js';
 import { getNPCDirection } from './npc-sprites.js';
-import { playerCanBeAttacked, attacksPausedByUI, ATTACK_RESUME_GRACE_MS } from './npc-attack-guard.js';
+import { playerCanBeAttacked, attacksPausedByUI, minigameBlocksAttacks, ATTACK_RESUME_GRACE_MS } from './npc-attack-guard.js';
 
 export class NPCCombat {
   constructor(scene) {
@@ -46,9 +46,11 @@ export class NPCCombat {
       return false;
     }
 
-    // Don't attack while a minigame is active (conversation, combat, etc.),
-    // nor for a moment after it closes, so the player can step away (7.1b)
-    if (window.MinigameFramework && window.MinigameFramework.currentMinigame) {
+    // Don't attack while a minigame is active (conversation, lock, etc.), nor
+    // for a moment after it closes, so the player can step away (7.1b). The
+    // phone is the exception: attacks carry on and a hit doesn't close it
+    // (m07 U12), so it is no free shield.
+    if (minigameBlocksAttacks()) {
       this.lastMinigameOpenAt = Date.now();
       return false;
     }
@@ -153,8 +155,8 @@ export class NPCCombat {
       return;
     }
 
-    // The phone, a conversation or a cutscene opened during the windup: the
-    // swing doesn't land, so the hit doesn't close it (7.1b)
+    // A conversation or a cutscene opened during the windup: the swing
+    // doesn't land, so the hit doesn't close it (7.1b)
     if (attacksPausedByUI()) {
       if (window.attackTelegraph && typeof window.attackTelegraph.hide === 'function') {
         window.attackTelegraph.hide(npcId);
@@ -223,9 +225,9 @@ export class NPCCombat {
       return;
     }
 
-    // The phone, a conversation or a cutscene opened mid-swing: no damage (7.1b)
+    // A conversation or a cutscene opened mid-swing: no damage (7.1b)
     if (attacksPausedByUI()) {
-      console.log(`${npcId} attack held - phone, conversation or cutscene open`);
+      console.log(`${npcId} attack held - conversation or cutscene open`);
       return;
     }
 

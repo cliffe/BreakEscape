@@ -24,7 +24,7 @@
 import { TILE_SIZE } from '../utils/constants.js';
 import { NPCPathfindingManager } from './npc-pathfinding.js';
 import { COMBAT_CONFIG } from '../config/combat-config.js';
-import { hostileMayChase, resolveChaseRange } from './npc-chase-leash.js';
+import { hostileMayChase, resolveChaseRange, shouldCloseInDirectly, CLOSE_IN_MARGIN } from './npc-chase-leash.js';
 
 /**
  * NPCBehaviorManager - Manages all NPC behaviors
@@ -1437,7 +1437,25 @@ class NPCBehavior {
             return true;
         }
 
-        // Always pathfind to chase the player — never walk directly (avoids wall-walking).
+        // Just out of reach (a knockback, a step back) with a clear line: walk
+        // straight in, since a path over a cell or two can come back empty or
+        // already reached, and the NPC then stood off (m04 confirmation N2)
+        if (pathfindingManager && distance <= attackRange + CLOSE_IN_MARGIN &&
+            shouldCloseInDirectly({
+                distance,
+                attackRange,
+                lineOfSight: pathfindingManager.hasWorldPhysicsLineOfSight(hnx, hny, playerPos.x, playerPos.y)
+            })) {
+            this.chasePath = [];
+            this.chasePathIndex = 0;
+            this.sprite.body.setVelocity((dx / distance) * chaseSpeed, (dy / distance) * chaseSpeed);
+            this.direction = this.calculateDirection(dx, dy);
+            this.playAnimation('walk', this.direction);
+            this.isMoving = true;
+            return true;
+        }
+
+        // Otherwise pathfind to chase the player — never walk directly (avoids wall-walking).
         // LOS only tunes how often we refresh the path.
         const currentTime = Date.now();
 

@@ -730,6 +730,38 @@ module BreakEscape
       assert_nil scenario_json(create_game)['savedNpcHostility']
     end
 
+    # m05 E6 (user 2026-10-17): a reload mid-fight was a free full heal.
+    test 'player HP syncs, the latest value wins, and it comes back on load' do
+      game = create_game
+
+      put sync_state_game_url(game), params: { playerHealth: { hp: 64, maxHP: 100 }, clientTs: 2000 }, as: :json
+      put sync_state_game_url(game), params: { playerHealth: { hp: 48, maxHP: 100 }, clientTs: 3000 }, as: :json
+      assert_response :success
+      assert_equal({ 'hp' => 48, 'maxHP' => 100 }, scenario_json(game)['savedPlayerHealth'])
+
+      # A stale flush from the old page doesn't put the older HP back
+      put sync_state_game_url(game), params: { playerHealth: { hp: 90, maxHP: 100 }, clientTs: 2500 }, as: :json
+      assert_equal({ 'hp' => 48, 'maxHP' => 100 }, game.reload.player_state['playerHealth'])
+    end
+
+    test 'player HP: bad values are ignored, and a save at 0 HP loads as full health' do
+      game = create_game
+
+      put sync_state_game_url(game), params: { playerHealth: { hp: 30, maxHP: 100 } }, as: :json
+      [{ hp: 120, maxHP: 100 }, { hp: -5, maxHP: 100 }, { hp: 'lots', maxHP: 100 }, { hp: 10, maxHP: 0 }].each do |bad|
+        put sync_state_game_url(game), params: { playerHealth: bad }, as: :json
+      end
+      assert_equal({ 'hp' => 30, 'maxHP' => 100 }, game.reload.player_state['playerHealth'])
+
+      put sync_state_game_url(game), params: { playerHealth: { hp: 0, maxHP: 100 } }, as: :json
+      assert_equal({ 'hp' => 0, 'maxHP' => 100 }, game.reload.player_state['playerHealth'])
+      assert_nil scenario_json(game)['savedPlayerHealth'], 'a knocked-out player wakes at full health'
+    end
+
+    test 'no savedPlayerHealth before any sync' do
+      assert_nil scenario_json(create_game)['savedPlayerHealth']
+    end
+
     # =========================================================================
     # What a sync costs, and the order syncs apply in (plan A+B)
     # =========================================================================
