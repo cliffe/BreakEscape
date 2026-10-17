@@ -1201,8 +1201,8 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
               "onceOnly": true,
               "setGlobal": { "case_ready_notified": true },
               "unlockAim": "confront_insider",
-              "_comment": "Round 3: 8 s, so it doesn't stack with the vault and print texts; worded to read right after a partial naming too. Pass 5 m1: also shows the last aim, so 'Name your suspect' is on screen once the case is ready.",
-              "sendTimedMessage": { "delay": 8000, "message": "That's both halves: why he'd do it, and proof it's leaving the building. <%= tail %>" }
+              "_comment": "Round 3: 8 s, so it doesn't stack with the vault and print texts; worded to read right after a partial naming too. Pass 5 m1: also shows the last aim, so 'Name your suspect' is on screen once the case is ready. Fixes round 3 (2026-10-17): the front-door reason can now complete the case and the naming in one conversation with Patricia, so the 'Call her' text is skipped if he's named before it lands.",
+              "sendTimedMessage": { "delay": 8000, "message": "That's both halves: why he'd do it, and proof it's leaving the building. <%= tail %>", "skipIfGlobal": "torres_identified" }
             },
 <% end %>
 <% end %>
@@ -1238,15 +1238,15 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
               "eventPattern": "door_unlock_attempt",
               "condition": "data.connectedRoom === 'torres_office' && globalVars.torres_suspected === true",
               "onceOnly": true,
-              "_comment": "Pass 5 regression M4: door_unlock_attempt fires before the lock check, so with the card in hand this used to arrive as the player walked in.",
-              "sendTimedMessage": { "delay": 1500, "message": "Torres' office. IT holds a spare for every office, and Owen won't part with it without a reason.", "skipIfGlobal": "office_card_obtained" }
+              "_comment": "Pass 5 regression M4: door_unlock_attempt fires before the lock check, so with the card in hand this used to arrive as the player walked in. Fixes round 3 (2026-10-17, blind B finding 2): says where the 'reason' comes from (Patricia's say-so), which is what Owen's request_office_card actually checks.",
+              "sendTimedMessage": { "delay": 1500, "message": "Torres' office. Owen holds IT's spare, and he hands it over on Patricia's say-so. If she hasn't messaged him yet, ask her.", "skipIfGlobal": "office_card_obtained" }
             },
             {
-              "_comment": "Round 3 (F5): before suspicion there is no Owen ask yet, so the bark doesn't name him or promise one.",
+              "_comment": "Round 3 (F5): before suspicion there is no Owen ask yet, so the bark doesn't name him or promise one. Fixes round 3 (2026-10-17, blind B finding 2): 'a reason Owen can write in his log' sent the tester to Owen, who had nothing to offer; the reason is a name put to Patricia, so the bark says so. Owen's new 'spare cards' topic says the same.",
               "eventPattern": "door_unlock_attempt",
               "condition": "data.connectedRoom === 'torres_office' && globalVars.torres_suspected !== true",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 1500, "message": "Office keycard. IT holds a spare for every office. You'd need a reason Owen can write in his log.", "skipIfGlobal": "office_card_obtained" }
+              "sendTimedMessage": { "delay": 1500, "message": "Office keycard. IT holds a spare for every office, but searching someone's desk is Security's call. Tell Patricia who you suspect, and why.", "skipIfGlobal": "office_card_obtained" }
             },
             {
               "_comment": "PASS 3 P5/P7: door_unlock_attempt fires before the lock check (unlock-system.js:110-118), so the bark is worded to be true whether or not the player already has the password.",

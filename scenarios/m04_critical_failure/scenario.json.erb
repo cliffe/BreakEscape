@@ -1238,6 +1238,23 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
               "cooldown": 0,
               "setGlobal": { "static_engaged": false }
             },
+            <%# Round 3 (2026-10-17, CONFIRM_R2 N2): the hub has no fight topic, so the
+                phone advice the other missions give (m03, m05-m08: get clear before
+                you read your phone) had nowhere to appear. One text, the first time
+                the gate guard or an operative turns hostile (not a reload's restore).
+                Voltage is left out: his fight is the trigger race, where HaX says
+                "Don't let him reach that bench", and "get clear" would contradict it.
+                One mapping per NPC (the condition evaluator takes no parentheses or
+                arrays); fight_phone_texted keeps it to one text a game. %>
+<% %w[security_guard operative_cipher operative_relay operative_static].each do |hostile_id| %>
+            {
+              "eventPattern": "npc_hostile_state_changed",
+              "condition": "data.npcId === '<%= hostile_id %>' && data.isHostile === true && data.restored !== true && globalVars.fight_phone_texted !== true",
+              "onceOnly": true,
+              "setGlobal": { "fight_phone_texted": true },
+              "sendTimedMessage": { "delay": 5500, "message": "They keep swinging while you're on this phone. Get clear before you read it, or stand and fight: Q for fists, then E or click when they're in front." }
+            },
+<% end %>
             <%# Playtest D7: the three optional methodology tasks never ticked.
                 Each is completed by the flag its step produces: the scan finds the
                 exposed status page (flag 1), enumeration finds the FTP drop (flag
@@ -2961,6 +2978,7 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
         Credits: blackout_named (the player has heard Blackout's name). %>
     "guard_admitted": false,
     "guard_hostile": false,
+    "fight_phone_texted": false,
     "cipher_engaged": false,
     "static_engaged": false,
     "static_stood_aside": false,
