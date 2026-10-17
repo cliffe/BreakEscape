@@ -128,3 +128,263 @@ No wrong pronoun, no wrong place, no contradiction with the player's actions in 
 - m06 injection tested with `turn_double_agent` and `public_exposure` only. The arrest, knocked-out and killed variants were not run in the browser.
 - The m06 puzzle chain was assisted (known codes, supplied flags). The conclusion itself was the game's own.
 - `new-game.rb --imports=latest` was tried once (m07); the other missions were checked with injected files only.
+
+## Round 2
+
+Question answered: **plumbing** for the two debrief lines Round 1 could not reach (check 7). Both missions were played from the first screen to their closing debrief on the keyless :3001 server, headless, with injected imports. Date of the run: 2026-10-17, evening.
+
+### Method
+
+- Games were made with `PLAYTEST_PORT=3001 BREAK_ESCAPE_STANDALONE=true bin/rails runner tools/playtest/new-game.rb <mission> --imports=<file|none>`. The import files and the `new-game` output are in the scratchpad (`confirm-r4/carry/imp_*.json`, `imp4_*.json`, `newgame_*.txt`).
+- Each mission was played once by hand on a "leader" game, one command per tool call, then the same route was sent to the other variants in lockstep (same command, every game, stop on the first failure). The variants differ only in their imports, so the line read is the only thing that changes. Three m02 games and four m04 games ran side by side, one browser each.
+- Dialogue was read from the page's own person-chat state (`mg getState`, the `dialogue` object), not from the ink.
+- The standalone server has no VMs, so every VM flag was submitted as `<flag:N>` from the seeded XML ("flag supplied").
+- Time to reach the debrief on the leader: m02 about 8 minutes of game time (created 22:44:15, debrief opened about 22:52, ~110 harness commands); m04 about 13 minutes for all four games (created 23:04:54, debrief 23:17).
+
+### Pass/fail table
+
+| # | Check | Result | Evidence |
+|---|---|---|---|
+| 7a-1 | m02 debrief, `m01_found_casualty_projections: true` (game 2682) | PASS | line below; log seq 521 |
+| 7a-2 | m02 debrief, `m01_player_launched_attack: true` (game 2683) | PASS | log seq 537 |
+| 7a-3 | m02 debrief, nothing imported (game 2684) | PASS | log seq 489 |
+| 7a-4 | m02 `getState().importedGlobals` | PASS | four entries per game; `found` true only for the injected ones; `sourceGameId` null (injected, not looked up) |
+| 7a-5 | m02 reload once per run, line the same afterwards | PASS for 2683 and 2684 (reloaded in the Boardroom, before the debrief, imports and line unchanged). **NOT CONFIRMED for 2682** (reloaded mid-debrief, see Findings F1) | 2683 reload at seq 374, line at 537; 2684 reload at seq 342, line at 489 |
+| 7b-1 | m04 debrief, `m03_danny_fate: protected` (game 2693) | PASS | log seq 687 |
+| 7b-2 | m04 debrief, `m03_danny_fate: left` (game 2694) | PASS | seq 663 |
+| 7b-3 | m04 debrief, `m03_danny_fate: ko` with `m03_danny_ko: true` (game 2695) | PASS | seq 655 |
+| 7b-4 | m04 debrief, nothing imported (game 2696) | PASS | seq 651: no Danny line, the Task Force Null lines run straight into the choice |
+| 7b-5 | m04 `getState().importedGlobals` | PASS | `m03_danny_fate`, `m03_danny_ko`, `m03_victoria_fate` with `found` matching the injected file; `sourceGameId` null |
+| 7b-6 | m04 reload once per run | Done mid-debrief on 2693 and 2694 (imports unchanged afterwards, `m03_danny_fate` still `protected` / `left`); debrief is not replayable (F1) so the line could not be re-read | |
+| 7-c | Lines read right in context | PASS (two small notes, F4 and F5) | below |
+
+Not run: `m03_danny_fate: exposed` (same code path as `protected`, string compare), the unimported-but-`m01_final_choice` variants of m02, and a reload before the m04 debrief.
+
+### Lines, quoted from the page
+
+**m02, closing debrief.** HaX, after the player picks "This was ENTROPY again – like Derek's cell at Viral Dynamics." The line before and after is the same in all three games.
+
+> Agent HaX: Yes. ENTROPY. The same network that ran Social Fabric out of Viral Dynamics.
+> **[line under test]**
+> Agent HaX: Ghost will have done the same sums. Different cell, different weapon, identical arithmetic.
+
+| Game | Imports | Line under test (verbatim) |
+|---|---|---|
+| 2682 | `m01_found_casualty_projections` true | "Derek Lawson kept casualty projections. You found the spreadsheet yourself: how many Operation Shatter would kill, signed off in advance." |
+| 2683 | `m01_player_launched_attack` true | "Derek Lawson kept casualty projections. You let Operation Shatter launch, and the count is landing inside his range." |
+| 2684 | none | "Derek Lawson kept casualty projections. A spreadsheet of how many Operation Shatter would kill, approved before he pulled the trigger." |
+
+All three match the ink (`m02_closing_debrief.ink`, the `q_entropy_link` knot) word for word. The launched branch wins over the found branch when both are true (ink order), which is what the comment says. Each reads as one continuous HaX paragraph. The unimported branch is the original line and reads fine on its own; it does not mention the player, so there is no contradiction for a player who never played m01.
+
+**m04, closing debrief.** HaX, `debrief_task_force_announcement`, directly after "He's calling it Task Force Null. Your name's on his list."
+
+| Game | Imports | Line under test (verbatim) |
+|---|---|---|
+| 2693 | `m03_danny_fate` protected | "Danny Foster's statement goes in Task Force Null's first file. You gave him a way in at WhiteHat, and he hasn't stopped talking since." |
+| 2694 | `m03_danny_fate` left | "Danny Foster isn't in Task Force Null's first file. You left the choice with him at WhiteHat, and his phone is still off." |
+| 2695 | `m03_danny_fate` ko, `m03_danny_ko` true | "Danny Foster's statement goes in Task Force Null's first file. You knocked him out at WhiteHat. He talked once he came round." |
+| 2696 | none | (no line) HaX goes from "He's calling it Task Force Null. Your name's on his list." straight to the player's choices ("What would Task Force Null do?") |
+
+All three variants match the ink. The "ko" branch fires on `m03_danny_ko or m03_danny_fate == "ko"` and read correctly with both set. The unimported branch is silent and reads smoothly: the two lines before it stand on their own and the choice menu follows.
+
+### Assisted (and whether the debrief line depends on it)
+
+| What was assisted | Where | Does the line depend on it? |
+|---|---|---|
+| Import values injected through `new-game.rb --imports=<file>` (no m01 or m03 run existed); `sourceGameId` is therefore null | all seven games | **Yes, this is the input under test.** The lookup of a real earlier run was covered in Round 1 (m06 to m07) and is not re-tested here |
+| VM flags submitted as `<flag:N>` from the seeded XML (no VM in standalone) | m02 and m04 flag station | No |
+| `bootstrap` auto-picked the opening briefing choices | all seven games | No (the m02 briefing line from m01 was not the target) |
+| m02: Boardroom PIN `0417` typed from the walkthrough, Kim's desk diary never read. m02: Reeves never named (`unmask_identify` open), so the press-terminal ambush path ran | m02 | No |
+| m02: console choice was "Ransom Payment" (after refusing Ghost's offer); the debrief branch on `paid_ransom` was not under test | m02 | No |
+| m04: `mg completeLockpick` on the OptiGrid tool case (picking cannot be driven) | m04 | No |
+| m04: fingerprint kit used the `getState().debug` values (`printCentre` 74,64; pattern `loop`) to place the find click and pick "Loop", then dusted, lifted and mounted by hand | m04 | No |
+| m04: RFID flipper menu items (`Saved`, `Level 1`, `Emulate`) and the ESD guard, button and confirm buttons clicked through the DOM with `eval`; the title screen was moved on with a synthetic Enter keydown after a reload; the Resume button was clicked through the DOM | m04, m02 | No |
+| m04: Cipher, Relay and Static were punched for real by the `playerCombat` bot (copied from `m04-final-check-C-2330.jsonl`, `fight.sh` in the scratchpad). **No `debugKO` or `damageNPC` anywhere.** Voltage was arrested through the dialogue ("Step away from the bench"), not fought. The cloned Level 2 card was not needed: HaX relayed a "Workshop Keycard (relayed copy)" after Relay went down | m04 | No |
+
+### Earned-secrets table
+
+| Secret | Value used | In-game source | Earned? |
+|---|---|---|---|
+| m02 IT override key | (item) | Bernie, dialogue reward | yes |
+| m02 server room keycard | (item) | Gary, rapport route | yes |
+| m02 Gary's reused password | not typed | Sticky note read | n/a |
+| m02 `Hospital1987`, flags 1-4 | `<flag:N>` | VM challenge | **no, flag supplied** |
+| m02 Boardroom PIN | `0417` | Kim's desk diary / Kim's dialogue | **no, value known, source not read** |
+| m04 Level 1 card | cloned | Vance, cover route | yes |
+| m04 Level 2 workshop access | relayed copy card | Relay KO, HaX text | yes |
+| m04 flags 1-4 | `<flag:N>` | VM challenge | **no, flag supplied** |
+| m04 Vance's print | lifted, Loop, Robert Vance | Hall 1 duty panel, kit from the tool case | partly (find click and pattern from `getState().debug`, tool case via `completeLockpick`) |
+
+The rows marked "no" are the boundary of what the runs prove: the VM-dependent steps were exercised, not tested. Neither is on the path of the lines under test.
+
+### Reload
+
+- **m02, games 2683 and 2684:** `sync`, `location.reload()`, Resume clicked through the DOM, title screen moved on with Enter, at the Boardroom (before the comms terminal). Imports intact (`m01_player_launched_attack` true / all false), inventory and tasks kept, and the debrief then showed the same lines as above. The player is put back in the start room (`reception_lobby`) after Resume, so the route to the Boardroom had to be walked again.
+- **m02, game 2682 and m04, games 2693 and 2694:** reloaded in the middle of the debrief. After Resume the page goes straight to the end-of-mission credits and the debrief does not replay (`debrief_played` / `mission_complete` already true). The game then concludes (`status=completed`). So these debriefs are **not replayable** after a reload and the line cannot be re-read; imports were unchanged (`getState().importedGlobals`, `m03_danny_fate`).
+
+### verify-run output
+
+Session logs are in the scratchpad (`/tmp/claude-1000/-home-cliffe-Files-Projects-Code-BreakEscape-BreakEscape/d6b8f541-8b07-49dd-af31-499f27c257e9/scratchpad/confirm-r4/carry/`). Long lines ("NPCs met", "globals set") are cut at 260 characters in my copy; the rest is verbatim. Every game also read `status=completed` with a `mission_concluded_at` after the closing `sync`.
+
+| Game | Mission | Imports | Session log |
+|---|---|---|---|
+| 2682 | m02 | found_casualty_projections | `m02-2682-session.jsonl` (547 lines) |
+| 2683 | m02 | player_launched_attack | `m02-2683-session.jsonl` (814 lines) |
+| 2684 | m02 | none | `m02-2684-session.jsonl` (766 lines) |
+| 2693 | m04 | danny_fate protected | `m04-2693-session.jsonl` (740 lines) |
+| 2694 | m04 | danny_fate left | `m04-2694-session.jsonl` (716 lines) |
+| 2695 | m04 | danny_fate ko, danny_ko | `m04-2695-session.jsonl` (760 lines) |
+| 2696 | m04 | none | `m04-2696-session.jsonl` (756 lines) |
+
+
+Game 2682:
+
+```
+game            2682  (mission 46)
+created         2026-10-17 22:44:15 UTC
+last write      2026-10-17 23:00:25 UTC
+played for      969s of wall clock
+current room    "reception_lobby"
+unlocked rooms  12: reception_lobby, ward_vestibule, ward_approach, hospital_ward, ward_hall, office_corridor, staff_room, dr_kim_office, it_department, security_office, server_room, conference_room
+unlocked objs   1: entropy_staging_cache
+inventory       8: Your Phone, Lock Pick Kit, Notepad, IT Department Override Key, Visitor Badge (Countersigned), Server Room Keycard, Gary's Password Sticky Note, Verified Restore Manifest
+NPCs met        17: opening_briefing_cutscene, director_netherton, agent_nightshade, receptionist, agent_0x99, ghost, closing_debrief_trigger, ward_nurse, roaming_ward_nurse, patient_bed4, patient_bed2, patient_bed5, security_guard_patrol, dr_sarah_kim, gary_w
+flags submitted 4: flag{m02_ransomed_trust_hospital_backup_server_1_25da41}, flag{m02_ransomed_trust_hospital_backup_server_2_f8a77c}, flag{m02_ransomed_trust_hospital_backup_server_3_4d3913}, flag{m02_ransomed_trust_hospital_backup_server_4_f8a466}
+globals set     57: advised_board_pay, awaiting_ambush, backdoor_fully_exploited, backup_recovery_source, backup_restore_initiated, bernie_gave_key, bernie_trusts_player, bernie_vouched, briefing_played, cover_burned, cover_restored, debrief_played, decoded_ra
+
+VERDICT: progress recorded — 11 rooms beyond the first, 1 objects unlocked, 4 flags submitted.
+Cross-check the specifics above against the report.
+```
+
+Game 2683:
+
+```
+game            2683  (mission 46)
+created         2026-10-17 22:44:17 UTC
+last write      2026-10-17 23:03:49 UTC
+played for      1172s of wall clock
+current room    "reception_lobby"
+unlocked rooms  12: reception_lobby, ward_vestibule, ward_approach, hospital_ward, ward_hall, office_corridor, staff_room, dr_kim_office, it_department, security_office, server_room, conference_room
+unlocked objs   1: entropy_staging_cache
+inventory       8: Your Phone, Lock Pick Kit, Notepad, IT Department Override Key, Visitor Badge (Countersigned), Server Room Keycard, Gary's Password Sticky Note, Verified Restore Manifest
+NPCs met        17: opening_briefing_cutscene, director_netherton, agent_nightshade, receptionist, agent_0x99, ghost, closing_debrief_trigger, ward_nurse, roaming_ward_nurse, patient_bed4, patient_bed2, patient_bed5, security_guard_patrol, dr_sarah_kim, gary_w
+flags submitted 4: flag{m02_ransomed_trust_hospital_backup_server_1_ce3a2b}, flag{m02_ransomed_trust_hospital_backup_server_2_f32553}, flag{m02_ransomed_trust_hospital_backup_server_3_96eeef}, flag{m02_ransomed_trust_hospital_backup_server_4_0a70cd}
+globals set     58: advised_board_pay, awaiting_ambush, backdoor_fully_exploited, backup_recovery_source, backup_restore_initiated, bernie_gave_key, bernie_trusts_player, bernie_vouched, briefing_played, cover_burned, cover_restored, debrief_played, decoded_ra
+
+VERDICT: progress recorded — 11 rooms beyond the first, 1 objects unlocked, 4 flags submitted.
+Cross-check the specifics above against the report.
+```
+
+Game 2684:
+
+```
+game            2684  (mission 46)
+created         2026-10-17 22:44:19 UTC
+last write      2026-10-17 23:03:49 UTC
+played for      1170s of wall clock
+current room    "reception_lobby"
+unlocked rooms  12: reception_lobby, ward_vestibule, ward_approach, hospital_ward, ward_hall, office_corridor, staff_room, dr_kim_office, it_department, security_office, server_room, conference_room
+unlocked objs   1: entropy_staging_cache
+inventory       8: Your Phone, Lock Pick Kit, Notepad, IT Department Override Key, Visitor Badge (Countersigned), Server Room Keycard, Gary's Password Sticky Note, Verified Restore Manifest
+NPCs met        17: opening_briefing_cutscene, director_netherton, agent_nightshade, receptionist, agent_0x99, ghost, closing_debrief_trigger, ward_nurse, roaming_ward_nurse, patient_bed4, patient_bed2, patient_bed5, security_guard_patrol, dr_sarah_kim, gary_w
+flags submitted 4: flag{m02_ransomed_trust_hospital_backup_server_1_1d3bc6}, flag{m02_ransomed_trust_hospital_backup_server_2_775ce7}, flag{m02_ransomed_trust_hospital_backup_server_3_a66e87}, flag{m02_ransomed_trust_hospital_backup_server_4_519cd1}
+globals set     56: advised_board_pay, awaiting_ambush, backdoor_fully_exploited, backup_recovery_source, backup_restore_initiated, bernie_gave_key, bernie_trusts_player, bernie_vouched, briefing_played, cover_burned, cover_restored, debrief_played, decoded_ra
+
+VERDICT: progress recorded — 11 rooms beyond the first, 1 objects unlocked, 4 flags submitted.
+Cross-check the specifics above against the report.
+```
+
+Game 2693:
+
+```
+game            2693  (mission 48)
+created         2026-10-17 23:04:54 UTC
+last write      2026-10-17 23:18:24 UTC
+played for      810s of wall clock
+current room    "main_entrance"
+unlocked rooms  7: main_entrance, operations_office, scada_control_room, battery_hall_1, battery_hall_2, engineering_workshop, plant_room
+unlocked objs   1: optigrid_tool_case
+inventory       9: Your Phone, RFID Cloner, Lock Pick Kit, Grid Regulator Credentials, CyberChef Workstation, Notepad, Workshop Keycard (relayed copy), Fingerprint Kit, OptiGrid Job Card #4782 (back page)
+NPCs met        12: opening_briefing_cutscene, director_netherton, agent_nightshade, security_guard, agent_0x99, robert_vance_phone, agent_0x99_debrief, robert_vance, operative_cipher, operative_relay, voltage, operative_static
+flags submitted 4: flag{m04_critical_failure_bms_jump_server_1_b39dae}, flag{m04_critical_failure_bms_jump_server_2_86a141}, flag{m04_critical_failure_bms_jump_server_3_d310a3}, flag{m04_critical_failure_bms_jump_server_4_852dca}
+globals set     51: all_flags_in, anomaly_detected, attack_mechanism_known, attack_prevented, blackout_named, briefing_played, cell_alerted, checkpoint_passed, cipher_engaged, clock_started, crew_hint_texted, debrief_started, disclosure_choice, distcc_guide_of
+
+VERDICT: progress recorded — 6 rooms beyond the first, 1 objects unlocked, 4 flags submitted.
+Cross-check the specifics above against the report.
+```
+
+Game 2694:
+
+```
+game            2694  (mission 48)
+created         2026-10-17 23:04:56 UTC
+last write      2026-10-17 23:18:25 UTC
+played for      809s of wall clock
+current room    "main_entrance"
+unlocked rooms  7: main_entrance, operations_office, scada_control_room, battery_hall_1, battery_hall_2, engineering_workshop, plant_room
+unlocked objs   1: optigrid_tool_case
+inventory       9: Your Phone, RFID Cloner, Lock Pick Kit, Grid Regulator Credentials, CyberChef Workstation, Notepad, Workshop Keycard (relayed copy), Fingerprint Kit, OptiGrid Job Card #4782 (back page)
+NPCs met        12: opening_briefing_cutscene, director_netherton, agent_nightshade, security_guard, agent_0x99, robert_vance_phone, agent_0x99_debrief, robert_vance, operative_cipher, operative_relay, voltage, operative_static
+flags submitted 4: flag{m04_critical_failure_bms_jump_server_1_84b9d5}, flag{m04_critical_failure_bms_jump_server_2_962676}, flag{m04_critical_failure_bms_jump_server_3_47f036}, flag{m04_critical_failure_bms_jump_server_4_8a1c31}
+globals set     51: all_flags_in, anomaly_detected, attack_mechanism_known, attack_prevented, blackout_named, briefing_played, cell_alerted, checkpoint_passed, cipher_engaged, clock_started, crew_hint_texted, debrief_started, disclosure_choice, distcc_guide_of
+
+VERDICT: progress recorded — 6 rooms beyond the first, 1 objects unlocked, 4 flags submitted.
+Cross-check the specifics above against the report.
+```
+
+Game 2695:
+
+```
+game            2695  (mission 48)
+created         2026-10-17 23:04:57 UTC
+last write      2026-10-17 23:17:51 UTC
+played for      774s of wall clock
+current room    "main_entrance"
+unlocked rooms  7: main_entrance, operations_office, scada_control_room, battery_hall_1, battery_hall_2, engineering_workshop, plant_room
+unlocked objs   1: optigrid_tool_case
+inventory       9: Your Phone, RFID Cloner, Lock Pick Kit, Grid Regulator Credentials, CyberChef Workstation, Notepad, Workshop Keycard (relayed copy), Fingerprint Kit, OptiGrid Job Card #4782 (back page)
+NPCs met        12: opening_briefing_cutscene, director_netherton, agent_nightshade, security_guard, agent_0x99, robert_vance_phone, agent_0x99_debrief, robert_vance, operative_cipher, operative_relay, voltage, operative_static
+flags submitted 4: flag{m04_critical_failure_bms_jump_server_1_e71075}, flag{m04_critical_failure_bms_jump_server_2_3ba111}, flag{m04_critical_failure_bms_jump_server_3_e8ba5a}, flag{m04_critical_failure_bms_jump_server_4_871d03}
+globals set     52: all_flags_in, anomaly_detected, attack_mechanism_known, attack_prevented, blackout_named, briefing_played, cell_alerted, checkpoint_passed, cipher_engaged, clock_started, crew_hint_texted, debrief_started, disclosure_choice, distcc_guide_of
+
+VERDICT: progress recorded — 6 rooms beyond the first, 1 objects unlocked, 4 flags submitted.
+Cross-check the specifics above against the report.
+```
+
+Game 2696:
+
+```
+game            2696  (mission 48)
+created         2026-10-17 23:04:59 UTC
+last write      2026-10-17 23:17:50 UTC
+played for      771s of wall clock
+current room    "main_entrance"
+unlocked rooms  7: main_entrance, operations_office, scada_control_room, battery_hall_1, battery_hall_2, engineering_workshop, plant_room
+unlocked objs   1: optigrid_tool_case
+inventory       9: Your Phone, RFID Cloner, Lock Pick Kit, Grid Regulator Credentials, CyberChef Workstation, Notepad, Workshop Keycard (relayed copy), Fingerprint Kit, OptiGrid Job Card #4782 (back page)
+NPCs met        12: opening_briefing_cutscene, director_netherton, agent_nightshade, security_guard, agent_0x99, robert_vance_phone, agent_0x99_debrief, robert_vance, operative_cipher, operative_relay, voltage, operative_static
+flags submitted 4: flag{m04_critical_failure_bms_jump_server_1_658734}, flag{m04_critical_failure_bms_jump_server_2_80ae83}, flag{m04_critical_failure_bms_jump_server_3_dac495}, flag{m04_critical_failure_bms_jump_server_4_1d5852}
+globals set     51: all_flags_in, anomaly_detected, attack_mechanism_known, attack_prevented, blackout_named, briefing_played, cell_alerted, checkpoint_passed, cipher_engaged, clock_started, crew_hint_texted, debrief_started, disclosure_choice, distcc_guide_of
+
+VERDICT: progress recorded — 6 rooms beyond the first, 1 objects unlocked, 4 flags submitted.
+Cross-check the specifics above against the report.
+```
+
+### Findings
+
+| # | Severity | Finding | Where |
+|---|---|---|---|
+| F1 | minor (known, recorded so nobody expects a replay) | A reload in the middle of either debrief skips the rest of it: after Resume the credits play at once and the mission concludes. The debrief cannot be replayed and the carry-over line cannot be re-read after a reload at that point. This is the documented design (the `debrief_played` backstop comment in m02's `scenario.json.erb`); the two lines are safe because a reload before the debrief starts leaves the imports and the line unchanged (m02 games 2683 and 2684). | games 2682, 2693, 2694 |
+| F2 | minor (reload) | After a reload and Resume the player is placed in the first room (`reception_lobby` / `main_entrance`) rather than where they stood, so a mid-mission reload costs a walk back. Inventory, rooms and tasks are kept. Not related to carry-over. | games 2683, 2684 |
+| F3 | minor (harness) | `enter` from `office_corridor` to `staff_room` and from `staff_room` to `dr_kim_office` clicks the neighbouring door instead (Security Office lockpicking, Boardroom PIN) because the doors sit within the click radius. `moveTo` onto the doorway worked as a workaround. `interact` on an encrypted terminal and on the recovery console also reports `ok:false` with `mismatch:true, reason:"wrong-target-opened"` although the right minigame opened (log seq 101). | m02 games 2682-2684 |
+| F4 | minor (wording, optional) | m02, launched branch: "the count is landing inside his range" is slightly abstract on its own. A player who launched the attack in m01 has seen the count; a player who only skimmed may not connect "his range" to the projections spreadsheet named in the same sentence. Reads correctly in context, so this is taste only. | game 2683 |
+| F5 | minor (wording, optional) | m04, `protected` / `ko` / `exposed` lines open "Danny Foster's statement ..." with no lead-in, so the player has to remember who Danny is from m03. Fine for anyone who played m03 (the only players who see the line), but a player who imported only `victoria_fate` sees nothing, which is correct. | games 2693, 2695 |
+
+0 blockers, 0 majors, 5 minors (1 known design behaviour, 1 reload, 1 harness, 2 optional wording).
+
+### Assumptions and limits
+
+- Assumed the lookup of a real earlier run was already covered by Round 1; here the imports were injected, so `sourceGameId` is null in every game.
+- m04 variants `exposed` and `m03_victoria_fate` other than `recruited` were not run. The m04 line does not read `victoria_fate`.
+- The m04 run uses the "arrest" ending for Voltage, so the debrief opener was "Shutdown engaged before the racks went. Banks isolated, hall intact." The Danny line sits after the intelligence and architect nodes and is the same on the vented/captured/escaped openers (one knot), but those openers were not walked.
+- m02 ended with the ambush path (Reeves not named), not with the named-arrest path; the projections line is in `q_entropy_link`, which does not branch on either.
