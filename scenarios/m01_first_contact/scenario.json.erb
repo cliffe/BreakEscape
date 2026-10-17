@@ -2111,6 +2111,14 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
     }
   },
 
+  <%# Carry-over (docs/agents/CARRY_OVER_PLAN.md): the story outcomes later
+      missions may import as read-only globals. m02 reads final_choice,
+      found_casualty_projections and player_launched_attack. JSON only: no ink
+      or audio in m01 changes. Renaming one of these breaks the importing
+      mission; the validator says which. %>
+  "exportGlobals": ["final_choice", "kevin_choice", "found_casualty_projections",
+                    "player_aborted_attack", "player_launched_attack"],
+
   "globalVariables": {
     "player_name": "Agent Zero",
     "briefing_played": false,

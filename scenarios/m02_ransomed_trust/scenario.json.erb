@@ -3509,6 +3509,22 @@ boardroom_pin = "0417"
     ["advised_board_pay", "advised_board_refuse"]
   ],
 
+  <%# Carry-over (docs/agents/CARRY_OVER_PLAN.md). Imports are read-only and
+      default to "never played m01": HaX's Derek line in the briefing and the
+      casualty-projections line in the debrief fall back to the original lines.
+      Exports: m03 reads paid_ransom, ghost_keys_used, ward_recovering and
+      bed4_manually_stabilised (HaX's St. Catherine's line). Renaming one of
+      these breaks the importing mission; the validator says which. %>
+  "importGlobals": [
+    { "from": "m01_first_contact", "var": "final_choice",               "default": "" },
+    { "from": "m01_first_contact", "var": "found_casualty_projections", "default": false },
+    { "from": "m01_first_contact", "var": "player_launched_attack",     "default": false },
+    { "from": "m01_first_contact", "completed": "m01_completed" }
+  ],
+  "exportGlobals": ["paid_ransom", "ghost_keys_used", "ward_recovering", "bed4_manually_stabilised",
+                    "patient_bed4_deceased", "exposed_hospital", "ghost_deal_accepted",
+                    "insider_asset_arrested", "insider_asset_escaped"],
+
   "globalVariables": {
     "player_name": "Agent 0x00",
     "briefing_played": false,

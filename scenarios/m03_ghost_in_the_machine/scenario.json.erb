@@ -1888,6 +1888,20 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
     }
   },
 
+  <%# Carry-over (docs/agents/CARRY_OVER_PLAN.md). Imports are read-only and
+      default to "never played m02": HaX's St. Catherine's line in the briefing
+      is added only for a player who finished m02. Exports: m04 reads
+      victoria_fate, danny_fate and danny_ko. Renaming one of these breaks the
+      importing mission; the validator says which. %>
+  "importGlobals": [
+    { "from": "m02_ransomed_trust", "var": "paid_ransom",              "default": false },
+    { "from": "m02_ransomed_trust", "var": "ghost_keys_used",          "default": false },
+    { "from": "m02_ransomed_trust", "var": "ward_recovering",          "default": false },
+    { "from": "m02_ransomed_trust", "var": "bed4_manually_stabilised", "default": false },
+    { "from": "m02_ransomed_trust", "completed": "m02_completed" }
+  ],
+  "exportGlobals": ["victoria_fate", "danny_fate", "danny_ko", "directive_decoded", "guard_bribed"],
+
   "globalVariables": {
     "mission_phase": "act1_meeting",
     "victoria_influence": 0,

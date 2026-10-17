@@ -493,6 +493,13 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
     ]
   },
 
+  <%# Carry-over (docs/agents/CARRY_OVER_PLAN.md): the story outcomes later
+      missions may import as read-only globals. m05 reads voltage_captured and
+      voltage_escaped (its briefing's Task Force Null line). Renaming one of
+      these breaks the importing mission; the validator says which. %>
+  "exportGlobals": ["voltage_captured", "voltage_escaped", "casualties_occurred",
+                    "disclosure_choice", "crew_lost"],
+
   "startRoom": "main_entrance",
 
   "startItemsInInventory": [
@@ -2873,6 +2880,16 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
         }
       ]
     }
+  ],
+
+  <%# Carry-over imports from m03 (docs/agents/CARRY_OVER_PLAN.md). Read-only;
+      the defaults are "never played m03", and those players hear no extra line.
+      HaX's briefing names Victoria Sterling's fate; her Task Force Null line in
+      the debrief names Danny Foster's. %>
+  "importGlobals": [
+    { "from": "m03_ghost_in_the_machine", "var": "victoria_fate", "default": "" },
+    { "from": "m03_ghost_in_the_machine", "var": "danny_fate",    "default": "" },
+    { "from": "m03_ghost_in_the_machine", "var": "danny_ko",      "default": false }
   ],
 
   "globalVariables": {
