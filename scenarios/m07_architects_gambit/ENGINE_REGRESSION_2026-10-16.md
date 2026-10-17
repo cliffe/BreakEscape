@@ -124,3 +124,10 @@ Also done from the lead's rulings: `gender` on the five person NPCs (Netherton x
 | A-m7 | minor | `redirect_declined` and `team_redirected` both true after decline then move | **Fixed (0cd2823a).** The move clears `redirect_declined`. Route r35. |
 | A-m8 | minor | Debrief "The other three operations went ahead on schedule" | **Fixed (0cd2823a).** With a team committed: "started on schedule. One of them ran into our team."; uncommitted keeps "went ahead". |
 | A-m9 | minor | Garbled sign in Ray's conversation background | Deferred: background art; not touched in this pass. |
+
+## Fixes round 2 (2026-10-17)
+
+- **creditsOverlay:** operation BLACKOUT; ticker OPERATION BLACKOUT: SEQUENCE ABORTED / FOUR OPERATIONS. ONE CLOCK. ONE TEAM. / HE KNEW WHERE YOU WOULD BE / THE ARCHITECT: AT LARGE / ENTROPY: STILL OPERATIONAL. No "ENTROPY CONTAINED": the Architect is free and both debrief codas say he knew the deployment. The debrief needs `grid_saved`, so the abort holds in every ending (with Seattle dark for a while if the clock ran out).
+- **Phone during a fight (engine a73b1175: attacks no longer pause while the phone is open, and a hit leaves it open).** Hollis' second text: "...walk out of his reach before you read anything else." Park's and Mercer's: "He's slower than you, won't follow you out of the vault/control room, and won't wait while you read." Three timed texts changed; routes r18, r20, r32 updated.
+- Checks: validator, dialoguelint (no new findings), m07 routes (35, all pass).
+- Browser check owed: the credits overlay header and ticker.

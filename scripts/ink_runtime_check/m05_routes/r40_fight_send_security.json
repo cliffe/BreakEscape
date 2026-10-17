@@ -173,7 +173,7 @@
    "said": [
     "I won't choose for you",
     "Hard is certain tonight",
-    "Q switches to fists. If you can't take him, call me"
+    "Q switches to fists. Can't take him? Get out of his reach, then call me"
    ],
    "notSaid": [
     "I'm not going to answer that"
@@ -191,7 +191,7 @@
   {
    "said": [
     "He's coming for you. Q switches to fists (again for a harder punch)",
-    "Keep pressing Q until the open hand shows"
+    "Press Q till the open hand shows"
    ]
   },
   {

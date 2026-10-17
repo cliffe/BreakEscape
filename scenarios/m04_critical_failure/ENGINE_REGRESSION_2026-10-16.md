@@ -152,3 +152,10 @@ Scenario/ink fixer, covering this report and `PASS5_BLIND_A.md` (game 2513). Eng
 Checks: ink compiles (10 files). m04 routes 35 of 35, with r35 new. dialoguelint: only the 2 withdrawn blank-reentry checks. tagdiff on Cipher: 2 structural differences (the new condition). Validator: schema passed, 0 errors, 12 issues (unchanged). `rooms.js` syntax checked.
 
 Browser checks still owed: the ESD station's look in game, and that it can't be reached from Hall 2. A Restart after a Cipher fight, then the talk-out and the call-in. The phone timestamps reading 04:xx.
+
+## Fixes round 2 (2026-10-17)
+
+- **Confirmation N4, the gate guard hit for the engine default (10 damage, chase 145):** he had no `behavior.hostile` block. Nothing in the scenario or his ink makes him meant to be deadlier (a mid-fifties bystander the debrief scolds you for hitting), so he now has `{ chaseSpeed: 100, attackDamage: 4, pauseToAttack: true }`, the operatives' damage (Cipher and Static 4) and a slower chase than any of them. A 60 HP player now takes about 15 hits. In the scenario erb (committed by the lead).
+- **Phone during a fight (engine a73b1175: attacks no longer pause while the phone is open, and a hit leaves it open).** Checked: HaX's m04 fight lines already say to get clear or stop talking first ("Then stop talking to me and drop him.", "Lose him or put him down, then call."). No change.
+- Checks: validator, dialoguelint, m04 routes (35, all pass).
+- Browser check owed: punch the gate guard and count hits to KO (about 15 from 60 HP).

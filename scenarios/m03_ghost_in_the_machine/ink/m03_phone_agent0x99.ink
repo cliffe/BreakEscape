@@ -278,7 +278,7 @@ And never pick a lock where he can see you. If he catches the picks, he stops ta
 === hint_guard_hostile ===
 #speaker:agent_0x99
 ~ hint_guard_hostile_given = true
-He's hostile now. Keep moving and stay out of his reach, or stand and fight.
+He's hostile, and he keeps swinging while you're on this phone. Get off it and keep out of his reach, or stand and fight.
 He goes down if you fight him, but it goes on the record and it ends any claim to a quiet night.
 + [Understood]
     -> hub
@@ -417,7 +417,7 @@ distcc is the one that matters -- that's where the operational logs sit. Submit 
     -> report_end
 }
 { guard_attacking:
-    The guard's after you. Keep out of his reach.
+    The guard's after you. Get off the phone and keep out of his reach.
     -> report_end
 }
 { guard_told_safetynet:

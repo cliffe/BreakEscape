@@ -137,3 +137,10 @@ Also done from the lead's rulings: `gender` on all eleven person NPCs (ATHENA x2
 | A-M5 | minor | Overwritten lines | Partly fixed (6b72b469): the two "moment longer" tells and the repeated "genuinely encourage" cut. "Order is a candle in a hurricane" kept: a script-edit line the user approved (S1). The confrontation's "You hold his eye a moment longer than you mean to" kept: it is the player's beat after the reveal, not a tell. |
 | A-M6 | minor | Vector's role differs between dossier and Director | **Fixed (6b72b469).** The Director now says "Intelligence analyst, signals and cryptography", matching the dossier and personnel print. |
 | A-M7 | minor | Credits miss the Director choice and the locker break-ins | Withdrawn: "ON THE RECORD: AGENT 0x00 TO THE DIRECTOR" carries the stance ("Own the gap" / "He's the crime, not you") whenever it was chosen, and "THE LOCKERS" carries a pick that was seen. An unwitnessed pick stays off the record by design. |
+
+## Fixes round 2 (2026-10-17)
+
+- **creditsOverlay:** operation LOOKING GLASS; ticker THE LEAK: TRACED AND NAMED / RECRUITED IN TRAINING. FIFTEEN YEARS WAITING. / EVERY CATALOGUED WEAKNESS: IN ENTROPY'S HANDS / THE ARCHITECT: AT LARGE / ENTROPY: STILL OPERATIONAL. True whether Nightshade is arrested or left in place.
+- **Phone during a fight (engine a73b1175: attacks no longer pause while the phone is open, and a hit leaves it open).** E11's "get clear before you read your phone" is back: the punched Director ("He's slower and stays in his office: get clear before you read your phone."; after the naming "...he's slower and stays put. Get clear before reading your phone.") and the generic hostile text ("Click open floor to get clear before you read your phone."). Three timed texts changed; routes r13, r14, r16 updated. The debrief's "handed the enemy the map" line left as is (confirmation run).
+- Checks: validator, dialoguelint, m08 routes (27, all pass).
+- Browser check owed: the credits overlay header and ticker.

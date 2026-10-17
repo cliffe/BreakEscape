@@ -5,7 +5,7 @@
 { "talk": "netherton", "picks": ["I'm ready"] },
 { "enter": "cryptography_lab" }, { "enter": "break_room" },
 { "event": "npc_hostile_state_changed", "data": { "npcId": "background_agent", "isHostile": true } },
-{ "said": ["The off-duty agent's coming at you", "He won't talk to you while he's like this. Put him down or keep away", "To get clear, click open floor and walk"] },
+{ "said": ["The off-duty agent's coming at you", "He won't talk to you while he's like this. Put him down or keep away", "Click open floor to get clear before you read your phone"] },
 { "ko": "background_agent" },
 { "expect": { "offduty_agent_ko": true, "nightshade_tipped_off": true, "locker_seen_picked": false, "nightshade_tidied": false } },
 { "said": ["An agent out cold in the break room"] },

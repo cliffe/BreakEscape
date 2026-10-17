@@ -17,7 +17,7 @@
     "[choice] Put it down. (Fight him.)",
     "with his fists up. This is going to be a fight.",
     "Fists up, face him, hit him. Q a second time throws the harder punch.",
-    "He's slower than you, and he won't leave the checkpoint. If it's going badly, walk out of his reach."
+    "He's slower than you, and he won't leave the checkpoint. If it's going badly, walk out of his reach before you read anything else."
    ],
    "notSaid": ["stows", "Or walk away", "Q switches to fists"]
   },

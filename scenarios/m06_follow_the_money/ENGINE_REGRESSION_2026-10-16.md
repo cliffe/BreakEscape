@@ -134,3 +134,10 @@ Scenario/ink fixer for m06. Ink and routes are in d45eb5fa. The `scenario.json.e
 | A-R10 | blind A | minor | **Deferred to the engine fixer.** The "streaky sheen" text is in `dusting-game.js`. |
 | A-R11 | blind A | minor | **Fixed (erb).** In `custody_index.csv`, slot 4471 now shows opened 2025-05 and slot 5093 (which had the same clash) 2025-04, both before the July credits. Neither date is used by the puzzle. |
 | — | ruling | — | **Done (erb).** `gender` is added to Netherton, the checkpoint guard, Irina, Dani, Priya, Kemal and Satoshi (from the voice notes), so the past-talking toast says "He's" or "She's". |
+
+## Fixes round 2 (2026-10-17)
+
+- **creditsOverlay:** operation LEDGER; ticker ENTROPY'S MONEY: FOLLOWED TO HASHCHAIN / 'SATOSHI NAKAMOTO II': IN CUSTODY / SIX CELLS. SEVENTY-TWO HOURS. / THE ARCHITECT REMAINS AT LARGE. True whether the fund is frozen or watched and Volkova turned or detained (Satoshi is detained in every ending).
+- **Phone during a fight (engine a73b1175: attacks no longer pause while the phone is open, and a hit leaves it open).** The minder's and Satoshi's first fight texts now say "he won't wait while you read this" (the minder's "Step back between swings" was cut for the 30-word cap). Two timed texts changed; route r32 updated.
+- Checks: validator, dialoguelint, m06 routes (35, all pass).
+- Browser check owed: the credits overlay header and ticker.

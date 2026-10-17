@@ -138,3 +138,10 @@ Checks: ink compiles (8 files); all 28 m03 routes run, r26 new and clean. r2's t
 Browser check still owed: one Restart after a fight with Terry, then walk into his cone. Expect the wary line and no punches.
 
 New spoken line (not voiced yet): Terry, "Back on your feet, then. One wrong move and I'm on the radio."
+
+## Fixes round 2 (2026-10-17)
+
+- **Confirmation N2, no `gameClock`:** added `gameClock` (`start` "Thu 14:55", rate 1; anchors 23:00 on `clone_call_done`, the night scene, and "Fri 08:30" on `debrief_played`), from Ffion's "three o'clock", the night scene's "Eleven o'clock that night" and the debrief's "morning after". Days are named so the morning anchor can move past midnight. Parsed with `game-clock.js`. In the scenario erb (committed by the lead).
+- **Phone during a fight (engine a73b1175: attacks no longer pause while the phone is open, and a hit leaves it open).** HaX's `hint_guard_hostile` now says he keeps swinging while you're on the phone ("Get off it and keep out of his reach, or stand and fight."), and the status line for an attacking guard says "Get off the phone and keep out of his reach." Two spoken lines changed (TTS).
+- Checks: ink compile, validator, dialoguelint (no new findings), m03 routes (28, no failures), reopencheck (0 problems).
+- Browser check owed: the phone clock reads about 15:00 on arrival, 23:00 after the night scene, and Fri 08:30 in the debrief.

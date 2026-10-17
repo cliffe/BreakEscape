@@ -51,6 +51,7 @@ VAR office_card_obtained = false
 VAR torres_print_collected = false
 VAR torres_suspected = false // Synced scenario global: enough on Torres to search his office; also set by Patricia (m05_phone_patricia, m05_npc_patricia_morgan) and the case_motive/case_exfil mappings
 VAR found_door_log = false
+VAR heard_tin_story = false // Synced scenario global (round 2, 2026-10-17): Lisa told the tin story without a name; set by m05_npc_lisa_park
 VAR found_halloran_alibi = false
 VAR halloran_questioned = false
 VAR halloran_accused = false // Synced scenario global: Halloran suspended on the player's word; also set by Patricia (m05_phone_patricia, m05_npc_patricia_morgan)
@@ -874,7 +875,7 @@ It only works if he wants out.
     I won't choose for you. But weigh it like this.
     Soft gets us his network and keeps his family whole, if he means it. If he doesn't, we've put a liar back inside.
     Hard is certain tonight, and we learn nothing from him.
-    And if it turns into a fight: he's no fighter. Q switches to fists. If you can't take him, call me.
+    If it turns into a fight: he's no fighter. Q switches to fists. Can't take him? Get out of his reach, then call me.
     -> support_hub
 
 + [I'll decide when I'm standing in front of him.]
@@ -995,7 +996,7 @@ See you at HQ.
 // Struggling run A (D1): mid-fight, or after a lost one.
 - torres_hostile:
     Torres went for you at that terminal. He's past talking. If he swings: Q for fists, then E or click when he's in front.
-    Or tell me to send Security. It'll cost us any chance of talking to him.
+    Or get clear of him, then tell me to send Security. It'll cost us any chance of talking to him.
 - torres_identified and not torres_print_collected:
     He's in the key vault, past the server room. The reader takes one of two prints, and his is on something in his office.
     {not office_card_obtained and not owen_ko:
@@ -1061,6 +1062,15 @@ See you at HQ.
     - found_door_log and (halloran_questioned or found_halloran_alibi) and torres_reason_guessed and not torres_suspected:
         ~ door_log_hinted = true
         Her spare goes in at night. Look at who comes through the front door just before it.
+    // Round 2 (2026-10-17, Lisa vaguer): with the files in hand, tie the
+    // motive to a name on the log. Names nobody; the method stays the player's.
+    - found_door_log and found_vetting_file and not torres_suspected:
+        {heard_tin_story:
+            You've got the files. Lisa's tin is for someone on that team with a sick wife and no cover.
+            One file fits. Find that name on the badge log.
+        - else:
+            You've got the files. One of them owes money he hasn't declared. Find that name on the badge log.
+        }
     - found_door_log and not torres_suspected:
         {patricia_ko:
             You've got a pattern in the hallway badge log. Give me the name and the reason, or read her files. They're on her office floor.

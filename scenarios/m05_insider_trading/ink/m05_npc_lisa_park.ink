@@ -14,6 +14,12 @@
 // PASS 4 (dialogue): "What have you noticed lately?" spreads the gossip over
 // Halloran, Ben and David, so it no longer singles David out before the
 // badge log. hub_quiet gives the hub a re-entry line (m03 pattern).
+//
+// ROUND 2 (2026-10-17, user: Lisa vaguer): the tin is for "someone on the
+// crypto team" and she won't say who. The name comes from Patricia's vetting
+// files (spouse treated abroad, insurer said no) and the badge log. Once the
+// player has the files or a suspicion she confirms it's David
+// (confirm_david), and the personal topics open from there.
 // ===========================================
 
 VAR lisa_influence = 0              // 0-100 scale
@@ -22,13 +28,16 @@ VAR topic_torres_personal = false
 VAR topic_elena = false
 VAR told_about_torres = false
 VAR first_meeting = true
-VAR heard_about_david = false
+VAR heard_tin_story = false         // Synced scenario global: she has told the tin story (no name); read by HaX's who-nudge
+VAR david_confirmed = false         // ink-local: she has said the tin is for David
 VAR hub_quiet = false               // set by every exit, so a goodbye doesn't end on a greeting
 VAR fate_noted = false              // Phase 4 dialogue C1 (D5-8): her reaction to Torres' fate, once
 
 // Synced from scenario globals
 VAR player_name = "Agent 0x00"
 VAR torres_identified = false
+VAR torres_suspected = false        // Synced scenario global: the evidence points at Torres
+VAR found_vetting_file = false      // Synced scenario global: Patricia's vetting files handed over
 VAR final_choice = "" // Synced scenario global: Torres' fate; set by m05_torres_confrontation and HaX's post-KO call. Read for her reaction (D5-8)
 
 // ===========================================
@@ -68,18 +77,23 @@ Lisa Park: Lisa Park, marketing. I don't go near the crypto stuff, but I sit by 
 
 === torres_sympathy ===
 #speaker:lisa_park
-~ heard_about_david = true
+~ heard_tin_story = true
 
-Lisa Park: David Torres, in cryptography. Keep it to yourself, yeah? His wife Elena's got cancer. Stage 3.
+Lisa Park: Someone on the crypto team. I promised I wouldn't say who, so don't ask.
 
-Lisa Park: The treatment that might work is a trial in the States, and the insurer won't touch it. Hence the tin.
+Lisa Park: His wife's got cancer. Stage 3. The treatment that might work is a trial in the States, and the insurer won't touch it. Hence the tin.
 
-Lisa Park: He's lost weight. Looks like he hasn't slept in months.
+Lisa Park: He's been borrowing to cover it, I think. He's lost weight. Looks like he hasn't slept in months.
 
 + [That's rough. Thanks for telling me.]
     ~ lisa_influence += 10
     #influence_increased
-    Lisa Park: He'd hate that I told you. He hates a fuss.
+    Lisa Park: He'd hate that I told you even that much. He hates a fuss.
+    ~ hub_quiet = true
+    -> hub
+
++ [Which one of them is it?]
+    Lisa Park: I said don't ask. Patricia keeps files on that whole team. That's her job, not mine.
     ~ hub_quiet = true
     -> hub
 
@@ -122,13 +136,20 @@ Lisa Park: He's lost weight. Looks like he hasn't slept in months.
 + {not topic_office_mood} [How's the office mood these days?]
     -> ask_office_mood
 
-+ {not heard_about_david} [Who's the collection tin for?]
++ {not heard_tin_story} [Who's the collection tin for?]
     -> torres_sympathy
 
-+ {heard_about_david and not topic_torres_personal} [Tell me about David Torres.]
+// Round 2: she names him only once the player has the files or a suspicion.
++ {heard_tin_story and knows_torres() and not david_confirmed} [Is the tin for David Torres?]
+    -> confirm_david
+
++ {not heard_tin_story and knows_torres() and not david_confirmed} [What can you tell me about David Torres?]
+    -> confirm_david
+
++ {david_confirmed and not topic_torres_personal} [Tell me more about David.]
     -> ask_torres_personal
 
-+ {heard_about_david and not topic_elena} [Is David all right? At home, I mean?]
++ {david_confirmed and not topic_elena} [Is David all right? At home, I mean?]
     -> ask_elena
 
 + {torres_identified and not told_about_torres} [It's David. I'm sorry.]
@@ -140,6 +161,23 @@ Lisa Park: He's lost weight. Looks like he hasn't slept in months.
     #exit_conversation
     -> hub
 
+=== function knows_torres() ===
+~ return found_vetting_file or torres_suspected or torres_identified
+
+=== confirm_david ===
+#speaker:lisa_park
+~ david_confirmed = true
+~ lisa_influence += 5
+#influence_increased
+{heard_tin_story:
+    Lisa Park: I didn't tell you that. You didn't get it from me.
+    Lisa Park: Yes. It's David. His wife's called Elena.
+- else:
+    Lisa Park: David? Keep this to yourself, yeah? The collection tin's for him.
+    Lisa Park: His wife Elena's got cancer. A trial in the States, and the insurer won't touch it.
+}
+-> hub
+
 === ask_office_mood ===
 #speaker:lisa_park
 ~ topic_office_mood = true
@@ -149,7 +187,6 @@ Lisa Park: He's lost weight. Looks like he hasn't slept in months.
 Lisa Park: Tense. The crypto team keep looking at each other like it's a game of Cluedo.
 
 {lisa_influence >= 15:
-    ~ heard_about_david = true
     ~ lisa_influence += 5
     #influence_increased
     Lisa Park: Dr Halloran had a stand-up row with the CEO last month about publishing. Half the building heard it.
@@ -200,6 +237,7 @@ Lisa Park: Now he barely talks at all.
 === told_torres ===
 #speaker:lisa_park
 ~ told_about_torres = true
+~ david_confirmed = true
 
 Lisa Park: No. David wouldn't...
 
