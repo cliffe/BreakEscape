@@ -593,6 +593,23 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
     ]
   },
 
+  <%# Carry-over (docs/agents/CARRY_OVER_PLAN.md).
+      importGlobals: what Voltage's fate was in m04, read-only, fixed when the
+      game is created. A player who never finished m04 gets the defaults, which
+      are today's neutral line. No completed import: m04's debrief opens only
+      after the shutdown, which needs Voltage captured or escaped, so every
+      finished m04 run sets one of the two. Read by the briefing's Task Force
+      Null line.
+      exportGlobals: what m06 (and later) may import from this mission. m06
+      reads final_choice. Renaming one of these breaks the importing mission;
+      the validator says which. %>
+  "importGlobals": [
+    { "from": "m04_critical_failure", "var": "voltage_captured", "default": false },
+    { "from": "m04_critical_failure", "var": "voltage_escaped",  "default": false }
+  ],
+  "exportGlobals": ["final_choice", "torres_turned", "torres_arrested", "elena_treatment_funded",
+                    "entropy_program_exposed", "recruiter_deal_accepted"],
+
   "startRoom": "reception_lobby",
 
   "startItemsInInventory": [
