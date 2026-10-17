@@ -92,7 +92,9 @@ Maya Chen: They're planning to kill people. On purpose. They call it "Operation 
 ~ discussed_operation = true
 #unlock_task:inform_safetynet_operation_shatter
 
-Maya Chen: From what I've gathered, Operation Shatter is a coordinated disinformation attack. They've profiled millions of people—demographic cohorts they're betting will panic first—cross-referenced with who reacts fastest to an alert, who forwards without checking, who trusts which channels.
+Maya Chen: From what I've gathered, Operation Shatter is a coordinated disinformation attack.
+
+Maya Chen: They've profiled millions of people—demographic cohorts they're betting will panic first—cross-referenced with who reacts fastest to an alert, who forwards without checking, who trusts which channels.
 
 Maya Chen: The plan is to send fake emergency messages—hospital closures, bank failures, government alerts—tuned per segment where they think it'll spread fastest.
 
