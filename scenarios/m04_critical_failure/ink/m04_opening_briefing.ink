@@ -233,8 +233,11 @@ Agent HaX: Read him first. Hard evidence will do the persuading for you.
 // Blind run A (worst line 3): the directive recap read as written, not spoken.
 Agent HaX: The Zero Day job left us one line. "Zero Day supplies, Critical Mass executes. Grid storage, this winter."
 
+Agent HaX: Well, it's winter, and this is the site.
+
 // Carry-over (2026-10-17): what the player did with Victoria Sterling in m03,
-// said where her directive is quoted. Never played (or no call made): no line.
+// said after her directive's quote and HaX's answer to it (browser check: in
+// between, "Well, it's winter" answered nothing). Never played: no line.
 {
 - m03_victoria_fate == "recruited":
     Agent HaX: You turned Victoria Sterling, and she gave us the window. She also warned that some of what she sold was already installed.
@@ -243,10 +246,8 @@ Agent HaX: The Zero Day job left us one line. "Zero Day supplies, Critical Mass 
 - m03_victoria_fate == "escaped":
     Agent HaX: You let Victoria Sterling walk out of WhiteHat. She sold the kit for tonight, and she's still out there selling.
 - m03_victoria_fate == "ko":
-    Agent HaX: You put Victoria Sterling in a hospital bed, and she hasn't said a word since. That line came off the drive in her desk.
+    Agent HaX: You put Victoria Sterling in a hospital bed, and she hasn't said a word since. The directive came off the drive in her desk.
 }
-
-Agent HaX: Well, it's winter, and this is the site.
 
 Agent HaX: Social Fabric are standing by to amplify the panic. Strikes across the region, all timed to 0800.
 

@@ -113,7 +113,13 @@ Agent HaX: The ransomware ran on a ProFTPD backdoor. That exploit didn't come fr
     Agent HaX: Ghost pulled the trigger. Someone handed them the gun. That's what we go and find.
     -> mission_stakes
 * [Walk me through St. Catherine's again.]
-    Agent HaX: A ward of patients on life support, encrypted in the night. How many died came down to a recovery call.
+    // Carry-over browser check: a player who finished m02 has just heard their
+    // own count, so the recap points back at their call instead of repeating it.
+    {m02_completed:
+        Agent HaX: A ward of patients on life support, encrypted in the night. The recovery call was yours, and you know what it cost.
+    - else:
+        Agent HaX: A ward of patients on life support, encrypted in the night. How many died came down to a recovery call.
+    }
     Agent HaX: That's the buyer, Ghost. Zero Day sold the exploit and invoiced for it.
     ~ knows_m2_connection = true
     #set_global:knows_m2_connection:true
