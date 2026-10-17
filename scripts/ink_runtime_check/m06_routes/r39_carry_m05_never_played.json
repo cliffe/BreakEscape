@@ -1,0 +1,33 @@
+{
+ "steps": [
+  {
+   "note": "R39 (carry-over, 2026-10-17): m05 never finished; m05_final_choice is \"\". The briefing is today's, word for word."
+  },
+  {
+   "talk": "briefing",
+   "picks": [
+    "Which payments",
+    "Why would Volkova",
+    "I'm ready"
+   ]
+  },
+  {
+   "said": [
+    "Out: $847,000 to the Insider Threat Initiative for the Quantum Dynamics job, through TalentStack's wallet.",
+    "Somebody is keeping the books"
+   ],
+   "notSaid": [
+    "You turned Torres",
+    "You put the Initiative"
+   ]
+  },
+  {
+   "set": {
+    "briefing_played": true
+   }
+  },
+  {
+   "maxRun": 9
+  }
+ ]
+}

@@ -6,7 +6,8 @@
 // rendered (ruby ERB, the validator's stubs) and its eventMappings are run on
 // the events a step raises, so the routes exercise the real wiring.
 //
-// Route file: { "globals": {...}, "steps": [ step, ... ] } where a step is one of
+// Route file: { "globals": {...}, "imports": {...}, "steps": [ step, ... ] } ("imports": carry-over
+// values from a finished earlier run; left out = never played) where a step is one of
 //   {"note": "..."}                          a heading in the output
 //   {"set": {...}}                           globals the engine would set; each change raises
 //                                            global_variable_changed:<name>
@@ -79,6 +80,23 @@ let heard = [];
 function out(t) { console.log(t); heard.push(t); }
 function fail() { stats.fails++; }
 
+// ---- carry-over imports (docs/agents/CARRY_OVER_PLAN.md; as m07's driver) ----
+// Every import starts at its default, which is a player who never finished the source mission.
+// A route's "imports": {"m04_voltage_captured": true, ...} stands for a finished earlier run.
+// Imports are read-only: any write to one, from ink, a tag or a mapping, fails the route.
+const IMPORTED = new Set();
+for (const e of scenario.importGlobals || []) {
+  const isCompleted = Object.prototype.hasOwnProperty.call(e, 'completed');
+  const prefix = (String(e.from).match(/^((?:m|sis)\d\d)_/) || [])[1];
+  const name = isCompleted ? e.completed : (e.as || `${prefix}_${e.var}`);
+  IMPORTED.add(name); G[name] = isCompleted ? false : e.default;
+}
+for (const [k, v] of Object.entries(route.imports || {})) {
+  if (!IMPORTED.has(k)) { out(`   [FAIL: route imports ${k}, which the scenario does not import]`); fail(); }
+  G[k] = v;
+}
+if (route.imports) out(`   [imports: ${JSON.stringify(route.imports)}]`);
+
 // ---- conditions, as the engine evaluates them ----
 function evalCond(cond, ctx) {
   if (!cond) return true;
@@ -100,6 +118,7 @@ function emit(pattern, ctx = {}) {
   depth--;
 }
 function setGlobal(k, v, always) {
+  if (IMPORTED.has(k)) { out(`   [FAIL: write to imported read-only global ${k}=${JSON.stringify(v)}]`); fail(); return; }
   const old = G[k]; G[k] = v;
   if (old !== v || always) emit(`global_variable_changed:${k}`, { value: v, data: { name: k, value: v } });
 }
@@ -139,6 +158,7 @@ function syncOut(s) {  // ink assignments to synced globals raise global_variabl
   for (const k of Object.keys(G)) {
     if (!s.variablesState.GlobalVariableExistsWithName(k)) continue;
     const v = s.variablesState[k];
+    if (G[k] !== v && IMPORTED.has(k)) { out(`   [FAIL: ink wrote imported read-only global ${k}=${JSON.stringify(v)}]`); fail(); continue; }
     if (G[k] !== v) { G[k] = v; changed.push(k); out(`      [ink: ${k}=${JSON.stringify(v)}]`); }
   }
   for (const k of changed) emit(`global_variable_changed:${k}`, { value: G[k], data: { name: k, value: G[k] } });

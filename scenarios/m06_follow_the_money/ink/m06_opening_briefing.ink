@@ -12,6 +12,10 @@
 // External variables
 VAR player_name = "Agent 0x00"
 
+// Imported (read-only) from m05 (docs/agents/CARRY_OVER_PLAN.md): "" when the
+// player never finished m05. Never assign it here.
+VAR m05_final_choice = "" // Imported (read-only) from m05 final_choice: turn_double_agent / arrest / combat_nonlethal / combat_lethal / public_exposure
+
 // ================================================
 // START: BRIEFING BEGINS
 // ================================================
@@ -27,6 +31,17 @@ Director Magnus Netherton: Agent 0x00. Every cell we have hit is being paid by s
 Agent 0x47 'Nightshade': Money's just another protocol, and this one leaks. Follow enough hops and the mixers stop hiding people and start revealing them.
 
 Agent HaX: Two payments we've traced so far. One came in, one went out, and both went through the same exchange.
+
+// Carry-over (2026-10-17): a player who turned Torres or went public in m05
+// hears how that choice found the outgoing payment. Before the first choice, so
+// both routes ("Which payments?" / "Which exchange?") hear it. Every other m05
+// ending, and never played, adds nothing (the briefing stays as it was).
+{
+- m05_final_choice == "turn_double_agent":
+    Agent HaX: You turned Torres, so he's still taking their money, on our script now. That's how we traced the one going out.
+- m05_final_choice == "public_exposure":
+    Agent HaX: You put the Initiative on the front pages, and TalentStack's accounts came out with it. That's how we traced the one going out.
+}
 
 + [Which payments?]
     -> money_explanation

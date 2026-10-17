@@ -12,6 +12,13 @@ VAR handler_trust = 50 // Synced scenario global: HaX's confidence (0-100); also
 // External variables (set by game)
 VAR player_name = "Agent 0x00"
 
+// Imported (read-only) from m04 (docs/agents/CARRY_OVER_PLAN.md): false when
+// the player never finished m04. Never assign these here.
+VAR m04_voltage_captured = false // Imported (read-only) from m04 voltage_captured: Voltage arrested or KO'd
+VAR m04_voltage_escaped = false  // Imported (read-only) from m04 voltage_escaped: the player took the button and he reached the dock
+// No m04_completed: m04's debrief opens only after the shutdown, which needs
+// Voltage captured or escaped, so a finished m04 run always sets one of the two.
+
 // ===========================================
 // OPENING
 // ===========================================
@@ -30,7 +37,17 @@ Director Magnus Netherton: I have brought Nightshade in because catching a mole 
 
 // PASS 5 (A5): m04's debrief set up Task Force Null; this is its first word
 // since. Nothing promised about later missions.
-Director Magnus Netherton: Task Force Null is three people and a whiteboard so far. Every cell we've hit bought something. This time it's bought a person. I want to know how.
+// Carry-over (2026-10-17): a player who finished m04 hears Voltage's fate named
+// (m04_closing_debrief: "Voltage is in a room now" / "Voltage is out there").
+// The else branch is the original line, word for word (cached audio).
+{
+- m04_voltage_captured:
+    Director Magnus Netherton: Task Force Null is three people and a whiteboard. Voltage is in custody, because you took him alive. Every cell we've hit bought something. This time, a person.
+- m04_voltage_escaped:
+    Director Magnus Netherton: Task Force Null is three people and a whiteboard. Voltage is at large. You chose the button over him. Every cell we've hit bought something. This time, a person.
+- else:
+    Director Magnus Netherton: Task Force Null is three people and a whiteboard so far. Every cell we've hit bought something. This time it's bought a person. I want to know how.
+}
 
 // Phase 4 dialogue C1 (D5-28): the player speaks before the run reaches ten.
 // Both choices converge (a stance on the same briefing). Nightshade's "calm"

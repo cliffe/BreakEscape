@@ -1,0 +1,36 @@
+{
+ "imports": {
+  "m05_final_choice": "arrest"
+ },
+ "steps": [
+  {
+   "note": "R38 (carry-over, 2026-10-17): m05 finished with Torres handed to the police. No branch for this ending: the briefing is today's."
+  },
+  {
+   "talk": "briefing",
+   "picks": [
+    "Which payments",
+    "Why would Volkova",
+    "I'm ready"
+   ]
+  },
+  {
+   "said": [
+    "Out: $847,000 to the Insider Threat Initiative for the Quantum Dynamics job, through TalentStack's wallet.",
+    "Somebody is keeping the books"
+   ],
+   "notSaid": [
+    "You turned Torres",
+    "You put the Initiative"
+   ]
+  },
+  {
+   "set": {
+    "briefing_played": true
+   }
+  },
+  {
+   "maxRun": 9
+  }
+ ]
+}

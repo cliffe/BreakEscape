@@ -2,7 +2,8 @@
 // Adapted from scripts/ink_runtime_check/m04_routes/route.js (pass 5). m06 has no
 // scenario timers, so the clock model is gone; the engine reactions are m06's.
 // usage: node scripts/ink_runtime_check/m06_routes/route.js scripts/ink_runtime_check/m06_routes/<name>.json
-// Route file: { "globals": {...}, "steps": [ step, ... ] } where a step is one of
+// Route file: { "globals": {...}, "imports": {...}, "steps": [ step, ... ] } ("imports": carry-over
+// values from a finished earlier run; left out = never played) where a step is one of
 //   {"note": "..."}                         a heading in the output
 //   {"set": {...}}                          globals the engine would set (pickups, flags, safe)
 //   {"talk": "irina", "knot": "opt", "picks": ["substr", 0, ...], "reload": true|"page"|"wipe"}
@@ -68,10 +69,43 @@ const G = Object.assign({}, gv, route.globals || {});
 const stories = {};
 const stats = { lines: 0, choices: 0, maxRun: 0, run: 0, runs: [], fails: 0 };
 function syncIn(s) { for (const k of Object.keys(G)) { if (s.variablesState.GlobalVariableExistsWithName(k)) s.variablesState[k] = G[k]; } }
-function syncOut(s) { for (const k of Object.keys(G)) { if (s.variablesState.GlobalVariableExistsWithName(k)) G[k] = s.variablesState[k]; } }
+function syncOut(s) {
+  for (const k of Object.keys(G)) {
+    if (!s.variablesState.GlobalVariableExistsWithName(k)) continue;
+    const v = s.variablesState[k];
+    if (G[k] !== v && IMPORTED.has(k)) { out(`   [FAIL: ink wrote imported read-only global ${k}=${JSON.stringify(v)}]`); stats.fails++; s.variablesState[k] = G[k]; continue; }
+    G[k] = v;
+  }
+}
 function knotOfChoices(s) { const c = s.currentChoices[0]; if (!c) return null; const p = c.sourcePath || (c.targetPath && c.targetPath.toString()); return p ? p.split('.')[0] : null; }
 let heard = [];
 function out(t) { console.log(t); heard.push(t); }
+
+// ---- carry-over imports (docs/agents/CARRY_OVER_PLAN.md; as m07's driver) ----
+// Every import starts at its default, which is a player who never finished the source mission.
+// A route's "imports": {"m05_final_choice": "turn_double_agent"} stands for a finished earlier run.
+// Imports are read-only: any write to one, from ink, a tag or a mapping, fails the route.
+const IMPORTED = new Set();
+// Parsed from the erb with its comments stripped first (so a comment that names the key
+// can't match), and the array found by a depth-counted bracket scan, as creditsLines() does.
+const erbNoComments = stripErb(erb);
+const importsAt = erbNoComments.indexOf('"importGlobals"');
+if (importsAt >= 0) {
+  const at = erbNoComments.indexOf('[', importsAt);
+  let depth = 0, end = at;
+  for (let i = at; i < erbNoComments.length; i++) { if (erbNoComments[i] === '[') depth++; if (erbNoComments[i] === ']') { depth--; if (!depth) { end = i; break; } } }
+  for (const e of JSON.parse(erbNoComments.slice(at, end + 1))) {
+    const isCompleted = Object.prototype.hasOwnProperty.call(e, 'completed');
+    const prefix = (String(e.from).match(/^((?:m|sis)\d\d)_/) || [])[1];
+    const name = isCompleted ? e.completed : (e.as || `${prefix}_${e.var}`);
+    IMPORTED.add(name); G[name] = isCompleted ? false : e.default;
+  }
+}
+for (const [k, v] of Object.entries(route.imports || {})) {
+  if (!IMPORTED.has(k)) { out(`   [FAIL: route imports ${k}, which the scenario does not import]`); stats.fails++; }
+  G[k] = v;
+}
+if (route.imports) out(`   [imports: ${JSON.stringify(route.imports)}]`);
 const cond = c => { try { return !!(new Function('globalVars', `return (${c});`))(G); } catch (e) { out(`   [condition error: ${c}]`); return false; } };
 // ---- real mappings (puzzle chains R3): the erb's literal eventMappings for a pattern,
 // in file order, evaluated with the engine's condition rules (npc-manager.js
@@ -110,7 +144,7 @@ function fire(pattern, data) {
     if (tm && !(tm.skipIfGlobal && G[tm.skipIfGlobal])) out(`      [HaX text: ${tm.message}]`);
   });
 }
-function setG(k, v, why) { if (G[k] !== v) { G[k] = v; out(`      [engine: ${why} -> ${k}=${v}]`); } }
+function setG(k, v, why) { if (IMPORTED.has(k)) { out(`   [FAIL: write to imported read-only global ${k}=${JSON.stringify(v)} (${why})]`); stats.fails++; return; } if (G[k] !== v) { G[k] = v; out(`      [engine: ${why} -> ${k}=${v}]`); } }
 let debriefOpened = false;
 function engine() {
   if (G.guard_caught && !G.cover_strained) { setG('cover_strained', true, 'caught at the checkpoint lock'); out("      [HaX text: The guard saw your picks. He'll ring the FCA to check on you...]"); }
@@ -156,7 +190,9 @@ function load(f) { const s = new inkjs.Story(fs.readFileSync(path.join(DIR, f + 
 let checkMark = false; // dialogue C1: consecutive said/notSaid steps check the same lines
 for (const step of route.steps) {
   if (checkMark && !(step.said || step.notSaid)) { heard = []; checkMark = false; }
-  if (step.set) { Object.assign(G, step.set); out(`   {set ${JSON.stringify(step.set)}}`); engine(); continue; }
+  if (step.set) {
+    for (const k of Object.keys(step.set)) if (IMPORTED.has(k)) { out(`   [FAIL: set step writes imported read-only global ${k}]`); stats.fails++; delete step.set[k]; }
+    Object.assign(G, step.set); out(`   {set ${JSON.stringify(step.set)}}`); engine(); continue; }
   if (step.note) { console.log(`\n## ${step.note}`); continue; }
   // Phase 4 dialogue C1 (D6-3): {"maxRun": 9} asserts the longest run without a choice so far.
   if (step.maxRun !== undefined) { const ok = stats.maxRun <= step.maxRun; if (!ok) stats.fails++; console.log(`   [${ok ? 'PASS' : 'FAIL'}] longest run ${stats.maxRun} (${stats.maxAt}) <= ${step.maxRun}`); continue; }
