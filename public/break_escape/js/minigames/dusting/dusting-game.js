@@ -31,6 +31,11 @@ if (!document.getElementById('dusting-css')) {
 }
 
 const N = 128;
+// Does the dusting panel fit the window height? The container pads 12 px top and bottom.
+export function refCardsFit(root, viewportHeight, pad = 24) {
+    if (!root || typeof root.getBoundingClientRect !== 'function' || !viewportHeight) return true;
+    return root.getBoundingClientRect().height + pad <= viewportHeight;
+}
 const STEPS = ['find', 'powder', 'dust', 'lift', 'compare'];
 const STEP_NAMES = { find: 'Find', powder: 'Powder', dust: 'Dust', lift: 'Lift', compare: 'Compare' };
 const HINT_AFTER_MS = 15000;
@@ -1240,6 +1245,13 @@ export class DustingMinigame extends MinigameScene {
             const s = this.wide && this.candidates.length <= 2 ? 2 : 1;
             cv.style.width = `${N * s}px`; cv.style.height = `${N * s}px`;
         });
+        // Two cards at 2x put the panel's foot ~21 px below a 1000 px window (m08
+        // confirmation N1): drop them to 1x when the panel doesn't fit the height.
+        if (!refCardsFit(this.root, window.innerHeight)) {
+            this.panel.querySelectorAll('.dusting-ref-canvas').forEach(cv => {
+                cv.style.width = `${N}px`; cv.style.height = `${N}px`;
+            });
+        }
     }
 
     // ------------------------------------------------------------------ test bridge
