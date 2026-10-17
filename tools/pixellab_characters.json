@@ -559,6 +559,15 @@
     },
     "imported": "2026-10-17"
   },
+  "the_recruiter": {
+    "character_id": "54df40d4-bb63-44af-bbc2-f854ba93aa8e",
+    "name": "Make portrait for The Recruiter\nA full-figured Afr...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-10-17"
+  },
   "thomas_park": {
     "character_id": "b5f70700-f3b0-4b11-b9fc-85f8b4319c02",
     "name": "Make portrait for Thomas Park\nA lean Korean-Americ...",
