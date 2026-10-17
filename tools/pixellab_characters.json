@@ -8,6 +8,15 @@
     },
     "imported": "2026-09-29"
   },
+  "agent_vector": {
+    "character_id": "0daaefa6-72b4-4113-a736-248c00d8f44e",
+    "name": "Make portrait for Agent Vector\nA slim, slightly hu...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-10-17"
+  },
   "amy_clarke": {
     "character_id": "32c736ae-0ffa-48eb-b493-3fd0d71c19d0",
     "name": "Make portrait for Amy Clarke\nA white British woman...",
