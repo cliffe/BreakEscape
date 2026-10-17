@@ -115,7 +115,7 @@ Dr. Irina Volkova: Back again. What do you need?
 #complete_task:meet_irina
 Narrator: A sharp-eyed woman in her mid-thirties looks up from three monitors of transaction graphs.
 
-Dr. Irina Volkova: You must be the FCA. Dr. Irina Volkova, Chief Technology Officer.
+Dr. Irina Volkova: You must be the FCA. Dr Irina Volkova, Chief Technology Officer.
 
 Dr. Irina Volkova: A supervisory visit. Always a pleasure, I'm sure.
 
@@ -329,7 +329,7 @@ Dr. Irina Volkova: Satoshi is paranoid about doors and careless about passwords.
     #influence_increased
     ~ badge_handed = true
     #give_item:keycard:m06_cto_badge
-    Dr. Irina Volkova: *unclips it* Bring it back. And don't tell facilities I handed it over, they'll write a memo about it.
+    Dr. Irina Volkova: *unclips it* Bring it back. And don't tell facilities I handed it over; they'll write a memo about it.
 
     Dr. Irina Volkova: West door. Try not to judge the whiteboard.
     -> hub

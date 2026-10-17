@@ -54,7 +54,7 @@ VAR irina_ko = false
     }
 
     + {not irina_arrested and not irina_ko} [Mostly? That's an interesting qualifier.]
-        Dani Okonkwo: Joking. It's all above board. Irina makes sure. Honestly. Ignore me.
+        Dani Okonkwo: Joking. It's all above board. Irina makes sure. Ignore me.
         -> hub
 
     + [It's a standard audit. Nothing to worry about, if everything's compliant.]
@@ -171,7 +171,7 @@ Dani Okonkwo: We're compliant. We're just also, like, private. That's the brand.
 === suspicious_activity ===
 #speaker:trader
 
-Dani Okonkwo: Depends on your perspective.
+Dani Okonkwo: Depends who's asking.
 
 Dani Okonkwo: Some people want privacy. Some want to hide money. From a chart they look the same.
 

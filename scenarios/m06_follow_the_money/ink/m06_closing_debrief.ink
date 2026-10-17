@@ -201,7 +201,7 @@ Agent HaX: She went down on the trading floor. Fine in a day, the medics say. Ch
 
 + [I didn't decide it. It happened fast.]
     Agent HaX: They usually do. I'm not writing you up for it.
-    Agent HaX: Log it honestly, though. We lost an asset. Write that.
+    Agent HaX: Log it honestly, though. We lost an asset, and the file says so.
     -> satoshi_aftermath
 
 === irina_recruited_path ===
@@ -222,7 +222,7 @@ Agent HaX: She gave us the mixer. Nobody alive knows ENTROPY's plumbing better.
 === recruitment_validation ===
 Agent HaX: For tonight, yes. What's in her head beats anything on her servers.
 
-Agent HaX: Pool keys and the wallet map before midnight, and the account that paid her.
+Agent HaX: She's promised the pool keys and the wallet map by tonight, and the account that paid her.
 
 -> recruitment_impact
 
@@ -290,7 +290,7 @@ Agent HaX: The Crypto Anarchists have lost their best cryptographer. Replacing h
     }
 }
 {read_irina_notes:
-    Agent HaX: Reading her notes first was good work. Know what they've already told themselves.
+    Agent HaX: Reading her notes first was good work. You knew what she'd told herself before you said a word.
 }
 -> satoshi_aftermath
 
@@ -305,9 +305,9 @@ Agent HaX: The Crypto Anarchists have lost their best cryptographer. Replacing h
     Agent HaX: He came round in the van and started on financial freedom before they'd finished his rights.
 - else:
     {monitoring_enabled:
-        Agent HaX: We detained "Satoshi Nakamoto II" in his own office. The police have him, and nobody outside that van knows it yet.
+        Agent HaX: We detained "Satoshi Nakamoto the Second" in his own office. The police have him, and nobody outside that van knows it yet.
     - else:
-        Agent HaX: We detained "Satoshi Nakamoto II" in his own office and handed him to the police.
+        Agent HaX: We detained "Satoshi Nakamoto the Second" in his own office and handed him to the police.
     }
 
     {
@@ -501,12 +501,12 @@ Agent HaX: All four flags in.
 === evidence_complete ===
 Agent HaX: Priya's write-up and the fund allocation, both. Wallets, transactions and what they pay for.
 
-Agent HaX: That's evidence the police can use. Several cells will face financial charges.
+Agent HaX: That's evidence the police can use. People in several cells will face charges over the money.
 
 -> lore_discussion
 
 === evidence_partial_fund ===
-Agent HaX: You've the fund allocation. Without Priya's write-up we're missing a few links.
+Agent HaX: You've got the fund allocation. Without Priya's write-up we're missing a few links.
 
 Agent HaX: The allocation's the one that matters.
 

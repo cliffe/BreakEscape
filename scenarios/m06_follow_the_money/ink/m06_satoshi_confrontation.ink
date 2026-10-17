@@ -59,7 +59,7 @@ VAR pitch_heard = false  // Dialogue C1 (D6-21): the full freeze-or-watch pitch 
     #set_variable:satoshi_spoken=true
 
     #speaker:narrator
-    Narrator: A man in his early forties leans against the front of an executive desk. The Bitcoin whitepaper is framed on the wall behind him, at exactly the height of his own head.
+    Narrator: A man in his early forties leans on the front of an executive desk. The Bitcoin whitepaper hangs framed behind him, level with his own head.
 
     // Pass 5 A3: the cover pays off either way, and differently.
     {
@@ -115,7 +115,7 @@ Narrator: For the first time since you walked in, he stops smiling.
 #speaker:satoshi
 Satoshi Nakamoto II: Nobody says that name in this building.
 Satoshi Nakamoto II: Yes. Satoshi's Ghost. The Crypto Anarchists answer to me, and The Architect's money answers to my signature.
-Satoshi Nakamoto II: "Nakamoto II" is for the brochure. The Ghost is who pays for things.
+Satoshi Nakamoto II: "Nakamoto the Second" is for the brochure. The Ghost is who pays for things.
 -> casualties_discussion
 
 // ===========================================

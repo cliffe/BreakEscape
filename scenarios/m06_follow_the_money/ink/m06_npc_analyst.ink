@@ -103,7 +103,7 @@ Priya Raghavan: It flags anything that looks like laundering or sanctions dodgin
 Priya Raghavan: Big money through our mixer. Big round sums, always late in the evening.
 
 + [That sounds suspicious.]
-    Priya Raghavan: Yeah. Very.
+    Priya Raghavan: Yeah. I've stopped pretending it isn't.
     -> suspicious_patterns
 
 + [Show me.]
@@ -179,7 +179,7 @@ Priya Raghavan: But we're the door either side of it. Bitcoin in, Monero in the 
 Priya Raghavan: The chain can't see the middle. Our own logs can.
 
 + [So your logs can see what the chain can't?]
-    Priya Raghavan: Pretty much.
+    Priya Raghavan: Every hop of it.
     -> internal_logs_value
 
 + [Then whoever has your logs has everything.]

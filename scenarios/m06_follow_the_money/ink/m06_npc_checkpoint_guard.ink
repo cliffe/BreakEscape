@@ -60,7 +60,7 @@ VAR guard_asked_name = false
     Checkpoint Guard: Regulator. Yeah, they said there'd be one. Who are you here to see?
     -> start.name
 + [IT. I've been asked to look at the servers.]
-    Checkpoint Guard: IT come in through the back with a ticket number. You're not on my list.
+    Checkpoint Guard: Tech support come in through the back with a ticket number. You're not on my list.
     #exit_conversation
     -> start.question
 + [A consultant. Blockchain audit.]

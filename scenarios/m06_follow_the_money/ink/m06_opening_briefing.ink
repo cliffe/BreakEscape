@@ -41,11 +41,11 @@ Agent HaX: Two payments we've traced so far. One came in, one went out, and both
 // funded he talked first (m05 debrief: "Torres knows where his came from").
 {
 - m05_final_choice == "turn_double_agent":
-    Agent HaX: You turned Torres, so he's still taking their money, on our script now. That's how we traced the one going out.
+    Agent HaX: You turned Torres. He's still taking their money, but on our script now. That's how we traced the one going out.
 - m05_final_choice == "public_exposure":
     Agent HaX: You put the Initiative on the front pages, and TalentStack's accounts came out with it. That's how we traced the one going out.
 - m05_final_choice == "arrest" and m05_elena_treatment_funded:
-    Agent HaX: You handed Torres to the police after he talked, for Elena's treatment. He knew who paid him. That's how we traced the one going out.
+    Agent HaX: You promised Torres we'd pay for Elena's treatment, and he talked before the police took him. He knew who paid him. That's how we traced the one going out.
 - m05_final_choice == "arrest":
     Agent HaX: The police took Torres with no deal from you, and he hasn't said a word since. We traced the one going out without him.
 - m05_final_choice == "combat_nonlethal":
@@ -83,7 +83,7 @@ Agent HaX: Their mixer takes Bitcoin in, runs it through Monero, and pays it int
 
 Agent HaX: From outside, the trail stops there. Their own records pick it up again.
 
-Agent HaX: Two people matter. The CEO calls himself "Satoshi Nakamoto II". True believer. Nobody turns him.
+Agent HaX: Two people matter. The CEO calls himself "Satoshi Nakamoto the Second". True believer. Nobody turns him.
 
 Agent HaX: The CTO, Dr Irina Volkova, built the mixer. She might turn.
 
