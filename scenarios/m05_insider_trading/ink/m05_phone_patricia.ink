@@ -29,6 +29,7 @@
 
 // Synced from scenario globals
 VAR player_name = "Agent 0x00"
+VAR proof_given = false // Fixes round 3 (2026-10-17): local; the front-door reason completed the proof in phone_log_reason_right, so phone_case_why's right answer is the naming
 VAR patricia_ko = false
 VAR patricia_phone_available = false
 VAR torres_identified = false // Synced scenario global: Torres named on motive and exfil; also set by HaX (m05_phone_agent_0x99) and Patricia in person (m05_npc_patricia_morgan)
@@ -234,11 +235,20 @@ I sign that log off every Monday. I never once read the front door.
 {halloran_accused:
     And Ruth's sitting in her lab, suspended on your word. That's on both of us now.
 }
+// Fixes round 3 (2026-10-17, blind B findings 3 and 4): as in person
+// (m05_npc_patricia_morgan.ink, log_reason_right). With the proof now complete
+// and a motive in hand she asks for the why, and a right answer is the naming.
+{has_motive() and has_exfil():
+    ~ torres_suspected = true
+    ~ proof_given = true
+    That's a pattern. Put it with the {found_upload_schedule:upload schedule|staging manifest} and it's proof. Now tell me why he'd do it.
+    -> phone_case_why
+}
 // D1 (2026-10-16): with flag 3 in, the pattern ties the manifest's badge 4471 to him.
-{flag3_submitted:
-    That's a pattern, and the portal manifest says that spare staged the package. Now I need a reason.
+{flag3_submitted or found_manifest or found_upload_schedule:
+    That's a pattern, and it ties him to the package. That's how. I still don't know why.
 - else:
-    That's a pattern. It's not a reason, and it's not proof the data's going anywhere.
+    That's a pattern. It puts him at the door. It doesn't tell me why, and it doesn't show me the data leaving.
 }
 -> phone_partial_naming
 
@@ -262,6 +272,10 @@ I sign that log off every Monday. I never once read the front door.
     #exit_conversation
     -> hub
 + {found_medical_bills or found_vetting_file} [Money. His wife's treatment isn't covered, and he's borrowed against the house.]
+    {proof_given:
+        Money. And you've shown me how. That's both.
+        -> phone_significant_findings
+    }
     Money. All right. And the proof it's leaving?
     -> phone_case_proof
 + [He's been distracted for months.]
@@ -270,6 +284,10 @@ I sign that log off every Monday. I never once read the front door.
     #exit_conversation
     -> hub
 + {found_torres_journal} [His own journal. He knows what it costs, and he's doing it anyway.]
+    {proof_given:
+        In his own hand. And you've shown me how. That's both.
+        -> phone_significant_findings
+    }
     In his own hand. All right. And the proof it's leaving?
     -> phone_case_proof
 

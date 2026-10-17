@@ -34,6 +34,7 @@ VAR asked_access = false      // playtest round: the access ask stays in the hub
 VAR told_about_david = false   // scenario design R1 (m6): the news about David, once
 VAR card_handed = false       // playtest round: local, hides the office ask once the card is given
 VAR fate_noted = false        // Phase 4 dialogue C1 (D5-8): his reaction to Torres' fate, once
+VAR office_rule_heard = false // Round 3 (2026-10-17): he has said an office spare needs Patricia's say-so, once
 
 // Synced from scenario globals
 VAR player_name = "Agent 0x00"
@@ -64,7 +65,7 @@ VAR owen_refused_password = false // Synced scenario global (pass 5 puzzle R1, P
 }
 ~ first_meeting = false
 #speaker:narrator
-Narrator: A man in his late twenties at a workstation, headphones on, three terminals of logs scrolling past. He pulls the headphones down.
+Narrator: A bearded man in his late twenties at a workstation, three terminals of logs scrolling past, a staff badge on a lanyard round his neck. He swivels round.
 
 #speaker:owen_gallagher
 Owen Gallagher: Alright. You're the security consultant? Owen Gallagher, sysadmin.
@@ -165,6 +166,16 @@ Owen Gallagher: I thought it was remote work at first. It's too tidy for that. S
 
 + {torres_suspected and not office_card_obtained and not card_handed} [I need into David Torres' office.]
     -> request_office_card
+
+// Round 3 (2026-10-17, blind B finding 2): HaX says Owen wants "a reason"
+// for an office spare, but before anyone is suspected he offered nothing.
+// He now says where that reason comes from: a name, put to Patricia. Names
+// nobody, once.
++ {not torres_suspected and not office_card_obtained and not office_rule_heard} [Do you keep spare cards for the offices?]
+    ~ office_rule_heard = true
+    Owen Gallagher: One for every office. Whose? Doesn't matter, actually. A spare means going through someone's desk, and that's not my call.
+    Owen Gallagher: Tell Patricia who you think it is, and why. If she buys it, she messages me and the card's yours.
+    -> hub
 
 + {torres_identified and not told_about_david} [It's David. He's the one.]
     -> owen_told
@@ -335,6 +346,12 @@ Owen Gallagher: Board bought it because you can't write a thumb on a sticky note
 #give_item:notes:server_door_log
 Owen Gallagher: Reader logs. Every after-hours swipe for three weeks, every door. Give us a sec... there.
 Owen Gallagher: That's Halloran's spare on the server hallway. Odd. She's in that lab all day, but never at night.
+// Round 3 (2026-10-17, blind B finding 5): "Halloran's spare" pointed away
+// from the borrower, and the log only reached the Notepad. This draws the eye
+// to the front-door column without saying what it shows.
+Owen Gallagher: Mind, a spare only tells you which card. The front door's on there too, and that one tells you who was actually in the building.
+#speaker:narrator
+Narrator: He prints the log and hands it over. It goes into your notes, every door on one sheet.
 -> hub
 
 === request_office_card ===

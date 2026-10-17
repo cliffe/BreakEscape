@@ -28,6 +28,7 @@ VAR gave_vetting_file = false
 VAR first_meeting = true
 VAR hub_quiet = false
 VAR fate_noted = false   // Phase 4 dialogue C1 (D5-8): her reaction to Torres' fate, once
+VAR proof_given = false  // Fixes round 3 (2026-10-17): the front-door reason completed the proof in log_reason_right, so case_why's right answer is the full naming
 
 // Synced from scenario globals
 VAR player_name = "Agent 0x00"
@@ -334,6 +335,13 @@ Patricia Morgan: What do you need?
     Patricia Morgan: If this turns out to be nothing, it was a routine audit. Understood?
     -> hub
 
+// Fixes round 3 (2026-10-17, blind B finding 2): before anyone is suspected,
+// asking for an office spare here offered nothing. It now says what she
+// needs and goes straight to the naming, which names nobody for the player.
++ {not torres_suspected and not torres_identified and not patricia_authorised_office and not office_card_obtained} [I need a look inside someone's office.]
+    Patricia Morgan: Whose, and why? Give me a name I can defend and I'll message Owen for the spare.
+    -> share_findings_who
+
 // Puzzle R1 (P6): only once Owen has actually refused.
 + {(server_door_seen or it_notice_read) and owen_refused_password and not server_password_obtained and not patricia_authorised_server} [The server room wants a password Owen won't give me.]
     ~ patricia_authorised_server = true
@@ -481,11 +489,23 @@ Patricia Morgan: I sign that log off every Monday. I never once read the front d
 {halloran_accused:
     Patricia Morgan: And Ruth's sitting in her lab, suspended on your word. That's on both of us now.
 }
+// Fixes round 3 (2026-10-17, blind B findings 3 and 4): she used to say "Now
+// I need a reason" and then hand over the spare without asking for one, and
+// the naming left identify_torres open. door_log_reasoned is now true, so if
+// that completes the proof and the motive is in hand, she asks for the why
+// here and a right answer is the full naming (case_why, proof_given).
+// torres_suspected is set first, so a wrong why still leaves the office ask.
+{has_motive() and has_exfil():
+    ~ torres_suspected = true
+    ~ proof_given = true
+    Patricia Morgan: That's a pattern. Put it with the {found_upload_schedule:upload schedule|staging manifest} and it's proof. Now tell me why he'd do it.
+    -> case_why
+}
 // D1 (2026-10-16): with flag 3 in, the pattern ties the manifest's badge 4471 to him.
-{flag3_submitted:
-    Patricia Morgan: That's a pattern, and the portal manifest says that spare staged the package. Now I need a reason.
+{flag3_submitted or found_manifest or found_upload_schedule:
+    Patricia Morgan: That's a pattern, and it ties him to the package. That's how. I still don't know why.
 - else:
-    Patricia Morgan: That's a pattern. It's not a reason, and it's not proof the data's going anywhere.
+    Patricia Morgan: That's a pattern. It puts him at the door. It doesn't tell me why, and it doesn't show me the data leaving.
 }
 -> partial_naming
 
@@ -512,6 +532,10 @@ Patricia Morgan: I sign that log off every Monday. I never once read the front d
     Patricia Morgan: That's how anyone on that team could. I asked why him.
     -> reason_wrong
 + {found_medical_bills or found_vetting_file} [Money. His wife's treatment isn't covered, and he's borrowed against the house.]
+    {proof_given:
+        Patricia Morgan: Money. And you've shown me how. That's both.
+        -> significant_reaction
+    }
     Patricia Morgan: Money. All right. And the proof it's leaving?
     -> case_proof
 + [He's been distracted for months.]
@@ -520,6 +544,10 @@ Patricia Morgan: I sign that log off every Monday. I never once read the front d
     Patricia Morgan: So has half this building. That's a mood, not a motive.
     -> reason_wrong
 + {found_torres_journal} [His own journal. He knows what it costs, and he's doing it anyway.]
+    {proof_given:
+        Patricia Morgan: In his own hand. And you've shown me how. That's both.
+        -> significant_reaction
+    }
     Patricia Morgan: In his own hand. All right. And the proof it's leaving?
     -> case_proof
 

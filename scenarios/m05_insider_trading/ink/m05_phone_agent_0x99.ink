@@ -52,6 +52,9 @@ VAR torres_print_collected = false
 VAR torres_suspected = false // Synced scenario global: enough on Torres to search his office; also set by Patricia (m05_phone_patricia, m05_npc_patricia_morgan) and the case_motive/case_exfil mappings
 VAR found_door_log = false
 VAR heard_tin_story = false // Synced scenario global (round 2, 2026-10-17): Lisa told the tin story without a name; set by m05_npc_lisa_park
+VAR found_halloran_vetting = false // Synced scenario global (fixes round 3, 2026-10-17): Halloran's vetting file is in the notes; set by its onRead
+VAR files_hint_given = false // Fixes round 3 (2026-10-17): local; the gentle vetting-files rung has been given, so the next ask may give "One file fits"
+VAR hax_proof_given = false // Fixes round 3 (2026-10-17): local; the front-door reason completed the proof in hax_log_reason_right, so hax_case_why's right answer is the naming
 VAR found_halloran_alibi = false
 VAR halloran_questioned = false
 VAR halloran_accused = false // Synced scenario global: Halloran suspended on the player's word; also set by Patricia (m05_phone_patricia, m05_npc_patricia_morgan)
@@ -492,6 +495,10 @@ If she's the wrong name, the right one has just watched Security move. Be sure a
     #exit_conversation
     -> support_hub
 + {found_medical_bills or found_vetting_file} [Money. His wife's treatment isn't covered, and he's borrowed against the house.]
+    {hax_proof_given:
+        Money, and you've shown me how. That's both.
+        -> hax_named
+    }
     Money. And the proof it's leaving?
     -> hax_case_proof
 + [He's been distracted for months.]
@@ -500,6 +507,10 @@ If she's the wrong name, the right one has just watched Security move. Be sure a
     #exit_conversation
     -> support_hub
 + {found_torres_journal} [His own journal. He knows what it costs, and he's doing it anyway.]
+    {hax_proof_given:
+        In his own hand, and you've shown me how. That's both.
+        -> hax_named
+    }
     In his own hand. And the proof it's leaving?
     -> hax_case_proof
 
@@ -611,6 +622,15 @@ His badge just went through the hallway and the vault's logged him in. He's at t
 ~ door_log_reasoned = true
 ~ door_log_reasoned_first = true
 Checked. All four nights.
+// Fixes round 3 (2026-10-17, blind B findings 3 and 4): as Patricia's
+// log_reason_right. With the proof now complete and a motive in hand, ask for
+// the why here; a right answer is the naming.
+{has_motive() and has_exfil():
+    ~ torres_suspected = true
+    ~ hax_proof_given = true
+    With the {found_upload_schedule:upload schedule|staging manifest}, that's your proof. Now why?
+    -> hax_case_why
+}
 // D1 (2026-10-16): with flag 3 in, that spare staged the manifest.
 {flag3_submitted:
     And that spare staged the portal manifest. Now find me why.
@@ -1064,13 +1084,22 @@ See you at HQ.
         Her spare goes in at night. Look at who comes through the front door just before it.
     // Round 2 (2026-10-17, Lisa vaguer): with the files in hand, tie the
     // motive to a name on the log. Names nobody; the method stays the player's.
-    - found_door_log and found_vetting_file and not torres_suspected:
+    // Fixes round 3 (2026-10-17, blind B finding 9): "One file fits" did the
+    // last step for the student. It now waits for both files to be in the
+    // notes (found_vetting_file and found_halloran_vetting, set by each file's
+    // onRead) and for the gentler rung below to have been given on an earlier
+    // ask. The engine has no "note opened in the Notepad" event, so "opened"
+    // is "handed over"; the rung order is what holds it back.
+    - found_door_log and found_vetting_file and found_halloran_vetting and files_hint_given and not torres_suspected:
         {heard_tin_story:
             You've got the files. Lisa's tin is for someone on that team with a sick wife and no cover.
             One file fits. Find that name on the badge log.
         - else:
             You've got the files. One of them owes money he hasn't declared. Find that name on the badge log.
         }
+    - found_door_log and found_vetting_file and not torres_suspected:
+        ~ files_hint_given = true
+        You've got the files. Read both against what the team have told you about each other, then go back to the badge log.
     - found_door_log and not torres_suspected:
         {patricia_ko:
             You've got a pattern in the hallway badge log. Give me the name and the reason, or read her files. They're on her office floor.

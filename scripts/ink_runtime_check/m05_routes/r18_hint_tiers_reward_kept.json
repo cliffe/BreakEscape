@@ -47,6 +47,18 @@
 ]
 },
 {
+"note": "Fixes round 3 (2026-10-17): Owen's hand-over now points at the front-door column without the method; checked here so the HaX check below covers only the call."
+},
+{
+"said": [
+"The front door's on there too"
+],
+"notSaid": [
+"six minutes",
+"just before"
+]
+},
+{
 "note": "Ask HaX where I stand with the log just read."
 },
 {

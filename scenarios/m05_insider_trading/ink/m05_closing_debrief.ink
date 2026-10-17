@@ -311,7 +311,7 @@ Agent HaX: Let's go through it.
 - torres_reason_guessed:
     Agent HaX: You gave a wrong name or a wrong reason before the right one. Patricia's report says so, and so does mine.
 - door_log_reasoned:
-    Agent HaX: You read past her line on the badge log. Her spare on the server hallway, his badge on the front door six minutes before, every night.
+    Agent HaX: You read past the obvious line on the badge log. Halloran's spare on the server hallway, Torres' badge on the front door six minutes before, every night.
 - halloran_questioned:
     Agent HaX: Halloran told you whose spare it was. The log had already said who carried it.
 - found_door_log:
