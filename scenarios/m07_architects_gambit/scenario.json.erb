@@ -70,6 +70,18 @@ scada_password = "CascadeWindow19"
 
   "show_scenario_brief": "on_resume",
 
+  <%# Round 2 (2026-10-17): the safetynet credits overlay's header and ticker. No 'ENTROPY CONTAINED': the Architect is free and he knew the deployment in advance (both debrief codas say so). The debrief needs grid_saved, so the abort holds in every ending. %>
+  "creditsOverlay": {
+    "operation": "BLACKOUT",
+    "ticker": [
+      "OPERATION BLACKOUT: SEQUENCE ABORTED",
+      "FOUR OPERATIONS. ONE CLOCK. ONE TEAM.",
+      "HE KNEW WHERE YOU WOULD BE",
+      "THE ARCHITECT: AT LARGE",
+      "ENTROPY: STILL OPERATIONAL"
+    ]
+  },
+
   "startRoom": "security_checkpoint",
 
   "flags": {
@@ -1130,7 +1142,7 @@ scada_password = "CascadeWindow19"
               "eventPattern": "npc_hostile_state_changed",
               "condition": "data.npcId === 'ray_hollis' && data.isHostile === true && data.restored !== true",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 5500, "message": "He's slower than you, and he won't leave the checkpoint. If it's going badly, walk out of his reach." }
+              "sendTimedMessage": { "delay": 5500, "message": "He's slower than you, and he won't leave the checkpoint. If it's going badly, walk out of his reach before you read anything else." }
             },
             {
               "eventPattern": "npc_hostile_state_changed",
@@ -1142,7 +1154,7 @@ scada_password = "CascadeWindow19"
               "eventPattern": "npc_hostile_state_changed",
               "condition": "data.npcId === 'thomas_park' && data.isHostile === true && data.restored !== true",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 5500, "message": "To get clear, click open floor and walk, fists up or not. He's slower than you, and he won't follow you out of the vault." }
+              "sendTimedMessage": { "delay": 5500, "message": "To get clear, click open floor and walk, fists up or not. He's slower than you, won't follow you out of the vault, and won't wait while you read." }
             },
             {
               "eventPattern": "npc_hostile_state_changed",
@@ -1154,7 +1166,7 @@ scada_password = "CascadeWindow19"
               "eventPattern": "npc_hostile_state_changed",
               "condition": "data.npcId === 'james_mercer' && data.isHostile === true && data.restored !== true",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 5500, "message": "To get clear, click open floor and walk, fists up or not. He's slower than you, and he won't follow you out of the control room." }
+              "sendTimedMessage": { "delay": 5500, "message": "To get clear, click open floor and walk, fists up or not. He's slower than you, won't follow you out of the control room, and won't wait while you read." }
             },
             <%# Engine regression fixes (2026-10-17, finding 3): a Restart after a
                 knockout calms a non-KO'd Hollis, Park or Mercer and emits
@@ -1397,9 +1409,10 @@ scada_password = "CascadeWindow19"
           "npcType": "person",
           "gender": "male",
           "position": { "x": 3.5, "y": 6.3 },
-          "spriteSheet": "male_security_guard_v2",
-          "spriteTalk": "assets/characters/male_security_guard_talk.png",
-          "spriteVisemes": "assets/characters/male_security_guard_visemes.png",
+          "spriteSheet": "ray_hollis",
+          "spriteTalk": "assets/characters/ray_hollis_talk.png",
+          "spriteVisemes": "assets/characters/ray_hollis_visemes.png",
+          "avatar": "assets/characters/ray_hollis_headshot.png",
           "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 },
           "storyPath": "scenarios/m07_architects_gambit/ink/m07_npc_ray_hollis.json",
           "voice": {
@@ -1502,7 +1515,9 @@ scada_password = "CascadeWindow19"
           "npcType": "phone",
           "phoneId": "player_phone",
           "phoneTheme": "terminal",
-          "avatar": "assets/characters/male_hacker_hood_headshot.png",
+          "spriteTalk": "assets/characters/the_architect_talk.png",
+          "spriteVisemes": "assets/characters/the_architect_visemes.png",
+          "avatar": "assets/characters/the_architect_headshot.png",
           "storyPath": "scenarios/m07_architects_gambit/ink/m07_architect_comms.json",
           "voice": {
             "name": "Sadaltager",
@@ -1841,9 +1856,10 @@ scada_password = "CascadeWindow19"
           "npcType": "person",
           "gender": "female",
           "position": { "x": 3, "y": 7.5 },
-          "spriteSheet": "female_scientist_v2",
-          "spriteTalk": "assets/characters/female_scientist_talk.png",
-          "spriteVisemes": "assets/characters/female_scientist_visemes.png",
+          "spriteSheet": "elena_rodriguez",
+          "spriteTalk": "assets/characters/elena_rodriguez_talk.png",
+          "spriteVisemes": "assets/characters/elena_rodriguez_visemes.png",
+          "avatar": "assets/characters/elena_rodriguez_headshot.png",
           "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 },
           "storyPath": "scenarios/m07_architects_gambit/ink/m07_npc_elena_rodriguez.json",
           "voice": {
@@ -2031,9 +2047,10 @@ scada_password = "CascadeWindow19"
           "npcType": "person",
           "gender": "male",
           "position": { "x": 7, "y": 3 },
-          "spriteSheet": "male_office_worker_v2",
-          "spriteTalk": "assets/characters/male_office_worker_talk.png",
-          "spriteVisemes": "assets/characters/male_office_worker_visemes.png",
+          "spriteSheet": "james_mercer",
+          "spriteTalk": "assets/characters/james_mercer_talk.png",
+          "spriteVisemes": "assets/characters/james_mercer_visemes.png",
+          "avatar": "assets/characters/james_mercer_headshot.png",
           "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 },
           "storyPath": "scenarios/m07_architects_gambit/ink/m07_npc_james_mercer.json",
           "voice": {
@@ -2253,9 +2270,9 @@ scada_password = "CascadeWindow19"
           "npcType": "person",
           "gender": "male",
           "position": { "x": 4.5, "y": 4.5 },
-          "spriteSheet": "male_telecom_v2",
-          "spriteTalk": "assets/characters/male_telecom_talk.png",
-          "spriteVisemes": "assets/characters/male_telecom_visemes.png",
+          "spriteSheet": "thomas_park",
+          "spriteTalk": "assets/characters/thomas_park_talk.png",
+          "avatar": "assets/characters/thomas_park_headshot.png",
           "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 },
           "storyPath": "scenarios/m07_architects_gambit/ink/m07_npc_thomas_park.json",
           "voice": {
@@ -2348,6 +2365,24 @@ scada_password = "CascadeWindow19"
       ]
     }
   },
+
+<%# ---------------------------------------------------------------------------
+    CARRY-OVER (docs/agents/CARRY_OVER_PLAN.md; CONTRACT.md "Imported globals").
+    importGlobals: m06's freeze-or-watch choice and whether the player opened
+    Satoshi's safe, read-only, fixed when the game is created. A player who never
+    finished m06 gets the defaults, which are today's neutral lines. m06_completed
+    tells a run that finished without choosing apart from never played. Read by the
+    briefing (the "Frozen or watched" line) and HaX's topic_teacher.
+    exportGlobals: what m08 (and later) may import from this mission.
+%>
+  "importGlobals": [
+    { "from": "m06_follow_the_money", "var": "assets_seized",            "default": false },
+    { "from": "m06_follow_the_money", "var": "monitoring_enabled",       "default": false },
+    { "from": "m06_follow_the_money", "var": "architect_identity_found", "default": false },
+    { "from": "m06_follow_the_money", "completed": "m06_completed" }
+  ],
+  "exportGlobals": ["team_assignment", "team_redirected", "grid_saved", "mercer_fate",
+                    "elena_outcome", "architect_echo_heard"],
 
 <%# ---------------------------------------------------------------------------
     STATE CONTRACT. CONTRACT.md is the authority; this block must match it
