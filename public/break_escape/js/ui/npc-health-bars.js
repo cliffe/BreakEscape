@@ -118,7 +118,11 @@ export class NPCHealthBars {
 
     // Calculate HP percentage
     const hpPercent = Math.max(0, state.currentHP / state.maxHP);
-    console.log(`🏥 Updating ${npcId}: HP=${state.currentHP}/${state.maxHP} (${Math.round(hpPercent * 100)}%)`);
+    // update() calls this every frame; logging each call stalls the game with DevTools open
+    if (healthBar.loggedHP !== state.currentHP) {
+      healthBar.loggedHP = state.currentHP;
+      console.log(`🏥 Updating ${npcId}: HP=${state.currentHP}/${state.maxHP} (${Math.round(hpPercent * 100)}%)`);
+    }
 
     // Update bar width - shrinks from right side, stays anchored to left
     const maxWidth = COMBAT_CONFIG.ui.healthBarWidth;

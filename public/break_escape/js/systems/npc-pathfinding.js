@@ -737,10 +737,10 @@ export class NPCPathfindingManager {
         // The grid keeps a body's clearance round every obstacle, so a body
         // can be standing (legally, a few px from a wall or desk) in a cell the
         // grid calls blocked, and EasyStar finds nothing from a blocked start.
-        // Start from the nearest walkable cell instead; it is within 2 cells.
+        // Start from the nearest walkable cell the body can walk straight to.
         let sx = toCX(startX), sy = toCY(startY);
         if (this.worldGrid[sy]?.[sx] !== 0) {
-            const near = this.findNearestWalkableWorldCell(startX, startY, 2);
+            const near = this.findNearestWalkableStartCell(startX, startY);
             if (near) { sx = toCX(near.x); sy = toCY(near.y); }
         }
 
@@ -786,6 +786,46 @@ export class NPCPathfindingManager {
             if (best !== null) break;
         }
         return best;
+    }
+
+    /**
+     * Where a body standing at (worldX, worldY) should start a path from: the
+     * nearest walkable cell it can walk to in a straight line. The grid keeps a
+     * body's clearance round every obstacle, so a narrow open gap (behind m01's
+     * reception desk, against the back wall) is all blocked cells; the nearest
+     * walkable cell there is often on the far side of the desk, and an NPC sent
+     * to it walks into the desk and stays (m01: Sarah punched behind her desk).
+     * Only the centre line is tested: the gap is narrower than the body-width
+     * sweep, and the physics slides the body along an edge it grazes.
+     * Falls back to the plain nearest cell when nothing in range has a line.
+     */
+    findNearestWalkableStartCell(worldX, worldY, maxRadius = 10) {
+        if (!this.worldGrid || !this.worldGridBounds) return null;
+        const { minX, minY, cols, rows, step } = this.worldGridBounds;
+        const centerCX = Math.floor((worldX - minX) / step);
+        const centerCY = Math.floor((worldY - minY) / step);
+        if (this.worldGrid[centerCY]?.[centerCX] === 0) {
+            return { x: minX + centerCX * step + step / 2, y: minY + centerCY * step + step / 2 };
+        }
+
+        const candidates = [];
+        for (let dy = -maxRadius; dy <= maxRadius; dy++) {
+            for (let dx = -maxRadius; dx <= maxRadius; dx++) {
+                const cx = centerCX + dx, cy = centerCY + dy;
+                if (cy < 0 || cy >= rows || cx < 0 || cx >= cols) continue;
+                if (this.worldGrid[cy][cx] !== 0) continue;
+                const x = minX + cx * step + step / 2;
+                const y = minY + cy * step + step / 2;
+                candidates.push({ x, y, d: (x - worldX) ** 2 + (y - worldY) ** 2 });
+            }
+        }
+        candidates.sort((a, b) => a.d - b.d);
+        for (const c of candidates) {
+            if (this.hasWorldPhysicsLineOfSight(worldX, worldY, c.x, c.y, 0, 0)) {
+                return { x: c.x, y: c.y };
+            }
+        }
+        return this.findNearestWalkableWorldCell(worldX, worldY, maxRadius);
     }
 
     /**

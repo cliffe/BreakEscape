@@ -897,7 +897,7 @@ class NPCBehavior {
             const pathfindingManager = this.pathfindingManager || window.pathfindingManager;
             if (pathfindingManager) {
                 const { x: rnx, y: rny } = this.npcBodyPos();
-                const rSnapped = pathfindingManager.findNearestWalkableWorldCell(rnx, rny)
+                const rSnapped = pathfindingManager.findNearestWalkableStartCell(rnx, rny)
                                  || { x: rnx, y: rny };
                 pathfindingManager.findWorldPath(
                     rSnapped.x,
@@ -1140,7 +1140,7 @@ class NPCBehavior {
         console.log(`🗺️ [${this.npcId}] New waypoint target at (${wpDest.x}, ${wpDest.y}), dwell: ${nextWaypoint.dwellTime}ms`);
 
         const { x: wpnx, y: wpny } = this.npcBodyPos();
-        const wpSnapped = pathfindingManager.findNearestWalkableWorldCell(wpnx, wpny)
+        const wpSnapped = pathfindingManager.findNearestWalkableStartCell(wpnx, wpny)
                           || { x: wpnx, y: wpny };
         this._pathfindingInProgress = true;
         pathfindingManager.findWorldPath(
@@ -1245,7 +1245,7 @@ class NPCBehavior {
         }
 
         const { x: mrnx, y: mrny } = this.npcBodyPos();
-        const mrSnapped = pathfindingManager.findNearestWalkableWorldCell(mrnx, mrny)
+        const mrSnapped = pathfindingManager.findNearestWalkableStartCell(mrnx, mrny)
                           || { x: mrnx, y: mrny };
         pathfindingManager.findWorldPath(
             mrSnapped.x,
@@ -1341,7 +1341,7 @@ class NPCBehavior {
 
         // Request pathfinding from current position to target
         const { x: rndnx, y: rndny } = this.npcBodyPos();
-        const rndSnapped = pathfindingManager.findNearestWalkableWorldCell(rndnx, rndny)
+        const rndSnapped = pathfindingManager.findNearestWalkableStartCell(rndnx, rndny)
                            || { x: rndnx, y: rndny };
         pathfindingManager.findWorldPath(
             rndSnapped.x,
@@ -1552,7 +1552,7 @@ class NPCBehavior {
         // Snap both positions to walkable cells — EasyStar cannot path from/to blocked cells.
         // This is the same strategy player.js uses in movePlayerToPoint.
         const { x: csnx, y: csny } = this.npcBodyPos();
-        const npcSnapped  = pathfindingManager.findNearestWalkableWorldCell(csnx, csny)
+        const npcSnapped  = pathfindingManager.findNearestWalkableStartCell(csnx, csny)
                             || { x: csnx, y: csny };
         const destSnapped = pathfindingManager.findNearestWalkableWorldCell(playerPos.x, playerPos.y)
                             || { x: playerPos.x, y: playerPos.y };
