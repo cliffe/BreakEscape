@@ -98,6 +98,15 @@
     },
     "imported": "2026-10-17"
   },
+  "elena_rodriguez": {
+    "character_id": "2f1f7a20-6606-4a07-b264-9330cbfdc312",
+    "name": "Make portrait for Elena Rodriguez\nA tall, athletic...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-10-17"
+  },
   "female_blowse_v2": {
     "character_id": "df960bf2-20c6-4600-b725-44846cb0337f",
     "name": "A woman with long wavy black hair, light skin, a r...",
@@ -246,6 +255,15 @@
   "irina_volkova": {
     "character_id": "95fc9762-3a9d-4bff-9892-b1876aa69c95",
     "name": "Make portrait for Dr Irina Volkova\nA slender white...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-10-17"
+  },
+  "james_mercer": {
+    "character_id": "2e9acd6e-94b2-4dc0-bc42-c939d179fa7a",
+    "name": "Make portrait for Dr James Mercer\nA lean, tall whi...",
     "size": {
       "width": 60,
       "height": 60
@@ -535,6 +553,15 @@
   "the_architect": {
     "character_id": "53bd1c77-eaad-4877-82fc-cd649cb0f0ef",
     "name": "Make portrait for The Architect\nA man in his sixti...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-10-17"
+  },
+  "thomas_park": {
+    "character_id": "b5f70700-f3b0-4b11-b9fc-85f8b4319c02",
+    "name": "Make portrait for Thomas Park\nA lean Korean-Americ...",
     "size": {
       "width": 60,
       "height": 60

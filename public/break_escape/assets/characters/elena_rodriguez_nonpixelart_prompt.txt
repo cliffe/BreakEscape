@@ -1,0 +1,10 @@
+Make portrait for Elena Rodriguez
+A tall, athletic Mexican-American woman of about 32 with warm tan skin, strong eyebrows, long thick dark brown wavy hair tied in a low ponytail with loose strands falling by her cheeks, and dark eyes held steady despite fear, a grid operations engineer, competent and precise, who helped plan something she now knows will hurt people. She wears a high-visibility orange engineering safety vest with reflective stripes, open over a light grey work shirt with the sleeves rolled up, safety glasses tucked into the shirt's chest pocket, a lanyard with a plain blank ID card, a white hard hat clipped to her belt, dark navy work trousers and a brown leather belt. One hand resting on the hard hat at her hip. Her jaw is tight. No text, no writing and no logos anywhere.
+Body angled slightly to the side in a three-quarter turn, head turned toward the camera.
+Dialog view of character
+Dramatic lighting
+In the style of a detailed vector graphics illustration. the portrait shows the body from the hips up, including the waistline, belt, pockets and top of the trousers, against a plain background, in a game art design, realism and digital art aesthetic. Dialog character. Gritty realism.
+Slightly anime. Neutral expression.
+Square aspect ratio
+
+# Gemini (nanobanana), 2026-10-16, no reference images. Reframed with reframe_portrait.py --flip; unflipped original is elena_rodriguez_concept_3_raw.png.
