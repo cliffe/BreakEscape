@@ -248,6 +248,7 @@ def check_unknown_fields(json_data)
     scenario_id scenario_name scenario_brief endGoal version startRoom startPosition
     show_scenario_brief disableAttacks creditsTheme creditsOverlay gameClock flags music startItemsInInventory globalVariables
     player objectives rooms npcs phoneNPCs narrator timers _comment mutuallyExclusiveGlobals lighting
+    importGlobals exportGlobals
   ]
 
   # Check top-level unknown fields
@@ -3974,6 +3975,300 @@ def check_ink_global_collisions(json_data, repo_root)
   issues
 end
 
+# ============================================================================
+# CARRY-OVER: importGlobals / exportGlobals (docs/agents/CARRY_OVER_PLAN.md 2.8)
+# A reading mission imports another mission's exported globals as read-only
+# values, fixed when the game is created. Both ends are checked here.
+# ============================================================================
+
+CARRY_OVER_NAME_RE = /\A[a-z][a-z0-9]*_[a-z0-9_]+\z/.freeze
+CARRY_OVER_STRUCTURAL_MAPPING_KEYS = %w[setVisible completeTask unlockAim unlockTask skipTask emitEvent].freeze
+$carry_over_source_cache = {}
+
+# The name an import is known by in this mission (Game CarryOver.import_name).
+def carry_over_import_name(entry)
+  return nil unless entry.is_a?(Hash)
+  return entry['completed'].to_s if entry.key?('completed')
+  return entry['as'].to_s if entry['as'].is_a?(String) && !entry['as'].empty?
+
+  prefix = entry['from'].to_s[/\A((?:m|sis)\d\d)_/, 1]
+  prefix && entry['var'].is_a?(String) ? "#{prefix}_#{entry['var']}" : nil
+end
+
+# Before the other checks run: the imports become declared globals (with their
+# defaults), so every "is this global declared?" check accepts them. Returns the
+# original import list.
+def prepare_carry_over_globals(json_data)
+  imports = json_data['importGlobals']
+  return [] unless imports.is_a?(Array)
+
+  json_data['globalVariables'] = {} unless json_data['globalVariables'].is_a?(Hash)
+  imports.each do |entry|
+    name = carry_over_import_name(entry)
+    next if name.nil? || json_data['globalVariables'].key?(name)
+
+    json_data['globalVariables'][name] = entry.key?('completed') ? false : entry['default']
+  end
+  imports
+end
+
+def carry_over_ink_files(json_data, repo_root)
+  queue = []
+  walk = lambda do |node|
+    case node
+    when Hash
+      node.each do |k, v|
+        if k == 'storyPath' && v.is_a?(String)
+          queue << File.join(repo_root, v.sub(/\.json\z/, '.ink'))
+        else
+          walk.call(v)
+        end
+      end
+    when Array then node.each { |v| walk.call(v) }
+    end
+  end
+  walk.call(json_data)
+  files = []
+  until queue.empty?
+    f = queue.shift
+    next if files.include?(f) || !File.exist?(f)
+    files << f
+    File.readlines(f, encoding: 'UTF-8').each { |l| queue << File.expand_path($1, File.dirname(f)) if l =~ /^\s*INCLUDE\s+(\S+)/ }
+  end
+  files
+end
+
+# name => [[where, value-or-nil], ...] for every write in the scenario JSON.
+def carry_over_json_writes(json_data)
+  writes = Hash.new { |h, k| h[k] = [] }
+  walk = lambda do |node, path|
+    case node
+    when Hash
+      if node['type'] == 'set_global' && node['key'].is_a?(String)
+        writes[node['key']] << ["#{path} (applyActions set_global)", node['value']]
+      end
+      node.each do |k, v|
+        next if %w[globalVariables importGlobals exportGlobals].include?(k)
+        if PASS4C_SET_KEYS_HASH.include?(k) && v.is_a?(Hash)
+          v.each { |name, val| writes[name] << ["#{path}/#{k}", val] }
+        elsif (k == 'setGlobal' || k == 'globalVarOnKO' || k =~ /\AsetGlobal/) && v.is_a?(String)
+          writes[v] << ["#{path}/#{k}", nil]
+        else
+          walk.call(v, "#{path}/#{k}")
+        end
+      end
+    when Array
+      node.each_with_index { |v, i| walk.call(v, "#{path}[#{i}]") }
+    end
+  end
+  walk.call(json_data, '')
+  writes
+end
+
+# name => [[where, value-or-nil], ...] for every write in the mission's ink.
+def carry_over_ink_writes(ink_files, repo_root)
+  writes = Hash.new { |h, k| h[k] = [] }
+  ink_files.each do |f|
+    rel = f.sub("#{repo_root}/", '')
+    File.readlines(f, encoding: 'UTF-8').each_with_index do |raw, i|
+      line = raw.sub(%r{(^|\s)//.*$}, '\1')
+      if line =~ /^\s*~\s*(\w+)\s*=\s*(.+?)\s*$/
+        var, lit = $1, $2
+        writes[var] << ["#{rel}:#{i + 1}", lit[/\A"(.*)"\z/, 1]]
+      elsif line =~ /^\s*~\s*(\w+)\s*(?:\+\+|--|\+=|-=)/
+        writes[$1] << ["#{rel}:#{i + 1}", nil]
+      end
+      line.scan(/#\s*set_global:(\w+):([^\s#]*)/) { |n, v| writes[n] << ["#{rel}:#{i + 1}", v] }
+      line.scan(/#\s*set_variable:(\w+)(?:=([^\s#]*))?/) { |n, v| writes[n] << ["#{rel}:#{i + 1}", v] }
+    end
+  end
+  writes
+end
+
+def carry_over_load_source(scenarios_dir, from)
+  return $carry_over_source_cache[[scenarios_dir, from]] if $carry_over_source_cache.key?([scenarios_dir, from])
+
+  dir = File.join(scenarios_dir, from)
+  erb = File.join(dir, 'scenario.json.erb')
+  plain = File.join(dir, 'scenario.json')
+  data = if File.exist?(erb)
+           render_erb_to_json(erb)
+         elsif File.exist?(plain)
+           JSON.parse(File.read(plain))
+         end
+  $carry_over_source_cache[[scenarios_dir, from]] = data
+rescue StandardError => e
+  $carry_over_source_cache[[scenarios_dir, from]] = { '__error' => e.message.lines.first.to_s.strip }
+end
+
+# imports: the list prepare_carry_over_globals returned. own_globals: this
+# mission's globalVariables before the imports were merged in.
+def check_carry_over(json_data, repo_root, mission_name, scenarios_dir, imports, own_globals)
+  issues = []
+  imports = Array(imports)
+  exports = json_data['exportGlobals']
+  return issues if imports.empty? && exports.nil?
+
+  ink_files = carry_over_ink_files(json_data, repo_root)
+  ink_writes = carry_over_ink_writes(ink_files, repo_root)
+  json_writes = carry_over_json_writes(json_data)
+  own_globals = own_globals.is_a?(Hash) ? own_globals : {}
+
+  # ---- exports (this mission as a source) ----
+  unless exports.nil?
+    if !exports.is_a?(Array) || !exports.all? { |e| e.is_a?(String) }
+      issues << "❌ ERROR: exportGlobals must be a list of global names."
+    else
+      imported_names = imports.map { |e| carry_over_import_name(e) }.compact.reject { |n| own_globals.key?(n) }
+      exports.each do |name|
+        if imported_names.include?(name)
+          issues << "❌ ERROR: exportGlobals lists '#{name}', which this mission imports. Imports never pass on second-hand; " \
+                    "a later mission imports from the original source."
+        elsif !own_globals.key?(name)
+          issues << "❌ ERROR: exportGlobals lists '#{name}', which is not in this mission's globalVariables."
+        elsif ink_writes[name].empty? && json_writes[name].empty?
+          issues << "⚠️ WARNING: exported global '#{name}' is never written in this mission (no ink assignment, tag or " \
+                    "scenario setter), so every mission that imports it always sees the default."
+        end
+      end
+    end
+  end
+
+  # ---- imports (this mission as a reader) ----
+  names_seen = {}
+  imports.each_with_index do |entry, i|
+    at = "importGlobals[#{i}]"
+    unless entry.is_a?(Hash) && entry['from'].is_a?(String) && !entry['from'].empty?
+      issues << "❌ ERROR: #{at} needs a \"from\" (the source mission's folder name)."
+      next
+    end
+    from = entry['from']
+    name = carry_over_import_name(entry)
+    completed_form = entry.key?('completed')
+
+    if from == mission_name
+      issues << "❌ ERROR: #{at} imports from this mission itself (#{from})."
+      next
+    end
+    if completed_form && (entry.key?('var') || entry.key?('as') || entry.key?('default'))
+      issues << "❌ ERROR: #{at}: the \"completed\" form takes only \"from\" and \"completed\" (no var, as or default)."
+    end
+    if !completed_form && !entry['var'].is_a?(String)
+      issues << "❌ ERROR: #{at} needs a \"var\" (a global the source exports) or a \"completed\" name."
+      next
+    end
+    if name.nil?
+      issues << "❌ ERROR: #{at}: \"as\" is required when \"from\" (#{from}) doesn't start with an mNN_ or sisNN_ prefix."
+      next
+    end
+    if name !~ CARRY_OVER_NAME_RE || name.start_with?('global_')
+      issues << "❌ ERROR: #{at}: imported name '#{name}' must be lower_snake_case with a prefix (e.g. m06_assets_seized), " \
+                "and must not start with global_."
+    end
+    if own_globals.key?(name)
+      issues << "❌ ERROR: #{at}: imported name '#{name}' collides with this mission's own globalVariables."
+      next
+    end
+    if names_seen.key?(name)
+      issues << "❌ ERROR: #{at}: imported name '#{name}' is already used by #{names_seen[name]}."
+    end
+    names_seen[name] = at
+
+    source = carry_over_load_source(scenarios_dir, from)
+    if source.nil?
+      issues << "❌ ERROR: #{at}: source mission '#{from}' not found (no #{from}/scenario.json.erb next to this mission)."
+    elsif source['__error']
+      issues << "❌ ERROR: #{at}: source mission '#{from}' failed to render: #{source['__error']}"
+    elsif !completed_form
+      var = entry['var']
+      sglobals = source['globalVariables'].is_a?(Hash) ? source['globalVariables'] : {}
+      if !entry.key?('default')
+        issues << "❌ ERROR: #{at}: '#{name}' needs a \"default\", the value used when the player never finished #{from}."
+      end
+      if !sglobals.key?(var)
+        issues << "❌ ERROR: #{at}: '#{var}' is not a global in #{from}'s globalVariables."
+      else
+        unless Array(source['exportGlobals']).include?(var)
+          issues << "❌ ERROR: #{at}: #{from} does not list '#{var}' in its exportGlobals. Add it there, so a rename in " \
+                    "#{from} is caught."
+        end
+        if entry.key?('default') && ink_global_value_type(entry['default']) != ink_global_value_type(sglobals[var])
+          issues << "❌ ERROR: #{at}: default #{entry['default'].inspect} for '#{name}' is not the same type as " \
+                    "#{from}'s own default for '#{var}' (#{sglobals[var].inspect})."
+        end
+        # String values this mission compares against that the source never assigns.
+        if sglobals[var].is_a?(String)
+          src_ink = carry_over_ink_writes(carry_over_ink_files(source, repo_root), repo_root)
+          src_json = carry_over_json_writes(source)
+          known = ([sglobals[var]] + (src_ink[var] + src_json[var]).map(&:last)).compact.map(&:to_s)
+          compared = []
+          ink_files.each do |f|
+            File.read(f, encoding: 'UTF-8').scan(/\b#{Regexp.escape(name)}\s*(?:==|!=)\s*"([^"]*)"/) { |(v)| compared << v }
+          end
+          json_strings = []
+          sw = lambda do |n|
+            case n
+            when Hash then n.each { |k, v| sw.call(v) unless k == 'importGlobals' }
+            when Array then n.each { |v| sw.call(v) }
+            when String then json_strings << n
+            end
+          end
+          sw.call(json_data)
+          json_strings.each do |s|
+            s.scan(/globalVars\.#{Regexp.escape(name)}\s*(?:===|!==|==|!=)\s*['"]([^'"]*)['"]/) { |(v)| compared << v }
+          end
+          (compared.uniq - known).each do |v|
+            issues << "⚠️ WARNING: '#{name}' is compared with \"#{v}\", a value #{from} never assigns to '#{var}' " \
+                      "(it assigns #{known.uniq.map(&:inspect).join(', ')})."
+          end
+        end
+      end
+    end
+
+    # Read-only: nothing in this mission may write an import.
+    (ink_writes[name] + json_writes[name]).each do |where, _|
+      issues << "❌ ERROR: imported global '#{name}' is written at #{where}. Imports are read-only: the server drops the " \
+                "write, and the value would differ from what was carried in."
+    end
+  end
+
+  # Solvability: the mission must be finishable with every import at its default.
+  imported = names_seen.keys
+  unless imported.empty?
+    Array(json_data['objectives']).each do |aim|
+      next unless aim.is_a?(Hash)
+      Array(aim.dig('concludeRequires', 'globals')).each do |g|
+        issues << "❌ ERROR: aim '#{aim['aimId']}' concludeRequires.globals uses imported '#{g}'. A player who never finished the " \
+                  "source could not end this mission." if imported.include?(g)
+      end
+    end
+    uc_walk = lambda do |node, path|
+      case node
+      when Hash
+        if node['unlockCondition'].is_a?(Hash) && imported.include?(node['unlockCondition']['globalVariable'])
+          issues << "❌ ERROR: #{path}/unlockCondition gates on imported '#{node['unlockCondition']['globalVariable']}'. " \
+                    "The mission must be solvable with every import at its default."
+        end
+        if node['eventPattern'].is_a?(String) && node['condition'].is_a?(String)
+          hit = imported.find { |g| node['condition'] =~ /(?<![\w])#{Regexp.escape(g)}(?!\w)/ }
+          structural = CARRY_OVER_STRUCTURAL_MAPPING_KEYS.select { |k| node.key?(k) }
+          if hit && structural.any?
+            issues << "⚠️ WARNING: #{path}: eventMapping on #{node['eventPattern']} has a condition on imported '#{hit}' and " \
+                      "changes the game (#{structural.join(', ')}). Check in a design review that the mission is still " \
+                      "solvable with every import at its default."
+          end
+        end
+        node.each { |k, v| uc_walk.call(v, "#{path}/#{k}") unless %w[importGlobals globalVariables].include?(k) }
+      when Array
+        node.each_with_index { |v, i| uc_walk.call(v, "#{path}[#{i}]") }
+      end
+    end
+    uc_walk.call(json_data, '')
+  end
+
+  issues
+end
+
 def check_tooling_pass4c(json_data, repo_root)
   check_stacked_timed_texts(json_data) + check_globals_never_read(json_data, repo_root) + check_credit_sections(json_data) +
     check_ink_global_collisions(json_data, repo_root)
@@ -4557,6 +4852,10 @@ def main
     puts "✓ ERB rendered successfully"
     puts
 
+    # Carry-over: imported globals count as declared for every later check.
+    own_globals = (json_data['globalVariables'] || {}).dup
+    carry_imports = prepare_carry_over_globals(json_data)
+
     # Output JSON if requested
     if options[:output_json]
       puts "Rendered JSON:"
@@ -4708,6 +5007,8 @@ def main
     common_issues += check_recurring_bugs(json_data, repo_root)
     common_issues += check_unheard_room_triggers(json_data, repo_root)
     common_issues += check_tooling_pass4c(json_data, repo_root)
+    common_issues += check_carry_over(json_data, repo_root, File.basename(File.dirname(erb_path)),
+                                      File.dirname(File.dirname(erb_path)), carry_imports, own_globals)
 
     # Check for recommended fields
     puts "Checking recommended fields..."

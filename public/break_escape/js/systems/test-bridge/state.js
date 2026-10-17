@@ -652,7 +652,10 @@ export function getState({ radius, limit } = {}) {
         dialogue: window.__test?.minigame?.getState?.()?.dialogue ?? null,
         inventory: inventoryState(),
         objectives: objectivesState(),
-        globals: globalsState()
+        globals: globalsState(),
+        // Globals carried in from earlier missions, with where each came from
+        // ({ name: { from, var|completed, found, sourceGameId } }; CARRY_OVER_PLAN.md).
+        importedGlobals: JSON.parse(JSON.stringify(window.gameScenario?.importedGlobals || {}))
     };
 }
 

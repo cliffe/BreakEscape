@@ -324,6 +324,26 @@ class NPCConversationStateManager {
     }
 
     /**
+     * Record the globals imported from earlier missions (scenario.importedGlobals,
+     * docs/agents/CARRY_OVER_PLAN.md). They are read-only: ink assignments and
+     * the #set_global / #set_variable tags are refused with a warning. This is a
+     * guard against authoring mistakes; the server, which never stores a write to
+     * an imported name, and the validator are what enforce it.
+     * @param {Iterable<string>} names
+     */
+    setReadOnlyGlobals(names) {
+        this.readOnlyGlobalNames = new Set(names || []);
+    }
+
+    /**
+     * @param {string} name
+     * @returns {boolean} True if the global was imported from an earlier mission
+     */
+    isReadOnlyGlobal(name) {
+        return !!this.readOnlyGlobalNames && this.readOnlyGlobalNames.has(name);
+    }
+
+    /**
      * Check if a variable is a synced global: declared in the scenario's
      * globalVariables, or named with the global_ prefix.
      *
@@ -431,6 +451,7 @@ class NPCConversationStateManager {
         names.forEach(name => {
             if (!(name in window.gameState.globalVariables)) return;
             if (!this.isGlobalVariable(name)) return;
+            if (this.isReadOnlyGlobal(name)) return; // imported: never written back
             if (story.variablesState.GlobalVariableExistsWithName(name)) {
                 // Use the indexer which automatically unwraps Ink's Value objects
                 // According to Ink source: this[variableName] returns (varContents as Runtime.Value).valueObject
@@ -477,6 +498,19 @@ class NPCConversationStateManager {
                 // story declares, so onceOnly eventMappings whose condition had since
                 // become true fired spuriously (m01: three "Derek's contained" calls).
                 if (window.gameState.globalVariables[variableName] === unwrappedValue) return;
+
+                // Imported from an earlier mission: read-only. Put the story's copy
+                // back. inkjs may already have used the written value for the rest
+                // of this passage, so this is clean-up; the validator is the guard.
+                if (this.isReadOnlyGlobal(variableName)) {
+                    console.warn(`⚠️ Ink (${npcId}) tried to set imported read-only global ${variableName}; reverted`);
+                    try {
+                        story.variablesState[variableName] = window.gameState.globalVariables[variableName];
+                    } catch (err) {
+                        console.warn(`⚠️ Could not revert ${variableName}:`, err.message);
+                    }
+                    return;
+                }
 
                 story.__beChangedGlobals.add(variableName);
                 console.log(`🌐 Global variable changed: ${variableName} = ${newValue} (from ${npcId})`);

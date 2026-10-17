@@ -4,7 +4,10 @@
 //  2. #set_global / #set_variable emit global_variable_changed only on a change,
 //     as an ink assignment does;
 //  3. a phone intro's deferred globals are applied on first open only if nothing
-//     has set them since the preload.
+//     has set them since the preload;
+//  4. globals imported from an earlier mission (CARRY_OVER_PLAN.md) are
+//     read-only: an ink assignment is reverted, #set_global and #set_variable
+//     are refused, and the value still syncs into every story.
 // Run with: node --test test/js/global-sync-declared.test.mjs
 //
 // Browser modules are copied to a temp dir as .mjs, as in
@@ -246,4 +249,76 @@ test('the phone-chat minigame applies deferred globals through the guarded helpe
     const src = readFileSync(join(js, 'minigames/phone-chat/phone-chat-minigame.js'), 'utf8');
     assert.ok(src.includes('PhoneChatConversation.applyDeferredGlobals(npc)'));
     assert.ok(!/deferredGlobals\)\.forEach/.test(src), 'no unguarded write loop left');
+});
+
+// ------------------------------------------------------------------ item 4 (carry-over imports)
+
+function setupImported() {
+    const ctx = setup();
+    ctx.manager.setReadOnlyGlobals(['briefing_seen']);
+    return ctx;
+}
+
+test('an imported global still syncs into a story', () => {
+    const { manager } = setupImported();
+    window.gameState.globalVariables.briefing_seen = true;
+    const story = newStory();
+    manager.syncGlobalVariablesToStory(story);
+    assert.equal(story.variablesState.briefing_seen, true);
+    assert.equal(manager.isReadOnlyGlobal('briefing_seen'), true);
+    assert.equal(manager.isReadOnlyGlobal('mission_phase'), false);
+});
+
+test('an ink assignment to an imported global is reverted with a warning and not written to gameState', () => {
+    const { manager, dispatcher } = setupImported();
+    const warnings = [];
+    const warn = console.warn;
+    console.warn = (...a) => warnings.push(a.join(' '));
+    try {
+        const story = newStory();
+        manager.syncGlobalVariablesToStory(story);
+        manager.observeGlobalVariableChanges(story, 'guard');
+        story.ChoosePathString('hub');
+        story.Continue();
+        story.ChooseChoiceIndex(1); // Read the brief: ~ briefing_seen = true
+        story.ContinueMaximally();
+        assert.equal(window.gameState.globalVariables.briefing_seen, false);
+        assert.equal(story.variablesState.briefing_seen, false, 'the story copy is put back');
+        assert.equal(changeEvents(dispatcher, 'briefing_seen').length, 0);
+        assert.deepEqual(manager.syncGlobalVariablesFromStory(story), []);
+        assert.ok(warnings.some(w => w.includes('read-only global briefing_seen')));
+    } finally {
+        console.warn = warn;
+    }
+});
+
+test('the full-scan fallback (no observer) never writes an imported global back', () => {
+    const { manager } = setupImported();
+    const story = newStory();
+    story.variablesState.briefing_seen = true;
+    assert.deepEqual(manager.syncGlobalVariablesFromStory(story), []);
+    assert.equal(window.gameState.globalVariables.briefing_seen, false);
+});
+
+test('#set_global and #set_variable refuse an imported global', async () => {
+    const { dispatcher } = setupImported();
+    const warn = console.warn;
+    console.warn = () => {};
+    try {
+        await processGameActionTags(['set_global:briefing_seen:true', 'set_variable:briefing_seen=true'], null);
+    } finally {
+        console.warn = warn;
+    }
+    assert.equal(window.gameState.globalVariables.briefing_seen, false);
+    assert.equal(changeEvents(dispatcher, 'briefing_seen').length, 0);
+    await processGameActionTags(['set_variable:mission_phase=night'], null);
+    assert.equal(window.gameState.globalVariables.mission_phase, 'night', 'other globals still set');
+});
+
+test('game.js marks the imports read-only and re-applies them over the saved globals', () => {
+    const src = readFileSync(join(js, 'core/game.js'), 'utf8');
+    const mark = src.indexOf('setReadOnlyGlobals?.(importedNames)');
+    const merge = src.indexOf('Object.assign(window.gameState.globalVariables, gameScenario.savedGlobalVariables)');
+    const reapply = src.indexOf('importedNames.forEach');
+    assert.ok(mark > 0 && merge > mark && reapply > merge);
 });

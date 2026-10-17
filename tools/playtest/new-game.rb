@@ -1,6 +1,6 @@
 # Create a playtest game the same way the standalone "new game" form does.
 #
-#   BREAK_ESCAPE_STANDALONE=true bin/rails runner tools/playtest/new-game.rb <mission> [flag_hints.xml]
+#   BREAK_ESCAPE_STANDALONE=true bin/rails runner tools/playtest/new-game.rb <mission> [flag_hints.xml] [--imports=none|latest|<file.json>]
 #
 # <mission> is the scenario name ("m02_ransomed_trust") or the numeric id.
 #
@@ -13,8 +13,19 @@
 # Aborts rather than handing back a game with no valid flags: that failure makes
 # every flag submission return "Invalid flag" and looks exactly like a scenario
 # bug halfway through a run.
+#
+# --imports (carry-over, docs/agents/CARRY_OVER_PLAN.md) sets what a mission
+# with importGlobals takes from earlier missions:
+#   none    (the default) every import at its default: "never played". Every
+#           local playtest shares one demo player, so without this an earlier
+#           test run's finished m06 would leak into the next m07 run.
+#   latest  look the player's finished runs up, as a real game does.
+#   <file>  a JSON object { "m06_assets_seized": true, "m06_completed": true }.
+# Games started from the browser UI always look up (latest).
 
-arg = ARGV[0] or abort 'usage: new-game.rb <mission_name_or_id> [flag_hints.xml]'
+imports_opt = 'none'
+ARGV.reject! { |a| a.start_with?('--imports=') && (imports_opt = a.split('=', 2)[1]) }
+arg = ARGV[0] or abort 'usage: new-game.rb <mission_name_or_id> [flag_hints.xml] [--imports=none|latest|<file.json>]'
 xml_path = ARGV[1]
 
 mission = if arg =~ /\A\d+\z/
@@ -85,6 +96,16 @@ g = BreakEscape::Game.new(
   player: BreakEscape::DemoUser.first || BreakEscape::DemoUser.create!(username: 'playtest'),
   mission: mission
 )
+case imports_opt
+when 'latest' then nil
+when 'none' then state[BreakEscape::CarryOver::OVERRIDES_KEY] = {}
+else
+  abort "--imports file not found: #{imports_opt}" unless File.exist?(imports_opt)
+  overrides = JSON.parse(File.read(imports_opt))
+  abort '--imports file must hold a JSON object' unless overrides.is_a?(Hash)
+  state[BreakEscape::CarryOver::OVERRIDES_KEY] = overrides
+end
+
 g.player_state = state
 g.save!
 
@@ -111,6 +132,9 @@ puts "MISSION=#{mission.name} (id #{mission.id})"
 puts "GAME_ID=#{g.id}"
 puts "URL=http://127.0.0.1:#{ENV.fetch('PLAYTEST_PORT', '3000')}/break_escape/games/#{g.id}"
 puts "FLAG_SOURCE=#{source}"
+if g.scenario_data['importedGlobals'].present?
+  puts "IMPORTS=#{imports_opt} #{g.scenario_data['importedGlobals'].keys.map { |k| "#{k}=#{g.scenario_data['globalVariables'][k].inspect}" }.join(' ')}"
+end
 puts "FLAGS_EXPECTED=#{needs.map { |vm, n| "#{vm}:#{n}" }.join(' ')}" if needs.any?
 puts "VALID_FLAGS=#{valid.length}"
 

@@ -161,6 +161,27 @@ module BreakEscape
       assert_equal first, body['missionConcludedAt'], 'The timestamp must not move on a repeat call.'
     end
 
+    # Carry-over (docs/agents/CARRY_OVER_PLAN.md 2.4): the credits of a Restart
+    # replay refresh the story snapshot later missions import, and still roll.
+    test 'a repeat conclude after a Restart refreshes the story snapshot and still answers alreadyConcluded' do
+      game = create_game(gated_scenario, tasks: { 'submit_ssh_flag' => 'completed', 'submit_sudo_flag' => 'completed' })
+      game.player_state['globalVariables'] = { 'choice' => 'first' }
+      game.save!
+      post conclude_game_url(game)
+      assert_equal 'first', game.reload.player_state.dig('storySnapshot', 'globals', 'choice')
+
+      game.reset_player_state! # wipes the flag tasks
+      game.reload.player_state['globalVariables']['choice'] = 'second'
+      game.save!
+
+      post conclude_game_url(game)
+      body = JSON.parse(response.body)
+
+      assert_equal true, body['success']
+      assert_equal true, body['alreadyConcluded']
+      assert_equal 'second', game.reload.player_state.dig('storySnapshot', 'globals', 'choice')
+    end
+
     test "cannot conclude another player's game" do
       game = Game.create!(mission: @mission, player: @other,
                           scenario_data: ungated_scenario, player_state: PLAYER_STATE.deep_dup)

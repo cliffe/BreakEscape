@@ -2,6 +2,8 @@ module BreakEscape
   class Game < ApplicationRecord
     self.table_name = 'break_escape_games'
 
+    include CarryOver
+
     # Associations
     belongs_to :player, polymorphic: true
     belongs_to :mission, class_name: 'BreakEscape::Mission'
@@ -23,6 +25,7 @@ module BreakEscape
     # Callbacks
     before_create :sync_vm_set_id_column
     before_create :generate_scenario_data
+    before_create :resolve_imported_globals # CarryOver: earlier missions' choices, before player_state is built
     before_create :initialize_player_state
     before_create :set_started_at
     before_create :set_scoring_totals
@@ -76,7 +79,12 @@ module BreakEscape
     # Resets player_state to initial values, preserving mission context (VM/flags)
     def reset_player_state!
       # unlockedAvatars: a reset must not take back avatars a completed run earned.
-      preserved_keys = %w[vm_set_id vm_ips flags_by_vm standalone_flags] + [AvatarUnlocks::STATE_KEY]
+      # storySnapshot: the last finished run's choices, which later missions
+      # import (CarryOver). A concluded game from before snapshots existed gets
+      # one now, from the globals about to be wiped.
+      write_story_snapshot if mission_concluded_at.present? && !player_state.key?(CarryOver::SNAPSHOT_KEY)
+      preserved_keys = %w[vm_set_id vm_ips flags_by_vm standalone_flags] +
+                       [AvatarUnlocks::STATE_KEY, CarryOver::SNAPSHOT_KEY]
       new_state = player_state.slice(*preserved_keys)
       self.player_state = new_state
       initialize_player_state
@@ -229,9 +237,20 @@ module BreakEscape
     # Merge the client's global variables. A null value deletes the key: the
     # client sends null for a global that no longer exists (the SIEM minigame
     # deletes its state key). Does not save!; the caller does.
+    # Imported globals (CarryOver) are read-only: a client write to one, delete
+    # included, is dropped.
     def merge_global_variables!(variables)
       globals = player_state['globalVariables'] ||= {}
+      read_only = imported_global_names
       variables.each do |key, value|
+        if read_only.include?(key.to_s)
+          # The first sync after a load resends every global, imports included
+          # and unchanged; only a changed value is worth a warning.
+          if globals[key.to_s] != value
+            Rails.logger.warn "[BreakEscape] Ignored a client write to imported global '#{key}'"
+          end
+          next
+        end
         if value.nil?
           globals.delete(key)
         else
@@ -2061,6 +2080,7 @@ module BreakEscape
       self.mission_concluded_at = now
       self.status               = 'completed'
       self.completed_at         = now
+      write_story_snapshot # CarryOver; the credits' /conclude refreshes it after the debrief
       true  # concluded
     end
 
@@ -2195,6 +2215,10 @@ module BreakEscape
 
       set_global.each do |name, value|
         name = name.to_s
+        if imported_global?(name)
+          Rails.logger.warn "[BreakEscape] Task #{task['taskId']} onComplete.setGlobal '#{name}' is an imported (read-only) global; not applied"
+          next
+        end
         unless declared.key?(name)
           Rails.logger.warn "[BreakEscape] Task #{task['taskId']} onComplete.setGlobal '#{name}' is not declared in globalVariables; not applied server-side"
           next
@@ -2434,6 +2458,9 @@ module BreakEscape
       # Dynamic room state tracking (delta overlay on scenario_data)
       self.player_state['room_states'] ||= {}           # Hash of room modifications
       self.player_state['npc_given_items'] ||= {}       # npc_id => items that NPC has handed to the player
+
+      # Imported globals (CarryOver): their values and the read-only list.
+      apply_imported_globals_to_state
     end
 
     def set_started_at
@@ -2580,6 +2607,16 @@ module BreakEscape
       return { concluded: false, already: false, missing: ['no missionConclusion aim in scenario'] } if aim.nil?
 
       if mission_concluded_at.present?
+        # The credits of a game that had already concluded (the aim's tasks got
+        # there first, or a Restart replay): refresh the story snapshot later
+        # missions import, so it holds the debrief's final choices. Only when the
+        # story globals the ending needs are set again, so a half-finished replay
+        # can't overwrite a full run. Never refuses the credits, and touches only
+        # player_state: no score, completed_at or completion hook.
+        if conclude_story_globals_met?(aim)
+          write_story_snapshot
+          save!
+        end
         return { concluded: true, already: true, missing: [] }
       end
 
@@ -2591,6 +2628,7 @@ module BreakEscape
       self.status               = 'completed'
       self.completed_at         = now
       self.score                = calculate_task_score.round
+      write_story_snapshot # CarryOver
       save!
 
       { concluded: true, already: false, missing: [] }

@@ -1367,6 +1367,10 @@ export async function create() {
     // globals are merged: a save can hold names the scenario no longer declares,
     // which stay in gameState but don't sync. Nothing is pruned from the save.
     window.npcConversationStateManager?.setDeclaredGlobals?.(Object.keys(gameScenario.globalVariables || {}));
+    // Globals imported from earlier missions (the server resolved them into
+    // globalVariables when the game was created): read-only from here on.
+    const importedNames = Object.keys(gameScenario.importedGlobals || {});
+    window.npcConversationStateManager?.setReadOnlyGlobals?.(importedNames);
 
     // Merge in server-saved global variables (from a resumed session).
     // Saved values take precedence over scenario defaults so that persistent
@@ -1375,6 +1379,10 @@ export async function create() {
         Object.assign(window.gameState.globalVariables, gameScenario.savedGlobalVariables);
         console.log('🌐 Merged saved global variables from server:', gameScenario.savedGlobalVariables);
     }
+    // A save never overrides an imported value.
+    importedNames.forEach(name => {
+        window.gameState.globalVariables[name] = gameScenario.globalVariables?.[name];
+    });
     
     // Restore saved notes from a previous session (includes player observations).
     // Deduplicate by id so notes added this session aren't lost if restore races with addNote.

@@ -1,0 +1,39 @@
+{
+ "steps": [
+  {
+   "note": "R33 (carry-over, 2026-10-17): m07 never finished, so the imports are at their defaults. ATHENA's original line, word for word (cached audio)."
+  },
+  {
+   "talk": "briefing"
+  },
+  {
+   "said": [
+    "one team to send, and an enemy who had the deployment before we did."
+   ],
+   "notSaid": [
+    "Your tasking order sent the one team to Washington",
+    "Your tasking order sent the one team to San Francisco",
+    "Your tasking order sent the one team to Austin",
+    "You moved the one team to Austin with the clock running",
+    "Your tasking order for the one team is blank",
+    "dispatch in eleven counties has started dropping calls",
+    "so no backdoor went anywhere",
+    "Nine days on, those counties are still answering"
+   ]
+  },
+  {
+   "talk": "netherton",
+   "picks": [
+    "Tell me about Nightshade"
+   ]
+  },
+  {
+   "said": [
+    "noticed nothing"
+   ]
+  },
+  {
+   "maxRun": 9
+  }
+ ]
+}

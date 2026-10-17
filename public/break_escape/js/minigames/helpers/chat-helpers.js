@@ -462,6 +462,11 @@ export async function processGameActionTags(tags, ui) {
                             console.warn(result.message);
                             break;
                         }
+                        if (window.npcConversationStateManager?.isReadOnlyGlobal?.(varName)) {
+                            result.message = `⚠️ set_global refused: ${varName} is imported from an earlier mission (read-only)`;
+                            console.warn(result.message);
+                            break;
+                        }
                         
                         // Parse value (support booleans, numbers, strings)
                         let parsedValue = varValue;
@@ -549,6 +554,11 @@ export async function processGameActionTags(tags, ui) {
 
                         if (!varName) {
                             result.message = '⚠️ set_variable tag missing variable name';
+                            console.warn(result.message);
+                            break;
+                        }
+                        if (window.npcConversationStateManager?.isReadOnlyGlobal?.(varName)) {
+                            result.message = `⚠️ set_variable refused: ${varName} is imported from an earlier mission (read-only)`;
                             console.warn(result.message);
                             break;
                         }

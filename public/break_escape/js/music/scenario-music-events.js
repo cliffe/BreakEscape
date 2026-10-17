@@ -182,6 +182,10 @@ async function concludeMission() {
     // global set moments ago (sis01's debrief_complete) only reaches it with the
     // 30 s sync. Without this the server refuses an ending the player has earned.
     await window.stateSync?.sync?.();
+    // Once more: a no-op when the first was saved, a resend when it was answered
+    // stale or failed. The conclude also snapshots the story globals that later
+    // missions import (CARRY_OVER_PLAN.md), so the debrief's last choices matter.
+    await window.stateSync?.sync?.();
 
     let response;
     try {
