@@ -148,7 +148,7 @@ Agent HaX: Don't go in hoping to talk him round. He knows exactly what happens t
 === timeline_explanation ===
 #speaker:agent_0x99
 
-Agent HaX: Their traffic puts it at 0800 local.
+Agent HaX: Their traffic puts it at eight in the morning, local time.
 
 Agent HaX: That's your window. It's tight, and they're ready for interference.
 
@@ -249,7 +249,7 @@ Agent HaX: Well, it's winter, and this is the site.
     Agent HaX: You put Victoria Sterling in a hospital bed, and she hasn't said a word since. The directive came off the drive in her desk.
 }
 
-Agent HaX: Social Fabric are standing by to amplify the panic. Strikes across the region, all timed to 0800.
+Agent HaX: Social Fabric are standing by to amplify the panic. Strikes across the region, all timed for eight o'clock.
 
 Agent HaX: One mind behind it, the one the directive named: The Architect. Voltage answers up that chain. Take him, and we're closer to whoever's setting the clock on all of it.
 

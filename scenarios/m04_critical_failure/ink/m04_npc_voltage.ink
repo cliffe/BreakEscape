@@ -238,7 +238,7 @@ Narrator: He answers without hesitating, and without looking away.
 
 Voltage: Eleven on site tonight. Nine on the night crew in Hall 2, the duty engineer, and the man on the gate.
 
-Voltage: On the feed, best case, forty-odd. Oxygen concentrators, the dialysis unit at St Aldate's, home ventilators. That's the number Blackout signed, and I countersigned.
+Voltage: On the feed, best case, forty-odd. Oxygen concentrators, the dialysis unit at Saint Aldate's, home ventilators. That's the number Blackout signed, and I countersigned.
 
 Voltage: You think I don't know it. I know it to one decimal place.
 
@@ -290,9 +290,9 @@ Voltage: I run this site. Blackout signs for Critical Mass. Above him it stops b
 // claims the dilemma only when the button is on offer.
 {confrontation_choice == 1:
     {attack_mechanism_known and anomaly_detected:
-        Narrator: The laptop is open on the plant-room bench with the trigger armed on screen, and the red mushroom head of the hardwired shutdown is on the wall behind him. You cannot reach both.
+        Narrator: The laptop's open on the bench, the trigger armed on screen. Behind him, on the wall, is the red mushroom head of the hardwired shutdown. You cannot reach both.
     - else:
-        Narrator: The laptop is open on the plant-room bench with the trigger armed on screen, and the red mushroom head of the hardwired shutdown is on the wall behind him.
+        Narrator: The laptop's open on the bench, the trigger armed on screen. Behind him, on the wall, is the red mushroom head of the hardwired shutdown.
     }
 }
 
@@ -345,7 +345,7 @@ Voltage: I run this site. Blackout signs for Critical Mass. Above him it stops b
 ~ voltage_confronted = true
 
 #complete_task:confront_voltage
-Voltage: You've picked the slow option.
+Voltage: Then you'll have to be faster than one keystroke.
 // Pass 5 A3: Static is no longer only a man you talk to. If he's still up when
 // the fight starts, he comes in with it.
 {operative_static_defeated:

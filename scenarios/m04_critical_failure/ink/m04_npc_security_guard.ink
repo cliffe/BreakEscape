@@ -142,7 +142,7 @@ Security Guard: Hey. Where do you think you're going?
 === guard_smooth_talk ===
 #speaker:security_guard
 
-Security Guard: Testing my protocols.
+Security Guard: Testing my protocols. At four in the morning.
 
 * [Exactly. You challenged me. That's a pass.]
     -> guard_fooled
@@ -161,7 +161,7 @@ Security Guard: Oh. Right. Should I still log you in?
 === guard_demands_credentials ===
 #speaker:security_guard
 
-Security Guard: I'll need to see some ID before you go any further.
+Security Guard: Go on, then. Let's have a proper look at it.
 
 -> guard_credentials_check
 

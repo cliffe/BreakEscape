@@ -83,7 +83,7 @@ A grid-safety audit at four in the morning. You regulator lot keep strange hours
 === vance_professional_response ===
 #speaker:robert_vance
 
-Right. I run a tight ship here, budget and all.
+Right. I run a tight ship here, on a tighter budget.
 
 Tick your boxes and let's be quick about it. I've a plant to keep running.
 
@@ -182,7 +182,7 @@ Is there a problem?
 
 Just OptiGrid this month. Budget cuts, essential work only.
 
-Which is why an audit at this hour is... hard going. We do what we can with what we've got.
+Which is why an audit at this hour is the last thing I need. We do what we can with what we've got.
 
 -> vance_provides_access
 
@@ -204,7 +204,7 @@ Unusual? Not that I've seen. Why?
 
 Alright. What do you need?
 
-Staff records, maintenance logs, whatever you need off this desk.
+Staff records, maintenance logs, anything off this desk.
 
 -> vance_provides_access
 
@@ -609,7 +609,7 @@ You'll have the halls. And I know the SCADA side better than they do.
 
 I'll have the access logs and the monitoring up from here.
 
-Come back to the ops desk when you need it, and I'm on comms while you move.
+Come back to the ops desk when you need me. I'm on comms while you move.
 
 // PASS 3 P2: the ally paths bypass vance_provides_access, so the card is copied
 // here (12 ally paths, M3). The exit is its own knot so the clone can't share
@@ -645,6 +645,6 @@ Robert Vance: Go. I'll be on the desk.
 
 // Vance looks confused but lets it go
 
-Alright. You know where I am if you need me.
+Alright. If you say so.
 
 -> initial_meeting_end_professional

@@ -156,7 +156,7 @@ Agent, report.
     The facility manager's being treated by medics. He'll live. He won't be filing a commendation.
 }
 {security_guard_ko:
-    And the gate guard's in A&E with a sore head. He was the one person on site doing his job by the book.
+    And the gate guard's in hospital with a sore head. He was the one person on site doing his job by the book.
 }
 ->->
 
