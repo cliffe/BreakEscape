@@ -14,6 +14,7 @@ import { displayPhoneLine } from './phone-chat-speaker.js';
 import { displayDashes } from '../../utils/display-dashes.js';
 import { messageClockText } from '../../systems/game-clock.js';
 import { hasHiddenChoicesBelow, numberedChoiceText } from './phone-chat-choices.js';
+import { createBottomPin } from './phone-chat-scroll.js';
 import { portraitFor } from '../../utils/portrait-variants.js';
 
 export default class PhoneChatUI {
@@ -144,6 +145,13 @@ export default class PhoneChatUI {
         
         // Show or hide the "more choices" cue as the player scrolls the list
         this.elements.choicesContainer?.addEventListener('scroll', () => this.updateChoicesScrollCue());
+
+        // Keep the last bubble above the choices as the panel fills in or changes
+        // height, and when the window resizes (round 7, m06 M2)
+        this._bottomPin?.destroy();
+        this._bottomPin = createBottomPin(this.elements.messagesContainer, {
+            watch: [this.elements.choicesContainer, this.elements.typingIndicator]
+        });
 
         console.log('✅ Phone UI rendered');
     }
@@ -509,6 +517,7 @@ export default class PhoneChatUI {
         // Clear messages and choices
         this.elements.messagesContainer.innerHTML = '';
         this.elements.choicesContainer.innerHTML = '';
+        this._bottomPin?.pin(false);
         
         console.log(`💬 Showing conversation with ${npc.displayName || npcId}`);
     }
@@ -832,12 +841,15 @@ export default class PhoneChatUI {
      */
     scrollToBottom(smooth = true) {
         const container = this.elements?.messagesContainer;
-        if (container) {
-            container.scrollTo({
-                top: container.scrollHeight,
-                behavior: smooth ? 'smooth' : 'auto'
-            });
+        if (!container) return;
+        if (this._bottomPin) {
+            this._bottomPin.pin(smooth);
+            return;
         }
+        container.scrollTo({
+            top: container.scrollHeight,
+            behavior: smooth ? 'smooth' : 'auto'
+        });
     }
     
     /**
@@ -942,6 +954,8 @@ export default class PhoneChatUI {
             this._typewriterCancel();
             this._typewriterCancel = null;
         }
+        this._bottomPin?.destroy();
+        this._bottomPin = null;
         this.container.innerHTML = '';
         this.elements = {};
         this.currentView = 'contact-list';

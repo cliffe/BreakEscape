@@ -162,3 +162,37 @@ Browser checks owed:
 Checks: `node --test test/js/` gives 743 tests, 741 passing. The two failures are the known runner error in `engine-fixes-pass3` and `engine-fixes-round4`, and both pass on their own (10/10). New: `test/js/session-overlay-pause.test.mjs` (6 tests). It covers the helper, and runs `scheduleDialogueAdvance` from the source: held under the overlay with the full delay after Resume, a timer coming due under the overlay, a stale hold dropped, and no change without the overlay or in click-through mode. It also checks the wiring of the voice, the closing line, phone typing and the page flag. `bin/rails test`: 664 runs, 0 failures. Phone reopen check: 0 problems.
 
 Browser (keyless :3001, 1400x1000, my own Playwright script, in the session scratchpad and not kept): m08 game 2703. The briefing ran four lines. I left the page, cleared `briefing_played` on the server (standing in for an unsynced flag) and reloaded. The title screen was closed under the overlay the way its failsafe does it. The briefing opened under the overlay on "SAFETYNET headquarters, the Citadel…" and was still on that line after 15 s. Enter closed the overlay with the same line showing. It was still there 3.8 s later and had moved to the next line by 6.8 s. No page errors (`pending_review/r6_overlay_holds_briefing.png`, `r6_overlay_resumed_same_line.png`). Control, game 2704 with the flag cleared by console, which is the old behaviour: after the same 15 s the briefing had moved three lines on. The replayed briefing starts from its first line, not the line before the reload. That is how the cutscene replays, not part of this fix. m01 game 2701: the briefing doesn't replay on reload, and the Mission Brief notes open instead.
+
+## Round 7
+
+Engine agent, from the round-5 confirmation runs (`scenarios/m06_follow_the_money/CONFIRM_R5_2026-10-18.md` M2, `scenarios/m08_the_mole/CONFIRM_R5_2026-10-18.md` A2).
+
+| Finding | Outcome |
+| --- | --- |
+| m06 M2: reopening HaX's thread after a reload, "See you at HQ." sits partly behind the choices | **Fixed.** **Cause:** `scrollToBottom()` aimed one smooth scroll at the thread's `scrollHeight` when the history was drawn. The choices panel filled in under the thread straight after and took its height, so the scroll ended short: measured on m08 game 2725 at 1400x1000, 26 px short with the last bubble 14 px behind the choices; after shrinking the window, 166 px short. New `phone-chat-scroll.js` (`createBottomPin`): while the thread is pinned, a `ResizeObserver` on the thread, the choices panel, the typing indicator and every bubble (bubbles added later are picked up by a `MutationObserver`) puts it back at the bottom. The player scrolling up unpins it, so a resize leaves their place alone; scrolling back to the bottom pins it again. A smooth scroll's own scroll events are ignored for 800 ms, but the wheel or a touch counts as the player at once. `phone-chat-ui.js` creates it in `render()`, pins on `showConversation`, routes `scrollToBottom()` through it, and destroys it in `cleanup()`. |
+| m08 A2: HaX's "ATHENA's avatar is down…" bark on screen about 6 s after a quick reload | **Not a repeat; no change.** The confirmation run reloaded about 1 s after the KO, inside the mapping's 2000 ms delay. The text had not been shown, the pagehide save carried it as a pending timed message, and it arrived once after the reload. That is the E12 behaviour working as meant. A restore never re-fires the KO (`npc-hostile.js` emits `npc_ko` only on a live knockout; restore emits `npc_hostile_changed` with `restored`), and `onceOnly` plus the `nightshade_tipped_off` condition would stop the handler anyway. |
+
+**A2 browser runs** (keyless :3001, 1400x1000, real punch KO with Q and E, then a page reload without `skip_resume`, Resume after 6 s; bark DOM watched from page start on both loads, HaX history and `timedMessages` read before and after):
+
+| Reload after KO | Game | Before the reload | After the reload |
+| --- | --- | --- | --- |
+| 1 s | 2720 | not shown, not in the thread; pending with 769 ms left | shown once (after Resume), in the thread once, marked delivered |
+| 3 s | 2722 | shown once, in the thread, delivered, nothing pending | no bark; in the thread once; nothing pending |
+| 10 s | 2725 | shown once, in the thread, delivered, nothing pending | no bark; in the thread once; nothing pending |
+
+In all three the KO restored and `nightshade_tipped_off` / `tipoff_source: "athena"` held.
+
+**M2 browser checks** (same server): thread bottom gap and last-bubble overlap measured at 0.1, 0.3, 0.6, 1, 2 and 3.5 s after opening, then after shrinking the window to 80% height.
+
+| Game | Window | Choices | Before the fix | After |
+| --- | --- | --- | --- | --- |
+| m06 2706 ("See you at HQ.", the reported state) | 1400x1000 and 1024x700 | 5, "more choices" showing | (report screenshot `thread_after_reload.png`) | gap 0 at every sample; bubble 12 px clear of the choices; same after the resize |
+| m06 2705 | 1400x1000 and 1024x700 | 2, no cue | not measured | gap 0, 13 px clear, same after the resize |
+| m08 2725 | 1400x1000 | 5, cue showing | 26 px short, bubble 14 px behind; 166 px short after the resize | gap 0, 12 px clear, same after the resize |
+| m08 2725 | 1024x700 | 5, cue showing | not measured | gap 0, 12 px clear, same after the resize |
+
+Also on 2725: wheel up 300 px then shrink the window, the thread kept the player's place; wheel back down and enlarge, gap 0; picking choice 3 put HaX's reply at the bottom, 12 px clear.
+
+Observation, not changed: at 1024x700 the thread area between the header and the choices (which cap at 200 px) is about 85 px, shorter than a three-line bubble, so only the bubble's lower part shows even when scrolled to the end. That is the phone's fixed layout at that height, not the scroll.
+
+Checks: `node --test test/js/` 750 tests, 748 passing; the two failures are the known runner error in `engine-fixes-pass3` and `engine-fixes-round4`, which pass on their own (10/10). New `test/js/phone-chat-bottom-pin.test.mjs` (7 tests). `bin/rails test` 664 runs, 0 failures. `reopencheck.mjs` 0 problems.
