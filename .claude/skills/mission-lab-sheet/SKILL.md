@@ -1,6 +1,6 @@
 ---
 name: mission-lab-sheet
-description: Writes or rewrites the student-facing lab sheet for a Break Escape mission — a getting-started guide, the concepts behind each lock with worked examples students can check by hand, and a stage-by-stage walkthrough of layered hints (a visible nudge, then a collapsed Nudge, then a collapsed Recipe) — and publishes it to HacktivityLabSheets and the mission's mission.json. Two modes: "full" (lab-sheet learning: concepts, worked examples, questions and exercises) and "practical" (a focused walkthrough: what to do, where, and how, with only the concepts needed). Hacktivity shows the same page as "Lab Sheet" in courses and "Walkthrough" in game events. Trigger when the user asks to "write a lab sheet", "make a walkthrough", "student guide for <mission>", "hints for students", "update the labsheet", or to publish a mission's sheet to Hacktivity.
+description: Writes or rewrites the student-facing lab sheet for a Break Escape mission — a getting-started guide, the concepts behind each lock with worked examples students can check by hand, and a stage-by-stage walkthrough of layered hints (a visible nudge, then a collapsed Nudge, then a collapsed Recipe) — and publishes it to HacktivityLabSheets and the mission's mission.json. Two modes: "full" (lab-sheet learning: concepts, worked examples, questions and exercises) and "practical" (a focused walkthrough: what to do, where, and how, with only the concepts needed). Hacktivity shows the same page as "Lab Sheet" in courses and "Walkthrough" in game events. For VM missions the step-by-step technical/exploit steps go in a linked companion sheet (labsheet_vm_steps.md) so the main game walkthrough stays spoiler-light and reviewable without tripping strict content filters. Trigger when the user asks to "write a lab sheet", "make a walkthrough", "student guide for <mission>", "hints for students", "update the labsheet", "split the VM/technical steps out", or to publish a mission's sheet to Hacktivity.
 ---
 
 # Break Escape mission lab sheet
@@ -102,6 +102,41 @@ The method, the traps, where help is in the game.
 - Include a "Before the First Lock" stage (where the first clue is, how to get the main tool) and a finale stage.
 - Mark a natural stopping point for a 60-minute class with a `> Tip:`.
 
+### VM technical steps: a companion file (VM missions only)
+
+For a mission with a VM, the step-by-step **technical/exploit** content does **not** live in the
+main sheet. It goes in a companion file `scenarios/<mission>/labsheet_vm_steps.md`, linked from
+the main walkthrough at the point the player reaches the server room / VM terminal. The main
+`labsheet.md` carries the whole **game** walkthrough (physical access, exploration, decoding,
+NPCs, the finale) and the **concepts** (including a short, non-procedural "what this technique
+is" intro for each VM skill); the companion carries the **how** of the server work.
+
+Why the split (state this to the user):
+- **Spoiler control.** A player can follow the game walkthrough and still figure out the
+  technical steps themselves, opening the companion only when they want the answers.
+- **Reviewability.** Isolating the step-by-step exploit content lets the main walkthrough be
+  reviewed and edited without strict content filters refusing on intrusion detail, and lets the
+  technical steps be reviewed on their own.
+
+What goes in the companion `labsheet_vm_steps.md`:
+- Its own front matter (same shape as the main sheet; `title` like "<Mission> — VM Technical
+  Steps", a `description` noting it is the technical companion, same `license`/`cybok`), and a
+  first line linking back to the main walkthrough.
+- The **Stuck? Hints** stages for the VM challenges only (getting a shell, brute force,
+  filesystem navigation/flag hunting, privilege escalation) — the same Nudge/Recipe tiers.
+- The **Try It on the Command Line** exploitation section.
+- The same content rules apply here too: **never print a real answer; VM flags are never
+  printed** — the Recipe tier says how to get a value, not the value.
+
+What stays in the main `labsheet.md`:
+- Everything else, and a pointer where the VM stages used to be, e.g. a `> Note:` after the
+  "Server Room" stage: "The server work has its own sheet so you can play the rest spoiler-free
+  and tackle the box yourself: **[VM Technical Steps](labsheet_vm_steps.md)** — open it when you
+  want the hints for getting in, finding the flags and escalating." Link by the published slug
+  on the Hacktivity side (see Publish).
+
+Non-VM missions (SIS, lab/demo with no VM) keep everything in the one sheet.
+
 ## Step 4: House style
 
 Apply `HacktivityLabSheets/_labs/example_highlighting_guide.md`, with these project decisions:
@@ -120,6 +155,7 @@ Apply `HacktivityLabSheets/_labs/example_highlighting_guide.md`, with these proj
 3. The published URL is `https://cliffe.github.io/HacktivityLabSheets/labs/<category>/<slug>/`, where `<slug>` is the file name without `.md`, with `_` turned into `-`, lower case. (Pages with an explicit `permalink:` use that instead.)
 4. Set `"lab_sheet_url"` in `scenarios/<mission>/mission.json`, inserted after `"collection"` with a one-line edit (do not rewrite the file through a JSON serialiser: it reflows the arrays). Validate with `python3 -m json.tool`.
 5. Hacktivity copies the mission's `lab_sheet_url` onto a new game slot whose own field is blank. Existing slots need the URL set by hand; say so in the hand-off.
+6. **Companion (VM missions):** publish `labsheet_vm_steps.md` the same way, to the same `<category>`, as its own file (slug e.g. `<mission>-vm-technical-steps`), `cmp`-identical. `mission.json`'s `lab_sheet_url` stays pointed at the **main** sheet (the walkthrough Hacktivity shows); the companion is reached only via the link inside the main sheet. Make the main sheet's link to it the companion's published URL (`https://cliffe.github.io/HacktivityLabSheets/labs/<category>/<companion-slug>/`) so it resolves on the Pages site, not just the relative repo path.
 
 ## Step 6: Verify
 
@@ -128,7 +164,10 @@ Apply `HacktivityLabSheets/_labs/example_highlighting_guide.md`, with these proj
 - `<details>` and `</details>` counts match.
 - `grep -nE '^> [A-Za-z ]+: [a-z\`]'` returns nothing (capital after labels).
 - `grep -niwE 'delve|intricate|tapestry|pivotal|underscore|landscape|foster|enhance|crucial|robust|profound'` returns nothing outside technical uses.
-- No real answer, PIN, key or flag appears anywhere.
+- No real answer, PIN, key or flag appears anywhere (in **either** file).
 - The published copy `cmp`s identical; `mission.json` validates.
+- VM missions: the main sheet holds no step-by-step VM exploit stages (they are in the
+  companion), the main sheet links to the companion, and the companion links back. Both carry
+  front matter and both publish cleanly.
 
 Report: the mode chosen, the sections, any facts you found that contradict the solution guide or design docs (list them; do not fix other files unless asked), and the published URL.
