@@ -51,8 +51,8 @@ service accounts:
 | flag_3 | `hcfindb` | The financial database account (transaction records) | `submit_flag3` |
 | flag_4 | `hcvault` | Read by `hcops` via **sudo** — privilege escalation, full estate | `submit_flag4` |
 
-The `distcc_exec` foothold deliberately carries **no** `flag_generator`, so the count
-stays at exactly four and the ordering is unambiguous. distcc is the way *onto* the
+The `apache_druid_rce` foothold (CVE-2021-25646) deliberately carries **no** `flag_generator`, so the count
+stays at exactly four and the ordering is unambiguous. The Druid RCE is the way *onto* the
 box (and to the world-readable shadow file); the flags are the cracking / reuse /
 priv-esc rewards. **If you add or reorder any `flag_generator`, re-derive this table
 and fix the `submit_flags` targets.**

@@ -94,7 +94,7 @@ over on request through a `support_hub` choice — never pushed into the invento
 | Guide | Offered on | Lab sheet |
 |-------|-----------|-----------|
 | Offline password cracking | Picking up Irina's wordlist | `offline-password-cracking` |
-| distcc exploitation (the foothold) | First interacting with the VM launcher | `distcc-exploitation` |
+| Apache Druid RCE (the foothold) | First interacting with the VM launcher | `apache-druid-rce` |
 | Privilege escalation / credential reuse | Submitting flag 1 | `privilege-escalation` |
 | Reconnaissance | First interacting with the VM launcher | `reconnaissance-and-network-mapping` |
 | RFID cloning | Entering the trading floor | `rfid-cloning` |

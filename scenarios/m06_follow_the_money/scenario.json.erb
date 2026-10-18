@@ -748,8 +748,8 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
     "rfid_guide_hint_given": false,
     "recon_guide_offered": false,
     "recon_guide_hint_given": false,
-    "distcc_guide_offered": false,
-    "distcc_guide_hint_given": false,
+    "druid_guide_offered": false,
+    "druid_guide_hint_given": false,
     "lockpick_guide_offered": false,
     "lockpick_guide_hint_given": false,
     "server_room_entered": false
@@ -878,13 +878,13 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
               "observations": "Turning a readable shadow file into cracked account passwords: unshadow, then John the Ripper offline. The reused password is the shortest path across the backend."
             },
             {
-              "_comment": "PASS 3 P3: the backend's foothold is distccd RCE (SecGen m06_follow_the_money.xml). The sheet's worked example is m03's box; HaX's give line says so.",
+              "_comment": "DRUID SWAP 2026-10-18: the backend's foothold is Apache Druid unauthenticated RCE, CVE-2021-25646 (SecGen m06_follow_the_money.xml). Carries no flag of its own.",
               "type": "lab-workstation",
-              "id": "m06_distcc_field_guide",
-              "name": "SAFETYNET Field Guide: Exploiting distcc",
+              "id": "m06_druid_field_guide",
+              "name": "SAFETYNET Field Guide: Apache Druid RCE",
               "takeable": true,
-              "labUrl": "https://cliffe.github.io/HacktivityLabSheets/labs/safetynet/distcc-exploitation/",
-              "observations": "Remote code execution through an exposed distcc build service. The worked example is an earlier job's server; here it is the way onto the backend and carries no flag of its own."
+              "labUrl": "https://cliffe.github.io/HacktivityLabSheets/labs/safetynet/apache-druid-rce/",
+              "observations": "Unauthenticated remote code execution through an exposed Apache Druid analytics service (CVE-2021-25646). It is the way onto the backend and carries no flag of its own."
             },
             {
               "type": "lab-workstation",
@@ -1073,9 +1073,9 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
               "eventPattern": "object_interacted",
               "condition": "data.objectType === 'vm-launcher'",
               "onceOnly": true,
-              "setGlobal": { "recon_guide_offered": true, "distcc_guide_offered": true, "cracking_guide_offered": true },
+              "setGlobal": { "recon_guide_offered": true, "druid_guide_offered": true, "cracking_guide_offered": true },
               "completeTask": "access_hackme_vm",
-              "sendTimedMessage": { "delay": 1800, "message": "You're on the backend. A build service is listening that shouldn't be: that's your way in. Map first. I've guides for recon, distcc and cracking." }
+              "sendTimedMessage": { "delay": 1800, "message": "You're on the backend. A data-analytics service is listening that shouldn't be: that's your way in. Map first. I've guides for recon, Druid and cracking." }
             },
             {
               "_comment": "PASS 2: used to read the passphrase out ('bitcoin2025') the moment the checklist was picked up, which made the puzzle a pickup. Now HaX points at the second half of the clue.",

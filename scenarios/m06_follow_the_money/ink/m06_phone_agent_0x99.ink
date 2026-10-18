@@ -54,12 +54,12 @@ VAR irina_exec_badge_given = false
 VAR cracking_guide_offered = false
 VAR privesc_guide_offered = false
 VAR recon_guide_offered = false
-VAR distcc_guide_offered = false
+VAR druid_guide_offered = false
 VAR rfid_guide_offered = false
 VAR cracking_guide_hint_given = false
 VAR privesc_guide_hint_given = false
 VAR recon_guide_hint_given = false
-VAR distcc_guide_hint_given = false
+VAR druid_guide_hint_given = false
 VAR rfid_guide_hint_given = false
 VAR flag1_submitted = false
 VAR flag2_submitted = false
@@ -197,7 +197,7 @@ Everything after that is joining up the cells' money.
 
 // Field guides (Pass 5 minor): one choice, offered while any guide the player
 // has met is still unsent; the menu lists only those.
-+ {(distcc_guide_offered and not distcc_guide_hint_given) or (privesc_guide_offered and not privesc_guide_hint_given) or (cracking_guide_offered and not cracking_guide_hint_given) or (recon_guide_offered and not recon_guide_hint_given) or (rfid_guide_offered and not rfid_guide_hint_given) or (lockpick_guide_offered and not lockpick_guide_hint_given)} [Send me a field guide.]
++ {(druid_guide_offered and not druid_guide_hint_given) or (privesc_guide_offered and not privesc_guide_hint_given) or (cracking_guide_offered and not cracking_guide_hint_given) or (recon_guide_offered and not recon_guide_hint_given) or (rfid_guide_offered and not rfid_guide_hint_given) or (lockpick_guide_offered and not lockpick_guide_hint_given)} [Send me a field guide.]
     -> guide_menu
 
 // Early-game topics, retired once the player is past them
@@ -306,7 +306,7 @@ Try the other way first.
     Priya Raghavan's write-up, in the lab east off the trading floor. It follows the money into the mixer. Take it.
 }
 {recon_guide_offered and not flag1_submitted:
-    The backend has a build service listening that shouldn't be. That's your way in. Map first.
+    The backend has a data-analytics service listening that shouldn't be. That's your way in. Map first.
 }
 {flag1_submitted and not flag2_submitted:
     You've one account. Try that password everywhere before anything clever.
@@ -636,8 +636,8 @@ Which one?
     -> request_rfid_guide
 + {recon_guide_offered and not recon_guide_hint_given} [Reconnaissance and network mapping.]
     -> request_recon_guide
-+ {distcc_guide_offered and not distcc_guide_hint_given} [Exploiting distcc.]
-    -> request_distcc_guide
++ {druid_guide_offered and not druid_guide_hint_given} [Apache Druid RCE.]
+    -> request_druid_guide
 + {cracking_guide_offered and not cracking_guide_hint_given} [Offline password cracking.]
     -> request_cracking_guide
 + {privesc_guide_offered and not privesc_guide_hint_given} [Privilege escalation.]
@@ -663,13 +663,13 @@ Offline cracking guide sent.
 It turns that readable shadow file into logins. Then try each password on the other accounts.
 -> hub
 
-=== request_distcc_guide ===
+=== request_druid_guide ===
 #speaker:agent_0x99
-~ distcc_guide_hint_given = true
-#set_variable:distcc_guide_hint_given=true
-#give_item:lab-workstation:m06_distcc_field_guide
-distcc guide sent.
-The example's from an earlier job. Here the build service just gets you on the box. No flag on it.
+~ druid_guide_hint_given = true
+#set_variable:druid_guide_hint_given=true
+#give_item:lab-workstation:m06_druid_field_guide
+Druid guide sent.
+That analytics service runs code it's handed. It just gets you on the box. No flag on it.
 -> hub
 
 === request_privesc_guide ===
