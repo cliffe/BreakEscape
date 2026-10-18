@@ -138,3 +138,65 @@ not met: no catalogue scenario would improve skill fit, kill-chain richness or s
 
 No mission `labsheet.md` exists, so there is no local teaching text to correct. The shared
 SAFETYNET field guides were not edited (see 03 for the orchestrator note).
+
+---
+
+## Round 3 (2026-10-18) — VM↔mission integration quality (Step 4b)
+
+Traced the four VM challenge/flag nodes through `dungeon_graph.md` against the m01 benchmark.
+Note: m04 was reworked since R1/R2 — the foothold is now **Erlang/OTP SSH RCE
+(CVE-2025-32433)** on port 2222, not distcc. The R1/R2 text above that names distcc is stale
+for the foothold (flag_4); the XML and all game wiring are on Erlang now (confirmed: both XML
+copies identical, `ssh_erlangotp_rce` is flag_4, `targetFlags` maps erlang→flag4).
+
+### Six checks
+
+1. **Motivation — OK.** The entry technique is named in-fiction at the right beat: HaX's timed
+   message after the FTP flag, `scenario.json.erb:1094` — "There's an Erlang/OTP SSH daemon on a
+   high port there — the crew's way back in, with a brand-new pre-auth RCE." The target host/IP
+   is found in-game: Network Monitoring Station observation names the jump server at
+   192.168.100.10 and "a host that isn't on Albion's asset list" (`scenario.json.erb:1829`), and
+   the Workshop Access Log shows the OptiGrid crew had 3h+ on the OT network
+   (`scenario.json.erb:1820`). No wordlist is needed (pre-auth RCE, nothing to crack), so there is
+   no "credential from thin air" gap. The field-guide handler path exists
+   (`ink/m04_phone_agent0x99.ink:250-253`).
+
+2. **Gating — OK.** The launcher sits in `engineering_workshop`, behind `door_engineering_workshop`
+   (RFID lock) requiring `workshop_keycard_level_2` from NPC Relay, who is in `battery_hall_2`
+   behind its own RFID lock requiring the RFID cloner + a facility keycard. The dungeon graph puts
+   `bms_jump_server_terminal` downstream of that chain (`dungeon_graph.md` puzzle graph,
+   `workshop_keycard_level_2 --> door_engineering_workshop --> engineering_workshop`). Not sitting
+   in the start area.
+
+3. **Diegetic attacker box — OK (reworded).** HaX directs the player to it: "Work the terminal in
+   the workshop" (`ink/m04_phone_agent0x99.ink:913`) and "Their jump server's in the engineering
+   workshop" (`ink/m04_opening_briefing.ink:276`). The launcher is dressed onto the workshop
+   terminal bench. Reworded the launcher `observations` (`scenario.json.erb:1747`) to name it as
+   that terminal and read diegetic (from→to in 03).
+
+4. **Flag payoff — OK.** Each flag triggers a concrete beat, not just a tick:
+   flag_1/network_scan → finds the falsified rack-status page feeding the SCADA HMI + opens the
+   ProFTPD thread (`scenario.json.erb:1128`); flag_2/ftp_intel → cross-cell coordination intel
+   ("Zero Day supplies, Critical Mass executes", `:1128`) + triggers the Erlang tip (`:1094`);
+   flag_4/erlang_rce → "You're on the box" foothold (`:1111`); flag_3/privesc → "Root... the
+   charge-ceiling override on every bank. That's how they're pushing the racks past safe"
+   (`:1120`). All four also feed `lock_esd_pushbutton` (graph edges `vmfl_* --> lock_esd_pushbutton`).
+
+5. **Requiredness & pacing — OK.** `concludeRequires.tasksCompleted` (`scenario.json.erb:440-445`)
+   gates the ending on all four submit tasks; the ESD pushbutton that stops the runaway needs all
+   four flags plus the physical thermometer and dealing with Voltage (graph edges to
+   `lock_esd_pushbutton`). Guides are paced, not dumped up front: recon/vuln on reaching the
+   workshop (`:1079,1087`), ProFTPD after the scan (`:1127`), Erlang after FTP (`:1093`), sudo
+   after FTP or after the Erlang foothold (`:1100-1111`).
+
+6. **Graph coherence — OK.** On `dungeon_graph.md` the VM nodes sit on the critical path
+   (Map the Attack on the OT Network) with their in-game prerequisites feeding in (workshop chain)
+   and their unlock hanging off (all four `vmfl_* --> lock_esd_pushbutton --> aim_stop_the_runaway`).
+
+### Verdict (Round 3)
+Well integrated — not bolted on. The VM is reached through a physical keycard/RFID chain, its
+target and entry technique are discovered/justified in-game, each flag drives a story beat, and the
+flags gate the ending. One light-touch diegetic reword applied (check 3); no author-sized gaps
+found. No shared field guide needed editing for integration (the Erlang guide is offered in-game
+and the guide content lives in HacktivityLabSheets — see 03 for the standing note that the shared
+guides are the orchestrator's to reconcile).
