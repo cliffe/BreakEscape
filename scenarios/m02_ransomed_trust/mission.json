@@ -4,7 +4,7 @@
   "difficulty_level": 1,
   "secgen_scenario": "break_escape/safetynet/m02_ransomed_trust.xml",
   "collection": "season_1",
-  "lab_sheet_url": "https://cliffe.github.io/HacktivityLabSheets/labs/introducing_attacks/m02-ransomed-trust/",
+  "lab_sheet_url": "https://cliffe.github.io/HacktivityLabSheets/labs/safetynet/m02-ransomed-trust/",
   "ui_theme": "spy",
   "cybok": [
     {

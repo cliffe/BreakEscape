@@ -4,7 +4,7 @@
   "difficulty_level": 2,
   "secgen_scenario": "break_escape/safetynet/m08_the_mole.xml",
   "collection": "season_1",
-  "lab_sheet_url": "https://cliffe.github.io/HacktivityLabSheets/labs/introducing_attacks/m08-the-mole/",
+  "lab_sheet_url": "https://cliffe.github.io/HacktivityLabSheets/labs/safetynet/m08-the-mole/",
   "ui_theme": "spy",
   "id": "m08_the_mole",
   "title": "Mission 8: The Mole",

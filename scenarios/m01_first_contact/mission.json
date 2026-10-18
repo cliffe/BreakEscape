@@ -5,7 +5,7 @@
   "secgen_scenario": "break_escape/safetynet/m01_first_contact.xml",
   "collection": "season_1",
   "ui_theme": "spy",
-  "lab_sheet_url": "https://cliffe.github.io/HacktivityLabSheets/labs/introducing_attacks/m01-first-contact/",
+  "lab_sheet_url": "https://cliffe.github.io/HacktivityLabSheets/labs/safetynet/m01-first-contact/",
   "cybok": [
     {
       "ka": "NS",
