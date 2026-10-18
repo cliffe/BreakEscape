@@ -160,3 +160,65 @@ shell straight to `sudo -l`/root and omits the **user-access step for flag3** (t
 `0600` in the manager's home; the player must log in as the manager with the recovered portal
 creds to read it). The Mission Application paragraph ("dig into what's on disk … his directory
 holds a Data Package Manifest — Flag 3") implies it is readable from the initial shell.
+
+---
+
+# Round 3 — integration (2026-10-18)
+
+Step 4b: is the VM woven into the mission or bolted on? Traced the VM challenge/flag nodes
+through `dungeon_graph.md` against the m01 benchmark. m05 is one of the better-integrated
+missions — the flag chain drives specific HaX story beats and the ending needs all four flags.
+
+## Six integration checks
+
+1. **Motivation — OK.** The entry credentials are earned as flag1 itself (the leaked Bludit
+   admin login, web-exposed on the box) and HaX frames the recon ("An admin login, left lying
+   about in a handover note" — `scenario.json.erb:1050`); the target (QDC's Bludit research
+   portal on the subnet) is named on the launcher (`:1804`) and the drop-site
+   (`:1813`). This is the recon flag's intended job (flag1 = RECON) with an NPC tip, not a
+   wordlist from nowhere. The Recon and Bludit field guides are in HaX's hand-out set
+   (`:882,898`).
+2. **Gating — OK.** The launcher sits in `server_room`, which is a password lock
+   (`:1787-1789`, Owen's sticky note / IT-ticket relay `:935`) behind the `server_hallway`
+   RFID lock (clone Owen's badge or Dr Halloran's visitor spare `#4471`). The dungeon graph
+   shows `server_password_sticky_note --> door_server_room --> server_room -->
+   bludit_cms_server_terminal` on the critical path. Reaching the console is itself a chain.
+3. **Diegetic attacker box — OK (was borderline; fixed).** The launcher opens the *attacker*
+   Kali console (`vm_object('attack_vm', …)`, `:1806`) but the observation read like a plain
+   QDC terminal and never said whose console it was. Reworded to make it SAFETYNET's audit
+   console on the research network (`:1804`), matching m01's "A Kali Linux system IT have
+   prepared for your security audit" bar.
+4. **Flag payoff — OK (strong).** Each flag fires a distinct HaX beat and advances the case,
+   not just a scoreboard: flag1 → the handover-note login (`:1045-1051`); flag2 → "you're on
+   the research portal's box now, find out who's been living on it" (`:1052-1057`); flag3 →
+   "staged by badge 4471 … find who carries that spare", and hands out the sudo field guide
+   (`setGlobal privesc_guide_offered`, `:1060-1065`); flag4 → "the Architect's authorisation,
+   casualty projection and all" and sets `architect_approval_confirmed` which gates the
+   call-in before the debrief (`:1067-1073`). flag3's badge-4471 beat ties the digital evidence
+   to the physical insider (Torres' visitor spare #4471), and flag4 supplies the Architect/
+   Recruiter intel.
+5. **Requiredness & pacing — OK.** `concludeRequires.tasksCompleted` = submit_flag1..4
+   (`:527-534`, confirmed R1/R2): the VM cannot be skipped. Field-guide pacing is staged — the
+   sudo guide is withheld until flag3 (`:1063-1065`) rather than dumped up front; Bludit/Recon
+   guides are available when the player heads for the portal.
+6. **Graph coherence — OK.** `dungeon_graph.md` shows `bludit_cms_server_terminal -->
+   vmch_submit_flag1`, the flag1→2→3→4 soft chain, and every `vmfl_submit_flagN -.->
+   aim_exploit_infrastructure`, with the physical gating chain (RFID hallway → password server
+   room) feeding in and the aim/ending hanging off. VM nodes sit on the critical path.
+
+## Mission-local fix applied
+- `scenario.json.erb:1804` launcher `observations`: "A terminal on the research network. QDC's
+  Bludit research portal is somewhere on this subnet." → "An admin workstation wired into the
+  research network. SAFETYNET has loaded it with your audit toolkit — QDC's Bludit research
+  portal is somewhere on this subnet." (Check 3: make the attacker console diegetic.)
+
+## Author-sized gaps
+None required. Integration clears the m01 bar on all six checks. Optional-only polish: flag1's
+credentials are recovered by on-box recon rather than a physical found-note in the building —
+this is correct for a RECON flag and is NPC-framed, so no change; a found "handover note" prop
+in the server room would be pure flavour (author call, not needed).
+
+## Verification
+- `ruby scripts/validate_scenario.rb scenarios/m05_insider_trading/scenario.json.erb --skip-ink`
+  — clean (only pre-existing `showProgress`/NPC-behavior recommended-field warnings, unrelated).
+  Dungeon graph regenerated. No ink changed (compile-ink not needed).
