@@ -36,3 +36,31 @@ No ink changed. No SecGen XML changed. No shared file changed.
   `ssh-access-and-bruteforce.md`, `privilege-escalation.md`) already match this VM's
   modules (NFS overshare + netcat, operator SSH login, `sudo awk` → root). No shared-file edit is
   needed for m07.
+
+---
+
+## Round 2 (2026-10-18) — no new edits
+
+Independent re-review. Round 1's two BreakEscape edits (`mission.json:5` secgen_scenario path;
+`scenario.json.erb:1906` fallback title → `attack_vm`) are present and correct. No regression found.
+
+- **Rebase decision:** KEEP (no rebase). The SCADA four-stage chain (NFS → netcat → SSH login →
+  sudo-awk root) fits m07's CyBOK (NS/SOIM/OSV/AAA/AB/MAT) and story better than any catalogue
+  scenario; the "clear win" bar is not met. Rationale in 01_technical_review.md.
+- **Pedagogy:** no fix. `sudo_root_awk` grants a scoped `ALL=(root) NOPASSWD: awk *` rule
+  (config.pp:13) — the intended GTFOBins lesson, matching `privilege-escalation.md` Method 4.
+  Both escalation flags (operator-home `0600`, `/root` `0600`) genuinely require their step.
+- **SecGen XML:** not edited this round.
+- **Shared field-guide changes for the orchestrator:** none for m07.
+
+### Verification (Round 2)
+- `ruby scripts/validate_scenario.rb scenarios/m07_architects_gambit/scenario.json.erb` — passes;
+  ERB re-renders to valid JSON, dungeon graph regenerates (critical path 3 hops). Only pre-existing
+  WARN/SUGGEST noise (agent_0x99 timed-text spacing; conditional music-credit fallbacks).
+- No ink changed; not recompiled.
+- SecGen module paths re-checked: `nfs_overshare`, `nc_message`, `parameterised_accounts`,
+  `sudo_root_awk` and the `random_sanitised_word`/`random_number` generators all resolve under
+  `modules/` (static check; no build).
+
+### Open / needs author VM build
+- A real build-and-solve of the VM remains a separate VM task for the author (unchanged from Round 1).

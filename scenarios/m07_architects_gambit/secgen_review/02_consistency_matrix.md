@@ -25,3 +25,18 @@
 | In-mission secgen/ copy | — | none | — | n/a (nothing to drift) |
 
 No mismatch remains after F1 and F2.
+
+---
+
+## Round 2 (2026-10-18) — re-checked, unchanged
+
+Re-ran the matrix against the current files. Every row still holds; no mismatch remains and
+no value drifted since Round 1. Key re-confirmations:
+
+- `secgen_scenario` = `break_escape/safetynet/m07_architects_gambit.xml` (mission.json:5).
+- `vm_object('attack_vm', …)` lookup key and fallback `title` both `attack_vm` (:1906) → attacker console.
+- Flag host key `scada_attack_host` on both `vm_flags_json` (:88) and `flags_for_vm` (:1922).
+- Four display-form `targetFlags` (:441,452,564,575); four `flagN_submitted` globals wired.
+- sudo rule is scoped (`awk` only) — matches the GTFOBins teaching, not a scoped-vs-full mismatch.
+
+No rebase; VM kept. No new edits.
