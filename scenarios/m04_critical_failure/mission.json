@@ -2,7 +2,7 @@
   "display_name": "Critical Failure",
   "description": "Infiltrate the Albion Energy Storage facility — 200 MWh of grid-scale lithium-ion battery storage — where ENTROPY's Critical Mass cell has weaponised the BMS and SCADA systems to drive the battery racks into thermal runaway. Eleven people are on site and 240,000 are on the feed. Confirm the falsified telemetry against a physical instrument, work the OT network from the engineering workshop, and get to the hardwired Emergency Shutdown before the 0800 trigger — past the man holding the remote.",
   "difficulty_level": 2,
-  "secgen_scenario": "m04_critical_failure",
+  "secgen_scenario": "break_escape/safetynet/m04_critical_failure.xml",
   "collection": "season_1",
   "ui_theme": "spy",
   "cybok": [

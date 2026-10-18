@@ -1744,14 +1744,25 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
           <%# Room dressing c3: a black monitor (pc10) on the workshop's terminal bench (room_aes_workshop). %>
           "position": "as-type:pc",
           "takeable": false,
-          "observations": "Network terminal providing access to the BMS jump server for vulnerability analysis",
+          "observations": "A Kali working box on the OT segment -- your access onto the network to reach and analyse the BMS jump server at 192.168.100.10.",
           "hacktivityMode": <%= vm_context && vm_context['hacktivity_mode'] ? 'true' : 'false' %>,
-          "vm": <%= vm_object('bms_jump_server', {
+          <%# SecGen m04 builds two systems: the target bms_jump_server (owner of the
+              four flags, keyed in the flag-station below) and the kali attack box
+              (nmap/metasploit/pwtools). The launcher must open a CONSOLE on the
+              attacker, exactly as m01 (vm_object('kali')) and m02
+              (vm_object('attack_vm')) do; launching bms_jump_server put the console
+              on the victim and left kali unreachable, so the whole kill chain was
+              unplayable. vm_object's title is the SecGen system_name ('kali'); the
+              fallback title/IP are the standalone placeholders, on the target's
+              192.168.100.x subnet. %>
+          "vm": <%= vm_object('kali', {
             "id": 1,
-            "title": "BMS Jump Server",
-            "ip": "192.168.100.10",
+            "title": "kali",
+            "ip": "192.168.100.3",
             "enable_console": true
           }) %>,
+          "showPostit": true,
+          "postitNote": "user: kali\npassword: kali",
           "puzzle_graph_role": "vm",
           "puzzle_graph_aim": "map_the_attack"
         },
