@@ -53,6 +53,8 @@ The game teaches by doing. The questions are in this sheet, after the game.
 3. If you get stuck, go to **Stuck? Hints, Stage by Stage** and find the stage you are on. Each stage has a hint you can read straight away, then a stronger nudge and the full recipe hidden behind "Show" buttons. Open one at a time, and go back to the game after each: a lock you open on the first hint teaches you more than one you open with the recipe.
 4. After the game, work through **After the Game: Questions and Exercises**.
 
+The server steps (the four VM stages and the command-line attack exercises) are in the linked companion sheet, [VM Technical Steps](https://cliffe.github.io/HacktivityLabSheets/labs/introducing_attacks/m01-first-contact-vm-technical-steps/), so you can play the rest without them.
+
 > Note: The server mission is generated for your game. The operative's SSH password and the flag values on the server are not the same as anyone else's, so this sheet never gives you one, only the way to find it. Physical PINs and passwords in the office are the same each game, but they are still things you work out in the game; this sheet says where each clue is, not what it reads.
 
 ## Getting Started {#getting-started}
@@ -401,120 +403,7 @@ Use Kevin's server room keycard on the reader. Inside is a Kali Linux terminal a
 
 </details>
 
-### The VM: Getting In {#hints-vm-connect}
-
-**Where:** the Kali terminal in the server room. **Goal:** log into Kali and find the target's details.
-
-> Hint: The terminal is a full Kali Linux machine. Its own login is on the sticky note on it. The target you are attacking is a different machine, and its address and username came from Derek's storage safe.
-
-<details markdown="1">
-<summary>Nudge</summary>
-
-Log into the Kali box using the login on its sticky note. The attack server is at the address on the "Server Access Details" note from the storage safe, and the username you are targeting is Derek's. You also took Derek's password list from the same safe; save it into a file on Kali, one password per line, to use as your wordlist.
-
-**To learn more in game:** once you find Derek's password list, Agent HaX offers the SSH and Linux basics guide. Open your phone and choose **[I'd like that ops manual]**. It covers Hydra, SSH and moving around a Linux filesystem.
-
-</details>
-
-<details markdown="1">
-<summary>Recipe</summary>
-
-1. \==action: Log into Kali using the login on the terminal's sticky note==.
-2. \==action: Save Derek's password list to a file== (for example `passwords.txt`), one password per line.
-3. \==action: Note the target address and username== from the Server Access Details note.
-
-</details>
-
-### The VM: SSH Brute Force {#hints-vm-ssh}
-
-**Where:** the Kali shell. **Goal:** find Derek's SSH password and log in.
-
-> Hint: You have a username, a target and a wordlist. One tool tries each password in the list against the login until one fits.
-
-<details markdown="1">
-<summary>Nudge</summary>
-
-Use Hydra against the SSH service on the target, with Derek's username and your password file. When it finds a match it prints the password. Then connect with `ssh` using that password. The password is generated for your game, so it is not written anywhere in this sheet; Hydra finds it for you.
-
-**Learn it:** ==action: Before running the attack, open the wordlist and read it==. Every line is a habit Derek reuses. That is why a short list works.
-
-</details>
-
-<details markdown="1">
-<summary>Recipe</summary>
-
-1. \==action: Run Hydra against SSH on the target== with Derek's username and your wordlist:
-
-```bash
-hydra -l derek -P passwords.txt 172.16.0.2 ssh
-```
-
-2. \==action: Read the password Hydra prints==, then connect:
-
-```bash
-ssh derek@172.16.0.2
-```
-
-3. \==action: Find the decryption key file in Derek's home directory== and submit it to unlock the ENTROPY archive.
-
-</details>
-
-> Warning: If Hydra finds nothing, check you are targeting the right username and that each password is on its own line with no blank lines or stray spaces.
-
-### The VM: Finding the Flags {#hints-vm-nav}
-
-**Where:** logged in as Derek. **Goal:** find the two pieces of evidence in his account.
-
-> Hint: Evidence is rarely at the top. List everything, including folders, and look inside a folder named after the operation.
-
-<details markdown="1">
-<summary>Nudge</summary>
-
-In Derek's home directory, `ls -la` shows the files. One is the archive decryption key. Another sits inside a subdirectory named for the operation; move into it and read the file there. Reading a file one level down is the directory traversal flag. Submit the decryption key at the ENTROPY archive in the server room, and the deployment notes flag at the drop-site terminal.
-
-**To learn more in game:** open your phone and choose **[Linux navigation tips]** for `ls`, `cd` and `cat`.
-
-</details>
-
-<details markdown="1">
-<summary>Recipe</summary>
-
-1. \==action: List the home directory with `ls -la`==.
-2. \==action: `cat` the decryption key file== and submit its contents at the ENTROPY archive.
-3. \==action: `cd` into the operation subdirectory and `cat` the deployment notes==, then submit that flag at the drop-site.
-
-</details>
-
-### The VM: Privilege Escalation {#hints-vm-sudo}
-
-**Where:** logged in as Derek. **Goal:** reach the files in the `shatter` account.
-
-> Hint: Some files are not yours to read. Check what your account is allowed to do as other accounts.
-
-<details markdown="1">
-<summary>Nudge</summary>
-
-Run `sudo -l` to see what Derek's account may do. It can act as the `shatter` account. Use that to read the files in `shatter`'s home directory: one is the encoded deployment configuration (Base64, submit it at the drop-site), and one is the launch authorization code (you enter that into Derek's launch device at the end).
-
-**To learn more in game:** after your first server flag, Agent HaX offers the privilege escalation guide. Open your phone and choose **[I need the privilege escalation guide]**, or **[Privilege escalation guidance]** for a quick steer.
-
-</details>
-
-<details markdown="1">
-<summary>Recipe</summary>
-
-1. \==action: Run `sudo -l`== to confirm you can act as the `shatter` account.
-2. \==action: Read `shatter`'s files as that account==, for example:
-
-```bash
-sudo -u shatter ls /home/shatter
-sudo -u shatter cat /home/shatter/shatter_configuration
-```
-
-3. \==action: The configuration is Base64==; decode it and submit that flag at the drop-site.
-4. \==action: Read the launch authorization code in the shatter account== and keep it for the launch device.
-
-</details>
+> Note: The server work has its own sheet, so you can play the rest spoiler-free and tackle the box yourself. Open [VM Technical Steps](https://cliffe.github.io/HacktivityLabSheets/labs/introducing_attacks/m01-first-contact-vm-technical-steps/) when you want the hints for getting in, finding the flags and escalating privileges.
 
 ### Opening the Archive and Reporting In {#hints-archive}
 
@@ -623,7 +512,7 @@ Maya in her office is the person who tipped off SAFETYNET. Talking to her fills 
 
 ## Try It on the Command Line (Optional) {#command-line}
 
-The server stage already happens on a real Kali shell. These short exercises let you practise the same techniques safely on your own machine or a lab VM, with your own data, not anything from the game. Use any current Linux distribution with `base64`, `tr`, `hydra`, `ssh` and `sudo` available.
+The server stage already happens on a real Kali shell, and its attack exercises are in the [VM Technical Steps](https://cliffe.github.io/HacktivityLabSheets/labs/introducing_attacks/m01-first-contact-vm-technical-steps/) sheet. These short exercises let you practise the decoding safely on your own machine or a lab VM, with your own data, not anything from the game. Use any current Linux distribution with `base64` and `tr` available.
 
 ### Encoding by hand and by tool {#cli-encoding}
 
@@ -637,33 +526,6 @@ printf 'Qrerx vf gur yrnx' | tr 'A-Za-z' 'N-ZA-Mn-za-m'
 ```
 
 > Question: Run the ROT13 command on its own output. Why do you get the original text back? What does that tell you about using ROT13 to protect anything?
-
-### A dictionary attack you own {#cli-hydra}
-
-Set up a throwaway account on a lab VM you control, give it a weak password that is on a list, and attack it. ==action: Build a tiny wordlist and run Hydra against your own test box==:
-
-```bash
-cat > mylist.txt << 'EOF'
-summer2024
-companyname
-password1
-letmein
-EOF
-hydra -l testuser -P mylist.txt 127.0.0.1 ssh
-```
-
-> Warning: Only ever run this against a machine you own or have written permission to test. Guessing passwords against anyone else's system is an offence.
-
-### Acting as another user {#cli-sudo}
-
-On a lab VM, ==action: look at your sudo rights and read a file as another account==:
-
-```bash
-sudo -l
-sudo -u otheruser cat /home/otheruser/notes.txt
-```
-
-> Question: If `sudo -l` showed you could run any command as any user, what would that let you do on the whole machine, and why is that the same risk as being root?
 
 ## After the Game: Questions and Exercises {#after-the-game}
 
