@@ -2,7 +2,7 @@
   "display_name": "The Mole",
   "description": "Someone inside SAFETYNET handed ENTROPY the Portland deployment before it was signed. Two agents are dead. Go back to headquarters and find the traitor among your own colleagues, quietly, before they vanish.",
   "difficulty_level": 2,
-  "secgen_scenario": "m08_the_mole",
+  "secgen_scenario": "break_escape/safetynet/m08_the_mole.xml",
   "collection": "season_1",
   "ui_theme": "spy",
   "id": "m08_the_mole",

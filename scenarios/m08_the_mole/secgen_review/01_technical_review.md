@@ -1,0 +1,90 @@
+# m08_the_mole — SecGen/VM consistency review
+
+Audience: the author. Method: `.claude/skills/mission-secgen-review/SKILL.md` +
+`docs/agents/SECGEN_REVIEW_BRIEF.md`. Baseline reference: `m01_first_contact`.
+Reviewed statically; no VM was built or booted.
+
+## Verdict
+
+The mission is well wired. The flag-submission form, the `vm_flags_json` key, the
+`vm_object` lookup title and the flag-to-global bridging were all already correct and match
+the m01 baseline. Two real defects were found and fixed: the `secgen_scenario` binding string
+(the confirmed campaign-wide bug) and a console-VM fallback IP on the wrong network. Both are
+the smallest change that resolves the mismatch. No new puzzle mechanics introduced.
+
+## The VM
+
+Canonical SecGen scenario:
+`/home/cliffe/Files/Projects/Code/SecGen/scenarios/break_escape/safetynet/m08_the_mole.xml`.
+There is **no in-mission `secgen/` copy**, so there is no two-copy drift to reconcile.
+
+Two systems:
+- `attack_vm` — Kali (`base distro="Kali" name="MSF"`), the console the player works from.
+  `IP_addresses` datastore index 0. Description text and the aligned fallback: 172.16.0.3.
+- `safetynet_gitlist_server` — Debian 12 KDE desktop, the target that owns all four flags.
+  `IP_addresses` datastore index 1. Description text: 172.16.0.2.
+
+Four flags, document order:
+1. **Repository exposure (recon)** — `gitlist_040` `strings_to_pre_leak`. Read by the
+   unauthenticated GitList argument-injection RCE (CVE-2018-1000533). Exposes the ops-account
+   username (`organisation['manager']['username']`).
+2. **Stashed credentials** — `gitlist_040` `strings_to_leak`, carrying the generated
+   `password` (the mole's committed credential). Both flags 1 and 2 come from the same module;
+   their within-module emit order is only confirmable by a build (noted open).
+3. **User access (home directory)** — `parameterised_accounts` creates the ops account
+   (`super_user:false`) with `leaked_filenames=[flag]` and a `strings_to_leak` concatenate
+   block (the ENTROPY correspondence). `leak_files` writes to `/home/<ops>/` at `0600` owned
+   by the ops user, so this flag genuinely requires the SSH login with the recovered creds.
+4. **Root** — `sudo_root_apt_get`. Its `config.pp` installs
+   `ALL ALL=(root) NOPASSWD: /usr/bin/apt-get *` and leaks the flag to `/root` at `0600`
+   owned by `root`. Genuine escalation: the ops account (non-super-user) must abuse the
+   apt-get sudo rule to read `/root`.
+
+All module paths referenced by the XML exist under SecGen `modules/` (verified):
+`gitlist_040`, `parameterised_accounts` (unix), `sudo_root_apt_get`,
+`encoders/selector/concatenate`, `encoders/base/base64`.
+
+## Engine wiring (checked against m01 + engine source)
+
+- **`secgen_scenario`** — was the bare name `m08_the_mole`, which is not in Hacktivity's
+  `SCENARIOS` set (`Dir["**/*.xml"]` under SecGen `scenarios/`), so it fails
+  `validates :scenario, inclusion:` and binds no VM. Fixed to the confirmed path
+  `break_escape/safetynet/m08_the_mole.xml`. **(FINDING 1 — fixed)**
+- **`vm_object('attack_vm', …)`** — the lookup title `attack_vm` equals the console VM's
+  SecGen `system_name`, so Hacktivity mode resolves the real VM. Correct. The standalone
+  fallback object carried `ip:"192.168.100.50"`, off the target's 172.16.0.x network; a
+  standalone player would get a placeholder IP on the wrong net. Fixed to `172.16.0.3` (the
+  attack VM's address, per the XML). Display `title:"kali"` left as-is (cosmetic; matches how
+  m01 labels its Kali box). **(FINDING 2 — fixed)**
+- **`vm_flags_json('safetynet_gitlist_server', …)`** and the flag-station
+  `flags_for_vm('safetynet_gitlist_server', …)` are keyed by the flag-owning `system_name`.
+  Correct.
+- **`targetFlags` form** — all four `submit_flags` tasks use the matching display form
+  `flag_station_evidence_relay:safetynet_gitlist_server-flagN` (station-scoped). None uses the
+  never-matching reference form. Correct — no rescue needed.
+- **`flagRewards` → globals** — the station sets `flag1_submitted`…`flag4_submitted`
+  directly. `agent_0x99` eventMappings on `global_variable_changed:flagN_submitted` then set
+  the narrative globals (`found_gitlist_vuln`, `found_leaked_creds`, `found_architect_comms`,
+  `found_access_logs`). A per-flag mapping sets `all_flags_submitted` once all four booleans
+  are true. Every gate that depends on these globals has an explicit `setGlobal` behind it —
+  nothing relies on `flagRewards` setting a global it does not set. Chain complete.
+
+## Solvability
+
+The VM cannot be skipped: the concluding aim `close_the_investigation` has
+`concludeRequires.tasksCompleted` = the four flag tasks
+(`recover_gitlist_exposure`, `recover_stashed_credentials`, `recover_home_flag`,
+`escalate_to_root`). Each flag exists on the VM at the implied location, owned by the right
+account, with flags 3 and 4 behind real access/escalation. The crackable/committed credential
+is generated by `random_sanitised_word` from the shipped `wordlist` (min length 6); no
+in-game text prints a per-build secret (checked ink, notes, mission.json).
+
+## Field guides (shared — report only)
+
+The mission offers generic technique guides (scanning-and-exploitation, secrets-in-git-history,
+vulnerability-analysis, privilege-escalation, encoding-and-decoding-with-cyberchef,
+reconnaissance). All live in `HacktivityLabSheets/_labs/safetynet/` and are shared across
+missions; none hard-codes an m08 account, path or IP, so there is nothing stale to correct and
+no m08-specific guide to edit. The XML `lab_sheet_url`
+(`.../labs/safetynet/scanning-and-exploitation/`) resolves to an existing guide. No field-guide
+changes required or made.
