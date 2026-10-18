@@ -80,3 +80,61 @@ text leaks a per-build secret (flag strings and the root password are build-gene
 Pass after F1 and F2. The mission could not bind a VM (F1) and could not be solved on a
 real build (F2); both are now aligned to the m01/m02 pattern. One item needs a real build
 to confirm end to end (see `03_edits_applied.md`).
+
+---
+
+## Round 2 (2026-10-18) — confirm, rebase judgement, pedagogy
+
+Fresh independent pass. Scope: BreakEscape m04 artifacts + canonical SecGen XML (in sync).
+
+### Round 1 fixes confirmed held
+
+- `mission.json:5` `secgen_scenario` = `break_escape/safetynet/m04_critical_failure.xml` — correct path form.
+- `scenario.json.erb:1758` launcher is `vm_object('kali', …)` — opens the **attacker** Kali box, not the target. `bms_jump_server` launcher is gone.
+- Flag host key `flags_for_vm('bms_jump_server', …)` (line 1776); station `acceptsVms: ["bms_jump_server"]` (1775).
+- `targetFlags` all in station-scoped **display form** `flag_station_dropsite:bms_jump_server-flagN` (lines 335/352/369/379); none in the never-matching reference form.
+- Flag→global bridge present: each `submit_*_flag` task sets its `flag_*_submitted` global (lines 1332–1335); the four-way `all_flags_in` fan-in (1336–1339) is intact.
+- `concludeRequires.tasksCompleted` (442–445) gates the ending on all four submit tasks — VM cannot be skipped.
+- Two XML copies byte-identical (`diff` clean); all module paths resolve under `SecGen/modules/`.
+
+Nothing regressed; nothing was missed in Round 1.
+
+### Rebase decision — KEEP (no rebase)
+
+The current VM is a bespoke build, not a clone of a catalogue scenario, and it already fits
+the mission's `mission.json` CyBOK and story tightly:
+
+- **Kill chain matches the taught skills exactly.** nmap recon (NS) → falsified web rack-status
+  page + backdoored ProFTPD intel (NS/SOIM) → distcc CVE-2004-2687 RCE foothold (MAT) →
+  sudoedit CVE-2023-22809 local privesc to root (MAT/OSV/SS). The two named CVEs in
+  `mission.json` keywords are the two the VM actually ships.
+- **Story fit is specific.** The OT jump server between corporate LAN and the BMS/SCADA
+  segment, the fake-maintenance (OptiGrid) ProFTPD channel, and the SCADA-fed rack telemetry
+  are woven into the VM content (web body, FTP path `optigrid_transfer/coordination_notes`,
+  privesc reward `/root/root_only/bms_calibration_override`). No catalogue CTF
+  (Feeling Blu, Rooting for a win, etc.) carries SCADA/OT theming or this CVE pairing; rebasing
+  would lose story fit and the MAT CVE coverage for no hands-on gain.
+
+Confirmed statically solvable (see solvability below). The high Round-2 bar for rebasing is
+not met: no catalogue scenario would improve skill fit, kill-chain richness or story fit. KEEP.
+
+### Pedagogy / VM-design — checked against the module source, no change needed
+
+- **flag_3 (privesc) genuinely requires escalation.** `sudoedit` module (`install.pp`) leaks
+  the flag via `leak_files` to `/root` at mode `0600`, owned by root →
+  `/root/root_only/bms_calibration_override` is unreadable without becoming root. The flag
+  framed as the privesc reward is not readable without escalating. Lesson is true.
+- **Escalation is reachable from the foothold.** The sudoers line the module writes is
+  `ALL ALL = (root) NOPASSWD: sudoedit /etc/hosts` — account-agnostic, so the distccd daemon
+  context the distcc RCE lands in can run the CVE-2023-22809 exploit to root. Foothold account
+  does not matter.
+- **No scoped-vs-full sudo mismatch.** The taught misconfiguration is a *scoped* sudoedit rule
+  (exactly CVE-2023-22809's setup), and the VM grants exactly that scoped rule — they agree.
+  (The `kali` account's `super_user:true` full sudo is on the attacker box and is irrelevant
+  to the lesson.)
+- **flag_4 (distcc foothold) placement correct.** `distcc_exec/config.pp` leaks to
+  `/home/distccd/optigrid_toolkit/operator_notes`, owner `distccd`, mode `0600`. The RCE runs
+  as distccd, so the foothold account can read its own reward. No escalation implied, correct.
+
+No mission `labsheet.md` exists, so there is no local teaching text to correct. The shared
+SAFETYNET field guides were not edited (see 03 for the orchestrator note).

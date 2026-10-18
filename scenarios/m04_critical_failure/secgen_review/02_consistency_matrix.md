@@ -45,3 +45,29 @@ distcc=index 3). Correct. `concludeRequires` gates the ending on the four submit
 | | Canonical (`SecGen/.../m04_critical_failure.xml`) | In-mission (`scenarios/m04_critical_failure/secgen/…`) |
 |---|---|---|
 | Content | authoritative | byte-identical (`diff` clean) | match |
+
+---
+
+## Round 2 (2026-10-18) — re-checked, still consistent
+
+Re-ran the Step 2 matrix against the current files. All rows above still hold:
+
+- `secgen_scenario` = `break_escape/safetynet/m04_critical_failure.xml` (match).
+- `vm_object('kali', …)` launcher → attacker box (match); fallback `192.168.100.3` on the
+  target subnet.
+- Flag host key, 4 flags in XML document order (website, proftpd, sudoedit, distcc =
+  flag_1..flag_4), `targetFlags` map privesc→flag3 / distcc→flag4 — match.
+- Flag→global bridge rows all match; `concludeRequires` gates all four submit tasks.
+- Two SecGen XML copies byte-identical.
+
+### Leaked-file placement verified against module source (Round 2)
+
+| Flag | Module | Leak path (owner, mode) | Escalation needed? |
+|---|---|---|---|
+| flag_1 website | `parameterised_website` | web body (falsified rack status) | no (network) |
+| flag_2 proftpd | `proftpd_133c_backdoor` | `optigrid_transfer/coordination_notes` (FTP) | no (network) |
+| flag_3 sudoedit | `sudoedit/manifests/install.pp` | `/root/root_only/bms_calibration_override` (root, 0600) | **yes** — root-only |
+| flag_4 distcc | `distcc_exec/manifests/config.pp` | `/home/distccd/optigrid_toolkit/operator_notes` (distccd, 0600) | no — RCE lands as distccd |
+
+Escalation gate (flag_3) is real; the account-agnostic `ALL ALL = (root) NOPASSWD: sudoedit
+/etc/hosts` rule lets the distccd foothold run CVE-2023-22809 to root. No drift found.
