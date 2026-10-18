@@ -57,3 +57,48 @@ solvable; the drift was all on the game side). No in-mission `secgen/` copy exis
   flag-station `flags_for_vm` + player_state `flags_by_vm`, same as m04; `game.rb` collects
   valid flags from the station and flags_by_vm, so the top-level block is not required here.
 </content>
+
+---
+
+# Round 2 (2026-10-18)
+
+## Edits applied this round
+
+None. Round-1 fixes (`secgen_scenario` path; vm-launcher fallback IP) are intact and correct.
+The rebase decision is KEEP (see 01 R2.2), and the VM chain is pedagogically sound as built
+(see 01 R2.3), so no BreakEscape scenario edit and **no canonical SecGen XML edit** was needed.
+Validator re-run clean (pre-existing `showProgress` warnings only).
+
+## Rebase decision
+KEEP. Bludit RCE + `sudo less` root escape fits the mission CyBOK and maps 1:1 to the four
+aims; m05 is already an adaptation of the best-fit catalogue scenario (Feeling Blu). No rebase.
+
+## Pedagogy fixes
+None required. flag3 (manager-home 0600) and flag4 (root-owned 0600 behind the `sudo less`
+escape) are both genuinely gated; the sudo rule is already scoped to the taught GTFOBins
+`less` escape (no full-`ALL=(ALL) ALL` vs scoped-teaching mismatch).
+
+## Shared field-guide change for the orchestrator (report only — NOT edited)
+
+File: `HacktivityLabSheets/_labs/safetynet/bludit-cms-exploitation.md`
+What: add a user-access step between the shell step and the root step. The current Core
+Workflow (steps 4→5, lines ~71-72) goes www-data shell → `sudo -l` → root, and the Mission
+Application paragraph (lines ~91) implies Flag 3's "Data Package Manifest" is readable straight
+from the initial shell.
+Why: Flag 3 is leaked to `/home/<manager>/flag` at mode `0600` owned by the manager account, so
+the www-data RCE shell cannot read it. The player must first become the manager — the portal
+admin password recovered at Flag 1 is also that account's Linux password — e.g. `su - <manager>`
+from the shell, then read the manifest in the manager's home. Suggested: insert a workflow step
+"Pivot to the account whose credentials you recovered" before the `sudo -l` step, and reword the
+Mission Application Flag 3 sentence so it doesn't read as readable from the first shell.
+No per-build secret appears in the guide (good); all other values (handover-note creds, Bludit
+3.9.2 authenticated upload RCE, `sudo -l` GTFOBins root escape) match the VM.
+
+## Still open / build-confirm (carried from Round 1, unchanged)
+- (build-confirm) Host IP octets vs the prose `<description>` (172.16.0.2 / .3) — auto-assigned
+  by `network_ip` in datastore order; only a build confirms the octets. Game does not depend on
+  it (real IPs flow from vm_context).
+- (build-confirm) Within-Bludit flag order (recon flag1 before RCE flag2) resolves by document
+  order; a build confirms. If swapped, swap the two fallback flag strings and submit-flag titles.
+- (author, cosmetic) `scenario.json.erb:1806` fallback `"title":"kali"` — standalone display
+  label only; lookup key `attack_vm` is correct.

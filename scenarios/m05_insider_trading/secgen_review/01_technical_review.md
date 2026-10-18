@@ -87,3 +87,76 @@ explicitly-pathed encoders `modules/encoders/selector/concatenate` and
 (out of scope).
 </content>
 </invoke>
+
+---
+
+# Round 2 (2026-10-18)
+
+Independent re-pass. Reviewer read the canonical SecGen XML, the `sudo_root_less` and
+`parameterised_accounts` module manifests, the HaX phone ink, and the shared Bludit field
+guide directly.
+
+## R2.1 — Round-1 fixes all held (confirmed)
+
+- `mission.json:5` `secgen_scenario` = `break_escape/safetynet/m05_insider_trading.xml` — correct
+  relative XML path. ✓
+- `scenario.json.erb:1806` `vm_object('attack_vm', …)` — lookup key `attack_vm` = the SecGen
+  attacker system (`<system_name>attack_vm</system_name>`, Kali MSF base). This opens the
+  **attacker/Kali console**, not the target `qdc_research_server`. ✓ Fallback `"ip":"172.16.0.3"`
+  on the target's `172.16.0.x` network. ✓ (Cosmetic fallback `"title":"kali"` still a
+  standalone-only label — unchanged, see open list.)
+- `scenario.json.erb:1815` flag host key `flags_for_vm('qdc_research_server', …)` — matches the
+  flag-owning system. ✓
+- `scenario.json.erb:461/471/481/491` `targetFlags` all in the matching display form
+  `flag_station_evidence:qdc_research_server-flagN`. ✓
+- `scenario.json.erb:1816-1841` `flagRewards` use `set_global flag1..4_submitted`; globals
+  declared `705-708`; no reliance on the implicit bridge. ✓
+- `scenario.json.erb:527-534` `concludeRequires.tasksCompleted` = submit_flag1..4 — the VM
+  cannot be skipped. ✓
+
+Validator re-run clean (only pre-existing `showProgress` recommended-field warnings on
+collect_items tasks, unrelated).
+
+## R2.2 — Rebase decision: KEEP (no rebase)
+
+The current VM (Bludit 3.9.2 authenticated image-upload RCE → manager-account user flag →
+`sudo less` root escape) is a direct fit for the mission's `mission.json` CyBOK: WAM (file
+upload / server-side vuln), AAA (authentication, brute-force fallback), MAT (exploitation
+frameworks), OSV (sudo misconfiguration), SS (CVE/CWE). The four flags map 1:1 onto the four
+aims (recon → web exploit → user → root). The catalogue's only Bludit scenario is **Feeling
+Blu** (`labs/introducing_attacks/9_feeling_blu.xml`), and the shared field guide is itself
+*derived from* `9_feeling_blu.md` — so m05 is already an adaptation of the best-fit catalogue
+scenario, hardened with mission-specific narrative payloads. No catalogue scenario would
+improve hands-on play or story/CyBOK fit. Default-KEEP bar not cleared for a rebase.
+
+## R2.3 — Pedagogy / VM-design: assessed, no VM change required
+
+- **flag3 (user access) is genuinely gated.** The manager-account manifest is leaked by
+  `parameterised_accounts` to `/home/<manager>/flag` at mode `0600` owned by the manager, so
+  the initial www-data RCE shell (flag2) cannot read it. Reaching it requires becoming the
+  manager — the portal password recovered at flag1 is also that account's Linux password
+  (`password` datastore, shared by design = realistic credential reuse). Needs the creds +
+  a login; not a hollow gate.
+- **flag4 (root) is genuinely gated.** `sudo_root_less` leaks the Architect authorisation to a
+  root-owned `0600` file in `/root` and grants `ALL ALL=(root) NOPASSWD: /bin/less /root/<pre_leak>`.
+  The manager (and www-data) can read it only via the `less` → root-shell GTFOBins escape. The
+  sudo rule is already **scoped** to a single `less` command, which is exactly the GTFOBins
+  escape the field guide teaches — **no scoped-vs-full-`ALL=(ALL) ALL` mismatch** to correct.
+- No flag framed as an escalation reward is readable without escalating. No VM edit applied.
+
+Note (non-blocking): the sudo rule is granted to `ALL` users, so the www-data shell can take
+the root escape directly without first becoming the manager. flag3 (manager user) is therefore
+a parallel evidence flag rather than a strict stepping-stone to flag4. All four are still
+individually gated and all four are required by `concludeRequires`, so the design holds.
+
+## R2.4 — Shared Bludit field guide (audit; report to orchestrator, not edited)
+
+`HacktivityLabSheets/_labs/safetynet/bludit-cms-exploitation.md` (shared safetynet guide;
+reported, not edited). Matches the VM on recon→leaked-handover-creds (flag1), rate-limited
+brute-force fallback, authenticated `bludit_upload_images_exec` RCE (flag2), and the
+`sudo -l` → GTFOBins-escape-to-root chain (flag4). No per-build secret printed. One gap — see
+the orchestrator report in `03_edits_applied.md` R2: the Core Workflow jumps from the www-data
+shell straight to `sudo -l`/root and omits the **user-access step for flag3** (the manifest is
+`0600` in the manager's home; the player must log in as the manager with the recovered portal
+creds to read it). The Mission Application paragraph ("dig into what's on disk … his directory
+holds a Data Package Manifest — Flag 3") implies it is readable from the initial shell.

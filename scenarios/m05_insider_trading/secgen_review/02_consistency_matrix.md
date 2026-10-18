@@ -25,3 +25,21 @@ absent from source. Status reflects the state **after** the fixes in `03_edits_a
 | Recruiter cover | "TalentStack Executive Recruiting" (ink) | n/a | "TalentStack Executive Recruiting" (manifest + Architect doc) | match |
 | Lab-sheet URL | n/a | n/a | `https://cliffe.github.io/HacktivityLabSheets/labs/safetynet/bludit-cms-exploitation/` | see open list (field guide) |
 </content>
+
+---
+
+# Round 2 (2026-10-18) — re-check
+
+Re-ran the matrix against the current files and the module manifests. No new mismatch; every
+row above still holds. Additions resolved this round:
+
+| Value | Story (ink) | Break Escape scenario | SecGen VM | Status |
+|---|---|---|---|---|
+| vm_object opens attacker console | n/a | `vm_object('attack_vm')` (1806) | attacker system `attack_vm`, Kali MSF base | match (opens Kali, not the target) |
+| flag3 escalation gate | HaX hints reference the manifest as evidence | `set_global flag3_submitted` | `/home/<manager>/flag` 0600 owned by manager; needs manager login | match (genuine user gate) |
+| flag4 escalation gate | HaX "see what that account can run" (ink 401/1055), sudo guide (829/835) | `set_global flag4_submitted` | `sudo less /root/<file>` GTFOBins escape; flag 0600 root-owned | match (genuine root gate; scoped sudo rule) |
+| sudo rule scope | guide teaches GTFOBins `less` escape | n/a | `ALL ALL=(root) NOPASSWD: /bin/less /root/<pre_leak>` (sudo_root_less/config.pp) | match (scoped = taught technique; no full-sudo mismatch) |
+| Field-guide flag3 step | n/a | n/a | manifest 0600 in manager home | **gap in shared guide** — see 03 R2 report |
+
+Ink carries no hard VM values (no IPs, no literal flag strings, no filesystem paths) — story
+canon only. Confirmed by grep of `ink/*.ink`.
