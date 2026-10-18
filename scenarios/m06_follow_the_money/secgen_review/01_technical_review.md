@@ -115,3 +115,70 @@ This also resolves the long-standing S5 ambiguity logged in `DECISIONS_PENDING.m
 The mission's "Privilege escalation" HaX hint (`ink/m06_phone_agent_0x99.ink` `request_privesc_guide`) previously described credential reuse ("two boxes share a service account… try the password you already have") — that is lateral movement (flag_2), already covered by the cracking-guide hint, and following it would no longer reach flag_4. Repointed it to the sudo route ("The vault won't crack. One of the other accounts can run sudo… Start with sudo -l").
 
 Lateral-movement cracking (hcauth/hcledger/hcfindb) is unchanged and still solvable; only the vault is now escalation-only.
+
+---
+
+## Round 3 — integration (2026-10-18)
+
+Step 4b: is the Druid-RCE VM woven into the mission or bolted on? Traced the VM
+nodes (`vmch/vmfl_submit_flag1..4`) through `dungeon_graph.md` against the m01 bar.
+Note: the "VM, in brief" section above is stale round-1 prose (says distcc / Debian 9);
+the VM is now Apache Druid RCE on Debian 12 — see the canonical XML and Round 2.
+
+### The six checks
+
+1. **Motivation — OK (strengthened).** Server-room passphrase comes from a found IT
+   checklist + Irina's found wordlist (`scenario.json.erb:287`, `:53`, `ink/m06_phone_agent_0x99.ink:301`).
+   Credential reuse and the findb→doors fact are on the rack inventory sheet
+   (`scenario.json.erb:2010`) and the on-box `reuse_note` (SecGen XML:172-184). The
+   Druid foothold was the one value supplied only by HaX's phone line
+   (`scenario.json.erb:1078`, `ink/m06_phone_agent_0x99.ink:309,672`) — below the m01
+   bar, where the target host is also a physical note. Fixed: added `hc-analytics-01`
+   (Apache Druid, no auth, "temporary") to the rack inventory sheet so the environment
+   surfaces the foothold too (`scenario.json.erb:2010-2011`). Sudo/priv-esc route to the
+   vault is justified by the privesc hint + guide (`ink/...:675-683`).
+2. **Gating — OK.** The backend terminal is in `server_room`, behind the password door
+   (`scenario.json.erb:1924-1926`), itself behind the trading-floor key lock + checkpoint
+   guard. The dungeon graph shows `hashchain_backend_server_terminal --> vmch_submit_flag1`
+   with the room/door chain feeding in. Not a terminal in the start area.
+3. **Diegetic attacker box — OK.** The launcher is the exchange's own "HashChain Backend
+   Server Terminal" operator console in the server room (`scenario.json.erb:1934-1939`),
+   reached as part of the infiltration. (It opens the `kali_cracker` console; framed as the
+   in-room operator terminal rather than left by a named NPC — acceptable, in-fiction.)
+4. **Flag payoff — OK (strong).** Each flag drives a concrete beat, not a scoreboard:
+   flag_1 → `credential_reuse_available` + reuse story (`scenario.json.erb:370,1109`);
+   flag_2 → lateral-movement beat (`:376,1113`); flag_3 → **Door Controller Export** giving
+   the data-centre PIN 3110 that physically opens the next room (`:1968-1991`, graph edge
+   `vmfl_submit_flag3 --> door_data_center`); flag_4 → **Cold Storage Recovery Keys** that
+   enable the freeze asset-decision (`:1972-2000,1129` sets `found_wallet_keys`).
+5. **Requiredness & pacing — OK.** `concludeRequires.tasksCompleted = submit_flag1..4`
+   (`scenario.json.erb:524-531`) — the ending cannot skip the VM. Guides are handed at the
+   right beats: recon/Druid/cracking on first touching the terminal (`:1076`), privesc after
+   flag_1 (`:1109`), not all up front.
+6. **Graph coherence — OK.** VM nodes sit on the critical-path aim `crack_passwords`; the
+   flag chain is linear (flag1→reuse→flag2→db-reachable→flag3→data-centre door→flag4) with
+   in-game prerequisites feeding in and story unlocks hanging off, matching the fiction.
+
+### Fixes applied (mission-local)
+- `scenario.json.erb:2010-2011` — rack inventory sheet: added `B-07 hc-analytics-01`
+  (Apache Druid, no auth) line + ops note, and reworded `observations`, so the Druid
+  foothold is discoverable in the environment, not only via HaX. Resolves the Check-1 gap.
+
+### Author-sized gaps flagged
+- None blocking. Optional polish (not applied, author's call): the VM launcher's
+  `observations` (`scenario.json.erb:1939`) could name why an FCA supervisor's console
+  reaches the backend, to match m01's "Kevin set up the Kali box" diegesis. Current framing
+  (the exchange's own operator terminal) is adequate.
+- Housekeeping: the round-1 "VM, in brief" paragraph above still describes the pre-swap
+  distcc/Debian 9 chain; worth refreshing to Druid/Debian 12 when next editing this doc.
+
+### Shared-file changes for the orchestrator
+- None. No shared SAFETYNET field guide or SecGen module was edited this round. The new
+  `apache-druid-rce` field guide referenced by `m06_druid_field_guide` and the SecGen
+  `lab_sheet_url` is a shared guide — report only, not touched.
+
+### Verification
+- `ruby scripts/validate_scenario.rb scenarios/m06_follow_the_money/scenario.json.erb` —
+  clean (0 errors; only pre-existing suggestions/missing-recommended items, unrelated to
+  this edit). Dungeon graph regenerated (Puzzle 59/66, unchanged). No ink changed, so no
+  recompile needed.

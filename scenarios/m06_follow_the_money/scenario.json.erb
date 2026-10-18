@@ -2007,8 +2007,8 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
           "_comment": "Pass-4 dialogue playtest: auto-placed 23 px south of the flag station, so interacting from the north opened the station. Room dressing (room_hce_servers): it now has its own notes slot at the far end of the ops bench, 32 px+ from the station.",
           "takeable": true,
           "readable": true,
-          "text": "HASHCHAIN — RACK B INVENTORY\n\nB-01  hc-auth-01      (staff authentication)\nB-02  hc-trade-01     (matching engine)\nB-03  hc-ledger-01    (internal ledger — RESTRICTED)\nB-04  hc-findb-01     (financial database — RESTRICTED)\nB-05  hc-vault-01     (cold storage keys — RESTRICTED)\nB-06  hc-mixer-01     (privacy conversion service)\n\nNote from ops: the auth and ledger service accounts share a password.\nThe financial database account also drives the door controllers.\nRaised as a risk in March. Closed as 'accepted'.",
-          "observations": "Rack inventory. Two service accounts share a password, and the financial database's account runs the doors.",
+          "text": "HASHCHAIN — RACK B INVENTORY\n\nB-01  hc-auth-01      (staff authentication)\nB-02  hc-trade-01     (matching engine)\nB-03  hc-ledger-01    (internal ledger — RESTRICTED)\nB-04  hc-findb-01     (financial database — RESTRICTED)\nB-05  hc-vault-01     (cold storage keys — RESTRICTED)\nB-06  hc-mixer-01     (privacy conversion service)\nB-07  hc-analytics-01 (Apache Druid dashboards — console on the backend LAN, no auth, \"temporary\")\n\nNote from ops: the auth and ledger service accounts share a password.\nThe financial database account also drives the door controllers.\nThe analytics box (B-07) was stood up for a board demo and never locked down — it talks to the whole backend.\nRaised as a risk in March. Closed as 'accepted'.",
+          "observations": "Rack inventory. An analytics box sits on the backend with no login, two service accounts share a password, and the financial database's account runs the doors.",
           "puzzle_graph_role": "clue",
           "puzzle_graph_reveals": "credential_reuse_available"
         }
