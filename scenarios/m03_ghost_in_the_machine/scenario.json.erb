@@ -1535,7 +1535,7 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
           "observations": "Zero Day's VM access terminal, the only way into their isolated training network: the box they rehearse exploits on before they sell them. Nightshade has bridged it to your own kit, so the lab opens on your machine like any other VM. The panel says how.",
           "puzzle_graph_role": "vm",
           "hacktivityMode": <%= vm_context && vm_context['hacktivity_mode'] ? 'true' : 'false' %>,
-          "vm": <%= vm_object('ghost_in_machine_vm_network', {"id":1,"title":"Zero Day Training Network","ip":"192.168.100.3","enable_console":true}) %>
+          "vm": <%= vm_object('attack_vm', {"id":1,"title":"attack_vm","ip":"192.168.100.2","enable_console":true}) %>
         },
         {
           "type": "workstation",
