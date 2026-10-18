@@ -53,3 +53,20 @@ Count: 4 game slots ↔ 4 VM flags. Order aligns slot-for-slot.
 | Cleanup `spoiler_admin_pass` | *(per-build)* |
 
 No in-game text prints a per-build secret. The one fixed credential (`Hospital1987`) is a deliberate hinted password, not a per-build secret.
+
+---
+
+## Round 2 (2026-10-18) — matrix re-verified, no changes
+
+Every row re-checked against the live files; all still `match`. Additions confirmed this pass:
+
+| Value | Where it lands on the VM (module-verified) | Access required | Status |
+|---|---|---|---|
+| flag2 (proftpd_backdoor_exploited) | `/root/` via `proftpd_133c_backdoor` `strings_to_leak`, mode `0600` owner root (config.pp) | root — only via the backdoor RCE | match (escalation genuine) |
+| flag1 (ssh_access_granted) | `/home/gary/hospital_docs/backup_procedures`, `leak_files` mode `0600` owner gary | gary (SSH) or root | match (foothold genuine) |
+| flag3 (database_backup_located) | `/home/ftp/` via `strings_to_pre_leak` | anonymous FTP, pre-exploit | match (recon, by design) |
+| flag4 (ghost_operational_log) | `/home/ftp/` via `strings_to_pre_leak`, reversibly encoded (`^(ascii|alpha)_reversible$`, difficulty low) | anonymous FTP + decode | match (decode challenge intact) |
+| in-mission secgen copy | — | `diff -q` vs canonical: identical | match |
+
+No value drift found. `secgen_scenario`, launcher, flag host key, `targetFlags` display form,
+flag→global bridge and `concludeRequires` all confirmed (see 01 Round 2).

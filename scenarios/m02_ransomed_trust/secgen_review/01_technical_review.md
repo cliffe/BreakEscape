@@ -87,3 +87,76 @@ string encoder; `proftpd_133c_backdoor`; `ssh_root_login`; `parameterised_accoun
 - **N3 — historical dev notes** (`IMPLEMENTATION_SUMMARY.md`, `OBJECTIVES_VERIFICATION.md`)
   still mention the superseded PIN `4729` / "Asset #47". These are changelog/history docs, not
   canonical artifacts; left untouched.
+
+---
+
+# Round 2 (2026-10-18)
+
+Independent re-pass. Verdict unchanged: the mission is sound. Round 1 held with no
+regressions; no new code edits were required. Rebase decision: **KEEP**. No pedagogy fix
+warranted on m02's own artifacts or VM; one shared field-guide observation reported for the
+orchestrator.
+
+## R2.1 — Round-1 fixes confirmed (all held)
+
+- `mission.json:5` `secgen_scenario` = `break_escape/safetynet/m02_ransomed_trust.xml` — correct
+  path form (matches the confirmed Hacktivity `SCENARIOS` inclusion rule). Held.
+- `scenario.json.erb:2282` `vm_object('attack_vm', {title:"kali", ip:"172.16.0.2", enable_console:true})`
+  — match arg `attack_vm` equals the attacker box's `system_name`, so the launcher opens the
+  **Kali/MSF attacker console**, not the target. Fallback `title:"kali"`/`ip:172.16.0.2` on the
+  attacker subnet. Held (N1 cosmetic, see below).
+- `scenario.json.erb:112` `vm_flags_json('hospital_backup_server', [...])` — keyed by the flag-owning
+  `system_name`. Held.
+- `targetFlags` (`:369,:380,:391,:404`) all in the matching station display form
+  `flag_station_dropsite:hospital_backup_server-flagN`. No reference-form (`<vm>:flag_N`) task. Held.
+- Flag→global bridge: each global set explicitly by an `objective_task_completed:submit_*_flag`
+  handler (`flag_ssh_submitted :1081`, `flag_ghost_log_submitted :1100`, `flag_database_submitted
+  :1147`, `flag_proftpd_submitted :1369`); all four declared in `globalVariables` (`:3571-3574`).
+  Does not depend on `flagRewards`/`sudo_flag_submitted` bridge. Held.
+- `concludeRequires.tasksCompleted` (`:512-519`) = all four `submit_*_flag` tasks. The VM cannot
+  be skipped. Held. Validator critical path (4 hops) still terminates at "Bring The Wards Back".
+- In-mission `secgen/m02_ransomed_trust.xml` still **byte-identical** to canonical (`diff -q` clean).
+- Every module path/type in the canonical XML resolves under SecGen `modules/`: `parameterised_accounts`,
+  `iceweasel`, `kali_top10`, `kali_web`, `kde_minimal`, `handy_cli_tools`, `ssh_root_login`,
+  `proftpd_133c_backdoor`, encoder `selector/concatenate`, `account` generator, `flag_generator`
+  (type → 5 flag modules), and `^(ascii|alpha)_reversible$` (type → 13 reversible encoders incl.
+  rot13/base64/caesar). No build run.
+
+## R2.2 — Rebase decision: KEEP
+
+Origin name `rooting_for_a_win` (catalogue: AC, F, MAT, NS, SOIM, SS). The canonical VM is
+already a bespoke adaptation purpose-built for this story: ProFTPD 1.3.3c backdoor RCE→root,
+anonymous-FTP pre-leak recon, a reversible-encoding challenge, and an SSH foothold with a
+story-hinted password — every leaked document is woven into the plot (Gary's warning email,
+Ghost's deployment log, the escrow-PIN rule, the insider badge `SC-4471`, the £150,000 ransom).
+Its CyBOK (MAT exploitation/backdoor-trojans, SS CVEs, SOIM pentest, NS FTP, F encoding, AC
+symmetric crypto) maps exactly onto `mission.json`. No catalogue scenario — including
+`rooting_for_a_win` itself — would improve hands-on fit or story fit; a rebase would only strip
+the narrative integration and lose the solvable, on-theme kill chain. The Round-2 bar (clear,
+specific improvement outweighing the current VM) is not met. **Keep and deepen.**
+
+## R2.3 — Pedagogy / VM-design assessment (no m02-side fix warranted)
+
+- **Escalation is genuine** (verified against the module manifest, not just the XML):
+  `proftpd_133c_backdoor/manifests/config.pp` writes `strings_to_leak` (flag2,
+  proftpd_backdoor_exploited) to `/root/…` at mode `0600` owned by root, and the module's
+  `<privilege>root_rwx</privilege>` backdoor is the only path there. flag1
+  (ssh_access_granted) sits in gary's home at `0600` (SSH-as-gary, or root). So flag2 truly
+  requires the exploit and flag1 truly requires a foothold — the "VM required" guarantee is not
+  hollow.
+- **No sudo misconfiguration to reconcile.** gary is `super_user:false`; the VM teaches no
+  scoped-vs-full sudo rule, so there is nothing to bring into agreement on the VM side. (The
+  sudo pedagogy in the *shared* privesc field guide is a separate reporting item — see 03.)
+- **flags 3 & 4 are `strings_to_pre_leak`** (anonymous FTP, pre-exploit) by design — flag3 is
+  recon (the server notice), flag4 is the reversibly-encoded operational log, so flag4 still
+  poses the decode challenge (CyBOK F / AC). Matches Round-1's "readable before login" framing;
+  intentional, not a defect.
+- Net: Round 1 was thorough; the smallest-change principle means no edit is the correct Round-2
+  action on m02's own artifacts and VM. Assessed, nothing to apply.
+
+## R2.4 — Notes carried forward (unchanged, author decision)
+
+- **N1** fallback launcher label `kali` vs attacker `system_name` `attack_vm` — cosmetic,
+  standalone-only; the real VM object replaces it in Hacktivity. Left as-is.
+- **N2** object id `vm_launcher_rooting_for_a_win` (`:2148,:2218,:2277`) — internal, self-consistent,
+  binds no VM; renaming is pure graph churn. Left as-is.

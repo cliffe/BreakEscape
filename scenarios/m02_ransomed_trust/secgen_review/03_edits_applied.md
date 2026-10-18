@@ -53,3 +53,46 @@ None. The published SAFETYNET field guides under
 missions; they were read and are generic technique guides (placeholder host/user, Hydra with a
 short candidate wordlist, ProFTPD backdoor) consistent with this VM. No stale mission values
 (`gary`/`marcus`/`4729`/`SC-4471`/IPs) appear in them, so no shared-file edit is required.
+
+---
+
+## Round 2 (2026-10-18)
+
+**No code edits applied.** Round 1 held with no regressions; the smallest-change principle
+means no further edit is warranted on m02's own artifacts or its canonical SecGen XML. Rebase
+decision: **KEEP** (see 01 R2.2). No SecGen-repo edits.
+
+### Verification (Round 2)
+- `ruby scripts/validate_scenario.rb scenarios/m02_ransomed_trust/scenario.json.erb` — passes.
+  Only pre-existing suggestions/warnings (phone timed-message spacing, missing-behavior NPCs,
+  credits fallback); none SecGen-related, none introduced this pass. Dungeon graph regenerated
+  (Puzzle 105 nodes / 126 edges; critical path 4 hops ending at "Bring The Wards Back").
+- `diff -q` canonical vs in-mission `secgen/` copy — identical.
+- All canonical-XML module paths/types resolve under SecGen `modules/` (static; no build).
+- `compile-ink` — not run (no `.ink` changed).
+- Note: running the validator rewrites `dungeon_graph.{html,json,md}` as a side effect; content
+  is logically unchanged.
+
+### Shared-file changes for the orchestrator (REPORT — do not edit, parallel-safe)
+1. **`HacktivityLabSheets/_labs/safetynet/privilege-escalation.md`** (mirror of
+   `scenarios/m02_ransomed_trust/lab_sheet/SAFETYNET_FIELD_GUIDE_Privilege_Escalation.md`).
+   The guide teaches **sudo-based** escalation (`sudo -l`, `sudo -u`, sudoers misconfig). m02's
+   actual root route is the **ProFTPD 1.3.3c backdoor RCE** (→ root directly); gary has no sudo
+   rights (`super_user:false`). The guide is offered at `submit_ssh_flag`, where the real root
+   route is the ProFTPD exploit (covered by the ProFTPD Exploitation guide, offered at the same
+   milestone). Low severity: the guide is generic and other SAFETYNET missions (e.g. m06) do
+   have genuine sudo privesc, so it is shared and correct for them. No edit needed for m02;
+   flagging only so the orchestrator is aware the privesc guide is slightly off-target for this
+   mission. Recommend: no change, or a one-line "on some hosts the escalation is a service
+   exploit rather than sudo — see the exploitation guide" pointer if the orchestrator wants it.
+2. No other shared field guide (recon, vuln-analysis, proftpd, ssh, lockpicking) carries a stale
+   m02 value or teaches a technique the VM lacks. The SSH guide teaches Hydra bruteforce while
+   the game also hands three candidate passwords (incl. `Hospital1987`); both routes are valid
+   and the guide's wordlist section already cites "founding/anniversary years", so this is
+   consistent, not a mismatch. No change requested.
+
+### Needs an author VM build to confirm
+- Platform-string end-to-end (as Round 1): `secgen_scenario` follows the confirmed rule but no
+  real Hacktivity bind was exercised.
+- A build-and-solve would confirm the ProFTPD backdoor lands flag2 in `/root` and the reversible
+  encoder on flag4 round-trips. Reasoned statically only.
