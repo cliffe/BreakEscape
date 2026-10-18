@@ -2277,7 +2277,7 @@ boardroom_pin = "0417"
           "id": "vm_launcher_rooting_for_a_win",
           "name": "VM Access Terminal",
           "takeable": false,
-          "observations": "Kali attack terminal -- your working box for reaching the hospital backup server over the network",
+          "observations": "Your SAFETYNET field box -- the Kali kit you patched into the server room's isolated segment, the one point in the building that can still reach the backup server's network. HaX pushes your tools and field guides to it from here.",
           "hacktivityMode": <%= vm_context && vm_context['hacktivity_mode'] ? 'true' : 'false' %>,
           "vm": <%= vm_object('attack_vm', {"id":1,"title":"kali","ip":"172.16.0.2","enable_console":true}) %>,
           "puzzle_graph_role": "vm",

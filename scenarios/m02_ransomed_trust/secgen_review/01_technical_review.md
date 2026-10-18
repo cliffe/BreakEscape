@@ -160,3 +160,79 @@ specific improvement outweighing the current VM) is not met. **Keep and deepen.*
   standalone-only; the real VM object replaces it in Hacktivity. Left as-is.
 - **N2** object id `vm_launcher_rooting_for_a_win` (`:2148,:2218,:2277`) — internal, self-consistent,
   binds no VM; renaming is pure graph churn. Left as-is.
+
+---
+
+# Round 3 — integration (2026-10-18)
+
+VM↔mission integration quality (skill Step 4b), scored against the m01 benchmark. Traced the
+four VM challenge/flag nodes (`vmch_submit_database/ssh/proftpd/ghost_log_flag` and their
+`vmfl_*` flags) through `dungeon_graph.md`. The VM is woven in, not bolted on. One minor reword
+applied; no author-sized gaps.
+
+## Six checks
+
+1. **Motivation — OK.** Credentials are found in-fiction: SSH password `Hospital1987` is on
+   Gary's sticky note (`scenario.json.erb:2145`, `:2107`) and in his access-notes file
+   (`:2119`), echoed by HaX (`:1021`, phone `hint_password` ink). Target host `172.16.0.3` and
+   the ProFTPD 1.3.3c backdoor are on the network-diagram whiteboard (`:2215`) and Gary's notes
+   (`:2119`); HaX `hint_vm` spells out the chain (phone ink `:463-472`). Nothing appears from
+   thin air.
+2. **Gating — OK.** VM access sits deep on the critical path, not in the start area. Server room
+   is RFID-locked (`:2266-2267`, `server_room_keycard` from Gary); Gary is behind the IT
+   override (Bernie); the launcher additionally requires the sticky note + network diagram found
+   in IT (`:2148`, `:2218` → `lock_vm_launcher_rooting_for_a_win → vm_access_terminal` in the
+   graph). HaX confirms "the server room is the one door where picks and charm are both useless"
+   (phone ink `:419`).
+3. **Diegetic attacker box — CONCERN → fixed (reword).** HaX dialogue already frames it as "your
+   attack box" (`:1069`, `:1076`), but the launcher's own `observations` (`:2280`) read only
+   "Kali attack terminal -- your working box…", which neither says whose box it is nor why a Kali
+   rig is standing in a hospital server room — thinner than m01's "A Kali Linux system IT have
+   prepared for your security audit." Reworded to name it the player's SAFETYNET field box,
+   patched into the server room's isolated segment (the one point that reaches the backup
+   server's network — consistent with phone ink `:419`/`:930`), with HaX pushing tools/guides to
+   it (matches the `#give_item:lab-workstation` delivery). See `03_edits_applied.md`.
+4. **Flag payoff — OK.** Every flag drives a concrete beat, none is a bare scoreboard:
+   flag1/ssh → unlocks the ProFTPD challenge (`puzzle_graph_unlocks: proftpd_exploitation_unlocked`,
+   `:385`) and reveals the escrow safe (`escrow_safe_known`, `:1081`); flag2/proftpd → opens the
+   database-backup challenge (`:396`); flag3/database → the drop-site cuts the Verified Restore
+   Manifest the Recovery Console refuses to run without (`flagRewards` give_item `:2306`, item
+   `:2320-2331`) and opens the emergency-store safe (`:374`); flag4/ghost_log → auto-unlocks the
+   ENTROPY staging cache (`unlock_object :2311`, task `:409`) exposing Ghost's manifesto, the
+   affiliate-handling note and the insider badge `SC-4471`.
+5. **Requiredness & pacing — OK.** `concludeRequires.tasksCompleted` (`:512-519`) lists all four
+   `submit_*_flag` tasks, so the VM cannot be skipped (confirmed Rounds 1–2). Field guides are
+   drip-fed at the right beat, not all up front: lockpicking on its beat (`:837`); scanning+ssh
+   on `access_server_room` (`:1068`); scanning-and-exploitation on first touching the launcher
+   (`:1075`); vulnerability+exploitation+privesc on `submit_ssh_flag` (`:1081`); CyberChef on the
+   ROT13 decode beat (`:1013`). Each is offered through the HaX phone hub gated on its
+   `*_guide_offered` flag (phone ink `:188`), exactly the m01 pattern.
+6. **Graph coherence — OK.** In `dungeon_graph.md` the VM nodes sit on the critical path: physical
+   prerequisites feed in (`lock_vm_launcher_rooting_for_a_win → vm_access_terminal →
+   vmch_submit_database_flag`), the four challenges chain
+   (database → ssh → proftpd → ghost_log via `vmfl_* -.-> vmch_*`), and story unlocks hang off
+   every flag (`vmfl_submit_database_flag → lock_emergency_storage_safe` /
+   `lock_hospital_recovery_console`; `vmfl_submit_ghost_log_flag → lock_entropy_staging_cache` /
+   `lock_ghost_lore_unlocked` / `lock_press_terminal`). All route to "Bring The Wards Back".
+
+## Fix applied (mission-local)
+
+- `scenario.json.erb:2280` — launcher `observations`:
+  `"Kali attack terminal -- your working box for reaching the hospital backup server over the network"`
+  → `"Your SAFETYNET field box -- the Kali kit you patched into the server room's isolated segment, the one point in the building that can still reach the backup server's network. HaX pushes your tools and field guides to it from here."`
+  Resolves check 3. Text-only; validator clean, dungeon graph regenerated unchanged in structure.
+
+## Author-sized gaps
+
+None. The VM is integrated to the m01 standard. No new puzzle/room/story beat is needed.
+
+## Shared-file changes for the orchestrator
+
+None this round. (Round 2's shared privesc field-guide observation still stands; see `03_edits_applied.md`.)
+
+## Verification
+
+- `ruby scripts/validate_scenario.rb scenarios/m02_ransomed_trust/scenario.json.erb` — no errors;
+  only pre-existing suggestions/warnings, none introduced by this edit. Dungeon graph regenerated
+  (Puzzle 105/126, critical path 4 hops to "Bring The Wards Back").
+- No ink changed (no compile-ink needed).
