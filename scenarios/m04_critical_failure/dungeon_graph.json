@@ -249,14 +249,14 @@
       "optional": false
     },
     {
-      "id": "vmch_submit_distcc_exploit_flag",
-      "label": "Submit proof of the distcc foothold",
+      "id": "vmch_submit_erlang_rce_flag",
+      "label": "Submit proof of the Erlang/OTP SSH foothold",
       "kind": "vm",
       "optional": false
     },
     {
-      "id": "vmfl_submit_distcc_exploit_flag",
-      "label": "Distcc Exploit Flag",
+      "id": "vmfl_submit_erlang_rce_flag",
+      "label": "Erlang Rce Flag",
       "kind": "flag",
       "optional": false
     },
@@ -480,13 +480,13 @@
       "soft": true
     },
     {
-      "from": "vmch_submit_distcc_exploit_flag",
-      "to": "vmfl_submit_distcc_exploit_flag",
+      "from": "vmch_submit_erlang_rce_flag",
+      "to": "vmfl_submit_erlang_rce_flag",
       "soft": false
     },
     {
       "from": "vmfl_submit_ftp_intel_flag",
-      "to": "vmch_submit_distcc_exploit_flag",
+      "to": "vmch_submit_erlang_rce_flag",
       "soft": true
     },
     {
@@ -495,7 +495,7 @@
       "soft": false
     },
     {
-      "from": "vmfl_submit_distcc_exploit_flag",
+      "from": "vmfl_submit_erlang_rce_flag",
       "to": "vmch_submit_privesc_flag",
       "soft": true
     },
@@ -540,7 +540,7 @@
       "soft": false
     },
     {
-      "from": "vmfl_submit_distcc_exploit_flag",
+      "from": "vmfl_submit_erlang_rce_flag",
       "to": "lock_esd_pushbutton",
       "soft": false
     },

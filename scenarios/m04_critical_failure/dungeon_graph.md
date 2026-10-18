@@ -110,8 +110,8 @@ flowchart TD
   vmfl_submit_network_scan_flag{"Network Scan Flag"}
   vmch_submit_ftp_intel_flag["Submit the intelligence file from their FTP service"]
   vmfl_submit_ftp_intel_flag{"Ftp Intel Flag"}
-  vmch_submit_distcc_exploit_flag["Submit proof of the distcc foothold"]
-  vmfl_submit_distcc_exploit_flag{"Distcc Exploit Flag"}
+  vmch_submit_erlang_rce_flag["Submit proof of the Erlang/OTP SSH foothold"]
+  vmfl_submit_erlang_rce_flag{"Erlang Rce Flag"}
   vmch_submit_privesc_flag["Submit proof you became root on the jump server"]
   vmfl_submit_privesc_flag{"Privesc Flag"}
 
@@ -156,10 +156,10 @@ flowchart TD
   vmch_submit_network_scan_flag --> vmfl_submit_network_scan_flag
   vmch_submit_ftp_intel_flag --> vmfl_submit_ftp_intel_flag
   vmfl_submit_network_scan_flag -.-> vmch_submit_ftp_intel_flag
-  vmch_submit_distcc_exploit_flag --> vmfl_submit_distcc_exploit_flag
-  vmfl_submit_ftp_intel_flag -.-> vmch_submit_distcc_exploit_flag
+  vmch_submit_erlang_rce_flag --> vmfl_submit_erlang_rce_flag
+  vmfl_submit_ftp_intel_flag -.-> vmch_submit_erlang_rce_flag
   vmch_submit_privesc_flag --> vmfl_submit_privesc_flag
-  vmfl_submit_distcc_exploit_flag -.-> vmch_submit_privesc_flag
+  vmfl_submit_erlang_rce_flag -.-> vmch_submit_privesc_flag
   bms_jump_server_terminal --> vmch_submit_network_scan_flag
   main_entrance --> operations_office
   operations_office --> scada_control_room
@@ -168,7 +168,7 @@ flowchart TD
   analogue_thermometer_rack_bank_c_wall --> lock_esd_pushbutton
   vmfl_submit_network_scan_flag --> lock_esd_pushbutton
   vmfl_submit_ftp_intel_flag --> lock_esd_pushbutton
-  vmfl_submit_distcc_exploit_flag --> lock_esd_pushbutton
+  vmfl_submit_erlang_rce_flag --> lock_esd_pushbutton
   vmfl_submit_privesc_flag --> lock_esd_pushbutton
   action_deal_with_voltage --> lock_esd_pushbutton
 
@@ -177,8 +177,8 @@ flowchart TD
   class rfid_cloner,lock_pick_kit,cyberchef_workstation,maintenance_work_orders,scada_hmi_main_display,fingerprint_kit,optigrid_job_card_4782_back_page,access_control_export_hv_plant_room,analogue_thermometer_rack_bank_c_wall,h_gas_detector_panel,duty_round_panel,social_fabric_safehouse_card_encoded item
   class npc_robert_vance,facility_access_keycard_level_1,spare_keycard_level_1,npc_entropy_operative_relay,workshop_keycard_level_2,npc_voltage_critical_mass key
   class action_meet_robert_vance,action_deal_with_voltage action
-  class bms_jump_server_terminal,vmch_submit_network_scan_flag,vmch_submit_ftp_intel_flag,vmch_submit_distcc_exploit_flag,vmch_submit_privesc_flag vm
-  class vmfl_submit_network_scan_flag,vmfl_submit_ftp_intel_flag,vmfl_submit_distcc_exploit_flag,vmfl_submit_privesc_flag flag
+  class bms_jump_server_terminal,vmch_submit_network_scan_flag,vmch_submit_ftp_intel_flag,vmch_submit_erlang_rce_flag,vmch_submit_privesc_flag vm
+  class vmfl_submit_network_scan_flag,vmfl_submit_ftp_intel_flag,vmfl_submit_erlang_rce_flag,vmfl_submit_privesc_flag flag
 
   classDef optional stroke-dasharray:5 2
   class facility_access_keycard_level_1,spare_keycard_level_1 optional
@@ -290,8 +290,8 @@ flowchart TD
   vmfl_submit_network_scan_flag{"Network Scan Flag"}
   vmch_submit_ftp_intel_flag["Submit the intelligence file from their FTP service"]
   vmfl_submit_ftp_intel_flag{"Ftp Intel Flag"}
-  vmch_submit_distcc_exploit_flag["Submit proof of the distcc foothold"]
-  vmfl_submit_distcc_exploit_flag{"Distcc Exploit Flag"}
+  vmch_submit_erlang_rce_flag["Submit proof of the Erlang/OTP SSH foothold"]
+  vmfl_submit_erlang_rce_flag{"Erlang Rce Flag"}
   vmch_submit_privesc_flag["Submit proof you became root on the jump server"]
   vmfl_submit_privesc_flag{"Privesc Flag"}
   aim_get_inside{{"Get Inside Albion Energy Storage"}}
@@ -342,10 +342,10 @@ flowchart TD
   vmch_submit_network_scan_flag --> vmfl_submit_network_scan_flag
   vmch_submit_ftp_intel_flag --> vmfl_submit_ftp_intel_flag
   vmfl_submit_network_scan_flag -.-> vmch_submit_ftp_intel_flag
-  vmch_submit_distcc_exploit_flag --> vmfl_submit_distcc_exploit_flag
-  vmfl_submit_ftp_intel_flag -.-> vmch_submit_distcc_exploit_flag
+  vmch_submit_erlang_rce_flag --> vmfl_submit_erlang_rce_flag
+  vmfl_submit_ftp_intel_flag -.-> vmch_submit_erlang_rce_flag
   vmch_submit_privesc_flag --> vmfl_submit_privesc_flag
-  vmfl_submit_distcc_exploit_flag -.-> vmch_submit_privesc_flag
+  vmfl_submit_erlang_rce_flag -.-> vmch_submit_privesc_flag
   bms_jump_server_terminal --> vmch_submit_network_scan_flag
   main_entrance --> operations_office
   operations_office --> scada_control_room
@@ -354,7 +354,7 @@ flowchart TD
   analogue_thermometer_rack_bank_c_wall --> lock_esd_pushbutton
   vmfl_submit_network_scan_flag --> lock_esd_pushbutton
   vmfl_submit_ftp_intel_flag --> lock_esd_pushbutton
-  vmfl_submit_distcc_exploit_flag --> lock_esd_pushbutton
+  vmfl_submit_erlang_rce_flag --> lock_esd_pushbutton
   vmfl_submit_privesc_flag --> lock_esd_pushbutton
   action_deal_with_voltage --> lock_esd_pushbutton
   aim_get_inside -.-> aim_confirm_the_lie
@@ -366,7 +366,7 @@ flowchart TD
   door_engineering_workshop -.-> aim_reach_the_workshop
   vmfl_submit_network_scan_flag -.-> aim_map_the_attack
   vmfl_submit_ftp_intel_flag -.-> aim_map_the_attack
-  vmfl_submit_distcc_exploit_flag -.-> aim_map_the_attack
+  vmfl_submit_erlang_rce_flag -.-> aim_map_the_attack
   vmfl_submit_privesc_flag -.-> aim_map_the_attack
   door_plant_room -.-> aim_take_back_the_plant
   bms_jump_server_terminal -.-> aim_map_the_attack
@@ -378,8 +378,8 @@ flowchart TD
   class rfid_cloner,lock_pick_kit,cyberchef_workstation,maintenance_work_orders,scada_hmi_main_display,fingerprint_kit,optigrid_job_card_4782_back_page,access_control_export_hv_plant_room,analogue_thermometer_rack_bank_c_wall,h_gas_detector_panel,duty_round_panel,social_fabric_safehouse_card_encoded item
   class npc_robert_vance,facility_access_keycard_level_1,spare_keycard_level_1,npc_entropy_operative_relay,workshop_keycard_level_2,npc_voltage_critical_mass key
   class action_meet_robert_vance,action_deal_with_voltage action
-  class bms_jump_server_terminal,vmch_submit_network_scan_flag,vmch_submit_ftp_intel_flag,vmch_submit_distcc_exploit_flag,vmch_submit_privesc_flag vm
-  class vmfl_submit_network_scan_flag,vmfl_submit_ftp_intel_flag,vmfl_submit_distcc_exploit_flag,vmfl_submit_privesc_flag flag
+  class bms_jump_server_terminal,vmch_submit_network_scan_flag,vmch_submit_ftp_intel_flag,vmch_submit_erlang_rce_flag,vmch_submit_privesc_flag vm
+  class vmfl_submit_network_scan_flag,vmfl_submit_ftp_intel_flag,vmfl_submit_erlang_rce_flag,vmfl_submit_privesc_flag flag
   class aim_get_inside,aim_confirm_the_lie,aim_reach_the_workshop,aim_map_the_attack,aim_stop_the_runaway critical
   class aim_take_back_the_plant aim
 
@@ -482,7 +482,7 @@ flowchart TD
   rc_safetynet_field_guide_lockpicking_9{"SAFETYNET Field Guide: Lockpicking"}
   rc_safetynet_field_guide_recon_network_mapping_10{"SAFETYNET Field Guide: Reconnaissance and Network Mapping"}
   rc_safetynet_field_guide_vuln_analysis_11{"SAFETYNET Field Guide: Vulnerability Analysis and Attack Surface"}
-  rc_safetynet_field_guide_distcc_12{"SAFETYNET Field Guide: distcc Exploitation"}
+  rc_safetynet_field_guide_erlang_ssh_12{"SAFETYNET Field Guide: Erlang/OTP SSH RCE"}
   rc_safetynet_field_guide_cyberchef_13{"SAFETYNET Field Guide: Encoding and Decoding with CyberChef"}
   rc_safetynet_field_guide_privesc_14{"SAFETYNET Field Guide: Privilege Escalation via Sudo"}
   rc_safetynet_field_guide_proftpd_15{"SAFETYNET Field Guide: ProFTPD Exploitation Workflow"}
@@ -555,7 +555,7 @@ flowchart TD
   rc_npc_agent_hax_7 --> rc_safetynet_field_guide_lockpicking_9
   rc_npc_agent_hax_7 --> rc_safetynet_field_guide_recon_network_mapping_10
   rc_npc_agent_hax_7 --> rc_safetynet_field_guide_vuln_analysis_11
-  rc_npc_agent_hax_7 --> rc_safetynet_field_guide_distcc_12
+  rc_npc_agent_hax_7 --> rc_safetynet_field_guide_erlang_ssh_12
   rc_npc_agent_hax_7 --> rc_safetynet_field_guide_cyberchef_13
   rc_npc_agent_hax_7 --> rc_safetynet_field_guide_privesc_14
   rc_npc_agent_hax_7 --> rc_safetynet_field_guide_proftpd_15
@@ -611,7 +611,7 @@ flowchart TD
 
   class main_entrance,operations_office,scada_control_room,security_office,battery_hall_1,loading_dock room
   class engineering_workshop,battery_hall_2,plant_room lock
-  class rc_obj1_1,rc_obj2_2,rc_safetynet_field_guide_rfid_cloning_8,rc_safetynet_field_guide_lockpicking_9,rc_safetynet_field_guide_recon_network_mapping_10,rc_safetynet_field_guide_vuln_analysis_11,rc_safetynet_field_guide_distcc_12,rc_safetynet_field_guide_cyberchef_13,rc_safetynet_field_guide_privesc_14,rc_safetynet_field_guide_proftpd_15,rc_relayed_workshop_keycard_16,rc_obj19_19,rc_obj20_20,rc_obj21_21,rc_obj22_22,rc_vance_level1_keycard_24,rc_scada_hmi_display_25,rc_obj26_26,rc_obj27_27,rc_vm_launcher_bms_jump_server_28,rc_flag_station_dropsite_29,rc_obj30_30,rc_obj31_31,rc_obj33_33,rc_obj34_34,rc_obj35_35,rc_obj36_36,rc_obj37_37,rc_security_spare_keycard_l1_39,rc_obj40_40,rc_analog_thermometer_41,rc_rack_status_panel_42,rc_hydrogen_detector_43,rc_obj44_44,rc_hall1_round_panel_45,rc_obj47_47,rc_obj48_48,rc_bms_bypass_module_49,rc_obj50_50,rc_obj52_52,rc_obj53_53,rc_esd_pushbutton_54,rc_obj55_55,rc_obj56_56,rc_obj57_57,rc_obj58_58,rc_obj61_61,rc_obj62_62,rc_obj64_64 item
+  class rc_obj1_1,rc_obj2_2,rc_safetynet_field_guide_rfid_cloning_8,rc_safetynet_field_guide_lockpicking_9,rc_safetynet_field_guide_recon_network_mapping_10,rc_safetynet_field_guide_vuln_analysis_11,rc_safetynet_field_guide_erlang_ssh_12,rc_safetynet_field_guide_cyberchef_13,rc_safetynet_field_guide_privesc_14,rc_safetynet_field_guide_proftpd_15,rc_relayed_workshop_keycard_16,rc_obj19_19,rc_obj20_20,rc_obj21_21,rc_obj22_22,rc_vance_level1_keycard_24,rc_scada_hmi_display_25,rc_obj26_26,rc_obj27_27,rc_vm_launcher_bms_jump_server_28,rc_flag_station_dropsite_29,rc_obj30_30,rc_obj31_31,rc_obj33_33,rc_obj34_34,rc_obj35_35,rc_obj36_36,rc_obj37_37,rc_security_spare_keycard_l1_39,rc_obj40_40,rc_analog_thermometer_41,rc_rack_status_panel_42,rc_hydrogen_detector_43,rc_obj44_44,rc_hall1_round_panel_45,rc_obj47_47,rc_obj48_48,rc_bms_bypass_module_49,rc_obj50_50,rc_obj52_52,rc_obj53_53,rc_esd_pushbutton_54,rc_obj55_55,rc_obj56_56,rc_obj57_57,rc_obj58_58,rc_obj61_61,rc_obj62_62,rc_obj64_64 item
   class rc_npc_agent_hax_3,rc_npc_director_magnus_netherton_4,rc_npc_agent_0x47_nightshade_5,rc_npc_security_guard_6,rc_npc_agent_hax_7,rc_npc_robert_vance_ops_desk_17,rc_npc_agent_hax_18,rc_npc_robert_vance_23,rc_npc_entropy_operative_cipher_46,rc_npc_entropy_operative_relay_51,rc_npc_voltage_critical_mass_59,rc_npc_entropy_operative_static_60 npc
   class rc_optigrid_tool_case_32,rc_security_equipment_locker_38,rc_extraction_gobag_63 container
   class node_start start

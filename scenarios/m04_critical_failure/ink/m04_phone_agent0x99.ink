@@ -25,8 +25,8 @@ VAR recon_guide_offered = false
 VAR recon_guide_hint_given = false
 VAR vuln_guide_offered = false
 VAR vuln_guide_hint_given = false
-VAR distcc_guide_offered = false
-VAR distcc_guide_hint_given = false
+VAR erlang_guide_offered = false
+VAR erlang_guide_hint_given = false
 VAR cyberchef_guide_offered = false
 VAR cyberchef_guide_hint_given = false
 VAR privesc_guide_offered = false
@@ -182,7 +182,7 @@ EXTERNAL player_name()
 
 // ---- Field guides, one choice. Exposure-gated: offered by an eventMapping
 // ---- when the player meets the obstacle, handed over here on request.
-+ {(rfid_guide_offered and not rfid_guide_hint_given) or (lockpicking_guide_offered and not lockpicking_guide_hint_given) or (recon_guide_offered and not recon_guide_hint_given) or (vuln_guide_offered and not vuln_guide_hint_given) or (distcc_guide_offered and not distcc_guide_hint_given) or (privesc_guide_offered and not privesc_guide_hint_given) or (proftpd_guide_offered and not proftpd_guide_hint_given) or (cyberchef_guide_offered and not cyberchef_guide_hint_given)} [Send me a field guide.]
++ {(rfid_guide_offered and not rfid_guide_hint_given) or (lockpicking_guide_offered and not lockpicking_guide_hint_given) or (recon_guide_offered and not recon_guide_hint_given) or (vuln_guide_offered and not vuln_guide_hint_given) or (erlang_guide_offered and not erlang_guide_hint_given) or (privesc_guide_offered and not privesc_guide_hint_given) or (proftpd_guide_offered and not proftpd_guide_hint_given) or (cyberchef_guide_offered and not cyberchef_guide_hint_given)} [Send me a field guide.]
     // Struggling run A (F8): a visible reply before the list.
     Which one?
     -> field_guides
@@ -208,8 +208,8 @@ EXTERNAL player_name()
     -> request_vuln_guide
 + {proftpd_guide_offered and not proftpd_guide_hint_given} [The ProFTPD guide.]
     -> request_proftpd_guide
-+ {distcc_guide_offered and not distcc_guide_hint_given} [The distcc guide.]
-    -> request_distcc_guide
++ {erlang_guide_offered and not erlang_guide_hint_given} [The Erlang SSH RCE guide.]
+    -> request_erlang_guide
 + {privesc_guide_offered and not privesc_guide_hint_given} [The sudo guide.]
     -> request_privesc_guide
 + {cyberchef_guide_offered and not cyberchef_guide_hint_given} [The CyberChef decoding guide.]
@@ -247,10 +247,10 @@ Sent. Find what's alive on that subnet before you touch anything.
 Sent. Once you know what's listening, it tells you what's worth pushing on.
 -> support_hub
 
-=== request_distcc_guide ===
-~ distcc_guide_hint_given = true
-#give_item:lab-workstation:safetynet_field_guide_distcc
-Sent. Old daemon, runs compile jobs for anyone who asks. That's your way onto the box.
+=== request_erlang_guide ===
+~ erlang_guide_hint_given = true
+#give_item:lab-workstation:safetynet_field_guide_erlang_ssh
+Sent. Erlang/OTP SSH daemon on a high port — a brand-new pre-auth RCE that runs commands before it even asks who you are. Your way in.
 -> support_hub
 
 === request_privesc_guide ===

@@ -20,7 +20,7 @@ BMS/SCADA thermal telemetry.
 - Debian 12 system sitting between the corporate LAN and the BMS/SCADA segment
 - Exposed web service carrying the falsified rack status page
 - ProFTPD service holding OptiGrid's transferred operational intelligence
-- Legacy distccd (CVE-2004-2687) left behind by the "maintenance" crew — remote command execution
+- Erlang/OTP SSH daemon (CVE-2025-32433) left behind by the "maintenance" crew — unauthenticated pre-auth remote code execution
 - sudoedit (CVE-2023-22809) for local privilege escalation
 
 **kali**
@@ -40,7 +40,7 @@ flag_hints.xml. scenario.json.erb therefore expects exactly four flags on
   flag_1  parameterised_website     -> submit_network_scan_flag
   flag_2  proftpd_133c_backdoor     -> submit_ftp_intel_flag
   flag_3  sudoedit                  -> submit_privesc_flag
-  flag_4  distcc_exec               -> submit_distcc_exploit_flag
+  flag_4  ssh_erlangotp_rce         -> submit_erlang_rce_flag
 
 If a SecGen build emits a different order or count, update `targetFlags` in
 scenario.json.erb to match — do not renumber here.
@@ -51,7 +51,7 @@ scenario.json.erb to match — do not renumber here.
 - Systems Security: vulnerability exploitation, privilege escalation
 - Cyber-Physical Systems: SCADA/ICS exposure via an OT jump host
   </description>
-  <lab_sheet_url>https://cliffe.github.io/HacktivityLabSheets/labs/safetynet/vulnerability-analysis-and-attack-surface/</lab_sheet_url>
+  <lab_sheet_url>https://cliffe.github.io/HacktivityLabSheets/labs/safetynet/erlang-otp-ssh-rce/</lab_sheet_url>
   <type>ctf-lab</type>
   <type>lab-sheet</type>
   <difficulty>medium</difficulty>
@@ -136,12 +136,16 @@ Last integrity check: PASSED</value>
       </input>
     </vulnerability>
 
-    <!-- FLAG 4 (submit_distcc_exploit_flag)
-         Legacy distccd on a high port — runs compile jobs for anyone who can reach
-         it. This is the route onto the jump server. -->
-    <vulnerability cve="CVE-2004-2687">
+    <!-- FLAG 4 (submit_erlang_rce_flag)
+         Erlang/OTP SSH daemon (CVE-2025-32433) on a high port — a brand-new pre-auth
+         RCE in the plant's control stack, left reachable by the "maintenance" crew.
+         This is the route onto the jump server. -->
+    <vulnerability module_path=".*/ssh_erlangotp_rce">
       <input into="strings_to_leak">
         <generator type="flag_generator"/>
+      </input>
+      <input into="ssh_port">
+        <value>2222</value>
       </input>
       <input into="leaked_filenames">
         <value>optigrid_toolkit/operator_notes</value>

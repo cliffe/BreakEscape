@@ -22,7 +22,7 @@
       "topic": "Attacks and exploitation",
       "keywords": [
         "EXPLOITATION",
-        "distcc CVE-2004-2687",
+        "Erlang/OTP SSH CVE-2025-32433",
         "sudoedit CVE-2023-22809",
         "Remote code execution",
         "Infrastructure attacks",

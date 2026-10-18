@@ -356,15 +356,15 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
           "status": "active"
         },
         {
-          "taskId": "exploit_distcc_vulnerability",
+          "taskId": "exploit_erlang_ssh_vulnerability",
           "title": "Get a foothold on the BMS jump server",
           "type": "custom",
           "status": "active",
           "optional": true
         },
         {
-          "taskId": "submit_distcc_exploit_flag",
-          "title": "Submit proof of the distcc foothold",
+          "taskId": "submit_erlang_rce_flag",
+          "title": "Submit proof of the Erlang/OTP SSH foothold",
           "type": "submit_flags",
           "targetFlags": ["flag_station_dropsite:bms_jump_server-flag4"],
           "targetCount": 1,
@@ -442,7 +442,7 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
           "submit_network_scan_flag",
           "submit_ftp_intel_flag",
           "submit_privesc_flag",
-          "submit_distcc_exploit_flag"
+          "submit_erlang_rce_flag"
         ]
       },
       "conclusionScreen": { "type": "bond_visualiser" },
@@ -772,11 +772,11 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
             },
             {
               "type": "lab-workstation",
-              "id": "safetynet_field_guide_distcc",
-              "name": "SAFETYNET Field Guide: distcc Exploitation",
+              "id": "safetynet_field_guide_erlang_ssh",
+              "name": "SAFETYNET Field Guide: Erlang/OTP SSH RCE",
               "takeable": true,
-              "labUrl": "https://cliffe.github.io/HacktivityLabSheets/labs/safetynet/distcc-exploitation/",
-              "observations": "Field guide to exploiting a legacy distccd service (CVE-2004-2687) for command execution"
+              "labUrl": "https://cliffe.github.io/HacktivityLabSheets/labs/safetynet/erlang-otp-ssh-rce/",
+              "observations": "Field guide to exploiting an Erlang/OTP SSH daemon (CVE-2025-32433) for unauthenticated remote code execution"
             },
             {
               "type": "lab-workstation",
@@ -1077,7 +1077,7 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
               "eventPattern": "room_entered:engineering_workshop",
               "onceOnly": true,
               "setGlobal": { "recon_guide_offered": true, "vuln_guide_offered": true, "server_room_reached": true, "lockpicking_guide_offered": true },
-              "sendTimedMessage": { "delay": 3000, "message": "You're on the OT network. The BMS jump server is their way in; scan it from the terminal. Four flags make the case: status page, FTP drop, distcc foothold, root." }
+              "sendTimedMessage": { "delay": 3000, "message": "You're on the OT network. The BMS jump server is their way in; scan it from the terminal. Four flags make the case: status page, FTP drop, SSH foothold, root." }
             },
             <%# Round 2 (re-review m7): the 87-word workshop text split in two. The
                 guides offer and the tool-case pointer (fix 2a) follow it. %>
@@ -1090,11 +1090,11 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
               "eventPattern": "objective_task_completed:submit_ftp_intel_flag",
               "onceOnly": true,
               "completeTask": "investigate_compromised_services",
-              "setGlobal": { "distcc_guide_offered": true },
-              "sendTimedMessage": { "delay": 2000, "message": "There's a legacy distccd on that box too. The crew left it as a way back in. Prove it works. I've a guide if you want it.", "skipIfGlobal": "flag_distcc_exploit_submitted" }
+              "setGlobal": { "erlang_guide_offered": true },
+              "sendTimedMessage": { "delay": 2000, "message": "There's an Erlang/OTP SSH daemon on a high port there — the crew's way back in, with a brand-new pre-auth RCE. I've a guide if you want it.", "skipIfGlobal": "flag_erlang_rce_submitted" }
             },
             <%# PASS 3 P15 (review): the sudo offer on the FTP flag, only if the
-                distcc flag hasn't already made it. %>
+                Erlang SSH RCE flag hasn't already made it. %>
             {
               "eventPattern": "objective_task_completed:submit_ftp_intel_flag",
               "condition": "globalVars.privesc_guide_offered !== true",
@@ -1102,9 +1102,9 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
               "setGlobal": { "privesc_guide_offered": true },
               "sendTimedMessage": { "delay": 7000, "message": "And once you're on the box, I've a sudo guide for getting to root." }
             },
-            <%# PASS 3 P15: if the distcc flag lands first, offer the privesc guide then. %>
+            <%# PASS 3 P15: if the Erlang SSH RCE flag lands first, offer the privesc guide then. %>
             {
-              "eventPattern": "objective_task_completed:submit_distcc_exploit_flag",
+              "eventPattern": "objective_task_completed:submit_erlang_rce_flag",
               "condition": "globalVars.privesc_guide_offered !== true",
               "onceOnly": true,
               "setGlobal": { "privesc_guide_offered": true },
@@ -1265,16 +1265,16 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
             <%# Playtest D7: the three optional methodology tasks never ticked.
                 Each is completed by the flag its step produces: the scan finds the
                 exposed status page (flag 1), enumeration finds the FTP drop (flag
-                2, wired on the FTP handler above), and the distcc foothold is flag 4. %>
+                2, wired on the FTP handler above), and the Erlang/OTP SSH foothold is flag 4. %>
             {
               "eventPattern": "objective_task_completed:submit_network_scan_flag",
               "onceOnly": true,
               "completeTask": "scan_scada_network"
             },
             {
-              "eventPattern": "objective_task_completed:submit_distcc_exploit_flag",
+              "eventPattern": "objective_task_completed:submit_erlang_rce_flag",
               "onceOnly": true,
-              "completeTask": "exploit_distcc_vulnerability"
+              "completeTask": "exploit_erlang_ssh_vulnerability"
             },
             <%# Voltage neutralised. The ARREST and ESCAPE paths set
                 voltage_captured / voltage_escaped from ink (both emit
@@ -1331,12 +1331,12 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
                 required (the ESD's anomaly_detected condition). %>
             { "eventPattern": "objective_task_completed:submit_network_scan_flag", "onceOnly": true, "setGlobal": { "flag_network_scan_submitted": true } },
             { "eventPattern": "objective_task_completed:submit_ftp_intel_flag", "onceOnly": true, "setGlobal": { "flag_ftp_intel_submitted": true } },
-            { "eventPattern": "objective_task_completed:submit_distcc_exploit_flag", "onceOnly": true, "setGlobal": { "flag_distcc_exploit_submitted": true } },
+            { "eventPattern": "objective_task_completed:submit_erlang_rce_flag", "onceOnly": true, "setGlobal": { "flag_erlang_rce_submitted": true } },
             { "eventPattern": "objective_task_completed:submit_privesc_flag", "onceOnly": true, "setGlobal": { "flag_privesc_submitted": true } },
-            { "eventPattern": "objective_task_completed:submit_network_scan_flag", "condition": "globalVars.flag_ftp_intel_submitted === true && globalVars.flag_distcc_exploit_submitted === true && globalVars.flag_privesc_submitted === true", "onceOnly": true, "setGlobal": { "all_flags_in": true } },
-            { "eventPattern": "objective_task_completed:submit_ftp_intel_flag", "condition": "globalVars.flag_network_scan_submitted === true && globalVars.flag_distcc_exploit_submitted === true && globalVars.flag_privesc_submitted === true", "onceOnly": true, "setGlobal": { "all_flags_in": true } },
-            { "eventPattern": "objective_task_completed:submit_distcc_exploit_flag", "condition": "globalVars.flag_network_scan_submitted === true && globalVars.flag_ftp_intel_submitted === true && globalVars.flag_privesc_submitted === true", "onceOnly": true, "setGlobal": { "all_flags_in": true } },
-            { "eventPattern": "objective_task_completed:submit_privesc_flag", "condition": "globalVars.flag_network_scan_submitted === true && globalVars.flag_ftp_intel_submitted === true && globalVars.flag_distcc_exploit_submitted === true", "onceOnly": true, "setGlobal": { "all_flags_in": true } },
+            { "eventPattern": "objective_task_completed:submit_network_scan_flag", "condition": "globalVars.flag_ftp_intel_submitted === true && globalVars.flag_erlang_rce_submitted === true && globalVars.flag_privesc_submitted === true", "onceOnly": true, "setGlobal": { "all_flags_in": true } },
+            { "eventPattern": "objective_task_completed:submit_ftp_intel_flag", "condition": "globalVars.flag_network_scan_submitted === true && globalVars.flag_erlang_rce_submitted === true && globalVars.flag_privesc_submitted === true", "onceOnly": true, "setGlobal": { "all_flags_in": true } },
+            { "eventPattern": "objective_task_completed:submit_erlang_rce_flag", "condition": "globalVars.flag_network_scan_submitted === true && globalVars.flag_ftp_intel_submitted === true && globalVars.flag_privesc_submitted === true", "onceOnly": true, "setGlobal": { "all_flags_in": true } },
+            { "eventPattern": "objective_task_completed:submit_privesc_flag", "condition": "globalVars.flag_network_scan_submitted === true && globalVars.flag_ftp_intel_submitted === true && globalVars.flag_erlang_rce_submitted === true", "onceOnly": true, "setGlobal": { "all_flags_in": true } },
             { "eventPattern": "global_variable_changed:all_flags_in", "condition": "value === true && globalVars.anomaly_detected !== true", "onceOnly": true, "sendTimedMessage": { "delay": 2500, "message": "Flags are in. Grid control still wants a real reading off the racks. The dial thermometer on the Rack Bank C wall, Hall 1. It isn't on their network.", "skipIfGlobal": "anomaly_detected" } },
             <%# Browser M-1: with the dial unread the ESD won't arm, so this text drops
                 "Get to the ESD" and the dial text on all_flags_in follows it. %>
@@ -1777,7 +1777,7 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
             'flag{network_scan_complete}',
             'flag{ftp_intel_gathered}',
             'flag{privesc_complete}',
-            'flag{distcc_exploit_complete}'
+            'flag{erlang_rce_complete}'
           ]) %>,
           <%# Pass 5 (alignment minor): the rewards were emit_events nothing listened
               to, and the flag station showed "Event triggered". They now set the
@@ -1806,9 +1806,9 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
             },
             {
               "type": "set_global",
-              "key": "flag_distcc_exploit_submitted",
+              "key": "flag_erlang_rce_submitted",
               "value": true,
-              "description": "distcc foothold evidence submitted - remote command execution proven"
+              "description": "Erlang/OTP SSH foothold evidence submitted - unauthenticated remote code execution proven"
             }
           ]
         },
@@ -2583,7 +2583,7 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
             { "from": "analogue_thermometer_rack_bank_c_wall", "to": "lock_esd_pushbutton" },
             { "from": "vmfl_submit_network_scan_flag", "to": "lock_esd_pushbutton" },
             { "from": "vmfl_submit_ftp_intel_flag", "to": "lock_esd_pushbutton" },
-            { "from": "vmfl_submit_distcc_exploit_flag", "to": "lock_esd_pushbutton" },
+            { "from": "vmfl_submit_erlang_rce_flag", "to": "lock_esd_pushbutton" },
             { "from": "vmfl_submit_privesc_flag", "to": "lock_esd_pushbutton" },
             { "from": "action_deal_with_voltage", "to": "lock_esd_pushbutton" }
           ],
@@ -2941,7 +2941,7 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
     "flag_network_scan_submitted": false,
     "flag_ftp_intel_submitted": false,
     "flag_privesc_submitted": false,
-    "flag_distcc_exploit_submitted": false,
+    "flag_erlang_rce_submitted": false,
 
     "operative_cipher_defeated": false,
     "operative_relay_defeated": false,
@@ -2972,8 +2972,8 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
     "recon_guide_hint_given": false,
     "vuln_guide_offered": false,
     "vuln_guide_hint_given": false,
-    "distcc_guide_offered": false,
-    "distcc_guide_hint_given": false,
+    "erlang_guide_offered": false,
+    "erlang_guide_hint_given": false,
     "cyberchef_guide_offered": false,
     "cyberchef_guide_hint_given": false,
     "privesc_guide_offered": false,
