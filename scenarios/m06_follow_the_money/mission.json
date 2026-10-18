@@ -2,7 +2,7 @@
   "display_name": "Follow the Money",
   "description": "Track cryptocurrency payments from previous ENTROPY operations to the Crypto Anarchists' HashChain Exchange. Infiltrate the exchange as a visiting FCA supervisor, access financial records, and map ENTROPY's funding network. Discover 'The Architect's Fund' and the financial infrastructure supporting all ENTROPY cells.",
   "difficulty_level": 2,
-  "secgen_scenario": "m06_follow_the_money",
+  "secgen_scenario": "break_escape/safetynet/m06_follow_the_money.xml",
   "collection": "season_1",
   "ui_theme": "spy",
   "cybok": [
