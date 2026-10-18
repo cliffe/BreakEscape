@@ -8,7 +8,7 @@ overview: |
 
   You play a SAFETYNET agent sent undercover into WhiteHat Security Services, a respectable penetration-testing firm that runs Zero Day Syndicate's exploit marketplace out of its back rooms. Zero Day sold the way into St. Catherine's Hospital. Your handler, Agent HaX, and the analyst Nightshade run the operation from HQ. You clone the receptionist's badge, clone the CEO Victoria Sterling's executive card while you interview as a recruit, then return at night to get onto the training network, exploit its services, crack Sterling's office, and decode the records that name the buyer and the next target. The mission ends with decisions about the people who made that night possible.
 
-  This sheet gets you started, explains the ideas behind each lock and each network stage with small worked examples you can check by hand, and has a stage-by-stage set of hints for when you are stuck, from a gentle nudge up to a full recipe. Agent HaX hands out short in-game field guides as you reach each challenge; this sheet tells you how to get each one. There are moral choices and more than one ending; the hints help you understand what you hold, not which choice to make.
+  This sheet gets you started, explains the ideas behind each lock with small worked examples you can check by hand, and has a stage-by-stage set of hints for when you are stuck, from a gentle nudge up to a full recipe. Agent HaX hands out short in-game field guides as you reach each challenge; this sheet tells you how to get them. The training-network work has its own companion sheet. There are moral choices and more than one ending; the hints help you understand what you hold, not which choice to make.
 tags: ["rfid", "mifare", "cloning", "nmap", "reconnaissance", "proftpd", "backdoor", "distcc", "cve-2004-2687", "base64", "rot13", "hex", "cyberchef", "encoding", "lockpicking", "break-escape"]
 categories: ["introducing_attacks"]
 type: ["game-based-learning", "lab-sheet"]
@@ -42,8 +42,6 @@ By the end of this lab you should be able to:
 - explain how an RFID badge is read and copied, and why a weak-default card falls in seconds while a custom-key card needs a recovery attack
 - tell Base64, ROT13 and hex apart on sight, decode each by hand and in CyberChef, and say why none of them is a form of security
 - peel a layered encoding (one scheme wrapped in another) and know which order to undo it in
-- scan a small network, read service banners, and pick out the service worth attacking
-- describe how a trojaned service release (the ProFTPD 1.3.3c source backdoor) and a trusting network daemon (distcc) each hand an attacker remote command execution
 - recognise reset and default passwords, and explain why a slip on a monitor undoes a strong policy
 - weigh up the choices a case like this forces, about the people you meet and the evidence you hold
 
@@ -56,13 +54,15 @@ The game teaches by doing. The questions are in this sheet, after the game.
 3. If you get stuck, go to **Stuck? Hints, Stage by Stage** and find the stage you are on. Each stage has a hint you can read straight away, then a stronger nudge and a full recipe hidden behind "Show" buttons. Open one at a time, and go back to the game after each.
 4. After the game, work through **After the Game: Questions and Exercises**.
 
+The server steps (the training-network stages and the four VM flags) are in the linked companion sheet, [VM Technical Steps](https://cliffe.github.io/HacktivityLabSheets/labs/introducing_attacks/m03-ghost-in-the-machine-vm-technical-steps/), so you can play the rest without them.
+
 > Note: The network mission is generated for your game. The flag values on the training VMs are not the same as anyone else's, so this sheet never gives you one, only the way to find it. The office password and the safe code are the same each game, but they are still things you work out from clues in the building; this sheet says where each clue is and what shape the answer takes, not what it reads.
 
 ## Getting Started {#getting-started}
 
 You are a SAFETYNET field agent. The firm WhiteHat Security Services runs legitimate audits by day and Zero Day Syndicate's exploit marketplace by night. Zero Day sold the exploit that took down St. Catherine's Hospital. Your cover is a freelance penetration tester that Victoria Sterling, WhiteHat's CEO, is looking at as a recruit. That cover gets you an afternoon interview. The real work happens after dark, when you come back for the training network and the paper trail. Agent HaX runs you by phone; Nightshade handles the technical bridge from HQ.
 
-You do not need to know the exploits before you start. The field guides teach each one as you reach it.
+You do not need any prior knowledge before you start. The field guides teach each idea as you reach it.
 
 1. \==action: Start the Break Escape mission **Ghost in the Machine**==.
 2. \==action: Watch the briefing from Agent HaX and Director Netherton==, and ask any topics you want. Then choose how you want to play it.
@@ -183,24 +183,6 @@ Sterling's office computer was reset to a default built from two public facts: h
 
 > Question: The helpdesk slip tells an attacker the exact format of the password. Even if Sterling had picked a strong, random password instead, what one habit in this office would still have undone it?
 
-### Network Reconnaissance {#recon}
-
-Before you attack anything, you map it. A network scan (with a tool such as **nmap**) finds which hosts are up, which ports and services they run, and what version each service reports. It also reads the **banners** services announce when you connect. Versions matter: a service version is often enough to tell you whether a known weakness applies. On this network the scan turns up an FTP service, a web host, and a service labelled as a legacy build. Read what each one says when you connect; the scan flag is in a service banner.
-
-The field guide has the exact scan commands and what to do with the results. To get it in game, open your phone, choose **[Send me a field guide.]** then **[The recon and network mapping guide.]** (offered once you have reached the server room). Published version: [Reconnaissance and Network Mapping](https://cliffe.github.io/HacktivityLabSheets/labs/safetynet/reconnaissance-and-network-mapping/).
-
-### Service Exploitation: A Trojaned Release and a Trusting Daemon {#exploitation}
-
-Two services on the training network can be made to run commands for you, by very different routes. You do not need the detail here; the field guides carry the workflow. The point is to understand the class of weakness behind each.
-
-**The ProFTPD 1.3.3c source backdoor.** In 2010 the source release of this FTP server was tampered with before it was published, so anyone who downloaded and installed that release was running hidden back-door code. It is not a flaw in the design, it is a poisoned supply chain, and it is the exact build Zero Day sold for the hospital job. The anonymous FTP area holds nothing that matters; the intelligence sits behind the back door.
-
-**distcc (CVE-2004-2687).** distcc spreads software-compile jobs across machines, and the daemon trusts any machine on its network to send it work. That trust is the weakness: a service that assumes the network around it is friendly. The legacy box runs it, and the operational records sit behind it.
-
-The two field guides have the step-by-step workflow for each. To get them in game, open your phone, choose **[Send me a field guide.]** then **[The ProFTPD exploitation guide.]** or **[The distcc exploitation guide.]** (both appear once you have the first flag in). Published versions: [ProFTPD Exploitation Workflow](https://cliffe.github.io/HacktivityLabSheets/labs/safetynet/proftpd-exploitation-workflow/) and [distcc Exploitation](https://cliffe.github.io/HacktivityLabSheets/labs/safetynet/distcc-exploitation/).
-
-> Question: The FTP backdoor came from a tampered release, and the distcc daemon runs jobs for anyone who asks. One is a supply-chain problem, one is a trust-the-network problem. For each, name one thing a defender could have done that would have stopped it.
-
 ### One Supplier in a Network {#entropy}
 
 The records you recover describe Zero Day as a supplier, not an attacker: it arms the cells that run the attacks, and it answers to figures above it ("0day", and above them "The Architect"). The transaction log and the catalogue show a Phase 2 aimed at infrastructure. Taking Sterling off the board closes this supplier's front; it does not end the network behind her. Keep that in mind at the end.
@@ -280,33 +262,23 @@ Finish anything you want to do by day first (there is little). When you walk int
 
 </details>
 
-### The Server Room Door and the Network {#hints-network}
+### The Server Room {#hints-server-room}
 
-**Where:** the server room, north off the main hallway, at night. **Goal:** get in, then submit the four flags.
+**Where:** the server room, north off the main hallway, at night. **Goal:** get in and reach the VM Access Terminal.
 
-> Hint: This door wants Sterling's executive card, not the receptionist's. Inside is a terminal onto their training network and a drop-site to submit flags. Map before you touch anything.
-
-<details markdown="1">
-<summary>Nudge</summary>
-
-Emulate Sterling's Executive Keycard at the server-room reader. Inside, the VM Access Terminal opens their isolated training network on your own machine (Nightshade has bridged it). The job is four flags, submitted at the Drop-Site Terminal. Work the services in order; the Training Lab Runbook in the server-room filing cabinet lays it out, and HaX has a field guide for each stage. The steps below give the goal of each flag and which guide to ask for; the guides carry the exact commands.
-
-</details>
+> Hint: This door wants Sterling's executive card, not the receptionist's. Inside is a terminal onto their training network and a drop-site terminal where flags are submitted.
 
 <details markdown="1">
 <summary>Steps</summary>
 
-> Note: These four stages run on the training VMs. The goal and the field guide for each are below; the commands live in the guides, not in this sheet.
-
-1. \==action: Emulate the Executive Keycard at the server-room reader, then launch the VM Access Terminal==.
-2. **Scan flag.** Goal: map the network and read the service banners; the scan flag is in one of them. Field guide in game: **[Send me a field guide.]** then **[The recon and network mapping guide.]** (offered once you reach the server room). Published: [Reconnaissance and Network Mapping](https://cliffe.github.io/HacktivityLabSheets/labs/safetynet/reconnaissance-and-network-mapping/). Concept: [Network Reconnaissance](#recon).
-3. **FTP flag.** Goal: get past the FTP service (the trojaned ProFTPD build) to the intelligence it protects. Field guide in game: **[The ProFTPD exploitation guide.]** (offered once the scan flag is in). Published: [ProFTPD Exploitation Workflow](https://cliffe.github.io/HacktivityLabSheets/labs/safetynet/proftpd-exploitation-workflow/). Concept: [Service Exploitation](#exploitation).
-4. **Pricing flag.** Goal: pull the price list off the web host and decode it. The web page carries it encoded, not encrypted, so it decodes at the CyberChef workstation. Concept and route: [Decoding What You Find](#hints-decode).
-5. **distcc flag.** Goal: get command execution through the legacy distcc service to the operational records behind it. Field guide in game: **[The distcc exploitation guide.]** (offered once the scan flag is in). Published: [distcc Exploitation](https://cliffe.github.io/HacktivityLabSheets/labs/safetynet/distcc-exploitation/). Concept: [Service Exploitation](#exploitation). When this flag lands, the drop-site prints the Zero Day transaction log.
+1. \==action: Emulate the saved Executive Keycard at the server-room reader==.
+2. \==action: Walk in and approach the VM Access Terminal==.
 
 </details>
 
-> Warning: The ending needs all four flags. Flags one to three alone will not let you conclude; the distcc flag is the one that completes the case.
+> Warning: The server room reader wants Sterling's executive card. If it refuses you, check you emulated the right saved card.
+
+> Note: The server work has its own sheet, so you can play the rest spoiler-free and tackle the network yourself. Open [VM Technical Steps](https://cliffe.github.io/HacktivityLabSheets/labs/introducing_attacks/m03-ghost-in-the-machine-vm-technical-steps/) when you want the hints for the training network and its four flags.
 
 ### Decoding What You Find {#hints-decode}
 
@@ -491,7 +463,7 @@ A locked cabinet in her office (pick it) holds Zero Day's internal history: how 
 <details markdown="1">
 <summary>The server-room filing cabinet</summary>
 
-A locked cabinet in the server room holds the Training Lab Runbook, which lays out the order of the network job. Useful if you are unsure where to start on the VMs.
+A locked cabinet in the server room holds the Training Lab Runbook, which lays out the order of the network job. The companion sheet covers the network job in detail.
 
 </details>
 
@@ -504,7 +476,7 @@ The wall-safe catalogue is the internal version of the web price list: the same 
 
 ## Try It on the Command Line (Optional) {#command-line}
 
-The network stage already happens on a real Kali shell. These short exercises let you practise the same decoding and scanning techniques safely, with your own data, not anything from the game. Use any current Linux distribution with `base64`, `tr`, `xxd` and `nmap` available.
+These short exercises let you practise the decoding techniques safely, with your own data, not anything from the game. Use any current Linux distribution with `base64`, `tr` and `xxd` available. The network command-line practice is in the companion sheet.
 
 ### Encoding by hand and by tool {#cli-encoding}
 
@@ -531,16 +503,6 @@ printf 'VGV2cSBzdmVmZw==' | base64 -d | tr 'A-Za-z' 'N-ZA-Mn-za-m'; echo
 ```
 
 > Question: The encode pipeline runs ROT13 then Base64. The decode pipeline runs base64 -d then ROT13. Why is the decode the reverse order, and what happens if you try From Hex on a Base64 string?
-
-### A version scan you own {#cli-nmap}
-
-Against a lab VM you control, ==action: scan for open ports and service versions==:
-
-```bash
-nmap -sV 192.168.56.0/24
-```
-
-> Warning: Only ever scan a machine you own or have written permission to test. Scanning someone else's network can be an offence.
 
 ## After the Game: Questions and Exercises {#after-the-game}
 
@@ -584,8 +546,7 @@ Work through these after you finish. Use your own run: the network flags were ge
 
 ## Further Reading {#further-reading}
 
-- The SAFETYNET field guides handed out in this mission, published online: [RFID Cloning](https://cliffe.github.io/HacktivityLabSheets/labs/safetynet/rfid-cloning/), [Reconnaissance and Network Mapping](https://cliffe.github.io/HacktivityLabSheets/labs/safetynet/reconnaissance-and-network-mapping/), [ProFTPD Exploitation Workflow](https://cliffe.github.io/HacktivityLabSheets/labs/safetynet/proftpd-exploitation-workflow/), [distcc Exploitation](https://cliffe.github.io/HacktivityLabSheets/labs/safetynet/distcc-exploitation/), [Encoding and Decoding with CyberChef](https://cliffe.github.io/HacktivityLabSheets/labs/safetynet/encoding-and-decoding-with-cyberchef/) and [Lockpicking](https://cliffe.github.io/HacktivityLabSheets/labs/safetynet/lockpicking/).
-- The broader [Scanning and Exploitation](https://cliffe.github.io/HacktivityLabSheets/labs/safetynet/scanning-and-exploitation/) field guide, for the scan-to-exploit workflow end to end.
+- The SAFETYNET field guides handed out in this mission, published online: [RFID Cloning](https://cliffe.github.io/HacktivityLabSheets/labs/safetynet/rfid-cloning/), [Encoding and Decoding with CyberChef](https://cliffe.github.io/HacktivityLabSheets/labs/safetynet/encoding-and-decoding-with-cyberchef/) and [Lockpicking](https://cliffe.github.io/HacktivityLabSheets/labs/safetynet/lockpicking/).
+- The companion [VM Technical Steps](https://cliffe.github.io/HacktivityLabSheets/labs/introducing_attacks/m03-ghost-in-the-machine-vm-technical-steps/) sheet, for the training-network stages.
 - The CyberChef documentation and wiki, and its Magic operation for recognising unknown encodings.
-- The nmap reference guide (`man nmap`) for the reconnaissance stage.
 - The Cyber Security Body of Knowledge (CyBOK) chapters on Network Security, on Malware and Attack Technology, and on Applied Cryptography.
