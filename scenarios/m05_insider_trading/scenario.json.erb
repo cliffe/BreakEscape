@@ -1803,7 +1803,7 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
           "puzzle_graph_note": "PASS 4 fix 16: hangs the VM flag chain off the server room in the dungeon graph",
           "observations": "A terminal on the research network. QDC's Bludit research portal is somewhere on this subnet.",
           "hacktivityMode": <%= vm_context && vm_context['hacktivity_mode'] ? 'true' : 'false' %>,
-          "vm": <%= vm_object('attack_vm', {"id":5,"title":"kali","ip":"192.168.100.75","enable_console":true}) %>
+          "vm": <%= vm_object('attack_vm', {"id":5,"title":"kali","ip":"172.16.0.3","enable_console":true}) %>
         },
         {
           "type": "flag-station",

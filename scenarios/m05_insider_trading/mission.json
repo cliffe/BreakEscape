@@ -2,7 +2,7 @@
   "display_name": "Insider Trading",
   "description": "Infiltrate Quantum Dynamics Corporation to identify and stop an insider threat. ENTROPY has recruited an employee to exfiltrate quantum-safe key material for the National Emergency-Services Dispatch Network. You have 4 hours to find the insider, gather evidence, and stop the acquisition before the 999 dispatch network's key-rotation window opens.",
   "difficulty_level": 2,
-  "secgen_scenario": "m05_insider_trading",
+  "secgen_scenario": "break_escape/safetynet/m05_insider_trading.xml",
   "collection": "season_1",
   "ui_theme": "spy",
   "scenarioId": "m05_insider_trading",
