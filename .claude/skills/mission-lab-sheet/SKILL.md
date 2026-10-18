@@ -1,6 +1,6 @@
 ---
 name: mission-lab-sheet
-description: Writes or rewrites the student-facing lab sheet for a Break Escape mission — a getting-started guide, the concepts behind each lock with worked examples students can check by hand, and a stage-by-stage walkthrough of layered hints (a visible nudge, then a collapsed Nudge, then a collapsed Recipe) — and publishes it to HacktivityLabSheets and the mission's mission.json. Two modes: "full" (lab-sheet learning: concepts, worked examples, questions and exercises) and "practical" (a focused walkthrough: what to do, where, and how, with only the concepts needed). Hacktivity shows the same page as "Lab Sheet" in courses and "Walkthrough" in game events. For VM missions the step-by-step technical/exploit steps go in a linked companion sheet (labsheet_vm_steps.md) so the main game walkthrough stays spoiler-light and reviewable without tripping strict content filters. Trigger when the user asks to "write a lab sheet", "make a walkthrough", "student guide for <mission>", "hints for students", "update the labsheet", "split the VM/technical steps out", or to publish a mission's sheet to Hacktivity.
+description: Writes or rewrites the student-facing lab sheet for a Break Escape mission — a getting-started guide, the concepts behind each lock with worked examples students can check by hand, and a stage-by-stage walkthrough of layered hints (a visible nudge, then a collapsed Nudge, then a collapsed Recipe) — and publishes it to HacktivityLabSheets and the mission's mission.json. Two modes: "full" (lab-sheet learning: concepts, worked examples, questions and exercises) and "practical" (a focused walkthrough: what to do, where, and how, with only the concepts needed). Hacktivity shows the same page as "Lab Sheet" in courses and "Walkthrough" in game events. For VM missions the whole server/VM block (concepts, hint stages, command-line practice and server reflection questions) goes in a linked companion sheet (labsheet_vm_steps.md), leaving the main game walkthrough free of server attack content (strict split). Trigger when the user asks to "write a lab sheet", "make a walkthrough", "student guide for <mission>", "hints for students", "update the labsheet", "split the VM/technical steps out", or to publish a mission's sheet to Hacktivity.
 ---
 
 # Break Escape mission lab sheet
@@ -53,12 +53,12 @@ Keep the HacktivityLabSheets front matter: `title`, `author` (keep existing auth
 1. **Purpose**: "By the end of this lab you should be able to" bullets.
 2. **How to Use This Sheet**: play order; hints are layered, open one at a time and go back to the game after each; answers differ per game (if they do).
 3. **Getting Started**: the player's role in one paragraph; numbered `\==action:` launch steps; time estimate and a stopping point for a 60-minute class; **How to Play** (controls, where handed items go, the handler's hint options, tool tips as `> Tip:` and `> Warning:` blocks); a **warm-up** using made-up data that exercises the main tool once.
-4. **Concepts**: one subsection per idea, in play order. Use tables for recognition ("what you see → what it probably is → what to try"), worked examples in code blocks, and one `> Question:` self-check per subsection where the answer is not on the page.
+4. **Concepts**: one subsection per idea, in play order. Use tables for recognition ("what you see → what it probably is → what to try"), worked examples in code blocks, and one `> Question:` self-check per subsection where the answer is not on the page. For VM missions, the server/VM concepts go in the companion, not here (strict split — see "VM technical steps: a companion file").
 5. **Stuck? Hints, Stage by Stage**: see the hint pattern below. Start with a `> Tip:` giving the three questions to ask before opening any hint (What is the clue made of? What shape does the lock want? What did the clue's own description say?).
 6. **What the Tools and Locks Are Telling You**: a two-column table of error messages and symptoms → usual cause.
 7. **Optional Side Content**: each optional puzzle in its own `<details>`.
-8. **Try It on the Command Line (Optional)** where the mission's techniques have shell equivalents. Keep the student's own data, not game data.
-9. **After the Game: Questions and Exercises**: grouped by theme; `> Question:` blocks then a `> Action:` hand-in exercise per group.
+8. **Try It on the Command Line (Optional)** where the mission's techniques have shell equivalents. Keep the student's own data, not game data. For VM missions, the server shell practice goes in the companion.
+9. **After the Game: Questions and Exercises**: grouped by theme; `> Question:` blocks then a `> Action:` hand-in exercise per group. For VM missions, the server-specific group (e.g. "Attacking the Server") goes in the companion; the game sheet keeps the game-portion questions.
 10. **Further Reading**.
 
 ### Practical mode sections
@@ -104,41 +104,48 @@ The method, the traps, where help is in the game.
 
 ### VM technical steps: a companion file (VM missions only)
 
-For a mission with a VM, the **step-by-step solution hints** for the server challenges and the
-**command-line practice** exercises live in a companion file
-`scenarios/<mission>/labsheet_vm_steps.md`, linked from the main walkthrough at the point the
-player reaches the server room / VM terminal. Everything else — including the VM concepts —
-stays on the main game sheet.
+For a mission with a VM, use a **strict split**: the **entire server/VM block** lives in a
+companion file `scenarios/<mission>/labsheet_vm_steps.md`, and the main `labsheet.md` carries
+**no** server/VM attack content at all. The main sheet is the game walkthrough; the companion is
+the complete server work. The game sheet links to the companion at the point the player reaches
+the server room / VM terminal.
 
-What stays on the main `labsheet.md`:
+What stays on the main `labsheet.md` (the game sheet):
 - The whole game walkthrough: building navigation, locks (PINs, keys, lockpicking), NPCs, the
   in-game puzzles and decoding, evidence, moral choices and the finale.
-- The **VM concepts** — the "what this is" sections that explain the ideas behind the server
-  work (what SSH and online password guessing are, what a Linux shell and filesystem look like,
-  what privilege escalation and sudo are), framed in the mission's story, with short
-  illustrative examples. This is narrative and conceptual teaching, not a solution, and it reads
-  as part of the whole sheet, so it belongs on the game sheet. Naming the tools and showing an
-  illustrative command in a concept is fine. The m01 `labsheet.md` is the benchmark.
-- A pointer where the server hints would be: a `> Note:` after the "Server Room" stage, e.g.
+- **All non-VM concepts** — physical access, weak authentication, Base64/ROT13 and other
+  encoding, lockpicking — with their worked examples. The game sheet stays a full teaching sheet
+  for the game portion; it just offloads the server block wholesale.
+- A pointer where the server block would be: a `> Note:` after the "Server Room" stage, e.g.
   "The server work has its own sheet so you can play the rest spoiler-free and tackle it
   yourself: **[VM Technical Steps](labsheet_vm_steps.md)** — open it when you want the server
   hints." Link by the companion's published slug on the Hacktivity side (see Publish).
+- **No** VM/server concept intros, no attack commands, no tool names in an attack context, no
+  server hint stages, no server command-line practice, and no server-specific reflection
+  questions. If it is about getting into or acting on the box, it is in the companion.
 
-What goes in the companion `labsheet_vm_steps.md`:
+What goes in the companion `labsheet_vm_steps.md` (the whole server block, end to end):
 - Its own front matter (same shape as the main sheet; `title` like "<Mission>: VM Technical
   Steps", a `description` noting it is the technical companion, same `license`/`cybok`), and a
   first line linking back to the main walkthrough.
+- The **VM/server concepts** — the "what this is" intros (what SSH and online password guessing
+  are, what a Linux shell and filesystem look like, what privilege escalation and sudo are),
+  with their worked/illustrative examples. Concept sits next to the hints and practice that use
+  it.
 - The **Stuck? Hints** stages for the VM challenges (the per-stage Nudge and Recipe tiers that
   walk through solving the mission's own target).
 - The **Try It on the Command Line** practice section.
+- The **server-specific After-the-Game reflection questions and exercises** (the "Attacking the
+  Server" group); the game sheet's After-the-Game section keeps only the game-portion questions.
 - The same content rules apply: **never print a real answer; VM flags are never printed** — the
   Recipe tier says how to get a value, not the value.
 
-Why the split (state this to the user):
-- **Spoiler control.** A player follows the game sheet and the concepts, works the server out
-  themselves, and opens the companion only when they want the step-by-step hints.
-- **Reviewable on its own.** The step-by-step intrusion hints sit in one file, so they can be
-  written and checked separately from the game walkthrough.
+Why the strict split (state this to the user):
+- **Spoiler control.** A player follows the game sheet, works the server out themselves, and
+  opens the companion only when they want the hints.
+- **A clean, mechanical boundary.** "Does the game sheet contain any server/VM attack content?"
+  is answerable by grep, so the split holds up across missions and reviewers without drift. The
+  whole server block — concept, hints, practice, reflection — sits in one reviewable file.
 
 **Authoring note.** Write the companion with a model that handles technical security steps
 without refusing; if the orchestrator model refuses on intrusion detail, delegate the companion
@@ -178,8 +185,10 @@ Apply `HacktivityLabSheets/_labs/example_highlighting_guide.md`, with these proj
 - `grep -niwE 'delve|intricate|tapestry|pivotal|underscore|landscape|foster|enhance|crucial|robust|profound'` returns nothing outside technical uses.
 - No real answer, PIN, key or flag appears anywhere (in **either** file).
 - The published copy `cmp`s identical; `mission.json` validates.
-- VM missions: the main sheet holds no step-by-step VM exploit stages (they are in the
-  companion), the main sheet links to the companion, and the companion links back. Both carry
-  front matter and both publish cleanly.
+- VM missions (strict split): the main sheet holds **no** server/VM content at all — no VM
+  concepts, attack commands, hint stages, shell practice or server reflection questions; grep
+  the game sheet for the mission's tool names, target username/IP and service terms and expect
+  nothing. The main sheet links to the companion and the companion links back. Both carry front
+  matter and both publish cleanly.
 
 Report: the mode chosen, the sections, any facts you found that contradict the solution guide or design docs (list them; do not fix other files unless asked), and the published URL.
