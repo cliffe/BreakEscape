@@ -1832,7 +1832,7 @@ CREDITS
           "id": "vm_launcher_gitlist",
           "name": "GitList Repository Server",
           "takeable": false,
-          "observations": "SAFETYNET's internal code server, humming in the corner rack. It hosts the org's source -- and, it turns out, a great deal that was never meant to be source.",
+          "observations": "SAFETYNET's internal code server, humming in the corner rack. It hosts the org's source -- and, it turns out, a great deal that was never meant to be source. Agent HaX has racked a field console beside it: a Kali box on a quiet network of her own, so you can work the server without a single query reaching the floor upstairs.",
           "hacktivityMode": <%= vm_context && vm_context['hacktivity_mode'] ? 'true' : 'false' %>,
           "vm": <%= vm_object('attack_vm', {"id":1,"title":"kali","ip":"172.16.0.3","enable_console":true}) %>,
           "puzzle_graph_role": "vm"

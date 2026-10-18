@@ -166,3 +166,69 @@ The canonical XML passes flag4 to `sudo_root_apt_get` as `strings_to_leak` only,
 scenario `ctf/git_dejavu.xml`, so the module leaks the flag into `/root` as designed; the exact
 filename is build-time. Left as-is (matches a live scenario). A build-and-solve would confirm
 the resulting `/root` filename, but no change is warranted statically.
+
+## Round 3 — integration (2026-10-18)
+
+Step 4b: is the VM woven into the mission or bolted on? Traced the four VM challenge/flag
+nodes through `dungeon_graph.md` against the m01 benchmark. No VM built or booted.
+
+### The six checks
+
+1. **Motivation — OK.** The entry technique and target are discoverable in-fiction. The
+   committed credentials live in the repo history on the box itself (self-contained: the
+   mole's opsec failure), so they are "found Derek's note"-equivalent rather than appearing
+   from nowhere. The target host is reached by recon from the Kali console (flag 1 = repository
+   exposure / recon), the taught skill. Agent HaX names the attack path on the wire
+   ("That's the repo box… go for the GitList flaw", scenario.json.erb:1205) and the server
+   access log by the rack ties the box straight to the leak ("Root for the account. The doors
+   for the person", :1871). Credentials/target/technique are all justified in-game.
+2. **Gating — OK.** The server room is doubly gated and both appear on the graph: an RFID lock
+   opened by cloning the Director's all-zones keycard (`action_clone_the_director_card` →
+   `door_server_room`) and, on the optional path, a badge-printer PIN
+   (`lock_badge_printer` → `printed_server_zone_badge` → `door_server_room`). The launcher is
+   never in the start area. scenario.json.erb:1363-1386 (printer/PIN), :1449-1457 (keycard).
+3. **Diegetic attacker box — CONCERN → fixed.** The launcher's `observations`
+   (scenario.json.erb:1835) described only the *target* repo server; nothing explained the
+   Kali console the launcher actually opens (`vm_object('attack_vm', …)`, :1837). Against the
+   m01 bar ("A Kali Linux system IT have prepared for your security audit"), the attacker box
+   was unexplained in-fiction. Fixed by rewording the observations to place a field console at
+   the rack, left by Agent HaX (the on-wire support NPC), on a quiet network — diegetic,
+   and consistent with the "do it quietly" premise. Now reads as a prepared attacker box.
+4. **Flag payoff — OK (exceeds the bar).** Every flag triggers a concrete story beat, not a
+   scoreboard: flag 1 → `found_gitlist_vuln` + HaX's RCE beat and offers the git-secrets guide
+   (:752-756); flag 2 → `found_leaked_creds`, "log in properly with them" (:760-764); flag 3 →
+   `found_architect_comms` + the `architect@entropy.onion` mail tying the account to the
+   Portland intercept, offers the privesc guide (:768-772); flag 4 → `found_access_logs`, the
+   root-only auth log that places terminal/time. The interrogation-room evidence wall assembles
+   the four flags into the case file against Nightshade (:2188-2189). The flags *do* something.
+5. **Requiredness & pacing — OK.** `concludeRequires.tasksCompleted` = the four flag tasks
+   (:525-532); `all_flags_submitted` latches only when all four booleans hold (:1331-1332) and
+   gates the confrontation and debrief. The VM cannot be skipped. Field guides are paced to the
+   beat they are needed, not dumped up front: recon on entering the server room (:1190-1194),
+   scanning + vuln-analysis on first launcher interaction (:1200-1205), git-secrets on flag 1
+   (:755), privesc on flag 3 (:771), CyberChef on recovering the encoded comms (:1026-1029).
+6. **Graph coherence — OK.** The integrated graph puts `vmch_*`/`vmfl_*` on the critical path:
+   `gitlist_repository_server → vmch_recover_gitlist_exposure → … → vmch_escalate_to_root`,
+   with the server-room access chain feeding in and the flag nodes feeding
+   `aim_get_into_the_repo` and `aim_correlate_the_evidence` (dungeon_graph.md:449-452), which
+   converge through the AND gate into `aim_confront_the_mole`. Prerequisites in, story unlocks
+   out — matching the assessment above.
+
+### Mission-local fixes applied
+
+- scenario.json.erb:1835 — `vm_launcher_gitlist.observations`: appended a sentence placing a
+  Kali field console at the rack, left by Agent HaX on a quiet network (from: target-server
+  description only → to: target description + diegetic attacker console). Resolves Check 3.
+  Validator clean; ERB re-renders to valid JSON; no ink touched.
+
+### Author-sized gaps
+
+None. The VM is woven into the finale at or above the m01 bar on every check; the only gap was
+the undescribed attacker console, which was a mission-local reword, not new puzzle/room/story
+work. No `mission-puzzle-chains` referral needed.
+
+### Shared-file note for the orchestrator
+
+`secrets-in-git-history.md` lives in the shared `_labs/safetynet/` folder but is referenced
+only by m08 (`grep` across all missions). No edit was needed this round; flagging only that it
+is de facto m08-specific despite its shared location.
