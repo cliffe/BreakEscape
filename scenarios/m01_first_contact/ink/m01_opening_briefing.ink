@@ -102,7 +102,7 @@ Agent HaX: Then report back with actionable intelligence so we can stop whatever
 === operative_identity ===
 Agent HaX: Derek Lawson. Senior Marketing Manager at Viral Dynamics.
 
-Agent HaX: He's been there three months. Timeline matches when the suspicious activity started.
+Agent HaX: He's been there about eighteen months. The timeline matches when the suspicious activity started.
 
 Agent HaX: He's ENTROPY, but we don't know the full scope of what he's running.
 
@@ -206,7 +206,7 @@ Agent HaX: He's not ENTROPY, just overworked and underpaid. He'll appreciate com
 === other_npcs ===
 Agent HaX: Sarah O'Brien is the receptionist. Professional, friendly. Don't give her any reason to flag you.
 
-Agent HaX: And Maya Chen—the journalist who contacted us. Be careful around her. Derek might be watching who she talks to.
+Agent HaX: And Maya Chen—the analyst who contacted us. Be careful around her. Derek might be watching who she talks to.
 
 -> deployment
 

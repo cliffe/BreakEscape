@@ -243,7 +243,7 @@ Agent HaX: I noticed you worked with both Kevin and Maya.
 Agent HaX: Kevin gave you legitimate access—that's the IT contractor cover working as intended.
 
 {maya_identity_protected:
-    Agent HaX: And Maya... you protected her identity. She's safe. She can continue her journalism without looking over her shoulder.
+    Agent HaX: And Maya... you protected her identity. She's safe. She can continue her work without looking over her shoulder.
     Agent HaX: That matters. She took a risk contacting us.
 - else:
     Agent HaX: Maya's identity was compromised during the operation. We're relocating her for safety.

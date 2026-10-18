@@ -1669,9 +1669,7 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
               "takeable": true,
               "puzzle_graph_role": "tool",
               "puzzle_graph_note": "Decoding tool — required with Encoded Note (1) and Encoded Note (2) to derive safe/PC/cabinet PINs",
-              "observations": "A laptop preloaded with CyberChef — Patricia's personal crypto analysis tool. Take it.",
-              "storyPath": "scenarios/m01_first_contact/ink/m01_terminal_cyberchef.json",
-              "currentKnot": "start"
+              "observations": "A laptop preloaded with CyberChef — Patricia's personal crypto analysis tool. Take it."
             },
             {
               "type": "notes",
@@ -2028,7 +2026,7 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
           "takeable": false,
           "observations": "A Kali Linux system IT have prepared for your security audit.",
           "hacktivityMode": <%= vm_context && vm_context['hacktivity_mode'] ? 'true' : 'false' %>,
-          "vm": <%= vm_object('intro_to_linux_security_lab', {"id":1,"title":"kali","ip":"192.168.100.50","enable_console":true}) %>,
+          "vm": <%= vm_object('kali', {"id":1,"title":"kali","ip":"172.16.0.3","enable_console":true}) %>,
           "showPostit": true,
           "postitNote": "user: kali\npassword: kali"
         },
