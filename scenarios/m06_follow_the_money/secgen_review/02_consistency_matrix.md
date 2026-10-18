@@ -26,3 +26,18 @@ Values generated at build time are marked *(per-build)* — legitimately absent 
 | Flag values | n/a | fallback `flag{…}` placeholders | *(per-build)* flag_generator | match (per-build) |
 | hcops password | n/a | not hardcoded | literal `password` (in jtrpassword.lst) | present (see note) |
 | Crackable passwords | n/a | not hardcoded | *(per-build)* from `jtrpassword.lst` ×3 | *(per-build)* |
+
+---
+
+## Round 2 update (2026-10-18)
+
+Changed rows (SecGen is canonical; game aligned):
+
+| Value | Story (ink) | Break Escape scenario | SecGen VM | Status |
+|-------|-------------|----------------------|-----------|--------|
+| flag_4 route | "whole estate" / "last flag" (generic); HaX privesc hint now points at sudo | submit_flag4 → Cold Storage Recovery Keys, found_wallet_keys | `hcvault` `cold_storage/full_access_flag` (0600), reachable **only** via `hcops` sudo | match — escalation now required |
+| hcvault password | n/a | not hardcoded | **strong_password_generator** (was `weak_passwords[2]`) | changed — not crackable |
+| weak_passwords count | n/a | n/a | **2** generators (was 3; `[2]` removed, it was only hcvault's) | changed |
+| privesc HaX hint | sudo route ("vault won't crack… sudo -l") | `request_privesc_guide` ink | sudo via hcops `ALL=(ALL) ALL` | match (was: described reuse) |
+
+All other rows from the round-1 table are unchanged and still match.

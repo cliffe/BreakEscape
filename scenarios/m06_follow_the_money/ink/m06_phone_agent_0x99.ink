@@ -678,8 +678,8 @@ The example's from an earlier job. Here the build service just gets you on the b
 #set_variable:privesc_guide_hint_given=true
 #give_item:lab-workstation:m06_privesc_field_guide
 Privilege escalation guide sent.
-The rack sheet says two of those boxes share a service account. Start there.
-Try the password you already have.
+The vault won't crack. One of the other accounts can run sudo, though. Crack that operator login, then read the vault with its rights.
+Start with sudo -l to see what it's allowed.
 -> hub
 
 === request_recon_guide ===

@@ -46,3 +46,34 @@ edited.
 ## Not done / out of scope
 - No VM build/boot or solve (static review only).
 - No commit/stash/checkout (orchestrator commits per repo, per mission).
+
+---
+
+## Round 2 (2026-10-18)
+
+### Changes (file:line, repo, from → to)
+
+| # | File | Repo | From → To | Resolves |
+|---|------|------|-----------|----------|
+| R2-1 | `SecGen/scenarios/break_escape/safetynet/m06_follow_the_money.xml` (hcvault account) | **SecGen** | `hcvault` password `<datastore access="2">weak_passwords</datastore>` → `<generator type="strong_password_generator"/>` | flag_4 escalation now required (round-1 open item 1) |
+| R2-2 | same XML (`weak_passwords` datastore + comment) | **SecGen** | removed the unused 3rd `custom_list_password` generator (`weak_passwords[2]`, only hcvault used it); updated the datastore comment and the hcvault comment | keep XML honest after R2-1 |
+| R2-3 | `scenarios/m06_follow_the_money/ink/m06_phone_agent_0x99.ink` (`request_privesc_guide`) | BreakEscape | privesc hint "two boxes share a service account… try the password you already have" (credential reuse) → sudo route "The vault won't crack. One of the other accounts can run sudo… Start with sudo -l" | hint now matches flag_4's required sudo path |
+
+**SecGen repo edit** (R2-1, R2-2): the canonical XML changed — commit it in the SecGen repo. No in-mission `secgen/` copy exists, so nothing to sync there.
+Ink changed (R2-3): recompiled, committed `.json` alongside.
+
+### Verification (Round 2)
+- `./scripts/compile-ink.sh m06_follow_the_money` — 9 compiled, 0 failed.
+- `ruby scripts/validate_scenario.rb scenarios/m06_follow_the_money/scenario.json.erb` — Schema validation passed; JSON/ink valid; critical path unchanged (5 hops, `concludeRequires` = all four flags). The 21 objective-wiring warnings are pre-existing onceOnly-handler notices on `agent_0x99_handler`, unrelated to these edits.
+- SecGen XML: `strong_password_generator` is an existing generator type (already used for `desktop_root_password` and `spoiler_admin_pass`); no new module path introduced. All referenced module paths still resolve under `SecGen/modules/`. Static check only; no build.
+- Solvability re-traced: hcauth/hcledger/hcfindb still crack+reuse as before; hcvault flag now reachable only via hcops (`password`, in `jtrpassword.lst`) + sudo. hcops hash is in the world-readable shadow, so the escalation is tractable.
+
+### Round-1 open item — now closed
+Round-1 open item 1 (flag_4 priv-esc optional) is resolved by R2-1/R2-2/R2-3 above.
+
+### Needs an author VM build to confirm (static review only)
+- Confirm `strong_password_generator` yields a password NOT in `jtrpassword.lst`/`rockyou.txt` (it is a long random string, so effectively uncrackable — build-time property).
+- Confirm `hcops`'s `super_user: true` renders as `hcops ALL=(ALL) ALL` on the built Debian 9 box so `sudo` reads hcvault's 0600 flag (brief confirms this is the render; a build verifies the live box).
+
+### Shared-file changes for the orchestrator
+None required. The shared **Privilege Escalation via Sudo** guide (`HacktivityLabSheets/_labs/safetynet/privilege-escalation.md`) already teaches `sudo -l` and `sudo -u [user] cat /home/[user]/…`, which is exactly the now-required route — it was read, not edited, and needs no change for m06. Other m06 field guides (offline-password-cracking, distcc-exploitation) stay generic and need no change.

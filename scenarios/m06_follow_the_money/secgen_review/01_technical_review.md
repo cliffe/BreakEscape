@@ -92,3 +92,26 @@ requirement. The author deliberately chose this (there is an explicit XML commen
 so this review does not override it. If the intent is that flag_4 *requires*
 escalation, give `hcvault` a `strong_password_generator` password so the only route
 to its 0600 flag is `hcops` sudo. Left as an author decision (see doc 03).
+
+---
+
+## Round 2 (2026-10-18)
+
+### Round-1 confirmation — all held
+- `mission.json` `secgen_scenario` = `break_escape/safetynet/m06_follow_the_money.xml` (correct path). ✓
+- `vm_object('kali_cracker', …)` opens the **attacker/Kali** console (not the target); fallback `title`/`ip` = `kali_cracker` / `172.16.0.3` (same 172.16.0.0/24 as the target). ✓
+- Flag host key `hackme_crack_me_lab` on `vm_flags_json` / `flags_for_vm` / `acceptsVms`. ✓
+- `targetFlags` all station display form `flag_station_financial:hackme_crack_me_lab-flagN`. ✓
+- flag→global bridges (`flag1..4_submitted` via station `flagRewards` set_global + `objective_task_completed` setGlobal) and `concludeRequires = [submit_flag1..4]` all intact. ✓
+
+### Rebase decision — KEEP (deepened)
+The current VM is a strong fit and was kept. Its kill chain (distcc RCE foothold → world-readable shadow → offline crack → credential reuse → sudo privilege escalation) is a richer, five-stage chain that maps cleanly onto the mission's `mission.json` CyBOK (MAT exploitation, AAA authentication + authorisation, SOIM penetration testing) and onto the "crack your way onto the backend and follow the money" story. No catalogue scenario in `SECGEN_ADAPTABLE_CATALOGUE.md` improves on this, and the round-1 brief sets a high bar defaulting to keep. Kept and deepened with the escalation pedagogy fix below.
+
+### Pedagogy fix applied — flag_4 now genuinely requires escalation
+Round 1 flagged (left for the author) that `hcvault` had its own weak crackable password, so flag_4 — framed as the privilege-escalation reward reached by `hcops` via sudo — could be read by cracking `hcvault` directly, making the escalation optional. Per the Round 2 brief (user: fix with best judgement), applied the smallest change that makes the lesson true: `hcvault`'s password is now a `strong_password_generator` value (not drawn from `weak_passwords`), and the now-unused `weak_passwords[2]` generator was removed. The flag in `hcvault`'s `cold_storage/full_access_flag` is mode `0600`, so the only route is `hcops` (weak password `password`, in `jtrpassword.lst`) → `sudo` to read it. `hcops` has `super_user: true` = `hcops ALL=(ALL) ALL`, so `sudo -u hcvault cat …` / `sudo cat …` works. The escalation is now mandatory and tractable.
+
+This also resolves the long-standing S5 ambiguity logged in `DECISIONS_PENDING.md`/`IMPROVEMENT_LOOP_LOG.md` ("does the route need sudo?") in favour of the shared **Privilege Escalation via Sudo** field guide: the route now definitely needs sudo, and the guide (`sudo -l`, `sudo -u [user] cat /home/[user]/…`) teaches exactly this path.
+
+The mission's "Privilege escalation" HaX hint (`ink/m06_phone_agent_0x99.ink` `request_privesc_guide`) previously described credential reuse ("two boxes share a service account… try the password you already have") — that is lateral movement (flag_2), already covered by the cracking-guide hint, and following it would no longer reach flag_4. Repointed it to the sudo route ("The vault won't crack. One of the other accounts can run sudo… Start with sudo -l").
+
+Lateral-movement cracking (hcauth/hcledger/hcfindb) is unchanged and still solvable; only the vault is now escalation-only.
