@@ -165,6 +165,56 @@ Confirm the VM flags are genuinely required and reachable:
 - The crackable account's password is one of the strings the game ships as its wordlist (so
   the brute force succeeds), and no in-game text leaks a per-build secret.
 
+## Step 4b — VM–mission integration quality
+
+Solvability (Step 4) only asks "can the flags be earned and are they required." This step asks
+the harder question: **is the VM woven into the mission, or bolted on?** Load the mission's
+`dungeon_graph.md` and trace the VM nodes through it — a well-integrated VM appears on the
+critical path with physical/story steps leading into it and story beats hanging off its flags.
+
+**The m01 benchmark (what "well-integrated" looks like).** Use this as the bar:
+- **The credentials/targets are earned in the fiction.** The SSH password list is a physical
+  "My Passwords" note found in Derek's storage safe; the server's name/IP/user are on a note
+  beside it. The player doesn't get a wordlist from nowhere — they find Derek's.
+- **VM access is gated by in-game puzzle steps, not just "here is a terminal."** The server
+  room is behind an RFID keycard (from Kevin) and the IT-room PIN (voicemail/maintenance
+  notes), and Kevin is behind the IT-room PIN. Reaching the Kali box is itself a chain.
+- **The attacker box exists in-fiction.** Kevin "set up a Kali Linux workstation in there for
+  the audit" — the VM launcher is diegetic, left by a character, not a floating game object.
+- **Each flag triggers a specific story beat, not a scoreboard.** flag_1 unlocks the ENTROPY
+  encrypted archive (whose intel gates the Derek confrontation); flag_3 is the launch
+  authorization code entered into Derek's device to abort/launch Operation Shatter; flags
+  2/4 submit at the drop-site and reveal deployment intel. The flags *do* something in the story.
+- **The flags are required to finish** (the ending gate / `concludeRequires`), and the handler
+  offers the matching field guide at the beat each challenge appears.
+
+**Assess the mission against each of these and report CONCERN / OK / N/A with file:line:**
+1. **Motivation** — are the VM's credentials, target host and entry technique discoverable or
+   justified in-game (a found note, an NPC tip, a readable file), or do they appear from thin
+   air? A wordlist/credential the player never finds in the fiction is a CONCERN.
+2. **Gating** — is VM access reached through physical/puzzle/NPC steps (keycard, PIN, badge,
+   conversation) that the dungeon graph shows on the path, or is the terminal just sitting in
+   the start area?
+3. **Diegetic attacker box** — is the Kali/launcher placed and explained in the fiction
+   (left by an NPC, in a plausible room)?
+4. **Flag payoff** — does each flag unlock/trigger a concrete story beat (open a safe/archive,
+   arm/abort a device, reveal a document, change the debrief), or is it only submitted for
+   completion? A flag with no narrative consequence is a CONCERN.
+5. **Requiredness & pacing** — do the flags gate the ending, and does the handler hand out the
+   right field guide at the right moment (not all up front, not never)?
+6. **Graph coherence** — on `dungeon_graph.md`, do the VM challenge/flag nodes sit on the
+   critical path with their in-game prerequisites feeding in and their story unlocks hanging
+   off, matching the above?
+
+**Fixing integration gaps.** Many are mission-local and within this skill's remit: add the
+found-in-game note that supplies the credentials/target, gate the launcher behind an existing
+lock, give a flag a `puzzle_graph_unlocks`/`completesTask`/story-beat payoff, move a field-guide
+offer to the right event, or reword a launcher's `observations` so it reads as diegetic. Apply
+those with best judgement and log each. A gap that needs real narrative or level work (a new
+puzzle, a new room, a story beat that doesn't exist yet) is a flagged author item — note it and,
+for puzzle/level depth specifically, point at the `mission-puzzle-chains` skill rather than
+redesigning here. Keep every change solvable and validator-clean.
+
 ## Optional: rebasing the VM on a known-good scenario
 
 A mission's VM may be **rebased on a known-good SecGen scenario** when that would enhance the
@@ -210,7 +260,9 @@ Apply the fixes. Then, from the repo root:
 Write to `scenarios/<mission>/secgen_review/`:
 
 - `01_technical_review.md` — the full review: the matrix reasoning, each finding
-  (technical/engine/story) with file:line, solvability, and a verdict. Audience: the author.
+  (technical/engine/story) with file:line, solvability, the **Step 4b integration assessment**
+  (the six checks scored CONCERN/OK/N/A against the m01 benchmark, each with file:line), and a
+  verdict. Audience: the author.
 - `02_consistency_matrix.md` — the value-by-value table from Step 2.
 - `03_edits_applied.md` — per-file changelog (what changed, from → to, which finding it
   resolves), the verification results, and a "still open / needs author decision" list (the

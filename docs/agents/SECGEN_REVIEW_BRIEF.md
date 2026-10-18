@@ -96,6 +96,30 @@ rewriting). Return: what you confirmed, the rebase decision (keep/rebase + ratio
 rebased, the full change list across repos), the pedagogy fixes applied, shared field-guide
 changes for the orchestrator, and anything needing an author VM build.
 
+## ROUND 3 (this pass) — VM↔mission integration quality
+
+Rounds 1–2 made the VM consistent, correctly wired and required. Round 3 asks whether the VM is
+**woven into the mission or bolted on**, using the skill's new **Step 4b** and the m01 benchmark.
+Do this per mission:
+
+1. Load the mission's `dungeon_graph.md` and trace the VM challenge/flag nodes through it.
+2. Score the six Step 4b checks (motivation, gating, diegetic attacker box, flag payoff,
+   requiredness & pacing, graph coherence) CONCERN/OK/N/A with file:line, against m01's bar:
+   credentials/target found in-game; VM access gated by physical/PIN/badge/NPC steps; the Kali
+   box placed by a character in-fiction; each flag triggers a concrete story beat; flags gate
+   the ending; the right field guide offered at the right moment.
+3. **Fix mission-local integration gaps with best judgement, log each**: add the in-game
+   note/clue that supplies the credentials/target; gate the launcher behind an existing lock;
+   give a flag a real payoff (`puzzle_graph_unlocks`/`completesTask`/story beat); move a
+   field-guide offer to the right event; reword a launcher's `observations` to read as diegetic.
+   Keep it solvable and validator-clean.
+4. **Flag author-sized gaps** (a new puzzle/room/story beat that doesn't exist yet) rather than
+   inventing them here; for puzzle/level depth point at the `mission-puzzle-chains` skill.
+
+Append a "Round 3 — integration" section to each mission's `secgen_review/01_technical_review.md`
+(the six scores + what you fixed + what you flagged). Do NOT commit; the orchestrator commits
+per mission. Shared field guides: report, don't edit (orchestrator reconciles).
+
 ## Baseline reference
 `m01_first_contact` has been through this review and is known working. Read
 `scenarios/m01_first_contact/scenario.json.erb` (flags block, vm-launcher, flag-station,
