@@ -50,6 +50,52 @@ scenario into the mission's canonical SecGen XML and re-align all game reference
 decision to record with reasoning. Only when it clearly improves the mission; otherwise keep
 the current VM and just align. Never build a VM.
 
+## ROUND 2 (this pass) — confirm, rebase where it clearly helps, fix pedagogy
+
+Round 1 aligned every mission's `secgen_scenario`, VM-launcher wiring and placeholder IPs,
+and committed per mission. Round 2 is a fresh independent pass. Do all of:
+
+1. **Confirm round 1 held** for your mission: `secgen_scenario` is the correct path,
+   `vm_object('<title>')` opens the *attacker/Kali* console (not the target), flag host key,
+   display-form `targetFlags`, flag→global bridge and `concludeRequires` are all correct.
+   Fix anything that regressed or was missed.
+
+2. **Rebasing (execute a clear win, else keep).** Judge whether rebasing this mission's VM on
+   a known-good catalogue scenario (`docs/agents/SECGEN_ADAPTABLE_CATALOGUE.md`) would clearly
+   improve hands-on play or story/CyBOK fit. The bar is high: round 1 found every current VM
+   internally sound and on-theme, so **default to KEEP** and deepen. Rebase only if you can
+   name specific improvements (better skill fit to the mission's `mission.json` CyBOK, a
+   richer/again-solvable kill chain, closer story fit) that outweigh the current VM. If you
+   rebase: adapt the chosen scenario's systems/modules into the mission's **canonical** SecGen
+   XML (`/home/cliffe/Files/Projects/Code/SecGen/scenarios/break_escape/safetynet/<mission>.xml`),
+   keep an in-mission `secgen/` copy in sync if one exists, and re-align every game reference
+   (flags/accounts/hosts/IPs/paths/launcher/labsheet). You CANNOT build-verify a rebase here —
+   reason statically, keep the mission validator-clean, and clearly mark the rebase "needs an
+   author VM build to confirm" in your docs. When in doubt, keep and recommend rather than
+   execute.
+
+3. **Pedagogy/VM-design fixes — apply with best judgement, log each** (user: fix these, don't
+   just flag). Examples: if a flag framed as the privilege-escalation reward is readable
+   without escalating, make escalation genuinely required (e.g. give the holder a strong
+   generated password / correct file ownership); if the labsheet/field guide teaches a
+   *scoped* sudo misconfiguration but the VM grants full `ALL=(ALL) ALL`, bring them into
+   agreement (prefer scoping the VM rule to the taught target if tractable, else correct the
+   teaching text). Make the smallest change that makes the lesson true; record what you chose
+   and why.
+
+4. **Field guides.** Your mission's own `labsheet.md` — edit freely to match the VM. The
+   **shared** SAFETYNET field guides in `HacktivityLabSheets/_labs/safetynet/` are edited by
+   the orchestrator only: if one needs a change for your mission, REPORT it (file, what, why)
+   — do not edit it (parallel agents share it).
+
+5. **Commits:** still the orchestrator's job, per mission, per repo. Do not commit. If you
+   edited the canonical SecGen XML, say so clearly so it gets committed in the SecGen repo.
+
+Update your `secgen_review/` docs in place (add a "Round 2" section to each rather than
+rewriting). Return: what you confirmed, the rebase decision (keep/rebase + rationale; if
+rebased, the full change list across repos), the pedagogy fixes applied, shared field-guide
+changes for the orchestrator, and anything needing an author VM build.
+
 ## Baseline reference
 `m01_first_contact` has been through this review and is known working. Read
 `scenarios/m01_first_contact/scenario.json.erb` (flags block, vm-launcher, flag-station,
