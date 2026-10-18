@@ -77,6 +77,25 @@ Fix the path in the duplicate (or treat the duplicate as reference-only and keep
 The two copies also differ in the field-guide lab-sheet URL scheme — that one is an author
 decision (which URL layout is canonical), noted, not changed.
 
+**VM verification against source.** Checked directly against the SecGen scenario XML and the
+`parameterised_accounts` manifests. Flag placement is confirmed: `leak_files` drops each file
+in `/home/<user>/` at `0600` owned by the user — flag_1 `/home/derek/DECRYPTION_KEY`, flag_2
+`/home/derek/operation_shatter/deployment_notes`, flag_3 `/home/shatter/launch_code/launch_flag`,
+flag_4 `/home/shatter/shatter_configuration`. Since shatter's files are `0600`/`shatter`, flag_3
+and flag_4 truly require escalation. The `derek` password selector uses the identical 27-string
+list the game ships. One fidelity gap:
+
+**Issue V1 — sudo grant is broader than the labsheet teaches.** `account.pp` renders
+`super_user: true` as `derek ALL=(ALL) ALL` — unrestricted sudo, not a scoped rule. The
+labsheet frames this as a *scoped* "operative account with sudo rights over the infrastructure
+account" (become `shatter`). In reality `sudo -l` as derek shows `(ALL) ALL`; `sudo -u shatter …`
+and plain `sudo …` both work. Solvable, but the pedagogy is imprecise. Either scope the VM rule
+to `derek ALL=(shatter) …` (needs a custom sudoers entry — the module only exposes the boolean)
+or reword the labsheet to "derek is an over-privileged full sudoer." Author decision; not changed.
+Minor, same file: the `shatter_configuration` and `deployment_notes` flavour text point at
+`~/DECRYPTION_KEY` / "shatter's operation_shatter/ directory", but the key and that directory are
+in derek's home — harmless red herrings.
+
 ## 2. Puzzle solvability (physical)
 
 Traced the full lock/key chain against the dungeon graph; no dead ends or soft-locks.

@@ -72,12 +72,36 @@ IDs refer to `01_full_technical_review.md`.
    the sibling lab mission's pattern (scenario-definition path relative to the environment
    repo's `scenarios/`, with `.xml`). Confirm it matches exactly how the platform records
    this mission's environment batch, since that string is what attaches the environment.
-2. **VM-side values not verifiable from metadata.** A value-only check of the environment
-   definition confirmed the machine names, address, accounts, the operative-password
-   mechanism/wordlist, and the four flag locations all line up with the game. Two things sit
-   in code not checked here and should be confirmed against a built environment: the exact
-   placement of the leaked files, and that the privilege rule is scoped as intended. These
-   are VM claims for the author to confirm outside this review.
+2. **VM-side verification (now checked directly against the SecGen source).** Confirmed from
+   `break_escape/safetynet/m01_first_contact.xml` and the `parameterised_accounts` manifests:
+   - **Leaked-file placement — confirmed.** `account.pp` leaks each file into `/home/<user>/`
+     at mode `0600` owned by that user: flag_1 `/home/derek/DECRYPTION_KEY`, flag_2
+     `/home/derek/operation_shatter/deployment_notes`, flag_3
+     `/home/shatter/launch_code/launch_flag`, flag_4 `/home/shatter/shatter_configuration`.
+     Matches the game and labsheet exactly. Because shatter's files are `0600`/owned by
+     `shatter`, flag_3 and flag_4 genuinely require escalation — the VM flags cannot be
+     shortcut.
+   - **Sudo scope — confirmed, and broader than the labsheet teaches (new finding, V1 below).**
+   - Per-build secrets (the chosen `derek` password, the flag strings) remain inherently
+     unknowable from source — that is expected, not a gap.
+**V1. Sudo grant is broader than the labsheet's lesson (author decision).** The
+   `parameterised_accounts` module renders `super_user: true` as `derek ALL=(ALL) ALL` —
+   full unrestricted sudo, not a scoped rule. The labsheet frames the lesson as a *scoped*
+   "operative account with sudo rights over the infrastructure account" and asks why a
+   marketing login should never be allowed to *become the shatter account*. A student running
+   `sudo -l` sees `(ALL) ALL`, which is a broader (and arguably more serious) finding than the
+   sheet describes; the intended path still works. Two ways to reconcile:
+   (a) tighten the VM to a scoped `derek ALL=(shatter) …` rule — but the module supports only
+   the boolean, so this needs a custom sudoers entry or a different module (a real SecGen
+   change); or (b) adjust the labsheet wording to say derek is an over-privileged full sudoer
+   and the lesson is that a marketing account should never hold unrestricted sudo. Not changed
+   here — it is a pedagogy/VM-design call for the author.
+
+   Also minor: the VM's `shatter_configuration` text cites `~/DECRYPTION_KEY` (that file is in
+   derek's home, not shatter's), and `deployment_notes` says the archive key is in "shatter's
+   operation_shatter/ directory" (the key is in derek's home; `operation_shatter/` is derek's).
+   Harmless red herrings, but slightly misleading if a player follows them literally.
+
 3. **Field-guide web-address scheme differs between the two environment-definition copies.**
    The canonical copy and the in-mission duplicate use different published-guide URL layouts.
    Left unchanged — which layout is canonical is an author decision.
