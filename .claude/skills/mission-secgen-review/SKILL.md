@@ -165,6 +165,18 @@ Confirm the VM flags are genuinely required and reachable:
 - The crackable account's password is one of the strings the game ships as its wordlist (so
   the brute force succeeds), and no in-game text leaks a per-build secret.
 
+## Optional: rebasing the VM on a known-good scenario
+
+A mission's VM may be **rebased on a known-good SecGen scenario** when that would enhance the
+mission's hands-on play or its fit with the story (see
+`docs/agents/SECGEN_ADAPTABLE_CATALOGUE.md` for the adaptable scenarios and their paths). This
+is a design improvement beyond consistency alignment: adapt the chosen scenario's
+systems/modules into the mission's canonical SecGen XML and re-align every game reference to
+the new VM. Match by the skill the mission should teach and its `mission.json` CyBOK mapping,
+not title flavour. Only rebase when it clearly improves the mission; if the current VM is a
+good fit, keep it and just align. A full rebase is a flagged design decision — record the
+before/after and the reasoning in the review, and still never build a VM.
+
 ## Which layer wins
 
 - **Technical values → SecGen is canonical.** Server name, IP, accounts, file paths, flag

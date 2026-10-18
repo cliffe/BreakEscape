@@ -43,6 +43,13 @@ standard (see `AGENTS.md`).
   rule — if a labsheet/field guide teaches a scoped misconfiguration, that is a pedagogy
   mismatch to flag, not silently "fix".
 
+## Optional VM rebasing
+A mission's VM may be rebased on a known-good catalogue scenario if it enhances play — see
+`docs/agents/SECGEN_ADAPTABLE_CATALOGUE.md`. This is a design improvement (adapt the chosen
+scenario into the mission's canonical SecGen XML and re-align all game references), a flagged
+decision to record with reasoning. Only when it clearly improves the mission; otherwise keep
+the current VM and just align. Never build a VM.
+
 ## Baseline reference
 `m01_first_contact` has been through this review and is known working. Read
 `scenarios/m01_first_contact/scenario.json.erb` (flags block, vm-launcher, flag-station,
