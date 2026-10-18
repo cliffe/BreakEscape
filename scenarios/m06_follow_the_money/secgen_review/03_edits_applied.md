@@ -109,3 +109,10 @@ Changes:
 Needs an author VM build to confirm: Druid provisions on the Debian 9 base and lands a shell as
 an unprivileged service account that can read the world-readable shadow file (eventful_data runs
 it on Debian 12 — the Bookworm-tested evidence; the Debian 9 base is unverified here).
+
+### Debian 12 base (2026-10-18)
+m06's backend base moved Debian 9 → Debian 12 in the canonical SecGen XML, matching the live
+Druid scenario (Eventful Data runs `apache_druid_rce` on Debian 12). This resolves the earlier
+"Druid on Debian 9 unverified" caveat. Account hashes are SHA-512 via `parameterised_accounts`
+regardless of distro, so the offline-cracking lesson is unchanged. (Still needs an author build
+to confirm end to end, like every mission here.)
