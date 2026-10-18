@@ -135,3 +135,80 @@ No shared-file change to report for m07.
 
 ### Verdict (Round 2)
 No edits applied this round. Round 1 holds; validator re-run clean (only the pre-existing timed-text spacing WARNING on `agent_0x99` and the conditional music-credit SUGGESTions, unrelated to SecGen wiring). KEEP the VM. No author VM build item beyond the standing "a real build-and-solve is a separate VM task" note.
+
+---
+
+## Round 3 (2026-10-18) — VM↔mission integration quality (Step 4b)
+
+Traced the four VM challenge/flag nodes through `dungeon_graph.md` and scored the six Step 4b
+checks against the m01 benchmark.
+
+### The VM on the critical path (from the graph)
+`vm_access_terminal` sits in `server_room` (behind the RFID lock) → `vmch_recover_coordination_traffic`
+→ flag1 → (soft) `vmch_intercept_c2_channel` → flag2 → `door_scada_control`; flag2 → `vmch_escalate_on_attack_host`
+→ flag3; flag3 → `vmch_terminate_cascade_scripts` → flag4 → `lock_crisis_control_system` → `aim_end_the_sequence`.
+Every flag feeds a downstream in-game unlock, and the final flag opens the win object. The VM is the spine
+of the critical path, not a side-room.
+
+### Six checks
+
+1. **Motivation — OK.** The target host is named and justified in-fiction in the same room as the launcher:
+   `scada_backup_server` observation (`scenario.json.erb:1993`) — "the host driving the cascade… its NFS
+   export is world-readable… You reach it from the VM terminal." The NFS entry technique is surfaced there;
+   HaX also names it (`ink/m07_phone_agent_0x99.ink:360`, "Their host has an NFS share open to anyone"). The
+   credentials are *earned by the chain itself* (flag 1 → username, flag 2 → operator password via the netcat
+   listener capture at `:1981`), not handed over as a wordlist from nowhere — tighter than m01's found note.
+   The netcat listener is found by recon (HaX's `vm2` hint + the recon/NFS field guides), which is legitimate
+   active recon rather than thin air. The SCADA door password itself is delivered diegetically inside the
+   listener capture (`:1981`).
+
+2. **Gating — OK.** The launcher is in `server_room`, reached only through the RFID-locked
+   `door_server_room`, which has three gated routes on the graph (Ray Hollis's badge; the printed contractor
+   badge behind the badge-station PIN from the shift handover sheet; or the optional RFID cloner). Server hall
+   is itself reached via `operations_floor` from the checkpoint. No terminal in the start area.
+
+3. **Diegetic attacker box — OK (reworded this round).** The launcher is placed in the server hall and framed
+   as the agent's own working machine; HaX calls it "the Kali box in the server hall… your way onto their
+   network" (`ink/m07_phone_agent_0x99.ink:358`). Provenance was previously left implicit (the one spot
+   thinner than m01's "Kevin set it up for the audit"). Fixed mission-locally by rewording the launcher
+   observation (`scenario.json.erb:1904`) so the agent is stated to have set it onto the maintenance VLAN —
+   see the edit below. No ink change needed; the ink was already consistent with agent ownership.
+
+4. **Flag payoff — OK.** Every flag triggers a concrete story beat, not a scoreboard tick:
+   - flag 1 → `give_item` the Coordination Schedule decode (`flagRewards[0]`, `:1933`; item at `:1960`),
+     which drives the team-redirect decision (`deduce_schedule`) and reveals the Portland site notes / vault rule.
+   - flag 2 → `give_item` the Listener Capture (`:1938`; item at `:1976`) carrying the operator password **and**
+     the SCADA control-room door code; `puzzle_graph_unlocks: scada_control` (`:1918`) — the redundant route past
+     Elena.
+   - flag 3 → `set_global flag3_submitted` (`:1943`) which arms the cascade, starts the visible 15-minute
+     countdown and closes the team-redirect window (`:1013–1025`), and cues an Architect comms line — the
+     mission's biggest beat.
+   - flag 4 → `unlock_object crisis_control_system` (`:1952`), the flag-locked win object.
+
+5. **Requiredness & pacing — OK.** `concludeRequires.tasksCompleted` gates the ending on all four flag tasks
+   (`:590+`), so the VM cannot be skipped. Field guides are offered at the beat each challenge appears, not all
+   up front: recon + NFS guides unlock on first VM-terminal use (`:1272`), the SSH guide on the flag-2 /
+   password beat (`:940,947`), the privesc guide on flag 3 (`:1278–1280`, reinforced by HaX's "Privesc guide's
+   yours if you want it" at `:1017`). RFID/lockpicking guides gate on their own physical beats (`:1256,1264`).
+
+6. **Graph coherence — OK.** On the integrated graph the VM challenge/flag nodes sit on the amber critical
+   path with their in-game prerequisites feeding in (RFID-locked server hall → launcher) and their story
+   unlocks hanging off (flag2 → `door_scada_control`; flag4 → `lock_crisis_control_system` → `aim_end_the_sequence`).
+   No floating VM node.
+
+### Mission-local fix applied
+- `scenario.json.erb:1904` — VM launcher `observations`: "A Kali box on the maintenance VLAN -- your working
+  machine…" → "The Kali box you set up here on the maintenance VLAN -- your working machine…". Makes the
+  attacker box's provenance explicit (check 3), matching the m01 bar. Cosmetic/narrative only; validator clean.
+
+### Author-sized gaps
+None. m07's VM is woven into the mission to the m01 standard — all six checks OK. No new puzzle/room/story
+beat is needed; no `mission-puzzle-chains` referral warranted for integration.
+
+### Shared files
+No shared-file (SecGen module / shared field guide) change needed for Round 3.
+
+### Verification (Round 3)
+`ruby scripts/validate_scenario.rb scenarios/m07_architects_gambit/scenario.json.erb` — no errors; dungeon
+graph regenerated. Only the pre-existing timed-text spacing WARNING on `agent_0x99` and the conditional
+music-credit SUGGESTIONS remain, both unrelated to the VM/integration. No ink changed, so no recompile needed.
