@@ -63,3 +63,38 @@ No ink was changed. No SecGen XML change was required.
 - **Note (no action):** `scenarios/m03_ghost_in_the_machine/SECGEN_PROPOSED_m03_ghost_in_the_machine.xml`
   is a stale design proposal superseded by the canonical SecGen XML; it is not a wired artifact.
   Author may delete it; not touched here.
+
+---
+
+## Round 2 (2026-10-18)
+
+### Edits applied
+**None.** Round 1's two fixes (`secgen_scenario` path; `vm_object('attack_vm')` launcher)
+were re-verified from source and hold. No regression, no omission, no pedagogy defect that
+needed a change. No BreakEscape file, no SecGen XML, no labsheet was edited this round.
+
+### Rebase decision
+**KEEP** the current canonical VM (`break_escape/safetynet/m03_ghost_in_the_machine.xml`). It
+is a bespoke build matching the mission CyBOK (NS/MAT/AC/F/SS) and carrying the story's own
+flag content; no catalogue scenario improves hands-on fit. Rationale in 01_technical_review.md
+§Round 2.3.
+
+### Verification
+- `ruby scripts/validate_scenario.rb scenarios/m03_ghost_in_the_machine/scenario.json.erb --skip-ink --no-graph`
+  → `Schema validation passed`, `Validation complete`. Only the pre-existing warnings
+  (two reception_lobby NPCs without `behavior`; one spriteVisemes suggestion;
+  two exec_wing cutscene onceOnly notes) — unchanged from HEAD.
+- No ink changed → compile-ink not run.
+- Module paths all resolve under `SecGen/modules/`; `leak_files` owner/mode defaults confirmed.
+
+### Open / needs author decision / shared-file changes
+- **Shared field guides:** none need changing for m03. The shared SAFETYNET guides
+  (distcc, proftpd, reconnaissance, rfid) agree with the VM. **Nothing for the orchestrator.**
+- **Author decision (unchanged from R1, cosmetic):** labsheet.md:535-540 generic
+  `nmap -sV 192.168.56.0/24` "scan a VM you own" exercise (not the mission net 192.168.100.0/24);
+  deliberately generic with a legal warning — left as-is, not a mismatch. And `mission.json:8`
+  lab_sheet_url hyphen/underscore slug — cosmetic, not a VM value.
+- **Needs an author VM build to confirm (out of scope):** that the ProFTPD root backdoor and
+  distcc RCE provision and run as reasoned (static review only).
+- **Stale artifact (no action):** `SECGEN_PROPOSED_m03_ghost_in_the_machine.xml` in the mission
+  dir is a pre-canonical proposal, wired nowhere; author may delete.

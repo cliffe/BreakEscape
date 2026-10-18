@@ -25,3 +25,21 @@ Two systems: `attack_vm` (Kali/MSF attacker console) and `ghost_in_machine_vm_ne
 Per-build values (legitimately absent from source): all four flag strings, the server
 root password, the cleanup/spoiler passwords. Marked present via `flag_generator` /
 `strong_password_generator`, not "missing".
+
+---
+
+## Round 2 (2026-10-18)
+
+Re-verified every row against the canonical SecGen XML and the referenced modules. No change
+to the matrix: every technical value still matches, the two Round-1 "fixed" rows remain
+correctly aligned in `mission.json` / `scenario.json.erb`. Additional source confirmations:
+
+| Value | Break Escape | SecGen VM / module | Status |
+|---|---|---|---|
+| Flag 2 ownership/mode | gated FTP flag | `/root`, root:root, 0600 (`leak_files` default owner + explicit `mode=0600`) | match, root-gated |
+| Flag 4 ownership/mode | gated distcc flag | `/home/distccd` (dir 0750 distccd), file distccd 0600 | match, distccd-gated |
+| Target account privilege | n/a | `student` `super_user:false`; no sudo privesc taught | match (no pedagogy mismatch) |
+| Attacker account | n/a | `kali` `super_user:true` (attacker console) | match |
+| Rebase | n/a | KEEP — bespoke VM already matches CyBOK + story | n/a |
+
+No new mismatch, no missing value. Per-build strings unchanged.

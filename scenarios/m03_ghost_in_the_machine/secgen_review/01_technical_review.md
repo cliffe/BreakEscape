@@ -90,3 +90,35 @@ the smallest possible value changes. Every other layer — flag count/order, fla
 gating, targetFlags form, flag→global bridging, the ending gate — already agrees with the VM.
 The mission is consistent and solvable end to end against the canonical SecGen scenario,
 pending a real VM build-and-solve (a separate task, out of scope here).
+
+---
+
+## Round 2 (2026-10-18)
+
+Fresh independent pass. Re-derived every value from source; did not assume Round 1.
+
+### 1. Round-1 fixes confirmed (all held)
+- **`secgen_scenario`** = `break_escape/safetynet/m03_ghost_in_the_machine.xml` (`mission.json:5`). Correct XML-path form.
+- **`vm_object`** = `vm_object('attack_vm', {…"title":"attack_vm","ip":"192.168.100.2"…})` (`scenario.json.erb:1538`). Opens the Kali attacker console (`system_name=attack_vm`, IP_addresses[0]=.2), not the flag-owning target. Correct.
+- **Flag host key** `vm_flags_json('ghost_in_machine_vm_network', …)` (:83) and flag-station `acceptsVms:["ghost_in_machine_vm_network"]` (:1556) — keyed on the flag-owning `system_name`. Correct.
+- **`targetFlags`** all four display-form `flag_station_dropsite:ghost_in_machine_vm_network-flagN` (:273/284/295/306). Match the game.rb matcher.
+- **Flag→global bridge** — the four `flag_*_submitted` globals are set by `objective_task_completed:submit_*_flag` mappings (:976-998), initialised false (:1921-1924). The confrontation (:1006-1028) and ending read them. Chain complete.
+- **`concludeRequires`** = all four submit-flag tasks (:452-457). VM cannot be skipped.
+- Nothing regressed; nothing was missed in Round 1.
+
+### 2. Module behaviour re-confirmed at source (grounds solvability)
+- `secgen_functions::leak_files` default `owner='root', group='root'` (code_examples/.../leak_files.pp:1).
+- **Flag 2** proftpd `/root` leak block sets `mode=0600`, no owner → root:root. Genuinely behind the unauthenticated root backdoor RCE.
+- **Flag 4** distcc leak → `/home/distccd` (dir 0750 owner distccd), file owner distccd mode 0600. Genuinely behind the distcc_exec RCE (runs as distccd).
+- **Flag 1** `scan_flag` (one generator) rendered into the FTP AccessGrantMsg and the web index source — reachable by recon, as intended.
+- **Flag 3** ROT13 price list in the web page source — decode challenge, reachable.
+- `module_path` targets all resolve: `proftpd_133c_backdoor` (not the `_nonroot` sibling), `distcc_exec`, `services/unix/http/parameterised_website`, `utilities/unix/system/parameterised_accounts`.
+
+### 3. Rebase decision — KEEP (no rebase)
+The canonical VM is a bespoke build matched tightly to the mission's `mission.json` CyBOK and story: NS (nmap recon / banners), MAT (ProFTPD 1.3.3c source backdoor + distcc CVE-2004-2687), AC/F (ROT13 decode), SS (legacy-service vulns). Its leaked content *is* the narrative payload (invoice ZDS-2024-0847, St. Catherine's, Sable sign-off) that ties m03 back to m02. No catalogue scenario in `SECGEN_ADAPTABLE_CATALOGUE.md` fits the three-technique recon→backdoor→RCE arc or the story as well, and rebasing would throw away the story-integrated flag content for no gain in hands-on value. Clear KEEP; deepened the review instead.
+
+### 4. Pedagogy / VM-design — reviewed, no fix required
+- No scoped-vs-full sudo mismatch: the target account `student` is `super_user:false` and the mission teaches RCE (backdoor + distcc), not a sudo privesc; no guide teaches a scoped sudo rule. (`kali` on the attacker box is `super_user:true`, correct for an attacker console.)
+- Both escalation-reward flags (2, 4) are genuinely gated by file ownership/permissions behind their RCEs — escalation is real, not hollow.
+- No per-build secret is printed in any in-game text or the labsheet.
+No change was warranted; recorded rather than invented.
