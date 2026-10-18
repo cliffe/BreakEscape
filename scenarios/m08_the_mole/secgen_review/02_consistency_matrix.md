@@ -27,3 +27,23 @@ legitimately absent from source. Status reflects state **after** the fixes in `0
 No mismatches remain. The only not-fully-confirmable item is the within-`gitlist_040` emit
 order of flags 1 vs 2 (both from one module), which a build would confirm; the game's labels
 assume recon-then-creds, matching the XML document order of the inputs.
+
+## Round 2 (2026-10-18)
+
+Re-ran the matrix against the current files. No row changed status — every value still
+matches, including the Round 1 fixes (`secgen_scenario` path, fallback IP 172.16.0.3). The
+flag1-vs-flag2 order row is now resolved on static grounds: SecGen numbers `flag_generator`
+outputs in XML document order, and `strings_to_pre_leak` (recon) precedes `strings_to_leak`
+(creds), so flag1=recon / flag2=creds as the game assumes. A build would be final confirmation
+but is not required.
+
+New rows confirmed this pass:
+
+| Value | Break Escape scenario | SecGen VM / field guide | Status |
+|---|---|---|---|
+| Sudo rule scope | `escalate_to_root` (flag4) | `ALL ALL=(root) NOPASSWD: /usr/bin/apt-get *` (scoped, not full sudo) | match |
+| Privesc technique taught | privilege-escalation guide | `sudo -l` → apt-get GTFOBins (guide lines 219-221) | match |
+| Ops account privilege | login then escalate | `super_user:false`; apt-get rule is the only escalation path | match |
+| flag4 leak path | "cached under root" | `sudo_root_apt_get` → `/root` 0600 root-owned (filename build-time) | match (build-confirm) |
+
+No mismatches. No rebase (VM kept). No pedagogy change (lesson already true).

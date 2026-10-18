@@ -46,3 +46,42 @@ for the story). No ink changed, so no recompile. No shared files edited.
 None. No SecGen module under `modules/` and no cross-mission field guide needs a change: the
 VM is internally consistent, the referenced technique guides are generic and name no stale
 m08 value, and there is no in-mission `secgen/` copy to reconcile.
+
+## Round 2 (2026-10-18)
+
+**No edits applied this pass.** Round 2 confirmed the Round 1 fixes held, decided to keep the
+VM (no rebase), and found the pedagogy already sound — so there was nothing to change in any
+repo.
+
+### Confirmation
+- `secgen_scenario` path, `vm_object('attack_vm')`→Kali, flag-host key, display-form
+  `targetFlags`, flag→global bridge and `concludeRequires` (four flag tasks) all still correct.
+- Round-1 open item (flag1 vs flag2 emit order) resolved statically: document order gives
+  flag1=recon, flag2=creds, matching the game. See `01_technical_review.md` Round 2.
+
+### Rebase decision
+KEEP. The bespoke VM is a superset of `ctf/git_dejavu` with story-tailored flag payloads and
+full CyBOK coverage; no catalogue scenario improves the finale. Rationale in
+`01_technical_review.md`.
+
+### Pedagogy
+No fix needed. The sudo rule is genuinely scoped (`apt-get` GTFOBins), not full sudo, and the
+shared `privilege-escalation.md` guide teaches apt-get GTFOBins to match. flag3 (user) and
+flag4 (root) are each behind a real step. No VM or teaching edit improves the lesson.
+
+### Verification (this pass)
+- `ruby scripts/validate_scenario.rb scenarios/m08_the_mole/scenario.json.erb --skip-ink
+  --no-graph` — no errors; same pre-existing SUGGESTION/WARNING/GOOD-PRACTICE notes as Round 1
+  (credits conditional-fallback suggestions, PC-container suggestion, one cutscene onceOnly
+  warning), none SecGen-related.
+- No ink changed → no `compile-ink` needed. No SecGen XML changed.
+- All module paths referenced by the canonical XML still exist under SecGen `modules/`.
+
+### Shared-file changes for the orchestrator
+None. The `privilege-escalation.md` field guide already agrees with the VM — no change
+requested. No SecGen module under `modules/` needs editing.
+
+### Needs an author VM build (optional confirmation only)
+- flag1-vs-flag2 emit order (document-order reasoning is high-confidence).
+- flag4's exact `/root` filename under `sudo_root_apt_get` with `strings_to_leak`-only input
+  (matches known-good `ctf/git_dejavu`, so expected to work).

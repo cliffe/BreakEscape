@@ -88,3 +88,81 @@ missions; none hard-codes an m08 account, path or IP, so there is nothing stale 
 no m08-specific guide to edit. The XML `lab_sheet_url`
 (`.../labs/safetynet/scanning-and-exploitation/`) resolves to an existing guide. No field-guide
 changes required or made.
+
+## Round 2 (2026-10-18)
+
+A fresh independent pass. Confirm the Round 1 fixes, decide keep-vs-rebase, apply pedagogy
+fixes with judgement. No VM built or booted. Finale: story fit carries extra weight.
+
+### Round 1 confirmation — all held
+
+- `secgen_scenario` = `break_escape/safetynet/m08_the_mole.xml` (mission.json:5). Correct path.
+- `vm_object('attack_vm', {title:"kali", ip:"172.16.0.3", …})` (scenario.json.erb:1837) opens
+  the **Kali attacker** console (`attack_vm` is the Kali `system_name`), not the gitlist
+  target. Fallback IP 172.16.0.3 on the target's 172.16.0.x net. Correct.
+- `vm_flags_json('safetynet_gitlist_server', …)` (:144) and `flags_for_vm(...)` /
+  `acceptsVms:["safetynet_gitlist_server"]` (:1846-1847) keyed by the flag-owning host. Correct.
+- `targetFlags` — all four tasks use the matching display form
+  `flag_station_evidence_relay:safetynet_gitlist_server-flagN` (:432, :442, :462, :472). Correct.
+- flag→global bridge: station `flagRewards` set `flag1..4_submitted` (:1857-1860); `agent_0x99`
+  eventMappings on `global_variable_changed:flagN_submitted` set the narrative globals
+  (`found_gitlist_vuln`, `found_leaked_creds`, `found_architect_comms`, `found_access_logs`);
+  a per-flag mapping latches `all_flags_submitted` once all four booleans hold (:1328-1332).
+  Every story/ink gate behind these has an explicit `setGlobal`. Chain complete.
+- `concludeRequires.tasksCompleted` = the four flag tasks (:525-532). The VM cannot be skipped.
+
+Nothing regressed; nothing was missed in Round 1.
+
+### Flag 1 vs 2 emit order — resolved statically (Round 1 open item)
+
+SecGen assigns `flag_generator` numbers in XML **document order** at datastore-resolution
+time. In the canonical XML the `strings_to_pre_leak` input (recon / repository exposure)
+precedes the `strings_to_leak` input (stashed credentials), so flag1=recon, flag2=creds —
+exactly the game's mapping (`found_gitlist_vuln`, `found_leaked_creds`). The within-module
+`configure.pp` processing order (flag-leak before file-leak) is about *where* each string
+lands, not flag numbering, so it does not change the assignment. Confidence is high on static
+grounds; a build-and-solve would be final confirmation but is not required to proceed.
+
+### Rebase decision — KEEP (no rebase)
+
+The current VM is bespoke and a strict superset of the closest catalogue scenario
+(`ctf/git_dejavu` = git-committed secrets + `sudo_root_apt_get`). It chains GitList 0.4.0
+argument-injection RCE (CVE-2018-1000533, no auth) → repository-committed credentials → SSH
+login as the mole's ops account → `sudo apt-get` GTFOBins privesc → root-only access logs and
+The Architect's authorisation. That covers the full `mission.json` CyBOK map — WAM (injection),
+SS (CVE + hard-coded password), NS/AAA (SSH + auth), SOIM (pentest/vuln analysis), OSV (privesc),
+F (audit trail), C (base64/concatenate-encoded correspondence), AB (insider threat) — and the
+flag payloads are story-tailored (the ENTROPY correspondence to `architect@entropy.onion`, the
+root authorisation naming NIGHTSHADE/Agent 0x47 and the two casualties). No stock catalogue
+scenario matches the finale's story or improves the kill chain; rebasing would strip the
+bespoke narrative and reduce fit. Default-to-keep bar from the brief is not cleared. **Keep.**
+
+### Pedagogy / VM design — reviewed, no fix needed (lesson is already true)
+
+The brief flagged the apt-get `/root` sudo rule scope vs the taught lesson as a candidate fix.
+It is not a mismatch here:
+
+- `sudo_root_apt_get/manifests/config.pp` grants a genuinely **scoped** rule
+  `ALL ALL=(root) NOPASSWD: /usr/bin/apt-get *` (plus `sudo -l`), not a full `super_user`
+  `ALL=(ALL) ALL`. The ops account is `super_user:false`, so this rule is the *only* escalation
+  path and it is a real GTFOBins misconfiguration.
+- The shared `privilege-escalation.md` field guide teaches exactly this: `sudo -l` → GTFOBins,
+  with explicit apt-get shell escapes (lines 219-221). VM and teaching agree.
+- flag3 (user access) sits in the ops account's own `/home/<ops>/` at 0600, readable only
+  **after** the SSH login with recovered creds — correctly a user-access flag, not a hollow
+  escalation reward. flag4 (root) sits in `/root` at 0600 root-owned — genuinely behind the
+  sudo escalation. The committed credential (`random_sanitised_word` min 6) is the ops account's
+  actual password via the shared `password` datastore, so recon→creds→login is a real chain and
+  no cracking is needed (matches the SS "HARD-CODED PASSWORD" keyword). No per-build secret is
+  printed in-game.
+
+No VM edit and no teaching-text edit improve the lesson; it is sound. (Had it granted full
+sudo while the guide taught scoping, the brief's fix would apply — it does not here.)
+
+### flag4 leak shape — build-confirm note (not a defect)
+
+The canonical XML passes flag4 to `sudo_root_apt_get` as `strings_to_leak` only, with no
+`leaked_filenames`. This is the **identical input shape** used by the known-good catalogue
+scenario `ctf/git_dejavu.xml`, so the module leaks the flag into `/root` as designed; the exact
+filename is build-time. Left as-is (matches a live scenario). A build-and-solve would confirm
+the resulting `/root` filename, but no change is warranted statically.
