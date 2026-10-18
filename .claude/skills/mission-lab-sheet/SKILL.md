@@ -169,12 +169,12 @@ Apply `HacktivityLabSheets/_labs/example_highlighting_guide.md`, with these proj
 
 ## Step 5: Publish
 
-1. The source is `scenarios/<mission>/labsheet.md` in BreakEscape.
-2. Copy it, byte-identical, to `HacktivityLabSheets/_labs/<category>/<file>.md` and confirm with `cmp`. Check whether a published copy already exists (`grep -rl` the title) and overwrite that one rather than making a second.
+1. **The sheet lives only in HacktivityLabSheets** (as of 2026-10-18 the old `scenarios/<mission>/labsheet.md` mirror in BreakEscape was removed, so there is nothing to keep in sync). Edit `HacktivityLabSheets/_labs/<category>/<file>.md` directly; for a new mission create it there. Check whether a sheet already exists for this mission (`grep -rl` the title) and edit that one rather than making a second. There is no byte-identical BreakEscape copy, so no `cmp` step.
 3. The published URL is `https://cliffe.github.io/HacktivityLabSheets/labs/<category>/<slug>/`, where `<slug>` is the file name without `.md`, with `_` turned into `-`, lower case. (Pages with an explicit `permalink:` use that instead.)
 4. Set `"lab_sheet_url"` in `scenarios/<mission>/mission.json`, inserted after `"collection"` with a one-line edit (do not rewrite the file through a JSON serialiser: it reflows the arrays). Validate with `python3 -m json.tool`.
 5. Hacktivity copies the mission's `lab_sheet_url` onto a new game slot whose own field is blank. Existing slots need the URL set by hand; say so in the hand-off.
-6. **Companion (VM missions):** publish `labsheet_vm_steps.md` the same way, to the same `<category>`, as its own file (slug e.g. `<mission>-vm-technical-steps`), `cmp`-identical. `mission.json`'s `lab_sheet_url` stays pointed at the **main** sheet (the walkthrough Hacktivity shows); the companion is reached only via the link inside the main sheet. Make the main sheet's link to it the companion's published URL (`https://cliffe.github.io/HacktivityLabSheets/labs/<category>/<companion-slug>/`) so it resolves on the Pages site, not just the relative repo path.
+6. **Companion (VM missions):** the companion also lives only in HacktivityLabSheets, as its own file in the same `<category>` (slug e.g. `<mission>-vm-technical-steps`). `mission.json`'s `lab_sheet_url` stays pointed at the **main** sheet (the walkthrough Hacktivity shows); the companion is reached only via the link inside the main sheet. Make the main sheet's link to it the companion's published URL (`https://cliffe.github.io/HacktivityLabSheets/labs/<category>/<companion-slug>/`) so it resolves on the Pages site, not just the relative repo path.
+7. **Screenshots (game sheets only):** playtest screenshots live under `HacktivityLabSheets/assets/images/<category>/<sheet-basename>/` and are referenced from the sheet as `![caption]({{ site.baseurl }}/assets/images/<category>/<sheet>/<file>.png)`. Capture them with the playtest bridge (no VM stages needed; pass the VM gate with the `session` flag policy to reach finale frames). Keep them out of the VM companion.
 
 ## Step 6: Verify
 
@@ -184,7 +184,7 @@ Apply `HacktivityLabSheets/_labs/example_highlighting_guide.md`, with these proj
 - `grep -nE '^> [A-Za-z ]+: [a-z\`]'` returns nothing (capital after labels).
 - `grep -niwE 'delve|intricate|tapestry|pivotal|underscore|landscape|foster|enhance|crucial|robust|profound'` returns nothing outside technical uses.
 - No real answer, PIN, key or flag appears anywhere (in **either** file).
-- The published copy `cmp`s identical; `mission.json` validates.
+- `mission.json` validates (`python3 -m json.tool`).
 - VM missions (strict split): the main sheet holds **no** server/VM content at all — no VM
   concepts, attack commands, hint stages, shell practice or server reflection questions; grep
   the game sheet for the mission's tool names, target username/IP and service terms and expect
