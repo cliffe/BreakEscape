@@ -22,13 +22,13 @@ Break Escape hosts more than one kind of game. Settle which kind you're working 
 
 - **SAFETYNET campaign missions (m01–m08):** a spy thriller.
   - The aim is a fun game with well-written dialogue in the style of a TV spy thriller: tension, secrets, characters with their own agendas, sharp exchanges and reveals that land. Agent HaX is the handler, ENTROPY the enemy.
-  - Each mission requires its practice VM to finish; the VM tasks are woven into the story, and what the game says about the VM must match its SecGen definition (`scenarios/break_escape/safetynet/<mission>.xml`).
-  - Equipment carries over between missions. Physical confrontations are allowed.
+  - The VM flags are required to complete each mission. They are woven into the story, and what the game says about the VMs must match SecGen (`scenarios/break_escape/safetynet/<mission>.xml` in the SecGen repo).
+  - Kit is cumulative across missions. Combat is allowed.
   - The learning comes through the hands-on VM work and the linked field guides, not through lecturing in the dialogue.
 - **Security-Informed Safety serious games (sis01–sis03):** education first.
   - They are CyBOK games on risk management, safety cases, incident response and the sector's regulation, played standalone, sometimes by student teams.
   - The aim is decisions that are genuinely arguable, professional voices that sound like the real job, facts that match the scenario's `information_pack.md`, and a debrief and lab sheet that give students something to reflect on.
-  - There are no VMs, no spy framing and no physical confrontation (`"disableAttacks": true`).
+  - There are no VMs, no spy framing and no combat (`"disableAttacks": true`).
   - See `docs/agents/SIS_IMPROVEMENT_PLAYBOOK.md`.
 - **Lab, demo and test scenarios** (`lab_*`, `crypto*`, `test*`, demos): small scenarios built around one lab topic or one engine feature. Keep them short and focused on that one thing. If a task needs their aims settled, ask the user, because they aren't written down yet.
 
@@ -47,7 +47,7 @@ Most work here is iterative, and there is more than one loop. Decide which stage
 Use this to bring a playable mission up to standard. m03 was the first full run (`docs/agents/M03_IMPROVEMENT_PROMPT.md` is the reusable orchestrator prompt; `scenarios/m03_ghost_in_the_machine/IMPROVEMENT_LOOP_LOG.md` is the model log). m02 and sis02 went through the same stages.
 
 1. **Alignment** (`mission-alignment-plan`): music, aims and objective staging, HaX's progress-gated hub, stakes and moral choices, rooms, canon with the missions either side.
-2. **Puzzle chains** (`mission-puzzle-chains`): chain depth, lock order, cumulative kit, whether choices are required, the silent-failure engine bugs, the VM tasks woven in.
+2. **Puzzle chains** (`mission-puzzle-chains`): chain depth, lock order, cumulative kit, whether choices are required, the silent-failure engine bugs, VM flags woven in.
 3. **Scenario design** (`scenario-design-review`): solvability, clue distribution, CyBOK coverage, objective scaffolding, "does the player always know what to do next?".
 4. **Dialogue** (`npc-dialog-review`): the writing against the aim for the kind of game, and the ink structure. Snapshot the ink first so `tagdiff --old` proves what changed, and keep a list of spoken lines changed (old → new), because re-voicing costs money.
 5. **Playtests** (`playtest-scenario`, "The improvement loop"): Sonnet runs of 10–15 minutes with a reload, regression and struggling-player personas, at most 3 rounds, then a **blind playtest** with student materials only, one last fix pass and a targeted check.
@@ -103,7 +103,7 @@ Calibrate first: put the first mission that's ready through the dialogue stage a
 - State scope and limits explicitly: which files it may edit, which it must not (other missions, finished missions, `.claude/skills/*`, other repos), and "don't commit".
 - Say what to return: a change list, test results, evidence (file:line, game ids, screenshots), and the questions for the next step.
 - Ask for plans and long documents to be written **section by section with Edit**. A whole-file rewrite once got truncated and a plan was lost.
-- Keep prose at game-design level. Refer to sensitive in-game figures and technical lab detail by citation rather than restating them, and keep briefs that touch the lab sheets or the VM's technical content short ("carry out approved item L1 in the log"). Long, detailed briefs on those topics have been stopped by content safeguards; where the task is the VM's technical content itself, hand it to the model chosen for that (see "Choosing a model").
+- Keep prose at game-design level. Refer to casualty figures, attack steps and similar detail by citation rather than restating them, and keep briefs that touch the lab sheets or the VM's technical content short ("carry out approved item L1 in the log"). Long, detailed briefs on those topics have been stopped mid-run before; where the task is the VM's technical content itself, hand it to the model chosen for that (see "Choosing a model").
 - When parallel agents touch the same area, split them by file and tell each one to re-read any shared file just before editing it.
 
 ## Making judgements without asking

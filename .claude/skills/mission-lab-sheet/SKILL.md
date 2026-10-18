@@ -104,47 +104,48 @@ The method, the traps, where help is in the game.
 
 ### VM technical steps: a companion file (VM missions only)
 
-For a mission with a VM, **all of the server/VM material** — the technical concepts, the
-step-by-step challenge hints, and any command-line practice — lives in a companion file
+For a mission with a VM, the **step-by-step solution hints** for the server challenges and the
+**command-line practice** exercises live in a companion file
 `scenarios/<mission>/labsheet_vm_steps.md`, linked from the main walkthrough at the point the
-player reaches the server room / VM terminal. The main `labsheet.md` is the **game** sheet
-only: building navigation, locks (PINs, keys, lockpicking), NPCs, the in-game puzzles and
-decoding the player does inside the game, evidence, moral choices, and the finale. The main
-sheet carries **no** server/VM attack content — not even a concept intro for it; that all sits
-in the companion.
+player reaches the server room / VM terminal. Everything else — including the VM concepts —
+stays on the main game sheet.
 
-Why the split (state this to the user):
-- **Spoiler control.** A player follows the game sheet and figures out the server work
-  themselves, opening the companion only when they want the hints.
-- **Keeps the exploit content off a strict-filter model.** The game sheet contains no
-  intrusion detail, so it can be written and reviewed by any model. The companion is the only
-  place the technical steps appear, so whoever handles it can be chosen accordingly (see the
-  authoring note), and the technical steps can be reviewed on their own.
-
-**Authoring split (important).** Write the companion with a model that does not refuse on
-technical security steps; some models reliably refuse when authoring intrusion steps. The
-companion's author reads the mission's own files for the technical facts — it is NOT given
-those specifics second-hand. An orchestrator coordinating this does not need to read, and
-should not restate, the server/VM specifics: it hands the companion job to that author with a
-pointer to the mission, and keeps its own prompt and the game-sheet author's prompt free of
-attack/CVE/tool/technique detail. Verify the companion mechanically (tag counts, `cmp` the
-published copy, grep that no flag-shaped string appears) without reading its prose.
+What stays on the main `labsheet.md`:
+- The whole game walkthrough: building navigation, locks (PINs, keys, lockpicking), NPCs, the
+  in-game puzzles and decoding, evidence, moral choices and the finale.
+- The **VM concepts** — the "what this is" sections that explain the ideas behind the server
+  work (what SSH and online password guessing are, what a Linux shell and filesystem look like,
+  what privilege escalation and sudo are), framed in the mission's story, with short
+  illustrative examples. This is narrative and conceptual teaching, not a solution, and it reads
+  as part of the whole sheet, so it belongs on the game sheet. Naming the tools and showing an
+  illustrative command in a concept is fine. The m01 `labsheet.md` is the benchmark.
+- A pointer where the server hints would be: a `> Note:` after the "Server Room" stage, e.g.
+  "The server work has its own sheet so you can play the rest spoiler-free and tackle it
+  yourself: **[VM Technical Steps](labsheet_vm_steps.md)** — open it when you want the server
+  hints." Link by the companion's published slug on the Hacktivity side (see Publish).
 
 What goes in the companion `labsheet_vm_steps.md`:
 - Its own front matter (same shape as the main sheet; `title` like "<Mission>: VM Technical
   Steps", a `description` noting it is the technical companion, same `license`/`cybok`), and a
   first line linking back to the main walkthrough.
-- The server/VM **concepts** (the short "what this is" intros), the **Stuck? Hints** stages for
-  the VM challenges (the Nudge/Recipe tiers), and the **Try It on the Command Line** section.
-- The same content rules apply here too: **never print a real answer; VM flags are never
-  printed** — the Recipe tier says how to get a value, not the value.
+- The **Stuck? Hints** stages for the VM challenges (the per-stage Nudge and Recipe tiers that
+  walk through solving the mission's own target).
+- The **Try It on the Command Line** practice section.
+- The same content rules apply: **never print a real answer; VM flags are never printed** — the
+  Recipe tier says how to get a value, not the value.
 
-What stays in the main `labsheet.md`:
-- The whole game sheet, and a pointer where the server/VM section would be, e.g. a `> Note:`
-  after the "Server Room" stage: "The server work has its own sheet so you can play the rest
-  spoiler-free and tackle it yourself: **[VM Technical Steps](labsheet_vm_steps.md)** — open it
-  when you want the server hints." Link by the published slug on the Hacktivity side (see
-  Publish).
+Why the split (state this to the user):
+- **Spoiler control.** A player follows the game sheet and the concepts, works the server out
+  themselves, and opens the companion only when they want the step-by-step hints.
+- **Reviewable on its own.** The step-by-step intrusion hints sit in one file, so they can be
+  written and checked separately from the game walkthrough.
+
+**Authoring note.** Write the companion with a model that handles technical security steps
+without refusing; if the orchestrator model refuses on intrusion detail, delegate the companion
+(and the SecGen reads) to one that does not (see `AGENTS.md`). The companion's author reads the
+mission's own files for the technical facts — it is not given those specifics second-hand.
+Either way, verify the companion mechanically (tag counts, `cmp` the published copy, grep that
+no flag-shaped string appears).
 
 Non-VM missions (SIS, lab/demo with no VM) keep everything in the one sheet.
 
