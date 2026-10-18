@@ -22,6 +22,7 @@ import TTSManager from '../../systems/tts-manager.js';
 import { rememberNpcLine, getRememberedNpcLine, reopenContextLine } from './person-chat-reopen.js';
 import { startEventConversation } from './person-chat-event-start.js';
 import { personChatBackgroundFor } from './person-chat-background.js';
+import { isSessionOverlayShowing, onSessionOverlayClosed, whenSessionOverlayClosed } from '../../utils/session-overlay-pause.js';
 
 // Configuration constants for dialogue auto-advance timing
 const DIALOGUE_AUTO_ADVANCE_DELAY = 5000; // Default delay in milliseconds for new dialogue text (5 seconds)
@@ -405,14 +406,29 @@ export class PersonChatMinigame extends MinigameScene {
             if (this.autoAdvanceTimer) {
                 clearTimeout(this.autoAdvanceTimer);
             }
-            // Set new timeout that will call handleContinueButtonClick
-            this.autoAdvanceTimer = setTimeout(() => {
-                if (this.pendingContinueCallback && typeof this.pendingContinueCallback === 'function') {
-                    const callback = this.pendingContinueCallback;
-                    this.pendingContinueCallback = null;
-                    callback();
-                }
-            }, delay);
+            this._releaseOverlayHold?.();
+            this._releaseOverlayHold = null;
+            // Held while the session-resume overlay is up (a reload mid-cutscene): the line
+            // stays on screen, and its full delay starts when Resume closes the overlay.
+            const arm = () => {
+                this.autoAdvanceTimer = setTimeout(() => {
+                    this.autoAdvanceTimer = null;
+                    if (isSessionOverlayShowing()) { hold(); return; }
+                    if (this.pendingContinueCallback && typeof this.pendingContinueCallback === 'function') {
+                        const pending = this.pendingContinueCallback;
+                        this.pendingContinueCallback = null;
+                        pending();
+                    }
+                }, delay);
+            };
+            const hold = () => {
+                this._releaseOverlayHold = onSessionOverlayClosed(() => {
+                    this._releaseOverlayHold = null;
+                    // Skipped if the line was moved on meanwhile (a jump, choices, cleanup)
+                    if (this.pendingContinueCallback === callback && !this.isClickThroughMode) arm();
+                });
+            };
+            if (isSessionOverlayShowing()) hold(); else arm();
         }
     }
     
@@ -1397,6 +1413,9 @@ export class PersonChatMinigame extends MinigameScene {
                 : (block.speaker && block.speaker !== 'player' && !isOwnNpcByName && parsedSpeaker?.voice
                     ? block.speaker
                     : this.npcId);
+            // Voice starts when the session-resume overlay closes, not under it
+            await whenSessionOverlayClosed();
+            if (!this.ttsManager) return;
             const audioDuration = await this.ttsManager.play(ttsSpeakerId, ttsText);
             if (audioDuration && audioDuration > 0) {
                 // Use audio duration + buffer as advance delay
@@ -1514,9 +1533,10 @@ export class PersonChatMinigame extends MinigameScene {
     showConversationOverMessage(message) {
         this.ui.showDialogue(message, 'system');
         if (this.params.disableClose === true) {
-            setTimeout(() => {
+            // Not under the session-resume overlay: the closing line stays up until Resume
+            whenSessionOverlayClosed().then(() => setTimeout(() => {
                 if (this.gameState.isActive) this.complete(true);
-            }, 2000);
+            }, 2000));
         }
     }
     
@@ -1625,6 +1645,10 @@ export class PersonChatMinigame extends MinigameScene {
      * This is called by the base class before the minigame is removed
      */
     cleanup() {
+        // Drop an auto-advance held for the session-resume overlay
+        this._releaseOverlayHold?.();
+        this._releaseOverlayHold = null;
+
         // Stop and destroy TTS
         if (this.ttsManager) {
             this.ttsManager.stop();

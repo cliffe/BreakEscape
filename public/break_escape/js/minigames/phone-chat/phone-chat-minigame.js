@@ -15,6 +15,7 @@ import InkEngine from '../../systems/ink/ink-engine.js';
 import { processGameActionTags } from '../helpers/chat-helpers.js';
 import { classifyPhoneLine, displayPhoneLine, phoneStepLines } from './phone-chat-speaker.js';
 import { choiceIndexFromKey } from './phone-chat-choices.js';
+import { whenSessionOverlayClosed } from '../../utils/session-overlay-pause.js';
 
 export class PhoneChatMinigame extends MinigameScene {
     /**
@@ -731,6 +732,9 @@ export class PhoneChatMinigame extends MinigameScene {
         const stillOurs = () => this.isConversationActive && run === this._typeoutRun;
         // Tags are processed before the typeout, and one can close the phone (a
         // cutscene's set_global): nothing left to type into (m06 N-6-1)
+        if (!stillOurs()) return false;
+        // Nothing types out under the session-resume overlay; it carries on after Resume
+        await whenSessionOverlayClosed();
         if (!stillOurs()) return false;
         const line = classifyPhoneLine('npc', raw.trim());
         if (line.type === 'npc') {

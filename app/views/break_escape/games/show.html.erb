@@ -333,6 +333,9 @@
       var overlay = document.getElementById('session-resume-overlay');
       var newSessionBtn = document.getElementById('session-new-btn');
       overlay.style.display = 'flex';
+      // Timed dialogue (person-chat auto-advance, its voice, phone typing) waits while this
+      // is set, and carries on at the close event (utils/session-overlay-pause.js).
+      window.breakEscapeSessionOverlayShowing = true;
 
       // Keys: Enter resumes, nothing else gets through to the title screen or the game
       // (ui/session-resume-keys.js). Clicks still work on every button.
@@ -373,6 +376,8 @@
 
       document.getElementById('session-resume-btn').addEventListener('click', function() {
         overlay.style.display = 'none';
+        window.breakEscapeSessionOverlayShowing = false;
+        window.dispatchEvent(new Event('break-escape:session-overlay-closed'));
       });
 
       document.getElementById('session-restart-btn').addEventListener('click', function() {
