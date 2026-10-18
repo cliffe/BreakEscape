@@ -122,3 +122,75 @@ The canonical VM is a bespoke build matched tightly to the mission's `mission.js
 - Both escalation-reward flags (2, 4) are genuinely gated by file ownership/permissions behind their RCEs — escalation is real, not hollow.
 - No per-build secret is printed in any in-game text or the labsheet.
 No change was warranted; recorded rather than invented.
+
+---
+
+## Round 3 — integration (2026-10-18)
+
+Step 4b: is the VM woven into the mission or bolted on? Traced the VM challenge/flag nodes
+through `dungeon_graph.md` and scored the six checks against the m01 benchmark. HIGH effort,
+static only.
+
+### The six checks
+
+1. **Motivation — OK.** The target intel is found in-game, not handed from nowhere. The
+   Training Lab Runbook in the server-room filing cabinet
+   (`scenario.json.erb:1485-1488`) names every technique the player needs: "nmap the lab
+   network", "ProFTPD 1.3.3c, the trojaned 2010 build… anonymous login works", "the web host
+   serves the price list… only encoded, not encrypted", "the legacy build runs distcc". The
+   runbook sits in the same room as the VM terminal, so the player reads it exactly when they
+   reach the box. The techniques are all unauthenticated (backdoor / distcc RCE / recon /
+   decode), so there is no SSH wordlist to find — "find the credentials" is N/A here, and the
+   runbook covers the equivalent (what services, what versions, what to do). HaX's briefing
+   reinforces it (`ink/m03_opening_briefing.ink:151,213,215`).
+
+2. **Gating — OK.** The VM terminal is inside the RFID-locked Server Room, reached only via
+   the cloned executive keycard + RFID cloner (`dungeon_graph.md` andgate2:
+   rfid_cloner + executive_keycard → door_server_room). The keycard itself comes from cloning
+   Victoria Sterling, who is behind the Conference Room RFID lock (andgate1). Reaching the box
+   is a multi-step physical/NPC chain, not a terminal in the start area.
+
+3. **Diegetic attacker box — OK.** The launcher reads as fiction, placed by a character:
+   "Zero Day's VM access terminal… Nightshade has bridged it to your own kit, so the lab opens
+   on your machine like any other VM" (`scenario.json.erb:1535`). It opens the attacker
+   console `attack_vm` (:1538), consistent with the Round 1/2 wiring.
+
+4. **Flag payoff — OK.** Each flag fires a distinct HaX story beat on submission, not a
+   scoreboard tick (`scenario.json.erb:975-998`): scan → "that's their lab mapped… the FTP
+   server runs the build that opened St. Catherine's"; ftp → "the backdoor they sold Ghost,
+   running on their own training box"; http → "read the healthcare tier and you'll see why
+   we're here"; distcc → opens the revelation call and prints the Zero Day Transaction Log as
+   a carried item (:1571,1576-1583) — the evidence that drives the confrontation. The
+   write-only `vm_flagN_reward` set_globals (:1567-1570) are intentional no-ops; the narrative
+   payoff lives in the task-completion mappings, which is tighter than a station reward.
+
+5. **Requiredness & pacing — OK.** All four submit-flag tasks are in `concludeRequires`
+   (`scenario.json.erb:451` block; confirmed Rounds 1/2) — the ending cannot be reached
+   without the VM. Field guides are *not* dumped up front: they are paced through HaX's phone
+   hub (`ink/m03_phone_agent0x99.ink:158-169`), each gated by progress — RFID after the
+   briefing, recon/CyberChef once offered, ProFTPD and distcc only after the scan flag is in
+   (`flag_scan_submitted`), lockpicking once offered. This matches the m01 "right guide at the
+   right beat" bar.
+
+6. **Graph coherence — OK.** On `dungeon_graph.md` the VM nodes sit on the critical path:
+   `server_room → vm_access_terminal → vmch_submit_network_scan_flag → …` with the four
+   `vmfl_*` flags feeding `aim_act2_breach_server_room`, which gates `aim_moral_choices` via
+   `night_confrontation_ready`. Physical prerequisites (andgate2 keycard chain) feed into the
+   room; story unlocks (the confrontation, the ending) hang off the flags. Coherent.
+
+### Fixes applied
+None. All six checks are at or near the m01 bar; Rounds 1–2 fixed the wiring and Passes 2–5
+(alignment/puzzle/dialogue/room work) already wove the VM into the fiction. Inventing changes
+here would only disturb a mature, validator-clean mission.
+
+### Author-sized gaps flagged
+None. No new puzzle/room/story beat is needed for integration quality. (For any further
+puzzle-chain *depth* work, the `mission-puzzle-chains` skill is the right tool — out of scope
+for this consistency/integration review.)
+
+### Verification
+`ruby scripts/validate_scenario.rb scenarios/m03_ghost_in_the_machine/scenario.json.erb
+--skip-ink --no-graph` → schema validation passed; the 9 issues/suggestions and 2
+missing-recommended are all pre-existing and unrelated to VM integration (cutscene
+`onceOnly` suggestions in the exec-wing hallway, a viseme suggestion, two lobby NPCs with no
+behaviour). No ink changed, so no recompile. No files edited this round.
