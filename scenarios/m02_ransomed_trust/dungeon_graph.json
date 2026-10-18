@@ -561,6 +561,18 @@
       "optional": true
     },
     {
+      "id": "vmch_submit_database_flag",
+      "label": "Map the backup server and submit the flag left in its public files",
+      "kind": "vm",
+      "optional": false
+    },
+    {
+      "id": "vmfl_submit_database_flag",
+      "label": "Database Flag",
+      "kind": "flag",
+      "optional": false
+    },
+    {
       "id": "vmch_submit_ssh_flag",
       "label": "Get a foothold on the backup server and submit the SSH flag",
       "kind": "vm",
@@ -594,18 +606,6 @@
       "id": "lock_database_backup_accessible",
       "label": "Database Backup Accessible",
       "kind": "lock",
-      "optional": false
-    },
-    {
-      "id": "vmch_submit_database_flag",
-      "label": "Locate the encrypted database backup and submit the flag",
-      "kind": "vm",
-      "optional": false
-    },
-    {
-      "id": "vmfl_submit_database_flag",
-      "label": "Database Flag",
-      "kind": "flag",
       "optional": false
     },
     {
@@ -1130,9 +1130,24 @@
       "soft": true
     },
     {
+      "from": "vmch_submit_database_flag",
+      "to": "vmfl_submit_database_flag",
+      "soft": false
+    },
+    {
+      "from": "vmfl_submit_database_flag",
+      "to": "lock_emergency_storage_safe",
+      "soft": false
+    },
+    {
       "from": "vmch_submit_ssh_flag",
       "to": "vmfl_submit_ssh_flag",
       "soft": false
+    },
+    {
+      "from": "vmfl_submit_database_flag",
+      "to": "vmch_submit_ssh_flag",
+      "soft": true
     },
     {
       "from": "vmfl_submit_ssh_flag",
@@ -1155,27 +1170,12 @@
       "soft": false
     },
     {
-      "from": "vmch_submit_database_flag",
-      "to": "vmfl_submit_database_flag",
-      "soft": false
-    },
-    {
-      "from": "vmfl_submit_proftpd_flag",
-      "to": "vmch_submit_database_flag",
-      "soft": true
-    },
-    {
-      "from": "vmfl_submit_database_flag",
-      "to": "lock_emergency_storage_safe",
-      "soft": false
-    },
-    {
       "from": "vmch_submit_ghost_log_flag",
       "to": "vmfl_submit_ghost_log_flag",
       "soft": false
     },
     {
-      "from": "vmfl_submit_database_flag",
+      "from": "vmfl_submit_proftpd_flag",
       "to": "vmch_submit_ghost_log_flag",
       "soft": true
     },
@@ -1196,7 +1196,7 @@
     },
     {
       "from": "vm_access_terminal",
-      "to": "vmch_submit_ssh_flag",
+      "to": "vmch_submit_database_flag",
       "soft": false
     },
     {

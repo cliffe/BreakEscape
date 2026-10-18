@@ -21,7 +21,7 @@ St. Catherine's Regional went dark at 02:47. Every clinical system is encrypted,
 
 4 hops through story aims — minimum mandatory sequence to reach mission completion:
 
-**Talk Your Way In → Get Into IT → Somebody Pulled Your Booking → Turn Their Backdoor Around → Put A Name To The Badge**
+**Talk Your Way In → Get Into IT → Somebody Pulled Your Booking → Turn Their Backdoor Around → Bring The Wards Back**
 
 ## How to Read These Diagrams
 
@@ -162,14 +162,14 @@ flowchart TD
   appointment_card_on_the_chairs{"Appointment Card on the Chairs"}
   ward_approach("Ward Approach")
   nurse_s_handwritten_note{"Nurse's Handwritten Note"}
+  vmch_submit_database_flag["Map the backup server and submit the flag left in its public files"]
+  vmfl_submit_database_flag{"Database Flag"}
   vmch_submit_ssh_flag["Get a foothold on the backup server and submit the SSH flag"]
   vmfl_submit_ssh_flag{"Ssh Flag"}
   lock_proftpd_exploitation_unlocked["Proftpd Exploitation Unlocked"]
   vmch_submit_proftpd_flag["Exploit the ProFTPD backdoor and submit the flag"]
   vmfl_submit_proftpd_flag{"Proftpd Flag"}
   lock_database_backup_accessible["Database Backup Accessible"]
-  vmch_submit_database_flag["Locate the encrypted database backup and submit the flag"]
-  vmfl_submit_database_flag{"Database Flag"}
   vmch_submit_ghost_log_flag["Recover Ghost's operational log and submit the flag"]
   vmfl_submit_ghost_log_flag{"Ghost Log Flag"}
   lock_ghost_lore_unlocked["Ghost Lore Unlocked"]
@@ -274,20 +274,20 @@ flowchart TD
   ward_vestibule --> appointment_card_on_the_chairs
   ward_approach -.-> nurse_s_handwritten_note
   nurse_s_handwritten_note -.-> lock_emergency_storage_safe
+  vmch_submit_database_flag --> vmfl_submit_database_flag
+  vmfl_submit_database_flag --> lock_emergency_storage_safe
   vmch_submit_ssh_flag --> vmfl_submit_ssh_flag
+  vmfl_submit_database_flag -.-> vmch_submit_ssh_flag
   vmfl_submit_ssh_flag --> lock_proftpd_exploitation_unlocked
   vmch_submit_proftpd_flag --> vmfl_submit_proftpd_flag
   vmfl_submit_ssh_flag -.-> vmch_submit_proftpd_flag
   vmfl_submit_proftpd_flag --> lock_database_backup_accessible
-  vmch_submit_database_flag --> vmfl_submit_database_flag
-  vmfl_submit_proftpd_flag -.-> vmch_submit_database_flag
-  vmfl_submit_database_flag --> lock_emergency_storage_safe
   vmch_submit_ghost_log_flag --> vmfl_submit_ghost_log_flag
-  vmfl_submit_database_flag -.-> vmch_submit_ghost_log_flag
+  vmfl_submit_proftpd_flag -.-> vmch_submit_ghost_log_flag
   vmfl_submit_ghost_log_flag --> lock_ghost_lore_unlocked
   vmfl_submit_ghost_log_flag --> lock_entropy_staging_cache
   lock_vm_launcher_rooting_for_a_win --> vm_access_terminal
-  vm_access_terminal --> vmch_submit_ssh_flag
+  vm_access_terminal --> vmch_submit_database_flag
   reception_lobby --> ward_vestibule
   hospital_ward --> ward_approach
   hospital_ward --> ward_hall
@@ -307,8 +307,8 @@ flowchart TD
   class lock_pick_kit,reception_desk_visitor_log,hospital_founding_plaque,crisis_protocol_notice,infected_terminal,backup_server_ssh_notes,printouts_on_gary_s_desk,gary_s_password_sticky_note,photo_frame_emma_s_birthday,gary_s_email_archive_warning_7_of_7,dr_kim_s_reply_12_november,network_diagram_whiteboard,planted_network_device,cyberchef_workstation,handwritten_note_taped_inside_the_rack,pin_cracker,entropy_asset_tag,ghost_s_operational_manifesto,affiliate_handling_note,dr_kim_s_desk_diary,zero_day_syndicate_invoice,dr_kim_s_signed_statement,ransomware_incorporated_proposal,night_security_post_log,key_cabinet_empty,night_rota,ward_board,val_s_pocket_notebook,night_handover_board,estates_audit_snag_list,staff_noticeboard,ward_clerk_s_laptop,appointment_card_on_the_chairs,nurse_s_handwritten_note item
   class npc_bernie_nwosu,it_department_override_key,npc_sister_doyle,bank_staff_lanyard,npc_gary_whitlock,server_room_keycard,spare_contractor_lanyard,entropy_key_material,offline_backup_encryption_keys,npc_dr_sarah_kim,npc_val_okonkwo,security_office_key,wrapped_contractor_lanyard key
   class action_sign_in_at_reception,action_talk_to_ward_nurse,action_social_engineer_gary,action_meet_dr_kim,action_val_opens_office action
-  class vm_access_terminal,vmch_submit_ssh_flag,vmch_submit_proftpd_flag,vmch_submit_database_flag,vmch_submit_ghost_log_flag vm
-  class vmfl_submit_ssh_flag,vmfl_submit_proftpd_flag,vmfl_submit_database_flag,vmfl_submit_ghost_log_flag flag
+  class vm_access_terminal,vmch_submit_database_flag,vmch_submit_ssh_flag,vmch_submit_proftpd_flag,vmch_submit_ghost_log_flag vm
+  class vmfl_submit_database_flag,vmfl_submit_ssh_flag,vmfl_submit_proftpd_flag,vmfl_submit_ghost_log_flag flag
 
   classDef optional stroke-dasharray:5 2
   class lock_pick_kit,hospital_founding_plaque,bank_staff_lanyard,gary_s_password_sticky_note,spare_contractor_lanyard,pin_cracker,sealed_equipment_case,dr_kim_s_desk_diary,dr_kim_s_signed_statement,security_office_key,wrapped_contractor_lanyard,nurse_s_handwritten_note optional
@@ -341,21 +341,21 @@ flowchart TD
   aim_access_it_systems{{"Get Into IT"}}
   aim_cover_compromised{{"Somebody Pulled Your Booking"}}
   aim_exploit_entropy_backdoor{{"Turn Their Backdoor Around"}}
-  aim_unmask_inside_asset{{"Somebody Held The Door"}}
+  aim_unmask_inside_asset{{"Someone On The Inside"}}
   aim_identify_inside_asset{{"Put A Name To The Badge"}}
-  aim_recover_offline_keys{{"The Keys In The Safe"}}
+  aim_recover_offline_keys{{"The Emergency Store Safe"}}
   aim_restore_hospital_systems{{"Bring The Wards Back"}}
 
   aim_infiltrate_hospital -.-> aim_access_it_systems
-  aim_access_it_systems -.-> aim_cover_compromised
   aim_cover_compromised -.-> aim_exploit_entropy_backdoor
-  aim_cover_compromised -.-> aim_unmask_inside_asset
-  aim_exploit_entropy_backdoor -.-> aim_identify_inside_asset
-  aim_cover_compromised -.-> aim_recover_offline_keys
   aim_exploit_entropy_backdoor -.-> aim_restore_hospital_systems
+  aim_access_it_systems -.->|cover_burned| aim_cover_compromised
+  aim_exploit_entropy_backdoor -.->|insider_badge_id_found| aim_identify_inside_asset
+  aim_exploit_entropy_backdoor -.->|escrow_safe_known| aim_recover_offline_keys
+  aim_exploit_entropy_backdoor -.->|unlockAim| aim_unmask_inside_asset
 
-  class aim_infiltrate_hospital,aim_access_it_systems,aim_cover_compromised,aim_exploit_entropy_backdoor,aim_identify_inside_asset critical
-  class aim_unmask_inside_asset,aim_recover_offline_keys,aim_restore_hospital_systems aim
+  class aim_infiltrate_hospital,aim_access_it_systems,aim_cover_compromised,aim_exploit_entropy_backdoor,aim_restore_hospital_systems critical
+  class aim_unmask_inside_asset,aim_identify_inside_asset,aim_recover_offline_keys aim
 ```
 
 ## Story + Puzzle (Integrated)
@@ -476,14 +476,14 @@ flowchart TD
   appointment_card_on_the_chairs{"Appointment Card on the Chairs"}
   ward_approach("Ward Approach")
   nurse_s_handwritten_note{"Nurse's Handwritten Note"}
+  vmch_submit_database_flag["Map the backup server and submit the flag left in its public files"]
+  vmfl_submit_database_flag{"Database Flag"}
   vmch_submit_ssh_flag["Get a foothold on the backup server and submit the SSH flag"]
   vmfl_submit_ssh_flag{"Ssh Flag"}
   lock_proftpd_exploitation_unlocked["Proftpd Exploitation Unlocked"]
   vmch_submit_proftpd_flag["Exploit the ProFTPD backdoor and submit the flag"]
   vmfl_submit_proftpd_flag{"Proftpd Flag"}
   lock_database_backup_accessible["Database Backup Accessible"]
-  vmch_submit_database_flag["Locate the encrypted database backup and submit the flag"]
-  vmfl_submit_database_flag{"Database Flag"}
   vmch_submit_ghost_log_flag["Recover Ghost's operational log and submit the flag"]
   vmfl_submit_ghost_log_flag{"Ghost Log Flag"}
   lock_ghost_lore_unlocked["Ghost Lore Unlocked"]
@@ -492,9 +492,9 @@ flowchart TD
   aim_access_it_systems{{"Get Into IT"}}
   aim_cover_compromised{{"Somebody Pulled Your Booking"}}
   aim_exploit_entropy_backdoor{{"Turn Their Backdoor Around"}}
-  aim_unmask_inside_asset{{"Somebody Held The Door"}}
+  aim_unmask_inside_asset{{"Someone On The Inside"}}
   aim_identify_inside_asset{{"Put A Name To The Badge"}}
-  aim_recover_offline_keys{{"The Keys In The Safe"}}
+  aim_recover_offline_keys{{"The Emergency Store Safe"}}
   aim_restore_hospital_systems{{"Bring The Wards Back"}}
 
   door_it_department --> it_department
@@ -596,20 +596,20 @@ flowchart TD
   ward_vestibule --> appointment_card_on_the_chairs
   ward_approach -.-> nurse_s_handwritten_note
   nurse_s_handwritten_note -.-> lock_emergency_storage_safe
+  vmch_submit_database_flag --> vmfl_submit_database_flag
+  vmfl_submit_database_flag --> lock_emergency_storage_safe
   vmch_submit_ssh_flag --> vmfl_submit_ssh_flag
+  vmfl_submit_database_flag -.-> vmch_submit_ssh_flag
   vmfl_submit_ssh_flag --> lock_proftpd_exploitation_unlocked
   vmch_submit_proftpd_flag --> vmfl_submit_proftpd_flag
   vmfl_submit_ssh_flag -.-> vmch_submit_proftpd_flag
   vmfl_submit_proftpd_flag --> lock_database_backup_accessible
-  vmch_submit_database_flag --> vmfl_submit_database_flag
-  vmfl_submit_proftpd_flag -.-> vmch_submit_database_flag
-  vmfl_submit_database_flag --> lock_emergency_storage_safe
   vmch_submit_ghost_log_flag --> vmfl_submit_ghost_log_flag
-  vmfl_submit_database_flag -.-> vmch_submit_ghost_log_flag
+  vmfl_submit_proftpd_flag -.-> vmch_submit_ghost_log_flag
   vmfl_submit_ghost_log_flag --> lock_ghost_lore_unlocked
   vmfl_submit_ghost_log_flag --> lock_entropy_staging_cache
   lock_vm_launcher_rooting_for_a_win --> vm_access_terminal
-  vm_access_terminal --> vmch_submit_ssh_flag
+  vm_access_terminal --> vmch_submit_database_flag
   reception_lobby --> ward_vestibule
   hospital_ward --> ward_approach
   hospital_ward --> ward_hall
@@ -624,19 +624,19 @@ flowchart TD
   vmfl_submit_ghost_log_flag --> lock_press_terminal
   lock_hospital_recovery_console --> lock_press_terminal
   aim_infiltrate_hospital -.-> aim_access_it_systems
-  aim_access_it_systems -.-> aim_cover_compromised
   aim_cover_compromised -.-> aim_exploit_entropy_backdoor
-  aim_cover_compromised -.-> aim_unmask_inside_asset
-  aim_exploit_entropy_backdoor -.-> aim_identify_inside_asset
-  aim_cover_compromised -.-> aim_recover_offline_keys
   aim_exploit_entropy_backdoor -.-> aim_restore_hospital_systems
+  aim_access_it_systems -.->|cover_burned| aim_cover_compromised
+  aim_exploit_entropy_backdoor -.->|insider_badge_id_found| aim_identify_inside_asset
+  aim_exploit_entropy_backdoor -.->|escrow_safe_known| aim_recover_offline_keys
+  aim_exploit_entropy_backdoor -.->|unlockAim| aim_unmask_inside_asset
   reception_lobby -.-> aim_infiltrate_hospital
   hospital_ward -.-> aim_infiltrate_hospital
   door_it_department -.-> aim_access_it_systems
   door_server_room -.-> aim_cover_compromised
+  vmfl_submit_database_flag -.-> aim_exploit_entropy_backdoor
   vmfl_submit_ssh_flag -.-> aim_exploit_entropy_backdoor
   vmfl_submit_proftpd_flag -.-> aim_exploit_entropy_backdoor
-  vmfl_submit_database_flag -.-> aim_exploit_entropy_backdoor
   vmfl_submit_ghost_log_flag -.-> aim_exploit_entropy_backdoor
   emergency_equipment_storage -.-> aim_recover_offline_keys
   lock_emergency_storage_safe -.-> aim_recover_offline_keys
@@ -666,10 +666,10 @@ flowchart TD
   class lock_pick_kit,reception_desk_visitor_log,hospital_founding_plaque,crisis_protocol_notice,infected_terminal,backup_server_ssh_notes,printouts_on_gary_s_desk,gary_s_password_sticky_note,photo_frame_emma_s_birthday,gary_s_email_archive_warning_7_of_7,dr_kim_s_reply_12_november,network_diagram_whiteboard,planted_network_device,cyberchef_workstation,handwritten_note_taped_inside_the_rack,pin_cracker,entropy_asset_tag,ghost_s_operational_manifesto,affiliate_handling_note,dr_kim_s_desk_diary,zero_day_syndicate_invoice,dr_kim_s_signed_statement,ransomware_incorporated_proposal,night_security_post_log,key_cabinet_empty,night_rota,ward_board,val_s_pocket_notebook,night_handover_board,estates_audit_snag_list,staff_noticeboard,ward_clerk_s_laptop,appointment_card_on_the_chairs,nurse_s_handwritten_note item
   class npc_bernie_nwosu,it_department_override_key,npc_sister_doyle,bank_staff_lanyard,npc_gary_whitlock,server_room_keycard,spare_contractor_lanyard,entropy_key_material,offline_backup_encryption_keys,npc_dr_sarah_kim,npc_val_okonkwo,security_office_key,wrapped_contractor_lanyard key
   class action_sign_in_at_reception,action_talk_to_ward_nurse,action_social_engineer_gary,action_meet_dr_kim,action_val_opens_office action
-  class vm_access_terminal,vmch_submit_ssh_flag,vmch_submit_proftpd_flag,vmch_submit_database_flag,vmch_submit_ghost_log_flag vm
-  class vmfl_submit_ssh_flag,vmfl_submit_proftpd_flag,vmfl_submit_database_flag,vmfl_submit_ghost_log_flag flag
-  class aim_infiltrate_hospital,aim_access_it_systems,aim_cover_compromised,aim_exploit_entropy_backdoor,aim_identify_inside_asset critical
-  class aim_unmask_inside_asset,aim_recover_offline_keys,aim_restore_hospital_systems aim
+  class vm_access_terminal,vmch_submit_database_flag,vmch_submit_ssh_flag,vmch_submit_proftpd_flag,vmch_submit_ghost_log_flag vm
+  class vmfl_submit_database_flag,vmfl_submit_ssh_flag,vmfl_submit_proftpd_flag,vmfl_submit_ghost_log_flag flag
+  class aim_infiltrate_hospital,aim_access_it_systems,aim_cover_compromised,aim_exploit_entropy_backdoor,aim_restore_hospital_systems critical
+  class aim_unmask_inside_asset,aim_identify_inside_asset,aim_recover_offline_keys aim
 
   classDef optional stroke-dasharray:5 2
   class lock_pick_kit,hospital_founding_plaque,bank_staff_lanyard,gary_s_password_sticky_note,spare_contractor_lanyard,pin_cracker,sealed_equipment_case,dr_kim_s_desk_diary,dr_kim_s_signed_statement,security_office_key,wrapped_contractor_lanyard,nurse_s_handwritten_note optional
