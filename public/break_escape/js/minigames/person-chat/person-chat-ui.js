@@ -225,8 +225,12 @@ export default class PersonChatUI {
                 this.background // Optional background image path
             );
             // Hidden until the first content (see awaitingFirstContent). Set before
-            // init() so its first deferred render draws the background only.
+            // init() so its first deferred render draws nothing (black): we don't yet
+            // know whether the opening is a scene shot (cover background) or a line
+            // (zoomed NPC), so holding on black avoids flashing the full-scene
+            // background before the view zooms to the NPC.
             this.portraitRenderer._characterHidden = true;
+            this.portraitRenderer._holdingForContent = true;
             this.portraitRenderer.init();
             
             console.log('✅ Portrait initialized');
@@ -331,7 +335,12 @@ export default class PersonChatUI {
         if (!(isNarrator && narratorCharacter === 'none')) {
             this.revealPortrait();
         } else {
+            // Opening on a scene shot: end the black hold and draw the (cover) background.
             this.awaitingFirstContent = false;
+            if (this.portraitRenderer) {
+                this.portraitRenderer._holdingForContent = false;
+                this.portraitRenderer.render();
+            }
         }
         
         console.log(`📝 showDialogue called with character: ${characterId}, text length: ${text?.length || 0}, narrator: ${isNarrator}`);
@@ -426,7 +435,12 @@ export default class PersonChatUI {
     revealPortrait() {
         if (!this.awaitingFirstContent) return;
         this.awaitingFirstContent = false;
-        this.portraitRenderer?.setCharacterHidden(false);
+        if (this.portraitRenderer) {
+            // End the black hold before revealing, so the single render draws the
+            // zoomed NPC directly rather than the full-scene cover background first.
+            this.portraitRenderer._holdingForContent = false;
+            this.portraitRenderer.setCharacterHidden(false);
+        }
     }
 
     /**

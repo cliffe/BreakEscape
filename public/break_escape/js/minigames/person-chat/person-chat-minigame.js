@@ -1716,8 +1716,10 @@ export class PersonChatMinigame extends MinigameScene {
             // A new background is a scene shot: the old speaker leaves with the old
             // scene, and the next speaker (or Narrator[character]) brings a portrait back
             this.ui.portraitRenderer.setCharacterHidden(true);
-            // An opening Background[...] is the first content: nothing to reveal
+            // An opening Background[...] is the first content: nothing to reveal.
+            // End the initial black hold so the (cover) scene shot can draw.
             this.ui.awaitingFirstContent = false;
+            this.ui.portraitRenderer._holdingForContent = false;
             // Background[room]: this conversation's own background (the NPC's or its room's
             // chatBackground), e.g. to cut back inside after an exterior establishing shot
             if (backgroundFilename.trim().toLowerCase() === 'room') {

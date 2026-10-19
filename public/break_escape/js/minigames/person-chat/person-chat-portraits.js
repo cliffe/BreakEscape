@@ -118,6 +118,7 @@ export default class PersonChatPortraits {
         this._lastRenderedTalkFrame = -1;  // Sentinel – forces first render
         this._narratorMode = false; // When true, suppress mouth animation (narrator lines)
         this._characterHidden = false; // When true, draw the background only (a scene shot)
+        this._holdingForContent = false; // Initial hold while the first line loads: draw nothing (black), so a normal chat doesn't flash the full-scene cover background before zooming to the NPC
 
         // Lip-sync mode (optional spriteVisemes sheet; replaces the 2×2 talk cycle when loaded)
         this.visemeSheet = null;      // Loaded sheet for the current speaker, or null
@@ -728,6 +729,11 @@ export default class PersonChatPortraits {
             // Clear canvas
             this.ctx.fillStyle = '#000';
             this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+
+            // Initial hold while the first line loads: stay black until we know whether
+            // the opening is a scene shot (cover background) or a line (zoomed NPC), so a
+            // normal chat never flashes the full-scene background before zooming in.
+            if (this._holdingForContent) return;
 
             // Scene shot (after a Background[...] line, or Narrator[none]): no character
             if (this._characterHidden) {
