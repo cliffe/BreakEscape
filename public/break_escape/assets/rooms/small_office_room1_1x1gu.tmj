@@ -45,10 +45,10 @@
          "y":0
         }, 
         {
-         "data":[0, 440, 0, 440, 0,
-            0, 441, 0, 441, 0,
-            440, 0, 0, 0, 440,
-            441, 0, 0, 0, 441,
+         "data":[0, 434, 0, 434, 0,
+            0, 435, 0, 435, 0,
+            434, 0, 0, 0, 434,
+            435, 0, 0, 0, 435,
             0, 0, 0, 0, 0,
             0, 0, 0, 0, 0],
          "height":6,
@@ -122,8 +122,8 @@
                  "type":"",
                  "visible":true,
                  "width":64,
-                 "x":116,
-                 "y":96
+                 "x":87,
+                 "y":119.5
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -207,20 +207,20 @@
                  "type":"",
                  "visible":true,
                  "width":24,
-                 "x":120,
-                 "y":67
+                 "x":108.5,
+                 "y":65.5
                 }, 
                 {
-                 "gid":1210,
-                 "height":60,
+                 "gid":845,
+                 "height":47,
                  "id":63,
                  "name":"",
                  "rotation":0,
                  "type":"",
                  "visible":true,
                  "width":29,
-                 "x":88,
-                 "y":68
+                 "x":84,
+                 "y":66.25
                 }, 
                 {
                  "gid":356,
@@ -2240,12 +2240,13 @@
          "source":"..\/..\/..\/..\/..\/assets\/rooms\/door_side_sheet_32.tsx"
         }, 
         {
-         "firstgid":440,
+         "firstgid":434,
          "source":"..\/..\/..\/..\/..\/assets\/rooms\/door_sheet_32.tsx"
-        }, 
+        },
+    
         {
          "columns":0,
-         "firstgid":801,
+         "firstgid":436,
          "grid":
             {
              "height":1,
@@ -2256,7 +2257,7 @@
          "name":"objects\/hospital_extras",
          "spacing":0,
          "tilecount":502,
-         "tileheight":60,
+         "tileheight":64,
          "tiles":[
                 {
                  "id":0,
@@ -2287,7 +2288,8 @@
                  "image":"..\/objects\/stretcher1.png",
                  "imageheight":45,
                  "imagewidth":58
-                }, 
+                },
+            
                 {
                  "id":5,
                  "image":"..\/objects\/water_cooler1.png",
@@ -2317,7 +2319,8 @@
                  "image":"..\/objects\/chairs_stacked1.png",
                  "imageheight":45,
                  "imagewidth":20
-                }, 
+                },
+            
                 {
                  "id":10,
                  "image":"..\/objects\/monitor_stand1.png",
@@ -2347,7 +2350,8 @@
                  "image":"..\/objects\/instrument_trolley1.png",
                  "imageheight":41,
                  "imagewidth":37
-                }, 
+                },
+            
                 {
                  "id":15,
                  "image":"..\/objects\/step_stool1.png",
@@ -2377,7 +2381,8 @@
                  "image":"..\/objects\/sharps_bin1.png",
                  "imageheight":26,
                  "imagewidth":16
-                }, 
+                },
+            
                 {
                  "id":20,
                  "image":"..\/objects\/first_aid_kit1.png",
@@ -2407,7 +2412,8 @@
                  "image":"..\/objects\/medicine_fridge1.png",
                  "imageheight":31,
                  "imagewidth":18
-                }, 
+                },
+            
                 {
                  "id":25,
                  "image":"..\/objects\/rota_board1.png",
@@ -2437,7 +2443,8 @@
                  "image":"..\/objects\/binders1.png",
                  "imageheight":22,
                  "imagewidth":20
-                }, 
+                },
+            
                 {
                  "id":30,
                  "image":"..\/objects\/gloves_box1.png",
@@ -2467,7 +2474,8 @@
                  "image":"..\/objects\/mugs_tray1.png",
                  "imageheight":15,
                  "imagewidth":20
-                }, 
+                },
+            
                 {
                  "id":35,
                  "image":"..\/objects\/test_tube_rack1.png",
@@ -2497,7 +2505,8 @@
                  "image":"..\/objects\/eye_chart1.png",
                  "imageheight":24,
                  "imagewidth":16
-                }, 
+                },
+            
                 {
                  "id":40,
                  "image":"..\/objects\/kitchen_counter_sink1.png",
@@ -2527,7 +2536,8 @@
                  "image":"..\/objects\/soap_dispenser1.png",
                  "imageheight":19,
                  "imagewidth":12
-                }, 
+                },
+            
                 {
                  "id":45,
                  "image":"..\/objects\/notice_board1.png",
@@ -2557,7 +2567,8 @@
                  "image":"..\/objects\/directory_sign1.png",
                  "imageheight":26,
                  "imagewidth":34
-                }, 
+                },
+            
                 {
                  "id":50,
                  "image":"..\/objects\/whiteboard1.png",
@@ -2587,7 +2598,8 @@
                  "image":"..\/objects\/power_panel1.png",
                  "imageheight":22,
                  "imagewidth":18
-                }, 
+                },
+            
                 {
                  "id":55,
                  "image":"..\/objects\/health_poster1.png",
@@ -2617,7 +2629,8 @@
                  "image":"..\/objects\/health_poster5.png",
                  "imageheight":21,
                  "imagewidth":16
-                }, 
+                },
+            
                 {
                  "id":60,
                  "image":"..\/objects\/health_poster6.png",
@@ -2647,7 +2660,8 @@
                  "image":"..\/objects\/toy_box1.png",
                  "imageheight":28,
                  "imagewidth":30
-                }, 
+                },
+            
                 {
                  "id":65,
                  "image":"..\/objects\/wall_clock1.png",
@@ -2677,7 +2691,8 @@
                  "image":"..\/objects\/aircon_unit1.png",
                  "imageheight":63,
                  "imagewidth":32
-                }, 
+                },
+            
                 {
                  "id":70,
                  "image":"..\/objects\/staff_lockers1.png",
@@ -2707,7 +2722,8 @@
                  "image":"..\/objects\/bedhead_panel2.png",
                  "imageheight":19,
                  "imagewidth":28
-                }, 
+                },
+            
                 {
                  "id":75,
                  "image":"..\/objects\/ppe_dispenser1.png",
@@ -2737,7 +2753,8 @@
                  "image":"..\/objects\/bedhead_unit1.png",
                  "imageheight":44,
                  "imagewidth":26
-                }, 
+                },
+            
                 {
                  "id":80,
                  "image":"..\/objects\/cylinder_rack1.png",
@@ -2767,7 +2784,8 @@
                  "image":"..\/objects\/aed_cabinet1.png",
                  "imageheight":24,
                  "imagewidth":21
-                }, 
+                },
+            
                 {
                  "id":85,
                  "image":"..\/objects\/cctv_camera1.png",
@@ -2797,7 +2815,8 @@
                  "image":"..\/objects\/kvm_cart1.png",
                  "imageheight":61,
                  "imagewidth":37
-                }, 
+                },
+            
                 {
                  "id":90,
                  "image":"..\/objects\/checkin_kiosk1.png",
@@ -2827,7 +2846,8 @@
                  "image":"..\/objects\/handwash_poster1.png",
                  "imageheight":38,
                  "imagewidth":31
-                }, 
+                },
+            
                 {
                  "id":95,
                  "image":"..\/objects\/photocopier1.png",
@@ -2857,7 +2877,8 @@
                  "image":"..\/objects\/filing_cabinet_locked1.png",
                  "imageheight":61,
                  "imagewidth":29
-                }, 
+                },
+            
                 {
                  "id":100,
                  "image":"..\/objects\/hospital_chair_north2.png",
@@ -2887,7 +2908,8 @@
                  "image":"..\/objects\/tape_library1.png",
                  "imageheight":59,
                  "imagewidth":30
-                }, 
+                },
+            
                 {
                  "id":105,
                  "image":"..\/objects\/patient_hoist1.png",
@@ -2917,7 +2939,8 @@
                  "image":"..\/objects\/cable_tray1.png",
                  "imageheight":14,
                  "imagewidth":150
-                }, 
+                },
+            
                 {
                  "id":110,
                  "image":"..\/objects\/year_planner1.png",
@@ -2947,7 +2970,8 @@
                  "image":"..\/objects\/wall_rail1.png",
                  "imageheight":6,
                  "imagewidth":192
-                }, 
+                },
+            
                 {
                  "id":115,
                  "image":"..\/objects\/it_workbench1.png",
@@ -2977,7 +3001,8 @@
                  "image":"..\/objects\/cctv_monitors2.png",
                  "imageheight":34,
                  "imagewidth":46
-                }, 
+                },
+            
                 {
                  "id":120,
                  "image":"..\/objects\/wall_rail2.png",
@@ -3007,7 +3032,8 @@
                  "image":"..\/objects\/drop_box1.png",
                  "imageheight":24,
                  "imagewidth":20
-                }, 
+                },
+            
                 {
                  "id":125,
                  "image":"..\/objects\/uni_directory1.png",
@@ -3037,7 +3063,8 @@
                  "image":"..\/objects\/uni_timetable1.png",
                  "imageheight":22,
                  "imagewidth":16
-                }, 
+                },
+            
                 {
                  "id":130,
                  "image":"..\/objects\/uni_poster1.png",
@@ -3067,7 +3094,8 @@
                  "image":"..\/objects\/uni_poster6.png",
                  "imageheight":21,
                  "imagewidth":16
-                }, 
+                },
+            
                 {
                  "id":135,
                  "image":"..\/objects\/uni_poster7.png",
@@ -3097,7 +3125,8 @@
                  "image":"..\/objects\/lecture_ledge1.png",
                  "imageheight":12,
                  "imagewidth":198
-                }, 
+                },
+            
                 {
                  "id":140,
                  "image":"..\/objects\/lecture_ledge2.png",
@@ -3127,7 +3156,8 @@
                  "image":"..\/objects\/book_trolley1.png",
                  "imageheight":43,
                  "imagewidth":38
-                }, 
+                },
+            
                 {
                  "id":151,
                  "image":"..\/objects\/scope_cart1.png",
@@ -3157,7 +3187,8 @@
                  "image":"..\/objects\/beanbag1.png",
                  "imageheight":41,
                  "imagewidth":44
-                }, 
+                },
+            
                 {
                  "id":157,
                  "image":"..\/objects\/stanchions1.png",
@@ -3187,7 +3218,8 @@
                  "image":"..\/objects\/soldering_iron1.png",
                  "imageheight":26,
                  "imagewidth":26
-                }, 
+                },
+            
                 {
                  "id":163,
                  "image":"..\/objects\/beanbag_orange1.png",
@@ -3217,7 +3249,8 @@
                  "image":"..\/objects\/uni_certificate1.png",
                  "imageheight":14,
                  "imagewidth":18
-                }, 
+                },
+            
                 {
                  "id":168,
                  "image":"..\/objects\/uni_portrait1.png",
@@ -3247,7 +3280,8 @@
                  "image":"..\/objects\/uni_fountain1.png",
                  "imageheight":22,
                  "imagewidth":14
-                }, 
+                },
+            
                 {
                  "id":174,
                  "image":"..\/objects\/uni_radiator1.png",
@@ -3277,7 +3311,8 @@
                  "image":"..\/objects\/uni_sign_study1.png",
                  "imageheight":11,
                  "imagewidth":44
-                }, 
+                },
+            
                 {
                  "id":179,
                  "image":"..\/objects\/uni_banner_soc1.png",
@@ -3307,7 +3342,8 @@
                  "image":"..\/objects\/freshers_stall2.png",
                  "imageheight":47,
                  "imagewidth":62
-                }, 
+                },
+            
                 {
                  "id":185,
                  "image":"..\/objects\/display_case3.png",
@@ -3337,7 +3373,8 @@
                  "image":"..\/objects\/laser_cutter2.png",
                  "imageheight":60,
                  "imagewidth":46
-                }, 
+                },
+            
                 {
                  "id":190,
                  "image":"..\/objects\/it_workbench2.png",
@@ -3367,7 +3404,8 @@
                  "image":"..\/objects\/uni_poster8.png",
                  "imageheight":21,
                  "imagewidth":16
-                }, 
+                },
+            
                 {
                  "id":195,
                  "image":"..\/objects\/pc_ransomware.png",
@@ -3397,7 +3435,8 @@
                  "image":"..\/objects\/display_table1.png",
                  "imageheight":39,
                  "imagewidth":78
-                }, 
+                },
+            
                 {
                  "id":200,
                  "image":"..\/objects\/whitehat_sign1.png",
@@ -3427,7 +3466,8 @@
                  "image":"..\/objects\/leather_sofa1.png",
                  "imageheight":38,
                  "imagewidth":62
-                }, 
+                },
+            
                 {
                  "id":205,
                  "image":"..\/objects\/glass_coffee_table1.png",
@@ -3457,7 +3497,8 @@
                  "image":"..\/objects\/marble_desk1.png",
                  "imageheight":44,
                  "imagewidth":63
-                }, 
+                },
+            
                 {
                  "id":210,
                  "image":"..\/objects\/fig_plant1.png",
@@ -3487,7 +3528,8 @@
                  "image":"..\/objects\/camp_bed1.png",
                  "imageheight":38,
                  "imagewidth":43
-                }, 
+                },
+            
                 {
                  "id":215,
                  "image":"..\/objects\/zds_conference_table1.png",
@@ -3517,7 +3559,8 @@
                  "image":"..\/objects\/club_chair_w1.png",
                  "imageheight":46,
                  "imagewidth":36
-                }, 
+                },
+            
                 {
                  "id":220,
                  "image":"..\/objects\/credenza1.png",
@@ -3547,7 +3590,8 @@
                  "image":"..\/objects\/brochure_rack1.png",
                  "imageheight":48,
                  "imagewidth":44
-                }, 
+                },
+            
                 {
                  "id":225,
                  "image":"..\/objects\/pizza_boxes1.png",
@@ -3577,7 +3621,8 @@
                  "image":"..\/objects\/coffee_cups1.png",
                  "imageheight":20,
                  "imagewidth":21
-                }, 
+                },
+            
                 {
                  "id":230,
                  "image":"..\/objects\/cable_tangle1.png",
@@ -3607,7 +3652,8 @@
                  "image":"..\/objects\/private_sign1.png",
                  "imageheight":11,
                  "imagewidth":35
-                }, 
+                },
+            
                 {
                  "id":235,
                  "image":"..\/objects\/restricted_sign1.png",
@@ -3637,7 +3683,8 @@
                  "image":"..\/objects\/aes_esd_station1.png",
                  "imageheight":25,
                  "imagewidth":20
-                }, 
+                },
+            
                 {
                  "id":240,
                  "image":"..\/objects\/aes_esd_button2.png",
@@ -3667,7 +3714,8 @@
                  "image":"..\/objects\/aes_ppe_rack1.png",
                  "imageheight":25,
                  "imagewidth":26
-                }, 
+                },
+            
                 {
                  "id":245,
                  "image":"..\/objects\/aes_status_display1.png",
@@ -3697,7 +3745,8 @@
                  "image":"..\/objects\/aes_pegboard1.png",
                  "imageheight":19,
                  "imagewidth":27
-                }, 
+                },
+            
                 {
                  "id":250,
                  "image":"..\/objects\/aes_cctv1.png",
@@ -3727,7 +3776,8 @@
                  "image":"..\/objects\/aes_radio_charger1.png",
                  "imageheight":20,
                  "imagewidth":16
-                }, 
+                },
+            
                 {
                  "id":255,
                  "image":"..\/objects\/aes_hv_sign1.png",
@@ -3757,7 +3807,8 @@
                  "image":"..\/objects\/aes_battery_rack2.png",
                  "imageheight":63,
                  "imagewidth":30
-                }, 
+                },
+            
                 {
                  "id":260,
                  "image":"..\/objects\/aes_beacon1.png",
@@ -3787,7 +3838,8 @@
                  "image":"..\/objects\/aes_cable_drum1.png",
                  "imageheight":24,
                  "imagewidth":27
-                }, 
+                },
+            
                 {
                  "id":265,
                  "image":"..\/objects\/aes_chiller1.png",
@@ -3817,7 +3869,8 @@
                  "image":"..\/objects\/aes_control_panel1.png",
                  "imageheight":60,
                  "imagewidth":57
-                }, 
+                },
+            
                 {
                  "id":270,
                  "image":"..\/objects\/aes_drum1.png",
@@ -3847,7 +3900,8 @@
                  "image":"..\/objects\/aes_inverter1.png",
                  "imageheight":56,
                  "imagewidth":56
-                }, 
+                },
+            
                 {
                  "id":275,
                  "image":"..\/objects\/aes_inverter2.png",
@@ -3877,7 +3931,8 @@
                  "image":"..\/objects\/aes_pallet_truck1.png",
                  "imageheight":28,
                  "imagewidth":28
-                }, 
+                },
+            
                 {
                  "id":280,
                  "image":"..\/objects\/aes_suppression1.png",
@@ -3907,7 +3962,8 @@
                  "image":"..\/objects\/aes_tool_trolley1.png",
                  "imageheight":23,
                  "imagewidth":26
-                }, 
+                },
+            
                 {
                  "id":285,
                  "image":"..\/objects\/aes_transformer1.png",
@@ -3937,7 +3993,8 @@
                  "image":"..\/objects\/aes_esd_sign1.png",
                  "imageheight":17,
                  "imagewidth":43
-                }, 
+                },
+            
                 {
                  "id":290,
                  "image":"..\/objects\/aes_inverter_sign1.png",
@@ -3967,7 +4024,8 @@
                  "image":"..\/objects\/aes_process_diagram1.png",
                  "imageheight":30,
                  "imagewidth":46
-                }, 
+                },
+            
                 {
                  "id":295,
                  "image":"..\/objects\/aes_procedures_sign1.png",
@@ -3997,7 +4055,8 @@
                  "image":"..\/objects\/aes_spill_kit1.png",
                  "imageheight":27,
                  "imagewidth":20
-                }, 
+                },
+            
                 {
                  "id":300,
                  "image":"..\/objects\/aes_spill_cabinet1.png",
@@ -4027,7 +4086,8 @@
                  "image":"..\/objects\/aes_floor_tray1.png",
                  "imageheight":20,
                  "imagewidth":28
-                }, 
+                },
+            
                 {
                  "id":305,
                  "image":"..\/objects\/aes_air_mover1.png",
@@ -4057,7 +4117,8 @@
                  "image":"..\/objects\/aes_cabinet_dark1.png",
                  "imageheight":26,
                  "imagewidth":18
-                }, 
+                },
+            
                 {
                  "id":310,
                  "image":"..\/objects\/aes_floor_grate1.png",
@@ -4087,7 +4148,8 @@
                  "image":"..\/objects\/aes_lockers_grey1.png",
                  "imageheight":59,
                  "imagewidth":58
-                }, 
+                },
+            
                 {
                  "id":315,
                  "image":"..\/objects\/aes_shelving1.png",
@@ -4117,7 +4179,8 @@
                  "image":"..\/objects\/aes_skip1.png",
                  "imageheight":53,
                  "imagewidth":50
-                }, 
+                },
+            
                 {
                  "id":320,
                  "image":"..\/objects\/aes_tool_chest1.png",
@@ -4147,7 +4210,8 @@
                  "image":"..\/objects\/aes_bypass_module1.png",
                  "imageheight":16,
                  "imagewidth":21
-                }, 
+                },
+            
                 {
                  "id":325,
                  "image":"..\/objects\/aes_mimic_board1.png",
@@ -4177,7 +4241,8 @@
                  "image":"..\/objects\/aes_office_chair1.png",
                  "imageheight":54,
                  "imagewidth":33
-                }, 
+                },
+            
                 {
                  "id":330,
                  "image":"..\/objects\/hce_logo_sign1.png",
@@ -4207,7 +4272,8 @@
                  "image":"..\/objects\/hce_chart_screen1.png",
                  "imageheight":30,
                  "imagewidth":48
-                }, 
+                },
+            
                 {
                  "id":335,
                  "image":"..\/objects\/hce_chart_screen2.png",
@@ -4237,7 +4303,8 @@
                  "image":"..\/objects\/hce_cage_panel1.png",
                  "imageheight":54,
                  "imagewidth":53
-                }, 
+                },
+            
                 {
                  "id":340,
                  "image":"..\/objects\/hce_cage_door1.png",
@@ -4267,7 +4334,8 @@
                  "image":"..\/objects\/hce_node_shelf1.png",
                  "imageheight":49,
                  "imagewidth":54
-                }, 
+                },
+            
                 {
                  "id":345,
                  "image":"..\/objects\/hce_wallet_cabinet1.png",
@@ -4297,7 +4365,8 @@
                  "image":"..\/objects\/hce_kiosk1.png",
                  "imageheight":58,
                  "imagewidth":30
-                }, 
+                },
+            
                 {
                  "id":350,
                  "image":"..\/objects\/hce_hsm1.png",
@@ -4327,7 +4396,8 @@
                  "image":"..\/objects\/hce_display_case1.png",
                  "imageheight":60,
                  "imagewidth":30
-                }, 
+                },
+            
                 {
                  "id":355,
                  "image":"..\/objects\/hce_reception_desk1.png",
@@ -4357,7 +4427,8 @@
                  "image":"..\/objects\/hce_whitepaper_frame1.png",
                  "imageheight":26,
                  "imagewidth":20
-                }, 
+                },
+            
                 {
                  "id":360,
                  "image":"..\/objects\/hce_custody_sign1.png",
@@ -4387,7 +4458,8 @@
                  "image":"..\/objects\/hce_lab_sign1.png",
                  "imageheight":11,
                  "imagewidth":63
-                }, 
+                },
+            
                 {
                  "id":365,
                  "image":"..\/objects\/hce_block_screen1.png",
@@ -4417,7 +4489,8 @@
                  "image":"..\/objects\/qdc_cryostat1.png",
                  "imageheight":64,
                  "imagewidth":50
-                }, 
+                },
+            
                 {
                  "id":370,
                  "image":"..\/objects\/qdc_dewar1.png",
@@ -4447,7 +4520,8 @@
                  "image":"..\/objects\/qdc_glovebox1.png",
                  "imageheight":57,
                  "imagewidth":56
-                }, 
+                },
+            
                 {
                  "id":375,
                  "image":"..\/objects\/qdc_optical_bench1.png",
@@ -4477,7 +4551,8 @@
                  "image":"..\/objects\/qdc_recycling_bins1.png",
                  "imageheight":32,
                  "imagewidth":58
-                }, 
+                },
+            
                 {
                  "id":380,
                  "image":"..\/objects\/qdc_instrument_rack1.png",
@@ -4507,7 +4582,8 @@
                  "image":"..\/objects\/qdc_logo_small1.png",
                  "imageheight":13,
                  "imagewidth":32
-                }, 
+                },
+            
                 {
                  "id":385,
                  "image":"..\/objects\/qdc_lab_sign1.png",
@@ -4537,7 +4613,8 @@
                  "image":"..\/objects\/qdc_it_sign1.png",
                  "imageheight":11,
                  "imagewidth":47
-                }, 
+                },
+            
                 {
                  "id":390,
                  "image":"..\/objects\/qdc_lab_rules1.png",
@@ -4567,7 +4644,8 @@
                  "image":"..\/objects\/qdc_whiteboard_net1.png",
                  "imageheight":30,
                  "imagewidth":46
-                }, 
+                },
+            
                 {
                  "id":395,
                  "image":"..\/objects\/qdc_suspects_board1.png",
@@ -4597,7 +4675,8 @@
                  "image":"..\/objects\/qdc_poster_ready1.png",
                  "imageheight":21,
                  "imagewidth":16
-                }, 
+                },
+            
                 {
                  "id":400,
                  "image":"..\/objects\/qdc_poster_team1.png",
@@ -4627,7 +4706,8 @@
                  "image":"..\/objects\/qdc_kitchenette2.png",
                  "imageheight":59,
                  "imagewidth":56
-                }, 
+                },
+            
                 {
                  "id":405,
                  "image":"..\/objects\/qdc_cctv_desk1.png",
@@ -4655,9 +4735,10 @@
                 {
                  "id":409,
                  "image":"..\/objects\/filing_cabinet_locked2.png",
-                 "imageheight":60,
+                 "imageheight":47,
                  "imagewidth":29
-                }, 
+                },
+            
                 {
                  "id":410,
                  "image":"..\/objects\/qdc_hsm1.png",
@@ -4687,7 +4768,8 @@
                  "image":"..\/objects\/pnw_muster_sign1.png",
                  "imageheight":23,
                  "imagewidth":30
-                }, 
+                },
+            
                 {
                  "id":415,
                  "image":"..\/objects\/pnw_video_wall1.png",
@@ -4717,7 +4799,8 @@
                  "image":"..\/objects\/notes_plantlog1.png",
                  "imageheight":26,
                  "imagewidth":16
-                }, 
+                },
+            
                 {
                  "id":420,
                  "image":"..\/objects\/pnw_genplate_one1.png",
@@ -4747,7 +4830,8 @@
                  "image":"..\/objects\/pnw_cable_ladder1.png",
                  "imageheight":22,
                  "imagewidth":200
-                }, 
+                },
+            
                 {
                  "id":425,
                  "image":"..\/objects\/pnw_splice1.png",
@@ -4777,7 +4861,8 @@
                  "image":"..\/objects\/pnw_genhall_sign1.png",
                  "imageheight":17,
                  "imagewidth":67
-                }, 
+                },
+            
                 {
                  "id":430,
                  "image":"..\/objects\/pnw_vault_sign1.png",
@@ -4807,7 +4892,8 @@
                  "image":"..\/objects\/pnw_ats1.png",
                  "imageheight":54,
                  "imagewidth":34
-                }, 
+                },
+            
                 {
                  "id":435,
                  "image":"..\/objects\/pnw_switch_cabinet1.png",
@@ -4837,7 +4923,8 @@
                  "image":"..\/objects\/pnw_console1.png",
                  "imageheight":49,
                  "imagewidth":64
-                }, 
+                },
+            
                 {
                  "id":440,
                  "image":"..\/objects\/pnw_console2.png",
@@ -4867,7 +4954,8 @@
                  "image":"..\/objects\/pnw_batteries1.png",
                  "imageheight":53,
                  "imagewidth":52
-                }, 
+                },
+            
                 {
                  "id":445,
                  "image":"..\/objects\/pnw_cable_trolley1.png",
@@ -4897,7 +4985,8 @@
                  "image":"..\/objects\/notes_clip1.png",
                  "imageheight":26,
                  "imagewidth":11
-                }, 
+                },
+            
                 {
                  "id":450,
                  "image":"..\/objects\/pnw_backup_tag1.png",
@@ -4927,7 +5016,8 @@
                  "image":"..\/objects\/pnw_ats_cover1.png",
                  "imageheight":30,
                  "imagewidth":16
-                }, 
+                },
+            
                 {
                  "id":455,
                  "image":"..\/objects\/notes_tucked1.png",
@@ -4957,7 +5047,8 @@
                  "image":"..\/objects\/hq_logo_sign1.png",
                  "imageheight":21,
                  "imagewidth":82
-                }, 
+                },
+            
                 {
                  "id":460,
                  "image":"..\/objects\/hq_logo_small1.png",
@@ -4987,7 +5078,8 @@
                  "image":"..\/objects\/hq_tactical_board1.png",
                  "imageheight":32,
                  "imagewidth":62
-                }, 
+                },
+            
                 {
                  "id":465,
                  "image":"..\/objects\/hq_evidence_wall1.png",
@@ -5017,7 +5109,8 @@
                  "image":"..\/objects\/hq_badge_reader1.png",
                  "imageheight":12,
                  "imagewidth":8
-                }, 
+                },
+            
                 {
                  "id":470,
                  "image":"..\/objects\/hq_poster_postit1.png",
@@ -5047,7 +5140,8 @@
                  "image":"..\/objects\/hq_ops_sign1.png",
                  "imageheight":11,
                  "imagewidth":47
-                }, 
+                },
+            
                 {
                  "id":475,
                  "image":"..\/objects\/hq_intel_sign1.png",
@@ -5077,7 +5171,8 @@
                  "image":"..\/objects\/hq_director_sign1.png",
                  "imageheight":11,
                  "imagewidth":39
-                }, 
+                },
+            
                 {
                  "id":480,
                  "image":"..\/objects\/hq_archive_sign1.png",
@@ -5107,7 +5202,8 @@
                  "image":"..\/objects\/hq_locker_b1.png",
                  "imageheight":52,
                  "imagewidth":20
-                }, 
+                },
+            
                 {
                  "id":485,
                  "image":"..\/objects\/hq_locker_c1.png",
@@ -5137,7 +5233,8 @@
                  "image":"..\/objects\/notes_legalpad1.png",
                  "imageheight":16,
                  "imagewidth":14
-                }, 
+                },
+            
                 {
                  "id":490,
                  "image":"..\/objects\/hq_interview_table1.png",
@@ -5167,7 +5264,8 @@
                  "image":"..\/objects\/hq_archive_shelf1.png",
                  "imageheight":61,
                  "imagewidth":42
-                }, 
+                },
+            
                 {
                  "id":495,
                  "image":"..\/objects\/hq_security_container1.png",
@@ -5197,7 +5295,8 @@
                  "image":"..\/objects\/hq_console1.png",
                  "imageheight":41,
                  "imagewidth":52
-                }, 
+                },
+            
                 {
                  "id":500,
                  "image":"..\/objects\/hq_rack1.png",
@@ -5227,7 +5326,8 @@
                  "image":"..\/objects\/qdc_safety_shower1.png",
                  "imageheight":48,
                  "imagewidth":21
-                }, 
+                },
+            
                 {
                  "id":505,
                  "image":"..\/objects\/qdc_first_aid_cabinet1.png",
@@ -5257,7 +5357,8 @@
                  "image":"..\/objects\/pnw_console2_p5.png",
                  "imageheight":49,
                  "imagewidth":64
-                }, 
+                },
+            
                 {
                  "id":510,
                  "image":"..\/objects\/pnw_console1_p6.png",
@@ -5270,7 +5371,7 @@
                  "imageheight":61,
                  "imagewidth":40
                 }],
-         "tilewidth":60
+         "tilewidth":252
         }],
  "tilewidth":32,
  "type":"map",
