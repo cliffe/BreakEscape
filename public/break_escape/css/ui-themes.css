@@ -1094,8 +1094,10 @@
 
 
 /* ===================================================================
-   Other game UI: conversations, messages, menus, title and game over.
-   In-world devices (phone, notebook, documents, monitors) keep their look.
+   Other game UI: conversations, toasts, menus and game over.
+   In-world devices (phone, notebook, documents, monitors) keep their look,
+   and so do the NPC message bubbles (phone green) and the title screen (CRT
+   green).
    =================================================================== */
 
 /* --- Conversations (person-chat): the portrait stays full-bleed and the
@@ -1167,38 +1169,6 @@
 [data-ui-theme] .notification-title { color: var(--ui-accent); font-family: var(--ui-heading-font); }
 [data-ui-theme] .notification-close { color: var(--ui-text-dim); }
 
-/* --- NPC message bubbles (barks): theme frame instead of phone green --- */
-[data-ui-theme] .npc-bark {
-  border-style: solid;
-  border-width: var(--ui-square-px);
-  border-image-source: var(--ui-square-image);
-  border-image-slice: var(--ui-square-slice) fill;
-  border-image-width: var(--ui-square-px);
-  background: none;
-  color: var(--ui-text);
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
-  image-rendering: pixelated;
-}
-
-[data-ui-theme] .npc-bark:hover {
-  filter: brightness(1.15);
-}
-
-[data-ui-theme] .npc-bark-dismiss { color: var(--ui-text-dim); }
-[data-ui-theme] .npc-bark-dismiss:hover { color: var(--ui-text); }
-
-[data-ui-theme] .npc-bark-clear-all {
-  border-style: solid;
-  border-width: var(--ui-small-button-px);
-  border-image-source: var(--ui-small-button-image);
-  border-image-slice: var(--ui-small-button-slice) fill;
-  border-image-width: var(--ui-small-button-px);
-  background: none;
-  color: var(--ui-button-text);
-  box-shadow: none;
-  image-rendering: pixelated;
-}
-
 /* --- Interaction choice menu (several things under the pointer); its own
        styles are injected at run time, hence the id in each selector --- */
 [data-ui-theme] #be-interaction-menu {
@@ -1250,18 +1220,6 @@
   font-family: var(--ui-heading-font);
   text-transform: var(--ui-heading-transform);
   letter-spacing: var(--ui-heading-spacing);
-}
-
-/* --- Title screen: the theme's accent and glow instead of fixed green --- */
-[data-ui-theme] .title-screen-title,
-[data-ui-theme] .title-screen-cursor,
-[data-ui-theme] .title-screen-prompt {
-  color: var(--ui-accent);
-  text-shadow: var(--ui-text-glow);
-}
-
-[data-ui-theme] .title-screen-prompt-hint {
-  color: var(--ui-text-dim);
 }
 
 /* --- Game over and the resume-session overlay set their colours inline
