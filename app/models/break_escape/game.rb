@@ -770,9 +770,22 @@ module BreakEscape
           kept_fields = {}
           # maxAttempts..showKeyboard are the password/PIN pad options (not secret): door pads read them from here.
           # chatBackground: person-chat falls back to the room's image before the room is lazy-loaded.
+          # lighting: the room's lighting block (mode, ambient, emitters, variants) — not secret.
+          # The client's door-spill needs it to know whether a still-unloaded room is lit, so
+          # light leaks under a closed door into a lit room (but not into a dark motion room).
           %w[type connections locked lockType requires difficulty door_sign keyPins ambientSound ambientVolume
-             maxAttempts passwordHint showHint postitNote showPostit showKeyboard chatBackground].each do |field|
+             maxAttempts passwordHint showHint postitNote showPostit showKeyboard chatBackground lighting].each do |field|
             kept_fields[field] = room_data[field] if room_data.key?(field)
+          end
+
+          # A motion-sensor room is lit only when someone's actually in it. NPCs are stripped
+          # from the lazy payload, so expose just whether a present (non-phone, non-hidden) NPC
+          # occupies the room, for the door-spill's before-loaded fallback.
+          npcs = room_data['npcs']
+          if npcs.is_a?(Array)
+            kept_fields['hasPresentNpc'] = npcs.any? do |n|
+              n.is_a?(Hash) && n['npcType'] != 'phone' && !(n['behavior'].is_a?(Hash) && n['behavior']['initiallyHidden'])
+            end
           end
 
           # If the player has already unlocked this room, mark it as unlocked so the

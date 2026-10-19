@@ -644,9 +644,11 @@ export class LightingSystem {
       leds.push({
         img,
         color,
-        // Offsets from the sprite's top-left, kept to the front panel.
+        // Offsets from the sprite's top-left, kept to the front panel. Racks are drawn
+        // in a slight 3/4 view, so the top ~40% is the cabinet's top surface: LEDs sit on
+        // the front face below it (lower ~55%), not scattered up onto the lid.
         dx: Math.round(3 + Math.random() * Math.max(1, w - 6)),
-        dy: Math.round(4 + Math.random() * Math.max(1, h * 0.7 - 4)),
+        dy: Math.round(h * 0.42 + Math.random() * Math.max(1, h * 0.5)),
         period: 150 + Math.random() * 1800,
         duty: Math.random() < 0.3 ? 1 : 0.2 + Math.random() * 0.6,
         offset: Math.random() * 2000,
@@ -1083,7 +1085,7 @@ export class LightingSystem {
       this.stampNpcGlows(stamp, state);
     }
     // Spill goes on after every fill, since it is meant to cross the doorway.
-    for (const state of visible) this.stampDoorSpill(state, stamp);
+    for (const state of visible) this.stampDoorSpill(state, stamp, rt, ox, oy);
     // Phaser 3.60: a batch whose last stamp is a MULTIPLY one (an emitter's floorTint)
     // is lost at endDraw and the whole map comes out white (every room unlit). Ending
     // on an ADD stamp avoids it; a black ADD adds nothing.
@@ -1234,14 +1236,46 @@ export class LightingSystem {
    * it was opened from keeps the open door: when that is the darker room, the
    * brighter one's light is drawn back through it here.
    */
-  stampDoorSpill(state, stamp) {
+  stampDoorSpill(state, stamp, rt, ox, oy) {
     const room = window.rooms?.[state.roomId];
     const myLevel = state.drawLevel ?? state.level;
+    const stripOpts = this.stripOpts || (this.stripOpts = { blendMode: Phaser.BlendModes.ADD, skipBatch: true });
     for (const door of room?.doorSprites || []) {
       const props = door.doorProperties;
-      if (!props?.open) continue;
+      if (!props) continue;
       const other = this.rooms.get(props.connectedRoom);
       const otherLevel = other ? (other.drawLevel ?? other.level) : 0;
+      // Closed door into a brighter room: a thin strip of light leaks through the gap along
+      // the edge of the doorway that faces this (darker) room. Drawn only from the darker
+      // room's side (where it's seen). The brighter room's intended light is read from the
+      // scenario when it isn't loaded yet, so an always-lit room glows at the door before
+      // the player reaches it.
+      if (!props.open) {
+        const src = this.connectedRoomLight(props.connectedRoom);
+        const leak = (src?.level ?? 0) - myLevel;
+        if (!src || leak <= 0.08) continue;
+        const long = TILE_SIZE * 0.5, thin = 5;
+        let sx, sy, halfW, halfH;
+        if (props.isSideDoor) {
+          // E/W door: it sits in a side wall, so the gap faces into the room, away from
+          // that wall. A vertical strip on the door's inner (room-facing) edge.
+          const away = props.direction === 'east' ? -1 : 1; // toward this room, off the wall
+          sx = door.x + away * (TILE_SIZE / 2 - 2);
+          sy = door.y;
+          halfW = thin; halfH = long;
+        } else {
+          // N/S door: two tiles tall; the gap is along the bottom of the doorway.
+          sx = door.x;
+          sy = door.y + TILE_SIZE - 2;
+          halfW = long; halfH = thin;
+        }
+        stripOpts.tint = src.panelColor;
+        stripOpts.alpha = Math.min(1, 0.5 * leak);
+        stripOpts.scaleX = (halfW * RES) / (LIGHT_TEX_SIZE / 2);
+        stripOpts.scaleY = (halfH * RES) / (LIGHT_TEX_SIZE / 2);
+        rt.stamp(LIGHT_TEX, null, (sx - ox) * RES, (sy - oy) * RES, stripOpts);
+        continue;
+      }
       const push = { north: [0, -1], south: [0, 1], east: [1, 0], west: [-1, 0] }[props.direction] || [0, 0];
       const d = TILE_SIZE * 1.2;
       let diff = myLevel - otherLevel;
@@ -1258,6 +1292,27 @@ export class LightingSystem {
       // wall either side up to the door's top, which the floor pool barely reaches.
       if (push[0] === 0) stamp(door.x, door.y + 8, TILE_SIZE * 1.4, source.panelColor, 0.45 * diff);
     }
+  }
+
+  /**
+   * A room's intended lit level (0..1) and panel colour, for light leaking from it.
+   * Uses the live lighting state when the room is loaded; otherwise falls back to the
+   * scenario's lighting config, so a closed door into an always-lit (or NPC-occupied)
+   * room still glows underneath before the room itself has been loaded.
+   */
+  connectedRoomLight(roomId) {
+    const other = this.rooms.get(roomId);
+    if (other) return { level: other.level, panelColor: other.panelColor };
+    // Room not loaded yet: derive its intended light from the lazy-load metadata (the room's
+    // lighting block and a `hasPresentNpc` flag the server sends, since NPCs are stripped). A
+    // motion room with nobody in it is dark, so no light leaks under a door into it.
+    const data = window.gameScenario?.rooms?.[roomId];
+    if (!data) return null;
+    const { cfg } = resolveRoomLighting(data.lighting || {}, window.gameState?.globalVariables || {});
+    const mode = cfg.mode || this.defaultMode;
+    const on = mode === 'on' || (mode === 'motion' && data.hasPresentNpc && cfg.startOn !== false);
+    const litAmbient = parseColor(cfg.ambient, parseColor(this.config.ambient, DEFAULT_LIT_AMBIENT));
+    return { level: on ? 1 : 0, panelColor: panelColorFor(litAmbient) };
   }
 
   /** Whether a room still holds its own open door into another (it then spills through it itself). */
