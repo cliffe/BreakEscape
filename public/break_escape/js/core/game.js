@@ -1271,6 +1271,12 @@ export function preload() {
     this.load.image('chair-white-2-rotate7', 'objects/chair-white-2-rotate7.png');
     this.load.image('chair-white-2-rotate8', 'objects/chair-white-2-rotate8.png');
 
+    // ENTROPY field equipment (ruggedised hardware, used via scenario sprite overrides)
+    this.load.image('entropy_drive_case1', 'objects/entropy_drive_case1.png');
+    this.load.image('entropy_command_unit1', 'objects/entropy_command_unit1.png');
+    this.load.image('entropy_comms_terminal1', 'objects/entropy_comms_terminal1.png');
+    this.load.image('safetynet_flag_terminal1', 'objects/safetynet_flag_terminal1.png');
+
     // Load audio files
     // NPC system sounds
     this.load.audio('message_received', 'sounds/message_received.mp3');
