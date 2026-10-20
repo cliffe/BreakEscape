@@ -5,7 +5,7 @@ has a working default (✅) already applied in the plans, so if you agree with a
 nothing to do. Tick a box, strike a default through, or write in the `notes:` space to change one.
 
 - **No-VM suite** (in-browser minigames, systems, scenarios): `planning_notes/phishing_and_social_engineering/`
-  — the design docs are in `designs/00`–`12`, the review trail in `REVIEW_LOG.md`.
+  — the design docs are in `designs/00`–`07`, `10` and `11`; `README.md` there is the entry point and holds the open questions.
 - **VM suite** (SecGen-backed practical challenges, player-mediated, no IPC):
   `planning_notes/phishing_and_social_engineering_secgen/` — docs `README`, `01`–`04`, `REVIEW_R1.md`.
 

@@ -25,8 +25,8 @@ cannot talk to each other programmatically. There is no socket, no shared databa
   flag station (validated server-side), other findings into the intel board or a story gate.
 
 This is not a limitation to work around; it is the design. It mirrors a real engagement, where the
-operator is the one carrying intelligence between recon and exploitation. And it sidesteps the SecGen
-phishing lab's flakiness (`../phishing_and_social_engineering/README.md`): the *game* half stays
+operator is the one carrying intelligence between recon and exploitation. And it sidesteps the flakiness of judging
+phishing on a VM (see `../phishing_and_social_engineering/README.md`): the *game* half stays
 deterministic (the rules engine judges pretexts in-browser), while the *VM* half is a genuine box
 where a real payload runs or a real service is reached.
 

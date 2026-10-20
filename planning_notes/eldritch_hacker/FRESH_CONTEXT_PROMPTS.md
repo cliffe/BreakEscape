@@ -186,7 +186,7 @@ Task: update the phishing/SE plans for the new direction.
    and no student-lab companion. Keep the docs for reference; the README carries a status line.
 4. Update PHISHING_AND_SE_DECISIONS.md: mark answered items from DIRECTION.md, revise section H, and
    add any new questions in its "New questions" space.
-5. Log what changed in the plan's REVIEW_LOG.md / RESUME.md.
+5. Log what changed in the plan's README.md (planning_notes/phishing_and_social_engineering/).
 
 UK English. Commit when done.
 ```

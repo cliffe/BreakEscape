@@ -34,7 +34,7 @@ the VM flags.
 
 ## SAFETYNET missions: the phishing/SE VM stage
 
-The fold-in plan (`../phishing_and_social_engineering/designs/12_safetynet_integration.md`) put a
+An earlier fold-in plan (its design doc has since been removed) put a
 **no-VM** spear-phish/pretext stage into m01 "Soft Entry". The VM track is how that same stage earns
 its **required VM flag** in a mission:
 

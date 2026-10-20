@@ -46,8 +46,8 @@ decision, and date the change.
   readable, never purple to the point of obscuring a clue. Same SAFETYNET universe and cast — Agent
   HaX and the others continue.
 - **No retrofit into Licence to Hack m01–m08.** The phishing/SE systems are not added to those
-  missions. The optional m01 "Soft Entry" fold-in in `phishing_and_social_engineering/designs/12`
-  is shelved and marked superseded there.
+  missions. There is no m01 "Soft Entry" fold-in; the design doc for it was
+  removed, and the systems are described in `phishing_and_social_engineering/README.md`.
 - **Fun and educational, not hard** (standing rule). Engaging puzzles and narrative, same design
   approaches and skills as game 1, with universe differences.
 

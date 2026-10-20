@@ -3,7 +3,6 @@
 Status: plan, 2026-10-20. Last in the build order (most new UI, least reuse). Feeds the mail client
 (`01`) a `link` payload; is judged by the `linkCredible` factor of the rules engine (`04`); its
 output is reused by the triage defender (`05`) as "a bad page to inspect".
-R1 fixes applied, 2026-10-20 (REVIEW_07_R1.md F1–F5).
 
 ## 1. Purpose & audience
 
@@ -11,7 +10,7 @@ The player builds a fake sign-in page for a pretext, sees how convincing it is, 
 own page as the victim and learns how to catch one. Maps to book Ch. 8 "Cloning a Landing Page".
 All three audiences, tuned by data: the Cyber Security student lab goes deepest (every choice,
 homograph card, unaided inspection); awareness learners get three choices and highlighted tells;
-SAFETYNET missions use it as one stage with a preset brand. What it teaches, in order: a page is
+SAFETYNET: Eldritch Hacker uses it as one stage with a preset brand. What it teaches, in order: a page is
 only as convincing as its domain, logo, wording, form and padlock together; a look-alike domain is
 the one thing the attacker can never make perfect; and the defender's checklist (domain, padlock,
 origin of the form, hover the link, don't sign in from a mailed link).
@@ -23,20 +22,42 @@ are part of the design, not polish, and a reviewer should treat any breach as a 
 
 - **No code authoring.** The player never types or edits HTML, CSS, JavaScript or a form handler.
   Every input is a choice from a list the scenario authored.
-- **The "page" is a data record**, drawn to a canvas inside the overlay. It is not a document the
-  browser can load, it has no export, download, copy-as-HTML or "preview in new tab".
+- **The "page" is a data record**, rendered from that record into inert elements inside the overlay (a
+  pixel-art layer plus plain DOM text, section 6). It is not a document the browser can load, and it has
+  no export, download, copy-as-HTML or "preview in new tab". The safety property is held by constraint,
+  not by the choice of medium: the preview contains **no `<form>`, `<input>`, `<textarea>`, `<select>`,
+  `<a href>`, `<button>`, `<iframe>`, `<script>` or `contenteditable`**, and no function serialises it.
+  A unit test walks the preview's DOM after every step and fails on any of those (N3).
 - **No capture code exists anywhere.** When a victim "visits" or "submits", the game flips a
   boolean and prints a result line. No field value is ever read, stored, sent or logged, because
   there is none: the victim is a scenario record, not a person typing into a form.
 - **No network.** Nothing in the component makes a request. Domains are strings in scenario JSON.
-- **Fictional only.** Brands and domains are invented. A load-time lint (N6) enforces two separate
-  things: every authored domain string ends in the reserved, non-registrable suffix `.example`, and
-  no authored brand name or domain string contains a word from a real-brand denylist (PayPal,
-  NatWest, Microsoft and the like). The suffix rule stops a registrable address; the denylist stops
-  a scenario dressing the builder's own domain menu in a real brand, which the suffix rule alone does
-  not (`paypal.example` passes a suffix-only check). Real services appear only in a plain-text
-  concept card as a typographic example (`paypa1` against `paypal`), which the denylist does not
-  touch because it checks the domain/brand menu, not concept-card prose.
+- **Fictional only.** Brands and domains are invented. Two controls enforce it, and this section says
+  plainly where each runs and what it misses.
+  - **Offline lint (N6).** A check in `scripts/validate_scenario.rb`, plus a CI test over every
+    `scenarios/*` (`test/js/validator-landing-pages.test.mjs`, modelled on the existing
+    `validator-*.test.mjs`). It requires every authored domain string to end in the reserved,
+    non-registrable suffix `.example`, to be ASCII (a homograph is written as `\u` escapes in the JSON
+    and the lint accepts only escapes, never raw non-ASCII), and to pass a brand check. The brand check
+    **folds, then matches**: NFKC-normalise, map confusables (Cyrillic and Greek to Latin, `1`/`l`/`I`,
+    `0`/`o`, `rn` to `m`, `vv` to `w`), strip hyphens and dots, then look for a denylisted real brand
+    (PayPal, NatWest, Microsoft and the like). The primary control is an allowlist: every domain label
+    must be built from the page's fictional `realDomain` brand word plus an authored trick suffix, so a
+    free-standing real brand cannot appear at all. The denylist is the backstop. The list lives in the
+    validator, not in a scenario, so one scenario cannot quietly shorten it.
+  - **What the offline lint does not do.** It does not run when a scenario loads. `validate_scenario.rb`
+    is a command-line tool with no caller in `app/`, `lib/` or the browser, and the server sends the
+    scenario's `social` block to the client unvalidated (`game.rb`, `filtered_scenario_for_bootstrap`
+    strips only room contents, `flags` and `targetFlags`). It protects the repository from an author's
+    mistake. It does not stop a hand-edited scenario served from elsewhere. It also misses a real brand
+    that is neither on the denylist nor in its confusable map, and it does not read concept-card prose,
+    which is exempt on purpose (below) and reviewed by hand.
+  - **Runtime guard (N6b, engine work).** `landing-page-model.js` refuses to score or draw any domain
+    that is not on the page's authored menu or does not end `.example`, and draws a "blocked" placeholder
+    instead. This is a suffix and membership check only. It cannot judge brands, which is why the offline
+    lint carries that part.
+  - Real services appear only in a plain-text concept card as a typographic example (`paypa1` against
+    `paypal`). The checks above read the domain and brand menu, not concept-card prose.
 - **No operational how-to.** The game says that look-alike domains, homographs and cheap
   certificates exist and shows what they look like. It does not say where or how to register,
   host, obtain a certificate for, or mail one.
@@ -52,17 +73,30 @@ are part of the design, not polish, and a reviewer should treat any breach as a 
 
 ## 3. The loop
 
-One overlay, house style (dark panel, `Press Start 2P` headings, `VT323` body, `#00ff41` accent,
-canvas drawn low-res and scaled with `image-rendering: pixelated`). A **step strip** across the top
-shows `Pretext · Build · Score · Send · Inspect`. The left half is the **page preview** drawn as a
-tiny fake browser (address bar, padlock, page body). The right half is the **choice panel** for the
-current step. A **Pretext card** from the mail client's brief stays pinned at the top of the panel
-(for example: "Sofia expects a payslip notice on the staff payroll portal").
+One overlay in house style (README Conventions): a dark panel with square corners, colours from the
+`--ui-*` tokens in `css/ui-themes.css` so the mission's `ui_theme` applies, `GNF` body and `Press Start
+2P` headings for chrome. Nothing is hard-coded green. A **step strip** across the top shows
+`Pretext · Build · Score · Send · Inspect`. The left half is the **page preview**, a tiny fake browser
+(address bar, secure-connection icon, page body). The right half is the **choice panel** for the current
+step. A **Pretext card** stays pinned at the top of the panel.
+
+The preview has two layers (section 6). Pixel art (logos, banners, frame icons, product pictures) is drawn
+low-res and scaled with `image-rendering: pixelated`. All text, including the address bar, the page's
+visible wording, field labels and the concept cards, is inert DOM text in the bundled readable sans-serif.
+Text is never drawn into the low-res canvas, because at that size the differences the lesson depends on
+(`rn` against `m`, `vv` against `w`, `l` against `1`) disappear.
 
 ### Step 1. Pretext
-The pinned card states the story the page must fit, taken from the scenario's `pretext` block: which
-service the target uses, what the email will say, what she expects to see after clicking. A
-"Concept: why the page must match the story" card is one click away. No choices yet. Button: Build.
+The pinned card is **built from what the player holds, not from the scenario's answer.** It lists the text
+of the held facts that bear on this page (here `lord_portal`: "Sofia uses a staff payroll portal"; after the
+call, also `lord_portal_name`, which says what the portal is called and how its notices read, and
+`lord_payslip_date`). If nothing relevant is held, the card says "You haven't found out what Sofia would
+expect to see yet" and offers a **Case file** button (the nested-launch convention in section 6). The
+`pretext` block in the data is the scorer's key and is never shown as UI text. All options in step 2 are
+always listed, so the card gives the player the evidence and the player makes the call: a player holding
+only `lord_portal` still has to infer that the company's own brand and a payslip purpose are the likely
+fit, and a player who has had the call is certain rather than guessing. A "Concept: why the page must
+match the story" card is one click away. No choices yet. Button: Build.
 
 ### Step 2. Build (seven choices, any order, preview updates live)
 Each choice is a row of chips. The preview redraws on every change. Choosing never blocks; the
@@ -80,10 +114,14 @@ player can change anything until they press Score.
 6. **Form fields** — tick which fields the page asks for (email, password, one-time code, card
    number, national insurance number). The real service asks for a known set.
 7. **Padlock** — "Show a secure padlock" on or off. A note says: *a padlock only means the
-   connection is encrypted to whoever owns that domain. It says nothing about who that is.*
+   connection is encrypted to whoever owns that domain. It says nothing about who that is.* The fake
+   browser frame is generic (it does not copy any one browser), and strings call the icon "padlock" or
+   "secure-connection icon" because browsers have changed how they draw it. Confirm the wording against
+   current browsers before it ships (OQ5).
 
 A **Tell counter** (optional, on for early teaching) shows how many giveaways the current page has,
-without naming them. Hover a chip for its one-line teaching note.
+without naming them. Each chip has a one-line teaching note, shown on hover and behind a visible "?"
+button, since hover does not exist on touch.
 
 ### Step 3. Score
 Press Score. The game shows the **credibility meter** (0 to 100), the target's threshold as a line
@@ -92,10 +130,13 @@ If below the line the player edits and re-scores. No attempt limit, no dead end.
 
 ### Step 4. Send
 Once the score meets the threshold the button changes to **Attach to email**. The page is saved
-as a `link` payload (section 6) and the overlay closes; the player finishes the email in the mail
-client (`01`), which hands `linkCredible` to the rules engine (`04`). A player who wants to
-experiment can still send a below-threshold page: the rules engine will fail `linkCredible` and
-the target's in-character reply says why. Nothing is blocked.
+as a `link` payload (section 6) and the overlay closes. If the builder was opened from the mail client's
+Attach menu, the mail client reopens with its draft restored and the link attached (the return-to in
+section 6); if it was opened from a workstation, the player carries on to the mail client themselves. The
+mail client (`01`) hands `linkCredible` to the rules engine (`04`). A player who wants to experiment can
+still send a below-threshold page: the rules engine will fail `linkCredible` and the target's
+in-character reply says why. Nothing is blocked. Closing the overlay without attaching keeps the draft
+choices and is a normal exit (section 6), not a failure.
 
 ### Step 5. The outcome report
 When the email has landed and the target "clicks", the mail client calls back into this component
@@ -108,10 +149,14 @@ The result is a record `{ visited: bool, submitted: bool, noticed: bool }` and a
 scenario's metrics report (book Ch. 9): `Visits 1 · Submissions 1 · Reports 0`.
 
 ### Step 6. Inspect your own page (the defender flip)
-The overlay reopens the same preview as the **victim's browser** and asks: "Find the giveaways."
-The player clicks on parts of the page (address bar, padlock, logo, form, wording). Each correct
-click confirms a tell and shows its defender string (section 4); wrong clicks say what was fine.
-The step ends when every tell the page has is found, or the player taps **Show me**. A closing card
+The player reopens the saved page from the workstation as the **victim's browser** (the Inspect button
+appears once the page has been attached and its email has been sent) and is asked: "Find the giveaways."
+The player selects parts of the page (address bar, padlock, logo, form, wording). Each part is a focusable
+element inside the preview (a `div` with `role="button"` and `tabindex="0"`, not a form control), so the
+step works by keyboard, by touch and through the playtest bridge. Each correct pick confirms a tell and
+shows its defender string (section 4); wrong picks say what was fine. The link tell has a **Show the link
+target** button, because hovering does not exist on touch. The step ends when every tell the page has is
+found, or the player taps **Show me**. A closing card
 lists the **five habits** that beat this attack:
 
 1. Read the address up to the first single `/`, then find the ending: `.com`, or a country ending like `.co.uk`. The real site is the single name immediately before that ending (`accountingnow.example`, or `natwest.co.uk` for a UK site). Everything to the left (`login.`, `secure.`, an extra word) is just labels the owner can set to anything.
@@ -124,7 +169,7 @@ lists the **five habits** that beat this attack:
 
 Deterministic and visible. The model is a pure function,
 `scorePage(spec, pretext, target) → { credibility, factors[], gates[], tells[], verdict }`, with no
-randomness and no free text to interpret. That removes the SecGen failure modes outright: there is
+randomness and no free text to interpret. That removes the usual failure modes of loosely judged labs: there is
 no loose substring matching (nothing is typed), no rejection that fails to say why (every factor
 returns a string), and no victim that rejects everything (the target's threshold is authored and
 reachable from the choices on screen).
@@ -151,14 +196,24 @@ real domain has no tier: it is locked.
 | Extra word | `accountingnow-hr.example` | 2 | Real name present; a skimmer sees it |
 | Real name as a subdomain | `login.accountingnow.account-help.example` | 2 | Fools a skim; fails a careful read |
 | Looks-like letters (typo-squat) | `accountingnovv.example` (`vv` for `w`) | 3 | Needs a second look in a small font |
-| Same-looking letter from another alphabet (homograph) | `accountingn<Cyrillic о>w.example` | 3 | Identical to the eye; student lab only |
+| Same-looking letter from another alphabet (homograph) | `accountingn` + U+043E + `w.example` (written as the escape `\u043E` in the data) | 3 | Identical to the eye where the text is shown as typed (a mail client, a chat message); student lab only |
 
-Concept card text for the two top tiers, shown on the hover note and on the defender card (plain
+**How a homograph is shown.** Current browsers do not display a Latin label with one Cyrillic letter in it
+as typed. They show the coded form, here `xn--accountingnw-fgk.example`. So the option carries two display
+strings: the as-typed form in the mail link text and the chip, and the coded form in the fake address bar.
+The scoring tier is for the as-typed form, where the eye cannot tell. In step 6 the address bar shows the
+coded form and the card says so: a browser defends against this, a mail or chat app may not, which is why
+the fourth habit (don't sign in from a link) matters more than good eyesight. Both strings are authored
+escapes in the data; no raw look-alike character appears in this doc or in the sample data.
+
+Concept card text for the two top tiers, shown behind the "?" button and on the defender card (plain
 language, no instruction): *"A typo-squat is a name one keystroke or one look-alike pair away from
 the real one, such as `paypa1` for `paypal`, or `rn` for `m`. A homograph swaps a letter for a
 different-alphabet letter that looks the same, so even a careful eye cannot tell. Browsers
 sometimes show these in a coded form (`xn--...`) for that reason. The defence is not better
-eyesight. It is not signing in from a link."*
+eyesight. It is not signing in from a link."* Address and domain strings, including any `xn--` label,
+render raw through `textContent`, never through `displayDashes`, which would rewrite a double hyphen
+(`utils/display-dashes.js`).
 
 ### Gates (checked after the points)
 
@@ -236,9 +291,11 @@ uses a staff payroll portal", 00 §1). The clone imitates the company's own Acco
 portal (`accountingnow.example`). Her authored `linkThreshold` is 70 and `minDomainTier` is 2 (both
 live in this doc's data, keyed by target id `lord`).
 
-This worked example assumes `04` carries a `lord` target with `linkCredible` among its required
-factors and an `expectedLink` (00 §4, §7). `04` does not define that entry today; the orchestrator
-adds it to `04`. This doc only supplies the page-side numbers it points at.
+`04` carries the `lord` target, with `linkCredible` among its required factors and an `expectedLink`
+(`00` §4, §7); this doc only supplies the page-side numbers it points at. Lord's `senderTrust` is backed by
+`lord_trusts_portal_sender` and her link by `lord_portal_name`, both granted by the call (`06`), so the page
+is judged against intel the player has earned. The score does not read any global: the call changes what
+the player knows, not how many points a choice is worth.
 
 **Attempt 1.** The player rushes: AccountingNow, "Sign in", `accountingnov.example`, a blurry logo,
 wording with slips, ticks email + password + card number, padlock off.
@@ -289,21 +346,23 @@ checks. The real defence is the fourth habit: don't sign in from the link."*
 
 ## 5. Scenario-authored data
 
-All content lives in scenario JSON; the minigame holds none. Brands, domains, tiers, thresholds,
-tells and strings are authored. The N6 lint runs at load: every `domain` and `realDomain` value must
-end in `.example`, and no `name` or domain string may contain a word from the real-brand denylist, or
-the scenario fails to load (safety, N6 below). The example clones the company's own AccountingNow
-payroll portal (00 §1), the brand Sofia's `lord_portal` intel points at.
+All content lives in scenario JSON under `social.landingPages` (`00` §11); the minigame holds none.
+Brands, domains, tiers, thresholds, tells and strings are authored. The offline lint (N6) requires every
+`domain` and `realDomain` to be ASCII and end in `.example`, and applies the fold-then-match brand check
+described in section 1; the runtime guard (N6b) refuses anything off the authored menu. Neither runs "at
+load" in the sense of rejecting a scenario, and section 1 says what they miss. The example clones the
+company's own AccountingNow payroll portal (`00` §1), the brand Sofia's `lord_portal` intel points at.
+An object carries only a pointer, `minigameData: { landingPageId }` (`00` §11).
 
 ```jsonc
-"landingPages": [
+"social": { "landingPages": [
   {
-    "id": "payroll_login",                  // referenced by 01's payloadKit: { kind:"link", landingPageId }
+    "id": "payroll_login",                  // referenced by 01's payload kit item page_payroll: { kind:"link", landingPageId }
     "pretext": {
       "brandId": "accountingnow",           // the service the story names
       "purposeId": "payslip",               // what the email promises the page shows
       "tone": "formal",                     // which wording variant matches
-      "story": "a staff-portal notice that her first payslip is ready"
+      "story": "a staff-portal notice that her first payslip is ready"   // scorer's key; never shown as UI text
     },
     "brands": [
       { "id": "accountingnow", "name": "AccountingNow", "realDomain": "accountingnow.example",
@@ -315,8 +374,10 @@ payroll portal (00 §1), the brand Sofia's `lord_portal` intel points at.
           { "id": "d_sub",       "domain": "login.accountingnow.account-help.example",
                                                                           "trick": "subdomain",    "tier": 2 },
           { "id": "d_vv",        "domain": "accountingnovv.example",      "trick": "typo-squat",   "tier": 3 },
-          { "id": "d_homo",      "domain": "accountingnоw.example",  "trick": "homograph",    "tier": 3,
-            "minProfile": "student" }       // hidden below the student profile
+          { "id": "d_homo",      "domain": "accountingn\u043Ew.example",
+                                 "browserDomain": "xn--accountingnw-fgk.example",
+                                 "trick": "homograph",    "tier": 3,
+            "minProfile": "student" }       // hidden below the student profile; \u escapes only
         ] },
       { "id": "cloudbox", "name": "CloudBox", "realDomain": "cloudbox.example", "realFields": ["email", "password"],
         "domains": [ /* a decoy brand: wrong for this pretext */ ] }
@@ -344,18 +405,30 @@ payroll portal (00 §1), the brand Sofia's `lord_portal` intel points at.
     "conceptCards": ["typo-squat", "homograph", "padlock", "hover-link", "right-to-left"],
     "profile": "student"                    // student | awareness | mission; see section 7
   }
-]
+] }
 ```
 
 The builder never reads the target's secrets: it reads only `linkThreshold` and `minDomainTier`,
 keyed by the `04` target id (`lord` here). This page record carries its `targetId` (`lord`); `04`'s
-`lord` target owns the `linkCredible` factor and `expectedLink` (00 §4, §7) and is already defined
-there.
+`lord` target owns the `linkCredible` factor and `expectedLink` (`00` §4, §7).
 
-`homograph` strings are authored with `\u` escapes and an explanatory note, never typed free-hand.
-The real-brand denylist the N6 lint checks against is a validator-level list (PayPal, NatWest,
-Microsoft and the like, case-insensitive, matched as substrings of `name` and every domain string),
-not a per-scenario field, so a single scenario cannot quietly shorten it.
+Homograph strings are authored with `\u` escapes and an explanatory note, never typed free-hand, and the
+offline lint rejects a raw non-ASCII byte in any `domain`, `browserDomain` or `realDomain` field. The
+real-brand denylist and confusable map are validator-level, not a per-scenario field (section 1).
+
+**Globals.** The builder sets `landing_<pageId>_built` (boolean, for example `landing_payroll_login_built`)
+and `landing_<pageId>_domain` (the chosen domain option id, such as `d_word`; colon-free), through the
+shared writer (`00` S3) when the page is attached. Both are declared in `globalVariables`. `10` and the
+`boostIfGlobal` hooks in `04` use these names.
+
+**Stored record.** A built page is saved as ids only: the option ids chosen, the field ids ticked,
+`credibility`, `tellsFound`. It never stores a value, and the validator rejects any field key shaped like a
+captured-value slot (`value`, `captured`, `submitted_data`). Records live in one global,
+`se_landing_pages` (default `{}`), under the `globalVariables[STATE_KEY]` pattern the SIEM minigame uses
+(`siem-dashboard-minigame.js`), so they survive a reload; ids-only keeps them small, because the 60 KB
+`pagehide` flush shares one budget with every other global (`state-sync.js`). A new top-level game-state
+section would never reach the server (the permitted parameters in `games_controller.rb` are fixed), which
+is why this uses a global.
 
 ## 6. Engine wiring
 
@@ -363,26 +436,52 @@ New component folder `public/break_escape/js/minigames/landing-page-builder/`:
 
 - `landing-page-builder-minigame.js` — the overlay, extends `MinigameScene`.
 - `landing-page-model.js` — pure `scorePage(...)` (section 4) and the tell list. No DOM, unit-testable.
-- `landing-page-render.js` — draws the fake browser to a low-res canvas (address bar, padlock,
-  logo block, form boxes, wording lines) scaled with `image-rendering: pixelated`. It draws shapes
-  and text only; it builds no HTML a browser would load.
+- `landing-page-render.js` — renders the fake browser from the record into two layers. **Pixel layer:**
+  logos, banner and product pictures, and frame icons (padlock open, closed, crossed; "Not secure"
+  badge), as `<img>` or a small canvas scaled with `image-rendering: pixelated`. **Text layer:** the
+  address bar, the page's visible wording, form-field labels and the concept cards as plain DOM text in the
+  bundled readable sans-serif (N8), at native resolution, set with `textContent`. Form fields are drawn as
+  styled `div` boxes with a label, never as form controls (the safety constraints in section 1). The
+  preview is a `role="img"` figure with an `aria-label` that describes the page; in step 6 its hot-spots
+  are `div role="button" tabindex="0"`. It outputs no HTML a browser would load and has no serialise
+  function.
 
-**Registration and start** follow the existing pattern. Register in
-`public/break_escape/js/minigames/index.js` next to `MinigameFramework.registerScene('text-file', …)`
-(`index.js:160`), which calls `registerScene(sceneType, SceneClass)` at
-`minigames/framework/minigame-manager.js:229`. Start through `startMinigame(sceneType, container,
-params)` (`minigame-manager.js:15`), from a starter added in `systems/minigame-starters.js` modelled
-on the `startMinigame('siem-dashboard', null, params)` block (`minigame-starters.js:660-679`). Params:
-`{ landingPageId, targetId, onComplete }`. Two ways in: (a) from a workstation object ("Build a
-page"), (b) from the mail client's Attach menu when the `link` payload has no built page yet.
-Display layers lean on `text-file/` and `examine/` for panel chrome (`text-file-minigame.js`,
-`examine-minigame.js`).
+**Registration and start** need the full wiring checklist in README Conventions, with this component's
+names:
 
-**Completion.** The minigame sets `this.gameResult` and calls `this.complete(true)` when the page is
-saved (step 4). `complete()` emits `minigame_completed { minigameName, success, result }` through
-`window.eventDispatcher` (`minigames/framework/base-minigame.js:84-108`), and `endMinigame` then
-invokes `params.onComplete(success, result)` (`minigame-manager.js:204-206`). Closing early calls
-`complete(false)`, which emits `minigame_failed`.
+- `export`, `import` and `registerScene('landing-page-builder', …)` in `minigames/index.js` (three places,
+  next to `registerScene('text-file', …)` at `index.js:160`; `registerScene` is at
+  `minigames/framework/minigame-manager.js:229`).
+- A starter in `systems/minigame-starters.js` modelled on the siem block (`startMinigame('siem-dashboard',
+  null, params)`, `minigame-starters.js:649-680`), exposed as `window.startLandingPageBuilder`.
+- A branch in `systems/interactions.js` for the page-builder workstation object type, like the siem and
+  command-board branches; a sprite `assets/objects/page-builder.png`.
+- A stylesheet linked in `app/views/break_escape/games/show.html.erb`.
+- No `requiresKeyboardInput`: the builder has no text entry (every input is a chip, tick or button), so
+  game keys are left alone. If one is ever added, set the flag and follow the Esc rule below.
+- Validator and schema (N6): `social.landingPages` under the `social` key, and a `minigameData` entry
+  (`landingPageId`) for the object type.
+
+Params: `{ landingPageId, targetId, returnTo?, onComplete }`. Two ways in: (a) from a workstation object
+("Build a page"), (b) from the mail client's Attach menu when the `link` payload has no built page yet.
+Panel chrome leans on `text-file/` and `examine/` (`text-file-minigame.js`, `examine-minigame.js`).
+
+**Nested launch.** `MinigameFramework.startMinigame` ends the running minigame first and runs its
+`onComplete(false)` (`minigame-manager.js`, `endMinigame`), so launching the builder from the composer
+would discard the composer. The convention in README Conventions applies: the mail client saves its draft
+to its own global before launching, passes `returnTo: { sceneType: 'mail-client', params }`, and the
+builder's close (saved or not) reopens it with the draft restored. The builder's own "Case file" button
+(step 1) does the same the other way, saving its choices to `se_landing_pages` first. The shared helper is
+the README's return-to item; the builder adds nothing of its own.
+
+**Completion and close.** When the page is attached (step 4) the minigame sets `this.gameResult` and calls
+`this.complete(true)`. `complete()` emits `minigame_completed { minigameName, success, result }` through
+`window.eventDispatcher` (`minigames/framework/base-minigame.js`), and `endMinigame` then invokes
+`params.onComplete(success, result)` (`minigame-manager.js`). **Closing early is also a normal exit**:
+the builder saves its draft choices, sets `gameResult.saved = false` and calls `complete(true)`, so a
+close never emits `minigame_failed`. `BaseMinigame.start()` binds a document-level Escape that calls
+`complete(false)`; the builder passes `disableClose: true` and binds its own Escape to the same close.
+Scenario logic keys on the `landing_<pageId>_built` global, not on the event.
 
 ```jsonc
 // result
@@ -393,17 +492,20 @@ invokes `params.onComplete(success, result)` (`minigame-manager.js:204-206`). Cl
   "tellsFound": ["domain","formOrigin","hoverMismatch"], "inspectionComplete": true }
 ```
 
-**Bridging to globals.** The scenario reacts with `set_global` (`systems/apply-actions.js:33-40`)
-or an objective `onComplete.setGlobal` (`systems/objectives-manager.js:754-756`), for example
-`landing_payroll_login_built = true`. No flag is involved in building; if a scenario wants a flag for
-"phish landed", that is `01`'s server-validated flow (`flag-station-minigame.js` pattern), and the
-builder never judges a flag.
+**Bridging to globals.** On attach the builder sets `landing_<pageId>_built` and
+`landing_<pageId>_domain` through the shared global writer (`00` S3; today `applyActions` `set_global`,
+`systems/apply-actions.js`). A scenario reacts with an `eventMappings` entry on
+`global_variable_changed:landing_payroll_login_built`, or an objective `onComplete.setGlobal`
+(`systems/objectives-manager.js`). A global alone cannot complete a task (README engine table,
+"Objectives"). No flag is involved in building; if a scenario wants a flag for "phish landed", that is
+`01`'s server-validated flow (`flag-station-minigame.js` pattern), and the builder never judges a flag.
 
 **Cross-component contracts.**
 
-- **`01` (mail client).** The `link` payload (`01`, payloadKit) holds `landingPageId`. `01` loads the
-  saved page record, shows its chip as "Link: {shown address}" (the **display text** the player
-  writes may name the real brand, the **target** is the look-alike, which is the hover-link lesson),
+- **`01` (mail client).** The `link` payload kit item (`page_payroll`, `00` §1 `link` slot type) holds
+  `landingPageId`. `01` loads the saved page record, shows its chip as "Link: {shown address}" (the
+  **display text** the player writes may name the real brand, the **target** is the look-alike, which is
+  the hover-link lesson),
   and passes `{ credibility, gatesPassed }` into `04`. After a landed phish `01` calls
   `describeVictimOutcome(page, target, landed)` (exported from `landing-page-model.js`) for the
   step 5 result line.
@@ -424,13 +526,19 @@ builder never judges a flag.
 
 | # | Item | Notes |
 |---|------|-------|
-| N1 | `landing-page-builder` overlay (preview, choice panel, step strip, score panel) | New component, house style |
+| N1 | `landing-page-builder` overlay (preview, choice panel, step strip, score panel), with the wiring checklist above | New `minigames/landing-page-builder/`; `minigames/index.js`; `systems/minigame-starters.js`; `systems/interactions.js`; `show.html.erb` |
 | N2 | `landing-page-model.js` pure scorer + tell table + `describeVictimOutcome` | Unit tests mirror section 4's worked example (34 and 87) |
-| N3 | `landing-page-render.js` canvas fake-browser drawer | Shapes and text only; no HTML output |
-| N4 | Persist built pages in game state keyed by `landingPageId` so reload keeps them | Shared mechanism with `01` N2 (persisted inbox); learn from the fingerprint reload bug |
-| N5 | Step 6 defender inspection (click-to-find tells, decoy padlock, closing five-habits card) | Proposed for reuse by `05` as a change request (see cross-component contracts), not yet in `05` |
-| N6 | Scenario-load lint: every `domain`/`realDomain` ends `.example`; **no `name` or domain string contains a word from the validator's real-brand denylist** (checks the whole string, not just the suffix); every string non-empty with no unresolved `{placeholder}`; every non-`unrelated` tier has a defender string | Safety (fictional-brand enforcement + the SecGen blank-message fix) |
+| N3 | `landing-page-render.js` two-layer renderer (pixel layer, inert DOM text layer) and the DOM-safety test that fails on any form, link, button, frame, script or `contenteditable` in the preview | New; test in `test/js/` |
+| N4 | Persist built pages as ids in the `se_landing_pages` global (section 5), with the 60 KB flush note | `state-sync.js` flush; `siem-dashboard-minigame.js` STATE_KEY pattern as the model |
+| N5 | Step 6 defender inspection (focusable hot-spots, decoy padlock, "Show the link target", closing five-habits card) | Proposed for reuse by `05` as a change request (see cross-component contracts), not yet in `05` |
+| N6 | Offline lint and CI test: every `domain`/`browserDomain`/`realDomain` is ASCII and ends `.example`; fold-then-match brand check with the allowlist as primary control (section 1); every string non-empty with no unresolved `{placeholder}`; every tier (0 included) has a defender string; no field key shaped like a captured-value slot; an `xn--` string survives rendering unchanged | `scripts/validate_scenario.rb` (`known_top_level`, S11); `scripts/scenario-schema.json`; `scripts/minigame-data-schemas.json`; new `test/js/validator-landing-pages.test.mjs` |
+| N6b | Runtime guard: the model and the renderer refuse a domain not on the authored menu or not ending `.example`, and draw a "blocked" placeholder | `landing-page-model.js`, `landing-page-render.js` |
 | N7 | Concept cards (typo-squat, homograph, padlock, hover-link, right-to-left) as shared content | Also used by `02`/`05` tool cards |
+| N8 | Bundled readable sans-serif for all text in the preview and cards (README engine table, "Fonts and CSS"); authored domains rendered raw, not via `displayDashes` | `public/break_escape/assets/fonts/`; `css/fonts.css`; `utils/display-dashes.js` bypass |
+| N9 | Nested launch and close: return-to for the mail-client round trip, close as a normal exit with its own Escape (README engine table, "Minigame framework") | `minigames/framework/minigame-manager.js`, `base-minigame.js` (`disableClose`) |
+
+N6 and N6b together are the safety enforcement. The shared engine items they depend on are in `00` §12
+(S3 the shared global writer, S11 the validator and schema).
 
 ## 7. Reuse across audiences
 
@@ -438,33 +546,65 @@ One data record, one `profile`:
 
 | | Student lab | Awareness | Mission |
 |---|---|---|---|
-| Choices shown | All seven | Brand, domain, padlock (others fixed to correct) | Domain and wording only; HaX presets the rest |
+| Choices shown | All seven | Brand, domain, padlock (others fixed to correct) | Domain and wording only; the handler presets the rest |
 | Domain menu | Six tricks including homograph | Three tricks (wrong letter, extra word, typo-squat), no homograph | Three, no homograph |
 | Meter and per-factor lines | Shown after Score only | Live, with a tell counter | Live |
-| Step 6 inspection | Find tells unaided, then closing card | Tells auto-highlighted, tap to read | One-line summary in HaX dialogue |
+| Step 6 inspection | Find tells unaided, then closing card | Tells auto-highlighted, tap to read | One-line summary in the handler's dialogue |
 | Gates | `minDomainTier` 2 to 3, escalating across targets | Off (threshold only) | One target, threshold 60 |
-| Concept cards | All five, optional "why" panels | Two (padlock, hover-link) | None; HaX explains |
+| Concept cards | All five, optional "why" panels | Two (padlock, hover-link) | None; the handler explains |
 | Outcome | Metrics line for the Ch. 9 report | "You fooled the system. Could you spot yours?" then flip to `05` | `set_global landing_*_built` gates the next lock |
 
 ## 8. Art and audio assets (PixelLab-first, none generated now)
 
-- Fake-browser chrome: window frame, address bar, padlock open/closed/crossed icons, "Not secure" badge — pixel UI, about 8 sprites at native size, scaled 3x.
+- Fake-browser chrome: window frame, address bar frame, padlock open/closed/crossed icons, "Not secure" badge — pixel UI, about 8 sprites at native size, scaled 3x. The address text itself is DOM text, not part of the sprite.
 - Fictional brand logos (AccountingNow, the decoy CloudBox) in three renderings each (crisp, blurry, stretched): produced from one crisp 32x32 source; the blurry and stretched variants are drawn deliberately bad in the renderer, not downscaled (house rule: no downscaling pixel art).
-- Page body templates: sign-in, password-expired, payslip-ready layouts (shapes and text lines).
+- Page body templates: sign-in, password-expired, payslip-ready layouts (pixel blocks; their text is DOM text).
 - Step-strip icons (pretext, build, score, send, inspect), tell-found stamp, credibility meter frame.
 - Concept-card illustrations: `paypa1` against `paypal`, `rn` against `m`, an address bar with the real name hidden in a subdomain, padlock beside a fake address.
 - Audio: reuse existing UI clicks; one soft "found it" cue on a correct tell; nothing new needed.
 
+## Visual style (decided 2026-10-20)
+
+- The built page and the fake-browser frame use the game's pixel-art look: pixel logos for the fictional
+  brands, pixel imagery in the page body, and a frame styled like the game UI with `--ui-*` colours.
+- Text the player must read or compare is **inert DOM text in a bundled readable sans-serif**, not a pixel
+  font and not text drawn into the low-res canvas. That covers the domain, the address bar, the page's
+  visible wording, field labels and the concept cards. Look-alike domains (`rn` against `m`, `paypa1`
+  against `paypal`) must behave as they do in a real browser, which needs a face whose `l`, `I`, `1`,
+  `rn` and `m` differ clearly. None is bundled today (the game ships `GNF`, `Pixelify Sans` and `Press
+  Start 2P`; the only sans-serif declarations are a system stack and `Arial`), so N8 adds one, self-hosted
+  as woff2 and declared in `css/fonts.css`. Use it only inside the fake page, the address bar and the
+  cards; the surrounding chrome stays in the theme fonts.
+- Pixel-art imagery makes a built page obviously part of the game. It cannot be lifted as a working
+  phishing page, and it cannot be mistaken for a real brand. That supports the weaponisation check in
+  "Safety design", but the structural constraints there (no form controls, no export) are what actually
+  hold the line; art style is not relied on.
+
+## 8a. Accessibility and small screens
+
+- Below about 700 px the two panes stack: preview above, choice panel below. The step strip becomes a list
+  with `aria-current="step"`. Touch targets are at least 44 px.
+- Every chip row is a radio group (or a checkbox group for form fields), reachable by Tab and arrow keys.
+  Every action, including Score, Attach, Show me and the step 6 picks, is reachable by keyboard.
+- The credibility number is text, and the verdict and the per-factor lines sit in an
+  `aria-live="polite"` region. The ✓, ~ and ✗ marks are always paired with the words Pass, Partly and Fail,
+  never colour or a symbol alone. The tell counter is text.
+- The meter fill and any "found it" stamp do not animate under `prefers-reduced-motion`.
+- Teaching notes are behind a visible "?" button as well as hover. The link target in step 6 is behind a
+  button, not hover.
+- The preview is one labelled figure with a text description, so a screen reader hears the page as a
+  description; in step 6 the hot-spots are the focusable parts.
+
 ## 9. Open questions
 
-User-facing ones are copied into `QUESTIONS_FOR_USER.md` as Q07-A to Q07-E.
+The user-facing ones (OQ1 to OQ5) are repeated in `README.md`.
 
-- OQ1 (→ Q07-A): real brand names in concept-card text. Default: yes, plain text only.
-- OQ2 (→ Q07-B): domain chosen from a menu, never typed. Default: menu. Free typing needs a
+- OQ1: real brand names in concept-card text. Default: yes, plain text only.
+- OQ2: domain chosen from a menu, never typed. Default: menu. Free typing needs a
   similarity scorer and edges toward a look-alike generator.
-- OQ3 (→ Q07-C): homograph in the student profile only. Default: yes.
-- OQ4 (→ Q07-D): outcome counts in the builder. Default: yes, counts only.
-- OQ5 (→ Q07-E): padlock wording and the redirect mention. Default: as written.
+- OQ3: homograph in the student profile only. Default: yes.
+- OQ4: outcome counts in the builder. Default: yes, counts only.
+- OQ5: padlock wording (a padlock means the connection is private to whoever owns the address, and fake sites can show one). Default: as written, with the icon called "padlock" or "secure-connection icon" because some browsers have replaced the padlock with a neutral icon. Verify against current browsers before shipping.
 - OQ6: should `tier` be authored or computed from edit distance and confusable-character rules?
   Default: authored. Computed tiers are less readable to a reviewer and would need a confusables
   table the game has no other use for.
