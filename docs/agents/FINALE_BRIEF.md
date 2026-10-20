@@ -31,7 +31,7 @@ m09 and m10 close Season 1 of SAFETYNET: Licence to Hack. They are the payoff fo
 ## Where the work goes
 
 - Shared finale docs: `planning_notes/overall_story_plan/mission_initializations/finale/`
-- Per mission, stage outputs: `planning_notes/overall_story_plan/mission_initializations/m09_digital_archaeology/stages/stage_N/` and `.../m10_final_cipher/stages/stage_N/` (same layout as m05's). Working ids stay until stage 0 settles titles; a rename later follows the rename rule.
+- Per mission, stage outputs: `planning_notes/overall_story_plan/mission_initializations/m09_digital_archaeology/stages/stage_N/` and `.../m10_full_disclosure/stages/stage_N/` (same layout as m05's). Working ids stay until stage 0 settles titles; a rename later follows the rename rule.
 - Each stage folder also holds its review rounds: `REVIEW_R1.md`, `REVIEW_R2.md`, ...
 - Built mission (stage 9 on): `scenarios/m09_<slug>/`, `scenarios/m10_<slug>/`.
 

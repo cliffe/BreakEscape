@@ -45,3 +45,23 @@ Orchestrator checks and decisions (phase A close):
 - Author 3 filled FINALE_ARC.md §3–9 and both stage-0 files (draft for R1). Highlights: imports typed route/helper/obstacle-with-way-round/presence/line, never gating; m09 imports 42 + 8 `completed`, m10 56 + 9; 41 JSON-only export additions (m08 gets 18); m09 exports 4 for m10. Endings all after VM flag 4. Database choice secure / disclose / wipe both ("disclose" is new). New sleeper: Agent 0x5E "Lantern" (Tomasz Wierzbicki), not Vector/Phantom (keeps m08's verdict). Titles: m09 keeps Digital Archaeology; m10 proposed "Tomb Gamma". Teaser behind `teaser_enabled` (default off). §2 fix: Mercer rows use `m07_mercer_ko`.
 
 ### Stage 0 review round 1
+
+| Reviewer | Blocker | Major | Minor | Verdict |
+|---|---|---|---|---|
+| Accuracy (`finale/REVIEW_STAGE0_R1_ACCURACY.md`) | 0 | 7 | 23 | revise: plumbing right (98 imports script-checked), several value meanings wrong (A1 redirected Trojan Horse, A3 pipeline list vs deal, A5 "" default, A6 m06 already says the name) |
+| Design (`finale/REVIEW_STAGE0_R1_DESIGN.md`) | 0 | 13 | 11 | revise: premise and endings strong; m10 overstuffed, sleeper a cheat, too many imports, carry-overs read out as lists |
+
+User answers 2026-10-20: F5 approved (m07 `teacher_discussed` global, m02 derived `reeves_fate`); F6 keep "disclose"; F7 the live line is canon; F8 not "Tomb Gamma": pitch other titles.
+
+Orchestrator decisions for the R1 fix pass (sent to author 3):
+- Length: m09 ~75 min, m10 ~100 (old outline; m07 ships at 90). 4–5 returning faces get full scenes in m10.
+- Adopt D-02 (only a SAFETYNET agent pressing the key proves his point), D-03 (plant on the raid team, introduced in m09, whodunit in m10, recruited via m05 TalentStack; rename sleeper after A2 clash).
+- D-07 softened: the user wants as many decisions as possible carried, so tier rather than cut (tier 1 ~15 felt and tested per mission; tier 2 cheap fixed-string lines, kept broad; tier 3 cut with reasons). The approved ink changes stay at least in tier 2.
+- Cap the Reading at 3–4 entries and his opening case at three; other callbacks become player-chosen talk-down arguments.
+- Adopt the reviewer's direction on D-04/05/09/10/11/12/15 and all accuracy majors.
+- F8 answered: m10 title **Full Disclosure** (id `m10_full_disclosure`; folder renamed after the R1 fix pass).
+- R1 fix pass (author 3): 53 fixed, 1 withdrawn (D-23, Reeves kept per F5), 0 deferred; outcomes in FINALE_ARC §10. Key changes: Publication needs a SAFETYNET hand on the key (06:00 city-by-city fallback keeps the clock); sleeper is Agent 0x5E "Lantern" Halina Kowalczyk (ledger WREN, TalentStack lateral hire), raid team met in m09, m10 accusation is a real choice; core: case capped at three, cost stated per database option, lethal force only at the dead-man switch, Scorched Earth is his own purge; tiers (m09 43+8, m10 58+9, 38 export additions); m09 purge order as clock, Recruiter's offer to every player, the Albion flaw evidence; m10 five full returning scenes (Nightshade, Victoria, Voltage, Ghost, Gary), nine rooms. New names grepped: no clash (orchestrator re-checked Kowalczyk/Halina/WREN).
+- For later (not blocking): new canon that Tesseract recruited Nightshade while still chief strategist (goes into the bible at stage 6); ten new sprites; a sensitivity look at Cody Old Coyote (Apsáalooke) at the character stage.
+- Folder renamed m10_final_cipher → m10_full_disclosure.
+
+### Stage 0 review round 2

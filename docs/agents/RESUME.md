@@ -1,6 +1,6 @@
 # Resume note: finale m09 + m10 (started 2026-10-20)
 
-Brief `docs/agents/FINALE_BRIEF.md`; log `scenarios/FINALE_DEV_LOG.md`; pending `scenarios/FINALE_DECISIONS_PENDING.md`. Outputs under `planning_notes/overall_story_plan/mission_initializations/finale/`, `.../m09_digital_archaeology/`, `.../m10_final_cipher/`.
+Brief `docs/agents/FINALE_BRIEF.md`; log `scenarios/FINALE_DEV_LOG.md`; pending `scenarios/FINALE_DECISIONS_PENDING.md`. Outputs under `planning_notes/overall_story_plan/mission_initializations/finale/`, `.../m09_digital_archaeology/`, `.../m10_full_disclosure/`.
 Plan: phase A inventory (carry-over m01–m04, m05–m08; VM shape) → stage 0 joint for both missions + finale arc doc → stages 1+2, 3, 4+5, 6, 7, 8, 9 per mission (author + ≥3 review rounds; milestone cross-reviews after 3, 5, 8) → AGENTS.md improvement loops. User answers F1–F4 in the log (all endings kept; SecGen drafts, m08 exports, teaser slot, stage-doc commits approved).
 Status: phase A running (VM shape done).
 
