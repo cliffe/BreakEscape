@@ -1,6 +1,6 @@
 # Scenario initialisation: m09 Digital Archaeology
 
-Stage 0. Author: stage-0 author (Opus), 2026-10-20. Status: round 1 and 2 findings folded in (FINALE_ARC §10, §11); draft for review round 3.
+Stage 0. Author: stage-0 author (Opus), 2026-10-20. Status: round 1–3 findings folded in (FINALE_ARC §10–12); stage 1 handover in FINALE_ARC §13; draft for review round 4.
 
 Shared design for both finale missions: `../../finale/FINALE_ARC.md` (premise §1, threads §2, imports §3, cast §5, flags §6, risks §8). This file does not repeat it.
 
@@ -35,7 +35,7 @@ Every type the player has used in m01–m08 is available. The PIN cracker is iss
 | Challenge | Where and why | Builds on |
 |---|---|---|
 | **PIN cracker (issued)** | Handed over at the briefing by Halina Kowalczyk ("The long way is over," HaX). Opens Sorensen's office safe, which holds the Reading's shelf mark and the tape room's key card. The PIN can also be found the long way (her desk). | m02 (optional pick-up), m02–m08 safes; m08's "I chose what you went in without" |
-| **The purge (the night's clock)** | Sorensen shreds and degausses in the restricted cage; Jesse Tran runs a tape wipe from the server closet. It moves on story events (flag 1, the Recruiter's call, flag 2), never on minutes, so VM speed costs nothing. Two save-one choices, with HaX naming each bin: Derek's file or Nightshade's copy (default: the Initiative's letters to Social Fabric); then the Recruiter's file or Tomb Alpha's tapes. Stopping Sorensen saves the paper pair; stopping Tran saves the tape pair. Nothing required is ever lost (FINALE_ARC §6.1). | m07's clock |
+| **The purge (the night's clock)** | Sorensen shreds and degausses in the restricted cage; Jesse Tran runs a tape wipe from the server closet. It moves on story events in one order (flag 1, the cage, flag 2, the Recruiter's call, the tape deck), never on minutes, so VM speed costs nothing. Two forced save-one choices, with HaX naming what is in each: at the cage, Derek's file or Nightshade's copy (default: the Initiative's letters to Social Fabric), and the other is gone when the cage opens; at the end of the Recruiter's call, her file (a tape) or Tomb Alpha's tapes, and the other is wiped. Stopping Sorensen or Tran afterwards saves only what is left on that side. Nothing required is ever lost (FINALE_ARC §6.1). | m07's clock |
 | Lockpicking | Archive doors, plan chests, the salvage cage holding Tomb Alpha's and Tomb Beta's kit. | m01 on |
 | Patrolling guard | Cody Old Coyote on his rounds; Jesse Tran's call-in adds a second guard (avoidable). | m02 on |
 | RFID cloning | Sorensen's master card, cloned at her side while she talks (the m08 technique), or Noor's card if she helps. | m03, m08 |
@@ -45,11 +45,11 @@ Every type the player has used in m01–m08 is available. The PIN cracker is iss
 | Document correlation | The handwriting on Nightshade's recruitment file against the annotation style in the Alpha/Beta files and the m07 decode: one hand. With flag 3 this is the proof. Optional: WREN against the personnel records in the legacy files (`sleeper_named`). | m03 directive, m08 door audit |
 | The kept flaw, and coordinated disclosure done once | The catalogue entry for one of the holes Critical Mass later came through at Albion (the plant's control equipment), marked "retain: operational value" nine years ago; Tesseract's memo from the same year arguing it should go to the vendor; and the vendor notice he drafted and never sent. On the critical path (flag 3's files). The player may send the notice now from the drop terminal (optional, `albion_notified`); he answers it in m10. | m04 disclosure choice |
 | Combat (light) | Tran's called-in guard; Sorensen if pushed. Every NPC knock-out leaves the mission finishable. | m01 on |
-| **Choices for every player** | The Recruiter's offer: WREN's name now (always right), if the player leaves her file, the handler list for the twenty-three, to burn; a double-cross is possible. The two purge choices. HaX's confession: "You should have told me." / "I'd have done the same in your place." On some branches also: tell HaX about the m05 deal or hang up; send Nightshade his file or keep it. | m05, m08 |
+| **Choices for every player** | The Recruiter's offer, after flag 2: WREN's name now (always right), if the player lets her file (a tape holding her handler list, gated by m05's outcome) be wiped; taking it means pulling Tomb Alpha's tapes at the deck instead; a double-cross is possible and rolls up only part of her network. The cage choice. HaX's confession, with the player's answer ("You should have told me." / "I'd have done the same in your place."; on the safe-opened branch, "You should have pushed." / "I'd have sat on it too."). On some branches also: tell HaX about the m05 deal or hang up; send Nightshade his file or keep it. | m05, m08 |
 
 ### 2.3 Hybrid workflow
 
-Briefing cutscene in Task Force Null's room (the wall of cards, the purge order, the raid team) → archive by the loading dock → drop terminal in the reading room → **flag 1** gives the shelf marks, and the purge starts → restricted stacks (cage: print, card, picks; Sorensen at the shredder; the first save-one choice, or stop her) → the ledger shelf → **flag 2**: WREN is on the raid team; optional cross-reference (Torres rings in on that branch) → the Recruiter rings with her offer; the tape wipe moves to her file → server closet (stop Tran, or the second save-one choice) → Sorensen's office: safe (PIN cracker), the Reading, Nightshade's file → tape room (code from the catalogue, decoded with Gary's hint or the long way) → Tomb Beta's server → **flag 3**, the Albion papers and the handwriting: identity scene at the drop terminal, Netherton says the name, HaX's confession and the player's answer; optionally send the vendor notice → **flag 4**: the hour and the defences → Tesseract rings HaX → Netherton's Montana order, and why the team goes in together → debrief.
+Briefing cutscene in Task Force Null's room (the wall of cards, the purge order, the raid team) → archive by the loading dock → drop terminal in the reading room → **flag 1** gives the shelf marks, and the purge starts → restricted stacks (Sorensen at the shredder behind the mesh: save one bin through the hatch; opening the cage with print, card and picks takes the other) → Nightshade's file in a locked plan chest → the ledger shelf → **flag 2**: the printed ledger read, then shredded; WREN is on the raid team; optional cross-reference (Torres rings in from his desk on that branch) → the Recruiter rings with her offer; as the call ends, the player pulls one tape from the deck at the drop terminal → server closet (stop Tran, saving the rest of the tape side) → Sorensen's office: safe (PIN cracker), the Reading → tape room (code from the catalogue, decoded with Gary's hint or the long way) → Tomb Beta's server → **flag 3**, the Albion papers and the handwriting: identity scene at the drop terminal, Netherton says the name, HaX's confession and the player's answer; optionally send the vendor notice → **flag 4**: the hour and the defences → Tesseract rings HaX → Netherton's Montana order, and why the team goes in together → debrief.
 
 ## 3. ENTROPY cell
 
@@ -63,9 +63,9 @@ Briefing cutscene in Task Force Null's room (the wall of cards, the purge order,
 
 **Cell philosophy in play.** People as records: every placement costed, every recruit's life a line item. Nightshade's file shows it from the inside; the Reading turns it on the player.
 
-**Previous operations.** m05 (TalentStack, Torres), m08 (Nightshade, fifteen years in place), and WREN, placed in Task Force Null eleven years ago through Harwick & Lowe, an older front nobody had tied to the Initiative before tonight.
+**Previous operations.** m05 (TalentStack, Torres), m08 (Nightshade, fifteen years in place), and WREN, placed in SAFETYNET eleven years ago through Harwick & Lowe, an older front nobody had tied to the Initiative before tonight, and assigned to Task Force Null's Montana operation on day 10.
 
-**Inter-cell connections.** Social Fabric's plant on the staff (Jesse Tran, m01's lost intelligence); Zero Day's front company on the lease (m03); the Crypto Anarchists' account that pays it (m06, Irina); Critical Mass's and Ransomware Inc's money in the refit ledger (m02, m04). Every earlier cell has a paper trail into this building.
+**Inter-cell connections.** Social Fabric's agent on the staff (Jesse Tran, m01's lost intelligence); Zero Day's front company on the lease (m03); the Crypto Anarchists' account that pays it (m06, Irina); ENTROPY's money in the refit ledger (St. Catherine's ransom, where it was paid). Every earlier cell has a paper trail into this building.
 
 ## 4. Theme options
 
@@ -134,7 +134,7 @@ Option 1, The Records Office (night), under a purge, with Option 2's auditor blu
 ### Next steps
 
 - Stage 1–2 (narrative and storytelling): the briefing's "previously on" with never-played cards and the "who is Tesseract" beat; the identity scene in its forms (rows 70, 98, 125); the Reading's four entries and last page; the Recruiter's call; Tesseract's call to HaX. A reviewer reads the default path with no other mission in mind.
-- Stage 3 (moral choices): the Recruiter's offer and the double-cross (every player), the two purge choices (every player), the answer to HaX's confession (every player), the vendor notice (optional), the m05 secret (by branch), Nightshade's file (by branch), Noor (tell her or not), Sorensen's fate.
+- Stage 3 (moral choices): the Recruiter's offer, the double-cross and the tape-deck pull that ends her call (one decision, every player), the cage choice (every player), the answer to HaX's confession (every player), the vendor notice (optional), the m05 secret (by branch), Nightshade's file (by branch), Noor (tell her or not), Sorensen's fate.
 - Stage 4 (objectives): the aims below; the purge's event triggers.
 - Stage 5 (rooms): loading dock, front desk, reading room, open stacks, restricted cage, salvage cage, Sorensen's office, tape room, server closet. The briefing is a cutscene, not a room.
 - Haiku VM plan: fit the modules to §2.1.
@@ -143,7 +143,7 @@ Option 1, The Records Office (night), under a purge, with Option 2's auditor blu
 
 - **Opening and closing.** Briefing cutscene in Task Force Null's room with `skipIfGlobal`: the wall of earlier missions as the "previously on" (row 57); the intercepted purge order; the dispatch count (rows 81–85); the raid team, with Kowalczyk handing over the PIN cracker. Closing debrief: Netherton reads the two dead agents' names, signs the Montana order, tells the player the raid team goes in together ("They come. You watch them."), `bond_visualiser` conclusion.
 - **Aims, staged and spoiler-safe.** 1 Get in and set up the drop terminal. 2 Find the restricted series before it burns (flag 1, the cage). 3 Read the Initiative's ledger (flag 2; optional: identify WREN). 4 Search the director's office (the safe, the Reading, the files). 5 Take Tomb Beta's server (flags 3–4). Optional: stop Sorensen; stop the tape wipe; send the vendor notice. `missionConclusion`: report to Netherton. `concludeRequires`: the four flags only.
-- **HaX's hub, progress-gated.** Topics open on progress globals: Tran (a warning before the player meets him unless `m01_maya_ko`); the restricted series after flag 1; WREN and the cross-reference nudge after flag 2; the Recruiter's file before the player answers her (what taking the offer would cost); the Recruiter after her call; "what the line means" on a quiet stretch after flag 2; the name after flag 3 (row 70's forms); what is in each bin at each purge choice, and what the purge has cost, once. Field-guide offers gated `_guide_offered` / `_hint_given` per VM stage.
+- **HaX's hub, progress-gated.** Topics open on progress globals: Tran (a warning before the player meets him with `m01_completed and not m01_maya_ko`, a neutral one on a cold start); the restricted series after flag 1; WREN and the cross-reference nudge after flag 2; the Recruiter's file before the player answers her (what taking the offer would cost); the Recruiter after her call; "what the line means" on a quiet stretch after flag 2; the name after flag 3 (row 70's forms); what is in each bin at each purge choice, and what the purge has cost, once. Field-guide offers gated `_guide_offered` / `_hint_given` per VM stage.
 - **Music.** Cutscene for the briefing; a tense investigation track with the shredder under it; threat on any hostile; a held cue for the identity scene; the Tesseract call under silence, then the closing track.
 - **KO resilience.** Sorensen, Noor, Tran and Old Coyote can all be knocked out; a downed Sorensen stops the shredder and a downed Tran stops the tape wipe; Sorensen's card drops when she is down and her print stays on her mug, and Noor's help always has the default route beside it.
 - **Carry-overs.** All imports and their uses: FINALE_ARC §3.1. m09's exports: §3.4. No import gates completion.
@@ -170,8 +170,8 @@ Checked against the 00 prompt's list and the alignment rubric. Ticks are the aut
 - [x] Stakes are specific: 1,100–2,600, his own figure; a sleeper on the team; the player's own file.
 - [x] True-believer villains with a spreadsheet (Sorensen, the Architect).
 - [x] Evidence discovered in play, not told.
-- [x] Player choices that matter in m10 (FINALE_ARC §3.4), and mid-mission choices for every player (the Recruiter's offer, two purge choices, the answer to HaX).
-- [x] A clock inside the mission (the purge) that runs on story events, costs optional finds only, and is visible.
+- [x] Player choices that matter in m10 (FINALE_ARC §3.4), and mid-mission choices for every player (the cage, the Recruiter's offer with the tape-deck pull, the answer to HaX). Each is forced by an event, so stopping Sorensen or Tran first can't skip it.
+- [x] A clock inside the mission (the purge) that runs on story events in one order, costs optional finds only, and is visible.
 - [x] A cold start works: the wall of cards is the "previously on".
 
 **Hybrid architecture**
@@ -179,6 +179,11 @@ Checked against the 00 prompt's list and the alignment rubric. Ticks are the aut
 - [x] Flags have story meaning and a submission point.
 - [x] Objectives track flags and in-game finds together.
 - [x] In-game work points at the VM (the catalogue clue, the ledger cross-reference) and back.
+- [x] VM challenges complement rather than duplicate in-game ones: the VM reads the servers (index, ledger, credential, mirror job); the in-game work is paper, locks and people, and the two meet in correlation (the handwriting against the credential).
+- [x] ERB narrative content needs no VM changes: the flags' meanings are fixed in FINALE_ARC §6.1, and every story variant lives in the ERB and ink.
+- [ ] In-game challenges teach skills the VM needs (or the reverse): partly. The catalogue encoding and the record correlation point at the VM work without teaching it. Owner: stage 4, with the lab sheet.
+- [ ] Flexible learning paths (labs done separately): open. Owner: the lab-sheet stage (the VM-steps companion sheet).
+- [x] Scope achievable in about 75 minutes: nine rooms, four flags, two forced choices; m08 ships at 70 with a similar load.
 
 **Alignment rubric (m01/m02)**
 - [x] Canon and stakes; staged aims; HaX's progress-gated hub; music; KO resilience; bookends and `bond_visualiser` (§6 design notes).

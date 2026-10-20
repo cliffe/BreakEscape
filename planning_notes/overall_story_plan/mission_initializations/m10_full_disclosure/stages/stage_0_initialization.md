@@ -1,6 +1,6 @@
 # Scenario initialisation: m10 Full Disclosure (`m10_full_disclosure`)
 
-Stage 0. Author: stage-0 author (Opus), 2026-10-20. Status: round 1 and 2 findings folded in (FINALE_ARC §10, §11); draft for review round 3. Renamed from the working id `m10_final_cipher`.
+Stage 0. Author: stage-0 author (Opus), 2026-10-20. Status: round 1–3 findings folded in (FINALE_ARC §10–12); stage 1 handover in FINALE_ARC §13; draft for review round 4. Renamed from the working id `m10_final_cipher`.
 
 Shared design for both finale missions: `../../finale/FINALE_ARC.md` (premise §1, threads §2, imports §3, endings §4, cast §5, flags §6, teaser §7, risks §8). This file does not repeat it.
 
@@ -12,8 +12,8 @@ Shared design for both finale missions: `../../finale/FINALE_ARC.md` (premise §
 - **Primary CyBOK areas:** Operating Systems and Virtualisation Security (a service boxed in on its host, and getting out of the box); Network Security (a segmented site, entered from outside); Law and Regulation with Human Factors (vulnerability disclosure: hoarding, coordinated disclosure, full release).
 - **ENTROPY cells:** the Architect's own workshop, with representatives of every cell the player has met (§3).
 - **Mission type:** raid and confrontation.
-- **Place in the season:** night of day 12; the Publication is set for 06:00 UTC on day 13. FINALE_ARC §1.3–1.5.
-- **What it owes the player:** the bunker, the database, the man, the plant on their own team, and a reckoning with eight missions of their own choices.
+- **Place in the season:** the evening of day 12 in Montana; on the Citadel's clock, which every in-game screen shows, the early hours of day 13 (about 01:45–06:00 UTC). The Publication is set for 06:00 UTC. FINALE_ARC §1.3–1.5.
+- **What it owes the player:** the bunker, the database, the man, the sleeper on their own team, and a reckoning with eight missions of their own choices.
 
 ## 2. Technical challenges
 
@@ -38,19 +38,20 @@ The finale adds no new kit. It asks the player to use all of it, in one place, u
 | Lockpicking | Store rooms, the workshop's cages, old Cold War cabinets, the core's outer lock (the long way). | m01 on |
 | RFID cloning | A technician's card on the workshop floor (or Gary's); a gallery guard's card for the outer lock. | m03, m08 |
 | PIN cracker | The bunker's original Cold War safes; the workshop where the crackers are made (row 29). | m09 |
-| Fingerprint kit | The plant room's reader; Voltage's print on the bypass as proof (on that branch). | m04, m08 |
-| Social engineering | The five full scenes (FINALE_ARC §5.3): Nightshade at the door (a deal, a payment, or one word), Gary at the workshop (consultant or recruit), Voltage at the plant (on the phone or at the switchgear), the gallery (Victoria or Vos), Ghost on the server-hall handset (talk Ghost out of selling the head start). Also Asante. Every one has a fight-or-sneak alternative. | m01 on |
-| **The whodunit** | One of the raid team is WREN (m09). Three clues across the bunker: the door log shows Malhotra's cloned badge at the core's service door at 02:10; the alibi (Malhotra was on comms with HaX; Arakawa was with the player); the workshop bench's serial, which matches the cracker on the player's own belt. Nightshade or Phantom skip one step. **Accusing is a real choice**: right, she is held; wrong, the innocent officer is led off with a line, the team loses that officer's job, and the player can recall them on new evidence; none, she acts at the core. Skipped entirely if m09 already named her (FINALE_ARC §4.4). | m08 door audit, m09 ledger |
-| **Victoria's offer** (recruited branch) | She offers to open the outer lock. Confront her with Zero Day's order from the schedule, trust her blind, or refuse her. Arrested branch: deal with her over Vos, or not. | m03 |
-| Encoding (CyberChef) | Asante's or Mercer's schedule notes; the correction on the casualty sheet. | m01 on |
-| Combat | Guards, the plant, Mercer if at large, the sleeper at the core if uncaught. Knock-outs throughout; lethal force only in the ending, and only when he reaches for the dead-man switch. | m01 on |
+| Fingerprint kit | The power room's reader; Voltage's print on the bypass as proof (on that branch). | m04, m08 |
+| Social engineering | The five full scenes (FINALE_ARC §5.3), each with a decision and a face-to-face beat on won and lost branches alike: the door slot at the forward post (Nightshade: a deal he was refused in m08, a payment, or one word); the workshop (protected Gary walks in and asks the player to talk round or take in a technician he trained; unprotected Gary is talked round); the power room (captured Voltage walked to his switchgear or kept on the phone; escaped Voltage stood down, talked or fought); the gallery (Victoria, or Vos; arrested Victoria met face to face at the forward post); Ghost on the security office's handset (talk Ghost out of selling the head start; refused Ghost asks why). Also Asante. One non-HaX voice on the line per room. Every scene has a fight-or-sneak alternative. | m01 on |
+| **The whodunit** | One of the raid team is WREN (m09). At 02:10, before the breach, the team split: Quintero and Kowalczyk took the service tunnel, Arakawa held the fence with the player, Malhotra was on comms with HaX, Vector and Phantom were with Netherton. Three clues across the bunker: the door log shows Malhotra's cloned badge at the core's service door at 02:10 (the readers take SAFETYNET badges because Tesseract loaded them from the stolen database); the alibi, which clears Malhotra, Arakawa, Vector and Phantom; the workshop bench's serial, which matches the cracker on the player's own belt. Nightshade or Phantom skip one step. **Accusing is a real choice**: right, she is held; wrong, the innocent officer is led off with a line, the team loses that officer's job, and Netherton recalls them by radio once the player holds the clearing evidence; none, she acts at the core. Skipped entirely if m09 already named her (FINALE_ARC §4.0, §4.4). | m08 door audit, m09 ledger |
+| **Victoria's offer** | Recruited: she offers to open the outer lock. Confront her with Zero Day's order from the schedule, trust her blind, or refuse her. Arrested: face to face at the forward post, a deal over Vos, or not. | m03 |
+| **The head start** | Armed when flag 2 goes in; stopped by an optional task at the server-hall console, or it goes when the player leaves the server hall. The countdown display moves with story beats, never by wall-clock time. | m07 clock |
+| Encoding (CyberChef) | Asante's or Mercer's schedule notes; the margin note on the casualty sheet (the sheet itself is on the workshop's critical path; the decode sharpens the talk-down rebuttal). | m01 on |
+| Combat | Guards, the power room, Mercer if at large, the sleeper at the core if uncaught. Knock-outs throughout; lethal force only in the ending, and only when he reaches for the dead-man switch. | m01 on |
 | Optional console tasks | Close the backdoor channel (server hall), kill the story (media room). They lower the cost; they never gate the ending. The schedule shows what is in the first batches, in plain words. | m07 triage |
 | The argument | Tesseract's case (three record lines), then three exchanges: each of his claims has one matching rebuttal from the mission, up to two from the player's record, and decoys that answer a different question. Two of three to win; a miss is visibly a miss (FINALE_ARC §4.1). | m07 Mercer, m08 Nightshade |
 | The choices at the core | Stop, or "Show me how it works"; secure, disclose or wipe both, each with its cost said first; then surrender, arrest, or the dead-man moment (FINALE_ARC §4). | every mission's endings |
 
 ### 2.3 Hybrid workflow
 
-Briefing at the forward post (Netherton, HaX, the raid team in position; WREN detained here if named in m09; the cold-start version for a player who skipped m09; the door's full scene: Nightshade in some form) → **flag 1** from outside: cameras, doors, the door log → the blast door, keyed to open for Agent 0x00 by name → blast-door tunnel (Reeves on the rota sheet, by branch) → security office: the player's photo on the wall, Hollis on the duty board (by branch), the door log (clue 1) → workshop floor (Gary or a technician; the bench serial, clue 3) → plant room, on the main path (Voltage in person or on the phone; cut the gallery's shutter) → server hall (Asante or Mercer; Ghost on the handset): **flags 2 and 3**, the schedule, the channels, the disarm armed; optional backdoor task → media room (optional; the drafted story, or Social Fabric's crew) → HaX's last line before the jam → gallery, alone (Victoria or Vos) → the core's outer lock (picked, cloned off a gallery guard, opened by a Victoria who holds, or in Ghost's guard-change window) → the core: Tesseract stops the clock; **flag 4** at the host terminal; then his case, the three exchanges, the choices (FINALE_ARC §4.1) → endings → epilogue → teaser slot → credits. The accusation can be made any time after clue 1.
+Briefing at the forward post (Netherton, HaX, the raid team; WREN detained here if named in m09; the cold-start version, with who Tesseract is, for a player who skipped m09; the door slot's full scene; arrested Victoria or captured Voltage met here on those branches) → the pre-breach split at the fence (02:10) → **flag 1** from outside: cameras, doors, the door log → the blast door, keyed to open for Agent 0x00 by name → blast-door tunnel (Reeves on the rota sheet, by branch) → security office: the player's photo on the wall, Hollis on the duty board (by branch), the door log (clue 1), Ghost on the duty handset → workshop floor (Gary or a technician; the casualty sheet; the bench serial, clue 3) → power room, on the main path (Voltage in person or on the phone; cut the gallery's shutter) → server hall (Asante or Mercer): **flags 2 and 3**, the schedule, the channels, the disarm armed (HaX points at the sealed section's hatch before flag 3); optional tasks: stop the head start, close the backdoor → media room (optional; the drafted story, or Social Fabric's crew) → HaX's last line before the jam → gallery, alone (Victoria or Vos) → the core's outer lock (picked, cloned off a gallery guard, opened by a Victoria who holds, or in Ghost's guard-change window) → the core: Tesseract stops the clock; **flag 4** at the host terminal; then his case, the three exchanges, the choices (FINALE_ARC §4.1) → endings → epilogue → teaser slot → credits. The accusation can be made any time after clue 1.
 
 ## 3. ENTROPY cells
 
@@ -61,7 +62,7 @@ Briefing at the forward post (Netherton, HaX, the raid team in position; WREN de
 | Cell | In the bunker | Through |
 |---|---|---|
 | The Architect (mastermind) | in person, at the core | every player |
-| Critical Mass | the power plant; the release schedule | Voltage (and Static), Mercer; or plant technicians and Asante |
+| Critical Mass | the power room; the release schedule | Voltage (and Static), Mercer; or power-room technicians and Asante |
 | Zero Day Syndicate | the gallery, for the head start | Victoria Sterling, or Pieter Vos, who took her desk |
 | Ransomware Incorporated | on the network, selling the head start on | Ghost, for every player |
 | Social Fabric | the media room | its crew, when Fracture was uncovered (`m07_completed`); otherwise the drafted story on the desk |
@@ -87,15 +88,15 @@ The premise is fixed by FINALE_ARC §1.3 and §4; the options differ in how the 
 
 **Logline.** Task Force Null goes into a Cold War bunker in the Montana hills the night before the Architect publishes every weakness SAFETYNET ever catalogued, and the faces from eight missions are waiting inside.
 
-**Setting.** A 1960s command bunker on federal land, sold off in the nineties, refitted with ENTROPY's money. Nine playable rooms: forward post (the gate in view), security office, blast-door tunnel, power plant with old switchgear and a battery room, workshop floor, server hall in the old command room, media room, gallery above the core, the core itself. The service tunnel is a cutscene. Cover: a private data-storage company with a fence and a sign. Atmosphere: concrete, sodium lamps, the hum of a plant that was built for the end of the world. Stage 5 should try m04's `room_aes_*` plant, workshop and security tiles and m07's `room_pnw_*` tiles first.
+**Setting.** A 1960s command bunker on federal land, sold off in the nineties, refitted with ENTROPY's money. Nine playable rooms: forward post (the gate in view), security office, blast-door tunnel, the power room with old switchgear and a battery room, workshop floor, server hall in the old command room, media room, gallery above the core, the core itself. The service tunnel is a cutscene. Cover: a private data-storage company with a fence and a sign. Atmosphere: concrete, sodium lamps, the hum of a plant that was built for the end of the world. Stage 5 should try m04's `room_aes_*` plant, workshop and security tiles and m07's `room_pnw_*` tiles first.
 
 **Inciting incident.** m09's flag 4 gave the hour; Tesseract's call to HaX gave the invitation ("Bring 0x00. I've kept a door."). He needs a SAFETYNET hand on the key, and his file says it will be 0x00's (FINALE_ARC §1.2). Netherton signs the raid knowing it is an invitation.
 
-**Stakes.** Personal: the player's own record argued back at them; a plant on their own team; HaX facing her teacher. Organisational: SAFETYNET's whole map of weaknesses, and whether the service keeps hoarding it. Societal: 1,100–2,600 projected dead in the first month if it goes out; eleven counties' dispatch already failing on some branches. Urgency: the cells' head start goes at 04:00 UTC and the fallback at 06:00, whether anyone presses or not.
+**Stakes.** Personal: the player's own record argued back at them; a sleeper on their own team; HaX facing her teacher. Organisational: SAFETYNET's whole map of weaknesses, and whether the service keeps hoarding it. Societal: 1,100–2,600 projected dead in the first month if it goes out; eleven counties' dispatch already failing on some branches. Urgency: the countdown shows the cells' head start at 04:00 UTC and the fallback at 06:00; in play both move on story events, so the urgency is felt in what people say, never charged against slow VM work.
 
 **Central conflict.** Getting in is the player against a fortress and a traitor; the core is the player against an argument they half agree with, made by a man who wants them to finish it for him.
 
-**Arc.** Act 1: the forward post and the door's scene, flag 1, the blast door that knows the player's name, the tunnel, the first clue. Act 2: the workshop, the plant and the server hall, each with a full scene; the other two clues; the schedule and the disarm. Act 3: the gallery alone, the core, the clock stopped, Tesseract, the choices, the ending.
+**Arc.** Act 1: the forward post and the door's scene, flag 1, the blast door that knows the player's name, the tunnel, the first clue. Act 2: the workshop, the power room and the server hall, each with a full scene; the other two clues; the schedule and the disarm. Act 3: the gallery alone, the core, the clock stopped, Tesseract, the choices, the ending.
 
 **Key NPCs.** Tesseract; HaX and Netherton; the raid team (Quintero, Kowalczyk, Malhotra, Arakawa; Vector and Phantom by branch); Asante; the five returning scenes and the rest by branch (FINALE_ARC §5).
 
@@ -143,16 +144,16 @@ Option 1, The Siege, with the keyed blast door and the quiet gallery from Option
 
 - Stage 1–2: the cold-start briefing (read with no other mission in mind); Tesseract's case (three record lines by priority, FINALE_ARC §4.1); the three exchanges, their decoys and visible reactions; the five slots in every form; the three clues, the accused officer's line and the recall; WREN refused at the key; each ending's scene; HaX's last word.
 - Stage 3: the core's choices with their stated costs and the Join signposting (FINALE_ARC §4.1–4.3); the accusation; Victoria's offer and the arrested-branch deal; Nightshade's deal on the arrested branch; talking Ghost out of the sale.
-- Stage 4: the aims below; the raid clock with its 04:00 and 06:00 marks, stopped at the core.
+- Stage 4: the aims below; the countdown display's steps per story beat (04:00 as the player leaves the server hall; never 06:00 before the core); the act-by-act time budget.
 - Stage 5: the nine rooms in §4 Option 1. Every presence slot has its default occupant (FINALE_ARC §5.3).
 - Haiku VM plan: fit the modules to §2.1, adding the entry stage.
 
 ### Design notes (m01/m02 standard, `mission-alignment-plan`)
 
 - **Opening and closing.** Briefing cutscene at the forward post with `skipIfGlobal`; the raid team by branch and in position; WREN detained on screen if m09 named her; a never-played-m09 version with the three facts (FINALE_ARC §4.0). Closing: one scene per ending, the closing card, the teaser slot (default off), credits; `bond_visualiser` conclusion on every ending, MISSION FAILED styling on Join (as m01's launch).
-- **Aims, staged and spoiler-safe.** 1 Breach the perimeter (flag 1). 2 Get below ground (blast door, tunnel, security office). 3 Cut the power to the gallery (workshop, plant). 4 Find the release (server hall, flags 2–3; optional: close the backdoor, kill the story). 5 Reach the core (gallery, outer lock, flag 4). Optional throughout: find the plant on the team. `missionConclusion`: the core. `concludeRequires`: the four flags only. The endings and the accusation are globals the debrief reads, not tasks.
-- **HaX's hub, progress-gated.** From the forward post and on the line: a nudge after each whodunit clue; the fence and the empty posts on `m06_assets_seized`; the plant after flag 1 ("Whoever's in the plant runs your lights."); "Get on his box. He'll keep." at the core; each returning face as the player meets them, the channels and the schedule's contents after flag 2, her doubt about Victoria before the gallery, "what the line means" if m09 didn't play it, Tesseract after the core opens. Field-guide offers gated per VM stage. Silent in the one-room gallery stretch, after a last line that names the next door.
-- **Music.** Cutscene at the forward post; a driving raid track; threat on hostiles; the clock's last minutes before each mark; silence in the gallery; the clock's tick cut dead when he stops it; a held, low cue at the core, thinning on each landed point; one track per ending's close (victory for the successes, a cold variant for Scorched Earth and Join).
+- **Aims, staged and spoiler-safe.** 1 Breach the perimeter (flag 1). 2 Get below ground (blast door, tunnel, security office). 3 Cut the power to the gallery (workshop, power room). 4 Find the release (server hall, flags 2–3; optional: stop the head start, close the backdoor, kill the story). 5 Reach the core (gallery, outer lock, flag 4). Optional throughout: find WREN. `missionConclusion`: the core. `concludeRequires`: the four flags only. The endings and the accusation are globals the debrief reads, not tasks.
+- **HaX's hub, progress-gated.** From the forward post and on the line: a nudge after each whodunit clue; the fence and the empty posts on `m06_assets_seized`; the power room after flag 1 ("Whoever's in the power room runs your lights."); the head start when flag 2 goes in; the sealed section's hatch before flag 3; "Get on his box. He'll keep." at the core, and the field-guide offer still working there; each returning face as the player meets them, the channels and the schedule's contents after flag 2, her doubt about Victoria before the gallery, "what the line means" if m09 didn't play it, Tesseract after the core opens. Field-guide offers gated per VM stage. Silent in the one-room gallery stretch, after a last line that names the next door.
+- **Music.** Cutscene at the forward post; a driving raid track; threat on hostiles; the countdown's tension rising with each story beat; silence in the gallery; the clock's tick cut dead when he stops it; a held, low cue at the core, thinning on each landed point; one track per ending's close (victory for the successes, a cold variant for Scorched Earth and Join).
 - **KO resilience.** Every NPC in the bunker can be knocked out with the route intact, the raid team included (a downed raid member is held at the forward post; it is not an accusation, and costs an epilogue line). Tesseract cannot be knocked out before the core's choices (he is seated behind the console, and the core sequence is a conversation), so the endings always run.
 - **Carry-overs.** All imports, tiered, and their uses: FINALE_ARC §3.2; exports for a later season: §3.5. No import gates completion. Tier 1 is built and playtested first.
 - **Spoken lines.** Tesseract's lines per import value are fixed strings; no printed variables.
@@ -182,7 +183,8 @@ Checked against the 00 prompt's list and the alignment rubric. Ticks are the aut
 - [x] Endings decided by the player, signposted, never traps (FINALE_ARC §4.3); every database option has a stated cost.
 - [x] The villain's plan holds together: he needs 0x00 at the key, which explains the invitation, the keyed door, his waiting, the paused clock and his refusal of WREN (FINALE_ARC §1.2, §4.4).
 - [x] Mid-mission choices for every player: the accusation, talking Ghost out of the sale, the gallery's choice on Victoria's branches.
-- [x] Five full-scene slots on the main path, filled on every combination; a won branch puts a person in the room too (FINALE_ARC §5.3).
+- [x] Five full-scene slots on the main path, filled on every combination; a won branch puts a person in the room too, with one decision and one face-to-face beat (FINALE_ARC §5.3).
+- [x] Slow VM work never costs a story outcome: the countdown moves on story events (FINALE_ARC §4.2).
 - [x] The climax never runs against a clock or waits on VM work: he stops the clock, and the core holds one flag.
 - [x] A cold start works: the briefing's never-played version (FINALE_ARC §4.0).
 
@@ -191,6 +193,11 @@ Checked against the 00 prompt's list and the alignment rubric. Ticks are the aut
 - [x] Flags have story meaning and a submission point.
 - [x] Objectives track flags and in-game work together.
 - [x] In-game work points at the VM (the door log, the channels) and back.
+- [x] VM challenges complement rather than duplicate in-game ones: the VM opens the bunker's systems; the in-game work is people, locks and the whodunit, and they meet in the door log and the schedule.
+- [x] ERB narrative content needs no VM changes: flag meanings are fixed in FINALE_ARC §6.2; every story variant lives in the ERB and ink.
+- [ ] In-game challenges teach skills the VM needs (or the reverse): partly. The sealed section's maintenance hatch, which HaX points at before flag 3, is a physical echo of getting out of a container at game-design level only. Owner: stage 4, with the lab sheet.
+- [ ] Flexible learning paths (labs done separately): open. Owner: the lab-sheet stage (the VM-steps companion sheet).
+- [ ] Scope achievable in about 100 minutes: tight (four flags, five scenes, a three-clue whodunit, a 10–12 minute core). Owner: stage 4's act-by-act time budget against m07, cutting the media room and then the backdoor task first if it runs past about 110 minutes.
 
 **Alignment rubric (m01/m02)**
 - [x] Canon and stakes; staged aims; HaX's progress-gated hub; music; KO resilience; bookends and `bond_visualiser` (§6 design notes).
