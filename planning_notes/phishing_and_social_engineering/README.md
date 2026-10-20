@@ -38,7 +38,7 @@ it.
 
 | Doc | What it is | Status |
 |-----|------------|--------|
-| `designs/00_data_contract.md` | Shared schemas, canonical "AccountingNow" dataset and typed intel facts, factor library, intel-to-factor map, ink and engine constraints. §8 influence global and thresholds, §9 channels and synced globals, §10 email-to-ink contract, template and slot schema, §10a email identities, §11 where data lives (`social`), §12 engine work | Plan. Current. Contract for 01 to 11 |
+| `designs/00_data_contract.md` | Shared schemas, canonical "AccountingNow" dataset and typed intel facts, factor library, intel-to-factor map, ink and engine constraints. §8 influence global and thresholds, §9 channels and synced globals, §10 email-to-ink contract, template and slot schema, §10a email identities, §11 where data lives (`social`), §12 engine work, §13 settled values (authoritative where a value is listed) | Plan. Current. Contract for 01 to 11 |
 | `designs/01_mail_client.md` | Mail client (inbox and compose), accounts and mailboxes, reply delivery, persisted inbox | Plan. Current |
 | `designs/02_osint_browser.md` | OSINT browser: company site, social media, public documents | Plan. Current |
 | `designs/03_intel_board.md` | Intel board: evidence tracker, readiness, defender mode | Plan. Current |
@@ -111,6 +111,21 @@ one link id per built page (`kit_payroll_page`), the `mode` board pointer, readi
 real-minute lockouts stored in globals, the triage set size per audience, and the six-domain menu with an
 auth row for each. Attachments and links are chosen with the Attach control, never as blanks.
 
+**J. Round-3 settlements (decided 2026-10-20).** Details are in `00` §13.
+- The lab ships two mail accounts, `guest` (can spoof) and `freemail` (created, cannot spoof); `jed_pc`
+  is a non-lab example. Reply delay is 15 s for all three lab targets.
+- Sender authentication carries a `dmarcPolicy` (`none`, `quarantine`, `reject`) on the claimed domain.
+- An empty blank blocks Send with a neutral line that never names the evidence.
+- Engagement items carry a `step`; a step is done when all its items are correct. Plan mode has two
+  picks (objectives, measures).
+- Pretext calls can be reopened while asks remain; outcome and lowest-influence globals hold the latest
+  call, and grants accumulate.
+- Band flags such as `dev_wary` are recomputed on every influence change and cleared at the threshold
+  plus the re-arm margin; `recoverTo` must be at least the highest effect threshold plus that margin
+  (Dev and Priya: -30). Lockout lives in globals, and is checked before the pretext card opens.
+- The victim record is written on every send that carries a landing page; check missions conclude on
+  their triage global so the carry-over finds a baseline; `call` is a supported non-email triage kind.
+
 Defaults taken elsewhere, for context: fictional targets only, no real-staff OSINT; the
 lab is the first slice; the awareness product measures pre and post from the start and defers LMS and
 SSO integration.
@@ -134,12 +149,11 @@ Working defaults are taken for all of these; none blocks the design.
   reused.)
 - Reply routing on a spoofed From: the first slice returns the reply to the real account's mailbox and
   says so once. Is an optional reply-to slot worth a later slice? How are found credentials shown (a
-  note, or the password minigame)? Can an account be burned (`00` §10a)?
+  note, or the password minigame)?
 - Does the checklist appear on send, or only once the reply has arrived? In assessment mode should it
   wait, so the player reads the reaction first?
 - One reply per send, or can the ink send a later "chaser"?
 - One persistent inbox per scenario, opened from any workstation or the phone? Default: yes.
-- A Sent folder for the defender's role swap ("find your own phish among real mail")? Default: yes.
 - Rules engine: build the advisory LLM note at all (default: off, flagged for cost)? How strict is the
   coherence gate before it frustrates (default: lenient, tune in playtest)? Should a `redFlag` string be
   mandatory per factor per target (default: no; the validator warns on a mismatched override)?
@@ -156,8 +170,7 @@ Working defaults are taken for all of these; none blocks the design.
   the tutor applies by hand; or build a per-student report from `globalVariables` counters. The awareness
   product has the same constraint: Hacktivity shows event scoreboards, so "private score, no league
   table" holds only in a standalone host.
-- Length target: one session of 60 to 90 minutes, aiming at about 75 (decided; `10` is trimmed to fit).
-  Cut order if long is in `10` (profile, Hampshire, triage to six, two findings).
+- Cut order if the lab runs long is in `10` (profile, Hampshire, triage to six, two findings).
 - Include the SPF-breaks-on-forwarding header case? Default: yes; drop it for a first-year cohort.
 - Publish an optional practical-mode lab sheet in HacktivityLabSheets after the game exists (default:
   yes; the game must be completable without it)?
@@ -175,8 +188,8 @@ Working defaults are taken for all of these; none blocks the design.
 - Domain chosen from an authored menu, never typed? Default: menu, which keeps scoring deterministic
   and avoids a look-alike generator.
 - Homograph shown in the student lab only, as one authored example? Default: yes.
-- Outcome counts only in the builder (`Visits 1 · Submissions 1 · Reports 0`), no captured data of any
-  kind? Default: yes.
+- Outcome counts only in the builder (visits and submissions, simulated; reports are not measured), no
+  captured data of any kind? Default: yes.
 - Padlock teaching line: "a padlock means the connection is private to whoever owns the address; fake
   sites can show one". Please confirm you are happy teaching it that way. Default: as written.
 
@@ -202,7 +215,7 @@ Working defaults are taken for all of these; none blocks the design.
 ## Engine work, consolidated
 
 Everything new that the plan needs, once, with the code that has to change. Paths are under
-`public/break_escape/js/` unless stated. `00` §12 holds the full detail for S1 to S11; the other
+`public/break_escape/js/` unless stated. `00` §12 holds the full detail for S1 to S12; the other
 numbers are the owning doc's N-items. Nothing here is built yet.
 
 | Area | Work | Owner | Code location |
@@ -211,21 +224,21 @@ numbers are the owning doc's N-items. Nothing here is built yet.
 | Global sync | One shared global writer (write, broadcast, emit) used by `applyActions`; engine-set variables written after restore and sync in every loader; `email_` set excluded from saved ink variables | `00` S3, S7 | `systems/apply-actions.js`; `systems/npc-conversation-state.js`; `person-chat-minigame.js`, `phone-chat-minigame.js` |
 | Influence | Watcher on the influence global, write path with reasons, threshold effects and latch, `npc_influence_changed` event, listener for `npc-influence-change`, influence tags in phone-chat and the mail runner (social characters only) | `00` S5, `06` N9 | new `systems/social-influence.js`; `chat-helpers.js`; `phone-chat-conversation.js` |
 | Influence UI | A DOM influence bar with threshold icons, tells panel, render-only phone bubbles, portrait tint hook | `00` S4, `06` N4 | `person-chat-ui.js`, `phone-chat-ui.js`, `person-chat-portraits.js` (not `npc-health-bar.js`) |
-| Lockout | A `lockedOut` record with channel scope and expiry; "will not talk" refusal in person-chat, phone-chat and mail; opt-in combat hostile left as is | `00` S10 | `systems/interactions.js` NPC sprite branch; model `systems/npc-hostile.js`; `state-sync.js` |
+| Lockout | Stored in the declared globals `<character>_lockout_until` and `_lockout_channel` (no separate record, no server section); "will not talk" refusal checked in person-chat, phone-chat, mail and before `pretext-prep`; the lift writes `recoverTo` silently and clears the band flags; opt-in combat hostile left as is | `00` S10 | `systems/interactions.js` NPC sprite branch and `phone` `callId` branch; `systems/social-influence.js`; phone-chat and mail entry points |
 | Records without a room | Headless email records registered at start, and the ink endpoint finds them; display-name ties prefer the conversation's own NPC | `00` S2, S8 | `systems/npc-lazy-loader.js`; `core/game.js`; `app/controllers/break_escape/games_controller.rb` ink lookup; `systems/npc-manager.js` |
 | Mail | Mail client minigame with accounts, account creation, switcher, Sent folder and drafts; mail scheduler (ink and text jobs) and runner; notification and message-list renderer; `mailState` persisted (client export and flush, server sanitiser and caps, bootstrap, restore) | `01` N1 to N14, `00` S6, S9 | `minigames/` (new); `state-sync.js` `KEYED_SECTIONS`, `confirm()`, `flush()`; `games_controller.rb` `merge_last_write_wins_sections`; `app/models/break_escape/game.rb`; `core/game.js` |
 | Templates | Template and slot composer, blank picker from held facts, send gate; slot judge with `linkInfo` | `01` N10, `04` N1 to N10, `06` N6 | new; `systems/phish-rules.js` |
 | Intel | Typed intel facts; `se_intel_*` declared; `grantFact` and `evaluateReadiness` set `target_ready_<id>` and `osint_done` at grant time; facts added as notes | `00` §1, §4, §5, `02` N2, `03` N3 | `systems/social-intel.js` (new); `systems/apply-actions.js`; `window.addNote` in `notes-minigame.js` |
 | OSINT, board | OSINT browser (picked lookups, selectable metadata, namesake and archive elements); intel board with modes (scope, plan, recon, defender) | `02` N1 to N9, `03` N1 to N6 | `minigames/` (new) |
 | Pretext | Judge, `PretextSession`, `pretext-prep`, debrief in the chat overlay, completion payload and per-call globals | `06` N1 to N12 | `minigames/pretext-prep/` (new); `systems/pretext-judge.js` (new) |
-| Triage | Inbox-triage minigame and scorer; read-only `mail-reader` shared with the mail client; `playerSent` message kind reading `tells`; header-interpretation quiz | `05` N1 to N9, `01` N5 | `minigames/` (new) |
-| Landing page | Builder, scorer, DOM/pixel layered renderer (text in the sans-serif), persisted pages, `linkInfoFor`, validator lint (allowlist plus denylist, ASCII on raw text) and a runtime guard | `07` N1 to N9 | `minigames/` (new); `scripts/validate_scenario.rb` |
+| Triage | Inbox-triage minigame and scorer; read-only `mail-reader` shared with the mail client; `playerSent` message kind reading `tells`; non-email kinds including `call` | `05` N1 to N9, `01` N5 | `minigames/` (new) |
+| Landing page | Builder, scorer, DOM/pixel layered renderer (text in the sans-serif), persisted pages, `linkInfoFor`, validator lint (allowlist plus denylist, ASCII on raw text) and a runtime guard | `07` N1 to N10 (with N6b) | `minigames/` (new); `scripts/validate_scenario.rb` |
 | Lab | Engagement report builder, metrics read from `mailState`, board mode data, validator work, ink externals | `10` N1 to N8 | `minigames/engagement-report/` (new); see `10` |
 | Awareness | Episode runner, flip view, defend sets, measurement store, facilitated flag, non-email surfaces, role swap | `11` N1 to N15 | `minigames/` (new); see `11` |
 | Minigame framework | Wiring checklist per minigame; return-to for nested overlays (`00` S12; `startMinigame` ends the running one); `requiresKeyboardInput` and an own Close control on every overlay | README Conventions | `minigames/framework/minigame-manager.js`, `base-minigame.js`; `minigames/index.js`; `minigame-starters.js`; `systems/interactions.js` |
 | Objectives | A global cannot complete a task or open a lock; use `eventMappings` on `global_variable_changed:<name>` with `completeTask`, or `#complete_task`. Numeric conditions (`>= 60`) are not supported: write a boolean | all | `systems/objectives-manager.js`; `systems/npc-manager.js` event mappings |
 | Fonts and CSS | Atkinson Hyperlegible (Regular and Bold, OFL 1.1), self-hosted, declared in `css/fonts.css` as `--se-font-readable`, used for every string the player reads or compares; authored domains rendered raw, not through `displayDashes` | `07`, `02` | `public/break_escape/assets/fonts/`; `css/fonts.css` |
-| Validator and schema | Top-level `social`; `social.characters` lints; `se_intel_*` declared; template and slot checks; `on_email` and `email_*` checks; `minigameData` schema entries; `npcType` unchanged; lockout lint; the landing-page lint and `test/js` unit tests run in CI (a step in `.github/workflows/ci.yml`) | `00` S11 and each doc | `scripts/validate_scenario.rb` (`known_top_level`), `scripts/scenario-schema.json`, `scripts/minigame-data-schemas.json` |
+| Validator and schema | Top-level `social`; `social.characters` lints; `se_intel_*` declared; template and slot checks; `on_email` and `email_*` checks; `minigameData` schema entries; `npcType` unchanged; lockout lint; the landing-page lint and `test/js` unit tests run in CI (a step in `.github/workflows/ci.yml`; the validator loop covers only scenarios with a `social` key, with `--no-graph`, and must not rewrite tracked files) | `00` S11 and each doc | `scripts/validate_scenario.rb` (`known_top_level`), `scripts/scenario-schema.json`, `scripts/minigame-data-schemas.json` |
 | Platform (not BreakEscape) | Per-student report or richer score recording, if the assessment needs more than task and aim share | open | Hacktivity `app/jobs/game_scoring_job.rb` |
 
 ## Design pillars

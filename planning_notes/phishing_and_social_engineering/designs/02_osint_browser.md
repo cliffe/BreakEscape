@@ -192,7 +192,8 @@ Facts are **not** defined here. `social.intelFacts` (`00` §1) holds each fact's
 
 - A block's `fact` is the one award path for that fact. `showIf` names a global. The forensic data
   platform's renderer supports it on blocks only; applying it to a profile (as here, hiding Chris
-  Hampshire's profile until the careers page has been read) is new work in N1, so the discovery order
+  Hampshire's profile until the careers inbox block `careers_inbox` has been selected, which grants
+  `hampshire_careers`) is new work in N1, so the discovery order
   follows the story.
 - `unlockedBy.visited` takes either a site id (`"deck"`) or `siteId.pageId` (`"company.team"`), so the two
   namespaces never mix. `se_osint_state.visited` stores the same strings.
@@ -257,8 +258,12 @@ only on the false-to-true flip:
    flip-only wrapper that adds both. The shared writer also broadcasts to cached ink stories, so a
    conversation already open sees it.
 2. Adds the fact as a note with `window.addNote(title, text, important)` (`minigames/notes/notes-minigame.js`):
-   title "Evidence: <subject>", text the fact's `text`. `addNote` de-duplicates by title and text, so a
-   repeat collect is harmless. `gameState.notes` already syncs (`state-sync.js`, `buildPlayerSections`)
+   title "Evidence: <subject>", text the fact's `text`. The subject shown is the person's display name only
+   if the player already holds a name form for them (`03` hides unidentified names); otherwise it is a
+   neutral label ("a colleague", "the company"), never the cast id. `addNote` de-duplicates by title and
+   text, so a repeat collect is harmless. `addNote` gives each note `id: Date.now()` and the sync merges
+   notes by `id`, so several facts granted in one synchronous run (the call grants three) would collide
+   and lose notes; N2 changes `addNote` to build ids from the timestamp plus a counter. `gameState.notes` already syncs (`state-sync.js`, `buildPlayerSections`)
    and restores (`core/game.js`), so the player gets a searchable evidence log with no new persistence.
 3. Calls `window.stateSync?.sync()` so a reload straight after a collect loses nothing.
 4. Runs `evaluateReadiness(readinessSlots, globals)` (`00` §4, in `systems/social-intel.js`), which sets
@@ -301,7 +306,7 @@ browser. The composer (`01`) does not open the board at all; it reads the `se_in
   renders `block.html` through `displayDashes` (line 106); authored domains must not. The staff, post
   and result kinds are the new ones. Authored text is set with `textContent`, or with a one-line
   escaper copied into the new module (`escapeHtml` in `blockchain-explorer-minigame.js:4` is
-  module-local, and the `text()` helper beside it runs `displayDashes`), never `innerHTML`, so a
+  module-local, and the `escapeText` helper beside it (line 14) runs `displayDashes`), never `innerHTML`, so a
   domain or handle cannot inject markup.
 - **Evidence log.** `window.addNote`, above.
 - **Markdown.** `utils/note-markdown.js` (`renderNoteMarkdown`) escapes input and renders headings, bold,
@@ -315,13 +320,13 @@ browser. The composer (`01`) does not open the board at all; it reads the `se_in
 | # | Item | Where in code |
 |---|------|---------------|
 | N1 | `osint-browser` overlay: sites strip, display-only address bar, page renderer (company, social, document, tools), selectable blocks, properties panel, profile-level `showIf`, own Close control, `requiresKeyboardInput: true`. The wiring checklist above | new `minigames/osint-browser/`; `index.js`; `minigame-starters.js`; `systems/interactions.js`; `show.html.erb` |
-| N2 | `grantFact(id)`: shared writer (`00` S3), note, sync, flip-only, then `evaluateReadiness` (sets `target_ready_<id>`, `osint_done`); used by 02 and by `06` grants | new `systems/social-intel.js`; `systems/apply-actions.js` `set_global`; `notes-minigame.js` `window.addNote` |
+| N2 | `grantFact(id)`: shared writer (`00` S3), note, sync, flip-only, then `evaluateReadiness` (sets `target_ready_<id>`, `osint_done`); used by 02 and by `06` grants | new `systems/social-intel.js`; `systems/apply-actions.js` `set_global`; `notes-minigame.js` `window.addNote` (unique note ids: timestamp plus counter) |
 | N3 | Document properties view with selectable fields | in N1 |
 | N4 | Tools panel: picked lookups with `unlockedBy`, decoy entries, result blocks | in N1 |
 | N5 | Close as a normal exit, own Close control and Escape, nested launch to the case file with return-to (`00` S12) | `minigames/framework/base-minigame.js` (`disableClose`), `minigame-manager.js` |
 | N6 | Cast headshots: each of `pierce`, `baker`, `hampshire`, `lord` needs a sprite key and a `<key>_headshot.png` (32x32). A headshot-to-`<key>_talk.png` fallback for profile images does not exist (`person-chat-portraits.js:913-916` falls back the other way, `_talk` to `_headshot`), so either every key ships a headshot or the reverse fallback is new work here. Site images live under `assets/osint/<scenario>/` | `public/break_escape/assets/characters/`; path built as in `ui/hud.js`; `person-chat-portraits.js` |
 | N7 | Bundle Atkinson Hyperlegible (`00` §6) and apply `--se-font-readable` to every string the browser shows that holds a domain, address, handle, file name or metadata field, wherever it appears (address bar, tools-panel labels such as "Hunter lookup: accountingnow.example", result lines, notes, confirmations); authored domains rendered raw | `public/break_escape/assets/fonts/`; `css/fonts.css`; `utils/display-dashes.js` bypass |
-| N8 | Validator: every fact (bar the call-granted ones) is granted by exactly one element and each `source` equals that element's id; every `fact` and `showIf` resolves; every `unlockedBy.visited` is a site id or `siteId.pageId`; every `se_intel_*` declared; `se_osint_state` declared with default `{}`; domain and address strings end `.example`; `social.osint` schema and the `minigameData` entry | `scripts/validate_scenario.rb` (`known_top_level`); `scripts/scenario-schema.json`; `scripts/minigame-data-schemas.json` (S11) |
+| N8 | Validator: every fact (bar the call-granted ones) is granted by exactly one element and each `source` equals that element's id; every `fact` and `showIf` resolves; every `unlockedBy.visited` is a site id or `siteId.pageId`; every `se_intel_*` declared; `se_osint_state` declared with default `{}`; domain and address strings, including every `sites[].url`, end `.example` and pass the brand denylist check in `07` N6 (fold, then match; the brand-word allowlist does not apply to site urls); `social.osint` schema and the `minigameData` entry | `scripts/validate_scenario.rb` (`known_top_level`); `scripts/scenario-schema.json`; `scripts/minigame-data-schemas.json` (S11) |
 | N9 | Test: the address-bar formatter (a pure function, so no DOM is needed) returns a string with `--` (an `xn--` label) unchanged; run by the CI step in `00` S11 | `test/js/` |
 
 ## Accessibility and small screens
@@ -356,7 +361,7 @@ browser. The composer (`01`) does not open the board at all; it reads the `se_in
   including `baker`, who is not an NPC but appears on profiles and sender cards. Headshots are cut from the
   walk sprite and can be stale, so check each after art changes.
 
-## Visual style (decided 2026-10-20)
+## Visual style
 
 - Overlay chrome follows house style (README Conventions): dark panel, square corners, colours from the
   `--ui-*` tokens in `css/ui-themes.css` so the mission's `ui_theme` applies, `GNF` body font, `Press

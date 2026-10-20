@@ -94,7 +94,7 @@ All companies and people are fictional. Defend items are scored by `05`'s `aware
 | E4 | Executive / PA | Whaling and deepfake voice | OSINT: an exec's public calendar, travel posts, PA name. Write a short "I'm about to board, need this paid" email to the PA | Defend: the exec's PA gets an email, then a voice note and a call that sounds like the exec (TTS voice with a clone-style "effect"). The correct move is the same as in E1: stop and verify through a known channel. A debrief panel explains voice cloning at concept level, nothing about how | Authority, secrecy ("don't tell finance"), travel excuse, new payment details, voice with no verifiable channel, request that breaks process | 5 items (3 phish, 2 genuine), 2 of them voice (needs N12) |
 | E5 | General staff: credential pages | Login-page clone via `07` | Build a look-alike "Single Sign-On" page from abstract parts (logo, form, domain choice); the learner picks which domain to send people to. `07` judges the choices (never produces a deployable page) | Triage: a link in an inbox; open it in a mock browser pane; check the address bar, the certificate padlock misconception ("a padlock doesn't mean it's safe"), and decide whether to enter details. One genuine IT page is mixed in | Domain mismatch, subtle misspelling, padlock myth (`padlock_myth`), unexpected "your session expired" prompt, password manager not auto-filling | 5 URL/page items (3 phish, 2 genuine); needs N13 |
 | E6 | General staff: mobile | QR-code phishing (quishing) and SMS phishing (smishing) as concept | Short: the learner chooses a pretext and a channel for a fictional office (a "parking permit" poster with a QR code, a "parcel fee" text). Uses `01`'s narrow, phone-shaped layout; no landing page is built | Triage on a phone shell: texts, a QR on a printed notice, a "scan to confirm your MFA" email. Decide: don't scan, report, verify with the named sender through another channel | QR hides the URL (`unexpected_qr`), unexpected fee, shortened link (`smish_shortlink_urgency`), "reply STOP" trick (`reply_stop_trick`), sender not in contacts, message outside normal channel | 6 items (4 phish, 2 genuine); needs N14 |
-| E7 (optional) | Everyone: Voice and the CEO | Deepfake-voice CEO fraud | A cross-role finale reusing E1/E4 content: the learner prepares the fictional "script" for a cloned-voice call (the TTS engine makes it audible), no score, checklist only, and never judged on audio realism | Defend: hear 3 voicemails, two real and one cloned. The learner cannot rely on the voice, so the game rewards the verify action, not "ear detection" | Voice alone is not proof, unusual request, urgency, no callback path | 3 voicemail items (1 cloned, 2 real), scored on the verdict and not on a guess about the audio (needs N12) |
+| E7 (optional) | Everyone: Voice and the CEO | Deepfake-voice CEO fraud | A cross-role finale reusing E1/E4 content: the learner prepares the fictional "script" for a cloned-voice call (the TTS engine makes it audible), no score, checklist only, and never judged on audio realism | Defend: hear 3 voicemails, two real and one cloned, then triage 2 emails reused from E1 and E4 (a genuine payment request that was verified by phone, and a "CEO needs this today" phish). The learner cannot rely on the voice, so the game rewards the verify action, not "ear detection" | Voice alone is not proof, unusual request, urgency, no callback path | 5 items: 3 voicemails (1 cloned, 2 real) and 2 emails (1 phish, 1 genuine), scored on the verdict and not on a guess about the audio (needs N12) |
 
 Notes on specific episodes:
 
@@ -212,7 +212,12 @@ sequencing and strings. It lives at `social.awarenessEpisode` (`00` §11). Defen
 
 A check mission (the pre-check and post-check, 5.2) uses the same wrapper with `"stages": ["check"]`
 and a `defend.setId` naming a parallel form; it has no attack, flip or debrief beyond the result
-screen.
+screen. Each check mission has one aim with `missionConclusion: true`, whose only task completes on
+`triage_pre_done` (post: `triage_post_done`) through the usual `eventMappings` mapping, and the aim
+declares `concludeRequires: { "globals": ["triage_pre_done"] }` (post: `triage_post_done`). The
+conclusion is what sets `mission_concluded_at`, which `CarryOver` reads; without it the pre-check game
+would never count as concluded. Gating on the done global also stops a pre-check that ends without a
+finished round from exporting the declared defaults as if they were a result.
 
 Red-flag ids come from the shared library in `00_data_contract.md` section 2: the seven factor
 tells plus the **channel tells** (`lookalike_domain`, `changed_bank_details`, `vish_callback_pressure`,
@@ -240,9 +245,14 @@ core loop and not a later add-on (the default is to measure from the start and s
   The two checks are therefore shell missions of their own, per role and pairing
   (`awareness_pre_finance_ab`, `awareness_post_finance_ab` and so on), each one kiosk that opens one
   triage set. The pre-check mission lists `exportGlobals` for `triage_pre_percent`,
-  `triage_pre_reportRate` and `triage_pre_done`. The post-check mission lists `importGlobals` for them
-  (with `as` names such as `pre_percent` and a default) and `{ "from": "<pre mission>", "completed":
-  "pre_check_completed" }`. The platform's `CarryOver` (`app/models/break_escape/carry_over.rb`) fixes
+  `triage_pre_reportRate` and `triage_pre_done`. The post-check mission lists `importGlobals` for the
+  same three, each with `as` equal to its own name (`triage_pre_percent` and so on, so `05`'s
+  comparison reader works unchanged, and no name clashes with the post mission's own `triage_post_`
+  prefix), a default, and `{ "from": "<pre mission>", "completed": "pre_check_completed" }`. The
+  post screen shows a baseline only when both `pre_check_completed` and the imported `triage_pre_done`
+  are true. The triage starter writes the exported `triage_pre_*` names from JS, so the validator's
+  "exported global is never written in this mission" warning is expected for them until `05` N5 makes
+  the validator treat `setGlobalPrefix` names as written. The platform's `CarryOver` (`app/models/break_escape/carry_over.rb`) fixes
   those values when the post-check game is created, from the learner's newest concluded run of the pre
   mission, read-only, so the comparison needs no server work of our own. Consequences, stated rather
   than hidden:
@@ -319,6 +329,9 @@ change is `05`'s `scoringProfile: "awareness"` (N9). The minigame starter and co
 the same as `01` (`minigame-manager.js:229` registration, `minigame-starters.js` starters,
 `minigame_completed` via `base-minigame.js:84-108`, `set_global` at `apply-actions.js:33`).
 
+**Reply delay.** The attack target of each episode sets `emailReplyDelay` to 6 seconds, inside the 5 to 8
+second range `00` §10 gives awareness episodes, so the flip beat does not wait long for the reply.
+
 **Mission wrapper.** The platform loads missions only from `scenarios/<name>/scenario.json.erb` plus
 `mission.json` (`app/models/break_escape/mission.rb:46-50, 124-135`; `db/seeds.rb:50-60`), and a game
 needs a map and a player. A JSON-only episode has no way into it. Decision: **one shell mission per
@@ -330,7 +343,7 @@ organiser puts the chosen ones in an event. The episode data lives in each shell
 
 | # | Item | Notes |
 |---|------|-------|
-| N1 | **Episode runner**: a scene started by the kiosk that reads `awarenessEpisode`, starts each stage's minigame in turn, shows the step strip, and carries state between stages (what the learner sent → shown back in the flip) in a declared global `episode_<id>_state` | New; small. Only one minigame is open at a time, so it relies on the return-to work in the README engine list. An objectives chain of kiosk objects is the fallback if that slips |
+| N1 | **Episode runner**: a scene started by the kiosk that reads `awarenessEpisode`, starts each stage's minigame in turn, shows the step strip, and carries state between stages (what the learner sent → shown back in the flip) in a declared global `episode_<id>_state` | New; small. Only one minigame is open at a time, so it relies on the return-to work in the README engine list. An objectives chain of kiosk objects is the fallback if that slips. Like every overlay here it sets `requiresKeyboardInput: true`, draws its own Close, binds Esc, and gets a Space/E bridge test (`00` §6) |
 | N2 | **Flip view**: re-renders the learner's sent message in the read-only mail client with its `tells` highlighted | Reuses `01` read-only mode and `05`'s `playerSent` message kind, which replays the latest sent record and reads its stored `tells` (`00` §10a), not `redFlags` (a landed message has none) |
 | N3 | **Defend sets** for `05` as `triageSets` entries, with `truth.flags` ids from `00` §2 and the channel tells | Depends on `05`. Non-email items need the surfaces in N11 to N14 |
 | N4 | **Measurement store**: pre, post and in-episode records per item, local first | New; schema in 5.2. Learner id: see 6.2 |
@@ -340,9 +353,9 @@ organiser puts the chosen ones in an event. The episode data lives in each shell
 | N8 | Neutral corporate look: fictional brand set, logo placeholder, step strip | `ui_theme: "general"` (and `secops`) already exist in `Mission::UI_THEMES` (`mission.rb:69`), so no theme file is missing; the work is the brand art and strings |
 | N9 | `scoringProfile: "awareness"` selected on the `05` sets; the profile is defined in `05` | Config, not new scoring code in 11 |
 | N10 | Channel-tell ids in the red-flag library | Done in `00` §2; episodes only reference them |
-| N11 | **Mock authenticator and push stream** (E3): a phone-shaped screen showing unrequested approve/deny prompts on a timeline, with the odd-hour push | New; not in `01` to `07` |
-| N12 | **Voicemail player** (E4, E7): plays a fixed TTS clip per item and takes a `05` verdict | New; the cloned-voice clip is a style variant of an existing voice (N7) |
-| N13 | **Mock browser pane with a certificate padlock check** (E5) as a triage item kind | New. `02`'s browser is a navigation shell and `07`'s padlock is a canvas decoy; neither is a triage item. `07` N5 (defender inspection items) is proposed as a change request to `05` and is not accepted yet |
+| N11 | **Mock authenticator and push stream** (E3): a phone-shaped screen showing unrequested approve/deny prompts on a timeline, with the odd-hour push | New; not in `01` to `07`. Overlay rules as N1: `requiresKeyboardInput: true`, own Close and Esc, bridge test |
+| N12 | **Voicemail player** (E4, E7): plays a fixed TTS clip per item and takes a `05` verdict | New; the cloned-voice clip is a style variant of an existing voice (N7). Overlay rules as N1 |
+| N13 | **Mock browser pane with a certificate padlock check** (E5) as a triage item kind | New. `02`'s browser is a navigation shell and `07`'s padlock is a canvas decoy; neither is a triage item. `07` N5 (defender inspection items) is proposed as a change request to `05` and is not accepted yet. Overlay rules as N1 |
 | N14 | **Printed QR poster and SMS thread** items (E6) | New item kinds for `05` |
 | N15 | **Role swap** (E3): the learner is the helpdesk agent and takes scripted calls. Each call in the episode's `defend.calls[]` is `{ id, genuine, claims: [{ fact, value }], tells: [...] }`, with the claims drawn from the same `06` `knows` and `lines` data the attacker call used, so the facts the learner exploited are the ones they now check. For each call the agent picks `comply`, `verify_callback` (ring the number on file), `escalate` or `refuse`. The right action for an impostor is `verify_callback` or `escalate`; a genuine awkward caller is also served by `verify_callback`, and refusing one without offering the safe route loses points. Scoring reuses `05`'s scorer through a `call` message kind (R2), with the call's `tells` as the flags (`vish_callback_pressure`, `borrowed_authority`, `secrecy_or_bypass`) | Specified here and built here, before E3 ships; the lab and `06` do not need it. New: the scripted-caller sequencer on the `person-chat` shell, the four-action choice, and the `call` kind in `05` |
 
@@ -391,11 +404,12 @@ open. Each is a request, so a later change in that doc is reconciled here.
 | # | Doc | Request |
 |---|-----|---------|
 | R1 | `05` | A fourth verdict, `Verify` ("I would check this by ringing a number I already hold"), with its own score row, for E1 and E4. Until it exists the debrief teaches the verifying step and Report is the scored right answer |
-| R2 | `05` | Message kinds beyond email (`voicemail`, `sms`, `qr`, `page`, `call`) for E3 to E7, using the channel-tell chips `05` already supports |
+| R2 | `05` | Message kinds beyond email (`voicemail`, `sms`, `qr`, `page`, `call`) for E3 to E7, using the channel-tell chips `05` already supports. The `call` kind carries the four actions of N15 (`comply`, `verify_callback`, `escalate`, `refuse`) with its own scoring row, since the three email verdicts do not fit it |
 | R3 | `05` | Later: let the stage (`pre` or `post`) of a parallel form be assigned at launch from the learner id. The first slice counterbalances by mission pair (5.2) and does not need it |
 | R4 | `05` | A larger bank per form with a seeded draw. Not needed for the first slice (fixed forms) |
 | R5 | `05` | Record time to answer in milliseconds per answer in `answers[]`; never shown or scored |
 | R6 | `05` | Write per-factor results as scalar globals (for example `<prefix>f_<factor>_caught` and `_missed`), so a per-factor pre/post comparison can cross missions through `CarryOver`. The first slice compares `percent` and `reportRate` |
+| R7 | `05` | A comparison screen on the post-check that reads the imported `triage_pre_percent` and `triage_pre_reportRate` beside the post mission's own `triage_post_` values, and shows "no baseline" unless `pre_check_completed` and `triage_pre_done` are both true |
 
 ## 7. Reuse across audiences
 
@@ -406,7 +420,7 @@ Awareness is the **shallow setting** of the same components:
 | Required factors in `04` | 2–3 | 4–6 | 3–4, framed by dialogue |
 | Red-flag meter | On in attack, off in defend | Off after first target | Off |
 | OSINT depth | 3–5 facts, one page | Multi-site, metadata, search | One or two clues |
-| Retries / hints | Unlimited, escalating | Escalating, scored | Hint stages |
+| Retries / hints | Unlimited, escalating | Escalating, not scored (completion share only, `10` §4) | Hint stages |
 | Header / SPF / DKIM / DMARC | Not shown; the words "this domain isn't theirs" only | Read inside the triage, panel open (`05`); no separate quiz | Optional |
 | Scoring | Defence only, `05` `awareness` profile; private only in a standalone host (A7) | `analyst` profile in triage; Hacktivity records task and aim share, richer rubric open (`10` OQ2) | Gate on a global |
 | Skin | Neutral corporate | Lab | Eldritch Hacker |

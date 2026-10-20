@@ -97,7 +97,10 @@ re-read the board at any time.
 | **Operations Room** | **Mail workstation** (`mail_terminal`); **page-builder workstation**; a **desk phone** | 01 (+04); 07; 06 |
 | **Blue Team Room** | **Triage workstation**; the SOC board (`case-file`, `defender` mode); Tomasz | 05; 03 |
 
-Doors are plain key locks (each lock carries `keyPins`). Ruth hands over each key (`#give_item`, the
+Doors are plain key locks. Each lock carries `keyPins`, and each key item Ruth hands over carries
+matching `keyPins` and `opens_lock` (`README_scenario_design.md`, key checklist). Ruth also gives the
+player a starting phone item (`startItemsInInventory` with `npcIds: ["ruth_phone"]`), which is how her
+hint hub is reachable from every room. Ruth hands over each key (`#give_item`, the
 existing pattern) when the previous aim completes, so the objectives enforce the sequence and the
 player sees a physical reason to go back to her. The Blue Team door stays locked until the report is
 filed (the narrative flip: you leave the red cell and walk into the client's SOC seat).
@@ -160,18 +163,19 @@ call in stage 5. Two further facts are stale on purpose.
   gives `pierce_expects_balance_sheet`. The careers pages give `hampshire_careers`, `tech_stack` and
   `careers_attachment` (".odt and .docx only"). An archived org chart on the company site's archive
   page is out of date: it lists a person who left in spring as the finance lead. Selecting it gives
-  the stale fact `old_org_chart`, which offers a wrong manager and a wrong team later.
+  the stale fact `old_org_chart` (shown under "Old or unverified" on the board's company panel), which offers a wrong manager and a wrong team later.
 - **Tools panel.** The student picks lookups from a short list; nothing is typed. The Hunter lookup
   on `accountingnow.example` returns the pattern (`first-initial.surname@`) and grants
   `email_pattern`. A name search for "J. Baker" returns two entries, Jed Baker of AccountingNow and a
   plumber in Leeds. Choosing the right one grants nothing and says why it matched; choosing the
-  namesake grants the stale fact `baker_namesake`, a sender name Pierce does not trust. The three
-  four in-browser concept cards sit beside what they model: `tool_hunter` (the Hunter lookup),
-  `tool_harvester` (the name search), `tool_recon` and `tool_exiftool` (the document properties panel).
-  There are no wall notes.
+  namesake grants the stale fact `baker_namesake` (also under "Old or unverified"), a sender name Pierce does not trust. The four in-browser concept
+  cards sit beside what they model: `tool_hunter` (the Hunter lookup), `tool_harvester` (the name
+  search), `tool_recon` and `tool_exiftool` (the document properties panel).
 - **Social media.** Pierce's "first week in finance, Jed's showing me the ropes" (`pierce_trusts_jed`);
   Hampshire's "so many CVs to get through before Friday" (`hampshire_cv_backlog`, visible once the
-  careers page has been read); Sofia Lord's "sorting my payslip on the staff portal" (`lord_portal`:
+  careers inbox block on the careers page has been selected, because the post's `showIf` reads the fact
+  `hampshire_careers` that selecting the block grants; a student who only reads the page never sees it,
+  so Ruth's hint rungs for this stage point back at the careers inbox); Sofia Lord's "sorting my payslip on the staff portal" (`lord_portal`:
   she uses *a* staff portal, no name). Teaches how ordinary posts become pretext material.
 - **Public documents.** A published PDF with a **properties panel**. The student selects the field
   that gives something away: the author field, `mpierce`, grants `username_convention`, and the
@@ -196,7 +200,7 @@ with blanks (`00` §10). Every blank is filled from a fact the student holds, so
 what they have found, plus the occasional `stale` entry. The rules engine (04) judges each send and
 returns the full factor checklist, not the first failure. The mail client does not complete on a
 send: the overlay stays open for the checklist, and it completes only when the player closes it. The
-reply arrives into the mailbox after the target's reply delay (15 seconds for each lab target), and
+reply arrives into the mailbox after the target's reply delay (15 seconds for each of the three lab targets, Hampshire included), and
 every task keys on `phish_<id>_landed`, never on the client closing.
 
 The mail client has two accounts here (`00` §10a):
@@ -206,7 +210,12 @@ The mail client has two accounts here (`00` §10a):
 | `guest` ("Operator") | given | Rounds 2 and 3: the target offers `from_named`, so the From blanks are free and the student can claim to be Jed or the portal |
 | `freemail` | created, `unlockedBy: acct_freemail` | Round 1, where Hampshire offers only `from_own`, so the From is forced to the account's own name and address and nothing is spoofed: the student picks one of two authored addresses from the `createMenu` (which sets `acct_freemail_choice` and `acct_freemail`) |
 
-The lab defines no `found` account (`00` §10a keeps that kind for Eldritch Hacker).
+The lab declares exactly these two accounts. It defines no `found` account: `jed_pc` and its `jed`
+mailbox are Eldritch Hacker data (`00` §10a), so the lab's `playerSentAuth` has a row for `guest`, a row
+for `freemail` and one for each of the six menu domains, and no others. `freemail` is declared with
+`spoofsFrom: false` in the lab, so its From is always its own name and address; only `guest` can claim to
+be Jed or the portal, which is why rounds 2 and 3 are sent from `guest` and why the replay of "the
+student's own phish" in stage 7 always has a `guest` record to draw from.
 
 | Round | Target | Account | Required factors (04) | What the round teaches |
 |-------|--------|---------|-----------------------|------------------------|
@@ -218,8 +227,12 @@ delay the engine appends her authored `replies.landed` (or the canonical fail li
 failed factor) to the mailbox of the account used, and sets `phish_hampshire_landed` only when the
 message landed. Pierce's reply is written by `pierce_mail` (its `on_email` knot), which sets
 `phish_pierce_landed`; one owner per target, never both. The checklist does not wait for either.
-Each failure shows exactly which factor failed, the failed send costs the character 10 influence
-(04), and the hint ladder starts after two misses. Pierce's and Lord's influence is bounded at -40
+Each failure shows exactly which factor failed, a failed send costs Pierce or Lord 10 influence (04;
+Hampshire has no character, so nothing moves for her), and the hint ladder starts after two misses.
+Where a blank needs evidence the student has not found, the blank is empty and Send is blocked with a
+neutral line ("A blank needs evidence you haven't found yet", defined in 04, used by 01). The line never
+names or hints at the missing value, so the judged checklist never reports a missing-evidence gap; the
+hint ladder and the board's "still missing" panel do that work. Pierce's and Lord's influence is bounded at -40
 and carries no report or lockout (section 5, "Influence"), so a run of bad sends only moves the bar.
 
 **`senderAuth` on the attacker side.** From round 1 the checklist carries an advisory line under the
@@ -249,7 +262,10 @@ the mail client offers is the payload-kit item `kit_payroll_page`.
 The page does not depend on the call, and the call does not change the page's score: 07 reads no
 globals. Ruth suggests calling Dev first because what he says sharpens the wording the student will
 want, but either order completes the aim. After the round 3 send the student can reopen the page at
-the builder as the victim (07's step 6, "Inspect your own page") and find the giveaways. The step is
+the builder as the victim (07's step 6, "Inspect your own page") and find the giveaways. Per 07, Inspect is
+available once any send is recorded, and a below-threshold page gives a victim record of visited and
+noticed whether or not the email lands, so Inspect is reachable even after "attach anyway" on a page that
+then failed `linkCredible`. The step is
 not a required task; Ruth points to it, and stage 7's triage covers the same tells from the reader's
 side.
 
@@ -277,17 +293,24 @@ the debrief screen after it.
   `payslip_date` (pressure -10, floor -20, verification: the intern's name) grants
   `lord_payslip_date`. Grants set `se_intel_*` through the shared writer, so the board and 04 see
   them at once.
-- **Outputs.** `pretext_call_done` is set when the call ends with at least one ask granted;
-  `pretext_call_reported` is set when it ends in a report. The engine writes
-  `pretext_service_desk_call_outcome`, `_lowest` and `_state`; the `reports` threshold sets
-  `dev_reported`. All are declared in `globalVariables`, none imported.
+- **Outputs.** `pretext_call_done` is set when any call ends with at least one ask granted;
+  `pretext_call_reported` is set when a call ends in a report. The desk phone can start a new call after
+  any outcome while asks remain: each call begins at Dev's current influence, asks whose facts the
+  student already holds are not offered again, per-ask grants accumulate, and
+  `pretext_service_desk_call_outcome` and `_lowest` are overwritten by the latest call (06). The engine
+  also writes `_state`; the `reports` threshold sets `dev_reported`, which stays set. All are declared in
+  `globalVariables`, none imported.
 - **A failed call never dead-ends the path.** Dev's `reports` threshold has three effects: it sets
   `dev_reported`, ends the call "to check with his manager", and starts a channel-scoped lockout of
   two real minutes (`00` §8: the clock is real elapsed time, not scaled by any game rate, and it
   survives a reload). A forced report, from the refusal limit or a failed verification, runs the same
   effects at whatever influence Dev has reached, so the lockout and the reset always follow a report.
-  When the two minutes pass the engine sets him back to -30, above his wary line, and clears the
-  latch. Ruth says the call was "burned for a couple of minutes", which is that expiry spoken in
+  When the two minutes pass the engine sets him back to `recoverTo` -30 and clears the latch. The rule
+  (`00` §8) is that `recoverTo` is at least the highest effect threshold's `at` plus `rearmMargin`: his
+  highest is wary at -40 and the margin is 10, so -30 satisfies it exactly. His threshold flags
+  (`dev_wary`, `dev_refusing`) are recomputed on every influence change and cleared once influence
+  reaches `at` plus the margin or above, so after the reset he is not wary and not refusing; Dev's ink
+  branches on the band it is passed rather than reading a stale flag. Ruth says the call was "burned for a couple of minutes", which is that expiry spoken in
   character, and the student has the page builder to use meanwhile. No object is greyed and no
   mission beat is needed. At -30 the date ask (floor -20) needs a few matched claims first, so the
   second attempt is harder but open; the hint ladder (06 §4.5) starts then. The lockout is
@@ -295,9 +318,11 @@ the debrief screen after it.
   the stage 6 finding and the stage 7 mitigation pick that up.
 
 Because `pretext_call_done` needs one ask and Sofia's phish needs all three facts, the `prepare_hard`
-aim can complete with the date still unknown. The round 3 checklist then names the gap as an intel
-gap ("you still don't know when payslips are released") and Ruth's hint rungs point at Dev. This is
-by design: the phone stays open for another call.
+aim can complete with the date still unknown. With the payslip date unknown the `when` blank is empty, so
+Send is blocked with the neutral pre-send line and nothing is judged; the checklist does not name the
+gap. Ruth's hint rungs point back at Dev. This is by design: the phone reopens for a second call
+(asks whose facts are held are not offered again), so a student who got only the portal name on the
+first call makes a second call for the date.
 
 Back at the mail workstation the student composes **round 3 to Sofia Lord** from `guest`, with the
 portal's notification sender in the From blanks (`portal_full` and `portal_address`, both provided by
@@ -323,9 +348,11 @@ keep:
   failed send is a chance for a member of staff to report you". The reply received is the landed
   outcome; the lab records no "opened" or "clicked" for mail.
 - **Page.** From the persisted page record `se_landing_pages.payroll_login.victim` (`00` §11a, 07
-  step 5): visited, submitted, noticed, shown as "Visits 1 · Submissions 1 (simulated)".
-- **Call.** From the pretext globals: the outcome, the lowest influence Dev reached
-  (`pretext_service_desk_call_lowest`) and whether he reported (`dev_reported`).
+  step 5), written for every send with a page attached, landed or not (a below-threshold page reads visited and
+  noticed): visited, submitted, noticed, shown as "Visits 1 · Submissions 1 (simulated)".
+- **Call.** From the pretext globals: whether any ask was granted (`pretext_call_done`), whether Dev
+  reported at any point (`dev_reported`), and the latest call's outcome and lowest influence
+  (`pretext_service_desk_call_outcome`, `_lowest`, which the latest call overwrites).
 - It says once that this test cannot see whether staff reported the attempts, and that a live
   engagement would add it.
 
@@ -380,17 +407,20 @@ Tomasz takes the report and sets a debrief exercise. The same strings serve both
 
    The student passes the step when the round's percent reaches the set's `passPercent` (60): the
    triage starter writes `triage_pass` (`setGlobalPrefix: "triage_"`), and a round below it can be run
-   again from the result screen's "Try again" (mission-stage sets have no first-attempt guard, 05). The concept panel (SPF, DKIM, DMARC;
+   again from the result screen's "Try again" (mission-stage sets have no first-attempt guard, 05).
+   Ruth's `eventMappings` entry listens for `triage_pass` and completes `triage_passed`; Tomasz only
+   reads it. The concept panel (SPF, DKIM, DMARC;
    the 05 glossary) is short and follows 05's definitions: SPF lists the hosts allowed to send for the
    envelope domain; DKIM signs chosen headers and the body; DMARC requires SPF or DKIM to pass *and
    align* with the visible `From` domain, and publishes a policy (`none`, `quarantine`, `reject`). The
    consequence of AccountingNow's `p=none` is taught in the stage 6 finding and in the `headerNote` on
    the student's own Pierce phish ("a policy of `none` monitors but does not stop this").
 2. **Threat-intel profile (Ch. 12).** The SOC board switches to `defender` mode: the facts the student
-   collected, titled "what an attacker can assemble about us". For each of four exposed facts (the
+   collected, titled "what an attacker can assemble about us". The mode lists only facts that carry a `reduceNote`. For each of the four (the
    email pattern, the document metadata, the Lord social post, the careers inbox) the student picks
    one mitigation from an authored list (remove the staff email list, strip PDF metadata on publish,
-   a social-media policy, a call-back procedure), each with a reason. The chosen mitigations make up
+   a social-media policy, a call-back procedure), each with a reason. Each of the four facts carries a
+   `reduceNote` in `00` §1, which 03's validator requires of any fact used in `factMitigations`. The chosen mitigations make up
    the profile. There is no indicator tagging in this slice (the mode's indicators step is off unless
    authored).
 
@@ -399,7 +429,7 @@ When every fact has a good mitigation chosen the mode sets `profile_done`.
 ### Closing debrief (Blue Team Room)
 
 Tomasz gives a short in-person debrief once `profile_done` is set: what the exercise showed, what
-AccountingNow will change, and the no-blame line. Branches are gated on globals (`dev_reported` and
+AccountingNow will change, and the no-blame line. Branches are gated on globals (`dev_reported` and the latest call's
 `pretext_service_desk_call_outcome` for the call; `phish_pierce_attempts` equal to 1 for a first-try
 land on Pierce) and use fixed strings, so voiced lines print no variables. The conversation ends with
 `#complete_task:closing_debrief` and `#exit_conversation`, which completes the mission-conclusion aim
@@ -446,11 +476,23 @@ accepted (`scenarios/lab_tesseract_trials/DESIGN.md`, D3); there is no measured 
 students for either lab. Expect this lab to run past 75 for a slow cohort.
 Cut order, with the minutes each saves, if the playtest runs long:
 
-1. Drop the stage 7 profile and end on the triage (3).
+Each cut is authored as a data variant before the playtest, so applying one is a data change and not a
+rewrite. What each one edits:
+
+1. Drop the stage 7 profile and end on the triage (3). Remove the `profile_done` task (21 tasks) and its
+   mention in the `defend` aim; the SOC `case-file` object and `engagement.defender` go; Tomasz's debrief
+   gate and the `closing_debrief` unlock move from `profile_done` to `triage_pass`; the four-mitigation
+   row of the time budget goes.
 2. Drop Hampshire's round and start the phishing at Pierce (4), moving the open-inbox lesson to a
-   triage message.
-3. Reduce the triage to six messages, four authored and the two `playerSent` (3).
-4. Reduce the report to two findings (2).
+   triage message (the CV message stays). Remove the `ready_hampshire` and `hampshire_landed` tasks (20
+   tasks, or 19 with cut 1), the `hampshire` entry from `intelBoard.people` (so `osint_done` and Ruth's
+   Operations-key condition then wait on Pierce and Lord only), the `freemail` account and its
+   `createMenu`, the three Hampshire-only facts, and the careers mitigation from the defender list
+   (three remain).
+3. Reduce the triage to six messages, four authored and the two `playerSent` (3): drop the parcel
+   notice and the staff newsletter. This needs a six-message variant of the set (the contract size for
+   the lab is eight, `00` §13), so author it with the set.
+4. Reduce the report to two findings (2): drop finding 3, the look-alike portal page. No task changes.
 
 Already left out for time, and where each would return in an extension: the stand-alone
 header-interpretation quiz, the DMARC rollout simulation and indicator tagging in the profile.
@@ -522,10 +564,10 @@ writer (`00` S3).
 | `se_landing_pages` | 07 (object, default `{}`) | the mail client (`linkInfo`), the report, 05's `domainFrom` |
 | `se_osint_state`, `se_board_state` | 02, 03 (objects, default `{}`) | their own minigames |
 | `pretext_call_done`, `pretext_call_reported` | 06 call outcomes | the `call_dev` task, Ruth |
-| `pretext_service_desk_call_outcome`, `_lowest`, `_state` | the pretext session (06) | the report, Tomasz |
-| `dev_influence`, `dev_latched`, `dev_wary`, `dev_refusing`, `dev_reported`, `dev_lockout_until`, `dev_lockout_channel` | the influence service (`00` §8), Dev's ink | the bar, Ruth, the report |
+| `pretext_service_desk_call_outcome`, `_lowest`, `_state` | the pretext session (06); the latest call overwrites `_outcome` and `_lowest` | the report, Tomasz |
+| `dev_influence`, `dev_latched`, `dev_wary`, `dev_refusing`, `dev_reported`, `dev_lockout_until`, `dev_lockout_channel` | the influence service (`00` §8), Dev's ink; `dev_wary` and `dev_refusing` are recomputed on every influence change | the bar, Ruth, the report |
 | `pierce_influence`, `pierce_latched`, `pierce_wary`; `lord_influence`, `lord_latched`, `lord_wary` | the mail stories and the influence service | the bar in the mail pane |
-| `triage_percent`, `triage_reportRate`, `triage_done`, `triage_pass` | the triage starter (`setGlobalPrefix: "triage_"`, `passPercent: 60`, 05) | the `triage_passed` task (on `triage_pass`), Tomasz |
+| `triage_percent`, `triage_reportRate`, `triage_done`, `triage_pass` | the triage starter (`setGlobalPrefix: "triage_"`, `passPercent: 60`, 05) | Ruth's mapping, which completes `triage_passed` on `triage_pass`; Tomasz's briefing |
 
 ### Hints and no dead ends
 
@@ -560,15 +602,18 @@ aims completed. BreakEscape computes it in `Game#calculate_task_score`
 (`app/models/break_escape/game.rb`, lines 50 to 58): `tasks_completed / total_tasks * 70` plus
 `objectives_completed / total_aims * 30`. `total_tasks` counts every task, optional ones included, so
 skipping an optional task lowers the ceiling. For a VM-free mission Hacktivity's `GameScoringJob`
-(`app/jobs/game_scoring_job.rb`, lines 24 to 36) takes that value as the game's score, recalculates
-the event result and broadcasts it. There is no per-outcome mark, hint count, attempt count or tutor
+(`app/jobs/game_scoring_job.rb`) recomputes the same formula in its own `calculate_task_completion_score`
+(lines 116 to 123); when the game has a `game_slot` it also recalculates the event result and
+broadcasts it (lines 29 to 36). There is no per-outcome mark, hint count, attempt count or tutor
 view. `merge_global_variables!` (`game.rb`, from line 242) persists every global key the client sends
 except imported ones, so the lab can store counters, but nothing reads them. Only the ink sync
 tests for declared names.
 
 **What the lab can evidence with that.** The lab has no optional tasks and 22 required ones, so the
 score is a completion share and a completed run scores 100. Each learning outcome is evidenced by the
-tasks that can only complete once the student has done the thing. A task completes only when the
+tasks that complete once the student has done the thing. Completion is client-attested (the completing
+globals and the `manual` tasks are set by the browser, `00` §5), which is acceptable for a formative lab
+and means a summative mark would need server-side checks. A task completes only when the
 underlying judgement is right: wrong scope cards, wrong findings pairs and a low triage round are
 explained and re-done, so a student can finish with mistakes made on the way.
 
@@ -577,7 +622,7 @@ explained and re-done, so a student can finish with mistakes made on the way.
 | 1 scope & law | `scope_cards`, `stop_rule` |
 | 2, 3 OSINT | `email_pattern_found`, `metadata_read`, `ready_hampshire`, `ready_pierce`, `ready_lord` |
 | 4 spear-phish | `hampshire_landed`, `pierce_landed`, `lord_landed` |
-| 5 landing page | `landing_page_built` |
+| 5 landing page | `lord_landed` (needs a page that meets the threshold, because `linkCredible` is required); `landing_page_built` records only that a page was attached, since "attach anyway" is allowed below the threshold |
 | 6 pretext | `call_dev` |
 | 7 reporting | `results_reviewed`, `findings_paired`, `pick_objectives`, `pick_measures` |
 | 8 authentication | `triage_passed` (a round at or above the pass mark; a failed round is re-run) |
@@ -683,7 +728,7 @@ stylesheet linked in `show.html.erb` (README Conventions).
 | `osint-workstation` | Recon | `{ siteIds }` | `osint-browser` (02) | `osint-workstation` |
 | `mail_terminal` | Operations | `{ accountIds: ["guest","freemail"] }` | `mail-client` (01) | `mail_terminal` |
 | `page-builder` | Operations | `{ landingPageId: "payroll_login" }` | `landing-page-builder` (07) | `page-builder` |
-| desk phone | Operations | `{ callId: "service_desk_call" }` | `phone-chat` with `pretext-prep` (06) | the phone branch |
+| desk phone (engine type `phone`; no new sprite) | Operations | `{ callId: "service_desk_call" }` | `phone-chat` with `pretext-prep` (06) | the `phone` branch, with a `callId` check before the `text`/`npcIds` branch |
 | `report-workstation` | Engagement | none | `engagement-report` (N1) | `report-workstation` |
 | `triage-workstation` | Blue Team | `{ triageSetId }` | `inbox-triage` (05) | `triage-workstation` |
 
@@ -731,10 +776,10 @@ Hampshire's reply is a text job from her target's authored `replies` (no ink sto
   },
   "scope": {
     "onCompleteGlobal": "roe_signed",
-    "steps": [ { "id": "sort",     "onCompleteGlobal": "roe_scope_done" },
+    "steps": [ { "id": "scope",    "onCompleteGlobal": "roe_scope_done" },
                { "id": "stoprule", "onCompleteGlobal": "roe_stoprule_done" } ],
     "cards": [
-      { "id": "personal_mail", "kind": "sort", "step": "sort", "text": "Email a staff member's personal address",
+      { "id": "personal_mail", "kind": "sort", "step": "scope", "text": "Email a staff member's personal address",
         "inScope": false, "why": "RoE section 4 limits the test to work accounts." },
       { "id": "real_compromise", "kind": "question", "step": "stoprule",
         "text": "You find a real compromise. What do you do?",
@@ -744,9 +789,9 @@ Hampshire's reply is a text job from her target's authored `replies` (no ink sto
   },
   "plan": {
     "onCompleteGlobal": "plan_done",
-    "steps": [ { "id": "objectives", "onCompleteGlobal": "plan_objective_done" },
+    "steps": [ { "id": "objective",  "onCompleteGlobal": "plan_objective_done" },
                { "id": "measures",   "onCompleteGlobal": "plan_measures_done" } ],
-    "objectives": [ { "id": "disrupt_payroll", "step": "objectives", "correct": false, "why": "RoE section 3 bars disruption." } ],
+    "objectives": [ { "id": "disrupt_payroll", "step": "objective", "correct": false, "why": "RoE section 3 bars disruption." } ],
     "measures":   [ { "id": "sent",   "step": "measures", "correct": true,  "why": "..." },
                     { "id": "names",  "step": "measures", "correct": false, "blame": true, "why": "..." } ]
   },
@@ -770,9 +815,9 @@ Hampshire's reply is a text job from her target's authored `replies` (no ink sto
 }
 ```
 
-The mode blocks follow `00` §11 ("Engagement mode blocks"); `factMitigations` lives only here. The
-`step` field on each card and pick is how an item names the step it belongs to (open request to 03,
-section 6). All feedback strings are authored and linted for empty interpolation (04 N3). The
+The mode blocks follow `00` §11 ("Engagement mode blocks"); `factMitigations` lives only here. Every
+card, question and pick carries `step: <stepId>`, and a step's global is set when all items with that
+step are answered correctly (`00` §11, 03). All feedback strings are authored and linted for empty interpolation (04 N3). The
 `scope`, `plan`, `report` and `defender` items follow the "right answer plus a reason for each wrong
 one" shape of the 04 factors, so one validator rule covers them (section 6, N7).
 
@@ -817,11 +862,6 @@ Every value below is settled in `00`; 10 builds on it and cites the section.
 | `06` | Character `dev`, record `dev_service_desk`, call `service_desk_call`; the `reports` threshold with the lockout; a forced report runs the `reports` effects | `00` §8; 06 §4.8 |
 | `07` | Page `payroll_login`, the six-domain menu, the persisted record with `victim`, the two globals, no input from globals to the page score | `00` §11a, §13 |
 
-**Open request.** To `03`: each scope card, question card and plan pick carries a `step` id naming the
-engagement step it counts toward, so the board can set the step global when that step's items are all
-correct. `00` §11 defines the step globals but not how items bind to them; this doc authors `step` on
-each item.
-
 ### New engine work specific to this scenario
 
 | # | Item | Notes |
@@ -830,7 +870,7 @@ each item.
 | N2 | **Report data**: the report reads what 01, 07 and 06 already record (`mailState.metrics`, the page record's `victim`, the call globals) | No store of its own |
 | N3 | **Board modes** `scope` and `plan` with the `engagement` data (scope and question cards, objective and measure picks) | Owned by 03; this doc supplies the data shapes in section 5 |
 | N4 | **Defender-mode mitigation picks** | Owned by 03; `engagement.defender.factMitigations`; no indicator tagging in this slice |
-| N5 | Door and key gating use existing locks and `#give_item`; **no new engine work** | Key locks carry `keyPins` |
+| N5 | Door and key gating use existing locks and `#give_item`; **no new engine work** | Key locks and the key items both carry `keyPins`; the key items also carry `opens_lock`. Ruth's phone is a starting item (`startItemsInInventory`, `npcIds: ["ruth_phone"]`) |
 | N6 | Non-VM mission configuration: `secgen_scenario: null` and a `collection` label | `Mission#requires_vms?` already supports it; `db/seeds.rb` lines 67 to 71 read `secgen_scenario` and `collection` |
 | N7 | **Validator work** (`scripts/validate_scenario.rb`, `scripts/scenario-schema.json`, `scripts/minigame-data-schemas.json`) | `known_top_level` (lines 246 to 251) gains `social`; `known_npc_fields` and `known_behavior_fields` gain only what 00 §8 and §9 add; `minigame-data-schemas.json` gains an entry per object type in the table above; each type needs its `assets/objects/<type>.png` sprite; every `engagement` item with a `correct` or `good` flag carries a `why`; every completing global in the objectives table is declared; the promised lints from 00 §12 S11, 04 N3, 05 N5, 06 N10 and 07 |
 | N8 | **Ink externals** (`se_influence`, `pretext_say`, `pretext_ask`) bind in `InkEngine` (`00` S1) | The authoring guide says "use synced-global `VAR`s, not `EXTERNAL` functions" because the engine binds only six read-only externals and an unbound one throws (`ink-engine.js` catches only the bind failure). When S1 lands, amend that rule in `README_scenario_design.md`. Also needed: bind in person-chat, phone-chat and the headless mail runner; add stubs to `scripts/ink_runtime_check/voicelines.mjs`, `inkcheck.js` and `reopencheck.mjs`; a validator rule that every `EXTERNAL` a story declares is bound for every channel the character supports |
@@ -846,8 +886,8 @@ consolidated table. Nothing here needs a VM, the flag-station or the vm-launcher
   becomes spot-the-phish only. Targets, rules and strings are the same files with fewer factors
   required and the meter on throughout.
 - **Eldritch Hacker:** any single stage is liftable (OSINT → phish → call). The lab's `phishTargets`
-  and `osint` blocks are the templates. A `found` account and phone identities (`00` §10a) belong
-  there, not here.
+  and `osint` blocks are the templates. A `found` account (`jed_pc` and its mailbox) and phone identities
+  (`00` §10a) belong there, not here.
 - **Student tuning knobs:** red-flag meter on or off per target; required factors per target; hint
   verbosity; whether the triage includes the forwarder case (the hardest concept) or leaves it out;
   which of the cut-order items to restore for a longer slot.

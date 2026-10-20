@@ -49,12 +49,15 @@ canonical **pass and fail lines** are in `00` §2, imported by both this engine 
   target: the account's domain is the envelope and signing domain, the header From's domain is the
   visible one, and the claimed domain's `senderAuth` policy says whether the pair aligns. Equal
   domains are aligned, and a claimed domain with no policy (Hampshire's) publishes nothing, so its
-  read is `would-pass`. A found internal account sending as its own person passes; a freemail
+  read is `would-pass`. The policy object carries `dmarcPolicy: "none" | "quarantine" | "reject"`
+  (`00` §7) alongside `domainPublishesAuth` and `spoofAligns`. A found internal account sending as its own person passes; a freemail
   account sending as the company fails. An author may override the derived result per target.
   Advisory on the attack side: a spoof can still fool a person if delivered, but the player is told it
-  would likely be quarantined or flagged. Where the claimed domain publishes DMARC at `p=none`
-  (AccountingNow does) the advisory says the check fails alignment and, with a policy of `none`, the
-  message is still delivered.
+  would likely be quarantined or flagged. The advisory text is the target's authored
+  `factorStrings.senderAuth` line when it has one. Without one it is the canonical `00` §2 line plus
+  a clause chosen by `dmarcPolicy`: `none` says the message is still delivered, `quarantine` that it
+  would likely be quarantined, `reject` that it would be rejected. AccountingNow publishes `p=none`,
+  and Pierce's authored line says so; the verdict is never changed by it.
 - **`attachmentPlausible` has three states**, `pass` / `missing` / `wrong-type`, each with its own
   keyed reply and red-flag string. A no-attachment send returns `missing` with "there's nothing
   here", never the wrong-type line.
@@ -82,8 +85,8 @@ slot"; in short:
   inbox lists `trusts: ["*"]`: any From passes and `claimedSender` is `null`. With `from_own` the
   header From is the account itself (`headerFrom: { account: true }`), and only the account's own
   name and address are compared.
-- **Link.** `linkCredible` reads `message.linkInfo`, filled by `01` from `07`'s `linkInfoFor` (`00`
-  §11a): it passes when `linkInfo.meetsThreshold` is true and fails with state `missing` when the kit
+- **Link.** `linkCredible` reads `message.linkInfo`, filled by `01` from `07`'s
+  `linkInfoFor(record, pageDef, kitId)` (`00` §11a): it passes when `linkInfo.meetsThreshold` is true and fails with state `missing` when the kit
   item has no built page. The judge reads nothing else about the link.
 - **Free text is unscored.** The judge ignores it and the ink never reads it.
 
@@ -95,7 +98,7 @@ of whether it landed. The engine computes it after judging:
 | tell | present when |
 |------|--------------|
 | `senderTrust` | `claimedSender` is set and the account's `person` is not that person (a deliberate spoof) |
-| `linkCredible` | `linkInfo.domain` is not `expectedLink.realDomain`, whether or not the page was convincing |
+| `linkCredible` | `linkInfo.domain` is set and is not `expectedLink.realDomain`, whether or not the page was convincing. A message with no link, or a link in state `missing` (no domain), never raises it |
 | `senderAuth` | the derived advisory read is `would-fail` |
 | `urgencyCalibrated` | the pretext or ask template's authored `urgency` is above the target's `urgency.advisoryMax`; a target with no `urgency` block never raises it |
 
@@ -107,9 +110,13 @@ The lab's tells, as sent from the `guest` account:
 | Message | `tells` |
 |---------|---------|
 | Pierce phish, claiming Jed | `senderTrust`, `senderAuth` |
-| The same, sent from `jed_pc` | none: the account is Jed's and the domains are equal |
 | Lord phish, claiming the portal, with the built page | `senderTrust`, `senderAuth`, `linkCredible`, `urgencyCalibrated` (the payslip pretext and the link ask are authored `medium`, above her `advisoryMax` of `low`) |
 | Hampshire application from `freemail` | none: `from_own`, equal domains, no `claimedSender` |
+
+A `found` internal account sending as its own person would give no tells, because the account is
+that person's and the domains are equal. The lab ships no such account (only `guest` and `freemail`);
+it is an Eldritch Hacker case. `freemail` does not spoof, so a Pierce or Lord send from it has its
+own name as the From and fails `senderTrust`.
 
 `05` decides which of these a replay shows. For a `playerSent` entry with `domainFrom` the panel shows
 the look-alike domain's passing result, so `senderAuth` is not offered as a flag there.
@@ -141,6 +148,23 @@ No silent pass/fail anywhere. The per-factor, per-state keyed mapping stops wron
 empty-string lint (N3) stops blank ones. For character targets the validator also checks the
 `on_email` knot exists and handles a failed send (it must produce a non-empty reply in every branch).
 
+### Pre-send gate
+
+Judging starts only on a sendable message. `01` disables Send, with one neutral line, in two cases:
+a blank in the message has no held option (an empty blank cannot be sent), or a fact in the target's
+`requiresIntelToAttempt` is not held. The line is a single fixed string, which a scenario does not
+override:
+
+> A blank needs evidence you haven't found yet
+
+It never names the blank's fact, the value, the source or the person who holds it, and it is the
+same whatever is missing, so it cannot be used to probe for answers. `01` marks the empty blank. A
+blank that has options but none chosen gets the ordinary "Choose an option for the <slot label>
+blank". Nothing is judged: no sent record, no attempt counted, no checklist. The player finds the
+gap through the hint ladder, the intel board and the pretext call, not through this line. Lord's
+portal and date blanks are empty until the call, so before it her composer shows this line.
+`requiresIntelToAttempt` remains for facts that sit behind no blank.
+
 A character locked out on the mail channel (`00` §8, S10) is not judged: `01` refuses the send before
 `evaluateMessage` runs, so a lockout never produces a half-result.
 
@@ -161,10 +185,8 @@ Target **Melanie Pierce**, Finance (character `pierce`). Trusts `baker` (her col
   the spoof would fail the domain's sender authentication (advisory). Melanie's `on_email` knot
   replies "Thanks Jed, opening it now", raises her influence (+10, reason `senderTrust`) and sets
   `phish_pierce_landed`. The reply arrives in the `guest` mailbox, not Jed's.
-- The same message sent from the found account `jed_pc` (`00` §10a) lands too, with `tells` empty:
-  the account really is Jed's. The ink may trust it more.
 - Player uses a fixed-wording greeting "Hello," (no name blank) and a generic pretext "Please see
-  attached." and attaches an archive. `senderTrust` passes. `addressedTo` fails, because the greeting
+  attached." and attaches the invoice PDF (`kit_invoice`). `senderTrust` passes. `addressedTo` fails, because the greeting
   has no name blank. `pretextRelevant` fails, because no blank holds a distinctive value.
   `attachmentPlausible` is `wrong-type`. The checklist shows all three failures with reasons. The
   engine sets `email_first_fail = "addressedTo"` and `email_attachment = "wrong-type"`. Her reply:
@@ -191,7 +213,8 @@ The complete schema is `00` §7; targets live in `social.phishTargets` and templ
       "pretext":  ["pretext_sheet","pretext_generic"],
       "ask":      ["ask_open_attached","ask_confirm"]
     },
-    "senderAuth": { "domainPublishesAuth": true, "spoofAligns": false },   // the claimed domain's policy
+    "senderAuth": { "domainPublishesAuth": true, "spoofAligns": false, "dmarcPolicy": "none" },   // the claimed domain's policy
+    "redFlagMeter": false,                       // per target; default is mailClient.showRedFlagMeter
     "urgency": { "advisoryMax": "medium" },
     "primedFor": {
       "distinctiveValues": ["balance_sheet"],               // >= minDistinct, exact ids, from the pretext part
@@ -207,6 +230,9 @@ The complete schema is `00` §7; targets live in `social.phishTargets` and templ
       "senderTrust":         { "pass": "✓ From someone she trusts", "fail": "Who is this? I don't recognise the address.", "redFlag": null },
       "addressedTo":         { "pass": "✓ Addressed her by name",   "fail": "This doesn't even have my name on it.",       "redFlag": null },
       "pretextRelevant":     { "pass": "✓ Relevant to her",         "fail": "I'm not expecting anything like this.",        "redFlag": null },
+      "senderAuth":          { "pass": "✓ Sender authentication would pass",
+                               "fail": "The spoofed j.baker@ address fails the domain's alignment check. AccountingNow publishes its DMARC policy as p=none, so a receiver would still deliver it.",
+                               "redFlag": null },
       "attachmentPlausible": { "pass": "✓ The attachment fits",
                                "missing":    { "fail": "You said you'd attach it, but there's nothing here.", "redFlag": null },
                                "wrong-type": { "fail": "Why would you send me that file type?",               "redFlag": null } }
@@ -219,14 +245,24 @@ The complete schema is `00` §7; targets live in `social.phishTargets` and templ
     "id": "hampshire",                            // easy: an open careers inbox, no character story
     "address": "careers@accountingnow.example",
     "displayName": "Chris Hampshire",
-    "emailReplyDelay": 10,                        // seconds; a data-only target authors its own delay
+    "emailReplyDelay": 15,                        // seconds; a data-only target authors its own delay
+    "redFlagMeter": true,
     "templateSets": { "from": ["from_own"], "greeting": ["greet_generic"],
                       "pretext": ["pretext_apply"], "ask": ["ask_review_cv"] },
     "primedFor": { "distinctiveValues": ["cv"], "minDistinct": 1, "expectedAttachment": "document",
                    "trusts": ["*"], "story": "an applicant's CV for the open role" },
     "requiredFactors": ["senderTrust","pretextRelevant","attachmentPlausible"],
     "advisoryFactors": ["senderAuth","urgencyCalibrated"],
-    "replies": { "landed": "Thanks, I'll get to this CV before Friday." },   // a failed send uses the 00 §2 canonical fail line
+    "factorStrings": {
+      "senderTrust":         { "pass": "✓ An open inbox accepts any sender", "fail": "I don't recognise who this is from.", "redFlag": null },
+      "pretextRelevant":     { "pass": "✓ Reads like an application", "fail": "This isn't about the role. I only handle applications.", "redFlag": null },
+      "senderAuth":          { "pass": "Sent as your own outside address, so there is nothing to spoof and nothing to fail.",
+                               "fail": "Sender authentication would not pass.", "redFlag": null },
+      "attachmentPlausible": { "pass": "✓ The CV is attached",
+                               "missing":    { "fail": "You mention a CV, but there's nothing attached.", "redFlag": null },
+                               "wrong-type": { "fail": "That isn't a file type I can open as a CV.",      "redFlag": null } }
+    },
+    "replies": { "landed": "Thanks, I'll get to this CV before Friday." },   // a failed send uses the factorStrings fail line of the first failed factor
     "hints": ["An open inbox trusts anyone who looks like an applicant.", "What does the careers page ask applicants to send?"],
     "outcome": { "setGlobal": { "phish_hampshire_landed": true } }
   },
@@ -238,7 +274,8 @@ The complete schema is `00` §7; targets live in `social.phishTargets` and templ
     "addressedAs": ["lord_first"],
     "templateSets": { "from": ["from_named"], "greeting": ["greet_named"],
                       "pretext": ["pretext_payslip"], "ask": ["ask_open_link"] },
-    "senderAuth": { "domainPublishesAuth": true, "spoofAligns": false },
+    "senderAuth": { "domainPublishesAuth": true, "spoofAligns": false, "dmarcPolicy": "none" },
+    "redFlagMeter": false,
     "urgency": { "advisoryMax": "low" },
     "primedFor": {
       "distinctiveValues": ["staff_portal_name","mon_6th"],  // both arrive with the pretext call (06)
@@ -261,6 +298,8 @@ The complete schema is `00` §7; targets live in `social.phishTargets` and templ
 
 Notes on the records:
 
+- **Meter.** `redFlagMeter` is a per-target boolean; when absent it takes `mailClient.showRedFlagMeter`
+  (`01`). The lab has it on for Hampshire and off for Pierce and Lord.
 - **Ids.** `character` names the `social.characters` entry. Name and address values are the
   `<person>_<form>` and `<person>_address` ids of `00` §1. The `trusts` entries are `social.people`
   ids (`00` §1): `baker`, the non-cast sender `portal`, or `"*"`.
@@ -279,8 +318,10 @@ Notes on the records:
   that `implies` the document value `cv`, provided by `careers_attachment` (`00` §1). The reply is a
   text job (`00` §10): `replies.landed` when the message landed, otherwise the canonical fail line of
   the first failed factor. It is appended to the mailbox of the sending account after
-  `emailReplyDelay`, and `phish_hampshire_landed` is set only if the message landed. She has no
-  `factorStrings`, so the ✓ lines and fail lines are the `00` §2 canonical ones. The lesson is that the
+  `emailReplyDelay`, and `phish_hampshire_landed` is set only if the message landed. Her
+  `factorStrings` cover the factors she judges, and her `senderAuth` pass line says the message is
+  sent as the student's own outside address, so nothing is spoofed; the other factors fall back to
+  the `00` §2 canonical strings. The lesson is that the
   From line is only a label.
 - **Template shapes** (`from_named`, `greet_named`, `pretext_sheet`, `pretext_apply` and so on) are
   the `00` §10 schema; the lab's full set is the appendix below. A template may carry an authored
@@ -329,12 +370,12 @@ What each blank offers, derived from held facts (`00` §1 "provides"):
 | Target | Slot | Options (fact that provides each; kind) |
 |--------|------|------------------------------------------|
 | pierce | `sender_name` | `baker_full` "Jed Baker" (`pierce_trusts_jed`, `pierce_expects_balance_sheet`; distinctive); `leeds_baker_full` "J. Baker" (`baker_namesake`; stale) |
-| pierce | `sender_address` | one built-from-pattern option per person whose name is held, once `email_pattern` is held: `baker_address`, and `leeds_baker_address` if the namesake is held |
+| pierce | `sender_address` | the `00` §1 rule builds one option per person the player holds any name entry for, once `email_pattern` is held: `baker_address` (right), `leeds_baker_address` (stale, if the namesake is held), and the wrong options `pierce_address` (from `pierce_role`), `lord_address` (from `lord_intern`) and `hampshire_address` (from `careers_attachment`'s name entry), each present only if that person's name is held; plus `portal_address` once `lord_trusts_portal_sender` is held (fixed entry, wrong for Pierce) |
 | pierce | `name` | `pierce_first`, `pierce_formal`, `pierce_full` (`pierce_role`; generic); `pierce_short` (`pierce_expects_balance_sheet`; generic). `pierce_full` is not in her `addressedAs` |
 | pierce | `document` | `balance_sheet` (`pierce_expects_balance_sheet`; distinctive) |
 | pierce | `when` | `friday` (`pierce_expects_balance_sheet`; generic) |
 | lord | `sender_name` | `portal_full` (`lord_trusts_portal_sender`, after the call; distinctive); wrong options `baker_full` and `leeds_baker_full` if held |
-| lord | `sender_address` | `portal_address` (fixed, `lord_trusts_portal_sender`); pattern-built options for other held names |
+| lord | `sender_address` | `portal_address` (fixed, `lord_trusts_portal_sender`; right); wrong options from the same rule: `baker_address`, `leeds_baker_address`, `pierce_address`, `lord_address`, `hampshire_address`, each only if that person's name is held and `email_pattern` is held |
 | lord | `name` | `lord_first`, `lord_full` (`lord_intern`; generic). Only `lord_first` is in her `addressedAs` |
 | lord | `portal` | `staff_portal_name` (`lord_portal_name`; distinctive) |
 | lord | `when` | `mon_6th` (`lord_payslip_date`; distinctive) |
@@ -362,7 +403,8 @@ definitions, so attack and defence cannot disagree about what a tell is. No new 
 runs inside minigames that already use `startMinigame` / `onComplete`. Data-only outcomes are applied
 by the text job through the shared writer (S3).
 
-`boostIfGlobal` / `strictIfGlobal` are applied by `01`, which reads the named globals from
+`boostIfGlobal` / `strictIfGlobal` are applied by `01` (its send flow, step "builds the message", and
+N6), which reads the named globals from
 `gameState.globalVariables` and passes `evaluateMessage` a copy of the target with that factor
 relaxed or tightened, so the module stays pure. A character's influence global is one of those
 globals, so a clumsy earlier email or call changes how a later message is judged with no mirroring
@@ -373,7 +415,9 @@ browser lab. Outcome globals are client-set, so they cannot be the sole proof of
 
 ### New engine work
 
-`S1` to `S12` are in `00` §12; the rules engine uses S1, S3, S6, S7, S9 and S11. Doc items:
+`S1` to `S12` are in `00` §12; the rules engine uses S1, S3, S5 (the `se_influence` write path and influence service a character
+target's `on_email` writes through), S6, S7, S8 (the headless email record), S9, S10 (lockout, checked
+by `01` before judging) and S11. Doc items:
 
 | # | Item |
 |---|------|
@@ -386,7 +430,8 @@ browser lab. Outcome globals are client-set, so they cannot be the sole proof of
 | N7 | Reply text for a data-only target: `replies.landed` or the first failed factor's fail line, handed to the text job with the target's `outcome.setGlobal` key (`00` §10 "Timing and delivery", S9) |
 | N8 | `senderAuth` derivation from `fromAccount` and `headerFrom` against the claimed domain's policy, with the per-target override |
 | N9 | `tells[]` computation (table above), returned on every `EvalResult` |
-| N10 | Validator checks in `scripts/validate_scenario.rb` (via `00` S11): every `character` target has an email story with `on_email` that declares the `email_*` VARs it reads and `VAR <character>_influence`; each target's `templateSets` cover all four parts and slot ids are unique; every `distinctiveValues` entry is provided by some fact; every required factor is reachable from facts the scenario grants, including that each required `addressedTo` has a name option in `addressedAs` provided by a granted fact; `trusts` ids resolve against `social.people`; one outcome owner; `requiresIntelToAttempt` globals are declared; outcome globals are declared and read; `expectedLink.brandId` is a brand in `07`; every template named in a set exists |
+| N10 | Validator checks in `scripts/validate_scenario.rb` (via `00` S11): every `character` target has an email story with `on_email` that declares the `email_*` VARs it reads and `VAR <character>_influence`; each target's `templateSets` cover all four parts and slot ids are unique; every `distinctiveValues` entry is provided by some fact; every required factor is reachable from facts the scenario grants, including that each required `addressedTo` has a name option in `addressedAs` provided by a granted fact; `trusts` ids resolve against `social.people`; one outcome owner; `senderAuth.dmarcPolicy` present whenever `domainPublishesAuth` is true; `requiresIntelToAttempt` globals are declared; outcome globals are declared and read; `expectedLink.brandId` is a brand in `07`; every template named in a set exists |
+| N11 | Pre-send gate: the fixed neutral line, shown by `01` for an empty blank or a missing `requiresIntelToAttempt` fact; the validator rejects any scenario string that tries to replace it |
 
 ## Reuse across products
 
