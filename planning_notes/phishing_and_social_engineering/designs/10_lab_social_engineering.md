@@ -293,8 +293,8 @@ the mail client offers is the payload-kit item `kit_payroll_page`, and only for 
 `targets` map: the lab's page lists `lord` alone, so the composer offers "build/attach page" for Sofia
 and never for Hampshire or Pierce.
 
-If Sofia signs in on a page that meets its threshold and her email landed, the mail client adds her staff
-portal sign-in to the notes as a simulated record (`07` §5, N11). Nothing in the lab depends on it, because
+If Sofia signs in on a page that meets its threshold and her email landed, the mail client adds the page's
+authored note to the notes, a fictional staff portal sign-in for Sofia (`07` §5, N11). Nothing in the lab depends on it, because
 the lab ships no found accounts (`00` §10a).
 
 The page does not depend on the call, and the call does not change the page's score: 07 reads no

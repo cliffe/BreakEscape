@@ -1669,10 +1669,11 @@ others; `02` N8 and `07` §1 and N6 refer to this list instead of restating it:
 | `address` | `social.people[]`, the OSINT staff-block rows, a `provides` entry of type `address`, `mailClient.accounts[]` (and each `createMenu[]` entry), `landingPages[].capture.address` (`07`) |
 | `addresses[]` | `mailClient.contacts[]` |
 | `text` | `social.conceptCards[]` |
+| `name` on `brands[]` of a landing page | `07` §1, §5; denylist only, and a template's `name` may equal its own `lookOf` |
 
 Every address-like field gets the **host-only `.example` rule** (strip any scheme and everything from the
 first `/`; for an address, test the part after the last `@`), the ASCII check and the fold-and-match
-denylist; the allowlist check (on the raw labels, first) applies to the menu `domain` values only. A
+denylist; the allowlist check (on the raw labels, first) applies to the menu `domain` values only. A brand `name` gets the denylist alone. A
 **host-shaped token** is a hostname in a URL or address field, or a dotted token in `conceptCards[].text`
 whose last label is a known public TLD (the validator carries the list) and is not `.example`. It
 excludes file names (`Q3.pdf`, `CV.docx`: a known file extension is not a TLD) and pattern phrases
@@ -1681,7 +1682,7 @@ other prose (a post, a block, a template or a reply), so the claim is "no real-b
 fields", not "anywhere in `social`". Real product names (`Microsoft Excel`, `Xero`, `Office 365`) may
 appear in OSINT and fact prose; only a real brand inside a domain or address field is rejected. A template
 brand's `lookOf` name (`07` §1) may appear in its landing page's name and text, and the same denylist applies
-to that name in domain and address fields.
+to that name in domain, address and brand `name` fields, except that a template's `name` may equal its own `lookOf`.
 
 **Pointers.** An object carries only a pointer in `minigameData`. One object type has one entry in
 `minigame-data-schemas.json`, and each new type needs a sprite `assets/objects/<type>.png` and a `this.load.image` line in `core/game.js` `preload()` (the existing `phone` needs neither):
@@ -1801,7 +1802,7 @@ and sets `landing_<pageId>_built` and `landing_<pageId>_domain` when the page is
   "built": true }
 ```
 
-`targetId` is a key of the page's `targets` map (the lab's page has exactly one, `lord`; a page has at
+The record's keys are closed, as `07` §5 lists them. `targetId` is a key of the page's `targets` map (the lab's page has exactly one, `lord`; a page has at
 least one, and the validator checks it; a page on a `page-builder` workstation has exactly one, which the starter uses). The builder can be launched only for a target in that map: it
 refuses any other `targetId`, and the composer offers "build/attach page" only for such targets, so
 `linkThreshold` and `minDomainTier` are always defined. `meetsThreshold` is computed by `07`'s model
@@ -1821,9 +1822,9 @@ target. This keeps the noticed branch and the defender inspection reachable afte
 `linkText` (the address the mail client shows for the link, for example `accountingnow.example/payroll`)
 that the hover-mismatch lesson contrasts with the real domain; the player does not write it.
 
-**Capture note.** When a send first stores `victim.submitted: true`, the mail client adds the page's
-`capture.note` to the player's notes, once (`07` N11). The record gets no new field: the note is authored
-scenario text, and a repeat or a noticed send adds nothing.
+**Capture note.** When a send first stores `victim.submitted: true`, the mail client's send path adds the
+page's `capture.note` to the player's notes, once (`01` §3 item 2, `07` N11). The record gets no new field: the
+note is authored scenario text and may hold a fictional sign-in, and a repeat or a noticed send adds nothing.
 
 **One link id per page.** The payload-kit item for a page is `kit_payroll_page`, with
 `landingPageId: "payroll_login"`; the same id is `message.link`, the sent record's `link.kitId` and
@@ -1861,6 +1862,8 @@ Items other docs depend on. Each has a code location. The consolidated cross-doc
 | S12 | **Return to.** `startMinigame(scene, container, { returnTo: { sceneType, params }, ... })`: `endMinigame` calls `returnTo` after `onComplete`, on a normal exit only. A parent that launches a child sets `suspended: true` in its params so its `onComplete` ignores the `onComplete(false, null)` that `startMinigame` fires when it ends the running minigame. The launcher passes the child's required parameters in the call. The parent saves its draft first (mail: `mailState.drafts`; OSINT and board: their `se_*_state` globals) | `minigames/framework/minigame-manager.js` (`startMinigame`, `endMinigame`); `base-minigame.js` |
 | S13 | **World influence pip.** A small bar above a character's sprite, drawn while the character's influence differs from its start value (it hides again if the value returns to the start) and redrawn on `npc_influence_changed`. It reads the same global and thresholds as S4 and is skipped for characters with no sprite and no `social.characters` entry. It is a sibling of the combat health bar and is replaced by it if `combatHostile` fires | new `ui/npc-influence-pips.js`, modelled on `ui/npc-health-bars.js` (Phaser graphics at the health bar's fixed `overlayDepth(850)`, or at sprite depth + 1 if the pip must sort with its sprite; theme colours from `ui/theme-colours.js`). The health bars follow their sprites because `core/game.js` calls `window.npcHealthBars.update()` every frame (about line 2164), so the pip needs the same: create it beside `window.npcHealthBars` (about line 1679) and call its `update()` beside line 2164 |
 | S14 | **Mail devices and found mail.** `mail_terminal` joins `PICKUP_THEN_INTERACT_TYPES` so a takeable one is picked up and then opened from inventory. The `mail_terminal` branch sits **after** the generic lock check (`data.locked === true`, about line 1340, alongside the `phone` branch at about 1355), so a locked terminal asks to be unlocked first. The pickup block (about 776-784) runs `addToInventory` and re-enters `handleObjectInteraction` with no lock test, so a takeable device with `locked: true` must not be auto-picked-up and opened by it until it is unlocked; confirm the server-side unlock endpoint also accepts a takeable item (it validates by object id); per-device `accountIds` and per-contact `accountIds`; mailbox history from seeded messages with `folder` `inbox` or `sent`; message `highlights` that call `grantFact` or the notes API; `emailKnots`; the open check in the mail bridge; the mail runner's handling of `#compose_reply:<targetId>` and `#mail_later:<seconds>:<knot>`; job kinds `seed` and a `choice` field on ink jobs; `deliverAt` | `systems/interactions.js` (the set at about line 776 and the `mail_terminal` branch); `minigames/mail-client/` (new); the mail runner (S6); `systems/social-intel.js` (`grantFact`); `window.addNote` in `notes-minigame.js` |
+
+**Capture note owner.** The capture note has no S-item of its own. `07` N11 owns the model's `captureGranted`, and `01` N6 owns the one call on the mail client's send path (`01` §3 item 2) that stores the victim outcome and adds the note.
 
 Back-compat checklist for any of these changes: `applyActions` `set_global` still emits `global_variable_changed` on every call, same value or not (audit the shipped scenarios that map on it); m01 Derek (`#hostile`, then `#influence:-100`) still
 turns hostile through `#hostile`; m02 guards and ward nurse are not turned hostile by ink arithmetic; m04 Vance and m05
@@ -1913,8 +1916,8 @@ lists the triage sizes and the domain ids.
 | CI validator loop | one job with Ruby (bundler-cache, sqlite apt packages and `BUNDLE_BUILD__SQLITE3` as the existing jobs) and Node 20; `package-lock.json` un-ignored and committed so `npm ci` works; Node tests run as `bundle exec node --test test/js/validator-*.test.mjs test/js/social-*.test.mjs` and fail rather than skip; the social unit tests are `social-phish-rules`, `social-triage-scoring`, `social-pretext-judge`, `social-intel`, and the safety tests `social-landing-page-model`, `-render`, `-guard` and `social-osint-address-bar`; `test:social` script; no test runs the bare validator CLI; `--strict-social --no-graph --skip-ink` over scenarios with a `social` key; `git diff --exit-code` | S11 |
 | Concept cards | `social.conceptCards[] { id, title, text, image? }`; brand exemption on `text` only, host-shaped tokens still end `.example` | 11 |
 | Real-brand lint scope | the single field list in §11 ("Lint field list"); host-shaped token = hostname in a URL/address field or a dotted token in card text ending in a known public TLD (not `.example`), excluding file names and `initial.surname` patterns; `.example` tested on the hostname only | 11 |
-| Captured sign-in | a first `submitted` outcome adds the page's `capture.note` once (`window.addNote`; no global, fact or record field); `capture.address` is linted `.example` | 11a, 07 N11 |
-| Template brands | a student-profile brand may carry `lookOf` (a real tool's name): its page may show the name, while domain and address fields never carry it (denylisted); awareness has none | 07 §1, §7 |
+| Captured sign-in | a first `submitted` outcome adds the page's `capture.note` once (`window.addNote`; the note may hold a fictional sign-in; no global, fact or record field); `capture.address` is linted `.example` | 11a, 07 N11 |
+| Template brands | a brand may carry `lookOf` (a real tool's name) where the page's profile is `student` (default, `07` OQ3): its page may show the name, while domain, address and brand `name` fields never carry it (denylisted; a template's `name` may equal its own `lookOf`); awareness and missions have none by default | 07 §1, §7 |
 | Landing verdict | a page at or above threshold that fails a gate gets the second verdict row's string (`07` §4) | 07 |
 | Defender facts | exactly four with a `reduceNote`: `email_pattern`, `username_convention`, `lord_portal`, `hampshire_careers` | 1 |
 | Call outcome | `reported`, else `got_it` if any ask granted in the call, else `walked_away`; `pretext_call_done` set by any granting ask | 06 |

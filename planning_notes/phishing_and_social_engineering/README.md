@@ -202,19 +202,21 @@ deliberately weak and is labelled weak, with callback to the number on file as t
   no effectiveness claims (A3); hosted service sold commercially (A5), with PixelLab's terms checked once
   before release (`11`).
 
-**S. Builder brand templates (decided 2026-10-20).** In the student lab a brand may copy the sign-in look of a
-real, popular open-source tool, and its page may show that tool's name. Every domain, address and account stays
-fictional and ends `.example`, and the lint keeps the real name out of domain and address fields (`07` §1, §5).
-Awareness keeps fictional brands only (`07` §7). Per the user's note, the template build goes to a Haiku agent,
-so these docs give the game-level rules and no build detail.
+**S. Builder brand templates (decided 2026-10-20).** A builder brand may copy the sign-in look of a real, popular
+open-source tool, and its page may show that tool's name. Every domain, address and account stays fictional and
+ends `.example`, and the lint keeps the real name out of domain, address and brand `name` fields (`07` §1, §5,
+`00` §11). Templates are for the student lab by default; whether awareness and missions may use them is open
+(`07` OQ3). The template build goes to a Haiku agent, so these docs give the game-level rules and no build detail.
 
 **T. Builder captures are simulated, and the player's input is never read (decided 2026-10-20).** A submitted
-sign-in adds an authored, fictional note to the player's notes (`07` §5 and N11, `00` §11a). It is a scenario
-record: nothing the player types is read, and the page record keeps ids and booleans only. The metrics line stays
-Visits and Submissions, and reports are still not measured (`10`).
+sign-in adds the page's authored note to the player's notes. The note may hold a fictional sign-in that an NPC
+leaks through the attack (`07` §5 and N11, `00` §11a). Nothing the player types is read, and the page record keeps
+ids and booleans only. The metrics line counts pages (Visits and Submissions), and reports are still not measured
+(`10`).
 
-**U. Padlock teaching line confirmed (decided 2026-10-20).** The line in `07` §3 stands as written. Checking the
-wording against current browsers is a pre-ship task.
+**U. Padlock teaching line confirmed (decided 2026-10-20).** The line the user approved, "a padlock means the
+connection is private to whoever owns the address; fake sites can show one", is the wording in `07` §3 step 2.
+Checking the wording against current browsers is a pre-ship task.
 
 Defaults taken elsewhere, for context: fictional targets only, no real-staff OSINT; the
 lab is the first slice; the awareness product measures pre and post from the start and defers LMS and
@@ -242,8 +244,8 @@ Key decisions (L to U).
 **Landing-page builder (`07`)**
 
 - Homograph shown in the student lab only, as one authored example? Default: yes.
-- Template brands: artwork. Default: a pixel redraw of the tool's layout and colours, with no copied logo artwork. Alternative: the tool's own logo. This carries the trademark risk, so it needs a decision before the first template ships.
-- Template brands in the awareness product (`11`)? Default: no, fictional brands only (`07` §7). Alternative: templates there too, which needs a view on the commercial release (decision R).
+- Template brands: how closely a template copies its tool, and whether it may reproduce the tool's logo artwork. The logo carries the trademark risk, so the user decides it; the planner records no default. Drawing is for the Haiku build brief (`07` OQ2).
+- Template brands outside the student lab (awareness and missions)? Default: student lab only, enforced by the lint (`07` OQ3). Alternative: templates in every profile, which needs a view on the commercial release (decision R).
 
 **Awareness product (`11`)**
 

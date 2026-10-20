@@ -173,7 +173,7 @@ stays pure and the stored target is untouched. It then calls `evaluateMessage(ta
    page, it also calls `07`'s `describeVictimOutcome(record, target, landed)` and stores the result
    in the page record's `victim` field, keeping the best outcome through `07`'s `betterVictim`: a later send that does not land
    never replaces a `victim` entry written by an earlier landed send. That happens for every send with a page attached, landed or
-   not, so the "noticed" outcome and the Inspect step are reachable after an "attach anyway" send.
+   not, so the "noticed" outcome and the Inspect step are reachable after an "attach anyway" send. The send path reads the stored `victim` before the write. When `07`'s `captureGranted(before, after)` is true (the first `submitted`), it calls `window.addNote` with the page's `capture.note` (`07` N11).
 3. **A delivery job**, saved in `mailState.jobs` (`00` §10). A target with a `character` gets an ink
    job: the mail runner writes the result into the character's email-story variables, runs
    `on_email`, and the ink writes the reply, changes the character's influence with a reason and fires
@@ -479,7 +479,7 @@ reads `metrics`, the sent records and the outcome globals.
 | N3 | Close behaviour and the `gameResult` transform above (completion on Close, never on send), documented for scenario authors; own Close control, capture-phase Esc, `requiresKeyboardInput` and its bridge test | — |
 | N4 | Payload kit as abstract items; Attach menu; the `link` kind refers to a landing page built in `07`; nested launch of the builder and Notes through S12; `linkInfo` filled from `linkInfoFor`; the link item offered only for targets in the page's `targets` map; the re-attach test reads the page record's `built` | Cross-component |
 | N5 | A read-only **`mail-reader`** component (message list + reading pane, link-hover status bar, header panel) shared with the triage defender (`05`) | `01` adopts it too so the two cannot drift |
-| N6 | Email→ink bridge in the client: apply `boostIfGlobal` / `strictIfGlobal` to a copy of the target, judge (open check included, `04` N12), write the sent record and the job (ink or text) to the scheduler, call `describeVictimOutcome` for a message with a page, render the reply | Uses `00` S1 (externals), S6 (runner), S7 (run-scoped `email_`), S8 (headless record), S9 (scheduler); not `timedMessages` |
+| N6 | Email→ink bridge in the client: apply `boostIfGlobal` / `strictIfGlobal` to a copy of the target, judge (open check included, `04` N12), write the sent record and the job (ink or text) to the scheduler, call `describeVictimOutcome` for a message with a page, store the best outcome with `betterVictim`, call `window.addNote` with the capture note when `captureGranted` says so (`07` N11), render the reply | Uses `00` S1 (externals), S6 (runner), S7 (run-scoped `email_`), S8 (headless record), S9 (scheduler); not `timedMessages` |
 | N7 | Influence bar in the reading pane for social characters, with the number beside it | The shared DOM widget, `00` S4 |
 | N8 | Thread follow-ups: the "Choose a reply" options from ink and the "Write your reply. This one is judged" composer (`#compose_reply`), exactly one at a time from `threads[key].expects`; quick-reply records; position stored per `(character, account)`; chasers (`#mail_later`) and timed mail (`deliverAt`) | Mirrors phone-chat choices; `00` §10 |
 | N9 | Contacts with a `character` and no sprite; contacts joined to targets by `targetId` | Delivered by `00` S8 (headless email records) |

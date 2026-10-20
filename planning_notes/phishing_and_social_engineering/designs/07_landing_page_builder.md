@@ -26,9 +26,10 @@ are part of the design, not polish, and a reviewer should treat any breach as a 
   pixel-art layer plus plain DOM text, section 6). It is not a document the browser can load, and it has
   no export, download, copy-as-HTML or "preview in new tab". The safety property is held by constraint,
   not by the choice of medium: the preview contains **no `<form>`, `<input>`, `<textarea>`, `<select>`,
-  `<a href>`, `<button>`, `<iframe>`, `<script>` or `contenteditable`**, and no function serialises it.
-  A test walks the preview's DOM after every step and fails on any of those (N3; it needs a DOM, which
-  N3 supplies with `jsdom`).
+  `<a>`, `<button>`, `<iframe>`, `<script>` element or `contenteditable` attribute**, and no function serialises
+  it. These are tag names, not ARIA roles: the step 6 hot-spots are `div` elements with `role="button"`,
+  which are allowed. A test walks the preview's DOM after every step and fails on any of those (N3; it needs
+  a DOM, which N3 supplies with `jsdom`).
 - **Nothing captures the player.** The page has no form controls, so the player types nothing into it.
   When a victim "visits" or "submits", the game flips a boolean, prints a result line and, on the first
   submitted sign-in, adds the page's authored note to the player's notes (section 5, `capture`). That
@@ -36,11 +37,13 @@ are part of the design, not polish, and a reviewer should treat any breach as a 
   record, sent or logged.
 - **No network.** Nothing in the component makes a request. Domains are strings in scenario JSON.
 - **Fictional names and addresses.** Every domain, address and account is invented, and every one ends
-  `.example`. Brands are invented too, with one exception: a template brand (student profile only,
-  section 7) copies the sign-in look of a real, popular open-source tool and may show that tool's name.
-  A template's `id` is still a fictional word, and the lint denylists its `lookOf` name in domain and
-  address fields (section 5), so the real name cannot reach a domain. Two controls enforce it, and this
-  section says plainly where each runs and what it misses.
+  `.example`. Brands are invented too, with one exception: a template brand copies the sign-in look of a
+  real, popular open-source tool and may show that tool's name. A scenario can offer several templates,
+  each with its own `lookOf`. By default they appear in the student profile only (section 7, OQ3). A
+  template's `id` is still a fictional word. The lint denylists each `lookOf` name in domain and address
+  fields and in brand `name` fields (section 5), so the real name cannot reach a domain. A template's
+  `name` may equal its own `lookOf`. Two controls enforce it, and this section says plainly where each runs
+  and what it misses.
   - **Offline lint (N6).** A check in `scripts/validate_scenario.rb`, tested by a Node test that calls the
     lint functions in-process (`ruby -e 'require validate_scenario.rb'`, the pattern in
     `test/js/validator-carry-over.test.mjs:13-23`, which writes nothing) over inline fixtures and over each
@@ -182,7 +185,7 @@ player can change anything until they press Score. A change made **after** a Sco
 (see Step 3).
 
 1. **Brand** — which service to imitate. Several brands are offered (fictional brands, and template
-   brands in the student profile, section 1); only one matches the pretext.
+   brands where the profile allows them, section 1); only one matches the pretext.
 2. **Page purpose** — "Sign in", "Password expired", "Payslip ready". One fits the story.
 3. **Domain** — a short list of addresses (chips set in Atkinson Hyperlegible, so `rn` and `m` or `vv`
    and `w` can be told apart), each tagged with its trick (real, typo, extra word,
@@ -193,8 +196,8 @@ player can change anything until they press Score. A change made **after** a Sco
    with spelling and grammar slips.
 6. **Form fields** — tick which fields the page asks for (email, password, one-time code, card
    number, national insurance number). The real service asks for a known set.
-7. **Padlock** — "Show a secure padlock" on or off. A note says: *a padlock only means the
-   connection is encrypted to whoever owns that domain. It says nothing about who that is.* The fake
+7. **Padlock** — "Show a secure padlock" on or off. A note says: *a padlock means the connection is
+   private to whoever owns the address; fake sites can show one.* The fake
    browser frame is generic (it does not copy any one browser), and strings call the icon "padlock" or
    "secure-connection icon" because browsers have changed how they draw it. Check the wording against
    current browsers before it ships. This is a pre-ship check, not a design question.
@@ -246,7 +249,7 @@ the result line (the capture is **simulated**):
 
 The result is a record `{ visited: bool, submitted: bool, noticed: bool }` and a count line for the
 scenario's metrics report (book Ch. 9): `Visits 1 · Submissions 1`. The count line has no "Reports" figure,
-because the lab does not measure whether staff would report. The rule is deterministic, with no
+because the lab does not measure whether staff would report. The count is per page, not per send: each page adds at most 1 to Visits and at most 1 to Submissions, however many sends carried it. The rule is deterministic, with no
 randomness, and takes `landed` as an input:
 
 | Case | visited | submitted | noticed |
@@ -270,7 +273,8 @@ reached by an "Attach anyway" send and not only by a landed one.
 **The capture note.** The first time the stored outcome becomes `submitted`, the mail client adds the
 page's `capture` note to the player's notes, once (N11). A `noticed` or non-landed send adds nothing, and
 a later `submitted` send adds nothing more. The note is authored scenario text, not anything the player
-entered.
+entered. It may hold a fictional sign-in that an NPC leaks through the attack; the player never types it.
+The send path in `01` (section 3, item 2) makes the call.
 
 ### Step 6. Inspect your own page (the defender flip)
 The player reopens the saved page from the workstation as the **victim's browser** (the Inspect button
@@ -311,7 +315,7 @@ reachable from the choices on screen).
 | `domain` | 35 | By the option's authored `tier`: tier 3 = 35, tier 2 = 22, tier 1 = 10, tier 0 = 0. |
 | `logo` | 10 | Crisp: 10. Blurry or stretched: 4. None: 0. |
 | `wording` | 10 | Matches the pretext's tone: 10. Generic: 5. With slips: 0. |
-| `form` | 10 | Exactly the real service's fields: 10. A real field missing: 4. Any extra sensitive field (card number, national insurance number): 0. |
+| `form` | 10 | Checked in this order. Any extra sensitive field (card number, national insurance number): 0. Else a real field missing: 4. Else an extra field that is not sensitive (for example `one_time_code`): 5. Else exactly the real service's fields: 10. The 5 is a planner default, to tune in playtest. |
 | `padlock` | 10 | Shown: 10. Not shown: 0. |
 
 Domain tiers are authored per brand (section 5), not inferred, so a reviewer can read them. The
@@ -428,6 +432,7 @@ builder.
 | `wording` ✗ | ✗ Wording: spelling and grammar slips. | Spelling and grammar mistakes in a "professional" page. |
 | `form` ✓ | ✓ Form: asks for the same details as the real sign-in. | — |
 | `form` ~ | ~ Form: the real sign-in also asks for something this one leaves out. | The sign-in is missing a step the real one has. |
+| `form` ~ (extra field) | ~ Form: asks for a field the real sign-in does not use. | The sign-in asks for a field the real one does not use. |
 | `form` ✗ | ✗ Form: asks for more than a sign-in ever should. | A sign-in page asking for card or national insurance numbers. |
 | `padlock` ✓ | ✓ Padlock: shown. (It would be shown on any address with a certificate, real or not.) | — |
 | `padlock` ✗ | ✗ Padlock: missing. The browser says "Not secure". | The browser warns "Not secure" on a page asking for a password. |
@@ -545,7 +550,7 @@ An object carries only a pointer, `minigameData: { landingPageId }` (`00` §11).
                                  "trick": "homograph",    "tier": 3,
             "minProfile": "student" }       // hidden below the student profile; \u escapes only. Options without minProfile show in every profile
         ] },
-      // a template brand adds "lookOf": "<a real tool's name>" (student profile only; section 1)
+      // a template brand adds "lookOf": "<a real tool's name>" (student profile by default; section 1, OQ3)
       { "id": "cloudbox", "name": "CloudBox", "realDomain": "cloudbox.example", "realFields": ["email", "password"],
         "domains": [ /* a decoy brand: wrong for this pretext */ ] }
     ],
@@ -570,7 +575,7 @@ An object carries only a pointer, `minigameData: { landingPageId }` (`00` §11).
     "strings": { /* every line in section 4's tables, overridable per scenario; the validator
                     requires each to be non-empty and to use only {firstName}, {shown}, {real}, {linkText} */ },
     "conceptCards": ["typo-squat", "homograph", "padlock", "hover-link", "right-to-left", "five-habits"],   // ids into social.conceptCards (00 §11)
-    "capture": { "address": "sofia.lord@accountingnow.example", "note": "Staff portal sign-in for Sofia Lord. Password: ********" },   // not in the awareness profile; see "Capture" below
+    "capture": { "address": "sofia.lord@accountingnow.example", "note": "Staff portal sign-in for Sofia Lord. Username: sofia.lord. Password: Autumn-Payslip-26" },   // not in the awareness profile; see "Capture" below
     "profile": "student"                    // student | awareness | mission; see section 7
   }
 ] }
@@ -605,9 +610,9 @@ offline lint accepts a non-ASCII parsed `domain` only for `trick: "homograph"` a
 map are validator-level, not a per-scenario field.
 
 **Capture.** `capture` is optional, and the awareness profile has none. `address` is linted like every
-address field (`00` §11, lint field list). `note` is authored text, reviewed by hand, and it never holds a
-password string: the password is masked. The mail client adds the note on the first `submitted` outcome
-(the capture note, N11). No global is set for it, and the page record gets no field.
+address field (`00` §11, lint field list). `note` is authored text, reviewed by hand. It may hold a fictional
+sign-in that an NPC leaks through the attack. The player never types it. The send path in `01` (section 3,
+item 2) adds the note on the first `submitted` outcome (the capture note, N11). No global is set for it, and the page record gets no field.
 
 **Globals.** When the page is attached the builder sets `landing_<pageId>_built` (boolean, for example
 `landing_payroll_login_built`) and `landing_<pageId>_domain` (the chosen domain option id, such as
@@ -628,8 +633,12 @@ the shape `00` §11a defines:
   "built": true }
 ```
 
-It holds ids and booleans only. It never stores a value, and the validator rejects any field key shaped
-like a captured-value slot (`value`, `captured`, `submitted_data`). `se_landing_pages` is declared with
+It holds ids and booleans only, and its keys are closed: `pageId`, `targetId`, `choices` (`brand`, `purpose`,
+`domainId`, `logo`, `wording`, `fields`, `padlock`), `credibility`, `gatesPassed`, `meetsThreshold`,
+`tellsFound`, `victim` (`visited`, `submitted`, `noticed`) and `built`. The validator reads authored JSON only,
+so it cannot see this record. The closed keys are enforced at run time: N2 tests that the record builder,
+`applyScore` and `betterVictim` emit no other key, and N4 drops any other key where the record is written or
+synced. `se_landing_pages` is declared with
 default `{}` under the `globalVariables[STATE_KEY]` pattern the SIEM minigame uses
 (`siem-dashboard-minigame.js`), so records survive a reload; one small record per page keeps it well
 inside the 60 KB `pagehide` flush, which shares one budget with every other global (`state-sync.js`). A
@@ -740,17 +749,17 @@ lock (README engine table, "Objectives"). No flag is involved in building; if a 
 | # | Item | Notes |
 |---|------|-------|
 | N1 | `landing-page-builder` overlay (preview, choice panel, step strip, score panel), with the wiring checklist above | New `minigames/landing-page-builder/`; `minigames/index.js`; `systems/minigame-starters.js`; `systems/interactions.js`; `show.html.erb` |
-| N2 | `landing-page-model.js` pure scorer + tell table + `describeVictimOutcome` + `betterVictim` | Unit tests mirror section 4's worked example (34 and 87), the 75-point `d_letter` case (second-row verdict plus the gate line), that `betterVictim` keeps a `submitted` entry over a later `noticed` or all-false one, that `applyScore` on a record holding `victim` and `tellsFound` keeps both, and that a choice change after a Score yields a record with `meetsThreshold: false` and `built: false` (so `linkInfoFor` reports `missing` until the next Score). File: `test/js/social-landing-page-model.test.mjs` |
-| N3 | `landing-page-render.js` two-layer renderer (pixel layer, inert DOM text layer) and the DOM-safety test (`test/js/social-landing-page-render.test.mjs`) that fails on any form, link, button, frame, script or `contenteditable` in the preview. The test needs a DOM: add `jsdom` to `devDependencies` (today only Playwright is there, and the existing `.test.mjs` files stub `document` by hand, for example `sight-challenge-tutorial-prompt.test.mjs:38`) | New; test in `test/js/`; `package.json` |
-| N4 | Persist built pages as ids in the `se_landing_pages` global (section 5), with the 60 KB flush note | `state-sync.js` flush; `siem-dashboard-minigame.js` STATE_KEY pattern as the model |
+| N2 | `landing-page-model.js` pure scorer + tell table + `describeVictimOutcome` + `betterVictim` | Unit tests mirror section 4's worked example (34 and 87), the 75-point `d_letter` case (second-row verdict plus the gate line), that `betterVictim` keeps a `submitted` entry over a later `noticed` or all-false one, that `applyScore` on a record holding `victim` and `tellsFound` keeps both, and that a choice change after a Score yields a record with `meetsThreshold: false` and `built: false` (so `linkInfoFor` reports `missing` until the next Score); that an extra non-sensitive form field scores 5, and 4 when a real field is also missing; that the model exports no name matching `serialise`, `export` or `download`; and that the record builder, `applyScore` and `betterVictim` emit only the closed keys in section 5. File: `test/js/social-landing-page-model.test.mjs` |
+| N3 | `landing-page-render.js` two-layer renderer (pixel layer, inert DOM text layer) and the DOM-safety test (`test/js/social-landing-page-render.test.mjs`) that fails on any `a`, `form`, `input`, `textarea`, `select`, `button`, `iframe` or `script` element, or any `contenteditable` attribute, in the preview (tag names, so the `div role="button"` hot-spots pass). The same file greps the builder's folder for `fetch`, `XMLHttpRequest`, `WebSocket` and `sendBeacon` and fails on any match. The test needs a DOM: add `jsdom` to `devDependencies` (today only Playwright is there, and the existing `.test.mjs` files stub `document` by hand, for example `sight-challenge-tutorial-prompt.test.mjs:38`) | New; test in `test/js/`; `package.json` |
+| N4 | Persist built pages as ids in the `se_landing_pages` global (section 5), with the 60 KB flush note and a shape guard that drops any key outside the closed set in section 5, where the record is written and where it is synced | `state-sync.js` flush; `siem-dashboard-minigame.js` STATE_KEY pattern as the model |
 | N5 | Step 6 defender inspection (focusable hot-spots, decoy padlock, "Show the link target" in the choice panel, closing five-habits card); exports `buildSuspectPage` and the `tells` table for optional reuse by `05` | New in `landing-page-builder/` |
-| N6 | Offline lint, its test, the `--strict-social` mode and the **CI job that runs them**: the host-only `.example` rule (strip scheme and path; email addresses by the part after `@`); ASCII with the homograph exception and the raw-text escape check; the allowlist on raw labels first (`decoyWords`, brand word, edit distance), then the fold-and-match denylist per label and on the concatenation (section 1); every string non-empty and using only the allowed placeholders (`{firstName}`, `{shown}`, `{real}`, `{linkText}`); the `.example`, ASCII and denylist checks cover every field on the `00` §11 lint field list (the single list; not restated here); the concept-card scope (the brand exemption applies to `social.conceptCards[].text` only; host-shaped tokens in card text must end `.example`); every `conceptCards` id on a page resolves; every `targets` key is a target whose required factors include `linkCredible`, and a page has at least one (exactly one in the lab); a `page-builder` object's `landingPageId` names a page with exactly one `targets` key, and that key is a `phishTargets` id; a stored `tellsFound` id is one of the nine (the factor ids plus `formOrigin` and `hoverMismatch`, `00` §11a); every tier (0 included) has a defender string; no field key shaped like a captured-value slot; `decoyWords` pass the denylist; each brand's `lookOf` name joins the denylist for the domain and address fields. **`--strict-social`** runs the `social` lints and exits 1 when any reports an error (the validator today exits 1 on a structure, schema or ink compile error, `scripts/validate_scenario.rb:4928, 4964, 5081`, and on bad arguments; every other finding falls through to `exit 0`). **CI job**: one job with Ruby (`ruby/setup-ruby` at the repo's Ruby version, `bundler-cache`, plus the `sqlite3 libsqlite3-dev` apt packages and `BUNDLE_BUILD__SQLITE3: "--enable-system-libraries"` env that both existing `ci.yml` jobs set) and Node (`actions/setup-node`); **remove `package-lock.json` from `.gitignore` (line 43), regenerate it after adding `jsdom` (N3) and commit it**, so `npm ci` has a lockfile (`npm install` in the job is not reproducible and is not used); `npm ci`; `bundle exec node --test test/js/validator-*.test.mjs test/js/social-*.test.mjs` (under Bundler so the spawned `ruby` finds `json-schema`; the safety tests are `social-landing-page-model` N2/N10, `social-landing-page-render` N3, `social-landing-page-guard` N6b and `social-osint-address-bar` from `02` N9; the pure-module unit tests are `social-phish-rules` (`04`), `social-triage-scoring` (`05` N4), `social-pretext-judge` (`06` N1) and `social-intel` (`02` N2); the step fails if any named file is missing; a `package.json` script `test:social` runs the same command; Node pinned to 20 with a `jsdom` release that supports it); then `bundle exec ruby scripts/validate_scenario.rb <scenario> --strict-social --no-graph --skip-ink` over only the scenarios whose `scenario.json.erb` has a `social` key. The Node tests fail rather than skip when `CI` is set and `ruby` or `json-schema` is missing, and the job fails if the test run reports any skipped test. Without `--skip-ink` the validator compiles ink into tracked `ink/*.json` (`validate_scenario.rb:709-714`, written beside the source), and `--no-graph` stops `dungeon_graph.*` rewrites; with `--skip-ink`, `check_ink_files` does not run (`:4977-4979`), so the `social` ink lints (`on_email` knot, `email_*` VARs, synced vars) **parse the `.ink` source text directly** and do not depend on compiled output; this is part of S11. The step ends with `git diff --exit-code`. The validator gains the punycode encoder for the `browserDomain` check. Without the job the lint is not enforced. Scenarios that fail today for unrelated reasons are out of scope | `scripts/validate_scenario.rb` (`known_top_level`, S11); `scripts/scenario-schema.json`; `scripts/minigame-data-schemas.json`; new `test/js/validator-landing-pages.test.mjs` (calls the lint functions in-process or, if it runs the command line, passes `--no-graph --skip-ink`; never the bare command, which rewrites tracked files); `.github/workflows/ci.yml`; `.gitignore`; `package-lock.json` (existing `ci.yml` has Ruby 2.7.8 only in `lint` and `test`, and no Node) |
+| N6 | Offline lint, its test, the `--strict-social` mode and the **CI job that runs them**: the host-only `.example` rule (strip scheme and path; email addresses by the part after `@`); ASCII with the homograph exception and the raw-text escape check; the allowlist on raw labels first (`decoyWords`, brand word, edit distance), then the fold-and-match denylist per label and on the concatenation (section 1); every string non-empty and using only the allowed placeholders (`{firstName}`, `{shown}`, `{real}`, `{linkText}`); the `.example`, ASCII and denylist checks cover every field on the `00` §11 lint field list (the single list; not restated here), with brand `name` checked against the denylist only and exempt where a template's `name` equals its own `lookOf`; the concept-card scope (the brand exemption applies to `social.conceptCards[].text` only; host-shaped tokens in card text must end `.example`); every `conceptCards` id on a page resolves; every `targets` key is a target whose required factors include `linkCredible`, and a page has at least one (exactly one in the lab); a `page-builder` object's `landingPageId` names a page with exactly one `targets` key, and that key is a `phishTargets` id; a stored `tellsFound` id is one of the nine (the factor ids plus `formOrigin` and `hoverMismatch`, `00` §11a); every tier (0 included) has a defender string; `decoyWords` pass the denylist; each brand's `lookOf` name joins the denylist for the domain, address and brand `name` fields, and a `lookOf` is allowed only where the page's `profile` is `student` (OQ3), with a fixture test for that rule. **`--strict-social`** runs the `social` lints and exits 1 when any reports an error (the validator today exits 1 on a structure, schema or ink compile error, `scripts/validate_scenario.rb:4928, 4964, 5081`, and on bad arguments; every other finding falls through to `exit 0`). **CI job**: one job with Ruby (`ruby/setup-ruby` at the repo's Ruby version, `bundler-cache`, plus the `sqlite3 libsqlite3-dev` apt packages and `BUNDLE_BUILD__SQLITE3: "--enable-system-libraries"` env that both existing `ci.yml` jobs set) and Node (`actions/setup-node`); **remove `package-lock.json` from `.gitignore` (line 43), regenerate it after adding `jsdom` (N3) and commit it**, so `npm ci` has a lockfile (`npm install` in the job is not reproducible and is not used); `npm ci`; `bundle exec node --test test/js/validator-*.test.mjs test/js/social-*.test.mjs` (under Bundler so the spawned `ruby` finds `json-schema`; the safety tests are `social-landing-page-model` N2/N10, `social-landing-page-render` N3, `social-landing-page-guard` N6b and `social-osint-address-bar` from `02` N9; the pure-module unit tests are `social-phish-rules` (`04`), `social-triage-scoring` (`05` N4), `social-pretext-judge` (`06` N1) and `social-intel` (`02` N2); the step fails if any named file is missing; a `package.json` script `test:social` runs the same command; Node pinned to 20 with a `jsdom` release that supports it); then `bundle exec ruby scripts/validate_scenario.rb <scenario> --strict-social --no-graph --skip-ink` over only the scenarios whose `scenario.json.erb` has a `social` key. The Node tests fail rather than skip when `CI` is set and `ruby` or `json-schema` is missing, and the job fails if the test run reports any skipped test. Without `--skip-ink` the validator compiles ink into tracked `ink/*.json` (`validate_scenario.rb:709-714`, written beside the source), and `--no-graph` stops `dungeon_graph.*` rewrites; with `--skip-ink`, `check_ink_files` does not run (`:4977-4979`), so the `social` ink lints (`on_email` knot, `email_*` VARs, synced vars) **parse the `.ink` source text directly** and do not depend on compiled output; this is part of S11. The step ends with `git diff --exit-code`. The validator gains the punycode encoder for the `browserDomain` check. Without the job the lint is not enforced. Scenarios that fail today for unrelated reasons are out of scope | `scripts/validate_scenario.rb` (`known_top_level`, S11); `scripts/scenario-schema.json`; `scripts/minigame-data-schemas.json`; new `test/js/validator-landing-pages.test.mjs` (calls the lint functions in-process or, if it runs the command line, passes `--no-graph --skip-ink`; never the bare command, which rewrites tracked files); `.github/workflows/ci.yml`; `.gitignore`; `package-lock.json` (existing `ci.yml` has Ruby 2.7.8 only in `lint` and `test`, and no Node) |
 | N6b | Runtime guard: the model and the renderer refuse a domain not on the authored menu or whose host does not end `.example`, and draw a "blocked" placeholder. Unit test: both the model and the renderer return the blocked placeholder for an off-menu domain, and for an on-menu-shaped but non-`.example` domain, and still render a valid menu domain | `landing-page-model.js`, `landing-page-render.js`; test `test/js/social-landing-page-guard.test.mjs`, run by the N6 job's `social-*` glob |
 | N7 | Concept cards (typo-squat, homograph, padlock, hover-link, right-to-left, five-habits) as entries in `social.conceptCards` (`00` §11), shown by the shared card renderer that `02` N1 builds; this item adds the builder's cards and the validator check that every page `conceptCards` id resolves | Also used by `02`'s tool cards; validator in N6 |
 | N8 | Bundle Atkinson Hyperlegible (`00` §6) and apply `--se-font-readable` to every string the builder shows that holds an authored domain, address, handle or document field, wherever it appears: preview text, address bar, domain chips, the score checklist, feedback lines, tells-panel lines and concept cards; authored domains rendered raw, not via `displayDashes` | `public/break_escape/assets/fonts/`; `css/fonts.css`; `utils/display-dashes.js` bypass |
 | N9 | Nested launch and close: return-to for the mail-client round trip (`00` S12), close as a normal exit with its own Close control and Escape, `requiresKeyboardInput: true` | `minigames/framework/minigame-manager.js`, `base-minigame.js` (`disableClose`) |
 | N10 | `linkInfoFor(record, pageDef, kitId)`, `describeVictimOutcome` and `betterVictim` in the model, unit-tested against the worked example | `landing-page-model.js` |
-| N11 | Capture note: when the stored outcome first becomes `submitted`, add the page's `capture.note` once with `window.addNote`. A pure `captureGranted(before, after)` in the model decides it. Unit test: the first `submitted` adds the note, and a repeat or a `noticed` send adds nothing | `landing-page-model.js` (`captureGranted`); the mail client's send path (`01`, which needs one matching call) |
+| N11 | Capture note: when the stored outcome first becomes `submitted`, add the page's `capture.note` once with `window.addNote`. A pure `captureGranted(before, after)` in the model decides it. Unit test: the first `submitted` adds the note, and a repeat or a `noticed` send adds nothing | `landing-page-model.js` (`captureGranted`); the send-path call in `01` section 3, item 2, and `01` N6, which compares the stored outcome before and after `betterVictim` |
 
 N6 and N6b together are the safety enforcement. The shared engine items they depend on are in `00` §12
 (S3 the shared global writer, S11 the validator and schema).
@@ -763,7 +772,7 @@ One data record, one `profile`:
 |---|---|---|---|
 | Choices shown | All seven | Brand, domain, padlock (others fixed to correct) | Domain and wording only; the handler presets the rest |
 | Domain menu | Six tricks including homograph | Three tricks (wrong letter, extra word, typo-squat), no homograph | Three, no homograph |
-| Brands | Fictional, and template brands (`lookOf`) | Fictional only | As authored; fictional by default |
+| Brands | Fictional, and template brands (`lookOf`) | Fictional only | Fictional by default (OQ3) |
 | Meter and per-factor lines | Shown after Score only | Live, with a tell counter | Live |
 | Step 6 inspection | Find tells unaided, then closing card | Tells auto-highlighted, tap to read | One-line summary in the handler's dialogue |
 | Gates | `minDomainTier` 2 for Lord, the lab's one target | Off (threshold only) | One target, threshold 60 |
@@ -774,7 +783,7 @@ One data record, one `profile`:
 
 - Fake-browser chrome: window frame, address bar frame, padlock open/closed/crossed icons, "Not secure" badge — pixel UI, about 8 sprites at native size, scaled 3x. The address text itself is DOM text, not part of the sprite.
 - Fictional brand logos (AccountingNow, the decoy CloudBox) in three renderings each (crisp, blurry, stretched): produced from one crisp 32x32 source; the blurry and stretched variants are drawn deliberately bad in the renderer, not downscaled (house rule: no downscaling pixel art).
-- Template brands: pixel layouts that redraw a tool's sign-in layout and colours, with no copied logo artwork (section 9, OQ2).
+- Template brands: artwork is decided in the Haiku build brief, not in this document (section 9, OQ2).
 - Page body templates: sign-in, password-expired, payslip-ready layouts (pixel blocks; their text is DOM text).
 - Step-strip icons (pretext, build, score, send, inspect), tell-found stamp, credibility meter frame.
 - Concept-card illustrations: `paypa1` against `paypal`, `rn` against `m`, an address bar with the real name hidden in a subdomain, padlock beside a fake address.
@@ -819,8 +828,8 @@ One data record, one `profile`:
 The user-facing ones are repeated in `README.md`.
 
 - OQ1: homograph in the student profile only. Default: yes.
-- OQ2: template brands' artwork. Default: a pixel redraw of the tool's layout and colours, with no copied logo artwork. Alternative: the tool's own logo, which carries the most trademark risk.
-- OQ3: template brands in the awareness profile. Default: no, fictional brands only (section 7).
+- OQ2: how closely a template copies its tool, and whether it may reproduce the tool's logo artwork. Logo artwork carries the most trademark risk, so the user decides it; the planner records no default. Drawing the template is for the Haiku build brief.
+- OQ3: template brands outside the student lab (awareness and missions). Default: student lab only, enforced by the N6 lint (section 7). Alternative: templates in every profile, which needs a view on the commercial release.
 - OQ4: domain chosen from a menu, never typed. Default: menu. Free typing needs a similarity scorer and edges toward a look-alike generator.
 - OQ5: should `tier` be authored or computed from edit distance and confusable-character rules?
   Default: authored. Computed tiers are less readable to a reviewer and would need a confusables
