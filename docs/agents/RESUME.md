@@ -1,3 +1,9 @@
+# Resume note: finale m09 + m10 (started 2026-10-20)
+
+Brief `docs/agents/FINALE_BRIEF.md`; log `scenarios/FINALE_DEV_LOG.md`; pending `scenarios/FINALE_DECISIONS_PENDING.md`. Outputs under `planning_notes/overall_story_plan/mission_initializations/finale/`, `.../m09_digital_archaeology/`, `.../m10_final_cipher/`.
+Plan: phase A inventory (carry-over m01–m04, m05–m08; VM shape) → stage 0 joint for both missions + finale arc doc → stages 1+2, 3, 4+5, 6, 7, 8, 9 per mission (author + ≥3 review rounds; milestone cross-reviews after 3, 5, 8) → AGENTS.md improvement loops. User answers F1–F4 in the log (all endings kept; SecGen drafts, m08 exports, teaser slot, stage-doc commits approved).
+Status: phase A running (VM shape done).
+
 # Resume note — m07 and m08 full passes (pass 5, started 2026-10-13)
 
 Same process and rules as m05/m06 below (user, 2026-10-13: run concurrently, no user input; blocking items go in each mission's `DECISIONS_PENDING.md`). Briefs `docs/agents/M07_PASS_BRIEF.md`, `M08_PASS_BRIEF.md`. Started: stage-1 regression playtest and alignment review cycle 1 for both. m05 is at dialogue cycle 3 review + room dressing; m06 at struggling-run fix browser check.
