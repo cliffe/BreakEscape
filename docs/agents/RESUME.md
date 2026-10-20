@@ -2,7 +2,7 @@
 
 Brief `docs/agents/FINALE_BRIEF.md`; log `scenarios/FINALE_DEV_LOG.md`; pending `scenarios/FINALE_DECISIONS_PENDING.md`. Outputs under `planning_notes/overall_story_plan/mission_initializations/finale/`, `.../m09_digital_archaeology/`, `.../m10_full_disclosure/`.
 Plan: phase A inventory (carry-over m01–m04, m05–m08; VM shape) → stage 0 joint for both missions + finale arc doc → stages 1+2, 3, 4+5, 6, 7, 8, 9 per mission (author + ≥3 review rounds; milestone cross-reviews after 3, 5, 8) → AGENTS.md improvement loops. User answers F1–F4 in the log (all endings kept; SecGen drafts, m08 exports, teaser slot, stage-doc commits approved).
-Status: phase A running (VM shape done).
+Status (2026-10-21): stage 0 closed (fb37b305; 4 review rounds; handover in FINALE_ARC §13). m10 titled Full Disclosure (folder m10_full_disclosure). Running: stages 1+2 authors for m09 and m10 (parallel; proposed arc changes listed at the end of each story_arc.md), Haiku drafting SecGen m09/m10 scenarios (uncommitted in SecGen, notes in finale/SECGEN_DRAFT_NOTES.md). Opus agents must not read VM material (FINALE_BRIEF). Two Opus authors were stopped by safeguards in stage 0; avoid 'keep your reasoning' wording.
 
 # Resume note — m07 and m08 full passes (pass 5, started 2026-10-13)
 
