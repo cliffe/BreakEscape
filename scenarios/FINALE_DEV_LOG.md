@@ -91,3 +91,8 @@ Orchestrator: verified N-14 (no friendly follow/escort in `npc-behavior.js`; onl
 
 ## Stages 1+2: narrative structure and storytelling elements (per mission)
 - SecGen drafts (Haiku, F2): `SecGen/scenarios/break_escape/safetynet/m09_digital_archaeology.xml` and `m10_full_disclosure.xml`, uncommitted; notes `finale/SECGEN_DRAFT_NOTES.md`. Four flags each in story order; seed content in place; root SSH and leftover datastore removed on the m10 escape boxes. Self-reviewed against review-secgen-scenario. Unbuilt. Story-side choices it made (to fold in at stage 3/5 if the designers agree): second city Austin; the Zero Day order signed Sterling. Gaps: catalogue_server flag 1/2 text not seeded yet; no lab sheet URL. m09 also uses druid (m06 used it; second use).
+
+### m09 stages 1+2
+- Draft (author `m09-s12`): story_arc.md (482 lines), storytelling_elements.md (520). 75-minute budget (briefing 5, get in 15, stacks 30, name and hour 21, debrief 4); 14 choices; cold-start versions; all 43 imports placed. Settled §13 items 3 (m09 side), 4, 8, 9, 11, 16. Eleven proposed FINALE_ARC changes in story_arc §14.
+- Orchestrator: accept in principle change 1 (name held back to flag 3: the identity scene gets its weight) and 2 (Tomb Beta's server left off the purge as his invitation; ties to m10's premise). All arc changes applied together once m10's list is in, after the R1 reviewers judge them.
+- R1: two reviewers (writing; structure).
