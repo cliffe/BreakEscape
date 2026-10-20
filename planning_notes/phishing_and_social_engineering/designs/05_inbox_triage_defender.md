@@ -131,8 +131,9 @@ a message** control.
 The score (see "Rules"), three headline numbers (**Phish caught**, **Reported rather than just
 deleted**, **Real mail trusted**), a **skill breakdown** by factor ("Sender address: caught 3 of 4;
 Links: caught 1 of 3; Header checks: caught 0 of 2"), and one pointer to the weakest skill with a
-nudge toward the relevant attacker-seat minigame or lab-sheet section. Buttons: **Finish**, and
-(training only) **Try the other set**. In a pre-test the result screen also says "Come back for
+nudge toward the relevant attacker-seat minigame or lab-sheet section. Buttons: **Finish**; in
+training only, **Try the other set**; and, for a training or mission set below its `passPercent`,
+**Try again** (N6; the lab depends on it). In a pre-test the result screen also says "Come back for
 the follow-up after your training". The stage travels with the result globals (`triage_pre_*`), which
 is what lets the post-test show the change.
 
@@ -451,7 +452,7 @@ The set carries one `playerSentAuth` table, next to `messages`:
 ```jsonc
 "playerSentAuth": {
   "accounts": {                         // a row for every id in social.mailClient.accounts: guest and freemail in the lab
-    "guest":    { "spf": "fail", "dkim": "none", "dmarc": "fail", "envelopeFrom": "workstation", "replyTo": "guest@workstation" },
+    "guest":    { "spf": "fail", "dkim": "none", "dmarc": "fail", "envelopeFrom": "workstation.example", "replyTo": "guest@workstation.example" },
     "freemail": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "freemail.example", "replyTo": "{account_address}" }
   },
   "domains": {                          // a row for every id in the landing-page domain menu (07): six in the lab
@@ -563,8 +564,8 @@ The awareness episodes (`11` §6.4) use four additions, all data on the same com
   never enable Verify (the validator refuses `call` in an `analyst` set). Reasons chips are the set's
   enabled channel tells (`vish_callback_pressure`, `secrecy_or_bypass`, `borrowed_authority`), and
   the review card shows the same Caught / Missed lists. `11` E3 (N15) uses it for the role-swap episode.
-  An episode's defend set may hold fewer than five messages when it mixes kinds, for example three
-  voicemails plus two emails reused from other episodes (`11` E7), which still totals five.
+  An episode's defend set (five to eight messages) may mix kinds, for example three voicemails plus
+  two emails reused from other episodes (`11` E7), which totals five.
 - **Stage at launch.** `startInboxTriageMinigame` accepts a `stage` parameter (`pre` or `post`) that
   overrides the set's authored `stage`, so a cohort can be counterbalanced between `pre_a` and
   `post_b`. The effective stage fills the `{stage}` token in `outcome.setGlobalPrefix`, so a form run
@@ -611,8 +612,11 @@ shows it worked through):
    is not a normal exit here: the minigame sets `gameResult = { aborted: true }` itself and calls
    `complete(false)` (as SIEM and command board do), so a half-finished pre-test is never scored. Esc
    closes an open chip sheet or header panel first.
-7. Validator and schema entries for the object's `minigameData` (`00` S11), and the sprite
-   `assets/objects/triage-workstation.png`.
+7. Validator and schema entries for the object's `minigameData` (`00` S11), the sprite
+   `assets/objects/triage-workstation.png`, and a `this.load.image('triage-workstation',
+   'objects/triage-workstation.png')` line in `core/game.js` `preload()` (object sprites are created
+   from a base key that only a preload line guarantees; without it the object renders as Phaser's
+   missing-texture box, and the validator's PNG-exists check does not catch that).
 
 **Completion.** The minigame sets `this.gameResult = result` then `this.complete(true)`
 (`framework/base-minigame.js`). `complete(true)` fires only when every message has a verdict; closing
@@ -634,13 +638,14 @@ replaced by the effective stage). Four rules:
 
 - **Sync, then emit.** The starter calls the writer with `deferEmit` (the S3 option that updates
   `gameState.globalVariables` without emitting `global_variable_changed`), awaits
-  `window.stateSync.sync()`, and only then emits the `global_variable_changed` events for the four
+  `window.stateSync.syncConfirmed()`, and only then emits the `global_variable_changed` events for the four
   names (only those whose value changed, as `deferEmit` returns pending events for changed values only; `00` S3) and its done event, last (`00` §11). The server copy of `globalVariables` is therefore current
   before any `eventMappings` entry fires a task POST, so a `concludeRequires` keyed on
   `<prefix>done` or `<prefix>pass` finds it met. The await applies to every set, not only check sets.
   `sync()` resolves even when the PUT fails or the server answers `{ stale: true }`, so the starter does
-  not trust the resolution alone. `_syncOnce` is changed to report whether the server confirmed
-  (`00` S3), and the starter retries `sync()` until it does. While it is retrying, the result screen
+  not use it. `syncConfirmed()` (`00` S3) goes through the same single-flight queue as `sync()` and
+  re-issues the PUT with a fresh `clientTs` until the server accepts it; it resolves `true` at once when
+  there is nothing left to send. While it is retrying, the result screen
   shows a "Saving your result..." notice and the done event is held; nothing is emitted until a sync is
   confirmed. If the player is offline or the server keeps refusing, the notice stays and the retries
   continue in the background, so the task completes late rather than never. The limitation: a player
@@ -664,8 +669,10 @@ replaced by the effective stage). Four rules:
   does not reset it to false after a later lower round, so a door or task a pass opened stays open.
   There is no "best score" mechanism: `percent` is the latest round.
 
-A global cannot complete a task or open a lock by itself, and task and aim conditions are truthy or
-`equals` only, so a numeric `triage_percent >= 60` is not usable. A mission reacts to the boolean
+A global cannot complete a task or open a lock by itself. An aim's `unlockCondition` is truthy or
+`equals` only, but an `eventMappings` `condition` on `global_variable_changed:<name>` accepts numeric
+comparisons such as `value >= 60` (`systems/npc-manager.js`, header comment and compare regex). A
+boolean is still the simpler contract, so a mission reacts to the boolean
 `<prefix>pass` through an `eventMappings` entry on `global_variable_changed:<name>` on an NPC record
 (`systems/npc-manager.js`; the lab uses Ruth, a start-room NPC that is always registered) with `completeTask` / `unlockTask`, or through an aim
 `unlockCondition.globalVariable`. The awareness product reads `triage_pre_percent` and
@@ -682,7 +689,7 @@ awards a lab flag for finishing, it goes through `POST /games/:id/flags`
 | N3 | Import 00 §2's factor library and canonical red-flag strings (including `senderAuth` and the channel tells) through the same resolution rule `04`/`01` use (per-target `factorStrings` override, else canonical, never null). 05 adds only the chip label tables | No `04` schema change needed: `senderAuth` is already the shared factor in 00 §2 |
 | N4 | `triage-scoring.js` pure scorer and its unit tests in `test/js/social-triage-scoring.test.mjs` (named so the CI glob in `00` S11 runs them; the worked example is test case one) | No framework deps |
 | N5 | Scenario validator checks: the `stage` launch parameter only with a `{stage}` prefix, `call` messages only in `awareness` sets with `verifyVerdict` and `push` messages only in `awareness` sets, `playerSentAuth` placeholders limited to `{account_address}` and `{domain}`, `<setGlobalPrefix>` names treated as written (so an `exportGlobals` entry for them raises no "never written" warning), the four `<prefix>` globals declared only for the stage the mission's kiosk launches and any name the mission imports (`importGlobals`) skipped, so an import never collides with an own declaration, `passPercent: 0` accepted on a check set (and the non-zero-`passPercent` warning on a `<prefix>done` task applying to the other sets), parallel-form balance (counts per factor and per truth, skipping `playerSent`), non-empty authored strings, every phish message has `perFlagNote` per flag and at least one flag, `truth.flags` ids exist in 00 §2's factor library or enabled channel tells, `playerSentAuth` has a row for every account id and for every id in `07`'s domain menu, `domainFrom` appears only on `playerSent` entries, a set has no `mailbox` field | Extends the validator (`00` S11); lint like `04` N3 |
-| N6 | Result persistence and the **first-attempt guard**: on completion the starter writes `<prefix>percent`, `<prefix>reportRate`, `<prefix>done`, `<prefix>pass` as globals through the shared writer (S3). Globals persist across reload (the writer patches `gameState.globalVariables`; serialised by `state-sync.js` and restored in `core/game.js`'s saved-globals restore, with saved values taking precedence; `00` §5). The writes use `deferEmit`, then the starter retries `window.stateSync.sync()` until the server confirms (S3 makes `_syncOnce` report success) before emitting the changed `global_variable_changed` events and its done event (see "Bridging"). Before starting a `pre` or `post` set the starter checks `<prefix>done`: if true, it opens a read-only result screen built from the stored globals (the headline band from `percent`, and the report rate); no replay, nothing overwritten. Per-message answers, `perFactor`, `answers[].ms` and the review cards are not stored and are not shown on the reopen; training and mission sets skip the check | Needs the S3 `deferEmit` option and the confirmed-sync result from `_syncOnce` (`00` S3). The awareness product still needs a server-side record for anything richer (OQ1) |
+| N6 | Result persistence and the **first-attempt guard**: on completion the starter writes `<prefix>percent`, `<prefix>reportRate`, `<prefix>done`, `<prefix>pass` as globals through the shared writer (S3). Globals persist across reload (the writer patches `gameState.globalVariables`; serialised by `state-sync.js` and restored in `core/game.js`'s saved-globals restore, with saved values taking precedence; `00` §5). The writes use `deferEmit`, then the starter awaits `window.stateSync.syncConfirmed()`, which retries until the server confirms (S3 makes `_syncOnce` report success), before emitting the changed `global_variable_changed` events and its done event (see "Bridging"). Before starting a `pre` or `post` set the starter checks `<prefix>done`: if true, it opens a read-only result screen built from the stored globals (the headline band from `percent`, and the report rate); no replay, nothing overwritten. Per-message answers, `perFactor`, `answers[].ms` and the review cards are not stored and are not shown on the reopen; training and mission sets skip the check | Needs the S3 `deferEmit` option and the confirmed-sync result from `_syncOnce` (`00` S3). The awareness product still needs a server-side record for anything richer (OQ1) |
 | N7 | Starter `startInboxTriageMinigame` in `systems/minigame-starters.js` (with the `stage` parameter and `answers[].ms`), plus the rest of the wiring checklist above | Modelled on `startSiemMinigame` |
 | N8 | `scoringProfile` support in `triage-scoring.js`: the two profiles in "Scoring profiles", with a test for each using the worked example (68% analyst, 86% awareness) | Pure function |
 | N9 | `playerSent` message kind: reads the latest persisted sent record to the target whose `tells` include `senderTrust` or `senderAuth` (else the latest with any tell), from any mailbox (`01` N12, `00` §10a: `fromAccount`, `tells`, `link`, `attachment`, rendered `body`), takes `truth.flags` from stored `EvalResult.tells`, the `playerSentAuth` literal table and `domainFrom` substitution, with the page-less case above | — |
@@ -703,7 +710,7 @@ Depth is data, as in `01` and `04`. Same component, different `triageSets` entry
 | Real mail with a failed check | 0–1 | 0 | 1 (the forwarded mail) | 0 |
 | Scoring profile | `awareness` | `awareness` | `analyst` | `awareness` (default) or `analyst` |
 | Chip wording | Plain | Plain | Technical (factor names, SPF/DKIM/DMARC terms) | In-character |
-| After the round | Result, stage stored, pre→post comparison | Result, back to the episode | Result, then lab sheet questions | Sets a global that gates progress |
+| After the round | Result, stage stored, pre→post comparison | Result, back to the episode | Result, then the next task | Sets a global that gates progress |
 | Retry | Pre/post: first attempt only, enforced by the `<prefix>done` guard (N6) | Free | Free; the task keys on `<prefix>pass` | Free, latest round shown; `pass` stays set once reached |
 
 The awareness product's measurement is: run `pre_a` before the training episodes, `post_b` after,
@@ -734,14 +741,14 @@ All PixelLab-first; none generated now.
 - No audio needed. Optional: a short UI confirm blip on a locked verdict, from the existing UI sound
   set.
 
-## Open questions
+## Decisions
 
 Not in this plan: page-inspection items. `07` proposes that the triage round also offer "inspect this
 page" items built from its `buildSuspectPage` record and step-6 tells (`07` N5). `00` defines no shared suspect-page record, so this doc has no such message kind. If
 `00` gains one, the item is a new `kind` beside `playerSent`, with page tells drawn from `00` §2's
 `lookalike_domain` and `linkCredible` strings.
 
-Design decisions taken:
+Decisions taken (the OQ numbers are kept because other docs cite them):
 
 - OQ1: The pre/post score lives in `gameState.globalVariables` for the lab and Eldritch Hacker. A
   small server-side record per `gameId` is built only when the awareness product is productised

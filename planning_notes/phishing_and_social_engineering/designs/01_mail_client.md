@@ -3,7 +3,7 @@
 Status: plan. Core component; nothing in the suite plays without it. Pairs with the rules engine
 (`04_phish_rules_engine.md`), which judges what the player sends, and with NPC ink stories, which
 write the replies (`00_data_contract.md` §10). Shared shapes, ids and the engine items `S1` to `S14`
-live in `00`; this doc references them and adds only the mail-client items `N1` to `N14`.
+live in `00`; this doc references them and adds only the mail-client items `N1` to `N18`.
 
 ## Purpose & audience
 
@@ -54,7 +54,10 @@ showing its authored `linkText`; hovering or tapping it shows the real destinati
 
 The Sent folder lists the account's sent records (`00` §10a): the rendered `body` as sent, the From
 as displayed, the attachment or link chosen, and a small "judged: landed / did not land" line from the
-stored `landed`. Every send writes one record there, and `05`'s `playerSent` messages read it.
+stored `landed`. Every send writes one record there, and `05`'s `playerSent` messages read it. In
+`withReply` mode (assessment) the judged line and the tells are hidden for a record whose delivery job
+has not yet run, so opening Sent straight after sending shows only "Sent. Waiting for a reply"; both
+appear when the job runs, with the reply (N17). In `onSend` mode (the lab) they show at once.
 
 This is also where **replies from a target arrive**. A reply is written by the character's
 email-channel ink story from its `on_email` knot, or by the target's authored text for a data-only
@@ -63,7 +66,8 @@ of the **account the player really sent from**, not the one the message claimed 
 persist across reloads (N2).
 
 When the reply comes from a social character, the reading pane shows that character's **influence
-bar** with its threshold markers (`00` §8, S4), so the player can see the effect of what they sent.
+bar** with its threshold markers and the score as a number beside it (`00` §8, S4), so the player
+can see the effect of what they sent.
 
 ### 2. Compose
 
@@ -80,7 +84,8 @@ Fields, in the order the player fills them:
   blanks, display name and address, each filled from evidence the player holds, and is free only
   when the chosen account has `spoofsFrom`. `from_own` has no blanks: the From is the sending
   account's own name and address, shown as a read-only line ("You can only send as yourself from
-  this address"). The From is also forced to the account when the account lacks `spoofsFrom`, and
+  this address. Switch account to send as someone else.", the second sentence shown only when another
+  listed account has `spoofsFrom`). The From is also forced to the account when the account lacks `spoofsFrom`, and
   when the target offers only `from_own` (Hampshire). In the lab only `guest` has `spoofsFrom`; `freemail` does not, so its From is always its own.
 - **Subject** — chosen from the target's `subjects` list (`04`, `00` §7); the first entry is the default, and a one-entry list is a fixed subject. The sent record, drafts and the reply's `Re: <subject>` all read the chosen entry's `text`. The judge does not read the wording, but each subject has a `topic`, and with the From it decides whether the target opens the message (`00` §2, "The open check"). The pick therefore matters most when the From is a stranger's.
 - **Body** — the greeting, pretext and ask, built from templates with blanks (`00` §10). The judge
@@ -153,7 +158,8 @@ stays pure and the stored target is untouched. It then calls `evaluateMessage(ta
    first. The job runs even when the character ignores the message, so the checklist always arrives. The sender-authentication line is the target's
    authored `factorStrings.senderAuth` text when it has one: its `fail` string when the derived read
    is `would-fail`, its `pass` string when it is `would-pass`. In the lab Pierce authors both (her
-   `fail` carries the `p=none` line) and Hampshire authors a `pass` line. Otherwise (Lord) it is the
+   `fail` carries the `p=none` line) and Hampshire authors a `pass` line only (her From is always the
+   sending account, so the read is always `would-pass`). Otherwise (Lord) it is the
    canonical `00` §2 line plus a clause built from the claimed domain's `dmarcPolicy` (`none`: a
    failing message is still delivered; `quarantine`: it would likely be quarantined; `reject`: it
    would be rejected).
@@ -194,18 +200,19 @@ stays pure and the stored target is untouched. It then calls `evaluateMessage(ta
 What 01 renders from an `EvalResult`, concretely:
 
 ```
-Sent to Melanie Pierce, as guest@workstation (claimed: Jed Baker).
-  ✓ They would open it (she trusts the sender)
+Sent to Melanie Pierce, as guest@workstation.example (claimed: Jed Baker).
+  ✓ She would open it
   ✓ From someone she trusts
   ✓ Addressed her by name
-  ✗ Not relevant to her — "I'm not expecting anything like this"
-  ✗ Attachment missing — "You said you'd attach it, but there's nothing here"
-  Advisory: the spoofed j.baker@ address fails the domain's alignment check. AccountingNow
-  publishes DMARC at p=none, so it would still be delivered.   [Edit & resend]
+  ✗ I'm not expecting anything like this.
+  ✗ You said you'd attach it, but there's nothing here.
+  Advisory: The spoofed j.baker@ address fails the domain's alignment check. AccountingNow
+  publishes its DMARC policy as p=none, so a receiver would still deliver it.   [Edit & resend]
 ```
 
-Some seconds later in the `guest` mailbox: "Re: Quick one — Sorry, who is this? I wasn't expecting
-anything." with Melanie's bar a notch lower. On success: a green banner "She opened it.", the reply,
+The lines are Pierce's authored `factorStrings` (`04`). Some seconds later in the `guest` mailbox
+the reply follows the first failed factor, here `pretextRelevant`: "Re: Quick one — I'm not expecting
+anything like this." with Melanie's bar a notch lower. On success: a green banner "She opened it.", the reply,
 and the outcome global.
 
 #### Closing the client
@@ -316,10 +323,10 @@ The minigame holds no content. A scenario supplies it under the top-level `socia
     ],
     "seededMessages": [
       { "id": "welcome", "mailbox": "guest", "from": { "name": "IT", "address": "it@accountingnow.example" },
-        "to": "guest@workstation", "subject": "Your new laptop", "body": "...",
+        "to": "guest@workstation.example", "subject": "Your new laptop", "body": "...",
         "time": "08:05", "unread": true }
       // optional per message: "folder": "sent" with "fromAccount" (history on a found device),
-      // "highlights": [ { "id": "h_q3", "text": "Q3 balance sheet", "grants": "pierce_expects_balance_sheet" } ],
+      // "highlights": [ { "id": "h_example", "text": "an exact phrase in the body", "grants": "<a fact id whose source is h_example>" } ],   // illustrative: the lab ships no highlights
       // "deliverAt": { "afterSeconds": 120 } or { "global": "phish_pierce_landed" } (timed mail)
     ],
     "payloadKit": [
@@ -389,7 +396,14 @@ every new minigame needs; it is also in the README conventions):
 3. **Interaction.** A branch in `systems/interactions.js` for the new `mail_terminal` object type
    (SIEM and flag-station are the models). Add the type to `PICKUP_THEN_INTERACT_TYPES` (the set near
    line 776 that already holds `workstation` and `phone`), so a takeable terminal is picked up first and
-   opened from inventory.
+   opened from inventory. Where the `mail_terminal` branch sits decides whether an object lock works:
+   the generic lock check (`data.locked === true` then `handleUnlock`, near line 1340) runs after the
+   type branches near 790, and the pickup block at 776-784 adds the item to inventory and re-enters
+   `handleObjectInteraction` with no lock test. So the `mail_terminal` branch goes after the lock
+   check, beside the phone branch (near 1355), and the pickup block must send a takeable item whose
+   `locked` is true to the unlock flow first, so a locked takeable terminal is not picked up and
+   opened from inventory before it is unlocked (`00` S14). The server-side unlock endpoint validates by
+   object id; confirm it accepts a takeable item before relying on this.
 4. **Stylesheet.** A `css/mail-client-minigame.css`, linked in
    `app/views/break_escape/games/show.html.erb`.
 5. **Close and Esc.** Because `disableClose` hides the framework's close button and Esc handler, the
@@ -400,7 +414,11 @@ every new minigame needs; it is also in the README conventions):
    `minigameName = this.constructor.name`, i.e. `MailClientMinigame`, not the scene type. Scenarios
    react to the outcome global. `restartCurrentMinigame` (debug only) derives the scene type from the
    class name and would look up `mailclient`; it is ignored for this component.
-7. **Validator and schema** entries for the new object type (`00` S11).
+7. **Validator and schema** entries for the new object type (`00` S11), the sprite
+   `assets/objects/mail_terminal.png`, and a `this.load.image('mail_terminal',
+   'objects/mail_terminal.png')` line in `core/game.js` `preload()`. Object sprites are created from a
+   base key that only a hard-coded preload line guarantees; without it the terminal renders as
+   Phaser's missing-texture box, and the validator's PNG-exists check does not catch that.
 8. **Return-to.** The nested launches above use S12 (`00` §12).
 
 Flags, where a scenario uses them, validate server-side (`POST /break_escape/games/:id/flags`,
@@ -462,7 +480,7 @@ reads `metrics`, the sent records and the outcome globals.
 | N4 | Payload kit as abstract items; Attach menu; the `link` kind refers to a landing page built in `07`; nested launch of the builder and Notes through S12; `linkInfo` filled from `linkInfoFor`; the link item offered only for targets in the page's `targets` map; the re-attach test reads the page record's `built` | Cross-component |
 | N5 | A read-only **`mail-reader`** component (message list + reading pane, link-hover status bar, header panel) shared with the triage defender (`05`) | `01` adopts it too so the two cannot drift |
 | N6 | Email→ink bridge in the client: apply `boostIfGlobal` / `strictIfGlobal` to a copy of the target, judge (open check included, `04` N12), write the sent record and the job (ink or text) to the scheduler, call `describeVictimOutcome` for a message with a page, render the reply | Uses `00` S1 (externals), S6 (runner), S7 (run-scoped `email_`), S8 (headless record), S9 (scheduler); not `timedMessages` |
-| N7 | Influence bar in the reading pane for social characters | The shared DOM widget, `00` S4 |
+| N7 | Influence bar in the reading pane for social characters, with the number beside it | The shared DOM widget, `00` S4 |
 | N8 | Thread follow-ups: the "Choose a reply" options from ink and the "Write your reply. This one is judged" composer (`#compose_reply`), exactly one at a time from `threads[key].expects`; quick-reply records; position stored per `(character, account)`; chasers (`#mail_later`) and timed mail (`deliverAt`) | Mirrors phone-chat choices; `00` §10 |
 | N9 | Contacts with a `character` and no sprite; contacts joined to targets by `targetId` | Delivered by `00` S8 (headless email records) |
 | N10 | Template composer: blanks whose options come from held evidence (`se_intel_*` globals through each fact's `provides`), and a send gate that refuses an empty blank with the neutral pre-send line (`04`) | Shares the blank picker with `06` (N6) |
@@ -472,7 +490,8 @@ reads `metrics`, the sent records and the outcome globals.
 | N14 | Mail notification (HUD badge or bark variant) and the rule that an open client appends without a bark | `00` S9 |
 | N15 | Devices: `accountIds` on each `mail_terminal`, takeable terminals used from inventory, per-contact `accountIds`, seeded mailbox history (`folder` inbox or sent), password-locked terminals via the ordinary object lock | `00` S14 |
 | N16 | Highlights: render marked spans, "Save as evidence" calling `grantFact` with the highlight id as the source, "Add to Notepad" for any selection (S12 `returnTo`) | `00` S14, `02` N2 |
-| N17 | Checklist timing: `checklistTiming` setting, the "Waiting for a reply" Sent row and the reveal when the job runs; the open-check row | `00` §10 |
+| N17 | Checklist timing: `checklistTiming` setting, the "Waiting for a reply" Sent row and the reveal when the job runs; the open-check row. In `withReply` mode the Sent folder's judged line and tells stay hidden until the job has run, so the reply is read before the verdict | `00` §10 |
+| N18 | Validator checks for `social.mailClient` (via `00` S11): `createMenu` ids unique; `unlockedBy`, `acct_<id>`, `acct_<id>_choice` and `phish_<id>_attempts` declared in `globalVariables` (an undeclared global is silently not synced to ink, `npc-conversation-state.js:362-372`); mailbox ids named by accounts and seeded messages exist; `mail_terminal.accountIds`, `defaultAccount` and contact `accountIds` name real accounts; every highlight `text` is an exact substring of its message body, each highlight-granted fact has `source` equal to the highlight id and is granted by exactly one highlight; `deliverAt.global` is declared; `emailKnots` names exist in the character's email story | Owned here; `00` S11 references it |
 
 ## Narrow screens and accessibility
 
@@ -490,7 +509,7 @@ reads `metrics`, the sent records and the outcome globals.
 - Screen readers: the checklist and the "reply arrived" notice are `aria-live="polite"`. Ticks and
   crosses are always paired with words; the unread dot has a text equivalent.
 - No motion under `prefers-reduced-motion`; the success banner appears without animation.
-- Free-text flavour, when enabled, needs the validator rule that no ink reads it.
+- Free-text flavour is off in the lab (`freeTextFlavour: false`, unscored if a scenario enables it). When enabled, the validator rule is that no ink reads it.
 
 ## Reuse across products
 
@@ -528,7 +547,3 @@ reads `metrics`, the sent records and the outcome globals.
   those differences or make them obvious, and long reading in a pixel font is tiring.
 - The checklist and the tells use the house pixel style for chrome (icons, frames, headings that hold
   no authored string). Their reason text is Atkinson Hyperlegible.
-
-## Open questions
-
-- How much unscored free-text flavour is allowed in the lab? Default: none in the first slice.

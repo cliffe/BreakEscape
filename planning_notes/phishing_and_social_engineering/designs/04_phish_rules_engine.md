@@ -205,7 +205,7 @@ Target **Melanie Pierce**, Finance (character `pierce`). Trusts `baker` (her col
 - Player retries from `freemail`, where the From is forced to the account's own name, with the subject
   "Quick one". Pierce does not know the sender and the subject's topic (`general`) is not one she opens,
   so `email_opened` is false and `email_open_via` is `"none"`. Her `on_email` knot sends nothing. The
-  checklist's first row reads "Nothing about the sender or the subject made them open it", and the
+  checklist's first row reads "Nothing about the sender or the subject made her open it", and the
   other rows still show what else was wrong. With the subject "For your review" (topic `finance`) she
   opens it, finds the sender unfamiliar, and the reply says so. Same message, different subject, a
   different reason in her own words.
@@ -266,7 +266,8 @@ The complete schema is `00` §7; targets live in `social.phishTargets` and templ
                                "wrong-type": { "fail": "Why would you send me that file type?",               "redFlag": null } }
     },
     "hints": ["Think about who Melanie trusts.", "What does she expect to receive, and when?",
-              "Re-read Jed's note on the company site about the Friday balance sheet."]
+              "Re-read Jed's note on the company site about the Friday balance sheet.",
+              "This account can only send as itself. The Operator account lets you choose the sender."]
     // no "outcome": the pierce_mail on_email knot sets phish_pierce_landed
   },
   {
@@ -279,7 +280,7 @@ The complete schema is `00` §7; targets live in `social.phishTargets` and templ
     "emailReplyDelay": 15,                        // seconds; a data-only target authors its own delay
     "redFlagMeter": true,
     "templateSets": { "from": ["from_own"], "greeting": ["greet_generic"],
-                      "pretext": ["pretext_apply"], "ask": ["ask_review_cv"] },
+                      "pretext": ["pretext_apply","pretext_enquiry"], "ask": ["ask_review_cv"] },   // the enquiry is plausible but wrong for an applications desk
     "primedFor": { "distinctiveValues": ["cv"], "minDistinct": 1, "expectedAttachment": "document",
                    "trusts": ["*"], "story": "an applicant's CV for the open role" },
     "requiredFactors": ["senderTrust","pretextRelevant","attachmentPlausible"],
@@ -287,8 +288,7 @@ The complete schema is `00` §7; targets live in `social.phishTargets` and templ
     "factorStrings": {
       "senderTrust":         { "pass": "✓ An open inbox accepts any sender", "fail": "I don't recognise who this is from.", "redFlag": null },
       "pretextRelevant":     { "pass": "✓ Reads like an application", "fail": "This isn't about the role. I only handle applications.", "redFlag": null },
-      "senderAuth":          { "pass": "✓ Sent as your own address, so there is nothing to spoof and nothing to fail.",
-                               "fail": "Sender authentication would not pass.", "redFlag": null },
+      "senderAuth":          { "pass": "✓ Sent as your own address, so there is nothing to spoof and nothing to fail.", "redFlag": null },   // her From is always the account's own, so the read is always would-pass and a fail line could never show
       "attachmentPlausible": { "pass": "✓ The CV is attached",
                                "missing":    { "fail": "You mention a CV, but there's nothing attached.", "redFlag": null },
                                "wrong-type": { "fail": "That isn't a file type I can open as a CV.",      "redFlag": null } }
@@ -323,7 +323,8 @@ The complete schema is `00` §7; targets live in `social.phishTargets` and templ
     "hints": ["She's a new intern — what routine admin is she doing?",
               "She mentioned the staff portal and her payslip.",
               "The service desk can tell you what the portal is called and when payslips drop. Ring them.",
-              "Build a page that looks like that portal (see 07)."]
+              "Build a page that looks like that portal (see 07).",
+              "This account can only send as itself. The Operator account lets you choose the sender."]
     // no "outcome": the lord_mail on_email knot sets phish_lord_landed
   }
 ]
@@ -333,7 +334,17 @@ Notes on the records:
 
 - **Subject and interests.** `subjects[]` (`{ id, text, topic }`, first is the default; `00` §7) is the list the composer's Subject pick reads (`01`). The wording is not judged; the `topic` feeds the open check against the target's `interests.topics`. The reply subject is `Re: <chosen text>` unless the ink sets one. The lab's texts are neutral so a subject never hints at a blank value, and each list holds a subject whose topic the target does not open. Pierce opens `finance`, Lord `payroll`, Hampshire `recruitment`; the sender's trust opens the message regardless (`00` §2).
 - **Plausible but wrong templates.** Each closed target's pretext part holds one decoy that fits a real phishing story but not this person: Pierce's `pretext_invoice` (supplier invoices are accounts payable's job, not hers) and Lord's `pretext_password` (she has no password expiry to worry about). A decoy fails `pretextRelevant`, and the character's reply says why in character. Targets differ in what they open, whom they trust and what they act on, so a template that lands on one fails on another.
-- **Advisory `senderAuth` text.** An authored `factorStrings.senderAuth` is read per state: `fail` when the derived read is `would-fail`, `pass` when it is `would-pass`. Pierce authors both (her `fail` carries the `p=none` line); Hampshire authors a `pass` line; Lord authors none and uses the `00` §2 canonical string plus a clause from her claimed domain's `dmarcPolicy`. Advisory pass lines carry the same leading tick as the other pass lines.
+- **Advisory `senderAuth` text.** An authored `factorStrings.senderAuth` is read per state: `fail` when the derived read is `would-fail`, `pass` when it is `would-pass`. Pierce authors both (her `fail` carries the `p=none` line); Hampshire authors only a `pass` line, because her From is forced to the sending account and the read can never be `would-fail`; Lord authors none and uses the `00` §2 canonical string plus a clause from her claimed domain's `dmarcPolicy`. Advisory pass lines carry the same leading tick as the other pass lines.
+- **Closed and open targets.** A target is **closed** when `primedFor.trusts` is not `["*"]`: it
+  trusts named senders only, so the template choice has to carry the lesson. A closed target's pretext
+  part holds two to four templates, including one credible-but-wrong decoy. An **open** target
+  (`trusts: ["*"]`, Hampshire) is exempt from the decoy rule in general, but the lab still gives her
+  two pretext templates so the pretext part is a real choice in round 1.
+- **Influence per send.** The lab's `pierce_mail` and `lord_mail` stories apply
+  `se_influence(-10, <first failed factor>)` on every opened send that does not land and
+  `se_influence(10, <reason>)` on a landing (`00` §8, §10). The validator's N10 checks that each
+  `character` target's `on_email` knot calls `se_influence` on both branches. Hampshire has no
+  character, so a failed send costs her nothing.
 - **Meter.** `redFlagMeter` is a per-target boolean; when absent it takes `mailClient.showRedFlagMeter`
   (`01`). The lab has it on for Hampshire and off for Pierce and Lord.
 - **Ids.** `character` names the `social.characters` entry. Name and address values are the
@@ -350,8 +361,10 @@ Notes on the records:
   `boostIfGlobal` / `strictIfGlobal` remain available for chains that are not facts (`00` §7).
 - **Hampshire is a data-only, text-job target.** She has no `character` and no `addressedAs`; her
   greeting is `greet_generic` and `addressedTo` is not required. Her From is `from_own`, so the account
-  is the From and `senderTrust` passes under `trusts: ["*"]`. Her `pretext_apply` is fixed wording
-  that `implies` the document value `cv`. `careers_attachment` (`00` §1) teaches the value, but the judge needs no fact for it; her only gate is the careers contact reveal. The reply is a
+  is the From and `senderTrust` passes under `trusts: ["*"]`. Her pretext part offers two templates, as every target's does in the lab:
+  `pretext_apply` is fixed wording that `implies` the document value `cv`, and `pretext_enquiry` is a
+  general services enquiry that implies nothing, so it fails `pretextRelevant` ("This isn't about the
+  role"). Her open inbox excuses her from needing a trusted sender, not from the template choice. `careers_attachment` (`00` §1) teaches the value, but the judge needs no fact for it; her only gate is the careers contact reveal. The reply is a
   text job (`00` §10): `replies.landed` when the message landed, otherwise the canonical fail line of
   the first failed factor. It is appended to the mailbox of the sending account after
   `emailReplyDelay`, and `phish_hampshire_landed` is set only if the message landed. Her
@@ -396,6 +409,7 @@ the `urgencyCalibrated` tell.
 | `pretext_generic` | pretext | `Please see attached.` | none | — | low | pierce |
 | `pretext_invoice` | pretext | `Your supplier invoice is overdue.` | none | — | high | pierce |
 | `pretext_apply` | pretext | `I'm applying for the open role.` | none | document `cv` | low | hampshire |
+| `pretext_enquiry` | pretext | `I'd like to ask about your accounting services.` | none | — | low | hampshire |
 | `pretext_payslip` | pretext | `Your {portal} payslip is ready to view (released {when}).` | `portal`: portal; `when`: date / release | — | medium | lord |
 | `pretext_password` | pretext | `Your password expires {expiry}.` | `expiry`: date | — | high | lord |
 | `ask_open_attached` | ask | `Can you open the attached file and check it before Friday?` | none | — | low | pierce |
@@ -423,7 +437,7 @@ the one fixed entry is `portal_address`.
 | lord | `portal` | `staff_portal_name` (`lord_portal_name`; distinctive) |
 | lord | `expiry` | `friday` (`pierce_expects_balance_sheet`, `hampshire_cv_backlog`; generic, offered only if held; a wrong option, since the decoy carries no distinctive value) |
 | lord | `when` (`about: "release"`) | `mon_6th` (`lord_payslip_date`, which provides it with `about: "release"`; distinctive). `friday` is untagged, so it is never offered here: until the call grants the date this blank is empty and Send is blocked |
-| hampshire | none | no blanks; `cv` comes from `pretext_apply`'s `implies` |
+| hampshire | none | no blanks; `cv` comes from `pretext_apply`'s `implies`; `pretext_enquiry` implies nothing |
 
 The Dev call's opening line (`open_buddy`, `06` §4.8) is owned by `06` and uses two blanks of the same
 schema: `intern`: name / intern (`lord_first`, `lord_full` from `lord_intern`) and `team`: team /
@@ -474,9 +488,9 @@ by `01` before judging) and S11. Doc items:
 | N7 | Reply text for a data-only target: `replies.landed` or the first failed factor's fail line, handed to the text job with the target's `outcome.setGlobal` key (`00` §10 "Timing and delivery", S9) |
 | N8 | `senderAuth` derivation from `fromAccount` and `headerFrom` against the claimed domain's policy, with the per-target override |
 | N9 | `tells[]` computation (table above), returned on every `EvalResult` |
-| N10 | Validator checks in `scripts/validate_scenario.rb` (via `00` S11): every `character` target has an email story with `on_email` that declares the `email_*` VARs it reads and `VAR <character>_influence`; each target's `templateSets` cover all four parts and slot ids are unique; every `distinctiveValues` entry is provided by some fact; every required factor is reachable from facts the scenario grants, including that each required `addressedTo` has a name option in `addressedAs` provided by a granted fact; `trusts` ids resolve against `social.people`; one outcome owner; `senderAuth.dmarcPolicy` present whenever `domainPublishesAuth` is true; `requiresIntelToAttempt` globals are declared; outcome globals are declared and read; `expectedLink.brandId` is a brand in `07`; every template named in a set exists; every `phishTargets` entry has at least one `subjects` item, with ids unique within the target, non-empty `text` and a `topic` (the first is the composer's default and the sent record, draft and reply subject read it); every target has `interests.topics` and at least one subject whose topic is not among them unless it trusts `"*"`; every closed target's pretext part offers two to four templates, at most two blanks each, including one that cannot satisfy `pretextRelevant`; a reply to `#compose_reply:<targetId>` names an existing target of the same character |
-| N12 | Open check in `phish-rules.js`: `interests.topics` against the subject's `topic`, `senderTrust` as the other route, `EvalResult.open`, `landed` needing it, the `email_opened`, `email_open_via` and `email_subject_topic` variables; unit tests in `social-phish-rules` for sender-opens, subject-opens and neither | `00` §2, §3, §10 |
+| N10 | Validator checks in `scripts/validate_scenario.rb` (via `00` S11): every `character` target has an email story with `on_email` that declares the `email_*` VARs it reads and `VAR <character>_influence`; each target's `templateSets` cover all four parts and slot ids are unique; every `distinctiveValues` entry is provided by some fact; every required factor is reachable from facts the scenario grants, including that each required `addressedTo` has a name option in `addressedAs` provided by a granted fact; `trusts` ids resolve against `social.people`; one outcome owner; `senderAuth.dmarcPolicy` present whenever `domainPublishesAuth` is true; `requiresIntelToAttempt` globals are declared; outcome globals are declared and read; `expectedLink.brandId` is a brand in `07`; every template named in a set exists; every `phishTargets` entry has at least one `subjects` item, with ids unique within the target, non-empty `text` and a `topic` (the first is the composer's default and the sent record, draft and reply subject read it); every target has `interests.topics` and at least one subject whose topic is not among them unless it trusts `"*"`; every closed target (`primedFor.trusts` is not `["*"]`) has a pretext part of two to four templates, at most two blanks each, including one that cannot satisfy `pretextRelevant`, and every lab target offers at least two pretext templates; every `character` target's `on_email` knot calls `se_influence` on both its landing and failing branches; a reply to `#compose_reply:<targetId>` names an existing target of the same character |
 | N11 | Pre-send gate: the fixed neutral line, shown by `01` for an empty blank or a missing `requiresIntelToAttempt` fact; the validator rejects any scenario string that tries to replace it |
+| N12 | Open check in `phish-rules.js`: `interests.topics` against the subject's `topic`, `senderTrust` as the other route, `EvalResult.open`, `landed` needing it, the `email_opened`, `email_open_via` and `email_subject_topic` variables; unit tests in `social-phish-rules` for sender-opens, subject-opens and neither | `00` §2, §3, §10 |
 
 ## Reuse across products
 

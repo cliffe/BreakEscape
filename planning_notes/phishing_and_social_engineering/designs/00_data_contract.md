@@ -332,8 +332,9 @@ refused. The advisory sentence is built from `dmarcPolicy`, so no policy is impl
 target's `factorStrings.senderAuth` may replace the sentence. The mail client's header read shows
 `factorStrings.senderAuth.fail` when the read is `would-fail` and `.pass` when it is `would-pass`, and
 falls back to the derived sentence for a side the target does not author. In the lab Pierce authors
-both sides (the `fail` side is the `p=none` line) and Hampshire authors the `pass` side ("Sent as your own
-address, so there is nothing to spoof and nothing to fail."; `04` holds both); Lord uses the derived
+both sides (the `fail` side is the `p=none` line) and Hampshire authors the `pass` side only ("Sent as your own
+address, so there is nothing to spoof and nothing to fail."; her From is forced to the account, so the
+read is always `would-pass` and a `fail` string could never show); Lord uses the derived
 sentence with the `dmarcPolicy` clause. A scenario may override the derived result per target. No real header forging happens. On the attack
 side this is **advisory**: a spoof can still fool a person if it is delivered, but the player is told
 it would likely be quarantined or flagged (the honest link to `01`'s "delivery isn't guaranteed"
@@ -608,8 +609,10 @@ Verified in code:
   branch on in the same step. Anything ink must branch on lives in an ink `VAR` (influence does, §8) or
   comes back from an external function.
 - **External functions are bound per loader, and only six exist.** `bindExternalFunction`
-  (`ink-engine.js`) is used in `person-chat-conversation.js` and `phone-chat-conversation.js`, which
-  each bind the same six read-only context functions. "Proven" applies to the binding mechanism only;
+  (`ink-engine.js`) is used in `phone-chat-conversation.js` (`setupExternalFunctions`), which binds the
+  six read-only context functions. The live person-chat minigame builds its own `InkEngine`
+  (`person-chat-minigame.js`) and reuses `PhoneChatConversation` for its story, so both chats share
+  that one binding site. (`person-chat-conversation.js` is not imported by anything; do not edit it.) "Proven" applies to the binding mechanism only;
   none of the six has a side effect. A story that declares an `EXTERNAL` that the loader running it
   has not bound throws at the first `Continue()`. Stories are also run by other loaders: the phone
   intro preload (`PhoneChatConversation._preloadOpeningOnce`), the entry-knot dry runs
@@ -624,15 +627,15 @@ Verified in code:
 - **Restore overwrites variables the engine set before it.** Anything the engine writes into a story
   at open (identity variables, `email_*`) is written **after** `restoreNPCState` and after
   `syncGlobalVariablesToStory`, in every loader.
-- **Influence tags today** (detail in §8): `#influence:N` sets the stored behaviour score absolutely
-  and is handled in person-chat only (`person-chat-conversation.js` `processTags`, calling
-  `npcGameBridge.setNPCInfluence`); `#influence_gained:N` / `#influence_lost:N` and the `rapport_` /
-  `respect_` / `friendship_` variants dispatch an `npc-influence-change` event that nothing listens
-  for; `#influence_increased` / `#influence_decreased` (`chat-helpers.js`) show only the
-  `+ Influence: <name>` / `- Influence: <name>` popup. None of the toast tags changes a stored score.
-  Phone-chat runs the shared processor (`phone-chat-minigame.js`, which also sets
-  `window.currentConversationNPCId`), so it shows the two popup tags; it does not handle
-  `#influence:N`, `_gained` or `_lost`.
+- **Influence tags today** (detail in §8): the live engine handles no influence-value tag. Both chats
+  run their tags through `processGameActionTags` in `chat-helpers.js`, which has no case for
+  `#influence:N`, `#influence_gained:N`, `#influence_lost:N` or the `rapport_` / `respect_` /
+  `friendship_` variants; those tags are ignored. `#influence_increased` / `#influence_decreased` show
+  only the `+ Influence: <name>` / `- Influence: <name>` popup, and `#hostile` is what turns an NPC
+  hostile (m01 Derek). The dispatcher for `npc-influence-change` and the `setNPCInfluence` call sit in
+  `person-chat-conversation.js`, which nothing loads. The legacy `-50` auto-hostile path exists in
+  `npc-behavior.js` and `npc-game-bridge.js`, but nothing feeds it from ink. Phone-chat's
+  `phone-chat-minigame.js` also sets `window.currentConversationNPCId`.
 - **Ink `DONE` ends a story run.** A mail-channel story is headless and only ever runs from
   `on_email`, so ending there with `-> DONE` is fine. A person or phone story still ends in its hub
   (the authoring guide's rule against ending in `DONE`).
@@ -688,6 +691,10 @@ Every factor must be authorable. The target schema includes, beyond 04's core fi
   expectedAttachment: "spreadsheet", trusts: ["baker"] }` — the values the judge compares (§10
   "Judging by slot"). `trusts` ids are `social.people` ids (cast, `portal` and other senders), or `"*"`.
   Lord's is `minDistinct: 2` (the portal name and the payslip date) with `trusts: ["portal"]`.
+  A **closed target** is one whose `primedFor.trusts` is not `["*"]` (it trusts named senders only).
+  The template-choice rule (§10, §13) applies in full to a closed target; an open-inbox target such as
+  Hampshire still offers at least two pretext templates, but need not offer a wrong-for-her one if every
+  pretext suits an open inbox.
 - `boostIfGlobal` / `strictIfGlobal` — optional hooks so an earlier call (`06`) changes how a later
   phish lands: `boostIfGlobal: {"reset_granted_pierce": "pretextRelevant"}` relaxes a factor when a
   global is set; `strictIfGlobal: {"helpdesk_alerted": "senderTrust"}` tightens one when the mark
@@ -733,10 +740,10 @@ influence going down.
 | Ink stories track a `VAR influence` and adjust it (`~ influence += 2`) | m01 Maya, Sarah, Kevin; m02 ward nurse and security guard; `scenarios/ink/influence-demo.ink`. The tag after each `+=` is the authoring-guide convention |
 | Ink stories track a prefixed **scenario global** instead | m02 `gary_influence`, `bernie_influence`; m03 `victoria_influence`; m04 `vance_trust_level` ("synced scenario global, also raised face to face") |
 | Toast tags `#influence_increased` / `#influence_decreased` | `chat-helpers.js`: popup with the NPC's display name, no value, no reason |
-| Toast tags `#influence_gained:N` / `#influence_lost:N`, `#rapport_*`, `#respect_*`, `#friendship_*` | `person-chat-conversation.js`: dispatch `npc-influence-change`. **Nothing listens for it**, so no toast shows today. Used about 440 times in shipped ink; harmless |
-| Absolute set `#influence:N` | person-chat only → `npcGameBridge.setNPCInfluence`, which works only for sprite NPCs (behaviours exist only for sprites: `core/game.js`, `core/rooms.js`). m01 Derek (`#hostile` plus `#influence:-100`) depends on it flipping the NPC to combat |
-| Auto-hostile | `npc-game-bridge.js` and `npc-behavior.js` (`setInfluence`): combat-hostile when influence drops strictly **below** `behavior.config.hostile.influenceThreshold`, default `-50` (`|| -50`, so an authored `0` becomes `-50`). m02 guards can pass -50 through ink arithmetic alone |
-| A bar above an NPC | `systems/npc-health-bar.js`: a Phaser world-space graphic drawn from hostile HP only. It cannot draw in the DOM overlays and shares nothing but colour constants |
+| Toast tags `#influence_gained:N` / `#influence_lost:N`, `#rapport_*`, `#respect_*`, `#friendship_*` | **Not handled by the live engine.** `processGameActionTags` (`chat-helpers.js`) has no case for them, so they are ignored; the only code that dispatches `npc-influence-change` is in `person-chat-conversation.js`, which nothing imports, and nothing listens for the event. Used about 440 times in shipped ink; harmless |
+| Absolute set `#influence:N` | **Not handled by the live engine** (no case in `processGameActionTags`); `npcGameBridge.setNPCInfluence` has no live caller. m01 Derek turns hostile because of the `#hostile` tag on the line above his `#influence:-100` (`m01_derek_confrontation.ink`), not because of the influence tag |
+| Auto-hostile | `npc-game-bridge.js` and `npc-behavior.js` (`setInfluence`): combat-hostile when influence drops strictly **below** `behavior.config.hostile.influenceThreshold`, default `-50` (`|| -50`, so an authored `0` becomes `-50`). The path exists, but nothing feeds it from ink today: a local ink `VAR influence` is never mirrored into behaviour state, so m02 guards are not turned hostile by ink arithmetic |
+| A bar above an NPC | `ui/npc-health-bars.js` (`NPCHealthBars`, created in `core/game.js` at about line 1679, updated every frame at about line 2164): a Phaser world-space graphic drawn from hostile HP only. It cannot draw in the DOM overlays and shares nothing but colour constants. (`systems/npc-health-bar.js` is not loaded) |
 | Global↔ink sync | `NpcConversationStateManager` (see §9): declared globals sync both ways, name-keyed |
 
 ### The design
@@ -834,8 +841,9 @@ Threshold fields:
   `#report:<reason>`. Influence is **not** changed by a forced report. The validator requires every
   character that has call data in `social.pretextNpcs` to have a threshold with id `reports`.
 - **Existing missions are unchanged.** None of this applies to an NPC that has no `social.characters`
-  entry. The legacy `#influence:N`, `#hostile` and the `-50` auto-hostile default stay exactly as they
-  are (m01 Derek still fights; m02 guards are not turned hostile by ink arithmetic). The engine does
+  entry. The legacy tags, `#hostile` and the `-50` auto-hostile default stay exactly as they
+  are (m01 Derek still turns hostile through `#hostile`; m02 guards are not turned hostile by ink
+  arithmetic). The new influence-tag handling applies to social characters only (S5). The engine does
   not mirror any ink `influence` into the behaviour state, and a character that wants a sprite NPC's
   behaviour state kept equal sets `"mirrorToBehavior": true`.
 - **Lockout is not combat, and it persists in globals.** A `lockout` effect writes two declared
@@ -878,8 +886,7 @@ Threshold fields:
 
 ### Characters of the student lab
 
-Every character the student can contact has a `social.characters` entry. Failed mail sends cost 10
-points each (04), so the two mail-only targets cannot be locked out of the only route to them.
+Every character the student can contact has a `social.characters` entry. A failed mail send costs 10 points and a landing adds 10 (a rule stated in `04`, applied by the lab's `pierce_mail` and `lord_mail`; sketch in §10), so the two mail-only targets cannot be locked out of the only route to them.
 Hampshire is a data-only target with no character entry, so she has no influence and pays nothing;
 her `emailReplyDelay` is authored on her target (15, like the other two).
 
@@ -938,8 +945,8 @@ updates on `global_variable_changed:<influence global>` and on `npc_influence_ch
 written from ink alone moves the bar. Per-change reasons show only when the event carries one. The
 number is always printed beside the bar, in training and assessment alike, so the player can see how
 far a line moved it and avoid pushing it too low. The bar is also shown on the character's world
-sprite (S13) once its value has first changed, so the player sees the effect of an email or a call
-from across the room. There is one bar per character. A second social meter would be added only if
+sprite (S13) whenever the value differs from the start value (it hides again if the value returns to the
+start), so the player sees the effect of an email or a call from across the room. There is one bar per character. A second social meter would be added only if
 research supports it and the player would understand it at once. A character with no `social.characters`
 entry shows no bar.
 
@@ -965,13 +972,16 @@ which has no id, keys on its ordinal among the `se_influence` calls of that turn
 returns the stored result without writing again. The same id used on two different turns, such as a
 sticky "ring back later", runs both times. Dry runs bind the no-op versions (S1).
 
-### Influence tags outside person-chat
+### Influence tags (new work in the shared tag processor)
 
-For social characters only, the shared tag processor (`chat-helpers.js` `processGameActionTags`) also
-handles `#influence_gained:N[:reason]` and `#influence_lost:N[:reason]` and routes them to the write
-path (S5), so the tags work in phone-chat and the mail runner as well as person-chat. For every other
-NPC the existing tags keep their behaviour exactly (a popup, or nothing). The `npc-influence-change`
-event gets a listener that does the same routing for social characters.
+None of these tags does anything in the live engine today (§6, the table above). For social characters
+only, the shared tag processor (`chat-helpers.js` `processGameActionTags`, the processor both chats and
+the mail runner use) gains cases for `#influence:N`, `#influence_gained:N[:reason]`,
+`#influence_lost:N[:reason]` and `#report:<reason>`, and routes them to the write path (S5). It is one
+implementation, so person-chat, phone-chat and the mail runner behave the same. For every other NPC
+the existing tags keep their behaviour exactly (a popup, or nothing). Nothing is added to
+`person-chat-conversation.js` or to the `npc-influence-change` event, which the live engine never
+dispatches.
 
 ---
 
@@ -1007,7 +1017,7 @@ The mechanism exists and is name-keyed (`systems/npc-conversation-state.js`):
 | Declare | `setDeclaredGlobals(Object.keys(gameScenario.globalVariables))`, called in `core/game.js` at load | A name is a synced global if it is declared there, or prefixed `global_` (`isGlobalVariable`) |
 | Into a story | `syncGlobalVariablesToStory(story)` | Copies every declared global that the story also declares as a `VAR`. A story that does not declare it is skipped. Runs on every open, after `restoreNPCState` |
 | Out of a story | `observeGlobalVariableChanges` and `syncGlobalVariablesFromStory` | On an ink assignment: writes `gameState.globalVariables`, calls `broadcastGlobalVariableChange` to every other cached story, emits `global_variable_changed:<name>`. Read-only (imported) globals are reverted |
-| Between stories | `broadcastGlobalVariableChange(name, value, sourceNpcId)` | Pushes to every story in `npcManager.inkEngineCache` that declares the name; the source is skipped to avoid a loop |
+| Between stories | `broadcastGlobalVariableChange(name, value, sourceNpcId)` | Pushes to every story in `npcManager.inkEngineCache` that declares the name; the source is skipped to avoid a loop. The live chat minigames build private `InkEngine`s that are **not** in that cache (`inkEngineCache` is filled by `npc-manager.js` `getInkEngine` and the bark path only), so a broadcast never reaches the story of a conversation that is open; S3 adds an explicit write to it |
 | Persist | `game.rb` `merge_global_variables!` | Saves every key the client sends (minus imported ones) on the 30 s sync and on `pagehide`; restored by `core/game.js` |
 
 So two stories that both declare `VAR priya_influence`, with the global declared, already stay equal
@@ -1141,8 +1151,8 @@ manager, [name]". The rules:
 **How much choice a target offers.** A target offers two to four templates for its pretext part and for any
 other part where the player has a real choice (a forced From or a single greeting may offer one), with at most two
 blanks in any one template. The set is built from credible phishing, not from one right answer. Next to
-the templates that fit the target sit one or two plausible ones that do not (a generic IT notice for a
-finance officer, a prize draw for a payroll intern), so a send is not guaranteed to land and the player
+the templates that fit the target sit one or two plausible ones that do not (a supplier invoice for a
+finance officer who does not handle payables, a password-expiry notice for an intern waiting on a payslip), so a send is not guaranteed to land and the player
 has to think about this person. Blanks offer only held facts, a stale one included (§1); the plausible
 wrong choice lives in the templates, never in invented values. When a send fails the target says why in
 character (the `email_*` variables below), and that reply is the player's feedback on what this person
@@ -1251,8 +1261,10 @@ There is no engine-level headless runner today. The one precedent,
 `PhoneChatConversation._preloadOpeningOnce`, runs only on an empty thread, observes no globals and
 defers tags and globals to first open. The mail runner needs the opposite, and is specified here:
 
-1. A fresh `InkEngine` per delivery (`systems/ink/ink-engine.js`), story loaded via
-   `npcManager.storyCache` / `getInkEngine`.
+1. Construct a separate `InkEngine` per delivery (`systems/ink/ink-engine.js`), with the story JSON taken
+   from `npcManager.storyCache` or the ink endpoint (the way `getInkEngine` fetches it). Do not call
+   `getInkEngine`: it returns the engine shared with barks when one is cached, and it needs
+   `getNPC(npcId)` to succeed (the headless record, S8).
 2. Restore the record's saved scalar variables (`applySavedInkVariables`, keyed by the record id), then,
    if `mailState.threads["<key>"]` holds a position, load it with `story.state.LoadJson(position)`.
    `restoreNPCState` is not used: it reads the in-memory `conversationStates` map keyed by NPC id.
@@ -1342,7 +1354,9 @@ not wait on a reply).
 lab's setting) or `"withReply"` (assessment). On send, `onSend` shows the checklist at once. `withReply`
 shows "Sent. Waiting for a reply" and reveals the checklist when the job runs, so the player reads the
 character's reaction first and then sees why. The reveal happens when the job completes, so a message
-the character ignores still gets its checklist. The sent record is written in both modes.
+the character ignores still gets its checklist. The sent record is written in both modes, but in `withReply` mode the Sent folder hides the judged
+"landed / did not land" line and the tells for a record whose job has not yet run (or whose reply has
+not arrived), so opening Sent straight after sending reveals nothing early; they appear with the checklist.
 
 Delivery does **not** reuse `timedMessages`. That machinery delivers fixed text to a phone thread: it
 needs a literal `text` at send time, ignores `targetKnot` for an NPC's own messages, treats `delay` as
@@ -1359,7 +1373,8 @@ A job has one of three kinds. An **ink job** is the record above (`character`, `
 `{ jobId, kind: "text", targetId, accountId, msgId, text, outcomeGlobal, remainingMs }`, where `text`
 is the target's authored `replies.landed` or the canonical fail line for the first failed factor (§2)
 and `outcomeGlobal` is the target's `outcome.setGlobal` key, set to true only when the message
-landed. Delivering a text job appends the reply to the mailbox of `accountId`, then sets the global
+landed. A data-only target that does not open the message (§2) gets no text job, and its `outcomeGlobal` stays
+false. Delivering a text job appends the reply to the mailbox of `accountId`, then sets the global
 through the shared writer. Both kinds use `emailReplyDelay` of the target (data-only targets may
 author it on the target). A **seed job** holds a seeded message waiting for its `deliverAt`:
 `{ jobId, kind: "seed", messageId, mailbox, remainingMs }`, or `global` in place of `remainingMs`;
@@ -1387,7 +1402,7 @@ message claims to be from**.
 ```jsonc
 "social": { "mailClient": {
   "accounts": [
-    { "id": "guest",    "address": "guest@workstation",               "displayName": "Operator",
+    { "id": "guest",    "address": "guest@workstation.example",       "displayName": "Operator",
       "kind": "given",   "person": null,      "mailbox": "guest",    "spoofsFrom": true },
     { "id": "freemail", "kind": "created",    "person": null,         "unlockedBy": "acct_freemail",
       "mailbox": "freemail", "spoofsFrom": false,
@@ -1669,7 +1684,7 @@ brand's `lookOf` name (`07` §1) may appear in its landing page's name and text,
 to that name in domain and address fields.
 
 **Pointers.** An object carries only a pointer in `minigameData`. One object type has one entry in
-`minigame-data-schemas.json`, and each new type needs a sprite `assets/objects/<type>.png` (the existing `phone` needs none):
+`minigame-data-schemas.json`, and each new type needs a sprite `assets/objects/<type>.png` and a `this.load.image` line in `core/game.js` `preload()` (the existing `phone` needs neither):
 
 | Object type | `minigameData` | Notes |
 |-------------|----------------|-------|
@@ -1832,23 +1847,23 @@ Items other docs depend on. Each has a code location. The consolidated cross-doc
 
 | # | Item | Where in code |
 |---|------|---------------|
-| S1 | Bind the social externals (`se_influence`, `pretext_say`, `pretext_ask`) once inside `InkEngine`, with no-op defaults (return 0) when no session is active. Every loader gets them, including the phone preload, the bark path and dry runs. Add stubs to the ink tooling | `systems/ink/ink-engine.js` (`bindExternalFunction`); loaders `person-chat-conversation.js`, `phone-chat-conversation.js` (`_preloadOpeningOnce`, `resolveEntryKnot`), `npc-manager.js` bark path; stubs in `scripts/ink_runtime_check/voicelines.mjs`, `inkcheck.js`, `reopencheck.mjs` |
+| S1 | Bind the social externals (`se_influence`, `pretext_say`, `pretext_ask`) once inside `InkEngine`, with no-op defaults (return 0) when no session is active. Every loader gets them, including the phone preload, the bark path and dry runs. Add stubs to the ink tooling | `systems/ink/ink-engine.js` (`bindExternalFunction`); loaders `phone-chat-conversation.js` (`setupExternalFunctions`, 128-170; `_preloadOpeningOnce`, `resolveEntryKnot`; used by both chats), `person-chat-minigame.js` and `phone-chat-minigame.js` (their `InkEngine`s), `npc-manager.js` bark path; stubs in `scripts/ink_runtime_check/voicelines.mjs`, `inkcheck.js`, `reopencheck.mjs` |
 | S2 | Display-name resolution prefers the conversation's own NPC on a tie | `npc-manager.js` speaker/name lookup |
-| S3 | A shared global writer: write `gameState.globalVariables`, `broadcastGlobalVariableChange`, emit `global_variable_changed`. The writer takes two options: `emitAlways`, and `deferEmit`, which writes and broadcasts the value but returns the pending `global_variable_changed` events to the caller instead of emitting them, so a caller can await `stateSync.sync()` and then emit (the triage starter, §11 "Sync, then emit"). `grantFact`, the social paths (influence, pretext, threshold effects, step globals) and the triage starter's result writes emit **only on a change** (a `deferEmit` call returns only the events for names whose value changed); `applyActions` `set_global` uses the writer with `emitAlways`, so it keeps emitting on every call exactly as today (about 20 shipped scenarios use `global_variable_changed` in `eventMappings` or tasks, and some may re-set a value to re-fire a mapping). The only new behaviour for `applyActions` is the broadcast to cached stories, which writes a value only into stories that already declare that variable. For a **social influence global** it also writes the value into the **calling story** (its `InkEngine`, via `setDeclaredVariable` with the observer detached, as `broadcastGlobalVariableChange` does) and writes the clamped value back to the source story when ink wrote out of range, so a later ink assignment starts from the engine's value. `stateSync` also gains `syncConfirmed()` (§11 "Sync, then emit"): `_syncOnce` returns `true` on a confirmed PUT and `false` on a network error or a `{ stale: true }` answer (today it logs and returns, so `sync()` resolves either way); `sync()` keeps its promise behaviour; `syncConfirmed()` loops `_syncOnce` with back-off until it returns `true`, calling an optional `onRetry` so the starter can show its notice. The stale branch must refresh its base before the retry, as `sync()` does today | `systems/apply-actions.js` `set_global`; `state-sync.js` (`sync`, `_syncOnce`, lines 290-326); `systems/npc-conversation-state.js` (`broadcastGlobalVariableChange`, observer); pattern in `objectives-manager.js`, `inventory.js` |
-| S4 | The influence bar: a new DOM component for person-chat, phone-chat, the mail pane and the board's influence section, reading the global and the thresholds. Not an extension of the world-space health bar | new; `person-chat-ui.js`, `phone-chat-ui.js`; not `npc-health-bar.js` |
-| S5 | The social influence service: the watcher on the influence global, the write path behind `se_influence` and the pretext functions (S3's calling-story write included), threshold effects and the latch, the forced `report(character, reason)` path (§8), the `npc_influence_changed` event, the listener for `npc-influence-change`, and the `#influence_gained/lost[:reason]` and `#report:<reason>` tags for social characters in the shared tag processor and in phone-chat. The idempotency ledger is scoped per run (§8) | new `systems/social-influence.js`; `chat-helpers.js` `processGameActionTags`; `phone-chat-conversation.js` `processTags`; `person-chat-conversation.js` |
+| S3 | A shared global writer: write `gameState.globalVariables`, `broadcastGlobalVariableChange`, emit `global_variable_changed`. The writer takes two options: `emitAlways`, and `deferEmit`, which writes and broadcasts the value but returns the pending `global_variable_changed` events to the caller instead of emitting them, so a caller can await `stateSync.syncConfirmed()` and then emit (the triage starter, §11 "Sync, then emit"). `grantFact`, the social paths (influence, pretext, threshold effects, step globals) and the triage starter's result writes emit **only on a change** (a `deferEmit` call returns only the events for names whose value changed); `applyActions` `set_global` uses the writer with `emitAlways`, so it keeps emitting on every call exactly as today (about 20 shipped scenarios use `global_variable_changed` in `eventMappings` or tasks, and some may re-set a value to re-fire a mapping). The only new behaviour for `applyActions` is the broadcast to cached stories, which writes a value only into stories that already declare that variable. For **every global it changes** the writer also writes the value into the **calling story** (its `InkEngine`, via `setDeclaredVariable` with the observer detached, as `broadcastGlobalVariableChange` does) if that story declares the variable, and writes the clamped value back to the source story when ink wrote out of range, so a later ink assignment starts from the engine's value. This covers influence globals, `grants.intel` facts, `pretext_call_done`, band flags and `dev_reported`: the live chat minigames' engines are not in `inkEngineCache`, so the broadcast alone would leave an open conversation blind to a mid-call write. The binding passes the open conversation's engine to the writer, as the mail runner passes its own. `stateSync` also gains `syncConfirmed()` (§11 "Sync, then emit"): `_syncOnce` returns `true` on a confirmed PUT and also when `buildChanges()` is null (nothing left to send counts as confirmed), and `false` on a network error or a `{ stale: true }` answer (today it logs and returns `undefined`, so `sync()` resolves either way, and its stale branch only logs; nothing is refreshed). `sync()` keeps its promise behaviour. `syncConfirmed()` goes through the same single-flight queue as `sync()` (it never runs beside the 30 s timer's sync) and repeats the attempt with back-off until it gets `true`, calling an optional `onRetry` so the starter can show its notice. Each retry re-issues the changes with a fresh `clientTs` (`nextClientTs()` always issues a larger one), which is how a `{ stale: true }` answer clears | `systems/apply-actions.js` `set_global`; `state-sync.js` (`sync`, `_syncOnce`, lines 286-326); `systems/npc-conversation-state.js` (`broadcastGlobalVariableChange`, observer); pattern in `objectives-manager.js`, `inventory.js` |
+| S4 | The influence bar: a new DOM component for person-chat, phone-chat, the mail pane and the board's influence section, reading the global and the thresholds. Not an extension of the world-space health bar | new; `person-chat-ui.js`, `phone-chat-ui.js`; not `ui/npc-health-bars.js` |
+| S5 | The social influence service: the watcher on the influence global, the write path behind `se_influence` and the pretext functions (S3's calling-story write included), threshold effects and the latch, the forced `report(character, reason)` path (§8), the `npc_influence_changed` event, and the `#influence:N`, `#influence_gained/lost[:reason]` and `#report:<reason>` tags for social characters, handled once in the shared tag processor that both chats and the mail runner use. The idempotency ledger is scoped per run (§8) | new `systems/social-influence.js`; `chat-helpers.js` `processGameActionTags` (the live processor: `person-chat-conversation.js` is not loaded and is not edited); `phone-chat-conversation.js` (used by both chats); `person-chat-minigame.js`, `phone-chat-minigame.js` |
 | S6 | The mail runner (§10), doing the loader's sync steps in order, with a fresh idempotency ledger per run | new; modelled on `phone-chat-conversation.js` `_preloadOpeningOnce` |
 | S7 | Exclude the `email_` prefix from `recordInkVariables` / `exportNpcInkVariables`; set engine-written variables after restore and sync in every loader | `systems/npc-conversation-state.js`; `person-chat-minigame.js` (restore then sync), `phone-chat-minigame.js` |
 | S8 | Register headless email records at game start from `social.characters.*.emailRecord` and make every lookup that today searches only `rooms.*.npcs` search them too: the client registration, the ink endpoint, `find_npc_in_scenario`, which `game.rb` defines twice (645 and 1281; Ruby keeps the later one, so keep one and make it the helper), the NPC item validation behind `#give_item`, `scenario_npc_ids` (`game.rb` 1817), and the validator's phone checks (`validate_scenario.rb` 2345-2350 for the `phoneId` check, 2353-2355 for the required phone `storyPath` and 676-680 (`ink_files_to_check`) where story files are collected for compile, which must include the headless records; the KO check at 1110 and the "phone NPCs setting global variables" check at 2583 iterate `room['npcs']`, so they need the same helper). Prefer one helper (`scenario_npc_records`) that returns room NPCs plus headless records | `systems/npc-lazy-loader.js`; `core/game.js` start-room registration; `games_controller.rb` ink lookup (1966-1984); `app/models/break_escape/game.rb`; `scripts/validate_scenario.rb` |
-| S9 | Mail scheduler, `mailState` persistence (§10a), notification and the message-list renderer | `npc-manager.js` tick loop; `state-sync.js` `buildPlayerSections`, `KEYED_SECTIONS` (`mailState` is a keyed section, §10a), `confirm()`, `flush()` (`mailState` placed immediately after `globalVariables` in the first reduced list); job change detection compares job ids and `accountId`/`msgId` only, as `timedMessages` diffs its `pending` ids (state-sync.js:232-249), because `remainingMs` counts down every tick and would otherwise make `jobs` changed on every sync; `remainingMs` rides along with any other change; `games_controller.rb` `merge_last_write_wins_sections`, bootstrap; `game.rb` `merge_phone_state!` as the model; `core/game.js` restore |
+| S9 | Mail scheduler, `mailState` persistence (§10a), notification and the message-list renderer | `npc-manager.js` tick loop; `state-sync.js` `buildPlayerSections`, `KEYED_SECTIONS` (`mailState` is a keyed section, §10a), `confirm()`, `flush()` (`mailState` placed immediately after `globalVariables` in the first reduced list); job change detection compares job ids and `accountId`/`msgId` only, as `timedMessages` diffs its `pending` ids (state-sync.js:218-227), because `remainingMs` counts down every tick and would otherwise make `jobs` changed on every sync; `remainingMs` rides along with any other change; `games_controller.rb` `merge_last_write_wins_sections`, bootstrap; `game.rb` `merge_phone_state!` as the model; `core/game.js` restore |
 | S10 | The lockout: stored in the declared globals `<character>_lockout_until` and `<character>_lockout_channel` (§8), so it rides `globalVariables` persistence and needs no server section. The check on person-chat, phone-chat, mail and the `callId` starter (refuse before `pretext-prep` opens, so a locked-out student never fills in a pretext card first), and the lift (which writes `recoverTo` silently, clears the latch and the band flags) | `systems/interactions.js` NPC sprite branch and the `phone` `callId` branch; `systems/social-influence.js`; `phone-chat` and mail entry points |
-| S11 | Validator, schema and CI. **Lints:** the top-level `social` key; the `social.characters` lints (synced vars declared, `VAR`s match, lockout has an expiry or a route, thresholds ordered, `recoverTo >= highest effect threshold at + rearmMargin`, `clearOnRearm` only on booleans, a `reports` threshold on any character with call data); **declared globals:** for every character `<character>_influence` and `<character>_latched`, the band-flag and report globals, both lockout globals for a character with a `lockout` effect, and every `setGlobal` effect target are declared in `globalVariables` and are not imported (an undeclared name is silently not synced to ink, `npc-conversation-state.js:362-372`); the `se_intel_*` and `se_report_state` declarations; template/slot checks; `on_email` and `email_*` VAR checks; contact and readiness consistency (§11); the brand/host lint over exactly the **lint field list** in §11; `minigame-data-schemas.json` entries; no `intel_*` rule applied to other missions. **Exit behaviour (accurate today):** the validator exits 1 on a structure error (`validate_scenario.rb:4928`), an ink compile error (`:4964`, skipped by `--skip-ink`), a schema error (`:5081`), and on bad arguments or a missing file (`:4858`, `:4880`); every finding from the `check_*` functions is printed and the run exits 0. A **social-lint mode**, `--strict-social`, makes it exit 1 on any social lint error as well. **CI job** (one job, both runtimes): `ruby/setup-ruby` with the repo's Ruby version, `bundler-cache` and `BUNDLE_BUILD__SQLITE3: "--enable-system-libraries"` in the step env, preceded by the same `apt-get install sqlite3 libsqlite3-dev` step the existing `lint` and `test` jobs use (copy from `ci.yml`); `actions/setup-node` (Node 20, matching the `jsdom` release chosen in `07` N3); `npm ci`. **`package-lock.json`:** it is gitignored (`.gitignore:43`) and untracked, so `npm ci` has nothing to read on a fresh checkout; this item removes that `.gitignore` line, regenerates the lockfile after adding `jsdom`, and commits it (`npm install` in CI is not reproducible and is not used). Then the Node tests **under Bundler**: `bundle exec node --test test/js/validator-*.test.mjs test/js/social-*.test.mjs`. `bundle exec` puts Bundler's `RUBYOPT` in the environment of the plain `ruby` that each validator test spawns, so that child can load `json-schema`; without it every validator test would fail. The tests fail, not skip, under CI when Ruby or the gem is missing. Every test of a social module is named `test/js/social-<module>.test.mjs` so the glob runs it: the pure-module unit tests `social-phish-rules` (`04`), `social-triage-scoring` (`05` N4), `social-pretext-judge` (`06` N1) and `social-intel` (`02` N2), and the safety tests `social-landing-page-model` (scorer and `betterVictim`, `07` N2), `social-landing-page-render` (renderer DOM safety, `07` N3), `social-landing-page-guard` (runtime guard, `07` N6b) and `social-osint-address-bar` (address-bar formatter, `02` N9); `package.json` gains a `test:social` script with the same file list. **No test runs the validator CLI in a way that rewrites tracked files:** tests call the lint functions in-process through `ruby -e 'require validate_scenario.rb'` (as `test/js/validator-carry-over.test.mjs:13-23` does) or pass `--no-graph --skip-ink`, never the bare command line. Then a loop of `bundle exec` validator runs over **only the scenarios that carry a `social` key** with `--strict-social --no-graph --skip-ink`, then `git diff --exit-code` to prove no tracked file was rewritten (`--skip-ink` stops inklecate writing compiled `ink/*.json` beside the sources; because it also skips `check_ink_files`, the social ink lints parse the `.ink` text directly and do not read compiled output). The landing-page lint tests the **hostname only** for the `.example` suffix, runs the allowlist on the **raw labels first**, then folds and matches the denylist (§11); it also checks that each page has at least one `targets` key (exactly one in the lab) | `scripts/validate_scenario.rb` `known_top_level` and the `npcType` branches; `scripts/scenario-schema.json`; `scripts/minigame-data-schemas.json`; `scripts/ink_runtime_check/`; `.github/workflows/ci.yml`; `.gitignore`; `package.json` |
+| S11 | Validator, schema and CI. **Lints:** the top-level `social` key; the `social.characters` lints (synced vars declared, `VAR`s match, lockout has an expiry or a route, thresholds ordered, `recoverTo >= highest effect threshold at + rearmMargin`, `clearOnRearm` only on booleans, a `reports` threshold on any character with call data); **declared globals:** for every character `<character>_influence` and `<character>_latched`, the band-flag and report globals, both lockout globals for a character with a `lockout` effect, and every `setGlobal` effect target are declared in `globalVariables` and are not imported (an undeclared name is silently not synced to ink, `npc-conversation-state.js:362-372`); the `se_intel_*` and `se_report_state` declarations; template/slot checks; `on_email` and `email_*` VAR checks; contact and readiness consistency (§11); the mail-client checks owned by `01` N18 (account, device, mailbox, highlight and `deliverAt` data); the brand/host lint over exactly the **lint field list** in §11; `minigame-data-schemas.json` entries; no `intel_*` rule applied to other missions. **Exit behaviour (accurate today):** the validator exits 1 on a structure error (`validate_scenario.rb:4928`), an ink compile error (`:4964`, skipped by `--skip-ink`), a schema error (`:5081`), and on bad arguments or a missing file (`:4858`, `:4880`); every finding from the `check_*` functions is printed and the run exits 0. A **social-lint mode**, `--strict-social`, makes it exit 1 on any social lint error as well. **CI job** (one job, both runtimes): `ruby/setup-ruby` with the repo's Ruby version, `bundler-cache` and `BUNDLE_BUILD__SQLITE3: "--enable-system-libraries"` in the step env, preceded by the same `apt-get install sqlite3 libsqlite3-dev` step the existing `lint` and `test` jobs use (copy from `ci.yml`); `actions/setup-node` (Node 20, matching the `jsdom` release chosen in `07` N3); `npm ci`. **`package-lock.json`:** it is gitignored (`.gitignore:43`) and untracked, so `npm ci` has nothing to read on a fresh checkout; this item removes that `.gitignore` line, regenerates the lockfile after adding `jsdom`, and commits it (`npm install` in CI is not reproducible and is not used). Then the Node tests **under Bundler**: `bundle exec node --test test/js/validator-*.test.mjs test/js/social-*.test.mjs`. `bundle exec` puts Bundler's `RUBYOPT` in the environment of the plain `ruby` that each validator test spawns, so that child can load `json-schema`; without it every validator test would fail. The tests fail, not skip, under CI when Ruby or the gem is missing. Every test of a social module is named `test/js/social-<module>.test.mjs` so the glob runs it: the pure-module unit tests `social-phish-rules` (`04`), `social-triage-scoring` (`05` N4), `social-pretext-judge` (`06` N1) and `social-intel` (`02` N2), and the safety tests `social-landing-page-model` (scorer and `betterVictim`, `07` N2), `social-landing-page-render` (renderer DOM safety, `07` N3), `social-landing-page-guard` (runtime guard, `07` N6b) and `social-osint-address-bar` (address-bar formatter, `02` N9); `package.json` gains a `test:social` script with the same file list. **No test runs the validator CLI in a way that rewrites tracked files:** tests call the lint functions in-process through `ruby -e 'require validate_scenario.rb'` (as `test/js/validator-carry-over.test.mjs:13-23` does) or pass `--no-graph --skip-ink`, never the bare command line. Then a loop of `bundle exec` validator runs over **only the scenarios that carry a `social` key** with `--strict-social --no-graph --skip-ink`, then `git diff --exit-code` to prove no tracked file was rewritten (`--skip-ink` stops inklecate writing compiled `ink/*.json` beside the sources; because it also skips `check_ink_files`, the social ink lints parse the `.ink` text directly and do not read compiled output). The landing-page lint tests the **hostname only** for the `.example` suffix, runs the allowlist on the **raw labels first**, then folds and matches the denylist (§11); it also checks that each page has at least one `targets` key (exactly one in the lab) | `scripts/validate_scenario.rb` `known_top_level` and the `npcType` branches; `scripts/scenario-schema.json`; `scripts/minigame-data-schemas.json`; `scripts/ink_runtime_check/`; `.github/workflows/ci.yml`; `.gitignore`; `package.json` |
 | S12 | **Return to.** `startMinigame(scene, container, { returnTo: { sceneType, params }, ... })`: `endMinigame` calls `returnTo` after `onComplete`, on a normal exit only. A parent that launches a child sets `suspended: true` in its params so its `onComplete` ignores the `onComplete(false, null)` that `startMinigame` fires when it ends the running minigame. The launcher passes the child's required parameters in the call. The parent saves its draft first (mail: `mailState.drafts`; OSINT and board: their `se_*_state` globals) | `minigames/framework/minigame-manager.js` (`startMinigame`, `endMinigame`); `base-minigame.js` |
-| S13 | **World influence pip.** A small bar above a character's sprite, drawn once the character's influence has first moved off its start value and redrawn on `npc_influence_changed`. It reads the same global and thresholds as S4 and is skipped for characters with no sprite and no `social.characters` entry. It is a sibling of the combat health bar and is replaced by it if `combatHostile` fires | new `ui/npc-influence-pips.js`, modelled on `ui/npc-health-bars.js` (Phaser graphics at `overlayDepth(sprite.depth + 1)`, theme colours from `ui/theme-colours.js`), created beside `window.npcHealthBars` in `core/game.js` (about line 1679) |
-| S14 | **Mail devices and found mail.** `mail_terminal` joins `PICKUP_THEN_INTERACT_TYPES` so a takeable one is picked up and then opened from inventory; per-device `accountIds` and per-contact `accountIds`; mailbox history from seeded messages with `folder` `inbox` or `sent`; message `highlights` that call `grantFact` or the notes API; `emailKnots`; the open check in the mail bridge; the mail runner's handling of `#compose_reply:<targetId>` and `#mail_later:<seconds>:<knot>`; job kinds `seed` and a `choice` field on ink jobs; `deliverAt` | `systems/interactions.js` (the set at about line 776 and the `mail_terminal` branch); `minigames/mail-client/` (new); the mail runner (S6); `systems/social-intel.js` (`grantFact`); `window.addNote` in `notes-minigame.js` |
+| S13 | **World influence pip.** A small bar above a character's sprite, drawn while the character's influence differs from its start value (it hides again if the value returns to the start) and redrawn on `npc_influence_changed`. It reads the same global and thresholds as S4 and is skipped for characters with no sprite and no `social.characters` entry. It is a sibling of the combat health bar and is replaced by it if `combatHostile` fires | new `ui/npc-influence-pips.js`, modelled on `ui/npc-health-bars.js` (Phaser graphics at the health bar's fixed `overlayDepth(850)`, or at sprite depth + 1 if the pip must sort with its sprite; theme colours from `ui/theme-colours.js`). The health bars follow their sprites because `core/game.js` calls `window.npcHealthBars.update()` every frame (about line 2164), so the pip needs the same: create it beside `window.npcHealthBars` (about line 1679) and call its `update()` beside line 2164 |
+| S14 | **Mail devices and found mail.** `mail_terminal` joins `PICKUP_THEN_INTERACT_TYPES` so a takeable one is picked up and then opened from inventory. The `mail_terminal` branch sits **after** the generic lock check (`data.locked === true`, about line 1340, alongside the `phone` branch at about 1355), so a locked terminal asks to be unlocked first. The pickup block (about 776-784) runs `addToInventory` and re-enters `handleObjectInteraction` with no lock test, so a takeable device with `locked: true` must not be auto-picked-up and opened by it until it is unlocked; confirm the server-side unlock endpoint also accepts a takeable item (it validates by object id); per-device `accountIds` and per-contact `accountIds`; mailbox history from seeded messages with `folder` `inbox` or `sent`; message `highlights` that call `grantFact` or the notes API; `emailKnots`; the open check in the mail bridge; the mail runner's handling of `#compose_reply:<targetId>` and `#mail_later:<seconds>:<knot>`; job kinds `seed` and a `choice` field on ink jobs; `deliverAt` | `systems/interactions.js` (the set at about line 776 and the `mail_terminal` branch); `minigames/mail-client/` (new); the mail runner (S6); `systems/social-intel.js` (`grantFact`); `window.addNote` in `notes-minigame.js` |
 
-Back-compat checklist for any of these changes: `applyActions` `set_global` still emits `global_variable_changed` on every call, same value or not (audit the shipped scenarios that map on it); m01 Derek (`#hostile` plus `#influence:-100`) still
-fights; m02 guards and ward nurse are not turned hostile by ink arithmetic; m04 Vance and m05
+Back-compat checklist for any of these changes: `applyActions` `set_global` still emits `global_variable_changed` on every call, same value or not (audit the shipped scenarios that map on it); m01 Derek (`#hostile`, then `#influence:-100`) still
+turns hostile through `#hostile`; m02 guards and ward nurse are not turned hostile by ink arithmetic; m04 Vance and m05
 Patricia pairs need no change; `neye-eve.json` is untouched; a story with none of the new externals
 or variables loads with no warning; a story that declares the new externals loads from the phone
 preload, the bark path and a dry run.
@@ -1885,7 +1900,7 @@ lists the triage sizes and the domain ids.
 | Mode completion | block `onCompleteGlobal`, optional step globals (names in §11) | 11 |
 | Readiness globals | `target_ready_<id>`, `osint_done`, set by `evaluateReadiness` from `grantFact` | 11, 4 |
 | Reply-delay unit and value | `emailReplyDelay` in seconds of wall-clock countdown; 15 for Pierce, Lord and Hampshire | 8, 10 |
-| Sender-auth policy | `senderAuth: { domainPublishesAuth, spoofAligns, dmarcPolicy: none \| quarantine \| reject }`; Pierce's `factorStrings.senderAuth` carries the `p=none` line; Hampshire authors the `pass` side, Lord uses the derived sentence, and any factor a target leaves out uses the §2 canonical string | 2, 7 |
+| Sender-auth policy | `senderAuth: { domainPublishesAuth, spoofAligns, dmarcPolicy: none \| quarantine \| reject }`; Pierce's `factorStrings.senderAuth` carries the `p=none` line; Hampshire authors the `pass` side only (the `fail` side is unreachable for her), Lord uses the derived sentence, and any factor a target leaves out uses the §2 canonical string | 2, 7 |
 | Missing evidence | an empty blank (or a missing `requiresIntelToAttempt` fact) blocks Send; neutral line "A blank needs evidence you haven't found yet" (defined in `04`) | 10 |
 | Band flags | `setGlobal` boolean with `clearOnRearm: true`, recomputed on every influence change, cleared at `at + rearmMargin` or above; ink branches on the returned band | 8 |
 | `recoverTo` rule | `recoverTo >= A + rearmMargin` (character's `influence.rearmMargin`, default 10), `A` = highest `at` among `"below"` thresholds with effects (`"above"` thresholds excluded); Dev and Priya -30 | 8 |
@@ -1906,7 +1921,7 @@ lists the triage sizes and the domain ids.
 | Band numbers | by threshold id: `wary` 1, `refuses` 2, `reports` 3, `lockout` 4, else 0 | 8 |
 | Builder targets | the builder launches only for a target in the page's `targets` map (one in the lab) | 11a |
 | `applyActions` emit | `set_global` keeps emitting on every call; change-only emission is for `grantFact` and the social paths | S3 |
-| Check and episode shells | a host NPC completes the tasks; the starter writes with `deferEmit`, awaits `stateSync.sync()`, then emits the changed events and its done event (S3, `05` N6); every episode shell has an aim | 11, S3 |
+| Check and episode shells | a host NPC completes the tasks; the starter writes with `deferEmit`, awaits `stateSync.syncConfirmed()` (retrying until the server confirms), then emits the changed events and its done event (S3, `05` N6); every episode shell has an aim | 11, S3 |
 | `mailState` flush | keyed section; sent in the `pagehide` flush only while it fits the 60 KB budget (after `globalVariables` in the first fallback); delivery-then-close within 30 s guaranteed only for a small `mailState` | 10a |
 | Awareness reply delay | 5 to 8 seconds on an episode's attack target (lab 15) | 10 |
 | Hampshire `senderAuth` pass line | account-neutral: "Sent as your own address, so there is nothing to spoof and nothing to fail." | 2 |
@@ -1919,10 +1934,12 @@ lists the triage sizes and the domain ids.
 | Forced From | template `from_own`, `headerFrom: { account: true }` | 10, 10a |
 | Open check | a gate beside the seven factors: opens if `senderTrust` passes or the chosen subject's `topic` is in `interests.topics`; `EvalResult.open { opened, via, subjectTopic }`; `landed` needs it; ink variables `email_opened`, `email_open_via`, `email_subject_topic`; row text from `factorStrings.open` | 2, 3, 7, 10 |
 | Subject | chosen from `subjects[{ id, text, topic }]`; the wording is not judged; the topic feeds only the open check; every list has one topic the target does not open | 7 |
-| Template choice | two to four templates in the pretext part and wherever the player has a real choice, at most two blanks per template, at least one credible but wrong pretext template for a closed target; blanks offer held facts only | 10 |
+| Template choice | two to four templates in the pretext part and wherever the player has a real choice, at most two blanks per template, at least one credible but wrong pretext template for a closed target (`primedFor.trusts` not `["*"]`, §7); an open-inbox target still offers at least two pretext templates; blanks offer held facts only | 10 |
 | Reply controls | a thread shows either "Choose a reply" (ink options, unscored) or "Write your reply. This one is judged" (`#compose_reply:<targetId>`), never both; `mailState.threads[key].expects` | 10 |
 | One reply, chasers | one reply per send; at most one pending chaser per thread (`#mail_later:<seconds>:<knot>`); timed mail by `deliverAt` on a seeded message | 10 |
 | Checklist timing | `mailClient.checklistTiming`: `onSend` (training, the lab) or `withReply` (assessment); revealed when the job completes | 10 |
 | Mailboxes and devices | no single inbox: a device offers only its `accountIds`; a found account on a found device reads that character's seeded history and replies as them; takeable `mail_terminal` works from inventory; highlights grant a fact or go to the notepad; no reply-to slot | 10a |
 | Influence number | always printed beside the bar, in both modes; the bar also shows on the world sprite once the value has changed (S13); one bar per character | 8 |
 | No generated text | no language model anywhere in the game; free text is unscored and unread | 7 |
+| Free text in dialogue and mail | none in this build (the first slice); a scenario that allows a free-text box treats it as unscored and unread (§7, §10). Decided here; not an open question | 6, 1 |
+| Lab ink and reply features | the lab's mail stories end each reply with no choices, no `#compose_reply` and no `#mail_later`; thread `expects` is never set | 10 |

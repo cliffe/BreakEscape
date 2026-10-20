@@ -90,7 +90,7 @@ no live updates. The layout:
   are not readiness slots, because readiness never depends on something earned after the recon room
   (`00` §4).
 - **Influence:** a card for a target that has a `social.characters` entry shows its influence bar with the
-  threshold icons (`00` §8, the S4 component), read-only, from the character's influence global.
+  threshold icons and the score as a number beside it (`00` §8, the S4 component), read-only, from the character's influence global.
 
 ### Readiness rule and worked example
 
@@ -198,7 +198,8 @@ the panel stays on screen. It needs the full wiring checklist in README Conventi
 - `export`, `import`, `registerScene('intel-board', …)` in `minigames/index.js`.
 - A starter in `systems/minigame-starters.js`, exposed as `window.startIntelBoard`.
 - A branch in `systems/interactions.js` for the case-file object type, and a sprite
-  `assets/objects/case-file.png`.
+  `assets/objects/case-file.png`, and a
+  `this.load.image('case-file', 'objects/case-file.png')` line in `core/game.js` `preload()`. Object sprites are created from a base key that only a hard-coded preload line guarantees; without it the object renders as Phaser's missing-texture box, and the validator's PNG-exists check does not catch that.
 - A stylesheet linked in `app/views/break_escape/games/show.html.erb`.
 - `requiresKeyboardInput: true`. Nothing is typed, but the board is operated by Tab, Enter and Space, and
   the player controller's document-level `keydown` handler would otherwise jump on Space, interact on
@@ -234,7 +235,7 @@ the mode's global, not on that event.
 
 | # | Item | Where in code |
 |---|------|---------------|
-| N1 | `intel-board` overlay: people cards, contacts strip, company panel, readiness checklist, "From the call" section, influence bar (S4), own Close control, `requiresKeyboardInput: true` | new `minigames/intel-board/`; wiring as above |
+| N1 | `intel-board` overlay: people cards, contacts strip, company panel, readiness checklist, "From the call" section, influence bar with its number (S4), own Close control, `requiresKeyboardInput: true` | new `minigames/intel-board/`; wiring as above |
 | N2 | Rebuild from the `se_intel_*` and `target_ready_*` globals on open; file each fact by `subject`; no live updates needed | in N1; `00` §5 |
 | N3 | Display `target_ready_<id>` and `osint_done`, set by `evaluateReadiness` (`00` §4), which is owned by `02` N2 | `social-intel.js` (`02` N2) |
 | N4 | Modes `scope`, `plan`, `defender`: structured selection exercises (sorting cards, question cards, picks, confirm items), ids saved in `se_board_state`, items bound to steps by `step`, step and block globals set through the shared writer; content read from `social.engagement` | in N1; shape in `00` §11 |

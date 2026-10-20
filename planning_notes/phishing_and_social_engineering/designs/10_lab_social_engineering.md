@@ -124,8 +124,8 @@ deterministic feedback:
   emergency contact on the sheet) and a reason for each wrong one.
 
 When both steps are done the mode sets `roe_signed`, Whitlock's authorisation is "signed", and the
-rule is stated once, plainly: "The same actions without this sheet are offences (Computer Misuse Act
-1990 in the UK; Computer Fraud and Abuse Act in the US)." **This beat is the ethics gate (book Ch. 2);
+rule is stated once, plainly: "The same actions without this sheet are offences (the Computer Misuse
+Act 1990 in the UK, and equivalent laws elsewhere)." **This beat is the ethics gate (book Ch. 2);
 it is the first aim and cannot be skipped.**
 
 ### Stage 1 — Scope & plan (planning whiteboard, `plan` mode; Ch. 3)
@@ -210,7 +210,7 @@ The mail client has two accounts here (`00` §10a):
 
 | Account | Kind | Use |
 |---------|------|-----|
-| `guest` ("Operator") | given | Rounds 2 and 3: the target offers `from_named`, so the From blanks are free and the student can claim to be Jed or the portal |
+| `guest` ("Operator", `guest@workstation.example`) | given | Rounds 2 and 3: the target offers `from_named`, so the From blanks are free and the student can claim to be Jed or the portal |
 | `freemail` | created, `unlockedBy: acct_freemail` | Round 1, where Hampshire offers only `from_own`, so the From is forced to the account's own name and address and nothing is spoofed: the student picks one of two authored addresses from the `createMenu` (which sets `acct_freemail_choice` and `acct_freemail`) |
 
 The lab declares exactly these two accounts. It defines no `found` account: `jed_pc` and its `jed`
@@ -225,7 +225,7 @@ any tell), so it is the student's `guest` send even if a later `freemail` retry 
 
 | Round | Target | Account | Required factors (04) | What the round teaches |
 |-------|--------|---------|-----------------------|------------------------|
-| 1 | Hampshire | `freemail` | `senderTrust`, `pretextRelevant`, `attachmentPlausible` | An open inbox trusts any sender (`trusts: ["*"]`). The From part is the blank-free `from_own` template, so the header From is the account's own name and address whichever account is used. She has no `addressedAs` and the greeting is the generic one, so `addressedTo` is not a factor. An applicant pretext (`pretext_apply`, which implies the document `cv`; `careers_attachment` provides it) and a CV from the kit (kind `document`) are what land. Red-flag meter **on** |
+| 1 | Hampshire | `freemail` | `senderTrust`, `pretextRelevant`, `attachmentPlausible` | An open inbox trusts any sender (`trusts: ["*"]`). The From part is the blank-free `from_own` template, so the header From is the account's own name and address whichever account is used. She has no `addressedAs` and the greeting is the generic one, so `addressedTo` is not a factor. Her pretext part offers two templates: an applicant pretext (`pretext_apply`, which implies the document `cv`; `careers_attachment` provides it) and a general enquiry (`pretext_enquiry`), which is the credible wrong one for an application desk and fails `pretextRelevant` with her authored line. The applicant pretext and a CV from the kit (kind `document`) are what land. Red-flag meter **on** |
 | 2 | Pierce | `guest` | `senderTrust`, `addressedTo`, `pretextRelevant`, `attachmentPlausible` | The From line is only a label: the student pairs a display name with an address (`baker_full`, `baker_address`), and nothing but the checklist says whether they belong together. Trust is borrowed from a known contact. Needs the Jed spoof and the Friday balance-sheet story, both from OSINT. Her `addressedAs` forms come from `pierce_role` (first, formal) and the Q3 note (short). Meter **off** |
 
 Hampshire has no ink story, so her reply is a **text job** (`00` §10 "Timing and delivery"): after the
@@ -248,9 +248,24 @@ target cares about (Pierce `finance`, Lord `payroll`). The checklist's first row
 message would be opened, and the character's reply, when there is one, says in their own words why
 they did not trust it, which is the clue to who this person is. Each closed target also has a
 plausible wrong template in the pretext part (Pierce's overdue supplier invoice, Lord's password
-notice), so a send is not guaranteed to land. **Retries are free and unlimited**, framed as rehearsal
+notice), so a send is not guaranteed to land. Hampshire's open inbox excuses her from the subject
+rule only; she too offers a wrong pretext (the general enquiry), so the pretext part is a choice in
+every round. **Retries are free and unlimited**, framed as rehearsal
 that Ruth reviews. A failed send moves the bar and nothing else, failed sends are counted in the report,
 and there is no heat limit. The lab runs in training mode (`checklistTiming: "onSend"`).
+
+**The wrong-account turn.** The student creates `freemail` for round 1, so it is live when rounds 2
+and 3 start, and a send to Pierce or Lord from it cannot land (it cannot spoof, so `senderTrust`
+fails). The composer's read-only From line for such an account names the way out ("This account can
+only send as itself. Switch account to send as someone else"), and the last rung of Pierce's and
+Lord's hint ladders (04 `hints`) and of Ruth's stage 3 hub rungs says the same: "This account can
+only send as itself. The Operator account lets you choose the sender." The ladder therefore ends in
+a near-explicit pointer for the most likely wrong turn.
+
+**Reply features not used.** The lab's mail stories end each reply with no choices, no
+`#compose_reply` and no `#mail_later`, and a thread's `expects` is never set, so no judged reply task
+exists beyond the 22 listed and the budget holds. Those features belong to Eldritch Hacker and the
+awareness product.
 
 **`senderAuth` on the attacker side.** From round 1 the checklist carries an advisory line under the
 factors. In round 1 it says "Sent as your own address, so there is nothing to spoof and nothing to
@@ -533,8 +548,9 @@ rewrite. What each one edits:
    Operations-key condition then wait on Pierce and Lord only) and from `phishTargets`, the `freemail`
    account with its `createMenu` and from `mail_terminal.accountIds` (leaving `["guest"]`), the
    `phish_hampshire_landed`, `phish_hampshire_attempts`, `target_ready_hampshire`, `acct_freemail` and
-   `acct_freemail_choice` globals, the `freemail` row of `playerSentAuth`, the three Hampshire-only
-   facts (`hampshire_careers`, `hampshire_cv_backlog`, `careers_attachment`), and the careers
+   `acct_freemail_choice` globals, the `freemail` row of `playerSentAuth`, the four browse-found facts that only the Hampshire round or the careers page
+   supplies (`hampshire_careers`, `hampshire_cv_backlog`, `careers_attachment` and `tech_stack`, which
+   `careers_stack` grants on that page), which leaves 10 contract facts (7 found by browsing, 3 granted by the call) plus the 2 stale, and the careers
    mitigation from the defender list (three remain). It also removes what points at those facts: the
    `hampshire` entry in `social.intelBoard.readinessSlots` (its `needsIntel` ids would be undeclared
    facts and its key would no longer be a target, which 03 N6 rejects), any `VAR` or `eventMappings`
@@ -543,11 +559,11 @@ rewrite. What each one edits:
    entry in `mailClient.contacts` (its `revealedBy` names `hampshire_careers`, so leaving
    it fails the contact check in `00` §11), the careers-page and Hampshire social-post elements in
    `social.osint` (an element whose `fact` is undeclared fails 02's lint), the `kit_cv` payload item,
-   and the Hampshire-only templates (`pretext_apply`, `ask_review_cv`, and `greet_generic` if no other
+   and the Hampshire-only templates (`pretext_apply`, `pretext_enquiry`, `ask_review_cv`, and `greet_generic` if no other
    target's `templateSets` uses it).
-3. Reduce the triage to six messages, four authored and the two `playerSent` (3): drop the parcel
+3. Reduce the triage to six messages, four authored and the two `playerSent` (2): drop the parcel
    notice and the staff newsletter. This needs a six-message variant of the set (the contract size for
-   the lab is eight, `00` §13), so author it with the set; the stage 7 time-budget row drops by 3 and the pass mark stays 60.
+   the lab is eight, `00` §13), so author it with the set; the stage 7 time-budget row drops by 2 (the two dropped messages are the quick ones, so the nine minutes for eight messages fall to seven for six; the total becomes 73 for this cut) and the pass mark stays 60. The slow items stay: the two `playerSent` messages and the forwarder, which becomes the fourth of the six, after the look-alike notice.
 4. Reduce the report to two findings (2): drop finding 3, the look-alike portal page, from
    `engagement.report.findings` and its cause and control lists, and update the stage 6 text and the
    time-budget row. No task changes.
@@ -780,7 +796,7 @@ no entry and no bar. No lab character uses `combatHostile`.
 ### Object types (wiring checklist)
 
 Each new object type has one entry in `scripts/minigame-data-schemas.json`, a sprite
-`assets/objects/<type>.png` (the validator's sprite-per-type check), a branch in
+`assets/objects/<type>.png` (the validator's sprite-per-type check), the texture's preload line in `core/game.js` `preload()` (without it the object renders as Phaser's missing-texture box, and the validator's sprite check does not catch that), a branch in
 `systems/interactions.js`, a registered scene, a starter in `systems/minigame-starters.js` and a
 stylesheet linked in `show.html.erb` (README Conventions).
 
@@ -802,7 +818,7 @@ stylesheet linked in `show.html.erb` (README Conventions).
 | `mailClient` (two accounts, contacts, seeded inbox, payload kit) | 01 | ~6 benign seeded messages for realism; the triage set is separate |
 | `osint` sites (company with an archive page, careers, three social profiles, a PDF with properties, a tools panel) and `intelFacts` | 02, 00 §1 | 14 contract facts (11 found by browsing, 3 granted by the call) plus 2 stale |
 | `intelBoard` (title, `people`, readiness slots) | 03 | one block, four modes |
-| `templates` and `phishTargets` ×3 | 04, 00 §10 | 3 targets, 4 to 7 templates per target in `templateSets` (Hampshire 4, Pierce 7, Lord 4), blank-value lists tagged distinctive or generic, replies, `factorStrings`, hints |
+| `templates` and `phishTargets` ×3 | 04, 00 §10 | 3 targets, 4 to 8 templates per target in `templateSets` (Hampshire 5, Pierce 8, Lord 5), blank-value lists tagged distinctive or generic, replies, `factorStrings`, hints |
 | Landing-page rules, six look-alike domain options, tells | 07 | 1 page model, ~6 tells |
 | Pretext call: `pretextNpcs[service_desk_call]` and Dev's phone story | 06 §4.8 | 1 call, 2 asks, one opening pretext line (`open_buddy`) |
 | Triage set (8 messages with auth results, 2 of them `playerSent`) | 05 | 6 authored messages, 2 `playerSent`, `playerSentAuth` rows for six domains and two accounts |
@@ -933,12 +949,12 @@ Every value below is settled in `00`; 10 builds on it and cites the section.
 
 | # | Item | Notes |
 |---|------|-------|
-| N1 | **Engagement report builder** (`minigames/engagement-report/`): results panel, findings pairing with the blame option, sets `report_results_done`, `report_findings_done` and `report_filed` | Small; reuses overlay chrome and the right/wrong+why pattern from 04. Reads `social.engagement.report`, `mailState.metrics`, `se_landing_pages` and the pretext globals; saves its in-progress choices in the object global `se_report_state` and calls `stateSync.sync()` as the board does. It shows "no page sent" when the page record has no `victim`. The Confirm button for the `results` step is a `confirm` item in `engagement.report.items` (an item kind `00` §11 and 03 N6 must list, so the "every declared step has items" lint holds) Follows the full wiring checklist in README Conventions: scene, starter, interaction branch, stylesheet, schema entry, sprite, `requiresKeyboardInput`, its own Close |
+| N1 | **Engagement report builder** (`minigames/engagement-report/`): results panel, findings pairing with the blame option, sets `report_results_done`, `report_findings_done` and `report_filed` | Small; reuses overlay chrome and the right/wrong+why pattern from 04. Reads `social.engagement.report`, `mailState.metrics`, `se_landing_pages` and the pretext globals; saves its in-progress choices in the object global `se_report_state` and calls `stateSync.sync()` as the board does. It shows "no page sent" when the page record has no `victim`. The Confirm button for the `results` step is a `confirm` item in `engagement.report.items` (an item kind `00` §11 and 03 N6 must list, so the "every declared step has items" lint holds) Follows the full wiring checklist in README Conventions: scene, starter, interaction branch, stylesheet, schema entry, sprite and its preload line in `core/game.js` `preload()`, `requiresKeyboardInput`, its own Close |
 | N2 | **Report data**: the report reads what 01, 07 and 06 already record (`mailState.metrics`, the page record's `victim`, the call globals) | No store of its own |
 | N3 | **Board modes** `scope` and `plan` with the `engagement` data (scope and question cards, objective and measure picks) | Owned by 03; this doc supplies the data shapes in section 5 |
 | N4 | **Defender-mode mitigation picks** | Owned by 03; `engagement.defender.factMitigations`; no indicator tagging in this slice |
 | N5 | Door and key gating use existing locks and `#give_item`; **no new engine work** | Key locks and the key items both carry `keyPins`; the key items also carry `opens_lock`. Ruth's phone is a starting item (`startItemsInInventory`, `npcIds: ["ruth_phone"]`) |
-| N6 | Non-VM mission configuration: `secgen_scenario: null` and the new `collection` label `lab_games`. `lab_tesseract_trials` is the same kind of game, so its `mission.json` moves to `lab_games` too (a one-line content change) | `Mission#requires_vms?` already supports it; `db/seeds.rb` lines 67 to 71 read `secgen_scenario` and `collection`; the missions index builds its filter and headings from `Mission.collections` and titleizes the label (`app/views/break_escape/missions/index.html.erb`, lines 114 to 125), so it shows as "Lab Games" with no code change |
+| N6 | Non-VM mission configuration: `secgen_scenario: null` and the new `collection` label `lab_games`. `lab_tesseract_trials` is the same kind of game, so its `mission.json` moves to `lab_games` too (a one-line content change). The three Tesseract documents that name `escape_room` (`DESIGN.md`, Q10; `SOLUTION_GUIDE.md`; `ALIGNMENT_PLAN.md`) are updated to match, and `db:seed` is re-run on deployed instances so the stored label changes | `Mission#requires_vms?` already supports it; `db/seeds.rb` lines 67 to 71 read `secgen_scenario` and `collection`; the missions index builds its filter and headings from `Mission.collections` and titleizes the label (`app/views/break_escape/missions/index.html.erb`, lines 114 to 125), so it shows as "Lab Games" with no code change |
 | N7 | **Validator work** (`scripts/validate_scenario.rb`, `scripts/scenario-schema.json`, `scripts/minigame-data-schemas.json`) | `known_top_level` (lines 246 to 251) gains `social`; `known_npc_fields` and `known_behavior_fields` gain only what 00 §8 and §9 add; `minigame-data-schemas.json` gains an entry per object type in the table above; each type needs its `assets/objects/<type>.png` sprite; every `engagement` item with a `correct` or `good` flag carries a `why`; every completing global in the objectives table is declared; the promised lints from 00 §12 S11, 04 N3, 05 N5, 06 N10 and 07 |
 | N8 | **Ink externals** (`se_influence`, `pretext_say`, `pretext_ask`) bind in `InkEngine` (`00` S1) | The authoring guide says "use synced-global `VAR`s, not `EXTERNAL` functions" because the engine binds only six read-only externals and an unbound one throws (`ink-engine.js` catches only the bind failure). When S1 lands, amend that rule in `README_scenario_design.md`. Also needed: bind in person-chat, phone-chat and the headless mail runner; add stubs to `scripts/ink_runtime_check/voicelines.mjs`, `inkcheck.js` and `reopencheck.mjs`; a validator rule that every `EXTERNAL` a story declares is bound for every channel the character supports |
 
@@ -995,8 +1011,9 @@ Every question below is decided; none is open.
 - OQ7: Cast follows `00` §1; confirm or rename there only.
 - OQ8: The `collection` label is the new `lab_games` (decided; N6).
 - OQ9: **Extension content.** If the playtest shows spare time, restore content that puts the core
-  mechanisms and the new minigames to work first, in this order: (1) a second triage round from the
-  unused authored set ("Try the other set", 05; data only), (2) indicator tagging in the profile
+  mechanisms and the new minigames to work first, in this order: (1) a second triage round: author a
+  second 8-message set (mission stage, same `playerSentAuth`) and offer it from the result screen
+  (new authoring, not data already present; 05's "Try the other set" is a training-only button), (2) indicator tagging in the profile
   (`engagement.defender.indicators`, board `defender` mode), (3) a stand-alone header quiz, (4) the
   DMARC rollout simulation. The last two do not exercise the core systems, so they come last. Items
   (2) to (4) need their data shape specified in 05 or 03 first; none is built in this slice.
