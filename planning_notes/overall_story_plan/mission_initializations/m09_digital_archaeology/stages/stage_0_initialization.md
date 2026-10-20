@@ -1,6 +1,6 @@
 # Scenario initialisation: m09 Digital Archaeology
 
-Stage 0. Author: stage-0 author (Opus), 2026-10-20. Status: round 1–3 findings folded in (FINALE_ARC §10–12); stage 1 handover in FINALE_ARC §13; draft for review round 4.
+Stage 0. Author: stage-0 author (Opus), 2026-10-20. Status: round 1–4 findings folded in (FINALE_ARC §10–12, §14); stage 1 handover in FINALE_ARC §13; stage 0 complete.
 
 Shared design for both finale missions: `../../finale/FINALE_ARC.md` (premise §1, threads §2, imports §3, cast §5, flags §6, risks §8). This file does not repeat it.
 
@@ -38,8 +38,8 @@ Every type the player has used in m01–m08 is available. The PIN cracker is iss
 | **The purge (the night's clock)** | Sorensen shreds and degausses in the restricted cage; Jesse Tran runs a tape wipe from the server closet. It moves on story events in one order (flag 1, the cage, flag 2, the Recruiter's call, the tape deck), never on minutes, so VM speed costs nothing. Two forced save-one choices, with HaX naming what is in each: at the cage, Derek's file or Nightshade's copy (default: the Initiative's letters to Social Fabric), and the other is gone when the cage opens; at the end of the Recruiter's call, her file (a tape) or Tomb Alpha's tapes, and the other is wiped. Stopping Sorensen or Tran afterwards saves only what is left on that side. Nothing required is ever lost (FINALE_ARC §6.1). | m07's clock |
 | Lockpicking | Archive doors, plan chests, the salvage cage holding Tomb Alpha's and Tomb Beta's kit. | m01 on |
 | Patrolling guard | Cody Old Coyote on his rounds; Jesse Tran's call-in adds a second guard (avoidable). | m02 on |
-| RFID cloning | Sorensen's master card, cloned at her side while she talks (the m08 technique), or Noor's card if she helps. | m03, m08 |
-| Fingerprint kit | The restricted cage's reader takes Sorensen's print, lifted off her mug or her stamp. | m04, m08 |
+| RFID cloning | Sorensen's master card, cloned through the cage mesh while she talks (the m08 technique), or Noor's card if she helps. | m03, m08 |
+| Fingerprint kit | The restricted cage's reader takes Sorensen's print, lifted off the stamp she leaves at the hatch. | m04, m08 |
 | Social engineering | Noor (help, a warning, or telling her she is on the list), Old Coyote (talk past), Sorensen (bluff as an auditor until her own records show the bluff; she quotes one Reading entry at the player), Gary on the phone if protected (he gives the tape room's decode hint). | m01 on |
 | Encoding (CyberChef workstation) | The tape room's code is written into the catalogue in an old archive encoding (clue from flag 1). Tomb Alpha's annotations, in the Architect's hand, decode to the line HaX recognises (optional, if the tapes are saved from the purge). | m01 on |
 | Document correlation | The handwriting on Nightshade's recruitment file against the annotation style in the Alpha/Beta files and the m07 decode: one hand. With flag 3 this is the proof. Optional: WREN against the personnel records in the legacy files (`sleeper_named`). | m03 directive, m08 door audit |
@@ -49,7 +49,7 @@ Every type the player has used in m01–m08 is available. The PIN cracker is iss
 
 ### 2.3 Hybrid workflow
 
-Briefing cutscene in Task Force Null's room (the wall of cards, the purge order, the raid team) → archive by the loading dock → drop terminal in the reading room → **flag 1** gives the shelf marks, and the purge starts → restricted stacks (Sorensen at the shredder behind the mesh: save one bin through the hatch; opening the cage with print, card and picks takes the other) → Nightshade's file in a locked plan chest → the ledger shelf → **flag 2**: the printed ledger read, then shredded; WREN is on the raid team; optional cross-reference (Torres rings in from his desk on that branch) → the Recruiter rings with her offer; as the call ends, the player pulls one tape from the deck at the drop terminal → server closet (stop Tran, saving the rest of the tape side) → Sorensen's office: safe (PIN cracker), the Reading → tape room (code from the catalogue, decoded with Gary's hint or the long way) → Tomb Beta's server → **flag 3**, the Albion papers and the handwriting: identity scene at the drop terminal, Netherton says the name, HaX's confession and the player's answer; optionally send the vendor notice → **flag 4**: the hour and the defences → Tesseract rings HaX → Netherton's Montana order, and why the team goes in together → debrief.
+Briefing cutscene in Task Force Null's room (the wall of cards, the purge order, the raid team) → archive by the loading dock → drop terminal in the reading room → **flag 1** gives the shelf marks; the purge has been running since before the player arrived → restricted stacks (Sorensen at the shredder behind the mesh, reachable only by talk: save one bin through the hatch; opening the cage with print, card and picks takes the other) → Nightshade's file in a locked plan chest → the ledger shelf → **flag 2**: the printed ledger read, then shredded; WREN is on the raid team; optional cross-reference (Torres rings in from his desk on that branch) → the Recruiter rings with her offer; as she hangs up she fires the deck wipe herself, and the player pulls one tape from the deck at the drop terminal → server closet (stop Tran, saving the rest of the tape side, never the deck) → Sorensen's office: safe (PIN cracker), the Reading → tape room (code from the catalogue, decoded with Gary's hint or the long way) → Tomb Beta's server → **flag 3**, the Albion papers and the handwriting: identity scene at the drop terminal, Netherton says the name, HaX's confession and the player's answer; optionally send the vendor notice → **flag 4**: the hour and the defences → Tesseract rings HaX → Netherton's Montana order, and why the team goes in together → debrief.
 
 ## 3. ENTROPY cell
 
@@ -83,7 +83,7 @@ The premise is fixed by FINALE_ARC §1.3; the options differ in setting, cover a
 
 **Central conflict.** Archaeology against a fire: the evidence is old and scattered, and someone is destroying it while the player reads.
 
-**Arc.** Act 1: get in, set up the drop terminal, find the restricted series while the shredder runs. Act 2: the ledger and WREN, the Recruiter's offer, the Reading, Nightshade's file, Tran's wipe. Act 3: Tomb Beta's server, the kept flaw, the name, the hour, his call to HaX.
+**Arc.** Act 1: get in, set up the drop terminal, find the restricted series while the shredder runs. Act 2: the ledger and WREN, the Recruiter's offer, the Reading, Nightshade's file, the deck wipe. Act 3: Tomb Beta's server, the kept flaw, the name, the hour, his call to HaX.
 
 **Key NPCs.** Sorensen, Noor Haddad, Jesse Tran, Cody Old Coyote; HaX and Netherton; the raid team in the briefing (Quintero, Kowalczyk, Malhotra, Arakawa); phone voices (the Recruiter for everyone; Nightshade and Gary by branch).
 
@@ -113,7 +113,7 @@ The premise is fixed by FINALE_ARC §1.3; the options differ in setting, cover a
 
 ## 5. Recommendation
 
-**Option 1, The Records Office (night), under a purge.** It keeps the clock m08 gave the player, adds one inside the mission, uses one map, and lets the evidence do the work: the player discovers the Architect's name, his casualty sheet and his reading of them in documents, as the stakes rules ask, rather than being told. A night building with a small staff gives room to evade a guard and to talk to three people properly. Take one thing from Option 2: Sorensen is in late, and the player can bluff her as an auditor sent by the lease-holder until her own records show the bluff.
+**Option 1, The Records Office (night), under a purge.** It keeps the clock m08 gave the player, adds one inside the mission, uses one map, and lets the evidence do the work: the player discovers the Architect's name, his casualty sheet and his reading of them in documents, as the stakes rules ask, rather than being told. A night building with a small staff gives room to evade a guard and to talk to three people properly. Take one thing from Option 2: Sorensen is in late, behind the cage mesh, and the player can bluff her through it as an auditor sent by the lease-holder until her own records show the bluff.
 
 ## 6. Initialisation summary
 
@@ -145,7 +145,7 @@ Option 1, The Records Office (night), under a purge, with Option 2's auditor blu
 - **Aims, staged and spoiler-safe.** 1 Get in and set up the drop terminal. 2 Find the restricted series before it burns (flag 1, the cage). 3 Read the Initiative's ledger (flag 2; optional: identify WREN). 4 Search the director's office (the safe, the Reading, the files). 5 Take Tomb Beta's server (flags 3–4). Optional: stop Sorensen; stop the tape wipe; send the vendor notice. `missionConclusion`: report to Netherton. `concludeRequires`: the four flags only.
 - **HaX's hub, progress-gated.** Topics open on progress globals: Tran (a warning before the player meets him with `m01_completed and not m01_maya_ko`, a neutral one on a cold start); the restricted series after flag 1; WREN and the cross-reference nudge after flag 2; the Recruiter's file before the player answers her (what taking the offer would cost); the Recruiter after her call; "what the line means" on a quiet stretch after flag 2; the name after flag 3 (row 70's forms); what is in each bin at each purge choice, and what the purge has cost, once. Field-guide offers gated `_guide_offered` / `_hint_given` per VM stage.
 - **Music.** Cutscene for the briefing; a tense investigation track with the shredder under it; threat on any hostile; a held cue for the identity scene; the Tesseract call under silence, then the closing track.
-- **KO resilience.** Sorensen, Noor, Tran and Old Coyote can all be knocked out; a downed Sorensen stops the shredder and a downed Tran stops the tape wipe; Sorensen's card drops when she is down and her print stays on her mug, and Noor's help always has the default route beside it.
+- **KO resilience.** Sorensen, Noor, Tran and Old Coyote can all be knocked out; a downed Sorensen stops what is left of the shredding and a downed Tran stops the rest of the tape side (never the deck, which the Recruiter wipes); Sorensen's card drops when she is down and her print stays on her stamp, and Noor's help always has the default route beside it.
 - **Carry-overs.** All imports and their uses: FINALE_ARC §3.1. m09's exports: §3.4. No import gates completion.
 - **Spoken lines.** The Reading is object text in the narrator's voice or unvoiced; every branch line is a fixed string, never a printed variable.
 

@@ -86,3 +86,7 @@ Orchestrator decisions for the R3 fix pass: raid clock marks driven by story eve
 | R4 combined (`finale/REVIEW_STAGE0_R4.md`) | 0 | 4 | 13 | not clean, sentence-level: N-01 stale won-branch staging, N-02 forward-post overload (four beats before flag 1), N-03 purge choices skippable, N-04 disclose default cost not live. Reviewer: no round 5 needed if the fix pass touches only these. |
 
 Orchestrator: verified N-14 (no friendly follow/escort in `npc-behavior.js`; only hostile chase across rooms). Final fix pass adopts the reviewer's fixes for N-01–N-04; escort beats become per-room staging; a friendly-follow engine feature may be proposed at stage 5 but nothing depends on it. Stage 0 closes after this pass with an orchestrator check (no round 5), per AGENTS.md (stop when nothing above minor remains; the R4 majors are sentence-level).
+- Final pass: 15 fixed, 2 handed to §13 (N-15, N-16, stage 3). Orchestrator check: majors N-01–N-04 grepped in all three docs; one stale copy left (m10 stage 0 L44, arrested Victoria "at the forward post"), fixed by the orchestrator.
+- **Stage 0 closed 2026-10-21.** Four review rounds: R1 54 findings, R2 46, R3 39, R4 17 (no blockers at any round). Handover to stage 1: FINALE_ARC §13 (32 items with owner stages).
+
+## Stages 1+2: narrative structure and storytelling elements (per mission)
