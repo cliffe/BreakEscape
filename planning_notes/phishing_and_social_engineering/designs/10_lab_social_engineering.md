@@ -936,7 +936,7 @@ Every value below is settled in `00`; 10 builds on it and cites the section.
 
 | Doc | What the lab uses | Settled in |
 |-----|-------------------|------------|
-| `00` | Facts and `provides` (including `old_org_chart`, `baker_namesake`, the portal sender, Lord's greeting forms), readiness and `osint_done`, characters, `createMenu`, sent record and `mailState.metrics`, pointers, engagement mode blocks, Atkinson Hyperlegible | §1, §4, §8, §10a, §11, §13 |
+| `00` | Facts and `provides` (including `old_org_chart`, `baker_namesake`, the portal sender, Lord's greeting forms), readiness and `osint_done`, characters, `createMenu`, sent record and `mailState.metrics`, pointers, engagement mode blocks, Atkinson Hyperlegible Next | §1, §4, §8, §10a, §11, §13 |
 | `01` | Accounts `guest` and `freemail`; the fixed `from_own` template; text-job replies for Hampshire; `kit_payroll_page`; per-target `phish_<id>_attempts` | `00` §10, §10a, §11a |
 | `02` | Hunter result `r_pattern` grants `email_pattern`; the field-selection panel grants `username_convention`; the J. Baker search keeps its ambiguous result; the archived chart `org_old_chart` grants `old_org_chart`; no typed input | `00` §1; 02 "Picked lookups" |
 | `03` | Four modes by `minigameData.mode`, one object per mode; mode blocks with `onCompleteGlobal`; question cards; defender mode has no indicators step unless authored | `00` §11 |
@@ -959,7 +959,7 @@ Every value below is settled in `00`; 10 builds on it and cites the section.
 | N8 | **Ink externals** (`se_influence`, `pretext_say`, `pretext_ask`) bind in `InkEngine` (`00` S1) | The authoring guide says "use synced-global `VAR`s, not `EXTERNAL` functions" because the engine binds only six read-only externals and an unbound one throws (`ink-engine.js` catches only the bind failure). When S1 lands, amend that rule in `README_scenario_design.md`. Also needed: bind in person-chat, phone-chat and the headless mail runner; add stubs to `scripts/ink_runtime_check/voicelines.mjs`, `inkcheck.js` and `reopencheck.mjs`; a validator rule that every `EXTERNAL` a story declares is bound for every channel the character supports |
 
 The other engine items the lab depends on (S1 to S14 in `00` §12, the OSINT, board, mail, pretext,
-triage and landing-page work in 01 to 07, the bundled Atkinson Hyperlegible font) are in the README's
+triage and landing-page work in 01 to 07, the bundled Atkinson Hyperlegible Next font) are in the README's
 consolidated table. Nothing here needs a VM, the flag-station or the vm-launcher.
 
 ## 7. Reuse and tuning
@@ -990,7 +990,7 @@ consolidated table. Nothing here needs a VM, the flag-station or the vm-launcher
   `report-workstation`, `triage-workstation`), plus item sprites: RoE sheet, three keys (Recon,
   Operations, Blue Team).
 - UI art owned by 01, 02, 03, 05, 07; this doc adds only the report panel (results table, finding
-  cards, tick and cross). All text the player reads or compares uses Atkinson Hyperlegible (`00` §6).
+  cards, tick and cross). All text the player reads or compares uses Atkinson Hyperlegible Next (`00` §6), whose Latin and Cyrillic subsets let the homograph option in the domain menu show as typed, with the punycode form as a teaching contrast.
 - Audio: voice for Ruth, Dev and Tomasz, fixed lines only (the TTS cache is keyed on text, so no
   printed variables in a voiced line; Dev's reactions are fixed strings per held value, 06 §4.4).
   Music reuses an existing office track.

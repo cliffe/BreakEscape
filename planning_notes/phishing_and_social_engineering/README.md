@@ -87,7 +87,7 @@ the format the scorer wants. Free text, if allowed at all, is unscored flavour. 
 
 **E. Visual style (decided 2026-10-20).** In-world pictures are pixel art. Text the player must read or
 compare stays in a readable sans-serif, so look-alike domains behave as they do in a real browser. Real
-tools keep their own look. The bundled face is Atkinson Hyperlegible (Regular and Bold, SIL OFL 1.1), and it
+tools keep their own look. The bundled face is Atkinson Hyperlegible Next (Regular and Bold, SIL OFL 1.1, Latin and Cyrillic), and it
 covers every string the player reads or compares, domain chips and feedback lines included (`00` §6). Details are in `01`, `02` and `07`.
 
 **F. Player identities: email first, phone later (decided 2026-10-20).** The mail client has player
@@ -218,6 +218,34 @@ ids and booleans only. The metrics line counts pages (Visits and Submissions), a
 connection is private to whoever owns the address; fake sites can show one", is the wording in `07` §3 step 2.
 Checking the wording against current browsers is a pre-ship task.
 
+**V. Awareness product: build order, defend-only variants, check sequencing (decided 2026-10-21).**
+The first-slice episode order is E1 (finance), then E5 (login page), then E3 (vishing); E2, E4, E6 and E7 follow
+(`11` A2, §3.2). Every episode also has a defend-only variant, which drops the OSINT, write and flip stages and
+keeps the brief, defend and debrief, so a customer who dislikes the "write a phish" beat still gets the measured
+defend set (`11` A6, §3.1, §5.1). The organiser sequences the pre and post check missions by hand, a missing
+baseline is shown as such, and product copy claims nothing stricter (`11` A8, §5.2). Moved here from the open
+questions.
+
+**W. Rules engine: lenient coherence gate, optional redFlag (decided 2026-10-21).** The coherence gate (the open
+check and `pretextRelevant`) starts lenient and is tuned in playtest. A per-factor, per-target `redFlag` string
+is optional, because the canonical library in `00` §2 always supplies one; the validator warns when a target
+overrides `fail` without a matching `redFlag` (`04`, `00` §13, S11). Moved here from the open questions.
+
+**X. Bundled font covers Cyrillic; homographs shown as typed (decided 2026-10-21).** The bundled readable face is
+Atkinson Hyperlegible Next (OFL 1.1) with Latin and Cyrillic subsets, so a look-alike domain is drawn as typed
+(the option's `domain`), not only as punycode. The punycode form (`browserDomain`) may sit beside it as a teaching
+contrast. Authored data and the lint do not change: the Cyrillic letter stays a `\u` escape in ASCII source. Cyrillic
+coverage of Atkinson Hyperlegible Next is not verified here, so the import acceptance check in `00` §6 is a gate
+(Cyrillic letters resolve in the face; `rn`/`m`, `vv`/`w` and `l`/`I`/`1` stay distinct); the fallback is Source Sans 3.
+Replaces the earlier plan of a Latin-only subset with the homograph drawn only as punycode (`00` §6, `01`, `02`, `05`,
+`10`). **`07` must follow** (see the alignment list under this decision): its "How a homograph is shown" text,
+the rule that every text surface shows `browserDomain`, and the Latin-only font statement are out of date.
+Alignment list for `07`: show `domain` as typed on every text surface, with `browserDomain` as an optional contrast
+line; drop the claim that the face has no Cyrillic letter; keep the concept-card illustration if wanted, but it is
+no longer needed to stand in for the as-typed form; `linkInfoFor` returns `domain` as typed plus `browserDomain`
+(`00` §11a); the lint and the `\u` escape rule stay; keep the "current browsers may show punycode" teaching point
+as a contrast, stated without a claim about every browser.
+
 Defaults taken elsewhere, for context: fictional targets only, no real-staff OSINT; the
 lab is the first slice; the awareness product measures pre and post from the start and defers LMS and
 SSO integration.
@@ -230,11 +258,7 @@ stories per channel with synced globals (`00` §9), and template blanks for its 
 ## Open questions
 
 Working defaults are taken for all of these; none blocks the design. The answered items are recorded under
-Key decisions (L to U).
-
-**Rules engine (`04`)**
-
-- How strict is the coherence gate before it frustrates (default: lenient, tune in playtest)? Should a `redFlag` string be mandatory per factor per target (default: no; the validator warns on a mismatched override)?
+Key decisions (L to X).
 
 **Pretext (`06`)**
 
@@ -246,12 +270,6 @@ Key decisions (L to U).
 - Homograph shown in the student lab only, as one authored example? Default: yes.
 - Template brands: how closely a template copies its tool, and whether it may reproduce the tool's logo artwork. The logo carries the trademark risk, so the user decides it; the planner records no default. Drawing is for the Haiku build brief (`07` OQ2).
 - Template brands outside the student lab (awareness and missions)? Default: student lab only, enforced by the lint (`07` OQ3). Alternative: templates in every profile, which needs a view on the commercial release (decision R).
-
-**Awareness product (`11`)**
-
-- A2. First-slice episode order? Default: E1 finance, then E5 login page and E3 vishing.
-- A6. A defend-only variant of each episode for customers who dislike the "write a phish" beat? Default: yes.
-- A8. Pre/post ordering and strictness. The platform does not order missions or stop a second pre-check game, and `CarryOver` uses the newest concluded run. Default: the organiser sequences the check missions, a missing baseline is shown as such, and product copy claims nothing stricter.
 
 ## Engine work, consolidated
 
@@ -278,7 +296,7 @@ numbers are the owning doc's N-items. Nothing here is built yet.
 | Awareness | Episode runner, flip view, defend sets, measurement store, facilitated flag, non-email surfaces, role swap, shell host NPC and flushed done event | `11` N1 to N16 | `minigames/` (new); see `11` |
 | Minigame framework | Wiring checklist per minigame (including the sprite preload line in `core/game.js`); return-to for nested overlays (`00` S12; `startMinigame` ends the running one); `requiresKeyboardInput` and an own Close control on every overlay | README Conventions | `minigames/framework/minigame-manager.js`, `base-minigame.js`; `minigames/index.js`; `minigame-starters.js`; `systems/interactions.js` |
 | Objectives | A global cannot complete a task or open a lock; use `eventMappings` on `global_variable_changed:<name>` with `completeTask`, or `#complete_task`. An aim's `unlockCondition` is truthy or `equals` only; an `eventMappings` condition on `global_variable_changed:<name>` accepts numeric comparisons (`value >= 60`). A boolean is still the simpler contract | all | `systems/objectives-manager.js`; `systems/npc-manager.js` event mappings |
-| Fonts and CSS | Atkinson Hyperlegible (Regular and Bold, OFL 1.1), self-hosted, declared in `css/fonts.css` as `--se-font-readable`, used for every string the player reads or compares; authored domains rendered raw, not through `displayDashes` | `07`, `02` | `public/break_escape/assets/fonts/`; `css/fonts.css` |
+| Fonts and CSS | Atkinson Hyperlegible Next (Regular and Bold, Latin and Cyrillic subsets, OFL 1.1; Cyrillic coverage checked at import, fallback Source Sans 3), self-hosted, declared in `css/fonts.css` as `--se-font-readable`, used for every string the player reads or compares; authored domains rendered raw, not through `displayDashes` | `07`, `02` | `public/break_escape/assets/fonts/`; `css/fonts.css` |
 | Validator and schema | Top-level `social`; `social.characters` lints; `_influence`, `_latched` and every `setGlobal` effect global declared and not imported; `se_intel_*` declared; template and slot checks; `on_email` and `email_*` checks; `minigameData` schema entries; `npcType` unchanged; lockout lint; the single "Lint field list" (`00` §11). The validator exits 1 on structure, schema and ink compile errors and on bad arguments, otherwise 0; `--strict-social` also exits 1 on social lint errors. CI (`.github/workflows/ci.yml`): one job with Ruby (`ruby/setup-ruby`, the sqlite3 apt packages and `BUNDLE_BUILD__SQLITE3: "--enable-system-libraries"`, as the existing jobs) and Node 20 with jsdom; `package-lock.json` un-ignored (`.gitignore:43`), regenerated and committed so `npm ci` works; Node tests run as `bundle exec node --test test/js/validator-*.test.mjs test/js/social-*.test.mjs` and fail rather than skip; the unit tests `social-phish-rules`, `social-triage-scoring`, `social-pretext-judge`, `social-intel` and the safety tests `social-landing-page-model`, `-render`, `-guard` and `social-osint-address-bar` (plus a `test:social` script); validator tests call lint functions in-process or use `--no-graph --skip-ink`; a loop over only scenarios with a `social` key with `--strict-social --no-graph --skip-ink` that must not rewrite tracked files | `00` S11 and each doc | `scripts/validate_scenario.rb` (`known_top_level`), `scripts/scenario-schema.json`, `scripts/minigame-data-schemas.json`, `.github/workflows/ci.yml`, `.gitignore`, `package.json` |
 | Platform (not BreakEscape) | Per-student report or richer score recording, if an assessment ever needs more than task and aim share | out of scope for now | Hacktivity `app/jobs/game_scoring_job.rb` |
 
@@ -335,7 +353,7 @@ numbers are the owning doc's N-items. Nothing here is built yet.
   chrome and headings use the theme fonts (`GNF` is the framework body font, `Press Start 2P` for
   headings). Pixel art (logos, portraits, icons) is drawn low-res and scaled with
   `image-rendering: pixelated`. All text a player reads or compares is a readable sans-serif that is
-  bundled with the game: Atkinson Hyperlegible (none was bundled before; see the engine list). `scenarios/FINGERPRINT_MINIGAME_PLAN.md`
+  bundled with the game: Atkinson Hyperlegible Next (none was bundled before; see the engine list). `scenarios/FINGERPRINT_MINIGAME_PLAN.md`
   is the template for how a minigame design doc is structured.
 - Accessibility and small screens: a single column below about 700 px; every action reachable by
   keyboard (drag-to-link has a pick-and-confirm alternative); `aria-live="polite"` on score and

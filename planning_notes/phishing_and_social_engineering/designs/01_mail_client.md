@@ -29,7 +29,7 @@ global that carries across all three.
 ## The loop
 
 A single overlay. The frame (window chrome, buttons, folder icons) is pixel-art and in the game's UI
-theme. Every string the player reads or compares is in the bundled Atkinson Hyperlegible (`00` §6):
+theme. Every string the player reads or compares is in the bundled Atkinson Hyperlegible Next (`00` §6):
 headers, addresses, subjects, bodies, contact names, file names, checklist lines, banners and
 advisory lines. Only chrome labels that contain none of those (a button reading "Compose") use the
 theme fonts. Authored addresses render with `textContent`, never through `displayDashes`. Two panes: a
@@ -486,7 +486,7 @@ reads `metrics`, the sent records and the outcome globals.
 | N10 | Template composer: blanks whose options come from held evidence (`se_intel_*` globals through each fact's `provides`), and a send gate that refuses an empty blank with the neutral pre-send line (`04`) | Shares the blank picker with `06` (N6) |
 | N11 | Accounts: own-account resolution, `unlockedBy` globals, `createMenu` and the Create-account panel, `accountIds` on objects, the switcher, `burned_<id>` greying, per-mailbox unread | `00` §10a |
 | N12 | Sent record per `00` §10a (all of its fields, including `id`, `thread`, `mailbox` and `to`): `folder`, `fromAccount`, `targetId`, `subject`, `templates`, `slots`, `body`, `attachment`, `link`, `landed`, `tells`; the Sent folder view | Part of `mailState`; `05` replays it |
-| N13 | Narrow-screen layout and accessibility pass (below) | Needs the bundled Atkinson Hyperlegible (`00` §6) |
+| N13 | Narrow-screen layout and accessibility pass (below) | Needs the bundled Atkinson Hyperlegible Next (`00` §6) |
 | N14 | Mail notification (HUD badge or bark variant) and the rule that an open client appends without a bark | `00` S9 |
 | N15 | Devices: `accountIds` on each `mail_terminal`, takeable terminals used from inventory, per-contact `accountIds`, seeded mailbox history (`folder` inbox or sent), password-locked terminals via the ordinary object lock | `00` S14 |
 | N16 | Highlights: render marked spans, "Save as evidence" calling `grantFact` with the highlight id as the source, "Add to Notepad" for any selection (S12 `returnTo`) | `00` S14, `02` N2 |
@@ -540,10 +540,10 @@ reads `metrics`, the sent records and the outcome globals.
 - In-world pages and messages use pixel-art imagery: NPC headshots (the existing pixel portraits) for
   senders and contacts, pixel logos, banners, product photos, and cult sigils or flyers where a
   scenario has them. The mail frame (folder pane, buttons, window chrome) is styled like the game UI.
-- All text the player must read or compare uses the bundled Atkinson Hyperlegible (`00` §6), not a
+- All text the player must read or compare uses the bundled Atkinson Hyperlegible Next (`00` §6), not a
   pixel font. That covers email headers, addresses, subjects, body text, contact and file names, and
   the checklist, banner and tells lines. Look-alike addresses (`accountingnovv` against
-  `accountingnow`, `rn` against `m`) must read as they would in a real mail client. Pixel fonts blur
+  `accountingnow`, `rn` against `m`) must read as they would in a real mail client. A homograph address (a Cyrillic letter in a Latin name) draws as typed in the same face, which covers Cyrillic (`00` §6); the tells line may add the punycode form as a contrast. Pixel fonts blur
   those differences or make them obvious, and long reading in a pixel font is tiring.
 - The checklist and the tells use the house pixel style for chrome (icons, frames, headings that hold
-  no authored string). Their reason text is Atkinson Hyperlegible.
+  no authored string). Their reason text is Atkinson Hyperlegible Next.

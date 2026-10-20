@@ -74,6 +74,13 @@ canonical **pass and fail lines** are in `00` §2, imported by both this engine 
 - **`urgencyCalibrated` is advisory only.** Overdone urgency does not fail a send (real heavy-urgency
   phishing still lands). Urgency is a tell the defender reads and an advisory note to the attacker.
 
+**Strictness of the coherence gate.** The gate that decides whether a message hangs together (the open check
+and `pretextRelevant`: sender, subject and pretext facts agree) starts lenient: `minDistinct: 1`, any one
+distinctive value counts, and a target's hard settings are raised only by authored values. The settings
+are tuned in playtest, loosening first where players stall. The lab ships with the lenient starting values
+that are authored in this document (Lord's `minDistinct: 2` is the one deliberate exception, as the
+hard target).
+
 A scenario turns factors on/off per target via `requiredFactors` / `advisoryFactors` (`00` §7). An
 easy target needs 2–3; a hard spear-phish needs all, with tighter tests.
 
@@ -500,8 +507,10 @@ awareness learner's first try.
 
 ## Open questions
 
-- Does a target need one distinctive value per primed fact, or any one of several? Default: any one
-  (`minDistinct: 1`); the hard target raises it. Tune in playtest.
-- Should a `redFlag` string be mandatory per factor per target so `05` always has material? Default:
-  no (the canonical library covers it); the validator warns if a target overrides `fail` without a
-  matching `redFlag`.
+None open. Decided 2026-10-21:
+
+- Strictness: the coherence gate starts lenient (`minDistinct: 1`, any one distinctive value) and is tuned
+  in playtest; the hard target raises it by authored values.
+- A per-factor, per-target `redFlag` string is optional. The canonical `00` §2 library covers every factor,
+  so `05` always has material; the validator warns when a target overrides `fail` without a matching
+  `redFlag` (a mismatched override).

@@ -268,7 +268,7 @@ the mode's global, not on that event.
 Chrome follows house style (README Conventions): dark panel, square corners, `--ui-*` tokens, `GNF` body,
 `Press Start 2P` headings; no hard-coded green. Pinned-card, string and empty-slot art are pixel art. Every
 string the player reads (fact text, addresses, the checklist, mitigation options and their `why` lines,
-the scope brief) is inert DOM text in Atkinson Hyperlegible (`00` §6, `--se-font-readable`).
+the scope brief) is inert DOM text in Atkinson Hyperlegible Next (`00` §6, `--se-font-readable`).
 
 ## Assets
 

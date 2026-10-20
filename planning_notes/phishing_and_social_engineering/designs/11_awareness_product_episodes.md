@@ -76,7 +76,19 @@ each episode.
 | 7 | Post-check mission (once per learner) | 4 min | The other parallel form, same difficulty mix; shows the change from the imported pre-check result | 05 |
 
 An organiser who wants no checks leaves the two check missions out of the event (facilitated mode,
-section 5.3). Stage 3 is the only
+section 5.3).
+
+**Defend-only variant (decided 2026-10-21).** Every episode can be offered to a customer as a defend-only variant
+for audiences that object to the "write a phish" beat. It drops the OSINT, write and flip stages, which exist
+only to feed the attack, and keeps the brief, defend and debrief (`"variant": "defendOnly"`, section 5.1;
+about 8 minutes). The defend set, its scoring and the pre and post check are the same as in the full
+episode, so measurement is unchanged. What is lost is the empathy beat of seeing one's own message arrive.
+The brief and debrief carry a `defendOnly` string where they refer to the learner's own message. The
+variant is a field of the episode definition, so the defend-only version is its own shell mission (its own
+`awarenessEpisode`, same `defend.setId`); the kiosk still carries only `{ episodeId }`, and the organiser picks
+the mission when building the event.
+
+Stage 3 is the only
 place the learner "attacks"; it is capped at **one attempt producing one artefact** (one message, one
 call, one page choice, or one text/QR pretext, depending on the episode) so the episode stays short
 and does not become a phishing workshop. The first Send ends the beat (`maxMessages: 1`), so the
@@ -105,7 +117,9 @@ Notes on specific episodes:
 - **E3 and E7 depend on `06`** (pretext dialogue on the influence score), and E3 also on the role swap
   (N15). If `06` slips, E3 falls back to the phone-chat shell with a branching script and no influence
   bar, and it still needs N15's scripted-caller scoring.
-- **E5 is last in build order** because it depends on `07`.
+- **First-slice order is E1, then E5, then E3** (decided 2026-10-21). E1 is the flagship and needs no
+  new component. E5 follows once the landing-page builder (`07`) and the interactive `page` card (N13) are
+  built. E3 follows once the role swap (N15) is built. E2, E4, E6 and E7 come after.
 - **E7 is the distinctive episode.** Break Escape already has TTS (the `tts-audio` pipeline), so a
   "cloned" executive voice is a style variant of an existing voice rather than a new capability.
   It must never use a real person's voice; the cast is fictional. E7 ships as an optional episode
@@ -203,6 +217,7 @@ sequencing and strings. It lives at `social.awarenessEpisode` (`00` §11). Defen
   "role": "finance",
   "company": "brightwell_foods",           // fictional, neutral corporate skin
   "durationTargetMin": 13,
+  "variant": "full",                         // or "defendOnly": stages become ["brief","defend","debrief"], durationTargetMin about 8, no attack block read (section 3.1)
   "scopeNote": "Authorised exercise at FICTIONAL Brightwell Foods. In scope: this inbox.",
   "stages": ["brief","osint","write","flip","defend","debrief"],   // the pre- and post-check are missions of their own (5.2)
   "attack": { "target": "supplier_contact",       // a 04 phishTargets id; its templateSets (one or two blanks) are inline there
@@ -311,7 +326,7 @@ core loop and not a later add-on (the default is to measure from the start and s
   - "Once per learner" holds inside a game (the guard) and across the event only as far as the host
     gives one game per learner per mission. A second game of the pre mission replaces the baseline,
     because the newest concluded run counts. Product copy does not claim stricter than that; the hosting
-    question is out of scope for now (A7) and the ordering question is A8.
+    question is out of scope for now (A7) and the ordering question is settled as A8 below.
   - A role-specific pair covers a learner's primary role. Episodes from other roles are extras with no
     check of their own.
 - **Recorded per item:** item id, form, learner verdict (Trust, Report, Delete), the chips ticked, the
@@ -506,7 +521,7 @@ The same list is in `README.md`.
 
 - **A1 (decided).** E7, the deepfaked-voice CEO episode, ships as an optional episode, framed around
   "verify, don't trust the ear", with no technique detail.
-- **A2.** Episode order for the first slice? Default: E1 (finance) first as the flagship, then E5
+- **A2 (decided 2026-10-21).** First-slice episode order: E1 (finance) first as the flagship, then E5
   (login page, after N13), then E3 (vishing) once the role swap (N15) is built; E2, E4, E6, E7
   follow. The role swap is in this product's build scope (N15) and not the lab's.
 - **A3 (decided).** No pilot of the pre/post measurement; no effectiveness claims (5.4).
@@ -517,15 +532,14 @@ The same list is in `README.md`.
 - **A7 (out of scope for now).** Standalone host or inside Hacktivity (6.2). Hacktivity's scoreboard
   and `game.player` identify the learner, so product copy promises no pseudonymous id, private scores
   or "no league table" until this is decided.
-- **A8.** Pre/post ordering and strictness (5.2). The platform does not order missions or stop a learner
-  opening a second game of the pre-check, and `CarryOver` uses the newest concluded run. Default: the
-  organiser sequences the check missions by hand, a missing baseline is shown as such, and product copy
-  claims nothing stricter. A stricter rule needs a Hacktivity event setting (one game per learner per
-  mission, order enforced).
-- **A6.** Is the "write a phish" beat acceptable for all customer audiences? Some HR
-  departments may object. Default: yes, because it is capped at one message to a fictional
-  colleague and judged, not exported. Offer a "defend-only" variant of each episode as a customer
-  option, losing the empathy beat but keeping measurement.
+- **A8 (decided 2026-10-21).** Pre/post ordering and strictness (5.2). The platform does not order missions
+  or stop a learner opening a second game of the pre-check, and `CarryOver` uses the newest concluded run.
+  The organiser sequences the check missions by hand, a missing baseline is shown as such, and product
+  copy claims nothing stricter. A stricter rule would need a Hacktivity event setting (one game per
+  learner per mission, order enforced); that is out of scope for now.
+- **A6 (decided 2026-10-21).** The "write a phish" beat is capped at one message to a fictional colleague
+  and judged, not exported. Every episode also has a defend-only variant as a customer option (3.1, 5.1),
+  which loses the empathy beat and keeps measurement.
 
 ### Claims to verify before anything user-facing
 

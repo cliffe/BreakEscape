@@ -442,7 +442,7 @@ the recipient saw it (`10` stage 7, `11`). A `playerSent` entry names where to d
 ```jsonc
 { "kind": "playerSent", "id": "own_lord",
   "targetId": "lord",                  // the phishTarget whose message to replay (the latest sent one whose tells include senderTrust or senderAuth, else the latest with any tell, from whichever account sent it)
-  "domainFrom": "landing_domain",      // optional, on a playerSent entry only: show the look-alike domain the player picked in 07
+  "domainFrom": "landing_domain",      // optional, on a playerSent entry only: show the look-alike domain the player picked in 07, as typed (a homograph pick draws with its Cyrillic letter in the bundled face, `00` §6, and the tells line may add its punycode form as a contrast)
   "notes": { "perFlagNote": { "senderTrust": "...", "linkCredible": "...", "urgencyCalibrated": "..." },
              "headerNote": "...", "ifTrusted": "...", "reportReply": "..." } }   // authored once per target
 ```
@@ -507,7 +507,7 @@ The set carries one `playerSentAuth` table, next to `messages`:
   from the From and `reply_to_differs` is not implied by the replay.
 - **Placeholders in `playerSentAuth`.** The loader substitutes exactly two tokens: `{account_address}`
   (the address of the resolved account, which for `freemail` depends on the `createMenu` choice) and
-  `{domain}` (the `browserDomain` or `domain` of the picked menu option). No other placeholder is
+  `{domain}` (the `domain` of the picked menu option, as typed; its `browserDomain`, when it has one, is available as a contrast line). No other placeholder is
   allowed and the validator refuses an unresolved brace; the pass, fail and none values stay literal.
 - **`domainFrom` belongs to `playerSent` only.** Authored messages carry literal `auth` rows. The lab's
   authored look-alike payroll notice names its own look-alike domain; it does not substitute the
