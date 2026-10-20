@@ -83,7 +83,7 @@ Each fact has a stable bare `id` (below). Collecting it sets the global `se_inte
 already use.
 
 A fact's `source` is the id of **the one element that grants it**: a block, a search or lookup result,
-a metadata field, or, for call facts, the ask id. The ids below are the lab's (`02` owns the pages).
+a metadata field, a mail highlight (§10a), or, for call facts, the ask id. The ids below are the lab's (`02` owns the pages).
 
 | fact id | Source element | Fact | Backs factor (§4) |
 |---------|----------------|------|-------------------|
@@ -281,6 +281,26 @@ the first failed factor. A target may override either in `factorStrings`.
 | `urgencyCalibrated` | "✓ The pressure was believable" | "That feels rushed." (advisory; never a reply) |
 | `linkCredible` | "✓ The link looked right" | "That link doesn't look right to me." State `missing`: "There's no page behind that link." |
 
+### The open check (a gate, not a factor)
+
+A message has to be opened before its content matters. The open check sits beside the seven factors and
+is not one of them. It reads the two things a person sees in a message list, the From and the Subject.
+
+- A target has `interests: { topics: [...] }` (§7): the subject topics it opens whatever else is true.
+  Each entry of the target's `subjects[]` carries a `topic` (§7).
+- The message **opens** when the sender passes `senderTrust` (the target recognises who the message
+  claims to be from; an open inbox trusts every sender) **or** the chosen subject's `topic` is in
+  `interests.topics`. A stranger therefore needs a subject the target cares about, and a convincing
+  sender gets the message opened whatever the subject says.
+- `EvalResult.open` is `{ opened, via, subjectTopic }`, with `via` one of `"sender"`, `"subject"` or
+  `"none"`. `landed` needs `opened` as well as every required factor. All factors are still evaluated
+  when the message is not opened, so the checklist shows the whole picture.
+- The checklist's first row is "Would they open it?", with the strings `factorStrings.open`
+  `{ pass, fail }` (a target may override them). Canonical `pass`: "✓ They would open it". Canonical
+  `fail`: "Nothing about the sender or the subject made them open it". Any in-character explanation
+  comes from the ink (§10), not from this row.
+- It is neither a tell nor a defender chip: `05` teaches the seven factors and the channel tells.
+
 ### `attachmentPlausible` has three result states
 
 | state | when | reply string (diegetic) | red-flag string |
@@ -363,6 +383,7 @@ real sending account, the header From (§10a), and the attachment or link pick:
 ```jsonc
 // message
 { "fromAccount": "guest",
+  "subject": "s_review",                // id of the chosen entry in the target's subjects list (§7)
   "headerFrom": { "name": "baker_full", "address": "baker_address" },   // value ids from the From blanks
   "templates": { "greeting": "greet_named", "pretext": "pretext_sheet", "ask": "ask_open_attached" },
   "slots": { "name": "pierce_short", "document": "balance_sheet", "when": "friday" },
@@ -378,7 +399,8 @@ meetsThreshold }` or `{ kitId, state: "missing" }`.
 ```jsonc
 // EvalResult
 {
-  "landed": true,                       // all REQUIRED factors passed
+  "landed": true,                       // opened (§2) and all REQUIRED factors passed
+  "open": { "opened": true, "via": "sender", "subjectTopic": "finance" },   // §2 "The open check"
   "factors": [                          // one entry per evaluated factor
     { "id": "senderTrust", "pass": true,  "state": "pass",
       "reply": null, "redFlag": null, "mode": "required" },
@@ -428,8 +450,8 @@ send. A scenario never keys a task on `minigame_completed` for mail: it keys on 
 `phish_<id>_landed` global, which the reply's ink (or the text job for a data-only target) sets when
 the reply is delivered (§10).
 
-The only numeric idea in the deterministic engine is the optional advisory LLM note (§7), which is
-never pass/fail and never an aggregate quality number.
+The judge is deterministic and has no numeric quality score. No part of the game calls a language
+model (§7).
 
 ---
 
@@ -681,18 +703,21 @@ Every factor must be authorable. The target schema includes, beyond 04's core fi
   (`senderTrust`, `pretextRelevant`, `attachmentPlausible` and the `pass` side of `senderAuth`, in `04`);
   any factor she leaves out uses the canonical string. The lab's Pierce authors `senderAuth.fail` (the
   `p=none` line) and `.pass`; Lord authors none for it.
-- `subjects: [{ id, text }]` — the subject lines the composer offers; the first is the default.
-  The sent record stores the chosen `text`, and a reply is `Re: <text>` unless the ink sets one.
+- `subjects: [{ id, text, topic }]` — the subject lines the composer offers; the first is the default.
+  The sent record stores the chosen `text`, and a reply is `Re: <text>` unless the ink sets one. The
+  judge does not read the wording; the `topic` feeds only the open check (§2). Every list holds at least
+  one subject whose topic the target does not open, so the pick matters for a stranger.
+- `interests: { topics: [...] }` — the subject topics the target opens (§2). Who a character is shows
+  in this and in what they act on (`primedFor`, `expectedLink`), so targets in one scenario differ in
+  topics, trusted senders, accepted attachment and link, and in the templates they are offered (§10).
 - `character` (optional) — the id of the `social.characters` entry whose mail-channel story writes
   this target's replies (§10). Without it the target replies from `replies` / `factorStrings`.
 
-### LLM advisory scope
+### No generated text
 
-If the optional advisory is built, it is constrained to **"does this body reference this authored
-target's `primedFor` facts"**, never a general "how convincing is this phish" score, and never
-improvement suggestions that would transfer to a real target. Advice-only, default-off, cost-noted.
-Outside that scope it becomes a phishing-quality optimiser and breaks the "model, don't weaponise"
-rule.
+No part of the game calls a language model. The judge, the replies, the feedback lines and the hints are
+all authored data or ink. A free-text box, where a scenario allows one, is unscored and unread (§10), so
+nothing needs to interpret it.
 
 ---
 
@@ -910,9 +935,13 @@ mail reading pane. On mount it takes the open conversation's NPC id, finds the c
 (`social.characters` reverse map from channel ids), reads the value from
 `gameState.globalVariables[influence.global]` and the markers from `thresholds[].at`/`icon`. It
 updates on `global_variable_changed:<influence global>` and on `npc_influence_changed`, so a change
-written from ink alone moves the bar. Per-change reasons show only when the event carries one. Whether
-the number is printed is a scenario setting (`tuning.influenceNumberVisible`, 06). A character with no
-`social.characters` entry shows no bar.
+written from ink alone moves the bar. Per-change reasons show only when the event carries one. The
+number is always printed beside the bar, in training and assessment alike, so the player can see how
+far a line moved it and avoid pushing it too low. The bar is also shown on the character's world
+sprite (S13) once its value has first changed, so the player sees the effect of an email or a call
+from across the room. There is one bar per character. A second social meter would be added only if
+research supports it and the player would understand it at once. A character with no `social.characters`
+entry shows no bar.
 
 ### Scale
 
@@ -1069,10 +1098,11 @@ Email is asynchronous phone-chat. The engine judges; the ink reacts in character
 mail story is a separate file (§9) with its own `on_email` entry knot.
 
 1. **Compose.** The player builds a message in `01` from templates with blanks (below): which
-   account to send from (§10a), the From line, the greeting, a pretext and an ask, and an optional
-   attachment or link from the payload kit.
-2. **Judge.** On send, `evaluateMessage(target, message)` (§3) returns an `EvalResult`. The mail
-   client shows the factor checklist at once.
+   account to send from (§10a), the From line, the subject, the greeting, a pretext and an ask, and an
+   optional attachment or link from the payload kit.
+2. **Judge.** On send, `evaluateMessage(target, message)` (§3) returns an `EvalResult`, which includes
+   the open check (§2). The mail client shows the factor checklist at once in training mode and with
+   the reply in assessment mode ("Timing and delivery").
 3. **Write into ink.** If the target has a `character`, the mail runner (below) loads that character's
    email-channel story, sets the variables in the tables below, and schedules `on_email`.
 4. **Deliver after a delay.** When the delay elapses ("Timing"), the ink runs from `on_email`. Its
@@ -1080,8 +1110,9 @@ mail story is a separate file (§9) with its own `on_email` entry knot.
    (From = the NPC, subject `Re: <subject>` unless the ink sets one).
 5. **React.** The ink uses the same tags phone NPCs use: `#give_item`, `#set_global`,
    `#complete_task`, unlock tags, and influence changes with a reason (§8).
-6. **Follow up.** Within a thread, short follow-up replies are ink choices offered under the reply
-   (as in phone-chat). A new crafted message is judged again from step 1.
+6. **Follow up.** Within a thread the player either picks a short ink reply or writes a judged reply,
+   never both at once ("Replies, reply choices and chasers"). A new crafted message is judged again
+   from step 1.
 
 ### Composing: templates with blanks
 
@@ -1106,6 +1137,16 @@ manager, [name]". The rules:
   can never satisfy `pretextRelevant`; with `implies` it counts as the values it names (Hampshire's
   applicant pretext implies `cv`, so the judge needs no fact from her: her only gate is the contact
   reveal, §11). It can also satisfy a generic pretext (an open careers inbox).
+
+**How much choice a target offers.** A target offers two to four templates for its pretext part and for any
+other part where the player has a real choice (a forced From or a single greeting may offer one), with at most two
+blanks in any one template. The set is built from credible phishing, not from one right answer. Next to
+the templates that fit the target sit one or two plausible ones that do not (a generic IT notice for a
+finance officer, a prize draw for a payroll intern), so a send is not guaranteed to land and the player
+has to think about this person. Blanks offer only held facts, a stale one included (§1); the plausible
+wrong choice lives in the templates, never in invented values. When a send fails the target says why in
+character (the `email_*` variables below), and that reply is the player's feedback on what this person
+trusts, opens and acts on.
 
 ### Template and slot schema
 
@@ -1190,6 +1231,10 @@ with the Attach control and travel as `message.attachment` and `message.link` (�
 | `email_account_kind` | string | `"given"`, `"found"` or `"created"` |
 | `email_account_domain` | string | domain of the sending account |
 | `email_to` | string | which of the character's addresses the message used |
+| `email_opened` | bool | `EvalResult.open.opened` (§2) |
+| `email_open_via` | string | `"sender"`, `"subject"` or `"none"` |
+| `email_subject_topic` | string | the `topic` of the chosen subject |
+| `email_in_reply_to` | string | id of the message this one answers, or `""` for a new message |
 
 Each mail story declares the VARs it reads. Values are colon-free (§6). The validator checks that every
 target with a `character` has an email-channel story with an `on_email` knot, and that it declares
@@ -1218,7 +1263,12 @@ defers tags and globals to first open. The mail runner needs the opposite, and i
    for the mail client (or shown as mailbox notifications) rather than popped over whatever overlay is
    open; `give_item` reads the record's `itemsHeld`, so the record must be loaded (S8).
 7. Write the lines to the mailbox as one message; store the story position and any choices in
-   `mailState.threads["<character>:<accountId>"]`; `recordInkVariables`; reset the `email_` set.
+   `mailState.threads["<character>:<accountId>"]`; `recordInkVariables`; reset the `email_` set. A run
+   that produces no text (a message the character never opened and chose to ignore) delivers nothing
+   and just ends the job; the checklist has already said the message was not opened.
+
+The knot the runner enters is `on_email` unless the character's `emailKnots` (§10a) names another for
+the sending account.
 
 A thread position is stored separately from the phone and person positions, so a mail run never
 overwrites a conversation that is open on another channel. Choices under a reply persist only when the
@@ -1232,10 +1282,15 @@ only the record id, never the composite key.
 VAR pierce_influence = 0
 EXTERNAL se_influence(delta, reason)
 VAR email_landed = false
+VAR email_opened = true
 VAR email_first_fail = ""
 VAR email_attachment = "none"
 
 === on_email ===
+{ not email_opened:
+    // She never opened it. Say nothing, or leave a one-line auto-reply that hints at why.
+    -> DONE
+}
 { email_landed:
     Thanks Jed, opening it now.
     ~ se_influence(10, "senderTrust")
@@ -1252,13 +1307,42 @@ VAR email_attachment = "none"
 -> DONE
 ```
 
+### Replies, reply choices and chasers
+
+- **One reply per send.** An `on_email` run produces one message.
+- **Reply options (ink choices).** When the run ends on ink choices they appear under the reply as short
+  one-sentence options ("Sorry, wrong person", "It's the Q3 sheet Jed mentioned"). They are unscored
+  and the ink decides what follows, including influence changes. Picking one writes a sent record of
+  `kind: "quickReply"` (the chosen text; no templates, slots or tells; `landed` null) and queues the
+  continuation as an ink job with `choice` set to the index picked. It runs after the character's
+  reply delay and produces the next message.
+- **Write a reply (judged).** Where the character should be drawn into giving something away, the knot
+  ends with the tag `#compose_reply:<targetId>`. The thread then offers a composer in place of the
+  options. `<targetId>` is a `phishTargets` entry with the same `character`, so its templates, hidden
+  criteria and outcome are authored like any target (§7). The message carries `email_in_reply_to`.
+- **Never both.** `mailState.threads[key].expects` is `{ mode: "choices" }` or `{ mode: "compose",
+  targetId }`, and the reading pane shows exactly one control, labelled by what it does: "Choose a
+  reply" for the options, "Write your reply. This one is judged" for the composer. The player always
+  knows whether the next step is a pick or an open task.
+- **Chasers and timed mail.** A run may queue one later message with `#mail_later:<seconds>:<knot>`: an
+  ink job on the same thread that enters the named knot with the same `email_*` snapshot. A thread
+  holds at most one pending chaser. A scenario event can also drop mail into a mailbox: a seeded
+  message with `deliverAt: { "afterSeconds": n }` or `{ "global": "<name>" }` is delivered by the
+  scheduler when the countdown ends or the global becomes true (job kind `seed`).
+
 ### Timing and delivery
 
 Replies arrive after a delay: authored per character as `social.characters.<id>.emailReplyDelay`, an
 integer number of **seconds of wall-clock countdown** (default 20). The lab sets 15 for all three of its
 targets, Hampshire included (a data-only target authors it on the target); an awareness episode sets
 its own on its attack target (5 to 8 seconds is the recommended range there, so a short episode does
-not wait on a reply). The checklist does not wait; only the in-character reply does.
+not wait on a reply).
+
+**When the checklist shows.** `mailClient.checklistTiming` is `"onSend"` (training; the default, and the
+lab's setting) or `"withReply"` (assessment). On send, `onSend` shows the checklist at once. `withReply`
+shows "Sent. Waiting for a reply" and reveals the checklist when the job runs, so the player reads the
+character's reaction first and then sees why. The reveal happens when the job completes, so a message
+the character ignores still gets its checklist. The sent record is written in both modes.
 
 Delivery does **not** reuse `timedMessages`. That machinery delivers fixed text to a phone thread: it
 needs a literal `text` at send time, ignores `targetKnot` for an NPC's own messages, treats `delay` as
@@ -1270,14 +1354,16 @@ in `mailState`, delivered by the runner above. It reuses the NPC manager's tick 
 payload or its sink. The countdown uses the wall clock; the time shown on the message uses
 `gameClock`, as phone messages do (`gameTime`).
 
-A job has one of two kinds. An **ink job** is the record above (`character`, `npcId`, `knot`,
+A job has one of three kinds. An **ink job** is the record above (`character`, `npcId`, `knot`,
 `vars`). A **text job** serves a data-only target (no `character`, such as Hampshire):
 `{ jobId, kind: "text", targetId, accountId, msgId, text, outcomeGlobal, remainingMs }`, where `text`
 is the target's authored `replies.landed` or the canonical fail line for the first failed factor (§2)
 and `outcomeGlobal` is the target's `outcome.setGlobal` key, set to true only when the message
 landed. Delivering a text job appends the reply to the mailbox of `accountId`, then sets the global
 through the shared writer. Both kinds use `emailReplyDelay` of the target (data-only targets may
-author it on the target).
+author it on the target). A **seed job** holds a seeded message waiting for its `deliverAt`:
+`{ jobId, kind: "seed", messageId, mailbox, remainingMs }`, or `global` in place of `remainingMs`;
+delivering it appends the message to the mailbox and raises the mail notification.
 
 ### Notification
 
@@ -1290,16 +1376,6 @@ open (S9).
 
 The **inbox-triage defender** (`05`) is content-driven: a fixed set of incoming messages with
 authored truth, flags and notes. It stays data. No NPC story runs in triage.
-
-### Open questions for the email→ink design
-
-- Subject line: a template with blanks too, or ignored by the judge? Default: ignored by the judge,
-  as today (`04` judges the body only).
-- How many templates does a target offer, and how many blanks may one template carry?
-- Are wrong but plausible blank values offered beyond the authored `stale` entries? Default: only held
-  facts, a stale one included.
-- Should the checklist wait for the reply in assessment mode, so the player reads the reaction first?
-- One reply per send, or can the ink send a second, later message (a "chaser")?
 
 ---
 
@@ -1325,7 +1401,8 @@ message claims to be from**.
 The lab ships exactly these two accounts. Only `guest` can spoof; `freemail` sends from its own
 address (its From is forced), so it teaches that a look-alike outside address fails against a
 company that publishes authentication. A **found** account is modelled but not shipped in the lab;
-this example is for `04`'s test case and the Eldritch Hacker build, and adds an account and a mailbox:
+this example is for `04`'s test case, the worked found-mailbox case below and the Eldritch Hacker build,
+and adds an account and a mailbox:
 
 ```jsonc
 { "id": "jed_pc", "address": "j.baker@accountingnow.example", "displayName": "Jed Baker",
@@ -1348,7 +1425,13 @@ this example is for `04`'s test case and the Eldritch Hacker build, and adds an 
   chosen entry's. The lab's globals are `acct_freemail` and `acct_freemail_choice`.
 - **Access.** A mail terminal carries `minigameData.accountIds: [...]`, the way a phone object
   carries `npcIds` (§11). The mail client opens on the first available account (or `defaultAccount`
-  when the object names one) and shows an account switcher; unread counts are per mailbox.
+  when the object names one) and shows an account switcher; unread counts are per mailbox. There is no
+  single inbox per scenario: each device offers the accounts it lists (see "Mailboxes, devices and
+  found mail").
+- **Found credentials need no screen of their own.** The account's `unlockedBy` global says whether
+  it is available. A device that should need a password carries the game's ordinary object lock
+  (`locked`, `lockType`), whose key is found as intel or a note; opening the device is then the
+  login.
 - **A sent message separates two things.** `fromAccount` is the account really used; it fixes the
   envelope domain and `senderAuth`. `headerFrom` `{name, address}` is the claimed From, built from
   the From blanks (§10), and is free only when the account has `spoofsFrom`; otherwise it is forced
@@ -1362,9 +1445,10 @@ this example is for `04`'s test case and the Eldritch Hacker build, and adds an 
   can send as that person with authentication that passes; a freemail account spoofing the company
   would not.
 - **Replies return to the real account's mailbox**, not to the spoofed party. In real life a reply to a
-  spoofed From goes to that person, so a spoof-only attacker never sees the answer. The first slice
+  spoofed From goes to that person, so a spoof-only attacker never sees the answer. The plan
   routes to `fromAccount`, and the checklist says so once ("In real life this reply would go to Jed's
-  inbox unless you set a reply-to"). An optional controlled reply-to slot is a later slice.
+  inbox unless you set a reply-to"). There is no reply-to slot. A player who wants the answer to a
+  message sent as Jed gets it by using Jed's account on a device that holds it (next section).
 - **The ink is told.** `email_account`, `email_account_kind`, `email_account_domain`, `email_to` and
   `email_claimed_sender` (§10) let the reply branch on identity: a found internal account is trusted
   more than a freemail one, a spoof the NPC can check is caught.
@@ -1375,6 +1459,40 @@ this example is for `04`'s test case and the Eldritch Hacker build, and adds an 
   the character accepts or catches) are future work for the Eldritch Hacker strand. In this plan
   there is one player voice on every phone, and the character's beliefs about who is speaking are not
   tracked per identity.
+
+### Mailboxes, devices and found mail
+
+A mailbox belongs to an account, and an account is reachable only from a device that lists it. That is
+how one scenario holds several inboxes and how the player reads and answers another person's mail.
+
+```jsonc
+"mailboxes": [ { "id": "guest" }, { "id": "freemail" },
+               { "id": "jed", "owner": "baker" } ]     // owner: a social.people id, optional
+```
+
+- **A character's mailbox with history.** `mailbox` records are seeded with `seededMessages[]` that
+  carry `mailbox: "jed"` and a `folder` of `inbox` or `sent` (an authored sent message names the
+  account in `fromAccount`). The loader normalises them like any authored message. This is the email
+  history the player reads on a found device.
+- **Devices.** A `mail_terminal` object is a fixed workstation or laptop in a room. A `mail_terminal`
+  with `takeable: true` can be picked up and opened from inventory, which is how a player carries
+  their own client (S14). Each device lists its `accountIds`; the switcher shows only those. A second
+  inventory item can list different accounts, so a scenario can give the player a personal client and
+  leave a colleague's laptop in a room.
+- **Replying as the character.** On a device that lists the found account, the player picks it in "Send
+  as". Its From is forced to the account's own name and address, sender authentication follows the
+  account's domain, and the thread key uses that account id. The ink sees `email_account_kind:
+  "found"`. A character may name a different knot for an identity with `social.characters.<id>.emailKnots`
+  (`{ "<accountId>": "<knot>" }`; the default is `on_email`), so a reply to Jed's real account can read
+  differently from a reply to the guest account.
+- **Contacts per device.** A contact may list `accountIds`; it appears in the To list only for those
+  accounts. A contact with no `accountIds` appears for all, once its `revealedBy` global is set.
+- **Highlights and saved evidence.** An authored message may carry `highlights: [{ id, text, grants? }]`,
+  where `text` is an exact substring of the body (the validator checks it). Highlighted words are
+  marked in the reading pane. Selecting one offers "Save as evidence": with `grants` set it calls
+  `grantFact(grants)` with the highlight's `id` as the fact's `source` (one award path, `02`); without
+  it the sentence goes to the notepad. Any other selection can be sent to the notepad (the notes API),
+  which grants nothing.
 
 ### The message record (persisted)
 
@@ -1406,6 +1524,9 @@ client stores it in `mailState.mailboxes[<mailboxId>].messages[]`.
   later template edit cannot change what the player sent. `templates` and `slots` are stored for the
   judge, the report and the debrief. `link.domainId` is the 07 domain menu id the player picked,
   copied from the landing-page record at send time (§11a), so the triage reader can look it up.
+- **Quick replies.** A reply option the player picks (§10 "Replies, reply choices and chasers") is stored
+  as a sent record with `kind: "quickReply"`, `body` the chosen text, `targetId` null, empty `templates`
+  and `slots`, `tells: []` and `landed: null`. It is never judged and never replayed in triage.
 - **Inbox mail** (a reply, seeded mail) has `folder: "inbox"`, `from` set to the sender, no
   `fromAccount`, `templates`, `slots` or `targetId`, `tells: []` and `landed: null`.
 - **Authored messages** (seeded mail in `mailClient.seededMessages` and the messages inside a triage
@@ -1422,7 +1543,8 @@ client stores it in `mailState.mailboxes[<mailboxId>].messages[]`.
 "mailState": {
   "mailboxes": { "guest": { "messages": [ /* records */ ], "unread": 1 } },
   "jobs": [ /* mail scheduler jobs, §10 */ ],
-  "threads": { "pierce:guest": { "position": { /* saved ink state */ }, "choices": [ ] } },   // key "<character>:<accountId>"; a data-only target has no entry
+  "threads": { "pierce:guest": { "position": { /* saved ink state */ }, "choices": [ ],
+                                 "expects": { "mode": "choices" } } },   // key "<character>:<accountId>"; mode "choices" | "compose" (+ targetId); a data-only target has no entry
   "drafts": { "guest": { "to": "...", "subject": "...", "templates": { }, "slots": { },
                          "attachment": null, "link": null } },   // one per account; survives a nested launch
   "metrics": { "pierce": { "sent": 3, "failed": 2, "landed": 1, "firstTryLanded": false } }
@@ -1716,6 +1838,8 @@ Items other docs depend on. Each has a code location. The consolidated cross-doc
 | S10 | The lockout: stored in the declared globals `<character>_lockout_until` and `<character>_lockout_channel` (§8), so it rides `globalVariables` persistence and needs no server section. The check on person-chat, phone-chat, mail and the `callId` starter (refuse before `pretext-prep` opens, so a locked-out student never fills in a pretext card first), and the lift (which writes `recoverTo` silently, clears the latch and the band flags) | `systems/interactions.js` NPC sprite branch and the `phone` `callId` branch; `systems/social-influence.js`; `phone-chat` and mail entry points |
 | S11 | Validator, schema and CI. **Lints:** the top-level `social` key; the `social.characters` lints (synced vars declared, `VAR`s match, lockout has an expiry or a route, thresholds ordered, `recoverTo >= highest effect threshold at + rearmMargin`, `clearOnRearm` only on booleans, a `reports` threshold on any character with call data); **declared globals:** for every character `<character>_influence` and `<character>_latched`, the band-flag and report globals, both lockout globals for a character with a `lockout` effect, and every `setGlobal` effect target are declared in `globalVariables` and are not imported (an undeclared name is silently not synced to ink, `npc-conversation-state.js:362-372`); the `se_intel_*` and `se_report_state` declarations; template/slot checks; `on_email` and `email_*` VAR checks; contact and readiness consistency (§11); the brand/host lint over exactly the **lint field list** in §11; `minigame-data-schemas.json` entries; no `intel_*` rule applied to other missions. **Exit behaviour (accurate today):** the validator exits 1 on a structure error (`validate_scenario.rb:4928`), an ink compile error (`:4964`, skipped by `--skip-ink`), a schema error (`:5081`), and on bad arguments or a missing file (`:4858`, `:4880`); every finding from the `check_*` functions is printed and the run exits 0. A **social-lint mode**, `--strict-social`, makes it exit 1 on any social lint error as well. **CI job** (one job, both runtimes): `ruby/setup-ruby` with the repo's Ruby version, `bundler-cache` and `BUNDLE_BUILD__SQLITE3: "--enable-system-libraries"` in the step env, preceded by the same `apt-get install sqlite3 libsqlite3-dev` step the existing `lint` and `test` jobs use (copy from `ci.yml`); `actions/setup-node` (Node 20, matching the `jsdom` release chosen in `07` N3); `npm ci`. **`package-lock.json`:** it is gitignored (`.gitignore:43`) and untracked, so `npm ci` has nothing to read on a fresh checkout; this item removes that `.gitignore` line, regenerates the lockfile after adding `jsdom`, and commits it (`npm install` in CI is not reproducible and is not used). Then the Node tests **under Bundler**: `bundle exec node --test test/js/validator-*.test.mjs test/js/social-*.test.mjs`. `bundle exec` puts Bundler's `RUBYOPT` in the environment of the plain `ruby` that each validator test spawns, so that child can load `json-schema`; without it every validator test would fail. The tests fail, not skip, under CI when Ruby or the gem is missing. Every test of a social module is named `test/js/social-<module>.test.mjs` so the glob runs it: the pure-module unit tests `social-phish-rules` (`04`), `social-triage-scoring` (`05` N4), `social-pretext-judge` (`06` N1) and `social-intel` (`02` N2), and the safety tests `social-landing-page-model` (scorer and `betterVictim`, `07` N2), `social-landing-page-render` (renderer DOM safety, `07` N3), `social-landing-page-guard` (runtime guard, `07` N6b) and `social-osint-address-bar` (address-bar formatter, `02` N9); `package.json` gains a `test:social` script with the same file list. **No test runs the validator CLI in a way that rewrites tracked files:** tests call the lint functions in-process through `ruby -e 'require validate_scenario.rb'` (as `test/js/validator-carry-over.test.mjs:13-23` does) or pass `--no-graph --skip-ink`, never the bare command line. Then a loop of `bundle exec` validator runs over **only the scenarios that carry a `social` key** with `--strict-social --no-graph --skip-ink`, then `git diff --exit-code` to prove no tracked file was rewritten (`--skip-ink` stops inklecate writing compiled `ink/*.json` beside the sources; because it also skips `check_ink_files`, the social ink lints parse the `.ink` text directly and do not read compiled output). The landing-page lint tests the **hostname only** for the `.example` suffix, runs the allowlist on the **raw labels first**, then folds and matches the denylist (§11); it also checks that each page has at least one `targets` key (exactly one in the lab) | `scripts/validate_scenario.rb` `known_top_level` and the `npcType` branches; `scripts/scenario-schema.json`; `scripts/minigame-data-schemas.json`; `scripts/ink_runtime_check/`; `.github/workflows/ci.yml`; `.gitignore`; `package.json` |
 | S12 | **Return to.** `startMinigame(scene, container, { returnTo: { sceneType, params }, ... })`: `endMinigame` calls `returnTo` after `onComplete`, on a normal exit only. A parent that launches a child sets `suspended: true` in its params so its `onComplete` ignores the `onComplete(false, null)` that `startMinigame` fires when it ends the running minigame. The launcher passes the child's required parameters in the call. The parent saves its draft first (mail: `mailState.drafts`; OSINT and board: their `se_*_state` globals) | `minigames/framework/minigame-manager.js` (`startMinigame`, `endMinigame`); `base-minigame.js` |
+| S13 | **World influence pip.** A small bar above a character's sprite, drawn once the character's influence has first moved off its start value and redrawn on `npc_influence_changed`. It reads the same global and thresholds as S4 and is skipped for characters with no sprite and no `social.characters` entry. It is a sibling of the combat health bar and is replaced by it if `combatHostile` fires | new `ui/npc-influence-pips.js`, modelled on `ui/npc-health-bars.js` (Phaser graphics at `overlayDepth(sprite.depth + 1)`, theme colours from `ui/theme-colours.js`), created beside `window.npcHealthBars` in `core/game.js` (about line 1679) |
+| S14 | **Mail devices and found mail.** `mail_terminal` joins `PICKUP_THEN_INTERACT_TYPES` so a takeable one is picked up and then opened from inventory; per-device `accountIds` and per-contact `accountIds`; mailbox history from seeded messages with `folder` `inbox` or `sent`; message `highlights` that call `grantFact` or the notes API; `emailKnots`; the open check in the mail bridge; the mail runner's handling of `#compose_reply:<targetId>` and `#mail_later:<seconds>:<knot>`; job kinds `seed` and a `choice` field on ink jobs; `deliverAt` | `systems/interactions.js` (the set at about line 776 and the `mail_terminal` branch); `minigames/mail-client/` (new); the mail runner (S6); `systems/social-intel.js` (`grantFact`); `window.addNote` in `notes-minigame.js` |
 
 Back-compat checklist for any of these changes: `applyActions` `set_global` still emits `global_variable_changed` on every call, same value or not (audit the shipped scenarios that map on it); m01 Derek (`#hostile` plus `#influence:-100`) still
 fights; m02 guards and ward nurse are not turned hostile by ink arithmetic; m04 Vance and m05
@@ -1785,3 +1909,12 @@ lists the triage sizes and the domain ids.
 | Thread key | `"<character>:<accountId>"`; `"<targetId>:<accountId>"` for a data-only target (no `threads` entry written) | 10a |
 | Created account | `createMenu`; `acct_<id>` and `acct_<id>_choice` | 10a |
 | Forced From | template `from_own`, `headerFrom: { account: true }` | 10, 10a |
+| Open check | a gate beside the seven factors: opens if `senderTrust` passes or the chosen subject's `topic` is in `interests.topics`; `EvalResult.open { opened, via, subjectTopic }`; `landed` needs it; ink variables `email_opened`, `email_open_via`, `email_subject_topic`; row text from `factorStrings.open` | 2, 3, 7, 10 |
+| Subject | chosen from `subjects[{ id, text, topic }]`; the wording is not judged; the topic feeds only the open check; every list has one topic the target does not open | 7 |
+| Template choice | two to four templates in the pretext part and wherever the player has a real choice, at most two blanks per template, at least one credible but wrong pretext template for a closed target; blanks offer held facts only | 10 |
+| Reply controls | a thread shows either "Choose a reply" (ink options, unscored) or "Write your reply. This one is judged" (`#compose_reply:<targetId>`), never both; `mailState.threads[key].expects` | 10 |
+| One reply, chasers | one reply per send; at most one pending chaser per thread (`#mail_later:<seconds>:<knot>`); timed mail by `deliverAt` on a seeded message | 10 |
+| Checklist timing | `mailClient.checklistTiming`: `onSend` (training, the lab) or `withReply` (assessment); revealed when the job completes | 10 |
+| Mailboxes and devices | no single inbox: a device offers only its `accountIds`; a found account on a found device reads that character's seeded history and replies as them; takeable `mail_terminal` works from inventory; highlights grant a fact or go to the notepad; no reply-to slot | 10a |
+| Influence number | always printed beside the bar, in both modes; the bar also shows on the world sprite once the value has changed (S13); one bar per character | 8 |
+| No generated text | no language model anywhere in the game; free text is unscored and unread | 7 |

@@ -3,7 +3,7 @@
 Status: plan. Built on the mail client (`01`) and the rules engine's factor library (`04`). This is
 the defender's seat, and the pre/post measurement the awareness product depends on. Factor ids,
 canonical red-flag strings and the `senderAuth` model come from the shared contract,
-`00_data_contract.md` §2; this doc defines none of its own. Engine items `S1` to `S12` are in `00`
+`00_data_contract.md` §2; this doc defines none of its own. Engine items `S1` to `S14` are in `00`
 §12 and are referenced, not repeated.
 
 **Triage is data, not ink.** Unlike the attacker-side email loop, where a target NPC's ink story
@@ -272,6 +272,14 @@ the ways it must not mislead:
 - **A fail is a clue, not proof.** Forwarding often breaks SPF and mailing lists (which rewrite the
   message) often break DKIM, so one failure with a DMARC pass is usually legitimate.
 - **None is not safe.** "None" means no one is vouching, which is a reason for more care, not less.
+- **The forwarded case stays in the lab and is made easy to read.** A genuine message that reached the
+  recipient through a colleague's forward carries a "Forwarded by a colleague" banner above the header
+  panel. Each result is a word as well as a colour (pass, fail, none). Below the three results the panel
+  adds one authored plain-English line saying what they add up to ("SPF failed, but DKIM and DMARC passed.
+  A plain forward often does this, and it is usually fine."). The message comes late in the set (sixth of the lab's eight),
+  after the look-alike-domain item that teaches "a pass is not a trust verdict", so the student meets
+  the simple reading first. A facilitator who wants it out for a first-year cohort removes the message
+  from the set (data only).
 
 The game never explains how to forge any of these results, how to set up a sending domain, or how to
 get a message past a receiver. That is deliberate ("model, don't weaponise"). The attacker
@@ -733,18 +741,14 @@ page" items built from its `buildSuspectPage` record and step-6 tells (`07` N5).
 `00` gains one, the item is a new `kind` beside `playerSent`, with page tells drawn from `00` §2's
 `lookalike_domain` and `linkCredible` strings.
 
-For the user (also listed in `../README.md`):
+Design decisions taken:
 
-- OQ1: **Where does the pre/post score live for the awareness product?** Default: in
-  `gameState.globalVariables` for the lab and Eldritch Hacker, and a small server-side record per
-  `gameId` only when the awareness product is productised (`11` §6.3). Alt: build the server record
-  now so the first pilot can export results. Costs engine/server work.
-- OQ3: **Should the pre-test show feedback at all before the post-test?** Default: yes, at the
-  end of the round (every message gets its named flags). Alt: scores only until after the post-test,
-  which makes the measurement cleaner but is a worse learning experience and breaks the "every
+- OQ1: The pre/post score lives in `gameState.globalVariables` for the lab and Eldritch Hacker. A
+  small server-side record per `gameId` is built only when the awareness product is productised
+  (`11` §6.3).
+- OQ3: The pre-test shows feedback at the end of the round (every message gets its named flags), before
+  the post-test. Scores-only until the post-test would measure more cleanly but breaks the "every
   verdict explains itself" rule.
-
-Design decisions taken, not for the user:
 
 - OQ4: Fixed message order, no shuffle. Easier to compare scores; a seeded shuffle per `gameId` is a
   cheap later change if learners in one room start sharing answers.

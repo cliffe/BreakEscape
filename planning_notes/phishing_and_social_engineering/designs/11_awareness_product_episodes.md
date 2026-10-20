@@ -108,8 +108,9 @@ Notes on specific episodes:
 - **E5 is last in build order** because it depends on `07`.
 - **E7 is the distinctive episode.** Break Escape already has TTS (the `tts-audio` pipeline), so a
   "cloned" executive voice is a style variant of an existing voice rather than a new capability.
-  It must never use a real person's voice; the cast is fictional. Whether to ship it at all is
-  open question A1 below, because audio deepfakes are a sensitive demo.
+  It must never use a real person's voice; the cast is fictional. E7 ships as an optional episode
+  (decided), framed around "verify, don't trust the ear" with no technique detail, because audio
+  deepfakes are a sensitive demo.
 - **Cast diversity.** Vary age and background across each episode's cast (standing project rule).
 
 ## 4. Rules, scoring and culture
@@ -173,10 +174,10 @@ These are product rules, enforced in copy review:
   episode ends with "what to do on Monday: report it, and how your organisation reports" (a slot
   the customer fills, section 6.3).
 - **No individual league tables (a product goal that depends on the host, section 6.2).** No "best
-  phisher", no names on a leaderboard. Scores are shown to the learner only. Any aggregate shown to an
-  organiser is a team or role aggregate with a minimum group size (suggested 10 (to verify against
-  privacy advice)). Hacktivity broadcasts a per-user score to event channels, so this holds only in a
-  standalone host or after Hacktivity changes (open question A7).
+  phisher", no names on a leaderboard. Scores are shown to the learner only. An aggregate view for
+  organisers is out of scope for now (A4); if one is built later it is a team or role aggregate with a
+  minimum group size, set then. Hacktivity broadcasts a per-user score to event channels, so this holds only in a
+  standalone host or after Hacktivity changes (hosting and privacy are out of scope for now, A7).
 - **Grounding.** The no-blame stance, valuing report rate over click rate, and no shaming of
   individuals follow UK NCSC guidance on phishing and security culture (NCSC "Phishing attacks:
   defending your organisation" and its security-culture material; cited from memory, check wording and
@@ -306,7 +307,7 @@ core loop and not a later add-on (the default is to measure from the start and s
   - "Once per learner" holds inside a game (the guard) and across the event only as far as the host
     gives one game per learner per mission. A second game of the pre mission replaces the baseline,
     because the newest concluded run counts. Product copy does not claim stricter than that; the hosting
-    question is A7 and the ordering question is A8.
+    question is out of scope for now (A7) and the ordering question is A8.
   - A role-specific pair covers a learner's primary role. Episodes from other roles are extras with no
     check of their own.
 - **Recorded per item:** item id, form, learner verdict (Trust, Report, Delete), the chips ticked, the
@@ -317,9 +318,9 @@ core loop and not a later add-on (the default is to measure from the start and s
   path.
 - **What we can claim.** A before/after change on matched parallel items for a cohort. We **cannot**
   claim reduced real-world click rates from this alone. The product copy must say so.
-- **Calibration.** Because pre and post answers feed straight into the product's own claims, we
-  should pilot the forms to check that A and B are in fact equal in difficulty (small pilot, compare
-  means). See open question A3.
+- **Calibration.** Because pre and post answers feed straight into the product's own claims, the
+  forms are written to be equal in difficulty and checked in internal playtest. No pilot is planned
+  (A3), so the copy claims no equivalence between the forms and no effect.
 - **Evidence context.** Research on awareness training is mixed. A large 2025 study by Ho et al.
   (UC San Diego, IEEE Symposium on Security and Privacy 2025; roughly 19,500 employees at a health
   organisation, 8-month randomised trial, ten simulated phishing campaigns) reported no significant
@@ -333,7 +334,8 @@ core loop and not a later add-on (the default is to measure from the start and s
   click-through reading but on a 15-minute interactive episode, it measures knowledge on matched
   items, and it does not claim behaviour change that the evidence does not show. The Ho
   study measured embedded training after a click, not an attack-then-defend game, so it does not
-  answer whether this format works either; that is for our own pilot to show (section 5.4).
+  answer whether this format works either; that is not established, and no pilot is planned, so the
+  copy makes no effectiveness claim (section 5.4).
 - **Chothia et al. (ASE '18)** report that students universally said the exercise raised their
   awareness, which supports the empathy lesson. They do **not** report a measured learning
   effect: the paper defers formal evaluation to future work, and the only numbers are participation.
@@ -344,7 +346,7 @@ core loop and not a later add-on (the default is to measure from the start and s
 Chothia et al. designed their exercise to encourage students to discuss phishing attacks and
 anecdotally found the discussion particularly useful. That is a design aim plus an anecdote, not a
 measured finding, and formal assessment is left to future work. We borrow the idea as a hypothesis
-to test in our pilot (5.4), not as established evidence. A facilitated mode lets us try it:
+as a design choice, not as established evidence (5.4). A facilitated mode lets us try it:
 
 - Teams of 3–4 share one screen for the attack beat and **discuss** the message before sending.
 - A facilitator view (a plain second tab, or a printed card set) gives a prompt at each stage: "What
@@ -355,11 +357,12 @@ to test in our pilot (5.4), not as established evidence. A facilitated mode lets
 - It reuses the same episode JSON. The new work is a `facilitated: true` flag that adds prompts,
   hides the per-learner score from the shared screen, and pauses between stages.
 
-### 5.4 Pilot plan (small, honest)
+### 5.4 No pilot (decided)
 
-Run E1 and E5 with a small cohort (staff or students, with consent), pre/post on parallel banks,
-plus a no-training control group on the same measurement if feasible. Report effect sizes with
-uncertainty. If we see no effect, that is a result and we change the format, not the claim.
+No pilot of the pre/post measurement is planned. The measurement is built in from the start because
+the data is cheap to keep, but product copy makes no effectiveness claim and quotes no effect size.
+A pilot with ethical sign-off would be a separate decision, taken if the product ever needs to make
+such a claim.
 
 ## 6. Engine wiring and productisation staging
 
@@ -405,7 +408,7 @@ organiser puts the chosen ones in an event. The episode data lives in each shell
 
 ### 6.2 Privacy defaults and hosting
 
-- **Hosting is open (A7), and it decides what privacy claims can be made.** (a) A standalone host with
+- **Hosting and learner privacy are out of scope for now (A7), and the answer decides what privacy claims can be made.** (a) A standalone host with
   no Hacktivity hook would need a new customer store for measurement, and could offer a pseudonymous
   learner id and private scores. (b) Inside Hacktivity, every game belongs to a user
   (`game.player`); `GameScoringJob` (`app/jobs/game_scoring_job.rb`) records the task and aim
@@ -430,14 +433,15 @@ Not built in the first slice. Listed so the data model does not block them.
 |-------|------|-----------|-----------------------|
 | Later | **SCORM / xAPI / LTI export** (xAPI statements per item and episode; SCORM package for older LMSs; LTI launch) | Needs a stable episode and measurement schema first | Store measurement records in a form that maps cleanly to xAPI (actor, verb, object, result) |
 | Later | **SSO** (SAML/OIDC) | Customer-specific, depends on hosting model | Keep learner id pluggable |
-| Later | **Admin dashboard** (cohort completion, pre/post change, per-flag weak spots) with minimum group size | Needs real data volume | Aggregate only; no individual ranking (4.3) |
+| Later | **Admin dashboard** (cohort completion, pre/post change, per-flag weak spots) with minimum group size | Out of scope for now (A4); needs real data volume | Aggregate only; no individual ranking (4.3) |
 | Later | **Corporate skin** (customer logo, colour, "how we report here" slot for the Monday card) | Neutral skin first | Theme file and a `customer_report_route` string slot |
 | Later | Localisation | Phishing is language-specific; needs native review | Strings in data, not code |
 | First slice (baseline) | Core-loop accessibility: keyboard-only play of attack and defend beats, accessible names on report/verdict controls, reduced motion, plain-text alternatives for every item | A workplace-mandated product cannot leave staff out; pixel UI is a real risk | Build into item data and component markup from the start |
 | Later | Full accessibility audit and screen-reader polish of the canvas surfaces | Needs a working product to audit | Plain-text alternatives already in item data |
 
-The commercial packaging question (hosted service vs licensed bundle, licence of the pixel-art
-assets for commercial use) is open question A5.
+The product is a **hosted service sold commercially** (decided, A5). The PixelLab-generated art is
+taken as usable for that under the project's subscription; the terms text is checked once before
+release (see "Claims to verify").
 
 ### 6.4 Requests of other docs
 
@@ -471,7 +475,7 @@ Awareness is the **shallow setting** of the same components:
 | OSINT depth | 3–5 facts, one page | Multi-site, metadata, search | One or two clues |
 | Retries / hints | Attack beat: one send, meter guidance before it; defend: first answer recorded, a similar item follows | Unlimited, escalating, not scored (completion share only, `10` §4) | Hint stages |
 | Header / SPF / DKIM / DMARC | Collapsed behind "Show details" (pre/post) or off (episodes); no jargon, only "this domain isn't theirs" | Read inside the triage, panel open (`05`); no separate quiz | Optional |
-| Scoring | Defence only, `05` `awareness` profile; private only in a standalone host (A7) | `analyst` profile in triage; Hacktivity records task and aim share, richer rubric open (`10` OQ2) | Gate on a global |
+| Scoring | Defence only, `05` `awareness` profile; private only in a standalone host (A7) | `analyst` profile in triage; Hacktivity records task and aim share, richer rubric out of scope for now (`10` section 4) | Gate on a global |
 | Skin | Neutral corporate | Lab | Eldritch Hacker |
 | Time | about 13 min per episode, plus one pair of checks | about 75 min, one session | one stage of a mission |
 
@@ -496,22 +500,19 @@ PixelLab-first, not to be generated now.
 
 The same list is in `README.md`.
 
-- **A1.** Ship the deepfaked-voice CEO episode (E7)? Default: **yes, as optional**, framed
-  around "verify, don't trust the ear", and with no technique detail.
+- **A1 (decided).** E7, the deepfaked-voice CEO episode, ships as an optional episode, framed around
+  "verify, don't trust the ear", with no technique detail.
 - **A2.** Episode order for the first slice? Default: E1 (finance) first as the flagship, then E5
   (login page, after N13), then E3 (vishing) once the role swap (N15) is built; E2, E4, E6, E7
   follow. The role swap is in this product's build scope (N15) and not the lab's.
-- **A3.** Ethical sign-off and a small pilot for pre/post claims before any effectiveness copy
-  is written? Default: **yes**, pilot per 5.4, and no effectiveness claims until it reports.
-- **A4.** Minimum group size for any aggregate shown to a customer? Default: 10, subject to
-  privacy advice (to verify).
-- **A5.** Commercial packaging: hosted service vs licensed bundle, and are the pixel-art
-  assets (PixelLab-generated) cleared for commercial redistribution? Default: undecided, assume
-  hosted; check the PixelLab terms before selling (to verify).
-- **A7.** Hosting and learner privacy: standalone host or inside Hacktivity (6.2)? The answer decides
-  whether a pseudonymous learner id, private scores and "no league table" can be promised, because
-  Hacktivity's scoreboard and `game.player` identify the learner. Default: do not promise them until
-  decided.
+- **A3 (decided).** No pilot of the pre/post measurement; no effectiveness claims (5.4).
+- **A4 (out of scope for now).** The minimum group size for aggregates shown to a customer is not set
+  until an aggregate view is built.
+- **A5 (decided).** Hosted service, sold commercially; the PixelLab art is taken as cleared for that
+  (6.3).
+- **A7 (out of scope for now).** Standalone host or inside Hacktivity (6.2). Hacktivity's scoreboard
+  and `game.player` identify the learner, so product copy promises no pseudonymous id, private scores
+  or "no league table" until this is decided.
 - **A8.** Pre/post ordering and strictness (5.2). The platform does not order missions or stop a learner
   opening a second game of the pre-check, and `CarryOver` uses the newest concluded run. Default: the
   organiser sequences the check missions by hand, a missing baseline is shown as such, and product copy
@@ -532,6 +533,8 @@ The same list is in `README.md`.
 - Chothia et al.: team discussion is a design aim with anecdotal support only (verified); no
   measured learning effect to quote.
 - NCSC guidance titles and wording: cited from memory (to verify).
+- PixelLab's terms on commercial use of generated art in a hosted, sold product: read the current terms
+  text once before release.
 - Statistics on BEC loss share, quishing and smishing prevalence: none quoted here; any figure
   added later needs a source (e.g. an annual national cyber-crime report) (to verify).
 

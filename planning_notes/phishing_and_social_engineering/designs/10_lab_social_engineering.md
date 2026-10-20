@@ -5,7 +5,7 @@ single session of about 75 minutes. It is the first shippable SE product and tak
 technical-lab slot. Browser-only, no VMs. Its systems later become the core of SAFETYNET: Eldritch
 Hacker (see `README.md`).
 
-`00_data_contract.md` is authoritative for ids, schemas and the engine items (S1 to S12); §13 there
+`00_data_contract.md` is authoritative for ids, schemas and the engine items (S1 to S14); §13 there
 lists the values several docs must match. Where this doc leans on 01 to 07 it cites the section of
 00 that settles the value (section 6, "What this doc relies on"). The pretext score is the NPC's
 influence (`00` §8), carried across channels (`00` §9). Email replies come from the character's mail
@@ -232,7 +232,7 @@ Hampshire has no ink story, so her reply is a **text job** (`00` §10 "Timing an
 delay the engine appends her authored `replies.landed` (or the canonical fail line for the first
 failed factor) to the mailbox of the account used, and sets `phish_hampshire_landed` only when the
 message landed. Pierce's reply is written by `pierce_mail` (its `on_email` knot), which sets
-`phish_pierce_landed`; one owner per target, never both. The checklist does not wait for either.
+`phish_pierce_landed`; one owner per target, never both. The checklist shows at once for both.
 Each failure shows exactly which factor failed, a failed send costs Pierce or Lord 10 influence (04;
 Hampshire has no character, so nothing moves for her), and the hint ladder starts after two misses.
 Where a blank needs evidence the student has not found, the blank is empty and Send is blocked with a
@@ -240,6 +240,17 @@ neutral line ("A blank needs evidence you haven't found yet", defined in 04, use
 names or hints at the missing value, so the judged checklist never reports a missing-evidence gap; the
 hint ladder and the board's "still missing" panel do that work. Pierce's and Lord's influence is bounded at -40
 and carries no report or lockout (section 5, "Influence"), so a run of bad sends only moves the bar.
+
+**Opening, subject and retries.** The composer's Subject pick matters because a target has to open the
+message first (`00` §2). A trusted-looking sender gets it opened (the rounds 2 and 3 spoofs do); a
+`freemail` retry to Pierce or Lord is a stranger, so it opens only if the subject's topic is one the
+target cares about (Pierce `finance`, Lord `payroll`). The checklist's first row says whether the
+message would be opened, and the character's reply, when there is one, says in their own words why
+they did not trust it, which is the clue to who this person is. Each closed target also has a
+plausible wrong template in the pretext part (Pierce's overdue supplier invoice, Lord's password
+notice), so a send is not guaranteed to land. **Retries are free and unlimited**, framed as rehearsal
+that Ruth reviews. A failed send moves the bar and nothing else, failed sends are counted in the report,
+and there is no heat limit. The lab runs in training mode (`checklistTiming: "onSend"`).
 
 **`senderAuth` on the attacker side.** From round 1 the checklist carries an advisory line under the
 factors. In round 1 it says "Sent as your own address, so there is nothing to spoof and nothing to
@@ -423,7 +434,11 @@ Tomasz takes the report and sets a debrief exercise. The same strings serve both
      inbox** (authored phish; the defender's view of stage 3 round 1).
    - **Genuine mail via a forwarder** (authored): Jed to Pierce, Friday balance sheet. SPF fail
      (the forwarding host is not in the sender's SPF record), DKIM pass, DMARC pass because DKIM
-     aligns. Teaches why DMARC needs only one aligned pass and why SPF alone breaks on forwarding.
+     aligns. Teaches why DMARC needs only one aligned pass and why SPF alone breaks on forwarding. It
+     stays in the lab. To keep it clear, the message shows a "Forwarded by a colleague" banner, each
+     check reads as a word as well as a colour, and a plain caption under the three results says what
+     they add up to (05, "The header panel"). It is the sixth of the eight, after the look-alike
+     notice.
    - **A vendor invoice** and **a staff newsletter** (authored, genuine).
 
    The student passes the step when the round's percent reaches the set's `passPercent` (60): the
@@ -675,14 +690,11 @@ The in-game records that exist (attempts per target, sent, failed and landed cou
 at send time) are for the student, the report and the closing debrief. They do not reach Hacktivity.
 The game does not record which factors failed or how many hints were shown.
 
-**Open (needs Hacktivity work, not decided here).** A weighted rubric would need per-outcome marks and
-a tutor view. Two options, neither chosen: (a) keep the platform score as the completion share and give
-the module leader a hand-applied rubric; (b) have the game write counters into `globalVariables`
-(`phish_<id>_attempts`, the `mailState.metrics` values) and build a per-student report in Hacktivity
-that reads them. Failed-factor lists and hint counts would be new counters (for example `failedFactors`
-on the sent record and a `hintsShown` count in `mailState.metrics[targetId]`, both a change to `00`
-§10a, with the hint ladder writing them). Option (b) changes `game_scoring_job.rb` and adds a tutor view. This is
-open question OQ2 in section 9. Optional follow-on coursework (not in-game): a 500-word reflection on
+**Richer assessment is out of scope for now.** The lab is scored by the platform's completion share
+and nothing else is built for assessment. A weighted rubric, per-student reports or a tutor view
+would need Hacktivity work (for example counters in `globalVariables` read by `game_scoring_job.rb`,
+and new fields such as `failedFactors` on the sent record and `hintsShown` in `mailState.metrics`);
+none of that is part of this plan. Optional follow-on coursework (not in-game): a 500-word reflection on
 what the look-alike domain taught about authentication, and a one-paragraph awareness note for staff.
 
 **CyBOK mapping** for `mission.json`, using keywords from `docs/CyBOKList.md`. The list has no
@@ -711,9 +723,9 @@ null`). `lab_scanning` is a VM lab and is not the model. Files: `mission.json`, 
   "description": "...",                                  // required by the validator
   "difficulty_level": 2,                                 // required
   "secgen_scenario": null,
-  "collection": "escape_room",                          // see OQ8; seeds.rb defaults to 'default'
+  "collection": "lab_games",                            // a new strand label (N6); seeds.rb defaults to 'default'
   "ui_theme": "secops",                                  // valid in Mission::UI_THEMES
-  "lab_sheet_url": "...",                                // once the optional sheet is published
+  "lab_sheet_url": "...",                                // added at the end of the project, once the sheet exists (section 5)
   "cybok": [ { "ka": "HF", "topic": "Awareness and Education", "keywords": ["..."] } ]   // table in section 4
 }
 ```
@@ -871,9 +883,10 @@ step are answered correctly (`00` §11, 03). All feedback strings are authored a
 `scope`, `plan`, `report` and `defender` items follow the "right answer plus a reason for each wrong
 one" shape of the 04 factors, so one validator rule covers them (section 6, N7).
 
-**Optional lab sheet.** A short "practical"-mode sheet (concept recap per stage, hints) may be
-published via `HacktivityLabSheets` and linked from `mission.json`. The game must be completable
-without it (all learning is in-game).
+**Lab sheet, written last.** Lab sheets and walkthroughs for all labs and game scenarios are written
+as the final step, after practically everything else is complete. This lab's sheet is a short
+"practical"-mode one (concept recap per stage, hints), published via `HacktivityLabSheets` and linked
+from `mission.json` then. The game must be completable without it (all learning is in-game).
 
 ## 6. Engine wiring
 
@@ -921,11 +934,11 @@ Every value below is settled in `00`; 10 builds on it and cites the section.
 | N3 | **Board modes** `scope` and `plan` with the `engagement` data (scope and question cards, objective and measure picks) | Owned by 03; this doc supplies the data shapes in section 5 |
 | N4 | **Defender-mode mitigation picks** | Owned by 03; `engagement.defender.factMitigations`; no indicator tagging in this slice |
 | N5 | Door and key gating use existing locks and `#give_item`; **no new engine work** | Key locks and the key items both carry `keyPins`; the key items also carry `opens_lock`. Ruth's phone is a starting item (`startItemsInInventory`, `npcIds: ["ruth_phone"]`) |
-| N6 | Non-VM mission configuration: `secgen_scenario: null` and a `collection` label | `Mission#requires_vms?` already supports it; `db/seeds.rb` lines 67 to 71 read `secgen_scenario` and `collection` |
+| N6 | Non-VM mission configuration: `secgen_scenario: null` and the new `collection` label `lab_games`. `lab_tesseract_trials` is the same kind of game, so its `mission.json` moves to `lab_games` too (a one-line content change) | `Mission#requires_vms?` already supports it; `db/seeds.rb` lines 67 to 71 read `secgen_scenario` and `collection`; the missions index builds its filter and headings from `Mission.collections` and titleizes the label (`app/views/break_escape/missions/index.html.erb`, lines 114 to 125), so it shows as "Lab Games" with no code change |
 | N7 | **Validator work** (`scripts/validate_scenario.rb`, `scripts/scenario-schema.json`, `scripts/minigame-data-schemas.json`) | `known_top_level` (lines 246 to 251) gains `social`; `known_npc_fields` and `known_behavior_fields` gain only what 00 §8 and §9 add; `minigame-data-schemas.json` gains an entry per object type in the table above; each type needs its `assets/objects/<type>.png` sprite; every `engagement` item with a `correct` or `good` flag carries a `why`; every completing global in the objectives table is declared; the promised lints from 00 §12 S11, 04 N3, 05 N5, 06 N10 and 07 |
 | N8 | **Ink externals** (`se_influence`, `pretext_say`, `pretext_ask`) bind in `InkEngine` (`00` S1) | The authoring guide says "use synced-global `VAR`s, not `EXTERNAL` functions" because the engine binds only six read-only externals and an unbound one throws (`ink-engine.js` catches only the bind failure). When S1 lands, amend that rule in `README_scenario_design.md`. Also needed: bind in person-chat, phone-chat and the headless mail runner; add stubs to `scripts/ink_runtime_check/voicelines.mjs`, `inkcheck.js` and `reopencheck.mjs`; a validator rule that every `EXTERNAL` a story declares is bound for every channel the character supports |
 
-The other engine items the lab depends on (S1 to S12 in `00` §12, the OSINT, board, mail, pretext,
+The other engine items the lab depends on (S1 to S14 in `00` §12, the OSINT, board, mail, pretext,
 triage and landing-page work in 01 to 07, the bundled Atkinson Hyperlegible font) are in the README's
 consolidated table. Nothing here needs a VM, the flag-station or the vm-launcher.
 
@@ -936,11 +949,11 @@ consolidated table. Nothing here needs a VM, the flag-station or the vm-launcher
   becomes spot-the-phish only. Targets, rules and strings are the same files with fewer factors
   required and the meter on throughout.
 - **Eldritch Hacker:** any single stage is liftable (OSINT → phish → call). The lab's `phishTargets`
-  and `osint` blocks are the templates. A `found` account (`jed_pc` and its mailbox) and phone identities
-  (`00` §10a) belong there, not here.
+  and `osint` blocks are the templates. A `found` account (`jed_pc` and its mailbox), found laptops with
+  mail history, a personal client in inventory and phone identities (`00` §10a) belong there, not here.
 - **Student tuning knobs:** red-flag meter on or off per target; required factors per target; hint
-  verbosity; whether the triage includes the forwarder case (the hardest concept) or leaves it out;
-  which of the cut-order items to restore for a longer slot.
+  verbosity; whether the triage set keeps the forwarder message (it does; a facilitator can remove it
+  for a first-year cohort); which of the cut-order items to restore for a longer slot.
 - **Cohort reuse:** a second fictional company (different pattern, e.g. `firstname.surname@`) swaps
   in as data, so a re-sit or a second cohort does not share answers.
 
@@ -964,27 +977,22 @@ consolidated table. Nothing here needs a VM, the flag-station or the vm-launcher
 
 ## 9. Open questions
 
-Defaults are taken so nothing blocks; the open ones are also listed in `README.md`.
+Every question below is decided; none is open.
 
-- OQ1: **Retries as rehearsal.** Realistically a failed phish alerts the target. Default: retries are
-  free and unlimited, framed as rehearsal reviewed by Ruth, with failed sends counted in the report;
-  a failed mail send moves the bar and nothing else. Alternative: a "heat" limit that forces a hint.
-- OQ2: **Assessment and Hacktivity scoring (open, not decided).** The platform records only the
-  task/aim completion share (section 4). A weighted rubric by outcome, hint and attempt counts and a
-  tutor view need Hacktivity work: either a hand-applied rubric over the completion share, or a
-  per-student report built from `globalVariables` counters. Which, and who builds it?
+- OQ1: Retries are free and unlimited, framed as rehearsal (decided; stage 3).
+- OQ2: Richer assessment and Hacktivity scoring are out of scope for now (decided; section 4).
 - OQ3: **Length.** Target one session of about 75 minutes (decided; section 4 gives the budget and cut
   order). Run a timed blind playtest, as the Tesseract lab did, before fixing the figures.
-- OQ4: **Include the forwarder/SPF-breaks message?** Default yes (it is the correct, commonly missed
-  nuance); drop it for a first-year cohort.
-- OQ5: **Lab sheet.** Publish an optional practical-mode sheet (default yes, after the game exists)
-  or keep it fully in-game.
-- OQ6: **Legal framing by jurisdiction.** Default names the UK Computer Misuse Act 1990 with a generic
-  "equivalent laws elsewhere" line; a module leader may want local wording.
-- OQ7: **Cast naming.** Cast follows `00` §1; confirm or rename there only.
-- OQ8: **`collection` label.** Default: reuse `escape_room`, the non-VM lab precedent
-  (`lab_tesseract_trials`), so no platform change. Alternative: add a collection for this strand.
-- OQ9: **Extension content.** If the playtest shows spare time, restore in this order: indicator
-  tagging in the profile (`engagement.defender.indicators`), a stand-alone header quiz, the DMARC
-  rollout simulation. Each needs its data shape specified in 05 or 03 first; none is built in this
-  slice.
+- OQ4: The forwarder/SPF message is included, with the clarity aids in stage 7 (decided).
+- OQ5: The lab sheet is written last, with the sheets for all labs and scenarios (decided; section 5).
+- OQ6: Legal framing names the UK Computer Misuse Act 1990 with a generic "equivalent laws elsewhere"
+  line, and the cast surnames Pierce, Lord and Hampshire stay (decided). A module leader may want local
+  wording.
+- OQ7: Cast follows `00` §1; confirm or rename there only.
+- OQ8: The `collection` label is the new `lab_games` (decided; N6).
+- OQ9: **Extension content.** If the playtest shows spare time, restore content that puts the core
+  mechanisms and the new minigames to work first, in this order: (1) a second triage round from the
+  unused authored set ("Try the other set", 05; data only), (2) indicator tagging in the profile
+  (`engagement.defender.indicators`, board `defender` mode), (3) a stand-alone header quiz, (4) the
+  DMARC rollout simulation. The last two do not exercise the core systems, so they come last. Items
+  (2) to (4) need their data shape specified in 05 or 03 first; none is built in this slice.

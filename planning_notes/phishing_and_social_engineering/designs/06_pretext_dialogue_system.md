@@ -54,11 +54,11 @@ The **pretext card** holds the templates the player has prepared for this call. 
 `person-chat` opens with the NPC (in person: portrait plus the room's `chatBackground`). `phone-chat` opens as a thread, with the portrait in the header. Each turn:
 
 1. The NPC speaks (ink line, lip-synced as for any NPC).
-2. The player picks from two to four choices. Choices are templates (beat 2) or fixed lines. They cover the elicitation techniques: appeal to authority, urgency, reciprocity, a shared detail from OSINT, a direct ask, small talk, correcting yourself, and deflecting a question.
+2. The player picks from two to four choices. Choices are templates (beat 2) or fixed lines. They cover the elicitation techniques: appeal to authority, urgency, reciprocity, a shared detail from OSINT, a direct ask, small talk, correcting yourself, and deflecting a question. A template carries at most two blanks, and blanks offer only held facts (a stale one included), as in email (`00` §10). Some of the choices are credible lines that do not suit this character, so a call is not guaranteed to go well, and the tells panel says why in terms of who they are.
 3. The choice's claims are checked against what the NPC knows, and the influence moves.
 4. A tells panel shows the result of that line beside the portrait (section 4.4). The NPC reacts in character, and the reaction depends on the band the bar has reached.
 
-An **influence bar** sits under the portrait (in the header in `phone-chat`). It is one bar for this character, running from -100 to +100, with an icon at each of the character's configured thresholds (section 4.1). The bar is the DOM component in `00` §8: it reads the character's influence global and its `thresholds`, and redraws when the global changes, whether the change came from the judge or from ink. The portrait follows the band. The player always sees where they stand, subject to the number setting in OQ1. The same bar shows in the mail reading pane for an email character (`01`).
+An **influence bar** sits under the portrait (in the header in `phone-chat`). It is one bar for this character, running from -100 to +100, with an icon at each of the character's configured thresholds (section 4.1). The bar is the DOM component in `00` §8: it reads the character's influence global and its `thresholds`, and redraws when the global changes, whether the change came from the judge or from ink. The portrait follows the band. The player always sees where they stand, number included, in training and assessment alike, so they can avoid pushing the bar too low. Once the value has first changed, the same bar also shows on the character's sprite in the room (`00` S13). There is one bar per character. The same bar shows in the mail reading pane for an email character (`01`).
 
 ### Beat 4. Outcome
 
@@ -124,7 +124,7 @@ Influence carries over. The next attempt starts at the character's current value
 
 ### 4.4 The tells panel
 
-After every line the panel adds one entry. Each entry has four parts: the **delta and band**, the **factor** (which fact or technique), a **verdict mark**, and a **plain reason**. In training mode (`tellDetail: "full"`) the reason shows the actual value. In assessment mode (`"category"`) it names the factor only. Assessment mode also drops the influence numbers and keeps the band.
+After every line the panel adds one entry. Each entry has four parts: the **delta and band**, the **factor** (which fact or technique), a **verdict mark**, and a **plain reason**. In training mode (`tellDetail: "full"`) the reason shows the actual value. In assessment mode (`"category"`) it names the factor only. Both modes keep the influence numbers and the band.
 
 | Case | Format shown (training mode) |
 |---|---|
@@ -177,6 +177,8 @@ Same call, other choices at the same points (shown in the training debrief as "w
 | Turn 7 (from -10) | "I started Monday the 6th, third floor." | start date ✓ +10; floor ✗ (a lesser fact) -20; verification failed | -20 CALM. A failed verification reports the call at once, whatever the bar says, and `helpdesk_alerted` is set. |
 
 The defender note for the debrief reads: "Callback to a number already on file defeats every one of these lines. And the two verification answers, start date and floor, were not secrets. Both came from a public announcement post, so anyone who read it could answer. A verification question only works if its answer is something an outsider cannot find. The attacker's best move is one that never reaches a reset."
+
+**Policy realism (decided).** The helpdesk policy Priya and Dev model is deliberately weak: a temporary code read out over the phone after two matched facts, with the facts being things an outsider can find. The debrief labels it weak. The defence it teaches is callback to the number on file, which no line in the game beats. That is realistic enough to teach from and reads as a lesson in why the policy fails, not as a recipe, because the game never shows a real helpdesk's script, real numbers or a way past a callback.
 
 ### 4.7 Worked example: Neye Eve (a new copy of `scenarios/ink/neye-eve.ink`)
 
@@ -293,8 +295,7 @@ A call's data is one entry in `social.pretextNpcs` (`00` §11). It names its `ch
       "matchCreditCapPerLine": 10, "maxRefusals": 2,
       "feedbackMode": "live",                         // "live" | "debriefOnly"
       "tellDetail": "full",                           // "full" | "category" | "none"
-      "showTechniqueNames": "live",                   // "live" | "debriefOnly"
-      "influenceNumberVisible": true
+      "showTechniqueNames": "live"                    // "live" | "debriefOnly"
     },
     "knows": {                                        // what Priya can CHECK, by fact id
       "who":       { "value": "sam_okafor",     "grade": "identity" },
@@ -498,7 +499,7 @@ The engine also writes two declared globals per call, `pretext_<callId>_outcome`
 | N1 | `pretext-judge.js` pure module | Deterministic; unit tests from sample JSON in `test/js/social-pretext-judge.test.mjs` (the `social-*` name is what puts it in the CI glob, `00` S11) |
 | N2 | `PretextSession` at `globalVariables['pretext_<callId>_state']` | Reload-safe. No influence value (influence is the character's global). |
 | N3 | Bind `pretext_say` and `pretext_ask` once in `InkEngine` (`00` S1); set the `pretext_*` VARs after restore and sync | Spike first: load from the phone preload and a bark. Idempotent on the turn counter. |
-| N4 | Influence bar (`00` S4), tells panel, render-only phone system bubbles, portrait tint hook | New DOM components, not reuse of `npc-health-bar.js`. Shared with `01` N7. |
+| N4 | Influence bar (`00` S4), world-sprite pip (`00` S13), tells panel, render-only phone system bubbles, portrait tint hook | The bar and tells are new DOM components, not reuse of `npc-health-bar.js`; the pip is a sibling of `ui/npc-health-bars.js`. Shared with `01` N7. |
 | N5 | `pretext-prep` minigame: brief, pretext card, blank pickers from held facts | Reads `02` and `03` data. Follows the overlay rules (`00` §6): `requiresKeyboardInput: true`, its own Close control and Esc (a picker closes first), a bridge test that Space and `E` do nothing while it is open, text in the bundled sans-serif |
 | N6 | Template picker: a choice with blanks, options from held facts only | Same widget as the `01` composer (`01` N10) |
 | N7 | Debrief panel, rendered by `person-chat-pretext.js` inside the chat overlay when it intercepts the close; `pretext-prep` completes with no payload | Reads `session.log` |
@@ -539,13 +540,9 @@ PixelLab-first, and not to be generated now. Check scope with the user before an
 
 ## 9. Open questions
 
-Question numbers are stable references; OQ2 is retired (decided).
+Question numbers are stable references; OQ1, OQ2, OQ6, OQ7 and OQ8 are retired (decided in sections 3, 4.4 and 4.6).
 
-- **OQ1. Number visibility.** The bar always shows with its icons. Is the influence number hidden in assessment mode (default), or is the bar hidden there too, read only through the NPC's reactions and the tells panel? Default: number hidden, bar shown.
 - **OQ3. Does a call feed a later phish?** Default: yes, through influence and the report global. The link runs through `boostIfGlobal` and `strictIfGlobal` (`00` §7, §8).
 - **OQ4. Does a report recover?** The default is a channel-scoped lockout with an expiry and a reset (section 4.3). Open: should a report without a lockout also recover over time, or only on a scenario beat?
 - **OQ5. Unscored free text.** Is unscored free-text flavour allowed in dialogue at all? Default: no.
-- **OQ6. Policy realism.** Is the policy we model realistic enough to teach from (a helpdesk reading a temporary code over the phone after two matched facts)? It is deliberately weak so the attacker can win, and the defender note says so. It needs a security-accuracy check. Default: keep it, labelled as a weak policy.
-- **OQ7. Templates per call.** How many templates does a call offer, and how many blanks can one template carry? Open. The lab needs enough choice for the judgement to be real. The number is for playtest. The same question applies to email (`00` §10).
-- **OQ8. Wrong but plausible blank values.** Are wrong values offered in a blank beyond the authored `stale` entries? Default: only held facts, a stale one included.
 - **OQ9. Neye Eve's ending.** Does the story's immediate end on a wrong name stay (a verification check), or give way to a recovery window? Default: stays, as in the story.

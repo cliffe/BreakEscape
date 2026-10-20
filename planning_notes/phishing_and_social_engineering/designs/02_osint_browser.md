@@ -49,7 +49,10 @@ names; the second page shows the same words as unmarked text. The validator chec
 
 Facts that arrive by a pretext call (`lord_portal_name`, `lord_payslip_date`, `lord_trusts_portal_sender`)
 are granted by `06`, not here, and the validator excludes them from the "granted exactly once here" rule.
-Both paths call the same function (N2), so a fact looks the same however it arrives.
+A fact can also be granted by a **mail highlight** (`01`, `00` §10a): a marked span in a seeded message on a
+found device, whose id is the fact's `source`. The validator excludes those facts from the "granted
+exactly once here" rule in the same way and checks that each is granted by exactly one highlight.
+All three paths call the same function (N2), so a fact looks the same however it arrives.
 
 ### Layers (each a kind of source, each teaching a real OSINT technique)
 
