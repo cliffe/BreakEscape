@@ -96,3 +96,8 @@ Orchestrator: verified N-14 (no friendly follow/escort in `npc-behavior.js`; onl
 - Draft (author `m09-s12`): story_arc.md (482 lines), storytelling_elements.md (520). 75-minute budget (briefing 5, get in 15, stacks 30, name and hour 21, debrief 4); 14 choices; cold-start versions; all 43 imports placed. Settled §13 items 3 (m09 side), 4, 8, 9, 11, 16. Eleven proposed FINALE_ARC changes in story_arc §14.
 - Orchestrator: accept in principle change 1 (name held back to flag 3: the identity scene gets its weight) and 2 (Tomb Beta's server left off the purge as his invitation; ties to m10's premise). All arc changes applied together once m10's list is in, after the R1 reviewers judge them.
 - R1: two reviewers (writing; structure).
+
+### m10 stages 1+2
+- Draft (author `m10-s12`): story_arc.md (~13.7k words), storytelling_elements.md (~10.4k). Acts 24 + 44 + 32 = 100 min (35 VM); cut order media room → backdoor task → shorter fence wait → Tesseract idle lines → Vector/Phantom lines; never cut the five scenes, three clues, three exchanges, stated costs. Two default technicians (Imran Siddiqui, Wendell Briggs). Epilogue at the forward post at 06:00 for every ending; credits open "In this operation" with the player's people. Settled §13 items 2, 3, 4, 5, 11, 19, 23, 24, 32. 18 proposed FINALE_ARC changes (story_arc §14). Cracker line aligned with m09's draft.
+- For the user later (F10): the core's music thinning with each landed point and a silent gallery need an engine change (no silence/layer control); fallback: drop to silence on the second landed point. Voice clashes (Netherton/Gary Charon; Ghost/Vector/Mercer Iapetus) for the audio stage.
+- R1: two reviewers (writing; structure), same lenses as m09.
