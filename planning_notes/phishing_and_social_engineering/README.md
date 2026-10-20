@@ -156,83 +156,85 @@ stories per channel with synced globals (`00` §9), and template blanks for its 
 Working defaults are taken for all of these; none blocks the design.
 
 **Email to ink (`00` §10, `01`, `04`)**
-- Is the subject a template with blanks, or ignored by the judge? Today `04` judges the body only
-  (default: ignored, as today).
-- How many templates does a target offer, and are wrong but plausible blank values offered? Both are
-  open (`00` §10, `06` OQ7 and OQ8).
+
+- Is the subject a template with blanks, or ignored by the judge? Today `04` judges the body only (default: ignored, as today).
+  - User: OK for now, although Subject and From are probably relevant to open rate
+- How many templates does a target offer, and are wrong but plausible blank values offered? Both are open (`00` §10, `06` OQ7 and OQ8).
+  - User: Base it on credible phishing attempts, not all garanteed success -- if the NPC tells you why they don't trust it, that give the player feedback to figure out how to phish specific NPCs. Different NPCs should have different interested, and kinds of phishing/topics etc that they will open, and action
 - Reply choices: how are choices in a reply thread shown in the mail client?
-- Is an optional reply-to slot worth a later slice? How are found credentials shown (a note, or the
-  password minigame)?
-- In assessment mode, should the checklist wait for the reply so the player reads the reaction first?
-  (In training mode it appears at once on send, `00` §3 and §10.)
+  - User: I guess since it's ink we could have ink responses coded in, for example, short 1 sentence replys to emails. The open ended edits would be specific to tasks where we are eliciting other responses. It should be clear to the user when they are expected to choose from ink options, or edit with templates to hit a hidden criteria for the NPC to take action
+- Is an optional reply-to slot worth a later slice? How are found credentials shown (a note, or the password minigame)?
+  - User: Oh this is a good point, if the player accesses a PC that has the email client on it, they should be able to see the email history of that NPC, and actually reply as that NPC.
+  - Say for example, the player enters a room and interacts with a laptop (computer container) that contains an email client, they should be able to access emails from here, the whole system we are discussing. That involves having various email NPCs and their chat histories in the email client. The player can also have their own email client, in their inventory for example, which might contain different email npcs, configured knots etc.
+  - Found information can be highlighted, and saved for later -- either in the notepads, or some other intel save system.
+- In assessment mode, should the checklist wait for the reply so the player reads the reaction first? (In training mode it appears at once on send, `00` §3 and §10.)
+  - User: Use your best judgement
 - One reply per send, or can the ink send a later "chaser"?
+  - User: Usually one reply per send, although could be triggerd by timed events.
 - One persistent inbox per scenario, opened from any workstation or the phone? Default: yes.
-- Rules engine: build the advisory LLM note at all (default: off, flagged for cost)? How strict is the
-  coherence gate before it frustrates (default: lenient, tune in playtest)? Should a `redFlag` string be
-  mandatory per factor per target (default: no; the validator warns on a mismatched override)?
+  - User: See my comments above.
+- Rules engine: build the advisory LLM note at all (default: off, flagged for cost)? How strict is the coherence gate before it frustrates (default: lenient, tune in playtest)? Should a `redFlag` string be mandatory per factor per target (default: no; the validator warns on a mismatched override)?
+  - No LLMs in game
 
 **Student lab (`10`)**
-- Failed phish: free unlimited retries framed as rehearsal (default), or a "heat" limit that forces a
-  hint after N failures?
-- **Assessment and Hacktivity scoring (open, not decided).** Hacktivity currently records only a score
-  from task and aim completion (BreakEscape `game.rb` scores tasks completed over total tasks at 70%
-  and aims at 30%; Hacktivity's `GameScoringJob` reads that). There is no per-outcome mark, hint
-  count, attempt count or tutor view, and optional tasks lower the ceiling. Any richer rubric (per-student
-  metrics from persisted game state, such as `mailState.metrics`) needs Hacktivity work.
-  Options: shape the objectives so task counts approximate the weights and treat the table as a rubric
-  the tutor applies by hand; or build a per-student report from `globalVariables` counters. The awareness
-  product has the same constraint: Hacktivity shows event scoreboards, so "private score, no league
-  table" holds only in a standalone host.
+
+- Failed phish: free unlimited retries framed as rehearsal (default), or a "heat" limit that forces a hint after N failures?
+  - User: free unlimited for the lab
+- **Assessment and Hacktivity scoring (open, not decided).** Hacktivity currently records only a score from task and aim completion (BreakEscape `game.rb` scores tasks completed over total tasks at 70% and aims at 30%; Hacktivity's `GameScoringJob` reads that). There is no per-outcome mark, hint count, attempt count or tutor view, and optional tasks lower the ceiling. Any richer rubric (per-student metrics from persisted game state, such as `mailState.metrics`) needs Hacktivity work. Options: shape the objectives so task counts approximate the weights and treat the table as a rubric the tutor applies by hand; or build a per-student report from `globalVariables` counters. The awareness product has the same constraint: Hacktivity shows event scoreboards, so "private score, no league table" holds only in a standalone host.
+  - User: out of scope for now
 - Include the SPF-breaks-on-forwarding header case? Default: yes; drop it for a first-year cohort.
-- Publish an optional practical-mode lab sheet in HacktivityLabSheets after the game exists (default:
-  yes; the game must be completable without it)?
-- Legal framing: UK Computer Misuse Act 1990 plus a generic "equivalent laws elsewhere" line
-  (default); cast surnames Pierce, Lord and Hampshire kept (`10` OQ6, OQ7).
-- Which `collection` label does the non-VM lab use? Default: reuse `escape_room`, the precedent set by
-  `lab_tesseract_trials`; the alternative is a new collection for this strand (`10` OQ8).
-- If the playtest shows spare time, which extension content returns, and in what order: indicator
-  tagging in the profile, a stand-alone header quiz, the DMARC rollout simulation (`10` OQ9)? Each needs
-  its data shape specified in `05` or `03` first.
+  - Use your best judgement -- make sure the UI is clear and the game is fun
+- Publish an optional practical-mode lab sheet in HacktivityLabSheets after the game exists (default: yes; the game must be completable without it)?
+  - User: Lab sheets / walkthroughs of all labs and game scenarios -- to be written only as a final step after practically everything else is complete
+- Legal framing: UK Computer Misuse Act 1990 plus a generic "equivalent laws elsewhere" line (default); cast surnames Pierce, Lord and Hampshire kept (`10` OQ6, OQ7).
+  - Yes
+- Which `collection` label does the non-VM lab use? Default: reuse `escape_room`, the precedent set by `lab_tesseract_trials`; the alternative is a new collection for this strand (`10` OQ8).
+  - Probably we need to update the categories, `lab_tesseract_trials` and this game are a new kind of lab game
+- If the playtest shows spare time, which extension content returns, and in what order: indicator tagging in the profile, a stand-alone header quiz, the DMARC rollout simulation (`10` OQ9)? Each needs its data shape specified in `05` or `03` first.
+  - Use your best judegement -- nice to see the core se mechanisms and new minigames in use.
 
 **Triage (`05`)**
-- Where does the pre/post score live? Default: `gameState.globalVariables` for the lab and Eldritch
-  Hacker, and a server-side record per game only when the awareness product is productised.
+
+- Where does the pre/post score live? Default: `gameState.globalVariables` for the lab and Eldritch Hacker, and a server-side record per game only when the awareness product is productised.
+  - OK
 - Does the pre-test show feedback before the post-test? Default: yes, at the end of the round.
+  - OK
 
 **Landing-page builder (`07`)**
-- Real brand names in concept-card prose only (`social.conceptCards[].text`; the classic `paypa1` against
-  `paypal`), never as a domain and never in a built page? Default: yes. Alternative: fictional examples
-  everywhere.
+
+- Real brand names in concept-card prose only (`social.conceptCards[].text`; the classic `paypa1` against `paypal`), never as a domain and never in a built page? Default: yes. Alternative: fictional examples everywhere.
+  - User: Fine to use clones of actual websites in the game -- SETI have these as templates, and if a company complains we can remove it.
+  - There is more educational value in seeing it in action as close to reality as possible (without a real attack taking place)
+  - A tool that's essentially emulating SETI UI would be great (with NPC creds being captured, or player pretend creds)
 - Homograph shown in the student lab only, as one authored example? Default: yes.
-- Outcome counts only in the builder (visits and submissions, simulated; reports are not measured), no
-  captured data of any kind? Default: yes.
-- Padlock teaching line: "a padlock means the connection is private to whoever owns the address; fake
-  sites can show one". Please confirm you are happy teaching it that way. Default: as written.
+- Outcome counts only in the builder (visits and submissions, simulated; reports are not measured), no captured data of any kind? Default: yes.
+  - SImulate capturing data from NPC actions -- NPCs could have creds that they leak to the user via attack. Note these aren't real creds, it's all part of the game.
+- Padlock teaching line: "a padlock means the connection is private to whoever owns the address; fake sites can show one". Please confirm you are happy teaching it that way. Default: as written.
+  - Yes.
 
 **Pretext dialogue (`06`)**
-- Gauge visibility: the influence bar is shown with threshold icons (decision A). Is the number hidden
-  in assessment mode (default), or is the bar hidden there too and read only through the NPC's
-  reactions and the tells panel?
-- Security accuracy of the modelled helpdesk policy: a deliberately weak policy (a temporary code read
-  out after two matched facts), labelled weak, with callback to the number on file as the defence.
-  Is that realistic enough to teach from without reading as a recipe?
+
+- Gauge visibility: the influence bar is shown with threshold icons (decision A). Is the number hidden in assessment mode (default), or is the bar hidden there too and read only through the NPC's reactions and the tells panel?
+  - It's probably more fun if the player has some visibility, and can avoid moving the bar too far down for example. Possibly the influence bar should be visible in chat and game sprite, once it's value has changed.
+  - Only include more than one social bar, if there is research to back it up, and if the player will understand clearly.
+- Security accuracy of the modelled helpdesk policy: a deliberately weak policy (a temporary code read out after two matched facts), labelled weak, with callback to the number on file as the defence. Is that realistic enough to teach from without reading as a recipe?
+  - Yes, sounds good.
 
 **Awareness product (`11`)**
-- A1. Ship the deepfaked-voice CEO episode (E7)? Default: yes, optional, "verify, don't trust the ear",
-  no technique detail.
+
+- A1. Ship the deepfaked-voice CEO episode (E7)? Default: yes, optional, "verify, don't trust the ear", no technique detail.
+  - Yes.
 - A2. First-slice episode order? Default: E1 finance, then E5 login page and E3 vishing.
 - A3. A small consented pilot of pre/post measurement before any effectiveness claims? Default: yes.
+  - No
 - A4. Minimum group size for aggregates shown to customers? Default: 10 (verify with privacy advice).
-- A5. Hosted service or licensed bundle, and are the PixelLab assets cleared for commercial
-  redistribution? Default: assume hosted; check PixelLab terms.
-- A6. A defend-only variant of each episode for customers who dislike the "write a phish" beat?
-  Default: yes.
-- A7. Hosting and learner privacy: standalone host or inside Hacktivity? Hacktivity's scoreboard and
-  `game.player` identify the learner, so a pseudonymous id, private scores and "no league table" cannot
-  be promised inside it. Default: do not promise them until decided.
-- A8. Pre/post ordering and strictness. The platform does not order missions or stop a second pre-check
-  game, and `CarryOver` uses the newest concluded run. Default: the organiser sequences the check
-  missions, a missing baseline is shown as such, and product copy claims nothing stricter.
+  - Out of scope for now, let's build the game features and content first
+- A5. Hosted service or licensed bundle, and are the PixelLab assets cleared for commercial redistribution? Default: assume hosted; check PixelLab terms.
+  - Hosted, yes, commercial.
+- A6. A defend-only variant of each episode for customers who dislike the "write a phish" beat? Default: yes.
+- A7. Hosting and learner privacy: standalone host or inside Hacktivity? Hacktivity's scoreboard and `game.player` identify the learner, so a pseudonymous id, private scores and "no league table" cannot be promised inside it. Default: do not promise them until decided.
+  - Out of scope.
+- A8. Pre/post ordering and strictness. The platform does not order missions or stop a second pre-check game, and `CarryOver` uses the newest concluded run. Default: the organiser sequences the check missions, a missing baseline is shown as such, and product copy claims nothing stricter.
 
 ## Engine work, consolidated
 
