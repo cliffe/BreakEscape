@@ -74,3 +74,9 @@ Orchestrator decisions for the R2 fix pass: every won branch also puts a person 
 
 ### Stage 0 review round 3 (confirmation)
 - VM plan updated (Haiku): "Submitted at" columns; R1–R6 outcomes; open mismatches M1–M6. Orchestrator: M1/M2 (flags submitted away from the attack box) are a stage 4+5 room question, not a VM one: m01–m08 already separate the VM launcher from flag stations, so stage 5 places a launcher or flag station where each submission happens. M3/M4 (seed content: Tomb Beta's memo and unsent notice; bunker schedule text) go to the SecGen drafting step. M5 resolved: the Nosferatu account is the web server's own service account, which is what the story says. M6 to the SecGen draft (name the target, no route).
+| Reviewer | Blocker | Major | Minor | Verdict |
+|---|---|---|---|---|
+| Design R3 (`finale/REVIEW_STAGE0_R3_DESIGN.md`) | 0 | 5 | 14 | not clean: structure ready for stage 1; fix R3-03 (whodunit logic) and R3-04 (purge choices not forced) before stage 1; R3-01 won branches lack decisions, R3-02 raid clock punishes slow VM work, R3-05 disclose cost on paper; 23-item stage-1 handover list |
+| Accuracy R3 (`finale/REVIEW_STAGE0_R3_ACCURACY.md`) | 0 | 4 | 16 | not clean: B1–B16 fixed but stale copies left (C9, C10, C12, C13); C1 never-played m07 line contradicts m07/m08; C2 twenty-three placements already blown on m05 branches; C3 purge order differs between docs; C4 alibi clears the wrong officer. 105 imports script-clean. |
+
+Orchestrator decisions for the R3 fix pass: raid clock marks driven by story events, never by slow VM work (R3-02); won-branch versions each get a decision and a face-to-face beat (R3-01); fix all majors and accuracy minors; scene-level design minors and the reviewer's 23-item list go to a new FINALE_ARC §13 "Handover to stage 1"; grep every touched term afterwards (four R2 fixes left stale copies). Round 4 is a single combined confirmation reviewer.
