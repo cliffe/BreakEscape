@@ -65,3 +65,4 @@ Orchestrator decisions for the R1 fix pass (sent to author 3):
 - Folder renamed m10_final_cipher → m10_full_disclosure.
 
 ### Stage 0 review round 2
+- VM plan (Haiku, `finale/FINALE_VM_PLAN.md`; Opus agents don't read it): m09 two targets (catalogue server flags 1–2, Tomb Beta server flags 3–4); m10 four targets (monitoring host entry stage flags 1–2, release host and core host flags 3–4), root-over-SSH removed so the escape can't be skipped. Six story-side rewordings (R1–R6) go to the stage-0 author with the R2 fixes, passed as story wording only. Not built; SecGen drafting (F2) after stage 0 closes.
