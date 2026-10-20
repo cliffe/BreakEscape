@@ -130,18 +130,20 @@ it is the first aim and cannot be skipped.**
 
 ### Stage 1 — Scope & plan (planning whiteboard, `plan` mode; Ch. 3)
 
-At the planning whiteboard the student turns the brief into a plan with two picks:
+At the planning whiteboard the student turns the brief into a plan with two picks. Both are
+single-select (`03`): each list has exactly one right option, and every wrong one carries a reason.
 
-1. **Objectives** (step `plan_objective_done`): pick from a list (test finance and HR staff by email;
-   test the service desk by phone; measure how far each attempt gets). Wrong picks (for example
-   "disrupt payroll") are rejected with the rules-of-engagement reason.
-2. **Success measures** (step `plan_measures_done`): pick which numbers the report will need. The
-   right picks are the ones the lab can actually record: messages sent, messages that landed, failed
-   sends, page visits and submissions, and the call outcome. The wrong picks are "which named staff
-   fell for it" (a blame measure, rejected with the Ch. 9 reason) and "passwords collected" (nothing
-   is collected: page results are simulated). The card for "did staff report us" is explained as the
-   measure a live test would add and this lab cannot observe. The point is that you decide the
-   metrics *before* you send anything.
+1. **Objective** (step `plan_objective_done`): pick the one objective that fits the brief. The right
+   option is "find out how far email and a phone pretext get against AccountingNow's finance, HR and
+   service-desk staff, and report the gaps". Wrong options include "disrupt payroll" (rejected with
+   the rules-of-engagement reason) and "collect staff passwords" (nothing is collected: page results
+   are simulated).
+2. **Success measure** (step `plan_measures_done`): pick the one measure the report will be built
+   around. The right option is "how far each attempt gets", which the lab can record: messages sent,
+   landed and failed, page visits and submissions, and the call outcome. The wrong options are "which
+   named staff fell for it" (a blame measure, rejected with the Ch. 9 reason), "passwords collected"
+   (nothing is collected) and "did staff report us" (explained as the measure a live test would add
+   and this lab cannot observe). The point is that you decide the metrics *before* you send anything.
 
 When both steps are done the mode sets `plan_done`; Ruth gives the Recon Room key. The case-file board
 already shows the three target cards with empty readiness slots ("You still don't know ..."), so the
@@ -238,8 +240,8 @@ hint ladder and the board's "still missing" panel do that work. Pierce's and Lor
 and carries no report or lockout (section 5, "Influence"), so a run of bad sends only moves the bar.
 
 **`senderAuth` on the attacker side.** From round 1 the checklist carries an advisory line under the
-factors. In round 1 it says the message is sent as the student's own outside address, so there is
-nothing to spoof and nothing to fail. In round 2 Pierce's authored `factorStrings.senderAuth` line
+factors. In round 1 it says "Sent as your own address, so there is nothing to spoof and nothing to
+fail" (the line is account-neutral, because Hampshire is mailed from whichever account is chosen). In round 2 Pierce's authored `factorStrings.senderAuth` line
 says the spoofed `j.baker@` address fails the domain's alignment check and that, because
 AccountingNow publishes its DMARC policy as `p=none`, it is still delivered. It never changes the
 verdict. It plants the question stage 7 answers: why was this flagged, and why can a message pass all
@@ -366,8 +368,9 @@ keep:
 - It says once that this test cannot see whether staff reported the attempts, and that a live
   engagement would add it.
 
-The student reads the results (step `report_results_done`, set when they confirm the table) and then
-builds the **findings** (step `report_findings_done`). For each of three findings the student pairs a
+The student reads the results and presses Confirm under the table (a `confirm` item carrying
+`step: "results"`, authored in `engagement.report.items`; it is done when pressed, which sets
+`report_results_done`) and then builds the **findings** (step `report_findings_done`). For each of three findings the student pairs a
 *root cause* with a *control* from authored lists. Finding 1, "Finance acted on mail spoofing a
 colleague": cause "no external-sender banner; DMARC at `p=none`", control "banner plus DMARC
 enforcement". Finding 2, "The service desk gave out the portal name and payslip date": cause "no
@@ -503,7 +506,12 @@ rewrite. What each one edits:
    `phish_hampshire_landed`, `phish_hampshire_attempts`, `target_ready_hampshire`, `acct_freemail` and
    `acct_freemail_choice` globals, the `freemail` row of `playerSentAuth`, the three Hampshire-only
    facts (`hampshire_careers`, `hampshire_cv_backlog`, `careers_attachment`), and the careers
-   mitigation from the defender list (three remain).
+   mitigation from the defender list (three remain). It also removes what points at those facts: the
+   `hampshire` entry in `mailClient.contacts` (its `revealedBy` names `hampshire_careers`, so leaving
+   it fails the contact check in `00` §11), the careers-page and Hampshire social-post elements in
+   `social.osint` (an element whose `fact` is undeclared fails 02's lint), the `kit_cv` payload item,
+   and the Hampshire-only templates (`pretext_apply`, `ask_review_cv`, and `greet_generic` if no other
+   target's `templateSets` uses it).
 3. Reduce the triage to six messages, four authored and the two `playerSent` (3): drop the parcel
    notice and the staff newsletter. This needs a six-message variant of the set (the contract size for
    the lab is eight, `00` §13), so author it with the set; the stage 7 time-budget row drops by 3 and the pass mark stays 60.
@@ -520,7 +528,9 @@ Standard aim/task structure (`README_scenario_design.md`, Objectives System), ea
 the previous (`unlockCondition.aimCompleted`). Every task is required: the platform score counts
 optional tasks in the total (see "Assessment"), so the lab has none. Tasks that wait on minigame
 outcomes are `manual` tasks completed by an `eventMapping` `completeTask` on Ruth's NPC record
-(`eventMappings` live on NPC records, and she is in the start room, so she is the single listener),
+(`eventMappings` live on NPC records, and she is in the start room, so she is the single listener;
+the engine registers only start-room NPCs at game start, so her record must stay in the start room, or
+become a headless record per `00` S8, and no one should move the listener to a lazily loaded room),
 keyed to `global_variable_changed:<name>`. The mappings are once-only, because the writers can set a
 global more than once. Ruth's check-in knots also re-issue `#complete_task` for any completing global
 that is already true, so a student who works out of order, or a task that was not yet active when its
@@ -757,13 +767,13 @@ stylesheet linked in `show.html.erb` (README Conventions).
 | `mailClient` (two accounts, contacts, seeded inbox, payload kit) | 01 | ~6 benign seeded messages for realism; the triage set is separate |
 | `osint` sites (company with an archive page, careers, three social profiles, a PDF with properties, a tools panel) and `intelFacts` | 02, 00 §1 | 14 contract facts (11 found by browsing, 3 granted by the call) plus 2 stale |
 | `intelBoard` (title, `people`, readiness slots) | 03 | one block, four modes |
-| `templates` and `phishTargets` ×3 | 04, 00 §10 | 3 targets, about 4 to 6 templates per target in `templateSets`, blank-value lists tagged distinctive or generic, replies, `factorStrings`, hints |
+| `templates` and `phishTargets` ×3 | 04, 00 §10 | 3 targets, 4 to 7 templates per target in `templateSets` (Hampshire 4, Pierce 7, Lord 4), blank-value lists tagged distinctive or generic, replies, `factorStrings`, hints |
 | Landing-page rules, six look-alike domain options, tells | 07 | 1 page model, ~6 tells |
 | Pretext call: `pretextNpcs[service_desk_call]` and Dev's phone story | 06 §4.8 | 1 call, 2 asks, 2 to 3 pretext lines |
 | Triage set (8 messages with auth results, 2 of them `playerSent`) | 05 | 6 authored messages, 2 `playerSent`, `playerSentAuth` rows for six domains and two accounts |
 | RoE sheet text, scope and question cards, plan picks, report findings, defender mitigations | this doc | text + 3 findings + 4 mitigation blocks |
 | Ink | this doc, 06, 00 §10 | 7 files (below) |
-| Concept cards | 02 | `social.conceptCards` (`00` §11): the browser's four tool cards (`tool_hunter`, `tool_harvester`, `tool_recon`, `tool_exiftool`); the SPF/DKIM/DMARC explainers are 05's glossary |
+| Concept cards | 02, 07 | `social.conceptCards` (`00` §11): ten cards in all. 02's four tool cards (`tool_hunter`, `tool_harvester`, `tool_recon`, `tool_exiftool`) and 07's six page cards (`typo-squat`, `homograph`, `padlock`, `hover-link`, `right-to-left`, `five-habits`), which the landing page references and 07 N6 requires to resolve; the SPF/DKIM/DMARC explainers are 05's glossary |
 
 **Ink files** (the mail stories need `on_email` knots and the `email_*` and `<character>_influence`
 VARs, `00` §10; each declares its `se_intel_*` and synced VARs, `00` §5, §9):
@@ -808,14 +818,17 @@ Hampshire's reply is a text job from her target's authored `replies` (no ink sto
     "onCompleteGlobal": "plan_done",
     "steps": [ { "id": "objective",  "onCompleteGlobal": "plan_objective_done" },
                { "id": "measures",   "onCompleteGlobal": "plan_measures_done" } ],
-    "objectives": [ { "id": "disrupt_payroll", "step": "objective", "correct": false, "why": "RoE section 3 bars disruption." } ],
-    "measures":   [ { "id": "sent",   "step": "measures", "correct": true,  "why": "..." },
-                    { "id": "names",  "step": "measures", "correct": false, "blame": true, "why": "..." } ]
+    // single-select picks (03): one option per pick has correct: true
+    "objectives": [ { "id": "how_far_gaps",     "step": "objective", "correct": true,  "why": "..." },
+                    { "id": "disrupt_payroll",  "step": "objective", "correct": false, "why": "RoE section 3 bars disruption." } ],
+    "measures":   [ { "id": "how_far",  "step": "measures", "correct": true,  "why": "..." },
+                    { "id": "names",    "step": "measures", "correct": false, "blame": true, "why": "..." } ]
   },
   "report": {
     "onCompleteGlobal": "report_filed",
     "steps": [ { "id": "results",  "onCompleteGlobal": "report_results_done" },
                { "id": "findings", "onCompleteGlobal": "report_findings_done" } ],
+    "items": [ { "kind": "confirm", "step": "results", "text": "I have read the campaign results" } ],
     "findings": [
       { "id": "spoofed_colleague", "text": "Finance acted on mail spoofing a colleague",
         "rootCauses": [ { "id": "no_banner_dmarc_none", "correct": true,  "why": "..." },
@@ -883,7 +896,7 @@ Every value below is settled in `00`; 10 builds on it and cites the section.
 
 | # | Item | Notes |
 |---|------|-------|
-| N1 | **Engagement report builder** (`minigames/engagement-report/`): results panel, findings pairing with the blame option, sets `report_results_done`, `report_findings_done` and `report_filed` | Small; reuses overlay chrome and the right/wrong+why pattern from 04. Reads `social.engagement.report`, `mailState.metrics`, `se_landing_pages` and the pretext globals. Follows the full wiring checklist in README Conventions: scene, starter, interaction branch, stylesheet, schema entry, sprite, `requiresKeyboardInput`, its own Close |
+| N1 | **Engagement report builder** (`minigames/engagement-report/`): results panel, findings pairing with the blame option, sets `report_results_done`, `report_findings_done` and `report_filed` | Small; reuses overlay chrome and the right/wrong+why pattern from 04. Reads `social.engagement.report`, `mailState.metrics`, `se_landing_pages` and the pretext globals. The Confirm button for the `results` step is a `confirm` item in `engagement.report.items` (an item kind `00` §11 and 03 N6 must list, so the "every declared step has items" lint holds) Follows the full wiring checklist in README Conventions: scene, starter, interaction branch, stylesheet, schema entry, sprite, `requiresKeyboardInput`, its own Close |
 | N2 | **Report data**: the report reads what 01, 07 and 06 already record (`mailState.metrics`, the page record's `victim`, the call globals) | No store of its own |
 | N3 | **Board modes** `scope` and `plan` with the `engagement` data (scope and question cards, objective and measure picks) | Owned by 03; this doc supplies the data shapes in section 5 |
 | N4 | **Defender-mode mitigation picks** | Owned by 03; `engagement.defender.factMitigations`; no indicator tagging in this slice |

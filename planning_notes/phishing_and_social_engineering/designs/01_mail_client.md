@@ -388,9 +388,9 @@ could otherwise pass 2 MB). Over a cap, the sanitiser drops the oldest read inbo
 job. If the section is still over the total, the update is not saved and the previous state stands
 (logged, as `npcInkVariables` does). The `00` §10a caps line states these values.
 
-`mailState` holds the mailboxes (`messages[]` as the `00` §10a record: `folder`, `fromAccount`,
-`from`, `targetId`, `templates`, `slots`, `body`, `attachment`, `link`, `landed`, `tells`, `time`,
-`gameTime`, `read`), the pending delivery jobs (ink and text), the per-`(character, account)` thread
+`mailState` holds the mailboxes (`messages[]` as the `00` §10a record in full: `id`, `thread`, `mailbox`,
+`folder`, `fromAccount`, `from`, `to`, `subject`, `targetId`, `templates`, `slots`, `body`,
+`attachment`, `link`, `landed`, `tells`, `time`, `gameTime`, `read`), the pending delivery jobs (ink and text), the per-`(character, account)` thread
 positions, the drafts and `metrics[targetId]` (`sent`, `failed`, `landed`, `firstTryLanded`). The
 displayed time is the record's `time`; the countdown is wall clock. The engagement report (`10`)
 reads `metrics`, the sent records and the outcome globals.
@@ -422,7 +422,7 @@ reads `metrics`, the sent records and the outcome globals.
 | N9 | Contacts with a `character` and no sprite; contacts joined to targets by `targetId` | Delivered by `00` S8 (headless email records) |
 | N10 | Template composer: blanks whose options come from held evidence (`se_intel_*` globals through each fact's `provides`), and a send gate that refuses an empty blank with the neutral pre-send line (`04`) | Shares the blank picker with `06` (N6) |
 | N11 | Accounts: own-account resolution, `unlockedBy` globals, `createMenu` and the Create-account panel, `accountIds` on objects, the switcher, `burned_<id>` greying, per-mailbox unread | `00` §10a |
-| N12 | Sent record per `00` §10a: `folder`, `fromAccount`, `targetId`, `subject`, `templates`, `slots`, `body`, `attachment`, `link`, `landed`, `tells`; the Sent folder view | Part of `mailState`; `05` replays it |
+| N12 | Sent record per `00` §10a (all of its fields, including `id`, `thread`, `mailbox` and `to`): `folder`, `fromAccount`, `targetId`, `subject`, `templates`, `slots`, `body`, `attachment`, `link`, `landed`, `tells`; the Sent folder view | Part of `mailState`; `05` replays it |
 | N13 | Narrow-screen layout and accessibility pass (below) | Needs the bundled Atkinson Hyperlegible (`00` §6) |
 | N14 | Mail notification (HUD badge or bark variant) and the rule that an open client appends without a bark | `00` S9 |
 

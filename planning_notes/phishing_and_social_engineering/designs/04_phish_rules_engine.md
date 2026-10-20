@@ -258,7 +258,7 @@ The complete schema is `00` §7; targets live in `social.phishTargets` and templ
     "factorStrings": {
       "senderTrust":         { "pass": "✓ An open inbox accepts any sender", "fail": "I don't recognise who this is from.", "redFlag": null },
       "pretextRelevant":     { "pass": "✓ Reads like an application", "fail": "This isn't about the role. I only handle applications.", "redFlag": null },
-      "senderAuth":          { "pass": "✓ Sent as your own outside address, so there is nothing to spoof and nothing to fail.",
+      "senderAuth":          { "pass": "✓ Sent as your own address, so there is nothing to spoof and nothing to fail.",
                                "fail": "Sender authentication would not pass.", "redFlag": null },
       "attachmentPlausible": { "pass": "✓ The CV is attached",
                                "missing":    { "fail": "You mention a CV, but there's nothing attached.", "redFlag": null },
@@ -324,7 +324,7 @@ Notes on the records:
   the first failed factor. It is appended to the mailbox of the sending account after
   `emailReplyDelay`, and `phish_hampshire_landed` is set only if the message landed. Her
   `factorStrings` cover the factors she judges, and her `senderAuth` pass line says the message is
-  sent as the student's own outside address, so nothing is spoofed; the other factors fall back to
+  sent as the student's own address, whichever account they choose, so nothing is spoofed; the other factors fall back to
   the `00` §2 canonical strings. The lesson is that the
   From line is only a label.
 - **Template shapes** (`from_named`, `greet_named`, `pretext_sheet`, `pretext_apply` and so on) are
@@ -381,7 +381,7 @@ the one fixed entry is `portal_address`.
 | pierce | `sender_name` | `baker_full` "Jed Baker" (`pierce_trusts_jed`, `pierce_expects_balance_sheet`; distinctive); wrong options if held: `leeds_baker_full` "J. Baker" (`baker_namesake`; stale), `portal_full` (`lord_trusts_portal_sender`) |
 | pierce | `sender_address` | `baker_address` (right, built from the pattern); wrong options if held: `leeds_baker_address` (stale, from the namesake result), `portal_address` (fixed entry of `lord_trusts_portal_sender`) |
 | pierce | `name` | `pierce_first`, `pierce_formal`, `pierce_full` (`pierce_role`; generic); `pierce_short` (`pierce_expects_balance_sheet`; generic). `pierce_full` is not in her `addressedAs`. Held Lord forms (`lord_first`, `lord_full`; recipient) are wrong options |
-| pierce | `document` | `balance_sheet` (`pierce_expects_balance_sheet`; distinctive) |
+| pierce | `document` | `balance_sheet` (`pierce_expects_balance_sheet`; distinctive); wrong option if held: `cv` (`careers_attachment`; untagged, so a no-`about` slot offers it; distinctive for Hampshire, not in Pierce's `distinctiveValues`) |
 | pierce | `when` | `friday` (`pierce_expects_balance_sheet`, `hampshire_cv_backlog`; generic) |
 | lord | `sender_name` | `portal_full` (`lord_trusts_portal_sender`, after the call; distinctive); wrong options if held: `baker_full`, `leeds_baker_full` |
 | lord | `sender_address` | `portal_address` (fixed, `lord_trusts_portal_sender`; right); wrong options if held: `baker_address`, `leeds_baker_address` |
@@ -439,7 +439,7 @@ by `01` before judging) and S11. Doc items:
 | N7 | Reply text for a data-only target: `replies.landed` or the first failed factor's fail line, handed to the text job with the target's `outcome.setGlobal` key (`00` §10 "Timing and delivery", S9) |
 | N8 | `senderAuth` derivation from `fromAccount` and `headerFrom` against the claimed domain's policy, with the per-target override |
 | N9 | `tells[]` computation (table above), returned on every `EvalResult` |
-| N10 | Validator checks in `scripts/validate_scenario.rb` (via `00` S11): every `character` target has an email story with `on_email` that declares the `email_*` VARs it reads and `VAR <character>_influence`; each target's `templateSets` cover all four parts and slot ids are unique; every `distinctiveValues` entry is provided by some fact; every required factor is reachable from facts the scenario grants, including that each required `addressedTo` has a name option in `addressedAs` provided by a granted fact; `trusts` ids resolve against `social.people`; one outcome owner; `senderAuth.dmarcPolicy` present whenever `domainPublishesAuth` is true; `requiresIntelToAttempt` globals are declared; outcome globals are declared and read; `expectedLink.brandId` is a brand in `07`; every template named in a set exists |
+| N10 | Validator checks in `scripts/validate_scenario.rb` (via `00` S11): every `character` target has an email story with `on_email` that declares the `email_*` VARs it reads and `VAR <character>_influence`; each target's `templateSets` cover all four parts and slot ids are unique; every `distinctiveValues` entry is provided by some fact; every required factor is reachable from facts the scenario grants, including that each required `addressedTo` has a name option in `addressedAs` provided by a granted fact; `trusts` ids resolve against `social.people`; one outcome owner; `senderAuth.dmarcPolicy` present whenever `domainPublishesAuth` is true; `requiresIntelToAttempt` globals are declared; outcome globals are declared and read; `expectedLink.brandId` is a brand in `07`; every template named in a set exists; every `phishTargets` entry has at least one `subjects` item, with ids unique within the target and non-empty `text` (the first is the composer's default and the sent record, draft and reply subject read it) |
 | N11 | Pre-send gate: the fixed neutral line, shown by `01` for an empty blank or a missing `requiresIntelToAttempt` fact; the validator rejects any scenario string that tries to replace it |
 
 ## Reuse across products

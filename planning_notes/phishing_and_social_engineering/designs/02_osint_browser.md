@@ -105,8 +105,10 @@ four are the only concept cards in the OSINT stage; `10` shows no separate wall 
 
 **Where cards live.** A `card` value is an id into `social.conceptCards[] { id, title, text, image? }`
 (`00` §11), a plain-text collection shared with `07`'s cards (`07` N7). The text is authored prose that may
-name the real tool; it is the only field the brand lint exempts (`07` §1), and it holds no domain other
-than a `.example` one. One shared card renderer shows a card (title, text, optional pixel image) behind the
+name the real tool; it is the only field the brand denylist exempts (`07` §1), and it holds no domain other
+than a `.example` one. Real product names elsewhere in this data (`Microsoft Excel` in a metadata field,
+`Xero` and `Office 365` on the careers page) are generic software names in prose, not domains; the lint
+does not read them (`07` §1). One shared card renderer shows a card (title, text, optional pixel image) behind the
 "What is this?" button; N1 builds it and `07` N7 reuses it. The validator (N8) checks that every `card`
 id resolves.
 
@@ -334,15 +336,18 @@ browser. The composer (`01`) does not open the board at all; it reads the `se_in
 | N5 | Close as a normal exit, own Close control and Escape, nested launch to the case file with return-to (`00` S12) | `minigames/framework/base-minigame.js` (`disableClose`), `minigame-manager.js` |
 | N6 | Cast headshots: each of `pierce`, `baker`, `hampshire`, `lord` needs a sprite key and a `<key>_headshot.png` (32x32). A headshot-to-`<key>_talk.png` fallback for profile images does not exist (`person-chat-portraits.js:913-916` falls back the other way, `_talk` to `_headshot`), so either every key ships a headshot or the reverse fallback is new work here. Site images live under `assets/osint/<scenario>/` | `public/break_escape/assets/characters/`; path built as in `ui/hud.js`; `person-chat-portraits.js` |
 | N7 | Bundle Atkinson Hyperlegible (`00` §6) and apply `--se-font-readable` to every string the browser shows that holds a domain, address, handle, file name or metadata field, wherever it appears (address bar, tools-panel labels such as "Hunter lookup: accountingnow.example", result lines, notes, confirmations); authored domains rendered raw | `public/break_escape/assets/fonts/`; `css/fonts.css`; `utils/display-dashes.js` bypass |
-| N8 | Validator: every fact (bar the call-granted ones) is granted by exactly one element and each `source` equals that element's id; every `fact` and `showIf` resolves; every `unlockedBy` is `{ visited }` (a site id or `siteId.pageId` that exists) or `{ fact }` (a declared fact id); every `card` id is in `social.conceptCards`; every `se_intel_*` declared; `se_osint_state` declared with default `{}`; the hostname of every authored address passes the `.example` rule, and every address (host and path) passes the ASCII and brand-denylist checks in `07` N6 (the hostname is the part of a `sites[].url` before the first `/`, or the part of an address after the last `@`, with any scheme stripped first; a path such as `/Q3.pdf` is allowed and needs no `.example`; the raw-label brand-word allowlist is for `07`'s menu domains and does not apply to site urls); `social.osint` schema and the `minigameData` entry | `scripts/validate_scenario.rb` (`known_top_level`); `scripts/scenario-schema.json`; `scripts/minigame-data-schemas.json` (S11) |
-| N9 | Test: the address-bar formatter (a pure function, so no DOM is needed) returns a string with `--` (an `xn--` label) unchanged; run by the CI step in `00` S11 | `test/js/` |
+| N8 | Validator: every fact (bar the call-granted ones) is granted by exactly one element and each `source` equals that element's id; every `fact` and `showIf` resolves; every `unlockedBy` is `{ visited }` (a site id or `siteId.pageId` that exists) or `{ fact }` (a declared fact id); every `card` id is in `social.conceptCards`; every `se_intel_*` declared; `se_osint_state` declared with default `{}`; the hostname of every authored address passes the `.example` rule, and every address (host and path) passes the ASCII and brand-denylist checks in `07` N6 (the lint reads address fields and concept-card text only, not block, post or result prose; `07` §1 defines the host-shaped token, which excludes filenames such as `Q3.pdf` and patterns such as `first-initial.surname`) (the hostname is the part of a `sites[].url` before the first `/`, or the part of an address after the last `@`, with any scheme stripped first; a path such as `/Q3.pdf` is allowed and needs no `.example`; the raw-label brand-word allowlist is for `07`'s menu domains and does not apply to site urls); `social.osint` schema and the `minigameData` entry | `scripts/validate_scenario.rb` (`known_top_level`); `scripts/scenario-schema.json`; `scripts/minigame-data-schemas.json` (S11) |
+| N9 | Tests: the address-bar formatter (a pure function) returns a string with `--` (an `xn--` label) unchanged; clicking a page link leaves `window.location` unchanged and switches the displayed page (needs the DOM that `07` N3 supplies with `jsdom`). Both live in `test/js/social-osint-address-bar.test.mjs` and are run by the CI step in `00` S11 and `07` N6 (`bundle exec node --test test/js/validator-*.test.mjs test/js/social-*.test.mjs`) | `test/js/` |
 
 ## Accessibility and small screens
 
 - A single column below about 700 px. The sites strip becomes a vertical list of buttons; the tools panel
   becomes a section under the page. Nothing depends on hover.
 - Every selectable block is a button reachable by Tab and Enter, and the overlay has a visible Close button. Its accessible name is the block text,
-  with "Add to notes" as the description. Links are real links in the page body, in tab order.
+  with "Add to notes" as the description. Links in a page body are focusable elements (`<a href="#">` whose click handler calls `preventDefault`, or
+  `role="link"` buttons) in tab order. Activating one switches the page shown inside the overlay and
+  never navigates: the authored URL is display text and no `href` carries it. A test (N9) clicks a link
+  and checks that `window.location` is unchanged.
 - A visually hidden `aria-live="polite"` region announces "Noted: <fact text>" and "Nothing here you can
   use". The visible confirmation always carries words, not just a tick or colour.
 - No motion under `prefers-reduced-motion`: the "noted" flourish becomes a static highlight.

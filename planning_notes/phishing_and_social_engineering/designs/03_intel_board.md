@@ -29,8 +29,8 @@ short structured exercise, built entirely from selecting authored options: no ty
 | Mode | What the player does | Completion sets |
 |------|----------------------|-----------------|
 | `recon` (default) | Reads people cards, the company panel and the readiness checklist. Display only | nothing: `target_ready_<id>` and `osint_done` are set where the facts are granted (below) |
-| `scope` | Reads the rules-of-engagement brief, sorts authored scope cards into in-scope and out-of-scope, and answers the authored stop-rule question | `roe_signed` when every sorting card is placed correctly and every question card is answered; step globals `roe_scope_done` and `roe_stoprule_done` |
-| `plan` | Turns the brief into a plan by making two picks from authored lists: the objective and the success measure (the targets are already fixed by the scope step, so there is no target pick) | `plan_done`; steps `plan_objective_done`, `plan_measures_done` |
+| `scope` | Reads the rules-of-engagement brief, sorts authored scope cards into in-scope and out-of-scope, and answers the authored stop-rule question | `roe_signed` when every sorting card is placed correctly and every question card is answered with its `correct: true` option; step globals `roe_scope_done` and `roe_stoprule_done` |
+| `plan` | Turns the brief into a plan by making two single-select picks from authored lists: the objective and the success measure (the targets are already fixed by the scope step, so there is no target pick) | `plan_done`; steps `plan_objective_done`, `plan_measures_done` |
 | `defender` | The same facts relabelled as exposure: pick the better mitigation for each leaked fact | `profile_done` (no steps) |
 
 The content of `scope`, `plan` and `defender` (cards, option lists, correct answers, the global names) is
@@ -43,11 +43,12 @@ false-to-true flip.
 same block. A step is done when every item carrying that step id is answered correctly: a sorting card sits
 in the right pile; a question card has its `correct: true` option chosen; a multi-select pick has every
 `correct: true` option chosen and no `correct: false` one; a single-select pick has its correct option
-chosen. The step's global is set on the false-to-true flip, and the block's `onCompleteGlobal` is set when
+chosen; a `{ kind: "confirm", step }` item (a Confirm button, no answer to get wrong, used by the lab report's `results` step) is done when pressed. The step's global is set on the false-to-true flip, and the block's `onCompleteGlobal` is set when
 every declared step is done. A block with no `steps[]` is done when all its items are. A validator rule
 (N6) rejects an item whose `step` is not declared in its block and a declared step with no items. In the
 lab, `scope` has steps `scope` and `stoprule`; `plan` has `objective` and `measures`, and both are
-single-select picks.
+single-select picks (one authored option is correct, the rest are wrong, and each wrong pick shows its `why`).
+The validator (N6) checks that every `plan` pick has exactly one `correct: true` option.
 
 A `scope` block holds two card kinds: sorting cards, and `kind: "question"` cards with
 options `{ id, text, correct, why }` (one right answer, an explanation after each pick). Objectives
@@ -64,9 +65,9 @@ no live updates. The layout:
 - **People cards:** one per target (`people`), merged on the shared cast `id` (`00` §1). Name, role and
   address read from `social.people`, but only as far as the player holds them: the header reads "Not yet
   identified" until a held fact either provides a name form for the person or has that person as its
-  `subject`. The second route exists for Hampshire, whom no fact names (he is greeted with
+  `subject`. The second route exists for Hampshire, whom no fact names (she is greeted with
   `greet_generic`): once `hampshire_careers` or any other fact with subject `hampshire` is held, the
-  header shows his name and role from `social.people`. The role appears once `pierce_role` (or the
+  header shows her name and role from `social.people`. The role appears once `pierce_role` (or the
   equivalent) is held, and the address once `email_pattern` or a fixed address fact is held. The
   card lists the facts found about the person, with empty slots for what is not yet known ("Expects:
   ???").
@@ -136,7 +137,7 @@ three lab targets, so every recon-fed factor has backing intel:
       { "label": "What the file should be", "needsIntel": ["careers_attachment"],
         "goalString": "You still don't know what kind of file Chris will open.",
         "doneString": "Chris takes .odt and .docx files." },
-      { "label": "Why he would read it", "needsIntel": ["hampshire_cv_backlog"],
+      { "label": "Why she would read it", "needsIntel": ["hampshire_cv_backlog"],
         "goalString": "You still don't know what Chris is busy with.",
         "doneString": "Chris is behind on CVs before Friday." } ],
     "lord": [
@@ -176,7 +177,7 @@ choosing the right J. Baker, choosing the metadata field that matters.
 
 The same facts are shown as **exposure**, not progress. For each fact in `engagement.defender.factMitigations`
 (`00` §11: `[ { intel, options: [ { id, text, good, why } ] } ]`) the card shows the fact's `reduceNote` (the
-one-line "reduce this" prompt from `00` §1, for example "Keep internal routines off the public site") and
+one-line "reduce this" prompt from `00` §1, for example "Staff should not post about internal systems or their release dates." on `lord_portal`) and
 asks the player to pick a mitigation. Only facts that carry a `reduceNote` can appear here (N6), so the
 lab's four defender facts (`email_pattern`, `username_convention`, `lord_portal`, `hampshire_careers`, the
 list in `00` §1) each need one authored there; `00` §1 authors a note for no other fact. A wrong pick shows its `why`: what it would and wouldn't fix. The
@@ -235,9 +236,9 @@ the mode's global, not on that event.
 | N1 | `intel-board` overlay: people cards, contacts strip, company panel, readiness checklist, "From the call" section, influence bar (S4), own Close control, `requiresKeyboardInput: true` | new `minigames/intel-board/`; wiring as above |
 | N2 | Rebuild from the `se_intel_*` and `target_ready_*` globals on open; file each fact by `subject`; no live updates needed | in N1; `00` §5 |
 | N3 | Display `target_ready_<id>` and `osint_done`, set by `evaluateReadiness` (`00` §4), which is owned by `02` N2 | `social-intel.js` (`02` N2) |
-| N4 | Modes `scope`, `plan`, `defender`: structured selection exercises (sorting cards, question cards, picks), ids saved in `se_board_state`, items bound to steps by `step`, step and block globals set through the shared writer; content read from `social.engagement` | in N1; shape in `00` §11 |
+| N4 | Modes `scope`, `plan`, `defender`: structured selection exercises (sorting cards, question cards, picks, confirm items), ids saved in `se_board_state`, items bound to steps by `step`, step and block globals set through the shared writer; content read from `social.engagement` | in N1; shape in `00` §11 |
 | N5 | Close as a normal exit with its own Close control and Escape; nested launch and return-to (`00` S12) | `minigames/framework/base-minigame.js` (`disableClose`), `minigame-manager.js` |
-| N6 | Validator: `readinessSlots` keys are target ids, every `needsIntel` id is a declared fact, every target has at least one slot and every `addressedAs` source lies in its slots, `factMitigations[].intel` ids are facts with a `reduceNote`, every `onCompleteGlobal` and step global is declared, every item's `step` is declared in its block and every declared step has items; schema entries for `social.intelBoard` and the case-file `minigameData` | `scripts/validate_scenario.rb` (S11); `scripts/scenario-schema.json`; `scripts/minigame-data-schemas.json` |
+| N6 | Validator: `readinessSlots` keys are target ids, every `needsIntel` id is a declared fact, every target has at least one slot and every `addressedAs` source lies in its slots, `factMitigations[].intel` ids are facts with a `reduceNote`, every `onCompleteGlobal` and step global is declared, every item's `step` is declared in its block and every declared step has items (a `confirm` item counts); schema entries for `social.intelBoard` and the case-file `minigameData` | `scripts/validate_scenario.rb` (S11); `scripts/scenario-schema.json`; `scripts/minigame-data-schemas.json` |
 
 ## Accessibility and small screens
 
