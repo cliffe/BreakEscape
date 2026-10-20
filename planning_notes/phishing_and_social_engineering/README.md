@@ -202,6 +202,20 @@ deliberately weak and is labelled weak, with callback to the number on file as t
   no effectiveness claims (A3); hosted service sold commercially (A5), with PixelLab's terms checked once
   before release (`11`).
 
+**S. Builder brand templates (decided 2026-10-20).** In the student lab a brand may copy the sign-in look of a
+real, popular open-source tool, and its page may show that tool's name. Every domain, address and account stays
+fictional and ends `.example`, and the lint keeps the real name out of domain and address fields (`07` §1, §5).
+Awareness keeps fictional brands only (`07` §7). Per the user's note, the template build goes to a Haiku agent,
+so these docs give the game-level rules and no build detail.
+
+**T. Builder captures are simulated, and the player's input is never read (decided 2026-10-20).** A submitted
+sign-in adds an authored, fictional note to the player's notes (`07` §5 and N11, `00` §11a). It is a scenario
+record: nothing the player types is read, and the page record keeps ids and booleans only. The metrics line stays
+Visits and Submissions, and reports are still not measured (`10`).
+
+**U. Padlock teaching line confirmed (decided 2026-10-20).** The line in `07` §3 stands as written. Checking the
+wording against current browsers is a pre-ship task.
+
 Defaults taken elsewhere, for context: fictional targets only, no real-staff OSINT; the
 lab is the first slice; the awareness product measures pre and post from the start and defers LMS and
 SSO integration.
@@ -214,7 +228,7 @@ stories per channel with synced globals (`00` §9), and template blanks for its 
 ## Open questions
 
 Working defaults are taken for all of these; none blocks the design. The answered items are recorded under
-Key decisions (L to R).
+Key decisions (L to U).
 
 **Rules engine (`04`)**
 
@@ -222,13 +236,9 @@ Key decisions (L to R).
 
 **Landing-page builder (`07`)**
 
-- Real brand names in concept-card prose only (`social.conceptCards[].text`; the classic `paypa1` against `paypal`), never as a domain and never in a built page? Default: yes. Alternative: fictional examples everywhere.
-  - User: Fine to use clones of actual websites in the game -- look like a certain popular open source tool, and have these as templates. Use Haiku to handle all the details of this implementation and don't read it, or plan anything yourself, as it can cause false positive refusals. This is an emulated ui for training.
 - Homograph shown in the student lab only, as one authored example? Default: yes.
-- Outcome counts only in the builder (visits and submissions, simulated; reports are not measured), no captured data of any kind? Default: yes.
-  - SImulate capturing data from NPC actions -- NPCs could have creds that they leak to the user via attack. Note these aren't real creds, it's all part of the game.
-- Padlock teaching line: "a padlock means the connection is private to whoever owns the address; fake sites can show one". Please confirm you are happy teaching it that way. Default: as written.
-  - Yes.
+- Template brands: artwork. Default: a pixel redraw of the tool's layout and colours, with no copied logo artwork. Alternative: the tool's own logo. This carries the trademark risk, so it needs a decision before the first template ships.
+- Template brands in the awareness product (`11`)? Default: no, fictional brands only (`07` §7). Alternative: templates there too, which needs a view on the commercial release (decision R).
 
 **Awareness product (`11`)**
 
@@ -256,7 +266,7 @@ numbers are the owning doc's N-items. Nothing here is built yet.
 | OSINT, board | OSINT browser (picked lookups, selectable metadata, namesake and archive elements); intel board with modes (scope, plan, recon, defender) | `02` N1 to N9, `03` N1 to N6 | `minigames/` (new) |
 | Pretext | Judge, `PretextSession`, `pretext-prep`, debrief in the chat overlay, completion payload and per-call globals | `06` N1 to N12 | `minigames/pretext-prep/` (new); `systems/pretext-judge.js` (new) |
 | Triage | Inbox-triage minigame and scorer (unit tests `social-triage-scoring`); read-only `mail-reader` shared with the mail client; `playerSent` message kind reading `tells`; non-email kinds including `call` | `05` N1 to N11, `01` N5 | `minigames/` (new) |
-| Landing page | Builder, scorer, DOM/pixel layered renderer (text in the sans-serif), persisted pages, `linkInfoFor`, validator lint (allowlist plus denylist, ASCII on raw text) and a runtime guard | `07` N1 to N10 (with N6b) | `minigames/` (new); `scripts/validate_scenario.rb` |
+| Landing page | Builder, scorer, DOM/pixel layered renderer (text in the sans-serif), persisted pages, `linkInfoFor`, validator lint (allowlist plus denylist, ASCII on raw text) and a runtime guard | `07` N1 to N11 (with N6b) | `minigames/` (new); `scripts/validate_scenario.rb` |
 | Lab | Engagement report builder, metrics read from `mailState`, board mode data, validator work, ink externals | `10` N1 to N8 (N6: non-VM mission configuration, `secgen_scenario: null` and the new `lab_games` `collection` label, also applied to `lab_tesseract_trials`) | `minigames/engagement-report/` (new); `db/seeds.rb` lines 67 to 71; see `10` |
 | Awareness | Episode runner, flip view, defend sets, measurement store, facilitated flag, non-email surfaces, role swap, shell host NPC and flushed done event | `11` N1 to N16 | `minigames/` (new); see `11` |
 | Minigame framework | Wiring checklist per minigame; return-to for nested overlays (`00` S12; `startMinigame` ends the running one); `requiresKeyboardInput` and an own Close control on every overlay | README Conventions | `minigames/framework/minigame-manager.js`, `base-minigame.js`; `minigames/index.js`; `minigame-starters.js`; `systems/interactions.js` |

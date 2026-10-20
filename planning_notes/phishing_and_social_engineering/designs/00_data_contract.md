@@ -1651,7 +1651,7 @@ others; `02` N8 and `07` §1 and N6 refer to this list instead of restating it:
 |-------|-------|
 | `domain`, `browserDomain`, `realDomain`, `linkText` | landing-page domain menu and page definitions (`07`), `phishTargets[].expectedLink.realDomain` |
 | `sites[].url` | OSINT sites (`02`) |
-| `address` | `social.people[]`, the OSINT staff-block rows, a `provides` entry of type `address`, `mailClient.accounts[]` (and each `createMenu[]` entry) |
+| `address` | `social.people[]`, the OSINT staff-block rows, a `provides` entry of type `address`, `mailClient.accounts[]` (and each `createMenu[]` entry), `landingPages[].capture.address` (`07`) |
 | `addresses[]` | `mailClient.contacts[]` |
 | `text` | `social.conceptCards[]` |
 
@@ -1664,7 +1664,9 @@ excludes file names (`Q3.pdf`, `CV.docx`: a known file extension is not a TLD) a
 (`initial.surname`, `m.pierce`), and it ignores the local part of an `@` address. The lint does not read
 other prose (a post, a block, a template or a reply), so the claim is "no real-brand domain in those
 fields", not "anywhere in `social`". Real product names (`Microsoft Excel`, `Xero`, `Office 365`) may
-appear in OSINT and fact prose; only a real brand inside a domain or address field is rejected.
+appear in OSINT and fact prose; only a real brand inside a domain or address field is rejected. A template
+brand's `lookOf` name (`07` §1) may appear in its landing page's name and text, and the same denylist applies
+to that name in domain and address fields.
 
 **Pointers.** An object carries only a pointer in `minigameData`. One object type has one entry in
 `minigame-data-schemas.json`, and each new type needs a sprite `assets/objects/<type>.png` (the existing `phone` needs none):
@@ -1804,6 +1806,10 @@ target. This keeps the noticed branch and the defender inspection reachable afte
 `linkText` (the address the mail client shows for the link, for example `accountingnow.example/payroll`)
 that the hover-mismatch lesson contrasts with the real domain; the player does not write it.
 
+**Capture note.** When a send first stores `victim.submitted: true`, the mail client adds the page's
+`capture.note` to the player's notes, once (`07` N11). The record gets no new field: the note is authored
+scenario text, and a repeat or a noticed send adds nothing.
+
 **One link id per page.** The payload-kit item for a page is `kit_payroll_page`, with
 `landingPageId: "payroll_login"`; the same id is `message.link`, the sent record's `link.kitId` and
 the page-record lookup key. This is the only link id.
@@ -1892,6 +1898,8 @@ lists the triage sizes and the domain ids.
 | CI validator loop | one job with Ruby (bundler-cache, sqlite apt packages and `BUNDLE_BUILD__SQLITE3` as the existing jobs) and Node 20; `package-lock.json` un-ignored and committed so `npm ci` works; Node tests run as `bundle exec node --test test/js/validator-*.test.mjs test/js/social-*.test.mjs` and fail rather than skip; the social unit tests are `social-phish-rules`, `social-triage-scoring`, `social-pretext-judge`, `social-intel`, and the safety tests `social-landing-page-model`, `-render`, `-guard` and `social-osint-address-bar`; `test:social` script; no test runs the bare validator CLI; `--strict-social --no-graph --skip-ink` over scenarios with a `social` key; `git diff --exit-code` | S11 |
 | Concept cards | `social.conceptCards[] { id, title, text, image? }`; brand exemption on `text` only, host-shaped tokens still end `.example` | 11 |
 | Real-brand lint scope | the single field list in §11 ("Lint field list"); host-shaped token = hostname in a URL/address field or a dotted token in card text ending in a known public TLD (not `.example`), excluding file names and `initial.surname` patterns; `.example` tested on the hostname only | 11 |
+| Captured sign-in | a first `submitted` outcome adds the page's `capture.note` once (`window.addNote`; no global, fact or record field); `capture.address` is linted `.example` | 11a, 07 N11 |
+| Template brands | a student-profile brand may carry `lookOf` (a real tool's name): its page may show the name, while domain and address fields never carry it (denylisted); awareness has none | 07 §1, §7 |
 | Landing verdict | a page at or above threshold that fails a gate gets the second verdict row's string (`07` §4) | 07 |
 | Defender facts | exactly four with a `reduceNote`: `email_pattern`, `username_convention`, `lord_portal`, `hampshire_careers` | 1 |
 | Call outcome | `reported`, else `got_it` if any ask granted in the call, else `walked_away`; `pretext_call_done` set by any granting ask | 06 |

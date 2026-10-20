@@ -136,13 +136,13 @@ single-select (`03`): each list has exactly one right option, and every wrong on
 1. **Objective** (step `plan_objective_done`): pick the one objective that fits the brief. The right
    option is "find out how far email and a phone pretext get against AccountingNow's finance, HR and
    service-desk staff, and report the gaps". Wrong options include "disrupt payroll" (rejected with
-   the rules-of-engagement reason) and "collect staff passwords" (nothing is collected: page results
-   are simulated).
+   the rules-of-engagement reason) and "collect staff passwords" (the engagement keeps nobody's
+   password: a submitted page is simulated, and the sign-in it hands over is a game note).
 2. **Success measure** (step `plan_measures_done`): pick the one measure the report will be built
    around. The right option is "how far each attempt gets", which the lab can record: messages sent,
    landed and failed, page visits and submissions, and the call outcome. The wrong options are "which
    named staff fell for it" (a blame measure, rejected with the Ch. 9 reason), "passwords collected"
-   (nothing is collected) and "did staff report us" (explained as the measure a live test would add
+   (the lab records submissions, not what was submitted) and "did staff report us" (explained as the measure a live test would add
    and this lab cannot observe). The point is that you decide the metrics *before* you send anything.
 
 When both steps are done the mode sets `plan_done`; Ruth gives the Recon Room key. The case-file board
@@ -277,6 +277,10 @@ On attach the builder saves the page record in `se_landing_pages.payroll_login` 
 the mail client offers is the payload-kit item `kit_payroll_page`, and only for targets in the page's
 `targets` map: the lab's page lists `lord` alone, so the composer offers "build/attach page" for Sofia
 and never for Hampshire or Pierce.
+
+If Sofia signs in on a page that meets its threshold and her email landed, the mail client adds her staff
+portal sign-in to the notes as a simulated record (`07` §5, N11). Nothing in the lab depends on it, because
+the lab ships no found accounts (`00` §10a).
 
 The page does not depend on the call, and the call does not change the page's score: 07 reads no
 globals. Ruth suggests calling Dev first because what he says sharpens the wording the student will
