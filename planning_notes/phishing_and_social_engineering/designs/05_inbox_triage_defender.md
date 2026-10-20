@@ -432,7 +432,7 @@ the recipient saw it (`10` stage 7, `11`). A `playerSent` entry names where to d
 
 ```jsonc
 { "kind": "playerSent", "id": "own_lord",
-  "targetId": "lord",                  // the phishTarget whose message to replay (the latest sent one that has tells, from whichever account sent it)
+  "targetId": "lord",                  // the phishTarget whose message to replay (the latest sent one whose tells include senderTrust or senderAuth, else the latest with any tell, from whichever account sent it)
   "domainFrom": "landing_domain",      // optional, on a playerSent entry only: show the look-alike domain the player picked in 07
   "notes": { "perFlagNote": { "senderTrust": "...", "linkCredible": "...", "urgencyCalibrated": "..." },
              "headerNote": "...", "ifTrusted": "...", "reportReply": "..." } }   // authored once per target
@@ -457,13 +457,16 @@ The set carries one `playerSentAuth` table, next to `messages`:
 }
 ```
 
-- **Source.** The latest persisted **sent** record (`00` §10a) whose `targetId` matches **and whose
-  `tells` is non-empty**, across the Sent folders of every mailbox in `mailState` (the triage
-  workstation carries no account list of its own), whether or not it landed. A later send with no tells (a retry from `freemail`, which cannot spoof) never shadows an
-  earlier record that has them, and a record with no tells is never replayed. The account that
-  sent it is read from the record's `fromAccount`, so a send from `guest` or from `freemail` is
-  found either way. An optional `fromMailbox` restricts the search to one mailbox; the lab omits it.
-  If no sent record to that target has tells, the entry is skipped.
+- **Source.** Across the Sent folders of every mailbox in `mailState` (the triage workstation
+  carries no account list of its own), whether or not the send landed, the loader picks the latest
+  persisted **sent** record (`00` §10a) whose `targetId` matches and whose `tells` include `senderTrust`
+  or `senderAuth`, the two spoof tells that only a spoofing account can raise. If no record has either,
+  it takes the latest matching record with any tell. A later send with only account-independent tells
+  (a retry from `freemail`, which cannot spoof but still carries `urgencyCalibrated`, and
+  `linkCredible` when a page is attached) never shadows an earlier spoofed send, and a record with no
+  tells is never replayed. The account that sent it is read from the record's `fromAccount`. An
+  optional `fromMailbox` restricts the search to one mailbox; the lab omits it. If no sent record to
+  that target has any tell, the entry is skipped.
 - **Shape.** The loader builds an authored message from the record: `from` and `to` as stored, the
   stored rendered `body`, `links[]` from the record's `link` (the link text is the page's authored
   `linkText`, the destination is the picked domain from `07`'s menu, looked up by `link.domainId`),
@@ -473,21 +476,23 @@ The set carries one `playerSentAuth` table, next to `messages`:
   A landed phish has an empty `redFlags` but non-empty `tells`, which is exactly what the defender is
   asked to find. A message with no tells is left out of the round, so *F* is never 0. `perFlagNote`
   strings come from `notes`, one per tell id.
-- **Auth results.** Authored literals, never computed from anything the player typed. Without
-  `domainFrom`, or when the record has no `link.domainId` (the chosen record carried no page, or its
-  link was `missing`), the auth is the row for the record's real `fromAccount` in `accounts`, and
-  `linkCredible` is dropped from `truth.flags` for that entry (`04` raises that tell only when a
-  link domain is set); if no tells remain the entry is skipped. For a record with a link, the auth is
-  the row for the real `fromAccount` in `accounts`: a message sent from
-  `guest` while claiming another person shows the fail result that row gives. With `domainFrom:
-  "landing_domain"` and a `link.domainId` on the record, the From address's domain, the envelope and
-  the reply-to take the domain picked in `07`, read only from the sent record's `link.domainId` (copied
-  from the page record when the message was sent, so a later rebuild of the page does not change the
-  replay), and the auth is that id's row in `domains`. The attacker owns
-  that domain, so the lab's rows pass all three. The panel then shows a pass for a phish, so
-  `senderAuth` is removed from `truth.flags` for that entry; the flags that remain are the ones a
-  reader can find (`senderTrust`, `linkCredible`, `urgencyCalibrated` for the lab's Lord phish). A
-  missing account or domain id fails validation. The lab ships `guest` and `freemail` only.
+- **Auth results.** Authored literals, never computed from anything the player typed.
+  - *The record has no `link.domainId`* (the chosen record carried no page, or its link was
+    `missing`): the auth is the row for the record's real `fromAccount` in `accounts`, and
+    `linkCredible` is dropped from `truth.flags` (`04` raises that tell only when a link domain is
+    set). If no tells remain, the entry is skipped.
+  - *The record has a link*: `linkCredible` stays in `truth.flags` whatever `domainFrom` says, and the
+    link destination is shown from `link.domainId` as in Shape. Without `domainFrom`, the auth is the
+    row for the real `fromAccount` in `accounts`: a message sent from `guest` while claiming another
+    person shows the fail result that row gives. With `domainFrom: "landing_domain"`, the From
+    address's domain, the envelope and the reply-to take the domain picked in `07`, read only from the
+    sent record's `link.domainId` (copied from the page record when the message was sent, so a later
+    rebuild of the page does not change the replay), and the auth is that id's row in `domains`. The
+    attacker owns that domain, so the lab's rows pass all three. The panel then shows a pass for a
+    phish, so `senderAuth` is removed from `truth.flags` for that entry; the flags that remain are the
+    ones a reader can find (`senderTrust`, `linkCredible`, `urgencyCalibrated` for the lab's Lord
+    phish). `domainFrom` changes only the From domain, envelope, reply-to and auth row.
+  - A missing account or domain id fails validation. The lab ships `guest` and `freemail` only.
 - **Reply-to local part.** A domain row's `replyTo` uses the same local part as the replayed From
   (the page's `portal_address`, `payroll-notices`), so the panel never shows a Reply-to that differs
   from the From and `reply_to_differs` is not implied by the replay.
@@ -549,7 +554,7 @@ The awareness episodes (`11` §6.4) use four additions, all data on the same com
   that holds `call` messages is an `awareness` set with `verifyVerdict: true`, because `analyst` sets
   never enable Verify (the validator refuses `call` in an `analyst` set). Reasons chips are the set's
   enabled channel tells (`vish_callback_pressure`, `secrecy_or_bypass`, `borrowed_authority`), and
-  the review card shows the same Caught / Missed lists. `11` (R2) uses it for the role-swap episode.
+  the review card shows the same Caught / Missed lists. `11` E3 (N15) uses it for the role-swap episode.
   An episode's defend set may hold fewer than five messages when it mixes kinds, for example three
   voicemails plus two emails reused from other episodes (`11` E7), which still totals five.
 - **Stage at launch.** `startInboxTriageMinigame` accepts a `stage` parameter (`pre` or `post`) that
@@ -622,9 +627,17 @@ replaced by the effective stage). Four rules:
 - **Sync, then emit.** The starter calls the writer with `deferEmit` (the S3 option that updates
   `gameState.globalVariables` without emitting `global_variable_changed`), awaits
   `window.stateSync.sync()`, and only then emits the `global_variable_changed` events for the four
-  names and its done event (`00` §11). The server copy of `globalVariables` is therefore current
+  names (only those whose value changed, as `deferEmit` returns pending events for changed values only; `00` S3) and its done event, last (`00` §11). The server copy of `globalVariables` is therefore current
   before any `eventMappings` entry fires a task POST, so a `concludeRequires` keyed on
   `<prefix>done` or `<prefix>pass` finds it met. The await applies to every set, not only check sets.
+  `sync()` resolves even when the PUT fails or the server answers `{ stale: true }`, so the starter does
+  not trust the resolution alone. `_syncOnce` is changed to report whether the server confirmed
+  (`00` S3), and the starter retries `sync()` until it does. While it is retrying, the result screen
+  shows a "Saving your result..." notice and the done event is held; nothing is emitted until a sync is
+  confirmed. If the player is offline or the server keeps refusing, the notice stays and the retries
+  continue in the background, so the task completes late rather than never. The limitation: a player
+  who closes the tab during the retries loses the unsent result, and the shell concludes only on
+  the next completed round.
 
 - **`<prefix>done` means the round was completed, at any score**, and is what the pre/post
   first-attempt guard reads (N6). **`<prefix>pass` means `percent >= outcome.passPercent`.** A task or
@@ -637,7 +650,7 @@ replaced by the effective stage). Four rules:
   `triage_pass`.
 - **Training and mission sets may be re-run.** A result below `passPercent` offers "Try again", which
   starts a fresh round; each completion rewrites `percent`, `reportRate` and `done` with the latest
-  round. S3 emits only on a change, so writing `true` again does not refire an `eventMappings` entry,
+  round. The starter's writes emit only on a change (`00` S3), so writing `true` again does not refire an `eventMappings` entry,
   while a changed `percent` emits an event that nothing maps.
 - **`<prefix>pass` is never cleared.** The starter sets it true when a round reaches `passPercent` and
   does not reset it to false after a later lower round, so a door or task a pass opened stays open.
@@ -659,13 +672,13 @@ awards a lab flag for finishing, it goes through `POST /games/:id/flags`
 | N1 | `inbox-triage` minigame component (sort, chip list, review cards, result screen, narrow layout; the optional Verify verdict and the non-email message kinds) | New overlay |
 | N2 | The read-only `mail-reader` shared with the mail client (`01` N5): link-hover status bar with tap/focus pin, header panel | `01` adopts it too so its reading pane and this one never drift |
 | N3 | Import 00 §2's factor library and canonical red-flag strings (including `senderAuth` and the channel tells) through the same resolution rule `04`/`01` use (per-target `factorStrings` override, else canonical, never null). 05 adds only the chip label tables | No `04` schema change needed: `senderAuth` is already the shared factor in 00 §2 |
-| N4 | `triage-scoring.js` pure scorer and its unit tests (the worked example is test case one) | No framework deps |
+| N4 | `triage-scoring.js` pure scorer and its unit tests in `test/js/social-triage-scoring.test.mjs` (named so the CI glob in `00` S11 runs them; the worked example is test case one) | No framework deps |
 | N5 | Scenario validator checks: the `stage` launch parameter only with a `{stage}` prefix, `call` messages only in `awareness` sets with `verifyVerdict` and `push` messages only in `awareness` sets, `playerSentAuth` placeholders limited to `{account_address}` and `{domain}`, `<setGlobalPrefix>` names treated as written (so an `exportGlobals` entry for them raises no "never written" warning), the four `<prefix>` globals declared only for the stage the mission's kiosk launches and any name the mission imports (`importGlobals`) skipped, so an import never collides with an own declaration, `passPercent: 0` accepted on a check set (and the non-zero-`passPercent` warning on a `<prefix>done` task applying to the other sets), parallel-form balance (counts per factor and per truth, skipping `playerSent`), non-empty authored strings, every phish message has `perFlagNote` per flag and at least one flag, `truth.flags` ids exist in 00 §2's factor library or enabled channel tells, `playerSentAuth` has a row for every account id and for every id in `07`'s domain menu, `domainFrom` appears only on `playerSent` entries, a set has no `mailbox` field | Extends the validator (`00` S11); lint like `04` N3 |
-| N6 | Result persistence and the **first-attempt guard**: on completion the starter writes `<prefix>percent`, `<prefix>reportRate`, `<prefix>done`, `<prefix>pass` as globals through the shared writer (S3). Globals persist across reload (the writer patches `gameState.globalVariables`; serialised by `state-sync.js` and restored in `core/game.js`'s saved-globals restore, with saved values taking precedence; `00` §5). The writes use `deferEmit`, then the starter awaits `window.stateSync.sync()` before emitting the `global_variable_changed` events and its done event (see "Bridging"). Before starting a `pre` or `post` set the starter checks `<prefix>done`: if true, it opens a read-only result screen built from the stored globals (the headline band from `percent`, and the report rate); no replay, nothing overwritten. Per-message answers, `perFactor`, `answers[].ms` and the review cards are not stored and are not shown on the reopen; training and mission sets skip the check | Needs the S3 `deferEmit` option (`00` S3). The awareness product still needs a server-side record for anything richer (OQ1) |
+| N6 | Result persistence and the **first-attempt guard**: on completion the starter writes `<prefix>percent`, `<prefix>reportRate`, `<prefix>done`, `<prefix>pass` as globals through the shared writer (S3). Globals persist across reload (the writer patches `gameState.globalVariables`; serialised by `state-sync.js` and restored in `core/game.js`'s saved-globals restore, with saved values taking precedence; `00` §5). The writes use `deferEmit`, then the starter retries `window.stateSync.sync()` until the server confirms (S3 makes `_syncOnce` report success) before emitting the changed `global_variable_changed` events and its done event (see "Bridging"). Before starting a `pre` or `post` set the starter checks `<prefix>done`: if true, it opens a read-only result screen built from the stored globals (the headline band from `percent`, and the report rate); no replay, nothing overwritten. Per-message answers, `perFactor`, `answers[].ms` and the review cards are not stored and are not shown on the reopen; training and mission sets skip the check | Needs the S3 `deferEmit` option and the confirmed-sync result from `_syncOnce` (`00` S3). The awareness product still needs a server-side record for anything richer (OQ1) |
 | N7 | Starter `startInboxTriageMinigame` in `systems/minigame-starters.js` (with the `stage` parameter and `answers[].ms`), plus the rest of the wiring checklist above | Modelled on `startSiemMinigame` |
 | N8 | `scoringProfile` support in `triage-scoring.js`: the two profiles in "Scoring profiles", with a test for each using the worked example (68% analyst, 86% awareness) | Pure function |
-| N9 | `playerSent` message kind: reads the latest persisted sent record to the target that has non-empty `tells`, from any mailbox (`01` N12, `00` §10a: `fromAccount`, `tells`, `link`, `attachment`, rendered `body`), takes `truth.flags` from stored `EvalResult.tells`, the `playerSentAuth` literal table and `domainFrom` substitution, with the page-less case above | — |
-| N10 | `call` and `push` message kinds: transcript card with the four actions mapped to Trust / Report / Delete / Verify; MFA prompt card with three actions mapped to Trust / Delete / Report; channel-tell chips | `11` R2, E3 |
+| N9 | `playerSent` message kind: reads the latest persisted sent record to the target whose `tells` include `senderTrust` or `senderAuth` (else the latest with any tell), from any mailbox (`01` N12, `00` §10a: `fromAccount`, `tells`, `link`, `attachment`, rendered `body`), takes `truth.flags` from stored `EvalResult.tells`, the `playerSentAuth` literal table and `domainFrom` substitution, with the page-less case above | — |
+| N10 | `call` and `push` message kinds: transcript card with the four actions mapped to Trust / Report / Delete / Verify; MFA prompt card with three actions mapped to Trust / Delete / Report; channel-tell chips | `11` N15, E3 |
 | N11 | Comparison screen: after a post round, a panel reading `triage_pre_percent`, `triage_post_percent` and the two report rates, and showing the change (`11` §5.2); small, one panel on the result step. **No-baseline gate:** the panel shows the comparison only when the imported `triage_pre_done` is true (and the mission's `pre_check_completed` flag is true); otherwise it shows "no baseline" and the post round's own result only | Reads globals imported from the pre mission under those names. Per-factor counts are not carried between the two missions, so the first slice compares `percent` and `reportRate` only; each round's own result screen still shows its per-factor lists |
 
 ## Reuse across audiences

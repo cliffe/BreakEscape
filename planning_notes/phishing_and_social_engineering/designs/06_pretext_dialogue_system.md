@@ -223,13 +223,19 @@ Dev's character is `dev`, with influence global `dev_influence` (declared at -10
 ```jsonc
 {
   "character": "dev", "callId": "service_desk_call",
+  "susceptibility": { "urgency": -10, "authority_borrowed": -20, "candour": 10 },
+  "unverifiableCost": -10,
   "knows": {
     "intern": { "value": "lord_full", "accept": ["lord_first","lord_full"], "grade": "identity" },
     "team":   { "value": "finance",   "grade": "identity" }
   },
   "lines": {
     "open_buddy": { "blanks": { "intern": "intern", "team": "team" },
-                    "claims": [ {"fact":"intern","from":"blank:intern"}, {"fact":"team","from":"blank:team"} ] }
+                    "claims": [ {"fact":"intern","from":"blank:intern"}, {"fact":"team","from":"blank:team"} ] },
+    "repair_team": { "technique": "candour", "repairs": "team", "blanks": { "team": "team" },
+                     "claims": [ {"fact":"team","from":"blank:team"} ] },
+    "urgent_payslip": { "technique": "urgency", "claims": [] },
+    "name_drop_manager": { "technique": "authority_borrowed", "claims": [] }
     // the intern blank takes a name form held from lord_intern (about: intern); the team blank offers `finance` (lord_intern) and the stale `accounts` (old_org_chart)
   },
   "asks": {
@@ -245,6 +251,24 @@ Dev's character is `dev`, with influence global `dev_influence` (declared at -10
     "reported":    { "line": "I'll need to check this with my manager. Goodbye.",
                      "setGlobal": { "pretext_call_reported": true } },
     "walked_away": { }
+  },
+  "tells": {
+    "intern": { "pass": "Intern. She is on the new-starter list.", "fail": "Intern. You said \"{said}\". The list has {actual}.",
+                "failCategory": "Intern. That did not match the new-starter list.", "unknown": "Intern. He cannot check this." },
+    "team":   { "pass": "Team. Finance matches.", "fail": "Team. You said \"{said}\". The directory has {actual}.",
+                "failCategory": "Team. That did not match the directory.", "unknown": "Team. He cannot check this." },
+    "techniques": { "urgency": "Urgency. A rushed payslip query is the oldest pressure line on a service desk.",
+                    "authority_borrowed": "Borrowed authority. Naming a manager does not replace the check.",
+                    "candour": "Candour. Owning the slip early costs less than defending it." },
+    "repair": "Corrected. Owning a slip early costs less than defending it.",
+    "ask": { "accepted": "He read it out.", "pending": "He wants to check one more thing.", "refused": "He will not do that on this call." },
+    "bands": { "calm": "Dev is relaxed.", "wary": "Dev has slowed down.", "refusing": "Dev has stopped helping." }
+  },
+  "hints": [ "Check who the new starter's team is.", "The company site lists the Finance team and its new intern.",
+             "Sofia Lord is the new intern in Finance." ],
+  "defenderNotes": {
+    "intern": "A service desk that checks the new-starter list catches a guessed name.",
+    "payslip_date": "Calling back on the number already on file defeats every line here."
   }
 }
 ```
@@ -343,7 +367,7 @@ Notes for authors:
 
 - A `knows` entry may list `accept: [...]`, extra value ids that count as a match (Dev's intern accepts any `lord_*` name form).
 - A claim's `from` names a blank the player filled, or a fixed value in the line. A claim whose fact is absent from `knows` is unverifiable by design.
-- A fact is correct if the claim's value equals `knows[fact].value`. The comparison uses value ids from the `provides` entries in `00` §1, so there is no text parsing. A blank's options are the `provides` entries of held facts with the blank's type.
+- A fact is correct if the claim's value equals `knows[fact].value`. The comparison uses value ids from the `provides` entries in `00` §1, so there is no text parsing. A blank's options are the `provides` entries of held facts with the blank's type and matching `about` (`00` §1, "Filter rule"): an untagged entry is never offered to a blank that has an `about`, so Dev's `team` blank does not show `pierce_role`'s untagged `finance`.
 - `grade` sets the cost of a mismatch: `identity` is -30 and `lesser` is -20.
 - **Outputs are generic.** An ask's `grants` may set any number of globals (`setGlobal`) and any number of intel facts (`intel`, which sets `se_intel_<id>` in the shared writer). A call's `outcomes` entries may each `setGlobal`. This is how `10` gets the portal name, the payslip date and `pretext_call_done` (section 4.8; the last is set in each ask's `grants`), with no engine change per scenario.
 - Template wording stays in the ink. The JSON names each line's blanks and the fact each one feeds. The validator checks that the two agree, for every channel story of the character that carries the call.
@@ -423,7 +447,7 @@ Tagging each choice with a weight and counting the tags does not fit the engine:
 
 Instead the ink calls two **external functions**, `pretext_say` and `pretext_ask`, which the engine binds. They run while ink continues, return a small integer, and ink branches on it. Binding an external is an existing pattern, but the existing six are read-only context functions bound per loader (`00` §6), and a story that declares an external its loader has not bound throws at the first `Continue()`. So these two, and `se_influence`, are bound once inside `InkEngine` with no-op defaults (S1, `00` §12), which makes them safe in the phone intro preload, the bark path, the entry-knot dry runs and the mail runner. **A spike comes first:** load a story that declares them from the phone preload and from a bark, and confirm it neither throws nor writes.
 
-Both functions take one argument, the id, and are **idempotent** under the rule in `00` §8: the session keeps a turn counter, incremented on each choice, and a call keyed `(turn, function, id, ordinal)` returns its stored result if it arrives again. The same id used on two different turns, such as a sticky "ring back later", runs both times. The wrapper forwards only `(name, func)`, so a third argument such as `lookaheadSafe` cannot be passed; the inkjs default (`false`) suits a side-effecting function. The blank values for a step come from the template picker, which records them on the session before the call. `pretext_say` reads them there and does not take them as an argument.
+Both functions take one argument, the id, and are **idempotent** under the rule in `00` §8: the session keeps a turn counter, incremented on each choice, and a call keyed `(runId, turn, function, id-or-ordinal)` under the rule in `00` §8 returns its stored result if it arrives again. The same id used on two different turns, such as a sticky "ring back later", runs both times. The wrapper forwards only `(name, func)`, so a third argument such as `lookaheadSafe` cannot be passed; the inkjs default (`false`) suits a side-effecting function. The blank values for a step come from the template picker, which records them on the session before the call. `pretext_say` reads them there and does not take them as an argument.
 
 **One write path for influence.** Every influence entry goes through the path that `se_influence(delta, reason)` uses (`00` §8, S5). That path writes the character's influence global through the shared writer (so every loaded channel story and the bar see it), appends the tells entry, shows the toast and runs the threshold effects. `pretext_say` calls it once per entry, so a line with a claim, a technique and a repair makes three writes, each with its own reason. The judge stays pure. It returns the entries and the resulting band, and the binding applies them: each entry through the write path, and, when `reported` is true, `report(character, reportReason)` (`00` §8), which runs the effects of the threshold whose id is `reports`. The write path also sets the calling story's own influence VAR, so a later ink assignment starts from the engine's value.
 
@@ -471,7 +495,7 @@ The engine also writes two declared globals per call, `pretext_<callId>_outcome`
 
 | # | Item | Notes |
 |---|------|-------|
-| N1 | `pretext-judge.js` pure module | Deterministic; unit tests from sample JSON |
+| N1 | `pretext-judge.js` pure module | Deterministic; unit tests from sample JSON in `test/js/social-pretext-judge.test.mjs` (the `social-*` name is what puts it in the CI glob, `00` S11) |
 | N2 | `PretextSession` at `globalVariables['pretext_<callId>_state']` | Reload-safe. No influence value (influence is the character's global). |
 | N3 | Bind `pretext_say` and `pretext_ask` once in `InkEngine` (`00` S1); set the `pretext_*` VARs after restore and sync | Spike first: load from the phone preload and a bark. Idempotent on the turn counter. |
 | N4 | Influence bar (`00` S4), tells panel, render-only phone system bubbles, portrait tint hook | New DOM components, not reuse of `npc-health-bar.js`. Shared with `01` N7. |
@@ -515,11 +539,12 @@ PixelLab-first, and not to be generated now. Check scope with the user before an
 
 ## 9. Open questions
 
+Question numbers are stable references; OQ2 is retired (decided).
+
 - **OQ1. Number visibility.** The bar always shows with its icons. Is the influence number hidden in assessment mode (default), or is the bar hidden there too, read only through the NPC's reactions and the tells panel? Default: number hidden, bar shown.
-- **OQ2. Role swap.** Decided: it belongs to the awareness build (`11` N15), not the lab or this doc.
 - **OQ3. Does a call feed a later phish?** Default: yes, through influence and the report global. The link runs through `boostIfGlobal` and `strictIfGlobal` (`00` §7, §8).
 - **OQ4. Does a report recover?** The default is a channel-scoped lockout with an expiry and a reset (section 4.3). Open: should a report without a lockout also recover over time, or only on a scenario beat?
-- **OQ5. Free-text speech.** Decided: scored speech is templates with blanks (beat 2, `00` §10). Still open: whether unscored free-text flavour is allowed in dialogue at all. Default: no.
+- **OQ5. Unscored free text.** Is unscored free-text flavour allowed in dialogue at all? Default: no.
 - **OQ6. Policy realism.** Is the policy we model realistic enough to teach from (a helpdesk reading a temporary code over the phone after two matched facts)? It is deliberately weak so the attacker can win, and the defender note says so. It needs a security-accuracy check. Default: keep it, labelled as a weak policy.
 - **OQ7. Templates per call.** How many templates does a call offer, and how many blanks can one template carry? Open. The lab needs enough choice for the judgement to be real. The number is for playtest. The same question applies to email (`00` §10).
 - **OQ8. Wrong but plausible blank values.** Are wrong values offered in a blank beyond the authored `stale` entries? Default: only held facts, a stale one included.

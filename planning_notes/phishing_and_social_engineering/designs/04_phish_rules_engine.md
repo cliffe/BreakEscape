@@ -87,7 +87,11 @@ slot"; in short:
   name and address are compared.
 - **Link.** `linkCredible` reads `message.linkInfo`, filled by `01` from `07`'s
   `linkInfoFor(record, pageDef, kitId)` (`00` §11a): it passes when `linkInfo.meetsThreshold` is true and fails with state `missing` when the kit
-  item has no built page. The judge reads nothing else about the link.
+  item has no built page. When a target lists `linkCredible` in `requiredFactors` and has an
+  `expectedLink`, the link is required, not "required if present": a send with `message.link === null`
+  fails `linkCredible` with state `missing` and the same "There's no page behind that link" string. Lord
+  therefore cannot land without the stage 4 page. Where a target lists `linkCredible` as advisory, a
+  send with no link simply does not raise it. The judge reads nothing else about the link.
 - **Free text is unscored.** The judge ignores it and the ink never reads it.
 
 ### Tells
@@ -98,7 +102,7 @@ of whether it landed. The engine computes it after judging:
 | tell | present when |
 |------|--------------|
 | `senderTrust` | `claimedSender` is set and the account's `person` is not that person (a deliberate spoof) |
-| `linkCredible` | `linkInfo.domain` is set and is not `expectedLink.realDomain`, whether or not the page was convincing. A message with no link, or a link in state `missing` (no domain), never raises it |
+| `linkCredible` | `linkInfo.domain` is set and is not `expectedLink.realDomain`, whether or not the page was convincing. A message with no link, or a link in state `missing` (no domain), never raises the tell (it fails the factor instead where the factor is required) |
 | `senderAuth` | the derived advisory read is `would-fail` |
 | `urgencyCalibrated` | the pretext or ask template's authored `urgency` is above the target's `urgency.advisoryMax`; a target with no `urgency` block never raises it |
 
@@ -111,6 +115,7 @@ The lab's tells, as sent from the `guest` account:
 |---------|---------|
 | Pierce phish, claiming Jed | `senderTrust`, `senderAuth` |
 | Lord phish, claiming the portal, with the built page | `senderTrust`, `senderAuth`, `linkCredible`, `urgencyCalibrated` (the payslip pretext and the link ask are authored `medium`, above her `advisoryMax` of `low`) |
+| Lord phish from `freemail`, with the built page | `urgencyCalibrated`, `linkCredible` (no spoof tell, so it is not replayed over a `guest` send) |
 | Hampshire application from `freemail` | none: `from_own`, equal domains, no `claimedSender` |
 
 A `found` internal account sending as its own person would give no tells, because the account is
@@ -118,7 +123,7 @@ that person's and the domains are equal. The lab ships no such account (only `gu
 it is an Eldritch Hacker case. `freemail` does not spoof, so a Pierce or Lord send from it has its
 own name as the From and fails `senderTrust`.
 
-`05` decides which of these a replay shows: it replays the latest sent record to a target that has tells, and never one with none (a `freemail` send cannot spoof, so it raises none). For a `playerSent` entry with `domainFrom` the panel shows
+Two tells are account-independent: `urgencyCalibrated` (a property of the authored templates) and `linkCredible` (a property of the attached page). A `freemail` send to Lord therefore still carries `urgencyCalibrated`, and with a page attached `linkCredible`. Only `senderTrust` and `senderAuth` are spoof tells, which a spoofing account alone can raise. `05` selects the record a `playerSent` entry replays by those spoof tells: the latest sent record to the target whose `tells` include `senderTrust` or `senderAuth`, and if none has either, the latest with any tell. A `freemail` retry carries no spoof tell, so it never shadows the student's `guest` phish. For a `playerSent` entry with `domainFrom` the panel shows
 the look-alike domain's passing result, so `senderAuth` is not offered as a flag there.
 
 ## Layered, legible feedback
@@ -163,7 +168,7 @@ blank that has options but none chosen gets the ordinary "Choose an option for t
 blank". Nothing is judged: no sent record, no attempt counted, no checklist. The player finds the
 gap through the hint ladder, the intel board and the pretext call, not through this line. Lord's
 portal and date blanks are empty until the call, so before it her composer shows this line.
-`requiresIntelToAttempt` is for a hard gate on a fact that feeds no blank; no lab target uses it, because every fact a lab target needs sits behind a blank and the empty-blank gate already covers it.
+`requiresIntelToAttempt` is for a hard gate on a fact that feeds no blank; no lab target uses it. Every fact a lab target needs apart from Hampshire's sits behind a blank, and the empty-blank gate covers it; Hampshire's applicant pretext `implies` the document value `cv`, so her only gate is the careers contact reveal.
 
 A character locked out on the mail channel (`00` §8, S10) is not judged: `01` refuses the send before
 `evaluateMessage` runs, so a lockout never produces a half-result.
@@ -319,7 +324,7 @@ Notes on the records:
 - **Hampshire is a data-only, text-job target.** She has no `character` and no `addressedAs`; her
   greeting is `greet_generic` and `addressedTo` is not required. Her From is `from_own`, so the account
   is the From and `senderTrust` passes under `trusts: ["*"]`. Her `pretext_apply` is fixed wording
-  that `implies` the document value `cv`, provided by `careers_attachment` (`00` §1). The reply is a
+  that `implies` the document value `cv`. `careers_attachment` (`00` §1) teaches the value, but the judge needs no fact for it; her only gate is the careers contact reveal. The reply is a
   text job (`00` §10): `replies.landed` when the message landed, otherwise the canonical fail line of
   the first failed factor. It is appended to the mailbox of the sending account after
   `emailReplyDelay`, and `phish_hampshire_landed` is set only if the message landed. Her
@@ -430,7 +435,7 @@ by `01` before judging) and S11. Doc items:
 
 | # | Item |
 |---|------|
-| N1 | `phish-rules.js` module + the factor library |
+| N1 | `phish-rules.js` module + the factor library, with unit tests in `test/js/social-phish-rules.test.mjs` (named so the CI glob in `00` S11 runs them) |
 | N2 | Slot judge per `00` §10: exact id comparison with distinctive, generic and stale kinds, `implies`, the sender mismatch rule, `from_own`, `linkInfo`, free text ignored |
 | N3 | Empty-string lint on all authored feedback (no blank interpolation), with the single `factorStrings` shape above |
 | N4 | Hint-stage tracking per target (reuses the mission hint pattern) |

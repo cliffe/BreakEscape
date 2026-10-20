@@ -217,9 +217,11 @@ The lab declares exactly these two accounts. It defines no `found` account: `jed
 mailbox are Eldritch Hacker data (`00` §10a), so the lab's `playerSentAuth` has a row for `guest`, a row
 for `freemail` and one for each of the six menu domains, and no others. `freemail` is declared with
 `spoofsFrom: false` in the lab, so its From is always its own name and address; only `guest` can claim to
-be Jed or the portal, which is why rounds 2 and 3 are sent from `guest`. A `freemail` send to Pierce or Lord raises no
-tell, so it is never replayed: stage 7 replays the latest record to the target that has tells, which
-is the student's `guest` send even if a later `freemail` retry exists (05 "Source").
+be Jed or the portal, which is why rounds 2 and 3 are sent from `guest`. A `freemail` send can still
+raise the account-independent tells (for Lord, `urgencyCalibrated`, and `linkCredible` when a page is
+attached), but never the spoof tells `senderTrust` and `senderAuth`. Stage 7 replays the latest record
+to the target whose tells include `senderTrust` or `senderAuth` (and only if none does, the latest with
+any tell), so it is the student's `guest` send even if a later `freemail` retry exists (05 "Source").
 
 | Round | Target | Account | Required factors (04) | What the round teaches |
 |-------|--------|---------|-----------------------|------------------------|
@@ -291,9 +293,9 @@ the debrief screen after it.
   team `accounts`, which Dev catches.
 - **Dev's influence bar** (`00` §8) is in the phone-chat header, with threshold icons for wary (-40),
   refuses (-50) and reports (-70). Dev starts at -10 (`dev_influence`). Claims he can check and that
-  hold raise it; claims he can check and that are wrong lower it a lot; urgency and borrowed
-  authority lower it; owning a slip early recovers it. The tells panel shows the delta, the reason and
-  the line after every turn.
+  hold raise it, and claims he can check and that are wrong lower it a lot (06's mechanics; Dev's
+  authored data is one opening line, `open_buddy`, plus the two asks). The tells panel shows the delta,
+  the reason and the line after every turn.
 - **Two asks.** `portal_name` (floor -30, no verification) grants `lord_portal_name` and
   `lord_trusts_portal_sender`: the portal's name, how its notices read and who they come from.
   `payslip_date` (pressure -10, floor -20, verification: the intern's name) grants
@@ -340,9 +342,12 @@ portal's notification sender in the From blanks (`portal_full` and `portal_addre
 `lord_intern` provides as a greeting value, and the only form her `addressedAs` accepts), a payslip
 pretext carrying the portal name and the date (`minDistinct: 2`), and the page built in stage 4 as
 the link (`kit_payroll_page`). Required factors: `senderTrust`, `addressedTo`, `pretextRelevant`,
-`linkCredible`. Without a built page `linkCredible` fails with state `missing` and the checklist says
-"there's no page behind that link"; a page below the threshold fails with its credibility reason.
-That is the hard gate, checked at send time and not on the board (`00` §4). Advisory only:
+`linkCredible`. Lord lists `linkCredible` in `requiredFactors` and has an `expectedLink`, so a send
+with no link at all fails it with state `missing` ("There's no page behind that link"), exactly as a
+send whose page is not built does; a page below the threshold fails with its credibility reason. Lord
+therefore cannot land without the stage 4 page. That is the hard gate, checked at send time and not on
+the board (`00` §2, §4; 04 "Link"). Because the page must be attached for the phish to land, the page
+record always has a `victim` by the time the report reads it. Advisory only:
 `urgencyCalibrated` ("this reads as high-pressure, a defender would clock it") and `senderAuth`
 (sent from `guest`, so the claimed domain would fail alignment). Urgency never fails a send, because
 real phishing with heavy pressure still lands; it is taught as a tell in the stage 7 triage, where the
@@ -359,9 +364,10 @@ keep:
   outcome; the lab records no "opened" or "clicked" for mail.
 - **Page.** From the persisted page record `se_landing_pages.payroll_login.victim` (`00` §11a, 07
   step 5), written for every send with a page attached, landed or not (a below-threshold page reads visited and
-  noticed): visited, submitted, noticed, shown as "Visits 1 · Submissions 1 (simulated)". The record
-  keeps its best outcome, so a later send that does not land never erases an earlier success; the
-  report reads the same best outcome.
+  noticed): the three booleans are shown as "Visited: yes · Submitted: yes (simulated) · Noticed: no".
+  They are a best-outcome flag, not a count of visits. The record keeps its best outcome, so a later
+  send that does not land never erases an earlier success; the report reads the same. If `victim` is
+  absent (no send has carried the page) the panel says "no page sent".
 - **Call.** From the pretext globals: whether any ask was granted (`pretext_call_done`), whether Dev
   reported at any point (`dev_reported`), and the latest call's outcome and lowest influence
   (`pretext_service_desk_call_outcome`, `_lowest`, which the latest call overwrites).
@@ -370,8 +376,8 @@ keep:
 
 The student reads the results and presses Confirm under the table (a `confirm` item carrying
 `step: "results"`, authored in `engagement.report.items`; it is done when pressed, which sets
-`report_results_done`) and then builds the **findings** (step `report_findings_done`). For each of three findings the student pairs a
-*root cause* with a *control* from authored lists. Finding 1, "Finance acted on mail spoofing a
+`report_results_done`) and then builds the **findings** (step `findings`, global `report_findings_done`, done when every finding has a correct cause and control
+chosen). For each of three findings the student pairs a *root cause* with a *control* from authored lists. Finding 1, "Finance acted on mail spoofing a
 colleague": cause "no external-sender banner; DMARC at `p=none`", control "banner plus DMARC
 enforcement". Finding 2, "The service desk gave out the portal name and payslip date": cause "no
 verification script", control "call-back to a number on file". Finding 3, "A look-alike portal page
@@ -399,7 +405,7 @@ Tomasz takes the report and sets a debrief exercise. The same strings serve both
    tell the student themselves exploited. Reading headers is part of this step, not a separate quiz:
    each message's authentication results carry a `headerNote`. Five messages are phish and three are
    genuine:
-   - **Student's Pierce phish** (`playerSent`, the latest sent record to `pierce` that has tells,
+   - **Student's Pierce phish** (`playerSent`, the latest sent record to `pierce` whose tells include `senderTrust` or `senderAuth`,
      landed or not): the display name is Jed's, the real account is not (`tells`: `senderTrust`,
      `senderAuth` would-fail). SPF fail, DKIM none, DMARC fail; the `Return-Path` and the first external hop do not
      match the name.
@@ -407,7 +413,8 @@ Tomasz takes the report and sets a debrief exercise. The same strings serve both
      domain the student picked in stage 4): `tells`: `senderTrust`, `senderAuth`, `linkCredible` and the
      advisory urgency read are stored, and the replay lists the flags without `senderAuth` (the
      header panel shows a pass for the look-alike domain, so `senderAuth` is not a flag there). The
-     record is the latest to `lord` that has tells. Its auth result comes from 05's `playerSentAuth` table, which has a row for each of
+     record is the latest to `lord` whose tells include `senderTrust` or `senderAuth`, so a later
+     `freemail` retry does not replace it. Its auth result comes from 05's `playerSentAuth` table, which has a row for each of
      the six menu domains and for the lab's two accounts (`guest`, `freemail`).
    - **Look-alike payroll notice** (authored, fixed look-alike domain): all three checks pass, **for
      the look-alike domain**. Authentication proves the sending domain is *consistent*, not
@@ -442,7 +449,10 @@ When every fact has a good mitigation chosen the mode sets `profile_done`.
 
 ### Closing debrief (Blue Team Room)
 
-Tomasz gives a short in-person debrief once `profile_done` is set: what the exercise showed, what
+Tomasz gives a short in-person debrief once every required completion global is set, `triage_pass`
+and `profile_done` (both are synced VARs in `tomasz.ink`; until both are true he says "come back when
+you have finished the exercise"). The SOC `case-file` stays usable before the triage, so the gate is on
+Tomasz and not on the object. What the exercise showed, what
 AccountingNow will change, and the no-blame line. Branches are gated on globals (`dev_reported` and the latest call's
 `pretext_service_desk_call_outcome` for the call; `phish_pierce_attempts` equal to 1 for a first-try
 land on Pierce) and use fixed strings, so voiced lines print no variables. The conversation ends with
@@ -456,7 +466,7 @@ and opens the conclusion screen.
 ```
 roe_signed -> plan_done -> osint_done (+ username convention) -> phish_hampshire_landed -> phish_pierce_landed
            -> [ landing_payroll_login_built  AND  pretext_call_done ]   (either order)
-           -> phish_lord_landed -> report_filed -> triage_pass -> profile_done -> closing_debrief (mission complete)
+           -> phish_lord_landed -> report_filed -> triage_pass + profile_done (either order) -> closing_debrief (mission complete)
 ```
 
 Everything on it is a deterministic judgement with an explanation. There is no timer, no lose state
@@ -495,7 +505,7 @@ rewrite. What each one edits:
 
 1. Drop the stage 7 profile and end on the triage (3). Remove the `profile_done` task (21 tasks) and its
    mention in the `defend` aim; the SOC `case-file` object and `engagement.defender` go; Tomasz's debrief
-   gate and the `closing_debrief` unlock move from `profile_done` to `triage_pass`; the four-mitigation
+   gate (`triage_pass` and `profile_done`) drops to `triage_pass` alone, and he stops declaring `profile_done`; the four-mitigation
    row of the time budget goes. Learning outcome 9 is then taught in the debrief only: the assessment
    table drops that row and the outcome has no evidencing task.
 2. Drop Hampshire's round and start the phishing at Pierce (4), moving the open-inbox lesson to a
@@ -507,7 +517,11 @@ rewrite. What each one edits:
    `acct_freemail_choice` globals, the `freemail` row of `playerSentAuth`, the three Hampshire-only
    facts (`hampshire_careers`, `hampshire_cv_backlog`, `careers_attachment`), and the careers
    mitigation from the defender list (three remain). It also removes what points at those facts: the
-   `hampshire` entry in `mailClient.contacts` (its `revealedBy` names `hampshire_careers`, so leaving
+   `hampshire` entry in `social.intelBoard.readinessSlots` (its `needsIntel` ids would be undeclared
+   facts and its key would no longer be a target, which 03 N6 rejects), any `VAR` or `eventMappings`
+   entry in `ruth.ink`, `ruth_phone.ink` or `tomasz.ink` that names a removed global
+   (`phish_hampshire_landed`, `target_ready_hampshire`, and the Hampshire hint rungs), the `hampshire`
+   entry in `mailClient.contacts` (its `revealedBy` names `hampshire_careers`, so leaving
    it fails the contact check in `00` §11), the careers-page and Hampshire social-post elements in
    `social.osint` (an element whose `fact` is undeclared fails 02's lint), the `kit_cv` payload item,
    and the Hampshire-only templates (`pretext_apply`, `ask_review_cv`, and `greet_generic` if no other
@@ -579,8 +593,9 @@ writer (`00` S3).
 |--------|--------|---------|
 | `roe_scope_done`, `roe_stoprule_done`, `roe_signed` | the `scope` mode (03) | `authorise` tasks, Ruth, Whitlock |
 | `plan_objective_done`, `plan_measures_done`, `plan_done` | the `plan` mode | `plan` tasks, Ruth |
-| `profile_done` | the `defender` mode (no steps) | the `defend` task, Tomasz |
+| `profile_done` | the `defender` mode (no steps) | the `defend` task, Tomasz (his debrief needs this and `triage_pass`) |
 | `report_results_done`, `report_findings_done`, `report_filed` | the report builder (N1) | `report` tasks, Ruth |
+| `se_report_state` | the report builder (N1; object, default `{}`, ids only: the Confirm press and the finding pairings chosen so far; saved with `stateSync.sync()` as the board does) | the report builder, on reopen |
 | `se_intel_<id>`: the 14 contract facts plus `se_intel_baker_namesake` and `se_intel_old_org_chart` | `grantFact`: 02 for browsing finds, 06 `grants.intel` for the three call facts | 03 readiness, 04, composers, Ruth's hints, the `recon` tasks |
 | `target_ready_hampshire`, `target_ready_pierce`, `target_ready_lord`, `osint_done` | `evaluateReadiness`, run from `grantFact` | the `ready_*` tasks, Ruth |
 | `phish_hampshire_landed` | the text job at reply delivery | `hampshire_landed`, aims |
@@ -609,8 +624,8 @@ writer (`00` S3).
   KO-resilience check. Ruth hands over keys in person, which is safe because nobody can be knocked
   out.
 - **Reload safety.** Board facts, mail state (sent messages, mailboxes, jobs, drafts, metrics), the
-  landing page record, the pretext session, Dev's lockout deadline and the report draft persist in
-  game state (`00` §5, §8, §9, §10a; 03 N2; 06 `PretextSession`).
+  landing page record, the pretext session and Dev's lockout deadline persist in game state (`00` §5,
+  §8, §9, §10a; 03 N2; 06 `PretextSession`). The report draft persists in `se_report_state` (N1).
 
 ### Ethics and authorisation (book Ch. 2)
 
@@ -633,8 +648,8 @@ skipping an optional task lowers the ceiling. For a VM-free mission Hacktivity's
 (lines 116 to 123); when the game has a `game_slot` it also recalculates the event result and
 broadcasts it (lines 29 to 36). There is no per-outcome mark, hint count, attempt count or tutor
 view. `merge_global_variables!` (`game.rb`, from line 242) persists every global key the client sends
-except imported ones, so the lab can store counters, but nothing reads them. Only the ink sync
-tests for declared names.
+except imported ones, so the lab can store counters, but nothing reads them. The server does not check
+names against `globalVariables`; only the ink sync checks that a name is declared.
 
 **What the lab can evidence with that.** The lab has no optional tasks and 22 required ones, so the
 score is a completion share and a completed run scores 100. Each learning outcome is evidenced by the
@@ -655,14 +670,18 @@ explained and re-done, so a student can finish with mistakes made on the way.
 | 8 authentication | `triage_passed` (a round at or above the pass mark; a failed round is re-run) |
 | 9 mitigations | `profile_done` |
 
-The in-game records the student sees (attempts, failed factors, hints used, the lowest influence Dev
-reached) are for the student and the closing debrief. They do not reach Hacktivity.
+The in-game records that exist (attempts per target, sent, failed and landed counts, the page's best
+`victim` outcome, the call outcome, the lowest influence Dev reached, and the checklist shown on screen
+at send time) are for the student, the report and the closing debrief. They do not reach Hacktivity.
+The game does not record which factors failed or how many hints were shown.
 
 **Open (needs Hacktivity work, not decided here).** A weighted rubric would need per-outcome marks and
 a tutor view. Two options, neither chosen: (a) keep the platform score as the completion share and give
 the module leader a hand-applied rubric; (b) have the game write counters into `globalVariables`
-(`phish_<id>_attempts`, the `mailState.metrics` values, hint counts) and build a per-student report in
-Hacktivity that reads them. Option (b) changes `game_scoring_job.rb` and adds a tutor view. This is
+(`phish_<id>_attempts`, the `mailState.metrics` values) and build a per-student report in Hacktivity
+that reads them. Failed-factor lists and hint counts would be new counters (for example `failedFactors`
+on the sent record and a `hintsShown` count in `mailState.metrics[targetId]`, both a change to `00`
+§10a, with the hint ladder writing them). Option (b) changes `game_scoring_job.rb` and adds a tutor view. This is
 open question OQ2 in section 9. Optional follow-on coursework (not in-game): a 500-word reflection on
 what the look-alike domain taught about authentication, and a one-paragraph awareness note for staff.
 
@@ -769,7 +788,7 @@ stylesheet linked in `show.html.erb` (README Conventions).
 | `intelBoard` (title, `people`, readiness slots) | 03 | one block, four modes |
 | `templates` and `phishTargets` ×3 | 04, 00 §10 | 3 targets, 4 to 7 templates per target in `templateSets` (Hampshire 4, Pierce 7, Lord 4), blank-value lists tagged distinctive or generic, replies, `factorStrings`, hints |
 | Landing-page rules, six look-alike domain options, tells | 07 | 1 page model, ~6 tells |
-| Pretext call: `pretextNpcs[service_desk_call]` and Dev's phone story | 06 §4.8 | 1 call, 2 asks, 2 to 3 pretext lines |
+| Pretext call: `pretextNpcs[service_desk_call]` and Dev's phone story | 06 §4.8 | 1 call, 2 asks, one opening pretext line (`open_buddy`) |
 | Triage set (8 messages with auth results, 2 of them `playerSent`) | 05 | 6 authored messages, 2 `playerSent`, `playerSentAuth` rows for six domains and two accounts |
 | RoE sheet text, scope and question cards, plan picks, report findings, defender mitigations | this doc | text + 3 findings + 4 mitigation blocks |
 | Ink | this doc, 06, 00 §10 | 7 files (below) |
@@ -829,8 +848,9 @@ Hampshire's reply is a text job from her target's authored `replies` (no ink sto
     "steps": [ { "id": "results",  "onCompleteGlobal": "report_results_done" },
                { "id": "findings", "onCompleteGlobal": "report_findings_done" } ],
     "items": [ { "kind": "confirm", "step": "results", "text": "I have read the campaign results" } ],
+    // every finding carries step "findings" (03 N6 lint); the other two are authored the same way
     "findings": [
-      { "id": "spoofed_colleague", "text": "Finance acted on mail spoofing a colleague",
+      { "id": "spoofed_colleague", "step": "findings", "text": "Finance acted on mail spoofing a colleague",
         "rootCauses": [ { "id": "no_banner_dmarc_none", "correct": true,  "why": "..." },
                         { "id": "staff_carelessness",   "correct": false, "blame": true,
                           "why": "Blames people; the control gap is the cause." } ],
@@ -896,7 +916,7 @@ Every value below is settled in `00`; 10 builds on it and cites the section.
 
 | # | Item | Notes |
 |---|------|-------|
-| N1 | **Engagement report builder** (`minigames/engagement-report/`): results panel, findings pairing with the blame option, sets `report_results_done`, `report_findings_done` and `report_filed` | Small; reuses overlay chrome and the right/wrong+why pattern from 04. Reads `social.engagement.report`, `mailState.metrics`, `se_landing_pages` and the pretext globals. The Confirm button for the `results` step is a `confirm` item in `engagement.report.items` (an item kind `00` §11 and 03 N6 must list, so the "every declared step has items" lint holds) Follows the full wiring checklist in README Conventions: scene, starter, interaction branch, stylesheet, schema entry, sprite, `requiresKeyboardInput`, its own Close |
+| N1 | **Engagement report builder** (`minigames/engagement-report/`): results panel, findings pairing with the blame option, sets `report_results_done`, `report_findings_done` and `report_filed` | Small; reuses overlay chrome and the right/wrong+why pattern from 04. Reads `social.engagement.report`, `mailState.metrics`, `se_landing_pages` and the pretext globals; saves its in-progress choices in the object global `se_report_state` and calls `stateSync.sync()` as the board does. It shows "no page sent" when the page record has no `victim`. The Confirm button for the `results` step is a `confirm` item in `engagement.report.items` (an item kind `00` §11 and 03 N6 must list, so the "every declared step has items" lint holds) Follows the full wiring checklist in README Conventions: scene, starter, interaction branch, stylesheet, schema entry, sprite, `requiresKeyboardInput`, its own Close |
 | N2 | **Report data**: the report reads what 01, 07 and 06 already record (`mailState.metrics`, the page record's `victim`, the call globals) | No store of its own |
 | N3 | **Board modes** `scope` and `plan` with the `engagement` data (scope and question cards, objective and measure picks) | Owned by 03; this doc supplies the data shapes in section 5 |
 | N4 | **Defender-mode mitigation picks** | Owned by 03; `engagement.defender.factMitigations`; no indicator tagging in this slice |
@@ -944,7 +964,7 @@ consolidated table. Nothing here needs a VM, the flag-station or the vm-launcher
 
 ## 9. Open questions
 
-Defaults are taken so nothing blocks; the same list is in `README.md`.
+Defaults are taken so nothing blocks; the open ones are also listed in `README.md`.
 
 - OQ1: **Retries as rehearsal.** Realistically a failed phish alerts the target. Default: retries are
   free and unlimited, framed as rehearsal reviewed by Ruth, with failed sends counted in the report;

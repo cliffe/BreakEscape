@@ -35,29 +35,36 @@ are part of the design, not polish, and a reviewer should treat any breach as a 
 - **No network.** Nothing in the component makes a request. Domains are strings in scenario JSON.
 - **Fictional only.** Brands and domains are invented. Two controls enforce it, and this section says
   plainly where each runs and what it misses.
-  - **Offline lint (N6).** A check in `scripts/validate_scenario.rb`, tested by a Node test that shells
-    the validator over inline fixtures and over each scenario that carries a `social` key
-    (`test/js/validator-landing-pages.test.mjs`, the same pattern as the existing `validator-*.test.mjs`
-    files). **Nothing runs those tests automatically today**: `.github/workflows/ci.yml` has a `bin/rubocop`
-    lint job and a `bin/rails test` job and no Node step, the `test:js` script in `package.json` runs a
-    single file, and no Rails test calls the validator. The validator also exits non-zero only for a
-    schema error; its lint findings are printed and the run still ends `exit 0`. N6 therefore includes
-    two pieces of engine work (`00` S11): a **social-lint mode**, `--strict-social`, which runs the
-    `social` lints and exits 1 when any of them reports an error, and a **CI job that has both runtimes**
-    (Ruby from `ruby/setup-ruby` at the repo's Ruby version with `bundler-cache`, so `json-schema` is
-    present, and Node 20 from `actions/setup-node`, pinned to a release the chosen `jsdom` supports), runs
-    `npm ci`, then the Node tests as `bundle exec node --test test/js/validator-*.test.mjs
-    test/js/social-*.test.mjs` (Bundler's `RUBYOPT` reaches the `ruby` each validator test spawns; a plain
-    `node --test` would run those children outside Bundler and fail on the missing `json-schema` gem), then
-    the validator under `bundle exec` with `--strict-social --no-graph --skip-ink` over the scenarios with a
-    `social` key only, without rewriting tracked files (see N6). The `social-*` glob holds the safety
-    tests, named explicitly in N6 so a rename cannot drop one from the run. The tests must not skip
-    silently: when `CI` is set, a missing `ruby` or `json-schema` fails the test instead of skipping it, and
-    the job fails if the test run reports any skipped test or if any named file is missing. Other scenarios are out of scope: several fail the
-    validator today for unrelated reasons. The lint is enforced once that CI job exists, and not before.
+  - **Offline lint (N6).** A check in `scripts/validate_scenario.rb`, tested by a Node test that calls the
+    lint functions in-process (`ruby -e 'require validate_scenario.rb'`, the pattern in
+    `test/js/validator-carry-over.test.mjs:13-23`, which writes nothing) over inline fixtures and over each
+    scenario that carries a `social` key (`test/js/validator-landing-pages.test.mjs`). The test never runs the
+    validator's bare command line: without `--no-graph --skip-ink` that rewrites tracked `dungeon_graph.*` and
+    `ink/*.json` files. **Nothing runs those tests automatically today**: `.github/workflows/ci.yml` has a
+    `bin/rubocop` lint job and a `bin/rails test` job and no Node step, the `test:js` script in `package.json`
+    runs a single file, and no Rails test calls the validator. The validator exits 1 on a structure, schema or
+    ink compile error (`scripts/validate_scenario.rb:4928, 4964, 5081`; `--skip-ink` skips the ink compile) and
+    on bad arguments or a missing file; every other finding, including the `social` lints, is printed and the
+    run still ends `exit 0`. N6 therefore includes engine work (`00` S11): a **social-lint mode**,
+    `--strict-social`, which runs the `social` lints and exits 1 when any of them reports an error, and a
+    **CI job that has both runtimes**. The job reuses the existing jobs' setup: the `sqlite3 libsqlite3-dev`
+    apt packages and `BUNDLE_BUILD__SQLITE3: "--enable-system-libraries"` on the `ruby/setup-ruby` step (Ruby
+    at the repo's version, `bundler-cache`), so `json-schema` and the `sqlite3` gem build as they do in
+    `ci.yml`; Node 20 from `actions/setup-node`, pinned to a release the chosen `jsdom` supports; `npm ci`,
+    which needs a committed `package-lock.json` (it is in `.gitignore` today, so N6 un-ignores it, regenerates
+    it after `jsdom` is added and commits it, rather than using the non-reproducible `npm install`); then the
+    Node tests as `bundle exec node --test test/js/validator-*.test.mjs test/js/social-*.test.mjs` (Bundler's
+    `RUBYOPT` reaches the `ruby` each validator test spawns; a plain `node --test` would run those children
+    outside Bundler and fail on the missing `json-schema` gem), then the validator under `bundle exec` with
+    `--strict-social --no-graph --skip-ink` over the scenarios with a `social` key only, without rewriting
+    tracked files (see N6). The `social-*` glob holds the safety tests and the pure-module unit tests, all
+    named explicitly in N6 so a rename cannot drop one from the run. The tests must not skip silently: when
+    `CI` is set, a missing `ruby` or `json-schema` fails the test instead of skipping it, and the job fails if
+    the test run reports any skipped test or if any named file is missing. Other scenarios are out of scope:
+    several fail the validator today for unrelated reasons. The lint is enforced once that CI job exists, and
+    not before.
     The lint requires:
-    - **hostname only for the `.example` rule.** For every authored address (`domain`, `browserDomain`,
-      `realDomain`, the page's `linkText`, and `02`'s `sites[].url`) the lint takes the **host part**:
+    - **hostname only for the `.example` rule.** For every field on the `00` §11 lint field list the lint takes the **host part**:
       strip any scheme, then take everything before the first `/`, and for an email address everything
       after the last `@`. The host must end `.example`. A path after the host (`/payroll`, `/Q3.pdf`) is
       allowed and does not need to end `.example`; it gets the ASCII check and the denylist check below;
@@ -85,11 +92,14 @@ are part of the design, not polish, and a reviewer should treat any breach as a 
       removed. The concatenation catches a brand split across labels. `decoyWords` go through the same
       fold and match. The denylist and confusable map live in the validator, not in a scenario, so one
       scenario cannot quietly shorten them; `decoyWords` are authored and reviewed by hand;
-    - **no real-brand domain in the fields the lint reads.** The lint reads exactly these: the address
-      fields named above (`domain`, `browserDomain`, `realDomain`, `linkText`, `02`'s `sites[].url`) and the
-      `text` of `social.conceptCards` entries. A real domain such as a bank's or a mail provider's fails
-      the `.example` rule in any of them. The lint does not read other prose (page block text, posts, seeded
-      mail bodies, templates, replies); that is reviewed by hand, and this doc claims nothing about it.
+    - **no real-brand domain in the fields the lint reads.** The fields are the single list in `00` §11
+      ("Lint field list"), which this document does not restate: it covers every authored address, domain and
+      link field (including `social.people`, contact, account, `provides` and staff-block addresses) and the
+      `text` of `social.conceptCards` entries. The host-only `.example` rule, the ASCII check and the
+      denylist apply to every field on that list; the allowlist applies to menu `domain` values only. A real
+      domain such as a bank's or a mail provider's fails the `.example` rule in any of them. The lint does not
+      read other prose (page block text, posts, seeded mail bodies, templates, replies); that is reviewed by
+      hand, and this doc claims nothing about it.
       A **host-shaped token** is a hostname in a URL or address field, or, in card text, a dotted token
       whose last label is a public top-level domain from a short list kept in the validator (`com`, `net`,
       `org`, `uk`, `io`, `co`, `info`, `biz`, `eu` and the like; `example` is not on it, and every token
@@ -161,7 +171,8 @@ match the story" card is one click away. No choices yet. Button: Build.
 
 ### Step 2. Build (seven choices, any order, preview updates live)
 Each choice is a row of chips. The preview redraws on every change. Choosing never blocks; the
-player can change anything until they press Score.
+player can change anything until they press Score. A change made **after** a Score marks that score stale
+(see Step 3).
 
 1. **Brand** — which service to imitate. Several fictional brands are offered; only one matches
    the pretext.
@@ -188,7 +199,12 @@ button, since hover does not exist on touch.
 ### Step 3. Score
 Press Score. The game shows the **credibility meter** (0 to 100), the target's threshold as a line
 on it, and the per-factor checklist (section 4). Verdict line is one of three strings (section 4).
-If below the line the player can edit and re-score. No attempt limit, no dead end. Each Score updates the
+If below the line the player can edit and re-score. No attempt limit, no dead end.
+**A page can only be attached with the score for its current choices.** Any change to a choice after Score
+greys the meter and checklist ("Score again"), hides the Attach button until the next Score, and writes the
+changed `choices` to the page record with `meetsThreshold: false` and `built: false`, so the stored record
+never pairs new choices with an old credibility. The record is therefore always a pure function of the
+choices that were last scored, or is marked unscored. Each Score updates the
 page record (section 5) with `built: false`, so the choices survive a close. Score writes only `pageId`,
 `targetId`, `choices`, `credibility`, `gatesPassed`, `meetsThreshold` and `built`. It **preserves**
 `victim` and `tellsFound`: re-scoring never clears the victim record, so Inspect and the report's
@@ -199,7 +215,7 @@ replay is unaffected by a rebuild); step 6 recomputes the tells from the current
 the stored `tellsFound` ids that still apply to them.
 
 ### Step 4. Send
-After Score, the button is **Attach to email** once the score meets the threshold and every gate passes,
+After a Score of the current choices (never after a later change, Step 3), the button is **Attach to email** once the score meets the threshold and every gate passes,
 and **Attach anyway** below the line (same control, relabelled, so a player can experiment). Either way
 the page record is marked `built: true`, the kit item `kit_payroll_page` resolves to it, and
 `landing_payroll_login_built` and `landing_payroll_login_domain` are set (section 5). The overlay closes.
@@ -347,7 +363,9 @@ its `domain`). `meetsThreshold = credibility >= pageDef.targets[record.targetId]
 gatesPassed`. The mail client
 resolves `kit_payroll_page` to the record in `se_landing_pages` and sets `message.linkInfo` to this
 result. The `linkCredible` factor (`04`) passes when `linkInfo.meetsThreshold` is true and fails with
-"there's no page behind that link" when the state is `missing`; the `linkCredible` tell is present when
+"there's no page behind that link" when the state is `missing`. For a target with an `expectedLink`, a send
+with no link at all also fails `linkCredible` (the link is required, `00` §2), so Sofia cannot land without
+the stage 4 page; the `linkCredible` tell is present when
 `linkInfo.domain` differs from the target's `expectedLink.realDomain` (`04`), whether or not the page
 convinced. `04` owns the factor, this document owns the number and the function. `04`'s two feedback
 strings for `linkCredible` stay the authoritative reply and red-flag text; the per-factor lines below are
@@ -703,11 +721,11 @@ lock (README engine table, "Objectives"). No flag is involved in building; if a 
 | # | Item | Notes |
 |---|------|-------|
 | N1 | `landing-page-builder` overlay (preview, choice panel, step strip, score panel), with the wiring checklist above | New `minigames/landing-page-builder/`; `minigames/index.js`; `systems/minigame-starters.js`; `systems/interactions.js`; `show.html.erb` |
-| N2 | `landing-page-model.js` pure scorer + tell table + `describeVictimOutcome` + `betterVictim` | Unit tests mirror section 4's worked example (34 and 87), the 75-point `d_letter` case (second-row verdict plus the gate line), that `betterVictim` keeps a `submitted` entry over a later `noticed` or all-false one, and that `applyScore` on a record holding `victim` and `tellsFound` keeps both. File: `test/js/social-landing-page-model.test.mjs` |
+| N2 | `landing-page-model.js` pure scorer + tell table + `describeVictimOutcome` + `betterVictim` | Unit tests mirror section 4's worked example (34 and 87), the 75-point `d_letter` case (second-row verdict plus the gate line), that `betterVictim` keeps a `submitted` entry over a later `noticed` or all-false one, that `applyScore` on a record holding `victim` and `tellsFound` keeps both, and that a choice change after a Score yields a record with `meetsThreshold: false` and `built: false` (so `linkInfoFor` reports `missing` until the next Score). File: `test/js/social-landing-page-model.test.mjs` |
 | N3 | `landing-page-render.js` two-layer renderer (pixel layer, inert DOM text layer) and the DOM-safety test (`test/js/social-landing-page-render.test.mjs`) that fails on any form, link, button, frame, script or `contenteditable` in the preview. The test needs a DOM: add `jsdom` to `devDependencies` (today only Playwright is there, and the existing `.test.mjs` files stub `document` by hand, for example `sight-challenge-tutorial-prompt.test.mjs:38`) | New; test in `test/js/`; `package.json` |
 | N4 | Persist built pages as ids in the `se_landing_pages` global (section 5), with the 60 KB flush note | `state-sync.js` flush; `siem-dashboard-minigame.js` STATE_KEY pattern as the model |
 | N5 | Step 6 defender inspection (focusable hot-spots, decoy padlock, "Show the link target" in the choice panel, closing five-habits card); exports `buildSuspectPage` and the `tells` table for optional reuse by `05` | New in `landing-page-builder/` |
-| N6 | Offline lint, its test, the `--strict-social` mode and the **CI job that runs them**: the host-only `.example` rule (strip scheme and path; email addresses by the part after `@`); ASCII with the homograph exception and the raw-text escape check; the allowlist on raw labels first (`decoyWords`, brand word, edit distance), then the fold-and-match denylist per label and on the concatenation (section 1); every string non-empty and using only the allowed placeholders (`{firstName}`, `{shown}`, `{real}`, `{linkText}`); the `.example` and denylist checks also cover `linkText` and `02`'s `sites[].url`; the concept-card scope (the brand exemption applies to `social.conceptCards[].text` only; host-shaped tokens in card text must end `.example`); every `conceptCards` id on a page resolves; every `targets` key is a target whose required factors include `linkCredible`, and a page has at least one (exactly one in the lab); every tier (0 included) has a defender string; no field key shaped like a captured-value slot; `decoyWords` pass the denylist. **`--strict-social`** runs the `social` lints and exits 1 when any reports an error (the validator today exits non-zero only on a schema error, `scripts/validate_scenario.rb:5081`; other findings fall through to `exit 0`). **CI job**: one job with Ruby (`ruby/setup-ruby` at the repo's Ruby version, `bundler-cache`) and Node (`actions/setup-node`); `npm ci`; `bundle exec node --test test/js/validator-*.test.mjs test/js/social-*.test.mjs` (under Bundler so the spawned `ruby` finds `json-schema`; the safety tests are `social-landing-page-model` N2/N10, `social-landing-page-render` N3, `social-landing-page-guard` N6b and `social-osint-address-bar` from `02` N9, and the step fails if any is missing; a `package.json` script `test:social` runs the same command; Node pinned to 20 with a `jsdom` release that supports it); then `bundle exec ruby scripts/validate_scenario.rb <scenario> --strict-social --no-graph --skip-ink` over only the scenarios whose `scenario.json.erb` has a `social` key. The Node tests fail rather than skip when `CI` is set and `ruby` or `json-schema` is missing, and the job fails if the test run reports any skipped test. Without `--skip-ink` the validator compiles ink into tracked `ink/*.json` (`validate_scenario.rb:709-714`, written beside the source), and `--no-graph` stops `dungeon_graph.*` rewrites; with `--skip-ink`, `check_ink_files` does not run (`:4977-4979`), so the `social` ink lints (`on_email` knot, `email_*` VARs, synced vars) **parse the `.ink` source text directly** and do not depend on compiled output; this is part of S11. The step ends with `git diff --exit-code`. The validator gains the punycode encoder for the `browserDomain` check. Without the job the lint is not enforced. Scenarios that fail today for unrelated reasons are out of scope | `scripts/validate_scenario.rb` (`known_top_level`, S11); `scripts/scenario-schema.json`; `scripts/minigame-data-schemas.json`; new `test/js/validator-landing-pages.test.mjs`; `.github/workflows/ci.yml` (existing `ci.yml` has Ruby 2.7.8 only in `lint` and `test`, and no Node) |
+| N6 | Offline lint, its test, the `--strict-social` mode and the **CI job that runs them**: the host-only `.example` rule (strip scheme and path; email addresses by the part after `@`); ASCII with the homograph exception and the raw-text escape check; the allowlist on raw labels first (`decoyWords`, brand word, edit distance), then the fold-and-match denylist per label and on the concatenation (section 1); every string non-empty and using only the allowed placeholders (`{firstName}`, `{shown}`, `{real}`, `{linkText}`); the `.example`, ASCII and denylist checks cover every field on the `00` §11 lint field list (the single list; not restated here); the concept-card scope (the brand exemption applies to `social.conceptCards[].text` only; host-shaped tokens in card text must end `.example`); every `conceptCards` id on a page resolves; every `targets` key is a target whose required factors include `linkCredible`, and a page has at least one (exactly one in the lab); a `page-builder` object's `landingPageId` names a page with exactly one `targets` key, and that key is a `phishTargets` id; a stored `tellsFound` id is one of the nine (the factor ids plus `formOrigin` and `hoverMismatch`, `00` §11a); every tier (0 included) has a defender string; no field key shaped like a captured-value slot; `decoyWords` pass the denylist. **`--strict-social`** runs the `social` lints and exits 1 when any reports an error (the validator today exits 1 on a structure, schema or ink compile error, `scripts/validate_scenario.rb:4928, 4964, 5081`, and on bad arguments; every other finding falls through to `exit 0`). **CI job**: one job with Ruby (`ruby/setup-ruby` at the repo's Ruby version, `bundler-cache`, plus the `sqlite3 libsqlite3-dev` apt packages and `BUNDLE_BUILD__SQLITE3: "--enable-system-libraries"` env that both existing `ci.yml` jobs set) and Node (`actions/setup-node`); **remove `package-lock.json` from `.gitignore` (line 43), regenerate it after adding `jsdom` (N3) and commit it**, so `npm ci` has a lockfile (`npm install` in the job is not reproducible and is not used); `npm ci`; `bundle exec node --test test/js/validator-*.test.mjs test/js/social-*.test.mjs` (under Bundler so the spawned `ruby` finds `json-schema`; the safety tests are `social-landing-page-model` N2/N10, `social-landing-page-render` N3, `social-landing-page-guard` N6b and `social-osint-address-bar` from `02` N9; the pure-module unit tests are `social-phish-rules` (`04`), `social-triage-scoring` (`05` N4), `social-pretext-judge` (`06` N1) and `social-intel` (`02` N2); the step fails if any named file is missing; a `package.json` script `test:social` runs the same command; Node pinned to 20 with a `jsdom` release that supports it); then `bundle exec ruby scripts/validate_scenario.rb <scenario> --strict-social --no-graph --skip-ink` over only the scenarios whose `scenario.json.erb` has a `social` key. The Node tests fail rather than skip when `CI` is set and `ruby` or `json-schema` is missing, and the job fails if the test run reports any skipped test. Without `--skip-ink` the validator compiles ink into tracked `ink/*.json` (`validate_scenario.rb:709-714`, written beside the source), and `--no-graph` stops `dungeon_graph.*` rewrites; with `--skip-ink`, `check_ink_files` does not run (`:4977-4979`), so the `social` ink lints (`on_email` knot, `email_*` VARs, synced vars) **parse the `.ink` source text directly** and do not depend on compiled output; this is part of S11. The step ends with `git diff --exit-code`. The validator gains the punycode encoder for the `browserDomain` check. Without the job the lint is not enforced. Scenarios that fail today for unrelated reasons are out of scope | `scripts/validate_scenario.rb` (`known_top_level`, S11); `scripts/scenario-schema.json`; `scripts/minigame-data-schemas.json`; new `test/js/validator-landing-pages.test.mjs` (calls the lint functions in-process or, if it runs the command line, passes `--no-graph --skip-ink`; never the bare command, which rewrites tracked files); `.github/workflows/ci.yml`; `.gitignore`; `package-lock.json` (existing `ci.yml` has Ruby 2.7.8 only in `lint` and `test`, and no Node) |
 | N6b | Runtime guard: the model and the renderer refuse a domain not on the authored menu or whose host does not end `.example`, and draw a "blocked" placeholder. Unit test: both the model and the renderer return the blocked placeholder for an off-menu domain, and for an on-menu-shaped but non-`.example` domain, and still render a valid menu domain | `landing-page-model.js`, `landing-page-render.js`; test `test/js/social-landing-page-guard.test.mjs`, run by the N6 job's `social-*` glob |
 | N7 | Concept cards (typo-squat, homograph, padlock, hover-link, right-to-left, five-habits) as entries in `social.conceptCards` (`00` §11), shown by the shared card renderer that `02` N1 builds; this item adds the builder's cards and the validator check that every page `conceptCards` id resolves | Also used by `02`'s tool cards; validator in N6 |
 | N8 | Bundle Atkinson Hyperlegible (`00` §6) and apply `--se-font-readable` to every string the builder shows that holds an authored domain, address, handle or document field, wherever it appears: preview text, address bar, domain chips, the score checklist, feedback lines, tells-panel lines and concept cards; authored domains rendered raw, not via `displayDashes` | `public/break_escape/assets/fonts/`; `css/fonts.css`; `utils/display-dashes.js` bypass |

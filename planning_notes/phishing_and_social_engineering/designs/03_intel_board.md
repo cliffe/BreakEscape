@@ -41,14 +41,13 @@ false-to-true flip.
 
 **Step binding.** Every sorting card, question card and pick carries `step: <stepId>`, naming a step in the
 same block. A step is done when every item carrying that step id is answered correctly: a sorting card sits
-in the right pile; a question card has its `correct: true` option chosen; a multi-select pick has every
-`correct: true` option chosen and no `correct: false` one; a single-select pick has its correct option
-chosen; a `{ kind: "confirm", step }` item (a Confirm button, no answer to get wrong, used by the lab report's `results` step) is done when pressed. The step's global is set on the false-to-true flip, and the block's `onCompleteGlobal` is set when
+in the right pile; a question card has its `correct: true` option chosen; a single-select pick has its correct option
+chosen; a `{ kind: "confirm", step, text }` item (a Confirm button labelled with `text`, no answer to get wrong, used by the lab report's `results` step) is done when pressed. The step's global is set on the false-to-true flip, and the block's `onCompleteGlobal` is set when
 every declared step is done. A block with no `steps[]` is done when all its items are. A validator rule
 (N6) rejects an item whose `step` is not declared in its block and a declared step with no items. In the
 lab, `scope` has steps `scope` and `stoprule`; `plan` has `objective` and `measures`, and both are
 single-select picks (one authored option is correct, the rest are wrong, and each wrong pick shows its `why`).
-The validator (N6) checks that every `plan` pick has exactly one `correct: true` option.
+The validator (N6) checks that every `plan` pick and every `question` card has exactly one `correct: true` option.
 
 A `scope` block holds two card kinds: sorting cards, and `kind: "question"` cards with
 options `{ id, text, correct, why }` (one right answer, an explanation after each pick). Objectives
@@ -65,7 +64,9 @@ no live updates. The layout:
 - **People cards:** one per target (`people`), merged on the shared cast `id` (`00` §1). Name, role and
   address read from `social.people`, but only as far as the player holds them: the header reads "Not yet
   identified" until a held fact either provides a name form for the person or has that person as its
-  `subject`. The second route exists for Hampshire, whom no fact names (she is greeted with
+  `subject`. **This is the one naming rule for the game**: the evidence notes `02` writes use it too, so a
+  fact reads the same on the board and in the notebook (a note for a fact with subject `pierce` names
+  Melanie Pierce, because that fact is itself held once granted). The second route exists for Hampshire, whom no fact names (she is greeted with
   `greet_generic`): once `hampshire_careers` or any other fact with subject `hampshire` is held, the
   header shows her name and role from `social.people`. The role appears once `pierce_role` (or the
   equivalent) is held, and the address once `email_pattern` or a fixed address fact is held. The
@@ -238,7 +239,7 @@ the mode's global, not on that event.
 | N3 | Display `target_ready_<id>` and `osint_done`, set by `evaluateReadiness` (`00` §4), which is owned by `02` N2 | `social-intel.js` (`02` N2) |
 | N4 | Modes `scope`, `plan`, `defender`: structured selection exercises (sorting cards, question cards, picks, confirm items), ids saved in `se_board_state`, items bound to steps by `step`, step and block globals set through the shared writer; content read from `social.engagement` | in N1; shape in `00` §11 |
 | N5 | Close as a normal exit with its own Close control and Escape; nested launch and return-to (`00` S12) | `minigames/framework/base-minigame.js` (`disableClose`), `minigame-manager.js` |
-| N6 | Validator: `readinessSlots` keys are target ids, every `needsIntel` id is a declared fact, every target has at least one slot and every `addressedAs` source lies in its slots, `factMitigations[].intel` ids are facts with a `reduceNote`, every `onCompleteGlobal` and step global is declared, every item's `step` is declared in its block and every declared step has items (a `confirm` item counts); schema entries for `social.intelBoard` and the case-file `minigameData` | `scripts/validate_scenario.rb` (S11); `scripts/scenario-schema.json`; `scripts/minigame-data-schemas.json` |
+| N6 | Validator: `readinessSlots` keys are target ids, every `needsIntel` id is a declared fact, every target has at least one slot and every `addressedAs` source lies in its slots, `factMitigations[].intel` ids are facts with a `reduceNote`, every `onCompleteGlobal` and step global is declared, every item's `step` is declared in its block and every declared step has items (a `confirm` item counts, and carries a `text` label); every `plan` pick list and every `question` card has exactly one `correct: true` option; schema entries for `social.intelBoard` and the case-file `minigameData` | `scripts/validate_scenario.rb` (S11); `scripts/scenario-schema.json`; `scripts/minigame-data-schemas.json` |
 
 ## Accessibility and small screens
 

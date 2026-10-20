@@ -260,7 +260,7 @@ canonical red-flag string per factor, so attack and defence cannot disagree abou
 | `pretextRelevant` | required | The pretext template's slot values include at least `minDistinct` of the target's distinctive values (not just generic ones) | "No plausible reason for this message to this person" |
 | `attachmentPlausible` | required if attachment | Attachment present **and** its kind matches the pretext's expected kind | see three states below |
 | `urgencyCalibrated` | **advisory / red-flag only** | never fails a send (see below) | "Unexpected urgency or pressure to act fast" |
-| `linkCredible` | required if link | `message.linkInfo.meetsThreshold` is true: the built page's credibility reaches the target's threshold and its gates pass (§11a; scored by 07). State `missing` when the kit item has no built page | "Link destination doesn't match the real site (look-alike domain)" |
+| `linkCredible` | required if the target has an `expectedLink` (§7); otherwise evaluated only when a link is attached | `message.linkInfo.meetsThreshold` is true: the built page's credibility reaches the target's threshold and its gates pass (§11a; scored by 07). State `missing` when the send carries no link, or the kit item has no built page. A target with an `expectedLink` therefore cannot land without a page | "Link destination doesn't match the real site (look-alike domain)" |
 
 **Red-flag resolution:** a factor's `redFlag` in an `EvalResult` (§3) is the per-target override
 from `factorStrings` when the author set one, **otherwise the canonical string above**. A `null` in
@@ -382,9 +382,9 @@ meetsThreshold }` or `{ kitId, state: "missing" }`.
   "factors": [                          // one entry per evaluated factor
     { "id": "senderTrust", "pass": true,  "state": "pass",
       "reply": null, "redFlag": null, "mode": "required" },
-    { "id": "attachmentPlausible", "pass": false, "state": "missing",
-      "reply": "You said you'd attach it...", "redFlag": "Claims an attachment that isn't present",
-      "mode": "required" }
+    { "id": "senderAuth", "pass": false, "state": "would-fail",
+      "reply": null, "redFlag": "Fails sender authentication (SPF/DKIM/DMARC) — the domain didn't really send this",
+      "mode": "advisory" }
   ],
   "claimedSender": "baker",             // person id the From blanks matched, or null
   "fromAccount": "guest",               // the account really used (§10a)
@@ -428,8 +428,8 @@ send. A scenario never keys a task on `minigame_completed` for mail: it keys on 
 `phish_<id>_landed` global, which the reply's ink (or the text job for a data-only target) sets when
 the reply is delivered (§10).
 
-There is **no aggregate `pretextScore`** in the deterministic engine. The only numeric idea is the
-optional advisory LLM note (§7), which is never pass/fail and never an aggregate quality number.
+The only numeric idea in the deterministic engine is the optional advisory LLM note (§7), which is
+never pass/fail and never an aggregate quality number.
 
 ---
 
@@ -485,6 +485,17 @@ target id, one array of slots per target:
     { "label": "What she expects", "needsIntel": ["pierce_expects_balance_sheet"],
       "goalString": "You still don't know what Melanie expects to receive.",
       "doneString": "She expects a Q3 balance sheet from Jed on Fridays." }
+  ],
+  "hampshire": [
+    { "label": "Where mail goes", "needsIntel": ["hampshire_careers"],
+      "goalString": "You still don't know how Chris receives mail from strangers.",
+      "doneString": "The careers inbox accepts CVs from anyone." },
+    { "label": "What the file should be", "needsIntel": ["careers_attachment"],
+      "goalString": "You still don't know what kind of file Chris will open.",
+      "doneString": "Chris takes .odt and .docx files." },
+    { "label": "Why she would read it", "needsIntel": ["hampshire_cv_backlog"],
+      "goalString": "You still don't know what Chris is busy with.",
+      "doneString": "Chris is behind on CVs before Friday." }
   ],
   "lord": [
     { "label": "Her payroll system", "needsIntel": ["lord_portal","lord_intern"],
@@ -687,8 +698,8 @@ rule.
 
 ## 8. NPC influence: the per-character global, threshold behaviours and the bar
 
-There is **no separate suspicion meter**. How far a character believes the player is that
-character's **influence** score. Suspicion is influence going down.
+How far a character believes the player is that character's **influence** score; suspicion is
+influence going down.
 
 ### What the engine already has
 
@@ -744,6 +755,11 @@ character's **influence** score. Suspicion is influence going down.
 } }
 ```
 
+Character-level influence fields (in `influence`): `global`, `min`, `max`, `start`, and the optional
+integer `rearmMargin` (default 10). `rearmMargin` is one value per character: it is how far above
+(below, for `"above"` thresholds) a threshold's `at` the influence must climb before that threshold
+re-arms and its band flags clear, and the margin the `recoverTo` rule uses.
+
 Threshold fields:
 
 - `at`: the value. A threshold with `"when": "below"` (the default for negative values) fires when the
@@ -758,12 +774,12 @@ Threshold fields:
 |--------|--------------|
 | `setGlobal {global, value, clearOnRearm?}` | `applyActions set_global` through the shared writer (§9). Declare the global; do not import it. Values colon-free. `clearOnRearm: true` (booleans only) makes it a **band flag**: see "Band flags" below |
 | `endConversation` | closes the open conversation on any channel with the NPC's authored `outcomes.reported` line |
-| `lockout {scope, until, recoverTo}` | refuses new conversations. `scope`: `"channel"` (only the channel the player was on) or `"character"` (all channels). `until`: `{ "afterMinutes": N }` (**real elapsed minutes** from `gameClock.elapsedMs()`; it is not scaled by a scenario's `gameClock.rate`, and needs no `gameClock` block), `{ "global": "name" }` (lifts when that global becomes true) or `null` (permanent; the validator rejects this on a critical-path character, below). `recoverTo`: the influence value set when the lockout lifts (default: the declared start). **Rule: `recoverTo >= A + rearmMargin`, where `A` is the highest `at` among the character's `"when": "below"` thresholds that carry effects (`"above"` thresholds such as `trusts` are excluded)** (the comparison is `>=`; the validator checks it). The lift writes it **silently**: it clears the latch, clears the band flags and re-arms the thresholds without running their effects, so a character never returns already `wary` or `refusing`. Dev and Priya (`at` -40, margin 10) use -30, which meets the rule exactly |
+| `lockout {scope, until, recoverTo}` | refuses new conversations. `scope`: `"channel"` (only the channel the player was on) or `"character"` (all channels). `until`: `{ "afterMinutes": N }` (**real elapsed minutes** from `gameClock.elapsedMs()`; it is not scaled by a scenario's `gameClock.rate`, and needs no `gameClock` block), `{ "global": "name" }` (lifts when that global becomes true) or `null` (permanent; the validator rejects this on a critical-path character, below). `recoverTo`: the influence value set when the lockout lifts (default: the declared start). **Rule: `recoverTo >= A + rearmMargin` (the character's `influence.rearmMargin`, default 10), where `A` is the highest `at` among the character's `"when": "below"` thresholds that carry effects (`"above"` thresholds such as `trusts` are excluded)** (the comparison is `>=`; the validator checks it). The lift writes it **silently**: it clears the latch, clears the band flags and re-arms the thresholds without running their effects, so a character never returns already `wary` or `refusing`. Dev and Priya (`at` -40, margin 10) use -30, which meets the rule exactly |
 | `combatHostile` | **opt-in.** Calls `setHostile`, the existing combat state (tint, chase, health bar, punch on click). Off by default |
 | `toast {text}` | a fixed one-line notice |
 
 - A crossing fires when the value moves from the other side of `at` to this side. It re-arms when the
-  value returns to `at + rearmMargin` or above (default margin 10; for a `"when": "above"` threshold,
+  value returns to `at + rearmMargin` or above (the character's `influence.rearmMargin`, default 10; for a `"when": "above"` threshold,
   to `at - rearmMargin` or below). The latch is stored in the global `<character>_latched` (a
   colon-free comma list of fired ids), so a reload does not re-fire.
 - **Band flags.** A `setGlobal` effect with a boolean value and `clearOnRearm: true` is a band flag
@@ -1086,8 +1102,10 @@ manager, [name]". The rules:
 - Free text, if the product allows it at all, is unscored flavour. Neither the judge nor the target's
   ink reads it.
 - Fixed wording is allowed in a template, since it is the player's craft rather than a fact. A
-  template with no blanks needs no evidence, and carries no distinctive value, so on its own it can
-  never satisfy `pretextRelevant`. It can satisfy a generic pretext (an open careers inbox).
+  template with no blanks needs no evidence. Unless it declares `implies` it carries no value, so it
+  can never satisfy `pretextRelevant`; with `implies` it counts as the values it names (Hampshire's
+  applicant pretext implies `cv`, so the judge needs no fact from her: her only gate is the contact
+  reveal, §11). It can also satisfy a generic pretext (an open careers inbox).
 
 ### Template and slot schema
 
@@ -1144,7 +1162,11 @@ with the Attach control and travel as `message.attachment` and `message.link` (�
   header From is forced equal to the account, so only the account's own name can pass.
 - `senderAuth` (advisory): derived from the real account and the header From (§2).
 - `linkCredible`: passes when `message.linkInfo.meetsThreshold` is true; `linkInfo` is built from the
-  saved landing-page record (§11a). The judge compares nothing else about the link.
+  saved landing-page record (§11a). The judge compares nothing else about the link. For a target that
+  has an `expectedLink` (§7) the factor is **required whether or not a link is attached**: a send with
+  `message.link === null` fails it with state `missing` and the "There's no page behind that link."
+  string, so no link-targeted phish can land without a built page. A target with no `expectedLink`
+  evaluates the factor only when a link is attached (and lists it as advisory or not at all).
 - `urgencyCalibrated` (advisory): from the pretext template's authored `urgency` tag.
 
 ### Variables the engine writes before `on_email`
@@ -1367,7 +1389,7 @@ client stores it in `mailState.mailboxes[<mailboxId>].messages[]`.
   "from": { "name": "Jed Baker", "address": "j.baker@accountingnow.example" },   // the From as displayed
   "to": "m.pierce@accountingnow.example",
   "targetId": "pierce",                   // the phishTargets id, or null when the recipient is not a target
-  "subject": "Q3 numbers",
+  "subject": "Quick one",
   "templates": { "from": "from_named", "greeting": "greet_named", "pretext": "pretext_sheet", "ask": "ask_open_attached" },
   "slots": { "sender_name": "baker_full", "sender_address": "baker_address",
              "name": "pierce_short", "document": "balance_sheet", "when": "friday" },
@@ -1411,7 +1433,11 @@ client stores it in `mailState.mailboxes[<mailboxId>].messages[]`.
   `failed` or `landed` by `EvalResult.landed`; `firstTryLanded` is true when the first send to that
   target landed. The engine also writes the declared integer global `phish_<targetId>_attempts`
   (the same count as `sent`) so an ink story can branch on it. There are no `metric_*` globals; the
-  engagement report (`10`) reads `mailState.metrics`, the sent records and the outcome globals.
+  engagement report (`10`) reads `mailState.metrics`, the sent records and the outcome globals. The
+  contract records no failed-factor ids per send and no hint counter: the record keeps `tells` and
+  `landed`, the metrics keep counts. An assessment that needs failed factors or hints shown would add
+  new fields (for example `failedFactors` on the sent record, `hintsShown` in `metrics`) and the hint
+  ladder would have to write them; none is part of this plan.
 - **Drafts live in `mailState`**, not in a global, so a nested launch (the page builder, the notes
   minigame) returns to a restored composer (§6 "Return to").
 - **Caps** are the mail client's own constants, not the phone's (`MAX_PHONE_HISTORY_MESSAGES` 150 and
@@ -1438,9 +1464,12 @@ client stores it in `mailState.mailboxes[<mailboxId>].messages[]`.
 ### Triage (`05`)
 
 The defender reader (`05`) reads the **inline `messages`** of its `triageSets` entry. A set has no
-`mailbox` field. A `playerSent` entry uses the latest **sent** record to its `targetId`, searched across the Sent folders of every mailbox in
-`mailState`, **that has a non-empty `tells`** (landed or not). A later send with no tells, such as a retry from
-`freemail`, does not shadow an earlier spoofed one, and a record with no tells is never replayed. The
+`mailbox` field. A `playerSent` entry replays one **sent** record to its `targetId`, searched across the
+Sent folders of every mailbox in `mailState` (landed or not). Selection: the latest sent record whose
+`tells` include `senderTrust` or `senderAuth` (the spoof tells, which only a spoofing account can
+raise); if no record has either, the latest record with any non-empty `tells`. A later `freemail` send
+raises only the account-independent tells (`urgencyCalibrated`, and `linkCredible` when a page is
+attached), so it never shadows the student's spoofed send; a record with no tells is never replayed. The
 entry reads the account from the record's `fromAccount`, the picked, rendered link and attachment from
 the record's `link` and `attachment`, the `body` and the `tells` as sent, and the domain from
 `link.domainId`. It is skipped only when no sent record to that target has tells. An optional
@@ -1486,20 +1515,34 @@ message is stored in Sent, is not judged and delivers nothing. The validator che
 **Concept cards.** `social.conceptCards[]` entries are `{ id, title, text, image? }`: plain-text teaching
 cards (`tool_hunter`, `tool_harvester`, `tool_recon`, `tool_exiftool` in `02`; `typo-squat`, `homograph`,
 `padlock`, `hover-link`, `right-to-left` and `five-habits` in `07`). One shared card renderer shows
-them (`02` N1, `07` N7). The landing-page brand lint (`07` §1) exempts the brand check on exactly the `text` field of these
-entries, so a card may name a real service in prose to teach the classic look-alike. It never exempts a
-domain: a host-shaped token in card text must still end `.example` (`five-habits` uses
-`accountingnow.example`). **What the lint covers.** The real-brand-domain check reads exactly these
-fields: `domain`, `browserDomain`, `realDomain`, `linkText`, `sites[].url`, address fields (a `provides`
-`address` value, contact `addresses[]`, account `address`) and the `text` of `conceptCards[]`. It does not
-read other prose (a post, a block, a template or a reply), so the claim is "no real-brand domain in
-those fields", not "anywhere in `social`". A **host-shaped token** is a hostname in a URL or address
-field, or a dotted token in card text whose last label is a known public TLD (the validator carries
-the list) and is not `.example`. It excludes file names (`Q3.pdf`, `CV.docx`: a known file extension
-is not a TLD) and pattern phrases (`initial.surname`, `m.pierce`), and it ignores the local part of an
-`@` address. Real product names (`Microsoft Excel`, `Xero`, `Office 365`) may appear in OSINT
-and fact prose; only a real brand inside a domain or address is rejected.
+them (`02` N1, `07` N7). The brand check is exempt on exactly the `text` field of these entries, so a
+card may name a real service in prose to teach the classic look-alike. It never exempts a domain: a
+host-shaped token in card text must still end `.example` (`five-habits` uses `accountingnow.example`).
 The validator checks that every card id a doc or scenario references exists.
+
+### Lint field list
+
+The one list. The real-brand and host lint reads exactly these fields and no
+others; `02` N8 and `07` §1 and N6 refer to this list instead of restating it:
+
+| Field | Where |
+|-------|-------|
+| `domain`, `browserDomain`, `realDomain`, `linkText` | landing-page domain menu and page definitions (`07`), `phishTargets[].expectedLink.realDomain` |
+| `sites[].url` | OSINT sites (`02`) |
+| `address` | `social.people[]`, the OSINT staff-block rows, a `provides` entry of type `address`, `mailClient.accounts[]` (and each `createMenu[]` entry) |
+| `addresses[]` | `mailClient.contacts[]` |
+| `text` | `social.conceptCards[]` |
+
+Every address-like field gets the **host-only `.example` rule** (strip any scheme and everything from the
+first `/`; for an address, test the part after the last `@`), the ASCII check and the fold-and-match
+denylist; the allowlist check (on the raw labels, first) applies to the menu `domain` values only. A
+**host-shaped token** is a hostname in a URL or address field, or a dotted token in `conceptCards[].text`
+whose last label is a known public TLD (the validator carries the list) and is not `.example`. It
+excludes file names (`Q3.pdf`, `CV.docx`: a known file extension is not a TLD) and pattern phrases
+(`initial.surname`, `m.pierce`), and it ignores the local part of an `@` address. The lint does not read
+other prose (a post, a block, a template or a reply), so the claim is "no real-brand domain in those
+fields", not "anywhere in `social`". Real product names (`Microsoft Excel`, `Xero`, `Office 365`) may
+appear in OSINT and fact prose; only a real brand inside a domain or address field is rejected.
 
 **Pointers.** An object carries only a pointer in `minigameData`. One object type has one entry in
 `minigame-data-schemas.json`, and each new type needs a sprite `assets/objects/<type>.png` (the existing `phone` needs none):
@@ -1525,7 +1568,7 @@ therefore completes on its own global. **Step binding.** Every sorting card, que
 carries `step: <stepId>`, a step id in the same block. A step is done when every item carrying that
 step id is answered correctly (a card placed in its right pile, a question answered with a `correct`
 option, a single-select pick whose chosen option has `correct: true`); the
-block global is set when all its steps are done. A step whose content is read-only (the report's `results` table) carries one `confirm` item (`{ "kind": "confirm", "step": "results" }`), done when the student presses Confirm; every declared step has at least one item. A block with no `steps[]` is done when all its items
+block global is set when all its steps are done. A step whose content is read-only (the report's `results` table) carries one `confirm` item (`{ "kind": "confirm", "step": "results", "text": "I have read the campaign results" }`, where `text` is the label beside the Confirm button), done when the student presses Confirm; every declared step has at least one item. A block with no `steps[]` is done when all its items
 are correct. The lab's values:
 
 | Block | Block global | Step globals |
@@ -1560,7 +1603,7 @@ and lives only in `engagement`; `intelBoard` holds the title, `people` (ids) and
 | `pretext_call_reported` (a lab-owned name) | Dev's `outcomes.reported.setGlobal` (`06` §4.8) | boolean, default false; set when the call ends reported; declared in `globalVariables` (`10` keys a branch on it) |
 | `pretext_<callId>_outcome`, `_lowest`, `_state` | the pretext session | `06` §6 (outcome precedence: `reported`, else `got_it` if any ask granted in the call, else `walked_away`). A call can be reopened: `_outcome` and `_lowest` hold the latest call, per-ask grants accumulate |
 | `<prefix>percent`, `<prefix>reportRate`, `<prefix>done`, `<prefix>pass` | the triage starter | the set's `setGlobalPrefix` (05). These four scalars are all that persists of a finished round: a later read-only reopen shows the headline, percent and report rate from them, while per-answer data (`answers[].ms`, `perFactor`, the stage) lives only in the in-memory result until a server record exists (`05` OQ1) |
-| `se_osint_state`, `se_board_state`, `se_landing_pages`, `episode_<id>_state` | their minigames | object-valued, default `{}` |
+| `se_osint_state`, `se_board_state`, `se_landing_pages`, `se_report_state`, `episode_<id>_state` | their minigames; `se_report_state` is the report builder's in-progress pairings (finding id to chosen cause and control; ids only, saved and synced as the board does) | object-valued, default `{}` |
 
 **Missions that carry a score (check missions, `11`).** A mission whose result another mission reads
 through `exportGlobals` must conclude, because the carry-over reads only concluded games. Each such
@@ -1576,12 +1619,20 @@ Shell rules for these missions and for the awareness episode shells:
 - **Sync, then emit.** `concludeRequires` reads the server's `player_state`, and client globals reach
   it only on the 30 s sync or `pagehide`. The shared writer emits `global_variable_changed` at the moment
   it writes, and the host NPC's mapping completes the task (an immediate POST) on that event, so the
-  emission must wait for the sync. The shared writer (S3) therefore takes a `deferEmit` option. The
-  triage starter writes `<prefix>percent`, `reportRate`, `pass` and `done` with `deferEmit`, awaits
-  `window.stateSync.sync()` (it returns a promise), and only then emits the
-  `global_variable_changed` events (done last) and its done event, so the task's POST finds the gate met
-  and the exported values current. The unflushed case must not be possible; the test is that a
-  `concludeRequires` check made at the instant of the task POST sees the done global. `05` N6
+  emission must wait for a sync the server has **confirmed**. The shared writer (S3) therefore takes a
+  `deferEmit` option, and `stateSync` gains `syncConfirmed()` (S3). The triage starter (and any other
+  runner that sets an episode's done global, `11` N15) writes `<prefix>percent`, `reportRate`, `pass` and
+  `done` with `deferEmit`, then awaits `window.stateSync.syncConfirmed()`, which resolves `true` only when
+  the server accepted the PUT and did not answer `{ stale: true }`, and **retries until it does** (after
+  each failure the result screen shows a "Saving your progress..." notice and the call is retried with a
+  short back-off). Only after a confirmed sync does the starter emit the `global_variable_changed` events
+  (done last) and its done event, so the task's POST finds the gate met and the exported values current.
+  **Limitation, stated honestly:** this removes the unflushed case while the page stays open and the
+  network comes back. If the connection stays down, or the player closes the tab before a confirmed
+  sync, nothing is emitted: the result stays on screen with the notice, the task does not complete and
+  `concludeRequires` stays unmet until the player reopens the round and it syncs. Nothing can guarantee
+  delivery offline. The test is that a `concludeRequires` check made at the instant of the task POST sees
+  the done global, and that a forced failed sync emits nothing until a later sync succeeds. `05` N6
   documents the starter; `11` N16 refers to it.
 - **Names that cannot collide.** Each check mission keys its task on its own stage's done global
   (`triage_pre_done` in the pre mission, `triage_post_done` in the post mission). The pre mission declares
@@ -1616,7 +1667,10 @@ least one, and the validator checks it; a page on a `page-builder` workstation h
 refuses any other `targetId`, and the composer offers "build/attach page" only for such targets, so
 `linkThreshold` and `minDomainTier` are always defined. `meetsThreshold` is computed by `07`'s model
 as `credibility >= targets[targetId].linkThreshold && gatesPassed`. A page can be attached below the
-threshold ("attach anyway"); `built` is true either way. `victim` is written on **every send that
+threshold ("attach anyway"); `built` is true either way. **Attach needs a current Score.** Any change to a
+choice after Score writes `meetsThreshold: false` and `built: false` into the record (the meter greys
+and Attach is hidden) until the next Score, so an attached record is always the result of `scorePage`
+on its own `choices`. Closing the builder without changing anything leaves the record as it was. `victim` is written on **every send that
 carries the page**, landed or not: `01` calls `describeVictimOutcome(record, target, landed)` and
 stores the result through `betterVictim(old, new)`, which keeps the best outcome. Outcomes rank
 `submitted` > `noticed` > nothing; the first send always writes, and a later send replaces the stored
@@ -1652,15 +1706,15 @@ Items other docs depend on. Each has a code location. The consolidated cross-doc
 |---|------|---------------|
 | S1 | Bind the social externals (`se_influence`, `pretext_say`, `pretext_ask`) once inside `InkEngine`, with no-op defaults (return 0) when no session is active. Every loader gets them, including the phone preload, the bark path and dry runs. Add stubs to the ink tooling | `systems/ink/ink-engine.js` (`bindExternalFunction`); loaders `person-chat-conversation.js`, `phone-chat-conversation.js` (`_preloadOpeningOnce`, `resolveEntryKnot`), `npc-manager.js` bark path; stubs in `scripts/ink_runtime_check/voicelines.mjs`, `inkcheck.js`, `reopencheck.mjs` |
 | S2 | Display-name resolution prefers the conversation's own NPC on a tie | `npc-manager.js` speaker/name lookup |
-| S3 | A shared global writer: write `gameState.globalVariables`, `broadcastGlobalVariableChange`, emit `global_variable_changed`. The writer takes two options: `emitAlways`, and `deferEmit`, which writes and broadcasts the value but returns the pending `global_variable_changed` events to the caller instead of emitting them, so a caller can await `stateSync.sync()` and then emit (the triage starter, §11 "Sync, then emit"). `grantFact` and the social paths (influence, pretext, threshold effects, step globals) emit **only on a change**; `applyActions` `set_global` uses the writer with `emitAlways`, so it keeps emitting on every call exactly as today (about 20 shipped scenarios use `global_variable_changed` in `eventMappings` or tasks, and some may re-set a value to re-fire a mapping). The only new behaviour for `applyActions` is the broadcast to cached stories, which writes a value only into stories that already declare that variable. For a **social influence global** it also writes the value into the **calling story** (its `InkEngine`, via `setDeclaredVariable` with the observer detached, as `broadcastGlobalVariableChange` does) and writes the clamped value back to the source story when ink wrote out of range, so a later ink assignment starts from the engine's value | `systems/apply-actions.js` `set_global`; `systems/npc-conversation-state.js` (`broadcastGlobalVariableChange`, observer); pattern in `objectives-manager.js`, `inventory.js` |
+| S3 | A shared global writer: write `gameState.globalVariables`, `broadcastGlobalVariableChange`, emit `global_variable_changed`. The writer takes two options: `emitAlways`, and `deferEmit`, which writes and broadcasts the value but returns the pending `global_variable_changed` events to the caller instead of emitting them, so a caller can await `stateSync.sync()` and then emit (the triage starter, §11 "Sync, then emit"). `grantFact`, the social paths (influence, pretext, threshold effects, step globals) and the triage starter's result writes emit **only on a change** (a `deferEmit` call returns only the events for names whose value changed); `applyActions` `set_global` uses the writer with `emitAlways`, so it keeps emitting on every call exactly as today (about 20 shipped scenarios use `global_variable_changed` in `eventMappings` or tasks, and some may re-set a value to re-fire a mapping). The only new behaviour for `applyActions` is the broadcast to cached stories, which writes a value only into stories that already declare that variable. For a **social influence global** it also writes the value into the **calling story** (its `InkEngine`, via `setDeclaredVariable` with the observer detached, as `broadcastGlobalVariableChange` does) and writes the clamped value back to the source story when ink wrote out of range, so a later ink assignment starts from the engine's value. `stateSync` also gains `syncConfirmed()` (§11 "Sync, then emit"): `_syncOnce` returns `true` on a confirmed PUT and `false` on a network error or a `{ stale: true }` answer (today it logs and returns, so `sync()` resolves either way); `sync()` keeps its promise behaviour; `syncConfirmed()` loops `_syncOnce` with back-off until it returns `true`, calling an optional `onRetry` so the starter can show its notice. The stale branch must refresh its base before the retry, as `sync()` does today | `systems/apply-actions.js` `set_global`; `state-sync.js` (`sync`, `_syncOnce`, lines 290-326); `systems/npc-conversation-state.js` (`broadcastGlobalVariableChange`, observer); pattern in `objectives-manager.js`, `inventory.js` |
 | S4 | The influence bar: a new DOM component for person-chat, phone-chat, the mail pane and the board's influence section, reading the global and the thresholds. Not an extension of the world-space health bar | new; `person-chat-ui.js`, `phone-chat-ui.js`; not `npc-health-bar.js` |
 | S5 | The social influence service: the watcher on the influence global, the write path behind `se_influence` and the pretext functions (S3's calling-story write included), threshold effects and the latch, the forced `report(character, reason)` path (§8), the `npc_influence_changed` event, the listener for `npc-influence-change`, and the `#influence_gained/lost[:reason]` and `#report:<reason>` tags for social characters in the shared tag processor and in phone-chat. The idempotency ledger is scoped per run (§8) | new `systems/social-influence.js`; `chat-helpers.js` `processGameActionTags`; `phone-chat-conversation.js` `processTags`; `person-chat-conversation.js` |
 | S6 | The mail runner (§10), doing the loader's sync steps in order, with a fresh idempotency ledger per run | new; modelled on `phone-chat-conversation.js` `_preloadOpeningOnce` |
 | S7 | Exclude the `email_` prefix from `recordInkVariables` / `exportNpcInkVariables`; set engine-written variables after restore and sync in every loader | `systems/npc-conversation-state.js`; `person-chat-minigame.js` (restore then sync), `phone-chat-minigame.js` |
 | S8 | Register headless email records at game start from `social.characters.*.emailRecord` and make every lookup that today searches only `rooms.*.npcs` search them too: the client registration, the ink endpoint, `find_npc_in_scenario`, which `game.rb` defines twice (645 and 1281; Ruby keeps the later one, so keep one and make it the helper), the NPC item validation behind `#give_item`, `scenario_npc_ids` (`game.rb` 1817), and the validator's phone checks (`validate_scenario.rb` 2345-2350 for the `phoneId` check, 2353-2355 for the required phone `storyPath` and 676-680 (`ink_files_to_check`) where story files are collected for compile, which must include the headless records; the KO check at 1110 and the "phone NPCs setting global variables" check at 2583 iterate `room['npcs']`, so they need the same helper). Prefer one helper (`scenario_npc_records`) that returns room NPCs plus headless records | `systems/npc-lazy-loader.js`; `core/game.js` start-room registration; `games_controller.rb` ink lookup (1966-1984); `app/models/break_escape/game.rb`; `scripts/validate_scenario.rb` |
-| S9 | Mail scheduler, `mailState` persistence (§10a), notification and the message-list renderer | `npc-manager.js` tick loop; `state-sync.js` `buildPlayerSections`, `KEYED_SECTIONS`/`WHOLE_SECTIONS`, `confirm()`, `flush()`; `games_controller.rb` `merge_last_write_wins_sections`, bootstrap; `game.rb` `merge_phone_state!` as the model; `core/game.js` restore |
+| S9 | Mail scheduler, `mailState` persistence (§10a), notification and the message-list renderer | `npc-manager.js` tick loop; `state-sync.js` `buildPlayerSections`, `KEYED_SECTIONS` (`mailState` is a keyed section, §10a), `confirm()`, `flush()` (`mailState` placed immediately after `globalVariables` in the first reduced list); job change detection compares job ids and `accountId`/`msgId` only, as `timedMessages` diffs its `pending` ids (state-sync.js:232-249), because `remainingMs` counts down every tick and would otherwise make `jobs` changed on every sync; `remainingMs` rides along with any other change; `games_controller.rb` `merge_last_write_wins_sections`, bootstrap; `game.rb` `merge_phone_state!` as the model; `core/game.js` restore |
 | S10 | The lockout: stored in the declared globals `<character>_lockout_until` and `<character>_lockout_channel` (§8), so it rides `globalVariables` persistence and needs no server section. The check on person-chat, phone-chat, mail and the `callId` starter (refuse before `pretext-prep` opens, so a locked-out student never fills in a pretext card first), and the lift (which writes `recoverTo` silently, clears the latch and the band flags) | `systems/interactions.js` NPC sprite branch and the `phone` `callId` branch; `systems/social-influence.js`; `phone-chat` and mail entry points |
-| S11 | Validator and schema: the top-level `social` key; the `social.characters` lints (synced vars declared, `VAR`s match, lockout has an expiry or a route, thresholds ordered, `recoverTo >= highest effect threshold at + rearmMargin`, `clearOnRearm` only on booleans, a `reports` threshold on any character with call data, lockout globals declared); the `se_intel_*` declaration; template/slot checks; `on_email` and `email_*` VAR checks; contact and readiness consistency (§11); `minigame-data-schemas.json` entries; no `intel_*` rule applied to other missions. A **social-lint mode**: `--strict-social` makes the validator exit 1 on any social lint error (today only schema errors and ink compile errors exit non-zero; findings from the `check_*` functions are printed and the run exits 0). The landing-page lint and the JS unit tests run in CI as one job with both runtimes: `ruby/setup-ruby` (the repo's Ruby version, `bundler-cache`), `actions/setup-node` (Node 20, matching the `jsdom` release chosen in `07` N3), `npm ci`, then the Node tests **under Bundler**: `bundle exec node --test test/js/validator-*.test.mjs test/js/social-*.test.mjs`. `bundle exec` puts Bundler's `RUBYOPT` in the environment of the plain `ruby` that each validator test spawns, so that child can load `json-schema`; without it every validator test would fail. The tests fail, not skip, under CI when Ruby or the gem is missing. The safety tests are named `social-*.test.mjs` so the glob runs them: `social-landing-page-model` (scorer and `betterVictim`, `07` N2), `social-landing-page-render` (renderer DOM safety, `07` N3), `social-landing-page-guard` (runtime guard, `07` N6b) and `social-osint-address-bar` (address-bar formatter, `02` N9); `package.json` gains a `test:social` script with the same file list. Then a loop of `bundle exec` validator runs over **only the scenarios that carry a `social` key** with `--strict-social --no-graph --skip-ink`, then `git diff --exit-code` to prove no tracked file was rewritten (`--skip-ink` stops inklecate writing compiled `ink/*.json` beside the sources; because it also skips `check_ink_files`, the social ink lints parse the `.ink` text directly and do not read compiled output). The landing-page lint tests the **hostname only** for the `.example` suffix (strip any scheme and everything from the first `/`; paths are allowed), runs the allowlist on the **raw labels first**, then folds and matches the denylist; it also checks that each page has at least one `targets` key (exactly one in the lab) | `scripts/validate_scenario.rb` `known_top_level` and the `npcType` branches; `scripts/scenario-schema.json`; `scripts/minigame-data-schemas.json`; `scripts/ink_runtime_check/`; `.github/workflows/ci.yml` |
+| S11 | Validator, schema and CI. **Lints:** the top-level `social` key; the `social.characters` lints (synced vars declared, `VAR`s match, lockout has an expiry or a route, thresholds ordered, `recoverTo >= highest effect threshold at + rearmMargin`, `clearOnRearm` only on booleans, a `reports` threshold on any character with call data); **declared globals:** for every character `<character>_influence` and `<character>_latched`, the band-flag and report globals, both lockout globals for a character with a `lockout` effect, and every `setGlobal` effect target are declared in `globalVariables` and are not imported (an undeclared name is silently not synced to ink, `npc-conversation-state.js:362-372`); the `se_intel_*` and `se_report_state` declarations; template/slot checks; `on_email` and `email_*` VAR checks; contact and readiness consistency (§11); the brand/host lint over exactly the **lint field list** in §11; `minigame-data-schemas.json` entries; no `intel_*` rule applied to other missions. **Exit behaviour (accurate today):** the validator exits 1 on a structure error (`validate_scenario.rb:4928`), an ink compile error (`:4964`, skipped by `--skip-ink`), a schema error (`:5081`), and on bad arguments or a missing file (`:4858`, `:4880`); every finding from the `check_*` functions is printed and the run exits 0. A **social-lint mode**, `--strict-social`, makes it exit 1 on any social lint error as well. **CI job** (one job, both runtimes): `ruby/setup-ruby` with the repo's Ruby version, `bundler-cache` and `BUNDLE_BUILD__SQLITE3: "--enable-system-libraries"` in the step env, preceded by the same `apt-get install sqlite3 libsqlite3-dev` step the existing `lint` and `test` jobs use (copy from `ci.yml`); `actions/setup-node` (Node 20, matching the `jsdom` release chosen in `07` N3); `npm ci`. **`package-lock.json`:** it is gitignored (`.gitignore:43`) and untracked, so `npm ci` has nothing to read on a fresh checkout; this item removes that `.gitignore` line, regenerates the lockfile after adding `jsdom`, and commits it (`npm install` in CI is not reproducible and is not used). Then the Node tests **under Bundler**: `bundle exec node --test test/js/validator-*.test.mjs test/js/social-*.test.mjs`. `bundle exec` puts Bundler's `RUBYOPT` in the environment of the plain `ruby` that each validator test spawns, so that child can load `json-schema`; without it every validator test would fail. The tests fail, not skip, under CI when Ruby or the gem is missing. Every test of a social module is named `test/js/social-<module>.test.mjs` so the glob runs it: the pure-module unit tests `social-phish-rules` (`04`), `social-triage-scoring` (`05` N4), `social-pretext-judge` (`06` N1) and `social-intel` (`02` N2), and the safety tests `social-landing-page-model` (scorer and `betterVictim`, `07` N2), `social-landing-page-render` (renderer DOM safety, `07` N3), `social-landing-page-guard` (runtime guard, `07` N6b) and `social-osint-address-bar` (address-bar formatter, `02` N9); `package.json` gains a `test:social` script with the same file list. **No test runs the validator CLI in a way that rewrites tracked files:** tests call the lint functions in-process through `ruby -e 'require validate_scenario.rb'` (as `test/js/validator-carry-over.test.mjs:13-23` does) or pass `--no-graph --skip-ink`, never the bare command line. Then a loop of `bundle exec` validator runs over **only the scenarios that carry a `social` key** with `--strict-social --no-graph --skip-ink`, then `git diff --exit-code` to prove no tracked file was rewritten (`--skip-ink` stops inklecate writing compiled `ink/*.json` beside the sources; because it also skips `check_ink_files`, the social ink lints parse the `.ink` text directly and do not read compiled output). The landing-page lint tests the **hostname only** for the `.example` suffix, runs the allowlist on the **raw labels first**, then folds and matches the denylist (§11); it also checks that each page has at least one `targets` key (exactly one in the lab) | `scripts/validate_scenario.rb` `known_top_level` and the `npcType` branches; `scripts/scenario-schema.json`; `scripts/minigame-data-schemas.json`; `scripts/ink_runtime_check/`; `.github/workflows/ci.yml`; `.gitignore`; `package.json` |
 | S12 | **Return to.** `startMinigame(scene, container, { returnTo: { sceneType, params }, ... })`: `endMinigame` calls `returnTo` after `onComplete`, on a normal exit only. A parent that launches a child sets `suspended: true` in its params so its `onComplete` ignores the `onComplete(false, null)` that `startMinigame` fires when it ends the running minigame. The launcher passes the child's required parameters in the call. The parent saves its draft first (mail: `mailState.drafts`; OSINT and board: their `se_*_state` globals) | `minigames/framework/minigame-manager.js` (`startMinigame`, `endMinigame`); `base-minigame.js` |
 
 Back-compat checklist for any of these changes: `applyActions` `set_global` still emits `global_variable_changed` on every call, same value or not (audit the shipped scenarios that map on it); m01 Derek (`#hostile` plus `#influence:-100`) still
@@ -1688,7 +1742,14 @@ lists the triage sizes and the domain ids.
 | Triage global prefix | `outcome.setGlobalPrefix`, with a `{stage}` token for staged sets (`triage_{stage}_`, awareness). The lab's set uses the literal prefix `triage_` (stage `mission`, `passPercent: 60`), so its globals are `triage_percent`, `triage_reportRate`, `triage_done` and `triage_pass` | 05 |
 | Red-flag meter | per-target `redFlagMeter` boolean; absent takes `mailClient.showRedFlagMeter` | 04 |
 | Lab accounts | `guest` (spoofs) and `freemail` (created, `spoofsFrom: false`); no `jed_pc` | 10a |
-| `playerSent` | latest **sent** record to the target from any mailbox **that has tells** (account from `fromAccount`, domain from `link.domainId`), landed or not; a tell-less later send does not shadow it; `domainFrom: "landing_domain"` on a `playerSent` entry only; authored messages carry literal auth rows | 10a |
+| `playerSent` | the latest **sent** record to the target, from any mailbox, whose `tells` include `senderTrust` or `senderAuth`; if none, the latest with any tells; landed or not (account from `fromAccount`, domain from `link.domainId`); a later `freemail` send does not shadow a spoofed one; `domainFrom: "landing_domain"` on a `playerSent` entry only; authored messages carry literal auth rows | 10a |
+| `linkCredible` | required whenever the target has an `expectedLink`: a send with no link fails it with state `missing`; Lord cannot land without the stage 4 page | 2, 10 |
+| Attach after Score | a choice change after Score writes `meetsThreshold: false`, `built: false` until re-scored; Attach needs a current Score | 11a |
+| `rearmMargin` | optional character-level integer in `influence`, default 10 | 8 |
+| `confirm` item | `{ kind: "confirm", step, text }` | 11 |
+| Report builder state | object-valued global `se_report_state` (ids only) | 11 |
+| Sync then emit | `deferEmit`, then `stateSync.syncConfirmed()` retries until the server confirms, then emit; if the connection never comes back, nothing is emitted and the task stays incomplete | 11, S3 |
+| Validator exit | exits 1 on structure, ink compile and schema errors, bad arguments or a missing file; `--strict-social` adds social lint errors | S11 |
 | Board pointer | `mode` (one board object per mode) | 11 |
 | Call pointer | `callId` on the existing `phone` type; the branch goes above the `interactions.js:1355` gate (engine change, §11); no new sprite | 11 |
 | Mode completion | block `onCompleteGlobal`, optional step globals (names in §11) | 11 |
@@ -1697,16 +1758,16 @@ lists the triage sizes and the domain ids.
 | Sender-auth policy | `senderAuth: { domainPublishesAuth, spoofAligns, dmarcPolicy: none \| quarantine \| reject }`; Pierce's `factorStrings.senderAuth` carries the `p=none` line; Hampshire authors the `pass` side, Lord uses the derived sentence, and any factor a target leaves out uses the §2 canonical string | 2, 7 |
 | Missing evidence | an empty blank (or a missing `requiresIntelToAttempt` fact) blocks Send; neutral line "A blank needs evidence you haven't found yet" (defined in `04`) | 10 |
 | Band flags | `setGlobal` boolean with `clearOnRearm: true`, recomputed on every influence change, cleared at `at + rearmMargin` or above; ink branches on the returned band | 8 |
-| `recoverTo` rule | `recoverTo >= A + rearmMargin`, `A` = highest `at` among `"below"` thresholds with effects (`"above"` thresholds excluded); Dev and Priya -30 | 8 |
+| `recoverTo` rule | `recoverTo >= A + rearmMargin` (character's `influence.rearmMargin`, default 10), `A` = highest `at` among `"below"` thresholds with effects (`"above"` thresholds excluded); Dev and Priya -30 | 8 |
 | Lockout storage | globals `<character>_lockout_until`, `_lockout_channel`; no server section; checked before `pretext-prep` | 8, S10 |
 | Step binding | each card, pick and question carries `step`; step done when all its items are correct; block global when all steps are done | 11 |
 | Plan mode | two single-select picks (objective, measure), globals `plan_objective_done`, `plan_measures_done`; a read-only step (report `results`) has one `confirm` item | 11 |
 | Reopened calls | a call can be reopened after any outcome while asks remain; `pretext_<callId>_outcome` and `_lowest` hold the latest call; grants accumulate | 06 |
 | Victim record | written on every send carrying the page, keeping the best outcome (`betterVictim`: submitted > noticed > nothing; a later send replaces it only if ranked at least as high); re-scoring a page never clears it, per 11a | 11a |
 | Check missions | `missionConclusion` aim gated on the triage completion global | 11 |
-| CI validator loop | one job with Ruby (bundler-cache) and Node; Node tests run as `bundle exec node --test test/js/validator-*.test.mjs test/js/social-*.test.mjs` (Node 20; safety tests `social-landing-page-model`, `-render`, `-guard` and `social-osint-address-bar`; `test:social` script) and fail rather than skip; `--strict-social --no-graph --skip-ink` over scenarios with a `social` key; `git diff --exit-code` | S11 |
+| CI validator loop | one job with Ruby (bundler-cache, sqlite apt packages and `BUNDLE_BUILD__SQLITE3` as the existing jobs) and Node 20; `package-lock.json` un-ignored and committed so `npm ci` works; Node tests run as `bundle exec node --test test/js/validator-*.test.mjs test/js/social-*.test.mjs` and fail rather than skip; the social unit tests are `social-phish-rules`, `social-triage-scoring`, `social-pretext-judge`, `social-intel`, and the safety tests `social-landing-page-model`, `-render`, `-guard` and `social-osint-address-bar`; `test:social` script; no test runs the bare validator CLI; `--strict-social --no-graph --skip-ink` over scenarios with a `social` key; `git diff --exit-code` | S11 |
 | Concept cards | `social.conceptCards[] { id, title, text, image? }`; brand exemption on `text` only, host-shaped tokens still end `.example` | 11 |
-| Real-brand lint scope | checks `domain`, `browserDomain`, `realDomain`, `linkText`, `sites[].url`, address fields and concept-card `text` only; host-shaped token = hostname in a URL/address field or a dotted token ending in a known public TLD (not `.example`), excluding file names and `initial.surname` patterns | 11 |
+| Real-brand lint scope | the single field list in §11 ("Lint field list"); host-shaped token = hostname in a URL/address field or a dotted token in card text ending in a known public TLD (not `.example`), excluding file names and `initial.surname` patterns; `.example` tested on the hostname only | 11 |
 | Landing verdict | a page at or above threshold that fails a gate gets the second verdict row's string (`07` §4) | 07 |
 | Defender facts | exactly four with a `reduceNote`: `email_pattern`, `username_convention`, `lord_portal`, `hampshire_careers` | 1 |
 | Call outcome | `reported`, else `got_it` if any ask granted in the call, else `walked_away`; `pretext_call_done` set by any granting ask | 06 |

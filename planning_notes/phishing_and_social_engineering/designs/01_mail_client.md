@@ -95,10 +95,10 @@ Fields, in the order the player fills them:
   kit item's page `targets` map (`00` §11a, `07`); for any other target it is absent, so the builder
   is never launched for a target the page has no threshold for. Choosing the link item opens the
   builder unless the page record has `built: true` (see "Nested launch and drafts"). A record with `built: false`, which `07` saves on
-  every Score and when the builder is closed without attaching, counts as not built. Only the
+  every Score and on any choice change after a Score (until the page is re-scored), counts as not built. Closing the builder without attaching changes nothing. Only the
   builder's **Attach to email** / **Attach anyway** control sets `built: true` (`07` step 4), so a
   below-threshold page reaches a message only by that deliberate step. Once built, the item attaches
-  at once, and `linkCredible` fails with the reasons `07` gives if the page missed the threshold.
+  at once, and `linkCredible` fails with the reasons `07` gives if the page missed the threshold. The builder's Attach control is offered only for the current choices once they have been scored: changing a choice after Score clears `meetsThreshold` and `built` until the page is scored again (`07`), so the attached page is always the one that was scored. For a target with an `expectedLink`, a message with no link fails `linkCredible` (`04`), so the client does not treat "no page attached" as a pass.
 
 A live **red-flag meter** on the side is optional per target: the target's `redFlagMeter` boolean
 (`04`), defaulting to `mailClient.showRedFlagMeter`. The lab has it on for Hampshire and off for
@@ -188,7 +188,7 @@ What 01 renders from an `EvalResult`, concretely:
 
 ```
 Sent to Melanie Pierce, as guest@workstation (claimed: Jed Baker).
-  ✓ Sender looked trusted
+  ✓ From someone she trusts
   ✓ Addressed her by name
   ✗ Not relevant to her — "I'm not expecting anything like this"
   ✗ Attachment missing — "You said you'd attach it, but there's nothing here"
@@ -196,7 +196,7 @@ Sent to Melanie Pierce, as guest@workstation (claimed: Jed Baker).
   publishes DMARC at p=none, so it would still be delivered.   [Edit & resend]
 ```
 
-Some seconds later in the `guest` mailbox: "Re: Q3 numbers — Sorry, who is this? I wasn't expecting
+Some seconds later in the `guest` mailbox: "Re: Quick one — Sorry, who is this? I wasn't expecting
 anything." with Melanie's bar a notch lower. On success: a green banner "She opened it.", the reply,
 and the outcome global.
 
@@ -374,8 +374,8 @@ arrived; when the mail client is open the reply is appended with no bark (S9).
 
 | Touch point | Where |
 |-------------|-------|
-| Client registration | `js/state-sync.js`: add the section to `KEYED_SECTIONS` / `WHOLE_SECTIONS` and to `confirm()`, and build it in `buildPlayerSections` / `buildChanges` |
-| `pagehide` flush | `state-sync.js` `flush()`: add `mailState` to the hard-coded allow-list. The keepalive body is capped at `KEEPALIVE_BODY_LIMIT` (60 000 bytes), so a large mailbox falls back to the next 30 s sync; messages and the job that produced them are committed in one write, so a flush never keeps one without the other |
+| Client registration | `js/state-sync.js`: register the section as a keyed section in `KEYED_SECTIONS` (`00` §10a) and in `confirm()`, and build it in `buildPlayerSections` / `buildChanges` |
+| `pagehide` flush | `state-sync.js` `flush()`: add `mailState` to the hard-coded allow-list, placed immediately after `globalVariables` in the first reduced list (`00` §10a), so it survives the fallback trimming. The keepalive body is capped at `KEEPALIVE_BODY_LIMIT` (60 000 bytes), so a large mailbox falls back to the next 30 s sync; messages and the job that produced them are committed in one write, so a flush never keeps one without the other |
 | Server accept | `app/controllers/break_escape/games_controller.rb` `merge_last_write_wins_sections`, so a stale request cannot overwrite it; the section's sanitiser and caps live in `app/models/break_escape/game.rb`, a `merge_mail_state!` modelled on `merge_phone_state!` and its cap constants |
 | Bootstrap and restore | `games_controller.rb` bootstrap (`savedMailState`) and `js/core/game.js` restore, then `state-sync` acknowledges the key |
 
@@ -403,7 +403,7 @@ reads `metrics`, the sent records and the outcome globals.
 | Pin a fact while reading | Notes API (`startNotesMinigame`, `window.addNote`) and the password minigame's "Add to Notepad" | Same button on the reading pane, launched with S12 `returnTo` and the draft saved first |
 | Thread view, bubbles, choices, avatar | `phone-chat-ui.js`, `phone-chat-conversation.js` (`collectSteps`, `saveState`) | Reply choices (N8) and the thread layout. The influence bar is not in the phone UI: the bar is new (S4) |
 | Headless run | `PhoneChatConversation._preloadOpeningOnce` | The model the runner extends (`00` §10) |
-| Blank picker | none; nearest is `container-minigame` item lists | New control, shared with `06` (N10) |
+| Blank picker | none; nearest is `container-minigame` item lists | New control, shared with `06` (N6) |
 
 ### New engine work
 
@@ -412,7 +412,7 @@ reads `metrics`, the sent records and the outcome globals.
 | # | Item | Notes |
 |---|------|-------|
 | N1 | `mail-client` minigame component (list, reading pane, Sent folder, composer, account switcher, Create-account panel) | New overlay; one component with a narrow layout, not a second one |
-| N2 | `mailState` persistence: the touch points above, with the new per-mailbox caps and the total byte cap and trim order; drafts (`mailState.drafts`) written on change and before a launch; `metrics` and `phish_<id>_attempts` written on each send | Implements `00` S9's persistence half |
+| N2 | `mailState` persistence: the touch points above, with the new per-mailbox caps and the total byte cap and trim order; drafts (`mailState.drafts`) written on change and before a launch; `metrics` and `phish_<id>_attempts` written on each send; change detection for `jobs` compares job ids and `accountId`/`msgId` only, as `timedMessages` does with its pending ids, because `remainingMs` counts down on every tick and would otherwise mark the section changed on every sync (`remainingMs` rides along with any other change) | Implements `00` S9's persistence half |
 | N3 | Close behaviour and the `gameResult` transform above (completion on Close, never on send), documented for scenario authors; own Close control, capture-phase Esc, `requiresKeyboardInput` and its bridge test | — |
 | N4 | Payload kit as abstract items; Attach menu; the `link` kind refers to a landing page built in `07`; nested launch of the builder and Notes through S12; `linkInfo` filled from `linkInfoFor`; the link item offered only for targets in the page's `targets` map; the re-attach test reads the page record's `built` | Cross-component |
 | N5 | A read-only **`mail-reader`** component (message list + reading pane, link-hover status bar, header panel) shared with the triage defender (`05`) | `01` adopts it too so the two cannot drift |
