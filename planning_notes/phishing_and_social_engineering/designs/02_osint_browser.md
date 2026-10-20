@@ -74,7 +74,9 @@ old organisation chart. It is a deliberately out-of-date source: selecting it gr
 
 The tools panel offers **one entry per thing the player could sensibly look up**, built from what they
 have already seen: a name from the team page, a handle from a profile, the company domain. An entry
-appears once its `unlockedBy` condition holds (a page has been visited, or a named fact is held). The
+appears once its `unlockedBy` condition holds: `{ "visited": "<siteId>" | "<siteId>.<pageId>" }` when a
+page has been visited, or `{ "fact": "<factId>" }` when a named fact is held (read from its `se_intel_*`
+global). An entry with no `unlockedBy` is always listed. The
 player picks an entry and reads its authored result list; selecting a result block collects its fact, as
 anywhere else. Some entries are decoys that return nothing useful ("No public results for this handle"),
 so picking is a judgement, not a click-through.
@@ -99,8 +101,14 @@ framework that automates the above), **Maltego** (link-analysis graphs of people
 card is shown beside the lookup that models it, behind a visible "What is this?" button: `tool_hunter`
 (the Hunter lookup), `tool_harvester` (the name search), `tool_recon` (the handle search) and
 `tool_exiftool` (the document properties panel; **exiftool** reads the metadata a file carries). These
-four are the only concept cards in the OSINT stage; `10` shows no separate wall notes for them. Cards are
-shared content with `07` N7.
+four are the only concept cards in the OSINT stage; `10` shows no separate wall notes for them.
+
+**Where cards live.** A `card` value is an id into `social.conceptCards[] { id, title, text, image? }`
+(`00` §11), a plain-text collection shared with `07`'s cards (`07` N7). The text is authored prose that may
+name the real tool; it is the only field the brand lint exempts (`07` §1), and it holds no domain other
+than a `.example` one. One shared card renderer shows a card (title, text, optional pixel image) behind the
+"What is this?" button; N1 builds it and `07` N7 reuses it. The validator (N8) checks that every `card`
+id resolves.
 
 ### Document metadata
 
@@ -319,14 +327,14 @@ browser. The composer (`01`) does not open the board at all; it reads the `se_in
 
 | # | Item | Where in code |
 |---|------|---------------|
-| N1 | `osint-browser` overlay: sites strip, display-only address bar, page renderer (company, social, document, tools), selectable blocks, properties panel, profile-level `showIf`, own Close control, `requiresKeyboardInput: true`. The wiring checklist above | new `minigames/osint-browser/`; `index.js`; `minigame-starters.js`; `systems/interactions.js`; `show.html.erb` |
+| N1 | `osint-browser` overlay: sites strip, display-only address bar, page renderer (company, social, document, tools), selectable blocks, properties panel, profile-level `showIf`, the shared concept-card renderer (also used by `07` N7), own Close control, `requiresKeyboardInput: true`. The wiring checklist above | new `minigames/osint-browser/`; `index.js`; `minigame-starters.js`; `systems/interactions.js`; `show.html.erb` |
 | N2 | `grantFact(id)`: shared writer (`00` S3), note, sync, flip-only, then `evaluateReadiness` (sets `target_ready_<id>`, `osint_done`); used by 02 and by `06` grants | new `systems/social-intel.js`; `systems/apply-actions.js` `set_global`; `notes-minigame.js` `window.addNote` (unique note ids: timestamp plus counter) |
 | N3 | Document properties view with selectable fields | in N1 |
 | N4 | Tools panel: picked lookups with `unlockedBy`, decoy entries, result blocks | in N1 |
 | N5 | Close as a normal exit, own Close control and Escape, nested launch to the case file with return-to (`00` S12) | `minigames/framework/base-minigame.js` (`disableClose`), `minigame-manager.js` |
 | N6 | Cast headshots: each of `pierce`, `baker`, `hampshire`, `lord` needs a sprite key and a `<key>_headshot.png` (32x32). A headshot-to-`<key>_talk.png` fallback for profile images does not exist (`person-chat-portraits.js:913-916` falls back the other way, `_talk` to `_headshot`), so either every key ships a headshot or the reverse fallback is new work here. Site images live under `assets/osint/<scenario>/` | `public/break_escape/assets/characters/`; path built as in `ui/hud.js`; `person-chat-portraits.js` |
 | N7 | Bundle Atkinson Hyperlegible (`00` §6) and apply `--se-font-readable` to every string the browser shows that holds a domain, address, handle, file name or metadata field, wherever it appears (address bar, tools-panel labels such as "Hunter lookup: accountingnow.example", result lines, notes, confirmations); authored domains rendered raw | `public/break_escape/assets/fonts/`; `css/fonts.css`; `utils/display-dashes.js` bypass |
-| N8 | Validator: every fact (bar the call-granted ones) is granted by exactly one element and each `source` equals that element's id; every `fact` and `showIf` resolves; every `unlockedBy.visited` is a site id or `siteId.pageId`; every `se_intel_*` declared; `se_osint_state` declared with default `{}`; domain and address strings, including every `sites[].url`, end `.example` and pass the brand denylist check in `07` N6 (fold, then match; the brand-word allowlist does not apply to site urls); `social.osint` schema and the `minigameData` entry | `scripts/validate_scenario.rb` (`known_top_level`); `scripts/scenario-schema.json`; `scripts/minigame-data-schemas.json` (S11) |
+| N8 | Validator: every fact (bar the call-granted ones) is granted by exactly one element and each `source` equals that element's id; every `fact` and `showIf` resolves; every `unlockedBy` is `{ visited }` (a site id or `siteId.pageId` that exists) or `{ fact }` (a declared fact id); every `card` id is in `social.conceptCards`; every `se_intel_*` declared; `se_osint_state` declared with default `{}`; the hostname of every authored address passes the `.example` rule, and every address (host and path) passes the ASCII and brand-denylist checks in `07` N6 (the hostname is the part of a `sites[].url` before the first `/`, or the part of an address after the last `@`, with any scheme stripped first; a path such as `/Q3.pdf` is allowed and needs no `.example`; the raw-label brand-word allowlist is for `07`'s menu domains and does not apply to site urls); `social.osint` schema and the `minigameData` entry | `scripts/validate_scenario.rb` (`known_top_level`); `scripts/scenario-schema.json`; `scripts/minigame-data-schemas.json` (S11) |
 | N9 | Test: the address-bar formatter (a pure function, so no DOM is needed) returns a string with `--` (an `xn--` label) unchanged; run by the CI step in `00` S11 | `test/js/` |
 
 ## Accessibility and small screens

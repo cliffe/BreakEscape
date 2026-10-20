@@ -62,9 +62,12 @@ A case-file overlay (house style, see Visual style). The board is rebuilt on ope
 no live updates. The layout:
 
 - **People cards:** one per target (`people`), merged on the shared cast `id` (`00` §1). Name, role and
-  address read from `social.people`, but only as far as the player holds them: until a held fact provides
-  a name form for the person the header reads "Not yet identified", the role appears once `pierce_role`
-  (or the equivalent) is held, and the address once `email_pattern` or a fixed address fact is held. The
+  address read from `social.people`, but only as far as the player holds them: the header reads "Not yet
+  identified" until a held fact either provides a name form for the person or has that person as its
+  `subject`. The second route exists for Hampshire, whom no fact names (he is greeted with
+  `greet_generic`): once `hampshire_careers` or any other fact with subject `hampshire` is held, the
+  header shows his name and role from `social.people`. The role appears once `pierce_role` (or the
+  equivalent) is held, and the address once `email_pattern` or a fixed address fact is held. The
   card lists the facts found about the person, with empty slots for what is not yet known ("Expects:
   ???").
   Each fact appears on the card named by its `subject`; company-wide facts (`email_pattern`, `tech_stack`,
@@ -175,8 +178,8 @@ The same facts are shown as **exposure**, not progress. For each fact in `engage
 (`00` §11: `[ { intel, options: [ { id, text, good, why } ] } ]`) the card shows the fact's `reduceNote` (the
 one-line "reduce this" prompt from `00` §1, for example "Keep internal routines off the public site") and
 asks the player to pick a mitigation. Only facts that carry a `reduceNote` can appear here (N6), so the
-lab's four defender facts (`email_pattern`, `username_convention`, `lord_portal`, `hampshire_careers`) each
-need one authored in `00` §1. A wrong pick shows its `why`: what it would and wouldn't fix. The
+lab's four defender facts (`email_pattern`, `username_convention`, `lord_portal`, `hampshire_careers`, the
+list in `00` §1) each need one authored there; `00` §1 authors a note for no other fact. A wrong pick shows its `why`: what it would and wouldn't fix. The
 mode completes (`profile_done`) when each fact has a `good` option chosen. This makes it a
 threat-intelligence product (book Ch. 12), not a relabelled board. There is **no indicators step** unless
 the scenario authors `engagement.defender.indicators` (off by default; the lab authors none). If it does,

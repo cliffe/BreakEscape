@@ -82,7 +82,7 @@ Fields, in the order the player fills them:
   account's own name and address, shown as a read-only line ("You can only send as yourself from
   this address"). The From is also forced to the account when the account lacks `spoofsFrom`, and
   when the target offers only `from_own` (Hampshire). In the lab only `guest` has `spoofsFrom`; `freemail` does not, so its From is always its own.
-- **Subject** — fixed, or chosen from a short authored list. The judge ignores it (open question).
+- **Subject** — chosen from the target's `subjects` list (`04`, `00` §7); the first entry is the default, and a one-entry list is a fixed subject. The sent record, drafts and the reply's `Re: <subject>` all read the chosen entry's `text`. The judge ignores it (open question).
 - **Body** — the greeting, pretext and ask, built from templates with blanks (`00` §10). The judge
   scores the blank values, not the wording, so a template never reveals an answer the player has not
   found. A blank with nothing held stays empty and cannot be sent: Send is disabled and the composer shows
@@ -91,8 +91,10 @@ Fields, in the order the player fills them:
   unscored free-text flavour; it is shown in the message but never judged and never read by the ink.
 - **Attach** — a menu of the payload kit, abstract items such as "CV.docx", "Q3_balance_sheet.xlsx",
   "Link to your landing page". Never a real payload. An attachment or a link is chosen only here; it
-  is never a blank (`00` §1). Choosing the link item opens the builder unless the page record has
-  `built: true` (see "Nested launch and drafts"). A record with `built: false`, which `07` saves on
+  is never a blank (`00` §1). The link item is listed only when the composer's target is in the
+  kit item's page `targets` map (`00` §11a, `07`); for any other target it is absent, so the builder
+  is never launched for a target the page has no threshold for. Choosing the link item opens the
+  builder unless the page record has `built: true` (see "Nested launch and drafts"). A record with `built: false`, which `07` saves on
   every Score and when the builder is closed without attaching, counts as not built. Only the
   builder's **Attach to email** / **Attach anyway** control sets `built: true` (`07` step 4), so a
   below-threshold page reaches a message only by that deliberate step. Once built, the item attaches
@@ -145,9 +147,12 @@ stays pure and the stored target is untouched. It then calls `evaluateMessage(ta
 
 1. **At once, the checklist** (the teaching layer): each factor ✓/✗ with a one-line reason, plus
    advisory lines (urgency, sender authentication). The sender-authentication line is the target's
-   authored `factorStrings.senderAuth` text when it has one; otherwise it is the canonical `00` §2
-   line plus a clause built from the claimed domain's `dmarcPolicy` (`none`: a failing message is
-   still delivered; `quarantine`: it would likely be quarantined; `reject`: it would be rejected).
+   authored `factorStrings.senderAuth` text when it has one: its `fail` string when the derived read
+   is `would-fail`, its `pass` string when it is `would-pass`. In the lab Pierce authors both (her
+   `fail` carries the `p=none` line) and Hampshire authors a `pass` line. Otherwise (Lord) it is the
+   canonical `00` §2 line plus a clause built from the claimed domain's `dmarcPolicy` (`none`: a
+   failing message is still delivered; `quarantine`: it would likely be quarantined; `reject`: it
+   would be rejected).
    The first time a message is sent with a claimed
    From that differs from the account, one line adds: "In real life this reply would go to <claimed
    person>'s inbox unless you set a reply-to; here it comes to <account>."
@@ -156,7 +161,8 @@ stays pure and the stored target is untouched. It then calls `evaluateMessage(ta
    attachment and link. It updates `mailState.metrics[targetId]` and the declared integer global
    `phish_<targetId>_attempts`. It clears that account's draft. When the message carries a built
    page, it also calls `07`'s `describeVictimOutcome(record, target, landed)` and stores the result
-   in the page record's `victim` field. That happens for every send with a page attached, landed or
+   in the page record's `victim` field, keeping the best outcome through `07`'s `betterVictim`: a later send that does not land
+   never replaces a `victim` entry written by an earlier landed send. That happens for every send with a page attached, landed or
    not, so the "noticed" outcome and the Inspect step are reachable after an "attach anyway" send.
 3. **A delivery job**, saved in `mailState.jobs` (`00` §10). A target with a `character` gets an ink
    job: the mail runner writes the result into the character's email-story variables, runs
@@ -235,7 +241,8 @@ client uses the return-to helper (`00` §6, S12).
   ends the running minigame), and starts the builder with `{ landingPageId, targetId, returnTo:
   { sceneType: 'mail-client', params: { accountId } } }`. The builder's Close is a normal exit. Its
   `returnTo` reopens the client, which restores the draft and attaches the link if
-  `landing_<pageId>_built` is now true.
+  the page record's `built` is now true (or `linkInfoFor` no longer returns `missing`) (the record is the truth; the global `landing_<pageId>_built`
+  stays true after a first attach, so it cannot tell a later Score-and-close from an attach).
 - **Add to Notepad.** The same pattern with the notes minigame: save the draft, launch with
   `returnTo` for the mail client, restore on return.
 - **Esc and Close.** The client sets `disableClose: true`, which hides the framework's close button
@@ -407,7 +414,7 @@ reads `metrics`, the sent records and the outcome globals.
 | N1 | `mail-client` minigame component (list, reading pane, Sent folder, composer, account switcher, Create-account panel) | New overlay; one component with a narrow layout, not a second one |
 | N2 | `mailState` persistence: the touch points above, with the new per-mailbox caps and the total byte cap and trim order; drafts (`mailState.drafts`) written on change and before a launch; `metrics` and `phish_<id>_attempts` written on each send | Implements `00` S9's persistence half |
 | N3 | Close behaviour and the `gameResult` transform above (completion on Close, never on send), documented for scenario authors; own Close control, capture-phase Esc, `requiresKeyboardInput` and its bridge test | — |
-| N4 | Payload kit as abstract items; Attach menu; the `link` kind refers to a landing page built in `07`; nested launch of the builder and Notes through S12; `linkInfo` filled from `linkInfoFor` | Cross-component |
+| N4 | Payload kit as abstract items; Attach menu; the `link` kind refers to a landing page built in `07`; nested launch of the builder and Notes through S12; `linkInfo` filled from `linkInfoFor`; the link item offered only for targets in the page's `targets` map; the re-attach test reads the page record's `built` | Cross-component |
 | N5 | A read-only **`mail-reader`** component (message list + reading pane, link-hover status bar, header panel) shared with the triage defender (`05`) | `01` adopts it too so the two cannot drift |
 | N6 | Email→ink bridge in the client: apply `boostIfGlobal` / `strictIfGlobal` to a copy of the target, judge, write the sent record and the job (ink or text) to the scheduler, call `describeVictimOutcome` for a message with a page, render the reply | Uses `00` S1 (externals), S6 (runner), S7 (run-scoped `email_`), S8 (headless record), S9 (scheduler); not `timedMessages` |
 | N7 | Influence bar in the reading pane for social characters | The shared DOM widget, `00` S4 |
@@ -415,7 +422,7 @@ reads `metrics`, the sent records and the outcome globals.
 | N9 | Contacts with a `character` and no sprite; contacts joined to targets by `targetId` | Delivered by `00` S8 (headless email records) |
 | N10 | Template composer: blanks whose options come from held evidence (`se_intel_*` globals through each fact's `provides`), and a send gate that refuses an empty blank with the neutral pre-send line (`04`) | Shares the blank picker with `06` (N6) |
 | N11 | Accounts: own-account resolution, `unlockedBy` globals, `createMenu` and the Create-account panel, `accountIds` on objects, the switcher, `burned_<id>` greying, per-mailbox unread | `00` §10a |
-| N12 | Sent record per `00` §10a: `folder`, `fromAccount`, `targetId`, `templates`, `slots`, `body`, `attachment`, `link`, `landed`, `tells`; the Sent folder view | Part of `mailState`; `05` replays it |
+| N12 | Sent record per `00` §10a: `folder`, `fromAccount`, `targetId`, `subject`, `templates`, `slots`, `body`, `attachment`, `link`, `landed`, `tells`; the Sent folder view | Part of `mailState`; `05` replays it |
 | N13 | Narrow-screen layout and accessibility pass (below) | Needs the bundled Atkinson Hyperlegible (`00` §6) |
 | N14 | Mail notification (HUD badge or bark variant) and the rule that an open client appends without a bark | `00` S9 |
 
@@ -473,7 +480,7 @@ reads `metrics`, the sent records and the outcome globals.
 
 ## Open questions
 
-- Subject: a template with blanks, or ignored by the judge? Default: ignored (`00` §10).
+- Is the subject judged or a template with blanks? Default: neither; it is an unscored pick from the target's `subjects` list.
 - How much unscored free-text flavour is allowed in the lab? Default: none in the first slice.
 - Does the checklist appear on send, or only once the reply has arrived? Default: on send; assessment
   mode may wait.

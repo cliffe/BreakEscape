@@ -88,7 +88,7 @@ All companies and people are fictional. Defend items are scored by `05`'s `aware
 
 | ID | Role | Attack type taught | Attack beat | Defend beat | Red flags surfaced | Defend items (scored per 4.1) |
 |----|------|--------------------|-------------|-------------|--------------------|-------|
-| E1 | Finance / accounts payable | Invoice fraud and BEC (no payload, no link) | OSINT: supplier name, the finance manager, a real-looking quarter-end rush. Write an email "from" a known supplier asking to update bank details on an open invoice. Required (04): `senderTrust`, `pretextRelevant`; `urgencyCalibrated` is advisory; no attachment factor | Triage a payments inbox: five items: a genuine invoice, a genuine routine purchase order, a lookalike domain (`brightwel1foods`), a "CEO needs this wired today", and a genuine change-of-bank that is correctly verified by phone. The right move for the phish is to report and ring the supplier on the number on file (the debrief says so; a `Verify` verdict is request R1 in 6.4) | Changed bank details (`changed_bank_details`), urgency plus secrecy (`secrecy_or_bypass`), display name vs real address, lookalike domain (`lookalike_domain`), reply-to differs from From (`reply_to_differs`), pressure to skip the normal process | 5 items (2 phish, 3 genuine); one genuine item carries a "confirmed by phone" note |
+| E1 | Finance / accounts payable | Invoice fraud and BEC (no payload, no link) | OSINT: supplier name, the finance manager, a real-looking quarter-end rush. Write an email "from" a known supplier asking to update bank details on an open invoice. Required (04): `senderTrust`, `pretextRelevant`; `urgencyCalibrated` is advisory; no attachment factor | Triage a payments inbox: five items: a genuine invoice, a genuine routine purchase order, a lookalike domain (`brightwel1foods`), a "CEO needs this wired today", and a genuine change-of-bank that is correctly verified by phone. The right move for the phish is to report and ring the supplier on the number on file (the debrief says so; a `Verify` verdict is provided by `05`, 6.4) | Changed bank details (`changed_bank_details`), urgency plus secrecy (`secrecy_or_bypass`), display name vs real address, lookalike domain (`lookalike_domain`), reply-to differs from From (`reply_to_differs`), pressure to skip the normal process | 5 items (2 phish, 3 genuine); one genuine item carries a "confirmed by phone" note |
 | E2 | HR / recruitment | Malicious CV (link or "enable content" lure, concept-level) | OSINT: an open vacancy, the recruiter's name, a social post asking people to email CVs (the Chothia example). Write a candidate email with an attachment from the abstract kit | Triage a recruitment inbox: genuine CVs, one with a link to a "portfolio" on an odd domain, one asking to "enable editing to view", one from a recruiter agency with the right domain. Learn: open in a viewer, don't enable content, report to IT. One short concept panel on macros, flagged in the debrief text as "largely blocked now, but the lure still shows up" (to verify wording) | Unexpected link, "enable editing/content" prompt, sender-attachment mismatch, generic greeting, domain age/lookalike | 6 items (2 phish, 4 genuine); includes correct attachment handling |
 | E3 | Helpdesk / IT support | Vishing and social-engineered password reset; MFA fatigue as the second beat | `06` pretext call: the learner phones a fictional helpdesk as a "locked-out manager" and tries to get a reset. The NPC's influence bar (`00` §8) shows how each line moved it, and the learner sees which verification question the NPC skipped. Then a short MFA-fatigue beat: they spam push approvals in a mock authenticator and see the target eventually tap "approve" at 06:50 | Role swap (N15, built in this product's scope): the learner is the helpdesk agent. Calls come in via `person-chat`; they must run the verification script (callback to the number on file, manager approval, never read out a reset code). One call is genuine and awkward, to avoid "refuse everything" being the winning move. MFA beat: a stream of unrequested pushes, correct action is deny and report | Urgency and name-dropping, "I'm in a meeting, can't call back" (`vish_callback_pressure`), authority pressure (`borrowed_authority`), request to bypass verification, unrequested MFA prompt (`unrequested_mfa_push`), push at an odd hour | 4 calls (2 impostor, 2 genuine) plus 1 MFA push item, scored by the role swap's rules (N15) and shown as a percent. Refusing a genuine caller without offering the safe route loses points. Ships only when N15 and N11 exist |
 | E4 | Executive / PA | Whaling and deepfake voice | OSINT: an exec's public calendar, travel posts, PA name. Write a short "I'm about to board, need this paid" email to the PA | Defend: the exec's PA gets an email, then a voice note and a call that sounds like the exec (TTS voice with a clone-style "effect"). The correct move is the same as in E1: stop and verify through a known channel. A debrief panel explains voice cloning at concept level, nothing about how | Authority, secrecy ("don't tell finance"), travel excuse, new payment details, voice with no verifiable channel, request that breaks process | 5 items (3 phish, 2 genuine), 2 of them voice (needs N12) |
@@ -213,11 +213,40 @@ sequencing and strings. It lives at `social.awarenessEpisode` (`00` §11). Defen
 A check mission (the pre-check and post-check, 5.2) uses the same wrapper with `"stages": ["check"]`
 and a `defend.setId` naming a parallel form; it has no attack, flip or debrief beyond the result
 screen. Each check mission has one aim with `missionConclusion: true`, whose only task completes on
-`triage_pre_done` (post: `triage_post_done`) through the usual `eventMappings` mapping, and the aim
-declares `concludeRequires: { "globals": ["triage_pre_done"] }` (post: `triage_post_done`). The
-conclusion is what sets `mission_concluded_at`, which `CarryOver` reads; without it the pre-check game
-would never count as concluded. Gating on the done global also stops a pre-check that ends without a
-finished round from exporting the declared defaults as if they were a result.
+`triage_pre_done` (post: `triage_post_done`), and the aim declares `concludeRequires: { "globals":
+["triage_pre_done"] }` (post: `triage_post_done`). These done globals are specific to the check (the
+pre mission's `triage_pre_` prefix and the post mission's `triage_post_` prefix), so neither
+mission's own names collide with the other's imports. The conclusion is what sets
+`mission_concluded_at`, which `CarryOver` reads; without it the pre-check game would never count as
+concluded. Gating on the done global also stops a pre-check that ends without a finished round from
+exporting the declared defaults as if they were a result.
+
+Three pieces make that conclusion reachable:
+
+- **A host NPC.** `eventMappings` live on NPC records, and a global cannot complete a task by
+  itself (a kiosk object has no mappings). Every check shell and every episode shell
+  therefore includes one host NPC beside the kiosk (a receptionist or proctor in the one-room map).
+  She says one line of welcome, and her record carries the `global_variable_changed:<done global>`
+  mapping with `completeTask`, so the task completes when the global changes.
+- **A flushed gate.** `concludeRequires.globals` is read from the server's copy of the player's
+  state, which the client syncs every 30 seconds. The triage starter therefore writes its globals
+  (`percent`, `reportRate`, `done`, `pass`), then awaits `window.stateSync.sync()`, and only then
+  emits its done event. The mapping's task completion then finds the gate met and the exported
+  values current (`05` N6; `00` §11, "Missions that carry a score").
+- **Validator-clean globals.** Check sets author `passPercent: 0`, so a task keyed on `<prefix>done`
+  does not trip the `05` warning about `done` with a non-zero pass mark. The pre mission declares
+  `triage_pre_percent`, `triage_pre_reportRate`, `triage_pre_done` and `triage_pre_pass` in its own
+  `globalVariables` (the export and the `concludeRequires` check both need them declared). The post
+  mission declares only its own `triage_post_*` names and imports the three `triage_pre_*` names, so
+  the starter's auto-declaration covers the stage the kiosk launches and skips names the mission
+  imports (`05` N5).
+
+An **episode shell** has the same host NPC and one `missionConclusion` aim with one task, which
+completes on the episode's defend-set done global (the set's `setGlobalPrefix` is
+`episode_<id>_defend_`, so the global is `episode_<id>_defend_done`) through the host's mapping, with
+the same flush before the done event and the aim's `concludeRequires` on that global. Without it an
+episode shell would have no tasks, Hacktivity's task and aim share would be zero and no concluded run
+would exist. The episode set also authors `passPercent: 0`.
 
 Red-flag ids come from the shared library in `00_data_contract.md` section 2: the seven factor
 tells plus the **channel tells** (`lookalike_domain`, `changed_bank_details`, `vish_callback_pressure`,
@@ -257,8 +286,7 @@ core loop and not a later add-on (the default is to measure from the start and s
   mission, read-only, so the comparison needs no server work of our own. Consequences, stated rather
   than hidden:
   - Only scalar globals cross (a value is kept only when its JSON type matches the default). The
-    first slice compares `percent` and `reportRate`; a per-factor comparison needs `05` to write
-    scalar per-factor globals (request R6).
+    first slice compares `percent` and `reportRate`; a per-factor comparison is not planned.
   - The platform does not order missions. The organiser places the pre-check first and the post-check
     last in the event; if the pre-check was never concluded, `pre_check_completed` is false and the
     post screen says there is no baseline.
@@ -269,9 +297,9 @@ core loop and not a later add-on (the default is to measure from the start and s
   - A role-specific pair covers a learner's primary role. Episodes from other roles are extras with no
     check of their own.
 - **Recorded per item:** item id, form, learner verdict (Trust, Report, Delete), the chips ticked, the
-  item score, stage (pre, post, in-episode first answer), and time to answer in milliseconds (request R5:
-  `05` records verdict, flags and score only today; the time is never shown to the learner and `05`
-  has no timer, so it measures nothing the learner is judged on). The attack beat stores a template id
+  item score, stage (pre, post, in-episode first answer), and time to answer in milliseconds (`05` records `answers[].ms`;
+  the time is never shown to the learner and `05` has no timer, so it measures nothing the learner is
+  judged on). The attack beat stores a template id
   plus blank ids, held in session to feed the flip, then discarded. No free text exists in the scored
   path.
 - **What we can claim.** A before/after change on matched parallel items for a cohort. We **cannot**
@@ -329,14 +357,15 @@ change is `05`'s `scoringProfile: "awareness"` (N9). The minigame starter and co
 the same as `01` (`minigame-manager.js:229` registration, `minigame-starters.js` starters,
 `minigame_completed` via `base-minigame.js:84-108`, `set_global` at `apply-actions.js:33`).
 
-**Reply delay.** The attack target of each episode sets `emailReplyDelay` to 6 seconds, inside the 5 to 8
-second range `00` §10 gives awareness episodes, so the flip beat does not wait long for the reply.
+**Reply delay.** The attack target of each episode authors its own `emailReplyDelay` (`00` §10; the
+default is 20 seconds). The flip beat does not wait for the in-character reply: it replays the
+checklist and the stored `tells`, which are available at once.
 
 **Mission wrapper.** The platform loads missions only from `scenarios/<name>/scenario.json.erb` plus
 `mission.json` (`app/models/break_escape/mission.rb:46-50, 124-135`; `db/seeds.rb:50-60`), and a game
 needs a map and a player. A JSON-only episode has no way into it. Decision: **one shell mission per
-episode**, each a one-room kiosk map with `ui_theme: "general"` and a single `kiosk` object whose
-`minigameData` is `{ episodeId }` (`00` §11). Hacktivity then lists seven episode missions plus the
+episode**, each a one-room kiosk map with `ui_theme: "general"`, a host NPC (5.1) and a single `kiosk` object
+whose `minigameData` is `{ episodeId }` (`00` §11). Hacktivity then lists seven episode missions plus the
 check missions of 5.2 (a `collection` label to agree; the existing `training` may fit), and an
 organiser puts the chosen ones in an event. The episode data lives in each shell's
 `social.awarenessEpisode`.
@@ -357,7 +386,8 @@ organiser puts the chosen ones in an event. The episode data lives in each shell
 | N12 | **Voicemail player** (E4, E7): plays a fixed TTS clip per item and takes a `05` verdict | New; the cloned-voice clip is a style variant of an existing voice (N7). Overlay rules as N1 |
 | N13 | **Mock browser pane with a certificate padlock check** (E5) as a triage item kind | New. `02`'s browser is a navigation shell and `07`'s padlock is a canvas decoy; neither is a triage item. `07` N5 (defender inspection items) is proposed as a change request to `05` and is not accepted yet. Overlay rules as N1 |
 | N14 | **Printed QR poster and SMS thread** items (E6) | New item kinds for `05` |
-| N15 | **Role swap** (E3): the learner is the helpdesk agent and takes scripted calls. Each call in the episode's `defend.calls[]` is `{ id, genuine, claims: [{ fact, value }], tells: [...] }`, with the claims drawn from the same `06` `knows` and `lines` data the attacker call used, so the facts the learner exploited are the ones they now check. For each call the agent picks `comply`, `verify_callback` (ring the number on file), `escalate` or `refuse`. The right action for an impostor is `verify_callback` or `escalate`; a genuine awkward caller is also served by `verify_callback`, and refusing one without offering the safe route loses points. Scoring reuses `05`'s scorer through a `call` message kind (R2), with the call's `tells` as the flags (`vish_callback_pressure`, `borrowed_authority`, `secrecy_or_bypass`) | Specified here and built here, before E3 ships; the lab and `06` do not need it. New: the scripted-caller sequencer on the `person-chat` shell, the four-action choice, and the `call` kind in `05` |
+| N15 | **Role swap** (E3): the learner is the helpdesk agent and takes scripted calls. Each call in the episode's `defend.calls[]` is `{ id, genuine, claims: [{ fact, value }], tells: [...] }`, with the claims drawn from the same `06` `knows` and `lines` data the attacker call used, so the facts the learner exploited are the ones they now check. For each call the agent picks `comply`, `verify_callback` (ring the number on file), `escalate` or `refuse`. The right action for an impostor is `verify_callback` or `escalate`; a genuine awkward caller is also served by `verify_callback`, and refusing one without offering the safe route loses points. Scoring reuses `05`'s scorer through `05`'s `call` message kind, with the call's `tells` as the flags (`vish_callback_pressure`, `borrowed_authority`, `secrecy_or_bypass`) | Specified here and built here, before E3 ships; the lab and `06` do not need it. New: the scripted-caller sequencer on the `person-chat` shell, the four-action choice, and the `call` kind in `05` |
+| N16 | **Shell host NPC and flushed done event**: one visible NPC per check and episode shell whose `eventMappings` complete the conclusion task, and a triage starter that awaits `window.stateSync.sync()` before emitting its done event (5.1) | Small. The await is the `05` N6 change; the NPC is authored content. Validator: every shell has at least one aim and task, and a `concludeRequires` global that its set writes |
 
 ### 6.2 Privacy defaults and hosting
 
@@ -368,7 +398,8 @@ organiser puts the chosen ones in an event. The episode data lives in each shell
   completion share as the game's score and broadcasts `game_progress` with `user_handle`, `score` and
   `mission_scoreboard_url` to the user, team and event channels (lines 173 to 192). There is no
   pseudonymous id and no hook to suppress the scoreboard. In (b) the product can promise only task and
-  aim share, and `05`'s percent lives in `globalVariables` for whoever reads it. The "pseudonymous
+  aim share (each shell has the one conclusion aim and task of 5.1, so the share is 0 or 100), and
+  `05`'s percent lives in `globalVariables` for whoever reads it. The "pseudonymous
   learner id" and "no league table" goals in this doc hold in (a), or in (b) after Hacktivity changes.
   Until A7 is settled they are goals, not claims, and product copy must not make them.
 - No free text is retained: the scored path holds only choices, template ids, blank ids and timings.
@@ -396,20 +427,24 @@ assets for commercial use) is open question A5.
 
 ### 6.4 Requests of other docs
 
-Episodes rely on `00` §10a, §11 and §13 for `playerSent` (the latest sent record, with stored `tells`
-and the rendered body), the triage sizes (awareness pre/post 10, episode defend sets 5 to 8), the
-`kiosk` pointer `{ episodeId }` and the `awarenessEpisode` key. The requests below are the ones still
-open. Each is a request, so a later change in that doc is reconciled here.
+Episodes rely on `00` §10a, §11 and §13 for `playerSent` (the latest sent record that has tells, with
+the stored `tells` and the rendered body), the triage sizes (awareness pre/post 10, episode defend
+sets 5 to 8), the `kiosk` pointer `{ episodeId }` and the `awarenessEpisode` key.
+
+`05` already provides, in its "Extensions for the awareness episodes" and N1, N7, N9 to N11: the
+`Verify` verdict (E1 and E4), the non-email message kinds `voicemail`, `sms`, `qr`, `page`, `push` (Approve is Trust, Deny is Delete, Deny and report is Report; tell `unrequested_mfa_push`) and `call`
+(the `call` kind maps its four actions onto Trust, Report, Delete and Verify, with no scoring row of
+its own), the `stage` launch parameter, `answers[].ms`, and the comparison screen on the post-check
+(percent and report rate only, no per-factor comparison; it reads the imported `triage_pre_percent` and `triage_pre_reportRate` beside the post mission's own
+`triage_post_` values, and shows "no baseline" unless `pre_check_completed` and `triage_pre_done` are
+both true). The requests below are what `05` does not provide. Each is a request, so a later change in
+that doc is reconciled here.
 
 | # | Doc | Request |
 |---|-----|---------|
-| R1 | `05` | A fourth verdict, `Verify` ("I would check this by ringing a number I already hold"), with its own score row, for E1 and E4. Until it exists the debrief teaches the verifying step and Report is the scored right answer |
-| R2 | `05` | Message kinds beyond email (`voicemail`, `sms`, `qr`, `page`, `call`) for E3 to E7, using the channel-tell chips `05` already supports. The `call` kind carries the four actions of N15 (`comply`, `verify_callback`, `escalate`, `refuse`) with its own scoring row, since the three email verdicts do not fit it |
 | R3 | `05` | Later: let the stage (`pre` or `post`) of a parallel form be assigned at launch from the learner id. The first slice counterbalances by mission pair (5.2) and does not need it |
 | R4 | `05` | A larger bank per form with a seeded draw. Not needed for the first slice (fixed forms) |
-| R5 | `05` | Record time to answer in milliseconds per answer in `answers[]`; never shown or scored |
-| R6 | `05` | Write per-factor results as scalar globals (for example `<prefix>f_<factor>_caught` and `_missed`), so a per-factor pre/post comparison can cross missions through `CarryOver`. The first slice compares `percent` and `reportRate` |
-| R7 | `05` | A comparison screen on the post-check that reads the imported `triage_pre_percent` and `triage_pre_reportRate` beside the post mission's own `triage_post_` values, and shows "no baseline" unless `pre_check_completed` and `triage_pre_done` are both true |
+
 
 ## 7. Reuse across audiences
 

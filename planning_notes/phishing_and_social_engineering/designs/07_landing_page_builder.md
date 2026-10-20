@@ -40,13 +40,23 @@ are part of the design, not polish, and a reviewer should treat any breach as a 
     (`test/js/validator-landing-pages.test.mjs`, the same pattern as the existing `validator-*.test.mjs`
     files). **Nothing runs those tests automatically today**: `.github/workflows/ci.yml` has a `bin/rubocop`
     lint job and a `bin/rails test` job and no Node step, the `test:js` script in `package.json` runs a
-    single file, and no Rails test calls the validator. N6 therefore includes the CI step (`00` S11): set up
-    Node, `npm ci`, run `node --test test/js/validator-*.test.mjs`, then run the validator over the
-    scenarios with a `social` key only (the lab and any later SE scenario), with `--no-graph` and without
-    rewriting tracked files (see N6). Other scenarios are out of scope: several fail the validator today for
-    unrelated reasons. The lint is enforced once that CI step exists, and not before. The lint requires:
-    - every authored address ends in the reserved, non-registrable suffix `.example`: `domain`,
-      `browserDomain`, `realDomain`, the page's `linkText`, and `02`'s `sites[].url`;
+    single file, and no Rails test calls the validator. The validator also exits non-zero only for a
+    schema error; its lint findings are printed and the run still ends `exit 0`. N6 therefore includes
+    two pieces of engine work (`00` S11): a **social-lint mode**, `--strict-social`, which runs the
+    `social` lints and exits 1 when any of them reports an error, and a **CI job that has both runtimes**
+    (Ruby from `ruby/setup-ruby` at the repo's Ruby version with `bundler-cache`, so `json-schema` is
+    present, and Node from `actions/setup-node`), runs `npm ci`, `node --test test/js/validator-*.test.mjs`,
+    then the validator under `bundle exec` with `--strict-social --no-graph` over the scenarios with a
+    `social` key only, without rewriting tracked files (see N6). The tests must not skip silently:
+    when `CI` is set, a missing `ruby` or `json-schema` fails the test instead of skipping it, and the job
+    fails if the test run reports any skipped test. Other scenarios are out of scope: several fail the
+    validator today for unrelated reasons. The lint is enforced once that CI job exists, and not before.
+    The lint requires:
+    - **hostname only for the `.example` rule.** For every authored address (`domain`, `browserDomain`,
+      `realDomain`, the page's `linkText`, and `02`'s `sites[].url`) the lint takes the **host part**:
+      strip any scheme, then take everything before the first `/`, and for an email address everything
+      after the last `@`. The host must end `.example`. A path after the host (`/payroll`, `/Q3.pdf`) is
+      allowed and does not need to end `.example`; it gets the ASCII check and the denylist check below;
     - **ASCII, with one exception.** The validator renders the ERB and parses the JSON, and a parsed
       string cannot show whether its source was an escape or a raw character. So the lint checks both
       forms: a `browserDomain` and every `realDomain` must be plain ASCII; a `domain` may contain
@@ -54,32 +64,41 @@ are part of the design, not polish, and a reviewer should treat any breach as a 
       and exactly one non-ASCII character that is in the confusable map; and for any such `domain` the
       **raw `.json.erb` text must not contain the parsed non-ASCII string**, only its `\u` escape. A
       homograph written as a raw character therefore fails;
-    - **the brand check folds, then matches.** NFKC-normalise, map confusables (Cyrillic and Greek to
-      Latin, `1`/`l`/`I`, `0`/`o`, `rn` to `m`, `vv` to `w`), strip hyphens and dots, then look for a
-      denylisted real brand (PayPal, NatWest, Microsoft and the like). This runs on every authored address
-      listed above, including `linkText` and `02`'s site urls;
-    - **the allowlist is the primary control.** The `.example` suffix is stripped first, so it is not itself a label. After folding, each remaining
-      label of a `domain` must either
-      contain the brand's word (`accountingnow`), or be within edit distance 2 of it (`accountingnov`,
-      `accountingnovv`), or appear in that brand's authored `decoyWords` list (`payroll-online`,
-      `account-help`, `login`). This accepts every sample domain in section 5 and rejects a
-      free-standing real brand, because a real brand is neither the fictional brand word nor on the
-      authored decoy list. The denylist is the backstop. The denylist and confusable map live in the
-      validator, not in a scenario, so one scenario cannot quietly shorten them; `decoyWords` are
-      authored, are checked against the denylist like any label, and are reviewed by hand.
+    - **the allowlist runs first, on the raw labels.** Take the host of a menu `domain`, remove the
+      `.example` suffix, and split what is left on `.` into labels. Each label, as authored (lower-cased,
+      hyphens kept, nothing folded), must either contain the brand's word (`accountingnow`), or be within
+      edit distance 2 of it (`accountingnov`, `accountingnovv`), or equal one of that brand's authored
+      `decoyWords` (`payroll-online`, `account-help`, `login`). This accepts every sample domain in
+      section 5 and rejects a free-standing real brand, because a real brand is neither the fictional brand
+      word nor on the authored decoy list. The allowlist applies to menu `domain` values only, not to
+      `linkText` or `02`'s site urls;
+    - **then the denylist runs on folded text.** For every authored address (the host, and the path
+      too), NFKC-normalise, map confusables (Cyrillic and Greek to Latin, `1`/`l`/`I`, `0`/`o`, `rn` to
+      `m`, `vv` to `w`), then match a denylisted real brand (PayPal, Microsoft, the big UK banks and the like) against
+      each folded label and against the folded concatenation of all labels with hyphens and dots
+      removed. The concatenation catches a brand split across labels. `decoyWords` go through the same
+      fold and match. The denylist and confusable map live in the validator, not in a scenario, so one
+      scenario cannot quietly shorten them; `decoyWords` are authored and reviewed by hand;
+    - **no real-brand domain anywhere in authored data.** The `.example` rule has no exemption: a
+      real domain such as a bank's or a mail provider's fails it wherever it appears in `social`,
+      concept-card text included (the next bullet says what the card exemption is).
   - **What the offline lint does not do.** It does not run when a scenario loads. `validate_scenario.rb`
     is a command-line tool with no caller in `app/`, `lib/` or the browser, and the server sends the
     scenario's `social` block to the client unvalidated (`game.rb`, `filtered_scenario_for_bootstrap`
     strips only room contents, `flags` and `targetFlags`). It protects the repository from an author's
     mistake. It does not stop a hand-edited scenario served from elsewhere. It also misses a real brand
-    that is neither on the denylist nor in its confusable map, and it does not read concept-card prose,
-    which is exempt on purpose (below) and reviewed by hand.
+    that is neither on the denylist nor in its confusable map, and it does not judge concept-card prose
+    for brands, which is exempt on purpose (below) and reviewed by hand.
   - **Runtime guard (N6b, engine work).** `landing-page-model.js` refuses to score or draw any domain
-    that is not on the page's authored menu or does not end `.example`, and draws a "blocked" placeholder
-    instead. This is a suffix and membership check only. It cannot judge brands, which is why the offline
+    that is not on the page's authored menu or whose host does not end `.example`, and draws a "blocked"
+    placeholder instead. This is a suffix and membership check only, and N6b lists its unit test. It cannot judge brands, which is why the offline
     lint carries that part.
-  - Real services appear only in a plain-text concept card as a typographic example (`paypa1` against
-    `paypal`). The checks above read the domain and brand menu, not concept-card prose.
+  - Real service names appear only in the `text` of an entry in `social.conceptCards` (`00` §11), as a
+    typographic example (`paypa1` against `paypal`). That field alone is exempt from the **brand
+    denylist**; it is the only exemption, and the lint names the field exactly. Card text is still scanned
+    for host-shaped tokens (a label, a dot, a label), and each must end `.example`; a bare word such as
+    `paypa1`, or an ending that starts with a dot such as `.co.uk`, is not host-shaped. The domain checks
+    above read the brand menu and every other authored address, not card prose.
 - **No operational how-to.** The game says that look-alike domains, homographs and cheap
   certificates exist and shows what they look like. It does not say where or how to register,
   host, obtain a certificate for, or mail one.
@@ -161,8 +180,12 @@ and **Attach anyway** below the line (same control, relabelled, so a player can 
 the page record is marked `built: true`, the kit item `kit_payroll_page` resolves to it, and
 `landing_payroll_login_built` and `landing_payroll_login_domain` are set (section 5). The overlay closes.
 If the builder was opened from the mail client's Attach menu, the mail client reopens with its draft
-restored and the link attached (S12, section 6); if it was opened from a workstation, the player carries
-on to the mail client themselves. The mail client (`01`) fills `message.linkInfo` from `linkInfoFor`
+restored and the link attached (S12, section 6). The client decides whether to attach from the page
+record (`built: true`) or from the `linkInfoFor` result the builder returns as its `gameResult`, never from
+the `landing_<pageId>_built` global. The global stays true after a first attach even if the player later
+reopens the builder, presses Score (the record goes back to `built: false`) and closes without
+attaching. If the builder was opened from a workstation, the player carries on to the mail client
+themselves. The mail client (`01`) fills `message.linkInfo` from `linkInfoFor`
 (section 4) and the rules engine (`04`) judges `linkCredible`. A below-threshold page therefore fails
 `linkCredible` and the target's in-character reply says why. Nothing is blocked. Closing the overlay
 without attaching keeps the draft choices and is a normal exit (section 6), not a failure.
@@ -186,15 +209,21 @@ randomness, and takes `landed` as an input:
 | `meetsThreshold` true but the email did not land (it failed for another reason) | false | false | false |
 
 The mail client (`01`) calls `describeVictimOutcome(record, target, landed)` once per send that carries this
-page and stores the result in the page record's `victim` field (`00` §11a), overwriting the previous send's.
-This is the only trigger; `01` and this document describe the same one. A below-threshold page never
+page and stores the result in the page record's `victim` field (`00` §11a). **The record keeps the best
+outcome across sends.** Outcomes rank `submitted` (2) above `noticed` (1) above nothing (0, all three
+false). The model exports `betterVictim(existing, next)`, which returns `next` when its rank is at least
+the existing rank and `existing` otherwise, and the mail client stores that. A resend that does not
+land, or a later below-threshold send, therefore never erases an earlier success, and the metrics report
+(`Visits`, `Submissions`) reads the same stored record. The first send always writes an entry, even an
+all-false one, so Inspect (step 6) is reachable after any send. This is the only trigger; `01` and this
+document describe the same one. A below-threshold page never
 lands for a target whose required factors include `linkCredible`, which is why the `noticed` row is
 reached by an "Attach anyway" send and not only by a landed one.
 
 ### Step 6. Inspect your own page (the defender flip)
 The player reopens the saved page from the workstation as the **victim's browser** (the Inspect button
 appears once the page record has a `victim` entry, that is, once any email carrying the page's link has
-been sent, landed or not; the report's victim lines use `victim.visited` only) and is asked: "Find the giveaways."
+been sent, landed or not; the report's victim lines use the best-outcome `victim` record) and is asked: "Find the giveaways."
 The player selects parts of the page (address bar, padlock, logo, form, wording). Each part is a focusable
 element inside the preview (a `div` with `role="button"` and `tabindex="0"`, not a form control, inside a preview container that has
 `role="group"` and not `role="img"`, because `img` hides its children from assistive technology), so the
@@ -203,9 +232,10 @@ shows its defender string (section 4); wrong picks say what was fine. The link t
 target** button in the choice panel (not inside the preview, which holds no `<button>`), because hovering
 does not exist on touch. The step ends when every tell the page has is
 found, or the player taps **Show me**. A closing card
-lists the **five habits** that beat this attack:
+lists the **five habits** that beat this attack. The card is the entry `five-habits` in
+`social.conceptCards`, so its text is authored in one place and falls under the card rules in section 1:
 
-1. Read the address up to the first single `/`, then find the ending: `.com`, or a country ending like `.co.uk`. The real site is the single name immediately before that ending (`accountingnow.example`, or `natwest.co.uk` for a UK site). Everything to the left (`login.`, `secure.`, an extra word) is just labels the owner can set to anything.
+1. Read the address up to the first single `/`, then find the ending (`.example` in this game; a two-part country ending works the same way). The real site is the single name immediately before that ending, here `accountingnow.example`. Everything to the left (`login.`, `secure.`, an extra word) is just labels the owner can set to anything.
 2. Don't trust the padlock to mean "safe". It means "private to whoever owns this address".
 3. Hover over a link before clicking and compare it with where the message says it goes.
 4. Don't sign in from a mailed link. Open the service from a bookmark or type it yourself.
@@ -416,7 +446,7 @@ checks. The real defence is the fourth habit: don't sign in from the link."*
 ## 5. Scenario-authored data
 
 All content lives in scenario JSON under `social.landingPages` (`00` §11); the minigame holds none.
-Brands, domains, tiers, thresholds, tells and strings are authored. The offline lint (N6) applies the `.example`, ASCII/homograph, allowlist and fold-then-match rules
+Brands, domains, tiers, thresholds, tells and strings are authored. The offline lint (N6) applies the host-only `.example`, ASCII/homograph, raw-label allowlist and fold-and-match denylist rules
 described in section 1; the runtime guard (N6b) refuses anything off the authored menu. Neither runs "at
 load" in the sense of rejecting a scenario, and section 1 says what they miss. The example clones the
 company's own AccountingNow payroll portal (`00` §1), the brand Sofia's `lord_portal` intel points at.
@@ -474,16 +504,22 @@ An object carries only a pointer, `minigameData: { landingPageId }` (`00` §11).
                 "wording": 10, "form": 10, "padlock": 10 },     // defaults shown; overridable
     "strings": { /* every line in section 4's tables, overridable per scenario; the validator
                     requires each to be non-empty and to use only {firstName}, {shown}, {real}, {linkText} */ },
-    "conceptCards": ["typo-squat", "homograph", "padlock", "hover-link", "right-to-left"],
+    "conceptCards": ["typo-squat", "homograph", "padlock", "hover-link", "right-to-left", "five-habits"],   // ids into social.conceptCards (00 §11)
     "profile": "student"                    // student | awareness | mission; see section 7
   }
 ] }
 ```
 
 The builder never reads the target's secrets: it reads only `linkThreshold` and `minDomainTier`,
-keyed by the `04` target id (`lord` here). The persisted record's `targetId` is the sole key of the page's
-`targets` map (`00` §11a); `04`'s `lord` target owns the `linkCredible` factor and `expectedLink`
-(`{ brandId, realDomain }`, `00` §4, §7).
+keyed by the `04` target id (`lord` here). **The builder is only launched for a target in the page's
+`targets` map.** `meetsThreshold` reads `targets[record.targetId]`, so a `targetId` with no entry would
+leave the threshold and `minDomainTier` undefined. Both ways in enforce it: a workstation passes the
+map's key, and the mail composer offers "build/attach page" for a page only to targets that are keys of
+that page's `targets` map (`01`), so composing to Pierce or Hampshire never shows the link item for
+this page. The builder also refuses a `targetId` outside the map (it shows "This page isn't for this
+person" and closes), as a backstop. The persisted record's `targetId` is therefore always a key of the
+map (`00` §11a); the lab's page has exactly one key. `04`'s `lord` target owns the `linkCredible` factor
+and `expectedLink` (`{ brandId, realDomain }`, `00` §4, §7).
 
 **The domain menu and the other docs.** The student profile offers six domain ids: `d_unrelated`,
 `d_letter`, `d_word`, `d_sub`, `d_vv`, `d_homo` (`00` §13). The awareness and mission profiles offer a
@@ -564,8 +600,9 @@ names:
 - Validator and schema (N6): `social.landingPages` under the `social` key, and a `minigameData` entry
   (`landingPageId`) for the object type.
 
-Params: `{ landingPageId, targetId, returnTo?, onComplete }`; `targetId` is the sole key of the page's
-`targets` map when launched from a workstation. Two ways in: (a) from a workstation object
+Params: `{ landingPageId, targetId, returnTo?, onComplete }`; `targetId` is always a key of the page's
+`targets` map: a workstation passes it, and the composer launches the builder only for such targets (section 5).
+Two ways in: (a) from a workstation object
 ("Build a page"), (b) from the mail client's Attach menu when the `link` payload has no built page yet.
 Panel chrome leans on `text-file/` and `examine/` (`text-file-minigame.js`, `examine-minigame.js`).
 
@@ -630,16 +667,16 @@ lock (README engine table, "Objectives"). No flag is involved in building; if a 
 | # | Item | Notes |
 |---|------|-------|
 | N1 | `landing-page-builder` overlay (preview, choice panel, step strip, score panel), with the wiring checklist above | New `minigames/landing-page-builder/`; `minigames/index.js`; `systems/minigame-starters.js`; `systems/interactions.js`; `show.html.erb` |
-| N2 | `landing-page-model.js` pure scorer + tell table + `describeVictimOutcome` | Unit tests mirror section 4's worked example (34 and 87) |
+| N2 | `landing-page-model.js` pure scorer + tell table + `describeVictimOutcome` + `betterVictim` | Unit tests mirror section 4's worked example (34 and 87), and that `betterVictim` keeps a `submitted` entry over a later `noticed` or all-false one |
 | N3 | `landing-page-render.js` two-layer renderer (pixel layer, inert DOM text layer) and the DOM-safety test that fails on any form, link, button, frame, script or `contenteditable` in the preview. The test needs a DOM: add `jsdom` to `devDependencies` (today only Playwright is there, and the existing `.test.mjs` files stub `document` by hand, for example `sight-challenge-tutorial-prompt.test.mjs:38`) | New; test in `test/js/`; `package.json` |
 | N4 | Persist built pages as ids in the `se_landing_pages` global (section 5), with the 60 KB flush note | `state-sync.js` flush; `siem-dashboard-minigame.js` STATE_KEY pattern as the model |
 | N5 | Step 6 defender inspection (focusable hot-spots, decoy padlock, "Show the link target" in the choice panel, closing five-habits card); exports `buildSuspectPage` and the `tells` table for optional reuse by `05` | New in `landing-page-builder/` |
-| N6 | Offline lint, its test, and the **CI step that runs it**: `.example` suffix; ASCII with the homograph exception and the raw-text escape check; `decoyWords`/brand-word/edit-distance allowlist plus fold-then-match denylist (section 1); every string non-empty and using only the allowed placeholders (`{firstName}`, `{shown}`, `{real}`, `{linkText}`); the `.example` and brand-denylist checks also cover `linkText` and `02`'s `sites[].url`; the `.example` suffix stripped before the label check; every tier (0 included) has a defender string; no field key shaped like a captured-value slot; `decoyWords` pass the denylist. Without the CI step the lint is not enforced. The step is `setup-node`, `npm ci`, `node --test test/js/validator-*.test.mjs`, then the validator over only the scenarios whose `scenario.json.erb` has a `social` key, each run with `--no-graph`. The validator also recompiles ink and writes `dungeon_graph.*` and ink output into scenario folders, which dirties tracked files, so the step uses `--skip-ink` or a validator output-dir option that writes outside the tree, and ends with `git diff --exit-code`. The scenarios that fail today for unrelated reasons are out of scope | `scripts/validate_scenario.rb` (`known_top_level`, S11); `scripts/scenario-schema.json`; `scripts/minigame-data-schemas.json`; new `test/js/validator-landing-pages.test.mjs`; `.github/workflows/ci.yml` |
-| N6b | Runtime guard: the model and the renderer refuse a domain not on the authored menu or not ending `.example`, and draw a "blocked" placeholder | `landing-page-model.js`, `landing-page-render.js` |
-| N7 | Concept cards (typo-squat, homograph, padlock, hover-link, right-to-left) as shared content | Also used by `02`/`05` tool cards |
+| N6 | Offline lint, its test, the `--strict-social` mode and the **CI job that runs them**: the host-only `.example` rule (strip scheme and path; email addresses by the part after `@`); ASCII with the homograph exception and the raw-text escape check; the allowlist on raw labels first (`decoyWords`, brand word, edit distance), then the fold-and-match denylist per label and on the concatenation (section 1); every string non-empty and using only the allowed placeholders (`{firstName}`, `{shown}`, `{real}`, `{linkText}`); the `.example` and denylist checks also cover `linkText` and `02`'s `sites[].url`; the concept-card scope (the brand exemption applies to `social.conceptCards[].text` only; host-shaped tokens in card text must end `.example`); every `conceptCards` id on a page resolves; every `targets` key is a target whose required factors include `linkCredible`, and a page has at least one (exactly one in the lab); every tier (0 included) has a defender string; no field key shaped like a captured-value slot; `decoyWords` pass the denylist. **`--strict-social`** runs the `social` lints and exits 1 when any reports an error (the validator today exits non-zero only on a schema error, `scripts/validate_scenario.rb:5081`; other findings fall through to `exit 0`). **CI job**: one job with Ruby (`ruby/setup-ruby` at the repo's Ruby version, `bundler-cache`) and Node (`actions/setup-node`); `npm ci`; `node --test test/js/validator-*.test.mjs`; then `bundle exec ruby scripts/validate_scenario.rb <scenario> --strict-social --no-graph` over only the scenarios whose `scenario.json.erb` has a `social` key. The Node tests fail rather than skip when `CI` is set and `ruby` or `json-schema` is missing, and the job fails if the test run reports any skipped test. The validator also recompiles ink and writes `dungeon_graph.*` and ink output into scenario folders, which dirties tracked files, so the step uses `--skip-ink` or a validator output-dir option that writes outside the tree, and ends with `git diff --exit-code`. Without the job the lint is not enforced. Scenarios that fail today for unrelated reasons are out of scope | `scripts/validate_scenario.rb` (`known_top_level`, S11); `scripts/scenario-schema.json`; `scripts/minigame-data-schemas.json`; new `test/js/validator-landing-pages.test.mjs`; `.github/workflows/ci.yml` (existing `ci.yml` has Ruby 2.7.8 only in `lint` and `test`, and no Node) |
+| N6b | Runtime guard: the model and the renderer refuse a domain not on the authored menu or whose host does not end `.example`, and draw a "blocked" placeholder. Unit test: both the model and the renderer return the blocked placeholder for an off-menu domain, and for an on-menu-shaped but non-`.example` domain, and still render a valid menu domain | `landing-page-model.js`, `landing-page-render.js`; test in `test/js/` run by the N6 job |
+| N7 | Concept cards (typo-squat, homograph, padlock, hover-link, right-to-left, five-habits) as entries in `social.conceptCards` (`00` §11), shown by the shared card renderer that `02` N1 builds; this item adds the builder's cards and the validator check that every page `conceptCards` id resolves | Also used by `02`'s tool cards; validator in N6 |
 | N8 | Bundle Atkinson Hyperlegible (`00` §6) and apply `--se-font-readable` to every string the builder shows that holds an authored domain, address, handle or document field, wherever it appears: preview text, address bar, domain chips, the score checklist, feedback lines, tells-panel lines and concept cards; authored domains rendered raw, not via `displayDashes` | `public/break_escape/assets/fonts/`; `css/fonts.css`; `utils/display-dashes.js` bypass |
 | N9 | Nested launch and close: return-to for the mail-client round trip (`00` S12), close as a normal exit with its own Close control and Escape, `requiresKeyboardInput: true` | `minigames/framework/minigame-manager.js`, `base-minigame.js` (`disableClose`) |
-| N10 | `linkInfoFor(record, pageDef, kitId)` and `describeVictimOutcome` in the model, unit-tested against the worked example | `landing-page-model.js` |
+| N10 | `linkInfoFor(record, pageDef, kitId)`, `describeVictimOutcome` and `betterVictim` in the model, unit-tested against the worked example | `landing-page-model.js` |
 
 N6 and N6b together are the safety enforcement. The shared engine items they depend on are in `00` §12
 (S3 the shared global writer, S11 the validator and schema).
@@ -655,7 +692,7 @@ One data record, one `profile`:
 | Meter and per-factor lines | Shown after Score only | Live, with a tell counter | Live |
 | Step 6 inspection | Find tells unaided, then closing card | Tells auto-highlighted, tap to read | One-line summary in the handler's dialogue |
 | Gates | `minDomainTier` 2 to 3, escalating across targets | Off (threshold only) | One target, threshold 60 |
-| Concept cards | All five, optional "why" panels | Two (padlock, hover-link) | None; the handler explains |
+| Concept cards | All five teaching cards, optional "why" panels, plus the closing five-habits card | Two (padlock, hover-link) | None; the handler explains |
 | Outcome | Metrics line for the Ch. 9 report | "You fooled the system. Could you spot yours?" then flip to `05` | an `eventMappings` entry on `global_variable_changed:landing_*_built` unlocks the next lock |
 
 ## 8. Art and audio assets (PixelLab-first, none generated now)

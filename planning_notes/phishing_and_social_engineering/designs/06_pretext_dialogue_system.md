@@ -66,6 +66,8 @@ An **influence bar** sits under the portrait (in the header in `phone-chat`). It
 - **Reported.** Influence reaches the `reports` threshold, the refusal limit is reached, or a verification fails. The NPC says what they will do ("I'll ring you back on the number we hold for you"). The call ends, and the effects of the threshold whose id is `reports` run (`00` §8), whether the influence reached it or the judge forced the report with `report(character, reason)`: usually a report global is set and the conversation ends. Influence stays where it is, and the next attempt starts from there unless a lockout lifts and resets it.
 - **Walked away.** A "ring back later" choice ends the call with no result and no penalty. It is always offered once the NPC is wary, so there is always a graceful exit.
 
+**Which outcome a call records.** A call can grant an ask and then end another way (the player closes the window, or a later verification fails). The call's `outcome` is `reported` if it ended in a report (whatever was granted before), otherwise `got_it` if any ask was granted during this call, otherwise `walked_away`. Closing the chat counts as walking away unless a grant already made it `got_it`. Granted asks are never taken back, so what the call yielded does not depend on how it ended; `outcome` records only how the latest call ended.
+
 A retry with a different pretext comes after the lockout expiry the scenario configures, or a mission beat, or at once in awareness mode. A retry does not reset influence unless the character's lockout does (section 4.3). Awareness resets the character between attempts, as a scenario choice (section 7).
 
 ### Beat 5. Debrief
@@ -148,7 +150,7 @@ After a reported call, the next attempt can show a one-line nudge that names wha
 
 ### 4.6 Worked example: Priya at the AccountingNow helpdesk
 
-Fictional company. The people and facts in this example (Sam Okafor, the stale org chart, the award) are example-only and are not in the lab's `intelFacts`; the lab's own call is 4.8. Priya Nair, helpdesk. Her character is `priya`, with influence global `priya_influence`, declared at -20. Her markers are wary -40, refuses -50, reports -70 and lockout -90, the `00` §8 example values. Her directory holds the new starter **Sam Okafor** (Finance, manager Melanie Pierce, started Monday the 6th, second floor). Her policy is no password reset without two matched verification facts. She is pleased that the helpdesk won the team award, which the company page mentions.
+Fictional company. The people and facts in this example (Sam Okafor, the award, `helpdesk_email_format` and `reset_granted_okafor`) are example-only and are not in the lab's `intelFacts`. The stale org chart is different: it is the lab's own fact `old_org_chart` (`00` §1), reused here for the wrong manager. The lab's own call is 4.8. Priya Nair, helpdesk. Her character is `priya`, with influence global `priya_influence`, declared at -20. Her markers are wary -40, refuses -50, reports -70 and lockout -90, the `00` §8 example values. Her directory holds the new starter **Sam Okafor** (Finance, manager Melanie Pierce, started Monday the 6th, second floor). Her policy is no password reset without two matched verification facts. She is pleased that the helpdesk won the team award, which the company page mentions.
 
 The player's card has Sam Okafor (Finance) and "I'm locked out". The manager blank holds **Jed Baker**, taken from a stale org chart on the board. Jed is a Finance colleague in the canon (`00` §1), not the manager. The stale chart is wrong about who manages Sam.
 
@@ -159,7 +161,7 @@ The player's card has Sam Okafor (Finance) and "I'm locked out". The manager bla
 | 2 | "Welcome, Sam. Who's your line manager?" | "Jed Baker said to ring you." | manager ✗ (identity) -30; fact opens | -40 WARY | `-30  WARY  ✗ Manager. You said "Jed Baker". Her directory shows Melanie Pierce.` Priya: "Jed Baker? He's a Finance colleague, isn't he?" |
 | 3 | (same) | "Sorry, Melanie Pierce. A week in and I'm mixing up names." | repair: claim ✓ +10, candour +10 | -20 CALM | `+20  CALM  ✓ Corrected. Owning a slip early costs less than defending it.` |
 | 4 | "No worries. Found you." | "Congrats on the team award, saw it on the company page." | shared detail: claim +10, technique +10; the cap limits claim credit only | 0 CALM | `+20  CALM  ✓ Shared detail. A real detail she can confirm builds trust.` |
-| 5 | "What can I do?" | "Can you confirm my email address? I want to give it to a supplier." | ask `email_format`, pressure 0, floor -30 | 0 CALM | `ASK OK  floor -30, she is at 0. Low-stakes: she would tell any new starter this.` Priya: "sam.okafor@accountingnow.example, first dot last." Grants the fact `email_pattern` (`grants.intel`). |
+| 5 | "What can I do?" | "Can you confirm my email address? I want to give it to a supplier." | ask `email_format`, pressure 0, floor -30 | 0 CALM | `ASK OK  floor -30, she is at 0. Low-stakes: she would tell any new starter this.` Priya: "sam.okafor@accountingnow.example, first dot last." Grants the example-only fact `helpdesk_email_format` (`grants.intel`). |
 | 6 | "Anything else?" | "Could you reset my password? I still can't get in." | ask `pw_reset`, pressure -10, floor -20; needs two verification facts | -10 CALM | `ASK PENDING  floor -20, she is at -10. She wants to verify you first.` Priya: "Before I do: your start date and which floor?" |
 | 7 | (same) | "I started Monday the 6th, second floor." | start date ✓ +10, floor ✓ +10; cap +10 | 0 CALM | `+10  CALM  ✓ Verification passed: start date and floor.` Priya: "Done. Temporary code is on your screen. Change it at login." Grants `reset_granted_okafor`. |
 
@@ -232,12 +234,14 @@ Dev's character is `dev`, with influence global `dev_influence` (declared at -10
   },
   "asks": {
     "portal_name":  { "pressure": 0,   "floor": -30, "verification": [],
-                      "grants": { "intel": ["lord_portal_name","lord_trusts_portal_sender"] } },
+                      "grants": { "intel": ["lord_portal_name","lord_trusts_portal_sender"],
+                                  "setGlobal": { "pretext_call_done": true } } },
     "payslip_date": { "pressure": -10, "floor": -20, "verification": ["intern"],
-                      "grants": { "intel": ["lord_payslip_date"] } }
+                      "grants": { "intel": ["lord_payslip_date"],
+                                  "setGlobal": { "pretext_call_done": true } } }
   },
   "outcomes": {
-    "got_it":      { "setGlobal": { "pretext_call_done": true } },
+    "got_it":      { },
     "reported":    { "line": "I'll need to check this with my manager. Goodbye.",
                      "setGlobal": { "pretext_call_reported": true } },
     "walked_away": { }
@@ -245,7 +249,7 @@ Dev's character is `dev`, with influence global `dev_influence` (declared at -10
 }
 ```
 
-- The two asks are the lab's outputs: `portal_name` grants the portal's name and notice wording (`lord_portal_name`) and the portal sender (`lord_trusts_portal_sender`); `payslip_date` grants this month's date (`lord_payslip_date`). `grants.intel` sets `se_intel_<id>` through the shared writer, so the board and `04` see them at once. `pretext_call_done` is set when a call ends `got_it` (at least one ask granted) and stays set; a later call that ends `reported` or `walked_away` does not unset it. The lab can require it.
+- The two asks are the lab's outputs: `portal_name` grants the portal's name and notice wording (`lord_portal_name`) and the portal sender (`lord_trusts_portal_sender`); `payslip_date` grants this month's date (`lord_payslip_date`). `grants.intel` sets `se_intel_<id>` through the shared writer, so the board and `04` see them at once. Both asks also set `pretext_call_done` in their `grants`, so it is set by the first ask that grants, whatever the call's ending: a call that grants `portal_name` and is then reported at the `payslip_date` check still sets it, and a later call never unsets it. The `got_it` outcome carries no global of its own; `outcome` only records how the latest call ended (beat 4). The lab requires `pretext_call_done` (`10` stage 5), and `10` also reads the intel globals, since a student who holds `lord_portal_name` but not `lord_payslip_date` rings again.
 - The completion payload carries `lowestInfluence` (section 6), so `10` stage 6 can report how far Dev fell, and the engine writes `pretext_service_desk_call_lowest` (the latest call's lowest) for the report.
 - A failed call cannot block the critical path. A report ends the call and sets `dev_reported`; the lockout is two real minutes on the phone channel and then resets Dev to -30, his wary line plus the re-arm margin. Ruth's "burned for a couple of minutes" is that expiry, spoken in character, and no object is greyed. The hint ladder (4.5) starts on the next attempt.
 - Data is identical in shape to Priya's, so the validator checks it the same way (section 6, N10).
@@ -316,7 +320,7 @@ A call's data is one entry in `social.pretextNpcs` (`00` §11). It names its `ch
     },
     "asks": {
       "email_format": { "pressure": 0,   "floor": -30, "verification": [],
-                        "grants": { "intel": ["email_pattern"] } },
+                        "grants": { "intel": ["helpdesk_email_format"] } },   // example-only fact: the lab's email_pattern has one award path, the Hunter lookup (00 §1)
       "pw_reset":     { "pressure": -10, "floor": -20, "verification": ["startDate","floor"],
                         "grants": { "setGlobal": { "reset_granted_okafor": true } } }
     },
@@ -341,7 +345,7 @@ Notes for authors:
 - A claim's `from` names a blank the player filled, or a fixed value in the line. A claim whose fact is absent from `knows` is unverifiable by design.
 - A fact is correct if the claim's value equals `knows[fact].value`. The comparison uses value ids from the `provides` entries in `00` §1, so there is no text parsing. A blank's options are the `provides` entries of held facts with the blank's type.
 - `grade` sets the cost of a mismatch: `identity` is -30 and `lesser` is -20.
-- **Outputs are generic.** An ask's `grants` may set any number of globals (`setGlobal`) and any number of intel facts (`intel`, which sets `se_intel_<id>` in the shared writer). A call's `outcomes` entries may each `setGlobal`. This is how `10` gets the portal name, the payslip date and `pretext_call_done` (section 4.8), with no engine change per scenario.
+- **Outputs are generic.** An ask's `grants` may set any number of globals (`setGlobal`) and any number of intel facts (`intel`, which sets `se_intel_<id>` in the shared writer). A call's `outcomes` entries may each `setGlobal`. This is how `10` gets the portal name, the payslip date and `pretext_call_done` (section 4.8; the last is set in each ask's `grants`), with no engine change per scenario.
 - Template wording stays in the ink. The JSON names each line's blanks and the fact each one feeds. The validator checks that the two agree, for every channel story of the character that carries the call.
 - `susceptibility` keys are a small fixed vocabulary (urgency, authority_borrowed, reciprocity, shared_detail, candour, deflect). A new key is an engine and validator change.
 - Values are safe to tune per NPC. The validator warns if the tuning leaves no route to "got it".
@@ -382,7 +386,7 @@ Priya: Welcome, Sam. Who's your line manager?
 }
 ```
 
-Band values: 0 calm, 1 wary, 2 refusing, 3 reported, 4 locked out. `pretext_manager_name` and `pretext_manager_value` are declared ink VARs that the engine fills from the pretext card when the call starts, after the saved state is restored. The tells panel is drawn by the engine inside `pretext_say` and `pretext_ask`. Ink should branch on the band the function returns, as above, or on the influence number. The `*_wary` and `*_refusing` globals are band flags that the service recomputes after every influence change and clears at the threshold plus the re-arm margin (`00` §8); they are for the bar, the debrief and other systems, and ink should not lean on them for in-call logic.
+Band values: 0 calm, 1 wary, 2 refusing, 3 reported, 4 locked out. The band comes from the character's `thresholds[]` by id (`00` §8, "Band numbers"): the highest crossed threshold whose id is `wary` gives 1, `refuses` gives 2, `reports` gives 3 (also returned when the call is force-reported), `lockout` or a `lockout` effect gives 4, and any other id leaves the band alone. A character with only `wary` (the mail characters) therefore returns only 0 or 1. Band 4 reaches a conversation only if it is still open when a lockout starts; Dev's and Priya's lockouts come with or after `reports`, which ends the call, so for them 4 is never returned in a call. `pretext_manager_name` and `pretext_manager_value` are declared ink VARs that the engine fills from the pretext card when the call starts, after the saved state is restored. The tells panel is drawn by the engine inside `pretext_say` and `pretext_ask`. Ink should branch on the band the function returns, as above, or on the influence number. The `*_wary` and `*_refusing` globals are band flags that the service recomputes after every influence change and clears at the threshold plus the re-arm margin (`00` §8); they are for the bar, the debrief and other systems, and ink should not lean on them for in-call logic.
 
 ## 6. Engine wiring
 
@@ -434,7 +438,7 @@ Both functions take one argument, the id, and are **idempotent** under the rule 
 
 ### Starting the call and the completion event
 
-An NPC with call data (a `phone` object carrying a `callId`, a receptionist, a phone on the intel board) starts `pretext-prep` instead of straight dialogue. The existing NPC interaction path in `systems/interactions.js` (the branch that starts `person-chat`) is the pattern. **The starter checks the lockout first** (`00` §8, S10): if the character's `<character>_lockout_until` and `_lockout_channel` say this channel is closed, it shows the "will not talk to you" toast and does not open `pretext-prep`, so a locked-out student never fills in a pretext card only to be refused. The `callId` branch sits before the `npcIds` branch for a `phone` object. The call itself is played in `person-chat` or `phone-chat`, so those own the completion. `pretext-prep` (beats 1 and 2) completes with no payload (`aborted`-style) when it hands over to the chat, and a scenario never keys on that event: it keys on `pretext_<callId>_outcome`. `person-chat-pretext.js` intercepts the chat's close, renders the **debrief (beat 5) inside the same overlay**, then sets the payload as the chat minigame's `gameResult` and completes it, so `base-minigame.js` emits `minigame_completed` with:
+An NPC with call data (a `phone` object carrying a `callId`, a receptionist, a phone on the intel board) starts `pretext-prep` instead of straight dialogue. The existing NPC interaction path in `systems/interactions.js` (the branch that starts `person-chat`) is the pattern. **The starter checks the lockout first** (`00` §8, S10): if the character's `<character>_lockout_until` and `_lockout_channel` say this channel is closed, it shows the "will not talk to you" toast and does not open `pretext-prep`, so a locked-out student never fills in a pretext card only to be refused. The `callId` branch sits before the `npcIds` branch for a `phone` object. **Which record the call opens.** The `callId` names a `social.pretextNpcs` entry, whose `character` names the `social.characters` entry (`00` §8). A `phone` object (or phone item) opens that character's `channels.phone` record in `phone-chat`. An NPC sprite opens `channels.person` in `person-chat` and carries `callId` as a top-level NPC field (a schema addition, `00` §11); `pretext-prep` reads it. The lab needs only the phone case. The call itself is played in `person-chat` or `phone-chat`, so those own the completion. `pretext-prep` (beats 1 and 2) completes with no payload (`aborted`-style) when it hands over to the chat, and a scenario never keys on that event: it keys on `pretext_<callId>_outcome`. `person-chat-pretext.js` intercepts the chat's close, renders the **debrief (beat 5) inside the same overlay**, then sets the payload as the chat minigame's `gameResult` and completes it, so `base-minigame.js` emits `minigame_completed` with:
 
 ```jsonc
 { "callId": "helpdesk_call", "character": "priya", "npcId": "priya_helpdesk",
@@ -445,7 +449,7 @@ An NPC with call data (a `phone` object carrying a `callId`, a receptionist, a p
 
 The engine also writes two declared globals per call, `pretext_<callId>_outcome` (a string) and `pretext_<callId>_lowest` (an integer), so a scenario and the report builder can read the result without parsing the event. The call's `outcomes` entries set whatever scenario globals the author names (`pretext_call_done`).
 
-**Calling again.** A call can be reopened after any outcome, including `got_it`, while the call still has asks whose grants the player does not hold (the lab's Lord needs both `lord_portal_name` and `lord_payslip_date`, so a student who hangs up after one ask rings again). Each call starts a fresh `PretextSession` at the character's current influence. Asks whose facts are already held are not offered again. A reported call is subject to the lockout above; the other outcomes can be followed straight away. `pretext_<callId>_outcome` and `pretext_<callId>_lowest` are overwritten by the latest call, while the grants of every call accumulate, because `se_intel_*` facts and the `setGlobal` outputs are never taken back. `pretext_call_done` therefore stays true once any call has ended `got_it`, and reports and debriefs that need "did the student get the facts" read the intel globals and `pretext_call_done`, not the last outcome string. When every ask's grants are held the starter says so with a toast and opens nothing.
+**Calling again.** A call can be reopened after any outcome, including `got_it`, while the call still has asks whose grants the player does not hold (the lab's Lord needs both `lord_portal_name` and `lord_payslip_date`, so a student who hangs up after one ask rings again). Each call starts a fresh `PretextSession` at the character's current influence. Asks whose facts are already held are not offered again. A reported call is subject to the lockout above; the other outcomes can be followed straight away. `pretext_<callId>_outcome` and `pretext_<callId>_lowest` are overwritten by the latest call, while the grants of every call accumulate, because `se_intel_*` facts and the `setGlobal` outputs are never taken back. `pretext_call_done` therefore stays true once any ask has granted (it is set in the ask's `grants`), and reports and debriefs that need "did the student get the facts" read the intel globals and `pretext_call_done`, not the last outcome string. When every ask's grants are held the starter says so with a toast and opens nothing.
 
 ### How outcomes bridge to state
 
@@ -457,11 +461,11 @@ The engine also writes two declared globals per call, `pretext_<callId>_outcome`
 
 | Global or value | Consumer | Effect |
 |--------------------|----------|--------|
-| `se_intel_email_pattern` (granted by `grants.intel`) | Intel board (`03`); mail client (`01`) | The pattern appears on the board, and the composer can build addresses for other staff. |
+| `se_intel_lord_portal_name` (granted by the Dev call's `portal_name` ask, `grants.intel`) | Intel board (`03`); mail client (`01`) | The portal's name appears on the board and in the composer's `portal` blank. The same route serves any fact a call grants. |
 | `reset_granted_<id>` | Phish rules (`04`), target data | A `boostIfGlobal` on a target. With a reset on record, an "IT" sender or a "new login" pretext passes `senderTrust` or `pretextRelevant`, and the reply says why. |
 | `helpdesk_alerted` (a report global) | Phish rules (`04`), the stage | A `strictIfGlobal` on a target. The later phish must be sharper. A reported pretext warns the target. |
 | `<character>_influence` | Email reply (`00` §10); `04` | The email-channel story reads it as a synced global. `04` reads it as a global with `boostIfGlobal` or `strictIfGlobal` (`00` §7, §8), with no mirroring step. |
-| `se_intel_lord_portal_name` and the other `grants.intel` facts | Board, composer, `04`, `07` | Facts the call grants are ordinary facts; their `provides` entries open blanks. |
+| `pretext_call_done` | `10` stage 5, the call task | Set by the first ask that grants (in the ask's `grants`), however the call ends. |
 
 ### New engine work required
 

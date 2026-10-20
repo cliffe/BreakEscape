@@ -111,7 +111,7 @@ one link id per built page (`kit_payroll_page`), the `mode` board pointer, readi
 real-minute lockouts stored in globals, the triage set size per audience, and the six-domain menu with an
 auth row for each. Attachments and links are chosen with the Attach control, never as blanks.
 
-**J. Round-3 settlements (decided 2026-10-20).** Details are in `00` §13.
+**J. Contract settlements (decided 2026-10-20).** Details are in `00` §13.
 - The lab ships two mail accounts, `guest` (can spoof) and `freemail` (created, cannot spoof); `jed_pc`
   is a non-lab example. Reply delay is 15 s for all three lab targets.
 - Sender authentication carries a `dmarcPolicy` (`none`, `quarantine`, `reject`) on the claimed domain.
@@ -125,6 +125,19 @@ auth row for each. Attachments and links are chosen with the Attach control, nev
   (Dev and Priya: -30). Lockout lives in globals, and is checked before the pretext card opens.
 - The victim record is written on every send that carries a landing page; check missions conclude on
   their triage global so the carry-over finds a baseline; `call` is a supported non-email triage kind.
+
+**K. Further contract settlements (decided 2026-10-20).** Details are in `00` §13.
+- A replayed `playerSent` message is the latest sent record to the target that has tells. The victim
+  record keeps its best outcome, so a later non-landing send does not erase an earlier success.
+- A call records `reported` if it ended in a report, otherwise `got_it` if any ask was granted, otherwise
+  `walked_away`; `pretext_call_done` is set by any granting ask. A threshold-to-band rule gives ink its
+  band numbers.
+- `applyActions` keeps emitting `global_variable_changed` on every call; change-only emission is for
+  `grantFact` and the social paths.
+- Concept cards live in `social.conceptCards`; no authored data holds a real-brand domain. The defender
+  facts are exactly four. The page builder launches only for a target in the page's `targets` map.
+- CI gains a social-lint mode (`--strict-social`) and a job with both Ruby and Node. Check and episode
+  mission shells have a host NPC, flush state before the done event, and carry an aim.
 
 Defaults taken elsewhere, for context: fictional targets only, no real-staff OSINT; the
 lab is the first slice; the awareness product measures pre and post from the start and defers LMS and
@@ -183,8 +196,9 @@ Working defaults are taken for all of these; none blocks the design.
 - Does the pre-test show feedback before the post-test? Default: yes, at the end of the round.
 
 **Landing-page builder (`07`)**
-- Real brand names in concept-card text only (the classic `paypa1` against `paypal`), never in a built
-  page? Default: yes. Alternative: fictional examples everywhere.
+- Real brand names in concept-card prose only (`social.conceptCards[].text`; the classic `paypa1` against
+  `paypal`), never as a domain and never in a built page? Default: yes. Alternative: fictional examples
+  everywhere.
 - Domain chosen from an authored menu, never typed? Default: menu, which keeps scoring deterministic
   and avoids a look-alike generator.
 - Homograph shown in the student lab only, as one authored example? Default: yes.
@@ -221,24 +235,24 @@ numbers are the owning doc's N-items. Nothing here is built yet.
 | Area | Work | Owner | Code location |
 |------|------|-------|---------------|
 | Ink externals | Bind the social externals once in `InkEngine` with no-op defaults, so the phone preload, bark path, dry runs and mail runner can load stories that declare them; add tooling stubs | `00` S1 | `systems/ink/ink-engine.js`; `person-chat-conversation.js`, `phone-chat-conversation.js`; `npc-manager.js` bark path; `scripts/ink_runtime_check/` |
-| Global sync | One shared global writer (write, broadcast, emit) used by `applyActions`; engine-set variables written after restore and sync in every loader; `email_` set excluded from saved ink variables | `00` S3, S7 | `systems/apply-actions.js`; `systems/npc-conversation-state.js`; `person-chat-minigame.js`, `phone-chat-minigame.js` |
+| Global sync | One shared global writer (write, broadcast, emit) used by `applyActions` (which keeps emitting on every call) and by the change-only social paths; engine-set variables written after restore and sync in every loader; `email_` set excluded from saved ink variables | `00` S3, S7 | `systems/apply-actions.js`; `systems/npc-conversation-state.js`; `person-chat-minigame.js`, `phone-chat-minigame.js` |
 | Influence | Watcher on the influence global, write path with reasons, threshold effects and latch, `npc_influence_changed` event, listener for `npc-influence-change`, influence tags in phone-chat and the mail runner (social characters only) | `00` S5, `06` N9 | new `systems/social-influence.js`; `chat-helpers.js`; `phone-chat-conversation.js` |
 | Influence UI | A DOM influence bar with threshold icons, tells panel, render-only phone bubbles, portrait tint hook | `00` S4, `06` N4 | `person-chat-ui.js`, `phone-chat-ui.js`, `person-chat-portraits.js` (not `npc-health-bar.js`) |
 | Lockout | Stored in the declared globals `<character>_lockout_until` and `_lockout_channel` (no separate record, no server section); "will not talk" refusal checked in person-chat, phone-chat, mail and before `pretext-prep`; the lift writes `recoverTo` silently and clears the band flags; opt-in combat hostile left as is | `00` S10 | `systems/interactions.js` NPC sprite branch and `phone` `callId` branch; `systems/social-influence.js`; phone-chat and mail entry points |
 | Records without a room | Headless email records registered at start, and the ink endpoint finds them; display-name ties prefer the conversation's own NPC | `00` S2, S8 | `systems/npc-lazy-loader.js`; `core/game.js`; `app/controllers/break_escape/games_controller.rb` ink lookup; `systems/npc-manager.js` |
 | Mail | Mail client minigame with accounts, account creation, switcher, Sent folder and drafts; mail scheduler (ink and text jobs) and runner; notification and message-list renderer; `mailState` persisted (client export and flush, server sanitiser and caps, bootstrap, restore) | `01` N1 to N14, `00` S6, S9 | `minigames/` (new); `state-sync.js` `KEYED_SECTIONS`, `confirm()`, `flush()`; `games_controller.rb` `merge_last_write_wins_sections`; `app/models/break_escape/game.rb`; `core/game.js` |
-| Templates | Template and slot composer, blank picker from held facts, send gate; slot judge with `linkInfo` | `01` N10, `04` N1 to N10, `06` N6 | new; `systems/phish-rules.js` |
+| Templates | Template and slot composer, blank picker from held facts, send gate; slot judge with `linkInfo` | `01` N10, `04` N1 to N11, `06` N6 | new; `systems/phish-rules.js` |
 | Intel | Typed intel facts; `se_intel_*` declared; `grantFact` and `evaluateReadiness` set `target_ready_<id>` and `osint_done` at grant time; facts added as notes | `00` §1, §4, §5, `02` N2, `03` N3 | `systems/social-intel.js` (new); `systems/apply-actions.js`; `window.addNote` in `notes-minigame.js` |
 | OSINT, board | OSINT browser (picked lookups, selectable metadata, namesake and archive elements); intel board with modes (scope, plan, recon, defender) | `02` N1 to N9, `03` N1 to N6 | `minigames/` (new) |
 | Pretext | Judge, `PretextSession`, `pretext-prep`, debrief in the chat overlay, completion payload and per-call globals | `06` N1 to N12 | `minigames/pretext-prep/` (new); `systems/pretext-judge.js` (new) |
-| Triage | Inbox-triage minigame and scorer; read-only `mail-reader` shared with the mail client; `playerSent` message kind reading `tells`; non-email kinds including `call` | `05` N1 to N9, `01` N5 | `minigames/` (new) |
+| Triage | Inbox-triage minigame and scorer; read-only `mail-reader` shared with the mail client; `playerSent` message kind reading `tells`; non-email kinds including `call` | `05` N1 to N11, `01` N5 | `minigames/` (new) |
 | Landing page | Builder, scorer, DOM/pixel layered renderer (text in the sans-serif), persisted pages, `linkInfoFor`, validator lint (allowlist plus denylist, ASCII on raw text) and a runtime guard | `07` N1 to N10 (with N6b) | `minigames/` (new); `scripts/validate_scenario.rb` |
 | Lab | Engagement report builder, metrics read from `mailState`, board mode data, validator work, ink externals | `10` N1 to N8 | `minigames/engagement-report/` (new); see `10` |
 | Awareness | Episode runner, flip view, defend sets, measurement store, facilitated flag, non-email surfaces, role swap | `11` N1 to N15 | `minigames/` (new); see `11` |
 | Minigame framework | Wiring checklist per minigame; return-to for nested overlays (`00` S12; `startMinigame` ends the running one); `requiresKeyboardInput` and an own Close control on every overlay | README Conventions | `minigames/framework/minigame-manager.js`, `base-minigame.js`; `minigames/index.js`; `minigame-starters.js`; `systems/interactions.js` |
 | Objectives | A global cannot complete a task or open a lock; use `eventMappings` on `global_variable_changed:<name>` with `completeTask`, or `#complete_task`. Numeric conditions (`>= 60`) are not supported: write a boolean | all | `systems/objectives-manager.js`; `systems/npc-manager.js` event mappings |
 | Fonts and CSS | Atkinson Hyperlegible (Regular and Bold, OFL 1.1), self-hosted, declared in `css/fonts.css` as `--se-font-readable`, used for every string the player reads or compares; authored domains rendered raw, not through `displayDashes` | `07`, `02` | `public/break_escape/assets/fonts/`; `css/fonts.css` |
-| Validator and schema | Top-level `social`; `social.characters` lints; `se_intel_*` declared; template and slot checks; `on_email` and `email_*` checks; `minigameData` schema entries; `npcType` unchanged; lockout lint; the landing-page lint and `test/js` unit tests run in CI (a step in `.github/workflows/ci.yml`; the validator loop covers only scenarios with a `social` key, with `--no-graph`, and must not rewrite tracked files) | `00` S11 and each doc | `scripts/validate_scenario.rb` (`known_top_level`), `scripts/scenario-schema.json`, `scripts/minigame-data-schemas.json` |
+| Validator and schema | Top-level `social`; `social.characters` lints; `se_intel_*` declared; template and slot checks; `on_email` and `email_*` checks; `minigameData` schema entries; `npcType` unchanged; lockout lint; the landing-page lint and `test/js` unit tests run in CI (a step in `.github/workflows/ci.yml`; a job with Ruby and Node, a social-lint mode (`--strict-social`) that exits non-zero, Node tests that fail rather than skip, and a validator loop over only scenarios with a `social` key with `--no-graph` that must not rewrite tracked files) | `00` S11 and each doc | `scripts/validate_scenario.rb` (`known_top_level`), `scripts/scenario-schema.json`, `scripts/minigame-data-schemas.json` |
 | Platform (not BreakEscape) | Per-student report or richer score recording, if the assessment needs more than task and aim share | open | Hacktivity `app/jobs/game_scoring_job.rb` |
 
 ## Design pillars
@@ -307,7 +321,7 @@ numbers are the owning doc's N-items. Nothing here is built yet.
   way existing minigames do. Every new minigame needs the same wiring checklist: export, import and
   `registerScene` in `minigames/index.js`; a starter in `minigame-starters.js` exposed on `window`; a
   branch in `systems/interactions.js` for the object type; a stylesheet linked in
-  `app/views/break_escape/games/show.html.erb`; `requiresKeyboardInput: true` for any overlay with keyboard-operable controls (it pauses the world's movement and interaction keys); and
+  `app/views/break_escape/games/show.html.erb`; a sprite `assets/objects/<type>.png` (the validator rejects an object type with none) and a `minigame-data-schemas.json` entry for the type's `minigameData`; `requiresKeyboardInput: true` for any overlay with keyboard-operable controls (it pauses the world's movement and interaction keys); and
   `aborted: true` set by the minigame itself on Esc (the framework does not). Only one minigame is
   open at a time, so a minigame that launches another uses the return-to helper (`00` S12): it saves its draft (mail: `mailState.drafts`) and passes `returnTo`, or reads the data inline instead of opening the other overlay.
 - Scenario-authored content (victims, OSINT facts, rules, feedback strings) lives in scenario JSON, not

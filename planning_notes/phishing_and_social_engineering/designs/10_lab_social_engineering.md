@@ -162,8 +162,9 @@ call in stage 5. Two further facts are stale on purpose.
   Lord's row gives `lord_intern`. A team note ("Jed: I'll send Mel the Q3 balance sheet on Friday")
   gives `pierce_expects_balance_sheet`. The careers pages give `hampshire_careers`, `tech_stack` and
   `careers_attachment` (".odt and .docx only"). An archived org chart on the company site's archive
-  page is out of date: it lists a person who left in spring as the finance lead. Selecting it gives
-  the stale fact `old_org_chart` (shown under "Old or unverified" on the board's company panel), which offers a wrong manager and a wrong team later.
+  page is out of date (it dates from 2019): it shows Jed Baker as the manager and seats interns
+  under Accounts. Selecting it gives the stale fact `old_org_chart` (shown under "Old or unverified"
+  on the board's company panel), which offers a wrong manager and a wrong team later.
 - **Tools panel.** The student picks lookups from a short list; nothing is typed. The Hunter lookup
   on `accountingnow.example` returns the pattern (`first-initial.surname@`) and grants
   `email_pattern`. A name search for "J. Baker" returns two entries, Jed Baker of AccountingNow and a
@@ -214,8 +215,9 @@ The lab declares exactly these two accounts. It defines no `found` account: `jed
 mailbox are Eldritch Hacker data (`00` §10a), so the lab's `playerSentAuth` has a row for `guest`, a row
 for `freemail` and one for each of the six menu domains, and no others. `freemail` is declared with
 `spoofsFrom: false` in the lab, so its From is always its own name and address; only `guest` can claim to
-be Jed or the portal, which is why rounds 2 and 3 are sent from `guest` and why the replay of "the
-student's own phish" in stage 7 always has a `guest` record to draw from.
+be Jed or the portal, which is why rounds 2 and 3 are sent from `guest`. A `freemail` send to Pierce or Lord raises no
+tell, so it is never replayed: stage 7 replays the latest record to the target that has tells, which
+is the student's `guest` send even if a later `freemail` retry exists (05 "Source").
 
 | Round | Target | Account | Required factors (04) | What the round teaches |
 |-------|--------|---------|-----------------------|------------------------|
@@ -257,7 +259,9 @@ attached ("attach anyway"), and `linkCredible` then fails at send time with the 
 
 On attach the builder saves the page record in `se_landing_pages.payroll_login` (`00` §11a) and sets
 `landing_payroll_login_built` and `landing_payroll_login_domain` (the chosen domain id). The link
-the mail client offers is the payload-kit item `kit_payroll_page`.
+the mail client offers is the payload-kit item `kit_payroll_page`, and only for targets in the page's
+`targets` map: the lab's page lists `lord` alone, so the composer offers "build/attach page" for Sofia
+and never for Hampshire or Pierce.
 
 The page does not depend on the call, and the call does not change the page's score: 07 reads no
 globals. Ruth suggests calling Dev first because what he says sharpens the wording the student will
@@ -293,8 +297,11 @@ the debrief screen after it.
   `payslip_date` (pressure -10, floor -20, verification: the intern's name) grants
   `lord_payslip_date`. Grants set `se_intel_*` through the shared writer, so the board and 04 see
   them at once.
-- **Outputs.** `pretext_call_done` is set when any call ends with at least one ask granted;
-  `pretext_call_reported` is set when a call ends in a report. The desk phone can start a new call after
+- **Outputs.** `pretext_call_done` is set by the first granted ask, because both asks carry
+  `setGlobal: { pretext_call_done: true }` in their `grants` (06 §4.8). It is therefore true however
+  the call ends (granted then closed, granted then reported, granted then walked away), and it stays
+  set. The outcome global only records how the latest call ended. `pretext_call_reported` is set when
+  a call ends in a report. The desk phone can start a new call after
   any outcome while asks remain: each call begins at Dev's current influence, asks whose facts the
   student already holds are not offered again, per-ask grants accumulate, and
   `pretext_service_desk_call_outcome` and `_lowest` are overwritten by the latest call (06). The engine
@@ -317,10 +324,11 @@ the debrief screen after it.
   channel-scoped, so the email route to Sofia stays open. A call-back policy would have stopped this;
   the stage 6 finding and the stage 7 mitigation pick that up.
 
-Because `pretext_call_done` needs one ask and Sofia's phish needs all three facts, the `prepare_hard`
-aim can complete with the date still unknown. With the payslip date unknown the `when` blank is empty, so
-Send is blocked with the neutral pre-send line and nothing is judged; the checklist does not name the
-gap. Ruth's hint rungs point back at Dev. This is by design: the phone reopens for a second call
+Because `pretext_call_done` needs one granted ask and Sofia's phish needs all three facts, the
+`prepare_hard` aim can complete with the date still unknown. Lord's `when` blank offers only the
+payslip date from `lord_payslip_date` (her `when` blank is filtered to the release date, so the
+generic `friday` Pierce uses is never offered, 04), so with the date unknown the blank is empty and Send is blocked with the neutral pre-send line; nothing is judged
+and the checklist does not name the gap. Ruth's hint rungs point back at Dev. This is by design: the phone reopens for a second call
 (asks whose facts are held are not offered again), so a student who got only the portal name on the
 first call makes a second call for the date.
 
@@ -349,7 +357,9 @@ keep:
   outcome; the lab records no "opened" or "clicked" for mail.
 - **Page.** From the persisted page record `se_landing_pages.payroll_login.victim` (`00` §11a, 07
   step 5), written for every send with a page attached, landed or not (a below-threshold page reads visited and
-  noticed): visited, submitted, noticed, shown as "Visits 1 · Submissions 1 (simulated)".
+  noticed): visited, submitted, noticed, shown as "Visits 1 · Submissions 1 (simulated)". The record
+  keeps its best outcome, so a later send that does not land never erases an earlier success; the
+  report reads the same best outcome.
 - **Call.** From the pretext globals: whether any ask was granted (`pretext_call_done`), whether Dev
   reported at any point (`dev_reported`), and the latest call's outcome and lowest influence
   (`pretext_service_desk_call_outcome`, `_lowest`, which the latest call overwrites).
@@ -386,14 +396,15 @@ Tomasz takes the report and sets a debrief exercise. The same strings serve both
    tell the student themselves exploited. Reading headers is part of this step, not a separate quiz:
    each message's authentication results carry a `headerNote`. Five messages are phish and three are
    genuine:
-   - **Student's Pierce phish** (`playerSent`, the latest sent record to `pierce`, landed or not): the
-     display name is Jed's, the real account is not (`tells`: `senderTrust`, `senderAuth`
-     would-fail). SPF fail, DKIM none, DMARC fail; the `Return-Path` and the first external hop do not
+   - **Student's Pierce phish** (`playerSent`, the latest sent record to `pierce` that has tells,
+     landed or not): the display name is Jed's, the real account is not (`tells`: `senderTrust`,
+     `senderAuth` would-fail). SPF fail, DKIM none, DMARC fail; the `Return-Path` and the first external hop do not
      match the name.
    - **Student's Lord phish** (`playerSent`, `domainFrom: "landing_domain"`, so the link shows the
      domain the student picked in stage 4): `tells`: `senderTrust`, `senderAuth`, `linkCredible` and the
      advisory urgency read are stored, and the replay lists the flags without `senderAuth` (the
-     header panel shows the failed checks instead). Its auth result comes from 05's `playerSentAuth` table, which has a row for each of
+     header panel shows a pass for the look-alike domain, so `senderAuth` is not a flag there). The
+     record is the latest to `lord` that has tells. Its auth result comes from 05's `playerSentAuth` table, which has a row for each of
      the six menu domains and for the lab's two accounts (`guest`, `freemail`).
    - **Look-alike payroll notice** (authored, fixed look-alike domain): all three checks pass, **for
      the look-alike domain**. Authentication proves the sending domain is *consistent*, not
@@ -417,9 +428,9 @@ Tomasz takes the report and sets a debrief exercise. The same strings serve both
    the student's own Pierce phish ("a policy of `none` monitors but does not stop this").
 2. **Threat-intel profile (Ch. 12).** The SOC board switches to `defender` mode: the facts the student
    collected, titled "what an attacker can assemble about us". The mode lists only facts that carry a `reduceNote`. For each of the four (the
-   email pattern, the document metadata, the Lord social post, the careers inbox) the student picks
+   email pattern, the document metadata, Lord's social post, the careers inbox) the student picks
    one mitigation from an authored list (remove the staff email list, strip PDF metadata on publish,
-   a social-media policy, a call-back procedure), each with a reason. Each of the four facts carries a
+   a social-media policy, filter and scan the careers inbox), each with a reason. Each of the four facts carries a
    `reduceNote` in `00` §1, which 03's validator requires of any fact used in `factMitigations`. The chosen mitigations make up
    the profile. There is no indicator tagging in this slice (the mode's indicators step is off unless
    authored).
@@ -482,17 +493,23 @@ rewrite. What each one edits:
 1. Drop the stage 7 profile and end on the triage (3). Remove the `profile_done` task (21 tasks) and its
    mention in the `defend` aim; the SOC `case-file` object and `engagement.defender` go; Tomasz's debrief
    gate and the `closing_debrief` unlock move from `profile_done` to `triage_pass`; the four-mitigation
-   row of the time budget goes.
+   row of the time budget goes. Learning outcome 9 is then taught in the debrief only: the assessment
+   table drops that row and the outcome has no evidencing task.
 2. Drop Hampshire's round and start the phishing at Pierce (4), moving the open-inbox lesson to a
    triage message (the CV message stays). Remove the `ready_hampshire` and `hampshire_landed` tasks (20
    tasks, or 19 with cut 1), the `hampshire` entry from `intelBoard.people` (so `osint_done` and Ruth's
-   Operations-key condition then wait on Pierce and Lord only), the `freemail` account and its
-   `createMenu`, the three Hampshire-only facts, and the careers mitigation from the defender list
-   (three remain).
+   Operations-key condition then wait on Pierce and Lord only) and from `phishTargets`, the `freemail`
+   account with its `createMenu` and from `mail_terminal.accountIds` (leaving `["guest"]`), the
+   `phish_hampshire_landed`, `phish_hampshire_attempts`, `target_ready_hampshire`, `acct_freemail` and
+   `acct_freemail_choice` globals, the `freemail` row of `playerSentAuth`, the three Hampshire-only
+   facts (`hampshire_careers`, `hampshire_cv_backlog`, `careers_attachment`), and the careers
+   mitigation from the defender list (three remain).
 3. Reduce the triage to six messages, four authored and the two `playerSent` (3): drop the parcel
    notice and the staff newsletter. This needs a six-message variant of the set (the contract size for
-   the lab is eight, `00` §13), so author it with the set.
-4. Reduce the report to two findings (2): drop finding 3, the look-alike portal page. No task changes.
+   the lab is eight, `00` §13), so author it with the set; the stage 7 time-budget row drops by 3 and the pass mark stays 60.
+4. Reduce the report to two findings (2): drop finding 3, the look-alike portal page, from
+   `engagement.report.findings` and its cause and control lists, and update the stage 6 text and the
+   time-budget row. No task changes.
 
 Already left out for time, and where each would return in an extension: the stand-alone
 header-interpretation quiz, the DMARC rollout simulation and indicator tagging in the profile.
@@ -746,7 +763,7 @@ stylesheet linked in `show.html.erb` (README Conventions).
 | Triage set (8 messages with auth results, 2 of them `playerSent`) | 05 | 6 authored messages, 2 `playerSent`, `playerSentAuth` rows for six domains and two accounts |
 | RoE sheet text, scope and question cards, plan picks, report findings, defender mitigations | this doc | text + 3 findings + 4 mitigation blocks |
 | Ink | this doc, 06, 00 §10 | 7 files (below) |
-| Concept cards | 02 | the browser's four tool cards (`tool_hunter`, `tool_harvester`, `tool_recon`, `tool_exiftool`); the SPF/DKIM/DMARC explainers are 05's glossary |
+| Concept cards | 02 | `social.conceptCards` (`00` §11): the browser's four tool cards (`tool_hunter`, `tool_harvester`, `tool_recon`, `tool_exiftool`); the SPF/DKIM/DMARC explainers are 05's glossary |
 
 **Ink files** (the mail stories need `on_email` knots and the `email_*` and `<character>_influence`
 VARs, `00` §10; each declares its `se_intel_*` and synced VARs, `00` §5, §9):

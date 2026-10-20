@@ -118,7 +118,7 @@ that person's and the domains are equal. The lab ships no such account (only `gu
 it is an Eldritch Hacker case. `freemail` does not spoof, so a Pierce or Lord send from it has its
 own name as the From and fails `senderTrust`.
 
-`05` decides which of these a replay shows. For a `playerSent` entry with `domainFrom` the panel shows
+`05` decides which of these a replay shows: it replays the latest sent record to a target that has tells, and never one with none (a `freemail` send cannot spoof, so it raises none). For a `playerSent` entry with `domainFrom` the panel shows
 the look-alike domain's passing result, so `senderAuth` is not offered as a flag there.
 
 ## Layered, legible feedback
@@ -163,7 +163,7 @@ blank that has options but none chosen gets the ordinary "Choose an option for t
 blank". Nothing is judged: no sent record, no attempt counted, no checklist. The player finds the
 gap through the hint ladder, the intel board and the pretext call, not through this line. Lord's
 portal and date blanks are empty until the call, so before it her composer shows this line.
-`requiresIntelToAttempt` remains for facts that sit behind no blank.
+`requiresIntelToAttempt` is for a hard gate on a fact that feeds no blank; no lab target uses it, because every fact a lab target needs sits behind a blank and the empty-blank gate already covers it.
 
 A character locked out on the mail channel (`00` §8, S10) is not judged: `01` refuses the send before
 `evaluateMessage` runs, so a lockout never produces a half-result.
@@ -206,6 +206,7 @@ The complete schema is `00` §7; targets live in `social.phishTargets` and templ
     "character": "pierce",                       // social.characters entry; its email story writes replies
     "address": "m.pierce@accountingnow.example",
     "displayName": "Melanie Pierce",
+    "subjects": [ { "id": "s_quick", "text": "Quick one" }, { "id": "s_review", "text": "For your review" } ],   // unscored; first is the default; neutral so it never hints at a blank value
     "addressedAs": ["pierce_first","pierce_short","pierce_formal"],   // name-form ids; not pierce_full
     "templateSets": {                            // which templates this target offers, per part
       "from":     ["from_named"],
@@ -245,6 +246,7 @@ The complete schema is `00` §7; targets live in `social.phishTargets` and templ
     "id": "hampshire",                            // easy: an open careers inbox, no character story
     "address": "careers@accountingnow.example",
     "displayName": "Chris Hampshire",
+    "subjects": [ { "id": "s_application", "text": "Application" } ],
     "emailReplyDelay": 15,                        // seconds; a data-only target authors its own delay
     "redFlagMeter": true,
     "templateSets": { "from": ["from_own"], "greeting": ["greet_generic"],
@@ -256,7 +258,7 @@ The complete schema is `00` §7; targets live in `social.phishTargets` and templ
     "factorStrings": {
       "senderTrust":         { "pass": "✓ An open inbox accepts any sender", "fail": "I don't recognise who this is from.", "redFlag": null },
       "pretextRelevant":     { "pass": "✓ Reads like an application", "fail": "This isn't about the role. I only handle applications.", "redFlag": null },
-      "senderAuth":          { "pass": "Sent as your own outside address, so there is nothing to spoof and nothing to fail.",
+      "senderAuth":          { "pass": "✓ Sent as your own outside address, so there is nothing to spoof and nothing to fail.",
                                "fail": "Sender authentication would not pass.", "redFlag": null },
       "attachmentPlausible": { "pass": "✓ The CV is attached",
                                "missing":    { "fail": "You mention a CV, but there's nothing attached.", "redFlag": null },
@@ -271,6 +273,7 @@ The complete schema is `00` §7; targets live in `social.phishTargets` and templ
     "character": "lord",
     "address": "s.lord@accountingnow.example",
     "displayName": "Sofia Lord",
+    "subjects": [ { "id": "s_notice", "text": "Your notice" }, { "id": "s_account", "text": "Account notice" } ],
     "addressedAs": ["lord_first"],
     "templateSets": { "from": ["from_named"], "greeting": ["greet_named"],
                       "pretext": ["pretext_payslip"], "ask": ["ask_open_link"] },
@@ -286,7 +289,6 @@ The complete schema is `00` §7; targets live in `social.phishTargets` and templ
     "requiredFactors": ["senderTrust","addressedTo","pretextRelevant","linkCredible"],
     "advisoryFactors": ["senderAuth","urgencyCalibrated"],
     "expectedLink": { "brandId": "accountingnow", "realDomain": "accountingnow.example" },
-    "requiresIntelToAttempt": ["se_intel_lord_portal_name"],
     "hints": ["She's a new intern — what routine admin is she doing?",
               "She mentioned the staff portal and her payslip.",
               "The service desk can tell you what the portal is called and when payslips drop. Ring them.",
@@ -298,6 +300,8 @@ The complete schema is `00` §7; targets live in `social.phishTargets` and templ
 
 Notes on the records:
 
+- **Subject.** `subjects[]` (`{ id, text }`, first is the default; `00` §7) is the unscored list the composer's Subject pick reads (`01`). The reply subject is `Re: <chosen text>` unless the ink sets one. The lab's texts are neutral so a subject never hints at a blank value.
+- **Advisory `senderAuth` text.** An authored `factorStrings.senderAuth` is read per state: `fail` when the derived read is `would-fail`, `pass` when it is `would-pass`. Pierce authors both (her `fail` carries the `p=none` line); Hampshire authors a `pass` line; Lord authors none and uses the `00` §2 canonical string plus a clause from her claimed domain's `dmarcPolicy`. Advisory pass lines carry the same leading tick as the other pass lines.
 - **Meter.** `redFlagMeter` is a per-target boolean; when absent it takes `mailClient.showRedFlagMeter`
   (`01`). The lab has it on for Hampshire and off for Pierce and Lord.
 - **Ids.** `character` names the `social.characters` entry. Name and address values are the
@@ -359,26 +363,31 @@ the `urgencyCalibrated` tell.
 | `pretext_sheet` | pretext | `Here is {document} you wanted {when}.` | `document`: document; `when`: date | — | low | pierce |
 | `pretext_generic` | pretext | `Please see attached.` | none | — | low | pierce |
 | `pretext_apply` | pretext | `I'm applying for the open role.` | none | document `cv` | low | hampshire |
-| `pretext_payslip` | pretext | `Your {portal} payslip is ready to view (released {when}).` | `portal`: portal; `when`: date | — | medium | lord |
+| `pretext_payslip` | pretext | `Your {portal} payslip is ready to view (released {when}).` | `portal`: portal; `when`: date / release | — | medium | lord |
 | `ask_open_attached` | ask | `Can you open the attached file and check it before Friday?` | none | — | low | pierce |
 | `ask_confirm` | ask | `Can you confirm you have received this?` | none | — | low | pierce |
 | `ask_open_link` | ask | `Please sign in at the link below to view it.` | none | — | medium | lord |
 | `ask_review_cv` | ask | `Could you review my CV when you have a moment?` | none | — | low | hampshire |
 
-What each blank offers, derived from held facts (`00` §1 "provides"):
+What each blank offers, derived from held facts (`00` §1 "provides"). The composer offers every held
+`provides` entry of the slot's type whose `about` equals the slot's `about`; a slot with no `about`
+offers only entries with none. The entries are not filtered by person, so a name held for someone else
+is a wrong option. Address options follow `00` §1 exactly: the `address` rule builds one option per
+person the player holds a `name` entry with `about: "sender"` for, once `email_pattern` is held, and
+the one fixed entry is `portal_address`.
 
 | Target | Slot | Options (fact that provides each; kind) |
 |--------|------|------------------------------------------|
-| pierce | `sender_name` | `baker_full` "Jed Baker" (`pierce_trusts_jed`, `pierce_expects_balance_sheet`; distinctive); `leeds_baker_full` "J. Baker" (`baker_namesake`; stale) |
-| pierce | `sender_address` | the `00` §1 rule builds one option per person the player holds any name entry for, once `email_pattern` is held: `baker_address` (right), `leeds_baker_address` (stale, if the namesake is held), and the wrong options `pierce_address` (from `pierce_role`), `lord_address` (from `lord_intern`) and `hampshire_address` (from `careers_attachment`'s name entry), each present only if that person's name is held; plus `portal_address` once `lord_trusts_portal_sender` is held (fixed entry, wrong for Pierce) |
-| pierce | `name` | `pierce_first`, `pierce_formal`, `pierce_full` (`pierce_role`; generic); `pierce_short` (`pierce_expects_balance_sheet`; generic). `pierce_full` is not in her `addressedAs` |
+| pierce | `sender_name` | `baker_full` "Jed Baker" (`pierce_trusts_jed`, `pierce_expects_balance_sheet`; distinctive); wrong options if held: `leeds_baker_full` "J. Baker" (`baker_namesake`; stale), `portal_full` (`lord_trusts_portal_sender`) |
+| pierce | `sender_address` | `baker_address` (right, built from the pattern); wrong options if held: `leeds_baker_address` (stale, from the namesake result), `portal_address` (fixed entry of `lord_trusts_portal_sender`) |
+| pierce | `name` | `pierce_first`, `pierce_formal`, `pierce_full` (`pierce_role`; generic); `pierce_short` (`pierce_expects_balance_sheet`; generic). `pierce_full` is not in her `addressedAs`. Held Lord forms (`lord_first`, `lord_full`; recipient) are wrong options |
 | pierce | `document` | `balance_sheet` (`pierce_expects_balance_sheet`; distinctive) |
-| pierce | `when` | `friday` (`pierce_expects_balance_sheet`; generic) |
-| lord | `sender_name` | `portal_full` (`lord_trusts_portal_sender`, after the call; distinctive); wrong options `baker_full` and `leeds_baker_full` if held |
-| lord | `sender_address` | `portal_address` (fixed, `lord_trusts_portal_sender`; right); wrong options from the same rule: `baker_address`, `leeds_baker_address`, `pierce_address`, `lord_address`, `hampshire_address`, each only if that person's name is held and `email_pattern` is held |
-| lord | `name` | `lord_first`, `lord_full` (`lord_intern`; generic). Only `lord_first` is in her `addressedAs` |
+| pierce | `when` | `friday` (`pierce_expects_balance_sheet`, `hampshire_cv_backlog`; generic) |
+| lord | `sender_name` | `portal_full` (`lord_trusts_portal_sender`, after the call; distinctive); wrong options if held: `baker_full`, `leeds_baker_full` |
+| lord | `sender_address` | `portal_address` (fixed, `lord_trusts_portal_sender`; right); wrong options if held: `baker_address`, `leeds_baker_address` |
+| lord | `name` | `lord_first`, `lord_full` (`lord_intern`; generic). Only `lord_first` is in her `addressedAs`. Held Pierce forms are wrong options |
 | lord | `portal` | `staff_portal_name` (`lord_portal_name`; distinctive) |
-| lord | `when` | `mon_6th` (`lord_payslip_date`; distinctive) |
+| lord | `when` (`about: "release"`) | `mon_6th` (`lord_payslip_date`, which provides it with `about: "release"`; distinctive). `friday` is untagged, so it is never offered here: until the call grants the date this blank is empty and Send is blocked |
 | hampshire | none | no blanks; `cv` comes from `pretext_apply`'s `implies` |
 
 The Dev call's opening line (`open_buddy`, `06` §4.8) is owned by `06` and uses two blanks of the same
