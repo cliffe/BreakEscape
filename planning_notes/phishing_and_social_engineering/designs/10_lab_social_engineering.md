@@ -166,7 +166,9 @@ call in stage 5. Two further facts are stale on purpose.
   `email_pattern`. A name search for "J. Baker" returns two entries, Jed Baker of AccountingNow and a
   plumber in Leeds. Choosing the right one grants nothing and says why it matched; choosing the
   namesake grants the stale fact `baker_namesake`, a sender name Pierce does not trust. The three
-  tool concept cards (Hunter, theHarvester, Recon-ng) sit beside the lookups they model.
+  four in-browser concept cards sit beside what they model: `tool_hunter` (the Hunter lookup),
+  `tool_harvester` (the name search), `tool_recon` and `tool_exiftool` (the document properties panel).
+  There are no wall notes.
 - **Social media.** Pierce's "first week in finance, Jed's showing me the ropes" (`pierce_trusts_jed`);
   Hampshire's "so many CVs to get through before Friday" (`hampshire_cv_backlog`, visible once the
   careers page has been read); Sofia Lord's "sorting my payslip on the staff portal" (`lord_portal`:
@@ -193,15 +195,16 @@ At the mail workstation (01) the student composes to **Hampshire**, then **Pierc
 with blanks (`00` §10). Every blank is filled from a fact the student holds, so a blank offers only
 what they have found, plus the occasional `stale` entry. The rules engine (04) judges each send and
 returns the full factor checklist, not the first failure. The mail client does not complete on a
-send: the overlay stays open for the checklist, and the reply arrives into the mailbox after the
-target's reply delay (15 seconds for each lab target). The scenario keys on `phish_<id>_landed`.
+send: the overlay stays open for the checklist, and it completes only when the player closes it. The
+reply arrives into the mailbox after the target's reply delay (15 seconds for each lab target), and
+every task keys on `phish_<id>_landed`, never on the client closing.
 
 The mail client has two accounts here (`00` §10a):
 
 | Account | Kind | Use |
 |---------|------|-----|
-| `guest` ("Operator") | given, `spoofsFrom: true` | Rounds 2 and 3: the From blanks are free, so the student can claim to be Jed |
-| `freemail` | created, `unlockedBy: acct_freemail` | Round 1: the student picks one of two authored addresses from the `createMenu` (which sets `acct_freemail_choice` and `acct_freemail`) |
+| `guest` ("Operator") | given | Rounds 2 and 3: the target offers `from_named`, so the From blanks are free and the student can claim to be Jed or the portal |
+| `freemail` | created, `unlockedBy: acct_freemail` | Round 1, where Hampshire offers only `from_own`, so the From is forced to the account's own name and address and nothing is spoofed: the student picks one of two authored addresses from the `createMenu` (which sets `acct_freemail_choice` and `acct_freemail`) |
 
 The lab defines no `found` account (`00` §10a keeps that kind for Eldritch Hacker).
 
@@ -350,7 +353,8 @@ Tomasz takes the report and sets a debrief exercise. The same strings serve both
 
 1. **Triage and headers.** An inbox of eight messages at the triage workstation (05,
    `triageSetId`), scored under the `analyst` profile with the header panel and glossary open and
-   immediate feedback: six authored messages and two `playerSent` (`00` §13). Per message: *trust /
+   immediate feedback: six authored messages and two `playerSent` (`00` §13). Only `playerSent` entries
+   carry `domainFrom`; the authored messages have literal auth rows. Per message: *trust /
    report / delete* (05's three verdicts), then the chips for why. Wrong calls are explained with the
    tell the student themselves exploited. Reading headers is part of this step, not a separate quiz:
    each message's authentication results carry a `headerNote`. Five messages are phish and three are
@@ -360,9 +364,9 @@ Tomasz takes the report and sets a debrief exercise. The same strings serve both
      would-fail). SPF fail, DKIM none, DMARC fail; the `Return-Path` and the first external hop do not
      match the name.
    - **Student's Lord phish** (`playerSent`, `domainFrom: "landing_domain"`, so the link shows the
-     domain the student picked in stage 4): `tells`: `senderTrust`, `senderAuth` (would-fail, sent
-     from `guest` as the portal), `linkCredible`, plus the advisory urgency read if the wording was
-     pressured. Its auth result comes from 05's `playerSentAuth` table, which has a row for each of
+     domain the student picked in stage 4): `tells`: `senderTrust`, `senderAuth`, `linkCredible` and the
+     advisory urgency read are stored, and the replay lists the flags without `senderAuth` (the
+     header panel shows the failed checks instead). Its auth result comes from 05's `playerSentAuth` table, which has a row for each of
      the six menu domains and for the lab's two accounts (`guest`, `freemail`).
    - **Look-alike payroll notice** (authored, fixed look-alike domain): all three checks pass, **for
      the look-alike domain**. Authentication proves the sending domain is *consistent*, not
@@ -376,7 +380,7 @@ Tomasz takes the report and sets a debrief exercise. The same strings serve both
 
    The student passes the step when the round's percent reaches the set's `passPercent` (60): the
    triage starter writes `triage_pass` (`setGlobalPrefix: "triage_"`), and a round below it can be run
-   again (mission-stage sets have no first-attempt guard, 05). The concept panel (SPF, DKIM, DMARC;
+   again from the result screen's "Try again" (mission-stage sets have no first-attempt guard, 05). The concept panel (SPF, DKIM, DMARC;
    the 05 glossary) is short and follows 05's definitions: SPF lists the hosts allowed to send for the
    envelope domain; DKIM signs chosen headers and the body; DMARC requires SPF or DKIM to pass *and
    align* with the visible `From` domain, and publishes a policy (`none`, `quarantine`, `reject`). The
@@ -449,8 +453,7 @@ Cut order, with the minutes each saves, if the playtest runs long:
 4. Reduce the report to two findings (2).
 
 Already left out for time, and where each would return in an extension: the stand-alone
-header-interpretation quiz, the DMARC rollout simulation, indicator tagging in the profile and the
-fourth tool concept card.
+header-interpretation quiz, the DMARC rollout simulation and indicator tagging in the profile.
 
 ### Objectives (aims and tasks)
 
@@ -698,7 +701,7 @@ stylesheet linked in `show.html.erb` (README Conventions).
 | Triage set (8 messages with auth results, 2 of them `playerSent`) | 05 | 6 authored messages, 2 `playerSent`, `playerSentAuth` rows for six domains and two accounts |
 | RoE sheet text, scope and question cards, plan picks, report findings, defender mitigations | this doc | text + 3 findings + 4 mitigation blocks |
 | Ink | this doc, 06, 00 §10 | 7 files (below) |
-| Concept cards | 02 | the browser's three tool cards; the SPF/DKIM/DMARC explainers are 05's glossary |
+| Concept cards | 02 | the browser's four tool cards (`tool_hunter`, `tool_harvester`, `tool_recon`, `tool_exiftool`); the SPF/DKIM/DMARC explainers are 05's glossary |
 
 **Ink files** (the mail stories need `on_email` knots and the `email_*` and `<character>_influence`
 VARs, `00` §10; each declares its `se_intel_*` and synced VARs, `00` §5, §9):
