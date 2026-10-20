@@ -5,10 +5,11 @@ single session of about 75 minutes. It is the first shippable SE product and tak
 technical-lab slot. Browser-only, no VMs. Its systems later become the core of SAFETYNET: Eldritch
 Hacker (see `README.md`).
 
-`00_data_contract.md` is authoritative for ids, schemas and the engine items (S1 to S11). Where this
-doc leans on 01 to 07 it says what it assumes (section 6, "Requests of other docs"); when those docs
-change, change the request, not their text. The pretext score is the NPC's influence (`00` §8),
-carried across channels (`00` §9). Email replies come from the character's mail story (`00` §10).
+`00_data_contract.md` is authoritative for ids, schemas and the engine items (S1 to S12); §13 there
+lists the values several docs must match. Where this doc leans on 01 to 07 it cites the section of
+00 that settles the value (section 6, "What this doc relies on"). The pretext score is the NPC's
+influence (`00` §8), carried across channels (`00` §9). Email replies come from the character's mail
+story (`00` §10).
 
 ## 1. Purpose & audience
 
@@ -24,7 +25,7 @@ sits in the defender's chair and reads the same attack from the other side.
 |-------|--------------|-------------------------|-----------|
 | 0 Authorisation | Ch. 2 | Why scope, consent and a rules-of-engagement sheet come first | intel board, `scope` mode (03) |
 | 1 Scope & plan | Ch. 3 | Objectives and success measures; what the targets will need | intel board, `plan` mode (03) |
-| 2 OSINT | Ch. 4–6 | Business, social-media, document and people OSINT; deriving the email pattern; reading file metadata | OSINT browser (02) → board (03) |
+| 2 OSINT | Ch. 4–6 | Business, social-media, document and people OSINT; reading a pattern lookup; picking the metadata field that gives something away | OSINT browser (02) → board (03) |
 | 3 Spear-phish, two rounds | Ch. 7 | Open inboxes, sender trust, addressing, pretext relevance, attachment fit, sender authentication (advisory) | mail client (01) + rules (04) |
 | 4 Landing page | Ch. 8 | How a credential-harvest page convinces, and the tells a defender checks | landing-page builder (07) |
 | 5 Pretext call, then the hard phish | Ch. 1, App. D | Pretexting, elicitation, how influence is won and lost; a link-bearing phish | pretext dialogue (06) + mail (01, 04) |
@@ -34,7 +35,8 @@ sits in the defender's chair and reads the same attack from the other side.
 **Learning outcomes.** These are what the objectives in section 4 evidence.
 
 1. Define an engagement scope and state why an unauthorised version of the same actions is an offence.
-2. Derive a company's email-address convention from public evidence and use it to predict an address.
+2. Identify a company's email-address convention from public evidence (a staff directory and a
+   Hunter-style lookup) and use it to predict an address.
 3. Identify what a published document's metadata discloses (author, software, username, path).
 4. Explain, for each phishing message sent, which factors made it land or fail.
 5. Distinguish a look-alike domain from the real one and explain what a clone page cannot copy.
@@ -47,10 +49,9 @@ sits in the defender's chair and reads the same attack from the other side.
 
 **Model, don't weaponise.** Tools are named at concept level only: theHarvester (collects emails,
 names and subdomains from public sources), Hunter (shows a domain's email pattern), Recon-ng (a
-framework that automates such modules), exiftool (reads file properties). The student never runs
-them; the OSINT browser shows what their output *looks like* and the lab asks what it means. The
-landing-page and mail components judge reasoning, and produce no runnable phishing kit, spoofing
-recipe or harvesting code.
+framework that automates such modules). The student never runs them; the OSINT browser shows what
+their output *looks like* and the lab asks what it means. The landing-page and mail components judge
+reasoning, and produce no runnable phishing kit, spoofing recipe or harvesting code.
 
 ## 2. Player goal in their own words
 
@@ -65,13 +66,13 @@ side and show the company how they should have caught me."
 The student plays a junior consultant at **Northgate Assurance**, a security consultancy, on a
 contracted engagement for **AccountingNow Ltd**, a 40-person accountancy software firm. Both are
 invented; every person, domain (`accountingnow.example`) and profile is fictional, and no real staff
-are profiled. Cast ids follow `00` §1; where this doc and 00 differ, 00 wins.
+are profiled. Cast ids follow `00` §1.
 
 | Who | Role in the lab | How the student meets them |
 |-----|-----------------|----------------------------|
 | **Ruth Adeyemi** | Northgate engagement lead: briefs, hands over keys, runs the support hub (progress-gated, as Agent HaX is in Licence to Hack) | Person NPC in the Engagement Office (`ruth`); phone contact `ruth_phone` for hints from any room |
 | **Gareth Whitlock** | AccountingNow managing director, the signing client | Person NPC in the Engagement Office, one short scene once the sheet is signed |
-| **Chris Hampshire** (`hampshire`, Careers/HR) | Target 1, easy: the open `careers@` inbox accepts CVs from anyone | Email only; replies come from the target's authored `replies` (no ink story) |
+| **Chris Hampshire** (`hampshire`, Careers/HR) | Target 1, easy: the open `careers@` inbox accepts CVs from anyone | Email only; data-only target (no `character`, no ink story): the reply is a text job from the target's authored `replies` |
 | **Melanie Pierce** (`pierce`, finance, new starter) | Target 2, medium: trusts colleague Jed Baker, primed for a Friday balance sheet (the worked example in 04) | Email only; `character: pierce`, mail story `pierce_mail` |
 | **Sofia Lord** (`lord`, intern) | Target 3, hard: new to the firm, uses the staff payroll portal, cautious about links | Email only; `character: lord`, mail story `lord_mail` |
 | **Dev** (`dev`, service desk) | The pretext-call target (06 §4.8): supports the staff portals | Phone only, record `dev_service_desk`; not an email target |
@@ -91,162 +92,200 @@ re-read the board at any time.
 
 | Room | Contents | Component |
 |------|----------|-----------|
-| **Engagement Office** (start, hub) | Ruth; Whitlock; the **Rules of Engagement** (RoE) sheet on the desk; the **case-file board**; the report workstation | 03 board (`scope`, `plan`, `recon` modes); report builder |
-| **Recon Room** | OSINT workstation; three **concept-card** notes on the wall (Hunter, theHarvester and Recon-ng, exiftool) | 02; `notes` objects |
-| **Operations Room** | **Mail workstation**; **page-builder workstation**; a **desk phone** | 01 (+04); 07; 06 |
-| **Blue Team Room** | **Triage workstation**; the SOC board in `defender` mode; Tomasz | 05; 03 |
+| **Engagement Office** (start, hub) | Ruth; Whitlock; three `case-file` objects, one per board mode: the **Rules of Engagement** sheet on the desk (`scope`), the **planning whiteboard** (`plan`) and the **case-file board** (`recon`); the report workstation | 03 board; report builder |
+| **Recon Room** | OSINT workstation | 02 |
+| **Operations Room** | **Mail workstation** (`mail_terminal`); **page-builder workstation**; a **desk phone** | 01 (+04); 07; 06 |
+| **Blue Team Room** | **Triage workstation**; the SOC board (`case-file`, `defender` mode); Tomasz | 05; 03 |
 
 Doors are plain key locks (each lock carries `keyPins`). Ruth hands over each key (`#give_item`, the
 existing pattern) when the previous aim completes, so the objectives enforce the sequence and the
 player sees a physical reason to go back to her. The Blue Team door stays locked until the report is
 filed (the narrative flip: you leave the red cell and walk into the client's SOC seat).
 
+Every overlay in the lab sets `requiresKeyboardInput: true` and draws its own Close control (`00` §6),
+so world keys are suspended while one is open.
+
 ### Stage 0 — Authorisation (Engagement Office; Ch. 2)
 
-Ruth briefs. At the case-file board in `scope` mode the student reads the **Rules of Engagement**
-(the sheet's text is shown first in the mode) and makes two small decisions with deterministic
-feedback:
+Ruth briefs. At the RoE sheet (a `case-file` object in `scope` mode) the student reads the
+**Rules of Engagement** (the sheet's text is shown first in the mode) and does two things with
+deterministic feedback:
 
-- *Is each action in scope?* Five cards: phish named staff by work email (in); phish staff at their
-  personal addresses (out); call the published service-desk line (in); tailgate into the building
-  (out for this contract, physical is excluded); post to AccountingNow's real customers (out). A
-  wrong answer is explained from the document ("§4 excludes personal accounts"), then re-asked.
-- *What do you do if you find a real compromise or a real person in distress?* One right answer
-  (stop and call the emergency contact on the sheet), with the reasons for the wrong ones.
+- *Sort the scope cards (step `roe_scope_done`).* Five cards: phish named staff by work email (in);
+  phish staff at their personal addresses (out); call the published service-desk line (in); tailgate
+  into the building (out for this contract, physical is excluded); post to AccountingNow's real
+  customers (out). A wrong placement is explained from the document ("§4 excludes personal
+  accounts") and the card goes back.
+- *Answer the stop-rule question (step `roe_stoprule_done`).* "What do you do if you find a real
+  compromise or a real person in distress?" A question card with one right answer (stop and call the
+  emergency contact on the sheet) and a reason for each wrong one.
 
-Then Whitlock's authorisation is "signed" on the board and the rule is stated once, plainly: "The
-same actions without this sheet are offences (Computer Misuse Act 1990 in the UK; Computer Fraud and
-Abuse Act in the US)." Sets `roe_signed`. **This beat is the ethics gate (book Ch. 2); it is the
-first aim and cannot be skipped.**
+When both steps are done the mode sets `roe_signed`, Whitlock's authorisation is "signed", and the
+rule is stated once, plainly: "The same actions without this sheet are offences (Computer Misuse Act
+1990 in the UK; Computer Fraud and Abuse Act in the US)." **This beat is the ethics gate (book Ch. 2);
+it is the first aim and cannot be skipped.**
 
-### Stage 1 — Scope & plan (board, `plan` mode; Ch. 3)
+### Stage 1 — Scope & plan (planning whiteboard, `plan` mode; Ch. 3)
 
-At the same board the student turns the brief into a plan with two picks:
+At the planning whiteboard the student turns the brief into a plan with two picks:
 
-1. **Objectives**: pick from a list (test finance and HR staff by email; test the service desk by
-   phone; measure reporting rates). Wrong picks (e.g. "disrupt payroll") are rejected with the
-   rules-of-engagement reason.
-2. **Success measures**: pick which numbers the report will need (messages sent, opened, clicked,
-   submitted, reported). Teaches that you decide the metrics *before* you send anything.
+1. **Objectives** (step `plan_objective_done`): pick from a list (test finance and HR staff by email;
+   test the service desk by phone; measure how far each attempt gets). Wrong picks (for example
+   "disrupt payroll") are rejected with the rules-of-engagement reason.
+2. **Success measures** (step `plan_measures_done`): pick which numbers the report will need. The
+   right picks are the ones the lab can actually record: messages sent, messages that landed, failed
+   sends, page visits and submissions, and the call outcome. The wrong picks are "which named staff
+   fell for it" (a blame measure, rejected with the Ch. 9 reason) and "passwords collected" (nothing
+   is collected: page results are simulated). The card for "did staff report us" is explained as the
+   measure a live test would add and this lab cannot observe. The point is that you decide the
+   metrics *before* you send anything.
 
-When the plan is accepted the three target cards appear with empty readiness slots ("You still
-don't know ..."), so the student sees what they must find. Sets `plan_done`; Ruth gives the Recon
-Room key.
+When both steps are done the mode sets `plan_done`; Ruth gives the Recon Room key. The case-file board
+already shows the three target cards with empty readiness slots ("You still don't know ..."), so the
+student can see what they must find.
 
 ### Stage 2 — OSINT (Recon Room; Ch. 4–6)
 
-At the OSINT workstation (02) the student works three layers and a short search list. Every fact
-found drops onto the board with a "noted" flourish, sets its `se_intel_<id>` global (`00` §5) and
-fills the matching readiness slot. The contract facts are in `00` §1; 11 of the 14 are found here
-and the other three (`lord_portal_name`, `lord_payslip_date`, `lord_trusts_portal_sender`) come from
-the call in stage 5.
+At the OSINT workstation (02) the student reads, selects and picks. Nothing is typed. Selecting the
+block that carries a fact collects it: `grantFact` sets its `se_intel_<id>` global, adds a note, and
+runs `evaluateReadiness` (`00` §4, §5), which sets `target_ready_<id>` and `osint_done` at the moment
+the last fact lands, whether or not the board is ever opened. The board is a place to look at the
+result, not a step in the chain. The contract facts are in `00` §1: 11 of the 14 are found here, and
+the other three (`lord_portal_name`, `lord_payslip_date`, `lord_trusts_portal_sender`) come from the
+call in stage 5. Two further facts are stale on purpose.
 
-- **Company site and careers page.** The team page lists some staff *with* addresses and some
-  without. The deliberate **derive-the-pattern step**: the student sees two examples and **picks the
-  pattern** (`first-initial.surname@`), and the board checks it by asking them to **pick the address
-  of a third person from a short list of candidates** (02 OQ1). Typing is never judged. Gives
-  `email_pattern`, `pierce_role`, `hampshire_careers`, `careers_attachment` and `tech_stack`
-  (Xero, Office 365), and Jed's note about the Friday balance sheet (`pierce_expects_balance_sheet`).
-  The Hunter concept card is read here: the tool shows a domain's pattern and a confidence; the
-  lesson is the pattern, not the tool.
+- **Company site.** The team page lists every staff member with their published address; seeing the
+  addresses grants nothing. Selecting Melanie Pierce's row gives `pierce_role` and selecting Sofia
+  Lord's row gives `lord_intern`. A team note ("Jed: I'll send Mel the Q3 balance sheet on Friday")
+  gives `pierce_expects_balance_sheet`. The careers pages give `hampshire_careers`, `tech_stack` and
+  `careers_attachment` (".odt and .docx only"). An archived org chart on the company site's archive
+  page is out of date: it lists a person who left in spring as the finance lead. Selecting it gives
+  the stale fact `old_org_chart`, which offers a wrong manager and a wrong team later.
+- **Tools panel.** The student picks lookups from a short list; nothing is typed. The Hunter lookup
+  on `accountingnow.example` returns the pattern (`first-initial.surname@`) and grants
+  `email_pattern`. A name search for "J. Baker" returns two entries, Jed Baker of AccountingNow and a
+  plumber in Leeds. Choosing the right one grants nothing and says why it matched; choosing the
+  namesake grants the stale fact `baker_namesake`, a sender name Pierce does not trust. The three
+  tool concept cards (Hunter, theHarvester, Recon-ng) sit beside the lookups they model.
 - **Social media.** Pierce's "first week in finance, Jed's showing me the ropes" (`pierce_trusts_jed`);
-  Hampshire's "so many CVs to get through before Friday" (`hampshire_cv_backlog`); Sofia Lord's
-  "sorting my payslip on the staff portal" (`lord_portal`: she uses *a* staff portal, no name) and her
-  new-intern profile (`lord_intern`). Teaches how ordinary posts become pretext material.
-- **Public documents.** A published PDF whose **metadata panel** (02 N3) shows author `mpierce`,
-  software "Microsoft Excel" and a path under `C:\Users\mpierce\` (`username_convention`). The student
-  answers two picked-answer prompts: what username convention does this show, and why does the path
-  matter? (Usernames are guessable from names, so a login page asks for something the attacker
-  already has; the path names the machine's profile layout.) An archived org chart on the same page
-  is out of date (`old_org_chart`, a `stale` fact): a person who left in spring is listed as the
-  finance lead. A student who spoofs that name in stage 3 fails `senderTrust` and learns why source
-  quality matters.
-- **Search list.** A short list of found names and handles to pick from, modelling theHarvester or
-  Recon-ng output. The student picks entries to open; nothing is typed.
+  Hampshire's "so many CVs to get through before Friday" (`hampshire_cv_backlog`, visible once the
+  careers page has been read); Sofia Lord's "sorting my payslip on the staff portal" (`lord_portal`:
+  she uses *a* staff portal, no name). Teaches how ordinary posts become pretext material.
+- **Public documents.** A published PDF with a **properties panel**. The student selects the field
+  that gives something away: the author field, `mpierce`, grants `username_convention`, and the
+  panel says why it matters (usernames are guessable from names, so a login page asks for something
+  the attacker already has; the path names the machine's profile layout). Selecting the software or
+  path rows explains what each discloses and grants nothing.
 
-Ruth's check-in is a *board* check, not a quiz. When all three target cards show "Ready to approach",
-Ruth says so and hands over the Operations key. Readiness follows `00` §4: Lord's card needs only
-`lord_portal` and `lord_intern`. The portal name, the portal sender and the payslip date arrive in
-stage 5 and are send-time prerequisites for her phish, never a reason to wait at this door. Missing a
-fact never blocks; the board's "still missing" panel and Ruth's hints point at the source layer.
+Ruth's check-in is a *board* check, not a quiz. When `osint_done` is set and the student has also
+found the document's username convention, Ruth says so and hands over the Operations key. (The
+metadata is not in any target's readiness slot, so Ruth asks for it herself: it is learning outcome 3
+and a required task.) Readiness follows `00` §4: Pierce needs her role, who she trusts plus the
+pattern, and what she expects; Hampshire needs the open inbox, the file type and the backlog; Lord
+needs only `lord_portal` and `lord_intern`. The portal name, the portal sender and the payslip date
+arrive in stage 5 and are send-time prerequisites for her phish, never a reason to wait at this door.
+Missing a fact never blocks anything but the door; the board's "still missing" panel and Ruth's hints
+point at the source layer.
 
 ### Stage 3 — Spear-phish, rounds 1 and 2 (Operations Room; Ch. 7)
 
 At the mail workstation (01) the student composes to **Hampshire**, then **Pierce**, from templates
 with blanks (`00` §10). Every blank is filled from a fact the student holds, so a blank offers only
 what they have found, plus the occasional `stale` entry. The rules engine (04) judges each send and
-returns the full factor checklist, not the first failure.
+returns the full factor checklist, not the first failure. The mail client does not complete on a
+send: the overlay stays open for the checklist, and the reply arrives into the mailbox after the
+target's reply delay (15 seconds for each lab target). The scenario keys on `phish_<id>_landed`.
 
 The mail client has two accounts here (`00` §10a):
 
 | Account | Kind | Use |
 |---------|------|-----|
 | `guest` ("Operator") | given, `spoofsFrom: true` | Rounds 2 and 3: the From blanks are free, so the student can claim to be Jed |
-| `freemail` | created, `unlockedBy: acct_freemail` | Round 1: the student picks an address from a short authored menu; header From is forced equal to it |
+| `freemail` | created, `unlockedBy: acct_freemail` | Round 1: the student picks one of two authored addresses from the `createMenu` (which sets `acct_freemail_choice` and `acct_freemail`) |
 
-A `found` account is part of the model but this lab does not use one.
+The lab defines no `found` account (`00` §10a keeps that kind for Eldritch Hacker).
 
 | Round | Target | Account | Required factors (04) | What the round teaches |
 |-------|--------|---------|-----------------------|------------------------|
-| 1 | Hampshire | `freemail` | `addressedTo`, `pretextRelevant`, `attachmentPlausible` | An open inbox trusts any sender. The From part is a fixed "own account" template with no blanks; an applicant pretext (`pretext_apply`, implying the document `cv`) and a CV from the kit are what land. Red-flag meter **on** |
-| 2 | Pierce | `guest` | `senderTrust`, `addressedTo`, `pretextRelevant`, `attachmentPlausible` | The From line is only a label: the student pairs a display name with an address (`baker_full`, `baker_address`), and nothing but the checklist says whether they belong together. Trust is borrowed from a known contact. Needs the Jed spoof and the Friday balance-sheet story, both from OSINT. Meter **off** |
+| 1 | Hampshire | `freemail` | `senderTrust`, `pretextRelevant`, `attachmentPlausible` | An open inbox trusts any sender (`trusts: ["*"]`). The From part is the blank-free `from_own` template, so the header From is the account's own name and address whichever account is used. She has no `addressedAs` and the greeting is the generic one, so `addressedTo` is not a factor. An applicant pretext (`pretext_apply`, which implies the document `cv`; `careers_attachment` provides it) and a CV from the kit (kind `document`) are what land. Red-flag meter **on** |
+| 2 | Pierce | `guest` | `senderTrust`, `addressedTo`, `pretextRelevant`, `attachmentPlausible` | The From line is only a label: the student pairs a display name with an address (`baker_full`, `baker_address`), and nothing but the checklist says whether they belong together. Trust is borrowed from a known contact. Needs the Jed spoof and the Friday balance-sheet story, both from OSINT. Her `addressedAs` forms come from `pierce_role` (first, formal) and the Q3 note (short). Meter **off** |
 
-Each success lands as the target's in-character reply plus the checklist and sets the landed global.
-Hampshire's reply is authored data; Pierce's is written by `pierce_mail` (its `on_email` knot) after
-the delay in `00` §10, and the checklist does not wait for it. Each failure shows exactly which factor
-failed, and the hint ladder starts after two misses.
+Hampshire has no ink story, so her reply is a **text job** (`00` §10 "Timing and delivery"): after the
+delay the engine appends her authored `replies.landed` (or the canonical fail line for the first
+failed factor) to the mailbox of the account used, and sets `phish_hampshire_landed` only when the
+message landed. Pierce's reply is written by `pierce_mail` (its `on_email` knot), which sets
+`phish_pierce_landed`; one owner per target, never both. The checklist does not wait for either.
+Each failure shows exactly which factor failed, the failed send costs the character 10 influence
+(04), and the hint ladder starts after two misses. Pierce's and Lord's influence is bounded at -40
+and carries no report or lockout (section 5, "Influence"), so a run of bad sends only moves the bar.
 
-**`senderAuth` on the attacker side.** From round 1 (this stage) the checklist carries an advisory
-line under the factors. In round 1 it says the message is sent as the student's own outside address,
-so there is nothing to spoof and nothing to fail. In round 2 it says, for example, "the spoofed
-`j.baker@` address would fail the domain's sender authentication and may be quarantined before
-Melanie sees it". It never changes the verdict. It plants the question stage 7 answers: why was this
-flagged, and why can a message pass all three checks and still be a phish.
+**`senderAuth` on the attacker side.** From round 1 the checklist carries an advisory line under the
+factors. In round 1 it says the message is sent as the student's own outside address, so there is
+nothing to spoof and nothing to fail. In round 2 Pierce's authored `factorStrings.senderAuth` line
+says the spoofed `j.baker@` address fails the domain's alignment check and that, because
+AccountingNow publishes its DMARC policy as `p=none`, it is still delivered. It never changes the
+verdict. It plants the question stage 7 answers: why was this flagged, and why can a message pass all
+three checks and still be a phish.
 
 ### Stage 4 — Landing page (Operations Room; Ch. 8)
 
-At the page-builder workstation (07) the student assembles a credential-harvest *page model* for
-Sofia Lord's phish: a look-alike of **her staff payroll portal**. They pick the look-alike domain
-from the authored menu (`d_word`, `d_sub`, `d_vv`, `d_homo`), the logo, the wording, the form fields
-and the padlock (07's seven choices). The builder judges the choices against rules (domain tier and
-homoglyph tells, brand and wording match, whether a padlock is shown and what it does and does not
-prove). **It builds a scored model of a page, never a working page or form handler** (07 owns that
-boundary). Feedback names each tell a defender could use. The page record (page id `payroll_login`,
-the chosen domain id and the choices) is persisted by 07 and sets `landing_payroll_login_built`.
+At the page-builder workstation (07, `landingPageId: payroll_login`) the student assembles a
+credential-harvest *page model* for Sofia Lord's phish: a look-alike of **her staff payroll portal**.
+They pick the look-alike domain from the authored six-domain menu (`d_unrelated`, `d_letter`,
+`d_word`, `d_sub`, `d_vv`, `d_homo`), the logo, the wording, the form fields and the padlock (07's
+seven choices). The builder judges the choices against rules (domain tier and homoglyph tells, brand
+and wording match, whether a padlock is shown and what it does and does not prove). **It builds a
+scored model of a page, never a working page or form handler** (07 owns that boundary). Feedback
+names each tell a defender could use. A page that falls short of the threshold can still be
+attached ("attach anyway"), and `linkCredible` then fails at send time with the reason.
 
-The page does not depend on the call, and the call does not change the page's score: 07 has no input
-from globals. Ruth suggests calling Dev first because what he says sharpens the wording the student
-will want, but either order completes the aim.
+On attach the builder saves the page record in `se_landing_pages.payroll_login` (`00` §11a) and sets
+`landing_payroll_login_built` and `landing_payroll_login_domain` (the chosen domain id). The link
+the mail client offers is the payload-kit item `kit_payroll_page`.
+
+The page does not depend on the call, and the call does not change the page's score: 07 reads no
+globals. Ruth suggests calling Dev first because what he says sharpens the wording the student will
+want, but either order completes the aim. After the round 3 send the student can reopen the page at
+the builder as the victim (07's step 6, "Inspect your own page") and find the giveaways. The step is
+not a required task; Ruth points to it, and stage 7's triage covers the same tells from the reader's
+side.
 
 ### Stage 5 — Pretext call, then the hard phish (Operations Room; Ch. 1, App. D)
 
 Sofia is cautious, and the page alone is not enough: a "your payslip is ready" notice is only
 plausible if the student knows what the real portal is called, who its notices come from, and when
 payslips are released. The social post gave only "a staff portal". The student gets the rest by
-calling **Dev on the service desk** from the desk phone. The call is `pretextNpcs[service_desk_call]`
-(06 §4.8) and runs on `phone-chat` with `pretext-prep` before it and the debrief after it.
+calling **Dev on the service desk** from the desk phone (`callId: service_desk_call`). The call is
+`pretextNpcs[service_desk_call]` (06 §4.8) and runs on `phone-chat` with `pretext-prep` before it and
+the debrief screen after it.
 
 - **Pretext card.** The student picks the opening line from templates: "I'm the new intern's buddy,
   she can't find her first payslip on the portal" (blanks: the intern's name from `lord_intern`, the
-  team from `pierce_role`). Some held values are stale. Dev checks the intern's name and team
-  (identity grade).
-- **Dev's influence bar** (`00` §8) is in the phone-chat header, with threshold icons for wary
-  (-40), refuses (-50), reports (-70) and the channel lockout (-90). Dev starts at -10
-  (`dev_influence`). Claims he can check and that hold raise it; claims he can check and that are
-  wrong lower it a lot; urgency and borrowed authority lower it; owning a slip early recovers it. The
-  tells panel shows the delta, the reason and the line after every turn.
+  team from `lord_intern`). Dev checks the intern's name and team (identity grade). He accepts either
+  name form (`lord_first` or `lord_full`) and the team `finance`. The stale org chart offers the
+  team `accounts`, which Dev catches.
+- **Dev's influence bar** (`00` §8) is in the phone-chat header, with threshold icons for wary (-40),
+  refuses (-50) and reports (-70). Dev starts at -10 (`dev_influence`). Claims he can check and that
+  hold raise it; claims he can check and that are wrong lower it a lot; urgency and borrowed
+  authority lower it; owning a slip early recovers it. The tells panel shows the delta, the reason and
+  the line after every turn.
 - **Two asks.** `portal_name` (floor -30, no verification) grants `lord_portal_name` and
   `lord_trusts_portal_sender`: the portal's name, how its notices read and who they come from.
   `payslip_date` (pressure -10, floor -20, verification: the intern's name) grants
   `lord_payslip_date`. Grants set `se_intel_*` through the shared writer, so the board and 04 see
   them at once.
-- **Outputs.** `pretext_call_done` is set when the call ends with at least one ask granted. The
-  engine writes `pretext_service_desk_call_outcome` and `pretext_service_desk_call_lowest`; a report
-  sets `dev_reported`. All are declared in `globalVariables`, none imported.
-- **A failed call never dead-ends the path.** If Dev reaches his `reports` threshold he ends the call
-  "to check with his manager", and a channel-scoped lockout keeps the phone from him for ten game
-  minutes, after which the engine sets him back to -30 (06 §4.8; `00` §8). Ruth says the call was
-  "burned for ten minutes", which is that expiry spoken in character. No object is greyed and no
+- **Outputs.** `pretext_call_done` is set when the call ends with at least one ask granted;
+  `pretext_call_reported` is set when it ends in a report. The engine writes
+  `pretext_service_desk_call_outcome`, `_lowest` and `_state`; the `reports` threshold sets
+  `dev_reported`. All are declared in `globalVariables`, none imported.
+- **A failed call never dead-ends the path.** Dev's `reports` threshold has three effects: it sets
+  `dev_reported`, ends the call "to check with his manager", and starts a channel-scoped lockout of
+  two real minutes (`00` §8: the clock is real elapsed time, not scaled by any game rate, and it
+  survives a reload). A forced report, from the refusal limit or a failed verification, runs the same
+  effects at whatever influence Dev has reached, so the lockout and the reset always follow a report.
+  When the two minutes pass the engine sets him back to -30, above his wary line, and clears the
+  latch. Ruth says the call was "burned for a couple of minutes", which is that expiry spoken in
+  character, and the student has the page builder to use meanwhile. No object is greyed and no
   mission beat is needed. At -30 the date ask (floor -20) needs a few matched claims first, so the
   second attempt is harder but open; the hint ladder (06 §4.5) starts then. The lockout is
   channel-scoped, so the email route to Sofia stays open. A call-back policy would have stopped this;
@@ -258,58 +297,76 @@ gap ("you still don't know when payslips are released") and Ruth's hint rungs po
 by design: the phone stays open for another call.
 
 Back at the mail workstation the student composes **round 3 to Sofia Lord** from `guest`, with the
-portal's notification sender in the From blanks (`lord_trusts_portal_sender` provides the name and
-address values), a named greeting, a payslip pretext carrying the date, and the page built in
-stage 4 as the link. Required factors: `senderTrust`, `addressedTo`, `pretextRelevant`,
-`linkCredible`. Without the built page `linkCredible` cannot pass and the checklist says so; that is
-the hard gate, checked at send time and not on the board (`00` §4). Advisory only: `urgencyCalibrated`
-("this reads as high-pressure, a defender would clock it") and `senderAuth`. Urgency never fails a
-send, because real phishing with heavy pressure still lands; it is taught as a tell in the stage 7
-triage, where the student is the reader.
+portal's notification sender in the From blanks (`portal_full` and `portal_address`, both provided by
+`lord_trusts_portal_sender`; Lord's `trusts` is `["portal"]`), a named greeting (`lord_first`, which
+`lord_intern` provides as a greeting value, and the only form her `addressedAs` accepts), a payslip
+pretext carrying the portal name and the date (`minDistinct: 2`), and the page built in stage 4 as
+the link (`kit_payroll_page`). Required factors: `senderTrust`, `addressedTo`, `pretextRelevant`,
+`linkCredible`. Without a built page `linkCredible` fails with state `missing` and the checklist says
+"there's no page behind that link"; a page below the threshold fails with its credibility reason.
+That is the hard gate, checked at send time and not on the board (`00` §4). Advisory only:
+`urgencyCalibrated` ("this reads as high-pressure, a defender would clock it") and `senderAuth`
+(sent from `guest`, so the claimed domain would fail alignment). Urgency never fails a send, because
+real phishing with heavy pressure still lands; it is taught as a tell in the stage 7 triage, where the
+student is the reader.
 
 ### Stage 6 — Metrics & report (Engagement Office; Ch. 9)
 
-The report workstation shows the **campaign results**, filled from what actually happened (this is
-why stage 1 asked for the measures):
+The report workstation shows the **campaign results**, filled only from records the other components
+keep:
 
-- Messages sent per target; outcome per target (opened, clicked, submitted, replied); attempts per
-  target; failed sends (framed honestly: "in a live test each failed send is a chance for a member of
-  staff to report you"); whether the call succeeded, the lowest influence Dev reached and which
-  triggers moved it.
-- **Findings builder.** For each of three findings the student pairs a *root cause* with a *control*
-  from authored lists. Finding 1, "Finance acted on mail spoofing a colleague": cause "no
-  external-sender banner; DMARC at `p=none`", control "banner plus DMARC enforcement". Finding 2,
-  "The service desk gave out the portal name and payslip date": cause "no verification script",
-  control "call-back to a number on file". Finding 3, "A look-alike portal page would convince
-  staff": cause "staff have no easy way to check the address or report it", control "bookmarked
-  portal plus a report button". Wrong pairs are explained; right pairs lock in.
-- **Tone is part of the pairing.** One wrong root-cause option per finding is a blame wording
-  ("Pierce should have known better"). Choosing it is not punished with a fail but shown why: the
-  report is about processes and controls, and blaming staff suppresses future reporting (Ch. 9 and
-  Ch. 10).
+- **Mail.** Per target, from `mailState.metrics[targetId]` (`00` §10a): messages sent, failed sends,
+  landed, and whether the first send landed. Failed sends are framed honestly: "in a live test each
+  failed send is a chance for a member of staff to report you". The reply received is the landed
+  outcome; the lab records no "opened" or "clicked" for mail.
+- **Page.** From the persisted page record `se_landing_pages.payroll_login.victim` (`00` §11a, 07
+  step 5): visited, submitted, noticed, shown as "Visits 1 · Submissions 1 (simulated)".
+- **Call.** From the pretext globals: the outcome, the lowest influence Dev reached
+  (`pretext_service_desk_call_lowest`) and whether he reported (`dev_reported`).
+- It says once that this test cannot see whether staff reported the attempts, and that a live
+  engagement would add it.
 
-Ruth reads it. Sets `report_filed`; Ruth gives the Blue Team key.
+The student reads the results (step `report_results_done`, set when they confirm the table) and then
+builds the **findings** (step `report_findings_done`). For each of three findings the student pairs a
+*root cause* with a *control* from authored lists. Finding 1, "Finance acted on mail spoofing a
+colleague": cause "no external-sender banner; DMARC at `p=none`", control "banner plus DMARC
+enforcement". Finding 2, "The service desk gave out the portal name and payslip date": cause "no
+verification script", control "call-back to a number on file". Finding 3, "A look-alike portal page
+would convince staff": cause "staff have no easy way to check the address or report it", control
+"bookmarked portal plus a report button". Wrong pairs are explained; right pairs lock in.
+
+**Tone is part of the pairing.** One wrong root-cause option per finding is a blame wording
+("Pierce should have known better"). Choosing it is not punished with a fail but shown why: the
+report is about processes and controls, and blaming staff suppresses future reporting (Ch. 9 and
+Ch. 10).
+
+When both steps are done the report builder sets `report_filed`; Ruth reads it and gives the Blue Team
+key.
 
 ### Stage 7 — Defender flip (Blue Team Room; Ch. 10–12)
 
 Tomasz takes the report and sets a debrief exercise. The same strings serve both seats (04
-`redFlagStrings` are the tells in 05).
+`factorStrings` red flags are the tells in 05).
 
-1. **Triage and headers.** An inbox of eight messages at the triage workstation (05), scored under
-   the `analyst` profile with the header panel and glossary open. Per message: *trust / report /
-   delete* (05's three verdicts), then the chips for why. Wrong calls are explained with the tell the
-   student themselves exploited. Reading headers is part of this step, not a separate quiz: each
-   message's authentication results carry a `headerNote`. Five messages are phish and three are
+1. **Triage and headers.** An inbox of eight messages at the triage workstation (05,
+   `triageSetId`), scored under the `analyst` profile with the header panel and glossary open and
+   immediate feedback: six authored messages and two `playerSent` (`00` §13). Per message: *trust /
+   report / delete* (05's three verdicts), then the chips for why. Wrong calls are explained with the
+   tell the student themselves exploited. Reading headers is part of this step, not a separate quiz:
+   each message's authentication results carry a `headerNote`. Five messages are phish and three are
    genuine:
-   - **Student's Pierce phish** (`playerSent`): the display name is Jed's, the real account is not
-     (`tells`: `senderTrust`, `senderAuth` would-fail). SPF fail, DKIM none, DMARC fail; the
-     `Return-Path` and the first external hop do not match the name.
-   - **Student's Lord phish** (`playerSent`): `tells`: `senderTrust`, `linkCredible`, plus the
-     advisory urgency read.
-   - **Look-alike payroll notice** (authored): all three checks pass, **for the look-alike domain**,
-     and the sending domain is the student's own stage 4 choice (`domainFrom` substitution, section
-     6). Authentication proves the sending domain is *consistent*, not *trustworthy*; this is the
-     lesson students most often get wrong.
+   - **Student's Pierce phish** (`playerSent`, the latest sent record to `pierce`, landed or not): the
+     display name is Jed's, the real account is not (`tells`: `senderTrust`, `senderAuth`
+     would-fail). SPF fail, DKIM none, DMARC fail; the `Return-Path` and the first external hop do not
+     match the name.
+   - **Student's Lord phish** (`playerSent`, `domainFrom: "landing_domain"`, so the link shows the
+     domain the student picked in stage 4): `tells`: `senderTrust`, `senderAuth` (would-fail, sent
+     from `guest` as the portal), `linkCredible`, plus the advisory urgency read if the wording was
+     pressured. Its auth result comes from 05's `playerSentAuth` table, which has a row for each of
+     the six menu domains and for the lab's two accounts (`guest`, `freemail`).
+   - **Look-alike payroll notice** (authored, fixed look-alike domain): all three checks pass, **for
+     the look-alike domain**. Authentication proves the sending domain is *consistent*, not
+     *trustworthy*; this is the lesson students most often get wrong.
    - **Parcel notice with a zip** (authored phish) and **CV with an odd portfolio link to the careers
      inbox** (authored phish; the defender's view of stage 3 round 1).
    - **Genuine mail via a forwarder** (authored): Jed to Pierce, Friday balance sheet. SPF fail
@@ -317,37 +374,41 @@ Tomasz takes the report and sets a debrief exercise. The same strings serve both
      aligns. Teaches why DMARC needs only one aligned pass and why SPF alone breaks on forwarding.
    - **A vendor invoice** and **a staff newsletter** (authored, genuine).
 
-   The concept panel (SPF, DKIM, DMARC; the 05 glossary) is short and follows 05's definitions: SPF
-   lists the hosts allowed to send for the envelope domain; DKIM signs chosen headers and the body;
-   DMARC requires SPF or DKIM to pass *and align* with the visible `From` domain, and publishes a
-   policy (`none`, `quarantine`, `reject`). The consequence of AccountingNow's `p=none` is taught in
-   the stage 6 finding and in the `headerNote` on the student's own Pierce phish ("a policy of `none`
-   monitors but does not stop this").
-2. **Threat-intel profile (Ch. 12).** The board switches to `defender` mode: the facts the student
+   The student passes the step when the round's percent reaches the set's `passPercent` (60): the
+   triage starter writes `triage_pass` (`setGlobalPrefix: "triage_"`), and a round below it can be run
+   again (mission-stage sets have no first-attempt guard, 05). The concept panel (SPF, DKIM, DMARC;
+   the 05 glossary) is short and follows 05's definitions: SPF lists the hosts allowed to send for the
+   envelope domain; DKIM signs chosen headers and the body; DMARC requires SPF or DKIM to pass *and
+   align* with the visible `From` domain, and publishes a policy (`none`, `quarantine`, `reject`). The
+   consequence of AccountingNow's `p=none` is taught in the stage 6 finding and in the `headerNote` on
+   the student's own Pierce phish ("a policy of `none` monitors but does not stop this").
+2. **Threat-intel profile (Ch. 12).** The SOC board switches to `defender` mode: the facts the student
    collected, titled "what an attacker can assemble about us". For each of four exposed facts (the
    email pattern, the document metadata, the Lord social post, the careers inbox) the student picks
    one mitigation from an authored list (remove the staff email list, strip PDF metadata on publish,
    a social-media policy, a call-back procedure), each with a reason. The chosen mitigations make up
-   the profile. There is no indicator tagging in this slice.
+   the profile. There is no indicator tagging in this slice (the mode's indicators step is off unless
+   authored).
 
-Finishing the profile sets `profile_done`.
+When every fact has a good mitigation chosen the mode sets `profile_done`.
 
 ### Closing debrief (Blue Team Room)
 
 Tomasz gives a short in-person debrief once `profile_done` is set: what the exercise showed, what
-AccountingNow will change, and the no-blame line. Branches are gated on globals (the call went well
-or was reported; a first-try land on Pierce) and use fixed strings, so voiced lines print no
-variables. The conversation ends with `#complete_task:closing_debrief` and `#exit_conversation`,
-which completes the mission-conclusion aim and opens the conclusion screen.
+AccountingNow will change, and the no-blame line. Branches are gated on globals (`dev_reported` and
+`pretext_service_desk_call_outcome` for the call; `phish_pierce_attempts` equal to 1 for a first-try
+land on Pierce) and use fixed strings, so voiced lines print no variables. The conversation ends with
+`#complete_task:closing_debrief` and `#exit_conversation`, which completes the mission-conclusion aim
+and opens the conclusion screen.
 
 ## 4. Rules, gating & assessment
 
 ### Critical path
 
 ```
-roe_signed -> plan_done -> osint_done -> phish_hampshire_landed -> phish_pierce_landed
+roe_signed -> plan_done -> osint_done (+ username convention) -> phish_hampshire_landed -> phish_pierce_landed
            -> [ landing_payroll_login_built  AND  pretext_call_done ]   (either order)
-           -> phish_lord_landed -> report_filed -> triage_done -> profile_done -> closing_debrief (mission complete)
+           -> phish_lord_landed -> report_filed -> triage_pass -> profile_done -> closing_debrief (mission complete)
 ```
 
 Everything on it is a deterministic judgement with an explanation. There is no timer, no lose state
@@ -358,77 +419,110 @@ and call feed the Sofia Lord phish; the report feeds the Blue Team door).
 ### Time budget (target 75 minutes; accepted range 60 to 90)
 
 A first-time student, including walking, reading and dialogue. The figures are estimates until the
-timed blind playtest in section 9 replaces them.
+timed blind playtest in section 9 replaces them. The budget has no slack line: the accepted range is
+the slack, and the cut order below is applied if the playtest runs long.
 
 | Stage | Minutes | What is in it |
 |-------|--------:|---------------|
 | 0 Authorisation | 5 | Brief, five scope cards, one stop-rule question, Whitlock's line |
-| 1 Scope & plan | 4 | Two picks; target cards appear |
-| 2 OSINT | 11 | Three layers, derive-the-pattern pick, two metadata picks, search list, 11 facts |
-| 3 Phish rounds 1 and 2 | 11 | Freemail account (1), Hampshire (3), Pierce (7) with two to three attempts each |
-| 4 Landing page | 6 | Seven choices, the tells feedback |
-| 5 Call and round 3 | 11 | Pretext card and call (7), Sofia's phish (4) |
-| 6 Report | 6 | Results, three findings paired |
-| 7 Triage and profile | 13 | Eight messages (9), four mitigations (4) |
+| 1 Scope & plan | 4 | Objective and measure picks |
+| 2 OSINT | 10 | Team page, Hunter lookup, name search, three social profiles, the document's properties panel, the archived chart; 11 facts |
+| 3 Phish rounds 1 and 2 | 11 | Freemail account (1), Hampshire (3), Pierce (7) with two to three attempts each; the 15-second reply waits overlap with reading the checklist |
+| 4 Landing page | 7 | Seven choices and the tells feedback (5); the optional inspection after round 3 (2) |
+| 5 Call and round 3 | 11 | Pretext card, call and debrief screen (7), Sofia's phish (4) |
+| 6 Report | 6 | Results table, three findings paired |
+| 7 Triage and profile | 12 | Eight messages (9), four mitigations (3) |
 | Closing debrief | 3 | Tomasz |
-| Walking, doors, Ruth's hand-overs | 5 | Spread across the stages |
+| Walking, doors, Ruth's hand-overs | 6 | About eight door trips and five conversations with Ruth, spread across the stages |
 | **Total** | **75** | |
 
-Reply delays are short in-game waits that overlap with the next action, so they add no time. The
-Tesseract lab estimated 45 to 60 and ran 60 to 75 with real students (`scenarios/lab_tesseract_trials/DESIGN.md`),
-so expect this lab to run past 75 for a slow cohort. Cut order, with the minutes each saves, if the
-playtest runs long:
+If Dev's lockout fires, the two minutes are spent on the page builder, so it adds no time unless the
+page is already built. The Tesseract lab's design records an estimate of 60 to 75 minutes that the user
+accepted (`scenarios/lab_tesseract_trials/DESIGN.md`, D3); there is no measured figure from real
+students for either lab. Expect this lab to run past 75 for a slow cohort.
+Cut order, with the minutes each saves, if the playtest runs long:
 
-1. Drop the stage 7 profile and end on the triage (4).
-2. Drop Hampshire's round and start the phishing at Pierce (3), moving the open-inbox lesson to a
+1. Drop the stage 7 profile and end on the triage (3).
+2. Drop Hampshire's round and start the phishing at Pierce (4), moving the open-inbox lesson to a
    triage message.
-3. Reduce the triage to six messages (3).
+3. Reduce the triage to six messages, four authored and the two `playerSent` (3).
 4. Reduce the report to two findings (2).
 
-The things that are already cut for time, and where each would return in an extension: the
-stand-alone header-interpretation quiz, the DMARC rollout simulation, indicator tagging in the
-profile, a second ambiguous search result and the fourth tool concept card.
+Already left out for time, and where each would return in an extension: the stand-alone
+header-interpretation quiz, the DMARC rollout simulation, indicator tagging in the profile and the
+fourth tool concept card.
 
 ### Objectives (aims and tasks)
 
 Standard aim/task structure (`README_scenario_design.md`, Objectives System), each aim unlocked by
 the previous (`unlockCondition.aimCompleted`). Every task is required: the platform score counts
 optional tasks in the total (see "Assessment"), so the lab has none. Tasks that wait on minigame
-outcomes are `manual` tasks completed by an `eventMapping` `completeTask` on Ruth (she is in the
-start room, so she is the single listener), keyed to `global_variable_changed:<name>`. Tasks in later
-aims ship `status: "active"` because `unlockAim` activates only the first task of an aim. Each
-`enter_room` task sits first in its aim.
+outcomes are `manual` tasks completed by an `eventMapping` `completeTask` on Ruth's NPC record
+(`eventMappings` live on NPC records, and she is in the start room, so she is the single listener),
+keyed to `global_variable_changed:<name>`. The mappings are once-only, because the writers can set a
+global more than once. Ruth's check-in knots also re-issue `#complete_task` for any completing global
+that is already true, so a student who works out of order, or a task that was not yet active when its
+global changed, loses nothing. Tasks in later aims ship `status: "active"` because `unlockAim`
+activates only the first task of an aim. Each `enter_room` task sits first in its aim.
 
-| Aim | Tasks (type) | Completes on |
-|-----|--------------|--------------|
-| `authorise` | `scope_cards` (`manual`), `stop_rule` (`manual`) | `roe_signed` |
-| `plan` | `pick_objectives` (`manual`), `pick_measures` (`manual`) | `plan_done` |
-| `recon` | `enter_recon` (`enter_room`), `email_pattern_derived` (`manual`), `metadata_read` (`manual`), `ready_hampshire`, `ready_pierce`, `ready_lord` (`manual`, each completed by Ruth's mapping on `target_ready_<id>`) | the last task's `onComplete.setGlobal` sets `osint_done` (nothing else sets it) |
-| `phish_easy` | `enter_operations` (`enter_room`), `hampshire_landed` (`manual`), `pierce_landed` (`manual`) | `phish_pierce_landed` |
-| `prepare_hard` | `landing_page_built` (`manual`), `call_dev` (`manual`) | both `landing_payroll_login_built` and `pretext_call_done`, either order |
-| `phish_hard` | `lord_landed` (`manual`) | `phish_lord_landed` |
-| `report` | `results_reviewed` (`manual`), `findings_paired` (`manual`) | `report_filed` |
-| `defend` | `enter_blue_team` (`enter_room`), `triage_done` (`manual`), `profile_done` (`manual`), `closing_debrief` (`manual`, completed by Tomasz's `#complete_task`) | `closing_debrief`; the aim has `missionConclusion: true` |
+**Each task has its own completing global.** The board modes and the report builder set a step
+global per step and a block global when every step is done (`00` §11, "Engagement mode blocks").
 
-That is eight aims and 22 tasks.
+| Aim | Task (type) | Completes on | Hand-over or unlock |
+|-----|-------------|--------------|---------------------|
+| `authorise` | `scope_cards` (`manual`) | `roe_scope_done` | |
+| | `stop_rule` (`manual`) | `roe_stoprule_done` | `roe_signed` (block): Whitlock's scene |
+| `plan` | `pick_objectives` (`manual`) | `plan_objective_done` | |
+| | `pick_measures` (`manual`) | `plan_measures_done` | `plan_done` (block): Recon key |
+| `recon` | `enter_recon` (`enter_room`) | entering the room | |
+| | `email_pattern_found` (`manual`) | `se_intel_email_pattern` | |
+| | `metadata_read` (`manual`) | `se_intel_username_convention` | |
+| | `ready_hampshire` (`manual`) | `target_ready_hampshire` | |
+| | `ready_pierce` (`manual`) | `target_ready_pierce` | |
+| | `ready_lord` (`manual`) | `target_ready_lord` | `osint_done` plus `se_intel_username_convention`: Operations key |
+| `phish_easy` | `enter_operations` (`enter_room`) | entering the room | |
+| | `hampshire_landed` (`manual`) | `phish_hampshire_landed` | |
+| | `pierce_landed` (`manual`) | `phish_pierce_landed` | |
+| `prepare_hard` | `landing_page_built` (`manual`) | `landing_payroll_login_built` | |
+| | `call_dev` (`manual`) | `pretext_call_done` | aim ends when both are done, either order |
+| `phish_hard` | `lord_landed` (`manual`) | `phish_lord_landed` | |
+| `report` | `results_reviewed` (`manual`) | `report_results_done` | |
+| | `findings_paired` (`manual`) | `report_findings_done` | `report_filed` (block): Blue Team key |
+| `defend` | `enter_blue_team` (`enter_room`) | entering the room | |
+| | `triage_passed` (`manual`) | `triage_pass` | |
+| | `profile_done` (`manual`) | `profile_done` | |
+| | `closing_debrief` (`manual`) | Tomasz's `#complete_task` | the aim has `missionConclusion: true` |
+
+That is eight aims and 22 tasks. `osint_done` is not set by a task: `evaluateReadiness` sets it from
+`grantFact` when every card in `intelBoard.people` is ready (`00` §4), whatever order the tasks
+complete in.
 
 ### Global variables
 
 All are declared in `globalVariables` (the validator warns on undeclared `set_global` names).
-`se_intel_<id>` is derived from `social.intelFacts` (`00` §5).
+`se_intel_<id>` is derived from `social.intelFacts` (`00` §5). Writers set globals through the shared
+writer (`00` S3).
 
 | Global | Set by | Read by |
 |--------|--------|---------|
-| `roe_signed`, `plan_done`, `report_filed`, `profile_done` | stage UIs via `complete(true)` → `set_global` | Ruth's ink, aim unlocks, key hand-overs |
-| `se_intel_<id>` (14 contract facts, plus `se_intel_old_org_chart`) | 02 collects; 06 `grants.intel` for the three call facts | 03 readiness, 04, composers, Ruth's hints |
-| `target_ready_hampshire`, `target_ready_pierce`, `target_ready_lord` | 03 readiness | the three `recon` tasks, which set `osint_done` |
-| `phish_hampshire_landed`, `phish_pierce_landed`, `phish_lord_landed` | the target's outcome (set by the mail story where the target has a `character`, by `outcome.setGlobal` for Hampshire; one or the other, never both) | aims, report metrics |
-| `acct_freemail` | the mail client's account creation | `social.mailClient.accounts` |
-| `landing_payroll_login_built` | 07 (`landing_<id>_built`; the chosen domain is in the persisted page record, not a global) | `linkCredible` (04), the look-alike message in 05 |
-| `pretext_call_done`, `dev_reported`, `dev_influence`, `dev_latched`, `pretext_service_desk_call_outcome`, `pretext_service_desk_call_lowest`, `pretext_service_desk_call_state` | 06 (§4.8, §6) | aims, report metrics, Ruth and Tomasz |
-| `pierce_influence`, `lord_influence` (and `_latched`) | the mail stories, via `se_influence` (`00` §8) | 04 `strictIfGlobal` hooks if authored, the bar in the mail pane |
-| `metric_sent_<id>`, `metric_failed_<id>` | 01 send log (names to agree with 01) | report workstation |
-| `triage_done`, `triage_percent`, `triage_reportRate` | 05 (`setGlobalPrefix: "triage_"`) | `defend` aim, Tomasz's debrief |
+| `roe_scope_done`, `roe_stoprule_done`, `roe_signed` | the `scope` mode (03) | `authorise` tasks, Ruth, Whitlock |
+| `plan_objective_done`, `plan_measures_done`, `plan_done` | the `plan` mode | `plan` tasks, Ruth |
+| `profile_done` | the `defender` mode (no steps) | the `defend` task, Tomasz |
+| `report_results_done`, `report_findings_done`, `report_filed` | the report builder (N1) | `report` tasks, Ruth |
+| `se_intel_<id>`: the 14 contract facts plus `se_intel_baker_namesake` and `se_intel_old_org_chart` | `grantFact`: 02 for browsing finds, 06 `grants.intel` for the three call facts | 03 readiness, 04, composers, Ruth's hints, the `recon` tasks |
+| `target_ready_hampshire`, `target_ready_pierce`, `target_ready_lord`, `osint_done` | `evaluateReadiness`, run from `grantFact` | the `ready_*` tasks, Ruth |
+| `phish_hampshire_landed` | the text job at reply delivery | `hampshire_landed`, aims |
+| `phish_pierce_landed`, `phish_lord_landed` | the target's `on_email` ink at reply delivery | `pierce_landed`, `lord_landed`, aims |
+| `phish_hampshire_attempts`, `phish_pierce_attempts`, `phish_lord_attempts` | the mail client, on each send | Tomasz's debrief |
+| `acct_freemail`, `acct_freemail_choice` | the `freemail` account's `createMenu` | `social.mailClient.accounts` |
+| `landing_payroll_login_built`, `landing_payroll_login_domain` | 07, on attach (`landing_<pageId>_built`, `_domain`) | the `prepare_hard` task; `linkCredible` reads the page record |
+| `se_landing_pages` | 07 (object, default `{}`) | the mail client (`linkInfo`), the report, 05's `domainFrom` |
+| `se_osint_state`, `se_board_state` | 02, 03 (objects, default `{}`) | their own minigames |
+| `pretext_call_done`, `pretext_call_reported` | 06 call outcomes | the `call_dev` task, Ruth |
+| `pretext_service_desk_call_outcome`, `_lowest`, `_state` | the pretext session (06) | the report, Tomasz |
+| `dev_influence`, `dev_latched`, `dev_wary`, `dev_refusing`, `dev_reported`, `dev_lockout_until`, `dev_lockout_channel` | the influence service (`00` §8), Dev's ink | the bar, Ruth, the report |
+| `pierce_influence`, `pierce_latched`, `pierce_wary`; `lord_influence`, `lord_latched`, `lord_wary` | the mail stories and the influence service | the bar in the mail pane |
+| `triage_percent`, `triage_reportRate`, `triage_done`, `triage_pass` | the triage starter (`setGlobalPrefix: "triage_"`, `passPercent: 60`, 05) | the `triage_passed` task (on `triage_pass`), Tomasz |
 
 ### Hints and no dead ends
 
@@ -442,9 +536,9 @@ All are declared in `globalVariables` (the validator warns on undeclared `set_gl
 - **No KO.** `disableAttacks: true` turns off punching and tells the validator to skip its
   KO-resilience check. Ruth hands over keys in person, which is safe because nobody can be knocked
   out.
-- **Reload safety.** Board facts, mail state (sent messages, mailboxes, schedulers), the landing page
-  record, the pretext session and the report draft persist in game state (`00` §5, §9, §10; 01 N2,
-  03 N2; 06 `PretextSession`).
+- **Reload safety.** Board facts, mail state (sent messages, mailboxes, jobs, drafts, metrics), the
+  landing page record, the pretext session, Dev's lockout deadline and the report draft persist in
+  game state (`00` §5, §8, §9, §10a; 03 N2; 06 `PretextSession`).
 
 ### Ethics and authorisation (book Ch. 2)
 
@@ -463,26 +557,27 @@ aims completed. BreakEscape computes it in `Game#calculate_task_score`
 (`app/models/break_escape/game.rb`, lines 50 to 58): `tasks_completed / total_tasks * 70` plus
 `objectives_completed / total_aims * 30`. `total_tasks` counts every task, optional ones included, so
 skipping an optional task lowers the ceiling. For a VM-free mission Hacktivity's `GameScoringJob`
-(`app/jobs/game_scoring_job.rb`, lines 21 to 29) takes that value as the game's score, recalculates
+(`app/jobs/game_scoring_job.rb`, lines 24 to 36) takes that value as the game's score, recalculates
 the event result and broadcasts it. There is no per-outcome mark, hint count, attempt count or tutor
-view. `merge_global_variables!` (`game.rb` lines 240 to 262) persists any declared global the client
-sends, so the lab can store counters, but nothing reads them.
+view. `merge_global_variables!` (`game.rb`, from line 242) persists every global key the client sends
+except imported ones, so the lab can store counters, but nothing reads them. Only the ink sync
+tests for declared names.
 
 **What the lab can evidence with that.** The lab has no optional tasks and 22 required ones, so the
 score is a completion share and a completed run scores 100. Each learning outcome is evidenced by the
 tasks that can only complete once the student has done the thing. A task completes only when the
-underlying judgement is right: wrong scope cards, wrong findings pairs and wrong triage verdicts are
-explained and re-asked, so a student can finish with mistakes made on the way.
+underlying judgement is right: wrong scope cards, wrong findings pairs and a low triage round are
+explained and re-done, so a student can finish with mistakes made on the way.
 
 | Outcome (section 1) | Tasks that evidence it |
 |---------------------|------------------------|
 | 1 scope & law | `scope_cards`, `stop_rule` |
-| 2, 3 OSINT | `email_pattern_derived`, `metadata_read`, `ready_hampshire`, `ready_pierce`, `ready_lord` |
+| 2, 3 OSINT | `email_pattern_found`, `metadata_read`, `ready_hampshire`, `ready_pierce`, `ready_lord` |
 | 4 spear-phish | `hampshire_landed`, `pierce_landed`, `lord_landed` |
 | 5 landing page | `landing_page_built` |
 | 6 pretext | `call_dev` |
-| 7 reporting | `results_reviewed`, `findings_paired` |
-| 8 authentication | `triage_done` |
+| 7 reporting | `results_reviewed`, `findings_paired`, `pick_objectives`, `pick_measures` |
+| 8 authentication | `triage_passed` (a round at or above the pass mark; a failed round is re-run) |
 | 9 mitigations | `profile_done` |
 
 The in-game records the student sees (attempts, failed factors, hints used, the lowest influence Dev
@@ -491,8 +586,8 @@ reached) are for the student and the closing debrief. They do not reach Hacktivi
 **Open (needs Hacktivity work, not decided here).** A weighted rubric would need per-outcome marks and
 a tutor view. Two options, neither chosen: (a) keep the platform score as the completion share and give
 the module leader a hand-applied rubric; (b) have the game write counters into `globalVariables`
-(`hints_used_<stage>`, `attempts_<target>`, `roe_first_try`, `metric_*`) and build a per-student report
-in Hacktivity that reads them. Option (b) changes `game_scoring_job.rb` and adds a tutor view. This is
+(`phish_<id>_attempts`, the `mailState.metrics` values, hint counts) and build a per-student report in
+Hacktivity that reads them. Option (b) changes `game_scoring_job.rb` and adds a tutor view. This is
 open question OQ2 in section 9. Optional follow-on coursework (not in-game): a 500-word reflection on
 what the look-alike domain taught about authentication, and a one-paragraph awareness note for staff.
 
@@ -512,9 +607,8 @@ what the look-alike domain taught about authentication, and a one-paragraph awar
 ### Files and platform configuration
 
 This is a non-VM lab, so the layout reference is `scenarios/lab_tesseract_trials/` (`secgen_scenario:
-null`), with `scenarios/sis01_healthcare/` for `creditsTheme`. `lab_scanning` is a VM lab and is not
-the model. Files: `mission.json`, `scenario.json.erb`, `ink/`. No VM fields, no `flags` block and no
-VM companion sheet.
+null`). `lab_scanning` is a VM lab and is not the model. Files: `mission.json`, `scenario.json.erb`,
+`ink/`. No VM fields, no `flags` block and no VM companion sheet.
 
 ```jsonc
 // mission.json
@@ -530,9 +624,11 @@ VM companion sheet.
 }
 ```
 
-In the scenario: `"disableAttacks": true`, `"creditsTheme": "cyber"`, a `missionConclusion` aim
-(`defend`) with `"conclusionScreen": { "type": "end_screen" }` and `"concludeRequires": {}` (declared
-deliberately: the lab has no large technical work to verify server-side).
+In the scenario: `"disableAttacks": true`, a `missionConclusion` aim (`defend`) with
+`"conclusionScreen": { "type": "end_screen" }` and `"concludeRequires": {}` (declared deliberately:
+the lab has no large technical work to verify server-side). The lab sets no `creditsTheme`: the credits
+visualiser opens from a `music.events` entry with `credits` (as in `sis01_healthcare`), which this
+lab does not author, and `end_screen` draws only a plain overlay.
 
 ### Scenario schema: where each block lives
 
@@ -541,42 +637,75 @@ and the browser reads one object. Objects carry only a pointer in `minigameData`
 
 | Block (`social.*`) | Owner doc | Object pointer (`minigameData`) |
 |--------------------|-----------|---------------------------------|
-| `intelFacts`, `templates` | 00 | none |
-| `characters` (`pierce`, `lord`, `dev`) | 00 §8, §9 | none; channel records are ordinary NPC records |
-| `mailClient` (accounts, mailboxes, contacts, seeded inbox, payload kit) | 01 | mail workstation: `mailboxId`, `accountIds` |
-| `osint` | 02 | OSINT workstation: the site set id |
-| `intelBoard` (`readinessSlots`, `scopeNote`, people, defender relabel) | 03 | case-file board and SOC board: `boardMode` |
+| `intelFacts`, `people`, `templates` | 00 | none |
+| `characters` (`pierce`, `lord`, `dev`) | 00 §8, §9 | none; channel records are ordinary NPC records, and the two mail records are headless (`emailRecord`) |
+| `mailClient` (accounts, mailboxes, contacts, seeded inbox, payload kit) | 01 | `mail_terminal`: `{ accountIds }` |
+| `osint` | 02 | `osint-workstation`: `{ siteIds }` |
+| `intelBoard` (`readinessSlots`, title, `people`) | 03 | `case-file`: `{ mode }`, one object per mode |
 | `phishTargets` (`hampshire`, `pierce`, `lord`) | 04 | none; selected by the mail UI |
-| `triageSets` | 05 | triage workstation: `triageSetId` |
-| `landingPages` | 07 | page-builder workstation: `landingPageId` |
-| `pretextNpcs` (`service_desk_call`) | 06 | desk phone: `callId` |
-| `engagement` | 10 | report workstation: none (reads `social.engagement`) |
+| `triageSets` | 05 | `triage-workstation`: `{ triageSetId }` |
+| `landingPages` | 07 | `page-builder`: `{ landingPageId }` |
+| `pretextNpcs` (`service_desk_call`) | 06 | desk phone: `{ callId }` |
+| `engagement` (scope, plan, report, defender, `scopeNote`) | 10 | `report-workstation`: none (reads `social.engagement`) |
 
 New NPC fields (`social.characters` entries, `channels`, `syncedVars`, `thresholds`, headless email
 records) are 00's. The validator work this implies is in section 6.
+
+### Influence (`social.characters`)
+
+The three characters are the table in `00` §8 ("Characters of the student lab"); the values are:
+
+| Character | Channels | Start, range | Thresholds | Reply delay |
+|-----------|----------|--------------|------------|-------------|
+| `pierce` | email (`pierce_mail`) | 0, -40 to 100 | `wary` at -30 sets `pierce_wary`; nothing else | 15 s |
+| `lord` | email (`lord_mail`) | 0, -40 to 100 | `wary` at -30 sets `lord_wary`; nothing else | 15 s |
+| `dev` | phone (`dev_service_desk`) | -10, -100 to 100 | `wary` -40 sets `dev_wary`; `refuses` -50 sets `dev_refusing`; `reports` -70 sets `dev_reported`, ends the conversation and starts a 2-minute channel lockout that resets him to -30 | none |
+
+Pierce and Lord are reachable only by mail and are on the critical path, so they have no `refuses`,
+`reports` or `lockout`, and the -40 floor means failed sends (-10 each) only move the bar. Dev is the
+only lab character with a lockout, and it sits on `reports` so that a forced report lifts too. Hampshire
+has no character entry (no ink story, no bar). Ruth, Whitlock and Tomasz are ordinary story NPCs with
+no entry and no bar. No lab character uses `combatHostile`.
+
+### Object types (wiring checklist)
+
+Each new object type has one entry in `scripts/minigame-data-schemas.json`, a sprite
+`assets/objects/<type>.png` (the validator's sprite-per-type check), a branch in
+`systems/interactions.js`, a registered scene, a starter in `systems/minigame-starters.js` and a
+stylesheet linked in `show.html.erb` (README Conventions).
+
+| Object type | Room | `minigameData` | Opens | Interaction branch |
+|-------------|------|----------------|-------|--------------------|
+| `case-file` (three in the Engagement Office, one in the Blue Team Room) | both | `{ mode }`: `scope`, `plan`, `recon`, `defender` | `intel-board` (03) | `case-file` |
+| `osint-workstation` | Recon | `{ siteIds }` | `osint-browser` (02) | `osint-workstation` |
+| `mail_terminal` | Operations | `{ accountIds: ["guest","freemail"] }` | `mail-client` (01) | `mail_terminal` |
+| `page-builder` | Operations | `{ landingPageId: "payroll_login" }` | `landing-page-builder` (07) | `page-builder` |
+| desk phone | Operations | `{ callId: "service_desk_call" }` | `phone-chat` with `pretext-prep` (06) | the phone branch |
+| `report-workstation` | Engagement | none | `engagement-report` (N1) | `report-workstation` |
+| `triage-workstation` | Blue Team | `{ triageSetId }` | `inbox-triage` (05) | `triage-workstation` |
 
 ### Data volume
 
 | Content | Owner doc | Volume |
 |---------|-----------|--------|
 | `globalVariables`, `objectives`, rooms, doors, keys, NPC placement | this doc | one `scenario.json.erb` |
-| `mailClient` (two accounts, contacts, seeded inbox, payload kit) | 01 | ~6 benign seeded messages for realism, plus the triage set |
-| `osint` sites (company, careers, three social profiles, a PDF with metadata, an archived org chart, a search list) and `intelFacts` | 02, 00 §1 | 14 contract facts (11 found by browsing, 3 granted by the call) plus 1 stale |
-| `intelBoard` (title, `scopeNote`, people, readiness slots, defender relabel text) | 03 | one block, four modes |
-| `templates` and `phishTargets` ×3 | 04, 00 §10 | 3 targets, about 4 to 6 templates per target in `templateSets`, blank-value lists tagged distinctive or generic, replies, `redFlagStrings`, hints |
-| Landing-page rules, look-alike domain options, tells | 07 | 1 page model, ~6 tells |
+| `mailClient` (two accounts, contacts, seeded inbox, payload kit) | 01 | ~6 benign seeded messages for realism; the triage set is separate |
+| `osint` sites (company with an archive page, careers, three social profiles, a PDF with properties, a tools panel) and `intelFacts` | 02, 00 §1 | 14 contract facts (11 found by browsing, 3 granted by the call) plus 2 stale |
+| `intelBoard` (title, `people`, readiness slots) | 03 | one block, four modes |
+| `templates` and `phishTargets` ×3 | 04, 00 §10 | 3 targets, about 4 to 6 templates per target in `templateSets`, blank-value lists tagged distinctive or generic, replies, `factorStrings`, hints |
+| Landing-page rules, six look-alike domain options, tells | 07 | 1 page model, ~6 tells |
 | Pretext call: `pretextNpcs[service_desk_call]` and Dev's phone story | 06 §4.8 | 1 call, 2 asks, 2 to 3 pretext lines |
-| Triage set (8 messages with auth results, 2 of them `playerSent`) | 05 | 6 authored messages |
-| RoE sheet text, scope cards, plan picks, report findings, defender mitigations | this doc | text + 3 findings + 4 mitigation blocks |
+| Triage set (8 messages with auth results, 2 of them `playerSent`) | 05 | 6 authored messages, 2 `playerSent`, `playerSentAuth` rows for six domains and two accounts |
+| RoE sheet text, scope and question cards, plan picks, report findings, defender mitigations | this doc | text + 3 findings + 4 mitigation blocks |
 | Ink | this doc, 06, 00 §10 | 7 files (below) |
-| Concept cards | this doc | 3 tool `notes` objects (the SPF/DKIM/DMARC explainers are 05's glossary) |
+| Concept cards | 02 | the browser's three tool cards; the SPF/DKIM/DMARC explainers are 05's glossary |
 
 **Ink files** (the mail stories need `on_email` knots and the `email_*` and `<character>_influence`
 VARs, `00` §10; each declares its `se_intel_*` and synced VARs, `00` §5, §9):
 
 | File | Channel | Content |
 |------|---------|---------|
-| `ruth.ink` | person | Briefing, key hand-overs (`#give_item`), stage check-ins, debrief on the report |
+| `ruth.ink` | person | Briefing, key hand-overs (`#give_item`), stage check-ins that re-issue `#complete_task` for completed steps, debrief on the report |
 | `ruth_phone.ink` | phone | Hint hub: three rungs per stage, gated on progress globals |
 | `whitlock.ink` | person | The short authorisation scene |
 | `tomasz.ink` | person | Triage briefing and the closing debrief |
@@ -584,27 +713,44 @@ VARs, `00` §10; each declares its `se_intel_*` and synced VARs, `00` §5, §9):
 | `pierce_mail.ink` | email, headless | `on_email`: Pierce's reply and influence changes |
 | `lord_mail.ink` | email, headless | `on_email`: Sofia's reply and influence changes |
 
-Hampshire replies from her target's authored `replies` (no ink story, no `character`).
+Hampshire's reply is a text job from her target's authored `replies` (no ink story, no `character`).
 
 ### Authored fragments owned by this doc
 
 ```jsonc
 "engagement": {
   "client": "AccountingNow Ltd (fictional)",
+  "scopeNote": "Authorised exercise for AccountingNow Ltd (fictional). In scope: work email to named staff, the published service-desk line, public OSINT.",
   "roe": {
     "inScope":  [ "work email to named staff", "published service-desk phone line", "public OSINT" ],
     "outScope": [ "personal accounts", "physical entry", "real customers", "denial of service" ],
-    "stopContact": "Ruth Adeyemi, Northgate duty line",
-    "scopeCards": [
-      { "id": "personal_mail", "text": "Email a staff member's personal address", "inScope": false,
-        "why": "RoE section 4 limits the test to work accounts." }
+    "stopContact": "Ruth Adeyemi, Northgate duty line"
+  },
+  "scope": {
+    "onCompleteGlobal": "roe_signed",
+    "steps": [ { "id": "sort",     "onCompleteGlobal": "roe_scope_done" },
+               { "id": "stoprule", "onCompleteGlobal": "roe_stoprule_done" } ],
+    "cards": [
+      { "id": "personal_mail", "kind": "sort", "step": "sort", "text": "Email a staff member's personal address",
+        "inScope": false, "why": "RoE section 4 limits the test to work accounts." },
+      { "id": "real_compromise", "kind": "question", "step": "stoprule",
+        "text": "You find a real compromise. What do you do?",
+        "options": [ { "id": "stop_call", "text": "Stop and call the emergency contact", "correct": true,  "why": "..." },
+                     { "id": "carry_on",  "text": "Note it and carry on",               "correct": false, "why": "..." } ] }
     ]
   },
   "plan": {
-    "objectives": [ { "id": "disrupt_payroll", "correct": false, "why": "RoE section 3 bars disruption." } ],
-    "measures":   [ "sent", "opened", "clicked", "submitted", "reported", "callOutcome" ]
+    "onCompleteGlobal": "plan_done",
+    "steps": [ { "id": "objectives", "onCompleteGlobal": "plan_objective_done" },
+               { "id": "measures",   "onCompleteGlobal": "plan_measures_done" } ],
+    "objectives": [ { "id": "disrupt_payroll", "step": "objectives", "correct": false, "why": "RoE section 3 bars disruption." } ],
+    "measures":   [ { "id": "sent",   "step": "measures", "correct": true,  "why": "..." },
+                    { "id": "names",  "step": "measures", "correct": false, "blame": true, "why": "..." } ]
   },
   "report": {
+    "onCompleteGlobal": "report_filed",
+    "steps": [ { "id": "results",  "onCompleteGlobal": "report_results_done" },
+               { "id": "findings", "onCompleteGlobal": "report_findings_done" } ],
     "findings": [
       { "id": "spoofed_colleague", "text": "Finance acted on mail spoofing a colleague",
         "rootCauses": [ { "id": "no_banner_dmarc_none", "correct": true,  "why": "..." },
@@ -614,15 +760,18 @@ Hampshire replies from her target's authored `replies` (no ink story, no `charac
     ]
   },
   "defender": {
+    "onCompleteGlobal": "profile_done",
     "factMitigations": [ { "intel": "email_pattern",
-                           "options": [ { "id": "remove_list", "good": true, "why": "..." } ] } ]
+                           "options": [ { "id": "remove_list", "text": "Remove the staff email list", "good": true, "why": "..." } ] } ]
   }
 }
 ```
 
-All feedback strings are authored and linted for empty interpolation (04 N3). The `report` and
-`defender` blocks follow the "right answer plus a reason for each wrong one" shape of the 04
-factors, so one validator rule covers them (section 6, N7).
+The mode blocks follow `00` §11 ("Engagement mode blocks"); `factMitigations` lives only here. The
+`step` field on each card and pick is how an item names the step it belongs to (open request to 03,
+section 6). All feedback strings are authored and linted for empty interpolation (04 N3). The
+`scope`, `plan`, `report` and `defender` items follow the "right answer plus a reason for each wrong
+one" shape of the 04 factors, so one validator rule covers them (section 6, N7).
 
 **Optional lab sheet.** A short "practical"-mode sheet (concept recap per stage, hints) may be
 published via `HacktivityLabSheets` and linked from `mission.json`. The game must be completable
@@ -634,58 +783,65 @@ without it (all learning is in-game).
 
 | Stage | Component | Start interaction | Completion |
 |-------|-----------|-------------------|------------|
-| 0, 1 | Intel board (03), `scope` then `plan` mode | `case-file` object | `minigame_completed` → `set_global` (`roe_signed`, `plan_done`) |
-| 2 | OSINT browser (02) | recon workstation | intel globals → board; `osint_done` when all three targets are ready |
-| 3, 5 | Mail client (01) + rules engine (04) | mail workstation | `minigame_completed {targetId, landed, outcome, redFlags, tells}` (`00` §3) → the target's `phish_<id>_landed` |
-| 4 | Landing-page builder (07) | page-builder workstation | `landing_payroll_login_built` |
+| 0 | Intel board (03), `scope` mode | `case-file`, `{ mode: "scope" }` | `roe_scope_done`, `roe_stoprule_done`, then `roe_signed` |
+| 1 | Intel board, `plan` mode | `case-file`, `{ mode: "plan" }` | `plan_objective_done`, `plan_measures_done`, then `plan_done` |
+| 2 | OSINT browser (02) | `osint-workstation` | `grantFact` → `evaluateReadiness` sets `target_ready_<id>` and `osint_done`; the `recon` board (`{ mode: "recon" }`) is a viewer |
+| 3, 5 | Mail client (01) + rules engine (04) | `mail_terminal` | none on send; the reply delivery (ink job or text job) sets `phish_<id>_landed` (`00` §3, §10) |
+| 4 | Landing-page builder (07) | `page-builder` | `landing_payroll_login_built` and `_domain` on attach |
 | 5 | Pretext dialogue (06) on `phone-chat` | desk phone (`callId`) | `pretext_call_done` and the per-call globals (06 §6) |
-| 6 | Report builder (new, N1) | report workstation | `report_filed` |
-| 7 | Triage (05); board `defender` mode (03) | triage workstation; SOC board | `triage_done`; `profile_done` |
+| 6 | Report builder (new, N1) | `report-workstation` | `report_results_done`, `report_findings_done`, then `report_filed` |
+| 7 | Triage (05); board `defender` mode (03) | `triage-workstation`; SOC `case-file` | `triage_pass`; `profile_done` |
 
-Registration, starters and completion follow the pattern cited in 01 (`registerScene` in
-`minigames/index.js`, a starter in `systems/minigame-starters.js`, `base-minigame.js` emitting
-`minigame_completed`, bridging with `set_global` or an objective's `onComplete.setGlobal`). Ruth's
-`eventMappings` on `global_variable_changed:<name>` complete the `manual` tasks and give keys. A
-global cannot complete a task by itself; only the mapping does (README engine table).
+Registration, starters and completion follow the pattern in `01` and the README Conventions
+(`registerScene` in `minigames/index.js`, a starter in `systems/minigame-starters.js`,
+`base-minigame.js` emitting `minigame_completed`, bridging with `set_global` or an objective's
+`onComplete.setGlobal`). Ruth's `eventMappings` on `global_variable_changed:<name>` complete the
+`manual` tasks and give keys. A global cannot complete a task by itself; only the mapping does
+(README engine table).
 
-### Requests of other docs
+### What this doc relies on
 
-This doc assumes the following. Each is a request, so a later change in that doc is reconciled here.
+Every value below is settled in `00`; 10 builds on it and cites the section.
 
-| Doc | Request |
-|-----|---------|
-| `00` | (1) Add the stale fact `old_org_chart` (subject `company`, source the archived org chart on the public documents page) providing a `stale` name value for the departed finance lead, and list `se_intel_old_org_chart`. (2) `lord_trusts_portal_sender` provides a `name` and an `address` value for the portal's notification sender, and `lord`'s `primedFor.trusts` names that sender. (3) Confirm the `hampshire` and `lord` target records listed under `04` |
-| `01` | Accounts `guest` (given, spoofing) and `freemail` (created, with the authored address menu). A persisted send log with the counts the report needs, and the fixed "own account" From template (no blanks) used when the account cannot spoof |
-| `02` | The derive step is a pick of the pattern then a pick of a third address from candidates; two metadata prompts as picked answers; the archived org chart; a search list to pick from, with no typed query and no ambiguous result; three concept cards |
-| `03` | Modes `scope`, `plan`, `recon`, `defender` on `intelBoard`, one completion payload per mode: `scope` → `roe_signed`, `plan` → `plan_done`, `defender` → `profile_done`, `recon` is a viewer that sets `target_ready_<id>`. The case-file board advances `scope` → `plan` → `recon` from the progress globals, so one object serves three stages. `defender` mode supports a choose-one-mitigation interaction per exposed fact, with a reason |
-| `04` | A `hampshire` record (open inbox, `trusts: ["*"]`, distinctive `cv`, expected attachment `document`, `replies` only, no `character`); `pierce` and `lord` with `character`; `lord`'s `trusts` entry for the portal sender; `templateSets` per target; the lab does not use `lord_payslip_date_known`, because the date is an ordinary fact (`se_intel_lord_payslip_date`) |
-| `05` | A lab set of eight messages under `analyst` with `setGlobalPrefix: "triage_"` (so `triage_done` is written); header panel and glossary open; a message kind `playerSent` that reads the persisted sent record (`fromAccount`, `headerFrom`, `tells`) and takes truth from `tells`, included only when `tells` is non-empty so F is at least 1; a `domainFrom: "landing_page"` substitution on an authored message, with an authored `auth` result for each of the four menu domains (all pass); parallel-form balance checks (05 N5) skip `playerSent` messages. The lab uses no header quiz and no rollout simulation |
-| `06` | Matches §4.8: character `dev`, record `dev_service_desk`, call `service_desk_call`, outputs as in stage 5. Spoken reactions are fixed strings per held value (06 §4.4), so the audio plan voices only fixed lines |
-| `07` | Page id `payroll_login`, global `landing_payroll_login_built` (`landing_<id>_built`); the persisted page record exposes the chosen domain id for 05; the four menu domains each carry an authored `auth` row for 05; no input from globals to the page score |
+| Doc | What the lab uses | Settled in |
+|-----|-------------------|------------|
+| `00` | Facts and `provides` (including `old_org_chart`, `baker_namesake`, the portal sender, Lord's greeting forms), readiness and `osint_done`, characters, `createMenu`, sent record and `mailState.metrics`, pointers, engagement mode blocks, Atkinson Hyperlegible | §1, §4, §8, §10a, §11, §13 |
+| `01` | Accounts `guest` and `freemail`; the fixed `from_own` template; text-job replies for Hampshire; `kit_payroll_page`; per-target `phish_<id>_attempts` | `00` §10, §10a, §11a |
+| `02` | Hunter result `r_pattern` grants `email_pattern`; the field-selection panel grants `username_convention`; the J. Baker search keeps its ambiguous result; the archived chart `org_old_chart` grants `old_org_chart`; no typed input | `00` §1; 02 "Picked lookups" |
+| `03` | Four modes by `minigameData.mode`, one object per mode; mode blocks with `onCompleteGlobal`; question cards; defender mode has no indicators step unless authored | `00` §11 |
+| `04` | `hampshire` (`from_own`, `trusts: ["*"]`, `senderTrust`, `pretextRelevant`, `attachmentPlausible`, no `addressedAs`), `pierce`, `lord` (`trusts: ["portal"]`, `minDistinct: 2`, `addressedAs: ["lord_first"]`, `expectedLink { brandId, realDomain }`) | `00` §7, §13 |
+| `05` | A lab set of 8 (6 authored, 2 `playerSent`) under `analyst`, `setGlobalPrefix: "triage_"`, `passPercent`; `domainFrom: "landing_domain"` on `playerSent` entries only; `playerSentAuth` rows for the six domain ids and each account id; the free retry on mission-stage sets | `00` §10a, §13 |
+| `06` | Character `dev`, record `dev_service_desk`, call `service_desk_call`; the `reports` threshold with the lockout; a forced report runs the `reports` effects | `00` §8; 06 §4.8 |
+| `07` | Page `payroll_login`, the six-domain menu, the persisted record with `victim`, the two globals, no input from globals to the page score | `00` §11a, §13 |
+
+**Open request.** To `03`: each scope card, question card and plan pick carries a `step` id naming the
+engagement step it counts toward, so the board can set the step global when that step's items are all
+correct. `00` §11 defines the step globals but not how items bind to them; this doc authors `step` on
+each item.
 
 ### New engine work specific to this scenario
 
 | # | Item | Notes |
 |---|------|-------|
-| N1 | **Engagement report builder** (`minigames/engagement-report/`): results panel, findings pairing with the blame option, emits `report_filed` | Small; reuses overlay chrome and the right/wrong+why pattern from 04. Reads `social.engagement.report` and the counts from 01's send log |
-| N2 | **Metrics collection**: 01 records sends, failures and outcomes per target in `mailState`; the report reads them | Extend 01's persisted state rather than add a store |
-| N3 | **Board modes** `scope` and `plan` with the `engagement` data (scope cards, objective and measure picks) | Owned by 03; this doc supplies the data shapes in section 5 |
-| N4 | **Defender-mode mitigation picks** | Owned by 03; no indicator tagging in this slice |
+| N1 | **Engagement report builder** (`minigames/engagement-report/`): results panel, findings pairing with the blame option, sets `report_results_done`, `report_findings_done` and `report_filed` | Small; reuses overlay chrome and the right/wrong+why pattern from 04. Reads `social.engagement.report`, `mailState.metrics`, `se_landing_pages` and the pretext globals. Follows the full wiring checklist in README Conventions: scene, starter, interaction branch, stylesheet, schema entry, sprite, `requiresKeyboardInput`, its own Close |
+| N2 | **Report data**: the report reads what 01, 07 and 06 already record (`mailState.metrics`, the page record's `victim`, the call globals) | No store of its own |
+| N3 | **Board modes** `scope` and `plan` with the `engagement` data (scope and question cards, objective and measure picks) | Owned by 03; this doc supplies the data shapes in section 5 |
+| N4 | **Defender-mode mitigation picks** | Owned by 03; `engagement.defender.factMitigations`; no indicator tagging in this slice |
 | N5 | Door and key gating use existing locks and `#give_item`; **no new engine work** | Key locks carry `keyPins` |
 | N6 | Non-VM mission configuration: `secgen_scenario: null` and a `collection` label | `Mission#requires_vms?` already supports it; `db/seeds.rb` lines 67 to 71 read `secgen_scenario` and `collection` |
-| N7 | **Validator work** (`scripts/validate_scenario.rb`, `scripts/scenario-schema.json`, `scripts/minigame-data-schemas.json`) | `known_top_level` (lines 246 to 251) gains `social`; `known_npc_fields` and `known_behavior_fields` gain only what 00 §8 and §9 add; `minigame-data-schemas.json` gains an entry per new object type (`boardMode`, `mailboxId` and `accountIds`, `triageSetId`, `landingPageId`, `callId`); each new object type needs an `assets/objects/<type>.png` sprite (the validator's sprite-per-type check); a lint that `engagement.report` and `engagement.defender` use the right-answer-plus-reason shape; the promised lints from 00 §12 S11, 04 N3, 05 N5, 06 N10 and 07 |
+| N7 | **Validator work** (`scripts/validate_scenario.rb`, `scripts/scenario-schema.json`, `scripts/minigame-data-schemas.json`) | `known_top_level` (lines 246 to 251) gains `social`; `known_npc_fields` and `known_behavior_fields` gain only what 00 §8 and §9 add; `minigame-data-schemas.json` gains an entry per object type in the table above; each type needs its `assets/objects/<type>.png` sprite; every `engagement` item with a `correct` or `good` flag carries a `why`; every completing global in the objectives table is declared; the promised lints from 00 §12 S11, 04 N3, 05 N5, 06 N10 and 07 |
 | N8 | **Ink externals** (`se_influence`, `pretext_say`, `pretext_ask`) bind in `InkEngine` (`00` S1) | The authoring guide says "use synced-global `VAR`s, not `EXTERNAL` functions" because the engine binds only six read-only externals and an unbound one throws (`ink-engine.js` catches only the bind failure). When S1 lands, amend that rule in `README_scenario_design.md`. Also needed: bind in person-chat, phone-chat and the headless mail runner; add stubs to `scripts/ink_runtime_check/voicelines.mjs`, `inkcheck.js` and `reopencheck.mjs`; a validator rule that every `EXTERNAL` a story declares is bound for every channel the character supports |
 
-The other engine items the lab depends on (S1 to S11 in `00` §12, the OSINT, board, mail, pretext,
-triage and landing-page work in 01 to 07, the bundled sans-serif) are in the README's consolidated
-table. Nothing here needs a VM, the flag-station or the vm-launcher.
+The other engine items the lab depends on (S1 to S12 in `00` §12, the OSINT, board, mail, pretext,
+triage and landing-page work in 01 to 07, the bundled Atkinson Hyperlegible font) are in the README's
+consolidated table. Nothing here needs a VM, the flag-station or the vm-launcher.
 
 ## 7. Reuse and tuning
 
 - **Awareness (11):** the same data, shortened. Drop stage 0's legal detail to a one-card consent,
-  keep one OSINT layer, one easy target, no landing page, no header reading; defend becomes
-  spot-the-phish only. Targets, rules and strings are the same files with fewer factors required and
-  the meter on throughout.
+  keep one OSINT layer, one easy target, no landing page in most episodes, no header reading; defend
+  becomes spot-the-phish only. Targets, rules and strings are the same files with fewer factors
+  required and the meter on throughout.
 - **Eldritch Hacker:** any single stage is liftable (OSINT → phish → call). The lab's `phishTargets`
   and `osint` blocks are the templates. A `found` account and phone identities (`00` §10a) belong
   there, not here.
@@ -704,9 +860,11 @@ table. Nothing here needs a VM, the flag-station or the vm-launcher.
   headers; they do not walk. Vary ethnicity and age across the cast (standing preference).
 - Rooms: Engagement Office, Recon Room, Operations Room, Blue Team Room; orthogonal top-down props:
   desk, workstation, whiteboard/board, desk phone, SOC wall of screens.
-- Item sprites: RoE sheet, three keys (Recon, Operations, Blue Team), concept-card notes.
+- Object sprites, one per new type (`case-file`, `osint-workstation`, `mail_terminal`, `page-builder`,
+  `report-workstation`, `triage-workstation`), plus item sprites: RoE sheet, three keys (Recon,
+  Operations, Blue Team).
 - UI art owned by 01, 02, 03, 05, 07; this doc adds only the report panel (results table, finding
-  cards, tick and cross).
+  cards, tick and cross). All text the player reads or compares uses Atkinson Hyperlegible (`00` §6).
 - Audio: voice for Ruth, Dev and Tomasz, fixed lines only (the TTS cache is keyed on text, so no
   printed variables in a voiced line; Dev's reactions are fixed strings per held value, 06 §4.4).
   Music reuses an existing office track.
@@ -716,8 +874,8 @@ table. Nothing here needs a VM, the flag-station or the vm-launcher.
 Defaults are taken so nothing blocks; the same list is in `README.md`.
 
 - OQ1: **Retries as rehearsal.** Realistically a failed phish alerts the target. Default: retries are
-  free and unlimited, framed as rehearsal reviewed by Ruth, with failed sends counted in the report.
-  Alternative: a "heat" limit that forces a hint.
+  free and unlimited, framed as rehearsal reviewed by Ruth, with failed sends counted in the report;
+  a failed mail send moves the bar and nothing else. Alternative: a "heat" limit that forces a hint.
 - OQ2: **Assessment and Hacktivity scoring (open, not decided).** The platform records only the
   task/aim completion share (section 4). A weighted rubric by outcome, hint and attempt counts and a
   tutor view need Hacktivity work: either a hand-applied rubric over the completion share, or a
@@ -734,5 +892,6 @@ Defaults are taken so nothing blocks; the same list is in `README.md`.
 - OQ8: **`collection` label.** Default: reuse `escape_room`, the non-VM lab precedent
   (`lab_tesseract_trials`), so no platform change. Alternative: add a collection for this strand.
 - OQ9: **Extension content.** If the playtest shows spare time, restore in this order: indicator
-  tagging in the profile, a stand-alone header quiz, the DMARC rollout simulation. Each needs its
-  data shape specified in 05 or 03 first; none is built in this slice.
+  tagging in the profile (`engagement.defender.indicators`), a stand-alone header quiz, the DMARC
+  rollout simulation. Each needs its data shape specified in 05 or 03 first; none is built in this
+  slice.

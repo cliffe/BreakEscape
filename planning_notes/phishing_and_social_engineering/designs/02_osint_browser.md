@@ -30,7 +30,8 @@ deliberate: a browser that marked the useful lines would do the player's thinkin
 3. Select a block to note it. A noted fact saves at once (see Engine wiring).
 4. Open a document's properties panel and select the field that gives something away.
 5. Use the tools panel: pick a simulated tool lookup or a search from the list (below).
-6. Close the browser. Closing is a normal exit, and the case file (`03`) shows what is still missing.
+6. Close the browser with its own visible Close control (or Esc). Closing is a normal exit, and the case
+   file (`03`) shows what is still missing; its readiness already updated as each fact was collected.
 
 There is **no typed input anywhere in this browser.** No search box, no pattern prompt, no free-text
 answer. What a player can do is read, follow a link, select a block, or pick from a short authored list.
@@ -40,8 +41,9 @@ facts by finding them, and a fact then supplies the blank values they can use la
 ### One award path per fact
 
 Each fact in `social.intelFacts` is granted by **exactly one** element of the OSINT data: one block, one
-search result, one lookup result or one metadata field. That element's page or result id is the fact's
-`source` (`00` §1). No fact is also granted by merely viewing a page, and a page carries no `intel`
+search result, one lookup result or one metadata field. That element's own id (the block, post, result or
+field id, never its page or site id) is the fact's `source` (`00` §1): `row_pierce`, `note_q3`,
+`post_pierce_jed`, `r_pattern`, `f_author`, `org_old_chart`. No fact is also granted by merely viewing a page, and a page carries no `intel`
 array of its own. A fact that the player sees on two pages is granted by the one that the author
 names; the second page shows the same words as unmarked text. The validator checks this (N8).
 
@@ -64,7 +66,11 @@ Both paths call the same function (N2), so a fact looks the same however it arri
    lookups, if a scenario wants one, are a distinct entry ("this handle appears in a known breach list"),
    not conflated with enumeration.
 
-### Picked lookups (replaces a typed search box)
+The company site also keeps an **Archive** page (linked from the footer of every company page) holding an
+old organisation chart. It is a deliberately out-of-date source: selecting it grants the `stale` fact
+`old_org_chart`, which gives the composer a wrong manager and a wrong team to choose between (`00` §1).
+
+### Picked lookups
 
 The tools panel offers **one entry per thing the player could sensibly look up**, built from what they
 have already seen: a name from the team page, a handle from a profile, the company domain. An entry
@@ -77,8 +83,9 @@ so picking is a judgement, not a click-through.
   result grants `email_pattern`, the single award path for that fact. The team page also shows the
   published addresses, because a real directory does; seeing them is not a grant.
 - **A name search for "J. Baker"** (theHarvester or Recon-ng style) returns two entries on purpose, Jed
-  Baker of AccountingNow and a namesake elsewhere, so the player must use the company site to decide.
-  Selecting the namesake grants the `stale` fact `baker_namesake`; selecting the right entry grants
+  Baker of AccountingNow and a namesake in Leeds (`leeds_baker`, `00` §1), so the player must use the
+  company site to decide. Selecting the namesake result `r_namesake` grants the `stale` fact
+  `baker_namesake`; selecting the right entry (`r_jed`) grants
   nothing new and the result says why it matched (same employer, same role). OSINT is messy, which is
   the lesson, and the stale fact gives `05`/`04` something wrong to hold (`00` §1, "stale").
 - No tool is runnable and none connects anywhere. The learning is what each would return, why that
@@ -89,24 +96,29 @@ so picking is a judgement, not a click-through.
 Real tools are named with a one-line "what it does" on a concept card: **theHarvester** (emails,
 subdomains and names from public sources), **Hunter** (address patterns for a domain), **Recon-ng** (a
 framework that automates the above), **Maltego** (link-analysis graphs of people and organisations). The
-card is shown beside the lookup that models it. Cards are shared content with `07` N7. In the student lab,
-one card per layer is enough (the lab's time budget is in `10`); the other tools are one-line mentions.
+card is shown beside the lookup that models it, behind a visible "What is this?" button: `tool_hunter`
+(the Hunter lookup), `tool_harvester` (the name search), `tool_recon` (the handle search) and
+`tool_exiftool` (the document properties panel; **exiftool** reads the metadata a file carries). These
+four are the only concept cards in the OSINT stage; `10` shows no separate wall notes for them. Cards are
+shared content with `07` N7.
 
 ### Document metadata
 
 A `document` site has a properties panel listing authored `fields` (author, software, path, created,
 last-saved-by). Each field is a selectable row. Selecting one shows what it gives an attacker ("The author
 field is the staff member's username, `mpierce`. Usernames often follow a convention.") and, for the field
-that carries a fact, collects it. This replaces the old typed metadata prompts: the player decides which
-field matters by selecting it.
+that carries a fact, collects it. The player decides which field matters by selecting it; there are no
+prompts to answer. The panel carries the `tool_exiftool` card.
 
 ## Worked example: the flagship chain
 
 Player reads the team page and selects Melanie's row (`pierce_role`). They run the Hunter lookup and
 select the pattern (`email_pattern`). They read Melanie's post ("First week in the finance team, Jed's
 showing me the ropes!") and select it (`pierce_trusts_jed`). They find the team note ("Jed: I'll send Mel
-the Q3 balance sheet on Friday") and select it (`pierce_expects_balance_sheet`). Those four are exactly
-Pierce's recon prerequisites in `00` §4, so the case file flips her card to "Ready to approach". Each
+the Q3 balance sheet on Friday") and select it (`pierce_expects_balance_sheet`). Those four facts fill
+Pierce's three readiness slots in `00` §4 (who she is, who she trusts, what she expects). The moment the
+last one is granted, `grantFact` runs `evaluateReadiness` and sets `target_ready_pierce`; the case file
+only displays it, so a player who never opens the board still advances. Each
 fact also supplies blank values: `pierce_role` gives her name forms, `pierce_expects_balance_sheet` gives
 the document, Jed's name and "Friday", and `email_pattern` lets the composer build `j.baker@…` once a
 sender name is held (`00` §1, "Typed intel fact schema").
@@ -131,6 +143,10 @@ Facts are **not** defined here. `social.intelFacts` (`00` §1) holds each fact's
               "role": "Careers/HR", "address": "careers@accountingnow.example" },
             { "id": "row_lord",    "kind": "staff", "person": "lord", "name": "Sofia Lord",
               "role": "Intern", "address": "s.lord@accountingnow.example", "fact": "lord_intern" } ] },
+        { "id": "archive", "title": "Archive", "blocks": [
+            { "id": "org_old_chart", "kind": "p",
+              "text": "Organisation chart (2019): Jed Baker manages the team. Interns sit in Accounts.",
+              "fact": "old_org_chart" } ] },
         { "id": "notes", "title": "Team notes", "blocks": [
             { "id": "note_q3", "kind": "p", "text": "Jed: I'll send Mel the Q3 balance sheet on Friday.",
               "fact": "pierce_expects_balance_sheet" },
@@ -152,7 +168,7 @@ Facts are **not** defined here. `social.intelFacts` (`00` §1) holds each fact's
         { "person": "hampshire", "showIf": "se_intel_hampshire_careers", "posts": [
             { "id": "post_hampshire_cvs", "text": "So many CVs to get through before Friday.",
               "fact": "hampshire_cv_backlog" } ] } ] },
-    { "id": "deck", "url": "accountingnow.example/Q3.pdf", "type": "document",
+    { "id": "deck", "url": "accountingnow.example/Q3.pdf", "type": "document", "card": "tool_exiftool",
       "fields": [
         { "id": "f_author", "label": "Author", "value": "mpierce", "fact": "username_convention" },
         { "id": "f_software", "label": "Software", "value": "Microsoft Excel" },
@@ -160,11 +176,11 @@ Facts are **not** defined here. `social.intelFacts` (`00` §1) holds each fact's
   ],
   "tools": [
     { "id": "hunter", "label": "Hunter lookup: accountingnow.example", "card": "tool_hunter",
-      "unlockedBy": { "visited": "team" },
+      "unlockedBy": { "visited": "company.team" },
       "results": [ { "id": "r_pattern", "text": "Most addresses follow first-initial.surname@accountingnow.example",
                      "fact": "email_pattern" } ] },
     { "id": "name_baker", "label": "Name search: J. Baker", "card": "tool_harvester",
-      "unlockedBy": { "visited": "team" },
+      "unlockedBy": { "visited": "company.team" },
       "results": [ { "id": "r_jed", "text": "J. Baker, Finance, accountingnow.example" },
                    { "id": "r_namesake", "text": "J. Baker, Plumbing, Leeds", "fact": "baker_namesake" } ] },
     { "id": "name_pierce_decoy", "label": "Handle search: @mpierce_official", "card": "tool_recon",
@@ -174,12 +190,15 @@ Facts are **not** defined here. `social.intelFacts` (`00` §1) holds each fact's
 } }
 ```
 
-- A block's `fact` is the one award path for that fact. `showIf` names a global and works on blocks and
-  profiles, as in the forensic data platform's block renderer; here it hides Chris Hampshire's profile
-  until the careers page has been read, so the discovery order follows the story.
-- `baker_namesake` (and the "stale org chart" `00` §1 mentions) are decoy facts the scenario authors
-  into `social.intelFacts` with `kind: "stale"` entries. They are scenario-local and need declaring like
-  any other fact (see Unresolved at the end of this doc).
+- A block's `fact` is the one award path for that fact. `showIf` names a global. The forensic data
+  platform's renderer supports it on blocks only; applying it to a profile (as here, hiding Chris
+  Hampshire's profile until the careers page has been read) is new work in N1, so the discovery order
+  follows the story.
+- `unlockedBy.visited` takes either a site id (`"deck"`) or `siteId.pageId` (`"company.team"`), so the two
+  namespaces never mix. `se_osint_state.visited` stores the same strings.
+- `baker_namesake` (result `r_namesake`) and `old_org_chart` (block `org_old_chart` on the company site's
+  archive page) are the two `stale` facts defined in `00` §1 and its `provides` table. They are declared
+  in `social.intelFacts` like any other fact.
 - Which blocks exist, the page text, and the `url` strings are content only; they never carry values the
   engine compares. Domain, address and metadata strings render raw (not through `displayDashes`; see N9).
 - Everything in this block reaches the browser unfiltered (`00` §11). That is acceptable for the lab.
@@ -188,20 +207,22 @@ Facts are **not** defined here. `social.intelFacts` (`00` §1) holds each fact's
 
 Every recon-fed factor in `00` §4 has its backing fact reachable here, or by the call.
 
-| Fact | Granted by | Backs |
+| Fact | Granted by (element id) | Backs |
 |------|-----------|-------|
-| `email_pattern` | Hunter lookup result | `senderTrust` (address built from a held name) |
-| `pierce_role` | team page, Pierce row | `addressedTo` name forms; Pierce card |
-| `pierce_trusts_jed` | Pierce's post | `senderTrust` (Pierce) |
-| `pierce_expects_balance_sheet` | team note | `pretextRelevant`, `attachmentPlausible` (Pierce) |
-| `hampshire_careers` | careers page | `senderTrust` (open inbox) |
-| `hampshire_cv_backlog` | Chris's post | `pretextRelevant` (Hampshire) |
-| `careers_attachment` | how-to-apply page | `attachmentPlausible` (Hampshire) |
-| `tech_stack` | careers page | flavour; not a prerequisite |
-| `lord_intern` | team page, Lord row | Lord's name forms; Lord card |
-| `lord_portal` | Sofia's post | Lord readiness; what to clone (`07`) |
-| `username_convention` | document author field | lab teaching only |
-| `lord_portal_name`, `lord_payslip_date`, `lord_trusts_portal_sender` | the pretext call (`06`) | `linkCredible`, `pretextRelevant`, `senderTrust` (Lord) |
+| `email_pattern` | `r_pattern`, the Hunter lookup result | `senderTrust` (address built from a held name) |
+| `pierce_role` | `row_pierce`, team page | `addressedTo` name forms; Pierce card |
+| `pierce_trusts_jed` | `post_pierce_jed`, Pierce's post | `senderTrust` (Pierce) |
+| `pierce_expects_balance_sheet` | `note_q3`, team note | `pretextRelevant`, `attachmentPlausible` (Pierce) |
+| `hampshire_careers` | `careers_inbox`, careers page | `senderTrust` (open inbox) |
+| `hampshire_cv_backlog` | `post_hampshire_cvs`, Chris's post | `pretextRelevant` (Hampshire) |
+| `careers_attachment` | `apply_format`, how-to-apply page | `attachmentPlausible` (Hampshire) |
+| `tech_stack` | `careers_stack`, careers page | flavour; not a prerequisite |
+| `lord_intern` | `row_lord`, team page | Lord's name forms; Lord card |
+| `lord_portal` | `post_lord_payslip`, Sofia's post | Lord readiness; what to clone (`07`) |
+| `username_convention` | `f_author`, document author field | lab teaching only; in no readiness slot |
+| `baker_namesake` (stale) | `r_namesake`, name search | none; a wrong sender option |
+| `old_org_chart` (stale) | `org_old_chart`, archive page | none; a wrong manager and team |
+| `lord_portal_name`, `lord_payslip_date`, `lord_trusts_portal_sender` | `portal_name`, `payslip_date` (the pretext call, `06`) | `linkCredible`, `pretextRelevant`, `senderTrust` (Lord) |
 
 ## Engine wiring
 
@@ -213,32 +234,40 @@ README Conventions, listed here with this component's names so nothing is missed
 - A branch in `systems/interactions.js` for the workstation object type (for example `osint-workstation`),
   like the siem and command-board branches there; a sprite `assets/objects/osint-workstation.png`.
 - A stylesheet linked in `app/views/break_escape/games/show.html.erb`.
-- No `requiresKeyboardInput`: nothing is typed, so game keys are left alone. If a scenario ever adds a
-  text field, set it and follow the Esc rule below.
+- `requiresKeyboardInput: true` in the starter's params. The overlay is operated by Tab, Enter, Space and
+  arrow keys, and the player controller's document-level `keydown` handler would otherwise jump on Space,
+  call `tryInteractWithNearest()` on `E` (which can open another object's minigame) and swallow the
+  arrows; the flag pauses it (`core/player.js:279-330`, `keyboardPaused`;
+  `minigames/framework/minigame-manager.js:37-45`). Add a test-bridge check that Space and `E` do
+  nothing while the browser is open (`00` §6, "Overlay rules").
 - Validator keys and schema (N8): `social.osint` under the `social` top-level key (`00` §11, S11), and a
   `minigameData` schema entry for the workstation object.
 
-The object carries only a pointer: `minigameData: { siteIds?: [...] }` (new, optional; it limits a
-workstation to some sites, for example the careers-only terminal). Without it the browser shows every
-site in `social.osint`.
+The object carries only a pointer: `minigameData: { siteIds: [...] }` (`00` §11; it limits a workstation
+to some sites, for example the careers-only terminal). Without it the browser shows every site in
+`social.osint`.
 
 ### Collecting a fact, and persistence
 
 `grantFact(id)` (N2, one function in `systems/`, shared with `06`'s `grants.intel`) does all of this, and
 only on the false-to-true flip:
 
-1. Sets `se_intel_<id>` through the shared global writer (`00` S3; today
-   `applyActions({type:'set_global'})` in `systems/apply-actions.js`, which patches
-   `gameState.globalVariables` and emits `global_variable_changed:se_intel_<id>`). The shared writer
-   also broadcasts to cached ink stories, so a conversation already open sees it.
+1. Sets `se_intel_<id>` through the shared global writer (`00` S3). `applyActions({type:'set_global'})`
+   (`systems/apply-actions.js:33-43`) emits on every call and has no flourish; `grantFact` is the
+   flip-only wrapper that adds both. The shared writer also broadcasts to cached ink stories, so a
+   conversation already open sees it.
 2. Adds the fact as a note with `window.addNote(title, text, important)` (`minigames/notes/notes-minigame.js`):
    title "Evidence: <subject>", text the fact's `text`. `addNote` de-duplicates by title and text, so a
    repeat collect is harmless. `gameState.notes` already syncs (`state-sync.js`, `buildPlayerSections`)
    and restores (`core/game.js`), so the player gets a searchable evidence log with no new persistence.
 3. Calls `window.stateSync?.sync()` so a reload straight after a collect loses nothing.
+4. Runs `evaluateReadiness(readinessSlots, globals)` (`00` §4, in `systems/social-intel.js`), which sets
+   `target_ready_<id>` on each false-to-true flip and `osint_done` when every id in
+   `intelBoard.people` is ready. Readiness is therefore set where the facts are granted, with no
+   dependency on the board having been opened. The pretext call grants (`06`) call the same function.
 
-Visited pages (needed for `unlockedBy`) are kept as ids in one object, `se_osint_state`
-(`{ visited: [...] }`), a global under the `globalVariables[STATE_KEY]` pattern the SIEM minigame uses
+Visited sites and pages (needed for `unlockedBy`) are kept as ids in one object, `se_osint_state`
+(`{ visited: ["company", "company.team", ...] }`), a global under the `globalVariables[STATE_KEY]` pattern the SIEM minigame uses
 (`siem-dashboard-minigame.js`). It is declared in `globalVariables` with default `{}`. It is not an ink
 variable, so it never syncs to a story. Keep it ids-only; the 60 KB `pagehide` flush shares one budget with
 every other global (`state-sync.js`).
@@ -250,24 +279,30 @@ validator derives the list from `social.intelFacts` and checks it.
 
 Closing the browser is a normal exit. The scene sets `gameResult = { collected: [...], visited: [...] }`
 and calls `complete(true)`, so a close never emits `minigame_failed` (`base-minigame.js` `complete`).
-`BaseMinigame.start()` binds a document-level Escape that calls `complete(false)`; the browser passes
-`disableClose: true` and binds its own Escape that calls the same close. Scenarios drive tasks off the
+`BaseMinigame.start()` binds a document-level Escape that calls `complete(false)`, and `disableClose:
+true` hides the framework's close button as well as that handler (`base-minigame.js:18-23, 70-80`). The
+browser passes `disableClose: true`, draws its own visible **Close** control (touch players have no Esc)
+and binds its own Escape, in the capture phase, to the same close. Scenarios drive tasks off the
 `se_intel_*` globals, not off this event.
 
 A "Case file" button opens the intel board (`03`). Only one minigame runs at a time, and
 `MinigameFramework.startMinigame` ends the running one first (`minigames/framework/minigame-manager.js`),
-so the button uses the nested-launch convention in README Conventions: the browser's state is already in
-its globals, the launch passes `returnTo: { sceneType: 'osint-browser', params }`, and the board's close
-reopens the browser. The composer (`01`) does not open the board at all; it reads the `se_intel_*` globals
-inline.
+so the button uses engine item S12 (`00` §12, "Return to"): the browser's state is already in
+`se_osint_state` and the `se_intel_*` globals, it sets `suspended: true` in its params so its `onComplete`
+ignores the `onComplete(false, null)` that `startMinigame` fires, and it launches the board with
+`{ mode: 'recon', returnTo: { sceneType: 'osint-browser', params } }`. The board's close reopens the
+browser. The composer (`01`) does not open the board at all; it reads the `se_intel_*` globals inline.
 
 ### Reuse
 
 - **Block renderer.** `minigames/forensic-data-platform/forensic-data-platform-minigame.js` already renders
   typed blocks (`p`, `list`, `document-excerpt`, `callout`, `timeline`, `log-table`) with `showIf`. Copy that
-  renderer's block set for page bodies rather than writing a second one; the staff, post and result kinds
-  are the new ones. Authored text is set with `textContent` or an `escapeHtml` helper
-  (`blockchain-explorer-minigame.js`), never `innerHTML`, so a domain or handle cannot inject markup.
+  renderer's block set for page bodies rather than writing a second one, but not its `p` case, which
+  renders `block.html` through `displayDashes` (line 106); authored domains must not. The staff, post
+  and result kinds are the new ones. Authored text is set with `textContent`, or with a one-line
+  escaper copied into the new module (`escapeHtml` in `blockchain-explorer-minigame.js:4` is
+  module-local, and the `text()` helper beside it runs `displayDashes`), never `innerHTML`, so a
+  domain or handle cannot inject markup.
 - **Evidence log.** `window.addNote`, above.
 - **Markdown.** `utils/note-markdown.js` (`renderNoteMarkdown`) escapes input and renders headings, bold,
   lists and tables, but has no links or images. Use it for long bodies if wanted; clickable links are new.
@@ -279,21 +314,21 @@ inline.
 
 | # | Item | Where in code |
 |---|------|---------------|
-| N1 | `osint-browser` overlay: sites strip, display-only address bar, page renderer (company, social, document, tools), selectable blocks, properties panel. The wiring checklist above | new `minigames/osint-browser/`; `index.js`; `minigame-starters.js`; `systems/interactions.js`; `show.html.erb` |
-| N2 | `grantFact(id)`: shared writer (`00` S3), note, sync, flip-only; used by 02 and by `06` grants | new `systems/social-intel.js`; `systems/apply-actions.js` `set_global`; `notes-minigame.js` `window.addNote` |
+| N1 | `osint-browser` overlay: sites strip, display-only address bar, page renderer (company, social, document, tools), selectable blocks, properties panel, profile-level `showIf`, own Close control, `requiresKeyboardInput: true`. The wiring checklist above | new `minigames/osint-browser/`; `index.js`; `minigame-starters.js`; `systems/interactions.js`; `show.html.erb` |
+| N2 | `grantFact(id)`: shared writer (`00` S3), note, sync, flip-only, then `evaluateReadiness` (sets `target_ready_<id>`, `osint_done`); used by 02 and by `06` grants | new `systems/social-intel.js`; `systems/apply-actions.js` `set_global`; `notes-minigame.js` `window.addNote` |
 | N3 | Document properties view with selectable fields | in N1 |
 | N4 | Tools panel: picked lookups with `unlockedBy`, decoy entries, result blocks | in N1 |
-| N5 | Close as a normal exit, own Escape, nested launch to the case file with return-to (README engine table, "Minigame framework") | `minigames/framework/base-minigame.js` (`disableClose`), `minigame-manager.js` |
-| N6 | Cast headshots: each of `pierce`, `baker`, `hampshire`, `lord` needs a sprite key and a `<key>_headshot.png` (32x32); profile images fall back to `<key>_talk.png` frame 0. Site images live under `assets/osint/<scenario>/` | `public/break_escape/assets/characters/`; path built as in `ui/hud.js`; `person-chat-portraits.js` fallback |
-| N7 | Bundled readable sans-serif for page text and the address bar (README engine table, "Fonts and CSS"), plus authored domains rendered raw | `public/break_escape/assets/fonts/`; `css/fonts.css`; `utils/display-dashes.js` bypass |
-| N8 | Validator: every fact (bar the call-granted ones) is granted by exactly one element; every `fact` and `showIf` resolves; every `se_intel_*` declared; domain and address strings end `.example`; `social.osint` schema and the `minigameData` entry | `scripts/validate_scenario.rb` (`known_top_level`); `scripts/scenario-schema.json`; `scripts/minigame-data-schemas.json` (S11) |
-| N9 | Test: a string with `--` (an `xn--` label) displays unchanged in the address bar | `test/js/` |
+| N5 | Close as a normal exit, own Close control and Escape, nested launch to the case file with return-to (`00` S12) | `minigames/framework/base-minigame.js` (`disableClose`), `minigame-manager.js` |
+| N6 | Cast headshots: each of `pierce`, `baker`, `hampshire`, `lord` needs a sprite key and a `<key>_headshot.png` (32x32). A headshot-to-`<key>_talk.png` fallback for profile images does not exist (`person-chat-portraits.js:913-916` falls back the other way, `_talk` to `_headshot`), so either every key ships a headshot or the reverse fallback is new work here. Site images live under `assets/osint/<scenario>/` | `public/break_escape/assets/characters/`; path built as in `ui/hud.js`; `person-chat-portraits.js` |
+| N7 | Bundle Atkinson Hyperlegible (`00` §6) and apply `--se-font-readable` to every string the browser shows that holds a domain, address, handle, file name or metadata field, wherever it appears (address bar, tools-panel labels such as "Hunter lookup: accountingnow.example", result lines, notes, confirmations); authored domains rendered raw | `public/break_escape/assets/fonts/`; `css/fonts.css`; `utils/display-dashes.js` bypass |
+| N8 | Validator: every fact (bar the call-granted ones) is granted by exactly one element and each `source` equals that element's id; every `fact` and `showIf` resolves; every `unlockedBy.visited` is a site id or `siteId.pageId`; every `se_intel_*` declared; `se_osint_state` declared with default `{}`; domain and address strings end `.example`; `social.osint` schema and the `minigameData` entry | `scripts/validate_scenario.rb` (`known_top_level`); `scripts/scenario-schema.json`; `scripts/minigame-data-schemas.json` (S11) |
+| N9 | Test: the address-bar formatter (a pure function, so no DOM is needed) returns a string with `--` (an `xn--` label) unchanged; run by the CI step in `00` S11 | `test/js/` |
 
 ## Accessibility and small screens
 
 - A single column below about 700 px. The sites strip becomes a vertical list of buttons; the tools panel
   becomes a section under the page. Nothing depends on hover.
-- Every selectable block is a button reachable by Tab and Enter. Its accessible name is the block text,
+- Every selectable block is a button reachable by Tab and Enter, and the overlay has a visible Close button. Its accessible name is the block text,
   with "Add to notes" as the description. Links are real links in the page body, in tab order.
 - A visually hidden `aria-live="polite"` region announces "Noted: <fact text>" and "Nothing here you can
   use". The visible confirmation always carries words, not just a tick or colour.
@@ -305,7 +340,7 @@ inline.
 
 ## Reuse across audiences
 
-- **Student lab:** all four layers, document metadata, the ambiguous search, a concept card per layer.
+- **Student lab:** all four layers, document metadata, the ambiguous search, the archive page, the four concept cards.
   The lab's session length (about 75 minutes, `10`) limits how many sites and decoys it ships.
 - **Awareness:** company site and social only, fewer facts, no tools panel; the lesson is "look how much
   is public".
@@ -328,28 +363,17 @@ inline.
   Start 2P` for headings. Nothing is hard-coded green.
 - In-world pictures (logos, banners, product photos, headshots) are pixel art.
 - Text the player must read or compare is **inert DOM text in a readable sans-serif, not a pixel font**:
-  the address bar, document metadata, bios, posts and body text. The sans-serif is a bundled, self-hosted
-  face with clearly different `l`, `I`, `1` and `rn`/`m` (N7; none is bundled today, and the game's
-  existing fonts are `GNF`, `Pixelify Sans` and `Press Start 2P`). Without a bundled face the text would
-  take whatever the player's operating system supplies and look-alike domains would not behave as in a
-  real browser.
+  the address bar, document metadata, bios, posts, body text, and any tools-panel label or result line
+  that contains a domain, address or handle. The face is Atkinson Hyperlegible (`00` §6, N7), which keeps
+  `l`, `I`, `1` and `rn`/`m` apart; the game's own fonts (`GNF`, `Press Start 2P`) stay on chrome labels
+  and headings with no such string. Without a bundled face the text would take whatever the player's
+  operating system supplies and look-alike domains would not behave as in a real browser.
 - Real tools (CyberChef, a terminal) keep their own real look.
 
 ## Open questions
 
-- OQ1 (resolved): the derive-the-pattern step is gone. Sofia's address is on the team page, so there was
-  nothing to derive; `email_pattern` is collected from the Hunter lookup instead.
-- OQ2: simulate partial or rate-limited tool output? Default: clean for awareness, one ambiguous result
+- OQ1: simulate partial or rate-limited tool output? Default: clean for awareness, one ambiguous result
   (the two J. Bakers) in the lab.
-- OQ3: real-staff OSINT stays out of scope; fictional targets only.
-- OQ4: how many decoy blocks per page before selecting becomes tedious? Default: roughly one decoy to
+- OQ2: real-staff OSINT stays out of scope; fictional targets only.
+- OQ3: how many decoy blocks per page before selecting becomes tedious? Default: roughly one decoy to
   every useful block; tune in playtest.
-
-## Unresolved against `00`
-
-- `baker_namesake` and a stale org-chart fact are scenario-authored `stale` facts that `00` §1 mentions
-  in prose but does not list as ids. They belong in the `00` §1 fact table (or are declared per scenario).
-- `minigameData.siteIds` is not in `00` §11's list of pointers (`mailboxId`, `accountIds`, `triageSetId`,
-  `landingPageId`, `callId`). Add it, or drop it and ship one dataset per scenario.
-- `00` §1 lists `lord_intern` as found on "social + team page". This doc grants it from the team page only,
-  because a fact has one award path; `00` should say so.

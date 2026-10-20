@@ -39,15 +39,15 @@ it.
 | Doc | What it is | Status |
 |-----|------------|--------|
 | `designs/00_data_contract.md` | Shared schemas, canonical "AccountingNow" dataset and typed intel facts, factor library, intel-to-factor map, ink and engine constraints. §8 influence global and thresholds, §9 channels and synced globals, §10 email-to-ink contract, template and slot schema, §10a email identities, §11 where data lives (`social`), §12 engine work | Plan. Current. Contract for 01 to 11 |
-| `designs/01_mail_client.md` | Mail client (inbox and compose), accounts and mailboxes, reply delivery, persisted inbox | Plan. Being aligned with 00 |
-| `designs/02_osint_browser.md` | OSINT browser: company site, social media, public documents | Plan. Being aligned with 00 |
-| `designs/03_intel_board.md` | Intel board: evidence tracker, readiness, defender mode | Plan. Being aligned with 00 |
-| `designs/04_phish_rules_engine.md` | Phish-judging rules and layered feedback (a system, not a screen) | Plan. Being aligned with 00 |
-| `designs/05_inbox_triage_defender.md` | Inbox triage: the defender mirror and the pre/post assessment | Plan. Being aligned with 00 |
+| `designs/01_mail_client.md` | Mail client (inbox and compose), accounts and mailboxes, reply delivery, persisted inbox | Plan. Current |
+| `designs/02_osint_browser.md` | OSINT browser: company site, social media, public documents | Plan. Current |
+| `designs/03_intel_board.md` | Intel board: evidence tracker, readiness, defender mode | Plan. Current |
+| `designs/04_phish_rules_engine.md` | Phish-judging rules and layered feedback (a system, not a screen) | Plan. Current |
+| `designs/05_inbox_triage_defender.md` | Inbox triage: the defender mirror and the pre/post assessment | Plan. Current |
 | `designs/06_pretext_dialogue_system.md` | Pretext and vishing dialogue, on the character's influence global (`00` §8), separate stories per channel with synced globals (`00` §9) and templates (`00` §10) | Plan. Current |
-| `designs/07_landing_page_builder.md` | Landing-page builder, abstracted: a scored page model, never a working page | Plan. Being aligned with 00 |
-| `designs/10_lab_social_engineering.md` | The student lab scenario chaining 00 to 07 | Plan. Being aligned with 00 and 06; cut to one session |
-| `designs/11_awareness_product_episodes.md` | Awareness episodes (attack then defend), measurement, privacy | Plan. Being aligned with 00 and 05 |
+| `designs/07_landing_page_builder.md` | Landing-page builder, abstracted: a scored page model, never a working page | Plan. Current |
+| `designs/10_lab_social_engineering.md` | The student lab scenario chaining 00 to 07 | Plan. Current; cut to one session |
+| `designs/11_awareness_product_episodes.md` | Awareness episodes (attack then defend), measurement, privacy | Plan. Current |
 
 ## Key decisions
 
@@ -73,7 +73,7 @@ they exist without a loaded room. Intel from OSINT and earlier conversations arr
 globals that unlock credible claims. A new copy of `neye-eve.ink` is the worked example (`00` §9). (Replaces the earlier idea of one ink
 story per NPC serving every channel, switched by a `channel` variable.)
 
-**C. Email replies are written by ink (proposed).** The rules engine judges the message and writes the
+**C. Email replies are written by ink (decided 2026-10-20).** The rules engine judges the message and writes the
 result into the target's ink variables. The NPC's `on_email` knot then writes the reply, moves
 influence with a reason and fires outcome tags. The checklist (the teaching layer) shows at once; the
 reply (the diegetic layer) arrives after a delay (`00` §10, `01`).
@@ -87,7 +87,8 @@ the format the scorer wants. Free text, if allowed at all, is unscored flavour. 
 
 **E. Visual style (decided 2026-10-20).** In-world pictures are pixel art. Text the player must read or
 compare stays in a readable sans-serif, so look-alike domains behave as they do in a real browser. Real
-tools keep their own look. Details are in `01`, `02` and `07`.
+tools keep their own look. The bundled face is Atkinson Hyperlegible (Regular and Bold, SIL OFL 1.1), and it
+covers every string the player reads or compares, domain chips and feedback lines included (`00` §6). Details are in `01`, `02` and `07`.
 
 **F. Player identities: email first, phone later (decided 2026-10-20).** The mail client has player
 accounts (given, found or created, unlocked by globals). A sent message records the real account used
@@ -99,6 +100,16 @@ account's mailbox, and the ink is told which account was used. Phone identities 
 **G. Student lab fits one session (decided 2026-10-20).** The lab must fit a single 60 to 90 minute
 session, with a target of about 75. Scope is trimmed (fewer targets, stages moved or dropped) rather
 than split into two labs. How the lab is assessed is open (see Open questions).
+
+**H. Role swap belongs to the awareness build (decided 2026-10-20).** The "play the helpdesk analyst"
+role swap is specified and built in the awareness product (`11` N15). The student lab and `06` do not
+carry it. (Settles the earlier disagreement between `06`, which put it after the first slice, and `11`,
+which wanted it in the first slice: `11` keeps it and `06` defers to it.)
+
+**I. Shared contract values (decided 2026-10-20).** `00` §13 lists the values several docs must match:
+one link id per built page (`kit_payroll_page`), the `mode` board pointer, readiness set at grant time,
+real-minute lockouts stored in globals, the triage set size per audience, and the six-domain menu with an
+auth row for each. Attachments and links are chosen with the Attach control, never as blanks.
 
 Defaults taken elsewhere, for context: fictional targets only, no real-staff OSINT; the
 lab is the first slice; the awareness product measures pre and post from the start and defers LMS and
@@ -139,15 +150,14 @@ Working defaults are taken for all of these; none blocks the design.
 - **Assessment and Hacktivity scoring (open, not decided).** Hacktivity currently records only a score
   from task and aim completion (BreakEscape `game.rb` scores tasks completed over total tasks at 70%
   and aims at 30%; Hacktivity's `GameScoringJob` reads that). There is no per-outcome mark, hint
-  count, attempt count or tutor view, and optional tasks lower the ceiling. Any richer rubric (the
-  weights table in `10` §4, per-student metrics from persisted game state) needs Hacktivity work.
+  count, attempt count or tutor view, and optional tasks lower the ceiling. Any richer rubric (per-student
+  metrics from persisted game state, such as `mailState.metrics`) needs Hacktivity work.
   Options: shape the objectives so task counts approximate the weights and treat the table as a rubric
   the tutor applies by hand; or build a per-student report from `globalVariables` counters. The awareness
   product has the same constraint: Hacktivity shows event scoreboards, so "private score, no league
   table" holds only in a standalone host.
 - Length target: one session of 60 to 90 minutes, aiming at about 75 (decided; `10` is trimmed to fit).
-  Cut order if long: forwarder header case, second ambiguous search, report tone check, optional aims,
-  the DMARC rollout simulation.
+  Cut order if long is in `10` (profile, Hampshire, triage to six, two findings).
 - Include the SPF-breaks-on-forwarding header case? Default: yes; drop it for a first-year cohort.
 - Publish an optional practical-mode lab sheet in HacktivityLabSheets after the game exists (default:
   yes; the game must be completable without it)?
@@ -169,16 +179,11 @@ Working defaults are taken for all of these; none blocks the design.
   kind? Default: yes.
 - Padlock teaching line: "a padlock means the connection is private to whoever owns the address; fake
   sites can show one". Please confirm you are happy teaching it that way. Default: as written.
-- `05` does not yet carry the contract `07` section 6 proposes (`buildSuspectPage`, shared tells and
-  defender strings). That is a change request against `05` to accept or revise.
 
 **Pretext dialogue (`06`)**
 - Gauge visibility: the influence bar is shown with threshold icons (decision A). Is the number hidden
   in assessment mode (default), or is the bar hidden there too and read only through the NPC's
   reactions and the tells panel?
-- Role swap ("play the helpdesk analyst") in the first slice? Default: no; ship the attacker call
-  first and add the swap with the defender work. Unresolved: the awareness doc (`11`) wants it in its
-  first slice (episode E3), so one of the two must move.
 - Security accuracy of the modelled helpdesk policy: a deliberately weak policy (a temporary code read
   out after two matched facts), labelled weak, with callback to the number on file as the defence.
   Is that realistic enough to teach from without reading as a recipe?
@@ -208,17 +213,19 @@ numbers are the owning doc's N-items. Nothing here is built yet.
 | Influence UI | A DOM influence bar with threshold icons, tells panel, render-only phone bubbles, portrait tint hook | `00` S4, `06` N4 | `person-chat-ui.js`, `phone-chat-ui.js`, `person-chat-portraits.js` (not `npc-health-bar.js`) |
 | Lockout | A `lockedOut` record with channel scope and expiry; "will not talk" refusal in person-chat, phone-chat and mail; opt-in combat hostile left as is | `00` S10 | `systems/interactions.js` NPC sprite branch; model `systems/npc-hostile.js`; `state-sync.js` |
 | Records without a room | Headless email records registered at start, and the ink endpoint finds them; display-name ties prefer the conversation's own NPC | `00` S2, S8 | `systems/npc-lazy-loader.js`; `core/game.js`; `app/controllers/break_escape/games_controller.rb` ink lookup; `systems/npc-manager.js` |
-| Mail | Mail client minigame with accounts and switcher; mail scheduler and runner; notification and message-list renderer; `mailState` persisted (client export, server sanitiser and caps, bootstrap, restore) | `01` N1 to N10, `00` S6, S9 | `minigames/` (new); `state-sync.js` `buildPlayerSections`; `games_controller.rb` permitted params; `app/models/break_escape/game.rb` (model on `merge_phone_state!`); `core/game.js` |
-| Templates | Template and slot composer, blank picker from held facts, send gate; slot judge | `01` N10, `04` N2, `06` N6 | new; `systems/phish-rules.js` |
-| Intel | Typed intel facts; `se_intel_*` declared; board rebuilt from globals; facts added as notes | `00` §1, §5, `02` N2, `03` N2 | `systems/apply-actions.js`; `window.addNote` in `notes-minigame.js` |
-| OSINT, board | OSINT browser (structured derive step, picked searches, metadata view); intel board with modes (scope, plan, recon, defender) | `02` N1 to N4, `03` N1 to N4 | `minigames/` (new) |
-| Pretext | Judge, `PretextSession`, `pretext-prep`, debrief, completion payload and per-call globals | `06` N1 to N8 | `minigames/pretext-prep/` (new); `systems/pretext-judge.js` (new) |
-| Triage | Inbox-triage minigame and scorer; read-only `mail-reader` shared with the mail client; `playerSent` message kind reading `tells`; header-interpretation quiz | `05` N1 to N8, `01` N5 | `minigames/` (new) |
-| Landing page | Builder, scorer, DOM/pixel layered renderer (text in the sans-serif), persisted pages, validator lint with confusable folding and a runtime guard | `07` N1 to N7 | `minigames/` (new); `scripts/validate_scenario.rb` |
-| Minigame framework | Wiring checklist per minigame; return-to for nested overlays (`startMinigame` ends the running one); Esc inside text fields | README Conventions | `minigames/framework/minigame-manager.js`, `base-minigame.js`; `minigames/index.js`; `minigame-starters.js`; `systems/interactions.js` |
+| Mail | Mail client minigame with accounts, account creation, switcher, Sent folder and drafts; mail scheduler (ink and text jobs) and runner; notification and message-list renderer; `mailState` persisted (client export and flush, server sanitiser and caps, bootstrap, restore) | `01` N1 to N14, `00` S6, S9 | `minigames/` (new); `state-sync.js` `KEYED_SECTIONS`, `confirm()`, `flush()`; `games_controller.rb` `merge_last_write_wins_sections`; `app/models/break_escape/game.rb`; `core/game.js` |
+| Templates | Template and slot composer, blank picker from held facts, send gate; slot judge with `linkInfo` | `01` N10, `04` N1 to N10, `06` N6 | new; `systems/phish-rules.js` |
+| Intel | Typed intel facts; `se_intel_*` declared; `grantFact` and `evaluateReadiness` set `target_ready_<id>` and `osint_done` at grant time; facts added as notes | `00` §1, §4, §5, `02` N2, `03` N3 | `systems/social-intel.js` (new); `systems/apply-actions.js`; `window.addNote` in `notes-minigame.js` |
+| OSINT, board | OSINT browser (picked lookups, selectable metadata, namesake and archive elements); intel board with modes (scope, plan, recon, defender) | `02` N1 to N9, `03` N1 to N6 | `minigames/` (new) |
+| Pretext | Judge, `PretextSession`, `pretext-prep`, debrief in the chat overlay, completion payload and per-call globals | `06` N1 to N12 | `minigames/pretext-prep/` (new); `systems/pretext-judge.js` (new) |
+| Triage | Inbox-triage minigame and scorer; read-only `mail-reader` shared with the mail client; `playerSent` message kind reading `tells`; header-interpretation quiz | `05` N1 to N9, `01` N5 | `minigames/` (new) |
+| Landing page | Builder, scorer, DOM/pixel layered renderer (text in the sans-serif), persisted pages, `linkInfoFor`, validator lint (allowlist plus denylist, ASCII on raw text) and a runtime guard | `07` N1 to N9 | `minigames/` (new); `scripts/validate_scenario.rb` |
+| Lab | Engagement report builder, metrics read from `mailState`, board mode data, validator work, ink externals | `10` N1 to N8 | `minigames/engagement-report/` (new); see `10` |
+| Awareness | Episode runner, flip view, defend sets, measurement store, facilitated flag, non-email surfaces, role swap | `11` N1 to N15 | `minigames/` (new); see `11` |
+| Minigame framework | Wiring checklist per minigame; return-to for nested overlays (`00` S12; `startMinigame` ends the running one); `requiresKeyboardInput` and an own Close control on every overlay | README Conventions | `minigames/framework/minigame-manager.js`, `base-minigame.js`; `minigames/index.js`; `minigame-starters.js`; `systems/interactions.js` |
 | Objectives | A global cannot complete a task or open a lock; use `eventMappings` on `global_variable_changed:<name>` with `completeTask`, or `#complete_task`. Numeric conditions (`>= 60`) are not supported: write a boolean | all | `systems/objectives-manager.js`; `systems/npc-manager.js` event mappings |
-| Fonts and CSS | A bundled, self-hosted sans-serif with distinct `l`, `I`, `1` and `rn`/`m`, declared in `css/fonts.css`; authored domains rendered raw, not through `displayDashes` | `07`, `02` | `public/break_escape/assets/fonts/`; `css/fonts.css` |
-| Validator and schema | Top-level `social`; `social.characters` lints; `se_intel_*` declared; template and slot checks; `on_email` and `email_*` checks; `minigameData` schema entries; `npcType` unchanged; lockout lint; the landing-page lint as a CI test | `00` S11 and each doc | `scripts/validate_scenario.rb` (`known_top_level`), `scripts/scenario-schema.json`, `scripts/minigame-data-schemas.json` |
+| Fonts and CSS | Atkinson Hyperlegible (Regular and Bold, OFL 1.1), self-hosted, declared in `css/fonts.css` as `--se-font-readable`, used for every string the player reads or compares; authored domains rendered raw, not through `displayDashes` | `07`, `02` | `public/break_escape/assets/fonts/`; `css/fonts.css` |
+| Validator and schema | Top-level `social`; `social.characters` lints; `se_intel_*` declared; template and slot checks; `on_email` and `email_*` checks; `minigameData` schema entries; `npcType` unchanged; lockout lint; the landing-page lint and `test/js` unit tests run in CI (a step in `.github/workflows/ci.yml`) | `00` S11 and each doc | `scripts/validate_scenario.rb` (`known_top_level`), `scripts/scenario-schema.json`, `scripts/minigame-data-schemas.json` |
 | Platform (not BreakEscape) | Per-student report or richer score recording, if the assessment needs more than task and aim share | open | Hacktivity `app/jobs/game_scoring_job.rb` |
 
 ## Design pillars
@@ -265,7 +272,7 @@ numbers are the owning doc's N-items. Nothing here is built yet.
 3. Inbox triage (05): the defender mirror, and the awareness assessment.
 4. Pretext dialogue (06): reuses `person-chat`, `phone-chat` and ink, so it is cheap.
 5. Landing-page builder (07): last, with the most new UI for the least reuse.
-6. Scenarios: the lab (10) first, then the awareness episodes (11) and the Eldritch Hacker missions.
+6. Scenarios: the lab (10) first, then the Eldritch Hacker missions, then the awareness episodes (11).
 
 ## Conventions
 
@@ -274,7 +281,7 @@ numbers are the owning doc's N-items. Nothing here is built yet.
   chrome and headings use the theme fonts (`GNF` is the framework body font, `Press Start 2P` for
   headings). Pixel art (logos, portraits, icons) is drawn low-res and scaled with
   `image-rendering: pixelated`. All text a player reads or compares is a readable sans-serif that is
-  bundled with the game (none is today; see the engine list). `scenarios/FINGERPRINT_MINIGAME_PLAN.md`
+  bundled with the game: Atkinson Hyperlegible (none was bundled before; see the engine list). `scenarios/FINGERPRINT_MINIGAME_PLAN.md`
   is the template for how a minigame design doc is structured.
 - Accessibility and small screens: a single column below about 700 px; every action reachable by
   keyboard (drag-to-link has a pick-and-confirm alternative); `aria-live="polite"` on score and
@@ -287,10 +294,9 @@ numbers are the owning doc's N-items. Nothing here is built yet.
   way existing minigames do. Every new minigame needs the same wiring checklist: export, import and
   `registerScene` in `minigames/index.js`; a starter in `minigame-starters.js` exposed on `window`; a
   branch in `systems/interactions.js` for the object type; a stylesheet linked in
-  `app/views/break_escape/games/show.html.erb`; `requiresKeyboardInput: true` for any text entry; and
+  `app/views/break_escape/games/show.html.erb`; `requiresKeyboardInput: true` for any overlay with keyboard-operable controls (it pauses the world's movement and interaction keys); and
   `aborted: true` set by the minigame itself on Esc (the framework does not). Only one minigame is
-  open at a time, so a minigame that launches another saves its draft to a global and passes a
-  return-to, or reads the data inline instead of opening the other overlay. `01` carries the details.
+  open at a time, so a minigame that launches another uses the return-to helper (`00` S12): it saves its draft (mail: `mailState.drafts`) and passes `returnTo`, or reads the data inline instead of opening the other overlay.
 - Scenario-authored content (victims, OSINT facts, rules, feedback strings) lives in scenario JSON, not
   in the minigame code, under one top-level `social` key (`00` §11). It reaches the browser unfiltered,
   so judged data is readable by a determined player. That is acceptable for the lab. Awareness scoring

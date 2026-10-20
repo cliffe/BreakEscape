@@ -10,13 +10,15 @@ It defines:
 3. the `evaluateMessage` I/O contract and how `01` transforms it
 4. the intel→factor prerequisite map and readiness rule
 5. intel persistence and gating, and how intel reaches ink
-6. the ink/engine constraints every ink-driven component must respect
+6. the ink/engine constraints every ink-driven component must respect, and the overlay rules every
+   new minigame follows (keyboard, close, return-to, the bundled font)
 7. phish-target schema completeness
 8. NPC influence: the per-character global, threshold behaviours and the bar
 9. channels: separate stories per channel, state shared through synced globals
 10. the email→ink contract, template and slot schema, and the email identity model (§10a)
-11. where scenario data lives (`social`)
+11. where scenario data lives (`social`), and the landing-page record (§11a)
 12. engine work owned by this doc
+13. settled values, in one place
 
 Code locations are given as file plus function name where a line number would drift. Paths are under
 `public/break_escape/js/` unless stated.
@@ -30,7 +32,7 @@ to end. The engagement is authorised by the fictional client and run by the fict
 **Northgate Assurance** (as in `10_lab_social_engineering.md`). All domains end `.example`; all
 people are fictional.
 
-### Cast (every staff entry carries a stable `id`, the join key for 03's people cards and for blank values)
+### Cast and directory (every entry carries a stable `id`, the join key for 03's people cards and for blank values)
 
 | id | Name | Role | Address | Notes |
 |----|------|------|---------|-------|
@@ -38,12 +40,41 @@ people are fictional.
 | `baker` | Jed Baker | Finance (Melanie's colleague) | j.baker@accountingnow.example | the trusted sender to spoof |
 | `hampshire` | Chris Hampshire | Careers/HR | careers@accountingnow.example | easy target (open careers inbox) |
 | `lord` | Sofia Lord | Intern | s.lord@accountingnow.example | hard target (needs link + pretext) |
+| `portal` | AccountingNow Payroll Portal | non-cast sender | payroll-notices@accountingnow.example | Lord's trusted sender; known only after the call |
+| `leeds_baker` | J. Baker | outside the company | j.baker@leedsplumbing.example | the namesake the name search returns; a decoy |
+
+The table is also data. `social.people` is the machine-readable directory every id above resolves
+against (name forms, `primedFor.trusts`, `social.mailClient.accounts[].person`, contacts, the board's people
+cards, the `<person>_address` values):
+
+```jsonc
+"people": [
+  { "id": "pierce", "kind": "cast", "address": "m.pierce@accountingnow.example",
+    "forms": { "first": "Melanie", "short": "Mel", "formal": "Ms Pierce", "full": "Melanie Pierce" } },
+  { "id": "baker",  "kind": "cast", "address": "j.baker@accountingnow.example",
+    "forms": { "first": "Jed", "full": "Jed Baker" } },
+  { "id": "hampshire", "kind": "cast", "address": "careers@accountingnow.example",
+    "forms": { "full": "Chris Hampshire" } },
+  { "id": "lord",   "kind": "cast", "address": "s.lord@accountingnow.example",
+    "forms": { "first": "Sofia", "full": "Sofia Lord" } },
+  { "id": "portal", "kind": "sender", "address": "payroll-notices@accountingnow.example",
+    "forms": { "full": "AccountingNow Payroll Portal" } },
+  { "id": "leeds_baker", "kind": "outside", "address": "j.baker@leedsplumbing.example",
+    "forms": { "full": "J. Baker" } }
+]
+```
+
+`kind` is `cast` (staff the player can meet or read about), `sender` (a non-person sender such as the
+portal) or `outside` (a decoy outside the company). `trusts` ids in `04` resolve against this list, so
+`portal` is valid. The validator checks that every `<person>_<form>` value in `intelFacts` names a
+person and form that exist here, and that every `<person>_address` resolves to an `address`.
 
 **Name-form ids.** A name blank holds one form of a person's name. Forms are ids of the shape
 `<person>_<form>`, with forms `first`, `short`, `formal` and `full`: `pierce_first` (Melanie),
 `pierce_short` (Mel), `pierce_formal` (Ms Pierce), `pierce_full` (Melanie Pierce). The same shape
-serves every person (`baker_full`, `lord_first`). The display string is the option's `label`.
-Everywhere a doc needs "her name" it uses one of these ids, never a bare `melanie`.
+serves every person (`baker_full`, `lord_first`, `portal_full`, `leeds_baker_full`). The display
+string is the option's `label`. Everywhere a doc needs "her name" it uses one of these ids, never a
+bare `melanie`.
 
 ### Discoverable intel
 
@@ -51,22 +82,29 @@ Each fact has a stable bare `id` (below). Collecting it sets the global `se_inte
 `se_` prefix keeps the family clear of the `intel_*` globals that m03, m04 and the SIS missions
 already use.
 
-| fact id | Where found (02 layer) | Fact | Backs factor (§4) |
-|---------|------------------------|------|-------------------|
-| `email_pattern` | derive step in the OSINT browser, from the addresses on the team page | first-initial.surname@accountingnow.example | senderTrust (compose any address) |
-| `username_convention` | deck document metadata (author `mpierce`, app "Microsoft Excel") | AD username = firstinitial+surname | (lab teaching; distinct from email alias) |
-| `pierce_role` | company team page | Melanie Pierce works in Finance | addressing; supplies her name forms |
-| `pierce_trusts_jed` | social post ("Jed's showing Mel the ropes") | Melanie trusts Jed Baker | senderTrust (who to spoof) |
-| `pierce_expects_balance_sheet` | company-site note (Jed: "I'll send Mel the Q3 balance sheet Friday") | she expects a balance sheet from Jed, Fridays | pretextRelevant + attachmentPlausible |
-| `hampshire_careers` | company careers page | careers@ inbox accepts CVs from anyone | senderTrust (open inbox) |
-| `hampshire_cv_backlog` | social post from Chris ("so many CVs to get through before Friday") | Chris is behind on CVs | pretextRelevant (Hampshire) |
-| `careers_attachment` | careers "how to apply" page | ".odt/.docx only" | attachmentPlausible |
-| `tech_stack` | company careers/vacancies page | uses Xero + Office 365 | pretext flavour / lab teaching |
-| `lord_intern` | social + team page | Sofia is a new intern | pretext framing |
-| `lord_portal` | social post ("sorting my payslip on the staff portal") | she uses a staff payroll portal (name not given) | readiness for Lord; what to clone (07) |
-| `lord_portal_name` | granted by the pretext call (06) | the portal's name and how its notices read | linkCredible, senderTrust (Lord) |
-| `lord_payslip_date` | granted by the pretext call (06) | this month's payslip release date | pretextRelevant (Lord) |
-| `lord_trusts_portal_sender` | derived from `lord_portal_name` (granted with it) | Sofia expects notices from the portal's own notification address | senderTrust (Lord) |
+A fact's `source` is the id of **the one element that grants it**: a block, a search or lookup result,
+a metadata field, or, for call facts, the ask id. The ids below are the lab's (`02` owns the pages).
+
+| fact id | Source element | Fact | Backs factor (§4) |
+|---------|----------------|------|-------------------|
+| `email_pattern` | `r_pattern`: the Hunter lookup result (the team page also shows the addresses; seeing them grants nothing) | first-initial.surname@accountingnow.example | senderTrust (compose any address) |
+| `username_convention` | `f_author`: deck document metadata (author `mpierce`, app "Microsoft Excel") | AD username = firstinitial+surname | (lab teaching; distinct from email alias) |
+| `pierce_role` | `row_pierce`: the team page row | Melanie Pierce works in Finance | addressing; supplies her name forms |
+| `pierce_trusts_jed` | `post_pierce_jed`: social post ("Jed's showing me the ropes!") | Melanie trusts Jed Baker | senderTrust (who to spoof) |
+| `pierce_expects_balance_sheet` | `note_q3`: company-site note ("Jed: I'll send Mel the Q3 balance sheet on Friday") | she expects a balance sheet from Jed, Fridays | pretextRelevant + attachmentPlausible |
+| `hampshire_careers` | `careers_inbox`: careers page | careers@ inbox accepts CVs from anyone | senderTrust (open inbox) |
+| `hampshire_cv_backlog` | `post_hampshire_cvs`: social post from Chris | Chris is behind on CVs | pretextRelevant (Hampshire) |
+| `careers_attachment` | `apply_format`: "how to apply" page | ".odt/.docx only" | attachmentPlausible |
+| `tech_stack` | `careers_stack`: careers page | uses Xero + Office 365 | pretext flavour / lab teaching |
+| `lord_intern` | `row_lord`: the team page row. **One award path**: the social profile shows the same words as unmarked text | Sofia is a new intern in Finance | addressing; pretext framing |
+| `lord_portal` | `post_lord_payslip`: social post ("sorting my payslip on the staff portal") | she uses a staff payroll portal (name not given) | readiness for Lord; what to clone (07) |
+| `lord_portal_name` | `portal_name`: Dev call ask (06) | the portal's name and how its notices read | linkCredible, pretextRelevant (Lord) |
+| `lord_payslip_date` | `payslip_date`: Dev call ask (06) | this month's payslip release date | pretextRelevant (Lord) |
+| `lord_trusts_portal_sender` | `portal_name`: Dev call ask (06), granted with `lord_portal_name` | Sofia expects notices from the portal's own notification address | senderTrust (Lord) |
+| `baker_namesake` (stale) | `r_namesake`: the "J. Baker" name search, the namesake result | a J. Baker in Leeds | none; a wrong option |
+| `old_org_chart` (stale) | `org_old_chart`: the archived org chart block on the company site | an out-of-date structure | none; a wrong option |
+
+That is 14 contract facts (11 found by browsing, 3 granted by the call) plus 2 stale.
 
 The **email alias** `m.pierce` (how mail is addressed) is deliberately distinct from the **AD
 username** `mpierce` (from document metadata). Both are intel; they are not the same fact.
@@ -81,26 +119,19 @@ values it makes available. A blank option exists if and only if some collected f
   "pierce_expects_balance_sheet": {
     "text": "Melanie expects a Q3 balance sheet from Jed on Fridays.",
     "subject": "pierce",                    // board card it lives on: a cast id, or "company"
-    "source": "company_note",               // the 02 page or search result that grants it
+    "source": "note_q3",                    // the element in 02 (or the call ask in 06) that grants it
     "provides": [                           // blank values this fact unlocks
       { "type": "document", "value": "balance_sheet", "label": "the Q3 balance sheet",
         "kind": "distinctive", "attachmentKind": "spreadsheet" },
       { "type": "name", "about": "sender", "value": "baker_full", "label": "Jed Baker", "kind": "distinctive" },
+      { "type": "name", "about": "recipient", "value": "pierce_short", "label": "Mel", "kind": "generic" },
       { "type": "date", "value": "friday", "label": "Friday", "kind": "generic" }
     ],
     "reduceNote": "Keep internal routines off the public site."   // 03 defender mode: what to take down
   },
-  "pierce_role": {
-    "text": "Melanie Pierce works in Finance.", "subject": "pierce", "source": "team_page",
-    "provides": [
-      { "type": "name", "about": "recipient", "value": "pierce_full",   "label": "Melanie Pierce", "kind": "generic" },
-      { "type": "name", "about": "recipient", "value": "pierce_formal", "label": "Ms Pierce",      "kind": "generic" },
-      { "type": "name", "about": "recipient", "value": "pierce_first",  "label": "Melanie",        "kind": "generic" }
-    ]
-  },
   "email_pattern": {
     "text": "Staff addresses are first-initial.surname@accountingnow.example.",
-    "subject": "company", "source": "derive_step",
+    "subject": "company", "source": "r_pattern",
     "provides": [
       { "type": "address", "rule": "initial.surname@accountingnow.example", "label": "an address built from the pattern" }
     ]
@@ -110,44 +141,84 @@ values it makes available. A blank option exists if and only if some collected f
 
 Fields:
 
-- `text`: the sentence shown on the board. `subject`: the card. `source`: the grant point in `02`.
+- `text`: the sentence shown on the board. `subject`: the card. `source`: the grant element (above).
   `reduceNote`: the one-line "reduce this" prompt in the board's defender mode (`03`).
 - `provides[]`: one entry per blank value. `type` is the **slot type** (below). `about` optionally
-  narrows a name or date to a role in the message (`recipient`, `sender`, `manager`, `start`). `value`
-  is the id the judge compares. `label` is the string the option shows. `kind` is `distinctive`
-  (specific to this target's story; counts toward `pretextRelevant`), `generic` (true but not
-  distinguishing) or `stale` (held but wrong for this target, which the player can still pick).
-  `attachmentKind` ties a `document` value to the payload-kit kind (below).
-- An `address` entry carries a `rule` rather than a value. The composer builds one address option per
-  person the player knows a name for (from any held name entry), with value id `<person>_address`. A
-  rule is not a value, so a player who has `email_pattern` but no name for someone cannot build that
-  person's address.
+  narrows a name, date or team to a role in the message (`recipient`, `sender`, `manager`, `intern`,
+  `start`). `value` is the id the judge compares. `label` is the string the option shows. `kind` is
+  `distinctive` (specific to this target's story; counts toward `pretextRelevant`), `generic` (true
+  but not distinguishing) or `stale` (held but wrong for this target, which the player can still
+  pick). `attachmentKind` ties a `document` value to the payload-kit kind (below).
+- An `address` entry carries either a `rule` or a fixed `value`. A **rule** entry has the composer
+  build one address option per person the player knows a name for (from any held name entry), with
+  value id `<person>_address` and the address taken from `social.people`. A rule is not a value, so a
+  player who has `email_pattern` but no name for someone cannot build that person's address. A
+  **fixed** entry (`{ "type": "address", "value": "portal_address", "label": "...", "kind":
+  "distinctive" }`) offers that one address with no pattern needed.
 - Because a blank offers only held facts, a player holding only right facts sees only right options.
-  A wrong choice needs a `stale` entry or a generic value. The lab authors a few (a stale org chart, a
-  second "J. Baker" result) so the judgement is real.
-- Other facts follow the same shape. `lord_intern` provides `lord_full` and `lord_first` (a `name`
-  entry, `about: "intern"`), and `pierce_role` also provides `finance` (a `team` entry). The call in
-  `06` uses both.
+  A wrong choice needs a `stale` entry or a generic value. The lab authors two (an archived org chart
+  and the namesake result) so the judgement is real.
 - The ids in `04` `primedFor.facts` are derived: the facts whose `provides` include the target's
   `distinctiveValues`. They are not a second list to keep in step.
+
+### The complete `provides` table (the lab)
+
+Every entry is `type`, `about` (if any), `value` "label", `kind`. `subject` is the board card.
+
+| fact | subject | provides |
+|------|---------|----------|
+| `email_pattern` | company | `address` rule `initial.surname@accountingnow.example` "an address built from the pattern" |
+| `username_convention` | company | none |
+| `pierce_role` | pierce | `name`/recipient `pierce_first` "Melanie" generic; `pierce_formal` "Ms Pierce" generic; `pierce_full` "Melanie Pierce" generic; `team` `finance` "Finance" generic |
+| `pierce_trusts_jed` | pierce | `name`/sender `baker_full` "Jed Baker" distinctive |
+| `pierce_expects_balance_sheet` | pierce | `document` `balance_sheet` "the Q3 balance sheet" distinctive (`attachmentKind: spreadsheet`); `name`/sender `baker_full` "Jed Baker" distinctive; `name`/recipient `pierce_short` "Mel" generic; `date` `friday` "Friday" generic |
+| `hampshire_careers` | hampshire | none (open inbox: `trusts: ["*"]`) |
+| `hampshire_cv_backlog` | hampshire | `date` `friday` "Friday" generic |
+| `careers_attachment` | hampshire | `document` `cv` "my CV" distinctive (`attachmentKind: document`) |
+| `tech_stack` | company | none |
+| `lord_intern` | lord | `name`/recipient `lord_first` "Sofia" generic; `lord_full` "Sofia Lord" generic; `name`/intern `lord_first`, `lord_full` (same labels, generic); `team`/intern `finance` "Finance" generic |
+| `lord_portal` | lord | none (readiness; what to clone) |
+| `lord_portal_name` | lord | `portal` `staff_portal_name` "the staff portal" distinctive |
+| `lord_payslip_date` | lord | `date` `mon_6th` "Monday the 6th" distinctive |
+| `lord_trusts_portal_sender` | lord | `name`/sender `portal_full` "AccountingNow Payroll Portal" distinctive; `address` fixed `portal_address` "payroll-notices@accountingnow.example" distinctive |
+| `baker_namesake` | company | `name`/sender `leeds_baker_full` "J. Baker" stale |
+| `old_org_chart` | company | `name`/manager `baker_full` "Jed Baker" stale; `team`/intern `accounts` "Accounts" stale |
+
+Rules this table settles:
+
+- **Lord can be greeted.** `lord_intern` provides her name forms twice, once with `about:
+  "recipient"` (the greeting) and once with `about: "intern"` (the call's blank). Her `addressedAs`
+  is `["lord_first"]`. The validator checks that every `addressedAs` value is provided by a fact in
+  that target's readiness slots, and that the target's required factors are reachable from granted
+  facts.
+- **Pierce can be greeted by every form in her `addressedAs`.** `pierce_first` and `pierce_formal`
+  come from `pierce_role`, `pierce_short` from the Q3 note.
+- **Lord's trusted sender is the `portal` person.** `lord_trusts_portal_sender` provides the portal's
+  name and its fixed address, both belonging to `portal`, so a From of `portal_full` plus
+  `portal_address` passes `senderTrust` for Lord (`trusts: ["portal"]`), and only after the call.
+- **Wrong options exist.** `baker_namesake` gives a sender name that is not trusted;
+  `old_org_chart` gives a wrong manager and a wrong team for the pretext call (06).
+- **Values with colons are not allowed** (§6); a `value` is a short id.
 
 **Slot types** (the vocabulary a template slot or a pretext blank names):
 
 | type | value id shape | example |
 |------|----------------|---------|
 | `name` | `<person>_<form>` | `pierce_first`, `baker_full` |
-| `address` | `<person>_address`, built from a rule | `baker_address` |
+| `address` | `<person>_address`, built from a rule or fixed | `baker_address`, `portal_address` |
 | `document` | a short id | `balance_sheet`, `cv` |
 | `date` | a short id | `friday`, `mon_6th` |
 | `team`, `role`, `floor`, `achievement` | a short id | `finance`, `2`, `helpdesk_award` |
 | `portal` | a short id | `staff_portal_name` |
-| `attachment`, `link` | a payload-kit item id | `kit_balance_sheet`, `page_payroll` |
 
-A new type is a validator change. Values with colons are not allowed (§6).
+There are exactly these types. An attachment or a link is never a blank: it is chosen with the Attach
+control and carried as `message.attachment` / `message.link` (payload-kit item ids, §3). A new type is
+a validator change.
 
 **Payload-kit attachment kinds** are one list across `01` and `04`: `spreadsheet`, `document`,
-`pdf`, `archive`, `image`. A kit item is `{ id, label, kind }`. `primedFor.expectedAttachment` and the
-document value's `attachmentKind` use the same list.
+`pdf`, `archive`, `image`, plus `link` for a built landing page. A kit item is `{ id, label, kind }`,
+and a `link` item adds `landingPageId` (`kit_payroll_page`, §11a). `primedFor.expectedAttachment` and
+the document value's `attachmentKind` use the attachment kinds; a `link` is never an attachment.
 
 ---
 
@@ -164,12 +235,26 @@ canonical red-flag string per factor, so attack and defence cannot disagree abou
 | `pretextRelevant` | required | The pretext template's slot values include at least `minDistinct` of the target's distinctive values (not just generic ones) | "No plausible reason for this message to this person" |
 | `attachmentPlausible` | required if attachment | Attachment present **and** its kind matches the pretext's expected kind | see three states below |
 | `urgencyCalibrated` | **advisory / red-flag only** | never fails a send (see below) | "Unexpected urgency or pressure to act fast" |
-| `linkCredible` | required if link | Link text/domain credibly matches what it claims (scored by 07) | "Link destination doesn't match the real site (look-alike domain)" |
+| `linkCredible` | required if link | `message.linkInfo.meetsThreshold` is true: the built page's credibility reaches the target's threshold and its gates pass (§11a; scored by 07). State `missing` when the kit item has no built page | "Link destination doesn't match the real site (look-alike domain)" |
 
 **Red-flag resolution:** a factor's `redFlag` in an `EvalResult` (§3) is the per-target override
 from `factorStrings` when the author set one, **otherwise the canonical string above**. A `null` in
 a per-target `factorStrings` entry means "use the canonical string", never an empty flag, so `01`'s
 checklist and `05`'s chips always have a label.
+
+**Canonical pass and fail lines.** A target with no ink story (or a factor its `factorStrings` leave
+out) uses these. The `pass` line is the checklist's ✓ line; the `fail` line is the diegetic reply for
+the first failed factor. A target may override either in `factorStrings`.
+
+| factor | `pass` (checklist) | `fail` (diegetic reply) |
+|--------|--------------------|-------------------------|
+| `senderTrust` | "✓ Sender looked trusted" | "Sorry, who is this? I don't recognise the sender." |
+| `senderAuth` | "✓ Sender authentication would pass" | "This didn't pass the usual sender checks." |
+| `addressedTo` | "✓ Addressed by name" | "This doesn't have my name on it." |
+| `pretextRelevant` | "✓ Relevant to the recipient" | "I'm not expecting anything like this." |
+| `attachmentPlausible` | "✓ The attachment fits the story" | the per-state strings below |
+| `urgencyCalibrated` | "✓ The pressure was believable" | "That feels rushed." (advisory; never a reply) |
+| `linkCredible` | "✓ The link looked right" | "That link doesn't look right to me." State `missing`: "There's no page behind that link." |
 
 ### `attachmentPlausible` has three result states
 
@@ -216,6 +301,11 @@ are marked so.
 | `unrequested_mfa_push` | MFA fatigue | "An MFA prompt you didn't trigger" | defend-only |
 | `smish_shortlink_urgency` | smishing | "Unsolicited SMS with a shortened link and pressure" | defend-only |
 | `vish_callback_pressure` | vishing | "Caller discourages you from calling back the official number" | both (attack via `06`) |
+| `secrecy_or_bypass` | all | "Asked to keep it secret or to skip the normal process" | both (attack via `pretextRelevant`) |
+| `borrowed_authority` | vishing, BEC | "Someone senior is invoked to skip a check" | both (attack via `06`) |
+| `reply_to_differs` | email | "The reply-to address differs from the From address" | defend-only |
+| `reply_stop_trick` | smishing | "'Reply STOP' to opt out, which confirms your number is live" | defend-only |
+| `padlock_myth` | link/web | "A padlock shows the connection is private to the address owner, not that the site is safe" | defend-only |
 
 An author may add scenario-local tells; a reusable one belongs here.
 
@@ -229,7 +319,9 @@ high-pressure — a defender would clock it"), never as a landing gate.
 
 ## 3. `evaluateMessage` I/O contract, and 01's `result` transform
 
-`evaluateMessage(target, message) → EvalResult`, in the pure module `systems/phish-rules.js`.
+`evaluateMessage(target, message, ctx) → EvalResult`, in the pure module `systems/phish-rules.js`.
+`ctx` is `{ accounts, people, templates }` (the scenario's `social.mailClient.accounts`,
+`social.people` and `social.templates`), passed in so the module reads no globals and no DOM.
 
 `message` is the composed message: the chosen template id per part with its slot values (§10), the
 real sending account, the header From (§10a), and the attachment or link pick:
@@ -240,8 +332,14 @@ real sending account, the header From (§10a), and the attachment or link pick:
   "headerFrom": { "name": "baker_full", "address": "baker_address" },   // value ids from the From blanks
   "templates": { "greeting": "greet_named", "pretext": "pretext_sheet", "ask": "ask_open_attached" },
   "slots": { "name": "pierce_short", "document": "balance_sheet", "when": "friday" },
-  "attachment": "kit_balance_sheet", "link": null }
+  "attachment": "kit_balance_sheet",    // payload-kit item id (the Attach control; never a slot)
+  "link": null,                         // payload-kit item id, e.g. "kit_payroll_page"
+  "linkInfo": null }                    // filled by 01 from the saved page record when link is set (§11a)
 ```
+
+A blank-free From (`from_own`) sends `"headerFrom": { "account": true }` instead of value ids (§10a).
+`linkInfo`, when `link` is set, is `{ kitId, pageId, domainId, domain, credibility, gatesPassed,
+meetsThreshold }` or `{ kitId, state: "missing" }`.
 
 ```jsonc
 // EvalResult
@@ -279,15 +377,22 @@ The same `EvalResult` has two consumers:
 `01`'s `minigame_completed` `result` is a transform of `EvalResult`, not a schema of its own:
 
 ```jsonc
-// 01 gameResult (set before complete(true))
+// 01 gameResult (of the last send; set when the player closes the client)
 {
   "targetId": "pierce",
   "landed": true,
   "redFlags": [ /* factors.filter(f=>!f.pass).map(f=>f.redFlag) */ ],
   "tells": [ /* EvalResult.tells, as redFlag strings */ ],
-  "outcome": "opened"   // from the target's authored landed outcome (04 outcome.setGlobal), not a score
+  "outcome": "landed"   // "landed" | "failed": EvalResult.landed at send time; never a score
 }
 ```
+
+The mail client does **not** complete on a send. The overlay stays open so the player reads the
+checklist and the banner and can edit and resend, and the in-character reply arrives later into the
+mailbox. `complete(true)` fires when the player closes the client, with the `gameResult` of the last
+send. A scenario never keys a task on `minigame_completed` for mail: it keys on the target's
+`phish_<id>_landed` global, which the reply's ink (or the text job for a data-only target) sets when
+the reply is delivered (§10).
 
 There is **no aggregate `pretextScore`** in the deterministic engine. The only numeric idea is the
 optional advisory LLM note (§7), which is never pass/fail and never an aggregate quality number.
@@ -302,7 +407,7 @@ have no recon counterpart.
 
 | recon-fed factor | satisfied in principle once the player has collected… |
 |------------------|--------------------------------------------------------|
-| `senderTrust` | the target's trusted-sender fact (`pierce_trusts_jed`; `lord_trusts_portal_sender` for Lord) **and** `email_pattern` where an address is built |
+| `senderTrust` | the target's trusted-sender fact (`pierce_trusts_jed`; `lord_trusts_portal_sender` for Lord, from the call) **and** `email_pattern` where an address is built |
 | `pretextRelevant` | the target's primed-topic fact (`pierce_expects_balance_sheet`; `lord_payslip_date` for Lord) |
 | `attachmentPlausible` | the expected-attachment fact (part of `pierce_expects_balance_sheet` / `careers_attachment`) |
 | `linkCredible` (link targets only) | `lord_portal_name` (a fact) plus a built page (07) |
@@ -315,6 +420,11 @@ as an intel gap, not a factor name, so it nudges without handing over the pretex
 
 - not yet collected: "You still don't know **what Melanie expects to receive**."
 - collected: "✓ You know she expects a balance sheet from Jed on Fridays."
+
+A target also needs its **addressing** facts: a target's `addressedAs` forms must be provided by facts
+inside its readiness slots (the validator checks it), so a card never reads "Ready to approach"
+while the composer has no name to greet her with. Pierce's first slot is therefore "Who she is"
+(`pierce_role`).
 
 A card flips to **"Ready to approach"** when all its fact slots are collected. The string is
 literally "Ready to approach — you have enough to craft something she'll believe." It never lists
@@ -332,9 +442,15 @@ target id, one array of slots per target:
 ```jsonc
 "readinessSlots": {
   "pierce": [
+    { "label": "Who she is", "needsIntel": ["pierce_role"],
+      "goalString": "You still don't know what Melanie does here.",
+      "doneString": "✓ She works in Finance." },
     { "label": "Who she trusts", "needsIntel": ["pierce_trusts_jed","email_pattern"],
       "goalString": "You still don't know who Melanie would open an email from.",
-      "doneString": "✓ She trusts Jed Baker; you know the email pattern." }
+      "doneString": "✓ She trusts Jed Baker; you know the email pattern." },
+    { "label": "What she expects", "needsIntel": ["pierce_expects_balance_sheet"],
+      "goalString": "You still don't know what Melanie expects to receive.",
+      "doneString": "✓ She expects a Q3 balance sheet from Jed on Fridays." }
   ],
   "lord": [
     { "label": "Her payroll system", "needsIntel": ["lord_portal","lord_intern"],
@@ -344,7 +460,12 @@ target id, one array of slots per target:
 }
 ```
 
-A slot may add `"needsGlobal": ["landing_payroll_login_built"]` (booleans only) for a non-fact
+**Where readiness is computed and set.** A pure function `evaluateReadiness(readinessSlots, globals)`
+in `systems/social-intel.js` runs after **every** fact grant: `grantFact` (`02` N2) calls it, and so
+do the call grants of `06`. It sets `target_ready_<id>` (once, on the false-to-true flip, through the
+shared writer) for each target whose slots are all done, and `osint_done` when every id in
+`intelBoard.people` is ready. The board only displays the result, so a player who never opens the
+case file still advances. A slot may add `"needsGlobal": ["landing_payroll_login_built"]` (booleans only) for a non-fact
 prerequisite, with a `goalString` that does not name the builder. Use it sparingly, and never for a
 prerequisite that sits behind the room the board gates.
 
@@ -355,26 +476,30 @@ prerequisite that sits behind the room the board gates.
 Minigame overlays are modal (the manager holds a single `currentMinigame`), so the intel board is
 not running while the OSINT browser is open. A live cross-overlay event cannot be the feed.
 
-- **Source of truth:** when the player collects a fact in `02`, the browser calls
-  `applyActions([{ type:'set_global', key:'se_intel_<id>', value:true }])` (`systems/apply-actions.js`,
-  the `set_global` case), which patches `gameState.globalVariables` and emits
-  `global_variable_changed:se_intel_<id>`. It emits and flourishes only on the false→true flip.
-  `gameState.globalVariables` persists server-side and restores on load (`state-sync.js`;
-  `core/game.js`, saved-globals restore). Sync runs every 30 s and on `pagehide`, so a collect is safe
+- **Source of truth:** when the player collects a fact in `02`, or a call grants one (`06`), the
+  caller uses `grantFact(id)` (`02` N2, `systems/social-intel.js`). It writes `se_intel_<id>` through
+  the shared writer (S3), which patches `gameState.globalVariables` and emits
+  `global_variable_changed:se_intel_<id>`; `grantFact` itself emits `intel_collected`, adds the note
+  and runs `evaluateReadiness` (§4) **only on the false→true flip**. (Today `applyActions`
+  `set_global`, `systems/apply-actions.js:33-43`, emits on every call and has no flourish; the flip
+  check is `grantFact`'s.) `gameState.globalVariables` persists server-side and restores on load
+  (`state-sync.js`; `core/game.js`, saved-globals restore). Sync runs every 30 s and on `pagehide`, so a collect is safe
   across a reload; a call to `window.stateSync?.sync()` after a collect closes the window entirely.
 - **Declare every fact.** Each `se_intel_<id>` is declared in the scenario's `globalVariables` with
-  default `false`. The server persists and the ink sync both test declared names
-  (`game.rb` `merge_global_variables!`; `NpcConversationState.isGlobalVariable`). A fact set only at
-  runtime and never declared persists nowhere useful and never reaches ink. The validator derives the
-  list from `social.intelFacts` and checks it. Docs write bare ids (`pierce_role`); the engine and the
+  default `false`. The ink sync tests declared names (`NpcConversationState.isGlobalVariable`), so a
+  fact that is set only at runtime and never declared never reaches ink. (The server's
+  `merge_global_variables!`, `game.rb:242-262`, saves every key the client sends, so persistence does
+  not depend on the declaration; `apply_task_set_globals!` does test declared names.) The validator
+  derives the list from `social.intelFacts` and checks it. Docs write bare ids (`pierce_role`); the engine and the
   ink use the prefixed name.
 - **`applyActions` does not tell a running ink story.** It writes `gameState.globalVariables` and
   emits an event, but it does not call `broadcastGlobalVariableChange` (as `objectives-manager.js`
   does). A story already cached in `npcManager.inkEngineCache` keeps the old value until its next
   `syncGlobalVariablesToStory`. Engine item S3 (§12) makes `set_global` broadcast; until then every
   runner here syncs before it runs.
-- **03 reads persisted globals on open** to rebuild the board (plus the `globalVariables[STATE_KEY]`
-  pattern used by the SIEM minigame for any richer per-fact payload). The `intel_collected` event is a
+- **03 reads persisted globals on open** to display the board (readiness itself is set at grant time,
+  §4), plus the `globalVariables[STATE_KEY]` pattern used by the SIEM minigame for any richer
+  per-fact payload. The `intel_collected` event is a
   live-UI flourish only. Each collected fact is also added as a note (`window.addNote`) so the player
   has a searchable evidence log outside the board.
 - **Gating is explicit.** Downstream components gate on named globals:
@@ -402,7 +527,9 @@ Verified in code:
 - **`#set_global` is refused for globals imported from an earlier mission**
   (`NpcConversationState.setReadOnlyGlobals` / `isReadOnlyGlobal`; `chat-helpers.js`
   `processGameActionTags`, the `set_global` and `set_variable` cases). Declare SE output globals in
-  the scenario's own `globalVariables`; don't import them.
+  the scenario's own `globalVariables`; don't import them. The authored key is `importGlobals`; the
+  server resolves it to `importedGlobals` (`app/models/break_escape/carry_over.rb`), so a global must
+  not appear under `importGlobals` either.
 - **Tag parameters split on `:`.** `#set_global:name:value` and the person-chat tag parser both split
   on colons, so values containing a colon break. Keep tag values colon-free.
 - **Ink choice tags are dropped** (`systems/ink/ink-engine.js` rebuilds choices as `{text,index}`),
@@ -436,6 +563,37 @@ Verified in code:
 - **Ink `DONE` ends a story run.** A mail-channel story is headless and only ever runs from
   `on_email`, so ending there with `-> DONE` is fine. A person or phone story still ends in its hub
   (the authoring guide's rule against ending in `DONE`).
+- **Temps do not cross a divert.** A `~ temp x = ...` is scoped to its knot. A value that the next
+  knot needs travels as a parameter (`-> manager_reaction(band)` with `=== manager_reaction(band) ===`)
+  or as a declared `VAR`.
+
+### Overlay rules every new minigame follows
+
+- **Keyboard.** An overlay with keyboard-operable controls (Tab, Enter, Space, arrow keys) starts with
+  `requiresKeyboardInput: true`. That is the flag that pauses the player controller's document-level
+  `keydown` handler (`minigames/framework/minigame-manager.js:37-45`; `core/player.js:279-330`,
+  `keyboardPaused`). Without it, Space jumps, `E` interacts with the nearest object (which can open
+  another minigame) and arrow keys move the player and are swallowed. Every overlay in this plan
+  sets it; each gets a bridge test that Space and `E` do nothing while it is open.
+- **Close.** `disableClose: true` hides the framework's close button and the base class's Esc
+  handler (`base-minigame.js:18-23, 70-80`), so an overlay that sets it draws its own visible Close
+  control and binds its own Esc (capture phase, so an open picker or text field closes first). Closing
+  a viewer overlay is a normal exit (`complete(true)` with a result).
+- **Return to.** A minigame that launches another uses S12 (§12): it saves its draft, passes
+  `returnTo`, and the child's close reopens it.
+- **Readable type.** The bundled face for everything the player reads or compares is **Atkinson
+  Hyperlegible** (Regular and Bold; SIL Open Font License 1.1). The files are
+  `public/break_escape/assets/fonts/AtkinsonHyperlegible-Regular.woff2` and `-Bold.woff2` (Latin
+  subsets, about 40 KB each) with its OFL text beside them, declared in `css/fonts.css` as the family
+  `"Atkinson Hyperlegible"` and exposed as the token `--se-font-readable`. Scope: every string the
+  player reads or compares, and any string that contains an authored domain, address, handle, file
+  name or document field, **wherever it appears**: domain chips, the address bar, the checklist and
+  tells-panel lines, feedback strings, mail bodies, board cards, briefs. The theme fonts (`GNF`,
+  `Press Start 2P`) keep to chrome labels and headings that contain no such string. Authored domains
+  render with `textContent`, never through `displayDashes`. The lab draws the punycode form of its
+  homograph (`xn--...`), so a Latin subset is enough. Acceptance check at import: render `rn`/`m`,
+  `vv`/`w` and `l`/`I`/`1` at the chip size; if any pair is ambiguous, swap the face (Lexend is the
+  fallback candidate, also OFL) and check the licence's reserved-name terms before subsetting.
 
 ---
 
@@ -448,11 +606,14 @@ Every factor must be authorable. The target schema includes, beyond 04's core fi
 - `urgency: { advisoryMax: "medium" }` — for the advisory urgency read (never a gate).
 - `senderAuth: { domainPublishesAuth: true, spoofAligns: false }` — the §2 senderAuth policy for the
   claimed domain. The result is derived from the sending account (§10a); an author may override it.
-- `expectedLink: { brand, domainClaims }` — for `linkCredible` (fed by 07).
+- `expectedLink: { brandId, realDomain }` — machine-readable, for `linkCredible` and its tell: the
+  brand the link claims (an id in `07`'s `brands`) and the real domain the tell compares against
+  (§11a). The judge never reads prose here.
 - Per-factor mode: `requiredFactors: [...]` and `advisoryFactors: [...]` (or `factors:[{id,mode}]`).
 - `primedFor`: `{ distinctiveValues: [...], genericValues: [...], minDistinct: 1,
   expectedAttachment: "spreadsheet", trusts: ["baker"] }` — the values the judge compares (§10
-  "Judging by slot").
+  "Judging by slot"). `trusts` ids are `social.people` ids (cast, `portal` and other senders), or `"*"`.
+  Lord's is `minDistinct: 2` (the portal name and the payslip date) with `trusts: ["portal"]`.
 - `boostIfGlobal` / `strictIfGlobal` — optional hooks so an earlier call (`06`) changes how a later
   phish lands: `boostIfGlobal: {"reset_granted_pierce": "pretextRelevant"}` relaxes a factor when a
   global is set; `strictIfGlobal: {"helpdesk_alerted": "senderTrust"}` tightens one when the mark
@@ -514,7 +675,9 @@ character's **influence** score. Suspicion is influence going down.
   "priya": {
     "displayName": "Priya Nair",
     "channels": { "person": "priya_helpdesk", "phone": "priya_helpdesk_phone", "email": "priya_helpdesk_mail" },
-    "influence": { "global": "priya_influence", "min": -100, "max": 100 },
+    "emailRecord": { "storyPath": "ink/priya_mail.json", "displayName": "Priya Nair (helpdesk mail)" },   // §9
+    "emailReplyDelay": 20,                                  // seconds of wall-clock countdown (§10)
+    "influence": { "global": "priya_influence", "min": -100, "max": 100, "start": -20 },
     "syncedVars": ["priya_influence", "priya_knows_sam_okafor"],
     "thresholds": [
       { "id": "wary",    "at": -40, "icon": "wary",
@@ -526,7 +689,7 @@ character's **influence** score. Suspicion is influence going down.
                      { "type": "endConversation" } ] },
       { "id": "lockout", "at": -90, "icon": "hostile",
         "effects": [ { "type": "lockout", "scope": "channel", "until": { "afterMinutes": 10 },
-                       "recoverTo": -50 } ] }
+                       "recoverTo": -30 } ] }
     ]
   }
 } }
@@ -546,39 +709,113 @@ Threshold fields:
 |--------|--------------|
 | `setGlobal {global, value}` | `applyActions set_global` through the shared writer (§9). Declare the global; do not import it. Values colon-free |
 | `endConversation` | closes the open conversation on any channel with the NPC's authored `outcomes.reported` line |
-| `lockout {scope, until, recoverTo}` | refuses new conversations. `scope`: `"channel"` (only the channel the player was on) or `"character"` (all channels). `until`: `{ "afterMinutes": N }` (game clock), `{ "global": "name" }` (lifts when that global becomes true) or `null` (permanent; the validator rejects this on a critical-path character, below). `recoverTo`: the influence value set when the lockout lifts (default: the declared start) |
+| `lockout {scope, until, recoverTo}` | refuses new conversations. `scope`: `"channel"` (only the channel the player was on) or `"character"` (all channels). `until`: `{ "afterMinutes": N }` (**real elapsed minutes** from `gameClock.elapsedMs()`; it is not scaled by a scenario's `gameClock.rate`, and needs no `gameClock` block), `{ "global": "name" }` (lifts when that global becomes true) or `null` (permanent; the validator rejects this on a critical-path character, below). `recoverTo`: the influence value set when the lockout lifts (default: the declared start). It must sit above every negative threshold's `at` plus `rearmMargin`, and the lift writes it **silently**: it clears the latch and re-arms the thresholds without running their effects, so a character never returns already `wary` or `refusing` (the validator checks the margin) |
 | `combatHostile` | **opt-in.** Calls `setHostile`, the existing combat state (tint, chase, health bar, punch on click). Off by default |
 | `toast {text}` | a fixed one-line notice |
 
 - A crossing fires when the value moves from the other side of `at` to this side. It re-arms when the
   value returns above `at` by more than `rearmMargin` (default 10). The latch is stored in the global
   `<character>_latched` (a colon-free comma list of fired ids), so a reload does not re-fire.
+- **A forced report.** A conversation can end in a report without the value reaching the `reports`
+  threshold: the refusal limit (`maxRefusals`), a failed verification, or a scripted beat. The write
+  path exposes `report(character, reason)` (S5). It runs the effects of the threshold whose **id is
+  `reports`**, in order, latches that id and records the reason (the debrief shows it). The pretext
+  judge returns `reported: true` with a reason (`"maxRefusals"`, `"verificationFailed"`,
+  `"threshold"`) and the binding calls `report`; an ink story may call it with the tag
+  `#report:<reason>`. Influence is **not** changed by a forced report. The validator requires every
+  character that has call data in `social.pretextNpcs` to have a threshold with id `reports`.
 - **Existing missions are unchanged.** None of this applies to an NPC that has no `social.characters`
   entry. The legacy `#influence:N`, `#hostile` and the `-50` auto-hostile default stay exactly as they
   are (m01 Derek still fights; m02 guards are not turned hostile by ink arithmetic). The engine does
   not mirror any ink `influence` into the behaviour state, and a character that wants a sprite NPC's
   behaviour state kept equal sets `"mirrorToBehavior": true`.
-- **Lockout is not combat.** A `lockout` effect writes a `lockedOut` record (the model is the hostile
-  system's `recordHostility`) with channel and expiry. It adds no tint, no chase and no health bar.
-  `systems/interactions.js` (the NPC sprite branch that today punches a hostile NPC) shows a "will not
-  talk to you" toast instead; phone-chat and the mail client refuse the same way. A lockout lifts by
-  the engine, which sets influence to `recoverTo`, clears the latch and the record.
+- **Lockout is not combat, and it persists in globals.** A `lockout` effect writes two declared
+  globals, `<character>_lockout_until` (an integer: the absolute `gameClock.elapsedMs()` at which it
+  lifts; `0` none; `-1` until the effect's `until.global` is true) and `<character>_lockout_channel`
+  (`person`, `phone`, `email`, `all` or `""`). They ride `globalVariables` persistence, so no server
+  section is needed and a reload keeps the deadline (the clock resumes from its saved elapsed time).
+  The validator derives both names for any character with a `lockout` effect and checks they are
+  declared. It adds no tint, no chase and no health bar. `systems/interactions.js` (the NPC sprite
+  branch that today punches a hostile NPC) shows a "will not talk to you" toast instead; phone-chat
+  and the mail client refuse the same way, and `01` refuses the send before `evaluateMessage` runs. The
+  engine lifts it when the deadline passes or the global turns true: it writes `recoverTo`
+  silently, clears the latch and zeroes both globals.
 - **A failed attempt must never permanently block a critical path.** The validator enforces this for
   any character that grants a fact or global a required task depends on: every `lockout` has an
   `until` (not `null`), or the grant has an authored alternative route (`alternativeRoute` on the ask:
   another channel or a global that a different beat sets). A scenario may also add its own beat, such
   as an `eventMappings` entry on `global_variable_changed:helpdesk_alerted` that sets the character's
   influence back to its start after a debrief line. `lockout.scope: "channel"` is the default
-  recommendation, so a burned phone call leaves the email route open.
+  recommendation, so a burned phone call leaves the email route open. A character reachable only by
+  mail, and needed on the critical path, has no lockout and no `reports` effects, and a `min` above
+  the lowest threshold (the lab's Pierce and Lord below), so failed sends only move the bar.
 - **Every change carries a reason.** Each influence change is tagged with a reason id (a fact id such
   as `manager`, a technique such as `urgency`, or a factor such as `senderTrust`). Writes made by the
   engine path carry `{delta, reason, line}`; an ink write that did not pass through the path is
   recorded with the reason `ink`. The toast, the tells panel and the debrief (06 §4) are drawn from
   that stream.
+- **The write path updates the running story.** An engine-side write (`se_influence`,
+  `pretext_say`, a threshold effect, a lockout lift) goes through the shared writer (S3). Besides
+  `gameState` and the other cached stories, the writer sets the **calling story's own VAR** (the
+  binding knows its `InkEngine`) with the observer detached, using the clamped value. An ink
+  assignment out of range (`~ priya_influence -= 120`) is clamped by the watcher and the clamped
+  value is written back into the story that wrote it. So `~ se_influence(-10, "x")` followed by
+  `~ priya_influence += 2` in one knot yields the sum, not the stale value plus two. The mail
+  runner's engine is not in `inkEngineCache`, so the runner passes it to the writer explicitly.
 - **It carries across channels without a single record.** Every channel story of a character declares
   `VAR <character>_influence`, so the value is the same in the person, phone and email stories (§9).
   A clumsy email lowers the influence the next call starts with. `04` can read it through
   `boostIfGlobal` / `strictIfGlobal` directly, because it is already a global.
+
+### Characters of the student lab
+
+Every character the student can contact has a `social.characters` entry. Failed mail sends cost 10
+points each (04), so the two mail-only targets cannot be locked out of the only route to them.
+
+```jsonc
+"characters": {
+  "pierce": {
+    "displayName": "Melanie Pierce",
+    "channels": { "email": "pierce_mail" },
+    "emailRecord": { "storyPath": "ink/pierce_mail.json", "displayName": "Melanie Pierce" },
+    "emailReplyDelay": 15,
+    "influence": { "global": "pierce_influence", "min": -40, "max": 100, "start": 0 },
+    "syncedVars": ["pierce_influence"],
+    "thresholds": [ { "id": "wary", "at": -30, "icon": "wary",
+                      "effects": [ { "type": "setGlobal", "global": "pierce_wary", "value": true } ] } ]
+  },
+  "lord": {
+    "displayName": "Sofia Lord",
+    "channels": { "email": "lord_mail" },
+    "emailRecord": { "storyPath": "ink/lord_mail.json", "displayName": "Sofia Lord" },
+    "emailReplyDelay": 15,
+    "influence": { "global": "lord_influence", "min": -40, "max": 100, "start": 0 },
+    "syncedVars": ["lord_influence"],
+    "thresholds": [ { "id": "wary", "at": -30, "icon": "wary",
+                      "effects": [ { "type": "setGlobal", "global": "lord_wary", "value": true } ] } ]
+  },
+  "dev": {
+    "displayName": "Dev",
+    "channels": { "phone": "dev_service_desk" },
+    "influence": { "global": "dev_influence", "min": -100, "max": 100, "start": -10 },
+    "syncedVars": ["dev_influence"],
+    "thresholds": [
+      { "id": "wary",    "at": -40, "icon": "wary",    "effects": [ { "type": "setGlobal", "global": "dev_wary", "value": true } ] },
+      { "id": "refuses", "at": -50, "icon": "refuses", "effects": [ { "type": "setGlobal", "global": "dev_refusing", "value": true } ] },
+      { "id": "reports", "at": -70, "icon": "reports",
+        "effects": [ { "type": "setGlobal", "global": "dev_reported", "value": true },
+                     { "type": "endConversation" },
+                     { "type": "lockout", "scope": "channel", "until": { "afterMinutes": 2 }, "recoverTo": -30 } ] } ]
+  }
+}
+```
+
+`start` is the declared default of the influence global. Pierce and Lord have no `refuses`, `reports`
+or `lockout`: a mail character cannot be burned, and the `min` of -40 stops a long run of bad sends
+from sinking the bar. Dev is the only lab character with a lockout, and it sits on `reports` so that
+a forced report (a refusal limit or a failed verification, at any influence) lifts after two real
+minutes with Dev reset to -30, above his `wary` line (`06` §4.8). Ruth, Whitlock and Tomasz are
+ordinary story NPCs with no `social.characters` entry and no bar.
 
 ### How the bar reads it
 
@@ -603,11 +840,15 @@ same exemption.
 ### Idempotency
 
 The influence functions (`se_influence`, `pretext_say`, `pretext_ask`) can be re-evaluated: ink may
-re-run a line after a restore, and the dry runs in `resolveEntryKnot` execute them. The engine keeps
-a **turn counter** per session, incremented on each `ChooseChoiceIndex` (the engine has no step index
-today). A call's key is `(turn, function, id, ordinal within the turn)`. The same key returns the
-stored result without writing again. The same id used on two different turns, such as a sticky
-"ring back later", runs both times. Dry runs bind the no-op versions (S1).
+re-run a line after a restore, and the dry runs in `resolveEntryKnot` execute them. The engine keeps a
+**ledger per run** and a **turn counter** inside it. A run is one open conversation (person-chat or
+phone-chat) or one mail delivery; a mail run's `runId` is its `msgId`. The turn counter increments
+on each `ChooseChoiceIndex`, so an `on_email` run (which makes no choice) is always turn 0, and a
+second email is a different run with a fresh ledger. A call's key is `(runId, turn, function,
+id-or-ordinal)`: `pretext_say` and `pretext_ask` key on their id, and `se_influence(delta, reason)`,
+which has no id, keys on its ordinal among the `se_influence` calls of that turn. The same key
+returns the stored result without writing again. The same id used on two different turns, such as a
+sticky "ring back later", runs both times. Dry runs bind the no-op versions (S1).
 
 ### Influence tags outside person-chat
 
@@ -652,15 +893,18 @@ The mechanism exists and is name-keyed (`systems/npc-conversation-state.js`):
 | Into a story | `syncGlobalVariablesToStory(story)` | Copies every declared global that the story also declares as a `VAR`. A story that does not declare it is skipped. Runs on every open, after `restoreNPCState` |
 | Out of a story | `observeGlobalVariableChanges` and `syncGlobalVariablesFromStory` | On an ink assignment: writes `gameState.globalVariables`, calls `broadcastGlobalVariableChange` to every other cached story, emits `global_variable_changed:<name>`. Read-only (imported) globals are reverted |
 | Between stories | `broadcastGlobalVariableChange(name, value, sourceNpcId)` | Pushes to every story in `npcManager.inkEngineCache` that declares the name; the source is skipped to avoid a loop |
-| Persist | `game.rb` `merge_global_variables!` (declared names only) | Saved on the 30 s sync and on `pagehide`; restored by `core/game.js` |
+| Persist | `game.rb` `merge_global_variables!` | Saves every key the client sends (minus imported ones) on the 30 s sync and on `pagehide`; restored by `core/game.js` |
 
 So two stories that both declare `VAR priya_influence`, with the global declared, already stay equal
 when open and re-sync on open. Nothing needs a per-record link. What the plan adds:
 
-- **Which variables sync.** Exactly the names in `social.characters.<id>.syncedVars`, which must all
-  be declared in `globalVariables` (the validator checks both lists agree and that each channel story
-  that names one declares the `VAR` with the same type and default). `<character>_influence` is always
-  implied.
+- **Which variables sync.** The engine needs no change here: it already syncs **any** declared
+  global that a story also declares as a `VAR` (`syncGlobalVariablesToStory`), whatever
+  `syncedVars` says. `social.characters.<id>.syncedVars` is documentation and validator input: every
+  name in it must be declared in `globalVariables`, and every channel story that names one must
+  declare the `VAR` with the same type and default (the validator checks both). A story that
+  declares a character's global but leaves it out of `syncedVars` still syncs, and the validator warns.
+  `<character>_influence` is always implied.
 - **How they are declared per NPC.** Per character, once (`syncedVars`), not per record. A record
   needs no field. An author lists the variable in `globalVariables`, in `syncedVars`, and in each
   story's `VAR` block.
@@ -689,11 +933,21 @@ distinct display names ("Priya Nair (helpdesk line)") as m04 does.
 An NPC registers only when its room loads (`systems/npc-lazy-loader.js`), and the ink endpoint finds
 a story only by looking in a room's `npcs` or `objects` (`games_controller.rb` ink lookup). An
 email-only character, or a world character whose room has not been entered, therefore cannot receive
-mail. Engine item S8: at game start, register a **headless record** (no sprite, `npcType: "phone"`,
-a `phoneId` no phone lists, for example `"mail_only"`, so it never shows as a phone contact) for every
-`social.characters.*.channels.email` id, and extend the ink lookup to search those entries. The
-channel record for a world character's email story is the same kind of headless record, with its own
-story file. The scenario schema's `npcType` list (`["person","phone"]`) is unchanged.
+mail. Engine item S8: the record is authored on the character, in
+`social.characters.<id>.emailRecord`:
+
+```jsonc
+"emailRecord": { "storyPath": "ink/pierce_mail.json", "displayName": "Melanie Pierce", "avatar": "pierce", "itemsHeld": [] }
+```
+
+`channels.email` is the record's id. At game start the engine registers `{ id, displayName,
+npcType: "phone", phoneId: "mail_only", storyPath, avatar, itemsHeld }` with no sprite (a `phoneId`
+no phone lists, so it never shows as a phone contact). Every consumer that today searches only
+`rooms.*.npcs` also searches these: the client registration, the ink endpoint, the model lookups
+behind `#give_item` and NPC item validation, `scenario_npc_ids`, and the validator (S8 lists the
+code). A world character's email story is the same kind of headless record, with its own story file;
+its person and phone records stay ordinary NPC records in their rooms. The scenario schema's
+`npcType` list (`["person","phone"]`) is unchanged.
 
 ### Worked example: `scenarios/ink/neye-eve.ink`
 
@@ -775,9 +1029,15 @@ manager, [name]". The rules:
     "implies": [ { "type": "document", "value": "cv" } ] },
   "from_named": { "part": "from", "text": "{sender_name} <{sender_address}>",
     "slots": [ { "id": "sender_name", "type": "name", "about": "sender" },
-               { "id": "sender_address", "type": "address" } ] }
+               { "id": "sender_address", "type": "address" } ] },
+  "from_own": { "part": "from", "text": "{account_name} <{account_address}>", "slots": [] }
 }
 ```
+
+`from_own` is the blank-free From template: `{account_name}` and `{account_address}` are built-in
+placeholders filled from the sending account (§10a), not slots. A message that uses it carries
+`headerFrom: { "account": true }`. The attachment and the link are never slots: they are chosen only
+with the Attach control and travel as `message.attachment` and `message.link` (§3).
 
 - A template has an `id`, a `part` (`from`, `greeting`, `pretext`, `ask`), `text` with `{slot}`
   placeholders, `slots[]` and optional `implies[]`. A slot has an `id`, a `type` (§1) and optionally
@@ -802,11 +1062,14 @@ manager, [name]". The rules:
   `<person>` of `<person>_address`) are compared with `primedFor.trusts`. Both the same trusted person
   sets `claimedSender` and passes. A name that matches a trusted person while the address belongs to
   someone else, or to a freemail or unrelated domain, fails with state `mismatch` and
-  `claimedSender = null`; the strings say which half was wrong. An open inbox (`hampshire`) lists
-  `trusts: ["*"]`. With one account that cannot spoof (§10a), the header From is forced equal to the
-  account, so only the account's own name can pass.
+  `claimedSender = null`; the strings say which half was wrong. `trusts` ids resolve against
+  `social.people` (cast, senders such as `portal`, and outside people). An open inbox (`hampshire`)
+  lists `trusts: ["*"]`: any From passes `senderTrust` and `claimedSender` is `null`, including the
+  forced `headerFrom: { account: true }` of `from_own`. With an account that cannot spoof (§10a), the
+  header From is forced equal to the account, so only the account's own name can pass.
 - `senderAuth` (advisory): derived from the real account and the header From (§2).
-- `linkCredible`: scored by `07` from the picked page.
+- `linkCredible`: passes when `message.linkInfo.meetsThreshold` is true; `linkInfo` is built from the
+  saved landing-page record (§11a). The judge compares nothing else about the link.
 - `urgencyCalibrated` (advisory): from the pretext template's authored `urgency` tag.
 
 ### Variables the engine writes before `on_email`
@@ -849,7 +1112,7 @@ defers tags and globals to first open. The mail runner needs the opposite, and i
 1. A fresh `InkEngine` per delivery (`systems/ink/ink-engine.js`), story loaded via
    `npcManager.storyCache` / `getInkEngine`.
 2. Restore the record's saved scalar variables (`applySavedInkVariables`), then `restoreNPCState` if a
-   thread position is stored for `(npcId, accountId)`.
+   thread position is stored for `(character, accountId)`.
 3. `syncGlobalVariablesToStory`, then attach `observeGlobalVariableChanges`.
 4. Set the `email_*` variables with `setVariable` (after steps 2 and 3, §6).
 5. `goToKnot('on_email')`, `continue()` until choices or the end, collecting text lines and tags.
@@ -857,11 +1120,11 @@ defers tags and globals to first open. The mail runner needs the opposite, and i
    for the mail client (or shown as mailbox notifications) rather than popped over whatever overlay is
    open; `give_item` reads the record's `itemsHeld`, so the record must be loaded (S8).
 7. Write the lines to the mailbox as one message; store the story position and any choices in
-   `mailState.threads[npcId:accountId]`; `recordInkVariables`; reset the `email_` set.
+   `mailState.threads["<character>:<accountId>"]`; `recordInkVariables`; reset the `email_` set.
 
 A thread position is stored separately from the phone and person positions, so a mail run never
 overwrites a conversation that is open on another channel. Choices under a reply persist only when the
-position is stored.
+position is stored. `restoreNPCState` in step 2 reads the same `"<character>:<accountId>"` key.
 
 ### Sketch
 
@@ -891,18 +1154,28 @@ VAR email_attachment = "none"
 
 ### Timing and delivery
 
-Replies arrive after a delay: authored per character (`emailReplyDelay`, default a short in-game
-wait), shorter in awareness episodes. The checklist does not wait; only the in-character reply does.
+Replies arrive after a delay: authored per character as `social.characters.<id>.emailReplyDelay`, an
+integer number of **seconds of wall-clock countdown** (default 20; awareness episodes use 5 to 8). The
+checklist does not wait; only the in-character reply does.
 
 Delivery does **not** reuse `timedMessages`. That machinery delivers fixed text to a phone thread: it
 needs a literal `text` at send time, ignores `targetKnot` for an NPC's own messages, treats `delay` as
 milliseconds from game start for NPC-level entries, and persists through a server whitelist that
 drops entries with empty text. A **mail scheduler** is new work (S9): a job record
-`{ jobId, character, npcId, accountId, msgId, vars:{email_*}, knot:"on_email", remainingMs }`, saved
+`{ jobId, kind:"ink", character, npcId, accountId, msgId, vars:{email_*}, knot:"on_email", remainingMs }`, saved
 in `mailState`, delivered by the runner above. It reuses the NPC manager's tick loop
 (`_checkTimedMessages`) and its "NPC not registered yet, retry next tick" behaviour, but not its
 payload or its sink. The countdown uses the wall clock; the time shown on the message uses
 `gameClock`, as phone messages do (`gameTime`).
+
+A job has one of two kinds. An **ink job** is the record above (`character`, `npcId`, `knot`,
+`vars`). A **text job** serves a data-only target (no `character`, such as Hampshire):
+`{ jobId, kind: "text", targetId, accountId, msgId, text, outcomeGlobal, remainingMs }`, where `text`
+is the target's authored `replies.landed` or the canonical fail line for the first failed factor (§2)
+and `outcomeGlobal` is the target's `outcome.setGlobal` key, set to true only when the message
+landed. Delivering a text job appends the reply to the mailbox of `accountId`, then sets the global
+through the shared writer. Both kinds use `emailReplyDelay` of the target (data-only targets may
+author it on the target).
 
 ### Notification
 
@@ -937,11 +1210,13 @@ message claims to be from**.
 "social": { "mailClient": {
   "accounts": [
     { "id": "guest",    "address": "guest@workstation",               "displayName": "Operator",
-      "kind": "given",   "mailbox": "guest",    "spoofsFrom": true },
-    { "id": "freemail", "address": "northgate.test@freemail.example", "displayName": "N. Test",
-      "kind": "created", "unlockedBy": "acct_freemail",               "mailbox": "freemail" },
+      "kind": "given",   "person": null,      "mailbox": "guest",    "spoofsFrom": true },
+    { "id": "freemail", "kind": "created",    "person": null,         "unlockedBy": "acct_freemail",
+      "mailbox": "freemail", "spoofsFrom": true,
+      "createMenu": [ { "id": "nt1", "address": "northgate.test@freemail.example", "displayName": "N. Test" },
+                      { "id": "nt2", "address": "n.assurance@freemail.example",    "displayName": "N. Assurance" } ] },
     { "id": "jed_pc",   "address": "j.baker@accountingnow.example",   "displayName": "Jed Baker",
-      "kind": "found",   "unlockedBy": "acct_jed_creds",              "mailbox": "jed" }
+      "kind": "found",   "person": "baker",   "unlockedBy": "acct_jed_creds", "mailbox": "jed" }
   ],
   "mailboxes": [ { "id": "guest" }, { "id": "freemail" }, { "id": "jed" } ]
 } }
@@ -949,20 +1224,33 @@ message claims to be from**.
 
 - **Accounts.** `kind` is `given` (available from the start), `found` (credentials obtained by OSINT,
   a note, a password minigame or a dropped item) or `created` (the player picks an address from an
-  authored menu, in the style of `07`'s domain menu). `unlockedBy` is a global (`acct_<id>`), set by
-  `applyActions` or a `#set_global` tag, so it saves with `globalVariables`. A `given` account has no
-  `unlockedBy`.
-- **Access.** A terminal or phone object carries `minigameData.accountIds: [...]`, the way a phone
-  object carries `npcIds`. The mail client opens on the first available account and shows an account
-  switcher; unread counts are per mailbox.
+  authored menu). `unlockedBy` is a global (`acct_<id>`), set by `applyActions` or a `#set_global`
+  tag, so it saves with `globalVariables`. A `given` account has no `unlockedBy`.
+- **`person` and domain.** `person` is the id of the `social.people` entry (§1) the account really
+  belongs to, or `null` for the player's own accounts. The account's **domain** is the part of its
+  address after `@`; it is derived, never authored. `jed_pc` is Jed's, so a message sent from it as
+  `baker` is no deception; the `senderTrust` tell (04) compares `claimedSender` with `person`.
+- **Creating an account.** A `created` account has no fixed address. Its `createMenu` lists the
+  addresses the player may pick (a menu, never typed, in the style of `07`'s domain menu). The mail
+  client shows a "Create account" entry in the switcher until `acct_<id>` is true. Picking a menu
+  entry sets two declared globals through the shared writer: `acct_<id>_choice` (the menu entry id, a
+  string) and `acct_<id>` (true). From then on the account's `address` and `displayName` are the
+  chosen entry's. The lab's globals are `acct_freemail` and `acct_freemail_choice`.
+- **Access.** A mail terminal carries `minigameData.accountIds: [...]`, the way a phone object
+  carries `npcIds` (§11). The mail client opens on the first available account (or `defaultAccount`
+  when the object names one) and shows an account switcher; unread counts are per mailbox.
 - **A sent message separates two things.** `fromAccount` is the account really used; it fixes the
-  envelope domain and `senderAuth`. `headerFrom` `{name, address}` is the claimed From, built from the
-  From blanks (§10), and is free only when the account has `spoofsFrom`; otherwise it is forced equal
-  to the account's own name and address.
+  envelope domain and `senderAuth`. `headerFrom` `{name, address}` is the claimed From, built from
+  the From blanks (§10), and is free only when the account has `spoofsFrom`; otherwise it is forced
+  equal to the account's own name and address. A From template with no blanks (`from_own`, §10) is
+  the forced case: the message carries `headerFrom: { "account": true }` and the judge reads the
+  account's own name and address.
 - **Sender authentication follows the real account.** The domain of `fromAccount` is the envelope and
   signing domain; the domain of `headerFrom` is the visible one; the claimed domain's policy (§7)
-  decides alignment. A found internal account can send as that person with authentication that
-  passes; a freemail account spoofing the company would not.
+  decides alignment. **Default:** when the two domains are equal the pair is aligned. A claimed domain
+  with no `senderAuth` policy publishes nothing, so its read is `would-pass`. A found internal account
+  can send as that person with authentication that passes; a freemail account spoofing the company
+  would not.
 - **Replies return to the real account's mailbox**, not to the spoofed party. In real life a reply to a
   spoofed From goes to that person, so a spoof-only attacker never sees the answer. The first slice
   routes to `fromAccount`, and the checklist says so once ("In real life this reply would go to Jed's
@@ -973,14 +1261,84 @@ message claims to be from**.
 - **Burned accounts.** The ink may set a global `burned_<accountId>` (via `#set_global`) when a
   character reports an address. The composer reads it and greys the account ("this address has been
   reported"). Influence stays per character, shared across identities.
-- **Persistence.** `mailState.mailboxes[id].messages[]` with
-  `{ id, thread, from, to, subject, body, fromAccount, headerFrom, time, gameTime, read }`, stored by
-  the new `mailState` server section (S9). Seeded messages carry `mailbox`.
-- **Triage (`05`).** The defender's inbox is one of these mailboxes; `triageSets[].mailbox` names it.
 - **Phones: later.** Multiple phones and a `caller_id` identity for calls (with per-identity claims
   the character accepts or catches) are future work for the Eldritch Hacker strand. In this plan
   there is one player voice on every phone, and the character's beliefs about who is speaking are not
   tracked per identity.
+
+### The message record (persisted)
+
+One record shape serves the inbox, the Sent folder, seeded mail and the triage reader. The mail
+client stores it in `mailState.mailboxes[<mailboxId>].messages[]`.
+
+```jsonc
+{ "id": "msg_017", "thread": "pierce:guest", "mailbox": "guest",
+  "folder": "sent",                       // "inbox" | "sent"
+  "fromAccount": "guest",                 // the account really used (sent mail only)
+  "from": { "name": "Jed Baker", "address": "j.baker@accountingnow.example" },   // the From as displayed
+  "to": "m.pierce@accountingnow.example",
+  "targetId": "pierce",                   // the phishTargets id, or null when the recipient is not a target
+  "subject": "Q3 numbers",
+  "templates": { "from": "from_named", "greeting": "greet_named", "pretext": "pretext_sheet", "ask": "ask_open_attached" },
+  "slots": { "sender_name": "baker_full", "sender_address": "baker_address",
+             "name": "pierce_short", "document": "balance_sheet", "when": "friday" },
+  "body": "Hi Mel,\nHere is the Q3 balance sheet you wanted Friday. ...",   // rendered at send time and stored
+  "attachment": { "kitId": "kit_balance_sheet", "kind": "spreadsheet" },     // or null
+  "link": { "kitId": "kit_payroll_page", "pageId": "payroll_login", "domainId": "d_word" },   // or null
+  "landed": true,                         // EvalResult.landed; null on inbox mail
+  "tells": [ "senderTrust", "senderAuth" ],   // EvalResult.tells as ids, as sent; [] on inbox mail
+  "time": "09:12", "gameTime": 543000,    // display clock string; numeric elapsed ms (phone convention)
+  "read": true }
+```
+
+- **`body` is stored rendered.** The Sent view and the triage `playerSent` replay read `body`, so a
+  later template edit cannot change what the player sent. `templates` and `slots` are stored for the
+  judge, the report and the debrief. `link.domainId` is the 07 domain menu id the player picked,
+  copied from the landing-page record at send time (§11a), so the triage reader can look it up.
+- **Inbox mail** (a reply, seeded mail) has `folder: "inbox"`, `from` set to the sender, no
+  `fromAccount`, `templates`, `slots` or `targetId`, `tells: []` and `landed: null`.
+- **Authored messages** (seeded mail in `mailClient.seededMessages` and the messages inside a triage
+  set) use the same field names, with the clock written as `time: "08:05"` and `unread: true`
+  instead of `gameTime` and `read`; the loader normalises (`read = !unread`, `gameTime` from the
+  game clock at load). They may add `links[]`, `attachments[]` and, for triage, `auth` and `truth`
+  (05). Body text may hold `{{link:<id>}}` tokens that point into `links[]`.
+- **The Sent folder is a decided feature.** Every send writes a record to the sending account's
+  mailbox with `folder: "sent"`.
+
+### `mailState`
+
+```jsonc
+"mailState": {
+  "mailboxes": { "guest": { "messages": [ /* records */ ], "unread": 1 } },
+  "jobs": [ /* mail scheduler jobs, §10 */ ],
+  "threads": { "pierce:guest": { "position": { /* saved ink state */ }, "choices": [ ] } },   // key "<character>:<accountId>"
+  "drafts": { "guest": { "to": "...", "subject": "...", "templates": { }, "slots": { },
+                         "attachment": null, "link": null } },   // one per account; survives a nested launch
+  "metrics": { "pierce": { "sent": 3, "failed": 2, "landed": 1, "firstTryLanded": false } }
+}
+```
+
+- **Metrics.** On every send to a target the client increments `metrics[targetId].sent`, and
+  `failed` or `landed` by `EvalResult.landed`; `firstTryLanded` is true when the first send to that
+  target landed. The engine also writes the declared integer global `phish_<targetId>_attempts`
+  (the same count as `sent`) so an ink story can branch on it. There are no `metric_*` globals; the
+  engagement report (`10`) reads `mailState.metrics`, the sent records and the outcome globals.
+- **Drafts live in `mailState`**, not in a global, so a nested launch (the page builder, the notes
+  minigame) returns to a restored composer (§6 "Return to").
+- **Caps** mirror the phone state caps: 200 messages per mailbox, 4000 characters per body, 50 jobs,
+  one draft per account. A delivery commits the message and removes its job in one write.
+- **Persistence** is the new `mailState` section (S9). The client registers it in `state-sync.js`
+  (`KEYED_SECTIONS` / `WHOLE_SECTIONS` and `confirm()`) and in the `flush()` allow-list so a
+  `pagehide` inside the 30 s window keeps a delivered reply; the server accepts it in
+  `merge_last_write_wins_sections` (so a stale request cannot overwrite it) with the caps above.
+  Seeded messages carry `mailbox`.
+
+### Triage (`05`)
+
+The defender reader (`05`) reads the **inline `messages`** of its `triageSets` entry. A set has no
+`mailbox` field. A `playerSent` entry draws from the Sent folder of the mailbox its `fromMailbox`
+names, using the latest **sent** record to its `targetId` (landed or not), and is skipped when that
+record has no tells.
 
 ---
 
@@ -992,25 +1350,122 @@ name and the browser reads one object:
 ```jsonc
 "social": {
   "intelFacts": { ... },      // §1
+  "people": [ ... ],          // §1: the staff and sender directory
   "templates": { ... },       // §10
   "characters": { ... },      // §8, §9
-  "mailClient": { "accounts": [...], "mailboxes": [...], "contacts": [...] },   // §10a, 01
+  "mailClient": { "accounts": [...], "mailboxes": [...], "contacts": [...],
+                  "seededMessages": [...], "payloadKit": [...] },   // §10a, 01
   "osint": { ... },           // 02
-  "intelBoard": { "readinessSlots": { ... } },   // 03, §4
+  "intelBoard": { "title": "...", "people": [...], "readinessSlots": { ... } },   // 03, §4
   "phishTargets": [ ... ],    // 04, §7
-  "triageSets": [ ... ],      // 05
+  "triageSets": [ ... ],      // 05; each set holds its own flagChips
   "landingPages": [ ... ],    // 07
   "pretextNpcs": [ ... ],     // 06
-  "engagement": { ... }       // 10
+  "engagement": { ... },      // 10: scopeNote, scope, plan, defender, report
+  "awarenessEpisode": { ... } // 11: present only in an awareness episode's scenario
 }
 ```
 
-Objects carry only a pointer in `minigameData` (`mailboxId`, `accountIds`, `triageSetId`, `landingPageId`,
-`callId`), so one object type needs one `minigameData` schema entry. Because the top-level scenario
-reaches the client unfiltered (`game.rb` bootstrap filtering strips only room contents, `flags` and
-`targetFlags`), judged data is readable in the page (§5). Do not use a key named `flags` anywhere
-under `social` that sits directly on an object or NPC; the server deletes `flags` arrays there. The
-`truth.flags` field in `05` is safe only because it sits inside `social.triageSets`.
+**Contacts.** `mailClient.contacts[]` entries are `{ id, person, name, addresses[], role,
+revealedBy, character?, targetId? }`. `person` is a `social.people` id. `revealedBy` is the
+`se_intel_<id>` global that makes the contact appear in the To list. `character` names the
+`social.characters` entry whose mail story replies. `targetId` joins the contact to a
+`phishTargets` entry; the target's `address` must be one of the contact's `addresses`, and `email_to`
+(§10) records which one the message used. Sending to a contact with no `targetId` is allowed: the
+message is stored in Sent, is not judged and delivers nothing. The validator checks that every
+`revealedBy` and every target's `addressedAs` source fact lies inside that target's readiness slots
+(§4), so a card cannot read "Ready to approach" while the contact cannot be reached or addressed.
+
+**Pointers.** An object carries only a pointer in `minigameData`. One object type has one entry in
+`minigame-data-schemas.json`, and each type needs a sprite `assets/objects/<type>.png`:
+
+| Object type | `minigameData` | Notes |
+|-------------|----------------|-------|
+| `mail_terminal` | `{ accountIds: [...], defaultAccount? }` | opens `mail-client`; a phone item may also list `accountIds` (Eldritch Hacker; no flow in the lab) |
+| `osint-workstation` | `{ siteIds: [...] }` | ids from `social.osint.sites`; the workstation opens only those |
+| `case-file` | `{ mode }` | one of `scope`, `plan`, `recon`, `defender`; one board object per mode, default `recon` |
+| `triage-workstation` | `{ triageSetId }` | |
+| `page-builder` | `{ landingPageId }` | |
+| `desk-phone` / NPC with call data | `{ callId }` | ids from `social.pretextNpcs` |
+| `report-workstation` | none | reads `social.engagement` |
+| `kiosk` | `{ episodeId }` | opens the episode runner (11) |
+
+`mode` is the pointer's one name everywhere. A nested launch passes the child's parameters in the
+call (`mode`, `targetId`, `landingPageId`), not through the object (§6 "Return to").
+
+**Engagement mode blocks.** Each of `scope`, `plan`, `defender` and `report` in `social.engagement` has
+`onCompleteGlobal` (set through the shared writer on the false-to-true flip, when every step is
+done) and an optional `steps[]` of `{ id, onCompleteGlobal }`, each set when that step is done. A task
+therefore completes on its own global. The lab's values:
+
+| Block | Block global | Step globals |
+|-------|--------------|--------------|
+| `scope` | `roe_signed` | `roe_scope_done` (sort the scope cards), `roe_stoprule_done` (the stop-rule question) |
+| `plan` | `plan_done` | `plan_objective_done`, `plan_measures_done` |
+| `defender` | `profile_done` | none |
+| `report` | `report_filed` | `report_results_done`, `report_findings_done` |
+
+Completion per mode: `scope` when every sorting card is placed correctly and every question card
+(`kind: "question"`, options `{id, text, correct, why}`) is answered; `plan` when the objective,
+measure and target picks are correct; `defender` when each fact in `engagement.defender.factMitigations`
+has a `good` option chosen. `defender` has no indicators step unless `engagement.defender.indicators`
+is authored (off by default). `factMitigations` is `[ { intel, options: [ { id, text, good, why } ] } ]`
+and lives only in `engagement`; `intelBoard` holds the title, `people` (ids) and `readinessSlots`.
+`scopeNote` lives in `engagement`.
+
+**Globals the scenario owns.** All are declared in `globalVariables`.
+
+| Global | Set by, and where | Notes |
+|--------|-------------------|-------|
+| `se_intel_<id>` | `grantFact` (OSINT or a call grant) | boolean, default false (§5) |
+| `target_ready_<id>` (one per `phishTargets` id) | `evaluateReadiness`, run from `grantFact` after every grant | boolean; set where the facts are granted, so the board need not be opened (§4) |
+| `osint_done` | `evaluateReadiness`, when every id in `intelBoard.people` is ready | boolean |
+| `phish_<id>_landed` | the target's `on_email` ink, or the text job for a data-only target, at reply delivery | boolean; one owner per target (04) |
+| `phish_<id>_attempts` | the mail client, on each send | integer |
+| `acct_<id>`, `acct_<id>_choice`, `burned_<id>` | account unlock, creation, ink | §10a |
+| `landing_<pageId>_built`, `landing_<pageId>_domain` | the page builder, on attach | boolean; domain option id (§11a) |
+| engagement block and step globals | the board modes, the report builder | table above |
+| `<character>_influence`, `_latched`, `_lockout_until`, `_lockout_channel` | the influence service, ink | §8 |
+| `pretext_<callId>_outcome`, `_lowest`, `_state` | the pretext session | §6 of 06 |
+| `<prefix>percent`, `<prefix>reportRate`, `<prefix>done`, `<prefix>pass` | the triage starter | the set's `setGlobalPrefix` (05) |
+| `se_osint_state`, `se_board_state`, `se_landing_pages`, `episode_<id>_state` | their minigames | object-valued, default `{}` |
+
+**Object-valued state globals** hold ids only and stay small (the 60 KB `pagehide` flush shares one
+budget with every global). A call's tells log keeps the last 40 entries. Mail is not stored this way;
+it lives in `mailState`.
+
+### 11a. The landing-page record and how it reaches the judge
+
+The builder (`07`) persists one record per built page in `globalVariables.se_landing_pages[<pageId>]`
+and sets `landing_<pageId>_built` and `landing_<pageId>_domain` when the page is attached:
+
+```jsonc
+{ "pageId": "payroll_login", "targetId": "lord",
+  "choices": { "brand": "accountingnow", "purpose": "payslip", "domainId": "d_word", "logo": "crisp",
+               "wording": "w_formal", "fields": ["email","password"], "padlock": true },
+  "credibility": 87, "gatesPassed": true, "meetsThreshold": true,
+  "tellsFound": ["domain","formOrigin","hoverMismatch"],
+  "victim": { "visited": true, "submitted": false, "noticed": true },
+  "built": true }
+```
+
+`targetId` is the sole key of the page's `targets` map. `meetsThreshold` is computed by `07`'s model
+as `credibility >= targets[targetId].linkThreshold && gatesPassed`. A page can be attached below the
+threshold ("attach anyway"); `built` is true either way. The page definition carries an authored
+`linkText` (the address the mail client shows for the link, for example `accountingnow.example/payroll`)
+that the hover-mismatch lesson contrasts with the real domain; the player does not write it.
+
+**One link id per page.** The payload-kit item for a page is `kit_payroll_page`, with
+`landingPageId: "payroll_login"`; the same id is `message.link`, the sent record's `link.kitId` and
+the `07` page record's kit reference. This is the only link id.
+
+**How the judge receives it.** `evaluateMessage` is pure and reads no globals (§3). When `message.link`
+is set, the mail client resolves the kit item to the page record and fills `message.linkInfo`
+from `07`'s `linkInfoFor(record, targetId)`:
+`{ kitId, pageId, domainId, domain, credibility, gatesPassed, meetsThreshold }`, or `{ kitId, state:
+"missing" }` when no record exists. `linkCredible` passes when `linkInfo.meetsThreshold` is true;
+state `missing` fails with "there's no page behind that link". The `linkCredible` tell is present when
+`linkInfo.domain !== target.expectedLink.realDomain`, whether or not the page convinced.
 
 ---
 
@@ -1022,18 +1477,43 @@ Items other docs depend on. Each has a code location. The consolidated cross-doc
 |---|------|---------------|
 | S1 | Bind the social externals (`se_influence`, `pretext_say`, `pretext_ask`) once inside `InkEngine`, with no-op defaults (return 0) when no session is active. Every loader gets them, including the phone preload, the bark path and dry runs. Add stubs to the ink tooling | `systems/ink/ink-engine.js` (`bindExternalFunction`); loaders `person-chat-conversation.js`, `phone-chat-conversation.js` (`_preloadOpeningOnce`, `resolveEntryKnot`), `npc-manager.js` bark path; stubs in `scripts/ink_runtime_check/voicelines.mjs`, `inkcheck.js`, `reopencheck.mjs` |
 | S2 | Display-name resolution prefers the conversation's own NPC on a tie | `npc-manager.js` speaker/name lookup |
-| S3 | A shared global writer: write `gameState.globalVariables`, `broadcastGlobalVariableChange`, emit `global_variable_changed`. Make `applyActions` `set_global` use it | `systems/apply-actions.js` `set_global`; pattern in `objectives-manager.js`, `inventory.js` |
-| S4 | The influence bar: a new DOM component for person-chat, phone-chat and the mail pane, reading the global and the thresholds. Not an extension of the world-space health bar | new; `person-chat-ui.js`, `phone-chat-ui.js`; not `npc-health-bar.js` |
-| S5 | The social influence service: the watcher on the influence global, the write path behind `se_influence` and the pretext functions, threshold effects and the latch, the `npc_influence_changed` event, the listener for `npc-influence-change`, and the `#influence_gained/lost[:reason]` tags for social characters in the shared tag processor and in phone-chat | new `systems/social-influence.js`; `chat-helpers.js` `processGameActionTags`; `phone-chat-conversation.js` `processTags`; `person-chat-conversation.js` |
-| S6 | The mail runner (§10), doing the loader's sync steps in order | new; modelled on `phone-chat-conversation.js` `_preloadOpeningOnce` |
+| S3 | A shared global writer: write `gameState.globalVariables`, `broadcastGlobalVariableChange`, emit `global_variable_changed`; emit only on a change. Make `applyActions` `set_global` use it. For a **social influence global** it also writes the value into the **calling story** (its `InkEngine`, via `setDeclaredVariable` with the observer detached, as `broadcastGlobalVariableChange` does) and writes the clamped value back to the source story when ink wrote out of range, so a later ink assignment starts from the engine's value | `systems/apply-actions.js` `set_global`; `systems/npc-conversation-state.js` (`broadcastGlobalVariableChange`, observer); pattern in `objectives-manager.js`, `inventory.js` |
+| S4 | The influence bar: a new DOM component for person-chat, phone-chat, the mail pane and the board's influence section, reading the global and the thresholds. Not an extension of the world-space health bar | new; `person-chat-ui.js`, `phone-chat-ui.js`; not `npc-health-bar.js` |
+| S5 | The social influence service: the watcher on the influence global, the write path behind `se_influence` and the pretext functions (S3's calling-story write included), threshold effects and the latch, the forced `report(character, reason)` path (§8), the `npc_influence_changed` event, the listener for `npc-influence-change`, and the `#influence_gained/lost[:reason]` and `#report:<reason>` tags for social characters in the shared tag processor and in phone-chat. The idempotency ledger is scoped per run (§8) | new `systems/social-influence.js`; `chat-helpers.js` `processGameActionTags`; `phone-chat-conversation.js` `processTags`; `person-chat-conversation.js` |
+| S6 | The mail runner (§10), doing the loader's sync steps in order, with a fresh idempotency ledger per run | new; modelled on `phone-chat-conversation.js` `_preloadOpeningOnce` |
 | S7 | Exclude the `email_` prefix from `recordInkVariables` / `exportNpcInkVariables`; set engine-written variables after restore and sync in every loader | `systems/npc-conversation-state.js`; `person-chat-minigame.js` (restore then sync), `phone-chat-minigame.js` |
-| S8 | Register headless email records at game start and extend the ink lookup; load stories independent of room load | `systems/npc-lazy-loader.js`; `core/game.js` start-room registration; `games_controller.rb` ink lookup (the room `npcs`/`objects` search) |
-| S9 | Mail scheduler, `mailState` persistence, notification and the message-list renderer | `npc-manager.js` tick loop; `state-sync.js` `buildPlayerSections`; `games_controller.rb` permitted params and bootstrap; `game.rb` `merge_phone_state!` as the model; `core/game.js` restore |
-| S10 | The lockout record and its checks on person-chat, phone-chat and mail | `systems/interactions.js` NPC sprite branch; model `npc-hostile.js` `recordHostility`; `state-sync.js` |
-| S11 | Validator and schema: the top-level `social` key; the `social.characters` lints (synced vars declared, `VAR`s match, lockout has an expiry or a route, thresholds ordered); the `se_intel_*` declaration; template/slot checks; `on_email` and `email_*` VAR checks; `minigame-data-schemas.json` entries; no `intel_*` rule applied to other missions | `scripts/validate_scenario.rb` `known_top_level` and the `npcType` branches; `scripts/scenario-schema.json`; `scripts/minigame-data-schemas.json`; `scripts/ink_runtime_check/` |
+| S8 | Register headless email records at game start from `social.characters.*.emailRecord` and make every lookup that today searches only `rooms.*.npcs` search them too: the client registration, the ink endpoint, `Game#npc lookup` (`game.rb` 645), NPC item validation and `record_npc_gift!` (`game.rb` 1281), `scenario_npc_ids` (`game.rb` 1817), and the validator's phone-NPC expectation (`validate_scenario.rb` 2490). Prefer one helper (`scenario_npc_records`) that returns room NPCs plus headless records | `systems/npc-lazy-loader.js`; `core/game.js` start-room registration; `games_controller.rb` ink lookup (1966-1984); `app/models/break_escape/game.rb`; `scripts/validate_scenario.rb` |
+| S9 | Mail scheduler, `mailState` persistence (§10a), notification and the message-list renderer | `npc-manager.js` tick loop; `state-sync.js` `buildPlayerSections`, `KEYED_SECTIONS`/`WHOLE_SECTIONS`, `confirm()`, `flush()`; `games_controller.rb` `merge_last_write_wins_sections`, bootstrap; `game.rb` `merge_phone_state!` as the model; `core/game.js` restore |
+| S10 | The lockout: stored in the declared globals `<character>_lockout_until` and `<character>_lockout_channel` (§8), so it rides `globalVariables` persistence and needs no server section. The check on person-chat, phone-chat and mail, and the lift (which writes `recoverTo` silently and clears the latch) | `systems/interactions.js` NPC sprite branch; `systems/social-influence.js`; `phone-chat` and mail entry points |
+| S11 | Validator and schema: the top-level `social` key; the `social.characters` lints (synced vars declared, `VAR`s match, lockout has an expiry or a route, thresholds ordered, `recoverTo` above every negative threshold, a `reports` threshold on any character with call data, lockout globals declared); the `se_intel_*` declaration; template/slot checks; `on_email` and `email_*` VAR checks; contact and readiness consistency (§11); `minigame-data-schemas.json` entries; no `intel_*` rule applied to other missions. The landing-page lint and the JS unit tests run in CI (a step running `node --test test/js/validator-*.test.mjs` and a loop of the validator over `scenarios/*/scenario.json.erb`) | `scripts/validate_scenario.rb` `known_top_level` and the `npcType` branches; `scripts/scenario-schema.json`; `scripts/minigame-data-schemas.json`; `scripts/ink_runtime_check/`; `.github/workflows/ci.yml` |
+| S12 | **Return to.** `startMinigame(scene, container, { returnTo: { sceneType, params }, ... })`: `endMinigame` calls `returnTo` after `onComplete`, on a normal exit only. A parent that launches a child sets `suspended: true` in its params so its `onComplete` ignores the `onComplete(false, null)` that `startMinigame` fires when it ends the running minigame. The launcher passes the child's required parameters in the call. The parent saves its draft first (mail: `mailState.drafts`; OSINT and board: their `se_*_state` globals) | `minigames/framework/minigame-manager.js` (`startMinigame`, `endMinigame`); `base-minigame.js` |
 
 Back-compat checklist for any of these changes: m01 Derek (`#hostile` plus `#influence:-100`) still
 fights; m02 guards and ward nurse are not turned hostile by ink arithmetic; m04 Vance and m05
 Patricia pairs need no change; `neye-eve.json` is untouched; a story with none of the new externals
 or variables loads with no warning; a story that declares the new externals loads from the phone
 preload, the bark path and a dry run.
+
+---
+
+## 13. Settled values, in one place
+
+Values several docs must match. Each is defined in the section named.
+
+| Value | Settled as | Section |
+|-------|-----------|---------|
+| Link id of a built page | `kit_payroll_page` (kit item) with `landingPageId: "payroll_login"` | 11a |
+| Landing-page globals | `landing_payroll_login_built` (bool), `landing_payroll_login_domain` (domain option id) | 11a |
+| Landing-page menu | six domain ids (`d_unrelated`, `d_letter`, `d_word`, `d_sub`, `d_vv`, `d_homo`) in the student profile; `05` `playerSentAuth` has a row for every one and for every account id | 11a, 05 |
+| Triage set size, by audience | awareness pre/post 10; student lab 8 (6 authored plus 2 `playerSent`); awareness-episode defend sets 5 to 8; Eldritch Hacker 3 to 5 | 10a |
+| `playerSent` | latest **sent** record to the target, landed or not; `domainFrom: "landing_domain"` on a `playerSent` entry only; authored messages carry literal auth rows | 10a |
+| Board pointer | `mode` (one board object per mode) | 11 |
+| Mode completion | block `onCompleteGlobal`, optional step globals (names in §11) | 11 |
+| Readiness globals | `target_ready_<id>`, `osint_done`, set by `evaluateReadiness` from `grantFact` | 11, 4 |
+| Reply-delay unit | `emailReplyDelay` in seconds of wall-clock countdown | 8, 10 |
+| Lockout clock | real elapsed minutes from `gameClock.elapsedMs()`, stored in `<character>_lockout_until` | 8 |
+| `email_pattern` source | the Hunter lookup result `r_pattern` | 1 |
+| Sans-serif | Atkinson Hyperlegible (Regular and Bold), SIL OFL 1.1, bundled | 6 |
+| Thread key | `"<character>:<accountId>"` | 10a |
+| Created account | `createMenu`; `acct_<id>` and `acct_<id>_choice` | 10a |
+| Forced From | template `from_own`, `headerFrom: { account: true }` | 10, 10a |

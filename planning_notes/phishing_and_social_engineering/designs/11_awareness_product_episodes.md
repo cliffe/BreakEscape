@@ -2,8 +2,8 @@
 
 Status: plan. The awareness product sits under the separate "Incident Simulations: Critical Cases"
 line, not SAFETYNET, and stays on a neutral corporate skin. It is built after the student lab (`10`)
-and after Eldritch Hacker's first slice, which means the role swap in `06` (not in the lab) is built as
-part of this product's scope (section 6.1, N15). The "Mission" column in section 7 means SAFETYNET:
+and after Eldritch Hacker's first slice. The role swap (the learner plays the helpdesk agent) is
+specified and built in this product's scope (section 6.1, N15), not in the lab or in `06`. The "Mission" column in section 7 means SAFETYNET:
 Eldritch Hacker. This is a curriculum and product doc, not a single minigame. It wires the systems in
 `01`–`07` into short episodes for non-technical staff. Depth is data (see section 7). Scoring is `05`'s
 `awareness` profile, not a scheme of its own; where an episode needs something `05` does not have,
@@ -57,24 +57,26 @@ credential capture. The payload kit is abstract labels (see `01`).
 
 ## 3. The loop and the episode set
 
-### 3.1 Standard episode shape (about 13 min, plus two checks per learner)
+### 3.1 Standard episode shape (about 13 min, plus the pre and post checks)
 
-The pre-check runs **once, before the learner's first episode**, and the post-check **once, after
-their last**, so three episodes cost one pair of checks and not three. Rows 0 and 7 therefore apply to
-the set of episodes, not to each. An episode on its own is rows 1 to 6.
+An episode is rows 1 to 6 and is one shell mission. The pre-check and the post-check are two further
+shell missions that bracket whichever episodes an organiser sets between them (section 5.2), so three
+episodes cost one pair of checks and not three. Rows 0 and 7 are those two missions, not stages inside
+each episode.
 
 | # | Stage | Time | What happens | Components |
 |---|-------|------|--------------|------------|
-| 0 | Pre-check (once per learner) | 4 min | One parallel form of 10 spot-the-phish messages (`05` `awareness` profile, `feedbackMode: "end"`), recorded (section 5.2) | 05 |
+| 0 | Pre-check mission (once per learner) | 4 min | One parallel form of 10 spot-the-phish messages (`05` `awareness` profile, `feedbackMode: "end"`), recorded and exported (section 5.2) | 05 |
 | 1 | Brief and consent | 1 min | "You're on an authorised exercise at Brightwell Foods (fictional). Scope: this inbox, these people." Short ethics beat | 03 scope note |
 | 2 | Look around | 2–3 min | 3–5 facts on a stripped-down OSINT page; the intel board ticks as they're found | 02, 03 |
 | 3 | Write | 3–4 min | Compose one message from templates with one or two blanks filled from the facts just found (or run one call from preset lines with one blank); red-flag meter on; retry freely, hints escalate | 01, 04, or 06 |
 | 4 | Flip | 30 s | "Your message landed (or not). Now you're the one it lands on." The learner sees what they sent arrive in a defender's inbox with its `tells` (`00` §3) highlighted | 01 read-only; 05 `playerSent` |
 | 5 | Defend | 4–6 min | Triage 5–8 messages (or handle a call / page) with the checklist from 04. Report button is always visible | 05 (and 06/07 where noted) |
 | 6 | Debrief | 1 min | Per-item reasoning, one "one thing to do on Monday" card, the no-blame line | 04 strings |
-| 7 | Post-check (once per learner) | 4 min | The other parallel form, same difficulty mix | 05 |
+| 7 | Post-check mission (once per learner) | 4 min | The other parallel form, same difficulty mix; shows the change from the imported pre-check result | 05 |
 
-Stages 0 and 7 can be switched off for a facilitated session (section 5.3). Stage 3 is the only
+An organiser who wants no checks leaves the two check missions out of the event (facilitated mode,
+section 5.3). Stage 3 is the only
 place the learner "attacks"; it is capped at **one attempt producing one artefact** (one message, one
 call, one page choice, or one text/QR pretext, depending on the episode) so the episode stays short
 and does not become a phishing workshop.
@@ -86,12 +88,12 @@ All companies and people are fictional. Defend items are scored by `05`'s `aware
 
 | ID | Role | Attack type taught | Attack beat | Defend beat | Red flags surfaced | Defend items (scored per 4.1) |
 |----|------|--------------------|-------------|-------------|--------------------|-------|
-| E1 | Finance / accounts payable | Invoice fraud and BEC (no payload, no link) | OSINT: supplier name, the finance manager, a real-looking quarter-end rush. Write an email "from" a known supplier asking to update bank details on an open invoice. Rules (04): `senderTrust`, `pretextRelevant`, `urgencyCalibrated`; no attachment factor | Triage a payments inbox: five items: a genuine invoice, a genuine routine purchase order, a lookalike domain (`brightwel1foods`), a "CEO needs this wired today", and a genuine change-of-bank that is correctly verified by phone. The right move for the phish is to report and ring the supplier on the number on file (the debrief says so; a `Verify` verdict is request R1 in 6.4) | Changed bank details, urgency plus secrecy, display name vs real address, lookalike domain, reply-to differs from From, pressure to skip the normal process | 5 items (2 phish, 3 genuine); one genuine item carries a "confirmed by phone" note |
+| E1 | Finance / accounts payable | Invoice fraud and BEC (no payload, no link) | OSINT: supplier name, the finance manager, a real-looking quarter-end rush. Write an email "from" a known supplier asking to update bank details on an open invoice. Required (04): `senderTrust`, `pretextRelevant`; `urgencyCalibrated` is advisory; no attachment factor | Triage a payments inbox: five items: a genuine invoice, a genuine routine purchase order, a lookalike domain (`brightwel1foods`), a "CEO needs this wired today", and a genuine change-of-bank that is correctly verified by phone. The right move for the phish is to report and ring the supplier on the number on file (the debrief says so; a `Verify` verdict is request R1 in 6.4) | Changed bank details (`changed_bank_details`), urgency plus secrecy (`secrecy_or_bypass`), display name vs real address, lookalike domain (`lookalike_domain`), reply-to differs from From (`reply_to_differs`), pressure to skip the normal process | 5 items (2 phish, 3 genuine); one genuine item carries a "confirmed by phone" note |
 | E2 | HR / recruitment | Malicious CV (link or "enable content" lure, concept-level) | OSINT: an open vacancy, the recruiter's name, a social post asking people to email CVs (the Chothia example). Write a candidate email with an attachment from the abstract kit | Triage a recruitment inbox: genuine CVs, one with a link to a "portfolio" on an odd domain, one asking to "enable editing to view", one from a recruiter agency with the right domain. Learn: open in a viewer, don't enable content, report to IT. One short concept panel on macros, flagged in the debrief text as "largely blocked now, but the lure still shows up" (to verify wording) | Unexpected link, "enable editing/content" prompt, sender-attachment mismatch, generic greeting, domain age/lookalike | 6 items (2 phish, 4 genuine); includes correct attachment handling |
-| E3 | Helpdesk / IT support | Vishing and social-engineered password reset; MFA fatigue as the second beat | `06` pretext call: the learner phones a fictional helpdesk as a "locked-out manager" and tries to get a reset. The NPC's influence bar (`00` §8) shows how each line moved it, and the learner sees which verification question the NPC skipped. Then a short MFA-fatigue beat: they spam push approvals in a mock authenticator and see the target eventually tap "approve" at 06:50 | Role swap (N15, built in this product's scope): the learner is the helpdesk agent. Calls come in via `person-chat`; they must run the verification script (callback to the number on file, manager approval, never read out a reset code). One call is genuine and awkward, to avoid "refuse everything" being the winning move. MFA beat: a stream of unrequested pushes, correct action is deny and report | Urgency and name-dropping, "I'm in a meeting, can't call back", authority pressure, request to bypass verification, unrequested MFA prompt, push at an odd hour | 4 calls (2 impostor, 2 genuine) plus 1 MFA push item, scored by the role swap's rules (N15) and shown as a percent. Refusing a genuine caller without offering the safe route loses points. Ships only when N15 and N11 exist |
+| E3 | Helpdesk / IT support | Vishing and social-engineered password reset; MFA fatigue as the second beat | `06` pretext call: the learner phones a fictional helpdesk as a "locked-out manager" and tries to get a reset. The NPC's influence bar (`00` §8) shows how each line moved it, and the learner sees which verification question the NPC skipped. Then a short MFA-fatigue beat: they spam push approvals in a mock authenticator and see the target eventually tap "approve" at 06:50 | Role swap (N15, built in this product's scope): the learner is the helpdesk agent. Calls come in via `person-chat`; they must run the verification script (callback to the number on file, manager approval, never read out a reset code). One call is genuine and awkward, to avoid "refuse everything" being the winning move. MFA beat: a stream of unrequested pushes, correct action is deny and report | Urgency and name-dropping, "I'm in a meeting, can't call back" (`vish_callback_pressure`), authority pressure (`borrowed_authority`), request to bypass verification, unrequested MFA prompt (`unrequested_mfa_push`), push at an odd hour | 4 calls (2 impostor, 2 genuine) plus 1 MFA push item, scored by the role swap's rules (N15) and shown as a percent. Refusing a genuine caller without offering the safe route loses points. Ships only when N15 and N11 exist |
 | E4 | Executive / PA | Whaling and deepfake voice | OSINT: an exec's public calendar, travel posts, PA name. Write a short "I'm about to board, need this paid" email to the PA | Defend: the exec's PA gets an email, then a voice note and a call that sounds like the exec (TTS voice with a clone-style "effect"). The correct move is the same as in E1: stop and verify through a known channel. A debrief panel explains voice cloning at concept level, nothing about how | Authority, secrecy ("don't tell finance"), travel excuse, new payment details, voice with no verifiable channel, request that breaks process | 5 items (3 phish, 2 genuine), 2 of them voice (needs N12) |
-| E5 | General staff: credential pages | Login-page clone via `07` | Build a look-alike "Single Sign-On" page from abstract parts (logo, form, domain choice); the learner picks which domain to send people to. `07` judges the choices (never produces a deployable page) | Triage: a link in an inbox; open it in a mock browser pane; check the address bar, the certificate padlock misconception ("a padlock doesn't mean it's safe"), and decide whether to enter details. One genuine IT page is mixed in | Domain mismatch, subtle misspelling, padlock myth, unexpected "your session expired" prompt, password manager not auto-filling | 5 URL/page items (3 phish, 2 genuine); needs N13 |
-| E6 | General staff: mobile | QR-code phishing (quishing) and SMS phishing (smishing) as concept | Short: the learner chooses a pretext and a channel for a fictional office (a "parking permit" poster with a QR code, a "parcel fee" text). Uses a cut-down `01` phone variant on `phone-chat`; no landing page is built | Triage on a phone shell: texts, a QR on a printed notice, a "scan to confirm your MFA" email. Decide: don't scan, report, verify with the named sender through another channel | QR hides the URL, unexpected fee, shortened link, "reply STOP" trick, sender not in contacts, message outside normal channel | 6 items (4 phish, 2 genuine); needs N14 |
+| E5 | General staff: credential pages | Login-page clone via `07` | Build a look-alike "Single Sign-On" page from abstract parts (logo, form, domain choice); the learner picks which domain to send people to. `07` judges the choices (never produces a deployable page) | Triage: a link in an inbox; open it in a mock browser pane; check the address bar, the certificate padlock misconception ("a padlock doesn't mean it's safe"), and decide whether to enter details. One genuine IT page is mixed in | Domain mismatch, subtle misspelling, padlock myth (`padlock_myth`), unexpected "your session expired" prompt, password manager not auto-filling | 5 URL/page items (3 phish, 2 genuine); needs N13 |
+| E6 | General staff: mobile | QR-code phishing (quishing) and SMS phishing (smishing) as concept | Short: the learner chooses a pretext and a channel for a fictional office (a "parking permit" poster with a QR code, a "parcel fee" text). Uses `01`'s narrow, phone-shaped layout; no landing page is built | Triage on a phone shell: texts, a QR on a printed notice, a "scan to confirm your MFA" email. Decide: don't scan, report, verify with the named sender through another channel | QR hides the URL (`unexpected_qr`), unexpected fee, shortened link (`smish_shortlink_urgency`), "reply STOP" trick (`reply_stop_trick`), sender not in contacts, message outside normal channel | 6 items (4 phish, 2 genuine); needs N14 |
 | E7 (optional) | Everyone: Voice and the CEO | Deepfake-voice CEO fraud | A cross-role finale reusing E1/E4 content: the learner prepares the fictional "script" for a cloned-voice call (the TTS engine makes it audible), no score, checklist only, and never judged on audio realism | Defend: hear 3 voicemails, two real and one cloned. The learner cannot rely on the voice, so the game rewards the verify action, not "ear detection" | Voice alone is not proof, unusual request, urgency, no callback path | 3 voicemail items (1 cloned, 2 real), scored on the verdict and not on a guess about the audio (needs N12) |
 
 Notes on specific episodes:
@@ -188,8 +190,7 @@ These are product rules, enforced in copy review:
 ### 5.1 Episode definition
 
 An episode is one JSON object that points at the component data of `01`–`07`. The wrapper holds only
-sequencing, strings and the measurement pairing. It lives at `social.awarenessEpisode`, a key `00` §11
-needs to list (request in 6.4). Defend items are not inlined: they are a `05` `triageSets` entry, whose
+sequencing and strings. It lives at `social.awarenessEpisode` (`00` §11). Defend items are not inlined: they are a `05` `triageSets` entry, whose
 `truth.flags` are the authored flags, so one definition of truth serves scoring and feedback.
 
 ```jsonc
@@ -199,26 +200,27 @@ needs to list (request in 6.4). Defend items are not inlined: they are a `05` `t
   "company": "brightwell_foods",           // fictional, neutral corporate skin
   "durationTargetMin": 13,
   "scopeNote": "Authorised exercise at FICTIONAL Brightwell Foods. In scope: this inbox.",
-  "stages": ["brief","osint","write","flip","defend","debrief"],   // pre- and post-check are run by the set, not per episode
-  "attack": { "target": "supplier_contact",       // a 04 phishTargets id
-              "templateSets": "e1_invoice",       // 04 templateSets; one or two blanks
-              "osint": "brightwell_finance",      // a 02 site set
+  "stages": ["brief","osint","write","flip","defend","debrief"],   // the pre- and post-check are missions of their own (5.2)
+  "attack": { "target": "supplier_contact",       // a 04 phishTargets id; its templateSets (one or two blanks) are inline there
+              "siteIds": ["brightwell_site","brightwell_social"],   // ids from social.osint.sites, passed to the OSINT browser
               "showRedFlagMeter": true, "maxMessages": 1, "scored": false },
-  "defend": { "setId": "e1_payments_inbox",       // a 05 triageSets entry, scoringProfile "awareness"
+  "defend": { "setId": "e1_payments_inbox",       // a 05 triageSets entry, scoringProfile "awareness", 5 to 8 messages
               "reportAlwaysVisible": true },
-  "measurement": { "formPair": "finance",         // the two parallel forms, section 5.2
-                   "forms": ["finance_a","finance_b"] },
   "debrief": { "mondayCard": "slot:customer_report_route", "noBlameLine": true }
 }
 ```
 
+A check mission (the pre-check and post-check, 5.2) uses the same wrapper with `"stages": ["check"]`
+and a `defend.setId` naming a parallel form; it has no attack, flip or debrief beyond the result
+screen.
+
 Red-flag ids come from the shared library in `00_data_contract.md` section 2: the seven factor
 tells plus the **channel tells** (`lookalike_domain`, `changed_bank_details`, `vish_callback_pressure`,
-`unexpected_qr`, `unrequested_mfa_push`, `smish_shortlink_urgency`). The invariant is: every tell that
-has both seats (attack and defend) uses one id and one canonical string, so the two cannot disagree.
-Defend-only tells (`unexpected_qr`, `unrequested_mfa_push`, `smish_shortlink_urgency`) have no attacker
-mirror in these episodes and are flagged as such in `00`. Scenario-local tells are allowed; reusable
-ones go into `00`.
+`secrecy_or_bypass`, `borrowed_authority`, and the defend-only `unexpected_qr`, `unrequested_mfa_push`,
+`smish_shortlink_urgency`, `reply_to_differs`, `reply_stop_trick`, `padlock_myth`). The invariant is:
+every tell that has both seats (attack and defend) uses one id and one canonical string, so the two
+cannot disagree. Defend-only tells have no attacker mirror in these episodes and are marked so in
+`00`. Scenario-local tells are allowed; reusable ones go into `00`.
 
 ### 5.2 Pre/post spot-the-phish measurement (built in from the start)
 
@@ -227,11 +229,35 @@ core loop and not a later add-on (the default is to measure from the start and s
 
 - **Parallel forms.** Each role has two forms, A and B, of 10 messages each (`05`'s `awareness`
   sets, `pairedWith`), matched on the number of phish, the count of each factor and the difficulty
-  mix. A learner takes one form before their first episode and the other after their last. Counterbalancing
-  (half the cohort takes A first, the rest B first) is chosen from the learner id at launch; it needs
-  `05` to let the stage be assigned at launch (request R3 in 6.4). The first slice uses fixed forms in
-  fixed order with no random draw from a larger bank; a seeded draw from a bank of about 12 per form is
-  a later request to `05` (R4).
+  mix. A learner takes one form before the episodes and the other after them. Four sets per role
+  exist (`pre_a`, `post_b`, `pre_b`, `post_a`), and counterbalancing is done by mission pair: an "AB"
+  pair (pre uses A, post uses B) and a "BA" pair. The organiser puts half the cohort on each pair, so
+  no launch-time assignment is needed in the first slice (assigning by learner id is a later request
+  to `05`, R3). The first slice uses fixed forms with no random draw from a larger bank; a seeded draw
+  from a bank of about 12 per form is a later request to `05` (R4).
+- **How pre and post cross missions.** Every episode is its own mission, so its own game with its own
+  `globalVariables`, and `05`'s first-attempt guard (`<prefix>done`, `05` N6) lives inside one game.
+  The two checks are therefore shell missions of their own, per role and pairing
+  (`awareness_pre_finance_ab`, `awareness_post_finance_ab` and so on), each one kiosk that opens one
+  triage set. The pre-check mission lists `exportGlobals` for `triage_pre_percent`,
+  `triage_pre_reportRate` and `triage_pre_done`. The post-check mission lists `importGlobals` for them
+  (with `as` names such as `pre_percent` and a default) and `{ "from": "<pre mission>", "completed":
+  "pre_check_completed" }`. The platform's `CarryOver` (`app/models/break_escape/carry_over.rb`) fixes
+  those values when the post-check game is created, from the learner's newest concluded run of the pre
+  mission, read-only, so the comparison needs no server work of our own. Consequences, stated rather
+  than hidden:
+  - Only scalar globals cross (a value is kept only when its JSON type matches the default). The
+    first slice compares `percent` and `reportRate`; a per-factor comparison needs `05` to write
+    scalar per-factor globals (request R6).
+  - The platform does not order missions. The organiser places the pre-check first and the post-check
+    last in the event; if the pre-check was never concluded, `pre_check_completed` is false and the
+    post screen says there is no baseline.
+  - "Once per learner" holds inside a game (the guard) and across the event only as far as the host
+    gives one game per learner per mission. A second game of the pre mission replaces the baseline,
+    because the newest concluded run counts. Product copy does not claim stricter than that; the hosting
+    question is A7 and the ordering question is A8.
+  - A role-specific pair covers a learner's primary role. Episodes from other roles are extras with no
+    check of their own.
 - **Recorded per item:** item id, form, learner verdict (Trust, Report, Delete), the chips ticked, the
   item score, stage (pre, post, in-episode first answer), and time to answer in milliseconds (request R5:
   `05` records verdict, flags and score only today; the time is never shown to the learner and `05`
@@ -291,25 +317,25 @@ uncertainty. If we see no effect, that is a result and we change the format, not
 Episodes reuse the minigames and systems of `01`–`07` and add a thin sequencer; the one configuration
 change is `05`'s `scoringProfile: "awareness"` (N9). The minigame starter and completion pattern is
 the same as `01` (`minigame-manager.js:229` registration, `minigame-starters.js` starters,
-`minigame_completed` via `base-minigame.js:84-108`, `set_global` at `apply-actions.js:33`; line
-numbers as cited in `01`, not re-verified here).
+`minigame_completed` via `base-minigame.js:84-108`, `set_global` at `apply-actions.js:33`).
 
 **Mission wrapper.** The platform loads missions only from `scenarios/<name>/scenario.json.erb` plus
 `mission.json` (`app/models/break_escape/mission.rb:46-50, 124-135`; `db/seeds.rb:50-60`), and a game
 needs a map and a player. A JSON-only episode has no way into it. Decision: **one shell mission per
-episode**, each a one-room kiosk map with `ui_theme: "general"` and a single kiosk object whose
-`minigameData` holds `episodeId`. Hacktivity then lists seven missions (a `collection` label to agree;
-the existing `training` may fit), and an organiser puts the chosen ones in an event. The episode data
-lives in each shell's `social.awarenessEpisode`.
+episode**, each a one-room kiosk map with `ui_theme: "general"` and a single `kiosk` object whose
+`minigameData` is `{ episodeId }` (`00` §11). Hacktivity then lists seven episode missions plus the
+check missions of 5.2 (a `collection` label to agree; the existing `training` may fit), and an
+organiser puts the chosen ones in an event. The episode data lives in each shell's
+`social.awarenessEpisode`.
 
 | # | Item | Notes |
 |---|------|-------|
 | N1 | **Episode runner**: a scene started by the kiosk that reads `awarenessEpisode`, starts each stage's minigame in turn, shows the step strip, and carries state between stages (what the learner sent → shown back in the flip) in a declared global `episode_<id>_state` | New; small. Only one minigame is open at a time, so it relies on the return-to work in the README engine list. An objectives chain of kiosk objects is the fallback if that slips |
-| N2 | **Flip view**: re-renders the learner's sent message in the read-only mail client with its `tells` highlighted | Reuses `01` read-only mode and `05`'s `playerSent` message kind (request in 6.4), which reads `00` §3 `tells` and not `redFlags` (a landed message has none) |
+| N2 | **Flip view**: re-renders the learner's sent message in the read-only mail client with its `tells` highlighted | Reuses `01` read-only mode and `05`'s `playerSent` message kind, which replays the latest sent record and reads its stored `tells` (`00` §10a), not `redFlags` (a landed message has none) |
 | N3 | **Defend sets** for `05` as `triageSets` entries, with `truth.flags` ids from `00` §2 and the channel tells | Depends on `05`. Non-email items need the surfaces in N11 to N14 |
 | N4 | **Measurement store**: pre, post and in-episode records per item, local first | New; schema in 5.2. Learner id: see 6.2 |
 | N5 | **Facilitated flag** (5.3) | New; small |
-| N6 | Phone-chat variant of the mail client for E6 | Planned in `01` |
+| N6 | Narrow, phone-shaped layout of the mail client for E6 | One component with a narrow layout (`01` N1); no second client |
 | N7 | Deepfake-voice style entry for E7 in the TTS config | Content only, existing TTS pipeline |
 | N8 | Neutral corporate look: fictional brand set, logo placeholder, step strip | `ui_theme: "general"` (and `secops`) already exist in `Mission::UI_THEMES` (`mission.rb:69`), so no theme file is missing; the work is the brand art and strings |
 | N9 | `scoringProfile: "awareness"` selected on the `05` sets; the profile is defined in `05` | Config, not new scoring code in 11 |
@@ -318,7 +344,7 @@ lives in each shell's `social.awarenessEpisode`.
 | N12 | **Voicemail player** (E4, E7): plays a fixed TTS clip per item and takes a `05` verdict | New; the cloned-voice clip is a style variant of an existing voice (N7) |
 | N13 | **Mock browser pane with a certificate padlock check** (E5) as a triage item kind | New. `02`'s browser is a navigation shell and `07`'s padlock is a canvas decoy; neither is a triage item. `07` N5 (defender inspection items) is proposed as a change request to `05` and is not accepted yet |
 | N14 | **Printed QR poster and SMS thread** items (E6) | New item kinds for `05` |
-| N15 | **Role swap** (E3): the learner is the helpdesk agent, takes scripted calls built from `06`'s `lines` data, chooses callback or comply, and is scored on the same facts the attacker call used | `06` §7 describes the swap but leaves it unspecified and not built; the lab does not need it. It is built here, before E3 ships. It needs the NPC-side policy data (`05` shares it), the scripted-caller sequencer, the callback choice and scoring |
+| N15 | **Role swap** (E3): the learner is the helpdesk agent and takes scripted calls. Each call in the episode's `defend.calls[]` is `{ id, genuine, claims: [{ fact, value }], tells: [...] }`, with the claims drawn from the same `06` `knows` and `lines` data the attacker call used, so the facts the learner exploited are the ones they now check. For each call the agent picks `comply`, `verify_callback` (ring the number on file), `escalate` or `refuse`. The right action for an impostor is `verify_callback` or `escalate`; a genuine awkward caller is also served by `verify_callback`, and refusing one without offering the safe route loses points. Scoring reuses `05`'s scorer through a `call` message kind (R2), with the call's `tells` as the flags (`vish_callback_pressure`, `borrowed_authority`, `secrecy_or_bypass`) | Specified here and built here, before E3 ships; the lab and `06` do not need it. New: the scripted-caller sequencer on the `person-chat` shell, the four-action choice, and the `call` kind in `05` |
 
 ### 6.2 Privacy defaults and hosting
 
@@ -357,18 +383,19 @@ assets for commercial use) is open question A5.
 
 ### 6.4 Requests of other docs
 
-Episodes assume the following. Each is a request, so a later change in that doc is reconciled here.
+Episodes rely on `00` §10a, §11 and §13 for `playerSent` (the latest sent record, with stored `tells`
+and the rendered body), the triage sizes (awareness pre/post 10, episode defend sets 5 to 8), the
+`kiosk` pointer `{ episodeId }` and the `awarenessEpisode` key. The requests below are the ones still
+open. Each is a request, so a later change in that doc is reconciled here.
 
 | # | Doc | Request |
 |---|-----|---------|
 | R1 | `05` | A fourth verdict, `Verify` ("I would check this by ringing a number I already hold"), with its own score row, for E1 and E4. Until it exists the debrief teaches the verifying step and Report is the scored right answer |
-| R2 | `05` | Message kinds beyond email (`voicemail`, `sms`, `qr`, `page`) for E3 to E7, using the channel-tell chips `05` already supports |
-| R3 | `05` | Let the stage (`pre` or `post`) of a parallel form be assigned at launch, so the cohort can be counterbalanced; today `stage` is authored in the set |
+| R2 | `05` | Message kinds beyond email (`voicemail`, `sms`, `qr`, `page`, `call`) for E3 to E7, using the channel-tell chips `05` already supports |
+| R3 | `05` | Later: let the stage (`pre` or `post`) of a parallel form be assigned at launch from the learner id. The first slice counterbalances by mission pair (5.2) and does not need it |
 | R4 | `05` | A larger bank per form with a seeded draw. Not needed for the first slice (fixed forms) |
 | R5 | `05` | Record time to answer in milliseconds per answer in `answers[]`; never shown or scored |
-| R6 | `05` | `playerSent` message kind reading the persisted sent record and `tells` (also requested by `10`), and a note that awareness forms hold 10 messages and episode defend sets 5 to 8 |
-| R7 | `00` | List `awarenessEpisode` among the `social` keys in §11 |
-| R8 | `06` | Specify the role swap (the scripted caller from `lines`, the callback choice, scoring); the lab needs none of it, so it can be written with N15 |
+| R6 | `05` | Write per-factor results as scalar globals (for example `<prefix>f_<factor>_caught` and `_missed`), so a per-factor pre/post comparison can cross missions through `CarryOver`. The first slice compares `percent` and `reportRate` |
 
 ## 7. Reuse across audiences
 
@@ -410,8 +437,7 @@ The same list is in `README.md`.
   around "verify, don't trust the ear", and with no technique detail.
 - **A2.** Episode order for the first slice? Default: E1 (finance) first as the flagship, then E5
   (login page, after N13), then E3 (vishing) once the role swap (N15) is built; E2, E4, E6, E7
-  follow. The role swap is in this product's build scope and not the lab's, so `06` OQ2 and the README
-  question are settled by moving it here.
+  follow. The role swap is in this product's build scope (N15) and not the lab's.
 - **A3.** Ethical sign-off and a small pilot for pre/post claims before any effectiveness copy
   is written? Default: **yes**, pilot per 5.4, and no effectiveness claims until it reports.
 - **A4.** Minimum group size for any aggregate shown to a customer? Default: 10, subject to
@@ -423,6 +449,11 @@ The same list is in `README.md`.
   whether a pseudonymous learner id, private scores and "no league table" can be promised, because
   Hacktivity's scoreboard and `game.player` identify the learner. Default: do not promise them until
   decided.
+- **A8.** Pre/post ordering and strictness (5.2). The platform does not order missions or stop a learner
+  opening a second game of the pre-check, and `CarryOver` uses the newest concluded run. Default: the
+  organiser sequences the check missions by hand, a missing baseline is shown as such, and product copy
+  claims nothing stricter. A stricter rule needs a Hacktivity event setting (one game per learner per
+  mission, order enforced).
 - **A6.** Is the "write a phish" beat acceptable for all customer audiences? Some HR
   departments may object. Default: yes, because it is capped at one message to a fictional
   colleague and judged, not exported. Offer a "defend-only" variant of each episode as a customer

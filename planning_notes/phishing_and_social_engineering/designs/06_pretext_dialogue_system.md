@@ -11,7 +11,7 @@ Influence belongs to the character, as a scenario global that every channel stor
 Audiences:
 
 - **Student lab (`10`):** the full model, in a trimmed form. Several checkable facts per NPC, a repair mechanic, an ask ladder, and an end-of-call debrief that names the technique on each line. The lab has one call (Dev, section 4.8).
-- **Awareness (`11`):** one NPC, two or three choices per turn, bar always visible, feedback live. Followed by a role swap (play the helpdesk analyst taking the call), which is the defender lesson.
+- **Awareness (`11`):** one NPC, two or three choices per turn, bar always visible, feedback live. The role swap (play the helpdesk analyst taking the call) is the defender lesson and is built in the awareness product's scope (`11` N15), not in this doc or the lab.
 - **Eldritch Hacker (game 2):** a call or front-desk bluff as one stage. The same engine runs it, and the outcome sets a global that opens a door or a later objective. The narrative is provisional (`../eldritch_hacker/`).
 
 Teaches (book *Practical Social Engineering*): Ch. 1 and App. D (pretexting, elicitation, vishing and sample pretexts), Ch. 3 (a pretext is prepared, not improvised), Ch. 6 (the OSINT on people that makes a pretext checkable), and Ch. 9–10 (why verification and callback policy defeat it). The defence is the other half of each lesson. Every way the player gets caught is a control that a real organisation uses.
@@ -63,7 +63,7 @@ An **influence bar** sits under the portrait (in the header in `phone-chat`). It
 ### Beat 4. Outcome
 
 - **Got it.** The player makes an ask while influence is at or above that ask's floor, and any verification the ask needs has passed. The NPC gives the information, and the ask's grants are applied (section 5).
-- **Reported.** Influence reaches the `reports` threshold, the refusal limit is reached, or a verification fails. The NPC says what they will do ("I'll ring you back on the number we hold for you"). The call ends, and the threshold's effects run (`00` §8): usually a report global is set and the conversation ends. Influence stays where it is, and the next attempt starts from there unless a lockout lifts and resets it.
+- **Reported.** Influence reaches the `reports` threshold, the refusal limit is reached, or a verification fails. The NPC says what they will do ("I'll ring you back on the number we hold for you"). The call ends, and the effects of the threshold whose id is `reports` run (`00` §8), whether the influence reached it or the judge forced the report with `report(character, reason)`: usually a report global is set and the conversation ends. Influence stays where it is, and the next attempt starts from there unless a lockout lifts and resets it.
 - **Walked away.** A "ring back later" choice ends the call with no result and no penalty. It is always offered once the NPC is wary, so there is always a graceful exit.
 
 A retry with a different pretext comes after the lockout expiry the scenario configures, or a mission beat, or at once in awareness mode. A retry does not reset influence unless the character's lockout does (section 4.3). Awareness resets the character between attempts, as a scenario choice (section 7).
@@ -85,7 +85,7 @@ The character's score is its influence global (`00` §8), `<character>_influence
 | wary | -40 | Sets `priya_wary`. Ink asks a verifying question, hesitates on asks, drops pleasantries. |
 | refuses | -50 | Sets `priya_refusing`. Ink declines asks that have no floor of their own. |
 | reports | -70 | Sets `helpdesk_alerted` and ends the conversation. |
-| lockout | -90 | Refuses new conversations on the channel for ten game minutes, then resets influence to -50. Not combat. |
+| lockout | -90 | Refuses new conversations on the channel for ten real minutes, then resets influence to -30 (above the wary line). Not combat. |
 
 Combat hostile is an effect a character can add (`combatHostile`). It is off by default and none of the SE characters use it. Existing missions that rely on `#hostile` or the legacy `-50` rule keep them.
 
@@ -108,7 +108,7 @@ Each choice carries up to four things. The judge turns them into entries, each w
 
 4. **Ask.** An ask has a `pressure` (influence points, usually negative) and a `floor`, the lowest influence at which the NPC will do it. It may also need **verification**: named facts the player must supply. The floor is tested after the pressure is applied. An ask below its floor is **refused softly**, not reported. The NPC says what they would need, and the refusal counts toward `maxRefusals` (default 2). When that limit is reached, the NPC reports. An ask with no floor is tested against the refuses threshold instead.
 
-A failed verification is scored as a mismatch, and the call reports at once. This follows real policy, where a failed identity check ends the call.
+A failed verification is scored as a mismatch, and the call reports at once through the forced-report path (`reason: "verificationFailed"`; the refusal limit uses `"maxRefusals"`). Influence is not changed by the report itself. This follows real policy, where a failed identity check ends the call.
 
 ### 4.3 Gating the outcome
 
@@ -118,7 +118,7 @@ A failed verification is scored as a mismatch, and the call reports at once. Thi
 
 Influence carries over. The next attempt starts at the character's current value (`00` §8), so the damage from a reported call becomes part of the next one. That is the point of carrying influence across channels.
 
-**A failed call cannot permanently block a critical path.** A lockout always has an expiry (`until`) or an alternative route (`00` §8); the validator rejects a permanent lockout on a character that grants something a required task needs. The default is a channel-scoped lockout of a few game minutes that resets influence to a point above the report line, so a burned phone call costs time and not the mission. A scenario that wants a harsher consequence uses the character's other channels: the email route stays open. Whether a report should also recover influence over time without a lockout is OQ4.
+**A failed call cannot permanently block a critical path.** A lockout always has an expiry (`until`) or an alternative route (`00` §8); the validator rejects a permanent lockout on a character that grants something a required task needs. The default is a channel-scoped lockout of a few game minutes that resets influence to a point above the report line, so a burned phone call costs time and not the mission. `recoverTo` sits above every negative threshold (the validator checks it) and the lift writes it silently, so the character does not return already wary. A scenario that wants a harsher consequence uses the character's other channels: the email route stays open. Whether a report should also recover influence over time without a lockout is OQ4.
 
 ### 4.4 The tells panel
 
@@ -148,7 +148,7 @@ After a reported call, the next attempt can show a one-line nudge that names wha
 
 ### 4.6 Worked example: Priya at the AccountingNow helpdesk
 
-Fictional company. Priya Nair, helpdesk. Her character is `priya`, with influence global `priya_influence`, declared at -20. Her markers are wary -40, refuses -50, reports -70 and lockout -90, the `00` §8 example values. Her directory holds the new starter **Sam Okafor** (Finance, manager Melanie Pierce, started Monday the 6th, second floor). Her policy is no password reset without two matched verification facts. She is pleased that the helpdesk won the team award, which the company page mentions.
+Fictional company. The people and facts in this example (Sam Okafor, the stale org chart, the award) are example-only and are not in the lab's `intelFacts`; the lab's own call is 4.8. Priya Nair, helpdesk. Her character is `priya`, with influence global `priya_influence`, declared at -20. Her markers are wary -40, refuses -50, reports -70 and lockout -90, the `00` §8 example values. Her directory holds the new starter **Sam Okafor** (Finance, manager Melanie Pierce, started Monday the 6th, second floor). Her policy is no password reset without two matched verification facts. She is pleased that the helpdesk won the team award, which the company page mentions.
 
 The player's card has Sam Okafor (Finance) and "I'm locked out". The manager blank holds **Jed Baker**, taken from a stale org chart on the board. Jed is a Finance colleague in the canon (`00` §1), not the manager. The stale chart is wrong about who manages Sam.
 
@@ -159,7 +159,7 @@ The player's card has Sam Okafor (Finance) and "I'm locked out". The manager bla
 | 2 | "Welcome, Sam. Who's your line manager?" | "Jed Baker said to ring you." | manager ✗ (identity) -30; fact opens | -40 WARY | `-30  WARY  ✗ Manager. You said "Jed Baker". Her directory shows Melanie Pierce.` Priya: "Jed Baker? He's a Finance colleague, isn't he?" |
 | 3 | (same) | "Sorry, Melanie Pierce. A week in and I'm mixing up names." | repair: claim ✓ +10, candour +10 | -20 CALM | `+20  CALM  ✓ Corrected. Owning a slip early costs less than defending it.` |
 | 4 | "No worries. Found you." | "Congrats on the team award, saw it on the company page." | shared detail: claim +10, technique +10; the cap limits claim credit only | 0 CALM | `+20  CALM  ✓ Shared detail. A real detail she can confirm builds trust.` |
-| 5 | "What can I do?" | "Can you confirm my email address? I want to give it to a supplier." | ask `email_format`, pressure 0, floor -30 | 0 CALM | `ASK OK  floor -30, she is at 0. Low-stakes: she would tell any new starter this.` Priya: "sam.okafor@accountingnow.example, first dot last." Grants `email_pattern_known`. |
+| 5 | "What can I do?" | "Can you confirm my email address? I want to give it to a supplier." | ask `email_format`, pressure 0, floor -30 | 0 CALM | `ASK OK  floor -30, she is at 0. Low-stakes: she would tell any new starter this.` Priya: "sam.okafor@accountingnow.example, first dot last." Grants the fact `email_pattern` (`grants.intel`). |
 | 6 | "Anything else?" | "Could you reset my password? I still can't get in." | ask `pw_reset`, pressure -10, floor -20; needs two verification facts | -10 CALM | `ASK PENDING  floor -20, she is at -10. She wants to verify you first.` Priya: "Before I do: your start date and which floor?" |
 | 7 | (same) | "I started Monday the 6th, second floor." | start date ✓ +10, floor ✓ +10; cap +10 | 0 CALM | `+10  CALM  ✓ Verification passed: start date and floor.` Priya: "Done. Temporary code is on your screen. Change it at login." Grants `reset_granted_okafor`. |
 
@@ -201,11 +201,14 @@ The lesson is in the second row. The shipped story is a multiple-choice quiz wit
 ```ink
 + {se_intel_alex_chen} [I'm your new manager, Alex Chen.]
     ~ temp band = pretext_say("claim_manager")
-    -> correct_manager
+    -> correct_manager(band)
 + {se_intel_sarah_johnson} [I'm your new manager, Sarah Johnson.]
     ~ temp band = pretext_say("claim_manager")
-    -> manager_reaction
+    -> manager_reaction(band)
 ```
+
+A `temp` does not cross a divert, so the band travels as a knot parameter (`=== manager_reaction(band) ===`).
+The facts `alex_chen` and `sarah_johnson` are example-only, as in 4.6.
 
 Here the ink gate supplies the blank value. In Priya's call the engine's template picker does the same job for any held name.
 
@@ -213,19 +216,19 @@ Here the ink gate supplies the blank value. In Priya's call the engine's templat
 
 The student lab (`10` stage 5) uses one call, to **Dev** on the service desk, and needs three things from it: the portal's name, how its notices read, and the payslip release date. Dev has the same mechanics as Priya and the same threshold shape; only the data differs. The lab's pretext is "I'm the new intern's buddy, she can't find her first payslip on the portal."
 
-Dev's character is `dev`, with influence global `dev_influence` (declared at -10). His thresholds are wary -40, refuses -50, reports -70 and a channel-scoped lockout at -90 for ten game minutes that resets him to -30. The `reports` effect sets `dev_reported` and ends the call; no effect is combat. He is a phone character only (`dev_service_desk`), so there is no mail story.
+Dev's character is `dev`, with influence global `dev_influence` (declared at -10). His thresholds are wary -40, refuses -50 and reports -70 (`00` §8, "Characters of the student lab"). The `reports` effects set `dev_reported`, end the call and start a channel-scoped lockout of two real minutes that resets him to -30. A forced report (the refusal limit or a failed verification) runs the same effects at any influence. No effect is combat. He is a phone character only (`dev_service_desk`), so there is no mail story.
 
 ```jsonc
 {
   "character": "dev", "callId": "service_desk_call",
   "knows": {
-    "intern": { "value": "lord_full", "grade": "identity" },
+    "intern": { "value": "lord_full", "accept": ["lord_first","lord_full"], "grade": "identity" },
     "team":   { "value": "finance",   "grade": "identity" }
   },
   "lines": {
     "open_buddy": { "blanks": { "intern": "intern", "team": "team" },
                     "claims": [ {"fact":"intern","from":"blank:intern"}, {"fact":"team","from":"blank:team"} ] }
-    // the intern blank takes the name held from lord_intern; the team blank takes `finance` from pierce_role
+    // the intern blank takes a name form held from lord_intern (about: intern); the team blank offers `finance` (lord_intern) and the stale `accounts` (old_org_chart)
   },
   "asks": {
     "portal_name":  { "pressure": 0,   "floor": -30, "verification": [],
@@ -243,7 +246,7 @@ Dev's character is `dev`, with influence global `dev_influence` (declared at -10
 
 - The two asks are the lab's outputs: `portal_name` grants the portal's name and notice wording (`lord_portal_name`) and the portal sender (`lord_trusts_portal_sender`); `payslip_date` grants this month's date (`lord_payslip_date`). `grants.intel` sets `se_intel_<id>` through the shared writer, so the board and `04` see them at once. `pretext_call_done` is set when the call ends with at least one ask granted, so the lab can require it.
 - The completion payload carries `lowestInfluence` (section 6), so `10` stage 6 can report how far Dev fell, and the engine writes `pretext_service_desk_call_lowest` for the report.
-- A failed call cannot block the critical path. A report ends the call and sets `dev_reported`; the lockout is ten game minutes on the phone channel and then resets Dev to -30, above his wary line. Ruth's "burned for ten minutes" is that expiry, spoken in character, and no object is greyed. The hint ladder (4.5) starts on the next attempt.
+- A failed call cannot block the critical path. A report ends the call and sets `dev_reported`; the lockout is two real minutes on the phone channel and then resets Dev to -30, above his wary line. Ruth's "burned for a couple of minutes" is that expiry, spoken in character, and no object is greyed. The hint ladder (4.5) starts on the next attempt.
 - Data is identical in shape to Priya's, so the validator checks it the same way (section 6, N10).
 
 ## 5. Scenario-authored data
@@ -277,7 +280,7 @@ A call's data is one entry in `social.pretextNpcs` (`00` §11). It names its `ch
       "shared_detail": 10, "candour": 10, "deflect": -10
     },
     "unverifiableCost": -10,
-    "tells": {                                        // per fact: authored, in her voice
+    "tells": {                                        // authored, in her voice: per fact, plus the technique, repair and ask strings (all linted non-empty)
       "manager": {
         "pass":         "Manager checks out.",
         "fail":         "Manager. You said \"{said}\". Her directory shows {actual}.",
@@ -285,6 +288,12 @@ A call's data is one entry in `social.pretextNpcs` (`00` §11). It names its `ch
         "unknown":      "Manager. She cannot check this."
       }
       // ... one block per fact in "knows"
+      "techniques": { "urgency": "Urgency. Helpdesk staff are trained to slow down when pushed.",
+                      "authority_borrowed": "...", "reciprocity": "...", "shared_detail": "...",
+                      "candour": "...", "deflect": "..." },   // one per susceptibility key in use
+      "repair": "Corrected. Owning a slip early costs less than defending it.",
+      "ask": { "accepted": "...", "pending": "...", "refused": "..." },
+      "bands": { "calm": "...", "wary": "...", "refusing": "..." }
     },
     "lines": {                                        // template choices, by id; wording lives in the ink
       "open_new_starter": { "blanks": { "who": "who", "team": "team" },
@@ -306,7 +315,7 @@ A call's data is one entry in `social.pretextNpcs` (`00` §11). It names its `ch
     },
     "asks": {
       "email_format": { "pressure": 0,   "floor": -30, "verification": [],
-                        "grants": { "setGlobal": { "email_pattern_known": true } } },
+                        "grants": { "intel": ["email_pattern"] } },
       "pw_reset":     { "pressure": -10, "floor": -20, "verification": ["startDate","floor"],
                         "grants": { "setGlobal": { "reset_granted_okafor": true } } }
     },
@@ -327,6 +336,7 @@ A call's data is one entry in `social.pretextNpcs` (`00` §11). It names its `ch
 
 Notes for authors:
 
+- A `knows` entry may list `accept: [...]`, extra value ids that count as a match (Dev's intern accepts any `lord_*` name form).
 - A claim's `from` names a blank the player filled, or a fixed value in the line. A claim whose fact is absent from `knows` is unverifiable by design.
 - A fact is correct if the claim's value equals `knows[fact].value`. The comparison uses value ids from the `provides` entries in `00` §1, so there is no text parsing. A blank's options are the `provides` entries of held facts with the blank's type.
 - `grade` sets the cost of a mismatch: `identity` is -30 and `lesser` is -20.
@@ -352,12 +362,12 @@ VAR pretext_manager_value = ""         // its value id; used to pick a fixed rea
 Priya: Welcome, Sam. Who's your line manager?
 + [{pretext_manager_name} said to ring you.]
     ~ temp band = pretext_say("give_manager")
-    -> manager_reaction
+    -> manager_reaction(band)
 + [Does it matter? I'm in a hurry.]
     ~ temp band = pretext_say("hurry_deflect")
-    -> manager_reaction
+    -> manager_reaction(band)
 
-=== manager_reaction ===
+=== manager_reaction(band) ===
 { band:
 - 0: Priya: Right, got you. -> next_step
 - 1: { pretext_manager_value == "baker_full":
@@ -394,7 +404,7 @@ Band values: 0 calm, 1 wary, 2 refusing, 3 reported, 4 locked out. `pretext_mana
 
 Two places, both about **imported read-only globals**. Neither depends on the conversation type. `NpcConversationState.setReadOnlyGlobals` / `isReadOnlyGlobal` records names imported from an earlier mission (ink assignments and the tags are refused). The refusals sit in `processGameActionTags` (`chat-helpers.js`, the `set_global` and `set_variable` cases). For this design:
 
-- Pretext outputs (`email_pattern_known`, `reset_granted_okafor`, `helpdesk_alerted`, `dev_reported`) must be **declared in `globalVariables`** and must **not** be named in `importedGlobals`. Otherwise the write is silently refused, with only a console warning. The validator should check this.
+- Pretext outputs (`reset_granted_okafor`, `helpdesk_alerted`, `dev_reported`) must be **declared in `globalVariables`** and must **not** be named in `importGlobals` (the authored key; the server resolves it to `importedGlobals`). Otherwise the write is silently refused, with only a console warning. The validator should check this.
 - `#set_global:name:value` splits on `:`, so values with colons break. Use plain flags and numbers. The engine writes the real outcome globals through the shared writer (`00` S3).
 - Writes from the tag path reach other loaded stories through `broadcastGlobalVariableChange`. The new module goes through the same writer and does not touch `gameState.globalVariables` directly.
 
@@ -410,12 +420,12 @@ Instead the ink calls two **external functions**, `pretext_say` and `pretext_ask
 
 Both functions take one argument, the id, and are **idempotent** under the rule in `00` §8: the session keeps a turn counter, incremented on each choice, and a call keyed `(turn, function, id, ordinal)` returns its stored result if it arrives again. The same id used on two different turns, such as a sticky "ring back later", runs both times. The wrapper forwards only `(name, func)`, so a third argument such as `lookaheadSafe` cannot be passed; the inkjs default (`false`) suits a side-effecting function. The blank values for a step come from the template picker, which records them on the session before the call. `pretext_say` reads them there and does not take them as an argument.
 
-**One write path for influence.** Every influence entry goes through the path that `se_influence(delta, reason)` uses (`00` §8, S5). That path writes the character's influence global through the shared writer (so every loaded channel story and the bar see it), appends the tells entry, shows the toast and runs the threshold effects. `pretext_say` calls it once per entry, so a line with a claim, a technique and a repair makes three writes, each with its own reason. The judge stays pure. It returns the entries and the resulting band, and the binding applies them.
+**One write path for influence.** Every influence entry goes through the path that `se_influence(delta, reason)` uses (`00` §8, S5). That path writes the character's influence global through the shared writer (so every loaded channel story and the bar see it), appends the tells entry, shows the toast and runs the threshold effects. `pretext_say` calls it once per entry, so a line with a claim, a technique and a repair makes three writes, each with its own reason. The judge stays pure. It returns the entries and the resulting band, and the binding applies them: each entry through the write path, and, when `reported` is true, `report(character, reportReason)` (`00` §8), which runs the effects of the threshold whose id is `reports`. The write path also sets the calling story's own influence VAR, so a later ink assignment starts from the engine's value.
 
 ### New components
 
-- `systems/pretext-judge.js`: a pure module, the same shape as `phish-rules.js` (`04`). `judgeUtterance(spec, session, utteranceId, blanks, influence) -> { entries[], influenceAfter, band, reported, locked }` and `judgeAsk(spec, session, askId, influence) -> { result, entries[], reported }`. Each entry is `{ delta, reason, line }`. Unit-testable from the scenario JSON alone.
-- `PretextSession`: `{ callId, character, npcId, openMismatches, refusals, log[], blanks, turn, lowestInfluence }`. It holds no influence value, because influence is the character's global (`00` §8). That means it survives a retry and a change of channel. It is held at `window.gameState.globalVariables['pretext_<callId>_state']`, one declared key per `callId`, the STATE_KEY pattern (`siem-dashboard-minigame.js`, `command-board-minigame.js`; `00` §5), so a reload keeps the log. A retry starts a fresh session, and the old transcript stays in history. The validator lists every `callId`'s key, checks it is declared, and checks no ink story declares a variable of that name. The transcript and the tells history live here; person-chat keeps none.
+- `systems/pretext-judge.js`: a pure module, the same shape as `phish-rules.js` (`04`). `judgeUtterance(spec, session, utteranceId, blanks, influence) -> { entries[], influenceAfter, band, reported, reportReason, locked }` and `judgeAsk(spec, session, askId, influence) -> { result, entries[], reported }`. Each entry is `{ delta, reason, line }`. Unit-testable from the scenario JSON alone.
+- `PretextSession`: `{ callId, character, npcId, openMismatches, refusals, log[], blanks, turn, lowestInfluence }`. It holds no influence value, because influence is the character's global (`00` §8). That means it survives a retry and a change of channel. It is held at `window.gameState.globalVariables['pretext_<callId>_state']`, one declared object-valued key per `callId`, the STATE_KEY pattern (`siem-dashboard-minigame.js`, `command-board-minigame.js`; `00` §5, §11), so a reload keeps the log. It holds ids and the last 40 log entries only (`00` §11). A retry starts a fresh session, and the old transcript stays in history. The validator lists every `callId`'s key, checks it is declared, and checks no ink story declares a variable of that name. The transcript and the tells history live here; person-chat keeps none.
 - `minigames/pretext-prep/`: beats 1 and 2, the brief and the pretext card, with blank pickers that list only held facts. On complete it starts `person-chat` or `phone-chat` with `{ npcId, startKnot, pretextCallId, blanks }`, where `npcId` is the channel record to open. The channel is implied by that record's type, so no `channel` parameter is needed. Registered like any scene, started from a starter in `systems/minigame-starters.js`, and reached from the NPC or desk phone through a branch in `systems/interactions.js` (`01` Engine wiring is the checklist).
 - `minigames/person-chat/person-chat-pretext.js`: attaches when `params.pretextCallId` is present. After the story loads, the saved state is restored and globals are synced (`00` §6), it fills the `pretext_*` VARs, mounts the influence bar and tells panel in `person-chat-ui.js`, and starts the session. The same module attaches to `phone-chat` after its story loads. There the tells render as **system bubbles that are render-only**: they are drawn in the thread but not saved with the contact's history (a new persisted message type would reach unread counts and `restartOnRetalk`), and the debrief reads the session log. The bar sits in the header.
 - Portrait tint: the three-band portrait expression (calm, wary, refusing) needs a tint hook in `person-chat-portraits.js`. There is none today. It is part of N4.
@@ -423,7 +433,7 @@ Both functions take one argument, the id, and are **idempotent** under the rule 
 
 ### Starting the call and the completion event
 
-An NPC with call data (a desk phone, a receptionist, a phone on the intel board) starts `pretext-prep` instead of straight dialogue. The existing NPC interaction path in `systems/interactions.js` (the branch that starts `person-chat`) is the pattern. On end, the minigame sets `this.gameResult` and calls `this.complete(true)`. `base-minigame.js` emits `minigame_completed` with:
+An NPC with call data (a desk phone, a receptionist, a phone on the intel board) starts `pretext-prep` instead of straight dialogue. The existing NPC interaction path in `systems/interactions.js` (the branch that starts `person-chat`) is the pattern. The call itself is played in `person-chat` or `phone-chat`, so those own the completion. `pretext-prep` (beats 1 and 2) completes with no payload (`aborted`-style) when it hands over to the chat, and a scenario never keys on that event: it keys on `pretext_<callId>_outcome`. `person-chat-pretext.js` intercepts the chat's close, renders the **debrief (beat 5) inside the same overlay**, then sets the payload as the chat minigame's `gameResult` and completes it, so `base-minigame.js` emits `minigame_completed` with:
 
 ```jsonc
 { "callId": "helpdesk_call", "character": "priya", "npcId": "priya_helpdesk",
@@ -444,7 +454,7 @@ The engine also writes two declared globals per call, `pretext_<callId>_outcome`
 
 | Global or value | Consumer | Effect |
 |--------------------|----------|--------|
-| `email_pattern_known` | Intel board (`03`); mail client (`01`) | The pattern appears on the board, and the composer can build addresses for other staff. |
+| `se_intel_email_pattern` (granted by `grants.intel`) | Intel board (`03`); mail client (`01`) | The pattern appears on the board, and the composer can build addresses for other staff. |
 | `reset_granted_<id>` | Phish rules (`04`), target data | A `boostIfGlobal` on a target. With a reset on record, an "IT" sender or a "new login" pretext passes `senderTrust` or `pretextRelevant`, and the reply says why. |
 | `helpdesk_alerted` (a report global) | Phish rules (`04`), the stage | A `strictIfGlobal` on a target. The later phish must be sharper. A reported pretext warns the target. |
 | `<character>_influence` | Email reply (`00` §10); `04` | The email-channel story reads it as a synced global. `04` reads it as a global with `boostIfGlobal` or `strictIfGlobal` (`00` §7, §8), with no mirroring step. |
@@ -460,10 +470,10 @@ The engine also writes two declared globals per call, `pretext_<callId>_outcome`
 | N4 | Influence bar (`00` S4), tells panel, render-only phone system bubbles, portrait tint hook | New DOM components, not reuse of `npc-health-bar.js`. Shared with `01` N7. |
 | N5 | `pretext-prep` minigame: brief, pretext card, blank pickers from held facts | Reads `02` and `03` data |
 | N6 | Template picker: a choice with blanks, options from held facts only | Same widget as the `01` composer (`01` N10) |
-| N7 | Debrief panel, with technique names and defender notes | Reads `session.log` |
-| N8 | `gameResult` payload and the per-call outcome and lowest-influence globals | Documented for scenario authors |
+| N7 | Debrief panel, rendered by `person-chat-pretext.js` inside the chat overlay when it intercepts the close; `pretext-prep` completes with no payload | Reads `session.log` |
+| N8 | `gameResult` payload set on the chat minigame (not on `pretext-prep`) and the per-call outcome and lowest-influence globals | Documented for scenario authors |
 | N9 | Influence write path behind `se_influence`, `pretext_say` and `pretext_ask` (`00` S5) | Writes the global through the shared writer; no behaviour-state copy unless `mirrorToBehavior` is set |
-| N10 | Validator: line and ask ids referenced by ink exist in every channel story that carries the call; each claim fact is in `knows` or intentionally unverifiable; each ink line's blanks match the JSON; output globals and report globals are declared and not imported; every `callId` state key is declared and unused by ink; a route to "got it" exists under the tuning; no permanent lockout on a critical-path character; empty-string lint on `tells` | Extends the scenario validator (`00` S11) |
+| N10 | Validator: line and ask ids referenced by ink exist in every channel story that carries the call; each claim fact is in `knows` or intentionally unverifiable; each ink line's blanks match the JSON; output globals and report globals are declared and not imported; every `callId` state key is declared and unused by ink; a route to "got it" exists under the tuning; no permanent lockout on a critical-path character; a `reports` threshold on every character with call data; `recoverTo` above every negative threshold; empty-string lint on `tells` (facts, techniques, repair, ask, bands) | Extends the scenario validator (`00` S11) |
 | N11 | Scenario authors use the existing `boostIfGlobal` and `strictIfGlobal` hooks (`00` §7) in `04` target data | No new engine work here. `04` must implement them. |
 | N12 | Call knots avoid once-only (`*`) choices | Authoring rule. Ink state persists, so exhausted choices would return empty on a retry. |
 
@@ -477,13 +487,13 @@ Depth is data in `tuning`, `knows` and the pretext card. The engine does not cha
 | Facts the NPC checks | 2 to 3, with one verification ask | 2 | 2–3, in the stage's voice |
 | `tellDetail` / `feedbackMode` | `full`, `live`, with technique names live (one call, so no step-down) | `full`, `live` | `full`, `live`; the stage's handler can narrate it |
 | Technique names | In the debrief, and live | Live, plain wording | Debrief only |
-| Start and thresholds | Start -10 to -20; markers -40, -50, -70, lockout -90 (the `00` §8 example) | Start near 0, with markers set further from the start so there is more room to recover | Set by the stage's tension |
+| Start and thresholds | Start -10 to -20; markers -40, -50, -70 (Dev, `00` §8); Priya's example adds a lockout at -90 | Start near 0, with markers set further from the start so there is more room to recover | Set by the stage's tension |
 | Hints | Three-step ladder after a reported call | Offered on the first reported call | The stage's handler gives the nudge |
 | After a report | Channel lockout of a few game minutes, then reset | Immediate retry, with the character reset to its start value | Raises the report global the stage uses |
-| Role swap | Not in the first slice | Required: the defender half | Not used |
+| Role swap | Not in the lab | Built in the awareness product's scope (`11` N15): the defender half | Not used |
 | Channels | The lab's call is phone only. Characters with a mail story use the email channel (`00` §9) | Phone (voice or chat) | Person or phone |
 
-The **role swap** is the defender mirror, in line with the suite's "attacker first, defender next" order. The player takes Priya's seat, gets a scripted caller whose lines come from the same `lines` data, and must choose callback or comply. The game scores them with the same facts the attacker was scored on, so attack and defence never disagree about what a tell is (the principle in `04` and `05`). It is not specified further here. It needs the NPC-side policy data, which `05` shares. The awareness product (`11`) treats it as part of its first slice; that conflicts with OQ2 and is listed as unresolved in the README.
+The **role swap** is the defender mirror, in line with the suite's "attacker first, defender next" order. The player takes Priya's seat, gets a scripted caller whose lines come from the same `lines` data, and must choose callback or comply. The game scores them with the same facts the attacker was scored on, so attack and defence never disagree about what a tell is (the principle in `04` and `05`). The awareness product (`11`) specifies and builds it (N15), reading the NPC-side policy data that `05` shares. This doc and the lab do not.
 
 ## 8. Art and audio assets needed
 
@@ -499,7 +509,7 @@ PixelLab-first, and not to be generated now. Check scope with the user before an
 ## 9. Open questions
 
 - **OQ1. Number visibility.** The bar always shows with its icons. Is the influence number hidden in assessment mode (default), or is the bar hidden there too, read only through the NPC's reactions and the tells panel? Default: number hidden, bar shown.
-- **OQ2. Role swap.** In the first slice? Default: no. Ship the attacker call first, and add the swap with the defender work. The awareness doc currently wants it in its first slice; one of the two has to move.
+- **OQ2. Role swap.** Decided: it belongs to the awareness build (`11` N15), not the lab or this doc.
 - **OQ3. Does a call feed a later phish?** Default: yes, through influence and the report global. The link runs through `boostIfGlobal` and `strictIfGlobal` (`00` §7, §8).
 - **OQ4. Does a report recover?** The default is a channel-scoped lockout with an expiry and a reset (section 4.3). Open: should a report without a lockout also recover over time, or only on a scenario beat?
 - **OQ5. Free-text speech.** Decided: scored speech is templates with blanks (beat 2, `00` §10). Still open: whether unscored free-text flavour is allowed in dialogue at all. Default: no.

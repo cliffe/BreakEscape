@@ -3,7 +3,7 @@
 Status: plan. Built on the mail client (`01`) and the rules engine's factor library (`04`). This is
 the defender's seat, and the pre/post measurement the awareness product depends on. Factor ids,
 canonical red-flag strings and the `senderAuth` model come from the shared contract,
-`00_data_contract.md` §2; this doc defines none of its own. Engine items `S1` to `S11` are in `00`
+`00_data_contract.md` §2; this doc defines none of its own. Engine items `S1` to `S12` are in `00`
 §12 and are referenced, not repeated.
 
 **Triage is data, not ink.** Unlike the attacker-side email loop, where a target NPC's ink story
@@ -27,10 +27,12 @@ Audiences, and what each gets:
 
 - **Awareness learners** (primary): a 10-message round used as a **pre-test and post-test**. It
   produces a score and a per-skill breakdown, which is the evidence-of-effect measurement hook. Plain-language flag names, header view
-  collapsed behind a "Show details" button, no jargon unless the learner opens it.
-- **Cyber Security students:** a 12–15 message round with the header view on by default, the
-  SPF / DKIM / DMARC panel in full, and look-alike domains that **pass** authentication (the lesson
-  that a pass is not a trust verdict).
+  collapsed behind a "Show details" button, no jargon unless the learner opens it. The episodes' own
+  defend sets (`11`) hold 5 to 8 messages.
+- **Cyber Security students:** the lab's round is **8 messages**: 6 authored plus 2 `playerSent`
+  (the student's own phishes, replayed). The header view is on by default, the SPF / DKIM / DMARC
+  panel is in full, and look-alike domains **pass** authentication (the lesson that a pass is not a
+  trust verdict).
 - **Eldritch Hacker:** a short 3–5 message round framed in dialogue ("sort the director's inbox
   before the real phish gets opened"), the result gating a door or an objective. Where the setting
   uses DMs or a feed rather than email, the same round runs on that variant of the reader.
@@ -98,7 +100,7 @@ measurement clean).
   sheet with 44 px rows; the three verdict buttons stack under the message; the header panel opens
   as its own screen. Chips are real checkboxes with labels; verdicts and chip results are announced
   with `aria-live="polite"`; ticks and crosses are always paired with words.
-- Each message shows a small tick (decided) in the list. The round ends when every message has a
+- Each message shows a small tick in the list once it has a verdict. The round ends when every message has a
   verdict. There is no timer: this is a judgement test, not a speed test, and a timer would
   measure reading speed for the wrong reasons.
 
@@ -156,9 +158,10 @@ plain-language **chip label** (below) and the per-message notes.
 
 **Channel tells.** A set may also enable any of 00 §2's channel tells as extra chips, with 00's
 canonical strings: `lookalike_domain`, `changed_bank_details`, `unexpected_qr`,
-`unrequested_mfa_push`, `smish_shortlink_urgency`, `vish_callback_pressure` (the last four are
-defend-only). Email-only rounds leave them off; the awareness episodes (`11`) turn on the ones
-their channel needs. They score exactly like the seven factors.
+`unrequested_mfa_push`, `smish_shortlink_urgency`, `vish_callback_pressure`, `secrecy_or_bypass`,
+`borrowed_authority`, `reply_to_differs`, `reply_stop_trick` and `padlock_myth` (the defend-only ones
+are marked in `00` §2). Email-only rounds leave them off; the awareness episodes (`11`) turn on the
+ones their channel needs. They score exactly like the seven factors.
 
 `senderAuth` is the shared both-seats factor in 00 §2: advisory on the attack side, scored here. 05
 reads its defence-side outcome, the header panel. A per-target `factorStrings` override (00 §2
@@ -182,7 +185,9 @@ The analyst profile teaches precision: a SOC that reports everything drowns. The
 exists because staff who are punished for reporting stop reporting (book Ch. 9, no-blame culture);
 reporting genuine mail is simply a safe action there. The numbers below are the analyst profile;
 the worked example gives both. **`11` selects `awareness`.** The lab (`10`) selects `analyst`.
-A mission picks either; default `awareness`.
+A mission picks either; default `awareness`. A set may enable a fourth verdict, **Verify** (see
+"Extensions for the awareness episodes"); it scores like Report in the `awareness` profile and is
+unavailable in `analyst` sets.
 
 ### Per-message score (0–100), analyst profile
 
@@ -324,18 +329,23 @@ a wrong call tells the player what they would have seen, and they can always con
 ## Scenario-authored data
 
 The minigame holds no content. A scenario supplies `social.triageSets` next to `social.mailClient`
-(`01`) and `social.phishTargets` (`04`) (`00` §11). The object that starts a round carries only
-`minigameData: { triageSetId }`. Messages reuse `01`'s `seededMessages` shape and add `auth`,
-`links`, `attachments` and `truth`. `truth.flags` is safe from the server's `flags` stripping because
-it sits inside `social.triageSets`; do not move it onto an object or NPC. **Red-flag text is not defined here.** It is resolved exactly as
+(`01`) and `social.phishTargets` (`04`) (`00` §11). The object that starts a round is a
+`triage-workstation` carrying only `minigameData: { triageSetId }`. **A set holds its messages
+inline.** It has no `mailbox` field, and the reader shows the set's own `messages`.
+
+A message uses the authored-message shape of `00` §10a: `id`, `from { name, address }`, `to`, `subject`,
+`time` (a display clock string such as `"09:12"`), `body` (which may hold `{{link:<id>}}` tokens that
+point into `links[]`), `links[]`, `attachments[]`, and, for triage, `auth` and `truth`. The loader
+normalises it as it does seeded mail (`read = !unread`, `gameTime` from the game clock at load).
+`truth.flags` is safe from the server's `flags` stripping because it sits inside `social.triageSets`;
+do not move it onto an object or NPC. **Red-flag text is not defined here.** It is resolved exactly as
 `00` §2 specifies: a per-target/per-message `factorStrings` override if the author set one, otherwise
-00 §2's canonical string. 05 adds only the chip labels and per-message notes.
+00 §2's canonical string. 05 adds only the chip labels, per-message notes and `playerSentAuth`.
 
 ```jsonc
 "triageSets": [
   {
     "id": "pre_a",
-    "mailbox": "triage_pre",        // the mailbox (00 §10a) the round reads from; the read-only reader shows it
     "chipStyle": "plain",           // "plain" | "technical" | "character": picks a built-in label table
     "flagChips": {                  // optional per-set overrides; keys are 00 §2 factor / channel-tell ids
       "senderTrust": "The sender's address doesn't match who it says it is",
@@ -389,6 +399,7 @@ it sits inside `social.triageSets`; do not move it onto an object or NPC. **Red-
       {
         "id": "m4_jed",
         "from": { "name": "Jed Baker", "address": "j.baker@accountingnow.example" },
+        "to": "you@accountingnow.example",
         "subject": "Friday balance sheet", "time": "08:40",
         "body": "Hi, Q3 balance sheet attached, can you check the profit line before Friday?",
         "attachments": [ { "label": "Q3_balance_sheet.xlsx", "kind": "spreadsheet" } ],
@@ -413,30 +424,63 @@ A set may include messages built from the player's own sent mail, so the student
 the recipient saw it (`10` stage 7, `11`). A `playerSent` entry names where to draw from:
 
 ```jsonc
-{ "kind": "playerSent", "id": "own_1",
-  "fromMailbox": "guest",              // the sent folder to draw from
-  "targetId": "lord",                  // the phishTarget whose message to replay (the latest landed one)
-  "domainFrom": "landing_domain",      // optional: show the link/From domain the player picked in 07
-  "notes": { /* perFlagNote and headerNote strings keyed by tell id, authored once per target */ } }
+{ "kind": "playerSent", "id": "own_lord",
+  "fromMailbox": "guest",              // the mailbox whose Sent folder to draw from
+  "targetId": "lord",                  // the phishTarget whose message to replay (the latest sent one)
+  "domainFrom": "landing_domain",      // optional, on a playerSent entry only: show the look-alike domain the player picked in 07
+  "notes": { "perFlagNote": { "senderTrust": "...", "linkCredible": "...", "urgencyCalibrated": "..." },
+             "headerNote": "...", "ifTrusted": "...", "reportReply": "..." } }   // authored once per target
 ```
 
-- **Source.** The persisted sent record (`01` N12): `fromAccount`, `headerFrom`, the picked link and
-  attachment, the rendered body, and the stored `EvalResult.tells`. If the player has not sent a
-  message to that target, the entry is skipped.
-- **Truth.** `isPhish` is true and `truth.flags` is the stored `tells`, independent of whether the
-  phish landed (`00` §3). A landed phish has an empty `redFlags` but non-empty `tells`, which is
-  exactly what the defender is asked to find. A message with no tells is left out of the round, so
-  *F* is never 0. `perFlagNote` strings come from the authored `notes` table for that target, one
-  per tell id.
-- **Auth results.** Still authored literals, never computed from anything the player typed. A
-  `playerSentAuth` table maps each account id and each `07` domain menu id to a literal result
-  (`{spf, dkim, dmarc, envelopeFrom, replyTo}`; the tier-2 and tier-3 domains pass all three because
-  the attacker owns the look-alike). `domainFrom: "landing_domain"` looks the picked domain id up in
-  that table and shows its domain string; a missing id fails validation. A message sent from the
-  `guest` account while claiming another person shows the fail result that table gives that account.
+The set carries one `playerSentAuth` table, next to `messages`:
+
+```jsonc
+"playerSentAuth": {
+  "accounts": {                         // a row for every id in social.mailClient.accounts
+    "guest":    { "spf": "fail", "dkim": "none", "dmarc": "fail", "envelopeFrom": "workstation", "replyTo": "guest@workstation" },
+    "freemail": { "spf": "pass", "dkim": "pass", "dmarc": "fail", "envelopeFrom": "freemail.example", "replyTo": "{account_address}" },
+    "jed_pc":   { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "accountingnow.example", "replyTo": "j.baker@accountingnow.example" }
+  },
+  "domains": {                          // a row for every id in the landing-page domain menu (07): six in the lab
+    "d_unrelated": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "bounce.{domain}", "replyTo": "payroll@{domain}" },
+    "d_letter":    { "...": "same shape" },
+    "d_word":      { "...": "same shape" },
+    "d_sub":       { "...": "same shape" },
+    "d_vv":        { "...": "same shape" },
+    "d_homo":      { "...": "same shape" }
+  }
+}
+```
+
+- **Source.** The latest persisted **sent** record (`00` §10a) in the Sent folder of `fromMailbox` whose
+  `targetId` matches, whether or not it landed. If the player has not sent a message to that target,
+  or the record's `tells` is empty, the entry is skipped.
+- **Shape.** The loader builds an authored message from the record: `from` and `to` as stored, the
+  stored rendered `body`, `links[]` from the record's `link` (the link text is the page's authored
+  `linkText`, the destination is the picked domain from `07`'s menu, looked up by `link.domainId`),
+  `attachments[]` from the record's `attachment`, `time` from the record, and `auth` from
+  `playerSentAuth`. `truth` is `{ isPhish: true, flags, ...notes }`.
+- **Truth.** `truth.flags` is the stored `tells`, independent of whether the phish landed (`00` §3).
+  A landed phish has an empty `redFlags` but non-empty `tells`, which is exactly what the defender is
+  asked to find. A message with no tells is left out of the round, so *F* is never 0. `perFlagNote`
+  strings come from `notes`, one per tell id.
+- **Auth results.** Authored literals, never computed from anything the player typed. Without
+  `domainFrom` the auth is the row for the real `fromAccount` in `accounts`: a message sent from
+  `guest` while claiming another person shows the fail result that row gives. With `domainFrom:
+  "landing_domain"` the From address's domain, the envelope and the reply-to take the domain picked in
+  `07` (the record's `link.domainId`), and the auth is that id's row in `domains`. The attacker owns
+  that domain, so the lab's rows pass all three. The panel then shows a pass for a phish, so
+  `senderAuth` is removed from `truth.flags` for that entry; the flags that remain are the ones a
+  reader can find (`senderTrust`, `linkCredible`, `urgencyCalibrated` for the lab's Lord phish). A
+  missing account or domain id fails validation.
+- **`domainFrom` belongs to `playerSent` only.** Authored messages carry literal `auth` rows. The lab's
+  authored look-alike payroll notice names its own look-alike domain; it does not substitute the
+  student's pick.
+- **Set size.** The lab's set is 8 messages: 6 authored plus 2 `playerSent` (the Pierce and Lord
+  phishes). If a `playerSent` entry is skipped the round is shorter and `percent` is the mean over the
+  messages present. The other audiences' sizes are in "Reuse across audiences".
 - **Balance.** Parallel-form checks (N5) skip `playerSent` entries, and a set that contains them is
-  not one half of a `pairedWith` pre/post pair. The student-lab set is 5 authored messages plus up
-  to 3 `playerSent`.
+  not one half of a `pairedWith` pre/post pair.
 - **Replay only.** The reader shows the stored message; it never lets the player edit or resend from
   triage.
 
@@ -455,6 +499,28 @@ Notes for authors:
 - Authentication results are **authored literals**. The game never computes them from anything a
   player typed, so there is no pathway from this data to a working spoof.
 
+### Extensions for the awareness episodes
+
+The awareness episodes (`11` §6.4) use four additions, all data on the same component.
+
+- **Verify verdict.** A set with `verifyVerdict: true` shows a fourth button, **Verify** ("I would check
+  this by ringing a number I already hold"), for the episodes that teach it. In the `awareness`
+  profile it scores like Report (60 on a phish, 60 on real mail, reasons unchanged). `reportRate`
+  still counts Report only; the result adds `verifyCount`. Sets that do not enable it behave as
+  described above, and `analyst` sets never enable it.
+- **Non-email kinds.** A message has a `kind`, default `email`. The others are `sms`, `voicemail`,
+  `qr` and `page`. Each renders through a small per-kind surface in the reading pane (a text bubble,
+  a transcript card, a pixel QR on a notice, a page card) with the same `truth`, notes and scoring.
+  Its `truth.flags` ids come from the set's enabled channel tells, and it has no `auth`, so the
+  header panel is hidden for it.
+- **Stage at launch.** `startInboxTriageMinigame` accepts a `stage` parameter that overrides the set's
+  authored `stage`, so a cohort can be counterbalanced between `pre_a` and `post_b`. The stored result
+  carries the effective stage.
+- **Milliseconds per answer.** `answers[].ms` records the time from opening a message to confirming
+  its verdict. It is stored in the result and never shown or scored.
+
+A larger message bank with a seeded draw is not in this plan; forms are fixed.
+
 ## Engine wiring
 
 New component `public/break_escape/js/minigames/inbox-triage/` containing:
@@ -466,46 +532,65 @@ New component `public/break_escape/js/minigames/inbox-triage/` containing:
 - `triage-scoring.js`: the pure `scoreTriage(set, answers) → result` described above. No DOM, no
   globals, so it can be unit-tested with the worked example.
 - It renders messages with a **read-only reading pane** factored out of the mail client
-  (`minigames/mail-client/mail-reader.js`, N2), so a fix to how `01` shows a From line fixes `05`.
+  (`minigames/mail-client/mail-reader.js`, `01` N5 and N2 below), so a fix to how `01` shows a From line fixes `05`.
 
-Wiring checklist (the same list every new minigame needs; `01` carries the detail):
+Wiring checklist (the same list every new minigame needs; the README conventions carry it, and `01`
+shows it worked through):
 
 1. Export, import and `registerScene('inbox-triage', InboxTriageMinigame)` in `minigames/index.js`.
 2. A starter `startInboxTriageMinigame` in `systems/minigame-starters.js`, modelled on
    `startSiemMinigame`, exposed on `window`. It checks `window.MinigameFramework` exists, calls `.init`
    if `mainGameScene` is missing, builds `params` with `lockable`, `showCancel` and an `onComplete`,
    and calls `window.MinigameFramework.startMinigame('inbox-triage', null, params)`. The set comes from
-   `lockable.scenarioData.minigameData.triageSetId`.
-3. A branch in `systems/interactions.js` for the object type that starts a round.
+   `lockable.scenarioData.minigameData.triageSetId`. It sets `disableClose: true` and
+   `requiresKeyboardInput: true`, and accepts an optional `stage` parameter (see "Extensions for the
+   awareness episodes").
+3. A branch in `systems/interactions.js` for the `triage-workstation` object type that starts a
+   round.
 4. A `css/inbox-triage-minigame.css`, linked in `app/views/break_escape/games/show.html.erb`.
-5. The chip list is checkboxes with no text entry, so `requiresKeyboardInput` is not needed.
-6. `aborted: true` set by the minigame itself. The framework's Esc path calls `complete(false)` with
-   no result; only minigames that set `gameResult = { aborted: true }` (SIEM, command board) look
-   aborted to a starter.
-7. Validator and schema entries for the object's `minigameData` (`00` S11).
+5. `requiresKeyboardInput: true`. The chips, verdict buttons and list are keyboard-operable (Tab, Enter,
+   Space), and without the flag Space and `E` would act on the world behind the overlay. Each gets a
+   bridge test that they do nothing while the round is open.
+6. An own **Close** control and Esc binding, because `disableClose` hides the framework's. Closing early
+   is not a normal exit here: the minigame sets `gameResult = { aborted: true }` itself and calls
+   `complete(false)` (as SIEM and command board do), so a half-finished pre-test is never scored. Esc
+   closes an open chip sheet or header panel first.
+7. Validator and schema entries for the object's `minigameData` (`00` S11), and the sprite
+   `assets/objects/triage-workstation.png`.
 
 **Completion.** The minigame sets `this.gameResult = result` then `this.complete(true)`
 (`framework/base-minigame.js`). `complete(true)` fires only when every message has a verdict; closing
 early sets `gameResult = { aborted: true }` and calls `complete(false)`, and the starter treats
-`result.aborted` as the SIEM starter does, recording nothing, so a half-finished pre-test is never
-scored. The sample below is the worked example's analyst round. `result`:
+`result.aborted` as the SIEM starter does, recording nothing. The sample below is the worked example's
+analyst round. `result`:
 
 ```jsonc
 { "setId": "demo_4", "stage": "mission", "scoringProfile": "analyst", "percent": 68, "headline": "Getting there: …",
   "phishCaught": 2, "phishTotal": 2, "reportRate": 0.5, "falseAlarms": 1,
   "flagRecall": 0.67, "perFactor": { "senderTrust": {"caught":2,"missed":0}, … },
-  "answers": [ { "id":"m2_payroll", "verdict":"report", "flags":["senderTrust","linkCredible","attachmentPlausible"], "score":73 } ] }
+  "answers": [ { "id":"m2_payroll", "verdict":"report", "flags":["senderTrust","linkCredible","attachmentPlausible"], "score":73, "ms":14200 } ] }
 ```
 
-**Bridging to globals and objectives.** The starter's `onComplete` calls the already-exported
-`applyActions([{ type:'set_global', key, value }, …])` (`systems/apply-actions.js`, `set_global`) to
-write `<prefix>percent`, `<prefix>reportRate`, `<prefix>done` and `<prefix>pass` (the prefix is the
-set's `outcome.setGlobalPrefix`; `pass` is `percent >= outcome.passPercent`). A global cannot complete
-a task or open a lock by itself, and task and aim conditions are truthy or `equals` only, so a
-numeric `triage_percent >= 60` is not usable. A mission reacts to the boolean `<prefix>pass` or
-`<prefix>done` through an `eventMappings` entry on `global_variable_changed:<name>` with
-`completeTask` / `unlockTask`, or an aim `unlockCondition.globalVariable`. The awareness product reads
-`triage_pre_percent` and `triage_post_percent` to compute the change. The minigame never decides a flag; where a scenario
+**Bridging to globals and objectives.** The starter's `onComplete` writes `<prefix>percent`,
+`<prefix>reportRate`, `<prefix>done` and `<prefix>pass` through the shared writer (`00` S3, which
+`applyActions` `set_global` uses; the prefix is the set's `outcome.setGlobalPrefix`). Two rules:
+
+- **`<prefix>done` means the round was completed, at any score**, and is what the pre/post
+  first-attempt guard reads (N6). **`<prefix>pass` means `percent >= outcome.passPercent`.** A task or
+  aim that should only complete on a good result keys on `<prefix>pass`, never on `<prefix>done`;
+  the validator warns on a mission task keyed on `<prefix>done` when the set has a non-zero
+  `passPercent`. The lab's `triage_done` task therefore completes on `triage_pass`.
+- **Training and mission sets may be re-run.** A result below `passPercent` offers "Try again", which
+  starts a fresh round; each completion rewrites the four globals. S3 emits only on a change, so
+  writing `true` again does not refire an `eventMappings` entry, while a changed `percent` emits an
+  event that nothing maps.
+
+A global cannot complete a task or open a lock by itself, and task and aim conditions are truthy or
+`equals` only, so a numeric `triage_percent >= 60` is not usable. A mission reacts to the boolean
+`<prefix>pass` through an `eventMappings` entry on `global_variable_changed:<name>` on an NPC record
+(`systems/npc-manager.js`; the lab uses Tomasz) with `completeTask` / `unlockTask`, or through an aim
+`unlockCondition.globalVariable`. The awareness product reads `triage_pre_percent` and
+`triage_post_percent` to compute the change. The minigame never decides a flag; where a scenario
 awards a lab flag for finishing, it goes through `POST /games/:id/flags`
 (`flag-station-minigame.js`) as in `01`.
 
@@ -513,32 +598,32 @@ awards a lab flag for finishing, it goes through `POST /games/:id/flags`
 
 | # | Item | Notes |
 |---|------|-------|
-| N1 | `inbox-triage` minigame component (sort, chip list, review cards, result screen, narrow layout) | New overlay |
+| N1 | `inbox-triage` minigame component (sort, chip list, review cards, result screen, narrow layout; the optional Verify verdict and the non-email message kinds) | New overlay |
 | N2 | The read-only `mail-reader` shared with the mail client (`01` N5): link-hover status bar with tap/focus pin, header panel | `01` adopts it too so its reading pane and this one never drift |
 | N3 | Import 00 §2's factor library and canonical red-flag strings (including `senderAuth` and the channel tells) through the same resolution rule `04`/`01` use (per-target `factorStrings` override, else canonical, never null). 05 adds only the chip label tables | No `04` schema change needed: `senderAuth` is already the shared factor in 00 §2 |
 | N4 | `triage-scoring.js` pure scorer and its unit tests (the worked example is test case one) | No framework deps |
-| N5 | Scenario validator checks: parallel-form balance (counts per factor and per truth, skipping `playerSent`), non-empty authored strings, every phish message has `perFlagNote` per flag and at least one flag, `truth.flags` ids exist in 00 §2's factor library or enabled channel tells, every `playerSentAuth` domain id exists in `07`'s menu, the `<prefix>` globals are declared | Extends the validator (`00` S11); lint like `04` N3 |
-| N6 | Result persistence and the **first-attempt guard**: on completion the starter writes `<prefix>percent`, `<prefix>reportRate`, `<prefix>done`, `<prefix>pass` as globals. Globals persist across reload (`set_global` patches `gameState.globalVariables`; serialised by `state-sync.js` and restored in `core/game.js`'s saved-globals restore, with saved values taking precedence; confirmed in 00 §5). Before starting a `pre` or `post` set the starter checks `<prefix>done`: if true, it opens the stored result read-only (no replay, nothing overwritten); training and mission sets skip the check | The awareness product still needs a server-side record (OQ1) |
-| N7 | Starter `startInboxTriageMinigame` in `systems/minigame-starters.js`, plus the rest of the wiring checklist above | Modelled on `startSiemMinigame` |
+| N5 | Scenario validator checks: parallel-form balance (counts per factor and per truth, skipping `playerSent`), non-empty authored strings, every phish message has `perFlagNote` per flag and at least one flag, `truth.flags` ids exist in 00 §2's factor library or enabled channel tells, `playerSentAuth` has a row for every account id and for every id in `07`'s domain menu, `domainFrom` appears only on `playerSent` entries, a set has no `mailbox` field, the `<prefix>` globals are declared | Extends the validator (`00` S11); lint like `04` N3 |
+| N6 | Result persistence and the **first-attempt guard**: on completion the starter writes `<prefix>percent`, `<prefix>reportRate`, `<prefix>done`, `<prefix>pass` as globals through the shared writer (S3). Globals persist across reload (the writer patches `gameState.globalVariables`; serialised by `state-sync.js` and restored in `core/game.js`'s saved-globals restore, with saved values taking precedence; `00` §5). Before starting a `pre` or `post` set the starter checks `<prefix>done`: if true, it opens the stored result read-only (no replay, nothing overwritten); training and mission sets skip the check | The awareness product still needs a server-side record (OQ1) |
+| N7 | Starter `startInboxTriageMinigame` in `systems/minigame-starters.js` (with the `stage` parameter and `answers[].ms`), plus the rest of the wiring checklist above | Modelled on `startSiemMinigame` |
 | N8 | `scoringProfile` support in `triage-scoring.js`: the two profiles in "Scoring profiles", with a test for each using the worked example (68% analyst, 86% awareness) | Pure function |
-| N9 | `playerSent` message kind: reads the persisted sent record (`01` N12), takes `truth.flags` from stored `EvalResult.tells`, `playerSentAuth` literal table and `domainFrom` substitution | Needs `00` §10a's sent-record fields to include `tells` |
+| N9 | `playerSent` message kind: reads the persisted sent record (`01` N12, `00` §10a: `tells`, `link`, `attachment`, rendered `body`), takes `truth.flags` from stored `EvalResult.tells`, the `playerSentAuth` literal table and `domainFrom` substitution | — |
 
 ## Reuse across audiences
 
 Depth is data, as in `01` and `04`. Same component, different `triageSets` entry:
 
-| Setting | Awareness pre/post | Student lab | Eldritch Hacker |
-|---------|--------------------|-------------|---------|
-| Messages | 10 | 12–15 | 3–5 |
-| `feedbackMode` | `end` | `immediate` | `immediate` |
-| `headerPanel` | `collapsed` | `open` | `collapsed` or `off` |
-| `glossary` | `closed` | `open` | `off` |
-| Look-alike that passes auth | 1 | 2–3 | 0–1 |
-| Real mail with a failed check | 0–1 | 2 | 0 |
-| Scoring profile | `awareness` | `analyst` | `awareness` (default) or `analyst` |
-| Chip wording | Plain | Technical (factor names, SPF/DKIM/DMARC terms) | In-character |
-| After the round | Result, stage stored, pre→post comparison | Result, then lab sheet questions | Sets a global that gates progress |
-| Retry | Pre/post: first attempt only, enforced by the `<prefix>done` guard (N6) | Free | Free, best score counts |
+| Setting | Awareness pre/post | Awareness episode defend set | Student lab | Eldritch Hacker |
+|---------|--------------------|------------------------------|-------------|---------|
+| Messages | 10 | 5–8 | 8 (6 authored + 2 `playerSent`) | 3–5 |
+| `feedbackMode` | `end` | `immediate` | `immediate` | `immediate` |
+| `headerPanel` | `collapsed` | `collapsed` or `off` | `open` | `collapsed` or `off` |
+| `glossary` | `closed` | `closed` | `open` | `off` |
+| Look-alike that passes auth | 1 | 0–1 | 1 authored, plus the student's own | 0–1 |
+| Real mail with a failed check | 0–1 | 0 | 1 (the forwarded mail) | 0 |
+| Scoring profile | `awareness` | `awareness` | `analyst` | `awareness` (default) or `analyst` |
+| Chip wording | Plain | Plain | Technical (factor names, SPF/DKIM/DMARC terms) | In-character |
+| After the round | Result, stage stored, pre→post comparison | Result, back to the episode | Result, then lab sheet questions | Sets a global that gates progress |
+| Retry | Pre/post: first attempt only, enforced by the `<prefix>done` guard (N6) | Free | Free; the task keys on `<prefix>pass` | Free, best score counts |
 
 The awareness product's measurement is: run `pre_a` before the training episodes, `post_b` after,
 and compare `percent`, `reportRate` and `perFactor`. The attacker-first episodes (`11`) sit between
@@ -556,6 +641,7 @@ All PixelLab-first; none generated now.
 
 - Reuse the mail-client chrome from `01` (window frame, unread dot, attachment chip, attachment-kind
   icons). No extra art for the list and reading pane.
+- The `triage-workstation` object sprite, `assets/objects/triage-workstation.png`.
 - Three verdict button icons at 16x16: tick (Trust), flag (Report), bin (Delete).
 - Chip-state icons at 12x12: caught tick, missed cross, false-flag dash.
 - Header-panel frame and three small status lamps for SPF / DKIM / DMARC (pass green, fail red, none
@@ -569,10 +655,11 @@ All PixelLab-first; none generated now.
 
 ## Open questions
 
-Not decided here: `07` proposes that the triage round also offer "inspect this page" items built from
-its `buildSuspectPage` record and step-6 tells (`07` N5). `00` does not define a shared suspect-page
-record, so this doc does not adopt it. If `00` gains one, the item is a new message kind beside
-`playerSent`, with page tells drawn from `00` §2's `lookalike_domain` and `linkCredible` strings.
+Not in this plan: page-inspection items. `07` proposes that the triage round also offer "inspect this
+page" items built from its `buildSuspectPage` record and step-6 tells (`07` N5), and `10` stage 7 asks
+for the same. `00` defines no shared suspect-page record, so this doc has no such message kind. If
+`00` gains one, the item is a new `kind` beside `playerSent`, with page tells drawn from `00` §2's
+`lookalike_domain` and `linkCredible` strings.
 
 For the user (also listed in `../README.md`):
 
