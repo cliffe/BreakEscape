@@ -199,9 +199,9 @@ Three devices carry most of the payoffs, so the player meets their history as th
 | 84 | Fracture uncovered | m10 | Social Fabric holds 43 states' voter records and its story machine; in the bunker it runs the media room. When the raid starts, a fake story about a SAFETYNET "massacre in Montana" begins to run; the player can kill it in the media room (optional), and the epilogue says whether it ran. | M | `m07_team_assignment` |
 | 85 | Meltdown uncovered | m09 | HaX gives the hospital count once in the m09 briefing, in a line that isn't a statistic. | L | `m07_team_assignment` |
 | 86 | `countdown_expired` (Seattle went dark) | m10 | Tesseract: "Seattle first. As scheduled." He schedules the Publication by city, and Seattle is first again. | L | `m07_countdown_expired` ✱ |
-| 87 | `mercer_fate = escaped / ko / ""` | m10 | Mercer is at Tomb Gamma: "When the fourth submission is declined, agent, somebody does this." He runs the release schedule. A boss-level talk or fight in the server hall. | M | `m07_mercer_fate` |
-| 88 | `mercer_fate = arrested` | m10 | His statement gave the bunker's server-hall layout; the briefing map shows it. | L | `m07_mercer_fate` |
-| 89 | `mercer_stance`, `mercer_told_diversion`, `mercer_ko` | dropped | Fine shading of one scene in m07; `mercer_fate` carries the outcome. | – | – |
+| 87 | `mercer_fate = escaped / ko / ""`, and `mercer_ko` false | m10 | Mercer is at Tomb Gamma: "When the fourth submission is declined, agent, somebody does this." He runs the release schedule. A boss-level talk or fight in the server hall. | M | `m07_mercer_fate`, `m07_mercer_ko` ✱ |
+| 88 | `mercer_fate = arrested`, or `mercer_ko` (knocked out, in custody and silent) | m10 | Arrested: his statement gave the bunker's server-hall layout; the briefing map shows it. Knocked out: in custody, no statement, no map line. | L | `m07_mercer_fate`, `m07_mercer_ko` ✱ |
+| 89 | `mercer_stance`, `mercer_told_diversion` | dropped | Fine shading of one scene in m07; `mercer_fate` and `mercer_ko` carry the outcome. | – | – |
 | 90 | `elena_outcome = turned` | m10 | Elena Rodriguez is on the phone at the plant route alongside, or instead of, Vance: she knows the release servers' power feed. "Analysis wants her. I have not decided" is answered: Netherton decided. | M | `m07_elena_outcome` |
 | 91 | `elena_outcome = fled` / KO | dropped | She "took nothing and broke nothing"; no finale role that wouldn't be clutter. | – | – |
 | 92 | `hollis_resolved = evaded` ("still on their payroll") | m10 | Ray Hollis is on the bunker's gate. He remembers the player. Talk-past or KO. | L | `m07_hollis_resolved` ✱ |
@@ -254,14 +254,416 @@ High-weight payoffs per mission, to show the load is shared:
 
 ## 3. Imports and exports
 
+Mechanism and rules: `README_scenario_design.md` "Carrying choices between missions" and `docs/agents/CARRY_OVER_PLAN.md` §2. Every alias below is the default `mNN_<var>` form, so `as` can be left out. Every default matches the source's `globalVariables` default (checked against each erb on 2026-10-20: every ✱ name below exists there; the two ✱✱ names do not yet).
+
+**The rule for both missions.** No import appears in `concludeRequires` or an `unlockCondition` (the validator errors on it anyway). Each import is one of five kinds, given in the **Use** column:
+
+- **R** route: opens an extra way through. The way without it still works.
+- **H** helper: a person or a fact that makes something quicker or clearer.
+- **O** obstacle: makes something harder, and the same mission always offers a way round it.
+- **P** presence: decides who is standing in a room. Every such room has a default occupant (§5.3), so the room works with the import at its default.
+- **L** line: changes what someone says, or what a document reads.
+
+Every mission also imports `completed` for each source (`m01_completed` … `m08_completed`; m10 adds `m09_completed`). Ink uses it to tell "never played" from "played and chose the default". A player who starts at m09 gets the default line everywhere, and the default line must stand on its own (it is new writing, so there is no older audio to preserve).
+
+Imports are read-only: one shared ink include per mission (`m09_carryover_vars.ink`, `m10_carryover_vars.ink`) declares them all as `VAR`, and nothing assigns them.
+
+### 3.1 m09 `importGlobals`
+
+| Alias | From | Var | Default | Use | Rows (§2) |
+|---|---|---|---|---|---|
+| `m01_final_choice` | m01_first_contact | `final_choice` | `""` | L: Derek's file, the Reading | 1, 8, 12 |
+| `m01_kevin_choice` | m01_first_contact | `kevin_choice` | `""` | L: the Reading | 5 |
+| `m01_found_casualty_projections` | m01_first_contact | `found_casualty_projections` | `false` | L: the Reading | 4 |
+| `m01_maya_ko` ✱ | m01_first_contact | `maya_ko` | `false` | O: the archive's Social Fabric plant calls in an extra guard; avoidable (he can be avoided, talked to, or put down). When false, HaX warns the player about him first | 6 |
+| `m01_kevin_ko` ✱ | m01_first_contact | `kevin_ko` | `false` | L: the Reading's innocents line | 6 |
+| `m01_sarah_ko` ✱ | m01_first_contact | `sarah_ko` | `false` | L: the Reading's innocents line | 6 |
+| `m02_paid_ransom` | m02_ransomed_trust | `paid_ransom` | `false` | L: the ransom in the refit ledger | 17 |
+| `m02_gary_protected` ✱ | m02_ransomed_trust | `gary_protected` | `false` | H: Gary on the phone about the archive's set-up | 23 |
+| `m02_patient_assaulted` ✱ | m02_ransomed_trust | `patient_assaulted` | `false` | L: the Reading | 26 |
+| `m02_insider_asset_arrested` | m02_ransomed_trust | `insider_asset_arrested` | `false` | L: Reeves' handler's contact sheet (fallback for `reeves_fate`) | 21–22 |
+| `m02_reeves_fate` ✱✱ | m02_ransomed_trust | `reeves_fate` | `""` | L: as above, finer | 21 |
+| `m03_victoria_fate` | m03_ghost_in_the_machine | `victoria_fate` | `""` | R on `recruited` (her comms protocols read the archive's internal mail: a second way to the restricted stacks); L on `arrested` / `ko` (the archive's company name) | 32, 34, 35 |
+| `m03_danny_fate` | m03_ghost_in_the_machine | `danny_fate` | `""` | L | 36 |
+| `m03_danny_ko` | m03_ghost_in_the_machine | `danny_ko` | `false` | L | 36 |
+| `m03_directive_decoded` | m03_ghost_in_the_machine | `directive_decoded` | `false` | L: identity scene | 37 |
+| `m04_lore_safehouse_address_found` ✱ | m04_critical_failure | `lore_safehouse_address_found` | `false` | L: briefing cold open | 55 |
+| `m05_final_choice` | m05_insider_trading | `final_choice` | `""` | L: the gap on `combat_lethal` | 64 |
+| `m05_torres_turned` | m05_insider_trading | `torres_turned` | `false` | H: Torres' address list shortens the sleeper search | 64 |
+| `m05_recruiter_deal_accepted` | m05_insider_trading | `recruiter_deal_accepted` | `false` | L: what the Recruiter says on her call | 61 |
+| `m05_recruiter_deal_confessed` ✱ | m05_insider_trading | `recruiter_deal_confessed` | `false` | L: HaX cuts in first | 61 |
+| `m05_found_pipeline_list` ✱ | m05_insider_trading | `found_pipeline_list` | `false` | H: Noor Haddad helps (a door, a warning) | 62 |
+| `m05_halloran_accused` ✱ | m05_insider_trading | `halloran_accused` | `false` | L: the Reading | 68 |
+| `m06_architect_identity_found` | m06_follow_the_money | `architect_identity_found` | `false` | L: which first line the reveal gets | 70 |
+| `m06_monitoring_enabled` | m06_follow_the_money | `monitoring_enabled` | `false` | H: the tagged payments on the briefing map; on the no-coordinate route they point at the bunker before the deed does | 71 |
+| `m06_irina_recruited` | m06_follow_the_money | `irina_recruited` | `false` | L | 74 |
+| `m06_minder_walked` ✱ | m06_follow_the_money | `minder_walked` | `false` | L: Kemal is the informant (default: an anonymous tip) | 77 |
+| `m07_team_assignment` | m07_architects_gambit | `team_assignment` | `""` | L: the dispatch count in the briefing | 81, 83, 85 |
+| `m07_team_redirected` | m07_architects_gambit | `team_redirected` | `false` | L | 82 |
+| `m07_architect_echo_heard` | m07_architects_gambit | `architect_echo_heard` | `false` | L: identity scene | 97 |
+| `m07_teacher_discussed` ✱✱ | m07_architects_gambit | `teacher_discussed` | `false` | L: where HaX's reveal starts | 98 |
+| `m07_found_tomb_gamma` ✱ | m07_architects_gambit | `found_tomb_gamma` | `false` | L | 95 |
+| `m08_nightshade_triple_agent` ✱ | m08_the_mole | `nightshade_triple_agent` | `false` | P + H: Nightshade's voice on the phone, naming which database entries guard the restricted stacks; and the "send him his file" choice | 104–106 |
+| `m08_nightshade_arrested` ✱ | m08_the_mole | `nightshade_arrested` | `false` | L: Netherton's visit | 107 |
+| `m08_nightshade_ko_before_fate` ✱ | m08_the_mole | `nightshade_ko_before_fate` | `false` | L: the briefing's "Not the bunker. Not yet." | 108 |
+| `m08_tomb_gamma_location_known` ✱ | m08_the_mole | `tomb_gamma_location_known` | `false` | L: how the deed is framed. The no-coordinate branch is `m08_completed and not m08_tomb_gamma_location_known`; a player who never played m08 gets the neutral framing | 108 |
+| `m08_debrief_stance` ✱ | m08_the_mole | `debrief_stance` | `""` | L: Netherton at the Montana order | 109 |
+| `m08_netherton_ko` ✱ | m08_the_mole | `netherton_ko` | `false` | L | 110 |
+| `m08_netherton_hostile` ✱ | m08_the_mole | `netherton_hostile` | `false` | L | 110 |
+| `m08_hax_ko` ✱ | m08_the_mole | `hax_ko` | `false` | L | 111 |
+| `m08_nightshade_tidied` ✱ | m08_the_mole | `nightshade_tidied` | `false` | P: the copy he sent ahead is an extra find in the restricted stacks | 113 |
+| `m08_named_on_evidence` ✱ | m08_the_mole | `named_on_evidence` | `false` | L: the Reading | 114 |
+| `m08_suspect_theory` ✱ | m08_the_mole | `suspect_theory` | `""` | L: the Reading | 114 |
+
+42 variables plus eight `completed` imports. The deed to Tomb Gamma is a task for every player (it is also the paper half of the defence plans), so the no-coordinate route changes the briefing and HaX's emphasis, never what the player must do.
+
+Task Force Null's wall in the briefing (row 57) is one object per earlier mission with text variants on these same imports; it needs no further names.
+
+### 3.2 m10 `importGlobals`
+
+| Alias | From | Var | Default | Use | Rows (§2) |
+|---|---|---|---|---|---|
+| `m01_final_choice` | m01_first_contact | `final_choice` | `""` | L: Tesseract's opening | 1 |
+| `m01_player_launched_attack` | m01_first_contact | `player_launched_attack` | `false` | L: the Join offer comes to this player first (signposting unchanged, §4.3) | 2 |
+| `m01_maya_ko` ✱ / `m01_kevin_ko` ✱ / `m01_sarah_ko` ✱ | m01_first_contact | as named | `false` | L: the innocents line | 6 |
+| `m02_ghost_deal_accepted` | m02_ransomed_trust | `ghost_deal_accepted` | `false` | R (kept: Ghost opens the side door) / O (broken: Ghost locks it; main route unaffected) | 13, 14 |
+| `m02_exposed_hospital` | m02_ransomed_trust | `exposed_hospital` | `false` | R with the above; L: talk-down argument | 13, 20 |
+| `m02_ghost_deal_refused` ✱ | m02_ransomed_trust | `ghost_deal_refused` | `false` | H: Ghost's parley, one fact (the core's guard change) | 15 |
+| `m02_ghost_keys_used` | m02_ransomed_trust | `ghost_keys_used` | `false` | L, plus O when the deal was also broken: Ghost watches the player's route (a camera alert that the security office can blind) | 16 |
+| `m02_bed4_manually_stabilised` | m02_ransomed_trust | `bed4_manually_stabilised` | `false` | L: talk-down argument | 19 |
+| `m02_patient_bed4_deceased` | m02_ransomed_trust | `patient_bed4_deceased` | `false` | L | 19 |
+| `m02_reeves_fate` ✱✱ | m02_ransomed_trust | `reeves_fate` | `""` | P: Reeves on the door rota | 21 |
+| `m02_insider_asset_arrested` / `m02_insider_asset_escaped` | m02_ransomed_trust | as named | `false` | P: fallback for the above | 22 |
+| `m02_gary_protected` ✱ | m02_ransomed_trust | `gary_protected` | `false` | P + H: Gary in the bunker when unprotected (with `m02_completed` and not `m02_exposed_hospital`); talked round, he opens the plant-room door | 23 |
+| `m02_patient_assaulted` ✱ | m02_ransomed_trust | `patient_assaulted` | `false` | L | 26 |
+| `m03_victoria_fate` | m03_ghost_in_the_machine | `victoria_fate` | `""` | P: Victoria in the gallery (recruited or escaped) | 32, 33 |
+| `m03_sterling_on_call_seen` ✱ | m03_ghost_in_the_machine | `sterling_on_call_seen` | `false` | O: recruited, she sells the raid (an alarm; avoidable, §4.4); escaped, she makes her stand-off. Without it: she holds and opens the core's outer lock (H), or recognises the player and leaves | 32, 33 |
+| `m03_guard_bribed` | m03_ghost_in_the_machine | `guard_bribed` | `false` | L: HaX and Finance | 38 |
+| `m04_voltage_captured` | m04_critical_failure | `voltage_captured` | `false` | H: the plant room marked on the briefing map; R: a route through the plant | 44 |
+| `m04_voltage_escaped` | m04_critical_failure | `voltage_escaped` | `false` | P: Voltage at the switchgear | 45 |
+| `m04_voltage_print_on_bypass` ✱ | m04_critical_failure | `voltage_print_on_bypass` | `false` | H: the proof that makes him stand down | 45, 53 |
+| `m04_static_left` ✱ / `m04_static_left_alone` ✱ | m04_critical_failure | as named | `false` | P: Static at the plant (either value means Static is at large) | 46 |
+| `m04_crew_lost` | m04_critical_failure | `crew_lost` | `false` | L: Tesseract's ledger | 47 |
+| `m04_casualties_occurred` | m04_critical_failure | `casualties_occurred` | `false` | L | 47 |
+| `m04_disclosure_choice` | m04_critical_failure | `disclosure_choice` | `""` | L: the strongest talk-down argument on `full`; epilogue | 48, 59 |
+| `m04_vance_is_ally` ✱ | m04_critical_failure | `vance_is_ally` | `false` | H: Vance on the phone at the switchgear | 50 |
+| `m04_robert_vance_ko` ✱ | m04_critical_failure | `robert_vance_ko` | `false` | L | 51 |
+| `m05_entropy_program_exposed` | m05_insider_trading | `entropy_program_exposed` | `false` | L: the media room's story names the player (the optional objective exists for every Fracture-uncovered player) | 66 |
+| `m05_elena_treatment_funded` | m05_insider_trading | `elena_treatment_funded` | `false` | L: epilogue | 65 |
+| `m05_found_pipeline_list` ✱ | m05_insider_trading | `found_pipeline_list` | `false` | L: epilogue count of the forty-seven | 62 |
+| `m06_assets_seized` | m06_follow_the_money | `assets_seized` | `false` | H: two empty guard posts and a gap in the fence | 72, 79, 80 |
+| `m06_satoshi_stance` ✱ | m06_follow_the_money | `satoshi_stance` | `""` | L: how warmly the Join offer is made | 76 |
+| `m07_team_assignment` | m07_architects_gambit | `team_assignment` | `""` | O on uncovered Austin: the backdoor is a live release channel (closing it is optional, §4.2); P on uncovered Fracture: Social Fabric in the media room | 81, 83, 84 |
+| `m07_team_redirected` | m07_architects_gambit | `team_redirected` | `false` | O: a smaller backdoor channel | 82 |
+| `m07_countdown_expired` ✱ | m07_architects_gambit | `countdown_expired` | `false` | L: "Seattle first. As scheduled." | 86 |
+| `m07_mercer_fate` | m07_architects_gambit | `mercer_fate` | `""` | P: Mercer in the server hall | 87, 88 |
+| `m07_mercer_ko` ✱ | m07_architects_gambit | `mercer_ko` | `false` | P: rules Mercer out (custody) | 87, 88 |
+| `m07_elena_outcome` | m07_architects_gambit | `elena_outcome` | `""` | H: Elena Rodriguez on the phone about the release servers' feed | 90 |
+| `m07_hollis_resolved` ✱ | m07_architects_gambit | `hollis_resolved` | `""` | P: Hollis on the gate on `evaded` | 92 |
+| `m07_debrief_stance` ✱ | m07_architects_gambit | `debrief_stance` | `""` | L: Tesseract quotes the player; H on `hardened`: the projection desk | 99, 102 |
+| `m07_architect_echo_heard` | m07_architects_gambit | `architect_echo_heard` | `false` | L: the extra recognition beat on the line | 120 |
+| `m08_nightshade_triple_agent` ✱ | m08_the_mole | `nightshade_triple_agent` | `false` | P + H: Nightshade at the door | 104 |
+| `m08_triple_agent_first_payment` ✱ | m08_the_mole | `triple_agent_first_payment` | `false` | H: the payment (today always equal to the above) | 104 |
+| `m08_nightshade_arrested` ✱ | m08_the_mole | `nightshade_arrested` | `false` | L: HaX's visit in the epilogue | 107 |
+| `m08_accused_vector` ✱ / `m08_accused_phantom` ✱ | m08_the_mole | as named | `false` | P: whether Vector and Phantom join | 112 |
+| `m08_vector_apologised` ✱ / `m08_phantom_apologised` ✱ | m08_the_mole | as named | `false` | P: as above | 112 |
+| `m08_vector_hostile` ✱ / `m08_phantom_hostile` ✱ | m08_the_mole | as named | `false` | P: as above (latches on a knock-out too) | 112 |
+| `m09_nightshade_shown_file` | m09_digital_archaeology | `nightshade_shown_file` | `false` | H (shown: the override) / O (not shown, on the triple-agent branch: one door locks and the sleeper is warned; the security office opens it) | 105 |
+| `m09_sleeper_named` | m09_digital_archaeology | `sleeper_named` | `false` | H: the sleeper is caught before the core | 117 |
+| `m09_recruiter_secret` | m09_digital_archaeology | `recruiter_secret` | `""` | L: Tesseract's leverage line, and HaX's answer to it | 61 |
+| `m09_reading_finished` | m09_digital_archaeology | `reading_finished` | `false` | L: one extra talk-down argument (the Reading's wrong prediction) | 101 |
+
+56 variables plus nine `completed` imports. Victoria's KO branch, Voltage's capture and the rest of the "absent" values put the room's default occupant in place (§5.3).
+
+### 3.3 Export additions to m01–m08
+
+**JSON only, approved (F2–F4).** One line each in the source mission's `exportGlobals`; no ink, no audio. The orchestrator makes these when stage 9 builds the importing mission, not before. Each name is already a key in that mission's `globalVariables`.
+
+| Source | Add to `exportGlobals` | Read by |
+|---|---|---|
+| m01 | `maya_ko`, `kevin_ko`, `sarah_ko` | m09, m10 |
+| m02 | `ghost_deal_refused`, `gary_protected`, `patient_assaulted` | m09, m10 |
+| m03 | `sterling_on_call_seen` | m10 |
+| m04 | `voltage_print_on_bypass`, `static_left`, `static_left_alone`, `vance_is_ally`, `robert_vance_ko`, `lore_safehouse_address_found` | m09, m10 |
+| m05 | `recruiter_deal_confessed`, `found_pipeline_list`, `halloran_accused` | m09, m10 |
+| m06 | `satoshi_stance`, `minder_walked` | m09, m10 |
+| m07 | `countdown_expired`, `hollis_resolved`, `found_tomb_gamma`, `debrief_stance`, `mercer_ko` | m09, m10 |
+| m08 (new block; it has none) | `nightshade_arrested`, `nightshade_triple_agent`, `triple_agent_first_payment`, `nightshade_ko_before_fate`, `tomb_gamma_location_known`, `debrief_stance`, `netherton_ko`, `netherton_hostile`, `hax_ko`, `accused_vector`, `accused_phantom`, `vector_apologised`, `phantom_apologised`, `vector_hostile`, `phantom_hostile`, `nightshade_tidied`, `named_on_evidence`, `suspect_theory` | m09, m10 |
+
+41 names across eight missions. After each addition, run the validator on the source (export names must stay stable from then on, CARRY_OVER_PLAN 2.9).
+
+**Needing an ink change (for the user).** Neither changes a spoken line, so no audio is regenerated.
+
+1. **m02 `reeves_fate`.** Add a string global (default `""`) set once in `m02_closing_debrief.ink` where the debrief already routes on five globals (`:646-665`): `arrested` / `exposed` / `ko` / `flagged` / `escaped` / `missed` / `unnoticed`. Then export it. Without it, m10 falls back to `insider_asset_arrested` / `insider_asset_escaped`, and "never caught" reads as absent (row 22).
+2. **m07 `teacher_discussed`.** Promote the local ink `VAR` to a scenario global (add it to `globalVariables`, default `false`, and a `#set_global:teacher_discussed:true` beside `m07_phone_agent0x99.ink:777`). Then export it. Without it, every player gets HaX's longer reveal in m09, and the ones who already heard the start hear it again.
+
+### 3.4 m09's exports, read by m10
+
+| Var | Values | Set where | m10 use |
+|---|---|---|---|
+| `nightshade_shown_file` | `true` / `false` | the triple-agent branch only: the player sends Nightshade his own recruitment file from the restricted stacks | which way he tips the board at the door (row 105) |
+| `sleeper_named` | `true` / `false` | the player matches the ledger's codename (VM flag 2) to a SAFETYNET personnel record in the archive. Optional | the sleeper caught before the core (row 117) |
+| `recruiter_secret` | `""` (never sold the list) / `confessed` (owned up in m05) / `told` (told HaX on the Recruiter's m09 call) / `kept` (hung up and said nothing) | the Recruiter's call; m09 works the value out from its own imports and the call | Tesseract's leverage line and HaX's reply (row 61) |
+| `reading_finished` | `true` / `false` | the player read the Reading to its last page, the prediction about them | an extra talk-down argument (§4.1) |
+
+### 3.5 m10's exports
+
+For a later season; nothing reads them yet. `ending` (`arrest` / `surrender` / `lethal` / `scorched` / `joined`), `database_outcome` (`secured` / `disclosed` / `both_wiped` / `published`), `sleeper_caught`, `partial_release` (`none` / `small` / `large`), `media_story_ran`. Stage 9 adds them; they cost nothing and stop the next season having to ask for an ink change.
+
 ## 4. m10 ending matrix
+
+Five endings: three successes (arrest, surrender and cooperation, lethal force), Scorched Earth, and Join ENTROPY. All five come after the same four VM flags, so `concludeRequires` is the same for every ending (the technical work only) and the ending is a global the debrief and credits read.
+
+### 4.1 The core sequence
+
+The player reaches the core with all four flags in (§6). Tesseract is there in person, alone, at the release console. He has been expecting Agent 0x00 since the keyed door (row 119).
+
+1. **His case.** A conversation, not a fight. He argues from the player's record (rows 1, 19, 47, 48, 76, 99) and the player answers. Each answer that lands is a **point**. He sets the Publication out plainly: the hour, the channels, his casualty sheet (1,100–2,600 in the first month), and why he thinks it is the last arms race.
+2. **The Publication.** The player chooses: **stop it** (disarm the release at the console, success and Scorched Earth paths) or **hear the offer** (the first step towards Join, §4.3). Stopping it is one console action; he does not fight for it. "Then we do it the slow way."
+3. **The database.** Three options at the same console:
+   - **Secure** the stolen copy as evidence. SAFETYNET keeps its own master. The hoard stands. (`secured`)
+   - **Disclose**: wipe Tomb Gamma's copy and send SAFETYNET's master to the vendors under a coordinated-disclosure schedule. Netherton authorises it on the line; he says what it will cost the service and signs. (`disclosed`)
+   - **Wipe both**: Tomb Gamma still holds the live line into the Citadel's vault that Nightshade left open; through it the player can erase SAFETYNET's master as well. This is Scorched Earth (below). (`both_wiped`)
+4. **Tesseract** (success paths only): **arrest**, **talk him into surrender and cooperation**, or **lethal force**. All three are always offered.
+
+**Talk-down points.** Surrender and cooperation needs two points. The mission always offers at least three arguments of its own, so it is winnable by any player:
+
+- the correction on his casualty sheet, found on the workshop floor or the projection desk: his model double-counts the hospitals' recovery time, and he signed it anyway;
+- what HaX does with "Let it hurt afterwards, not during" (she tells the player in m09, and again on the line in m10 if they missed it): you keep your own hurt for afterwards so you can do the job, you never hand it to strangers (row 120);
+- the gap between the Publication and his own rule: he has hidden every copy of himself for seven years and still won't put his own name on the release.
+
+Carry-overs add arguments, and the best of them land harder (each counts as a point and can replace a weak one): `m04_disclosure_choice = full` ("And nobody died for it"), `m02_exposed_hospital`, `m02_bed4_manually_stabilised`, Voltage stood down on his print, Gary talked round, `m09_reading_finished` (the Reading's last page predicts the player will press the button; they didn't), `m07_debrief_stance = hardened` (the live casualty curve from the projection desk). A weak or hostile answer costs nothing but the point. With fewer than two, he declines: "Arrest me, then. I'll be quiet in a cell." Arrest and lethal force remain.
+
+### 4.2 The Publication's channels and partial release
+
+The Publication goes out through up to three channels. Only the first must be shut to stop it; the others decide the cost.
+
+| Channel | Present when | Shut by | If left open |
+|---|---|---|---|
+| Tomb Gamma's own release servers | always | the core (step 2) | the Publication runs (Join only) |
+| The Trojan Horse backdoor | `m07_team_assignment` not `trojan_horse` | an optional console task in the server hall (needs flag 2) | **partial release**: the batch already queued on the backdoor goes out when the core is shut. Small when `m07_team_redirected` (14 million systems), large when Austin was never covered (47 million) |
+| Social Fabric's story machine | `m07_team_assignment` not `fracture` | an optional task in the media room | the "massacre in Montana" story runs; on `m05_entropy_program_exposed` it names SAFETYNET and the player's designation |
+
+**The clock.** The raid has a generous visible clock to the 06:00 UTC release, as m07 did. If it runs out before the core is shut, the first city's batch goes out through whatever channels are open ("Seattle first. As scheduled."), and the mission carries on. Running out never ends the mission and never forces an ending. With Austin covered and the clock beaten, nothing is released at all.
+
+### 4.3 Join ENTROPY: signposting
+
+The one non-success ending. A deliberate choice the player makes three times, never a trap:
+
+1. At step 2 the player chooses "I want to hear the offer." Tesseract makes it: Agent 0x00 presses the release, and walks out with him. The narrator says plainly what pressing it means. The next menu always includes "No. Stop it." and returns to step 2.
+2. The player chooses "Show me." HaX, on the line, says the player's designation and asks them not to. The narrator states the cost again: the mission ends here, working for ENTROPY, with the casualty figure. "Step away" is offered again.
+3. The release key is an object at the console, labelled, with its own confirmation ("Publish the database to everyone, now?"). Only that press sets the ending.
+
+It cannot be reached by a misclick, a knock-out, the clock, a failed talk-down, or any import. `m01_player_launched_attack` and `m06_satoshi_stance = wondered` change how warmly Tesseract makes the offer, and nothing else. m01's LAUNCH button is the precedent.
+
+### 4.4 What earlier choices change
+
+The route through the bunker works with every import at its default. These change the cost and who is standing at the end.
+
+| What changes | Better | Worse | In-mission way round for the worse case |
+|---|---|---|---|
+| Partial release (§4.2) | Austin covered in m07 | Austin never covered | the server-hall task, and beating the clock |
+| Media story | Fracture covered in m07 | Fracture uncovered, and `m05_entropy_program_exposed` names the player | the media-room task |
+| The sleeper (§5.2) | caught early: `m09_sleeper_named`, or a kept Nightshade names him at the door, or Phantom's list does | betrays the team at the core: he locks the core door behind the player and goes for the release key. Agent Marisol Quintero is hurt stopping him (wounded, not killed) | the security office's door log shows his badge where it shouldn't be; a player who reads it catches him there |
+| Nightshade at the door | shown his file in m09: he gives the override he was saving | not shown: one door locks, the sleeper is warned | the security office reopens the door; the log above still catches the sleeper |
+| Victoria (recruited and `sterling_on_call_seen`) | – | sells the raid: an alarm, reinforcements in the gallery | a kept Nightshade warns the player, or HaX's doubt in the briefing ("trust her as far as the gallery") lets the player skip the trap she sets |
+| Ghost | deal kept: side door; refused: one fact | deal broken: side door shut; with the keys used, Ghost watches the route | the main route; the security office blinds the cameras |
+| Plant route | Voltage captured (map), Vance or Elena on the phone, Voltage stood down on his print, Gary talked round | Voltage and Static at the switchgear | talk, fight, or the long way round through the workshop floor |
+| Guards | `m06_assets_seized`: two posts empty, gap in the fence | full staffing | stealth and the cloner as in any mission |
+| Who stands with the player | Vector and Phantom (not accused, or apologised to, and not hit) | they decline, and Netherton says why | the default raid team |
+
+### 4.5 The endings
+
+| Ending | Reached by | `ending` | Credits title |
+|---|---|---|---|
+| Arrest | stop, secure or disclose, arrest | `arrest` | MISSION COMPLETE |
+| Surrender and cooperation | stop, secure or disclose, talk-down with two or more points | `surrender` | MISSION COMPLETE |
+| Lethal force | stop, secure or disclose, lethal force | `lethal` | MISSION COMPLETE |
+| Scorched Earth | stop, wipe both | `scorched` | MISSION COMPLETE, then AGENT 0x00: SUSPENDED |
+| Join ENTROPY | the three steps of §4.3 | `joined` | MISSION FAILED, with the Publication's casualty projection (as m01's launch ending) |
+
+**Scorched Earth.** Wiping SAFETYNET's master through the live line trips the Citadel's breach protocol and the bunker's own: the core's fire suppression dumps, the lights go, the blast doors cycle. In the dark Tesseract is gone by the service tunnel. The player gets out with the team. Nobody holds the map, SAFETYNET included. Netherton suspends the player: "I would have wanted to do the same. That is why you are suspended and I am not."
+
+### 4.6 Epilogue beats
+
+Every ending runs the same frame: the forward post at first light (or the Citadel for Join), a short scene, the closing card, the teaser slot (§7), then credits. The closing card draws its lines from §2's epilogue rows: Zero Day still trading, Ghost's last message or clean exit, Elena Torres' treatment, the forty-seven reached, Albion's inquiry, the $12.8M, dispatch in eleven counties, the off-screen m07 leaders by whether their site was covered.
+
+| Ending | Tesseract | HaX | Netherton | Lines that change |
+|---|---|---|---|---|
+| Arrest | In a police van, says nothing. He nods to HaX through the window. | Watches the van go: "He taught me to keep it for afterwards. It's afterwards." | Signs the handover: "A trial. He will make speeches. Let him." | ENTROPY's cells keep running; "He is in a cell. The cells are not." |
+| Surrender | Gives the cells' contact protocol on the bunker's own terminal. | Sits with him for one minute and does not say what they talked about. | Takes the protocol to the Council. | Two cells rolled up in the closing card (the ones the player's history left weakest). |
+| Lethal force | One line: the player fires, he falls by the console. Nothing more on screen. | Long silence on the line, then: "Log it. I'll sign under you." | Covers it in writing and says so. | ENTROPY has a martyr; the cells go quiet, which is worse. A review board is named for after the credits. |
+| Scorched Earth | Gone. A card on the console, his hand: "Afterwards, then." | Stands with the player at the hearing. | Suspends the player (above). | The service rebuilds its threat catalogue from nothing. The teaser slot, if used, sits after the suspension. |
+| Join ENTROPY | Walks out with the player into the dark. | Her last message, unanswered: the player's designation, and nothing else. | Orders 0x00 brought in. | The casualty curve on the forward post's screen, climbing. |
+
+The secure / disclose choice adds one beat in each success ending: secured, Netherton files the stolen copy in the vault beside the master ("Two maps now," HaX says); disclosed, the first vendor patches land on the morning of the Publication's hour, and HaX reads the count.
 
 ## 5. Cast
 
+Sprite keys are the ones the shipped missions use (inventories A §2, B §m0N.2). New characters need sprites and the usual character pipeline at stage 9.
+
+### 5.1 Returning characters
+
+| Character (sprite) | m09 | m10 |
+|---|---|---|
+| Agent HaX (`agent_hax`) | §5.4 | §5.4 |
+| Director Magnus Netherton (`netherton`) | §5.5 | §5.5 |
+| Nightshade (`nightshade`) | Triple agent: a voice on the player's phone from a SAFETYNET room; the player may send him his file. Arrested: one Netherton line. Silent handover: absent. | Triple agent: at the bunker door with his payment, tipped by m09. Otherwise absent; HaX's visit in the epilogue on the arrested branch. |
+| The Recruiter (phone only, no sprite) | Rings once inside her stacks; every player. What she says depends on m05. | Not present. The Initiative's status in the closing card. |
+| Derek Lawson | His file only. | Quoted by Tesseract. |
+| Gary Whitlock (`gary_whitlock`) | Protected: the expert on the phone. | Unprotected and quiet (m02 played): a technician in the bunker, talkable. |
+| Graham Reeves (`graham_reeves`) | Arrested: his handler's contact sheet. | Escaped or never caught: on the door rota, courteous; talk past or knock out. |
+| Ghost (terminal only) | – | On the network: side door, locked door, or parley. |
+| Victoria Sterling (`victoria_sterling`) | Recruited: her protocols open a mail route. Arrested or KO: the archive's company name. | Recruited: inside as Zero Day's representative, holds or sells. Escaped: a buyer's agent in the gallery, stand-off or recognition. |
+| Danny Foster | One HaX line by fate. | – |
+| Voltage (`voltage`), Static (`operative_static`) | – | Escaped: at the switchgear, Static with him if left. Captured: his map in the briefing. |
+| Robert Vance (`robert_vance`) | – | Ally: on the phone at the switchgear. KO'd: HaX's one line. |
+| David Torres | Turned: his address list. Dead: the gap. | – |
+| Kemal Aydin (`kemal_aydin`) | Walked: the informant who confirms Helena, by phone. | – |
+| Irina Volkova | Recruited: one HaX line. | – |
+| Dr James Mercer (`james_mercer`) | – | At large (not arrested, not knocked out): runs the release schedule in the server hall. |
+| Elena Rodriguez (`elena_rodriguez`) | – | Turned: on the phone about the release servers' feed. |
+| Ray Hollis (`ray_hollis`) | – | Evaded: on the gate. |
+| Agent 0x23 Vector (`agent_vector`), Agent 0x88 Phantom (`agent_phantom`) | – | Not wronged in m08: with the raid team. Vector's annex badge opens a sealed door; Phantom's list names sleeper suspects. Wronged: they decline. |
+| Dr Adrian Tesseract, the Architect | Voice only: his first call, to HaX, at the end. | In person at the core (new sprite `adrian_tesseract`). A man of 64, English; voice Sadaltager as in m07, without the distortion. |
+
+### 5.2 New characters
+
+Kept clear of the existing name clashes (Chen, Reeves, Park, Okafor/Okonkwo, the three Ghosts, Cipher).
+
+| Name | Age, background | Mission | Role |
+|---|---|---|---|
+| Margaret "Peg" Sorensen | 66, white Montanan of Norwegian family, former county clerk | m09 | Director of the Helena archive and the Insider Threat Initiative's keeper of records. A true believer: "People are records. I keep them." She holds the archive's master keys and the Reading's shelf mark. Hostile in her office if pushed; arrest or knock-out. |
+| Noor Haddad | 34, Lebanese-American, grew up in Dearborn | m09 | Records clerk, one of the forty-seven (a TalentStack placement she never knew about). If SAFETYNET warned her (`m05_found_pipeline_list`), she helps: a door, a warning about Sorensen. If not, she is a wary bystander, and the player can tell her she is in the ledger. |
+| Jesse Tran | 29, Vietnamese-American | m09 | The archive's IT contractor and Social Fabric's plant: the name Maya's lost intelligence would have flagged (row 6). Calls in a guard if he sees the player. |
+| Ernesto Villalobos | 24, Mexican-American | m09 | Night security guard. Innocent; a knock-out costs a line in the debrief. |
+| Agent 0x19 Callum Fraser, Agent 0x6B Ana Lúcia Ferreira | 31, Scottish; 38, Brazilian | m09 (named) | The two agents killed at the unanswered m07 sites. Netherton reads both names before the Montana order. Never seen. |
+| Agent 0x2D "Anchor", Marisol Quintero | 52, Mexican-American | m10 | Task Force Null's raid leader on the ground. Steady, dry, on the player's side. If the sleeper reaches the core she is the one hurt stopping him. |
+| Agent 0x5E "Lantern", Tomasz Wierzbicki | 47, Polish-British | m10 | **The sleeper.** Task Force Null's breaching lead, recruited in Tesseract's intake twelve years ago and placed by the Initiative; the m09 ledger lists him only by his ledger codename. Likeable and useful until he isn't. Caught early by the routes in §4.4. |
+| Dr Kwame Asante | 45, Ghanaian-British | m10 | Tomb Gamma's systems lead, who wrote the release pipeline. The server hall's default occupant when Mercer is not there. "I wrote it. I'd write it again." |
+| Tomb Gamma's guards and technicians, Social Fabric's media crew | mixed | m10 | Generic sprites, varied. |
+
+### 5.3 Default occupants
+
+Every room that a carry-over can fill has a default occupant, so the route works with all imports at their defaults.
+
+| Room (m10) | Default | Replaced or joined by |
+|---|---|---|
+| Gate | an ENTROPY gate guard | Ray Hollis |
+| Blast-door tunnel | a guard on the door rota | Graham Reeves |
+| Workshop floor | a technician with a cloneable card | Gary Whitlock |
+| Plant room | an ENTROPY plant technician | Voltage, with Static |
+| Server hall | Dr Kwame Asante | Dr James Mercer (Asante then works the media room's feed) |
+| Gallery | two guards | Victoria Sterling |
+| Media room | dark and empty | Social Fabric's crew |
+| The door (raid team) | Quintero, Wierzbicki, two Task Force Null officers | Vector, Phantom, Nightshade |
+| On the phone | HaX | Vance, Elena Rodriguez, Ghost (on a terminal) |
+
+### 5.4 HaX's arc
+
+m08 left her close to coming apart, texting "Same classroom, 0x00. Don't ask me whose yet." The finale is her reckoning with the man who taught her.
+
+- **m09.** In person at the briefing, then on the line. In the identity scene she says the name (or the player learns that she has known since m06, row 70). On a quiet stretch in the archive she tells the player what "Let it hurt afterwards, not during" means to her: you keep your own hurt for afterwards so you can do the job; you never pass it to strangers. That is the version the player can use against him in m10. On `m08_hax_ko`: "You put me on the floor at the Citadel. I'm still running you." At the end Tesseract rings her, not the player. The player hears her side only: short answers, then "I'll bring them." She tells the player what he said after he hangs up.
+- **m10.** At the forward post with Netherton, on the line all night. She knows the bunker's tricks because she knows his. At the core he talks to her through the player's handset; she does not decide for the player and says so. On `m09_recruiter_secret = kept`, Tesseract tells her about the forty-seven on the open line; she answers "I'll deal with that afterwards," and does, in the epilogue.
+- **Endings.** §4.6. In every success ending she gets the last word before the card.
+
+### 5.5 Netherton's role
+
+- **m09.** Runs the briefing in Task Force Null's room. Brings the legal cover (Victoria's CPS case on that branch). Reads the two dead agents' names. Signs the Montana order in front of the player: on `m08_debrief_stance = owned`, with his own name beside Nightshade's file; on `defended`, with one quiet thank-you he doesn't explain. On `m08_netherton_ko`: "Before we start. My jaw is fine. I'm not asking for an apology."
+- **m10.** Commands the raid from the forward post. Authorises disclosure if the player asks for it at the core (§4.1). Suspends the player on Scorched Earth. Orders the player brought in on Join. His m08 line "If he burns you, it is on my signature" comes due at the door on the triple-agent branch either way.
+
 ## 6. VM flags in story terms
+
+The VM plan is written separately (`finale/FINALE_VM_PLAN.md`, by a Haiku agent); it decides how each flag is reached and must fit the meanings below. Every flag is required (`concludeRequires`), is wired through `targetFlags` with `setGlobal`, and is followed by a HaX line that says what it bought in story terms.
+
+### 6.1 m09: the archive's servers
+
+Submitted at the SAFETYNET drop terminal the player sets up in the reading room (the field laptop), except flag 4, which is submitted in the tape room beside the machine it came from.
+
+| Flag | Story meaning | Unlocks in game |
+|---|---|---|
+| 1 | **A foothold on the archive's catalogue server**: the index of every box, tape and shelf, including the restricted series the public catalogue hides. | The shelf marks for the restricted stacks, and the first clue to the tape room's code. |
+| 2 | **The Insider Threat Initiative's ledger**: every placement the Recruiter has made, the forty-seven and the twenty-three, each under a ledger codename. One entry is inside SAFETYNET. | The printed ledger in the restricted stacks becomes readable, and the optional cross-reference task (codename to personnel file) opens: `sleeper_named`. |
+| 3 | **The owner of Tomb Beta's last server**: the machine was enrolled with a SAFETYNET staff credential, issued seven years ago and never revoked, in Dr Adrian Tesseract's name. With the handwriting on Nightshade's recruitment file, this is the proof. | The identity scene with HaX. |
+| 4 | **Full control of Tomb Beta's server**: its job that still mirrors to Tomb Gamma, carrying the Publication's hour (06:00 UTC, day 13) and the list of defences built from the stolen database. | Tesseract's call to HaX, the raid order, and the mission's close. |
+
+Together with the paper finds (the deed and construction file, the Reading, Nightshade's file), these give the four things §1.3 promises: the name, the ledger, the defences, the hour.
+
+### 6.2 m10: Tomb Gamma's network
+
+The forward post's terminal takes flag 1; the rest are submitted on terminals inside the bunker, where the player is standing when they get them.
+
+| Flag | Story meaning | Unlocks in game |
+|---|---|---|
+| 1 | **A foothold on the bunker's security system**: the camera and door controller in the security office. | Camera feeds, the blast-door route, and the door log that can catch the sleeper. |
+| 2 | **Inside the release pipeline**: the staging service that schedules the Publication by city. It lists the channels (§4.2). | The server-hall console: the optional task to close the backdoor channel; Asante's or Mercer's schedule turns readable. |
+| 3 | **Out of the release service's box onto the machine beneath it**: the release host itself. | The core's inner door, and the disarm action at the console. |
+| 4 | **Full control of the core host**: the stolen copy, and the live line into the Citadel's vault. | The database options at the core (§4.1). |
+
+Flags 1 and 2 are the earlier entry stage the brief asks for; 3 and 4 are the climax.
 
 ## 7. Teaser slot
 
+- **Where.** m10 only, after the closing card and immediately before the final credits roll. A few seconds. It is the last thing before the credits on every ending, Join included.
+- **What.** Decided later, by the user. Nothing in m09 or m10 sets it up, refers to it, or depends on it. No other eldritch content anywhere in either mission (brief, user decision 2026-10-20).
+- **How it is built.** One extra step in the credits sequence (a short cutscene or a single credits card) behind one global, `teaser_enabled`, default `false`. With it false, the credits run straight after the closing card and nothing else changes. No voiced lines until the content is decided.
+- **Constraints for whoever fills it.** No new characters from this season; no line that reads as a Season 1 loose end; it must make sense after all five endings.
+
 ## 8. Risks and open questions
 
+Each has a default the later stages follow unless the user says otherwise.
+
+| # | Risk or question | Default |
+|---|---|---|
+| 1 | **Import load.** 42 imports in m09 and 56 in m10 is far more than any earlier mission. Ink VAR lists, test fixtures and the dialogue lint all grow with it. | One shared include per mission declares them (§3). Route drivers test three import profiles besides `none`: a "kind" run, a "hard" run and a mixed one, chosen at stage 8 to cover every presence slot in §5.3. |
+| 2 | **Players who start at m09** (Hacktivity can assign missions out of order). | Every scene is written default-first; the default must read as a whole story without the earlier missions. Reviewers check the default path on its own. |
+| 3 | **The two ✱✱ ink changes are refused.** | Fallbacks in §3.3: Reeves via the two booleans; HaX's reveal from the start for everyone. |
+| 4 | **Join reached by accident**, or felt as a trap. | The three steps of §4.3. A blind playtest at stage 8 checks that no tester reaches it without meaning to. |
+| 5 | **Lethal force tone.** | One narrated line, no detail, no lingering shot; HaX's silence carries it. Same level as m05's `combat_lethal`. |
+| 6 | **Too many returning faces in m10.** A worst-case player meets Hollis, Reeves, Voltage and Static, Gary, Victoria, Mercer, Ghost and the sleeper. | Each sits in a room that exists anyway (§5.3), so the worst case is the same length as the default run; most are a talk-or-fight of under a minute. If stage 5 finds a room too crowded, the lowest-weight presence (Hollis, then Reeves) becomes a line instead. |
+| 7 | **The clock.** A timer adds tension and also pressure on players who are slow with the VM. | Generous, visible, never fails the mission (§4.2). Stage 4 sets the length from the m07 timings. |
+| 8 | **Local time.** 06:00 UTC on day 13 is around midnight in Montana, not dawn there. | Every in-game clock and line uses UTC, as the Citadel does; no line mentions dawn in local time. §1.5's "before dawn" is read as the Citadel's dawn. |
+| 9 | **The Architect in person.** He has been a voice since m01. Seeing him could shrink him. | He is shown only in the core, after the four flags, and stays seated at the console until the endings. His portrait is chosen with the user at the character stage. |
+| 10 | **"Disclose" as a fourth database option** goes beyond the brief's list. | Kept: it is the educational point of the finale (responsible disclosure against hoarding and full release) and it is a success variant, so the brief's ending list is unchanged. The user can cut it to two options. |
+| 11 | **SAFETYNET's master reachable from the bunker** (the live line) is new canon. | Kept: it is how Scorched Earth can destroy both copies from one console, and it fits m08's open door. Stage 6 lore writes it into the Citadel's incident file. |
+| 12 | **The sleeper's betrayal hurts Quintero.** It must not feel like punishment for skipping an optional task. | Wounded, never killed; the security office's door log is a visible, in-mission catch the HaX hub points to once the player has flag 1. |
+| 13 | **m10's VM needs an earlier stage** (brief). | §6.2 gives flags 1–2 their story; the Haiku VM plan fits the modules to them. If it cannot, flag 1 moves to the security office terminal and the meanings stay. |
+| 14 | **Titles and ids.** `m10_final_cipher` has nothing to do with a cipher. | Stage 0 proposes titles (per-mission files). A rename follows the rename rule, and m10's `importGlobals` entry for m09 uses whatever m09's final folder name is. |
+| 15 | **The Recruiter stays faceless.** | Yes, phone only, as in m05. She is left at large for a later season. |
+| 16 | **New sprites**: Tesseract, Sorensen, Haddad, Tran, Villalobos, Quintero, Wierzbicki, Asante. | Eight new characters across two missions, made through the usual pipeline at stage 9; the user approves each look first. |
+| 17 | **Codename clash.** "Lantern" and "Anchor" have not been checked against every earlier mission's text. | Stage 1 greps the scenarios and the bible before fixing them. |
+
 ## 9. Decision log
+
+Sections 1–2 (premise, timeline, thread allocation) are the earlier author's and stand as written, with one correction.
+
+- **§2 rows 87–89 corrected.** Row 87 put Mercer at Tomb Gamma on `mercer_fate = ko`, but an actual knock-out sets `mercer_ko` and leaves him in custody (m07 erb:228-230). Rows 87–88 now read `m07_mercer_ko` (✱) and row 89 no longer drops it.
+- **Five-kind use code for imports (R/H/O/P/L).** Makes the "never gates completion" rule checkable row by row.
+- **One shared ink include per mission for imports.** Fifty-odd VAR lines repeated in every ink file would drift.
+- **Imported `completed` for every source.** "Never played" needs its own neutral line, and m09 may be a player's first mission.
+- **No-coordinate route via `m08_completed and not m08_tomb_gamma_location_known`.** The source default is false, so the import alone can't tell a knocked-out Nightshade from an unplayed m08.
+- **The deed is a task for every player.** Keeps the no-coordinate route a change of framing, not of what the player must do.
+- **`m04_static_left_alone` imported beside `static_left`.** Either value means Static is at large; §2 row 46 named only one.
+- **m08 export list follows inventory B §m08.2, minus `nightshade_tipped_off`.** Only `nightshade_tidied` has a payoff (row 113).
+- **Export additions made at stage 9, not now.** The brief forbids editing other missions in this stage; the list is ready.
+- **m09 exports four values** (`nightshade_shown_file`, `sleeper_named`, `recruiter_secret`, `reading_finished`). Each has a concrete m10 use; `recruiter_secret` folds m05's confession and m09's call into one value m10 can read.
+- **m10 exports five values for a later season.** Cheap now; an ink change later.
+- **All endings after flag 4.** One `concludeRequires` for every ending, and the endings are choices, not failures of the technical work.
+- **Stopping the Publication is one console action, unopposed.** The climax is the argument and the choices, not a boss fight with an old man.
+- **Talk-down needs two points, with three always available in m10.** Winnable by any player; carry-overs make it easier and richer, never possible-only-with.
+- **"Disclose" added as a success-path database option.** It is the responsible-disclosure answer the finale's argument is about, and it pays m04's disclosure choice.
+- **Live line into the Citadel's vault.** Gives Scorched Earth a way to destroy both copies from the core and a reason for the chaos he escapes in.
+- **Join needs three deliberate steps, the last a labelled key with its own confirmation.** The brief says never a trap; m01's LAUNCH button is the precedent.
+- **Partial release comes from the m07 backdoor and the clock, not from failure.** Ties the cost to the player's m07 choice and keeps every route finishable.
+- **Clock never fails the mission.** "Fun and educational, not hard"; m07's countdown set the pattern.
+- **Every presence import has a default occupant.** The route works with all defaults, and a worst-case player's run is no longer than the default.
+- **The sleeper is a new Task Force Null agent, not an existing character.** Making Vector or Phantom the sleeper would undo m08's verdict that they were innocent.
+- **The sleeper wounds Quintero rather than killing anyone.** A missed optional task should cost, but a death would read as punishment.
+- **Tesseract calls HaX, not the player, at the end of m09.** He is her teacher; the player overhearing one side is more tense than a monologue.
+- **HaX's meaning of the line is told in m09.** It makes the line the player's own argument in m10 (row 120).
+- **New cast varied in age and background**, and clear of the Chen/Reeves/Park/Okafor clashes. User rule.
+- **Mercer's absence filled by Asante, not an empty hall.** The server hall needs someone who can explain the release.
+- **The two dead agents named (Fraser, Ferreira).** Row 100 has Netherton read the names, so they need names.
+- **Teaser behind a default-off global.** Planned slot, no dependency (brief).
+- **Clocks in UTC only.** Avoids the local-midnight/dawn mismatch in §1.5.
+- **Recommended titles: "Digital Archaeology" (m09, keep) and "Tomb Gamma" (m10).** Reasons in the per-mission stage 0 files.
