@@ -23,6 +23,7 @@ m09 and m10 close Season 1 of SAFETYNET: Licence to Hack. They are the payoff fo
 - `planning_notes/eldritch_hacker/DIRECTION.md` "Season 1 finale": the player succeeds, stopping the Architect and a number of cells. The eldritch parts of that section are now dropped (above).
 - The Architect canon: `story_design/universe_bible/04_characters/entropy/masterminds/the_architect.md` (identity section ~L33: SAFETYNET's lead suspect since m06 is Dr. Adrian Tesseract; confirmation planned for m09). m07 plants his line "Let it hurt afterwards, not during" (`scenarios/PASS4_EDITORIAL_LOG.md` ~L34, L48). Marcus Tesseract (institute founder) is Adrian's younger brother.
 - Tomb Gamma: dossier in m07 (`found_tomb_gamma`), coordinates (Montana) from Nightshade in m08 (`tomb_gamma_location_known`), or not if the player put him down first.
+- Canon corrections: there is no Director Cross (rename residue); SAFETYNET's director is Netherton. Marcus Tesseract's institute is the Quantum Cabal front, so nothing in the finale may depend on the institute or the Cabal (Marcus may appear only as Adrian's brother). Watch name clashes: three "Ghosts" (m02 Ghost, the Ghost Protocol cell, Satoshi's Ghost), two Reeves (m02 Graham, m07 Michael), several Chens, two Dr Okafors.
 - Carrying choices between missions: `docs/agents/CARRY_OVER_PLAN.md` and `README_scenario_design.md` "Carrying choices between missions". `importGlobals` reads from the original source mission (m10 can import from m03 directly). m01–m07 have `exportGlobals`; **m08 has none yet**.
 - Finale inventory (built in phase A): `planning_notes/overall_story_plan/mission_initializations/finale/`.
 - VM: candidate modules in `docs/agents/SECGEN_MODULE_PLAN.md` "Finale". No SecGen scenario exists yet for m09/m10.
@@ -55,6 +56,9 @@ The story_dev_prompts are older; the skills in `.claude/skills/` encode what lat
 Author (Opus) writes the stage output section by section with Edit. A fresh Opus reviewer (read-only) checks every claim against the code and earlier stages, tags findings blocker / major / minor with file:line, and gives a verdict. The author (resumed) folds them in; wrong findings are recorded as withdrawn with the reason. Minimum three rounds, up to five while blockers or majors keep appearing; the narrative stages (1–3, 7) aim for about five real improvement cycles. Milestone reviews after stages 3, 5 and 8 revisit every earlier stage for both missions together.
 
 ## Rules for every agent
+
+- **Opus agents never read VM material** (`finale/VM_SHAPE.md`, `SECGEN_MODULE_PLAN.md`, SecGen, field guides). The stage-0 author was stopped by a safety check after reading them. Opus works with the story meaning of each flag; the VM plan (`finale/FINALE_VM_PLAN.md`, when written) is Haiku's.
+- Create documents as skeletons (headings) first, then fill one section per Edit.
 
 - Write documents section by section with Edit, never one whole-file rewrite.
 - **VM content stays at game-design level.** Say "the VM's second flag (root on the archive server)", never exploit steps, CVE detail, commands or tool usage. Do not open SecGen files or the four exploit-detail field guides. VM technical writing goes to a Haiku agent the orchestrator runs.
