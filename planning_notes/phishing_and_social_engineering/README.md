@@ -137,7 +137,7 @@ auth row for each. Attachments and links are chosen with the Attach control, nev
   band numbers.
 - `applyActions` keeps emitting `global_variable_changed` on every call; change-only emission is for
   `grantFact` and the social paths.
-- Concept cards live in `social.conceptCards`; the real-brand lint covers domain and address fields and concept-card text, not all prose. The defender
+- Concept cards live in `social.conceptCards`; the real-brand lint covers domain and address fields and host-shaped tokens in concept-card text, not all prose. The defender
   facts are exactly four. The page builder launches only for a target in the page's `targets` map.
 - CI gains a social-lint mode (`--strict-social`) and a job with both Ruby and Node. Check and episode
   mission shells have a host NPC, write their result globals with `deferEmit`, sync and then emit the done event, and carry an aim.
@@ -202,16 +202,18 @@ deliberately weak and is labelled weak, with callback to the number on file as t
   no effectiveness claims (A3); hosted service sold commercially (A5), with PixelLab's terms checked once
   before release (`11`).
 
-**S. Builder brand templates (decided 2026-10-20).** A builder brand may copy the sign-in look of a real, popular
-open-source tool, and its page may show that tool's name. Every domain, address and account stays fictional and
-ends `.example`, and the lint keeps the real name out of domain, address and brand `name` fields (`07` §1, §5,
-`00` §11). Templates are for the student lab by default; whether awareness and missions may use them is open
-(`07` OQ3). The template build goes to a Haiku agent, so these docs give the game-level rules and no build detail.
+**S. Builder brands are invented, with generic or parody looks (decided 2026-10-21; replaces the 2026-10-20
+rule that a template could copy a real tool's sign-in look).** Every builder brand has an invented name, and every
+domain, address and account is invented and ends `.example`. A brand's `look` is `generic` (a neutral sign-in
+layout) or `parody` (an exaggerated layout that is plainly the game's own). No look copies a real product's name,
+layout, colours or logo, and no real logo is drawn. The same rule holds in the student lab, in Eldritch Hacker and
+in the awareness product. The lint keeps real brand names out of domain, address and brand `name` fields (`07` §1,
+§5, `00` §11). The build goes to a Haiku agent, so these docs give the game-level rules and no build detail.
 
 **T. Builder captures are simulated, and the player's input is never read (decided 2026-10-20).** A submitted
-sign-in adds the page's authored note to the player's notes. The note may hold a fictional sign-in that an NPC
-leaks through the attack (`07` §5 and N11, `00` §11a). Nothing the player types is read, and the page record keeps
-ids and booleans only. The metrics line counts pages (Visits and Submissions), and reports are still not measured
+sign-in adds the page's authored note to the player's notes. The note names the captured account and holds no
+password value (`07` §5 and N11, `00` §11a). Nothing the player types is read, and the page record keeps
+ids and booleans only. The metrics line counts pages as Visited and Submitted, and reports are still not measured
 (`10`).
 
 **U. Padlock teaching line confirmed (decided 2026-10-20).** The line the user approved, "a padlock means the
@@ -246,6 +248,12 @@ no longer needed to stand in for the as-typed form; `linkInfoFor` returns `domai
 (`00` §11a); the lint and the `\u` escape rule stay; keep the "current browsers may show punycode" teaching point
 as a contrast, stated without a claim about every browser.
 
+**Y. Builder details (decided 2026-10-21).** Four small settlements for `07`, taken on judgement and recorded so they can be challenged.
+- The extra-field score stays at 5, half the form points. One field too many is a giveaway, not a broken page. A missing real field scores 4, because the page cannot collect what the real sign-in does (`07` §4).
+- The metrics line reads `Visited` and `Submitted`, counted per page. These are the record's fields and the report's wording in `10`, so the lab uses one vocabulary for outcomes (`07` §5).
+- The capture note names the captured account and holds no password value. It is authored text, and the player never types it (`07` §5, `00` §11a).
+- Card examples use invented brand names, so the brand check no longer exempts card text. The lint still reads card text for host-shaped tokens, which must end `.example` (`07` §1, `00` §11).
+
 Defaults taken elsewhere, for context: fictional targets only, no real-staff OSINT; the
 lab is the first slice; the awareness product measures pre and post from the start and defers LMS and
 SSO integration.
@@ -258,7 +266,7 @@ stories per channel with synced globals (`00` §9), and template blanks for its 
 ## Open questions
 
 Working defaults are taken for all of these; none blocks the design. The answered items are recorded under
-Key decisions (L to X).
+Key decisions (L to Y).
 
 **Pretext (`06`)**
 
@@ -268,8 +276,7 @@ Key decisions (L to X).
 **Landing-page builder (`07`)**
 
 - Homograph shown in the student lab only, as one authored example? Default: yes.
-- Template brands: how closely a template copies its tool, and whether it may reproduce the tool's logo artwork. The logo carries the trademark risk, so the user decides it; the planner records no default. Drawing is for the Haiku build brief (`07` OQ2).
-- Template brands outside the student lab (awareness and missions)? Default: student lab only, enforced by the lint (`07` OQ3). Alternative: templates in every profile, which needs a view on the commercial release (decision R).
+- Invented brand and look names (AccountingNow, CloudBox, and the looks): are they clear of real companies and products? Pre-ship check, with a search before release, not a design question (`07` OQ2).
 
 ## Engine work, consolidated
 

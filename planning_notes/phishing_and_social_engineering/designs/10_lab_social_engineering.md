@@ -294,7 +294,8 @@ the mail client offers is the payload-kit item `kit_payroll_page`, and only for 
 and never for Hampshire or Pierce.
 
 If Sofia signs in on a page that meets its threshold and her email landed, the mail client adds the page's
-authored note to the notes, a fictional staff portal sign-in for Sofia (`07` §5, N11). Nothing in the lab depends on it, because
+authored note to the notes: Sofia's staff portal username and password, captured. The note holds no password
+value (`07` §5, N11). Nothing in the lab depends on it, because
 the lab ships no found accounts (`00` §10a).
 
 The page does not depend on the call, and the call does not change the page's score: 07 reads no

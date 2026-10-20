@@ -1667,9 +1667,9 @@ message is stored in Sent, is not judged and delivers nothing. The validator che
 **Concept cards.** `social.conceptCards[]` entries are `{ id, title, text, image? }`: plain-text teaching
 cards (`tool_hunter`, `tool_harvester`, `tool_recon`, `tool_exiftool` in `02`; `typo-squat`, `homograph`,
 `padlock`, `hover-link`, `right-to-left` and `five-habits` in `07`). One shared card renderer shows
-them (`02` N1, `07` N7). The brand check is exempt on exactly the `text` field of these entries, so a
-card may name a real service in prose to teach the classic look-alike. It never exempts a domain: a
-host-shaped token in card text must still end `.example` (`five-habits` uses `accountingnow.example`).
+them (`02` N1, `07` N7). Card prose uses only invented brand names, so a card teaches the look-alike with the
+lab's own brands. The lint reads card text for host-shaped tokens only, and each must end `.example`
+(`five-habits` uses `accountingnow.example`). Brand words in card prose are reviewed by hand.
 The validator checks that every card id a doc or scenario references exists.
 
 ### Lint field list
@@ -1683,8 +1683,8 @@ others; `02` N8 and `07` §1 and N6 refer to this list instead of restating it:
 | `sites[].url` | OSINT sites (`02`) |
 | `address` | `social.people[]`, the OSINT staff-block rows, a `provides` entry of type `address`, `mailClient.accounts[]` (and each `createMenu[]` entry), `landingPages[].capture.address` (`07`) |
 | `addresses[]` | `mailClient.contacts[]` |
-| `text` | `social.conceptCards[]` |
-| `name` on `brands[]` of a landing page | `07` §1, §5; denylist only, and a template's `name` may equal its own `lookOf` |
+| `text` | `social.conceptCards[]`; host-shaped tokens only, not prose |
+| `name` on `brands[]` of a landing page | `07` §1, §5; denylist only |
 
 Every address-like field gets the **host-only `.example` rule** (strip any scheme and everything from the
 first `/`; for an address, test the part after the last `@`), the ASCII check and the fold-and-match
@@ -1695,9 +1695,8 @@ excludes file names (`Q3.pdf`, `CV.docx`: a known file extension is not a TLD) a
 (`initial.surname`, `m.pierce`), and it ignores the local part of an `@` address. The lint does not read
 other prose (a post, a block, a template or a reply), so the claim is "no real-brand domain in those
 fields", not "anywhere in `social`". Real product names (`Microsoft Excel`, `Xero`, `Office 365`) may
-appear in OSINT and fact prose; only a real brand inside a domain or address field is rejected. A template
-brand's `lookOf` name (`07` §1) may appear in its landing page's name and text, and the same denylist applies
-to that name in domain, address and brand `name` fields, except that a template's `name` may equal its own `lookOf`.
+appear in OSINT and fact prose; only a real brand inside a domain or address field is rejected. Landing-page
+brands are invented (`07` §1), so no brand name needs an exception here.
 
 **Pointers.** An object carries only a pointer in `minigameData`. One object type has one entry in
 `minigame-data-schemas.json`, and each new type needs a sprite `assets/objects/<type>.png` and a `this.load.image` line in `core/game.js` `preload()` (the existing `phone` needs neither):
@@ -1839,7 +1838,8 @@ that the hover-mismatch lesson contrasts with the real domain; the player does n
 
 **Capture note.** When a send first stores `victim.submitted: true`, the mail client's send path adds the
 page's `capture.note` to the player's notes, once (`01` §3 item 2, `07` N11). The record gets no new field: the
-note is authored scenario text and may hold a fictional sign-in, and a repeat or a noticed send adds nothing.
+note is authored scenario text that names the captured account and holds no password value, and a repeat or a
+noticed send adds nothing.
 
 **One link id per page.** The payload-kit item for a page is `kit_payroll_page`, with
 `landingPageId: "payroll_login"`; the same id is `message.link`, the sent record's `link.kitId` and
@@ -1928,10 +1928,10 @@ lists the triage sizes and the domain ids.
 | Victim record | written on every send carrying the page, keeping the best outcome (`betterVictim`: submitted > noticed > nothing; a later send replaces it only if ranked at least as high); re-scoring a page never clears it, per 11a | 11a |
 | Check missions | `missionConclusion` aim gated on the triage completion global | 11 |
 | CI validator loop | one job with Ruby (bundler-cache, sqlite apt packages and `BUNDLE_BUILD__SQLITE3` as the existing jobs) and Node 20; `package-lock.json` un-ignored and committed so `npm ci` works; Node tests run as `bundle exec node --test test/js/validator-*.test.mjs test/js/social-*.test.mjs` and fail rather than skip; the social unit tests are `social-phish-rules`, `social-triage-scoring`, `social-pretext-judge`, `social-intel`, and the safety tests `social-landing-page-model`, `-render`, `-guard` and `social-osint-address-bar`; `test:social` script; no test runs the bare validator CLI; `--strict-social --no-graph --skip-ink` over scenarios with a `social` key; `git diff --exit-code` | S11 |
-| Concept cards | `social.conceptCards[] { id, title, text, image? }`; brand exemption on `text` only, host-shaped tokens still end `.example` | 11 |
+| Concept cards | `social.conceptCards[] { id, title, text, image? }`; card text is read for host-shaped tokens only, which end `.example`; card prose uses invented brands | 11 |
 | Real-brand lint scope | the single field list in §11 ("Lint field list"); host-shaped token = hostname in a URL/address field or a dotted token in card text ending in a known public TLD (not `.example`), excluding file names and `initial.surname` patterns; `.example` tested on the hostname only | 11 |
-| Captured sign-in | a first `submitted` outcome adds the page's `capture.note` once (`window.addNote`; the note may hold a fictional sign-in; no global, fact or record field); `capture.address` is linted `.example` | 11a, 07 N11 |
-| Template brands | a brand may carry `lookOf` (a real tool's name) where the page's profile is `student` (default, `07` OQ3): its page may show the name, while domain, address and brand `name` fields never carry it (denylisted; a template's `name` may equal its own `lookOf`); awareness and missions have none by default | 07 §1, §7 |
+| Captured sign-in | a first `submitted` outcome adds the page's `capture.note` once (`window.addNote`; the note names the captured account and holds no password value; no global, fact or record field); `capture.address` is linted `.example` | 11a, 07 N11 |
+| Builder brands and looks | brands are invented, each with a `look` of `generic` or `parody`; no look copies a real product; the denylist covers domain, address and brand `name` fields; no profile gate | 07 §1, §7, §8 |
 | Landing verdict | a page at or above threshold that fails a gate gets the second verdict row's string (`07` §4) | 07 |
 | Defender facts | exactly four with a `reduceNote`: `email_pattern`, `username_convention`, `lord_portal`, `hampshire_careers` | 1 |
 | Call outcome | `reported`, else `got_it` if any ask granted in the call, else `walked_away`; `pretext_call_done` set by any granting ask | 06 |

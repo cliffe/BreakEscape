@@ -108,7 +108,7 @@ four are the only concept cards in the OSINT stage; `10` shows no separate wall 
 
 **Where cards live.** A `card` value is an id into `social.conceptCards[] { id, title, text, image? }`
 (`00` §11), a plain-text collection shared with `07`'s cards (`07` N7). The text is authored prose that may
-name the real tool; it is the only field the brand denylist exempts (`07` §1), and it holds no domain other
+name the real tool; the lint reads it for host-shaped tokens only (`00` §11), and it holds no domain other
 than a `.example` one. Real product names elsewhere in this data (`Microsoft Excel` in a metadata field,
 `Xero` and `Office 365` on the careers page) are generic software names in prose, not domains; the lint
 does not read them (`07` §1). One shared card renderer shows a card (title, text, optional pixel image) behind the
