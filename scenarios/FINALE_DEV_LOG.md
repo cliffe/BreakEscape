@@ -90,3 +90,4 @@ Orchestrator: verified N-14 (no friendly follow/escort in `npc-behavior.js`; onl
 - **Stage 0 closed 2026-10-21.** Four review rounds: R1 54 findings, R2 46, R3 39, R4 17 (no blockers at any round). Handover to stage 1: FINALE_ARC §13 (32 items with owner stages).
 
 ## Stages 1+2: narrative structure and storytelling elements (per mission)
+- SecGen drafts (Haiku, F2): `SecGen/scenarios/break_escape/safetynet/m09_digital_archaeology.xml` and `m10_full_disclosure.xml`, uncommitted; notes `finale/SECGEN_DRAFT_NOTES.md`. Four flags each in story order; seed content in place; root SSH and leftover datastore removed on the m10 escape boxes. Self-reviewed against review-secgen-scenario. Unbuilt. Story-side choices it made (to fold in at stage 3/5 if the designers agree): second city Austin; the Zero Day order signed Sterling. Gaps: catalogue_server flag 1/2 text not seeded yet; no lab sheet URL. m09 also uses druid (m06 used it; second use).
