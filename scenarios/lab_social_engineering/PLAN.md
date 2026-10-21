@@ -53,7 +53,7 @@ owned by a packet in IMPLEMENTATION_PLAN §4; this plan does not build engine co
 | Pretext call | Phone object with `callId` opens `pretext-prep` through `startPretextCall`, which checks the lockout first (`interactions.js:633-652, 1429-1433`); `pretext-prep` then opens `phone-chat` for an NPC whose `npcType` is `phone` (`minigames/pretext-prep/pretext-card.js:193-204`). A call writes `pretext_<callId>_state`, `_outcome` and `_lowest` (`minigames/person-chat/person-chat-pretext.js:155, 343-344`). **`pretext_call_done` is not written by the engine** (`person-chat-pretext.js:334-335`): each ask's `grants.setGlobal` must carry it, as `10` stage 5 says. `grants.intel` goes through `grantFact` (`:198-208`) | Dev's call data and story; `pretext_call_done` in both asks' grants | P6-E, P6-F |
 | Influence | Thresholds, `reports` with lockout and `recoverTo`, lift on check (`systems/social-influence.js:570-592, 624-634, 664, 690-705`); bar in mail pane, board cards and chat headers (`ui/influence-bar.js`, `ui/pretext-chrome.js`) | The three character entries from `00` §8 | P6-E |
 | Triage | Registered (`minigames/index.js:173`); starter writes `<prefix>percent`, `reportRate`, `pass`, `done` with `deferEmit`, waits for `syncConfirmed`, then emits, `pass` never cleared (`systems/triage-starter.js:182-216`); `playerSent` picks the latest spoof-tell record (`minigames/inbox-triage/triage-messages.js:88-94`); `passPercent` from `set.outcome.passPercent`, default 0 | The eight-message set, `passPercent: 60`, prefix `triage_` | P6-E |
-| Landing-page builder | **Nothing exists**: no folder, no registration, no `page-builder` branch. Triage already reads `social.landingPages` for `domainFrom` (`triage-messages.js:100-148`); the validator lists the object type (`scripts/validate_social.rb:42-43`) and `landing.rb` is a stub | The whole of Phase 5, then `payroll_login` data | Phase 5 (opus48), then P6-E |
+| Landing-page builder | **Partly built** (refreshed 2026-10-21, R1-m2): the pure model `landing-page-model.js` (P5-A) and the preview renderer `landing-page-render.js` (P5-B) exist under `minigames/landing-page-builder/`, and `scripts/validate_social/landing.rb` is now a full lint (P5-C), not a stub. Still absent: the overlay scene (P5-D), registration in `index.js`, the `page-builder` interaction branch and starter, and persistence (P5-F). Triage reads the authored `social.landingPages` menu for the replay domain (`triage-messages.js:100-148`) | The rest of Phase 5 (scene, wiring, persistence), then `payroll_login` page data | Phase 5 (opus48), then P6-E/P6-W |
 | Report builder | **Nothing exists** (no `minigames/engagement-report/`, no `report-workstation` branch) | `10` N1, N2 | P6-B, P6-W |
 | Lab lints | `scripts/validate_social/lab.rb` is a stub returning `[]` | `10` N7 | P6-G |
 
@@ -93,7 +93,8 @@ dressed.
 The Engagement Office is the hub and the start room. Three doors leave it: west to Recon, east to
 Operations, north to Blue Team. The player always returns to the hub between stages, because that is
 where Ruth hands over the next key and where the board lives, so the walk back is never wasted (the
-board's "still missing" panel is the always-on "what next").
+board's per-card "Missing:" rows are the always-on "what next", and each slot's `goalString` names
+where to look, §4).
 
 | Room | Objects (type) | Opens | Door in / key |
 |------|----------------|-------|---------------|
@@ -205,8 +206,8 @@ platform score counts every task in the total (`Game#calculate_task_score`, all 
 task would only lower the ceiling), so the lab has none. Each `enter_room` task sits first in its aim;
 `unlockAim` activates only the first task of an aim, so later tasks ship `status: "active"`.
 
-The table below is `10` §4's objectives list, which this plan adopts unchanged except for the optional
-23rd task raised in §14 (Q1). Completes-on is the global; the hand-over column is Ruth's ink
+The table below is `10` §4's objectives list plus the settled `test_account` task (§14 Q1, accepted by
+the orchestrator: 23 tasks, baseline). Completes-on is the global; the hand-over column is Ruth's ink
 `#give_item` on her check-in, not an `eventMapping` (keys are given in dialogue, the audit found no
 `giveItem` mapping action, §1).
 
@@ -223,6 +224,7 @@ The table below is `10` §4's objectives list, which this plan adopts unchanged 
 | | `ready_pierce` (manual) | `target_ready_pierce` | |
 | | `ready_lord` (manual) | `target_ready_lord` | `osint_done` + `se_intel_username_convention`: Operations key |
 | `phish_easy` | `enter_operations` (enter_room) | entering Operations | |
+| | `test_account` (manual) | `acct_freemail` | first active non-entry task; "Set up an address to send from" |
 | | `hampshire_landed` (manual) | `phish_hampshire_landed` | |
 | | `pierce_landed` (manual) | `phish_pierce_landed` | |
 | `prepare_hard` | `payroll_page_attached` (manual) | `landing_payroll_login_built` | |
@@ -235,15 +237,30 @@ The table below is `10` §4's objectives list, which this plan adopts unchanged 
 | | `profile_done` (manual) | `profile_done` | |
 | | `closing_debrief` (manual) | Tomasz's `#complete_task` | the aim has `missionConclusion: true` |
 
-That is eight aims and 22 tasks (23 with Q1's `test_account`). `osint_done` is not a task: it is set by
-`evaluateReadiness` from `grantFact` the instant the last `intelBoard.people` card is ready
-(`systems/social-intel.js:70-88`), whatever order the readiness tasks complete in.
+That is eight aims and 23 tasks. `osint_done` is not a task: it is set by `evaluateReadiness` from
+`grantFact` the instant the last `intelBoard.people` card is ready (`systems/social-intel.js:70-88`),
+whatever order the readiness tasks complete in.
+
+**`test_account` and the open-inbox edge (R1-M2).** `test_account` ships `status: "active"` and sits
+first among the non-entry tasks of `phish_easy`, so it is the task the student sees on entering
+Operations. Its objective text and Ruth's round-1 rung say plainly what to do and why: "Set up a
+throwaway address to send from, so nothing you send comes back to Tarnside. Create it in the mail
+client before you write to anyone." It completes on `acct_freemail` (caught by Ruth's mapping like every
+other). There is **no hard block**: Hampshire's inbox is open (`trusts: ["*"]`), so a student can still
+land Hampshire from `guest` without `freemail`, and `phish_easy` simply stays open on `test_account`
+until they create the address. That stuck state is legible rather than silent: the open task names the
+fix, Ruth's rung repeats it, and the composer's account panel is one click away. L3 asserts
+`test_account` completes on `acct_freemail`, and F14 (§10) covers the guest-lands-Hampshire-first
+recovery (create the address afterwards; the task completes and the aim clears). Cut 2 removes the
+`freemail` account and this task together (§9), returning the count to 22 for that variant.
 
 ### How a task completes, and who listens
 
 Every `manual` task is completed by an `eventMapping` on **Ruth's NPC record** keyed to
-`global_variable_changed:<name>` with `onceOnly: true` and `completeTask: <taskId>` (the Tesseract
-pattern, `scenarios/lab_tesseract_trials/scenario.json.erb:458`). Ruth is the single listener because
+`global_variable_changed:<name>` with `condition: "value === true"`, `onceOnly: true` and
+`completeTask: <taskId>` (the Tesseract pattern, `scenarios/lab_tesseract_trials/scenario.json.erb:458`,
+which carries the same `value === true` guard; without it a future reset or a toggling writer would fire
+the mapping on a `false` write, R1-m5). Ruth is the single listener because
 only start-room NPCs are registered at game start (§1, §2). A global cannot complete a task by itself;
 only the mapping does. The `enter_room` tasks complete on the engine's room-entry event, not a mapping.
 
@@ -273,9 +290,12 @@ done (`00` §11). `se_intel_*`, `target_ready_*` and `osint_done` come from `gra
 `evaluateReadiness`. All completing globals are declared in `globalVariables` (the validator warns on an
 undeclared `set_global` name); `10` §4's global table is the full list.
 
-**Reply delay.** All three targets carry `emailReplyDelay: 15`, because the scheduler's default is 20 s
+**Reply delay.** Each target replies after 15 s, because the scheduler's default is 20 s
 (`mail-scheduler.js:50`) and the budget (below) assumes the 15-second wait overlaps with reading the
-checklist.
+checklist. `00` §8 authors `emailReplyDelay: 15` on the `pierce`/`lord` **characters** and on
+Hampshire's **target** (she has no character); the scheduler checks character then target
+(`mail-scheduler.js:346-352`), so both resolve. Follow `00`'s placement (character for Pierce/Lord,
+target for Hampshire) rather than putting it on all three targets (R1-m4).
 
 ### No dead ends, and hints
 
@@ -284,7 +304,12 @@ checklist.
   stronger nudge, then a near-explicit pointer, under ten choices at once, sticky.
 - **04 hint ladders** per target (nudge, stronger nudge, pointer to the missing fact), starting only
   after an earlier failure (`phish-rules.js:417-424`).
-- **The board's "still missing" panel** is the always-on answer to "what next".
+- **The board's per-card "Missing:" rows** (`intel-board-minigame.js:335-343`; there is no separate
+  "still missing" panel, §1) are the always-on answer to "what next". Each readiness slot's `goalString`
+  (`00` §4) must name *where to look*, not only the gap: the Hampshire backlog slot's `goalString` names
+  the careers inbox ("Check Chris's careers inbox — what's she behind on?"), so a student stuck on the
+  `showIf` trap (the backlog post is hidden until the careers inbox block is selected) is pointed at the
+  source, not just told a fact is missing (R1-m6). Ruth's stage-2 rung does the same.
 - Every failed attempt retries freely; the ladder always ends in a near-explicit pointer. The most
   likely wrong turn (sending Pierce/Lord from `freemail`, which cannot spoof) has an explicit pointer in
   the composer's From line and the last rung of Ruth's and the target's ladders (`10` stage 3).
@@ -333,8 +358,10 @@ It has three threads, each set up early and paid off late:
 ### Opening (Engagement Office, about 2 minutes)
 
 The game starts in the Engagement Office with Ruth already there and Fairbairn by the window. Ruth opens
-a person chat on load (a `game_loaded` mapping guarded by a `briefing_heard` global, the Tesseract pattern;
-`scenarios/lab_tesseract_trials/scenario.json.erb` music event on `game_loaded`). The briefing is short:
+the briefing conversation on load through the Tesseract load-conversation pattern: a `timedConversation`
+on her record with `waitForEvent: "game_loaded"`, `skipIfGlobal: "briefing_heard"` and
+`setGlobalOnStart: "briefing_heard"` (`scenarios/lab_tesseract_trials/scenario.json.erb:409-416`), not a
+music event. The briefing is short:
 who Ledgerwell are, what Tarnside has been hired to do, that nothing happens before the sheet is signed,
 and where the RoE sheet is. She hands over nothing yet; the player already holds her phone
 (`startItemsInInventory`). Ruth: "Gareth's nervous. He's never paid anyone to lie to his staff before.
@@ -386,8 +413,9 @@ Read the sheet properly; he'll be watching you do it."
   returns Jed and a Leeds plumber, and picking the namesake grants the stale `baker_namesake`; the 2019
   archived org chart grants the stale `old_org_chart` (wrong manager, interns under Accounts). Both land
   under "Old or unverified" and both can be misused later.
-- **Next-step cue.** The board's readiness slots fill as facts land, and the "still missing" panel names
-  the source layer for anything short. When `osint_done` is set and the student also holds
+- **Next-step cue.** The board's readiness slots fill as facts land, and each card's "Missing:" row
+  carries a `goalString` that names where to look for anything short (§4; the backlog slot names the
+  careers inbox). When `osint_done` is set and the student also holds
   `se_intel_username_convention`, Ruth hands the Operations key: "Good. You know how their addresses are
   built and what they publish about themselves. Operations is yours." The metadata is in no target's
   readiness slot, so Ruth asks for it herself (it is outcome 3 and a required task).
@@ -410,11 +438,16 @@ Read the sheet properly; he'll be watching you do it."
   is borrowed from a known contact (the Jed spoof from `guest`), and the Friday balance-sheet story (both
   from OSINT) is what lands.
 - **Beats.** The targets' replies are the characters: each rejection gives a sensible reason in that
-  person's voice, which is the clue to who they are. Round 1 is where the student creates the `freemail`
-  account (two authored addresses in the `createMenu`). The red-flag meter is on for Hampshire, off for
-  Pierce. This stage plants two through-lines: the student's Pierce send is the mail that comes back in
-  stage 7 (the student does not know it yet), and the `senderAuth` advisory line first appears here (round
-  1: "nothing to spoof"; round 2: the spoofed `j.baker@` fails alignment but `p=none` still delivers).
+  person's voice, which is the clue to who they are. The first task on entering Operations is
+  `test_account` ("Set up an address to send from"): Ruth's round-1 rung says plainly to create a
+  throwaway `freemail` address before writing to anyone, "so nothing comes back to Tarnside", which is
+  the created-account mechanic round 1 teaches (two authored addresses in the `createMenu`). The task
+  completes on `acct_freemail`. There is no hard block, so a student who sends Hampshire from `guest`
+  first is not failed, only left with `test_account` still open and named (F14, §4). The red-flag meter
+  is on for Hampshire, off for Pierce. This stage plants two through-lines: the student's Pierce send is
+  the mail that comes back in stage 7 (the student does not know it yet), and the `senderAuth` advisory
+  line first appears here (round 1: "nothing to spoof"; round 2: the spoofed `j.baker@` fails alignment
+  but `p=none` still delivers).
 - **Next-step cue.** Ruth's hub rungs and the checklist's first (open-check) row. Once both land, the
   `prepare_hard` aim opens and Ruth points to the page builder and the desk phone: "Sofia's the careful
   one. You'll want a page that looks like her portal, and a call to the service desk to make it read
@@ -547,9 +580,9 @@ Hampshire has no ink: her reply is a text job from her target's authored `replie
 - **Ruth is the support hub**, progress-gated as Agent HaX is in Licence to Hack, but her voice is a boss
   who cares about the client and the sheet, not a quizmaster. The hub (`ruth_phone`) shows only the
   current stage's rungs. The person record (`ruth.ink`) opens the briefing on load using the
-  `timedConversation` pattern with `waitForEvent: "game_loaded"`, `skipIfGlobal` and `setGlobalOnStart`
-  (the Tesseract opening, `scenario.json.erb:409-416`), not a music event. (The opening prose in §5 says
-  "music event on `game_loaded`"; the `timedConversation` form is the one to build.)
+  `timedConversation` pattern with `waitForEvent: "game_loaded"`, `skipIfGlobal: "briefing_heard"` and
+  `setGlobalOnStart: "briefing_heard"` (the Tesseract opening, `scenario.json.erb:409-416`), not a music
+  event (§5 "Opening" is written to match).
 - **Externals need fallbacks.** The mail stories and the pretext story declare `EXTERNAL se_influence`
   (and the pretext `EXTERNAL`s), each with an ink-side fallback function, because the engine turns on
   `allowExternalFunctionFallbacks` for social stories (`00` S1, Phase 0 P0-C); a declared `EXTERNAL`
@@ -559,7 +592,8 @@ Hampshire has no ink: her reply is a text job from her target's authored `replie
   so the four voiced characters' lines never interpolate a name. The player is never named aloud.
 - **Replies are terminal.** The mail stories end each reply with no choices, no `#compose_reply`, no
   `#mail_later`, and set no thread `expects`; those features belong to Eldritch Hacker, and leaving them
-  out keeps the judged-reply budget at the 22 tasks (`10` stage 3).
+  out means no judged reply task exists beyond those listed in §4, so the reply-feature budget holds
+  (`10` stage 3).
 - **Ethics in behaviour, not lectures.** The law is stated once (stage 0); everywhere else it shows in
   what the characters do. No bereavement or illness pretext exists in the template library, and Ruth says
   why if the student looks for one (`10` §3, Ch. 2).
@@ -599,7 +633,11 @@ time the report reads it, because a landing send must carry the page.
 has no store of its own (N2). The triage set (05) replays the student's own sends: its two `playerSent`
 entries pull the latest record to Pierce and to Lord whose tells include `senderTrust` or `senderAuth`
 (so a later `freemail` retry does not replace the `guest` spoof, decision K), with auth rows from
-`playerSentAuth` for the six domain ids and the two accounts.
+`playerSentAuth` for the six domain ids and the two accounts. The Lord replay's shown domain is resolved
+from the **authored** `social.landingPages` menu by the sent record's `link.domainId`
+(`triage-messages.js:100-148`, `lookupDomain`), not from the runtime `se_landing_pages` record the
+builder writes (R1-m8). P6-E must therefore give the authored `payroll_login` page the same domain-menu
+option ids the builder offers, so the id the student picked resolves in the triage replay.
 
 **Reply delivery sets the landing globals.** The scheduler delivers a reply after the delay and, for a
 data-only target, writes `phish_hampshire_landed` on a landed send (`mail-scheduler.js:376-383`); for a
@@ -650,9 +688,12 @@ report panel (results table, finding cards, tick and cross) and the concept card
 Source Sans 3 subset (already bundled, Phase 0) so the homograph domain shows as typed with its punycode
 form as a teaching contrast. Fictional brand logos (LOGO tier) for Ledgerwell and the payroll portal.
 
-**Audio.** Voiced: Ruth, Fairbairn, Tomasz, Dev, fixed lines only (§3, §6). Music reuses an existing
-office track (MUS tier). All of it is Phase 8, after the words stop changing and the user agrees to the
-cost; nothing is generated in the build phase.
+**Audio.** Voiced: Ruth, Fairbairn, Tomasz, Dev, fixed lines only (§3, §6). Fairbairn's voicing follows
+README decision Z (hints and minor characters are voiced too), which supersedes `10` §8 "Audio"
+(Ruth/Dev/Tomasz only) and `ASSETS.md` VO5 ("text-only unless the user says otherwise"); the TTS packet
+(P8-B) should treat Fairbairn as voiced and flag it for the user if the cost matters (R1-m3). Music
+reuses an existing office track (MUS tier). All of it is Phase 8, after the words stop changing and the
+user agrees to the cost; nothing is generated in the build phase.
 
 ## 9. Cut order
 
@@ -667,8 +708,10 @@ the variants are built and kept honest.
 | 3 | 2 min | Triage at six messages (drop the parcel notice and the newsletter); a six-message set authored beside the eight | unchanged |
 | 4 | 2 min | Report with two findings (drop the look-alike page finding) | unchanged |
 
-Task counts here assume the 23-task build this plan recommends (§4, Q1: the `test_account` task);
-subtract one if Q1 is turned down. Cut 2 also removes `test_account`.
+Task counts are against the 23-task baseline (§4, including the settled `test_account` task). Cut 1
+drops `profile_done` (23 → 22); cut 2 drops Hampshire's round, which also removes `freemail` and its
+`createMenu`, so `test_account` (completes on `acct_freemail`), `hampshire_landed` and `ready_hampshire`
+all go (23 → 20, or 19 with cut 1 as well).
 
 **How the variants are built.** One `scenario.json.erb` with an ERB switch, not four copies:
 
@@ -698,8 +741,9 @@ cut adds a voiced line, so no cut costs TTS money.
 ## 10. Playtest scripts
 
 The runs are defined in IMPLEMENTATION_PLAN §2.5 (regression persona, L1 to L6), §2.5 (failure branches
-F1 to F13) and §2.6 (the timed blind run). This section is the author's version: the content each run
-walks, and the discipline every run follows.
+F1 to F13) and §2.6 (the timed blind run); this plan adds F14 and F15 for the settled `test_account`
+task and the two recoverable traps (R1-M2, R1-m6, R1-m7). This section is the author's version: the
+content each run walks, and the discipline every run follows.
 
 **Discipline (every run).** Playtests use only the keyless server on :3001
 (`tools/playtest/start-keyless-server.sh`; `PLAYTEST_PORT=3001 BREAK_ESCAPE_STANDALONE=true bin/rails
@@ -716,7 +760,7 @@ report/scope/plan boolean checks; the L and F runs are the walk-throughs.
 |-----|--------|----------------|
 | L1 | 0, 1 | Scope cards, stop-rule question, Fairbairn's line, objective and measure picks; `roe_signed`, `plan_done`; Ruth hands the Recon key |
 | L2 | 2 | All 11 browse facts found; the J. Baker namesake stays ambiguous; the archive grants `old_org_chart`; board readiness; `osint_done`; Operations key |
-| L3 | 3 | Create `freemail`; land Hampshire; land Pierce from `guest` with the Jed spoof; reload during a reply wait |
+| L3 | 3 | Create `freemail` (**assert `test_account` completes on `acct_freemail`**); land Hampshire; land Pierce from `guest` with the Jed spoof; reload during a reply wait |
 | L4a, L4b | 4, 5 (both orders) | Page built and attached; the Dev call grants both asks; `pretext_call_done`; either order completes `prepare_hard` |
 | L5 | 5 (Lord), 6 | Lord lands with the page and the call facts; the report's results, three findings, `report_filed`; Blue Team key |
 | L6 | 7, close | Triage passes; the two `playerSent` messages are the tester's own sends; profile picks; Tomasz's debrief; the end screen; mission concluded on the server |
@@ -732,6 +776,13 @@ round below 60% offers "Try again" and `triage_pass` stays true; F10 the report'
 `why`; F11 every overlay closed with Esc and Close gives no `minigame_failed` and completes no task; F12 a
 reload at each stateful point (mail draft, pending reply, mid-call, mid-triage, builder draft, report in
 progress); F13 a 600 px-wide run through stages 2 and 3.
+
+Two added for the Q1 task and the recoverable traps (R1-M2, R1-m7): **F14** — land Hampshire from `guest`
+without creating `freemail`, confirm `phish_easy` stays open on `test_account`, that the open task and
+Ruth's rung both name the fix, then create the address and confirm `test_account` completes and the aim
+clears (the guest-lands-first recovery). **F15** — reach stage 2 without `hampshire_cv_backlog`
+(never select the careers inbox block), confirm the board slot's `goalString` and Ruth's stage-2 rung
+both point at the careers inbox, select it, and confirm the social post appears and the fact is granted.
 
 **What can be played when.** The slice dependency (§1) governs the early runs. Stages 0, 1, 4 and 6 are
 not playable until P6-C (board `scope`/`plan`), Phase 5 (the builder) and P6-B (the report) land, so
@@ -818,7 +869,7 @@ commits at the end of each iteration.
 | Pretext judge seam | The judge looks blank values up by blank name, the card keys by fact id; they agree only when the strings match (P4-A/P4-C) | Name Dev's and Lord's blanks to match their fact ids (true in the slice and Dev; §7) |
 | Mail UI debt | Raw `{placeholders}` (A4) and factor-id reasons (A2) make the checklist and composed sentence unreadable, and those are the whole teaching layer | P6-M lands before the first blind run (§11) |
 | Time budget | The AI timed figure is not a student's pace; the budget has no slack | §10 treats P6-V as screening; a human run settles it; the cut order is pre-authored (§9) |
-| `showIf` trap | A student who never selects the careers inbox block never sees `hampshire_cv_backlog`, so the fact stays missing | Ruth's stage 2 rung points back at the careers inbox; the board's "still missing" panel names the source layer |
+| `showIf` trap | A student who never selects the careers inbox block never sees `hampshire_cv_backlog`, so the fact stays missing | Ruth's stage 2 rung and the backlog slot's `goalString` both name the careers inbox (where to look), not only the gap (R1-m6); F15 asserts the recovery |
 | Stale-fact rake | A student who grabs `old_org_chart` or `baker_namesake` carries a wrong manager or distrusted sender into stages 3 and 5 | By design; the target's and Dev's own words explain the miss, and nothing downstream is blocked |
 | Single listener | Ruth's record carries every task mapping and must stay in the start room; a later art pass that moves her breaks the objectives | §2, §4 fix her in the start room; moving her needs a headless listener record (`00` S8) first |
 | Cut-variant switch | The ERB `ENV` switch may not be read by the Rails render path | P6-U confirms with the validator; if the render does not pass `ENV`, the switch becomes a top-of-file constant, flipped by hand (§9, §14 Q4) |
@@ -826,26 +877,24 @@ commits at the end of each iteration.
 
 ## 14. Open design questions
 
-`10` §9's open questions are all decided upstream. These are the ones this plan raises; each is given a
-recommendation for the orchestrator to confirm.
+`10` §9's open questions are all decided upstream. These are the ones this plan raises. Q1 and Q3 are
+now settled (round-1 review); Q2 and Q4 still want a confirmation.
 
-- **Q1 — A 23rd task to motivate creating the `freemail` account?** The Phase 1 debt A1 is that nothing
-  in the game tells the student to create an account before round 1, and Hampshire's open inbox would take
-  a `guest` send too, so a student may never meet the created-account mechanic that round 1 exists to
-  teach. **Recommendation: add it** — a `test_account` task in the `phish_easy` aim completed when
-  `acct_freemail` is set, with Ruth's round-1 rung telling the student to send Hampshire from a throwaway
-  address "so nothing comes back to Tarnside". This makes 23 tasks; §4 and §9 already carry the +1 maths,
-  and cut 2 removes it with the Hampshire round. If turned down, the account stays optional and A1 is
-  handled by a composer nudge alone.
+- **Q1 — A task to motivate creating the `freemail` account. Settled (R1-M1): add it.** The Phase 1 debt
+  A1 is that nothing in the game tells the student to create an account before round 1, and Hampshire's
+  open inbox would take a `guest` send too, so a student could skip the created-account mechanic round 1
+  exists to teach. The `test_account` task is now a settled row in the §4 table: `phish_easy`, completes
+  on `acct_freemail`, ships `status: "active"` as the first non-entry task, with objective text and Ruth's
+  round-1 rung both saying "set up a throwaway address before round 1" (R1-M2). No hard block on
+  Hampshire; the guest-lands-first recovery is F14. Baseline is 23 tasks; cut 2 removes it with the
+  Hampshire round (§4, §9).
 - **Q2 — The display name / title.** `10` §5 uses "Phishing and Social Engineering" as a working title.
   **Recommendation: keep it** unless the module leader wants a theme-fitting name; it is accurate and
   matches the CyBOK framing. Confirm before the lab sheet and the missions-index label are written.
-- **Q3 — The opening-conversation mechanism.** The §5 opening prose describes a "music event on
-  `game_loaded`"; the Tesseract pattern that actually opens a conversation on load is `timedConversation`
-  with `waitForEvent: "game_loaded"`, `skipIfGlobal` and `setGlobalOnStart` (`scenario.json.erb:409-416`).
-  **Recommendation: build the `timedConversation` form** (used in §6, §7), and correct the §5 opening
-  sentence to match when the plan is next edited. A music event is still authored separately if the lab
-  wants an opening track.
+- **Q3 — The opening-conversation mechanism. Settled (R1-m1): `timedConversation`.** The Tesseract
+  load-conversation pattern is a `timedConversation` with `waitForEvent: "game_loaded"`, `skipIfGlobal`
+  and `setGlobalOnStart` (`scenario.json.erb:409-416`), not a music event. §5 "Opening", §6 and §7 are
+  now written to match. A music event is still authored separately if the lab wants an opening track.
 - **Q4 — Cut-variant switch: `ENV` or a top-of-file constant?** §9 proposes an ERB `ENV['SE_LAB_CUTS']`
   switch, but the server render path may not pass `ENV`. **Recommendation: author the switch as an
   `ENV`-read with a constant fallback at the top of `scenario.json.erb`**, and have P6-U confirm with the

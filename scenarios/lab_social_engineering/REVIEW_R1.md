@@ -53,3 +53,24 @@ R1-m1 (the §5 opening contradiction) and R1-m7 (playtest coverage of the accept
 recoverable traps) are the ones most likely to bite a blind build or run. The design is otherwise sound
 and solvable, and the engine audit is accurate. Not clear to start the P6-E/P6-F build while the two
 majors are open (the brief's §11 gate: "no blocker or major open before the build starts").
+
+## Outcomes (P6-A planner, round-1 fix pass, 2026-10-21)
+
+Orchestrator decisions applied: M1 `test_account` settled (23 tasks, baseline); M2 make it the first
+active task in `phish_easy` ("Set up an address to send from"), no hard block on Hampshire, add the
+playtest assertion and the guest-lands-first recovery; all minors applied (m4 kept with a note).
+
+| id | severity | outcome | where fixed |
+|----|----------|---------|-------------|
+| R1-M1 | major | **Fixed.** `test_account` is now a settled row in the §4 objectives table (aim `phish_easy`, manual, completes on `acct_freemail`, `status: "active"`). "22 tasks" updated to 23 as the baseline throughout; §9 cut maths rewritten against 23 (cut 1 → 22, cut 2 → 20/19); §14 Q1 marked settled. | §4 table + prose; §9 task-count note; §14 Q1 |
+| R1-M2 | major | **Fixed.** New §4 block "`test_account` and the open-inbox edge": first active non-entry task, objective text and Ruth's round-1 rung state the fix plainly, no hard block on Hampshire (open inbox kept), the stuck state is legible (open task + rung + composer one click away). L3 asserts the task completes; F14 covers the guest-lands-Hampshire-first recovery. §5 stage 3 Beats updated with the cue. | §4 "test_account and the open-inbox edge"; §5 stage 3; §10 L3 + F14 |
+| R1-m1 | minor | **Fixed.** §5 "Opening" rewritten to the `timedConversation` + `waitForEvent: "game_loaded"` / `skipIfGlobal` / `setGlobalOnStart` form; §6 note updated; §14 Q3 marked settled. | §5 "Opening"; §6; §14 Q3 |
+| R1-m2 | minor | **Fixed.** §1 landing-page row refreshed to "Partly built": model (P5-A) and renderer (P5-B) exist, `landing.rb` is a full lint (P5-C); scene/registration/`page-builder` branch/persistence still Phase-5/P6-W. | §1 "What exists" table |
+| R1-m3 | minor | **Fixed.** §8 Audio notes Fairbairn's voicing follows README decision Z, which supersedes `10` §8 and ASSETS VO5; flagged for the TTS packet. | §8 "Audio" |
+| R1-m4 | minor | **Fixed (kept with a note).** §4 "Reply delay" now follows `00`'s placement (delay on the `pierce`/`lord` characters, on Hampshire's target), citing the scheduler's character-then-target resolution (`mail-scheduler.js:346-352`). | §4 "Reply delay" |
+| R1-m5 | minor | **Fixed.** §4 "How a task completes" now specifies `condition: "value === true"` on Ruth's mappings, matching the cited Tesseract pattern, with the reason (a false write would otherwise fire it). | §4 "How a task completes" |
+| R1-m6 | minor | **Fixed.** §4 hints now require each readiness slot's `goalString` to name *where to look* (the backlog slot names the careers inbox), not only the gap; §2, §5 stage-2 cue and the §13 `showIf` risk row updated to match; F15 asserts the recovery. | §2; §4 "No dead ends"; §5 stage 2; §13 |
+| R1-m7 | minor | **Fixed.** L3 asserts `test_account` completes on `acct_freemail`; F14 (guest-lands-Hampshire-first recovery) and F15 (careers-inbox `showIf` recovery) added; §10 intro and §13 updated. | §10 L3, F14, F15 |
+| R1-m8 | minor | **Fixed.** §7 clarifies the triage replay domain resolves from the **authored** `social.landingPages` menu via the sent record's `link.domainId` (`triage-messages.js:100-148`), not the runtime `se_landing_pages` record, so P6-E must give the authored page the same domain-menu option ids the builder offers. | §7 "Mail records feed the report and the triage" |
+
+No finding withdrawn; all ten applied.
