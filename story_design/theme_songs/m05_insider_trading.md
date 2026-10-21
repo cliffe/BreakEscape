@@ -80,7 +80,7 @@ I was already inside.
 [Verse 1]
 I've got a badge that opens every door,
 a face the cameras have filed before.
-Nobody checks the one who's always here;
+Nobody looks twice once a badge is cleared;
 I hang my coat and disappear.
 One of eight behind the lab-wing glass,
 I keep my head down, let the questions pass,
@@ -197,3 +197,109 @@ I used to know.
 - A, V1: "a name on a lanyard that works past dark." → "a name on a keycard that works past dark.". Lanyard count.
 - A, Outro: "I never broke in, darling." → "I never broke in, love.". The chorus keeps "my darling", and the outro no longer doubles it.
 - Notes updated to match.
+
+## Version C (agent)
+
+[Verse 1]
+Half past four on a Wednesday, all glass and clipped-back lawn,
+I badge in as an auditor, in a name I've barely worn.
+Patricia hands me eight names and a corridor of doors:
+seven of them are honest, and one is keeping score.
+I trade a coffee for a rumour, a favour for a card,
+and I smile the way they smile here, and it isn't very hard.
+
+[Pre-chorus]
+Look to the edges, work from the margins, last of all the face:
+the door that opens late at night, the money out of place.
+
+[Chorus]
+Insider trading,
+I came to catch a thief and learnt the trade:
+a smile for a door, a lie for a name, and I'm good at it, I'm afraid.
+Insider trading,
+I'm the visitor with the key,
+and every call they leave to ring
+is one they've left to me.
+
+[Verse 2]
+By seven the lab wing empties and the strip lights hum alone;
+I read the desks like tea leaves with a pick I call my own.
+Their server keeps a side door that nobody thought to watch,
+and flag by flag I'm learning what it is I'm here to catch.
+The powder I brought back from Albion lifts a print but not a why,
+and each time I name the wrong one, I buy the real one time.
+
+[Pre-chorus]
+HaX says it twice: keep the hunch and the proof apart,
+one pile for what I know, and one pile for my heart.
+
+[Chorus]
+Insider trading,
+I came to catch a thief and learnt the trade:
+a smile for a door, a lie for a name, and I'm good at it, I'm afraid.
+Insider trading,
+I'm the visitor with the key,
+and every call they leave to ring
+is one they've left to me.
+
+[Bridge]
+Four jobs in, I thought I'd learnt the look of someone bad;
+I've learnt instead the look of someone spending all they had.
+No road out of the data centre is going to leave us clean,
+not the one I've caught, not me, nor the calls that ring between.
+
+[Final chorus, up a key]
+Insider trading,
+I came to catch a thief and learnt the trade:
+a smile for a door, a lie for a name, and I'm good at it, I'm afraid.
+Insider trading,
+the visitor with the key,
+and whichever door I open now
+comes swinging back on me.
+
+[Outro]
+Eight names on a list.
+Seven honest.
+And a visitor, wearing mine.
+
+### Notes
+
+- **Tradition:** a blend. The verses are close and uneasy, in the agent's head, in the *You Know My Name* manner; the chorus is built to be belted, Bassey-size, and the key change carries the final lines. The title is turned on the singer: to catch an insider, the agent has to become one (a borrowed name, a coffee for Lisa's gossip, a favour for Owen's spare card) and is uneasy at how easily it comes ("I'm good at it, I'm afraid").
+- **Mission references:** Wednesday at half past four and the four-hour clock (HaX's deployment line), the external auditor cover on a visitor's badge, Patricia's eight-name list, the lockpicks, the print kit "brought back from Albion" (HaX's kit line, and a nod to how far the agent has come this season), the research portal as an unwatched side door, the flags, HaX's "look at the edges" and "keep hunches and proof in separate piles", and the data-centre finale. "Every call they leave to ring" is the slowed 999 dispatch, kept apart from A's minutes and B's ambulance and sirens.
+- **Whodunnit kept fair:** the insider is never named, gendered or described. "Seven of them are honest, and one is keeping score" leaves the pool at eight. "Each time I name the wrong one, I buy the real one time" is Patricia's warning after a wrong name ("whoever it really is has just watched Security move"); it fits any of the eight. The bridge's "someone spending all they had" gives only the motive the corridor flyer already makes public.
+- **Moral choice:** the bridge no longer lists the endings: "no road out of the data centre is going to leave us clean", not the insider, not the agent, not the 999 calls. The final chorus hands the consequence back to the agent.
+- **Mole thread:** none. The pre-chorus takes HaX's "look at the edges", not Nightshade's briefing, and nothing in the song mentions a teacher, calm, home or an unlatched door. The outro's "a visitor, wearing mine" is the agent's cover name: eight names on the list, and the one who isn't who they say is the singer.
+- **Avoided from A and B and the season list:** no "everyone has a price" or payment hook, stranger, ring-back, lifted thumb, rain, wedding band, minutes, mug, mirror, transfer bar, envelope, smiling name, sirens or turned back; no "darling", clock on the wall, flags as candles or "let it hurt afterwards". About 310 words without the repeated choruses.
+
+## Review (C)
+
+- **Version C:** a good angle that A and B don't take: the catcher trading on the inside, rueful about how easily it comes. Canon is accurate and the agent stays nameless, ungendered and no wiser than the mission. As drafted it had a Nightshade seed, and its chorus and V2 borrowed four of A's and B's images. **7/10 → 8.5/10.**
+
+**Nightshade check.** "Hunt the pattern" is Nightshade's own briefing line, and "I was taught" adds a teacher. The m08 review says any teacher line names him, because the game reveals early in m08 that he taught the player's intake, and the cross-season pass cleared m05 of every teacher, briefer and calm pointer. Credited to no one, the line still quotes him. That makes it an overt clue, which the seeding plan rules out for m05, so it goes. HaX's "look at the edges" replaces it and is fair to all eight suspects.
+
+**Wrong-accusation line.** "I buy the real one time" points at nobody: "the wrong one" and "the real one" are ungendered and fit every name on the list. Kept.
+
+**Changes made**
+
+- Pre-chorus: "Hunt the pattern, I was taught, and never mind the face," → "Look to the edges, work from the margins, last of all the face:" (drops Nightshade's quote and the teacher; HaX's line, and the face still comes last).
+- Chorus: "and every lie gets paid" → "and I'm good at it, I'm afraid" (B's "the price was paid" and A's price hook; the new line makes the singer's unease the point of the chorus).
+- Chorus: "I'm the stranger with the key" → "I'm the visitor with the key" (A's V2 already has the agent as "a stranger with an auditor's case", and B calls the agent "stranger"; a visitor's badge is the cover). The final chorus and outro change to match.
+- Chorus: "is ringing back to me" → "is one they've left to me" (A's bridge has "ringing back so late" for the Recruiter; the new line makes the unanswered 999 calls the agent's to answer).
+- V2: "I read the desks like diaries" → "I read the desks like tea leaves" (A's "reads in ink every lie you told" and B's journal).
+- V2: "a side door that was left upon the latch" → "a side door that nobody thought to watch" (unlatched doors and windows are the leak-at-home thread in m07 and m08).
+- V2: "lifts a thumb but not a why" → "lifts a print but not a why" (A's "lifted your thumb").
+
+**Stronger version:** B is still the strongest of the three: the best chorus, and the closest to the ink. C is the best fit for the agent's season arc, four jobs in and tested.
+
+**Left for the user**
+
+- The auditor cover is shared with A ("an auditor's case"). It is the mission's premise, so C keeps "I sign the book as an auditor".
+- "Patricia hands me eight names" compresses canon slightly: HaX gives the count of eight and Patricia names them in person.
+
+### Cross-season pass (C)
+
+- **B, V1:** "Nobody checks the one who's always here;" → "Nobody looks twice once a badge is cleared;". **Mole thread.** The m08 C review found that this line echoes Nightshade's "I'm always here", so m05 B and m08 together point at him. The new line keeps the insider's cover (cleared vetting, a badge nobody questions) and the cleared/disappear slant rhyme, and it fits all eight suspects.
+- C, V1: "I sign the book as an auditor," → "I badge in as an auditor,". m01, m03 and m05 C all opened by signing in, so m01 keeps it.
+- C, pre-chorus 2: "HaX is in my ear: keep the hunch and proof apart," → "HaX says it twice: keep the hunch and the proof apart,". The m02–m05 C repeat.
+- C, bridge: "Three doors out of the data centre, and not one of them is clean: / a cell, a second life, or a headline on a screen." → "No road out of the data centre is going to leave us clean, / not the one I've caught, not me, nor the calls that ring between." A's final chorus and B's bridge already list the endings, and three-way ending lists ran through most of the season's bridges. The new couplet keeps "clean", ends on the 999 calls from the chorus, and drops another door.
+- Checked, no change: "Patricia hands me eight names" is right. Patricia Morgan is QDC's Chief Security Officer in m05 (`m05_npc_patricia_morgan.ink`: "Eight people with developed vetting in the cryptography division"), a different person from m01's Patricia Wells. The two Patricias are canon.

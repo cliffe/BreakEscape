@@ -205,3 +205,106 @@ Your hand, my key.
   - A, Bridge: "and stamped it *value*, and stopped the clock;" → "and stamped it *value*, and sealed the box;". m10 owns the stopped clock (both versions, canon).
   - A, Final chorus: "I left the door wide open," → "I left the last box open,". Doors left open were in five songs, and the box answers "sealed the box" and "box by box".
 - Notes updated to match. This settles both of the review's Left-for-the-user items: the "four hands" line is now a question about all four rather than a claim on one, and WREN is no longer his.
+
+## Version C (agent)
+
+*A blend. Modern verses, low and dry, on a slow 4/4 with brushed snare and a single guitar; the classic tradition comes in at the bridge, when the strings and brass arrive, and the final chorus goes up a key. Sung by Agent 0x00, alone in the building, with HaX in one ear.*
+
+[Verse 1]
+Three days of leave, and they let me have one;
+then a sheet they took off a courier's run
+said *burn it all before the Publication*,
+a book nobody's read, and it isn't done.
+So it's picks at a dock in the Helena dark,
+past a front desk where the trolleys park;
+a man with a torch walks the fence alone.
+She says he's nobody's. I let him go home.
+
+[Pre-chorus]
+"One of ours, once," is all they'll say,
+no name till a court can hear;
+and the last of ours we trusted with the vault
+had it fifteen years.
+
+[Chorus]
+It's only digital archaeology,
+the dead, the dark, and me;
+I'm turning the ground of the life he left,
+and he can't turn round to see.
+So I keep my lamp low and I keep to his track,
+and the dead don't look back.
+
+[Verse 2]
+Paper comes down like a wedding's end
+round a careful clerk with a rubber stamp;
+she inks *destroyed* on each life in a box,
+and I lift her print off the handle, damp.
+And back in the racks where the tapes run cold,
+one machine's as warm as a hand,
+and it greets me the way a good host would
+who'd been told what time I'd land.
+
+[Pre-chorus]
+"Same classroom," she wrote. "Don't ask me whose."
+So I don't. I let it lie.
+If HaX were sure, she'd have handed it over;
+she was never one to hide.
+
+[Chorus]
+It's only digital archaeology,
+the dead, the dark, and me;
+I'm turning the ground of the life he left,
+and he can't turn round to see.
+So I keep my lamp low and I keep to his track,
+and the dead don't look back.
+
+[Bridge]
+There are two cards at the end of the wall,
+two names, and no outcome at all;
+nobody read them out loud today,
+so I've said them the whole long way.
+I came in keen, and I've been sold since,
+and I've stopped needing a name:
+whoever's behind that red-ringed "A.",
+I'm digging all the same.
+
+[Final chorus, up a key]
+It's only digital archaeology,
+the dead in their rows, asleep;
+I'm turning the ground of the life he left,
+and nobody's reading me.
+I'm the one with the lamp, I'm the one on the track,
+and the dead don't look back.
+No. The dead don't look back.
+
+[Outro]
+Three days of leave. I got one.
+I'll sleep when the digging's done.
+
+### Notes
+
+- **Tradition and voice:** a blend. The verses stay inside the agent's head (modern); the bridge and the lifted final chorus open into the classic sweep. By m09 the agent has been betrayed and is now hunting: tired, dry, set on the job ("I came in keen, and I've been sold since"). No name or pronoun for the agent, and no body detail beyond a hand lifting a print.
+- **Story references:** the leave cut from three days to one; the intercepted order ("Burn Helena before the Publication"), which nobody can explain yet ("a book nobody's read"); picks at the loading dock; Noor's trolleys at the front desk; Cody Old Coyote on his round (HaX's "not ours, not theirs" becomes "she says he's nobody's"); the shredder's confetti ("a wedding's end"); Sorensen, the former county clerk, stamping each box *destroyed*, and her print lifted off the stamp she sets down at the hatch; the cold tape racks and Tomb Beta's warm server; the two dead agents' cards with no outcome, which nobody reads at the briefing; the circled "-- A."; Netherton's "one of theirs" and "a name I can say in court"; HaX's "Same classroom… Don't ask me whose yet" text from m08; Nightshade, fifteen years one of ours.
+- **Dramatic irony (the agent sees none of it):** "he can't turn round to see", "nobody's reading me" and the hook "the dead don't look back" sound confident to the agent. Anyone who has played the mission knows about the Reading, the Architect's file on 0x00. "Greets me the way a good host would / who'd been told what time I'd land" is a figure of speech to the agent and, to a player, the server left for 0x00 on purpose. "If HaX were sure, she'd have handed it over; / she was never the kind to hide" is the agent's trust in HaX on the night she confesses she sat on the name.
+- **Kept out on purpose:** WREN, the raid team, the ledger's sleeper and Kowalczyk's cracker. The Architect is not named, the two dead agents are not named (Netherton reads them at the debrief), and there are no flags, Field Guide or technical detail. The title opens every chorus.
+
+## Review (C)
+
+- **Version C:** verdict: a dry, tired hunter's song that sounds clearly different from A's seducer and B's buried man, with a hook ("the dead don't dig back") that inverts B's "dig me up" and sings well, and an outro that brings back the opening leave line. Canon is close and the irony works ("nobody's reading me"). Four problems: the bridge named the two dead agents, which spends Netherton's debrief moment; the warm server was framed as the one thing "they were told to burn" and "forgot", which is B's chorus hook in other words; "If HaX had a name" is untrue for a player who heard her say it in Satoshi's office; and "lift her thumb from it" pointed at the box, where the print is on the stamp. Score 7.5 → 8.5.
+- **Checks:** the title is in every chorus. It scans on a slow 4/4; "said *burn it all before the Publication*" runs long but sits as a spoken-sung line. The agent narrates every line and is nameless and ungendered. "One of ours, once" is canon for every player at the briefing (story_arc §3.1 beat 6 and §10.2), so it stays as plain knowledge. "She" in pre-chorus 2 is HaX, who is "she" in canon (voice bible). WREN and the sleeper are absent. None of the season-wide repeats appear (no "let it hurt afterwards", clock, "darling", flags as candles, open doors or cursors), and there are no banned words.
+- **Changes made:**
+  - V2: "and I lift her thumb from it, still damp." → "and I lift her print off the handle, damp." The print comes off the stamp she sets down at the hatch, not off the box. "The handle" follows "rubber stamp" two lines up.
+  - V2: "of all of the things they were told to burn, / they forgot the one place I'd stand." → "and it greets me the way a good host would / who'd been told what time I'd land." The spared server was A's "leave one light, one server humming" and B's chorus hook ("they burn the rest, but the one I left alone"). The new lines keep the warm machine but move the irony from a purge oversight to an expected guest, and "land" is the agent's flight in.
+  - Pre-chorus 2: "If HaX had a name, she'd have handed it over;" → "If HaX were sure, she'd have handed it over;". On `m06_architect_identity_found` the agent heard HaX say the name as a guess, so "had a name" is false there. "Were sure" holds on every branch and is still the irony: she was sure.
+  - Bridge: "Fraser, Ferreira, no outcome at all;" → "two names, and no outcome at all;". HaX skips those cards and Netherton says "I will read those two myself. Later." He reads them before signing the Montana order. Naming them over the titles spends that moment. The image stays.
+  - Notes updated to match.
+- **Against A and B:** C is the most distinct of the three in voice and the only one sung from the hunter's side. B still carries the mission's twist best in a hook; C carries the Reading best ("nobody's reading me").
+- **Left for the user:** whether "the dead don't dig back" is too near A's "dig, darling, dig" and B's "dig me up". All three share the verb because of the title, and C's line answers B's directly, so I kept it. "A boy with a torch" for Cody (24) is the agent's view of him and reads younger than canon; "a kid" or "a lad" would do if it jars.
+
+### Cross-season pass (C)
+
+- V1: "a boy with a torch walks the fence alone." → "a man with a torch…". Cody Old Coyote is 24 (FINALE_ARC cast table; HaX: "Night guard. Twenty-four."). This settles the review's second Left-for-the-user item.
+- Pre-chorus 1: "and the last of ours we trusted with the keys / had them fifteen years." → "…with the vault / had it fifteen years." Keys run through nine of the ten C songs. The vault is where the threat database left in m08.
+- Pre-chorus 2: "she was never the kind to hide." → "she was never one to hide." "Kind" was in m01, m02, m08 and m09 C, and m02's chorus uses it most.
+- Chorus hook (all choruses and the tag): "the dead don't dig back" → "the dead don't look back". A's "dig, darling, dig" and B's "dig me up" made "dig" the hook of all three m09 songs. "Look back" pairs with "he can't turn round to see", and the irony is sharper: the Architect has been watching all along (the Reading). The bridge's "I'm digging all the same" and the outro keep the verb outside the hook. This settles the review's first Left-for-the-user item.
+- Checked, no change: HaX is "she" in canon (voice bible: "The game uses 'she'"), so "She says he's nobody's" and pre-chorus 2 are right.

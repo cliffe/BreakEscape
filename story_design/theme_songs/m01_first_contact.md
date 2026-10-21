@@ -199,3 +199,101 @@ Read alongside the other nine missions. Changes cut repeats that build up over t
 - B, V2: "I did the sums by lamplight," → "I did the sums in pencil,". Lamps recur (m02 B, m07 A, m08 B). Pencil is a better image for a man about to round 42–85 down to sixty.
 - B, Pre-chorus 2: "Plant your little flags, my darling," → "Plant your little flags, contractor,". The B versions otherwise avoid "darling", and Derek sneering at the cover is in character.
 - Noted, not changed: "the clock on the wall" stays here and was removed from m07 A and m10 A.
+
+## Version C (agent)
+
+[Verse 1]
+I signed the book as somebody else
+and folded my own name small.
+Sarah gave me a key and a pass to wear
+and pointed me down the east hall.
+Kevin worries for a living, he says,
+hands his card to a new face, too kind,
+and he lends me the kit that he keeps for the ones
+who leave their own keys behind.
+
+[Pre-chorus]
+HaX on the line says, slow, slow,
+write it down before you move.
+So I learn the floor like a tightrope wire
+in somebody else's shoes.
+
+[Chorus]
+First contact.
+Nobody here knows my face.
+I'm the hum in the lights, I'm the ink in the book,
+I'm a guest who'll be gone without trace.
+Write it down, HaX: first contact.
+Day one, and I'm in.
+
+[Verse 2]
+Maya jumps every time the door goes.
+She's been waiting for weeks for a knock.
+Patricia's chair still faces the hall,
+her questions shut up in a lock.
+I read notes that end in an equals sign
+like a sum someone left undone,
+and a list of two million sleeping names
+with a mark by the weakest ones.
+
+[Pre-chorus]
+HaX on the line says, slow, slow,
+write it down before you move.
+But the logs keep signing a kind man's name,
+and I've only got paper for proof.
+
+[Chorus]
+First contact.
+Nobody here knows my face.
+I'm the hum in the lights, I'm the ink in the book,
+I'm a guest who'll be gone without trace.
+Write it down, HaX: first contact.
+Day one, and I'm in.
+
+[Bridge]
+He said come back when I'd found something real,
+and he never once lifted his head.
+Now the cleaners have gone and his door's still lit
+at the end of a hall gone dead.
+And the last lock left in the building's a man
+with his hand on what I can't see.
+Whatever I choose when I open that door
+is the agent I'm going to be.
+
+[Final chorus, up a key]
+First contact.
+Let him look up and learn my face.
+I was the hum in the lights, I was ink in the book,
+now I'm the one thing he couldn't trace.
+Write it down, HaX: first contact.
+Day one, and I'm going in.
+
+[Outro]
+Signed in this morning.
+Not signed out.
+
+### Notes
+- Tradition: a blend. Modern, close-miked verses in a keen rookie's head on the first day in the field; a classic Bond hook in the chorus, with the title as a hit and "Day one, and I'm in" as the held tag. The final chorus moves from hiding to stepping forward.
+- Verse 1: the Visitor Sign-In Log at reception (the agent signs under the cover), Sarah's visitor badge and main-office key, directions to the IT room on the east side, Kevin the "professional worrier" handing over his server-room keycard and the lockpick set he bought "for when people lock themselves out". "Too kind" is Kevin trusting the contractor, which HaX later puts as "the IT guy who gave you access, who trusted you".
+- Pre-chorus 1 is HaX's briefing: "document everything", "gather intelligence and evidence before making any moves", and the borrowed IT-contractor identity.
+- Verse 2: Maya startled ("Oh! You startled me", the glance at the door) and "waiting for weeks"; Patricia Wells's vacant office with her findings in the locked briefcase (the chair is invented set dressing); the encoded notes as an image only; the two-million-profile vulnerability database.
+- Dramatic irony: "Nobody here knows my face" and "he never once lifted his head" are what the agent believes; players know Derek's "I've been watching you... The lockpicking." "The logs keep signing a kind man's name" is the rookie's unease at evidence pointing at Kevin. Players know about the contingency plan (fake logs, forged emails); the song never names Kevin there or says the logs are forged, though the "signed the book as somebody else" opening lets a listener wonder.
+- Bridge: Derek's "Come back when you've actually found something worth discussing", his late nights (the sign-in log, Sarah's "after midnight"), the launch device the agent hasn't seen, and the open ending choice. The cleaners are invented and only mark the hour. The outro returns to the sign-in book.
+
+## Review (C)
+
+- **Version C:** a good third song and plainly different from A and B: neither villain nor seduction, a rookie keeping notes on their first day. The chorus tag "Day one, and I'm in" is a nice double meaning (the hacker's "I'm in" and the agent's commitment), and the outro is the best two lines in any of the three. The agent is first person throughout, nameless and ungendered, and never knows more than the mission tells them. It was light on game objects, and its notes misquoted two canon details. Score 7.5 → 8.
+- **Changes made:**
+  - V1: "and the old locks give if you're kind, / then he gave me the kit…" → "hands his card to a stranger, too kind, / and he lends me the kit…". This adds the server-room keycard, which A and B never use, keeps the kind/behind rhyme and the "kind" echo for pre-chorus 2, and keeps the dramatic irony of Kevin trusting the agent. The draft's "old locks give" was presented as a Kevin quote, but the ink only has "I was worried about those old door locks".
+  - Notes: corrected "Patricia's notes locked in the safe" to the locked briefcase (the manager's-office safe holds Derek's key), and replaced the "old locks" quote.
+- **Checks:** title in the chorus as a two-word hit, and it sings. Scansion holds, with slant rhymes (move/shoes/proof, undone/ones) that suit the pulse. The canon is right: names, the east-side IT room, the sign-in log, Maya, Patricia, Derek's brush-off and late hours, two million profiles. The invented chair and cleaners contradict nothing: the manager's office is canonically vacant and the cleaners only mark the hour. No banned words, no "darling", clock, "let it hurt" or flags as candles. The Kevin line hints at the frame-up without stating it or naming him.
+- **Stronger version:** A is still the title song. C is the most player-facing of the three and would suit the mission's opening or briefing screen.
+- **Left for the user:** (1) "Nobody here knows my face" is the reverse side of B's "the auditor that no one saw. / I saw you all the same". The image is different but it rests on the same irony, so I kept it as the natural agent-side counterpart. (2) "Notes that end in an equals sign" points at the encoded notes closely enough that some players will read it as a clue. It's imagery rather than instruction, so I kept it, but it could go vaguer, like A's chalkboard line. (3) There's no drop-site terminal, flags or lizard sign-off from HaX, which keeps clear of A and B. The lizard is an option if you want one more nod.
+
+### Cross-season pass (C)
+
+Read with the other nine C songs in order, and against the A/B set.
+
+- V1: "I signed the book in a stranger's hand" → "I signed the book as somebody else". "Stranger" was in m01 C twice, m03 C and seven A/B songs, and "in a stranger's hand" is m03 B's exact phrase. The new line keeps the cover and the forged-log irony.
+- V1: "hands his card to a stranger, too kind," → "hands his card to a new face, too kind,". Same count. "New face" also sets up the chorus ("Nobody here knows my face").
+- Kept: the sign-in book and "Signed in this morning. / Not signed out." m01 now owns signing in. m03 and m05 C, which opened the same way, were changed.

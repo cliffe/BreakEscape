@@ -192,3 +192,114 @@ I'll be here.
 
 - A, V2: "I'll lay my keys before you, darling, free as summer rain," → "I'll lay my keys before you, friend, as free as summer rain,". This takes A from three uses of "darling" to two, and Ghost's businesslike "friend" goes with the invoice.
 - Noted, not changed: "held the door" is this mission's own twist (both versions) and comes back in m08 A's chorus ("He'll hold the door"). I left m08 alone. The echo between the two insiders can be heard as deliberate.
+
+## Version C (agent)
+
+[Verse 1]
+Rain on the car park, red behind the glass,
+a generator beating out the time.
+They gave me a card with my name in pen
+and not one reader left to call it mine.
+The building lost its memory in a minute,
+every name behind the same black screen,
+so I walk your halls on borrowed say-so,
+smiling like a face you've seen.
+
+[Pre-chorus]
+HaX in my ear says a pick is a confession,
+the people are the lock,
+so I ask, and I wait, and I thank the helpful ones,
+and I trust whoever answers when I knock.
+
+[Chorus]
+Ransomed trust,
+the only key I'm carrying tonight:
+a name in someone's book
+that's only good while someone's kind.
+I won't pick you, I can't buy you,
+all I've got's a name and half a lie.
+Ransomed trust,
+lend it me, and I'll give you back your eyes.
+
+[Verse 2]
+On the ward the screens have gone to biro,
+every hour initialled, every hour kept,
+and a man in bed four asks if I'm the one,
+and I say yes, and hope my hands can count his breath.
+Then a tired man lets go his one live card
+from a squared-up stack of being right.
+He's waited half a year for someone to agree.
+I fold it in my pocket with the night.
+
+[Pre-chorus]
+There's a cursor in the dark that talks like a ledger,
+says it's easier to hate a thing that blinks.
+HaX says keep it out of my head.
+It's in. It's sums I've seen before. It asks me what I think.
+
+[Chorus]
+Ransomed trust,
+the only key I'm carrying tonight:
+a name in someone's book
+that's only good while someone's kind.
+I won't pick you, I can't buy you,
+all I've got's a name and half a lie.
+Ransomed trust,
+lend it me, and I'll give you back your eyes.
+
+[Bridge]
+Then the cursor wears a hood,
+a shape against the light,
+holds the keys out, free of charge,
+if I'll put the board in print tonight.
+Pay, and another ward goes red.
+Refuse, and watch the counters crawl.
+Take it free, and never know
+whose doors I've opened after all.
+
+[Final chorus, up a key]
+Ransomed trust,
+the only key I'm carrying tonight:
+a name in someone's book
+that's only good while someone's kind.
+If somebody signs their name for mine,
+I won't make that kindness lie.
+Ransomed trust,
+lend it me, and I'll give you back your eyes,
+lend it me, and I'll give you back your eyes.
+
+[Outro]
+Rain on the car park.
+The badge gone soft as tissue on its clip.
+I owe them all tonight.
+I owe them all.
+
+### Notes
+- Tradition: a blend. Verses and pre-choruses are modern and close-up, sung inside the agent's head at a slow 6/8; the final chorus lifts a key for a classic belt. Season position: the second field operation, keen but tested for the first time. Ghost's body-count arithmetic is "sums I've seen before" (Derek's casualty projections from m01, which the briefing ties to this cell).
+- Angle: with the access control server encrypted, the agent's only credential is other people's belief: the paper badge Dr Kim signs ("a card with my name in pen"), the visitor log Bernie keeps ("a name in someone's book"), and a cover story that is "half a lie". "Only good while someone's kind" is HaX's warning that one of the people you're rude to will have to vouch for you. "Give you back your eyes" is the monitoring the agent is trying to restore (Mrs Hargreaves: "can't see me screen").
+- Game and story references: rain and red emergency lighting on arrival, the generator, every reader dead, HaX's "it's a confession if anyone sees you" and "this is a mission about people", the biro obs initialled on the ward, Mr Pryce in bed four ("you the one") and the hand bag clipped to his bed, Gary's one working card and his printed stack of emails, Ghost as the cursor that is "easier to despise", the hooded video, and the three-way choice (pay, refuse and restore by hand while the counters climb, or Ghost's free keys in exchange for publishing).
+- Branches sung as hopes, so every route fits: saving Mr Pryce ("hope my hands can count his breath"), Bernie vouching ("If somebody signs their name for mine"; Bernie and Dr Kim both sign for the agent, and the insider never signs anything), and Gary's card, which "lets go" on every route without the blame-route skid.
+- Dramatic irony the agent can't see: "I thank the helpful ones / and I trust whoever answers", "whose doors I've opened after all" (Ghost's keys, Ghost's doors) and the outro "I thanked them all", which a player hears as including him. Nothing names the insider, his post, the telephone or the badge.
+- Ghost is "it" and "the cursor". The agent has no name, pronouns or body detail. About 325 words with each chorus counted once.
+
+## Review (C)
+
+- **Version C:** a clear third song. The title read from the agent's side (trust as the only key you carry, lent by strangers) is new, and "lend it me, and I'll give you back your eyes" is the best closing hook of the three. The voice and the ungendered, nameless agent hold throughout, and the insider stays hidden. It sang three optional branches as fact (bagging Mr Pryce, Gary's blame-route skid and quote, Bernie's vouch), and two images came too close to B's: the nurse standing in for the monitor, and the pay/refuse "by hand" bridge couplet. Its chorus "strike" line also repeated B's struck-booking image. Score 7.5 → 8.5.
+- **Changes made:**
+  - Chorus (all three): "that any passing pen could strike" → "that's only good while someone's kind" (B's Verse 2 already sings the booking struck through in a different pen. The new line is HaX's "you'll need one of them to vouch for you" and sets up the final chorus's "kindness").
+  - Verse 2: "On the ward a nurse is standing in for a screen, / her biro keeps the watch the wires kept" → "On the ward the screens have gone to biro, / every hour initialled, every hour kept" (B's "she stands at bed two like an alarm" is the same image. The new lines use the initialled biro obs on Mr Pryce's chart and drop the gendered nurse).
+  - Verse 2: "and I say yes, and squeeze, and count his breath" → "and I say yes, and hope my hands can count his breath" (bagging him is optional and can fail. Sung as a hope it fits every route).
+  - Verse 2: "Then a tired man skids his one live card / across a squared-up stack of being right: / 'When they blame me, you'll have known.'" → "Then a tired man lets go his one live card / from a squared-up stack of being right. / He's waited half a year for someone to agree." (the skid and the quote happen only if you blame Gary, the route HaX warns against. The card changes hands on every route, and the new line is his six months of being ignored.)
+  - Bridge: "Pay, and the next ward pays. / Say no, and count the hours by hand. / Take it free, and never know / whose doors I've opened, or where I stand." → "Pay, and another ward goes red. / Refuse, and watch the counters crawl. / Take it free, and never know / whose doors I've opened after all." (B's bridge has "Pay, and every board learns paying works. / Refuse, and do the long night by hand". The new couplet uses the red floor plan from the briefing and Ghost's watched restore counters, and "after all" carries the my-keys-my-doors threat.)
+  - Final chorus: "Somebody signed their name for mine" → "If somebody signs their name for mine" (Bernie's vouch is optional, so it is sung as a hope. "Signs" fits Bernie's log and Dr Kim's badge and not the insider, who never signed the book).
+  - Notes rewritten to match.
+- **Stronger version:** B stays the strongest of the three for its twist-from-inside. C is the best fit for the player and the most singable chorus after A's.
+- **Left for the user:**
+  - Outro "I thanked them all" is past tense, so a rude or violent run makes it untrue. I kept it because a player hears the insider in "all". "I meant to thank them all" would make it true on every route but loses the sting.
+  - "I won't pick you" is a resolve, and plenty of runs do pick locks. I read it as the agent's intention, in line with HaX's advice.
+  - "not one reader left to call it mine" ignores the one reader that still works (Gary's, which takes only his card). This seemed fine as imagery.
+
+### Cross-season pass (C)
+
+- Outro: "The badge gone soft as tissue in my hand. / I thanked them all tonight. / I thanked them all." → "The badge gone soft as tissue on its clip. / I owe them all tonight. / I owe them all." **Every outcome.** "I thanked them" was untrue on a rude or violent run. Every run relies on the staff who vouch, so "owe" holds on all of them. A player still hears the insider in "all", and the debt suits a ransom song. "On its clip" thins hands, which appear in all ten C songs (m10 keeps them as its hook).
+- Noted, not changed: "HaX in my ear" was in m02–m05 C. m02 keeps it as the first, and m03, m04 and m05 were varied. The bridge's pay/refuse/take-it-free couplet is the same choice device A and B use. It was already reworked in review and sings consequences rather than naming the endings, so I left it.

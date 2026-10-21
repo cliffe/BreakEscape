@@ -185,3 +185,108 @@ I know.
 
 - A, V2: "Takes a card off a lanyard across a man's desk," → "Takes a card's quiet echo across a man's desk,". Both m04 versions had the same card-off-a-lanyard line, and lanyards recur all season. "Echo" is the clone as an image.
 - B, Pre-chorus 2: "The phone in your pocket says hurry," → "The phone on your belt says hurry,". "In your pocket" for HaX is already in both m01 songs.
+
+## Version C (agent)
+
+[Verse 1]
+Frost on the wire and a badge that I borrowed,
+the regulator they'd pencilled in for today.
+The halls hum low on the edge of the floodplain,
+a city's whole winter stacked up in the grey.
+I've picked my locks, I've copied cards,
+I've talked my way past a desk or two,
+but tonight there'll be more of them
+than I've ever got through.
+
+[Pre-chorus]
+Every screen in the building sings one number,
+and a room that agrees has been told what to do.
+So I'll go by my eyes and one honest gauge,
+and take what I touch to be true.
+
+[Chorus]
+Critical failure,
+the part that gives under load.
+Tonight a whole city is leaning
+on the thinnest wire it owns,
+and I'm scared the thinnest wire is me,
+out here on my own.
+
+[Verse 2]
+The guard says "early"; the gate swings open
+on one tired man and a short-handed shift.
+The cloner purrs once at my hip, and it's over:
+his card's in my pocket, half stolen, half a gift.
+A switch on his desk would empty the halls,
+and the man at the bench would hear it ring too.
+Do I spend my surprise on a crew I won't meet?
+That's arithmetic nobody taught me to do.
+
+[Pre-chorus]
+HaX on the phone keeps the orders plain:
+lives first, and the answers can wait.
+I said it back like I believed it.
+Tonight's when I learn what it weighs.
+
+[Chorus]
+Critical failure,
+the part that gives under load.
+Tonight a whole city is leaning
+on the thinnest wire it owns,
+and I'm scared the thinnest wire is me,
+out here on my own.
+
+[Bridge]
+He doesn't look up. Says he'd budgeted for more,
+like I'm a line on a sheet he signed before.
+Take him, and maybe the name over him slips;
+reach the wall, and the long halls cool in the dark.
+Lives first. By heart.
+Now let my hands mean what I said with my lips.
+
+[Final chorus, up a key]
+Critical failure,
+the part that gives under load.
+So let the whole city lean on me,
+the thinnest wire it owns.
+I'll hold till the morning comes,
+out here on my own.
+
+[Outro]
+I send back the reading I took by hand,
+and grid control reads it through:
+less time than we thought.
+
+### Notes
+- Tradition: a blend. The verses and pre-choruses are modern and inward, and the chorus is built to be belted classic-style, going up a key at the end. Agent 0x00 sings every line, nameless and ungendered. Four missions in, the keen first days are over. HaX warns of "more of them than you've faced before", and either choice costs lives.
+- Title: "critical failure" in its engineering sense, the single part that gives under load. The agent is afraid of being that part ("the thinnest wire it owns"), and the final chorus turns the fear into resolve.
+- Mission references: the regulator cover expected "today" and four hours early, the guard's "Bit early for visitors", the floodplain site ("a shed on a floodplain") and "it's winter, and this is the site". Also the faked SCADA telemetry ("a room that agrees has been told what to do") checked against a physical gauge, Vance's short-staffed shift, the cloner buzzing once ("half stolen, half a gift" fits the covert clone and Vance's "Copy it" alike), the evacuation alarm on Vance's desk that Voltage hears too, HaX's "Lives first. Intelligence second", Voltage's "One of you. I'd budgeted for more" and his countersigned casualty sheet, the ESD on the wall against Voltage, and "the name over him" for Blackout and The Architect.
+- Outro: the agent sends back the reading Nightshade asked for in the briefing ("Get me a real reading off that floor, and I'll tell you how much time we actually have"), and the answer is that Bank B won't last till eight. The reading goes to grid control, which has to believe it before the ESD will arm.
+- Foreshadowing within m04: "the man at the bench would hear it ring too" hints that the alarm starts Voltage's clock early. The bridge sets up the plant-room choice without saying that going for the button lets him walk.
+- Kept clear of A and B: no 28/61, dial, needle or "old iron", no decimal place, no "the button, or me", no spreading cells, sums, gaffer tape, klaxon, hi-vis, lanyard, dock door or 240,000. No season-wide repeats, and no teacher, calm or home pointer before m08.
+
+## Review (C)
+
+- **Version C:** a good agent's-eye song with a clean engineering hook and a chorus that lands after one hearing. The bridge's choice is the best writing in it. As drafted, its outro winked at the m08 mole and the pre-chorus nearly quoted his confession, and it had one canon slip and a few soft lines. Score 7.5/10 → 8.5/10.
+- **Extra check, the outro:** it reads as suspicion. "Swore" casts doubt, the past "would" sounds knowing, and "And neither would he." stands alone as the last line of the song, which is the classic place for a sting. Together with "the people who taught me what's true", the song ties a teacher, the briefer and honesty together in m04. The seeding plan says Nightshade is never suspicious in m03–m06, and the m08 review says any pre-m08 teacher line names him. Both lines are replaced. The new outro keeps the agent's trust in a colleague ("a friend on the wire") and ends on something that belongs to m04: the hand-taken reading comes back with less time than the agent hoped.
+- **Length:** 347 words with the repeated chorus left out (the draft's 386 counted it), so the song was within the limit. The trims below cut weak lines only.
+- **Changes made:**
+  - V1: "a regulator nobody's expecting till day." → "the regulator they'd pencilled in for today." "Till day" didn't parse. Canon says Albion is expecting the regulator today.
+  - V1: "but tonight, says the briefing, there's more of them / than I've ever walked through." → "but tonight there'll be more of them / than I've ever got through." This cuts filler, and "walked through" (people) read oddly.
+  - Pre-chorus 1: "one honest old gauge" → "one honest gauge". "Old" leant on A's "old iron dial".
+  - Pre-chorus 1: "and the people who taught me what's true." → "and take what I touch to be true." The old line nearly quoted Nightshade's m08 "Every word I taught you was true" and stacked on the teacher lines in m05 and m06 C. The new line keeps the hands-over-screens idea.
+  - V2: "Vance says \"aye\" and the gate swings open" → "The guard says \"early\"; the gate swings open". The guard admits the player ("Bit early for visitors"), not Vance.
+  - V2: "There's a switch on his desk that would empty the halls," → "A switch on his desk would empty the halls,". Tighter, and it scans better.
+  - Bridge: "Lives first. I said it, by heart." → "Lives first. By heart." The draft said "I said it" three times between pre-chorus 2 and the bridge. The heart/dark rhyme stays.
+  - Outro: "to the one who swore the physics won't lie. / And neither would he." → "and a friend on the wire reads it through: / less time than we thought." This drops the mole wink and ends on Nightshade's m04 reading. "Send home" → "send back" keeps "home" out of the pre-m08 songs.
+- **Against A and B:** C is a different song. A is the plant as jilted lover and B is Voltage's own head. B is still the strongest of the three. C is the most humane of them and the one most about the moral choice.
+- **Left for the user:**
+  - "He never feels the lift" presumes the covert clone mid-meeting. Canon also allows Vance to say "Copy it". Keep it, or change it if you want the song to fit both routes.
+  - "A friend on the wire" is warm and names no one. On replay after m08 it stings a little, which the brief allows. Make it "a voice on the wire" if you want no warmth there at all.
+
+### Cross-season pass (C)
+
+- Pre-chorus 1: "So I'll go by my hands and one honest gauge," → "So I'll go by my eyes and one honest gauge,". The song had hands four times, and you read a gauge with your eyes. The bridge keeps "let my hands mean what I said".
+- V2: "his card's in my pocket. He never feels the lift." → "his card's in my pocket, half stolen, half a gift." **Every outcome.** Vance can also say "Copy it", and the new line fits both routes. The shift/gift slant rhyme stays. This settles the review's first Left-for-the-user item.
+- Pre-chorus 2: "HaX in my ear keeps the orders plain:" → "HaX on the phone keeps the orders plain:". The m02–m05 C repeat (see m02).
+- Outro: "and a friend on the wire reads it through:" → "and grid control reads it through:". **Mole thread.** The reading goes to Nightshade (his briefing line), and m08 A sings "the colleague at your shoulder / Is the one you'll call a friend", so on a first play-through the two link the briefer to "friend". Grid control is who has to believe the reading before the ESD arms (HaX in the briefing). This settles the review's second Left-for-the-user item and takes "wire" out of the outro, leaving it to the chorus.

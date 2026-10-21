@@ -58,7 +58,7 @@ Down to the cold where the keys lie still,
 Every coin remembers, every ghost has left a will.
 Follow the money,
 Every vault a heart that's bought,
-Follow the money, honey, all the way to the one who taught.
+Follow the money, honey, all the way to the one who's never caught.
 
 [Outro]
 Money talks.
@@ -70,7 +70,7 @@ Follow the money...
 - Pre-chorus 1 is the FCA supervisory-visit cover from HaX's briefing: the paperwork gets you past reception but won't survive a phone call to the FCA. "Clean coins drown" and "through the mixer" in the chorus stand for the Bitcoin-to-Monero mixer and the cold wallets, kept as imagery.
 - Verse 2 is Dr Irina Volkova: her lattice-based cryptography, the lanyard "within a cloner's range" for the RFID cloner, and the turn-or-detain choice, where you show her the casualty projection on the fund allocation. The server breathing in the humming room is the server-room terminal, and the flags go back to the SAFETYNET drop-site as debts brought into sight.
 - Pre-chorus 2 is the $12.8 million fund, the wallets going quiet before a payout, and the three-day clock. In the bridge, "Freeze it... watch it" is the asset choice, along with Satoshi's claim that either one serves his purpose (martyr or a year of surveillance). The cold storage recovery keys turn up in the final chorus as "the cold where the keys lie still".
-- Twist hint: Satoshi's private Identity File names a former SAFETYNET strategist who mentored agents as the likely Architect. "The footprints lead back home", "a doctor keeps the books / his hand is in the way you look" (Dr Tesseract, and the training he wrote) and "the one who taught" point at this without naming him. "He calls the dead his lessons" echoes Satoshi's line that The Architect calls the casualties lessons.
+- Twist hint: Satoshi's private Identity File names a former SAFETYNET strategist who mentored agents as the likely Architect. "The footprints lead back home", "a doctor keeps the books / his hand is in the way you look" (Dr Tesseract, and the training he wrote) and "the one who's never caught" point at this without naming him. "He calls the dead his lessons" echoes Satoshi's line that The Architect calls the casualties lessons.
 - The outro twists Nightshade's briefing line, "Money's just another protocol, and this one leaks".
 
 ## Version B (modern)
@@ -169,3 +169,94 @@ What have I become?
 - A, Bridge: "a teacher keeps the books, / He calls the dead his lessons, and he taught your teacher how to look." → "a doctor keeps the books, / He calls the dead his lessons, and his hand is in the way you look." **Architect thread.** "Taught your teacher" was almost word for word m07 A's "who taught your teacher that art?", so m07 would only have restated m06. m06's reveal is narrower: the safe page names a doctor, and HaX says "he wrote the training I gave you". The new lines say that (a Dr behind the fund, his hand in the agent's training) and leave HaX's teacher to m07. "The one who taught" in the final chorus stays as the payoff.
 - A, V2: "Below, a cursor's breathing… / And every flag you carry home's a candle in the night." → "Below, a server's breathing… / And every flag you carry home's a debt brought into sight." Cursors appear in four songs and candles in five. "A debt brought into sight" is follow-the-money.
 - Notes updated to match.
+
+## Version C (agent)
+
+[Verse 1]
+I knew your voice in a hospital by generator light,
+a price on every darkened screen, a deadline through the night.
+I caught you buying a desperate man a reason to betray,
+and every time I reached for you, you'd changed and slipped away.
+
+[Pre-chorus]
+Tonight I wear a borrowed name and a regulator's grey,
+the guard runs down his list and finds a name that isn't mine.
+We both came in disguised tonight, we both know how to play,
+so take my hand across the floor and lead me down the line.
+
+[Chorus]
+Follow the money,
+you change your coat at every door,
+you come in as a ransom and you go out as a war.
+Follow the money,
+the only honest thing I've found:
+you always go where you were sent, and you write the dead ones down.
+
+[Verse 2]
+The trader shrugs, "Depends who's asking," watching six charts climb,
+the analyst draws streams that meet the sea at the same time.
+I ask Irina of her lattices and let my pocket listen in.
+She flagged the very sums I'm after. She knows where they've been.
+Down in the server room I prise your totals from the till,
+and every flag I carry out's receipt, and you will foot the bill.
+
+[Pre-chorus]
+A pad that gives me one guess, and a safe that keeps his year,
+the minder slips his watch off, and his hand's the size of a spade.
+HaX lays out what each road costs and leaves the choosing here,
+so take my hand across the floor and show me what you've made.
+
+[Chorus]
+Follow the money,
+you change your coat at every door,
+you come in as a ransom and you go out as a war.
+Follow the money,
+the only honest thing I've found:
+you always go where you were sent, and you write the dead ones down.
+
+[Bridge]
+He leans against his desk and asks if I have ever wondered.
+Whatever I answer, I wonder too. I've seen a hospital plundered.
+I could close my fist on you tonight, or tie a thread and let you fly,
+and both of them cost someone. Both are mine to justify.
+I follow every step in the book, and still you're one ahead,
+as if you'd written every page and knew which way I'd tread.
+
+[Final chorus, up a key]
+Follow the money,
+you're signed and waiting at the door,
+you came in as a ransom and you're going out a war.
+Follow the money,
+you're the only honest thing I've found,
+you always went where you were sent. Now I write the dead ones down.
+
+[Outro]
+Depends who's asking.
+I'm asking.
+Follow the money.
+
+### Notes
+- **Tradition:** a blend. The verses and bridge are intimate, in the *Skyfall* manner; the chorus is a classic belted hook. Agent 0x00 sings to the money as a fellow spy, something that wears disguises and changes coats, the way the agent does under the FCA cover. A addresses the mark and B is inside Irina's head, so the voice is new. Nothing fixes the agent's name, gender or body.
+- **Season position:** halfway, tested and starting to doubt. Verse 1 is the m02 ward on generators, the black screens and the ransom deadline, which happened whether or not the ransom was paid; the money is the RansomInc hospital ransoms pooled into HashChain. "Caught you buying a desperate man a reason to betray" is the m05 TalentStack payment to Torres, which came before any ending, so it holds whether Torres was turned, arrested (with or without the treatment deal), knocked out or left on the floor. Bridge line 2 puts joining SAFETYNET before the hospital, as the season runs.
+- **Mission references:** the FCA supervisory cover and the checkpoint guard's "not on my list". "Change your coat at every door" is the Bitcoin-to-Monero mixer; "ransom… war" is the $12.8M fund paying for "The Architect's Masterpiece"; "write the dead ones down" is the casualty projection. From the ink: Dani's "Depends who's asking" and six price charts, Priya's many wallets meeting one at the same time, the RFID cloner in the pocket while Irina talks lattices, and Irina having flagged the transactions herself. The server-room couplet is the terminal and its flags, kept as imagery: each flag a receipt, ending with the recovery keys that let SAFETYNET present the bill. Then the one-try custody pad, the safe holding 2140, Kemal pocketing his watch and his shovel-sized hand, and HaX's "I'll give you the cost of each. The call's yours."
+- **The choice:** freeze or watch is "close my fist on you, or tie a thread and let you fly". "Mine to justify" answers Satoshi's "Everything justifies something". Bridge lines 1–2 are Satoshi leaning on his desk and his "Do you ever wonder if we're right?", with the agent's private doubt rather than any one spoken answer. "The only honest thing I've found" echoes Kemal on Satoshi: "He at least says what he is." "Signed and waiting" is Satoshi's own phrase.
+- **Twist (dramatic irony only):** "I follow every step in the book, and still you're one ahead, / as if you'd written every page and knew which way I'd tread." The agent means the money is slippery and seems to know the playbook. A player who opened Satoshi's safe knows the likely Architect wrote SAFETYNET's training ("He wrote the training I gave you"), so the quarry really did write the book. It names no one and the agent sees through nothing. Nightshade is left out, so there is no m08 hint.
+- **Traps avoided:** none of A's or B's hooks or images (no "honey", drowning coins, "dark", cold slot, dead "in a cell", lanyard, martyr, "freeze it / watch it", footprints home, "his hand is in the way you look", "the one who taught", "debt brought into sight"). No Irina outcome stated. No clock on the wall, no "darling", no flags as candles, no cursor.
+
+## Review (C)
+
+- Version C: verdict: the most distinctive of the three. Singing to the money as a fellow spy in disguise gives the agent a voice neither A nor B has, the chorus ("you come in as a ransom and you go out as a war") is the best single line across the three, and the ink detail is dense and accurate. It had one line that assumed the agent watched the m05 payment, one that misplaced when the agent joined, a twist hint too close to A's, and no terminal reference. Score 8/10 → 9/10.
+- Changes made:
+  - V1 L3: "I watched you buy a frightened man a reason to betray" → "I caught you buying a desperate man a reason to betray". The agent never saw the payment made, only found it; "caught" is detection. "Desperate" fits Torres' motive (Elena's treatment) better than "frightened", and the line describes the payment, which comes before every m05 ending, so it holds for turned, arrested, knocked out or dead.
+  - V2: added "Down in the server room I prise your totals from the till, / and every flag I carry out's receipt, and you will foot the bill." This restores a passing game reference to the terminal and its flags, which the author had cut. "Receipt" and "foot the bill" keep it inside the money conceit, and it doesn't reuse A's "debt brought into sight" or any candle or cursor image. It also adds about 25 words, bringing the song to about 350 words not counting the repeat choruses, inside the limit.
+  - Bridge L2: "Sometimes. I chose my side the night the first ward's lights went under." → "Sometimes. I chose my side, and then I saw a hospital plundered." The old line dated the agent's choice to m02, but the agent joined before m01. The m02 lights also ran amber on generators, not out. "Plundered" holds whether the ransom was paid or not, since the attack happened either way.
+  - Bridge L5–6: "I follow every step I'm taught, and every step comes true, / as if the one who wrote the steps had walked this road with you." → "I follow every step I'm taught, and still you're one ahead, / as if you'd sat the course I sat and knew which way I'd tread." The old lines, like A's "his hand is in the way you look", were about the teacher's mark on the agent's method. The new image is the quarry anticipating the hunter, as if both learned from the same course. That is a different picture with the same payoff for a player who opened the safe, and it is no longer near A's "the one who taught".
+- Canon check: generator light, black screens, the guard's list, the six charts, "Depends who's asking", Irina flagging transactions, the one-try pad, the safe year, Kemal's watch and hand, HaX's costed choice, Satoshi leaning on his desk, "Do you ever wonder", "Everything justifies something" and "signed and waiting" all match the ink.
+- Stronger version: C for the agent's voice and the chorus. B stays the stronger character study, and A has the catchiest hook.
+- Left for the user: bridge line 2 sings the "Sometimes. But I chose my side." answer to Satoshi, which is one of several options at that choice; a player who rejected him outright may hear it as not theirs. "Receipt" lands on a weak beat and needs a slight push in the delivery ("carry OUT'S re-CEIPT").
+
+### Cross-season pass (C)
+
+- **A, final chorus:** "Follow the money, honey, all the way to the one who taught." → "…all the way to the one who's never caught." **Mole thread.** Next to "the footprints lead back home" in the bridge, "the one who taught" fits Nightshade once m08 reveals he taught the player's intake (voice bible, pass 4). Tesseract wrote the training and HaX gave it, and A's bridge already says that ("his hand is in the way you look"). The new line keeps the bought/caught rhyme and points at the Architect, who is never caught.
+- C, bridge: "Sometimes. I chose my side, and then I saw a hospital plundered." → "Whatever I answer, I wonder too. I've seen a hospital plundered." **Every outcome.** The old line sang one of Satoshi's dialogue options as the agent's reply. Now the doubt is private and holds whatever the player said.
+- C, bridge: "I follow every step I'm taught, and still you're one ahead, / as if you'd sat the course I sat…" → "I follow every step in the book, and still you're one ahead, / as if you'd written every page…". **Mole thread.** "Sat the course I sat" makes the quarry a classmate, and "taught" adds a teacher. After m08 both point at Nightshade. Tesseract wrote the training, so the author image keeps the m06 payoff and leaves the teacher out.

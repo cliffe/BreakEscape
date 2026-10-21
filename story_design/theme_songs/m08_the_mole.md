@@ -196,3 +196,93 @@ The m08 review's whodunit balance is unchanged. With m05's "calm ones back at ho
 
 - A, Outro: "Let it hurt when it's over, / Not while you're in the room." → "Every reader's burning red, love, / And somebody still walked through." This was nearly the same couplet as m07 B's bridge ("Let it hurt you when it's over / Not tonight…"), and HaX's line was in six songs. B's outro keeps it word for word as Nightshade's parting line. The new A outro goes back to verse 1's Level Red readers: the lockdown held and the leak still got out.
 - Noted, not changed: "He'll hold the door" (chorus) echoes m02's insider. "One door ajar" and B's "unlatched" go with doors left open in m04, m10 and (before this pass) m09.
+
+## Version C (agent)
+
+[Verse 1]
+I came home to the Citadel and had to be let in,
+a voice up in the ceiling marking every place I've been.
+Nine days I've worn my name like a coat that someone sold,
+and two of ours paid for it at the sites we couldn't hold.
+
+[Pre-chorus]
+Netherton says I'm the one he can clear without a log,
+since mine was the name on the bill.
+HaX on the line, so professional tonight,
+says, "Bear with me." And I will.
+
+[Chorus]
+There's a mark on the face of the house I call home;
+I've looked at it so long I forgot it was there.
+Three names on the paper, three doors down the hall.
+I'll bring it to the light it was never made to bear,
+and find the Mole.
+
+[Verse 2]
+One keeps his screen locked and his eyes on the sum,
+one's gone where no reader can follow his feet,
+one keeps the kind of hours that no roster can explain,
+and every one of them would offer me a seat.
+I raise a whorl from dust, I lean in close for a card,
+I wake the sleeping walls and ask them what they keep.
+
+[Pre-chorus]
+Say it too loud and every head turns,
+and the wrong one hangs while the right one walks.
+I've been certain before I was sure, and it burns,
+so I listen, and let the walls talk.
+
+[Chorus]
+There's a mark on the face of the house I call home;
+I've looked at it so long I forgot it was there.
+Three names on the paper, three doors down the hall.
+I'll bring it to the light it was never made to bear,
+and find the Mole.
+
+[Bridge]
+And when you're at the table with the tape going round,
+I'll have one key to turn and one to give away.
+I could turn the key on what you've done,
+or send you back to them to carry their words to me,
+and shake your hand at the door
+while I watch you walk.
+
+[Final chorus, up a key]
+There's a mark on the face of the house I call home,
+and tonight it's the only thing I see.
+Three names on the paper, three doors down the hall.
+I'll say it out loud when the walls agree,
+and name the Mole.
+
+[Outro]
+The ceiling keeps my footsteps
+and the hour I came through.
+Somewhere, it kept yours too.
+
+### Notes
+- **Tradition:** modern and intimate, in the *Skyfall* line, with the final chorus up a key. B is sung by the mole and C by the hunter, so the two face each other across the same corridor. By m08 the agent is tested and angry, and betrayed from inside for the first time.
+- **Verse 1 and pre-chorus 1:** ATHENA logging every entry and route under Level Red, nine days since Portland, the two dead agents, and the agent's name sold to ENTROPY. Netherton's "the one person in this building I can clear without a log... Yours was the name they were selling", and HaX's "very professional tonight. Bear with me".
+- **Chorus:** the mole as a mark on the skin, a spot on the face of the house you stop seeing because you've looked at it for years, then the animal's fear of daylight. A and B don't use it.
+- **Whodunit balance (Verse 2):** Vector's locked screen and maths (cleared by the key-exchange project), Phantom's unlogged absences (cleared by the travel desk), and odd hours, which Vector ("the hours"; "working nights") and Nightshade ("I'm always here") both have. No line belongs to Nightshade alone. Phantom says "Sit" and all three send the agent to the logs, hence "offer me a seat". The song has no teacher, lab, PIN box, smile or calm.
+- **Investigation as imagery:** the fingerprint kit ("a whorl from dust"), cloning the Director's card at close range ("lean in close for a card"), the door audit and root logs as the building's memory ("the sleeping walls", "let the walls talk"), Netherton's "certain before you are sure", and the accuse-out-loud mechanic ("every head turns").
+- **Bridge and outro:** the interrogation room that "records everything" and the police-or-leash choice: turn the key, or give it away and send the mole back to ENTROPY as SAFETYNET's source ("Feed us ENTROPY"). The handshake at the door works with either suspect. "It kept yours too" means nothing yet to the agent. A player who has finished hears the door log that names the mole.
+
+## Review (C)
+
+- **Version C:** a strong, distinct agent's-eye song, and its mark-on-the-face hook is the best new image across the three versions. The whodunit balance slipped in two places, and several images were borrowed from A and B. **7.5/10 → 8.5/10**
+- Five checks: the title sits naturally in the chorus as "find the Mole" / "name the Mole". It scans against a slow 4/4, with a loose bridge that suits the modern form. Canon is accurate apart from the leash line (fixed). The references are passing and nothing reads as a walkthrough. No banned words or season-wide repeats (no "let it hurt", clock, "darling" or candle-flags).
+- Agent checks: first person throughout, no name, no pronouns, no body details. The agent never sees through the mole, and every pointer is dramatic irony.
+- Changes made:
+  - V1: "with every reader red, / a voice up in the ceiling logging every step I tread" → "and had to be let in, / a voice up in the ceiling marking every place I've been". A and B both open on the red badge readers. The new lines keep ATHENA's entry log and Level Red.
+  - Pre-chorus 1: "He says I'm the one…" → "Netherton says I'm the one…". A bare "he" straight after the verse reads as the mole in a mole song. Netherton's name sings.
+  - Chorus: "I passed it so often I forgot it was there" → "I've looked at it so long I forgot it was there". This was too close to B's "I passed that little light each dawn".
+  - V2: "one's in before daylight and never goes home" → "one keeps the kind of hours that no roster can explain". **Nightshade lean.** "Never goes home" is his "I'm always here", and after m05 B's "Nobody checks the one who's always here" the two songs point at him together. Odd hours belong to Vector as well ("classified above the clerk who writes the roster"), so the line looks guilty, can clear either man and settles on neither.
+  - V2: "I lift a print off silver" → "I raise a whorl from dust". This was nearly A's "lift the thumbprint off the silver".
+  - V2, pre-chorus 2, final chorus: "sleeping doors" / "let the doors talk" / "when the doors agree" → "walls". Doors as witnesses is A's "door's own diary" and B's "never dreamed it testified". Walls that talk fit the ceiling that keeps footsteps in V1 and the outro. "Three doors down the hall" stays, because it's the suspects' rooms.
+  - Pre-chorus 2: "the whole floor turns" → "every head turns". "The whole floor's listening" is B's outro and Nightshade's own line.
+  - Bridge: "one key to hand back" → "one to give away". This avoids B's "never handed back", and "give away" also means betray.
+  - Bridge: "I could shut the door on what you've done, / or send you home to them with my words in your mouth" → "I could turn the key on what you've done, / or send you back to them to carry their words to me". **Canon.** The leash is "Feed us ENTROPY": he brings their secrets back, not SAFETYNET's words out. "Turn the key" ties the two keys to the two choices.
+  - Bridge: "and wear your kind of smile" → "and shake your hand at the door". **Nightshade lean.** All three suspects have a smile in the ink, but the smile that never slips is Nightshade's signature ("smiles as if the last nine days never happened", "The smile holds"). "Your kind of smile" also has the agent know the mole's face before the reveal, and A already has "smile across the desk". The handshake keeps the bargain without naming a tell.
+  - Not trimmed: with the repeated chorus excluded the song is about 340 words, inside the range, and no line is weak enough to cut.
+- **Whodunit check (with m05–m07):** after the edits no line in C singles out Nightshade, and no line in C joins m05's "always here" or the season's calm and teacher threads. The Phantom and Vector lines are their open, explained traits, and the hours line is shared.
+- **Left for the user:** "the wrong one hangs" is a figure of speech (SAFETYNET has no arrest powers, and no one is executed). Change it to "the wrong one falls" if it reads too literally.

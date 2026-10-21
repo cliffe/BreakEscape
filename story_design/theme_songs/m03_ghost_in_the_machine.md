@@ -172,3 +172,112 @@ I call it stock.
 
 - A, Pre-chorus 2: "Don't linger in my doorway, darling, I can see," → "Don't linger in my doorway, stranger, I can see,". This takes A from three uses of "darling" to two. "Stranger" is Sterling's view of the agent (B's "I know your face, I don't know your name").
 - B, Pre-chorus 2: "candles for a ward." → "vigils for a ward.". Candles come up in m06, m07 and m08 (Nightshade's "candle in a hurricane" is canon there). "Vigils" keeps the image of mourning St. Catherine's.
+
+## Version C (agent)
+
+[Verse 1]
+I walked in at three as the someone we'd planned,
+a CV we'd forged and a steady hand.
+She reads people for a living, HaX said,
+so I gave her a person to read instead.
+She asked me the price of the sick and the old:
+a T-shirt from the vendor, or forty thousand, cold.
+I said what the one I was playing would say,
+and I said it too quickly, and smiled anyway.
+
+[Pre-chorus]
+I stand at her shoulder and flatter her pride,
+something counts down in the dark at my side,
+thirty slow seconds of somebody's key,
+and she stops watching my hands. She's stopped watching me.
+
+[Chorus]
+I'm the ghost in the machine,
+no face to keep and no name to give,
+I carry the ward through the house that sold it,
+I count who died and I count who lived.
+Ghost in the machine,
+light as a rumour the night will forget,
+and the house doesn't know that the ghost is coming,
+the house doesn't know I'm coming yet.
+
+[Verse 2]
+I come back at eleven when the building's asleep,
+the night lights burning low on the floor,
+a torch goes round in the east wing, round again,
+and my picks ask softly at an office door.
+A guard with a hand full of what I could spare
+swears he's good at never seeing who's there.
+There's a man at his desk with the ward in his head,
+and I know it as well, every name, every bed.
+
+[Pre-chorus]
+Four quiet proofs sent off into the dark,
+HaX ticking them off as they come and go,
+a hospital premium, priced to the mark,
+and the house is asleep, as far as I know.
+
+[Chorus]
+I'm the ghost in the machine,
+no face to keep and no name to give,
+I carry the ward through the house that sold it,
+I count who died and I count who lived.
+Ghost in the machine,
+light as a rumour the night will forget,
+and the house doesn't know that the ghost is coming,
+the house doesn't know I'm coming yet.
+
+[Bridge]
+She said I'd do well here. I didn't flinch.
+I've turned that over all night like a key.
+If the house I am haunting is haunting me back,
+then which of us is free?
+Somewhere ahead there's a call to be made,
+and HaX says it's mine, and won't say more,
+and I'll know what it is when I'm stood before her,
+and I'll carry it, like the ward.
+
+[Final chorus, lift]
+I'm the ghost in the machine,
+no face to keep and no name to give,
+I carry the ward through the house that sold it,
+I count who died and I count who lived.
+Ghost in the machine,
+light as a rumour the night will forget,
+and the house doesn't know that the ghost is coming,
+the house hasn't seen me. Nobody yet.
+
+[Outro]
+File me as no one.
+Nobody saw a thing.
+
+### Notes
+- Tradition: a blend. The verses and first two choruses are modern, close and inside the agent's head, and the final chorus lifts into the classic style. A is the brassy one and B the brooding one, so C sits between them. 0x00 sings throughout with no name, pronouns or body details. "No face to keep and no name to give" is both the cover and the nameless player.
+- Season position: a month after St. Catherine's, so the agent has been tested and carries the m02 deaths. "I carry the ward through the house that sold it" and "I count who died and I count who lived" stay vague because the death toll depends on the m02 recovery call. "A man at his desk with the ward in his head" is Danny Foster ("I could tell you the ward layout from memory because I drew it"). The agent knows the ward as well from m02.
+- Verse 1 and the first pre-chorus are the three o'clock interview: the forged freelance CV, HaX's "she reads people for a living", Sterling's T-shirt-or-forty-thousand question, flattery as cover, and the cloner's thirty-second read in the agent's pocket. Verse 2 is the eleven o'clock return: the night lights, Terry's torch going "round, and round again" to the east, the picks, the five-hundred-pound bribe, Danny. The second pre-chorus has the four flags sent from the drop-site terminal ("four quiet proofs"), HaX on the phone, and the invoice's healthcare premium ("priced to the mark" means the price tag and the victim at once).
+- Dramatic irony with no spoiler: the agent believes "she's stopped watching me", "the house doesn't know I'm coming yet", "the house is asleep, as far as I know", that the guard is "good at never seeing", and in the outro "nobody saw a thing". Anyone who has played knows Sterling clocked the pocket, Ffion rings Terry, and Sterling is waiting with her coat on and a bag packed.
+- The bridge takes Sterling's "you didn't flinch once. People who don't flinch do well here" and turns it on the agent: the hunter afraid of fitting in. The choice is left unlisted: "HaX says it's mine, and won't say more" and "when I'm stood before her" both echo HaX's "that's a call for when you're stood in front of her".
+
+## Review (C)
+
+- **Version C:** a good third voice. The chorus hook ("nobody here knows I'm coming yet") does the dramatic irony the brief asks for, and the bridge's "which of us is free?" is the best single idea in the draft. The canon is accurate throughout (forty thousand, thirty seconds, five hundred, four flags, "didn't flinch", "stood in front of her"). It lost marks for lifting images from A and B: A's verse openers ("borrowed", "hungry", "Eleven o'clock and the…", "A man in the dark"), the whiteboard both A and B use, and "quiet as debt" beside A's "silent as money". Pre-chorus 2 had a line that didn't scan or rhyme, and the agent counted the dead in the chorus and again in verse 2. Score 7 → 8.5.
+- **Changes made:**
+  - Verse 1: "a hungry CV in a borrowed hand." → "a CV we'd forged and a steady hand." A's verse 1 opens with "a borrowed name" and "a hungry aim".
+  - Pre-chorus 1: "Stand by the board while she maps out her pride," → "I stand at her shoulder and flatter her pride,". A and B both build verse 1 round the whiteboard diagram. Flattery is one of the canon cover options, and the new line puts the agent into the first person.
+  - Chorus (all three): "light as a rumour, quiet as debt," → "light as a rumour the night will forget,". "Quiet as debt" was too close to A's "Silent as money". The new line keeps the rhyme with "yet" and sets up the outro's "Nobody saw a thing".
+  - Verse 2: "Eleven o'clock and the building's asleep," → "I come back at eleven when the building's asleep,". A's verse 2 opens "Eleven o'clock and the hallway's grey".
+  - Verse 2: "There's a man in the dark who drew every bed, / and I know them by heart, and I've counted the dead." → "There's a man at his desk with the ward in his head, / and I know it as well, every name, every bed." "A man in the dark" is A's Danny line, and the chorus already counts the dead.
+  - Pre-chorus 2: "an invoice that priced in a premium for the sick," → "a hospital premium, priced to the mark,". The old line ran long, landed off the beat and didn't rhyme with "dark". "Mark" is the price tag and the victim at once.
+  - Bridge: "Somewhere upstairs there's a call to be made," → "Somewhere ahead there's a call to be made,". Nothing in canon puts Sterling's office upstairs.
+- **Checks:** every line is in the agent's voice; the agent has no name, pronoun or body detail; the agent never sees past what they knew before Sterling's reveal; no "let it hurt afterwards", no clock, no darling, no flags as candles; no banned words; no technical detail.
+- **Stronger version:** B is still the strongest of the three. C is the one that best fits the season arc, and it is the only one in which the player hears their own position.
+- **Left for the user:** "I said it too quickly" assumes the player took the forty, and it anticipates Sterling's later "You said it very quickly." I kept it as the agent's own unease, but cut it if it reads as the agent knowing too much. The bridge's three endings (deal, cuffs, open door) use the same device as A's and B's bridges. It's the mission's moral choice, so I kept it.
+
+### Cross-season pass (C)
+
+- V1: "I signed in at three" → "I walked in at three". m01, m03 and m05 C all opened by signing in, so m01 keeps it.
+- V2: "and my picks ask softly at a stranger's door." → "and my picks ask softly at an office door." "Stranger" count (see m01).
+- Pre-chorus 2: "HaX in my ear keeping everything slow," → "HaX ticking them off as they come and go,". "HaX in my ear" was in four C songs, and "slow" is m01 C's HaX refrain. The new line is HaX tracking the four flags.
+- Chorus (all three): "and nobody here knows the ghost is coming, / nobody here knows I'm coming yet." → "and the house doesn't know that the ghost is coming, / the house doesn't know I'm coming yet." Final chorus: "nobody here has seen me. Nobody yet." → "the house hasn't seen me. Nobody yet." "Nobody here knows" was also m01 C's chorus hook, one mission earlier. "The house" ties to "the house that sold it", "the house is asleep" and the bridge's "If the house I am haunting is haunting me back". The irony holds, since Sterling's house is watching.
+- Bridge: "a deal, or the cuffs, or an open door, / and I'll know which one when I'm stood before her," → "and HaX says it's mine, and won't say more, / and I'll know what it is when I'm stood before her,". A's and B's bridges list the same three endings, so all three m03 songs ran deal/cuffs/door. The new line is HaX's "that's a call for when you're stood in front of her", and the more/ward slant rhyme keeps the shape.
+- Outro: "Sign me out as no one." → "File me as no one." This was m01 C's outro device ("Not signed out").

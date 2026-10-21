@@ -189,3 +189,107 @@ I always hang up first
 - A, Pre-chorus 2: "The clock on the wall counts you down to the wire," → "The countdown is walking you down to the wire,". "The clock on the wall" was in m01 A, m07 A and m10 A. m01 keeps it.
 - B, Final chorus: "A hundred and forty-seven candles / Still burning through the Portland night" → "A hundred and forty-seven stations / Still lit across the Portland night". Candles recur (m03, m06, m08). A's "to candles" is Park's own phrase, so that one stays.
 - Not changed: the two unlatched windows (A's bridge and B's pre-chorus 2). It is the same image in both versions of one mission and matches the m07 closing intercept. With m05's "own house" couplet gone, nothing before m07 points at a leak at home.
+
+## Version C (agent)
+
+[Verse 1]
+Rain on the interstate, mile after mile of it,
+and he reads me the targets like the shipping forecast.
+Everything I carry was cut for a door:
+a pin, a badge, a print on the glass.
+The handbook has pages on sending the force
+and none on the people you pass.
+
+[Pre-chorus]
+I've stood in a room with the power failing;
+nobody asked me who goes without.
+Now I say one word and an aircraft turns,
+and two pins stay red when the word goes out.
+
+[Chorus]
+If this is the Architect's gambit,
+I'm the piece he never played,
+come in off the rain on an empty road,
+not bought and not sold and not paid.
+Three states hanging on through the dark of the winter:
+I'll hold the part I can reach
+and carry the rest in place of sleep.
+
+[Verse 2]
+A guard with a torch and the pay he can't give back,
+a woman with the dark held in her teeth,
+a man at the console so sure of his sum
+he'd hand it to me like a gift, and believe.
+Everyone here was sold something smaller
+than the thing that they hold in their hands.
+I go through their doors on a copy of a card,
+and nobody knows where I stand.
+
+[Pre-chorus]
+He says he has read what they wrote of me,
+the shape that the file needs me in.
+He asks how I chose, and I think of the figures,
+the best our side has ever been given.
+
+[Chorus]
+If this is the Architect's gambit,
+I'm the piece he never played,
+come in off the rain on an empty road,
+not bought and not sold and not paid.
+Three states hanging on through the dark of the winter:
+I'll hold the part I can reach
+and carry the rest in place of sleep.
+
+[Bridge]
+Somewhere I'm not, there's a ward with its lists torn up,
+or a count that nobody will trust,
+or a signed little sleeper inside someone's update
+waiting ninety days out in the dust.
+I sent what I had where I swore it was needed.
+I'd send it again. I think. I don't know.
+
+[Final chorus, up a key]
+If this is the Architect's gambit,
+let me be the piece he never played,
+come in off the rain on an empty road,
+not bought and not sold and not paid.
+Three states hanging on through the dark of the winter:
+I'll hold every street I can reach
+and carry the rest in place of sleep.
+
+[Outro]
+Forty minutes of rain,
+and only our side knew.
+
+### Notes
+- **Tradition:** modern (*No Time to Die* / *Skyfall*), sung low and close from the driver's seat, lifting only in the final chorus. At m07 the agent has six missions behind them ("a room with the power failing" nods to the infrastructure jobs), trusts their own side, and has never had to choose who goes without.
+- **Verse 1 and pre-chorus 1** are the briefing and the delegation: the I-5 in the rain, Netherton reading the operations "flat" like the shipping forecast, a go-bag of picks, cloner and print kit (each made for a door, none for a choice), and the handbook's eleven pages on delegation of force with nothing on "which lot of people to leave". "An aircraft turns" and "two pins stay red" are the commit ("Say the word and their aircraft turns"; "The other two stay red"). No city is named, so it fits every run.
+- **Verse 2** walks the building: Hollis with his flashlight and the money in his account, Elena with the flashlight in her teeth, Mercer standing by his casualty sum. Each was sold a smaller story than the one they hold (a badge renewal, a six-hour outage). The zone badge is "a copy of a card".
+- **Pre-chorus 2** is the Architect's first call heard from the agent's side ("I've read your file… a particular shape") and his T-20 question. The agent thinks of the figures without saying how they answered, so it fits the number answer and the stomach answer alike.
+- **Dramatic irony, no twist stated.** The agent believes "the piece he never played", "not bought and not sold", "nobody knows where I stand" and "the best our side has ever been given". A player knows the intercept named 0x00 for Portland and that the Architect let SAFETYNET capture every number. The bridge's "ninety days" is the brief's figure, taken at its word; the debrief's "Ninety days was the brief. Nine was the truth" turns it. The bridge's "or… or" lists the three fates as possibilities, because the agent doesn't yet know which two land.
+- **Leak seed:** the outro's "and only our side knew" is the agent's reassurance that the drive and the forty-minute window were secret. After the closing intercept ("Window, forty minutes", from a safetynet.gov address), it reads as a leak at home. It points at no one, which is the strength mole_seeding_plan.md sets for m07.
+
+## Review (C)
+
+- **Version C:** the quietest of the three and the only one that holds the choice from inside: the handbook couplet, "two pins stay red", and a chorus hook ("the piece he never played") that the agent believes and the player knows is false. Voice, namelessness and pre-twist knowledge all hold. The weak spots were a canon slip on Hollis, an invented month, one image shared with A and B, a pre-chorus that fixed the player's answer, and choruses cut short to save words. Score 7.5/10 → 8.5/10.
+- **Checks:** title in every chorus, sung naturally. Scans in 6/8 and the chorus sticks. Canon accurate after the fixes below. References are passing and no twist is stated. No banned words or season repeats (no candles, flags, wall clock, endearments, "let it hurt afterwards").
+- **Changes made:**
+  - V1: "and the fires read out like a weather report" → "and he reads me the targets like a weather report". "Fires" was A's "three fires below" and B's "four fires lit"; the new line also puts Netherton in the car with the agent.
+  - Pre-chorus 1: "and two lights stay red" → "and two pins stay red". Canon has pins on the wall map, and lights is B's chorus image.
+  - Chorus: "through the dark of December" → "through the dark of the winter". Canon says only "winter"; no month is given.
+  - Chorus 2: restored in full (it had been cut to four lines to save words). Repeated choruses don't count toward the limit, and the reach/sleep close is the part that sings.
+  - V2: "a debt he can't give back" → "the pay he can't give back". Hollis was paid ("a number in my account that says stand here"); he owes nothing.
+  - Pre-chorus 2: "and I tell him: the figures" → "and I think of the figures". The old line chose the player's T-20 answer (number over stomach). The new one is true in every run and keeps the "given" irony.
+  - Bridge: "a count…" / "a signed little sleeper…" → "or a count…" / "or a signed little sleeper…". As drafted, all three fates read as happening, but one is always covered. "Or" keeps the agent's uncertainty and fits every run.
+  - Final chorus: restored the "Three states on a wire" line, so the lift carries the full seven lines with "every street I can reach".
+  - Outro: added "and only our side knew". This is the faint leak seed. It is the agent's own belief, names nobody, and matches the closing intercept.
+- **Ninety days:** kept. To the agent it is the brief's figure, sung straight, and to anyone who played it is the number the Austin row corrected to nine. A listener who never played hears a plausible dormancy figure, so it doesn't confuse.
+- **Against A and B:** C has the agent's voice where A and B have the Architect's, with no handset, queen, board, bait, prize or window. "Played/paid" is also the rhyme in A's final chorus ("watched how you played… the price that you paid"). It is a rhyme, not a hook or an image, so I kept it.
+- **Strongest of the three:** B still has the Architect's voice best. C is the strongest on the choice, and the only one that works for every run as drafted here.
+- **Left for the user:** (1) m09 A has "I read you like the weather". C's weather report is a different image (Netherton reading flat), but you may want one of them changed for the season. (2) "Forty miles of it" in V1 against "forty minutes" in the outro: canon gives only minutes, though miles of rain is not a contradiction. (3) The outro leak line could be cut if m07 should leave the leak to A's and B's unlatched windows alone.
+
+### Cross-season pass (C)
+
+- V1: "Rain on the interstate, forty miles of it," → "Rain on the interstate, mile after mile of it,". Canon gives forty minutes ("You are forty minutes out"; the narration's "Forty minutes of rain and empty interstate"), which the outro already sings. The verse no longer offers a second, invented forty.
+- V1: "and he reads me the targets like a weather report." → "…like the shipping forecast." m09 B has "I read you like the weather". The shipping forecast keeps Netherton's flat recital and suits the Director.
+- Chorus (all three): "Three states on a wire through the dark of the winter:" → "Three states hanging on through the dark of the winter:". "Wire" as the risk image was in m01 C (tightrope), m04 C (the hook) and here. m04 keeps it.

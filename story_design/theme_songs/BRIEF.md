@@ -72,3 +72,17 @@ Then **fix what you found** directly in the lyrics: targeted line edits that kee
 ```
 
 Leave the drafts in `drafts/` as they were.
+
+## Version C: the agent's voice
+
+Every Version C is sung by the SAFETYNET agent: Agent 0x00, the player character. Everything above still applies (title in the chorus, form, length, sources, banned words, no technical detail, no spoiled twist), plus:
+
+- **The agent is the narrator in every line.** First person, the agent's own head: what they see, carry and fear on this mission, addressing the target, the mark, HaX on the phone, the city, or themselves.
+- **Nameless and ungendered.** The player is 0x00 and nothing more: no name, no pronouns for the agent, no body details that fix gender or ethnicity.
+- **The agent doesn't know the twist yet.** Foreshadowing works only as dramatic irony: a line that means one thing to the agent and another to someone who has played the mission. The agent never "sees through" the mole or the sleeper before the mission does.
+- **Choose the tradition** (classic, modern or a blend) that suits this mission, and say which in your notes.
+- **A different song from A and B.** Read the mission's merged file `story_design/theme_songs/<mission>.md` first. Don't reuse its hooks or images, and read its Review sections, which list the spoiler and canon traps those songs fell into.
+- **Where the agent is in the season.** m01 is the first day in the field and m10 is the end. Let the voice change across the season (new and keen, then tested, then betrayed by one of their own in m08, then hunting). Check `planning_notes/overall_story_plan/season_1_arc.md` for what the agent has been through by this mission.
+- **Avoid season-wide repeats:** no "let it hurt afterwards", no clock on the wall, no "darling", no flags as candles.
+
+Authors write `drafts/<mission_folder>_C.md`. The reviewer adds `## Version C (agent)` with `### Notes` and a `## Review (C)` (same format as the Review above) to the end of the mission's merged file, leaving A and B untouched.
