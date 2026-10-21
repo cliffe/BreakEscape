@@ -330,3 +330,7 @@ Plan: 7a a CONTRACT.md per mission in scenarios/<mission>/ (every ink file and o
 
 ### m09 script edit round 2
 - R2 (fresh editor): revise (light). A 0/0/9, B 0/4/3, C 0/1/4. R1 all resolved; leftover grep clean; 16/16 compile, lint 0 errors, loopcheck clean (21 states). Audio: A 49 new, Recruiter 14, briefing 84+8N, debrief 49+16N; 3 easy cuts offered. Majors: B-R2-01 Recruiter call opens on HaX; B-R2-02 Noor bonus button before bonus known; B-R2-03 Coyote 'not an auditor' without cover; B-R2-04 text quotes cut line; C-R2-01 briefing 'She's right' ambiguous. Ruling: apply all incl. minors and the 3 audio cuts; contract §3.1/3.2/3.4/3.7/4.1 to follow.
+
+### m10 script edit round 1
+- R1 (fresh editor): revise. A 0/4/22, B 0/3/11, C 0/0/10. 33/33 compile, lint 0 errors, loopcheck clean, ~82 voiced call lines (contract 80). ~940 distinct voiced lines in m10; ~300 per run; cut list ~23.
+- Rulings (orchestrator): accept all findings and cross-read rulings. Netherton may address the player as 'Agent' / 'Agent 0x00' (voice bible, m08); contract §1.2 becomes 'no personal name or gendered word for the player'. '-> DONE' allowed in phone knots; contract rule becomes person-chat only. Netherton's 18 'two operations go dark' lines -> two picks from eight one-operation lines. Knot names gallery_open_call, exch_1..3: contract follows the ink. Hub ten-choice cap: stage 9 checks with a seeded state.
