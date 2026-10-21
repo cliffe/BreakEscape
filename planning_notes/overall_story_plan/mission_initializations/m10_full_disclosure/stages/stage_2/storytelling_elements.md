@@ -25,7 +25,7 @@ Speaker prefix `Dr Adrian Tesseract` (the m07 handset's `The Architect` is not r
 3. **He needs the player's hand so that his own stays clean.** "Let it hurt afterwards, not during" was his. He has spent seven years handing the hurt to strangers, and tonight he wants a stranger's hand on the key. The third rebuttal.
 4. **He doesn't want Kowalczyk to press it.** She has been his since he took her tasking from the Initiative; if she presses it, it proves nothing. That refusal is the one moment the player hears his motive from his own mouth.
 
-**His arc tonight.** Certain and courteous, a host. Each landed point takes a little certainty and none of the courtesy. It ends as the player decides: argued down far enough to stand up empty-handed and offer his cooperation; arrested, unmoved, looking forward to a trial; dead by the console, reaching; dead in his chair, unarmed; gone in the dark with a card that says "Afterwards, then."; or vindicated, walking out with the agent his file said would press it.
+**His arc tonight.** Certain and courteous, a host. Each landed point takes a little certainty and none of the courtesy. It ends as the player decides: argued down far enough to stand up empty-handed and offer his cooperation; arrested, unmoved, looking forward to a trial; dead by the console, reaching; shot unarmed; gone in the dark with a card that says "Afterwards, then."; or vindicated, walking out with the agent his file said would press it.
 
 ### 2.1 How he speaks, and how he takes an argument
 
@@ -58,8 +58,8 @@ When the player walks to the console (arc §9.3 step 1). Three parts, in this or
 
 **The Publication**, six lines at most:
 
-> Dr Adrian Tesseract: At six, everything SAFETYNET ever found goes to everyone. Free. With working detail.
-> Dr Adrian Tesseract: Eleven hundred to twenty-six hundred, the first month. Hospitals, dispatch, water. People who never had the skill before.
+> Dr Adrian Tesseract: At six it starts going out, city by city. Everything SAFETYNET ever found, free, with working detail.
+> Dr Adrian Tesseract: Press this, and it goes everywhere in the same minute. Eleven hundred to twenty-six hundred, the first month. Hospitals, dispatch, water. People who never had the skill before.
 > Dr Adrian Tesseract: Then it stops, because every vendor on earth patches at once, and nobody can hoard what everybody has.
 > Dr Adrian Tesseract: Every year your service keeps its map, it costs more than that. Nobody counts it. I did.
 
@@ -88,6 +88,8 @@ Warmer on `m01_player_launched_attack` ("You pressed it once, on your first day.
 | | `hardened` | "You asked your Council for the numbers. They're on the desk outside. Did you look?" |
 | | default | "Two of yours died at the sites nobody covered. I've read their names." |
 
+On `m09_recruiter_offer` is `taken` or `double_crossed` (m09's invoice, its change 30; R4-07), one ledger sting before the close, which decides nothing: "You bought WREN from my Recruiter. You understand costing."
+
 Then: "Since your first day." He never claims to have read the player's file; in m07 he told them files are written by people who need you to be a particular shape.
 
 ### 2.3 The three exchanges
@@ -101,7 +103,7 @@ One argument in three steps. Claims 2 and 3 open on the exchange just before (W1
 
 | Slot | Answer | Kind | His response |
 |---|---|---|---|
-| 1 | [Your schedule puts the hospitals first. You chose that order.] | evidence decoy (order, not price; N3) | "I chose the order. I asked whether the price was worth paying." |
+| 1 | [Your schedule puts the hospitals first, and you chose that order yourself.] | evidence decoy (order, not price; N3; 12 words, R4-04) | "I chose the order. I asked whether the price was worth paying." |
 | 2 | [Someone corrected your sheet upwards, and you signed the old number.] / decoded: [Asante corrected your sheet, and you signed under her initials.] | rebuttal | "*pause* I initialled it." / decoded: "*pause* I knew." |
 | 3 | [Your Council's curve is on the desk outside. It doesn't stop after a month.] (`hardened`) | record | "*pause* No. It wouldn't." |
 | 3 | [My first day, I had a choice to hurt people. I didn't.] (the first-day condition, row 6; N18) | record | "One agent is an anecdote." Then, on its own line: "*pause* I'll grant you the anecdote." |
@@ -122,6 +124,7 @@ One argument in three steps. Claims 2 and 3 open on the exchange just before (W1
 | 3 | [I told Albion's public the truth. They audited every site. Nobody died for it.] (`m04_disclosure_choice = full`) | record | "*pause* No. Nobody did." (on `m04_crew_lost`, his sting first) |
 | 3 | [I sent your notice. Tonight, from Helena.] (`m09_albion_notified`) | record | "Nine years late." Then: "*pause* Sooner than I managed." |
 | 4 | [I published St. Catherine's cover-up. Forty hospitals fixed their networks, and nobody had to die.] (`m02_exposed_hospital`) | record | "*pause* Done properly. Yes." |
+| 4 | [Your Recruiter offered me a name for a file. I wouldn't buy a name from her.] (`m09_recruiter_offer` is `named` or `refused`; m09's change 30, R4-07; stage 3 confirms) | record | "*pause* No. You'd rather the slow way. It worked." |
 | fill | [Eleven hundred people at the low end. You don't get to spend them.] | plain decoy (price; replaces "go to the press", N2) | "That's the price again. I've moved on to why." |
 
 **Exchange 3. "Someone has to make it hurt. Better me, with clean hands."**
@@ -146,7 +149,7 @@ One argument in three steps. Claims 2 and 3 open on the exchange just before (W1
 | 4 | [Voltage checked your sums tonight and stood down.] / [A man who warned them seven times opened a door for me tonight.] | record | "*pause* He always did check." / "*pause* Listening. It's slower." |
 | fill | [Nobody elected you to teach the world a lesson.] | plain decoy (the hoarding claim, not this one) | "Nobody elected the people who hoard, either. I asked who does the hurting." |
 
-Record answers take their slot by priority (first listed first); two record answers at most per exchange; the fill decoy takes the first empty record slot. Record answers placed under the wrong claim are decoys too (the full-disclosure answer under exchange 1: "True, and beside the point. I asked what it costs."), so a rich save has more decoys as well as more answers. On `m07_architect_echo_heard`, HaX has one line as he says "Let it hurt afterwards": "You heard him say that on your handset."
+Record answers take their slot by priority (first listed first); two record answers at most per exchange; the fill decoy takes the first empty record slot; a record answer placed under the wrong claim takes a slot after slot 4 (R4-05). Record answers placed under the wrong claim are decoys too (the full-disclosure answer under exchange 1: "True, and beside the point. I asked what it costs."), so a rich save has more decoys as well as more answers. On `m07_architect_echo_heard`, HaX has one line as he says "Let it hurt afterwards": "You heard him say that on your handset."
 
 ### 2.4 His other lines
 
@@ -157,6 +160,8 @@ Record answers take their slot by priority (first listed first); two record answ
 > Dr Adrian Tesseract: Ninety-nine. You've done well with them.
 
 (N5: "paused" is gone; "at six whatever we say" and "now, if someone presses this" are both true, and "someone" sets up the offer.)
+
+**Before flag 4** (his case is gated on it, R4-01), if the player walks to the console: "Finish on my box first. I'll keep."
 
 **Idle lines during flag 4**, on events the game sees (S2-17): the first use of the host terminal, a field-guide hint request, a failed flag submission:
 
@@ -237,10 +242,12 @@ Then, if confirmed, one line: "He is still looking at you when you fire." Nothin
 
 **Whodunit nudges** say what she can see and never name anyone (arc §8.2).
 
-**As flag 4 lands**, on a cold start or if the player never read the Albion papers (R3-03):
+**As flag 4 lands** (his case waits for it, R4-01), on `not m09_completed` (R3-03, R4-03):
 
 > Agent HaX: He argued for the vendor nine years ago and lost.
 > Agent HaX: The notice is on here. He wrote it himself, and he never sent it.
+
+On an m09 save: "The notice you read in Helena is on here too."
 
 **After flag 2**, reading the schedule: "Infusion pumps, a hospital group. Dispatch software, a whole county. A water utility's controllers." Then: "That's enough of that. You've got the rest on screen."
 

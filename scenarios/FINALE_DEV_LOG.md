@@ -153,3 +153,7 @@ Rulings: adopt the fixes; the m10 author must play the argument as a cold-start 
 - **m09 stages 1+2 closed 2026-10-21.** Four review rounds (R1 53, R2 32, R3 15, R4 9 findings; no blockers). 30 proposed FINALE_ARC changes in story_arc §14.
 - m10 R3 fix pass: 7 majors, 9 minors fixed. Cold-start play-through recorded (§17): listener 3/3; every fixed button strategy 1 point or less, random ~1 in 4 for two. WREN-named branch guarded; silent-Nightshade walk at 02:30 keeps Arakawa's alibi; wrong accusation of Arakawa costs a guard detail; executed ending's story rule per media-room branch (no "massacre"); "Elsewhere" credits block. §14 now 41 rows.
 | m10 R4 final (`m10.../stage_1/REVIEW_R4.md`) | 0 | 2 | 5 | all R3 fixed; §17 play-through confirmed (listener best; middle-length strategy reaches 2, minor); whodunit fair on default and silent-Nightshade branches. R4-01 his case not gated on flag 4; R4-02 casualty figure disagrees with m09 (key vs fallback). Final fix pass; orchestrator checks; no fifth round. |
+- m10 final pass: R4-01..07 fixed; orchestrator checked R4-01 (case gated on flag 4, "Finish on my box first. I'll keep.") and R4-02 (every live 1,100–2,600 line now prices the key). Middle-length strategy re-checked: 1 point.
+- **m10 stages 1+2 closed 2026-10-21.** Four review rounds (R1 63, R2 41, R3 16, R4 7 findings; one blocker in R1, fixed). 43 proposed FINALE_ARC changes in story_arc §14.
+
+## Arc-keeper: fold stages 1–2 changes into FINALE_ARC and stage 0
