@@ -109,3 +109,124 @@ M-1 reinforcements on `share_zero_day !== 'stopped'` ✅. M-2 single tunnel-post
 Blast door, inner door, stair and gallery stair: HaX `unlockDoor`, each with a `game_loaded` and `door_unlock_failed` backstop ✅. Power room: spare card in the picked fitter's locker, Imran/Gary's card cloned, or `#unlock_door` ✅. Outer lock 6083: cracker on every save, plus three codes and Victoria ✅. Records cupboard 2817 (optional): cracker, Ghost's or Vector's code ✅. Model terminal (optional): margin decode ✅.
 
 *Run `/scenario-design-review` for full objectives scaffolding analysis.*
+
+## R1b. Event mappings, and the raid team after the ending and under knock-outs
+
+Static trace, 2026-10-21, finishing the two checks that R1 left open. The erb is being edited for the R1 findings while this was written. Line numbers below are from the **current working copy**: everything after erb:1277 has moved by +1 to +12 against the R1 lines (for example, the Arakawa loop was 1454 and is now 1460, and the console mapping was 1512 and is now 1521). The fixes in progress cover R1 M-1, M-2, m-1, m-2, m-3 and m-4 (the `conclusionScreen` was removed, the briefing has `disableClose` and a reload backstop, `gate_console_used` is set on flag 1, the ladder bark is in, raid copies hide on `room_exited`, the consoles are renamed, and graph hints are added). R1b-M1 below interacts with the M-2 fix.
+
+Counts: 0 blockers, 3 majors, 10 minors (2 of the minors unverified).
+
+### Check 1: every mapping against the engine
+
+407 mappings, 104 distinct `eventPattern`s, 391 conditions.
+
+- **Every pattern has an emitter.** The emitters are:
+  - `room_entered[:id]` and `room_exited`: rooms.js:2992-3015
+  - `object_interacted`: interactions.js:693
+  - `door_unlock_attempt` and `door_unlock_failed[:room]`: unlock-system.js:122-130
+  - `door_unlocked`: unlock-system.js:675 and apply-actions.js:119
+  - `door_unlocked_by_npc`: npc-game-bridge.js:137
+  - `card_cloned`: rfid-minigame.js:293
+  - `fingerprint_collected:<owner>`: biometrics.js:95
+  - `item_picked_up:<type>`: inventory.js:283, 627 and npc-game-bridge.js:40
+  - `npc_ko[:id]`: npc-hostile.js:349-351
+  - `conversation_closed:<id>`: person-chat-minigame.js:1754 and phone-chat-minigame.js:1123
+  - `objective_task_completed[:id]`: objectives-manager.js:439-440, 612-619
+  - `game_loaded`: game.js:2064
+  - `player_spotted:<id>`: npc-sight-challenge.js:50
+  - `lockpick_used_in_view`: lockpick-catch.js:48
+  - `flag_N_in`: the flag station's `emit_event` reward, apply-actions.js:69
+  - `global_variable_changed:<g>`: every name is declared, and the onRead-only writers (`clue_door_log`, `casualty_sheet_read`) are bridged by npc-game-bridge.js:36.
+- **Every `data.*` field read is carried by its event.** The fields are `objectType`, `objectName`, `roomId` (object_interacted), `roomId`, `npcId` (door_unlocked_by_npc), `connectedRoom` (door events), `roomId` (room_exited), `cardName`, `objectId` (fingerprint) and `itemId`.
+- **Every condition parses** in `safeEvaluateCondition` (npc-manager.js:16-110): `&&`, `!`, comparisons and bare terms only, with no `||` or brackets. Every `globalVars.*` name is declared or imported, and `value` is used only on `global_variable_changed`.
+- **Action keys and targets.** Every action key is in `_buildMappingConfig` (npc-manager.js:656-690) except `barkDelay` (R1b-m2). Every `completeTask`, `unlockTask`, `unlockAim` and `unlockDoor` target exists. Every `targetKnot` exists in its NPC's ink. Every ink `#complete_task`, `#set_global`, `#give_item`, `#unlock_door` and `#clone_keycard` matches its target.
+- **`onceOnly` across a reload.** It survives. Handlers that don't open a conversation are saved at once. Handlers that open a conversation are saved when it closes, so a reload mid-scene replays them (npc-manager.js:790-800). The saved key is `npc:pattern:<index in eventMappings>` (npc-manager.js:697), so inserting mappings mid-list remaps the saved state of existing games (R1b-m9). Every conversation-opening mapping without `onceOnly` is guarded by a done-global or an engine skip.
+- Every handler has a **5 s default cooldown** unless `cooldown` is set (npc-manager.js:712). None of m10's repeating handlers needs to fire twice within 5 s.
+
+### Check 2: the raid team after each ending
+
+**Can the player move after the ending? Yes.**
+- The credits open with `disableClose`, but the close button comes back once the last credit line has shown (bond-visualiser.js:1291-1294), and closing resumes Phaser (:1663-1666). Nothing sets `player.disableMovement` (only `showEndScreen` does).
+- On a reload of a finished game, main.js:155-163 replays `handleMissionConcluded`. With the R1 M-2 fix (no `conclusionScreen`), that replay now opens nothing, so a reloaded finished game drops the player straight into the bunker.
+
+Only Netherton (`m10_director_netherton.ink:35-40, 345-346`), HaX in person (`m10_hax_post.ink`) and HaX's phone (`m10_phone_agent0x99.ink:39-58`) branch on `ending`. The phone contacts' `start` knots are silent. Every other raid conversation plays as if the raid were still on.
+
+| NPC (after any ending) | What they offer | OK? |
+|---|---|---|
+| Netherton, HaX (post and phone) | rest lines by ending; dead line on Join | ✅ |
+| Ghost, Vance, Elena, Victoria line, Recruiter | silent `start` | ✅ |
+| `quintero_core` | "Door's mine. You've got work." / "Don't. Finish it." (`m10_quintero.ink:179-192`) | ❌ R1b-M1 |
+| `quintero_lock`, `minder_lock` | "Hold the door." / "I've got the lock. Go on." | ❌ R1b-M1 |
+| Quintero, Arakawa, Malhotra, Vector, Phantom copies | normal menus, including "[You're WREN.]" | ❌ R1b-M1, R1b-M2 |
+| Kowalczyk bunker copies | full menu and accusation, after her capture at the core | ❌ R1b-M3 |
+| `kowalczyk_van` (taken) | "Go on. He's expecting you." | ❌ R1b-M1 |
+| Nightshade (table, lock), Asante, Vos, escaped Voltage | in-raid lines ("Go and look at him for me", "Go and finish it") | ❌ R1b-M1 |
+| HaX's release-console text (erb:1521) | reopens on a click, skipping her `start`; texts on Join; "[Close the backdoor.]" still completes a task | ❌ R1b-m1 |
+| Imran, Gary, Wendell, captured Voltage, Fonoti, Victoria, Mercer | neutral resting lines | ✅ |
+| Tesseract | hidden on close and on re-entry (erb:3665) | ✅ |
+| Closing scenes | `onceOnly` and `!closing_done`; can't replay | ✅ |
+
+### Check 2: knock-outs
+
+The engine (npc-hostile.js:263-388) drops `itemsHeld`, fires `npc_ko` and `npc_ko:<id>`, and only then sets `globalVarOnKO`. A knocked-out NPC can't be talked to or have their card cloned (interactions.js:1882).
+
+- **Kowalczyk knocked out** is possible only below ground (`kowalczyk_so/ws/pr/hall`, `globalVarOnKO: kowalczyk_ko`). Her post, van and core copies are `koImmune`.
+  - At every one of those places, the core skips the WREN beat (`m10_tesseract.ink:54`) and plays normally.
+  - The whodunit ends unsolved, unless she is then named on the phone ("She is already in the van.", `m10_phone_agent0x99.ink:354-357`).
+  - At 06:00, HaX says "awake in the second van" (`m10_six_oclock.ink:438-442`), and the walkabout leaves her out (`kow_here` false).
+  - Credits: "Woke in the second van. Nobody had named her."
+  - On the taken and double-crossed branches her copies never appear. ✅
+- **Many knock-outs.** `ko_pattern()` counts m01–m08 imports only, and its 4+ band is one line. With every knockable NPC down, the run still finishes:
+  - breach: the door/Netherton/reload arms (R1b-m3)
+  - power room: the fitter's locker by lockpick
+  - shutter: a knock-out sets `cut_by_hand`, then the phone voice
+  - outer lock: dropped cards, Ghost's code or the cracker
+  - core: `quintero_ko` routes to "[Take her.]" / "[Stop her.]"
+- **Gates whose speaker can be knocked out:** Arakawa's call (R1b-m3), Imran/Gary (locker), Wendell/escaped Voltage (phone cut), Victoria/Vos/Fonoti (PIN sources). Every one has a route that needs nobody. ✅
+
+### Findings
+
+**Majors**
+
+**R1b-M1. The player can walk round after the ending, and the raid team talk as if the raid is on.** See the table above. Reachable two ways: closing the credits after the last line, or reloading a finished game, which with the R1 M-2 fix now opens with no screen at all. The worst cases:
+- Quintero at the core says "You've got work." after every ending, including executed, where she has just taken the player's weapon.
+- On Join, Arakawa, Vector, Phantom and Malhotra chat normally.
+
+*Fix (m10, cheapest):* one HaX mapping per bunker and post NPC, `global_variable_changed:closing_done` → `setVisible: false`, plus the same on `game_loaded` with `closing_done === true`.
+*Fix (engine, all missions):* set `window.player.disableMovement = true` when the mission concludes, in `handleMissionConcluded` (objectives-manager.js:1059) or in the music path's `openCredits` (scenario-music-events.js:148), and on the reload replay.
+*Also:* branch `quintero.ink` `core` on `ending != ""`.
+
+**R1b-M2. Officers can still be accused after WREN has shown herself at the core.** The face-to-face accusation checks in six files test only `clue_door_log`, `whodunit_live`, `accused == ""` and `officer_out == ""`:
+- `m10_quintero.ink:20`
+- `m10_arakawa.ink:22`
+- `m10_malhotra.ink:16`
+- `m10_vector.ink:17`
+- `m10_phantom.ink:17`
+- `m10_kowalczyk.ink:25`
+
+HaX's phone version also tests `not wren_at_core` (`m10_phone_agent0x99.ink:93`). The WREN beat leaves `accused` at `""` (`m10_tesseract.ink:807-833`). So a player who leaves the core between the console and his end (or after the ending, per R1b-M1) can walk back and "[You're WREN.]" Quintero or anyone else. That writes `officer_out` and the exported `wrong_accusation`, and Quintero is "sent back" while holding Kowalczyk at the core (`quintero_core` doesn't hide on `officer_out`).
+*Fix:* add `and not wren_at_core and ending == ""` to all six functions.
+
+**R1b-M3. Kowalczyk's bunker copies come back after her capture.** Their reveal (`raid_copy`, erb:~2300-2316) tests `breach_open`, `!kowalczyk_ko`, `officer_out`, `accused` and `kowalczyk_gone_ahead`, but not `wren_entering` or `wren_at_core`. The new `room_exited` hide (R1 m-3) clears her when the player leaves a room, but `room_entered` shows her again on a walk back. So after Quintero has pinned her at the core, she is standing in the server hall with the full accusation sequence, whose last card writes `accused`, `sleeper_caught` and `wren_held`.
+*Fix:* add `&& !globalVars.wren_entering && !globalVars.wren_at_core && globalVars.ending === ''` to her copies' reveal condition, and hide them on `wren_entering`.
+
+**Minors**
+
+1. **R1b-m1.** HaX's console mapping (erb:1521) has no ending guard. Add `&& globalVars.ending === ''`.
+2. **R1b-m2.** `barkDelay` is ignored: `_buildMappingConfig` doesn't copy it, so npc-manager.js:1200 always reads 0. Fonoti's and the monitor guard's "Where's Farah?" barks (erb:3398, 3418) fire on entry, on top of "Camera's dead again." *Fix:* `sendTimedMessage`-style delay, or `delayMs` on the mapping (re-checked on fire), or copy `barkDelay` in the engine. m03 has the same problem.
+3. **R1b-m3.** The `npc_ko:arakawa_gate` arm of the Arakawa loop (erb:1460) is dead: it tests `arakawa_ko === true`, which the engine sets only after `npc_ko` fires (npc-hostile.js:349 vs :360). The first push on the blast door rescues it, but that push gives no bark. *Fix:* use `global_variable_changed:arakawa_ko` in the loop.
+4. **R1b-m4.** HaX's phone accusation menu (`m10_phone_agent0x99.ink:287-304`) still lists Quintero, Arakawa, Vector and Phantom when they are knocked out, and Netherton then orders an unconscious officer back. *Fix:* add `not <name>_ko` to each choice.
+5. **R1b-m5.** `quintero_lock` isn't hidden when `quintero_core` appears (`quintero_enters_core`), so with the gallery beside the core there are two Quinteros. *Fix:* hide `quintero_lock` on `quintero_enters_core`.
+6. **R1b-m6.** Knocking Arakawa out at the blast door after the breach leaves Nightshade untended: `minder_blast` reveals only on the breach, a reload or `officer_out`. *Fix:* add an `arakawa_ko` arm.
+7. **R1b-m7.** Some knock-outs leave no trace in the story (design gap): the minders have no `globalVarOnKO`, Netherton's bruises line skips `gary_ko`, and Tesseract's sting counts no m10 knock-outs.
+8. **R1b-m8.** On lethal and executed, Tesseract's sprite is hidden rather than shown down at the console. If his after-ending line is ever reached, "I'll see you in court" sits oddly against the van scene. Cosmetic.
+9. **R1b-m9.** The saved `onceOnly` state is keyed by the handler's index (npc-manager.js:697). The edits now inserting mappings into `agent_0x99`'s list shift every later index, so existing dev and playtest saves may replay or skip once-only texts. Use fresh saves for playtests after this round of edits.
+10. **R1b-m10 (unverified).** Two items:
+    - One push on the blast door can raise a HaX bark and the delayed split or Arakawa scene together (erb:~1344, ~1447, ~1849). Optionally add `&& !globalVars.gate_console_used` to the erb:~1447 bark.
+    - `duty_guard`'s `lockpick_used_in_view` mapping (erb:~2470, cooldown 250, no `onceOnly`) reopens `duty` on every catch. Check that this is intended.
+
+### Interaction with the R1 fixes in progress
+
+- Removing `conclusionScreen` (R1 M-2) fixes the empty screen over the last line, but makes a reloaded finished game open in the bunker with nothing over it. Pair it with R1b-M1's fix.
+- R1 m-3's `room_exited` hide doesn't cover a walk back (R1b-M3).
+- Renaming the three consoles is safe: no mapping reads `objectName === 'Field Console'`; the launchers are matched on `objectType`.
