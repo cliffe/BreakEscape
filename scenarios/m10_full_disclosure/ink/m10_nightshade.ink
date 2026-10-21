@@ -1,4 +1,5 @@
 INCLUDE m10_carryover_vars.ink
+VAR end_quiet = false   // end_rest: skip the line once after an exit
 // m10 Full Disclosure: Agent 0x47 'Nightshade' (group C).
 // NPC ids: nightshade_table (currentKnot table), nightshade_van (van),
 // nightshade_blast (blast), nightshade_lock (lock). All koImmune.
@@ -13,6 +14,7 @@ VAR ns_costs_said = false   // unshown branch: the closing costs have been said
 VAR ns_arr_seen = false     // arrested branch: the opening has played
 
 === start ===
+{ending != "": -> end_rest}
 {
 - outer_lock_open and nightshade_taken_in:
     -> lock
@@ -28,6 +30,7 @@ VAR ns_arr_seen = false     // arrested branch: the opening has played
 // The table: router for the three talking branches.
 // ---------------------------------------------------------------
 === table ===
+{ending != "": -> end_rest}
 {door_scene_done:
     -> table_rest
 }
@@ -338,6 +341,7 @@ Director Magnus Netherton: Without him you have Helena's plans. They are good pl
 // Silent, or never played: one word. The tether question is Netherton's.
 // ---------------------------------------------------------------
 === van ===
+{ending != "": -> end_rest}
 {ns_quiet:
     ~ ns_quiet = false
 - else:
@@ -350,6 +354,7 @@ Director Magnus Netherton: Without him you have Helena's plans. They are good pl
 
 // The tether at the blast door. "Manual." itself is on the net (HaX's breach_call).
 === blast ===
+{ending != "": -> end_rest}
 {ns_quiet:
     ~ ns_quiet = false
 - else:
@@ -363,6 +368,7 @@ Director Magnus Netherton: Without him you have Helena's plans. They are good pl
 
 // Taken in, at the outer lock. "Go on. I've got the door." is a bark (JSON).
 === lock ===
+{ending != "": -> end_rest}
 {ns_quiet:
     ~ ns_quiet = false
 - else:
@@ -373,3 +379,23 @@ Director Magnus Netherton: Without him you have Helena's plans. They are good pl
     ~ ns_quiet = true
     #exit_conversation
     -> lock
+
+// Stage 9 walkthrough R1b-M1: after his ending, nothing in-raid. One quiet line
+// by ending, none from SAFETYNET people on Join (a narrator beat), and the exit.
+=== end_rest ===
+{
+- end_quiet:
+    ~ end_quiet = false
+- ending == "joined":
+    Narrator: Nightshade watches you go and says nothing.
+- ending == "executed":
+    Narrator: Nightshade says nothing.
+- ending == "scorched":
+    Agent 0x47 'Nightshade': Gone in the dark. He always did like an exit.
+- else:
+    Agent 0x47 'Nightshade': It's done, then. Tell me how, one day.
+}
++ [(Leave it.)]
+    ~ end_quiet = true
+    #exit_conversation
+    -> end_rest

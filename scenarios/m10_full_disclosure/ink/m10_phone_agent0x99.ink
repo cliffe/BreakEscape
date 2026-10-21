@@ -287,19 +287,19 @@ Go on. Who?
 + {officer_out != "malhotra"} [Malhotra.]
     ~ hax_suspect = "malhotra"
     -> accuse_confirm
-+ {officer_out != "arakawa"} [Arakawa.]
++ {officer_out != "arakawa" and not arakawa_ko} [Arakawa.]
     ~ hax_suspect = "arakawa"
     -> accuse_confirm
 + [Kowalczyk.]
     ~ hax_suspect = "kowalczyk"
     -> accuse_confirm
-+ {officer_out != "quintero"} [Quintero.]
++ {officer_out != "quintero" and not quintero_ko} [Quintero.]
     ~ hax_suspect = "quintero"
     -> accuse_confirm
-+ {vector_on_team and officer_out != "vector"} [Vector.]
++ {vector_on_team and officer_out != "vector" and not vector_ko} [Vector.]
     ~ hax_suspect = "vector"
     -> accuse_confirm
-+ {phantom_on_team and officer_out != "phantom"} [Phantom.]
++ {phantom_on_team and officer_out != "phantom" and not phantom_ko} [Phantom.]
     ~ hax_suspect = "phantom"
     -> accuse_confirm
 + [Not yet.]
@@ -535,6 +535,7 @@ And if both copies die, the room purges. Doors, lights, all of it. He'll be read
 // Opened by the release console controls' mapping (CONTRACT §3.3), text.
 // Re-opens on each click and shows only what is still open.
 === console ===
+{ending != "": -> console_shut}
 {
 - head_start_killed == "":
     {share_zero_day == "stopped":
@@ -560,6 +561,15 @@ And if both copies die, the room purges. Doors, lights, all of it. He'll be read
     That console's done all it can for us.
 }
 -> console_menu
+
+// Walkthrough R1b-m1: after his ending the console is closed (nothing on Join).
+=== console_shut ===
+{ending != "joined":
+    That console's done all it can for us.
+}
++ [Leave it.]
+    #exit_conversation
+    -> DONE
 
 === console_menu ===
 + {head_start_killed == "" and share_zero_day == "live"} [Kill Zero Day's.]

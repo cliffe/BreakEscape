@@ -1,4 +1,5 @@
 INCLUDE m10_carryover_vars.ink
+VAR end_quiet = false   // end_rest: skip the line once after an exit
 // ================================================
 // Mission 10: Full Disclosure - Agent 0x23 'Vector' (vector_post, vector_so)
 // Group B, stage 7b. Contract §1.4. Shown only on vector_on_team. m08's
@@ -14,15 +15,17 @@ VAR vec_code_given = false
 VAR vec_why_asked = false
 
 === function vec_can_accuse() ===
-~ return clue_door_log and whodunit_live and accused == "" and officer_out == ""
+~ return clue_door_log and whodunit_live and accused == "" and officer_out == "" and not wren_at_core and ending == ""
 
 === start ===
+{ending != "": -> end_rest}
 {security_office_entered: -> so}
 -> post
 
 // ---------------- the table ----------------
 
 === post ===
+{ending != "": -> end_rest}
 Agent 0x23 'Vector': I've read the map three times. It hasn't changed. I keep checking anyway.
 ~ vec_quiet = true
 -> menu
@@ -31,6 +34,7 @@ Agent 0x23 'Vector': I've read the map three times. It hasn't changed. I keep ch
 
 // The cupboard's code, once, with why he knows it.
 === so ===
+{ending != "": -> end_rest}
 {
 - vec_code_given:
     ~ vec_quiet = true
@@ -44,6 +48,7 @@ Agent 0x23 'Vector': Write this down. I'd only worry otherwise.
 -> menu
 
 === menu ===
+{ending != "": -> end_rest}
 {
 - vec_quiet:
     ~ vec_quiet = false
@@ -93,3 +98,23 @@ Agent HaX: Wrong, and Netherton loses Vector till you can clear him. Sure?
     Agent 0x23 'Vector': I'll try. I won't manage.
     ~ vec_quiet = true
     -> menu
+
+// Stage 9 walkthrough R1b-M1: after his ending, nothing in-raid. One quiet line
+// by ending, none from SAFETYNET people on Join (a narrator beat), and the exit.
+=== end_rest ===
+{
+- end_quiet:
+    ~ end_quiet = false
+- ending == "joined":
+    Narrator: Vector doesn't look at you.
+- ending == "executed":
+    Narrator: Vector says nothing.
+- ending == "scorched":
+    Agent 0x23 'Vector': Keep walking. I'll catch you up.
+- else:
+    Agent 0x23 'Vector': It's over. I'm going to sleep for a week.
+}
++ [(Leave it.)]
+    ~ end_quiet = true
+    #exit_conversation
+    -> end_rest

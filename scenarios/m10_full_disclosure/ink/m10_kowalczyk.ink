@@ -1,4 +1,5 @@
 INCLUDE m10_carryover_vars.ink
+VAR end_quiet = false   // end_rest: skip the line once after an exit
 // ================================================
 // Mission 10: Full Disclosure - Halina Kowalczyk, WREN (Agent 0x5E 'Lantern')
 // Group B, stage 7b. Contract §1.4. One file, six copies, each with its own
@@ -22,7 +23,7 @@ VAR kow_cracker_asked = false
 VAR kow_from_peel = false
 
 === function kow_can_accuse() ===
-~ return clue_door_log and whodunit_live and accused == ""
+~ return clue_door_log and whodunit_live and accused == "" and not wren_at_core and ending == ""
 
 // Arakawa is beside her in every bunker room unless he is at the blast door,
 // down, or sent back.
@@ -31,6 +32,7 @@ VAR kow_from_peel = false
 
 // A copy with no currentKnot lands by the latest room entered.
 === start ===
+{ending != "": -> end_rest}
 {
 - m09_recruiter_offer == "taken":
     -> van
@@ -50,6 +52,7 @@ VAR kow_from_peel = false
 
 // The kit check, and the pair back (arc §5.2 item 5).
 === post ===
+{ending != "": -> end_rest}
 {
 - kow_quiet:
     ~ kow_quiet = false
@@ -82,6 +85,7 @@ VAR kow_from_peel = false
 // On taken: cuffed in the van. The aside asks C18; if it was closed before
 // she got an answer, she asks again here.
 === van ===
+{ending != "": -> end_rest}
 {
 - kow_quiet:
     ~ kow_quiet = false
@@ -112,6 +116,7 @@ Narrator: She turns back to the window.
 
 // Security office: the photo line; on the tether she goes ahead from here.
 === so ===
+{ending != "": -> end_rest}
 Agent 0x5E 'Lantern': Nice photo. They've got your good side. You don't have a good side.
 {nightshade_tethered: -> peel}
 ~ kow_quiet = true
@@ -119,6 +124,7 @@ Agent 0x5E 'Lantern': Nice photo. They've got your good side. You don't have a g
 
 // Workshop: on wren_warned she goes ahead a room early (arc §8.5).
 === ws ===
+{ending != "": -> end_rest}
 {wren_warned:
     Agent 0x5E 'Lantern': They knew we were coming. Saves us knocking.
     -> peel
@@ -128,12 +134,14 @@ Agent 0x5E 'Lantern': Smells like the electronics lab at school. I loved that ro
 -> menu
 
 === pr ===
+{ending != "": -> end_rest}
 Agent 0x5E 'Lantern': Bakelite. Don't touch anything older than your nan.
 ~ kow_quiet = true
 -> menu
 
 // Server hall: the default peel-off.
 === hall ===
+{ending != "": -> end_rest}
 -> peel
 
 // The peel-off (arc §6.3 item 7): the last face-to-face chance. The line that
@@ -158,6 +166,7 @@ Agent 0x5E 'Lantern': Service side. Go on.
 
 // The resting knot for every bunker copy.
 === menu ===
+{ending != "": -> end_rest}
 {
 - kow_quiet:
     ~ kow_quiet = false
@@ -280,3 +289,25 @@ Director Magnus Netherton: Hold her there. A minder is on the way down.
     ~ kow_quiet = true
     #exit_conversation
     -> held
+
+// Stage 9 walkthrough R1b-M1: after his ending, nothing in-raid. One quiet line
+// by ending, none from SAFETYNET people on Join (a narrator beat), and the exit.
+=== end_rest ===
+{
+- end_quiet:
+    ~ end_quiet = false
+- ending == "joined":
+    Narrator: Kowalczyk doesn't look at you.
+- sleeper_caught or wren_at_core or kowalczyk_ko or accused == "kowalczyk":
+    Narrator: Kowalczyk looks at the floor.
+- ending == "executed":
+    Narrator: Kowalczyk says nothing.
+- ending == "scorched":
+    Agent 0x5E 'Lantern': Out. I've got the case.
+- else:
+    Agent 0x5E 'Lantern': Long night. Go on, I'll pack the case.
+}
++ [(Leave it.)]
+    ~ end_quiet = true
+    #exit_conversation
+    -> end_rest

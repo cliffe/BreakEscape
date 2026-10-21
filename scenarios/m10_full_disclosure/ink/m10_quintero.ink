@@ -1,4 +1,5 @@
 INCLUDE m10_carryover_vars.ink
+VAR end_quiet = false   // end_rest: skip the line once after an exit
 // ================================================
 // Mission 10: Full Disclosure - Marisol Quintero (Agent 0x2D 'Anchor')
 // Group B, stage 7b. Contract §1.4. Copies and their currentKnot:
@@ -17,9 +18,10 @@ VAR quin_lock_said = false
 VAR quin_secret_asked = false
 
 === function quin_can_accuse() ===
-~ return clue_door_log and whodunit_live and accused == "" and officer_out == ""
+~ return clue_door_log and whodunit_live and accused == "" and officer_out == "" and not wren_at_core and ending == ""
 
 === start ===
+{ending != "": -> end_rest}
 {
 - core_entered:
     -> core
@@ -41,6 +43,7 @@ VAR quin_secret_asked = false
 
 // At the map with Netherton through the kit check; back from the drain at 02:20.
 === post ===
+{ending != "": -> end_rest}
 {
 - quin_quiet:
     ~ quin_quiet = false
@@ -64,6 +67,7 @@ VAR quin_secret_asked = false
 // on the tether, the photo line when Kowalczyk is off the team, or Arakawa's
 // peel-off line when he is up at the blast door and can't say it.
 === so ===
+{ending != "": -> end_rest}
 {
 - breach_announced:
     Agent 0x2D 'Anchor': I don't like doors that know your name.
@@ -78,21 +82,25 @@ VAR quin_secret_asked = false
 -> menu
 
 === ws ===
+{ending != "": -> end_rest}
 Agent 0x2D 'Anchor': Keep your hands off the benches. Half of it's live.
 ~ quin_quiet = true
 -> menu
 
 === pr ===
+{ending != "": -> end_rest}
 Agent 0x2D 'Anchor': Smells like a substation. Do what you came for.
 ~ quin_quiet = true
 -> menu
 
 === hall ===
+{ending != "": -> end_rest}
 Agent 0x2D 'Anchor': I've got the near end. Go do your work.
 ~ quin_quiet = true
 -> menu
 
 === menu ===
+{ending != "": -> end_rest}
 {
 - quin_quiet:
     ~ quin_quiet = false
@@ -143,6 +151,7 @@ Agent HaX: Wrong, and Quintero's off the raid till you can clear her. Sure?
 // arrested-Nightshade line, then she stays on this side of the door.
 // Her secret only on a say-nothing save, and only if asked (SE §3.4).
 === lock ===
+{ending != "": -> end_rest}
 {
 - quin_quiet:
     ~ quin_quiet = false
@@ -177,6 +186,7 @@ Agent HaX: Wrong, and Quintero's off the raid till you can clear her. Sure?
 // The core after the WREN beat: one resting line (her lines in the beat are
 // group A's, in m10_tesseract.ink).
 === core ===
+{ending != "": -> end_rest}
 {
 - quin_quiet:
     ~ quin_quiet = false
@@ -190,3 +200,23 @@ Agent HaX: Wrong, and Quintero's off the raid till you can clear her. Sure?
     ~ quin_quiet = true
     #exit_conversation
     -> core
+
+// Stage 9 walkthrough R1b-M1: after his ending, nothing in-raid. One quiet line
+// by ending, none from SAFETYNET people on Join (a narrator beat), and the exit.
+=== end_rest ===
+{
+- end_quiet:
+    ~ end_quiet = false
+- ending == "joined":
+    Narrator: Quintero doesn't look at you.
+- ending == "executed":
+    Narrator: Quintero won't look at you.
+- ending == "scorched":
+    Agent 0x2D 'Anchor': Out. Follow the torches.
+- else:
+    Agent 0x2D 'Anchor': It's done. Get some air.
+}
++ [(Leave it.)]
+    ~ end_quiet = true
+    #exit_conversation
+    -> end_rest

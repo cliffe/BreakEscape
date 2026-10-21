@@ -1,4 +1,5 @@
 INCLUDE m10_carryover_vars.ink
+VAR end_quiet = false   // end_rest: skip the line once after an exit
 // ================================================
 // Mission 10: Full Disclosure - Agent 0x88 'Phantom' (phantom_post)
 // Group B, stage 7b. Contract §1.4. Shown only on phantom_on_team. m08's
@@ -14,12 +15,14 @@ VAR pha_quiet = false
 VAR pha_list_heard = false
 
 === function pha_can_accuse() ===
-~ return clue_door_log and whodunit_live and accused == "" and officer_out == ""
+~ return clue_door_log and whodunit_live and accused == "" and officer_out == "" and not wren_at_core and ending == ""
 
 === start ===
+{ending != "": -> end_rest}
 -> post
 
 === post ===
+{ending != "": -> end_rest}
 {
 - pha_quiet:
     ~ pha_quiet = false
@@ -68,3 +71,23 @@ Agent HaX: Wrong, and Netherton loses Phantom till you can clear him. Sure?
     Agent 0x88 'Phantom': Already written down. Never mind.
     ~ pha_quiet = true
     -> post
+
+// Stage 9 walkthrough R1b-M1: after his ending, nothing in-raid. One quiet line
+// by ending, none from SAFETYNET people on Join (a narrator beat), and the exit.
+=== end_rest ===
+{
+- end_quiet:
+    ~ end_quiet = false
+- ending == "joined":
+    Narrator: Phantom doesn't look at you.
+- ending == "executed":
+    Narrator: Phantom writes something down and says nothing.
+- ending == "scorched":
+    Agent 0x88 'Phantom': Out first. I'll count us after.
+- else:
+    Agent 0x88 'Phantom': Tonight balances. Mostly.
+}
++ [(Leave it.)]
+    ~ end_quiet = true
+    #exit_conversation
+    -> end_rest

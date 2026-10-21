@@ -1,4 +1,5 @@
 INCLUDE m10_carryover_vars.ink
+VAR end_quiet = false   // end_rest: skip the line once after an exit
 // ================================================
 // Mission 10: Full Disclosure - Officer Kenji Arakawa
 // Group B, stage 7b. Contract §1.4. Copies and their currentKnot:
@@ -19,9 +20,10 @@ VAR arak_daughter_asked = false
 VAR arak_peel_said = false
 
 === function arak_can_accuse() ===
-~ return clue_door_log and whodunit_live and accused == "" and officer_out == ""
+~ return clue_door_log and whodunit_live and accused == "" and officer_out == "" and not wren_at_core and ending == ""
 
 === start ===
+{ending != "": -> end_rest}
 {
 - server_hall_entered and not nightshade_tethered:
     -> hall
@@ -43,6 +45,7 @@ VAR arak_peel_said = false
 
 // The kit check (koImmune table copy).
 === post ===
+{ending != "": -> end_rest}
 {
 - arak_quiet:
     ~ arak_quiet = false
@@ -72,6 +75,7 @@ Officer Kenji Arakawa: The sheriff closed it. Nobody asked who for.
 // SE's "It's ten past eight here" is replaced: the contract keeps every
 // spoken time in UTC (§5.6), so he gives the minutes instead of a local time.
 === gate ===
+{ending != "": -> end_rest}
 {arakawa_call_done: -> gate_rest}
 Narrator: Arakawa steps up beside you at the gate and dials.
 Officer Kenji Arakawa: She goes to bed in five minutes. Thirty seconds, I promise.
@@ -107,6 +111,7 @@ Officer Dev Malhotra: Arakawa, you're off the net.
 
 // The tether: at the blast door with silent Nightshade all night.
 === blast ===
+{ending != "": -> end_rest}
 Officer Kenji Arakawa: I've got him. He hasn't said a third word.
 ~ arak_quiet = true
 -> menu
@@ -115,6 +120,7 @@ Officer Kenji Arakawa: I've got him. He hasn't said a third word.
 
 // Security office: the photo line when Kowalczyk is off the team (RL §2.9).
 === so ===
+{ending != "": -> end_rest}
 {
 - not whodunit_live:
     Officer Kenji Arakawa: They took that from a long way off. Somebody's been watching you a while.
@@ -126,6 +132,7 @@ Officer Kenji Arakawa: I've got him. He hasn't said a third word.
 
 // Workshop: his reaction when she goes ahead early (wren_warned).
 === ws ===
+{ending != "": -> end_rest}
 {
 - wren_warned and kowalczyk_gone_ahead:
     ~ arak_peel_said = true
@@ -137,12 +144,14 @@ Officer Kenji Arakawa: I've got him. He hasn't said a third word.
 -> menu
 
 === pr ===
+{ending != "": -> end_rest}
 Officer Kenji Arakawa: That hum's in my teeth. Let's not stay long.
 ~ arak_quiet = true
 -> menu
 
 // Server hall: his reaction to her default peel-off.
 === hall ===
+{ending != "": -> end_rest}
 {
 - kowalczyk_gone_ahead and not wren_warned:
     ~ arak_peel_said = true
@@ -156,6 +165,7 @@ Officer Kenji Arakawa: That hum's in my teeth. Let's not stay long.
 // The resting knot. If she went ahead while he was talked to earlier, he
 // says his line once on the next talk (B-12), then the plain re-entry.
 === menu ===
+{ending != "": -> end_rest}
 {
 - arak_quiet:
     ~ arak_quiet = false
@@ -201,3 +211,23 @@ Agent HaX: Wrong, and Arakawa's off the raid till you can clear him. Sure?
     ~ arak_quiet = true
     #exit_conversation
     -> sent_back
+
+// Stage 9 walkthrough R1b-M1: after his ending, nothing in-raid. One quiet line
+// by ending, none from SAFETYNET people on Join (a narrator beat), and the exit.
+=== end_rest ===
+{
+- end_quiet:
+    ~ end_quiet = false
+- ending == "joined":
+    Narrator: Arakawa doesn't look at you.
+- ending == "executed":
+    Narrator: Arakawa looks at the ground and says nothing.
+- ending == "scorched":
+    Officer Kenji Arakawa: Keep moving. The road's open.
+- else:
+    Officer Kenji Arakawa: I'll open the road at seven. Go and sit down.
+}
++ [(Leave it.)]
+    ~ end_quiet = true
+    #exit_conversation
+    -> end_rest

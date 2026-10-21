@@ -1,4 +1,5 @@
 INCLUDE m10_carryover_vars.ink
+VAR end_quiet = false   // end_rest: skip the line once after an exit
 // ================================================
 // Mission 10: Full Disclosure - Officer Dev Malhotra (malhotra_post)
 // Group B, stage 7b. Contract §1.4. Person-chat, koImmune, at the van end
@@ -13,12 +14,14 @@ VAR mal_log_asked = false
 VAR mal_line_asked = false
 
 === function mal_can_accuse() ===
-~ return clue_door_log and whodunit_live and accused == "" and officer_out == ""
+~ return clue_door_log and whodunit_live and accused == "" and officer_out == "" and not wren_at_core and ending == ""
 
 === start ===
+{ending != "": -> end_rest}
 -> post
 
 === post ===
+{ending != "": -> end_rest}
 {
 - mal_quiet:
     ~ mal_quiet = false
@@ -64,3 +67,23 @@ Agent HaX: Wrong, and I lose Malhotra's relay till you can clear him. Sure?
     Officer Dev Malhotra: Gladly.
     ~ mal_quiet = true
     -> post
+
+// Stage 9 walkthrough R1b-M1: after his ending, nothing in-raid. One quiet line
+// by ending, none from SAFETYNET people on Join (a narrator beat), and the exit.
+=== end_rest ===
+{
+- end_quiet:
+    ~ end_quiet = false
+- ending == "joined":
+    Narrator: Malhotra takes his headset off and doesn't look at you.
+- ending == "executed":
+    Narrator: Malhotra takes his headset off and says nothing.
+- ending == "scorched":
+    Officer Dev Malhotra: Relay's down. Get out with the others.
+- else:
+    Officer Dev Malhotra: Relay's down. We're done for the night.
+}
++ [(Leave it.)]
+    ~ end_quiet = true
+    #exit_conversation
+    -> end_rest

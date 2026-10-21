@@ -10,6 +10,7 @@ INCLUDE m10_carryover_vars.ink
 VAR kowc_quiet = false
 
 === start ===
+{ ending != "": -> after_end }
 { m09_recruiter_offer == "double_crossed" and not wren_at_core:
     -> waiting
 - else:
@@ -37,3 +38,10 @@ Agent 0x5E 'Lantern': Not here. Not in front of him.
 }
 + [(Leave her.)]
     -> start
+
+// Walkthrough R1b-M1: after his ending, one narrator beat and the exit.
+=== after_end ===
+Narrator: Kowalczyk looks at the floor.
+~ kowc_quiet = true
+#exit_conversation
+-> rest
