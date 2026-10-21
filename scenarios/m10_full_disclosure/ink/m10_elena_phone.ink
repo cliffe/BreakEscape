@@ -17,8 +17,7 @@ VAR elena_decided_said = false   // FA row 90: said on the first ring only
 === cut_call ===
 {gallery_shutter_cut:
     The shutter's already dead. You don't need me for this one.
-    #exit_conversation
-    -> cut_after
+    -> cut_close_right
 }
 {
 - cut_step == 0:
@@ -70,8 +69,7 @@ Breaker row. The shutter's third from the left. Leave the rest alone, they feed 
     ~ cut_step = 3
     ~ gallery_shutter_cut = true
     Done. That shutter won't close tonight. Go get him.
-    #exit_conversation
-    -> cut_after
+    -> cut_close_way
 + [Give me a minute.]
     Third from the left. It'll wait.
     #exit_conversation
@@ -80,5 +78,19 @@ Breaker row. The shutter's third from the left. Leave the rest alone, they feed 
 // After the cut: no text, one way out.
 === cut_after ===
 + [(Put the phone away.)]
+    #exit_conversation
+    -> cut_after
+
+// Stage 9 final check (m09 CONTRACT §15 pattern): the phone closes ~3 ms after
+// the last line before #exit_conversation, so a call whose last line carries
+// information ends on a short unvoiced player reply. Flags are set before it.
+
+=== cut_close_way ===
++ [On my way.]
+    #exit_conversation
+    -> cut_after
+
+=== cut_close_right ===
++ [Right.]
     #exit_conversation
     -> cut_after

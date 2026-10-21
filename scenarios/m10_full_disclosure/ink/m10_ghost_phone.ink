@@ -65,8 +65,7 @@ The cupboard on the west wall's yours when you've answered.
 = kept_code
 #give_item:notes:ghost_cupboard_code
 Four digits. The rota inside names the man with the card.
-#exit_conversation
--> ghost_after
+-> ghost_close_got
 
 // Refused: the parley, and Ghost's question back. The answer picks the gift.
 === refused ===
@@ -79,8 +78,7 @@ You turned me down. Why?
     #give_item:notes:ghost_lock_code
     Then do this cleanly. Four digits, for the outer lock at the end of the gallery.
     Don't thank me. It's not for you.
-    #exit_conversation
-    -> ghost_after
+    -> ghost_close_got
 + [I didn't trust you to keep it.]
     ~ ghost_answer = "trust"
     ~ ghost_gift = "card"
@@ -89,8 +87,7 @@ You turned me down. Why?
     Then don't trust me. Check it. The one at the lock end. Fonoti.
     He carries the code card, and he'll want to be off shift.
     Don't thank me. It's not for you.
-    #exit_conversation
-    -> ghost_after
+    -> ghost_close_und
 
 // ---------------------------------------------------------------
 // Broken, unanswered, stranger: Ghost is selling the head start.
@@ -135,8 +132,7 @@ Agent HaX: If it sells, the release console can kill that share. It only does on
     ~ ghost_call_done = true
     Then watch. Five buyers, and not one of them knows you're in the room.
     It goes at four. Enjoy the view.
-    #exit_conversation
-    -> ghost_after
+    -> ghost_close_und
 
 // Broken branch, before the player owns the deal: nothing moves.
 === hook_refused ===
@@ -148,12 +144,25 @@ Not from you. You don't get to ask me about hospitals.
 ~ ghost_call_done = true
 No. *pause* I'd rather not leave on that.
 My share stays where it is. A clean exit, for once.
-#exit_conversation
--> ghost_after
+-> ghost_close_und
 
 // After the call: no text, one way out. The handset's mapping is gated on
 // !ghost_call_done, so the call itself never reopens.
 === ghost_after ===
 + [(Put the handset down.)]
+    #exit_conversation
+    -> ghost_after
+
+// Stage 9 final check (m09 CONTRACT §15 pattern): the phone closes ~3 ms after
+// the last line before #exit_conversation, so a call whose last line carries
+// information ends on a short unvoiced player reply. Flags are set before it.
+
+=== ghost_close_got ===
++ [Got it.]
+    #exit_conversation
+    -> ghost_after
+
+=== ghost_close_und ===
++ [Understood.]
     #exit_conversation
     -> ghost_after

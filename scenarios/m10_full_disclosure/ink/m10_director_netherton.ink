@@ -118,7 +118,7 @@ Agent HaX: Our former chief strategist. He trained me, and half the field. He wa
 === briefing_stakes ===
 Director Magnus Netherton: At six he publishes everything we ever catalogued. Every flaw, with working detail, free, to anyone.
 Director Magnus Netherton: City by city from six. Or everywhere in the same minute, if someone presses his key.
-Director Magnus Netherton: The cells get it at four, two hours early, as pay for the theft.
+Director Magnus Netherton: The cells get it at four, two hours early, as pay for stealing our database.
 {m08_completed and not neth_vector_present():
     Director Magnus Netherton: Vector declined. He said you would know why.
 }

@@ -131,12 +131,12 @@
             "style": "warning"
           },
           {
-            "text": "Breaching lead, Task Force Null. Eleven years in SAFETYNET. Stopped at the core with her hand out for his key.",
+            "text": "Breaching lead, Task Force Null. Eleven years in SAFETYNET. Badge cancelled at six.",
             "condition": "globalVars.wren_at_core === true",
             "style": "warning"
           },
           {
-            "text": "Breaching lead, Task Force Null. Eleven years in SAFETYNET. Woke in the second van. Nobody had named her.",
+            "text": "Breaching lead, Task Force Null. Eleven years in SAFETYNET. Woke in the second van. Badge cancelled at six.",
             "condition": "globalVars.kowalczyk_ko === true",
             "style": "warning"
           },

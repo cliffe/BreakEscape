@@ -16,8 +16,7 @@ INCLUDE m10_carryover_vars.ink
 === cut_call ===
 {gallery_shutter_cut:
     Shutter's dead already. You don't need me for that.
-    #exit_conversation
-    -> cut_after
+    -> cut_close_right
 }
 {
 - cut_step == 0:
@@ -65,8 +64,7 @@ Breaker row. The shutter's third from the left, the big one. Don't touch the oth
     ~ cut_step = 3
     ~ gallery_shutter_cut = true
     That's it. Shutter's dead. Sixty-year-old kit, and it still does what it's told.
-    #exit_conversation
-    -> cut_after
+    -> cut_close_way
 + [Give me a minute.]
     Third from the left. Take your time.
     #exit_conversation
@@ -75,5 +73,19 @@ Breaker row. The shutter's third from the left, the big one. Don't touch the oth
 // After the cut: no text, one way out.
 === cut_after ===
 + [(Put the phone away.)]
+    #exit_conversation
+    -> cut_after
+
+// Stage 9 final check (m09 CONTRACT §15 pattern): the phone closes ~3 ms after
+// the last line before #exit_conversation, so a call whose last line carries
+// information ends on a short unvoiced player reply. Flags are set before it.
+
+=== cut_close_way ===
++ [On my way.]
+    #exit_conversation
+    -> cut_after
+
+=== cut_close_right ===
++ [Right.]
     #exit_conversation
     -> cut_after

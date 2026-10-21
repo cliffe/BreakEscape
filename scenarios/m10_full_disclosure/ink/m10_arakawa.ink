@@ -78,7 +78,7 @@ Officer Kenji Arakawa: The sheriff closed it. Nobody asked who for.
 {ending != "": -> end_rest}
 {arakawa_call_done: -> gate_rest}
 Narrator: Arakawa steps up beside you at the gate and dials.
-Officer Kenji Arakawa: She goes to bed in five minutes. Thirty seconds, I promise.
+Officer Kenji Arakawa: Our clock runs on UTC. At home it's her bedtime. Thirty seconds, I promise.
 Narrator: He turns half away and talks low into the phone. Something about Saturday.
 Officer Kenji Arakawa: She wants a telescope. I'm getting her a telescope.
 ~ arakawa_call_done = true

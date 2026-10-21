@@ -37,17 +37,24 @@ A reduced charge, and you get the rest of my book. Or nothing, and you still hav
     ~ victoria_line_deal = "deal"
     ~ victoria_line_done = true
     Then I'll keep talking after tonight. You'll find I'm good at it.
-    #exit_conversation
-    -> call_after
+    -> vic_close_und
 + [No deal. You gave it for free.]
     ~ victoria_line_deal = "no_deal"
     ~ victoria_line_done = true
     I did, didn't I. Use it on him. He hates being read.
-    #exit_conversation
-    -> call_after
+    -> vic_close_und
 
 // After the call: no text, one way out.
 === call_after ===
 + [(Put the phone away.)]
+    #exit_conversation
+    -> call_after
+
+// Stage 9 final check (m09 CONTRACT §15 pattern): the phone closes ~3 ms after
+// the last line before #exit_conversation, so a call whose last line carries
+// information ends on a short unvoiced player reply. Flags are set before it.
+
+=== vic_close_und ===
++ [Understood.]
     #exit_conversation
     -> call_after

@@ -85,7 +85,7 @@ Voltage's print match ("I told you it'd be waiting. It was.") and the Alpha tape
 | T-41a | `monitor_guard` | Where's Farah? She was on till six. | `room_entered:gallery` with `globalVars.imran_outcome === 'talked_round' && !globalVars.gallery_camera_blinded` | `delayMs: 4000`. Her coat on the empty chair. **Fixed** (MC §3.5) |
 | T-41b | `lock_guard` | (T-41a's string) | `room_entered:gallery` with `globalVars.imran_outcome === 'talked_round' && globalVars.gallery_camera_blinded && !globalVars.fonoti_ko` | the monitor guard has gone to look at the camera |
 | T-42 | `nightshade_lock` | Go on. I've got the door. | `global_variable_changed:outer_lock_open` with `value === true && globalVars.nightshade_taken_in` | his voice on the lock's intercom. **Fixed** (MC §3.5) |
-| T-43 | narrator (stage 9: a narrator toast, or a `nightshade_lock` bark without the prefix) | Boots on the stair, then Nightshade's voice on the intercom, and the boots stop. | `conversation_closed:victoria_gallery` with `globalVars.victoria_gallery === 'trusted' && globalVars.share_zero_day !== 'stopped' && globalVars.nightshade_taken_in` | in place of the reinforcements (RL §2.7; condition per stage 8 M-1). **Fixed** (R1D-m9) |
+| T-43 | `nightshade_lock` | That's far enough. Back down the stair, all of you. | `conversation_closed:victoria_gallery` with `globalVars.victoria_gallery === 'trusted' && globalVars.share_zero_day !== 'stopped' && globalVars.nightshade_taken_in` | his voice on the lock's intercom, in place of the reinforcements (RL §2.7; condition per stage 8 M-1). Rewritten at stage 9 (IMPL_REVIEW_R1_TEXTS item 2): a bark can't carry narration, so the old "Boots on the stair…" line is now his own |
 
 ## 5. The core
 

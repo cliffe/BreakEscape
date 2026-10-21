@@ -127,10 +127,18 @@ Guard: Whoa. Hands where I can see them.
     -> fight
 
 // ---------------------------------------------------------------
-// The server hall: two patrols, no talking past.
+// The server hall: two patrols. Playtest B-03: with the raid team in the
+// hall (hall_team_present, set by stage 9's staging mappings) the player can
+// call them in, and both guards stand down (hall_guards_stood_down). Without
+// the team, every option is a fight, as designed.
 // ---------------------------------------------------------------
 === hall_a ===
+{hall_guards_stood_down:
+    -> passed
+}
 Guard: Hall's closed. Turn around.
++ {hall_team_present} [(Wave the team up behind you.)]
+    -> hall_stand_down
 + [I'm going to the core. Read the photo.]
     #hostile:hall_guard_a
     Guard: Core's past us. Nobody's going past us.
@@ -145,7 +153,12 @@ Guard: Hall's closed. Turn around.
     -> fight
 
 === hall_b ===
+{hall_guards_stood_down:
+    -> passed
+}
 Guard: Hey! Off the console row!
++ {hall_team_present} [(Wave the team up behind you.)]
+    -> hall_stand_down
 + [Do you know what that schedule does?]
     #hostile:hall_guard_b
     Guard: I watch the floor. I don't read it.
@@ -201,6 +214,15 @@ Guard: Alarm's up. Down on the grating, now!
     ~ grd_quiet = true
     #exit_conversation
     -> fight
+
+// The raid team steps in; both hall guards stand down at once.
+=== hall_stand_down ===
+~ hall_guards_stood_down = true
+Narrator: The raid team comes up the row behind you, weapons low.
+Guard: That's more of you than they pay me for. I didn't see anyone.
+~ grd_quiet = true
+#exit_conversation
+-> passed
 
 // Any guard who has turned.
 === fight ===

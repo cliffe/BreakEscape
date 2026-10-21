@@ -363,7 +363,7 @@ Kowalczyk. I'll put it to Netherton.
     Agent 0x2D 'Anchor': Copy. Going.
 - else:
     Director Magnus Netherton: I have nobody to send. Quintero is off the raid.
-    Then she's going where he is. You'll meet her there.
+    Then she's heading for the core. You'll meet her there.
 }
 -> support_hub
 
@@ -625,31 +625,26 @@ Director Magnus Netherton: Breach. Go.
 {m09_deck_pulled == "alpha_tapes":
     The best lock there is. Tape two.
 }
-#exit_conversation
--> DONE
+-> hax_close_way
 
 === inner_door_call ===
 Inner door's on their monitoring. I've got it.
-#exit_conversation
--> DONE
+-> hax_close_got
 
 // OT §4.3: named as Nightshade's doing, with the way round in the same breath.
 === tripwire_call ===
 That's Nightshade's entry. The door's locked from their side, and they know we're coming.
 There's a ladder at the guard post. Up and round.
-#exit_conversation
--> DONE
+-> hax_close_way
 
 === ladder_call ===
 Up the shaft. The release is on the corridor wall. Throw it and come back down.
 Door's yours.
-#exit_conversation
--> DONE
+-> hax_close_way
 
 === stair_call ===
 Stair's open. Workshop floor's below you.
-#exit_conversation
--> DONE
+-> hax_close_way
 
 // OT §4.4, arc §6.3 item 8 and §6.5. Named gallery_open_call: the contract's
 // "gallery_open" is also a global, and ink rejects the clash. disableClose: true, lines only, so a
@@ -664,8 +659,7 @@ Stair's open. Workshop floor's below you.
 }
 {officer_out == "malhotra":
     Netherton sweeps the... I'm losing y...
-    #exit_conversation
-    -> DONE
+    -> hax_close_und
 }
 Netherton sweeps the whole place at six. Whoever you leave standing up there, he collects.
 Up the stair, along the walkway, the lock's at the far end. He's jamming me.
@@ -673,8 +667,7 @@ You're on your own for one room. I'll be at the door.
 {m03_victoria_fate == "arrested" and not victoria_line_done:
     Sterling's still on the line. She has something on Vos.
 }
-#exit_conversation
--> DONE
+-> hax_close_und
 
 // The by-hand cut (CONTRACT §1.6), HaX's voice. Her own guarded resume knot:
 // it routes on cut_step, so a re-ring, the hub topic or a reload lands on the
@@ -682,8 +675,7 @@ You're on your own for one room. I'll be at the door.
 === cut_call ===
 {gallery_shutter_cut:
     Shutter's already dead. Nothing left to do in there.
-    #exit_conversation
-    -> DONE
+    -> hax_close_right
 }
 {
 - cut_step >= 2:
@@ -728,9 +720,32 @@ Top row. The third breaker from the left feeds the shutter.
     ~ cut_step = 3
     ~ gallery_shutter_cut = true
     That's the shutter. It's dead.
-    #exit_conversation
-    -> DONE
+    -> hax_close_way
 + [Give me a minute.]
     Third from the left. I'll be here.
+    #exit_conversation
+    -> DONE
+
+// Stage 9 final check (m09 CONTRACT §15 pattern): the phone closes ~3 ms after
+// the last line before #exit_conversation, so a call whose last line carries
+// information ends on a short unvoiced player reply. Flags are set before it.
+
+=== hax_close_way ===
++ [On my way.]
+    #exit_conversation
+    -> DONE
+
+=== hax_close_got ===
++ [Got it.]
+    #exit_conversation
+    -> DONE
+
+=== hax_close_und ===
++ [Understood.]
+    #exit_conversation
+    -> DONE
+
+=== hax_close_right ===
++ [Right.]
     #exit_conversation
     -> DONE

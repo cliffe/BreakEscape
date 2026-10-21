@@ -923,9 +923,9 @@ In eleven counties, people calling for help still get a dead line. Day thirteen.
 4. `globalVars.sleeper_caught === true && globalVars.wren_at_core === true` → "Named on the line. Stopped at the core anyway."
 5. `globalVars.sleeper_caught === true` → "Named. In the van by six."
 6. `globalVars.ending === 'joined'` → "Never came through the service door. No need." (w)
-7. `globalVars.wren_at_core === true` → "Came through the service door for the key. Stopped. Never named." (w)
-8. `globalVars.kowalczyk_ko === true` → "Knocked out below ground. Never named." (w) (only her bunker copies are knockable now, R1C-M2)
-9. always → "Never named." (w)
+7. `globalVars.wren_at_core === true` → "Came through the service door for the key. Stopped. Never accused." (stage 9: "named" clashed with the SAFETYNET heading's 'WREN') (w)
+8. `globalVars.kowalczyk_ko === true` → "Knocked out below ground. Never accused." (w) (only her bunker copies are knockable now, R1C-M2)
+9. always → "Never accused." (w)
 
 **OFFICER DEV MALHOTRA**
 
