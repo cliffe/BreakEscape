@@ -134,3 +134,6 @@ Orchestrator rulings for the R1 fix passes:
 | m09 structure (`m09.../stage_1/REVIEW_R2_STRUCTURE.md`) | 0 | 3 | 12 | not clean: the night's order and guarantees aren't enforced (R2-S01 flag order, R2-S02 empty exports / skippable identity scene, R2-S03 schedule clue optional); arc changes: accept 8, tweak 6, modify 3, add 6; 14 engine items for stages 4–5 |
 
 Rulings sent with m09's R2 fix pass: WREN single goal; reviewer's locks for the order; HaX refuses "Ninety-nine" in m09 (matches m10); "the rest" (he asked her to go with him; she said no, but it took till morning) is only promised in m09, paid in m10; budget stated as a range (85 with field guides, 95–100 without).
+| m10 structure (`m10.../stage_1/REVIEW_R2_STRUCTURE.md`) | 0 | 5 | 14 | not clean: R1 blocker gone; S2-01 WREN told in front of the team, S2-02 camera would show her, S2-03 tunnel fork names her, S2-04 clue 3 source missable, S2-05 epilogue payoffs lack homes; budget ~105 (108–115 first time); arc changes: accept 23, modify 10, new 34–36; 23 engine items |
+
+Rulings sent with m10's R2 fix pass: adopt both reviewers' fixes; m10 ~105 min, ceiling 110; no section-replace scripts (keep diffs reviewable); Alpha tapes/export name to agree with m09.
