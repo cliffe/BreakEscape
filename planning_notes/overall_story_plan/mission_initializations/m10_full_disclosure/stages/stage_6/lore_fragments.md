@@ -2,7 +2,7 @@
 
 ## 0. Status, sources and conventions
 
-Stage 6, draft 1, 2026-10-21. Author: m10 stage 6 author (Opus). Review rounds to follow in this folder (`REVIEW_R1.md` …).
+Stage 6, draft 2, 2026-10-21. Author: m10 stage 6 author (Opus). Round 1's two reviews (`REVIEW_R1_WRITING.md`, "W-nn"; `REVIEW_R1_CLUES.md`, "R1C-…") and the coordinator's rulings are folded in; §8 lists every finding and where it landed.
 
 **Built on** `../stage_1/story_arc.md` ("arc"), `../stage_2/storytelling_elements.md` ("SE"), `../stage_3/moral_choices.md` ("MC", the authority for choices, costs and globals), `../stage_4/objectives_tasks.md` ("OT", incl. §16's globals inventory), `../stage_5/room_layout.md` ("RL", the authority for object ids and positions), and `../../finale/FINALE_ARC.md` ("FA") §1–9 and §13's stage 6 handover (rows B1–B3, 10-1 to 10-8; the milestone part `finale/MILESTONE_S4-5_PART_a3237d9b.md` §3 is the same list in more detail). Prompt: `story_design/story_dev_prompts/06_lore_fragments.md`; standards that win where they differ: `.claude/skills/scenario-design-review/SKILL.md` §2b (clue distribution), `README_scenario_design.md` (object fields, variants, notes items, "Closing card and credits"), `README_ink_best_practices.md`. Canon checked against shipped m01–m08 (`scenarios/*/scenario.json.erb` and ink, read-only) and the universe bible. m09's shared facts come from m09's stage 1–5 documents (its stage 6 is being written in parallel; §6 lists what the two must match). No VM material was opened; flags are named by story meaning only.
 
@@ -12,10 +12,11 @@ Stage 6, draft 1, 2026-10-21. Author: m10 stage 6 author (Opus). Review rounds t
 
 - **Fixed text only.** Nothing prints a variable. Where a line depends on state, each state has its own fixed string with its condition.
 - **Object variants** (`observationVariants` / `textVariants`) take `&&` only (`utils/conditional-text.js`: no `||`, no parentheses), are read top to bottom, first match wins, so each list below is written most specific first and the default is the object's own `observations` / `text`. Readable objects get both lists with the same entries (README:536). A condition that would need `||` is written as one variant per arm. `=== ''` and `!globalVars.x` both work in that evaluator.
-- **Card and credits conditions** are JavaScript over `globalVars` (`music/scenario-music-events.js:35-49`, `new Function`), so `||`, parentheses and `? :` work there, and every name is written `globalVars.<name>`.
-- **No character from the coded-string list** (FA §13 B2) in any string a player sees (object and item text, names, notes, card and credit lines), coded or not, so one lint covers all of it; conditions are code, not displayed text, and use JavaScript's own `||` where §3 needs it: no `|`, `#`, `//`, `{`, `}`, `->`, `<-`, `<>`, `~`, `[`, `]`, `\`, `"`, `<%`, and no line starting `*`, `-`, `+` or `=`. Quoted speech inside a document uses single quotes. Line breaks below are real line breaks; stage 9 writes them as JSON newlines. (This is why the countdown separator is `·`, not OT §6's `|`; §6 change S6-07.)
+- **Card and credits conditions use the same subset: `globalVars.<name>`, `!`, `===` / `!==` and `&&` only** (coordinator ruling, round 1: never `||`, parentheses or arithmetic, whatever the music evaluator would accept). Where the close needs an "or" or a count, a derived string global carries it, computed in ink at the start of the closing scene, where `or` is native (§3.1, `close_compute`). A person's "either of these" is two clauses with the same text; a line's is two exclusive rows with the same text.
+- **No character from the coded-string list** (FA §13 B2) in any string a player sees (object and item text, names, notes, card and credit lines), coded or not, so one lint covers all of it (conditions are code, not displayed text): no `|`, `#`, `//`, `{`, `}`, `->`, `<-`, `<>`, `~`, `[`, `]`, `\`, `"`, `<%`, and no line starting `*`, `-`, `+` or `=`. Quoted speech inside a document uses single quotes. Line breaks below are real line breaks; stage 9 writes them as JSON newlines. (This is why the countdown separator is `·`, not OT §6's `|`; §6 change S6-07.)
 - **Notes items render a markdown subset** (README:487), so no notes text below uses `#`, `**`, a leading `-` or a table row.
-- UK English in prose; in-world American paperwork keeps American place names. UTC on every clock. WREN has no pronoun before the accusation, and no document gives one. Nobody genders the player. "The power room", never "the plant". Player-facing text never says "Ghost Protocol"; the m07 cells are named by their leaders (FA §4.6).
+- UK English in prose and in SAFETYNET's and Tesseract's papers; American paperwork (the bunker's staff, the 1962 drawings, Social Fabric) uses American words and spellings (roster, coffee pot, data center), as m09 stage 6 does. UI object names are SAFETYNET's view and stay UK.
+- **The credits call the player "0x00"** (or "her agent" from HaX's side, "his own agent" in a knock-out), never "you", as m07's shipped credits do. UTC on every clock. WREN has no pronoun before the accusation, and no document gives one. Nobody genders the player. "The power room", never "the plant". Player-facing text never says "Ghost Protocol"; the m07 cells are named by their leaders (FA §4.6).
 
 **Fixed values at a glance** (§2 has the reasons):
 
@@ -25,7 +26,7 @@ Stage 6, draft 1, 2026-10-21. Author: m10 stage 6 author (Opus). Review rounds t
 | Outer lock maintenance code (the shift code: the code card, Ghost's `ghost_lock_code`, the keypad's four worn keys) | `6083` |
 | Asante's model terminal password (from the margin note's decode) | `DOUBLECOUNT` (upper case) |
 | The lock guard | Sione Fonoti, 34, Samoan-American, from West Valley City, Utah; `displayName` "Sione Fonoti" |
-| The Citadel's incident file | `incident_file`, "Citadel Incident File V-47", on the forward post's table |
+| The Citadel's incident file | `incident_file`, "Citadel Incident File V-47", at the forward post's road end, (3, 8) |
 | The bunker's original name (Helena's plans) | Sun River Regional Control Site, civil defence, 1962 |
 | The bench's front supplier | Gallatin Instrument Supply, Bozeman |
 | The corrected casualty range (Asante) | 2,100 to 3,600 in the first thirty days (his signed figure: 1,100 to 2,600) |
@@ -36,7 +37,7 @@ Ids and positions are RL §2's. For each object: `name`, `observations` (the hov
 
 ### 1.1 Forward post
 
-**`incident_file`** (new, S6-01; on the kit table's south edge, suggested (12, 8), clear of `arakawa_post`; readable, `observationDisplay: "gameDisplay"`, `addToNotes: true`). Name: "Citadel Incident File V-47". Observations: "A buff folder with the Citadel's crest, signed out to Task Force Null. Somebody has read it until the corners went soft." Carries: the theft, the personnel index (why the readers know SAFETYNET badges, FA M-04), the vault line left open as a trace (F7, D-13), and the cracker quarantine (the stores half of the cracker canon, FA row 29). Changed by: nothing.
+**`incident_file`** (new, S6-01; on a kit crate at the road end, suggested (3, 8): one free tile from `case_signout_sheet` at (5, 8), off the table's two readable tiles, and clear of the NPCs' faces; stage 9 checks against dressing; readable, `readDisplay: "gameDisplay"`, `addToNotes: true`). Name: "Citadel Incident File V-47". Observations: "A buff folder with the Citadel's crest, signed out to Task Force Null. Somebody has read it until the corners went soft." Carries: the theft, the personnel index (why the readers know SAFETYNET badges, FA M-04), the decision to leave the door open and follow it (F7, D-13), and the cracker quarantine (the stores half of the cracker canon, FA row 29). It stops at "followed, on my signature": that the line is still open and reaches the master is the core's to say (`core_files`, then HaX's flag 4 line; W-01). Changed by: nothing.
 
 ```
 SAFETYNET. THE CITADEL. INCIDENT FILE V-47.
@@ -47,9 +48,9 @@ Copy for Task Force Null, Montana. Status: open.
 
 2. The door. Agent 0x47's own access into the vault, opened from inside and left open. Found on day nine.
 
-3. The decision. The door was not closed. It was watched, so that it could be followed to wherever the copy went. It has been followed. It ends at the coordinate on the Montana order, and it is still open from that end. Whoever holds that end can reach the master. Risk accepted, on my signature.
+3. The door. Left open, under watch, to follow the copy. Followed to the coordinate on the Montana order. Risk accepted, on my signature.
 
-4. Stores. Every PIN cracker 0x47 signed for in the last three years is withdrawn and held: 160 units, one supplier, four batches. Replacements are being sourced elsewhere.
+4. Stores. Every PIN cracker 0x47 signed for in the last three years is withdrawn and held: 160 units, one supplier, four batches. Stores will buy elsewhere. They have not yet said where.
 
 M. Netherton, Director.
 ```
@@ -76,7 +77,10 @@ Contents, as listed:
 Closed: not yet.
 ```
 
-Variant, same for both, condition `globalVars.m09_sleeper_named === true` (taken or double-crossed; Kowalczyk was never at the table): the same sheet with the two lines changed to "Opened: 01:52. Arakawa." and "Packed and checked by: K.A." The rest is identical.
+Variants, same for both, the rest of the sheet identical (R1C-M1):
+
+1. `globalVars.m09_recruiter_offer === 'double_crossed'` (she walked off the apron at Helena before the case was packed): "Opened: 01:52. Arakawa." and "Packed and checked by: K.A."
+2. `globalVars.m09_recruiter_offer === 'taken'` (she packed the case before the briefing, and was detained at it): "Opened: 01:52. Arakawa." and "Packed and checked by: H.K., K.A." So the case that holds the unused WREN cloner still shows her hand in the packing, and points at nobody new.
 
 **`helena_plans`** ((8, 8); readable, `gameDisplay`; `onRead.setVariable: { plans_read: true }`). Name: "Helena's Plans: Tomb Gamma, As Built". Observations: "The construction file from the Helena archive. Cold War drawings, every room numbered, stamped SUPERSEDED in red." Carries: the bunker's history (lore), the hand crank (pays the silent Nightshade's "Manual."), the shutter fed from the power room (why the power room is on the route), and the half of the payment check: entry 3, the inner door's interlock, which Nightshade's payment calls "original, unchanged" and contradicts (the payment's text is §1.10). Changed by: nothing.
 
@@ -90,7 +94,7 @@ From the construction file. Original drawings only.
 3. Tunnel inner door. Steel. Interlocked to the guardroom: it opens from the tunnel side only on the guardroom's release. Opened any other way, it locks and sounds in the guardroom.
 4. Guardroom. Alarm board. Stair B down to the lower level.
 5. Workshops, lower level.
-6. Plant room. Diesel, battery room, switchgear. The gallery shutter is fed from here.
+6. Power room. Diesel, battery room, switchgear. The gallery shutter is fed from here.
 7. Command room. Plotting board. Sealed equipment section at the east end, maintenance hatch.
 8. Gallery over the control room. Blast shutter at the stair head.
 9. Control room. Emergency exit, east wall, steel door.
@@ -100,7 +104,7 @@ SUPERSEDED BY REFIT. Refit drawings not on file.
 
 **`projection_desk`** ((11, 3); readable, `gameDisplay`). Name: "Projection Desk". Carries: the `hardened` record answer's evidence, and a third, independent figure that lands near Asante's correction. Changed by: m07 `debrief_stance`.
 
-- Default observations: "A field screen on a folding desk, dark. Set up for numbers nobody asked for." Default text: "The screen is dark."
+- Default observations: "A field screen on a folding desk, dark. Set up for numbers nobody asked for." Default text: "The screen is dark. Nobody asked it anything."
 - Variant, same for both, `globalVars.m07_debrief_stance === 'hardened'`: observations "The Council's curve, live. It doesn't flatten after a month." Text:
 
 ```
@@ -116,9 +120,9 @@ Week 12: 3,900 to 6,200, still rising
 Analysis: the source's own figure stops at thirty days. Ours doesn't.
 ```
 
-**`gate_hut`** ((18, 6); not readable). Changed by: m06 `assets_seized`. Default observations: "The bunker's gate hut, lit. A radio playing low inside, and someone who'd rather be anywhere else." Variant `globalVars.m06_assets_seized === true`: "The gate hut, dark and empty. Beside it the refit fence just stops, a few metres short of the rock." (HaX names the freeze; the gap is visual only, A30.)
+**`gate_hut`** ((18, 6); not readable). Changed by: m06 `assets_seized`. Default observations: "The bunker's gate hut, lit. A radio playing low inside, and a man in a parka reading the same page of a paperback." Variant `globalVars.m06_assets_seized === true`: "The gate hut, dark and empty. Beside it the refit fence just stops, a few metres short of the rock." (HaX names the freeze; the gap is visual only, A30.)
 
-**`kit_table`** (decor): "A folding table under a work lamp. Maps, radios, coffee going cold, and the breaching case open at one end."
+**`kit_table`** (decor): "A folding table under a work lamp. Maps, radios, coffee going cold, and the breaching case at one end." (No "open": the sheet says it was opened at 01:52, and the screen reads 01:45 at the briefing. R1C-m11: the case comes out shut and is opened seven minutes into the kit check, which keeps FA §4.4's and HaX's "one fifty-two". §6 S6-21 asks FA §4.0 and OT §6 to say "the breaching case on the table, opened at 01:52".)
 
 **`van_one`**: "The van. Side door open, the light on inside. A headset and a SAFETYNET badge on the step." (Malhotra's badge lies out all night, where a hand in the open case could reach it; FA §4.0.) **`van_two`**: "The second van. A steel rail along one wall, for cuffs."
 
@@ -131,13 +135,13 @@ Analysis: the source's own figure stops at thirty days. Ours doesn't.
 Default `text`:
 
 ```
-TUNNEL POST. NIGHT ROTA, DAYS 10 TO 16.
+TUNNEL POST. NIGHT ROSTER, DAYS 10 TO 16.
 22:00 to 06:00 UTC. One on post. Change at 02:30.
 
 Day 12 to 13: J. Kiel, then T. Abara.
 Day 13 to 14: T. Abara, then J. Kiel.
 
-The kettle stays on the post. So does the radio.
+The coffee pot stays on the post. So does the radio.
 ```
 
 Reeves variant, same for both: the default with one line added after the second day, "G. Reeves: on leave tonight. Back day 14." Four variants, one per arm, each the same text:
@@ -175,14 +179,16 @@ Power room: one technician.
 Command room: two, and the systems lead.
 Gallery: three.
 
-From the top: one SAFETYNET agent is expected tonight. Let them through to the core. Do not detain them. Nobody else gets through.
+From the top: the agent in the photo goes through to the core. Nobody else gets through.
 ```
 
 Variants, same for both, in this order (each replaces only the lines named):
 
-1. `globalVars.m06_assets_seized === true && globalVars.m07_hollis_resolved === 'evaded'`: "Gate: none." and "This office: one, desk only." Then, above the order from the top: "POSTS UNMANNED: BUDGET. The gate and this office's second chair stay empty until the account is unfrozen. Do not ask again." And beside the gate line, a photo pinned under "STOOD DOWN, BUDGET": "R. Hollis."
-2. `globalVars.m06_assets_seized === true`: the two lines and the memo as above, no photo.
-3. `globalVars.m07_hollis_resolved === 'evaded'`: "Gate: two, hut and fence. R. Hollis (photo pinned), and one." No memo.
+1. `globalVars.m06_assets_seized === true && globalVars.m07_hollis_resolved === 'evaded'`: "Gate: none." and "This office: one, desk only." Then, above the order from the top: "POSTS UNMANNED: BUDGET. The gate and this office's second chair stay empty until the account is unfrozen. Do not ask again." And under the gate line: "STOOD DOWN, BUDGET: R. HOLLIS." Observations for this variant: "Tonight's postings. A photo pinned under the gate line, a man with a tired face and STOOD DOWN written across it."
+2. `globalVars.m06_assets_seized === true`: the two lines and the memo as above, no Hollis line.
+3. `globalVars.m07_hollis_resolved === 'evaded'`: "Gate: two, hut and fence. R. Hollis, and one." No memo. Observations: "Tonight's postings, with a photo pinned beside the gate line."
+
+(W-17: the board's text is what the board says; the photo is described in the observation.)
 
 On variant 1 the freeze has kept Hollis home, so HaX's "I hope he stays in the hut" no longer fits; §6 change S6-09 gives her a line for that save.
 
@@ -232,7 +238,7 @@ On the double-cross the whodunit is off; the entry is lore and a sting (she used
 **`gallery_rota`** (in the cupboard; `type: notes`, takeable, readable, `onRead.setVariable: { gallery_rota_read: true, lock_guard_known: true }`). Name: "Gallery Shift Rota". Carries: the lock guard's name and that he carries the code card (a boss-key clue for the outer lock, FA §4.0 way 3). Changed by: nothing.
 
 ```
-GALLERY. NIGHT SHIFT, DAYS 10 TO 16.
+GALLERY. NIGHT ROSTER, DAYS 10 TO 16.
 22:00 to 06:00 UTC. Three on.
 
 Lock end: S. FONOTI. Carries the shift code card. The card stays on the walkway.
@@ -253,17 +259,17 @@ Refit, week 32. Purge test 1 of 3. Passed.
 Refit, week 33. Purge test 2 of 3. Passed. On the test sheet, in his hand: Both copies, or nothing.
 Refit, week 34. Purge test 3 of 3. Passed. Circuit armed.
 Refit, week 40. Camera bracket over the service door. Camera not wired. Do not wire it.
-Twelve days ago. Reader table reloaded from a new personnel table: 1,206 SAFETYNET badges. The service door takes any of them. Blast door 1 takes one, by name.
+After the four-site night. Reader table reloaded. New personnel table, 1,206 SAFETYNET badges. Service door: any of them. Blast door 1: one, by name.
 Day 12, 20:00. Standing order from below: the service door stays shut until told. Alarms on it silenced at this desk.
 ```
 
-**`fitter_locker`** ((1, 6); `lockType: key`, pickable, easy pins; contents `fitter_spare_card`, §1.10). Name: "Fitter's Locker". Observations: "The shift fitter's locker, dented, a cheap lock on it. Stencilled: FITTER. SPARES."
+**`fitter_locker`** ((1, 6); `lockType: key`, pickable, easy pins; contents `fitter_spare_card`, §1.10). Name: "Fitter's Locker". Observations: "The shift fitter's locker, dented, a cheap lock on it. Stencilled: MAINTENANCE. SPARES."
 
 **`clock_security`**: §1.9.
 
 ### 1.4 Workshop floor
 
-**`casualty_sheet`** ((4, 2); readable, `gameDisplay`, `addToNotes: true`; `onRead.setVariable: { casualty_sheet_read: true }`). Name: "Casualty Sheet". Observations: "His casualty sheet, pinned above the bench where the people who build his tools can see it. Someone has written in the margin, and he has signed under it." Carries: **the first rebuttal** (exchange 1: someone corrected his sheet upwards and he signed the old number), and Voltage's talk-down on the escaped branch ("This one's wrong by a thousand."). The body is m09's flag 4 sheet word for word (m09 SE, "The casualty sheet", the text on `mirror_job_printout`), so a player who read the original in Helena sees the same page with two additions. Changed by: nothing.
+**`casualty_sheet`** ((4, 2); readable, `gameDisplay`, `addToNotes: true`; `onRead.setVariable: { casualty_sheet_read: true }`). Name: "Casualty Sheet". Observations: "His casualty sheet, pinned above the bench where the people who build his tools can see it. Someone has written in the margin, and he has signed under it." Carries: **the first rebuttal** (exchange 1: someone corrected his sheet upwards and he signed the old number), and Voltage's talk-down on the escaped branch ("This one's wrong by a thousand."). The body is m09's flag 4 sheet word for word (m09 SE, "The casualty sheet", the text on `mirror_job_printout`), so a player who read the original in Helena sees the same page with three additions: the printing line, the margin correction and his second signature (W-19). Changed by: nothing.
 
 ```
 Printing 3. Refit model.
@@ -283,17 +289,19 @@ Under it, in the first hand: Seen. -- A.
 
 Whose initials (A35, settled): Asante's, "A.A.", and his second signature under them. The plain correction says *that* it is low and that someone else said so, which is all the rebuttal's plain form needs ("[Someone corrected your sheet upwards, and you signed the old number.]"). It doesn't say by how much or who: those are the decode's reward.
 
-**`casualty_margin_note`** ((6, 2); readable, `gameDisplay`, `addToNotes: true`). Name: "Margin Strip". Observations: "A strip torn from the same printout and pinned beside it. Letters in the same small, square hand, and none of them make words." Carries: the coded note, Base64, which decodes in the start kit's CyberChef workstation (operation "From Base64", one step) to a message that names Asante, gives the corrected range and the key to her model. Changed by: nothing. No `onRead` (reading the coded strip proves nothing; the decode is proved at the terminal, below).
+**`casualty_margin_note`** ((6, 2); readable, `gameDisplay`, `addToNotes: true`). Name: "Margin Strip". Observations: "A strip torn from the same printout and pinned beside the sheet. One long line in the same small, square hand, and none of it makes words." Carries: the coded note, Base64, which decodes in the start kit's CyberChef workstation (operation "From Base64", one step) to a message that names Asante, gives the corrected range and the key to her model. Changed by: nothing. No `onRead` (reading the coded strip proves nothing; the decode is proved at the terminal, below).
 
-Text (the coded line is one unbroken string, 176 characters, checked against the B2 list: letters, digits and a trailing `==` only):
+`text` is the coded line alone, so a paste of the whole notepad page decodes cleanly (R1C-m7: CyberChef's From Base64 drops non-alphabet characters, and an English lead line would garble the result). It is one unbroken string, 212 characters, checked against the B2 list (letters and digits only, no padding), re-encoded and decoded with `base64` after round 1's change:
 
 ```
-Pinned beside the sheet, in the small square hand:
-
-UmVjb3ZlcnkgY291bnRlZCB0d2ljZSwgaG9zcGl0YWwgcm93cy4gVHJ1ZSByYW5nZSAyLDEwMCB0byAzLDYwMC4gTXkgbW9kZWwgaXMgb24gdGhlIGJlbmNoIHRlcm1pbmFsLCBrZXkgRE9VQkxFQ09VTlQuIEFiZW5hIEFzYW50ZQ==
+Rm9yIHdob2V2ZXIgY2hlY2tzIGhpcyBzdW1zLiBSZWNvdmVyeSBjb3VudGVkIHR3aWNlLCBob3NwaXRhbCByb3dzLiBUcnVlIHJhbmdlIDIsMTAwIHRvIDMsNjAwLiBNeSBtb2RlbCBpcyBvbiB0aGUgYmVuY2ggdGVybWluYWwsIGtleSBET1VCTEVDT1VOVC4gQWJlbmEgQXNhbnRl
 ```
 
-Decoded (verified with `base64 -d`): "Recovery counted twice, hospital rows. True range 2,100 to 3,600. My model is on the bench terminal, key DOUBLECOUNT. Abena Asante"
+Decoded: "For whoever checks his sums. Recovery counted twice, hospital rows. True range 2,100 to 3,600. My model is on the bench terminal, key DOUBLECOUNT. Abena Asante"
+
+**Who she wrote it for** (W-08). She corrected the sheet in the open and he signed under it anyway; the coded strip is her second try, left for anyone who would check his arithmetic, which is what Voltage does ("You checked my sums.") and what the player is doing. It fits SE §3.6's Asante: a true believer in the software who wants the numbers honest, and who told herself the signature was his business. It also explains why she will confirm the sheet if asked (C7). Her full name stays, because the rebuttal's decoded form names her.
+
+**HaX's pointer** (stage 7; S6-22): Imran's or HaX's "There's something written in the margin. Not plain English." gains HaX's half-line "Copy just the code." so the player pastes the right thing.
 
 Why Base64: it is the first-week encoding (m01, m08's "same tricks as your first week"), one step, so the finale's only hands-on decode outside the VM is quick ("fun and educational, not hard"), and it carries a real lesson the scene makes for itself: she hid a password in the margin by encoding it, and encoding is not encryption.
 
@@ -310,6 +318,7 @@ Release by key, all cities, first thirty days: 2,100 to 3,600.
 Fallback by city: still fewer, still later.
 
 Sent to him with printing 3. He thanked me. He signed the old number.
+Left here for whoever checks his sums.
 ```
 
 **`bench_log`** ((3, 6); readable, `gameDisplay`, `addToNotes: true`; `onRead.setVariable: { clue_bench_log: true }`). Name: "Bench Log: Outgoing". Observations (default): "The bench's outgoing log, on a clipboard hung from a nail. Batches, quantities, and one line that isn't a batch." Carries: **clue 3**'s first half (a cloner shipped "to WREN" in Task Force Null's own breaching case, and the badge it copied at 01:58), and the cracker canon's bench half: crackers go out by supplier batch with no end user, which is why a bench-made cracker proves nothing (FA row 29). The four cracker batches match the incident file's "160 units, one supplier, four batches". The bench's only cloner on the log is WREN's, so nothing here says SAFETYNET's own cloners came off this bench. Changed by: m09's naming of WREN.
@@ -344,7 +353,7 @@ Variants, same for both:
 
 **`shutter_isolator`** (`as-type:aes_esd_station`; readable). Name: "Shutter Isolator". Carries: what the room is for, and afterwards what was done in it. Changed by: the cut, and the camera switch inside the by-hand cut.
 
-- Default (RL's, before the cut): "A key switch and a breaker row. Whoever runs this room can cut it, or someone on the line can talk you through it."
+- Default, before the cut (replaces RL's, W-18; the talk-through is HaX's and Voltage's to offer, not the object's): "A key switch and a breaker row, labelled GALLERY SHUTTER. The key is in it."
 - Variants, same for both, in order:
   1. `globalVars.gallery_shutter_cut === true && globalVars.gallery_camera_blinded === true`: "Key turned, breaker row down. GALLERY SHUTTER: ISOLATED. Under it, a smaller switch thrown the other way: GALLERY CAMERA: OFF."
   2. `globalVars.gallery_shutter_cut === true`: "Key turned, breaker row down. GALLERY SHUTTER: ISOLATED."
@@ -368,7 +377,9 @@ Variants, same for both:
 
 **`schedule_terminal`** ((14, 4); readable, `gameDisplay`, `addToNotes: true`). Name: "Release Schedule: Staging Copy". Carries: the Publication's two modes and its size (92,460 entries, m08's catalogue total), the channels, the cells' early-access orders with Zero Day's representative named (the evidence for recruited Victoria's confront option), the backdoor's size, and the first entries in plain words, one of them marked with SAFETYNET's own "retain" (the hoarding claim's evidence, in m09's disposition wording). Changed by: flag 2, m03 `victoria_fate`, m07 `team_assignment` / `team_redirected`.
 
-Default (before flag 2): observations "The staging copy of the release schedule, behind the monitoring host's login." Text: "Behind the monitoring host's login. Nothing to read yet."
+Default (before flag 2): observations "The staging copy of the release schedule, behind the monitoring host's login." Default `text` is **empty** (R1C-m8), so before flag 2 the object shows only its observation and no page goes into the notepad; the readable branch is skipped when there is no text (stage 9 confirms in the browser, else the object is `addToNotes: false` and HaX's flag 2 line says where the schedule is).
+
+92,460 is the sum of m08's catalogue (`scenarios/m08_the_mole/scenario.json.erb:1905`: 47,239 zero-days, 12,847 unpatched criticals, 8,923 infrastructure weaknesses, 23,451 supply-chain vectors); m08 never prints the total, so this file fixes it as canon (§4.4).
 
 After flag 2, the text is assembled from four fixed blocks. Block A, every save:
 
@@ -422,7 +433,7 @@ The backdoor conditions are FA §4.2's (the redirect also writes `trojan_horse`,
 
 **`release_console_controls`** ((12, 4)). Name: "Release Console Controls". Observations: default "Locked to the staging copy." Variant `globalVars.flag2_submitted === true`: "The head-start feeds, and the backdoor's queue. HaX can work one feed from here: kill it, or follow it. Not both." (The click opens HaX's `console` knot, OT; this text only labels it.)
 
-**`uplink_printer`** ((2, 7); readable, `gameDisplay`). Name: "Uplink Printer". Observations (default): "A printer by the west door, a draft in the tray with your photo on it, and a rota clipped to the corner." Carries: Social Fabric's story (FA row 84), whether it is running, and whether it names SAFETYNET and 0x00 (m05's "we'll be watching for their reply", row 66); the sign-off ties it to the Initiative's account, which is what the Helena letters were (m09 `cage_bin = letters`; HaX's line at this prop is stage 7's). Changed by: m07 Fracture, m05 `entropy_program_exposed`.
+**`uplink_printer`** ((2, 7); readable, `gameDisplay`). Name: "Uplink Printer". Observations (default): "A printer by the west door, a draft in the tray with your photo on it, and a schedule clipped to the corner." Carries: Social Fabric's story (FA row 84), whether it is running, and whether it names SAFETYNET and 0x00 (m05's "we'll be watching for their reply", row 66); the sign-off ties it to the Initiative's account, which is what the Helena letters were (m09 `cage_bin = letters`; HaX's line at this prop is stage 7's). Changed by: m07 Fracture, m05 `entropy_program_exposed`.
 
 Default `text` (held; Fracture covered, or m07 never played):
 
@@ -430,12 +441,12 @@ Default `text` (held; Fracture covered, or m07 never played):
 SOCIAL FABRIC. DRAFT. HOLD FOR SIGNAL.
 
 MASSACRE IN MONTANA
-Agents with no insignia stormed a rural data centre tonight and opened fire on the night staff. Eleven dead at their desks, say families still waiting at the fence.
+Agents with no insignia stormed a rural data center tonight and opened fire on the night staff. Eleven dead at their desks, say families still waiting at the fence.
 
 Photo: the agent who led them in. (Your photo, the one from the security office wall.)
 
 Clipped to the corner:
-MONTANA DESK. RELEASE ROTA. On the breach signal: three accounts per city, Seattle first.
+MONTANA DESK. RELEASE SCHEDULE. On the breach signal: three accounts per city, Seattle first.
 STATUS: HELD. Awaiting signal.
 For the Initiative's account.
 ```
@@ -476,11 +487,11 @@ Variants, same for both, in order:
 2. `globalVars.console_choice === 'stopped'`: "His console. The cover is down. The disarm's lamp is green."
 3. Default: "His console. One key under a hinged cover, and his hand resting beside it."
 
-**`core_files`** (new, S6-03; on the back wall beside the host terminal, suggested (4, 2), clear of the outer lock's approach at (1, 2); readable, `gameDisplay`, `addToNotes: true`). Name: "Core Host: File Index". Carries the core's LORE in one page: what was stolen and what it was used for, the vault line, the key's rule, the purge, his two closed workshops (m09's Tomb Alpha and Tomb Beta), and his notice. A player who reads it before his case has the whole Publication in his own filing. Changed by: flag 4, m09 `albion_notified`.
+**`core_files`** (new, S6-03; a wall screen on the back wall, suggested (4, 2), two tiles west of the key console's readout and clear of the outer lock's approach at (1, 2); the host terminal itself is at (2, 4); readable, `readDisplay: "gameDisplay"`, `addToNotes: true`). Name: "Core Host: File Index". Carries the core's LORE in one page: what was stolen and what it was used for, the vault line, the key's rule, the purge, his two closed workshops (m09's Tomb Alpha and Tomb Beta), and his notice. A player who reads it before his case has the whole Publication in his own filing. Changed by: flag 4, m09 `albion_notified`.
 
-- Default: observations "His box's file index, behind the core host's own login." Text: "Behind the core host's own login."
+- Default: observations "His box's file index, behind the core host's own login." Default `text` empty (R1C-m8: no stale page in the notepad before flag 4).
 - Variants, same for both, in order:
-  1. `globalVars.flag4_submitted === true && globalVars.m09_albion_notified === true`: the index below with the notice line reading "notice, albion    Drafted nine years ago. Sent from Helena on day 12, by someone else."
+  1. `globalVars.flag4_submitted === true && globalVars.m09_albion_notified === true`: the index below with the notice line reading "notice, albion    2017. Drafted. Sent from Helena, day 12. Not by me."
   2. `globalVars.flag4_submitted === true`: the index below.
 
 ```
@@ -494,10 +505,12 @@ early access      04:00 UTC. Two shares, paid for the theft.
 key               One hand. One of theirs.
 purge             Armed. Both copies, or nothing.
 alpha             Closed. Papers to Helena.
-beta              Closed. Server left running in Helena, on purpose.
-notice, albion    Drafted nine years ago. Not sent.
-reading, 0x00     A copy. The original is in Helena.
+beta              Closed. Server left running in Helena. For whoever came.
+notice, albion    2017. Drafted. Not sent.
+reading, for 0x00 A copy. The original went to Helena.
 ```
+
+His own filing, in his voice (W-09, W-10): dates, not explanations, and the Reading filed *for* 0x00. This is where the vault line is first said to be open still (W-01): the incident file at the forward post stops at "followed".
 
 "One of theirs" is his rule for the key ("It has to be one of theirs."), set down before WREN comes through the door; it gives WREN no pronoun.
 
@@ -564,7 +577,7 @@ A SAFETYNET agent shot a man in a converted Cold War bunker in Montana tonight. 
 ```
 
   (It holds for both cold buttons, "where he sits" and "where he stands".) Headline, photo and the one true paragraph only; there is no "massacre" in it (FA §4.5). It goes out on every branch of the executed ending (running: updated; held: sent), so it has no Fracture variant.
-- **`clock_blast_door`** observations, in order: `globalVars.breach_announced === true`: "The door's panel. OPENED FOR: AGENT 0x00. Under it, the clock."; `globalVars.breach_open === true`: "The door's panel. MANUAL. NO READ. Under it, the clock."; default: "The door's panel. READER ARMED, ONE NAME. Under it, the clock." (The panel says by name whether the bunker knows the player is in.)
+- **`clock_blast_door`** observations, in order: `globalVars.breach_announced === true`: "The door's panel. OPENED FOR: AGENT 0x00. Under it, the clock."; `globalVars.breach_open === true`: "The door's panel. MANUAL. NO READ. Under it, the clock."; default: "The door's panel. READER ARMED, ONE NAME. Under it, the clock." (The panel says by name whether the bunker knows the player is in. The default is never seen in play, since the tunnel is entered only after `breach_open`; it stays as a safety default, R1C-m18c.)
 - **`clock_gallery`**: "The lock panel, three paces short of the door." (A32.)
 - **`clock_core`**: "The key console's readout, a hand's width from the key." (It shows the lock's beat while they talk; nothing in its text says he paused anything, m10 change 37.)
 
@@ -572,8 +585,9 @@ A SAFETYNET agent shot a man in a converted Cold War bunker in Montana tonight. 
 
 **Kowalczyk's PIN cracker** (start kit, `type: "pin-cracker"`, `id: kowalczyk_cracker`). Name: "PIN Cracker (Kowalczyk's)". Never a clue (FA row 118); its casing is the suspicion beat at the cracker rack.
 
-- Default observations (`m09_completed`, the usual case): "Matte casing, no stores label. Halina Kowalczyk handed it to you before Helena: 'This one's mine. Never been through stores.'"
-- Variant `!globalVars.m09_completed`: "Matte casing, no stores label. Halina Kowalczyk handed it to you at the briefing: 'This one's mine. Never been through stores.'"
+- Default observations (`m09_completed`, the usual case): "Matte casing, no stores label. Halina Kowalczyk handed it to you before Helena: 'This one's mine. Never been through stores, never been near him.'" (m09's line whole, R1C-m18a.)
+- Variant `!globalVars.m09_completed && !globalVars.m08_completed`, first (FA §4.0 drops the last clause for a player who never met Nightshade): "Matte casing, no stores label. Halina Kowalczyk handed it to you at the briefing: 'This one's mine. Never been through stores.'"
+- Variant `!globalVars.m09_completed`: "Matte casing, no stores label. Halina Kowalczyk handed it to you at the briefing: 'This one's mine. Never been through stores, never been near him.'"
 
 ("Before Helena", not RL §4's "in Helena": in m09 she hands it over at the briefing in Task Force Null's room, before the flight. §6 change S6-08.)
 
@@ -583,7 +597,7 @@ The rest of the start kit (phone, CyberChef workstation, lock pick kit, RFID clo
 
 ```
 TOMB GAMMA. THE DEFENCES, AS HE BRIEFED THEM TO ME.
-Each with the catalogue entry it was built from. Refit work is marked as refit. Everything else is the 1962 build.
+Where he rebuilt, I've said so, with the catalogue entry he built it from. The rest is as the Americans poured it in 1962.
 
 1. Blast door. Refit reader on the original door, from SN-CAT 41077. Set to open for one badge by name. Yours.
 2. Tunnel post. Refit. One guard. Shift change at 02:30; the post stands empty till 02:45.
@@ -595,12 +609,12 @@ Each with the catalogue entry it was built from. Refit work is marked as refit. 
 8. Outer lock. Refit keypad. A shift code; the walkway guard carries it.
 9. Service door, core. Refit reader. The camera over it is for show.
 
-Every one of them came out of your own catalogue. I'd know. I chose what you went in without.
+Every refit came out of your own catalogue. I'd know. I chose what you went in without.
 ```
 
 On the shown branch Nightshade gives no payment item; he says the defences aloud, names entry 3 as the lie he was given to pass on, and hands over the override (MC §3.1).
 
-**`alarm_override`** (in `nightshade_table`'s `itemsHeld`, shown branch; `onPickup.setVariable: { override_held: true }`). Name: "Nightshade's Override Key". Observations: "A brass key on a paper tag. On the tag, in his hand: Security office board. Two turns to the left before you go down, and they won't hear a thing below." (Stage 9 checks that a `#give_item` fires `onPickup`; if not, the giving line also sets `override_held`.)
+**`alarm_override`** (in `nightshade_table`'s `itemsHeld`, shown branch; `onPickup.setVariable: { override_held: true }`). Name: "Nightshade's Override Key". Observations: "A brass key on a paper tag. On the tag, in his hand: Security office board. Keep it on you. While you carry it, the board doesn't talk to the floors below." (R1C-m13: the key works as carried, which is how `override_held` is set, on pickup.) (Stage 9 checks that a `#give_item` fires `onPickup`; if not, the giving line also sets `override_held`.)
 
 **`fitter_spare_card`** (in `fitter_locker`; `type: keycard`, `card_id: "tg_power_room_card"`). Name: "Spare Power-Room Card". Observations: "A spare from the fitter's locker. Taped to it, in marker: POWER RM. SPARE. SIGN FOR IT. Nobody has."
 
@@ -683,11 +697,11 @@ m10 has no `collect_items` task (OT §2), so there are no `targetItemIds` to mat
 
 Where the name is used: the gallery rota (§1.3); Ghost's card gift ("Then don't trust me. Check it." follows the name; stage 7 writes "The one at the lock end. Fonoti."); escaped Victoria's trade ("which of these two has the code card", named on "[Go.]"); Vos's deal ("That guard has the code card."; on "[Deal.]" he names him as he hands over his own copy); and his own ink. The pointer bark stays in the first person and doesn't name him ("That takes the shift code. It's on my card, and it stays there.", A13).
 
-The other names on paper, none of them on screen as NPCs with names: B. Haugen (the gallery's monitor post, `monitor_guard`), F. Qureshi (Farah, FA §5.2), J. Kiel and T. Abara (the tunnel rota), Gallatin Instrument Supply of Bozeman (the bench's front supplier, rolled up on Imran's taken-in branch). All grepped, no hits.
+The other names on paper, none of them on screen as NPCs with names: B. Haugen (the gallery's monitor post, `monitor_guard`), J. Kiel and T. Abara (the tunnel roster), Gallatin Instrument Supply of Bozeman (the bench's front supplier, rolled up on Imran's taken-in branch): all new, grepped, no hits. F. Qureshi is FA §5.2's existing Farah Qureshi, reused, not new.
 
 ### 2.5 The Citadel's incident file
 
-**Named and written** (FA §13 10-3, §8 r11, F7, D-13): **Citadel Incident File V-47**, object `incident_file` on the forward post's kit table (§1.1; §6 S6-01). It is the raid's own copy of the Director's file on the theft, which is why it is at the forward post and why it is plain: it states the vault line left open as a trace on Netherton's signature, which is the canon F7 asks to be written down, a day and a room before HaX's flag 4 line ("And the line into our vault is open from here. We left it open.") cashes it. It also carries the stores half of the cracker canon (FA §13 B1): stores withdrew every cracker Nightshade signed for, 160 units from one supplier in four batches, and the bench log's batches G-14 to G-17 are those four. Kowalczyk's own cracker, the cloner logged "to WREN" and the "logged by batch, no recipient" rule live in the bench log (§1.4) and the cracker's description (§1.10), so the canon note is complete across three m10 objects and needs no m09 object.
+**Named and written** (FA §13 10-3, §8 r11, F7, D-13): **Citadel Incident File V-47**, object `incident_file` at the forward post's road end (§1.1; §6 S6-01). It is the raid's own copy of the Director's file on the theft, which is why it is at the forward post and why it is plain: it states that the door was left open, watched and followed to Montana on Netherton's signature, which is the canon F7 asks to be written down. It stops there (W-01): that the line is still open and reaches the master is first read in his file index at the core, then said by HaX at flag 4 ("And the line into our vault is open from here. We left it open."), so the forward post sets the question and the core answers it. It also carries the stores half of the cracker canon (FA §13 B1): stores withdrew every cracker Nightshade signed for, 160 units from one supplier in four batches, and the bench log's batches G-14 to G-17 are those four. Kowalczyk's own cracker, the cloner logged "to WREN" and the "logged by batch, no recipient" rule live in the bench log (§1.4) and the cracker's description (§1.10), so the canon note is complete across three m10 objects and needs no m09 object.
 
 **For m09** (B1's other half): m09 stage 1 asked for the cracker canon "in the Citadel's incident file", which no m09 object carries. m09 claims nothing about where crackers are made (FA §9, stage 1–2 rulings), so the note is dropped from m09; m10's incident file is its home. §6 S6-10.
 
@@ -712,112 +726,121 @@ OT §7 has one music entry per closing NPC and ending value, each on `conversati
 
 **The credits** in each entry, in order: the title line(s) (`style: title`, the second line `style: warning`); `FULL DISCLOSURE` (`style: subtitle`); a blank line; the section `IN THIS OPERATION` (§3.3); the section `THE CELLS` (§3.4; not on E6); the section `ELSEWHERE` (§3.5). A section's heading prints only if one of its lines does.
 
-**Shared JavaScript.** Several conditions repeat. Stage 9 defines them once as Ruby string constants at the top of the ERB and interpolates them into each condition, so the built JSON holds plain fixed strings and the definitions can't drift:
+**No `||` anywhere** (round 1 ruling). Every card and credits condition is `globalVars.` tests joined by `&&`. Three kinds of logic need more than that, and each is handled once:
 
-| Name | JavaScript |
-|---|---|
-| `AUSTIN_UNCOVERED` | `globalVars.m07_completed === true && globalVars.m07_team_assignment !== 'trojan_horse'` |
-| `OP1` (Victoria's watch) | `globalVars.m03_victoria_fate === 'recruited' && (globalVars.victoria_gallery === 'confronted' \|\| globalVars.victoria_gallery === 'refused' \|\| (globalVars.victoria_gallery === 'trusted' && globalVars.head_start_killed === 'zero_day'))` |
-| `OP2` (Nightshade's channel) | `globalVars.m08_nightshade_triple_agent === true && !globalVars.m09_nightshade_shown_file` |
-| `OP3` (the HashChain tags) | `globalVars.m06_monitoring_enabled === true` |
-| `OP4` (the Critical Mass watch) | `globalVars.m09_completed === true && !globalVars.m09_albion_notified` |
-| `CELL_CONSOLE` | `((globalVars.head_start_killed === 'ghost' && globalVars.ghost_sale === 'bait') \|\| globalVars.share_zero_day === 'traced')` |
-| `CELL_M07` | `(!globalVars.m07_completed \|\| globalVars.m07_team_assignment !== '')` |
-| `CELL_COUNT` | `((CELL_CONSOLE ? 1 : 0) + (globalVars.database_outcome === 'secured' ? 1 : 0) + (globalVars.ending === 'surrender' ? 2 : 0) + (CELL_M07 ? 1 : 0))` |
-| `M07_FRACTURE` / `M07_MELTDOWN` | `globalVars.m07_completed === true && globalVars.m07_team_assignment === 'fracture'` / `'meltdown'` |
-| `M07_AUSTIN` | `(!globalVars.m07_completed \|\| globalVars.m07_team_assignment === 'trojan_horse')` (never played reads Austin covered, FA §3) |
-| `FORTY_SEVEN_WARNED` / `_LATE` | `globalVars.m05_found_pipeline_list === true && !globalVars.m05_recruiter_deal_accepted` / `globalVars.m05_found_pipeline_list === true && globalVars.m05_recruiter_deal_accepted === true && globalVars.m05_recruiter_deal_confessed === true` |
-| `MERCER_HERE` | `globalVars.m07_completed === true && !globalVars.m07_mercer_ko && globalVars.m07_mercer_fate !== 'arrested'` (FA row 87) |
+1. **The close's derived strings, computed in ink** (`close_compute`, S6-23). The closing scene (`six_oclock`, `hearing`, `citadel`) opens with one ink function in `m10_carryover_vars.ink` that reads the imports and locals with ink's own `or` and writes five string globals by `#set_global` before any line that matters plays. The card and credits are shown after the scene closes, so they always see them. Every value starts with a letter (ink turns digit-only values into numbers, F-01). Defaults `""`.
 
-(The `\|` in this table is the markdown escape for a JavaScript `||`; the built JSON holds `||`. These are conditions, not coded strings, so B2 doesn't apply to them; no condition is quoted in ink.)
+| Global | Values | Computed as |
+|---|---|---|
+| `close_secure_cell` | `zd_uk`, `procurement`, `crypto`, `cm`, `book`, or `""` when not secured | the first operation that applies on `database_outcome == "secured"` (FA §4.1 step 4): Victoria's watch (`m03_victoria_fate == "recruited"` and `victoria_gallery` is `confronted` or `refused`, or `trusted` with `head_start_killed == "zero_day"`), Nightshade's channel (`m08_nightshade_triple_agent` and not `m09_nightshade_shown_file`), the HashChain tags (`m06_monitoring_enabled`), the Critical Mass watch (`m09_completed` and not `m09_albion_notified`), else the order book |
+| `close_cell_name` | `couriers`, `zd_uk`, `procurement`, `crypto`, `cm`, `book`, `bait`, `trace`, `reeves`, `ashford`, `walsh`, `none` | the first that applies (§3.2's table) |
+| `close_cells` | `c0` … `c5` | console (1 if `head_start_killed == "ghost"` and `ghost_sale == "bait"`, or `share_zero_day == "traced"`) + secured (1) + surrender (2) + m07 (1 unless `m07_completed` and `m07_team_assignment == ""`). The cold ending counts a secured cell like any other (coordinator ruling on R1C-m17; MC §10's "or the cold ending" is superseded, S6-24) |
+| `close_human` | `dispatch_fixing`, `dispatch_dropping`, `albion_full_sent`, `albion_full`, `albion_inquest_sent`, `albion_inquest`, `albion_half`, `fortyseven_late`, `fortyseven_none`, `elena`, `none` | the human-line precedence (§3.2, U) |
+| `close_zero_day` | `vos_named`, `trading` | `vos_named` on Vos's branches (`m03_victoria_fate` is `arrested`, `ko` or `""`) unless `vos_outcome == "bought"` |
 
-`OP1`'s `trusted` arm is the test FA §4.1 step 4 names: trusted only counts while Zero Day's share was already dead, which only the console can have done before the gallery.
+2. **"Either of two" for one person** is two clauses with the same text; the first that holds prints, so nothing doubles.
+3. **"Either of two" for a line** is two rows with the same text and exclusive conditions.
+
+**Locals the clauses read that need a writer** (S6-12): `vector_on_team`, `phantom_on_team` (HaX's `game_loaded` mappings, one per arm of FA row 112: `m08_completed` and not hostile, and either not accused or apologised to; RL's staging already needs these arms), the five `<officer>_recalled` flags, `fonoti_ko`, and RL's existing KO latches `gary_ko` and `mercer_ko`, which were missing from OT §16.
+
+Two `&&`-only tests that recur below, written out wherever they appear: **Austin uncovered** is `globalVars.m07_completed === true && globalVars.m07_team_assignment !== 'trojan_horse'` (the redirect also writes `trojan_horse`, FA §4.2); **Mercer here** is `globalVars.m07_completed === true && !globalVars.m07_mercer_ko && globalVars.m07_mercer_fate !== 'arrested'` (FA row 87).
+
+**How the close reads** (W-02 to W-06). The card is five short lines in different shapes: two headlines (the man, the database), then the head start in his own arrival words, the cells as a sentence, and a person last. IN THIS OPERATION is one consequence per person, each with its own detail. ELSEWHERE runs in three movements, what is still out there, what the night did to systems, then people, and its last line is always a person. No line of the card is repeated below it, and "ninety days" appears once on any save.
 
 ### 3.2 The closing card
 
-**A, the Architect** (one line per entry, no condition inside it):
+Five lines at most, one per group, each group's conditions exclusive, so the cap never drops a line (§3.1). The man and the database are headlines with a colon; the head start borrows his arrival lines (SE §2.4), so the card answers him; the cells are a sentence; the last line is a person (W-02).
+
+**A, the Architect** (one line per entry, no condition):
 
 | Entry | Line |
 |---|---|
-| E1 arrest | "Dr Adrian Tesseract: in a cell. Awaiting trial." |
+| E1 arrest | "Dr Adrian Tesseract: in a cell, awaiting trial." |
 | E2 surrender | "Dr Adrian Tesseract: cooperating. No trial." |
 | E3 lethal | "Dr Adrian Tesseract: dead at his console, reaching for the key." |
 | E4 executed | "Dr Adrian Tesseract: shot unarmed." |
-| E5 scorched | "Dr Adrian Tesseract: at large, with what he remembers." |
+| E5 scorched | "Dr Adrian Tesseract: gone, with everything he remembers." |
 
-**D, the database** (E1–E5; by `database_outcome`; on E5 it is always `both_wiped`):
-
-| Condition | Line |
-|---|---|
-| `globalVars.database_outcome === 'secured'` | "The database: in the vault, both copies. Infusion pumps in 140 hospitals: still unpatched." |
-| `globalVars.database_outcome === 'disclosed'` | "The database: with the vendors. Forty have acknowledged. Fixes due in ninety days." |
-| `globalVars.database_outcome === 'both_wiped'` | "The database: gone, both copies. Nobody holds the map." |
-
-**H, the head start** (by `head_start_out`, set at the outer lock on every save, and `share_zero_day`, which keeps `traced` after the lock, S4-17):
+**D, the database** (E1–E5):
 
 | Condition | Line |
 |---|---|
-| `globalVars.head_start_out === 'none'` | "The head start: stopped. The cells got nothing." |
-| `globalVars.head_start_out === 'zero_day' && globalVars.share_zero_day === 'traced'` | "The head start: Zero Day's share went out, followed." |
-| `globalVars.head_start_out === 'zero_day' && globalVars.share_zero_day !== 'traced'` | "The head start: Zero Day has it." |
-| `globalVars.head_start_out === 'ghost'` | "The head start: the resale share went out." |
-| `globalVars.head_start_out === 'both' && globalVars.share_zero_day === 'traced'` | "The head start: both shares went out. One was followed." |
-| `globalVars.head_start_out === 'both' && globalVars.share_zero_day !== 'traced'` | "The head start: two cells have it." |
+| `globalVars.database_outcome === 'secured'` | "The database: back in the vault. Infusion pumps in 140 hospitals are still unpatched." |
+| `globalVars.database_outcome === 'disclosed'` | "The database: with the vendors. Forty have answered. The fixes are ninety days out." |
+| `globalVars.database_outcome === 'both_wiped' && globalVars.head_start_out === 'none'` | "The database: gone, both copies. Nobody holds the map." |
+| `globalVars.database_outcome === 'both_wiped' && globalVars.head_start_out !== 'none'` | "The database: gone, both copies. The cells kept what they took at four." |
 
-"Ghost" is never on the card; the second share is "the resale share" (MC §10).
+The `both_wiped` split is R1C-M3: "Nobody holds the map" is said only where nothing went at the lock. "Ninety days" is on the disclosed card here and nowhere else in the close (W-03).
 
-**C, the cells: the count and one name** (FA §4.6's fixed rule; MC §10). The name is the first that applies of: surrender's two, secure's one (by the operation it rode), the console's one, m07's one. Each name is written for two sentence positions. The line is built from fixed pieces, so the ERB helper `cells_card_lines` writes one line per (name, count) pair, each with the name's condition `&& CELL_COUNT === n`; the built JSON holds only fixed strings.
+**H, the head start** (by `head_start_out` and `share_zero_day`, which keeps `traced` after the lock, S4-17; his arrival lines, SE §2.4, so a player who heard "Nothing went at four." in the core reads it back):
 
-Names, with their conditions (mutually exclusive, in this order):
+| Condition | Line |
+|---|---|
+| `globalVars.head_start_out === 'none'` | "Nothing went at four." |
+| `globalVars.head_start_out === 'zero_day' && globalVars.share_zero_day === 'traced'` | "Zero Day has it. We followed it to four buyers." |
+| `globalVars.head_start_out === 'zero_day' && globalVars.share_zero_day !== 'traced'` | "Zero Day has it." |
+| `globalVars.head_start_out === 'ghost'` | "Someone's buyers have it. Not Zero Day's." |
+| `globalVars.head_start_out === 'both' && globalVars.share_zero_day === 'traced'` | "Two cells have it. We followed Zero Day's." |
+| `globalVars.head_start_out === 'both' && globalVars.share_zero_day !== 'traced'` | "Two cells have it." |
 
-| Name (after "among them") | Name (sentence start, for a count of one) | Condition |
+"Ghost" is never on the card (MC §10).
+
+**C, the cells** (FA §4.6's rule: the count, and one name, the first that applies of surrender's, secure's, the console's, m07's; both computed in `close_compute`, §3.1). The ERB helper `cells_card_lines` writes one line per (count, name) pair with the condition `globalVars.close_cells === '<c>' && globalVars.close_cell_name === '<name>'`; the built JSON holds only fixed strings.
+
+| `close_cell_name` | The name in the line | Applies when (first that holds, in ink) |
 |---|---|---|
-| the cells' couriers | (never one: surrender gives two) | `globalVars.ending === 'surrender'` |
-| Zero Day's UK desk | Zero Day's UK desk | `globalVars.ending !== 'surrender' && globalVars.database_outcome === 'secured' && OP1` |
-| the Initiative's procurement desk | The Initiative's procurement desk | `… secured && !OP1 && OP2` |
-| the Crypto Anarchists' reserve | The Crypto Anarchists' reserve | `… secured && !OP1 && !OP2 && OP3` |
-| Critical Mass | Critical Mass | `… secured && !OP1 && !OP2 && !OP3 && OP4` |
-| the order book's largest buyer | The order book's largest buyer | `… secured && !OP1 && !OP2 && !OP3 && !OP4` |
-| the resale share's five buyers | The resale share's five buyers | `globalVars.ending !== 'surrender' && globalVars.database_outcome !== 'secured' && globalVars.head_start_killed === 'ghost' && globalVars.ghost_sale === 'bait'` |
-| Zero Day's four buyers | Zero Day's four buyers | `globalVars.ending !== 'surrender' && globalVars.database_outcome !== 'secured' && globalVars.share_zero_day === 'traced'` |
-| Michael Reeves's cell | Michael Reeves's cell | `globalVars.ending !== 'surrender' && globalVars.database_outcome !== 'secured' && !CELL_CONSOLE && M07_FRACTURE` |
-| Marcus Ashford's cell | Marcus Ashford's cell | the same with `M07_MELTDOWN` |
-| Jennifer Walsh's cell | Jennifer Walsh's cell | the same with `M07_AUSTIN` |
-| (none) | – | `globalVars.ending !== 'surrender' && globalVars.database_outcome !== 'secured' && !CELL_CONSOLE && !CELL_M07` |
-
-(`…` stands for `globalVars.ending !== 'surrender' && globalVars.database_outcome === 'secured'`.)
+| `couriers` | ENTROPY's couriers | `ending == "surrender"` (his protocol's two: the couriers and their quartermaster, W-07) |
+| `zd_uk` | Zero Day's UK desk | `close_secure_cell == "zd_uk"` (and the same for the next four rows: the cell named is `close_secure_cell`'s) |
+| `procurement` | the Initiative's procurement desk | secured, not op 1, Nightshade's channel live (`m08_nightshade_triple_agent` and not `m09_nightshade_shown_file`) |
+| `crypto` | the Crypto Anarchists' reserve | secured, not ops 1–2, `m06_monitoring_enabled` |
+| `cm` | Critical Mass | secured, not ops 1–3, `m09_completed` and not `m09_albion_notified` |
+| `book` | the order book's largest buyer | secured, none of ops 1–4 |
+| `bait` | the resale share's five buyers | `head_start_killed == "ghost"` and `ghost_sale == "bait"` |
+| `trace` | Zero Day's four buyers | `share_zero_day == "traced"` and `head_start_killed != "ghost"` (R1C-m12) |
+| `reeves` | Michael Reeves's cell | `m07_completed` and `m07_team_assignment == "fracture"` |
+| `ashford` | Marcus Ashford's cell | `m07_completed` and `m07_team_assignment == "meltdown"` |
+| `walsh` | Jennifer Walsh's cell | not `m07_completed`, or `m07_team_assignment == "trojan_horse"` (never played reads Austin covered, FA §3) |
+| `none` | – | none of the above |
 
 The line's three forms:
 
-- count 0 (only the last row): "Cells broken: none."
-- count 1: "Cells broken: one. " + the sentence-start name + "." (for example "Cells broken: one. Jennifer Walsh's cell.")
-- count 2 to 5: "Cells broken: " + the word (two, three, four, five) + ", among them " + the name + "." (for example "Cells broken: three, among them the cells' couriers.")
+- `c0` (only with `none`): "Not one cell broken."
+- `c1`: "One cell broken: " + the name + "." For example "One cell broken: Jennifer Walsh's cell."
+- `c2` to `c5`: the word (Two, Three, Four, Five) + " cells broken, " + the name + " among them." For example "Two cells broken, Zero Day's UK desk among them." / "Three cells broken, ENTROPY's couriers among them."
 
-The count includes m07's cell, so it is the season's cells broken in the work that led here, not tonight's alone, which is why the line says "broken" and not "tonight". m07's cell counts where its site was covered: Fracture (Michael Reeves's), Meltdown (Marcus Ashford's) or Austin, direct or redirected (Jennifer Walsh's); never played reads Austin covered (FA §3), and `m07_completed` with no team committed adds nothing. The credits' THE CELLS section (§3.4) lists every one by name.
+The count includes m07's cell where its site was covered, so it is the cells broken in the work that led here, not tonight's alone, and the line never says "tonight". The cold ending counts a secured cell like the others (ruling on R1C-m17). THE CELLS (§3.4) lists every one.
 
-**U, one human line** (MC §10's precedence, with one change, S6-11): the first that applies; each later line carries the earlier ones' negations, so at most one holds.
+**U, one human line, always a person** (W-03; MC §10's precedence with S6-11: dispatch, then Albion, then the forty-seven while any of them is still at risk, then Elena Torres; computed once as `close_human` in ink):
 
-| # | Condition | Line |
+| `close_human` | Applies when (in ink, first that holds) | Line |
 |---|---|---|
-| 1a | `AUSTIN_UNCOVERED && globalVars.database_outcome === 'disclosed'` | "Dispatch in eleven counties: a vendor workaround by the weekend. The fix is due in ninety days." |
-| 1b | `AUSTIN_UNCOVERED && globalVars.database_outcome !== 'disclosed'` | "Dispatch in eleven counties: still dropping calls. Day thirteen." |
-| 2a | `!(AUSTIN_UNCOVERED) && globalVars.m04_completed === true && globalVars.m04_disclosure_choice === 'full' && globalVars.m09_albion_notified === true` | "Albion's inquiry asked who funded the plant's security. Parliament answered. It also asked SAFETYNET when it knew. SAFETYNET answered." |
-| 2b | the same with `&& !globalVars.m09_albion_notified` | "Albion's inquiry asked who funded the plant's security. Parliament answered." |
-| 2c | `!(AUSTIN_UNCOVERED) && globalVars.m04_completed === true && globalVars.m04_disclosure_choice === 'partial' && globalVars.m04_crew_lost === true && globalVars.m09_albion_notified === true` | "The Albion inquest heard the rest. It also asked SAFETYNET when it knew. SAFETYNET answered." |
-| 2d | the same with `&& !globalVars.m09_albion_notified` | "The Albion inquest heard the rest." |
-| 2e | `!(AUSTIN_UNCOVERED) && globalVars.m04_completed === true && globalVars.m04_disclosure_choice === 'partial' && !globalVars.m04_crew_lost` | "Albion's half-statement still stands. Nobody audited the other sites." |
-| 3a | `!(AUSTIN_UNCOVERED) && !(ALBION) && globalVars.m05_completed === true && FORTY_SEVEN_LATE` | "The forty-seven: twenty-eight reached in time. Nineteen had already signed." |
-| 3b | `!(AUSTIN_UNCOVERED) && !(ALBION) && globalVars.m05_completed === true && !(FORTY_SEVEN_WARNED) && !(FORTY_SEVEN_LATE)` | "The forty-seven: none of them reached. They're still on a list." |
-| 4 | `!(AUSTIN_UNCOVERED) && !(ALBION) && !(globalVars.m05_completed === true && !(FORTY_SEVEN_WARNED)) && globalVars.m05_elena_treatment_funded === true` | "Elena Torres is in treatment. It's working." |
-| – | none holds | no line; the card runs four |
+| `dispatch_fixing` | Austin uncovered and `database_outcome == "disclosed"` | "Callers in eleven counties will get through again by the weekend." |
+| `dispatch_dropping` | Austin uncovered | "In eleven counties, people calling for help still get a dead line. Day thirteen." |
+| `albion_full_sent` | `m04_completed`, `m04_disclosure_choice == "full"`, `m09_albion_notified` | "The Albion inquiry made a minister answer for the plant's security, then asked SAFETYNET when it knew." |
+| `albion_full` | `m04_completed`, `full` | "The Albion inquiry made a minister answer for the plant's security." |
+| `albion_inquest_sent` | `m04_completed`, `partial`, `m04_crew_lost`, `m09_albion_notified` | "The night crew's families heard the rest at Albion's inquest, and heard when SAFETYNET knew." |
+| `albion_inquest` | `m04_completed`, `partial`, `m04_crew_lost` | "The night crew's families heard the rest at Albion's inquest." |
+| `albion_half` | `m04_completed`, `partial` | "Albion's crew went back to work under a half-statement. Nobody audited the other sites." |
+| `fortyseven_late` | `m05_completed`, the list found and sold but confessed (FA row 62) | "Of the forty-seven, twenty-eight were warned in time. Nineteen had already signed." |
+| `fortyseven_none` | `m05_completed`, and the list neither found nor kept from her | "None of the forty-seven were warned. They're still on someone's list." |
+| `elena` | `m05_elena_treatment_funded` | "Elena Torres is in treatment. It's working." |
+| `none` | none of the above | no line; the card runs four |
 
-`ALBION` is `globalVars.m04_completed === true && (globalVars.m04_disclosure_choice === 'full' \|\| globalVars.m04_disclosure_choice === 'partial')`. The m09 half is added only where there is an inquiry (`full`, or `m04_crew_lost`), as FA row 59 has it.
+Each card row's condition is `globalVars.close_human === '<value>'`. The m09 half rides only where there was an inquiry (FA row 59). **S6-11** stands: in MC §10 the forty-seven applied on every m05 save, and `m05_elena_treatment_funded` is only true on an m05 save, so Elena Torres could never reach the card; here the forty-seven take the line only when some of them weren't reached, and where all were warned it falls through to her.
 
-**The change (S6-11).** In MC §10 the forty-seven applies on every `m05_completed` save, and `m05_elena_treatment_funded` is only ever true on an m05 save, so Elena Torres's line could never reach the card. Here the forty-seven takes the card only where some of them were not reached in time (late, or never); where every one was warned, the line falls through to Elena Torres. The precedence's reason holds: the forty-seven outrank her while any of them is still at risk. The "all reached" form keeps its home in ELSEWHERE.
+A full card, arrest, secured, nothing out at four, Zero Day's desk rolled up, Austin uncovered:
+
+```
+Dr Adrian Tesseract: in a cell, awaiting trial.
+The database: back in the vault. Infusion pumps in 140 hospitals are still unpatched.
+Nothing went at four.
+Two cells broken, Zero Day's UK desk among them.
+In eleven counties, people calling for help still get a dead line. Day thirteen.
+```
 
 ### 3.3 In this operation
 
-`{ "section": "IN THIS OPERATION", "people": [...] }`. One line per person, `NAME: clause`, the first clause that holds (README). People appear in the order the player meets them on the corridor, the player first and Tesseract last. A clause states an outcome, never the choice behind it (FA §4.6, m10 change 33). Where a person must always appear, the last clause has no condition ("always"); where a person can be absent, every clause has one. `style` is `entry` unless marked **(w)** for `warning`. The same section is used in all six entries; the arms for `executed`, `scorched` and `joined` sit inside it.
+`{ "section": "IN THIS OPERATION", "people": [...] }`. One line per person, `NAME: clause`, the first clause that holds (README). People appear in the order the player meets them on the corridor, the player first and Tesseract last. Each clause is a consequence with a detail only that person has (W-06); "Swept up at six" is kept for one man. The player is "0x00" throughout (W-15). Where a person must always appear, the last clause has no condition ("always"); where a person can be absent, every clause has one. Every condition is `globalVars.` and `&&` only; a clause listed twice with "same text" is an "or". `style` is `entry` unless marked **(w)** for `warning`. The same section is used in all six entries, with Join arms (`ending === 'joined'`) placed first wherever a clause would mention six o'clock, which Join never reaches (R1C-m14).
 
 **AGENT 0x00**
 
@@ -826,52 +849,55 @@ The count includes m07's cell, so it is the season's cells broken in the work th
 3. `globalVars.ending === 'executed'` → "Held until the board sits." (w)
 4. `globalVars.ending === 'scorched'` → "Suspended." (w)
 
-(No "always" clause: on most saves the player's line is the title. On `told` with an executed or scorched ending the title already carries the custody or the suspension, so the m09 payoff takes the line, FA §4.6.)
+(No "always" clause: on most saves the title is the player's line.)
 
 **DIRECTOR MAGNUS NETHERTON**
 
 1. `globalVars.ending === 'joined'` → "Ordered 0x00 brought in."
-2. `globalVars.ending === 'executed'` → "Signed nothing." (w)
-3. `globalVars.ending === 'scorched'` → "Signed the suspension."
+2. `globalVars.ending === 'executed'` → "Would not sign." (w)
+3. `globalVars.ending === 'scorched'` → "Suspended 0x00, and not himself."
 4. always → "Signed for all of it."
 
 **AGENT HAX**
 
 1. `globalVars.ending === 'joined'` → "Sent one word. Nobody answered." (w)
-2. `globalVars.ending === 'executed'` → "Said one word. Will be at the board." (w)
-3. `globalVars.ending === 'arrest' && globalVars.points_landed < 2` → "Killed the feed in time. Testifying."
-4. `globalVars.ending === 'arrest'` → "Testifying."
-5. `globalVars.ending === 'surrender'` → "Sat with him in the van for a minute. Told him who taught you."
-6. `globalVars.ending === 'lethal'` → "Signed under her agent."
-7. `globalVars.ending === 'scorched'` → "Stood beside her agent at the hearing."
-8. always → "On the line to the end."
+2. `globalVars.ending === 'executed'` → "Said 0x00's designation once, and nothing else. Will be at the board." (w)
+3. `globalVars.ending === 'arrest' && globalVars.head_start_killed === 'zero_day'` → "Killed a feed at the console. Testifying."
+4. `globalVars.ending === 'arrest' && globalVars.head_start_killed === 'ghost'` → same text
+5. `globalVars.ending === 'arrest'` → "Testifying against her teacher."
+6. `globalVars.ending === 'surrender'` → "Sat with him in the van for a minute. Told him what she'd taught 0x00 that he hadn't."
+7. `globalVars.ending === 'lethal'` → "Signed under her agent."
+8. `globalVars.ending === 'scorched'` → "Stood beside her agent at the hearing."
+9. always → "On the line to the end."
 
-**NIGHTSHADE** (FA rows 104–107; every save has him in one form)
+(R1C-M4, ruling: the feed clause rides `head_start_killed`, the console's own global. The draft's `points_landed < 2` arm meant the hold-fire beat, where HaX kills the release feed through the host; that has no global of its own. If stage 7 adds one, `fire_held`, it can take a clause "Killed his feed in time. Testifying." first in this list; §6 S6-25.)
 
-1. `globalVars.m08_nightshade_triple_agent === true && globalVars.m09_nightshade_shown_file === true && globalVars.nightshade_taken_in === true` → "Held the outer lock. Moved, and unreachable."
+**NIGHTSHADE**
+
+1. `globalVars.m08_nightshade_triple_agent === true && globalVars.m09_nightshade_shown_file === true && globalVars.nightshade_taken_in === true` → "Held the outer lock. Moved under a new name, and unreachable."
 2. `globalVars.m08_nightshade_triple_agent === true && globalVars.m09_nightshade_shown_file === true && globalVars.ending === 'arrest'` → "Left at the post. On the trial's witness list."
 3. `globalVars.m08_nightshade_triple_agent === true && globalVars.m09_nightshade_shown_file === true` → "Left at the post. Still useful."
-4. `OP2 && globalVars.database_outcome === 'disclosed'` → "Moved by morning. Unreachable." (his channel is always one of the two disclosure burns, since only Victoria's watch can rank above it)
-5. `OP2` → "Still at the table. Still paying, for now."
+4. `globalVars.m08_nightshade_triple_agent === true && !globalVars.m09_nightshade_shown_file && globalVars.database_outcome === 'disclosed'` → "Moved by morning. Unreachable."
+5. `globalVars.m08_nightshade_triple_agent === true && !globalVars.m09_nightshade_shown_file` → "Still at the table. Still paying, for now."
 6. `globalVars.m08_nightshade_arrested === true && !globalVars.m08_nightshade_ko_before_fate && globalVars.nightshade_deal === 'taken'` → "Gave up the map. Sentence reduced."
 7. `globalVars.m08_nightshade_arrested === true && !globalVars.m08_nightshade_ko_before_fate` → "No deal. Serving his full term."
-8. `globalVars.nightshade_tethered === true` → "Said two words. Turned the crank."
-9. always → "Said one word, from the van."
+8. `globalVars.nightshade_tethered === true` → "Said 'Manual.' and turned the crank."
+9. always → "Said 'Door.' from the van. Nothing else."
 
-**AGENT 0x23 'VECTOR'** (only with `m08_completed`; `VEC_IN` = `globalVars.m08_completed === true && (!globalVars.m08_accused_vector || globalVars.m08_vector_apologised === true) && !globalVars.m08_vector_hostile`)
+**AGENT 0x23 'VECTOR'** (`vector_on_team`, S6-12)
 
-1. `VEC_IN && globalVars.vector_ko === true` → "Put on the floor by his own agent." (w)
-2. `VEC_IN && globalVars.officer_out === 'vector'` → "Sent back on a wrong accusation." (w)
-3. `VEC_IN && globalVars.vector_recalled === true` → "Sent back, then recalled."
-4. `VEC_IN` → "Gave up the annex code. Asked for nothing."
-5. `globalVars.m08_completed === true` → "Declined the raid. He said you would know why." (w)
+1. `globalVars.vector_on_team === true && globalVars.vector_ko === true` → "Knocked out by his own agent." (w)
+2. `globalVars.vector_on_team === true && globalVars.officer_out === 'vector'` → "Sent back on a wrong accusation." (w)
+3. `globalVars.vector_on_team === true && globalVars.vector_recalled === true` → "Sent back, then recalled."
+4. `globalVars.vector_on_team === true` → "Gave up the annex code. Asked for nothing."
+5. `globalVars.m08_completed === true` → "Declined the raid. Said 0x00 would know why." (w)
 
-**AGENT 0x88 'PHANTOM'** (the same pattern with `PHA_IN` from the Phantom imports)
+**AGENT 0x88 'PHANTOM'** (`phantom_on_team`)
 
-1. `PHA_IN && globalVars.phantom_ko === true` → "Put on the floor by his own agent." (w)
-2. `PHA_IN && globalVars.officer_out === 'phantom'` → "Sent back on a wrong accusation." (w)
-3. `PHA_IN && globalVars.phantom_recalled === true` → "Sent back, then recalled."
-4. `PHA_IN` → "Audited the case. One unit over."
+1. `globalVars.phantom_on_team === true && globalVars.phantom_ko === true` → "Floored by the agent whose kit he audits." (w)
+2. `globalVars.phantom_on_team === true && globalVars.officer_out === 'phantom'` → "Sent back on a wrong accusation." (w)
+3. `globalVars.phantom_on_team === true && globalVars.phantom_recalled === true` → "Sent back, then recalled. Added it to his list."
+4. `globalVars.phantom_on_team === true` → "Audited the case. One unit over."
 5. `globalVars.m08_completed === true` → "Declined the raid. Netherton knows why." (w)
 
 **MARISOL QUINTERO**
@@ -879,35 +905,39 @@ The count includes m07's cell, so it is the season's cells broken in the work th
 1. `globalVars.quintero_ko === true` → "Put on the floor by her own agent." (w)
 2. `globalVars.officer_out === 'quintero'` → "Sent back on a wrong accusation." (w)
 3. `globalVars.quintero_wounded === true` → "Took a shoulder wound at the core. Talking by six."
-4. `globalVars.quintero_recalled === true` → "Sent back, then recalled."
+4. `globalVars.quintero_recalled === true` → "Sent back, then recalled. Said nothing about it."
 5. `globalVars.wren_at_core === true && globalVars.quintero_enters_core === true` → "Took Kowalczyk at the core. Unhurt."
 6. `globalVars.nightshade_tethered === true && globalVars.m09_sleeper_named === true` → "Breached ahead alone."
 7. always → "Held the outer lock."
 
-**HALINA KOWALCZYK** (named in credits only after the night's last scene, so naming her here gives nothing away; no pronoun is used)
+**HALINA KOWALCZYK** (named only in the credits, after the night's last scene; no pronoun)
 
 1. `globalVars.m09_recruiter_offer === 'taken'` → "Named in Helena. Detained at the briefing."
 2. `globalVars.m09_recruiter_offer === 'double_crossed'` → "Warned in Helena. Waiting at the core. Taken without a fight." (w)
-3. `globalVars.sleeper_caught === true && globalVars.wren_at_core === true` → "Named on the line. Stopped at the core anyway."
-4. `globalVars.sleeper_caught === true` → "Named. In the van by six."
-5. `globalVars.ending === 'joined'` → "Never came through the service door. No need." (w)
-6. `globalVars.wren_at_core === true` → "Came through the service door for the key. Stopped. Never named." (w)
-7. `globalVars.kowalczyk_ko === true` → "Knocked out on the raid. Never named." (w)
-8. always → "Never named." (w)
+3. `globalVars.sleeper_caught === true && globalVars.ending === 'joined'` → "Named. Left cuffed in the van."
+4. `globalVars.sleeper_caught === true && globalVars.wren_at_core === true` → "Named on the line. Stopped at the core anyway."
+5. `globalVars.sleeper_caught === true` → "Named. In the van by six."
+6. `globalVars.ending === 'joined'` → "Never came through the service door. No need." (w)
+7. `globalVars.wren_at_core === true` → "Came through the service door for the key. Stopped. Never named." (w)
+8. `globalVars.kowalczyk_ko === true` → "Knocked out below ground. Never named." (w) (only her bunker copies are knockable now, R1C-M2)
+9. always → "Never named." (w)
 
 **OFFICER DEV MALHOTRA**
 
 1. `globalVars.officer_out === 'malhotra'` → "Sent back on a wrong accusation." (w)
-2. `globalVars.malhotra_recalled === true` → "Sent back, then recalled."
-3. always → "Ran comms all night. His badge didn't."
+2. `globalVars.malhotra_recalled === true` → "Sent back, then cleared on the line by the Director."
+3. `globalVars.m09_sleeper_named === true` → "Ran comms all night." (R1C-m4: no copy was made of his badge on these saves)
+4. always → "Ran comms all night. His badge didn't."
 
 **OFFICER KENJI ARAKAWA**
 
-1. `globalVars.arakawa_ko === true` → "Put on the floor by his own agent." (w)
+1. `globalVars.arakawa_ko === true` → "Knocked out by his own agent." (w)
 2. `globalVars.officer_out === 'arakawa'` → "Sent back. The county road went with him." (w)
-3. `globalVars.arakawa_recalled === true` → "Sent back, then recalled."
-4. `globalVars.nightshade_tethered === true` → "Held the blast door all night. Home for Saturday."
-5. always → "Home for Saturday, with a telescope."
+3. `globalVars.arakawa_recalled === true` → "Sent back, then recalled. The sheriff never noticed."
+4. `globalVars.nightshade_tethered === true` → "Held the blast door all night beside Nightshade."
+5. always → "Kept the county road shut all night. Nobody asked who for."
+
+(His telescope is ELSEWHERE's last line, §3.5.)
 
 **GHOST** (every save)
 
@@ -916,72 +946,78 @@ The count includes m07's cell, so it is the season's cells broken in the work th
 3. `globalVars.ghost_sale === 'stopped'` → "Talked out of the sale. Left the network."
 4. `globalVars.ghost_sale === 'bait' && globalVars.head_start_killed === 'ghost'` → "Sold to five buyers in plain view. We have their names."
 5. `globalVars.ghost_sale === 'bait'` → "Sold in plain view. The share went out." (w)
-6. always → "Sold the head start. Clean exit, no trace." (w)
+6. `globalVars.ghost_sale === 'selling' && globalVars.head_start_killed === 'ghost'` → "Sold the head start. It never went out." (R1C-m15)
+7. always → "Sold the head start. Clean exit, no trace." (w)
 
 **GARY WHITLOCK** (only on m02 saves where he is in the bunker)
 
-0. `globalVars.m02_completed === true && globalVars.m02_gary_protected === true && globalVars.gary_ko === true` → "Consultant, SAFETYNET. Put on the floor by the agent who saved his career." (w) (`gary_ko` is RL's local latch on `gary_consultant`, not the m02 import `m02_gary_ko`.)
-1. `globalVars.m02_completed === true && globalVars.m02_gary_protected === true && globalVars.imran_outcome === 'talked_round'` → "Consultant, SAFETYNET. Watched the man he trained go home."
-2. `globalVars.m02_completed === true && globalVars.m02_gary_protected === true` → "Consultant, SAFETYNET. Brought up after the breach."
-3. `globalVars.gary_outcome === 'talked_round'` → "Walked out with the team. A witness."
-4. `globalVars.gary_outcome === 'left_in_place'` → "Still on their payroll. Still shipping nothing."
-5. `globalVars.gary_outcome === 'taken_in'` → "Charged. Three weeks there, nothing shipped."
-6. `globalVars.gary_outcome === 'ko'` → "Put on the floor in a technician's fleece." (w)
-7. `globalVars.m02_completed === true && !globalVars.m02_gary_protected && !globalVars.m02_exposed_hospital` → "Left at his bench."
+1. `globalVars.m02_completed === true && globalVars.m02_gary_protected === true && globalVars.gary_ko === true` → "Consultant, SAFETYNET. Put on the floor by the agent who saved his career." (w)
+2. `globalVars.m02_completed === true && globalVars.m02_gary_protected === true && globalVars.imran_outcome === 'talked_round'` → "Consultant, SAFETYNET. Watched the man he trained go home."
+3. `globalVars.m02_completed === true && globalVars.m02_gary_protected === true` → "Consultant, SAFETYNET. Came down after the breach in a new lanyard."
+4. `globalVars.gary_outcome === 'talked_round'` → "Walked out with the team. A witness."
+5. `globalVars.gary_outcome === 'left_in_place'` → "Still on their payroll. Still shipping nothing."
+6. `globalVars.gary_outcome === 'taken_in'` → "Charged. Three weeks at the bench, nothing shipped."
+7. `globalVars.gary_outcome === 'ko'` → "Knocked down in a technician's fleece." (w)
+8. `globalVars.m02_completed === true && !globalVars.m02_gary_protected && !globalVars.m02_exposed_hospital` → "Left at his bench."
 
 **IMRAN SIDDIQUI** (every save)
 
 1. `globalVars.imran_outcome === 'talked_round'` → "Went home. So did a friend."
 2. `globalVars.imran_outcome === 'taken_in'` → "Charged. His supplier was raided by morning."
 3. `globalVars.imran_outcome === 'card_cloned'` → "Kept his card. Lost a copy of it."
-4. `globalVars.imran_outcome === 'ko'` → "Put on the floor at his bench." (w)
-5. always → "Never asked. Swept up at six."
+4. `globalVars.imran_outcome === 'ko'` → "Knocked out at his bench." (w)
+5. `globalVars.ending === 'joined'` → "Never asked. Still at his bench."
+6. always → "Never asked. Still at his bench at six, under his own sheet."
 
 **VOLTAGE** (on `m04_voltage_captured` or `m04_voltage_escaped`)
 
 1. `globalVars.voltage_outcome === 'his_hands'` → "Did tonight's switching himself, for us."
-2. `globalVars.voltage_outcome === 'by_hand'` → "Talked his agent through the switching. Kept his hands still."
+2. `globalVars.voltage_outcome === 'by_hand'` → "Talked 0x00 through the switching. Kept his hands still."
 3. `globalVars.voltage_outcome === 'stood_down_print'` → "Stood down on his own thumbprint."
 4. `globalVars.voltage_outcome === 'talked_down'` → "Checked the sums. Stood down."
 5. `globalVars.voltage_outcome === 'fought'` → "Fought at his own switchgear. Charged." (w)
-6. `globalVars.voltage_outcome === 'ko'` → "Put on the floor at his own switchgear. Charged." (w)
+6. `globalVars.voltage_outcome === 'ko'` → "Knocked out at his own switchgear. Charged." (w)
 7. `globalVars.m04_voltage_captured === true` → "Brought up after the breach. Not needed."
-8. `globalVars.m04_voltage_escaped === true` → "Swept up at six."
+8. `globalVars.m04_voltage_escaped === true` → "Still at his switchgear when the team came down."
 
-**STATIC** (only `m04_static_left && !m04_static_left_alone`; `STATIC_IN` is that)
+**STATIC** (only `m04_static_left && !m04_static_left_alone`)
 
-1. `STATIC_IN && (globalVars.voltage_outcome === 'fought' \|\| globalVars.voltage_outcome === 'ko')` → "Went down beside Voltage." (w)
-2. `STATIC_IN` → "Went where Voltage went."
+1. `globalVars.m04_static_left === true && !globalVars.m04_static_left_alone && globalVars.voltage_outcome === 'fought'` → "Went down beside Voltage." (w)
+2. `globalVars.m04_static_left === true && !globalVars.m04_static_left_alone && globalVars.voltage_outcome === 'ko'` → same text (w)
+3. `globalVars.m04_static_left === true && !globalVars.m04_static_left_alone` → "Went where Voltage went."
 
 **WENDELL BRIGGS**
 
 1. `!globalVars.m04_voltage_captured && !globalVars.m04_voltage_escaped && globalVars.wendell_outcome === 'told'` → "Rang his mate Dale. Dale stayed home."
-2. `!globalVars.m04_voltage_captured && !globalVars.m04_voltage_escaped && globalVars.wendell_outcome === 'ko'` → "Put on the floor at his own panel. Dale walked into the raid at shift change; home by morning." (w)
-3. `!globalVars.m04_voltage_captured && !globalVars.m04_voltage_escaped` → "Never told. Asked if he still gets paid for the week. Dale walked into the raid at shift change; home by morning."
-4. `globalVars.m04_voltage_escaped === true && !(STATIC_IN)` → "Kept his head down at the far panel."
+2. `!globalVars.m04_voltage_captured && !globalVars.m04_voltage_escaped && globalVars.wendell_outcome === 'ko'` → "Floored at his own panel. Dale walked into the raid." (w)
+3. `!globalVars.m04_voltage_captured && !globalVars.m04_voltage_escaped` → "Never told. Dale walked into the raid at shift change."
+4. `globalVars.m04_voltage_escaped === true && !globalVars.m04_static_left` → "Kept his head down at the far panel."
+5. `globalVars.m04_voltage_escaped === true && globalVars.m04_static_left_alone === true` → same text
 
-**ROBERT VANCE** → `globalVars.m04_vance_is_ally === true && !globalVars.m04_voltage_captured && globalVars.cut_by_hand === true` → "Talked the switching through from Teesside."
+**ROBERT VANCE** → `globalVars.m04_vance_is_ally === true && !globalVars.m04_voltage_captured && globalVars.cut_by_hand === true` → "Talked 0x00 through 1960s switchgear from Teesside."
 
 **ELENA RODRIGUEZ** → `!globalVars.m04_vance_is_ally && globalVars.m07_elena_outcome === 'turned' && !globalVars.m04_voltage_captured && globalVars.cut_by_hand === true` → "On the line for the switching. Still turned."
 
 **DR ABENA ASANTE**
 
-1. `MERCER_HERE` → "On the uplink all night. Off the map."
-2. `globalVars.asante_outcome === 'ko'` → "Put on the floor beside her console." (w)
-3. `globalVars.asante_outcome === 'talked'` → "Showed the schedule. Confirmed her sums."
-4. always → "Swept up at six. She'd write it again."
+1. `globalVars.m07_completed === true && !globalVars.m07_mercer_ko && globalVars.m07_mercer_fate !== 'arrested'` → "Off the floor all night, on the uplink."
+2. `globalVars.asante_ko === true` → "Knocked out beside the console she wrote." (w)
+3. `globalVars.ending === 'joined'` → "Watched her release go out."
+4. `globalVars.asante_outcome === 'talked'` → "Showed the schedule. Confirmed her own sums."
+5. always → "Arrested at the release console she wrote."
 
-**DR JAMES MERCER** (only `MERCER_HERE`)
+**DR JAMES MERCER** (only where Mercer is here)
 
-1. `MERCER_HERE && globalVars.mercer_ko === true` → "Put on the floor in the server hall." (w)
-2. `MERCER_HERE` → "Swept up at six."
+1. `globalVars.m07_completed === true && !globalVars.m07_mercer_ko && globalVars.m07_mercer_fate !== 'arrested' && globalVars.mercer_ko === true` → "Knocked out in the server hall." (w)
+2. the same without the last test, `&& globalVars.ending === 'joined'` → "Still at the release console."
+3. `globalVars.m07_completed === true && !globalVars.m07_mercer_ko && globalVars.m07_mercer_fate !== 'arrested'` → "Arrested in the server hall, still arguing his arithmetic."
 
 **VICTORIA STERLING** (only on `recruited`, `escaped` and `arrested`)
 
 1. `globalVars.m03_victoria_fate === 'recruited' && globalVars.victoria_gallery === 'confronted'` → "Held, and opened the lock. The tap on Zero Day's brokers went dark at five."
 2. `globalVars.m03_victoria_fate === 'recruited' && globalVars.victoria_gallery === 'trusted' && globalVars.head_start_killed === 'zero_day'` → "Opened the lock. Still ours."
 3. `globalVars.m03_victoria_fate === 'recruited' && globalVars.victoria_gallery === 'trusted'` → "Sold the raid. Gone down the gallery stair." (w)
-4. `globalVars.victoria_gallery === 'ko'` → "Put on the floor on the walkway. Charged." (w)
+4. `globalVars.victoria_gallery === 'ko'` → "Knocked down on the walkway. Charged." (w)
 5. `globalVars.m03_victoria_fate === 'recruited'` → "Never handed anything. Still ours, for now."
 6. `globalVars.victoria_gallery === 'talked_down'` → "Lowered the pistol. At large, owing nobody."
 7. `globalVars.victoria_gallery === 'walked'` → "Walked out. At large." (w)
@@ -990,83 +1026,107 @@ The count includes m07's cell, so it is the season's cells broken in the work th
 10. `globalVars.m03_victoria_fate === 'arrested' && globalVars.victoria_line_deal === 'deal'` → "Still talking."
 11. `globalVars.m03_victoria_fate === 'arrested'` → "Serving the full charge."
 
-**PIETER VOS** (only on Vos's branches: `m03_victoria_fate` is `arrested`, `ko` or `""`; and **no clause on `vos_outcome === 'bought'`**, so a bought Vos is left out, as his deal promised)
+**PIETER VOS** (only on Vos's branches, and **no clause on `vos_outcome === 'bought'`**, so a bought Vos is left out, as his deal promised. `vos_outcome` defaults to `""` and is written `avoided` by Vos's own first line or his room's exit, so the clauses need no branch guard and print nothing on a Victoria save; R1C-m16, S6-12)
 
 1. `globalVars.vos_outcome === 'stood_aside'` → "Withdrew Zero Day's order. Stood aside."
-2. `globalVars.vos_outcome === 'ko'` → "Put on the floor on the walkway. Named." (w)
-3. `globalVars.vos_outcome === 'refused'` → "Named. Swept up at six."
-4. `globalVars.vos_outcome === 'avoided'` → "Named. Swept up at six."
+2. `globalVars.vos_outcome === 'ko'` → "Knocked out on the walkway. Named." (w)
+3. `globalVars.vos_outcome === 'refused' && globalVars.ending === 'joined'` → "Named. Still waiting for his delivery."
+4. `globalVars.vos_outcome === 'avoided' && globalVars.ending === 'joined'` → same text
+5. `globalVars.vos_outcome === 'refused'` → "Named. Arrested on the walkway, waiting for a delivery."
+6. `globalVars.vos_outcome === 'avoided'` → same text
 
 **SIONE FONOTI**
 
 1. `globalVars.fonoti_ko === true` → "Put on the floor on the walkway." (w)
-2. always → "Swept up at six, card or no card."
+2. `globalVars.ending === 'joined'` → "Still on the walkway."
+3. always → "Swept up at six, card or no card."
 
-**DR ADRIAN TESSERACT** (one clause per entry, no condition): E1 "Awaiting trial."; E2 "Cooperating. No trial."; E3 "Dead at his console, reaching." (w); E4 "Shot unarmed." (w); E5 "Gone by the service door. He left a card." (w); E6 "Walked out with you." (w)
+**DR ADRIAN TESSERACT** (one clause per entry, no condition): E1 "Awaiting trial."; E2 "Cooperating. No trial."; E3 "Dead at his console, reaching." (w); E4 "Shot unarmed." (w); E5 "Gone by the service door. He left a card." (w); E6 "Walked out with 0x00." (w)
 
-New locals this section reads, proposed in §6 (S6-12): `vector_recalled`, `phantom_recalled`, `quintero_recalled`, `malhotra_recalled`, `arakawa_recalled` (MC §5's recall line sets its officer's; the credits' "Recalled." needs to know who), and `fonoti_ko` (`lock_guard`'s `globalVarOnKO`; every knock-out is admitted somewhere, SE §9). Everything else is in MC §12 or OT §16.
+On a quiet save (Imran and Asante untouched, Voltage escaped and never resolved, Vos refused), the block now reads one line per person, each different: "Never asked. Still at his bench at six, under his own sheet." / "Still at his switchgear when the team came down." / "Arrested at the release console she wrote." / "Named. Arrested on the walkway, waiting for a delivery." / "Swept up at six, card or no card." The knock-out openings vary ("Put on the floor", "Knocked out", "Knocked down", "Floored"), and every knock-out is still admitted (SE §9).
 
 ### 3.4 The cells
 
-`{ "section": "THE CELLS", "lines": [...] }` on E1–E5 (not on Join, whose card says "Every cell has it."). Every line that holds prints, so this is the ledger in full, each source naming its own cell (FA §4.6's fixed rule). The m07 lines always print one of their two forms, so the heading always shows.
+`{ "section": "THE CELLS", "lines": [...] }` on E1–E5 (not on Join, whose card says "Every cell has it."). Every line that holds prints, so this is the ledger in full, each source naming its own cell (FA §4.6). The m07 lines always print one of their forms, so the heading always shows. Rows marked "same text" are an "or" (§3.1).
 
 | Condition | Line |
 |---|---|
-| `globalVars.ending === 'surrender'` | "The cells' couriers: rolled up. His protocol." |
-| `globalVars.ending === 'surrender'` | "Their quartermaster: rolled up. His protocol." |
-| `globalVars.database_outcome === 'secured' && OP1` | "Zero Day's UK desk: rolled up. Sterling's watch." |
-| `globalVars.database_outcome === 'secured' && !OP1 && OP2` | "The Initiative's procurement desk: rolled up. Nightshade's channel." |
-| `globalVars.database_outcome === 'secured' && !OP1 && !OP2 && OP3` | "The Crypto Anarchists' reserve: rolled up. The HashChain tags." |
-| `globalVars.database_outcome === 'secured' && !OP1 && !OP2 && !OP3 && OP4` | "Critical Mass: rolled up. The watch on the controllers." |
-| `globalVars.database_outcome === 'secured' && !OP1 && !OP2 && !OP3 && !OP4` | "The order book's largest buyer: rolled up." |
+| `globalVars.ending === 'surrender'` | "ENTROPY's couriers: rolled up. His protocol." |
+| `globalVars.ending === 'surrender'` | "ENTROPY's quartermaster: rolled up. His protocol." |
+| `globalVars.close_secure_cell === 'zd_uk'` | "Zero Day's UK desk: rolled up. Sterling's watch." |
+| `globalVars.close_secure_cell === 'procurement'` | "The Initiative's procurement desk: rolled up. Nightshade's channel." |
+| `globalVars.close_secure_cell === 'crypto'` | "The Crypto Anarchists' reserve: rolled up. The HashChain tags." |
+| `globalVars.close_secure_cell === 'cm'` | "Critical Mass: rolled up. The watch on the controllers." |
+| `globalVars.close_secure_cell === 'book'` | "The order book's largest buyer: rolled up." |
 | `globalVars.head_start_killed === 'ghost' && globalVars.ghost_sale === 'bait'` | "The resale share's five buyers: named, and paid for nothing." |
-| `globalVars.share_zero_day === 'traced'` | "Zero Day's share: four buyers followed. One was careless." |
-| `M07_FRACTURE` | "Michael Reeves's cell: its people taken at the Fracture site. He wasn't there." |
-| `!(M07_FRACTURE)` | "Michael Reeves's cell: standing." (w) |
-| `M07_AUSTIN` | "Jennifer Walsh's cell: stopped at Austin. She wasn't there." |
-| `!(M07_AUSTIN)` | "Jennifer Walsh's cell: standing." (w) |
-| `M07_MELTDOWN` | "Marcus Ashford's cell: stopped at the hospitals. He wasn't there." |
-| `!(M07_MELTDOWN)` | "Marcus Ashford's cell: standing." (w) |
+| `globalVars.head_start_killed === 'trace' && globalVars.share_zero_day === 'traced'` | "Zero Day's share: four buyers followed. One was careless." |
+| `globalVars.m07_completed === true && globalVars.m07_team_assignment === 'fracture'` | "Michael Reeves's cell: its people taken at the Fracture site. He wasn't there." |
+| `!globalVars.m07_completed` | "Michael Reeves's cell: standing." (w) |
+| `globalVars.m07_completed === true && globalVars.m07_team_assignment !== 'fracture'` | same text (w) |
+| `!globalVars.m07_completed` | "Jennifer Walsh's cell: stopped at Austin." |
+| `globalVars.m07_completed === true && globalVars.m07_team_assignment === 'trojan_horse'` | same text |
+| `globalVars.m07_completed === true && globalVars.m07_team_assignment !== 'trojan_horse'` | "Jennifer Walsh's cell: standing." (w) |
+| `globalVars.m07_completed === true && globalVars.m07_team_assignment === 'meltdown'` | "Marcus Ashford's cell: stopped at the hospitals. He wasn't there." |
+| `!globalVars.m07_completed` | "Marcus Ashford's cell: standing." (w) |
+| `globalVars.m07_completed === true && globalVars.m07_team_assignment !== 'meltdown'` | same text (w) |
 
-The m07 leaders are named by name, never by cell name, so "Ghost Protocol" never shares a screen with Ghost (FA §4.6). "He wasn't there" is m07's own fact (`m07_opening_briefing.ink:153`, "He does not attend"; `m07_closing_debrief.ink:213`, "Ashford is never with them"). A taken-in Imran's supplier and arrested Victoria's book are their own clauses (§3.3), not cells.
+`close_secure_cell` is the secured operation's cell (§3.1), `""` when the database wasn't secured, so the secure rows print on surrender too, beside its two. "He wasn't there" is m07's own fact for Reeves (`m07_opening_briefing.ink:153`, "He does not attend") and Ashford (`m07_closing_debrief.ink:213`, "Ashford is never with them"); m07 says nothing of where Walsh was, so her line doesn't claim it (R1C-m2). Leaders are named by name, never by cell name, so "Ghost Protocol" never shares a screen with Ghost.
 
 ### 3.5 Elsewhere
 
-`{ "section": "ELSEWHERE", "lines": [...] }` on all six entries. Everything with nobody in m10 to carry it, and every human line the card may have passed over (FA §4.6, MC §10), each once.
+`{ "section": "ELSEWHERE", "lines": [...] }` on E1–E5, in **three movements, in this order** (W-05): what is still out there; what the night did to systems; then people. The last line is always a person. No line repeats the card's human line (W-04): each person-line the card could have taken carries `close_human !== '<value>'`, and dispatch, which always takes the card when it applies, isn't here at all. The tap on Zero Day's brokers is Victoria's clause and isn't repeated. "Ninety days" isn't used (W-03).
+
+**Movement 1: still out there**
 
 | Condition | Line |
 |---|---|
-| `AUSTIN_UNCOVERED && globalVars.database_outcome === 'disclosed'` | "Dispatch in eleven counties: a vendor workaround by the weekend. The fix is due in ninety days." |
-| `AUSTIN_UNCOVERED && globalVars.database_outcome !== 'disclosed'` | "Dispatch in eleven counties: still dropping calls. Day thirteen." (w) |
-| `globalVars.m04_completed === true && globalVars.m04_disclosure_choice === 'full'` | "Albion's inquiry asked who funded the plant's security. Parliament answered." |
-| `globalVars.m04_completed === true && globalVars.m04_disclosure_choice === 'partial' && globalVars.m04_crew_lost === true` | "The Albion inquest heard the rest." |
-| `globalVars.m04_completed === true && globalVars.m04_disclosure_choice === 'partial' && !globalVars.m04_crew_lost` | "Albion's half-statement still stands. Nobody audited the other sites." (w) |
-| `globalVars.m09_albion_notified === true && (globalVars.m04_disclosure_choice === 'full' \|\| globalVars.m04_crew_lost === true)` | "Albion's inquiry also asked SAFETYNET when it knew. SAFETYNET answered." |
-| `globalVars.m09_albion_notified === true && !(globalVars.m04_disclosure_choice === 'full' \|\| globalVars.m04_crew_lost === true)` | "Carrow Controls: told nine years late. A fix is ninety days out." (the vendor m09 stage 6 names) |
-| `globalVars.m05_completed === true && FORTY_SEVEN_WARNED` | "The forty-seven: every one of them reached in time." |
-| `globalVars.m05_completed === true && FORTY_SEVEN_LATE` | "The forty-seven: twenty-eight reached in time. Nineteen had already signed." (w) |
-| `globalVars.m05_completed === true && !(FORTY_SEVEN_WARNED) && !(FORTY_SEVEN_LATE)` | "The forty-seven: none of them reached. They're still on a list." (w) |
-| `globalVars.m05_elena_treatment_funded === true` | "Elena Torres is in treatment. It's working." |
-| `globalVars.m09_recruiter_offer === 'named'` | "The Recruiter's network: rolled up." |
-| `globalVars.m09_recruiter_offer === 'double_crossed'` | "The Recruiter's network: about half of them. She warned the rest." (w) |
-| `globalVars.m09_recruiter_offer === 'taken' \|\| globalVars.m09_recruiter_offer === 'refused'` | "The Recruiter: at large, her people at their desks." (w) |
-| `globalVars.m09_legacy_files_saved === true` | "Eleven placements outside SAFETYNET, picked up from the Helena files." |
+| `globalVars.m09_recruiter_offer === 'named'` | "The Recruiter's network: rolled up at six." |
+| `globalVars.m09_recruiter_offer === 'double_crossed'` | "The Recruiter's network: about half of it. She warned the rest." (w) |
+| `globalVars.m09_recruiter_offer === 'taken'` | "The Recruiter: at large, her people at their desks." (w) |
+| `globalVars.m09_recruiter_offer === 'refused'` | same text (w) |
+| `globalVars.m02_completed === true && globalVars.m02_reeves_fate === 'escaped'` | "Graham Reeves: on leave from Tomb Gamma tonight. Still theirs." (w) |
+| the same with `'missed'`; with `'unnoticed'`; and `globalVars.m02_completed === true && globalVars.m02_reeves_fate === '' && globalVars.m02_insider_asset_escaped === true` | same text (w) |
+| `globalVars.m07_hollis_resolved === 'evaded' && globalVars.m06_assets_seized === true` | "Ray Hollis: stood down for the budget. Home with his kids." |
+| `globalVars.m07_hollis_resolved === 'evaded' && !globalVars.m06_assets_seized` | "Ray Hollis: on their gate roster. Still on their payroll." (w) |
+| `globalVars.m04_static_left_alone === true` | "Static: out of Albion on his own. Still out." (w) |
+| `globalVars.m04_robert_vance_ko === true` | "Robert Vance: said no again." (w) |
+| `globalVars.ending === 'executed'` | "Social Fabric's story ran at six. One paragraph of it was true." (w) |
+| `globalVars.media_story_ran === true && globalVars.ending !== 'executed'` | "Social Fabric's story ran from outside: a massacre that never happened." (w) |
+| `globalVars.media_story_ran === true && globalVars.ending !== 'executed' && globalVars.m05_entropy_program_exposed === true` | "It named SAFETYNET, and 0x00." (w) |
+| `globalVars.close_zero_day === 'vos_named'` | "Zero Day: still trading. Its broker, Pieter Vos, named." |
+| `globalVars.close_zero_day === 'trading'` | "Zero Day: still trading." |
+
+**Movement 2: systems**
+
+| Condition | Line |
+|---|---|
 | `globalVars.partial_release === 'small'` | "Seattle's first batch went out through the backdoor, into fourteen million systems." (w) |
 | `globalVars.partial_release === 'large'` | "Seattle's first batch went out through the backdoor, into forty-seven million systems." (w) |
-| `globalVars.database_outcome === 'disclosed'` | "Three water utilities: on manual till spring. There's no patch for their controllers." |
-| `globalVars.ending === 'executed'` | "Social Fabric's story ran at six. One paragraph of it was true." (w) |
-| `globalVars.media_story_ran === true && globalVars.ending !== 'executed'` | "Social Fabric's story ran from outside. A massacre that never happened." (w) |
-| `globalVars.media_story_ran === true && globalVars.m05_entropy_program_exposed === true` | "It named SAFETYNET, and 0x00." (w) |
-| `globalVars.victoria_gallery === 'confronted'` | "The tap on Zero Day's brokers: dark since five." (w) |
-| `(globalVars.m03_victoria_fate === 'arrested' \|\| globalVars.m03_victoria_fate === 'ko' \|\| globalVars.m03_victoria_fate === '') && globalVars.vos_outcome !== 'bought'` | "Zero Day: still trading. Its broker, Pieter Vos, named." |
-| `!((globalVars.m03_victoria_fate === 'arrested' \|\| globalVars.m03_victoria_fate === 'ko' \|\| globalVars.m03_victoria_fate === '') && globalVars.vos_outcome !== 'bought')` | "Zero Day: still trading." |
-| `globalVars.m02_completed === true && (globalVars.m02_reeves_fate === 'escaped' \|\| globalVars.m02_reeves_fate === 'missed' \|\| globalVars.m02_reeves_fate === 'unnoticed' \|\| (globalVars.m02_reeves_fate === '' && globalVars.m02_insider_asset_escaped === true))` | "Graham Reeves: on leave from Tomb Gamma tonight. Still theirs." (w) |
-| `globalVars.m07_hollis_resolved === 'evaded' && globalVars.m06_assets_seized === true` | "Ray Hollis: stood down for the budget. Home with his kids." |
-| `globalVars.m07_hollis_resolved === 'evaded' && !globalVars.m06_assets_seized` | "Ray Hollis: on their gate shift. Still on their payroll." (w) |
-| `globalVars.m04_static_left_alone === true` | "Static: out of Albion on his own. Still out." (w) |
-| `globalVars.m04_robert_vance_ko === true` | "Robert Vance: said no. Said you'd know why." (w) |
+| `globalVars.database_outcome === 'disclosed'` | "Three water utilities: on manual till spring. No patch exists for their controllers." |
+| `globalVars.m04_completed === true && globalVars.m04_disclosure_choice === 'full' && globalVars.close_human !== 'albion_full' && globalVars.close_human !== 'albion_full_sent'` | "The Albion inquiry made a minister answer for the plant's security." |
+| the same `&& globalVars.m09_albion_notified === true` | "Then it asked SAFETYNET when it knew." |
+| `globalVars.m04_completed === true && globalVars.m04_disclosure_choice === 'partial' && globalVars.m04_crew_lost === true && globalVars.close_human !== 'albion_inquest' && globalVars.close_human !== 'albion_inquest_sent'` | "The night crew's families heard the rest at Albion's inquest." |
+| the same `&& globalVars.m09_albion_notified === true` | "They also heard when SAFETYNET knew." |
+| `globalVars.m04_completed === true && globalVars.m04_disclosure_choice === 'partial' && !globalVars.m04_crew_lost && globalVars.close_human !== 'albion_half'` | "Albion's crew went back to work under a half-statement. Nobody audited the other sites." (w) |
+| `globalVars.m09_albion_notified === true && !globalVars.m04_completed` | "Carrow Controls: told nine years late. A fix is on its way." |
+| `globalVars.m09_albion_notified === true && globalVars.m04_disclosure_choice === 'quiet'` | same text |
+| `globalVars.m09_albion_notified === true && globalVars.m04_disclosure_choice === 'partial' && !globalVars.m04_crew_lost` | same text |
+| `globalVars.m09_legacy_files_saved === true` | "Eleven placements outside SAFETYNET, picked up from the Helena files." |
 
-The Albion lines here are split so that m09's half has a home on every save that sent the notice, including a `quiet` m04 save (no card line, FA row 59) and a never-played m04 (the vendor line). The forty-seven's three forms and Elena Torres always print here on an m05 save, whichever one the card chose. Kemal Aydin, Teresa Villanueva and the other m09-only people are m09's to credit.
+The "Then it asked" and "They also heard" lines print only directly under the line they continue, with the same condition plus the notice (R1C-m3). Every other notified save gets the Carrow line, so m09's send always has a home, including a `quiet` m04 save and a never-played m04. "Picked up" is the eleven people arrested from the files (m09 credits its own wording, "kept from the shredder").
+
+**Movement 3: people**
+
+| Condition | Line |
+|---|---|
+| `globalVars.m05_completed === true && globalVars.m05_found_pipeline_list === true && !globalVars.m05_recruiter_deal_accepted` | "Every one of the forty-seven was warned in time." |
+| `globalVars.m05_completed === true && globalVars.m05_found_pipeline_list === true && globalVars.m05_recruiter_deal_accepted === true && globalVars.m05_recruiter_deal_confessed === true && globalVars.close_human !== 'fortyseven_late'` | "Of the forty-seven, twenty-eight were warned in time. Nineteen had already signed." (w) |
+| `globalVars.m05_completed === true && !globalVars.m05_found_pipeline_list && globalVars.close_human !== 'fortyseven_none'` | "None of the forty-seven were warned. They're still on someone's list." (w) |
+| `globalVars.m05_completed === true && globalVars.m05_found_pipeline_list === true && globalVars.m05_recruiter_deal_accepted === true && !globalVars.m05_recruiter_deal_confessed && globalVars.close_human !== 'fortyseven_none'` | same text (w) |
+| `globalVars.m05_elena_treatment_funded === true && globalVars.close_human !== 'elena'` | "Elena Torres is in treatment. It's working." |
+| always | "In Billings, a girl turns nine on Saturday. Her father is bringing a telescope." |
+
+The last line is true on every save that reaches six o'clock (Arakawa's call, SE §3.4; his credit no longer carries the telescope) and is never on the card, so ELSEWHERE always ends on a person.
 
 ### 3.6 Join's card and credits
 
@@ -1080,7 +1140,8 @@ E6 (`citadel`, `ending === 'joined'`). FA §4.5: MISSION FAILED with the Publica
 - "THE PUBLICATION: RELEASED BY KEY. ALL CITIES, ONE MINUTE." (`warning`)
 - "PROJECTED DEATHS, FIRST THIRTY DAYS: 1,100 TO 2,600. HIS FIGURE." (`warning`)
 - "CORRECTED: 2,100 TO 3,600." (`warning`) Always printed, whether or not the player found Asante's correction: Join is where the player learns what the key really cost.
-- A blank line, then IN THIS OPERATION (§3.3, whose `joined` arms apply) and ELSEWHERE (§3.5). No THE CELLS.
+- A blank line, then IN THIS OPERATION (§3.3, with its Join arms).
+- ELSEWHERE, **movement 1 only** (W-21, decided on purpose): what is still out there, ending on "Zero Day: still trading." On Join nothing the player did elsewhere is good news worth printing, and the last word of a defection is the market that now has everything. No THE CELLS, no systems, no people, no telescope.
 
 ## 4. LORE fragments: what the bunker tells a player who reads
 
@@ -1090,7 +1151,7 @@ m10 is a raid with about 105 minutes in it (OT §8), so it has no separate colle
 
 | # | Fragment (id) | Room | Kind (06 prompt) | Thread | What a reader learns |
 |---|---|---|---|---|---|
-| 1 | Citadel Incident File V-47 (`incident_file`) | forward post | external validation | the Publication's preparation | how the database left, that the personnel index went with it, that the door was left open on Netherton's signature and still is, and the cracker quarantine |
+| 1 | Citadel Incident File V-47 (`incident_file`) | forward post | external validation | the Publication's preparation | how the database left, that the personnel index went with it, that the door was left open, watched and followed on Netherton's signature, and the cracker quarantine |
 | 2 | Helena's plans (`helena_plans`) | forward post | operational document | Tesseract's workshop | the bunker was a 1962 civil defence control site; the crank, the interlock, the shutter's feed, the control room's east exit |
 | 3 | The projection desk (`projection_desk`, on `hardened`) | forward post | database / numbers | the Publication | SAFETYNET's own analysts put the first month at 2,000 to 3,400 and say it keeps climbing |
 | 4 | The tunnel rota (`tunnel_rota`) | tunnel | personal / operational | ENTROPY's cells | the post's shift change is real (Nightshade's entry 2), and Graham Reeves works here now |
@@ -1113,7 +1174,7 @@ The 06 prompt's evidence documents are 8, 10 and 13, each with numbers, each fou
 
 **ENTROPY's cells.** The night shows the cells as customers and contractors, never as a council. The tunnel rota has m02's Reeves on the payroll (4); the bench sells through a supplier the stores never questioned (7); the schedule pays two cells in early access for the theft, and one of them already has a resale buyer (10, and Vos's secret); Social Fabric's draft carries the Initiative's sign-off (11). The credits then show the ledger: which cells broke, which stand, each m07 cell by its leader's name (§3.4). Nothing here names ENTROPY's founding or a new mastermind (FA row 11: a new one in the last hour is clutter).
 
-**The Publication's preparation.** From the outside in: the Citadel's file says what went and that the door is still open (1); the schedule says what goes, when, through which channels, and to whom first (10); the plotting board puts it on a map (9); the casualty sheet prices it, and Asante's model reprices it (8); the core's index shows the key and the purge waiting (13). Each step is said by a document, so when Tesseract makes his case at the console (six lines, SE §2.2), a reader has seen every number he uses, and one he doesn't.
+**The Publication's preparation.** From the outside in: the Citadel's file says what went and that the door was left open and followed (1); the core's index later says it is open still; the schedule says what goes, when, through which channels, and to whom first (10); the plotting board puts it on a map (9); the casualty sheet prices it, and Asante's model reprices it (8); the core's index shows the key and the purge waiting (13). Each step is said by a document, so when Tesseract makes his case at the console (six lines, SE §2.2), a reader has seen every number he uses, and one he doesn't.
 
 ### 4.3 What the fragments pay off from m01–m09
 
@@ -1122,8 +1183,8 @@ The 06 prompt's evidence documents are 8, 10 and 13, each with numbers, each fou
 | m01: Operation Shatter's casualty projections (`found_casualty_projections`) and its launch ending | 8, Join's credits | The same document type, signed by the same hand; Join's credits print his figure and the corrected one, as m01's launch ending printed its estimate |
 | m02: Ghost and Ransomware Incorporated; Reeves; the unlabelled case behind Gary's rack | 10, 4, 7 | Ransomware Incorporated is on the early-access list; Reeves is on the tunnel rota; the bench's casings are the casing Gary recognises |
 | m03: Zero Day, Sterling's desk "filled by Monday" | 10 | Zero Day's share is collected on site by Sterling or by Vos, "Resale not permitted", which is the rule Vos is breaking |
-| m04: Albion, Critical Mass, the bypass | 13, 3.5, `bypass_panel`, `static_kit` | The notice is on his box, unsent, or "sent from Helena by someone else"; Carrow Controls in Elsewhere; Voltage's thumb on the refit's bypass; Static's tool roll |
-| m05: the Initiative | 11, 3.4 | Social Fabric's rota bills the Initiative; the Initiative's procurement desk is a cell the database can roll up |
+| m04: Albion, Critical Mass, the bypass | 13, 3.5, `bypass_panel`, `static_kit` | The notice is on his box, unsent, or "Sent from Helena, day 12. Not by me."; Carrow Controls in Elsewhere; Voltage's thumb on the refit's bypass; Static's tool roll |
+| m05: the Initiative | 11, 3.4 | Social Fabric's schedule bills the Initiative; the Initiative's procurement desk is a cell the database can roll up |
 | m06: the freeze, HashChain | 5, `gate_hut`, 3.4 | "POSTS UNMANNED: BUDGET"; the dark gate hut; the Crypto Anarchists' reserve as a cell |
 | m07: Seattle, the backdoor, the four sites, Mercer, Hollis | 9, 10, 3.4, `duty_board` | Seattle first on the board; the Trojan Horse backdoor and its size on the schedule; the leaders' cells; Hollis on the duty board |
 | m08: the theft, the door, the stores, "I chose what you went in without" | 1, 7, `nightshade_payment` | The incident file states the theft and the open door; the bench log is the supply chain; Nightshade's payment ends on his m08 line |
@@ -1134,6 +1195,7 @@ The 06 prompt's evidence documents are 8, 10 and 13, each with numbers, each fou
 - **The cracker supply chain** (FA §13 item 3, B1): Tomb Gamma's bench made the PIN crackers SAFETYNET's stores bought through a front supplier, Gallatin Instrument Supply of Bozeman: four batches, 160 units, every one of them signed for by Nightshade, all now withdrawn. Kowalczyk's cracker is bench-made but was never issued through stores. Crackers go out by batch with no end user; cloners report each read back to the bench; one cloner went to WREN by hand.
 - **The bunker's origin**: Sun River Regional Control Site, a 1962 civil defence control site in Lewis and Clark County, at m08's coordinate; leased in 2016 (m09's deed) and refitted last year.
 - **The purge circuit**: fitted and tested in the refit, armed on the loss of both copies; his rule "both copies, or nothing".
+- **The catalogue's size**: 92,460 entries, the sum of m08's four catalogue figures (m08 never prints the total; R1C-m1).
 - **The readers**: 1,206 SAFETYNET badges loaded from the stolen personnel index (FA M-04); the service door takes any of them, the blast door one by name.
 - **The casualty figures**: his, 1,100 to 2,600 in the first thirty days, unchanged through three printings; Asante's corrected 2,100 to 3,600; the Council's own curve 2,000 to 3,400 at week 4.
 - **The lock guard**, Sione Fonoti, for the cast register (FA §5.2).
@@ -1149,7 +1211,7 @@ The 06 prompt's evidence documents are 8, 10 and 13, each with numbers, each fou
 |---|---|---|---|
 | 1 | `door_log` (security office, after flag 1) | Malhotra's badge, at 02:10, on the core's service door | "somebody has a copy" (HaX); it names the badge, not a hand |
 | 2 | HaX's alibi topic (spoken), or a helper: Nightshade's habits line, or `m09_sleeper_shortlist` at the aside | whoever nobody could see at 02:10 | Quintero and Kowalczyk (the tunnel pair) |
-| 3 | `bench_log` (workshop) **with** `case_signout_sheet` (forward post; HaX reads it on "[Who signed for the case?]"), or Phantom's list | a cloner sent "to WREN" in breaching case 2, which copied Malhotra's badge at 01:58; the case opened at 01:52 by Kowalczyk and Arakawa | Kowalczyk and Arakawa |
+| 3 | `bench_log` (workshop) **with** `case_signout_sheet` (forward post; HaX reads it on "[Who signed for the case?]"), or Phantom's list with the sheet (his list replaces the bench log's half; the names still come from the sheet, R1C-m6) | a cloner sent "to WREN" in breaching case 2, which copied Malhotra's badge at 01:58; the case opened at 01:52 by Kowalczyk and Arakawa | Kowalczyk and Arakawa |
 
 Clue 2 ∩ clue 3 = Kowalczyk. Clue 1 is what turns 02:10 into a test. No document carries a name next to "WREN": the bench log has the codename and Malhotra's badge (an innocent's), the sheet has two names and no codename. The m09 shortlist names Kowalczyk and Quintero, the same pair as clue 2, so it replaces clue 2 and never short-cuts it.
 
@@ -1164,11 +1226,13 @@ Clue 2 ∩ clue 3 = Kowalczyk. Clue 1 is what turns 02:10 into a test. No docume
 | Tripwire (`wren_warned`) | same (the ladder route reaches the office) | same | same | yes; she peels off at the workshop, so the bench log is read with her already gone, and accusing is on the line |
 | Arakawa knocked out before 02:10 | same | HaX's variant: "Arakawa was on the gravel at ten past. You saw to that." | same | yes |
 | Malhotra wrongly sent back | same | same | same | yes; recalled on clue 2 ("Eleven years. Check the log again.") |
-| Vector and Phantom present | same | Netherton had both at the van end | Phantom's list replaces it ("one more unit than its sheet lists", the sheet's own count) | yes |
+| Vector and Phantom present | same | Netherton had both at the van end | Phantom's list, with the sheet, replaces it ("one more unit than its sheet lists"; the names are the sheet's) | yes |
+| Kowalczyk or Quintero struck before the split | — | — | — | not possible: their table copies (`kowalczyk_post`, `quintero_post`) are `koImmune` until `split_started`, like Malhotra all night; only their bunker copies, after 02:10, can be knocked out (R1C-M2, ruling; §6 S6-26). So no paper ever records an act by someone the player had already put down |
+| Quintero sent back on a wrong accusation | same | the alibi still names the tunnel pair (where she was at 02:10 is unchanged); she is recalled on clue 3 ("I took the drain. I didn't pack the case. Read the sheet.") | same | yes |
 | Nightshade kept or dealt | same | his habits line replaces it | same | yes |
 | `m09_sleeper_shortlist` | same | HaX at the aside replaces it | same | yes |
 
-**Where it is off.** `taken`: the door log has no 02:10 entry, the bench log says the WREN cloner was never switched on and is still in the case, the sheet has Arakawa alone. `double_crossed`: the door log shows her own badge at 21:47 the evening before (lore, and a sting), the bench log says the cloner was never collected, the sheet has Arakawa alone. Neither variant contradicts the aside's named form or Netherton's briefing line.
+**Where it is off.** `taken`: the door log has no 02:10 entry, the bench log says the WREN cloner was never switched on and is still in the case, the sheet has Arakawa opening it and both H.K. and K.A. packing it, so the unused cloner sits in a case she packed and points at nobody new (R1C-M1). `double_crossed`: the door log shows her own badge at 21:47 the evening before (lore, and a sting), the bench log says the cloner was never collected, the sheet has Arakawa alone. Neither variant contradicts the aside's named form or Netherton's briefing line.
 
 **Fair before the lock.** The door log, the bench log and the sheet are all reachable before the server hall, where Kowalczyk's face-to-face window closes by default; the alibi needs only the line. The tunnel (tripwire) and tether variants move her peel-off a room earlier, which costs the face-to-face accusation, never a clue: the line accusation has the same outcomes (FA §4.4).
 
@@ -1178,7 +1242,7 @@ None is made here (this stage edits only its own file). "FA" is FINALE_ARC; the 
 
 | # | To | Change | Why |
 |---|---|---|---|
-| S6-01 | RL §2.1 (objects), §5 | Add `incident_file`, "Citadel Incident File V-47", a readable on the forward post's kit table, suggested (12, 8) | FA §13 10-3, §8 r11, F7, D-13: the vault line left open as a trace is written down; also the stores half of the cracker canon (B1) |
+| S6-01 | RL §2.1 (objects), §5 | Add `incident_file`, "Citadel Incident File V-47", a readable at the road end, suggested (3, 8), `readDisplay: "gameDisplay"` | FA §13 10-3, §8 r11, F7, D-13: the decision to leave the vault line open and follow it is written down, stopping short of the core's reveal (W-01); also the stores half of the cracker canon (B1) |
 | S6-02 | RL §2.4, §3 (lock graph), §6; OT §2–3 (`decode_the_margin`), §16 | Add `model_terminal`, a `pc` with a `password` lock (`DOUBLECOUNT`) holding the notes item `asante_model`; `margin_note_read` is set by `asante_model`'s `onRead`, not by the strip. `casualty_margin_note` stays the coded strip with no `onRead`. OT §3's trigger for `decode_the_margin` becomes "`asante_model`'s `onRead`". RL §3: one more optional lock (the password), whose key is the decode; the validator sees a password lock and its clue in the same room | The CyberChef workstation emits no event (`utils/crypto-workstation.js`), so as written nothing could set `margin_note_read` and the optional task and the rebuttal's decoded form were unreachable. The lock is the decode's proof, and it teaches its own small lesson (a password hidden by encoding is not hidden) |
 | S6-03 | RL §2.8 | Add `core_files`, "Core Host: File Index", a readable on the core's back wall, suggested (4, 2), text after `flag4_submitted` | The core's LORE (his workshops, the key's rule, the purge, his notice) in his own filing, a page a player can read while he waits; HaX's flag 4 lines then confirm what it shows |
 | S6-04 | RL §2.3, §2.7; OT §4.2, §4.5 | Fix the values: `records_cupboard` `requires: "2817"`; outer lock `requires: "6083"`; the three notes items' `text` as §2.2 | FA §13 10-2 |
@@ -1188,9 +1252,9 @@ None is made here (this stage edits only its own file). "FA" is FINALE_ARC; the 
 | S6-08 | RL §4 (the cracker's description) | "handed it to you before Helena", not "in Helena" | In m09 she hands it over at the briefing, before the flight (FA row 118; m09 S4 P15) |
 | S6-09 | SE §3.1 / stage 7 (HaX's Hollis line) | On `m06_assets_seized && m07_hollis_resolved === 'evaded'`, the duty board shows Hollis stood down for the budget; HaX's "I hope he stays in the hut" becomes, on that save, "Stood down for the budget. Your freeze kept him home tonight." | FA rows 72 and 92 together: the freeze empties the gate, so Hollis can't be on it |
 | S6-10 | m09 stage 1 / SA §3.4; FA §13 B1 | The cracker canon's home is m10's incident file, bench log and cracker description; m09 carries no incident file (m09 stage 6 §4.5 agrees). Mark B1 settled | B1 |
-| S6-11 | MC §10 (the human line), FA §4.6, §13 item 36 | The forty-seven take the card's human line only where some were not reached in time (`m05_completed` and not `FORTY_SEVEN_WARNED`); where all were warned, the line falls to Elena Torres. All three forty-seven forms stay in ELSEWHERE | As written, `m05_elena_treatment_funded` can only be true on an `m05_completed` save, so Elena Torres's card line was unreachable |
-| S6-12 | MC §5, §12; OT §16 | Add locals `malhotra_recalled`, `arakawa_recalled`, `quintero_recalled`, `vector_recalled`, `phantom_recalled` (bool, set by the recall's line for that officer) and `fonoti_ko` (bool, `globalVarOnKO`); add "credits" to the readers of `points_landed`, `cut_by_hand`, `imran_outcome`, `voltage_outcome`, `wendell_outcome`, `gary_outcome`, `asante_outcome`, `vos_outcome`, `victoria_gallery`, `victoria_line_deal`, `nightshade_deal`, `nightshade_taken_in`, `quintero_enters_core`, `partial_release`, `media_story_ran` | FA §4.4's "Recalled." credit needs to know who was recalled (`officer_out` is cleared on recall); the rest are reads §3 adds |
-| S6-13 | FA §4.6 ("The closing card"), MC §10 | The cells line's count includes m07's cell (covered site; never played reads Austin), so it reads "Cells broken: n", not "tonight"; the card's line forms and the THE CELLS section are §3.2 and §3.4 here. Card lines are per ending entry (§3.1), written mutually exclusive so the five-line cap never drops one | FA §4.6 named the count and one cell but not how to print a count without a variable; the cap takes the first five that hold |
+| S6-11 | MC §10 (the human line), FA §4.6, §13 item 36 | The forty-seven take the card's human line only where some were not reached in time (`m05_completed`, and not every one of them warned in time); where all were warned, the line falls to Elena Torres. All three forty-seven forms stay in ELSEWHERE | As written, `m05_elena_treatment_funded` can only be true on an `m05_completed` save, so Elena Torres's card line was unreachable |
+| S6-12 | MC §5, §12; OT §16; RL §2.1 | Add locals: `malhotra_recalled`, `arakawa_recalled`, `quintero_recalled`, `vector_recalled`, `phantom_recalled` (bool, set by the recall's line for that officer); `vector_on_team`, `phantom_on_team` (bool, HaX `game_loaded`, one mapping per arm of FA row 112; RL's staging can read them too); `fonoti_ko` (bool, `lock_guard`'s `globalVarOnKO`). Add RL's existing latches `gary_ko` and `mercer_ko` to OT §16 (R1C-m5). `vos_outcome` defaults to `""` and is written `avoided` by Vos's own first line or his room's exit (R1C-m16). Add "credits" to the readers of `head_start_killed`, `cut_by_hand`, `imran_outcome`, `voltage_outcome`, `wendell_outcome`, `gary_outcome`, `asante_outcome`, `vos_outcome`, `victoria_gallery`, `victoria_line_deal`, `nightshade_deal`, `nightshade_taken_in`, `quintero_enters_core`, `partial_release`, `media_story_ran` | The credits' "Recalled." needs to know who was recalled (`officer_out` is cleared on recall); the rest are reads §3 adds, and every condition stays `&&`-only |
+| S6-13 | FA §4.6 ("The closing card"), MC §10 | The card is five differently shaped lines: the man and the database as headlines, the head start in his arrival lines, the cells as a sentence (count plus one name, m07's covered cell included, so never "tonight"; surrender's two named "ENTROPY's couriers", W-07), and a person last (W-02, W-03). ELSEWHERE runs in three movements and ends on a person (W-05), never repeating the card (W-04). On Scorched Earth the database line splits on `head_start_out` (R1C-M3) | Round 1 rulings on the close |
 | S6-14 | FA §4.0 ("Why the readers log SAFETYNET badges"), §4.4 | Add: the readers hold 1,206 SAFETYNET badges; the service door takes any of them; on `double_crossed` the door log shows Kowalczyk's own badge at 21:47 the evening before (she came in openly; no 02:10 entry, as FA already says) | Lore consistency with the alarm log and the door log |
 | S6-15 | FA §2 row 112 / §8.1 Vector; RL §2.3 | The records cupboard's keypad is the Citadel's annex make (its observation says so), which is why Vector and Ghost both know the code | Grounds Vector's line for a player who never meets him |
 | S6-16 | MC §3.1 (the payment check), stage 7 | The check's ink option names entry 3: "[Your entry for the inner door says 1962 and no interlock. Helena's 1962 drawings have one.]" (draft wording for stage 7) | §1.10: the contradiction is entry 3 against plans entry 3 |
@@ -1198,15 +1262,90 @@ None is made here (this stage edits only its own file). "FA" is FINALE_ARC; the 
 | S6-18 | FA §13 stage 6 handover | Mark B1, B2, B3 and 10-1 to 10-8 settled by this file; U1 settled (already in `the_architect.md`, user-confirmed) | Housekeeping |
 | S6-19 | FA §5.2 name register | Add Sione Fonoti, B. Haugen, J. Kiel, T. Abara, Gallatin Instrument Supply, Sun River Regional Control Site | Name-clash register; all grepped clean |
 | S6-20 | m09 stage 6 (cross-check, no change needed unless they differ) | Shared facts as m10 uses them: the sheet's body (m09's `mirror_job_printout` wording); "Disposition: retain. Operational value."; Carrow Controls; Tomb Alpha and Tomb Beta closed, papers and server in Helena; the cracker handed over at the m09 briefing; 2017 / 2015 / 2019 / 2011 anchors. If m09's deed names the bunker, it should be Sun River Regional Control Site (m09 stage 6 currently says only "a decommissioned bunker, Montana") | One set of facts across both missions |
+| S6-21 | FA §4.0, §4.4; OT §6 (`t0145`) | "The breaching case on the table, opened at 01:52", not "open on the table" from 01:45 | R1C-m11: the sheet and HaX's hub line say 01:52; the case comes out shut and is opened seven minutes into the kit check, still before the 01:58 copy |
+| S6-22 | SE §3.1 / stage 7 (HaX's margin pointer) | HaX's pointer gains "Copy just the code." | R1C-m7: the strip's text is now the code alone; the half-line keeps a player from pasting the observation too |
+| S6-23 | OT §16, MC §12, stage 7 (`m10_carryover_vars.ink`), stage 9 | `close_compute`: an ink function run on the first line of each closing scene that writes `close_secure_cell`, `close_cell_name`, `close_cells`, `close_human`, `close_zero_day` (strings, default `""`, letter-first values) by `#set_global`; all three legs declared | The coordinator's ruling: no `\|\|` in any condition. The close's "or"s and the cells count live in ink, where `or` is native, and the card reads single `===` tests |
+| S6-24 | MC §10 ("the count runs from zero (no console catch, wipe or the cold ending)") | The cold ending counts a secured cell like the others | R1C-m17, ruled by the coordinator: the database was secured before the shot |
+| S6-25 | stage 7 (the hold-fire beat), optional | If wanted, a local `fire_held` set on "[Hold fire.]", read by a first HaX clause "Killed his feed in time. Testifying." | R1C-M4 moved HaX's feed clause to the console's `head_start_killed`; the hold-fire kill has no global of its own |
+| S6-26 | RL §2.1 (NPC table), §2.9 (roster); MC §5 | `kowalczyk_post` and `quintero_post` (the briefing-table copies) become `koImmune`, like Malhotra; their post-split and bunker copies stay knockable with their `_ko` latches | R1C-M2, ruling: `koImmune` can't be toggled in the engine (RL §6 item 36), and a pre-split knock-out would leave the 01:58 and 02:10 papers recording acts she couldn't have done. A `kowalczyk_ko` now always happens below ground |
+| S6-27 | RL §2.5 (`shutter_isolator`) | Its default text becomes "A key switch and a breaker row, labelled GALLERY SHUTTER. The key is in it." | W-18: the talk-through is HaX's and Voltage's to offer |
+| S6-28 | FA §2 row 59 | "with an inquiry (`full` or `m04_crew_lost`)" becomes "(`full`, or `partial` with `m04_crew_lost`)"; a `quiet` save that sent the notice gets the Carrow Controls line in ELSEWHERE | R1C-m3: on `quiet` no Albion line prints, so "also asked" would hang |
+| S6-29 | SE §3.4 (Arakawa's credit) | "Home for Saturday, with a telescope." becomes ELSEWHERE's fixed last line, "In Billings, a girl turns nine on Saturday. Her father is bringing a telescope."; his own credit carries the county road | W-05: the close ends on a person on every save |
+| S6-30 | RL §2.6, §2.8 (`schedule_terminal`, `core_files`) | Default `text` empty, so no pre-flag page reaches the notepad; stage 9 confirms the readable branch is skipped with no text, else `addToNotes: false` | R1C-m8 |
+| S6-31 | RL §4 | The cracker's description quotes m09's line whole on m09 saves, and drops "never been near him" only on a cold start with m08 unplayed | R1C-m18a, FA §4.0 |
 
 **Stage 9 checks this file asks for** (not design changes): that `#give_item` fires an item's `onPickup` (the override); that the cracker minigame runs faster on the dusted plate's four digits (else the plate's ordered fallback sentence, §1.7); that `hasFingerprint` can be given to `bypass_panel` on the escaped branch only; that `points_landed` is a declared global, since the credits read it.
 
 ## 7. For the user
 
-Nothing here blocks stage 7. Three things the user may want to see:
+Nothing here blocks stage 7. Four things the user may want to see:
 
 1. **One new lock in m10: a password.** The margin note's decode now opens a password-locked bench terminal (S6-02). Without it the optional decode had no way to register, so its task and the sharper rebuttal could never trigger. It is optional and off the critical path. The alternative is to drop the decode's in-game effect and keep the strip as lore only.
 2. **Elena Torres on the closing card** (S6-11). As stage 3 wrote the precedence, her line could never reach the card. The fix lets her line through when all forty-seven were warned in time. It is an ordering call, so the orchestrator can rule on it.
 3. **The teaser slot** is wired on four endings and holds no lines (§3.1). Its content is still the user's to decide.
+4. **The season's last line.** On every ending that reaches six o'clock, ELSEWHERE now closes on Arakawa's daughter: "In Billings, a girl turns nine on Saturday. Her father is bringing a telescope." Join closes instead on "Zero Day: still trading." Both are taste calls the user may want to read.
 
 U1 (Tesseract recruited Nightshade at 23 while chief strategist) is already in `the_architect.md`, marked user-confirmed, so nothing more is needed from the user.
+
+## 8. Review round 1 outcomes
+
+Two reviews, 2026-10-21: `REVIEW_R1_WRITING.md` (0 blockers, 7 majors, 18 minors, rewrites P1–P10) and `REVIEW_R1_CLUES.md` (0 blockers, 4 majors, 18 minors), with the coordinator's rulings. **All 47 findings applied; none withdrawn.** Where a ruling chose between a finding's options, the choice is noted.
+
+**Coordinator rulings applied across the file.** No `||`, parentheses or arithmetic in any condition (§0, §3.1): the close's "or"s and the cells count now live in an ink function, `close_compute`, writing five derived strings (S6-23); people's "or"s are repeated clauses, lines' "or"s repeated rows. The cold ending counts a secured cell (R1C-m17; S6-24).
+
+**Writing review**
+
+| Finding | Where it landed |
+|---|---|
+| W-01 incident file gives away the core | §1.1 item 3 is P1's wording; §1.8 index is where "open still" is first read; §2.5, §4.1–4.2 updated |
+| W-02 card as a status board | §3.2 rewritten: two headlines, his arrival lines for the head start, a sentence for the cells, a person last; model card at the end of §3.2 |
+| W-03 human line 1a, "ninety days" | §3.2 U: every human line names people; "ninety days" only in D's disclosed line; Carrow's line says "A fix is on its way" |
+| W-04 ELSEWHERE repeats the card | §3.5: every person-line the card could take carries `close_human !==`; dispatch removed from ELSEWHERE; the tap line removed |
+| W-05 ELSEWHERE has no shape | §3.5: three movements; fixed last line, Arakawa's daughter's telescope (S6-29) |
+| W-06 stock phrases | §3.3: "Swept up at six" kept for Fonoti only; P4-style details from SE §3.6 (Imran under his own sheet, Asante at the console she wrote, Mercer arguing his arithmetic, Vos waiting for a delivery, Voltage at his switchgear); knock-out openings varied |
+| W-07 couriers counted as cells | §3.2 C and §3.4: "ENTROPY's couriers" and "ENTROPY's quartermaster" (the reviewer's second option, keeping the count) |
+| W-08 Asante's note has no motive | §1.4: "For whoever checks his sums." re-encoded (212 characters, checked); her model ends "Left here for whoever checks his sums." Full name kept for the rebuttal |
+| W-09 index voice | §1.8: P5 ("2017. Drafted. Not sent." / "Not by me." / "For whoever came.") |
+| W-10 "reading, 0x00" | §1.8: "reading, for 0x00 … The original went to Helena." |
+| W-11 relative date in the alarm log | §1.3: "After the four-site night." (a day number would need OT's count confirmed; the event is unambiguous) |
+| W-12 UK words in American paperwork | §0 convention; ROSTER (tunnel, gallery), coffee pot, MAINTENANCE. SPARES, data center, RELEASE SCHEDULE, "Power room" in the plans |
+| W-13 "let them through" three times | §1.3 duty board: P9 |
+| W-14 the payment states the puzzle's rules | §1.10: P7 header |
+| W-15 the player's name in the credits | §0 convention ("0x00"); HaX's surrender clause P10; Vector "Said 0x00 would know why."; Vance and Voltage say "0x00" |
+| W-16 "one word" / "you'd know why" | Nightshade quotes his words ("Said 'Door.' from the van."; "Said 'Manual.' and turned the crank."); HaX's executed clause reworded; Vance "said no again." |
+| W-17 stage direction on the duty board | §1.3: the photo is in the observation |
+| W-18 the isolator's narrated hint | §1.5 and S6-27 |
+| W-19 three additions, "A.A." | §1.4 count corrected; "A.A." kept, playtest to watch whether it reads as his (A. Asante is the fallback) |
+| W-20 the gate hut | §1.1, the reviewer's line |
+| W-21 Join's ELSEWHERE | §3.6: decided, movement 1 only, ending on "Zero Day: still trading." |
+| W-22 Wendell's long clauses | §3.3: shortened |
+| W-23 Asante's vague clause | §3.3: "Arrested at the release console she wrote." |
+| W-24 incident file item 4 | §1.1: "Stores will buy elsewhere. They have not yet said where." |
+| W-25 projection desk default | §1.1: "The screen is dark. Nobody asked it anything." |
+
+**Clues review**
+
+| Finding | Where it landed |
+|---|---|
+| R1C-M1 `taken` sheet implicates Arakawa | §1.1: separate `taken` and `double_crossed` variants; `taken` keeps "H.K., K.A."; §5 updated |
+| R1C-M2 early knock-out on Kowalczyk | ruling: table copies of Kowalczyk and Quintero `koImmune`, bunker copies knockable (S6-26); §5 row added; her KO clause says "below ground" |
+| R1C-M3 Scorched Earth card contradicts itself | §3.2 D: `both_wiped` split on `head_start_out` |
+| R1C-M4 HaX's "Killed the feed" | ruling: on `head_start_killed` (two clauses); hold-fire left to an optional `fire_held` (S6-25) |
+| R1C-m1 92,460 unsourced | sourced as the sum of m08's four catalogue figures (§1.6, §4.4) |
+| R1C-m2 Walsh "wasn't there" | cut (§3.4) |
+| R1C-m3 dangling "also" | §3.5: continuation lines carry their parent's condition; Carrow takes every other notified save; FA row 59 tightened (S6-28) |
+| R1C-m4 Malhotra's badge on named saves | §3.3: "Ran comms all night." on `m09_sleeper_named` |
+| R1C-m5 missing locals, `PHA_IN` | `gary_ko`, `mercer_ko` into S6-12; `vector_on_team` / `phantom_on_team` replace the inline tests |
+| R1C-m6 Quintero rows, Phantom's half | §5: Quintero wrong-accusation row; "Phantom's list, with the sheet" |
+| R1C-m7 margin strip lead line | §1.4: text is the code alone; HaX's "Copy just the code." (S6-22) |
+| R1C-m8 stale notepad pages | §1.6, §1.8: default `text` empty (S6-30) |
+| R1C-m9 fields and positions | `readDisplay`; incident file at (3, 8); `core_files` wording |
+| R1C-m10 payment contradicts its header | §1.10: P7 header, "Every refit came out of your own catalogue." |
+| R1C-m11 case open at 01:45 | `kit_table` no longer says open; FA/OT to say "opened at 01:52" (S6-21). Chose this over moving the sheet to 01:40, because FA §4.4, SE and HaX's hub line all say 01:52 |
+| R1C-m12 card C exclusivity | the `trace` name now also needs `head_start_killed != "ghost"`, in `close_compute` |
+| R1C-m13 override tag | §1.10: works as carried |
+| R1C-m14 Join and "at six" | Join arms first for Imran, Kowalczyk, Asante, Mercer, Vos, Fonoti |
+| R1C-m15 Ghost's sale killed | §3.3: clause 6 |
+| R1C-m16 `vos_outcome` default | `""`, written `avoided` by Vos's own mapping (S6-12) |
+| R1C-m17 cold ending's cells | ruled: counts (S6-24) |
+| R1C-m18 quote, Qureshi, blast-door default | cracker quote whole on m09 saves (S6-31); Qureshi marked reused; the panel's default kept as a safety default and noted |
