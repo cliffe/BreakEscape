@@ -2,7 +2,7 @@
 
 ## 1. Status and how to use this
 
-Stage 2, draft 4. Author: stages 1–2 author (Opus). Draft 1 on 2026-10-21; round 1–3 fixes the same day (logged in `../stage_1/story_arc.md` §15–17). User decisions F11 (two lethal-force versions) and F13 (surrender is a deal with no public trial; arrest is a public trial) are folded in. Stage 3 (`../stage_3/moral_choices.md`, "MC §n") was folded in on 2026-10-21 (logged in arc §19): its new sample lines (P24, P25, P43) are added below, and stale ones replaced. MC is the authority for choice wording and costs; where a line here differs, MC wins. The stages 0–3 milestone fixes and the simplification pass were applied on 2026-10-21 (logged in arc §20): the media room and Social Fabric's crew are cut, the gallery has two options per branch, exchange 3's last record pool is two answers, the gallery guard is Farah Qureshi (FA §5.2), and the lines below follow. Stages 4–5 (`../stage_4/objectives_tasks.md`, "OT §n"; `../stage_5/room_layout.md`, "RL §n") were folded in on 2026-10-21 (logged in arc §21): HaX's briefing questions now live in her phone hub, she reads the case's sign-out names, she returns at the core inside his conversation, the release is said aloud by value, Ghost's call is answered at the handset, the kept branch's door is the records cupboard, the lock card is the lock guard's code card, the rooms and music follow RL and OT §7, and the voiced calls are listed in §9. Stage 6 (`../stage_6/lore_fragments.md`) was folded in on 2026-10-21 (logged in OT's last section): the lock guard is Sione Fonoti and is named in each naming line (S6-17), HaX gains the Hollis freeze line (S6-09) and "Copy just the code." (S6-22), Tesseract's card and credit lines follow stage 6 §3, and Arakawa's telescope moves from his credit to the close's last line (S6-29). Stage 6 is the authority for every readable string and every card and credits line.
+Stage 2, draft 4. Author: stages 1–2 author (Opus). Draft 1 on 2026-10-21; round 1–3 fixes the same day (logged in `../stage_1/story_arc.md` §15–17). User decisions F11 (two lethal-force versions) and F13 (surrender is a deal with no public trial; arrest is a public trial) are folded in. Stage 3 (`../stage_3/moral_choices.md`, "MC §n") was folded in on 2026-10-21 (logged in arc §19): its new sample lines (P24, P25, P43) are added below, and stale ones replaced. MC is the authority for choice wording and costs; where a line here differs, MC wins. The stages 0–3 milestone fixes and the simplification pass were applied on 2026-10-21 (logged in arc §20): the media room and Social Fabric's crew are cut, the gallery has two options per branch, exchange 3's last record pool is two answers, the gallery guard is Farah Qureshi (FA §5.2), and the lines below follow. Stages 4–5 (`../stage_4/objectives_tasks.md`, "OT §n"; `../stage_5/room_layout.md`, "RL §n") were folded in on 2026-10-21 (logged in arc §21): HaX's briefing questions now live in her phone hub, she reads the case's sign-out names, she returns at the core inside his conversation, the release is said aloud by value, Ghost's call is answered at the handset, the kept branch's door is the records cupboard, the lock card is the lock guard's code card, the rooms and music follow RL and OT §7, and the voiced calls are listed in §9. Stage 6 (`../stage_6/lore_fragments.md`) was folded in on 2026-10-21 (logged in OT's last section): the lock guard is Sione Fonoti and is named in each naming line (S6-17), HaX gains the Hollis freeze line (S6-09) and "Copy just the code." (S6-22), Tesseract's card and credit lines follow stage 6 §3, and Arakawa's telescope moves from his credit to the close's last line (S6-29). Stage 6 is the authority for every readable string and every card and credits line. **Stage 7 folded in** (2026-10-21; the list is OT's last section, "Stage 7 folded in"): the sample lines, buttons and knot names below follow the shipped ink (`scenarios/m10_full_disclosure/ink/`) and `CONTRACT.md` §8–10 (script edit rounds 1–3). From stage 8 on, the ink is the authority for every spoken line and button; samples here that the ink doesn't use are kept as voice samples only.
 
 Companion to `../stage_1/story_arc.md` ("arc §n"), which has the structure, order and branches. This file has the people (voice, wants, secret, arc, sample lines) and the feel of the night. FINALE_ARC is cited "FA §n" and its thread rows "row n"; a bare "§n" is a section of this file.
 
@@ -34,7 +34,7 @@ The m07 voice without the distortion, and a little more of him: still short, exa
 - **He grades.** "Better." / "That's a slogan." / "Closer."
 - **He asks questions he knows the answer to.**
 - **He uses numbers exactly** and never rounds aloud in his own favour. He did on paper; that is the point.
-- **He calls the player "Agent" or "0x00", and HaX "Ninety-nine"**, the way an instructor uses a number. Nobody else does. She refused it on his m09 call ("It's HaX. It has been for seven years."), and tonight she answers him again, shorter (§3.1).
+- **He calls the player "Agent" or "0x00", and HaX "Ninety-nine"**, the way an instructor uses a number. Nobody outside SAFETYNET names the player; Netherton and the team may also say "Agent" or "0x00" (stage 7, R-1), and nobody but him calls HaX "Ninety-nine". She refused it on his m09 call ("It's HaX. It has been for seven years."), and tonight she answers him again, shorter (§3.1).
 - **He is courteous to the end.** He never interrupts, raises his voice or gloats, and he threatens nobody but the player, once, as a courtesy (§2.4, surrender). When he concedes, he gives up exactly what was proved.
 - **He never says** "you don't understand", "join me", his motive in a speech, or an apology.
 
@@ -93,6 +93,8 @@ Warmer on `m01_player_launched_attack` ("You pressed it once, on your first day.
 
 Then: "Since your first day." He never claims to have read the player's file; in m07 he told them files are written by people who need you to be a particular shape.
 
+**The case's last menu** (stage 7, A2-07): "[Make your argument, then.]" / "[(Say nothing.)]"; then the knot `case_close` sets `case_heard` and he opens the exchanges: "Three things. Answer them properly and I'll tell you so."
+
 **The Recruiter beat**, after his evidence (MC §6.2), so m09's two Recruiter exports land once, in one place:
 
 - `m09_recruiter_secret`, to HaX: his leverage on `kept` and her reply (§2.4, §3.1); on `told` or `confessed` she cuts him off at "Forty-seven names"; on `denied` he gets the receipt out whole, and she hears the lie: "You told me she was fishing."
@@ -104,35 +106,37 @@ One argument in three steps. Claims 2 and 3 open on the exchange just before (W1
 
 **Exchange 1. "The cost is acceptable."**
 
-> Dr Adrian Tesseract: You've seen the sheet. You think the number's obscene.
+> (`casualty_sheet_read`) Dr Adrian Tesseract: You've seen the sheet. You think the number's obscene.
+> (otherwise) Dr Adrian Tesseract: You've heard the number. You think it's obscene.
 > Dr Adrian Tesseract: That's the cheapest it will ever be. Wait a year and the number goes up.
 
 | Slot | Answer | Kind | His response |
 |---|---|---|---|
 | 1 | [Your schedule puts the hospitals first, and you chose that order yourself.] | evidence decoy (order, not price; N3; 12 words, R4-04) | "I chose the order. I asked whether the price was worth paying." |
-| 2 | [Someone corrected your sheet upwards, and you signed the old number.] / decoded: [Asante corrected your sheet, and you signed under her initials.] | rebuttal | "*pause* I signed it." / decoded: "*pause* I knew." |
+| 2 | [Someone corrected your sheet upwards, and you signed your old number under it.] / decoded: [Asante corrected your sheet, and you signed your old figure under her initials.] | rebuttal | "*pause* I signed it." / decoded: "*pause* I knew." |
 | 3 | [Your Council's curve is on the desk outside. It doesn't stop after a month.] (`hardened`) | record | "*pause* No. It wouldn't." |
 | 3 | [My first day, I had a choice to hurt people. I didn't.] (the first-day condition, row 6; N18) | record | "One agent is an anecdote." Then, on its own line: "*pause* I'll grant you the anecdote." |
-| 4 | [I squeezed a bag for an hour to keep one man breathing. Your sheet has him as rounding.] (`m02_bed4_manually_stabilised`) | record | "*pause* I had him as rounding. He wasn't." |
-| 4 | [You priced Derek Lawson before anyone hired him. You don't pay your costs. You hand them out.] (`m09_cage_bin = derek_file`; m09's wording; MC §6.3) | record | "*pause* Derek paid it. I didn't." |
+| 4 | [I bagged one man by hand for an hour. Your sheet calls him rounding.] (`m02_bed4_manually_stabilised`) | record | "*pause* I had him as rounding. He wasn't." |
+| 4 | [You priced Derek before anyone hired him. You hand your costs out.] (`m09_cage_bin = derek_file`; after m09's wording; MC §6.3) | record | "*pause* Derek paid it. I didn't." |
 | fill | [You'll be in a cell long before the first month of this is over.] | plain decoy (about him, not the price; R3-12) | "That's about me. I asked about a price." |
 
 **Exchange 2. "Services like yours hoard. Only a shock fixes it."**
 
-> (exchange 1 landed, rebuttal or record) Dr Adrian Tesseract: Then the price is wrong. The reason isn't.
+> (exchange 1 landed on the rebuttal) Dr Adrian Tesseract: Then the price is wrong. The reason isn't.
+> (exchange 1 landed on a record answer) Dr Adrian Tesseract: Then your record argues with my sums. It doesn't argue with my reason.
 > (missed) Dr Adrian Tesseract: You've no answer to the price. Then hear why I'll pay it.
 > Dr Adrian Tesseract: Infusion pumps. A hundred and forty hospitals. Your service has known for three years and calls it an asset.
 > Dr Adrian Tesseract: Nobody fixes anything until it hurts everyone at once.
 
 | Slot | Answer | Kind | His response |
 |---|---|---|---|
-| 1 | [Only a shock? You never tried a letter. You wrote the notice and didn't send it.] | rebuttal (about "only"; N3) | a long silence, no cue. "No. I didn't send it." |
+| 1 | [Only a shock? You never tried. You wrote the notice and kept it.] | rebuttal (about "only"; N3) | a long silence, no cue. "No. I didn't send it." |
 | 2 | [The pump flaw's on your own schedule. You'll hand it to everyone at six.] | evidence decoy (the price again) | "I will. That's the price again. I asked whether anything else works." |
-| 3 | [I told Albion's public the truth. They audited every site. Nobody died for it.] (`m04_disclosure_choice = full`) | record | "*pause* No. Nobody did." (on `m04_crew_lost`, his sting first) |
-| 3 | [I published St. Catherine's cover-up. Forty hospitals fixed their networks, and nobody had to die.] (`m02_exposed_hospital`) | record | "*pause* Done properly. Yes." |
-| 4 | [I sent your notice. Tonight, from Helena.] (`m09_albion_notified`) | record | "Nine years late." Then: "*pause* Sooner than I managed." |
+| 3 | [I told Albion's public the truth. They audited every site. Nobody died for it.] (`m04_disclosure_choice = full`) | record | "*pause* No. Nobody did."; on `m04_crew_lost`, his sting first, then "*pause* None of them died of the truth. I'll grant that." instead |
+| 3 | [I published St. Catherine's cover-up. Forty hospitals fixed their networks. Nobody died.] (`m02_exposed_hospital`) | record | "*pause* Done properly. Yes." |
+| 4 | [I sent your notice from Helena, nine years after you wrote it.] (`m09_albion_notified`) | record | "*pause* Sooner than I managed." (his Albion sting first, on `m04_crew_lost`) |
 | 4 | [Your Recruiter offered me a name. I wouldn't buy it from her.] (`m09_recruiter_offer` is `named` or `refused`; m09's wording, one button for both missions, MC P22) | record | on `named`: "*pause* No. You'd rather the slow way. It worked." / on `refused`: "*pause* No. You let her keep her people sooner than pay her. I didn't think your service still did that." |
-| fill | [Eleven hundred people at the low end. You don't get to spend them.] | plain decoy (price; replaces "go to the press", N2) | "That's the price again. I've moved on to why." |
+| fill | [Eleven hundred people at the low end. You can't spend them.] | plain decoy (price; replaces "go to the press", N2) | "That's the price again. I've moved on to why." |
 
 **Exchange 3. "Someone has to make it hurt. Better me, with clean hands."**
 
@@ -140,27 +144,27 @@ One argument in three steps. Claims 2 and 3 open on the exchange just before (W1
 > (exchange 2 landed on a record answer) Dr Adrian Tesseract: Then it can be done without bodies. Someone still has to make them do it.
 > (missed) Dr Adrian Tesseract: You can't tell me who hoards. Then let me tell you who pays.
 > Dr Adrian Tesseract: I taught a room of twenty, once. Let it hurt afterwards, not during.
-> Dr Adrian Tesseract: Somebody has to be the during. I'd rather it was me.
+> Dr Adrian Tesseract: Somebody has to be the during. Better me.
 
-(R3-02: "I'd rather it was me" sets up "Better me" for the rebuttal and leaves the decoys no hook.)
+(R3-02: his "Better me." sets up the rebuttal's "Better you?" and leaves the decoys no hook. Stage 7 shortened draft 4's "I'd rather it was me" to the two words the rebuttal quotes. On `should_have_told`, HaX's unasked line comes here, before the menu: "My agent told me I sat on it. They were right. You never told me anything.")
 
 | Slot | Answer | Kind | His response |
 |---|---|---|---|
-| 1 | [Your schedule sends the pumps out first. That's a target list with a reason on top.] | evidence decoy (the price again) | "You've told me the cost. I asked who does the hurting." |
+| 1 | [Your schedule sends the pumps out first. That's a target list with reasons.] | evidence decoy (the price again) | "You've told me the cost. I asked who does the hurting." |
 | 2 | [HaX. You're on speaker.] (`m09_hax_confession_answer` is `same_in_your_place` or `afterwards`; the player offers her the floor, W33, N8) | record: HaX speaks (§3.1) | "Ninety-nine." He says only her number. |
 | 2 | [She learned that from you.] (`should_have_told`, after HaX's unasked line) | record | "*pause* Yes. By example." (N9) |
 | 3 | [Better you? You need my hand on that key so yours stays clean.] | rebuttal | "*pause* Better me, I said. And I brought you." (N10) |
-| 4 | [I've read your Tomb Alpha notes. You told them to carry it. You never told them to hand it on.] (`m09_deck_pulled = alpha_tapes`; S2-11: the notes; first in the pool, MC §6.3) | record | "*pause* I was younger. I meant it then." |
-| 4 | [You taught her to carry it so she could work. You never said it was so she'd never hand it on.] (`m09_completed`; HaX told the player in m09; the fallback) | record | "*pause* I never said it. She worked it out." |
-| fill | [Nobody elected you to teach the world a lesson.] | plain decoy (the hoarding claim, not this one) | "Nobody elected the people who hoard, either. I asked who does the hurting." |
+| 4 | [Your Tomb Alpha notes say carry it. They never say hand it on.] (`m09_deck_pulled = alpha_tapes`; S2-11: the notes; first in the pool, MC §6.3) | record | "*pause* I was younger. I meant it then." |
+| 4 | [She carries it so she never hands it on. You never taught that part.] (`m09_completed`; HaX told the player in m09; the fallback) | record | "*pause* I never said it. She worked it out." |
+| fill | [Nobody elected you to teach the whole world a lesson.] | plain decoy (the hoarding claim, not this one) | "Nobody elected the people who hoard, either. I asked who does the hurting." |
 
-Record answers take their slot by priority (each record slot has its own pool of at most two, first listed first; MC §6.3, P24; milestone pass, FA §4.1). "Your file says I press it", Voltage's three answers and the technician's left exchange 3's slot 4 when pools were capped at two; each keeps another home (MC §6.3), and their sample lines are retired. The clean first day in exchange 1 also needs `ko_pattern() == 0` (F16). **In exchange 3**, before his response to any pick, the knock-out pattern's sting by band (MC §6.3; FA §3.6): "You put someone on the floor who wasn't armed. Once. I noticed." / "More than once, you've put someone on the floor who wasn't armed. Clean hands, Agent?" / "Most of the operations I've watched, you put someone on the floor who wasn't armed. That isn't a lapse. It's a method."; two record answers at most per exchange; the fill decoy takes the first empty record slot; a record answer placed under the wrong claim takes a slot after slot 4 (R4-05). Record answers placed under the wrong claim are decoys too (the full-disclosure answer under exchange 1: "True, and beside the point. I asked what it costs."), so a rich save has more decoys as well as more answers. On `m07_architect_echo_heard`, HaX has one line as he says "Let it hurt afterwards": "You heard him say that on your handset."
+Stage 7 adds a breath between exchanges, so his response and his next claim never run together: after exchange 1, "[Go on.]" / "[You're not finished.]"; after exchange 2, "[And the last one?]" / "[(Let him go on.)]" (R3). On `m08_hax_ko` the knock-out sting ends "At the Citadel, it was your own handler." (A3-03). Record answers take their slot by priority (each record slot has its own pool of at most two, first listed first; MC §6.3, P24; milestone pass, FA §4.1). "Your file says I press it", Voltage's three answers and the technician's left exchange 3's slot 4 when pools were capped at two; each keeps another home (MC §6.3), and their sample lines are retired. The clean first day in exchange 1 also needs `ko_pattern() == 0` (F16). **In exchange 3**, before his response to any pick, the knock-out pattern's sting by band (MC §6.3; FA §3.6): "You put someone on the floor who wasn't armed. Once. I noticed." / "More than once, you've put someone on the floor who wasn't armed. Clean hands, Agent?" / "Most of the operations I've watched, you put someone on the floor who wasn't armed. That isn't a lapse. It's a method."; two record answers at most per exchange; the fill decoy takes the first empty record slot; a record answer placed under the wrong claim takes a slot after slot 4 (R4-05). Record answers placed under the wrong claim are decoys too (the full-disclosure answer under exchange 1: "True, and beside the point. I asked what it costs."), so a rich save has more decoys as well as more answers. On `m07_architect_echo_heard`, HaX has one line as he says "Let it hurt afterwards": "You heard him say that on your handset."
 
 ### 2.4 His other lines
 
 **Arrival.** His conversation opens as the player walks in (no teaser bark; OT §4.6). His first line is what the outer lock released, one fixed string by `head_start_out` (S4-12; HaX is jammed and the panel is easy to miss):
 
-> (`both`) Dr Adrian Tesseract: Two cells have it. They'll waste it.
+> (`both`) Dr Adrian Tesseract: Two cells have it. Much good may it do them.
 > (`zero_day`) Dr Adrian Tesseract: Zero Day has it. You didn't stop that one.
 > (`ghost`) Dr Adrian Tesseract: Someone's buyers have it. Not Zero Day's.
 > (`none`) Dr Adrian Tesseract: Nothing went at four. You were thorough.
@@ -248,7 +252,7 @@ Then "[Do it.]" or "[Lower the weapon.]". Confirmed, one line: "He is still look
 
 **Arc to the end.** In person at the forward post, then on the line all night. She knows the bunker's tricks because she knows his. The jam takes her for the gallery, the first room the player walks without her all season. At the core she answers him again, on the open line in front of her agent (she refused the name on his m09 call), refuses to decide for the player, argues with him herself on the speaker branch, and kills the feed if the player holds fire. In every success ending she has the last word before the card, and on every ending that reaches 06:00, except the cold one, she pays the promise.
 
-**"[How are you?]"**, a topic in her phone hub from the briefing on (the briefing's question hub moved into her phone, beside "[Why does he want me?]", "[The hour.]" and "[The head start.]", which retire at the breach; S4-6, OT §5), by `m09_hax_confession_answer` (S1-13):
+**"[How are you?]"**, a topic in her phone hub from the briefing until flag 2 goes in (stage 7, B2-01; the briefing's question hub moved into her phone, beside "[Why does he want me?]", "[The hour.]" and "[The head start.]", which retire at the breach; S4-6, OT §5), by `m09_hax_confession_answer` (S1-13):
 
 > (`should_have_told`) Agent HaX: I said everything from now on. So: I haven't slept, and I'd rather it was anyone else in that chair.
 > (`same_in_your_place`) Agent HaX: Better for having told you. Ask me again at six.
@@ -277,12 +281,12 @@ Then "[Do it.]" or "[Lower the weapon.]". Confirmed, one line: "He is still look
 > (Nightshade's map, either branch) Agent HaX: He's only as right as the man who briefed him.
 > (the tunnel post, on Helena's plans) Agent HaX: Helena's plans didn't have him. Nightshade's would have.
 > (Ghost's handset, as it rings) Agent HaX: Ghost leaves when Ghost has been paid. Make it not worth it.
-> (the bait) Agent HaX: Then you'll want the console for Ghost's share. It only does one.
+> (Ghost's selling branches, on the line before the menu) Agent HaX: If it sells, the release console can kill that share. It only does one.
 > (Imran) Agent HaX: Let him go and the phone goes with him. Keep him, and we get his supplier.
 > (Imran taken in, the phone) Agent HaX: A crate signed for at the service door on Tuesday. Raid-issue badge.
 > (unprotected Gary, at his belt) Agent HaX: A man on their bench who ships nothing is worth something. Later.
 > (the console) Agent HaX: I can kill one feed, or follow one. Not both. Pick.
-> (the trace, if the gallery stopped the share) Agent HaX: She cancelled it. Nothing to follow.
+> (the trace, if the gallery stopped the share) Agent HaX: She cancelled Zero Day's. Nothing to follow. (On Vos's branch: "Vos cancelled Zero Day's. Nothing to follow.")
 > (leaving the hall, console unanswered) Agent HaX: Fifteen minutes to their head start. That console's your last chance at it.
 > (arrested Victoria's re-ring) Agent HaX: Sterling's still on the line. She has something on Vos.
 
@@ -293,11 +297,10 @@ Then "[Do it.]" or "[Lower the weapon.]". Confirmed, one line: "He is still look
 > Agent HaX: He argued for the vendor nine years ago and lost.
 > Agent HaX: The notice is on here. He wrote it himself, and he never sent it.
 
-On an m09 save: "The notice you read in Helena is on here too." Then, on every save, the console and the purge (MC §6.1, P5):
+On an m09 save: "The notice you read in Helena is on here too." Then, on every save, the console and the vault line (MC §6.1, P5). The purge is no longer said here: HaX says it once, at the database (stage 7, A2-09); her hub topic "[The vault line.]" still carries it as text.
 
 > Agent HaX: I've got his box. If anything goes out from that console, I can try to kill the feed. Try.
 > Agent HaX: And the line into our vault is open from here. We left it open.
-> Agent HaX: He's rigged this room. If both copies die, it purges: doors, lights, all of it. He'll be ready for that. We won't.
 
 **After flag 2**, reading the schedule: "Infusion pumps, a hospital group. Dispatch software, a whole county. A water utility's controllers." Then: "That's enough of that. You've got the rest on screen."
 
@@ -308,13 +311,13 @@ On an m09 save: "The notice you read in Helena is on here too." Then, on every s
 > Agent HaX: We're following Zero Day's. It goes at the lock, and we watch who catches it.
 > Agent HaX: Both stopped. Nothing goes at the lock.
 
-**Leaving the server hall** (every branch; moved here from her last line before the jam, D-04). It plays in her voiced `gallery_open` call as the gallery stair unlocks, after the console warning if the console is unanswered and before her last line before the jam (OT §4.4):
+**Leaving the server hall** (every branch; moved here from her last line before the jam, D-04). It plays in her voiced `gallery_open_call` (the knot; it rings on the global `gallery_open`) as the gallery stair unlocks, after the console warning if the console is unanswered and before her last line before the jam (OT §4.4):
 
 > Agent HaX: Netherton sweeps the whole place at six. Whoever you leave standing up there, he collects.
 
 **Her last line before the jam** carries the one warning the gallery needs (MC §3.5), on recruited Victoria only; arrested Victoria's secret is used automatically now, so its warning is gone:
 
-> (recruited Victoria) Agent HaX: Sterling goes with whoever's winning. Make sure it's us before you hand her anything. Show her the order, and she'll know we read Zero Day's mail.
+> (recruited Victoria) Agent HaX: Sterling goes with whoever's winning. Show her the order, and she'll know we read Zero Day's mail.
 > Agent HaX: Up the stair, along the walkway, the lock's at the far end. He's jamming me. You're on your own for one room. I'll be at the door.
 > (arrested Victoria's line still unfinished; the call's last line, OT §4.4) Agent HaX: Sterling's still on the line. She has something on Vos.
 
@@ -324,10 +327,12 @@ On an m09 save: "The notice you read in Helena is on here too." Then, on every s
 
 **At the core.** She comes back inside his conversation, as its second speaker, right after his release line (S4-22; OT §4.6): a cracked word, then "...0x00.", then what went at the lock, by the same value (S4-12):
 
-> (`both`) Agent HaX: Their head start went. Both shares.
-> (`zero_day`) Agent HaX: Zero Day's went.
-> (`ghost`) Agent HaX: The resale went.
-> (`none`) Agent HaX: Nothing went at the lock.
+> (`both`) Agent HaX: Confirmed. Both shares went at the lock.
+> (`zero_day`) Agent HaX: Confirmed. Zero Day's share went.
+> (`ghost`) Agent HaX: Confirmed. The resale went.
+> (`none`) Agent HaX: Confirmed. Nothing left the lock.
+
+(Stage 7, A-10: the "Confirmed…" forms; her hub topic "[What went out?]" repeats them word for word.)
 
 When he greets her, she answers him, on every branch. m09's call has the full refusal ("It's HaX. It has been for seven years."); this is the payoff, and shorter:
 
@@ -349,11 +354,12 @@ When the player asks her what to do: "No. This one's yours. If I choose, I'll ch
 
 **The database** (MC §6.5), each line before the menu:
 
-> (secure's cost) Agent HaX: Infusion pumps in a hundred and forty hospitals. The one he used on you. Still live next year if we do this.
-> (disclose, naming it; D-02, the button says the same) Agent HaX: That's coordinated disclosure. The vendors first, quietly, with time to fix it.
-> (disclose, the unfixable) Agent HaX: The ones nobody can patch go to the operators, with workarounds. Not into a public list.
+> (secure's cost) Agent HaX: Keep them, and the infusion pumps in a hundred and forty hospitals are still live next year.
+> (disclose, naming it and the unfixable in one line; D-02, the button says the same) Agent HaX: That's coordinated disclosure. Vendors first, quietly, with time to fix. The ones nobody can patch go to the operators, with workarounds.
 > (disclose, on `m09_albion_notified`; m09 says the same line, P41) Agent HaX: You burned the Critical Mass watch for one letter. This is that letter, a thousand times.
-> (wipe, with the menu open) Agent HaX: If both copies die, this room purges itself. Doors, lights, everything. You won't have him after.
+> (wipe, before the menu) Agent HaX: If both copies die, this room purges itself. He'll be ready for it, and you won't have him after.
+
+The player's prompts between the costs (stage 7, A2-02, A3-01): "[And if we keep them?]" / "[Go on, sir.]" before HaX's pump line, "[And if ours go to the vendors?]" / "[(Wait.)]" after it, and "[And if I wipe both copies?]" / "[There's a third way.]" before the wipe.
 
 **At 06:00, on disclose:** "Forty vendors have acknowledged. Patch windows, ninety days. It'll be a year before most of them are fitted." Then: "Three water utilities went to manual at five. There's no patch for their controllers. They'll turn the valves by hand till spring."
 
@@ -376,26 +382,27 @@ It doesn't label itself (N4). Its place by ending is fixed in arc §10.1: on arr
 | Surrender | The rest, then, last: "He asked who taught you. I said I did." |
 | Lethal, justified | On the line: "I was a second behind you. Log it. I'll sign under you." At 06:00: "There'll be a board. I'll be sitting next to you." |
 | Lethal, cold | Your designation, once, on the line. Later, a message: "I'll be at the board. I don't know what I'll say." |
-| Scorched Earth | At the hearing, after the rest: "They'll ask me if I'd have stopped you. I'll tell them I wasn't asked." |
+| Scorched Earth | At the hearing, after the rest: "They'll ask me if I'd have stopped you. I'll tell them I wasn't asked." On `hax_asked_database` (the player asked her at the database): "They'll ask me if I'd have stopped you. I'll tell them you asked, and I said it was yours." (stage 7, A2-12, R3) |
 | Join | A message, unanswered: the player's designation, nothing else. |
 
 ### 3.2 Director Netherton
 
-`Director Magnus Netherton`. RP; formal, few contractions, exact numbers, short declaratives then a verdict; the handbook joke once.
+`Director Magnus Netherton`. RP; formal, full forms on weighted lines and contractions only in quick asides (stage 7, R-2), exact numbers, short declaratives then a verdict; the handbook joke once. He may call the player "Agent" or "Agent 0x00" (R-1).
 
 **Wants.** The database back and his people home, and to sign for whatever the night costs. **Secret:** none left; m08 took it. He carries the two dead agents and Nightshade's file and mentions neither unless asked. **Arc.** Commands from the forward post and never goes below ground. His m08 line, "If he burns you, it is on my signature", comes due at the door either way. He meets Tesseract twice: on the line at the database choice, and through a van window on arrest or surrender. He names what disclosure burns and signs anyway. He suspends the player on Scorched Earth and refuses to sign on the cold ending.
 
-> Director Magnus Netherton: Agent 0x00. He has invited us. We are going in anyway, because the alternative is six o'clock.
-> Director Magnus Netherton: Noted, Agent Quintero. Twice now. The record also says six o'clock.
+> Director Magnus Netherton: He has invited us. We are going in anyway, because the alternative is six o'clock.
+> (`m09_completed`) Director Magnus Netherton: Noted, Agent Quintero. Twice now. The record also says six o'clock.
+> (otherwise) Director Magnus Netherton: Noted, Agent Quintero. The record also says six o'clock.
 > (the briefing, after the stakes; once in the mission, D-02, so nobody leaves thinking full disclosure is the villain's position) Director Magnus Netherton: Full disclosure is one researcher, one flaw, after the vendor stops answering. This is every weapon we hold, handed out at once.
-> (the private aside, on `m09_recruiter_offer = named`; D-01) Director Magnus Netherton: Her tape gives our people by codename. The names were in her head. The arrests start at six. Not before. WREN would hear.
-> (06:00, on `named`) Director Magnus Netherton: It's six. The arrests have started.
+> (the private aside, on `m09_recruiter_offer = named`; D-01) Director Magnus Netherton: The Recruiter's tape gives our people by codename. The names were in her head. The arrests start at six, and no sooner. WREN would hear.
+> (06:00, on `named`; the scene opens a few minutes before six) Director Magnus Netherton: The arrest teams are at the doors. They go on the hour.
 > (absent) Director Magnus Netherton: Vector declined. He said you would know why.
 > (kept Nightshade, shown) Director Magnus Netherton: He did not burn you. Note that, someone.
 > (the recall, via HaX) Director Magnus Netherton: Officer Malhotra, you are cleared. Come back, and leave the face at the van.
 > (the private aside, after "and neither will you"; MC §5) Director Magnus Netherton: Whoever it is wants the same room you do. Find them before you get there.
 > (double-cross, the briefing) Director Magnus Netherton: Kowalczyk walked off the apron in Helena. We know where she has gone.
-> (kept Nightshade, not shown) Director Magnus Netherton: I'm keeping him. If he burns you twice, that's on my signature as well.
+> (kept Nightshade, not shown) Director Magnus Netherton: I am keeping him. If he burns you twice, that is on my signature as well.
 > (shown, stay) Director Magnus Netherton: Leave him here and nobody below sees him with us. He stays useful.
 > (shown, come) Director Magnus Netherton: Take him down there and every guard in the place sees him with us. After tonight he gets a new name, and nobody reaches him again. Not even you.
 > (Helena's plans) Director Magnus Netherton: The plans are good plans. They are old plans.
@@ -403,9 +410,9 @@ It doesn't label itself (N4). Its place by ending is fixed in arc §10.1: on arr
 > (the tether, Kowalczyk gone) Director Magnus Netherton: If he goes up, Arakawa stays with him, and Quintero breaches alone. You'll be at the lock without her.
 > (Vector or Phantom wrongly accused) Director Magnus Netherton: Then I am a pair of hands short. Carry on.
 > (at the core, to him) Director Magnus Netherton: Adrian.
-> (secure, his case) Director Magnus Netherton: Half of these can't be patched this year. The water controllers can't be patched at all. Send those out and every buyer knows where to hit. Nobody can stop them.
-> (disclose, its cost and why; MC §6.5) Director Magnus Netherton: Two operations go dark if you do this: the watch on Sterling, and the HashChain tags. Both of them run through holes on that list. Patch the holes and we lose the way in. I will sign it. (The two names are the first two that apply on the save, from MC §6.5's list of six.)
-> (wipe) Director Magnus Netherton: Then nobody has it. Not him, not us. Nobody fixes anything either. We both answer for it.
+> (secure, his case) Director Magnus Netherton: Half of these cannot be patched this year, and the water controllers never. Send them out and every buyer knows where to hit.
+> (disclose, its cost and why; MC §6.5) Director Magnus Netherton: Send ours to the vendors, and two operations go dark. / The watch on Sterling. / The HashChain tags. / Both of them run through holes on that list. Patch the holes and we lose the way in. I will sign it. (The two names are the first two that apply on the save, from MC §6.5's list of six, one fixed noun-phrase line each: "The watch on Sterling.", "Nightshade's channel.", "The HashChain tags.", the Critical Mass watch by m04's branch ("The watch on Voltage's people." / "The watch on what's left of Voltage's crew." / "The Critical Mass watch."), "The order-book watch.", "Our tap on Zero Day's brokers."; stage 7, A2-03, R3.)
+> (wipe) Director Magnus Netherton: Then nobody has it, and nobody fixes anything either. We both answer for it.
 > (step 5, two or more points, before the menu; F13) Director Magnus Netherton: If he cooperates, there is no trial. He gives us cells, and nobody hears his speech. Arrest him, and he makes it in open court.
 > (Scorched Earth) Director Magnus Netherton: I wanted to do the same. That is why you are suspended and I am not.
 > (Scorched Earth, at 06:00, the wipe's gain) Director Magnus Netherton: Nobody holds the map now. Not him, not the buyers, not whoever sits in my chair next.
@@ -444,9 +451,12 @@ Then one question, which she gets an answer to at 06:00: "When did you know?" Th
 
 | The player's answer | Her reply |
 |---|---|
-| [At the bench log. Then your name on the case's sheet.] | "The paperwork. It's always the paperwork." |
+| [At the bench log. Then your name on the sign-out sheet.] (`clue_bench_log`) | "The paperwork. It's always the paperwork." |
 | [At the briefing. You laughed too easily.] (a bluff the player may make whether or not it's true) | "*almost laughs* No, you didn't. But thank you." |
 | [I didn't. I worked it out.] | "That's worse. That means I was good." |
+| on `m09_recruiter_offer = taken` (asked at the van window after the aside), in place of the first two: [In Helena. She sold me your name.] (`bench`) | "Eleven years she paid my mum's care home. Then she sold me to you." |
+| on `taken`: [Before Helena. I had a feeling about you.] (`briefing`) | "*almost laughs* No, you didn't. But thank you." |
+| at 06:00 when nobody named her (`wren_at_core`, not `sleeper_caught`): [I didn't. Not till you came through his door.] (`worked_out`), the only answer | "That's worse. That means I was good." |
 
 **At the core, refused:** one word to him before she tries anyway: "Adrian." It is the only time anyone in the season says his first name to his face before the end.
 
@@ -470,25 +480,28 @@ Each reads as possibly WREN until a clue clears them, and as someone the player 
 > (wrongly accused) Agent 0x2D 'Anchor': I took the drain. I didn't pack the case. Read the sheet.
 > (06:00, backed her) Agent 0x2D 'Anchor': You backed me. I'll remember who did.
 > (06:00, backed Netherton) Agent 0x2D 'Anchor': Next time, back the slow way. Once.
-> (06:00, said nothing) Agent 0x2D 'Anchor': Shoulder. I've had worse from a door.
+> (06:00, said nothing, wounded) Agent 0x2D 'Anchor': Shoulder. I've had worse from a door.
+> (06:00, said nothing, unhurt) Agent 0x2D 'Anchor': Everybody walked out. That's all I wanted from tonight.
+> (at the core, wounded stopping WREN) Agent 0x2D 'Anchor': Shoulder. Leave it.
+> (holding the door at the core) Agent 0x2D 'Anchor': One arm's plenty for a door. You've got work. (wounded) / Door's mine. You've got work.
 
-The first two are said from the stretcher when she is hurt. She is unhurt when the Alpha tapes warned HaX, and on the double-cross branch, where she is on her feet at 06:00; MC §4 gives "Shoulder..." as the said-nothing line without a variant for an unhurt Quintero, so stage 7 words one.
+The first two are said from the stretcher when she is hurt. She is unhurt when the Alpha tapes warned HaX, and on the double-cross branch, where she is on her feet at 06:00; stage 7 worded the unhurt said-nothing line above. A knock-out or a wrong accusation takes her 06:00 line instead.
 
 **Officer Dev Malhotra.** 33, British-Indian, from Hounslow; quick and precise, defensive at the edges; eleven years in. **Wants:** to be trusted. **Secret:** the screening after m08 flagged him on a paperwork error, and he spent a week re-vetted; nobody on the team knows. It is why he asked to run the Helena line himself in m09, and why he runs it again tonight. **Arc:** the comms check; logging Arakawa off the net at 02:10; his badge on the door log.
 
 > Officer Dev Malhotra: Arakawa, you're off the net.
-> (asked about the log, through HaX's channel, R3-14) Officer Dev Malhotra: It's my badge. It isn't my hand. I was talking to her at ten past. Ask her.
+> (asked about the log, through HaX's channel, R3-14) Officer Dev Malhotra: It's my badge. It isn't my hand. I was talking to HaX at ten past. Ask her.
 > (wrongly accused) Officer Dev Malhotra: Eleven years. Check the log again.
 
-With Malhotra out, HaX's relay goes with him: her call as the gallery stair opens breaks up after its warning (§3.1; OT §4.4). Without Arakawa, Netherton covers the county road on the net, with no deputy on screen: "Sheriff's asking who the road's closed for. I've told him to wait." (arc §8.4).
+With Malhotra out, HaX's relay goes with him: her call as the gallery stair opens breaks up after its warning (§3.1; OT §4.4). Without Arakawa, the county road is covered by a HaX text quoting Netherton, with no deputy on screen: "Sheriff's asking who the road's closed for. I've told him to wait." (arc §8.4; stage 7 moved it from the net to a text, CONTRACT §5.8 row 10-11).
 
 **Officer Kenji Arakawa.** 41, Japanese-American, from Sacramento, lives in Billings (as m09 SE has him; MS-06); a federal lateral hire, the team's US liaison; Pacific Northwest, soft and slow. **Wants:** home for his daughter's ninth birthday on Saturday. **Secret:** none worth hiding; that is his job in the story (the transfer from draft 1 is cut, W19). **Arc:** the closed road and the breaching case (his suspicion); the call at 02:10 (his alibi; a line, not a choice, MC §4); a room ahead with Kowalczyk; the line as she goes; he looks away at her accusation. His credit carries the county road ("Kept the county road shut all night. Nobody asked who for."); the telescope is no longer his credit (S6-29) but ELSEWHERE's fixed last line, "In Billings, a girl turns nine on Saturday. Her father is bringing a telescope.", or the card's human line where no other applies, so the close ends on a person on every save that reaches six.
 
-> Officer Kenji Arakawa: It's ten past eight here. She goes to bed at quarter past. Thirty seconds.
+> Officer Kenji Arakawa: She goes to bed in five minutes. Thirty seconds, I promise.
 > (hanging up, unprompted) Officer Kenji Arakawa: She wants a telescope. I'm getting her a telescope.
 > (asked about the road) Officer Kenji Arakawa: The sheriff closed it. Nobody asked who for. Nobody did in Helena either.
 > (Kowalczyk goes ahead) Officer Kenji Arakawa: Service side. She always takes the door nobody's watching.
-> (wrongly accused) Officer Kenji Arakawa: You were stood next to me. Think.
+> (wrongly accused) Officer Kenji Arakawa: You were standing right next to me. Think.
 > (recalled) Officer Kenji Arakawa: You heard me on the phone to her. Then you thought I'd do this?
 
 **Agent 0x23 'Vector' and Agent 0x88 'Phantom'** (with `m08_completed` and not wronged), in their m08 voices. **Wants:** Vector, to be useful after being suspected; Phantom, to finish the hunt he started in m08. Their presence is the reward.
@@ -496,7 +509,7 @@ With Malhotra out, HaX's relay goes with him: her call as the gallery stair open
 > (at the records cupboard; his code goes into the notepad, S5-1) Agent 0x23 'Vector': Annex standard. They copied our lock and kept our master code. Write this down.
 > Agent 0x88 'Phantom': Since Portland I audit every sign-out. That case went out with one more unit than its sheet lists. Two names signed for it. I'd rather it had none.
 > (Vector, wrongly accused) Agent 0x23 'Vector': You've done this to me once. Check it properly, then say sorry properly.
-> (Phantom, wrongly accused) Agent 0x88 'Phantom': My list had a name on it. It wasn't mine.
+> (Phantom, wrongly accused) Agent 0x88 'Phantom': Ask me for my list next time. It has a name on it, and it isn't mine.
 
 ### 3.5 The five returning scenes
 
@@ -524,12 +537,12 @@ HaX's pointer to him after the briefing, by branch: "Nightshade's at the table. 
 > (protected) Gary Whitlock: You saved my career. I'm Director of something now. They gave me a lanyard.
 > (protected, seeing Imran) Gary Whitlock: I trained him. He was the only one who read my emails.
 > (protected, Imran talked round) Gary Whitlock: Good. That's how I'd want it done.
-> (protected, Imran taken in) Gary Whitlock: *flatly* I'd hoped you'd ask him first.
+> (protected, Imran taken in) Gary Whitlock: I'd hoped you'd ask him first. *flatly* Never mind.
 > (unprotected) Gary Whitlock: Seven warnings, nobody listened. You're listening now?
 > (unprotected, HaX, as a memory) Agent HaX: At St. Catherine's I asked you not to be the fifth person to treat him as an overhead. He's had a few more since.
 > (unprotected, a dismissive pick) Gary Whitlock: Then you're the board. Card's on my belt.
 > (unprotected, talked round) Gary Whitlock: Three weeks I've been here. I've not shipped a thing. Call it a work-to-rule.
-> (unprotected, cuffed) Gary Whitlock: Three weeks. I've not shipped a thing. Write that down.
+> (unprotected, taken in: "[You're coming in, Gary.]") Gary Whitlock: Then write it down. Three weeks, and not one unit out of that door.
 
 **Voltage, and Static** (the power room). Voltage: Johannesburg; low, flat, certain. Static: Polish-accented, very few words. **Voltage wants** (captured) the inquiry to record that he did this with his own hands; (escaped) to be right. **Secret:** he found the same error in the casualty sheet that Asante did, and said nothing.
 
@@ -539,7 +552,7 @@ HaX's pointer to him after the briefing, by branch: "Nightshade's at the table. 
 > (captured, for the inquiry) Voltage: Write down that I did it myself.
 > (captured, by hand) Voltage: You're right not to trust me.
 > (escaped, the print, once the player has dusted the bypass panel; S5-11) Voltage: My print. *flatly* I'm not going to argue with my own thumb.
-> (then) Agent HaX: I said it'd be waiting. It was.
+> (then) Agent HaX: I told you it'd be waiting. It was.
 > (escaped, the sheet) Voltage: I know my figures to one decimal place. This one's wrong by a thousand.
 > (escaped, a miss) Voltage: Don't tell me about sums.
 > Voltage: *flatly* I know.
@@ -553,8 +566,8 @@ HaX's pointer to him after the briefing, by branch: "Nightshade's at the table. 
 > (escaped, no threat) Victoria Sterling: St. Catherine's was a proof of concept. This is the rest.
 > (escaped, the trade) Victoria Sterling: I walk out. Zero Day's order goes away, and I tell you which of these two has the code card.
 
-On "[Go.]" she names the lock guard, Fonoti (S6-17; stage 7 words it).
-> (arrested, the line) Victoria Sterling: He took my desk by Monday. He's been selling my clients twice since Tuesday. I'd rather he lost than I won.
+On "[Go.]" she names the lock guard (S6-17; stage 7's wording): "The big one at the lock end. Fonoti. He carries the code card." Sold the raid, her resting line is "We're square. Don't ask me for anything else." (C3-01); missing her threat rests in the knot `threat_missed`.
+> (arrested, the line) Victoria Sterling: He had my desk by Monday. He's been selling my clients twice since Tuesday. I'd rather he lost than I won.
 > (arrested, her price, after the secret) Victoria Sterling: A reduced charge, and you get the rest of my book. Or nothing, and you still have this.
 
 The talk-down's hook is her own m03 words, in the player's button: "[You said you'd do it yourself. You haven't yet.]"
@@ -568,8 +581,8 @@ The talk-down's hook is her own m03 words, in the player's button: "[You said yo
 > (refused) Ghost: I hope it's you leading it. You turned me down. Why?
 > (refused, the gift, unasked) Ghost: Don't thank me. It's not for you.
 > (refused, "hold hospitals"; `ghost_gift = code`, the code goes into the notepad) Ghost: Then do this cleanly. Four digits.
-> (refused, "didn't trust you"; `ghost_gift = card`, the guard named aloud, no item, `lock_guard_known` set; OT §4.2) Ghost: Then don't trust me. Check it. The one at the lock end. Fonoti. (S6-17; stage 7's wording)
-> (unanswered) Ghost: You never answered me. Answer this.
+> (refused, "didn't trust you"; `ghost_gift = card`, the guard named aloud, no item, `lock_guard_known` set; OT §4.2) Ghost: Then don't trust me. Check it. The one at the lock end. Fonoti. He carries the code card, and he'll want to be off shift. (S6-17; stage 7's wording; Fonoti's Ghost option quotes the second sentence)
+> (unanswered) Ghost: You never answered me. You'll want to now.
 > (stranger) Ghost: You don't know me. That's rather the point. Two hours' head start. Five buyers. One of them wants the hospitals.
 > (a miss: money, then a threat) Ghost: Numbers are my department. / Ghost: You won't.
 > (the hook lands) Ghost: *pause* No. I'd rather not leave on that.
@@ -586,7 +599,7 @@ On **broken** the hook works only after the player owns the deal: "[I didn't kee
 > Dr Abena Asante: Every vendor patches in a week, because they have to. You lot have been asking nicely for thirty years.
 > (the sheet) Dr Abena Asante: I corrected his sums. He thanked me. *pause* That's between him and the sums.
 
-**Dr James Mercer** (server hall, at large; m07's Blackout). One line, then hostile: "When the fourth submission is declined, agent, somebody does this."
+**Dr James Mercer** (server hall, at large; m07's Blackout). One line, then hostile: "When the fourth submission is declined, somebody does this." (stage 7 dropped "agent": nobody outside SAFETYNET names the player)
 
 **Pieter Vos** (gallery). 50s, Dutch, from Rotterdam; flat, courteous, bored by ideology. **Wants:** delivery. **Secret:** he resells Zero Day's early access to a second buyer and skims.
 
@@ -610,14 +623,15 @@ Taken in ("[I'm taking you in.]"), he gives his card, phone and statement and no
 
 **Wendell Briggs** (power room). 63, white Montanan, from Great Falls; slow, laconic, rural. **Innocent:** he thinks the servers belong to a data company. **Wants:** the week's pay, and his old colleague on the next shift kept out of it.
 
-> Wendell Briggs: Kept this plant alive for Uncle Sam all through the eighties. They paid better this time.
-> (told) Wendell Briggs: *pause* Well. Which switch do you want, son. Or ma'am. Whichever.
-> (told, then; the call is what telling him costs, not a separate choice, MC §3.4) Wendell Briggs: Dale's on the next shift. I'm ringing him. He's got grandkids.
+> Wendell Briggs: Kept these generators running for Uncle Sam all through the eighties. They pay better this time.
+> (told, "[Those servers are set to shut down hospitals at six. That's the job.]") Wendell Briggs: *pause* Well. Which switch do you want.
+> (told, then; the call is what telling him costs, not a separate choice, MC §3.4) Wendell Briggs: Dale's on the next shift. I'm calling him. He's got grandkids.
+> (worked round, "[Never mind. Carry on, Mr Briggs.]") Wendell Briggs: Suit yourself. I'll be at the panel if anybody needs a breaker.
 > (worked round, 06:00) Wendell Briggs: Do I still get paid for the week?
 
 The phone voice says the cost before the player tells him, in a text as the player first walks into the power room, before Wendell's menu opens (OT §4.9; milestone A11): "He doesn't know. Tell him, and he'll want to warn somebody. Their switchboard will hear it." Credits: told, "Rang his mate Dale. Dale stayed home."; worked round, Dale walks into a raid at shift change (frightened, detained, released by morning). When the cut falls to the player (Wendell worked round or never told, a fight with escaped Voltage, either knocked out), the same phone voice rings and talks them through the switching, the camera switch among its choices; it rings again on every entry to the power room until the shutter is down (S4-15; OT §4.9). It is voiced, about eight lines in each of the three voices.
 
-**Guards and technicians.** The cells' people: hired muscle and contractors, mixed ages and backgrounds, varied generic sprites. Told to let 0x00 through and not why, so they fight. Two or three barks each, never gendering the player: "That's the one off the wall." / "Nobody said let them through armed." In the gallery, where HaX can't speak, each effect carried in from earlier gets one bark and no explanation (MC §3.5, P38): "Camera's dead again. I'll go and look." (the camera switch) / "Where's Farah? She was on till six." (Imran's call to his friend Farah Qureshi; her coat on an empty chair) / "Who gave out the code?" (the lock's opening on a save where Ghost gave the code; OT §4.5). The lock guard has two more (OT §4.5): on the first try at the keypad, "That takes the shift code. It's on my card, and it stays there." (the pointer to his own code card; milestone A13), and his challenge if the player cracks the keypad inside his cone, which a "[Shift change. Netherton's orders.]" talks past once.
+**Guards and technicians.** The cells' people: hired muscle and contractors, mixed ages and backgrounds, varied generic sprites. Told to let 0x00 through and not why, so they fight. Two or three barks each, never gendering the player: "That's the one off the wall." / the tunnel guard's "Nobody said let you through armed." (C-03); the Farah guard opens "Who are you? This walkway's closed till six." Guards rest in the shared knots `fight` and `passed`; both reinforcements share `reinforcement`. In the gallery, where HaX can't speak, each effect carried in from earlier gets one bark and no explanation (MC §3.5, P38): "Camera's dead again. I'll go and look." (the camera switch) / "Where's Farah? She was on till six." (Imran's call to his friend Farah Qureshi; her coat on an empty chair) / "Who gave out the code?" (the lock's opening on a save where Ghost gave the code; OT §4.5). The lock guard has two more (OT §4.5): on the first try at the keypad, "That takes the shift code. It's on my card, and it stays there." (the pointer to his own code card; milestone A13), and his challenge if the player cracks the keypad inside his cone, which a "[Shift change. Orders from upstairs.]" talks past once (C-07).
 
 **Sione Fonoti** (the lock guard, gallery; S6-05, stage 6 §2.4). 34, Samoan-American, from West Valley City, Utah; a former college lineman who does night security because it pays and nobody asks; big, slow to speak, polite. Hired muscle like the rest: told to let one agent through to the core and nothing about why. `displayName` "Sione Fonoti"; "S. Fonoti" on the gallery rota, which says he carries the shift code card. Named by Ghost's card gift, escaped Victoria's "[Go.]" and Vos's "[Deal.]"; his own pointer bark stays first person and doesn't name him. A knock-out sets `fonoti_ko` and gets a credit line ("Put on the floor on the walkway.").
 
@@ -729,13 +743,13 @@ At the core the music is part of the play: it is how the player knows a point la
 
 - **Speakers.** Each prefix is the NPC's exact displayName; `Dr Adrian Tesseract` in person. Phone inks take no prefix for the contact.
 - **Fixed strings only**; nothing prints a variable aloud.
-- **WREN has no pronoun** before the accusation, anywhere the player reads or hears it; nobody genders the player.
+- **WREN has no pronoun** before the accusation, anywhere the player reads or hears it; nobody genders the player, and nobody gives the player a personal name. SAFETYNET's people (Netherton included) and Tesseract may say "Agent", "Agent 0x00" or "0x00"; nobody else names the player (stage 7, R-1).
 - **Names said once:** he calls HaX "Ninety-nine", and nobody else does; she refuses it in m09 ("It's HaX. It has been for seven years.") and answers "Still HaX." once in m10; he says "Halina" once; Kowalczyk says "Adrian" once.
 - **The line** ("Let it hurt afterwards, not during") is his, once, in the third exchange. HaX's version on the speaker branch is in her own words, and her "rest" at 06:00 is the story of when he said it to her.
 - **One villain "Not X. Y." per scene at most**; none from anyone else. Asterisk cues at m01's density, never on a line with a number; his `*pause*` on a landed point is the one repeated cue.
 - **Every KO case is written**: a downed Victoria, Voltage, Gary, Imran, Wendell, Asante, Vos or raid member leaves a line or prop that admits it.
 - **Status answers branch to the step**: HaX's "[Where are we?]" lines are read at every beat, down to the room to walk back to after a reload (OT §5 has the ladder).
-- **Voiced calls** (F17, F20 committed in 24fcb06c; OT §13). Forced phone calls are voiced. A voiced call voices its start knot (each voiced mapping's `targetKnot`) and every knot reachable from it, never the contact's home knot (`currentKnot`, default `start`). So: every voiced mapping names a `targetKnot`; **every call knot ends `#exit_conversation` and never diverts to `start` or `support_hub`** (m09's convention; the by-hand cut's knot, which HaX's hub topic also reaches, included); no narrator line inside a call (narration there is silent, so the crank is Nightshade's "Manual." on the net and the ladder is HaX's own lines). Hubs, topics, "[Where are we?]", "[What's still live?]", the field-guide lines, the barks and every text stay unvoiced. About 80 lines: Ghost's handset 33 (kept 6, refused 7, the selling branches about 20 between them), arrested Victoria's line 9, the by-hand cut 24 (8 each for Vance, Elena and HaX, all recorded), HaX's breach call with Netherton (and, on the tether, Nightshade) on the net 4, her door calls (stair, inner door, tripwire, ladder) 5, her `gallery_open` call 7. HaX's lines inside his conversation at the core, her flag 4 lines among them (OT §4.6 step 4), are person-chat and voiced as a face-to-face scene, not counted here.
+- **Voiced calls** (F17, F20 committed in 24fcb06c; OT §13). Forced phone calls are voiced. A voiced call voices its start knot (each voiced mapping's `targetKnot`) and every knot reachable from it, never the contact's home knot (`currentKnot`, default `start`). So: every voiced mapping names a `targetKnot`; **every call knot ends `#exit_conversation` and never diverts to `start` or `support_hub`** (m09's convention; the by-hand cut's knot, which HaX's hub topic also reaches, included); no narrator line inside a call (narration there is silent, so the crank is Nightshade's "Manual." on the net and the ladder is HaX's own lines). Hubs, topics, "[Where are we?]", "[What's still live?]", the field-guide lines, the barks and every text stay unvoiced. About 80 lines: Ghost's handset 33 (kept 6, refused 7, the selling branches about 20 between them), arrested Victoria's line 9, the by-hand cut 24 (8 each for Vance, Elena and HaX, all recorded), HaX's breach call with Netherton (and, on the tether, Nightshade) on the net 4, her door calls (stair, inner door, tripwire, ladder) 5, her `gallery_open_call` 7. As shipped at stage 7: 81 (HaX's calls 28, Ghost 26, Vance 10, Elena 10, Victoria 7). HaX's lines inside his conversation at the core, her flag 4 lines among them (OT §4.6 step 4), are person-chat and voiced as a face-to-face scene, not counted here.
 - **Naming in the core**: "his console" or "the key console", never "the release console", which is the server hall's (R1D-M2).
 - **Every spoken time** matches the countdown objects (OT §6; S4-10): "fifteen minutes to their head start" at 03:45, "It's set for four" after flag 2.
 - **Codes said aloud go into the notepad** as notes items given by `#give_item` (F21; not `#add_note`): `ghost_cupboard_code`, `ghost_lock_code`, `vector_cupboard_code`.

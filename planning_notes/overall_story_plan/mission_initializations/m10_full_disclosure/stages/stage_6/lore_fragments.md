@@ -2,7 +2,7 @@
 
 ## 0. Status, sources and conventions
 
-**Stage 6 complete** (draft 3, 2026-10-21; round 2 folded in, §9; no round 3, the orchestrator checks directly). Author: m10 stage 6 author (Opus). Round 1's two reviews (`REVIEW_R1_WRITING.md`, "W-nn"; `REVIEW_R1_CLUES.md`, "R1C-…") and the coordinator's rulings are folded in; §8 lists every finding and where it landed.
+**Stage 6 complete** (draft 3, 2026-10-21; round 2 folded in, §9; no round 3, the orchestrator checks directly). Author: m10 stage 6 author (Opus). Round 1's two reviews (`REVIEW_R1_WRITING.md`, "W-nn"; `REVIEW_R1_CLUES.md`, "R1C-…") and the coordinator's rulings are folded in; §8 lists every finding and where it landed. **Stage 7 folded in** (2026-10-21; the list is OT's last section, "Stage 7 folded in"): HaX's credits take the `fire_held` clause first (S6-25 taken), the two rebuttal buttons quoted here follow the ink, and the SAFETYNET and IN MEMORY sections, which §3.1 doesn't list, ship in `scenarios/m10_full_disclosure/credits_sections.json` (orchestrator ruling; CONTRACT §5.9). This file stays the authority for every readable string and the card and the other credits sections.
 
 **Built on** `../stage_1/story_arc.md` ("arc"), `../stage_2/storytelling_elements.md` ("SE"), `../stage_3/moral_choices.md` ("MC", the authority for choices, costs and globals), `../stage_4/objectives_tasks.md` ("OT", incl. §16's globals inventory), `../stage_5/room_layout.md` ("RL", the authority for object ids and positions), and `../../finale/FINALE_ARC.md` ("FA") §1–9 and §13's stage 6 handover (rows B1–B3, 10-1 to 10-8; the milestone part `finale/MILESTONE_S4-5_PART_a3237d9b.md` §3 is the same list in more detail). Prompt: `story_design/story_dev_prompts/06_lore_fragments.md`; standards that win where they differ: `.claude/skills/scenario-design-review/SKILL.md` §2b (clue distribution), `README_scenario_design.md` (object fields, variants, notes items, "Closing card and credits"), `README_ink_best_practices.md`. Canon checked against shipped m01–m08 (`scenarios/*/scenario.json.erb` and ink, read-only) and the universe bible. m09's shared facts come from m09's stage 1–5 documents (its stage 6 is being written in parallel; §6 lists what the two must match). No VM material was opened; flags are named by story meaning only.
 
@@ -289,7 +289,7 @@ Under it, in the first hand: Seen. -- A.
 
 (Checked against m09 stage 6's current `mirror_job_printout`: its heading and five lines, character for character, with the same line breaks (R2-08). m09's "Release configuration" paragraph belongs to the printout, not to the sheet, so the bench copy leaves it out.)
 
-Whose initials (A35, settled): Asante's, "A.A.", and his second signature under them. The plain correction says *that* it is low and that someone else said so, which is all the rebuttal's plain form needs ("[Someone corrected your sheet upwards, and you signed the old number.]"). It doesn't say by how much or who: those are the decode's reward.
+Whose initials (A35, settled): Asante's, "A.A.", and his second signature under them. The plain correction says *that* it is low and that someone else said so, which is all the rebuttal's plain form needs ("[Someone corrected your sheet upwards, and you signed your old number under it.]", as shipped at stage 7). It doesn't say by how much or who: those are the decode's reward.
 
 **`casualty_margin_note`** ((6, 2); readable, `gameDisplay`, `addToNotes: true`). Name: "Margin Strip". Observations: "A strip torn from the same printout and pinned beside the sheet. One long line in the same small, square hand, and none of it makes words." Carries: the coded note, Base64, which decodes in the start kit's CyberChef workstation (operation "From Base64", one step) to a message that names Asante, gives the corrected range and the key to her model. Changed by: nothing. No `onRead` (reading the coded strip proves nothing; the decode is proved at the terminal, below).
 
@@ -309,7 +309,7 @@ Why Base64: it is the first-week encoding (m01, m08's "same tricks as your first
 
 **`model_terminal`** (new, S6-02; on the west bench, suggested (0, 7), one tile clear of `clock_workshop` at (0, 5); `type: pc`, `locked: true`, `lockType: password`, `requires: "DOUBLECOUNT"`; contents `asante_model`). Name: "Bench Terminal: Casualty Model". Observations: "A bench terminal with one file waiting behind a password prompt: CASUALTY MODEL, CORRECTED." Carries: the decode's proof. Without it nothing in the engine can know the player decoded the strip (the workstation emits no event), so `margin_note_read` and `decode_the_margin` (OT §2–3) had no trigger. Password locks are case-sensitive with a case hint; the key is written in capitals in the decode.
 
-**`asante_model`** (inside `model_terminal`; `type: notes`, takeable, readable, `onRead.setVariable: { margin_note_read: true }`). Name: "Asante's Corrected Model". Carries: the rebuttal's decoded form ("[Asante corrected your sheet, and you signed under her initials.]"), the size of the error, and that he knew.
+**`asante_model`** (inside `model_terminal`; `type: notes`, takeable, readable, `onRead.setVariable: { margin_note_read: true }`). Name: "Asante's Corrected Model". Carries: the rebuttal's decoded form ("[Asante corrected your sheet, and you signed your old figure under her initials.]", as shipped at stage 7), the size of the error, and that he knew.
 
 ```
 CASUALTY MODEL, CORRECTED. A. ASANTE, SYSTEMS.
@@ -862,17 +862,18 @@ In eleven counties, people calling for help still get a dead line. Day thirteen.
 
 **AGENT HAX**
 
-1. `globalVars.ending === 'joined'` → "Sent one word. Nobody answered." (w)
-2. `globalVars.ending === 'executed'` → "Said 0x00's designation once, and nothing else. Will be at the board." (w)
-3. `globalVars.ending === 'arrest' && globalVars.head_start_killed === 'zero_day'` → "Killed a feed at the console. Testifying."
-4. `globalVars.ending === 'arrest' && globalVars.head_start_killed === 'ghost'` → same text
-5. `globalVars.ending === 'arrest'` → "Testifying against her teacher."
-6. `globalVars.ending === 'surrender'` → "Sat with him in the van for a minute. Told him 0x00 was hers, not his."
-7. `globalVars.ending === 'lethal'` → "Signed under her agent."
-8. `globalVars.ending === 'scorched'` → "Stood beside her agent at the hearing."
-9. always → "On the line to the end."
+1. `globalVars.fire_held === true` → "Killed his feed in time. Testifying." (stage 7 took S6-25: `fire_held` is set on "[Hold fire.]", which always leads to `arrest`)
+2. `globalVars.ending === 'joined'` → "Sent one word. Nobody answered." (w)
+3. `globalVars.ending === 'executed'` → "Said 0x00's designation once, and nothing else. Will be at the board." (w)
+4. `globalVars.ending === 'arrest' && globalVars.head_start_killed === 'zero_day'` → "Killed a feed at the console. Testifying."
+5. `globalVars.ending === 'arrest' && globalVars.head_start_killed === 'ghost'` → same text
+6. `globalVars.ending === 'arrest'` → "Testifying against her teacher."
+7. `globalVars.ending === 'surrender'` → "Sat with him in the van for a minute. Told him 0x00 was hers, not his."
+8. `globalVars.ending === 'lethal'` → "Signed under her agent."
+9. `globalVars.ending === 'scorched'` → "Stood beside her agent at the hearing."
+10. always → "On the line to the end."
 
-(R1C-M4, ruling: the feed clause rides `head_start_killed`, the console's own global. The draft's `points_landed < 2` arm meant the hold-fire beat, where HaX kills the release feed through the host; that has no global of its own. If stage 7 adds one, `fire_held`, it can take a clause "Killed his feed in time. Testifying." first in this list; §6 S6-25.)
+(R1C-M4, ruling: the feed clause rides `head_start_killed`, the console's own global. The draft's `points_landed < 2` arm meant the hold-fire beat, where HaX kills the release feed through the host; stage 7 gave it its own global, `fire_held`, and the clause "Killed his feed in time. Testifying." now comes first in this list; §6 S6-25.)
 
 **NIGHTSHADE**
 
@@ -1269,7 +1270,7 @@ None is made here (this stage edits only its own file). "FA" is FINALE_ARC; the 
 | S6-22 | SE §3.1 / stage 7 (HaX's margin pointer) | HaX's pointer gains "Copy just the code." | R1C-m7: the strip's text is now the code alone; the half-line keeps a player from pasting the observation too |
 | S6-23 | OT §16, MC §12, stage 7 (`m10_carryover_vars.ink`), stage 9 | `close_compute`: an ink function run on the first line of each closing scene that writes `close_secure_cell`, `close_cell_name`, `close_cells`, `close_human`, `close_zero_day` (strings, default `""`, letter-first values) by plain `~` assignment to synced global `VAR`s (no tags inside the function, R2-06); all three legs declared | The coordinator's ruling: no `\|\|` in any condition. The close's "or"s and the cells count live in ink, where `or` is native, and the card reads single `===` tests |
 | S6-24 | MC §10 ("the count runs from zero (no console catch, wipe or the cold ending)") | The cold ending counts a secured cell like the others | R1C-m17, ruled by the coordinator: the database was secured before the shot |
-| S6-25 | stage 7 (the hold-fire beat), optional | If wanted, a local `fire_held` set on "[Hold fire.]", read by a first HaX clause "Killed his feed in time. Testifying." | R1C-M4 moved HaX's feed clause to the console's `head_start_killed`; the hold-fire kill has no global of its own |
+| S6-25 | stage 7 (the hold-fire beat), optional | If wanted, a local `fire_held` set on "[Hold fire.]", read by a first HaX clause "Killed his feed in time. Testifying." | R1C-M4 moved HaX's feed clause to the console's `head_start_killed`; the hold-fire kill has no global of its own. **Taken at stage 7** (§3.3 HaX, clause 1) |
 | S6-26 | RL §2.1 (NPC table), §2.9 (roster); MC §5 | `kowalczyk_post`, `quintero_post` and `arakawa_post` (the briefing-table copies) become `koImmune`, like Malhotra (Arakawa added in round 2, R2-07; his gate copy `arakawa_gate` stays knockable, so the Arakawa-down alibi row still works); their post-split and bunker copies stay knockable with their `_ko` latches | R1C-M2, ruling: `koImmune` can't be toggled in the engine (RL §6 item 36), and a pre-split knock-out would leave the 01:58 and 02:10 papers recording acts she couldn't have done. A `kowalczyk_ko` now always happens below ground |
 | S6-27 | RL §2.5 (`shutter_isolator`) | Its default text becomes "A key switch and a breaker row, labelled GALLERY SHUTTER. The key is in it." | W-18: the talk-through is HaX's and Voltage's to offer |
 | S6-28 | FA §2 row 59 | "with an inquiry (`full` or `m04_crew_lost`)" becomes "(`full`, or `partial` with `m04_crew_lost`)"; a `quiet` save that sent the notice gets the Carrow Controls line in ELSEWHERE | R1C-m3: on `quiet` no Albion line prints, so "also asked" would hang |
