@@ -93,4 +93,20 @@ before P6-E/P6-F start; the minors can ride into the build and the design-review
 
 ## Review log
 
-(Outcomes recorded by the orchestrator / resumed planner below.)
+### Outcomes (P6-A planner, round-2 fix pass, 2026-10-21)
+
+Orchestrator decisions applied: M1 keep the meter, recorded in §1 as unbuilt and owned by P6-M; m1
+author in-voice Hampshire fail replies (incl. `attachmentPlausible`); m2 name the PDF properties panel
+in the task text and Ruth's rung, add a playtest row; m3 the key-gated hint rung and locked-door line say
+"see Ruth for the key"; m4 sharpen the opening (cut the low-agency front toward 5 minutes, add a real
+choice or small reveal, keep what it teaches).
+
+| id | severity | outcome | where fixed |
+|----|----------|---------|-------------|
+| R2-M1 | major | **Fixed.** §1 mail row now records the live red-flag meter as **unbuilt** (grep returns nothing; not in the mail scope; `01`/`10` call it optional) and names the built on-ramp (the `onSend` checklist). The P6-M debt note adds the meter to P6-M's scope: composing-time meter per `01`, optional per target, authored on for Hampshire, off for Pierce and Lord; if P6-M does not land it, the checklist carries the on-ramp and solvability is unaffected. §5 stage 3 softened to match. | §1 mail row + "UI debt carried in (P6-M)"; §5 stage 3 Beats |
+| R2-m1 | minor | **Fixed.** §3 "Guards against stereotype" now requires P6-E to author in-voice `reply` strings for the Hampshire required factors a round-1 student realistically hits — `attachmentPlausible` and `senderTrust` at least — so her rejections stay in character, citing the data-only fallback path (`mail-bridge.js:353-356`). | §3 guards bullet |
+| R2-m2 | minor | **Fixed.** New §4 hints bullet "The metadata gate has no board signal": the `metadata_read` task text and Ruth's stage-2 rung both name the published PDF's **properties panel**, because the board shows no "Missing:" row for `username_convention`; §5 stage 2 next-step cue updated; F16 added for the all-green-board-but-metadata-missing stuck state. | §4 "No dead ends"; §5 stage 2; §10 F16 |
+| R2-m3 | minor | **Fixed.** §5 stage 1 next-step cue now states that the locked-door line and the first key-gated hint rung both say "see Ruth for the key" (for all three doors), because keys are handed over only in conversation and the phone text fires only after the key is held; F17 added for the key-gate return. | §5 stage 1 next-step cue; §10 F17 |
+| R2-m4 | minor | **Fixed.** §5 "Opening" rewritten to carry a reveal with stakes (Fairbairn's near-miss: a finance colleague almost wired a five-figure spoofed invoice) and a real choice (how the student answers Fairbairn's "will this make my staff look stupid", the honest no-blame answer seeding through-line 1); §4 pacing gains a "Sharpening the low-agency front" note targeting ~5 minutes for the combined front, keeping `10`'s figures as the cut-maths estimate and keeping the learning. | §5 "Opening"; §4 "Pacing" |
+
+No finding withdrawn; all five applied. §10 intro updated to F14–F17.

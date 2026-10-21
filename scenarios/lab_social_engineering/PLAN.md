@@ -49,7 +49,7 @@ owned by a packet in IMPLEMENTATION_PLAN §4; this plan does not build engine co
 | Intel board | Modes `recon` and `defender` only: `SUPPORTED_MODES = ['recon', 'defender']` (`minigames/intel-board/intel-board-minigame.js:39`); any other mode prints "This board mode is not available yet." (`:149`). Mode comes from `minigameData.mode`, default `recon` (`systems/minigame-starters.js:1154`). Defender picks save to `se_board_state.defender` and write the step and block globals through `writeGlobal` (`intel-board-minigame.js:265`). Readiness is displayed, read from `target_ready_<id>` (`board-model.js:177`); there is no separate "still missing" panel, only "Missing:" rows per card (`intel-board-minigame.js:335-343`) | `scope` and `plan` modes with step globals, question cards and the RoE text (`10` stages 0 and 1) | P6-C |
 | OSINT browser | Registered (`minigames/index.js:172`), `osint-workstation` branch (`systems/interactions.js:1034`), no typed input | Lab sites: company (team, careers, archive), friendface (three profiles), the published PDF, the tools panel | P6-E (data) |
 | Intel grants | `grantFact` flips `se_intel_<id>` once, adds a note, syncs and runs `evaluateReadiness` (`systems/social-intel.js:128-161`), which sets `target_ready_<id>` and `osint_done` once and never clears them (`:70-88`) | Data only | P6-E |
-| Mail client and rules | Registered (`minigames/index.js:170`); `mail_terminal` branch after the lock check (`interactions.js:1405`). Attempts and metrics written on send (`minigames/mail-client/mail-bridge.js:283, 298`). **No engine code writes `phish_<id>_landed`**: a data-only target names it in its `outcome.setGlobal` and the text job writes it only on a landed send (`mail-bridge.js:323-331`, `systems/mail-scheduler.js:376-383`); a character target writes it from ink (slice: `scenarios/test_social_slice/ink/teague_mail.ink:37`). Default reply delay is 20 s (`mail-scheduler.js:50`), so the lab must author `emailReplyDelay: 15` on all three targets. Pre-send line `PRE_SEND_GATE_LINE` (`systems/phish-rules.js:41`); escalating hint only after an earlier failure (`phish-rules.js:417-424`). Created accounts need both `acct_<id>` and `acct_<id>_choice` (`mail-data.js:36-37`) | Lab targets, templates, accounts, kit, seeded inbox; Hampshire's `outcome.setGlobal: { phish_hampshire_landed: true }`; `#set_global:phish_<id>_landed:true` in `pierce_mail` and `lord_mail` | P6-E, P6-F |
+| Mail client and rules | Registered (`minigames/index.js:170`); `mail_terminal` branch after the lock check (`interactions.js:1405`). Attempts and metrics written on send (`minigames/mail-client/mail-bridge.js:283, 298`). **No engine code writes `phish_<id>_landed`**: a data-only target names it in its `outcome.setGlobal` and the text job writes it only on a landed send (`mail-bridge.js:323-331`, `systems/mail-scheduler.js:376-383`); a character target writes it from ink (slice: `scenarios/test_social_slice/ink/teague_mail.ink:37`). Default reply delay is 20 s (`mail-scheduler.js:50`), so the lab authors `emailReplyDelay: 15` (placement per §4 "Reply delay": on the Pierce/Lord characters, on Hampshire's target). Pre-send line `PRE_SEND_GATE_LINE` (`systems/phish-rules.js:41`); escalating hint only after an earlier failure (`phish-rules.js:417-424`). Created accounts need both `acct_<id>` and `acct_<id>_choice` (`mail-data.js:36-37`). **The live red-flag meter while composing is not built** (R2-M1): `grep` for `redFlagMeter`/`showRedFlagMeter` across the JS returns nothing, and the mail scope (`IMPLEMENTATION_PLAN.md:220`) never listed it; `01` §3 and `10` line 975 call it optional/a tuning knob. The built on-ramp is the `onSend` checklist (`renderChecklist`/`redFlagsOf`, `mail-bridge.js:219-243`), which does land for every send | Lab targets, templates, accounts, kit, seeded inbox; Hampshire's `outcome.setGlobal: { phish_hampshire_landed: true }`; `#set_global:phish_<id>_landed:true` in `pierce_mail` and `lord_mail`; **the live red-flag meter (unbuilt), on for Hampshire, off for Pierce and Lord** | P6-E, P6-F; **meter P6-M** |
 | Pretext call | Phone object with `callId` opens `pretext-prep` through `startPretextCall`, which checks the lockout first (`interactions.js:633-652, 1429-1433`); `pretext-prep` then opens `phone-chat` for an NPC whose `npcType` is `phone` (`minigames/pretext-prep/pretext-card.js:193-204`). A call writes `pretext_<callId>_state`, `_outcome` and `_lowest` (`minigames/person-chat/person-chat-pretext.js:155, 343-344`). **`pretext_call_done` is not written by the engine** (`person-chat-pretext.js:334-335`): each ask's `grants.setGlobal` must carry it, as `10` stage 5 says. `grants.intel` goes through `grantFact` (`:198-208`) | Dev's call data and story; `pretext_call_done` in both asks' grants | P6-E, P6-F |
 | Influence | Thresholds, `reports` with lockout and `recoverTo`, lift on check (`systems/social-influence.js:570-592, 624-634, 664, 690-705`); bar in mail pane, board cards and chat headers (`ui/influence-bar.js`, `ui/pretext-chrome.js`) | The three character entries from `00` §8 | P6-E |
 | Triage | Registered (`minigames/index.js:173`); starter writes `<prefix>percent`, `reportRate`, `pass`, `done` with `deferEmit`, waits for `syncConfirmed`, then emits, `pass` never cleared (`systems/triage-starter.js:182-216`); `playerSent` picks the latest spoof-tell record (`minigames/inbox-triage/triage-messages.js:88-94`); `passPercent` from `set.outcome.passPercent`, default 0 | The eight-message set, `passPercent: 60`, prefix `triage_` | P6-E |
@@ -68,7 +68,10 @@ show factor ids (`senderTrust`) instead of words (A2); the Contacts and Close la
 `withReply` checklist is not re-shown after a reload (T2-6, not used by the lab, which runs `onSend`).
 A4 and A2 matter most here: the lab's whole teaching layer is the checklist and the composed sentence,
 so P6-M must land before the first blind run. A1 ("nothing motivates Create account") belongs to the
-lab's design and is answered in §5 stage 3 and Q1.
+lab's design and is answered in §5 stage 3 and Q1. **The live red-flag meter (R2-M1) is added to P6-M's
+scope**: the composing-time meter per `01`, optional per target, authored on for Hampshire and off for
+Pierce and Lord; if P6-M does not land it, the `onSend` checklist carries the on-ramp alone and §5 stage
+3's "meter on/off" difficulty step degrades to "checklist for everyone" with no effect on solvability.
 
 ## 2. Rooms and layout
 
@@ -166,6 +169,11 @@ key by key as each character is approved.
   catches the stale org chart. The debrief and the report blame the missing call-back rule, never Dev.
 - The three targets are never written as foolish. Each reply that turns the student down gives a
   sensible reason in that person's voice; each landing reads as what a busy, helpful person would do.
+  Hampshire is data-only, so her fail replies come from `factors[firstFailed].reply` if authored, else
+  the generic canonical line (`mail-bridge.js:353-356`). P6-E must author in-voice `reply` strings for
+  the required factors a round-1 student realistically hits — `attachmentPlausible` (the applicant
+  pretext with the CV omitted) and `senderTrust` at least — so her rejections stay in character, not just
+  `pretextRelevant` which `10` already has (R2-m1).
 - Tomasz is not the "paranoid security guy". He is a practical defender with no budget, glad of the
   test, and the one who says the no-blame line.
 - Ruth is the student's boss, not a quizmaster: she cares about the client and about the student
@@ -310,6 +318,14 @@ target for Hampshire) rather than putting it on all three targets (R1-m4).
   the careers inbox ("Check Chris's careers inbox — what's she behind on?"), so a student stuck on the
   `showIf` trap (the backlog post is hidden until the careers inbox block is selected) is pointed at the
   source, not just told a fact is missing (R1-m6). Ruth's stage-2 rung does the same.
+- **The metadata gate has no board signal** (R2-m2). `se_intel_username_convention` is half the
+  Operations-door gate but is in no readiness slot (`10`), so a student who fills all three target cards
+  before picking the PDF author field sees the board go fully green while the door stays locked, with no
+  "Missing:" row to explain it. Recovery therefore rests entirely on the still-open `metadata_read` task
+  and Ruth: the `metadata_read` objective text and Ruth's stage-2 rung both name the public-document
+  **properties panel** ("Open the published PDF and read its properties — who made it, and how"), so the
+  one gate the board cannot show is the one the task text points at most plainly. F16 asserts the
+  recovery.
 - Every failed attempt retries freely; the ladder always ends in a near-explicit pointer. The most
   likely wrong turn (sending Pierce/Lord from `freemail`, which cannot spoof) has an explicit pointer in
   the composer's From line and the last rung of Ruth's and the target's ladders (`10` stage 3).
@@ -335,6 +351,16 @@ a rewrite). If it comes in under 60, `10` OQ9's extension order applies (a secon
 Dev's two-minute lockout, if it fires, is spent on the page builder, so it adds no time unless the page
 is already built.
 
+**Sharpening the low-agency front (R2-m4).** Stages 0 and 1 are the plan's only stretch of low-agency
+card-sorting and single-select picking before OSINT, and at `10`'s 5 + 4 minutes they read as a
+front-loaded tutorial. The target is to bring the combined front (opening + stage 0 + stage 1) to about
+five minutes: the opening now carries a reveal and a real choice instead of plain exposition (§5
+"Opening"), stage 0's bounce-backs are quick, and stage 1 stays two picks because both teach (objective,
+and the blame-measure trap). The `10` figures above are kept as the authoritative estimate for the §9 cut
+maths; the design-review cycle (`scenario-design-review`) and the timed run (P6-V) confirm the front and
+may drop a scope card (five to four) if it still drags. This is sharpening, not padding — the learning
+(the ethics gate and measure-not-people) stays.
+
 ## 5. Stage by stage: puzzle, teaching, dialogue beats
 
 `10` §3 holds the mechanics of each stage and is not repeated. Each stage below gives the puzzle the
@@ -355,17 +381,27 @@ It has three threads, each set up early and paid off late:
 3. **"The call that should have been a call-back."** Dev is helpful because the policy lets him be. Payoff:
    the report's call-back finding and Tomasz's "we're writing Dev a script, not a warning".
 
-### Opening (Engagement Office, about 2 minutes)
+### Opening (Engagement Office, about 1 minute)
 
 The game starts in the Engagement Office with Ruth already there and Fairbairn by the window. Ruth opens
 the briefing conversation on load through the Tesseract load-conversation pattern: a `timedConversation`
 on her record with `waitForEvent: "game_loaded"`, `skipIfGlobal: "briefing_heard"` and
 `setGlobalOnStart: "briefing_heard"` (`scenarios/lab_tesseract_trials/scenario.json.erb:409-416`), not a
-music event. The briefing is short:
-who Ledgerwell are, what Tarnside has been hired to do, that nothing happens before the sheet is signed,
-and where the RoE sheet is. She hands over nothing yet; the player already holds her phone
-(`startItemsInInventory`). Ruth: "Gareth's nervous. He's never paid anyone to lie to his staff before.
-Read the sheet properly; he'll be watching you do it."
+music event. It is short and carries a **reveal with stakes** (R2-m4): who Ledgerwell are, and *why*
+Fairbairn hired a firm to lie to his own staff — last quarter one of his finance team nearly wired a
+five-figure invoice to a spoofed supplier, and he wants to know how bad it would have been before it
+happens for real. That is the hook that makes the sorting matter, and it plants through-line 1. She hands
+over nothing yet; the player already holds her phone (`startItemsInInventory`). Ruth: "Gareth watched one
+of his own people almost lose the firm a month's billing to a fake email. He's not angry at her — he's
+scared it'll happen again. Read the sheet properly; he'll be watching you do it."
+
+The opening also gives the student a **real choice** before the cards: Fairbairn turns from the window and
+asks, plainly, whether this test is going to make his staff look stupid. The student picks the answer —
+the honest one ("the test is about the gaps in your process, not about catching anyone out") seeds the
+no-blame theme and earns a line of trust from Fairbairn; a reassuring-but-wrong one ("don't worry, nobody
+will ever know it was them") draws a quiet correction from Ruth, because it is exactly the promise a bad
+report breaks. The choice sets no gate and costs no time, but it turns the first minute from exposition
+into a decision the student is later held to (stage 6's blame findings, Tomasz's close).
 
 ### Stage 0: Authorisation (RoE sheet, `case-file` `scope`)
 
@@ -392,8 +428,12 @@ Read the sheet properly; he'll be watching you do it."
 - **Beats.** On `plan_done`, the student goes back to Ruth, who gives the Recon key and says what the
   board will want: "Three people. The board shows what you don't know about each of them yet. Fill it
   from public sources only."
-- **Next-step cue.** The recon board already shows three empty target cards (`10` stage 1). Ruth's phone
-  also sends a one-line text once the key is in the inventory (§7, "Cues").
+- **Next-step cue.** The recon board already shows three empty target cards (`10` stage 1). Because each
+  door key is handed over only by talking to Ruth (`#give_item` on her check-in), a student who walks to
+  the locked Recon door without the key must be pointed back to her: the locked-door line and the first
+  key-gated hint rung both say "see Ruth for the key" (R2-m3; the same holds for the Operations and Blue
+  Team doors). Ruth's phone then confirms with a one-line text once the key is in the inventory (§7,
+  "Cues"), but that fires after the key is held, so it reassures rather than prompts.
 
 ### Stage 2: OSINT (Recon Room, `osint-workstation`)
 
@@ -418,7 +458,9 @@ Read the sheet properly; he'll be watching you do it."
   careers inbox). When `osint_done` is set and the student also holds
   `se_intel_username_convention`, Ruth hands the Operations key: "Good. You know how their addresses are
   built and what they publish about themselves. Operations is yours." The metadata is in no target's
-  readiness slot, so Ruth asks for it herself (it is outcome 3 and a required task).
+  readiness slot and the board gives no signal for it, so the `metadata_read` task text and Ruth's
+  stage-2 rung both name the published PDF's properties panel by name (R2-m2); it is outcome 3 and a
+  required task, and the door stays locked until it is read even when the board is fully green.
 - **Risk.** A student who reads the careers page but never selects the inbox block never sees Hampshire's
   backlog post, so that fact stays missing; Ruth's stage 2 rungs point back at the careers inbox. The
   stale facts are a deliberate rake: a student who grabs `old_org_chart` or `baker_namesake` can carry a
@@ -443,8 +485,10 @@ Read the sheet properly; he'll be watching you do it."
   throwaway `freemail` address before writing to anyone, "so nothing comes back to Tarnside", which is
   the created-account mechanic round 1 teaches (two authored addresses in the `createMenu`). The task
   completes on `acct_freemail`. There is no hard block, so a student who sends Hampshire from `guest`
-  first is not failed, only left with `test_account` still open and named (F14, §4). The red-flag meter
-  is on for Hampshire, off for Pierce. This stage plants two through-lines: the student's Pierce send is
+  first is not failed, only left with `test_account` still open and named (F14, §4). The live red-flag
+  meter is authored on for Hampshire (the gentle on-ramp) and off for Pierce; it is unbuilt and owned by
+  P6-M (§1, R2-M1), and if it does not land the `onSend` checklist carries the on-ramp for everyone. This
+  stage plants two through-lines: the student's Pierce send is
   the mail that comes back in stage 7 (the student does not know it yet), and the `senderAuth` advisory
   line first appears here (round 1: "nothing to spoof"; round 2: the spoofed `j.baker@` fails alignment
   but `p=none` still delivers).
@@ -741,8 +785,8 @@ cut adds a voiced line, so no cut costs TTS money.
 ## 10. Playtest scripts
 
 The runs are defined in IMPLEMENTATION_PLAN §2.5 (regression persona, L1 to L6), §2.5 (failure branches
-F1 to F13) and §2.6 (the timed blind run); this plan adds F14 and F15 for the settled `test_account`
-task and the two recoverable traps (R1-M2, R1-m6, R1-m7). This section is the author's version: the
+F1 to F13) and §2.6 (the timed blind run); this plan adds F14 to F17 for the settled `test_account` task
+and the recoverable traps (R1-M2, R1-m6, R1-m7, R2-m2, R2-m3). This section is the author's version: the
 content each run walks, and the discipline every run follows.
 
 **Discipline (every run).** Playtests use only the keyless server on :3001
@@ -783,6 +827,12 @@ Ruth's rung both name the fix, then create the address and confirm `test_account
 clears (the guest-lands-first recovery). **F15** — reach stage 2 without `hampshire_cv_backlog`
 (never select the careers inbox block), confirm the board slot's `goalString` and Ruth's stage-2 rung
 both point at the careers inbox, select it, and confirm the social post appears and the fact is granted.
+Two more for the round-2 traps (R2-m2, R2-m3): **F16** — fill all three target cards before the metadata,
+confirm the board reads fully green while the Operations door stays locked, that the `metadata_read` task
+text and Ruth's rung both name the PDF properties panel, then read it and confirm the door opens. **F17**
+— reach a completed stage with the next key not yet collected, walk to the locked door, confirm the
+locked-door line and the first key-gated hint rung both say "see Ruth for the key", return to Ruth and
+collect it.
 
 **What can be played when.** The slice dependency (§1) governs the early runs. Stages 0, 1, 4 and 6 are
 not playable until P6-C (board `scope`/`plan`), Phase 5 (the builder) and P6-B (the report) land, so
@@ -874,6 +924,9 @@ commits at the end of each iteration.
 | Single listener | Ruth's record carries every task mapping and must stay in the start room; a later art pass that moves her breaks the objectives | §2, §4 fix her in the start room; moving her needs a headless listener record (`00` S8) first |
 | Cut-variant switch | The ERB `ENV` switch may not be read by the Rails render path | P6-U confirms with the validator; if the render does not pass `ENV`, the switch becomes a top-of-file constant, flipped by hand (§9, §14 Q4) |
 | Client-attested completion | Tasks and completing globals are set by the browser, so the completion score is attestable, not server-verified | Acceptable for a formative lab (`10` §4 "Assessment"); a summative mark would need Hacktivity work, out of scope |
+
+
+**Pinned (orchestrator, round 2 note):** Dev's lockout must be authored with `scope: "channel"`, never `"character"`; a character-scoped lockout would also close the email route to Lord after a reported call (`social-influence.js:631`; `00` §8).
 
 ## 14. Open design questions
 
