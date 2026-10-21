@@ -303,3 +303,4 @@ Orchestrator rulings for the S4–5 milestone fix pass (all four parts):
 - **m10 stage 6 closed 2026-10-21.** Two review rounds (R1 47, R2 11 findings).
 
 ## Fold stage 6 into earlier docs
+- Fold (m09 stages 0–5, S4 §20): stage 6 ids, wiring, codes (safe PIN 060216), names, salvage puzzle, US usage folded (~158 exact replacements, each match-count checked); Sorensen's hatch-line repetition noted for stage 7; m05 'in the spring' → 'last spring'.

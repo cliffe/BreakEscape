@@ -62,7 +62,7 @@ Voices follow the voice bible; this section says what each wants tonight, what t
 - **Wants:** her file gone before SAFETYNET can read it, and something back from the Architect, who has taken WREN's tasking from her and is burning her records office.
 - **Hiding:** how much she minds. She prices the loss and never says it is personal; the player hears it in the word "back".
 - **Arc in m09:** one call. She arrives as the most composed voice in the mission and leaves having sold one of her own people for the whole deck, or having been refused by an agent she thought had a price. On `double_crossed` she sees that something came off her deck (not what), texts the player, and warns WREN aboard the aircraft.
-- **On the call:** she knows the player's designation, their kit, and (on the sold-and-lied branch) that in the spring the player let her courier have the forty-seven in return for a clean report; no money changed hands. She never raises her voice and never threatens; she prices. Before she says the name she never gives WREN a pronoun: the Architect is "your Architect", WREN is "my placement" and "them".
+- **On the call:** she knows the player's designation, their kit, and (on the sold-and-lied branch) that last spring the player let her courier have the forty-seven in return for a clean report; no money changed hands. She never raises her voice and never threatens; she prices. Before she says the name she never gives WREN a pronoun: the Architect is "your Architect", WREN is "my placement" and "them".
 
 > The Recruiter: Agent 0x00. You're standing in my filing system. I thought it polite to ring. *(cold start)*
 >
@@ -112,7 +112,7 @@ Voices follow the voice bible; this section says what each wants tonight, what t
 - **Arc in m09:** one call, at the Harwick & Lowe boxes, or a little after the player takes the Reading from the safe if they never open them (stage 4 §6.6). He is still in place, still a "live" line in Sorensen's book.
 - **Voice:** soft, slow, light Castilian Spanish (voice bible, m05). A decent man who did a terrible thing.
 
-> David Torres: I gave you this address in the spring. It was a line in a list.
+> David Torres: I gave you this address last spring. It was a line in a list.
 >
 > David Torres: I am still a live placement. Every morning I wake up and I am still a line in her book.
 >
@@ -127,7 +127,7 @@ Voices follow the voice bible; this section says what each wants tonight, what t
 
 > Gary Whitlock: Director of Cyber Security, me. They gave me a lanyard with my name spelt right. That's how you know it's serious.
 >
-> Gary Whitlock: I audited a trust that ran that tape library. Their codes were in the shelf scheme. Read it like a shelf mark, not a number. *(then the operation's name, which stage 6 fixes with the encoding, and "The chart on your wall is the key.")*
+> Gary Whitlock: Seen codes like that. Archives key them to the shelf scheme. Read it like a shelf mark, not a number. Vigenère, and the bay's word is the key. There'll be a chart near the keypad. *(stage 6 §2.3, C-16: he is a UK hospital IT man and can't see the room, so no Montana audit and no "your wall")*
 >
 > Gary Whitlock: Seven warnings, I wrote. For the archive. Funny where you end up.
 
@@ -141,11 +141,11 @@ His file, in a bin at the cage. Written before Viral Dynamics hired him, it cost
 
 ### Mentioned, not heard
 
-Victoria Sterling (her protocols, or her keys on the lease file), Kemal Aydin (a line at the casualty sheet), Irina Volkova (an account that bought the deed, on the rent book), Danny Foster (Zero Day's note on him, its own sheet; milestone D-07), Graham Reeves (his handler's sheet, unvoiced), Voltage (a card). Each lands at the moment it helps or is found (§7).
+Victoria Sterling (her protocols, or her keys on the lease file), Kemal Aydin (a line at the casualty sheet), Irina Volkova (an account that bought the deed, on the rent ledger), Danny Foster (Zero Day's note on him, its own sheet; milestone D-07), Graham Reeves (his handler's sheet, unvoiced), Voltage (a card). Each lands at the moment it helps or is found (§7).
 
 ## 3. New characters
 
-Ages, backgrounds and names are FINALE_ARC §5.2's. The cast across m09 runs from 24 to 66, four women and four men among the new faces, white, Arab-American, Vietnamese-American, Crow, Mexican-American, Polish-British, British-Indian and Japanese-American. Accents below are suggestions for stage 9's voice picks; each must be checked against the voice bible so no two speakers in m09 share a Gemini voice. Stages 4–5 add one more face (P14): the guard Tran calls in on `m01_maya_ko` (below, after Old Coyote).
+Ages, backgrounds and names are FINALE_ARC §5.2's. The cast across m09 runs from 24 to 66, four women and four men among the new faces, white, Arab-American, Vietnamese-American, Crow, Mexican-American, Polish-British, British-Indian and Japanese-American. Accents below are suggestions for stage 9's voice picks; each must be checked against the voice bible so no two speakers in m09 share a Gemini voice. Stages 4–5 add one more face (P14): the guard Tran calls in on `m01_maya_ko`, Lyle Dillard (below, after Old Coyote; named at stage 6).
 
 ### Margaret "Peg" Sorensen: the villain on site
 
@@ -181,12 +181,14 @@ Ages, backgrounds and names are FINALE_ARC §5.2's. The cast across m09 runs fro
 
 | Entry 1 value | Sorensen |
 |---|---|
-| fight | Viral Dynamics. You put a man on the floor after you'd already won. I filed that in the spring. |
+| fight | Viral Dynamics. You put a man on the floor after you'd already won. I filed that myself. |
 | arrest, or `""` with `m01_completed` | Viral Dynamics. You read Mr Lawson his rights, and he kept his promise and said nothing. He was always good about promises. |
 | recruit | You offered Mr Lawson a job. It's in your file, you know. "A recruiter's instinct." |
 | expose | You put Mr Lawson's figures in every newspaper. We had a very good month afterwards. |
 | surrender | Mr Lawson put the device down for you. You still think you talked him into it. |
 | never played m01 (cold start; uses entry 2's never-played form) | Your first days aren't in your file. Somebody at SAFETYNET is careful with you. |
+
+*(Stage 6 W6-17, for stage 7: with the Reading's page 1 rewritten and Derek's file carrying his motive and standing order, the `expose` and `surrender` lines here are the third telling of the same beat. Give her a different angle on those two values, or cut her line there.)*
 
 **Evidence the player finds:** her hand on the ledger (WREN's update; Torres "closed" or "lost"); her destruction stamps on every empty box; her costing columns; her annotated schedule. Her guilt is on paper, which is the only kind she would accept.
 
@@ -197,7 +199,7 @@ Ages, backgrounds and names are FINALE_ARC §5.2's. The cast across m09 runs fro
 - **Wants:** to keep the job that pays for her father's dialysis back in Dearborn.
 - **Secret:** last month Sorensen offered her an "after-hours filing bonus", cash, no paperwork, and she took it. She has wondered since how her boss knew about her father.
 - **Voice:** quick, Midwestern, guarded, sardonic under pressure. Answers questions with questions when she is scared.
-- **Arc:** by m05 (row 62). Warned in time: she has been waiting for SAFETYNET to turn up and is half relieved, and she has held back the last box of the night ("I didn't send the last one. It's under the desk."). Warned late: she gives the warning and keeps her card. Not warned: a wary bystander, until the player tells her what the bonus was. Told, or shown her own line in the ledger, she asks the one question the scene is for, then reaches for her phone to ring her father; the player stops her ("[Not tonight. Not from here.]"), and she puts it down and goes out with Arakawa's people as a witness. Left be, she goes home and rings him, as every night (stage 3 §4.2). Knocked out (`noor_ko`, milestone M-02), she stays down at her desk until Arakawa's people collect her, a held-back box stays under it, and Netherton gives her one line. On every branch she stands on the floor by her trolleys, close enough that the player can clone her staff-door card while she checks her list (stage 4 P5); warned in time, she hands it over.
+- **Arc:** by m05 (row 62). Warned in time: she has been waiting for SAFETYNET to turn up and is half relieved, and she has held back the last box of the night ("I didn't send the last one. It's under the desk."). Warned late: she gives the warning and keeps her card. Not warned: a wary bystander, until the player tells her what the bonus was. Told, or shown her own line in the ledger (offered once `ledger_page_seen` is set: the printed ledger read after flag 2), she asks the one question the scene is for, then reaches for her phone to ring her father; the player stops her ("[Not tonight. Not from here.]"), and she puts it down and goes out with Arakawa's people as a witness. Left be, she goes home and rings him, as every night (stage 3 §4.2). Knocked out (`noor_ko`, milestone M-02), she stays down at her desk until Arakawa's people collect her, a held-back box stays under it, and Netherton gives her one line. On every branch she stands on the floor by her trolleys, close enough that the player can clone her staff-door card while she checks her list (stage 4 P5); warned in time, she hands it over.
 
 > Noor Haddad: I file deeds for dead ranchers. Nobody recruits a records clerk.
 >
@@ -242,19 +244,19 @@ Ages, backgrounds and names are FINALE_ARC §5.2's. The cast across m09 runs fro
 
 ### The called guard (`m01_maya_ko` only)
 
-A second night guard Tran calls in from another site if he sees the player first at the server closet (stage 5 §3.3). He appears by the shutter in the open stacks, says one line ("Hey! Stay where you are."), and fights. Avoidable. He needs a name and a sprite (stage 4 P14); stage 6 or 7 casts him, with a different age and look from Old Coyote and Tran (FINALE_ARC cast rule). He has no arc and no secret: he is the cost of day one arriving eight missions late.
+**Lyle Dillard** (stage 6 §5). 54, white Montanan, a contract guard from Statewide Security: Tran rings an agency, not the archive's night desk, if he sees the player first at the server closet (stage 5 §3.3). Ex-sheriff's deputy, heavy, slow, bored, in it for the overtime; nothing political, no secret. He appears by the shutter in the open stacks, says one line ("Dillard, Statewide Security. Stay where you are."), and turns hostile. Avoidable. NPC id `archive_guard`, `displayName: "Lyle Dillard"`; sprite at the character stage. He differs from Old Coyote and Tran in age, ethnicity and manner (FINALE_ARC cast rule). He has no arc and no lore object: he is the cost of day one arriving eight missions late.
 
 ### The raid team (briefing, and the debrief)
 
 Four officers the player meets once in m09 and goes into the bunker with in m10. Each is likeable for a different reason and gets one beat that looks bad later (story arc §3.3). The m10 author owns their m10 arcs.
 
-**Agent 0x2D "Anchor", Marisol Quintero.** 52, Mexican-American, from El Paso. Raid leader on the ground. Steady, dry, few words, unsentimental about her people and fierce about them. Came to SAFETYNET eleven years ago as a lateral hire through Harwick & Lowe, as an honest candidate the firm placed for cover; her father is in residential care in El Paso. **Wants:** to bring everyone home from Montana. **Secret:** she doesn't trust the order. An order that falls into SAFETYNET's lap the night before the raid feels to her like something meant to be read, and she is half right. That is why she argued against tonight. On the shortlist, everything about her fits WREN except the truth.
+**Agent 0x2D "Anchor", Marisol Quintero.** 52, Mexican-American, from El Paso. Raid leader on the ground. Steady, dry, few words, unsentimental about her people and fierce about them. Came to SAFETYNET eleven years ago as a lateral hire through Harwick & Lowe, as an honest candidate the firm placed for cover; her father is in a nursing home in El Paso. **Wants:** to bring everyone home from Montana. **Secret:** she doesn't trust the order. An order that falls into SAFETYNET's lap the night before the raid feels to her like something meant to be read, and she is half right. That is why she argued against tonight. On the shortlist, everything about her fits WREN except the truth.
 
 > Agent 0x2D 'Anchor': One agent, no cover, in a building that's burning paper. If it goes wrong, I go into Montana a day late and one short.
 >
 > Agent 0x2D 'Anchor': Orders don't fall off couriers, Director.
 
-**Agent 0x5E "Lantern", Halina Kowalczyk.** 47, Polish-British, grew up in Ealing. Breaching lead. Warm, funny, practical, the one joke in a tense room. **Wants (as WREN):** one thing, the key: to be the hand on it at the core (m10's design). She still reports to the Initiative and draws its money; since day 10 her orders come from the Architect. **Why** (W-08): her mother has been in residential care for eleven years, and the Initiative has paid for it for eleven years; one dull line on her Harwick & Lowe sheet says so ("Next of kin: mother, residential care"). m10 gets her reason without a speech. **Secret:** she is WREN. **Rule:** one double-edged line in m09, the cracker; everything she says is true. On `double_crossed` the Recruiter warns her aboard the aircraft; she still sits through the flight (the identity scene is in the forward cabin, door shut), then takes a phone call on landing and walks off the apron at Helena, so she is missing from the hangar (stage 3 §4.7).
+**Agent 0x5E "Lantern", Halina Kowalczyk.** 47, Polish-British, grew up in Ealing. Breaching lead. Warm, funny, practical, the one joke in a tense room. **Wants (as WREN):** one thing, the key: to be the hand on it at the core (m10's design). She still reports to the Initiative and draws its money; since day 10 her orders come from the Architect. **Why** (W-08): her mother has been in a nursing home for eleven years, and the Initiative has paid for it for eleven years; one dull line on the Harwick & Lowe placement record says so ("Next of kin: Kowalczyk, mother, nursing home."). m10 gets her reason without a speech. **Secret:** she is WREN. **Rule:** one double-edged line in m09, the cracker; everything she says is true. On `double_crossed` the Recruiter warns her aboard the aircraft; she still sits through the flight (the identity scene is in the forward cabin, door shut), then takes a phone call on landing and walks off the apron at Helena, so she is missing from the hangar (stage 3 §4.7).
 
 > Agent 0x5E 'Lantern': Stores froze everything Nightshade ever signed for. This one's mine. Never been through stores, never been near him.
 >
@@ -475,7 +477,9 @@ The call, her side only (Beat 3.6; W-11):
 >
 > Agent HaX: That reader's on the catalogue server. Get me in there and I'll open it. *(the restricted stacks' door, before flag 1)* / Her keypad's off the card system. Leave it for now. *(the office, before the deck)* / That reader wants a real card. Hers will be somewhere she trusts. *(the tape room, before the safe)*
 >
-> Agent HaX: The chart on the wall beside you is their key. Run it through the workstation. *(hub, at the salvage keypad, after quoting the coded line; "Gary told you how." on his branch)*
+> Agent HaX: Catalogue line from flag one. / SALVAGE CAGE ACCESS / MSJMQAEGDZNVI / Just the code, not the label. The key is the salvage bay's word, on the chart in the tape room, by the keypad. If the cipher's new to you, ask me for the archive-code field guide. *(hub topic 5, first ask, each line its own text with no prefix; on `gary_called` the last sentence becomes "Gary told you how."; stage 6 §2.3)*
+>
+> Agent HaX: Vigenère Decode, on your workstation. Key: the salvage bay's word. Capitals in, capitals out. *(asked again, keypad still shut)*
 >
 > Agent HaX: His tapes are on the bench next door. When you want them. *(the identity scene's end, `deck_pulled == "alpha_tapes"`)*
 >
@@ -497,6 +501,8 @@ No topic lectures. Every answer is the next thing to do, or the cost of a thing,
 
 m09 is a mission the player reads. The documents carry the reveals, so each needs its own voice. All are object text; none is voiced, except where a character reads a line aloud.
 
+**Stage 6 folded in.** The final text of every document is `stage_6/lore_fragments.md` §1, which supersedes the drafts and samples below wherever they differ (stage 6 §6.4). Below, the samples are kept as voice notes, with the values stage 6 changed brought into line: the Reading's entry 1 on `expose` and `surrender` (W6-17), the Albion folder written in full with the vendor named (Carrow Controls, RM-4, VH-2017-0312; W6-01), Derek's file with his motive (W6-06), the letters with courier and handler (W6-08), Nightshade's form with no "-- A." (W6-07), eleven legacy rows (W6-03), and "06:00 UTC" (W6-22). Every document is split into its text and a one-line observations gloss; HaX's remarks on documents are ink (W6-02). American documents (the archive's, the lease, the ledgers, the H&L record, the guard's log) use US spelling and month/day/year; SAFETYNET's and Tesseract's use UK.
+
 ### 5.1 The Architect's hand, now
 
 Formal, short, aphoristic, third person about the agent ("they"). No thermodynamics read aloud; the formula sign-off is allowed on paper. Signed "-- A.".
@@ -507,15 +513,15 @@ Formal, short, aphoristic, third person about the agent ("they"). No thermodynam
 
 SAFETYNET read it and let it go on (story arc §3.1). The schedule is §5.3's.
 
-**The Reading** (Beat 3.1). A thin file. Each entry is a heading (the operation) and one or two sentences. Fixed strings by value; the never-played form is first-class writing, not a placeholder.
+**The Reading** (Beat 3.1). A thin file. Each entry is a heading (the operation) and one or two sentences. In the build it is four notes objects plus the last page (`the_reading`, `the_reading_2`, `the_reading_3`, `the_reading_4`, `the_reading_last_page`; stage 6 C-08), page 1 opening "0x00. Kept by M.S. Not to be summarised." Fixed strings by value; the never-played form is first-class writing, not a placeholder.
 
 | Entry | Value | Text (draft) |
 |---|---|---|
 | 1. Viral Dynamics (`m01_final_choice`) | fight | They put Lawson on the floor when the argument was already won. Force first. Noted. |
 | | arrest, or `""` with `m01_completed` | They read Lawson his rights. He kept his promise to me and said nothing. |
 | | recruit | They offered Lawson a deal. A recruiter's instinct. They should be careful whom they show it to. |
-| | expose | They put Lawson's figures on every front page, and did a month of my recruiting for me. |
-| | surrender | Lawson put the device down for them, as instructed. They believe they persuaded him. |
+| | expose | They gave Lawson's figures to the press. Applications rose. I keep the figure. |
+| | surrender | Lawson put the device down when they asked. It is the only order of mine he enjoyed. |
 | | never played | Lawson was arrested and kept his promise to me. Their file does not say who arrested him. |
 | 2. The innocents (first match wins: `m02_patient_assaulted`; then a first-day KO with `m01_completed`; then clean with `m01_completed`; else never played) | a first-day KO (`m01_kevin_ko`, `m01_sarah_ko` or `m01_maya_ko`) | On their first day they put a bystander on the floor. They will have told themselves it was necessary. |
 | | `m02_patient_assaulted` | They struck a patient on a ward. I have read the ward's notes. So, I expect, have they. |
@@ -555,45 +561,47 @@ This is his original sheet; the correction (his model credits the hospitals' rec
 
 **The release key** (flag 4's mirror job), one line of the job's configuration, rendered plainly as object text on the same `mirror_job_printout`, below the sheet:
 
-> Release: manual, at console. Single key. Requires an operator present. Fallback: 06:00, staged by city.
+> RELEASE CONFIGURATION. Manual, at console. Single key. Requires an operator present. Fallback: 06:00 UTC, staged by city.
 
 ### 5.2 The Architect's hand, nine years ago
 
 The Albion papers (Beat 3.4) are the first time the player hears the man before ENTROPY. Plain civil-service prose, first person, reasonable and humane. The contrast is the point: he was right, and he lost.
 
-**The catalogue entry:** a vulnerability in the control equipment at Albion's plant; a reference number; "Disposition: retain. Operational value." Initialled by the board, not by him.
+**The catalogue entry:** VH-2017-0312, an authentication bypass in the Carrow Controls RM-4 remote-management module, at about 400 UK sites; "Disposition: RETAIN. Operational value. Review 2019." The board line is ticked by every box but STRAT, the Chief Strategist's, left empty (stage 6 §1.10).
 
 **His memo** (to the disposition board, nine years ago):
 
-> We are holding a flaw in the control equipment of a grid battery site because it may one day be useful to us. It will certainly one day be useful to someone else.
+> We are holding a flaw in a Carrow controller because it may one day be useful to us. It will certainly one day be useful to someone else.
+>
+> Four hundred sites run this module. Their engineers cannot patch what nobody has told them about, and we cannot defend them from it, having chosen not to.
 >
 > I recommend notification to the vendor within thirty days. I have drafted the notice. I would rather send it than explain later why we didn't.
 
-**The notice** (drafted, never sent): a standard coordinated-disclosure letter to the vendor, with a ninety-day date. Plain and courteous. The only personal touch is the sign-off, which is his name and title, typed. Sending it in m09 sends this text unchanged, nine years late.
+**The notice** (drafted, never sent, 14 March 2017, to Product Security, Carrow Controls; written in full at stage 6 §1.10): a standard coordinated-disclosure letter to the vendor, with a ninety-day date. Plain and courteous. The only personal touch is the sign-off, which is his name and title, typed. Sending it in m09 sends this text unchanged, nine years late.
 
 ### 5.3 Other people's paper
 
 | Document | Voice | Sample |
 |---|---|---|
-| The ledger (flag 2; the printed binder) | Sorensen's columns: codename, source, placed, status, cost, notes. Her hand on the updates. | WREN. Legacy (H&L). Placed eleven years. Status: live. Day 10: assigned TF Null, Montana operation. M.S. |
-| The sale, booked (the drop terminal's ledger view, and HaX's text, once the player has been in Sorensen's office a little while, on `taken` or `double_crossed`) | A new line in Sorensen's columns. | Sale. WREN. To Agent 0x00. Consideration, one deck. Booked. |
-| The legacy placement files (the last box, on Sorensen's feed table, or under Noor's desk) | The Initiative's placements outside SAFETYNET, in Sorensen's own hand, the work she is proudest of. Never names WREN: the SAFETYNET placements went onto the Recruiter's tape, by codename only (D-01). | Eleven names. Stage 6 writes the entries. |
-| The Social Fabric letters' last page (the default other bin) | Social Fabric's next job, briefed to the Initiative. | Teresa Villanueva, 41, union rep at the Butte copper mine: a fabricated affair and a leaked medical file. The brief quotes her: "She says 'we' when she means the men on the night shift." |
-| Nightshade's recruitment file | Tesseract's hand, fifteen years ago, kind and clinical in the same sentence. | Twenty-three. Idealistic, tired already. Will wait if asked properly. Ask properly. |
-| Derek Lawson's file | The same hand, before Viral Dynamics. | Expected loss of asset: total. Expected yield: one demonstration, and the agency's attention. |
-| Harwick & Lowe placing sheet | An executive search firm's file, dull on purpose. Two candidates, same quarter, same client. | Candidates: H. Kowalczyk; M. Quintero. Lateral, private sector. Client: government (UK). Both placed. Next of kin: mother, residential care (Kowalczyk); father, residential care (Quintero). |
-| The master destruction schedule (Sorensen's safe) | The order's attachment: series by number, and her planning pass down the margin from before the night, a room per line, its series checked against the order and ticked as covered (R3-07). | Dock ✓. Front desk ✓. Reading room ✓. Open stacks ✓. Closet ✓. Stacks ✓. Cage ✓. Office ✓. Tape room ✓. Salvage cage (no series, no tick). In the margin: "Reading (safe); plan chest: not listed. Keep?" Reading the page sets `schedule_read`. (The unticked room follows the server into the salvage cage, stage 4 P1.) |
-| HaX's training notebook (a scan beside her case file in the reading room) | A student's notes, fifteen-odd years old, in her hand; his margin notes in another. | Her: "Disclosure: who does it serve?" His, beside it: "Ask who it hurts first. Then ask again afterwards." |
+| The ledger (flag 2; the printed binder) | Sorensen's columns: codename, source, placed, status, cost to date, notes. Her hand on the updates. Totals: placements 23, candidates 47, legacy 11. | WREN -- H&L -- 11 yrs -- LIVE -- $611,400, care fees, next of kin -- Day 10: assigned TF Null, Montana. Expected yield: one raid. M.S. / LINNET -- direct -- not placed -- CANDIDATE -- $500, filing bonus -- Father, dialysis, Dearborn. Ready when asked. (Before flag 2 the binder's rows are in the archive's cipher.) |
+| The sale, booked (the drop terminal's ledger view, and HaX's text, once the player has been in Sorensen's office a little while, on `taken` or `double_crossed`) | A new line in Sorensen's columns. | Sale. WREN. To Agent 0x00. Consideration, one deck. Booked. M.S. |
+| The legacy placement files (the last box, on Sorensen's feed table, or under Noor's desk) | The Initiative's placements outside SAFETYNET, in Sorensen's own hand, the work she is proudest of. Never names WREN: the SAFETYNET placements went onto the Recruiter's tape, by codename only (D-01). | Eleven rows, "SERIES L -- LEGACY PLACEMENTS, NOT SAFETYNET. M.S.", 2009 to 2018, each with a post, a cost to date, a yield and a note (Ruth Lindqvist, deputy clerk, Cascade County, $14,000, voter rolls, "Quiet. Reliable." ...). Penciled at the foot: "The best work I have done. Nobody will ever know. That was the point." (stage 6 §1.6) |
+| The Social Fabric letters' last page (the default other bin) | Social Fabric's next job, briefed to the Initiative. | "INITIATIVE TO SOCIAL FABRIC -- HANDOFF 14". Courier J.T., server closet, Mountain States; handler D. Varga, the Bozeman number. Next file: Teresa Villanueva, 41, union rep at the Butte copper mine: an affair, photographs in hand, her medical file. "Why her: when she says we, she means the men on the night shift." (US.) |
+| Nightshade's recruitment file ("Candidate Assessment, Intake 2011") | A SAFETYNET intake form, fifteen years ago, with the assessor's notes in his hand, kind and clinical in the same sentence; no "-- A.", no office label: the hand does the naming (W6-07). | Seen 7 November. Again on the 17th. Idealistic, tired already. Will wait if asked properly. Ask properly. No payment. Belief is the payment. (The looped g and crossed 7s match the notebook margin.) |
+| Derek Lawson's file | The same hand, before Viral Dynamics. | Motive: belief. He has read everything I sent him and believes it more than I do. ... Expected loss of asset: total. Expected yield: one demonstration, and the agency's attention. Standing order, on hire: if taken, put the device down and wait. Say nothing. (Fixed text, true on every m01 branch.) |
+| Harwick & Lowe placement record ("Placement Record, HL2015-0477") | An executive search firm's file, dull on purpose. Two candidates, same quarter, same client. US. | Ref HL2015-0477. Q2 2015. Search: lateral hires from the private sector. Client: government, UK. Two placements. Fee: 30% of first-year salary, per placement. Candidates: H. Kowalczyk; M. Quintero. Next of kin: Kowalczyk, mother, nursing home. Quintero, father, nursing home. Status: both placed. File closed. |
+| The master destruction schedule (Sorensen's safe) | The order's attachment: series by number, and her planning pass down the margin from before the night, a room per line, its series checked against the order and ticked as covered (R3-07). | Dock ✓. Front desk ✓. Reading room ✓. Open stacks ✓. Closet ✓. Stacks ✓. Cage ✓. Office ✓. Tape room ✓. Salvage cage (no series, no tick). In the margin: "Reading (safe). Plan chest: not listed. Keep?" Reading the page sets `schedule_read`. (The unticked room follows the server into the salvage cage, stage 4 P1.) |
+| HaX's training notebook (a scan beside her case file in the reading room) | A student's notes from STRAT-204, 17 October 2011, in her hand; his margin notes in another. | Her: "Wk 7. Disclosure: who does it serve?" His, beside it: "Wk 7. Ask who it hurts first. Then ask again, afterwards." |
 | Tomb Alpha's tapes (if pulled, `refused`) | Recordings of his teaching at the first workshop, with typed annotation sheets in his hand. One clip plays from the reel deck on a bench in the tape room after the identity scene (F12), voiced by TTS as an old lecture-room recording; speaker "Dr Adrian Tesseract (recording)". | "The best lock there is opens for the right name. Nobody fights a door that's expecting them." / "And build your own way out first. Always. Then let them build their way in." The decode of one sheet gives his first draft of the line: "Carry it yourself. Let it hurt afterwards." In m10 they pay off at the blast door and as HaX's service-door warning at the core (stage 3 §9 item 25). |
-| Old Coyote's incident book | Block capitals, short entries, unanswered. | SHREDDER RUNNING AGAIN. MRS S SAYS SCHEDULED. NOTED. |
-| The refit ledger | An accountant's. | One line on `m02_paid_ransom`: a receipt dated the day St. Catherine's paid. |
-| The rent book (Sorensen's office; split from the lease file, D-07) | An accountant's, monthly. | Every payment from the same account, and every page headed with the lease's start date, which is the safe's PIN (stage 4 P16). On `m06_irina_recruited`, HaX's Irina line (§7.2). |
-| Zero Day's note on Danny Foster (Sorensen's office, its own sheet, D-07) | A broker's memo, two lines. | On `left`: "Loose end, resolved." Otherwise his survey methods, which match a document in the archive. HaX's line by `m03_danny_fate` (row 36). |
-| Noor's trolley list | A destruction schedule, series numbers only. Empties in three steps (flag 1, flag 2, the cage), with the trolleys. | R-114 through R-161. Destroy. Certificate to follow. |
-| The coded catalogue line (a notes item HaX sends after flag 1; repeated on the drop terminal's screen) | One catalogue entry in an old archive encoding, out of place in the index. | "Catalogue: salvage cage." Then the coded line, a fixed string stage 6 writes, with no pipe, hash, double slash or braces, since ink quotes it (stage 4 P20). |
-| The shelf-code legend (tape room wall, beside the salvage keypad) | The archive's own shelf-code chart, framed, in the archive's terms. | The key to the coded line; stage 6 writes it to fit the CyberChef operation it chooses (P20). |
-| The Harwick & Lowe bay label (open stacks) | A shelf label. | HARWICK & LOWE, EXEC SEARCH (CLOSED). RETENTION 25 YRS. |
-| The Albion folder (salvage cage printer tray, after flag 3) | The catalogue entry, his memo and the unsent notice, printed off the box into one folder (stage 4 P19); voices as §5.2. | "Printer tray, empty." before flag 3. |
+| Old Coyote's incident book | "Incident Log". Block capitals, short entries, unanswered. US. | MON. SHREDDER RUNNING, NIGHT. MRS. S SAYS SCHEDULED. NOTED. ... FRI. SAME. NOBODY READS THIS. |
+| The build-out ledger (`refit_ledger`, "Build-Out Ledger", read in place) | Construction draws. US. | On `m02_paid_ransom`: "Draw 9 -- funds received 11/2024 -- $189,600, converted from BTC -- applied: blast door, furnish and install." Otherwise all draws from the lessee's own account. |
+| The rent ledger (`rent_book`, "Rent Ledger", Sorensen's office, read in place; split from the lease file, D-07) | An accountant's, monthly. US. | "RENT LEDGER -- SITE 2, MT. Lessee: Big Sky Holdings LLC. Lease start: 06/02/16"; every payment early, from one account. The header's digits as printed, `060216`, are the safe's PIN (stage 4 P16; stage 6 §3.2). On `m06_irina_recruited`, HaX's Irina line (§7.2), in ink. |
+| Zero Day's note on Danny Foster (`danny_sheet`, "Broker's Note: D. Foster", Sorensen's office, read in place, D-07) | A broker's memo, two lines. US. | On `left`: "FOSTER, D. Loose end, resolved." On `protected`, his survey methods in SAFETYNET's hands; on `exposed`, his survey of 214 on the public record; otherwise (a knock-out too) "No further action." HaX's line by `m03_danny_fate` (row 36). |
+| Noor's trolley list | "Destruction Run, Series R". A run sheet, series numbers only. Three ranges struck one at a time (flag 1, flag 2, the cage), with the trolleys. | DESTROY. Series R, 48 boxes. R-114 to R-129 -- DONE ... Certificate to follow. |
+| The coded catalogue line (a notes item HaX sends after flag 1; repeated on the drop terminal's screen) | One unindexed catalogue entry in the archive's own cipher, out of place in the index. `catalogue_salvage_line`, "Catalogue: salvage cage". | Two lines, label and code apart: "SALVAGE CAGE ACCESS" / "MSJMQAEGDZNVI". Only the second is ciphertext (`Vigenère Decode`, key `BONEYARD`, gives `LEWISANDCLARK`); no banned character (stage 6 §2). |
+| The shelf-code legend (tape room wall, beside the salvage keypad) | The archive's own shelf-code chart, framed, in the archive's terms. US. Observations only. | "MOUNTAIN STATES RECORDS & RETENTION -- SHELF MARKS": Bay 1 Reading room COTTONWOOD; Bays 2 to 9 Open stacks MERIDIAN; Bay 10 Restricted WATCHTOWER; Bay 11 Tape store STANDBY; Bay 12 Salvage BONEYARD. "House rule: cage and keypad codes use the bay word. Never write a code down. M.S." |
+| The Harwick & Lowe bay label (`hl_bay_label`, open stacks, observations only) | A shelf label. | HARWICK & LOWE, EXEC SEARCH (CLOSED). RETENTION 25 YRS. |
+| The Albion folder (salvage cage printer tray, after flag 3) | The catalogue entry, his memo and the unsent notice, printed off the box into one folder (stage 4 P19); voices as §5.2. | "PRINTER READY. TRAY EMPTY." before flag 3. |
 
 ## 6. Atmosphere and music
 
@@ -653,9 +661,9 @@ The user's rule: the player should feel earlier choices as things happening (who
 | `m05_recruiter_deal_accepted` | the Recruiter's call | her opening with the receipt and the offer; own it, deny it, or hang up (a hang-up plays as a refusal: HaX still saves one tape) | The spring's secret ringing the player's phone with their handler listening. |
 | `m05_recruiter_deal_confessed` | the call; Noor | HaX cuts the Recruiter off; Noor's late warning | The confession bought something: the leverage dies on the line. |
 | `m05_found_pipeline_list` | Noor, front desk; the cage | warned in time: the warning, her card handed over (other players clone it), and the last box held back under her desk (the legacy files saved, with no choice; the feed tray in the cage is empty) | SAFETYNET reached her first because the player kept the list, and she paid it back. |
-| `m05_torres_turned` | Harwick & Lowe boxes, or a little after the safe | Torres rings from his desk; one step off the search; the sick-parent line; "I gave you this address in the spring." | The man the player turned is still in there, and still frightened. |
+| `m05_torres_turned` | Harwick & Lowe boxes, or a little after the safe | Torres rings from his desk; one step off the search; the sick-parent line; "I gave you this address last spring." | The man the player turned is still in there, and still frightened. |
 | `m05_final_choice` | ledger (flag 2); wall card | Torres' entry: live, "lost", or "closed placement" in Sorensen's hand | On `combat_lethal`, HaX's silence does the work. |
-| `m03_victoria_fate` | the cage gate and door; the lease file | recruited: her protocols read Sorensen's mail, whose maintenance code opens the gate in place of the card (the print is still needed for the cabinet), and the recognition and bin choice play at the cage door; arrested or KO: her keys (or seized devices) opened Zero Day's client list, and this lease was on it | The asset the player turned is used, at last, on screen. |
+| `m03_victoria_fate` | the cage gate and door; the lease file | recruited: her protocols read Sorensen's mail, whose maintenance code opens the gate in place of the card (the print is still needed for the cabinet), and the recognition and bin choice play at the cage door; arrested or KO: her keys (or seized devices) opened Zero Day's client list after Cardiff, and this lease was on it (HaX, ink: "Big Sky was on Zero Day's client list. Sterling's keys opened it after Cardiff."; two conditions, `arrested` and `ko`) | The asset the player turned is used, at last, on screen. |
 | `m02_gary_protected` | the salvage cage's keypad, in the tape room | Gary rings, names the CyberChef operation and points at the legend | The man who wrote warnings "for the archive" rings an agent standing in one. A small, warm call in a cold room. |
 | `m01_maya_ko` | loading dock; the main-path radio after flag 1; server closet | HaX's Tran warning (or its absence), Tran radioing Old Coyote to a post beside the reading room's door, and, if Tran sees the player first, a called guard by the shutter | Day one's cost arrives eight missions late, as a surprise in a doorway. |
 | `m06_monitoring_enabled` | briefing (how the order was caught, unless Calder Wharf was); HaX's case file in the reading room | "Your tags lit up last night"; the tagged payments page in the case file (stage 4 P9) | The player's tags did the catching. |
@@ -670,14 +678,14 @@ The user's rule: the player should feel earlier choices as things happening (who
 | `m01_kevin_ko`, `m01_sarah_ko` | the Reading entry 2 | the first-day line |
 | `m02_patient_assaulted` | the Reading entry 2 | "They struck a patient on a ward." |
 | `m02_exposed_hospital`, `m02_ghost_deal_accepted` | wall card | the hospital's cover-up and the deal, in one line |
-| `m02_paid_ransom` | the refit ledger | "St. Catherine's money. It bought the blast door." |
-| `m03_danny_fate`, `m03_danny_ko` | Zero Day's note on him, its own sheet in Sorensen's office (D-07: no longer behind Victoria's or Irina's line) | by row 36: "Danny's statement just became evidence." / "loose end, resolved", then relief that he is alive / Danny's unanswered question on the two branches / nothing on KO |
+| `m02_paid_ransom` | the build-out ledger | "St. Catherine's money. It bought the blast door." |
+| `m03_danny_fate` (a knock-out reads the base, stage 6 C-24) | Zero Day's note on him, its own sheet in Sorensen's office (D-07: no longer behind Victoria's or Irina's line) | by row 36: "Danny's statement just became evidence." / "loose end, resolved", then relief that he is alive / Danny's unanswered question on the two branches / nothing on KO |
 | `m03_directive_decoded` | identity scene | HaX: "You've read him before. Sterling's drive." (style, not handwriting; only if `m07_architect_echo_heard` is false) |
 | `m04_disclosure_choice` | wall card; the Reading entry 3; the Albion papers | the choice lands twice in one night: his reading of it, then SAFETYNET's own nine years of silence |
 | `m04_voltage_captured`, `m04_voltage_escaped` | wall card; the Albion papers | Voltage in custody, or gone; whom the Critical Mass watch waits for ("what's left of his crew" / "Voltage's people") |
 | `m04_crew_lost` (new m09 Tier 2 import, stage 3) | the Albion papers; the debrief's notice question | with `full`, whether there is an inquiry to ask when SAFETYNET knew: "And Albion's inquiry gets to ask when we knew." |
 | `m04_lore_safehouse_address_found` | briefing, how the order was caught | "Your card from Albion. Task Force Null went in yesterday. It held a courier account, and this was on it." |
-| `m06_irina_recruited` | the rent book (D-07) | "Irina's account paid for this. Tell her it bought us the deed." |
+| `m06_irina_recruited` | the rent ledger (D-07) | "Irina's account paid for this. Tell her it bought us the deed." |
 | `m06_minder_walked` | the casualty sheet (flag 4) | "Kemal Aydin walked out on a smaller number than this." |
 | `m07_team_assignment`, `m07_team_redirected` | wall card; briefing stakes | where the team went; "Day eleven. Eleven counties."; the Meltdown hospital line |
 | `m07_debrief_stance` | the Reading entry 4 | the player's own words quoted back |
@@ -727,7 +735,9 @@ m10's slot people (Ghost, Voltage in person, Vance, Elena, Mercer, Hollis, Vecto
 - **Voice bible entries first.** Add an m09 table to the voice bible's one-mission section before any line is voiced: Sorensen, Noor, Tran, Old Coyote, and the four raid officers (who return in m10, so they may belong under "canon characters" instead; the orchestrator decides with the m10 author).
 - **HaX's phone texts** carry no prefix (the m08 hub pattern); her calls and in-person lines do.
 - **The three voiced calls** (the Recruiter's, the identity scene, Tesseract's): no narrator lines (HaX's asides instead), each knot ends by hanging up and never diverts into her hub, and the outcome lines the Recruiter's knot shares with HaX's resume knot sit in one include (stage 4 §6). Netherton's lines in the identity scene are prefixed `Director Magnus Netherton:` in HaX's thread. In the debrief and the Alpha clip, HaX speaks through a person-type record with her voice (stage 5 §3.1).
-- **The called guard** (`m01_maya_ko`) needs a speaker prefix once stage 6 or 7 names him (stage 4 P14).
+- **The called guard** (`m01_maya_ko`): Lyle Dillard, named at stage 6 §5; speaker NPC id `archive_guard`, `displayName: "Lyle Dillard"`, one line then `#hostile:archive_guard`.
+- **HaX's remarks on documents are ink** (stage 6 W6-02, §6.5): the lease (three lines by branch, "after Cardiff" on Victoria's), the rent ledger (Irina), the build-out ledger (the blast door), Danny's note, the legacy box ("Nobody of ours in here. Ours are on her tape, by codename."), Derek's file (on `surrender`, "There's your why. He was told to."; on `expose`, "He wanted your headlines."), the H&L record, the case file ("Your tags, from HashChain."). Stage 6 §1 lists each under its object. No document string begins with `*`, `-`, `+`, `=` or `#`, so any can be quoted; if a casualty-sheet line is read aloud, keep its first word first (C-23).
+- **Sorensen at the hatch** (§3): on `expose` and `surrender` her recognition line repeats what Derek's file and the Reading's page 1 now say (W6-17). Give her a different angle there, or cut it.
 - **The Recruiter's call** is the mission's most important ink. Write the three openings and the spine as one knot structure with the offer reachable on every branch except the hang-up, which has its own HaX-only form of the tape choice (story arc Beat 2.4; stage 3 §3.2–3.3). Every button writes a legal `recruiter_offer` / `deck_pulled` pair; two resume points after a "yes".
 - **The confession** has four openings, one shared line that reaches the wall (the two dead, Netherton silent), and three answers. Keep each form to about six lines before the choice. Her reply is two lines at most.
 - **The wall** is eight cards, one fixed line per value, plus never-played lines; when five or more are unplayed, only m04, m05, m07 and m08 keep their never-played sentence and the rest share one line (story arc §10.1, M-11). m03's never-played sentence says Cardiff (MS-01). It is the one place a list of carry-overs is allowed, because it is a "previously on" and the player is watching a montage.
