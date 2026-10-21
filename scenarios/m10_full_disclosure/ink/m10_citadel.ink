@@ -13,6 +13,11 @@ VAR cit_quiet = false
 { ending != "joined" or closing_done:
     -> leave
 }
+-> opening
+
+// Playtest D: a line in the same knot as close_compute() didn't show; the
+// opening is its own knot, as in six_oclock.
+=== opening ===
 Narrator: The Citadel, an hour later. Netherton is on the wall screen from Montana. Beside him, HaX's channel is still open. Nobody has spoken on it.
 Director Magnus Netherton: He told her it had to be one of ours. He was right, and I signed for that agent myself.
 + [(Listen.)]

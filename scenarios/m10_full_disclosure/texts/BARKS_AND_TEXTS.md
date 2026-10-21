@@ -44,6 +44,8 @@ Speakers: `agent_0x99` (HaX, phone), `lock_guard` (Sione Fonoti), `monitor_guard
 | T-20b | `agent_0x99` | Stood down for the budget. Your freeze kept him home tonight. | first read of `duty_board` with `globalVars.m07_hollis_resolved === 'evaded' && globalVars.m06_assets_seized` | **Fixed** (CONTRACT 10-14; S6-09) |
 | T-21 | `agent_0x99` | Finance want to know about five hundred pounds and a security guard in Cardiff. I've never been so pleased to fill in a form. | `global_variable_changed:arakawa_call_done` with `value === true && globalVars.m03_guard_bribed && !globalVars.breach_open` | `delayMs: 4000`: the lull while the pair walk back. 24 words. FA row 38 (rulings 14, 15; m10 R1 m-13: the import is kept). **Fixed** (SE §3.1) |
 | T-22 | `agent_0x99` | Sheriff's asking who the road's closed for. Netherton's told him to wait. | `room_entered` with `globalVars.officer_out === 'arakawa'` | the first room entry after Arakawa is sent back (CONTRACT 10-11; reworded at stage 8 so it is HaX's own text, reporting Netherton) |
+| T-58a | `agent_0x99` | Field console by the gate first. Start it, then the terminal. | `global_variable_changed:door_scene_done` with `value === true && !globalVars.gate_console_used` | `delayMs: 8000`. Skipped once the field console has been used. Stage 9 (builder) |
+| T-58b | `agent_0x99` | Not the terminal yet. The field console beside it. | first use of the Gate Terminal with `!globalVars.gate_console_used` | skipped once the field console has been used. Stage 9 (builder) |
 
 ## 3. Act 2: the workshop, the power room and the server hall
 
@@ -93,7 +95,7 @@ Voltage's print match ("I told you it'd be waiting. It was.") and the Alpha tape
 |---|---|---|---|---|
 | T-44 | `tesseract` | The long way. It's also the right one. | first `object_interacted` on `core_console_vm` with `globalVars.core_greeted && !globalVars.flag4_submitted` | his idle lines, on events the game sees (S2-17). **Fixed** (SE §2.4). Cut order: these go first, down to one (OT §8) |
 | T-45 | `tesseract` | Your reports say thorough. I didn't believe them. | `global_variable_changed:guide4_given` with `value === true && !globalVars.flag4_submitted` | **Fixed** (SE §2.4) |
-| T-46 | `tesseract` | Nearly there. You'll want to sit down for what comes after. You won't, I expect. | a failed flag submission at `core_host_terminal` (stage 9 names the event) with `!globalVars.flag4_submitted` | **Fixed** (SE §2.4) |
+| ~~T-46~~ | `tesseract` | Nearly there. You'll want to sit down for what comes after. You won't, I expect. | a failed flag submission at `core_host_terminal` (stage 9 names the event) with `!globalVars.flag4_submitted` | **Fixed** (SE §2.4) **Cut at stage 9** (no event for a failed submission). |
 
 ## 6. 06:00 and after
 

@@ -16,6 +16,7 @@ INCLUDE m10_carryover_vars.ink
 // ================================================
 
 VAR neth_quiet = false
+VAR neth_end_quiet = false   // neth_after / neth_dead only
 VAR neth_tether_seen = false
 VAR neth_sign_asked = false
 VAR neth_plans_asked = false
@@ -402,8 +403,8 @@ Agent HaX: Start the gate console on your way past. It's slow to boot.
 // Stage 9 follow-up: after his ending, a rest line by ending and the exit only.
 === neth_after ===
 {
-- neth_quiet:
-    ~ neth_quiet = false
+- neth_end_quiet:
+    ~ neth_end_quiet = false
 - ending == "executed":
     Director Magnus Netherton: Not now, Agent. The board will want you rested.
 - ending == "scorched":
@@ -412,19 +413,19 @@ Agent HaX: Start the gate console on your way past. It's slow to boot.
     Director Magnus Netherton: Go and get warm. The paperwork can wait an hour.
 }
 + [(Leave him to it.)]
-    ~ neth_quiet = true
+    ~ neth_end_quiet = true
     #exit_conversation
     -> neth_after
 
 // On Join nobody from SAFETYNET speaks to the player.
 === neth_dead ===
 {
-- neth_quiet:
-    ~ neth_quiet = false
+- neth_end_quiet:
+    ~ neth_end_quiet = false
 - else:
     Narrator: Netherton doesn't look at you.
 }
 + [(Leave.)]
-    ~ neth_quiet = true
+    ~ neth_end_quiet = true
     #exit_conversation
     -> neth_dead

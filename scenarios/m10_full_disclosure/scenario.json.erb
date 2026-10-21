@@ -1143,8 +1143,9 @@ end
         "disableClose": true,
         "fade": true,
         "closingCard": <%= j.(ending == 'joined' ? join_card : closing_card.(ending, teaser)) %>,
-        "credits": <%= j.(credits_for.(ending)) %>
-      }<%= ei < 5 ? ',' : '' %>
+        "credits": <%= j.(credits_for.(ending)) %><%= ending == 'joined' ? ',' : '' %>
+<% if ending == 'joined' %>        "headerText": "MISSION FAILED // AUDIO INTEL"
+<% end %>      }<%= ei < 5 ? ',' : '' %>
 <% end %>
     ]
   },
