@@ -181,9 +181,9 @@ Agent HaX: Wrong, and Quintero's off the raid till you can clear her. Sure?
 - quin_quiet:
     ~ quin_quiet = false
 - quintero_wounded:
-    Agent 0x2D 'Anchor': Shoulder. It'll keep. Finish it.
+    Agent 0x2D 'Anchor': It'll keep. Go on.
 - else:
-    Agent 0x2D 'Anchor': I've got the door. Finish it.
+    Agent 0x2D 'Anchor': I've got the door. Go on.
 }
 + [Thanks.]
     Agent 0x2D 'Anchor': Don't. Finish it.

@@ -247,7 +247,7 @@ Agent 0x5E 'Lantern': Well. *almost laughs* It was a good cracker.
     Narrator: Arakawa looks away.
 }
 Agent 0x5E 'Lantern': When did you know?
-+ {clue_bench_log} [At the bench log. Then your name on the case's sheet.]
++ {clue_bench_log} [At the bench log. Then your name on the sign-out sheet.]
     ~ kowalczyk_answer = "bench"
 + [At the briefing. You laughed too easily.]
     ~ kowalczyk_answer = "briefing"

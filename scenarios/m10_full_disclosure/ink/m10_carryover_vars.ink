@@ -273,6 +273,7 @@ VAR console_choice = ""
 VAR join_step = 0
 VAR cold_lowered = false
 VAR fire_held = false
+VAR hax_asked_database = false   // SCRIPT_EDIT_R2 A2-12: A tesseract database ("[HaX. What would you do?]"); read by A hearing
 
 // ===================== THE CLOSE'S FIVE STRINGS (S6 §3.1) =====================
 // Written only by close_compute(), first line of six_oclock / hearing / citadel.

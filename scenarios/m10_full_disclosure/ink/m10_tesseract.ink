@@ -13,7 +13,6 @@ INCLUDE m10_carryover_vars.ink
 
 // File-locals (tess_ prefix; never a scenario global's name)
 VAR tess_quiet = false      // set before every exit, so a reopen of `parked` re-routes
-VAR tess_asked_hax = false  // "[HaX. What would you do?]" asked once
 VAR tess_menu = false       // set before every divert into a choices-only menu; a reopen finds it false and re-routes
 VAR tess_bridge = false     // true only on the first pass through exch_bridge
 
@@ -117,7 +116,7 @@ Dr Adrian Tesseract: Take your time. It goes at six whatever we say. Or now, if 
 - head_start_out == "both":
     Agent HaX: Confirmed. Both shares went at the lock.
 - head_start_out == "zero_day":
-    Agent HaX: Confirmed. Zero Day's went.
+    Agent HaX: Confirmed. Zero Day's share went.
 - head_start_out == "ghost":
     Agent HaX: Confirmed. The resale went.
 - else:
@@ -187,7 +186,6 @@ Agent HaX: I've got his box. If anything goes out from that console, I can try t
 + [Understood.]
 -
 Agent HaX: And the line into our vault is open from here. We left it open.
-Agent HaX: He's rigged this room. If both copies die, it purges: doors, lights, all of it. He'll be ready for that. We won't.
 ~ flag4_heard = true
 -> core_router
 
@@ -241,7 +239,7 @@ Dr Adrian Tesseract: Either you press it, or I get a courtroom. I've costed both
 - m04_completed and m04_disclosure_choice == "quiet":
     Dr Adrian Tesseract: You buried it. You understand me better than you admit.
 - else:
-    Dr Adrian Tesseract: Albion. A plant left open because someone decided the hole was worth more than the fix. I argued against that, once.
+    Dr Adrian Tesseract: Albion. A site left open because someone decided the hole was worth more than the fix. I argued against that, once.
 }
 + [You've been reading my file.]
     Dr Adrian Tesseract: Files are written by people who need you to be a shape. I read the work.
@@ -302,7 +300,7 @@ Dr Adrian Tesseract: Since your first day.
     Dr Adrian Tesseract: My Recruiter offered you a name. You wouldn't buy it. I would have.
 }
 + [Make your argument, then.]
-+ [Say what you came to say.]
++ [(Say nothing.)]
 -
 ~ case_heard = true
 Dr Adrian Tesseract: Three things. Answer them properly and I'll tell you so.
@@ -843,9 +841,9 @@ Director Magnus Netherton: Half of these cannot be patched this year, and the wa
 + [And if we keep them?]
 + [Go on, sir.]
 -
-Agent HaX: Infusion pumps in a hundred and forty hospitals. Still live next year if we do this.
+Agent HaX: Keep them, and the infusion pumps in a hundred and forty hospitals are still live next year.
 + [What does it cost to send ours to the vendors?]
-+ [And the other way?]
++ [And if we send ours out?]
 -
 -> database_ops ->
 Director Magnus Netherton: Both of them run through holes on that list. Patch the holes and we lose the way in. I will sign it.
@@ -856,7 +854,7 @@ Agent HaX: That's coordinated disclosure. Vendors first, quietly, with time to f
 + [And if I wipe both copies?]
 + [There's a third way.]
 -
-Agent HaX: If both copies die, this room purges itself. Doors, lights, everything. You won't have him after.
+Agent HaX: If both copies die, this room purges itself. He'll be ready for it, and you won't have him after.
 Director Magnus Netherton: Then nobody has it, and nobody fixes anything either. We both answer for it.
 ~ tess_menu = true
 -> database_menu
@@ -880,8 +878,8 @@ Director Magnus Netherton: Then nobody has it, and nobody fixes anything either.
     ~ media_story_ran = m07_completed and m07_team_assignment != "fracture"
     ~ ending = "scorched"
     -> ending_scorched
-+ { not tess_asked_hax } [HaX. What would you do?]
-    ~ tess_asked_hax = true
++ { not hax_asked_database } [HaX. What would you do?]
+    ~ hax_asked_database = true
     Agent HaX: No. This one's yours. If I choose, I'll choose for the wrong reasons.
     ~ tess_menu = true
     -> database_menu
@@ -896,33 +894,33 @@ Director Magnus Netherton: Then nobody has it, and nobody fixes anything either.
 Director Magnus Netherton: Two operations go dark if you do this.
 { m03_victoria_fate == "recruited" and (victoria_gallery == "confronted" or victoria_gallery == "refused" or (victoria_gallery == "trusted" and head_start_killed == "zero_day")):
     ~ n = n + 1
-    Director Magnus Netherton: The watch on Sterling goes dark.
+    Director Magnus Netherton: The watch on Sterling.
 }
 { n < 2 and m08_nightshade_triple_agent and not m09_nightshade_shown_file:
     ~ n = n + 1
-    Director Magnus Netherton: Nightshade's channel goes dark.
+    Director Magnus Netherton: Nightshade's channel.
 }
 { n < 2 and m06_monitoring_enabled:
     ~ n = n + 1
-    Director Magnus Netherton: The HashChain tags go dark.
+    Director Magnus Netherton: The HashChain tags.
 }
 { n < 2 and m09_completed and not m09_albion_notified:
     ~ n = n + 1
     {
     - m04_voltage_escaped:
-        Director Magnus Netherton: The watch on Voltage's people goes dark.
+        Director Magnus Netherton: The watch on Voltage's people.
     - m04_voltage_captured:
-        Director Magnus Netherton: The watch on what's left of Voltage's crew goes dark.
+        Director Magnus Netherton: What's left of Voltage's crew.
     - else:
-        Director Magnus Netherton: The Critical Mass watch goes dark.
+        Director Magnus Netherton: The Critical Mass watch.
     }
 }
 { n < 2:
     ~ n = n + 1
-    Director Magnus Netherton: The watch on the head start's order book goes dark.
+    Director Magnus Netherton: The order-book watch.
 }
 { n < 2:
-    Director Magnus Netherton: Our tap on Zero Day's brokers goes dark.
+    Director Magnus Netherton: Our tap on Zero Day's brokers.
 }
 ->->
 

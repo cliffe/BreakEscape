@@ -124,9 +124,13 @@ Narrator: The forward post, a few minutes before six. Floodlights, engines runni
 Agent 0x5E 'Lantern': When did you know?
 + { not sleeper_caught } [I didn't. Not till you came through his door.]
     ~ kowalczyk_answer = "worked_out"
-+ { sleeper_caught } [At the bench log. Then your name on the case's sheet.]
++ { sleeper_caught and clue_bench_log and m09_recruiter_offer != "taken" } [At the bench log. Then your name on the sign-out sheet.]
     ~ kowalczyk_answer = "bench"
-+ { sleeper_caught } [At the briefing. You laughed too easily.]
++ { sleeper_caught and m09_recruiter_offer != "taken" } [At the briefing. You laughed too easily.]
+    ~ kowalczyk_answer = "briefing"
++ { sleeper_caught and m09_recruiter_offer == "taken" } [In Helena. Your name on the placing sheet.]
+    ~ kowalczyk_answer = "bench"
++ { sleeper_caught and m09_recruiter_offer == "taken" } [Before Helena. I had a feeling about you.]
     ~ kowalczyk_answer = "briefing"
 + { sleeper_caught } [I didn't. I worked it out.]
     ~ kowalczyk_answer = "worked_out"
@@ -194,6 +198,8 @@ Agent 0x5E 'Lantern': I liked you. I'd still have pressed it.
     Gary Whitlock: They've put him in the van behind mine. I'll write to him. Somebody should.
 - m02_gary_protected and imran_outcome == "talked_round":
     Gary Whitlock: Imran texted from the bus. First time he's thanked anyone for anything.
+- m02_gary_protected and imran_outcome == "ko":
+    Gary Whitlock: I sat with Imran till the medics came. He asked who it was. I said I didn't see.
 - m02_gary_protected:
     Gary Whitlock: Consultant. Lanyard and everything. I spent the night watching other people's benches.
 - gary_outcome == "talked_round":
@@ -262,6 +268,9 @@ Narrator: Netherton comes down the line of vans with a tablet under his arm.
 + [(Wait.)]
 -
 -> numbers_more ->
++ [And the database?]
++ [(Wait.)]
+-
 -> database_beat
 
 // The head start, the bait's catch and the trace. Shared with the executed
@@ -285,17 +294,10 @@ Narrator: Netherton comes down the line of vans with a tablet under his arm.
 }
 ->->
 
-// The partial release or the story, our own people, the tap, the $12.8M.
+// The story, our own people, the tap, the $12.8M. (SCRIPT_EDIT_R2 A2-01: the
+// partial release is not repeated here; HaX and he said it at the core, and
+// ELSEWHERE carries Seattle's batch.)
 === numbers_more ===
-{
-- partial_release == "large":
-    Director Magnus Netherton: The backdoor's batch went out when the core shut. Forty-seven million systems.
-- partial_release == "small":
-    Director Magnus Netherton: What was left on the backdoor went out when the core shut. Fourteen million systems.
-}
-{ partial_release != "none" and m07_countdown_expired:
-    Director Magnus Netherton: Seattle's went first.
-}
 { media_story_ran and ending != "executed":
     Director Magnus Netherton: Social Fabric ran its story from outside as we breached. Your photograph is on it, and not a word of it is true.
 }
@@ -379,7 +381,7 @@ Narrator: Netherton comes down the line of vans with a tablet under his arm.
 }
 { n < 2:
     ~ n = n + 1
-    Director Magnus Netherton: The order-book watch went blind with the first patches.
+    Director Magnus Netherton: The order-book watch went quiet with the first patches.
 }
 { n < 2:
     Director Magnus Netherton: Our tap on Zero Day's brokers dropped at ten past five.
@@ -420,7 +422,7 @@ Director Magnus Netherton: I know. I kept it to one page.
 // her last word by ending (FA §4.6 table). The screen reaches six as it lands.
 === the_rest ===
 {
-- wren_at_core and not sleeper_caught:
+- wren_at_core and not sleeper_caught and not six_k:
     Agent HaX: Kowalczyk came through his door for the key. Nobody named her before she did it herself.
 - kowalczyk_ko and not sleeper_caught:
     Agent HaX: Kowalczyk's awake in the second van. She hasn't asked who put her there.
@@ -505,6 +507,8 @@ Director Magnus Netherton: I will not put my name under this one. You will be he
 -
 -> numbers_core ->
 -> numbers_more ->
++ [(Say nothing.)]
+-
 -> database_beat
 
 === executed_close ===

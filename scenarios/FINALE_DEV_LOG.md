@@ -346,3 +346,6 @@ Plan: 7a a CONTRACT.md per mission in scenarios/<mission>/ (every ink file and o
 - I-7 guarded by ink-local said_floor_line. m09 script edit closed after 3 rounds (R3 verdict: ship). Next: opus48 VM-STEER pass.
 - VM-STEER pass (opus48): 5 placeholders resolved in m09_phone_agent0x99.ink; credential lines and flag-3 hint kept verbatim; flag 2, flag 4 ('set to copy to Tomb Gamma'), Tomb Beta guide line reworded. 0 new voiced lines. Compile 16/16, lint unchanged.
 - R2 (fresh editor): revise, last full round. A 0/2/11, B 0/1/6, C 0/0/3. R1 all in, no regressions; 33/33 compile, loopcheck 25 states clean. Majors: HaX hub 13 choices (B2-01), Netherton 7-line 06:00 run (A2-01), pump line 'if we do this' (A2-02). Ruling: apply all incl. optional 06:00 cut (backdoor, Seattle repeats). Then R3 fresh read.
+- R2 fixes applied: A 13/13 (new global hax_asked_database), B 7/7 (hub 10 on busy save; fence gate workshop_entered), C 3/3. Cross-group lines verified identical. Voiced: tesseract 184, six_oclock 98, hearing 9, calls 81. CONTRACT §9. Ruling: HaX hub text purge line after flag 4 stays (text, player-asked).
+
+### m10 script edit round 3

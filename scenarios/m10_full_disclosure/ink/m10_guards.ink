@@ -178,7 +178,7 @@ Guard: Shift's not over. Who let you up here?
     -> fight
 
 === farah ===
-Guard: Who are you? Nobody comes up that stair at night.
+Guard: Who are you? This walkway's closed till six.
 + [I'm going to the lock.]
     #hostile:farah_guard
     Guard: Not on my walkway.

@@ -340,7 +340,7 @@ Agent HaX: Start the gate console on your way past. It's slow to boot.
 - aside_done and door_branch() == "silent" and not door_scene_done:
     -> tether
 - ending != "":
-    Director Magnus Netherton: It is done. Sit down somewhere warm.
+    Director Magnus Netherton: Go and get warm. The paperwork will keep for an hour.
 - breach_open:
     Director Magnus Netherton: I am on the net. You do not need to come up here for me.
 - door_scene_done and flag1_submitted:

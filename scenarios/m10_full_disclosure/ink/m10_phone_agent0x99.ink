@@ -6,7 +6,7 @@ INCLUDE m10_carryover_vars.ink
 // PASS2 lesson 36), so the jam check runs on every open.
 // Text, never voiced: start, jammed, support_hub and every topic, console.
 // Voiced calls (F20; CONTRACT §4): breach_call, inner_door_call,
-// tripwire_call, ladder_call, stair_call, gallery_open, cut_call. Each ends
+// tripwire_call, ladder_call, stair_call, gallery_open_call, cut_call. Each ends
 // #exit_conversation then -> DONE: a phone thread whose story has ended
 // restarts at start on the next open (m09 CONTRACT §455), and no call knot
 // diverts into start, support_hub or a hub topic. No narrator, no printed
@@ -63,14 +63,14 @@ VAR hax_suspect = ""
 + {officer_out == "phantom" and clue_alibi} [Bring Phantom back.] -> recall_phantom
 + {clue_door_log and whodunit_live and not wren_at_core and accused == ""} [I know who WREN is.] -> accuse
 + {clue_bench_log and whodunit_live and not signout_read} [Who signed for the case?] -> signout
-+ {clue_door_log and whodunit_live and not clue_alibi} [Who was where at ten past?] -> alibi
++ {clue_door_log and door_log_given and whodunit_live and not clue_alibi} [Who was where at ten past?] -> alibi
 + {clue_door_log and whodunit_live and not clue_alibi and not door_log_given} [The door log.] -> door_log
 + {flag1_submitted and not power_room_entered and not hax_power_asked} [The power room?] -> power_room_topic
-+ {flag1_submitted and m06_assets_seized and not gallery_shutter_cut and not hax_fence_asked} [The fence.] -> fence
++ {flag1_submitted and m06_assets_seized and not workshop_entered and not hax_fence_asked} [The fence.] -> fence
 + {briefing_played and not breach_open and not hax_why_asked} [Why does he want me?] -> why_me
 + {briefing_played and not breach_open and not hax_hour_asked} [The hour.] -> the_hour
 + {briefing_played and not breach_open and not hax_headstart_asked} [The head start.] -> the_head_start
-+ {briefing_played and not hax_how_asked} [How are you?] -> how_are_you
++ {briefing_played and not flag2_submitted and not hax_how_asked} [How are you?] -> how_are_you
 + [Where are we?] -> where_are_we
 + {hax_guide_ready()} [Field guide.] -> field_guide
 + [That's all.]
@@ -174,7 +174,7 @@ He's kept a file on you since your first day. He thinks it'll be you.
     Then prove it to him slowly. He likes to be shown.
     -> support_hub
 + [Why would he think that?]
-    Because he's read everything you've ever signed. Ask him at the end. He'll tell you.
+    Because he's read everything you've ever signed. Most of it twice.
     -> support_hub
 
 === the_hour ===
@@ -325,7 +325,7 @@ Go on. Who?
 === accuse_right ===
 ~ accused = "kowalczyk"
 ~ sleeper_caught = true
-Kowalczyk. *a breath* I'll put it to Netherton.
+Kowalczyk. I'll put it to Netherton.
 {
 - kowalczyk_ko:
     ~ wren_held = true
@@ -456,7 +456,7 @@ Agent 0x88 'Phantom': Noted. It's going on the list.
 - head_start_out == "both":
     Confirmed. Both shares went at the lock.
 - head_start_out == "zero_day":
-    Confirmed. Zero Day's went.
+    Confirmed. Zero Day's share went.
 - head_start_out == "ghost":
     Confirmed. The resale went.
 - else:

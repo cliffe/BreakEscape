@@ -51,6 +51,10 @@
         "name": "AGENT 0x2D 'ANCHOR'",
         "clauses": [
           {
+            "text": "Raid lead. On her feet by Friday, and asking questions.",
+            "condition": "globalVars.quintero_ko === true"
+          },
+          {
             "text": "Raid lead. Back on light duties in six weeks.",
             "condition": "globalVars.quintero_wounded === true"
           },

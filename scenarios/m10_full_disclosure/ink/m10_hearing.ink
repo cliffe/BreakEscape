@@ -48,7 +48,11 @@ Agent HaX: I said no. It took me till morning.
 Narrator: Someone behind the table reads out your designation.
 #set_global:closing_done:true
 #complete_task:close_the_night
-Agent HaX: They'll ask me if I'd have stopped you. I'll tell them I wasn't asked.
+{ hax_asked_database:
+    Agent HaX: They'll ask me if I'd have stopped you. I'll tell them you asked me, and I wouldn't choose.
+- else:
+    Agent HaX: They'll ask me if I'd have stopped you. I'll tell them I wasn't asked.
+}
 ~ hear_quiet = true
 #exit_conversation
 -> finished
