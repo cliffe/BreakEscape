@@ -88,7 +88,7 @@ For a player who checked, the map is better on every count: that is the reward f
 | [No deals. I said it then.] (first, as the player's m08 answer) *(default)* | The player keeps their word. Nothing he wrote is used: no tripwire. He serves his full term (credits). At the lock, Quintero: "You turned him down twice. I'd have taken the deal. I'm glad you didn't." | Helena's old plans: the tunnel post is manned (HaX names it, as above). No ENTROPY-habits line: clue 2 stays to be found. | Netherton: "Without him you have Helena's plans. They are good plans. They are old plans." |
 | [Name them. You'll get your deal.] | The refit's map, as above; his line on ENTROPY's habits, which replaces clue 2 (arc §8.3). | One entry is wrong (Tesseract lied to him too): unchecked, the tripwire. His sentence is reduced in the credits. | HaX: "He's only as right as the man who briefed him." |
 
-Sets `nightshade_deal` (`refused` / `taken`). On `m09_cage_bin = nightshade_copy`, one line from him on either option: "You read what I cleared. Then you know I kept his letters." (m09 MC §3.1; the arrested-branch help m09 once proposed is dropped.)
+Sets `nightshade_deal` (`refused` / `taken`). On `m09_cage_bin = nightshade_copy`, one line from him on either option: "You read what I cleared. Then you know I kept his notes." (m09 MC §3.1; the arrested-branch help m09 once proposed is dropped.)
 
 **Silent, or never played** (`m08_nightshade_ko_before_fate`, or `not m08_completed`). One word: "Door."
 
