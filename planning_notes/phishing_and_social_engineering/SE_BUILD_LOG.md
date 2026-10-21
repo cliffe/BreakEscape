@@ -4,7 +4,7 @@ Brief: `docs/agents/SE_BUILD_BRIEF.md`. Plan: `IMPLEMENTATION_PLAN.md`. Artefact
 
 ## Resume
 
-Status (2026-10-21): Phase 0 wave 1 started (P0-A, P0-A1 to P0-A9, P0-B, P0-P); slice art batch 1 started.
+Status (2026-10-21): baselines, spikes, P0-L, P0-N, P0-P done and committed. Running: P0-J, art batch 1, then P0-C, D, E, H, I, M. Next: P0-F after D, P0-G after F, P0-K after J, then P0-R review and P0-T.
 
 ## User instructions for this build (2026-10-21)
 
@@ -44,6 +44,7 @@ Status (2026-10-21): Phase 0 wave 1 started (P0-A, P0-A1 to P0-A9, P0-B, P0-P); 
 - **F2** (P0-B): `scripts/ink_runtime_check/social-load-all.mjs` ran 79 m01–m08 stories through 214 runs (chat, event, phone preload, bark) with fallbacks off and on. No outcome differs. 2 runs differ in error wording only (m02/m03 HaX bark probe: `player_name` is unbound on the bark path either way). Only those two compiled stories call an `EXTERNAL`, and no m01–m08 mapping reaches the ink bark path. First output: `build_log/P0-B_social-load-all_first-output.txt`. 0.1 can land. The item 8 fixtures should be the m02/m03 HaX stories, not m04.
 - **P0-A3** (Sonnet): m03 baseline, game 2809, verify-run progress (4 tasks); Ffion 11 and Victoria 9 popups, bark after the night turn, no ink errors; 76 globals identical after reload. F1 (likely harness-induced): closing Ffion's chat with the cloner open saved an EM4100 card, set no flag, threw `NPC not found: null` and left an empty person-chat overlay; by hand it worked. Comparison runs do that beat by hand.
 - **P0-B** (Opus): F1 passes in both chats with no echo; the in-`Continue()` read-modify-write hazard is folded into plan 0.2. F2 `social-load-all.mjs`: 79 stories, 214 runs, 0 outcome differences flag off vs on (two wording-only lines on the m02/m03 HaX bark probe); fixtures for back-compat 8 updated. `getInkEngine` (`npc-manager.js:2079`) is dead code.
+- **P0-A1** (Sonnet): m01 baseline, game 2812, verify-run progress. Derek: `#influence:-100` logs `Unknown game action tag: influence` today (so P0-G must keep it a no-op for non-social NPCs), hostility comes from `#hostile`. Kevin `#hostile:kevin_park`: hostile but untinted until reload, tinted `0xFF6666` after; KO about 15 s later. Briefing: check `timedMessages[0].delivered`, not the close event. All ten browser baselines are in; Phase 0 editing packets released.
 
 ## Found in shipped content (for the user; not fixed here)
 
