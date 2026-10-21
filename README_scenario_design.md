@@ -901,6 +901,8 @@ Security tools enable specific mini-games and unlock mechanics. Can be placed as
 }
 ```
 
+A flag reward `{ "type": "unlock_door", "target_room": "server_room" }` (or `"room_id"`) opens that room on the server, so it survives a reload. Name the room: a reward with neither field falls back to the station's own room, which is already open. (Before F18 the station's room overrode the named one, so these rewards opened nothing.)
+
 #### launch-device example (see `scenarios/m01_first_contact/scenario.json.erb` for full reference)
 
 ```json
@@ -1154,7 +1156,7 @@ Common event patterns:
 - `"item_picked_up:item_type"` — fires when an item is picked up
 - `"door_unlock_attempt"` — fires on any door unlock attempt (`condition: "data.connectedRoom === 'room_id'"`)
 - `"door_unlocked"` — fires when the player unlocks a locked door (any lock type) or a flag reward's `unlock_door` action opens one. `data.connectedRoom` is the room unlocked (`condition: "data.connectedRoom === 'vault'"`); for a player unlock `data.roomId` is the room the player unlocked it from, and `data.lockType` and `data.direction` are set. No `:room_id` suffix form: filter with the condition
-- `"door_unlocked_by_npc"` — fires when an NPC's ink `#unlock_door:<room_id>` opens a door. `data.roomId` is the room unlocked, `data.npcId` who did it. It does not also fire `door_unlocked`
+- `"door_unlocked_by_npc"` — fires when an NPC's ink `#unlock_door:<room_id>` or an eventMapping's `unlockDoor` opens a door. `data.roomId` is the room unlocked, `data.npcId` who did it. It does not also fire `door_unlocked`
 - `"door_unlock_failed"` / `"door_unlock_failed:room_id"` — fires when a door refuses the player: no key (`reason: "no_key"`), a fingerprint reader refusal, an RFID reader refusing a card or clone (`"wrong_card"`, `"uid_only"`), or a card reader with nothing to present (no keycard, and no cloner or one with no saved cards: `"no_card"`), a wrong password at a password door (`"wrong_password"`, or `"wrong_password_case"` when the entry was right apart from letter case). `data.lockType` says which kind of lock
 - `"password_failed"` / `"password_failed:target_id"` — fires on every wrong password at a password keypad, door or object (`target_id` is the door's room id or the object's id). `data.caseMismatch` is true when the entry matched apart from letter case (the keypad then says passwords are case-sensitive); `data.attemptsRemaining`, `data.targetType`, `data.name`
 - `"object_interacted"` — fires when object interacted with (`condition: "data.objectType === 'vm-launcher'"`)
@@ -1184,6 +1186,7 @@ Event mapping actions (can be combined):
 | `completeTask: "task_id"` or `["id1","id2"]` | Mark a task complete |
 | `unlockTask: "task_id"` | Unlock a locked task |
 | `unlockAim: "aim_id"` | Unlock a locked objective aim |
+| `unlockDoor: "room_id"` or `["id1","id2"]` | Unlock the door to that room on the server, as this NPC, so it survives a reload (like ink `#unlock_door`, but the NPC needn't have been met or list the room in `unlockable`: the mapping is the permission). Fires `door_unlocked_by_npc`. The validator errors on a room that doesn't exist |
 | `onceOnly: true` | Ensure mapping only fires once |
 | `delayMs: ms` | Run the whole mapping this long after the event instead of at once (e.g. `8000` on `room_entered:` so the player can look round before a scene opens). The checks run at the event (nothing is scheduled if the condition fails then) and again when the delay is up, so a `globalVars` term that has stopped holding cancels it. One delay per mapping is pending at a time; if a minigame or conversation is open when it is up, it waits for that to close. A pending delay is not saved, so a reload before it fires leaves the mapping to fire on the next event. Not for `lockpick_used_in_view` (the pick is stopped at once regardless). |
 
@@ -1287,6 +1290,16 @@ A call the player must finish: it opens by itself, can't be closed, and if somet
 - While the call is open, texts from other contacts still arrive (they go in that contact's thread and show as a toast); clicking the toast does nothing until the call ends. A text from the caller is held until the phone closes.
 - A line in the caller's thread prefixed with another character's display name (`Director Netherton: Put her on.`) is drawn with that name over the bubble. Only registered characters' names count, so `Note: ...` stays plain text.
 - Test scenario: `scenarios/test_finale_calls_credits/`.
+
+#### Voiced phone calls
+
+Phone texts are silent. A call can be spoken instead: add `"voiced": true` to the mapping that opens it (`conversationMode: "phone-chat"`) or to the contact's `timedConversation`, next to `disableClose` and `resume`. It is off unless set.
+
+- Each line the contact speaks plays through TTS as it appears in the thread, as in person-chat, and the next line waits until it has finished. Clicking the thread skips the line playing.
+- A line prefixed with another character's display name (`Director Netherton: Put her on.`) is spoken in that character's `voice`, with their `voice.fx`. A character with no `voice` is read in the contact's voice. Player lines (`You: …`, `#speaker:player`) and narration are not spoken.
+- With `resume`, lines already in the thread are not spoken again; only new lines after the unanswered choice are. Lines the player never heard because the call was closed mid-way (a hit) are in the thread but not replayed.
+- The contact needs a `voice`. Lines use the same cache as person-chat (text, voice, style, language, model), and `batch_generate` voices every line of the contact's phone story (its texts too, not only the call's knot) once any of its calls is `voiced`, so a contact who texts a lot adds to the cost. Voiced lines follow the standing rule: no printed variables.
+- A line with no clip on a server without a key is silent and doesn't hold up the call.
 
 #### Field guides (exposure-gated handler lab sheets)
 
@@ -1541,6 +1554,8 @@ Dynamic music based on in-game events:
 | `npc_hostile_state_changed` | Fires when any NPC becomes hostile |
 | `all_hostiles_ko` | Fires when all hostile NPCs are knocked out |
 | `global_variable_changed:var_name` | Fires when a global variable changes |
+
+For silence, switch to the `silence` playlist (`{ "trigger": "...", "playlist": "silence", "fade": true }`): one silent 10-second track (`assets/music/Silence/Silence.mp3`) that loops, so the score fades out and stays out until a later event switches to another playlist. It shows as "Silence" in the music widget.
 
 ### Closing card and credits
 

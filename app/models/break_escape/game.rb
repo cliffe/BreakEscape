@@ -1027,7 +1027,7 @@ module BreakEscape
           # NPC unlock: Validate NPC has been encountered and has permission to unlock this door
           if method == 'npc'
             npc_id = attempt  # NPC id is passed as 'attempt'
-            return validate_npc_unlock(npc_id, target_id)
+            return npc_mapping_unlocks_door?(npc_id, target_id) || validate_npc_unlock(npc_id, target_id)
           end
 
           unless unlock_method_matches_lock?(room['lockType'], method)
@@ -1241,6 +1241,19 @@ module BreakEscape
         end
       end
       nil
+    end
+
+    # F19: an NPC eventMapping with `unlockDoor: "<room_id>"` (or a list) lets that
+    # NPC open the door through the 'npc' unlock path when the mapping fires. The
+    # event fires on the client, so, as with completeTask and setGlobal mappings,
+    # there is no encounter check: the scenario naming the room is the permission.
+    def npc_mapping_unlocks_door?(npc_id, room_id)
+      npc = find_npc_in_scenario(npc_id)
+      return false unless npc
+
+      Array(npc['eventMappings']).any? do |mapping|
+        mapping.is_a?(Hash) && Array(mapping['unlockDoor']).include?(room_id)
+      end
     end
 
     # Validate NPC unlock permission

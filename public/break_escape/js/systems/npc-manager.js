@@ -332,7 +332,8 @@ export default class NPCManager {
         waitForEvent: entry.timedConversation.waitForEvent || null,
         skipIfGlobal: entry.timedConversation.skipIfGlobal || null,
         setGlobalOnStart: entry.timedConversation.setGlobalOnStart || null,
-        disableClose: entry.timedConversation.disableClose === true
+        disableClose: entry.timedConversation.disableClose === true,
+        voiced: entry.timedConversation.voiced === true
       });
       console.log(`[NPCManager] Scheduled timed conversation for ${realId} to knot: ${entry.timedConversation.targetKnot}`);
     }
@@ -668,10 +669,12 @@ export default class NPCManager {
         skipTask: mapping.skipTask,          // taskId or [taskId] — mark tasks skipped (can no longer be done)
         unlockTask: mapping.unlockTask,      // taskId or [taskId] — unlock tasks directly
         unlockAim: mapping.unlockAim,        // aimId or [aimId] — unlock aims directly
+        unlockDoor: mapping.unlockDoor,      // roomId or [roomId] — unlock doors on the server (persists)
         emitEvent:     mapping.emitEvent     || null,   // event name to emit when mapping fires
         emitEventData: mapping.emitEventData || {},     // optional payload for that event
         disableClose:  mapping.disableClose  || false,  // hide × and block Esc for this conversation
         resume:        mapping.resume === true,         // phone-chat: reopen the saved thread, no knot jump
+        voiced:        mapping.voiced === true,         // phone-chat: speak the NPC's lines through TTS (F17)
         background:    mapping.background    || null,    // optional background image path
         // NEW ACTION FIELDS [Phase 2-4]
         setVisible:         mapping.setVisible          ?? undefined,
@@ -863,6 +866,19 @@ export default class NPCManager {
           console.log(`🔓 Event unlockAim: ${aimId}`);
         }
       });
+    }
+
+    // Unlock doors through the server's NPC unlock path (F19), so the unlock is
+    // saved and survives a reload; the bridge updates door sprites and emits
+    // door_unlocked_by_npc, as an ink #unlock_door does. One request at a time.
+    if (config.unlockDoor && window.NPCGameBridge?.unlockDoor) {
+      const rooms = Array.isArray(config.unlockDoor) ? config.unlockDoor : [config.unlockDoor];
+      (async () => {
+        for (const roomId of rooms) {
+          const result = await window.NPCGameBridge.unlockDoor(roomId, npcId);
+          console.log(`🔓 Event unlockDoor: ${roomId}`, result?.success ? 'ok' : result?.error);
+        }
+      })();
     }
 
     // Emit a custom event if specified (enables event chaining from NPC mappings)
@@ -1163,7 +1179,8 @@ export default class NPCManager {
             startKnot: (config.resume && npc.storyState) ? null : knotToUse,
             title: npc.displayName || 'Phone',
             theme: npc.phoneTheme,
-            disableClose: config.disableClose || false
+            disableClose: config.disableClose || false,
+            voiced: config.voiced === true
           });
           persistOnClose();
           console.log(`[NPCManager] Event '${eventPattern}' triggered for NPC '${npcId}' → phone-chat conversation`);
@@ -1506,7 +1523,7 @@ export default class NPCManager {
   //     }
   //   }
   scheduleTimedConversation(opts) {
-    const { npcId, targetKnot, triggerTime, delay, background, waitForEvent, skipIfGlobal, setGlobalOnStart, disableClose } = opts;
+    const { npcId, targetKnot, triggerTime, delay, background, waitForEvent, skipIfGlobal, setGlobalOnStart, disableClose, voiced } = opts;
 
     if (!npcId || !targetKnot) {
       console.error('[NPCManager] scheduleTimedConversation requires npcId and targetKnot');
@@ -1526,7 +1543,8 @@ export default class NPCManager {
       triggerTime: waitForEvent ? null : actualDelay, // Only set triggerTime if not waiting for event
       skipIfGlobal: skipIfGlobal || null,     // Skip if this global is already truthy
       setGlobalOnStart: setGlobalOnStart || null, // Set this global to true when conversation fires
-      disableClose: disableClose === true // no ×, no Esc (documented; was dropped before 2026-10-21)
+      disableClose: disableClose === true, // no ×, no Esc (documented; was dropped before 2026-10-21)
+      voiced: voiced === true // phone-chat: speak the NPC's lines through TTS (F17)
     };
 
     this.timedConversations.push(conversation);
@@ -1738,7 +1756,8 @@ export default class NPCManager {
           phoneId: npc.phoneId || 'player_phone',
           title: 'Phone',
           theme: npc.phoneTheme,
-          disableClose: conversation.disableClose === true
+          disableClose: conversation.disableClose === true,
+          voiced: conversation.voiced === true
         });
       } else {
         console.log(`🎭 Starting timed person conversation for ${conversation.npcId} at knot: ${conversation.targetKnot}`);

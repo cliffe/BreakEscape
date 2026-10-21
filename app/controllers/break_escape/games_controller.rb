@@ -2149,14 +2149,14 @@ module BreakEscape
         reward_key = obj['flagRewards'].keys.find { |k| k.downcase == flag_key.downcase }
         reward = obj['flagRewards'][reward_key] if reward_key
         if reward
-          rewards << reward.merge('flag_station_id' => flag_station_id, 'room_id' => room_id)
+          rewards << reward.merge('flag_station_id' => flag_station_id, 'room_id' => reward['room_id'] || room_id)
         end
       elsif obj['flagRewards'].is_a?(Array)
         if obj['requires']
           # Flag-locked object (safe/container with lockType: 'flag' and a single requires flag).
           # All rewards apply when the lock flag matches — no index lookup needed.
           obj['flagRewards'].each do |r|
-            rewards << r.merge('flag_station_id' => flag_station_id, 'room_id' => room_id)
+            rewards << r.merge('flag_station_id' => flag_station_id, 'room_id' => r['room_id'] || room_id)
           end
         else
           # Array structure: rewards[i] corresponds to flags[i]
@@ -2164,7 +2164,7 @@ module BreakEscape
           if flag_index && obj['flagRewards'][flag_index]
             rewards << obj['flagRewards'][flag_index].merge(
               'flag_station_id' => flag_station_id,
-              'room_id' => room_id
+              'room_id' => obj['flagRewards'][flag_index]['room_id'] || room_id
             )
           end
         end
@@ -2229,7 +2229,10 @@ module BreakEscape
     end
 
     def process_door_unlock_reward(reward, flag_key)
-      room_id = reward['room_id'] || reward['target_room']
+      # The reward's own target wins; room_id falls back to the station's room only
+      # when the reward names none (find_flag_rewards). F18: the station's room used
+      # to overwrite the target, so the reward opened the wrong room.
+      room_id = reward['target_room'] || reward['room_id']
 
       return { type: 'error', message: 'No room_id specified' } unless room_id
 

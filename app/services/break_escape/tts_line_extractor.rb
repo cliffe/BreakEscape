@@ -11,7 +11,10 @@ module BreakEscape
   # Covers person-chat ink stories (lines read by InkLineWalker, speaker
   # resolved as person-chat-minigame.js does) and room objects with a fixed
   # `voice` text and a `ttsVoice`. Barks and phone conversations are not voiced
-  # by the batch.
+  # by the batch, except a phone contact with a voiced call (`voiced: true` on a
+  # phone-chat eventMapping or on its timedConversation, F17): its story is a
+  # host like a person-chat one, read as phone-call-voice.js voices it (no
+  # narration).
   class TtsLineExtractor
     Entry = Struct.new(:npc_id, :text, :voice, :source, :path, :key, keyword_init: true)
     Note = Struct.new(:source, :path, :text, :reason, keyword_init: true)
@@ -67,13 +70,24 @@ module BreakEscape
       @hosts ||= begin
         list = []
         each_room_npc do |npc|
-          next unless npc['storyPath'] && npc['npcType'] != 'phone' && npc['voice'].is_a?(Hash)
+          next unless npc['storyPath'] && npc['voice'].is_a?(Hash)
+          next if npc['npcType'] == 'phone' && !self.class.voiced_call?(npc)
           list << npc
         end
         Array(scenario_data['startRoomObjects']).each do |obj|
           list << obj if obj['voice'].is_a?(Hash) && obj['storyPath'] && obj['npcType'] != 'phone'
         end
         list
+      end
+    end
+
+    # A phone contact whose calls are voiced: a phone-chat eventMapping or its
+    # timedConversation has `voiced: true`.
+    def self.voiced_call?(npc)
+      return true if npc.dig('timedConversation', 'voiced') == true
+
+      Array(npc['eventMappings']).any? do |m|
+        m.is_a?(Hash) && m['voiced'] == true && m['conversationMode'] == 'phone-chat'
       end
     end
 
@@ -220,8 +234,11 @@ module BreakEscape
           @notes << Note.new(source: host_id, path: "#{File.basename(ink_path)}:#{u.path}", text: u.text, reason: u.reason)
         end
 
+        phone = npc['npcType'] == 'phone'
         lines.each do |line|
           npc_id, text = resolve(line, host_id)
+          # A voiced phone call shows narration muted and doesn't voice it
+          next if phone && (npc_id == 'narrator' || phone_narration?(line.tags))
           yield host_id, ink_path, line, npc_id, text if npc_id
         end
       end
@@ -288,6 +305,16 @@ module BreakEscape
         return host_id if t == 'npc'
       end
       host_id
+    end
+
+    # phone-chat-speaker.js tagsSayNarrator: the last speaker tag wins.
+    def phone_narration?(tags)
+      Array(tags).reverse_each do |tag|
+        t = tag.strip.downcase
+        return true if %w[narrator speaker:narrator].include?(t)
+        return false if %w[player npc].include?(t) || t.start_with?('speaker:')
+      end
+      false
     end
 
     def resolve_ink_path(story_path)

@@ -293,9 +293,9 @@ def check_unknown_fields(json_data)
   known_event_mapping_fields = %w[
     eventPattern condition onceOnly maxTriggers cooldown fireOnlyWhenLoaded delayMs
     bark message barkDelay
-    targetKnot conversationMode background disableClose resume
+    targetKnot conversationMode background disableClose resume voiced
     patrolOverride setPatrolSpeed setDwellMultiplier setVisible
-    sendTimedMessage setGlobal completeTask skipTask unlockTask unlockAim
+    sendTimedMessage setGlobal completeTask skipTask unlockTask unlockAim unlockDoor
     _comment
   ]
 
@@ -472,6 +472,11 @@ def check_unknown_fields(json_data)
             unless known_event_mapping_fields.include?(key)
               warnings << "⚠️ WARNING: '#{mapping_path}' has unknown field '#{key}' — this field will be ignored by the game engine."
             end
+          end
+          # unlockDoor (F19): each room it names must exist, or the server refuses the unlock
+          [mapping['unlockDoor']].flatten.compact.each do |rid|
+            next if rid.is_a?(String) && json_data['rooms'].is_a?(Hash) && json_data['rooms'].key?(rid)
+            warnings << "❌ ERROR: '#{mapping_path}/unlockDoor' names room #{rid.inspect}, which is not a room in this scenario."
           end
         end
       end

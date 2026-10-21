@@ -11,6 +11,7 @@ VAR teaser_enabled = false
 
 === forced_call ===
 ~ call_started = true
+Agent HaX: You ran this mostly solo.
 Agent HaX: Don't hang up. First question.
 Director Netherton: Put her on when she's done.
 * [I trust you.]

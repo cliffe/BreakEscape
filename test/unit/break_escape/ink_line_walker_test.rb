@@ -245,4 +245,61 @@ module BreakEscape
       assert_empty walker.unresolved
     end
   end
+
+  # A phone contact's story is voiced only when a call is marked `voiced` (F17),
+  # and then as the phone voices it: no narration, no player lines.
+  class TtsLineExtractorVoicedCallTest < ActiveSupport::TestCase
+    CALL = 'test/fixtures/files/ink_line_walker/phone_call_host.json'.freeze
+    HAX_VOICE = { 'name' => 'Aoede', 'style' => 'Calm handler.', 'language' => 'en-GB' }.freeze
+    DIRECTOR_VOICE = { 'name' => 'Charon', 'style' => 'Weary director.', 'language' => 'en-GB' }.freeze
+    NARRATOR_VOICE = { 'name' => 'Algenib', 'style' => 'Noir.', 'language' => 'en-GB' }.freeze
+
+    def scenario(mapping: {}, timed: nil)
+      hax = { 'id' => 'agent_0x99', 'displayName' => 'Agent HaX', 'npcType' => 'phone',
+              'voice' => HAX_VOICE, 'storyPath' => CALL,
+              'eventMappings' => [{ 'eventPattern' => 'game_loaded', 'conversationMode' => 'phone-chat' }.merge(mapping)] }
+      hax['timedConversation'] = timed if timed
+      {
+        'narrator' => { 'id' => 'narrator', 'voice' => NARRATOR_VOICE },
+        'rooms' => {
+          'office' => {
+            'npcs' => [
+              hax,
+              { 'id' => 'director_netherton', 'displayName' => 'Director Netherton', 'npcType' => 'phone',
+                'voice' => DIRECTOR_VOICE }
+            ]
+          }
+        }
+      }
+    end
+
+    def entries_for(data)
+      TtsLineExtractor.new('walker_test', data).entries.map { |e| [e.npc_id, e.text] }
+    end
+
+    test "a phone story with no voiced call is not voiced" do
+      assert_empty entries_for(scenario)
+      assert_empty entries_for(scenario(mapping: { 'voiced' => true, 'conversationMode' => 'person-chat' }))
+    end
+
+    test "a voiced phone-chat mapping voices the contact's and the co-speaker's lines" do
+      entries = entries_for(scenario(mapping: { 'voiced' => true }))
+      assert_equal [
+        ['agent_0x99', "Don't hang up."],
+        ['director_netherton', "Put her on when she's done."],
+        ['agent_0x99', 'Stay on the line.']
+      ], entries
+    end
+
+    test "a voiced timedConversation counts too, and the endpoint accepts the co-speaker's line" do
+      extractor = TtsLineExtractor.new('walker_test', scenario(timed: { 'targetKnot' => 'call', 'voiced' => true }))
+      assert_equal 3, extractor.entries.size
+      assert extractor.spoken_by?('director_netherton', "Put her on when she's done.")
+      refute extractor.spoken_by?('agent_0x99', 'The line crackles.')
+      refute extractor.spoken_by?('narrator', 'The line crackles.')
+      service = TtsService.new
+      entry = extractor.entries.find { |e| e.npc_id == 'director_netherton' }
+      assert_equal service.cache_key_for("Put her on when she's done.", 'Charon', 'Weary director.', 'en-GB'), entry.key
+    end
+  end
 end

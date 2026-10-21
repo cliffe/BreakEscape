@@ -80,6 +80,17 @@ export function applyActions(actions, { source = 'scenario', gameId = null } = {
                     if (window.gameState?.unlockedRooms && !window.gameState.unlockedRooms.includes(action.room_id)) {
                         window.gameState.unlockedRooms.push(action.room_id);
                     }
+                    // A flag reward has already unlocked the room on the server: open the
+                    // door sprites to it now, as NPCGameBridge.unlockDoor does, or the door
+                    // asks for its lock until the next reload (F18). Other sources are
+                    // client-only, and the server would refuse the room, so they don't.
+                    if (source === 'flag_reward') {
+                        Object.values(window.rooms || {}).forEach(room => (room?.doorSprites || []).forEach(door => {
+                            if (door?.doorProperties?.connectedRoom === action.room_id) door.doorProperties.locked = false;
+                        }));
+                        if (window.gameScenario?.rooms?.[action.room_id]) window.gameScenario.rooms[action.room_id].locked = false;
+                        if (window.rooms?.[action.room_id]) window.rooms[action.room_id].locked = false;
+                    }
                     // connectedRoom is the room unlocked, as in unlock-system.js's door_unlocked:
                     // objectives-manager and eventMapping conditions (data.connectedRoom) read it
                     window.eventDispatcher?.emit('door_unlocked', { roomId: action.room_id, connectedRoom: action.room_id, source });

@@ -17,6 +17,8 @@ import { classifyPhoneLine, displayPhoneLine, phoneStepLines } from './phone-cha
 import { choiceIndexFromKey } from './phone-chat-choices.js';
 import { whenSessionOverlayClosed } from '../../utils/session-overlay-pause.js';
 import { phoneCloseLocked, phoneEscapeAction, FORCED_CALL_END_CLOSE_MS } from './phone-call-lock.js';
+import { isVoicedCall, phoneLineVoice, PhoneCallVoice } from './phone-call-voice.js';
+import TTSManager from '../../systems/tts-manager.js';
 
 export class PhoneChatMinigame extends MinigameScene {
     /**
@@ -740,7 +742,7 @@ export class PhoneChatMinigame extends MinigameScene {
     /**
      * Type one story line into the open thread and record it. A line written as the
      * player's ("You: …", or tagged #speaker:player) goes in as a player bubble with the
-     * prefix stripped, with no "typing…" from the NPC (U3); phone texts are not voiced.
+     * prefix stripped, with no "typing…" from the NPC (U3); phone texts are not voiced, except in a voiced call (F17).
      * @param {string} raw - the line as the ink printed it
      * @param {number} typingDelayMs
      * @returns {Promise<boolean>} false if the conversation was closed meanwhile
@@ -768,7 +770,35 @@ export class PhoneChatMinigame extends MinigameScene {
         if (!stillOurs()) return false;
         // Typed into the open thread, so already read (else the badge sticks after closing)
         this.history.addMessage(line.type, line.text, { read: true });
+        // A voiced call speaks the line now and the next one waits for it (F17). Already
+        // in the history, so a close mid-line must not flush it again: always true here.
+        if (line.type === 'npc' && isVoicedCall(this.params)) await this._speakCallLine(line, raw);
         return true;
+    }
+
+    /**
+     * Voice one NPC line of a voiced call (params.voiced) and wait until it ends, the
+     * player clicks the thread, or the call is left. Lines redrawn from the history on a
+     * reopen don't come through here, so a resumed call doesn't replay them.
+     * @param {{type: string, text: string}} line - from classifyPhoneLine
+     * @param {string} raw - the line as printed (its entry in _pendingNpcMessages)
+     */
+    async _speakCallLine(line, raw) {
+        const contact = this.npcManager.getNPC(this.currentNPCId);
+        const voice = phoneLineVoice(displayPhoneLine(line.type, line.text, contact), contact, this.npcManager.npcs);
+        if (!voice) return;
+        if (!this._callVoice) {
+            this._callVoice = new PhoneCallVoice(new TTSManager());
+            this.addEventListener(this.ui.elements.messagesContainer, 'click', () => this._callVoice?.skip());
+        }
+        // The line is in the history now, so a close while it plays must not flush it
+        // again. Off the pending list while it plays; back after, for the caller's shift.
+        const pending = this._pendingNpcMessages;
+        const mine = pending && pending[0] === raw.trim() ? pending.shift() : null;
+        const run = this._typeoutRun;
+        await whenSessionOverlayClosed();
+        await this._callVoice?.speak(voice.speakerId, voice.text, this.npcManager.getNPC(voice.speakerId)?.voice?.fx || null);
+        if (mine !== null && run === this._typeoutRun && this._pendingNpcMessages === pending) pending.unshift(mine);
     }
 
     /**
@@ -1041,8 +1071,9 @@ export class PhoneChatMinigame extends MinigameScene {
      */
     closeConversation() {
         console.log('🔙 Closing conversation');
-        
+
         this._flushPendingMessages();
+        this._callVoice?.stop();   // a voiced call's line stops with the thread
         this._emitConversationClosed(this.currentNPCId);
         this.isConversationActive = false;
         this.currentNPCId = null;
@@ -1234,7 +1265,9 @@ export class PhoneChatMinigame extends MinigameScene {
         // clears currentNPCId/conversation, so this can't double-emit)
         this._flushPendingMessages();
         this._emitConversationClosed(this.currentNPCId);
-        
+        this._callVoice?.destroy();
+        this._callVoice = null;
+
         if (this.ui) {
             this.ui.cleanup();
         }
