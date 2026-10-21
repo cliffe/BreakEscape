@@ -36,14 +36,9 @@ Narrator: She stamps a box DESTROYED and slides it back toward the noise.
     Margaret Sorensen: As you like. Most people sit, in the end.
     -> recognition
 
-// HaX names the bins before any button, then Sorensen places the player.
+// Sorensen places the player (the scene's turn), then HaX names the bins
+// right before the buttons (script edit B-04; B5 runs in the same order).
 === recognition ===
-Agent HaX: Bin by the hatch is Derek Lawson's file, and it isn't Derek's handwriting on it. It's the only place anyone wrote down why he did what he did.
-{m08_nightshade_tidied:
-    Agent HaX: The other's what Nightshade cleared from his locker. His own words on what he took. One of them's ash in a minute.
-- else:
-    Agent HaX: The other's the Social Fabric letters. Last one's about a union rep in Butte they're about to bury. One of them's ash in a minute.
-}
 // B-1: one line per m01 value. On expose and surrender she gives the
 // archivist's angle (what she filed, what it costs), so the beat isn't a
 // third telling of Derek's file and the Reading's page 1 (W6-17).
@@ -57,12 +52,18 @@ Agent HaX: Bin by the hatch is Derek Lawson's file, and it isn't Derek's handwri
 - m01_final_choice == "surrender":
     Margaret Sorensen: Viral Dynamics. I still pay Mr. Lawson's lawyer, every month. It's the cheapest line in my book.
 - m01_final_choice == "arrest" or m01_completed:
-    Margaret Sorensen: Viral Dynamics. You read Mr. Lawson his rights, and he kept his promise and said nothing. He was always good about promises.
+    Margaret Sorensen: Viral Dynamics. You handed Mr. Lawson to the police, and he kept his promise and said nothing. He was always good about promises.
 - else:
     Margaret Sorensen: Your first days aren't in your file. Somebody at SAFETYNET is careful with you.
 }
 Margaret Sorensen: You're not from the lease-holder. You're the one he writes about.
 Agent HaX: ...She's got a file on you.
+Agent HaX: Bin by the hatch is Derek Lawson's file, and it isn't Derek's handwriting on it. It's the only place anyone wrote down why he did what he did.
+{m08_nightshade_tidied:
+    Agent HaX: The other's what Nightshade cleared from his locker. His own words on what he took. One of them's ash in a minute.
+- else:
+    Agent HaX: The other's the Social Fabric letters. Last one's about a union rep in Butte they're about to bury. One of them's ash in a minute.
+}
 -> back
 
 === back ===
@@ -72,9 +73,9 @@ Agent HaX: ...She's got a file on you.
 === hub ===
 {not hub_quiet:
     {bin_chosen:
-        Margaret Sorensen: {&You have your file. I have my boxes.|Still here? I'm nearly through.}
+        Margaret Sorensen: You have your file. I have my boxes.
     - else:
-        Margaret Sorensen: {&Take your time. The shredder won't.|The chair's still free.}
+        Margaret Sorensen: Take your time. The shredder won't.
     }
 }
 ~ hub_quiet = false
@@ -106,11 +107,12 @@ Agent HaX: ...She's got a file on you.
     Agent HaX: So that's what he had time to clear.
     -> back
 // Sticky, before and after the bin: her card is on a reel at her hip.
-+ [Lean on the counter while she stamps.]
++ [What's in tonight's run?]
     #clone_keycard:stacks_card
     {hatch_leaned:
-        Margaret Sorensen: {&Mind the ink. It doesn't come out of a cuff.|Still leaning? The counter's older than you are.}
+        Margaret Sorensen: Less than when you last asked. Careful of the ink, it doesn't come out of a cuff.
     - else:
+        Margaret Sorensen: Series R, to the last box.
         Margaret Sorensen: Take the print if you like. By the time it matters, the shredder will have caught up.
     }
     ~ hatch_leaned = true
@@ -120,6 +122,6 @@ Agent HaX: ...She's got a file on you.
     Margaret Sorensen: I keep records. I don't read them aloud.
     -> back
 + [I'll leave you to it.]
-    Margaret Sorensen: {&I'll be here.|Mind the step on your way.}
+    Margaret Sorensen: Watch the step on your way.
     #exit_conversation
     -> back

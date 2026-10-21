@@ -27,7 +27,7 @@ Narrator: Sorensen looks up from the feed table as the gate swings open.
 - m01_final_choice == "surrender":
     Margaret Sorensen: Viral Dynamics. I still pay Mr. Lawson's lawyer, every month. It's the cheapest line in my book.
 - m01_final_choice == "arrest" or m01_completed:
-    Margaret Sorensen: Viral Dynamics. You read Mr. Lawson his rights, and he kept his promise and said nothing. He was always good about promises.
+    Margaret Sorensen: Viral Dynamics. You handed Mr. Lawson to the police, and he kept his promise and said nothing. He was always good about promises.
 - else:
     Margaret Sorensen: Your first days aren't in your file. Somebody at SAFETYNET is careful with you.
 }

@@ -36,7 +36,7 @@ Jesse Tran: Paper. You people break into buildings at night for paper.
 
 === hub ===
 {not hub_quiet:
-    Jesse Tran: {&Still here? Bold.|You're in my light, tourist.|What. I'm working.}
+    Jesse Tran: {&Still here? Bold.|What. I'm working.}
 }
 ~ hub_quiet = false
 + {not tran_asked_reels} [What are you wiping?]
@@ -54,7 +54,7 @@ Jesse Tran: Paper. You people break into buildings at night for paper.
     Jesse Tran: Fine. It's off. I walk out that door, and I make a phone call on the way.
     -> deal
 + [Enjoy your night.]
-    Jesse Tran: {&Living the dream.|Bye, tourist.}
+    Jesse Tran: Living the dream.
     #exit_conversation
     -> back
 

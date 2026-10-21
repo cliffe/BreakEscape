@@ -26,11 +26,11 @@ VAR hub_quiet = false
 - else:
     {
     - coyote_cover == "auditor":
-        Cody Old Coyote: {&Still auditing?|You again. Find anything good?}
+        Cody Old Coyote: Still auditing?
     - coyote_cover == "contractor":
-        Cody Old Coyote: {&Still fixing the shredder?|It's still making that noise, you know.}
+        Cody Old Coyote: Still fixing the shredder?
     - else:
-        Cody Old Coyote: {&You again.|Another lap? You're worse than my sister.}
+        Cody Old Coyote: You again.
     }
 }
 + {coyote_challenges == 1} [Lease-holder's audit. Sorensen knows I'm here.]
@@ -44,16 +44,16 @@ VAR hub_quiet = false
     #exit_conversation
     -> back
 + {coyote_challenges > 1} [Same as before. Carry on.]
-    Cody Old Coyote: {&Sure.|Whatever you say.|Knock yourself out.}
+    Cody Old Coyote: Knock yourself out.
     #exit_conversation
     -> back
-+ {not old_coyote_told} [Tell him the truth.]
++ {not old_coyote_told} [I'm not an auditor. You don't want to see tonight.]
     -> truth
 
 // Shared by the challenge and the hub.
 === truth ===
 #set_global:old_coyote_told:true
-Cody Old Coyote: You're not the auditor. Auditors bring coffee. I'll be in the truck.
+Cody Old Coyote: Figured. Auditors bring coffee. I'll be in the truck.
 #exit_conversation
 -> back
 
@@ -69,7 +69,7 @@ Cody Old Coyote: You're not the auditor. Auditors bring coffee. I'll be in the t
     {coyote_challenges == 0 and coyote_cover == "":
         Cody Old Coyote: Hey. Building's closed. You lost?
     - else:
-        Cody Old Coyote: {&What's up?|You again.|Make it quick, I'm on a lap.}
+        Cody Old Coyote: {&What's up?|Make it quick, I'm on a lap.}
     }
 }
 ~ hub_quiet = false
@@ -85,9 +85,9 @@ Cody Old Coyote: You're not the auditor. Auditors bring coffee. I'll be in the t
     ~ coyote_asked_log = true
     Cody Old Coyote: Every night. It's on my desk by the dock. Read it if you want. You'd be the first.
     -> back
-+ {not old_coyote_told} [Tell him the truth.]
++ {not old_coyote_told} [I'm not an auditor. You don't want to see tonight.]
     -> truth
 + [I'll let you get on with your round.]
-    Cody Old Coyote: {&Fence isn't going anywhere.|Sure.}
+    Cody Old Coyote: Fence isn't going anywhere.
     #exit_conversation
     -> back

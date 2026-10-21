@@ -31,14 +31,14 @@ VAR hub_quiet = false
     // Warned in time: she knows what the player is. No tell choice later.
     #complete_task:meet_the_clerk
     #give_item:keycard:noor_staff_card
-    Noor Haddad: You're the one they said would come. Here, my card. The staff door's round the side.
+    Noor Haddad: You're the one they said would come. Here, my card. The staff door's around the side.
     Noor Haddad: Peg's been in the cage since before I got here. She never feeds the shredder herself, and tonight she's sent me home twice.
     Noor Haddad: I didn't send the last one. It's under the desk.
     -> back
 - m05_found_pipeline_list and m05_recruiter_deal_accepted and m05_recruiter_deal_confessed:
     // Warned late: the warning, and no card.
     #complete_task:meet_the_clerk
-    Noor Haddad: Somebody rang me in the summer and told me to watch my boss. Then nobody rang back.
+    Noor Haddad: Somebody called me in the summer and told me to watch my boss. Then nobody called back.
     Noor Haddad: Peg's been in the cage since before I got here. She never feeds the shredder herself, and tonight she's sent me home twice.
     Noor Haddad: I don't know you. I'm not losing this job for a phone call.
     -> back
@@ -72,9 +72,9 @@ VAR hub_quiet = false
 {not hub_quiet:
     {
     - noor_cover == "safetynet":
-        Noor Haddad: {&You again. Still recruiting?|What now? I've got trolleys to load.|Peg's going to notice you, you know.}
+        Noor Haddad: {&You again. Still recruiting?|What now? I've got carts to load.}
     - else:
-        Noor Haddad: {&What now? I've got trolleys to load.|Still here? Peg's going to notice.|You again. Okay.}
+        Noor Haddad: {&What now? I've got carts to load.|Still here? Peg's going to notice.}
     }
 }
 ~ hub_quiet = false
@@ -98,14 +98,14 @@ VAR hub_quiet = false
     Noor Haddad: Three years. She hired me off a temp agency in Billings.
     Noor Haddad: She knew my name before I said it. I thought that was nice.
     -> back
-+ {not (m05_found_pipeline_list and not m05_recruiter_deal_accepted) and not noor_told and not ledger_page_seen} [Tell her what the bonus was.]
++ {not (m05_found_pipeline_list and not m05_recruiter_deal_accepted) and not noor_told and not ledger_page_seen} [That bonus wasn't for filing. She was sizing you up.]
     Noor Haddad: My dad's on dialysis in Dearborn. I never told her that. How did she know that?
     -> reach
-+ {not (m05_found_pipeline_list and not m05_recruiter_deal_accepted) and not noor_told and ledger_page_seen} [Show her the page.]
++ {not (m05_found_pipeline_list and not m05_recruiter_deal_accepted) and not noor_told and ledger_page_seen} [Read this. It's her ledger. You're on it.]
     Noor Haddad: Was I going to say yes? Don't answer. I know I was.
     -> reach
 + [I'll let you get on.]
-    Noor Haddad: {&Mind the trolleys.|Sure. Peg's counting.}
+    Noor Haddad: Watch the carts.
     #exit_conversation
     -> back
 

@@ -25,7 +25,7 @@ VAR hub_quiet = false
 {cage_met or sorensen_fate != "left": -> hub}
 ~ cage_met = true
 Narrator: She feeds another sheaf into the shredder and doesn't turn round.
-Margaret Sorensen: It's paper, dear. The people are where they've always been, at their desks, doing what they were placed to do.
+Margaret Sorensen: It's only paper. The people are where they've always been, at their desks, doing what they were placed to do.
 Margaret Sorensen: Paper was the only thing that could ever have hurt them. So the paper goes.
 Margaret Sorensen: Torres cost us one hospital bill, and he got us within an afternoon of a nation's dispatch keys. I'd call that good value. So would you, if you were honest.
 -> back
@@ -40,7 +40,7 @@ Margaret Sorensen: Torres cost us one hospital bill, and he got us within an aft
     {sorensen_fate == "talked":
         Narrator: She's writing in pencil, box by box. She doesn't look up.
     - else:
-        Margaret Sorensen: {&Another box.|Mind your sleeves near the feed.|You're standing in my light.}
+        Margaret Sorensen: {&Another box.|Keep your sleeves away from the feed.|You're standing in my light.}
     }
 }
 ~ hub_quiet = false
@@ -49,8 +49,9 @@ Margaret Sorensen: Torres cost us one hospital bill, and he got us within an aft
     Margaret Sorensen: When I've finished, dear. You'll want the list to be complete.
     -> back
 // The lever (MC §4.3): her own pencilled query says the plan chest wasn't
-// on the schedule. Shown only with his file in hand.
-+ {nightshade_file_held and sorensen_fate == "left"} [He kept his own papers off your list. Only yours burn.]
+// on the schedule. Shown only with Nightshade's file in hand. "Your
+// Architect" so "he" can't be read as Nightshade (script edit B-12).
++ {nightshade_file_held and sorensen_fate == "left"} [Your Architect kept his own papers off your list. Only yours burn.]
     Narrator: She reads the label on the file in your hand, and sets the stamp down.
     #set_global:sorensen_fate:talked
     Margaret Sorensen: Then I'll keep what's left. Give me a pencil. I'll write down what I've destroyed, accurately.
@@ -64,7 +65,7 @@ Margaret Sorensen: Torres cost us one hospital bill, and he got us within an aft
     {sorensen_fate == "talked":
         Narrator: She keeps writing.
     - else:
-        Margaret Sorensen: Mind the gate. It sticks.
+        Margaret Sorensen: The gate sticks.
     }
     #exit_conversation
     -> back

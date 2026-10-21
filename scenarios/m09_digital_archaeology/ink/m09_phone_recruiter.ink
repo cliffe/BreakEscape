@@ -79,7 +79,7 @@ VAR recruiter_hung_up = false
 {
 - m05_recruiter_deal_accepted and not m05_recruiter_deal_confessed:
     #unlock_task:answer_the_offer
-    Forty-seven names, and nothing points at you. Does your handler know? I'd like to give you one more name, and I'd like you to keep this one too.
+    Forty-seven names, and nothing points at you. Does your handler know? I have one more name for you. Keep this one too.
     {recruiter_secret == "told" or recruiter_secret == "denied":
         -> spine
     }
@@ -94,8 +94,7 @@ VAR recruiter_hung_up = false
     -> spine
 - else:
     #unlock_task:answer_the_offer
-    Agent 0x00. You're standing in my filing system. I thought it polite to ring.
-    A card cloner, a safe cracker, and a handler who's listening to this. I do keep up.
+    Agent 0x00, with a card cloner, a safe cracker and a handler listening. You're standing in my filing system. I thought I'd call.
     -> spine
 }
 
@@ -113,35 +112,36 @@ VAR recruiter_hung_up = false
     ~ recruiter_hung_up = true
     -> hang_up_block
 
-// 3. The spine. B-2: the line before the grievance carries the burn order;
-// the tasking is said once, in the fixed offer line below.
+// 3. The spine. One grievance line (script edit B-13); the tasking is said
+// once, in the offer line below. Every line here is 25 words or fewer.
 = spine
-Margaret's shredding my files tonight, on your Architect's order. She was very apologetic about it.
-Eleven years of placements, written off in a night for his schedule. I'd like something back on the books.
+Margaret's shredding eleven years of my placements tonight, for his schedule. I'd like something back on the books.
 + [He's ENTROPY's planner. You work for him.]
     I work with him. Tonight he forgot the difference.
     -> offer
-+ [Why ring me?]
-    You're the one standing in it. Nobody else is close enough to buy.
++ [Go on.]
     -> offer
 
+// The double-cross cost she no longer says in full ("half my people will
+// have moved") is said before the button by HaX's yes-block line.
 = offer
-One of your four is mine. Was mine. Your Architect took my placement for Montana and didn't ask. I'll give you the name tonight. The price is the deck. All of it goes.
+One of your four is mine. Was mine, until your Architect took them for Montana. The name tonight, for the deck. All of it.
 Say no and I wipe it myself. Same deck, no name.
-I can't see which tape you pull. I can see that you pulled one. Pull anything after you've had the name, and I'll ring my placement and tell them they've been sold. You'll have bought nothing, and half my people will have moved by morning.
-// B-2: HaX on what her file holds, by m05 (needs group A's sign-off).
+I can't see which tape you pull, only that you pulled one. Take the name and pull anything, and I call my placement.
+// B-2: HaX on what her file holds, by m05 (group A to sign off). No
+// default arm: it repeated the next line (script edit B-03).
 {
 - m05_final_choice == "turn_double_agent":
     Agent HaX: Torres gave us what he knew. Her file has the names he couldn't.
 - m05_final_choice == "public_exposure":
     Agent HaX: Her file has her handlers, and every one of the forty-seven.
-- else:
-    Agent HaX: Her file has the handlers for all twenty-three placements.
 }
-Agent HaX: Her file is her network, all of it. The Alpha tapes are him teaching, recorded. He teaches what he'll do. If he built the bunker the way he taught it, it's on there.
+// The first half is the hang-up block's string, so one clip serves both.
+Agent HaX: Her file is her network, all of it. The Alpha tapes are him teaching, recorded.
+Agent HaX: He teaches what he'll do. If he built the bunker the way he taught it, it's on there.
 Agent HaX: I can beat that wipe.
 Nobody has.
-Agent HaX: Buy from her and SAFETYNET goes in an ENTROPY ledger. The Architect's orders are in that ledger already. He'll read the sale, and he'll quote it at you.
+Agent HaX: Buy from her and we go in an ENTROPY ledger, next to his orders. He'll read the sale, and he'll quote it at you.
 -> answer
 
 // 4. The answer.
@@ -150,10 +150,10 @@ Agent HaX: Buy from her and SAFETYNET goes in an ENTROPY ledger. The Architect's
     #set_global:recruiter_said_yes:true
     #set_global:recruiter_offer:taken
     #set_global:deck_pulled:none
-    Sensible.
     #set_global:sleeper_named:true
     #set_global:recruiter_gone:true
-    Halina Kowalczyk. Her mother's care home has had my cheque every month for eleven years. She gave you something at the briefing, I expect. She's generous. It's how we hired her.
+    Sensible. Halina Kowalczyk. Her mother's care home has had my check for eleven years.
+    She gave you something at the briefing, I expect. She's generous. It's how we hired her.
     {raid_team_answer == "kowalczyk":
         Agent HaX: You thanked her at the briefing. Keep doing it.
     }
@@ -171,7 +171,7 @@ Agent HaX: She's watching the deck. Pull her file and we get half her people. Sh
     #set_global:deck_pulled:none
     #set_global:deck_choice_made:true
     #complete_task:answer_the_offer
-    Agent HaX: She fired it from Peg's office. I'm on the door.
+    Agent HaX: She fired it from Sorensen's office. I'm on the door.
     Agent HaX: Her card for the tape room will be in that office.
     #exit_conversation
     -> DONE
@@ -181,13 +181,13 @@ Agent HaX: She's watching the deck. Pull her file and we get half her people. Sh
     Agent HaX: First name on it is a handler in Baltimore.
     #set_global:deck_choice_made:true
     #complete_task:answer_the_offer
-    Agent HaX: She fired it from Peg's office. I'm on the door.
+    Agent HaX: She fired it from Sorensen's office. I'm on the door.
     Agent HaX: Her card for the tape room will be in that office.
     #exit_conversation
     -> DONE
 
 = no_block
-Agent HaX: She watched the counter. Not the copy. One of them. Now.
+Agent HaX: She only watched the counter. I can pull one before it wipes. Which?
 -> tape_choice
 
 // After a hang-up: no Recruiter line. HaX's asides stand in for narration.
@@ -207,7 +207,7 @@ Agent HaX: One of them. Now.
     Agent HaX: One of four. Two, if that firm's boxes say so.
     #set_global:deck_choice_made:true
     #complete_task:answer_the_offer
-    Agent HaX: She fired it from Peg's office. I'm on the door.
+    Agent HaX: She fired it from Sorensen's office. I'm on the door.
     Agent HaX: Her card for the tape room will be in that office.
     #exit_conversation
     -> DONE
@@ -216,7 +216,7 @@ Agent HaX: One of them. Now.
     #set_global:deck_pulled:alpha_tapes
     #set_global:deck_choice_made:true
     #complete_task:answer_the_offer
-    Agent HaX: She fired it from Peg's office. I'm on the door.
+    Agent HaX: She fired it from Sorensen's office. I'm on the door.
     Agent HaX: Her card for the tape room will be in that office.
     #exit_conversation
     -> DONE
