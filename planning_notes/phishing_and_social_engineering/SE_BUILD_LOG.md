@@ -4,7 +4,7 @@ Brief: `docs/agents/SE_BUILD_BRIEF.md`. Plan: `IMPLEMENTATION_PLAN.md`. Artefact
 
 ## Resume
 
-Status (2026-10-21): Phase 0 closed (two review rounds, ten browser comparison runs, two targeted checks). Phase 1a closed (`5e2889ff`). Phase 1 closed (`391b7dd7`). Phases 2-4 wave 1 and the P2/P3 wiring committed. Phases 2-4 built and bridge scripts 3 and 4 written. Next (grok): P2-T0 (OSINT bridge), then reviews and playtests for Phases 2, 3 and 4. Waiting on the user: art batch 1 questions (art_batch1/REVIEW.md) and the R-01 speaker-tie question below.
+Status (2026-10-21): Phase 0 closed (two review rounds, ten browser comparison runs, two targeted checks). Phase 1a closed (`5e2889ff`). Phase 1 closed (`391b7dd7`). Phases 2-4 wave 1 and the P2/P3 wiring committed. Phases 2-4 built; Grok reviews found 2 blockers and 5 majors; a Grok fix round is running. Then Opus reviews Grok's Phase 2-3 work and opus48 its Phase 4 work (user, 2026-10-21). Running in parallel: P5-A, P5-B, P5-C (opus48) and the lab plan P6-A (Opus). Quota is ample for 24 hours (user): iterate for quality. Waiting on the user: art batch 1 questions (art_batch1/REVIEW.md) and the R-01 speaker-tie question below.
 
 ## User instructions for this build (2026-10-21)
 
@@ -15,7 +15,9 @@ Status (2026-10-21): Phase 0 closed (two review rounds, ten browser comparison r
 - Hacktivity changes go to main, but check with the user before making any Hacktivity change. Other
   repos may be changed now.
 - Builder (07) packets in future rounds go to `opus48`, not Haiku (2026-10-21). The plan's Phase 5 model columns still say Haiku; the opus48 agent that starts Phase 5 updates them.
-- New tasks go to the `grok` agent type while the weekly Claude quota is low (2026-10-21); agents already running finish where they are.
+- New tasks went to the `grok` agent type while the weekly Claude quota was low (2026-10-21); the credit has since reset, so new tasks go back to Claude models per AGENTS.md (the running Grok fix round finishes).
+- Grok's work is reviewed by Opus, or by opus48 where it is the attack-shaped emulation (Phase 4, builder), before it is committed (2026-10-21).
+- Ample quota for the next 24 hours: iterate and use subagents freely; the aim is a high-quality, fun and educational game (2026-10-21).
 - Questions: the question tool when no context is needed; otherwise a batched `.md` with images and
   context.
 
