@@ -134,6 +134,8 @@ VAR hax_suspect = ""
     Stair's open.
 - security_office_entered:
     The handset. Answer it.
+- tripwire_tripped and not inner_door_open:
+    The ladder at the guard post. Up and round.
 - breach_open:
     Through the tunnel.
 - door_scene_done and flag1_submitted:
