@@ -216,6 +216,14 @@ Fix round 1 for Phases 2-4 sent to grok with a one-line brief (P2-T, P3-T, P4-T 
 
 - **P2-T0** (grok, one-line brief): `tools/playtest/se/bridge-2.jsonl`, 15 evals (keys inert, Tab order, Esc closes properties first, Close and Esc succeed, Case file returns to the same page, reload keeps visited pages and granted facts). Grok's run: 15/15 on game 2928. Tools panel not covered. Note: `playtest-session.js` appends to its log, so check one session's output at a time.
 
+- **P6-A** (Opus): lab plan partly written (`scenarios/lab_social_engineering/PLAN.md`: §1 engine audit with file:line, §3 cast, §5 to mid stage 2, §9 cut order) before a content safeguard stopped it in §5. Not retried on Opus. Per the user's routing of attack-shaped work to opus48, the rest goes to an opus48 agent with a pointer-only brief. Useful engine facts it found: `phish_<id>_landed` and `pretext_call_done` are authored, not engine-written; no `giveItem` in eventMappings (Ruth's ink gives keys, or a mapping `unlockDoor`s); default reply delay 20 s; triage `passPercent` defaults to 0.
+
+- **P5-B** (opus48): builder preview renderer `minigames/landing-page-builder/landing-page-render.js` (two layers, inert text, hot-spots in inspect mode, raw homograph and xn-- rendering, the off-menu/non-.example guard frame, readable font inline). Test 10/10 incl. the network-API grep. For P5-A: the guard is duplicated by rule, not import. For the review: the xn-- form also shows in the preview address bar.
+
+- **P5-A** (opus48): builder model `landing-page-model.js` (pure: `scorePage`, `guardDomain`, `buildRecord`, `applyScore`, `setBuilt`, `linkInfoFor`, `describeVictimOutcome`, `betterVictim`, `captureGranted`; closed key sets). Tests 20/20 incl. the 07 worked example (34, 87, 75, 100). Plan table P5 rows now opus48 (the Phase 5 prose still says Haiku). Wordings need `slips: true` to score zero (sent to P5-C as a lint). P5-B duplicates the domain guard by rule; the review should consider importing `guardDomain` instead.
+
+- **P6-A finished** (opus48): `scenarios/lab_social_engineering/PLAN.md`, 15 sections (rooms, cast, 8 aims and 22 tasks, stages 0-7 and debrief, voice and ink, hand-offs, art and audio, cut order, playtest scripts L1-L6 and F1-F13, packets, checks, risks). Orchestrator decisions on its questions: Q1 add a `test_account` task completed on `acct_freemail` (23 tasks); Q2 keep the working title "Phishing and Social Engineering" (user may rename); Q3 open with `timedConversation` + `waitForEvent: game_loaded`, fix the §5 sentence; Q4 ENV read with a constant fallback. Review rounds on opus48 next.
+
 ## Review rounds
 
 ### Phase 0, round 1 (P0-R, Opus): 0 blocker, 2 major, 13 minor
