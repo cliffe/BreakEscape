@@ -123,6 +123,10 @@ Fix round 1 for Phases 2-4 (grok): every P2-T, P3-T and P4-T finding reported fi
 
 `build_log/REVIEW_grok_P2P3.md`. Phase 2 fixes correct. Phase 3: Grok's T3-1 fix relabelled Hampshire's CV ask as urgent so a tell was stored, so every Hampshire send shows a false "rushed" advisory and the replayed card flags a deadline that is not there (R-1); the replayed card contradicts itself on authentication (R-2); the authored phish `pay_today` comes from the real domain with every check passing (R-3); no bridge opens the replayed card (R-4). No m01-m08 change (validator identical on all eight before and after `84b96773`). Decisions: revert the urgency change and point the player-sent entry at Teague's spoofed send; give `pay_today` a look-alike domain and a header note as in 05's example; add bridge rows that open the replayed card; fix all minors (F3 shows the contract's default icon); check-bridge compares eval counts. Fix round 2 (opus48) takes these plus the Phase 4 R-minors.
 
+### Phase 5, review (P5-R, opus48): 0 blocker, 0 major, 3 minor
+
+`build_log/P5-R.md`. No m01-m08 impact (landing guard runs only with landing globals; R4 confirmed). 07 §1 safety verified in code: preview draws only inert elements, local image paths, no network, no typed value stored. Minors: equal-rank victim write-backs resync needlessly (F1, fix by skipping equal rank); `pendingMessage` stored unsanitised but bounded (F2); a scope note (F3). The browser bridge P5-T is the last open item.
+
 ## Questions for the user
 
 - **How to build the rest of Phase 4** (call preparation screen P4-C, call UI P4-E, its bridge and playtest). The orchestrator's brief for P4-C was stopped by a safety classifier.
