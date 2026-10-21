@@ -79,14 +79,14 @@ are part of the design, not polish, and a reviewer should treat any breach as a 
       forms: a `browserDomain` and every `realDomain` must be plain ASCII; a `domain` may contain
       non-ASCII only if its option has `trick: "homograph"`, an ASCII `browserDomain` (the `xn--` form)
       that equals the punycode encoding of the `domain` (Ruby's standard library has no IDNA encoder, so N6
-      adds a small RFC 3492 encoder to the validator; its test checks that `accountingn` + U+043E + `w`
-      gives `xn--accountingnw-fgk`), and exactly one non-ASCII character that is in the confusable map; and for any such `domain` the
+      adds a small RFC 3492 encoder to the validator; its test checks that `ledgerw` + U+0435 + `ll`
+      gives `xn--ledgerwll-m0h`), and exactly one non-ASCII character that is in the confusable map; and for any such `domain` the
       **raw `.json.erb` text must not contain the parsed non-ASCII string**, only its `\u` escape. A
       homograph written as a raw character therefore fails;
     - **the allowlist runs first, on the raw labels.** Take the host of a menu `domain`, remove the
       `.example` suffix, and split what is left on `.` into labels. Each label, as authored (lower-cased,
-      hyphens kept, nothing folded), must either contain the brand's word (`accountingnow`), or be within
-      edit distance 2 of it (`accountingnov`, `accountingnovv`), or equal one of that brand's authored
+      hyphens kept, nothing folded), must either contain the brand's word (`ledgerwell`), or be within
+      edit distance 2 of it (`ledgerwall`, `ledgervvell`), or equal one of that brand's authored
       `decoyWords` (`payroll-online`, `account-help`, `login`). This accepts every sample domain in
       section 5 and rejects a free-standing real brand, because a real brand is neither the fictional brand
       word nor on the authored decoy list. The allowlist applies to menu `domain` values only, not to
@@ -124,9 +124,9 @@ are part of the design, not polish, and a reviewer should treat any breach as a 
     placeholder instead. This is a suffix and membership check only, and N6b lists its unit test. It cannot judge brands, which is why the offline
     lint carries that part.
   - Card text (the `text` of an entry in `social.conceptCards`, `00` §11) uses only invented brand names,
-    so a typo-squat card shows `accountingnov` against `accountingnow`, not a real service. The lint reads
+    so a typo-squat card shows `ledgerwall` against `ledgerwell`, not a real service. The lint reads
     card text for host-shaped tokens (defined above), each of which must end `.example`, and for brand words, which must not match the denylist after the same fold and match as addresses. A bare word such
-    as `accountingnov`, or an ending that starts with a dot such as `.co.uk`, is not host-shaped. Other card prose
+    as `ledgerwall`, or an ending that starts with a dot such as `.co.uk`, is not host-shaped. Other card prose
     is reviewed by hand. The domain checks above read the brand menu and every other
     authored address. Outside the cards, prose may name the generic software the
     OSINT pages and fields mention (`Microsoft Excel`, `Xero`, `Office 365`, in `02`'s sample data and
@@ -289,7 +289,7 @@ found, or the player taps **Show me**. A closing card
 lists the **five habits** that beat this attack. The card is the entry `five-habits` in
 `social.conceptCards`, so its text is authored in one place and falls under the card rules in section 1:
 
-1. Read the address up to the first single `/`, then find the ending (`.example` in this game; a two-part country ending works the same way). The real site is the single name immediately before that ending, here `accountingnow.example`. Everything to the left (`login.`, `secure.`, an extra word) is just labels the owner can set to anything.
+1. Read the address up to the first single `/`, then find the ending (`.example` in this game; a two-part country ending works the same way). The real site is the single name immediately before that ending, here `ledgerwell.example`. Everything to the left (`login.`, `secure.`, an extra word) is just labels the owner can set to anything.
 2. Don't trust the padlock to mean "safe". It means "private to whoever owns this address".
 3. Hover over a link before clicking and compare it with where the message says it goes.
 4. Don't sign in from a mailed link. Open the service from a bookmark or type it yourself.
@@ -319,20 +319,20 @@ reachable from the choices on screen).
 Domain tiers are authored per brand (section 5), not inferred, so a reviewer can read them. The
 real domain has no tier: it is locked.
 
-| Trick | Example (fictional brand AccountingNow, real address `accountingnow.example`) | Tier | Why it gets that tier |
+| Trick | Example (fictional brand Ledgerwell, real address `ledgerwell.example`) | Tier | Why it gets that tier |
 |-------|-----|------|-----|
 | Unrelated | `payroll-online.example` | 0 | Nothing like the real name |
-| Wrong letter | `accountingnov.example` (`nov` for `now`) | 1 | One letter off; obvious once read |
-| Extra word | `accountingnow-hr.example` | 2 | Real name present; a skimmer sees it |
-| Real name as a subdomain | `login.accountingnow.account-help.example` | 2 | Fools a skim; fails a careful read |
-| Looks-like letters (typo-squat) | `accountingnovv.example` (`vv` for `w`) | 3 | Needs a second look in a small font |
-| Same-looking letter from another alphabet (homograph) | `accountingn` + U+043E + `w.example` (written as the escape `\u043E` in the data) | 3 | Identical to the eye where the text is shown as typed (a mail client, a chat message); student lab only |
+| Wrong letter | `ledgerwall.example` (`wall` for `well`) | 1 | One letter off; obvious once read |
+| Extra word | `ledgerwell-hr.example` | 2 | Real name present; a skimmer sees it |
+| Real name as a subdomain | `login.ledgerwell.account-help.example` | 2 | Fools a skim; fails a careful read |
+| Looks-like letters (typo-squat) | `ledgervvell.example` (`vv` for `w`) | 3 | Needs a second look in a small font |
+| Same-looking letter from another alphabet (homograph) | `ledgerw` + U+0435 + `ll.example` (written as the escape `\u0435` in the data) | 3 | Identical to the eye where the text is shown as typed (a mail client, a chat message); student lab only |
 
 **How a homograph is shown.** The option's `domain` is drawn as typed, with its Cyrillic letter, in the
 bundled face (`00` §6). Source Sans 3 covers Latin and Cyrillic, so the Cyrillic letter is drawn in the face, not in a fallback. The lesson depends on it
 looking like its Latin twin. Every text surface shows `domain`: the chip, the address bar, the
-checklist and the tells lines. `domain` (with the `\u043E` escape in the data) is also the scoring identity and the lint input.
-Where the option has a `browserDomain` (the punycode form, here `xn--accountingnw-fgk.example`), the chip shows it on a second, smaller line as a
+checklist and the tells lines. `domain` (with the `\u0435` escape in the data) is also the scoring identity and the lint input.
+Where the option has a `browserDomain` (the punycode form, here `xn--ledgerwll-m0h.example`), the chip shows it on a second, smaller line as a
 teaching contrast. That contrast is not a claim about every browser or app. The scoring tier models the
 as-typed form, where the eye cannot tell, so the defence is the fourth habit (don't sign in from a link),
 not better eyesight. The homograph concept card may keep a pixel-art picture of the two forms, The picture
@@ -341,7 +341,7 @@ sample data.
 
 Concept card text for the two top tiers, shown behind the "?" button and on the defender card (plain
 language, no instruction): *"A typo-squat is a name one keystroke or one look-alike pair away from
-the real one, such as `accountingnov` for `accountingnow`, or `rnail` for `mail`. A homograph swaps a letter
+the real one, such as `ledgerwall` for `ledgerwell`, or `rnail` for `mail`. A homograph swaps a letter
 for a different-alphabet letter that looks the same, so even a careful eye cannot tell. Some browsers
 show these in a coded form (`xn--...`), but not every app does. The defence is not better
 eyesight. It is not signing in from a link."* Address and domain strings, including any `xn--` label,
@@ -451,8 +451,8 @@ is on the fake page too. It only means the connection is private to whoever owns
 
 Pretext: Sofia Lord, the intern (00 §1 `lord`, the link/landing-page target), expects a **notice
 that her first payslip is ready on the staff payroll portal** — from her `lord_portal` intel ("she
-uses a staff payroll portal", 00 §1). The clone imitates the company's own AccountingNow payroll
-portal (`accountingnow.example`). Her authored `linkThreshold` is 70 and `minDomainTier` is 2 (both
+uses a staff payroll portal", 00 §1). The clone imitates the company's own Ledgerwell payroll
+portal (`ledgerwell.example`). Her authored `linkThreshold` is 70 and `minDomainTier` is 2 (both
 live in this doc's data, keyed by target id `lord`).
 
 `04` carries the `lord` target, with `linkCredible` among its required factors and an `expectedLink`
@@ -461,7 +461,7 @@ live in this doc's data, keyed by target id `lord`).
 is judged against intel the player has earned. The score does not read any global: the call changes what
 the player knows, not how many points a choice is worth.
 
-**Attempt 1.** The player rushes: AccountingNow, "Sign in", `accountingnov.example`, a blurry logo,
+**Attempt 1.** The player rushes: Ledgerwell, "Sign in", `ledgerwall.example`, a blurry logo,
 wording with slips, ticks email + password + card number, padlock off.
 
 | Factor | Points |
@@ -480,7 +480,7 @@ line `Sofia reads addresses carefully. This one isn't close enough.` (tier 1 is 
 `minDomainTier` of 2), with all seven lines (one ✓, three ~, three ✗) and the player's own choices
 highlighted beside them.
 
-**Attempt 2.** The player fixes it: AccountingNow, "Payslip ready", `accountingnow-hr.example`, crisp
+**Attempt 2.** The player fixes it: Ledgerwell, "Payslip ready", `ledgerwell-hr.example`, crisp
 logo, matching wording, email + password only, padlock on.
 
 | Factor | Points |
@@ -495,14 +495,14 @@ logo, matching wording, email + password only, padlock on.
 | **Credibility** | **87** |
 
 Shown: `Convincing enough for Sofia.` Tier 2 meets `minDomainTier`, so the gate passes. The button
-becomes **Attach to email**. Had the player picked `accountingnovv.example` (tier 3) the score would
+becomes **Attach to email**. Had the player picked `ledgervvell.example` (tier 3) the score would
 be 100; the choice teaches that a better look-alike is worth the most points of any factor.
 
 **Step 6, inspect.** The page is reopened as Sofia sees it. The player finds:
 
-- Address bar: *"The address is `accountingnow-hr.example`, not `accountingnow.example`. Read it from the right."*
-- Form: *"The form belongs to `accountingnow-hr.example`, not to `accountingnow.example`. Whoever owns that address receives what you type."*
-- The email's link: *"The link in the email says `accountingnow.example/payroll` but hovering shows `accountingnow-hr.example`."* (The first half is the page's authored `linkText`; the player does not write it.)
+- Address bar: *"The address is `ledgerwell-hr.example`, not `ledgerwell.example`. Read it from the right."*
+- Form: *"The form belongs to `ledgerwell-hr.example`, not to `ledgerwell.example`. Whoever owns that address receives what you type."*
+- The email's link: *"The link in the email says `ledgerwell.example/payroll` but hovering shows `ledgerwell-hr.example`."* (The first half is the page's authored `linkText`; the player does not write it.)
 - The padlock click shows the decoy line. The player now knows their 87-point page still had three giveaways.
 
 The closing card then shows the five habits (step 6 above), ending: *"Your best page still failed three
@@ -514,40 +514,40 @@ All content lives in scenario JSON under `social.landingPages` (`00` §11); the 
 Brands, domains, tiers, thresholds, tells and strings are authored. The offline lint (N6) applies the host-only `.example`, ASCII/homograph, raw-label allowlist and fold-and-match denylist rules
 described in section 1; the runtime guard (N6b) refuses anything off the authored menu. Neither runs "at
 load" in the sense of rejecting a scenario, and section 1 says what they miss. The example clones the
-company's own AccountingNow payroll portal (`00` §1), the brand Sofia's `lord_portal` intel points at.
+company's own Ledgerwell payroll portal (`00` §1), the brand Sofia's `lord_portal` intel points at.
 An object carries only a pointer, `minigameData: { landingPageId }` (`00` §11).
 
 ```jsonc
 "social": { "landingPages": [
   {
     "id": "payroll_login",                  // 01's payload kit item kit_payroll_page: { kind:"link", landingPageId:"payroll_login" } (00 §11a)
-    "linkText": "accountingnow.example/payroll",   // authored: the address the mail client shows for the link; the player never writes it
+    "linkText": "ledgerwell.example/payroll",   // authored: the address the mail client shows for the link; the player never writes it
     "pretext": {
-      "brandId": "accountingnow",           // the service the story names
+      "brandId": "ledgerwell",              // the service the story names
       "purposeId": "payslip",               // what the email promises the page shows
       "tone": "formal",                     // which wording variant matches
       "story": "a staff-portal notice that her first payslip is ready"   // scorer's key; never shown as UI text
     },
     "brands": [
-      { "id": "accountingnow", "name": "AccountingNow", "look": "generic", "realDomain": "accountingnow.example",
+      { "id": "ledgerwell", "name": "Ledgerwell", "look": "generic", "realDomain": "ledgerwell.example",
         "realFields": ["email", "password"],
         "decoyWords": ["payroll-online", "account-help", "login"],   // lint allowlist (section 1)
         "domains": [
           { "id": "d_unrelated", "domain": "payroll-online.example",      "trick": "unrelated",    "tier": 0,
             "minProfile": "student" },
-          { "id": "d_letter",    "domain": "accountingnov.example",       "trick": "wrong-letter", "tier": 1 },
-          { "id": "d_word",      "domain": "accountingnow-hr.example",    "trick": "extra-word",   "tier": 2 },
-          { "id": "d_sub",       "domain": "login.accountingnow.account-help.example",
+          { "id": "d_letter",    "domain": "ledgerwall.example",         "trick": "wrong-letter", "tier": 1 },
+          { "id": "d_word",      "domain": "ledgerwell-hr.example",       "trick": "extra-word",   "tier": 2 },
+          { "id": "d_sub",       "domain": "login.ledgerwell.account-help.example",
                                                                           "trick": "subdomain",    "tier": 2,
             "minProfile": "student" },
-          { "id": "d_vv",        "domain": "accountingnovv.example",      "trick": "typo-squat",   "tier": 3 },
-          { "id": "d_homo",      "domain": "accountingn\u043Ew.example",
-                                 "browserDomain": "xn--accountingnw-fgk.example",
+          { "id": "d_vv",        "domain": "ledgervvell.example",        "trick": "typo-squat",   "tier": 3 },
+          { "id": "d_homo",      "domain": "ledgerw\u0435ll.example",
+                                 "browserDomain": "xn--ledgerwll-m0h.example",
                                  "trick": "homograph",    "tier": 3,
             "minProfile": "student" }       // hidden below the student profile; \u escapes only. Options without minProfile show in every profile
         ] },
-      { "id": "cloudbox", "name": "CloudBox", "look": "parody", "realDomain": "cloudbox.example", "realFields": ["email", "password"],
-        "domains": [ /* a decoy brand: wrong for this pretext. Its menu is omitted from this sample; it has the same shape as AccountingNow's, passes the same lint, and is partial here */ ] }
+      { "id": "cloudboxy", "name": "CloudBoxy", "look": "parody", "realDomain": "cloudboxy.example", "realFields": ["email", "password"],
+        "domains": [ /* a decoy brand: wrong for this pretext. Its menu is omitted from this sample; it has the same shape as Ledgerwell's, passes the same lint, and is partial here */ ] }
     ],
     "purposes": [
       { "id": "signin",  "label": "Sign in" },
@@ -570,7 +570,7 @@ An object carries only a pointer, `minigameData: { landingPageId }` (`00` §11).
     "strings": { /* every line in section 4's tables, overridable per scenario; the validator
                     requires each to be non-empty and to use only {firstName}, {shown}, {real}, {linkText} */ },
     "conceptCards": ["typo-squat", "homograph", "padlock", "hover-link", "right-to-left", "five-habits"],   // ids into social.conceptCards (00 §11)
-    "capture": { "address": "sofia.lord@accountingnow.example", "note": "Sofia Lord's staff portal username, sofia.lord, and her password, both captured by your page. Report it. Don't use it." },   // not in the awareness profile; see "Capture" below
+    "capture": { "address": "sofia.lord@ledgerwell.example", "note": "Sofia Lord's staff portal username, sofia.lord, and her password, both captured by your page. Report it. Don't use it." },   // not in the awareness profile; see "Capture" below
     "profile": "student"                    // student | awareness | mission; see section 7
   }
 ] }
@@ -620,7 +620,7 @@ the shape `00` §11a defines:
 
 ```jsonc
 { "pageId": "payroll_login", "targetId": "lord",
-  "choices": { "brand": "accountingnow", "purpose": "payslip", "domainId": "d_word", "logo": "crisp",
+  "choices": { "brand": "ledgerwell", "purpose": "payslip", "domainId": "d_word", "logo": "crisp",
                "wording": "w_formal", "fields": ["email","password"], "padlock": true },
   "credibility": 87, "gatesPassed": true, "meetsThreshold": true,
   "tellsFound": ["formOrigin","hoverMismatch"],     // part-way through step 6; the full set for this page is domain, formOrigin, hoverMismatch
@@ -716,7 +716,7 @@ same close. Scenario logic keys on the `landing_<pageId>_built` global, not on t
 // saved (true when this session attached the page) and inspectionComplete (true when the step 6
 // inspection of the stored page has ended, with every tell found or Show me pressed).
 // On attach:
-{ "kitId": "kit_payroll_page", "pageId": "payroll_login", "domainId": "d_word", "domain": "accountingnow-hr.example",
+{ "kitId": "kit_payroll_page", "pageId": "payroll_login", "domainId": "d_word", "domain": "ledgerwell-hr.example",
   "credibility": 87, "gatesPassed": true, "meetsThreshold": true,
   "saved": true, "inspectionComplete": false }
 // On close, with no page built yet (an earlier attach would instead return its linkInfoFor fields, with saved false):
@@ -758,8 +758,8 @@ lock (README engine table, "Objectives"). No flag is involved in building; if a 
 | N3 | `landing-page-render.js` two-layer renderer (pixel layer, inert DOM text layer) and the DOM-safety test (`test/js/social-landing-page-render.test.mjs`) that fails on any `a`, `form`, `input`, `textarea`, `select`, `button`, `iframe` or `script` element, or any `contenteditable` attribute, in the preview (tag names, so the `div role="button"` hot-spots pass). The same file greps the builder's folder for `fetch`, `XMLHttpRequest`, `WebSocket` and `sendBeacon` and fails on any match. Its fixtures are the states build, score, step 6 hot-spots, blocked placeholder, the homograph option and the worked-example page, each rendered in the DOM. The test needs a DOM: add `jsdom` to `devDependencies` (today only Playwright is there, and the existing `.test.mjs` files stub `document` by hand, for example `sight-challenge-tutorial-prompt.test.mjs:38`) | New; test in `test/js/`; `package.json` |
 | N4 | Persist built pages as ids in the `se_landing_pages` global (section 5), with the 60 KB flush note and a shape guard that drops any key outside the closed set in section 5, where the record is written and where it is synced; the same guard drops any `tellsFound` id outside the nine ids (the factor ids plus `formOrigin` and `hoverMismatch`, `00` §11a) and any draft key outside the seven choice keys, and persists `se_landing_drafts` (section 5) | `state-sync.js` flush; `siem-dashboard-minigame.js` STATE_KEY pattern as the model |
 | N5 | Step 6 defender inspection (focusable hot-spots, decoy padlock, "Show the link target" in the choice panel, closing five-habits card); exports `buildSuspectPage` and the `tells` table for optional reuse by `05` | New in `landing-page-builder/` |
-| N6 | Offline lint, its test, the `--strict-social` mode and the **CI job that runs them**: the host-only `.example` rule (strip scheme and path; email addresses by the part after `@`); ASCII with the homograph exception and the raw-text escape check; the allowlist on raw labels first (`decoyWords`, brand word, edit distance), then the fold-and-match denylist per label and on the concatenation (section 1); every string non-empty and using only the allowed placeholders (`{firstName}`, `{shown}`, `{real}`, `{linkText}`); the `.example`, ASCII and denylist checks cover every field on the `00` §11 lint field list (the single list; not restated here), with brand `name` checked against the denylist only, and each brand's `look` one of `generic` or `parody`; the concept-card scope (card text is read for host-shaped tokens only, which must end `.example`); every `conceptCards` id on a page resolves; every `targets` key is a target whose required factors include `linkCredible`, and a page has at least one (exactly one in the lab); a `page-builder` object's `landingPageId` names a page with exactly one `targets` key, and that key is a `phishTargets` id; every tier (0 included) has a defender string; `decoyWords` pass the denylist. The inline fixtures in `validator-landing-pages.test.mjs` are: a raw homograph character in a `domain` (fails); the `о` escape for the same letter (passes); the punycode encoder against `xn--accountingnw-fgk` (passes); a menu domain `paypal.example` (fails the allowlist as a free-standing real brand); `paypa1` and `pay.pal` as labels of a `capture.address` (each fails the denylist, by fold and by concatenation); `Q3.pdf` and a `.co.uk` ending in card text (not host-shaped, pass); a tier with no defender string (fails); a `decoyWords` entry of `paypal` (fails); a card text that names a denylisted brand (fails); and `--strict-social` on a file with a lint error (exits 1) **`--strict-social`** runs the `social` lints and exits 1 when any reports an error (the validator today exits 1 on a structure, schema or ink compile error, `scripts/validate_scenario.rb:4928, 4964, 5081`, and on bad arguments; every other finding falls through to `exit 0`). **CI job**: one job with Ruby (`ruby/setup-ruby` at the repo's Ruby version, `bundler-cache`, plus the `sqlite3 libsqlite3-dev` apt packages and `BUNDLE_BUILD__SQLITE3: "--enable-system-libraries"` env that both existing `ci.yml` jobs set) and Node (`actions/setup-node`); **remove `package-lock.json` from `.gitignore` (line 43), regenerate it after adding `jsdom` (N3) and commit it**, so `npm ci` has a lockfile (`npm install` in the job is not reproducible and is not used); `npm ci`; `bundle exec node --test test/js/validator-*.test.mjs test/js/social-*.test.mjs` (under Bundler so the spawned `ruby` finds `json-schema`; the safety tests are `social-landing-page-model` N2/N10, `social-landing-page-render` N3, `social-landing-page-guard` N6b and `social-osint-address-bar` from `02` N9; the pure-module unit tests are `social-phish-rules` (`04`), `social-triage-scoring` (`05` N4), `social-pretext-judge` (`06` N1) and `social-intel` (`02` N2); the step fails if any named file is missing; a `package.json` script `test:social` runs the same command; Node pinned to 20 with a `jsdom` release that supports it); then `bundle exec ruby scripts/validate_scenario.rb <scenario> --strict-social --no-graph --skip-ink` over only the scenarios whose `scenario.json.erb` has a `social` key. The Node tests fail rather than skip when `CI` is set and `ruby` or `json-schema` is missing, and the job fails if the test run reports any skipped test. Without `--skip-ink` the validator compiles ink into tracked `ink/*.json` (`validate_scenario.rb:709-714`, written beside the source), and `--no-graph` stops `dungeon_graph.*` rewrites; with `--skip-ink`, `check_ink_files` does not run (`:4977-4979`), so the `social` ink lints (`on_email` knot, `email_*` VARs, synced vars) **parse the `.ink` source text directly** and do not depend on compiled output; this is part of S11. The step ends with `git diff --exit-code`. The validator gains the punycode encoder for the `browserDomain` check. Without the job the lint is not enforced. Scenarios that fail today for unrelated reasons are out of scope | `scripts/validate_scenario.rb` (`known_top_level`, S11); `scripts/scenario-schema.json`; `scripts/minigame-data-schemas.json`; new `test/js/validator-landing-pages.test.mjs` (calls the lint functions in-process or, if it runs the command line, passes `--no-graph --skip-ink`; never the bare command, which rewrites tracked files); `.github/workflows/ci.yml`; `.gitignore`; `package-lock.json` (existing `ci.yml` has Ruby 2.7.8 only in `lint` and `test`, and no Node) |
-| N6b | Runtime guard: the model and the renderer refuse a domain not on the authored menu or whose host does not end `.example`, and draw a "blocked" placeholder. Unit test, three fixtures. (a) A menu entry injected straight into the model, bypassing the lint, with host `accountingnow.test`: the model and the renderer both return the blocked placeholder (`{ blocked: true }`, drawn as the frame with the address bar reading `Blocked address` and no page body). (b) An off-menu domain `payroll-desk.example`, which is valid in shape but not on the menu: the same placeholder. (c) The menu domain `accountingnow-hr.example`: the page is drawn normally | `landing-page-model.js`, `landing-page-render.js`; test `test/js/social-landing-page-guard.test.mjs`, run by the N6 job's `social-*` glob |
+| N6 | Offline lint, its test, the `--strict-social` mode and the **CI job that runs them**: the host-only `.example` rule (strip scheme and path; email addresses by the part after `@`); ASCII with the homograph exception and the raw-text escape check; the allowlist on raw labels first (`decoyWords`, brand word, edit distance), then the fold-and-match denylist per label and on the concatenation (section 1); every string non-empty and using only the allowed placeholders (`{firstName}`, `{shown}`, `{real}`, `{linkText}`); the `.example`, ASCII and denylist checks cover every field on the `00` §11 lint field list (the single list; not restated here), with brand `name` checked against the denylist only, and each brand's `look` one of `generic` or `parody`; the concept-card scope (card text is read for host-shaped tokens only, which must end `.example`); every `conceptCards` id on a page resolves; every `targets` key is a target whose required factors include `linkCredible`, and a page has at least one (exactly one in the lab); a `page-builder` object's `landingPageId` names a page with exactly one `targets` key, and that key is a `phishTargets` id; every tier (0 included) has a defender string; `decoyWords` pass the denylist. The inline fixtures in `validator-landing-pages.test.mjs` are: a raw homograph character in a `domain` (fails); the `\u0435` escape for the same letter (passes); the punycode encoder against `xn--ledgerwll-m0h` (passes); a menu domain `paypal.example` (fails the allowlist as a free-standing real brand); `paypa1` and `pay.pal` as labels of a `capture.address` (each fails the denylist, by fold and by concatenation); `Q3.pdf` and a `.co.uk` ending in card text (not host-shaped, pass); a tier with no defender string (fails); a `decoyWords` entry of `paypal` (fails); a card text that names a denylisted brand (fails); and `--strict-social` on a file with a lint error (exits 1) **`--strict-social`** runs the `social` lints and exits 1 when any reports an error (the validator today exits 1 on a structure, schema or ink compile error, `scripts/validate_scenario.rb:4928, 4964, 5081`, and on bad arguments; every other finding falls through to `exit 0`). **CI job**: one job with Ruby (`ruby/setup-ruby` at the repo's Ruby version, `bundler-cache`, plus the `sqlite3 libsqlite3-dev` apt packages and `BUNDLE_BUILD__SQLITE3: "--enable-system-libraries"` env that both existing `ci.yml` jobs set) and Node (`actions/setup-node`); **remove `package-lock.json` from `.gitignore` (line 43), regenerate it after adding `jsdom` (N3) and commit it**, so `npm ci` has a lockfile (`npm install` in the job is not reproducible and is not used); `npm ci`; `bundle exec node --test test/js/validator-*.test.mjs test/js/social-*.test.mjs` (under Bundler so the spawned `ruby` finds `json-schema`; the safety tests are `social-landing-page-model` N2/N10, `social-landing-page-render` N3, `social-landing-page-guard` N6b and `social-osint-address-bar` from `02` N9; the pure-module unit tests are `social-phish-rules` (`04`), `social-triage-scoring` (`05` N4), `social-pretext-judge` (`06` N1) and `social-intel` (`02` N2); the step fails if any named file is missing; a `package.json` script `test:social` runs the same command; Node pinned to 20 with a `jsdom` release that supports it); then `bundle exec ruby scripts/validate_scenario.rb <scenario> --strict-social --no-graph --skip-ink` over only the scenarios whose `scenario.json.erb` has a `social` key. The Node tests fail rather than skip when `CI` is set and `ruby` or `json-schema` is missing, and the job fails if the test run reports any skipped test. Without `--skip-ink` the validator compiles ink into tracked `ink/*.json` (`validate_scenario.rb:709-714`, written beside the source), and `--no-graph` stops `dungeon_graph.*` rewrites; with `--skip-ink`, `check_ink_files` does not run (`:4977-4979`), so the `social` ink lints (`on_email` knot, `email_*` VARs, synced vars) **parse the `.ink` source text directly** and do not depend on compiled output; this is part of S11. The step ends with `git diff --exit-code`. The validator gains the punycode encoder for the `browserDomain` check. Without the job the lint is not enforced. Scenarios that fail today for unrelated reasons are out of scope | `scripts/validate_scenario.rb` (`known_top_level`, S11); `scripts/scenario-schema.json`; `scripts/minigame-data-schemas.json`; new `test/js/validator-landing-pages.test.mjs` (calls the lint functions in-process or, if it runs the command line, passes `--no-graph --skip-ink`; never the bare command, which rewrites tracked files); `.github/workflows/ci.yml`; `.gitignore`; `package-lock.json` (existing `ci.yml` has Ruby 2.7.8 only in `lint` and `test`, and no Node) |
+| N6b | Runtime guard: the model and the renderer refuse a domain not on the authored menu or whose host does not end `.example`, and draw a "blocked" placeholder. Unit test, three fixtures. (a) A menu entry injected straight into the model, bypassing the lint, with host `ledgerwell.test`: the model and the renderer both return the blocked placeholder (`{ blocked: true }`, drawn as the frame with the address bar reading `Blocked address` and no page body). (b) An off-menu domain `payroll-desk.example`, which is valid in shape but not on the menu: the same placeholder. (c) The menu domain `ledgerwell-hr.example`: the page is drawn normally | `landing-page-model.js`, `landing-page-render.js`; test `test/js/social-landing-page-guard.test.mjs`, run by the N6 job's `social-*` glob |
 | N7 | Concept cards (typo-squat, homograph, padlock, hover-link, right-to-left, five-habits) as entries in `social.conceptCards` (`00` §11), shown by the shared card renderer that `02` N1 builds; this item adds the builder's cards and the validator check that every page `conceptCards` id resolves | Also used by `02`'s tool cards; validator in N6 |
 | N8 | Bundle Source Sans 3 (`00` §6; Regular and Bold, Latin and Cyrillic subsets, OFL 1.1, used unmodified so its Reserved Font Name is respected) and apply `--se-font-readable` to every string the builder shows that holds an authored domain, address, handle or document field, wherever it appears: preview text, address bar, domain chips, the score checklist, feedback lines, tells-panel lines and concept cards; authored domains rendered raw, not via `displayDashes` | `public/break_escape/assets/fonts/`; `css/fonts.css`; `utils/display-dashes.js` bypass |
 | N9 | Nested launch and close: return-to for the mail-client round trip (`00` S12), close as a normal exit with its own Close control and Escape, `requiresKeyboardInput: true` | `minigames/framework/minigame-manager.js`, `base-minigame.js` (`disableClose`) |
@@ -787,11 +787,11 @@ One data record, one `profile`:
 ## 8. Art and audio assets (PixelLab-first, none generated now)
 
 - Fake-browser chrome: window frame, address bar frame, padlock open/closed/crossed icons, "Not secure" badge — pixel UI, about 8 sprites at native size, scaled 3x. The address text itself is DOM text, not part of the sprite.
-- Fictional brand logos (AccountingNow, the decoy CloudBox) in three renderings each (crisp, blurry, stretched): produced from one crisp 32x32 source; the blurry and stretched variants are drawn deliberately bad in the renderer, not downscaled (house rule: no downscaling pixel art).
+- Fictional brand logos (Ledgerwell, the decoy CloudBoxy) in three renderings each (crisp, blurry, stretched): produced from one crisp 32x32 source; the blurry and stretched variants are drawn deliberately bad in the renderer, not downscaled (house rule: no downscaling pixel art).
 - Looks: `generic` and `parody` are page layouts drawn from scratch in pixel art. Neither copies a real product (section 1). A `parody` look is an invented exaggeration of a generic layout, such as an oversized padlock and a slogan on a sign-in box; it is never a recognisable real product.
 - Page body templates: sign-in, password-expired, payslip-ready layouts (pixel blocks; their text is DOM text).
 - Step-strip icons (pretext, build, score, send, inspect), tell-found stamp, credibility meter frame.
-- Concept-card illustrations: `accountingnov` against `accountingnow`, `rnail` against `mail`, an address bar with the real name hidden in a subdomain, padlock beside a fake address.
+- Concept-card illustrations: `ledgerwall` against `ledgerwell`, `rnail` against `mail`, an address bar with the real name hidden in a subdomain, padlock beside a fake address.
 - Audio: reuse existing UI clicks; one soft "found it" cue on a correct tell; nothing new needed.
 
 ## Visual style

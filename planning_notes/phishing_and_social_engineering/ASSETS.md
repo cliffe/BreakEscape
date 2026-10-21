@@ -6,10 +6,7 @@ portraits and POV room concepts, and its use is confirmed with the user before a
 their target size, never resized down (standing rule).
 
 Compiled 2026-10-21 from `README.md` and `designs/00` to `06`, `10` and `11`, plus the settled structure in
-`../eldritch_hacker/DIRECTION.md`. `designs/07` was deliberately not opened: the page builder appears here only
-as far as the README and `10` describe it (object `page-builder`, Operations Room, `landingPageId:
-payroll_login`, invented brands, `generic` or `parody` looks). Rows marked "per 07" need a second pass once
-that doc is read.
+`../eldritch_hacker/DIRECTION.md`. The builder rows (UI22, LOGO1, LOGO4 to LOGO6, OBJ8) were filled in from `designs/07`.
 
 ## How to read this
 
@@ -46,7 +43,7 @@ the validator still wants one `assets/objects/<type>.png` per type.
 | OBJ5 | Case-file instance, `plan` mode (planning whiteboard): override `whiteboard1` or `whiteboard2` | 10 stage 1 | Reuse | existing | Lab |
 | OBJ6 | Case-file instance, `defender` mode (SOC board): override `siem_dashboard` or `hq_alert_screen1` | 10 stage 7 | Reuse | existing | Lab |
 | OBJ7 | `osint-workstation.png` (Recon Room). Must read differently from OBJ1 | 02; 10 §5 | Adapt | PixelLab object | Lab |
-| OBJ8 | `page-builder.png` (Operations Room workstation) | README; 10 §5 | Adapt | PixelLab object | Lab |
+| OBJ8 | `assets/objects/page-builder.png`, the Operations Room workstation that opens the landing-page builder | 07 §6; README; 10 §5 | Adapt | PixelLab object | Lab |
 | OBJ9 | `report-workstation.png` (Engagement Office) | 10 N1, §8 | Adapt | PixelLab object | Lab |
 | OBJ10 | `triage-workstation.png` (Blue Team Room) | 05 Assets; 10 §8 | Adapt | PixelLab object | Lab |
 | OBJ11 | Desk phone for the Dev call (engine type `phone`, no new sprite). Pick from `phone1` to `phone5` by eye | 10 §5; 06 | Reuse | existing | Lab |
@@ -155,7 +152,7 @@ scaled with `image-rendering: pixelated`. Anything the player reads or compares 
 | UI19 | SPF / DKIM / DMARC header-panel frame and three status lamps, 16x16, each with a non-colour mark (tick, cross, dash) | 05 Assets | New | PixelLab | Lab |
 | UI20 | Triage result badge, 64x64, three states (sharp, getting there, practising) | 05 Assets | New | PixelLab | Lab |
 | UI21 | Engagement report panel: results table, finding cards, tick and cross. CSS plus UI4 marks | 10 §8 | Reuse | CSS | Lab |
-| UI22 | Landing-page builder chrome and the layered pixel parts of the page model. Owned by 07 and not reviewed here | README; 10 stage 4 | New | PixelLab | Lab |
+| UI22 | Landing-page builder chrome, at native size: fake-browser window frame, address-bar frame, padlock open, closed and crossed, and a "Not secure" badge (about 8 sprites, scaled 3x in the renderer); five step-strip icons (Pretext, Build, Score, Send, Inspect); a tell-found stamp; a credibility meter frame. Address bar, page text and field labels are DOM text, not sprites. Page body layouts are LOGO4 and LOGO6 | 07 §3, §8; README; 10 stage 4 | New | PixelLab | Lab |
 | UI23 | Padlock icon for the builder and the concept card. `icons/padlock_32.png` exists | 10 stage 4 | Reuse | existing | Lab |
 | UI24 | Concept-card images (`social.conceptCards[].image?`, optional), ten cards: four tools, six page cards | 10 §5 | New | PixelLab | Later |
 
@@ -170,18 +167,17 @@ scale. Each headshot is checked after any art change, because headshots cut from
 
 Every brand name, domain and address is invented and ends `.example`. A `generic` look is a neutral sign-in
 layout. A `parody` look is an exaggerated layout that is plainly the game's own. No look copies a real
-product's name, layout, colours or logo, and no real logo is drawn (README S). The set of logo variants per
-brand (00 §11a shows a `logo` choice such as `crisp`) belongs to 07 and is not specified here. Real names
+product's name, layout, colours or logo, and no real logo is drawn (README S). Each brand has one crisp logo; the blurry and stretched variants are drawn by the renderer (LOGO1, `07` §8). Real names
 such as Hunter, theHarvester and Recon-ng appear in text as concept-card labels only, never as logos.
 
 | ID | Asset | Used in | Status | Generator | Tier |
 |----|-------|---------|--------|-----------|------|
-| LOGO1 | Ledgerwell logo, with the builder's logo variants (per 07). Used on the company site, the payroll-page model, the portal sender chip and the favicon | 00 §1; 10 stage 4 | New | PixelLab | Lab |
+| LOGO1 | Ledgerwell logo: one crisp 32x32 source. The blurry and stretched builder variants are drawn in the renderer from that source, not made as separate art. Used on the company site, the payroll-page model, the portal sender chip and the favicon | 07 §8; 00 §1; 10 stage 4 | New | PixelLab | Lab |
 | LOGO2 | Tarnside Assurance logo (RoE sheet, report, Ruth's signature block) | 10 §3 | New | PixelLab | Lab |
 | LOGO3 | friendface, the invented social network: logo, favicon and a plainly parody layout | 02 (site `friendface.example`) | New | PixelLab | Lab |
-| LOGO4 | Generic sign-in look (neutral layout art for the builder) | README S; 07 | New | PixelLab | Lab |
-| LOGO5 | CloudBoxy, a second invented builder brand named in the README open questions. Not on the lab's one page, so confirm it is wanted | README open questions | New | PixelLab | Later |
-| LOGO6 | Parody look art for the builder | README S; 11 E5 | New | PixelLab | Later |
+| LOGO4 | Generic look (07 §8): neutral page layouts for the three page purposes (sign-in, password expired, payslip ready), pixel blocks with DOM text. Ledgerwell's look | 07 §5, §8 | New | PixelLab | Lab |
+| LOGO5 | CloudBoxy logo: the decoy brand in the student lab's brand choice. One crisp 32x32 source; blurry and stretched variants drawn in the renderer, as LOGO1 | 07 §3 step 2, §5, §8 | New | PixelLab | Lab |
+| LOGO6 | Parody look (07 §8): CloudBoxy's page layouts, an invented exaggeration of a generic layout (an oversized padlock, a slogan on the sign-in box). Plainly the game's own, never a real product's layout | 07 §5, §8 | New | PixelLab | Lab |
 | LOGO7 | Awareness neutral-skin set: logo placeholder, generic badge, step strip | 11 §8 | New | PixelLab | Later |
 | LOGO8 | Invented SSO brand and look for episode E5 | 11 E5 | New | PixelLab | Later |
 | LOGO9 | Awareness icons: padlock with a "myth" overlay (adapt `padlock_32.png`), QR poster, SMS bubble, authenticator push card | 11 §8 | Adapt | PixelLab | Later |
@@ -272,7 +268,6 @@ Settled (README decision Z): Ledgerwell and CloudBoxy are the names; Ruth's hint
 characters, Fairbairn included, are voiced, with TTS deferred to a late stage; no lab theme song (MUS4 dropped).
 
 1. Gemini TTS and Gemini concept portraits are metered; confirm scope before either runs.
-2. A second pass on `designs/07` is needed to firm up UI22, the logo variants, LOGO4 to LOGO6 and the builder's sprite list.
 
 ## 9. Counts
 
@@ -282,8 +277,8 @@ Counted from the tables above. *Adapt* is reported separately because the new fi
 | Tier | New | Adapt | Reuse | Total |
 |------|-----|-------|-------|-------|
 | First slice | 9 | 4 | 8 | 21 |
-| Rest of the lab | 34 | 6 | 18 | 58 |
-| Later | 18 | 1 | 1 | 20 |
+| Rest of the lab | 36 | 6 | 18 | 60 |
+| Later | 16 | 1 | 1 | 18 |
 | **All** | **61** | **11** | **27** | **99** |
 
 The Lab "Reuse" figure includes two rows marked "Reuse or New" (SFX7, SFX8), counted as reuse because the
