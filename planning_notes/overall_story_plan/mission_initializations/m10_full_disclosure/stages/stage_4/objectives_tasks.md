@@ -2,7 +2,7 @@
 
 ## 0. Status, sources and conventions
 
-Stage 4, draft 2, 2026-10-21: round 1's two reviews (`../stage_5/REVIEW_R1_PUZZLES.md`, "F-nn"; `../stage_5/REVIEW_R1_DESIGN.md`, "R1D-…") folded in, with the orchestrator's rulings and user decisions F17–F19 and F10 (§12). Author: stages 4+5 author (Opus). Companion: `../stage_5/room_layout.md` ("RL §n"), which owns rooms, ids, positions and the engine verdicts this file relies on.
+Stage 4, draft 3, 2026-10-21: round 1's two reviews (`../stage_5/REVIEW_R1_PUZZLES.md`, "F-nn"; `../stage_5/REVIEW_R1_DESIGN.md`, "R1D-…") folded in (§12), then round 2 (`../stage_5/REVIEW_R2.md`, "R2-…"; §14), with the orchestrator's rulings and user decisions F17–F19 and F10, whose engine work is committed (57d3d237). Author: stages 4+5 author (Opus). Companion: `../stage_5/room_layout.md` ("RL §n"), which owns rooms, ids, positions and the engine verdicts this file relies on.
 
 Built on `../stage_0_initialization.md` ("s0"), `../stage_1/story_arc.md` ("arc", including §20), `../stage_2/storytelling_elements.md` ("SE"), `../stage_3/moral_choices.md` ("MC", the authority for every choice, cost and global), and `../../finale/FINALE_ARC.md` ("FA", §1–9, §13, §17). The prompt is `story_design/story_dev_prompts/04_player_objectives.md`; where it differs from the newer standards, these win: `mission-alignment-plan` (staged, spoiler-safe aims; HaX's progress-gated hub), `scenario-design-review` §2g (no dead zones; action titles; a pointer for every task), `mission-puzzle-chains` (convergence only through `unlockCondition` and `concludeRequires`), `README_scenario_design.md` "Authoring Rules", `tools/pass2/PASS2_LESSONS.md`. The model is m08's objectives block (`scenarios/m08_the_mole/scenario.json.erb:328-556`), whose shape this file copies: `aimId` / `title` / `description` / `status` / `order` / `unlockCondition`, tasks with `taskId` / `title` / `type`.
 
@@ -10,7 +10,7 @@ No VM material was opened. Flags are named by story meaning: flag 1 the foothold
 
 Engine facts this file depends on (checked in code; RL §6 has the evidence):
 
-- **Story doors open by an eventMapping unlock (user decision F19, being built).** Today no mapping action unlocks a door (`systems/npc-manager.js:648-683`); F19 adds one that goes through the server's persisted unlock. This file calls the key `unlockDoor: "<room>"`; the final name is in `docs/agents/FINALE_ENGINE_UNLOCKS_SILENCE.md` when written. Each door's done-flag is set **from the unlock event** (`door_unlocked` with `data.connectedRoom`), never in the same mapping or knot, so a failed unlock leaves nothing claiming the door is open (F-05). Ink `#unlock_door` with `unlockable` (`game.rb:1247-1270`) stays only where a person naturally opens a door: a technician at the power-room door, Victoria or Vos at the outer lock. The flag-reward `unlock_door` is not used: it unlocks the station's own room (F-03; the fix is F18).
+- **Story doors open by an eventMapping `unlockDoor` (F19, committed; `docs/agents/FINALE_ENGINE_UNLOCKS_SILENCE.md`).** `"unlockDoor": "<room>"` on an NPC's eventMapping unlocks through the server's persisted `npc` path with no encounter or `unlockable` check (`systems/npc-manager.js:671, 869-881`; `game.rb:1246-1258`), and emits **`door_unlocked_by_npc` with `{ roomId, npcId }`** (`systems/npc-game-bridge.js:131-139`), not `door_unlocked`. Each door's done-flag is set **from that event** (`data.roomId === '<room>' && data.npcId === 'agent_0x99'`; R2-M1), never in the same mapping or knot, so a failed unlock leaves nothing claiming the door is open (F-05). Ink `#unlock_door` with `unlockable` (`game.rb:1247-1270`) stays only where a person naturally opens a door: a technician at the power-room door, Victoria or Vos at the outer lock. The flag-reward `unlock_door` (fixed by F18) isn't needed and isn't used.
 - **Mappings live on NPCs and register when the NPC's room loads, and a mapping's `setVisible` and conversation keys act only on its own NPC** (F-02). Global mappings (clock, shares, doors, aims) sit on HaX (`agent_0x99`, listed in the start room); every show, hide or scene-opening mapping sits on the NPC it moves, with the README relay (HaX sets a global; the NPC's `room_entered:<own room>` reads it) for NPCs in later rooms.
 - **A reload always respawns the player in the start room** (`core/game.js:1687-1727`; the saved room is never read back; F-06). Every state therefore has a `game_loaded` catch-up, and every room's staging is re-applied on `room_entered`, because the player walks back down the corridor.
 - **Ink `#set_global` turns numeric-looking values into numbers** (`chat-helpers.js:474-478`; F-01), so string globals never hold digits alone (`raid_clock` uses `t0230`).
@@ -18,8 +18,8 @@ Engine facts this file depends on (checked in code; RL §6 has the evidence):
 - **One flag, one reward**; a flag's station is the first station whose `flags` list holds it, and its task id is station-qualified with the flag's index *in that station's list* (`games_controller.rb:2407-2528`).
 - **`concludeRequires.globals` counts only boolean `true`**, so `ending` (a string) never goes in it.
 - Person-chat state does not survive a reload (it restarts at the start knot); phone threads do. Every forced face-to-face scene therefore re-enters on globals, never on saved ink position.
-- **Forced phone calls can be voiced (F17, being built)**: a mapping or conversation key, written here `voiced: true` (final name in `docs/agents/FINALE_ENGINE_VOICED_CALLS.md`). §13 lists which calls are voiced and their lines.
-- **A `silence` playlist exists (F10)**, so the gallery and the second landed point are true silence (§7).
+- **Forced phone calls can be voiced (F17, committed; `docs/agents/FINALE_ENGINE_VOICED_CALLS.md`)**: `"voiced": true` on a `phone-chat` eventMapping or a `timedConversation` (`systems/npc-manager.js:336, 677, 1183`). Narration in a voiced call stays silent, and marking any call voiced makes `batch_generate` voice that contact's whole phone story, texts and hub included. §13 lists the voiced calls and their budget.
+- **A `silence` playlist exists (F10, committed)**, so the gallery and the second landed point are true silence (§7).
 - Music and credits conditions are JavaScript and always name `globalVars.` (F-17).
 
 Conventions: UTC on every clock; WREN gets no pronoun before the accusation; "the power room"; ids are working names that stage 9 may rename under the rename rule. "Pointer" means the in-world line, bark or object that tells the player a task exists.
@@ -110,7 +110,7 @@ Six main aims, one optional aim. 28 tasks: 18 required, 10 optional. Every task 
     ] },
   { "aimId": "find_the_sleeper", "title": "Find The Sleeper (Optional)",
     "description": "One of tonight's team was placed eleven years ago. Netherton won't tell them you know. Find them before you reach the core, or don't.",
-    "status": "locked", "order": 6,
+    "status": "locked", "order": 6, "unlockCondition": { "globalVariable": "whodunit_open" },
     "tasks": [
       { "taskId": "read_the_door_log", "title": "Read the door log at the security office's monitoring desk", "type": "custom", "optional": true, "status": "active" },
       { "taskId": "check_the_alibis", "title": "Work out who nobody could see at ten past two", "type": "custom", "optional": true, "status": "active" },
@@ -125,7 +125,7 @@ Notes on the shape:
 - **`decide_his_end` completes on any `ending`**, including `scorched` and `joined`, where the end-for-him menu never opens: the pick that set `ending` is the decision. So all four `end_it` tasks complete on every ending, and the score never punishes an ending.
 - **`close_the_night` completes on the last line of the closing scene** (the 06:00 cutscene; the hearing on Scorched Earth; the Citadel on Join), never on a pick, so the visualiser follows the scene (README "Flags and tasks", PASS2 lesson 46). It is what "the ending scene completes the conclusion task" (MC §8.1) means in the engine.
 - **The station ids carry the flag's index within that station's list** (§0), so flag 2 is `release_console:<vm>-flag1` and flag 3 `sealed_hatch:<vm>-flag1`. Each station's `flags` must be built with `flags_for_vm_slice` (RL §2; F-18), never `flags_for_vm`, or the first station owns every flag. If the VM plan splits the network into more than one VM, only these four strings and RL §2's `acceptsVms` change.
-- **The WREN aim opens at the private aside, by an explicit `unlockAim`** (F-04, R1D-m4). A `globalVariable` unlock is evaluated but never re-checked when the global changes (`objectives-manager.js:688-700`, `:849-869`), and at load it would show the aim during the briefing, before the player has been told. So the aim is `"status": "locked"` with no condition, and HaX carries, in this order: `whodunit_live` defaults `true`; a `game_loaded` mapping sets it `false` on `globalVars.m09_sleeper_named === true && globalVars.m09_recruiter_offer === 'taken'`, another on the same with `'double_crossed'` (no `||`; the same allowed local-from-import write as `sleeper_caught`, MC §12); then `unlockAim: find_the_sleeper` on `global_variable_changed:aside_done` with `globalVars.whodunit_live === true`, and on `game_loaded` with `globalVars.aside_done === true && globalVars.whodunit_live === true` (the reload catch-up). `aside_done` is set on the aside's last line.
+- **The WREN aim is story-gated and opened at the private aside** (F-04, R1D-m4, R2-M6). Its `unlockCondition` is the local `whodunit_open` (default `false`), so the aim stays hidden at load, and a task completing on a closed save (the door log is read on every save) can't reveal it: only a `globalVariable` condition counts as a story gate (`objectives-manager.js:704-736`). The condition is never re-checked when the global changes (`:688-700`, `:849-869`), so the explicit `unlockAim` stays. HaX carries, in this order: `whodunit_live` defaults `true`; a `game_loaded` mapping sets it `false` on `globalVars.m09_sleeper_named === true && globalVars.m09_recruiter_offer === 'taken'`, another on the same with `'double_crossed'` (the same allowed local-from-import write as `sleeper_caught`, MC §12); then, on `global_variable_changed:aside_done` with `globalVars.whodunit_live === true`, `setGlobal: { whodunit_open: true }` and `unlockAim: find_the_sleeper`, and the same on `game_loaded` with `globalVars.aside_done === true && globalVars.whodunit_live === true`. `aside_done` is set on the aside's last line. As a second guard, every WREN `completeTask` mapping carries `globalVars.whodunit_open === true`.
 - **`decode_the_margin`** completes on the margin note's decoded read (`margin_note_read`); Imran or HaX points at it once ("There's something written in the margin. Not plain English."; R1D-m17).
 - **Failure states:** none. Join is MISSION FAILED in the credits but concludes normally (`decide_*` complete); every other ending is MISSION COMPLETE. No clock ends the mission.
 
@@ -137,7 +137,7 @@ Notes on the shape:
 |---|---|---|---|---|
 | `take_the_briefing` | `#complete_task` on the briefing cutscene's first line (Netherton's `timedConversation`, `waitForEvent: game_loaded`, `skipIfGlobal: briefing_played`, `setGlobalOnStart: briefing_played`) | nothing directly; the door scene is open from the start | the cutscene opens on load | first-line completion; a reload never replays it |
 | `settle_the_table` | mapping `global_variable_changed:door_scene_done` (value true) → `completeTask` | half of the breach (§4.1) | HaX after the aside, by branch (SE §3.5): "Nightshade's at the table." / "Netherton has a question about the van." Her first line after the cutscene also asks the player to start the gate console so it boots during the table (R1D-m16) | holders are `koImmune` (RL §2.1): `nightshade_table` on three branches, `director_netherton` on the silent one; a walk-away resumes at the closing choice because the knot re-enters on `door_scene_done` |
-| `submit_flag_1` | server, on submission at `gate_terminal` | flag reward `set_global flag1_submitted` (bridged a second time from `objective_task_completed:submit_flag_1`, F-14); half of the breach; clue 1 readable | HaX: "The gate terminal's yours. Get me their monitoring." The flag 1 field guide is offered on the first use of the gate console (`object_interacted`, `data.objectType === 'vm-launcher' && data.roomId === 'forward_post'`; R1D-m13); the same per station for flags 2–4 | server-authoritative |
+| `submit_flag_1` | server, on submission at `gate_terminal` | flag reward `emit_event flag_1_in`, queued server-side (`pending_events`) and delivered on the next load if the tab dies first; HaX's mapping on `flag_1_in` sets `flag1_submitted` (F-14, R2-m5; stage 9 checks delivery after a reload); half of the breach; clue 1 readable | HaX: "The gate terminal's yours. Get me their monitoring." The flag 1 field guide is offered on the first use of the gate console (`object_interacted`, `data.objectType === 'vm-launcher' && data.roomId === 'forward_post'`; R1D-m13); the same per station for flags 2–4 | server-authoritative |
 | `go_through_the_blast_door` | `enter_room blast_tunnel` | completes the aim; `get_below_ground` shows | the breach call (§4.1): "Breach. Go." | the unlock is server-persisted (F19) |
 | `reach_security_office` | `enter_room security_office` | the duty handset starts ringing (§4.2) | the inner door is the only way on; on the tripwire route HaX names the ladder ("There's a ladder at the guard post. Up and round."; R1D-m6) | the ladder (RL §2.2) |
 | `answer_the_handset` | HaX mapping on `ghost_call_done` → `completeTask` | the stair down (§4.2) | the handset rings and a bark says so; the stair's holding line: "The stair's on their system. Whoever's on that handset has it." | Ghost's thread is saved server-side; clicking the handset resumes it every time (`resume: true`), and re-entering the office re-rings it |
@@ -147,13 +147,13 @@ Notes on the shape:
 | `reach_power_room` | `enter_room power_room` | – | the reader beeps red; HaX: "Someone on that floor carries a card for it. Or there's the fitter's locker upstairs." | talk, clone, or the fitter's spare card from the security office (RL §2.3–2.4); nothing needs a person |
 | `cut_the_shutter` | mapping on `gallery_shutter_cut` → `completeTask` (set in the slot-holder's ink, or in the phone voice's by-hand cut) | completes the aim; HaX: "Shutter's down. The hall's next." | the slot-holder offers it; on "work round him", a knock-out or a refusal, the phone voice rings (§4.9; R1D-M8); the isolator's text says someone on the line can talk you through it | the phone voice re-rings on every entry to the power room while `!gallery_shutter_cut`; HaX's hub topic "[Talk me through the shutter.]" is the last net |
 | `reach_server_hall` | `enter_room server_hall` | – | the power room's only onward door | – |
-| `submit_flag_2` | server, `release_console` | flag reward `set_global flag2_submitted` (bridged again from the task); console options; schedule readable; arrested Victoria's line rings | HaX on entering: "That console takes what you pull from the staging copy." | server-authoritative |
-| `submit_flag_3` | server, `sealed_hatch` (the station at the sealed section's hatch, the hall's east end; R1D-m5) | flag reward `set_global flag3_submitted` (bridged again from the task); the disarm armed; half of the gallery (§4.4) | HaX at the hatch before flag 3 (FA §6.2) | server-authoritative |
+| `submit_flag_2` | server, `release_console` | flag reward `emit_event flag_2_in` → HaX sets `flag2_submitted`; console options; schedule readable; arrested Victoria's line rings | HaX on entering: "That console takes what you pull from the staging copy." | server-authoritative |
+| `submit_flag_3` | server, `sealed_hatch` (the station at the sealed section's hatch, the hall's east end; R1D-m5) | flag reward `emit_event flag_3_in` → HaX sets `flag3_submitted`; the disarm armed; half of the gallery (§4.4) | HaX at the hatch before flag 3 (FA §6.2) | server-authoritative |
 | `use_the_console` (optional) | mapping on `global_variable_changed:head_start_killed` (value not `""`) | the share display globals (§6) | HaX after flag 2 and leaving the hall (arc §6.3) | skipping it is the warned cost |
 | `close_the_backdoor` (optional, locked) | unlocked by mapping on `flag2_submitted` with `backdoor_channel_live`; completed on `backdoor_closed` | `partial_release` stays `none` | HaX after flag 2, with the count | a task, free |
 | `cross_the_gallery` | `enter_room gallery` | `hax_jammed = true` (§5) | HaX's last line before the jam names the stair and the walkway | – |
 | `open_the_outer_lock` | mapping on `head_start_out` written → `completeTask` (§4.5) | the head start goes; Quintero placed at the lock | the keypad's wrong-code line ("Shift code. Ask the gallery's duty guard."); the barks | five ways through (§4.5) |
-| `submit_flag_4` | server, `core_host_terminal` | flag reward `set_global flag4_submitted` (bridged again); his case opens once all four flags are in | Tesseract, after HaX's greeting: "Get on his box. He'll keep." | server-authoritative |
+| `submit_flag_4` | server, `core_host_terminal` | flag reward `emit_event flag_4_in` → HaX sets `flag4_submitted`; his case opens once all four flags are in | Tesseract, after HaX's greeting: "Get on his box. He'll keep." | server-authoritative |
 | `hear_him_out` | mapping on `exchange_3` (value not `""`) | the console menu | walking to him with all four flags opens the case (R1D-B1) | Tesseract `koImmune` for the whole scene (RL §2.8) |
 | `decide_the_console` | mapping on `console_choice` set | the database menu | his console menu | the core resumes on globals (MC rule 1.11) |
 | `decide_the_database` | mapping on `database_outcome` set | step 5 (not after wipe or Join) | Netherton and HaX state each cost before the menu | as above |
@@ -177,12 +177,12 @@ Notes on the shape:
 
 **The one pattern for a story door** (round 1: F-05, F-19, R1D-m12; user decision F19). The door is a room lock of type `rfid` whose `requires` names a card that exists nowhere (`tg_story_lock_<room>`), so neither a pick, the cracker nor the cloner opens it. Its `door_sign` is a name only ("Blast Door", "Stair B", "Inner Door", "Gallery Stair"), because the sign is also the unlock toast's text. An ERB comment beside each says the validator's "nothing can open it" warning is intended (four expected warnings).
 
-It opens by **the F19 mapping unlock** (`unlockDoor: "<room>"`, persisted through the server's unlock path) on HaX, when its condition holds. The mappings, per door:
+It opens by **an `unlockDoor` mapping** (`"unlockDoor": "<room>"`, persisted through the server's unlock path) on HaX, when its condition holds. The mappings, per door:
 
 1. One mapping per global in the condition, on `global_variable_changed:<global>`, each carrying the full condition and `!globalVars.<door>_open`, with `delayMs: 1500` (a `delayMs` mapping re-arms while any minigame is open, so it never fires inside the conversation that set the flag; `systems/npc-manager.js:602-622`).
 2. `game_loaded` with the same condition (a pending delay is lost on reload).
 3. `door_unlock_failed:<room>` with the same condition: the player tried the door, so try the unlock again.
-4. The done-flag: `door_unlocked` with `data.connectedRoom === '<room>' && !globalVars.<door>_open` sets `<door>_open`. It is set only by the event the server's acceptance produces, so a failed unlock leaves the flag false and every catch-up live. (If F19's trial report says its unlock emits a different event, this mapping keys on that one.)
+4. The done-flag: `door_unlocked_by_npc` with `data.roomId === '<room>' && data.npcId === 'agent_0x99' && !globalVars.<door>_open` sets `<door>_open` (R2-M1). The bridge emits it only after the server accepts, so a failed unlock leaves the flag false and every catch-up live. `door_unlocked` (the player's own unlock, and the touch of an already-open door) is used only at the outer lock (§4.5).
 5. Holding lines: `door_unlock_failed:<room>` with each missing half negated (one mapping per half, since conditions can't say "not both") gives HaX's line for what is still missing, as a `bark`.
 
 The line that tells the player the door opened rides on `global_variable_changed:<door>_open`, never on the unlock itself.
@@ -194,8 +194,8 @@ Ink `#unlock_door` with `unlockable` stays only where a person opens a door in t
 - **Door:** `forward_post` → `blast_tunnel`. Sign "Blast Door".
 - **Condition:** `globalVars.door_scene_done === true && globalVars.flag1_submitted === true && globalVars.pair_back === true`. `pair_back` ends the pre-breach split (§6), so the breach can't cut across Arakawa's call; the split itself waits for the table, so this adds nothing a player can stall on.
 - **Holders of `door_scene_done`:** `nightshade_table` on his three branches, `director_netherton` on the silent branch (one id; R1D-m18). Netherton's briefing is also his conversation, so nothing keys on his `conversation_closed`; only the global counts.
-- **On `breach_open`:** HaX's knot `breach_call`, a short voiced call (§13): Netherton on the net, "Breach. Go."; on `nightshade_tethered`, the narrator gives the crank ("Manual." and the wheel turns); otherwise the reader reads the player's badge and the panel shows their designation. It sets `raid_clock` to `t0230`.
-- **Holding barks:** missing the table: "Netherton won't call it till the table's settled."; missing flag 1: "Their monitoring first. Then we go."; missing the pair: "Quintero's not back from the tunnel yet."
+- **On `breach_open`:** HaX's knot `breach_call`, a short voiced call (§13): Netherton on the net, "Breach. Go."; on `nightshade_tethered`, the narrator gives the crank ("Manual." and the wheel turns); otherwise the reader reads the player's badge and the panel shows their designation. `raid_clock` moves to `t0230` by a HaX mapping on `breach_open`, not in the knot, so a reload before the line can't lose the step (R2-m1).
+- **Holding barks:** missing the table: "Netherton won't call it till the table's settled."; missing flag 1: "Their monitoring first. Then we go."; missing the pair: "Arakawa's still on the phone. Quintero's waiting on him." The same event, `door_unlock_failed:blast_tunnel` with `!globalVars.pair_back`, is heard by Netherton's and Arakawa's own catch-up mappings (§6), which re-open whichever of their lines is still owed (R2-M5), so the bark always names a thing that is happening. An event, not a latch, so every try works.
 
 ### 4.2 The stair: Ghost's call
 
@@ -216,19 +216,19 @@ Ink `#unlock_door` with `unlockable` stays only where a person opens a door in t
 
 - **Door:** `server_hall` → `gallery`. Sign "Gallery Stair".
 - **Condition:** `globalVars.flag2_submitted === true && globalVars.flag3_submitted === true && globalVars.gallery_shutter_cut === true` (R1D-B1). Three triggers plus `game_loaded` and the failed-try catch-up. So nobody reaches the lock without the console's chance, the core without the disarm, or an ending without three of the four flags.
-- **On `gallery_open`:** HaX's knot `gallery_open`, voiced (§13): the console warning if C9 is unanswered, the sweep line, then her last line before the jam (arc §6.3, §6.5). It sets `raid_clock` to `t0345`.
+- **On `gallery_open`:** HaX's knot `gallery_open`, voiced (§13): the console warning if C9 is unanswered, the sweep line, then her last line before the jam (arc §6.3, §6.5). The flag is set at unlock time (the `door_unlocked_by_npc` event, §4), before the player can reach the stair, so this call plays before the jam (R2-M1). `raid_clock` moves to `t0345` by a HaX mapping on `gallery_open`.
 - **Holding barks**, one per missing half: "The staging copy first." / "The hatch. Get under the release service." / "The shutter's still live. Power room."
 
 ### 4.5 The outer lock: one unlock event, five ways through
 
 - **Door:** `gallery` → `core`, a room lock of type `pin` (the maintenance code; accepted by the orchestrator in round 1).
 - **The ways through:**
-  1. **The cracker, in the lock guard's window** (F-09). Sight isn't checked while a minigame is open, and a sighting that still holds when it closes fires then (`systems/npc-sight-challenge.js:26-29`). So the risk sits at the close. `lock_guard` patrols between the keypad and the slit windows, with a long dwell at the far end; as he turns away he barks his own window ("Window end. Back in five."), since HaX is jammed. Crack inside the window and nothing happens. Crack in his cone and `player_spotted:lock_guard` opens his person-chat as the minigame closes (his own mapping): talk past him ("[Shift change. Netherton's orders.]" works once), or he goes hostile (`#hostile`) with the door open behind the player. Sets `lock_guard_challenged`.
-  2. **The fingerprint kit on the keypad** (F-07). `lock_keypad_plate`, a dustable object beside the door: dusting shows the four worn keys. The cracker's search then runs on four known digits, so the player cracks it in the guard's window with time to spare. A fifth way that needs no person, and the kit's use on every save. (Stage 9 checks that the cracker minigame's feedback lets a player who knows the digits finish faster; if it doesn't, the plate's note gives the order of wear, heaviest first, and the code is that order.)
+  1. **The cracker, while the guard isn't looking** (F-09, R2-M4). Sight isn't checked while a minigame is open, and a sighting that still holds when it closes fires then (`systems/npc-sight-challenge.js:26-29`). So the risk sits at the close, and it is scoped to the keypad: `lock_guard`'s `los.challengeOnSight` has `requireGlobal: "at_keypad"` and `skipIfGlobal: ["outer_lock_open", "lock_guard_challenged"]`. `at_keypad` is set by his own mapping on `door_unlock_attempt` with `data.connectedRoom === 'core'` and cleared on `room_exited` with `data.roomId === 'gallery'`, so arriving in the gallery or finishing a conversation there never triggers him. He walks the walkway with a long `dwellTime` at the stair end, facing the windows (no `pauseForPlayer` while dwelling, or he turns to the player), and his cone is drawn (`los.visualize: true`): the player sees when the keypad is out of it. Crack outside his cone and nothing happens. Crack in it and `player_spotted:lock_guard` opens his person-chat as the minigame closes (his own mapping): talk past him ("[Shift change. Netherton's orders.]" works once), or he goes hostile (`#hostile`) with the door open behind the player. Sets `lock_guard_challenged`.
+  2. **The fingerprint kit on the keypad** (F-07). `lock_keypad_plate`, a dustable object beside the door (`hasFingerprint: true`, `fingerprintOwner: "gallery_shift"`). Dusting emits `fingerprint_collected:gallery_shift` with `data.objectId` (`systems/biometrics.js:20-100`); a HaX mapping on it with `data.objectId === 'lock_keypad_plate'` sets `keypad_dusted`, and the plate's `textVariants` on `keypad_dusted` show the four worn keys (R2-m4). The cracker's search then runs on four known digits, so the player cracks it while the guard looks away, with time to spare. A fifth way that needs no person, and the kit's use on every save. (Stage 9 checks that the cracker minigame's feedback lets a player who knows the digits finish faster; if it doesn't, the plate's note gives the order of wear, heaviest first, and the code is that order.)
   3. **The code card, the quiet way.** `lock_guard` carries it (`itemsHeld`; dropped on a knock-out). Vos holds his own copy and gives it on "[Deal.]" (`#give_item` gives only from the speaker's items; F-12). Escaped Victoria, the cupboard's rota or Ghost's card gift names the guard; the guard's own ink then offers "[Sterling sent me.]" or "[The rota says you carry the card.]", which ends in his `#give_item`. There is no pickpocketing (R1D-m10).
   4. **From inside:** Victoria who holds or Vos who stands aside runs `#unlock_door:core` (`"unlockable": ["core"]`).
   5. **Ghost's code**, typed from the note (§4.2).
-- **A wrong code** gives the keypad's feedback and the lock guard's bark "Shift code. Ask the gallery's duty guard." (a mapping on `door_unlock_failed:core`, on `lock_guard`), which points at the code card and, through the rota in the security office, makes the return trip available on every save (F-08a).
+- **The pointer to the card** (R2-M3). A PIN lock emits no `door_unlock_failed`, so the line keys on the attempt itself: the lock guard's `bark` on `door_unlock_attempt` with `data.connectedRoom === 'core' && !globalVars.lock_guard_known`, `onceOnly`: "Shift code. The duty guard carries it." It reads before or after a guess, points at the code card, and through the rota in the security office makes the return trip available on every save (F-08a). No engine change.
 - **One event:** two HaX mappings set `outer_lock_open`: `door_unlocked` with `data.connectedRoom === 'core' && !globalVars.outer_lock_open`, and `door_unlocked_by_npc` with `data.roomId === 'core' && !globalVars.outer_lock_open`. The guard matters because walking through an open door also emits `door_unlocked`.
 - **What it computes**, on `global_variable_changed:outer_lock_open`, four mutually exclusive mappings write `head_start_out` (`&&` only):
   - `both`: `globalVars.share_zero_day !== 'stopped' && globalVars.share_resale === 'live'`
@@ -243,7 +243,7 @@ Ink `#unlock_door` with `unlockable` stays only where a person opens a door in t
 Tesseract is `koImmune` for the whole scene (RL §2.8). His conversation always enters at `core_router`, which routes on globals because a person-chat restarts after a reload, and a reload puts the player back at the forward post (§0), so the walk back ends here:
 
 1. `m09_recruiter_offer == "double_crossed" and not wren_at_core` → the double-cross opening (MC §6.4).
-2. `not core_greeted` → his release line (§4.5), HaX's "Still HaX.", then "Get on his box." (sets `core_greeted`).
+2. `not core_greeted` → his release line (§4.5); then HaX, on the open line, inside this same conversation: her one word, the designation, her release line by value, "Ninety-nine. You've done well with them." / "Still HaX."; then "Get on his box." (sets `core_greeted`). **What opens it** (R2-m2): Tesseract's own mapping on `room_entered:core` with `!globalVars.core_greeted` (`delayMs: 800`) opens `core_router`. HaX's return is not a separate call, so nothing on entry can cut his first line; her lines are prefixed `Agent HaX:` in his story and drawn as the second speaker.
 3. `not (flag1_submitted and flag2_submitted and flag3_submitted and flag4_submitted)` → "Finish on my box first. I'll keep." (R1D-B1: the case waits on all four flags).
 4. `not case_heard` → his case and the Recruiter beat (sets `case_heard` on its last line).
 5. The first of `exchange_1`, `exchange_2`, `exchange_3` still `""`.
@@ -263,10 +263,10 @@ The ending's own beat at the core plays inside his conversation after the pick, 
 | `surrender` | `six_oclock` | the same, `'surrender'` | yes |
 | `lethal` | `six_oclock` | the same, `'lethal'` | yes |
 | `executed` | `six_oclock` (no walkabout) | the same, `'executed'` | yes |
-| `scorched` | `six_oclock`, then `hearing` | `six_oclock` as above; `hearing` on `global_variable_changed:six_done` with `globalVars.ending === 'scorched'` (`six_oclock`'s last line sets `six_done` on every ending) | `six_oclock`: no (on `scorched` its last line sets `six_done` only); `hearing`: yes |
+| `scorched` | `six_oclock`, then `hearing` | `six_oclock` as above; `hearing` on `global_variable_changed:six_done` with `globalVars.ending === 'scorched' && !globalVars.closing_done` (`six_oclock`'s last line sets `six_done` on every ending) | `six_oclock`: no (on `scorched` its last line sets `six_done` only, and it has no credits entry); `hearing`: yes |
 | `joined` | `citadel` | `conversation_closed:tesseract` with `globalVars.ending === 'joined'` | yes |
 
-`six_oclock` carries one mapping per ending value it serves (five), because conditions can't say "not joined" any other way than `globalVars.ending !== '' && globalVars.ending !== 'joined'`, which is also allowed: either form works; stage 9 picks one. Each scene's NPC also has `game_loaded` with its ending's value and `!globalVars.closing_done` (and, for `hearing`, `six_done`), so a reload mid-close re-opens the right scene. The completing line runs `#complete_task:close_the_night` and `#set_global:closing_done:true`; §7 has what follows.
+`six_oclock` carries one mapping per ending value it serves (five). **Every closing mapping**, the `conversation_closed:tesseract` ones included, carries `!globalVars.closing_done` and `onceOnly` (R2-M7, R2-m7), so re-talking him after the pick never replays a scene. Each scene's NPC also has a `game_loaded` backstop with its ending's value and `!globalVars.closing_done`; **`six_oclock`'s backstop for `scorched` adds `!globalVars.six_done`**, and `hearing`'s requires `six_done`. So a reload during the hearing re-opens the hearing alone, and a reload during the 06:00 scene re-opens that alone; the conclusion completes on the hearing's last line either way (R2-M7). The completing line runs `#complete_task:close_the_night` and `#set_global:closing_done:true`; §7 has what follows.
 
 ### 4.8 The other locks on the route
 
@@ -323,26 +323,26 @@ The schedule's three entries are said unprompted as flag 2 lands (SE §3.1), so 
 
 ## 6. The countdown objects and the clock's steps
 
-**The clock is one string global, `raid_clock`**, default `"t0145"`, moved only by story events (FA §4.2): no `gameClock`, no `timers`, and since round 1 no `delayMs` steps either (R1D-M6). Its values start with `t` so ink `#set_global` can't turn them into numbers (F-01); stage 9 greps the ink for `set_global:raid_clock:` and checks every value has the prefix. Every step's mapping (on HaX) also requires the step before it (`globalVars.raid_clock === '<previous>'`), so walking back up the corridor after a reload never winds it back.
+**The clock is one string global, `raid_clock`**, default `"t0145"`, moved only by story events (FA §4.2): no `gameClock`, no `timers`, and since round 1 no `delayMs` steps either (R1D-M6). Its values start with `t` so ink `#set_global` can't turn them into numbers (F-01); stage 9 greps the ink for `set_global:raid_clock:` and checks every value has the prefix. Every step's mapping (on HaX) moves the clock only forward: it carries `globalVars.raid_clock < '<this value>'` (the evaluator compares strings, `systems/npc-manager.js:57-66`, and the `t` values sort in time order; R2-m1). So walking back up the corridor after a reload never winds it back, and a skipped step (Arakawa down, or a step lost to a reload) never freezes the ones after it. Every step is a mapping `setGlobal`; no knot writes `raid_clock` (stage 9's grep finds none).
 
 | Step | Value | Set by (events only) | What else happens on it |
 |---|---|---|---|
 | Briefing | `t0145` | default | the kit check; the breaching case open on the table |
-| The split | `t0200` | the second of two events: `door_scene_done`, and the first use of the gate console (`gate_console_used`, from `object_interacted` with `data.objectType === 'vm-launcher' && data.roomId === 'forward_post'`). Netherton's own mapping then opens his short line (`delayMs: 1500`): "Quintero, Kowalczyk. The service tunnel. Go." It sets `split_started` | their table copies hide themselves on `split_started`; **closes MS-23**: the split starts after the 01:58 copy and after the table, so it never lands inside Nightshade's scene |
-| Arakawa's call | `t0210` | `conversation_closed:director_netherton` with `globalVars.split_started === true && !globalVars.arakawa_call_done && !globalVars.arakawa_ko`: `arakawa_gate` reveals himself beside the player and opens his own short scene (he dials; the telescope line; Malhotra on the net: "Arakawa, you're off the net."). Its last line sets `arakawa_call_done`. If Arakawa is down, a HaX mapping on the same event with `globalVars.arakawa_ko === true` sets `arakawa_call_done` and nobody makes the call (§6h, design review) | the alibi the player sees; HaX's alibi topic restates it either way |
-| The pair back | `t0220` | `arakawa_call_done` and `flag1_submitted`, whichever is second (two mappings) sets `pair_back`; Quintero's and Kowalczyk's table copies show themselves on it | their two lines if asked |
-| The breach | `t0230` | HaX's `breach_call` (§4.1) | Netherton at the gate; Vector and Phantom where present |
+| The split | `t0200` | the second of two events: `door_scene_done`, and the first use of the gate console (`gate_console_used`, from `object_interacted` with `data.objectType === 'vm-launcher' && data.roomId === 'forward_post'`). Netherton's own mapping then opens his short line (`delayMs: 1500`): "Quintero, Kowalczyk. The service tunnel. Go." Its **last** line sets `split_started`. Catch-ups (R2-M5): Netherton's `game_loaded` and `door_unlock_failed:blast_tunnel` mappings with `door_scene_done && gate_console_used && !split_started` re-open the line | their table copies hide themselves on `split_started`; **closes MS-23**: the split starts after the 01:58 copy and after the table, so it never lands inside Nightshade's scene |
+| Arakawa's call | `t0210` | `conversation_closed:director_netherton` with `globalVars.split_started === true && !globalVars.arakawa_call_done && !globalVars.arakawa_ko`: `arakawa_gate` reveals himself beside the player and opens his own short scene (he dials; the telescope line; Malhotra on the net: "Arakawa, you're off the net."). Its last line sets `arakawa_call_done`. Catch-ups (R2-M5): `arakawa_gate`'s own `game_loaded` and `door_unlock_failed:blast_tunnel` mappings with `split_started && !arakawa_call_done && !arakawa_ko` reveal him and re-open the scene (`delayMs: 1500`). If Arakawa is down, a HaX mapping on the same event with `globalVars.arakawa_ko === true` sets `arakawa_call_done` and nobody makes the call (§6h, design review) | the alibi the player sees; HaX's alibi topic restates it either way |
+| The pair back | `t0220` | `arakawa_call_done` and `flag1_submitted`, whichever is second (two mappings) sets `pair_back`, plus a HaX `game_loaded` catch-up on both with `!pair_back` (R2-M5); Quintero's and Kowalczyk's table copies show themselves on it | their two lines if asked |
+| The breach | `t0230` | HaX's mapping on `breach_open` (§4.1) | Netherton at the gate; Vector and Phantom where present |
 | Security office | `t0245` | first `room_entered:security_office` | the handset rings |
 | Workshop floor | `t0300` | first `room_entered:workshop_floor` | – |
 | Power room | `t0315` | first `room_entered:power_room` | – |
 | Server hall | `t0330` | first `room_entered:server_hall` | – |
-| Leaving the hall | `t0345` | HaX's `gallery_open` knot (§4.4) | the console warning if unanswered; the sweep line; her last line before the jam |
+| Leaving the hall | `t0345` | HaX's mapping on `gallery_open` (§4.4) | the console warning if unanswered; the sweep line; her last line before the jam |
 | The outer lock | `t0400` | `head_start_out` written (§4.5) | every live share goes; LIVE lines become RELEASED; he and HaX say it |
 | The core | holds at `t0400` | – | he pauses nothing; nothing moves while they talk |
 | Join | – | `database_outcome === 'published'` | every object reads RELEASED |
-| 06:00 | `t0600` | `six_oclock`'s first line | the table's object reaches six and nothing happens |
+| 06:00 | `t0600` | `six_oclock`'s mapping as its scene opens (`setGlobal` on the same event) | the table's object reaches six and nothing happens |
 
-Each step's "first `room_entered`" is the previous-value guard: a second entry finds the clock already past it.
+Each step's "first `room_entered`" is the forward-only guard: a second entry finds the clock already past it.
 
 **The objects.** One per main-path room, eight in all (RL §2 names each and its place): the forward post's table screen, the blast door's panel, the security office's duty screen, the workshop's shift clock, the power room's load board, the server hall's release console screen, the gallery's lock panel (on the wall beside the outer lock, not under it), the core's key-console readout. Each is `readable`, `readDisplay: "gameDisplay"`, `addToNotes: false`, with `observationVariants` and `textVariants` (the same list for both), most advanced state first.
 
@@ -368,7 +368,7 @@ with `ZERO DAY` one of LIVE / STOPPED / TRACED / RELEASED (a traced share that w
 
 **The order at the end** (R1D-m14; m08's verified order, `scenarios/m08_the_mole/scenario.json.erb:258-272`, 540-556): the pick sets `database_outcome` (where it applies) and `ending` → the ending's own beat plays to its end inside his conversation → it closes → the scene NPC's mapping opens the closing scene (§4.7) → on its last line (the last scene's, on `scorched`) `#complete_task:close_the_night` completes `end_it`, the client concludes and the server checks the four flag tasks → the scene closes, and the music event on `conversation_closed:<that scene's NPC>` plays the ending's track and carries `closingCard` and `credits` (the F14 format) → the visualiser runs the card, the teaser (off unless `globalVars.teaser_enabled`, and skipped on `executed` and `joined`), then the credits. As in m08, a second music entry fires the same credits on `global_variable_changed:closing_backstop_fired` (set by the `game_loaded` backstops of §4.7), so a reload mid-scene can't conclude with no credits; `end_it`'s `conclusionScreen` re-opens the visualiser on any later reload, on the card, not on a second roll.
 
-**Credits by ending:** one music entry per closing NPC and ending value: `victory` for `arrest`, `surrender` and `lethal`; `end` for `scorched`, `executed` and `joined` (MISSION FAILED on `joined`, as m01's launch ending). The card and credit clauses are stage 7's, in the F14 `closingCard` / `section` format. Conditions are JavaScript and always name `globalVars.` (F-17).
+**Credits by ending:** one music entry per closing NPC and ending value, on `conversation_closed:<npc>` with `globalVars.closing_done === true`; `six_oclock` has **no** entry for `scorched` (the hearing's carries it; R2-M7): `victory` for `arrest`, `surrender` and `lethal`; `end` for `scorched`, `executed` and `joined` (MISSION FAILED on `joined`, as m01's launch ending). The card and credit clauses are stage 7's, in the F14 `closingCard` / `section` format. Conditions are JavaScript and always name `globalVars.` (F-17).
 
 **Music, the whole night** (SE §8; playlists are the engine's, `music/music-config.js`, plus F10's `silence`):
 
@@ -429,28 +429,27 @@ Stage 1's act figures stand (25 + 40 + 32 + 8 = 105, ceiling 110; arc §2). Belo
 
 MC §16's live plan (3 end to end, 8 + 5 + 4 + 6 + 9 segments) as `tools/playtest/new-game.rb` command lines: `PLAYTEST_PORT=3001 BREAK_ESCAPE_STANDALONE=true bin/rails runner tools/playtest/new-game.rb m10_full_disclosure --imports=<file> --start-room <R> [--unlock ...] [--set ...]`. Imports files go in `tools/playtest/m10_imports/<run>.json`; only the keys that differ from the defaults are listed (each listed source also needs its `mNN_completed: true`).
 
-**Deep starts and the start room's NPCs** (F-00, the orchestrator's ruling). Every global mapping, every phone NPC (HaX, Ghost, Victoria's line, the phone voices) and every closing-scene NPC is listed in `forward_post`, and only the start room's NPCs load at boot. The act-start runs assume **the bootstrap fix now being built**: `--start-room` keeps the original start room's NPCs (phone NPCs included) loaded and met. **If the fix can't be made**, every baseline below instead starts with `--start-room forward_post`, keeps its `--unlock` and `--set` lists, and the tester walks to the target room through the unlocked doors (six rooms at most, about two minutes); the run tables don't change.
+**Deep starts** (F-00, R2-M8; the bootstrap as committed, `tools/playtest/README.md`). `--start-room` moves every phone NPC (HaX, Ghost, Victoria's line, the phone voices) into the new start room, so HaX's mappings, hub and `unlockDoor` mappings register (`unlockDoor` needs no met NPC). Person NPCs stay put unless carried: the core-start runs add `--carry-npc six_oclock --carry-npc hearing --carry-npc citadel` (hidden at 500, 500, so they stay off-screen in the core). `--complete-task` marks earlier tasks done, so each baseline starts with the panel where a player would have it. `--submit-flag` records a flag as submitted, applies its station's rewards (the `emit_event` reward is queued in `pending_events` and delivered at load) and completes its `submit_flags` task, so `/conclude` can pass.
 
-**What F15 can't seed, and how the runs cope** (tools/playtest/README.md): objective and task progress, ink state and door states beyond unlocked rooms.
+**What the bootstrap can't seed:** ink state and anything the client does when a task completes or a reward arrives (mappings, unlocks, messages); the runs `--set` the globals those leave behind, including each `flagN_submitted` beside its `--submit-flag`.
 
-- **Flags.** "Injected" means the gates' globals are `--set` (`flag1_submitted` and so on), which is all the doors and ink read. The flag tasks stay open, so a run that must reach the credits submits the station's `test:flag:N` alias on the way past (the dev alias resolves per station and runs every check, `games_controller.rb:1166-1178`), or uses S4-9's proposed `--submit-flag`.
-- **Aims.** Earlier aims start open; the tester reports the panel but doesn't fail on it.
+- **Aims.** Earlier aims are completed by `--complete-task`; anything left open is reported, not failed.
 - **The start kit** is `startItemsInInventory`, present on every run.
-- **Reloads.** A reload respawns at the forward post (§0). Every reload check (A4, A5, A8, C3, D3, D9) expects the respawn, times the walk back, and checks that the state is intact on arrival.
+- **Reloads.** A reload respawns at `startRoom`: the forward post on full runs, the bootstrap's start room on deep starts. Every reload check (A4, A5, A7, A8, C3, D3, D9) expects the respawn, times any walk back, and checks the state on arrival.
 
-**Baselines** (each also sets every door done-flag it passes, so no catch-up fires over the tester's first command, and `hax_jammed=false`):
+**Baselines** (each also sets every door done-flag it passes, so no catch-up fires over the tester's first command, and `hax_jammed=false`; flag ids are station-qualified):
 
-- **S-wk** (workshop start): `--start-room workshop_floor --unlock blast_tunnel --unlock security_office --unlock workshop_floor --set briefing_played=true --set briefing_done=true --set door_scene_done=true --set gate_console_used=true --set split_started=true --set arakawa_call_done=true --set flag1_submitted=true --set pair_back=true --set breach_open=true --set inner_door_open=true --set security_office_entered=true --set ghost_call_done=true --set stair_open=true --set aside_done=true --set hax_jammed=false --set raid_clock='"t0245"'`
-- **S-so** (security office start, whodunit): `--start-room security_office --unlock blast_tunnel --unlock security_office`, the same `--set` list up to and including `inner_door_open`, plus `--set aside_done=true --set whodunit_live=true --set hax_jammed=false --set raid_clock='"t0230"'` (the aim opens from the `game_loaded` `unlockAim` catch-up, §2 notes)
-- **S-sh** (server hall start): S-wk with `--start-room server_hall --unlock power_room --unlock server_hall --set workshop_entered=true --set power_room_entered=true --set gallery_shutter_cut=true --set flag2_submitted=true --set raid_clock='"t0315"'`
-- **S-core** (core start): S-sh with `--start-room core --unlock gallery --unlock core --set server_hall_entered=true --set flag3_submitted=true --set gallery_open=true --set outer_lock_open=true --set head_start_out='"none"' --set raid_clock='"t0400"' --set flag4_submitted=true` (drop `flag4_submitted` where the run says "worked")
+- **S-wk** (workshop start): `--start-room workshop_floor --unlock blast_tunnel --unlock security_office --unlock workshop_floor --submit-flag gate_terminal:<vm>-flag1 --complete-task take_the_briefing --complete-task settle_the_table --complete-task go_through_the_blast_door --complete-task reach_security_office --complete-task answer_the_handset --set briefing_played=true --set briefing_done=true --set door_scene_done=true --set gate_console_used=true --set split_started=true --set arakawa_call_done=true --set flag1_submitted=true --set pair_back=true --set breach_open=true --set inner_door_open=true --set security_office_entered=true --set ghost_call_done=true --set stair_open=true --set aside_done=true --set hax_jammed=false --set raid_clock='"t0245"'`
+- **S-so** (security office start, whodunit): `--start-room security_office --unlock blast_tunnel --unlock security_office --submit-flag gate_terminal:<vm>-flag1 --complete-task take_the_briefing --complete-task settle_the_table --complete-task go_through_the_blast_door`, the same `--set` list up to and including `inner_door_open`, plus `--set aside_done=true --set whodunit_live=true --set whodunit_open=true --set hax_jammed=false --set raid_clock='"t0230"'` (the aim opens from HaX's `game_loaded` catch-up, §2 notes)
+- **S-sh** (server hall start): S-wk with `--start-room server_hall --unlock power_room --unlock server_hall --submit-flag release_console:<vm>-flag1 --complete-task take_the_stair_down --complete-task reach_power_room --complete-task cut_the_shutter --set workshop_entered=true --set power_room_entered=true --set gallery_shutter_cut=true --set flag2_submitted=true --set raid_clock='"t0315"'`
+- **S-core** (core start): S-sh with `--start-room core --unlock gallery --unlock core --carry-npc six_oclock --carry-npc hearing --carry-npc citadel --submit-flag sealed_hatch:<vm>-flag1 --submit-flag core_host_terminal:<vm>-flag1 --complete-task reach_server_hall --complete-task cross_the_gallery --complete-task open_the_outer_lock --set server_hall_entered=true --set flag3_submitted=true --set gallery_open=true --set outer_lock_open=true --set head_start_out='"none"' --set share_zero_day='"stopped"' --set raid_clock='"t0400"' --set flag4_submitted=true` (drop flag 4's two options where the run says "worked"; on D1's two `zero_day` games, `share_zero_day='"released"'`; R2-m8b)
 
 **End to end (3; start: mission start; VM flags worked)**
 
 | Run | Imports | Notes |
 |---|---|---|
 | E1 kind | m01 `final_choice=arrest`; m02 `gary_protected`, `ghost_deal_accepted`, `exposed_hospital`, `bed4_manually_stabilised`; m03 `victoria_fate=recruited`; m04 `voltage_captured`, `disclosure_choice=full`, `vance_is_ally`; m05 `found_pipeline_list`; m06 `assets_seized`, `satoshi_stance=rejected`; m07 `team_assignment=trojan_horse`, `debrief_stance=owned`; m08 `nightshade_triple_agent`, `triple_agent_first_payment`, `named_on_evidence`; m09 `nightshade_shown_file`, `recruiter_offer=named`, `deck_pulled=her_file`, `hax_confession_answer=same_in_your_place`, `albion_notified`, `sleeper_shortlist` | times the whole night against §8 |
-| E2 hard | m02 `ghost_deal_accepted`, `ghost_keys_used`; m03 `victoria_fate=escaped`, `sterling_on_call_seen`; m04 `voltage_escaped`, `crew_lost`, `disclosure_choice=quiet`; m07 `team_assignment=fracture`, `debrief_stance=hardened`; m08 `nightshade_triple_agent`; m09 `recruiter_offer=taken`, `sleeper_named`, `deck_pulled=none`, `recruiter_secret=kept` | the outer lock by the cracker in the guard's window |
+| E2 hard | m02 `ghost_deal_accepted`, `ghost_keys_used`; m03 `victoria_fate=escaped`, `sterling_on_call_seen`; m04 `voltage_escaped`, `crew_lost`, `disclosure_choice=quiet`; m07 `team_assignment=fracture`, `debrief_stance=hardened`; m08 `nightshade_triple_agent`; m09 `recruiter_offer=taken`, `sleeper_named`, `deck_pulled=none`, `recruiter_secret=kept` | the outer lock by the cracker while the guard's cone is off the keypad |
 | E3 cold | `--imports=none` | the fingerprint plate at the outer lock |
 
 **Segment A: forward post to the stair (8; start: mission start)**
@@ -463,7 +462,7 @@ MC §16's live plan (3 end to end, 8 + 5 + 4 + 6 + 9 segments) as `tools/playtes
 | A4 | as A3 | reload before the closing choice: respawn, walk back, the knot re-enters at it; a strike at Nightshade does nothing (`__test.debugKO` returns `ko-immune`) |
 | A5 | m08 `nightshade_triple_agent`, `nightshade_tidied`; m09 `cage_bin=nightshade_copy`; m02 `ghost_deal_accepted`, `ghost_keys_used` | the map unchecked; the ladder used **before** trying the door (the cost still lands, F-13); reload mid-Ghost-call, then the handset resumes it |
 | A6 | m08 `nightshade_triple_agent`; m02 `ghost_deal_refused` | – |
-| A7 | m08 `nightshade_arrested`; m02 `completed` only; m03 `guard_bribed`; m09 `cage_bin=nightshade_copy`, `recruiter_offer=named` | Arakawa knocked out before the split: no call, HaX's alibi variant |
+| A7 | m08 `nightshade_arrested`; m02 `completed` only; m03 `guard_bribed`; m09 `cage_bin=nightshade_copy`, `recruiter_offer=named` | first game: reload during Arakawa's scene (his catch-up re-opens it; the breach waits, then opens); second game: Arakawa knocked out before the split, no call, HaX's alibi variant |
 | A8 | m08 `nightshade_arrested`; m02 `ghost_deal_accepted`, `exposed_hospital` | reload between deal and check |
 
 **Segment B: workshop and power room (5; S-wk)**
@@ -490,11 +489,11 @@ MC §16's live plan (3 end to end, 8 + 5 + 4 + 6 + 9 segments) as `tools/playtes
 | Run | Imports | Extra |
 |---|---|---|
 | C1 | m03 `victoria_fate=recruited` | kill Zero Day's; trust her; she opens it from inside |
-| C2 | m03 `recruited`; m02 `ghost_deal_accepted` | `--set ghost_sale='"bait"' --set share_resale='"live"'`; trace; trust (share live: the alarm); the cracker in the guard's window |
+| C2 | m03 `recruited`; m02 `ghost_deal_accepted` | `--set ghost_sale='"bait"' --set share_resale='"live"'`; trace; trust (share live: the alarm); the cracker while the guard's cone is off the keypad |
 | C3 | m03 `recruited` | console skipped; confront; reload, then left unanswered; step back down from the gallery to the console (HaX returns) |
 | C4 | m03 `escaped`, `sterling_on_call_seen`; m07 `completed`, `team_assignment=meltdown`; m02 `completed` | `--set ghost_sale='"bait"' --set share_resale='"live"'`; kill Ghost's buyers'; talked down / knocked out on reload; **the lock by the guard's dropped code card** (MC §16 had "Ghost's code", which this save can't have; the code route is A1's and A6's) |
 | C5 | m03 `escaped`; m07 `team_assignment=meltdown` | trace; "[Go.]" (the guard named) then the guard's own `#give_item`; arrest on reload; the backdoor closed |
-| C6 | m03 `victoria_fate=arrested` | kill Zero Day's; the line: deal; the secret used on Vos; reload: the call closed, re-ring at the stair, abandoned; Vos's trade |
+| C6 | m03 `victoria_fate=arrested` | S-sh **without** flag 2's `--submit-flag` and `--set` (so her first ring fires on the change; R2-m8a); submit flag 2 in the browser with the station's `test:flag` alias; kill Zero Day's; the line: deal; the secret used on Vos; reload: the call closed, re-ring at the stair, abandoned; Vos's trade |
 
 **Segment D: the core (9; S-core)**
 
@@ -518,13 +517,13 @@ None is made here. RL §7 lists the layout ones. Updated in round 1.
 |---|---|---|---|
 | S4-1 | MC rule 1.5, §12 done-flags; FA §4.0 "Forced scenes and nets" | "A door opened by an eventMapping firing `unlock_door`" → "a story door (an RFID lock with no card) opened by the F19 mapping unlock on HaX, its done-flag set from the unlock event, with `game_loaded` and failed-try catch-ups" | F19; F-05 (the flag can't claim a door the server refused) |
 | S4-2 | MC §3.1 (the breach) | The breach needs the table, flag 1 and the pair back; HaX's `breach_call` carries Netherton's "Breach. Go." | §4.1 |
-| S4-3 | MC §3.5, FA §4.0 route, s0 §2.2 "RFID cloning" row | The outer lock is a PIN lock with five ways through: the cracker in the guard's window, the fingerprint plate, the code card, the inside, Ghost's code | accepted by the orchestrator; F-07, F-09 |
+| S4-3 | MC §3.5, FA §4.0 route, s0 §2.2 "RFID cloning" row | The outer lock is a PIN lock with five ways through: the cracker while the guard's cone is off the keypad, the fingerprint plate, the code card, the inside, Ghost's code | accepted by the orchestrator; F-07, F-09 |
 | S4-4 | MC §3.2, FA row 13, arc §7.5 | The kept branch's "east door" and Vector's sealed door are the records cupboard in the security office | accepted by the orchestrator |
 | S4-5 | MC §8.1, FA §4.0, §4.6 | The closing scene opens when his conversation closes; the hearing chains off the 06:00 scene; `close_the_night` on the last scene's last line; credits on that scene's `conversation_closed` (m08's order) | R1D-M1, R1D-m14 |
 | S4-6 | arc §3 beat 8, SE §3.1 | The briefing's question hub moves into HaX's phone | saves about a minute of cutscene |
 | S4-7 | FA §15/§17 MS-23; arc §5.2 | The split starts on the second of the table and the gate console's first use; Arakawa's call and the pair back follow on events, not timers | R1D-M6; closes MS-23's time half |
 | S4-8 | MC §6.1, FA §4.1 | Tesseract `koImmune` for the whole core scene | the engine can't toggle the key; nothing needs it |
-| S4-9 | Orchestrator, tooling | `new-game.rb --submit-flag <station>:<n>` | core-start runs can then reach real credits |
+| S4-9 | Orchestrator, tooling | `new-game.rb --submit-flag` (now built, with `--carry-npc` and `--complete-task`) | used by §9 |
 | S4-10 | Stage 7 | The objects' times are the authority for every spoken time | §6 |
 | S4-11 | arc §6.3, MC §3.5 | The gallery needs flags 2 and 3 and the cut; his case needs all four flags | R1D-B1 |
 | S4-12 | arc §9.2, MC §3.5 | The head start's release is said aloud by him (first line in the core) and by HaX on her return, by `head_start_out` | R1D-M7 |
@@ -533,12 +532,18 @@ None is made here. RL §7 lists the layout ones. Updated in round 1.
 | S4-15 | arc §6.2, MC §3.4 | The by-hand cut is rung by the phone voice on a stated trigger, re-rung on entry, with HaX's topic as the last net | R1D-M8 |
 | S4-16 | MC §12 | New locals: `split_started`, `gate_console_used`, `pair_back`, `aside_done`, `briefing_done`, `six_done`, `closing_backstop_fired`, `cut_by_hand`, `ladder_used`, `<room>_entered`, `<door>_open`, `door_log_given`, `signout_read`, `margin_note_read`, `lock_guard_challenged`, `keypad_dusted`, `voltage_print_lifted`; `raid_clock` values take a `t` prefix | the wiring above |
 | S4-17 | MC §4 C9 note | A traced share stays `traced` at the lock; the screens read OUT, TRACED | F-16 |
+| S4-18 | MC §12 done-flags, FA §4.0 | Story doors' done-flags are set on `door_unlocked_by_npc` from HaX (`npcId === 'agent_0x99'`) | R2-M1 |
+| S4-19 | arc §8 (whodunit), MC §5 | The WREN aim is story-gated by `whodunit_open`, opened at the aside | R2-M6 |
+| S4-20 | MC §3.5 | The lock guard challenges only at the keypad (`requireGlobal: at_keypad`), with a visible cone; the pointer to the card plays on the first attempt | R2-M3, R2-M4 |
+| S4-21 | MC §4 C9 | Flag rewards are `emit_event` (`flag_N_in`), and HaX sets each `flagN_submitted` | R2-m5 |
+| S4-22 | SE §3.1, arc §9.3 | HaX's return at the core is spoken inside his conversation, as the second speaker | R2-m2 |
 
 ## 11. For the user
 
 - **Time budget.** The VM's 32 minutes are estimates from m07/m08 (M-14 still open). A timed VM run, before stage 7, turns 105 into a measured figure.
 - **The bootstrap fix** (deep starts keep the start room's NPCs) is what 24 of the 35 test runs assume; §9 has the walk-in fallback.
-- F10 and F17–F19 are settled; nothing else here waits on the user.
+- F10 and F17–F19 are committed (57d3d237).
+- **HaX's voiced calls bring her whole thread into the TTS batch** (§13): about 220 more lines than the calls themselves. Keep (assumed here), or leave her key calls unvoiced and her thread as text.
 
 ## 12. Review round 1 outcomes
 
@@ -594,7 +599,7 @@ Two reviews, 2026-10-21: `../stage_5/REVIEW_R1_PUZZLES.md` (F-00 to F-22: 1 bloc
 
 ## 13. Voiced phone calls (F17)
 
-Forced phone calls are voiced with the F17 key (`voiced: true` here; final name in `docs/agents/FINALE_ENGINE_VOICED_CALLS.md`). Face-to-face scenes are voiced as in every mission and aren't listed. Counts are spoken lines by the caller (and any second speaker on the line), for the audio budget; stage 7 fixes the wording, and the counts move with it.
+Forced phone calls are voiced with `"voiced": true` on the `phone-chat` mapping or `timedConversation` (F17, committed; `docs/agents/FINALE_ENGINE_VOICED_CALLS.md`). Narration in a voiced call is silent, so the narrator lines inside HaX's calls (the crank, the ladder) are written to read well unspoken. Face-to-face scenes are voiced as in every mission and aren't listed. **One budget rule from the engine:** marking any of a contact's calls voiced makes `batch_generate` voice that contact's whole phone story. For Ghost, Victoria's line and the phone voices that is the call itself. For HaX it is her whole thread: the hub topics, "[Where are we?]", the field-guide lines and her texts, about 220 lines more by stage 2–3's counts (an estimate for stage 7 to firm up). The alternative, keeping HaX's key calls unvoiced, keeps her thread as text as in m01–m08; this file assumes voiced, since F17 named her key lines. Counts are spoken lines by the caller (and any second speaker on the line), for the audio budget; stage 7 fixes the wording, and the counts move with it.
 
 | Call | Voiced | Speakers | Lines (approx.) |
 |---|---|---|---|
@@ -604,11 +609,35 @@ Forced phone calls are voiced with the F17 key (`voiced: true` here; final name 
 | HaX: `breach_call` | yes | HaX, Netherton on the net, narrator | 4 (two variants: crank, reader) |
 | HaX: `stair_open`, `inner_door`, `tripwire`, `ladder` | yes | HaX, narrator | 1 + 1 + 2 + 2 |
 | HaX: `gallery_open` (console warning, sweep, last line before the jam, by branch) | yes | HaX | about 5 |
-| HaX: her return at the core (one word, the designation, the release line by value) | yes | HaX | 6 |
+| HaX: her return at the core | – | – | moved into Tesseract's conversation as the second speaker (OT §4.6 step 2; R2-m2), so it is voiced as person-chat, not counted here |
 | HaX: flag 4 (the notice, the feed, the vault line, the purge) | yes | HaX | 5 |
 | HaX: the database menu's costs and refusal | yes | HaX, Netherton | about 8 |
 | HaX: "[What's still live?]" by state | yes | HaX | 6 |
-| HaX: hub topics and "[Where are we?]" | no (texts) | – | the rest of her thread stays text, as in m01–m08 |
+| HaX: hub topics, "[Where are we?]", texts | yes, by the batch rule above | HaX | about 220 |
 | The 06:00 texts (Ghost's, the Recruiter's) | no | – | unvoiced by design (FA §4.6) |
 
-About 110 voiced phone lines in all, on top of the person-chat scenes.
+About 100 voiced lines in the forced calls, plus about 220 for the rest of HaX's thread that the batch rule brings with them: about 320 phone lines in all, on top of the person-chat scenes.
+
+## 14. Review round 2 outcomes
+
+`../stage_5/REVIEW_R2.md`, 2026-10-21: 0 blockers, 8 majors (R2-M1 to M8), 8 minors (R2-m1 to m8). The engine features were committed the same day (57d3d237), so every "being built" is now the committed name. **All 16 are applied, none withdrawn**, with the orchestrator's rulings. RL §10 lists the layout ones.
+
+| Finding | Fix | Where |
+|---|---|---|
+| R2-M1 | done-flags on `door_unlocked_by_npc` with `npcId === 'agent_0x99'`; the gallery's call now plays before the jam | §0, §4 pattern, §4.4 |
+| R2-M2 | the core east of the gallery | RL §1, §2.7–2.8 |
+| R2-M3 | the pointer to the code card on `door_unlock_attempt`, `onceOnly`, reworded; no engine change | §4.5 |
+| R2-M4 | `requireGlobal: at_keypad` and `skipIfGlobal`; a visible cone replaces the bark; no `pauseForPlayer` | §4.5; RL §2.7 |
+| R2-M5 | `game_loaded` and failed-try catch-ups for the split, Arakawa's call and the pair back; `split_started` on the line's last line | §4.1, §6 |
+| R2-M6 | the WREN aim story-gated by `whodunit_open`, with the explicit `unlockAim` | §2 |
+| R2-M7 | `!closing_done` and `onceOnly` on every closing mapping; `six_oclock`'s scorched backstop needs `!six_done`; no scorched credits on `six_oclock` | §4.7, §7 |
+| R2-M8 | `--carry-npc` for the three closing NPCs, `--submit-flag` for the four flags, `--complete-task` for earlier tasks | §9 |
+| R2-m1 | forward-only `<` clock guards; every clock step a mapping, none in ink | §6, §4.1, §4.4 |
+| R2-m2 | Tesseract opens `core_router` on `room_entered:core`; HaX's return inside it | §4.6 |
+| R2-m3 | `cooldown: 0` and `data.objectName` keys on the console controls and the ladder | RL §2.2, §2.6 |
+| R2-m4 | dusting wired: `fingerprint_collected:<owner>` + `data.objectId` → `keypad_dusted` / `voltage_print_lifted`; the keys as `textVariants` | §4.5; RL §2.5, §2.7 |
+| R2-m5 | `emit_event` flag rewards, queued server-side | §3 |
+| R2-m6 | positions; the fifth expected validator warning | RL §2 |
+| R2-m7 | covered by R2-M7 on all six closing rows | §4.7 |
+| R2-m8 | C6 without flag 2 pre-set; S-core sets `share_zero_day`; `--complete-task`; stale wording gone | §9 |
+

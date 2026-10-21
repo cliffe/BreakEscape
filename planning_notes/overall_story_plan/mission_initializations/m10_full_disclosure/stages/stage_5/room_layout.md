@@ -2,7 +2,7 @@
 
 ## 0. Status, sources and conventions
 
-Stage 5, draft 2, 2026-10-21: round 1's two reviews (`REVIEW_R1_PUZZLES.md`, "F-nn"; `REVIEW_R1_DESIGN.md`, "R1D-…") folded in with the orchestrator's rulings and user decisions F17–F19 and F10 (§9; OT §12). Author: stages 4+5 author (Opus). Companion: `../stage_4/objectives_tasks.md` ("OT §n"), which owns aims, tasks, the story-door pattern (OT §4), the clock (OT §6), the voiced calls (OT §13) and the test states (OT §9). Sources as OT §0, plus the prompt `story_design/story_dev_prompts/05_room_layout_design.md`, `mission-puzzle-chains` (lock order, cumulative kit, silent-failure bugs), `mission-room-dressing` (layout constraints only), README "Room Layout System" and "Authoring Rules", and the engine code (§6 cites it). Models: m07 and m08's `scenario.json.erb`.
+Stage 5, draft 3, 2026-10-21: round 1's two reviews (`REVIEW_R1_PUZZLES.md`, "F-nn"; `REVIEW_R1_DESIGN.md`, "R1D-…"; §9) and round 2's (`REVIEW_R2.md`, "R2-…"; §10) folded in, with the orchestrator's rulings and user decisions F17–F19 and F10, committed in 57d3d237. Author: stages 4+5 author (Opus). Companion: `../stage_4/objectives_tasks.md` ("OT §n"), which owns aims, tasks, the story-door pattern (OT §4), the clock (OT §6), the voiced calls (OT §13) and the test states (OT §9). Sources as OT §0, plus the prompt `story_design/story_dev_prompts/05_room_layout_design.md`, `mission-puzzle-chains` (lock order, cumulative kit, silent-failure bugs), `mission-room-dressing` (layout constraints only), README "Room Layout System" and "Authoring Rules", and the engine code (§6 cites it). Models: m07 and m08's `scenario.json.erb`.
 
 Conventions: sizes in grid units (GU; 1 GU = 5 tiles wide, 4 tiles of floor tall, plus a 2-tile north wall; README:1618-1639). NPC and object positions are tiles inside the room, `{x, y}`, on the floor (y ≥ 3 in a 2-GU-tall room, y ≥ 2 in a 1-GU-tall one), one free tile around every readable and every door's approach, and no NPC on an interactable's face (README:1834; R1D-M10). Door tiles used below: a north or south door sits at tile x 1 or x 8 of a 10-wide room by parity (stage 9's `predict_door_sides.py` says which); an east or west door at row 2. **A mapping's `setVisible` and scene opening act only on its own NPC** (F-02), so every reveal or hide below is the NPC's own mapping; a NPC in a later room reads a global HaX sets, on its own `room_entered:<own room>`. **A reload respawns the player at the forward post** (F-06), so every reveal also has its `room_entered` form. Every person on a forced scene or the critical path is listed with `koImmune` or with its KO cover. Room ids are working names.
 
@@ -11,11 +11,9 @@ Conventions: sizes in grid units (GU; 1 GU = 5 tiles wide, 4 tiles of floor tall
 Eight playable rooms (FA §5.3, D-05; no ninth room, the orchestrator's ruling on R1D-M9), one corridor from the surface to the core, with the act's centre widened. Every connection is east–west, or north–south between rooms of equal width, so every pair of doors aligns (README:1818). No room has an array side. The puzzles reviewer ran `scripts/check_door_alignment.py` on round 0's layout from five start rooms and all seven pairs aligned; the round 1 change below keeps the same rule, and stage 9 re-runs it.
 
 ```
-                                                                                   [ core 2x2 ]
-                                                                                        | outer lock (PIN)
-[ forward_post ]-blast door-[ tunnel ]-inner door-[ security ]                          |
-   (start)       (story)                 (story)       | stair (story)                  |
-                                                  [ workshop ]-RFID-[ power ]-open-[ server_hall 4x2 ]-gallery stair (story)-[ gallery ]
+[ forward_post ]-blast door-[ tunnel ]-inner door-[ security ]
+   (start)       (story)                 (story)       | stair (story)
+                                                  [ workshop ]-RFID-[ power ]-open-[ server_hall 4x2 ]-gallery stair (story)-[ gallery ]-outer lock (PIN)-[ core ]
 ```
 
 **Positions** (BFS from `startRoom`, GU, origin at the forward post's top-left; README:1641-1648):
@@ -28,10 +26,10 @@ Eight playable rooms (FA §5.3, D-05; no ninth room, the orchestrator's ruling o
 | `workshop_floor` | 2×2 | 6–8 | 2–4 | N: stair; E: power-room door |
 | `power_room` | 2×2 | 8–10 | 2–4 | W; E |
 | `server_hall` | **4×2** | 10–14 | 2–4 | W; E: gallery stair |
-| `gallery` | 2×1 | 14–16 | 2–3 | W: gallery stair; N: outer lock |
-| `core` | 2×2 | 14–16 | 0–2 | S: outer lock |
+| `gallery` | 2×1 | 14–16 | 2–3 | W: gallery stair; E: outer lock |
+| `core` | 2×2 | 16–18 | 2–4 | W: outer lock |
 
-**What changed in round 1** (R1D-M9): the server hall is 4×2 (20×10 tiles), the act's centre and the largest room, with room for two patrols, the console, the sealed section's hatch station at its east end and somewhere to stand back from the guards. To keep every door aligned, the gallery now leaves the hall by its **east** wall (E/W pairs always align) and the core sits north of the gallery (equal widths). No two rectangles overlap: the core's x 14–16, y 0–2 and the gallery's y 2–3 are clear of everything else. Sizes are fixed from here, since a change shifts the parity of everything after it.
+**What changed in round 1** (R1D-M9): the server hall is 4×2 (20×10 tiles), the act's centre and the largest room, with room for two patrols, the console, the sealed section's hatch station at its east end and somewhere to stand back from the guards. To keep every door aligned, the gallery leaves the hall by its **east** wall (E/W pairs always align). **Round 2** (R2-M2): with the core north of the gallery, the 4×2 hall put the outer lock at tile x 1, on the stair's own approach. So the core now sits **east** of the gallery, and the gallery is a straight walkway: the stair at its west end (0, 2), the outer lock at its east end (9, 2). The round 2 reviewer ran the alignment script on this layout: both pairs align and nothing overlaps (the core's x 16–18, y 2–4 is clear). Sizes are fixed from here, since a change shifts the parity of everything after it.
 
 **Not a room:** the service tunnel (a cutscene), the vans' interiors (props and hidden NPCs at the forward post), the core's service door (a prop on the core's east wall), the guard post's ladder (an object), and the 06:00 forward post (the same room, in a cutscene).
 
@@ -52,7 +50,7 @@ Map types: stage 0 asked for m04's `room_aes_*` and m07's `room_pnw_*` first. Ev
 
 Objects without a template slot are pinned with `position` (README:1773). **The four stations each list only their own flag** (F-18): `flags: <%= flags_for_vm_slice('<vm>', N, 1, [...]) %>` with N = 0 (gate), 1 (release console), 2 (sealed hatch), 3 (core host), never `flags_for_vm`, which would give the first station every flag. Each carries `hintOnlyFlags` as a Hash keyed by the other three `"<vm>:flag_N"` references (the top-level `flags` block from `vm_flags_json`), with "That one goes in at …" naming the right terminal. Stage 9 submits one flag at a wrong station to check the hint.
 
-**Story doors** (OT §4): `lockType: "rfid"`, `requires: "tg_story_lock_<room>"`, a `door_sign` that is a name only, and an ERB comment that the validator's "nothing can open it" warning is intended (R1D-m12; four warnings).
+**Story doors** (OT §4): `lockType: "rfid"`, `requires: "tg_story_lock_<room>"`, a `door_sign` that is a name only, and an ERB comment that the validator's "nothing can open it" warning is intended (R1D-m12). Five expected warnings in all: the four story doors, and `fitter_locker`, a key lock with no key item (only the pick opens it; R2-m6).
 
 ### 2.1 `forward_post` (start; 4×2)
 
@@ -69,8 +67,8 @@ Objects without a template slot are pinned with `position` (README:1773). **The 
 | `case_signout_sheet` | the case's sign-out sheet: "opened 01:52, Kowalczyk / Arakawa" | (5, 8) | readable, `gameDisplay`; clue 3's second half; `onRead` sets `signout_read` (also set by HaX's topic, OT §5) |
 | `helena_plans` | Helena's plans (pre-refit) | (8, 8) | readable; `onRead` sets `plans_read` (the payment check, §6 item 37) |
 | `projection_desk` | the Council's casualty curve | (11, 3) | `observationVariants` on `m07_debrief_stance === 'hardened'`; otherwise a dark screen |
-| `gate_console` | VM launcher (the field console, `vm_object` as m08) | (15, 3) | its first use sets `gate_console_used` (HaX's mapping on `object_interacted`) |
-| `gate_terminal` | flag station, slice 0 (flag 1), reward `set_global flag1_submitted` | (17, 3) | `hintOnlyFlags` for 2–4 |
+| `gate_console` | VM launcher (the field console, `vm_object` as m08) | (14, 3) | its first use sets `gate_console_used` (HaX's mapping on `object_interacted`) |
+| `gate_terminal` | flag station, slice 0 (flag 1), reward `emit_event flag_1_in` (HaX sets `flag1_submitted`; R2-m5) | (16, 3) | `hintOnlyFlags` for 2–4 |
 | `gate_hut` | the gate's guard hut | (18, 6) | sprite variant: dark on `m06_assets_seized` (one of the two empty posts) |
 | `van_one`, `van_two` | the vans | (1, 3), (1, 7) | decor |
 
@@ -99,7 +97,7 @@ Objects without a template slot are pinned with `position` (README:1773). **The 
 
 **Doors.** W: the blast door. E: the inner door to `security_office`, a story door, sign "Inner Door".
 
-**Objects.** `clock_blast_door` (the door's panel, (2, 2); shows the player's designation when the reader opened it); `tunnel_rota` (the rota on the post's board, (5, 2): "G. Reeves, on leave tonight" by FA rows 21–22's read rule); `post_ladder` (the guard post's ladder, (7, 4); its use is an `object_interacted` event, so every click counts; R1D-M4; its text off the tripwire route: "A ladder up into the office's back corridor. The inner door's quicker.").
+**Objects.** `clock_blast_door` (the door's panel, (2, 2); shows the player's designation when the reader opened it); `tunnel_rota` (the rota on the post's board, (5, 2): "G. Reeves, on leave tonight" by FA rows 21–22's read rule); `post_ladder` (the guard post's ladder, (7, 4); its use is an `object_interacted` event keyed on `data.objectName` and `data.roomId === 'blast_tunnel'`, with `cooldown: 0`, so every click counts (R1D-M4, R2-m3); its text off the tripwire route: "A ladder up into the office's back corridor. The inner door's quicker.").
 
 **NPCs: the tunnel post** (the night's first guard effect). Two copies, each with its own `room_entered:blast_tunnel` and `game_loaded` mappings reading the door's globals:
 
@@ -134,7 +132,7 @@ Both copies are knockable (`tunnel_guard_ko`); nothing hangs on them.
 
 | NPC | Where | When | KO |
 |---|---|---|---|
-| `duty_guard` | patrol (4, 4) → (6, 7), clear of every object | always; faster on `security_alerted` | knockable, `duty_guard_ko` |
+| `duty_guard` | patrol (4, 4) → (6, 8), clear of every object and of `kowalczyk_ahead_so` (R2-m6) | always; faster on `security_alerted` | knockable, `duty_guard_ko` |
 | `duty_guard_b` | at the monitors (8, 4) | unless `m06_assets_seized` | knockable |
 | `kowalczyk_ahead_so` | (6, 7) | the tether branch's peel-off, a room early; carries `!globalVars.kowalczyk_ko` | knockable, `kowalczyk_ko` |
 | `vector_so` | (3, 5), beside the cupboard (not in front of it) | Vector present: reveals itself on `room_entered:security_office`, gives the code in his ink, hides itself on `room_exited` | knockable, `vector_ko` |
@@ -164,7 +162,7 @@ Both copies are knockable (`tunnel_guard_ko`); nothing hangs on them.
 
 **Doors.** W and E (row 2), the E door open to the server hall.
 
-**Objects.** `shutter_isolator` (`as-type:aes_esd_station`, readable; before the cut: "A key switch and a breaker row. Whoever runs this room can cut it, or someone on the line can talk you through it."; R1D-M8); `clock_power` (the load board, (5, 2)); `bypass_panel` ((7, 2), **dustable**, F-07): on `m04_voltage_escaped` the refit's bypass carries Voltage's print; dusting it sets `voltage_print_lifted`, and on `m04_voltage_print_on_bypass` HaX matches it to the print the player lifted at Albion ("Same thumb. I said it'd be waiting."), which unlocks the stand-down option in his ink. Without the m04 print it is "a clean print with nothing on file to match"; on other branches, an old panel with the fitters' smudges. `static_kit` ((8, 7), on `m04_static_left_alone`). The cut and the gallery camera switch are ink choices (the slot-holder's, or the phone voice's, OT §4.9), so "inert once anyone else cuts" needs no object condition.
+**Objects.** `shutter_isolator` (`as-type:aes_esd_station`, readable; before the cut: "A key switch and a breaker row. Whoever runs this room can cut it, or someone on the line can talk you through it."; R1D-M8); `clock_power` (the load board, (5, 2)); `bypass_panel` ((7, 2), **dustable**, F-07): on `m04_voltage_escaped` the refit's bypass carries Voltage's print; dusting it (`hasFingerprint: true`, `fingerprintOwner: "voltage"`) emits `fingerprint_collected:voltage`, and a HaX mapping with `data.objectId === 'bypass_panel'` sets `voltage_print_lifted` (R2-m4); and on `m04_voltage_print_on_bypass` HaX matches it to the print the player lifted at Albion ("Same thumb. I said it'd be waiting."), which unlocks the stand-down option in his ink. Without the m04 print it is "a clean print with nothing on file to match"; on other branches, an old panel with the fitters' smudges. `static_kit` ((8, 7), on `m04_static_left_alone`). The cut and the gallery camera switch are ink choices (the slot-holder's, or the phone voice's, OT §4.9), so "inert once anyone else cuts" needs no object condition.
 
 **NPCs.**
 
@@ -190,10 +188,10 @@ Both copies are knockable (`tunnel_guard_ko`); nothing hangs on them.
 | `plotting_board` | the 1960s board | (3, 2)–(7, 2) | decor |
 | `clock_server_hall` | the release console's screen (countdown, with the share lines) | (10, 2) | |
 | `hall_console` | VM launcher (the same field console) | (8, 4) | its first use offers the flag 2 field guide |
-| `release_console` | flag station, slice 1 (flag 2), reward `set_global flag2_submitted` | (10, 4) | |
-| `release_console_controls` | the console's head-start and backdoor controls | (12, 4) | every click is an `object_interacted` event that opens HaX's knot `console` (gated on `flag2_submitted` in the mapping; before it, the object's text says "Locked to the staging copy."); R1D-M4 |
+| `release_console` | flag station, slice 1 (flag 2), reward `emit_event flag_2_in` | (10, 4) | |
+| `release_console_controls` | the console's head-start and backdoor controls | (12, 4) | every click is an `object_interacted` event (`data.objectName === 'Release Console Controls' && data.roomId === 'server_hall'`, `cooldown: 0`; R2-m3) that opens HaX's knot `console` (gated on `flag2_submitted` in the mapping; before it, the object's text says "Locked to the staging copy."); R1D-M4 |
 | `schedule_terminal` | the schedule's first entries | (14, 4) | readable after flag 2 (`textVariants`) |
-| `sealed_hatch` | the sealed section's maintenance hatch, with the field kit's link: **flag station**, slice 2 (flag 3), reward `set_global flag3_submitted` | (17, 4) | flag 3's place (R1D-m5); HaX's pointer before flag 3 |
+| `sealed_hatch` | the sealed section's maintenance hatch, with the field kit's link: **flag station**, slice 2 (flag 3), reward `emit_event flag_3_in` | (17, 4) | flag 3's place (R1D-m5); HaX's pointer before flag 3 |
 | `uplink_printer` | Social Fabric's draft, its rota clipped on | (2, 7) | variants by Fracture branch, `m05_entropy_program_exposed`, `m09_cage_bin` |
 
 **NPCs.**
@@ -212,9 +210,9 @@ Both copies are knockable (`tunnel_guard_ko`); nothing hangs on them.
 
 **Mood.** A walkway over the core's roof; steel underfoot; slit windows down into it. No HaX, and silence (F10).
 
-**Doors.** W (row 2): the gallery stair. N: the outer lock to `core`, `lockType: pin`, `requires: <maintenance code>`, `difficulty: hard`. Positions below assume the outer lock lands at tile x 8 (mirror them if `predict_door_sides.py` puts it at x 1). Tiles (1, 2) (the stair's approach) and (8, 2) (the lock's) stay clear (F-11).
+**Doors.** W (row 2, tile (0, 2)): the gallery stair. E (row 2, tile (9, 2)): the outer lock to `core`, `lockType: pin`, `requires: <maintenance code>`, `difficulty: hard`. A straight walkway since round 2 (R2-M2): the stair at one end, the lock at the other, approaches (1, 2) and (8, 2) kept clear (F-11). E/W doors land on row 2 whatever the parity, so no positions here depend on `predict_door_sides.py`.
 
-**Five ways through** (OT §4.5): the cracker in the lock guard's window; the fingerprint plate; the code card; from inside; Ghost's code. **Why PIN** (accepted by the orchestrator): a door takes one lock type, and with PIN every way is the engine's own persisted unlock path.
+**Five ways through** (OT §4.5): the cracker while the guard's cone is off the keypad; the fingerprint plate; the code card; from inside; Ghost's code. **Why PIN** (accepted by the orchestrator): a door takes one lock type, and with PIN every way is the engine's own persisted unlock path.
 
 **Objects.** `clock_gallery` (the lock panel, (6, 2), on the wall two tiles west of the lock, not under it); `lock_keypad_plate` (the keypad's face plate, (9, 3) on the east wall beside the lock, **dustable**: shows the four worn keys; sets `keypad_dusted`; F-07); `farah_chair` ((4, 4), a coat on an empty chair, visible on `imran_outcome === 'talked_round'`); `slit_window` ((3, 2), decor; the grey head below).
 
@@ -225,10 +223,10 @@ Both copies are knockable (`tunnel_guard_ko`); nothing hangs on them.
 | Victoria (`victoria_gallery`) | (5, 3) | `recruited`, or `escaped` without the threat | knockable, `victoria_ko`; `"unlockable": ["core"]` |
 | Victoria, the threat (`victoria_threat`) | (5, 3), pistol held low (her own sprite) | `escaped and m03_sterling_on_call_seen` (a second copy, F-22) | knockable, `victoria_ko` |
 | Pieter Vos (`vos`) | (5, 3) | `ko`, `""`, or `arrested` | knockable, `vos_ko`; `"unlockable": ["core"]`; holds his own code card (F-12) |
-| `lock_guard` | patrol (7, 4) → (2, 4), dwell 20 s at (2, 4), barking his window as he turns ("Window end. Back in five."); `los.challengeOnSight` | always | carries the code card (`itemsHeld`, dropped on a knock-out); his own ink gives it on "[Sterling sent me.]" or "[The rota says you carry the card.]"; `player_spotted:lock_guard` opens his scene (OT §4.5) |
+| `lock_guard` | patrol (7, 4) → (2, 4), `dwellTime` 20 s at (2, 4) facing the slit windows, no `pauseForPlayer`; `los.visualize: true` (his cone is drawn, so the player sees when the keypad is clear); `los.challengeOnSight` with `requireGlobal: "at_keypad"` and `skipIfGlobal: ["outer_lock_open", "lock_guard_challenged"]` (R2-M4; OT §4.5) | always | carries the code card (`itemsHeld`, dropped on a knock-out); his own ink gives it on "[Sterling sent me.]" or "[The rota says you carry the card.]"; `player_spotted:lock_guard` opens his scene (OT §4.5) |
 | `monitor_guard` | (3, 5) | unless `gallery_camera_blinded` (then he barks and hides himself) | knockable |
 | `farah_guard` | (4, 5) | unless `imran_outcome === 'talked_round'` | knockable |
-| `reinforcement_a`, `_b` | (2, 3), (3, 3) | `victoria_gallery === 'trusted'` with Zero Day's share live (the alarm), **and** `!nightshade_taken_in`. With Nightshade taken in, they never appear: one narrator line instead ("Boots on the stair, then Nightshade's voice on the intercom, and the boots stop."; R1D-m9) | hostile, knockable |
+| `reinforcement_a`, `_b` | (3, 4), (4, 4), clear of the stair's approach (R2-m6) | `victoria_gallery === 'trusted'` with Zero Day's share live (the alarm), **and** `!nightshade_taken_in`. With Nightshade taken in, they never appear: one narrator line instead ("Boots on the stair, then Nightshade's voice on the intercom, and the boots stop."; R1D-m9) | hostile, knockable |
 | `quintero_lock`, `minder_lock` | (7, 5) | on `outer_lock_open` (their own mappings), per the staging rule; one of the two | Quintero knockable |
 | `nightshade_lock` | (6, 5) | on `outer_lock_open`, `nightshade_taken_in` | `koImmune` |
 
@@ -238,9 +236,9 @@ The jam: OT §5. The barks (MC §3.5) are each guard's `bark` on `room_entered:g
 
 **Mood.** Plain concrete. One console, one terminal, one chair he is sitting in and one he isn't. Nothing on the walls. The quietest room in the game.
 
-**Doors.** S: the outer lock (keep its approach clear). The service door is a prop on the east wall (`service_door`, (9, 5)), with a dummy camera on a bracket above it.
+**Doors.** W (row 2): the outer lock, approach (1, 2) kept clear (R2-M2). The service door is a prop on the east wall (`service_door`, (9, 5)), with a dummy camera on a bracket above it.
 
-**Objects.** `key_console` (the key console under his hand, (6, 3); a prop with no interaction: its menus and the key's confirmation are ink in his conversation, §6 item 45. Player-facing text calls it "his console" or "the key console", never the release console; R1D-M2); `clock_core` (the key console's readout, (8, 2), holds at 04:00); `core_host_terminal` (flag station, slice 3 (flag 4), reward `set_global flag4_submitted`, (2, 4)); `core_console_vm` (VM launcher, (2, 6)); `scorched_card` (his card, "Afterwards, then.", (5, 3) on the console's edge, a sprite variant on `ending === 'scorched'`).
+**Objects.** `key_console` (the key console under his hand, (6, 3); a prop with no interaction: its menus and the key's confirmation are ink in his conversation, §6 item 45. Player-facing text calls it "his console" or "the key console", never the release console; R1D-M2); `clock_core` (the key console's readout, (8, 2), holds at 04:00); `core_host_terminal` (flag station, slice 3 (flag 4), reward `emit_event flag_4_in`, (2, 4)); `core_console_vm` (VM launcher, (2, 6)); `scorched_card` (his card, "Afterwards, then.", (5, 3) on the console's edge, a sprite variant on `ending === 'scorched'`).
 
 **NPCs.**
 
@@ -255,7 +253,7 @@ HaX is back on the line as the player walks in (her one word, the designation, t
 
 ## 3. The lock graph
 
-In dependency order. Story doors are OT §4's pattern (an RFID lock with no card, opened by the F19 mapping unlock on HaX, its done-flag set from the unlock event).
+In dependency order. Story doors are OT §4's pattern (an RFID lock with no card, opened by an `unlockDoor` mapping on HaX, its done-flag set from `door_unlocked_by_npc` with `npcId === 'agent_0x99'`; R2-M1).
 
 ```
 start (forward_post, kit in hand)
@@ -284,7 +282,7 @@ server_hall (open door from power_room)
  ├─ hall_console + sealed_hatch (VM) ─► flag 3
  └─ flag 2 + flag 3 + gallery_shutter_cut ─► GALLERY STAIR (story) ─► gallery
 gallery
- └─ OUTER LOCK (PIN) ◄─ the cracker in the guard's window | the keypad plate (dust) + the cracker | the guard's code card (knock-out drop, Vos, or the guard's own ink once he is named) | Victoria or Vos from inside | Ghost's code
+ └─ OUTER LOCK (PIN) ◄─ the cracker while the guard's drawn cone is off the keypad | the keypad plate (dust) + the cracker | the guard's code card (knock-out drop, Vos, or the guard's own ink once he is named) | Victoria or Vos from inside | Ghost's code
       └─ outer_lock_open ─► head_start_out, shares released, 04:00, said aloud ─► core
 core
  └─ core_console_vm + core_host_terminal (VM) ─► flag 4 ─► (all four flags) his case ─► exchanges ─► console ─► database ─► ending ─► his conversation closes ─► closing scene(s) ─► close_the_night ─► /conclude, credits
@@ -299,7 +297,7 @@ core
 | Stair | 2 | 2 (the call) | ✅ by design |
 | Power-room door | 3 | 3 (talk, clone) or **2 (the fitter's locker)** | ✅ boss-key on the no-talk route since round 1 (F-08b): see the reader, go back one room, pick the locker. The talk and clone routes stay in the room |
 | Gallery stair | 5 | 4 (the cut) and 5 (flags 2–3) | ✅ boss-key |
-| Outer lock | 6 | 2 (the rota; Ghost's code on two branches) or 6 (cracker, plate, card, inside) | ✅ boss-key available on **every** save since round 1 (F-08a): the keypad's wrong-code line names the duty guard, and the rota that names him is in the security office. The in-room ways remain the defaults |
+| Outer lock | 6 | 2 (the rota; Ghost's code on two branches) or 6 (cracker, plate, card, inside) | ✅ boss-key available on **every** save since round 1 (F-08a): the lock guard's line on the first try at the keypad (`door_unlock_attempt`, since a PIN lock emits no failure event; R2-M3) says the duty guard carries the code, and the rota that names him is in the security office. The in-room ways remain the defaults |
 | Records cupboard, fitter's locker | 2 | 2 or kit | optional |
 
 **Capability arc** (mission-puzzle-chains 3b). m10 grants nothing new; it now spends all of it on the quiet routes: m01's lockpick (the fitter's locker), m03's and m08's cloner (the power-room card), m04's and m08's fingerprint kit (the keypad plate on every save; the bypass panel on the escaped-Voltage branch; F-07), m09's PIN cracker (the outer lock and the cupboard). Every tool has a talk route beside it, which is right for "fun and educational, not hard"; none is decoration any more.
@@ -360,11 +358,11 @@ That is forty names. Tier 2 imports change lines only and appear in no room's st
 
 ## 6. Engine items 30–48: verdicts
 
-The list is MC's structure review (`stage_3/REVIEW_R1_STRUCTURE.md:323-341`). Verdicts: **works** (as is), **pattern** (a scenario pattern, no engine change), **decided** (engine work the user approved on 2026-10-21, now being built), **engine** (not approved; listed for the user). Read from the working tree, including today's trials; paths under `public/break_escape/js/` unless stated. Round 1's reviewers re-checked every claim; corrections are folded in (§9).
+The list is MC's structure review (`stage_3/REVIEW_R1_STRUCTURE.md:323-341`). Verdicts: **works** (as is, including the features committed in 57d3d237), **pattern** (a scenario pattern, no engine change), **engine** (not approved; listed for the user). Read from the working tree, including today's trials; paths under `public/break_escape/js/` unless stated. Round 1's reviewers re-checked every claim; corrections are folded in (§9).
 
 | # | Item | Verdict | How, and the evidence |
 |---|---|---|---|
-| 30 | A door opened on a done-flag, persisted | **decided (F19)** | Today no mapping key unlocks a door (`systems/npc-manager.js:648-683`), `applyActions.unlock_door` is client-only (`systems/apply-actions.js:78-87`), and the flag-reward `unlock_door` unlocks the **station's own room**, because `find_flag_rewards` merges the station's `room_id` over the reward's (`games_controller.rb:2152-2166`, `:2232`; F-03; being fixed as F18; m10 doesn't use it). F19 adds a persisted mapping unlock; OT §4 uses it, with the done-flag set from the unlock event (F-05). Ink `#unlock_door` from a met NPC with `unlockable` (`game.rb:1028-1031`, `:1247-1270`) stays for people who open doors in the fiction |
+| 30 | A door opened on a done-flag, persisted | **works (F19)** | `"unlockDoor": "<room>"` on an NPC eventMapping unlocks through the server's `npc` path, with no encounter or `unlockable` check, and persists (`systems/npc-manager.js:671, 869-881`; `game.rb:1028-1030, 1246-1258`; `docs/agents/FINALE_ENGINE_UNLOCKS_SILENCE.md`). It emits **`door_unlocked_by_npc` with `{ roomId, npcId }`** (`systems/npc-game-bridge.js:131-139`), so each done-flag listens for that with `npcId === 'agent_0x99'` (R2-M1, F-05). The flag-reward `unlock_door` bug (F-03) is fixed (F18); m10 doesn't use it. Ink `#unlock_door` from a met NPC with `unlockable` (`game.rb:1028-1031`, `:1247-1270`) stays for people who open doors in the fiction |
 | 31 | An AND lock (the breach) | **pattern** | one mapping per half, each conditioned on the rest, plus `game_loaded` and the failed-try catch-up (OT §4.1). `delayMs` re-arms while a minigame is open (`systems/npc-manager.js:602-622`), so it never fires inside the scene that set the flag; a pending delay is lost on reload, which `game_loaded` covers |
 | 32 | Phone NPCs that ring, re-ring, resume | **works** + **pattern** | `resume: true`, `disableClose` honoured for Esc and back (trial); phone threads persist server-side. Ghost's call opens on a click of the handset (`object_interacted`), not on entry (R1D-M11), and re-rings on re-entry; F17 makes it voiced (OT §13) |
 | 33 | A phone silent in a jammed room | **pattern** | `hax_jammed` set on entering the gallery before the lock, cleared on entering any other room and at the lock (F-06, R1D-M3); every ringing mapping carries `!globalVars.hax_jammed`; the phone stays usable and HaX's hub opens on static |
@@ -392,17 +390,21 @@ The list is MC's structure review (`stage_3/REVIEW_R1_STRUCTURE.md:323-341`). Ve
 - **`#give_item` gives only the speaker's own items** (`chat-helpers.js:98-113`; F-12): Vos holds his own card. No pickpocketing exists.
 - **Flag stations:** four, one flag each by `flags_for_vm_slice` (`app/models/break_escape/mission.rb:269-280`; F-18); a wrong-station flag gets the `hintOnlyFlags` message (`games_controller.rb:1180-1216`, `:2389-2405`); one reward per flag, `set_global` rewards applied client-side, so each flag global is bridged a second time from its task's `objective_task_completed` (F-14).
 - **`door_sign` is the unlock toast's text** (`utils/room-display-name.js:12`; F-19): signs are names.
-- **Music conditions are JavaScript** and need `globalVars.` (`music/scenario-music-events.js:42-54`; F-17). F10's `silence` playlist is decided.
-- **Voiced forced calls** (F17) are decided; OT §13 lists them.
+- **Music conditions are JavaScript** and need `globalVars.` (`music/scenario-music-events.js:42-54`; F-17). F10's `silence` playlist is committed (`music/music-config.js:154-164`).
+- **Voiced forced calls** (F17) are committed: `"voiced": true` on a phone-chat mapping or `timedConversation` (`systems/npc-manager.js:336, 677, 1183`); narration stays silent; the batch voices the contact's whole phone story. OT §13 lists them.
+- **A PIN lock emits no `door_unlock_failed`** (`systems/unlock-system.js:263-270`; R2-M3): the pointer to the code card keys on `door_unlock_attempt`.
+- **`challengeOnSight` fires on any sighting** unless scoped (`systems/npc-sight-challenge.js:1-57`; R2-M4): `requireGlobal` and `skipIfGlobal` scope the lock guard to the keypad.
+- **Dusting** emits `fingerprint_collected:<owner>` with `objectId` and sets no global itself (`systems/biometrics.js:20-100`; R2-m4).
+- **Mappings default to a 5 s cooldown** (`systems/npc-manager.js:705-711`; R2-m3): every repeat-click trigger sets `cooldown: 0`.
 
 **Engine work still open** (none blocks m10):
 
 1. A mapping key or ink tag to toggle `koImmune` (about five lines). Not needed as designed.
-2. Tooling, not engine: the bootstrap fix so `--start-room` keeps the start room's NPCs (being built), and `new-game.rb --submit-flag` (OT S4-9).
+2. Tooling: done. `new-game.rb` now has `--start-room` (carrying phone NPCs), `--carry-npc`, `--complete-task` and `--submit-flag`; OT §9 uses them.
 
 ## 7. Proposed changes
 
-None is made here; OT §10 has the objective-side ones (S4-1 to S4-17). Updated in round 1.
+None is made here; OT §10 has the objective-side ones (S4-1 to S4-22). Updated in rounds 1 and 2.
 
 | # | To | Change | Why |
 |---|---|---|---|
@@ -421,6 +423,9 @@ None is made here; OT §10 has the objective-side ones (S4-1 to S4-17). Updated 
 | S5-13 | arc §6.3 item 6, FA §6.2 | Flag 3 is submitted at the sealed hatch's own station | R1D-m5 |
 | S5-14 | MC §3.5 | With Nightshade holding the lock, the trusted-Victoria reinforcements never appear (a narrator line instead) | R1D-m9 |
 | S5-15 | MC §3.5 | Escaped Victoria with the threat is her own NPC copy | F-22 |
+| S5-16 | FA §5.3, arc §9.1–9.2, s0 §4 | **The core is east of the gallery**; the gallery is a straight walkway, stair at one end and the outer lock at the other | R2-M2 |
+| S5-17 | MC §3.5 | The lock guard's challenge is scoped to the keypad (`at_keypad`), with his cone drawn; no "window" bark | R2-M4 |
+| S5-18 | MC §3.5 | The pointer to the code card plays on the first try at the keypad | R2-M3 |
 
 ## 8. For the user
 
@@ -454,3 +459,21 @@ Two reviews in this folder, 2026-10-21: `REVIEW_R1_PUZZLES.md` (F-00 to F-22) an
 | R1D §2d″ | the tunnel is a timing pass, the gallery a talk or fight (§2.2, §2.7) |
 
 Measured against the puzzles reviewer's alignment run on round 0's eight rooms; stage 9 re-runs `check_door_alignment.py` and `predict_door_sides.py` on the 4×2 hall.
+
+## 10. Review round 2 outcomes
+
+`REVIEW_R2.md`, 2026-10-21: 0 blockers, 8 majors, 8 minors. **All 16 applied, none withdrawn**; OT §14 maps every one. Those whose fix is in this file:
+
+| Finding | Fix here |
+|---|---|
+| R2-M1 | the story doors' done-flag event named (§3, §6 item 30) |
+| R2-M2 | the core east of the gallery; the walkway's doors and positions; the core's west door (§1, §2.7, §2.8) |
+| R2-M3 | the pointer on `door_unlock_attempt` (§3 audit, §6) |
+| R2-M4 | the lock guard's `requireGlobal`, `skipIfGlobal`, drawn cone and dwell (§2.7) |
+| R2-m3 | `cooldown: 0` and `data.objectName` on the ladder and the console controls (§2.2, §2.6) |
+| R2-m4 | the bypass panel's dusting wired (§2.5); the plate's in OT §4.5 |
+| R2-m5 | flag rewards are `emit_event` (§2.1, §2.6, §2.8) |
+| R2-m6 | `duty_guard`'s endpoint, the reinforcements, the gate terminal moved; the fifth expected validator warning (§2) |
+
+Stage 9 re-runs `check_door_alignment.py` on the final scenario; the round 2 reviewer's run on this layout aligned every pair.
+
