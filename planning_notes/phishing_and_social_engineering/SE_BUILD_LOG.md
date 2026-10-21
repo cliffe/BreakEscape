@@ -193,6 +193,8 @@ Fix round 2 (opus48): T2-1 fixed with an applied-marker global `se_mail_applied`
 
 - **P3-T0** (grok): `tools/playtest/se/bridge-3.jsonl`, 32 evals (triage opens, keys inert, round answered, result survives reload, `triage_sorted` once, defender wrong/good picks and `defender_profile_done`). Grok's report: 32/32 (game 2920), bridge-1a 38/38, bridge-1b 82/82; not yet re-run by Claude (the Phase 3 playtest will). Gap: a fresh game has no sent mail, so the `playerSent` card is not exercised.
 
+- **P4-C** (grok, one-line brief per the user): `minigames/pretext-prep/` (brief, card of blanks from held facts, opens the chat with `blanks` keyed by fact id). Orchestrator re-ran: social and validator 547/547. For the Phase 4 review: the judge looks values up by blank name while the card keys by fact id, which only agree when they are the same string (true in the slice and Dev, not Priya's `{name: manager}`); the 06 §4.5 hint ladder is not on the card.
+
 ## Review rounds
 
 ### Phase 0, round 1 (P0-R, Opus): 0 blocker, 2 major, 13 minor
