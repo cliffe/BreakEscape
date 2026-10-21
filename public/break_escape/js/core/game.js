@@ -2328,6 +2328,7 @@ function gatherInteractablesNearClick(worldX, worldY) {
     };
 
     const koSystem = window.npcHostileSystem;
+    const doorwaysSeen = new Map();
 
     Object.values(window.rooms).forEach(room => {
         // Items
@@ -2391,14 +2392,25 @@ function gatherInteractablesNearClick(worldX, worldY) {
                 const ddy = door.y - player.y;
                 if (ddx * ddx + ddy * ddy > DOOR_RANGE_SQ) return;
                 if (!tapHits(door.x, door.y, door)) return;
-                candidates.push({
+                // Each room draws its own sprite for a shared N/S doorway, so the two
+                // sides of one door can both be in reach: list the doorway once, by the
+                // sprite of the room the player is standing in (m09 dressing R2).
+                const pairKey = [door.doorProperties.roomId, door.doorProperties.connectedRoom].sort().join('|');
+                const seen = doorwaysSeen.get(pairKey);
+                if (seen) {
+                    if (door.doorProperties.roomId !== window.currentPlayerRoom) return;
+                    candidates.splice(candidates.indexOf(seen), 1);
+                }
+                const entry = {
                     label: door.doorProperties.door_sign || 'Door',
                     detail: door.doorProperties.locked ? 'Locked' : null,
                     icon: openHandIcon(),
                     onSelect: () => {
                         if (window.handleDoorInteraction) window.handleDoorInteraction(door);
                     }
-                });
+                };
+                doorwaysSeen.set(pairKey, entry);
+                candidates.push(entry);
             });
         }
     });
