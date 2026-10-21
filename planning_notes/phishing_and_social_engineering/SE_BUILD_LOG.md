@@ -191,6 +191,8 @@ Fix round 2 (opus48): T2-1 fixed with an applied-marker global `se_mail_applied`
 
 - **P4-C stopped (2026-10-21).** A safety classifier stopped the orchestrator while it wrote the Grok brief for the call-preparation screen; the Grok relay had started on a cut-off brief and was stopped before writing anything (checked). Not retried or reworded. Phase 4's remaining packets (P4-C, P4-E, P4-T0, P4-T) wait for the user. P3-T0 (triage bridge) launched on grok meanwhile.
 
+- **P3-T0** (grok): `tools/playtest/se/bridge-3.jsonl`, 32 evals (triage opens, keys inert, round answered, result survives reload, `triage_sorted` once, defender wrong/good picks and `defender_profile_done`). Grok's report: 32/32 (game 2920), bridge-1a 38/38, bridge-1b 82/82; not yet re-run by Claude (the Phase 3 playtest will). Gap: a fresh game has no sent mail, so the `playerSent` card is not exercised.
+
 ## Review rounds
 
 ### Phase 0, round 1 (P0-R, Opus): 0 blocker, 2 major, 13 minor
