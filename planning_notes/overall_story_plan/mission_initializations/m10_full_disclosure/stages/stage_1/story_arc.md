@@ -2,7 +2,7 @@
 
 ## 0. Status and sources
 
-Stage 1, draft 2. Author: stages 1–2 author (Opus). Draft 1 on 2026-10-21; round 1 fixes on 2026-10-21 (§15). User decision F11 (2026-10-21) is folded in: two lethal-force versions.
+Stage 1, draft 3. Author: stages 1–2 author (Opus). Draft 1 on 2026-10-21; round 1 fixes (§15) and round 2 fixes (§16) the same day. User decision F11 (2026-10-21) is folded in: two lethal-force versions.
 
 Built on `../stage_0_initialization.md` and `../../../finale/FINALE_ARC.md`. FINALE_ARC is cited "FA §n" and its thread rows "row n"; a bare "§n" is a section of this file. Where they disagree, FINALE_ARC wins until a change in §14 is accepted. Voices, sample lines, music and atmosphere are in `../stage_2/storytelling_elements.md` ("stage 2"); this file is structure, order and branching. Later-stage detail (globals and their values, minute timings, voice settings, playlists) is left to the stage that owns it, with a pointer.
 
@@ -25,23 +25,25 @@ Conventions:
 |---|---|---|---|
 | 1. The door | forward post (gate in view), blast-door tunnel, security office | 1 | 01:45 → 02:45 |
 | 2. The floors | workshop floor, power room, server hall, media room (optional) | 2, 3 | 03:00 → 03:45 |
-| 3. The core | gallery, outer lock, core | 4 | 04:00 as the outer lock opens; paused at the core |
+| 3. The core | gallery, outer lock, core | 4 | 04:00 as the outer lock opens; still at the core while they talk |
 
 **The line through it.** "Let it hurt afterwards, not during" (row 120). He taught it to HaX; she taught it to the player; Nightshade said it at the end of m08. At the core he says it once, and the player's answer to his last claim turns it on him: he needs the player's hand on the key so his own stays clean.
 
-**Feel.** Crowded and loud through Act 2, then quiet. The gallery is the first room the player walks alone; the core is a conversation with the clock paused and his hand resting by the key.
+**Feel.** Crowded and loud through Act 2, then quiet. The gallery is the first room the player walks alone; the core is a conversation with the hour still set for six and his hand resting by the key.
 
 ## 2. Time budget and what is cut first
 
-Ceiling 110 minutes (orchestrator); target about 105 for a first-time player who does the main path and some optional work. Stage 4 owns the per-beat figures against m07's and m09's timings (FA §13 item 23).
+About 105 minutes, ceiling 110 (orchestrator ruling; §14 change 34). Stage 4 owns the per-beat figures against m07's and m09's timings (FA §13 item 23).
 
 | Act | Minutes | What fills it |
 |---|---|---|
-| 1. The door | 22 | briefing (4–5), the door (3), flag 1 with the fence wait played during it (9), tunnel and security office (6) |
+| 1. The door | 25 | briefing and the private aside (5), the door (3), flag 1 with the fence wait played during it (9), the blast door, tunnel and security office with Ghost's call (8) |
 | 2. The floors | 45 | three full scenes (about 7 each), flags 2 and 3 (about 18), optional console tasks and the media room (3–6) |
-| 3. The core | 33 | gallery and lock (8), flag 4 (8–9), his case and the three exchanges (9–10), the choices (5) |
+| 3. The core | 33 | gallery and lock (7), flag 4 (8), his case and the three exchanges (9), the choices (6–7) |
 | Close | 5 | the ending scene and the 06:00 cutscene; the card and credits run after play |
-| **Total** | **105** | VM work about 35 of it |
+| **Total** | **108** | VM work about 35 of it; about 105 once cut 1 fires |
+
+For a first-time player the honest figure is 108–115, so the first cut below is **planned**: the media room goes unless stage 8's timed playtest comes in under 105 with it (S2-16).
 
 Two savings from the round 1 review are built in: the fence wait plays while the player works flag 1 at the gate terminal, so Arakawa's beat and the recon fill VM time; and the 06:00 frame is a cutscene, so there is no walk back to the surface.
 
@@ -65,31 +67,32 @@ Never cut: the five full scenes, the three clues and the accusation, the three e
 
 1. **Cold open.**
    - `m09_sleeper_named`: Quintero cuffs Kowalczyk against the van without a word. Netherton, one line: it was the player's work in Helena. She looks at the player once. The whodunit is off for this run (§8).
-   - Otherwise: the kit check. Kowalczyk and Arakawa are packing the breaching case together, and she laughs at something he says. Malhotra's badge lies on the table beside his headset while he runs the comms check with HaX. Nobody remarks on either. (The breaching case and the badge are clue 3's seed; §8.2.)
+   - Otherwise: the kit check, which runs from 01:45 until the split, with the breaching case open on the table throughout. Kowalczyk and Arakawa are packing it together, and she laughs at something he says; both sign the case's sign-out sheet, which stays on the table all night (the source for clue 3, §8.2). Malhotra's badge lies by his headset while he runs the comms check with HaX. Nobody remarks on either.
    - On `m04_voltage_captured`: Voltage is visible in the back of the second van, cuffed, saying nothing. This is the only helper the briefing shows. The others are met in their own rooms (§7).
 2. **The stakes.** The Publication at 06:00: the whole stolen database to everyone, free, with working detail. His projection, in his hand, found in Helena: 1,100 to 2,600 dead in the first month, hospitals first by his ordering. The cells' head start at 04:00. Netherton reads both numbers in full.
-3. **The invitation.** HaX: he rang her last night and asked her to bring 0x00; he has "kept a door". Netherton: they go in knowingly, because the alternative is six o'clock.
+3. **The invitation.** HaX: he rang her last night and asked her to bring 0x00; he has "kept a door". Netherton: they go in knowingly, because the alternative is six o'clock. His handbook line goes here, its one use (N13): the chapter on raids by invitation is one page long, and it says don't.
 4. **Quintero objects**, for the second time in two days (she argued against the Helena job too, in m09): she would go in at noon tomorrow with twice the people. Netherton: "Noted, Agent Quintero. Twice now. The record also says six o'clock." The player may back either of them; Quintero answers it at the outer lock (§9.2). It is her reason for suspicion: a delay helps the 06:00 fallback.
-5. **WREN.** Netherton states what the ledger says, for every player: one of this team, "placed eleven years ago" (§14 change 4). He keeps the team together and says why in a line. The team stands in view: Quintero leads on the ground, Kowalczyk breaches, Malhotra runs comms from the van, Arakawa liaises (the county sheriff has closed the road for him, and once again nobody asked who for; §8.1).
+5. **The team**, named in one breath: Quintero leads on the ground, Kowalczyk breaches, Malhotra runs comms from the van, Arakawa liaises (the county sheriff has closed the road for him, and once again nobody asked who for; §8.1). Nothing is said about WREN in front of them.
 6. **Vector and Phantom**, with `m08_completed`. Present (not accused, or apologised to, and not hit): they are standing at the table, and the player sees them before anyone names them. Absent: Netherton's one line for each, split by the stakes beat so they don't land together ("Vector declined. He said you would know why." early; "Phantom asked me to tell you he is busy tonight. He is not." after the objection).
 7. **The clock line.** Austin never covered (with `m07_completed`): HaX, "Day thirteen. Eleven counties."
 8. **The question hub** (`README_ink_best_practices.md`, question-hub; nothing is skipped): why he wants 0x00; the hour and the fallback; the head start; and, for HaX, how she is (stage 2 §3.1 has the answer by `m09_hax_confession_answer`).
-9. **The order.** Netherton, one sentence and a reason: "HaX. Go." HaX points at the door scene, by branch (stage 2 §3.5).
+9. **The order.** Netherton, one sentence and a reason: "HaX. Go."
+10. **The private aside** (S2-01; §14 change 35). Netherton and HaX take the player to the van end. The team is visible through the van's open door, packing, out of earshot. Netherton gives the ledger's fact: one of this team, "placed eleven years ago". He keeps the team together because benching four agents would tell WREN they know; and he will say nothing to them, "and neither will you" (as in m09). On `m09_sleeper_shortlist`, HaX: "Two faces from Helena. Watch both." Then HaX points at the door scene, by branch (stage 2 §3.5).
 
 **Not in the briefing:** the schedule's cities (flag 2), how the readers work (the blast door), who WREN is, and the other helpers (each in its room: Gary at the workshop door, Mercer's drawing at the server hall's map, Victoria's call in the server hall, the Council's numbers on the projection desk by the table, which HaX mentions only if the player looks at it).
 
 ## 4. Cold-start briefing (m09 never played)
 
-`not m09_completed`. The same scene in the same order, carrying what m09 would have given in about 45 extra seconds, with the four suspects in view (FA §4.0). A reviewer reads it with no other mission in mind (FA §13 item 16).
+`not m09_completed`. The same scene in the same order, carrying what m09 would have given in about 45 extra seconds. A reviewer reads it with no other mission in mind (FA §13 item 16).
 
 1. **No detained WREN.** The cold open is the kit check.
-2. **Three facts, before the stakes.**
+2. **The mole first, on `not m08_completed`** (S2-09): Netherton, "Agent 0x47, Nightshade. Fifteen years one of ours. He sold them the database. He is in the van, and he has said one word since."
+3. **Two facts in front of the team, before the stakes.**
    - **The name.** Netherton: "An archive in Helena, last night, gave us three things. The first is a name. The Architect is Dr Adrian Tesseract. We proved it from his own hand." HaX, one sentence: SAFETYNET's former chief strategist, who trained her and half the field, and walked out seven years ago.
    - **The hour.** 06:00; the head start at 04:00; his projection.
-   - **WREN.** "The third is worse. The people who placed our mole placed someone else. Their ledger calls that person WREN, placed eleven years ago, and puts WREN on this team." The reason the team stays together follows.
-3. **The mole, on `not m08_completed`** (S1-06), before the door scene: Netherton, "Agent 0x47, Nightshade. Fifteen years one of ours. He sold them the database. He is in the van, and he has said one word since." That one line makes the door scene and "our mole" make sense.
-4. **The cracker.** Kowalczyk hands it over here: "This one's mine. Never been through stores, never been near him." On `not m08_completed` she drops the last clause ("Never been through stores."), since the player doesn't know who "him" is.
-5. **No m09 callbacks.** The confession answer, the Reading, the Recruiter and the Albion notice don't exist for this player; HaX's "how are you" uses its neutral form.
+4. **The third fact at the private aside** (beat 10, out of the team's earshot): "The third is worse. The same people who bought our mole placed someone else. Their ledger calls that person WREN, placed eleven years ago, and puts WREN on this team." The reason the team stays together follows, and "neither will you".
+5. **The cracker.** Kowalczyk hands it over here: "This one's mine. Never been through stores, never been near him." On `not m08_completed` she drops the last clause ("Never been through stores."), since the player doesn't know who "him" is.
+6. **No m09 callbacks.** The confession answer, the Reading, the Recruiter and the Albion notice don't exist for this player; HaX's "how are you" uses its neutral form.
 
 **A player whose first mission is m10.** HaX and Netherton say who they are by job in their first lines, as m02's Netherton does ("Magnus Netherton. I run this shop."). Every room uses its default occupant (FA §5.3).
 
@@ -108,10 +111,10 @@ Nightshade's full scene (§7.1). It is the first thing the player does with cont
 The player works flag 1 at the gate terminal while the split happens around them (S1-07).
 
 1. **Flag 1**: a foothold on the security monitoring host the cameras and doors report to. HaX's field-guide offer is live from the start. What it buys, said by HaX in story terms: the cameras, the blast-door route, and the door log, readable at the security office's desk.
-2. **The split.** Quintero takes herself and Kowalczyk to recon the service tunnel; they go into the tunnel mouth in the hillside. Arakawa holds the gate beside the player. (Kowalczyk detained: Quintero goes alone.)
+2. **The split.** Quintero takes herself and Kowalczyk to recon the service tunnel; they go into the tunnel mouth in the hillside. Arakawa holds the gate beside the player. (Kowalczyk detained: Quintero goes alone.) The service tunnel forks, and both branches come out by the core's service door (the drain surfaces beside it), so where each of them went decides nothing (S2-03).
 3. **Arakawa's call.** The countdown object at the gate reads 02:10. He makes a call off the net to his daughter in Billings: ten past eight in Montana, and she goes to bed at quarter past. The player can let it go, tell him to get off the phone, or ask about her (a stance; he gets off either way). Malhotra, from the van end, logs it aloud: "Arakawa, you're off the net." That one line puts Malhotra at the van end at 02:10, and the call puts Arakawa beside the player.
 4. **The lull** (one line, on `m03_guard_bribed`): Malhotra passes HaX a query from Finance about five hundred pounds and a security guard in London; she is pleased to fill in the form.
-5. **The pair come back** about 02:20. Asked where they went, Quintero: "I took the drain, she took the door end." Kowalczyk: "Door end. Service door's real. Steel, a reader, a camera that doesn't move." Both true.
+5. **The pair come back** about 02:20. Asked where they went, Quintero: "We split at the fork. I took the drain. It comes up by the service door anyway." Kowalczyk: "Door end. Service door's real. Steel, a reader, a camera that doesn't move." Both true; the camera doesn't move because it was never wired (S2-02, §8.2).
 6. **On `m06_assets_seized`**, once the cameras are up: two posts empty and a gap where the refit fence was never finished. HaX: "Two posts empty. That's your freeze. He couldn't make payroll." The gap is a quieter way to the tunnel.
 7. **HaX points the way** (every player): "Whoever's in the power room runs your lights."
 8. **The breach**, 02:30. Netherton comes up to the gate with Vector and Phantom where present; the team goes through on the player's signal.
@@ -169,7 +172,7 @@ The old command room: the 1960s plotting board still on the wall, racks where th
 5. **Optional console tasks** (need flag 2): stop the head start; close the backdoor. One action each, with a confirmation and a HaX line.
 6. **The sealed section and flag 3.** HaX points at the Cold War sealed section off the hall, its maintenance hatch into the machinery beneath (FA §6.2), before flag 3: out of the release service's container onto the release host beneath it. It arms the disarm, which the player carries to the core.
 7. **Kowalczyk peels off** (if free): "I'll take the service side and meet you at the lock." Arakawa, as she goes: "Service side. She always takes the door nobody's watching." The last face-to-face chance to accuse her; after it, an accusation goes on the line (§8.4).
-8. **Leaving the hall:** if the head start is live, HaX, "Fifteen minutes to their head start. It goes when the outer lock opens." The countdown objects read 03:45.
+8. **Leaving the hall:** if the head start is live, HaX, "Fifteen minutes to their head start. It goes when the outer lock opens." The countdown objects read 03:45. The gallery door opens only once flag 3 is in and the disarm is armed (S2-07; stage 5 enforces it), so nobody reaches the lock without the chance to stop the head start or the core without the disarm.
 
 ### 6.4 The media room (optional)
 
@@ -191,15 +194,15 @@ Each scene is two or three minutes, on the main path, with a person and a decisi
 | **Kept, shown his file** | `m08_nightshade_triple_agent and m09_nightshade_shown_file` | At the table, uncuffed, a minder beside him. The first payment in full: each defence beside the database entry it came from. He marks one as wrong, a lie Tesseract gave him to pass on, and hands over the override he was saving. **[W]** | Take the override and leave him at the post, or take him in with the team; he asks to see Tesseract's face (stage 3; FA §13 item 28). | The override is the security office's alarm panel: the guards below aren't raised by the breach, and the tunnel post is empty. Netherton's m08 line, "If he burns you, it is on my signature", comes due kept. |
 | **Kept, not shown** | `m08_nightshade_triple_agent and not m09_nightshade_shown_file` | The same table and payment, given warmly. One entry is wrong, and he doesn't say so. The wrong entry is a tripwire: whoever uses it announces the raid. | Accept the payment, or check it against the defence list from Helena (the m09 plans; every player has them, FA §3). | Unchecked: the tripwire at the tunnel's inner door (§5.3): a locked door, a warned bunker, a warned WREN, who goes ahead a room early (§8.5). Checked: he smiles, the player avoids the wrong entry, and none of it happens. Netherton's line comes due the other way if the player didn't check. |
 | **Arrested** | `m08_nightshade_arrested and not m08_nightshade_ko_before_fate` (m08's KO safety net sets both; S1-03) | Brought up from the second van in cuffs. He offers the defences for a reduced sentence: "You said no deals. Netherton says otherwise tonight." | Refuse again (the first option), or take the deal. | Deal: the defences with their entries, one wrong, which the m09 plans show to a player who checks; and his read on the Initiative's habits. **[W]** Refused: the defences come from the m09 plans alone, and one camera isn't marked. HaX visits him in the epilogue either way. |
-| **Silent, or never played** | `m08_nightshade_ko_before_fate`, or `not m08_completed` | In the back of the van, cuffed to the rail. One word: "Door." On a cold start Netherton's line has said who he is (§4). | Netherton asks whether to bring him to the blast door on a tether, or leave him in the van. | Brought: Arakawa walks him up and stays with him, so Arakawa isn't a room ahead at the security office (one more guard there). At the door Nightshade says his second word, "Manual.", and the hand crank opens the door without telling the bunker 0x00 is in (§5.3). Left: "Door." stays a word, and the door announces the player. |
+| **Silent, or never played** | `m08_nightshade_ko_before_fate`, or `not m08_completed` | In the back of the van, cuffed to the rail. One word: "Door." On a cold start Netherton's line has said who he is (§4). | Netherton asks whether to bring him to the blast door on a tether, or leave him in the van. | Brought: Arakawa walks him up and stays with him at the blast door for the rest of the night, so Arakawa isn't a room ahead (one more guard at the security office). At the door Nightshade says his second word, "Manual.", and the hand crank opens the door without telling the bunker 0x00 is in (§5.3). Left: "Door." stays a word, and the door announces the player. Knock-ons of "brought" (S2-06): Quintero has Arakawa's line as Kowalczyk goes ahead; the accusation's last beat has no Arakawa reaction; Arakawa can be accused only on the line; a wrong accusation of him costs the crank instead (he is sent back, with Nightshade). |
 
 ### 7.2 The workshop: Gary, or Imran Siddiqui (workshop floor)
 
-The default technician on every branch is **Imran Siddiqui** (26, British-Pakistani, Sparkhill, Birmingham), who worked under Gary in St. Catherine's IT. His grievance branches on what the player did in m02 (S1-11): protected, Gary landed on his feet and the rest of the team got a reference and a box; unprotected, the board sacked the team and kept itself. The Initiative found him six months later. He holds a cloneable card for the power-room door (FA §13 item 13: the default technician stays when Gary joins).
+The default technician on every branch is **Imran Siddiqui** (26, British-Pakistani, Sparkhill, Birmingham), who worked under Gary in St. Catherine's IT. His grievance branches on whether Gary is in work after m02 (S2-10): in work (protected, or exposed and rehired after the backlash), Gary landed on his feet and the rest of the team got a reference and a box; out of work (unprotected and quiet), the board sacked the team and kept itself; never played, a grievance about a board that never read its emails. The Initiative found him six months later. He holds a cloneable card for the power-room door (FA §13 item 13: the default technician stays when Gary joins).
 
 | Branch | Condition | The beat | The decision | What it changes |
 |---|---|---|---|---|
-| **Gary protected** | `m02_completed and m02_gary_protected` | Gary is at the door as the player opens it, brought up after the breach. He recognises the bench's casing from the unlabelled case behind his rack at St. Catherine's (m02's `entropy_field_case`), and then Imran on the floor, whom he trained. | Talk Imran round with Gary there, and decide whether to leave him his phone; or take him in. | Talked round, phone left: he opens the power-room door, and points the player at the bench log by name; but he can still make a call, and the player won't know until the epilogue whether he did. Talked round, phone taken: the same, and no risk. Taken in: cuffed to the bench rail, card cloned, and his phone holds the bench's supplier contact, which rolls up the front supplier in the epilogue. Gary's reaction differs each way. |
+| **Gary protected** | `m02_completed and m02_gary_protected` | Gary is at the door as the player opens it, brought up after the breach. He recognises the bench's casing from the unlabelled case behind his rack at St. Catherine's (m02's `entropy_field_case`), and then Imran on the floor, whom he trained. | Talk Imran round with Gary there, and decide whether to leave him his phone; or take him in. | Talked round, phone left (trust): he opens the power-room door and names the bench log, and he uses the phone to ring a friend on the gallery shift and send her home, so the gallery has one guard fewer; the epilogue shows her safe. Talked round, phone taken (no trust): he opens the door but, stung, won't name the bench log, so the player finds clue 3 alone; the phone's supplier contact goes to Netherton. Taken in: cuffed to the bench rail, card cloned, the supplier contact taken, which rolls up the front supplier in the epilogue. Gary's reaction differs each way (N6). |
 | **Gary unprotected and quiet** | `m02_completed and not m02_gary_protected and not m02_exposed_hospital` | Gary on the floor in a technician's fleece, recruited after St. Catherine's sacked him, Imran at the next bench. HaX's m02 line comes back as a memory (stage 2 §3.5). | Talk him round (listening is the argument), take him in, or clone his card and walk past. | Talked round: Gary opens the power-room door and goes out with the team; "a technician talked round" becomes a third-claim record answer. Otherwise the long way, and the epilogue says where he ends up. |
 | **Default** | m02 never played, or exposed without protection | Imran alone, wary, a card on his belt. | Talk him round (the casualty sheet above his own bench), clone his card, or knock him out; on talking round, his phone as above. | As the protected branch, without Gary. |
 
@@ -239,9 +242,9 @@ Every player: the same unplaceable voice as in m02, on the duty handset (a phone
 
 ## 8. The whodunit, beat by beat
 
-Skipped on `m09_sleeper_named`: Kowalczyk is cuffed at the briefing, so nobody props the service door, the door log is only the camera and door feed, and the core has no WREN beat. Otherwise it runs as FA §4.4 with the changes below (§14 changes 3, 11, 22, 27).
+Skipped on `m09_sleeper_named`: Kowalczyk is cuffed at the briefing, so nobody props the service door, the door log has no 02:10 entry, and the core has no WREN beat. Otherwise it runs as FA §4.4 with the changes below (§14 changes 3, 11, 22, 27).
 
-**What WREN did, and for whom.** The Initiative placed her eleven years ago. Tesseract took her tasking off the Initiative's books for tonight (the m09 draft's change 8): see 0x00 safely to the core, and keep the core's service door open for him. At 01:58, at the kit check, she copied Malhotra's badge with a cloner from the breaching case while it lay by his headset. At 02:10, at the door end of the recon, she propped the service door with the copy. It is his way out (Scorched Earth uses it) and, if 0x00 won't press the key, her way in. She believes in the Publication, and that is her one goal at the core (§9.3).
+**What WREN did, and for whom.** The Initiative placed her eleven years ago. Tesseract took her tasking off the Initiative's books for tonight (the m09 draft's change 8): see 0x00 safely to the core, and keep the core's service door open for him. At 01:58, at the kit check (01:45 to the split, the case open on the table throughout), she copied Malhotra's badge with a cloner from the breaching case while it lay by his headset. At 02:10, at the door end of the recon, she propped the service door with the copy. It is his way out (Scorched Earth uses it) and, if 0x00 won't press the key, her way in. She believes in the Publication, and that is her one goal at the core (§9.3).
 
 ### 8.1 The field
 
@@ -249,7 +252,7 @@ Each suspect has a reason for suspicion the player can see, a beat, and somethin
 
 | Suspect | Why suspect them | Their beat | What clears them |
 |---|---|---|---|
-| **Quintero** (52) | Argued against Helena and against tonight; a delay helps the 06:00 fallback. Took the drain alone at 02:10. She too came in through Harwick & Lowe (as honest cover, which she doesn't know), and her father is in residential care, so m09's placing sheet names her beside Kowalczyk. | The objection, and her answer at the outer lock. | Clue 3: she didn't pack the breaching case. Clue 2 leaves her in; she is the obvious wrong answer. |
+| **Quintero** (52) | Argued against Helena and against tonight; a delay helps the 06:00 fallback. Took the drain alone at 02:10, and the drain comes up by the service door. She too came in through Harwick & Lowe, placed as honest cover (she doesn't know the firm was a front), and her father is in residential care, so m09's placing sheet names her beside Kowalczyk. Her hire dates to the same quarter as Kowalczyk's, so "placed eleven years ago" fits her as well as Malhotra. | The objection, and her answer at the outer lock. | Clue 3: she didn't pack the breaching case. Clue 2 leaves her in; she is the obvious wrong answer. |
 | **Kowalczyk** (47) | Breaching lead, always a room ahead, her badge on every door; took the door end at 02:10; packed the breaching case. A Harwick & Lowe hire; her mother is in residential care. Easy to like. Her cracker has the bench's casing. | The cracker; laughing with Arakawa at the kit check; the peel-off. | Nothing. |
 | **Malhotra** (33) | His badge is on the door log. Eleven years' service, the same as WREN's placement. In Helena he asked to run the line himself, and he has run comms all night from the van, his badge on the table. | Logging Arakawa off the net at 02:10, aloud. | Clue 2: on comms with HaX at 02:10, at the van end, and the player heard him. |
 | **Arakawa** (41) | A lateral hire, the outsider. He closed the county road tonight, as he cleared Helena's police in m09, and again nobody asked who for. He packed the breaching case with Kowalczyk. | The call to his daughter during flag 1. | Clue 2: beside the player at the gate at 02:10. |
@@ -260,33 +263,34 @@ Each suspect has a reason for suspicion the player can see, a beat, and somethin
 
 No clue names WREN on its own; two together do. HaX's nudges say only what she can see.
 
-1. **The door log** (security office, needs flag 1). At 02:10 the core's service door opened to a SAFETYNET badge: Malhotra's. HaX: "The log says Malhotra's badge. Malhotra was on with me at ten past." So somebody has a copy.
-2. **The alibi** (on the line, any time after clue 1). Who wasn't where somebody could see them at 02:10? The player saw Arakawa; HaX had Malhotra; Netherton had Vector and Phantom. That leaves the tunnel pair, Quintero and Kowalczyk. HaX: "So who wasn't where somebody could see them at ten past?"
-3. **The bench log** (workshop floor). Beside the supplier batches (the crackers Nightshade put into stores, row 29) is a cloner shipped "to WREN", delivered in Task Force Null's breaching case, and the record the cloner sent home to the bench (its units report back): a SAFETYNET badge, Malhotra's, copied at 01:58. At 01:58 the case was open on the kit-check table, packed by Kowalczyk and Arakawa. HaX: "That's a cloner in our own breaching kit. Who packed it?"
+1. **The door log** (security office, needs flag 1). At 02:10 the core's service door opened to a SAFETYNET badge: Malhotra's. HaX: "The log says Malhotra's badge. Malhotra was on with me at ten past." So somebody has a copy. If the player asks for the service door's camera (flag 1 gives the feeds): "That camera's a box on a bracket. Never wired." (S2-02.)
+2. **The alibi** (on the line, any time after clue 1). Who wasn't where somebody could see them at 02:10? The player saw Arakawa; HaX had Malhotra; Netherton had Vector and Phantom. That leaves the tunnel pair, Quintero and Kowalczyk, and since both branches of the fork come out by the service door, either could have opened it. HaX: "So who wasn't where somebody could see them at ten past?"
+3. **The bench log** (workshop floor). Beside the supplier batches (the crackers Nightshade put into stores, row 29) is a cloner shipped "to WREN", delivered in Task Force Null's breaching case, and the record the cloner sent home to the bench (its units report back): a SAFETYNET badge, Malhotra's, copied at 01:58. At 01:58 the case was open on the kit-check table. Who packed it is on the case's sign-out sheet at the forward post, which the player can read when they like and which HaX reads out if asked (S2-04): Kowalczyk and Arakawa. HaX's nudge: "That's a cloner in our own breaching kit. The sign-out sheet's on the table here." If asked, she reads the two names.
 
 Clues 2 and 3 cross at one name. Clue 1 supplies the time that makes clue 2 a test. The cracker is not a clue: it shows she carried a bench unit, which proves nothing on its own (bench units went into SAFETYNET's stores through Nightshade). It is the last card at the accusation.
 
 ### 8.3 Helpers who replace a clue
 
-- **Nightshade, kept or dealt** (§7.1) replaces clue 2: "Your log will show a borrowed badge. Don't ask whose. Ask who took the door end."
-- **Phantom's list** replaces clue 3. Since m08 he has audited every kit sign-out; his list for tonight is who signed for the breaching case at the kit check: Kowalczyk and Arakawa.
-- **`m09_sleeper_shortlist`** (the two faces from m09's Harwick & Lowe sheet) replaces clue 2. HaX, at the briefing: "Two faces from Helena. Watch both." The alibi later gives the same pair.
+- **Nightshade, kept or dealt** (§7.1) replaces clue 2. He speaks before the split, so his line is ENTROPY's usual method, not a forecast (S2-03, N14): "They always borrow a badge, and it's never the borrower's. Look for whoever went where nobody watches."
+- **Phantom's list** replaces clue 3. Since m08 he has audited every kit sign-out; his list for tonight is the breaching case's sheet: Kowalczyk and Arakawa.
+- **`m09_sleeper_shortlist`** (the two faces from m09's Harwick & Lowe sheet) replaces clue 2. HaX says it at the private aside (§3 beat 10), out of the team's hearing: "Two faces from Helena. Watch both." The alibi later gives the same pair.
 - **Imran, talked round** (§7.2) points the player at the bench log by name; he doesn't replace a clue.
 
 ### 8.4 Accusing
 
 Any time after clue 1. Face to face when the accused is in the room; **on the line**, to HaX, who passes it to Netherton, when they are not (Malhotra at the van, Vector and Phantom at the forward post, Kowalczyk after she goes ahead). Outcomes are the same either way.
 
-- **Right, face to face.** Three beats (W16):
-  1. **Her first lie.** "Malhotra's badge, Malhotra's door. Ask him." The player breaks it with the alibi: he was on with HaX.
-  2. **The second.** "I packed that case with Kenji. Ask him where he was at ten past." The player breaks it from memory: beside them at the gate.
-  3. **The last card.** The cracker she gave them came off that bench. She cracks (stage 2 §3.3), and Arakawa, who laughed with her at the kit check, looks away.
+- **Right, face to face.** The player lays four cards down, in this order (N15), and she answers the first two with lies:
+  1. **The alibi.** She lies: "Malhotra's badge, Malhotra's door. Ask him." The card breaks it: he was on with HaX.
+  2. **The cloner in the case.** She lies: "I packed that case with Kenji. Ask him where he was at ten past."
+  3. **Arakawa at the gate.** The player breaks the second lie from memory: he was beside them.
+  4. **Her own words.** "[You said it never went through stores. Then it came straight off his bench.]" She cracks (stage 2 §3.3), and Arakawa, who laughed with her at the kit check, looks away (unless he is at the blast door, §7.1).
   She is held at the forward post. `sleeper_caught` is true.
 - **Right, on the line.** Netherton sends Quintero by the service side and she takes Kowalczyk at the door. If Quintero has been wrongly sent back, there is nobody to send: WREN reaches the core and the player stops her there, and `sleeper_caught` is still true (S1-19).
 - **Wrong.** The innocent officer is led back to the forward post with one line that is also a hint (stage 2 §3.4). The team loses that officer's job (FA §4.4): without Malhotra, HaX's line drops a room early; without Arakawa, one more guard ahead; without Quintero, nobody but the player stops WREN at the core; without Vector, his door shuts; without Phantom, his list goes. `wrong_accusation` is true.
 - **The recall.** Once the player holds the clearing evidence, Netherton recalls the officer over HaX's channel; their job returns from the next room.
 - **None.** WREN acts at the core.
-- **A knock-out is not an accusation.** A downed raid member is held at the forward post and costs an epilogue line. A knocked-out Kowalczyk can't act at the core, but `sleeper_caught` stays false, and the epilogue says she was never named.
+- **A knock-out is not an accusation.** A downed raid member is held at the forward post and costs an epilogue line. A knocked-out Kowalczyk can't act at the core. A held raid member can still be accused on the line, with the same outcomes (S2-18), so `sleeper_caught` becomes true if the player names her afterwards; if they never do, it stays false and the epilogue says she was never named.
 
 ### 8.5 If WREN was warned
 
@@ -294,7 +298,7 @@ On the tripwire (§5.3) she goes ahead a room early, at the workshop floor, with
 
 ## 9. Act 3: the gallery and the core
 
-Aim 5: reach the core. 04:00 as the outer lock opens, then paused.
+Aim 5: reach the core. 04:00 as the outer lock opens; the countdown doesn't move again while he and the player talk.
 
 ### 9.1 The gallery (alone)
 
@@ -312,23 +316,24 @@ The first room the player walks alone. HaX is jammed and the music is gone. A wa
 One room. The core host terminal on one side; Tesseract seated at the release console on the other, a man in his sixties (his look is the user's call, FA §8 risk 9). His hand rests beside the key. He is non-hostile and can't be knocked out before the choices (stage 5 builds him that way).
 
 **Step 0: arrival.**
-- He has paused the release: "Take your time. I've paused it. I'd rather it was you." Then, so the threat stays in the room (W5): it starts again when he presses the key under his hand, or at six if nobody does anything. The core's countdown object reads PAUSED.
-- He greets HaX on the player's handset: "Ninety-nine. You've done well with them." She answers him, on every branch (W20): "It's HaX. It has been for seven years." Then, to the player: "Get on his box. He'll keep."
-- **Flag 4** at the host terminal: the stolen copy and the live line into the Citadel's vault. Two or three idle lines from him, each on VM sub-progress, never on time. The field-guide offer still works. On a cold start (or if the player never read the Albion papers), HaX reads one line off his box as flag 4 lands: he argued for the vendor nine years ago, and lost (S1-17). If the player asks about the head start: released, "Two hours for people who'll waste it. They were always scenery."; stopped, "Good. I never liked paying them." (FA §13 item 19).
+- He tells the player there is no hurry, and why there is (N5): "Take your time. It goes at six whatever we say. Or now, if someone presses this. I'd rather it was you." His hand rests by the key; "someone" sets up the offer. The core's countdown object keeps its time (it moves only on beats, so nothing moves while they talk). This replaces FA §4.1's "I've paused it" (§14 change 37).
+- He greets HaX on the player's handset: "Ninety-nine. You've done well with them." She answers him, on every branch (W20). She refused the name on his m09 call ("It's HaX. It has been for seven years."), so m10's answer is the payoff and shorter: "Still HaX." Then, to the player: "Get on his box. He'll keep."
+- **Flag 4** at the host terminal: the stolen copy and the live line into the Citadel's vault. Two or three idle lines from him, on events the game sees (S2-17): the player's first use of the host terminal, a field-guide hint request, a failed flag submission. Never on time. The field-guide offer still works. On a cold start (or if the player never read the Albion papers), HaX reads one line off his box as flag 4 lands: he argued for the vendor nine years ago, and lost (S1-17). If the player asks about the head start: released, "Two hours for people who'll waste it. They were always scenery."; stopped, "Good. I never liked paying them." (FA §13 item 19).
 
 **Step 1: his case** (when the player walks to the console; the console's menu comes after the third exchange).
 1. **The Publication, plainly**: the hour, the fallback city by city, his figure from memory, why it ends the arms race. Six lines at most.
 2. **The offer, which every player hears** (D-21): it has to be one of them; if he presses it, it's a crime, and if they press it, it's a confession. Warmer on `m01_player_launched_attack` and `m06_satoshi_stance = wondered`, colder on `rejected`; nothing else changes.
-3. **His evidence** (W9): "My file says it will be you", then up to three lines from the player's record as proof, by priority (m04 `disclosure_choice`, m01 `final_choice`, m07 `debrief_stance`, each with a default), said as one speech, two at most before the player can answer. They come after the offer so they read as his argument.
-4. **On `m09_recruiter_secret`**: HaX heard the Recruiter's receipt in m09 (the m09 review's S-25), so his leverage is the silence since: on `kept`, he tells her on the open line that her agent never explained it to her, and she answers "I'll deal with that afterwards"; on `told` or `confessed`, he starts and she cuts him off: "They told me. Next." He knows because the Initiative's records have mirrored to Tomb Gamma since he took WREN's tasking (S1-12).
+3. **His evidence** (W9, N7): he opens on his m07 handset line turned round, "I told you once I prefer to watch. I've watched.", then up to three lines from the player's record as proof, by priority (m04 `disclosure_choice`, m01 `final_choice`, m07 `debrief_stance`, each with a default), said as one speech, two at most before the player can answer, and closes "Since your first day." He never claims to have read the player's file; on a never-played-m07 save the line still reads as a man who has been watching.
+4. **On `m09_recruiter_secret`**: HaX heard the Recruiter's receipt in m09 (the m09 review's S-25), so his leverage is the silence since: on `kept`, he tells her on the open line that her agent never explained it to her, and she answers "I'll deal with that when this is done."; on `told` or `confessed`, he starts and she cuts him off: "They told me. Next." He knows because the Initiative's records have mirrored to Tomb Gamma since he took WREN's tasking (S1-12).
 
 **Step 2: the three exchanges** (FA §4.1; lines in stage 2 §2.3). One argument, three steps:
 
-- **He moves with the player** (W1). Claims 2 and 3 each have two openers, one after a landed point ("Then the number was wrong. The reason isn't.") and one after a miss.
-- **Each exchange offers** the mission's rebuttal (always), up to two answers from the player's record that fit, and one decoy: a true, strong line aimed at a different claim (W2). Record answers placed under the wrong claim are decoys too. The order on screen is fixed per exchange, chosen by hand, with the mission's rebuttal never in the same slot twice.
-- **Claim 1, "The cost is acceptable."** Rebuttal: someone corrected his sheet and he signed the old number (the plain form); decoded, it names Asante. Record: `hardened` (the live curve), `m02_bed4_manually_stabilised`, the clean first day.
-- **Claim 2, "Services like yours hoard."** He gives it a victim (W4): an infusion-pump flaw in a hundred and forty hospitals that SAFETYNET has known about for three years and calls an asset. Rebuttal: he argued for the vendor nine years ago, lost, and never sent the notice; tonight strangers pay for that. Record: `m04_disclosure_choice = full`, `m09_albion_notified`, `m02_exposed_hospital`.
-- **Claim 3, "Someone has to make it hurt. Better me, with clean hands."** He starts the line here ("Let it hurt afterwards, not during."). Rebuttal (W3), grounded in his offer: he needs the player's hand on the key so his own stays clean; he is handing the hurt on, as he always has. Record, in priority order: "Put me on speaker" (`m09_hax_confession_answer = same_in_your_place`); on `should_have_told`, HaX's unasked line, then "She learned that from you."; HaX's meaning of the line, told in m09 (`m09_completed`); `m09_reading_finished`; `alpha_tapes_saved` if stage 3 adopts it (the Tomb Alpha tapes are recordings of his teaching, m09's change 16; S1-15); Voltage stood down; a technician talked round. On `m07_architect_echo_heard`, HaX has one beat as he says the line: the player heard him say it on their handset in m07.
+- **He moves with the player** (W1). Claims 2 and 3 each have two openers, one after a landed point and one after a miss, each keyed to the exchange just before it, so he never concedes something that wasn't proved (N1).
+- **Each exchange has four fixed slots** (S2-12): the mission's rebuttal; an evidence decoy; and two record slots. Where the player has fewer than two record answers, a plain decoy fills the empty slot. The rebuttal sits in a different slot in each exchange (2, 1, 3). A cold-start player therefore sees three buttons.
+- **No length tell** (N3). The rebuttal and the evidence decoy are about the same length, one sentence each, and both cite something found tonight; the decoy cites it against the wrong claim. Lines in stage 2 §2.3.
+- **Claim 1, "The cost is acceptable."** Rebuttal: someone corrected his sheet and he signed the old number (decoded, it names Asante). Evidence decoy: his schedule puts the hospitals first, which is about order, not price. Record: `hardened` (the live curve), `m02_bed4_manually_stabilised`, the first-day choice not to hurt anyone (N18).
+- **Claim 2, "Services like yours hoard. Only a shock fixes it."** He gives it a victim (W4): an infusion-pump flaw in a hundred and forty hospitals that SAFETYNET has known about for three years and calls an asset. Rebuttal, about the claim (N3): "only a shock" is untested, because he never tried a letter; he wrote the Albion notice and didn't send it. Evidence decoy: the pump flaw is on his own schedule, which is the price again. Plain decoy: a fair line about the price, not "go to the press" (N2). Record: `m04_disclosure_choice = full`, `m09_albion_notified`, `m02_exposed_hospital`.
+- **Claim 3, "Someone has to make it hurt. Better me, with clean hands."** He starts the line here ("Let it hurt afterwards, not during."). Rebuttal (W3), grounded in his offer: "better me" was never true; he needs the player's hand on the key so his own stays clean. His concession gives up exactly that (N10). Record, in priority order: HaX on speaker, offered by the player (`m09_hax_confession_answer` is `same_in_your_place` or `afterwards`; W33, N8); on `should_have_told`, HaX's unasked line, then "She learned that from you."; on `afterwards`, HaX's own beat first (stage 2 §3.1: the player gave her line back to her in Helena, and she is holding them to it); HaX's meaning of the line, told in m09 (`m09_completed`); `m09_reading_finished`; his Tomb Alpha teaching notes (`m09_deck_pulled = alpha_tapes`, m09's export, change 25; S2-11); Voltage stood down; a technician talked round. On `m07_architect_echo_heard`, HaX has one beat as he says the line: the player heard him say it on their handset in m07.
 - **A landed point** shows: he stops, looks at the console, a beat of silence, and the music takes a step down; then a concession of exactly what was proved. **A miss**: he answers at once, dry, and nothing moves. Ledger answers (`m04_crew_lost`, `m02_patient_bed4_deceased`, `m06_satoshi_stance`) sting first and decide nothing. **Two of three** for surrender.
 
 **Step 3: the console.** **Stop it** (the disarm armed at the server hall) or **"Show me how it works"** (Join, §9.4).
@@ -343,8 +348,8 @@ One room. The core host terminal on one side; Tesseract seated at the release co
 
 **Step 5: the end for him** (not after "wipe both"). User decision F11: two lethal-force versions, each signposted.
 - **Two or more points.** He stands, hands empty: "Ask me, then." Accept his cooperation (**surrender**), or arrest him anyway (**arrest**), or the cold choice below.
-- **Fewer than two.** "Arrest me, then." The menu: arrest him, or the cold choice. On "arrest", as the player moves, **he makes a move that threatens lives**: his hand goes to the console to re-arm the fallback for the first city with one key (W8: an act he makes, not a dead-man switch). In that moment: **fire** (**justified lethal force**, one narrated line; HaX was a second behind: "I was a second behind you. Log it. I'll sign under you."), or **hold fire**, and HaX kills the feed through the host the player controls in time (**arrest**).
-- **The cold choice** (F11), offered in both menus, clearly labelled and confirmed: "[Shoot him where he sits.]" The narrator states it plainly: his hands are empty and in sight, this would be an execution, and it ends the mission on the record. Then "[Do it.]" or "[Lower the weapon.]". Only "Do it." sets `ending = executed`. It can't be reached by a misclick, a knock-out, the clock, a failed talk-down or any import. Its weight is HaX's and Netherton's reactions (§10.5).
+- **Fewer than two.** "Arrest me, then." The menu: arrest him, or the cold choice. On "arrest", as the player moves, **he makes a move that threatens lives**: his hand goes to the console, where one key sends the first city's list out anyway (W8, N17: an act he makes, not a dead-man switch). In that moment: **fire** (**justified lethal force**, one narrated line; HaX was a second behind: "I was a second behind you. Log it. I'll sign under you."), or **hold fire**, and HaX kills the feed through the host the player controls in time (**arrest**).
+- **The cold choice** (F11), offered in both menus, clearly labelled and confirmed: "[Shoot him where he sits.]" on fewer than two points, "[Shoot him where he stands.]" on two or more (N11). The narrator's warning (stage 2 §2.4) says plainly that his hands are empty, he isn't moving, it would be an execution, and HaX is on the line. Then "[Do it.]" or "[Lower the weapon.]". Only "Do it." sets `ending = executed`. It can't be reached by a misclick, a knock-out, the clock, a failed talk-down or any import. Its weight is HaX's and Netherton's reactions (§10.5).
 
 ### 9.4 The Join path (FA §4.3)
 
@@ -362,18 +367,28 @@ Three deliberate steps, never a trap; WREN never comes through on this path.
 
 A cutscene at the forward post, so nobody walks back up through nine rooms (S1-27). Floodlights, engines running, people on bumpers, the countdown object on the table still counting. It has two parts.
 
-1. **The walkabout.** A short hub of the people the night left standing there, by branch; the player picks whom to go to, each gives one line, and "[That's everyone.]" moves on. At most five are offered, chosen by the weight of the player's choices: Quintero (on a stretcher if she was hurt, answering the briefing stance once more); Kowalczyk in the van if caught (answering the question she asked at the accusation); a wrongly accused officer not recalled; Nightshade, and on the arrested branch HaX going to his van while the player doesn't hear it (FA §5.1); Voltage led past (the inquiry line); Gary and Imran (the phone, if the player left it with him); Wendell (whether he's paid for the week, and his colleague); Victoria in a van if arrested in the gallery. This is where the carry-overs land last: as people in the cold.
-2. **Netherton and HaX.** The scene closes as the countdown object reaches 06:00 and nothing happens; on a partial release HaX says Seattle's batch went first. Netherton folds the night into two lines with numbers (the head start, the partial release, the media story; FA §4.6), then the database's beat (§10.8). HaX keeps her promise from Helena (§14 change 21): she tells the player "the rest", on every ending that reaches 06:00 except the cold one. Then her last word (stage 2 §3.1).
+**Where every promised payoff lands** (S2-05; written once here). Each has a guaranteed home, so a rich save loses nothing and the executed ending keeps most of them:
+
+| Payoff | Home |
+|---|---|
+| Every person met tonight, and what became of them (Imran's call, Gary's fate, Wendell's colleague, Voltage's inquiry ask, arrested Victoria's charge, a knocked-out raid member, WREN never named) | the credits' "In this operation", one outcome clause each (§11.3) |
+| Ghost's message (the answer to "Did the board ever thank you?", or the parley's goodbye) and the Recruiter's line on `double_crossed` ("I'll remember the shape of you.") | two phone texts during the 06:00 cutscene, unvoiced |
+| The $12.8M on `m06_assets_seized` | one of Netherton's two lines |
+| Elena Torres, dispatch, the forty-seven, Albion's inquiry | the card's human line (§11.1); the rest in the credits' clauses where a person carries them |
+| The five heaviest people | the walkabout, below |
+
+1. **The walkabout.** A short hub of the people the night left standing there, by branch; the player picks whom to go to, each gives one line, and "[That's everyone.]" moves on. At most five, in this precedence: Quintero (on a stretcher if hurt, answering the briefing stance once more); Kowalczyk in the van if caught (answering her question); a wrongly accused officer not recalled; HaX on `m09_recruiter_secret = kept` (the forty-seven, as its own pick, N20); Nightshade (on the arrested branch, HaX goes to his van and the player doesn't hear it, FA §5.1); then Voltage, Gary and Imran, Wendell, Victoria. Those past five are paid in the credits.
+2. **Netherton and HaX**, in a fixed order (N20): Netherton's two lines with numbers (the head start, the partial release or the media story, the $12.8M where it applies; FA §4.6); the database's beat (§10.8); the van, on arrest and surrender (§10.2–10.3); HaX's promise from Helena, "the rest" (§14 change 21), on every ending that reaches 06:00 except the cold one; then her last word as the countdown object reaches 06:00 and nothing happens (on a partial release HaX says Seattle's batch went first). "Afterwards" is said at most twice in a run (N4): his line in exchange 3, and HaX's "It's afterwards." on arrest; Scorched Earth's card is his only one on that ending.
 
 ### 10.2 Arrest (`arrest`)
 
 - **Core:** he holds out his wrists before he is asked.
-- **06:00:** in a police van. He nods to HaX through the window. HaX: "You'll want a lawyer, Adrian. Get a good one. I'm testifying." Netherton, at the window: "Adrian." He: "Magnus. You kept the chapter on raids by invitation, I see." Netherton signs the handover: "A trial. He will make speeches. Let him."
+- **06:00:** in a police van. He nods to HaX through the window. HaX: "You'll want a lawyer, Adrian. Get a good one. I'm testifying." Netherton at the window; the names were spent at the core, so this is the chapter (N13): he, "I wrote that chapter, Magnus."; Netherton, "I know. I kept it to one page." Netherton signs the handover: "A trial. He will make speeches. Let him." As the van goes, HaX: "It's afterwards."
 
 ### 10.3 Surrender and cooperation (`surrender`)
 
 - **Core:** he types the cells' contact protocol into the bunker's own terminal himself, without hurrying.
-- **06:00:** HaX sits with him in the van for a minute and doesn't say what they talked about. Netherton and he exchange the same two names through the window. Netherton takes the protocol to the Council; two cells are rolled up (the rule is stage 3's).
+- **06:00:** HaX sits with him in the van for a minute and doesn't say what they talked about. Netherton and he have the chapter exchange through the window (§10.2). Netherton takes the protocol to the Council; two cells are rolled up (the rule is stage 3's).
 
 ### 10.4 Lethal force, justified (`lethal`)
 
@@ -385,19 +400,20 @@ A cutscene at the forward post, so nobody walks back up through nine rooms (S1-2
 The darkest ending (F11). Its weight is the people who have to answer for it.
 
 - **Core:** one narrated line. He is sitting with his hands empty, and the player fires. On the line, HaX says nothing for a long time, then the player's designation, once.
-- **Afterwards:** no walkabout. Quintero comes in from the lock and takes the player's weapon without a word. At the forward post Netherton doesn't sign anything: "I will not put my name under this one. You will be held until the board sits." HaX doesn't come to the van. Her last word is a message, later: "I'll be at the board. I don't know what I'll say." She does not tell the player "the rest".
-- **Title:** MISSION COMPLETE, then AGENT 0x00: IN CUSTODY. ENTROPY has a martyr shot unarmed, and says so.
+- **Afterwards:** no walkabout. Quintero comes in from the lock and takes the player's weapon without a word; if she is wounded or was sent back, Netherton's van team does it at the lock (S2-08). At the forward post Netherton doesn't sign anything: "I will not put my name under this one. You will be held until the board sits." HaX doesn't come to the van. Her last word is a message, later: "I'll be at the board. I don't know what I'll say." She does not tell the player "the rest".
+- **The cost, made concrete** (N16): at 06:00 Social Fabric sends the "massacre in Montana" story, the one drafted with the player's photo on it. It goes out unchanged, and it is now true.
+- **Title:** MISSION COMPLETE, then AGENT 0x00: IN CUSTODY.
 
 ### 10.6 Scorched Earth (`scorched`)
 
 - **Core:** "wipe both" goes through. The core purges itself (his own dead-man, triggered by the wipe, D-12): fire suppression, the lights, the doors cycling. In the dark he is gone by the service door WREN propped (or his own way, if she was caught). On the console, a card in his hand: "Afterwards, then."
-- **06:00:** Netherton suspends the player in front of the team: "I would have wanted to do the same. That is why you are suspended and I am not." Then: every flaw is still out there, and nobody can see them any more.
+- **06:00:** Netherton suspends the player in front of the team: "I wanted to do the same. That is why you are suspended and I am not." Then: every flaw is still out there, and nobody can see them any more.
 - **The hearing** (a short scene after): HaX stands with the player; her last word is about them (stage 2 §3.1).
 - **Title:** MISSION COMPLETE, then AGENT 0x00: SUSPENDED.
 
 ### 10.7 Join ENTROPY (`joined`)
 
-- **Core:** the key is pressed; "Thank you, Agent." The countdown objects run to 06:00 and on, city by city. He takes his coat and walks out with the player by the service door.
+- **Core:** the key is pressed; "Thank you, Agent." The countdown objects jump to RELEASED: the key sends everything everywhere in the same minute (the 06:00 fallback would have gone city by city, as m09 has it). He takes his coat and walks out with the player by the service door.
 - **No 06:00 scene.** The frame is the Citadel: HaX at her desk, her last message unanswered (the player's designation, nothing else); Netherton orders 0x00 brought in; the casualty curve on the forward post's screen, climbing.
 - **Title:** MISSION FAILED, with the Publication's casualty projection, as m01's launch ending.
 
@@ -413,10 +429,10 @@ One beat with a consequence (FA §4.6; costs are stage 3's). Secured: the copy f
 
 Fixed strings, narrator or unvoiced. It arrives after the scenes have said most of it, so it stays short (W26):
 
-1. **The Architect**, by ending: in a cell; cooperating; dead; at large, with his memory; with you.
+1. **The Architect**, by ending: in a cell; cooperating; dead, reaching; shot unarmed (S2-08, N16); at large, with his memory; with you.
 2. **The database**, by `database_outcome`, matching the 06:00 beat.
 3. **The head start**: nobody got it; one cell did; or two cells have it.
-4. **The cells**, in one line together: the ones staged tonight and the ones not (Ghost Protocol, Digital Vanguard, Supply Chain Saboteurs by the m07 sites, with `m07_completed`; m07's canon otherwise), and the Recruiter by the one rule (FA §4.6).
+4. **The cells** (N21): the count and one name, by branch ("Four cells rolled up. Ghost Protocol was not among them."), from the staged cells and the m07 cells (with `m07_completed`; m07's canon otherwise). The Recruiter is named only if the rule gives her a changed state (FA §4.6).
 5. **One human line**, chosen by the player's heaviest earlier choice: Elena Torres treated; dispatch in eleven counties restored, and after how many days; the forty-seven reached; or Albion's inquiry (by `m04_disclosure_choice`). Stage 3 sets the order.
 
 ### 11.2 The teaser slot (FA §7)
@@ -425,8 +441,8 @@ After the card, before the roll, on every ending. A few seconds behind `teaser_e
 
 ### 11.3 The credits
 
-1. **"In this operation"**: the people this player's season put in the bunker, in the order the player met them tonight, one line each with the room ("Agent 0x47 'Nightshade', the door"; "Gary Whitlock, the workshop"). Fixed strings per branch; the defaults (Imran Siddiqui, Wendell Briggs, Pieter Vos, a stranger on the handset) are named too.
-2. **SAFETYNET**: Netherton, HaX, the raid team (a wrongly accused officer never recalled is still listed; WREN last, under her codename).
+1. **"In this operation"**: the people this player's season put in the bunker, in the order the player met them tonight, one line each with the room and one outcome clause by branch (S2-05): "Agent 0x47 'Nightshade', the door. Moved, and unreachable." / "Imran Siddiqui, the workshop. Kept his phone. Sent a friend home." / "Wendell Briggs, the power room. Paid for the week." Fixed strings per branch; the defaults (Imran, Wendell, Pieter Vos, a stranger on the handset) are named too. This is the home for every promised payoff that the 06:00 scene doesn't reach, executed ending included.
+2. **SAFETYNET**: Netherton, HaX, the raid team (a wrongly accused officer never recalled is still listed), and last, "Halina Kowalczyk, 'WREN'" (N21: her Initiative codename under SAFETYNET's heading is the sting).
 3. **In memory**: Agent 0x19 Callum Fraser and Agent 0x6B Ana Lúcia Ferreira.
 4. **The production credits**, over the closing track.
 5. **End of Season 1.**
@@ -455,53 +471,59 @@ FA §13 items owned by stage 1 that concern m10. "#" is that table's number; "Wh
 
 1. FA §13 item 28: where a kept, shown Nightshade who is taken in is placed, and whether he speaks at the core. Suggested: the outer lock with Quintero, and one line to Tesseract after the choices.
 2. Surrender's two cells rolled up: the rule for which two.
-3. The $12.8M on `m06_assets_seized` (row 80): a Netherton decision the player hears.
+3. The $12.8M on `m06_assets_seized` (row 80): a Netherton decision the player hears. Stage 2's sample line takes "returned to the victims' fund" as a default; stage 3 confirms or flips it.
 4. The closing card's human line: the order of precedence among the four candidates.
 5. Disclose's branch operations (FA §13 item 27): the watch on a recruited Victoria survives because a Victoria who held goes back to Zero Day as if nothing happened; Nightshade's channel survives because he never went below ground (unless taken in, item 1).
 6. The cold lethal choice: confirm the two-step wording and that it is offered in both step-5 menus.
-7. `alpha_tapes_saved` (FA §13 item 25): whether it is adopted; its slot under the third claim is reserved.
+7. The Alpha tapes (FA §13 item 25): m10 reads m09's export `m09_deck_pulled` (`her_file` / `alpha_tapes` / `none`); the slot under the third claim is reserved, and the answer cites his teaching notes, since the tapes may never play (stage 3/5 decide whether they do).
 
 **For stage 4 and 5.** The countdown objects (one per main-path room, text from a global set on beats); Kowalczyk's cracker in the start kit; Tesseract non-hostile and KO-proof until the choices; the phone NPCs that ring on room entry (Ghost, arrested Victoria); companions placed per room with `setVisible`; the 06:00 cutscene and the Scorched Earth and Join cutscenes; the release key object.
 
 ## 14. Proposed FINALE_ARC changes
 
-For the arc-keeper; none is made here. Round 1 verdicts (REVIEW_R1_STRUCTURE §4) are applied: 1–18 as accepted or modified, 19 onward new in round 1. **m09** marks a change that needs a matching line in m09 (the m09 author's).
+For the arc-keeper; none is made here. Round 1 verdicts (REVIEW_R1_STRUCTURE §4) and round 2 verdicts (REVIEW_R2_STRUCTURE §5: accept 23, modify 10, plus new 34–36) are applied; 37–39 are new in round 2. Stage 0 sweeps are named in each row's sections column ("s0"), since stage 0 is not edited here. **m09** marks a change that needs a matching line in m09 (the m09 author's).
 
 | # | Change | FA sections | Status |
 |---|---|---|---|
 | 1 | No pronoun for WREN in player-facing text before the accusation. **m09:** the ledger and HaX too. | §4.4, §5.2, row 117 | accepted |
 | 2 | The cracker: Kowalczyk's own, bench-made, "This one's mine. Never been through stores, never been near him." in both missions; Nightshade's procured crackers came from the bench and were quarantined after m08. | §13 item 3, rows 29, 118 | accepted |
-| 3 | Accusations go **on the line** (to HaX, passed to Netherton) for anyone not in the room, including WREN after she goes ahead; same outcomes. Named on the line with no Quintero to send: she reaches the core, the player stops her, `sleeper_caught` is true. Netherton on the raid net speaks through HaX's channel and counts as hers for the one-voice rule. | §4.0, §4.4 | modified per S1-08, S1-18, S1-19 |
-| 4 | Malhotra has eleven years' service; both m10 briefings state WREN's placement, "eleven years ago". | §5.2, row 117 | modified per S1-23 |
+| 3 | Accusations go **on the line** (to HaX, passed to Netherton) for anyone not in the room, including WREN after she goes ahead; same outcomes. Named on the line with no Quintero to send: she reaches the core, the player stops her, `sleeper_caught` is true. Netherton on the raid net speaks through HaX's channel and counts as hers for the one-voice rule. A held (knocked-out) raid member can still be accused on the line. | §4.0, §4.4 | accepted in round 2, with S2-18 added |
+| 4 | Malhotra has eleven years' service; WREN's placement, "eleven years ago", is stated at the private aside in both briefings (change 35), never in front of the team. Quintero's H&L hire dates to the same quarter. | §5.2, row 117 | modified per S2-01 |
 | 5 | The epilogue is the forward post at 06:00 under floodlights, as a cutscene. | §4.6 | accepted, cutscene per S1-07/S1-27 |
 | 6 | Escaped Victoria without the threat offers a trade for walking out. | §4.2, §4.4, §4.6, §5.3 | modified: works with change 19 |
 | 7 | Arrested Victoria's information: Vos resells Zero Day's early access and skims; used, he withdraws Zero Day's order. | §4.2, §4.4, §4.6, row 34 | modified: works with change 19 |
-| 8 | Default technicians Imran Siddiqui (workshop; grievance branches on `m02_gary_protected`) and Wendell Briggs (power room). | §5.2, §5.3 | accepted, with S1-11 |
+| 8 | Default technicians Imran Siddiqui (workshop; his grievance keyed on whether Gary is in work after m02, with a never-played line) and Wendell Briggs (power room). | §5.2, §5.3 | modified per S2-10 |
 | 9 | A warned WREN goes ahead a room early, at the workshop. | §4.4, row 105 | accepted |
 | 10 | The shown Nightshade's override is the security office's alarm panel. | row 105, §4.4 | accepted |
-| 11 | Helpers: Nightshade (kept or dealt) and m09's `sleeper_shortlist` each replace clue 2; Phantom's list (who signed for the breaching case at the kit check: Kowalczyk and Arakawa) replaces clue 3. | §4.4, §5.2, §3.2 (add `m09_sleeper_shortlist`) | modified per S1-04, and to fit m09's change 6 (Quintero is also a Harwick & Lowe hire, so a lateral-hire list no longer narrows) |
+| 11 | Helpers: Nightshade (kept or dealt) and m09's `sleeper_shortlist` each replace clue 2; Phantom's list (the breaching case's sign-out: Kowalczyk and Arakawa) replaces clue 3. Nightshade's line is ENTROPY's usual method, since he speaks before the split ("They always borrow a badge, and it's never the borrower's. Look for whoever went where nobody watches."). The tunnel fork decides nothing: both branches come out by the service door. The shortlist line is said at the private aside. | §4.0 (the split), §4.4, §5.2, §3.2 Tier 1 and §3.4 (add `m09_sleeper_shortlist`) | modified per S2-03, S2-01 |
 | 12 | Asante corrected his casualty sheet; the decoded note says so. | §4.1, §5.2 | accepted |
 | 13 | Escaped Voltage can be talked down with the corrected sheet. | §4.4, row 45 | accepted |
 | 14 | Close order: conclusion screen, card, teaser, roll; credits open with "In this operation". | §4.6, §7 | accepted |
 | 15 | Quintero objects at the briefing (twice now) and the player can back her; answered at the lock. | §4.0, §5.2 | accepted |
 | 16 | Arakawa's 02:10 call is his alibi and his human beat; his suspicion is the closed road (as Helena's police in m09) and packing the breaching case. | §4.0, §4.4 | modified per S1-21, W17 |
-| 17 | Tesseract calls HaX "Ninety-nine" in both missions; in m10 she answers him, "It's HaX." **m09:** the name she refuses on his call. | §5.4 | accepted |
+| 17 | Tesseract calls HaX "Ninety-nine" in both missions. In m09 she refuses it ("It's HaX. It has been for seven years."); in m10 she answers "Still HaX." | §5.4 | accepted; wording synced with m09 in round 2 |
 | 18 | The raid team's suspicion beats agree across both missions, and m10 calls back all three of m09's. | §5.2, §13 item 4 | modified per S1-21 |
-| 19 | **The cells' head start goes as the outer lock opens**, so every gallery decision is in time. HaX's warning: "It goes when the outer lock opens." | §1.2, §4.2 (table and clock), §4.4, §4.6, §8 r7 | new (S1-01, orchestrator ruling) |
-| 20 | **Two lethal-force endings** (user decision F11). Justified: when he makes a move that threatens lives (his hand to the console to re-arm the first city's fallback; an act, not a dead-man switch), and HaX is a second behind. Cold: a separate, labelled, two-step choice in both step-5 menus, `ending = executed`, the darkest ending (MISSION COMPLETE, then AGENT 0x00: IN CUSTODY). D-11's "not after a successful talk-down" now applies only to the justified version. | §4.1 step 5, §4.5, §4.6, §3.5, §8 r5 | new (F11, W8) |
+| 19 | **The cells' head start goes as the outer lock opens**, so every gallery decision is in time. HaX's warning: "It goes when the outer lock opens." The gallery door opens only once flag 3 is in (the disarm armed). | §1.2, §4.2 (table and clock), §4.4, §4.6, §8 r7; s0 L45, L147 | modified per S2-07, S2-15 |
+| 20 | **Two lethal-force endings** (user decision F11). Justified: when he makes a move that threatens lives (his hand to the console, where one key sends the first city's list out anyway; an act, not a dead-man switch), and HaX is a second behind. Cold: a separate, labelled, two-step choice in both step-5 menus ("where he sits" / "where he stands"), `ending = executed`, the darkest ending (MISSION COMPLETE, then AGENT 0x00: IN CUSTODY; the card reads "shot unarmed"; the weapon taken by Quintero, or Netherton's van team if she is down or gone). D-11's "not after a successful talk-down" now applies only to the justified version. | §4.1 step 5, §4.5, §4.6, §3.5, §8 r5; s0 L47, L50, L160 | modified per S2-08, S2-15 |
 | 21 | **HaX's promise from m09 is paid at 06:00**: she tells the player "the rest", on every ending that reaches 06:00 except the cold one. **m09:** her confession promises it "when it's over". | §5.4, §4.6 | new (cross-mission) |
-| 22 | **Clue 3 is the bench's cloner record**: a cloner shipped "to WREN" in Task Force Null's breaching case copied Malhotra's badge at 01:58, while the case was open on the kit-check table, packed by Kowalczyk and Arakawa. The cracker becomes a suspicion beat and the accusation's last card. No single clue names WREN; clues 2 and 3 cross at one name. HaX's nudges never name a suspect. | §4.4 (clue 3), §13 item 3 | new (W15) |
-| 23 | **The silent door gets a decision**: bring Nightshade to the blast door on a tether (Arakawa guards him) or leave him; brought, he says "Manual." and the crank opens the door without announcing 0x00. Five full scenes then hold on every combination. | §1.3, §5.3; stage 0's checklist | new (S1-05) |
+| 22 | **Clue 3 is the bench's cloner record**: a cloner shipped "to WREN" in Task Force Null's breaching case copied Malhotra's badge at 01:58, while the case was open on the kit-check table (01:45 to the split), packed by Kowalczyk and Arakawa; who packed it is on the case's sign-out sheet on the forward-post table, readable any time, and HaX reads it if asked. The cracker becomes a suspicion beat and the accusation's last card. No single clue names WREN; clues 2 and 3 cross at one name. HaX's nudges never name a suspect. | §4.4 (clue 3), §13 item 3 | modified per S2-04 (the camera, S2-02, is change 36) |
+| 23 | **The silent door gets a decision**: bring Nightshade to the blast door on a tether (Arakawa guards him there all night) or leave him; brought, he says "Manual." and the crank opens the door without announcing 0x00. Knock-ons: Quintero has Arakawa's peel-off line; Arakawa is accused only on the line; a wrong accusation of him costs the crank. Five full scenes then hold on every combination. | §1.3, §5.3; s0 checklist | modified per S2-06 |
 | 24 | **Guard the arrested branch**: `m08_nightshade_arrested and not m08_nightshade_ko_before_fate` (m08's KO safety net sets both). **m09:** Netherton's visit line has the same overlap. | §3.2, §5.3, row 107 | new (S1-03) |
-| 25 | **No countdown engine feature**: time is shown by lines and a countdown object per room whose text reads a global set on story beats (PAUSED at the core; "EARLY ACCESS: RELEASED" at the lock). | §4.2 "The clock", §8 r7 | new (S1-09, orchestrator ruling) |
+| 25 | **No countdown engine feature**: time is shown by lines and a countdown object per room whose text reads a global set on story beats ("EARLY ACCESS: RELEASED" at the lock; at the core it holds the last beat's time, change 37; on Join, RELEASED). | §4.2 "The clock", §8 r7 | accepted |
 | 26 | **Kowalczyk's cracker is in m10's start kit** on every branch; inventory doesn't carry between missions. | §4.4 | new (S1-26, orchestrator ruling) |
 | 27 | **WREN's tasking**: Tesseract took it (m09's change 8: she stays on the Initiative's books and draws its money, but answers to him). It was to see 0x00 to the core and keep the service door open as his exit. Her own goal at the core is the key; refused, she tries anyway. The copy-for-the-Initiative line is dropped, which differs from m09's change 8 second half ("plays both ends"): one goal, per the orchestrator's ruling (W7). His refusal: "When they find out what you are, it proves nothing. It has to be one of theirs." | §4.4 "WREN at the core", §1.2 | new (W6, W7, S1-12) |
-| 28 | Netherton and Tesseract speak at the database choice on every branch, and through the van window on arrest and surrender. | §5.5, §4.6 | new (W21) |
+| 28 | Netherton and Tesseract trade names once, at the database choice, on every branch; through the van window on arrest and surrender they have the chapter ("I wrote that chapter, Magnus." / "I know. I kept it to one page."); the handbook line itself is in the briefing. | §5.5, §4.6 | accepted; wording per N13 |
 | 29 | **The casualty sheet**: m09's flag 4 gives his original; the bench copy in m10 is a later printing carrying Asante's correction and his second signature. FA §4.1's wording becomes "credits the hospitals' recovery twice, so it understates the dead". | §4.1, §6.1 | new (S1-16) |
-| 30 | **Quintero holds the outer lock** while he talks to 0x00 alone, and comes in at the noise when WREN does. | §4.0, §4.4 | new (W22) |
-| 31 | **Exchange 3's mission rebuttal is the clean-hands argument** (he needs the player's hand so his own stays clean); HaX's meaning of the line becomes a record answer on `m09_completed`; `alpha_tapes_saved` gets a slot below `m09_reading_finished`. His case gives his record lines after the offer, as evidence. | §4.1 (case and table), row 120, §13 item 25 | new (W3, W9, S1-15) |
+| 30 | **Quintero holds the outer lock** while he talks to 0x00 alone, and comes in at the noise when WREN does. If she is wounded or sent back, the lock is empty, and on the executed ending Netherton's van team takes the weapon. | §4.0, §4.4 | modified per S2-08 |
+| 31 | **Exchange 3's mission rebuttal is the clean-hands argument** ("Better you? You need my hand on that key so yours stays clean."; his concession "Better me, I said. And I brought you."). HaX's meaning of the line becomes a record answer on `m09_completed`; the Alpha answer cites his Tomb Alpha teaching notes, on `m09_deck_pulled = alpha_tapes` (m09's export, its change 25), below `m09_reading_finished`. His case gives his record lines after the offer, opening "I told you once I prefer to watch. I've watched." Each exchange has four fixed slots with an evidence decoy the same length as the rebuttal. | §4.1 (case and table), row 120, §13 item 25, §3.2 (add `m09_deck_pulled`) | modified per S2-11, N3, N7, N10 |
 | 32 | Vos's default gallery trade (the lock card for his name off the report); Ghost's "unanswered" branch for an m02 player who never answered (`m02_completed` and neither deal value). | §4.4, §5.3 | new (S1-28, S1-10) |
-| 33 | The closing card is five lines at most. | §4.6 | new (W26, orchestrator ruling) |
+| 33 | The closing card is five lines at most, and every promised epilogue payoff has a guaranteed home: one outcome clause per person in "In this operation"; two phone texts in the 06:00 cutscene (Ghost's message, the Recruiter's line on `double_crossed`); Netherton's $12.8M line on `m06_assets_seized`; the walkabout for the five heaviest. | §4.6 | modified per S2-05 |
+| 34 | **m10 runs about 105 minutes, ceiling 110**; the media-room cut is planned unless stage 8's timed playtest comes in under 105. | §1.3, §8 r6; s0 §1, L200 | new in round 2 (S2-15, S2-16; orchestrator accepts) |
+| 35 | **The WREN fact is told to the player privately** at the van end after the briefing, the team in view and out of earshot; Netherton says nothing to them, "and neither will you" (as in m09). Same on the cold start. | §4.0, row 117 | new in round 2 (S2-01) |
+| 36 | **The service door's camera is a dummy**, a box on a bracket the refit never wired; Kowalczyk's "a camera that doesn't move" is true, and HaX says so if asked. | §4.4 clue 1, §6.2 flag 1 | new in round 2 (S2-02) |
+| 37 | **He doesn't pause the release**: "Take your time. It goes at six whatever we say. Or now, if someone presses this." The core's countdown object holds the last beat's time. Replaces "He stops the clock" / "I've paused it". | §1.2, §4.1 step 0, §4.2 "The clock"; s0 L45, L54 | new in round 2 (N5) |
+| 38 | **`hax_confession_answer = afterwards`** (m09's change 24): at the core it opens the speaker record answer like `same_in_your_place`, with one HaX line first ("You gave me my line back in Helena. All right."); at the briefing, "You gave me my own line back in Helena. I'm holding you to it." | §3.4, §4.1 (third claim), §5.4 | new in round 2 (m09 sync) |
+| 39 | **"The rest" is four lines' worth, and "afterwards" is rationed**: "The night he left, he asked me to go with him." / "I said no. It took me till morning." The word "afterwards" is said at most twice in a run (his exchange 3 line; HaX's "It's afterwards." on arrest; the Scorched Earth card is his only one there). | §5.4, §4.6 | new in round 2 (N4) |
 
 ## 15. Review round 1 outcomes
 
@@ -581,3 +603,66 @@ Reviews: `REVIEW_R1_STRUCTURE.md` (S1-01 to S1-28: 1 blocker, 8 majors, 19 minor
 | W35 | minor | Fixed: the flagged phrasings rewritten | §10.1; SE §5, §6 |
 | Worst ten | – | All ten rewritten as suggested (no. 3 and 10 lightly changed); "It's afterwards." now stands alone after the van leaves | SE §2–3 |
 | Length | – | Later-stage detail cut to pointers (globals table, minute timings, display steps, card pagination, voice names and clashes, the playlist table); duplicated lines kept in SE only. About 21.7k words before this log (from 24.5k), after the new content this round asked for | throughout |
+
+## 16. Review round 2 outcomes
+
+Reviews: `REVIEW_R2_STRUCTURE.md` (S2-01 to S2-19: 5 majors, 14 minors; verdicts on the 33 changes) and `REVIEW_R2_WRITING.md` (N1 to N21: 8 majors, 13 minors; the worst ten; R1's W33). Orchestrator rulings applied as given; m09's round 2 sync (`hax_confession_answer = afterwards`, `deck_pulled`, the "It's HaX" refusal on its call, 06:00 city by city with the key sending everything at once) folded in. Edited section by section with Edit this round.
+
+### Structure review
+
+| ID | Sev | Outcome | Where |
+|---|---|---|---|
+| S2-01 | major | Fixed (ruling): the WREN fact is told at a private aside at the van end, the team out of earshot; same on the cold start; the shortlist line moved there | §3 beats 5, 10; §4; §8.3; §14 changes 4, 35 |
+| S2-02 | major | Fixed (ruling): the service door's camera is a dummy; one HaX line | §5.2, §8.2; §14 change 36 |
+| S2-03 | major | Fixed (ruling): both branches of the fork come out by the service door; Quintero's line rewritten; Nightshade's line is ENTROPY's usual method | §5.2, §8.1–8.3; §14 change 11 |
+| S2-04 | major | Fixed (ruling): the breaching case's sign-out sheet at the forward post is the source for who packed it; the kit check runs 01:45 to the split | §3, §8, §8.2; §14 change 22 |
+| S2-05 | major | Fixed (ruling): a payoff table in §10.1; one outcome clause per person in "In this operation"; two phone texts in the 06:00 cutscene; Netherton's $12.8M line | §10.1, §11.3; SE §3.2; §14 change 33 |
+| S2-06 | minor | Fixed: the silent door's Arakawa knock-ons written | §7.1, §8.4; §14 change 23 |
+| S2-07 | minor | Fixed: the gallery door opens only once flag 3 is in | §6.3; §14 change 19 |
+| S2-08 | minor | Fixed: cold-choice label by menu; the van team takes the weapon if Quintero is down or gone; card line "shot unarmed" | §9.3, §10.5, §11.1; §14 changes 20, 30 |
+| S2-09 | minor | Fixed: Nightshade's line first on the cold start; "The same people who bought our mole…" | §4 |
+| S2-10 | minor | Fixed: Imran's grievance keyed on Gary in work after m02; a never-played line | §7.2; SE §3.6; §14 change 8 |
+| S2-11 | minor | Fixed: the Alpha answer cites his teaching notes; one export name, m09's `deck_pulled` (`alpha_tapes`) | §9.3, §13; SE §2.3; §14 change 31 |
+| S2-12 | minor | Fixed: four fixed slots; rebuttal in slots 2, 1, 3 | §9.3; SE §2.3 |
+| S2-13 | minor | Fixed: "She refused it on his m09 call"; Quintero knows the firm, not that it was a front | SE §2.1, §3.4 |
+| S2-14 | minor | Fixed: "an overhead" | SE §3.5 |
+| S2-15 | minor | Fixed by proposal: stage 0 lines added to changes 19, 20 and 37; change 34 records the duration. Stage 0 not edited (ruling) | §14 |
+| S2-16 | minor | Fixed: Act 1 25, Act 3's choices 6–7, total 108; the media-room cut planned unless stage 8 times under 105 | §2; §14 change 34 |
+| S2-17 | minor | Fixed: idle lines on events the game sees | §9.3; SE §2.4 |
+| S2-18 | minor | Fixed: a held raid member can still be accused on the line | §8.4; §14 change 3 |
+| S2-19 | minor | m09's to fix (its change 8); m10 already says one goal | – |
+
+### Writing review
+
+| ID | Sev | Outcome | Where |
+|---|---|---|---|
+| N1 | major | Fixed: claim 3's landed opener keyed to exchange 2 ("Then I'm late. Someone still has to do it.") | §9.3; SE §2.3 |
+| N2 | major | Fixed: exchange 2's "go to the press" decoy replaced | SE §2.3 |
+| N3 | major | Fixed (ruling): an evidence decoy per exchange, the same length as the rebuttal and citing tonight's evidence; exchange 2's rebuttal is about "only a shock" | §9.3; SE §2.3; §14 change 31 |
+| N4 | major | Fixed (ruling): "afterwards" at most twice per run; "the rest" rewritten and unlabelled; the Recruiter line at 06:00 no longer uses it | §10.1; SE §3.1; §14 change 39 |
+| N5 | major | Fixed (ruling): "It goes at six whatever we say. Or now, if someone presses this." | §9.3; SE §2.4; §14 change 37 |
+| N6 | major | Fixed (ruling): leaving Imran his phone sends a friend home from the gallery (one guard fewer); taking it costs his help with the bench log | §7.2; SE §3.6 |
+| N7 | major | Fixed (ruling): "I told you once I prefer to watch. I've watched." / "Since your first day." | §9.3; SE §2.2 |
+| N10 | major | Fixed (ruling): "*pause* Better me, I said. And I brought you." | SE §2.3 |
+| N8 | minor | Fixed (with W33): the player's button is "[HaX. You're on speaker.]" | §9.3; SE §2.3, §3.1 |
+| N9 | minor | Fixed: "*pause* Yes. By example." | SE §2.3 |
+| N11 | minor | Fixed: "where he sits" / "where he stands" | §9.3; SE §2.4 |
+| N12 | minor | Fixed: cues moved off the four lines with numbers | SE §2.1, §2.3, §3.5 |
+| N13 | minor | Fixed: names traded once, at the core; the chapter exchange at the van; the handbook line placed in the briefing | §3, §10.2–10.3; SE §2.4, §3.2 |
+| N14 | minor | Fixed with S2-03 | §8.3 |
+| N15 | minor | Fixed: the player's four cards in order, the last her own words | §8.4 |
+| N16 | minor | Fixed: the warning rewritten; the drafted story goes out at 06:00, now true; card line "shot unarmed" | §10.5, §11.1; SE §2.4 |
+| N17 | minor | Fixed: "One key, and the first city's list goes out anyway." | §9.3; SE §2.4 |
+| N18 | minor | Fixed: the first-day answer claims only what the global records | SE §2.3 |
+| N19 | minor | Fixed: "Two hours' head start. Five buyers. One of them wants the hospitals." | SE §3.5 |
+| N20 | minor | Fixed: the 06:00 order written; the Recruiter line a walkabout pick | §10.1 |
+| N21 | minor | Fixed: card line 4 is a count and one name; the credits end "Halina Kowalczyk, 'WREN'" | §11.1, §11.3 |
+| W33 (R1) | minor | Fixed: the player offers HaX the floor | SE §2.3, §3.1 |
+| Worst ten | – | All ten taken as suggested; no. 2 keeps one cue instead of two | SE §2–3 |
+
+### m09 sync (coordinator, during this pass)
+
+- `afterwards`: its own briefing line, and a HaX line before the speaker answer; §14 change 38.
+- `deck_pulled`: used for the Alpha answer (`alpha_tapes`); §14 change 31.
+- m09's call has "It's HaX. It has been for seven years."; m10's payoff is "Still HaX." (§9.3; SE §3.1; §14 change 17).
+- The key sends everything everywhere in the same minute; the fallback would go city by city (§10.7; SE §2.4).
