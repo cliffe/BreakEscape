@@ -102,6 +102,31 @@ Confirmed from SEAM_A, with my evidence: M1 (`m09_sorensen_hatch.ink:85-103` pic
 | Vector and Phantom (112, 121) | m10 `m10_director_netherton.ink:79-85, 118-119, 168-169` | closed |
 | Marcus Tesseract (123) | nowhere | dropped on purpose (brief rule) |
 
+## Check of STAGE_8_VOICES_THREADS_A's missing and partial rows
+
+| Row | Verdict | Where it is, or where it should go |
+|---|---|---|
+| 20 exposed-hospital answer | **Exists.** VT-A searched exchange 1; it is in exchange 2, slot 3 | `m10_tesseract.ink:495-499` |
+| 21-22 Reeves | **Exists as stage 9 object text** | m10 S6 `tunnel_rota` variants (lore_fragments L134-155); m09 S6 handler contact sheet (m09 lore_fragments L146-153). HaX's "Reeves. From the hospital…" line is the only missing piece → stage 9 JSON bark on the rota's read |
+| 31 "Not the money. The lesson." | **Missing** | ink, `m10_tesseract.ink` `case` (one line by him, `m02_completed`), and HaX's beat as second speaker in the same knot |
+| 38 Terry Mott's £500 | Missing, already ruled | stage 9 JSON HaX text |
+| 46 Static alone | **Partial; mostly exists** | the `static_kit` object (m10 S6 L372) and the ELSEWHERE line (L1095) cover it. HaX's "That's his." → stage 9 JSON bark on the kit's read |
+| 51 Vance knocked out | **Partial** | ELSEWHERE "Robert Vance: said no again." (m10 S6 L1096) is there. HaX's "I rang Vance. He said no…" is missing → stage 9 JSON HaX text in the power room (no ink knot fits) |
+| 66 programme exposed | **Exists as stage 9 object text** | `uplink_printer` variants 1 and 3, "Sources name the unit as SAFETYNET's, and the agent as 0x00." (m10 S6 L458-460). HaX's line at the prop → stage 9 JSON bark, together with the `letters` bark (minor 9) |
+| 72 fund frozen | **Partial** | HaX's line exists (`m10_phone_agent0x99.ink:194`); the duty-board memo is m10 S6. Tesseract's "You froze my bank…" is missing → ink, `m10_tesseract.ink` `case`, on `m06_assets_seized` |
+| 79 "keeps spares" | **Missing everywhere**, with no object in m10 S6 | drop the row, or add a stage 9 object (a reserve ledger) with no ink. Recommend drop: secure's "crypto" cell already pays the reserve (`m10_six_oclock.ink:363`) |
+| 88 Mercer arrested or knocked out | **Missing** | ink, `m10_director_netherton.ink` `briefing_team`: one Netherton line on `m07_mercer_fate == "arrested"` ("Mercer's statement drew us the server hall."), or the map object's text at stage 9 |
+| 90 Elena turned | **Partial** | `m10_elena_phone.ink` gives her no "Netherton decided" line → ink, one line in `cut_0` on first ring |
+| 99, 102 Council "numbers" | **Partial** | Tesseract's line `m10_tesseract.ink:269` and the `projection_desk` object (m10 S6 L106-109) exist. Netherton's "You asked for the numbers. You have them." is missing → ink, `m10_director_netherton.ink` `briefing_stakes`, on `m07_debrief_stance == "hardened"` |
+| 108 the deed as a task | **Exists** | m09 S4 `find_the_deed` (`objectives_tasks.md:115`) |
+| 116 go-bag ticket | **Partial, confirmed** | `m09_briefing.ink:41-45` plays it only when neither earlier reason fires. Ink, `m09_briefing.ink`: one fixed Netherton line after the branch ("And Nightshade's go-bag held a one-way ticket to Helena."), gated on `m08_completed` and not already said |
+| 104 `m08_triple_agent_first_payment` | **Imported, read nowhere**, confirmed (m10 RL L367 only places it) | ruling: either the unshown payment needs it (ink `m10_nightshade.ink` `unshown`, a one-line variant) or drop the import (Tier 1 → cut) |
+| 34-35 Victoria arrested | Confirmed (my minor 12) | FA wording fix only |
+
+## Facts said differently that neither A file caught
+
+Already above: major 1 (what "Helena's plans" holds), major 3 (Task Force Null's age), minor 2 (morning, not night), minor 5 (Gary's title), minor 7 (water controllers patchable or not), minor 10 (the casualty figure spoken two ways). One more, which is a good one and not a fault: m09 "He told us to call him Adrian on the course. None of us ever managed it." (`m09_phone_agent0x99.ink:620`) is paid by m10 HaX's "You'll want a lawyer, Adrian." (`m10_six_oclock.ink:408`). Keep it, and keep HaX from calling him "Adrian" anywhere earlier in m10 (she doesn't now). Place names (Mountain States Records & Retention, Butte, Bozeman, Great Falls, Billings, Baltimore), "since the course" and "seven years" match across both missions.
+
 ## Checked and consistent
 
 Days and hours: leave cut on day 11, "two days ago" for Nightshade (`m09_briefing.ink:28, 45`); 06:00 UTC day 13, 04:00 head start, "twenty hours" (`m09_closing_debrief.ink:91`; `m10_director_netherton.ink:115-117`). "Seven years" (`m09_phone_agent0x99.ink:330, 572`; `m10_director_netherton.ink:104`). "Fifteen years" for Nightshade (`m09_briefing.ink:210`; `m10_director_netherton.ink:88`). "Eleven years" for WREN and Kowalczyk's mother's care (`m09_phone_recruiter.ink:157`; `m10_six_oclock.ink:145`). "Nine years" for the notice (`m09_phone_agent0x99.ink:436-442`; `m10_tesseract.ink:180, 503`). 140 hospitals, 47 and 14 million systems, twenty-three and forty-seven, eleven legacy placements, 1,100–2,600.
