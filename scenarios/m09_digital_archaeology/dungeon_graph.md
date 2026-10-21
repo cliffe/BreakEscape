@@ -12,9 +12,9 @@ Helena, Montana, after hours. Last night a courier carried the Architect's order
 | Total tasks | 27 (5 optional) |
 | VM flag challenges | 4 |
 | Physical locks | 11 |
-| AND-gate convergences | 0 |
+| AND-gate convergences | 1 |
 | Rooms | 11 |
-| Puzzle graph nodes / edges | 57 / 63 |
+| Puzzle graph nodes / edges | 59 / 66 |
 | Story graph nodes / edges | 6 / 5 |
 
 ## Critical Path
@@ -104,6 +104,7 @@ flowchart TD
   reading_room("Reading Room")
   field_laptop["Field Laptop"]
   safetynet_drop_terminal{"SAFETYNET Drop Terminal"}
+  drop_terminal_screen{"Drop Terminal Screen"}
   training_notebook_scan{"Training Notebook (scan)"}
   rubber_stamp{"Rubber Stamp"}
   lock_plan_cabinet["Plan Cabinet"]
@@ -117,6 +118,7 @@ flowchart TD
   shelf_marks{"Shelf Marks"}
   field_kit_link["Field Kit Link"]
   crate_stencilled_beta{"Crate, Stencilled BETA"}
+  andgate1((" + "))
   vmch_submit_catalogue_flag["Get into the catalogue server and submit the flag"]
   vmfl_submit_catalogue_flag{"Catalogue Flag"}
   vmch_submit_ledger_flag["Pull the Initiative's ledger off the catalogue server and submit it"]
@@ -158,7 +160,7 @@ flowchart TD
   reading_room --> field_laptop
   reading_room --> safetynet_drop_terminal
   safetynet_drop_terminal --> door_restricted_stacks
-  reading_room --> safetynet_drop_terminal
+  reading_room --> drop_terminal_screen
   reading_room --> training_notebook_scan
   restricted_stacks --> rubber_stamp
   rubber_stamp --> lock_plan_cabinet
@@ -178,6 +180,9 @@ flowchart TD
   salvage_cage --> field_kit_link
   salvage_cage --> lock_enrolment_crate
   salvage_cage -.-> crate_stencilled_beta
+  catalogue_salvage_cage -.-> andgate1
+  andgate1 --> door_salvage_cage
+  shelf_marks --> andgate1
   vmch_submit_catalogue_flag --> vmfl_submit_catalogue_flag
   vmfl_submit_catalogue_flag --> door_restricted_stacks
   vmch_submit_ledger_flag --> vmfl_submit_ledger_flag
@@ -193,9 +198,10 @@ flowchart TD
 
   class door_front_desk,door_staff_passage,door_restricted_stacks,door_restricted_cage,door_sorensen_office,door_tape_room,door_salvage_cage,lock_enrolment_crate,lock_director_safe,lock_hl_box,lock_plan_cabinet lock
   class front_desk,staff_passage,restricted_stacks,restricted_cage,sorensen_office,tape_room,salvage_cage,loading_dock,open_stacks,reading_room,server_closet room
-  class lock_pick_kit,rfid_cloner,fingerprint_kit,cyberchef_workstation,pin_cracker_kowalczyk_s,catalogue_salvage_cage,placement_record_hl2015_0477,harwick_lowe_dead_files,safetynet_drop_terminal,training_notebook_scan,rubber_stamp,candidate_assessment_intake_2011,plan_cabinet,the_reading_1_viral_dynamics,floor_safe,rent_ledger,lease_abstract_and_construction_file,shelf_marks,crate_stencilled_beta item
+  class lock_pick_kit,rfid_cloner,fingerprint_kit,cyberchef_workstation,pin_cracker_kowalczyk_s,catalogue_salvage_cage,placement_record_hl2015_0477,harwick_lowe_dead_files,safetynet_drop_terminal,drop_terminal_screen,training_notebook_scan,rubber_stamp,candidate_assessment_intake_2011,plan_cabinet,the_reading_1_viral_dynamics,floor_safe,rent_ledger,lease_abstract_and_construction_file,shelf_marks,crate_stencilled_beta item
   class npc_agent_hax,npc_noor_haddad,staff_card_n_haddad,npc_cody_old_coyote,key_ring_dock_office,key_card_tape_store key
   class field_laptop,field_kit_link,vmch_submit_catalogue_flag,vmch_submit_ledger_flag,vmch_submit_owner_flag,vmch_submit_control_flag vm
+  class andgate1 gate
   class vmfl_submit_catalogue_flag,vmfl_submit_ledger_flag,vmfl_submit_owner_flag,vmfl_submit_control_flag flag
 
   classDef optional stroke-dasharray:5 2
@@ -302,6 +308,7 @@ flowchart TD
   reading_room("Reading Room")
   field_laptop["Field Laptop"]
   safetynet_drop_terminal{"SAFETYNET Drop Terminal"}
+  drop_terminal_screen{"Drop Terminal Screen"}
   training_notebook_scan{"Training Notebook (scan)"}
   rubber_stamp{"Rubber Stamp"}
   lock_plan_cabinet["Plan Cabinet"]
@@ -315,6 +322,7 @@ flowchart TD
   shelf_marks{"Shelf Marks"}
   field_kit_link["Field Kit Link"]
   crate_stencilled_beta{"Crate, Stencilled BETA"}
+  andgate1((" + "))
   vmch_submit_catalogue_flag["Get into the catalogue server and submit the flag"]
   vmfl_submit_catalogue_flag{"Catalogue Flag"}
   vmch_submit_ledger_flag["Pull the Initiative's ledger off the catalogue server and submit it"]
@@ -362,7 +370,7 @@ flowchart TD
   reading_room --> field_laptop
   reading_room --> safetynet_drop_terminal
   safetynet_drop_terminal --> door_restricted_stacks
-  reading_room --> safetynet_drop_terminal
+  reading_room --> drop_terminal_screen
   reading_room --> training_notebook_scan
   restricted_stacks --> rubber_stamp
   rubber_stamp --> lock_plan_cabinet
@@ -382,6 +390,9 @@ flowchart TD
   salvage_cage --> field_kit_link
   salvage_cage --> lock_enrolment_crate
   salvage_cage -.-> crate_stencilled_beta
+  catalogue_salvage_cage -.-> andgate1
+  andgate1 --> door_salvage_cage
+  shelf_marks --> andgate1
   vmch_submit_catalogue_flag --> vmfl_submit_catalogue_flag
   vmfl_submit_catalogue_flag --> door_restricted_stacks
   vmch_submit_ledger_flag --> vmfl_submit_ledger_flag
@@ -412,9 +423,10 @@ flowchart TD
 
   class door_front_desk,door_staff_passage,door_restricted_stacks,door_restricted_cage,door_sorensen_office,door_tape_room,door_salvage_cage,lock_enrolment_crate,lock_director_safe,lock_hl_box,lock_plan_cabinet lock
   class front_desk,staff_passage,restricted_stacks,restricted_cage,sorensen_office,tape_room,salvage_cage,loading_dock,open_stacks,reading_room,server_closet room
-  class lock_pick_kit,rfid_cloner,fingerprint_kit,cyberchef_workstation,pin_cracker_kowalczyk_s,catalogue_salvage_cage,placement_record_hl2015_0477,harwick_lowe_dead_files,safetynet_drop_terminal,training_notebook_scan,rubber_stamp,candidate_assessment_intake_2011,plan_cabinet,the_reading_1_viral_dynamics,floor_safe,rent_ledger,lease_abstract_and_construction_file,shelf_marks,crate_stencilled_beta item
+  class lock_pick_kit,rfid_cloner,fingerprint_kit,cyberchef_workstation,pin_cracker_kowalczyk_s,catalogue_salvage_cage,placement_record_hl2015_0477,harwick_lowe_dead_files,safetynet_drop_terminal,drop_terminal_screen,training_notebook_scan,rubber_stamp,candidate_assessment_intake_2011,plan_cabinet,the_reading_1_viral_dynamics,floor_safe,rent_ledger,lease_abstract_and_construction_file,shelf_marks,crate_stencilled_beta item
   class npc_agent_hax,npc_noor_haddad,staff_card_n_haddad,npc_cody_old_coyote,key_ring_dock_office,key_card_tape_store key
   class field_laptop,field_kit_link,vmch_submit_catalogue_flag,vmch_submit_ledger_flag,vmch_submit_owner_flag,vmch_submit_control_flag vm
+  class andgate1 gate
   class vmfl_submit_catalogue_flag,vmfl_submit_ledger_flag,vmfl_submit_owner_flag,vmfl_submit_control_flag flag
   class aim_get_in,aim_read_the_ledger,aim_take_tomb_beta,aim_report_in critical
   class aim_restricted_series,aim_search_the_office aim
@@ -547,7 +559,7 @@ flowchart TD
   rc_npc_jesse_tran_31("Jesse Tran")
   rc_field_laptop_32{"Field Laptop"}
   rc_drop_terminal_33{"SAFETYNET Drop Terminal"}
-  rc_drop_terminal_screen_34{"SAFETYNET Drop Terminal"}
+  rc_drop_terminal_screen_34{"Drop Terminal Screen"}
   rc_case_file_35{"Case File, Helena"}
   rc_notebook_scan_36{"Training Notebook (scan)"}
   rc_sorensen_stamp_37{"Rubber Stamp"}

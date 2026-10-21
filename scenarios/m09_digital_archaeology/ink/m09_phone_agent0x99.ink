@@ -33,6 +33,7 @@ VAR flag2_submitted = false
 VAR flag3_submitted = false
 VAR flag4_submitted = false
 VAR stacks_entered = false
+VAR hatch_talked = false
 VAR cage_opened = false
 VAR nightshade_file_held = false
 VAR notebook_read = false
@@ -160,6 +161,9 @@ A clerk's on tonight, and an IT contractor, Jesse Tran.
 === flag1_read ===
 // The stacks door opens on its own mapping (S4 §4 row 1), which can retry,
 // so nothing here says the door is open.
+// Walkthrough R1 m-01: the salvage line is given on the first line, so a
+// player who closes the call at its first choice still holds it.
+#give_item:notes:catalogue_salvage_line
 Series R is the restricted series. R-114 to R-161, bay ten, behind the cage mesh in the restricted stacks.
 Sorensen's in there with them. The boxes on the clerk's trolleys are the ones on this list.
 The catalogue keeps something else live. Their ledger.
@@ -170,7 +174,6 @@ The catalogue keeps something else live. Their ledger.
     The ledger keeps. Her shredder doesn't. Stacks first.
 -
 Her card's on a reel at her hip. You've done this before.
-#give_item:notes:catalogue_salvage_line
 I've sent you the odd one. Salvage cage, their own code.
 #exit_conversation
 -> DONE
@@ -388,6 +391,7 @@ I don't know if saying it would have saved them. I didn't say it.
 = said_should
 #set_global:hax_confession_answer:should_have_told
 #set_global:identity_scene_done:true
+#unlock_task:send_the_notice
 #complete_task:hear_the_name
 // Script edit R2 follow-up: the first half of the other answers' Reading
 // form, one clip shared. R3 A-R3-01: her own turn after it, so "Yes. I
@@ -403,6 +407,7 @@ You get all of it from now on.
 = said_same
 #set_global:hax_confession_answer:same_in_your_place
 #set_global:identity_scene_done:true
+#unlock_task:send_the_notice
 #complete_task:hear_the_name
 {reading_told_hax:
     He wrote that I'd cover for you.
@@ -414,6 +419,7 @@ Don't be kind about it. *beat* Thank you. Once.
 = said_afterwards
 #set_global:hax_confession_answer:afterwards
 #set_global:identity_scene_done:true
+#unlock_task:send_the_notice
 #complete_task:hear_the_name
 {reading_told_hax:
     He wrote that I'd cover for you.
@@ -432,7 +438,9 @@ Seven years, and nobody turned it off. There's more on his box. A memo and a dra
 // choice, the inquiry as its own sentence. R2 audio cut 1: the watch and the
 // send are one line.
 = albion
-#unlock_task:send_the_notice
+// Walkthrough R1 m-05: #unlock_task:send_the_notice moved into the three
+// answer stitches, beside identity_scene_done, so a reload before these
+// lines can't leave the task hidden.
 {
 - m04_disclosure_choice == "full":
     We marked this hole "retain" nine years ago. The vendor never heard a word from us.
@@ -834,6 +842,9 @@ Sent. He'll read it tonight.
     Flag two. The ledger's still on the catalogue server.
 - cage_opened:
     The plan cabinet takes her print. It's on her stamp, on the hatch shelf. Then flag two, the ledger.
+// Walkthrough R1 m-04: after the hatch, name the gate and the cabinet.
+- hatch_talked and not cage_opened:
+    Clone her card at the hatch if you haven't. The gate's beside her, and the cabinet inside takes her print.
 - stacks_entered:
     The hatch. Talk to her across the counter, and take what you can off her.
 - flag1_submitted:

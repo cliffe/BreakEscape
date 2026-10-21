@@ -213,6 +213,12 @@
       "optional": false
     },
     {
+      "id": "drop_terminal_screen",
+      "label": "Drop Terminal Screen",
+      "kind": "item",
+      "optional": false
+    },
+    {
       "id": "training_notebook_scan",
       "label": "Training Notebook (scan)",
       "kind": "item",
@@ -289,6 +295,12 @@
       "label": "Crate, Stencilled BETA",
       "kind": "item",
       "optional": true
+    },
+    {
+      "id": "andgate1",
+      "label": "+",
+      "kind": "gate",
+      "optional": false
     },
     {
       "id": "vmch_submit_catalogue_flag",
@@ -503,7 +515,7 @@
     },
     {
       "from": "reading_room",
-      "to": "safetynet_drop_terminal",
+      "to": "drop_terminal_screen",
       "soft": false
     },
     {
@@ -600,6 +612,21 @@
       "from": "salvage_cage",
       "to": "crate_stencilled_beta",
       "soft": true
+    },
+    {
+      "from": "catalogue_salvage_cage",
+      "to": "andgate1",
+      "soft": true
+    },
+    {
+      "from": "andgate1",
+      "to": "door_salvage_cage",
+      "soft": false
+    },
+    {
+      "from": "shelf_marks",
+      "to": "andgate1",
+      "soft": false
     },
     {
       "from": "vmch_submit_catalogue_flag",

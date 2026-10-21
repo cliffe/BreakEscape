@@ -707,4 +707,15 @@ For the orchestrator. None stops the writers; each says what the writers do mean
 
 **Stage 9 (build) change: the staff passage.** The engine locks rooms, not doors, so S5's RFID staff door on the reading room would also have locked route B's open door from the open stacks. A new 2×1 room, `staff_passage`, sits between the front desk and the reading room (now 2×1) and carries the lock (`rfid`, `requires: "reading_staff_door"`). Noor's card and clone open it on route A; route B never meets it. No ink, knot, global or S6 string changes ("The staff door's around the side." still fits). S5 §3.11 and §18 record the layout.
 
+**Stage 9 walkthrough R1 changes** (`WALKTHROUGH_R1.md`):
+- M-01: HaX also completes `set_up_drop_terminal` on `flag1_submitted`, for a player whose VM was already open.
+- m-01: `#give_item:notes:catalogue_salvage_line` moves to `flag1_read`'s first line (was above "I've sent you the odd one.", §2.1), so an early close still delivers the note. The line itself is unchanged.
+- m-02: new global `dock_rung`; HaX's dock call also rings on `game_loaded` (`briefing_played && !flag1_submitted && !dock_rung`) for a reload during the briefing. M1 sets `dock_rung` too.
+- m-03: first-attempt texts for the office keypad and the tape reader before the deck (A3-02b, A3-03b in `texts/A_hax_texts.md`); A3-02's failure trigger is replaced, A3-03 keeps its failure trigger after the deck.
+- m-04: status ladder row `hatch_talked and not cage_opened`, "Clone her card at the hatch if you haven't. The gate's beside her, and the cabinet inside takes her print." (A1 now declares `hatch_talked`.)
+- m-05: `#unlock_task:send_the_notice` moves from `identity_scene.albion` into the three answer stitches, beside `identity_scene_done`.
+- m-06: Dillard gets `globalVarOnKO: "archive_guard_ko"` (new global; stage 8 m-11's "sets no global" no longer holds), and his catch-up re-show checks `!archive_guard_ko`.
+- m-11: B1's `recruiter_offer` and `deck_pulled` VARs carry the "Synced scenario global" comment.
+- m-12: the drop terminal's screen is named "Drop Terminal Screen".
+
 **Voiced counts after stage 8**: group A calls 56 distinct (HaX 53, Netherton 3; one new HaX line, one Netherton line reworded); the Recruiter 14 and B1's HaX 17, unchanged; briefing 91 character lines plus 8 Narrator (7 new: Netherton 3, HaX 4; 2 reworded); debrief 50 plus 16 Narrator (2 reworded); Sorensen 2 new lines (B5), 1 Narrator line reworded (B4); Noor 1 reworded.

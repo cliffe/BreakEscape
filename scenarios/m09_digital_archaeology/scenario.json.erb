@@ -116,9 +116,13 @@ end
 hax_maps = []
 
 # M1 (CONTRACT §5.5): the dock call after the briefing. Not forced, unvoiced.
-hax_maps << call_map("conversation_closed:briefing_cutscene", "!globalVars.flag1_submitted", "dock",
+hax_maps << call_map("conversation_closed:briefing_cutscene", "!globalVars.flag1_submitted && !globalVars.dock_rung", "dock",
                      delay: 2000, forced: false, once: true,
-                     comment: "M1: Beat 1.1 at the dock. start also diverts to dock until dock_heard, so the lines can't be missed (stage 8 m-14: only before flag 1).")
+                     comment: "M1: Beat 1.1 at the dock. start also diverts to dock until dock_heard, so the lines can't be missed (stage 8 m-14: only before flag 1).").merge("setGlobal" => { "dock_rung" => true })
+# Walkthrough R1 m-02: a reload during the briefing skips its replay
+# (skipIfGlobal), so its close never fires; ring the dock call on load instead.
+hax_maps << call_map("game_loaded", "globalVars.briefing_played && !globalVars.flag1_submitted && !globalVars.dock_rung", "dock",
+                     delay: 2000, forced: false, once: true).merge("setGlobal" => { "dock_rung" => true })
 
 # Act 1 tasks.
 hax_maps << { "eventPattern" => "room_entered:front_desk", "onceOnly" => true, "completeTask" => "get_inside" }
@@ -129,13 +133,23 @@ hax_maps << text_map("object_interacted", "data.objectType === 'vm-launcher' && 
 
 # Door refusals (A3-01..03).
 hax_maps << text_map("door_unlock_failed:restricted_stacks", nil, "That reader's on the catalogue server. Get me in there and I'll open it.")
-hax_maps << text_map("door_unlock_failed:sorensen_office", nil, "Her keypad's off the card system. Leave it for now.")
-hax_maps << text_map("door_unlock_failed:tape_room", nil, "That reader wants a real card. Hers will be somewhere she trusts.")
+# Walkthrough R1 m-03: door_unlock_failed needs a wrong try, so a player who
+# opens the office keypad or the tape reader and backs out heard nothing.
+# Before the deck choice these two speak on the first attempt instead; the
+# tape room's card refusal stays for after it (the office is open by then).
+hax_maps << text_map("door_unlock_attempt", "data.connectedRoom === 'sorensen_office' && !globalVars.deck_choice_made",
+                     "Her keypad's off the card system. There's no code to find for it. Leave it for now.")
+hax_maps << text_map("door_unlock_attempt", "data.connectedRoom === 'tape_room' && !globalVars.deck_choice_made",
+                     "That reader wants her own card, and she hasn't left it lying about. Leave it for now.")
+hax_maps << text_map("door_unlock_failed:tape_room", "globalVars.deck_choice_made", "That reader wants a real card. Hers will be somewhere she trusts.")
 
 # Flag 1 (S4 §4 row 1): the stacks door opens on HaX's unlockDoor (F19),
 # with an in-session retry and a reload backstop; her flag1_read call rings
 # after the station closes.
 hax_maps << { "eventPattern" => "global_variable_changed:flag1_submitted", "condition" => "value === true", "onceOnly" => true, "unlockDoor" => "restricted_stacks" }
+# Walkthrough R1 M-01: a player whose attack VM is already open can submit
+# flag 1 without clicking the laptop; the flag closes the setup task too.
+hax_maps << { "eventPattern" => "global_variable_changed:flag1_submitted", "condition" => "value === true", "onceOnly" => true, "completeTask" => "set_up_drop_terminal" }
 hax_maps << { "eventPattern" => "door_unlock_attempt", "condition" => "data.connectedRoom === 'restricted_stacks' && globalVars.flag1_submitted", "unlockDoor" => "restricted_stacks", "cooldown" => 0 }
 hax_maps << { "eventPattern" => "game_loaded", "condition" => "globalVars.flag1_submitted && !globalVars.stacks_entered", "unlockDoor" => "restricted_stacks" }
 hax_maps << call_map("global_variable_changed:flag1_submitted", "value === true", "flag1_read", delay: 2500, forced: false, once: true)
@@ -1173,6 +1187,7 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
             "language": "en-US"
           },
           "currentKnot": "start",
+          "globalVarOnKO": "archive_guard_ko",
           "behavior": {
             "initiallyHidden": true,
             "hostile": { "chaseSpeed": 85, "attackDamage": 5, "pauseToAttack": true }
@@ -1189,7 +1204,7 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
             {
               "_comment": "Catch-up: re-show him on entry once called (an initiallyHidden NPC is re-hidden on room load).",
               "eventPattern": "room_entered:open_stacks",
-              "condition": "globalVars.tran_alerted",
+              "condition": "globalVars.tran_alerted && !globalVars.archive_guard_ko",
               "setVisible": true
             }
           ],
@@ -1387,7 +1402,7 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
           "type": "notes",
           "sprite": "monitor_stand1",
           "id": "drop_terminal_screen",
-          "name": "SAFETYNET Drop Terminal",
+          "name": "Drop Terminal Screen",
           "position": { "x": 6.4, "y": 2.4 },
           "takeable": false,
           "readable": true,
@@ -2044,6 +2059,8 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
           "observationDisplay": "gameDisplay",
           "observations": "MOUNTAIN STATES RECORDS & RETENTION -- SHELF MARKS\nBay 1 ....... Reading room ..... COTTONWOOD\nBays 2 to 9 . Open stacks ...... MERIDIAN\nBay 10 ...... Restricted ....... WATCHTOWER\nBay 11 ...... Tape store ....... STANDBY\nBay 12 ...... Salvage .......... BONEYARD\nHouse rule: cage and keypad codes use the bay word. Never write a code down. M.S.",
           "puzzle_graph_role": "clue",
+          "puzzle_graph_unlocks": ["salvage_cage"],
+          "puzzle_graph_and_with": "Catalogue: salvage cage",
           "puzzle_graph_note": "The key (BONEYARD) to the coded line HaX sends at flag 1; with CyberChef's Vigenere Decode they give the salvage keypad code."
         },
         {
@@ -2347,6 +2364,8 @@ rows = imports.map { |m, v, d| %Q(    { "from": "#{m}", "var": "#{v}", "default"
     "noor_box_read": false,
     "legacy_remark_sent": false,
     "reeves_sheet_read": false,
-    "asset_tag_read": false
+    "asset_tag_read": false,
+    "dock_rung": false,
+    "archive_guard_ko": false
   }
 }

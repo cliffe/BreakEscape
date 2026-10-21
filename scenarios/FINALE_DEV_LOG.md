@@ -368,3 +368,4 @@ Plan: 7a a CONTRACT.md per mission in scenarios/<mission>/ (every ink file and o
 - Staff door: new 2×1 room staff_passage (front desk → passage [rfid reading_staff_door] → reading room, now 2×1); route B unlocked; objects moved off south-wall rows in reading room and salvage cage. Validator 0 errors; 11 doors aligned; depths fine.
 - m09 VM wiring (opus48): flags map, flags_for_vm fallbacks, mission.json secgen block and CyBOK rows; targetFlags/acceptsVms already right. Validator 0 errors. Build-confirm items added to F9.
 - m09 walkthrough R1: completable on all routes; 0/1/13. Ruling: fix all (M-01 complete set_up_drop_terminal on flag1_submitted; m-01..m-13 as proposed); 9 browser checks owed to playtests.
+- m09 walkthrough R1 fixes applied (new globals dock_rung, archive_guard_ko; first-attempt door texts A3-02b/A3-03b; status row for the gate). Validator 0 errors; reopencheck 0.

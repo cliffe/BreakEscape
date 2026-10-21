@@ -124,14 +124,14 @@ FA §21 "Stage 9 handover" (FINALE_ARC.md:2180-2203) is the base list; this sect
 |---|---|
 | ❌ INVALID | none |
 | Geometry | "Room layout geometry OK" (S5 §2 found no overlap on a stub) |
-| Credential check (`validate_scenario.rb:1661-1673`) | exactly one ⚠️: "a lock requires rfid 'stacks_release', but no item declares…". Expected: HaX's `unlockDoor` opens it. Leave a `_comment` on the door saying so. Any other credential warning is a real fault (`reading_staff_door`, `stacks_card`, `tape_room_reader` and `dock_office_door` each have an item: `noor_staff_card`, the cage Sorensen's card, `tape_room_keycard`, Old Coyote's key) |
+| Credential check (`validate_scenario.rb:1661-1673`) | exactly one ⚠️: "a lock requires rfid 'stacks_release', but no item declares…". *Stage 9 note (walkthrough R1 m-07): a second, also expected: `beta_crate`, the salvage crate, lockpick only by design.* Expected: HaX's `unlockDoor` opens it. Leave a `_comment` on the door saying so. Any other credential warning is a real fault (`reading_staff_door`, `stacks_card`, `tape_room_reader` and `dock_office_door` each have an item: `noor_staff_card`, the cage Sorensen's card, `tape_room_keycard`, Old Coyote's key) |
 | `submit_flags` | four tasks, each with station-qualified `targetFlags` and `targetCount: 1` |
 | `concludeRequires` | the four flag tasks only; no import in it or in any `unlockCondition` |
 | `unlockDoor` rooms | `restricted_stacks`, `restricted_cage`, `sorensen_office` all exist |
 | Speaker prefixes | every prefix in contract §8.3 resolves to a `displayName`, character for character, including `Agent 0x2D 'Anchor'`, `Agent 0x5E 'Lantern'` and `Dr Adrian Tesseract (recording)` |
 | `#set_global` / `VAR` | every set global declared in `globalVariables`; ink defaults match (`sorensen_fate` and `tran_outcome` default `"left"`, strings `""`, bools `false`); ink-locals (`hub_quiet`, `said_floor_line`, `confession_heard`, `notice_sent_here` …) reported as locals, not globals |
 | `#give_item` vs `itemsHeld` | `agent_0x99`: four `lab-workstation` guides and `catalogue_salvage_line`; `noor_haddad`: `noor_staff_card`; `sorensen_hatch` and `sorensen_door`: `derek_file`, `letters`, `nightshade_copy` |
-| Imports | 52 in `importGlobals` (50 if m-13 drops two), each read through the `INCLUDE`, none assigned |
+| Imports | 52 in `importGlobals` (50 if m-13 drops two), each read through the `INCLUDE`, none assigned. *Stage 9 note (walkthrough R1 m-13): 51 = 43 + 8 `completed`, after ruling 17 dropped two and BP F-03 added `m06_assets_seized`.* |
 | KO resilience | no critical-path warning; one side-objective suggestion for `meet_the_clerk` (covered by `taskOnKO`) |
 | Item types | every new object `type` has a sprite under `assets/objects/` (`validate_scenario.rb:1748`), or the manifest (M-04) names its placeholder |
 | Source missions | after the 58 JSON-only export additions and the two F5 ink changes (FA §3.3), the validator on each m01–m08 erb is as clean as before |

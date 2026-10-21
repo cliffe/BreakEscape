@@ -13,8 +13,8 @@ INCLUDE m09_carryover_vars.ink
 
 // Scenario globals this file reads or writes (CONTRACT §5).
 VAR recruiter_call_started = false
-VAR recruiter_offer = ""
-VAR deck_pulled = ""
+VAR recruiter_offer = ""   // Synced scenario global (also written by HaX's deck_resume)
+VAR deck_pulled = ""   // Synced scenario global (also written by HaX's deck_resume)
 VAR recruiter_secret = ""
 VAR recruiter_said_yes = false
 VAR recruiter_gone = false
