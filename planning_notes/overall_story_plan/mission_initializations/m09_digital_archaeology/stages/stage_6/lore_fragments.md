@@ -2,7 +2,7 @@
 
 ## 0. Status and inputs
 
-Stage 6 (lore). Author: stage 6 author (Opus), 2026-10-21. Status: **round 1 fixes folded in** (§7; reviews `REVIEW_R1_CLUES.md`, `REVIEW_R1_WRITING.md` in this folder); round 2 pending. §1–§3 were rewritten whole in round 1; the rules at the head of §1 supersede the general rules below where they differ.
+Stage 6 (lore). Author: stage 6 author (Opus), 2026-10-21. Status: **stage 6 complete** (round 1 folded in, §7; round 2 folded in, §8; reviews `REVIEW_R1_CLUES.md`, `REVIEW_R1_WRITING.md`, `REVIEW_R2.md` in this folder; no further review round, the orchestrator checks directly). §1–§3 were rewritten whole in round 1; the rules at the head of §1 supersede the general rules below where they differ.
 
 Inputs read: `docs/agents/FINALE_BRIEF.md`; `../../finale/FINALE_ARC.md` §1–9 and §13 (the stage 6 handover rows B1–B3, 9-1 to 9-9); this mission's `stage_1/story_arc.md` ("SA"), `stage_2/storytelling_elements.md` ("SE"), `stage_3/moral_choices.md` ("MC"), `stage_4/objectives_tasks.md` ("S4"), `stage_5/room_layout.md` ("S5"); `story_design/story_dev_prompts/06_lore_fragments.md`; the `scenario-design-review` skill (clue distribution: the player can always find what they need); `README_scenario_design.md` (notes items, `textVariants`/`observationVariants`, conditions, PIN/password locks); `README_ink_best_practices.md`; canon in `story_design/universe_bible/` (the Architect's identity section, the Insider Threat Initiative, the voice bible, SAFETYNET characters). VM material was not opened; flags appear by story meaning only (brief rule). The engine's `resolveObjectField` was read (`js/utils/conditional-text.js`): variants are `{ "condition", "value" }`, first match wins, `&&` only, `globalVars.` prefix.
 
@@ -30,7 +30,7 @@ Final fixed strings, ready for stage 9 (revised in round 1, §7). For each objec
 ### 1.1 The loading dock
 
 **`incident_book`** -- name "Incident Log" (W6-16). `notes`, `takeable: false`, `readable: true`. US.
-- text: "MON. SHREDDER RUNNING, NIGHT. MRS S SAYS SCHEDULED. NOTED.\nTUE. SAME. NOTED.\nWED. SAME.\nTHU. SAME.\nFRI. SAME. NOBODY READS THIS."
+- text: "MON. SHREDDER RUNNING, NIGHT. MRS. S SAYS SCHEDULED. NOTED.\nTUE. SAME. NOTED.\nWED. SAME.\nTHU. SAME.\nFRI. SAME. NOBODY READS THIS."
 - observations: "A guard's log in block capitals. The same entry, five nights running."
 - Carries: a week of the purge nobody read. Changed by: nothing.
 
@@ -62,7 +62,7 @@ Final fixed strings, ready for stage 9 (revised in round 1, §7). For each objec
 **`hl_box`** -- name "Harwick & Lowe, Dead Files". Container, `locked: true`, `lockType: "password"`, `requires: "HL2015-0477"`. observations: "Archive boxes from a closed search firm. The lid takes a file number." Contents: `hl_placing_sheet`.
 
 **`hl_placing_sheet`** -- name "Placement Record, HL2015-0477" (W6-16, W6-24). `notes`, read from the box (`takeable: true`, collected on read; it is a notes item in a container). `onRead: { "setVariable": { "sleeper_shortlist": true } }`. US, dull on purpose.
-- text: "HARWICK & LOWE -- PLACEMENT RECORD\nRef HL2015-0477. Q2 2015.\nSearch: lateral hires from the private sector.\nClient: government, UK. Two placements.\nFee: 30% of first-year salary, per placement.\nStart: Q3 2015.\nCandidates: H. Kowalczyk; M. Quintero.\nNext of kin: Kowalczyk, mother, residential care. Quintero, father, residential care.\nStatus: both placed. File closed."
+- text: "HARWICK & LOWE -- PLACEMENT RECORD\nRef HL2015-0477. Q2 2015.\nSearch: lateral hires from the private sector.\nClient: government, UK. Two placements.\nFee: 30% of first-year salary, per placement.\nStart: Q3 2015.\nCandidates: H. Kowalczyk; M. Quintero.\nNext of kin: Kowalczyk, mother, nursing home. Quintero, father, nursing home.\nStatus: both placed. File closed."
 - observations: "A placement record from a search firm that no longer exists. Two names."
 - Carries: narrows WREN to two (both with a parent in care; the record can't say which hire is honest). Sets `sleeper_shortlist`. HaX (ink, SA Beat 2.5): "Harwick & Lowe shut before TalentStack opened." Changed by: nothing.
 
@@ -79,13 +79,13 @@ The ledger block (L) used in the flag 2 variants:
 - `globalVars.flag2_submitted && globalVars.m05_final_choice === 'turn_double_agent'` → L + "\nTORRES -- placed 1 yr -- LIVE\n\nSALVAGE CAGE ACCESS\nMSJMQAEGDZNVI"
 - `globalVars.flag2_submitted && globalVars.m05_final_choice === 'public_exposure'` → L + "\nPlacements, current series: BLOWN, all 23. M.S.\nTORRES -- placed 1 yr -- LOST\n\nSALVAGE CAGE ACCESS\nMSJMQAEGDZNVI"
 - `globalVars.flag2_submitted` → L + "\nTORRES -- placed 1 yr -- LOST\n\nSALVAGE CAGE ACCESS\nMSJMQAEGDZNVI"
-- `globalVars.flag1_submitted` → "LIVE CAPTURE -- FULL CATALOGUE\nSeries R, restricted: R-114 to R-161. Location: restricted cage, bay 10.\nUnindexed entry, one line:\n\nSALVAGE CAGE ACCESS\nMSJMQAEGDZNVI"
+- `globalVars.flag1_submitted` → "LIVE CAPTURE -- FULL CATALOGUE\nSeries R, restricted: R-114 to R-161. Location: restricted cage, bay 10.\nUnindexed entry:\n\nSALVAGE CAGE ACCESS\nMSJMQAEGDZNVI"
 - text (base) → "PUBLIC CATALOGUE. County deeds, land records, corporate deposits." (W6-23: the self-pointing hint is cut.)
 - Carries: the Series R marks and the coded salvage line (flag 1); the ledger, its totals and the H&L file number (flag 2); Torres' status (m05); the booked sale (`taken` / `double_crossed`). Changed by: flags 1–2, `m05_final_choice`, `invoice_booked`.
 
 **`case_file`** -- name "Case File, Helena". `notes`, `takeable: false`, `readable: true`. UK, HaX's own file (W6-13; reviewer's rewrite 10 as base).
 - `textVariants`: `globalVars.m06_monitoring_enabled` → "CASE FILE -- HELENA. 0x99. Not for circulation.\n1. Intercept, day 10: the order, photographed.\n2. The wall, copied.\n3. Raid team, Montana: four names.\n4. Training notebook, 2011: scan, filed separately.\n5. HashChain tags, standing order. From: frozen fund, tagged. To: Big Sky Holdings LLC. Memo: RENT, SITE 2, MT. Monthly, since 2016.\nPencilled beside item 5: Not Helena."
-- text (base) → items 1 to 4 only, as above.
+- text (base) → "CASE FILE -- HELENA. 0x99. Not for circulation.\n1. Intercept, day 10: the order, photographed.\n2. The wall, copied.\n3. Raid team, Montana: four names.\n4. Training notebook, 2011: scan, filed separately."
 - observations: "A typed case file in HaX's name. Item 4 has a scan of its own on the next desk."
 - Carries: the tagged payments to the bunker's lessee (Big Sky Holdings LLC, matching `lease_file`); on the no-coordinate branch they point at the bunker before the deed does. Item 4 points, quietly, at the notebook. HaX (ink): "Your tags, from HashChain." Changed by: `m06_monitoring_enabled`.
 
@@ -104,7 +104,7 @@ The ledger block (L) used in the flag 2 variants:
 **The three bin files.** Notes items held by both `sorensen_hatch` and `sorensen_door`, given by id on the bin choice (§3.4). Each is a **fixed string with no variants**: they arrive by `#give_item`, which copies raw text (C-07). Ids unchanged: `derek_file`, `letters`, `nightshade_copy`.
 
 **`derek_file`** -- name "Asset File: D. Lawson". UK, Tesseract's ENTROPY hand, written before Viral Dynamics hired Derek (W6-06; reviewer's rewrite 4 as base). Every line is an instruction or a forecast written in advance, so it is true on every m01 branch; what the player did is read back by the Reading (entry 1) and by HaX's bin line in ink, not by this page.
-- text: "LAWSON, D. -- ASSET, VIRAL DYNAMICS\nMotive: belief. He has read everything I sent him and believes it more than I do. That is why he will do it, and why he will not stop when told.\nExpected loss of asset: total. Expected yield: one demonstration, and the agency's attention.\nStanding order, on hire: if taken, put the device down and wait. Say nothing.\nIf they publish his figures, let them. Publicity recruits.\nA good first lesson for whoever they send. -- A."
+- text: "LAWSON, D. -- ASSET, VIRAL DYNAMICS\nMotive: belief. He has read everything I sent him and believes it more than I do. That is why he will do it, and why he will not stop when they tell him to.\nExpected loss of asset: total. Expected yield: one demonstration, and the agency's attention.\nStanding order, on hire: if taken, put the device down and wait. Say nothing.\nIf they publish his figures, let them. Publicity recruits.\nA good first lesson for whoever they send. -- A."
 - observations: "A thin asset file, costed in a neat, sloping hand."
 - Carries: why Derek did it ("belief", m01's "He's a believer"), which pays the Reading's margin bet; the standing order behind his silence or surrender; a second sample of the hand. In m10, a record answer on `m09_cage_bin = derek_file`. HaX (ink, by `m01_final_choice`): on `surrender`, "There's your why. He was told to."; on `expose`, "He wanted your headlines." (stage 7 words them; one line, not a repeat of the page).
 
@@ -114,25 +114,25 @@ The ledger block (L) used in the flag 2 variants:
 - Carries: Tran's trade route (courier J.T., handler D. Varga), the lever that talks him off the wipe; the next smear (saved, Villanueva is warned). In m10 the server-hall rota carries **D. Varga** for HaX's "Tran's handler is on that rota" (§6). Changed by: nothing (on `m08_nightshade_tidied` this bin is offered as `nightshade_copy` instead).
 
 **`nightshade_copy`** -- name "Cleared from Locker 47". UK, two hands (W6-10; reviewer's rewrite 8 as base).
-- text: "A slip, in Nightshade's hand: Cleared from my locker and sent ahead. His notes to me, nothing of the Initiative's. Anything that named anyone else, I burned.\nUnder it, one card in another hand: 0x47. They will ask you to choose between them and us. You will not need to. Wait. -- A.\nAt the foot of the slip: A man may keep his own letters. It is other people's that make him a traitor."
+- text: "Covering slip: Cleared from my locker and sent ahead. His notes to me, nothing of the Initiative's. Anything that named anyone else, I burned. -- 47\nUnder it, one card in another hand: 0x47. They will ask you to choose between them and us. You will not need to. Wait. -- A.\nAt the foot of the slip: A man may keep his own letters. It is other people's that make him a traitor."
 - observations: "A covering slip clipped to one small card."
 - Carries: what he cleared and sent ahead (m08 `nightshade_tidied`); changes his text-back on the triple-agent branch; m10's door line on `m09_cage_bin = nightshade_copy`.
 
 ### 1.6 The restricted cage
 
 **`nightshade_file`** -- name "Candidate Assessment, Intake 2011". In `plan_cabinet` (biometric). `notes`, collected; `onPickup: { "setVariable": { "nightshade_file_held": true } }`. UK. A SAFETYNET form with the recruiter's notes on it (W6-07; reviewer's rewrite 5 as base): no "-- A.", no office label. The hand comparison does the naming.
-- text: "SAFETYNET -- INTAKE 2011 -- CANDIDATE ASSESSMENT\nCandidate: 0x47, provisional. Age: 23.\nAssessor's notes: Idealistic, tired already. Will wait if asked properly.\nAsk properly.\nNo payment. Belief is the payment.\nAssessor: initialled, not signed."
+- text: "SAFETYNET -- INTAKE 2011 -- CANDIDATE ASSESSMENT\nCandidate: 0x47, provisional. Age: 23.\nAssessor's notes: Seen 7 November. Again on the 17th. Idealistic, tired already. Will wait if asked properly.\nAsk properly.\nNo payment. Belief is the payment.\nAssessor: initialled, not signed."
 - observations: "A SAFETYNET training form, fifteen years old. The assessor's notes are in a sloping hand you have seen tonight."
-- Carries: the proof, with flag 3, that the course's teacher recruited Nightshade at 23 (U1 canon); the lever that talks Sorensen down (her schedule's "plan chest: not listed"). Matches the notebook's margin hand (the g of "Age", the 7 of "0x47"). Changed by: nothing.
+- Carries: the proof, with flag 3, that the course's teacher recruited Nightshade at 23 (U1 canon); the lever that talks Sorensen down (her schedule's "plan chest: not listed"). The match rests on the handwritten notes, not the printed fields: the loop on the g of "Again" and the crossed 7s of "7 November" and "the 17th" are the same as the notebook margin's g of "again" and crossed 7 of "Wk 7", which are the two features HaX's hints name ("Look at the loop on the g." / "Same pen pressure, same crossed sevens."). The 17th also matches the notebook's date, 17 October 2011. Changed by: nothing.
 
 **`feed_table_box`** -- name "The Last Box". `notes`, `takeable: false`, `readable: true` (a readable, not an item; the credit reads "kept from the shredder", M9-19). US, Sorensen's hand (W6-03, W6-15; reviewer's rewrite 2 as base, all eleven rows written, C-19). **The Series L sheets** (the string `noor_desk_box` reuses):
 
-> SERIES L -- LEGACY PLACEMENTS, NOT SAFETYNET. M.S.\nName / placed / post / cost to date / yield / notes\nRuth Lindqvist -- 2009 -- deputy clerk, Cascade County -- $14,000 -- voter rolls -- Quiet. Reliable.\nGail Pettibone -- 2010 -- dispatcher, county 911 center -- $8,500 -- call routing -- Asks nothing.\nDolores Ortega -- 2012 -- billing director, regional hospital -- $31,500 -- records, three systems -- Wants out. Remind her of her son.\nHector Salas -- 2012 -- shift supervisor, water treatment plant -- $12,000 -- control room rota -- Steady.\nJune Akiyama -- 2013 -- IT contractor, state DMV -- $22,000 -- license data -- Careful. Too careful.\nTom Brekke -- 2014 -- school board, Bozeman -- $6,000 -- vendor contracts -- Enjoys it.\nVernon Teague -- 2014 -- lineman foreman, rural co-op -- $9,800 -- substation keys -- Drinks. Watch.\nLeah Brandvold -- 2015 -- paralegal, county attorney -- $11,200 -- case lists -- Bright. Bored.\nAmit Deshmukh -- 2016 -- zoning officer, Billings -- $9,200 -- substation permits -- Never asked for anything yet. Will be.\nSamuel Ocampo -- 2017 -- records officer, VA clinic -- $7,400 -- patient lists -- Grateful.\nDoreen Fitch -- 2018 -- court reporter, district court -- $5,600 -- transcripts -- Lonely.\nPencilled at the foot: The best work I have done. Nobody will ever know. That was the point.
+> SERIES L -- LEGACY PLACEMENTS, NOT SAFETYNET. M.S.\nName / placed / post / cost to date / yield / notes\nRuth Lindqvist -- 2009 -- deputy clerk, Cascade County -- $14,000 -- voter rolls -- Quiet. Reliable.\nGail Pettibone -- 2010 -- dispatcher, county 911 center -- $8,500 -- call routing -- Asks nothing.\nDolores Ortega -- 2012 -- billing director, regional hospital -- $31,500 -- records, three systems -- Wants out. Remind her of her son.\nHector Salas -- 2012 -- shift supervisor, water treatment plant -- $12,000 -- control room rota -- Steady.\nJune Akiyama -- 2013 -- IT contractor, state DMV -- $22,000 -- license data -- Careful. Too careful.\nTom Brekke -- 2014 -- school board, Bozeman -- $6,000 -- vendor contracts -- Enjoys it.\nVernon Teague -- 2014 -- lineman foreman, rural co-op -- $9,800 -- substation keys -- Drinks. Watch.\nLeah Brandvold -- 2015 -- paralegal, county attorney -- $11,200 -- case lists -- Bright. Bored.\nAmit Deshmukh -- 2016 -- zoning officer, Billings -- $9,200 -- substation permits -- Never asked for anything yet. Will be.\nSamuel Ocampo -- 2017 -- records officer, VA clinic -- $7,400 -- patient lists -- Grateful.\nDoreen Fitch -- 2018 -- court reporter, district court -- $5,600 -- transcripts -- Lonely.\nPenciled at the foot: The best work I have done. Nobody will ever know. That was the point.
 
 - `textVariants`:
-  - `globalVars.m05_found_pipeline_list && !globalVars.m05_recruiter_deal_accepted` → "(empty tray)"
+  - `globalVars.m05_found_pipeline_list && !globalVars.m05_recruiter_deal_accepted` → "SERIES L. RECALLED. M.S."
   - `globalVars.legacy_files_saved` → the Series L sheets
-  - `globalVars.legacy_clock_run` → "(shredder strips)"
+  - `globalVars.legacy_clock_run` → "Lindqvist -- 20"
   - text (base) → the Series L sheets (readable while at risk: she is working through them)
 - `observationVariants`, in the same order: "The feed tray is empty. The last box never came up." / "The last box, off the feed table." / "Strips in the bin. The last box is gone." / base "An open box on the feed table. She is working through it sheet by sheet."
 - Carries: the Initiative's reach made physical, with numbers (eleven people, costs, yields; the 06 prompt's evidence rule). Exported as `legacy_files_saved`; m10's "Elsewhere" clause. HaX (ink, on reading): "Nobody of ours in here. Ours are on her tape, by codename." Changed by: `m05_found_pipeline_list`, `legacy_files_saved`, `legacy_clock_run`. The names are all grep-clean (§5 note).
@@ -141,25 +141,25 @@ The ledger block (L) used in the flag 2 variants:
 
 The page (P), used in the flag 2 variants:
 
-> INSIDER THREAT INITIATIVE -- LEDGER, PRINT COPY. M.S.\nPlacements 23. Candidates 47. Legacy 11.\nCodename / source / placed / status / cost to date / notes\nWREN -- H&L -- 11 yrs -- LIVE -- $611,400, care fees, next of kin -- Day 10: assigned TF Null, Montana. Expected yield: one raid. M.S.\nLINNET -- candidate -- not placed -- $500, filing bonus -- Father, dialysis, Dearborn. Ready when asked.
+> INSIDER THREAT INITIATIVE -- LEDGER, PRINT COPY. M.S.\nPlacements 23. Candidates 47. Legacy 11.\nCodename / source / placed / status / cost to date / notes\nWREN -- H&L -- 11 yrs -- LIVE -- $611,400, care fees, next of kin -- Day 10: assigned TF Null, Montana. Expected yield: one raid. M.S.\nLINNET -- direct -- not placed -- CANDIDATE -- $500, filing bonus -- Father, dialysis, Dearborn. Ready when asked.
 
 The Reeves paragraph (R), appended under P on that branch: "\nClipped inside: HANDLER CONTACT SHEET -- G. Reeves, St. Catherine's. Handler line, drop, schedule. Status: asset in custody. Handler: stand down."
 
 - `textVariants`:
-  1. `globalVars.ledger_page_seen && globalVars.sorensen_fate === 'left'` → "(shredder strips where the binder was)"
+  1. `globalVars.ledger_page_seen && globalVars.sorensen_fate === 'left'` → "ACEMENTS 23. CANDIDA"
   2. `globalVars.flag2_submitted && globalVars.m02_reeves_fate === 'arrested'` → P + R
   3. `globalVars.flag2_submitted && globalVars.m02_reeves_fate === 'ko'` → P + R
   4. `globalVars.flag2_submitted && globalVars.m02_reeves_fate === 'flagged'` → P + R
   5. `globalVars.flag2_submitted && globalVars.m02_reeves_fate === '' && globalVars.m02_completed && globalVars.m02_insider_asset_arrested` → P + R (the read rule for saves before the m02 export)
   6. `globalVars.flag2_submitted` → P
-  7. text (base) → "INSIDER THREAT INITIATIVE -- LEDGER, PRINT COPY. M.S.\nCodename / source / placed / status / cost to date / notes\n(every row in house cipher; the live copy holds the key)"
-- `observationVariants`: 1 → "Strips. She got to it." / 6 → "A binder of costed rows. Two have notes in pencil." / base → "A locked ring binder. Codenames down the margin."
+  7. text (base) → "INSIDER THREAT INITIATIVE -- LEDGER, PRINT COPY. M.S.\nCodename / source / placed / status / cost to date / notes\nVQTL -- XJ -- 11 -- ZKWM -- RHQ -- PWOZ BVNM\nKDSA -- XJ -- 9 -- ZKWM -- RHQ -- TOYL\nHGRF -- MQ -- 3 -- BEOP -- QNX -- LLUZ WYDE"
+- `observationVariants`: 1 → "Strips. She got to it." / 6 → "A binder of costed rows. Two have notes in pencil." / base → "A ring binder of rows in the archive's cipher. The live copy will have the key."
 - Carries: the scale in Sorensen's columns (23, 47, 11, with costs: the 06 prompt's numbers); WREN's live entry; Noor's codename LINNET and her $500 "filing bonus" (SE §3's secret), with "Father, dialysis, Dearborn" on every readable variant; Reeves' handler sheet (m02). Changed by: flag 2, `m02_reeves_fate`, `m02_insider_asset_arrested`, `ledger_page_seen`, `sorensen_fate`.
 
 ### 1.7 Sorensen's office
 
 **`clerk_certificate`** (new, W6-09, C-14) -- name "Framed Certificate". Not readable; `observations` only. US.
-- observations: "LEWIS AND CLARK COUNTY, MONTANA. In appreciation of twenty years' service: Margaret A. Sorensen, Clerk and Recorder, 1986 to 2006. The county's memory, kept."
+- observations: "LEWIS AND CLARK COUNTY, MONTANA. Board of County Commissioners. In appreciation of twenty years of service: Margaret A. Sorensen, Clerk and Recorder, 1986 to 2006. Presented June 2006."
 - Carries: the callback the salvage decode lands on (`LEWISANDCLARK`). Changed by: nothing.
 
 **The Reading: four objects** (C-08). One `textVariants` list returns one string, so the four entries are four notes objects in `director_safe`, each with its own short list. Tesseract's hand, UK, third person. Each page carries its heading (W6-18). Entry 1 is rewritten for expose and surrender so the beat isn't said three times (W6-17); the rest are kept word for word.
@@ -204,7 +204,7 @@ Carries (all four): the Architect's reading of Agent 0x00 (m07's "figures"); ent
 - Carries: the prediction; the line about HaX; the margin bet on the bin (right on `cage_bin = derek_file`, and `derek_file` now answers it). Sets `reading_finished`.
 
 **`master_schedule`** -- name "Destruction Schedule (master)". `notes`, collected; `onRead: { "setVariable": { "schedule_read": true } }`. The order's attachment (UK) with her planning pass (US).
-- text: "Series by number, per the order. -- A.\nHer planning pass, by room: Dock ✓. Front desk ✓. Reading room ✓. Open stacks ✓. Closet ✓. Stacks ✓. Cage ✓. Office ✓. Tape room ✓. Salvage cage, no series, no tick.\nIn the margin: Reading (safe). Plan chest: not listed. Keep?"
+- text: "Series by number, per the order. -- A.\nIn pencil, room by room: Dock ✓. Front desk ✓. Reading room ✓. Open stacks ✓. Closet ✓. Stacks ✓. Cage ✓. Office ✓. Tape room ✓. Salvage cage, no series, no tick.\nIn the margin: Reading (safe). Plan chest: not listed. Keep?"
 - observations: "The order's schedule, ticked room by room in pencil."
 - Carries: the salvage cage left off the order (the flag 4 realisation); her two kept items. Sets `schedule_read`.
 
@@ -214,7 +214,7 @@ Carries (all four): the Architect's reading of Agent 0x00 (m07's "figures"); ent
 - Carries: the deed and the paper half of the defences (`find_the_deed`); on the no-coordinate branch it finds the bunker. The commencement date is the safe PIN (§3.2). HaX (ink): no-coordinate branch, "There it is. Tomb Gamma has an address."; otherwise "Same site Nightshade gave us. Now it has a lease."; on `m03_victoria_fate` `arrested` or `ko` (two conditions), "Big Sky was on Zero Day's client list. Sterling's keys opened it after Cardiff." (C-21: "after Cardiff", not "in the spring").
 
 **`rent_book`** (id kept) -- name "Rent Ledger" (W6-16). `notes`, `takeable: false`, `readable: true`. US. **No variants** (C-17).
-- text: "RENT LEDGER -- SITE 2, MT. Lessee: Big Sky Holdings LLC.\nLease start: 06/02/16\nEvery month: received in full, same remitting account."
+- text: "RENT LEDGER -- SITE 2, MT. Lessee: Big Sky Holdings LLC. Lease start: 06/02/16\nDue / received / amount / remitter\n07/01/16 -- 06/29/16 -- $4,250.00 -- acct ending 4471\n08/01/16 -- 07/29/16 -- $4,250.00 -- acct ending 4471\nPaid early, every month since. Same account."
 - observations: "A monthly ledger. Every page is headed with the same date."
 - Carries: the safe PIN the long way (`060216`, the header as printed). HaX (ink, on `m06_irina_recruited`): "Irina's account paid for this. Tell her it bought us the deed."
 
@@ -228,7 +228,7 @@ Carries (all four): the Architect's reading of Agent 0x00 (m07's "figures"); ent
 - Carries: Danny's fate (m03). HaX (ink) by value, as SE §7.2. Changed by: `m03_danny_fate`.
 
 **`refit_ledger`** (id kept) -- name "Build-Out Ledger" (W6-16). `notes`, `takeable: false`, `readable: true`. US (construction draws).
-- `textVariants`: `globalVars.m02_paid_ransom` → "BUILD-OUT -- SITE 2, MT\nDraw 9 -- funds received 11/2024 -- $189,600, converted from BTC -- applied: blast door, supply and fit.\nAll other draws: lessee's own account."
+- `textVariants`: `globalVars.m02_paid_ransom` → "BUILD-OUT -- SITE 2, MT\nDraw 9 -- funds received 11/2024 -- $189,600, converted from BTC -- applied: blast door, furnish and install.\nAll other draws: lessee's own account."
 - text (base) → "BUILD-OUT -- SITE 2, MT\nDraws 1 to 9 -- lessee's own account -- paid in full."
 - observations: "Construction draws for the bunker's refit."
 - Carries: St. Catherine's ransom (£150,000 in Bitcoin, November 2024, m02) paid for the blast door. HaX (ink): "St. Catherine's money. It bought the blast door." Changed by: `m02_paid_ransom`.
@@ -266,7 +266,7 @@ Carries (all four): the Architect's reading of Agent 0x00 (m07's "figures"); ent
 - `observationVariants`: the same condition → "Typed sheets, stencilled ALPHA, with one enciphered line at the foot."; base → "A box of blank label stock."
 - Carries: decodes to "Carry it yourself. Let it hurt afterwards." (§2.4). Changed by: `deck_pulled`, `identity_scene_done`.
 
-**`alpha_tape_deck`** -- name "Reel Deck". Opens the clip (ink, S5 §3.9). observations: "A reel-to-reel deck." with `observationVariants` `globalVars.deck_pulled === 'alpha_tapes'` → "A reel-to-reel deck. One spool loaded, labelled ALPHA 2."; base → "A reel-to-reel deck. Empty spools."
+**`alpha_tape_deck`** -- name "Reel Deck". Opens the clip (ink, S5 §3.9). observations (base): "A reel-to-reel deck. Empty spools."; `observationVariants` `globalVars.deck_pulled === 'alpha_tapes'` → "A reel-to-reel deck. One spool loaded, labelled ALPHA 2."
 
 ### 1.10 The salvage cage
 
@@ -274,8 +274,8 @@ Carries (all four): the Architect's reading of Agent 0x00 (m07's "figures"); ent
 - observations: "A rack server, still running, fans loud in the cold. Asset tag: TOMB BETA. Nobody has stamped anything in here."
 
 **`albion_folder`** -- name "Printed Folder: VH-2017-0312". `notes`, `takeable: false`, `readable: true`. UK, three documents in full (W6-01; reviewer's rewrite 1 as base). Sending the notice sends the third document, unchanged.
-- `textVariants`: `globalVars.flag3_submitted` → "CATALOGUE ENTRY -- VULNERABILITY HOLDINGS\nRef: VH-2017-0312. Authentication bypass, Carrow Controls RM-4 remote-management module.\nDeployed at: grid battery sites, water treatment works, substations. Approx. 400 UK sites.\nVendor aware: no.\nDisposition: RETAIN. Operational value. Review 2019.\nBoard initials: four of five boxes. The fifth is blank.\n\nMEMO. To: Disposition Board. From: Chief Strategist. 14 March 2017. Re: VH-2017-0312.\nWe are holding a flaw in a Carrow controller because it may one day be useful to us. It will certainly one day be useful to someone else.\nFour hundred sites run this module. Their engineers cannot patch what nobody has told them about, and we cannot defend them from it, having chosen not to.\nI recommend notification to the vendor within thirty days. I have drafted the notice. I would rather send it than explain later why we didn't.\nA. Tesseract\n\nDRAFT, NOT SENT. To: Product Security, Carrow Controls. Re: RM-4 remote-management module.\nWe have found a flaw in the RM-4 module that lets an unauthenticated user on the management network issue control commands. A test case is attached for your engineers.\nWe will keep this confidential for ninety days from the date of this letter, or until a fix ships, whichever is sooner, so that your customers have time to patch. We are glad to help with testing.\nWith thanks,\nDr Adrian Tesseract, Chief Strategist"
-- text (base) → "(printer tray empty)"
+- `textVariants`: `globalVars.flag3_submitted` → "CATALOGUE ENTRY -- VULNERABILITY HOLDINGS\nRef: VH-2017-0312. Authentication bypass, Carrow Controls RM-4 remote-management module.\nDeployed at: grid battery sites, water treatment works, substations. Approx. 400 UK sites.\nVendor aware: no.\nDisposition: RETAIN. Operational value. Review 2019.\nBoard: OPS ✓ LEGAL ✓ TECH ✓ INT ✓ STRAT ......\n\nMEMO. To: Disposition Board. From: Chief Strategist. 14 March 2017. Re: VH-2017-0312.\nWe are holding a flaw in a Carrow controller because it may one day be useful to us. It will certainly one day be useful to someone else.\nFour hundred sites run this module. Their engineers cannot patch what nobody has told them about, and we cannot defend them from it, having chosen not to.\nI recommend notification to the vendor within thirty days. I have drafted the notice. I would rather send it than explain later why we didn't.\nA. Tesseract\n\nDRAFT, NOT SENT. 14 March 2017. To: Product Security, Carrow Controls. Re: RM-4 remote-management module.\nWe have found a flaw in the RM-4 module that lets an unauthenticated user on the management network issue control commands. A test case is attached for your engineers.\nWe will keep this confidential for ninety days from the date of this letter, or until a fix ships, whichever is sooner, so that your customers have time to patch. We are glad to help with testing.\nWith thanks,\nDr Adrian Tesseract, Chief Strategist"
+- text (base) → "PRINTER READY. TRAY EMPTY."
 - `observationVariants`: `globalVars.flag3_submitted` → "Three documents printed off the box, stapled together."; base → "Printer tray, empty."
 - Carries: the flaw SAFETYNET held from 2017 (one of Critical Mass's ways in at Albion), his memo and the notice he drafted: his case, partly true, before he makes it. The vendor is **Carrow Controls** (9-8); the flaw is an old one in the RM-4 module, not the player's own m04 route, which HaX called brand new. Changed by: flag 3; the send is `albion_notified`.
 
@@ -286,7 +286,7 @@ Carries (all four): the Architect's reading of Agent 0x00 (m07's "figures"); ent
 
 **`mirror_job_printout`** -- name "Mirror Job Printout". `notes`, `takeable: false`, `readable: true`. UK, his signed original (W6-22: UTC).
 - `textVariants`: `globalVars.flag4_submitted` → "PROJECTED DEATHS ATTRIBUTABLE TO THE PUBLICATION, FIRST THIRTY DAYS\nRelease by key, all cities: 1,100 to 2,600.\nFallback by city: fewer, later.\nPrincipal causes: hospital systems (dispatch, infusion, records); grid control; water treatment.\nAssumes the cells move first.\nAn acceptable price for the last arms race. -- A.\n\nRELEASE CONFIGURATION\nManual, at console. Single key. Requires an operator present.\nFallback: 06:00 UTC, staged by city."
-- text (base) → "(printer tray empty)"
+- text (base) → "PRINTER READY. TRAY EMPTY."
 - `observationVariants`: `globalVars.flag4_submitted` → "Two pages in the printer tray. The first is signed."; base → "Printer tray, empty."
 - Carries: the casualty sheet that prices the key, and the release mechanism. His original; m10 holds the corrected later printing. Changed by: flag 4.
 
@@ -328,7 +328,7 @@ The player can solve it with no Gary and no prior missions (C-03).
 
 - **The legend itself** (every route): "House rule: cage and keypad codes use the bay word." A careful player needs nothing else but the operation's name, which the field guide gives.
 - **HaX, hub topic 5**, `salvage_keypad_seen and not salvage_opened` (S4 §7.1). Her texts carry no prefix and no colon at the start of a line, so the label line can't be mistaken for a speaker. Fixed strings:
-  - First ask (C-02, C-04): "Catalogue line from flag one." / "SALVAGE CAGE ACCESS" / "MSJMQAEGDZNVI" / "Just the code, not the label. The key is the salvage bay's word, on the chart beside you. If the cipher's new to you, ask me for the archive-code field guide."
+  - First ask (C-02, C-04): "Catalogue line from flag one." / "SALVAGE CAGE ACCESS" / "MSJMQAEGDZNVI" / "Just the code, not the label. The key is the salvage bay's word, on the chart in the tape room, by the keypad. If the cipher's new to you, ask me for the archive-code field guide."
   - Asked again, while the keypad is still shut (C-03; ink visit count): "Vigenère Decode, on your workstation. Key: the salvage bay's word. Capitals in, capitals out."
   - On `gary_called`, the first ask ends "Gary told you how." in place of its last sentence.
 - **Gary**, `gary_phone`, on the first keypad attempt (`m02_gary_protected`; S4 §6.6). He is a UK hospital IT man and can't see the room (C-16, W6-21): "Seen codes like that. Archives key them to the shelf scheme. Read it like a shelf mark, not a number. Vigenère, and the bay's word is the key. There'll be a chart near the keypad."
@@ -576,3 +576,25 @@ Reviews: `REVIEW_R1_CLUES.md` (C-01 to C-24: 1 blocker, 7 majors, 16 minors) and
 | W6-26 | minor | Fixed: in-world markers ("In the margin, another hand:", "Pencilled at the foot:") replace bracketed directions | §1 |
 
 **Counts:** 50 findings (2 blockers, 20 majors, 28 minors). 49 fixed; 1 noted for stage 7 (C-23, which is a rule for later, not a fault in the strings). None withdrawn. Id changes: three new Reading ids, two new object ids, one new global, one PIN value; no bin-file id changed.
+
+## 8. Review round 2 outcomes
+
+Review: `REVIEW_R2.md` (0 blockers, 1 major, 12 minors). The reviewer's rewrites were used where given. Both decodes are unaffected (no code, key or coded line changed): `MSJMQAEGDZNVI` / `BONEYARD` → `LEWISANDCLARK`; the ALPHA line → "Carry it yourself. Let it hurt afterwards."
+
+| ID | Sev | Outcome | Where |
+|---|---|---|---|
+| R2-01 | major | Fixed: the assessor's handwritten notes open "Seen 7 November. Again on the 17th." (rewrite 1), so the hand carries a looped g and crossed 7s, the two features HaX's hints name; the Carries line now says the match rests on the handwriting, not the printed fields ("Age", "0x47"), and that the 17th matches the notebook's 17 October 2011 | §1.6 `nightshade_file` |
+| R2-02 | minor | Fixed: rent ledger with a header, columns and two rows, paid early from one account (rewrite 3); PIN still the header's digits, `060216` | §1.7 `rent_book` |
+| R2-03 | minor | Fixed: the base page shows enciphered rows instead of a bracketed note; base observation "A ring binder of rows in the archive's cipher. The live copy will have the key."; LINNET's row has all six columns ("direct -- not placed -- CANDIDATE") | §1.6 `printed_ledger` |
+| R2-04 | minor | Fixed: "In pencil, room by room:" (rewrite 5) | §1.7 `master_schedule` |
+| R2-05 | minor | Fixed: "Covering slip: ... I burned. -- 47"; the card's in-world marker kept | §1.5 `nightshade_copy` |
+| R2-06 | minor | Fixed: the board line printed as a form ("Board: OPS ✓ LEGAL ✓ TECH ✓ INT ✓ STRAT ......", the Chief Strategist's box empty; a dot leader, not a bracketed "(blank)", so it is in-world text); the notice dated 14 March 2017 | §1.10 `albion_folder` |
+| R2-07 | minor | Fixed: plain county wording, "Board of County Commissioners ... Presented June 2006." (rewrite 2) | §1.7 `clerk_certificate` |
+| R2-08 | minor | Fixed: "Unindexed entry:" | §1.4 `drop_terminal_screen` |
+| R2-09 | minor | Fixed: "furnish and install", "nursing home" (twice), "Penciled", "MRS. S" | §1.1, §1.3, §1.6, §1.7 |
+| R2-10 | minor | Fixed: HaX says "on the chart in the tape room, by the keypad" on every ask, since topic 5 can be opened from any room and her ink has no room check | §2.3 |
+| R2-11 | minor | Fixed: empty states are in-world text: "PRINTER READY. TRAY EMPTY." (both printers), "ACEMENTS 23. CANDIDA" (the shredded binder's surviving strip), "SERIES L. RECALLED. M.S." (the empty feed tray, Noor's branch), "Lindqvist -- 20" (a strip, clock run) | §1.6, §1.10 |
+| R2-12 | minor | Fixed: "why he will not stop when they tell him to." | §1.5 `derek_file` |
+| R2-13 | minor | Fixed: the case file's base written in full; the deck has one base observation | §1.4, §1.9 |
+
+**Counts:** 13 findings, all fixed, none withdrawn. No id, global, lock value or condition changed in round 2, so §6's lists stand as written. Stage 6 is complete.
