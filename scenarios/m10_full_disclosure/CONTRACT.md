@@ -1,0 +1,721 @@
+# m10 "Full Disclosure": Ink Contract (stage 7a)
+
+## 0. Status, authority and how to use this file
+
+**Stage 7a, draft 1 (2026-10-21).** Every 7b ink writer for m10 follows this file. It fixes file names, NPC ids, knot names, entry points, the globals each file reads and writes, the tags it emits and the eventMappings it relies on, so three writers can work in parallel and stage 9 can wire the result without guessing. It does not write lines. The design documents do that, and they win on wording:
+
+| Short name | File (under `planning_notes/overall_story_plan/mission_initializations/`) | Authority for |
+|---|---|---|
+| arc | `m10_full_disclosure/stages/stage_1/story_arc.md` | beats, order, the cold start |
+| SE | `.../stage_2/storytelling_elements.md` | voices and sample lines (samples fix the voice and beat; the writer finishes them) |
+| MC | `.../stage_3/moral_choices.md` | every choice, its options, gains, costs, who says the cost first, and the decision globals (§12) |
+| OT | `.../stage_4/objectives_tasks.md` | tasks, door wiring, HaX's hub (§5), the clock (§6), the core's resume order (§4.6), the close's order (§4.7, §7), the voiced calls (§13), the wiring globals (§16) |
+| RL | `.../stage_5/room_layout.md` | NPC ids, rooms, who is visible when, the raid team's roster (§2.9) |
+| S6 | `.../stage_6/lore_fragments.md` | every readable string, code, item id, and the closing card and credits as data (§3) |
+| FA | `finale/FINALE_ARC.md` | imports (§3.2), exports (§3.5), `ko_pattern()` (§3.6), the core and endings (§4), the forced-call and voiced-call rules (§6.1's paragraphs "One rule for every forced phone scene", "HaX's forced calls re-ring to a guarded knot" and "Voiced calls (F20)", which apply to both missions), the stage 7 handover (§13 rows B1–B5, 10-1 to 10-14) |
+
+Where they disagree: S6 wins on any string, MC on any choice or global value, OT on wiring, RL on ids and staging. This file wins on file names, knot names, entry points and who owns what. If this file contradicts a design document on story, the design document is right and this file is wrong: tell the orchestrator.
+
+**Writers read, before writing a line:** this file; the design sections their files cite (§1.3–1.5 name them per file); `README_ink_best_practices.md` (above all "Common ink bugs (pass 4)" and the hub pattern); `story_design/story_dev_prompts/07_ink_scripting.md` (the three-line pacing rule); `tools/pass2/PASS2_LESSONS.md` lessons 3, 13, 14, 21, 31, 35, 36, 41, 44, 48; `AGENTS.md` "Standing user rules"; and the user's style rules in `~/.claude/CLAUDE.md`. Models: `scenarios/m08_the_mole/ink/` (Netherton's audit, the confrontation, HaX's phone hub) and `scenarios/m07_architects_gambit/ink/m07_architect_comms.ink` (Tesseract's voice through the handset; m10 is the same man without the distortion).
+
+**Nobody on stage 7 opens VM material**: not `finale/VM_SHAPE.md`, `finale/FINALE_VM_PLAN.md`, `docs/agents/SECGEN_MODULE_PLAN.md`, SecGen, or the field guides. Flags are named by story meaning (flag 1 the foothold on the security monitoring host; flag 2 the staging schedule; flag 3 out of the release service's container; flag 4 the core host). HaX's field-guide lines say which guide she is sending and nothing about its content. Per-flag VM steers, if any are wanted, come later from an `opus48` agent.
+
+**The timed VM run is not a gate.** FA §13's stage 7 gate (a timed VM run first) was overridden by the user on 2026-10-21: use the estimates (about 7 to 8 minutes a flag). The cut order in OT §8 stands if playtests come in long.
+
+**Housekeeping for writers.** Write each file with Edit, knot by knot, not one whole-file rewrite. Compile and lint before reporting (§6). Don't edit this file, the design documents, other missions, the engine or `.claude/skills/`. Don't commit, stash or reset. Scratch files only in the folder the orchestrator gives you. Report: files written, line counts, every new fixed string that lives outside ink (barks, texts, bark wordings settled here), anything this contract got wrong.
+
+## 1. Ink files, writer groups and knots
+
+### 1.1 The three groups at a glance
+
+All ink lives in `scenarios/m10_full_disclosure/ink/`, one `.ink` per person or conversation, compiled to a `.json` beside it. Every file starts `INCLUDE m10_carryover_vars.ink` (§2.2) and declares no scenario global itself.
+
+**One file per person; copies share it.** RL stages one NPC record per person per room (`quintero_so`, `quintero_ws`, …). Each copy's record points at its person's file (`storyPath`) and names its own entry knot in `currentKnot` (the person-chat opens at `npc.currentKnot || 'start'`; `person-chat-minigame.js:523`). Each copy keeps its own saved story, so a copy never inherits another copy's position; anything one copy must know about another goes through a synced global. Each file's `start` knot is a router that sends any copy with no `currentKnot` to the right room knot by the `<room>_entered` globals, so a missing `currentKnot` still lands somewhere sensible.
+
+| Group | Voices it owns | Files (NPC ids) | Rough lines |
+|---|---|---|---|
+| **A** | Dr Adrian Tesseract; the core's narrator; the 06:00 scene, the hearing and the Citadel | `m10_carryover_vars.ink` (include); `m10_tesseract.ink` (`tesseract`); `m10_kowalczyk_core.ink` (`kowalczyk_core_waiting`, `kowalczyk_core`); `m10_six_oclock.ink` (`six_oclock`); `m10_hearing.ink` (`hearing`); `m10_citadel.ink` (`citadel`); `m10_recruiter_phone.ink` (`recruiter_phone`); plus the JSON fragment `scenarios/m10_full_disclosure/credits_sections.json` (§5.9) | include 420; Tesseract 1,050; Kowalczyk core 40; 06:00 600; hearing 90; Citadel 70; Recruiter 15; JSON 70. **About 2,350** |
+| **B** | Agent HaX; Director Magnus Netherton; the raid team (Kowalczyk, Quintero, Arakawa, Malhotra, Vector, Phantom, the minders) | `m10_phone_agent0x99.ink` (`agent_0x99`); `m10_hax_post.ink` (`hax_post`); `m10_director_netherton.ink` (`director_netherton`); `m10_kowalczyk.ink` (`kowalczyk_post`, `kowalczyk_van`, `kowalczyk_so`, `kowalczyk_ws`, `kowalczyk_pr`, `kowalczyk_hall`); `m10_quintero.ink` (`quintero_post`, `quintero_so`, `quintero_ws`, `quintero_pr`, `quintero_hall`, `quintero_lock`, `quintero_core`); `m10_arakawa.ink` (`arakawa_post`, `arakawa_gate`, `arakawa_blast`, `arakawa_so`, `arakawa_ws`, `arakawa_pr`, `arakawa_hall`); `m10_malhotra.ink` (`malhotra_post`); `m10_vector.ink` (`vector_post`, `vector_so`); `m10_phantom.ink` (`phantom_post`); `m10_minders.ink` (`minder_post`, `minder_blast`, `minder_lock`) | HaX phone 1,050; HaX in person 60; Netherton 480; Kowalczyk 300; Quintero 200; Arakawa 200; Malhotra 70; Vector 80; Phantom 80; minders 30. **About 2,550** |
+| **C** | Nightshade; Ghost; Gary; Imran; Voltage; Static; Wendell; Vance and Elena (phone); Asante; Mercer; Victoria (in person and on the line); Vos; Sione Fonoti; the bunker's guards | `m10_nightshade.ink` (`nightshade_table`, `nightshade_van`, `nightshade_blast`, `nightshade_lock`); `m10_ghost_phone.ink` (`ghost_phone`); `m10_imran.ink` (`imran`); `m10_gary.ink` (`gary_consultant`, `gary_tech`); `m10_voltage.ink` (`voltage_van`, `voltage_power_captured`, `voltage_power`); `m10_static.ink` (`static_power`); `m10_wendell.ink` (`wendell`, `wendell_far`); `m10_vance_phone.ink` (`vance_phone`); `m10_elena_phone.ink` (`elena_phone`); `m10_asante.ink` (`asante`); `m10_mercer.ink` (`mercer`); `m10_victoria_line.ink` (`victoria_line`); `m10_victoria.ink` (`victoria_gallery`, `victoria_threat`); `m10_vos.ink` (`vos`); `m10_fonoti.ink` (`lock_guard`); `m10_guards.ink` (`tunnel_guard`, `tunnel_guard_kettle`, `duty_guard`, `duty_guard_b`, `workshop_guard`, `hall_guard_a`, `hall_guard_b`, `monitor_guard`, `farah_guard`, `reinforcement_a`, `reinforcement_b`) | Nightshade 360; Ghost 260; Imran 200; Gary 180; Voltage 260; Static 25; Wendell 150; Vance 70; Elena 70; Asante 110; Mercer 30; Victoria's line 100; Victoria 210; Vos 120; Fonoti 110; guards 120. **About 2,375** |
+
+Line estimates are ink source lines (logic, choices and dialogue together), for balancing only. The include is mechanical (declarations from §2), which is why group A carries the heaviest single conversation and still balances.
+
+**Order of work.** Group A writes `m10_carryover_vars.ink` first, as §2.2 specifies it, and tells the orchestrator when it compiles (target: before anyone else's first compile). Groups B and C write knots meanwhile; nothing compiles until the include exists. Only group A edits the include. A writer who needs a global that isn't in §2 asks the orchestrator, who has group A add it and updates §2 here.
+
+### 1.2 Speaker register
+
+The prefix on a spoken line is the NPC's `displayName`, character for character (README_ink_best_practices "The prefix must match"). Returning characters keep their own mission's displayName. Stage 9 sets these; if it must change one, it changes the prefix in every file with it. Rows marked † are the stage 2 forms stage 9 still has to confirm.
+
+| Speaker prefix | NPC ids that speak it | Voice owner | Notes |
+|---|---|---|---|
+| `Dr Adrian Tesseract:` | `tesseract` | A | Never "The Architect" in person (SE §2) |
+| `Agent HaX:` | `agent_0x99` (phone), `hax_post` (in person); second speaker in `tesseract`, `director_netherton`, `six_oclock`, `hearing` | B | On her own phone ink, no prefix (`phone-self-prefix`); a prefix only for a second speaker on her line |
+| `Director Magnus Netherton:` | `director_netherton`; second speaker on HaX's calls and in `tesseract`, `six_oclock`, `hearing`, `citadel` | B | as m08 |
+| `Agent 0x5E 'Lantern':` † | Halina Kowalczyk (WREN): every `kowalczyk_*` id | B | "Halina" and "WREN" are what others call her; her own prefix is her SAFETYNET designation |
+| `Agent 0x2D 'Anchor':` † | Marisol Quintero: every `quintero_*` id | B | |
+| `Officer Kenji Arakawa:` † | every `arakawa_*` id | B | |
+| `Officer Dev Malhotra:` † | `malhotra_post`; second speaker on the net | B | |
+| `Agent 0x23 'Vector':`, `Agent 0x88 'Phantom':` | `vector_*`, `phantom_post` | B | m08's displayNames |
+| `Minder:` † | `minder_*` | B | one of SAFETYNET's van team, unnamed |
+| `Agent 0x47 'Nightshade':` | every `nightshade_*` id; second speaker in HaX's `breach_call` and in `six_oclock` | C | as m08 |
+| no prefix (phone contact) | `ghost_phone` | C | m02's displayName is "Ghost" |
+| `Gary Whitlock:` | `gary_consultant`, `gary_tech` | C | m02 |
+| `Imran Siddiqui:` | `imran` | C | |
+| `Voltage (Critical Mass):` † | every `voltage_*` id | C | m04's displayName; SE's samples write `Voltage:`. Stage 9 picks one and the prefix follows |
+| `ENTROPY Operative 'Static':` | `static_power` | C | m04 |
+| `Wendell Briggs:` | `wendell`, `wendell_far` | C | |
+| no prefix (phone contact) | `vance_phone` (Robert Vance), `elena_phone` (Elena Rodriguez), `victoria_line` (Victoria Sterling) | C | |
+| `Dr Abena Asante:` | `asante` | C | |
+| `Dr. James Mercer:` | `mercer` | C | m07's displayName keeps its full stop (he's American) |
+| `Victoria Sterling:` | `victoria_gallery`, `victoria_threat` | C | m03 |
+| `Pieter Vos:` | `vos` | C | |
+| `Sione Fonoti:` | `lock_guard` | C | S6 §2.4 |
+| `Guard:` † | the guards in `m10_guards.ink` | C | B. Haugen at the monitor post can be `Guard:` too; the name lives on paper |
+| `Narrator:` | any file, sparingly | the file's group | never inside a voiced call (§4); the core's warnings are fixed in MC §6.6–6.7 |
+
+The player speaks only through choice text: brackets carry the player's actual words, and no `You:` line echoes them. The credits and every written line call the player "0x00"; HaX and Tesseract may say "0x00" or "Agent" aloud, and nobody else uses a name for the player. Nobody genders the player.
+
+**Lines in another group's voice.** Some files carry a second speaker whose voice another group owns: HaX and Netherton inside `tesseract` and the closing scenes (A writes, B owns the voice), Nightshade in HaX's `breach_call` (B writes "Manual.", C owns), Kowalczyk and Quintero in the core and at 06:00 (A writes, B owns). The writer uses the design documents' fixed lines where they exist; any new line in another group's voice goes in the writer's report so the owning group's writer reads it in the cross-read (§6.1 step 6).
+
+### 1.3 Group A: Tesseract, the core and the close
+
+Read first: FA §4.1, §4.3, §4.5, §4.6; MC §6, §8, §10; SE §2 (all of it), §3.1's core and 06:00 lines, §3.2, §3.3's core and van lines; OT §4.6, §4.7, §7; S6 §3; arc §9.3, §9.4, §10, §11; m07's `m07_architect_comms.ink` for his rhythm.
+
+#### `m10_carryover_vars.ink` (include; no NPC)
+
+Declarations and two functions, nothing else: no knots, no text, no tags. Its exact contents are §2.2. Written first (§1.1).
+
+#### `m10_tesseract.ink` (`tesseract`, person, `koImmune`; the core)
+
+Every entry, first talk, mapping or walk-back, goes `start` → `core_router`. Nothing in this file relies on saved ink position: a reload restarts a person-chat, and a walk-away mid-scene must land at the first unset menu (MC rule 1.11). Every menu writes its global **on the pick**, before any reply line.
+
+| Knot | Entered from | What it must do |
+|---|---|---|
+| `start` | every open | `-> core_router`. No text. |
+| `core_router` | `start`; the end of every step | Route on globals, first that holds (OT §4.6): (1) `m09_recruiter_offer == "double_crossed" and not wren_at_core` → `double_cross_open`; (2) `not core_greeted` → `arrival`; (3) any of `flag1_submitted`…`flag4_submitted` false → `finish_box`; (4) `not flag4_heard` → `flag4_lines`; (5) `not case_heard` → `case`; (6) the first of `exchange_1`, `exchange_2`, `exchange_3` still `""` → that exchange's knot; (7) `console_choice == ""` → `console` (which resumes Join by `join_step`); (8) WREN free and `not wren_at_core`, which is `whodunit_live and not wren_held and not kowalczyk_ko and console_choice == "stopped"` (`whodunit_live` is false on `taken` and `double_crossed`; `wren_held` is true once she is held before the core, §2.5) → `wren_beat`; (9) `database_outcome == ""` → `database`; (10) `ending == ""` → `his_end`; (11) otherwise → `after_end`. No text of its own. |
+| `double_cross_open` | router (1) | MC §6.4 double-cross: the player arrives on the end of his refusal ("...it proves nothing. It has to be one of theirs." / Kowalczyk: "Adrian."); HaX: "Quintero. Core. Now."; Quintero takes her (or, with no Quintero, which here is `quintero_ko or officer_out == "quintero" or (nightshade_tethered and m09_sleeper_named)` because she breached ahead and comes late (MC §3.1), a one-option "[Take her.]" beat); Kowalczyk's line to the player on her way out. Sets `wren_at_core`, `sleeper_caught`; `quintero_enters_core` on the Quintero arm. Then `-> core_router` (step 0 runs as normal). |
+| `arrival` | router (2) | His release line by `head_start_out`, one of four fixed strings (OT §4.5); "Take your time. It goes at six whatever we say. Or now, if someone presses this. I'd rather it was you."; HaX's return as second speaker (her one word, cracked and late; the designation; her line by `head_start_out`); his "Ninety-nine. You've done well with them." / her "Still HaX."; on `m04_voltage_captured`, the quote at HaX's return (FA §13 10-6); then HaX: "Get on his box. He'll keep." Sets `core_greeted`. Ends `#exit_conversation` so the player can walk to the host terminal. Asked about the head start (one optional choice before the exit): released, "Two hours for people who'll waste it. They were always scenery."; stopped, "Good. I never liked paying them." (FA §13 item 19). |
+| `finish_box` | router (3) | "Finish on my box first. I'll keep." Then `#exit_conversation`. One line, no choices (it is the line a player hits by walking up early). |
+| `flag4_lines` | router (4); his mapping on `flag4_submitted` (§3) | HaX as second speaker (SE §3.1 "As flag 4 lands"): on `not m09_completed`, the two notice lines; on an m09 save, "The notice you read in Helena is on here too."; then on every save the console fact, the vault line and the purge (MC §6.1). Sets `flag4_heard`, then `-> core_router`. The router's step 3 already guarantees all four flags. |
+| `case` | router (5) | His case (FA §4.1 step 1; SE §2.2): the Publication in six lines at most; the offer every player hears, with its line by `m01_player_launched_attack` and `m06_satoshi_stance` only where MC §6.7 says so; his evidence opening "I told you once I prefer to watch. I've watched.", at most three record lines by priority (`m04_disclosure_choice`, `m01_final_choice`, `m07_debrief_stance`, each with its default), never more than two before the player can answer, closing "Since your first day."; then the Recruiter beat (MC §6.2): `m09_recruiter_secret` to HaX, then `m09_recruiter_offer` to the player (the invoice on `taken`/`double_crossed`, the clean record said for the player on `named`/`refused` only when `m09_albion_notified` hides it from exchange 2). Break the case with at least one player choice every three lines (the pacing rule's dramatic-reveal exception allows four). Sets `case_heard` on its last line, then `-> core_router`. |
+| `exchange_1`, `exchange_2`, `exchange_3` | router (6) | MC §6.3 and SE §2.3. Each: his opener (exchanges 2 and 3 open by the previous exchange's value: one opener for `rebuttal`, one for `record`, one for `miss`), his claim, then four buttons from the fixed slots in the fixed order (§5.4). Each pick writes `exchange_n` (`rebuttal` / `record` / `miss`) first, then his response: a concession with `*pause*` for a landed answer (the narrator marks only the first landed point: "He looks at the console for a long moment."), a dry miss line drawn from his range without repeats. Ledger stings (`m04_crew_lost`, `m02_patient_bed4_deceased`, `m06_satoshi_stance`) play before his response where SE §2.1 places them. In exchange 3: on `should_have_told`, HaX's unasked line before the menu; on `m07_architect_echo_heard`, HaX's one beat as he says the line; the `ko_pattern()` sting by band (FA §3.6) before his response to whatever is picked. Each ends `-> core_router`. |
+| `console` | router (7) | MC §6.4: "[Stop it.]" / "[Show me how it works.]". On `join_step >= 1` it resumes Join at `join_1`, `join_2` or `join_3` instead of offering the console again. "Stop it" writes `console_choice = "stopped"` and `partial_release` (`none`, or `small`/`large` when the backdoor channel is open and `not backdoor_closed`), plays his reply ("Then we do it the slow way…", or the `m09_reading_finished` "one thing" / "two things" line), the partial release as heard (with "Seattle first. As scheduled." on `m07_countdown_expired`), then `-> core_router`, which reaches `wren_beat` when she is free. On `m09_deck_pulled == "alpha_tapes"` with WREN free, HaX's service-door warning plays as the player reaches for it, before "Stop it" resolves. |
+| `join_1`, `join_2`, `join_3` | `console`, router via `join_step` | MC §6.7 exactly: each step writes `join_step` (1, 2, 3, the furthest reached); step 1 his key line, his line by points (derive `points_landed` here too), the narrator's line with the casualty figure (the only place it is said); step 2 HaX "0x00. Don't." and the narrator's line; step 3 the key and its confirmation "Publish the database to everyone, now?" as an ink choice. Every menu offers the way back exactly as MC lists it ("[Step back.]" / "[Step away.]" / "[Stop it.]" / "[No.]"); "[Stop it.]" goes to the `console` knot's stop branch. Only the confirmation writes `ending = "joined"`, `console_choice = "joined"`, `database_outcome = "published"`, `partial_release = "published"`, `media_story_ran = false`; then "Thank you, Agent." and `-> join_end`. |
+| `wren_beat` | router (8) | MC §6.4: she comes through the service door; his refusal ("Not you, Halina…") every time; her "Adrian."; then by branch: default (Quintero wounded: `quintero_wounded`, `quintero_enters_core`), `alpha_tapes` (Quintero takes her unhurt after the refusal), no Quintero (`quintero_ko or officer_out == "quintero"`: "[Stop her.]", one option, sets `wren_stopped`; on `alpha_tapes` HaX's warning goes to the player and the beat comes a second earlier). Sets `wren_entering` at the top (her copy reveals on it), `wren_at_core` on the resolution. Named right on the line with no Quintero to send (`sleeper_caught and not wren_held`): his "You found her. Too late to stop her walking in." Then `-> core_router`. **WREN held before the core** (`wren_held`, or `m09_recruiter_offer == "taken"`): no beat; his glance at the service door and "You found her. I wondered whether you would." play once, in `console`'s stop branch. |
+| `database` | router (9) | MC §6.5 in order: Netherton on the line ("Magnus." / "Adrian."), his secure case, HaX's cost of secure, Netherton's cost of disclose naming the first two operations that apply (§2.5 lists the tests; one fixed phrase per operation, chosen by condition, never printed), HaX naming coordinated disclosure, HaX on the unpatchable ones (and the `m09_albion_notified` line), HaX's purge warning again, shorter, then wipe's cost (HaX, Netherton). Menu: the three options with MC's button texts plus "[HaX. What would you do?]" (returns to the menu, once). Writes `database_outcome` on the pick. "Wipe both" also writes `ending = "scorched"`, `media_story_ran` (true only on `m07_completed` and Fracture uncovered) and goes to `ending_scorched`. The others `-> core_router`. |
+| `his_end` | router (10) | Derive `points_landed` from the three exchanges here (never counted). On `join_step >= 2`, his "You held your hand out for it…" first. Two or more: he stands, "Ask me, then."; Netherton's F13 line; menu "[Then cooperate. All of it.]" / "[No deal. You're under arrest.]" / the cold choice last. Fewer: "Arrest me, then."; menu "[You're under arrest.]" / the cold choice last; the arrest leads to the reach beat ("[Fire.]" / "[Hold fire.]"). The cold choice is MC §6.6 steps 1–4 word for word, `cold_lowered` removing it. Each final pick writes `ending` (and `fire_held` on "[Hold fire.]", §2.5) and `media_story_ran` (true on `executed`; else true only on `m07_completed` and uncovered Fracture), then goes to its ending knot. |
+| `ending_arrest`, `ending_surrender`, `ending_lethal`, `ending_executed`, `ending_scorched`, `join_end` | the final pick | The ending's own beat at the core (FA §4.5–4.6, MC §8): one narrated line for each shot ("His hand is on the key. You fire. He falls against the console before it's pressed." / "He is still looking at you when you fire."); HaX's lines by ending (on `executed`: a long silence, then the designation once; Quintero takes the weapon without a word, or the van team at the lock when she is wounded or out); on `scorched` the purge (lights, suppression, blast doors cycling; he is gone by the service door, or his own way on `m09_sleeper_named`); on `join_end` he takes his coat and walks out with the player by the service door. Each ends `#exit_conversation` and diverts to `after_end`. Nothing here completes a task (`decide_his_end` completes on the `ending` mapping, §3). |
+| `after_end` | router (11) | One fixed line per `ending` value for a player who talks to him again (dead: a narrator line; gone: none, the knot exits at once), then `#exit_conversation`, `-> after_end`. |
+
+**Idle lines** (three at most, on events; FA §4.1 step 0): barks on `tesseract` (unvoiced text in JSON, stage 9), on the first use of the core host terminal, a field-guide request, and a failed submission. Group A writes the three lines in its report, not in ink.
+
+#### `m10_kowalczyk_core.ink` (`kowalczyk_core_waiting`, `kowalczyk_core`; `koImmune`)
+
+Their lines live in `tesseract`. This file only answers a click: `start` → `waiting` (on the double-cross, before she is taken: one line, and `#exit_conversation`) or `through` (during the beat: one line). Both exit; neither sets anything.
+
+#### `m10_six_oclock.ink` (`six_oclock`, hidden person NPC; the forward post at 06:00)
+
+| Knot | What it must do |
+|---|---|
+| `start` | First line: `~ close_compute()` (no text before it), then route by `ending`: `executed` → `executed`; `joined` → `exit_only` (this scene never plays on Join; a stray open exits); otherwise → `opening`. |
+| `opening` | The fixed beats outside the walkabout, in this order, each once (FA §4.6, MC §8.2): a shown Nightshade left at the post (`m08_nightshade_triple_agent and m09_nightshade_shown_file and not nightshade_taken_in`): "You left me where they couldn't see me. I'm still useful. That's rarer than you'd think."; on `m09_recruiter_offer == "named"`, Netherton: "It's six. The arrests have started." Then `-> walkabout`. |
+| `walkabout` | A hub, at most three picks, then "[That's everyone.]" (sticky; also offered from the start). Quintero always first in the list (stretcher form on `quintero_wounded`; her line by `quintero_stance`, MC §4 C1). Then, in precedence, while picks remain: Kowalczyk in the van if caught (her reply by `kowalczyk_answer`, then "I liked you. I'd still have pressed it." only where her face-to-face scene didn't already say it); a wrongly accused officer not recalled (`officer_out`); Voltage, Gary or Imran, Wendell, Victoria, by branch. One line each. A file-local counter (`six_picks`) caps it at three; spent people retire. On `scorched` the walkabout runs too. |
+| `numbers` | Netherton's numbers, tonight's cost only (MC §10 rule 2): the head start by `head_start_out` (FA §4.6 "The head start"); the trace line on `share_zero_day == "traced"`; the partial release by `partial_release`, or the story on uncovered Fracture; one line if any raid member was knocked out (no names, §5.8 10-11); the Zero Day tap line on `victoria_gallery == "confronted"`; the $12.8M on `m06_assets_seized` (secured / not; never on `executed`). |
+| `database_beat` | By `database_outcome` (FA §4.6 "The database choice in the epilogue"): secured (vault, "Two maps now," the first operation's cell rolled up on screen); disclosed (HaX's acknowledgements line, the two operations going dark, the water utilities); both_wiped (Netherton's suspension of the player in front of the team, "I wanted to do the same…", then the wipe's gain line). |
+| `van` | Arrest and surrender only: the van; his nod to HaX; the chapter exchange with Netherton ("I wrote that chapter, Magnus." / "I know. I kept it to one page."); on `nightshade_taken_in`, the look at the van window ("You wrote me as a line item." / "You were a good one."); surrender's "There will be no trial." and HaX sitting with him for a minute. |
+| `the_rest` | HaX's forty-seven beat first on `m09_recruiter_secret` `kept` or `denied` (harder wording on `denied`; FA §13 10-9); then "the rest" in two lines ("The night he left, he asked me to go with him." / "I said no. It took me till morning."), introduced on arrest by "It's afterwards." as the van goes; then her last word by ending (FA §4.6 table). On `scorched` the rest is not told here (the hearing has it): Netherton's suspension stands as the scene's end. As her last word lands, one narrator line: the table's screen reaches six and nothing happens. |
+| `executed` | MC §8.3: no walkabout, no rest. The screen shows Social Fabric's story (the object's text; **no narrator line** reads it). Netherton: "I will not put my name under this one. You will be held until the board sits." HaX is not at the van (no HaX line; her message comes later as a text, JSON). Netherton's numbers without the $12.8M. The database beat without HaX reading acknowledgements. |
+| last line, every ending except `scorched` | `#set_global:six_done:true`, `#set_global:closing_done:true`, `#complete_task:close_the_night` as tags above the scene's last spoken line, then `#exit_conversation`. On `scorched`: `#set_global:six_done:true` only, above the last line (the hearing completes the night). |
+| `exit_only` | `#exit_conversation`, no text. |
+
+Walkabout picks read only what the 06:00 scene knows; a person who isn't standing there is never offered.
+
+#### `m10_hearing.ink` (`hearing`, hidden person NPC; Scorched Earth only)
+
+`start`: `~ close_compute()` first, then the hearing: HaX beside the player ("He still knows. He's one man with a memory now, not a map."), the rest told here, her last word "They'll ask me if I'd have stopped you. I'll tell them I wasn't asked." (FA §4.6; MC §8.2). Short: about a minute. Last line carries `#set_global:closing_done:true` and `#complete_task:close_the_night`, then `#exit_conversation`.
+
+#### `m10_citadel.ink` (`citadel`, hidden person NPC; Join only)
+
+`start`: `~ close_compute()` first. The Citadel, Netherton orders 0x00 brought in, the casualty curve climbing on the screen (narrator, one line, the curve and nothing else). No HaX lines (her last message is a text, JSON). Last line: `#set_global:closing_done:true`, `#complete_task:close_the_night`, `#exit_conversation`.
+
+#### `m10_recruiter_phone.ink` (`recruiter_phone`, phone; never rings)
+
+`start` is the home knot, gated and silent (PASS2 lesson 36): it prints nothing and holds one sticky exit choice. The 06:00 text on `double_crossed` ("I'll remember the shape of you.") is a JSON text, not ink.
+
+#### `credits_sections.json` (group A; JSON, not ink)
+
+The SAFETYNET and In memory sections for entries E1–E6 (§5.9).
+
+### 1.4 Group B: HaX, Netherton, the briefing, the raid team and the whodunit
+
+Read first: arc §3, §4, §5, §8; SE §3.1, §3.2, §3.3, §3.4, §3.5's HaX pointers; MC §4 (C1, C9, C10), §5; OT §3, §4.1–4.5, §4.9, §5, §13; RL §2.1, §2.9; FA §4.0, §4.4 "The whodunit"; m08's `m08_phone_agent_0x99.ink` and `m08_director_netherton.ink`.
+
+#### `m10_phone_agent0x99.ink` (`agent_0x99`, phone; home knot `start`)
+
+The busiest file in the mission. Hub topics are text; the seven call knots are voiced (§4). Every knot that can be reached by a call mapping ends `#exit_conversation` and never diverts into `start` or `support_hub`.
+
+| Knot | Entered from | What it must do |
+|---|---|---|
+| `start` | the phone opening outside a call; phone preload (PASS2 lesson 36) | Home knot. Prints nothing and writes nothing. `{hax_jammed: -> jammed}` else `-> support_hub`. |
+| `jammed` | `start` | One line, "...", and the sticky exit only (OT §5 "The jam"). |
+| `support_hub` | `start`; every topic's end | OT §5 exactly: progress-gated topics, newest first, each retired by its `_given` guard or its aim; the three sticky choices last ("[Where are we?]", "[Field guide.]" when a guide is on offer, "[That's all.]"). A phone resting knot holds choices only, no re-entry line (README_ink_best_practices bug 2, phone exception). At most ten visible on the busiest save (OT §5 "The ten-choice cap"). |
+| `where_are_we` | hub | The "[Where are we?]" ladder in OT §5, first that holds, one fixed line each; after a reload it names the room to walk back to. Returns to the hub. |
+| `field_guide` | hub | One button, branching by the VM stage the player is on, offered only once that stage's console has been used (`guideN_offered`, §2.5). Gives the stage's guide with `#give_item:lab-workstation:<guide_id>` (working ids `m10_guide_flag1`…`m10_guide_flag4`; stage 9 and the VM plan fix the real ids) and sets `guideN_given`. One plain line naming which guide she is sending; nothing about its content. |
+| `how_are_you`, `why_me`, `the_hour`, `the_head_start` | hub (`briefing_played`; the last three retire at `breach_open`) | SE §3.1 "[How are you?]" by `m09_hax_confession_answer` (cold-start forms on `not m09_completed`); the briefing hub's three questions (arc §3, OT §5). |
+| `fence`, `power_room_topic` | hub (`flag1_submitted`, with `m06_assets_seized` for the fence) | OT §5 rows. |
+| `door_log` | hub; HaX volunteers it on the log's first read (a bark, JSON) | Clue 1's read; the dummy camera if asked ("That camera's a box on a bracket. Never wired."). Sets `door_log_given`. |
+| `alibi` | hub (`clue_door_log and whodunit_live and not clue_alibi`) | Clue 2: what the player saw at the gate, what HaX had, what Netherton had (OT §3 row `check_the_alibis`; the `arakawa_ko` variant). Sets `clue_alibi`. |
+| `signout` | hub (`clue_bench_log and whodunit_live and not signout_read`) | "Opened one fifty-two. Kowalczyk and Arakawa." (the `taken` and `double_crossed` forms never reach here: the whodunit is off). Sets `signout_read`. |
+| `accuse`, `accuse_who`, `accuse_confirm`, `accuse_right`, `accuse_wrong` | hub "[I know who WREN is.]" (`clue_door_log and whodunit_live and not wren_at_core and accused == ""`) | The **line accusation** (MC §5): while `officer_out != ""`, a wrong name gets "Get <officer> back first." (one fixed line per officer) and the right one is still accepted. `accuse_who` lists the team on tonight's raid (Kowalczyk, Quintero, Arakawa, Malhotra; Vector and Phantom on `vector_on_team` / `phantom_on_team`), then "[Yes. Them.]" / "[Not yet.]". Right: `accused = "kowalczyk"`, `sleeper_caught = true`; Netherton on the net sends Quintero by the service side and `wren_held = true`, unless there is no Quintero to send (`quintero_ko or officer_out == "quintero"`), in which case Netherton says so and `wren_held` stays false. Wrong: `officer_out = "<name>"`, `wrong_accusation = true`; the officer's hint line on the net as second speaker (SE §3.4: Malhotra "Eleven years. Check the log again."); Netherton's cost line where MC §5 gives one. Each ends back at the hub. |
+| `recall_malhotra`, `recall_arakawa`, `recall_quintero`, `recall_vector`, `recall_phantom` | hub, one per officer (`officer_out == "<name>"` and the clearing clue held: `clue_bench_log` for Quintero, `clue_alibi` for the rest) | Netherton's recall over the channel ("Officer Malhotra, you are cleared. Come back, and leave the face at the van."; one fixed form per officer); `officer_out = ""`, `<name>_recalled = true`. |
+| `whats_live`, `what_went_out`, `backdoor_topic`, `hatch_topic`, `console_fact`, `vault_line` | hub, gates as OT §5 | `whats_live` reads `share_zero_day` and `share_resale` as fixed lines by state (four lines plus the lone-trace line) and ends with Sterling's rule on a recruited-Victoria save; `what_went_out` the four `head_start_out` lines, sets `what_went_out_given`; the rest as OT §5. |
+| `shutter_topic` | hub "[Talk me through the shutter.]" (`power_room_entered and not gallery_shutter_cut and phone_voice_is_hax`) | `-> cut_call`. Nothing else. |
+| `console` | the release console controls' mapping (§3), text, not voiced | C9 and C10 (MC §4): HaX's "I can kill one feed, or follow one. Not both. Pick."; options "[Kill Zero Day's.]", "[Kill Ghost's buyers'.]" (only on `ghost_sale == "bait"`), "[Let it run. Trace who gets it.]", and "[Close the backdoor.]" while `backdoor_channel_live and not backdoor_closed`; each pick writes `head_start_killed` (`zero_day` / `ghost` / `trace`) or `backdoor_closed`; once `head_start_killed != ""`, the share options are gone and only the backdoor (if live) and the exit remain. Ends `#exit_conversation`. |
+| `breach_call` | voiced call (§4) | OT §4.1 and SE §3.1: Netherton on the net, "Breach. Go."; on `nightshade_tethered`, Nightshade on the net, "Manual.", then HaX: "He's on the crank. Their reader never saw you."; otherwise HaX: "It's read your badge. They know you're in."; on `m09_deck_pulled == "alpha_tapes"`, HaX: "The best lock there is. Tape two." No narrator. `#exit_conversation`. |
+| `inner_door_call`, `tripwire_call`, `ladder_call`, `stair_call` | voiced calls | One or two lines each, fixed in SE §3.1 and OT §4.2–4.3. `#exit_conversation`. |
+| `gallery_open` | voiced call, `disableClose: true` | OT §4.4: the console warning if `head_start_killed == ""`; on a recruited Victoria, her one warning (MC §3.5: "Sterling goes with whoever's winning. …"); the sweep line; her last line before the jam naming the stair and the walkway; on `m03_victoria_fate == "arrested" and not victoria_line_done`, it ends on "Sterling's still on the line. She has something on Vos." **On `officer_out == "malhotra"`**: the warning(s) she owes, then the static fragment ("Netherton sweeps the... I'm losing y..."), and nothing after it. Never more than one warning before the last line (MC §3.5). `#exit_conversation`. |
+| `cut_call` | voiced call when the slot voice is HaX; `shutter_topic` | The shared shape in §1.6. Routes on `cut_step` and `gallery_shutter_cut`. `#exit_conversation` at the end, and on every early exit choice. |
+
+Unprompted HaX lines at beats (the flag lines, the pointers in SE §3.1 "On the way down" and "Pointers that say a cost before the pick", the nudges, "Lost you up there. I'm back.", the margin pointer and "Copy just the code.", the Hollis line, the `letters` line) are **barks or texts in JSON**, not ink (OT §13 "Barks and texts"). Group B owns their wording and lists every one it changes or settles in its report.
+
+#### `m10_hax_post.ink` (`hax_post`, person, `koImmune`; the forward post)
+
+HaX in person at the van end. `start` → `hub`: a re-entry line, two or three short topics at most (she points to her phone for the rest: the briefing questions live there), a sticky exit with her reply. Before the split only her own in-person lines; after `breach_open` she is "on the phone" (one line). No calls, no globals.
+
+#### `m10_director_netherton.ink` (`director_netherton`, person, `koImmune`)
+
+| Knot | Entered from | What it must do |
+|---|---|---|
+| `start` | every open | Router: `not briefing_done` → `briefing`; `briefing_done and not aside_done` → `aside`; `door_branch() == "silent" and not door_scene_done` → `tether`; otherwise → `hub`. |
+| `briefing` | the `timedConversation` on `game_loaded` (`skipIfGlobal: briefing_played`) | `#complete_task:take_the_briefing` above the first spoken line (PASS2 lesson 42). arc §3 and §4: which form plays (played m09: `taken`, then `double_crossed`, then the default kit check; cold start: on `not m08_completed`, Nightshade first, then the three facts with the name and the hour in front of the team), the stakes (both modes of the Publication; the full-disclosure-versus-Publication line once), Quintero's objection (second speaker) and C1, "[She's right. And we're going anyway.]" / "[The record says six. We go.]" / a say-nothing option, writing `quintero_stance`; the handbook line; Vector and Phantom at the table or declined (Netherton's line by branch); on a cold start Kowalczyk's cracker line (second speaker; drop "never been near him" on `not m08_completed`). Last line of this part sets `briefing_done`, then `-> aside`. Five lines at most between choices in the cutscene. |
+| `aside` | `briefing`; `start` if the cutscene was closed early | arc §3 "The private aside" and FA §4.0: the van end, HaX as second speaker. Default: placed eleven years ago, why the team stays together, "and neither will you", "Whoever it is wants the same room you do. Find them before you get there."; on `m09_sleeper_shortlist and not m09_sleeper_named` HaX's "Two faces from Helena. Watch both."; on `m08_named_on_evidence` with `whodunit_live`, HaX's line. **Check `double_crossed` before `taken`** (MS-03). `taken`: the named form, ending at the van window with Kowalczyk as second speaker: "When did you know?" and C18's three answers, writing `kowalczyk_answer`. `named`: Netherton adds "The arrests start at six. Not before. WREN would hear." `double_crossed`: wording to write (§5.8, 10-11). Last line sets `aside_done`. Then `#exit_conversation`, `-> hub`. |
+| `tether` | `start` on the silent branch | MC §3.1 "Silent, or never played": Netherton's cost line in the right form (whodunit running, or Kowalczyk off the team), then the closing choice "[Bring him up. Let's hear the second word.]" / "[Leave him in the van.]" (default). Writes `nightshade_tethered` (true or false) and `door_scene_done`. Re-enters here until `door_scene_done`. |
+| `split_line` | Netherton's mapping on the second of `door_scene_done` and `gate_console_used` (§3) | "Quintero, Kowalczyk. The service tunnel. Go." (Kowalczyk off the team: a form without her; §5.8). Its last line sets `split_started`. Ends `#exit_conversation`. |
+| `hub` | re-talk | A re-entry line by progress, a few topics (the plans, the van, the tether, what he will sign), a sticky exit with a reply. Nothing here sets a story global. |
+
+#### `m10_kowalczyk.ink` (Kowalczyk: `kowalczyk_post`, `kowalczyk_van`, `kowalczyk_so`, `kowalczyk_ws`, `kowalczyk_pr`, `kowalczyk_hall`)
+
+Knots by `currentKnot`: `post` (the kit check before the split; after `pair_back`, "Door end. Service door's real. Steel, a reader, a camera that doesn't move." if asked), `van` (`taken`: one resting line after the aside's question), `so`, `ws`, `pr`, `hall` (RL §2.9: the photo line in the security office; the peel-off line in the server hall by default, the security office on `nightshade_tethered`, the workshop on `wren_warned`; the peel-off line's last line sets `kowalczyk_gone_ahead`, on which her copies hide). Every bunker copy offers the **face-to-face accusation** while she is in the room (`clue_door_log and whodunit_live and accused == ""`): the four cards in arc §8.4's order, her two lies, the crack, then C18 ("When did you know?", three answers, `kowalczyk_answer`), then "I liked you. I'd still have pressed it." Writes `accused = "kowalczyk"`, `sleeper_caught = true`, `wren_held = true`. No pronoun for WREN anywhere before this scene.
+
+#### `m10_quintero.ink` (Quintero: `quintero_post`, `quintero_so`, `quintero_ws`, `quintero_pr`, `quintero_hall`, `quintero_lock`, `quintero_core`)
+
+`post` (the pair back: "We split at the fork. I took the drain. It comes up by the service door anyway."), `so` ("I don't like doors that know your name." on `breach_announced`; the photo line on the tether with Kowalczyk off the team; Arakawa's peel-off reaction on the tether when he isn't there to say it), `ws`, `pr`, `hall` (one line each at most), `lock` (MC §4 C1's lock line by `quintero_stance`; the arrested-Nightshade-refused line; "He wants you on your own. I'll be on this side of it."; her secret if asked on `quintero_stance == ""`, SE §3.4), `core` (one resting line). Every copy before the gallery offers the **face-to-face wrong accusation** (gated as Kowalczyk's, plus `officer_out == ""`): her line "I took the drain. I didn't pack the case. Read the sheet.", `officer_out = "quintero"`, `wrong_accusation = true`. Her recall line plays in HaX's `recall_quintero`.
+
+#### `m10_arakawa.ink` (Arakawa: `arakawa_post`, `arakawa_gate`, `arakawa_blast`, `arakawa_so`, `arakawa_ws`, `arakawa_pr`, `arakawa_hall`)
+
+`gate` is his call (OT §6 "Arakawa's call"): opened by his own mapping; he dials, the telescope line unprompted as he hangs up ("She wants a telescope. I'm getting her a telescope."), Malhotra on the net as second speaker ("Arakawa, you're off the net."). No choice. Its last line sets `arakawa_call_done`. `post`, `blast` (the tether), `so` (the photo line when Kowalczyk is off the team), `ws` (his reaction on `wren_warned`), `pr`, `hall` ("Service side. She always takes the door nobody's watching."). The face-to-face wrong accusation as Quintero's, with his own hint line; his recall line ("You heard me on the phone to her. Then you thought I'd do this?") plays in HaX's `recall_arakawa`.
+
+#### `m10_malhotra.ink`, `m10_vector.ink`, `m10_phantom.ink`, `m10_minders.ink`
+
+Malhotra (`malhotra_post`, `koImmune`): a few lines at the van end; the face-to-face wrong accusation ("Eleven years. Check the log again."). Vector (`vector_post`, `vector_so`): at the table; in the security office he gives the cupboard code (`#give_item:notes:vector_cupboard_code`, on its own line above his reply) and says why he knows it (S6-15); the face-to-face wrong accusation. Phantom (`phantom_post`): his list, which replaces clue 3 (sets `clue_bench_log`), and the face-to-face wrong accusation. Minders (`minder_post`, `minder_blast`, `minder_lock`): one line each, no globals.
+
+Face-to-face accusations in any of these files write exactly what the line accusation writes (MC §5: "the same outcomes"), and HaX's hub sees the result through the globals.
+
+### 1.5 Group C: the five full scenes and the bunker's people
+
+Read first: MC §3 (all five scenes), §4 C7, §7; arc §7; SE §3.5, §3.6; OT §4.2, §4.5, §4.9; RL §2.1–2.7; S6 §1, §2; the shipped voices of each returning character (m02 Ghost and Gary, m03 Victoria, m04 Voltage, Static and Vance, m07 Elena and Mercer, m08 Nightshade).
+
+**Rules for every slot scene** (MC rule 1.4): the scene's first line writes its outcome global to `"avoided"` only while it is still `""` (`imran_outcome`, `gary_outcome`, `voltage_outcome`, `wendell_outcome`, `victoria_gallery` on the escaped branches, `vos_outcome`); a room-exit mapping does the same for a player who never spoke (stage 9). Recruited Victoria's first line writes `"refused"` the same way. Knock-outs are written by mappings (`ko`), never by ink. Each scene re-enters on its outcome global: once decided, a re-talk gets a resting line, never the menu again (PASS2 lesson 14).
+
+#### `m10_nightshade.ink` (`nightshade_table`, `nightshade_van`, `nightshade_blast`, `nightshade_lock`; all `koImmune`)
+
+| Knot | What it must do |
+|---|---|
+| `start` | Router by `door_branch()` (§2.6) and copy: `table` for the three table branches, `van`, `blast`, `lock`. |
+| `table` | Re-enters on `door_scene_done` (resting line) or at the closing choice (MC §3.1 "Walk-away"). Three branches: **shown** (pays in full; marks the wrong entry as Tesseract's lie; hands over the override with `#give_item:key:alarm_override` on both options; closing choice "[Stay at the post.]" (default) / "[Come with us. You can see his face.]", Netherton's two cost lines first as second speaker; writes `nightshade_taken_in`); **not shown** (pays warmly, gives the payment with `#give_item:notes:nightshade_payment`; HaX's pointer as second speaker; once `payment_read and plans_read`, the check option worded per S6-16, which sets `payment_checked` and gets "You read your homework."; closing choice "[We'll go by your map.]" / "[Helena's plans will do.]" (default), each with its cost said first; writes `nightshade_map_used`); **arrested** (first line writes `nightshade_deal = "refused"`; "You said no deals…"; "[No deals. I said it then.]" first and default / "[Name them. You'll get your deal.]"; writes `nightshade_deal`, and `nightshade_map_used` on the deal). On the not-shown and arrested branches, `m09_cage_bin == "nightshade_copy"` adds his one line. His ENTROPY-habits line (FA §4.4 "Helpers") on shown, not shown and the deal sets `clue_alibi`. Every closing choice writes `tripwire_armed` (`nightshade_map_used and not payment_checked`) and then `door_scene_done`, in that order. |
+| `van` | Silent branch: "Door." and nothing else (a click shows it again). The tether question is Netherton's. |
+| `blast` | The tether at the blast door: one line in person ("Manual." itself is on the net, in HaX's `breach_call`). |
+| `lock` | Taken in, at the outer lock: one line on a click ("Go on. I've got the door." is a bark, JSON). |
+
+#### `m10_ghost_phone.ink` (`ghost_phone`, phone; home knot `start`)
+
+`start` is gated and silent (prints nothing, writes nothing, one sticky exit). `ghost_call` is the voiced call (§4): its **first line** writes `ghost_sale` (`stopped` on kept and refused, `selling` otherwise) and `ghost_gift = ""`; then MC §3.2's three branches: **kept** (`m02_ghost_deal_accepted and m02_exposed_hospital`; the question and three answers writing `ghost_answer` `not_why` / `card_unsigned` / `ask_them`; the last line gives `#give_item:notes:ghost_cupboard_code` and names the west-wall cupboard); **refused** (`m02_ghost_deal_refused`; "You turned me down. Why?"; "[I don't buy from people who hold hospitals.]" writes `ghost_gift = "code"`, `ghost_answer = "hospitals"` and gives `#give_item:notes:ghost_lock_code`; "[I didn't trust you to keep it.]" writes `ghost_gift = "card"`, `ghost_answer = "trust"`, `lock_guard_known = true`, and names "The one at the lock end. Fonoti."); **selling** (broken, unanswered, stranger: talk Ghost out of it, with the hook working on broken only after "[I didn't keep it. I'm asking anyway.]", visible misses for money and threats, writing `ghost_sale = "stopped"`; or "[Sell it, then. I want to see who's buying.]" writing `ghost_sale = "bait"`; no hang-up button). Every branch's last choice writes `ghost_call_done`. HaX's pointer as the handset rings is a bark (JSON), not a line here. No "Where were we." lines: `resume: true` re-enters no knot (FA §13 10-10). Ends `#exit_conversation`.
+
+#### `m10_imran.ink` (`imran`) and `m10_gary.ink` (`gary_consultant`, `gary_tech`)
+
+Imran: `workshop` (MC §3.3: his grievance by `m02_exposed_hospital`; the casualty sheet "Read what's pinned over my bench."; the margin pointer "There's something written in the margin. Not plain English."; the decision "[Go home. Keep your phone.]" / "[I'm taking you in.]", HaX's cost line first as second speaker. Talked round: `imran_outcome = "talked_round"`, `#unlock_door:power_room`, the bench-log line "Names, not stores. Look at the log.", the call that sends Farah home. Taken in: `imran_outcome = "taken_in"`, HaX reads the supplier delivery off his phone as second speaker; the power-room card by `#clone_keycard:tg_power_room_card`, or `#unlock_door:power_room` on `ghost_watch_on_route`, where he keeps the card on him). On the protected branch Gary speaks inside Imran's scene as second speaker ("I trained him. He read my emails."; his reaction to the decision). `follows_gary`: on the unprotected branch Imran says one line and defers to Gary.
+
+Gary: `consultant` (protected: at the door, "You saved my career."; recognises the casing; asks the player to talk Imran round or take him in, and points them at Imran), `tech` (unprotected and quiet: three short beats; a dismissive pick ends it without a fight, "Then you're the board. Card's on my belt."; options talk him round (`#unlock_door:power_room`), leave him in place (`#clone_keycard:tg_power_room_card`), "[Cuff him.]"; writes `gary_outcome` and Imran's matching `imran_outcome`; HaX's cost lines as second speaker where MC gives them).
+
+#### `m10_voltage.ink` (`voltage_van`, `voltage_power_captured`, `voltage_power`), `m10_static.ink` (`static_power`), `m10_wendell.ink` (`wendell`, `wendell_far`)
+
+Voltage: `van` (captured, at the forward post until the breach: one line). `captured` (MC §3.4: he offers both; "[Your hands. Go on.]" writes `voltage_outcome = "his_hands"`, "I could. Watch my hands.", the inquiry ask, then `gallery_shutter_cut`; "[I'll do it. Talk me through it.]" writes `voltage_outcome = "by_hand"` and runs the in-person cut in §1.6's shape, with "You're right not to trust me."). `escaped` (the print stand-down only on `m04_voltage_print_on_bypass and voltage_print_lifted`: "I'm not going to argue with my own thumb.", `voltage_outcome = "stood_down_print"`; the talk-down with the corrected sheet on `casualty_sheet_read`, two right picks, a miss "Don't tell me about sums."; `talked_down`; either stand-down cuts the shutter: `gallery_shutter_cut`; a failed talk or the player's choice to fight: `voltage_outcome = "fought"`, `cut_by_hand = true`, `#hostile:voltage_power`, and `#hostile:static_power` on `m04_static_left and not m04_static_left_alone`). Static: one line, nothing else.
+
+Wendell: `wendell` (the default branch: he thinks the servers belong to a data company; the phone voice's cost text has already been sent (JSON); "[Tell him what the servers are for.]": `wendell_outcome = "told"`, `server_hall_warned = true`, `gallery_shutter_cut = true`, "Well. Which switch do you want.", the call to Dale; "work round him": `wendell_outcome = "worked_round"`, `cut_by_hand = true`). `far` (escaped without Static: nervous at the far panel, one or two lines).
+
+#### `m10_vance_phone.ink` (`vance_phone`) and `m10_elena_phone.ink` (`elena_phone`)
+
+Each: `start` home, gated and silent; `cut_call`, the voiced by-hand cut in §1.6's shape, in that contact's voice. About eight spoken lines each. Ends `#exit_conversation`.
+
+#### `m10_asante.ink` (`asante`), `m10_mercer.ink` (`mercer`)
+
+Asante (C7, MC §4): on `server_hall_warned` she won't talk (one line, exit); otherwise she shows the schedule (`asante_outcome = "talked"`) and, asked about the sheet, confirms her correction ("I corrected his sums. He thanked me."), `asante_confirmed_sheet = true`. Mercer: one line, then `#hostile:mercer`.
+
+#### `m10_victoria_line.ink` (`victoria_line`, phone), `m10_victoria.ink` (`victoria_gallery`, `victoria_threat`), `m10_vos.ink` (`vos`)
+
+Victoria's line: `start` silent home; `victoria_call` (voiced): first line writes `victoria_line_deal = "no_deal"`; Vos's secret first, as goodwill, on a line that writes `vos_secret_known`; her price; "[Deal. I'll tell them you helped.]" / "[No deal. You gave it for free.]" writes `victoria_line_deal`; the last choice writes `victoria_line_done`. HaX's re-ring line is in HaX's `gallery_open`.
+
+Victoria in the gallery: `recruited` (first line writes `victoria_gallery = "refused"` while `""`; HaX's warning was in `gallery_open`; confront "[Before you touch that lock. Zero Day's order has your name on it.]" → `confronted`, `#unlock_door:core`; trust "[Open it.]" → `trusted`, `#unlock_door:core`, and when `share_zero_day == "live"` she sells the raid and leaves back down the gallery stair, past the player; the alarm and reinforcements are mappings). `escaped` (no threat: her trade; "[Go.]" → `walked`, names Fonoti, `lock_guard_known = true`; "[You're under arrest.]" → `arrested_here`). `threat` (on `victoria_threat`: her m03 line in its shipped words, MC §3.5; the talk-down on her own words → `talked_down`, she leaves down the gallery stair; a miss "Don't analyse me." raises the pistol and leaves only the knock-out, `#hostile:victoria_threat`).
+
+Vos: first line writes `vos_outcome = "avoided"` while `""`. On `vos_secret_known`: the one-option line "[Your second buyer. The one you skim from.]", `vos_secret_used = true`, `vos_outcome = "stood_aside"`, `#unlock_door:core`. Otherwise his trade: "[Deal.]" names Fonoti as he hands over his copy (`#give_item:notes:vos_code_card`), `lock_guard_known = true`, `vos_outcome = "bought"`; "[No.]" `vos_outcome = "refused"`.
+
+#### `m10_fonoti.ink` (`lock_guard`, Sione Fonoti)
+
+`start` → `talk`: polite, slow; one option per naming route, each gated as OT §4.5's table ("[The rota says you carry the card.]" on `gallery_rota_read`; "[Ghost says you'll want to be off shift.]" on `ghost_gift == "card"`; "[Sterling sent me.]" on `victoria_gallery == "walked"`; "[Vos sold you out.]" on `vos_outcome == "bought"`, which lets him stand down without giving a card the player already holds). Each of the first three ends with `#give_item:notes:gallery_code_card` above his reply. `challenge` (opened by his `player_spotted` mapping as the cracker closes): sets `lock_guard_challenged` at the top; "[Shift change. Netherton's orders.]" works once (a file-local flag); anything else, or a second try, `#hostile:lock_guard`. His two barks are JSON (S6 and OT §4.5 wordings).
+
+#### `m10_guards.ink` (the bunker's guards)
+
+One knot per guard id (`tunnel`, `kettle`, `duty`, `duty_b`, `workshop`, `hall_a`, `hall_b`, `monitor`, `farah`, `reinforcement`), each a short challenge for a `challengeOnSight` open or a click: two or three lines, a talk-past where the design allows one, else `#hostile:<id>`. The gallery's effect barks ("Camera's dead again. I'll go and look.", "Where's Farah? She was on till six.") are JSON. Hired muscle, varied, American (S6 §2.4); nobody here knows what the bunker is for.
+
+### 1.6 Seams between groups
+
+Where one group's file depends on another's, the globals in §2 are the whole interface. These are the places where two groups touch the same beat.
+
+**The by-hand cut, one shape in four places** (HaX's `cut_call` in B; Vance's and Elena's `cut_call` in C; Voltage's in-person "talk me through it" in C). One synced int, `cut_step`, carries the place, so a closed call, a re-ring, the hub topic or a walk-back always lands on the first unanswered step:
+
+| `cut_step` | The voice says | Choices |
+|---|---|---|
+| 0 | where the isolator is and what it looks like (the object's text: "A key switch and a breaker row, labelled GALLERY SHUTTER.") | "[I'm at it.]" → `cut_step = 1`; "[Give me a minute.]" → `#exit_conversation` |
+| 1 | turn the key to isolate | "[Key's turned.]" → `cut_step = 2`; the same wait choice |
+| 2 | the breaker row; which breaker is the shutter | "[And the gallery camera?]" (once; the voice says which switch, and it is thrown: `gallery_camera_blinded = true`); "[Pulling it.]" → `cut_step = 3`, `gallery_shutter_cut = true`, one closing line, `#exit_conversation` |
+
+The knot opens with `{gallery_shutter_cut: one line, #exit_conversation}`, then routes on `cut_step`. No narrator lines (it is voiced on the phone). Each voice says it in their own way in about eight lines across the steps; the camera line is the only optional one. Voltage's in-person version uses the same steps and the same global, with his lines in place of the phone voice's, and with the camera choice, so his "I'll tell you which one's the gallery camera" is kept.
+
+**The accusation, two doors into one result.** The line accusation is HaX's hub (B); the face-to-face accusation is a choice in each raid member's person file (B). Both write the same globals (`accused`, `officer_out`, `wrong_accusation`, `sleeper_caught`, `wren_held`), and every reader (A's core and 06:00, B's staging lines, the credits) reads only those. Kowalczyk's question (C18) is asked in one of three places: the aside at the van window on `taken` (B, Netherton's file), the face-to-face crack (B, Kowalczyk's file), or at 06:00 after a line accusation (A, `six_oclock`'s walkabout: she asks and the player answers there, then her reply). Each writes `kowalczyk_answer` once; 06:00 plays her reply whenever `kowalczyk_answer != ""` and asks the question first when `accused == "kowalczyk" and kowalczyk_answer == ""`.
+
+**The door scene's branch.** Nightshade's file (C), Netherton's tether (B), HaX's breach call (B) and the 06:00 lines (A) all branch on the same four-way choice. They call `door_branch()` from the include (§2.6) rather than re-deriving it.
+
+**The release, said twice.** Tesseract's arrival line (A) and HaX's return line (A, in his file) read the same `head_start_out`; the card's head-start line (S6 §3.2) reuses his words. HaX's hub `what_went_out` (B) uses her four return lines word for word.
+
+**The closing chain.** A's `tesseract` ending knots end the conversation; stage 9's mappings open `six_oclock` (or `citadel`) on `conversation_closed:tesseract`. Nothing in `tesseract` opens a closing scene, sets `six_done` or `closing_done`, or completes `close_the_night`.
+
+**06:00 speaks for groups B and C.** The walkabout and the van carry Quintero, Kowalczyk, Voltage, Gary or Imran, Wendell, Victoria and Nightshade. Group A writes those lines from MC §4, §5, §8.2 and SE §3.3–3.6, keyed on the outcome globals B and C write, and lists them in its report for the cross-read.
+
+**Ghost names the guard; the guard answers.** C writes both ends (`ghost_phone` and `lock_guard`), so the "[Ghost says you'll want to be off shift.]" option and Ghost's line agree.
+
+## 2. The state contract
+
+### 2.1 How globals reach the ink
+
+- **Every scenario global is a synced `VAR`, declared once, in the include.** The engine writes each `globalVariables` value into the ink `VAR` of the same name when a conversation opens, and the variable observer sends any `~` assignment back to `gameState`, broadcasts it to every loaded story and emits `global_variable_changed:<name>` (`npc-conversation-state.js:547-597`). Ink rejects a `VAR` declared twice in one compiled story, so no ink file other than `m10_carryover_vars.ink` declares a scenario global. File-local state (counters, "asked once" flags) uses a `VAR` with the file's prefix (`tess_`, `six_`, `hax_`, `neth_`, `kow_`, `quin_`, `arak_`, `ns_`, `ghost_l_`, `imran_`, `gary_`, `volt_`, `wend_`, `vic_`, `vos_l_`, `fon_`, `grd_`, …), never a scenario global's name.
+- **Three legs** (README_ink_best_practices; FA §13 10-7): every global a file writes is (1) in `globalVariables` (stage 9, from §2.5), (2) declared in the include, (3) written somewhere. §2.5 names the writer of each.
+- **Imports are read-only.** No `~` and no `#set_global` on any `mNN_` name, ever (the engine reverts it and the validator errors).
+- **How to write a global.** Use a plain `~ name = value` assignment for every global this contract lists. It updates the running story at once, so a router reading the value later in the same conversation sees it (the core depends on this), keeps strings as strings, and still emits `global_variable_changed`. `#set_global:name:value` is allowed where a design document names the tag (it writes `gameState` and emits the event, but turns digit-only values into numbers, and the running story sees it only after the tag is processed). **Never both for one write**: the tag would fire the event a second time. The closing scenes' `close_compute()` uses `~` only (FA §13 10-13).
+- **Where the write goes.** On a decision, the global is written on the line straight after the choice, before any reply (MC rule 1.11: "written on the pick"). A done-flag that closes a scene goes on the last choice, or the last line if the scene has none (FA §6.1's forced-scene rule), never on opening or closing the conversation.
+- **String values start with a letter**; ints only where §2.5 says int (`cut_step`, `join_step`, `points_landed`). `raid_clock` is never written by ink (OT §6: mappings only; stage 9 greps for it).
+- **Conditions in ink** may use `and`, `or`, `not` and parentheses freely. **Conditions in JSON** (eventMappings, object variants, `closingCard` lines, credits clauses) use `globalVars.<name>`, `!`, `===`, `!==` and `&&` only: no `||`, no parentheses, no arithmetic (FA §13 B5; S6 §0). Where JSON needs an "or", ink computes it first into a global (`close_compute`'s five strings, `wren_held`), or stage 9 writes one mapping or variant per arm.
+
+### 2.2 The shared include, `m10_carryover_vars.ink`
+
+Group A writes it first. Every other `.ink` in the folder begins with the line `INCLUDE m10_carryover_vars.ink` and nothing above it. Checked on 2026-10-21: `bin/inklecate` resolves an `INCLUDE` beside the root file, and compiles the include on its own too (`scripts/compile-ink.sh` compiles every `.ink` in the folder, so the include gets a `.json` that no NPC points at; harmless). No other mission uses `INCLUDE` yet, so stage 9 also checks the validator's ink scans read through it (§6.2).
+
+Contents, in this order, and nothing else (no knots, no text, no tags):
+
+1. A header comment: what the file is, "read-only imports: never assign", and the date.
+2. **Imports**, every name in §2.3, `VAR <alias> = <default>` with FA §3.2's default (`false` or `""`), grouped by source mission, then the nine `mNN_completed`.
+3. **Exports**, the seven in §2.4, with their defaults.
+4. **Locals**, every name in §2.5, with their defaults, grouped as §2.5 groups them.
+5. **The close's five strings**: `close_secure_cell`, `close_cell_name`, `close_cells`, `close_human`, `close_zero_day`, each `= ""`.
+6. **Functions** (§2.6): `ko_pattern()`, `door_branch()`, `landed_count()`, `close_compute()`. Functions read globals and return values; only `close_compute()` assigns, and only its five strings.
+
+Every default here equals the default stage 9 puts in `globalVariables` (or `importGlobals`). If the two ever differ, the scenario's value wins at runtime, and the validator's dead-`VAR` and undeclared-global checks catch the drift.
+
+### 2.3 Imports
+
+FA §3.2: 90 variables (Tier 1 40, Tier 2 50) plus nine `completed`, every alias the default `mNN_<var>`. Read-only. Defaults: `""` where marked, else `false`. **Wherever a present, at-large or penalising value equals the default**, the condition also needs that source's `mNN_completed`, so a player who never played it is told nothing false (FA §3, rule above the never-played table; MC rule 1.9).
+
+| Source | Tier 1 (presence, route, helper, obstacle, scene form) | Tier 2 (lines only) |
+|---|---|---|
+| m01 | – | `m01_final_choice` `""`, `m01_player_launched_attack`, `m01_maya_ko`, `m01_kevin_ko`, `m01_sarah_ko` |
+| m02 | `m02_ghost_deal_accepted`, `m02_exposed_hospital`, `m02_ghost_deal_refused`, `m02_ghost_keys_used`, `m02_gary_protected`, `m02_reeves_fate` `""`, `m02_insider_asset_arrested`, `m02_insider_asset_escaped` | `m02_patient_assaulted`, `m02_receptionist_ko`, `m02_ward_nurse_ko`, `m02_raval_ko`, `m02_gary_ko`, `m02_dr_kim_ko`, `m02_bed4_manually_stabilised`, `m02_patient_bed4_deceased` |
+| m03 | `m03_victoria_fate` `""`, `m03_sterling_on_call_seen` | `m03_guard_bribed`, `m03_guard_knocked_out`, `m03_receptionist_ko`, `m03_danny_ko` |
+| m04 | `m04_voltage_captured`, `m04_voltage_escaped`, `m04_voltage_print_on_bypass`, `m04_static_left`, `m04_static_left_alone`, `m04_vance_is_ally`, `m04_disclosure_choice` `""` | `m04_crew_lost`, `m04_robert_vance_ko`, `m04_security_guard_ko` |
+| m05 | – | `m05_entropy_program_exposed`, `m05_elena_treatment_funded`, `m05_final_choice` `""`, `m05_found_pipeline_list`, `m05_recruiter_deal_accepted`, `m05_recruiter_deal_confessed`, `m05_lisa_ko`, `m05_owen_ko`, `m05_halloran_ko`, `m05_patricia_ko` |
+| m06 | `m06_assets_seized` | `m06_satoshi_stance` `""`, `m06_monitoring_enabled`, `m06_guard_ko`, `m06_trader_ko`, `m06_analyst_ko` |
+| m07 | `m07_elena_outcome` `""`, `m07_mercer_fate` `""`, `m07_mercer_ko`, `m07_hollis_resolved` `""`, `m07_debrief_stance` `""`, `m07_team_assignment` `""`, `m07_team_redirected` | `m07_countdown_expired`, `m07_architect_echo_heard`, `m07_elena_ko` |
+| m08 | `m08_nightshade_triple_agent`, `m08_triple_agent_first_payment`, `m08_nightshade_arrested`, `m08_nightshade_ko_before_fate`, `m08_accused_vector`, `m08_accused_phantom`, `m08_vector_apologised`, `m08_phantom_apologised`, `m08_vector_hostile`, `m08_phantom_hostile` | `m08_offduty_agent_ko`, `m08_analyst_ko`, `m08_athena_ko`, `m08_netherton_ko`, `m08_hax_ko`, `m08_named_on_evidence` |
+| m09 | `m09_nightshade_shown_file`, `m09_sleeper_named`, `m09_recruiter_offer` `""`, `m09_deck_pulled` `""`, `m09_sleeper_shortlist` | `m09_recruiter_secret` `""`, `m09_reading_finished`, `m09_albion_notified`, `m09_cage_bin` `""`, `m09_legacy_files_saved`, `m09_hax_confession_answer` `""` |
+| completed | `m01_completed` … `m09_completed` (nine) | |
+
+Counts: Tier 1, 40; Tier 2, 50. FA §3.2 and MC §7 say which line or branch each one changes; writers read those rows, not this table, for meaning. Values the ink tests against (for typos): `m03_victoria_fate` `recruited` / `escaped` / `arrested` / `ko`; `m04_disclosure_choice` `full` / `partial` / `quiet`; `m06_satoshi_stance` `wondered` / `rejected` / `refused`; `m07_team_assignment` `fracture` / `trojan_horse` / `meltdown`; `m07_debrief_stance` `hardened` (and others; only `hardened` is read); `m07_mercer_fate` `arrested` (else at large, with `m07_completed`); `m07_hollis_resolved` `evaded`; `m07_elena_outcome` `turned`; `m09_recruiter_offer` `taken` / `double_crossed` / `named` / `refused`; `m09_deck_pulled` `none` / `her_file` / `alpha_tapes`; `m09_recruiter_secret` `kept` / `told` / `confessed` / `denied`; `m09_cage_bin` `derek_file` / `letters` / `nightshade_copy`; `m09_hax_confession_answer` `should_have_told` / `same_in_your_place` / `afterwards`; `m01_final_choice` and `m05_final_choice` as their missions export them (writers check the source erb's values before testing one).
+
+### 2.4 The seven exports
+
+FA §3.5, MC §12. Stage 9 lists them in `exportGlobals`; nothing reads them in a later mission yet, but each must be written on every route that reaches `/conclude`, at the one moment given.
+
+| Global | Type, default | Values | Written by (file, knot) | Read by in m10 |
+|---|---|---|---|---|
+| `ending` | string, `""` | `arrest`, `surrender`, `lethal`, `executed`, `scorched`, `joined` | A: `m10_tesseract.ink` `his_end` (four), `database` ("wipe both" → `scorched`), `join_3` (the confirmation → `joined`); always after `database_outcome` | the closing scenes, the closing mappings, music, card, credits, `decide_his_end` mapping |
+| `database_outcome` | string, `""` | `secured`, `disclosed`, `both_wiped`, `published` | A: `database` (three); `join_3` (`published`) | 06:00, card, credits, `close_compute`, `decide_the_database` mapping |
+| `sleeper_caught` | bool, `false` | | B: the right accusation (hub or face to face); A: `double_cross_open`. Stage 9: a HaX `game_loaded` mapping sets it on `m09_sleeper_named && m09_recruiter_offer === 'taken'` | A's core and 06:00; credits |
+| `wrong_accusation` | bool, `false` | stays true after a recall | B: any wrong accusation | 06:00, credits |
+| `head_start_out` | string, `""` | `none`, `zero_day`, `ghost`, `both` | stage 9 mappings at the outer lock (OT §4.5); **no ink writes it** | A: `arrival`, 06:00, `close_compute`; B: `what_went_out` |
+| `partial_release` | string, `"none"` | `none`, `small`, `large`, `published` | A: `console` ("Stop it"), `join_3` | 06:00, credits |
+| `media_story_ran` | bool, `false` | | A: wherever `ending` is written (§1.3) | 06:00, credits |
+
+`head_start_out`'s value `ghost` names Ghost's buyers' share in code only; it never appears on a screen or in a line (S6 §0).
+
+### 2.5 Local globals: who writes, who reads
+
+OT §16 and MC §12 are the full inventories; this table adds which **ink file** writes each, and the five globals this contract adds (marked **new**). "Map" means a stage 9 eventMapping writes it (on HaX unless stated); ink only reads it. Bool defaults are `false` unless given.
+
+**Act, doors and clock (written by mappings; ink reads)**
+
+| Global | Type, default | Writer | Ink readers |
+|---|---|---|---|
+| `raid_clock` | string, `"t0145"` | map only (never ink) | none required; a line that names a time must agree with OT §6's table |
+| `flag1_submitted` … `flag4_submitted` | bool | map, on `flag_N_in` | A `core_router`; B hub, `where_are_we` |
+| `briefing_played` | bool | Netherton's `setGlobalOnStart` | B hub |
+| `briefing_done`, `aside_done` | bool | B `m10_director_netherton.ink` (`briefing`, `aside` last lines) | B Netherton `start`; music; the WREN aim |
+| `whodunit_live` | bool, **`true`** | map (`game_loaded`) | A router; B accusation, alibi, signout |
+| `whodunit_open` | bool | map (on `aside_done`) | none |
+| `door_scene_done` | bool | C `m10_nightshade.ink` (`table`) or B Netherton `tether` | B `start`, hub; C `table` re-entry |
+| `gate_console_used`, `split_started`, `pair_back` | bool | map; `split_started` by B Netherton `split_line` | B `where_are_we` |
+| `arakawa_call_done` | bool | B `m10_arakawa.ink` (`gate`, last line); map when `arakawa_ko` | none |
+| `breach_open`, `inner_door_open`, `stair_open`, `gallery_open`, `outer_lock_open` | bool | map (`door_unlocked_by_npc` / `door_unlocked`) | B hub, `where_are_we`, calls; A none |
+| `breach_announced` | bool | map | B Quintero `so` |
+| `tripwire_armed` | bool | C `m10_nightshade.ink` (closing choice) | none in ink |
+| `tripwire_tripped`, `wren_warned`, `security_alerted` | bool | map | B Kowalczyk and Arakawa staging lines |
+| `ladder_used` | bool | map | B `ladder_call` (routing only) |
+| `override_held` | bool | the override's `onPickup` | none |
+| `plans_read`, `payment_read` | bool | objects' `onRead` | C Nightshade `table` (the check) |
+| `forward_post_entered`, `blast_tunnel_entered`, `security_office_entered`, `workshop_entered`, `power_room_entered`, `server_hall_entered`, `gallery_entered`, `core_entered` | bool | map (first `room_entered`) | B `where_are_we`, hub; any `start` router |
+| `ghost_call_done` | bool | C `m10_ghost_phone.ink` (last choice) | B `where_are_we` |
+| `ghost_watch_on_route` | bool | C Ghost `ghost_call`, first line, on the broken branch with `m02_ghost_keys_used` (OT §16) | C Imran; map (Imran's card uncloneable) |
+| `door_log_given`, `signout_read`, `what_went_out_given` | bool | B hub (and `signout_read` by the sheet's `onRead`) | B hub |
+| `clue_door_log`, `clue_alibi`, `clue_bench_log` | bool | objects' `onRead`; B `alibi`; C Nightshade's habits line (`clue_alibi`); B Phantom's list (`clue_bench_log`); map at the aside for the shortlist | B hub, accusation gates |
+| `casualty_sheet_read`, `margin_note_read` | bool | objects' `onRead` | A exchange 1 (the rebuttal's decoded form); C Voltage talk-down |
+| `phone_voice_is_hax` | bool | map | B `shutter_topic` gate |
+| `cut_by_hand` | bool | C Wendell `wendell` ("work round him"), C Voltage `escaped` (fight); map on the KOs and Wendell's walk-away | none in ink |
+| `cut_step` | int, `0` | `cut_call` (B and C) and Voltage's in-person cut (C) | the same |
+| `gallery_shutter_cut` | bool | C Voltage, Wendell, Vance, Elena; B HaX `cut_call` | B `where_are_we`, hub |
+| `voltage_print_lifted`, `keypad_dusted` | bool | map | C Voltage `escaped` |
+| `backdoor_channel_live` | bool | map (`game_loaded`, from the m07 imports) | A `console` (partial release); B `console`, hub |
+| `hax_jammed` | bool | map | B `start` |
+| `at_keypad`, `lock_guard_challenged` | bool | map; `lock_guard_challenged` by C Fonoti `challenge` | C Fonoti |
+| `lock_guard_known`, `gallery_rota_read` | bool | `gallery_rota`'s `onRead`; C Ghost (card answer), Victoria (`walked`), Vos (`bought`) | C Fonoti |
+| `core_greeted`, `flag4_heard`, `case_heard` | bool | A `tesseract` | A router |
+| `wren_entering`, `wren_stopped`, `quintero_enters_core` | bool | A `tesseract` | A; the core copies' mappings |
+| `six_done`, `closing_done` | bool | A closing scenes (last lines) | the closing mappings, music |
+| `vector_on_team`, `phantom_on_team` | bool | map (`game_loaded`, one per arm of FA row 112) | B Netherton briefing, accusation list |
+| `guide1_offered` … `guide4_offered` **new** | bool | map, on the first use of each stage's console (gate console for 1; hall console for 2, and for 3 once `flag2_submitted`; the core's VM console for 4) | B `field_guide` |
+| `guide1_given` … `guide4_given` **new** | bool | B `field_guide` | B hub |
+
+**Decisions** (MC §12; values exactly as listed there)
+
+| Global | Type, default | Writer (file, knot) | Readers |
+|---|---|---|---|
+| `quintero_stance` | string, `""` (`quintero` / `netherton`) | B Netherton `briefing` | B Quintero `lock`; A 06:00 |
+| `nightshade_taken_in`, `payment_checked`, `nightshade_map_used` | bool | C Nightshade `table` | B Quintero `lock`; A 06:00, `van`; map (tripwire, lock copies) |
+| `nightshade_deal` | string, `""` (`refused` on the arrested branch's first line / `taken`) | C Nightshade `table` | B Quintero `lock`; A credits via S6 |
+| `nightshade_tethered` | bool | B Netherton `tether` | B calls, staging lines; C Nightshade `blast`; A `double_cross_open` |
+| `ghost_sale` | string, `""` (`stopped` / `bait` / `selling`) | C Ghost `ghost_call` (first line, then the pick) | B `console`; map (share display) |
+| `ghost_gift` | string, `""` (`code` / `card`) | C Ghost | C Fonoti; map (bark) |
+| `ghost_answer` **values fixed here** | string, `""` (`not_why` / `card_unsigned` / `ask_them` / `hospitals` / `trust`) | C Ghost | map (Ghost's 06:00 text by value) |
+| `imran_outcome` | string, `""` (`talked_round` / `taken_in` / `card_cloned` / `ko` / `avoided`) | C Imran, Gary `tech`; map (`ko`, room exit) | A 06:00; map (Farah) |
+| `gary_outcome` | string, `""` (`talked_round` / `left_in_place` / `taken_in` / `ko` / `avoided`) | C Gary `tech`; map | A 06:00 |
+| `voltage_outcome` | string, `""` (`his_hands` / `by_hand` / `stood_down_print` / `talked_down` / `fought` / `ko` / `avoided`) | C Voltage; map | A 06:00 |
+| `wendell_outcome` | string, `""` (`told` / `worked_round` / `ko` / `avoided`) | C Wendell; map | A 06:00 |
+| `server_hall_warned` | bool | C Wendell | C Asante, Mercer (map: no draw-off) |
+| `gallery_camera_blinded` | bool | the by-hand cut (B or C) | map (monitor guard) |
+| `asante_outcome` | string, `"untouched"` (`talked` / `ko`) | C Asante; map (`ko`) | credits |
+| `asante_confirmed_sheet` | bool | C Asante | A exchange 1 |
+| `victoria_line_deal` | string, `""` (`no_deal` on the call's first line / `deal`) | C Victoria's line | credits |
+| `vos_secret_known`, `victoria_line_done` | bool | C Victoria's line; `victoria_line_done` also by map on entering the gallery | C Vos; B `gallery_open` |
+| `vos_secret_used` | bool | C Vos | map (share display) |
+| `victoria_gallery` | string, `""` (`confronted` / `trusted` / `refused` / `talked_down` / `walked` / `arrested_here` / `ko` / `avoided`) | C Victoria; map | A 06:00, `close_compute`, `numbers`; map |
+| `vos_outcome` | string, `""` (`stood_aside` / `bought` / `refused` / `ko` / `avoided`) | C Vos; map | `close_compute`; C Fonoti |
+| `head_start_killed` | string, `""` (`zero_day` / `ghost` / `trace`) | B `console` | A `close_compute`; map |
+| `share_zero_day` | string, `"live"` (`stopped` / `traced` / `released`) | map only | A `arrival`, `close_compute`, 06:00; B `whats_live` |
+| `share_resale` | string, `"none"` (`live` / `stopped` / `released`) | map only | B `whats_live` |
+| `backdoor_closed` | bool | B `console` | A `console`; map (task) |
+| `accused` | string, `""` (`kowalczyk`) | B (hub or Kowalczyk's file) | A router, 06:00; map (staging) |
+| `officer_out` | string, `""` (`malhotra` / `quintero` / `arakawa` / `vector` / `phantom`) | B accusation and recall | B `gallery_open`, staging; A `wren_beat`, 06:00 |
+| `wren_held` **new** | bool | B: a right face-to-face accusation; a right line accusation with Quintero available to send | A router (8), `wren_beat`, `console` |
+| `kowalczyk_gone_ahead` **new** | bool | B Kowalczyk (the peel-off line's last line) | map: her later copies stay hidden |
+| `kowalczyk_ko`, `quintero_ko`, `arakawa_ko`, `vector_ko`, `phantom_ko` | bool | `globalVarOnKO` on the field copies | A, B (staging lines; "no Quintero" tests) |
+| `malhotra_recalled`, `arakawa_recalled`, `quintero_recalled`, `vector_recalled`, `phantom_recalled` | bool | B `recall_*` | credits |
+| `fonoti_ko`, `gary_ko`, `mercer_ko` | bool | `globalVarOnKO` | credits |
+| `wren_at_core`, `quintero_wounded` | bool | A `tesseract` | A 06:00; credits |
+| `kowalczyk_answer` | string, `""` (`bench` / `briefing` / `worked_out`) | B (aside on `taken`; Kowalczyk's file); A (06:00 after a line accusation) | A 06:00 |
+| `exchange_1`, `exchange_2`, `exchange_3` | string, `""` (`rebuttal` / `record` / `miss`) | A `exchange_n` | A; music |
+| `points_landed` | int, `0` | A `his_end`, `join_1` (derived by `landed_count()`, never incremented) | A |
+| `console_choice` | string, `""` (`stopped` / `joined`) | A `console`, `join_3` | A router; map (task) |
+| `join_step` | int, `0` | A `join_1`–`join_3` (the furthest reached) | A |
+| `cold_lowered` | bool | A `his_end` | A |
+| `fire_held` **new** (S6-25, taken) | bool | A `his_end` ("[Hold fire.]") | credits: HaX's first clause "Killed his feed in time. Testifying." |
+
+`teaser_enabled` (FA §7) is configuration, default `false`, and no ink reads or writes it.
+
+### 2.6 `ko_pattern()` and `close_compute()`
+
+Four functions in the include. Ink functions can't print in a way the player sees safely and must not carry tags (R2-06), so none of them has text or tags.
+
+**`ko_pattern()`** returns an int: how many earlier missions have at least one bystander knock-out latch set (FA §3.6, 27 names). Add one for each mission whose test holds:
+
+| Mission | Test |
+|---|---|
+| m01 | `m01_completed and (m01_maya_ko or m01_kevin_ko or m01_sarah_ko)` |
+| m02 | `m02_patient_assaulted or m02_receptionist_ko or m02_ward_nurse_ko or m02_raval_ko or m02_gary_ko or m02_dr_kim_ko` |
+| m03 | `m03_guard_knocked_out or m03_receptionist_ko or m03_danny_ko` |
+| m04 | `m04_security_guard_ko or m04_robert_vance_ko` |
+| m05 | `m05_lisa_ko or m05_owen_ko or m05_halloran_ko or m05_patricia_ko` |
+| m06 | `m06_guard_ko or m06_trader_ko or m06_analyst_ko` |
+| m07 | `m07_elena_ko` |
+| m08 | `m08_offduty_agent_ko or m08_analyst_ko or m08_athena_ko or m08_netherton_ko or m08_hax_ko` |
+
+Read in two places only: exchange 3's ledger sting by band (1; 2–3; 4 or more; 0 says nothing), and the clean-first-day answer's gate in exchange 1 (`ko_pattern() == 0`). A table-driven test of it waits for stage 9 (§6.2).
+
+**`door_branch()`** returns a string, the first that holds: `"shown"` on `m08_nightshade_triple_agent and m09_nightshade_shown_file`; `"unshown"` on `m08_nightshade_triple_agent`; `"arrested"` on `m08_nightshade_arrested and not m08_nightshade_ko_before_fate`; otherwise `"silent"` (which covers `m08_nightshade_ko_before_fate` and `not m08_completed`). MC §3.1; RL §2.1's visibility mappings use the same tests, one mapping per arm.
+
+**`landed_count()`** returns an int: how many of `exchange_1`, `exchange_2`, `exchange_3` are `"rebuttal"` or `"record"`. A's `his_end` and `join_1` write `~ points_landed = landed_count()`; nothing increments it.
+
+**`close_compute()`** writes the five close strings by `~` assignment and returns nothing. Called with `~ close_compute()` as the very first line of `six_oclock`, `hearing` and `citadel`, before any text (FA §4.6; S6 §3.1). Every branch assigns all five, so a replayed scene recomputes from scratch.
+
+| Global | Logic (first that holds) | Source |
+|---|---|---|
+| `close_secure_cell` | only when `database_outcome == "secured"`: `zd_uk` when Victoria's watch survives (`m03_victoria_fate == "recruited"` and (`victoria_gallery == "confronted"` or `"refused"`, or `"trusted"` with `head_start_killed == "zero_day"`)); `procurement` on `m08_nightshade_triple_agent and not m09_nightshade_shown_file`; `crypto` on `m06_monitoring_enabled`; `cm` on `m09_completed and not m09_albion_notified`; else `book`. Not secured: `""` | S6 §3.1 |
+| `close_cell_name` | `couriers` on `ending == "surrender"`; else `close_secure_cell` when not `""`; else `bait` on `head_start_killed == "ghost" and ghost_sale == "bait"`; else `trace` on `share_zero_day == "traced" and head_start_killed != "ghost"`; else `reeves` on `m07_completed and m07_team_assignment == "fracture"`; `ashford` on `... == "meltdown"`; `walsh` on `not m07_completed or m07_team_assignment == "trojan_horse"`; else `none` | S6 §3.2 C |
+| `close_cells` | `c0`…`c5`: (1 for the console when `bait` or `trace` above holds) + (1 when secured, the cold ending included) + (2 on surrender) + (1 for m07 unless `m07_completed and m07_team_assignment == ""`). Build the string from the count with a fixed `{ n: - 0: c0 - 1: c1 … }` switch; never print the number | S6 §3.1, S6-24 |
+| `close_human` | S6 §3.2 U's eleven rows in order (`dispatch_fixing`, `dispatch_dropping`, `albion_full_sent`, `albion_full`, `albion_inquest_sent`, `albion_inquest`, `albion_half`, `fortyseven_late`, `fortyseven_none`, `elena`, `none`). "Austin uncovered" is `m07_completed and m07_team_assignment != "trojan_horse"`; the forty-seven's two conditions are FA §2 row 62's | S6 §3.2 U |
+| `close_zero_day` | `vos_named` when Vos held the gallery (`m03_victoria_fate` is `"arrested"`, `"ko"` or `""`) and `vos_outcome != "bought"`; else `trading` | S6 §3.1 |
+
+The card and the credits read these with single `===` tests (S6 §3.2–3.5), shown after the scene closes, so they always see the computed values. A walk-away mid-scene is safe: the `game_loaded` backstop re-opens the scene, which recomputes on its first line.
+
+## 3. Tags and the eventMappings the ink relies on
+
+### 3.1 The tags m10's ink may use
+
+Action tags go on their own line **above** the spoken line they belong to (PASS2 lesson 3), never after a divert that leaves them behind. A tag on its own line attaches to the next line of text, so it must not sit above a `Narrator:` line (`tag-on-narrator`).
+
+| Tag | Where, exactly | Notes |
+|---|---|---|
+| `#complete_task:take_the_briefing` | B Netherton `briefing`, above the first spoken line | PASS2 lesson 42 |
+| `#complete_task:close_the_night` | A `six_oclock` (not on `scorched`), `hearing`, `citadel`: above the scene's last spoken line | the conclusion screen opens the moment it completes (PASS2 lesson 46), so nothing may follow but `#exit_conversation` |
+| **No other `#complete_task`** | – | every other task completes by a stage 9 mapping on the global the ink writes (OT §3): `settle_the_table` ← `door_scene_done`; `answer_the_handset` ← `ghost_call_done`; `cut_the_shutter` ← `gallery_shutter_cut`; `use_the_console` ← `head_start_killed`; `close_the_backdoor` ← `backdoor_closed`; `hear_him_out` ← `exchange_3`; `decide_the_console` ← `console_choice`; `decide_the_database` ← `database_outcome`; `decide_his_end` ← `ending`; `check_the_alibis` ← `clue_alibi`; `read_the_bench_log` ← `clue_bench_log`; `name_the_sleeper` ← `accused` / `officer_out` / `wren_at_core` |
+| `#give_item:notes:ghost_cupboard_code` / `notes:ghost_lock_code` | C Ghost, kept branch's last line / the hospitals answer | items in `ghost_phone`'s `itemsHeld` (S6 §2.2) |
+| `#give_item:notes:vector_cupboard_code` | B Vector `so` | `vector_so`'s `itemsHeld` |
+| `#give_item:notes:gallery_code_card` | C Fonoti `talk` (rota, Ghost, Sterling options) | `lock_guard`'s `itemsHeld` |
+| `#give_item:notes:vos_code_card` | C Vos, "[Deal.]" | `vos`'s `itemsHeld` |
+| `#give_item:notes:nightshade_payment`, `#give_item:key:alarm_override` | C Nightshade `table` (payment on the shown and not-shown branches; override on the shown branch) | `nightshade_table`'s `itemsHeld`; the override's `onPickup` sets `override_held` (stage 9 checks `#give_item` fires it, S6 §6) |
+| `#give_item:lab-workstation:<guide_id>` | B `field_guide` | ids from the VM plan; working ids `m10_guide_flag1`…`4` |
+| `#clone_keycard:tg_power_room_card` | C Imran (taken in, unless `ghost_watch_on_route`), Gary `tech` (left in place) | the NPC record carries `rfidCard` with that `card_id`; needs the start kit's cloner |
+| `#unlock_door:power_room` | C Imran (talked round; taken in on `ghost_watch_on_route`), Gary (`talked_round`, both branches where MC has him open it) | NPC carries `"unlockable": ["power_room"]` |
+| `#unlock_door:core` | C Victoria (`confronted`, `trusted`), Vos (`stood_aside`) | NPC carries `"unlockable": ["core"]` |
+| `#hostile:<npcId>` | C Voltage (`voltage_power`, and `static_power` with him), Mercer, `victoria_threat`, `lock_guard`, the guards | the id form, never bare `#hostile`, so the right NPC turns |
+| `#exit_conversation` | every exit choice and every call knot's end | on its own line, after the NPC's reply (`exit-no-reply`); person-chat exits then divert to a resting knot (PASS2 lesson 21: no `DONE` or `END` anywhere) |
+| `#set_global:<name>:<value>` | allowed, never alongside a `~` for the same write (§2.1) | |
+
+**Not used in m10:** `#add_note` (F21: the notepad throws on it; codes are notes items), `#remove_npc` (hiding is a `setVisible` mapping), `#unlock_task` and `#unlock_aim` (mappings, OT §2), `#trigger_minigame` (the key's confirmation is an ink choice, RL §6 item 45), `#influence*`, and `#speaker:` (prefixes decide the speaker; README_ink_best_practices "`# speaker:` tags: fallback only").
+
+### 3.2 Doors are mappings, not tags
+
+The four story doors (the blast door, the inner door, the stair, the gallery stair) open only by HaX's `unlockDoor` mappings on their done-flag conditions (OT §4). No ink file emits `#unlock_door` for them, and no ink writes `breach_open`, `inner_door_open`, `stair_open`, `gallery_open` or `outer_lock_open`: those come from the unlock events. The ink's part is to write the conditions' inputs (`door_scene_done`, `ghost_call_done`, `gallery_shutter_cut`, and the mappings' `flagN_submitted`) at the right moment, and the holding barks (JSON) say what is missing. The only ink door unlocks are the four person-opened ones in §3.1.
+
+### 3.3 The eventMappings each file needs (stage 9 writes them; the ink assumes them)
+
+| NPC | Event and condition | Opens or writes |
+|---|---|---|
+| `director_netherton` | `timedConversation` on `game_loaded`, `skipIfGlobal: briefing_played`, `setGlobalOnStart: briefing_played` | his `start` (→ `briefing`) |
+| `director_netherton` | the second of `door_scene_done` and `gate_console_used`, with `!split_started` (`delayMs: 1500`); catch-ups on `game_loaded` and `door_unlock_failed:blast_tunnel` | knot `split_line` |
+| `arakawa_gate` | `conversation_closed:director_netherton` with `split_started && !arakawa_call_done && !arakawa_ko`; catch-ups as OT §6 | reveal, then knot `gate` |
+| `agent_0x99` | the seven calls (§4) | their call knots |
+| `agent_0x99` | `object_interacted`, `data.objectName === 'Release Console Controls' && data.roomId === 'server_hall'`, with `flag2_submitted === true && !hax_jammed`, `cooldown: 0` | `phone-chat`, knot `console`, not voiced |
+| `ghost_phone`, `victoria_line`, `vance_phone`, `elena_phone` | §4 | `ghost_call`, `victoria_call`, `cut_call` |
+| `tesseract` | `room_entered:core` with `!core_greeted` (`delayMs: 800`); `global_variable_changed:flag4_submitted` (`delayMs: 1500`) | `core_router` |
+| `kowalczyk_core_waiting`, `kowalczyk_core`, `quintero_core` | reveal and hide on `wren_entering`, `wren_stopped`, `wren_at_core`, `quintero_enters_core` (RL §2.8) | staging |
+| every `kowalczyk_*` field copy | hide on `kowalczyk_gone_ahead`, `accused === 'kowalczyk'` | staging |
+| `lock_guard` | `player_spotted:lock_guard` (the cracker closing in his cone) | knot `challenge` |
+| the guards with `challengeOnSight` | `player_spotted:<id>` | their knot in `m10_guards.ink` |
+| `six_oclock`, `hearing`, `citadel` | OT §4.7 (on `conversation_closed:tesseract` by `ending`, `!closing_done`, `onceOnly`; `hearing` on `six_done`; `game_loaded` backstops) | their `start` |
+| `agent_0x99` | the share display, the head start, the clock, the task completions, `whodunit_*`, `guideN_offered`, `<room>_entered` | globals only |
+
+Every person-chat mapping that opens a knot names it with `targetKnot`; a copy's normal click uses its `currentKnot`.
+
+## 4. Voiced calls
+
+### 4.1 The rule (F17, F20; FA §6.1; OT §13)
+
+A voiced call voices the knot its mapping names (`targetKnot`, on a mapping with `voiced: true`) and every knot reachable from it through diverts, tunnels and choices, **but never the contact's home knot** (its `currentKnot`, default `start`) or anything reached only through it. So:
+
+1. **Every voiced mapping names a `targetKnot` that is not the home knot**, ring and re-ring alike, and carries its own `voiced: true` (stage 9). Every home knot in m10 is `start`.
+2. **Every call knot ends `#exit_conversation`** and never diverts to `start`, `support_hub` or any hub topic. A hub topic that reuses a call knot (HaX's "[Talk me through the shutter.]" → `cut_call`) exits after it too; under F20 it is voiced from the hub as well, which is fine.
+3. **No narrator lines in a voiced call.** Narration there is silent and reads as a gap. What a narrator would say becomes the caller's line or a second speaker's on the net (the crank is Nightshade's "Manual."; the ladder is HaX's own lines).
+4. **No printed variables in a voiced line.** Choose between fixed strings with conditionals.
+5. **No "Where were we." lines under `resume: true`**: a resume re-enters no knot, so such a line would never play (FA §13 10-10). Calls with `resume` simply continue.
+6. **At most one non-HaX voice on the line per room** (FA §4.0, R3-01). Netherton, Malhotra and Nightshade on HaX's channel count as hers.
+7. Phone lines hold to 25 words (dialoguelint's phone cap; until stage 9 binds each file to its NPC, the lint applies the 30-word person cap, so writers hold the phone cap themselves).
+
+### 4.2 The calls
+
+| Call knot | File (group) | Contact, home knot | Rings on (stage 9) | `disableClose` / `resume` | Speakers | Approx. lines |
+|---|---|---|---|---|---|---|
+| `breach_call` | `m10_phone_agent0x99.ink` (B) | `agent_0x99`, `start` | `global_variable_changed:breach_open` | false / none | HaX; Netherton; Nightshade on the tether | 4–5 |
+| `inner_door_call` | B | `agent_0x99`, `start` | `inner_door_open` with `!ladder_used` | false / none | HaX | 1 |
+| `tripwire_call` | B | `agent_0x99`, `start` | `tripwire_tripped` | false / none | HaX | 1 |
+| `ladder_call` | B | `agent_0x99`, `start` | `inner_door_open` with `ladder_used` | false / none | HaX | 2 |
+| `stair_call` | B | `agent_0x99`, `start` | `stair_open` | false / none | HaX | 1 |
+| `gallery_open` | B | `agent_0x99`, `start` | `gallery_open` | **true** / none | HaX | 7 |
+| `cut_call` (HaX) | B | `agent_0x99`, `start` | `cut_by_hand` (HaX arm); re-ring on `room_entered:power_room` and once on `conversation_closed:agent_0x99` (`cut_by_hand && !gallery_shutter_cut && phone_voice_is_hax`) | false / **none** (routes on `cut_step`) | HaX | 8 |
+| `cut_call` (Vance) | `m10_vance_phone.ink` (C) | `vance_phone`, `start` | `cut_by_hand` (Vance arm); re-ring on `room_entered:power_room` | false / true | Robert Vance | 8 |
+| `cut_call` (Elena) | `m10_elena_phone.ink` (C) | `elena_phone`, `start` | the same, Elena arm | false / true | Elena Rodriguez | 8 |
+| `ghost_call` | `m10_ghost_phone.ink` (C) | `ghost_phone`, `start` | `object_interacted` on the duty handset, `!ghost_call_done`, `cooldown: 0` | true / true | Ghost | 33 |
+| `victoria_call` | `m10_victoria_line.ink` (C) | `victoria_line`, `start` | `flag2_submitted` (`m03_victoria_fate === 'arrested' && !victoria_line_done && !hax_jammed`); re-ring once on `conversation_closed:agent_0x99` after `gallery_open` | false / true | Victoria Sterling | 9 |
+| **Total** | | | | | | **about 80** |
+
+Every HaX call mapping also carries `!hax_jammed` and `delayMs: 1500`, so a call never opens over a conversation, a flag station or the gallery (OT §13 rule 5).
+
+### 4.3 HaX's guarded resume knots
+
+HaX's calls never use `resume` (FA §6.1, "HaX's forced calls re-ring to a guarded knot"): she hosts several calls and a hub, so a saved position could belong to another call. Her door calls and `gallery_open` are lines only, with no choice to leave unanswered, so a re-open simply replays them; `gallery_open` has `disableClose: true` and always plays out. **Her one call with choices is `cut_call`**, and it is its own guarded resume knot: it opens with `{gallery_shutter_cut: …}`, then routes on `cut_step` (§1.6), so a re-ring, the hub topic or a reload lands on the first unanswered step and never on a choice already made. The C9 console knot (`console`) is a text conversation, not a call: it re-opens on each click and shows only the choices still open (`head_start_killed == ""`, `not backdoor_closed`).
+
+Forced scenes of other contacts (Ghost, Victoria, Vance, Elena) each have one call, so `resume: true` restores the right place; their knots still name a `targetKnot` for the first ring and the no-saved-story case.
+
+### 4.4 HaX's voice in Tesseract's conversation
+
+HaX's lines at the core (her return, her flag 4 lines, her lines in the case, the exchanges, the console, the database and the endings) are **second-speaker lines inside `m10_tesseract.ink`**, prefixed `Agent HaX:`. There is no phone call at the core: opening a call would end his open person-chat (OT §4.6 step 4; milestone A7). These lines are voiced as a face-to-face scene and are not counted in §4.2. Netherton on the line at the core is the same: `Director Magnus Netherton:` lines inside his conversation.
+
+### 4.5 Text, not voice
+
+Unvoiced, and outside these call knots: HaX's hub and every topic; her barks (the holding barks, the power-room reader, "Lost you up there. I'm back.", the handset bark); the slot voice's cost text before Wendell's menu; Ghost's mid-call text on `m02_ghost_keys_used` (a held toast); every 06:00 text (Ghost's by `ghost_answer` or `ghost_sale`, the Recruiter's on `double_crossed`, HaX's later message on `executed`); the gallery's guard barks; Tesseract's idle lines. Writers settle any of their wording in the report; stage 9 puts them in JSON.
+
+After writing, each group recounts its voiced lines (calls only) with `node scripts/ink_runtime_check/voicelines.mjs <file.json>` on its call files and reports the count against this table.
+
+## 5. Writing rules
+
+### 5.1 Plain writing (the user's rules)
+
+Everything a player reads or hears follows the user's style rules in `~/.claude/CLAUDE.md`, and dialoguelint flags most breaches. In short: no inflated framing ("pivotal moment", "testament to", "stands as"); none of the banned words (delve, intricate, tapestry, pivotal, underscore, landscape, foster, enhance, crucial, breathtaking, captivate, profound, steadfast, robust, load-bearing, and the lint's longer list: leverage, navigate, valuable, additionally…); no summing-up lines; at most one or two "However"/"Moreover"-type transitions in a file; no "It's not X, it's Y" and no two-sentence "Not X. Y." (a villain may keep one per scene, §5.6); em dashes only where a comma or brackets won't do; no fake spectrums; no "It's important to note"; no trailing "-ing" tag clauses; vary sentence length. People in a TV thriller say less than they mean; nobody states the theme (SE §1).
+
+**Pacing** (07 prompt): three lines at most from one speaker before the player gets a choice; four for a dramatic reveal; five in the opening cutscene. One to two lines is the norm. Dialoguelint's caps: 30 words a face-to-face line, 25 a phone line, 15 a choice.
+
+**Choices.** Brackets carry the player's actual words, first person, each with a different consequence or stance; no `You:` echo; menus written by MC's kind labels (dilemma, puzzle, stance, task, information, hub; MC rule 1.12). A choice can only quote or answer what the player has heard on this route: check every choice against every way into its knot. A spoken goodbye always gets a reply. Hubs end on a sticky exit, retire spent topics, and show at most ten choices at once.
+
+### 5.2 Which English
+
+UK English for SAFETYNET and everything the player's side says or writes: HaX, Netherton, Malhotra, Kowalczyk (West London, with her family's vowels), the narrator, every choice, the credits ("Cyber Security" with a space where it appears). **US English** for the American characters' own words: Quintero (West Texas), Arakawa (Pacific Northwest), Wendell (rural Montana), Fonoti (Utah), the bunker's guards, Mercer, and the bunker's paperwork (roster, data center). Others keep their own: Tesseract an unplaceable educated English (UK spelling), Asante South London, Imran Birmingham, Vos Dutch-accented English (UK spelling), Victoria, Gary, Ghost, Voltage, Static, Vance and Elena as in their missions (SE §4). Spelling follows the speaker; times are UTC everywhere, said the way the speaker would ("ten past two", "oh-two-ten" for the van team).
+
+### 5.3 Tesseract's voice (SE §2.1; m07)
+
+The m07 voice without the distortion: short, exact, unhurried; he finishes his thoughts, as a teacher does with a student he rates. Most lines under fifteen words; his case may run to twenty-five, never more. No jargon. One image per scene at most. He grades ("Better." / "That's a slogan." / "Closer."), asks questions he knows the answer to, uses numbers exactly and never rounds aloud in his own favour. He calls the player "Agent" or "0x00", HaX "Ninety-nine" (nobody else does), and Kowalczyk "Halina" once. Courteous to the end: he never interrupts, raises his voice, gloats or apologises, threatens nobody but the player (once, as a courtesy, on surrender), and never says "you don't understand", "join me" or his motive as a speech. When he concedes he gives up exactly what was proved. His `*pause*` on a landed point is the scene's one repeated cue. "Let it hurt afterwards, not during." is his, said once, in exchange 3. "Afterwards" is said at most twice in a run (his exchange 3 line and HaX's "It's afterwards." on arrest; on Scorched Earth only his card says it).
+
+### 5.4 The argument: slots, order and button lengths (MC §6.3; SE §2.3)
+
+- Each exchange is one menu of **four fixed slots in a fixed order**: the rebuttal, the evidence decoy and the two record slots, with the plain decoy filling the first empty record slot. A record answer placed under the wrong claim goes after slot 4. Empty slots close up.
+- **On a cold start** the three menus read [decoy, **rebuttal**, decoy], [**rebuttal**, decoy, decoy], [decoy, decoy, **rebuttal**]. Keep the slot order that produces this; the pools only change which record answers fill slots 3 and 4.
+- **Record pools hold at most two candidates, most specific first** (MC §6.3's table). Each record answer shows only when its import holds (with `mNN_completed` where the default would lie).
+- **Button lengths:** every button in a menu within a few words of the others; no length tells. The rebuttal is neither the longest nor the shortest button in more than one of the three exchanges (SE §2.3; the decoy in exchange 1 is twelve words, R4-04). All choices under fifteen words.
+- **Decoys never answer the words he has just said**; each answers an earlier or different claim (R3-02). An evidence decoy cites something found tonight; the plain decoy is about him, not the claim.
+- **His responses:** a landed answer gets the pause (first time only, the narrator's "He looks at the console for a long moment."), then a concession of exactly what was proved; a miss gets an immediate dry line from his range, never repeated in a run (SE §2.1). Ledger stings (`m04_crew_lost`, `m02_patient_bed4_deceased`, `m06_satoshi_stance`, and `ko_pattern()` in exchange 3) play before his response and decide nothing.
+- Claims 2 and 3 open on the exchange before: three openers each (landed rebuttal, landed record, miss), so he never concedes what wasn't proved.
+- What the point count buys is said before the end-for-him menu (MC §6.3): two or more, he stands with empty hands and offers cooperation; fewer, he stays seated and the arrest has a dangerous moment. Neither is a failure.
+
+### 5.5 Signposting the dark choices
+
+**The cold ending** (MC §6.6, §8.3): the button names the act and his posture ("[Shoot him where he sits.]" / "[Shoot him where he stands.]"), always the last option, on both menus; no other button in the scene uses "shoot", and "[Fire.]" shares no word with it. Then the narrator's warning, word for word: "His hands are empty and in plain sight. He isn't moving. If you fire now, it's an execution, and HaX is on the line." Then "[Do it.]" / "[Lower the weapon.]"; lowering returns to the menu without the cold option ("You lower it. He hasn't moved."). The shot is one line: "He is still looking at you when you fire." Nothing from him; nobody sums it up. It can't be reached by a misclick, a knock-out, the clock, a failed talk-down or any import.
+
+**Join** (MC §6.7; FA §4.3): three deliberate steps, each offering the way back; the casualty figure said once, at step 1; HaX's "0x00. Don't." at step 2; the confirmation is the only button that sets the ending. Imports change how warmly he makes the offer, never the signposting.
+
+**The justified shot** is offered only in the reach beat on fewer than two points, after HaX's flag 4 fact ("I can try to kill the feed. Try."). Holding fire always works; nothing tells the player so.
+
+### 5.6 Violence, and the finale's standing rules
+
+- **Violence is a line** (FA §1.6; SE §1): knock-outs; each shot one narrated line; Quintero wounded at most (a shoulder), never killed; no gore, no lingering, TV level.
+- **WREN** has no pronoun anywhere before the accusation (or the reveal on `taken` / `double_crossed`); nobody genders the player.
+- **"The plant"** is never used for the room ("the power room") or for WREN ("WREN", "the sleeper").
+- **UTC only**, never local time; every spoken time matches OT §6's countdown table (for example "It's set for four" after flag 2; "Fifteen minutes to their head start" leaving the hall at 03:45).
+- **One villain "Not X. Y." per scene**, and none from anyone else.
+- **Asterisk cues** at m01's density (about one per 37 spoken lines), mid-line or behind a prefix, never starting a line and never on a line with a number or code (`emote-as-choice`, `stage-cue-in-info`).
+- **Names said once**: "Ninety-nine" is his alone; HaX answers "Still HaX." once; he says "Halina" once; Kowalczyk says "Adrian." once.
+- **"His console" or "the key console"** in the core, never "the release console" (that is the server hall's).
+- **"Ghost"** never appears on a screen, the card or a credit; the console's catch is "the resale share", m07's cells are named by their leaders, never "Ghost Protocol".
+- **No eldritch content** anywhere; the teaser slot is the user's and stays empty.
+- **Every knock-out case is written** (SE §9): a downed slot-holder or raid member leaves a line or a prop that admits it, in the scene that would have had them.
+- **The cold start reads cold** (FA §13 item 16): a player whose first mission is m10 must follow every line, including the van and "our mole" on `not m08_completed`.
+- **SAFETYNET canon** (PASS2 lesson 39): no arrest powers, no legal cover; agents detain and hand over. "Under arrest" is the team's word for detention; nobody cites an Act or a sentence.
+
+### 5.7 Lengths at a glance
+
+| Scene | Target |
+|---|---|
+| Briefing cutscene and aside | about 5 minutes (OT §8), spine only |
+| Each slot scene | 2–3 minutes, one decision after the talk |
+| His case | about 2 minutes; the Recruiter beat 30 seconds |
+| Each exchange | about 2 minutes |
+| 06:00 | about 5 minutes; walkabout lines one each |
+| The ending's own beat at the core | about 1 minute |
+
+### 5.8 Stage 7 handover items, settled here
+
+FA §13's stage 7 rows, each with where it lands. "Wording" means the writer writes it inside the stated limits.
+
+| Row | Settled as | Owner |
+|---|---|---|
+| B1 F20 in the ink | §4.1 | B, C |
+| B2 HaX's guarded resume knots | §4.3: `cut_call` routes on `cut_step`; her other calls are lines only | B |
+| B3 closing card and credits | the card and the four sections are S6 §3's data, copied by stage 9; stage 7 adds the SAFETYNET and In memory sections (§5.9) | A |
+| B4 rules carried | §5.6 | all |
+| B5 no `\|\|` in JSON | §2.1; `close_compute` | A |
+| 10-1 voiced calls; "Manual."; Quintero's door line; m09's `alpha_tapes` line | §4.2; "Manual." is Nightshade on the net in `breach_call`; "I don't like doors that know your name." is Quintero's in `quintero_so` on `breach_announced` (in person, so it doesn't add a voice to the call); "The best lock there is. Tape two." closes `breach_call` on `alpha_tapes` | B |
+| 10-2 Ghost's refused branch | §1.5 Ghost; Ghost's 06:00 text is JSON by `ghost_answer` (refused: by answer) and `ghost_sale` (selling branches) | C |
+| 10-3 the lock guard's ink | §1.5 Fonoti; the pointer bark is his, first person, JSON | C |
+| 10-4 the power room | the cost text is JSON (OT §4.9); the cut shape is §1.6 | C, B |
+| 10-5 staging lines | per RL §2.9 in each raid file; the Malhotra-out cost is `gallery_open`'s static branch; Victoria's call after `gallery_open` closes, with HaX's "Sterling's still on the line…" ending that call | B, C |
+| 10-6 `core_router` | §1.3; "Take your time…" in `arrival`; "Get on his box. He'll keep." is HaX's; the speaker answer and `should_have_told` in exchange 3's slot 2 with HaX's unasked line before the menu; the captured-Voltage quote at HaX's return; idle lines as barks | A |
+| 10-7 globals | §2; `raid_clock` never in ink; `ending` and `database_outcome` written before any ending beat | all |
+| 10-8 the hub | §1.4; "[What went out?]" gated `outer_lock_open and not hax_jammed and not what_went_out_given`; dialoguelint `crowded-hub` on the busiest save | B |
+| 10-9 06:00 | §1.3 `six_oclock`; the forty-seven as a fixed beat on `kept` and `denied`; Quintero's unhurt line on the double-cross and `alpha_tapes`; the Recruiter's text is JSON from `recruiter_phone` | A |
+| 10-10 resume lines | §4.1 rule 5 | B, C |
+| 10-11 wording left open | **"Who changed the code?"** is retired; the lock guard's bark "Who gave out the code?" on `door_unlocked` with `ghost_gift === 'code'` (OT §4.5) is the only form. **The aside on the double-cross**: Netherton and HaX at the van end, no whodunit and no "find them": one line that she has gone where he is and the player will meet her there, one from HaX at most; no shortlist or paper line. **HaX's `letters` line**: a bark on the first read of `uplink_printer` with `m09_cage_bin === 'letters'`: "Tran's handler is on that rota. He's in the Helena letters." (m09 S6 §6.3). **Knocked-out raid members at the forward post**: one Netherton line in `numbers` when any raid member was knocked out, naming nobody; the credits carry each person. **The Arakawa-out deputy**: Netherton's "Sheriff's asking who the road's closed for. I've told him to wait." as a HaX text (JSON) on the first room entry after `officer_out` becomes `arakawa`; no deputy NPC. **Rows 32–33's exit**: Victoria and her talked-down self leave "back down the gallery stair", past the player. **The split line without Kowalczyk** (`taken`, `double_crossed`): Netherton sends Quintero with a minder. | A, B, C |
+| 10-12 §13 line items 2, 4, 5, 11, 14, 20, 21, 24, 26, 32, 33 | each lands in the knot that §1.3–1.5 assigns to its beat; MC and SE hold the content | all |
+| 10-13 `close_compute` | §2.6 | A |
+| 10-14 stage 6's lines | Hollis: a HaX bark on reading `duty_board` with `m06_assets_seized && m07_hollis_resolved === 'evaded'`: "Stood down for the budget. Your freeze kept him home tonight." The payment check option: S6-16's wording, C. "Fonoti" in Ghost's, escaped Victoria's and Vos's lines, C. "Copy just the code.": a HaX bark after the margin pointer, B. `fire_held`: taken (§2.5). **"D. Varga" on the server-hall rota**: the rota clipped to `uplink_printer` gains "D. Varga" (Tran's handler, m09 S6 §6.3) so HaX's `letters` line points at a name the player can see; a readable string, so **stage 9** adds it to the printer's text and variants | A, B, C, stage 9 |
+
+### 5.9 The SAFETYNET and In memory credits sections (orchestrator ruling, FINALE_DEV_LOG "Fold (m10 stages 0–5)")
+
+They ship. Group A writes them as JSON in `scenarios/m10_full_disclosure/credits_sections.json`, in the committed F14 `section` format (README "Closing card and credits"; `public/break_escape/js/music/closing-sequence.js`), for stage 9 to place in each entry E1–E6 after ELSEWHERE and before the production credits:
+
+- **SAFETYNET** (arc §11.3 item 4), a `section` with `people`: Director Magnus Netherton; Agent HaX; the raid team on this save (Quintero, Arakawa, Malhotra, and Vector and Phantom on `vector_on_team` / `phantom_on_team`); a wrongly accused officer never recalled is still listed; **last**, "Halina Kowalczyk, 'WREN'" (her Initiative codename under SAFETYNET's heading is the sting). Each person gets one short clause, first that holds, ending on an unconditional clause where they must always appear. Clauses state an outcome, never the choice that caused it, and never repeat a line from IN THIS OPERATION. On E6 (Join), the section is Netherton, HaX and the raid team only, with a clause each that fits the Citadel ending.
+- **IN MEMORY**, a `section` with `lines`, unconditional on every entry: "Agent 0x19 Callum Fraser." and "Agent 0x6B Ana Lúcia Ferreira." (FA §5; the two agents killed at the unanswered m07 sites). Nothing else: no epithet, no date.
+
+Every condition uses `globalVars.<name>`, `!`, `===`, `!==` and `&&` only (§2.1). No character from S6 §0's coded-string list in any string. The player is "0x00", never "you". Stage 9 checks the file parses as JSON and that each section prints on every save that should show it.
+
+## 6. Checks each writer runs, and what waits for stage 9
+
+### 6.1 Before a writer reports
+
+Run from the repo root. Paste the summary of each into the report; "should pass" is not a result.
+
+1. **Compile:** `./scripts/compile-ink.sh m10_full_disclosure`. Every file compiles, including the include. Zero `END` warnings (no `END` or `DONE` anywhere; PASS2 lesson 21). Treat inklecate's "apparent loose end" warnings as bugs (README_ink_best_practices).
+2. **Dialogue lint:** `node scripts/ink_runtime_check/dialoguelint.mjs scenarios/m10_full_disclosure/` (or list your own files: `node scripts/ink_runtime_check/dialoguelint.mjs scenarios/m10_full_disclosure/ink/m10_<name>.ink …`; `--json` for machine output). It always exits 0, so read it. Clear every `error`; clear or justify every `check` and `warn` in the report (`voiced-variable`, `emote-as-choice`, `choice-fallthrough`, `blank-reentry`, `tag-on-narrator`, `phone-self-prefix`, `exit-no-reply`, `crowded-hub`, `not-x-but-y`, banned words, `stage-cue-density`). Until stage 9 writes the scenario, every file shows as `[person, unmapped]`, so the lint applies the 30-word cap to phone files too: hold phone lines to 25 words by hand.
+3. **Runtime walk:** `node scripts/ink_runtime_check/inkcheck.js scenarios/m10_full_disclosure/ink/<file>.json <knot> [VAR=value …]` from every entry knot this contract names for your files (each `currentKnot`, each call knot, each mapping's `targetKnot`), at least twice: a cold start (every import at its default, `mNN_completed` false) and one rich save that turns on the imports your file reads (for example `m09_completed=true m09_recruiter_offer=named m08_completed=true m08_nightshade_triple_agent=true`). Group A also walks `core_router` from each resume state (set `core_greeted`, `flag4_heard`, `case_heard`, each `exchange_n`, `console_choice`, `database_outcome` in turn) and `six_oclock` once per `ending`. No runtime errors, no unreachable content you meant to reach.
+4. **Hubs that loop:** `node scripts/ink_runtime_check/loopcheck.js <file.json> <knot>` on every re-enterable hub: HaX's `support_hub`, Netherton's `hub`, `hax_post`'s hub, `six_oclock`'s `walkabout`, and each raid file's resting knots. No hub may empty out.
+5. **Voiced lines:** `node scripts/ink_runtime_check/voicelines.mjs <file.json>` on each file with a call knot; report the call-knot counts against §4.2, and confirm by eye that no call knot prints a variable or a `Narrator:` line.
+6. **Greps:** no `VAR` in your files except prefixed file-locals (`grep -n "^VAR" scenarios/m10_full_disclosure/ink/m10_<name>.ink`); no `raid_clock` write; no `#add_note`; no `#set_global:<name>:<digits>` for a string global; no write to any `mNN_` import; every `#give_item` id is one in §3.1.
+7. **Cross-read:** read the lines other groups wrote in your characters' voices (§1.2, §1.6), and send corrections through the orchestrator rather than editing their files.
+
+### 6.2 What waits for stage 9 (or the browser)
+
+- **The scenario itself**: `scenario.json.erb`, `globalVariables` and `importGlobals` from §2, the seven `exportGlobals`, every eventMapping in §3.3 and §4.2, the barks and texts the writers' reports list, the countdown variants, and the closing card and credits from S6 §3 plus `credits_sections.json`.
+- **Validator**: `ruby scripts/validate_scenario.rb scenarios/m10_full_disclosure/scenario.json.erb`, including whether its ink scans (dead `VAR`, undeclared `#set_global`, imports written) read through `INCLUDE` correctly; no mission has used `INCLUDE` before.
+- **Dialoguelint again** once the erb binds each phone file to its NPC (the 25-word phone cap and `phone-self-prefix` then apply properly), and on the scenario's timed texts.
+- **`node scripts/ink_runtime_check/reopencheck.mjs scripts/ink_runtime_check/missions.json`** (needs an m10 entry) for every phone contact's reopen behaviour, especially HaX after each call and `cut_call`'s re-ring.
+- **`node scripts/ink_runtime_check/tagdiff.mjs`** from the first commit of the ink on, for every later rewrite (AGENTS.md "Verifying work").
+- **The `ko_pattern()` table-driven test** on seeded saves (FA §3.6), and a check that `close_compute()` gives the five strings S6 §3.2's examples expect.
+- **Browser checks** OT and RL list: `delayMs` holding HaX's calls until a minigame closes; Tesseract's `flag4_submitted` mapping opening `core_router` after the flag station closes; the lock guard's challenge as the cracker closes; `#give_item` firing the override's `onPickup`; the reveal and hide of every raid-team copy on each branch; the closing chain on all six endings, with one credits roll each.
+- **Voice audio**: only after the dialogue is signed off (tts-audio skill); the spoken-line list from `voicelines.mjs` and the person-chat files.
+
+## 7. Open items for the orchestrator
+
+Decisions this contract made where the design left room, and the things it could not settle. None blocks 7b.
+
+1. **`||` in credits conditions.** `README_scenario_design.md` "Closing card and credits" says card and credits conditions are JavaScript and that `||` and parentheses work there; FA §13 B5 and S6 §0 rule `&&` only for the close. This contract keeps the stricter rule (it is never wrong). Either the README sentence or the ruling should change so the two agree.
+2. **The include declares every scenario global**, not only the imports FA §3 assigns it. Reason: `close_compute()` reads locals, and ink rejects a `VAR` declared twice in one compiled story, so locals declared per file would clash with the include in every file that reads them. Consequence: `m10_carryover_vars.ink` is the one place to add a global.
+3. **New globals** (fold into OT §16 and MC §12 at the next fold): `guide1_offered`…`guide4_offered`, `guide1_given`…`guide4_given` (field-guide gating, named the way OT §5's exposure gate needs), `wren_held` (WREN held before the core; needed because a right line accusation with no Quintero sets `sleeper_caught` but still lets her reach the core), `kowalczyk_gone_ahead` (the peel-off; RL §2.9 says her copies hide after it but names no global), `fire_held` (S6-25's optional global, taken). Also `ghost_answer`'s five values, which MC §12 left as "one value per answer".
+4. **Displaynames to confirm at stage 9** (§1.2 †): Kowalczyk `Agent 0x5E 'Lantern'`, Quintero `Agent 0x2D 'Anchor'`, `Officer Kenji Arakawa`, `Officer Dev Malhotra`, Voltage (`Voltage (Critical Mass)` as m04, or SE's `Voltage`), `Minder`, `Guard`.
+5. **Field-guide item ids** are working names (`m10_guide_flag1`…`4`) until the VM plan fixes how many guides there are and their ids.
+6. **Imran's card on `ghost_watch_on_route`.** The design makes his card uncloneable on that save; an NPC's `rfidCard` is static data, and the cloner may work on him directly whatever the ink says. Stage 9 needs a way (a second Imran record without `rfidCard`, shown on that save, is one). The ink side is settled: on that save the taken-in branch uses `#unlock_door:power_room` instead of `#clone_keycard`.
+7. **Wording this contract settled in place of a design document** (§5.8 row 10-11): the double-cross aside's content, the split line without Kowalczyk (Quintero with a minder), one unnamed Netherton line for knocked-out raid members, the Arakawa-out line as a HaX text, the retirement of "Who changed the code?". The script editor at 7c should read these first.
+8. **06:00 carries five other characters' voices** (Quintero, Kowalczyk, Nightshade, the Act 2 slot-holders). Group A writes them; groups B and C cross-read (§6.1 step 7). If the orchestrator would rather move the walkabout's lines to their owners, B and C can write a `walkabout_<person>` knot set in A's file, but two writers in one file is the riskier option.
+9. **No INCLUDE precedent.** The validator, dialoguelint and `voicelines.mjs` have never seen a mission that includes a shared file. Dialoguelint parses `INCLUDE` as a declaration (checked); the others are stage 9's to confirm (§6.2).
+10. **Line estimates** in §1.1 are for balancing and come from the design's scene sizes and m07/m08's file lengths, not from a draft. If one group runs more than a third over, the orchestrator can move Asante and Mercer (C) or the minders and Malhotra (B) without touching any interface in §2.
