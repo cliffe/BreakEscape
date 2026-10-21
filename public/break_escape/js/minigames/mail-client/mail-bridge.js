@@ -24,14 +24,32 @@ import { heldFactIds, heldProvides } from './mail-composer.js';
 
 // The mail runner (P1-J) is loaded lazily: only a send to a character target needs
 // it, and keeping it off the module's static import graph lets the data-only bridge
-// tests run without it. core/game.js imports it at startup, so in the game it is
-// already cached and this resolves immediately.
+// tests run without it. The import is primed when this module loads, so by the time
+// any send happens the runner is resolved (core/game.js also imports it at startup,
+// the same cached module) and `scheduleInkReplyLazy` can add the job synchronously
+// within performSend (T2-3). Only a send before the import has settled takes the
+// microtask fallback; a load failure is surfaced to the caller as a false return.
 let _runnerModule = null;
+let _runnerNs = null;
+function primeRunner() {
+    if (!_runnerModule) {
+        _runnerModule = import('../../systems/mail-runner.js');
+        _runnerModule.then((m) => { _runnerNs = m; }).catch(() => { /* data-only path: runner not present */ });
+    }
+    return _runnerModule;
+}
+primeRunner();
+
+/** Schedule a character target's reply. Returns true when the job was added synchronously. */
 function scheduleInkReplyLazy(scheduler, opts) {
-    if (!_runnerModule) _runnerModule = import('../../systems/mail-runner.js');
-    _runnerModule.then((m) => {
+    if (_runnerNs) {
+        try { _runnerNs.scheduleInkReply(scheduler, opts); return true; }
+        catch (e) { console.error('[mail-bridge] scheduleInkReply failed', e); return false; }
+    }
+    primeRunner().then((m) => {
         try { m.scheduleInkReply(scheduler, opts); } catch (e) { console.error('[mail-bridge] scheduleInkReply failed', e); }
     }).catch((e) => console.error('[mail-bridge] could not load mail-runner', e));
+    return false;
 }
 
 const ICON = '/break_escape/assets/icons/';
@@ -259,10 +277,12 @@ export function performSend(scene, message) {
     // withReply mode a job still runs after the delay so the verdict and checklist
     // are revealed (01 N17). The opened-but-failed path keeps its reply.
     const opened = result.open && result.open.opened !== false;
+    let replyScheduled = false;
     if (isStr(target.character)) {
         // Character target: the on_email ink runner writes the reply (P1-J). The run
         // itself branches on email_opened, so for withReply an unopened send still
         // schedules a job (it delivers nothing but reveals the checklist on completion).
+        // A reply only actually comes back when the target opened it (00 §10).
         if (opened || timing === 'withReply') {
             scheduleInkReplyLazy(scheduler, {
                 target,
@@ -272,6 +292,7 @@ export function performSend(scene, message) {
                 scenario: scene.scenario || { social },
                 inReplyTo: (message && message.inReplyTo) || ''
             });
+            replyScheduled = opened;
         }
     } else if (opened) {
         const outcomeGlobal = target.outcome && target.outcome.setGlobal;
@@ -284,6 +305,7 @@ export function performSend(scene, message) {
             outcomeGlobal: firstGlobal,
             landed: result.landed
         });
+        replyScheduled = true;
     } else if (timing === 'withReply') {
         // Unopened, assessment timing: a silent job (empty text, no outcome) so the verdict and
         // checklist are still revealed after the usual delay (00 §10, 01 N17).
@@ -292,8 +314,14 @@ export function performSend(scene, message) {
 
     if (scene.refresh) scene.refresh();
     const claimed = result.claimedSender;
-    const claimedFrom = (claimed && account && account.person !== claimed) ? claimed : null;
-    return { result, record, target, gameResult: gameResultOf(result, target.id), claimedFrom };
+    // Show a readable name in the reply-to advisory, not the raw person id (A3:
+    // "shah's inbox"). Resolve against social.people, falling back to the address.
+    const claimedPerson = claimed ? arr(social.people).find((p) => p && p.id === claimed) : null;
+    const claimedLabel = claimedPerson
+        ? (claimedPerson.name || claimedPerson.forms?.full || claimedPerson.address || claimed)
+        : claimed;
+    const claimedFrom = (claimed && account && account.person !== claimed) ? claimedLabel : null;
+    return { result, record, target, gameResult: gameResultOf(result, target.id), claimedFrom, replyScheduled };
 }
 
 /** The data-only reply text: replies.landed, else the first failed factor's line (00 §10, N7). */

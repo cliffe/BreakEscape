@@ -240,6 +240,29 @@ module ValidateSocial
         issues.concat(target_sender_auth(t, where))
         issues.concat(target_expected_link(t, where))
         issues.concat(target_requires_intel(ctx, t, where))
+        issues.concat(target_factor_bias(ctx, t, where))
+      end
+      issues
+    end
+
+    # 00 §7, N-5: boostIfGlobal / strictIfGlobal name boolean flag globals and the
+    # mail bridge compares them with === true. A key pointed at a global declared
+    # with a non-boolean default therefore never flips its factor and the bias is a
+    # silent no-op (T2-8). A character's influence is the separate route read by the
+    # on_email ink, not here.
+    def self.target_factor_bias(ctx, t, where)
+      issues = []
+      %w[boostIfGlobal strictIfGlobal].each do |key|
+        hooks = t[key]
+        next unless hooks.is_a?(Hash)
+        hooks.each_key do |g|
+          next unless ctx.all_globals.key?(g)
+          default = ctx.all_globals[g]
+          next if [true, false].include?(default)
+          issues << warn_("#{where}.#{key} names global '#{g}', declared with a non-boolean default " \
+                          "(#{default.inspect}); the hook fires only on === true, so it can never flip a factor " \
+                          "(name a boolean flag global, or use the character's influence route read by the on_email ink)")
+        end
       end
       issues
     end

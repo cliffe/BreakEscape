@@ -165,12 +165,12 @@
         "urgency": "low" },
 
       "from_named": { "part": "from", "text": "{sender_name} <{sender_address}>",
-        "slots": [ { "id": "sender_name", "type": "name", "about": "sender" },
-                   { "id": "sender_address", "type": "address" } ] },
+        "slots": [ { "id": "sender_name", "type": "name", "about": "sender", "label": "sender's name" },
+                   { "id": "sender_address", "type": "address", "label": "sender's address" } ] },
       "greet_named": { "part": "greeting", "text": "Hi {name},",
-        "slots": [ { "id": "name", "type": "name", "about": "recipient" } ] },
+        "slots": [ { "id": "name", "type": "name", "about": "recipient", "label": "name to greet them by" } ] },
       "pretext_sheet": { "part": "pretext", "text": "Here is {document} you wanted {when}.",
-        "slots": [ { "id": "document", "type": "document" }, { "id": "when", "type": "date" } ],
+        "slots": [ { "id": "document", "type": "document", "label": "which file" }, { "id": "when", "type": "date", "label": "when they asked for it" } ],
         "urgency": "low" },
       "pretext_generic": { "part": "pretext", "text": "Please see attached.", "slots": [],
         "urgency": "low" },
@@ -316,7 +316,7 @@
         "factorStrings": {
           "open": { "pass": "✓ She would open it", "fail": "Nothing about the sender or the subject made her open it.", "redFlag": null },
           "senderTrust": { "pass": "✓ From someone she trusts", "fail": "Sorry, who is this? I don't recognise the address.", "redFlag": null },
-          "addressedTo": { "pass": "✓ Addressed her by name", "fail": "This doesn't even have my name on it.", "redFlag": null },
+          "addressedTo": { "pass": "✓ Addressed her by name", "fail": "This isn't addressed the way anyone who actually knows her would.", "redFlag": null },
           "pretextRelevant": { "pass": "✓ Relevant to her", "fail": "I'm not expecting anything like this.", "redFlag": null },
           "senderAuth": {
             "pass": "✓ Sender authentication would pass",

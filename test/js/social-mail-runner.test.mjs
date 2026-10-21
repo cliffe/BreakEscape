@@ -316,6 +316,55 @@ test('idempotent: re-running a job whose reply already exists appends and applie
     assert.equal(window.gameState.globalVariables.quill_influence, 10, 'influence not doubled');
 });
 
+// T2-1: partial sync. globalVariables persists (influence + the se_mail_applied
+// marker) but mailState does not (the reply is gone and the job is still pending,
+// e.g. the server refused an oversized mailState or the pagehide keepalive dropped
+// it whole). A re-run must re-deliver the reply but NOT re-apply influence.
+test('partial sync (mailState dropped): re-run recovers the reply once, influence is not doubled', async () => {
+    const w = makeWorld();
+    const sent = sendSent(w.scheduler, { id: 'sent_ps1' });
+    const vars = emailVarsFromResult({ character: 'quill' }, { id: sent.id }, { landed: true, open: { opened: true, via: 'sender' } });
+    const job = w.scheduler.addJob(buildInkJob({ character: 'quill', npcId: 'quill_mail', accountId: 'guest', msgId: sent.id, vars, knot: 'on_email' }), 1_000);
+    w.clock.t += 2_000;
+    await silent(() => drain(w.scheduler));
+    assert.equal(window.gameState.globalVariables.quill_influence, 10);
+    assert.ok((window.gameState.globalVariables.se_mail_applied || '').split(',').includes(job.jobId), 'marker written beside the influence');
+
+    // Drop only the reply from mailState (globalVariables, incl. the marker, is kept).
+    const box = w.scheduler.state.mailboxes.guest;
+    box.messages = box.messages.filter((m) => m.id !== `reply_${job.jobId}`);
+    assert.equal(box.messages.filter((m) => m.folder === 'inbox').length, 0, 'reply dropped');
+
+    await silent(() => w.runner._run({ ...job }));
+    const replies = w.scheduler.state.mailboxes.guest.messages.filter((m) => m.folder === 'inbox' && m.from?.name === 'Morgan Quill');
+    assert.equal(replies.length, 1, 'the lost reply was recovered, exactly once');
+    assert.equal(window.gameState.globalVariables.quill_influence, 10, 'influence not doubled on the recovery re-run');
+});
+
+// T2-1: the reverse. mailState persists (the reply is there) but globalVariables
+// did not (influence back to its start, the marker gone). A re-run must re-apply
+// influence (recover it) without duplicating the reply.
+test('partial sync (globalVariables dropped): re-run recovers the influence once, no duplicate reply', async () => {
+    const w = makeWorld();
+    const sent = sendSent(w.scheduler, { id: 'sent_ps2' });
+    const vars = emailVarsFromResult({ character: 'quill' }, { id: sent.id }, { landed: true, open: { opened: true, via: 'sender' } });
+    const job = w.scheduler.addJob(buildInkJob({ character: 'quill', npcId: 'quill_mail', accountId: 'guest', msgId: sent.id, vars, knot: 'on_email' }), 1_000);
+    w.clock.t += 2_000;
+    await silent(() => drain(w.scheduler));
+    assert.equal(window.gameState.globalVariables.quill_influence, 10);
+
+    // Drop the globalVariables side: influence back to start, the marker gone. The
+    // reply (and the influence service's lastSeen) are kept, as mailState would be.
+    window.gameState.globalVariables.quill_influence = 0;
+    delete window.gameState.globalVariables.se_mail_applied;
+    w.influence.lastSeen.set('quill', 0);
+
+    await silent(() => w.runner._run({ ...job }));
+    const replies = w.scheduler.state.mailboxes.guest.messages.filter((m) => m.folder === 'inbox' && m.from?.name === 'Morgan Quill');
+    assert.equal(replies.length, 1, 'the reply is not duplicated');
+    assert.equal(window.gameState.globalVariables.quill_influence, 10, 'influence re-applied on the recovery re-run');
+});
+
 test('retry while the record is not registered yet (S8), then deliver once it is', async () => {
     const w = makeWorld();
     const sent = sendSent(w.scheduler, { id: 'sent_r' });

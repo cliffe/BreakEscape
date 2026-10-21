@@ -150,7 +150,9 @@ export class MailClientMinigame extends SocialOverlayScene {
         this.reader = new MailReader(root, {
             pushLayer: (close, name) => this.pushLayer(close, name),
             judgedVisible: (rec) => !this._judgePending(rec),
-            onOpen: (rec) => this._markRead(rec)
+            // Opening a message is the player attending to the inbox, so the arrival
+            // notice has served its purpose and is cleared (A11: it lingered).
+            onOpen: (rec) => { this._clearNotice(); this._markRead(rec); }
         });
         this._refresh();
     }
@@ -358,6 +360,13 @@ export class MailClientMinigame extends SocialOverlayScene {
         panel.setAttribute('aria-label', 'Create account');
         panel.dataset.account = entry.id;
         panel.appendChild(el('h2', 'mail-create-title', 'Create account'));
+        // Name the service so the player knows which provider this account is with (A8):
+        // the domain of the addresses on offer (e.g. "freemail.example").
+        const service = (() => {
+            const addr = (entry.createMenu.find((m) => typeof m.address === 'string' && m.address.includes('@')) || {}).address || '';
+            return addr ? addr.slice(addr.indexOf('@') + 1) : '';
+        })();
+        if (service) panel.appendChild(el('p', 'mail-create-service', `A new address with ${service}.`));
         panel.appendChild(el('p', 'mail-create-help',
             'Pick the address this account will use. You cannot change it afterwards.'));
         const group = el('div', 'mail-create-menu');
@@ -456,7 +465,15 @@ export class MailClientMinigame extends SocialOverlayScene {
         if (next === this.folder) return;
         this.folder = next;
         this.reader.selectedId = null;
+        this.notice = '';
         this._refresh();
+    }
+
+    /** Clear the arrival notice and update its line now (A11: it outstayed its welcome). */
+    _clearNotice() {
+        if (!this.notice) return;
+        this.notice = '';
+        if (this.noticeEl) this.noticeEl.textContent = '';
     }
 
     _markRead(rec) {
@@ -631,15 +648,19 @@ export class MailClientMinigame extends SocialOverlayScene {
         this._dismissChecklist();
         const showReplyToNote = !!sendInfo.claimedFrom && !this._claimedFromNoticeShown;
         if (showReplyToNote) this._claimedFromNoticeShown = true;
-        // A data-only target (no character) has a text job scheduled, so a reply is coming.
-        const showReplyPending = !!(sendInfo.target && !sendInfo.target.character
-            && sendInfo.result && sendInfo.result.open && sendInfo.result.open.opened !== false);
+        // A reply is on its way whenever the send scheduled one (a data-only text job
+        // or a character's on_email ink job), so the player is not left at a dead end
+        // after closing the client (A13, P1-T T4). performSend reports it.
+        const showReplyPending = sendInfo.replyScheduled === true;
+        // After a landing there is nothing to resend, so "Done" closes the composer
+        // and returns to the inbox rather than dropping back onto a still-sendable
+        // form (A11). A failed send keeps the composer for Edit & resend.
         const panel = renderChecklist(sendInfo.result, sendInfo.target, {
             claimedFrom: sendInfo.claimedFrom,
             account: this.account,
             showReplyToNote,
             showReplyPending,
-            onEdit: () => this._dismissChecklist()
+            onEdit: () => { this._dismissChecklist(); if (sendInfo.result && sendInfo.result.landed) this.closeCompose(); }
         });
         this.root.appendChild(panel);
         this.checklistPanel = panel;

@@ -46,11 +46,15 @@
  *  8. Store the thread position and any reply choices / compose expectation,
  *     recordInkVariables (which drops email_* and so resets the run), end the run.
  *
- * Idempotency across a reload: the reply has a deterministic id (`reply_<jobId>`),
- * so a job restored and re-run after it was already delivered appends nothing and
- * applies nothing a second time. An unopened run produces no reply and no
- * influence, so it is safe to re-run; every opened branch produces a reply line,
- * so the reply-id guard also protects its influence change.
+ * Idempotency across a reload (T2-1): a delivery writes to two sync sections that
+ * can persist independently — the reply into mailState, the influence and the game
+ * tags' set_global effects into globalVariables. So each side keys on its own
+ * section: the reply on its deterministic id (`reply_<jobId>`, held in mailState),
+ * and the influence/tag side on `se_mail_applied` (a per-jobId marker in
+ * globalVariables, beside the influence). A re-run re-delivers only a reply that
+ * vanished (mailState dropped, globalVariables kept) and re-applies influence only
+ * when it vanished (the reverse), so neither can be committed twice. An unopened
+ * run produces no reply and no influence and is safe to re-run.
  *
  * This file touches `window` only through injectable dependencies (so the whole
  * run is unit-testable without a DOM) and never imports the mail bridge: the
@@ -63,6 +67,19 @@ const isStr = (v) => typeof v === 'string' && v.length > 0;
 const isObject = (v) => v !== null && typeof v === 'object' && !Array.isArray(v);
 const arr = (v) => (Array.isArray(v) ? v : []);
 const domainOf = (address) => (isStr(address) && address.includes('@') ? address.slice(address.indexOf('@') + 1) : '');
+
+// T2-1 reload idempotency for the influence (and game-tag) side of a delivery.
+// Influence, the game tags' set_global effects and this marker all live in
+// gameState.globalVariables, so they share one sync fate: a save (or the pagehide
+// keepalive) keeps them together or drops them together. The reply lives in
+// mailState, a separate sync section the server can refuse over its cap
+// (games_controller) or the keepalive can drop whole (state-sync.js), while
+// globalVariables is kept. Keying the influence commit on this co-located marker
+// (not on the reply, which can vanish on its own) stops a re-run doubling the
+// influence. Only a job still pending in the scheduler can re-run, so dropping the
+// oldest ids once their jobs are gone is safe.
+const APPLIED_GLOBAL = 'se_mail_applied';
+const APPLIED_CAP = 200;
 
 // ───────────────────────────────────────────────── pure helpers (send path)
 
@@ -195,6 +212,43 @@ export class MailRunner {
         return this._influence || (typeof window !== 'undefined' ? window.socialInfluence : null) || null;
     }
 
+    _globals() {
+        return (typeof window !== 'undefined') ? (window.gameState?.globalVariables || null) : null;
+    }
+
+    /** Has this job's influence (and game tags) already been committed to globalVariables? (T2-1) */
+    _alreadyApplied(jobId) {
+        const g = this._globals();
+        if (!g || !isStr(jobId)) return false;
+        const raw = g[APPLIED_GLOBAL];
+        return typeof raw === 'string' && raw.split(',').includes(jobId);
+    }
+
+    /** Record that this job's influence side is committed, in the same section as the influence (T2-1). */
+    _markApplied(jobId) {
+        const g = this._globals();
+        if (!g || !isStr(jobId)) return;
+        const raw = typeof g[APPLIED_GLOBAL] === 'string' ? g[APPLIED_GLOBAL] : '';
+        const ids = raw ? raw.split(',').filter(Boolean) : [];
+        if (ids.includes(jobId)) return;
+        ids.push(jobId);
+        if (ids.length > APPLIED_CAP) ids.splice(0, ids.length - APPLIED_CAP);
+        g[APPLIED_GLOBAL] = ids.join(',');
+    }
+
+    /**
+     * Bind se_influence to an inert function for a recovery re-run whose influence
+     * was already applied: the story still runs (to regenerate a lost reply) but
+     * cannot move influence a second time. It returns the character's current band,
+     * as the real external does, so a story that reads the return still branches.
+     */
+    _bindInertInfluence(engine, job) {
+        const influence = this.influence;
+        const fn = () => (influence?.getBand ? (influence.getBand(job.character) ?? 0) : 0);
+        if (typeof engine?.bindExternalFunction === 'function') engine.bindExternalFunction('se_influence', fn);
+        else engine?.BindExternalFunction?.('se_influence', fn);
+    }
+
     /**
      * The scheduler handler for the `ink` kind. Synchronous, because the
      * scheduler tick is: it starts the async run and reports "not ready" (false)
@@ -260,10 +314,10 @@ export class MailRunner {
     }
 
     static _defaultEncounter(npcId) {
-        // Client-side mirror only. The server-side player_state['encounteredNPCs']
-        // (the #give_item gate at games_controller validate_item_collectible) has no
-        // client endpoint to push to, so a headless record's give_item still needs a
-        // server-side change outside this packet's single-file scope (see report).
+        // Client-side mirror only. The server now auto-encounters a headless email
+        // record on the give path (games_controller `headless_email_record?` +
+        // `encounter_npc!`), so a reply's `#give_item` passes the server-side
+        // `encounteredNPCs` gate; this keeps window.gameState.encounteredNPCs in step.
         if (typeof window === 'undefined') return;
         const state = window.gameState;
         if (state) {
@@ -316,8 +370,15 @@ export class MailRunner {
         const scheduler = this.scheduler;
         if (!scheduler) return { retry: true };
         const replyId = `reply_${job.jobId}`;
-        // Already delivered (a reload re-ran a job whose reply is in the mailbox): nothing to do.
-        if (typeof scheduler.findMessage === 'function' && scheduler.findMessage(replyId)) return {};
+        // The two sync sections idempotency keys on (T2-1): the reply lives in
+        // mailState, the influence/game-tag commit in globalVariables. A reload can
+        // persist one without the other, so each side is guarded on its own section.
+        const alreadyDelivered = typeof scheduler.findMessage === 'function' && !!scheduler.findMessage(replyId);
+        const alreadyApplied = this._alreadyApplied(job.jobId);
+        // Both committed (a normal reload re-ran a settled job): nothing to do.
+        if (alreadyDelivered && alreadyApplied) return {};
+        // Otherwise one section dropped on its own: re-run to recover the missing
+        // side, but gate each side so neither is committed twice.
 
         const record = this._getNpc(job.npcId);
         if (!record) return { retry: true }; // headless record not registered yet (S8)
@@ -353,7 +414,8 @@ export class MailRunner {
         let undoTrack = null;
         if (influence && isStr(job.character)) {
             influence.beginRun?.(runId);
-            influence.bindInfluenceExternals?.(engine, { npcId: job.npcId, characterId: job.character, channel: 'email', runId });
+            if (alreadyApplied) this._bindInertInfluence(engine, job); // recovery re-run: do not move influence again (T2-1)
+            else influence.bindInfluenceExternals?.(engine, { npcId: job.npcId, characterId: job.character, channel: 'email', runId });
             undoTrack = influence.trackTurns?.(engine, runId) || null;
         }
 
@@ -378,9 +440,10 @@ export class MailRunner {
 
         const { mailLater, composeReplyTarget, subject, gameTags } = this._splitTags(tags);
 
-        // 7a. deliver the reply (a run that produced no text delivers nothing, 00 §10 step 7)
+        // 7a. deliver the reply (a run that produced no text delivers nothing, 00 §10 step 7).
+        // Skip when the reply is already in the box, so a recovery re-run never duplicates it.
         let message = null;
-        if (lines.length > 0) {
+        if (lines.length > 0 && !alreadyDelivered) {
             const sent = job.msgId && typeof scheduler.findMessage === 'function' ? scheduler.findMessage(job.msgId) : null;
             let subjectText = isStr(subject) ? subject : '';
             if (!subjectText) {
@@ -404,12 +467,19 @@ export class MailRunner {
             this._emit('mail_delivered', { mailbox: job.accountId, message, job });
         }
 
-        // 7b. game tags, ui-less, with the record as the conversation NPC (give_item)
-        if (gameTags.length > 0) await this._applyGameTags(gameTags, job, engine);
+        // 7b. game tags, ui-less, with the record as the conversation NPC (give_item).
+        // Their set_global effects live in globalVariables beside the influence, so
+        // gate them on the same marker: a recovery re-run that already applied them
+        // (globalVariables kept) does not fire them again (T2-1).
+        if (gameTags.length > 0 && !alreadyApplied) await this._applyGameTags(gameTags, job, engine);
 
         // 8. thread position and the next-step expectation (00 §10 "Replies, reply choices and chasers")
         this._storeThread(scheduler, key, position, endChoices, composeReplyTarget);
-        if (mailLater) this._scheduleChaser(scheduler, job, key, mailLater);
+        if (mailLater && !alreadyApplied) this._scheduleChaser(scheduler, job, key, mailLater);
+
+        // Mark the influence/game-tag side committed, co-located with the influence,
+        // once this run has done it (T2-1). A fresh run always reaches here.
+        if (!alreadyApplied) this._markApplied(job.jobId);
 
         sm?.recordInkVariables?.(job.npcId, story); // drops email_*: resets the run (S7)
         if (influence && isStr(job.character)) { if (undoTrack) undoTrack(); influence.endRun?.(runId); }
@@ -421,7 +491,16 @@ export class MailRunner {
         const scenario = (typeof window !== 'undefined') ? window.gameScenario : null;
         const accounts = scenario?.social?.mailClient?.accounts;
         const account = arr(accounts).find((a) => a && a.id === accountId);
-        return account && isStr(account.address) ? account.address : '';
+        if (!account) return '';
+        // A created account carries no static address; its address is the chosen
+        // createMenu entry, named by the `acct_<id>_choice` global (A10: the reply's
+        // To was empty for a player-made account).
+        if (account.kind === 'created') {
+            const globals = (typeof window !== 'undefined') ? window.gameState?.globalVariables : null;
+            const choice = arr(account.createMenu).find((m) => m && m.id === globals?.[`acct_${account.id}_choice`]);
+            if (choice && isStr(choice.address)) return choice.address;
+        }
+        return isStr(account.address) ? account.address : '';
     }
 
     async _applyGameTags(gameTags, job, engine) {
@@ -436,9 +515,13 @@ export class MailRunner {
 
     _storeThread(scheduler, key, position, endChoices, composeReplyTarget) {
         const thread = {};
-        if (isStr(position)) thread.position = position;
         if (isStr(composeReplyTarget)) thread.expects = { mode: 'compose', targetId: composeReplyTarget };
         else if (arr(endChoices).length > 0) thread.expects = { mode: 'choices', options: endChoices.map((c) => c.text) };
+        // The stored position is only ever read for a continuation or a compose
+        // reply (mail-runner `_run` loads it gated on isContinuation/loadPosition),
+        // so a terminal reply with no `expects` stores none: it would be a multi-KB
+        // ink snapshot nothing consumes, growing mailState for no gain (T2-2).
+        if (thread.expects && isStr(position)) thread.position = position;
         if (typeof scheduler.setThread === 'function') scheduler.setThread(key, Object.keys(thread).length ? thread : null);
     }
 

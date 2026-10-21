@@ -103,7 +103,37 @@ export class InfluenceBar {
         this._subs = [];
         this._build();
         this._subscribe();
+        this._seedChangeFromLog();
         this.update();
+    }
+
+    /**
+     * Show the most recent influence change on a freshly mounted bar (A2). The
+     * "Last change" line is otherwise only set by a live event, so a bar mounted
+     * after the change (the reading pane opened once a reply has landed, or the
+     * board card) showed the number with no reason. The influence service keeps a
+     * per-character log; read its last real change and compose the same line.
+     */
+    _seedChangeFromLog() {
+        if (this.changeText) return;
+        const svc = (typeof window !== 'undefined') ? window.socialInfluence : null;
+        if (!svc || typeof svc.getLog !== 'function') return;
+        let log;
+        try { log = svc.getLog(this.config.id); } catch (e) { return; }
+        if (!Array.isArray(log)) return;
+        for (let i = log.length - 1; i >= 0; i--) {
+            const e = log[i];
+            if (!isObject(e) || e.kind === 'silent' || typeof e.delta !== 'number' || e.delta === 0) continue;
+            this.changeText = this._changeLine(e.delta, e.reason);
+            return;
+        }
+    }
+
+    /** The "Last change: +N reason" line, shared by live events and the log seed. */
+    _changeLine(delta, reason) {
+        const sign = delta > 0 ? '+' : '';
+        const r = typeof reason === 'string' && reason && reason !== 'ink' ? ` ${reason}` : '';
+        return `Last change: ${sign}${delta}${r}`;
     }
 
     /** Current value from gameState (else the start value), clamped to the track for drawing only. */
@@ -212,9 +242,7 @@ export class InfluenceBar {
         // The event is a prompt to look again. Only its change line is taken from it.
         const own = isObject(data) && (data.character === undefined || data.character === this.config.id);
         if (own && isObject(data) && typeof data.delta === 'number' && data.delta !== 0 && !data.silent) {
-            const sign = data.delta > 0 ? '+' : '';
-            const reason = typeof data.reason === 'string' && data.reason && data.reason !== 'ink' ? ` ${data.reason}` : '';
-            this.changeText = `Last change: ${sign}${data.delta}${reason}`;
+            this.changeText = this._changeLine(data.delta, data.reason);
         }
         this.update();
     }

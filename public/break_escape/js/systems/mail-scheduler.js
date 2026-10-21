@@ -451,7 +451,15 @@ export class MailScheduler {
 
   _accountAddress(accountId) {
     const account = (this.mailClientConfig?.accounts || []).find(a => a?.id === accountId);
-    return account?.address || '';
+    if (!account) return '';
+    // A created account's address is the chosen createMenu entry, not the static
+    // record (A10: a data-only reply to a player-made account had an empty To).
+    if (account.kind === 'created') {
+      const globals = (typeof window !== 'undefined') ? window.gameState?.globalVariables : null;
+      const choice = (account.createMenu || []).find(m => m && m.id === globals?.[`acct_${account.id}_choice`]);
+      if (choice?.address) return choice.address;
+    }
+    return account.address || '';
   }
 
   _clockStamp() {

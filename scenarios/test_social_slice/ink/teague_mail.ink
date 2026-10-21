@@ -39,7 +39,7 @@ VAR email_attachment = "none"
 }
 { email_first_fail:
 - "senderTrust": Sorry, who is this? I don't recognise the address.
-- "addressedTo": This doesn't even have my name on it.
+- "addressedTo": This doesn't address me the way anyone who actually knows me would.
 - "pretextRelevant": I'm not expecting anything like this.
 - "attachmentPlausible": { email_attachment == "missing": You said you'd attach it, but there's nothing here. | That isn't a file I can open as a ledger. }
 - else: I'm not sure what this is.

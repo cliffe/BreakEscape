@@ -30,6 +30,17 @@ module BreakEscape
                       'the headless record was encountered by the give path'
     end
 
+    test 'an item not in the headless record itemsHeld is still refused (T2-4)' do
+      game = create_game
+      other = { 'type' => 'keycard', 'id' => 'not_authored', 'name' => 'Not authored', 'takeable' => true }
+      post inventory_game_url(game), params: { action_type: 'add', item: other, source_npc_id: 'quill_mail' }, as: :json
+
+      assert_response :unprocessable_entity, response.body
+      game.reload
+      assert_not_includes game.player_state['inventory'].map { |i| i['id'] }, 'not_authored',
+                          'an item the record does not hold is not self-grantable from it'
+    end
+
     test 'a room NPC the player has not met is still refused' do
       game = create_game
       post inventory_game_url(game), params: { action_type: 'add', item: ROOM_ITEM, source_npc_id: 'rory' }, as: :json

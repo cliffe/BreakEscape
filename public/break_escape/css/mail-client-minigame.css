@@ -52,6 +52,8 @@
 /* The label shrinks and ellipses so the whole toolbar, Close included, stays on one row. */
 .mail-account-label { font-family: var(--se-font-readable); font-size: 15px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .mail-folders { display: flex; gap: 4px; }
+/* Let toolbar buttons size to their label so it is never clipped (A9). */
+.mail-toolbar .minigame-button { white-space: nowrap; width: auto; }
 .mail-client .minigame-button,
 .mail-client .se-overlay-close {
     min-height: 44px;
@@ -308,7 +310,19 @@
 .mail-blank { font-family: var(--se-font-readable); font-size: 15px; min-height: 44px; }
 .mail-blank[data-empty="true"] { opacity: 0.7; }
 .mail-blank-gate { margin: 0; font-family: var(--se-font-readable); font-size: 13px; color: var(--ui-warn, #e6b04d); }
-.mail-compose-send-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: auto; }
+/* Keep Send, Back and the gate line in view when the form is taller than the
+   frame, so they are never clipped below the fold with no cue (A7). */
+.mail-compose-send-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    margin-top: auto;
+    position: sticky;
+    bottom: -16px;
+    padding: 8px 0 0;
+    background: linear-gradient(to bottom, transparent, var(--ui-surface, rgba(24, 30, 48, 1)) 8px);
+}
 .mail-compose-gate { margin: 0; font-family: var(--se-font-readable); font-size: 14px; color: var(--ui-warn, #e6b04d); }
 .mail-compose-send[disabled] { opacity: 0.5; cursor: not-allowed; }
 
@@ -341,9 +355,21 @@
     font-size: 16px;
     cursor: pointer;
 }
+/* A tinted highlight with a strong accent edge, so the active row keeps the
+   readable light text whatever colour the theme's accent is (A6: white-on-amber
+   was illegible). */
 .mail-picker-option.active,
-.mail-picker-option[aria-selected="true"] { background: var(--ui-accent, #3b6ea5); }
-.mail-picker-kind { font-size: 12px; color: var(--ui-text-dim, #a8b2c8); font-family: var(--ui-heading-font, 'GNF', monospace); }
+.mail-picker-option[aria-selected="true"] {
+    background: color-mix(in srgb, var(--ui-accent, #3b6ea5) 28%, transparent);
+    box-shadow: inset 4px 0 0 var(--ui-accent, #ffcc44);
+}
+.mail-picker-kind {
+    font-size: 13px;
+    color: var(--ui-text-dim, #c3ccdf);
+    font-family: var(--se-font-readable);
+    font-style: italic;
+    white-space: nowrap;
+}
 .mail-picker-kind.kind-stale { color: var(--ui-warn, #e6b04d); }
 
 /* Keyboard focus ring on every control (the theme buttons only style hover). */
@@ -438,8 +464,13 @@
     font-size: 16px;
     cursor: pointer;
 }
-.mail-create-option input { width: 20px; height: 20px; }
+/* accent-color makes the checked radio read as selected on dark surfaces; the
+   browser default filled an unchecked radio bright white so it looked picked (A8). */
+.mail-create-option input[type="radio"] { width: 20px; height: 20px; accent-color: var(--ui-accent, #ffcc44); }
+.mail-create-option:has(input:checked) { border-color: var(--ui-accent, #ffcc44); background: color-mix(in srgb, var(--ui-accent, #ffcc44) 14%, transparent); }
+.mail-create-name { font-weight: 700; }
 .mail-create-address { overflow-wrap: anywhere; color: var(--ui-text-dim, #a8b2c8); }
+.mail-create-service { font-family: var(--se-font-readable); font-size: 14px; color: var(--ui-text-dim, #a8b2c8); margin: 0; }
 .mail-create-bar { display: flex; gap: 8px; justify-content: flex-end; }
 @media (max-width: 767px) {
     .mail-account-select { width: 100%; }

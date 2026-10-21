@@ -355,6 +355,22 @@ test('04 N10: expectedLink shape (brandId/realDomain present); the brand-in-07 c
   assert.deepEqual(mailCall(`ValidateSocial::Mail.target_expected_link({}, 'w')`, {}), []);
 });
 
+test('T2-8: boostIfGlobal/strictIfGlobal pointed at a non-boolean global is warned (the hook needs === true)', { skip }, () => {
+  const bias = (target, globalVariables) =>
+    mailCall(`ValidateSocial::Mail.target_factor_bias(ctx, social['phishTargets'][0], 'social.phishTargets[x]')`,
+      { phishTargets: [target] }, { globalVariables });
+  // A boolean flag global: fine.
+  assert.deepEqual(bias({ id: 'x', boostIfGlobal: { helpdesk_alerted: 'senderTrust' } }, { helpdesk_alerted: false }), []);
+  // A number global: the === true compare can never fire, so warn.
+  const num = bias({ id: 'x', boostIfGlobal: { teague_influence: 'senderTrust' } }, { teague_influence: 0 });
+  assert.ok(num.some((s) => /boostIfGlobal names global 'teague_influence'.*non-boolean/.test(s)), num.join('\n'));
+  // strictIfGlobal is checked the same way.
+  const str = bias({ id: 'x', strictIfGlobal: { some_count: 'addressedTo' } }, { some_count: 3 });
+  assert.ok(str.some((s) => /strictIfGlobal names global 'some_count'.*non-boolean/.test(s)), str.join('\n'));
+  // An undeclared global is left to the other declared-global lints, not this one.
+  assert.deepEqual(bias({ id: 'x', boostIfGlobal: { undeclared_flag: 'senderTrust' } }, {}), []);
+});
+
 test('--strict-social: exit 1 on the broken fixture, 0 on the clean one and on a social-free one', { skip }, () => {
   const bad = cli('sm_broken', '--strict-social');
   assert.equal(bad.status, 1, bad.stdout + bad.stderr);

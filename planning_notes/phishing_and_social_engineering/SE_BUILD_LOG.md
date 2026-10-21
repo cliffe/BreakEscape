@@ -4,7 +4,7 @@ Brief: `docs/agents/SE_BUILD_BRIEF.md`. Plan: `IMPLEMENTATION_PLAN.md`. Artefact
 
 ## Resume
 
-Status (2026-10-21): Phase 0 closed (two review rounds, ten browser comparison runs, two targeted checks). Phase 1a closed (`5e2889ff`). Phase 1b implemented and committed; bridges 37/37 and 78/78. Next: P1-T2 (opus48 review, Sonnet playtest), fixes, then Phases 2, 3 and 4. Waiting on the user: art batch 1 questions (art_batch1/REVIEW.md) and the R-01 speaker-tie question below.
+Status (2026-10-21): Phase 0 closed (two review rounds, ten browser comparison runs, two targeted checks). Phase 1a closed (`5e2889ff`). Phase 1 closed. Next: Phases 2 (OSINT), 3 (triage) and 4 (pretext calls) in parallel. Waiting on the user: art batch 1 questions (art_batch1/REVIEW.md) and the R-01 speaker-tie question below.
 
 ## User instructions for this build (2026-10-21)
 
@@ -81,6 +81,12 @@ All 15 round 1 findings closed (R-12 by deferral). Node 926/930 (pass3 quarantin
 `build_log/P1-R_review.md`. Verdict: ship. J-1 (major): `performSend` queues a reply job for a data-only target that never opened the mail, against 00 §10; no effect on Hampshire. Minors N-1 to N-6 and O-1 (the Done-when validator command needs the file path). No m01-m08 regression. P1-A's ten gaps, P1-F's boost/strict and the composer/bridge boundary endorsed. Fix round 1 (opus48) takes these plus the ten P1-T UI items; decisions in its brief: locked-pickup limited to `mail_terminal`, `syncConfirmed` treats refused sections as unconfirmed, composer opens with no pretext chosen.
 
 Fix round 1 (opus48): all of J-1, N-1 to N-6, O-1 and the ten UI items fixed (table in the review file). Social and validator tests 280/280, Rails 714/0, slice validator exit 0, bridge 37/37. Orchestrator checked the screenshots (solid panels, icon ticks, reply line, Done button, composer opens unchosen). The board repetition was fixed in slice data (distinct `doneString`s), keeping 03's two lists. Queued for 1b: the composer shows both "Send as" and "From" with the same address; the bridge generator in scratch is stale (the committed `.jsonl` is the source now). **Phase 1a closed.**
+
+### Phase 1b, round 1 (P1-T2 review, opus48): 0 blocker, 1 major, 7 minor
+
+`build_log/P1-T2_review.md`. T2-1 (major): the runner applies `se_influence` before the reply is appended and guards only on the reply, so if `globalVariables` saves while `mailState` does not (pagehide drop, or a server refusal over cap), a reload re-runs the job and doubles the influence. Minors: thread position stored for every reply (T2-2), fire-and-forget scheduling (T2-3), the give trust gap (T2-4, acceptable for a lab), a stale comment (T2-5), withReply checklist after reload (T2-6), created account across tabs (T2-7), boost/strict lint (T2-8). Playtest (Sonnet, game 2909, `build_log/P1-T2_playtest.md`): every Done-when (1b) item passes; verify-run 3 tasks; one POST each. 13 minor player-experience notes. Back-compat item 7's bridge half not yet run. Fix round 2 (opus48) takes the review and playtest findings together.
+
+Fix round 2 (opus48): T2-1 fixed with an applied-marker global `se_mail_applied` that shares the influence's sync fate (the review's mailState placement would not have closed it; two partial-sync tests), T2-2, T2-3, T2-5, T2-8 fixed, T2-4 accepted with a test, T2-6 and T2-7 deferred; playtest A2, A3, A5 to A11, A13 fixed; A1, A4, A12 deferred. Back-compat item 7 bridge half passes (game 2913). Rails 717/0, slice validator 0, bridge-1a 37/37, bridge-1b 78/78. Orchestrator screenshot check: raw `{placeholders}` still show in template selects, change reasons are factor ids, two toolbar labels clip; queued as plan packet P6-M with the deferrals. **Phase 1 closed.**
 
 ## Questions for the user
 
