@@ -198,6 +198,8 @@ Fix round 2 (opus48): T2-1 fixed with an applied-marker global `se_mail_applied`
 - **P4-E** (grok, one-line brief): influence bar and tells in both chat headers (`ui/pretext-chrome.js`), render-only phone tell bubbles, portrait tint, world pip for sprite characters (`ui/npc-influence-pips.js`, created in core/game.js), the board's "From the call" section. Pip test 8/8. It reordered the start of both chats' `cleanup()`, which broke two source-text tests (finale-voiced-calls, session-overlay-pause); the orchestrator moved its lines below the existing ones and the full Node suite passes 1353/1353. Not yet looked at in a browser.
 - **P4-T0** (grok, one-line brief): `pretext-prep` registered and started from P4-D's callId paths; `callId` in the NPC schema (quinn_desk warning gone); desk phone moved to a reachable tile; `tools/playtest/se/bridge-4.jsonl` 30/30 on game 2926 (Grok's run). The fact picker is not exercised (slice starts with nothing held); the overlay CSS is duplicated in a page stylesheet. Orchestrator: slice validator 0, Rails 722/0.
 
+- **P2-T0** (grok, one-line brief): `tools/playtest/se/bridge-2.jsonl`, 15 evals (keys inert, Tab order, Esc closes properties first, Close and Esc succeed, Case file returns to the same page, reload keeps visited pages and granted facts). Grok's run: 15/15 on game 2928. Tools panel not covered. Note: `playtest-session.js` appends to its log, so check one session's output at a time.
+
 ## Review rounds
 
 ### Phase 0, round 1 (P0-R, Opus): 0 blocker, 2 major, 13 minor
