@@ -17,6 +17,8 @@ VAR hpost_phone_asked = false
 -> hub
 
 === hub ===
+{ending == "joined": -> post_dead}
+{ending != "": -> post_after}
 {
 - hpost_quiet:
     ~ hpost_quiet = false
@@ -51,3 +53,33 @@ VAR hpost_phone_asked = false
     ~ hpost_quiet = true
     #exit_conversation
     -> hub
+
+// Stage 9 follow-up: after his ending, a rest line by ending and the exit only.
+=== post_after ===
+{
+- hpost_quiet:
+    ~ hpost_quiet = false
+- ending == "executed":
+    Agent HaX: Not now.
+- ending == "scorched":
+    Agent HaX: Go with the team. We'll talk at the hearing.
+- else:
+    Agent HaX: It's done. Sit down a minute.
+}
++ [(Leave her be.)]
+    ~ hpost_quiet = true
+    #exit_conversation
+    -> post_after
+
+// On Join nobody from SAFETYNET speaks to the player.
+=== post_dead ===
+{
+- hpost_quiet:
+    ~ hpost_quiet = false
+- else:
+    Narrator: She doesn't look up.
+}
++ [(Leave.)]
+    ~ hpost_quiet = true
+    #exit_conversation
+    -> post_dead

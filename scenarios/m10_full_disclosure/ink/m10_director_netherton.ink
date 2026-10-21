@@ -34,6 +34,10 @@ VAR neth_plans_asked = false
 
 === start ===
 {
+- ending == "joined":
+    -> neth_dead
+- ending != "":
+    -> neth_after
 - not briefing_done:
     -> briefing
 - not aside_done:
@@ -338,6 +342,8 @@ Agent HaX: Start the gate console on your way past. It's slow to boot.
 // A re-entry line by progress; routes to the aside or the tether while either
 // is owed. Nothing here sets a story global.
 === hub ===
+{ending == "joined": -> neth_dead}
+{ending != "": -> neth_after}
 {
 - neth_quiet:
     ~ neth_quiet = false
@@ -345,8 +351,6 @@ Agent HaX: Start the gate console on your way past. It's slow to boot.
     -> aside
 - aside_done and door_branch() == "silent" and not door_scene_done:
     -> tether
-- ending != "" and ending != "joined":
-    Director Magnus Netherton: Go and get warm. The paperwork can wait an hour.
 - breach_open:
     Director Magnus Netherton: I am on the net. You do not need to come up here for me.
 - door_scene_done and flag1_submitted:
@@ -394,3 +398,33 @@ Agent HaX: Start the gate console on your way past. It's slow to boot.
     Director Magnus Netherton: Back in the van. Full term, as you told him.
 }
 -> hub.topics
+
+// Stage 9 follow-up: after his ending, a rest line by ending and the exit only.
+=== neth_after ===
+{
+- neth_quiet:
+    ~ neth_quiet = false
+- ending == "executed":
+    Director Magnus Netherton: Not now, Agent. The board will want you rested.
+- ending == "scorched":
+    Director Magnus Netherton: We both answer for it. Go and get warm first.
+- else:
+    Director Magnus Netherton: Go and get warm. The paperwork can wait an hour.
+}
++ [(Leave him to it.)]
+    ~ neth_quiet = true
+    #exit_conversation
+    -> neth_after
+
+// On Join nobody from SAFETYNET speaks to the player.
+=== neth_dead ===
+{
+- neth_quiet:
+    ~ neth_quiet = false
+- else:
+    Narrator: Netherton doesn't look at you.
+}
++ [(Leave.)]
+    ~ neth_quiet = true
+    #exit_conversation
+    -> neth_dead

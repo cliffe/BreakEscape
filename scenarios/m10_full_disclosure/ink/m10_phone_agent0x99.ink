@@ -37,8 +37,30 @@ VAR hax_suspect = ""
 // ---------------- home and hub (text) ----------------
 
 === start ===
+{ending == "joined": -> line_dead}
+{ending != "": -> after_ending}
 {hax_jammed: -> jammed}
 -> support_hub
+
+// Stage 9 follow-up: once his ending is chosen the hub is closed. One rest
+// line by ending and the exit; on Join, nothing at all from her.
+=== after_ending ===
+{
+- ending == "executed":
+    Not now.
+- ending == "scorched":
+    Get out with the team. We'll talk at the hearing.
+- else:
+    It's done. Come up when you're ready.
+}
++ [That's all.]
+    #exit_conversation
+    -> DONE
+
+=== line_dead ===
++ [Hang up.]
+    #exit_conversation
+    -> DONE
 
 // OT §5 "The jam": one line and the exit, nothing else.
 === jammed ===
