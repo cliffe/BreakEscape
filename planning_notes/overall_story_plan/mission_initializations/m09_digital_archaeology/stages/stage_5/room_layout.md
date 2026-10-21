@@ -2,7 +2,7 @@
 
 ## 0. Status and inputs
 
-Stage 5. Author: stages 4–5 author (Opus), 2026-10-21. Status: round 1 fixes folded in (§14; reviews `REVIEW_R1_PUZZLES.md` and `REVIEW_R1_DESIGN.md` in this folder), for review round 2. Designed to user decisions F17 (voiced forced calls), F18 (the flag-reward door fix), F19 (a mapping key that unlocks a door persistently, written `unlockDoor`) and F10 (a `silence` playlist). Companion to `../stage_4/objectives_tasks.md` ("S4"), which holds the tasks, globals, mappings and forced scenes; this document holds the space.
+Stage 5. Author: stages 4–5 author (Opus), 2026-10-21. Status: round 1 and round 2 fixes folded in (§14, §15; reviews `REVIEW_R1_PUZZLES.md`, `REVIEW_R1_DESIGN.md` and `REVIEW_R2.md` in this folder), for review round 3. Designed to user decisions F17 and F20 (voiced forced calls, `voiced: true`, voicing only what the call opens), F18 (the flag-reward door fix), F19 (`unlockDoor`, a persistent door unlock from a mapping) and F10 (the `silence` playlist), committed in 57d3d237. Companion to `../stage_4/objectives_tasks.md` ("S4"), which holds the tasks, globals, mappings and forced scenes; this document holds the space.
 
 Inputs: as S4 §0, plus `story_dev_prompts/05_room_layout_design.md`, the `mission-puzzle-chains` skill (lock order, cumulative kit, the silent-failure bug sweep), the `mission-room-dressing` skill (layout constraints only: north wall two tiles, square props, NPCs clear of furniture, interactables 32 px apart), `README_scenario_design.md` (grid units, room types, door rules, authoring rules), `tools/pass2/PASS2_LESSONS.md`, and the engine (`core/rooms.js`, `systems/doors.js` via the README's rules, `systems/interactions.js`, `systems/npc-manager.js`, `systems/npc-hostile.js`, `systems/unlock-system.js`, `app/controllers/break_escape/games_controller.rb`, `app/models/break_escape/game.rb`).
 
@@ -97,7 +97,7 @@ Room types are placeholders. No shipped room type is a records warehouse; the ne
 - **Size and doors.** 4×2 (20×10 tiles), the warehouse floor. S: the dock (shutter, at the room's west end, where the dock meets it). W: the reading room (open). E: the server closet (open). No lock: here the guard is the obstacle.
 - **Lighting.** Motion-sensor strips that come on one bay at a time as the player walks; the shredder louder here.
 - **NPCs.**
-  - `old_coyote` (person) on a patrol down two long aisles between shelving bays: `patrol.waypoints`, `waypointMode: "sequential"`, `loop`, `los` with `angle` about 120 and `range` about 150 px, `challengeOnSight` (`rooms: ["open_stacks"]`, `skipIfGlobal: "old_coyote_told"`) mapped to a person-chat challenge: talk past (any cover), "[Tell him the truth.]" (`old_coyote_told`, then `setVisible: false`: "I'll be in the truck."), or a fight. `globalVarOnKO: "old_coyote_ko"`. On `m01_maya_ko` after flag 1: `patrolOverride` to a tile **beside** the reading-room door, never on it, so his body can't block route B (review m5), and HaX's text "Tran's just sent the guard to your door."
+  - `old_coyote` (person) on a patrol that crosses the room's west end (between the shutter and the reading-room door, route B's seven-tile crossing) on every lap and returns down the long aisles past the H&L boxes (review m-R2-7): `patrol.waypoints`, `waypointMode: "sequential"`, `loop`, `los` with `angle` about 120 and `range` about 150 px, `challengeOnSight` (`rooms: ["open_stacks"]`, `skipIfGlobal: "old_coyote_told"`) mapped to a person-chat challenge: talk past (any cover), "[Tell him the truth.]" (`old_coyote_told`, then `setVisible: false`: "I'll be in the truck."), or a fight. `globalVarOnKO: "old_coyote_ko"`. On `m01_maya_ko` after flag 1: `patrolOverride` to a tile **beside** the reading-room door, never on it, so his body can't block route B (review m5), and HaX's text "Tran's just sent the guard to your door."
   - `archive_guard` (person, hidden, the guard Tran calls in on `m01_maya_ko`): not hostile while hidden. His own mapping on `global_variable_changed:tran_alerted` (and a catch-up on `room_entered:open_stacks` with `globalVars.tran_alerted`) shows him by the shutter and opens a one-line person-chat ("Hey! Stay where you are.") that ends `#hostile:archive_guard`, so no hidden NPC is ever hostile (review m10). Needs a name and sprite (S4 P14).
 - **Objects.** Shelving bays of client deposits (dressing); `hl_box` (Harwick & Lowe's dead files), a container with `lockType: "password"`, `requires` the file number from flag 2 (on the drop terminal's screen and in HaX's ledger read); `contents`: `hl_placing_sheet` (notes; `onRead` `setVariable: { "sleeper_shortlist": true }`). A bay label beside it ("HARWICK & LOWE, EXEC SEARCH (CLOSED). RETENTION 25 YRS.") makes the boxes findable before the number.
 - **Tier 1 here.** `m01_maya_ko` (the reroute, the called guard); `m05_torres_turned` (Torres rings as the boxes are opened after flag 2).
@@ -118,7 +118,7 @@ Room types are placeholders. No shipped room type is a records warehouse; the ne
 - **Objects** (the drop terminal is a reading desk with the field kit on it; review D-13 thinned this room):
   - `field_laptop`: `vm-launcher` (the attack VM).
   - `drop_terminal`: `flag-station`, `acceptsVms: ["catalogue_server"]`, `flagRewards`: `[set_global flag1_submitted, set_global flag2_submitted]`.
-  - `drop_terminal_screen`: one readable with stacked `textVariants`, most advanced first: the sale line on `invoice_booked`; the ledger after `flag2_submitted` (WREN's entry, the H&L source code and file number, Torres' line by `m05_final_choice`); the catalogue after `flag1_submitted` (the Series R shelf marks and the coded line "salvage cage: access ****"); "Public catalogue only." before. Reading it adds the text to the notepad (the readable default), which is how the coded line travels with the player to Act 3 (review D-03, M7).
+  - `drop_terminal_screen`: one readable with stacked `textVariants`, most advanced first: the sale line on `invoice_booked`; the ledger after `flag2_submitted` (WREN's entry, the H&L source code and file number, Torres' line by `m05_final_choice`); the catalogue after `flag1_submitted` (the Series R shelf marks); "Public catalogue only." before. **Every variant from flag 1 on ends with the coded salvage line** ("salvage cage: access ****"), so no later variant hides it. The line also reaches the notepad on every route from HaX's `flag1_read` (`#add_note`), and her keypad topic quotes it (review B-R2-1).
   - `case_file`: readable; HaX's case file (the order's photograph, the wall's cards, the raid team), with the tagged-payments page as a `textVariants` section on `m06_monitoring_enabled`.
   - `notebook_scan`: readable, a course code on the label; `onRead` sets `notebook_read`. Two tiles from the case file. It stays its own object because `notebook_read` has to come from reading this scan, not the case file.
   - microfiche reader, public catalogue terminal (dressing; "Series R: no records").
@@ -130,14 +130,14 @@ Room types are placeholders. No shipped room type is a records warehouse; the ne
 - **Size and doors.** 2×2. S (south-west corner): the reading room. E (2.5 tiles down): the cage gate, `rfid`, `requires: "stacks_card"`. W (2.5 tiles down): Sorensen's office, `password`, a code nobody has (HaX's `unlockDoor` on the deck). N (north-west corner): the tape room, `rfid`, `requires: "tape_room_reader"`. All four in view from the middle of the room.
 - **The cage front.** The east wall below the gate is a mesh line with a **hatch counter**: a counter half a tile deep with collision from about x 7.0 to 7.5, y 4 to 7, and a sealed strip behind it (x 7.5–9, y 4–7) where Sorensen works. The gate is above the strip at the top of the east wall, reached from the player's side. Strip and counter are collision rectangles in the new room map (as `room_uni_lecture`'s seat rows).
 - **Lighting.** The cage front lit hard white like a shop counter; the aisle dark until the strips catch it.
-- **NPC.** `sorensen_hatch` (person) in the strip, facing west across the counter.
+- **NPC.** `sorensen_hatch` (person) in the strip, behind the counter. A static sprite shows its first idle frame, which faces south (`npc-sprites.js:66-70, 143-151`), so she is set `facePlayer: false` (m02's Mr Pryce, `m02 scenario.json.erb:1732-1736`) and reads as bent over her work at the counter; a west-facing static sheet is the dressing pass's option (review m-R2-4).
   - **Reach (review B1).** `behavior.staticSprite: true`, `behavior.immovable: true`, with the default full-sprite collision body (`npc-sprites.js:91-107`), placed so the body's west edge meets the counter's player-side edge (centre about x 8.25 for an 80 px sprite). The engine then measures reach from the player's body centre to the nearest point of her body (`npc-reach.js`), which is under 32 px from a tile at the counter. A static sprite shows one frame; her talk portrait (`spriteTalk`) works as usual. **Fallback** if the browser check fails: a `hatch_bell` object on the counter whose `triggerOnInteract` sets `hatch_bell_rung`, and her own mapping on that global opens her person-chat (a mapping-opened conversation needs no reach, and she stays the host, so `#clone_keycard` still reads her `rfidCard`).
   - `koImmune: true` ("behind the mesh"). `rfidCard: { card_id: "stacks_card", rfid_protocol: "MIFARE_Classic_Custom_Keys" }` (m08's harder clone, the night's second). `#clone_keycard:stacks_card` is offered on **every** branch of her hatch knot and as a repeatable hub choice ("[Lean on the counter while she stamps.]"), because nothing else can clone that card.
   - Her hatch knot sets `hatch_talked` at the top, plays the bluff and the recognition, HaX's two bin lines, the bin buttons (`#give_item` of the pulled file from her `itemsHeld`, `bin_chosen`, `cage_bin`), and "Take the print if you like."
   - Hidden on `global_variable_changed:cage_opened`, **and** by a relay on `room_entered:restricted_stacks` with `globalVars.cage_opened`, for Victoria's route where the gate can open before this room has loaded (review M6). NPC visibility persists across reloads (`state-sync.js:13, 82`).
 - **Objects.**
-  - `sorensen_stamp`: on the hatch shelf on the player's side, about (6.5, 4.5); `hasFingerprint: true`, `fingerprintOwner: "Margaret Sorensen"`, `fingerprintDifficulty: "medium"`, a candidates list of the archive's staff.
-  - `hatch_bin_near`, `hatch_bin_far`: the two bins at the shredder's mouth, in the strip (seen, not used); `spriteVariants` on `cage_bin` (the one not saved shows empty) and `observationVariants` naming each (Derek's file; the letters, or on `m08_nightshade_tidied` Nightshade's copy), with "She's three boxes from the bins." on `flag2_submitted && !cage_opened` (review D-04).
+  - `sorensen_stamp`: on the hatch shelf on the player's side at the counter's south end, about (6.5, 6.5), a tile clear of her body (review m-R2-4); `hasFingerprint: true`, `fingerprintOwner: "Margaret Sorensen"`, `fingerprintDifficulty: "medium"`, a candidates list of the archive's staff. Its `observationVariants` carry the purge line on `flag2_submitted && !cage_opened`: "Her stamp's warm. She's three boxes from the bins." (moved from the bins, which sit out of reach behind her).
+  - `hatch_bin_near`, `hatch_bin_far`: the two bins at the shredder's mouth in the strip, behind her (seen, not examined: her body fills the strip and the bins are beyond the 32 px object reach); `spriteVariants` on `cage_bin` show which one went in. HaX's two bin lines in the hatch conversation name them, so nothing depends on examining them.
   - Binders and shelving along the west wall, either side of the office door (dressing; "past the binders").
 - **Tier 1 here.** `m08_nightshade_tidied` (the far bin and its button); `m03_victoria_fate` (the hatch can be skipped).
 - **Tasks here.** `enter_restricted_stacks`, `talk_at_the_hatch`.
@@ -187,7 +187,7 @@ Room types are placeholders. No shipped room type is a records warehouse; the ne
 - **Size and doors.** 2×1 (10×6 tiles): a mesh pen smaller than the tape room in front of it (review D-08). S: the tape room (`password`; Gary rings at the first attempt on `m02_gary_protected`).
 - **Lighting.** Tomb Beta's server fans and status lights, the only warm thing in the building; crates in the dark.
 - **NPCs.** None. The identity scene, the read and Tesseract's call are phone scenes heard here.
-- **Objects**, two tiles apart along the four floor rows (x about 1.5, 3.5, 5.5, 7.5, 9):
+- **Objects**, spaced along the four floor rows at about x 1.5, 3, 4.5, 6, 7.5 (a tile and a half apart, clear of the side walls); stage 9's `slot_audit.py` decides the final spots (review m-R2-8):
   - `tomb_beta_rack`: the server itself (dressing, with an `observations` line).
   - `field_kit_link`: `vm-launcher` (the same attack VM as `field_laptop`), on a crate beside the rack.
   - `tomb_beta_station`: `flag-station`, `acceptsVms: ["tomb_beta_server"]`, `flagRewards: [set_global flag3_submitted, set_global flag4_submitted]`.
@@ -351,7 +351,7 @@ Positions are tiles in the room (the sprite's centre; the feet sit about a tile 
 | `old_coyote` | `open_stacks` | person, patrol | two long aisles | `old_coyote_ko`; drops the dock key | `los` + `challengeOnSight`; leaves on `old_coyote_told`; override tile beside the reading-room door |
 | `archive_guard` | `open_stacks` | person, hidden, non-hostile until his own conversation turns him | by the shutter | – | only on `m01_maya_ko` after Tran sees the player; needs a name and sprite |
 | `jesse_tran` | `server_closet` | person | (2.5, 3.5) at the console | `tran_ko` + HaX mapping for `tran_outcome` | `los` + `challengeOnSight` on `m01_maya_ko` |
-| `sorensen_hatch` | `restricted_stacks` | person, **static sprite**, immovable | about (8.25, 5.5), body edge at the counter | `koImmune: true` | `rfidCard` (MIFARE custom keys), clone on every branch; hides on `cage_opened` (and on entry if already open) |
+| `sorensen_hatch` | `restricted_stacks` | person, **static sprite**, immovable, `facePlayer: false` | about (8.25, 5.5), body edge at the counter | `koImmune: true` | `rfidCard` (MIFARE custom keys), clone on every branch; hides on `cage_opened` (and on entry if already open) |
 | `sorensen` | `restricted_cage` | person | (6.5, 4.5), at the feed | `sorensen_ko`; HaX sets `sorensen_fate` unless `talked`; drops her card only | shown on entry unless `sorensen_ko` |
 | `sorensen_door` | `restricted_cage` | person, hidden | 500,500 | `koImmune: true` | hosts Victoria's door scene; holds the two files |
 | `alpha_recording` | `tape_room` | person, hidden | 500,500 | n/a | the clip's speaker (person-chat, TTS) |
@@ -386,7 +386,7 @@ Stage 1 §11's engine list: items 1–15, then stage 3's items 16–29 (MC §11 
 | 1 | Locks opened by a flag reward and by an ink global | **works** with F19 (round 1) | A flag carries one reward (`games_controller.rb:2160-2167`) and its `unlock_door` opened the station's own room (~2166, ~2233; being fixed as F18). With F19 a HaX mapping keyed on the flag's or the deck's global unlocks the door persistently (`unlockDoor`, S4 §4 rows 1, 2b, 5). Fallback if F19 lands differently: HaX's ink `#unlock_door` with `unlockable` (`chat-helpers.js:71-97`, `game.rb:1246-1270`), retired on entering the room. |
 | 2 | Flag 2 on its own station | not used | One station per machine (§9). Stage 1's option is declined: a second station accepting the same VM would split one flag's submission point. |
 | 3 | A call that survives being closed | **works** | F14: `disableClose` honoured for Esc and the back arrow; `resume: true` (`npc-manager.js:1148-1160`); README "Forced phone calls". |
-| 4 | A second speaker in a phone thread, shown and voiced | shown: **works**; voiced: **works with F17** | `otherSpeaker()` draws a registered name over the bubble (`phone-chat-ui.js:665-676`). Phone text wasn't voiced (`phone-chat-ui.js:232-260`); F17 adds a key that voices a forced call per speaker, used on the Recruiter's call, the identity scene and Tesseract's call (S4 §6.7). |
+| 4 | A second speaker in a phone thread, shown and voiced | shown: **works**; voiced: **works** (F17, F20) | `otherSpeaker()` draws a registered name over the bubble (`phone-chat-ui.js:665-676`). F17's `voiced: true` voices each line in its speaker's voice, if the speaker is registered (`netherton` in the start room; carried in playtest segments). Under F20 only the voiced call's knot and its diverts are voiced, not the host's whole thread; narration in a phone thread stays silent, so the scenes use HaX's asides instead (S4 §6). |
 | 5 | Two calls due on one walk | **works** | A `delayMs` mapping waits while any minigame or conversation is open, retrying every 500 ms (`npc-manager.js:612-620`), so HaX's Beat 2.7 call and Torres' follow each other. Pending delays aren't saved: room-entry backstops (S4 §5). |
 | 6 | The cage counter | **pattern** | An NPC talks only in its own room and within 32 px (`constants.js:65`): `sorensen_hatch` is a static-sprite NPC behind the counter whose body edge reaches it, so the body-edge reach applies (`npc-sprites.js:91-107`, `npc-reach.js`); `koImmune` (F14); swapped for `sorensen` in the cage on `cage_opened`. Fallback: a hatch bell whose global opens her conversation by mapping (review B1). Browser check at stage 9. |
 | 7 | Sorensen non-combat | **works** | NPCs are non-hostile by default; she fights back only if attacked (as any friendly NPC). The hatch record can't be attacked (`koImmune`). |
@@ -442,7 +442,7 @@ The 05 prompt's technical checklist, restated for the current engine. Stage 9 ru
 
 S4 §14 holds the full list (P1–P20). The ones that come from the layout:
 
-- **P1** Tomb Beta's server, its station and the four phone scenes move into the salvage cage, off the tape room; the shelf-code legend is in the tape room.
+- **P1** Tomb Beta's server, its station and the three phone scenes heard there (the identity scene, flag 4's read, Tesseract's call) move into the salvage cage, off the tape room; the shelf-code legend is in the tape room.
 - **P2** The card opens the cage gate; the print opens the plan cabinet.
 - **P3** Sorensen is three records: the hatch one a static sprite and `koImmune`, the cage one holding only her card, a hidden `koImmune` one for Victoria's door scene.
 - **P4** The cage is its own room: HaX's line is "…or walk out of this cage".
@@ -495,3 +495,26 @@ Reviews: `REVIEW_R1_PUZZLES.md` (4 blockers, 7 majors, 10 minors) and `REVIEW_R1
 | Other design findings (D-02, D-05–D-07, D-09–D-12, D-15–D-18) | | Fixed in S4 | S4 §16 |
 
 **Counts:** across both reviews, 39 findings: 36 fixed, 1 superseded by F17 (D-07), 1 accepted with a check (m9), 1 recorded for the user (m6). None withdrawn.
+
+## 15. Review round 2 outcomes
+
+Review: `REVIEW_R2.md` (B-R2-1; M-R2-1 to M-R2-4; m-R2-1 to m-R2-8), with the orchestrator's rulings and user decision F20. All 39 round 1 findings were confirmed as landed. S4 §17 records the same outcomes from the objectives side.
+
+| ID | Sev | Outcome | Where |
+|---|---|---|---|
+| B-R2-1 | blocker | Fixed (ruling): HaX's `flag1_read` logs the coded line with `#add_note`; every screen variant from flag 1 on repeats it; her keypad topic quotes it | §3.5; S4 §4 row 7, §7.1 topic 5, §8 |
+| M-R2-1 | major | Fixed (ruling): `cage_opened` follows `door_unlocked_by_npc` on Victoria's route; an in-session retry and a `game_loaded` backstop re-issue the unlock | S4 §4 row 2b, §5 |
+| M-R2-2 | major | Fixed (ruling): `cooldown: 0` on both `in_cage` setters; `!in_cage` dropped from ring (a) | S4 §4 row 3, §5 |
+| M-R2-3 | major | Resolved by F20: the scenes stay on their hosts; only the calls' knots are voiced; narrator lines become HaX's asides; recounted at about 66 | §10 item 4; S4 §6, §6.7 |
+| M-R2-4 | major | Fixed (ruling): S6 and S7 start in `tape_room`; `--carry-npc netherton`, and for S7 also `closing_debrief`, `kowalczyk`, `hax_voice`; a note on 1-GU start rooms flipping door parity | S4 §12 |
+| m-R2-1 | minor | Fixed: scene-opening backstops on `room_entered` only; unlock backstops on `game_loaded` | S4 §4, §5 |
+| m-R2-2 | minor | Fixed: the debrief restarts at its knot after a reload, so it reads `debrief_notice_before` (copied before it opens) and skips answered beats | S4 §5, §6.5 |
+| m-R2-3 | minor | Fixed: the Recruiter's re-rings exclude `nextRoom === 'restricted_cage'` | S4 §6.1 |
+| m-R2-4 | minor | Fixed: `facePlayer: false` (south-facing frame accepted); the purge line moved to the stamp; the stamp at the counter's south end; the bins seen, not examined | §3.6, §8 |
+| m-R2-5 | minor | Fixed: "Two samples. One pen." only on `bin_chosen and cage_bin == "derek_file"` | S4 §7.1 topic 11 |
+| m-R2-6 | minor | Fixed: row 1's wording corrected; in-session retries on `door_unlock_attempt` for the stacks, the gate and the office | S4 §4 rows 1, 2b, 5 |
+| m-R2-7 | minor | Fixed: Old Coyote's round crosses the west end every lap; S4's walking note corrected | §3.3; S4 §11 |
+| m-R2-8 | minor | Fixed: final key names, no fallback wording; P1's "three phone scenes"; the salvage cage's spacing left to `slot_audit.py` | S4 §0, §1; §0, §3.10, §12 |
+
+**Counts:** 13 findings (1 blocker, 4 majors, 8 minors). 12 fixed, 1 resolved by a user decision (M-R2-3, F20). None withdrawn.
+
