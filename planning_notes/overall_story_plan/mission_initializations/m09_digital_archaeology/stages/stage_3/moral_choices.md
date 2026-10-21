@@ -1,6 +1,6 @@
 # m09 Digital Archaeology: Stage 3, moral choices
 
-Stage 3. Author: stage 3 author (Opus), 2026-10-21. Status: round 1 and 2 fixes folded in (§13, §14); user decision F12 (the Alpha-tapes clip is voiced) applied.
+Stage 3. Author: stage 3 author (Opus), 2026-10-21. Status: stage 3 complete. Round 1–3 fixes folded in (§13–§15); user decision F12 (the Alpha-tapes clip is voiced) applied.
 
 Inputs: `../stage_0_initialization.md`; `../stage_1/story_arc.md` (beats cited as "Beat 2.4", its §8 choice list, §11 locks); `../stage_2/storytelling_elements.md` ("SE"); `../../../finale/FINALE_ARC.md` ("FA") §1–9, §13, §15; `story_dev_prompts/03_moral_choices.md`; the `npc-dialog-review` skill (§2d, "choices that matter"), the `mission-puzzle-chains` skill (§3a, "are the mission's own choices actually required"), `README_ink_best_practices.md` "Making Choices Matter", `docs/agents/CARRY_OVER_PLAN.md` §2.6 (imports never gate completion). For m10's side of each payoff, m10's stage 2 §2.2–2.3 (Tesseract's case and the three exchanges). VM flags appear only by story meaning.
 
@@ -124,7 +124,8 @@ HaX's boast is said where the Recruiter hears it, and she dismisses it; that is 
 
 1. The answer: **[Give me the name. Let the deck go.]** or **[No. Keep your name.]**
 2. After a yes, she names Halina Kowalczyk (with N-09's line), hangs up and fires the wipe. HaX: "She's watching the deck. Pull her file and we get half her people. She warns the rest, and Kowalczyk runs." Then **[Leave it. Let it wipe.]** (`taken`, `deck_pulled = none`) or **[Pull her file anyway.]** (`double_crossed`, `her_file`).
-3. After a no (or the hang-up of §3.3): "Then I'll tidy my own desk. *(beat)* Gone. Goodnight, agent." She wipes her own file first and drops off, sure it's gone. HaX: "She watched the counter. Not the copy. One of them. Now." (R2-12: the player sees why she believes it.) Then **[Her file.]** (`named`, `her_file`) or **[The Alpha tapes.]** (`refused`, `alpha_tapes`).
+3. **After a hang-up** (§3.3), with no Recruiter line, since the player has hung up before her offer (R3-01). Narrator: "The deck's counter starts running." HaX: "She's wiping it. She thinks it's gone." Then HaX's line from above: "Her file is her network, all of it. The Alpha tapes are him teaching, recorded. He teaches what he'll do. If he built the bunker the way he taught it, it's on there." Then: "One of them. Now." Then **[Her file.]** (`named`, `her_file`) or **[The Alpha tapes.]** (`refused`, `alpha_tapes`).
+4. After a no: "Then I'll tidy my own desk. *(beat)* Gone. Goodnight, agent." She wipes her own file first and drops off, sure it's gone. HaX: "She watched the counter. Not the copy. One of them. Now." (R2-12: the player sees why she believes it.) Then **[Her file.]** (`named`, `her_file`) or **[The Alpha tapes.]** (`refused`, `alpha_tapes`).
 
 `sleeper_named` is set only when she says the name. There is no "pull nothing" button (§1 change 2).
 
@@ -141,7 +142,7 @@ HaX's boast is said where the Recruiter hears it, and she dismisses it; that is 
 
 **Dominance.**
 
-- Take against refuse-with-tapes: certainty against the tapes and a clean record. Certainty is the bigger m10 effect; the tapes are the only route that hears him, and the only one that spares Quintero when WREN is free at the core.
+- Take against refuse-with-tapes: certainty against the tapes and a clean record. Certainty is the bigger m10 effect; the tapes are the only route that hears him, and the only refusal that spares Quintero at the core.
 - Take against double-cross (round 1, C-02): the double-cross buys half her network and costs the name's use. WREN, warned, is gone before the hangar and stands beside Tesseract at the core instead of sitting in cuffs at the briefing. Take keeps WREN in custody from the start (a prisoner with eleven years of the Initiative in her head, and her propped service door never happens) and keeps the player's word; the double-cross trades her custody and the player's word for half a network, and the core still goes cleanly. The Recruiter says the price before the answer, in her own voice.
 - Double-cross against refuse-with-her-file (R2-01): half her network and a WREN you can see coming (off the team, no whodunit, a clean core with nobody wounded), against the whole network and a clean record, with WREN still hidden on the team and a whodunit that can go wrong (a wrong accusation, or Quintero wounded at the core).
 - Refuse-with-file against refuse-with-tapes: her network against his teaching.
@@ -218,7 +219,7 @@ Two linked choices about the finale's argument: was he right nine years ago, and
 >
 > Agent HaX: That's where our watch is. If Voltage's people try that kit again, we see them. *(`m04_voltage_escaped`)* / If what's left of his crew tries it again, we see them. *(`m04_voltage_captured`)* / If Critical Mass tries it again, we see them. *(otherwise, cold starts included)*
 >
-> Agent HaX: Send it and the vendor starts fixing four hundred sites, and we pull the watch. They'll be crawling over that kit, and we can't be in it when they look. *(then, on `m04_disclosure_choice == "full"` or `m04_crew_lost`:)* And Albion's inquiry gets to ask when we knew.
+> Agent HaX: Send it and the vendor starts on a fix for four hundred sites, and we pull the watch. They'll be crawling over that kit, and we can't be in it when they look. *(then, on `m04_disclosure_choice == "full"` or `m04_crew_lost`:)* And Albion's inquiry gets to ask when we knew.
 
 **How disclosure actually runs** (R2-04; the teaching point). A notice starts a clock; it closes nothing tonight. The vendor acknowledges within hours, works to the usual coordinated-disclosure deadline of about ninety days for a fix, and the fix then takes months, often a year or more, to reach industrial sites, some of which never apply it. The watch goes dark at once only because SAFETYNET chooses to pull it: once the vendor is investigating that controller, SAFETYNET's own access in it would be found, and the service won't keep using a hole it has just reported. Every line below keeps to that.
 >
@@ -230,7 +231,7 @@ At the drop terminal, any time before the debrief: **[Send his notice.]** / **[N
 
 **The notice, at the debrief** (new; forced; §1 change 7). If it is still unsent, Netherton hands it to the player straight after the memo stance (below), before the hub, by the same branches (C-15, worst line 5, S3-15):
 
-> Director Magnus Netherton: His notice is still on that box. Send it, and the vendor starts fixing four hundred sites and the Critical Mass watch comes down tonight. *(on `full` or `m04_crew_lost`:)* The inquiry will ask when we knew. Hold it, and he can call us hoarders, and be right. You read it. You decide. I'll sign whichever.
+> Director Magnus Netherton: His notice is still on that box. Send it, and the vendor starts on a fix for four hundred sites and the Critical Mass watch comes down tonight. *(on `full` or `m04_crew_lost`:)* The inquiry will ask when we knew. Hold it, and he can call us hoarders, and be right. You read it. You decide. I'll sign whichever.
 
 **[Send it.]** / **[Hold it.]**
 
@@ -607,7 +608,7 @@ Not made here. FINALE_ARC and stage 0 are the arc-keeper's; m10's files are the 
 
 **m09 stage 1 (`story_arc.md`)**
 
-11. **Beat 2.4 (and SA:187, SA:600):** the m05 deal wording: "sold her the forty-seven" → "let her courier have the forty-seven", and the own-it button "[She's right. I let her courier have the list in the spring.]" (S3-02); the denial button and `denied`; the Recruiter's price, refusal and threat lines as §3.2 (the Architect named, no pronoun for WREN); HaX's boast, the Recruiter's "Nobody has." and HaX's invoice line, all voiced (no private text); step 5's routes (no "pull nothing"); `sleeper_named` on her naming line, with the two resume points (R2-03); "Then I'll tidy my own desk. Gone. Goodnight, agent." and HaX's "She watched the counter. Not the copy." (R2-12); the ledger line booking the sale; the double-cross text at the tape room ("…before your plane landed. It's still in the air.") and Kowalczyk walking off the apron at Helena on landing. Replace the route table with §3.2's four rows.
+11. **Beat 2.4 (and SA:187, SA:600):** the m05 deal wording: "sold her the forty-seven" → "let her courier have the forty-seven", and the own-it button "[She's right. I let her courier have the list in the spring.]" (S3-02); the denial button and `denied`; the Recruiter's price, refusal and threat lines as §3.2 (the Architect named, no pronoun for WREN); HaX's boast, the Recruiter's "Nobody has." and HaX's invoice line, all voiced (no private text); the hang-up form of the tape choice, with no Recruiter line (the counter starts; "She's wiping it. She thinks it's gone."; HaX's file/tapes line; "One of them. Now."; R3-01); step 5's routes (no "pull nothing"); `sleeper_named` on her naming line, with the two resume points (R2-03); "Then I'll tidy my own desk. Gone. Goodnight, agent." and HaX's "She watched the counter. Not the copy." (R2-12); the ledger line booking the sale; the double-cross text at the tape room ("…before your plane landed. It's still in the air.") and Kowalczyk walking off the apron at Helena on landing. Replace the route table with §3.2's four rows.
 12. **Beat 1.2:** Noor's choice as truth against her father's nightly call; warned in time, the held box. No trolley line from HaX (the files are Sorensen's now).
 13. **Beat 2.1 step 6, SA §8 rows 1, 11, 12, Beat 2.6, §7.1 "The archive" row:** Sorensen won't stop for an arrest alone (the separate "arrest" option goes; so does Tran's); the legacy files on her feed table, the clock and HaX's line naming it; the talk lever; a knock-out after `talked` keeps `talked`; "still free" means `left`. Renames: `cage_bin_saved` → `cage_bin`, `tran_stopped` → `tran_outcome` (S3-12).
 14. **Beat 2.2:** HaX's two-button question about Nightshade's file and its price.
@@ -656,7 +657,7 @@ Not made here. FINALE_ARC and stage 0 are the arc-keeper's; m10's files are the 
 ## 12. For the user
 
 1. **Decided (F12, 2026-10-21):** the Alpha-tapes clip is voiced. Two lines, about fifteen seconds, his m07 voice treated as an old recording. Built as an ink conversation voiced by TTS (§9 item 25); the user hears the recording style before it ships.
-2. **For the user to know:** the double-cross now costs the name. A player who takes the Recruiter's name and then pulls her file anyway loses WREN: she is warned, walks off the apron at Great Falls, and waits at the core in m10 instead of in cuffs at the briefing. The Recruiter says so before the choice. It is the largest change in this round, and it changes one m10 branch.
+2. **For the user to know:** the double-cross now costs the name. A player who takes the Recruiter's name and then pulls her file anyway loses WREN: she is warned, walks off the apron at Helena, and waits at the core in m10 instead of in cuffs at the briefing. The Recruiter says so before the choice. It is the largest change in this round, and it changes one m10 branch.
 3. **Tone check on Noor** (§4.2): telling her the truth means she can't ring her father, who is on dialysis in Dearborn, for weeks. It stays off-screen after she leaves except for Netherton's "She asked twice."
 4. **New named character, documents only:** Teresa Villanueva, 41, a union rep at the Butte copper mine (Butte's smelter closed in 1980), on the Social Fabric letters' last page, quoted once, and confirmed warned in Beat 2.7 (§3.1). Grepped: no clash.
 5. **F13** (surrender is a deal with no public trial; arrest is a public trial) touches nothing in m09. Netherton's memo-stance reply "Then he can make that argument in court, and lose it." stays right for the arrest ending and reads as his expectation on the others.
@@ -670,7 +671,7 @@ Reviews: `REVIEW_R1_CHOICES.md` (C-01 to C-15: 9 majors, 6 minors, five worst li
 | ID | Sev | Outcome | Where |
 |---|---|---|---|
 | C-01 | major | Fixed: the Recruiter names "your Architect"; WREN is "my placement" / "them" before the name | §3.2 |
-| C-02 | major | Fixed, my design (orchestrator: "a cost that bites in play"): the double-cross voids the name. She warns WREN; Kowalczyk walks off the apron at Great Falls and is missing from the hangar; in m10 she waits at the core with Tesseract. The Recruiter prices it before the answer. Chosen over the reviewer's option (b) (a fact paid for keeping faith) because it costs the double-cross something the player loses on the night, and keeps take's one advantage (WREN in cuffs) | §3.2, §4.7, §8, §11 changes 1, 5, 27 |
+| C-02 | major | Fixed, my design (orchestrator: "a cost that bites in play"): the double-cross voids the name. She warns WREN; Kowalczyk walks off the apron at Great Falls (superseded: Helena since R2-02) and is missing from the hangar; in m10 she waits at the core with Tesseract. The Recruiter prices it before the answer. Chosen over the reviewer's option (b) (a fact paid for keeping faith) because it costs the double-cross something the player loses on the night, and keeps take's one advantage (WREN in cuffs) | §3.2, §4.7, §8, §11 changes 1, 5, 27 |
 | C-03 | major | Fixed: every cost voiced on the call. The Recruiter: "Say no and I wipe it myself. Same deck, no name."; HaX's "I can beat that wipe." with her dismissal ("Nobody has."), which is also why she drops off sure it's gone. The private text and its engine item are withdrawn | §3.2; §11 change 30 |
 | C-04 | major | Fixed: the invoice priced as a moral cost ("SAFETYNET's in an ENTROPY ledger … He'll quote it at you."), which is what m10 delivers | §3.2, §9 item 33 |
 | C-05 | major | Fixed (ruling): Noor's cost is her father, not her job (the archive is gone by morning on every route). Told, she can't ring him; left, she rings him, unknowing | §4.2 |
@@ -739,3 +740,16 @@ Review: `REVIEW_R2.md` (R2-01 to R2-05 majors, R2-06 to R2-13 minors, five worst
 Also: the take-against-double-cross dominance line restated, since the double-cross's core is now clean: take keeps WREN in custody from the start and the player's word; the double-cross trades both for half a network. Three playtest routes added to change 43.
 
 **Counts:** 13 findings (5 major, 8 minor), plus five worst lines. All 13 fixed (R2-13 in part, as above); none withdrawn.
+
+## 15. Review round 3 outcomes
+
+Review: `REVIEW_R3.md` (R3-01 major; R3-02 to R3-04 minor). Final pass; applied as the orchestrator directed.
+
+| ID | Sev | Outcome | Where |
+|---|---|---|---|
+| R3-01 | major | Fixed: the hang-up gets its own form of the tape choice, with no Recruiter line: the deck's counter starts; HaX, "She's wiping it. She thinks it's gone."; her file/tapes line; "One of them. Now." | §3.2 step 3; §11 change 11 |
+| R3-02 | minor | Fixed: "the only refusal that spares Quintero at the core" | §3.2 dominance |
+| R3-03 | minor | Fixed: Helena in §12 item 2; §13's C-02 row marked superseded | §12, §13 |
+| R3-04 | minor | Fixed: "the vendor starts on a fix for four hundred sites", in HaX's and Netherton's lines | §3.5 |
+
+**Counts:** 4 findings (1 major, 3 minor), all fixed, none withdrawn. Stage 3 is complete.
