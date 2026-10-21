@@ -157,3 +157,7 @@ Rulings: adopt the fixes; the m10 author must play the argument as a cold-start 
 - **m10 stages 1+2 closed 2026-10-21.** Four review rounds (R1 63, R2 41, R3 16, R4 7 findings; one blocker in R1, fixed). 43 proposed FINALE_ARC changes in story_arc §14.
 
 ## Arc-keeper: fold stages 1–2 changes into FINALE_ARC and stage 0
+- Arc-keeper: 30/30 m09 and 43/43 m10 changes applied to FINALE_ARC §1–9, §13 and both stage 0 files; nine further stale copies swept; new §15 (change table, conflicts settled, 7 remaining inconsistencies). m10 imports now 65 (38 + 27) + 9 `completed`; m09 exports 9; m10 `ending` has six values incl. `executed`. Conflicts settled: WREN's goal and the service door; cracker (m10); one-voice rule per mission; speaker button; helper/clue mapping; split start time left to stage 4; `m09_deck_pulled` in m10 tier 2.
+- Remaining inconsistencies 1–4 (stage 1 doc housekeeping) go to the stage 3 authors as their first task; 5 to stage 4; 6–7 to stage 7.
+
+## Stage 3: moral choices (per mission)
