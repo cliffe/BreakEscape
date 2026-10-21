@@ -282,3 +282,7 @@ Orchestrator rulings for the S4–5 milestone fix pass (all four parts):
 - User answers 2026-10-21: **canon confirmed** (Tesseract recruited Nightshade at 23 while chief strategist; stage 6 writes it into the_architect.md and the lore); **use the estimates** for VM timing (no timed run before stage 7; ~7 min per flag stands until playtests).
 - S4–5 milestone fixes (m09, OT §19): 33 fixed; HaX's guarded resume knots (`deck_resume`, `identity_resume`, `hour_read_resume`), home knot shows only "Pick up. I'm ringing you." while a scene is pending; `mirror_job_printout` added; Netherton is `director_netherton`.
 - S4–5 milestone fixes (m10, OT "Stages 4–5 milestone fixes"): A1–A13, A14–A35, B1–B8 and cross-mission items applied. Malhotra's wrong accusation costs the end of HaX's gallery call to static; HaX's flag-4 lines move inside Tesseract's conversation (voiced phone lines ~80); four routes set `lock_guard_known`; lock guard's first-person pointer; she leaves by the gallery's west stair; RL §2.9 raid roster room by room; OT §16 globals inventory. FINALE_ARC follow-ups: 85 → ~80 voiced lines, the flag-4 move, roster ids (for the next arc pass).
+
+
+## Stage 6: lore fragments (per mission)
+- Started: m09 and m10 stage 6 authors (every readable text as final fixed strings, codes and ids, the closing card and credits clauses for m10, m09's CyberChef salvage puzzle, LORE fragments); a bible agent adding the confirmed Nightshade-at-23 canon to the_architect.md and Nightshade's entry.
