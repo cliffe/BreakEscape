@@ -2,7 +2,7 @@
 
 ## 0. Status, sources and conventions
 
-**Stages 4–5 complete** (draft 4, 2026-10-21; round 3's findings folded in, §11; no further review round). Draft 3: round 1's two reviews (`REVIEW_R1_PUZZLES.md`, "F-nn"; `REVIEW_R1_DESIGN.md`, "R1D-…"; §9) and round 2's (`REVIEW_R2.md`, "R2-…"; §10) folded in, with the orchestrator's rulings and user decisions F17–F19 and F10, committed in 57d3d237. Author: stages 4+5 author (Opus). Companion: `../stage_4/objectives_tasks.md` ("OT §n"), which owns aims, tasks, the story-door pattern (OT §4), the clock (OT §6), the voiced calls (OT §13) and the test states (OT §9). Sources as OT §0, plus the prompt `story_design/story_dev_prompts/05_room_layout_design.md`, `mission-puzzle-chains` (lock order, cumulative kit, silent-failure bugs), `mission-room-dressing` (layout constraints only), README "Room Layout System" and "Authoring Rules", and the engine code (§6 cites it). Models: m07 and m08's `scenario.json.erb`.
+**Stages 4–5 complete** (draft 4, 2026-10-21; round 3's findings folded in, §11; no further review round). The stages 4–5 milestone fixes are applied (OT's last section lists them; §2.9, the raid team's roster, is new). Draft 3: round 1's two reviews (`REVIEW_R1_PUZZLES.md`, "F-nn"; `REVIEW_R1_DESIGN.md`, "R1D-…"; §9) and round 2's (`REVIEW_R2.md`, "R2-…"; §10) folded in, with the orchestrator's rulings and user decisions F17–F19 and F10, committed in 57d3d237. Author: stages 4+5 author (Opus). Companion: `../stage_4/objectives_tasks.md` ("OT §n"), which owns aims, tasks, the story-door pattern (OT §4), the clock (OT §6), the voiced calls (OT §13) and the test states (OT §9). Sources as OT §0, plus the prompt `story_design/story_dev_prompts/05_room_layout_design.md`, `mission-puzzle-chains` (lock order, cumulative kit, silent-failure bugs), `mission-room-dressing` (layout constraints only), README "Room Layout System" and "Authoring Rules", and the engine code (§6 cites it). Models: m07 and m08's `scenario.json.erb`.
 
 Conventions: sizes in grid units (GU; 1 GU = 5 tiles wide, 4 tiles of floor tall, plus a 2-tile north wall; README:1618-1639). NPC and object positions are tiles inside the room, `{x, y}`, on the floor (y ≥ 3 in a 2-GU-tall room, y ≥ 2 in a 1-GU-tall one), one free tile around every readable and every door's approach, and no NPC on an interactable's face (README:1834; R1D-M10). Door tiles used below: a north or south door sits at tile x 1 or x 8 of a 10-wide room by parity (stage 9's `predict_door_sides.py` says which); an east or west door at row 2. **A mapping's `setVisible` and scene opening act only on its own NPC** (F-02), so every reveal or hide below is the NPC's own mapping; a NPC in a later room reads a global HaX sets, on its own `room_entered:<own room>`. **A reload respawns the player at the forward post** (F-06), so every reveal also has its `room_entered` form. Every person on a forced scene or the critical path is listed with `koImmune` or with its KO cover. Room ids are working names.
 
@@ -69,14 +69,14 @@ Objects without a template slot are pinned with `position` (README:1773). **The 
 | `projection_desk` | the Council's casualty curve | (11, 3) | `observationVariants` on `m07_debrief_stance === 'hardened'`; otherwise a dark screen |
 | `gate_console` | VM launcher (the field console, `vm_object` as m08) | (14, 3) | its first use sets `gate_console_used` (HaX's mapping on `object_interacted`) |
 | `gate_terminal` | flag station, slice 0 (flag 1), reward `emit_event flag_1_in` (HaX sets `flag1_submitted`; R2-m5) | (16, 3) | `hintOnlyFlags` for 2–4 |
-| `gate_hut` | the gate's guard hut | (18, 6) | sprite variant: dark on `m06_assets_seized` (one of the two empty posts) |
+| `gate_hut` | the gate's guard hut | (18, 6) | sprite variant: dark on `m06_assets_seized` (one of the two empty posts), with the unfinished fence gap beside it drawn on the same variant. The gap is visual only (milestone A30): HaX names it, and no route runs through it |
 | `van_one`, `van_two` | the vans | (1, 3), (1, 7) | decor |
 
 **NPCs** (all in the start room, so every mapping registers at load; every phone NPC and closing-scene NPC is listed here too, F-21):
 
 | NPC (id) | Where | When visible (its own mappings) | KO |
 |---|---|---|---|
-| Netherton (`director_netherton`) | (6, 5) | always. His conversation holds the briefing (`timedConversation`, `waitForEvent: game_loaded`, `skipIfGlobal: briefing_played`, `setGlobalOnStart: briefing_played`; its last line sets `briefing_done`), the silent branch's tether question, and the split's line (OT §6) | `koImmune` |
+| Netherton (`director_netherton`) | (6, 5) | always, at the table all night (there is no gate copy: at the breach he is on the net, in HaX's `breach_call`; milestone A16). His conversation holds the briefing (`timedConversation`, `waitForEvent: game_loaded`, `skipIfGlobal: briefing_played`, `setGlobalOnStart: briefing_played`; its last line sets `briefing_done`), the silent branch's tether question, and the split's line (OT §6) | `koImmune` |
 | HaX in person (`hax_post`) | (3, 5) | always; her calls are the phone NPC `agent_0x99` (listed here), which carries every global mapping | `koImmune` |
 | Nightshade at the table (`nightshade_table`) | (8, 4), uncuffed with a minder, or cuffed | shown, not shown, arrested branches (`game_loaded` with the import condition) | `koImmune` |
 | Nightshade in the van (`nightshade_van`) | (2, 6) | silent or never played | `koImmune` |
@@ -86,9 +86,10 @@ Objects without a template slot are pinned with `position` (README:1773). **The 
 | Quintero (`quintero_post`) | (12, 5), at the map board | until `split_started`; again on `pair_back` until `breach_open` | knockable, `globalVarOnKO: quintero_ko`; every later Quintero copy's reveal carries `!globalVars.quintero_ko` |
 | Kowalczyk (`kowalczyk_post`) | (10, 5), at the case end | as Quintero, unless `taken` or `double_crossed` | knockable, `kowalczyk_ko`; the same guard on her later copies |
 | Arakawa (`arakawa_post`, then `arakawa_gate`) | (11, 7) at the case end; (16, 5) at the gate | the table until `split_started`, then the gate (his call, OT §6) until `breach_open` | knockable, `arakawa_ko`; the same guard |
-| Vector, Phantom (`vector_post`, `phantom_post`) | (14, 7), (15, 7) | `m08_completed` and not wronged (one mapping per import arm) | knockable, `vector_ko`, `phantom_ko` |
+| Arakawa and Nightshade at the blast door (`arakawa_blast`, `nightshade_blast`) | (16, 7), (17, 6), by the door, clear of its approach (17–19, 2) | `nightshade_tethered && breach_open` (their own mappings; milestone A15). `nightshade_van` and `arakawa_gate` hide on `breach_open`. On `officer_out === 'arakawa'` or `arakawa_ko`, `arakawa_blast` stays hidden and `minder_blast` (16, 7) stands by Nightshade instead (the van team holds the door) | `arakawa_blast` knockable, `arakawa_ko`; `nightshade_blast` `koImmune`; `minder_blast` knockable |
+| Vector, Phantom (`vector_post`, `phantom_post`) | (4, 4), (5, 5), at the road end beside Netherton, clear of the table's readables (milestone A10: the alibi has Netherton with them at 02:10) | `m08_completed` and not wronged (one mapping per import arm) | knockable, `vector_ko`, `phantom_ko` |
 | A minder (`minder_post`) | (4, 7) | always (one of SAFETYNET's own; the freeze empties ENTROPY's posts, not ours) | knockable |
-| Ghost (`ghost_phone`), Victoria's line (`victoria_line`), Vance (`vance_phone`), Elena (`elena_phone`) | 500, 500 | phone NPCs, listed here so they hear early events (F-21). `ghost_phone`'s `itemsHeld` holds two `notes` items given by `#give_item` (F21): `ghost_cupboard_code` (`name: "Records cupboard: Ghost's code"`, kept branch) and `ghost_lock_code` (`name: "Outer lock: maintenance code"`, refused branch), each `text` a fixed four-digit string matching the lock's `requires`; no `|`, `#`, `//`, `{`, `}` | phones |
+| Ghost (`ghost_phone`), Victoria's line (`victoria_line`), Vance (`vance_phone`), Elena (`elena_phone`), the Recruiter (`recruiter_phone`) | 500, 500 | phone NPCs, listed here so they hear early events (F-21); each `start` (home) knot is gated and silent, and every voiced ring names a `targetKnot` (OT §13). `ghost_phone`'s `itemsHeld` holds two `notes` items given by `#give_item` (F21): `ghost_cupboard_code` (`name: "Records cupboard: Ghost's code"`, kept branch) and `ghost_lock_code` (`name: "Outer lock: maintenance code"`, refused branch, the hospitals answer only; the trust answer names the guard and gives no item, OT §4.2). Each `text` is the four digits alone, a fixed string matching the lock's `requires`; no `|`, `#`, `//`, `{`, `}`. `recruiter_phone` (milestone A12) sends only the 06:00 text on `double_crossed` ("I'll remember the shape of you."), unvoiced; it never rings | phones |
 | `six_oclock`, `hearing`, `citadel` | 500, 500 | hidden closing-scene NPCs; each opens its own scene (OT §4.7) | – |
 
 ### 2.2 `blast_tunnel` (2×1)
@@ -104,7 +105,7 @@ Objects without a template slot are pinned with `position` (README:1773). **The 
 | Copy | Visible when | Behaviour |
 |---|---|---|
 | `tunnel_guard` | Helena's plans used (default), or the door announced the player | a short patrol across the post (4, 3) → (6, 4), `los.challengeOnSight`. In a 1-GU corridor this is a timing pass or a talk, not a sneak; HaX's line doesn't promise sneaking (R1D §2d″) |
-| `tunnel_guard_kettle` | `nightshade_tethered` (the crank) | at the kettle (6, 2), facing away, LOS off |
+| `tunnel_guard_kettle` | `nightshade_tethered` (the crank) | at the kettle (7, 2), facing away, LOS off; one free tile from `tunnel_rota` (5, 2) (milestone A33) |
 | neither | Nightshade's map used, or the shown branch's override | the post is empty; a cold mug on the desk |
 
 Both copies are knockable (`tunnel_guard_ko`); nothing hangs on them.
@@ -125,18 +126,17 @@ Both copies are knockable (`tunnel_guard_ko`); nothing hangs on them.
 | `clock_security` | the duty screen (countdown) | (9, 3), east wall | |
 | `door_log` | the monitoring desk's door log | (7, 5), `as-type:cctv_monitors` | readable; `onRead` sets `clue_door_log` and HaX volunteers the read (`door_log_given`); on `taken` no 02:10 entry |
 | `duty_handset` | the desk phone | (5, 5) | rings (text "Ringing.") while `!ghost_call_done`; a click opens Ghost's call (OT §4.2) |
-| `records_cupboard` | the old records cupboard, `lockType: pin` | (1, 4), west wall | the kept branch's "east door" and Vector's "sealed door", in one place. Code from Ghost (kept; `ghost_cupboard_code`, given by `ghost_phone`) or Vector (`vector_cupboard_code`, given by `vector_so`), each a `notes` item given with `#give_item` (F21; not `#add_note`); the cracker also opens it. Contents: the gallery's shift rota (`gallery_rota`, readable; names the lock guard; `onRead` sets `lock_guard_known`) and the night's alarm log (lore) |
+| `records_cupboard` | the old records cupboard, `lockType: pin` | (1, 4), west wall | the kept branch's "east door" and Vector's "sealed door", in one place. Code from Ghost (kept; `ghost_cupboard_code`, given by `ghost_phone`) or Vector (`vector_cupboard_code`, given by `vector_so`), each a `notes` item given with `#give_item` (F21; not `#add_note`); the cracker also opens it. Contents: the gallery's shift rota (`gallery_rota`, readable; names the lock guard; `onRead.setVariable` sets `gallery_rota_read` and `lock_guard_known`, OT §4.5) and the night's alarm log (lore). Ghost's and Vector's codes are the same four digits (one PIN lock) |
 | `fitter_locker` | the shift fitter's locker, `lockType: key`, pickable, easy pins | (1, 6), west wall | contents: the fitter's spare `tg_power_room_card` keycard (F-08b: the no-talk route through the workshop is a return trip here, and spends the pick) |
 
 **NPCs.**
 
 | NPC | Where | When | KO |
 |---|---|---|---|
-| `duty_guard` | patrol (4, 4) → (6, 8), clear of every object and of `kowalczyk_ahead_so` (R2-m6) | always; faster on `security_alerted` | knockable, `duty_guard_ko` |
+| `duty_guard` | patrol (4, 4) → (6, 8), clear of every object and of `kowalczyk_so` (R2-m6) | always; faster on `security_alerted` | knockable, `duty_guard_ko` |
 | `duty_guard_b` | at the monitors (8, 4) | unless `m06_assets_seized` | knockable |
-| `kowalczyk_ahead_so` | (6, 7) | the tether branch's peel-off, a room early; carries `!globalVars.kowalczyk_ko` | knockable, `kowalczyk_ko` |
-| `vector_so` | (3, 5), beside the cupboard (not in front of it) | Vector present: reveals itself on `room_entered:security_office`, gives the code in his ink (`#give_item:notes:vector_cupboard_code`), hides itself on `room_exited` | knockable, `vector_ko`. `itemsHeld`: the notes item `vector_cupboard_code` (`name: "Records cupboard: Vector's code"`, `text`: the four digits as a fixed string matching `records_cupboard`'s `requires`, e.g. "Records cupboard code (Vector): <four digits>"; no `|`, `#`, `//`, `{`, `}`) |
-| `arakawa_ahead_so` / `quintero_ahead_so` | (4, 7) | per the staging rule (FA §4.0), with their KO guards | knockable |
+| `vector_so` | (3, 5), beside the cupboard (not in front of it) | Vector present: reveals itself on `room_entered:security_office`, gives the code in his ink (`#give_item:notes:vector_cupboard_code`), hides itself on `room_exited` | knockable, `vector_ko`. `itemsHeld`: the notes item `vector_cupboard_code` (`name: "Records cupboard: Vector's code"`, `text`: the four digits alone, a fixed string matching `records_cupboard`'s `requires` and the same digits as Ghost's; no `|`, `#`, `//`, `{`, `}`; milestone A34) |
+| The raid team (`kowalczyk_so`, `arakawa_so`, `quintero_so`) | §2.9 | §2.9's roster | §2.9 |
 
 ### 2.4 `workshop_floor` (2×2)
 
@@ -154,7 +154,7 @@ Both copies are knockable (`tunnel_guard_ko`); nothing hangs on them.
 | Gary, protected (`gary_consultant`) | (3, 4), inside the stair's landing | `m02_completed and m02_gary_protected`, on `room_entered:workshop_floor` | knockable, `gary_ko` |
 | Gary, unprotected (`gary_tech`) | (8, 5), at the next bench | `m02_completed and not m02_gary_protected and not m02_exposed_hospital` | knockable; a cloneable `tg_power_room_card`; `"unlockable": ["power_room"]` |
 | `workshop_guard` | patrol (2, 8) → (7, 8) | always | knockable |
-| `kowalczyk_ahead_ws` | (8, 3) | on `wren_warned` (the tripwire), with her KO guard | knockable |
+| The raid team (`kowalczyk_ws`, `arakawa_ws`, `quintero_ws`) | §2.9 | §2.9's roster | §2.9 |
 
 ### 2.5 `power_room` (2×2)
 
@@ -168,12 +168,13 @@ Both copies are knockable (`tunnel_guard_ko`); nothing hangs on them.
 
 | NPC | Where | When | KO |
 |---|---|---|---|
-| Wendell Briggs (`wendell`) | (6, 5), at the panel | default | knockable, `wendell_ko`; his KO rings the phone voice (OT §4.9) |
+| Wendell Briggs (`wendell`) | (6, 5), at the panel | default only (`!m04_voltage_captured && !m04_voltage_escaped`); not on the captured branch, where Voltage does the room's work (milestone A9) | knockable, `wendell_ko`; his KO rings the phone voice (OT §4.9) |
 | Wendell, far panel (`wendell_far`) | (8, 8) | the escaped branch without Static | knockable |
 | Voltage, captured (`voltage_power_captured`) | (4, 5), cuffed in front | `m04_voltage_captured`, on `room_entered:power_room` | `koImmune` |
 | Voltage, escaped (`voltage_power`) | (5, 4), at the switchgear | `m04_voltage_escaped` | knockable, `voltage_ko`; hostile only if the talk fails (`#hostile`) |
 | Static (`static_power`) | (7, 6) | `m04_static_left and not m04_static_left_alone` | knockable |
-| The phone voice | – | Vance, else Elena, else HaX (MS-07), rung per OT §4.9; unused with captured Voltage in the room | phones |
+| The phone voice | – | Vance, else Elena, else HaX (MS-07), rung per OT §4.9 (`targetKnot: cut_call`, `voiced: true` on the ring and the re-ring); on the default branch it texts Wendell's cost on the first entry, before his menu (milestone A11); unused with captured Voltage in the room | phones |
+| The raid team (`kowalczyk_pr`, `arakawa_pr`, `quintero_pr`) | §2.9 | §2.9's roster | §2.9 |
 
 ### 2.6 `server_hall` (4×2)
 
@@ -202,9 +203,8 @@ Both copies are knockable (`tunnel_guard_ko`); nothing hangs on them.
 | Dr James Mercer (`mercer`) | (11, 6) | Mercer at large; one line, then `#hostile` | knockable, `mercer_ko` |
 | `hall_guard_a` | patrol (2, 6) → (8, 6) (west half) | **every branch** (M-08) | knockable |
 | `hall_guard_b` | patrol (13, 8) → (17, 8) (east half, past the hatch) | every branch | knockable |
-| Victoria on the line (`victoria_line`, listed at the forward post) | – | `m03_victoria_fate === 'arrested'`: rings on `flag2_submitted` while in the hall; one re-ring on `gallery_open` while `!victoria_line_done`; abandoned with its first-line defaults on `room_entered:gallery` | phone (voiced, OT §13) |
-| Kowalczyk peeling off (`kowalczyk_hall`) | (15, 6) | whodunit running, she is free, not tethered; hides herself after her line | knockable |
-| Arakawa or Quintero (`arakawa_hall`, `quintero_hall`) | (4, 8) | per the staging rule, with their KO guards | knockable |
+| Victoria on the line (`victoria_line`, listed at the forward post) | – | `m03_victoria_fate === 'arrested'`: rings on `flag2_submitted` while in the hall (`targetKnot: victoria_call`, `voiced: true`, `resume: true`); one re-ring **after HaX's `gallery_open` call closes**, on `conversation_closed:agent_0x99` with `gallery_open && !victoria_line_done && !hax_jammed`, `onceOnly`, the same keys (milestone A4: ringing on `gallery_open` itself would cut HaX's call, which ends on "Sterling's still on the line. She has something on Vos."); abandoned with its first-line defaults on `room_entered:gallery` | phone (voiced, OT §13) |
+| The raid team (`kowalczyk_hall`, `arakawa_hall`, `quintero_hall`) | §2.9 | §2.9's roster; Kowalczyk's peel-off line is here on the default branch | §2.9 |
 
 ### 2.7 `gallery` (2×1)
 
@@ -214,7 +214,7 @@ Both copies are knockable (`tunnel_guard_ko`); nothing hangs on them.
 
 **Five ways through** (OT §4.5): the cracker while the guard's cone is off the keypad; the fingerprint plate; the code card; from inside; Ghost's code. **Why PIN** (accepted by the orchestrator): a door takes one lock type, and with PIN every way is the engine's own persisted unlock path.
 
-**Objects.** `clock_gallery` (the lock panel, (6, 2), on the wall two tiles west of the lock, not under it); `lock_keypad_plate` (the keypad's face plate, (9, 3) on the east wall beside the lock, **dustable**: shows the four worn keys; sets `keypad_dusted`; F-07); `farah_chair` ((4, 5), Farah's post, off the patrol row; a coat on an empty chair, visible on `imran_outcome === 'talked_round'`); `slit_window` ((3, 2), decor; the grey head below).
+**Objects.** `clock_gallery` (the lock panel, (6, 2), on the wall three tiles west of the lock at (9, 2), not under it; milestone A32); `lock_keypad_plate` (the keypad's face plate, (9, 3) on the east wall beside the lock, **dustable**: shows the four worn keys; sets `keypad_dusted`; F-07); `farah_chair` ((4, 5), Farah's post, off the patrol row; a coat on an empty chair, visible on `imran_outcome === 'talked_round'`); `slit_window` ((3, 2), decor; the grey head below).
 
 **NPCs.** Up to seven in 40 floor tiles, so they are spread along x 2–7 with the two approaches clear. This room is a talk or a fight, never stealth (R1D §2d″).
 
@@ -223,11 +223,11 @@ Both copies are knockable (`tunnel_guard_ko`); nothing hangs on them.
 | Victoria (`victoria_gallery`) | (5, 3) | `recruited`, or `escaped` without the threat | knockable, `victoria_ko`; `"unlockable": ["core"]` |
 | Victoria, the threat (`victoria_threat`) | (5, 3), pistol held low (her own sprite) | `escaped and m03_sterling_on_call_seen` (a second copy, F-22) | knockable, `victoria_ko` |
 | Pieter Vos (`vos`) | (5, 3) | `ko`, `""`, or `arrested` | knockable, `vos_ko`; `"unlockable": ["core"]`; holds his own code card (F-12) |
-| `lock_guard` | patrol (7, 4) → (2, 4), `dwellTime` 20 s at (2, 4) facing the slit windows, no `pauseForPlayer`; `los.visualize: true` (his cone is drawn, so the player sees when the keypad is clear); `los.challengeOnSight` with `requireGlobal: "at_keypad"` and `skipIfGlobal: ["lock_guard_challenged"]` (not `outer_lock_open`, which a successful crack sets before his check; R3-M1); `at_keypad` cleared on leaving the gallery, on entering it and on `game_loaded` (R3-m2) (R2-M4; OT §4.5) | always | carries the code card (`itemsHeld`, dropped on a knock-out); his own ink gives it on "[Sterling sent me.]" or "[The rota says you carry the card.]"; `player_spotted:lock_guard` opens his scene (OT §4.5) |
+| `lock_guard` | patrol (7, 4) → (2, 4), `dwellTime` 20 s at (2, 4) facing the slit windows, no `pauseForPlayer`; `los.visualize: true` (his cone is drawn, so the player sees when the keypad is clear); `los.challengeOnSight` with `requireGlobal: "at_keypad"` and `skipIfGlobal: ["lock_guard_challenged"]` (not `outer_lock_open`, which a successful crack sets before his check; R3-M1); `at_keypad` cleared on leaving the gallery, on entering it and on `game_loaded` (R3-m2) (R2-M4; OT §4.5) | always | carries the code card (`itemsHeld`, dropped on a knock-out); his own ink gives it on one option per route that named him (the rota, Ghost's card gift, escaped Victoria's "[Go.]", Vos's deal; OT §4.5's table); his barks: the pointer on the first try at the keypad ("That takes the shift code. It's on my card, and it stays there.") and "Who gave out the code?" (OT §4.5); `player_spotted:lock_guard` opens his scene (OT §4.5) |
 | `monitor_guard` | (3, 5) | unless `gallery_camera_blinded` (then he barks and hides himself) | knockable |
 | `farah_guard` | (4, 5) | unless `imran_outcome === 'talked_round'` | knockable |
 | `reinforcement_a`, `_b` | (3, 3), (4, 3), off the lock guard's patrol row and clear of the stair's approach (R2-m6, R3-m4) | `victoria_gallery === 'trusted'` with Zero Day's share live (the alarm), **and** `!nightshade_taken_in`. With Nightshade taken in, they never appear: one narrator line instead ("Boots on the stair, then Nightshade's voice on the intercom, and the boots stop."; R1D-m9) | hostile, knockable |
-| `quintero_lock`, `minder_lock` | (7, 5) | on `outer_lock_open` (their own mappings), per the staging rule; one of the two | Quintero knockable |
+| `quintero_lock`, `minder_lock` | (7, 5) | on `outer_lock_open` (their own mappings), per §2.9's roster; one of the two | Quintero knockable |
 | `nightshade_lock` | (6, 5) | on `outer_lock_open`, `nightshade_taken_in` | `koImmune` |
 
 The jam: OT §5. The barks (MC §3.5) are each guard's `bark` on `room_entered:gallery`, with its condition.
@@ -250,6 +250,33 @@ The jam: OT §5. The barks (MC §3.5) are each guard's `bark` on `room_entered:g
 | Quintero in the core (`quintero_core`) | (5, 7) | reveals herself on `quintero_enters_core` (the beat), with her KO guard | knockable |
 
 HaX is back on the line as the player walks in (her one word, the designation, then her release line).
+
+### 2.9 The raid team's roster, room by room (milestone A6)
+
+The engine has no follow or escort, so the raid team is staged as one copy per person per room (FA §4.0's summary; this table is the authority). Every copy reveals itself on `room_entered:<its room>` and on `game_loaded` with the conditions below (one mapping per arm where a condition would need `||`), so a reload's walk back finds the same people. Every copy carries its person's guards: `globalVars.breach_open === true`, `!globalVars.<name>_ko`, and `globalVars.officer_out !== '<name>'`; Kowalczyk's copies also carry `globalVars.whodunit_live === true` (false when m09 named her, `taken` or `double_crossed`) and `globalVars.accused !== 'kowalczyk'`. Positions are drafts, clear of readables' faces and door approaches; stage 9 checks them against dressing.
+
+**The rule in words.** Quintero is placed in each main-path room as the player enters it, from the security office to the server hall, and not the gallery; she reappears at the outer lock on `outer_lock_open`. Kowalczyk and Arakawa are "a room ahead": already in each room when the player arrives. Kowalczyk peels off in the server hall by default, in the security office on the tether, and in the workshop on `wren_warned`, and after her peel-off line hides herself; her later copies stay hidden. On the tether Arakawa is at the blast door (§2.1), so none of his later copies show. With Kowalczyk off the team, Arakawa breaches ahead alone, or Quintero does on the tether, and then a minder holds the lock.
+
+| Room | Copy (position) | Shown when (besides the person's guards) | Lines here |
+|---|---|---|---|
+| security office | `kowalczyk_so` (6, 7) | always | the photo line; **on the tether**, her peel-off line, then she hides herself |
+| | `arakawa_so` (4, 7) | `!nightshade_tethered` | the photo line when Kowalczyk is off the team |
+| | `quintero_so` (3, 7) | always | the photo line on the tether with Kowalczyk off the team; Arakawa's reaction to the peel-off on the tether ("Service side. She always takes the door nobody's watching.") |
+| workshop floor | `kowalczyk_ws` (8, 3) | `!nightshade_tethered` | **on `wren_warned`**, her peel-off line, a room early, then she hides herself |
+| | `arakawa_ws` (5, 7) | `!nightshade_tethered` | his reaction on `wren_warned` |
+| | `quintero_ws` (2, 4) | always | – |
+| power room | `kowalczyk_pr` (2, 7) | `!nightshade_tethered && !wren_warned` | – |
+| | `arakawa_pr` (3, 7) | `!nightshade_tethered` | – |
+| | `quintero_pr` (2, 4) | always | – |
+| server hall | `kowalczyk_hall` (15, 6) | `!nightshade_tethered && !wren_warned` | her peel-off line (the default), then she hides herself |
+| | `arakawa_hall` (14, 6) | `!nightshade_tethered` | his reaction to the peel-off |
+| | `quintero_hall` (4, 8) | always | – |
+| gallery | `quintero_lock` (7, 5) | `outer_lock_open`, and not (tether with Kowalczyk off the team): two arms, `!nightshade_tethered` and `globalVars.m09_sleeper_named !== true` | her lock lines (SE §3.4) |
+| | `minder_lock` (7, 5) | `outer_lock_open` and Quintero absent: three arms, `quintero_ko`, `officer_out === 'quintero'`, `nightshade_tethered && m09_sleeper_named` | – |
+| | `nightshade_lock` (6, 5) | `outer_lock_open && nightshade_taken_in` | "Go on. I've got the door." |
+| core | `quintero_core` (5, 7) | `quintero_enters_core` (the beat; late on the tether with Kowalczyk off the team) | the beat's lines |
+
+**Variants that need no extra copy:** `officer_out` and each `_ko` hide that person's copies through the guards above; the wrongly accused officer is at the forward post (Malhotra stays at the van; Vector or Phantom lose their post's job with Netherton's line and no room effect, MC §5). Arakawa out on the tether: `minder_blast` holds the blast door (§2.1). Kowalczyk caught (`accused === 'kowalczyk'`) hides her later copies. On `double_crossed`, `kowalczyk_core_waiting` is the only Kowalczyk in the bunker (§2.8).
 
 ## 3. The lock graph
 
@@ -297,7 +324,7 @@ core
 | Stair | 2 | 2 (the call) | ✅ by design |
 | Power-room door | 3 | 3 (talk, clone) or **2 (the fitter's locker)** | ✅ boss-key on the no-talk route since round 1 (F-08b): see the reader, go back one room, pick the locker. The talk and clone routes stay in the room |
 | Gallery stair | 5 | 4 (the cut) and 5 (flags 2–3) | ✅ boss-key |
-| Outer lock | 6 | 2 (the rota; Ghost's code on two branches) or 6 (cracker, plate, card, inside) | ✅ boss-key available on **every** save since round 1 (F-08a): the lock guard's line on the first try at the keypad (`door_unlock_attempt`, since a PIN lock emits no failure event; R2-M3) says the duty guard carries the code, and the rota that names him is in the security office. The in-room ways remain the defaults |
+| Outer lock | 6 | 2 (the rota; Ghost's code on two branches) or 6 (cracker, plate, card, inside) | ✅ boss-key available on **every** save since round 1 (F-08a): the lock guard's line on the first try at the keypad (`door_unlock_attempt`, since a PIN lock emits no failure event; R2-M3) says the code is on his own card ("That takes the shift code. It's on my card, and it stays there."; milestone A13), and the rota that names him is in the security office. The in-room ways remain the defaults |
 | Records cupboard, fitter's locker | 2 | 2 or kit | optional |
 
 **Capability arc** (mission-puzzle-chains 3b). m10 grants nothing new; it now spends all of it on the quiet routes: m01's lockpick (the fitter's locker), m03's and m08's cloner (the power-room card), m04's and m08's fingerprint kit (the keypad plate on every save; the bypass panel on the escaped-Voltage branch; F-07), m09's PIN cracker (the outer lock and the cupboard). Every tool has a talk route beside it, which is right for "fun and educational, not hard"; none is decoration any more.
@@ -318,7 +345,8 @@ core
 
 | Item | `type` | Notes |
 |---|---|---|
-| Phone | `phone`, `phoneId: player_phone`, `npcIds: ["agent_0x99", "ghost_phone", "victoria_line", "vance_phone", "elena_phone"]` | only HaX is preloaded; the others' `start` knots are gated so they reveal nothing until their mapping rings (PASS2 lesson 36) |
+| Phone | `phone`, `phoneId: player_phone`, `npcIds: ["agent_0x99", "ghost_phone", "victoria_line", "vance_phone", "elena_phone", "recruiter_phone"]` | only HaX is preloaded; the others' `start` knots are gated so they reveal nothing until their mapping rings or texts (PASS2 lesson 36); `recruiter_phone` only texts, at 06:00 on `double_crossed` (milestone A12) |
+| CyberChef workstation | `workstation`, as m08 and m09 | for the casualty sheet's margin note (`decode_the_margin`); no room object supplies one (milestone F-02; FA §4.0 "the player's usual kit") |
 | Lock pick kit | `lockpick` | m01 on |
 | RFID cloner | `rfid_cloner` | m03, m08 |
 | Fingerprint kit | `fingerprint_kit` | m04, m08 |
@@ -343,7 +371,7 @@ FA §3.2's forty Tier 1 imports, by the room they change and how. Every change i
 | `m04_voltage_escaped`, `m04_voltage_print_on_bypass` | power room | `voltage_power` at the switchgear; the dustable `bypass_panel` carries his print, and the m04 print is what it matches (F-07) |
 | `m04_static_left`, `m04_static_left_alone` | power room | `static_power` beside escaped Voltage; `static_kit` on the bench when he left alone |
 | `m04_vance_is_ally`, `m07_elena_outcome` | power room | which phone NPC fills the slot |
-| `m02_ghost_deal_accepted`, `m02_exposed_hospital`, `m02_ghost_deal_refused`, `m02_ghost_keys_used` | security office; workshop; gallery | Ghost's branch; the cupboard code (kept); the lock's code (refused; the lock guard's name stays spoken), each given as a notes item with `#give_item` (`ghost_cupboard_code`, `ghost_lock_code`; F21); on broken with keys used, Ghost's text and Imran's card made uncloneable (`ghost_watch_on_route`, a local written at the call) |
+| `m02_ghost_deal_accepted`, `m02_exposed_hospital`, `m02_ghost_deal_refused`, `m02_ghost_keys_used` | security office; workshop; gallery | Ghost's branch; the cupboard code (kept); on refused, the player's answer picks the gift: the lock's code (the hospitals answer) or the lock guard's name, spoken, setting `lock_guard_known` (the trust answer; OT §4.2); the codes are notes items given with `#give_item` (`ghost_cupboard_code`, `ghost_lock_code`; F21); on broken with keys used, Ghost's text and Imran's card made uncloneable (`ghost_watch_on_route`, a local written at the call) |
 | `m02_gary_protected` (with `m02_completed`, `m02_exposed_hospital`) | workshop | `gary_consultant` at the door, or `gary_tech` at the bench, or neither |
 | `m02_reeves_fate`, `m02_insider_asset_arrested`, `m02_insider_asset_escaped` | tunnel | `tunnel_rota` variant |
 | `m07_mercer_fate`, `m07_mercer_ko` | server hall | `mercer` in place of `asante`; on `arrested`, HaX's map line on entry |
@@ -391,7 +419,7 @@ The list is MC's structure review (`stage_3/REVIEW_R1_STRUCTURE.md:323-341`). Ve
 - **Flag stations:** four, one flag each by `flags_for_vm_slice` (`app/models/break_escape/mission.rb:269-280`; F-18); a wrong-station flag gets the `hintOnlyFlags` message (`games_controller.rb:1180-1216`, `:2389-2405`); one reward per flag; m10's are `emit_event` rewards that fire from the server's response, and HaX's mapping sets each flag's global. The server's `pending_events` copy isn't read by the client, so a tab that dies in that moment loses the global: a narrow window, accepted (F-14, R3-m1).
 - **`door_sign` is the unlock toast's text** (`utils/room-display-name.js:12`; F-19): signs are names.
 - **Music conditions are JavaScript** and need `globalVars.` (`music/scenario-music-events.js:42-54`; F-17). F10's `silence` playlist is committed (`music/music-config.js:154-164`).
-- **Voiced forced calls** (F17) are committed: `"voiced": true` on a phone-chat mapping or `timedConversation` (`systems/npc-manager.js:336, 677, 1183`); narration stays silent; under F20 only what a voiced call opens is voiced. OT §13 lists them (about 85 lines).
+- **Voiced forced calls** (F17) are committed: `"voiced": true` on a phone-chat mapping or `timedConversation` (`systems/npc-manager.js:336, 677, 1183`); narration stays silent; under F20 (committed, 24fcb06c) a voiced call voices its `targetKnot` and what it reaches, never the contact's home knot, so every voiced mapping names a `targetKnot` and every call knot ends `#exit_conversation`. OT §13 lists them with their wiring (about 80 lines).
 - **A PIN lock emits no `door_unlock_failed`** (`systems/unlock-system.js:263-270`; R2-M3): the pointer to the code card keys on `door_unlock_attempt`.
 - **`challengeOnSight` fires on any sighting** unless scoped (`systems/npc-sight-challenge.js:1-57`; R2-M4): `requireGlobal` and `skipIfGlobal` scope the lock guard to the keypad.
 - **Dusting** emits `fingerprint_collected:<owner>` with `objectId` and sets no global itself (`systems/biometrics.js:20-100`; R2-m4).
@@ -419,7 +447,7 @@ None is made here; OT §10 has the objective-side ones (S4-1 to S4-22). Updated 
 | S5-9 | s0 §4, arc §6.3, FA §5.3 | **The server hall is 4×2**, and the gallery leaves it by its east wall (the core east of the gallery since round 2) | R1D-M9; keeps every door aligned |
 | S5-10 | MC §3.3, arc §6.1 item 5 | The workshop's "old hatch" route becomes the fitter's spare card in a locker back in the security office | F-08b: a boss-key return trip that spends the pick |
 | S5-11 | MC §3.4, arc §7.3, FA rows 45, 53 | Voltage's print is lifted in m10 from a dustable bypass panel; the m04 print is what it matches | F-07 |
-| S5-12 | MC §3.5, FA §4.4 | The outer lock's keypad can be dusted (the four worn keys); the lock guard's line on the first try at the keypad names the duty guard as the code's holder | F-07, F-08a |
+| S5-12 | MC §3.5, FA §4.4 | The outer lock's keypad can be dusted (the four worn keys); the lock guard's line on the first try at the keypad says the code is on his own card (reworded at the milestone fix, A13) | F-07, F-08a |
 | S5-13 | arc §6.3 item 6, FA §6.2 | Flag 3 is submitted at the sealed hatch's own station | R1D-m5 |
 | S5-14 | MC §3.5 | With Nightshade holding the lock, the trusted-Victoria reinforcements never appear (a narrator line instead) | R1D-m9 |
 | S5-15 | MC §3.5 | Escaped Victoria with the threat is her own NPC copy | F-22 |

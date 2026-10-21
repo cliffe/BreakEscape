@@ -21,7 +21,7 @@ Speaker prefix `Dr Adrian Tesseract` (the m07 handset's `The Architect` is not r
 **His secrets**, each one the player can reach:
 
 1. **He lost the argument once and didn't finish it.** Nine years ago he argued the Albion flaw should go to the vendor, lost, drafted the notice and never sent it (m09). The Publication is that notice sent to everyone, with interest. The second rebuttal goes here.
-2. **He signed a figure he knew was low.** His systems lead corrected the sheet; he initialled the correction and signed again without changing the number. The first rebuttal.
+2. **He signed a figure he knew was low.** His systems lead, Asante, corrected the sheet and initialled her correction; he signed again under it without changing the number (milestone A35: her initials, his signature). The first rebuttal.
 3. **He needs the player's hand so that his own stays clean.** "Let it hurt afterwards, not during" was his. He has spent seven years handing the hurt to strangers, and tonight he wants a stranger's hand on the key. The third rebuttal.
 4. **He doesn't want Kowalczyk to press it.** She has been his since he took her tasking from the Initiative; if she presses it, it proves nothing. That refusal is the one moment the player hears his motive from his own mouth.
 
@@ -110,7 +110,7 @@ One argument in three steps. Claims 2 and 3 open on the exchange just before (W1
 | Slot | Answer | Kind | His response |
 |---|---|---|---|
 | 1 | [Your schedule puts the hospitals first, and you chose that order yourself.] | evidence decoy (order, not price; N3; 12 words, R4-04) | "I chose the order. I asked whether the price was worth paying." |
-| 2 | [Someone corrected your sheet upwards, and you signed the old number.] / decoded: [Asante corrected your sheet, and you signed under her initials.] | rebuttal | "*pause* I initialled it." / decoded: "*pause* I knew." |
+| 2 | [Someone corrected your sheet upwards, and you signed the old number.] / decoded: [Asante corrected your sheet, and you signed under her initials.] | rebuttal | "*pause* I signed it." / decoded: "*pause* I knew." |
 | 3 | [Your Council's curve is on the desk outside. It doesn't stop after a month.] (`hardened`) | record | "*pause* No. It wouldn't." |
 | 3 | [My first day, I had a choice to hurt people. I didn't.] (the first-day condition, row 6; N18) | record | "One agent is an anecdote." Then, on its own line: "*pause* I'll grant you the anecdote." |
 | 4 | [I squeezed a bag for an hour to keep one man breathing. Your sheet has him as rounding.] (`m02_bed4_manually_stabilised`) | record | "*pause* I had him as rounding. He wasn't." |
@@ -267,7 +267,7 @@ Then "[Do it.]" or "[Lower the weapon.]". Confirmed, one line: "He is still look
 
 > (the blast door, on `m09_deck_pulled = alpha_tapes`) Agent HaX: The best lock there is. Tape two.
 
-**The doors' calls** (short, voiced; OT §4, §13). On the breach, Netherton on the net: "Breach. Go." The inner door: "Inner door's on their monitoring. I've got it." The tripwire: "That's his entry. The door's locked from their side, and they know we're coming. There's a ladder at the guard post. Up and round." The stair: "Stair's open. Workshop floor's below you." The power-room reader: "Someone on that floor carries a card for it. Or there's the fitter's locker upstairs." Stepping back down from the gallery: "Lost you up there. I'm back."
+**The doors' calls** (short, voiced; OT §4, §13). On the breach, Netherton on the net: "Breach. Go."; on the tether, Nightshade on the net, "Manual.", and HaX: "He's on the crank. Their reader never saw you."; otherwise HaX: "It's read your badge. They know you're in." The inner door: "Inner door's on their monitoring. I've got it." The tripwire: "That's his entry. The door's locked from their side, and they know we're coming. There's a ladder at the guard post. Up and round." The ladder: "Up the shaft. The release is on the corridor wall. Throw it and come back down. Door's yours." The stair: "Stair's open. Workshop floor's below you." **Barks, not calls** (unvoiced; OT §13): the power-room reader, "Someone on that floor carries a card for it. Or there's the fitter's locker upstairs."; stepping back down from the gallery, "Lost you up there. I'm back."
 
 **Pointers that say a cost before the pick** (MC §3, P25), one at the beat:
 
@@ -286,7 +286,7 @@ Then "[Do it.]" or "[Lower the weapon.]". Confirmed, one line: "He is still look
 
 **Whodunit nudges** say what she can see and never name anyone (arc §8.2). At the bench log: "That's a cloner in our own breaching kit. The case's sign-out sheet is on the table up here. Want the names?" Her hub topic "[Who signed for the case?]" reads the sheet's two names, as written, without comment: "Opened one fifty-two. Kowalczyk and Arakawa." (S4-14). After the third clue: "That's three things that point somewhere. Your call, and you don't have to make it." With an officer out: "Get Malhotra back first."
 
-**As flag 4 lands** (his case waits for it, R4-01), on `not m09_completed` (R3-03, R4-03):
+**As flag 4 lands** (his case waits for it, R4-01). These lines are hers inside **his** conversation, as its second speaker, not a phone call: his own mapping on `flag4_submitted` opens it, and the router plays them before his case (OT §4.6 step 4; milestone A7). On `not m09_completed` (R3-03, R4-03):
 
 > Agent HaX: He argued for the vendor nine years ago and lost.
 > Agent HaX: The notice is on here. He wrote it himself, and he never sent it.
@@ -314,6 +314,11 @@ On an m09 save: "The notice you read in Helena is on here too." Then, on every s
 
 > (recruited Victoria) Agent HaX: Sterling goes with whoever's winning. Make sure it's us before you hand her anything. Show her the order, and she'll know we read Zero Day's mail.
 > Agent HaX: Up the stair, along the walkway, the lock's at the far end. He's jamming me. You're on your own for one room. I'll be at the door.
+> (arrested Victoria's line still unfinished; the call's last line, OT §4.4) Agent HaX: Sterling's still on the line. She has something on Vos.
+
+**With Malhotra wrongly sent back** (`officer_out == "malhotra"`; MC §5, OT §4.4): nobody is running the relay, so the call breaks up after the warning she owes (the console's, recruited Victoria's). The sweep line and the next door are lost:
+
+> Agent HaX: Netherton sweeps the... I'm losing y...
 
 **At the core.** She comes back inside his conversation, as its second speaker, right after his release line (S4-22; OT §4.6): a cracked word, then "...0x00.", then what went at the lock, by the same value (S4-12):
 
@@ -449,7 +454,7 @@ Then one question, which she gets an answer to at 06:00: "When did you know?" Th
 
 ### 3.4 The rest of the raid team
 
-Each reads as possibly WREN until a clue clears them, and as someone the player would miss if they were wrongly sent back. Each wrong-accusation line is also a hint. Their m09 beats are called back (arc §8.1).
+Each reads as possibly WREN until a clue clears them, and as someone the player would miss if they were wrongly sent back. Each wrong-accusation line is also a hint. Their m09 beats are called back (arc §8.1). Who stands in which room on each branch, with each copy's id and who says the photo line and the peel-off reaction there, is RL §2.9's roster (milestone A6).
 
 **Agent 0x2D "Anchor", Marisol Quintero.** 52, Mexican-American, from El Paso; West Texas, low and dry. **Wants:** everyone home. **Secret:** for m07 she asked the Council for a second team and was refused, and two people died at the sites nobody covered. That is why she wants "twice the people", and she says so only if asked at the lock. Harwick & Lowe placed her too, as honest cover; she knows the firm, and doesn't know it was a front (S2-13). Her father's care home is on her file beside Kowalczyk's mother's. **Arc:** the objection; the drain at 02:10; placed in each main-path room as the player enters (not the gallery); holds the outer lock while he talks to 0x00 alone; wounded at the core stopping WREN (unhurt when HaX was warned by the Alpha tapes, and on the double-cross branch).
 
@@ -473,6 +478,8 @@ The first two are said from the stretcher when she is hurt. She is unhurt when t
 > (asked about the log, through HaX's channel, R3-14) Officer Dev Malhotra: It's my badge. It isn't my hand. I was talking to her at ten past. Ask her.
 > (wrongly accused) Officer Dev Malhotra: Eleven years. Check the log again.
 
+With Malhotra out, HaX's relay goes with him: her call as the gallery stair opens breaks up after its warning (§3.1; OT §4.4). Without Arakawa, Netherton covers the county road on the net, with no deputy on screen: "Sheriff's asking who the road's closed for. I've told him to wait." (arc §8.4).
+
 **Officer Kenji Arakawa.** 41, Japanese-American, from Sacramento, lives in Billings (as m09 SE has him; MS-06); a federal lateral hire, the team's US liaison; Pacific Northwest, soft and slow. **Wants:** home for his daughter's ninth birthday on Saturday. **Secret:** none worth hiding; that is his job in the story (the transfer from draft 1 is cut, W19). **Arc:** the closed road and the breaching case (his suspicion); the call at 02:10 (his alibi; a line, not a choice, MC §4); a room ahead with Kowalczyk; the line as she goes; he looks away at her accusation. Credits: "Home for Saturday, with a telescope."
 
 > Officer Kenji Arakawa: It's ten past eight here. She goes to bed at quarter past. Thirty seconds.
@@ -493,7 +500,7 @@ The first two are said from the stretcher when she is hurt. She is unhurt when t
 
 Each keeps their own mission's voice and sprite. What they want tonight is what the player's history decided. These are the samples for arc §7; the arc doesn't repeat them.
 
-Ghost's handset is a forced phone scene (FA §6.1; arc §7), answered rather than sprung (OT §4.2): a bark as the player enters the security office ("Duty line. The handset on the desk is ringing."), and the call opens when they click the handset; if they close it early, the next click, or re-entering the office, picks it up at the last unanswered choice. It is voiced (§9). Arrested Victoria's secure line is optional with one re-ring at the server hall's exit to the gallery stair (MC §3.5). Each needs a short resume line ("Ghost: Where were we.", "Victoria Sterling: You hung up on me. I'll assume that was the signal.") as well as its opener.
+Ghost's handset is a forced phone scene (FA §6.1; arc §7), answered rather than sprung (OT §4.2): HaX's bark as the player enters the security office ("Duty line. The handset on the desk is ringing."; hers, so the toast doesn't name Ghost before the handset is answered), and the call opens when they click the handset; if they close it early, the next click, or re-entering the office, picks it up at the last unanswered choice. It is voiced (§9). Arrested Victoria's secure line is optional with one re-ring after HaX's call as the gallery stair opens (MC §3.5; OT §4.4). Neither has a resume line: `resume: true` restores the thread at the unanswered choice and enters no knot, so a "Where were we." could never play (milestone A29).
 
 **Agent 0x47 "Nightshade"** (the door). RP; lyrical and serene, a medium line then a short, quotable one. **Wants**, by branch: shown his file, to see Tesseract's face when he works out his own handwriting turned his best recruit; not shown, whatever suits him; arrested, a sentence he can survive; silent, nothing he will say. **Secret:** he still admires the man who wrote him off, and hates that he does.
 
@@ -556,8 +563,8 @@ The talk-down's hook is her own m03 words, in the player's button: "[You said yo
 > (broken, on `m02_ghost_keys_used`, a text mid-scene) Ghost: Left at the stairs. I can see you, and so can they.
 > (refused) Ghost: I hope it's you leading it. You turned me down. Why?
 > (refused, the gift, unasked) Ghost: Don't thank me. It's not for you.
-> (refused, "hold hospitals") Ghost: Then do this cleanly. Four digits.
-> (refused, "didn't trust you") Ghost: Then don't trust me. Check it.
+> (refused, "hold hospitals"; `ghost_gift = code`, the code goes into the notepad) Ghost: Then do this cleanly. Four digits.
+> (refused, "didn't trust you"; `ghost_gift = card`, the guard named aloud, no item, `lock_guard_known` set; OT §4.2) Ghost: Then don't trust me. Check it.
 > (unanswered) Ghost: You never answered me. Answer this.
 > (stranger) Ghost: You don't know me. That's rather the point. Two hours' head start. Five buyers. One of them wants the hospitals.
 > (a miss: money, then a threat) Ghost: Numbers are my department. / Ghost: You won't.
@@ -602,9 +609,9 @@ Taken in ("[I'm taking you in.]"), he gives his card, phone and statement and no
 > (told, then; the call is what telling him costs, not a separate choice, MC §3.4) Wendell Briggs: Dale's on the next shift. I'm ringing him. He's got grandkids.
 > (worked round, 06:00) Wendell Briggs: Do I still get paid for the week?
 
-The phone voice says the cost before the player tells him: "He doesn't know. Tell him, and he'll want to warn somebody. Their switchboard will hear it." Credits: told, "Rang his mate Dale. Dale stayed home."; worked round, Dale walks into a raid at shift change (frightened, detained, released by morning). When the cut falls to the player (Wendell worked round or never told, a fight with escaped Voltage, either knocked out), the same phone voice rings and talks them through the switching, the camera switch among its choices; it rings again on every entry to the power room until the shutter is down (S4-15; OT §4.9). It is voiced, about eight lines in each of the three voices.
+The phone voice says the cost before the player tells him, in a text as the player first walks into the power room, before Wendell's menu opens (OT §4.9; milestone A11): "He doesn't know. Tell him, and he'll want to warn somebody. Their switchboard will hear it." Credits: told, "Rang his mate Dale. Dale stayed home."; worked round, Dale walks into a raid at shift change (frightened, detained, released by morning). When the cut falls to the player (Wendell worked round or never told, a fight with escaped Voltage, either knocked out), the same phone voice rings and talks them through the switching, the camera switch among its choices; it rings again on every entry to the power room until the shutter is down (S4-15; OT §4.9). It is voiced, about eight lines in each of the three voices.
 
-**Guards and technicians.** The cells' people: hired muscle and contractors, mixed ages and backgrounds, varied generic sprites. Told to let 0x00 through and not why, so they fight. Two or three barks each, never gendering the player: "That's the one off the wall." / "Nobody said let them through armed." In the gallery, where HaX can't speak, each effect carried in from earlier gets one bark and no explanation (MC §3.5, P38): "Camera's dead again. I'll go and look." (the camera switch) / "Where's Farah? She was on till six." (Imran's call to his friend Farah Qureshi; her coat on an empty chair) / "Who changed the code?" (Ghost's code at the keypad). The lock guard has two more (OT §4.5): on the first try at the keypad, "Shift code. The duty guard carries it." (the pointer to his own code card), and his challenge if the player cracks the keypad inside his cone, which a "[Shift change. Netherton's orders.]" talks past once.
+**Guards and technicians.** The cells' people: hired muscle and contractors, mixed ages and backgrounds, varied generic sprites. Told to let 0x00 through and not why, so they fight. Two or three barks each, never gendering the player: "That's the one off the wall." / "Nobody said let them through armed." In the gallery, where HaX can't speak, each effect carried in from earlier gets one bark and no explanation (MC §3.5, P38): "Camera's dead again. I'll go and look." (the camera switch) / "Where's Farah? She was on till six." (Imran's call to his friend Farah Qureshi; her coat on an empty chair) / "Who gave out the code?" (the lock's opening on a save where Ghost gave the code; OT §4.5). The lock guard has two more (OT §4.5): on the first try at the keypad, "That takes the shift code. It's on my card, and it stays there." (the pointer to his own code card; milestone A13), and his challenge if the player cracks the keypad inside his cone, which a "[Shift change. Netherton's orders.]" talks past once.
 
 **Social Fabric** has no crew in the bunker (the media room is cut; arc §6.4). Its story is a prop on the server hall's uplink printer; on uncovered Fracture it runs from outside, and HaX says so at the prop: "It isn't going out from here. Nothing I can stop from this end." Held otherwise: "They wrote your obituary and didn't send it."
 
@@ -654,7 +661,7 @@ The bunker was built in the 1960s to outlast a war and refitted last year with E
 **Act 3: quiet.**
 
 - **The gallery.** A straight steel walkway above the core's roof, the stair at one end and the outer lock at the other, with slit windows down into it. No HaX, no music, the guards' footsteps on steel, the lock guard's slow walk to the stair end and back. Through the slits, the top of a grey head at a console.
-- **The outer lock.** A steel door with a keypad, its face plate worn on four keys, and the lock panel on the wall two paces short of it, which reads 04:00 as the lock opens, and on a live head start, "EARLY ACCESS: RELEASED" with no voice to read it. He says it instead, as the player walks in.
+- **The outer lock.** A steel door with a keypad, its face plate worn on four keys, and the lock panel on the wall three paces short of it, which reads 04:00 as the lock opens, and on a live head start, "EARLY ACCESS: RELEASED" with no voice to read it. He says it instead, as the player walks in.
 - **The core.** Plain concrete, his key console, one terminal, one chair he is sitting in and one he isn't. Nothing on the walls but a service door with a dummy camera above it. The key console's readout holds at 04:00; his hand rests beside the key. The quietest room in the game.
 - **06:00 at the forward post.** Floodlights now, engines running, people sitting on bumpers. The countdown object on the table reaching six and nothing happening.
 
@@ -719,7 +726,7 @@ At the core the music is part of the play: it is how the player knows a point la
 - **One villain "Not X. Y." per scene at most**; none from anyone else. Asterisk cues at m01's density, never on a line with a number; his `*pause*` on a landed point is the one repeated cue.
 - **Every KO case is written**: a downed Victoria, Voltage, Gary, Imran, Wendell, Asante, Vos or raid member leaves a line or prop that admits it.
 - **Status answers branch to the step**: HaX's "[Where are we?]" lines are read at every beat, down to the room to walk back to after a reload (OT §5 has the ladder).
-- **Voiced calls** (F17, F20; OT §13). Forced phone calls are voiced, and only what a call opens is voiced: its knot and the knots it diverts to, up to the contact's hub. Hubs, topics, "[Where are we?]", "[What's still live?]", the field-guide lines and every text stay unvoiced. About 85 lines: Ghost's handset 33 (kept 6, refused 7, the selling branches about 20 between them), arrested Victoria's line 9, the by-hand cut 24 (8 each for Vance, Elena and HaX, all recorded), HaX's breach call with Netherton on the net 3, her door calls (stair, inner door, tripwire, ladder) 5, her `gallery_open` call 5, and her lines as flag 4 lands 6. Narration inside a voiced call is silent, so the crank and the ladder are written to read well unspoken. HaX's lines inside his conversation at the core are person-chat and voiced as a face-to-face scene, not counted here.
+- **Voiced calls** (F17, F20 committed in 24fcb06c; OT §13). Forced phone calls are voiced. A voiced call voices its start knot (each voiced mapping's `targetKnot`) and every knot reachable from it, never the contact's home knot (`currentKnot`, default `start`). So: every voiced mapping names a `targetKnot`; **every call knot ends `#exit_conversation` and never diverts to `start` or `support_hub`** (m09's convention; the by-hand cut's knot, which HaX's hub topic also reaches, included); no narrator line inside a call (narration there is silent, so the crank is Nightshade's "Manual." on the net and the ladder is HaX's own lines). Hubs, topics, "[Where are we?]", "[What's still live?]", the field-guide lines, the barks and every text stay unvoiced. About 80 lines: Ghost's handset 33 (kept 6, refused 7, the selling branches about 20 between them), arrested Victoria's line 9, the by-hand cut 24 (8 each for Vance, Elena and HaX, all recorded), HaX's breach call with Netherton (and, on the tether, Nightshade) on the net 4, her door calls (stair, inner door, tripwire, ladder) 5, her `gallery_open` call 7. HaX's lines inside his conversation at the core, her flag 4 lines among them (OT §4.6 step 4), are person-chat and voiced as a face-to-face scene, not counted here.
 - **Naming in the core**: "his console" or "the key console", never "the release console", which is the server hall's (R1D-M2).
 - **Every spoken time** matches the countdown objects (OT §6; S4-10): "fifteen minutes to their head start" at 03:45, "It's set for four" after flag 2.
 - **Codes said aloud go into the notepad** as notes items given by `#give_item` (F21; not `#add_note`): `ghost_cupboard_code`, `ghost_lock_code`, `vector_cupboard_code`.

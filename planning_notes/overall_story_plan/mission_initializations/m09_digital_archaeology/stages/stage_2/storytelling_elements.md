@@ -425,9 +425,9 @@ Act 3:
 >
 > Agent HaX: He'll call it full disclosure. Full disclosure is one researcher publishing one flaw after the vendor stops answering. His notice was the coordinated kind: vendor first, time to fix it. This is every weapon we hold, handed out at once. *(flag 4's read, once, after the two modes; milestone D-02)*
 >
-> Agent HaX: His file first. Then the rest of his box. *(flag 4 in before the identity scene is done; R3-08)*
+> Agent HaX: His file first. Then the rest of his box. *(flag 4 in before the identity scene has started, the file not held; R3-08)*
 >
-> Agent HaX: Finish with me first. Then his box. *(the same, to a player who already holds the file; R4-04)*
+> *(to a player who holds the file but hasn't submitted flag 3: one line asking for the owner first, which stage 7 words. A scene already started and not finished rings again instead. "Finish with me first. Then his box." (R4-04) is cut at the stages 4–5 milestone: no state reached it; stage 4 §4 row 10.)*
 >
 > Agent HaX: No. It isn't. He shredded everyone but himself. *(on `schedule_read`, after "Her schedule. This room isn't on it.")*
 >
@@ -545,7 +545,7 @@ SAFETYNET read it and let it go on (story arc §3.1). The schedule is §5.3's.
 
 > They will save Lawson's file. They will want to know why he did it.
 
-**The casualty sheet** (flag 4's files):
+**The casualty sheet** (flag 4's files; object text on `mirror_job_printout`, a printout that lands in the salvage cage's printer tray on `flag4_submitted`, stage 5 §3.10, and read aloud by HaX in her text read):
 
 > Projected deaths attributable to the Publication, first thirty days. Release by key, all cities: 1,100 to 2,600. Fallback by city: fewer, later. Principal causes: hospital systems (dispatch, infusion, records); grid control; water treatment. Assumes the cells move first. An acceptable price for the last arms race. -- A.
 
@@ -553,7 +553,7 @@ SAFETYNET read it and let it go on (story arc §3.1). The schedule is §5.3's.
 
 This is his original sheet; the correction (his model credits the hospitals' recovery twice, so it understates the dead) is m10's (FINALE_ARC §4.1; wording synced, MS-23).
 
-**The release key** (flag 4's mirror job), one line of the job's configuration, rendered plainly as object text:
+**The release key** (flag 4's mirror job), one line of the job's configuration, rendered plainly as object text on the same `mirror_job_printout`, below the sheet:
 
 > Release: manual, at console. Single key. Requires an operator present. Fallback: 06:00, staged by city.
 
@@ -615,7 +615,7 @@ The existing playlists are `cutscene`, `noir`, `threat`, `spy-action`, `victory`
 |---|---|---|
 | Briefing | `cutscene` | The usual handover into a mission. |
 | Act 1, from the loading dock | `noir` | A tense investigation, under the shredder. |
-| Any hostile (Tran's guard; Tran himself if fought) | `threat` | As in every mission. Sorensen is non-combat and never triggers it. |
+| Any hostile (Tran's guard; Tran himself if fought) | `threat` | As in every mission. Sorensen is non-combat and triggers it only if the player attacks her (she fights back, stage 5 §10 item 7). |
 | Back to the search after a hostile is down | `noir` | |
 | The Recruiter's call | `noir`, faded low | Her voice should be the loudest thing in the room. |
 | "Afterwards. Not during." (Beat 2.7) | `noir`, low | Three words and a breath. |

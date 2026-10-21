@@ -2,7 +2,7 @@
 
 ## 0. Status, sources and conventions
 
-**Stages 4–5 complete** (draft 4, 2026-10-21; round 3's findings folded in, §15; no further review round, the orchestrator checks directly). Draft 3: round 1's two reviews (`../stage_5/REVIEW_R1_PUZZLES.md`, "F-nn"; `../stage_5/REVIEW_R1_DESIGN.md`, "R1D-…") folded in (§12), then round 2 (`../stage_5/REVIEW_R2.md`, "R2-…"; §14), with the orchestrator's rulings and user decisions F17–F19 and F10, whose engine work is committed (57d3d237). Author: stages 4+5 author (Opus). Companion: `../stage_5/room_layout.md` ("RL §n"), which owns rooms, ids, positions and the engine verdicts this file relies on.
+**Stages 4–5 complete** (draft 4, 2026-10-21; round 3's findings folded in, §15; no further review round, the orchestrator checks directly). The stages 4–5 milestone fixes are applied (2026-10-21; the last section lists each finding and where it landed; §16 is the new globals inventory). Draft 3: round 1's two reviews (`../stage_5/REVIEW_R1_PUZZLES.md`, "F-nn"; `../stage_5/REVIEW_R1_DESIGN.md`, "R1D-…") folded in (§12), then round 2 (`../stage_5/REVIEW_R2.md`, "R2-…"; §14), with the orchestrator's rulings and user decisions F17–F19 and F10, whose engine work is committed (57d3d237). Author: stages 4+5 author (Opus). Companion: `../stage_5/room_layout.md` ("RL §n"), which owns rooms, ids, positions and the engine verdicts this file relies on.
 
 Built on `../stage_0_initialization.md` ("s0"), `../stage_1/story_arc.md` ("arc", including §20), `../stage_2/storytelling_elements.md` ("SE"), `../stage_3/moral_choices.md` ("MC", the authority for every choice, cost and global), and `../../finale/FINALE_ARC.md` ("FA", §1–9, §13, §17). The prompt is `story_design/story_dev_prompts/04_player_objectives.md`; where it differs from the newer standards, these win: `mission-alignment-plan` (staged, spoiler-safe aims; HaX's progress-gated hub), `scenario-design-review` §2g (no dead zones; action titles; a pointer for every task), `mission-puzzle-chains` (convergence only through `unlockCondition` and `concludeRequires`), `README_scenario_design.md` "Authoring Rules", `tools/pass2/PASS2_LESSONS.md`. The model is m08's objectives block (`scenarios/m08_the_mole/scenario.json.erb:328-556`), whose shape this file copies: `aimId` / `title` / `description` / `status` / `order` / `unlockCondition`, tasks with `taskId` / `title` / `type`.
 
@@ -18,7 +18,7 @@ Engine facts this file depends on (checked in code; RL §6 has the evidence):
 - **One flag, one reward**; a flag's station is the first station whose `flags` list holds it, and its task id is station-qualified with the flag's index *in that station's list* (`games_controller.rb:2407-2528`).
 - **`concludeRequires.globals` counts only boolean `true`**, so `ending` (a string) never goes in it.
 - Person-chat state does not survive a reload (it restarts at the start knot); phone threads do. Every forced face-to-face scene therefore re-enters on globals, never on saved ink position.
-- **Forced phone calls can be voiced (F17, committed; `docs/agents/FINALE_ENGINE_VOICED_CALLS.md`)**: `"voiced": true` on a `phone-chat` eventMapping or a `timedConversation` (`systems/npc-manager.js:336, 677, 1183`). Narration in a voiced call stays silent, and under F20 only what the call opens is voiced (its knot and diverts up to the hub). §13 lists the voiced calls and their budget.
+- **Forced phone calls can be voiced (F17, committed; `docs/agents/FINALE_ENGINE_VOICED_CALLS.md`)**: `"voiced": true` on a `phone-chat` eventMapping or a `timedConversation` (`systems/npc-manager.js:336, 677, 1183`). Narration in a voiced call stays silent, so m10 puts no narrator line in one (as m09). **F20 is committed (24fcb06c; VOICED_CALLS §8):** a voiced call voices its start knots (the `targetKnot` of each `voiced: true` mapping) and every knot reachable from them, never the contact's home knot (its scenario `currentKnot`, default `start`). So every voiced mapping names a `targetKnot` that is not the home knot (a voiced contact with no start knot voices nothing), and every call knot ends `#exit_conversation` and never diverts to `start` or `support_hub`. §13 lists the voiced calls, their wiring and their budget.
 - **A `silence` playlist exists (F10, committed)**, so the gallery and the second landed point are true silence (§7).
 - Music and credits conditions are JavaScript and always name `globalVars.` (F-17).
 
@@ -36,14 +36,14 @@ The raid is one corridor of rooms (RL §1), so "where next" is rarely the questi
 
 Two places the player could lose the thread, and what holds them:
 
-- **The gallery (HaX jammed).** Her last line before the jam names the next door and the one warning the gallery needs (arc §6.5); the aim "Reach the core" is already visible, with "Get through the outer lock" as its open task; the walkway's countdown object shows the share status, so the player can read the state without her. The release itself is said aloud on the far side of the lock (§4.5): his first line in the core, by value, then HaX's return line (R1D-M7).
+- **The gallery (HaX jammed).** Her last line before the jam names the next door and the one warning the gallery needs (arc §6.5; with Malhotra wrongly sent back the call breaks up after the warning, and the aim and the straight walkway carry the next door, §4.4); the aim "Reach the core" is already visible, with "Get through the outer lock" as its open task; the walkway's countdown object shows the share status, so the player can read the state without her. The release itself is said aloud on the far side of the lock (§4.5): his first line in the core, by value, then HaX's return line (R1D-M7).
 - **Stepping back down from the gallery.** HaX comes back the moment the player re-enters the server hall ("Lost you up there. I'm back."), so the console and her hub work again (R1D-M3).
 - **The core between flag 4 and his case.** The case is gated on all four flags (arc §9.3; R1D-B1); walking to him early gets "Finish on my box first. I'll keep.", and the task list shows "Take the core host" until flag 4 is in, then "Hear him out". The gallery itself needs flags 2 and 3 (§4.4), so a missing flag can only be flag 4.
 - **After a reload.** The player respawns at the forward post (§0) with every opened door still open; HaX's "[Where are we?]" names the room to walk back to.
 
 ## 2. Aims and tasks (JSON-ready)
 
-Six main aims, one optional aim. 28 tasks: 18 required, 10 optional. Every task ships `"status": "active"` except the backdoor task (locked until its channel exists), because a locked aim reveals itself when any of its tasks completes and `unlockAim` activates only the first task (PASS2 lessons 27 and 33). `<vm>` stands for the VM's `system_name`, which the VM plan fixes; station ids are RL §2's.
+Six main aims, one optional aim. 28 tasks: 20 required, 8 optional (the optional ones: `read_the_casualty_sheet`, `decode_the_margin`, `use_the_console`, `close_the_backdoor` and the four WREN tasks; counted from the JSON below). Every task ships `"status": "active"` except the backdoor task (locked until its channel exists), because a locked aim reveals itself when any of its tasks completes and `unlockAim` activates only the first task (PASS2 lessons 27 and 33). `<vm>` stands for the VM's `system_name`, which the VM plan fixes; station ids are RL §2's.
 
 ```json
 "objectives": [
@@ -140,7 +140,7 @@ Notes on the shape:
 | `submit_flag_1` | server, on submission at `gate_terminal` | flag reward `emit_event flag_1_in`; HaX's mapping on `flag_1_in` sets `flag1_submitted`. The event fires from the server's response, the same moment a `set_global` would apply, so a tab that dies in that moment loses the global; the server's `pending_events` copy is written but nothing on the client reads it (R3-m1). The window is narrow and accepted; the engine change that would close it (emit and clear `pending_events` after `game_loaded`) is listed for the user, not assumed; half of the breach; clue 1 readable | HaX: "The gate terminal's yours. Get me their monitoring." The flag 1 field guide is offered on the first use of the gate console (`object_interacted`, `data.objectType === 'vm-launcher' && data.roomId === 'forward_post'`; R1D-m13); the same per station for flags 2–4 | server-authoritative |
 | `go_through_the_blast_door` | `enter_room blast_tunnel` | completes the aim; `get_below_ground` shows | the breach call (§4.1): "Breach. Go." | the unlock is server-persisted (F19) |
 | `reach_security_office` | `enter_room security_office` | the duty handset starts ringing (§4.2) | the inner door is the only way on; on the tripwire route HaX names the ladder ("There's a ladder at the guard post. Up and round."; R1D-m6) | the ladder (RL §2.2) |
-| `answer_the_handset` | HaX mapping on `ghost_call_done` → `completeTask` | the stair down (§4.2) | the handset rings and a bark says so; the stair's holding line: "The stair's on their system. Whoever's on that handset has it." | Ghost's thread is saved server-side; clicking the handset resumes it every time (`resume: true`), and re-entering the office re-rings it |
+| `answer_the_handset` | HaX mapping on `ghost_call_done` → `completeTask` | the stair down (§4.2) | the handset rings and HaX's bark says so; the stair's holding line: "The stair's on their system. Whoever's on that handset has it." | Ghost's thread is saved server-side; clicking the handset resumes it every time (`resume: true`), and re-entering the office re-rings it |
 | `take_the_stair_down` | `enter_room workshop_floor` | completes the aim | HaX on the stair's unlock event: "Stair's open. Workshop floor's below you." | – |
 | `read_the_casualty_sheet` | the sheet's `onRead` sets `casualty_sheet_read`; mapping → `completeTask` | the first rebuttal's evidence; Voltage's talk-down option | Imran or Gary points at it ("Read what's pinned over my bench."); HaX: "That's his sheet. Read it." | a readable object, no NPC needed |
 | `decode_the_margin` (optional) | the decoded note's `onRead` sets `margin_note_read`; mapping → `completeTask` | Asante's name; the first rebuttal's sharper form | Imran or HaX: "There's something written in the margin. Not plain English." | readable object |
@@ -152,8 +152,8 @@ Notes on the shape:
 | `use_the_console` (optional) | mapping on `global_variable_changed:head_start_killed` (value not `""`) | the share display globals (§6) | HaX after flag 2 and leaving the hall (arc §6.3) | skipping it is the warned cost |
 | `close_the_backdoor` (optional, locked) | unlocked by mapping on `flag2_submitted` with `backdoor_channel_live`; completed on `backdoor_closed` | `partial_release` stays `none` | HaX after flag 2, with the count | a task, free |
 | `cross_the_gallery` | `enter_room gallery` | `hax_jammed = true` (§5) | HaX's last line before the jam names the stair and the walkway | – |
-| `open_the_outer_lock` | mapping on `head_start_out` written → `completeTask` (§4.5) | the head start goes; Quintero placed at the lock | the lock guard's line on the first try at the keypad (`door_unlock_attempt`: "Shift code. The duty guard carries it."); the barks | five ways through (§4.5) |
-| `submit_flag_4` | server, `core_host_terminal` | flag reward `emit_event flag_4_in` → HaX sets `flag4_submitted`; his case opens once all four flags are in | Tesseract, after HaX's greeting: "Get on his box. He'll keep." | server-authoritative |
+| `open_the_outer_lock` | mapping on `head_start_out` written → `completeTask` (§4.5) | the head start goes; Quintero placed at the lock | the lock guard's line on the first try at the keypad (`door_unlock_attempt`: "That takes the shift code. It's on my card, and it stays there."); the barks | five ways through (§4.5) |
+| `submit_flag_4` | server, `core_host_terminal` | flag reward `emit_event flag_4_in` → HaX sets `flag4_submitted`; Tesseract's own mapping then opens `core_router`, where HaX reads the flag 4 facts as his conversation's second speaker (§4.6), and his case follows | HaX, inside his conversation after her greeting: "Get on his box. He'll keep." | server-authoritative |
 | `hear_him_out` | mapping on `exchange_3` (value not `""`) | the console menu | walking to him with all four flags opens the case (R1D-B1) | Tesseract `koImmune` for the whole scene (RL §2.8) |
 | `decide_the_console` | mapping on `console_choice` set | the database menu | his console menu | the core resumes on globals (MC rule 1.11) |
 | `decide_the_database` | mapping on `database_outcome` set | step 5 (not after wipe or Join) | Netherton and HaX state each cost before the menu | as above |
@@ -175,7 +175,7 @@ Notes on the shape:
 
 ## 4. The locks that force the story
 
-**The one pattern for a story door** (round 1: F-05, F-19, R1D-m12; user decision F19). The door is a room lock of type `rfid` whose `requires` names a card that exists nowhere (`tg_story_lock_<room>`), so neither a pick, the cracker nor the cloner opens it. Its `door_sign` is a name only ("Blast Door", "Stair B", "Inner Door", "Gallery Stair"), because the sign is also the unlock toast's text. An ERB comment beside each says the validator's "nothing can open it" warning is intended (four expected warnings).
+**The one pattern for a story door** (round 1: F-05, F-19, R1D-m12; user decision F19). The door is a room lock of type `rfid` whose `requires` names a card that exists nowhere (`tg_story_lock_<room>`), so neither a pick, the cracker nor the cloner opens it. Its `door_sign` is a name only ("Blast Door", "Stair B", "Inner Door", "Gallery Stair"), because the sign is also the unlock toast's text. An ERB comment beside each says the validator's "nothing can open it" warning is intended (five expected warnings: the four story doors and `fitter_locker`, a key lock with no key item; RL §2).
 
 It opens by **an `unlockDoor` mapping** (`"unlockDoor": "<room>"`, persisted through the server's unlock path) on HaX, when its condition holds. The mappings, per door:
 
@@ -194,29 +194,31 @@ Ink `#unlock_door` with `unlockable` stays only where a person opens a door in t
 - **Door:** `forward_post` → `blast_tunnel`. Sign "Blast Door".
 - **Condition:** `globalVars.door_scene_done === true && globalVars.flag1_submitted === true && globalVars.pair_back === true`. `pair_back` ends the pre-breach split (§6), so the breach can't cut across Arakawa's call; the split itself waits for the table, so this adds nothing a player can stall on.
 - **Holders of `door_scene_done`:** `nightshade_table` on his three branches, `director_netherton` on the silent branch (one id; R1D-m18). Netherton's briefing is also his conversation, so nothing keys on his `conversation_closed`; only the global counts.
-- **On `breach_open`:** HaX's knot `breach_call`, a short voiced call (§13): Netherton on the net, "Breach. Go."; on `nightshade_tethered`, the narrator gives the crank ("Manual." and the wheel turns); otherwise the reader reads the player's badge and the panel shows their designation. `raid_clock` moves to `t0230` by a HaX mapping on `breach_open`, not in the knot, so a reload before the line can't lose the step (R2-m1).
+- **On `breach_open`:** HaX's knot `breach_call`, a short voiced call (§13): Netherton on the net, "Breach. Go."; on `nightshade_tethered`, Nightshade speaks his second word on the net, "Manual." (a second speaker in his own voice, as Netherton is), and HaX says what it means: "He's on the crank. Their reader never saw you."; otherwise HaX: "It's read your badge. They know you're in." and the panel (`clock_blast_door`) shows the player's designation. No narrator line: narration in a voiced call is silent (§13). HaX's same mapping also sets `breach_announced` where `!nightshade_tethered` (RL §2.3's alarm lamps). `raid_clock` moves to `t0230` by a HaX mapping on `breach_open`, not in the knot, so a reload before the line can't lose the step (R2-m1).
 - **Holding barks:** missing the table: "Netherton won't call it till the table's settled."; missing flag 1: "Their monitoring first. Then we go."; missing the pair: "Arakawa's still on the phone. Quintero's waiting on him." The same event, `door_unlock_failed:blast_tunnel` with `!globalVars.pair_back`, is heard by Netherton's and Arakawa's own catch-up mappings (§6), which re-open whichever of their lines is still owed (R2-M5), so the bark always names a thing that is happening. An event, not a latch, so every try works.
 
 ### 4.2 The stair: Ghost's call
 
 - **Door:** `security_office` → `workshop_floor`. Sign "Stair B".
-- **The call is answered, not sprung** (R1D-M11). On `room_entered:security_office` with `!globalVars.ghost_call_done`, Ghost's NPC (`ghost_phone`, listed in `forward_post`) sends a bark: "Duty line. The handset on the desk is ringing." The `duty_handset`'s text reads "Ringing." while the call is unanswered. The call opens when the player clicks the handset: Ghost's mapping on `object_interacted` with `data.objectName === 'Duty Handset' && data.roomId === 'security_office' && !globalVars.ghost_call_done`, `conversationMode: phone-chat`, `resume: true`, `disableClose: true`, `voiced: true`, `cooldown: 0`. An event, not a latch global, so every click works (R1D-M4). The player picks the moment, so the room's patrols are never on them mid-call by surprise; the stair holds them until they answer.
-- **Re-ring:** re-entering the office repeats the bark; `resume: true` returns the call to its last unanswered choice (it falls back to the knot when nothing is saved; F-15). There is no `player_room` global (F-15).
+- **The call is answered, not sprung** (R1D-M11). On `room_entered:security_office` with `!globalVars.ghost_call_done && !globalVars.hax_jammed`, HaX sends a bark (milestone A28: from her, so the toast doesn't name the caller before the handset is answered): "Duty line. The handset on the desk is ringing." The `duty_handset`'s text reads "Ringing." while the call is unanswered. The call opens when the player clicks the handset: Ghost's (`ghost_phone`, listed in `forward_post`) mapping on `object_interacted` with `data.objectName === 'Duty Handset' && data.roomId === 'security_office' && !globalVars.ghost_call_done`, `conversationMode: phone-chat`, `targetKnot: ghost_call` (not Ghost's home knot `start`, which is gated and silent; F20), `resume: true`, `disableClose: true`, `voiced: true`, `cooldown: 0`. An event, not a latch global, so every click works (R1D-M4). The player picks the moment, so the room's patrols are never on them mid-call by surprise; the stair holds them until they answer.
+- **Re-ring:** re-entering the office repeats HaX's bark; `resume: true` returns the call to its last unanswered choice (it falls back to `targetKnot` when nothing is saved; F-15). Ghost has only this one call, so `resume` can't restore a different call's place. Resume lines ("Where were we.") can't play under `resume: true`, which re-enters no knot, so the call has none (milestone A29). There is no `player_room` global (F-15).
 - **Door condition:** `globalVars.ghost_call_done === true`. HaX's line on `stair_open`: "Stair's open. Workshop floor's below you."
-- **Codes said on the call are written down** (R1D-m11): Ghost's last line on the kept branch ends with `#give_item:notes:ghost_cupboard_code`; on the refused branch, `#give_item:notes:ghost_lock_code` (the outer lock's maintenance code), while the lock guard's name stays spoken (the rota names him anyway). Vector's cupboard code is `#give_item:notes:vector_cupboard_code` from `vector_so`. Each is a `notes` item in the speaker's `itemsHeld` (`ghost_phone`, `vector_so`; stage 5 RL §2.3) with a `name` and a fixed `text` of four digits matching the lock's `requires` (fixed at stage 9; no `|`, `#`, `//`, `{`, `}`). A notes item an NPC gives reaches the notepad (m09 S4 §4 row 7). `#add_note` is not used: `NPCGameBridge.addNote` builds a note with no text or id and the notepad throws (F21).
+- **Codes said on the call are written down** (R1D-m11): Ghost's last line on the kept branch ends with `#give_item:notes:ghost_cupboard_code`. **On the refused branch the player's answer picks the gift** (MC §3.2 owns the choice; milestone A2): "[I don't buy from people who hold hospitals.]" sets `ghost_gift = code` and ends with `#give_item:notes:ghost_lock_code` (the outer lock's maintenance code); "[I didn't trust you to keep it.]" sets `ghost_gift = card`, and Ghost names the gallery guard who carries the code card. The card answer hands over no item: the name is spoken, and the same line sets `lock_guard_known` (`#set_global:lock_guard_known:true`), which gives the guard's ink its Ghost option (§4.5). Vector's cupboard code is `#give_item:notes:vector_cupboard_code` from `vector_so`. Each is a `notes` item in the speaker's `itemsHeld` (`ghost_phone`, `vector_so`; stage 5 RL §2.3). **Format** (milestone A34): the `name` says what and whose ("Records cupboard: Ghost's code", "Records cupboard: Vector's code", "Outer lock: maintenance code"); the `text` is the four digits alone, a fixed string matching the lock's `requires` (no `|`, `#`, `//`, `{`, `}`). The records cupboard is one PIN lock, so **Ghost's and Vector's cupboard codes are the same four digits**. The outer lock's code is one value too: `ghost_lock_code`'s text, the code card's code and the four worn keys on the keypad plate. Stage 6 fixes the digits. A notes item an NPC gives reaches the notepad (m09 S4 §4 row 7). `#add_note` is not used: `NPCGameBridge.addNote` builds a note with no text or id and the notepad throws (F21).
 
 ### 4.3 The tunnel's inner door, and the tripwire
 
 - **Door:** `blast_tunnel` → `security_office`. Sign "Inner Door".
 - **Default:** `room_entered:blast_tunnel` with `!globalVars.tripwire_armed` opens it (the condition plus the catch-ups). HaX: "Inner door's on their monitoring. I've got it." `tripwire_armed` is one local boolean written at the closing choice (`nightshade_map_used && !payment_checked`).
 - **Tripwire route** (`tripwire_armed`): no unlock on entry. The first try at the door (`door_unlock_failed:security_office`) or the first use of the ladder, whichever comes first, sets `tripwire_tripped`, `wren_warned` and `security_alerted` (F-13), and HaX says: "That's his entry. The door's locked from their side, and they know we're coming. There's a ladder at the guard post. Up and round." (R1D-m6).
-- **The ladder:** `post_ladder`, a mapping on `object_interacted` with its name and `globalVars.tripwire_armed === true` sets `ladder_used`; HaX's mapping on `ladder_used` unlocks the inner door. The narration (HaX's knot, after `inner_door_open`): the player climbs the shaft, finds the door's manual release in the office's back corridor, throws it, and climbs back down to walk through. The cost is the warning, not a longer walk. A `game_loaded` catch-up re-unlocks on `ladder_used && !inner_door_open`.
+- **The ladder:** `post_ladder`, a mapping on `object_interacted` with its name and `globalVars.tripwire_armed === true` sets `ladder_used`; HaX's mapping on `ladder_used` unlocks the inner door. HaX's `ladder_call` (voiced, after `inner_door_open`, §13) says it in her own lines, with no narrator: up the shaft, the door's manual release on the back corridor's wall, throw it, back down and through ("Up the shaft. The release is on the corridor wall. Throw it and come back down. Door's yours."). The cost is the warning, not a longer walk. A `game_loaded` catch-up re-unlocks on `ladder_used && !inner_door_open`.
 
 ### 4.4 The gallery: flags 2 and 3, and the shutter
 
 - **Door:** `server_hall` → `gallery`. Sign "Gallery Stair".
 - **Condition:** `globalVars.flag2_submitted === true && globalVars.flag3_submitted === true && globalVars.gallery_shutter_cut === true` (R1D-B1). Three triggers plus `game_loaded` and the failed-try catch-up. So nobody reaches the lock without the console's chance, the core without the disarm, or an ending without three of the four flags.
-- **On `gallery_open`:** HaX's knot `gallery_open`, voiced (§13): the console warning if C9 is unanswered, the sweep line, then her last line before the jam (arc §6.3, §6.5). The flag is set at unlock time (the `door_unlocked_by_npc` event, §4), before the player can reach the stair, so this call plays before the jam (R2-M1). `raid_clock` moves to `t0345` by a HaX mapping on `gallery_open`.
+- **On `gallery_open`:** HaX's knot `gallery_open`, voiced (§13): the console warning if C9 is unanswered, the sweep line, then her last line before the jam (arc §6.3, §6.5), and, where arrested Victoria's line is still unfinished (`m03_victoria_fate == "arrested" and not victoria_line_done`), it ends on "Sterling's still on the line. She has something on Vos." The flag is set at unlock time (the `door_unlocked_by_npc` event, §4), before the player can reach the stair, so this call plays before the jam (R2-M1). `raid_clock` moves to `t0345` by a HaX mapping on `gallery_open`.
+- **Victoria's re-ring waits for HaX** (milestone A4). A conversation mapping ends whatever minigame is open, so the two `gallery_open` calls are staggered: HaX's rings on `gallery_open`; Victoria's re-ring is on `conversation_closed:agent_0x99` with `globalVars.gallery_open === true && !globalVars.victoria_line_done && !globalVars.hax_jammed`, `onceOnly` (RL §2.6).
+- **Malhotra wrongly sent back** (`officer_out == "malhotra"`; milestone A5, MC §5 owns the cost). The jam stays where it is (`room_entered:gallery` only). Without Malhotra running the relay, HaX's line breaks up early: her `gallery_open` call plays the warning she owes (the console if C9 is unanswered; recruited Victoria's) and then goes to static ("Netherton sweeps the... I'm losing y..."), so the sweep line and the next door are lost. The aim, the open task and the straight walkway still show the way. One ink branch in `gallery_open`, read when the call plays, so a recall before the stair opens restores the full call. No mapping changes. W2 tests it (§9).
 - **Holding barks**, one per missing half: "The staging copy first." / "The hatch. Get under the release service." / "The shutter's still live. Power room."
 
 ### 4.5 The outer lock: one unlock event, five ways through
@@ -225,17 +227,27 @@ Ink `#unlock_door` with `unlockable` stays only where a person opens a door in t
 - **The ways through:**
   1. **The cracker, while the guard isn't looking** (F-09, R2-M4). Sight isn't checked while a minigame is open, and a sighting that still holds when it closes fires then (`systems/npc-sight-challenge.js:26-29`). So the risk sits at the close, and it is scoped to the keypad: `lock_guard`'s `los.challengeOnSight` has `requireGlobal: "at_keypad"` and `skipIfGlobal: ["lock_guard_challenged"]`. `outer_lock_open` is deliberately **not** in it: a successful crack sets `outer_lock_open` at once, before the sight watcher's first check after the minigame closes, so skipping on it would mean he never challenges (R3-M1). `at_keypad` is set by his own mapping on `door_unlock_attempt` with `data.connectedRoom === 'core'`, and cleared on `room_exited` with `data.roomId === 'gallery'`, on `room_entered:gallery` and on `game_loaded` (a reload emits no `room_exited`; R3-m2), so arriving in the gallery, finishing a conversation there or coming back after a cancelled attempt never triggers him, and once the player is through the lock and out of the gallery he never challenges again. Stage 9 confirms in the browser that the challenge opens as the cracker closes, with the door open. He walks the walkway with a long `dwellTime` at the stair end, facing the windows (no `pauseForPlayer` while dwelling, or he turns to the player), and his cone is drawn (`los.visualize: true`): the player sees when the keypad is out of it. Crack outside his cone and nothing happens. Crack in it and `player_spotted:lock_guard` opens his person-chat as the minigame closes (his own mapping): talk past him ("[Shift change. Netherton's orders.]" works once), or he goes hostile (`#hostile`) with the door open behind the player. Sets `lock_guard_challenged`.
   2. **The fingerprint kit on the keypad** (F-07). `lock_keypad_plate`, a dustable object beside the door (`hasFingerprint: true`, `fingerprintOwner: "gallery_shift"`). Dusting emits `fingerprint_collected:gallery_shift` with `data.objectId` (`systems/biometrics.js:20-100`); a HaX mapping on it with `data.objectId === 'lock_keypad_plate'` sets `keypad_dusted`, and the plate's `textVariants` on `keypad_dusted` show the four worn keys (R2-m4). The cracker's search then runs on four known digits, so the player cracks it while the guard looks away, with time to spare. A fifth way that needs no person, and the kit's use on every save. (Stage 9 checks that the cracker minigame's feedback lets a player who knows the digits finish faster; if it doesn't, the plate's note gives the order of wear, heaviest first, and the code is that order.)
-  3. **The code card, the quiet way.** `lock_guard` carries it (`itemsHeld`; dropped on a knock-out). Vos holds his own copy and gives it on "[Deal.]" (`#give_item` gives only from the speaker's items; F-12). Escaped Victoria, the cupboard's rota or Ghost's card gift names the guard; the guard's own ink then offers "[Sterling sent me.]" or "[The rota says you carry the card.]", which ends in his `#give_item`. There is no pickpocketing (R1D-m10).
+  3. **The code card, the quiet way.** `lock_guard` carries it (`itemsHeld`; dropped on a knock-out). Vos holds his own copy and gives it on "[Deal.]" (`#give_item` gives only from the speaker's items; F-12). There is no pickpocketing (R1D-m10). **Who names the guard, and what each sets** (milestone A3). Every route that names him sets `lock_guard_known`, and the guard's ink has one option per route, each ending in his `#give_item` of the card:
+
+     | Route | Sets | The guard's option (gated on) |
+     |---|---|---|
+     | The gallery rota (records cupboard) | its `onRead` sets `gallery_rota_read` and `lock_guard_known` | "[The rota says you carry the card.]" (`gallery_rota_read`) |
+     | Ghost's card gift (refused branch) | `#set_global:lock_guard_known:true` on the card answer's line | "[Ghost says you'll want to be off shift.]" (`ghost_gift == "card"`) |
+     | Escaped Victoria's "[Go.]" | `#set_global:lock_guard_known:true` on the line that names him (`victoria_gallery = walked`) | "[Sterling sent me.]" (`victoria_gallery == "walked"`) |
+     | Vos's "[Deal.]" | `#set_global:lock_guard_known:true` with his `#give_item` (`vos_outcome = bought`) | "[Vos sold you out.]" (`vos_outcome == "bought"`; the player already holds Vos's copy, so this one only lets the guard stand down) |
+
+     Stage 7 words the options; these are drafts.
   4. **From inside:** Victoria who holds or Vos who stands aside runs `#unlock_door:core` (`"unlockable": ["core"]`).
   5. **Ghost's code**, typed from the note (§4.2).
-- **The pointer to the card** (R2-M3). A PIN lock emits no `door_unlock_failed`, so the line keys on the attempt itself: the lock guard's `bark` on `door_unlock_attempt` with `data.connectedRoom === 'core' && !globalVars.lock_guard_known`, `onceOnly`: "Shift code. The duty guard carries it." It reads before or after a guess, points at the code card, and through the rota in the security office makes the return trip available on every save (F-08a). No engine change.
+- **The pointer to the card** (R2-M3). A PIN lock emits no `door_unlock_failed`, so the line keys on the attempt itself: the lock guard's `bark` on `door_unlock_attempt` with `data.connectedRoom === 'core' && !globalVars.lock_guard_known`, `onceOnly`: "That takes the shift code. It's on my card, and it stays there." (milestone A13: the old "The duty guard carries it." pointed at `duty_guard` in the security office, and had the lock guard naming himself in the third person). It reads before or after a guess, points at the code card and the man carrying it, and through the rota in the security office makes the return trip available on every save (F-08a). No engine change.
+- **"Who gave out the code?"** (milestone A27). The PIN lock has one `requires`, so the engine can't tell Ghost's code from the shift code. The bark is the lock guard's, on `door_unlocked` with `data.connectedRoom === 'core' && globalVars.ghost_gift === 'code' && !globalVars.outer_lock_open`, `onceOnly`: "Who gave out the code?" On a save where Ghost gave the code and the player opened the lock another way, the line still fits.
 - **One event:** two HaX mappings set `outer_lock_open`: `door_unlocked` with `data.connectedRoom === 'core' && !globalVars.outer_lock_open`, and `door_unlocked_by_npc` with `data.roomId === 'core' && !globalVars.outer_lock_open`. The guard matters because walking through an open door also emits `door_unlocked`.
 - **What it computes**, on `global_variable_changed:outer_lock_open`, four mutually exclusive mappings write `head_start_out` (`&&` only):
   - `both`: `globalVars.share_zero_day !== 'stopped' && globalVars.share_resale === 'live'`
   - `zero_day`: `globalVars.share_zero_day !== 'stopped' && globalVars.share_resale !== 'live'`
   - `ghost`: `globalVars.share_zero_day === 'stopped' && globalVars.share_resale === 'live'`
   - `none`: `globalVars.share_zero_day === 'stopped' && globalVars.share_resale !== 'live'`
-  Then, on `global_variable_changed:head_start_out`: `share_zero_day` becomes `released` where it was `live` (a `traced` share stays `traced`, so the core, the card and HaX can still tell a traced share from a lost one; F-16), `share_resale` becomes `released` where it was `live`, `raid_clock` becomes `t0400`, `hax_jammed` clears, and `open_the_outer_lock` completes. `quintero_lock`, `nightshade_lock` and `minder_lock` reveal themselves on the same global (their own mappings).
+  Then, on `global_variable_changed:head_start_out`: `share_zero_day` becomes `released` where it was `live` (a `traced` share stays `traced`, so the core, the card and HaX can still tell a traced share from a lost one; F-16), `share_resale` becomes `released` where it was `live`, `raid_clock` becomes `t0400`, `hax_jammed` clears, and `open_the_outer_lock` completes. `quintero_lock`, `nightshade_lock` and `minder_lock` reveal themselves on `outer_lock_open` (their own mappings; RL §2.7 owns the reveal).
 - **The release is said aloud** (R1D-M7). HaX is jammed and the panel is easy to miss, so the person in the next room says it: Tesseract's first line as the player walks in, one of four fixed strings by `head_start_out` (`both`: "Two cells have it. They'll waste it." / `zero_day`: "Zero Day has it. You didn't stop that one." / `ghost`: "Someone's buyers have it. Not Zero Day's." / `none`: "Nothing went at four. You were thorough."). Then HaX's return, after her one word and the designation, one fixed line by the same value ("Their head start went. Both shares." / "Zero Day's went." / "The resale went." / "Nothing went at the lock."). The lock panel shows `EARLY ACCESS: RELEASED` or `NOTHING TO RELEASE`.
 
 ### 4.6 The core's resume order
@@ -245,13 +257,14 @@ Tesseract is `koImmune` for the whole scene (RL §2.8). His conversation always 
 1. `m09_recruiter_offer == "double_crossed" and not wren_at_core` → the double-cross opening (MC §6.4).
 2. `not core_greeted` → his release line (§4.5); then HaX, on the open line, inside this same conversation: her one word, the designation, her release line by value, "Ninety-nine. You've done well with them." / "Still HaX."; then "Get on his box." (sets `core_greeted`). **What opens it** (R2-m2): Tesseract's own mapping on `room_entered:core` with `!globalVars.core_greeted` (`delayMs: 800`) opens `core_router`. HaX's return is not a separate call, so nothing on entry can cut his first line; her lines are prefixed `Agent HaX:` in his story and drawn as the second speaker.
 3. `not (flag1_submitted and flag2_submitted and flag3_submitted and flag4_submitted)` → "Finish on my box first. I'll keep." (R1D-B1: the case waits on all four flags).
-4. `not case_heard` → his case and the Recruiter beat (sets `case_heard` on its last line).
-5. The first of `exchange_1`, `exchange_2`, `exchange_3` still `""`.
-6. `console_choice == ""` → the console menu ("Stop it", or "Show me how it works", with `join_step` resuming its own step).
-7. WREN's beat when she is free and `wren_at_core` is false.
-8. `database_outcome == ""` → the database menu.
-9. `ending == ""` → step 5 (`points_landed` derived here).
-10. Otherwise his line for the ending already chosen, and `#exit_conversation`.
+4. `not flag4_heard` → **HaX's flag 4 lines**, inside his conversation as its second speaker (milestone A7, the orchestrator's F20 ruling): the notice (cold-start form or the m09 line), the console fact, the vault line, the purge (arc §9.3 step 0; SE §3.1). Sets `flag4_heard`. **What opens it:** Tesseract's own mapping on `global_variable_changed:flag4_submitted` (`delayMs: 1500`, so it waits for the flag station's minigame to close) opens `core_router`, so the facts play as flag 4 lands with no phone call, and nothing can cut his conversation. The same walk-up after a reload re-enters here. These lines are person-chat, voiced as a face-to-face scene.
+5. `not case_heard` → his case and the Recruiter beat (sets `case_heard` on its last line).
+6. The first of `exchange_1`, `exchange_2`, `exchange_3` still `""`.
+7. `console_choice == ""` → the console menu ("Stop it", or "Show me how it works", with `join_step` resuming its own step).
+8. WREN's beat when she is free and `wren_at_core` is false.
+9. `database_outcome == ""` → the database menu.
+10. `ending == ""` → the story's step 5, the end-for-him menu (`points_landed` derived here).
+11. Otherwise his line for the ending already chosen, and `#exit_conversation`.
 
 ### 4.7 The conclusion waits on `ending`
 
@@ -281,11 +294,13 @@ So the no-talk route through the workshop is a boss-key return trip (see the rea
 
 ### 4.9 The by-hand cut and its phone voice (R1D-M8)
 
-The phone slot (Vance, else Elena, else HaX; MS-07) is unused when a captured Voltage is in the room, because he talks the player through it in person. Otherwise:
+The phone slot (Vance, else Elena, else HaX; MS-07) is unused when a captured Voltage is in the room, because he talks the player through it in person, and on that branch Wendell isn't in the room (RL §2.5). Otherwise:
 
-- **When it rings.** HaX sets `cut_by_hand` on any of: Wendell's "work round him" pick (his ink), Voltage's talk failing into a fight (his ink), `npc_ko:wendell`, `npc_ko:voltage_power`, and the player leaving Wendell's scene without telling him (`conversation_closed:wendell` with `globalVars.wendell_outcome !== 'told'`). The voice's own mapping rings on `global_variable_changed:cut_by_hand` (`delayMs: 1500`, `voiced: true`, `disableClose: false`), and again on `room_entered:power_room` with `cut_by_hand && !gallery_shutter_cut` (`resume: true`), so a reload's walk back re-rings it.
-- **What it carries.** The short switching sequence as ink choices, the gallery camera switch as one more choice inside it (RL §2.5), and `#set_global:gallery_shutter_cut:true` on its last step.
-- **Where the voice is HaX**, her hub topic "[Talk me through the shutter.]" (`{power_room_entered and not gallery_shutter_cut}`) carries the same knot, so even with the phone voice's ring missed the cut is always one tap away.
+- **Which voice.** Vance on `m04_vance_is_ally === true`; Elena on `m04_vance_is_ally !== true && m07_elena_outcome === 'turned'` (FA row 90); HaX on neither. Each arm is its own mapping on its own phone NPC, with that condition. HaX's arm also sets `phone_voice_is_hax` on `game_loaded` (the hub topic below reads it).
+- **The cost before the pick** (milestone A11; MC rule 1.2). On the default branch (`!m04_voltage_captured && !m04_voltage_escaped`), the slot voice's phone NPC sends one text on the first `room_entered:power_room`, `onceOnly`, before Wendell's menu: "He doesn't know. Tell him, and he'll want to warn somebody. Their switchboard will hear it." A text, unvoiced; it names the voice before any ring, which is fine on this branch.
+- **When it rings.** HaX sets `cut_by_hand` on any of: Wendell's "work round him" pick (his ink), Voltage's talk failing into a fight (his ink), `npc_ko:wendell`, `npc_ko:voltage_power`, and the player leaving Wendell's scene without telling him (`conversation_closed:wendell` with `globalVars.wendell_outcome !== 'told'`). The voice's own mapping rings on `global_variable_changed:cut_by_hand`: `conversationMode: phone-chat`, `targetKnot: cut_call`, `voiced: true`, `disableClose: false`, `delayMs: 1500`. **The re-ring** on `room_entered:power_room` with `cut_by_hand && !gallery_shutter_cut` spells out its own keys (milestone A26, F-03): Vance's and Elena's carry `targetKnot: cut_call`, `voiced: true`, `resume: true` (each has only this call, so `resume` restores the right place); HaX's carries `targetKnot: cut_call`, `voiced: true` and **no** `resume`, because her other voiced calls open with their own knots and move her saved position, so a `resume` could restore the wrong place; instead `cut_call` routes on `cut_step` (set as each switching step is done), so the re-ring lands on the first unanswered choice, and HaX also re-rings once on `conversation_closed:agent_0x99` (§13 rule 4). A reload's walk back re-rings it.
+- **What it carries.** The short switching sequence as ink choices, the gallery camera switch as one more choice inside it (RL §2.5), and `#set_global:gallery_shutter_cut:true` on its last step, which ends `#exit_conversation`: `cut_call` never diverts to `start` or `support_hub` (F20).
+- **Where the voice is HaX**, her hub topic "[Talk me through the shutter.]" (`{power_room_entered and not gallery_shutter_cut and phone_voice_is_hax}`) diverts into the same `cut_call`, so even with the ring missed the cut is always one tap away. Because `cut_call` ends `#exit_conversation`, the topic closes the phone after the cut rather than returning to the hub; under F20 a call knot reached from the hub is voiced there too.
 - **The isolator's text before the cut:** "A key switch and a breaker row. Whoever runs this room can cut it, or someone on the line can talk you through it."
 
 ## 5. HaX's hub by progress
@@ -310,7 +325,8 @@ The phone slot (Vance, else Elena, else HaX; MS-07) is unused when a captured Vo
 | `clue_door_log and whodunit_live and not wren_at_core` | "[I know who WREN is.]" | the accusation (MC §5); refused while `officer_out != ""` ("Get Malhotra back first.") |
 | `officer_out != "" and <their clearing clue held>` | "[Bring Malhotra back.]" (by officer) | the recall over HaX's channel |
 | `power_room_entered and not gallery_shutter_cut and phone_voice_is_hax` | "[Talk me through the shutter.]" | the by-hand cut (§4.9) |
-| `flag2_submitted and not hax_jammed and not outer_lock_open` | **"[What's still live?]"** | reads `share_zero_day` and `share_resale` and where each can still be stopped (SE §3.1's four lines by state, plus "We're following Zero Day's. Nothing else goes." for a lone trace); on a recruited-Victoria save it ends with her rule ("Sterling goes with whoever's winning."). After the lock it becomes "[What went out?]", reading `head_start_out` |
+| `flag2_submitted and not hax_jammed and not outer_lock_open` | **"[What's still live?]"** | reads `share_zero_day` and `share_resale` and where each can still be stopped (SE §3.1's four lines by state, plus "We're following Zero Day's. Nothing else goes." for a lone trace); on a recruited-Victoria save it ends with her rule ("Sterling goes with whoever's winning."). After the lock it gives way to "[What went out?]" (next row) |
+| `outer_lock_open and not hax_jammed and not what_went_out_given` | "[What went out?]" | reads `head_start_out` (the same four lines as her return, §4.5); sets `what_went_out_given` (milestone A21) |
 | `flag2_submitted and backdoor_channel_live and not backdoor_closed` | "[The backdoor.]" | the count by branch; the task |
 | `flag2_submitted and not flag3_submitted` | "[The hatch?]" | the sealed section's maintenance hatch and its station (FA §6.2) |
 | `flag4_submitted` | "[The console.]", "[The vault line.]" | the one fact about the feed and the purge, again |
@@ -323,7 +339,7 @@ The schedule's three entries are said unprompted as flag 2 lands (SE §3.1), so 
 
 ## 6. The countdown objects and the clock's steps
 
-**The clock is one string global, `raid_clock`**, default `"t0145"`, moved only by story events (FA §4.2): no `gameClock`, no `timers`, and since round 1 no `delayMs` steps either (R1D-M6). Its values start with `t` so ink `#set_global` can't turn them into numbers (F-01); stage 9 greps the ink for `set_global:raid_clock:` and checks every value has the prefix. Every step's mapping (on HaX) moves the clock only forward: it carries `globalVars.raid_clock < '<this value>'` (the evaluator compares strings, `systems/npc-manager.js:57-66`, and the `t` values sort in time order; R2-m1). So walking back up the corridor after a reload never winds it back, and a skipped step (Arakawa down, or a step lost to a reload) never freezes the ones after it. Every step is a mapping `setGlobal`; no knot writes `raid_clock` (stage 9's grep finds none).
+**The clock is one string global, `raid_clock`**, default `"t0145"`, moved only by story events (FA §4.2): no `gameClock`, no `timers`, and since round 1 no `delayMs` steps either (R1D-M6). Its values start with `t` so ink `#set_global` can't turn them into numbers (F-01); stage 9 greps the ink for `set_global:raid_clock:` and checks every value has the prefix. Every step's mapping (on HaX, except `t0600`, which is set by `six_oclock`'s own mapping) moves the clock only forward: it carries `globalVars.raid_clock < '<this value>'` (the evaluator compares strings, `systems/npc-manager.js:57-66`, and the `t` values sort in time order; R2-m1). So walking back up the corridor after a reload never winds it back, and a skipped step (Arakawa down, or a step lost to a reload) never freezes the ones after it. Every step is a mapping `setGlobal`; no knot writes `raid_clock` (stage 9's grep finds none).
 
 | Step | Value | Set by (events only) | What else happens on it |
 |---|---|---|---|
@@ -331,7 +347,7 @@ The schedule's three entries are said unprompted as flag 2 lands (SE §3.1), so 
 | The split | `t0200` | the second of two events: `door_scene_done`, and the first use of the gate console (`gate_console_used`, from `object_interacted` with `data.objectType === 'vm-launcher' && data.roomId === 'forward_post'`). Netherton's own mapping then opens his short line (`delayMs: 1500`): "Quintero, Kowalczyk. The service tunnel. Go." Its **last** line sets `split_started`. Catch-ups (R2-M5): Netherton's `game_loaded` and `door_unlock_failed:blast_tunnel` mappings with `door_scene_done && gate_console_used && !split_started` re-open the line | their table copies hide themselves on `split_started`; **closes MS-23**: the split starts after the 01:58 copy and after the table, so it never lands inside Nightshade's scene |
 | Arakawa's call | `t0210` | `conversation_closed:director_netherton` with `globalVars.split_started === true && !globalVars.arakawa_call_done && !globalVars.arakawa_ko`: `arakawa_gate` reveals himself beside the player and opens his own short scene (he dials; the telescope line; Malhotra on the net: "Arakawa, you're off the net."). Its last line sets `arakawa_call_done`. Catch-ups (R2-M5): `arakawa_gate`'s own `game_loaded` and `door_unlock_failed:blast_tunnel` mappings with `split_started && !arakawa_call_done && !arakawa_ko` reveal him and re-open the scene (`delayMs: 1500`). If Arakawa is down, HaX sets `arakawa_call_done` and nobody makes the call (§6h, design review): her mappings on `conversation_closed:director_netherton`, `npc_ko:arakawa_gate`, `game_loaded` and `door_unlock_failed:blast_tunnel`, each with `globalVars.split_started === true && globalVars.arakawa_ko === true && !globalVars.arakawa_call_done` (R3-M3: covers a player who leaves his scene early and then knocks him out) | the alibi the player sees; HaX's alibi topic restates it either way |
 | The pair back | `t0220` | `arakawa_call_done` and `flag1_submitted`, whichever is second (two mappings) sets `pair_back`, plus a HaX `game_loaded` catch-up on both with `!pair_back` (R2-M5); Quintero's and Kowalczyk's table copies show themselves on it | their two lines if asked |
-| The breach | `t0230` | HaX's mapping on `breach_open` (§4.1) | Netherton at the gate; Vector and Phantom where present |
+| The breach | `t0230` | HaX's mapping on `breach_open` (§4.1) | Netherton on the net (`breach_call`), staying at the table with Vector and Phantom where present (milestone A16: no gate copy of him) |
 | Security office | `t0245` | first `room_entered:security_office` | the handset rings |
 | Workshop floor | `t0300` | first `room_entered:workshop_floor` | – |
 | Power room | `t0315` | first `room_entered:power_room` | – |
@@ -346,10 +362,10 @@ Each step's "first `room_entered`" is the forward-only guard: a second entry fin
 
 **The objects.** One per main-path room, eight in all (RL §2 names each and its place): the forward post's table screen, the blast door's panel, the security office's duty screen, the workshop's shift clock, the power room's load board, the server hall's release console screen, the gallery's lock panel (on the wall beside the outer lock, not under it), the core's key-console readout. Each is `readable`, `readDisplay: "gameDisplay"`, `addToNotes: false`, with `observationVariants` and `textVariants` (the same list for both), most advanced state first.
 
-**The text.** Before flag 2: one line, `RELEASE 06:00 UTC  |  NOW 02:45`. From flag 2: three lines,
+**The text.** The head start's hour shows from the briefing (milestone A22: Netherton states it there and the briefing's screen shows both times; flag 2 is where the player finds how it goes out, the channels and the two shares). Before flag 2: one line, `EARLY ACCESS 04:00  |  RELEASE 06:00 UTC  |  NOW 02:45`. From flag 2: three lines,
 
 ```
-RELEASE 06:00 UTC  |  NOW 03:30
+EARLY ACCESS 04:00  |  RELEASE 06:00 UTC  |  NOW 03:30
 ZERO DAY: LIVE
 SECOND BUYER: NONE
 ```
@@ -456,12 +472,12 @@ MC §16's live plan (3 end to end, 8 + 5 + 4 + 6 + 9 segments) as `tools/playtes
 
 | Run | Imports | Extra |
 |---|---|---|
-| A1 | m09 `recruiter_offer=taken`, `sleeper_named`; m08 `nightshade_arrested`, `nightshade_ko_before_fate`; m02 `ghost_deal_refused` | the refused branch's code goes into the notepad (`ghost_lock_code`, `#give_item`); check the item is in the notepad |
+| A1 | m09 `recruiter_offer=taken`, `sleeper_named`; m08 `nightshade_arrested`, `nightshade_ko_before_fate`; m02 `ghost_deal_refused` the refused branch, the hospitals answer: the code goes into the notepad (`ghost_lock_code`, `#give_item`); check the item is in the notepad |
 | A2 | m09 `recruiter_offer=double_crossed`, `sleeper_named`, `deck_pulled=her_file` | – |
 | A3 | m08 `nightshade_triple_agent`, `triple_agent_first_payment`; Vector and Phantom present (`m08_completed`, neither accused); m09 `nightshade_shown_file`; m02 `ghost_deal_accepted`, `exposed_hospital` | the gate console started before the table: the split waits for the table |
 | A4 | as A3 | reload before the closing choice: respawn, walk back, the knot re-enters at it; a strike at Nightshade does nothing (`__test.debugKO` returns `ko-immune`) |
 | A5 | m08 `nightshade_triple_agent`, `nightshade_tidied`; m09 `cage_bin=nightshade_copy`; m02 `ghost_deal_accepted`, `ghost_keys_used` | the map unchecked; the ladder used **before** trying the door (the cost still lands, F-13); reload mid-Ghost-call, then the handset resumes it |
-| A6 | m08 `nightshade_triple_agent`; m02 `ghost_deal_refused` | – |
+| A6 | m08 `nightshade_triple_agent`; m02 `ghost_deal_refused` | the refused branch, the trust answer: no notes item, `lock_guard_known` set; later (S-sh on this file) the guard's Ghost option gives the card, and the keypad's pointer bark doesn't play |
 | A7 | m08 `nightshade_arrested`; m02 `completed` only; m03 `guard_bribed`; m09 `cage_bin=nightshade_copy`, `recruiter_offer=named` | first game: reload during Arakawa's scene (his catch-up re-opens it; the breach waits, then opens); second game: leave his scene before its last line, knock him out, try the blast door (HaX sets `arakawa_call_done`; R3-M3); third game: Arakawa knocked out before the split, no call, HaX's alibi variant |
 | A8 | m08 `nightshade_arrested`; m02 `ghost_deal_accepted`, `exposed_hospital` | reload between deal and check |
 
@@ -473,14 +489,14 @@ MC §16's live plan (3 end to end, 8 + 5 + 4 + 6 + 9 segments) as `tools/playtes
 | B2 | m02 `gary_protected`; m04 `voltage_captured` | – |
 | B3 | m02 `completed`; m04 `voltage_escaped`, `voltage_print_on_bypass` | dust the bypass panel; the print matches |
 | B4 | m02 `completed`; m04 `voltage_escaped`, `static_left` | dust the panel: no match on file; the sheet talk-down |
-| B5 | m02 `completed`, `ghost_deal_accepted`, `ghost_keys_used`; m04 `voltage_captured` | `--set ghost_watch_on_route=true` (Imran keeps his card); second game: Wendell knocked out, the phone voice rings |
+| B5 | m02 `completed`, `ghost_deal_accepted`, `ghost_keys_used`; m04 `voltage_captured` | `--set ghost_watch_on_route=true` (Imran keeps his card); captured Voltage, by hand (the camera switch). Second game **without** `m04_voltage_captured` (m04 `completed` only, so Wendell is in the room and the slot voice is live; milestone A9): the slot voice's text before Wendell's menu, then Wendell knocked out, the phone voice rings |
 
 **Segment W: the whodunit (4; S-so)**
 
 | Run | Imports | Accusation path |
 |---|---|---|
 | W1 | none | right, face to face (four cards); her question; Arakawa looks away |
-| W2 | none | wrong Malhotra; a second accusation refused; Malhotra recalled; then right, on the line |
+| W2 | none | wrong Malhotra; a second accusation refused; on S-sh with `--set officer_out='"malhotra"'`, open the gallery stair: HaX's `gallery_open` call breaks up after the warnings (no sweep line, no next door); then Malhotra recalled; then right, on the line |
 | W3 | m08 `nightshade_ko_before_fate` | `--set nightshade_tethered=true`; wrong Arakawa, not recalled (the county road) |
 | W4 | none | wrong Quintero, not recalled; then Kowalczyk on the line with no Quintero (stopped at the core) |
 
@@ -491,15 +507,15 @@ MC §16's live plan (3 end to end, 8 + 5 + 4 + 6 + 9 segments) as `tools/playtes
 | C1 | m03 `victoria_fate=recruited` | kill Zero Day's; trust her; she opens it from inside |
 | C2 | m03 `recruited`; m02 `ghost_deal_accepted` | `--set ghost_sale='"bait"' --set share_resale='"live"'`; trace; trust (share live: the alarm); the cracker while the guard's cone is off the keypad |
 | C3 | m03 `recruited` | console skipped; confront; reload, then left unanswered; step back down from the gallery to the console (HaX returns) |
-| C4 | m03 `escaped`, `sterling_on_call_seen`; m07 `completed`, `team_assignment=meltdown`; m02 `completed` | `--set ghost_sale='"bait"' --set share_resale='"live"'`; kill Ghost's buyers'; talked down / knocked out on reload; **the lock by the guard's dropped code card** (MC §16 had "Ghost's code", which this save can't have; the code route is A1's and A6's) |
-| C5 | m03 `escaped`; m07 `team_assignment=meltdown` | trace; "[Go.]" (the guard named) then the guard's own `#give_item`; arrest on reload; the backdoor closed |
+| C4 | m03 `escaped`, `sterling_on_call_seen`; m07 `completed`, `team_assignment=meltdown`; m02 `completed` | `--set ghost_sale='"bait"' --set share_resale='"live"'`; kill Ghost's buyers'; talked down / knocked out on reload; **the lock by the guard's dropped code card** (this save can't have Ghost's code; the code route is A1's, the hospitals answer, and A6 tests the card answer) |
+| C5 | m03 `escaped`; m07 `team_assignment=meltdown` | trace; "[Go.]" (the guard named, `lock_guard_known` set) then the guard's "[Sterling sent me.]" and his `#give_item`; arrest on reload; the backdoor closed |
 | C6 | m03 `victoria_fate=arrested` | S-sh **without** flag 2's `--submit-flag` and `--set` (so her first ring fires on the change; R2-m8a); submit flag 2 in the browser with the station's `test:flag` alias; kill Zero Day's; the line: deal; the secret used on Vos; reload: the call closed, re-ring at the stair, abandoned; Vos's trade |
 
 **Segment D: the core (9; S-core)**
 
 | Run | Imports | Extra |
 |---|---|---|
-| D1 | E1's file | six fresh games, one per ending; the closing chain per §4.7's table (the hearing after the 06:00 scene on `scorched`); `--set head_start_out='"zero_day"'` on two for the card and his release line |
+| D1 | E1's file | on one game, run S-core without flag 4's two options and submit it in the browser: Tesseract's mapping opens `core_router` and HaX's flag 4 lines play inside it (no phone call); six fresh games, one per ending; the closing chain per §4.7's table (the hearing after the 06:00 scene on `scorched`); `--set head_start_out='"zero_day"'` on two for the card and his release line |
 | D2 | none | Join's steps; the confirmation choice's "No" returns to step 2 |
 | D3 | none | a reload between each menu; `points_landed` derived, not counted |
 | D4 | none | strikes at him at each menu (immune; no knock-out fallback exists) |
@@ -544,7 +560,7 @@ None is made here. RL §7 lists the layout ones. Updated in round 1.
 - **The bootstrap** now carries the phone NPCs, carries the closing NPCs with `--carry-npc`, and submits flags and tasks (§9); nothing waits on it.
 - **Optional engine change** (R3-m1): emit and clear `player_state.pending_events` after `game_loaded`, which would close the narrow window where a dead tab loses a flag's global. The design works without it.
 - F10 and F17–F19 are committed (57d3d237).
-- **Voiced calls** follow F20 (only what a voiced call opens is voiced): about 85 lines in m10's forced calls (§13).
+- **Voiced calls** follow F20 (committed): about 80 lines in m10's forced calls (§13). HaX's flag 4 lines moved into Tesseract's conversation at the milestone fix, so they are person-chat now.
 
 ## 12. Review round 1 outcomes
 
@@ -600,22 +616,35 @@ Two reviews, 2026-10-21: `../stage_5/REVIEW_R1_PUZZLES.md` (F-00 to F-22: 1 bloc
 
 ## 13. Voiced phone calls (F17, F20)
 
-Forced phone calls are voiced with `"voiced": true` on the `phone-chat` mapping or `timedConversation` (F17, committed; `docs/agents/FINALE_ENGINE_VOICED_CALLS.md`). **F20 (user, 2026-10-21): only what a voiced call opens is voiced**: the call's knot and the knots it diverts to, up to the contact's hub; the hub, its topics and the contact's texts stay text. The final boundary rule goes in that doc's new section; this count assumes the call's knot and its diverts up to HaX's hub. Narration in a voiced call is silent, so the narrator lines inside HaX's calls (the crank, the ladder) are written to read well unspoken and aren't counted. Face-to-face scenes are voiced as in every mission and aren't listed: that includes HaX's lines inside Tesseract's conversation (her return, the flag 4 facts' repeat at the database menu, the database costs), which are person-chat (§4.6).
+Forced phone calls are voiced with `"voiced": true` on the `phone-chat` mapping or `timedConversation` (F17, committed; `docs/agents/FINALE_ENGINE_VOICED_CALLS.md`). **F20 is committed (24fcb06c; VOICED_CALLS §8):** a voiced call voices its start knots (the `targetKnot` of every `voiced: true` mapping) and every knot reachable from them through diverts, tunnels and choices, **never entering the contact's home knot** (its scenario `currentKnot`, default `start`). A voiced contact with no start knot voices nothing. The hub, its topics and the contact's texts stay text.
 
-Counts are spoken lines by the caller and any second speaker on the line, for the audio budget; stage 7 fixes the wording and the counts move with it.
+**Rules for every m10 call** (milestone A7, A8, A-06, F-01, F-13; the orchestrator's ruling; m09's convention):
 
-| Call | Speakers | Lines (approx.) |
-|---|---|---|
-| Ghost, the duty handset (§4.2): kept 6, refused 7, broken / unanswered / stranger about 20 distinct between them | Ghost | 33 |
-| Arrested Victoria's secure line (MC §3.5) | Victoria | 9 |
-| The by-hand cut (§4.9): one voice per save, but all three recorded | Vance, Elena, HaX | 8 each, 24 |
-| HaX `breach_call` | HaX, Netherton on the net | 3 |
-| HaX `stair_open`, `inner_door`, `tripwire`, `ladder` | HaX | 5 |
-| HaX `gallery_open`: the console warning, the sweep line, her last line before the jam by branch | HaX | 5 |
-| HaX as flag 4 lands: the notice (cold start or m09 form), the feed, the vault line, the purge | HaX | 6 |
-| **Total** | | **about 85** |
+1. Every voiced mapping, first ring and re-ring alike, names a `targetKnot` that is not the contact's home knot, and carries its own `voiced: true` (the key is per mapping).
+2. Every call knot ends `#exit_conversation` and never diverts to `start` or `support_hub`. HaX's `start` diverts to her hub, so a call knot that fell into `start` would leave the hub's lines unvoiced and the call open on her topics; ending each call with `#exit_conversation` avoids both. Stage 7 writes every call knot to this rule.
+3. No narrator line inside a voiced call (narration is silent there): what the narrator would say is HaX's, or a second speaker's on the net.
+4. HaX's forced calls never use `resume`: each opens with its own knot, which moves her saved position, so a `resume` could restore another call's place. Her door calls and `gallery_open` are lines only, with no choice to leave unanswered; `gallery_open` carries the gallery's one warning, so it has `disableClose: true` and always plays out. Her one call with choices is `cut_call` (when the slot voice is HaX): its knot routes on globals (`cut_step`, set as each switching step is done), so any re-entry lands on the first unanswered choice. It re-rings to that knot on `room_entered:power_room` and once on `conversation_closed:agent_0x99` (`cut_by_hand && !gallery_shutter_cut && phone_voice_is_hax`, `onceOnly`), and the hub topic reaches it too.
+5. Every HaX call mapping carries `!globalVars.hax_jammed` and `delayMs: 1500`, which re-arms while any minigame is open, so a call never opens over a conversation or a flag station.
+6. Two calls that could ring on the same event are staggered on the first one's `conversation_closed` (Victoria after HaX's `gallery_open`, §4.4).
 
-Not voiced under F20: HaX's hub topics, "[Where are we?]", "[What's still live?]", the field-guide lines and every text, including the two 06:00 texts (unvoiced by design, FA §4.6). This replaces round 2's estimate of about 320, which assumed the whole thread was batched.
+**The calls and their wiring.** Counts are spoken lines by the caller and any second speaker on the line, for the audio budget; stage 7 fixes the wording and the counts move with it.
+
+| Call (`targetKnot`) | Contact | Rings on (condition) | `disableClose` / `resume` | Speakers | Lines (approx.) |
+|---|---|---|---|---|---|
+| `ghost_call` (§4.2) | `ghost_phone` | `object_interacted`, the duty handset (`!ghost_call_done`), `cooldown: 0` | true / true (Ghost's only call) | Ghost | 33 (kept 6, refused 7, the selling branches about 20) |
+| `victoria_call` (MC §3.5) | `victoria_line` | `global_variable_changed:flag2_submitted` (`m03_victoria_fate === 'arrested' && !victoria_line_done && !hax_jammed`); re-ring once on `conversation_closed:agent_0x99` (`gallery_open && !victoria_line_done && !hax_jammed`, `onceOnly`) | false / true (her only call) | Victoria | 9 |
+| `cut_call` (§4.9) | `vance_phone`, `elena_phone` or `agent_0x99`, by slot | `global_variable_changed:cut_by_hand`; re-ring on `room_entered:power_room` (`cut_by_hand && !gallery_shutter_cut`); for HaX also once on `conversation_closed:agent_0x99` (rule 4) | false / true for Vance and Elena; none for HaX (the knot routes on `cut_step`) | Vance, Elena, HaX (one per save; all three recorded) | 8 each, 24 |
+| `breach_call` (§4.1) | `agent_0x99` | `global_variable_changed:breach_open` | false / none | HaX; Netherton and, on the tether, Nightshade on the net | 4 |
+| `inner_door_call` | `agent_0x99` | `global_variable_changed:inner_door_open` (`!ladder_used`) | false / none | HaX | 1 |
+| `tripwire_call` (§4.3) | `agent_0x99` | `global_variable_changed:tripwire_tripped` | false / none | HaX | 1 |
+| `ladder_call` (§4.3) | `agent_0x99` | `global_variable_changed:inner_door_open` (`ladder_used`) | false / none | HaX | 2 |
+| `stair_call` (§4.2) | `agent_0x99` | `global_variable_changed:stair_open` | false / none | HaX | 1 |
+| `gallery_open` (§4.4) | `agent_0x99` | `global_variable_changed:gallery_open` | true / none (lines only; it always plays out) | HaX | 7 (the console warning, the sweep line, her last line by branch, Sterling's line, the static fragment on Malhotra out) |
+| **Total** | | | | | **about 80** |
+
+**Barks and texts, not calls (unvoiced):** HaX's ringing-handset bark (§4.2); the holding barks on every story door (§4.1, §4.4); the power-room reader's line ("Someone on that floor carries a card for it. Or there's the fitter's locker upstairs."), a HaX bark on the door's first refusal; "Lost you up there. I'm back.", a HaX bark on `room_entered:server_hall` after the jam; the slot voice's cost text (§4.9); the gallery's guard barks; Ghost's mid-call text on `m02_ghost_keys_used` (it arrives as a held toast, not mid-thread); HaX's hub topics, "[Where are we?]", "[What's still live?]", "[What went out?]" and the field-guide lines; every 06:00 text (FA §4.6).
+
+**Person-chat, not counted here:** HaX's lines inside Tesseract's conversation (her return; her flag 4 lines, moved there at the milestone fix, §4.6 step 4; their repeat at the database menu; the database costs) are voiced as a face-to-face scene. This replaces round 2's estimate of about 320 (the whole thread batched) and the stages 4–5 estimate of about 85 (which counted the flag 4 lines as a call).
 
 ## 14. Review round 2 outcomes
 
@@ -657,3 +686,132 @@ Not voiced under F20: HaX's hub topics, "[Where are we?]", "[What's still live?]
 | F21 (user, 2026-10-21) | `#add_note` is not used; Ghost's and Vector's codes are `notes` items given by `#give_item` (`ghost_cupboard_code`, `ghost_lock_code`, `vector_cupboard_code`) | §4.2, §9 A1; RL §2.3 |
 | F20 (user) | voiced lines recounted for the calls only: about 85 | §13 |
 
+
+## 16. Globals inventory (wiring locals)
+
+Added at the stages 4–5 milestone fix (A25) so stage 7 can declare all three legs (`globalVariables`, the ink `VAR`, the setter) for every local. MC §12 owns the decision globals and their values; this table lists the wiring locals this file and RL use, with who writes and who reads each. "HaX" means a mapping on `agent_0x99`. All default `false` unless stated.
+
+| Global | Type, default | Written by | Read by |
+|---|---|---|---|
+| `raid_clock` | string, `"t0145"` | HaX's step mappings (§6); `t0600` by `six_oclock`'s own mapping | the eight countdown objects |
+| `flag1_submitted` … `flag4_submitted` | bool | HaX on `flag_N_in` | story doors, `core_router`, hub, tasks |
+| `briefing_played` | bool | Netherton's `setGlobalOnStart` | music, hub |
+| `briefing_done` | bool | the briefing's last line | music |
+| `aside_done` | bool | the private aside's last line | the WREN aim |
+| `whodunit_live` | bool, `true` | HaX `game_loaded` (false on m09 named with `taken` or `double_crossed`) | the WREN aim, hub |
+| `whodunit_open` | bool | HaX on `aside_done` | the WREN aim's `unlockCondition` |
+| `door_scene_done` | bool | the closing choice (MC §3.1) | the breach, the split |
+| `gate_console_used` | bool | HaX on the gate console's first `object_interacted` | the split |
+| `split_started` | bool | Netherton's split line, last line | table copies, Arakawa's call |
+| `arakawa_call_done` | bool | his scene's last line; HaX when `arakawa_ko` | `pair_back` |
+| `pair_back` | bool | HaX, second of `arakawa_call_done` and `flag1_submitted` | the breach, table copies |
+| `breach_open`, `inner_door_open`, `stair_open`, `gallery_open` | bool | HaX on `door_unlocked_by_npc` (§4) | HaX's calls, staging, hub, clock |
+| `outer_lock_open` | bool | HaX on `door_unlocked` / `door_unlocked_by_npc` into the core | `head_start_out`, lock copies, music, hub |
+| `breach_announced` | bool | HaX on `breach_open` with `!nightshade_tethered` | the alarm panel's lamps, `tunnel_guard` |
+| `tripwire_armed` | bool | the closing choice (`nightshade_map_used && !payment_checked`) | the inner door |
+| `tripwire_tripped`, `wren_warned`, `security_alerted` | bool | HaX on the first try at the inner door or the ladder's first use | security office guards, alarm lamps, Kowalczyk's peel-off room (RL §2.9) |
+| `ladder_used` | bool | `post_ladder`'s mapping | the inner door, `ladder_call` |
+| `override_held` | bool | `alarm_override`'s `onPickup` (the shown branch) | the tunnel post (empty), alarm lamps |
+| `plans_read`, `payment_read` | bool | `helena_plans` / `nightshade_payment` `onRead` | Nightshade's check option |
+| `<room>_entered` (one per room) | bool | HaX on the room's first `room_entered` | "[Where are we?]", hub gates, the clock |
+| `ghost_call_done` | bool | the call's last choice | the stair, task |
+| `ghost_watch_on_route` | bool | Ghost's call (broken, keys used) | Imran's card (uncloneable) |
+| `door_log_given` | bool | HaX on the door log's first read | hub topic retire |
+| `clue_door_log`, `clue_alibi`, `clue_bench_log` | bool | `onRead`s, HaX's alibi topic, the helpers (§3) | WREN tasks, hub |
+| `signout_read` | bool | the sign-out sheet's `onRead`; HaX's topic | hub |
+| `casualty_sheet_read`, `margin_note_read` | bool | `onRead`s | tasks, Voltage's talk-down, the rebuttal's form |
+| `phone_voice_is_hax` | bool | HaX `game_loaded`, on the slot's HaX arm (§4.9) | hub topic "[Talk me through the shutter.]" |
+| `cut_by_hand` | bool | HaX (§4.9) | the slot voice's ring |
+| `cut_step` | int, `0` | `cut_call`'s ink | `cut_call`'s routing |
+| `gallery_shutter_cut` | bool | the slot-holder's ink or `cut_call` | the gallery stair |
+| `voltage_print_lifted` | bool | HaX on `fingerprint_collected:voltage` | Voltage's stand-down |
+| `keypad_dusted` | bool | HaX on `fingerprint_collected:gallery_shift` | the plate's text |
+| `backdoor_channel_live` | bool | HaX `game_loaded` from the m07 imports | `close_the_backdoor`, hub |
+| `hax_jammed` | bool | HaX (§5) | every HaX call and text, hub, music |
+| `at_keypad` | bool | `lock_guard`'s mappings | his challenge |
+| `lock_guard_known` | bool | the rota's `onRead`; Ghost's card answer; escaped Victoria's "[Go.]"; Vos's "[Deal.]" (§4.5) | the pointer bark |
+| `gallery_rota_read` | bool | the rota's `onRead` | the guard's rota option |
+| `lock_guard_challenged` | bool | his challenge | his `skipIfGlobal` |
+| `what_went_out_given` | bool | HaX's topic | hub topic retire |
+| `core_greeted`, `flag4_heard`, `case_heard` | bool | `core_router` steps 2, 4, 5 | `core_router` |
+| `wren_entering`, `wren_stopped`, `quintero_enters_core` | bool | the core beat's ink | the core copies (RL §2.8) |
+| `six_done`, `closing_done` | bool | the closing scenes' last lines | the closing chain, credits |
+
+Not listed: MC §12's decision globals (`officer_out`, `ghost_gift`, `victoria_gallery`, `vos_outcome`, `server_hall_warned`, `victoria_line_done` and the rest).
+
+## Stages 4–5 milestone fixes
+
+2026-10-21. The four parts of the milestone review (`finale/MILESTONE_S4-5_PART_*.md`) and the orchestrator's rulings (`scenarios/FINALE_DEV_LOG.md`, "Milestone check: stages 4–5"), applied to the six m10 docs. "s0", "arc", "SE", "MC", "OT", "RL" as §0.
+
+**Choices made where a ruling left them open:**
+
+- **Malhotra's wrong-accusation cost** (A5). The jam stays on `room_entered:gallery` only (OT's wiring). With Malhotra out, HaX's `gallery_open` call breaks up after the warning she owes, so the sweep line and the next door are lost to static. One ink branch, read when the call plays; no mapping changes. Moving the jam to the server hall would have silenced HaX's console knot and the flag 2–3 help.
+- **HaX's flag 4 lines** (A7). They are her second-speaker lines inside Tesseract's conversation (`core_router` step 4), opened by his mapping on `flag4_submitted` with `delayMs: 1500`. No phone call, so nothing cuts his conversation. The voiced-call count drops from about 85 to about 80.
+- **Ghost's card gift** (A2). Spoken only, plus `lock_guard_known`; no fourth notes item.
+- **"Manual."** (A14, F-13). Nightshade's own line on the net inside `breach_call`, voiced in his voice. No narrator line in any voiced call (m09's convention).
+- **The pointer bark** (A13). Kept on the lock guard, reworded to first person: "That takes the shift code. It's on my card, and it stays there."
+- **The far stair** (B1). She leaves "back down the gallery stair" at the walkway's west end, past the player.
+- **Wendell on the captured branch** (A9). Not in the room; arc changed to match RL and MC.
+- **04:00 before flag 2** (A22). The hour shows from the briefing; flag 2 shows how it goes out.
+- **The casualty sheet's initials** (A35). Asante initialled her correction; Tesseract signed again under it.
+- **Arakawa out** (A31). A line from Netherton on the net, no deputy NPC. **The fence gap** (A30): visual only.
+
+**Part a3237d9b (m10 stages 0–5): 13 majors, 22 minors, 8 stale copies.**
+
+| Finding | Where fixed |
+|---|---|
+| A1 task count | OT §2 (20 required, 8 optional) |
+| A2 Ghost's refused gift | OT §4.2, §9 A1, A6, C4; RL §2.1, §5; MC §3.2, §16 C4; arc §7.5; s0 §2.2; SE §3.5 |
+| A3 `lock_guard_known` writers and the guard's options | OT §4.5 (table), §16; RL §2.3, §2.7; MC §3.5, §12 |
+| A4 Victoria's re-ring | OT §4.4, §13; RL §2.6 |
+| A5 Malhotra out | OT §4.4, §9 W2; arc §6.5, §8.4; MC §5, §12, §16 W2; SE §3.1, §3.4 |
+| A6 raid-team roster | RL §2.9 (new), §2.3, §2.4, §2.6 |
+| A7 voiced-call wiring | OT §13 (table and rules), §4.6 step 4, §3; SE §3.1, §9; MC §6.1; arc §9.3; s0 §6 |
+| A8, B8 F20 wording and the exit rule | OT §0, §13; s0 §6; SE §9 |
+| A9 B5 and Wendell | OT §9 B5; arc §7.3 |
+| A10 Vector and Phantom | RL §2.1 |
+| A11 Wendell's cost before the pick | OT §4.9; SE §3.6; MC §3.4 |
+| A12 `recruiter_phone` | RL §2.1, §4 |
+| A13 "the duty guard" | OT §3, §4.5; RL §3, §7; MC §3.5; arc §9.2, §21 note; SE §3.6 |
+| A14 "Manual." | OT §4.1, §13; arc §5.3 |
+| A15 tether copies at the blast door | RL §2.1, §2.9 |
+| A16 Netherton at the gate | OT §6; arc §5.2 |
+| A17 lock copies' reveal | OT §4.5 |
+| A18 five warnings | OT §4 |
+| A19 "Get on his box." | OT §3 |
+| A20 HaX's forty-seven | MC §6.2, §7 (imports table) |
+| A21 "[What went out?]" | OT §5 |
+| A22 04:00 before flag 2 | OT §6; s0 §2.2 |
+| A23 VM minutes | arc §2 |
+| A24 clock wording | OT §6 |
+| A25 globals inventory | OT §16 (new); MC §12 pointer |
+| A26 re-ring keys | OT §4.9, §13 |
+| A27 "Who gave out the code?" | OT §4.5; arc §7.4; MC §3.5; SE §3.6 |
+| A28 ringing bark from HaX | OT §4.2; SE §3.5 |
+| A29 resume lines | OT §4.2; SE §3.5 |
+| A30 fence gap | arc §5.2; MC §7 (imports table); RL §2.1 |
+| A31 Arakawa-out deputy | arc §8.4; MC §5; SE §3.4 |
+| A32 three tiles | RL §2.7; SE §5 |
+| A33 kettle guard | RL §2.2 |
+| A34 notes format, shared digits | OT §4.2; RL §2.1, §2.3 |
+| A35 initials | SE §2, §2.3 |
+| B1 far stair | arc §7.4; MC §3.5 |
+| B2 nine rooms | arc §10.1 |
+| B3 engine 37 | MC §3.1 |
+| B4 tripwire's way round | MC §3.1 |
+| B5 Netherton's KO mapping | MC §3.1 |
+| B6 C4 lock | MC §16 |
+| B7 arc note on OT D4 | arc §21 notes |
+
+**Part a70c75bc (cross-mission), m10 items:** F-01 `targetKnot` on every voiced mapping (OT §4.2, §4.9, §13; RL §2.6); F-02 CyberChef in the start kit (RL §4; s0 §2.2); F-03 `voiced` and `targetKnot` on the re-ring, no `resume` for HaX (OT §4.9, §13); F-07 stale counts (MC §6.3, §7, §12: 90 imports, 27 names; s0 §6 next steps); F-08 F20 committed (OT §0, §13; s0 §6; SE §9); F-09 `malhotra_ko` dropped (MC §5, §12); F-13 no narrator in voiced calls (OT §4.1, §4.3, §13; SE §9); F-15 KO fallback wording (arc §13).
+
+**Part a551d638 (FINALE_ARC), m10 items:** A-06 m10's voiced knots to m09's convention (OT §13 rules); A-15 the far stair (as B1). The rest are FINALE_ARC's.
+
+**Part a3b55ab0 (m09):** nothing for m10's docs; the `cage_bin = letters` payoff was already HaX's line at the server-hall prop in m10.
+
+**Left open:**
+
+- Stage 6: the lock guard's name, the codes' digits (one value per lock), the casualty sheet's correction wording, and the rest of part a3237d9b §3.
+- Stage 7: the guard's four options, the static fragment on Malhotra out, Nightshade's "Manual." line on the net, HaX's ladder lines and every call knot's `#exit_conversation`, from the drafts here.
+- Stage 9: confirm in the browser that `delayMs` holds every HaX call until an open minigame closes, and that Tesseract's `flag4_submitted` mapping opens `core_router` after the flag station closes.
+- Positions in RL §2.9 are drafts; stage 9 checks them against dressing and `predict_door_sides.py`.
