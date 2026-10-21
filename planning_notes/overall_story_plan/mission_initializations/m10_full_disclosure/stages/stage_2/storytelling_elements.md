@@ -379,6 +379,8 @@ Each reads as possibly WREN until a clue clears them, and as someone the player 
 
 Each keeps their own mission's voice and sprite. What they want tonight is what the player's history decided. These are the samples for arc §7; the arc doesn't repeat them.
 
+Ghost's handset and arrested Victoria's secure line are forced phone scenes (FA §6.1; arc §7): if the player closes one early, it rings again as they leave the room and picks up at the last unanswered choice, so each needs a short resume line ("Ghost: Where were we.", "Victoria Sterling: You hung up on me. I'll assume that was the signal.") as well as its opener.
+
 **Agent 0x47 "Nightshade"** (the door). RP; lyrical and serene, a medium line then a short, quotable one. **Wants**, by branch: shown his file, to see Tesseract's face when he works out his own handwriting turned his best recruit; not shown, whatever suits him; arrested, a sentence he can survive; silent, nothing he will say. **Secret:** he still admires the man who wrote him off, and hates that he does.
 
 > (shown) Agent 0x47 'Nightshade': He wrote fifteen years of me as a line item. In his hand. I'd know it anywhere. I learned to write like it.
