@@ -183,10 +183,10 @@ The ledger's live. Twenty-three placements, forty-seven candidates.
 And a legacy section, older than any list we've ever had off them.
 One legacy entry, codename WREN. Updated on day ten, in Sorensen's hand. "Assigned TF Null, Montana operation."
 + [TF Null. That's the raid team.]
-    Montana operation. Day ten. That's one of the four you met at the briefing.
+    That's one of the four you met at the briefing.
 + [Who is WREN?]
     The entry doesn't say who. It says where.
-    Montana operation. Day ten. That's one of the four you met at the briefing.
+    That's one of the four you met at the briefing.
 -
 I've told the Director. He'll say nothing to them. Neither will you.
 // m05, at most one line (CONTRACT §2.1); arrest, combat_nonlethal and
@@ -319,7 +319,7 @@ Her card for the tape room will be in that office.
 {not hand_matched:
     #complete_task:match_the_hand
     #set_global:hand_matched:true
-    You never told me about the writing on Nightshade's file. I put it next to my notebook. It's his.
+    You never told me about the writing on Nightshade's file. I put it beside my old course notebook. Same hand.
 }
 Tomb Beta's owner. It's one of ours. A SAFETYNET staff credential.
 Issued before he left us. Never revoked. The name on it is...
@@ -374,7 +374,9 @@ I don't know if saying it would have saved them. I didn't say it.
     -> said_same
 + {m06_architect_identity_found} [I'd have sat on it too.]
     -> said_same
-+ [Afterwards. Not during.]
+// R2 A-R2-08: only quoted once the player has heard it. The other two
+// answers always show, so the knot can't starve.
++ {afterwards_heard or m07_architect_echo_heard} [Afterwards. Not during.]
     -> said_afterwards
 
 // Script edit R1 A-b: the Reading forms are one line said before the
@@ -383,9 +385,7 @@ I don't know if saying it would have saved them. I didn't say it.
 #set_global:hax_confession_answer:should_have_told
 #set_global:identity_scene_done:true
 #complete_task:hear_the_name
-{reading_told_hax:
-    He wrote that I'd cover for you. He'd know. He taught me.
-}
+// Script edit R2 A-R2-03 / audio cut 2: no Reading form on this answer.
 Yes. I should have.
 You get all of it from now on.
 -> back_to_work
@@ -417,7 +417,8 @@ Seven years, and nobody turned it off. There's more on his box. A memo and a dra
 
 // Beat 3.4. The hub's notice topic has its own lines and never comes here.
 // Script edit R1 A-03/A-04/A-e/A-f: one controller line per form, no
-// choice, one watch line, one send line, the inquiry as its own sentence.
+// choice, the inquiry as its own sentence. R2 audio cut 1: the watch and the
+// send are one line.
 = albion
 #unlock_task:send_the_notice
 {
@@ -435,8 +436,7 @@ Seven years, and nobody turned it off. There's more on his box. A memo and a dra
 - else:
     Albion fixed its own plant. That controller also runs water works and substations. Four hundred sites, still open.
 }
-That's where our watch is. If anyone tries that kit again, we see them.
-Send it and the vendor starts on a fix. They'll go over that kit, so we pull the watch.
+Our watch sits on that kit. Send it, the vendor starts a fix, and the watch comes down.
 {m04_disclosure_choice == "full" or m04_crew_lost:
     And Albion's inquiry gets to ask when we knew.
 }
@@ -480,8 +480,9 @@ It isn't my call. It isn't yours either. If you're going to, don't ask me first.
 #set_global:hour_read_started:true
 #unlock_task:hear_the_mirror_job
 That job on his box still copies to Tomb Gamma. It's the Publication.
-He's giving it away. At six it starts going out, city by city. Turn that key and it goes everywhere in the same minute.
-Then why build a key at all?
+He's giving it away. At oh-six-hundred it starts going out, city by city.
+There's a key on here that sends it everywhere in the same minute.
+Then why build the key?
 He'll call it full disclosure.
 // The D-02 line, once, split at its sentence breaks for the 25-word cap.
 + [Isn't it?]
@@ -694,7 +695,7 @@ Netherton's on the ground at Helena. Tell me when you're ready to come in.
     -> support_hub
 // 14. Victoria's route (S4 §4 row 2b). No _given flag: if the unlock fails,
 // the topic comes back.
-+ {m03_victoria_fate == "recruited" and stacks_entered and not cage_opened} [Sorensen's mail.]
++ {m03_victoria_fate == "recruited" and stacks_entered and not cage_opened} [Can Victoria's people get me through that gate?]
     #set_global:maintenance_code_used:true
     Victoria's people read their mail. There's a maintenance code for that gate.
     The cabinet in there takes her print. It's on the stamp on her shelf.

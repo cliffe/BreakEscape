@@ -4,7 +4,7 @@ Strings the scenario sends as texts, for stage 9 to paste. Unvoiced. The Recruit
 
 | Sender | Text (fixed) | Trigger (for stage 9) |
 |---|---|---|
-| `recruiter` | You took the name and something off my deck. I said I'd know before your plane landed. It's still in the air. | `room_entered:tape_room`, condition `globalVars.recruiter_offer === 'double_crossed'`, `onceOnly` |
+| `recruiter` | You took the name and something off my deck. I said I'd know. Your team's plane is still in the air. | `room_entered:tape_room`, condition `globalVars.recruiter_offer === 'double_crossed'`, `onceOnly` |
 
 Notes for stage 9:
 

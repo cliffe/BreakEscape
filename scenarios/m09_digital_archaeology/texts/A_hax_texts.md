@@ -26,7 +26,7 @@ Stage 9 pastes these as `sendTimedMessage` mappings on `agent_0x99` (unvoiced, n
 | A3-09 | She's sixty-six. | `npc_ko:sorensen` | `onceOnly`. **Fixed** |
 | A3-10 | She's done with that box. | `npc_ko:sorensen` with `globalVars.legacy_clock_run` | `onceOnly`, `delayMs: 5000` (after A3-09). **Fixed** |
 | A3-11 | Her cracker. Use it anyway. | first `room_entered:sorensen_office` with `globalVars.sleeper_named` | `onceOnly`, before the safe. **Fixed** |
-| A3-12 | Kowalczyk's toy. Tell her it worked. | the safe's unlock (`director_safe`) with `!globalVars.sleeper_named` | `onceOnly`. **Fixed** |
+| A3-12 | Safe's open. Kowalczyk will want to hear about her toy. | the safe's unlock (`director_safe`) with `!globalVars.sleeper_named` | `onceOnly`. **Fixed** |
 | A3-13a | Sale. WREN. To Agent 0x00. Consideration, one deck. Booked. | `global_variable_changed:office_entered` with `globalVars.recruiter_offer === 'taken'` | `onceOnly`, `delayMs: 20000`; sets `invoice_booked` (S4 §6.6). **Fixed** |
 | A3-13b | She's booked you. You're in her ledger now. | as A3-13a | `delayMs: 25000`. **Fixed** |
 | A3-13c / d | (A3-13a and A3-13b again) | `global_variable_changed:office_entered` with `globalVars.recruiter_offer === 'double_crossed'` | the second mapping for `double_crossed`, same delays |

@@ -28,8 +28,9 @@ I am still a live placement. Every morning I wake up, and I am still a line in h
     Two names from the firm's sheet, I think. Read the next of kin on each. That is the line they hire on.
 - else:
     The old placements are filed under the firm that placed them. Find the firm's boxes, then the placing sheet.
+    // R2 C-R2-05: the shortlist arm already points at next of kin.
+    They pick people with someone to lose. Look for the ones with a sick parent.
 }
-They pick people with someone to lose. Look for the ones with a sick parent.
 + [Are you safe?]
     Safe enough. Please be quick.
     #exit_conversation

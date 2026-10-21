@@ -47,13 +47,22 @@ VAR hub_quiet = false
     Cody Old Coyote: Knock yourself out.
     #exit_conversation
     -> back
-+ {not old_coyote_told} [I'm not an auditor. You don't want to see tonight.]
+// R2 B-R2-03: deny the audit only once the player has claimed it.
++ {not old_coyote_told and coyote_cover == "auditor"} [I'm not an auditor. You don't want to see tonight.]
     -> truth
++ {not old_coyote_told and coyote_cover != "auditor"} [Go and sit in your truck. You don't want to see tonight.]
+    -> truth_plain
 
 // Shared by the challenge and the hub.
 === truth ===
 #set_global:old_coyote_told:true
 Cody Old Coyote: Figured. Auditors bring coffee. I'll be in the truck.
+#exit_conversation
+-> back
+
+=== truth_plain ===
+#set_global:old_coyote_told:true
+Cody Old Coyote: Figured. I'll be in the truck.
 #exit_conversation
 -> back
 
@@ -85,8 +94,10 @@ Cody Old Coyote: Figured. Auditors bring coffee. I'll be in the truck.
     ~ coyote_asked_log = true
     Cody Old Coyote: Every night. It's on my desk by the dock. Read it if you want. You'd be the first.
     -> back
-+ {not old_coyote_told} [I'm not an auditor. You don't want to see tonight.]
++ {not old_coyote_told and coyote_cover == "auditor"} [I'm not an auditor. You don't want to see tonight.]
     -> truth
++ {not old_coyote_told and coyote_cover != "auditor"} [Go and sit in your truck. You don't want to see tonight.]
+    -> truth_plain
 + [I'll let you get on with your round.]
     Cody Old Coyote: Fence isn't going anywhere.
     #exit_conversation

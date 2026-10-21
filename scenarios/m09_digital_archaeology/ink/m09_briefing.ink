@@ -230,7 +230,7 @@ Director Magnus Netherton: ENTROPY's planner. Every card on this wall has his in
 Director Magnus Netherton: They call him the Architect. We have a suspect.
 Director Magnus Netherton: I will not say the name in this room until we can prove it.
 { m06_architect_identity_found:
-    Agent HaX: You heard me say it after HashChain. I called it his guess.
+    Agent HaX: You heard me say it after HashChain. I called it Satoshi's guess.
 }
 // Beat 7: the stakes, HaX, fact first.
 Agent HaX: Whatever the Publication is, it's built from the database Nightshade sent to Montana. Every weakness we've ever catalogued.
@@ -287,7 +287,7 @@ Agent 0x5E 'Lantern': The long way's for people who get paid by the hour.
 === the_answer ===
 // Beat 11: the player's one answer to the team (MC §4.7). Paid back by HaX
 // when the Recruiter names Kowalczyk, or at the Harwick & Lowe sheet.
-+ [She's right. Send me anyway.]
++ [Quintero's right. Send me anyway.]
     #set_global:raid_team_answer:quintero
     Agent 0x2D 'Anchor': Then don't make me right.
     -> close

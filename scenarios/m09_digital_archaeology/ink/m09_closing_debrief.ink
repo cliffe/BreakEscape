@@ -255,7 +255,7 @@ Narrator: He lays the Montana order on a crate and uncaps a pen.
 Narrator: HaX is on the line from the Citadel, already packing.
 {
 - hax_confession_answer == "should_have_told":
-    Agent HaX: Everything I have on the bunker is on your phone. You get all of it from now on.
+    Agent HaX: Everything I have on the bunker is on your phone. As promised.
 - hax_confession_answer == "same_in_your_place":
     Agent HaX: I said thank you once. I'm not saying it twice. *beat* I haven't forgotten.
 - hax_confession_answer == "afterwards":
@@ -269,7 +269,7 @@ Agent HaX: I still owe you the rest. When this is over.
 - sleeper_named:
     Director Magnus Netherton: We take her at the briefing, in front of the others, where there is nowhere to go. Until then she sees nothing in my face. Nor in yours.
 - else:
-    Director Magnus Netherton: If I bench four agents tonight, WREN knows we know. They come. You watch them.
+    Director Magnus Netherton: If I bench anyone tonight, WREN knows we know. They come. You watch them.
 }
 // Beat 8: the last image. Task and report_done directly above it (lesson 46).
 #complete_task:report_to_netherton

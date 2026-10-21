@@ -85,7 +85,9 @@ VAR recruiter_hung_up = false
     }
     -> spring
 - m05_recruiter_deal_accepted and m05_recruiter_deal_confessed:
+    // R2 B-R2-01: her line first (the sold-and-lied clip), then HaX's.
     #unlock_task:answer_the_offer
+    Forty-seven names, and nothing points at you. Does your handler know? I have one more name for you. Keep this one too.
     Agent HaX: We've talked about that. She has nothing on you.
     -> spine
 - m05_completed:
@@ -125,7 +127,7 @@ Margaret's shredding eleven years of my placements tonight, for his schedule. I'
 // The double-cross cost she no longer says in full ("half my people will
 // have moved") is said before the button by HaX's yes-block line.
 = offer
-One of your four is mine. Was mine, until your Architect took them for Montana. The name tonight, for the deck. All of it.
+One of your four is mine. Was mine, until your Architect took them for Montana. The name tonight, for my tape deck. All of it.
 Say no and I wipe it myself. Same deck, no name.
 I can't see which tape you pull, only that you pulled one. Take the name and pull anything, and I call my placement.
 // B-2: HaX on what her file holds, by m05 (group A to sign off). No
@@ -192,8 +194,8 @@ Agent HaX: She only watched the counter. I can pull one before it wipes. Which?
 
 // After a hang-up: no Recruiter line. HaX's asides stand in for narration.
 = hang_up_block
+// R2 audio cut 3: one counter line, not two.
 #set_global:recruiter_gone:true
-Agent HaX: Her counter's running.
 Agent HaX: She's wiping it. She thinks it's gone.
 Agent HaX: Her file is her network, all of it. The Alpha tapes are him teaching, recorded.
 Agent HaX: One of them. Now.
