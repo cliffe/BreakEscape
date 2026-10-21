@@ -127,6 +127,10 @@ Fix round 1 for Phases 2-4 (grok): every P2-T, P3-T and P4-T finding reported fi
 
 `build_log/P5-R.md`. No m01-m08 impact (landing guard runs only with landing globals; R4 confirmed). 07 §1 safety verified in code: preview draws only inert elements, local image paths, no network, no typed value stored. Minors: equal-rank victim write-backs resync needlessly (F1, fix by skipping equal rank); `pendingMessage` stored unsanitised but bounded (F2); a scope note (F3). The browser bridge P5-T is the last open item.
 
+### Lab, implementation review 1 (P6-R, opus48): 0 blocker, 1 major, 6 minor
+
+`scenarios/lab_social_engineering/IMPL_REVIEW_R1.md`. Faithful, solvable build. R-A (major): Lord's look-alike-domain replay in triage comes back as a failing spoof, because the sent record drops the chosen domain and `lookupDomain` reads the wrong place (`brands[].domains`). Decisions: fix both and add an end-to-end Lord send to triage check; the report workstation refuses until the phishing stage is done (R-b5); Ruth's hints send the student back to Fairbairn (R-b3); fix R-b1, R-b2, R-b6 and P5-R's F1 and F2. Fix round (opus48).
+
 ## Questions for the user
 
 - **How to build the rest of Phase 4** (call preparation screen P4-C, call UI P4-E, its bridge and playtest). The orchestrator's brief for P4-C was stopped by a safety classifier.
