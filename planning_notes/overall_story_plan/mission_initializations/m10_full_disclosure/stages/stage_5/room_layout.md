@@ -88,7 +88,7 @@ Objects without a template slot are pinned with `position` (README:1773). **The 
 | Arakawa (`arakawa_post`, then `arakawa_gate`) | (11, 7) at the case end; (16, 5) at the gate | the table until `split_started`, then the gate (his call, OT §6) until `breach_open` | knockable, `arakawa_ko`; the same guard |
 | Vector, Phantom (`vector_post`, `phantom_post`) | (14, 7), (15, 7) | `m08_completed` and not wronged (one mapping per import arm) | knockable, `vector_ko`, `phantom_ko` |
 | A minder (`minder_post`) | (4, 7) | always (one of SAFETYNET's own; the freeze empties ENTROPY's posts, not ours) | knockable |
-| Ghost (`ghost_phone`), Victoria's line (`victoria_line`), Vance (`vance_phone`), Elena (`elena_phone`) | 500, 500 | phone NPCs, listed here so they hear early events (F-21) | phones |
+| Ghost (`ghost_phone`), Victoria's line (`victoria_line`), Vance (`vance_phone`), Elena (`elena_phone`) | 500, 500 | phone NPCs, listed here so they hear early events (F-21). `ghost_phone`'s `itemsHeld` holds two `notes` items given by `#give_item` (F21): `ghost_cupboard_code` (`name: "Records cupboard: Ghost's code"`, kept branch) and `ghost_lock_code` (`name: "Outer lock: maintenance code"`, refused branch), each `text` a fixed four-digit string matching the lock's `requires`; no `|`, `#`, `//`, `{`, `}` | phones |
 | `six_oclock`, `hearing`, `citadel` | 500, 500 | hidden closing-scene NPCs; each opens its own scene (OT §4.7) | – |
 
 ### 2.2 `blast_tunnel` (2×1)
@@ -125,7 +125,7 @@ Both copies are knockable (`tunnel_guard_ko`); nothing hangs on them.
 | `clock_security` | the duty screen (countdown) | (9, 3), east wall | |
 | `door_log` | the monitoring desk's door log | (7, 5), `as-type:cctv_monitors` | readable; `onRead` sets `clue_door_log` and HaX volunteers the read (`door_log_given`); on `taken` no 02:10 entry |
 | `duty_handset` | the desk phone | (5, 5) | rings (text "Ringing.") while `!ghost_call_done`; a click opens Ghost's call (OT §4.2) |
-| `records_cupboard` | the old records cupboard, `lockType: pin` | (1, 4), west wall | the kept branch's "east door" and Vector's "sealed door", in one place. Code from Ghost (kept) or Vector, both noted (`#add_note`); the cracker also opens it. Contents: the gallery's shift rota (`gallery_rota`, readable; names the lock guard; `onRead` sets `lock_guard_known`) and the night's alarm log (lore) |
+| `records_cupboard` | the old records cupboard, `lockType: pin` | (1, 4), west wall | the kept branch's "east door" and Vector's "sealed door", in one place. Code from Ghost (kept; `ghost_cupboard_code`, given by `ghost_phone`) or Vector (`vector_cupboard_code`, given by `vector_so`), each a `notes` item given with `#give_item` (F21; not `#add_note`); the cracker also opens it. Contents: the gallery's shift rota (`gallery_rota`, readable; names the lock guard; `onRead` sets `lock_guard_known`) and the night's alarm log (lore) |
 | `fitter_locker` | the shift fitter's locker, `lockType: key`, pickable, easy pins | (1, 6), west wall | contents: the fitter's spare `tg_power_room_card` keycard (F-08b: the no-talk route through the workshop is a return trip here, and spends the pick) |
 
 **NPCs.**
@@ -135,7 +135,7 @@ Both copies are knockable (`tunnel_guard_ko`); nothing hangs on them.
 | `duty_guard` | patrol (4, 4) → (6, 8), clear of every object and of `kowalczyk_ahead_so` (R2-m6) | always; faster on `security_alerted` | knockable, `duty_guard_ko` |
 | `duty_guard_b` | at the monitors (8, 4) | unless `m06_assets_seized` | knockable |
 | `kowalczyk_ahead_so` | (6, 7) | the tether branch's peel-off, a room early; carries `!globalVars.kowalczyk_ko` | knockable, `kowalczyk_ko` |
-| `vector_so` | (3, 5), beside the cupboard (not in front of it) | Vector present: reveals itself on `room_entered:security_office`, gives the code in his ink, hides itself on `room_exited` | knockable, `vector_ko` |
+| `vector_so` | (3, 5), beside the cupboard (not in front of it) | Vector present: reveals itself on `room_entered:security_office`, gives the code in his ink (`#give_item:notes:vector_cupboard_code`), hides itself on `room_exited` | knockable, `vector_ko`. `itemsHeld`: the notes item `vector_cupboard_code` (`name: "Records cupboard: Vector's code"`, `text`: the four digits as a fixed string matching `records_cupboard`'s `requires`, e.g. "Records cupboard code (Vector): <four digits>"; no `|`, `#`, `//`, `{`, `}`) |
 | `arakawa_ahead_so` / `quintero_ahead_so` | (4, 7) | per the staging rule (FA §4.0), with their KO guards | knockable |
 
 ### 2.4 `workshop_floor` (2×2)
@@ -343,7 +343,7 @@ FA §3.2's forty Tier 1 imports, by the room they change and how. Every change i
 | `m04_voltage_escaped`, `m04_voltage_print_on_bypass` | power room | `voltage_power` at the switchgear; the dustable `bypass_panel` carries his print, and the m04 print is what it matches (F-07) |
 | `m04_static_left`, `m04_static_left_alone` | power room | `static_power` beside escaped Voltage; `static_kit` on the bench when he left alone |
 | `m04_vance_is_ally`, `m07_elena_outcome` | power room | which phone NPC fills the slot |
-| `m02_ghost_deal_accepted`, `m02_exposed_hospital`, `m02_ghost_deal_refused`, `m02_ghost_keys_used` | security office; workshop; gallery | Ghost's branch; the cupboard code (kept); the lock's code or the lock guard's name (refused), each noted with `#add_note`; on broken with keys used, Ghost's text and Imran's card made uncloneable (`ghost_watch_on_route`, a local written at the call) |
+| `m02_ghost_deal_accepted`, `m02_exposed_hospital`, `m02_ghost_deal_refused`, `m02_ghost_keys_used` | security office; workshop; gallery | Ghost's branch; the cupboard code (kept); the lock's code (refused; the lock guard's name stays spoken), each given as a notes item with `#give_item` (`ghost_cupboard_code`, `ghost_lock_code`; F21); on broken with keys used, Ghost's text and Imran's card made uncloneable (`ghost_watch_on_route`, a local written at the call) |
 | `m02_gary_protected` (with `m02_completed`, `m02_exposed_hospital`) | workshop | `gary_consultant` at the door, or `gary_tech` at the bench, or neither |
 | `m02_reeves_fate`, `m02_insider_asset_arrested`, `m02_insider_asset_escaped` | tunnel | `tunnel_rota` variant |
 | `m07_mercer_fate`, `m07_mercer_ko` | server hall | `mercer` in place of `asante`; on `arrested`, HaX's map line on entry |
@@ -408,7 +408,7 @@ None is made here; OT §10 has the objective-side ones (S4-1 to S4-22). Updated 
 
 | # | To | Change | Why |
 |---|---|---|---|
-| S5-1 | FA rows 13, 112, 121; §4.4 Ghost row; MC §3.2; arc §5.4 item 5, §7.5 | The kept branch's "east door" and Vector's "sealed door" are **the records cupboard** in the security office (PIN; Ghost or Vector gives the code, noted in the notepad); it holds the gallery rota naming the lock guard | accepted by the orchestrator; no ninth room |
+| S5-1 | FA rows 13, 112, 121; §4.4 Ghost row; MC §3.2; arc §5.4 item 5, §7.5 | The kept branch's "east door" and Vector's "sealed door" are **the records cupboard** in the security office (PIN; Ghost or Vector gives the code as a notes item, which reaches the notepad); it holds the gallery rota naming the lock guard | accepted by the orchestrator; no ninth room |
 | S5-2 | FA §4.0 route, §4.4 gallery rows; MC §3.5 "ways through"; s0 §2.2 RFID row | **The outer lock is a PIN lock** with five ways through (OT §4.5) | accepted by the orchestrator; F-07, F-09 |
 | S5-3 | MC §6.7, FA §4.3 step 3 | The release key's confirmation is an ink choice | §6 item 45 |
 | S5-4 | MC §3.4, P14 | The gallery camera switch is a choice inside the by-hand cut's ink | §6 item 46 |
@@ -481,3 +481,4 @@ Stage 9 re-runs `check_door_alignment.py` on the final scenario; the round 2 rev
 
 `REVIEW_R3.md`, 2026-10-21: 3 majors, 5 minors, all applied, none withdrawn; OT §15 maps each. In this file: R3-M1 and R3-m2 (the lock guard's `skipIfGlobal` and the clears of `at_keypad`, §2.7), R3-m4 (`farah_chair` and the reinforcements off his patrol row, §2.7), R3-m1 and R3-m5 (stale copies in §6 and §7). The orchestrator checks directly from here.
 
+F21 (user, 2026-10-21): `#add_note` is not used. Ghost's and Vector's codes are `notes` items in `ghost_phone`'s and `vector_so`'s `itemsHeld`, given by `#give_item` (§2.3; OT §4.2).

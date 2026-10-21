@@ -203,7 +203,7 @@ Ink `#unlock_door` with `unlockable` stays only where a person opens a door in t
 - **The call is answered, not sprung** (R1D-M11). On `room_entered:security_office` with `!globalVars.ghost_call_done`, Ghost's NPC (`ghost_phone`, listed in `forward_post`) sends a bark: "Duty line. The handset on the desk is ringing." The `duty_handset`'s text reads "Ringing." while the call is unanswered. The call opens when the player clicks the handset: Ghost's mapping on `object_interacted` with `data.objectName === 'Duty Handset' && data.roomId === 'security_office' && !globalVars.ghost_call_done`, `conversationMode: phone-chat`, `resume: true`, `disableClose: true`, `voiced: true`, `cooldown: 0`. An event, not a latch global, so every click works (R1D-M4). The player picks the moment, so the room's patrols are never on them mid-call by surprise; the stair holds them until they answer.
 - **Re-ring:** re-entering the office repeats the bark; `resume: true` returns the call to its last unanswered choice (it falls back to the knot when nothing is saved; F-15). There is no `player_room` global (F-15).
 - **Door condition:** `globalVars.ghost_call_done === true`. HaX's line on `stair_open`: "Stair's open. Workshop floor's below you."
-- **Codes said on the call are written down** (R1D-m11): Ghost's last line on the kept branch runs `#add_note` with the cupboard's code; on the refused branch, the outer lock's maintenance code or the lock guard's name. Vector's cupboard code is noted the same way.
+- **Codes said on the call are written down** (R1D-m11): Ghost's last line on the kept branch ends with `#give_item:notes:ghost_cupboard_code`; on the refused branch, `#give_item:notes:ghost_lock_code` (the outer lock's maintenance code), while the lock guard's name stays spoken (the rota names him anyway). Vector's cupboard code is `#give_item:notes:vector_cupboard_code` from `vector_so`. Each is a `notes` item in the speaker's `itemsHeld` (`ghost_phone`, `vector_so`; stage 5 RL §2.3) with a `name` and a fixed `text` of four digits matching the lock's `requires` (fixed at stage 9; no `|`, `#`, `//`, `{`, `}`). A notes item an NPC gives reaches the notepad (m09 S4 §4 row 7). `#add_note` is not used: `NPCGameBridge.addNote` builds a note with no text or id and the notepad throws (F21).
 
 ### 4.3 The tunnel's inner door, and the tripwire
 
@@ -456,7 +456,7 @@ MC §16's live plan (3 end to end, 8 + 5 + 4 + 6 + 9 segments) as `tools/playtes
 
 | Run | Imports | Extra |
 |---|---|---|
-| A1 | m09 `recruiter_offer=taken`, `sleeper_named`; m08 `nightshade_arrested`, `nightshade_ko_before_fate`; m02 `ghost_deal_refused` | the refused branch's code goes into the notepad (`#add_note`) |
+| A1 | m09 `recruiter_offer=taken`, `sleeper_named`; m08 `nightshade_arrested`, `nightshade_ko_before_fate`; m02 `ghost_deal_refused` | the refused branch's code goes into the notepad (`ghost_lock_code`, `#give_item`); check the item is in the notepad |
 | A2 | m09 `recruiter_offer=double_crossed`, `sleeper_named`, `deck_pulled=her_file` | – |
 | A3 | m08 `nightshade_triple_agent`, `triple_agent_first_payment`; Vector and Phantom present (`m08_completed`, neither accused); m09 `nightshade_shown_file`; m02 `ghost_deal_accepted`, `exposed_hospital` | the gate console started before the table: the split waits for the table |
 | A4 | as A3 | reload before the closing choice: respawn, walk back, the knot re-enters at it; a strike at Nightshade does nothing (`__test.debugKO` returns `ko-immune`) |
@@ -502,7 +502,7 @@ MC §16's live plan (3 end to end, 8 + 5 + 4 + 6 + 9 segments) as `tools/playtes
 | D1 | E1's file | six fresh games, one per ending; the closing chain per §4.7's table (the hearing after the 06:00 scene on `scorched`); `--set head_start_out='"zero_day"'` on two for the card and his release line |
 | D2 | none | Join's steps; the confirmation choice's "No" returns to step 2 |
 | D3 | none | a reload between each menu; `points_landed` derived, not counted |
-| D4 | none | strikes at him at each menu (immune); then the KO fallback on a scratch copy with the key removed |
+| D4 | none | strikes at him at each menu (immune; no knock-out fallback exists) |
 | D5 | none (`--set whodunit_live=true`) | with Quintero; then `--set quintero_ko=true` for "[Stop her.]" |
 | D6 | m09 `recruiter_offer=double_crossed`, `sleeper_named`; second game `--set sleeper_caught=true --set accused='"kowalczyk"'` | – |
 | D7 | m09 `deck_pulled=alpha_tapes`, `recruiter_offer=refused` | with and without `--set quintero_ko=true` |
@@ -654,5 +654,6 @@ Not voiced under F20: HaX's hub topics, "[Where are we?]", "[What's still live?]
 | R3-m3 | the extra `whodunit_open` guard on WREN task mappings dropped | §2 notes |
 | R3-m4 | the chair and the reinforcements off the lock guard's patrol row | RL §2.7 |
 | R3-m5 | stale copies reworded | §3, §11; RL §6, §7 |
+| F21 (user, 2026-10-21) | `#add_note` is not used; Ghost's and Vector's codes are `notes` items given by `#give_item` (`ghost_cupboard_code`, `ghost_lock_code`, `vector_cupboard_code`) | §4.2, §9 A1; RL §2.3 |
 | F20 (user) | voiced lines recounted for the calls only: about 85 | §13 |
 
