@@ -189,3 +189,4 @@ User answers 2026-10-21: **F12 approved** (voiced Alpha-tapes clip); **F13 appro
 - **m10 stage 3 closed 2026-10-21.** Three review rounds (R1 42, R2 16, R3 5 findings; one blocker in R1, fixed).
 
 ## Fold stage 3 proposals, then the stages 0–3 milestone review
+- Fold (m09 docs): 14/14 stage-3 proposals for stage 0/1/2 applied plus engine items 17–29 and the playtest set; story_arc §19 maps each. Not applied: the Recruiter's old refusal line (superseded), review-history tables (kept as record), the optional exported flat reply. "Great Falls" survives only as where Noor is held (stage 3's own wording).
