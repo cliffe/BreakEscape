@@ -272,6 +272,8 @@ Fix round 1 for Phases 2-4 (grok): every P2-T, P3-T and P4-T finding reported fi
 
 - **P6-W** (Sonnet): report registered, started, branched, linked, preloaded; schema notes the board's four modes. Lab `--strict-social` 0; full Node 1499/1499; the report opens in a lab game (3010). Found: the report's root-cause and control options have no `text`, so their buttons are blank; sent to opus48 with a lint so it cannot recur.
 
+- **Bridge harness fix** (Sonnet): the reload race (an eval started against the old page as navigation committed) fixed with two Node-side screenshot steps after each reload wait; bridge-1a B1 updated for three board people. All seven slice bridges pass on fresh games: 1a 38, 1b 82, 2 15, 3 32, 3b 8, 3c 4, 4 30. Note: the session `--log` appends, so use a fresh output path per run.
+
 ## Review rounds
 
 ### Phase 0, round 1 (P0-R, Opus): 0 blocker, 2 major, 13 minor

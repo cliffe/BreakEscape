@@ -23,6 +23,8 @@
 {"cmd":"note","message":"T12 reload mid-round"}
 {"cmd":"waitFor","kind":"condition","fn":"() => { window.__preReload = true; setTimeout(() => location.assign(location.pathname + \"?skip_resume=1\"), 50); return true; }"}
 {"cmd":"waitFor","kind":"condition","fn":"() => !window.__preReload && window.__test && window.__test.isReady() === true","timeoutMs":60000}
+{"cmd":"screenshot","path":"/tmp/be-bridge-reload-wait.png"}
+{"cmd":"screenshot","path":"/tmp/be-bridge-reload-wait.png"}
 {"cmd":"eval","fn":"async () => { /* RELOAD the page reloaded (sentinel gone), the bridge is back and the game is ready */ const t0 = Date.now(); while (!(window.__test && window.__test.waitUntilReady) && Date.now() - t0 < 60000) await new Promise(r => setTimeout(r, 250));\n    if (window.__preReload) return false; const r = await window.__test.waitUntilReady({ timeoutMs: 60000 }); return !!(r && r.ok); }"}
 {"cmd":"bootstrap","tutorial":"decline","resume":"resume"}
 {"cmd":"eval","fn":"async () => { /* T12 reload mid-round: the half-done round was not scored */ const t = window.__test; const g = t.getState().globals;\n  return g.slice_triage_done === false && g.slice_triage_pass === false && g.slice_triage_percent === 0 && g.slice_triage_reportRate === 0\n    && !t.getState().objectives.completedTasks.includes('triage_sorted') && !t.getState().activeMinigame; }"}
@@ -45,6 +47,8 @@
 {"cmd":"note","message":"T21 reload after the result"}
 {"cmd":"waitFor","kind":"condition","fn":"() => { window.__preReload = true; setTimeout(() => location.assign(location.pathname + \"?skip_resume=1\"), 50); return true; }"}
 {"cmd":"waitFor","kind":"condition","fn":"() => !window.__preReload && window.__test && window.__test.isReady() === true","timeoutMs":60000}
+{"cmd":"screenshot","path":"/tmp/be-bridge-reload-wait.png"}
+{"cmd":"screenshot","path":"/tmp/be-bridge-reload-wait.png"}
 {"cmd":"eval","fn":"async () => { /* RELOAD the page reloaded (sentinel gone), the bridge is back and the game is ready */ const t0 = Date.now(); while (!(window.__test && window.__test.waitUntilReady) && Date.now() - t0 < 60000) await new Promise(r => setTimeout(r, 250));\n    if (window.__preReload) return false; const r = await window.__test.waitUntilReady({ timeoutMs: 60000 }); return !!(r && r.ok); }"}
 {"cmd":"bootstrap","tutorial":"decline","resume":"resume"}
 {"cmd":"eval","fn":"async () => { /* T21 the saved result and the completed task survive the reload */ const t = window.__test; const g = t.getState().globals;\n  const snap = JSON.parse(sessionStorage.getItem('be_p3_triage_snap') || 'null');\n  return !!snap && g.slice_triage_done === true && g.slice_triage_pass === true\n    && g.slice_triage_percent === snap.percent && g.slice_triage_reportRate === snap.reportRate\n    && t.getState().objectives.completedTasks.filter(id => id === 'triage_sorted').length === 1\n    && g.defender_profile_done === false && !t.getState().activeMinigame; }"}
