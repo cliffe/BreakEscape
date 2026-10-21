@@ -341,3 +341,4 @@ Plan: 7a a CONTRACT.md per mission in scenarios/<mission>/ (every ink file and o
 - R1 fixes applied: A all but A-26 (accepted as is), B all (B-09 bracketed silent option; B-10 'Twice now' gated on m09_completed), C all; cross-group B-04 'dead', A-10 'Confirmed…' lines shared. 33/33 compile, lint 0 errors, loopcheck clean. Voiced: Tesseract 185, 06:00 100, calls 81. CONTRACT.md draft 2 with §8 'Script edit R1 changes'.
 
 ### m10 script edit round 2
+- R3 (fresh editor): revise (light), then ship. A 0/1/2, B 0/1/2, C 0/0/2. All R2 in; compile 16/16, lint 0 errors, loopcheck 24 states clean. Quotables per scene confirmed. Gap: m08 KOs of HaX/Netherton are name-checks only. Ruling: apply all findings and improvements; A-R3-01 take 'I covered for him.' (+1); I-7 Netherton pen line (+1) for carry-over impact; C2 L215 full form.
