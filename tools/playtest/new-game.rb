@@ -22,10 +22,51 @@
 #   latest  look the player's finished runs up, as a real game does.
 #   <file>  a JSON object { "m06_assets_seized": true, "m06_completed": true }.
 # Games started from the browser UI always look up (latest).
+#
+# Test-only head-start options (they edit this one game row, nothing in the
+# engine; a normal "new game" cannot reach them). Repeatable; both
+# `--opt value` and `--opt=value` work:
+#   --start-room ROOM_ID   begin in that room (rewrites THIS game's copy of
+#                          scenario_data['startRoom'], so it is unlocked, loaded
+#                          and the spawn point). Must be a room id in the scenario.
+#   --unlock ROOM_ID       also mark a room unlocked (the start room always is)
+#   --set name=value       set a global variable. value is parsed as JSON when it
+#                          can be (true, false, 3, "x"), else kept as a string
+#   --give ITEM_ID         put a scenario item in the inventory, found by its
+#                          object id (rooms, containers, NPC itemsHeld, startItems);
+#                          the room copy is marked removed so it is not doubled
+# Set globals sit in player_state like any played-in value; imported globals
+# (importGlobals) are re-applied by the server, so use --imports=<file> for those.
+# --help prints this text.
+
+if ARGV.include?('--help') || ARGV.include?('-h')
+  puts File.read(__FILE__).lines.take_while { |l| l.start_with?('#') }.map { |l| l.sub(/\A# ?/, '') }.join
+  exit
+end
 
 imports_opt = 'none'
+start_room_opt = nil
+unlock_opts = []
+set_opts = []
+give_opts = []
+head_start = { '--start-room' => ->(v) { start_room_opt = v }, '--unlock' => ->(v) { unlock_opts << v },
+               '--set' => ->(v) { set_opts << v }, '--give' => ->(v) { give_opts << v } }
+rest = []
+args = ARGV.dup
+until args.empty?
+  a = args.shift
+  name, inline = a.split('=', 2)
+  if head_start.key?(name)
+    val = inline || args.shift
+    abort "#{name} needs a value (see --help)" if val.nil?
+    head_start[name].call(val)
+  else
+    rest << a
+  end
+end
+ARGV.replace(rest)
 ARGV.reject! { |a| a.start_with?('--imports=') && (imports_opt = a.split('=', 2)[1]) }
-arg = ARGV[0] or abort 'usage: new-game.rb <mission_name_or_id> [flag_hints.xml] [--imports=none|latest|<file.json>]'
+arg = ARGV[0] or abort 'usage: new-game.rb <mission_name_or_id> [flag_hints.xml] [--imports=none|latest|<file.json>] [--start-room R] [--unlock R] [--set k=v] [--give ITEM_ID]  (--help for details)'
 xml_path = ARGV[1]
 
 mission = if arg =~ /\A\d+\z/
@@ -109,6 +150,78 @@ end
 g.player_state = state
 g.save!
 
+# Head start (test only). Runs after the first save so the game's own scenario
+# copy exists; every edit is to this row.
+head_start_notes = []
+if [start_room_opt, unlock_opts, set_opts, give_opts].any?(&:present?)
+  rooms = g.scenario_data['rooms'] || {}
+  ([start_room_opt] + unlock_opts).compact.each do |r|
+    abort "No room '#{r}' in #{mission.name}. Rooms: #{rooms.keys.join(', ')}" unless rooms.key?(r)
+  end
+  ps = g.player_state
+  if start_room_opt
+    sd = g.scenario_data
+    sd['startRoom'] = start_room_opt
+    g.scenario_data = sd
+    ps['currentRoom'] = start_room_opt
+    head_start_notes << "start_room=#{start_room_opt}"
+  end
+  ps['unlockedRooms'] = (Array(ps['unlockedRooms']) + [start_room_opt].compact + unlock_opts).uniq
+  head_start_notes << "unlocked=#{ps['unlockedRooms'].join(',')}"
+  gv = (ps['globalVariables'] ||= {})
+  set_opts.each do |kv|
+    k, v = kv.split('=', 2)
+    abort "--set wants name=value, got '#{kv}'" if k.blank? || v.nil?
+    gv[k] = begin
+      JSON.parse(v)
+    rescue JSON::ParserError
+      v
+    end
+    head_start_notes << "set #{k}=#{gv[k].inspect}"
+  end
+  give_opts.each do |item_id|
+    found = nil
+    owner_room = nil
+    owner_npc = nil
+    walk = lambda do |node, room, npc|
+      case node
+      when Hash
+        npc = node['id'] if node['itemsHeld'].is_a?(Array) && node['id'].present?
+        if node['id'] == item_id && found.nil?
+          found = node
+          owner_room = room
+          owner_npc = npc
+        end
+        node.each_value { |v| walk.call(v, room, npc) }
+      when Array then node.each { |v| walk.call(v, room, npc) }
+      end
+    end
+    rooms.each { |rid, rd| walk.call(rd, rid, nil) }
+    walk.call(g.scenario_data['startItemsInInventory'], nil, nil)
+    abort "--give: no object with id '#{item_id}' in #{mission.name}" unless found
+    item = found.deep_dup
+    item['takeable'] = true
+    ps['inventory'] = Array(ps['inventory'])
+    ps['inventory'] << item unless ps['inventory'].any? { |i| i['id'] == item_id }
+    if owner_npc
+      # The client re-validates NPC-held items against the server on load and
+      # drops them ("NPC not encountered") unless the NPC has been met.
+      ps['encounteredNPCs'] = (Array(ps['encounteredNPCs']) + [owner_npc]).uniq
+      g.player_state = ps
+      g.record_npc_gift!(owner_npc, item)
+      ps = g.player_state
+      head_start_notes << "met #{owner_npc}"
+    elsif owner_room
+      rs = ((ps['room_states'] ||= {})[owner_room] ||= { 'objects_added' => [], 'objects_removed' => [], 'object_states' => {}, 'npc_states' => {} })
+      rs['objects_removed'] << item_id unless rs['objects_removed'].include?(item_id)
+    end
+    head_start_notes << "give #{item_id} (#{item['type']}, from #{owner_npc || owner_room || 'startItems'})"
+    head_start_notes << "NOTE #{item_id} is a notes item: it opens in the notepad, not the inventory" if item['type'] == 'notes'
+  end
+  g.player_state = ps
+  g.save!
+end
+
 # Sprite-restricted missions (validSprites) redirect the game page to the
 # configuration screen when the shared demo user's saved sprite is not allowed,
 # so window.__test never appears. Switch the preference to an allowed sprite for
@@ -132,6 +245,7 @@ puts "MISSION=#{mission.name} (id #{mission.id})"
 puts "GAME_ID=#{g.id}"
 puts "URL=http://127.0.0.1:#{ENV.fetch('PLAYTEST_PORT', '3000')}/break_escape/games/#{g.id}"
 puts "FLAG_SOURCE=#{source}"
+puts "HEAD_START=#{head_start_notes.join(' | ')}" if head_start_notes.any?
 if g.scenario_data['importedGlobals'].present?
   puts "IMPORTS=#{imports_opt} #{g.scenario_data['importedGlobals'].keys.map { |k| "#{k}=#{g.scenario_data['globalVariables'][k].inspect}" }.join(' ')}"
 end

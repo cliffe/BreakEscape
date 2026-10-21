@@ -12,7 +12,23 @@ Helpers for driving the game through the dev-only `window.__test` bridge. See `d
 
   Set `HEADED=0` for headless.
 
-- `new-game.rb` — creates a playtest game and its flag-hints XML. One argument, the scenario name.
+- `new-game.rb` — creates a playtest game and its flag-hints XML. One argument, the scenario name. `--help` prints the options.
+
+  Head start for short test runs (test-only; they edit that one game row, no engine code, and a normal new game cannot reach them). Repeatable, `--opt value` or `--opt=value`:
+
+  ```bash
+  PLAYTEST_PORT=3001 BREAK_ESCAPE_STANDALONE=true bin/rails runner tools/playtest/new-game.rb m08_the_mole \
+    --start-room server_room --unlock director_office \
+    --set briefing_played=true --set suspect_theory=vector \
+    --give netherton_keycard
+  ```
+
+  - `--start-room ROOM_ID` spawns the player there. It rewrites this game's own copy of `scenario_data['startRoom']` and sets `currentRoom`, so the room is unlocked and loaded first. Unknown ids abort and list the rooms.
+  - `--unlock ROOM_ID` also unlocks a room.
+  - `--set name=value` sets a global before load. The value is parsed as JSON when possible (`true`, `3`, `"x"`), else kept as a string. Imported globals are re-applied by the server: use `--imports=<file>` for those.
+  - `--give ITEM_ID` adds a scenario item to the inventory, found by object id in rooms, containers, NPC `itemsHeld` or `startItemsInInventory`. A room copy is marked removed so it is not doubled. An NPC-held item also marks that NPC as met and the item as given (the client re-checks this on load and silently drops the item otherwise). `notes` items open in the notepad, not the inventory.
+
+  The script prints `HEAD_START=...` with what it applied. Confirm with `verify-run.rb <game_id>` (current room, unlocked rooms, inventory) or, in the browser, `brief` / `state` after `bootstrap`. Not covered: objective/task progress, NPC conversation state, ink variables, door states beyond unlocked rooms. Set the globals the scenario's own gates read, and check the objectives the run starts with.
 
 - `session-start.sh` / `cmd.sh` / `session-stop.sh` — keep one browser open across many tool calls and drive it a command at a time.
 
