@@ -120,7 +120,7 @@ Director Magnus Netherton: The cells get it at four, two hours early, as pay for
 }
 + [How many will it kill?]
     Director Magnus Netherton: His own sheet says eleven hundred to twenty-six hundred, if the key is pressed. City by city, fewer, and later. Not few.
-+ [He's put that in writing?]
++ [Has he costed it?]
     Director Magnus Netherton: Signed it. Eleven hundred to twenty-six hundred, if the key is pressed. City by city, fewer, and later. Not few.
 - Director Magnus Netherton: Full disclosure is one researcher, one flaw, after the vendor stops answering. This is every weapon we hold, handed out at once.
 -> briefing_invite
@@ -217,7 +217,7 @@ Narrator: Netherton and HaX walk you to the van end. Through the open door the t
 + [Then bench the team.]
     Director Magnus Netherton: Bench four agents tonight and WREN knows we know. They stay together.
 + [Do we know who?]
-    Director Magnus Netherton: Bench four agents tonight and WREN knows we know. They stay together.
+    Director Magnus Netherton: No. And if I bench four agents to find out, WREN knows we know.
 - Director Magnus Netherton: I will say nothing to them, and neither will you.
 Director Magnus Netherton: Whoever it is wants the same room you do. Find them before you get there.
 {m09_recruiter_offer == "named":
@@ -233,14 +233,15 @@ Director Magnus Netherton: Whoever it is wants the same room you do. Find them b
 -> aside_end
 
 // The named form (R3-04, M-07): the aside ends at the van window with C18.
-// The first answer is reworded for this route (the player found her in
-// Helena, not on tonight's bench log); its value and her 06:00 reply are the same.
+// The first answer is the taken route's own (SCRIPT_EDIT_R3 B3-01): the
+// Recruiter sold the name on the phone. Same value, bench; her reply on this
+// route is group A's at 06:00.
 === aside_taken ===
 Narrator: Netherton and HaX walk you to the van end. Kowalczyk sits in the back of the second van, cuffed.
 Director Magnus Netherton: She was the one the ledger meant. If there is a second, it does not show one. Watch anyway.
 Narrator: At the van window, Kowalczyk turns her head.
 Agent 0x5E 'Lantern': When did you know?
-+ [In Helena. Your name on the placing sheet.]
++ [In Helena. She sold me your name.]
     ~ kowalczyk_answer = "bench"
 + [Before Helena. I had a feeling about you.]
     ~ kowalczyk_answer = "briefing"
@@ -340,7 +341,7 @@ Agent HaX: Start the gate console on your way past. It's slow to boot.
 - aside_done and door_branch() == "silent" and not door_scene_done:
     -> tether
 - ending != "":
-    Director Magnus Netherton: Go and get warm. The paperwork will keep for an hour.
+    Director Magnus Netherton: Go and get warm. The paperwork can wait an hour.
 - breach_open:
     Director Magnus Netherton: I am on the net. You do not need to come up here for me.
 - door_scene_done and flag1_submitted:

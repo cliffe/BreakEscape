@@ -90,7 +90,7 @@ VAR kow_from_peel = false
 - else:
     Agent 0x5E 'Lantern': Go on. He's expecting you.
 }
-+ {kowalczyk_answer == ""} [In Helena. Your name on the placing sheet.]
++ {kowalczyk_answer == ""} [In Helena. She sold me your name.]
     ~ kowalczyk_answer = "bench"
     -> van_after
 + {kowalczyk_answer == ""} [Before Helena. I had a feeling about you.]

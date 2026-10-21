@@ -279,6 +279,10 @@ Dr Adrian Tesseract: Since your first day.
 
 // MC §6.2: m09's two Recruiter exports, once each, here.
 === case_recruiter ===
+~ temp rec = m09_recruiter_secret == "kept" or m09_recruiter_secret == "told" or m09_recruiter_secret == "confessed" or m09_recruiter_secret == "denied" or m09_recruiter_offer == "double_crossed" or m09_recruiter_offer == "taken" or ((m09_recruiter_offer == "named" or m09_recruiter_offer == "refused") and m09_albion_notified)
+{ not rec:
+    -> case_close
+}
 {
 - m09_recruiter_secret == "kept":
     Dr Adrian Tesseract: You heard the receipt in Helena, Ninety-nine. Your agent never explained it, did they.
@@ -302,6 +306,9 @@ Dr Adrian Tesseract: Since your first day.
 + [Make your argument, then.]
 + [(Say nothing.)]
 -
+-> case_close
+
+=== case_close ===
 ~ case_heard = true
 Dr Adrian Tesseract: Three things. Answer them properly and I'll tell you so.
 -> core_router
@@ -414,8 +421,10 @@ Dr Adrian Tesseract: That's about me. I asked about a price.
 - else:
     -> core_router
 }
-+ [Go on.]
-+ [You're not finished.]
++ { exchange_2 == "" } [Go on.]
++ { exchange_2 == "" } [You're not finished.]
++ { exchange_2 != "" } [And the last one?]
++ { exchange_2 != "" } [(Let him go on.)]
 -
 -> core_router
 
@@ -620,6 +629,9 @@ Dr Adrian Tesseract: Nobody elected the people who hoard, either. I asked who do
     Dr Adrian Tesseract: More than once, you've put someone on the floor who wasn't armed. Clean hands, Agent?
 - k == 1:
     Dr Adrian Tesseract: You put someone on the floor who wasn't armed. Once. I noticed.
+}
+{ m08_hax_ko:
+    Dr Adrian Tesseract: At the Citadel, it was your own handler.
 }
 ->->
 
@@ -842,8 +854,8 @@ Director Magnus Netherton: Half of these cannot be patched this year, and the wa
 + [Go on, sir.]
 -
 Agent HaX: Keep them, and the infusion pumps in a hundred and forty hospitals are still live next year.
-+ [What does it cost to send ours to the vendors?]
-+ [And if we send ours out?]
++ [And if ours go to the vendors?]
++ [(Wait.)]
 -
 -> database_ops ->
 Director Magnus Netherton: Both of them run through holes on that list. Patch the holes and we lose the way in. I will sign it.
@@ -891,7 +903,7 @@ Director Magnus Netherton: Then nobody has it, and nobody fixes anything either.
 // 5 always applies, so the first two are always one of these pairs.
 === database_ops ===
 ~ temp n = 0
-Director Magnus Netherton: Two operations go dark if you do this.
+Director Magnus Netherton: Send ours to the vendors, and two operations go dark.
 { m03_victoria_fate == "recruited" and (victoria_gallery == "confronted" or victoria_gallery == "refused" or (victoria_gallery == "trusted" and head_start_killed == "zero_day")):
     ~ n = n + 1
     Director Magnus Netherton: The watch on Sterling.
@@ -910,7 +922,7 @@ Director Magnus Netherton: Two operations go dark if you do this.
     - m04_voltage_escaped:
         Director Magnus Netherton: The watch on Voltage's people.
     - m04_voltage_captured:
-        Director Magnus Netherton: What's left of Voltage's crew.
+        Director Magnus Netherton: The watch on what's left of Voltage's crew.
     - else:
         Director Magnus Netherton: The Critical Mass watch.
     }

@@ -159,7 +159,7 @@ Officer Kenji Arakawa: That hum's in my teeth. Let's not stay long.
 {
 - arak_quiet:
     ~ arak_quiet = false
-- kowalczyk_gone_ahead and whodunit_live and accused == "" and not arak_peel_said:
+- kowalczyk_gone_ahead and whodunit_live and accused == "" and not arak_peel_said and not nightshade_tethered:
     ~ arak_peel_said = true
     Officer Kenji Arakawa: Service side. She always takes the door nobody's watching.
 - else:

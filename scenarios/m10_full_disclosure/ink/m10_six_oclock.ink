@@ -128,7 +128,7 @@ Agent 0x5E 'Lantern': When did you know?
     ~ kowalczyk_answer = "bench"
 + { sleeper_caught and m09_recruiter_offer != "taken" } [At the briefing. You laughed too easily.]
     ~ kowalczyk_answer = "briefing"
-+ { sleeper_caught and m09_recruiter_offer == "taken" } [In Helena. Your name on the placing sheet.]
++ { sleeper_caught and m09_recruiter_offer == "taken" } [In Helena. She sold me your name.]
     ~ kowalczyk_answer = "bench"
 + { sleeper_caught and m09_recruiter_offer == "taken" } [Before Helena. I had a feeling about you.]
     ~ kowalczyk_answer = "briefing"
@@ -141,6 +141,8 @@ Agent 0x5E 'Lantern': I liked you. I'd still have pressed it.
 
 === kow_reply ===
 {
+- kowalczyk_answer == "bench" and m09_recruiter_offer == "taken":
+    Agent 0x5E 'Lantern': Eleven years she paid my mum's care home. Then she sold me to you.
 - kowalczyk_answer == "bench":
     Agent 0x5E 'Lantern': The paperwork. It's always the paperwork.
 - kowalczyk_answer == "briefing":
@@ -264,14 +266,21 @@ Narrator: Netherton comes down the line of vans with a tablet under his arm.
     Director Magnus Netherton: He reached. I'll put that first.
 }
 -> numbers_core ->
+-> more_menu ->
++ [And the database?]
++ [(Nod.)]
+-
+-> database_beat
+
+=== more_menu ===
+{ not ((media_story_ran and ending != "executed") or kowalczyk_ko or quintero_ko or arakawa_ko or vector_ko or phantom_ko or victoria_gallery == "confronted" or (m06_assets_seized and ending != "executed")):
+    ->->
+}
 + [And the rest of it?]
 + [(Wait.)]
 -
 -> numbers_more ->
-+ [And the database?]
-+ [(Wait.)]
--
--> database_beat
+->->
 
 // The head start, the bait's catch and the trace. Shared with the executed
 // ending, which hears the same numbers.

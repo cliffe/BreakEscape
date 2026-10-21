@@ -350,3 +350,6 @@ Plan: 7a a CONTRACT.md per mission in scenarios/<mission>/ (every ink file and o
 
 ### m10 script edit round 3
 - R3 (fresh editor): revise, no R4 needed. A 0/3/4, B 0/1/5, C 0/0/1. R2 all in; compile clean, loopcheck 18 states, hub <=10 on all seeds. Majors: A3-01 database buttons duplicate, A3-02 06:00 'rest of it' can be empty, B3-01 taken answer false (placing sheet), A3-03 m08 HaX KO never said (Tesseract line). Ruling: apply all, incl. scratch-tested A3-02/A3-06 tunnels. Stage 9 confirms after-ending hub lines unreachable.
+- R3 fixes applied: A 7/7, B 6/6, C 1/1. Compile 33/33, loopcheck clean, hub 10. Voiced: tesseract 185, six_oclock 99, hearing 9, calls 81. CONTRACT §10. m10 script edit closed after 3 rounds (R3: no R4 needed).
+
+## Stage 7 closed (both missions). Next: fold stage 7 deltas into earlier docs; stage 8 review.
