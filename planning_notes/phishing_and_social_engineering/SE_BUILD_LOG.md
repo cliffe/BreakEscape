@@ -4,7 +4,7 @@ Brief: `docs/agents/SE_BUILD_BRIEF.md`. Plan: `IMPLEMENTATION_PLAN.md`. Artefact
 
 ## Resume
 
-Status (2026-10-21): Phase 0 closed (two review rounds, ten browser comparison runs, two targeted checks). Next: Phase 1a (thin slice). Waiting on the user: art batch 1 questions (art_batch1/REVIEW.md) and the R-01 speaker-tie question below.
+Status (2026-10-21): Phase 0 closed (two review rounds, ten browser comparison runs, two targeted checks). Phase 1a started: P1-A, B, C, D, E1, G, H, I running (shared notes `build_log/P1_COMMON.md`). Next: P1-E2 after E1; P1-W after E1, G, I; P1-F after A, C, E2 (N-02 first); P1-T0; P1-R; P1-T. Waiting on the user: art batch 1 questions (art_batch1/REVIEW.md) and the R-01 speaker-tie question below.
 
 ## User instructions for this build (2026-10-21)
 
