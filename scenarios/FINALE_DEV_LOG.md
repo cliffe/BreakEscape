@@ -96,8 +96,28 @@ Orchestrator: verified N-14 (no friendly follow/escort in `npc-behavior.js`; onl
 - Draft (author `m09-s12`): story_arc.md (482 lines), storytelling_elements.md (520). 75-minute budget (briefing 5, get in 15, stacks 30, name and hour 21, debrief 4); 14 choices; cold-start versions; all 43 imports placed. Settled §13 items 3 (m09 side), 4, 8, 9, 11, 16. Eleven proposed FINALE_ARC changes in story_arc §14.
 - Orchestrator: accept in principle change 1 (name held back to flag 3: the identity scene gets its weight) and 2 (Tomb Beta's server left off the purge as his invitation; ties to m10's premise). All arc changes applied together once m10's list is in, after the R1 reviewers judge them.
 - R1: two reviewers (writing; structure).
+  - Writing R1 (`m09.../stage_1/REVIEW_R1_WRITING.md`): 0 blockers, 12 majors, 15 minors. Revise: shape, cast and most dialogue at shipped standard; fix HaX's confession (its cost: two agents died while she held the name), the quiet stretch repeating m08, the Recruiter dilemma (cross-reference gives the name away), the surprise told three times, the key never explained, Kowalczyk wasted at the debrief, briefing carry-overs as name-checks.
 
 ### m10 stages 1+2
 - Draft (author `m10-s12`): story_arc.md (~13.7k words), storytelling_elements.md (~10.4k). Acts 24 + 44 + 32 = 100 min (35 VM); cut order media room → backdoor task → shorter fence wait → Tesseract idle lines → Vector/Phantom lines; never cut the five scenes, three clues, three exchanges, stated costs. Two default technicians (Imran Siddiqui, Wendell Briggs). Epilogue at the forward post at 06:00 for every ending; credits open "In this operation" with the player's people. Settled §13 items 2, 3, 4, 5, 11, 19, 23, 24, 32. 18 proposed FINALE_ARC changes (story_arc §14). Cracker line aligned with m09's draft.
 - For the user later (F10): the core's music thinning with each landed point and a silent gallery need an engine change (no silence/layer control); fallback: drop to silence on the second landed point. Voice clashes (Netherton/Gary Charon; Ghost/Vector/Mercer Iapetus) for the audio stage.
 - R1: two reviewers (writing; structure), same lenses as m09.
+
+### Stages 1+2 round 1 results (both missions)
+
+| Mission / review | Blocker | Major | Minor | Verdict |
+|---|---|---|---|---|
+| m09 writing | 0 | 12 | 15 | revise |
+| m09 structure (`m09.../stage_1/REVIEW_R1_STRUCTURE.md`) | 0 | 9 | 17 | revise: Recruiter call can be missed (S-03/04), Act 3 budget unrealistic (S-01), handwriting check against digital text (S-05), the surprise has no findable clue (S-07); arc changes: accept 8, modify 3 |
+| m10 writing (`m10.../stage_1/REVIEW_R1_WRITING.md`) | 0 | 16 | 19 | revise: talk-down not yet an argument, logic holes at the core (paused clock, "one of theirs", WREN's goals, dead-man switch), whodunit solves itself, HaX never speaks to Tesseract, briefing and close are roll-calls |
+| m10 structure (`m10.../stage_1/REVIEW_R1_STRUCTURE.md`) | 1 | 8 | 19 | revise: S1-01 blocker head start released before the gallery outcomes that stop it; budget 115–125 not 100; story-beat countdown needs engine; arc changes: accept 11, modify 7 |
+
+User answer 2026-10-21, F11: **both, signposted**: a justified lethal-force option when he makes a move that threatens lives (not a dead-man switch), and a cold version as a separate, clearly labelled choice.
+
+Orchestrator rulings for the R1 fix passes:
+- Budgets: m09 ≤ 85 min, m10 ≤ 110 min, using the reviewers' cheapest savings first (m09: Reading in the safe, flag 3 in the tape room; m10: fence wait during flag 1, 06:00 frame as a cutscene, close trimmed).
+- No new engine dependency for the countdown: time is shown by lines and a countdown object whose text reads a global set on story beats; an engine countdown feature can be proposed later with F10.
+- Inventory doesn't carry between missions: m10 issues Kowalczyk's cracker again in its start kit.
+- m10 head start released as the outer lock opens (S1-01).
+- Cross-mission: HaX in m09 confesses the name and its cost (two agents died while she held it) and promises the rest "when it's over"; m10 pays that promise. Tesseract calls her "Ninety-nine" in both. m09's casualty sheet is his original; Asante's correction is in m10. "Off the books" becomes "took WREN's tasking". Alpha tapes get a slot in m10's third claim.
+- FINALE_ARC changes from both authors are applied together by one arc-keeper after the fix passes, using the reviewers' accept/modify verdicts.
