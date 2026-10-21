@@ -137,7 +137,7 @@ The ledger block (L) used in the flag 2 variants:
 - `observationVariants`, in the same order: "The feed tray is empty. The last box never came up." / "The last box, off the feed table." / "Strips in the bin. The last box is gone." / base "An open box on the feed table. She is working through it sheet by sheet."
 - Carries: the Initiative's reach made physical, with numbers (eleven people, costs, yields; the 06 prompt's evidence rule). Exported as `legacy_files_saved`; m10's "Elsewhere" clause. HaX (ink, on reading): "Nobody of ours in here. Ours are on her tape, by codename." Changed by: `m05_found_pipeline_list`, `legacy_files_saved`, `legacy_clock_run`. The names are all grep-clean (§5 note).
 
-**`printed_ledger`** -- name "Initiative Ledger, Print Copy". `notes`, `takeable: false`, `readable: true`; `onRead: { "setVariable": { "printed_ledger_read": true } }`. US (W6-04, W6-05; reviewer's rewrite 3 as base). **The read state no longer shreds the page early** (C-06): a new global `ledger_page_seen` is set by a HaX mapping on `global_variable_changed:printed_ledger_read` with `globalVars.flag2_submitted` (`delayMs: 500`), so only a read **after flag 2** counts; the shredded variant and Noor's "[Show her the page.]" both key on `ledger_page_seen` (§6).
+**`printed_ledger`** -- name "Initiative Ledger, Print Copy". `notes`, `takeable: false`, `readable: true`; `onRead: { "setVariable": { "printed_ledger_read": true } }`. US (W6-04, W6-05; reviewer's rewrite 3 as base). **The read state no longer shreds the page early** (C-06): a new global `ledger_page_seen` is set by a HaX mapping on `global_variable_changed:printed_ledger_read` with `globalVars.flag2_submitted` (`delayMs: 500`), so only a read **after flag 2** counts; the shredded variant and Noor's "[Read this. It's her ledger. You're on it.]" (stage 7's button) both key on `ledger_page_seen` (§6).
 
 The page (P), used in the flag 2 variants:
 
@@ -211,7 +211,7 @@ Carries (all four): the Architect's reading of Agent 0x00 (m07's "figures"); ent
 **`lease_file`** -- name "Lease Abstract and Construction File". `notes`, collected (`find_the_deed`). US lease abstract (W6-14), aligned with m10 stage 6's bunker. **No variants** (the old variants were glosses; HaX's lines move to ink, C-21, C-22).
 - text: "LEASE ABSTRACT\nLessor: State of Montana, surplus property.\nLessee: Big Sky Holdings LLC.\nPremises: Sun River Regional Control Site, a decommissioned 1962 civil defense facility, with access road and easements. Lewis and Clark County, Montana.\nTerm: 20 years. Commencement date: June 2, 2016.\nRecorded with the County Clerk and Recorder.\nAttached: as-built drawings, 1962; refit drawings, revision C."
 - observations: "A lease and a roll of drawings for a bunker in this county."
-- Carries: the deed and the paper half of the defences (`find_the_deed`); on the no-coordinate branch it finds the bunker. The commencement date is the safe PIN (§3.2). HaX (ink): no-coordinate branch, "There it is. Tomb Gamma has an address."; otherwise "Same site Nightshade gave us. Now it has a lease."; on `m03_victoria_fate` `arrested` or `ko` (two conditions), "Big Sky was on Zero Day's client list. Sterling's keys opened it after Cardiff." (C-21: "after Cardiff", not "in the spring").
+- Carries: the deed and the paper half of the defences (`find_the_deed`); on the no-coordinate branch it finds the bunker. The commencement date is the safe PIN (§3.2). HaX (ink): on `!m08_tomb_gamma_location_known` (cold starts included, script edit R1 ruling 5), "There it is. Tomb Gamma has an address."; on `m08_tomb_gamma_location_known`, "Same site Nightshade gave us. Now it has a lease."; on `m03_victoria_fate` `arrested` or `ko` (two conditions), "Big Sky was on Zero Day's client list. Sterling's keys opened it after Cardiff." (C-21: "after Cardiff", not "in the spring").
 
 **`rent_book`** (id kept) -- name "Rent Ledger" (W6-16). `notes`, `takeable: false`, `readable: true`. US. **No variants** (C-17).
 - text: "RENT LEDGER -- SITE 2, MT. Lessee: Big Sky Holdings LLC. Lease start: 06/02/16\nDue / received / amount / remitter\n07/01/16 -- 06/29/16 -- $4,250.00 -- acct ending 4471\n08/01/16 -- 07/29/16 -- $4,250.00 -- acct ending 4471\nPaid early, every month since. Same account."
@@ -379,7 +379,7 @@ The RFID and biometric locks (`reading_staff_door`, `stacks_release`, `stacks_ca
 | Thing | Value | Read on |
 |---|---|---|
 | WREN's codename | `WREN` | the screen and `printed_ledger` (no pronoun, no name: "care fees, next of kin") |
-| Noor's codename | `LINNET` | `printed_ledger` from flag 2, "$500, filing bonus" and "Father, dialysis, Dearborn" on every readable variant; Noor's "[Show her the page.]" is gated on `ledger_page_seen` (§6) |
+| Noor's codename | `LINNET` | `printed_ledger` from flag 2, "$500, filing bonus" and "Father, dialysis, Dearborn" on every readable variant; Noor's "[Read this. It's her ledger. You're on it.]" (stage 7's button) is gated on `ledger_page_seen` (§6) |
 | Series R | `R-114` to `R-161`, 48 boxes, restricted cage, bay 10 | `trolley_list`, the screen after flag 1, the legend's bay 10 |
 | Course code | `STRAT-204` | `notebook_scan` |
 | The bunker | Sun River Regional Control Site, Lewis and Clark County; lessee Big Sky Holdings LLC | `lease_file`, `rent_book`, `case_file`; m10 stage 6 uses the same site |
