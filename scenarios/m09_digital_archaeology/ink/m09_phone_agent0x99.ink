@@ -155,17 +155,20 @@ Night guard. Twenty-four. Not ours, not theirs. Don't hurt him.
 + [Who else is inside?]
     Margaret Sorensen runs the place. County clerk for twenty years before this.
 -
-A clerk's on tonight, and an IT contractor, Jesse Tran.
-// Playtest R1 A-m1: the Tran warning inline (it came after the close from
-// the tunnel), with the done flag on the last line.
-#set_global:dock_done:true
+// Playtest R1 A-m1 and confirm run: the Tran warning is part of the same
+// line as the clerk and Tran, one fixed sentence pair per m01 branch, so no
+// empty chunk (a tag-only line or a block) comes between them and the close.
+// The done flag rides on that line.
 {
 - m01_completed and not m01_maya_ko:
-    Maya's list has a Tran on it.
+    #set_global:dock_done:true
+    A clerk's on tonight, and an IT contractor, Jesse Tran. Maya's list has a Tran on it.
 - m01_maya_ko:
-    Maya Chen would have flagged him. We don't have Maya's names.
+    #set_global:dock_done:true
+    A clerk's on tonight, and an IT contractor, Jesse Tran. Maya Chen would have flagged him. We don't have Maya's names.
 - else:
-    Viral Dynamics' staff files have a Tran in them.
+    #set_global:dock_done:true
+    A clerk's on tonight, and an IT contractor, Jesse Tran. Viral Dynamics' staff files have a Tran in them.
 }
 #exit_conversation
 -> DONE

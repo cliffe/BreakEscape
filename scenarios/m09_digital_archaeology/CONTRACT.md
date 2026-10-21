@@ -733,4 +733,9 @@ For the orchestrator. None stops the writers; each says what the writers do mean
 - Read-in-place readables (17 notes objects) now use `readDisplay: "gameDisplay"`, so reading one no longer removes it from the room (the notes minigame removes a read note; C-M-1). The ones whose text changes have `addToNotes: false`.
 - Impl review: legacy remark in two arms (m-01); both sight cones `visualize: true` (m-02); A3-02 marked superseded (m-04); Reading pages and the schedule `puzzle_graph_role: evidence`, ring (c) `onceOnly` (m-05); m09 added to `scripts/ink_runtime_check/missions.json` (m-06).
 
+**Stage 9 confirmation-run changes** (`PLAYTEST_CONFIRM_1.md`, `_2.md`):
+- The dock call's last bubble now carries the Tran warning: "A clerk's on tonight, and an IT contractor, Jesse Tran." plus the m01-branch sentence, one fixed line per branch, with `#set_global:dock_done:true` on it. The tag-only chunk and the separate warning bubble are gone, so the warning can't be the line that is still typing when the thread closes.
+- Sorensen (cage) exit line: "Pull the gate shut on your way out."
+- New global `stacks_card_cloned`, set by HaX on `card_cloned` for "Stacks Card, M. Sorensen" (the event fires only when a read is saved). The hatch's clone choice retires on it and stays after a cancel.
+
 **Voiced counts after stage 8**: group A calls 56 distinct (HaX 53, Netherton 3; one new HaX line, one Netherton line reworded); the Recruiter 14 and B1's HaX 17, unchanged; briefing 91 character lines plus 8 Narrator (7 new: Netherton 3, HaX 4; 2 reworded); debrief 50 plus 16 Narrator (2 reworded); Sorensen 2 new lines (B5), 1 Narrator line reworded (B4); Noor 1 reworded.

@@ -25,6 +25,9 @@ VAR hub_quiet = false
 // Playtest R1 B-M1: the bin is chosen once; this local closes the buttons
 // at once (the #set_global reaches the story too late for the next menu).
 VAR bin_pulled = false
+// Synced scenario global (confirm run): set by HaX on card_cloned for her
+// card, so the clone option retires once a read is saved (it stays after a cancel).
+VAR stacks_card_cloned = false
 
 === start ===
 {hatch_met: -> hub}
@@ -115,7 +118,7 @@ Agent HaX: Bin by the hatch is Derek Lawson's file, and it isn't Derek's handwri
 // Sticky, before and after the bin: her card is on a reel at her hip.
 // Playtest R1 B-M2: the choice says what it is; she answers first, and the
 // clone runs on a narrator beat. Sticky so a failed read can be retried.
-+ [Lean on the counter, close to her card reel. Ask what's in tonight's run.]
++ {not stacks_card_cloned} [Lean on the counter, close to her card reel. Ask what's in tonight's run.]
     {hatch_leaned:
         Margaret Sorensen: Less than when you last asked. Careful of the ink, it doesn't come out of a cuff.
     - else:

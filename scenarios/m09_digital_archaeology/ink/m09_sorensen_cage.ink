@@ -71,7 +71,7 @@ Margaret Sorensen: Paper was the only thing that could ever have hurt them. So t
         Narrator: She keeps writing.
     - else:
         // Playtest R1 B-m1: was "The gate sticks."
-        Margaret Sorensen: Pull the gate to on your way out.
+        Margaret Sorensen: Pull the gate shut on your way out.
     }
     #exit_conversation
     -> back

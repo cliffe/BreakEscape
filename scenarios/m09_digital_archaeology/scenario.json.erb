@@ -173,6 +173,9 @@ hax_maps << { "eventPattern" => "global_variable_changed:maintenance_code_used",
 hax_maps << { "eventPattern" => "door_unlock_attempt", "condition" => "data.connectedRoom === 'restricted_cage' && globalVars.maintenance_code_used && !globalVars.cage_opened", "unlockDoor" => "restricted_cage", "cooldown" => 0 }
 hax_maps << { "eventPattern" => "game_loaded", "condition" => "globalVars.maintenance_code_used && !globalVars.cage_opened", "unlockDoor" => "restricted_cage" }
 hax_maps << { "eventPattern" => "global_variable_changed:hatch_talked", "condition" => "value === true", "onceOnly" => true, "completeTask" => "talk_at_the_hatch" }
+# Confirm run: the hatch's clone option retires once her card is saved to the
+# cloner (card_cloned fires only on a saved read, so a cancel keeps it).
+hax_maps << { "eventPattern" => "card_cloned", "condition" => "data.cardName.includes('M. Sorensen')", "onceOnly" => true, "setGlobal" => { "stacks_card_cloned" => true } }
 hax_maps << { "eventPattern" => "global_variable_changed:cage_opened", "condition" => "value === true", "onceOnly" => true,
               "completeTask" => ["talk_at_the_hatch", "open_the_cage"], "unlockTask" => "stop_the_shredding" }
 
@@ -2422,6 +2425,7 @@ rows = imports.map { |m, v, d| %Q(    { "from": "#{m}", "var": "#{v}", "default"
     "asset_tag_read": false,
     "dock_done": false,
     "debrief_closed": false,
+    "stacks_card_cloned": false,
     "noor_met": false,
     "archive_guard_ko": false
   }
