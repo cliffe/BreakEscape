@@ -29,6 +29,14 @@ export const MinigameFramework = {
      *     paused the world keys keeps them paused for the child. The flag is
      *     cleared again if the child fails to start.
      *
+     * When the child ends and the parent is NOT reopened (a failure close, an
+     * aborted result, a forced close, or a reopen that fails to start), the
+     * parent's own onComplete runs once, as onComplete(false, { aborted: true,
+     * viaChild: true, childSuccess, childResult }), so a starter's close work
+     * (persist, emit, re-enable) is not skipped (P0-R R-05). It is not called
+     * when the child's onComplete opened another minigame itself: that starter
+     * has taken over the flow, as before.
+     *
      * Without either param every minigame behaves as before.
      */
     startMinigame(sceneType, container, params) {
@@ -254,7 +262,10 @@ export const MinigameFramework = {
             // Return-to (S12): reopen the parent after onComplete, on a normal exit
             // only, and only if onComplete did not already open something
             if (!suspendedForChild && ending.params?.returnTo) {
-                this._startReturnTo(ending.params.returnTo, success, result);
+                const reopened = this._startReturnTo(ending.params.returnTo, success, result);
+                if (!reopened && !this.currentMinigame) {
+                    this._releaseParent(ending.params.returnTo, success, result);
+                }
             }
             // The child is about to start in the same call: leave its container
             // and the held barks alone until it is open
@@ -309,6 +320,22 @@ export const MinigameFramework = {
             return null;
         }
     },
+
+    // The suspended parent will not come back: run its own onComplete once,
+    // marked as an abnormal close through its child (R-05)
+    _releaseParent(returnTo, success, result) {
+        const parentParams = returnTo?._parentParams;
+        if (!parentParams || typeof parentParams.onComplete !== 'function') return;
+        if (this._releasedParents.has(parentParams)) return;
+        this._releasedParents.add(parentParams);
+        try {
+            parentParams.onComplete(false, { aborted: true, viaChild: true, childSuccess: success, childResult: result ?? null });
+        } catch (err) {
+            console.error('Suspended parent onComplete failed:', err);
+        }
+    },
+
+    _releasedParents: new WeakSet(),
 
     // A launch that never started must not leave the running parent marked
     // suspended, or a later close would skip its onComplete

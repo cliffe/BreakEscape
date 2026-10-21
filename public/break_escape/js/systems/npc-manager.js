@@ -133,17 +133,21 @@ export default class NPCManager {
    * Resolve a "Name:" speaker prefix to a character id (social build item 0.6,
    * data contract 00 S2). Same scan as person-chat's normalizeSpeakerId: the first
    * character, in registration order, whose id or displayName matches the name
-   * (case-insensitive) wins. One change: when that first match is by displayName
-   * alone and the conversation's own NPC has the same displayName, the own NPC
-   * wins. Two records of one character can share a name (m04's Robert Vance and his
-   * phone contact, m05's Patricia); before this, the one registered first took
-   * every prefix, whichever conversation it was. An id match is never overridden.
+   * (case-insensitive) wins. One change, for social characters only: when the
+   * caller says the conversation's own NPC is a social character (preferOwn), and
+   * the first match is by displayName alone and the own NPC has the same
+   * displayName, the own NPC wins. Without preferOwn the old first-match scan runs
+   * unchanged, so m01 to m08 (no social.characters) resolve exactly as before.
+   * Whether to apply the tie rule to every conversation is an open question for the
+   * user (P0-R R-01). An id match is never overridden.
    * @param {Object<string, {displayName?: string}>} characters - id -> character
    * @param {string} speakerName - the prefix text, e.g. "Priya Nair"
    * @param {string|null} ownNpcId - the NPC whose conversation this is
+   * @param {{preferOwn?: boolean}} [options] - preferOwn: the own NPC is a social
+   *   character (window.socialInfluence.isSocialCharacter), so it wins a name tie
    * @returns {string|null} the character id, in its own casing, or null
    */
-  static resolveSpeakerId(characters, speakerName, ownNpcId = null) {
+  static resolveSpeakerId(characters, speakerName, ownNpcId = null, { preferOwn = false } = {}) {
     if (!characters || typeof speakerName !== 'string') return null;
     const normalized = speakerName.toLowerCase().trim();
     if (!normalized) return null;
@@ -151,7 +155,7 @@ export default class NPCManager {
     for (const [id, character] of Object.entries(characters)) {
       if (id.toLowerCase() === normalized) return id;
       if (character?.displayName && character.displayName.toLowerCase() === normalized) {
-        const own = ownNpcId ? characters[ownNpcId] : null;
+        const own = preferOwn && ownNpcId ? characters[ownNpcId] : null;
         if (own && id !== ownNpcId && own.displayName &&
             own.displayName.toLowerCase() === normalized) {
           return ownNpcId;

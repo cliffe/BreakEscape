@@ -52,6 +52,7 @@ export class StateSync {
     this._running = null; // the sync in flight
     this._next = null; // the one sync queued behind it
     this.lastError = null; // error from the latest failed run (status set for HTTP errors)
+    this._boolFor = new WeakMap(); // run promise -> the boolean promise sync() hands out
   }
 
   start() {
@@ -289,11 +290,22 @@ export class StateSync {
    * straight after it, and every caller that asked meanwhile shares that run.
    */
   sync() {
+    const run = this._syncRun();
+    let ok = this._boolFor.get(run);
+    if (!ok) {
+      ok = run.then(r => r.ok);
+      this._boolFor.set(run, ok);
+    }
+    return ok;
+  }
+
+  /** The shared run behind sync(), resolving to that run's { ok, error }. */
+  _syncRun() {
     if (this._running) {
       if (!this._next) {
         this._next = this._running.then(() => {
           this._next = null;
-          return this.sync();
+          return this._syncRun();
         });
       }
       return this._next;
@@ -303,30 +315,32 @@ export class StateSync {
   }
 
   /**
-   * One sync run. Resolves true when the server holds everything (or there was
-   * nothing to send), false on a stale answer or a failure. A failure's error
-   * is kept in this.lastError so syncConfirmed can tell a refusal from a blip.
+   * One sync run. Resolves { ok: true } when the server holds everything (or
+   * there was nothing to send), { ok: false, error } on a stale answer (error
+   * null) or a failure. The error travels with the run, so syncConfirmed reads
+   * its own run's error and not a later run's (P0-R R-14); this.lastError keeps
+   * the latest one for anything else that wants it.
    */
   async _syncOnce() {
     try {
       const changes = this.buildChanges();
-      if (!changes) return true;
+      if (!changes) return { ok: true, error: null };
       const body = { ...changes.body, clientTs: this.nextClientTs() };
       const response = await ApiClient.put('/sync_state', body);
       if (response?.stale) {
         console.warn('State sync answered stale; resending with the next sync');
         this.lastError = null;
-        return false;
+        return { ok: false, error: null };
       }
       this.confirm(changes);
       this.lastError = null;
       console.log('✓ State synced to server');
-      return true;
+      return { ok: true, error: null };
     } catch (error) {
       // Nothing is marked confirmed, so the next sync sends it again
       this.lastError = error;
       console.error('State sync failed:', error);
-      return false;
+      return { ok: false, error };
     }
   }
 
@@ -338,8 +352,9 @@ export class StateSync {
    */
   async syncConfirmed({ attempts = 6, onRetry } = {}) {
     for (let i = 0; i < attempts; i++) {
-      if (await this.sync()) return true;
-      if (this.lastError?.status === 403) return false;
+      const { ok, error } = await this._syncRun();
+      if (ok) return true;
+      if (error?.status === 403) return false;
       if (i === attempts - 1) break;
       onRetry?.(i);
       await new Promise(r => setTimeout(r, Math.min(250 * 2 ** i, 4000)));

@@ -131,17 +131,44 @@ jobs:
             bundle exec node --test "test/js/$q"
           done
 
+      # Social scenarios are found by rendering each scenario.json.erb with the
+      # validator's own render_erb_to_json and checking the top-level `social` key,
+      # so indentation, layout or a key emitted from ERB cannot hide one (P0-R R-06).
+      # EXPECTED_SOCIAL lists scenarios that must be found; add each social
+      # scenario here when it lands (none ship yet).
       - name: Validator over scenarios with a social key
+        env:
+          LIST_SOCIAL: >-
+            require "./scripts/validate_scenario.rb";
+            ARGV.each { |f| j = render_erb_to_json(f); puts f if j.is_a?(Hash) && j.key?("social") }
+          EXPECTED_SOCIAL: ""
         run: |
           set -euo pipefail
+          # The lister must see the fixtures' social key (sf_clean, sf_broken) and not sf_nosocial
+          fixtures=$(bundle exec ruby -e "$LIST_SOCIAL" test/js/fixtures/social_framework/scenarios/*/scenario.json.erb)
+          echo "$fixtures"
+          for want in sf_clean sf_broken; do
+            grep -q "/$want/scenario.json.erb" <<<"$fixtures" || { echo "lister missed fixture $want"; exit 1; }
+          done
+          if grep -q "/sf_nosocial/" <<<"$fixtures"; then echo "lister matched sf_nosocial"; exit 1; fi
+
+          found=$(bundle exec ruby -e "$LIST_SOCIAL" scenarios/*/scenario.json.erb)
+          for want in $EXPECTED_SOCIAL; do
+            grep -q "^scenarios/$want/scenario.json.erb$" <<<"$found" || { echo "expected social scenario not found: $want"; exit 1; }
+          done
           count=0
           while IFS= read -r scenario; do
             [ -n "$scenario" ] || continue
             echo "== $scenario"
             bundle exec ruby scripts/validate_scenario.rb "$scenario" --strict-social --no-graph --skip-ink
             count=$((count + 1))
-          done < <(grep -lE '^  "social"[[:space:]]*:' scenarios/*/scenario.json.erb || true)
+          done <<<"$found"
           echo "Validated $count scenario(s) with a social key"
 
-      - name: No tracked file was rewritten
-        run: git diff --exit-code
+      # Tracked files unchanged, and nothing new written beside them (a dungeon
+      # graph or compiled ink next to an untracked source) (P0-R R-07)
+      - name: No tracked file was rewritten, no file was added
+        run: |
+          git diff --exit-code
+          status=$(git status --porcelain)
+          if [ -n "$status" ]; then echo "$status"; echo "files were added or changed by the run"; exit 1; fi

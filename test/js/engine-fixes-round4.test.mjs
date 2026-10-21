@@ -47,7 +47,8 @@ test('m06 N-6-1: lines waiting to be typed are set before the tags, which can cl
     const src = readFileSync(join(js, 'minigames/phone-chat/phone-chat-minigame.js'), 'utf8');
     // Both typeouts (after continue and after a choice): pending lines are recorded
     // before processGameActionTags, so a close inside the tags flushes them to the thread
-    const tagCalls = [...src.matchAll(/processGameActionTags\(accumulatedTags, this\.ui\)/g)].map(m => m.index);
+    // (the calls may carry a third argument, the tag options: social build P0-R R-04)
+    const tagCalls = [...src.matchAll(/processGameActionTags\(accumulatedTags, this\.ui[,)]/g)].map(m => m.index);
     assert.equal(tagCalls.length, 2);
     for (const at of tagCalls) {
         const before = src.slice(Math.max(0, at - 1200), at);

@@ -173,7 +173,7 @@ function phoneUnderTest({ closeDuringChoice }) {
         saveStoryState() { this._saveStoryStateFor(this.currentNPCId, this.conversation); },
         complete() {}
     };
-    for (const name of ['_saveStoryStateFor', '_keepOutputAfterTeardown']) {
+    for (const name of ['_saveStoryStateFor', '_keepOutputAfterTeardown', '_tagOptions']) {
         const [p, b] = methodParts(phoneSrc, name);
         self[name] = new Function('processGameActionTags', `return function(${p.join(',')}) { ${b} }`)(processGameActionTags);
     }

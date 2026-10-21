@@ -852,6 +852,16 @@ export class PersonChatMinigame extends MinigameScene {
     }
     
     /**
+     * Options for processGameActionTags: this conversation's NPC and its engine, so a
+     * social tag (#influence, #report, 00 S5) is attributed without relying on
+     * window.currentConversationNPCId (P0-R R-04). Only the social tag path reads
+     * them; non-social tags behave exactly as before.
+     */
+    _tagOptions() {
+        return { npcId: this.npcId || this.npc?.id || null, engine: this.inkEngine?.story ? this.inkEngine : null };
+    }
+
+    /**
      * PHASE 1: Normalize speaker ID for consistent lookup
      * 
      * Converts raw speaker ID to canonical form and validates existence
@@ -881,11 +891,14 @@ export class PersonChatMinigame extends MinigameScene {
         }
         
         // Look up by ID or displayName (case-insensitive). NPCManager.resolveSpeakerId
-        // does the same scan, but a display-name tie goes to this conversation's own NPC
-        // (social build 0.6; m04 Robert Vance, m05 Patricia have a same-named phone record).
+        // does the same scan; when this conversation's own NPC is a social character
+        // (scenario social.characters, social build 0.6) a display-name tie goes to it.
+        // Every other conversation keeps the first match (P0-R R-01).
         const resolveSpeakerId = this.npcManager?.constructor?.resolveSpeakerId;
         if (typeof resolveSpeakerId === 'function') {
-            const resolved = resolveSpeakerId(this.characters, speakerId, this.npc?.id);
+            const influence = typeof window !== 'undefined' ? window.socialInfluence : null;
+            const preferOwn = !!(this.npc?.id && influence?.isSocialCharacter?.(this.npc.id));
+            const resolved = resolveSpeakerId(this.characters, speakerId, this.npc?.id, { preferOwn });
             if (resolved) return resolved;
         } else for (const [id, character] of Object.entries(this.characters)) {
             if (id.toLowerCase() === normalized) {
@@ -1041,7 +1054,7 @@ export class PersonChatMinigame extends MinigameScene {
             // This ensures tags are processed even if there's no visible text
             if (result.tags && result.tags.length > 0) {
                 console.log('🏷️ Processing action tags from accumulated dialogue:', result.tags);
-                processGameActionTags(result.tags, this.ui);
+                processGameActionTags(result.tags, this.ui, this._tagOptions());
                 
                 // Check for exit_conversation tag
                 const shouldExit = result.tags.some(tag => tag.includes('exit_conversation'));
@@ -1311,7 +1324,7 @@ export class PersonChatMinigame extends MinigameScene {
                     if (nextLine.tags.length > 0) {
                         const prevNpcId = window.currentConversationNPCId;
                         window.currentConversationNPCId = this.npcId;
-                        await processGameActionTags(nextLine.tags, this.ui);
+                        await processGameActionTags(nextLine.tags, this.ui, this._tagOptions());
                         window.currentConversationNPCId = prevNpcId;
                     }
                     if (this.inkEngine && this.inkEngine.story) {
@@ -1327,13 +1340,13 @@ export class PersonChatMinigame extends MinigameScene {
                     // line (give_item, complete_task...) arrive here with no text, and
                     // displayAccumulatedDialogue never sees them, so run them first.
                     if (nextLine.tags && nextLine.tags.length > 0) {
-                        await processGameActionTags(nextLine.tags, this.ui);
+                        await processGameActionTags(nextLine.tags, this.ui, this._tagOptions());
                     }
                     console.log(`📋 Back to choices: ${nextLine.choices.length} options available`);
                     this.ui.showChoices(nextLine.choices);
                 } else if (nextLine.hasEnded) {
                     if (nextLine.tags && nextLine.tags.length > 0) {
-                        await processGameActionTags(nextLine.tags, this.ui);
+                        await processGameActionTags(nextLine.tags, this.ui, this._tagOptions());
                     }
                     // Story ended - save state and show message
                     if (this.inkEngine && this.inkEngine.story) {
@@ -1476,7 +1489,7 @@ export class PersonChatMinigame extends MinigameScene {
             // Process any game action tags (give_item, unlock_door, etc.)
             if (result.tags && result.tags.length > 0) {
                 console.log('🏷️ Processing tags from story:', result.tags);
-                processGameActionTags(result.tags, this.ui);
+                processGameActionTags(result.tags, this.ui, this._tagOptions());
             }
             
             // Determine who is speaking based on tags

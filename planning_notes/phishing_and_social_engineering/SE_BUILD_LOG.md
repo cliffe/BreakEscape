@@ -4,7 +4,7 @@ Brief: `docs/agents/SE_BUILD_BRIEF.md`. Plan: `IMPLEMENTATION_PLAN.md`. Artefact
 
 ## Resume
 
-Status (2026-10-21): Phase 0 implementation complete and committed; art batch 1 committed (3 user questions in art_batch1/REVIEW.md). Running: P0-R review and P0-T browser comparison runs. Next: fixes, confirm, then Phase 1a.
+Status (2026-10-21): Phase 0 closed (two review rounds, ten browser comparison runs, two targeted checks). Next: Phase 1a (thin slice). Waiting on the user: art batch 1 questions (art_batch1/REVIEW.md) and the R-01 speaker-tie question below.
 
 ## User instructions for this build (2026-10-21)
 
@@ -58,15 +58,42 @@ Status (2026-10-21): Phase 0 implementation complete and committed; art batch 1 
 - **P0-F** (Opus): `systems/social-influence.js` (install returns null with no `social.characters`; API in its header). Test 21/21; suite 875/877 (quarantine); reopencheck unchanged; nothing imports it yet. Decisions recorded for P0-R to check: `at: 0` defaults to "above"; a value already past a threshold at load fires nothing; silent lifts still emit change-only `global_variable_changed`; per-change toast left to S4; new events `npc_reported`, `social_conversation_ended`. Follow-ups put into P1-J (pass the runner's engine) and P1-K (bar reads `gameState`).
 - **P0-G** (Opus): tag cases for social characters only, found via `window.socialInfluence`; `_gained`/`_lost` default step 10; service installed by dynamic import only when `social.characters` exists. Test 15/15; HEAD-vs-new comparison of five non-social tag sequences identical; routes byte-identical; social-load-all exit 0. `session-overlay-pause` flaked once with the same runner error (passes alone and on rerun): watch it. Follow-ups into P4-B (ledger wiring) and P1-J (`NPCGameBridge`).
 - **Phase 0 suites (orchestrator):** node 890/891 (pass3 quarantined), Rails 675 runs 0 failures. Implementation committed before review.
+- **P0-T m07** (Sonnet, game 2836): 23 same, 2 different, 4 not comparable. Inventory order after reload varies (the baseline varied too). `assign_tactical_team` lingered in openTasks for three reads after its chain set the globals; final state identical; passed to P0-R to rule out the set_global writer.
+- **P0-T m06** (Sonnet, game 2842): 19 same, 1 different, 1 not reached. Irina popups, trust values, the one-message mapping and ink-equals-global all match. Different: a Resume overlay after reload (from `show.html.erb` and `Game#has_progress?`, neither touched in Phase 0; the m02-m05 baselines also met it), so judged a baseline artefact.
+- **P0-T lab_scanning** (game 2839): 19 same, 0 different. **sis01** (game 2845): 15 same, 0 different, 2 not reached (incidental baseline reads).
+- **P0-T m02** (game 2840): 25 same, 2 different. Popups per NPC, HaX phone and bark, 128 globals after reload all match. Different: Doyle's first `converse` repeated "Six beds in this bay..." about ten times before choices showed (end state the same); a timing-dependent guard warning did not fire. Queued: a targeted rerun of the Doyle talk on a fresh game to rule out a loader-order effect.
+- **P0-T m05** (game 2841): 20 same, 6 different, 1 not reached. Expected change seen: Patricia's prefixed person-chat lines show her name and in-person bust (`speaker-npc`, `npcId: patricia_morgan`), reading correctly. The six differences are turn-limit boundary timing (extra popups for Lisa and Halloran, identical final values and transcripts), clock text and warning counts; none points at Phase 0.
+- **P0-T m08** (game 2844): 35 same, 0 different. The missing Post-It and Badge Audit Printout are notes, not inventory: the test bridge's `brief` view simply does not list notes, so nothing is lost (struck from the shipped-content list).
+- **P0-T m01** (game 2837): 51 same, 0 different, 3 not reached (capture gaps). Derek's `#influence:-100` still unknown, hostility from `#hostile`; Kevin's tint after reload unchanged. The new `restored: true` on the hostile restore event is from the other session's 859da19d, not Phase 0.
+- **P0-T m04** (game 2838): 50 same, 1 different, 2 not reached. Vance values, barks, 95 globals all match. The baseline's "two popups per tag" was an observer artefact (one element per tag; `showInfluencePopup` appends the container then prepends). Different: after reload, `mg continue` did not close the title screen (DOM click did), load average about 40; passed to P0-R with the m07 item, and queued for a targeted rerun on a quiet machine.
+
+**Targeted check A** (games 2848, 2851): m02 Doyle's repeat did not reproduce (3 popups, influence 6, as baseline). m04: only Enter passes the resume overlay; Space then closes the title. Existing design (`ui/session-resume-keys.js`), not Phase 0.
+
+### Phase 0, round 2 (Opus): 0 blocker, 0 major, 2 minor
+
+All 15 round 1 findings closed (R-12 by deferral). Node 926/930 (pass3 quarantined; round4 and the finale session's new `event-mapping-unlock-door` hit the runner error, pass alone). No m01-m08 regression; the m03 superseded-instance warning is the old person-chat delayed complete, not the new manager path. New minors N-01 (forced-latch inference after reload) and N-02 (parent onComplete during an interrupt) scheduled into P4-D and P1-F.
+
+**Targeted check B** (games 2849, 2858): no superseded-instance warning in either m03 cloner beat; both saves set their globals and tasks; m05 Patricia shows her name and in-person bust. **Phase 0 closed** and the fix round committed (only this build's hunks staged in the two files shared with the finale session).
+
+## Questions for the user
+
+- **Speaker tie in shipped missions (R-01).** Applying the tie everywhere would give every briefing and debrief's "Agent HaX:" lines, and m07/m08 Netherton and Nightshade, the portrait of the conversation's own NPC instead of the first matching record. Probably a fix, but visible in finished missions. Held back until the user decides.
 
 ## Found in shipped content (for the user; not fixed here)
+
+- Resume overlay after reload swallows Space; a keyboard player who presses Space first sees nothing happen until Enter (existing `ui/session-resume-keys.js` design; targeted check A).
 
 - lab_scanning: reload replays the timed intro and resets `instructor_rapport` (P0-A9).
 - m02: interacting with Mr Pryce (bed 4) lands on his ventilator panel (P0-A2).
 - `female_hacker_hood_v2_talk.png` 404s in m03 and m04 (and likely every mission using that sprite); the file does not exist (P0-A3, P0-A4).
 - m03: closing a chat while the cloner is open can leave an empty person-chat overlay and `NPC not found: null` (P0-A3 F1, seen via the harness only).
-- m08: post-reload `brief` inventory may not list the Post-It and Badge Audit Printout (P0-A8, unconfirmed).
+
+- **P0-T m03** (games 2843, 2846): 25 same, 5 different, 4 not reached. Popup counts lower than the baseline (Ffion 10 v 11, Victoria 5 v 9) with identical influence totals and tag counts: the baseline observer's double count (as found in m04). One `complete() called on a superseded minigame instance` warning during the Victoria cloner save, an old guard also seen in m02 and m05 baselines, but on the path P0-M changed: for the round 2 reviewer to check. Cloner beat by hand worked.
 
 ## Review rounds
 
-(none yet)
+### Phase 0, round 1 (P0-R, Opus): 0 blocker, 2 major, 13 minor
+
+`build_log/P0-R_review.md`. R0 0/71 differ; Rails 675/0; node 890/891. Majors: R-01 the display-name tie re-routes about 1,850 shipped lines (every briefing and debrief's "Agent HaX:", m07/m08 Netherton, m08 Nightshade and break-room HaX), not just m05 Patricia; R-02 a forced report re-arms on the next change. Both extra items (m07 lingering task, m04 title after reload) judged not Phase 0: the first is a server round trip, the second the session-resume key guard swallowing Space.
+
+Decision: R-01 restricted to social characters for now (no visible change to m01-m08); whether to apply the tie to shipped missions goes to the user. Fix round 1 (Opus): 14 fixed, R-12 deferred to P1-H as an error; table in the review file. Gates: social group 145 x5, node 909/911 (quarantine), Rails 675/0, reopencheck 0, social-load-all as expected, R0 0/71 differ. Two older tests (`engine-fixes-round4:50`, `-round6:176`) needed one-line updates for the R-04 call-site change. Round 2 confirmation review and targeted browser checks A (m02 Doyle, m04 reload) and B (m03 cloner return, m05 Patricia) running.

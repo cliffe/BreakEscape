@@ -7,13 +7,38 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { dirname, join } from 'node:path';
+import { dirname, join, relative } from 'node:path';
+import { readdirSync, readFileSync, existsSync } from 'node:fs';
+import { createHash } from 'node:crypto';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '../..');
 const fx = join(root, 'test/js/fixtures/social_framework/scenarios');
 const ruby = spawnSync('ruby', ['--version']);
 const skip = ruby.status !== 0 && 'ruby not found';
 const env = { ...process.env, LANG: 'C.UTF-8' };
+
+// Under CI a missing Ruby is a failure, not a skip (00 S11)
+if (ruby.status !== 0 && process.env.CI) {
+  test('ruby is available (required under CI)', () => {
+    assert.fail('ruby not found: the validator tests cannot run, and CI must not skip them');
+  });
+}
+
+// Every file under the fixture folder, path and content, so the last test can show
+// that no run (the CLI ones included) wrote or changed anything there
+function folderHash(base) {
+  const h = createHash('sha256');
+  const walk = (d) => {
+    for (const e of readdirSync(d, { withFileTypes: true }).sort((a, b) => a.name.localeCompare(b.name))) {
+      const p = join(d, e.name);
+      if (e.isDirectory()) walk(p);
+      else { h.update(relative(base, p)); h.update('\0'); h.update(readFileSync(p)); h.update('\0'); }
+    }
+  };
+  walk(base);
+  return h.digest('hex');
+}
+const fixturesBefore = folderHash(fx);
 
 // types: asset stems that "exist" for the sprite lint (null skips the lint)
 function lint(scenario, types = []) {
@@ -134,4 +159,43 @@ test('each area has a stub file returning an empty list', { skip }, () => {
   assert.deepEqual(areas.map(a => a[0].split('::')[1]),
     ['Mail', 'Osint', 'Board', 'Triage', 'Pretext', 'Landing', 'Lab']);
   assert.ok(areas.every(a => a[1].length === 0));
+});
+
+test('a missing social sprite on its own is the only error, and fails --strict-social alone', { skip }, () => {
+  // in-process: the fixture is sf_clean plus one osint-workstation object
+  assert.deepEqual(lint('sf_sprite', SPRITES.concat('osint-workstation')), []);
+  const issues = lint('sf_sprite', SPRITES);
+  assert.equal(issues.length, 1, issues.join('\n'));
+  assert.match(issues[0], /❌.*'osint-workstation' but assets\/objects\/osint-workstation\.png does not exist/);
+  // CLI, against the real assets folder: meaningful only while that sprite is missing
+  if (existsSync(join(root, 'public/break_escape/assets/objects/osint-workstation.png'))) return;
+  const strict = cli('sf_sprite', '--strict-social');
+  assert.equal(strict.status, 1, strict.stdout + strict.stderr);
+  assert.match(strict.stdout, /--strict-social: 1 social lint error/);
+  const plain = cli('sf_sprite');
+  assert.equal(plain.status, 0, plain.stdout + plain.stderr);
+});
+
+test('edge cases: until.global route, "above" order, underscore keys, equals alone, no-paren fallback, recoverTo default', { skip }, () => {
+  const issues = lint('sf_edges', SPRITES);
+  const errors = issues.filter(i => i.startsWith('❌'));
+  assert.equal(errors.length, 3, issues.join('\n'));
+  // "above" thresholds must ascend
+  assert.ok(errors.some(e => /thresholds are not ordered: "above" thresholds must run from the lowest at to the highest \(got 20, 10\)/.test(e)));
+  // equals with no globalVariable is always met in the engine
+  assert.ok(errors.some(e => /aim 'a3'\) unlockCondition has 'equals' without 'globalVariable'/.test(e)));
+  // until.global must be declared; a declared one is a valid expiry route
+  assert.ok(errors.some(e => /threshold 'burned' lockout until\.global 'lena_undeclared' is not declared/.test(e)));
+  assert.ok(!issues.some(i => /lockout with no expiry/.test(i)), 'until.global counts as an expiry');
+  // _comment is a note, not an unlock key
+  assert.ok(!issues.some(i => /_comment/.test(i)));
+  // `=== function lena_mood ===` is a fallback for EXTERNAL lena_mood()
+  assert.ok(!issues.some(i => /EXTERNAL/.test(i)), issues.join('\n'));
+  // no influence.start: recoverTo defaults to the declared global (-20), as the engine does
+  assert.ok(!issues.some(i => /recoverTo/.test(i)), issues.join('\n'));
+});
+
+// Keep last: the runs above must not have written to the fixture folder
+test('the fixture folder is unchanged by the runs', () => {
+  assert.equal(folderHash(fx), fixturesBefore);
 });

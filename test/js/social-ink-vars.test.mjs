@@ -164,3 +164,46 @@ test('phone-chat applies engine VARs after its sync on both open paths and in th
     const apply3 = indexOrFail(c, "applyEngineVariables?.(npc.id, tempConversation.engine?.story, { channel: 'phone-preload' })", saved);
     assert.ok(apply3 < indexOrFail(c, 'tempConversation.goToEntryKnot(entryKnot);', apply3));
 });
+
+// Behavioural (R-10): the phone preload really runs the story, so the first line it
+// produces must read the engine value, not the saved one or the ink default.
+test('phone preload: the first line reads the engine-written VAR over the saved one', async () => {
+    const { mkdtempSync, writeFileSync } = await import('node:fs');
+    const { tmpdir } = await import('node:os');
+    const { pathToFileURL } = await import('node:url');
+    const dir = mkdtempSync(join(tmpdir(), 'social-ink-vars-'));
+    const copy = (rel, name, fix = (x) => x) => writeFileSync(join(dir, name), fix(readFileSync(join(js, rel), 'utf8')));
+    copy('minigames/phone-chat/phone-chat-speaker.js', 'phone-chat-speaker.mjs');
+    copy('minigames/phone-chat/phone-chat-conversation.js', 'phone-chat-conversation.mjs',
+        (x) => x.replace("'./phone-chat-speaker.js'", "'./phone-chat-speaker.mjs'"));
+    copy('systems/ink/ink-engine.js', 'ink-engine.mjs');
+    globalThis.inkjs = inkjs;
+    const { log, warn } = console;
+    console.log = () => {}; console.warn = () => {};
+    try {
+        const { default: PhoneChatConversation } = await import(pathToFileURL(join(dir, 'phone-chat-conversation.mjs')).href);
+        const { default: InkEngine } = await import(pathToFileURL(join(dir, 'ink-engine.mjs')).href);
+
+        async function preload(withWriter) {
+            const m = freshManager();
+            // a reload: the server sent back mira's own ink flags, engine_turn 1 among them
+            m.importNpcInkVariables({ mira: { met_player: true, engine_turn: 1 } });
+            if (withWriter) m.registerEngineVariableWriter('turns', () => ({ engine_turn: 7 }));
+            window.npcConversationStateManager = m;
+            const history = [];
+            const npc = { id: 'mira', storyJSON: JSON.parse(storyJson) };
+            const npcManager = {
+                getNPC: (id) => (id === 'mira' ? npc : null),
+                getConversationHistory: () => history,
+                addMessage: (id, who, text) => history.push(text)
+            };
+            await PhoneChatConversation._preloadOpeningOnce(npc, npcManager, new InkEngine('mira'));
+            return history;
+        }
+        assert.deepEqual(await preload(false), ['Turn 1.'], 'without a writer the saved value is read');
+        assert.deepEqual(await preload(true), ['Turn 7.'], 'the engine value is set after the restore');
+    } finally {
+        console.log = log; console.warn = warn;
+        delete window.npcConversationStateManager;
+    }
+});

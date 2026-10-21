@@ -10,8 +10,10 @@
  * no `social` key gets no service: installSocialInfluence returns null and
  * registers no listener, so nothing changes for m01 to m08.
  *
- * Nothing in the shipped engine imports this module yet. P0-G (the tag
- * processor) is the first caller; Phase 4 adds the lockout channel checks (S10).
+ * core/game.js imports and installs it at game start, and only for a scenario
+ * with social.characters. The shared tag processor (chat-helpers.js
+ * processGameActionTags) and person-chat's speaker lookup reach it through
+ * window.socialInfluence. Phase 4 adds the lockout channel checks (S10).
  *
  * ---------------------------------------------------------------- public API
  *
@@ -216,6 +218,7 @@ class SocialInfluenceService {
         this.logs = new Map();
         this.reports = new Map();
         this.runs = new Map();
+        this.forced = new Map(); // characterId -> Set of latch ids set by report(), not by a crossing
         this.listeners = [];
         this.pendingEvents = [];
 
@@ -231,7 +234,19 @@ class SocialInfluenceService {
         }
 
         for (const config of this.characters.values()) {
-            this.lastSeen.set(config.id, this.getInfluence(config.id));
+            const value = this.getInfluence(config.id);
+            this.lastSeen.set(config.id, value);
+            // A reload with 'reports' latched while the value is not past its `at`
+            // can only be a forced report (or a value that climbed part way back):
+            // hold it as forced so the next small change cannot re-arm it (R-02).
+            const reportsT = config.thresholds.find(t => t.id === 'reports');
+            if (reportsT && this.getLatched(config.id).includes('reports') && !past(reportsT, value)) {
+                this._forcedSet(config.id).add('reports');
+            }
+            // A start (or saved) value already past a threshold gets its band flags
+            // now, silently: no threshold effects, no latch and no events (R-03).
+            this._recomputeBandFlags(config, value, null);
+            this.pendingEvents = [];
             this._on(`global_variable_changed:${config.global}`, (data) => this._onInfluenceEvent(config, data));
             const liftGlobals = new Set(
                 config.thresholds.flatMap(t => t.effects)
@@ -241,6 +256,12 @@ class SocialInfluenceService {
                 this._on(`global_variable_changed:${name}`, () => this.checkLockout(config.id));
             }
         }
+    }
+
+    _forcedSet(characterId) {
+        let set = this.forced.get(characterId);
+        if (!set) { set = new Set(); this.forced.set(characterId, set); }
+        return set;
     }
 
     _on(event, cb) {
@@ -396,10 +417,17 @@ class SocialInfluenceService {
         const fire = [];
         if (silent) {
             this._writeLatch(config, [], ctx);
+            this.forced.delete(config.id);
         } else {
             const latched = new Set(this.getLatched(config.id));
+            const forced = this._forcedSet(config.id);
             for (const t of config.thresholds) {
-                if (latched.has(t.id)) {
+                if (latched.has(t.id) && forced.has(t.id)) {
+                    // A forced latch (report()) never saw the value cross. It holds
+                    // until a lockout lift clears it, or until the value has been past
+                    // `at` once; from then on it re-arms like any other latch (R-02).
+                    if (past(t, value)) forced.delete(t.id);
+                } else if (latched.has(t.id)) {
                     if (rearmedAt(t, value, config.rearmMargin)) { latched.delete(t.id); rearmed.push(t.id); }
                 } else if (past(t, value) && !past(t, previous)) {
                     latched.add(t.id);
@@ -649,6 +677,7 @@ class SocialInfluenceService {
         const latched = this.getLatched(config.id);
         if (latched.includes('reports')) return { reported: true, alreadyLatched: true, band: this.getBand(config.id) };
         this._writeLatch(config, [...latched, 'reports'], ctx);
+        if (!past(threshold, this.lastSeen.get(config.id))) this._forcedSet(config.id).add('reports');
         const at = this._now();
         this.reports.set(config.id, { reason, at });
         const value = this.lastSeen.get(config.id);

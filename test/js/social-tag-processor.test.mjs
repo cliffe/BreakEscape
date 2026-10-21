@@ -21,6 +21,12 @@ import { createRequire } from 'node:module';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
+// Node 18's runner reads each file's results back from the child process; this file's
+// console output (the tag processor logs every tag) has broken that read in group runs
+// ("Unable to deserialize cloned data", P0-R R-08). Keep the file silent: run() and
+// quiet() still capture or drop logs per call, and console.error is left alone.
+for (const k of ['log', 'info', 'warn', 'debug']) console[k] = () => {};
+
 const here = dirname(fileURLToPath(import.meta.url));
 const js = join(here, '../../public/break_escape/js');
 const fixtures = join(here, 'fixtures/social/tag_processor');
@@ -375,4 +381,77 @@ test('social: an explicit options.engine is used, and the phone engine of anothe
     await run(['influence_gained'], ui, calls.logs, { engine: mine, runId: 'run-1' });
     assert.equal(seen.engine, mine);
     assert.equal(seen.runId, 'run-1');
+});
+
+// ------------------------------------------------------------------ call sites pass the NPC (R-04)
+
+test('social: options.npcId attributes the tag when currentConversationNPCId is already cleared', async () => {
+    const { calls, ui, g } = setup({ npcId: null });
+    const [lost] = await run(['influence_gained'], ui, calls.logs);
+    assert.equal(lost.success, false, 'with no NPC known the tag falls through (the old loss)');
+    assert.equal(g.mara_influence, 0);
+    const [r] = await run(['influence_gained'], ui, calls.logs, { npcId: 'mara_phone' });
+    assert.equal(r.success, true);
+    assert.equal(g.mara_influence, 10);
+});
+
+test('a non-social NPC passed as options.npcId gets today\'s behaviour', async () => {
+    const { calls, ui, g } = setup({ npcId: null });
+    const before = { ...g };
+    const [r] = await run(['influence_gained:5'], ui, calls.logs, { npcId: 'kevin_park', engine: null });
+    assert.deepEqual(r, { action: 'influence_gained', param: '5', success: false, message: 'ℹ️ Unknown action: influence_gained' });
+    assert.deepEqual(g, before);
+});
+
+const chatSrc = (p) => readFileSync(join(js, 'minigames', p), 'utf8');
+/** Lift a method body from source as a function with the given params, plus extra scope names. */
+function lift(src, signature, params, scope = []) {
+    const start = src.indexOf(signature);
+    assert.ok(start >= 0, `${signature} not found`);
+    let i = src.indexOf('{', start), depth = 0, end = -1;
+    for (; i < src.length; i++) {
+        if (src[i] === '{') depth++;
+        else if (src[i] === '}' && --depth === 0) { end = i; break; }
+    }
+    const body = src.slice(src.indexOf('{', start) + 1, end);
+    return new Function(...scope, `return function (${params.join(', ')}) {${body}};`);
+}
+
+test('every chat call of processGameActionTags passes options', () => {
+    for (const p of ['phone-chat/phone-chat-minigame.js', 'person-chat/person-chat-minigame.js']) {
+        const calls = [...chatSrc(p).matchAll(/processGameActionTags\(([^;]*)\);/g)].map(m => m[1]);
+        assert.ok(calls.length >= 4, `${p}: calls found`);
+        for (const args of calls) assert.match(args, /_tagOptions\(/, `${p}: ${args}`);
+    }
+});
+
+test('phone teardown: the batch\'s tags carry the NPC, and no engine (the phone engine is shared)', async () => {
+    const src = chatSrc('phone-chat/phone-chat-minigame.js');
+    const tagOptions = lift(src, '_tagOptions(npcId, conversation) {', ['npcId', 'conversation'])();
+    const seen = [];
+    const teardown = lift(src, '_keepOutputAfterTeardown(npcId, conversation, messages, tags) {',
+        ['npcId', 'conversation', 'messages', 'tags'], ['processGameActionTags'])(
+        (tags, ui, options) => seen.push({ tags, ui, options }));
+    const old = { npcId: 'mara_phone', engine: { story: {} } };
+    const fake = { conversation: null, npcManager: null, phoneId: null, _saveStoryStateFor() {}, _tagOptions: tagOptions };
+    window.currentConversationNPCId = null;
+    teardown.call(fake, 'mara_phone', old, [], ['influence_lost:pushy']);
+    assert.deepEqual(seen, [{ tags: ['influence_lost:pushy'], ui: null, options: { npcId: 'mara_phone', engine: null } }]);
+
+    // the live conversation for the NPC passes its engine; another contact's does not
+    const live = { npcId: 'mara_phone', engine: { story: {} } };
+    assert.deepEqual(tagOptions.call({ conversation: live }, 'mara_phone', live), { npcId: 'mara_phone', engine: live.engine });
+    assert.deepEqual(tagOptions.call({ conversation: live }, 'kevin_park', live), { npcId: 'kevin_park', engine: null });
+
+    // and the processor then applies it to the social character
+    const { calls, ui, g } = setup({ npcId: null });
+    await run(seen[0].tags, ui, calls.logs, seen[0].options);
+    assert.equal(g.mara_influence, -10);
+});
+
+test('person chat: tag options name its own NPC and engine', () => {
+    const tagOptions = lift(chatSrc('person-chat/person-chat-minigame.js'), '_tagOptions() {', [])();
+    const engine = { story: {} };
+    assert.deepEqual(tagOptions.call({ npcId: 'mara_desk', inkEngine: engine }), { npcId: 'mara_desk', engine });
+    assert.deepEqual(tagOptions.call({ npcId: 'mara_desk', inkEngine: {} }), { npcId: 'mara_desk', engine: null });
 });

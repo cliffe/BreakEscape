@@ -156,24 +156,34 @@ const chars = () => ({
     gary: { displayName: 'Gary Finch' }
 });
 
-test('a display-name tie goes to the conversation\'s own NPC', () => {
-    assert.equal(NPCManager.resolveSpeakerId(chars(), 'Robert Vance', 'robert_vance'), 'robert_vance');
-    assert.equal(NPCManager.resolveSpeakerId(chars(), 'robert vance ', 'robert_vance'), 'robert_vance');
-    assert.equal(NPCManager.resolveSpeakerId(chars(), 'Robert Vance', 'robert_vance_phone'), 'robert_vance_phone');
+test('a social character wins a display-name tie in its own conversation (preferOwn)', () => {
+    const social = { preferOwn: true };
+    assert.equal(NPCManager.resolveSpeakerId(chars(), 'Robert Vance', 'robert_vance', social), 'robert_vance');
+    assert.equal(NPCManager.resolveSpeakerId(chars(), 'robert vance ', 'robert_vance', social), 'robert_vance');
+    assert.equal(NPCManager.resolveSpeakerId(chars(), 'Robert Vance', 'robert_vance_phone', social), 'robert_vance_phone');
+});
+
+test('a non-social tie keeps the first match, exactly as before (R-01)', () => {
+    // No options, or preferOwn false: the first registered record takes the name,
+    // even in the other record's own conversation (m01 to m08 HaX, Netherton, ...)
+    assert.equal(NPCManager.resolveSpeakerId(chars(), 'Robert Vance', 'robert_vance'), 'robert_vance_phone');
+    assert.equal(NPCManager.resolveSpeakerId(chars(), 'Robert Vance', 'robert_vance', { preferOwn: false }), 'robert_vance_phone');
+    assert.equal(NPCManager.resolveSpeakerId(chars(), 'robert vance ', 'robert_vance', {}), 'robert_vance_phone');
 });
 
 test('with no tie, or no own NPC, the first match wins as before', () => {
+    const social = { preferOwn: true };
     // Another NPC's conversation: the first registered still takes the name
-    assert.equal(NPCManager.resolveSpeakerId(chars(), 'Robert Vance', 'gary'), 'robert_vance_phone');
-    assert.equal(NPCManager.resolveSpeakerId(chars(), 'Robert Vance', null), 'robert_vance_phone');
-    assert.equal(NPCManager.resolveSpeakerId(chars(), 'Robert Vance', 'nobody'), 'robert_vance_phone');
-    assert.equal(NPCManager.resolveSpeakerId(chars(), 'Gary Finch', 'robert_vance'), 'gary');
+    assert.equal(NPCManager.resolveSpeakerId(chars(), 'Robert Vance', 'gary', social), 'robert_vance_phone');
+    assert.equal(NPCManager.resolveSpeakerId(chars(), 'Robert Vance', null, social), 'robert_vance_phone');
+    assert.equal(NPCManager.resolveSpeakerId(chars(), 'Robert Vance', 'nobody', social), 'robert_vance_phone');
+    assert.equal(NPCManager.resolveSpeakerId(chars(), 'Gary Finch', 'robert_vance', social), 'gary');
 });
 
 test('an id match is never overridden by the own NPC', () => {
     const c = { gary: { displayName: 'Gary Finch' }, finch: { displayName: 'Gary' } };
-    assert.equal(NPCManager.resolveSpeakerId(c, 'gary', 'finch'), 'gary');
-    assert.equal(NPCManager.resolveSpeakerId(c, 'GARY', 'finch'), 'gary', 'returns the id in its own casing');
+    assert.equal(NPCManager.resolveSpeakerId(c, 'gary', 'finch', { preferOwn: true }), 'gary');
+    assert.equal(NPCManager.resolveSpeakerId(c, 'GARY', 'finch', { preferOwn: true }), 'gary', 'returns the id in its own casing');
 });
 
 test('unknown, empty and non-string names resolve to null', () => {
@@ -207,9 +217,28 @@ const fakeChat = (ownNpcId, npcManager = new NPCManager(null, null)) => ({
     characters: { player: { id: 'player', displayName: 'Agent 0x00' }, ...chars() }
 });
 
-test('person-chat: a display-name tie goes to the open conversation\'s NPC', () => {
-    assert.equal(normalizeSpeakerId.call(fakeChat('robert_vance'), 'Robert Vance'), 'robert_vance');
-    assert.equal(normalizeSpeakerId.call(fakeChat('gary'), 'Robert Vance'), 'robert_vance_phone', 'no tie with the own NPC: first match, as before');
+// window.socialInfluence exists only when the scenario has social.characters.
+function withSocial(socialIds, fn) {
+    const had = Object.prototype.hasOwnProperty.call(globalThis, 'window');
+    const prev = globalThis.window;
+    globalThis.window = { socialInfluence: { isSocialCharacter: (id) => socialIds.includes(id) } };
+    try { return fn(); } finally { if (had) globalThis.window = prev; else delete globalThis.window; }
+}
+
+test('person-chat: a social NPC wins a display-name tie in its own conversation', () => {
+    withSocial(['robert_vance'], () => {
+        assert.equal(normalizeSpeakerId.call(fakeChat('robert_vance'), 'Robert Vance'), 'robert_vance');
+        assert.equal(normalizeSpeakerId.call(fakeChat('gary'), 'Robert Vance'), 'robert_vance_phone', 'no tie with the own NPC: first match, as before');
+    });
+});
+
+test('person-chat: a non-social NPC keeps the first match on a tie (R-01)', () => {
+    // No social scenario at all (m01 to m08): no window.socialInfluence
+    assert.equal(normalizeSpeakerId.call(fakeChat('robert_vance'), 'Robert Vance'), 'robert_vance_phone');
+    // A social scenario, but this conversation's NPC is not a social character
+    withSocial(['gary'], () => {
+        assert.equal(normalizeSpeakerId.call(fakeChat('robert_vance'), 'Robert Vance'), 'robert_vance_phone');
+    });
 });
 
 test('person-chat: an exact id match still wins, and the special cases are kept', () => {

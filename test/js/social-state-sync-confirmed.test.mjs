@@ -121,3 +121,30 @@ test('a 403 is final: false, one request, no retry', async () => {
     assert.equal(s.lastError.status, 403);
   } finally { globalThis.console = realConsole; realTimers(); }
 });
+
+test('the 403 check reads its own run\'s error, not a later run\'s (R-14)', async () => {
+  globalThis.console = quiet; fastTimers();
+  try {
+    // Stand-in for a later queued run that finishes before the caller resumes and
+    // clears the shared field: lastError always reads null here
+    const s = setup(fail403, ok);
+    Object.defineProperty(s, 'lastError', { get: () => null, set: () => {}, configurable: true });
+    let retries = 0;
+    assert.equal(await s.syncConfirmed({ onRetry: () => retries++ }), false, 'stops on its own 403');
+    assert.equal(requests.length, 1, 'no retry after the refusal');
+    assert.equal(retries, 0);
+  } finally { globalThis.console = realConsole; realTimers(); }
+});
+
+test('sync() callers queued together still share one promise', async () => {
+  globalThis.console = quiet;
+  try {
+    const s = setup(ok);
+    const first = s.sync();
+    const second = s.sync();
+    const third = s.sync();
+    assert.equal(second, third);
+    assert.notEqual(first, second);
+    assert.deepEqual(await Promise.all([first, second, third]), [true, true, true]);
+  } finally { globalThis.console = realConsole; }
+});

@@ -511,7 +511,7 @@ export class PhoneChatMinigame extends MinigameScene {
             // until the player actually opens the conversation (e.g. complete_task, set_global)
             if (npc.deferredTags && npc.deferredTags.length > 0) {
                 console.log(`📋 Processing ${npc.deferredTags.length} deferred tag(s) for ${npc.id}:`, npc.deferredTags);
-                processGameActionTags(npc.deferredTags, this.ui);
+                processGameActionTags(npc.deferredTags, this.ui, this._tagOptions(npc.id, this.conversation));
                 npc.deferredTags = null;
             }
 
@@ -708,7 +708,7 @@ export class PhoneChatMinigame extends MinigameScene {
 
         if (accumulatedTags.length > 0) {
             console.log('✅ Processing tags:', accumulatedTags);
-            processGameActionTags(accumulatedTags, this.ui);
+            processGameActionTags(accumulatedTags, this.ui, this._tagOptions(this.currentNPCId, this.conversation));
         } else {
             console.log('⚠️ No tags to process');
         }
@@ -882,7 +882,7 @@ export class PhoneChatMinigame extends MinigameScene {
 
         if (accumulatedTags.length > 0) {
             console.log('✅ Processing tags after choice:', accumulatedTags);
-            processGameActionTags(accumulatedTags, this.ui);
+            processGameActionTags(accumulatedTags, this.ui, this._tagOptions(this.currentNPCId, this.conversation));
         } else {
             console.log('⚠️ No tags to process after choice');
         }
@@ -988,7 +988,20 @@ export class PhoneChatMinigame extends MinigameScene {
         }
         this._saveStoryStateFor(npcId, conversation);
         if (window.updatePhoneBadge && this.phoneId) window.updatePhoneBadge(this.phoneId);
-        if (tags && tags.length > 0) processGameActionTags(tags, null);
+        if (tags && tags.length > 0) processGameActionTags(tags, null, this._tagOptions(npcId, conversation));
+    }
+
+    /**
+     * Options for processGameActionTags: the NPC the tags came from, so a social tag
+     * (#influence, #report, 00 S5) is not attributed through window.currentConversationNPCId,
+     * which teardown has already cleared (P0-R R-04). The engine is passed only while
+     * `conversation` is still the open one for that NPC: the phone reuses one InkEngine
+     * across contacts. Only the social tag path reads these options, so non-social tags
+     * behave exactly as before.
+     */
+    _tagOptions(npcId, conversation) {
+        const live = conversation && conversation === this.conversation && conversation.npcId === npcId;
+        return { npcId: npcId || null, engine: live ? (conversation.engine || null) : null };
     }
     
     /**

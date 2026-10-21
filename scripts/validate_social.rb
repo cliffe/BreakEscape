@@ -108,11 +108,18 @@ module ValidateSocial
     Array(ctx.json['objectives']).each_with_index do |aim, i|
       next unless aim.is_a?(Hash) && aim['unlockCondition'].is_a?(Hash)
 
-      aim['unlockCondition'].each_key do |k|
-        next if AIM_UNLOCK_KEYS.include?(k)
+      cond = aim['unlockCondition']
+      cond.each_key do |k|
+        # _comment and other underscore keys are notes; the engine never reads them
+        next if AIM_UNLOCK_KEYS.include?(k) || k.to_s.start_with?('_')
 
         issues << "❌ SOCIAL: /objectives[#{i}] (aim '#{aim['aimId']}') unlockCondition key '#{k}' is not supported " \
                   "(allowed: #{AIM_UNLOCK_KEYS.join(', ')}); the engine treats an unknown key as always met, so the aim would be unlocked from the start"
+      end
+      # equals is read only beside globalVariable; alone, the condition is always met
+      if cond.key?('equals') && !cond['globalVariable'] && !cond['aimCompleted'] && !cond['aimsCompleted'].is_a?(Array)
+        issues << "❌ SOCIAL: /objectives[#{i}] (aim '#{aim['aimId']}') unlockCondition has 'equals' without 'globalVariable'; " \
+                  'the engine treats it as always met, so the aim would be unlocked from the start'
       end
     end
     issues
@@ -246,7 +253,8 @@ module ValidateSocial
     out = {}
     files.each do |f|
       ink_lines(f).each do |l, _|
-        out[Regexp.last_match(1)] = arity(Regexp.last_match(2)) if l =~ /^\s*=+\s*function\s+(\w+)\s*\(([^)]*)\)/
+        # the parameter list is optional: `=== function foo ===` takes no arguments
+        out[Regexp.last_match(1)] = arity(Regexp.last_match(2)) if l =~ /^\s*=+\s*function\s+(\w+)\s*(?:\(([^)]*)\))?/
       end
     end
     out
@@ -466,9 +474,15 @@ module ValidateSocial
             issues << "❌ SOCIAL: #{where} threshold '#{t['id']}' lockout scope must be 'channel' or 'character'"
           end
           if a
-            rec = e.key?('recoverTo') ? e['recoverTo'] : infl['start']
+            # the same default as the engine (social-influence.js normaliseCharacter and
+            # liftLockout): influence.start, else the influence global's declared default, else 0
+            default_start = if number?(infl['start']) then infl['start']
+                            elsif number?(ctx.all_globals[infl_global]) then ctx.all_globals[infl_global]
+                            else 0
+                            end
+            rec = e.key?('recoverTo') ? e['recoverTo'] : default_start
             if !number?(rec)
-              issues << "❌ SOCIAL: #{where} threshold '#{t['id']}' lockout has no numeric recoverTo (and the influence has no numeric start to default to)"
+              issues << "❌ SOCIAL: #{where} threshold '#{t['id']}' lockout recoverTo must be a number (got #{rec.inspect})"
             elsif rec < a + margin
               issues << "❌ SOCIAL: #{where} threshold '#{t['id']}' lockout recoverTo #{rec} is below #{a + margin} " \
                         "(highest below-threshold 'at' #{a} + rearmMargin #{margin}); the character would come back still wary"

@@ -162,6 +162,38 @@ test('no return on a failure close, an aborted result or a forced close', () => 
     }
 });
 
+test('an abnormal child exit tells the suspended parent once: onComplete(false, aborted, viaChild) (R-05)', () => {
+    for (const [label, end, childSuccess] of [
+        ['failure', (c) => c.complete(false), false],
+        ['aborted', (c) => { c.gameResult = { aborted: true }; c.complete(true); }, true],
+        ['forced', () => FW.forceCloseMinigame(), false],
+    ]) {
+        reset(); calls.length = 0;
+        const p = FW.startMinigame('parent', null, { onComplete: record('parent') });
+        p.params.suspended = true;
+        const c = FW.startMinigame('child', null, { onComplete: record('child'), returnTo: { sceneType: 'parent', params: {} } });
+        end(c);
+        assert.equal(FW.currentMinigame, null, label);
+        assert.deepEqual(calls.map((x) => x.name), ['child', 'parent'], `${label}: child first, then the parent once`);
+        assert.equal(calls[1].success, false);
+        assert.equal(calls[1].result.aborted, true);
+        assert.equal(calls[1].result.viaChild, true);
+        assert.equal(calls[1].result.childSuccess, childSuccess, label);
+        FW.forceCloseMinigame();
+        assert.equal(calls.length, 2, `${label}: not called again`);
+    }
+});
+
+test('a normal child exit does not release the parent: it reopens and closes as usual (R-05)', () => {
+    reset(); calls.length = 0;
+    const p = FW.startMinigame('parent', null, { onComplete: record('parent') });
+    p.params.suspended = true;
+    FW.startMinigame('child', null, { returnTo: { sceneType: 'parent', params: {} } }).complete(true);
+    assert.deepEqual(calls, [], 'the parent is reopened, not completed');
+    FW.currentMinigame.complete(true);
+    assert.deepEqual(calls.map((x) => [x.name, x.success]), [['parent', true]]);
+});
+
 test('a child\'s onComplete that opens something itself wins over returnTo', () => {
     reset();
     const p = FW.startMinigame('parent', null, {});

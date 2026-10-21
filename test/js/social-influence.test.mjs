@@ -385,6 +385,71 @@ test('report(): runs the reports effects, latches, records the reason, leaves in
     assert.equal(quiet(() => service.report('pierce', 'x')).reported, false);
 });
 
+test('report() then a small change: the forced latch holds, band stays 3, effects do not run again (R-02)', () => {
+    const { service, g, calls } = setup();
+    service.report('dev', 'maxRefusals', { npcId: 'dev_service_desk' });
+    const until = g.dev_lockout_until;
+    const r = service.addInfluence('dev', -1, 'urgency');
+    assert.deepEqual(r.rearmed, [], 'a forced latch is not re-armed by a value that never crossed');
+    assert.equal(r.band, 3);
+    assert.deepEqual(service.getLatched('dev'), ['reports']);
+    service.addInfluence('dev', +20);
+    assert.equal(service.getBand('dev'), 3);
+    assert.equal(service.report('dev', 'verificationFailed').alreadyLatched, true);
+    assert.equal(calls.end.length, 1, 'endConversation ran once');
+    assert.equal(g.dev_lockout_until, until, 'the lockout deadline did not move');
+});
+
+test('a forced latch with no lockout re-arms only after the value has crossed it once (R-02)', () => {
+    const { service, g, calls } = setup();
+    service.report('priya', 'maxRefusals', { npcId: 'priya_helpdesk' });
+    assert.equal(g.helpdesk_alerted, true);
+    assert.deepEqual(service.addInfluence('priya', 5).rearmed, []);
+    assert.equal(service.getBand('priya'), 3);
+    // the value now crosses reports: still latched, so its effects do not run again
+    const down = service.setInfluence('priya', -75);
+    assert.deepEqual(down.crossed, ['wary', 'refuses']);
+    assert.equal(calls.end.length, 1);
+    // and from here it re-arms like a crossed latch, at at + rearmMargin
+    const up = service.setInfluence('priya', -60);
+    assert.ok(up.rearmed.includes('reports'));
+    assert.ok(!service.getLatched('priya').includes('reports'));
+});
+
+test('a forced latch survives a reload and is cleared by the lockout lift (R-02)', () => {
+    // reload: reports latched, value never past -70
+    let { service } = setup({ saved: { priya_latched: 'reports' } });
+    assert.deepEqual(service.addInfluence('priya', 3).rearmed, []);
+    assert.equal(service.getBand('priya'), 3);
+    uninstallSocialInfluence();
+    // lift: the latch is cleared and a later report runs the effects again
+    let clock, calls, g;
+    ({ service, clock, calls, g } = setup());
+    service.report('dev', 'maxRefusals', { npcId: 'dev_service_desk' });
+    clock.t += 120000;
+    assert.equal(service.checkLockout('dev'), true);
+    assert.equal(g.dev_latched, '');
+    assert.equal(service.report('dev', 'again', { npcId: 'dev_service_desk' }).reported, true);
+    assert.equal(calls.end.length, 2);
+});
+
+test('a start value already past a threshold gets its band flags at install, silently (R-03)', () => {
+    const { service, g, calls, dispatcher } = setup({ saved: { priya_influence: -55, dev_influence: -45 } });
+    assert.equal(g.priya_wary, true);
+    assert.equal(g.priya_refusing, true);
+    assert.equal(g.dev_wary, true);
+    assert.equal(g.dev_refusing, false);
+    assert.equal(g.helpdesk_alerted, false, 'not a band flag');
+    assert.equal(g.priya_latched, '', 'no latch: nothing fired');
+    assert.equal(service.getBand('priya'), 0);
+    assert.equal(calls.end.length + calls.toast.length, 0, 'no effects');
+    assert.equal(dispatcher.emitted.length, 0, 'no events at install');
+    // the next change keeps them, and a climb past at + margin clears them as usual
+    service.addInfluence('priya', 30);
+    assert.equal(g.priya_wary, false);
+    assert.equal(g.priya_refusing, false);
+});
+
 test('bandForLatched ranks by id: wary 1, refuses 2, reports 3, lockout (or a lockout effect) 4', () => {
     const t = (id, effects = []) => ({ id, effects });
     const all = [t('trusts'), t('wary'), t('refuses'), t('reports', [{ type: 'lockout' }]), t('lockout'), t('burned', [{ type: 'lockout' }])];
