@@ -272,6 +272,24 @@ export function gameResultOf(result, targetId) {
     };
 }
 
+// The composed-message fields the withReply re-judge reads (evaluateMessage,
+// renderBodyText, resolveHeaderDisplay). Only these are persisted on the sent
+// record's pendingMessage, bounding the stored object to a known key set (P5-R F2).
+const PENDING_MESSAGE_KEYS = Object.freeze([
+    'fromAccount', 'to', 'targetId', 'subject', 'headerFrom',
+    'templates', 'slots', 'attachment', 'attachmentKind',
+    'link', 'linkText', 'linkInfo', 'inReplyTo'
+]);
+
+function trimPendingMessage(message) {
+    const out = {};
+    if (!isObject(message)) return out;
+    for (const k of PENDING_MESSAGE_KEYS) {
+        if (message[k] !== undefined) out[k] = message[k];
+    }
+    return out;
+}
+
 // ─────────────────────────────────────────────────────── the send orchestration
 
 /**
@@ -332,7 +350,10 @@ export function performSend(scene, message) {
         // rebuilt after a reload, when the in-memory hold is gone (T2-6). It is removed
         // once the verdict is shown. judgePending is not persisted (the job queue is the
         // truth), but pendingMessage is whitelisted in the server mailState sanitiser.
-        record.pendingMessage = message;
+        // Only the fields the re-judge (rejudgeForChecklist -> evaluateMessage,
+        // renderBodyText) reads are kept, so the persisted blob is bounded to a known
+        // key set rather than riding the whole composed object un-sanitised (P5-R F2).
+        record.pendingMessage = trimPendingMessage(message);
     }
     commitRecord(scheduler, mailState, mailboxId, record);
 
@@ -454,6 +475,29 @@ function dataOnlyText(target, result) {
     return first ? (first.reply || first.line || '') : (result.openLine || '');
 }
 
+/**
+ * The persisted sent-record link (00 §10a). It carries the landing-page domain the
+ * student chose, read from message.linkInfo (domainId, pageId, domain, browserDomain),
+ * so the inbox-triage playerSent replay can resolve the look-alike domain and keep the
+ * linkCredible tell (R-A). Triage's `hasDomain` gate reads link.domainId and its
+ * `lookupDomain` early-returns on link.domain, so the page-nesting mismatch (domains
+ * nested under brands[]) is bypassed. `destination` is the resolved domain, as before.
+ */
+function linkRecordOf(message) {
+    if (!isStr(message.link)) return null;
+    const info = isObject(message.linkInfo) ? message.linkInfo : null;
+    const domain = info && isStr(info.domain) ? info.domain : null;
+    return {
+        kitId: message.link,
+        linkText: message.linkText || null,
+        domainId: info && isStr(info.domainId) ? info.domainId : null,
+        pageId: info && isStr(info.pageId) ? info.pageId : null,
+        domain,
+        browserDomain: info && isStr(info.browserDomain) ? info.browserDomain : null,
+        destination: domain
+    };
+}
+
 function buildRecord({ message, result, account, social, labels, subjectText, target, accountId }) {
     const header = resolveHeaderDisplay(message, account, labels);
     const record = {
@@ -469,10 +513,7 @@ function buildRecord({ message, result, account, social, labels, subjectText, ta
         slots: { ...(message.slots || {}) },
         body: renderBodyText(message, social.templates, account, labels),
         attachment: isStr(message.attachment) ? { kitId: message.attachment, kind: message.attachmentKind || null } : null,
-        link: isStr(message.link)
-            ? { kitId: message.link, linkText: message.linkText || null,
-                destination: (isObject(message.linkInfo) && isStr(message.linkInfo.domain)) ? message.linkInfo.domain : null }
-            : null,
+        link: linkRecordOf(message),
         landed: result ? result.landed : null,
         tells: result ? arr(result.tells).slice() : [],
         read: true

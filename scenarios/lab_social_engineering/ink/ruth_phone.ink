@@ -23,6 +23,7 @@ VAR phish_pierce_landed = false
 VAR acct_freemail = false
 VAR landing_payroll_login_built = false
 VAR pretext_call_done = false
+VAR pretext_call_reported = false
 VAR se_intel_lord_payslip_date = false
 VAR phish_lord_landed = false
 VAR report_filed = false
@@ -64,6 +65,9 @@ Ruth Adeyemi: On the sheet still?
 // ---- Stage 1: scope and plan ----
 === stage1 ===
 Ruth Adeyemi: Gareth's signed. The whiteboard next.
++ [Did Gareth say anything?]
+    Ruth Adeyemi: He signed in person, by the window. Go and hear his one condition before you plan.
+    -> stage1
 + [What objective do I pick?]
     Ruth Adeyemi: The one that matches the brief: test whether staff can be led into a mistake.
     -> stage1
@@ -111,7 +115,11 @@ Ruth Adeyemi: Operations now. Collect that key from me first if you need it.
 
 // ---- Stage 4 + 5: page and call ----
 === stage4 ===
-Ruth Adeyemi: Sofia's careful. A page and a call, either order.
+{ pretext_call_reported:
+    Ruth Adeyemi: Dev flagged that last call to his manager. Leave it a while, then try again — softer, and have your facts straight.
+- else:
+    Ruth Adeyemi: Sofia's careful. A page and a call, either order.
+}
 + {not landing_payroll_login_built} [The landing page?]
     Ruth Adeyemi: The page builder on the desk. Match her payroll portal — domain, logo, wording, the lot.
     -> stage4
@@ -160,6 +168,9 @@ Ruth Adeyemi: Sending's done. The report desk, in this room.
 // ---- Stage 7: defender flip ----
 === stage7 ===
 Ruth Adeyemi: Blue Team room. Tomasz will set you off.
++ [Has Gareth seen the report?]
+    Ruth Adeyemi: He has, and not one name in it. Go by the window — he'll want to thank you himself.
+    -> stage7
 + {not triage_pass} [The inbox triage?]
     Ruth Adeyemi: Sort each message: trust, report or delete. Read the SPF, DKIM and DMARC results.
     -> stage7
@@ -175,6 +186,9 @@ Ruth Adeyemi: Blue Team room. Tomasz will set you off.
 
 === stage_done ===
 Ruth Adeyemi: That's the lot. Go and let Tomasz close it out with you.
++ [Anything for Gareth?]
+    Ruth Adeyemi: He's read your report — no names, just like he asked. A word by the window wouldn't go amiss.
+    -> stage_done
 + [Will do.] #exit_conversation
     Ruth Adeyemi: Good work.
     -> hub

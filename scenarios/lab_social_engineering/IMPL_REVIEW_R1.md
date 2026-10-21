@@ -77,3 +77,38 @@ minors are dialogue/art-stage polish, a set-but-unread global, a missable themat
 playtest-coverage notes; none blocks the build and all can ride into P6-S / P6-T. Everything else in
 the lab is a faithful, solvable implementation of the vetted plan, with no hard dead ends, and the
 P6-T0 open points RP2 and the blank-option-text issue are already resolved in the current tree.
+
+## Fix round outcomes (opus48, 2026-10-21)
+
+Following the decisions in `SE_BUILD_LOG.md` "Lab, implementation review 1". R-b4 is left to the
+art pass (P6-S) per that decision; R-b6 needs no code change (the review says so) and R-b1's
+per-ask reaction makes the granted line read cleanly, so it is treated as reviewed.
+
+| id | sev | status | fix |
+|----|-----|--------|-----|
+| R-A | major | **fixed** | `mail-bridge.js` now carries `{domainId, pageId, domain, browserDomain}` on the Sent record's `link` (new `linkRecordOf`, from `message.linkInfo`), so triage's `hasDomain` gate holds, the `playerSentAuth.domains` row resolves and `lookupDomain` early-returns on `link.domain` — the `own_lord` replay shows the look-alike domain and keeps the `linkCredible` lesson. New end-to-end check `test/js/social-lord-triage-e2e.test.mjs` drives the real send → triage seam (2/2). |
+| R-b1 | minor | **fixed** | `dev_service_desk.ink` `ask_reaction` now takes the ask id; the `payslip_date` grant reads back the release date ("Monday the 6th"), the `portal_name` grant the portal line. |
+| R-b2 | minor | **fixed** | `ruth_phone.ink` stage 4 now reads `pretext_call_reported` (a line when Dev flagged the call), so the global is consumed; validator suggestion 25 is gone. Setter and declaration kept per `00` §13. |
+| R-b3 | minor | **fixed** | `ruth_phone.ink` adds rungs after `roe_signed` (stage 1) and after `report_filed` (stage 7, stage_done) pointing the student back to Fairbairn for the "no names" condition and the pay-off. |
+| R-b4 | minor | deferred | Phone-NPC avatars are the art pass (P6-S); the two validator warnings remain, as before. Not in the fix-round decision list. |
+| R-b5 | minor | **fixed** | `interactions.js` report-workstation branch gates on `minigameData.requiresGlobal` (inert when absent); the lab sets `requiresGlobal: "phish_lord_landed"` + a `lockedMessage`, so the report cannot open — and `results_reviewed`/`findings_paired` cannot complete — before the `phish_hard` aim unlocks. Schema updated. |
+| R-b6 | minor | reviewed | No code change (within-call `Continue()` re-evaluation is engine semantics; idempotent re-asks are harmless). R-b1 makes the granted ask read cleanly. |
+| F1 (P5-R) | minor | **fixed** | `landing-page-model.js` `betterVictim` returns `existing` on an exact rank tie (`>` not `>=`), so an equal-rank resend skips the write-back and does not re-sync identical victim state. |
+| F2 (P5-R) | minor | **fixed** | `mail-bridge.js` stores a trimmed `pendingMessage` (known `PENDING_MESSAGE_KEYS` only), bounding the persisted blob to the fields the withReply re-judge reads. |
+
+### Verification (all green)
+
+- **Node suite:** `bundle exec node --test test/js/*.test.mjs` → 1508 pass; the 5 whole-file
+  "failures" are a parallel-run worker-IPC crash (`uncaughtException`, "Unable to deserialize cloned
+  data"), and each passes alone — environmental, not a regression. The new
+  `social-lord-triage-e2e.test.mjs` passes 2/2; `social-mail-link-victim`, `social-landing-page-model`,
+  `social-mail-bridge`, `social-triage-*` pass.
+- **`bin/rails test`:** 723 runs, 2490 assertions, 0 failures, 0 errors, 1 skip.
+- **Validators** (`--strict-social --no-graph --skip-ink`): lab exit 0 (suggestions + the two
+  art-stage avatar warnings only; the R-b2 set-but-unread suggestion is gone); slice exit 0.
+- **Bridges** (fresh games, keyless :3001, each `check-bridge.mjs --expect`): bridge-1a 38/38 (g3054),
+  bridge-1b 82/82 (g3055), bridge-3b 8/8 (g3055), bridge-2 15/15 (g3056), bridge-3 32/32 (g3057),
+  bridge-3c 4/4 (g3058), bridge-4 30/30 (g3059), bridge-5 29/29 (g3060), bridge-6 35/35 (g3066) — all
+  PASS. bridge-6's RP0 now sets `phish_lord_landed` (exercised, not earned) to open the R-b5-gated
+  report, and its reload got the two-screenshot guard from `bridge_harness_fix.md` (the other bridges
+  already had it); both are bridge-script updates, no assertion changed.

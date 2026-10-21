@@ -504,11 +504,13 @@ function victimRank(v) {
 
 /**
  * Keep the best victim outcome across sends (section 5): submitted > noticed > nothing.
- * Returns next when its rank is at least the existing rank, otherwise existing. A resend that
- * does not land, or a later below-threshold send, never erases an earlier success.
+ * Returns next only when its rank strictly beats the existing rank, otherwise existing. A
+ * resend that does not land, or a later below-threshold send, never erases an earlier
+ * success; and an equal-rank resend returns the existing record unchanged, so the bridge's
+ * `next !== before` write-back is skipped and an identical state is not re-synced (P5-R F1).
  */
 export function betterVictim(existing, next) {
-  return victimRank(next) >= victimRank(existing) ? next : existing;
+  return victimRank(next) > victimRank(existing) ? next : existing;
 }
 
 /**

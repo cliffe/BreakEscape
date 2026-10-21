@@ -1088,6 +1088,19 @@ export function handleObjectInteraction(sprite) {
 
     // Engagement report workstation (P6-W): the report reads the case records itself.
     if (sprite.scenarioData.type === 'report-workstation') {
+        // Optional stage gate (R-b5): the lab keys this on the phishing stage
+        // (phish_lord_landed) so the report cannot be written — and its tasks cannot
+        // complete out of order — before the aim it belongs to has unlocked. The gate
+        // is read from the object's own minigameData, so it is inert for any mission
+        // that does not set it.
+        const gate = sprite.scenarioData.minigameData && sprite.scenarioData.minigameData.requiresGlobal;
+        if (typeof gate === 'string' && gate &&
+            !(window.gameState && window.gameState.globalVariables && window.gameState.globalVariables[gate] === true)) {
+            const msg = (sprite.scenarioData.minigameData && sprite.scenarioData.minigameData.lockedMessage) ||
+                'There is nothing to write up yet.';
+            window.gameAlert(msg, 'info', sprite.scenarioData.name || 'Report Workstation', 3500);
+            return;
+        }
         if (window.startEngagementReport) {
             window.startEngagementReport(sprite);
         } else {

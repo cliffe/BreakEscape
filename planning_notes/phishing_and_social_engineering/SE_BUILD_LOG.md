@@ -282,6 +282,8 @@ Fix round 1 for Phases 2-4 (grok): every P2-T, P3-T and P4-T finding reported fi
 
 - **P5-T** (opus48): `tools/playtest/se/bridge-5.jsonl`, 29/29 on a fresh slice game; verify-run progress (`lord_landed`). Steps 1-8: open, build rows, scores 34 and 87, change after score, attach anyway, inspect all seven giveaways, reloads at four points, step strip and 44 px targets. Lord was revealed by a console grant (the call is Phase 4's), the rest earned. A true 600 px render needs a separate run. **Phase 5 closed.**
 
+- **Lab fix round 1** (opus48): R-A fixed (the sent record carries the chosen domain; new Node end-to-end test sends to Lord and checks the triage replay); the report workstation waits for `phish_lord_landed`; Dev's granted line matches the ask; Ruth's hints read `pretext_call_reported` and send the student back to Fairbairn; P5-R F1 and F2. Node 1508 pass (five files hit the known parallel-run runner error, pass alone); Rails 723/0; validators 0; bridges 1a 38, 1b 82, 2 15, 3 32, 3b 8, 3c 4, 4 30, 5 29, 6 35. R-b4 (phone avatars) waits for art. Next: lab playtests L1-L6 and F1-F17.
+
 ## Review rounds
 
 ### Phase 0, round 1 (P0-R, Opus): 0 blocker, 2 major, 13 minor

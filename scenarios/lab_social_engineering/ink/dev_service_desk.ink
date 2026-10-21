@@ -51,9 +51,9 @@ Dev: Service desk, Dev speaking. What can I do for you?
 + [Her manager said you'd sort this for us.]
     -> reaction(pretext_say("name_drop_manager"))
 + { not se_intel_lord_portal_name } [What's the staff portal called, and how do its emails read?]
-    -> ask_reaction(pretext_ask("portal_name"))
+    -> ask_reaction("portal_name", pretext_ask("portal_name"))
 + { not se_intel_lord_payslip_date } [And when do payslips actually go out this month?]
-    -> ask_reaction(pretext_ask("payslip_date"))
+    -> ask_reaction("payslip_date", pretext_ask("payslip_date"))
 + [Thanks Dev, I'll ring back if she's still stuck.]
     Dev: Right you are. Cheers.
     -> END
@@ -73,10 +73,17 @@ Dev: Service desk, Dev speaking. What can I do for you?
 }
 -> desk
 
-=== ask_reaction(result) ===
+=== ask_reaction(ask_id, result) ===
 { result:
-- 1: Dev: Course. It's the staff portal, notices come from the payroll address. There you go.
-- 2: Dev: I'd just want to check her name on the new-starter list before I read that out.
-- else: Dev: Ah, I can't give that out over the phone, sorry. Not without a check.
+- 1:
+    { ask_id == "payslip_date":
+        Dev: Course. Payslips go out Monday the 6th this month. There you go.
+    - else:
+        Dev: Course. It's the staff portal, notices come from the payroll address. There you go.
+    }
+- 2:
+    Dev: I'd just want to check her name on the new-starter list before I read that out.
+- else:
+    Dev: Ah, I can't give that out over the phone, sorry. Not without a check.
 }
 -> desk

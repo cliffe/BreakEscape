@@ -100,7 +100,7 @@
 
   "report-workstation": {
     "required": [],
-    "optional": []
+    "optional": ["requiresGlobal", "lockedMessage"]
   },
 
   "phone": {
