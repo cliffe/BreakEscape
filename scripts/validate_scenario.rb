@@ -15,6 +15,7 @@ require 'pathname'
 require 'set'
 require 'base64'
 require 'open3'
+require_relative 'validate_social'
 
 # Try to load json-schema gem, provide helpful error if missing
 begin
@@ -248,7 +249,7 @@ def check_unknown_fields(json_data)
     scenario_id scenario_name scenario_brief endGoal version startRoom startPosition
     show_scenario_brief disableAttacks creditsTheme creditsOverlay gameClock flags music startItemsInInventory globalVariables
     player objectives rooms npcs phoneNPCs narrator timers _comment mutuallyExclusiveGlobals lighting
-    importGlobals exportGlobals
+    importGlobals exportGlobals social
   ]
 
   # Check top-level unknown fields
@@ -652,6 +653,55 @@ def check_ink_dialogue_hazards(ink_lines, source_ink_path, valid_speakers)
   issues
 end
 
+# Headless NPC records (social build item 0.5; data contract 00 S8): one per
+# social.characters entry with an emailRecord. The id is the character's
+# channels.email (an entry without one has no record); npcType "phone", phoneId
+# "mail_only", no room. Mirrors BreakEscape::Game.headless_npc_records and
+# public/break_escape/js/systems/scenario-npc-records.js. A record that reuses a
+# room NPC's id is dropped (the room NPC wins). Returns [[record, path], ...];
+# a scenario with no `social` key has none.
+def headless_npc_records(json_data)
+  social = json_data.is_a?(Hash) ? json_data['social'] : nil
+  characters = social.is_a?(Hash) ? social['characters'] : nil
+  return [] unless characters.is_a?(Hash)
+
+  room_ids = Set.new
+  if json_data['rooms'].is_a?(Hash)
+    json_data['rooms'].each_value do |room|
+      next unless room.is_a?(Hash) && room['npcs'].is_a?(Array)
+
+      room['npcs'].each { |npc| room_ids << npc['id'] if npc.is_a?(Hash) }
+    end
+  end
+  characters.filter_map do |character_id, character|
+    next unless character.is_a?(Hash)
+
+    record = character['emailRecord']
+    record_id = character['channels'].is_a?(Hash) ? character['channels']['email'] : nil
+    next unless record.is_a?(Hash) && record_id.is_a?(String) && !record_id.empty?
+    next if room_ids.include?(record_id)
+
+    npc = record.merge(
+      'id' => record_id,
+      'displayName' => record['displayName'] || character['displayName'] || record_id,
+      'npcType' => 'phone',
+      'phoneId' => 'mail_only',
+      'itemsHeld' => record['itemsHeld'].is_a?(Array) ? record['itemsHeld'] : []
+    )
+    [npc, "social/characters/#{character_id}/emailRecord"]
+  end
+end
+
+# Every NPC record: each room's npcs, in room order, then the headless records.
+# Returns [[npc, path], ...]. With no `social` key, exactly the room NPCs.
+def scenario_npc_records(json_data)
+  records = []
+  json_data['rooms']&.each do |room_id, room|
+    room['npcs']&.each_with_index { |npc, idx| records << [npc, "rooms/#{room_id}/npcs[#{idx}]"] }
+  end
+  records + headless_npc_records(json_data)
+end
+
 def check_ink_files(json_data, base_dir, scenario_dir = nil)
   issues = []
   ink_files_to_check = Set.new
@@ -659,26 +709,21 @@ def check_ink_files(json_data, base_dir, scenario_dir = nil)
 
   # Every id / displayName the engine's character registry will know about.
   valid_speakers = Set.new
-  json_data['rooms']&.each_value do |room|
-    room['npcs']&.each do |npc|
-      valid_speakers << npc['id'].to_s.downcase if npc['id']
-      valid_speakers << npc['displayName'].to_s.downcase if npc['displayName']
-    end
+  scenario_npc_records(json_data).each do |npc, _path|
+    valid_speakers << npc['id'].to_s.downcase if npc['id']
+    valid_speakers << npc['displayName'].to_s.downcase if npc['displayName']
   end
   if json_data['player']
     valid_speakers << json_data['player']['id'].to_s.downcase if json_data['player']['id']
     valid_speakers << json_data['player']['displayName'].to_s.downcase if json_data['player']['displayName']
   end
 
-  # Collect all referenced ink files from NPCs
-  json_data['rooms']&.each do |room_id, room|
-    room['npcs']&.each_with_index do |npc, idx|
-      if npc['storyPath']
-        path = "rooms/#{room_id}/npcs[#{idx}]"
-        items_held = npc['itemsHeld'] || []
-        items_held_types = (npc['itemsHeld'] || []).map { |item| item['type'] }.compact
-        ink_files_to_check.add({ path: path, storyPath: npc['storyPath'], items_held_types: items_held_types, items_held: items_held })
-      end
+  # Collect all referenced ink files from NPCs (room NPCs and headless records)
+  scenario_npc_records(json_data).each do |npc, path|
+    if npc['storyPath']
+      items_held = npc['itemsHeld'] || []
+      items_held_types = (npc['itemsHeld'] || []).map { |item| item['type'] }.compact
+      ink_files_to_check.add({ path: path, storyPath: npc['storyPath'], items_held_types: items_held_types, items_held: items_held })
     end
   end
 
@@ -1109,21 +1154,19 @@ def check_objectives_wiring(json_data, base_dir)
     # NPC is knocked out. A '#complete_task:' tag in such a phone NPC's ink is a KO fallback for
     # the knocked-out NPC (m06 Satoshi, m05 Patricia), so remember the ink per KO'd NPC id.
     ko_phone_ink = Hash.new { |h, k| h[k] = [] }
-    json_data['rooms']&.each do |_room_id, room|
-      room['npcs']&.each do |npc|
-        next unless npc['npcType'] == 'phone' && npc['storyPath']
-        ko_ids = Array(npc['eventMappings']).map { |m| m.is_a?(Hash) && m['eventPattern'].to_s[/\Anpc_ko:(.+)\z/, 1] }.compact
-        next if ko_ids.empty?
-        ink_text = nil
-        [npc['storyPath'].sub(/\.json$/, '.ink'), npc['storyPath'].sub(/\.ink$/, '.json')].each do |rel|
-          full = File.join(base_dir, rel)
-          if File.exist?(full)
-            ink_text = File.read(full)
-            break
-          end
+    scenario_npc_records(json_data).each do |npc, _path|
+      next unless npc['npcType'] == 'phone' && npc['storyPath']
+      ko_ids = Array(npc['eventMappings']).map { |m| m.is_a?(Hash) && m['eventPattern'].to_s[/\Anpc_ko:(.+)\z/, 1] }.compact
+      next if ko_ids.empty?
+      ink_text = nil
+      [npc['storyPath'].sub(/\.json$/, '.ink'), npc['storyPath'].sub(/\.ink$/, '.json')].each do |rel|
+        full = File.join(base_dir, rel)
+        if File.exist?(full)
+          ink_text = File.read(full)
+          break
         end
-        ko_ids.each { |kid| ko_phone_ink[kid] << ink_text } if ink_text
       end
+      ko_ids.each { |kid| ko_phone_ink[kid] << ink_text } if ink_text
     end
 
     # Required (non-optional) tasks and their types.
@@ -2501,6 +2544,19 @@ def check_common_issues(json_data, valid_item_types = nil)
     end
   end
 
+  # Headless NPC records (social.characters.*.emailRecord) are phone NPCs with no
+  # room: the same phoneId and storyPath checks as a room phone NPC. They are not
+  # phone contacts, so the phone-contact suggestions leave them out.
+  headless_npc_records(json_data).each do |npc, path|
+    all_npc_ids.add(npc['id'])
+    unless npc['phoneId']
+      issues << "❌ INVALID: '#{path}' (phone NPC) missing required 'phoneId' field - phone NPCs must specify which phone they appear on (e.g., 'player_phone')"
+    end
+    unless npc['storyPath']
+      issues << "❌ INVALID: '#{path}' (headless NPC record) missing required 'storyPath' field - a headless record must have a path to its Ink story JSON file"
+    end
+  end
+
   # Check phoneNPCs section - this is the OLD/INCORRECT format
   if json_data['phoneNPCs']
     json_data['phoneNPCs'].each_with_index do |npc, idx|
@@ -2612,6 +2668,18 @@ def check_common_issues(json_data, valid_item_types = nil)
           end
         end
       end
+    end
+  end
+
+  # The same phone-globals check for headless records (social.characters.*.emailRecord)
+  headless_npc_records(json_data).each do |npc, path|
+    next unless npc['storyPath'] && npc['eventMappings'].is_a?(Array)
+
+    cutscene_event_mappings = npc['eventMappings'].select do |m|
+      m['sendTimedMessage']&.key?('targetKnot') || m['sendTimedMessage']&.key?('conversationMode')
+    end
+    if cutscene_event_mappings.any?
+      mission_ending_phone_candidates << "💡 BEST PRACTICE: '#{path}' appears to be a mission-ending phone NPC with sendTimedMessage. Consider using event-driven cutscene architecture instead: 1) Add #set_global:variable_name:true tag in Ink story, 2) Add #exit_conversation tag to close phone, 3) Create separate person NPC with eventMapping listening for global_variable_changed:variable_name. See scenarios/m01_first_contact/scenario.json.erb for reference implementation"
     end
   end
 
@@ -4834,7 +4902,8 @@ def main
     output_json: false,
     no_graph: false,
     skip_ink: false,
-    no_lint: false
+    no_lint: false,
+    strict_social: false
   }
 
   OptionParser.new do |opts|
@@ -4858,6 +4927,10 @@ def main
 
     opts.on('--skip-ink', 'Skip ink file compilation validation (faster, but less thorough)') do
       options[:skip_ink] = true
+    end
+
+    opts.on('--strict-social', 'Exit 1 when a social lint (scripts/validate_social.rb) reports an error; a scenario with no `social` key always exits 0') do
+      options[:strict_social] = true
     end
 
     opts.on('--no-lint', 'Skip the DIALOGUE LINT section (dialoguelint.mjs over the mission folder)') do
@@ -5077,6 +5150,12 @@ def main
     common_issues += check_carry_over(json_data, repo_root, File.basename(File.dirname(erb_path)),
                                       File.dirname(File.dirname(erb_path)), carry_imports, own_globals)
 
+    # Social-engineering lints (scripts/validate_social.rb). Two lints (aim unlockCondition
+    # keys, object id uniqueness) apply to every scenario; the rest need a `social` key.
+    social_issues = ValidateSocial.check(json_data, repo_root: repo_root, valid_item_types: valid_item_types,
+                                                   imports: carry_imports)
+    common_issues += social_issues
+
     # Check for recommended fields
     puts "Checking recommended fields..."
     warnings = check_recommended_fields(json_data)
@@ -5143,6 +5222,12 @@ def main
         end
         puts
       end
+    end
+
+    # --strict-social: a social lint error fails the run (only for scenarios with a `social` key)
+    if options[:strict_social] && json_data.key?('social') && ValidateSocial.errors(social_issues).any?
+      puts "✗ --strict-social: #{ValidateSocial.errors(social_issues).length} social lint error(s)"
+      exit 1
     end
 
     # Exit with success (warnings don't cause failure)

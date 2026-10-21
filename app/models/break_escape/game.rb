@@ -641,14 +641,8 @@ module BreakEscape
         .uniq
     end
 
-    # Find NPC in scenario data
-    def find_npc_in_scenario(npc_id)
-      scenario_data['rooms']&.each do |_room_id, room|
-        npc = room['npcs']&.find { |n| n['id'] == npc_id }
-        return npc if npc
-      end
-      nil
-    end
+    # find_npc_in_scenario is defined once, in the public section below, on top of
+    # scenario_npc_records (this file used to define it twice; Ruby kept the later one).
 
     # Check if an item is already in the player's inventory
     # Matches by type, id, or name (similar to container filtering logic)
@@ -1277,14 +1271,62 @@ module BreakEscape
       true
     end
 
-    # Find NPC in scenario data
+    # Find an NPC record in the scenario: a room NPC, or a headless record
+    # (scenario_npc_records). The first room NPC with the id wins, as before.
     def find_npc_in_scenario(npc_id)
-      scenario_data['rooms']&.each do |_room_id, room_data|
-        room_data['npcs']&.each do |npc|
-          return npc if npc['id'] == npc_id
+      scenario_npc_records.find { |npc| npc['id'] == npc_id }
+    end
+
+    # Every NPC record the scenario defines: each room's npcs (in room order), then
+    # the headless records (data contract 00 S8). A scenario with no `social` key
+    # gives exactly the room NPCs.
+    def scenario_npc_records
+      self.class.scenario_npc_records(scenario_data)
+    end
+
+    def self.scenario_npc_records(data)
+      return [] unless data.is_a?(Hash)
+
+      room_npcs = []
+      rooms = data['rooms']
+      if rooms.is_a?(Hash)
+        rooms.each_value do |room|
+          next unless room.is_a?(Hash) && room['npcs'].is_a?(Array)
+
+          room['npcs'].each { |npc| room_npcs << npc if npc.is_a?(Hash) }
         end
       end
-      nil
+      room_ids = room_npcs.map { |npc| npc['id'] }
+      room_npcs + headless_npc_records(data).reject { |rec| room_ids.include?(rec['id']) }
+    end
+
+    # Headless NPC records: one per social.characters entry with an emailRecord,
+    # registered with no room and no sprite so mail can reach a character whose
+    # room has not loaded (00 S8, section 9). The record's id is the character's
+    # channels.email; an entry without one has no record. phoneId "mail_only" is
+    # a phone no scenario lists, so the record never shows as a phone contact.
+    HEADLESS_PHONE_ID = 'mail_only'
+
+    def self.headless_npc_records(data)
+      social = data.is_a?(Hash) ? data['social'] : nil
+      characters = social.is_a?(Hash) ? social['characters'] : nil
+      return [] unless characters.is_a?(Hash)
+
+      characters.filter_map do |_character_id, character|
+        next unless character.is_a?(Hash)
+
+        record = character['emailRecord']
+        record_id = character['channels'].is_a?(Hash) ? character['channels']['email'] : nil
+        next unless record.is_a?(Hash) && record_id.is_a?(String) && !record_id.empty?
+
+        record.merge(
+          'id' => record_id,
+          'displayName' => record['displayName'] || character['displayName'] || record_id,
+          'npcType' => 'phone',
+          'phoneId' => HEADLESS_PHONE_ID,
+          'itemsHeld' => record['itemsHeld'].is_a?(Array) ? record['itemsHeld'] : []
+        )
+      end
     end
 
     # ==========================================
@@ -1817,14 +1859,20 @@ module BreakEscape
     def scenario_npc_ids
       ids = Set.new
       if has_attribute?(:scenario_data)
-        (scenario_data['rooms'] || {}).each_value do |room|
-          Array(room['npcs']).each { |npc| ids << npc['id'] if npc.is_a?(Hash) && npc['id'].is_a?(String) }
-        end
+        scenario_npc_records.each { |npc| ids << npc['id'] if npc['id'].is_a?(String) }
       else
-        # sync_state's narrow load leaves scenario_data out; read just the ids
-        found = self.class.where(id: id).pick(Arel.sql("jsonb_path_query_array(scenario_data, '$.rooms.*.npcs[*].id')"))
-        found = JSON.parse(found) if found.is_a?(String)
-        Array(found).each { |npc_id| ids << npc_id if npc_id.is_a?(String) }
+        # sync_state's narrow load leaves scenario_data out; read just the ids:
+        # room NPCs, and the headless records' ids (social.characters.*.channels.email
+        # where the character has an emailRecord; see headless_npc_records)
+        found = self.class.where(id: id).pick(
+          Arel.sql("jsonb_path_query_array(scenario_data, '$.rooms.*.npcs[*].id')"),
+          Arel.sql("jsonb_path_query_array(scenario_data, " \
+                   "'$.social.characters.* ? (@.emailRecord.type() == \"object\").channels.email')")
+        )
+        Array(found).each do |list|
+          list = JSON.parse(list) if list.is_a?(String)
+          Array(list).each { |npc_id| ids << npc_id if npc_id.is_a?(String) && !npc_id.empty? }
+        end
       end
       (player_state['room_states'] || {}).each_value do |state|
         next unless state.is_a?(Hash)

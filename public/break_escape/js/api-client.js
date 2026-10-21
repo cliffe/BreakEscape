@@ -70,7 +70,9 @@ export class ApiClient {
     });
 
     if (!response.ok) {
-      throw new Error(`API Error: ${response.status}`);
+      const error = new Error(`API Error: ${response.status}`);
+      error.status = response.status;
+      throw error;
     }
 
     return response.json();

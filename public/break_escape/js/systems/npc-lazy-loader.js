@@ -4,6 +4,7 @@
  * Uses in-memory caching only (no persistent storage between sessions)
  */
 import { ensureCharacterTextures, spriteKeysForNPCs } from './character-textures.js';
+import { headlessNpcRecords } from './scenario-npc-records.js';
 
 export default class NPCLazyLoader {
   constructor(npcManager) {
@@ -109,6 +110,29 @@ export default class NPCLazyLoader {
     }
     
     this.loadedRooms.add(roomId);
+  }
+
+  /**
+   * Register the scenario's headless NPC records (social.characters.*.emailRecord,
+   * data contract 00 S8) at game start: no room, no sprite. Their stories load on
+   * first use, through the same ink endpoint as room NPCs. A scenario with no
+   * `social` key registers nothing.
+   * @param {object} scenario - the bootstrap scenario (window.gameScenario)
+   * @returns {string[]} ids registered
+   */
+  registerHeadlessRecords(scenario) {
+    const registered = [];
+    for (const record of headlessNpcRecords(scenario)) {
+      // A room NPC already registered under this id keeps it (the server's
+      // scenario_npc_records drops the clashing record the same way)
+      if (this.npcManager.getNPC?.(record.id)) continue;
+      this.npcManager.registerNPC(record);
+      registered.push(record.id);
+    }
+    if (registered.length) {
+      console.log(`✅ Registered ${registered.length} headless NPC record(s): ${registered.join(', ')}`);
+    }
+    return registered;
   }
 
   /**

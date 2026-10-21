@@ -565,7 +565,13 @@ export class PersonChatMinigame extends MinigameScene {
                 npcConversationStateManager.syncInventoryVariablesToStory(this.inkEngine.story, this.npc);
                 console.log('🔄 Re-synced global and inventory variables before showing dialogue');
             }
-            
+
+            // Engine-written VARs (00 S7) go in last: after the restore and both syncs,
+            // so neither can overwrite them, and before the first Continue reads them
+            if (this.inkEngine && this.inkEngine.story) {
+                npcConversationStateManager.applyEngineVariables(this.npcId, this.inkEngine.story, { channel: 'person-chat' });
+            }
+
             this.isConversationActive = true;
 
             // Clear any stale choices from a previous conversation before showing new dialogue
@@ -874,8 +880,14 @@ export class PersonChatMinigame extends MinigameScene {
             return this.npc.id;
         }
         
-        // Look up by ID or displayName (case-insensitive)
-        for (const [id, character] of Object.entries(this.characters)) {
+        // Look up by ID or displayName (case-insensitive). NPCManager.resolveSpeakerId
+        // does the same scan, but a display-name tie goes to this conversation's own NPC
+        // (social build 0.6; m04 Robert Vance, m05 Patricia have a same-named phone record).
+        const resolveSpeakerId = this.npcManager?.constructor?.resolveSpeakerId;
+        if (typeof resolveSpeakerId === 'function') {
+            const resolved = resolveSpeakerId(this.characters, speakerId, this.npc?.id);
+            if (resolved) return resolved;
+        } else for (const [id, character] of Object.entries(this.characters)) {
             if (id.toLowerCase() === normalized) {
                 return id; // Return original casing
             }

@@ -67,3 +67,81 @@ jobs:
         run: |
           bin/rails app:db:prepare
           bin/rails test
+
+  node-tests:
+    runs-on: ubuntu-22.04
+
+    steps:
+      - name: Install packages
+        run: sudo apt-get update && sudo apt-get install --no-install-recommends -y sqlite3 libsqlite3-dev
+
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        env:
+          BUNDLE_BUILD__SQLITE3: "--enable-system-libraries"
+        with:
+          ruby-version: 2.7.8
+          bundler-cache: true
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install Node packages
+        run: npm ci
+
+      # validator-portrait-variants.test.mjs writes ink under <repo>/tmp, which is
+      # git-ignored and so absent from a fresh checkout.
+      - name: Create tmp/
+        run: mkdir -p tmp
+
+      # The validator tests spawn plain `ruby`; bundle exec puts Bundler's
+      # RUBYOPT in the environment so the child can load the json-schema gem.
+      - name: Social and validator tests
+        run: bundle exec node --test test/js/validator-*.test.mjs test/js/social-*.test.mjs
+
+      - name: Whole test/js suite (regression cover for m01-m08)
+        env:
+          # Quarantine: file name -> reason. Each is skipped in the full run and
+          # then run alone below. Drop an entry once it passes the full run on Node 20.
+          #   engine-fixes-round4.test.mjs, engine-fixes-pass3.test.mjs:
+          #   "fail intermittently in the full run on Node 18 with a structured-clone
+          #   runner error, pass alone"
+          QUARANTINE: >-
+            engine-fixes-round4.test.mjs
+            engine-fixes-pass3.test.mjs
+        run: |
+          set -euo pipefail
+          files=()
+          for f in test/js/*.test.mjs; do
+            skip=0
+            for q in $QUARANTINE; do
+              [ "$(basename "$f")" = "$q" ] && skip=1
+            done
+            [ "$skip" -eq 0 ] && files+=("$f")
+          done
+          echo "Full run: ${#files[@]} files"
+          bundle exec node --test "${files[@]}"
+          for q in $QUARANTINE; do
+            echo "Quarantined, run alone: $q"
+            bundle exec node --test "test/js/$q"
+          done
+
+      - name: Validator over scenarios with a social key
+        run: |
+          set -euo pipefail
+          count=0
+          while IFS= read -r scenario; do
+            [ -n "$scenario" ] || continue
+            echo "== $scenario"
+            bundle exec ruby scripts/validate_scenario.rb "$scenario" --strict-social --no-graph --skip-ink
+            count=$((count + 1))
+          done < <(grep -lE '^  "social"[[:space:]]*:' scenarios/*/scenario.json.erb || true)
+          echo "Validated $count scenario(s) with a social key"
+
+      - name: No tracked file was rewritten
+        run: git diff --exit-code

@@ -1818,6 +1818,18 @@ module BreakEscape
             end
           end
         end
+
+        # A headless record (00 S8) gives from no room. A room NPC with the same id
+        # wins, as in Game.scenario_npc_records.
+        in_a_room = @game.scenario_data['rooms'].each_value.any? do |room_data|
+          room_data['npcs']&.any? { |npc| npc['id'] == source_npc_id }
+        end
+        unless in_a_room
+          headless = BreakEscape::Game.headless_npc_records(@game.scenario_data).find { |npc| npc['id'] == source_npc_id }
+          headless&.dig('itemsHeld')&.each do |held_item|
+            return npc_location.call(headless, nil, held_item) if matches.call(held_item)
+          end
+        end
       end
 
       # Priority 1: Items in unlocked rooms (most accessible)
@@ -1982,6 +1994,11 @@ module BreakEscape
           return obj
         end
       end
+
+      # Headless records (social.characters.*.emailRecord, data contract 00 S8),
+      # after every room, so a room NPC or object keeps its id
+      headless = BreakEscape::Game.headless_npc_records(@game.scenario_data).find { |npc| npc['id'] == npc_id }
+      return headless if headless
 
       # Log available NPCs for debugging
       if available_npcs.any?

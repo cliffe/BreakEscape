@@ -6,12 +6,13 @@ import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { dirname, join, relative } from 'node:path';
-import { mkdtempSync, writeFileSync, rmSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, writeFileSync, rmSync } from 'node:fs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '../..');
 const ruby = spawnSync('ruby', ['--version']);
 
 // The ink must sit under the repo root (storyPath is repo-relative); tmp/ is git-ignored.
+mkdirSync(join(root, 'tmp'), { recursive: true });
 const inkDir = mkdtempSync(join(root, 'tmp', 'portrait-variants-'));
 writeFileSync(join(inkDir, 'torres.ink'), '=== start ===\nHi. # portrait:ko\nNo. # portrait:base\nEh. # portrait:missing\n-> END\n');
 const storyPath = relative(root, join(inkDir, 'torres.json'));

@@ -40,7 +40,6 @@ test/dummy/storage/*
 public/break_escape/assets/characters/wip/*
 # Playwright playtest harness (see .claude/skills/playtest-scenario)
 node_modules/
-package-lock.json
 
 # TTS audio cache: committed, so players hear the takes that were reviewed
 # (generation isn't deterministic). Ignore only in-flight and test files.

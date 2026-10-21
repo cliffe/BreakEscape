@@ -13,9 +13,12 @@ export default class InkEngine {
     // inkjs library is available as global `inkjs` (loaded via assets/vendor/ink.js)
     if (typeof storyJson === 'string') {
       this.story = new inkjs.Story(storyJson);
+      // An unbound EXTERNAL runs its ink fallback function instead of throwing (00 S1)
+      this.story.allowExternalFunctionFallbacks = true;
     } else {
       // If it's an object, stringify then pass to constructor
       this.story = new inkjs.Story(JSON.stringify(storyJson));
+      this.story.allowExternalFunctionFallbacks = true;
     }
     
     // Don't automatically continue - let the caller control when to get content

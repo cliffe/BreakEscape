@@ -789,7 +789,7 @@ influence going down.
   "priya": {
     "displayName": "Priya Nair",
     "channels": { "person": "priya_helpdesk", "phone": "priya_helpdesk_phone", "email": "priya_helpdesk_mail" },
-    "emailRecord": { "storyPath": "ink/priya_mail.json", "displayName": "Priya Nair (helpdesk mail)" },   // §9
+    "emailRecord": { "storyPath": "scenarios/lab_social_engineering/ink/priya_mail.json", "displayName": "Priya Nair (helpdesk mail)" },   // §9
     "emailReplyDelay": 20,                                  // seconds of wall-clock countdown (§10)
     "influence": { "global": "priya_influence", "min": -100, "max": 100, "start": -20 },
     "syncedVars": ["priya_influence", "priya_knows_sam_okafor"],
@@ -925,7 +925,7 @@ her `emailReplyDelay` is authored on her target (15, like the other two).
   "pierce": {
     "displayName": "Melanie Pierce",
     "channels": { "email": "pierce_mail" },
-    "emailRecord": { "storyPath": "ink/pierce_mail.json", "displayName": "Melanie Pierce" },
+    "emailRecord": { "storyPath": "scenarios/lab_social_engineering/ink/pierce_mail.json", "displayName": "Melanie Pierce" },
     "emailReplyDelay": 15,
     "influence": { "global": "pierce_influence", "min": -40, "max": 100, "start": 0 },
     "syncedVars": ["pierce_influence"],
@@ -935,7 +935,7 @@ her `emailReplyDelay` is authored on her target (15, like the other two).
   "lord": {
     "displayName": "Sofia Lord",
     "channels": { "email": "lord_mail" },
-    "emailRecord": { "storyPath": "ink/lord_mail.json", "displayName": "Sofia Lord" },
+    "emailRecord": { "storyPath": "scenarios/lab_social_engineering/ink/lord_mail.json", "displayName": "Sofia Lord" },
     "emailReplyDelay": 15,
     "influence": { "global": "lord_influence", "min": -40, "max": 100, "start": 0 },
     "syncedVars": ["lord_influence"],
@@ -1092,7 +1092,8 @@ mail. Engine item S8: the record is authored on the character, in
 `social.characters.<id>.emailRecord`:
 
 ```jsonc
-"emailRecord": { "storyPath": "ink/pierce_mail.json", "displayName": "Melanie Pierce", "avatar": "pierce", "itemsHeld": [] }
+"emailRecord": { "storyPath": "scenarios/lab_social_engineering/ink/pierce_mail.json", "displayName": "Melanie Pierce", "avatar": "pierce", "itemsHeld": [] }
+// storyPath is repo-relative and starts with scenarios/ (the validator rejects ink/...; P0-I). The record id is channels.email; an id that clashes with a room NPC is dropped (room NPC wins), and the validator warns (P1-H). The mail runner adds the id to encounteredNPCs on first delivery, so #give_item from a headless record passes the server check
 ```
 
 `channels.email` is the record's id. At game start the engine registers `{ id, displayName,

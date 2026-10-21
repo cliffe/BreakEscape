@@ -19,9 +19,12 @@ import { hostileTurnMessage } from '../../systems/combat-input.js';
  * 
  * @param {Array<string>} tags - Array of tag strings from Ink story
  * @param {Object} ui - UI controller with showNotification method
+ * @param {Object} [options] - { engine, npcId, runId }: the calling story's InkEngine
+ *   and NPC, used only by the social influence tags (default: the open chat's
+ *   engine when it belongs to window.currentConversationNPCId)
  * @returns {Array<Object>} Array of processing results for each tag
  */
-export async function processGameActionTags(tags, ui) {
+export async function processGameActionTags(tags, ui, options = {}) {
     if (!window.NPCGameBridge) {
         console.warn('⚠️ NPCGameBridge not available, skipping tag processing');
         return [];
@@ -594,6 +597,17 @@ export async function processGameActionTags(tags, ui) {
                     }
                     break;
 
+                // Influence tags for social characters (00 §8 "Influence tags", S5).
+                // Only an NPC that resolves to a social.characters entry is handled;
+                // any other NPC falls through to default exactly as before (m01
+                // Derek's #influence:-100, the hub demos' #influence_gained:N).
+                case 'influence':
+                case 'influence_gained':
+                case 'influence_lost':
+                case 'report':
+                    if (applySocialInfluenceTag(action, param, result, options)) break;
+                    // falls through
+
                 default:
                     // Unknown tag, log but don't fail
                     console.log(`ℹ️ Unknown game action tag: ${action}`);
@@ -610,6 +624,69 @@ export async function processGameActionTags(tags, ui) {
     }
 
     return results;
+}
+
+// Per-change step for #influence_gained / #influence_lost written without a
+// number: social characters move in tens (00 §8 "Scale").
+const SOCIAL_INFLUENCE_STEP = 10;
+
+/**
+ * The social-character half of the influence tags (00 §8, S5; plan 0.3, P0-G).
+ *   #influence:N[:reason]           absolute set (setInfluence)
+ *   #influence_gained[:N][:reason]  +N, default SOCIAL_INFLUENCE_STEP
+ *   #influence_lost[:N][:reason]    -N, default SOCIAL_INFLUENCE_STEP
+ *   #report[:reason]                forced report (influence unchanged)
+ * Returns false, touching nothing, when no service is installed or the NPC is
+ * not a social character; the caller then keeps today's handling.
+ */
+function applySocialInfluenceTag(action, param, result, options = {}) {
+    const service = window.socialInfluence;
+    const npcId = options.npcId || window.currentConversationNPCId;
+    if (!service || !npcId || !service.isSocialCharacter?.(npcId)) return false;
+
+    let engine = options.engine || null;
+    if (!engine) {
+        const open = window.MinigameFramework?.currentMinigame;
+        const openNpc = open?.npcId ?? open?.currentNPCId ?? null;
+        // The phone chat reuses one engine across contacts: only take it for this NPC.
+        if (open?.inkEngine?.story && openNpc === npcId) engine = open.inkEngine;
+    }
+    const ctx = { engine, npcId };
+    if (options.runId !== undefined && options.runId !== null) ctx.runId = options.runId;
+
+    const parts = param ? param.split(':').map(p => p.trim()) : [];
+    const lead = parts.length && parts[0] !== '' ? Number(parts[0]) : NaN;
+
+    if (action === 'report') {
+        const reason = param || null;
+        const r = service.report(npcId, reason, ctx);
+        result.success = !!r?.reported;
+        result.message = `📣 Report (${npcId}): ${reason ?? 'no reason'}${r?.reported ? '' : ' (no reports threshold)'}`;
+        return true;
+    }
+
+    if (action === 'influence') {
+        if (!Number.isFinite(lead)) {
+            result.message = `⚠️ influence tag needs a number for ${npcId}: "${param}"`;
+            console.warn(result.message);
+            return true;
+        }
+        const reason = parts.slice(1).join(':') || null;
+        const r = service.setInfluence(npcId, lead, reason, ctx);
+        result.success = !!r;
+        result.message = r ? `🎭 Influence (${npcId}) = ${r.value} (was ${r.previous})` : `⚠️ influence not written for ${npcId}`;
+        return true;
+    }
+
+    // influence_gained / influence_lost
+    const hasAmount = Number.isFinite(lead);
+    const amount = hasAmount ? Math.abs(lead) : SOCIAL_INFLUENCE_STEP;
+    const reason = (hasAmount ? parts.slice(1).join(':') : param) || null;
+    const delta = action === 'influence_lost' ? -amount : amount;
+    const r = service.addInfluence(npcId, delta, reason, ctx);
+    result.success = !!r;
+    result.message = r ? `🎭 Influence (${npcId}) ${delta >= 0 ? '+' : ''}${delta} = ${r.value}` : `⚠️ influence not written for ${npcId}`;
+    return true;
 }
 
 /**

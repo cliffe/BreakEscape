@@ -484,8 +484,10 @@ export class PhoneChatMinigame extends MinigameScene {
             // The re-run shows only output the player hasn't seen: the knot's leading
             // text and tags, already in the thread, are not replayed (E10/E13; see
             // PhoneChatConversation.reopenWithCurrentGlobals).
+            // Engine-written VARs (00 S7) are set after the sync, before any re-run reads them
             const reopen = this.conversation.reopenWithCurrentGlobals(story => {
                 window.npcConversationStateManager?.syncGlobalVariablesToStory(story);
+                window.npcConversationStateManager?.applyEngineVariables?.(npcId, story, { channel: 'phone-chat' });
             });
 
             // If the saved story had ended (DONE/END), the restored story has no position and
@@ -517,6 +519,10 @@ export class PhoneChatMinigame extends MinigameScene {
             // (first_contact etc.), so a reload resumes here rather than at the intro
             this.saveStoryState();
         } else {
+            // Engine-written VARs (00 S7): after the load's sync, the saved flags and any
+            // restore-and-sync above, before the knot's first Continue
+            window.npcConversationStateManager?.applyEngineVariables?.(npcId, this.conversation.engine?.story, { channel: 'phone-chat' });
+
             // Navigate to starting knot (either first time, or explicit navigation request)
             if (explicitStartKnot) {
                 console.log(`📱 Explicit navigation to knot: ${explicitStartKnot}${restoredForKnot ? ' (from the saved story state)' : ''}`);

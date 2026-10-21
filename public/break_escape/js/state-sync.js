@@ -51,6 +51,7 @@ export class StateSync {
     this.lastClientTs = 0;
     this._running = null; // the sync in flight
     this._next = null; // the one sync queued behind it
+    this.lastError = null; // error from the latest failed run (status set for HTTP errors)
   }
 
   start() {
@@ -301,22 +302,49 @@ export class StateSync {
     return this._running;
   }
 
+  /**
+   * One sync run. Resolves true when the server holds everything (or there was
+   * nothing to send), false on a stale answer or a failure. A failure's error
+   * is kept in this.lastError so syncConfirmed can tell a refusal from a blip.
+   */
   async _syncOnce() {
     try {
       const changes = this.buildChanges();
-      if (!changes) return;
+      if (!changes) return true;
       const body = { ...changes.body, clientTs: this.nextClientTs() };
       const response = await ApiClient.put('/sync_state', body);
       if (response?.stale) {
         console.warn('State sync answered stale; resending with the next sync');
-        return;
+        this.lastError = null;
+        return false;
       }
       this.confirm(changes);
+      this.lastError = null;
       console.log('✓ State synced to server');
+      return true;
     } catch (error) {
       // Nothing is marked confirmed, so the next sync sends it again
+      this.lastError = error;
       console.error('State sync failed:', error);
+      return false;
     }
+  }
+
+  /**
+   * Sync until the server confirms, for callers that must know the save landed.
+   * Retries with back-off (250 ms doubling, capped at 4 s) up to `attempts`
+   * runs; onRetry(i) is called before each wait. A 403 is a refusal, not a
+   * blip, so it stops at once. Resolves true when confirmed, false otherwise.
+   */
+  async syncConfirmed({ attempts = 6, onRetry } = {}) {
+    for (let i = 0; i < attempts; i++) {
+      if (await this.sync()) return true;
+      if (this.lastError?.status === 403) return false;
+      if (i === attempts - 1) break;
+      onRetry?.(i);
+      await new Promise(r => setTimeout(r, Math.min(250 * 2 ** i, 4000)));
+    }
+    return false;
   }
 
   /**

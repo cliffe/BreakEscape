@@ -101,7 +101,7 @@ InkEngine.prototype.loadStory = function (json) {
   const story = origLoad.call(this, json);
   story.state.storySeed = 7;
   story.state.previousRandom = 0;
-  if (FLAG) story.allowExternalFunctionFallbacks = true;
+  story.allowExternalFunctionFallbacks = FLAG;
   return story;
 };
 

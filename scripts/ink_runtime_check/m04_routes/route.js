@@ -160,7 +160,7 @@ function hostile(npc) {
   if (npc === 'security_guard') G.guard_hostile = true;
   if (npc === 'voltage') G.voltage_fight_started = true;
 }
-function load(f) { const s = new inkjs.Story(fs.readFileSync(path.join(DIR, f + '.json'), 'utf8').replace(/^﻿/, '')); try { s.BindExternalFunction('player_name', () => 'Agent'); } catch (e) {} return s; }
+function load(f) { const s = new inkjs.Story(fs.readFileSync(path.join(DIR, f + '.json'), 'utf8').replace(/^﻿/, '')); s.allowExternalFunctionFallbacks = true; try { s.BindExternalFunction('player_name', () => 'Agent'); } catch (e) {} return s; }
 for (const step of route.steps) {
   if (step.set) { for (const k of Object.keys(step.set)) if (IMPORTED.has(k)) { out(`   [FAIL: write to imported read-only global ${k}]`); stats.fails++; } Object.assign(G, step.set); out(`   {set ${JSON.stringify(step.set)}}`); engine(); continue; }
   if (step.note) { console.log(`\n## ${step.note}`); continue; }  // notes stay out of said/notSaid

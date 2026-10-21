@@ -152,7 +152,7 @@ function readItem(id, quiet) {
   const sv = (it.onRead || it.onPickup || {}).setVariable || {};
   for (const [k, v] of Object.entries(sv)) setGlobal(k, v);
 }
-function load(f) { const s = new inkjs.Story(fs.readFileSync(path.join(DIR, f + '.json'), 'utf8').replace(/^﻿/, '')); try { s.BindExternalFunction('player_name', () => 'Agent'); } catch (e) {} return s; }
+function load(f) { const s = new inkjs.Story(fs.readFileSync(path.join(DIR, f + '.json'), 'utf8').replace(/^﻿/, '')); s.allowExternalFunctionFallbacks = true; try { s.BindExternalFunction('player_name', () => 'Agent'); } catch (e) {} return s; }
 function syncIn(s) { for (const k of Object.keys(G)) { if (s.variablesState.GlobalVariableExistsWithName(k)) s.variablesState[k] = G[k]; } }
 function syncOut(s) {  // ink assignments to synced globals raise global_variable_changed, as the observer does
   // Copy every change first, then raise the events, then push mapping results back.

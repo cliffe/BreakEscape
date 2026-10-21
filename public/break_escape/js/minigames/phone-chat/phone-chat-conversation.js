@@ -748,6 +748,8 @@ export default class PhoneChatConversation {
         // After a reload: restore this contact's own ink flags (e.g. first_contact)
         // so its start knot skips an intro the player already read
         window.npcConversationStateManager?.applySavedInkVariables?.(npc.id, tempConversation.engine?.story);
+        // Engine-written VARs (00 S7) last, after the load's sync and the saved flags
+        window.npcConversationStateManager?.applyEngineVariables?.(npc.id, tempConversation.engine?.story, { channel: 'phone-preload' });
 
         const entryKnot = npc.currentKnot || 'start';
         tempConversation.goToEntryKnot(entryKnot);

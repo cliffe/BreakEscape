@@ -1,4 +1,5 @@
 import { displayDashes } from '../utils/display-dashes.js';
+import { writeGlobal } from './global-writer.js';
 
 /**
  * Shared action executor for scenario-defined action descriptors.
@@ -32,11 +33,12 @@ export function applyActions(actions, { source = 'scenario', gameId = null } = {
 
             case 'set_global':
                 if (action.key !== undefined && window.gameState?.globalVariables) {
-                    window.gameState.globalVariables[action.key] = action.value;
-                    window.eventDispatcher?.emit(`global_variable_changed:${action.key}`, {
-                        name: action.key,
-                        value: action.value
-                    });
+                    // The shared writer (00 S3). emitAlways: set_global emits on every
+                    // call, same value or not, as it always has (some mappings re-set a
+                    // value to re-fire). The only new behaviour is the broadcast to
+                    // cached stories that declare the name; the open chat's story is
+                    // left as before (openChat: false).
+                    writeGlobal(action.key, action.value, { emitAlways: true, openChat: false });
                     console.log(`[applyActions] set_global ${action.key} =`, action.value);
                 }
                 break;

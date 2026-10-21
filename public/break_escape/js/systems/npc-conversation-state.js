@@ -7,6 +7,9 @@
  * @module npc-conversation-state
  */
 
+// Ink VAR prefixes that live for one run only and are never saved (00 S7)
+const RUN_SCOPED_PREFIXES = ['email_'];
+
 class NPCConversationStateManager {
     constructor() {
         this.conversationStates = new Map(); // { npcId: { storyState, variables, ... } }
@@ -148,6 +151,68 @@ class NPCConversationStateManager {
     }
 
     /**
+     * Run-scoped ink variables (00 S7). The `email_` set describes one mail run:
+     * the engine writes it before each run, so it is never recorded or exported
+     * and never reaches a later run or the server.
+     * @param {string} name - ink VAR name
+     * @returns {boolean}
+     */
+    isRunScopedVariable(name) {
+        return typeof name === 'string' && RUN_SCOPED_PREFIXES.some(prefix => name.startsWith(prefix));
+    }
+
+    /**
+     * Register a source of engine-written ink variables (00 S7; e.g. the pretext
+     * session's pretext_* VARs). Every loader calls applyEngineVariables after it
+     * has restored the story and synced globals, so a restored state or a sync can
+     * never overwrite what the engine wrote. Registering an id again replaces it.
+     * @param {string} id - writer id
+     * @param {Function} writer - ({ npcId, story, channel }) => { varName: value } | null
+     */
+    registerEngineVariableWriter(id, writer) {
+        if (!id || typeof writer !== 'function') return;
+        if (!this.engineVariableWriters) this.engineVariableWriters = new Map();
+        this.engineVariableWriters.set(id, writer);
+    }
+
+    /** @param {string} id - writer id given to registerEngineVariableWriter */
+    unregisterEngineVariableWriter(id) {
+        this.engineVariableWriters?.delete(id);
+    }
+
+    /**
+     * Set the engine-written variables in a loaded story: each registered
+     * writer's values, then `values` (a caller's own, e.g. the mail runner's
+     * email_* set). Call last, after restore and every sync. Only declared VARs
+     * are set (setDeclaredVariable). With no writers and no values it does nothing.
+     * @param {string} npcId - NPC identifier
+     * @param {Object} story - The Ink story object
+     * @param {Object} [context] - { channel, values }
+     * @returns {number} How many variables were set
+     */
+    applyEngineVariables(npcId, story, context = {}) {
+        if (!story?.variablesState) return 0;
+        const { values, ...rest } = context || {};
+        const sets = [];
+        for (const [id, writer] of this.engineVariableWriters || []) {
+            try {
+                const out = writer({ ...rest, npcId, story });
+                if (out && typeof out === 'object') sets.push(out);
+            } catch (e) {
+                console.warn(`⚠️ Engine variable writer ${id} failed for ${npcId}:`, e.message);
+            }
+        }
+        if (values && typeof values === 'object') sets.push(values);
+        let applied = 0;
+        for (const set of sets) {
+            for (const [name, value] of Object.entries(set)) {
+                if (this.setDeclaredVariable(story, name, value)) applied++;
+            }
+        }
+        return applied;
+    }
+
+    /**
      * NPC-local ink variables of every NPC with saved state, for the server
      * (state-sync.js sends them with each sync). Globals are left out, since
      * they sync on their own, and so is anything that isn't a plain scalar.
@@ -160,6 +225,7 @@ class NPCConversationStateManager {
             const vars = {};
             for (const [key, value] of Object.entries(state.variables)) {
                 if (this.isGlobalVariable(key)) continue;
+                if (this.isRunScopedVariable(key)) continue;
                 if (value === null || ['string', 'number', 'boolean'].includes(typeof value)) {
                     vars[key] = value;
                 }
@@ -231,6 +297,7 @@ class NPCConversationStateManager {
         const variables = {};
         for (const [key, value] of this.readDeclaredVariables(story)) {
             if (this.isGlobalVariable(key)) continue;
+            if (this.isRunScopedVariable(key)) continue;
             if (value === null || ['string', 'number', 'boolean'].includes(typeof value)) {
                 variables[key] = value;
             }

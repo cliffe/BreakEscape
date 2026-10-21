@@ -129,6 +129,39 @@ export default class NPCManager {
   // shown time stays put across reopen and reload (messageClockText in game-clock.js)
   static PHONE_MESSAGE_FIELDS = ['type', 'text', 'timestamp', 'gameTime', 'read', 'isBark', 'timed', 'preloaded'];
 
+  /**
+   * Resolve a "Name:" speaker prefix to a character id (social build item 0.6,
+   * data contract 00 S2). Same scan as person-chat's normalizeSpeakerId: the first
+   * character, in registration order, whose id or displayName matches the name
+   * (case-insensitive) wins. One change: when that first match is by displayName
+   * alone and the conversation's own NPC has the same displayName, the own NPC
+   * wins. Two records of one character can share a name (m04's Robert Vance and his
+   * phone contact, m05's Patricia); before this, the one registered first took
+   * every prefix, whichever conversation it was. An id match is never overridden.
+   * @param {Object<string, {displayName?: string}>} characters - id -> character
+   * @param {string} speakerName - the prefix text, e.g. "Priya Nair"
+   * @param {string|null} ownNpcId - the NPC whose conversation this is
+   * @returns {string|null} the character id, in its own casing, or null
+   */
+  static resolveSpeakerId(characters, speakerName, ownNpcId = null) {
+    if (!characters || typeof speakerName !== 'string') return null;
+    const normalized = speakerName.toLowerCase().trim();
+    if (!normalized) return null;
+
+    for (const [id, character] of Object.entries(characters)) {
+      if (id.toLowerCase() === normalized) return id;
+      if (character?.displayName && character.displayName.toLowerCase() === normalized) {
+        const own = ownNpcId ? characters[ownNpcId] : null;
+        if (own && id !== ownNpcId && own.displayName &&
+            own.displayName.toLowerCase() === normalized) {
+          return ownNpcId;
+        }
+        return id;
+      }
+    }
+    return null;
+  }
+
   constructor(eventDispatcher, barkSystem = null) {
     this.eventDispatcher = eventDispatcher;
     this.barkSystem = barkSystem;

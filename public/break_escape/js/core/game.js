@@ -1729,7 +1729,26 @@ export async function create() {
                 // Continue with room creation even if NPC loading fails
             }
         }
-        
+
+        // Headless NPC records (social.characters.*.emailRecord) have no room, so
+        // they register here, once, at game start. No-op without a `social` key.
+        try {
+            window.npcLazyLoader?.registerHeadlessRecords?.(gameScenario);
+        } catch (error) {
+            console.error('Failed to register headless NPC records:', error);
+        }
+
+        // Social influence service (00 S5): only a scenario with social.characters
+        // loads it. With no `social` key nothing is imported or installed.
+        if (gameScenario.social?.characters && Object.keys(gameScenario.social.characters).length > 0) {
+            try {
+                const { installSocialInfluence } = await import('../systems/social-influence.js');
+                installSocialInfluence({ scenario: gameScenario, dispatcher: window.eventDispatcher });
+            } catch (error) {
+                console.error('Failed to install the social influence service:', error);
+            }
+        }
+
         createRoom(startRoomId, startingRoomData, startingRoomPosition);
         revealRoom(startRoomId);
     } catch (error) {

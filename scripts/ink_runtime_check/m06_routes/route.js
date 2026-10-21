@@ -186,7 +186,7 @@ function closed(name) {
   if (NPCID[name]) fire('conversation_closed:' + NPCID[name], {});
   engine();
 }
-function load(f) { const s = new inkjs.Story(fs.readFileSync(path.join(DIR, f + '.json'), 'utf8').replace(/^﻿/, '')); try { s.BindExternalFunction('player_name', () => 'Agent'); } catch (e) {} return s; }
+function load(f) { const s = new inkjs.Story(fs.readFileSync(path.join(DIR, f + '.json'), 'utf8').replace(/^﻿/, '')); s.allowExternalFunctionFallbacks = true; try { s.BindExternalFunction('player_name', () => 'Agent'); } catch (e) {} return s; }
 let checkMark = false; // dialogue C1: consecutive said/notSaid steps check the same lines
 for (const step of route.steps) {
   if (checkMark && !(step.said || step.notSaid)) { heard = []; checkMark = false; }

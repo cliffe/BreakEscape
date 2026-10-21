@@ -1807,7 +1807,7 @@ These are the mistakes that most often leave a mission unfinishable or silently 
 - **Never end an NPC conversation in `DONE` or `END`.** Re-talking an ended story shows "(End of conversation)". Every exit is `#exit_conversation` on its own line, then `-> hub` (or `-> after_choice`).
 - **Guard once-only decision scenes.** Use `{fate != "": -> after_choice}`, or talking again replays the scene and overwrites the outcome.
 - **Put action tags above the line they belong to.** Use `#give_item:<type>:<itemId>`, with the id on the NPC's `itemsHeld` entry, and set "given" globals from an `item_picked_up:<type>` mapping, not in ink.
-- **Use synced-global `VAR`s, not `EXTERNAL` functions.** The engine binds only six externals; an unbound one throws.
+- **An `EXTERNAL` needs an ink fallback function of the same name and arity.** The engine turns ink fallbacks on, so an unbound external runs its fallback (`=== function se_influence(delta, reason) ===`, returning a neutral value such as 0). Without a fallback it still throws, story-wide, at the first `Continue()`. The chats bind only six read-only externals and the bark path binds none, so every external must have a fallback. For state, prefer synced-global `VAR`s.
 - **`setVariable` does no arithmetic.** `"x + 1"` assigns the string. Use one boolean per item instead of a counter.
 - **First-meeting openers need their own knot that diverts.** Choices in a `{cond: ...}` block without a divert merge into the next hub and are lost after one pick.
 - **Do not preload a contact whose `start` reveals plot.** The phone runs every preloaded contact's `start` knot on first open, and `~` assignments there write real globals.
