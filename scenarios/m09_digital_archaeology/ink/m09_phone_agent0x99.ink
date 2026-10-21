@@ -309,9 +309,11 @@ Her card for the tape room will be in that office.
 // Beat 3.3 steps 1-2. Netherton is on the line from the aircraft's forward
 // cabin; his three lines are fixed and he says nothing else.
 = opening
-// VM-STEER: check against the VM plan. The credential's first line, in
-// story terms only (CONTRACT §11 item 2): a SAFETYNET staff credential,
-// issued before he left, never revoked. Quote no VM string.
+// VM-STEER (checked vs FINALE_VM_PLAN m09 flag 3): aligned. The credential's
+// first line, story terms only (CONTRACT §11 item 2): a SAFETYNET staff
+// credential, issued before he left, never revoked. Quote no VM string. The VM
+// shows the credential beside flag 3; the name is said by Netherton below,
+// never by the flag string. Voiced lines kept verbatim (no new audio).
 // Script edit R1 A-01: the hand line opens the scene when it is still open,
 // so it never interrupts the credential; the start tags go on the first line.
 #set_global:identity_scene_started:true
@@ -629,10 +631,10 @@ Netherton's on the ground at Helena. Tell me when you're ready to come in.
 // 4. VM help, flags 3-4: one story-level steer before flag 3, one between 3 and 4.
 + {salvage_opened and not flag4_submitted} [I'm on his box. Where do I look?]
     {flag3_submitted:
-        // VM-STEER: check against the VM plan (flag 4, full control of Tomb Beta's server).
-        Now all of it. Something on there still talks to Tomb Gamma. Take the whole box and we'll see what.
+        // VM-STEER (checked vs FINALE_VM_PLAN m09 flag 4: root on Tomb Beta's server; the mirror job to Tomb Gamma in root's home). M6: name the target, imply no live link ("set to copy", as hour_read).
+        Now all of it. Something on there is set to copy to Tomb Gamma. Take the whole box and we'll see what.
     - else:
-        // VM-STEER: check against the VM plan (flag 3, the owner of Tomb Beta's server).
+        // VM-STEER (checked vs FINALE_VM_PLAN m09 flag 3: foothold on Tomb Beta's server; the staff credential beside the flag names the owner). Line kept vague: the credential reveal is the player's to make on the box.
         First, whose box it is. Somebody set it up and never handed it back.
     }
     -> support_hub
@@ -692,8 +694,8 @@ Netherton's on the ground at Helena. Tell me when you're ready to come in.
     }
 // 12. VM help, flag 2.
 + {flag1_submitted and not flag2_submitted} [The ledger. Where is it?]
-    // VM-STEER: check against the VM plan (flag 2, the Initiative's live ledger).
-    Same server as the catalogue, and nobody out front was ever meant to see it. Go further in than the public index.
+    // VM-STEER (checked vs FINALE_VM_PLAN m09 flag 2: root on the catalogue server, the live ledger in root's home). Full control of the same box, not a deeper index; stay off flag 1's "part that isn't public".
+    Same box you're already on. The live ledger sits where only the machine's keeper can reach. Get that far and it's yours.
     -> support_hub
 // 13. The legacy box (MC §4.3), once.
 + {cage_opened and not legacy_clock_run and not legacy_files_saved and not legacy_topic_given} [The box behind her.]
@@ -835,9 +837,9 @@ Sent. He'll read it tonight.
     -> guides_menu
 + {tomb_beta_guide_offered and not tomb_beta_guide_hint_given} [Tomb Beta's server.]
     ~ tomb_beta_guide_hint_given = true
-    // VM-STEER: check against the VM plan (the guide's leaver-credential section).
+    // VM-STEER (checked vs FINALE_VM_PLAN m09 flag 3: the leaver's service credential left on Tomb Beta's box). Points at the guide's method only, no commands.
     #give_item:lab-workstation:m09_tomb_beta_field_guide
-    On your workstation. Read the part about old accounts.
+    On your workstation. Read the part about old accounts nobody closed.
     -> guides_menu
 + {archive_code_guide_offered and not archive_code_guide_hint_given} [The archive's code.]
     ~ archive_code_guide_hint_given = true
