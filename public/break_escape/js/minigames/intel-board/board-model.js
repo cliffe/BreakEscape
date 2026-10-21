@@ -49,6 +49,79 @@ export function readBoardState(globals) {
 }
 
 /**
+ * The defender picks saved in se_board_state: { intel fact id: option id }. Ids only (00 §5).
+ * Anything that is not a string-to-string entry is dropped.
+ */
+export function readDefenderPicks(globals) {
+    const raw = readBoardState(globals).defender;
+    const picks = raw && typeof raw === 'object' && raw.picks && typeof raw.picks === 'object' ? raw.picks : {};
+    const out = {};
+    for (const [k, v] of Object.entries(picks)) if (typeof v === 'string') out[k] = v;
+    return out;
+}
+
+/**
+ * Defender mode (03 "Defender mode"; 00 §11 "Engagement mode blocks"). Pure.
+ *
+ * One item per `engagement.defender.factMitigations` entry, in authored order: the fact's text, its
+ * `reduceNote` (the "reduce this" prompt, 00 §1), the options, and the saved pick. An item is done
+ * when the saved pick is an option with `good: true`. A wrong pick keeps its `why` on show.
+ *
+ * Completion follows the step-binding rule: an item may carry `step`; a declared step is done when
+ * every item bound to it is done; the block is done when every declared step is done, or, with no
+ * `steps[]`, when every item is. An empty list is never done. Which globals still need setting is
+ * returned as `toSet` (names not already true), steps first, then the block's `onCompleteGlobal`.
+ */
+export function buildDefenderModel(social, globals) {
+    const g = globals || {};
+    const block = social?.engagement?.defender || {};
+    const facts = social?.intelFacts || {};
+    const picks = readDefenderPicks(g);
+    const list = Array.isArray(block.factMitigations) ? block.factMitigations : [];
+
+    const items = list.filter((fm) => fm && typeof fm.intel === 'string').map((fm) => {
+        const fact = facts[fm.intel] || {};
+        const options = (Array.isArray(fm.options) ? fm.options : []).map((o) => ({
+            id: o.id, text: o.text || '', good: o.good === true, why: o.why || ''
+        }));
+        const picked = options.find((o) => o.id === picks[fm.intel]) || null;
+        return {
+            intel: fm.intel,
+            step: typeof fm.step === 'string' ? fm.step : null,
+            text: fact.text || '',
+            reduceNote: fact.reduceNote || '',
+            options,
+            pickedId: picked ? picked.id : null,
+            picked,
+            done: !!(picked && picked.good)
+        };
+    });
+
+    const stepDecls = Array.isArray(block.steps) ? block.steps.filter((s) => s && s.id) : [];
+    const steps = stepDecls.map((s) => {
+        const bound = items.filter((i) => i.step === s.id);
+        return { id: s.id, onCompleteGlobal: s.onCompleteGlobal || null,
+            done: bound.length > 0 && bound.every((i) => i.done) };
+    });
+    const complete = items.length > 0 && (steps.length ? steps.every((s) => s.done) : items.every((i) => i.done));
+
+    const toSet = [];
+    for (const s of steps) if (s.done && s.onCompleteGlobal && !isTrue(g[s.onCompleteGlobal])) toSet.push(s.onCompleteGlobal);
+    if (complete && block.onCompleteGlobal && !isTrue(g[block.onCompleteGlobal])) toSet.push(block.onCompleteGlobal);
+
+    return {
+        title: block.title || 'Exposure review',
+        intro: block.intro || '',
+        items,
+        steps,
+        complete,
+        doneCount: items.filter((i) => i.done).length,
+        total: items.length,
+        toSet
+    };
+}
+
+/**
  * @param {object} social   scenario.social
  * @param {object} globals  gameState.globalVariables
  * @returns {object} the model (see the keys below)

@@ -623,7 +623,7 @@ export class MailClientMinigame extends SocialOverlayScene {
         } catch (err) {
             console.error('mail send failed:', err);
         }
-        if (sendInfo) {
+        if (sendInfo && !sendInfo.lockedOut) {
             this.recordSend(sendInfo.gameResult);
             // A judged send clears the saved draft so reopening Compose starts fresh,
             // not on the last send's choices (P1-T). The open composer keeps its form

@@ -12,6 +12,8 @@ import { catchLockpickInView } from './lockpick-catch.js';
 import { keypadTitle } from '../utils/lock-titles.js';
 import { resolveObjectField } from '../utils/conditional-text.js';
 import { socialOverlayParams } from '../minigames/framework/social-overlay.js';
+import { startInboxTriageMinigame } from './triage-starter.js';
+export { startInboxTriageMinigame };
 
 // Maps Phaser texture keys to their actual filenames (where key !== filename stem)
 const TEXTURE_KEY_TO_FILE = {
@@ -1157,3 +1159,28 @@ export function startIntelBoardMinigame(sprite, options = {}) {
     }));
 }
 window.startIntelBoardMinigame = startIntelBoardMinigame;
+
+// OSINT workstation (P2-W): opens only the sites in minigameData.siteIds (all sites when absent).
+export function startOsintBrowserMinigame(sprite, options = {}) {
+    if (!window.MinigameFramework) {
+        console.error('MinigameFramework not available');
+        window.gameAlert('Workstation unavailable.', 'error', 'Error', 3000);
+        return;
+    }
+    if (!window.MinigameFramework.mainGameScene) {
+        window.MinigameFramework.init(window.game);
+    }
+    const data = sprite?.scenarioData?.minigameData || {};
+    window.MinigameFramework.startMinigame('osint-browser', null, socialOverlayParams({
+        title: sprite?.scenarioData?.name || 'Workstation',
+        siteIds: data.siteIds,
+        start: data.start,
+        onComplete: (success, result) => {
+            if (typeof options.onComplete === 'function') options.onComplete(success, result);
+        }
+    }));
+}
+window.startOsintBrowserMinigame = startOsintBrowserMinigame;
+
+// Inbox triage (P3-W): the starter lives in triage-starter.js so tests can load it alone.
+window.startInboxTriageMinigame = startInboxTriageMinigame;

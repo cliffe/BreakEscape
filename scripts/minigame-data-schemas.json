@@ -97,6 +97,21 @@
     "optional": ["mode"]
   },
 
+  "phone": {
+    "required": [],
+    "optional": ["callId"]
+  },
+
+  "osint-workstation": {
+    "required": [],
+    "optional": ["siteIds", "start"]
+  },
+
+  "triage-workstation": {
+    "required": [],
+    "optional": ["triageSetId", "stage", "conclusionTaskId"]
+  },
+
   "notes": {
     "optional": ["timerRef"]
   },

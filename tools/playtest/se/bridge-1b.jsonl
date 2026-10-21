@@ -20,8 +20,11 @@
 {"cmd":"eval","fn":"async () => { /* L9b Esc with a select focused blurs it first: the mail client is still open and nothing was reported */ const t = window.__test; const mg = window.MinigameFramework.currentMinigame; const st = () => mg.getTestState(); const sleep = (ms) => new Promise(r => setTimeout(r, ms)); await sleep(150); const s = st(); return t.getState().activeMinigame?.id === 'mail-client' && document.activeElement?.tagName !== 'SELECT' && s.overlay.layers.length === 0; }"}
 {"cmd":"mg","action":"pressKey","args":["Escape"]}
 {"cmd":"eval","fn":"async () => { /* L9 the next Esc closes the client as { aborted: true }; creating an account is not a send */ const t = window.__test; await new Promise(r => setTimeout(r, 300));\n  const since = (m) => { const l = t.peekLog(500); let i = -1; l.forEach((e, j) => { if (e.kind === 'note' && e.message === m) i = j; }); return l.slice(i + 1).filter(e => e.kind === 'event'); }; const ev = since('L9 close the mail client with nothing sent'); const f = ev.find(e => e.event === 'minigame_failed' && e.data && e.data.minigameName === 'MailClientMinigame');\n  return !!f && f.data.result && f.data.result.aborted === true && !t.getState().activeMinigame && (t.getState().globals.phish_teague_attempts || 0) === 0; }"}
-{"cmd":"moveToNear","id":"note_teague_role"}
-{"cmd":"interact","id":"note_teague_role"}
+{"cmd":"interact","id":"slice_osint"}
+{"cmd":"waitFor","kind":"minigame","id":"osint-browser"}
+{"cmd":"eval","fn":"async () => { /* OSINT: Teague role from the team page */ const mg = window.MinigameFramework.currentMinigame; const sleep = (ms) => new Promise(r => setTimeout(r, ms)); if (!mg || mg.constructor.name !== 'OsintBrowserMinigame') return false; const root = mg.container; const click = async (sel) => { const el = root.querySelector(sel); if (!el) return false; el.click(); await sleep(120); return true; }; const steps = [[\"site\", \"company\"], [\"link\", \"company.team\"], [\"block\", \"row_teague\"]]; for (const [k, v] of steps) { let ok; if (k === 'site') ok = await click('.ob-site[data-site=\"' + v + '\"]'); else if (k === 'link') ok = await click('a[data-focus=\"link:' + v + '\"]'); else if (k === 'profile') ok = await click('a[data-focus=\"profile:' + v + '\"]'); else if (k === 'tool') ok = await click('button[data-tool=\"' + v + '\"]'); else if (k === 'block') ok = await click('.ob-block[data-id=\"' + v + '\"]'); if (!ok) return false; } return true; }"}
+{"cmd":"mg","action":"pressKey","args":["Escape"]}
+{"cmd":"waitFor","kind":"minigameClosed"}
 {"cmd":"waitFor","kind":"global","name":"se_intel_teague_role","expected":true}
 {"cmd":"interact","id":"slice_mail_terminal"}
 {"cmd":"waitFor","kind":"minigame","id":"mail-client"}
@@ -36,10 +39,11 @@
 {"cmd":"eval","fn":"async () => { /* P5 a blank with no evidence cannot open a picker, however it is activated */ const t = window.__test; const mg = window.MinigameFramework.currentMinigame; const st = () => mg.getTestState(); const sleep = (ms) => new Promise(r => setTimeout(r, ms)); const b = mg.composer.root.querySelector('.mail-blank[data-slot=\"document\"]'); b.click(); await sleep(80);\n  return mg.composer.getState().picker === null && !st().overlay.layers.includes('blank-picker') && mg.composer.pickerOpen === false; }"}
 {"cmd":"mg","action":"pressKey","args":["Escape"]}
 {"cmd":"mg","action":"pressKey","args":["Escape"]}
-{"cmd":"moveToNear","id":"note_teague_shah"}
-{"cmd":"interact","id":"note_teague_shah"}
-{"cmd":"moveToNear","id":"note_teague_export"}
-{"cmd":"interact","id":"note_teague_export"}
+{"cmd":"interact","id":"slice_osint"}
+{"cmd":"waitFor","kind":"minigame","id":"osint-browser"}
+{"cmd":"eval","fn":"async () => { /* OSINT: Teague trusts Shah (her post) and expects the export (team note) */ const mg = window.MinigameFramework.currentMinigame; const sleep = (ms) => new Promise(r => setTimeout(r, ms)); if (!mg || mg.constructor.name !== 'OsintBrowserMinigame') return false; const root = mg.container; const click = async (sel) => { const el = root.querySelector(sel); if (!el) return false; el.click(); await sleep(120); return true; }; const steps = [[\"site\", \"social\"], [\"profile\", \"teague\"], [\"block\", \"post_teague_shah\"], [\"site\", \"company\"], [\"link\", \"company.notes\"], [\"block\", \"note_export\"]]; for (const [k, v] of steps) { let ok; if (k === 'site') ok = await click('.ob-site[data-site=\"' + v + '\"]'); else if (k === 'link') ok = await click('a[data-focus=\"link:' + v + '\"]'); else if (k === 'profile') ok = await click('a[data-focus=\"profile:' + v + '\"]'); else if (k === 'tool') ok = await click('button[data-tool=\"' + v + '\"]'); else if (k === 'block') ok = await click('.ob-block[data-id=\"' + v + '\"]'); if (!ok) return false; } return true; }"}
+{"cmd":"mg","action":"pressKey","args":["Escape"]}
+{"cmd":"waitFor","kind":"minigameClosed"}
 {"cmd":"waitFor","kind":"global","name":"se_intel_teague_trusts_shah","expected":true}
 {"cmd":"waitFor","kind":"global","name":"se_intel_teague_expects_export","expected":true}
 {"cmd":"interact","id":"slice_mail_terminal"}
@@ -49,8 +53,11 @@
 {"cmd":"eval","fn":"async () => { /* P7 [F-1] every blank the composer counts toward Send is drawn: each blank in the state has a button the player can reach (the From row must not hide sender_name and sender_address) */ const t = window.__test; const mg = window.MinigameFramework.currentMinigame; const st = () => mg.getTestState(); const sleep = (ms) => new Promise(r => setTimeout(r, ms)); const c = mg.composer.getState();\n  return c.blanks.length > 0 && c.blanks.every(b => !!mg.composer.root.querySelector('.mail-blank[data-slot=\"' + b.slot + '\"]')); }"}
 {"cmd":"mg","action":"pressKey","args":["Escape"]}
 {"cmd":"mg","action":"pressKey","args":["Escape"]}
-{"cmd":"moveToNear","id":"note_company_addresses"}
-{"cmd":"interact","id":"note_company_addresses"}
+{"cmd":"interact","id":"slice_osint"}
+{"cmd":"waitFor","kind":"minigame","id":"osint-browser"}
+{"cmd":"eval","fn":"async () => { /* OSINT: address pattern from the Hunter lookup */ const mg = window.MinigameFramework.currentMinigame; const sleep = (ms) => new Promise(r => setTimeout(r, ms)); if (!mg || mg.constructor.name !== 'OsintBrowserMinigame') return false; const root = mg.container; const click = async (sel) => { const el = root.querySelector(sel); if (!el) return false; el.click(); await sleep(120); return true; }; const steps = [[\"site\", \"company\"], [\"link\", \"company.team\"], [\"site\", \"tools\"], [\"tool\", \"hunter\"], [\"block\", \"r_pattern\"]]; for (const [k, v] of steps) { let ok; if (k === 'site') ok = await click('.ob-site[data-site=\"' + v + '\"]'); else if (k === 'link') ok = await click('a[data-focus=\"link:' + v + '\"]'); else if (k === 'profile') ok = await click('a[data-focus=\"profile:' + v + '\"]'); else if (k === 'tool') ok = await click('button[data-tool=\"' + v + '\"]'); else if (k === 'block') ok = await click('.ob-block[data-id=\"' + v + '\"]'); if (!ok) return false; } return true; }"}
+{"cmd":"mg","action":"pressKey","args":["Escape"]}
+{"cmd":"waitFor","kind":"minigameClosed"}
 {"cmd":"waitFor","kind":"global","name":"se_intel_company_addresses","expected":true}
 {"cmd":"waitFor","kind":"global","name":"target_ready_teague","expected":true}
 {"cmd":"interact","id":"slice_mail_terminal"}
@@ -124,12 +131,11 @@
 {"cmd":"eval","fn":"async () => { /* D1 reload: the created account is still there (the switcher lists both accounts, no Create entry), the two sent records are kept, the attempt count and the influence value are as before */ const t = window.__test; const mg = window.MinigameFramework.currentMinigame; const st = () => mg.getTestState(); const sleep = (ms) => new Promise(r => setTimeout(r, ms)); const s = st().mail; const g = t.getState().globals; const sent = (window.mailState.mailboxes.guest.messages || []).filter(m => m.folder === 'sent');\n  return g.acct_freemail === true && g.acct_freemail_choice === 'tt1' && s.accounts.join() === 'guest,freemail' && s.creatable.length === 0 && s.switcher.options.map(o => o.value).join() === 'guest,freemail'\n    && sent.length === 2 && g.phish_teague_attempts === 2 && g.teague_influence === 0; }"}
 {"cmd":"eval","fn":"async () => { /* D2 reload: both Teague replies and their landing outcome survive in the inbox (and are not delivered a second time) [P1-J] */ const t = window.__test; const mg = window.MinigameFramework.currentMinigame; const st = () => mg.getTestState(); const sleep = (ms) => new Promise(r => setTimeout(r, ms)); const inbox = (window.mailState.mailboxes.guest.messages || []).filter(m => m.folder !== 'sent' && /teague/i.test(JSON.stringify(m.from || {}) + (m.thread || '')));\n  return inbox.length === 2 && (window.mailState.jobs || []).length === 0 && t.getState().globals.phish_teague_landed === true; }"}
 {"cmd":"mg","action":"pressKey","args":["Escape"]}
-{"cmd":"moveToNear","id":"careers_inbox"}
-{"cmd":"interact","id":"careers_inbox"}
-{"cmd":"moveToNear","id":"post_hampshire_cvs"}
-{"cmd":"interact","id":"post_hampshire_cvs"}
-{"cmd":"moveToNear","id":"apply_format"}
-{"cmd":"interact","id":"apply_format"}
+{"cmd":"interact","id":"slice_osint"}
+{"cmd":"waitFor","kind":"minigame","id":"osint-browser"}
+{"cmd":"eval","fn":"async () => { /* OSINT: Hampshire facts by browsing the careers page, her post and how-to-apply */ const mg = window.MinigameFramework.currentMinigame; const sleep = (ms) => new Promise(r => setTimeout(r, ms)); if (!mg || mg.constructor.name !== 'OsintBrowserMinigame') return false; const root = mg.container; const click = async (sel) => { const el = root.querySelector(sel); if (!el) return false; el.click(); await sleep(120); return true; }; const steps = [[\"site\", \"company\"], [\"link\", \"company.careers\"], [\"block\", \"careers_inbox\"], [\"link\", \"company.apply\"], [\"block\", \"apply_format\"], [\"site\", \"social\"], [\"profile\", \"hampshire\"], [\"block\", \"post_hampshire_cvs\"]]; for (const [k, v] of steps) { let ok; if (k === 'site') ok = await click('.ob-site[data-site=\"' + v + '\"]'); else if (k === 'link') ok = await click('a[data-focus=\"link:' + v + '\"]'); else if (k === 'profile') ok = await click('a[data-focus=\"profile:' + v + '\"]'); else if (k === 'tool') ok = await click('button[data-tool=\"' + v + '\"]'); else if (k === 'block') ok = await click('.ob-block[data-id=\"' + v + '\"]'); if (!ok) return false; } return true; }"}
+{"cmd":"mg","action":"pressKey","args":["Escape"]}
+{"cmd":"waitFor","kind":"minigameClosed"}
 {"cmd":"waitFor","kind":"global","name":"se_intel_hampshire_careers","expected":true}
 {"cmd":"waitFor","kind":"global","name":"se_intel_hampshire_cv_backlog","expected":true}
 {"cmd":"waitFor","kind":"global","name":"se_intel_careers_attachment","expected":true}

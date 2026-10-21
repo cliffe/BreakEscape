@@ -4,7 +4,7 @@ Brief: `docs/agents/SE_BUILD_BRIEF.md`. Plan: `IMPLEMENTATION_PLAN.md`. Artefact
 
 ## Resume
 
-Status (2026-10-21): Phase 0 closed (two review rounds, ten browser comparison runs, two targeted checks). Phase 1a closed (`5e2889ff`). Phase 1 closed (`391b7dd7`). Phases 2-4 wave 1 running: P2-A, P2-B, P2-C, P3-A, P3-B, P3-C, P3-D, P3-E, P4-A, P4-B, P4-D, P4-F, P4-G (shared notes `build_log/P2_4_COMMON.md`). Next: P2-W, P3-W, P4-C, P4-E, P4-T0, the bridge scripts, reviews and playtests per phase. Waiting on the user: art batch 1 questions (art_batch1/REVIEW.md) and the R-01 speaker-tie question below.
+Status (2026-10-21): Phase 0 closed (two review rounds, ten browser comparison runs, two targeted checks). Phase 1a closed (`5e2889ff`). Phase 1 closed (`391b7dd7`). Phases 2-4 wave 1 and the P2/P3 wiring committed. Next (on grok): P4-C, P4-E, P4-T0 and the P4 wiring; P2-T0, P3-T0 bridge scripts; reviews and playtests per phase. Waiting on the user: art batch 1 questions (art_batch1/REVIEW.md) and the R-01 speaker-tie question below.
 
 ## User instructions for this build (2026-10-21)
 
@@ -15,6 +15,7 @@ Status (2026-10-21): Phase 0 closed (two review rounds, ten browser comparison r
 - Hacktivity changes go to main, but check with the user before making any Hacktivity change. Other
   repos may be changed now.
 - Builder (07) packets in future rounds go to `opus48`, not Haiku (2026-10-21). The plan's Phase 5 model columns still say Haiku; the opus48 agent that starts Phase 5 updates them.
+- New tasks go to the `grok` agent type while the weekly Claude quota is low (2026-10-21); agents already running finish where they are.
 - Questions: the question tool when no context is needed; otherwise a batched `.md` with images and
   context.
 
@@ -155,6 +156,36 @@ Fix round 2 (opus48): T2-1 fixed with an applied-marker global `se_mail_applied`
 - **P1-T0b** (Sonnet): `tools/playtest/se/bridge-1b.jsonl`, 78 rows (accounts, picker and gate on Teague, sends, inert, influence bar, withReply, burned, reload, 600 px via an iframe container since the game refuses to start in a frame). Game 2905: 74/78; all [P1-J] rows pass but one. bridge-1a A3 updated, 37/37 (game 2906). Failures sent to an opus48 fixer: F-1 (the From row with blanks is hidden while the gate still needs them, so Teague can't be sent as Operator), K2 (Teague not on the board), F-2 (a reply refresh drops the bar's "Last change" line).
 
 - **1b bridge fixes** (opus48): F-1 (`_fromIsOwn` false when the From template has blanks), K2 (Teague on the board; bridge-1a B1/B6/B7 updated for two people), F-2 (the reading pane keeps the bar across a refresh). bridge-1a 37/37 (game 2907), bridge-1b 78/78 (game 2908); social and validator 349/349 serially. Phase 1b implementation committed; P1-T2 (review and playtest) next.
+
+- **P3-A** (Sonnet): `minigames/inbox-triage/triage-scoring.js`, pure; `scoreTriage({messages, answers, profile, bands, passPercent})`; the 05 worked example gives 68% (analyst) and 86% (awareness). Test 17/17. API passed to P3-B.
+
+- **P2-C** (Sonnet): slice OSINT data (`social.osint` with company, social and document sites plus three tools; four concept cards; `se_osint_state`), fact sources re-pointed to OSINT element ids, stand-ins kept and marked for removal at P2-W. Validator 0 (osint.rb still a stub then; agent checked the block by script). For P2-W: add the `osint-workstation` object (spec in its report) with a placeholder sprite copy, since OBJ7's art is not in batch 1; bridge rows that use stand-ins listed for replacement once they go. Stale facts left out of the slice so composer options do not shift.
+
+- **P3-D** (Sonnet): board defender mode (pure `buildDefenderModel`, cards with options and "Reduce this", wrong picks explain and stay changeable, good picks lock, picks saved in `se_board_state.defender`, globals set once on the flip, re-set on reopen if missed). Test 13/13; social glob 353/353. Additions for P3-E to adopt or reject: optional title, intro and per-item `step` keys. `indicators` not built (off by default, no shape in 00).
+
+- **P4-F** (Sonnet): `validate_social/pretext.rb` (reports threshold, ink ids, blank VARs named for the fact they feed, claims, declared call globals with types, route to "got it", tells, N12 once-only choices, callId pointers incl. the `phone` schema entry). Test 12/12; validator glob 64/64; R0 unchanged. Its own marker `"unverifiable": true` on a claim is not in 00/06. Naming and schema needs sent to P4-B and P4-G.
+
+- **P3-E** (Sonnet): `validate_social/triage.rb` (set shape, message kinds, authored messages, playerSent and its auth table, workstations and their globals, done-keyed tasks, paired forms) and defender lints in `board.rb`. Test 20/20; mail and framework validator tests still pass; slice exits 0. Guessed shapes to recheck: the landing-page domain menu (07 not opened) and `triage-workstation` minigameData `{triageSetId, stage?, conclusionTaskId?}`. The `carry_over_json_writes` follow-up is in P3-W's row.
+
+- **P2-B** (Sonnet): `validate_social/osint.rb` (`se_intel_*` declared for every fact, `se_osint_state`, id namespaces, one award path per fact, references, the §11 host/ASCII/denylist field list incl. concept-card text) with a reusable `HostLint` for P5-C; address-bar tests on P2-A's `formatAddress`. Tests 15/15 and 8/8; R0: 72 scenarios 0 issues; slice 0 errors, 7 warnings (the stand-ins, until P2-W removes them). Follow-ups in P2-W's row.
+
+- **P2-A** (Sonnet): OSINT browser overlay (`minigames/osint-browser/`: minigame, pure model, `address-bar.js`, shared `concept-card.js` for P5-D), CSS, getTestState; collect, repeat, decoy, showIf profiles, document properties, tools, Case file with return-to, reload; no text inputs. Test 16/16; screenshots at 1280 and 600 px read fine. Additions: `se_osint_state.at` (last place) and an optional `note` on blocks. Note: the social glob showed 34 influence/runner/tag failures while P4-D was editing social-influence.js; recheck when P4-D lands.
+
+- **P3-B** (Sonnet): inbox triage overlay (`minigames/inbox-triage/`: minigame, message loader with `playerSent`, chip tables, header panel), CSS on the mail client's frame, opt-in reader options in `mail-reader.js`. Tests 14 and 16; social and validator glob 500/500 serially (the earlier influence failures were P4-D mid-edit). Additions for P3-E/00: `forwardedBy`, `auth.summary`, set `brief`, set `nudges`; landing-page domain lookup guessed (07 not opened). P3-W runs after P2-W so the two wiring packets do not edit the shared files together.
+
+- **P3-C** (Opus): `systems/triage-starter.js` (save with deferEmit, await `syncConfirmed`, then emit with done last; withheld events kept per prefix; pass never cleared; reopen re-emits once when the conclusion task is open; stored results open read-only). Event name `inbox_triage_completed` chosen (none in the designs). Tests 17/17; Rails `social_sync_then_emit_test` 5/41/0; browser `tools/playtest/se/triage-sync-regress.js` on game 2916 passes blocked, offline and 403. For P3-W: the starter wiring and `conclusionTaskId` in minigameData (`build_log/P3-C_starter.md`). For P3-E: require `outcome.setGlobalPrefix`.
+
+- **P4-A** (opus48): `systems/pretext-judge.js`, pure: `judgeUtterance`, `judgeAsk`, `bandForInfluence`; the 06 §4.2 scoring incl. match-credit cap, repairs, double-downs, ask floor (inclusive), refusals to report, forced verification failure, clamping. Test 14/14 incl. the Priya and Dev examples. Spec = pretextNpcs entry merged with the character's thresholds and influence (to document in 00/06). 06 prose and §5 JSON disagree on `hurry_deflect` (-20 v -10); the JSON was followed.
+
+- **P4-D** (opus48): N-01 done with a persisted `<character>_forced` global (engine-internal, undeclared); `isLockedOut(id, channel)`; lockout refusals on person, phone and mail before anything opens; the `callId` branches in interactions.js (phone object above the text/voice gate; NPC with a callId) open `pretext-prep` through a lockout-checked starter. social-influence 27/27, social glob 440/440. Orchestrator: a refused mail send no longer counts as sent (`lockedOut` skips `recordSend`). For P4-T0/P4-C: register `pretext-prep` and its starter but do not add a second callId branch. For P4-F: allow `<character>_forced` as a derived global.
+
+- **P2-W** (Sonnet): OSINT browser registered, started, branched, preloaded, linked; placeholder `osint-workstation.png` (copy of workstation.png); schema entries incl. `social.osint`; `Context.raw` for the ASCII lint; stand-ins removed, `slice_osint` added; bridge rows now browse. Slice `--strict-social` 0 with no stand-in warnings; social and validator 516/516; bridge-1a 38/38 (game 2917), bridge-1b 82/82 (game 2918). Open: site tabs show ids (slice data needs `name`); add `sites[].pages[].url` to 00 §11. **P3-W launched on grok** (first grok packet).
+
+- **P4-G** (opus48): two slice calls: `brandt_desk_call` (phone-only via `slice_desk_phone`, one-minute lockout) and `quinn_floor_call` (person NPC `quinn_desk` with a walk sprite, so the pip shows); ink `brandt_desk` and `quinn_floor`, inkcheck clean; phone `callId` schema entry. Slice `--strict-social` exit 0 (one `callId` unknown-field warning, routed to P4-T0). Asks grant globals only, so the call-to-mail-blank path is not exercised by the slice. Found: P4-F's clean fixture ink repeats `~ temp` in one knot and would not compile (lint-only); the slice inlines the external into the divert instead.
+
+- **P4-B** (opus48): `person-chat/person-chat-pretext.js` (PretextSession stored in `pretext_<callId>_state`, `makePretextExternals` with ledger idempotency, `mergeSpec`, `finalisePretext`, `fillPretextVars` named by fact, `attachPretext` with its own debrief panel); both chat loaders begin/track/end a run and pass `runId` in tag options, only for social characters. Tests 11/11; judge+session 25; back-compat set 94/94; social glob 451/451; engine regression 57/57. P4-C must pass `blanks` keyed by fact id (in its plan row).
+
+- **P3-W** (grok, first grok packet): triage scene registered, starter wired, `triage-workstation` branch, CSS, preload, placeholder sprite, schema entry, `carry_over_json_writes` knows the four result globals; slice triage set `slice_inbox` (incl. the player's own Hampshire send), workstation, task `triage_sorted`, defender board on two facts. Orchestrator re-ran: slice `--strict-social` 0 errors; social and validator 535/535; validator output identical to HEAD on all 72 shipped scenarios; Rails suite below.
 
 ## Review rounds
 

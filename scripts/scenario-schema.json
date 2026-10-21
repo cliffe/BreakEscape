@@ -182,6 +182,67 @@
         }
       }
     },
+    "social": {
+      "type": "object",
+      "description": "Social-engineering systems data (planning_notes/phishing_and_social_engineering/designs/00_data_contract.md). Linted by scripts/validate_social.rb; this schema only fixes the shape of the blocks listed here.",
+      "properties": {
+        "osint": {
+          "type": "object",
+          "description": "The OSINT browser (design 02). Sites, their pages and selectable blocks, and the picked-lookup tools. Nothing in it is typed by the player.",
+          "properties": {
+            "profile": { "type": "string", "description": "Which showIf/profile set the browser reads (for example 'student')" },
+            "sites": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["id", "url"],
+                "properties": {
+                  "id": { "type": "string" },
+                  "url": { "type": "string", "description": "Host shown in the address bar exactly as authored; a fictional .example host (00 S11 lint field list)" },
+                  "type": { "type": "string", "enum": ["company-site", "social", "document"] },
+                  "card": { "type": "string", "description": "social.conceptCards id shown with the site" },
+                  "pages": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "required": ["id"],
+                      "properties": {
+                        "id": { "type": "string" },
+                        "title": { "type": "string" },
+                        "path": { "type": "string", "description": "Appended to the site's url in the address bar (the host stays the linted sites[].url)" },
+                        "url": { "type": "string", "description": "A full address for this page, shown as typed; linted as a host like sites[].url" },
+                        "blocks": { "type": "array", "items": { "type": "object" } }
+                      },
+                      "additionalProperties": true
+                    }
+                  },
+                  "profiles": { "type": "array", "items": { "type": "object" } },
+                  "fields": { "type": "array", "items": { "type": "object" } }
+                },
+                "additionalProperties": true
+              }
+            },
+            "tools": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["id"],
+                "properties": {
+                  "id": { "type": "string" },
+                  "label": { "type": "string" },
+                  "card": { "type": "string" },
+                  "unlockedBy": { "type": "object", "description": "{ \"visited\": \"<siteId>[.<pageId>]\" } or { \"fact\": \"<factId>\" }" },
+                  "results": { "type": "array", "items": { "type": "object" } }
+                },
+                "additionalProperties": true
+              }
+            }
+          },
+          "additionalProperties": true
+        }
+      },
+      "additionalProperties": true
+    },
     "timers": {
       "type": "array",
       "description": "Optional timer system configuration for the scenario (array of timer objects)",

@@ -1,6 +1,6 @@
 // The intel board (SE design 03; implementation plan Phase 1a, packet P1-G).
 //
-// Recon mode only for now: a case-file overlay that shows what the player has
+// Recon mode (P1-G) and defender mode (P3-D). Recon is a case-file overlay that shows what the player has
 // found, grouped by person and company, and what is still missing. Display
 // only. It is rebuilt from the persisted `se_intel_*`, `target_ready_*` and
 // `osint_done` globals every time it opens (N2); nothing is collected while an
@@ -17,16 +17,26 @@
 // window.gameScenario.social and the globals are window.gameState.globalVariables;
 // `social` exists so a test can hand in a fixture.
 //
+// Defender mode (03 "Defender mode"): the same facts as exposure. For each
+// engagement.defender.factMitigations entry the card shows the fact, its
+// reduceNote and the authored options; a wrong pick shows its `why` and can be
+// changed, a good pick locks the card. Picks are option ids in
+// se_board_state.defender.picks, so a reload shows them again. The block's
+// onCompleteGlobal (profile_done) and any step globals are set through the
+// shared writer on the false-to-true flip, and again on open if the saved picks
+// were complete but the global never landed. No typing, no indicators step
+// (engagement.defender.indicators is not read; the lab authors none).
+//
 // All text the player reads is set with textContent in Source Sans 3
 // (--se-font-readable), never through innerHTML or displayDashes.
 
 import { SocialOverlayScene } from '../framework/social-overlay.js';
 import { writeGlobal } from '../../systems/global-writer.js';
 import { createInfluenceBar } from '../../ui/influence-bar.js';
-import { buildBoardModel, readBoardState, STATE_KEY, READY_TEXT } from './board-model.js';
+import { buildBoardModel, buildDefenderModel, readBoardState, STATE_KEY, READY_TEXT } from './board-model.js';
 
 const ICON = '/break_escape/assets/icons/';
-const SUPPORTED_MODES = ['recon'];
+const SUPPORTED_MODES = ['recon', 'defender'];
 
 function h(tag, props = {}, ...kids) {
     const node = document.createElement(tag);
@@ -63,6 +73,7 @@ export class IntelBoardMinigame extends SocialOverlayScene {
         super(container, params);
         this.mode = SUPPORTED_MODES.includes(this.params.mode) ? this.params.mode : (this.params.mode || 'recon');
         this.model = null;
+        this.dmodel = null;
         this._liveText = '';
         this._bars = [];
     }
@@ -79,6 +90,10 @@ export class IntelBoardMinigame extends SocialOverlayScene {
     /** Re-read the globals and draw the board again (called on open). */
     rebuild() {
         this.model = buildBoardModel(this.social, this.globals);
+        if (this.mode === 'defender') {
+            this.dmodel = buildDefenderModel(this.social, this.globals);
+            this._applyDefenderCompletion();
+        }
         this._render();
         this._rememberReady();
     }
@@ -99,6 +114,7 @@ export class IntelBoardMinigame extends SocialOverlayScene {
     // ── drawing ───────────────────────────────────────────────────────────
     _render() {
         this._destroyBars();
+        if (this.mode === 'defender') { this._renderDefender(); return; }
         const m = this.model;
         const supported = SUPPORTED_MODES.includes(this.mode);
         this.gameContainer.textContent = '';
@@ -139,6 +155,121 @@ export class IntelBoardMinigame extends SocialOverlayScene {
 
         this.root = h('div', { class: 'ib-root', tabindex: '-1', 'data-mode': this.mode }, head, live, body);
         this.gameContainer.appendChild(this.root);
+    }
+
+    // ── defender mode ─────────────────────────────────────────────────────
+    _renderDefender(focusIntel = null, focusOpt = null) {
+        const d = this.dmodel;
+        this.gameContainer.textContent = '';
+        const live = h('div', { class: 'ib-live', role: 'status', 'aria-live': 'polite' });
+        live.textContent = this._liveText;
+        this._liveEl = live;
+
+        const close = h('button', { type: 'button', class: 'se-overlay-close minigame-button ib-close',
+            'aria-label': 'Close', text: 'Close' });
+        this.addEventListener(close, 'click', (e) => {
+            e.preventDefault?.();
+            e.stopPropagation?.();
+            this.requestClose();
+        });
+        this.closeButton = close;
+
+        const progress = d.complete
+            ? `Exposure review complete. ${d.doneCount} of ${d.total} reduced.`
+            : `${d.doneCount} of ${d.total} exposures reduced.`;
+        const head = h('header', { class: 'ib-head' },
+            h('h2', { class: 'ib-title', text: d.title }),
+            h('p', { class: 'ib-progress', text: progress }),
+            close);
+
+        const body = h('div', { class: 'ib-scroll', tabindex: '0', role: 'region',
+            'aria-label': `${d.title}: pick a mitigation for each exposure` });
+        if (d.intro) body.appendChild(h('p', { class: 'ib-scope-note', text: d.intro }));
+        if (!d.items.length) {
+            body.appendChild(h('p', { class: 'ib-empty', text: 'Nothing to review here yet.' }));
+        } else {
+            const list = h('ul', { class: 'ib-exposures', 'aria-label': 'Exposures' });
+            for (const item of d.items) list.appendChild(this._exposureCard(item));
+            body.appendChild(list);
+        }
+
+        this.root = h('div', { class: 'ib-root', tabindex: '-1', 'data-mode': 'defender' }, head, live, body);
+        this.gameContainer.appendChild(this.root);
+
+        if (focusIntel) {
+            const btn = this.root.querySelector(`[data-exposure="${focusIntel}"] [data-option="${focusOpt}"]`);
+            btn?.focus?.();
+        }
+    }
+
+    _exposureCard(item) {
+        const headingId = `ib-exp-${item.intel}`;
+        const state = item.done ? 'done' : (item.picked ? 'wrong' : 'open');
+        const card = h('li', { class: `ib-card ib-exposure is-${state}`, 'data-exposure': item.intel,
+            'data-state': state, 'aria-labelledby': headingId },
+            h('img', { class: 'ib-pin', src: `${ICON}board-pushpin.png`, alt: '', 'aria-hidden': 'true',
+                width: 11, height: 14 }),
+            h('div', { class: 'ib-card-head' },
+                h('h4', { id: headingId, class: 'ib-name', text: item.text || item.intel }),
+                h('span', { class: `ib-status ${item.done ? 'ready' : 'not-ready'}` },
+                    icon(item.done ? 'board-ready' : 'board-not-ready'),
+                    h('span', { class: 'ib-status-word', text: item.done ? 'Reduced' : 'Still exposed' }))));
+        if (item.reduceNote) {
+            card.appendChild(h('p', { class: 'ib-reduce', text: `Reduce this: ${item.reduceNote}` }));
+        }
+        card.appendChild(h('p', { class: 'ib-ask', text: 'Which mitigation would you put in place?' }));
+
+        const opts = h('ul', { class: 'ib-options', role: 'group', 'aria-labelledby': headingId });
+        for (const o of item.options) {
+            const chosen = item.pickedId === o.id;
+            const btn = h('button', { type: 'button', class: `ib-option minigame-button${chosen ? ' is-chosen' : ''}`,
+                'data-option': o.id, 'aria-pressed': String(chosen), disabled: item.done && !chosen ? true : false,
+                text: o.text });
+            this.addEventListener(btn, 'click', (e) => {
+                e.preventDefault?.();
+                e.stopPropagation?.();
+                this.pickMitigation(item.intel, o.id);
+            });
+            opts.appendChild(h('li', { class: 'ib-option-row' }, btn));
+        }
+        card.appendChild(opts);
+
+        if (item.picked) {
+            const word = item.done ? 'Good choice:' : 'Not enough:';
+            card.appendChild(h('p', { class: `ib-feedback ${item.done ? 'good' : 'bad'}`, role: 'status' },
+                icon(item.done ? 'mark-tick' : 'mark-cross'),
+                h('span', { class: 'ib-word', text: word }),
+                h('span', { class: 'ib-why', text: item.picked.why })));
+        }
+        return card;
+    }
+
+    /** A pick on one exposure. A card already reduced is locked; an unknown option is ignored. */
+    pickMitigation(intel, optionId) {
+        if (this.mode !== 'defender' || !this.dmodel) return false;
+        const item = this.dmodel.items.find((i) => i.intel === intel);
+        if (!item || item.done || !item.options.some((o) => o.id === optionId)) return false;
+        const state = readBoardState(this.globals);
+        const picks = { ...(state.defender?.picks || {}), [intel]: optionId };
+        this._writeState({ ...state, defender: { ...(state.defender || {}), picks } });
+        this.dmodel = buildDefenderModel(this.social, this.globals);
+        const now = this.dmodel.items.find((i) => i.intel === intel);
+        this._liveText = now.done ? `Good choice. ${now.picked.why}` : `Not enough. ${now.picked.why}`;
+        const flipped = this._applyDefenderCompletion();
+        if (flipped) this._liveText += ' Exposure review complete.';
+        this._renderDefender(intel, optionId);
+        return true;
+    }
+
+    /** Set the block and step globals that are due (steps first). Returns whether the block global flipped. */
+    _applyDefenderCompletion() {
+        const due = this.dmodel?.toSet || [];
+        if (!due.length) return false;
+        const blockName = this.social?.engagement?.defender?.onCompleteGlobal;
+        for (const name of due) writeGlobal(name, true, { openChat: false });
+        window.stateSync?.sync?.();
+        this.dmodel = buildDefenderModel(this.social, this.globals);
+        return due.includes(blockName);
     }
 
     _peopleSection(m) {
@@ -266,7 +397,7 @@ export class IntelBoardMinigame extends SocialOverlayScene {
     // ── state ─────────────────────────────────────────────────────────────
     /** Ids only: which ready cards the player has now seen. Small, and it survives a reload. */
     _rememberReady() {
-        if (!this.model || !SUPPORTED_MODES.includes(this.mode)) return;
+        if (!this.model || this.mode !== 'recon') return;
         const state = readBoardState(this.globals);
         const merged = [...new Set([...state.recon.seenReady, ...this.model.ready])];
         if (merged.length === state.recon.seenReady.length) return;
@@ -286,7 +417,8 @@ export class IntelBoardMinigame extends SocialOverlayScene {
     /** Close and Esc are a normal exit; completion is reported in the result. */
     closeResult() {
         const m = this.model || buildBoardModel(this.social, this.globals);
-        return { mode: this.mode, completed: this.mode === 'recon' ? m.osintDone : false, ready: [...m.ready] };
+        const completed = this.mode === 'recon' ? m.osintDone : (this.mode === 'defender' ? !!this.dmodel?.complete : false);
+        return { mode: this.mode, completed, ready: [...m.ready] };
     }
 
     // ── test bridge ───────────────────────────────────────────────────────
@@ -296,6 +428,17 @@ export class IntelBoardMinigame extends SocialOverlayScene {
             ...super.getTestState(),
             board: m ? {
                 mode: this.mode,
+                defender: this.dmodel ? {
+                    complete: this.dmodel.complete,
+                    done: this.dmodel.doneCount,
+                    total: this.dmodel.total,
+                    live: this._liveText,
+                    steps: this.dmodel.steps.map((s) => ({ id: s.id, done: s.done })),
+                    facts: this.dmodel.items.map((i) => ({
+                        intel: i.intel, reduceNote: i.reduceNote, picked: i.pickedId, done: i.done,
+                        options: i.options.map((o) => o.id)
+                    }))
+                } : null,
                 title: m.title,
                 osintDone: m.osintDone,
                 ready: [...m.ready],

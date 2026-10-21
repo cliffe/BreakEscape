@@ -1,7 +1,7 @@
 {
   "scenario_id": "test_social_slice",
   "scenario_name": "Test: social engineering slice",
-  "scenario_brief": "Test fixture for the Phase 1 social-engineering slice. Read the three stand-in notes to collect what you know about Chris Hampshire in Careers, open the case file to see whether you are ready, then write to her from the mail terminal.",
+  "scenario_brief": "Test fixture for the Phase 1 social-engineering slice. Browse Ledgerwell on the OSINT workstation to collect what you know about Chris Hampshire in Careers, open the case file to see whether you are ready, then write to her from the mail terminal.",
   "endGoal": "Prepare and land one phishing email on the Careers inbox.",
   "version": "1.0",
   "disableAttacks": true,
@@ -36,6 +36,16 @@
       "tasks": [
         { "taskId": "teague_landed", "title": "Land a message on Morgan Teague", "type": "custom", "status": "active" }
       ]
+    },
+    {
+      "aimId": "triage_round",
+      "title": "Sort the inbox",
+      "description": "Open the triage workstation and sort the mixed inbox.",
+      "status": "active",
+      "order": 2,
+      "tasks": [
+        { "taskId": "triage_sorted", "title": "Sort the mixed inbox", "type": "custom", "status": "active" }
+      ]
     }
   ],
 
@@ -53,6 +63,8 @@
     "se_intel_teague_trusts_shah": false,
     "se_intel_teague_expects_export": false,
     "se_intel_company_addresses": false,
+    "se_intel_username_convention": false,
+    "se_osint_state": {},
     "target_ready_teague": false,
     "phish_teague_landed": false,
     "phish_teague_attempts": 0,
@@ -63,7 +75,37 @@
     "acct_freemail": false,
     "acct_freemail_choice": "",
     "burned_guest": false,
-    "burned_freemail": false
+    "burned_freemail": false,
+
+    "brandt_influence": -10,
+    "brandt_latched": "",
+    "brandt_wary": false,
+    "brandt_refusing": false,
+    "brandt_reported": false,
+    "brandt_lockout_until": 0,
+    "brandt_lockout_channel": "",
+    "brandt_call_done": false,
+    "brandt_call_reported": false,
+    "pretext_brandt_desk_call_state": {},
+    "pretext_brandt_desk_call_outcome": "",
+    "pretext_brandt_desk_call_lowest": 0,
+
+    "quinn_influence": 0,
+    "quinn_latched": "",
+    "quinn_wary": false,
+    "quinn_refusing": false,
+    "quinn_reported": false,
+    "quinn_call_done": false,
+    "quinn_call_reported": false,
+    "pretext_quinn_floor_call_state": {},
+    "pretext_quinn_floor_call_outcome": "",
+    "pretext_quinn_floor_call_lowest": 0,
+
+    "slice_triage_percent": 0,
+    "slice_triage_reportRate": 0,
+    "slice_triage_done": false,
+    "slice_triage_pass": false,
+    "defender_profile_done": false
   },
 
   "social": {
@@ -89,6 +131,43 @@
           { "id": "wary", "at": -30, "icon": "wary",
             "effects": [ { "type": "setGlobal", "global": "teague_wary", "value": true, "clearOnRearm": true } ] }
         ]
+      },
+
+      "brandt": {
+        "displayName": "Brandt",
+        "channels": { "phone": "brandt_desk" },
+        "influence": { "global": "brandt_influence", "min": -100, "max": 100, "start": -10 },
+        "syncedVars": ["brandt_influence"],
+        "thresholds": [
+          { "id": "wary", "at": -40, "icon": "wary",
+            "effects": [ { "type": "setGlobal", "global": "brandt_wary", "value": true, "clearOnRearm": true } ] },
+          { "id": "refuses", "at": -50, "icon": "refuses",
+            "effects": [ { "type": "setGlobal", "global": "brandt_refusing", "value": true, "clearOnRearm": true } ] },
+          { "id": "reports", "at": -70, "icon": "reports",
+            "effects": [
+              { "type": "setGlobal", "global": "brandt_reported", "value": true },
+              { "type": "endConversation" },
+              { "type": "lockout", "scope": "channel", "until": { "afterMinutes": 1 }, "recoverTo": -30 }
+            ] }
+        ]
+      },
+
+      "quinn": {
+        "displayName": "Quinn",
+        "channels": { "person": "quinn_desk" },
+        "influence": { "global": "quinn_influence", "min": -100, "max": 100, "start": 0 },
+        "syncedVars": ["quinn_influence"],
+        "thresholds": [
+          { "id": "wary", "at": -30, "icon": "wary",
+            "effects": [ { "type": "setGlobal", "global": "quinn_wary", "value": true, "clearOnRearm": true } ] },
+          { "id": "refuses", "at": -50, "icon": "refuses",
+            "effects": [ { "type": "setGlobal", "global": "quinn_refusing", "value": true, "clearOnRearm": true } ] },
+          { "id": "reports", "at": -70, "icon": "reports",
+            "effects": [
+              { "type": "setGlobal", "global": "quinn_reported", "value": true },
+              { "type": "endConversation" }
+            ] }
+        ]
       }
     },
 
@@ -97,7 +176,8 @@
         "text": "The careers inbox accepts CVs from anyone.",
         "subject": "hampshire",
         "source": "careers_inbox",
-        "provides": []
+        "provides": [],
+        "reduceNote": "Send the open careers inbox through a filter before it reaches Chris."
       },
       "hampshire_cv_backlog": {
         "text": "Chris is behind on CVs before Friday.",
@@ -119,17 +199,18 @@
       "teague_role": {
         "text": "Morgan Teague manages the Finance team.",
         "subject": "teague",
-        "source": "note_teague_role",
+        "source": "row_teague",
         "provides": [
           { "type": "name", "about": "recipient", "value": "teague_first", "label": "Morgan", "kind": "generic" },
           { "type": "name", "about": "recipient", "value": "teague_formal", "label": "Ms Teague", "kind": "generic" },
           { "type": "name", "about": "recipient", "value": "teague_full", "label": "Morgan Teague", "kind": "generic" }
-        ]
+        ],
+        "reduceNote": "Put a role inbox on the public page instead of a named address."
       },
       "teague_trusts_shah": {
         "text": "Morgan trusts her colleague Ravi Shah.",
         "subject": "teague",
-        "source": "note_teague_shah",
+        "source": "post_teague_shah",
         "provides": [
           { "type": "name", "about": "sender", "value": "shah_full", "label": "Ravi Shah", "kind": "distinctive" }
         ]
@@ -137,7 +218,7 @@
       "teague_expects_export": {
         "text": "Morgan expects a Q3 ledger export from Ravi on Tuesdays.",
         "subject": "teague",
-        "source": "note_teague_export",
+        "source": "note_export",
         "provides": [
           { "type": "document", "value": "ledger_export", "label": "the Q3 ledger export", "kind": "distinctive", "attachmentKind": "spreadsheet" },
           { "type": "name", "about": "recipient", "value": "teague_short", "label": "Mo", "kind": "generic" },
@@ -147,10 +228,16 @@
       "company_addresses": {
         "text": "Staff addresses are first-initial.surname@ledgerwell.example.",
         "subject": "company",
-        "source": "note_company_addresses",
+        "source": "r_pattern",
         "provides": [
           { "type": "address", "rule": "initial.surname@ledgerwell.example", "label": "an address built from the pattern" }
         ]
+      },
+      "username_convention": {
+        "text": "Staff usernames are first initial plus surname, so Morgan Teague signs in as mteague.",
+        "subject": "company",
+        "source": "f_author",
+        "provides": []
       }
     },
 
@@ -217,6 +304,80 @@
       "bodyMode": "templates",
       "freeTextFlavour": false,
       "showRedFlagMeter": true
+    },
+
+    "conceptCards": [
+      { "id": "tool_hunter", "title": "Hunter",
+        "text": "Hunter reports the address pattern a company uses, for example first initial then surname. A tester reads it to work out how any named employee would be addressed. Defence: publish role inboxes such as careers@ledgerwell.example, not a list of staff addresses." },
+      { "id": "tool_harvester", "title": "theHarvester",
+        "text": "theHarvester collects names, email addresses and sub-domains from public sources. The results are noisy: two people can share a name, so check each hit against what the company's own site says before you rely on it." },
+      { "id": "tool_recon", "title": "Recon-ng",
+        "text": "Recon-ng is a framework that runs many lookups like the ones above from one place. A handle that returns nothing is a result too: it tells you not to spend time on that lead." },
+      { "id": "tool_exiftool", "title": "exiftool",
+        "text": "exiftool reads the metadata a file carries: author, software, saved-by name and folder path. Staff publish documents without clearing it, and the author field often shows the username convention." }
+    ],
+
+    "osint": {
+      "profile": "student",
+      "sites": [
+        { "id": "company", "url": "ledgerwell.example", "type": "company-site",
+          "pages": [
+            { "id": "team", "title": "Our Team", "blocks": [
+              { "id": "row_teague", "kind": "staff", "person": "teague", "name": "Morgan Teague",
+                "role": "Finance", "address": "m.teague@ledgerwell.example", "fact": "teague_role" },
+              { "id": "row_shah", "kind": "staff", "person": "shah", "name": "Ravi Shah",
+                "role": "Finance", "address": "r.shah@ledgerwell.example" },
+              { "id": "row_hampshire", "kind": "staff", "person": "hampshire", "name": "Chris Hampshire",
+                "role": "Careers", "address": "careers@ledgerwell.example" } ] },
+            { "id": "notes", "title": "Team notes", "blocks": [
+              { "id": "note_export", "kind": "p", "text": "Ravi: I'll send Mo the Q3 ledger export on Tuesday.",
+                "fact": "teague_expects_export" },
+              { "id": "note_lunch", "kind": "p", "text": "Friday lunch is in the kitchen. Bring a plate." },
+              { "id": "note_parking", "kind": "p", "text": "Visitor parking is in the east car park until further notice." } ] },
+            { "id": "careers", "title": "Careers", "blocks": [
+              { "id": "careers_inbox", "kind": "p", "text": "Send your CV to careers@ledgerwell.example. We read every one.",
+                "fact": "hampshire_careers" },
+              { "id": "careers_stack", "kind": "p", "text": "You will use Xero and Office 365." } ] },
+            { "id": "apply", "title": "How to apply", "blocks": [
+              { "id": "apply_format", "kind": "p", "text": "We accept .odt and .docx only.",
+                "fact": "careers_attachment" },
+              { "id": "apply_closing", "kind": "p", "text": "Applications close when the post is filled." } ] },
+            { "id": "archive", "title": "Archive", "blocks": [
+              { "id": "org_old_chart", "kind": "p",
+                "text": "Organisation chart (2019): Finance reported to the Operations Director. This page is no longer maintained." } ] } ] },
+
+        { "id": "social", "url": "friendface.example", "type": "social",
+          "profiles": [
+            { "person": "teague", "posts": [
+              { "id": "post_teague_shah", "text": "Month-end is painless when Ravi is on the ledger. He is the first person I would ask for anything.",
+                "fact": "teague_trusts_shah" },
+              { "id": "post_teague_train", "text": "Train cancelled again. Working from the kitchen table." } ] },
+            { "person": "hampshire", "showIf": "se_intel_hampshire_careers", "posts": [
+              { "id": "post_hampshire_cvs", "text": "So many CVs to get through before Friday.",
+                "fact": "hampshire_cv_backlog" },
+              { "id": "post_hampshire_tea", "text": "The kettle in Careers has died. Send help." } ] } ] },
+
+        { "id": "deck", "url": "ledgerwell.example/Q3.pdf", "type": "document", "card": "tool_exiftool",
+          "fields": [
+            { "id": "f_author", "label": "Author", "value": "mteague", "fact": "username_convention" },
+            { "id": "f_software", "label": "Software", "value": "Microsoft Excel" },
+            { "id": "f_path", "label": "Path", "value": "C:\\Users\\mteague\\Documents" } ] }
+      ],
+      "tools": [
+        { "id": "hunter", "label": "Hunter lookup: ledgerwell.example", "card": "tool_hunter",
+          "unlockedBy": { "visited": "company.team" },
+          "results": [
+            { "id": "r_pattern", "text": "Most addresses follow first-initial.surname@ledgerwell.example",
+              "fact": "company_addresses" } ] },
+        { "id": "name_shah", "label": "Name search: R. Shah", "card": "tool_harvester",
+          "unlockedBy": { "visited": "company.team" },
+          "results": [
+            { "id": "r_shah_staff", "text": "R. Shah, Finance, ledgerwell.example" },
+            { "id": "r_shah_other", "text": "R. Shah, Dental surgery, Leeds" } ] },
+        { "id": "handle_decoy", "label": "Handle search: @mteague_official", "card": "tool_recon",
+          "unlockedBy": { "visited": "deck" },
+          "results": [] }
+      ]
     },
 
     "intelBoard": {
@@ -332,7 +493,222 @@
         "hints": ["Think about who Morgan trusts.", "What does she expect to receive, and from whom?",
                   "This account can only send as itself. The Operator account lets you choose the sender."]
       }
-    ]
+    ],
+
+    "pretextNpcs": [
+      {
+        "character": "brandt",
+        "callId": "brandt_desk_call",
+        "tuning": { "matchCreditCapPerLine": 10, "maxRefusals": 2, "feedbackMode": "live", "tellDetail": "full", "showTechniqueNames": "live" },
+        "susceptibility": { "urgency": -10, "authority_borrowed": -20, "candour": 10 },
+        "unverifiableCost": -10,
+        "knows": {
+          "contact": { "value": "shah_full", "grade": "identity" }
+        },
+        "lines": {
+          "open_ref":   { "blanks": { "contact": "contact" }, "claims": [ { "fact": "contact", "from": "blank:contact" } ] },
+          "repair_ref": { "technique": "candour", "repairs": "contact", "blanks": { "contact": "contact" }, "claims": [ { "fact": "contact", "from": "blank:contact" } ] },
+          "urgent_now": { "technique": "urgency", "claims": [] },
+          "name_drop":  { "technique": "authority_borrowed", "claims": [] }
+        },
+        "asks": {
+          "portal_name":  { "pressure": 0,   "floor": -30, "verification": [],
+                            "grants": { "setGlobal": { "brandt_call_done": true } } },
+          "release_date": { "pressure": -10, "floor": -20, "verification": ["contact"],
+                            "grants": { "setGlobal": { "brandt_call_done": true } } }
+        },
+        "outcomes": {
+          "got_it": {},
+          "reported": { "line": "I'll need to check this with my manager. Goodbye.", "setGlobal": { "brandt_call_reported": true } },
+          "walked_away": {}
+        },
+        "tells": {
+          "contact": { "pass": "Contact. Ravi is on the colleague list.",
+                       "fail": "Contact. You said \"{said}\". The list has {actual}.",
+                       "failCategory": "Contact. That did not match the colleague list.",
+                       "unknown": "Contact. He cannot check this." },
+          "techniques": {
+            "urgency": "Urgency. A rushed request is the oldest pressure line on a service desk.",
+            "authority_borrowed": "Borrowed authority. Naming a manager does not replace the check.",
+            "candour": "Candour. Owning a correction early costs less than defending it."
+          },
+          "repair": "Corrected. Owning the slip early costs less than defending it.",
+          "ask": { "accepted": "He read it out.", "pending": "He wants to check one more thing.", "refused": "He will not do that on this call." },
+          "bands": { "calm": "Brandt is relaxed.", "wary": "Brandt has slowed down.", "refusing": "Brandt has stopped helping." }
+        },
+        "hints": [ "Work out whose name the desk would already recognise.", "The company site shows who Morgan trusts in Finance." ],
+        "defenderNotes": { "release_date": "Calling back on the number already on file defeats every line here." }
+      },
+      {
+        "character": "quinn",
+        "callId": "quinn_floor_call",
+        "tuning": { "matchCreditCapPerLine": 10, "maxRefusals": 2, "feedbackMode": "live", "tellDetail": "full", "showTechniqueNames": "live" },
+        "susceptibility": { "urgency": -10, "authority_borrowed": -20 },
+        "unverifiableCost": -10,
+        "knows": {
+          "person": { "value": "teague_full", "accept": ["teague_first", "teague_formal", "teague_full"], "grade": "identity" }
+        },
+        "lines": {
+          "open_floor":  { "blanks": { "person": "person" }, "claims": [ { "fact": "person", "from": "blank:person" } ] },
+          "press_floor": { "technique": "urgency", "claims": [] },
+          "name_floor":  { "technique": "authority_borrowed", "claims": [] }
+        },
+        "asks": {
+          "desk_location": { "pressure": 0,   "floor": -30, "verification": [],
+                             "grants": { "setGlobal": { "quinn_call_done": true } } },
+          "shift_pattern": { "pressure": -10, "floor": -20, "verification": ["person"],
+                             "grants": { "setGlobal": { "quinn_call_done": true } } }
+        },
+        "outcomes": {
+          "got_it": {},
+          "reported": { "line": "I think I'd better check with the office manager first.", "setGlobal": { "quinn_call_reported": true } },
+          "walked_away": {}
+        },
+        "tells": {
+          "person": { "pass": "Person. Morgan is on the floor plan.",
+                      "fail": "Person. You said \"{said}\". The plan has {actual}.",
+                      "failCategory": "Person. That did not match the floor plan.",
+                      "unknown": "Person. She cannot check this." },
+          "techniques": {
+            "urgency": "Urgency. A rushed ask on the floor is a classic pressure line.",
+            "authority_borrowed": "Borrowed authority. Naming a manager does not replace knowing who you are."
+          },
+          "ask": { "accepted": "She pointed it out.", "pending": "She wants to know who you are first.", "refused": "She will not say." },
+          "bands": { "calm": "Quinn is happy to help.", "wary": "Quinn has gone quiet.", "refusing": "Quinn has stopped helping." }
+        },
+        "hints": [ "Know who you are asking after before you approach.", "The company team page names the Finance staff." ],
+        "defenderNotes": { "shift_pattern": "Checking a stranger's identity before helping defeats a floor approach." }
+      }
+    ],
+
+    "triageSets": [
+      {
+        "id": "slice_inbox",
+        "scoringProfile": "analyst",
+        "feedbackMode": "end",
+        "headerPanel": "open",
+        "title": "Sort the inbox",
+        "bands": [
+          { "min": 85, "headline": "Sharp" },
+          { "min": 60, "headline": "Getting there" },
+          { "min": 0, "headline": "Worth another look" }
+        ],
+        "outcome": { "setGlobalPrefix": "slice_triage_", "passPercent": 0 },
+        "playerSentAuth": {
+          "accounts": {
+            "guest": {
+              "spf": "fail", "dkim": "none", "dmarc": "fail",
+              "envelopeFrom": "workstation.example",
+              "replyTo": "guest@workstation.example"
+            },
+            "freemail": {
+              "spf": "pass", "dkim": "pass", "dmarc": "pass",
+              "envelopeFrom": "freemail.example",
+              "replyTo": "{account_address}"
+            }
+          }
+        },
+        "messages": [
+          {
+            "id": "pay_today",
+            "from": { "name": "Ledgerwell Payroll", "address": "payroll@ledgerwell.example" },
+            "to": "operator@ledgerwell.example",
+            "subject": "Confirm your bank details today",
+            "time": "09:40",
+            "body": "Please confirm your bank details today, or this month's pay will be held.\n{{link:confirm}}",
+            "links": [
+              { "id": "confirm", "text": "ledgerwell.example/payroll", "destination": "https://pay-desk.example/login" }
+            ],
+            "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass" },
+            "truth": {
+              "isPhish": true,
+              "flags": ["linkCredible", "urgencyCalibrated"],
+              "perFlagNote": {
+                "linkCredible": "The words say ledgerwell.example, but the link goes to pay-desk.example.",
+                "urgencyCalibrated": "Today, and a held pay packet, are the pressure."
+              },
+              "ifTrusted": "Confirming would hand over bank details.",
+              "reportReply": "Thanks. This has been marked as a phish."
+            }
+          },
+          {
+            "id": "own_hampshire",
+            "kind": "playerSent",
+            "targetId": "hampshire",
+            "notes": {
+              "perFlagNote": {
+                "senderTrust": "The From address is not one Chris would expect from a colleague.",
+                "pretextRelevant": "The message does not read like an application for the open role.",
+                "attachmentPlausible": "The file is not a CV, or there is no file attached.",
+                "senderAuth": "The header checks do not match a Ledgerwell sender.",
+                "urgencyCalibrated": "A deadline in the message is the pressure.",
+                "addressedTo": "The greeting is not how anyone who knows Chris would write."
+              },
+              "headerNote": "The header results come from the account the message was sent from.",
+              "ifTrusted": "Chris would have opened it and treated it as a real application.",
+              "reportReply": "Thanks. Confirmed as a phish."
+            }
+          },
+          {
+            "id": "parking",
+            "from": { "name": "Facilities", "address": "facilities@ledgerwell.example" },
+            "to": "operator@ledgerwell.example",
+            "subject": "Visitor parking this week",
+            "time": "08:20",
+            "body": "Visitor parking is in the east car park until Friday. Please use the signed bays.\n\nFacilities",
+            "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass" },
+            "truth": {
+              "isPhish": false,
+              "flags": [],
+              "whyFine": { "default": "The sender, the subject and the request match a normal facilities note." }
+            }
+          },
+          {
+            "id": "laptop",
+            "from": { "name": "IT Service Desk", "address": "it@ledgerwell.example" },
+            "to": "operator@ledgerwell.example",
+            "subject": "Your new laptop",
+            "time": "08:05",
+            "body": "Your workstation account is ready. Sign in with the card in your welcome pack.\n\nIT Service Desk",
+            "auth": { "spf": "fail", "dkim": "pass", "dmarc": "pass" },
+            "truth": {
+              "isPhish": false,
+              "flags": [],
+              "whyFine": {
+                "senderAuth": "SPF failed. DKIM and DMARC passed.",
+                "default": "The sender and the subject match the laptop you were told to expect."
+              }
+            }
+          }
+        ]
+      }
+    ],
+
+    "engagement": {
+      "defender": {
+        "onCompleteGlobal": "defender_profile_done",
+        "factMitigations": [
+          {
+            "intel": "hampshire_careers",
+            "options": [
+              { "id": "filter", "text": "Filter mail to the open inbox", "good": true,
+                "why": "A filter can drop the obvious phish before Chris reads it." },
+              { "id": "hide", "text": "Take the address off the website", "good": false,
+                "why": "The address is already on old pages and in old mail. Hiding the page does not stop mail sent to it." }
+            ]
+          },
+          {
+            "intel": "teague_role",
+            "options": [
+              { "id": "rolebox", "text": "Publish a Finance role inbox", "good": true,
+                "why": "A role inbox gives a lookup tool no named address to copy." },
+              { "id": "leave", "text": "Leave the staff list as it is", "good": false,
+                "why": "The name and the address stay public, so the pattern can still be copied." }
+            ]
+          }
+        ]
+      }
+    }
   },
 
   "rooms": {
@@ -369,8 +745,34 @@
               "condition": "value === true",
               "onceOnly": true,
               "completeTask": "teague_landed"
+            },
+            {
+              "eventPattern": "global_variable_changed:slice_triage_done",
+              "condition": "value === true",
+              "onceOnly": true,
+              "completeTask": "triage_sorted"
             }
           ]
+        },
+        {
+          "id": "brandt_desk",
+          "displayName": "Brandt (service desk)",
+          "npcType": "phone",
+          "phoneId": "player_phone",
+          "storyPath": "scenarios/test_social_slice/ink/brandt_desk.json",
+          "currentKnot": "start"
+        },
+        {
+          "id": "quinn_desk",
+          "displayName": "Quinn",
+          "npcType": "person",
+          "position": { "x": 1, "y": 4 },
+          "spriteSheet": "male_office_worker_v2",
+          "spriteTalk": "assets/characters/male_office_worker_talk.png",
+          "spriteVisemes": "assets/characters/male_office_worker_visemes.png",
+          "callId": "quinn_floor_call",
+          "storyPath": "scenarios/test_social_slice/ink/quinn_floor.json",
+          "currentKnot": "start"
         }
       ],
       "objects": [
@@ -399,88 +801,50 @@
           "minigameData": { "mode": "recon" }
         },
         {
-          "type": "notes",
-          "sprite": "notes1",
-          "id": "careers_inbox",
-          "name": "Careers Page Printout",
-          "position": { "x": 3, "y": 6 },
+          "type": "osint-workstation",
+          "id": "slice_osint",
+          "name": "OSINT Workstation",
+          "position": { "x": 4, "y": 2 },
           "takeable": false,
           "interactable": true,
           "active": true,
-          "observations": "A printout of the careers page.",
-          "triggerOnInteract": [ { "type": "grant_fact", "fact": "hampshire_careers" } ]
+          "locked": false,
+          "observations": "A workstation with a browser for researching Ledgerwell.",
+          "minigameData": { "siteIds": ["company", "social", "deck"] }
         },
         {
-          "type": "notes",
-          "sprite": "notes2",
-          "id": "post_hampshire_cvs",
-          "name": "Chris's Social Post",
-          "position": { "x": 5, "y": 6 },
-          "takeable": false,
-          "interactable": true,
-          "active": true,
-          "observations": "A printed social post from Chris in Careers.",
-          "triggerOnInteract": [ { "type": "grant_fact", "fact": "hampshire_cv_backlog" } ]
-        },
-        {
-          "type": "notes",
-          "sprite": "notes3",
-          "id": "apply_format",
-          "name": "How To Apply Page",
-          "position": { "x": 7, "y": 6 },
-          "takeable": false,
-          "interactable": true,
-          "active": true,
-          "observations": "A printout of the how-to-apply page.",
-          "triggerOnInteract": [ { "type": "grant_fact", "fact": "careers_attachment" } ]
-        },
-        {
-          "type": "notes",
-          "sprite": "notes4",
-          "id": "note_teague_role",
-          "name": "Finance Team Page Printout",
-          "position": { "x": 2, "y": 4 },
-          "takeable": false,
-          "interactable": true,
-          "active": true,
-          "observations": "A printout of the finance team page listing Morgan Teague.",
-          "triggerOnInteract": [ { "type": "grant_fact", "fact": "teague_role" } ]
-        },
-        {
-          "type": "notes",
-          "sprite": "notes5",
-          "id": "note_teague_shah",
-          "name": "Morgan's Social Post",
-          "position": { "x": 4, "y": 4 },
-          "takeable": false,
-          "interactable": true,
-          "active": true,
-          "observations": "A printed social post from Morgan mentioning her colleague Ravi.",
-          "triggerOnInteract": [ { "type": "grant_fact", "fact": "teague_trusts_shah" } ]
-        },
-        {
-          "type": "notes",
-          "sprite": "notes6",
-          "id": "note_teague_export",
-          "name": "Company-Site Note",
+          "type": "triage-workstation",
+          "id": "slice_triage",
+          "name": "Triage Workstation",
           "position": { "x": 6, "y": 4 },
           "takeable": false,
           "interactable": true,
           "active": true,
-          "observations": "A note: Ravi will send Morgan the Q3 ledger export on Tuesday.",
-          "triggerOnInteract": [ { "type": "grant_fact", "fact": "teague_expects_export" } ]
+          "locked": false,
+          "observations": "A workstation for sorting a mixed inbox.",
+          "minigameData": { "triageSetId": "slice_inbox", "conclusionTaskId": "triage_sorted" }
         },
         {
-          "type": "notes",
-          "sprite": "notes_ledger1",
-          "id": "note_company_addresses",
-          "name": "Address-Lookup Result",
+          "type": "case-file",
+          "id": "slice_defender_board",
+          "name": "Defender case file",
           "position": { "x": 8, "y": 4 },
           "takeable": false,
           "interactable": true,
           "active": true,
-          "observations": "A lookup result showing the staff address pattern.",
-          "triggerOnInteract": [ { "type": "grant_fact", "fact": "company_addresses" } ]
+          "observations": "A board for choosing how Ledgerwell could reduce what you found.",
+          "minigameData": { "mode": "defender" }
+        },
+        {
+          "type": "phone",
+          "id": "slice_desk_phone",
+          "name": "Desk Phone",
+          "position": { "x": 2, "y": 2 },
+          "takeable": false,
+          "interactable": true,
+          "active": true,
+          "observations": "A desk phone. The service desk extension is on a sticky note.",
+          "minigameData": { "callId": "brandt_desk_call" }
         }
       ]
     }

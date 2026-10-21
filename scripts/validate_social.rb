@@ -17,7 +17,9 @@ require 'json'
 require 'set'
 
 module ValidateSocial
-  Context = Struct.new(:json, :repo_root, :valid_item_types, :imports, :social, keyword_init: true) do
+  # raw: the rendered JSON text, when the caller has it (P2-W), so lints can tell a \u escape
+  # written in the source from a raw character.
+  Context = Struct.new(:json, :repo_root, :valid_item_types, :imports, :social, :raw, keyword_init: true) do
     # Globals the scenario declares itself: globalVariables minus carry-over imports
     # (prepare_carry_over_globals merges those in before the other checks run).
     def own_globals
@@ -55,9 +57,9 @@ module ValidateSocial
   # json: the rendered scenario. imports: the importGlobals list (entries), when the
   # caller has merged them into globalVariables. valid_item_types: Set of asset file
   # stems (nil skips the sprite lint).
-  def self.check(json, repo_root:, valid_item_types: nil, imports: nil)
+  def self.check(json, repo_root:, valid_item_types: nil, imports: nil, raw: nil)
     ctx = Context.new(json: json, repo_root: repo_root, valid_item_types: valid_item_types,
-                      imports: imports || json['importGlobals'], social: json['social'])
+                      imports: imports || json['importGlobals'], social: json['social'], raw: raw)
     issues = []
     issues.concat(aim_unlock_keys(ctx))
     issues.concat(duplicate_object_ids(ctx))

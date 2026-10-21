@@ -347,6 +347,29 @@ test('lockout until a global: scope character, lifted when the global turns true
     assert.equal(calls.hostile.length, 1, 'not re-run on the lift');
 });
 
+test('isLockedOut: the S10 channel check used by the entry points', () => {
+    const { service, clock } = setup();
+    // dev: a channel-scoped (phone) lockout
+    service.setInfluence('dev', -75, 'claim', { npcId: 'dev_service_desk' });
+    assert.equal(service.isLockedOut('dev', 'phone'), true, 'the locked channel refuses');
+    assert.equal(service.isLockedOut('dev', 'person'), false, 'another channel is open');
+    assert.equal(service.isLockedOut('dev'), true, 'no channel given: any lockout is active');
+    assert.equal(service.isLockedOut('dev_service_desk', 'phone'), true, 'resolves a channel npc id');
+    // the deadline passing lifts it on the next check, so the channel opens
+    clock.t += 2 * 60000;
+    assert.equal(service.isLockedOut('dev', 'phone'), false, 'a due lockout lifts and the channel opens');
+    // lou: a character-scoped lockout closes every channel until lou_cleared
+    service.addInfluence('lou', -60, 'x', { npcId: 'lou_phone' });
+    assert.equal(service.isLockedOut('lou', 'person'), true);
+    assert.equal(service.isLockedOut('lou', 'phone'), true);
+    assert.equal(service.isLockedOut('lou', 'email'), true, "scope 'character' stores 'all'");
+    writeGlobal('lou_cleared', true);
+    assert.equal(service.isLockedOut('lou', 'person'), false, 'the until-global lift opens every channel');
+    // a non-social id, or a character with no active lockout, is never blocked
+    assert.equal(service.isLockedOut('someone_else', 'person'), false);
+    assert.equal(service.isLockedOut('priya', 'email'), false);
+});
+
 test('mirrorToBehavior copies the value without the auto-hostile check', () => {
     const { service } = setup();
     let hostileCalls = 0;
@@ -416,21 +439,42 @@ test('a forced latch with no lockout re-arms only after the value has crossed it
     assert.ok(!service.getLatched('priya').includes('reports'));
 });
 
-test('a forced latch survives a reload and is cleared by the lockout lift (R-02)', () => {
-    // reload: reports latched, value never past -70
-    let { service } = setup({ saved: { priya_latched: 'reports' } });
+test('a forced latch survives a reload and is cleared by the lockout lift (R-02, N-01)', () => {
+    // reload: reports latched and marked forced in <character>_forced, value never past -70
+    let { service } = setup({ saved: { priya_latched: 'reports', priya_forced: 'reports' } });
+    assert.deepEqual(service.getForced('priya'), ['reports']);
     assert.deepEqual(service.addInfluence('priya', 3).rearmed, []);
-    assert.equal(service.getBand('priya'), 3);
+    assert.equal(service.getBand('priya'), 3, 'still band 3: the forced mark holds the latch');
     uninstallSocialInfluence();
-    // lift: the latch is cleared and a later report runs the effects again
+    // lift: the latch and the forced mark are cleared and a later report runs the effects again
     let clock, calls, g;
     ({ service, clock, calls, g } = setup());
     service.report('dev', 'maxRefusals', { npcId: 'dev_service_desk' });
+    assert.deepEqual(service.getForced('dev'), ['reports'], 'report() at -10 marks the latch forced');
     clock.t += 120000;
     assert.equal(service.checkLockout('dev'), true);
     assert.equal(g.dev_latched, '');
+    assert.equal(g.dev_forced, '', 'the lift clears the forced mark too');
     assert.equal(service.report('dev', 'again', { npcId: 'dev_service_desk' }).reported, true);
     assert.equal(calls.end.length, 2);
+});
+
+test('N-01: a reload with reports latched by a real crossing (value climbed part way back, not forced) re-arms', () => {
+    // dev reports at -70, rearmMargin 10. A real crossing latched it; the value
+    // then climbed to -65 (between at and at + margin, so not yet re-armed) and the
+    // game was saved. No <character>_forced, so the reload must treat it as a normal
+    // crossed latch, not a forced one: the next climb past at + margin re-arms it.
+    const { service, g } = setup({ saved: { dev_influence: -65, dev_latched: 'reports' } });
+    assert.deepEqual(service.getForced('dev'), [], 'not forced: nothing wrote dev_forced');
+    assert.equal(service.getBand('dev'), 3, 'still reported at -65');
+    // a change that is still below at + margin keeps it latched
+    assert.deepEqual(service.addInfluence('dev', -2).rearmed, []);
+    assert.equal(service.getBand('dev'), 3);
+    // climbing to at + margin (-60) re-arms, as it would have before the reload
+    const up = service.setInfluence('dev', -60);
+    assert.ok(up.rearmed.includes('reports'), 'a real crossing re-arms at at + rearmMargin');
+    assert.equal(service.getBand('dev'), 0);
+    assert.equal(g.dev_latched, '');
 });
 
 test('a start value already past a threshold gets its band flags at install, silently (R-03)', () => {

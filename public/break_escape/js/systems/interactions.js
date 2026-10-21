@@ -610,8 +610,46 @@ function addInteractionIndicator(obj) {
     }
 }
 
+// SE social-engineering lockout (00 §8, S10). window.socialInfluence exists only
+// for a scenario with social.characters, so shipped missions (m01–m08) never enter
+// these branches and behave exactly as before. Returns true (and shows a one-line
+// refusal) when `id` is a social character locked out on `channel`; a due lockout
+// lifts on the way, opening the channel. `id` is a character id or a channel NPC id.
+function socialChannelLocked(id, channel) {
+    const svc = window.socialInfluence;
+    if (!svc || typeof svc.isLockedOut !== 'function' || !svc.isLockedOut(id, channel)) return false;
+    const name = svc.getCharacterConfig?.(id)?.displayName || '';
+    const tail = channel === 'email' ? 'will not read your mail right now.' : 'will not talk to you right now.';
+    const text = name ? `${name} ${tail}` : `They ${tail}`;
+    (window.gameAlert || window.showNotification)?.(text, 'warning', '', 2500);
+    return true;
+}
+
+// SE pretext call (06 N5, 00 S10): a desk phone or an NPC carrying a callId opens
+// pretext-prep rather than plain dialogue. The lockout is checked first, so a
+// locked-out student is refused before the pretext card opens. The callId names a
+// social.pretextNpcs entry; its `character` names the social.characters entry whose
+// channel record (channels.phone for a phone, channels.person for an NPC) is opened.
+function startPretextCall(callId, { npcId = null, channel } = {}) {
+    const svc = window.socialInfluence;
+    const calls = window.gameScenario?.social?.pretextNpcs;
+    const call = Array.isArray(calls) ? calls.find(c => c && c.callId === callId) : null;
+    if (!svc || !call) {
+        console.warn('[interactions] pretext call has no social service or no pretextNpcs entry:', callId);
+        return;
+    }
+    const characterId = call.character;
+    if (socialChannelLocked(characterId, channel)) return; // refuse before pretext-prep opens
+    const recordNpcId = npcId || svc.getCharacterConfig?.(characterId)?.channels?.[channel] || null;
+    if (!window.MinigameFramework) {
+        console.warn('[interactions] MinigameFramework unavailable for pretext call:', callId);
+        return;
+    }
+    window.MinigameFramework.startMinigame('pretext-prep', null, { callId, character: characterId, npcId: recordNpcId });
+}
+
 export function handleObjectInteraction(sprite) {
-    console.log('OBJECT INTERACTION', { 
+    console.log('OBJECT INTERACTION', {
         name: sprite.name, 
         id: sprite.objectId,
         scenarioData: sprite.scenarioData
@@ -651,11 +689,19 @@ export function handleObjectInteraction(sprite) {
             window.playerCombat.attack({ x: sprite.x, y: sprite.y });
             return;
         }
-        
+
+        // SE social-engineering lockout on the person channel (00 §8, S10): a
+        // social character who is locked out will not talk until it lifts.
+        if (socialChannelLocked(sprite.npcId, 'person')) return;
+
         // Non-hostile NPCs - start chat minigame
         if (window.MinigameFramework && window.npcManager) {
             const npc = window.npcManager.getNPC(sprite.npcId);
             if (npc) {
+                // SE pretext call (06 N5): an NPC carrying a callId runs the pretext
+                // flow in person-chat, not plain dialogue. The lab needs only the
+                // phone case; a sprite test character exercises this one (P4-G).
+                if (npc.callId) { startPretextCall(npc.callId, { npcId: sprite.npcId, channel: 'person' }); return; }
                 // Start person-chat minigame with this NPC
                 window.MinigameFramework.startMinigame('person-chat', null, {
                     npcId: sprite.npcId,
@@ -977,6 +1023,26 @@ export function handleObjectInteraction(sprite) {
             window.startIntelBoardMinigame(sprite);
         } else {
             window.gameAlert('Case file unavailable.', 'error', 'Error', 3000);
+        }
+        return;
+    }
+
+    // OSINT workstation (P2-W): opens the OSINT browser on the sites in minigameData.siteIds.
+    if (sprite.scenarioData.type === 'osint-workstation') {
+        if (window.startOsintBrowserMinigame) {
+            window.startOsintBrowserMinigame(sprite);
+        } else {
+            window.gameAlert('Workstation unavailable.', 'error', 'Error', 3000);
+        }
+        return;
+    }
+
+    // Inbox triage workstation (P3-W): opens the set named in minigameData.triageSetId.
+    if (sprite.scenarioData.type === 'triage-workstation') {
+        if (window.startInboxTriageMinigame) {
+            window.startInboxTriageMinigame(sprite);
+        } else {
+            window.gameAlert('Workstation unavailable.', 'error', 'Error', 3000);
         }
         return;
     }
@@ -1350,14 +1416,30 @@ export function handleObjectInteraction(sprite) {
         message += `Observations: ${resolvedObservations}\n`;
     }
     
+    // SE pretext call (06 N5, 00 S10): a desk phone carrying a callId opens
+    // pretext-prep. Placed ABOVE the phone gate below, which admits only a phone
+    // with text/voice/npcIds, so a desk phone with just a { callId } would never
+    // reach a branch placed inside it (an engine change, 00 §11). The lockout is
+    // checked inside startPretextCall, before the pretext card opens.
+    if (data.type === 'phone' && data.callId) {
+        startPretextCall(data.callId, { channel: 'phone' });
+        return;
+    }
+
     // For phone type objects, use phone-chat with runtime conversion or direct NPC access
     if (data.type === 'phone' && (data.text || data.voice || data.npcIds)) {
         console.log('Phone object detected:', { type: data.type, text: data.text, voice: data.voice, npcIds: data.npcIds });
-        
+
+        // SE lockout on the phone channel (00 §8, S10): refuse before opening
+        // phone-chat when any listed NPC is a locked-out social character.
+        if (window.socialInfluence && Array.isArray(data.npcIds)) {
+            for (const nid of data.npcIds) { if (socialChannelLocked(nid, 'phone')) return; }
+        }
+
         // Check if phone-chat system is available
         if (window.MinigameFramework && window.npcManager) {
             const phoneId = data.phoneId || 'default_phone';
-            
+
             // Check if phone has already been converted or has npcIds
             if (data.npcIds && data.npcIds.length > 0) {
                 console.log('Phone has npcIds, opening phone-chat directly', { npcIds: data.npcIds });

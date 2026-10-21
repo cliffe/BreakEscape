@@ -46,6 +46,16 @@ export class MailReader {
      * @param {(record: object) => string|null} [opts.influenceCharacter]  the social character whose
      *        influence bar shows with a message (default: the character in `thread`, else `targetId`)
      * @param {object} [opts.scenario]  scenario holding `social` for the bar (default window.gameScenario)
+     *
+     * Triage (05 N2) adds these; every one is off by default so the mail client is unchanged:
+     * @param {boolean} [opts.influence]  false: never show an influence bar
+     * @param {string} [opts.linkPrefix]  the pinned link line's lead ("This would go to: ")
+     * @param {{show:string, hide:string}} [opts.detailsLabels]  the details toggle's two labels
+     * @param {boolean} [opts.noDetails]  no details toggle or panel at all
+     * @param {boolean} [opts.detailsAlwaysOpen]  show the details panel with no toggle and no Esc layer
+     * @param {(record: object) => Node|null} [opts.detailsRenderer]  builds the details panel (the header panel)
+     * @param {(record: object, pane: HTMLElement) => void} [opts.afterBody]  appends controls under the message
+     * @param {(record: object) => string|null} [opts.rowBadge]  a short word shown in the list row
      */
     constructor(parent, opts = {}) {
         this.opts = opts;
@@ -144,6 +154,12 @@ export class MailReader {
             const body = el('span', 'mail-row-body');
             body.append(top, sub);
             row.append(mark, body);
+            const badge = this.opts.rowBadge ? this.opts.rowBadge(rec) : null;
+            if (badge) {
+                const b = el('span', 'mail-row-badge');
+                b.append(icon('mark-tick'), el('span', 'mail-row-badge-word', badge));
+                body.appendChild(b);
+            }
             if (Array.isArray(rec.attachments) && rec.attachments.length) {
                 row.appendChild(icon('attach-document', 'Has an attachment'));
             }
@@ -154,6 +170,7 @@ export class MailReader {
 
     /** The social character a message belongs to, for the influence bar (01 N7). */
     _influenceCharacter(rec) {
+        if (this.opts.influence === false) return null;
         if (this.opts.influenceCharacter) return this.opts.influenceCharacter(rec) || null;
         if (typeof rec.thread === 'string' && rec.thread.includes(':')) return rec.thread.split(':')[0];
         return rec.targetId || null;
@@ -214,13 +231,18 @@ export class MailReader {
             if (keptBar) bar.update(); // re-read gameState; the kept bar keeps its change line
         }
 
-        const detailsBtn = el('button', 'mail-details-toggle minigame-button',
-            this.detailsOpen ? 'Hide message details' : 'Message details');
-        detailsBtn.type = 'button';
-        detailsBtn.setAttribute('aria-expanded', this.detailsOpen ? 'true' : 'false');
-        detailsBtn.addEventListener('click', () => this._toggleDetails());
-        pane.appendChild(detailsBtn);
-        if (this.detailsOpen) pane.appendChild(this._detailsPanel(rec));
+        const always = this.opts.detailsAlwaysOpen === true;
+        const noDetails = this.opts.noDetails === true;
+        if (!always && !noDetails) {
+            const labels = this.opts.detailsLabels || { show: 'Message details', hide: 'Hide message details' };
+            const detailsBtn = el('button', 'mail-details-toggle minigame-button',
+                this.detailsOpen ? labels.hide : labels.show);
+            detailsBtn.type = 'button';
+            detailsBtn.setAttribute('aria-expanded', this.detailsOpen ? 'true' : 'false');
+            detailsBtn.addEventListener('click', () => this._toggleDetails());
+            pane.appendChild(detailsBtn);
+        }
+        if (!noDetails && (always || this.detailsOpen)) pane.appendChild(this._detailsPanel(rec));
 
         const attachments = Array.isArray(rec.attachments) ? rec.attachments.slice() : [];
         if (rec.attachment && !attachments.length) attachments.push(rec.attachment);
@@ -245,6 +267,7 @@ export class MailReader {
         this.linkStatus = status;
 
         if (this.folder === 'sent') pane.appendChild(this._sentNote(rec));
+        if (this.opts.afterBody) this.opts.afterBody(rec, pane);
     }
 
     _bodyNode(rec) {
@@ -261,7 +284,7 @@ export class MailReader {
             const chip = el('button', 'mail-chip mail-chip-link');
             chip.type = 'button';
             chip.dataset.linkId = link.id;
-            chip.title = `This would go to: ${dest}`;
+            chip.title = `${this._linkPrefix()}${dest}`;
             chip.append(icon('attach-link'), el('span', 'mail-chip-label', link.linkText || dest));
             const show = () => this._showLink(dest);
             chip.addEventListener('mouseenter', show);
@@ -272,12 +295,20 @@ export class MailReader {
         return body;
     }
 
+    _linkPrefix() {
+        return this.opts.linkPrefix || 'This would go to: ';
+    }
+
     _showLink(dest) {
-        this.linkNote = `This would go to: ${dest}`;
+        this.linkNote = `${this._linkPrefix()}${dest}`;
         if (this.linkStatus) this.linkStatus.textContent = this.linkNote;
     }
 
     _detailsPanel(rec) {
+        if (this.opts.detailsRenderer) {
+            const node = this.opts.detailsRenderer(rec);
+            if (node) return node;
+        }
         const box = el('dl', 'mail-details');
         const add = (k, v) => { box.append(el('dt', null, k), el('dd', null, v)); };
         add('Shown as from', `${rec.from?.name || ''} <${rec.from?.address || ''}>`);

@@ -3887,7 +3887,7 @@ def check_globals_never_read(json_data, repo_root)
           next
         elsif PASS4C_SET_KEYS_HASH.include?(k) && v.is_a?(Hash)
           v.each_key { |name| setters[name] ||= "#{path}/#{k}" }
-        elsif (k =~ /\AsetGlobal/ || k == 'globalVarOnKO') && v.is_a?(String)
+        elsif k != 'setGlobalPrefix' && (k =~ /\AsetGlobal/ || k == 'globalVarOnKO') && v.is_a?(String)
           setters[v] ||= "#{path}/#{k}"
         elsif k == 'setGlobal' && v.is_a?(String)
           setters[v] ||= "#{path}/#{k}"
@@ -4043,7 +4043,7 @@ def check_ink_global_collisions(json_data, repo_root)
         next if k == 'globalVariables'
         if PASS4C_SET_KEYS_HASH.include?(k) && v.is_a?(Hash)
           v.each_key { |name| scenario_writers[name] << "#{path}/#{k}" }
-        elsif (k == 'setGlobal' || k == 'globalVarOnKO' || k =~ /\AsetGlobal/) && v.is_a?(String)
+        elsif k != 'setGlobalPrefix' && (k == 'setGlobal' || k == 'globalVarOnKO' || k =~ /\AsetGlobal/) && v.is_a?(String)
           scenario_writers[v] << "#{path}/#{k}"
         else
           walk.call(v, "#{path}/#{k}")
@@ -4191,7 +4191,7 @@ def carry_over_json_writes(json_data)
         next if %w[globalVariables importGlobals exportGlobals].include?(k)
         if PASS4C_SET_KEYS_HASH.include?(k) && v.is_a?(Hash)
           v.each { |name, val| writes[name] << ["#{path}/#{k}", val] }
-        elsif (k == 'setGlobal' || k == 'globalVarOnKO' || k =~ /\AsetGlobal/) && v.is_a?(String)
+        elsif k != 'setGlobalPrefix' && (k == 'setGlobal' || k == 'globalVarOnKO' || k =~ /\AsetGlobal/) && v.is_a?(String)
           writes[v] << ["#{path}/#{k}", nil]
         else
           walk.call(v, "#{path}/#{k}")
@@ -4202,7 +4202,79 @@ def carry_over_json_writes(json_data)
     end
   end
   walk.call(json_data, '')
+  # A triage set's four result globals are written by the starter, not by ink or a
+  # scenario setter (05 N5). {stage} is filled the way the starter does: the
+  # workstation's stage, else the set's stage, else mission.
+  carry_over_record_triage_writes(json_data, writes)
   writes
+end
+
+# Records <setGlobalPrefix>percent, reportRate, done and pass as writes.
+TRIAGE_RESULT_SUFFIXES = %w[percent reportRate done pass].freeze
+
+def carry_over_record_triage_writes(json_data, writes)
+  sets = json_data.is_a?(Hash) ? json_data.dig('social', 'triageSets') : nil
+  return unless sets.is_a?(Array)
+
+  by_id = {}
+  sets.each_with_index do |set, i|
+    by_id[set['id']] = i if set.is_a?(Hash) && set['id'].is_a?(String)
+  end
+
+  launches = Hash.new { |h, k| h[k] = [] }
+  each_obj = lambda do |obj|
+    return unless obj.is_a?(Hash)
+
+    if obj['type'] == 'triage-workstation'
+      md = obj['minigameData'].is_a?(Hash) ? obj['minigameData'] : {}
+      sid = md['triageSetId']
+      launches[sid] << md['stage'] if sid.is_a?(String) && by_id.key?(sid)
+    end
+    %w[contents itemsHeld].each { |k| Array(obj[k]).each { |child| each_obj.call(child) } }
+  end
+  rooms = json_data['rooms'].is_a?(Hash) ? json_data['rooms'] : {}
+  rooms.each_value do |room|
+    next unless room.is_a?(Hash)
+
+    Array(room['objects']).each { |obj| each_obj.call(obj) }
+    Array(room['npcs']).each do |npc|
+      next unless npc.is_a?(Hash)
+
+      Array(npc['itemsHeld']).each { |obj| each_obj.call(obj) }
+    end
+  end
+  Array(json_data['startItemsInInventory']).each { |obj| each_obj.call(obj) }
+
+  sets.each_with_index do |set, i|
+    next unless set.is_a?(Hash)
+
+    prefix = set.dig('outcome', 'setGlobalPrefix')
+    next unless prefix.is_a?(String) && !prefix.empty?
+    next if prefix.gsub('{stage}', '') =~ /[{}]/
+
+    stages = if prefix.include?('{stage}')
+               found = set['id'].is_a?(String) ? launches[set['id']] : []
+               (found.empty? ? [nil] : found).map do |stage|
+                 if stage.is_a?(String) && !stage.empty?
+                   stage
+                 elsif set['stage'].is_a?(String) && !set['stage'].empty?
+                   set['stage']
+                 else
+                   'mission'
+                 end
+               end.uniq
+             else
+               [nil]
+             end
+    where = "/social/triageSets[#{i}] (triage starter)"
+    stages.each do |stage|
+      resolved = stage ? prefix.gsub('{stage}', stage) : prefix
+      TRIAGE_RESULT_SUFFIXES.each do |suffix|
+        name = "#{resolved}#{suffix}"
+        writes[name] << [where, nil] if name.match?(/\A[A-Za-z_][A-Za-z0-9_]*\z/)
+      end
+    end
+  end
 end
 
 # name => [[where, value-or-nil], ...] for every write in the mission's ink.
@@ -5158,7 +5230,7 @@ def main
     # Social-engineering lints (scripts/validate_social.rb). Two lints (aim unlockCondition
     # keys, object id uniqueness) apply to every scenario; the rest need a `social` key.
     social_issues = ValidateSocial.check(json_data, repo_root: repo_root, valid_item_types: valid_item_types,
-                                                   imports: carry_imports)
+                                                   imports: carry_imports, raw: rendered_json)
     common_issues += social_issues
 
     # Check for recommended fields

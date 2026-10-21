@@ -12,6 +12,7 @@ import PhoneChatUI from './phone-chat-ui.js';
 import PhoneChatConversation from './phone-chat-conversation.js';
 import PhoneChatHistory from './phone-chat-history.js';
 import InkEngine from '../../systems/ink/ink-engine.js';
+import { attachPretext } from '../person-chat/person-chat-pretext.js';
 import { processGameActionTags } from '../helpers/chat-helpers.js';
 import { classifyPhoneLine, displayPhoneLine, phoneStepLines } from './phone-chat-speaker.js';
 import { choiceIndexFromKey } from './phone-chat-choices.js';
@@ -440,6 +441,16 @@ export class PhoneChatMinigame extends MinigameScene {
         // Set conversation as active
         this.isConversationActive = true;
 
+        // Begin the per-run influence ledger and, for a pretext call, bind the two
+        // call externals and se_influence before the first Continue (00 §8, S1, S5;
+        // P4-B). The card VARs are re-asserted after each restore below. No-op for a
+        // non-social contact and a non-pretext call.
+        this._beginSocialRun(npcId);
+        if (this.params?.pretextCallId) {
+            try { this._pretext = await attachPretext(this, { chat: 'phone' }); }
+            catch (e) { console.warn('⚠️ pretext attach failed:', e.message); }
+        }
+
         // Saved ink flags for this contact (from before a reload). A restored
         // npc.storyState below carries its own, newer values and overrides these.
         window.npcConversationStateManager?.applySavedInkVariables?.(npcId, this.conversation.engine?.story);
@@ -494,6 +505,9 @@ export class PhoneChatMinigame extends MinigameScene {
             const reopen = this.conversation.reopenWithCurrentGlobals(story => {
                 window.npcConversationStateManager?.syncGlobalVariablesToStory(story);
                 window.npcConversationStateManager?.applyEngineVariables?.(npcId, story, { channel: 'phone-chat' });
+                // Re-assert the pretext card VARs: the restore (LoadJson) above replaced
+                // the story-local VARs, so set them before the re-run reads a choice.
+                this._pretext?.fillVars?.();
             });
 
             // If the saved story had ended (DONE/END), the restored story has no position and
@@ -528,6 +542,10 @@ export class PhoneChatMinigame extends MinigameScene {
             // Engine-written VARs (00 S7): after the load's sync, the saved flags and any
             // restore-and-sync above, before the knot's first Continue
             window.npcConversationStateManager?.applyEngineVariables?.(npcId, this.conversation.engine?.story, { channel: 'phone-chat' });
+
+            // Re-assert the pretext card VARs after the (possible) restore-for-knot
+            // above, before the knot's first Continue reads a choice.
+            this._pretext?.fillVars?.();
 
             // Navigate to starting knot (either first time, or explicit navigation request)
             if (explicitStartKnot) {
@@ -1037,7 +1055,39 @@ export class PhoneChatMinigame extends MinigameScene {
      */
     _tagOptions(npcId, conversation) {
         const live = conversation && conversation === this.conversation && conversation.npcId === npcId;
-        return { npcId: npcId || null, engine: live ? (conversation.engine || null) : null };
+        const opts = { npcId: npcId || null, engine: live ? (conversation.engine || null) : null };
+        // The per-run ledger id (00 §8), so an #influence / #report tag is deduped
+        // under the same run as the pretext externals. Set only while this NPC's
+        // social run is live; absent for every other contact and every non-social NPC.
+        if (live && this._socialRunId && this._socialRunNpc === npcId) opts.runId = this._socialRunId;
+        return opts;
+    }
+
+    /**
+     * Begin the per-run influence ledger for a social phone conversation (00 §8;
+     * P4-B). A run is one open conversation: it gives pretext_say / pretext_ask /
+     * se_influence a fresh turn counter that advances on each ChooseChoiceIndex, so
+     * they are idempotent under a reload replay. No social-influence service is
+     * installed for m01 to m08, so this does nothing there.
+     */
+    _beginSocialRun(npcId) {
+        const influence = (typeof window !== 'undefined') ? window.socialInfluence : null;
+        const story = this.conversation?.engine?.story || this.inkEngine?.story;
+        if (this._socialRunId || !npcId || !influence?.isSocialCharacter?.(npcId) || !story) return;
+        this._socialRunNpc = npcId;
+        this._socialRunId = `chat:${npcId}:${Date.now()}`;
+        influence.beginRun?.(this._socialRunId);
+        this._undoTrackTurns = influence.trackTurns?.(this.conversation?.engine || this.inkEngine, this._socialRunId) || null;
+    }
+
+    /** End the influence ledger run, unwrap ChooseChoiceIndex and the pretext hooks. */
+    _endSocialRun() {
+        const influence = (typeof window !== 'undefined') ? window.socialInfluence : null;
+        if (this._undoTrackTurns) { try { this._undoTrackTurns(); } catch (e) { /* best-effort */ } this._undoTrackTurns = null; }
+        if (influence && this._socialRunId) influence.endRun?.(this._socialRunId);
+        this._socialRunId = null;
+        this._socialRunNpc = null;
+        if (this._pretext?.teardown) { try { this._pretext.teardown(); } catch (e) { /* ignore */ } this._pretext = null; }
     }
     
     /**
@@ -1080,6 +1130,7 @@ export class PhoneChatMinigame extends MinigameScene {
 
         this._flushPendingMessages();
         this._callVoice?.stop();   // a voiced call's line stops with the thread
+        this._endSocialRun();      // one run per open conversation (00 §8)
         this._emitConversationClosed(this.currentNPCId);
         this.isConversationActive = false;
         this.currentNPCId = null;
@@ -1270,6 +1321,7 @@ export class PhoneChatMinigame extends MinigameScene {
         // A conversation still open at teardown counts as closed (closeConversation()
         // clears currentNPCId/conversation, so this can't double-emit)
         this._flushPendingMessages();
+        this._endSocialRun();      // end any live influence run (00 §8)
         this._emitConversationClosed(this.currentNPCId);
         this._callVoice?.destroy();
         this._callVoice = null;

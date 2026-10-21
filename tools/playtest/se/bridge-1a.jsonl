@@ -37,12 +37,11 @@
 {"cmd":"note","message":"B5 board close by Esc"}
 {"cmd":"mg","action":"pressKey","args":["Escape"]}
 {"cmd":"eval","fn":"async () => { /* B5 Esc closes the board with success and no minigame_failed */ const t = window.__test; await new Promise(r => setTimeout(r, 300));\n  const since = (m) => { const l = t.peekLog(500); let i = -1; l.forEach((e, j) => { if (e.kind === 'note' && e.message === m) i = j; }); return l.slice(i + 1).filter(e => e.kind === 'event'); }; const ev = since('B5 board close by Esc');\n  return ev.some(e => e.event === 'minigame_completed' && e.data && e.data.minigameName === 'IntelBoardMinigame' && e.data.success === true) && !ev.some(e => e.event === 'minigame_failed') && !t.getState().activeMinigame; }"}
-{"cmd":"moveToNear","id":"careers_inbox"}
-{"cmd":"interact","id":"careers_inbox"}
-{"cmd":"moveToNear","id":"post_hampshire_cvs"}
-{"cmd":"interact","id":"post_hampshire_cvs"}
-{"cmd":"moveToNear","id":"apply_format"}
-{"cmd":"interact","id":"apply_format"}
+{"cmd":"interact","id":"slice_osint"}
+{"cmd":"waitFor","kind":"minigame","id":"osint-browser"}
+{"cmd":"eval","fn":"async () => { /* OSINT: Hampshire facts by browsing the careers page, her post and how-to-apply */ const mg = window.MinigameFramework.currentMinigame; const sleep = (ms) => new Promise(r => setTimeout(r, ms)); if (!mg || mg.constructor.name !== 'OsintBrowserMinigame') return false; const root = mg.container; const click = async (sel) => { const el = root.querySelector(sel); if (!el) return false; el.click(); await sleep(120); return true; }; const steps = [[\"site\", \"company\"], [\"link\", \"company.careers\"], [\"block\", \"careers_inbox\"], [\"link\", \"company.apply\"], [\"block\", \"apply_format\"], [\"site\", \"social\"], [\"profile\", \"hampshire\"], [\"block\", \"post_hampshire_cvs\"]]; for (const [k, v] of steps) { let ok; if (k === 'site') ok = await click('.ob-site[data-site=\"' + v + '\"]'); else if (k === 'link') ok = await click('a[data-focus=\"link:' + v + '\"]'); else if (k === 'profile') ok = await click('a[data-focus=\"profile:' + v + '\"]'); else if (k === 'tool') ok = await click('button[data-tool=\"' + v + '\"]'); else if (k === 'block') ok = await click('.ob-block[data-id=\"' + v + '\"]'); if (!ok) return false; } return true; }"}
+{"cmd":"mg","action":"pressKey","args":["Escape"]}
+{"cmd":"waitFor","kind":"minigameClosed"}
 {"cmd":"waitFor","kind":"global","name":"se_intel_hampshire_careers","expected":true}
 {"cmd":"waitFor","kind":"global","name":"se_intel_hampshire_cv_backlog","expected":true}
 {"cmd":"waitFor","kind":"global","name":"se_intel_careers_attachment","expected":true}

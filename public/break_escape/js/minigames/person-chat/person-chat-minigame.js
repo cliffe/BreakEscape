@@ -16,6 +16,7 @@ import { MinigameScene } from '../framework/base-minigame.js';
 import PersonChatUI from './person-chat-ui.js';
 import PhoneChatConversation from '../phone-chat/phone-chat-conversation.js'; // Reuse phone-chat conversation logic
 import InkEngine from '../../systems/ink/ink-engine.js';
+import { attachPretext } from './person-chat-pretext.js';
 import { processGameActionTags, determineSpeaker as determineSpeakerFromTags } from '../helpers/chat-helpers.js';
 import npcConversationStateManager from '../../systems/npc-conversation-state.js';
 import TTSManager from '../../systems/tts-manager.js';
@@ -479,7 +480,12 @@ export class PersonChatMinigame extends MinigameScene {
                 this.showError('Failed to load conversation');
                 return;
             }
-            
+
+            // Begin the per-run influence ledger before any choice is made or the
+            // story is restored, so pretext_say / pretext_ask / se_influence are
+            // idempotent under a reload replay (00 §8; no-op for a non-social NPC).
+            this._beginSocialRun();
+
             // If a startKnot was provided (event-triggered conversation or video call), restore
             // the NPC's saved story state first (ink-local VARs, visit counts, once-only choice
             // history), then go to the event's knot. Jumping in a fresh story reset them (D2).
@@ -570,6 +576,14 @@ export class PersonChatMinigame extends MinigameScene {
             // so neither can overwrite them, and before the first Continue reads them
             if (this.inkEngine && this.inkEngine.story) {
                 npcConversationStateManager.applyEngineVariables(this.npcId, this.inkEngine.story, { channel: 'person-chat' });
+            }
+
+            // A pretext call (06): bind pretext_say / pretext_ask and se_influence,
+            // restore or start the session, fill the card VARs and arm the debrief —
+            // after restore, sync and the engine VARs, before the first Continue.
+            if (this.params?.pretextCallId) {
+                try { await attachPretext(this, { chat: 'person' }); }
+                catch (e) { console.warn('⚠️ pretext attach failed:', e.message); }
             }
 
             this.isConversationActive = true;
@@ -858,7 +872,38 @@ export class PersonChatMinigame extends MinigameScene {
      * them; non-social tags behave exactly as before.
      */
     _tagOptions() {
-        return { npcId: this.npcId || this.npc?.id || null, engine: this.inkEngine?.story ? this.inkEngine : null };
+        const opts = { npcId: this.npcId || this.npc?.id || null, engine: this.inkEngine?.story ? this.inkEngine : null };
+        // The per-run ledger id, so an #influence / #report tag is deduped under the
+        // same run as the pretext externals (00 §8 "Idempotency"). Set only for a
+        // social conversation; absent for every other NPC, which reads nothing of it.
+        if (this._socialRunId) opts.runId = this._socialRunId;
+        return opts;
+    }
+
+    /**
+     * Begin the per-run influence ledger for a social conversation (00 §8; P4-B).
+     * A run is one open conversation: beginRun gives it a fresh turn counter and
+     * trackTurns advances that counter on each ChooseChoiceIndex, so pretext_say,
+     * pretext_ask and se_influence are idempotent under a reload replay. A chat
+     * with a non-social NPC (every m01 to m08 NPC) does nothing here, because no
+     * social-influence service is installed for those missions.
+     */
+    _beginSocialRun() {
+        const influence = (typeof window !== 'undefined') ? window.socialInfluence : null;
+        const npcId = this.npcId || this.npc?.id || null;
+        if (this._socialRunId || !npcId || !influence?.isSocialCharacter?.(npcId) || !this.inkEngine?.story) return;
+        this._socialRunId = `chat:${npcId}:${Date.now()}`;
+        influence.beginRun?.(this._socialRunId);
+        this._undoTrackTurns = influence.trackTurns?.(this.inkEngine, this._socialRunId) || null;
+    }
+
+    /** End the influence ledger run and unwrap ChooseChoiceIndex. */
+    _endSocialRun() {
+        const influence = (typeof window !== 'undefined') ? window.socialInfluence : null;
+        if (this._undoTrackTurns) { try { this._undoTrackTurns(); } catch (e) { /* unwrap best-effort */ } this._undoTrackTurns = null; }
+        if (influence && this._socialRunId) influence.endRun?.(this._socialRunId);
+        this._socialRunId = null;
+        if (this._pretext?.teardown) { try { this._pretext.teardown(); } catch (e) { /* ignore */ } this._pretext = null; }
     }
 
     /**
@@ -1670,6 +1715,10 @@ export class PersonChatMinigame extends MinigameScene {
      * This is called by the base class before the minigame is removed
      */
     cleanup() {
+        // End the influence ledger run and unwrap ChooseChoiceIndex / the pretext
+        // close interceptor (no-op for a non-social or non-pretext conversation).
+        this._endSocialRun();
+
         // Drop an auto-advance held for the session-resume overlay
         this._releaseOverlayHold?.();
         this._releaseOverlayHold = null;

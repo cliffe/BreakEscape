@@ -42,6 +42,9 @@
  *   getCharacterConfig(characterId) -> normalised config (read-only use)
  *   getInfluence(characterId)      -> number (gameState, else the start value)
  *   getLatched(characterId)        -> string[] of fired threshold ids
+ *   getForced(characterId)         -> string[] of latch ids set by report() with
+ *                                     the value not past their `at` (persisted in
+ *                                     <character>_forced, N-01)
  *   getBand(characterId)           -> 0 calm, 1 wary, 2 refusing, 3 reported, 4 locked out
  *   getLog(characterId)            -> recent { delta, reason, line, value, previous, at, kind } entries
  *   getLastReport(characterId)     -> { reason, at } | null
@@ -70,8 +73,12 @@
  *       'reports' threshold: { reported: false }. Already latched: effects are
  *       not run again.
  *
- * Service: lockout (storage only; the channel checks are Phase 4, S10)
+ * Service: lockout (S10)
  *   getLockoutState(id) -> { active, until, channel, remainingMs }   (lifts first if due)
+ *   isLockedOut(id, channel?) -> boolean. The S10 channel check the entry points
+ *       (person-chat and phone-chat in interactions.js, the pretext callId
+ *       starter, mail performSend) call before opening a conversation or sending.
+ *       Lifts a due lockout first. False for a non-social id or no active lockout.
  *   checkLockout(id) -> true when it lifted
  *   checkAllLockouts()
  *   liftLockout(id)   writes recoverTo silently, clears the latch and band
@@ -110,7 +117,12 @@
  *     change: set at or past `at`, cleared to the declared default at the re-arm
  *     point, left alone between.
  *   - The lockout lift and its recoverTo write run no effects and no toasts;
- *     they do emit the change-only global events so the bar can redraw.
+ *     they do emit the change-only global events so the bar can redraw. The lift
+ *     clears <character>_latched and <character>_forced.
+ *   - A forced report (report()) latches 'reports' and, when the value is not
+ *     past its `at`, records it in <character>_forced so a reload does not re-arm
+ *     it on the next small change (N-01). The mark is dropped once the value goes
+ *     past `at` once; from then on the latch re-arms like any crossed latch.
  *   - Lockout storage: <character>_lockout_until = absolute elapsed ms, -1 for
  *     until.global and also for a permanent (null) lockout, 0 none;
  *     <character>_lockout_channel = person | phone | email | all | "".
@@ -197,7 +209,8 @@ function normaliseCharacter(id, raw, scenario) {
         mirrorToBehavior: raw.mirrorToBehavior === true,
         latchedGlobal: `${id}_latched`,
         lockoutUntilGlobal: `${id}_lockout_until`,
-        lockoutChannelGlobal: `${id}_lockout_channel`
+        lockoutChannelGlobal: `${id}_lockout_channel`,
+        forcedGlobal: `${id}_forced`
     };
 }
 
@@ -218,7 +231,6 @@ class SocialInfluenceService {
         this.logs = new Map();
         this.reports = new Map();
         this.runs = new Map();
-        this.forced = new Map(); // characterId -> Set of latch ids set by report(), not by a crossing
         this.listeners = [];
         this.pendingEvents = [];
 
@@ -236,13 +248,10 @@ class SocialInfluenceService {
         for (const config of this.characters.values()) {
             const value = this.getInfluence(config.id);
             this.lastSeen.set(config.id, value);
-            // A reload with 'reports' latched while the value is not past its `at`
-            // can only be a forced report (or a value that climbed part way back):
-            // hold it as forced so the next small change cannot re-arm it (R-02).
-            const reportsT = config.thresholds.find(t => t.id === 'reports');
-            if (reportsT && this.getLatched(config.id).includes('reports') && !past(reportsT, value)) {
-                this._forcedSet(config.id).add('reports');
-            }
+            // Which latches were forced is read from the persisted <character>_forced
+            // global (N-01): a reload no longer guesses it from 'reports' latched with
+            // the value not past its `at`, which also caught a real crossing that had
+            // climbed part way back (it would have stuck at band 3 until a lift).
             // A start (or saved) value already past a threshold gets its band flags
             // now, silently: no threshold effects, no latch and no events (R-03).
             this._recomputeBandFlags(config, value, null);
@@ -256,12 +265,6 @@ class SocialInfluenceService {
                 this._on(`global_variable_changed:${name}`, () => this.checkLockout(config.id));
             }
         }
-    }
-
-    _forcedSet(characterId) {
-        let set = this.forced.get(characterId);
-        if (!set) { set = new Set(); this.forced.set(characterId, set); }
-        return set;
     }
 
     _on(event, cb) {
@@ -307,6 +310,13 @@ class SocialInfluenceService {
         const config = this.getCharacterConfig(id);
         if (!config) return [];
         const raw = this._globals()?.[config.latchedGlobal];
+        return (typeof raw === 'string' && raw) ? raw.split(',').filter(Boolean) : [];
+    }
+
+    getForced(id) {
+        const config = this.getCharacterConfig(id);
+        if (!config) return [];
+        const raw = this._globals()?.[config.forcedGlobal];
         return (typeof raw === 'string' && raw) ? raw.split(',').filter(Boolean) : [];
     }
 
@@ -378,6 +388,16 @@ class SocialInfluenceService {
         if ((prev ?? '') !== next) this._write(config.latchedGlobal, next, ctx);
     }
 
+    // The forced-latch set persists in <character>_forced (N-01), so a reload
+    // knows a 'reports' latch came from report() and not from a crossing. It is
+    // engine-internal: no ink story reads it, so it rides globalVariables but
+    // never syncs to a story.
+    _writeForced(config, ids, ctx) {
+        const next = [...new Set(ids)].join(',');
+        const prev = this._globals()?.[config.forcedGlobal];
+        if ((prev ?? '') !== next) this._write(config.forcedGlobal, next, ctx);
+    }
+
     _recomputeBandFlags(config, value, ctx) {
         for (const t of config.thresholds) {
             for (const e of t.effects) {
@@ -417,16 +437,17 @@ class SocialInfluenceService {
         const fire = [];
         if (silent) {
             this._writeLatch(config, [], ctx);
-            this.forced.delete(config.id);
+            this._writeForced(config, [], ctx);
         } else {
             const latched = new Set(this.getLatched(config.id));
-            const forced = this._forcedSet(config.id);
+            const forced = new Set(this.getForced(config.id));
+            let forcedChanged = false;
             for (const t of config.thresholds) {
                 if (latched.has(t.id) && forced.has(t.id)) {
                     // A forced latch (report()) never saw the value cross. It holds
                     // until a lockout lift clears it, or until the value has been past
                     // `at` once; from then on it re-arms like any other latch (R-02).
-                    if (past(t, value)) forced.delete(t.id);
+                    if (past(t, value)) { forced.delete(t.id); forcedChanged = true; }
                 } else if (latched.has(t.id)) {
                     if (rearmedAt(t, value, config.rearmMargin)) { latched.delete(t.id); rearmed.push(t.id); }
                 } else if (past(t, value) && !past(t, previous)) {
@@ -438,6 +459,7 @@ class SocialInfluenceService {
             fire.sort((a, b) => (value < previous ? b.at - a.at : a.at - b.at));
             crossed.push(...fire.map(t => t.id));
             this._writeLatch(config, [...latched], ctx);
+            if (forcedChanged) this._writeForced(config, [...forced], ctx);
         }
         this._recomputeBandFlags(config, value, ctx);
         for (const t of fire) this._runEffects(config, t, ctx);
@@ -630,6 +652,24 @@ class SocialInfluenceService {
         };
     }
 
+    /**
+     * S10 channel check: is this character refusing `channel` right now? Lifts a
+     * due lockout first (getLockoutState calls checkLockout), so a check that runs
+     * after the deadline opens the channel and resets influence silently. A
+     * character-scoped lockout stores 'all' and blocks every channel. A character
+     * with no social entry, or no active lockout, returns false, so shipped paths
+     * (no social character) are never blocked. `channel` is 'person', 'phone' or
+     * 'email'; omit it to ask whether any channel is closed.
+     */
+    isLockedOut(id, channel = null) {
+        const config = this.getCharacterConfig(id);
+        if (!config) return false;
+        const state = this.getLockoutState(config.id);
+        if (!state.active) return false;
+        if (!channel) return true;
+        return state.channel === 'all' || state.channel === channel;
+    }
+
     checkLockout(id) {
         const config = this.getCharacterConfig(id);
         if (!config) return false;
@@ -677,7 +717,9 @@ class SocialInfluenceService {
         const latched = this.getLatched(config.id);
         if (latched.includes('reports')) return { reported: true, alreadyLatched: true, band: this.getBand(config.id) };
         this._writeLatch(config, [...latched, 'reports'], ctx);
-        if (!past(threshold, this.lastSeen.get(config.id))) this._forcedSet(config.id).add('reports');
+        if (!past(threshold, this.lastSeen.get(config.id))) {
+            this._writeForced(config, [...this.getForced(config.id), 'reports'], ctx);
+        }
         const at = this._now();
         this.reports.set(config.id, { reason, at });
         const value = this.lastSeen.get(config.id);

@@ -67,6 +67,25 @@ export function resolveTarget(social, targetId) {
 }
 
 /**
+ * SE lockout on the mail channel (00 §8, S10): a send to a social character who is
+ * locked out on email is refused before evaluateMessage runs, so nothing is judged
+ * or consumed (01 §3). window.socialInfluence exists only for a scenario with
+ * social.characters, so shipped mail paths and the data-only bridge tests (no
+ * window, no social service) are untouched. Returns true, and shows the one-line
+ * refusal, when the send is refused.
+ */
+function mailChannelLocked(target) {
+    const svc = (typeof window !== 'undefined') ? window.socialInfluence : null;
+    const characterId = target && target.character;
+    if (!svc || typeof svc.isLockedOut !== 'function' || !isStr(characterId)) return false;
+    if (!svc.isLockedOut(characterId, 'email')) return false;
+    const name = svc.getCharacterConfig?.(characterId)?.displayName || '';
+    const text = name ? `${name} will not read your mail right now.` : 'They will not read your mail right now.';
+    (window.gameAlert || window.showNotification)?.(text, 'warning', '', 2500);
+    return true;
+}
+
+/**
  * Apply boostIfGlobal / strictIfGlobal (00 §7): boost relaxes a factor
  * (demote to advisory, so it no longer gates), strict tightens one (promote to
  * required). Returns a modified COPY so the stored target is never mutated, or
@@ -253,6 +272,12 @@ export function performSend(scene, message) {
         commitRecord(scheduler, mailState, mailboxId, record);
         if (scene.refresh) scene.refresh();
         return { result: null, record, target: null, gameResult: gameResultOf(null, null), claimedFrom: null };
+    }
+
+    // SE lockout on the mail channel (00 §8, S10): refuse before judging, so a
+    // locked-out character's send is not judged, stored or counted; the draft stays.
+    if (mailChannelLocked(target)) {
+        return { result: null, record: null, target, gameResult: null, claimedFrom: null, lockedOut: true };
     }
 
     const metrics = (mailState && mailState.metrics) || (mailState.metrics = {});
