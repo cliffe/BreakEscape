@@ -29,6 +29,14 @@
 #   --start-room ROOM_ID   begin in that room (rewrites THIS game's copy of
 #                          scenario_data['startRoom'], so it is unlocked, loaded
 #                          and the spawn point). Must be a room id in the scenario.
+#                          Phone NPCs (npcType "phone") defined in the original start
+#                          room are moved into the new start room in this game's copy,
+#                          because the client only loads the start room's NPCs at boot
+#                          and would otherwise never register them (contacts, hub,
+#                          #unlock_door). Other NPCs stay where they are.
+#   --carry-npc NPC_ID     also move this NPC (any type) from the original start room
+#                          into the new start room. Repeatable. It spawns at its
+#                          x/y in the new room, so use for position-free NPCs.
 #   --unlock ROOM_ID       also mark a room unlocked (the start room always is)
 #   --set name=value       set a global variable. value is parsed as JSON when it
 #                          can be (true, false, 3, "x"), else kept as a string
@@ -47,9 +55,10 @@ end
 imports_opt = 'none'
 start_room_opt = nil
 unlock_opts = []
+carry_opts = []
 set_opts = []
 give_opts = []
-head_start = { '--start-room' => ->(v) { start_room_opt = v }, '--unlock' => ->(v) { unlock_opts << v },
+head_start = { '--start-room' => ->(v) { start_room_opt = v }, '--unlock' => ->(v) { unlock_opts << v }, '--carry-npc' => ->(v) { carry_opts << v },
                '--set' => ->(v) { set_opts << v }, '--give' => ->(v) { give_opts << v } }
 rest = []
 args = ARGV.dup
@@ -153,7 +162,7 @@ g.save!
 # Head start (test only). Runs after the first save so the game's own scenario
 # copy exists; every edit is to this row.
 head_start_notes = []
-if [start_room_opt, unlock_opts, set_opts, give_opts].any?(&:present?)
+if [start_room_opt, unlock_opts, set_opts, give_opts, carry_opts].any?(&:present?)
   rooms = g.scenario_data['rooms'] || {}
   ([start_room_opt] + unlock_opts).compact.each do |r|
     abort "No room '#{r}' in #{mission.name}. Rooms: #{rooms.keys.join(', ')}" unless rooms.key?(r)
@@ -161,7 +170,20 @@ if [start_room_opt, unlock_opts, set_opts, give_opts].any?(&:present?)
   ps = g.player_state
   if start_room_opt
     sd = g.scenario_data
+    orig_start = sd['startRoom']
     sd['startRoom'] = start_room_opt
+    if orig_start != start_room_opt
+      from_npcs = Array(sd.dig('rooms', orig_start, 'npcs'))
+      moving, staying = from_npcs.partition { |n| n['npcType'] == 'phone' || carry_opts.include?(n['id']) }
+      missing = carry_opts - moving.map { |n| n['id'] }
+      abort "--carry-npc: no NPC #{missing.join(', ')} in original start room #{orig_start}" if missing.any?
+      if moving.any?
+        sd['rooms'][orig_start]['npcs'] = staying
+        dest = (sd['rooms'][start_room_opt]['npcs'] ||= [])
+        moving.each { |n| dest << n unless dest.any? { |d| d['id'] == n['id'] } }
+        head_start_notes << "moved NPCs #{moving.map { |n| n['id'] }.join(',')} #{orig_start} -> #{start_room_opt}"
+      end
+    end
     g.scenario_data = sd
     ps['currentRoom'] = start_room_opt
     head_start_notes << "start_room=#{start_room_opt}"
