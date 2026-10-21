@@ -2,7 +2,7 @@
 
 ## 0. Status, sources and conventions
 
-Stage 5, draft 3, 2026-10-21: round 1's two reviews (`REVIEW_R1_PUZZLES.md`, "F-nn"; `REVIEW_R1_DESIGN.md`, "R1D-…"; §9) and round 2's (`REVIEW_R2.md`, "R2-…"; §10) folded in, with the orchestrator's rulings and user decisions F17–F19 and F10, committed in 57d3d237. Author: stages 4+5 author (Opus). Companion: `../stage_4/objectives_tasks.md` ("OT §n"), which owns aims, tasks, the story-door pattern (OT §4), the clock (OT §6), the voiced calls (OT §13) and the test states (OT §9). Sources as OT §0, plus the prompt `story_design/story_dev_prompts/05_room_layout_design.md`, `mission-puzzle-chains` (lock order, cumulative kit, silent-failure bugs), `mission-room-dressing` (layout constraints only), README "Room Layout System" and "Authoring Rules", and the engine code (§6 cites it). Models: m07 and m08's `scenario.json.erb`.
+**Stages 4–5 complete** (draft 4, 2026-10-21; round 3's findings folded in, §11; no further review round). Draft 3: round 1's two reviews (`REVIEW_R1_PUZZLES.md`, "F-nn"; `REVIEW_R1_DESIGN.md`, "R1D-…"; §9) and round 2's (`REVIEW_R2.md`, "R2-…"; §10) folded in, with the orchestrator's rulings and user decisions F17–F19 and F10, committed in 57d3d237. Author: stages 4+5 author (Opus). Companion: `../stage_4/objectives_tasks.md` ("OT §n"), which owns aims, tasks, the story-door pattern (OT §4), the clock (OT §6), the voiced calls (OT §13) and the test states (OT §9). Sources as OT §0, plus the prompt `story_design/story_dev_prompts/05_room_layout_design.md`, `mission-puzzle-chains` (lock order, cumulative kit, silent-failure bugs), `mission-room-dressing` (layout constraints only), README "Room Layout System" and "Authoring Rules", and the engine code (§6 cites it). Models: m07 and m08's `scenario.json.erb`.
 
 Conventions: sizes in grid units (GU; 1 GU = 5 tiles wide, 4 tiles of floor tall, plus a 2-tile north wall; README:1618-1639). NPC and object positions are tiles inside the room, `{x, y}`, on the floor (y ≥ 3 in a 2-GU-tall room, y ≥ 2 in a 1-GU-tall one), one free tile around every readable and every door's approach, and no NPC on an interactable's face (README:1834; R1D-M10). Door tiles used below: a north or south door sits at tile x 1 or x 8 of a 10-wide room by parity (stage 9's `predict_door_sides.py` says which); an east or west door at row 2. **A mapping's `setVisible` and scene opening act only on its own NPC** (F-02), so every reveal or hide below is the NPC's own mapping; a NPC in a later room reads a global HaX sets, on its own `room_entered:<own room>`. **A reload respawns the player at the forward post** (F-06), so every reveal also has its `room_entered` form. Every person on a forced scene or the critical path is listed with `koImmune` or with its KO cover. Room ids are working names.
 
@@ -214,7 +214,7 @@ Both copies are knockable (`tunnel_guard_ko`); nothing hangs on them.
 
 **Five ways through** (OT §4.5): the cracker while the guard's cone is off the keypad; the fingerprint plate; the code card; from inside; Ghost's code. **Why PIN** (accepted by the orchestrator): a door takes one lock type, and with PIN every way is the engine's own persisted unlock path.
 
-**Objects.** `clock_gallery` (the lock panel, (6, 2), on the wall two tiles west of the lock, not under it); `lock_keypad_plate` (the keypad's face plate, (9, 3) on the east wall beside the lock, **dustable**: shows the four worn keys; sets `keypad_dusted`; F-07); `farah_chair` ((4, 4), a coat on an empty chair, visible on `imran_outcome === 'talked_round'`); `slit_window` ((3, 2), decor; the grey head below).
+**Objects.** `clock_gallery` (the lock panel, (6, 2), on the wall two tiles west of the lock, not under it); `lock_keypad_plate` (the keypad's face plate, (9, 3) on the east wall beside the lock, **dustable**: shows the four worn keys; sets `keypad_dusted`; F-07); `farah_chair` ((4, 5), Farah's post, off the patrol row; a coat on an empty chair, visible on `imran_outcome === 'talked_round'`); `slit_window` ((3, 2), decor; the grey head below).
 
 **NPCs.** Up to seven in 40 floor tiles, so they are spread along x 2–7 with the two approaches clear. This room is a talk or a fight, never stealth (R1D §2d″).
 
@@ -223,10 +223,10 @@ Both copies are knockable (`tunnel_guard_ko`); nothing hangs on them.
 | Victoria (`victoria_gallery`) | (5, 3) | `recruited`, or `escaped` without the threat | knockable, `victoria_ko`; `"unlockable": ["core"]` |
 | Victoria, the threat (`victoria_threat`) | (5, 3), pistol held low (her own sprite) | `escaped and m03_sterling_on_call_seen` (a second copy, F-22) | knockable, `victoria_ko` |
 | Pieter Vos (`vos`) | (5, 3) | `ko`, `""`, or `arrested` | knockable, `vos_ko`; `"unlockable": ["core"]`; holds his own code card (F-12) |
-| `lock_guard` | patrol (7, 4) → (2, 4), `dwellTime` 20 s at (2, 4) facing the slit windows, no `pauseForPlayer`; `los.visualize: true` (his cone is drawn, so the player sees when the keypad is clear); `los.challengeOnSight` with `requireGlobal: "at_keypad"` and `skipIfGlobal: ["outer_lock_open", "lock_guard_challenged"]` (R2-M4; OT §4.5) | always | carries the code card (`itemsHeld`, dropped on a knock-out); his own ink gives it on "[Sterling sent me.]" or "[The rota says you carry the card.]"; `player_spotted:lock_guard` opens his scene (OT §4.5) |
+| `lock_guard` | patrol (7, 4) → (2, 4), `dwellTime` 20 s at (2, 4) facing the slit windows, no `pauseForPlayer`; `los.visualize: true` (his cone is drawn, so the player sees when the keypad is clear); `los.challengeOnSight` with `requireGlobal: "at_keypad"` and `skipIfGlobal: ["lock_guard_challenged"]` (not `outer_lock_open`, which a successful crack sets before his check; R3-M1); `at_keypad` cleared on leaving the gallery, on entering it and on `game_loaded` (R3-m2) (R2-M4; OT §4.5) | always | carries the code card (`itemsHeld`, dropped on a knock-out); his own ink gives it on "[Sterling sent me.]" or "[The rota says you carry the card.]"; `player_spotted:lock_guard` opens his scene (OT §4.5) |
 | `monitor_guard` | (3, 5) | unless `gallery_camera_blinded` (then he barks and hides himself) | knockable |
 | `farah_guard` | (4, 5) | unless `imran_outcome === 'talked_round'` | knockable |
-| `reinforcement_a`, `_b` | (3, 4), (4, 4), clear of the stair's approach (R2-m6) | `victoria_gallery === 'trusted'` with Zero Day's share live (the alarm), **and** `!nightshade_taken_in`. With Nightshade taken in, they never appear: one narrator line instead ("Boots on the stair, then Nightshade's voice on the intercom, and the boots stop."; R1D-m9) | hostile, knockable |
+| `reinforcement_a`, `_b` | (3, 3), (4, 3), off the lock guard's patrol row and clear of the stair's approach (R2-m6, R3-m4) | `victoria_gallery === 'trusted'` with Zero Day's share live (the alarm), **and** `!nightshade_taken_in`. With Nightshade taken in, they never appear: one narrator line instead ("Boots on the stair, then Nightshade's voice on the intercom, and the boots stop."; R1D-m9) | hostile, knockable |
 | `quintero_lock`, `minder_lock` | (7, 5) | on `outer_lock_open` (their own mappings), per the staging rule; one of the two | Quintero knockable |
 | `nightshade_lock` | (6, 5) | on `outer_lock_open`, `nightshade_taken_in` | `koImmune` |
 
@@ -388,10 +388,10 @@ The list is MC's structure review (`stage_3/REVIEW_R1_STRUCTURE.md:323-341`). Ve
 - **`unlockCondition.globalVariable` is evaluated, not re-checked** (`systems/objectives-manager.js:688-700`, `:849-869`; F-04): the WREN aim opens by an explicit `unlockAim` (OT §2).
 - **Sight isn't checked while a minigame is open**; a sighting that holds at the close fires then (`systems/npc-sight-challenge.js:26-29`; F-09): the lock guard's challenge comes at the cracker's close (OT §4.5).
 - **`#give_item` gives only the speaker's own items** (`chat-helpers.js:98-113`; F-12): Vos holds his own card. No pickpocketing exists.
-- **Flag stations:** four, one flag each by `flags_for_vm_slice` (`app/models/break_escape/mission.rb:269-280`; F-18); a wrong-station flag gets the `hintOnlyFlags` message (`games_controller.rb:1180-1216`, `:2389-2405`); one reward per flag, `set_global` rewards applied client-side, so each flag global is bridged a second time from its task's `objective_task_completed` (F-14).
+- **Flag stations:** four, one flag each by `flags_for_vm_slice` (`app/models/break_escape/mission.rb:269-280`; F-18); a wrong-station flag gets the `hintOnlyFlags` message (`games_controller.rb:1180-1216`, `:2389-2405`); one reward per flag; m10's are `emit_event` rewards that fire from the server's response, and HaX's mapping sets each flag's global. The server's `pending_events` copy isn't read by the client, so a tab that dies in that moment loses the global: a narrow window, accepted (F-14, R3-m1).
 - **`door_sign` is the unlock toast's text** (`utils/room-display-name.js:12`; F-19): signs are names.
 - **Music conditions are JavaScript** and need `globalVars.` (`music/scenario-music-events.js:42-54`; F-17). F10's `silence` playlist is committed (`music/music-config.js:154-164`).
-- **Voiced forced calls** (F17) are committed: `"voiced": true` on a phone-chat mapping or `timedConversation` (`systems/npc-manager.js:336, 677, 1183`); narration stays silent; the batch voices the contact's whole phone story. OT §13 lists them.
+- **Voiced forced calls** (F17) are committed: `"voiced": true` on a phone-chat mapping or `timedConversation` (`systems/npc-manager.js:336, 677, 1183`); narration stays silent; under F20 only what a voiced call opens is voiced. OT §13 lists them (about 85 lines).
 - **A PIN lock emits no `door_unlock_failed`** (`systems/unlock-system.js:263-270`; R2-M3): the pointer to the code card keys on `door_unlock_attempt`.
 - **`challengeOnSight` fires on any sighting** unless scoped (`systems/npc-sight-challenge.js:1-57`; R2-M4): `requireGlobal` and `skipIfGlobal` scope the lock guard to the keypad.
 - **Dusting** emits `fingerprint_collected:<owner>` with `objectId` and sets no global itself (`systems/biometrics.js:20-100`; R2-m4).
@@ -416,10 +416,10 @@ None is made here; OT §10 has the objective-side ones (S4-1 to S4-22). Updated 
 | S5-6 | FA §4.6, arc §10.1 | The two 06:00 texts arrive in the thread after the cutscene | §6 item 44; M-15 |
 | S5-7 | s0 §4 Option 1, SE §5 | Map types per §2's table; three new maps and a dressed or new server hall; bunker props first | R1D-M9 |
 | S5-8 | FA §5.3 | Forced-scene holders are `koImmune`; their `npc_ko` nets are dropped | the trial landed |
-| S5-9 | s0 §4, arc §6.3, FA §5.3 | **The server hall is 4×2**, and the gallery leaves it by its east wall (the core above the gallery) | R1D-M9; keeps every door aligned |
+| S5-9 | s0 §4, arc §6.3, FA §5.3 | **The server hall is 4×2**, and the gallery leaves it by its east wall (the core east of the gallery since round 2) | R1D-M9; keeps every door aligned |
 | S5-10 | MC §3.3, arc §6.1 item 5 | The workshop's "old hatch" route becomes the fitter's spare card in a locker back in the security office | F-08b: a boss-key return trip that spends the pick |
 | S5-11 | MC §3.4, arc §7.3, FA rows 45, 53 | Voltage's print is lifted in m10 from a dustable bypass panel; the m04 print is what it matches | F-07 |
-| S5-12 | MC §3.5, FA §4.4 | The outer lock's keypad can be dusted (the four worn keys); a wrong code names the duty guard | F-07, F-08a |
+| S5-12 | MC §3.5, FA §4.4 | The outer lock's keypad can be dusted (the four worn keys); the lock guard's line on the first try at the keypad names the duty guard as the code's holder | F-07, F-08a |
 | S5-13 | arc §6.3 item 6, FA §6.2 | Flag 3 is submitted at the sealed hatch's own station | R1D-m5 |
 | S5-14 | MC §3.5 | With Nightshade holding the lock, the trusted-Victoria reinforcements never appear (a narrator line instead) | R1D-m9 |
 | S5-15 | MC §3.5 | Escaped Victoria with the threat is her own NPC copy | F-22 |
@@ -476,4 +476,8 @@ Measured against the puzzles reviewer's alignment run on round 0's eight rooms; 
 | R2-m6 | `duty_guard`'s endpoint, the reinforcements, the gate terminal moved; the fifth expected validator warning (§2) |
 
 Stage 9 re-runs `check_door_alignment.py` on the final scenario; the round 2 reviewer's run on this layout aligned every pair.
+
+## 11. Review round 3 outcomes
+
+`REVIEW_R3.md`, 2026-10-21: 3 majors, 5 minors, all applied, none withdrawn; OT §15 maps each. In this file: R3-M1 and R3-m2 (the lock guard's `skipIfGlobal` and the clears of `at_keypad`, §2.7), R3-m4 (`farah_chair` and the reinforcements off his patrol row, §2.7), R3-m1 and R3-m5 (stale copies in §6 and §7). The orchestrator checks directly from here.
 
