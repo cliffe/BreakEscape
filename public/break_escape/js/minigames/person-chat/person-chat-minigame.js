@@ -1603,6 +1603,12 @@ export class PersonChatMinigame extends MinigameScene {
      * @param {string} message - Text to show
      */
     showConversationOverMessage(message) {
+        // A pretext call finalises here: outcome, debrief, session closed (06 §6).
+        // The "press ESC" line is for an ordinary conversation.
+        if (this._pretext && !this._pretext.finished) {
+            this._pretext.finish();
+            return;
+        }
         this.ui.showDialogue(message, 'system');
         if (this.params.disableClose === true) {
             // Not under the session-resume overlay: the closing line stays up until Resume

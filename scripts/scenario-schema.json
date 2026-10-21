@@ -239,6 +239,86 @@
             }
           },
           "additionalProperties": true
+        },
+        "landingPages": {
+          "type": "array",
+          "description": "The landing-page builder (design 07). One record per buildable credential-harvest page. Fields are linted by scripts/validate_social/landing.rb (00 S11 lint field list); this schema fixes only the outer shape. No form controls, no network, invented brands, .example hosts.",
+          "items": {
+            "type": "object",
+            "required": ["id", "targets", "brands"],
+            "properties": {
+              "id": { "type": "string" },
+              "linkText": { "type": "string", "description": "The address the mail client shows for the link, authored; the player never types it (host linted like a .example address)" },
+              "pretext": { "type": "object", "additionalProperties": true },
+              "targets": {
+                "type": "object",
+                "description": "Per-target strictness keyed by a phishTargets id; { linkThreshold, minDomainTier }. Each key must be a target that requires linkCredible.",
+                "additionalProperties": { "type": "object", "additionalProperties": true }
+              },
+              "brands": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "required": ["id"],
+                  "properties": {
+                    "id": { "type": "string" },
+                    "name": { "type": "string", "description": "Invented brand name; checked against the real-brand denylist" },
+                    "look": { "type": "string", "enum": ["generic", "parody"] },
+                    "realDomain": { "type": "string", "description": "A fictional .example host (00 S11 lint field list)" },
+                    "realFields": { "type": "array", "items": { "type": "string" } },
+                    "decoyWords": { "type": "array", "items": { "type": "string" }, "description": "Allowlisted domain labels; each must pass the denylist" },
+                    "domains": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "required": ["id", "domain"],
+                        "properties": {
+                          "id": { "type": "string" },
+                          "domain": { "type": "string", "description": "Shown as typed; ASCII unless trick is 'homograph' with a \\u escape (00 S11)" },
+                          "browserDomain": { "type": "string", "description": "The punycode (xn--) form, shown as a teaching contrast; equals the encoding of domain" },
+                          "trick": { "type": "string" },
+                          "tier": { "type": "integer", "minimum": 0, "maximum": 3 },
+                          "minProfile": { "type": "string" }
+                        },
+                        "additionalProperties": true
+                      }
+                    }
+                  },
+                  "additionalProperties": true
+                }
+              },
+              "purposes": { "type": "array", "items": { "type": "object" } },
+              "logos": { "type": "array", "items": { "type": "object" } },
+              "wordings": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": { "type": "string" },
+                    "match": { "type": "boolean" },
+                    "slips": { "type": "boolean" },
+                    "text": { "type": "string" }
+                  },
+                  "additionalProperties": true
+                }
+              },
+              "fields": { "type": "array", "items": { "type": "string" } },
+              "extraSensitiveFields": { "type": "array", "items": { "type": "string" } },
+              "points": { "type": "object", "additionalProperties": true },
+              "strings": { "type": "object", "additionalProperties": true },
+              "conceptCards": { "type": "array", "items": { "type": "string" }, "description": "social.conceptCards ids shown by the builder" },
+              "capture": {
+                "type": "object",
+                "properties": {
+                  "address": { "type": "string", "description": "A fictional .example address (00 S11 lint field list)" },
+                  "note": { "type": "string", "description": "Authored capture note; holds no password value" }
+                },
+                "additionalProperties": true
+              },
+              "profile": { "type": "string", "enum": ["student", "awareness", "mission"] }
+            },
+            "additionalProperties": true
+          }
         }
       },
       "additionalProperties": true

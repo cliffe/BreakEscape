@@ -411,6 +411,7 @@ module ValidateSocial
         sites(osint).each do |site|
           Mail.hash_list(site['pages']).each do |pg|
             issues.concat(lint_field(ctx, pg['url'], "social.osint.sites[#{site['id']}].pages[#{pg['id']}].url")) if pg.key?('url')
+            issues.concat(lint_field(ctx, pg['path'], "social.osint.sites[#{site['id']}].pages[#{pg['id']}].path")) if pg.key?('path')
           end
         end
       end

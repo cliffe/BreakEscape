@@ -371,11 +371,21 @@ export class OsintBrowserMinigame extends SocialOverlayScene {
 
     _headshot(profile) {
         const person = this._person(profile.person);
-        const key = String(profile.avatar || person?.avatar || `${profile.person}_headshot`).replace(/\.png$/, '');
+        const raw = profile.avatar || person?.avatar;
+        // No avatar: fall back to the default person icon, as 00 says the board's people
+        // card and the mail reader do (never nothing). A named avatar that fails to load
+        // is swapped for the same default.
+        if (!raw) return this._defaultHeadshot();
+        const key = String(raw).replace(/\.png$/, '');
         const img = h('img', { class: 'ob-headshot', src: `${CHARACTERS}${key}.png`, alt: '', 'aria-hidden': 'true',
             width: 32, height: 32 });
-        img.addEventListener('error', () => { img.style.visibility = 'hidden'; });
+        img.addEventListener('error', () => { img.replaceWith(this._defaultHeadshot()); });
         return img;
+    }
+
+    _defaultHeadshot() {
+        return h('img', { class: 'ob-headshot ob-headshot-default', src: `${ICON}mail-account.png`, alt: '',
+            'aria-hidden': 'true', width: 32, height: 32 });
     }
 
     _profileLink(profile) {
@@ -396,7 +406,7 @@ export class OsintBrowserMinigame extends SocialOverlayScene {
             h('div', { class: 'ob-profile-who' },
                 h('h3', { class: 'ob-page-title', tabindex: '-1', text: this._profileName(profile) }),
                 profile.handle ? h('span', { class: 'ob-handle ob-readable', text: profile.handle }) : null,
-                profile.bio ? h('p', { class: 'ob-bio', text: profile.bio }) : null));
+                profile.bio ? h('p', { class: 'ob-bio ob-readable', text: profile.bio }) : null));
     }
 
     _documentView(site) {
@@ -552,10 +562,10 @@ export class OsintBrowserMinigame extends SocialOverlayScene {
                 h('span', { class: 'ob-line ob-field-value ob-readable', text: block.value ?? '' })];
         }
         if (k === 'post') {
-            return [h('span', { class: 'ob-line ob-post-text', text: block.text || '' }),
+            return [h('span', { class: 'ob-line ob-post-text ob-readable', text: block.text || '' }),
                 block.date ? h('span', { class: 'ob-line ob-post-date', text: block.date }) : null];
         }
-        return [h('span', { class: 'ob-line ob-block-text', text: block.text || '' })];
+        return [h('span', { class: 'ob-line ob-block-text ob-readable', text: block.text || '' })];
     }
 
     _selectable(block, site) {
@@ -600,6 +610,13 @@ export class OsintBrowserMinigame extends SocialOverlayScene {
                 text = `Noted: ${factText}`;
                 this._collected.push(fact);
                 this._flash = block.id;
+                // The grant_fact action toasts this; the browser calls grantFact
+                // itself, so the same line has to fire here (P2-T F4).
+                const newlyReady = res.readiness?.newlyReady || [];
+                if (newlyReady.length) {
+                    window.gameAlert?.('You know enough to approach now — write to them from a mail terminal.',
+                        'success', 'Ready to approach', 6000);
+                }
             } else if (isHeld(this.globals, fact)) {
                 outcome = 'already';
                 text = `Already noted: ${factText}`;

@@ -67,6 +67,23 @@ module BreakEscape
       refute @game.player_state.key?('mailState')
     end
 
+    test 'a withReply record keeps pendingMessage but drops the transient judgePending flag (T2-6)' do
+      rec = msg('p1', folder: 'sent').merge(
+        'judgePending' => true,
+        'pendingMessage' => { 'targetId' => 'hampshire', 'subject' => 's_application',
+                              'templates' => { 'pretext' => 'pretext_apply' }, 'slots' => {},
+                              'headerFrom' => { 'account' => true }, 'attachment' => 'kit_cv' }
+      )
+      @game.merge_mail_state!('mailboxes.guest.p1' => rec)
+
+      stored = mail.dig('mailboxes', 'guest', 'messages').find { |m| m['id'] == 'p1' }
+      assert stored
+      refute stored.key?('judgePending'), 'judgePending is not whitelisted (the job queue is the truth)'
+      assert_equal 'hampshire', stored.dig('pendingMessage', 'targetId')
+      assert_equal 'pretext_apply', stored.dig('pendingMessage', 'templates', 'pretext')
+      assert_equal 'kit_cv', stored.dig('pendingMessage', 'attachment')
+    end
+
     test 'a seeded stub is stored as a stub' do
       stub = { 'id' => 'welcome', 'seeded' => true, 'read' => true, 'gameTime' => 0 }
       @game.merge_mail_state!('mailboxes.guest.welcome' => stub)

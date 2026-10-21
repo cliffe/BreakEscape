@@ -195,6 +195,9 @@ test('immediate feedback: the review card names caught, missed and false flags a
     assert.match($(s, '.tri-review-card').textContent, /What would have happened: Opening it/);
     verdict(s, 'm4_jed', 'report', ['senderAuth']);
     assert.match($(s, '.tri-review-card').textContent, /real, but reporting is never wrong/);
+    const mark = $(s, '.tri-card-verdict');
+    assert.ok(mark.classList.contains('acceptable'));
+    assert.equal(mark.classList.contains('wrong'), false);
     assert.match($(s, '.tri-review-card').textContent, /SPF failed, yet DKIM and DMARC passed/);
     assert.equal(state(s).step, 'sort');                // immediate: no review step, "See result" on the last card
     assert.equal($(s, '.tri-next').textContent, 'Next message');
@@ -278,7 +281,7 @@ test('Finish completes with the result; persistResult holds Finish while saving 
     playWorkedExample(t);
     click($(t, '.tri-next'));
     assert.equal(state(t).saving, true);
-    assert.match($(t, '.tri-save-note').textContent, /Saving your result\.\.\./);
+    assert.equal($(t, '.tri-save-note').textContent, '');
     assert.equal($(t, '.tri-finish').disabled, true);
     esc();
     assert.equal(ended.length, 0, 'Close is held while saving');

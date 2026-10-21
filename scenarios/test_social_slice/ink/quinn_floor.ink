@@ -13,6 +13,8 @@ EXTERNAL pretext_ask(ask_id)
 VAR quinn_influence = 0
 VAR pretext_person_name = ""
 VAR pretext_person_value = ""
+VAR se_intel_desk_location = false
+VAR se_intel_shift_pattern = false
 
 === function pretext_say(utterance_id) ===
 ~ return 0
@@ -32,10 +34,10 @@ Quinn: Hiya. After someone in particular?
     -> reaction(pretext_say("press_floor"))
 + [My manager pointed me your way.]
     -> reaction(pretext_say("name_floor"))
-+ [Which desk is theirs?]
-    -> ask_reaction(pretext_ask("desk_location"))
-+ [And what shift are they on?]
-    -> ask_reaction(pretext_ask("shift_pattern"))
++ { not se_intel_desk_location } [Which desk is theirs?]
+    -> ask_reaction(pretext_ask("desk_location"), "desk")
++ { not se_intel_shift_pattern } [And what shift are they on?]
+    -> ask_reaction(pretext_ask("shift_pattern"), "shift")
 + [No worries, I'll catch them later.]
     -> END
 
@@ -51,9 +53,14 @@ Quinn: Hiya. After someone in particular?
 }
 -> floor
 
-=== ask_reaction(result) ===
+=== ask_reaction(result, which) ===
 { result:
-- 1: Quinn: Over by the window, there.
+- 1:
+    { which == "shift":
+        Quinn: Early shift. They're in from eight.
+    - else:
+        Quinn: Over by the window, there.
+    }
 - 2: Quinn: Remind me who you are again?
 - else: Quinn: I'd rather not say, sorry.
 }

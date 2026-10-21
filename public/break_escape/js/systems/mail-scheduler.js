@@ -43,7 +43,7 @@ import { writeGlobal } from './global-writer.js';
 export const MAIL_MESSAGE_FIELDS = [
   'id', 'thread', 'mailbox', 'folder', 'fromAccount', 'from', 'to', 'targetId', 'subject',
   'templates', 'slots', 'body', 'attachment', 'link', 'landed', 'tells', 'time', 'gameTime',
-  'read', 'kind', 'seeded', 'links', 'attachments', 'highlights'
+  'read', 'kind', 'seeded', 'links', 'attachments', 'highlights', 'pendingMessage'
 ];
 
 // Default reply delay when neither the character nor the target authors one (00 §10)

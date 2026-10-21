@@ -24,7 +24,7 @@ for (const rel of [
     'systems/phish-rules.js', 'systems/global-writer.js', 'systems/social-influence.js', 'ui/influence-bar.js', 'systems/mail-scheduler.js',
     'minigames/mail-client/mail-client-minigame.js', 'minigames/mail-client/mail-reader.js',
     'minigames/mail-client/mail-data.js', 'minigames/mail-client/mail-notification.js',
-    'minigames/mail-client/mail-composer.js', 'minigames/mail-client/mail-bridge.js'
+    'minigames/mail-client/mail-composer.js', 'minigames/mail-client/mail-bridge.js', 'minigames/landing-page-builder/landing-page-model.js'
 ]) {
     mkdirSync(dirname(join(dir, rel)), { recursive: true });
     writeFileSync(join(dir, rel), readFileSync(join(js, rel), 'utf8'));
@@ -340,4 +340,56 @@ test('draft change persists to the scheduler, one per account', () => {
     const { scene, scheduler } = openClient();
     scene._onDraftChange({ to: 'x', subject: 's_hello', templates: {}, slots: {}, attachment: null, link: null });
     assert.deepEqual(scheduler.state.drafts.guest.subject, 's_hello');
+});
+
+// ── T2-6: the withReply teaching checklist survives a reload ─────────────────
+
+test('withReply: the verdict is held until the delivery job runs, then the checklist shows', () => {
+    clock = 0;
+    const { scene, scheduler, host } = openClient();
+    scene.params.checklistTiming = 'withReply';
+    scene._handleComposeSend(message());
+    // Held, not shown: the Sent record keeps the composed message for the rebuild.
+    assert.equal(host.querySelector('.mail-checklist'), null, 'no checklist before the reply');
+    const rec = scheduler.state.mailboxes.guest.messages.find((m) => m.folder === 'sent');
+    assert.ok(rec.pendingMessage, 'the composed message is kept on the record');
+    // judgePending is deliberately not persisted by the scheduler (the job queue is the
+    // truth for whether a verdict is still pending); pendingMessage is what the rebuild needs.
+    // The reply lands; now the checklist appears and the pending message is cleared.
+    clock = 15000;
+    scheduler.tick(clock);
+    assert.ok(host.querySelector('.mail-checklist'), 'the checklist shows once the reply lands');
+    assert.equal(rec.pendingMessage, undefined, 'pendingMessage cleared once shown');
+});
+
+test('withReply + reload: the checklist is rebuilt from the persisted record when the in-memory hold is gone', () => {
+    clock = 0;
+    const first = openClient();
+    first.scene.params.checklistTiming = 'withReply';
+    first.scene._handleComposeSend(message());
+    const rec = first.scheduler.state.mailboxes.guest.messages.find((m) => m.folder === 'sent');
+    assert.ok(rec.pendingMessage, 'record carries the composed message');
+
+    // Reload: drop the open client (its in-memory _heldChecklists is lost) and reopen
+    // over the same scheduler state, as a page reload does.
+    first.scene.cleanup();
+    const host = document.getElementById('host');
+    host.textContent = '';
+    const reopened = new MailClientMinigame(host, {
+        social: first.social, mailClient: first.social.mailClient, accountIds: ['guest'],
+        checklistTiming: 'withReply', scheduler: first.scheduler,
+        mailState: first.scheduler.state, globals: window.gameState.globalVariables
+    });
+    window.MinigameFramework = { currentMinigame: reopened, endMinigame() {} };
+    reopened.init();
+    reopened.start();
+    assert.equal(reopened._heldChecklists, undefined, 'the reopened client has no in-memory hold');
+
+    // The queued job runs: the checklist is rebuilt from record.pendingMessage.
+    clock = 15000;
+    first.scheduler.tick(clock);
+    assert.ok(host.querySelector('.mail-checklist'), 'the checklist is rebuilt after the reload');
+    assert.ok(host.querySelector('.mail-checklist-banner.landed'), 'the rebuilt verdict is the landing');
+    assert.equal(rec.pendingMessage, undefined, 'pendingMessage cleared after the rebuild');
+    reopened.cleanup();
 });

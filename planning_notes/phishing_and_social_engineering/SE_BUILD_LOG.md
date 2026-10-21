@@ -4,7 +4,7 @@ Brief: `docs/agents/SE_BUILD_BRIEF.md`. Plan: `IMPLEMENTATION_PLAN.md`. Artefact
 
 ## Resume
 
-Status (2026-10-21): Phase 0 closed (two review rounds, ten browser comparison runs, two targeted checks). Phase 1a closed (`5e2889ff`). Phase 1 closed (`391b7dd7`). Phases 2-4 wave 1 and the P2/P3 wiring committed. Phases 2-4 built; Grok reviews found 2 blockers and 5 majors; a Grok fix round is running. Phase 5 A-F and the lab (plan, data, ink, report, board modes) built and committed. Running: fix round 2 for Phases 2-4 (opus48), P5-G builder wiring, P6-M meter and mail debt. Next: P5-T, P5-R; P6-W, P6-G, P6-T0, P6-R, then lab playtests and design cycles. Waiting on the user: art batch 1 questions (art_batch1/REVIEW.md) and the R-01 speaker-tie question below.
+Status (2026-10-21): Phase 0 closed (two review rounds, ten browser comparison runs, two targeted checks). Phase 1a closed (`5e2889ff`). Phase 1 closed (`391b7dd7`). Phases 2-4 wave 1 and the P2/P3 wiring committed. Phases 2-4 built; Grok reviews found 2 blockers and 5 majors; a Grok fix round is running. Phases 0-4 closed; Phase 5 built and wired; the lab built (plan, data, ink, report, board modes, lints, meter). Next: P5-T and P5-R (builder bridge and review), P6-W lab wiring, P6-T0, P6-R, lab playtests L1-L6 and F1-F17, then design cycles. Waiting on the user: art batch 1 questions (art_batch1/REVIEW.md) and the R-01 speaker-tie question below.
 
 ## User instructions for this build (2026-10-21)
 
@@ -261,6 +261,10 @@ Fix round 1 for Phases 2-4 (grok): every P2-T, P3-T and P4-T finding reported fi
 
 - **P6-M** (opus48): live red-flag meter while composing (per target; on for Hampshire), template selects show the filled sentence, influence reasons in words, toolbar clip fixed, the withReply checklist rebuilt after a reload (`pendingMessage` whitelisted on the server). Mail tests 132/132; Rails 723/0. Orchestrator checked the meter screenshot. Its residual urgency flag on Hampshire is Grok's R-1 change, which fix round 2 reverts.
 - **P6-G** (Sonnet): engagement step and one-correct lints in `board.rb`; `lab.rb` (every scored option has a `why`, completing globals declared, mappings name declared globals and real tasks); lab block in `missions.json`. Validator tests 122/122; lab and slice `--strict-social` clean; reopencheck on the lab 0 problems.
+
+- **P5-G** (opus48): builder wired (scene, starter, `page-builder` branch, preload, CSS, schema, placeholder sprite); mail `link` kind (offered only for a target a page serves, nested builder launch and re-attach) and the send-path victim record and one capture note; defender-string keys aligned to the model (`defDomainTier<N>`); slice fixture page `payroll_login` for a new `lord` target. Tests 24/24 and 8/8; social and validator 699/699. Note: `mail-bridge.js` now imports the landing model, so every test that copies it must copy the model too (already done in the tree; commit together).
+
+- **Fix round 2 for Phases 2-4** (opus48): every finding in both Claude reviews fixed (replay now uses Teague's spoofed send; `pay_today` uses a look-alike domain with a header note; new bridge-3b opens the replayed card, bridge-3c the collapsed header; check-bridge `--expect` fails on a short run; hint ladder advances on any failed call). Orchestrator re-ran: full Node 1499/1499, Rails 723/0, slice and lab `--strict-social` 0. Known harness gaps: a reload while an overlay is open breaks the session on this machine's headless shell (bridge-1a and bridge-3 at that step; reload-free equivalents pass), and bridge-1a B1 still expects one board person (the slice now has Lord). Phases 2, 3 and 4 closed. Committed with P5-G and P6-M.
 
 ## Review rounds
 

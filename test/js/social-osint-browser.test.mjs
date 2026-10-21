@@ -354,10 +354,58 @@ test('arrow keys move along the sites strip; every control is reachable by Tab (
 
 test('the stylesheet puts domains in the readable face and has a narrow layout', () => {
     const css = readFileSync(join(js, '../css/osint-browser-minigame.css'), 'utf8');
-    assert.match(css, /\.ob-address-text[\s\S]*?font-family:\s*var\(--se-font-readable/);
+    // Match within a single rule block (up to the next `{`, then the first declaration):
+    // a loose [\s\S]*? would pass even if the font-family moved to a later, unrelated rule.
+    assert.match(css, /\.ob-address-text[^{]*\{[^}]*font-family:\s*var\(--se-font-readable/);
+    assert.match(css, /\.ob-post-text[^{]*\{[^}]*font-family:\s*var\(--se-font-readable/);
+    assert.match(css, /\.ob-bio[^{]*\{[^}]*font-family:\s*var\(--se-font-readable/);
     assert.match(css, /@media \(max-width: 700px\)/);
     assert.match(css, /prefers-reduced-motion/);
     assert.doesNotMatch(css, /#0f0\b|#00ff00/i, 'nothing hard-coded green');
+});
+
+test('a post and a paragraph carry the readable face', () => {
+    setGlobals();
+    const s = open();
+    const post = s._lines({ kind: 'post', text: 'Month-end is painless.' })[0];
+    const para = s._lines({ kind: 'p', text: 'Friday lunch is in the kitchen.' })[0];
+    assert.ok(post.classList.contains('ob-post-text') && post.classList.contains('ob-readable'));
+    assert.ok(para.classList.contains('ob-block-text') && para.classList.contains('ob-readable'));
+});
+
+test('a profile with no avatar falls back to the default person icon, never nothing (R-8)', () => {
+    setGlobals();
+    const s = open();
+    // A profile whose person is unknown and carries no avatar: 00 says the fallback is the
+    // default icon, so _headshot returns an <img>, not null.
+    const img = s._headshot({ person: 'nobody' });
+    assert.ok(img, 'no headshot element for a profile without an avatar');
+    assert.equal(img.tagName, 'IMG');
+    assert.ok(img.classList.contains('ob-headshot') && img.classList.contains('ob-headshot-default'));
+    assert.match(img.getAttribute('src'), /mail-account\.png$/);
+});
+
+test('collecting the fact that makes a target ready toasts "Ready to approach" (F4/R-7)', () => {
+    setGlobals();
+    const alerts = [];
+    window.gameAlert = (msg, kind, title, ms) => { alerts.push({ msg, kind, title, ms }); };
+    const s = open();
+    // Collect the four flagship facts; the last one flips target_ready_pierce and must toast.
+    pick(s, 'row_pierce');
+    click(linkTo(s, 'Read the team notes'));
+    pick(s, 'note_q3');
+    click(siteButton(s, 'social'));
+    click(linkTo(s, 'Melanie Pierce'));
+    pick(s, 'post_pierce_jed');
+    assert.equal(alerts.length, 0, 'no ready toast before the target is ready');
+    click(siteButton(s, 'tools'));
+    click(s.container.querySelector('.ob-tool[data-tool="hunter"]'));
+    pick(s, 'r_pattern');
+    assert.equal(window.gameState.globalVariables.target_ready_pierce, true);
+    assert.equal(alerts.length, 1, 'one ready toast when the target becomes newly ready');
+    assert.equal(alerts[0].title, 'Ready to approach');
+    assert.equal(alerts[0].kind, 'success');
+    delete window.gameAlert;
 });
 
 test('model: sites, links, tools and state are read defensively', () => {

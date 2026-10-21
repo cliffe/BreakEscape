@@ -98,7 +98,7 @@ test('records with no tells, quick replies, seeded stubs and other targets are n
     ];
     assert.equal(pickSentRecord(state(['guest', msgs]), entry()), null);
     const out = resolvePlayerSent(entry(), set, state(['guest', msgs]), social, { globals });
-    assert.equal(out.skipped, 'no-sent-record');
+    assert.equal(out.skipped, 'sent-without-tells');
 });
 
 test('truth.flags is the stored tells whether or not the phish landed', () => {

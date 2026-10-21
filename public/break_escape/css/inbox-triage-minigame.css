@@ -146,6 +146,7 @@
 .tri-review-card p { margin: 6px 0; font-size: 16px; }
 .tri-card-verdict { display: flex; align-items: flex-start; gap: 4px; font-weight: 600; }
 .tri-card-verdict.right { color: var(--ui-success, #6ee08f); }
+.tri-card-verdict.acceptable { color: var(--ui-text, #eef1f8); }
 .tri-card-verdict.wrong { color: var(--ui-danger, #ff7a6b); }
 .tri-flags, .tri-false-flags, .tri-why-fine { margin: 6px 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 4px; font-size: 16px; }
 .tri-flag, .tri-false-flag { display: flex; align-items: flex-start; gap: 4px; }

@@ -120,13 +120,22 @@ function refusesAt(spec) {
   return t && isNum(t.at) ? t.at : null;
 }
 
+// A filled blank, keyed the way the judge tests do (`blank:name` -> blanks.name)
+// or the way the card stores it (fact id -> { value, label }). 06 §5.
+function blankRecord(blanks, name, factId) {
+  if (!blanks) return undefined;
+  if (name && blanks[name] != null) return blanks[name];
+  if (factId && name !== factId && blanks[factId] != null) return blanks[factId];
+  return undefined;
+}
+
 // The value id a claim points at: a filled blank, or a fixed value in the line.
 function claimValue(claim, blanks) {
   if (!claim) return undefined;
   const from = claim.from;
   if (isStr(from) && from.startsWith('blank:')) {
     const name = from.slice('blank:'.length);
-    const b = blanks && blanks[name];
+    const b = blankRecord(blanks, name, claim.fact);
     return b && typeof b === 'object' ? b.value : b;
   }
   if (from !== undefined && from !== null) return from;
@@ -134,10 +143,10 @@ function claimValue(claim, blanks) {
 }
 
 // Display label for a value id: a blank's own label, or spec.labels, else the id.
-function labelFor(spec, valueId, blanks, blankName) {
-  if (blankName && blanks && blanks[blankName] && typeof blanks[blankName] === 'object') {
-    const b = blanks[blankName];
-    if (isStr(b.label)) return b.label;
+function labelFor(spec, valueId, blanks, blankName, factId) {
+  const rec = blankRecord(blanks, blankName, factId);
+  if (rec && typeof rec === 'object' && isStr(rec.label) && (rec.value === undefined || rec.value === valueId)) {
+    return rec.label;
   }
   const map = spec && spec.labels;
   if (map && isStr(map[valueId])) return map[valueId];
@@ -273,7 +282,7 @@ export function judgeUtterance(spec, session, utteranceId, blanks, influence) {
       const delta = isNum(GRADE_COST[known.grade]) ? GRADE_COST[known.grade] : GRADE_COST.lesser;
       const blankName = claim.from && isStr(claim.from) && claim.from.startsWith('blank:')
         ? claim.from.slice('blank:'.length) : null;
-      const said = labelFor(spec, value, blanks, blankName);
+      const said = labelFor(spec, value, blanks, blankName, fact);
       const actual = labelFor(spec, known.value);
       entries.push({ delta, reason: fact, line: failTell(spec, fact, said, actual) });
       opens.push(fact);

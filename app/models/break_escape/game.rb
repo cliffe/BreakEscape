@@ -2059,6 +2059,7 @@ module BreakEscape
     MAIL_MESSAGE_KEYS = %w[
       id thread mailbox folder fromAccount from to targetId subject templates slots body
       attachment link landed tells time gameTime read kind seeded links attachments highlights
+      pendingMessage
     ].freeze
     MAIL_JOB_KINDS = %w[ink text seed].freeze
     MAIL_JOB_STRING_KEYS = %w[character npcId accountId msgId knot targetId messageId mailbox global outcomeGlobal].freeze

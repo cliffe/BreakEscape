@@ -22,7 +22,7 @@ for (const rel of ['minigames/framework/base-minigame.js', 'minigames/framework/
     'minigames/mail-client/mail-client-minigame.js',
     'minigames/mail-client/mail-reader.js', 'minigames/mail-client/mail-data.js',
     'minigames/mail-client/mail-notification.js', 'minigames/mail-client/mail-composer.js',
-    'minigames/mail-client/mail-bridge.js', 'systems/global-writer.js', 'systems/social-influence.js', 'ui/influence-bar.js']) {
+    'minigames/mail-client/mail-bridge.js', 'minigames/landing-page-builder/landing-page-model.js', 'systems/global-writer.js', 'systems/social-influence.js', 'ui/influence-bar.js']) {
     mkdirSync(dirname(join(dir, rel)), { recursive: true });
     writeFileSync(join(dir, rel), readFileSync(join(js, rel), 'utf8'));
 }

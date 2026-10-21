@@ -230,7 +230,7 @@ test('mount 1, a reply arriving while a message is open keeps the bar and its la
     // A change lands on the live bar (its last-change line and the live region fire).
     window.gameState.globalVariables.pierce_influence = 10;
     window.eventDispatcher.emit('npc_influence_changed', { character: 'pierce', delta: 10, reason: 'senderTrust' });
-    assert.match(reader.readPane.querySelector('.ib-infl-change').textContent, /Last change: \+10 senderTrust/);
+    assert.match(reader.readPane.querySelector('.ib-infl-change').textContent, /Last change: \+10 sender trust/);
     const subsAfterChange = window.eventDispatcher.listeners.get('global_variable_changed:pierce_influence')?.length;
     assert.equal(subsAfterChange, 1);
 
@@ -243,8 +243,8 @@ test('mount 1, a reply arriving while a message is open keeps the bar and its la
     assert.equal(reader.influenceBar, barBefore, 'bar instance kept across the refresh');
     assert.equal(window.eventDispatcher.listeners.get('global_variable_changed:pierce_influence')?.length, 1);
     assert.ok(reader.readPane.querySelector('.influence-bar'), 'bar re-attached to the pane');
-    assert.match(reader.readPane.querySelector('.ib-infl-change').textContent, /Last change: \+10 senderTrust/);
-    assert.match(reader.getState().influence.change, /Last change: \+10 senderTrust/);
+    assert.match(reader.readPane.querySelector('.ib-infl-change').textContent, /Last change: \+10 sender trust/);
+    assert.match(reader.getState().influence.change, /Last change: \+10 sender trust/);
     assert.equal(reader.getState().influence.value, 10);
 
     // Selecting a different character still rebuilds the bar (and resets the change line).

@@ -22,6 +22,7 @@ const copies = [
     'minigames/person-chat/person-chat-pretext.js',
     'systems/phish-rules.js',
     'systems/global-writer.js',
+    'systems/social-intel.js',
     'systems/social-influence.js',
     'utils/display-dashes.js',
     'ui/modal-stack.js'
@@ -40,7 +41,7 @@ globalThis.getComputedStyle = dom.window.getComputedStyle.bind(dom.window);
 globalThis.MouseEvent = dom.window.MouseEvent;
 globalThis.KeyboardEvent = dom.window.KeyboardEvent;
 
-const { blankSlot, optionsForFact, blanksPayload, callGate, callLaunch } = await import(pathToFileURL(join(dir, 'minigames/pretext-prep/pretext-card.js')));
+const { blankSlot, optionsForFact, blanksPayload, callGate, callLaunch, hintLine } = await import(pathToFileURL(join(dir, 'minigames/pretext-prep/pretext-card.js')));
 const { PretextPrepMinigame } = await import(pathToFileURL(join(dir, 'minigames/pretext-prep/pretext-prep-minigame.js')));
 const { fillPretextVars } = await import(pathToFileURL(join(dir, 'minigames/person-chat/person-chat-pretext.js')));
 
@@ -380,4 +381,14 @@ test('both blanks must be filled when each has options, and a stale pick is allo
     assert.match(text(scene), /Sofia Lord/);
     assert.match(text(scene), /Accounts/);
     assert.match(text(scene), /Melanie Pierce said to ring you/);
+});
+
+test('R-5/R-6: the hint ladder advances by the failed-call counter, not only reports', () => {
+    const spec = { callId: 'c1', hints: ['first nudge', 'second nudge', 'recipe step'] };
+    assert.equal(hintLine(spec, {}), '', 'no failed call yet, no hint');
+    assert.equal(hintLine(spec, { pretext_c1_reports: 0 }), '', 'counter at zero shows nothing');
+    assert.equal(hintLine(spec, { pretext_c1_reports: 1 }), 'first nudge', 'one failed call shows hints[0]');
+    assert.equal(hintLine(spec, { pretext_c1_reports: 2 }), 'second nudge', 'two advance to hints[1]');
+    assert.equal(hintLine(spec, { pretext_c1_reports: 9 }), 'recipe step', 'further failures stay on the last line');
+    assert.equal(hintLine({ callId: 'c1' }, { pretext_c1_reports: 3 }), '', 'no hints authored, no line');
 });

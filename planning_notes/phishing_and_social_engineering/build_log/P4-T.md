@@ -265,3 +265,19 @@ The m06 and m07 runs saw another session's uncommitted edit in `public/break_esc
 ## Verdict
 
 R3 holds. Phase 4 is still not done. One blocker (T4-1: a finished call never records its outcome, never shows the debrief, and stays open so the next ring resumes it) and three majors (T4-2 blank key, T4-3 the email loop is not in the slice, T4-4 a granted ask stays on the menu). The judge tests, the lockout lift and the live bar, tells and pip do what the runs asked of them.
+
+## Fix round 1
+
+| Finding | Outcome |
+|---------|---------|
+| T4-1 | Fixed. Closing the chat (Esc, the ×, End, ink END, the phone back control) finalises the call and shows the debrief. `{ aborted: true }` and a superseded instance do not. `person-chat-pretext.js:539-575`; `person-chat-minigame.js:1608-1609`; `phone-chat-minigame.js:1135-1153`. Bridge-4 dismisses that debrief before it expects the overlay to be gone. |
+| T4-2 | Fixed. A blank is read by its name, then by fact id, including the card's `{ value, label }`. `pretext-judge.js:125-146`. |
+| T4-3 | Fixed. Brandt grants `portal_name` and `payslip_date` (a sender name and a date for the composer). Quinn grants `desk_location` and `shift_pattern`. Teague's `strictIfGlobal` promotes `senderAuth` once `brandt_reported` is true. `scenario.json.erb:248-275`, `:502`, `:551-554`, `:593-596`. |
+| T4-4 | Fixed. Each ask is hidden once its fact is held, and a call whose every ask is already granted toasts and does not open prep. `brandt_desk.ink:44-47`; `quinn_floor.ink:37-40`; `interactions.js:643-665`. |
+| T4-5 | Fixed. The session log's turn increments when a say or an ask is recorded. `person-chat-pretext.js:281`, `:318`. |
+| T4-6 | Fixed. A reported call increments `pretext_<callId>_reports`, and prep shows that step of `hints`. `person-chat-pretext.js:354`; `pretext-card.js:180`; `pretext-prep-minigame.js:141`. A third hint is on each slice call. |
+| T4-7 | Fixed. The shift grant has its own line: "Early shift. They're in from eight." `quinn_floor.ink:56-63`. |
+| T4-8 | Fixed. With an empty service log, the bar takes the last non-zero delta from the saved call session. `influence-bar.js:143`. |
+| T4-9 | Fixed. Prep no longer injects a second stylesheet. The copy next to the module is gone. The page still links `pretext-prep-minigame.css`. |
+| T4-10 | Fixed. `grantFact` is loaded with the module, and the grant runs before the session is saved. `person-chat-pretext.js:49`, `:198-207`. |
+| T4-11 | Fixed. The unread-VAR check skips `pretext_*_name` and `pretext_*_value`, which the card fills. `validate_scenario.rb:3761-3762`. The strict-social run no longer warns on those two. |

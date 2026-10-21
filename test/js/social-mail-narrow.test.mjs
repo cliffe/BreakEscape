@@ -23,7 +23,8 @@ for (const rel of [
     'systems/phish-rules.js', 'systems/global-writer.js', 'systems/social-influence.js', 'ui/influence-bar.js', 'systems/mail-scheduler.js',
     'minigames/mail-client/mail-client-minigame.js', 'minigames/mail-client/mail-reader.js',
     'minigames/mail-client/mail-data.js', 'minigames/mail-client/mail-notification.js',
-    'minigames/mail-client/mail-composer.js', 'minigames/mail-client/mail-bridge.js'
+    'minigames/mail-client/mail-composer.js', 'minigames/mail-client/mail-bridge.js',
+    'minigames/landing-page-builder/landing-page-model.js'
 ]) {
     mkdirSync(dirname(join(dir, rel)), { recursive: true });
     writeFileSync(join(dir, rel), readFileSync(join(js, rel), 'utf8'));
@@ -167,23 +168,26 @@ test('withReply: the Sent verdict and checklist wait for the job, then both appe
     assert.match(host.querySelector('.mail-judged').textContent, /Judged: landed/);
 });
 
-test('withReply: the verdict stays hidden after a reload while the job is still queued', () => {
+test('withReply: the verdict waits while the job is queued after a reload, then the checklist is rebuilt (T2-6)', () => {
     clock = 0;
     const { scene, scheduler, host } = open('withReply');
     scene._handleComposeSend(message());
     scene.cleanup();
     host.textContent = '';
-    // A new client over the same state (a reload): the held checklist is gone, the queue is not.
+    // A new client over the same state (a reload): the in-memory held checklist is gone, the queue is not.
     const again = new MailClientMinigame(host, { social: scene.params.social, mailClient: scene.params.mailClient, accountIds: ['guest'],
-        scheduler, mailState: scheduler.state, globals: window.gameState.globalVariables });
+        checklistTiming: 'withReply', scheduler, mailState: scheduler.state, globals: window.gameState.globalVariables });
     window.MinigameFramework = { currentMinigame: again, endMinigame() {} };
     again.init(); again.start();
     sentRow(host).click();
     assert.equal(host.querySelector('.mail-judged').textContent, 'Sent. Waiting for a reply.');
+    assert.equal(host.querySelector('.mail-checklist'), null, 'nothing to explain until the job runs');
     clock = 15000;
     scheduler.tick(clock);
     assert.match(host.querySelector('.mail-judged').textContent, /Judged: landed/);
-    assert.equal(host.querySelector('.mail-checklist'), null, 'no cached result to explain after a reload');
+    // The teaching checklist is rebuilt from the record's stored message (T2-6), not lost.
+    assert.ok(host.querySelector('.mail-checklist'), 'the checklist is rebuilt after the reload');
+    assert.ok(host.querySelector('.mail-checklist-banner.landed'));
     again.cleanup();
 });
 

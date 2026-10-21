@@ -24,7 +24,8 @@ import { SocialOverlayScene } from '../framework/social-overlay.js';
 import { MailReader } from './mail-reader.js';
 import { MailComposer } from './mail-composer.js';
 import { registerOpenClient } from './mail-notification.js';
-import { performSend, renderChecklist } from './mail-bridge.js';
+import { performSend, renderChecklist, rejudgeForChecklist, resolveTarget, applyFactorBias } from './mail-bridge.js';
+import { evaluateMessage } from '../../systems/phish-rules.js';
 import { writeGlobal } from '../../systems/global-writer.js';
 import {
     resolveAccounts, visibleContacts, emptyMailState, ensureMailbox,
@@ -165,6 +166,15 @@ export class MailClientMinigame extends SocialOverlayScene {
         this._offJobs = this.scheduler?.onEvent?.((event, data) => {
             if (event === 'mail_job_done') this._onJobDone(data?.job);
         }) || null;
+        // Reopened from the landing-page builder (01 §2): restore the draft into Compose and
+        // attach the link if its page is now built.
+        if (this.params.reopenCompose) {
+            this.params.reopenCompose = false;
+            const kitId = this.params.attachLinkKit || null;
+            this.params.attachLinkKit = null;
+            this.openCompose();
+            if (kitId && this.composer) this.composer.attachLinkIfBuilt(kitId);
+        }
     }
 
     /**
@@ -180,17 +190,28 @@ export class MailClientMinigame extends SocialOverlayScene {
     }
 
     _onJobDone(job) {
-        if (job?.msgId) {
+        const sent = (() => {
+            if (!job?.msgId) return null;
             const box = this.account ? this.mailState?.mailboxes?.[this.account.mailbox] : null;
-            const sent = box?.messages?.find((m) => m.id === job.msgId);
-            if (sent) delete sent.judgePending;
-        }
+            return box?.messages?.find((m) => m.id === job.msgId) || null;
+        })();
+        if (sent) delete sent.judgePending;
         if (this.root && this.reader) this._refresh();
         // withReply: the reply has been read (or the silent job has run); now show why.
         const held = job?.msgId && this._heldChecklists?.get(job.msgId);
         if (held) {
             this._heldChecklists.delete(job.msgId);
+            if (sent) delete sent.pendingMessage;
             this._showChecklist(held);
+            return;
+        }
+        // After a reload the in-memory hold is gone, but the record kept the composed
+        // message: rebuild the teaching checklist from it so the verdict is not lost (T2-6).
+        if (sent && sent.pendingMessage && this._checklistTiming() === 'withReply') {
+            let rebuilt = null;
+            try { rebuilt = rejudgeForChecklist(this, sent); } catch (err) { console.error('mail checklist rebuild failed:', err); }
+            delete sent.pendingMessage;
+            if (rebuilt && rebuilt.result) this._showChecklist(rebuilt);
         }
     }
 
@@ -566,12 +587,16 @@ export class MailClientMinigame extends SocialOverlayScene {
             phishTargets: social.phishTargets,
             intelFacts: social.intelFacts,
             payloadKit: this.config.payloadKit,
+            landingPages: social.landingPages,
             account: this.account,
             accounts: this.accounts,
             onSendAs: (id) => this.switchAccount(id),
+            onAttachLink: (kit) => this._launchBuilderForLink(kit),
             contacts: this.contacts(),
             globals: this.globals,
             draft,
+            meterDefault: this.config.showRedFlagMeter === true,
+            evaluate: (message) => this._liveJudge(message),
             pushLayer: (close, name) => this.pushLayer(close, name),
             onSend: (message, composer) => this._handleComposeSend(message, composer),
             onChange: (d) => this._onDraftChange(d),
@@ -596,6 +621,27 @@ export class MailClientMinigame extends SocialOverlayScene {
     }
 
     /**
+     * Attach a link whose page is not built yet (01 N4, §2 "Attach a link that has no
+     * page"): save the draft, open the landing-page builder on top, and come back here
+     * when it closes. The reopened client restores the draft, reopens Compose and attaches
+     * the link if the page record is now built (07's Attach / Attach anyway set built: true).
+     */
+    _launchBuilderForLink(kit) {
+        if (!kit || typeof kit.landingPageId !== 'string' || !kit.landingPageId) return;
+        this._pendingLinkKit = kit.id;
+        const child = this.launchChild('landing-page-builder', {
+            landingPageId: kit.landingPageId,
+            targetId: this.composer?.target?.id || null,
+            kitId: kit.id
+        });
+        if (!child) {
+            // The builder did not start: stay open, clear the pending flag.
+            this._pendingLinkKit = null;
+            window.gameAlert?.('Page builder unavailable.', 'error', 'Error', 3000);
+        }
+    }
+
+    /**
      * Draft persistence (01 §2 "Drafts", 00 §10a): one draft per account in
      * mailState, written on every change and before any nested launch. The
      * scheduler owns mailState.drafts; also forward to any params hook.
@@ -607,6 +653,24 @@ export class MailClientMinigame extends SocialOverlayScene {
             else { (this.mailState.drafts || (this.mailState.drafts = {}))[id] = draft; }
         }
         try { this.params.onDraftChange?.(draft, id); } catch (err) { console.error('mail onDraftChange failed:', err); }
+    }
+
+    /**
+     * Judge the composer's current draft for the live red-flag meter (01, 04), with the
+     * same bias and ctx the send path uses, but no side effects. Returns null when there
+     * is no target to judge.
+     */
+    _liveJudge(message) {
+        const social = this.social || {};
+        const target = resolveTarget(social, message && message.targetId);
+        if (!target) return null;
+        const metrics = (this.mailState && this.mailState.metrics) || {};
+        const m = metrics[target.id];
+        const priorFailures = m && typeof m.failed === 'number' ? m.failed : 0;
+        const judged = applyFactorBias(target, this.globals);
+        const ctx = { accounts: this.accounts, people: social.people, templates: social.templates,
+                      payloadKit: this.config.payloadKit, priorFailures };
+        try { return evaluateMessage(judged, message, ctx); } catch (err) { console.error('mail meter judge failed:', err); return null; }
     }
 
     /**
@@ -751,7 +815,15 @@ export class MailClientMinigame extends SocialOverlayScene {
     }
 
     returnParams() {
-        return { accountId: this.account?.id || null, suspended: false };
+        const params = { accountId: this.account?.id || null, suspended: false };
+        // Coming back from the landing-page builder: reopen Compose and attach the link if
+        // its page is now built (01 §2 "Attach a link that has no page").
+        if (this._pendingLinkKit) {
+            params.reopenCompose = true;
+            params.attachLinkKit = this._pendingLinkKit;
+            this._pendingLinkKit = null;
+        }
+        return params;
     }
 
     // ── test bridge ──────────────────────────────────────────────────────────

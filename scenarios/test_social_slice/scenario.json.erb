@@ -46,6 +46,16 @@
       "tasks": [
         { "taskId": "triage_sorted", "title": "Sort the mixed inbox", "type": "custom", "status": "active" }
       ]
+    },
+    {
+      "aimId": "lord_round",
+      "title": "Lord's sign-in",
+      "description": "An intern who will type her staff-portal password into a convincing page. Build a landing page, attach it to a mail, and land it on her.",
+      "status": "active",
+      "order": 3,
+      "tasks": [
+        { "taskId": "lord_landed", "title": "Land a landing-page link on Sofia Lord", "type": "custom", "status": "active" }
+      ]
     }
   ],
 
@@ -64,6 +74,10 @@
     "se_intel_teague_expects_export": false,
     "se_intel_company_addresses": false,
     "se_intel_username_convention": false,
+    "se_intel_portal_name": false,
+    "se_intel_payslip_date": false,
+    "se_intel_desk_location": false,
+    "se_intel_shift_pattern": false,
     "se_osint_state": {},
     "target_ready_teague": false,
     "phish_teague_landed": false,
@@ -71,6 +85,14 @@
     "teague_influence": 0,
     "teague_wary": false,
     "teague_latched": "",
+
+    "target_ready_lord": false,
+    "phish_lord_landed": false,
+    "phish_lord_attempts": 0,
+    "landing_payroll_login_built": false,
+    "landing_payroll_login_domain": "",
+    "se_landing_pages": {},
+    "se_landing_drafts": {},
 
     "acct_freemail": false,
     "acct_freemail_choice": "",
@@ -89,6 +111,7 @@
     "pretext_brandt_desk_call_state": {},
     "pretext_brandt_desk_call_outcome": "",
     "pretext_brandt_desk_call_lowest": 0,
+    "pretext_brandt_desk_call_reports": 0,
 
     "quinn_influence": 0,
     "quinn_latched": "",
@@ -100,11 +123,16 @@
     "pretext_quinn_floor_call_state": {},
     "pretext_quinn_floor_call_outcome": "",
     "pretext_quinn_floor_call_lowest": 0,
+    "pretext_quinn_floor_call_reports": 0,
 
     "slice_triage_percent": 0,
     "slice_triage_reportRate": 0,
     "slice_triage_done": false,
     "slice_triage_pass": false,
+    "slice_triage2_percent": 0,
+    "slice_triage2_reportRate": 0,
+    "slice_triage2_done": false,
+    "slice_triage2_pass": false,
     "defender_profile_done": false
   },
 
@@ -116,7 +144,9 @@
       { "id": "teague", "kind": "cast", "address": "m.teague@ledgerwell.example",
         "forms": { "first": "Morgan", "short": "Mo", "formal": "Ms Teague", "full": "Morgan Teague" } },
       { "id": "shah", "kind": "cast", "address": "r.shah@ledgerwell.example",
-        "forms": { "first": "Ravi", "full": "Ravi Shah" } }
+        "forms": { "first": "Ravi", "full": "Ravi Shah" } },
+      { "id": "lord", "kind": "cast", "address": "s.lord@ledgerwell.example",
+        "forms": { "first": "Sofia", "full": "Sofia Lord" } }
     ],
 
     "characters": {
@@ -238,6 +268,34 @@
         "subject": "company",
         "source": "f_author",
         "provides": []
+      },
+      "portal_name": {
+        "text": "The staff portal is called PeopleDesk.",
+        "subject": "company",
+        "source": "portal_name",
+        "provides": [
+          { "type": "name", "about": "sender", "value": "portal_desk", "label": "PeopleDesk", "kind": "distinctive" }
+        ]
+      },
+      "payslip_date": {
+        "text": "Payslips go out on the last Friday of the month.",
+        "subject": "company",
+        "source": "release_date",
+        "provides": [
+          { "type": "date", "value": "last_friday", "label": "the last Friday", "kind": "generic" }
+        ]
+      },
+      "desk_location": {
+        "text": "Morgan's desk is by the window.",
+        "subject": "teague",
+        "source": "desk_location",
+        "provides": []
+      },
+      "shift_pattern": {
+        "text": "Morgan works the early shift.",
+        "subject": "teague",
+        "source": "shift_pattern",
+        "provides": []
       }
     },
 
@@ -262,6 +320,13 @@
       "pretext_generic": { "part": "pretext", "text": "Please see attached.", "slots": [],
         "urgency": "low" },
       "ask_open_attached": { "part": "ask", "text": "Can you open the attached file and check it, please?", "slots": [],
+        "urgency": "low" },
+
+      "pretext_payslip": { "part": "pretext", "text": "Your payslip for this month is ready to view.", "slots": [],
+        "urgency": "low" },
+      "pretext_portal": { "part": "pretext", "text": "There is an action waiting on your staff portal account.", "slots": [],
+        "urgency": "medium" },
+      "ask_sign_in": { "part": "ask", "text": "Sign in to the staff portal using the link to view it.", "slots": [],
         "urgency": "low" }
     },
 
@@ -281,7 +346,10 @@
           "revealedBy": "se_intel_hampshire_careers", "targetId": "hampshire" },
         { "id": "teague", "person": "teague", "character": "teague", "name": "Morgan Teague",
           "addresses": ["m.teague@ledgerwell.example"], "role": "Finance",
-          "revealedBy": "se_intel_teague_role", "targetId": "teague" }
+          "revealedBy": "se_intel_teague_role", "targetId": "teague" },
+        { "id": "lord", "person": "lord", "name": "Sofia Lord",
+          "addresses": ["s.lord@ledgerwell.example"], "role": "Intern",
+          "revealedBy": "se_intel_portal_name", "targetId": "lord" }
       ],
       "seededMessages": [
         { "id": "welcome", "mailbox": "guest",
@@ -298,7 +366,9 @@
       "payloadKit": [
         { "id": "kit_cv", "label": "CV.docx", "kind": "document" },
         { "id": "kit_ledger", "label": "Q3-ledger.xlsx", "kind": "spreadsheet" },
-        { "id": "kit_memo", "label": "Memo.pdf", "kind": "pdf" }
+        { "id": "kit_memo", "label": "Memo.pdf", "kind": "pdf" },
+        { "id": "kit_payroll_page", "label": "Link to your landing page", "kind": "link",
+          "landingPageId": "payroll_login" }
       ],
       "checklistTiming": "onSend",
       "bodyMode": "templates",
@@ -314,13 +384,25 @@
       { "id": "tool_recon", "title": "Recon-ng",
         "text": "Recon-ng is a framework that runs many lookups like the ones above from one place. A handle that returns nothing is a result too: it tells you not to spend time on that lead." },
       { "id": "tool_exiftool", "title": "exiftool",
-        "text": "exiftool reads the metadata a file carries: author, software, saved-by name and folder path. Staff publish documents without clearing it, and the author field often shows the username convention." }
+        "text": "exiftool reads the metadata a file carries: author, software, saved-by name and folder path. Staff publish documents without clearing it, and the author field often shows the username convention." },
+      { "id": "typo-squat", "title": "Typo-squat",
+        "text": "A name one look-alike pair away, such as ledgerwall for ledgerwell. Read the address letter by letter before you trust it." },
+      { "id": "homograph", "title": "Homograph",
+        "text": "A letter from another alphabet that looks the same, so the address reads right but is not. The browser shows the real xn-- form." },
+      { "id": "padlock", "title": "Padlock",
+        "text": "A padlock means the connection is private, not that the site is who it claims to be. A fake page can have one too." },
+      { "id": "hover-link", "title": "Hover the link",
+        "text": "The words of a link are not where it goes. Hover, or read the status bar, to see the real address before clicking." },
+      { "id": "right-to-left", "title": "Read right to left",
+        "text": "Read a domain from the right. The part just before the final label is the real owner; everything to its left can be made up." },
+      { "id": "five-habits", "title": "Five habits",
+        "text": "Stop before you type a password. Read the address. Check the link target. Ignore the padlock as proof. Open the real site yourself if unsure." }
     ],
 
     "osint": {
       "profile": "student",
       "sites": [
-        { "id": "company", "url": "ledgerwell.example", "type": "company-site",
+        { "id": "company", "name": "Ledgerwell", "url": "ledgerwell.example", "type": "company-site",
           "pages": [
             { "id": "team", "title": "Our Team", "blocks": [
               { "id": "row_teague", "kind": "staff", "person": "teague", "name": "Morgan Teague",
@@ -346,7 +428,7 @@
               { "id": "org_old_chart", "kind": "p",
                 "text": "Organisation chart (2019): Finance reported to the Operations Director. This page is no longer maintained." } ] } ] },
 
-        { "id": "social", "url": "friendface.example", "type": "social",
+        { "id": "social", "name": "Friendface", "url": "friendface.example", "type": "social",
           "profiles": [
             { "person": "teague", "posts": [
               { "id": "post_teague_shah", "text": "Month-end is painless when Ravi is on the ledger. He is the first person I would ask for anything.",
@@ -357,7 +439,7 @@
                 "fact": "hampshire_cv_backlog" },
               { "id": "post_hampshire_tea", "text": "The kettle in Careers has died. Send help." } ] } ] },
 
-        { "id": "deck", "url": "ledgerwell.example/Q3.pdf", "type": "document", "card": "tool_exiftool",
+        { "id": "deck", "name": "Q3.pdf", "url": "ledgerwell.example/Q3.pdf", "type": "document", "card": "tool_exiftool",
           "fields": [
             { "id": "f_author", "label": "Author", "value": "mteague", "fact": "username_convention" },
             { "id": "f_software", "label": "Software", "value": "Microsoft Excel" },
@@ -382,8 +464,16 @@
 
     "intelBoard": {
       "title": "Engagement: Ledgerwell",
-      "people": ["hampshire", "teague"],
+      "people": ["hampshire", "teague", "lord"],
       "readinessSlots": {
+        "lord": [
+          { "label": "What the portal is called", "needsIntel": ["portal_name"],
+            "goalString": "You still don't know what the staff portal is called.",
+            "doneString": "You know the staff portal is PeopleDesk." },
+          { "label": "When payslips land", "needsIntel": ["payslip_date"],
+            "goalString": "You still don't know when a payslip would plausibly arrive.",
+            "doneString": "You know payslips go out on the last Friday." }
+        ],
         "hampshire": [
           { "label": "Where mail goes", "needsIntel": ["hampshire_careers"],
             "goalString": "You still don't know how Chris receives mail from strangers.",
@@ -464,6 +554,7 @@
         "senderAuth": { "domainPublishesAuth": true, "spoofAligns": false, "dmarcPolicy": "none" },
         "redFlagMeter": false,
         "urgency": { "advisoryMax": "medium" },
+        "strictIfGlobal": { "brandt_reported": "senderAuth" },
         "primedFor": {
           "distinctiveValues": ["ledger_export"],
           "genericValues": ["tuesday"],
@@ -492,6 +583,101 @@
         },
         "hints": ["Think about who Morgan trusts.", "What does she expect to receive, and from whom?",
                   "This account can only send as itself. The Operator account lets you choose the sender."]
+      },
+      {
+        "id": "lord",
+        "address": "s.lord@ledgerwell.example",
+        "displayName": "Sofia Lord",
+        "subjects": [
+          { "id": "s_payslip", "text": "Your payslip", "topic": "hr" },
+          { "id": "s_hello_lord", "text": "Hello", "topic": "general" }
+        ],
+        "interests": { "topics": ["hr"] },
+        "emailReplyDelay": 15,
+        "redFlagMeter": false,
+        "urgency": { "advisoryMax": "medium" },
+        "templateSets": { "from": ["from_own"], "greeting": ["greet_generic"],
+                          "pretext": ["pretext_payslip", "pretext_portal"], "ask": ["ask_sign_in"] },
+        "primedFor": { "trusts": ["*"], "story": "a payslip notice with a sign-in link" },
+        "expectedLink": { "brandId": "ledgerwell", "realDomain": "ledgerwell.example" },
+        "requiredFactors": ["senderTrust", "linkCredible"],
+        "advisoryFactors": ["urgencyCalibrated"],
+        "factorStrings": {
+          "senderTrust": { "pass": "✓ A new intern opens anything that looks official", "fail": "I don't recognise this sender.", "redFlag": null },
+          "linkCredible": {
+            "pass": "✓ The link looks like the real staff portal",
+            "fail": "That link does not go where it says it does.",
+            "redFlag": null
+          }
+        },
+        "replies": { "landed": "Thanks, signing in now." },
+        "hints": ["A new intern trusts an official-looking portal.", "The address in the link has to match the real staff portal."],
+        "outcome": { "setGlobal": { "phish_lord_landed": true } }
+      }
+    ],
+
+    "landingPages": [
+      {
+        "id": "payroll_login",
+        "linkText": "ledgerwell.example/payroll",
+        "pretext": { "brandId": "ledgerwell", "purposeId": "payslip",
+                     "facts": ["portal_name", "payslip_date"] },
+        "fields": ["email", "password", "one_time_code", "card_number", "ni_number"],
+        "extraSensitiveFields": ["card_number", "ni_number"],
+        "targets": {
+          "lord": { "linkThreshold": 70, "minDomainTier": 2 }
+        },
+        "brands": [
+          {
+            "id": "ledgerwell",
+            "name": "Ledgerwell",
+            "look": "generic",
+            "realDomain": "ledgerwell.example",
+            "realFields": ["email", "password"],
+            "decoyWords": ["payroll-online", "account-help", "login"],
+            "domains": [
+              { "id": "d_unrelated", "domain": "payroll-online.example", "trick": "unrelated", "tier": 0 },
+              { "id": "d_letter", "domain": "ledgerwall.example", "trick": "wrong-letter", "tier": 1 },
+              { "id": "d_word", "domain": "ledgerwell-hr.example", "trick": "extra-word", "tier": 2 },
+              { "id": "d_sub", "domain": "login.ledgerwell.account-help.example", "trick": "subdomain", "tier": 2 },
+              { "id": "d_vv", "domain": "ledgervvell.example", "trick": "typo-squat", "tier": 3 },
+              { "id": "d_homo", "domain": "ledgerw\u0435ll.example", "browserDomain": "xn--ledgerwll-m0h.example", "trick": "homograph", "tier": 3 }
+            ]
+          },
+          {
+            "id": "cloudboxy",
+            "name": "CloudBoxy",
+            "look": "parody",
+            "realDomain": "cloudboxy.example",
+            "realFields": ["email", "password"],
+            "decoyWords": ["cloud-login"],
+            "domains": [
+              { "id": "c_letter", "domain": "cloudbuxy.example", "trick": "wrong-letter", "tier": 1 }
+            ]
+          }
+        ],
+        "purposes": [
+          { "id": "signin", "label": "Sign in" },
+          { "id": "expired", "label": "Password expired" },
+          { "id": "payslip", "label": "Payslip ready" }
+        ],
+        "wordings": [
+          { "id": "w_formal", "match": true, "text": "Your first payslip is ready. Sign in to the staff portal to view it." },
+          { "id": "w_generic", "match": false, "text": "Please sign in to continue." },
+          { "id": "w_slips", "match": false, "slips": true, "text": "Plese login to veiw you're payslip." }
+        ],
+        "strings": {
+          "defDomainTier0": "The address has no connection to the service it claims to be.",
+          "defDomainTier1": "The address is {shown}, not {real}. One letter is wrong.",
+          "defDomainTier2": "The address is {shown}, not {real}. Read it from the right.",
+          "defDomainTier3": "The address is {shown}, not {real}. Compare every letter.",
+          "verdictHigh": "Convincing enough for {firstName}."
+        },
+        "conceptCards": ["typo-squat", "homograph", "padlock", "hover-link", "right-to-left", "five-habits"],
+        "capture": {
+          "address": "sofia.lord@ledgerwell.example",
+          "note": "Sofia Lord's account was captured by your page. Report it."
+        }
       }
     ],
 
@@ -513,9 +699,9 @@
         },
         "asks": {
           "portal_name":  { "pressure": 0,   "floor": -30, "verification": [],
-                            "grants": { "setGlobal": { "brandt_call_done": true } } },
+                            "grants": { "setGlobal": { "brandt_call_done": true }, "intel": ["portal_name"] } },
           "release_date": { "pressure": -10, "floor": -20, "verification": ["contact"],
-                            "grants": { "setGlobal": { "brandt_call_done": true } } }
+                            "grants": { "setGlobal": { "brandt_call_done": true }, "intel": ["payslip_date"] } }
         },
         "outcomes": {
           "got_it": {},
@@ -536,7 +722,7 @@
           "ask": { "accepted": "He read it out.", "pending": "He wants to check one more thing.", "refused": "He will not do that on this call." },
           "bands": { "calm": "Brandt is relaxed.", "wary": "Brandt has slowed down.", "refusing": "Brandt has stopped helping." }
         },
-        "hints": [ "Work out whose name the desk would already recognise.", "The company site shows who Morgan trusts in Finance." ],
+        "hints": [ "Work out whose name the desk would already recognise.", "The company site shows who Morgan trusts in Finance.", "Ravi Shah is the colleague the desk already knows." ],
         "defenderNotes": { "release_date": "Calling back on the number already on file defeats every line here." }
       },
       {
@@ -555,9 +741,9 @@
         },
         "asks": {
           "desk_location": { "pressure": 0,   "floor": -30, "verification": [],
-                             "grants": { "setGlobal": { "quinn_call_done": true } } },
+                             "grants": { "setGlobal": { "quinn_call_done": true }, "intel": ["desk_location"] } },
           "shift_pattern": { "pressure": -10, "floor": -20, "verification": ["person"],
-                             "grants": { "setGlobal": { "quinn_call_done": true } } }
+                             "grants": { "setGlobal": { "quinn_call_done": true }, "intel": ["shift_pattern"] } }
         },
         "outcomes": {
           "got_it": {},
@@ -576,7 +762,7 @@
           "ask": { "accepted": "She pointed it out.", "pending": "She wants to know who you are first.", "refused": "She will not say." },
           "bands": { "calm": "Quinn is happy to help.", "wary": "Quinn has gone quiet.", "refusing": "Quinn has stopped helping." }
         },
-        "hints": [ "Know who you are asking after before you approach.", "The company team page names the Finance staff." ],
+        "hints": [ "Know who you are asking after before you approach.", "The company team page names the Finance staff.", "Morgan Teague is the person the floor plan names." ],
         "defenderNotes": { "shift_pattern": "Checking a stranger's identity before helping defeats a floor approach." }
       }
     ],
@@ -587,6 +773,7 @@
         "scoringProfile": "analyst",
         "feedbackMode": "end",
         "headerPanel": "open",
+        "glossary": "open",
         "title": "Sort the inbox",
         "bands": [
           { "min": 85, "headline": "Sharp" },
@@ -611,41 +798,43 @@
         "messages": [
           {
             "id": "pay_today",
-            "from": { "name": "Ledgerwell Payroll", "address": "payroll@ledgerwell.example" },
+            "from": { "name": "Ledgerwell Payroll", "address": "payroll@ledgerwell-hr.example" },
             "to": "operator@ledgerwell.example",
             "subject": "Confirm your bank details today",
             "time": "09:40",
             "body": "Please confirm your bank details today, or this month's pay will be held.\n{{link:confirm}}",
             "links": [
-              { "id": "confirm", "text": "ledgerwell.example/payroll", "destination": "https://pay-desk.example/login" }
+              { "id": "confirm", "text": "ledgerwell.example/payroll", "destination": "https://ledgerwell-hr.example/login" }
             ],
-            "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass" },
+            "auth": {
+              "spf": "pass", "dkim": "pass", "dmarc": "pass",
+              "envelopeFrom": "bounce.ledgerwell-hr.example",
+              "replyTo": "payroll@ledgerwell-hr.example"
+            },
             "truth": {
               "isPhish": true,
-              "flags": ["linkCredible", "urgencyCalibrated"],
+              "flags": ["senderTrust", "linkCredible", "urgencyCalibrated"],
               "perFlagNote": {
-                "linkCredible": "The words say ledgerwell.example, but the link goes to pay-desk.example.",
+                "senderTrust": "The address is payroll@ledgerwell-hr.example, a look-alike of ledgerwell.example.",
+                "linkCredible": "The words say ledgerwell.example, but the link goes to ledgerwell-hr.example.",
                 "urgencyCalibrated": "Today, and a held pay packet, are the pressure."
               },
+              "headerNote": "SPF, DKIM and DMARC all pass, because the sender controls the look-alike domain. A pass tells you which domain sent it, not that you should trust it.",
               "ifTrusted": "Confirming would hand over bank details.",
               "reportReply": "Thanks. This has been marked as a phish."
             }
           },
           {
-            "id": "own_hampshire",
+            "id": "own_teague",
             "kind": "playerSent",
-            "targetId": "hampshire",
+            "targetId": "teague",
             "notes": {
               "perFlagNote": {
-                "senderTrust": "The From address is not one Chris would expect from a colleague.",
-                "pretextRelevant": "The message does not read like an application for the open role.",
-                "attachmentPlausible": "The file is not a CV, or there is no file attached.",
-                "senderAuth": "The header checks do not match a Ledgerwell sender.",
-                "urgencyCalibrated": "A deadline in the message is the pressure.",
-                "addressedTo": "The greeting is not how anyone who knows Chris would write."
+                "senderTrust": "The From claims Ravi Shah, but this account set that name itself; it is not proof the mail came from him.",
+                "senderAuth": "The spoofed Ledgerwell address fails the domain's SPF and DMARC alignment checks."
               },
-              "headerNote": "The header results come from the account the message was sent from.",
-              "ifTrusted": "Chris would have opened it and treated it as a real application.",
+              "headerNote": "These header results are for the account the message was actually sent from, not the name written in the From line.",
+              "ifTrusted": "Morgan would have treated it as a real note from Ravi and opened the attachment.",
               "reportReply": "Thanks. Confirmed as a phish."
             }
           },
@@ -670,14 +859,75 @@
             "subject": "Your new laptop",
             "time": "08:05",
             "body": "Your workstation account is ready. Sign in with the card in your welcome pack.\n\nIT Service Desk",
-            "auth": { "spf": "fail", "dkim": "pass", "dmarc": "pass" },
+            "auth": {
+              "spf": "fail", "dkim": "pass", "dmarc": "pass",
+              "summary": "SPF failed, but DKIM and DMARC passed. A plain forward often does this, and it is usually fine."
+            },
             "truth": {
               "isPhish": false,
               "flags": [],
               "whyFine": {
                 "senderAuth": "SPF failed. DKIM and DMARC passed.",
-                "default": "The sender and the subject match the laptop you were told to expect."
+                "default": "The sender is IT's own Ledgerwell address, the note is internal only, and there is nothing to click or open."
               }
+            }
+          }
+        ]
+      },
+      {
+        "id": "slice_inbox_collapsed",
+        "scoringProfile": "analyst",
+        "feedbackMode": "end",
+        "headerPanel": "collapsed",
+        "glossary": "closed",
+        "title": "Sort the inbox (collapsed headers)",
+        "bands": [
+          { "min": 85, "headline": "Sharp" },
+          { "min": 60, "headline": "Getting there" },
+          { "min": 0, "headline": "Worth another look" }
+        ],
+        "outcome": { "setGlobalPrefix": "slice_triage2_", "passPercent": 0 },
+        "messages": [
+          {
+            "id": "col_phish",
+            "from": { "name": "IT Helpdesk", "address": "support@ledgerwell-it.example" },
+            "to": "operator@ledgerwell.example",
+            "subject": "Reset your password now",
+            "time": "10:15",
+            "body": "Your mailbox will be locked unless you reset your password now.\n{{link:reset}}",
+            "links": [
+              { "id": "reset", "text": "ledgerwell.example/reset", "destination": "https://ledgerwell-it.example/reset" }
+            ],
+            "auth": {
+              "spf": "pass", "dkim": "pass", "dmarc": "pass",
+              "envelopeFrom": "bounce.ledgerwell-it.example",
+              "replyTo": "support@ledgerwell-it.example"
+            },
+            "truth": {
+              "isPhish": true,
+              "flags": ["senderTrust", "linkCredible", "urgencyCalibrated"],
+              "perFlagNote": {
+                "senderTrust": "The address is support@ledgerwell-it.example, a look-alike of ledgerwell.example.",
+                "linkCredible": "The words say ledgerwell.example, but the link goes to ledgerwell-it.example.",
+                "urgencyCalibrated": "\"Now\", and a locked mailbox, are the pressure."
+              },
+              "headerNote": "All three checks pass because the sender owns the look-alike domain; a pass names the domain that sent it, not one you should trust.",
+              "ifTrusted": "Resetting through the link would hand over the password.",
+              "reportReply": "Thanks. Confirmed as a phish."
+            }
+          },
+          {
+            "id": "col_real",
+            "from": { "name": "Facilities", "address": "facilities@ledgerwell.example" },
+            "to": "operator@ledgerwell.example",
+            "subject": "Fire drill on Thursday",
+            "time": "09:00",
+            "body": "There is a scheduled fire drill on Thursday at 11am. Please use the stairs.\n\nFacilities",
+            "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass" },
+            "truth": {
+              "isPhish": false,
+              "flags": [],
+              "whyFine": { "default": "A routine facilities notice from the real internal address, with nothing to click or open." }
             }
           }
         ]
@@ -751,6 +1001,12 @@
               "condition": "value === true",
               "onceOnly": true,
               "completeTask": "triage_sorted"
+            },
+            {
+              "eventPattern": "global_variable_changed:phish_lord_landed",
+              "condition": "value === true",
+              "onceOnly": true,
+              "completeTask": "lord_landed"
             }
           ]
         },
@@ -825,6 +1081,18 @@
           "minigameData": { "triageSetId": "slice_inbox", "conclusionTaskId": "triage_sorted" }
         },
         {
+          "type": "triage-workstation",
+          "id": "slice_triage_collapsed",
+          "name": "Triage Workstation (collapsed headers)",
+          "position": { "x": 7, "y": 4 },
+          "takeable": false,
+          "interactable": true,
+          "active": true,
+          "locked": false,
+          "observations": "A second triage workstation whose header panel starts collapsed.",
+          "minigameData": { "triageSetId": "slice_inbox_collapsed" }
+        },
+        {
           "type": "case-file",
           "id": "slice_defender_board",
           "name": "Defender case file",
@@ -845,6 +1113,18 @@
           "active": true,
           "observations": "A desk phone. The service desk extension is on a sticky note.",
           "minigameData": { "callId": "brandt_desk_call" }
+        },
+        {
+          "type": "page-builder",
+          "id": "slice_page_builder",
+          "name": "Page Builder",
+          "position": { "x": 2, "y": 2 },
+          "takeable": false,
+          "interactable": true,
+          "active": true,
+          "locked": false,
+          "observations": "A workstation for assembling a credential-harvest landing page.",
+          "minigameData": { "landingPageId": "payroll_login" }
         }
       ]
     }

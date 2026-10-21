@@ -51,9 +51,12 @@
 .mail-account { display: flex; align-items: center; gap: 6px; min-width: 0; flex: 0 1 auto; margin-right: 8px; }
 /* The label shrinks and ellipses so the whole toolbar, Close included, stays on one row. */
 .mail-account-label { font-family: var(--se-font-readable); font-size: 15px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.mail-folders { display: flex; gap: 4px; }
-/* Let toolbar buttons size to their label so it is never clipped (A9). */
-.mail-toolbar .minigame-button { white-space: nowrap; width: auto; }
+.mail-folders { display: flex; gap: 4px; flex: none; }
+/* Toolbar buttons size to their label and never shrink, so Contacts, Compose and
+   Close keep their whole label on one row; only the account label (min-width:0,
+   ellipsis) gives way when the row is tight (A9; P1-T2 clip at 1400 px). */
+.mail-toolbar .minigame-button,
+.mail-toolbar .se-overlay-close { white-space: nowrap; width: auto; flex: none; }
 .mail-client .minigame-button,
 .mail-client .se-overlay-close {
     min-height: 44px;
@@ -76,7 +79,7 @@
     text-align: center;
 }
 .mail-folder-count:empty { display: none; }
-.mail-toolbar-actions { display: flex; gap: 4px; }
+.mail-toolbar-actions { display: flex; gap: 4px; flex: none; }
 
 .mail-notice {
     margin: 0;
@@ -325,6 +328,42 @@
 }
 .mail-compose-gate { margin: 0; font-family: var(--se-font-readable); font-size: 14px; color: var(--ui-warn, #e6b04d); }
 .mail-compose-send[disabled] { opacity: 0.5; cursor: not-allowed; }
+
+/* Live red-flag meter (01, 04): a side panel beside the composed message that lists
+   the red flags the current draft would raise and clears them as it improves. */
+.mail-redflag-meter {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 10px 12px;
+    border: 2px solid var(--ui-line, #4c5b80);
+    border-left: 4px solid var(--ui-danger, #ff7a6b);
+    background: color-mix(in srgb, var(--ui-danger, #ff7a6b) 8%, transparent);
+    font-family: var(--se-font-readable);
+}
+.mail-redflag-meter[data-count="0"] {
+    border-left-color: var(--ui-success, #6ee08f);
+    background: color-mix(in srgb, var(--ui-success, #6ee08f) 8%, transparent);
+}
+.mail-redflag-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.mail-redflag-title { font-family: var(--ui-heading-font, 'GNF', monospace); font-size: 12px; color: var(--ui-text-dim, #a8b2c8); }
+.mail-redflag-count {
+    min-width: 1.6em;
+    padding: 0 6px;
+    text-align: center;
+    font-weight: 700;
+    font-size: 14px;
+    color: #1a1a1a;
+    background: var(--ui-danger, #ff7a6b);
+}
+.mail-redflag-meter[data-count="0"] .mail-redflag-count { background: var(--ui-success, #6ee08f); }
+.mail-redflag-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.mail-redflag-item,
+.mail-redflag-clean { display: flex; align-items: flex-start; gap: 6px; margin: 0; font-size: 15px; line-height: 1.35; }
+.mail-redflag-item { color: var(--ui-danger, #ff7a6b); }
+.mail-redflag-clean { color: var(--ui-success, #6ee08f); }
+.mail-redflag-mark { width: 16px; height: 16px; flex: none; margin-top: 2px; image-rendering: pixelated; }
+.mail-redflag-text { min-width: 0; }
 
 .mail-picker {
     position: absolute;

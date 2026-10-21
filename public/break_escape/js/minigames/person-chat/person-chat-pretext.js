@@ -46,6 +46,7 @@
 
 import writeGlobalDefault from '../../systems/global-writer.js';
 import { getSocialInfluence } from '../../systems/social-influence.js';
+import { grantFact as grantFactDefault } from '../../systems/social-intel.js';
 
 const LOG_LIMIT = 40;               // 00 §11: the session holds the last 40 entries only
 const isObject = (v) => v !== null && typeof v === 'object' && !Array.isArray(v);
@@ -195,7 +196,7 @@ export async function resolveJudge(judge = injectedJudge) {
  * flags and any number of `intel` facts, all through the shared writer so the open
  * conversation, the cached stories and the bar see them at once (S3).
  */
-export async function applyGrants(grants, ctx, { writeGlobal = writeGlobalDefault, grantFact = null } = {}) {
+export function applyGrants(grants, ctx, { writeGlobal = writeGlobalDefault, grantFact = null } = {}) {
     if (!isObject(grants)) return;
     const w = { engine: ctx?.engine || null, npcId: ctx?.npcId || null };
     if (isObject(grants.setGlobal)) {
@@ -203,7 +204,7 @@ export async function applyGrants(grants, ctx, { writeGlobal = writeGlobalDefaul
     }
     const intel = Array.isArray(grants.intel) ? grants.intel : [];
     if (intel.length) {
-        const grant = grantFact || (await import('../../systems/social-intel.js')).grantFact;
+        const grant = grantFact || grantFactDefault;
         for (const id of intel) grant(id, { engine: w.engine, npcId: w.npcId, source: 'pretext' });
     }
 }
@@ -277,6 +278,7 @@ export function makePretextExternals({ service, spec, session, ctx, judge, write
         session.applyUtteranceChanges(judged);
         fireReport(judged, 'threshold');
         const band = Number.isFinite(judged.band) ? judged.band : service.getBand(character);
+        session.turn += 1;
         session.addLog({ turn: session.turn, kind: 'say', id: utteranceId, entries: judged.entries || [], band });
         persistSession(session);
         if (typeof onChange === 'function') onChange({ kind: 'say', id: utteranceId, judged, band });
@@ -292,9 +294,13 @@ export function makePretextExternals({ service, spec, session, ctx, judge, write
         const inkResult = (judged.inkResult === 0 || judged.inkResult === 1 || judged.inkResult === 2) ? judged.inkResult : 0;
         if (inkResult === 1) {
             // Grants are authored on the ask, not decided by the judge (00 §8).
-            // Fire-and-forget: the awaited chain only touches the shared writer.
-            Promise.resolve(applyGrants(askSpec.grants, ctx, { writeGlobal, grantFact }))
-                .catch(err => console.warn('⚠️ [pretext] grant failed:', err?.message));
+            // Synchronous, and before the session is saved, so a reload cannot
+            // miss a fact the ask just gave (grantFact is loaded with this module).
+            try {
+                applyGrants(askSpec.grants, ctx, { writeGlobal, grantFact });
+            } catch (err) {
+                console.warn('⚠️ [pretext] grant failed:', err?.message);
+            }
             if (!session.grantedAsks.includes(askId)) session.grantedAsks.push(askId);
         } else if (inkResult === 2) {
             // Waiting on verification: record which facts, so the next line's matches
@@ -309,6 +315,7 @@ export function makePretextExternals({ service, spec, session, ctx, judge, write
         fireReport(judged, 'maxRefusals');
         session.noteInfluence(service.getInfluence(character));
         const band = Number.isFinite(judged.band) ? judged.band : service.getBand(character);
+        session.turn += 1;
         session.addLog({ turn: session.turn, kind: 'ask', id: askId, entries: judged.entries || [], band, result: inkResult });
         persistSession(session);
         if (typeof onChange === 'function') onChange({ kind: 'ask', id: askId, judged, band, result: inkResult });
@@ -342,6 +349,15 @@ export function finalisePretext({ session, spec, service, ctx, writeGlobal = wri
 
     writeGlobal(`pretext_${session.callId}_outcome`, outcome, w);
     writeGlobal(`pretext_${session.callId}_lowest`, lowest ?? 0, w);
+    // 06 §4.5: the hint ladder advances on any failed call, not only a report. A call
+    // that is reported, refused, or walked away from with nothing granted all count as
+    // a failed attempt; only `got_it` (the player left with a grant) does not advance it.
+    if (outcome !== 'got_it') {
+        const key = `pretext_${session.callId}_reports`;
+        const globals = (typeof window !== 'undefined') ? window.gameState?.globalVariables : null;
+        const prev = Number(globals?.[key]);
+        writeGlobal(key, (Number.isFinite(prev) ? prev : 0) + 1, w);
+    }
 
     const outcomeSpec = spec?.outcomes?.[outcome];
     if (isObject(outcomeSpec?.setGlobal)) {
@@ -517,28 +533,50 @@ export async function attachPretext(minigame, { chat, judge: injected = null } =
     fillPretextVars(story, session.blanks);
 
     // Intercept the close: show the debrief, set the payload, then complete (N7, N8).
+    // Closing the chat is the end of the call (06: walked away, unless a grant
+    // already made it got_it, or the call was reported). Esc, the ×, End
+    // Conversation and a story that reaches END all come through here.
     const originalComplete = minigame.complete.bind(minigame);
     let finished = false;
+    let debriefUp = false;
+    const superseded = () => window.MinigameFramework && window.MinigameFramework.currentMinigame !== minigame;
     const handle = {
         session, spec, ctx, service,
+        get finished() { return finished; },
         // Re-assert the card VARs after an ink restore (LoadJson overwrites story-local
         // VARs). Idempotent, last write wins; the loader calls it post-restore.
         fillVars: () => fillPretextVars(engine?.story, session.blanks),
         teardown: () => { /* set below */ },
-        finish: (success = true) => {
-            if (finished) { originalComplete(success); return; }
+        finish: () => {
+            if (finished) {
+                if (!debriefUp) originalComplete(true);
+                return;
+            }
             finished = true;
             const payload = finalisePretext({ session, spec, service, ctx });
-            minigame.gameResult = { ...(minigame.gameResult || {}), ...payload };
+            const prior = minigame.gameResult && minigame.gameResult.aborted ? {} : (minigame.gameResult || {});
+            minigame.gameResult = { ...prior, ...payload };
+            delete minigame.gameResult.aborted;
             const container = minigame.container || minigame.messageContainer || null;
-            renderDebrief(container, { session, spec, onDone: () => originalComplete(true) });
+            debriefUp = true;
+            renderDebrief(container, {
+                session, spec,
+                onDone: () => { debriefUp = false; originalComplete(true); }
+            });
         }
     };
     minigame.complete = (success) => {
-        // An abort (forced close, superseded instance) completes straight through;
-        // a normal end shows the debrief first.
-        if (success === false || finished) { originalComplete(success); return; }
-        handle.finish(true);
+        if (superseded()) { originalComplete(success); return; }
+        // The debrief is already up: Esc or the × dismisses it as a normal end.
+        if (debriefUp) { debriefUp = false; originalComplete(true); return; }
+        if (finished) { originalComplete(success); return; }
+        // Defensive only: a SocialOverlayScene's abort() sets { aborted: true } before
+        // complete(false), and that is not the player ending the call, so it records
+        // nothing. A phone/person chat extends MinigameScene and never sets `aborted`,
+        // so for a chat this branch is dead and every complete(false) is a normal call
+        // end (superseded() above already covers the hand-off to another minigame).
+        if (success === false && minigame.gameResult?.aborted === true) { originalComplete(false); return; }
+        handle.finish();
     };
     handle.teardown = () => { minigame.complete = originalComplete; };
 

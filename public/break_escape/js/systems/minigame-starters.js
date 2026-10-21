@@ -1186,6 +1186,33 @@ window.startOsintBrowserMinigame = startOsintBrowserMinigame;
 // Inbox triage (P3-W): the starter lives in triage-starter.js so tests can load it alone.
 window.startInboxTriageMinigame = startInboxTriageMinigame;
 
+// Landing-page builder (P5-G): the workstation opens the page named in
+// minigameData.landingPageId. The overlay derives the target from the page's single
+// `targets` key when targetId is absent (07 section 5). A workstation launch has no
+// kitId, so gameResult.kitId is null there; the mail Attach launch passes kitId.
+export function startLandingPageBuilder(sprite, options = {}) {
+    if (!window.MinigameFramework) {
+        console.error('MinigameFramework not available');
+        window.gameAlert('Page builder unavailable.', 'error', 'Error', 3000);
+        return;
+    }
+    if (!window.MinigameFramework.mainGameScene) {
+        window.MinigameFramework.init(window.game);
+    }
+    const data = sprite?.scenarioData?.minigameData || {};
+    window.MinigameFramework.startMinigame('landing-page-builder', null, socialOverlayParams({
+        title: sprite?.scenarioData?.name || 'Page Builder',
+        landingPageId: options.landingPageId || data.landingPageId,
+        targetId: options.targetId || data.targetId,
+        kitId: options.kitId,
+        returnTo: options.returnTo,
+        onComplete: (success, result) => {
+            if (typeof options.onComplete === 'function') options.onComplete(success, result);
+        }
+    }));
+}
+window.startLandingPageBuilder = startLandingPageBuilder;
+
 // Pretext preparation (P4-T0). The callId branches in interactions.js call this
 // after the lockout check. socialOverlayParams sets requiresKeyboardInput and
 // disableClose before startMinigame reads them. The overlay draws its own Close.

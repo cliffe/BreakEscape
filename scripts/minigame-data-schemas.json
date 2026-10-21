@@ -112,6 +112,11 @@
     "optional": ["triageSetId", "stage", "conclusionTaskId"]
   },
 
+  "page-builder": {
+    "required": ["landingPageId"],
+    "optional": ["targetId"]
+  },
+
   "notes": {
     "optional": ["timerRef"]
   },

@@ -49,6 +49,20 @@ const ICON_FOR = {
 };
 const FALLBACK_ICON = 'mark-question';
 
+// Readable words for the canonical judge factors (phish-rules FACTOR_ORDER), so the
+// "Last change" line reads in plain English rather than a code id such as "senderTrust"
+// (P1-T2 A2). An authored reason that is not a factor id (a phrase the ink already
+// wrote, "missing attachment") passes through unchanged.
+const REASON_WORDS = {
+    senderTrust: 'sender trust',
+    senderAuth: 'sender checks',
+    addressedTo: 'the greeting',
+    pretextRelevant: 'relevance',
+    attachmentPlausible: 'the attachment',
+    urgencyCalibrated: 'the tone',
+    linkCredible: 'the link'
+};
+
 const isObject = (v) => v !== null && typeof v === 'object' && !Array.isArray(v);
 const finite = (v, d) => (typeof v === 'number' && Number.isFinite(v) ? v : d);
 
@@ -116,24 +130,56 @@ export class InfluenceBar {
      */
     _seedChangeFromLog() {
         if (this.changeText) return;
+        if (this._seedFromServiceLog()) return;
+        this._seedFromSession();
+    }
+
+    /** The live influence service log, when this page has seen the change. */
+    _seedFromServiceLog() {
         const svc = (typeof window !== 'undefined') ? window.socialInfluence : null;
-        if (!svc || typeof svc.getLog !== 'function') return;
+        if (!svc || typeof svc.getLog !== 'function') return false;
         let log;
-        try { log = svc.getLog(this.config.id); } catch (e) { return; }
-        if (!Array.isArray(log)) return;
+        try { log = svc.getLog(this.config.id); } catch (e) { return false; }
+        if (!Array.isArray(log)) return false;
         for (let i = log.length - 1; i >= 0; i--) {
             const e = log[i];
             if (!isObject(e) || e.kind === 'silent' || typeof e.delta !== 'number' || e.delta === 0) continue;
             this.changeText = this._changeLine(e.delta, e.reason);
-            return;
+            return true;
         }
+        return false;
+    }
+
+    /**
+     * After a reload the service log is empty. The call session is persisted
+     * at pretext_<callId>_state, and its rows carry the same deltas.
+     */
+    _seedFromSession() {
+        const globals = this.getGlobals?.() || {};
+        const id = this.config?.id;
+        if (!id) return;
+        let best = null;
+        for (const [key, state] of Object.entries(globals)) {
+            if (!key.startsWith('pretext_') || !key.endsWith('_state')) continue;
+            if (!isObject(state) || state.character !== id || !Array.isArray(state.log)) continue;
+            for (const row of state.log) {
+                const entries = Array.isArray(row?.entries) ? row.entries : [];
+                for (const e of entries) {
+                    if (!isObject(e) || typeof e.delta !== 'number' || e.delta === 0) continue;
+                    best = e;
+                }
+            }
+        }
+        if (!best) return;
+        this.changeText = this._changeLine(best.delta, best.reason);
     }
 
     /** The "Last change: +N reason" line, shared by live events and the log seed. */
     _changeLine(delta, reason) {
         const sign = delta > 0 ? '+' : '';
-        const r = typeof reason === 'string' && reason && reason !== 'ink' ? ` ${reason}` : '';
-        return `Last change: ${sign}${delta}${r}`;
+        const word = typeof reason === 'string' && reason && reason !== 'ink'
+            ? ` ${REASON_WORDS[reason] || reason}` : '';
+        return `Last change: ${sign}${delta}${word}`;
     }
 
     /** Current value from gameState (else the start value), clamped to the track for drawing only. */

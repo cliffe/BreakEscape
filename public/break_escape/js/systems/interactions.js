@@ -630,6 +630,24 @@ function socialChannelLocked(id, channel) {
 // locked-out student is refused before the pretext card opens. The callId names a
 // social.pretextNpcs entry; its `character` names the social.characters entry whose
 // channel record (channels.phone for a phone, channels.person for an NPC) is opened.
+function grantsHeld(grants, globals) {
+    if (!grants || typeof grants !== 'object') return false;
+    const intel = Array.isArray(grants.intel) ? grants.intel : [];
+    const setGlobal = grants.setGlobal && typeof grants.setGlobal === 'object' ? grants.setGlobal : {};
+    if (!intel.length && !Object.keys(setGlobal).length) return false;
+    const intelOk = intel.every(id => globals[`se_intel_${id}`] === true);
+    const globalsOk = Object.entries(setGlobal).every(([name, value]) => globals[name] === value);
+    return intelOk && globalsOk;
+}
+
+function everyAskHeld(call, globals) {
+    const asks = call?.asks;
+    if (!asks || typeof asks !== 'object') return false;
+    const list = Object.values(asks);
+    if (!list.length) return false;
+    return list.every(ask => grantsHeld(ask?.grants, globals));
+}
+
 function startPretextCall(callId, { npcId = null, channel } = {}) {
     const svc = window.socialInfluence;
     const calls = window.gameScenario?.social?.pretextNpcs;
@@ -640,6 +658,13 @@ function startPretextCall(callId, { npcId = null, channel } = {}) {
     }
     const characterId = call.character;
     if (socialChannelLocked(characterId, channel)) return; // refuse before pretext-prep opens
+    const globals = window.gameState?.globalVariables || {};
+    if (everyAskHeld(call, globals)) {
+        const name = svc.getCharacterConfig?.(characterId)?.displayName || '';
+        const text = name ? `You already have what ${name} can tell you.` : 'You already have what they can tell you.';
+        (window.gameAlert || window.showNotification)?.(text, 'info', '', 2500);
+        return;
+    }
     const recordNpcId = npcId || svc.getCharacterConfig?.(characterId)?.channels?.[channel] || null;
     // The starter (minigame-starters.js) sets requiresKeyboardInput before
     // startMinigame reads params. P4-D's phone and NPC checks below are the
@@ -1046,6 +1071,17 @@ export function handleObjectInteraction(sprite) {
             window.startInboxTriageMinigame(sprite);
         } else {
             window.gameAlert('Workstation unavailable.', 'error', 'Error', 3000);
+        }
+        return;
+    }
+
+    // Landing-page builder workstation (P5-G): opens the page named in
+    // minigameData.landingPageId (07 section 6). The id is hyphenated (D3).
+    if (sprite.scenarioData.type === 'page-builder') {
+        if (window.startLandingPageBuilder) {
+            window.startLandingPageBuilder(sprite);
+        } else {
+            window.gameAlert('Page builder unavailable.', 'error', 'Error', 3000);
         }
         return;
     }

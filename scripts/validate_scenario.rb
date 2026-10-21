@@ -3758,6 +3758,8 @@ def check_recurring_bugs(json_data, repo_root)
     # 8. a VAR the ink reads but nothing ever sets: its condition is dead (m06 recruitment_accepted)
     code.scan(/^\s*VAR\s+(\w+)\s*=\s*(.+?)\s*$/).each do |var, default|
       next if globals.include?(var) || RECURRING_SYNCED_INK_VARS.include?(var)
+      # The pretext card writes these from the chosen blank (06 §5). The ink only reads them.
+      next if var.match?(/\Apretext_[A-Za-z0-9_]+_(?:name|value)\z/)
       next unless ['false', '0', '""'].include?(default.strip)
       assigned = code =~ /~\s*#{var}\s*(?:=|\+\+|--|\+=|-=)/ || code =~ /#\s*set_(?:variable|global):#{var}\b/
       next if assigned

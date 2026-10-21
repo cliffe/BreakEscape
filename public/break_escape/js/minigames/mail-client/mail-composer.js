@@ -17,13 +17,13 @@
 // empty and blocks Send with the neutral pre-send line, which never names the
 // missing fact (00 §10).
 
-import { preSendGate, PRE_SEND_GATE_LINE } from '../../systems/phish-rules.js';
+import { preSendGate, PRE_SEND_GATE_LINE, evaluateMessage } from '../../systems/phish-rules.js';
 
 export { PRE_SEND_GATE_LINE };
 
 const PARTS = ['from', 'greeting', 'pretext', 'ask'];
-// The payload-kit kinds that attach as a file. `link` is a Phase 5 kind and is
-// never offered as an attachment (00 §1, 01 §2 Attach).
+// The payload-kit kinds that attach as a file. `link` is a separate control (_renderLink,
+// P5-G): it opens the landing-page builder (00 §1, 01 §2 Attach), not the file menu.
 const ATTACHMENT_KINDS = new Set(['spreadsheet', 'document', 'pdf', 'archive', 'image']);
 const NAME_SUFFIXES = ['_first', '_short', '_formal', '_full'];
 const SE_INTEL_PREFIX = 'se_intel_';
@@ -151,9 +151,11 @@ export class MailComposer {
      * @param {HTMLElement} parent
      * @param {object} opts
      *   people, templates, phishTargets, intelFacts, payloadKit   scenario data (00 §11)
+     *   landingPages   social.landingPages, for the `link` kind (01 N4)
      *   account        resolved sending account { id, address, displayName, spoofsFrom, person, burned }
      *   accounts       every resolved account of the device (the "Send as" choices)
      *   onSendAs       (accountId) => void           the player picked another account in "Send as"
+     *   onAttachLink   (kit) => void                 a `link` kit was chosen whose page is not built
      *   contacts       visible contacts [{ id, name, addresses, role, targetId, character }]
      *   globals        global variables (held facts, burned_<id>)
      *   pushLayer      (close, name) => remover    the overlay's Esc-layer hook
@@ -169,10 +171,17 @@ export class MailComposer {
         this.targets = new Map(arr(opts.phishTargets).filter((t) => t && isStr(t.id)).map((t) => [t.id, t]));
         this.intelFacts = isObject(opts.intelFacts) ? opts.intelFacts : {};
         this.payloadKit = arr(opts.payloadKit);
+        this.landingPages = arr(opts.landingPages);
         this.account = opts.account || null;
         this.accounts = arr(opts.accounts);
         this.contacts = arr(opts.contacts);
         this.globals = isObject(opts.globals) ? opts.globals : {};
+        // The live red-flag meter (01 "red-flag meter", 04 N) is per target: the
+        // target's `redFlagMeter` boolean, defaulting to mailClient.showRedFlagMeter
+        // (passed in as meterDefault). `evaluate` is the shell's live judge (bias +
+        // evaluateMessage); absent, the composer judges from phish-rules directly.
+        this.meterDefault = opts.meterDefault === true;
+        this.evaluate = typeof opts.evaluate === 'function' ? opts.evaluate : null;
 
         this.heldIds = heldFactIds(this.intelFacts, this.globals);
         this.entries = heldProvides(this.heldIds, this.intelFacts);
@@ -182,6 +191,7 @@ export class MailComposer {
         this.choice = {};           // part -> template id
         this.slots = {};            // slot id -> value id
         this.attachment = null;     // payload-kit item id
+        this.link = null;           // payload-kit `link` item id (a built landing page)
         this.gate = { ok: false, reason: 'empty-blank', line: '' };
         this._picker = null;
         this._popPicker = null;
@@ -263,6 +273,7 @@ export class MailComposer {
         this.choice = {};
         this.slots = {};
         this.attachment = null;
+        this.link = null;
         for (const part of PARTS) {
             // The pretext is the player's deliberate choice (01 §2): leave it unchosen so
             // the composer opens with Send disabled until they pick one (P1-T). Every other
@@ -297,6 +308,60 @@ export class MailComposer {
         this.render();
     }
 
+    /** The landing-page definition for a `link` kit, or null. */
+    _pageOf(kit) {
+        if (!kit || !isStr(kit.landingPageId)) return null;
+        return this.landingPages.find((p) => p && p.id === kit.landingPageId) || null;
+    }
+
+    /** The saved page record (se_landing_pages[pageId]) for a `link` kit, or null. */
+    _recordOf(kit) {
+        if (!kit || !isStr(kit.landingPageId)) return null;
+        const pages = isObject(this.globals.se_landing_pages) ? this.globals.se_landing_pages : null;
+        return pages && isObject(pages[kit.landingPageId]) ? pages[kit.landingPageId] : null;
+    }
+
+    /** The `link` kits offered for the current target: the kit's page lists this target (01 N4). */
+    linkKitsForTarget() {
+        const t = this.target;
+        if (!t) return [];
+        return this.payloadKit.filter((k) => {
+            if (!k || k.kind !== 'link' || !isStr(k.landingPageId)) return false;
+            const page = this._pageOf(k);
+            return page && isObject(page.targets) && Object.prototype.hasOwnProperty.call(page.targets, t.id);
+        });
+    }
+
+    /**
+     * Choose a `link` kit (01 N4). A built page attaches at once; an unbuilt one asks the
+     * host to open the builder (onAttachLink), which returns here and attaches on close when
+     * the page is now built. Choosing the same, already-attached kit detaches it.
+     */
+    setLink(kit) {
+        if (!kit || !isStr(kit.id)) { this.link = null; this._emitChange(); this.render(); return; }
+        if (this.link === kit.id) { this.link = null; this._emitChange(); this.render(); return; }
+        const rec = this._recordOf(kit);
+        if (rec && rec.built === true) {
+            this.link = kit.id;
+            this._emitChange();
+            this.render();
+            return;
+        }
+        // Not built yet: hand off to the host to launch the builder.
+        try { this.opts.onAttachLink?.(kit); } catch (err) { console.error('composer onAttachLink failed:', err); }
+    }
+
+    /** Called by the host after the builder closes: attach the link if its page is now built. */
+    attachLinkIfBuilt(kitId) {
+        const kit = this.payloadKit.find((k) => k && k.id === kitId && k.kind === 'link');
+        const rec = this._recordOf(kit);
+        if (kit && rec && rec.built === true) {
+            this.link = kit.id;
+            this._emitChange();
+        }
+        if (this.root) this.render();
+    }
+
     /** Every slot across the chosen templates, as [{ part, slot }]. */
     activeSlots() {
         const out = [];
@@ -309,6 +374,68 @@ export class MailComposer {
 
     optionsFor(slot) {
         return optionsForSlot(slot, { entries: this.entries, people: this.people });
+    }
+
+    /**
+     * A template's text with its blanks shown filled in rather than as raw
+     * `{placeholders}` (A4). A chosen blank reads as its evidence label; an unfilled
+     * blank reads as its slot label in brackets ("[name to greet them by]"), never a
+     * value the player has not found; account tokens read as the sending account.
+     */
+    _fillPreview(tpl) {
+        if (!isObject(tpl) || !isStr(tpl.text)) return tpl && isStr(tpl.text) ? tpl.text : '';
+        const slotById = {};
+        for (const s of arr(tpl.slots)) if (s && isStr(s.id)) slotById[s.id] = s;
+        return String(tpl.text).replace(/\{([a-zA-Z0-9_]+)\}/g, (whole, key) => {
+            if (key === 'account_name') return this.account ? (this.account.displayName || this.account.address || '') : '';
+            if (key === 'account_address') return this.account ? (this.account.address || '') : '';
+            const slot = slotById[key];
+            const chosen = this.slots[key];
+            if (isStr(chosen)) {
+                const opt = slot ? this.optionsFor(slot).find((o) => o.value === chosen) : null;
+                if (opt) return opt.label;
+                const e = this.entries.find((x) => x.value === chosen);
+                return e ? (e.label || e.value) : chosen;
+            }
+            const label = slot && isStr(slot.label) ? slot.label : key;
+            return `[${label}]`;
+        });
+    }
+
+    /** Whether the live red-flag meter shows for the current target (01, 04). */
+    _meterOn() {
+        const t = this.target;
+        if (!t) return false;
+        return typeof t.redFlagMeter === 'boolean' ? t.redFlagMeter : this.meterDefault;
+    }
+
+    /** Judge the current draft for the meter: the shell's bias-aware judge, else phish-rules direct. */
+    _liveResult() {
+        const target = this.target;
+        if (!target) return null;
+        const message = this.buildMessage();
+        try {
+            if (this.evaluate) return this.evaluate(message) || null;
+            const ctx = { accounts: this.accounts, people: this.people, templates: this.templates, payloadKit: this.payloadKit };
+            return evaluateMessage(target, message, ctx);
+        } catch (err) {
+            console.error('composer meter judge failed:', err);
+            return null;
+        }
+    }
+
+    /** The red flags the current draft would raise, de-duped (00 §2, §13: failed factors). */
+    _meterData() {
+        if (!this._meterOn()) return { on: false, flags: [], clean: false, landed: false };
+        const result = this._liveResult();
+        const flags = [];
+        const seen = new Set();
+        const push = (s) => { if (isStr(s) && !seen.has(s)) { seen.add(s); flags.push(s); } };
+        if (result) {
+            if (result.open && result.open.opened === false) push(result.openLine || 'Nothing here would make them open it.');
+            for (const f of arr(result.factors)) if (!f.pass && isStr(f.redFlag)) push(f.redFlag);
+        }
+        return { on: true, flags, clean: flags.length === 0, landed: !!(result && result.landed) };
     }
 
     /** The composed message (00 §3). */
@@ -325,6 +452,10 @@ export class MailComposer {
             };
         }
         const kit = this.payloadKit.find((k) => k && k.id === this.attachment) || null;
+        // The link is a kitId string (01 N4); the bridge fills linkInfo from the saved
+        // page record before judging. linkText comes from the page the kit names.
+        const linkKit = isStr(this.link) ? this.payloadKit.find((k) => k && k.id === this.link && k.kind === 'link') : null;
+        const linkPage = linkKit ? this._pageOf(linkKit) : null;
         return {
             fromAccount: this.account ? this.account.id : null,
             to: this.toAddress || '',
@@ -335,7 +466,8 @@ export class MailComposer {
             slots: { ...this.slots },
             attachment: kit ? kit.id : null,
             attachmentKind: kit ? kit.kind : null,
-            link: null,
+            link: linkKit ? linkKit.id : null,
+            linkText: linkPage && isStr(linkPage.linkText) ? linkPage.linkText : null,
             linkInfo: null
         };
     }
@@ -391,6 +523,7 @@ export class MailComposer {
         if (isObject(draft.templates)) this.choice = { ...draft.templates };
         if (isObject(draft.slots)) this.slots = { ...draft.slots };
         if (isStr(draft.attachment)) this.attachment = draft.attachment;
+        if (isStr(draft.link)) this.link = draft.link;
         if (isStr(draft.contactId)) this.contactId = draft.contactId;
         // A draft saved before contactId was persisted (or a non-target one)
         // still names its recipient by address: recover it from `to` (D3).
@@ -401,7 +534,7 @@ export class MailComposer {
         // Mark the form as restored so _selectDefaultContact does not reset it.
         this._draftRestored = isStr(draft.to) || isStr(draft.contactId) ||
             (isObject(draft.templates) && Object.keys(draft.templates).length > 0) ||
-            isStr(draft.attachment) || (isObject(draft.slots) && Object.keys(draft.slots).length > 0);
+            isStr(draft.attachment) || isStr(draft.link) || (isObject(draft.slots) && Object.keys(draft.slots).length > 0);
     }
 
     draft() {
@@ -412,7 +545,7 @@ export class MailComposer {
             templates: { ...this.choice },
             slots: { ...this.slots },
             attachment: this.attachment,
-            link: null
+            link: this.link
         };
     }
 
@@ -458,6 +591,8 @@ export class MailComposer {
             this._renderSubject();
             this._renderBody();
             this._renderAttach();
+            this._renderLink();
+            this._renderMeter();
         }
         this._renderSend();
         // Rebuilding the form drops focus to the page; put it back where the player was.
@@ -598,7 +733,7 @@ export class MailComposer {
                 // record it, not a greyed-out disabled control (P1-T).
                 if (!this.choice[part]) this.choice[part] = set[0];
                 const only = templateOf(this.templates, set[0]);
-                row.appendChild(el('p', 'mail-compose-value mail-compose-fixed', only ? only.text : set[0]));
+                row.appendChild(el('p', 'mail-compose-value mail-compose-fixed', only ? this._fillPreview(only) : set[0]));
             } else {
                 this._renderPartSelect(row, part);
             }
@@ -622,7 +757,7 @@ export class MailComposer {
         }
         for (const id of set) {
             const tpl = templateOf(this.templates, id);
-            const opt = el('option', null, tpl ? tpl.text : id);
+            const opt = el('option', null, tpl ? this._fillPreview(tpl) : id);
             opt.value = id;
             if (id === this.choice[part]) opt.selected = true;
             select.appendChild(opt);
@@ -687,6 +822,80 @@ export class MailComposer {
         select.addEventListener('change', () => this.setAttachment(select.value));
         row.append(label, select);
         this.root.appendChild(row);
+    }
+
+    /**
+     * The `link` kind (01 N4): a button per landing-page link offered for this target. A built
+     * page attaches at once; an unbuilt one opens the builder through the host (onAttachLink).
+     * The link is never a blank and never a real URL.
+     */
+    _renderLink() {
+        const kits = this.linkKitsForTarget();
+        if (!kits.length) return;
+        const row = el('div', 'mail-compose-row mail-compose-link-row');
+        row.append(el('span', 'mail-compose-label', 'Link'));
+        for (const k of kits) {
+            const rec = this._recordOf(k);
+            const built = !!(rec && rec.built === true);
+            const attached = this.link === k.id;
+            const btn = el('button', 'mail-compose-link minigame-button');
+            btn.type = 'button';
+            btn.dataset.kit = k.id;
+            btn.setAttribute('aria-pressed', attached ? 'true' : 'false');
+            const base = k.label || k.id;
+            btn.textContent = attached ? `${base} — attached (tap to remove)`
+                : built ? `Attach ${base}` : `Build & attach ${base}`;
+            btn.addEventListener('click', () => this.setLink(k));
+            row.appendChild(btn);
+        }
+        this.root.appendChild(row);
+    }
+
+    /**
+     * The live red-flag meter (01, 04): a side panel that, for a target with the meter
+     * on, shows the red flags the current draft would raise and clears them as the draft
+     * improves. A teaching aid for the first target; it reads the message as a defender
+     * would and never names a fact the player has not found.
+     */
+    _renderMeter() {
+        const data = this._meterData();
+        if (!data.on) return;
+        const panel = el('aside', 'mail-redflag-meter');
+        panel.dataset.count = String(data.flags.length);
+        panel.setAttribute('role', 'status');
+        panel.setAttribute('aria-live', 'polite');
+        panel.setAttribute('aria-label', 'Red-flag check');
+        const head = el('div', 'mail-redflag-head');
+        head.appendChild(el('span', 'mail-redflag-title', 'Red flags'));
+        head.appendChild(el('span', 'mail-redflag-count', String(data.flags.length)));
+        panel.appendChild(head);
+        if (data.flags.length) {
+            const list = el('ul', 'mail-redflag-list');
+            for (const flag of data.flags) {
+                const li = el('li', 'mail-redflag-item');
+                const img = el('img', 'mail-redflag-mark');
+                img.src = '/break_escape/assets/icons/mark-cross.png';
+                img.alt = '';
+                img.setAttribute('aria-hidden', 'true');
+                img.width = 16;
+                img.height = 16;
+                li.append(img, el('span', 'mail-redflag-text', flag));
+                list.appendChild(li);
+            }
+            panel.appendChild(list);
+        } else {
+            const ok = el('p', 'mail-redflag-clean');
+            const img = el('img', 'mail-redflag-mark');
+            img.src = '/break_escape/assets/icons/mark-tick.png';
+            img.alt = '';
+            img.setAttribute('aria-hidden', 'true');
+            img.width = 16;
+            img.height = 16;
+            ok.append(img, el('span', 'mail-redflag-text',
+                'No red flags right now — this reads clean so far.'));
+            panel.appendChild(ok);
+        }
+        this.root.appendChild(panel);
     }
 
     _renderSend() {
@@ -810,13 +1019,16 @@ export class MailComposer {
             templates: { ...this.choice },
             slots: { ...this.slots },
             attachment: this.attachment,
+            link: this.link,
+            linkKits: this.linkKitsForTarget().map((k) => ({ id: k.id, built: !!(this._recordOf(k) && this._recordOf(k).built === true) })),
             blanks,
             picker,
             account: this.account ? this.account.id : null,
             sendAs: this.accounts.map((a) => ({ id: a.id, burned: this.isBurned(a) })),
             sendEnabled: this.gate.ok,
             gateLine: this.gate.ok ? '' : (this.gate.line || ''),
-            gateReason: this.gate.reason || null
+            gateReason: this.gate.reason || null,
+            redFlagMeter: this._meterData()
         };
     }
 

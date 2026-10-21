@@ -28,9 +28,11 @@ const copy = (src, name, fix = (s) => s) => writeFileSync(join(dir, name), fix(r
 copy('systems/global-writer.js', 'global-writer.mjs');
 copy('systems/pretext-judge.js', 'pretext-judge.mjs');
 copy('systems/social-influence.js', 'social-influence.mjs', (s) => s.replace("'./global-writer.js'", "'./global-writer.mjs'"));
+copy('systems/social-intel.js', 'social-intel.mjs', (s) => s.replace("'./global-writer.js'", "'./global-writer.mjs'"));
 copy('minigames/person-chat/person-chat-pretext.js', 'person-chat-pretext.mjs', (s) => s
     .replace("'../../systems/global-writer.js'", "'./global-writer.mjs'")
-    .replace("'../../systems/social-influence.js'", "'./social-influence.mjs'"));
+    .replace("'../../systems/social-influence.js'", "'./social-influence.mjs'")
+    .replace("'../../systems/social-intel.js'", "'./social-intel.mjs'"));
 
 const imp = (name) => import(pathToFileURL(join(dir, name)).href);
 const { writeGlobal } = await imp('global-writer.mjs');
@@ -246,6 +248,26 @@ test('pretext_ask grants: setGlobal and intel applied once, outcome got_it', () 
     assert.equal(typeof globals()[`pretext_${CALL}_lowest`], 'number');
     assert.equal(globals().pretext_call_reported, false, 'got_it does not set the reported flag');
     assert.equal(session.open, false, 'the session is closed after finalise');
+});
+
+test('R-5: a failed call advances the hint counter (walked away or reported); got_it does not', () => {
+    const { service } = setup({ start: 0 });
+    // Walked away: nothing granted, not reported -> the ladder advances.
+    const s1 = new P.PretextSession({ callId: CALL, character: 'dev' });
+    s1.blanks = { ...CARD };
+    const e1 = externals({ service, session: s1, runId: 'r1' });
+    const p1 = P.finalisePretext({ session: s1, spec: e1.spec, service, ctx: e1.ctx });
+    assert.equal(p1.outcome, 'walked_away');
+    assert.equal(globals()[`pretext_${CALL}_reports`], 1, 'a walked-away call advances the ladder');
+
+    // got_it: a granting ask -> the ladder does not advance.
+    const s2 = new P.PretextSession({ callId: CALL, character: 'dev' });
+    s2.blanks = { ...CARD };
+    const e2 = externals({ service, session: s2, runId: 'r2' });
+    quiet(() => e2.pretext_ask('portal_name'));
+    const p2 = P.finalisePretext({ session: s2, spec: e2.spec, service, ctx: e2.ctx });
+    assert.equal(p2.outcome, 'got_it');
+    assert.equal(globals()[`pretext_${CALL}_reports`], 1, 'a got_it call leaves the ladder where it was');
 });
 
 test('pretext_ask pending, then a verifying line, then granted', () => {

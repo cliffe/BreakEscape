@@ -9,8 +9,11 @@
 // and the phish_<id>_attempts global, and builds the checklist DOM and the
 // §3 gameResult transform.
 //
-// Attachments only (no link kind) and no victim record / landing-page handling
-// yet. A data-only target's reply is the text job scheduled here; a target with a
+// It also handles the `link` kind (01 N4, Phase 5): it fills message.linkInfo from
+// the saved landing-page record before judging, and after a send that carries a built
+// page it writes the best victim outcome back onto that record (07 betterVictim) and
+// adds the capture note once, the first time the outcome becomes submitted (07 N11).
+// A data-only target's reply is the text job scheduled here; a target with a
 // `character` gets an ink job scheduled through the mail runner (P1-J), whose
 // on_email run writes the reply in character.
 //
@@ -21,6 +24,8 @@
 import { evaluateMessage, CANONICAL } from '../../systems/phish-rules.js';
 import { writeGlobal } from '../../systems/global-writer.js';
 import { heldFactIds, heldProvides } from './mail-composer.js';
+import { linkInfoFor, describeVictimOutcome, betterVictim, captureGranted, buildRecord as buildLandingRecord }
+    from '../landing-page-builder/landing-page-model.js';
 
 // The mail runner (P1-J) is loaded lazily: only a send to a character target needs
 // it, and keeping it off the module's static import graph lets the data-only bridge
@@ -64,6 +69,27 @@ export function resolveTarget(social, targetId) {
     const list = social && social.phishTargets;
     const targets = Array.isArray(list) ? list : Object.values(list || {});
     return targets.find((t) => t && t.id === targetId) || null;
+}
+
+/** The payload-kit `link` item named by message.link (a kitId string), or null (01 N4). */
+function linkKitOf(config, linkId) {
+    if (!isStr(linkId)) return null;
+    const kit = arr(config && config.payloadKit).find((k) => k && k.id === linkId);
+    return kit && kit.kind === 'link' && isStr(kit.landingPageId) ? kit : null;
+}
+
+/** The landing-page definition for a pageId (00 §11a; social.landingPages is an array). */
+function findLandingPage(social, pageId) {
+    if (!isStr(pageId)) return null;
+    const list = social && social.landingPages;
+    const pages = Array.isArray(list) ? list : Object.values(list || {});
+    return pages.find((p) => p && p.id === pageId) || null;
+}
+
+/** The saved page record (se_landing_pages[pageId]) from the live globals, or null. */
+function landingRecord(globals, pageId) {
+    const pages = isObject(globals && globals.se_landing_pages) ? globals.se_landing_pages : null;
+    return pages && isObject(pages[pageId]) ? pages[pageId] : null;
 }
 
 /**
@@ -280,6 +306,16 @@ export function performSend(scene, message) {
         return { result: null, record: null, target, gameResult: null, claimedFrom: null, lockedOut: true };
     }
 
+    // A link kind (01 N4, Phase 5): resolve the kit's landing page to the saved record and
+    // fill message.linkInfo from 07's linkInfoFor before judging, so linkCredible sees the
+    // built page's domain and threshold (or the missing state when no page is built yet).
+    const linkKit = linkKitOf(config, message && message.link);
+    if (linkKit) {
+        const pageDef = findLandingPage(social, linkKit.landingPageId);
+        const rec = landingRecord(globals, linkKit.landingPageId);
+        message.linkInfo = linkInfoFor(rec, pageDef, linkKit.id);
+    }
+
     const metrics = (mailState && mailState.metrics) || (mailState.metrics = {});
     const priorFailures = isObject(metrics[target.id]) ? (metrics[target.id].failed || 0) : 0;
     const judged = applyFactorBias(target, globals);
@@ -290,12 +326,45 @@ export function performSend(scene, message) {
     const subjectText = subjectTextOf(target, message.subject);
     const record = buildRecord({ message, result, account, social, labels, subjectText, target, accountId });
     const timing = scene.checklistTiming ? scene.checklistTiming() : 'onSend';
-    if (timing === 'withReply') record.judgePending = true;
+    if (timing === 'withReply') {
+        record.judgePending = true;
+        // Keep the composed message with the record so the teaching checklist can be
+        // rebuilt after a reload, when the in-memory hold is gone (T2-6). It is removed
+        // once the verdict is shown. judgePending is not persisted (the job queue is the
+        // truth), but pendingMessage is whitelisted in the server mailState sanitiser.
+        record.pendingMessage = message;
+    }
     commitRecord(scheduler, mailState, mailboxId, record);
 
     // Metrics and the attempts global (00 §10a, §3 "The record").
     const m = updateMetrics(metrics, target.id, result.landed);
     writeGlobal(`phish_${target.id}_attempts`, m.sent);
+
+    // Victim record and capture note (01 N6, 07 N10/N11). A send that carries a built
+    // page writes the best victim outcome back onto the saved page record (07's
+    // betterVictim), so the "noticed" outcome and the step-6 Inspect are reachable even
+    // after an "attach anyway" send. The first time the outcome becomes submitted, the
+    // capture note is added once.
+    if (linkKit) {
+        const pages = isObject(globals.se_landing_pages) ? globals.se_landing_pages : null;
+        const rec = pages && isObject(pages[linkKit.landingPageId]) ? pages[linkKit.landingPageId] : null;
+        if (rec && rec.built === true) {
+            const before = isObject(rec.victim) ? rec.victim : null;
+            const outcome = describeVictimOutcome(rec, target, result.landed);
+            const next = betterVictim(before, outcome);
+            if (next !== before) {
+                const updated = buildLandingRecord({ ...rec, victim: next });
+                writeGlobal('se_landing_pages', { ...pages, [linkKit.landingPageId]: updated });
+            }
+            if (captureGranted(before, next)) {
+                const pageDef = findLandingPage(social, linkKit.landingPageId);
+                const note = pageDef && pageDef.capture && isStr(pageDef.capture.note) ? pageDef.capture.note : null;
+                if (note && typeof window !== 'undefined' && typeof window.addNote === 'function') {
+                    try { window.addNote(note); } catch (err) { console.error('capture note failed:', err); }
+                }
+            }
+        }
+    }
 
     // Schedule the reply. An unopened send gets no reply at all in onSend mode
     // (00 §10 "Timing and delivery", J-1): nothing made the target open it. In
@@ -338,15 +407,44 @@ export function performSend(scene, message) {
     }
 
     if (scene.refresh) scene.refresh();
-    const claimed = result.claimedSender;
-    // Show a readable name in the reply-to advisory, not the raw person id (A3:
-    // "shah's inbox"). Resolve against social.people, falling back to the address.
-    const claimedPerson = claimed ? arr(social.people).find((p) => p && p.id === claimed) : null;
-    const claimedLabel = claimedPerson
-        ? (claimedPerson.name || claimedPerson.forms?.full || claimedPerson.address || claimed)
-        : claimed;
-    const claimedFrom = (claimed && account && account.person !== claimed) ? claimedLabel : null;
+    // Show a readable name in the reply-to advisory, not the raw person id (A3).
+    const claimedFrom = resolveClaimedFrom(social, account, result.claimedSender);
     return { result, record, target, gameResult: gameResultOf(result, target.id), claimedFrom, replyScheduled };
+}
+
+/**
+ * Rebuild the teaching checklist's inputs for a sent record whose verdict was held
+ * in withReply mode, after a reload dropped the in-memory hold (T2-6). Re-judges the
+ * record's stored `pendingMessage` with the live globals; purely to render the
+ * checklist, so nothing is counted, recorded or scheduled. Returns a sendInfo-shaped
+ * object, or null when the record carries no pending message or its target is gone.
+ */
+export function rejudgeForChecklist(scene, record) {
+    if (!scene || !isObject(record) || !isObject(record.pendingMessage)) return null;
+    const social = scene.social || {};
+    const globals = scene.globals || {};
+    const config = scene.config || {};
+    const target = resolveTarget(social, record.targetId);
+    if (!target) return null;
+    const metrics = (scene.mailState && scene.mailState.metrics) || {};
+    const priorFailures = isObject(metrics[target.id]) ? (metrics[target.id].failed || 0) : 0;
+    const judged = applyFactorBias(target, globals);
+    const ctx = { accounts: scene.accounts || [], people: social.people, templates: social.templates,
+                  payloadKit: config.payloadKit, priorFailures };
+    const result = evaluateMessage(judged, record.pendingMessage, ctx);
+    const claimedFrom = resolveClaimedFrom(social, scene.account, result.claimedSender);
+    // The reply has already been delivered by the time the job completes after a reload.
+    return { result, record, target, gameResult: gameResultOf(result, target.id), claimedFrom, replyScheduled: false };
+}
+
+/**
+ * The reply-to advisory's readable name (A3): the claimed sender resolved against
+ * social.people, or null when the From is the account's own identity.
+ */
+function resolveClaimedFrom(social, account, claimed) {
+    if (!claimed || !account || account.person === claimed) return null;
+    const p = arr(social && social.people).find((pp) => pp && pp.id === claimed);
+    return p ? (p.name || (p.forms && p.forms.full) || p.address || claimed) : claimed;
 }
 
 /** The data-only reply text: replies.landed, else the first failed factor's line (00 §10, N7). */
@@ -371,7 +469,10 @@ function buildRecord({ message, result, account, social, labels, subjectText, ta
         slots: { ...(message.slots || {}) },
         body: renderBodyText(message, social.templates, account, labels),
         attachment: isStr(message.attachment) ? { kitId: message.attachment, kind: message.attachmentKind || null } : null,
-        link: null,
+        link: isStr(message.link)
+            ? { kitId: message.link, linkText: message.linkText || null,
+                destination: (isObject(message.linkInfo) && isStr(message.linkInfo.domain)) ? message.linkInfo.domain : null }
+            : null,
         landed: result ? result.landed : null,
         tells: result ? arr(result.tells).slice() : [],
         read: true

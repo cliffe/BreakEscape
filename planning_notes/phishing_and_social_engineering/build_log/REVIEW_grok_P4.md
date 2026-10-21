@@ -49,3 +49,15 @@ Scope: P4-C (`build_log/P4-C.md`), P4-E (`P4-E.md`), P4-T0 (`P4-T0.md`, `tools/p
 ## Verdict
 
 **The P4-T review was accurate** — all four escalated findings (blocker T4-1, majors T4-2/T4-3/T4-4) and the seven minors are real. **Fix round 1 resolves every one, correctly and completely**, and I verified it independently: 94/94 node tests, validator exit 0, bridge-4 30/30 on a fresh game with the outcome globals written on both the person (walked_away) and phone (reported) close paths. No new blockers or majors. Five minor observations (R-1..R-5), none of which gate the phase. Phase 4, on this evidence, is done.
+
+## Fix round 2 (opus48, 2026-10-21)
+
+The P4-T findings were already fixed and verified in Fix round 1; this round closes the five R-minors from this review. Checks after the round: `social-pretext-prep` / `social-pretext-session` / `social-pretext-judge` 37 tests pass (incl. two new R-5 tests); full node social suite 701/701; `bin/rails test` 723 runs, 0 failures; slice validator exit 0; bridge-4 re-run 30/30 on a fresh game.
+
+| id | sev | status | what changed | verification |
+|----|-----|--------|--------------|--------------|
+| R-1 | minor | fixed | Logging gap only. The post-fix re-run is recorded here: node suites and bridge-4 re-run clean this round. | this round's checks. |
+| R-2 | minor | fixed | Reworded the `complete` override comment in `person-chat-pretext.js` to say the `aborted` branch is defensive only: a chat extends MinigameScene and never sets `gameResult.aborted`, so every `complete(false)` on a chat is a normal call end (`superseded()` covers the hand-off). | source read; `finale-voiced-calls` 16/16, `session-overlay-pause` unaffected. |
+| R-3 | minor | fixed | The pending-message flush now runs on the pretext leave path too, so leaving a call never drops a queued line. Placed inside `_leavePretextCall()` (not `closeConversation`) so `closeConversation`'s body stays byte-identical to HEAD — the `finale-voiced-calls` source-text test pins that function's `_flushPendingMessages(); _callVoice?.stop();` order. | `finale-voiced-calls.test.mjs` 16/16; bridge-4 30/30 (phone call still records `reported`). |
+| R-4 | minor | noted | The extra slice edits the diff carried were other packets' shared-tree work (and this round's own Phase 2-3 data fixes). No shipped-mission impact. | — |
+| R-5 | minor | fixed | Per the recorded decision, the hint ladder now advances on any failed call, not only a report: `finalisePretext` increments `pretext_<callId>_reports` when `outcome !== 'got_it'` (reported, refused, or walked away with nothing granted). `hintLine`'s doc updated. | new tests: `social-pretext-session` "a failed call advances the hint counter … got_it does not"; `social-pretext-prep` "the hint ladder advances by the failed-call counter". bridge-4 still 30/30. |

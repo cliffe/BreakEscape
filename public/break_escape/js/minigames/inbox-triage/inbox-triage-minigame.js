@@ -20,13 +20,13 @@
 //   storedResult      object    { percent, reportRate, headline? }: a read-only result and nothing else
 //                               (the pre/post first-attempt reopen, N6)
 //   persistResult     function  (result) => Promise<{ confirmed }>. Called once each time the Result
-//                               step is shown for a finished round (systems/triage-starter.js). While the
-//                               promise is pending, and while the starter calls setSavingState('saving'),
-//                               the screen shows "Saving your result..." and holds Finish; 'saved' or a
-//                               settled confirmed:true clears it; 'failed' or confirmed:false shows that it
-//                               will save the next time the round is opened. (`onResult` is accepted as
-//                               an alias.)
-//   setSavingState    method    ('saving' | 'saved' | 'failed'): the starter calls it on the open overlay.
+//                               step is shown for a finished round (systems/triage-starter.js). The first
+//                               attempt holds Finish and leaves the note blank ('pending'). The saving
+//                               notice appears only when the starter calls setSavingState('saving') on a
+//                               retry (05). 'saved' or a settled confirmed:true clears it and unlocks
+//                               Finish; 'failed' or confirmed:false shows that it will save the next time
+//                               the round is opened. (`onResult` is accepted as an alias.)
+//   setSavingState    method    ('pending' | 'saving' | 'saved' | 'failed'): the starter calls it on the open overlay.
 //   onComplete        function  (success, result) as for every minigame
 // Completion: Finish sets gameResult to the result (see _buildResult) and complete(true).
 // Close or Esc anywhere before the Result step sets { aborted: true } and complete(false).
@@ -507,6 +507,16 @@ export class InboxTriageMinigame extends SocialOverlayScene {
         return phish ? verdict === 'report' || verdict === 'verify' : verdict === 'trust' || verdict === 'verify';
     }
 
+    /**
+     * How the review card paints a verdict. Report on real mail is not a failure:
+     * the line says reporting is never wrong, and under awareness that call is
+     * full marks (05). A danger-coloured cross would contradict the sentence.
+     */
+    _verdictTone(rec, verdict) {
+        if (rec.truth.isPhish !== true && verdict === 'report') return 'acceptable';
+        return this._isRight(rec, verdict) ? 'right' : 'wrong';
+    }
+
     /** One review card (05 step 3): verdict line, caught and missed flags, false flags, what would have happened. */
     _card(rec) {
         const ans = this.answers.get(rec.id);
@@ -518,9 +528,9 @@ export class InboxTriageMinigame extends SocialOverlayScene {
         title.tabIndex = -1;
         card.appendChild(title);
 
-        const right = this._isRight(rec, ans.verdict);
-        const verdict = el('p', `tri-card-verdict ${right ? 'right' : 'wrong'}`);
-        verdict.append(icon(right ? 'mark-tick' : 'mark-cross'),
+        const tone = this._verdictTone(rec, ans.verdict);
+        const verdict = el('p', `tri-card-verdict ${tone}`);
+        verdict.append(icon(tone === 'wrong' ? 'mark-cross' : 'mark-tick'),
             el('span', null, `You chose ${VERDICT_LABEL[ans.verdict]}. ${this._verdictLine(rec, ans.verdict)}`));
         card.appendChild(verdict);
 
@@ -760,7 +770,10 @@ export class InboxTriageMinigame extends SocialOverlayScene {
         let out;
         try { out = fn(result); } catch (err) { console.error('triage persistResult failed:', err); return; }
         if (out && typeof out.then === 'function') {
-            this.setSavingState('saving');
+            // Hold Finish quietly on the first attempt. The saving notice is for a
+            // retry (05: shown while syncConfirmed is retrying), which the starter
+            // reports with setSavingState('saving').
+            this.setSavingState('pending');
             const settle = (state) => { if (this.result === result) this.setSavingState(state); };
             out.then((res) => settle(res === false || res?.confirmed === false ? 'failed' : 'saved'), () => settle('failed'));
         }
@@ -768,7 +781,9 @@ export class InboxTriageMinigame extends SocialOverlayScene {
 
     /** The starter reports the save: 'saving' holds Finish, 'saved' clears the note, 'failed' says it will save on the next open. */
     setSavingState(state) {
-        this.saving = state === 'saving';
+        // 'pending' holds Finish with no notice (the first attempt is in flight).
+        // 'saving' is the retry notice. Both keep Finish disabled until the save confirms.
+        this.saving = state === 'saving' || state === 'pending';
         this.saveFailed = state === 'failed';
         if (this.saveNote) {
             this.saveNote.textContent = state === 'saving' ? (this.params.savingNotice || 'Saving your result...')

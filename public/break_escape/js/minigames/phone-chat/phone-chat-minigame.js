@@ -596,6 +596,7 @@ export class PhoneChatMinigame extends MinigameScene {
             this.continueStory();
         } else if (result.hasEnded) {
             console.log('🏁 Story has ended');
+            if (this._finishPretextCall()) return;
             this.ui.showNotification('Conversation ended', 'info');
             this.isConversationActive = false;
             this._releaseForcedCall();
@@ -700,6 +701,7 @@ export class PhoneChatMinigame extends MinigameScene {
         // If story has ended with no messages, end conversation immediately
         if (lastResult.hasEnded && accumulatedMessages.length === 0) {
             console.log('🏁 Conversation ended');
+            if (this._finishPretextCall()) return;
             this.ui.showNotification('Conversation ended', 'info');
             this.isConversationActive = false;
             this._releaseForcedCall();
@@ -754,6 +756,7 @@ export class PhoneChatMinigame extends MinigameScene {
         } else if (lastResult.hasEnded || !lastResult.canContinue) {
             // No more content and no choices - end conversation
             console.log('🏁 No more choices available');
+            if (lastResult.hasEnded && this._finishPretextCall()) return;
             this.isConversationActive = false;
             this._releaseForcedCall();
         }
@@ -971,6 +974,7 @@ export class PhoneChatMinigame extends MinigameScene {
         // Check if conversation ended AFTER displaying the final text
         if (lastResult.hasEnded) {
             console.log('🏁 Conversation ended');
+            if (this._finishPretextCall()) return;
             this.ui.showNotification('Conversation ended', 'info');
             this.isConversationActive = false;
             this._releaseForcedCall();
@@ -1124,10 +1128,33 @@ export class PhoneChatMinigame extends MinigameScene {
     }
     
     /**
-     * Close the current conversation and return to contact list
+     * A pretext call that reaches END, or that the player leaves, records its
+     * outcome and shows the debrief before the thread is torn down (06 §6).
+     * @returns {boolean} true when the debrief has taken over
      */
+    _finishPretextCall() {
+        if (!this._pretext || this._pretext.finished) return false;
+        this._pretext.finish();
+        return true;
+    }
+
+    _leavePretextCall() {
+        // Flush any still-typing NPC line into the thread before the debrief/complete, so
+        // leaving a call never drops a queued message (R-3): the ordinary close path flushes,
+        // and the pretext leave path must not differ.
+        this._flushPendingMessages();
+        this._callVoice?.stop();
+        if (!this._pretext.finished) {
+            this._pretext.finish();
+            return;
+        }
+        // The debrief is already up. Leaving the thread is the same as Done.
+        this.complete(true);
+    }
+
     closeConversation() {
         console.log('🔙 Closing conversation');
+        if (this._pretext) return this._leavePretextCall();
 
         this._flushPendingMessages();
         this._callVoice?.stop();   // a voiced call's line stops with the thread

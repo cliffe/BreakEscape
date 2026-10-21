@@ -15,6 +15,8 @@ EXTERNAL pretext_ask(ask_id)
 VAR brandt_influence = -10
 VAR pretext_contact_name = ""
 VAR pretext_contact_value = ""
+VAR se_intel_portal_name = false
+VAR se_intel_payslip_date = false
 
 === function pretext_say(utterance_id) ===
 // Fallback only: a dry run or preload has no binding. The real binding judges the
@@ -39,9 +41,9 @@ Brandt: Service desk, how can I help?
     -> reaction(pretext_say("urgent_now"))
 + [My manager said you could sort this out.]
     -> reaction(pretext_say("name_drop"))
-+ [Can you tell me the portal's name?]
++ { not se_intel_portal_name } [Can you tell me the portal's name?]
     -> ask_reaction(pretext_ask("portal_name"))
-+ [And when do payslips go out?]
++ { not se_intel_payslip_date } [And when do payslips go out?]
     -> ask_reaction(pretext_ask("release_date"))
 + [I'll ring back later.]
     -> END

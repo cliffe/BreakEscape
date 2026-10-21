@@ -1,7 +1,6 @@
-/* Pretext preparation (06 beats 1 and 2). The minigame adds this link itself,
-   so the overlay is styled before the wiring packet touches show.html.erb.
-   Chrome headings use the theme face. Every string the player reads uses
-   Source Sans 3. */
+/* Pretext preparation (06 beats 1 and 2). Linked from the game page
+   (show.html.erb). Chrome headings use the theme face. Every string the
+   player reads uses Source Sans 3. */
 
 .pretext-prep-container {
     background: var(--ui-backdrop, rgba(6, 8, 16, 0.78));
@@ -70,6 +69,13 @@
 .pretext-brief,
 .pretext-card {
     margin: 0 0 16px;
+}
+
+.pretext-hint {
+    margin: 0 0 16px;
+    padding: 8px 10px;
+    border-left: 3px solid var(--ui-line, #4c5b80);
+    color: var(--ui-text, #eef1f8);
 }
 
 .pretext-scope,

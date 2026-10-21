@@ -37,7 +37,10 @@
 .ob-handle,
 .ob-tool-label,
 .ob-field-value,
-.ob-staff-address {
+.ob-staff-address,
+.ob-post-text,
+.ob-block-text,
+.ob-bio {
     font-family: var(--se-font-readable, 'Source Sans 3', 'Segoe UI', Arial, sans-serif);
 }
 

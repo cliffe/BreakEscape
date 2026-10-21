@@ -62,6 +62,13 @@ test('Priya happy path reproduces the worked example influence column', () => {
   assert.match(entryFor(t2, 'manager').line, /Jed Baker/);
   assert.match(entryFor(t2, 'manager').line, /Melanie Pierce/);
 
+  // The card stores { value, label } under the fact id. The same value still scores.
+  const cardRight = judgeUtterance(PRIYA, sess(), 'give_manager', { manager: { value: 'pierce_full', label: 'Melanie Pierce' } }, -10);
+  assert.equal(entryFor(cardRight, 'manager').delta, 10);
+  const cardWrong = judgeUtterance(PRIYA, sess(), 'give_manager', { manager: { value: 'baker_full', label: 'Jed Baker' } }, -10);
+  assert.match(entryFor(cardWrong, 'manager').line, /Jed Baker/);
+  assert.match(entryFor(cardWrong, 'manager').line, /Melanie Pierce/);
+
   // Turn 3: owning the slip early. Repair = claim +10 + candour +10 = +20, clears the mismatch.
   const t3 = judgeUtterance(PRIYA, sess({ openMismatches: ['manager'] }), 'repair_manager', { name: 'pierce_full' }, -40);
   assert.equal(t3.influenceAfter, -20);

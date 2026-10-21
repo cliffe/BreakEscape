@@ -25,6 +25,7 @@ for (const rel of ['systems/phish-rules.js',
     'minigames/mail-client/mail-client-minigame.js', 'minigames/mail-client/mail-reader.js',
     'minigames/mail-client/mail-data.js', 'minigames/mail-client/mail-notification.js',
     'minigames/mail-client/mail-composer.js', 'minigames/mail-client/mail-bridge.js',
+    'minigames/landing-page-builder/landing-page-model.js',
     'systems/global-writer.js', 'systems/social-influence.js', 'ui/influence-bar.js']) {
     mkdirSync(dirname(join(dir, rel)), { recursive: true });
     writeFileSync(join(dir, rel), readFileSync(join(js, rel), 'utf8'));
@@ -280,4 +281,74 @@ test('the mail client Compose button opens the composer over the reader', () => 
     assert.equal(host.querySelector('.mail-composer'), null);
     assert.equal(scene.gameState.isActive, true);
     scene.cleanup();
+});
+
+// ── P6-M: A4 filled sentences, and the live red-flag meter ───────────────────
+
+// A composer over the fixture for a chosen contact/target.
+function composerFor(targetId, name, globals = {}, over = {}) {
+    const host = document.getElementById('host');
+    host.textContent = '';
+    const fx = over.fx || fixture();
+    const contacts = [{ id: targetId, name, role: 'Role', addresses: [`${targetId}@ledgerwell.example`], targetId }];
+    const composer = new MailComposer(host, {
+        people: fx.people, templates: fx.templates, phishTargets: fx.phishTargets,
+        intelFacts: fx.intelFacts, payloadKit: fx.mailClient.payloadKit,
+        account: GUEST, contacts, globals, pushLayer: () => () => {}, onSend: () => {}, ...over
+    });
+    return { composer, host, fx };
+}
+
+test('A4: part selects show the filled sentence, never a raw {placeholder}', () => {
+    const { composer, host } = composerFor('pierce', 'Mel Pierce', grant('pierce_role'));
+    const pretextSel = host.querySelector('.mail-compose-template[data-part="pretext"]');
+    const pretextText = [...pretextSel.options].map((o) => o.textContent).join(' | ');
+    assert.doesNotMatch(pretextText, /[{}]/, 'no raw braces in the pretext options');
+    assert.match(pretextText, /\[document\]/, 'an unfilled blank reads as its label in brackets');
+
+    // Greeting defaults to greet_named; filling the recipient name shows it in the option.
+    composer.setSlot('name', 'pierce_first');
+    const greetSel = host.querySelector('.mail-compose-template[data-part="greeting"]');
+    const named = [...greetSel.options].find((o) => o.value === 'greet_named');
+    assert.doesNotMatch(named.textContent, /[{}]/);
+    assert.match(named.textContent, /^Hi .+,$/, 'the greeting option fills the chosen name');
+    assert.doesNotMatch(named.textContent, /\[name\]/);
+});
+
+test('red-flag meter: on by meterDefault, lists the draft red flags and clears them as it improves', () => {
+    const { composer, host } = composerFor('hampshire', 'Chris Hampshire', grant('hampshire_careers'), { meterDefault: true });
+    composer.chooseTemplate('pretext', 'pretext_enquiry'); // wrong pretext, no attachment
+    let m = composer.getState().redFlagMeter;
+    assert.equal(m.on, true);
+    assert.equal(m.clean, false);
+    assert.ok(m.flags.length >= 2, 'the wrong pretext and the missing attachment are both flagged');
+    const panel = host.querySelector('.mail-redflag-meter');
+    assert.ok(panel, 'the meter panel is drawn');
+    assert.equal(host.querySelectorAll('.mail-redflag-item').length, m.flags.length);
+    assert.equal(panel.dataset.count, String(m.flags.length));
+
+    // The right pretext plus the CV clear every flag.
+    composer.chooseTemplate('pretext', 'pretext_apply');
+    composer.setAttachment('kit_cv');
+    m = composer.getState().redFlagMeter;
+    assert.equal(m.clean, true);
+    assert.equal(m.flags.length, 0);
+    assert.equal(host.querySelector('.mail-redflag-meter').dataset.count, '0');
+    assert.ok(host.querySelector('.mail-redflag-clean'), 'a clean draft shows the reassuring line');
+    assert.equal(host.querySelector('.mail-redflag-item'), null);
+});
+
+test('red-flag meter: off when neither the target nor the default turns it on, and the per-target flag overrides the default', () => {
+    // Default off, no per-target flag: no meter.
+    const a = composerFor('hampshire', 'Chris Hampshire', grant('hampshire_careers'), { meterDefault: false });
+    a.composer.chooseTemplate('pretext', 'pretext_enquiry');
+    assert.equal(a.composer.getState().redFlagMeter.on, false);
+    assert.equal(a.host.querySelector('.mail-redflag-meter'), null);
+
+    // Default on, but the target sets redFlagMeter:false -> off (the per-target flag wins).
+    const fx = fixture();
+    fx.phishTargets.find((t) => t.id === 'hampshire').redFlagMeter = false;
+    const b = composerFor('hampshire', 'Chris Hampshire', grant('hampshire_careers'), { meterDefault: true, fx });
+    assert.equal(b.composer.getState().redFlagMeter.on, false);
+    assert.equal(b.host.querySelector('.mail-redflag-meter'), null);
 });

@@ -258,6 +258,17 @@ export class MailReader {
             pane.appendChild(chips);
         }
 
+        // A sent record's landing-page link (01 N4): an abstract chip, never a real URL.
+        if (rec.link && (rec.link.destination || rec.link.linkText || rec.link.kitId)) {
+            const chips = el('div', 'mail-chips');
+            const chip = el('span', 'mail-chip mail-chip-attachment');
+            const labelText = rec.link.destination || rec.link.linkText || rec.link.kitId;
+            chip.append(icon('attach-link'), el('span', 'mail-chip-label', labelText),
+                el('span', 'mail-sr-only', ' (link attachment)'));
+            chips.appendChild(chip);
+            pane.appendChild(chips);
+        }
+
         pane.appendChild(this._bodyNode(rec));
 
         const status = el('p', 'mail-link-status');

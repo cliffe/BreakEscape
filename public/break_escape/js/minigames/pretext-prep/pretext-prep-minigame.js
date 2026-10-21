@@ -22,17 +22,8 @@
 import { SocialOverlayScene } from '../framework/social-overlay.js';
 import {
     blankSlot, blanksPayload, briefCopy, callGate, callLaunch, cardFacts, cardLines,
-    factLabel, heldOnBoard, kindText, optionsForFact, readinessLines, textParts
+    factLabel, heldOnBoard, hintLine, kindText, optionsForFact, readinessLines, textParts
 } from './pretext-card.js';
-
-function ensurePrepStyles() {
-    if (typeof document === 'undefined' || document.getElementById('pretext-prep-styles')) return;
-    const link = document.createElement('link');
-    link.id = 'pretext-prep-styles';
-    link.rel = 'stylesheet';
-    link.href = new URL('./pretext-prep.css', import.meta.url).href;
-    document.head.appendChild(link);
-}
 
 function h(tag, props = {}, ...kids) {
     const node = document.createElement(tag);
@@ -85,7 +76,6 @@ export class PretextPrepMinigame extends SocialOverlayScene {
 
     init() {
         super.init();
-        ensurePrepStyles();
         this.container.classList.add('pretext-prep-container');
         this.gameContainer.classList.add('pretext-prep-game');
         this.render();
@@ -148,6 +138,8 @@ export class PretextPrepMinigame extends SocialOverlayScene {
 
         const scroll = h('div', { class: 'pretext-scroll' });
         scroll.appendChild(this._briefBlock(brief, held));
+        const hint = hintLine(spec, this.globals);
+        if (hint) scroll.appendChild(h('p', { class: 'pretext-hint', text: hint }));
         scroll.appendChild(this._cardBlock(facts, options, lines, factIds, labelFor, ready));
         root.appendChild(scroll);
 

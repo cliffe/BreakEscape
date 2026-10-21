@@ -172,6 +172,22 @@ export function callGate(facts, optionsByFact, chosen) {
     return { ok: true, reason: null, line: '' };
 }
 
+/**
+ * The hint for this attempt (06 §4.5). The ladder advances on each failed call
+ * (reported, refused, or walked away with nothing granted; not a `got_it`): the
+ * first failure shows hints[0], the second hints[1], and further failures stay on
+ * the last line. No failed call yet, or no hints authored, means no line. The
+ * counter is `pretext_<callId>_reports`, written by finalisePretext.
+ */
+export function hintLine(spec, globals) {
+    const hints = Array.isArray(spec?.hints) ? spec.hints.filter((h) => typeof h === 'string' && h) : [];
+    if (!hints.length || !isStr(spec?.callId)) return '';
+    const n = Number(globals?.[`pretext_${spec.callId}_reports`]);
+    const count = Number.isFinite(n) ? n : 0;
+    if (count < 1) return '';
+    return hints[Math.min(count - 1, hints.length - 1)];
+}
+
 /** `{ factId: { value, label } }` for the facts the player has filled. */
 export function blanksPayload(facts, optionsByFact, chosen) {
     const out = {};

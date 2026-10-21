@@ -63,9 +63,15 @@ function substituteRow(row, tokens) {
     return out;
 }
 
-/** Sent records across the mailboxes in `mailState`, with a position for tie-breaking. */
-function sentCandidates(mailState, targetId, fromMailbox) {
-    const out = [];
+/**
+ * Sent records to one target, split by whether they carry tells.
+ * A record with no tells is never replayed (05). `tellless` is true when at
+ * least one real sent record exists and none of them have tells, so the skip
+ * reason can say that instead of pretending there was no send.
+ */
+function classifySent(mailState, targetId, fromMailbox) {
+    const withTells = [];
+    let tellless = false;
     let order = 0;
     const boxes = isObj(mailState?.mailboxes) ? mailState.mailboxes : {};
     for (const [boxId, box] of Object.entries(boxes)) {
@@ -75,11 +81,16 @@ function sentCandidates(mailState, targetId, fromMailbox) {
             if (!isObj(rec) || rec.folder !== 'sent' || rec.seeded === true) continue;
             if (rec.kind === 'quickReply' || rec.targetId !== targetId) continue;
             const tells = Array.isArray(rec.tells) ? rec.tells.filter(isStr) : [];
-            if (!tells.length) continue;
-            out.push({ rec, order, tells, time: Number.isFinite(rec.gameTime) ? rec.gameTime : 0 });
+            if (!tells.length) { tellless = true; continue; }
+            withTells.push({ rec, order, tells, time: Number.isFinite(rec.gameTime) ? rec.gameTime : 0 });
         }
     }
-    return out;
+    return { withTells, tellless };
+}
+
+/** Sent records across the mailboxes in `mailState`, with a position for tie-breaking. */
+function sentCandidates(mailState, targetId, fromMailbox) {
+    return classifySent(mailState, targetId, fromMailbox).withTells;
 }
 
 const later = (a, b) => (a.time - b.time) || (a.order - b.order);
@@ -126,8 +137,9 @@ function kitItem(social, kitId) {
  * Returns { message } or { skipped: reason }.
  */
 export function resolvePlayerSent(entry, set, mailState, social, opts = {}) {
+    const classified = classifySent(mailState, entry?.targetId, entry?.fromMailbox || null);
     const picked = pickSentRecord(mailState, entry);
-    if (!picked) return { skipped: 'no-sent-record' };
+    if (!picked) return { skipped: classified.tellless ? 'sent-without-tells' : 'no-sent-record' };
     const rec = picked.rec;
     const auth = isObj(set?.playerSentAuth) ? set.playerSentAuth : {};
 

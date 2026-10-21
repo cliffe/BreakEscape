@@ -38,6 +38,8 @@ Server: keyless, 127.0.0.1:3001, pid 1178210, started Wed Oct 21 16:06:28 2026. 
 
 `tools/playtest/se/bridge-3.jsonl` was run twice (games 2939 and 2948). Both stopped at the first reload: the script calls `location.assign(?skip_resume=1)` inside a `waitFor` that returns immediately, and the next eval starts before the new document has `__test` ("Execution context was destroyed"). On 2948 the evals through one mid-round answer passed, and the rows after that reload did not. That is a script race. The completion path and the reopen were re-run with `page.reload` and a click on Resume, below. P3-T0 recorded bridge-3 as 32/32 on game 2920; this session did not reproduce that full script.
 
+Fix round 2 (2026-10-21) confirms this race still reproduces and files the command: `PLAYWRIGHT_BROWSERS_PATH unset, Node 24 (ms-playwright-go/1.57.0/node), chromium 1248 headless shell, bundle exec … playtest-session.js --headless < bridge-3.jsonl` fails at the first reload (RELOAD eval destroyed by the navigation; `window.__test` then undefined) on games 2978, 2985 and 2997. It is a browser-timing issue specific to reloading *while an overlay is open* — reloads with no overlay (bridge-1b D1/D2, bridge-4) pass in the same environment, and the untouched bridge-1a fails at its reload the same way. REVIEW_grok_P2P3's clean 32/32 was a different browser build. Not a script defect; the mid-round-reload coverage depends on the browser.
+
 ### Game 2940: Hampshire send, then triage
 
 The careers contact was already on the server from browsing the company site (`se_intel_hampshire_careers` true). The send used the composer's own templates (`from_own`, `pretext_apply`, attachment `kit_cv`), not a typed secret. The message landed. Opening the triage workstation showed three messages and skipped `own_hampshire`.
@@ -243,3 +245,13 @@ No VM-side claim in this packet needs checking against SecGen.
 ## Verdict
 
 Do not mark Phase 3 done. One blocker (T3-1: the playerSent card does not show the Hampshire send) and one major (T3-2: Report on real mail is drawn as a failure). Three minors (T3-3, T3-4, T3-5). The scorer, the validator, the one-shot reopen, the blocked save, the 403 stop, the narrow layout and the defender picks held.
+
+## Fix round 1
+
+| Finding | Outcome |
+|---------|---------|
+| T3-1 | Fixed in data; verified in a browser in Fix round 2. The Fix round 1 approach (relabel Hampshire's CV ask as urgent so a tell is stored) was superseded: the review (REVIEW_grok_P2P3 R-1/R-2) found that taught a false tell, so Fix round 2 reverted the urgency change and pointed the playerSent entry at Teague's spoofed send, which carries honest `senderTrust`/`senderAuth` tells (`own_teague`, `targetId: "teague"`). A sent record with no tells is still skipped as `sent-without-tells`. The replayed card is now opened in a browser by `tools/playtest/se/bridge-3b.jsonl` (8/8, after bridge-1b lands a Teague send). |
+| T3-2 | Fixed. Report on real mail uses the class `acceptable` and a tick. The score is unchanged. `inbox-triage-minigame.js:515-516`; `inbox-triage-minigame.css:149`. |
+| T3-3 | Fixed. The slice set sets `"glossary": "open"`. `scenario.json.erb:626`. |
+| T3-4 | Fixed. The laptop message has `auth.summary` in the design's words for a fail that is still fine. `scenario.json.erb:710-712`. |
+| T3-5 | Fixed. The first save sets `pending`: Finish stays disabled and the note stays blank. "Saving your result..." is only the `saving` state, which the starter uses on a retry. `inbox-triage-minigame.js:776`. |

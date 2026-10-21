@@ -150,3 +150,14 @@ Game 2945 earned only `hampshire_careers` (play.log line 33) before the script e
 ### As a player
 
 The workstation opens on the team page. The three tabs read `company`, `social` and `deck`, with the host written under each one. Careers is a normal page link. Clicking the inbox line notes it and adds an evidence note; the same for the file-type line and Hampshire's post. A lunch note says there is nothing to use. The document properties panel shows Author `mteague` in the readable face. The Hunter line is the one that is hard to read: the address sits in the pixel font, while the address bar and the staff rows do not. Teague's picture is a blank square; Hampshire's portrait appears once her profile is unlocked. Case file lists her as ready and Close puts you back on Careers. The mail checks match the earlier slice: the enquiry fails on her own line, a reload still brings the reply, and the application with the CV lands.
+
+## Fix round 1
+
+| Finding | Outcome |
+|---------|---------|
+| F1 | Fixed. Posts, paragraphs and bios carry `ob-readable`, and the stylesheet sets Source Sans 3 on those classes as well as the address and domain lines. `osint-browser-minigame.js:557`, `:560`, `:401`; `osint-browser-minigame.css:34-44`. |
+| F2 | Fixed. The three sites are named Ledgerwell, Friendface and Q3.pdf. Ids are unchanged. `scenario.json.erb:357` (social and deck beside it). `bridge-2.jsonl` expects those labels. |
+| F3 | Fixed. A headshot is requested only when the profile or the person has an avatar. Teague has none. `osint-browser-minigame.js:372-375`. |
+| F4 | Fixed. Noting a block that newly readies a target shows "Ready to approach". `osint-browser-minigame.js:607-610`. |
+| F5 | Fixed. The mission description says the facts come from the browser. `mission.json:3`. |
+| F6 | Fixed. `pages[].url` and `pages[].path` are on the contract field list, and `pages[].path` is linted next to `pages[].url`. `00_data_contract.md:1734-1735`; `scripts/validate_social/osint.rb:414`. |

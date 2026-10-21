@@ -158,6 +158,13 @@ test('00 section 11 lint field list: host-only .example on url and address field
   has(/createMenu\[c1\]\.address "tarnside/, 0);
 });
 
+test('F6/R-11: a page `path` is linted like a host (§11 field list), a clean .example path passes', { skip }, () => {
+  const bad = mutated((s) => { s.social.osint.sites[0].pages[0].path = 'ledgerwell.com/profile'; });
+  assert.equal(hits(lint(bad), /❌.*pages\[team\]\.path "ledgerwell\.com\/profile": host 'ledgerwell\.com' does not end \.example/).length, 1);
+  const good = mutated((s) => { s.social.osint.sites[0].pages[0].path = 'ledgerwell.example/team/profile'; });
+  assert.equal(hits(lint(good), /pages\[team\]\.path/).length, 0, 'a .example page path raises nothing');
+});
+
 test('00 section 11: denylist with fold-and-match, on hosts', { skip }, () => {
   has(/❌.*sites\[social\]\.url "paypal\.example\/login": host 'paypal\.example' contains the real brand 'paypal'/);
   has(/❌.*sites\[leeds\]\.url "https:\/\/paypa1\.example".*real brand 'paypal'/);   // 1 folds to l

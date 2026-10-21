@@ -1,0 +1,202 @@
+{
+  "globalVariables": {
+    "landing_payroll_login_built": false,
+    "landing_payroll_login_domain": ""
+  },
+  "rooms": {
+    "lab_room": {
+      "objects": [
+        {
+          "type": "page-builder",
+          "id": "builder_station",
+          "minigameData": {
+            "landingPageId": "payroll_login"
+          }
+        }
+      ]
+    }
+  },
+  "social": {
+    "conceptCards": [
+      {
+        "id": "typo-squat",
+        "title": "Typo-squat",
+        "text": "A name one look-alike pair away, such as ledgerwall for ledgerwell."
+      },
+      {
+        "id": "homograph",
+        "title": "Homograph"
+      },
+      {
+        "id": "padlock",
+        "title": "Padlock"
+      },
+      {
+        "id": "hover-link",
+        "title": "Hover the link"
+      },
+      {
+        "id": "right-to-left",
+        "title": "Read right to left",
+        "text": "The real site is ledgerwell.example."
+      },
+      {
+        "id": "five-habits",
+        "title": "Five habits"
+      }
+    ],
+    "phishTargets": [
+      {
+        "id": "lord",
+        "requiredFactors": [
+          "senderTrust",
+          "linkCredible"
+        ],
+        "expectedLink": {
+          "brandId": "ledgerwell",
+          "realDomain": "ledgerwell.example"
+        }
+      }
+    ],
+    "landingPages": [
+      {
+        "id": "payroll_login",
+        "linkText": "ledgerwell.example/payroll",
+        "targets": {
+          "lord": {
+            "linkThreshold": 70,
+            "minDomainTier": 2
+          }
+        },
+        "brands": [
+          {
+            "id": "ledgerwell",
+            "name": "Ledgerwell",
+            "look": "generic",
+            "realDomain": "ledgerwell.example",
+            "realFields": [
+              "email",
+              "password"
+            ],
+            "decoyWords": [
+              "payroll-online",
+              "account-help",
+              "login"
+            ],
+            "domains": [
+              {
+                "id": "d_unrelated",
+                "domain": "payroll-online.example",
+                "trick": "unrelated",
+                "tier": 0
+              },
+              {
+                "id": "d_letter",
+                "domain": "ledgerwall.example",
+                "trick": "wrong-letter",
+                "tier": 1
+              },
+              {
+                "id": "d_word",
+                "domain": "ledgerwell-hr.example",
+                "trick": "extra-word",
+                "tier": 2
+              },
+              {
+                "id": "d_sub",
+                "domain": "login.ledgerwell.account-help.example",
+                "trick": "subdomain",
+                "tier": 2
+              },
+              {
+                "id": "d_vv",
+                "domain": "ledgervvell.example",
+                "trick": "typo-squat",
+                "tier": 3
+              },
+              {
+                "id": "d_homo",
+                "domain": "ledgerw\u0435ll.example",
+                "browserDomain": "xn--ledgerwll-m0h.example",
+                "trick": "homograph",
+                "tier": 3
+              }
+            ]
+          },
+          {
+            "id": "cloudboxy",
+            "name": "CloudBoxy",
+            "look": "parody",
+            "realDomain": "cloudboxy.example",
+            "realFields": [
+              "email",
+              "password"
+            ],
+            "decoyWords": [
+              "cloud-login"
+            ],
+            "domains": [
+              {
+                "id": "c_letter",
+                "domain": "cloudbuxy.example",
+                "trick": "wrong-letter",
+                "tier": 1
+              }
+            ]
+          }
+        ],
+        "purposes": [
+          {
+            "id": "signin",
+            "label": "Sign in"
+          },
+          {
+            "id": "expired",
+            "label": "Password expired"
+          },
+          {
+            "id": "payslip",
+            "label": "Payslip ready"
+          }
+        ],
+        "wordings": [
+          {
+            "id": "w_formal",
+            "match": true,
+            "text": "Your first payslip is ready. Sign in to the staff portal to view it."
+          },
+          {
+            "id": "w_generic",
+            "match": false,
+            "text": "Please sign in to continue."
+          },
+          {
+            "id": "w_slips",
+            "match": false,
+            "slips": true,
+            "text": "Plese login to veiw you're payslip."
+          }
+        ],
+        "strings": {
+          "defDomainTier0": "The address has no connection to the service it claims to be.",
+          "defDomainTier1": "The address is {shown}, not {real}. One letter is wrong.",
+          "defDomainTier2": "The address is {shown}, not {real}. Read it from the right.",
+          "defDomainTier3": "The address is {shown}, not {real}. Compare every letter.",
+          "verdictPass": "Convincing enough for {firstName}."
+        },
+        "conceptCards": [
+          "typo-squat",
+          "homograph",
+          "padlock",
+          "hover-link",
+          "right-to-left",
+          "five-habits"
+        ],
+        "capture": {
+          "address": "sofia.lord@ledgerwell.example",
+          "note": "Sofia Lord's account was captured by your page. Report it."
+        }
+      }
+    ]
+  }
+}
