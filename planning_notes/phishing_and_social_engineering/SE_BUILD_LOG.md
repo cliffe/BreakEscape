@@ -274,6 +274,8 @@ Fix round 1 for Phases 2-4 (grok): every P2-T, P3-T and P4-T finding reported fi
 
 - **Bridge harness fix** (Sonnet): the reload race (an eval started against the old page as navigation committed) fixed with two Node-side screenshot steps after each reload wait; bridge-1a B1 updated for three board people. All seven slice bridges pass on fresh games: 1a 38, 1b 82, 2 15, 3 32, 3b 8, 3c 4, 4 30. Note: the session `--log` appends, so use a fresh output path per run.
 
+- **P6-T0** (Sonnet): `tools/playtest/se/bridge-6.jsonl`, 35 evals on the lab (scope sheet, plan whiteboard, report, reload). Game 3045: 34/35; RP2 failed because the report model keyed calls by `id` while the contract and the lab use `callId`. Orchestrator fixed `report-model.js` to read `callId` (falling back to `id`) and the fixture; report test 15/15. Open for P6-R: Ruth's opening hub defeats `bootstrap`; report tasks complete from their globals while the `report` aim is still locked.
+
 ## Review rounds
 
 ### Phase 0, round 1 (P0-R, Opus): 0 blocker, 2 major, 13 minor

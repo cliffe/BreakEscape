@@ -18,7 +18,7 @@
     { "id": "payroll_login", "linkText": "ledgerwell.example/payroll" }
   ],
   "pretextNpcs": [
-    { "id": "service_desk_call", "character": "dev" }
+    { "callId": "service_desk_call", "character": "dev" }
   ],
   "engagement": {
     "report": {

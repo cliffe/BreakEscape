@@ -131,6 +131,8 @@ export function buildReportModel(social, globals, mailState) {
 
     // ── results: calls ──────────────────────────────────────────────────────
     const calls = (Array.isArray(social?.pretextNpcs) ? social.pretextNpcs : [])
+        // The contract keys a call by `callId` (00 §11); `id` is accepted for older data.
+        .map((c) => (c && typeof c === 'object' ? { ...c, id: typeof c.callId === 'string' ? c.callId : c.id } : c))
         .filter((c) => c && typeof c.id === 'string')
         .map((c) => {
             const character = typeof c.character === 'string' ? c.character : null;
