@@ -91,6 +91,8 @@ Fix round 2 (opus48): T2-1 fixed with an applied-marker global `se_mail_applied`
 
 ## Questions for the user
 
+- **How to build the rest of Phase 4** (call preparation screen P4-C, call UI P4-E, its bridge and playtest). The orchestrator's brief for P4-C was stopped by a safety classifier.
+
 - **How to build the composer (P1-E2).** See the stop above.
 
 - **Speaker tie in shipped missions (R-01).** Applying the tie everywhere would give every briefing and debrief's "Agent HaX:" lines, and m07/m08 Netherton and Nightshade, the portrait of the conversation's own NPC instead of the first matching record. Probably a fix, but visible in finished missions. Held back until the user decides.
@@ -186,6 +188,8 @@ Fix round 2 (opus48): T2-1 fixed with an applied-marker global `se_mail_applied`
 - **P4-B** (opus48): `person-chat/person-chat-pretext.js` (PretextSession stored in `pretext_<callId>_state`, `makePretextExternals` with ledger idempotency, `mergeSpec`, `finalisePretext`, `fillPretextVars` named by fact, `attachPretext` with its own debrief panel); both chat loaders begin/track/end a run and pass `runId` in tag options, only for social characters. Tests 11/11; judge+session 25; back-compat set 94/94; social glob 451/451; engine regression 57/57. P4-C must pass `blanks` keyed by fact id (in its plan row).
 
 - **P3-W** (grok, first grok packet): triage scene registered, starter wired, `triage-workstation` branch, CSS, preload, placeholder sprite, schema entry, `carry_over_json_writes` knows the four result globals; slice triage set `slice_inbox` (incl. the player's own Hampshire send), workstation, task `triage_sorted`, defender board on two facts. Orchestrator re-ran: slice `--strict-social` 0 errors; social and validator 535/535; validator output identical to HEAD on all 72 shipped scenarios; Rails suite below.
+
+- **P4-C stopped (2026-10-21).** A safety classifier stopped the orchestrator while it wrote the Grok brief for the call-preparation screen; the Grok relay had started on a cut-off brief and was stopped before writing anything (checked). Not retried or reworded. Phase 4's remaining packets (P4-C, P4-E, P4-T0, P4-T) wait for the user. P3-T0 (triage bridge) launched on grok meanwhile.
 
 ## Review rounds
 
