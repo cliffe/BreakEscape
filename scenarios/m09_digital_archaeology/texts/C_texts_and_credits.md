@@ -54,11 +54,11 @@ Every person ends on an unconditional clause, so each always has a line; clauses
     { "name": "HALINA KOWALCZYK", "clauses": [
       { "text": "Took a phone call on the apron and walked away.", "condition": "globalVars.recruiter_offer === 'double_crossed'" },
       { "text": "Thanked for her cracker, to her face.", "condition": "globalVars.kowalczyk_reply === 'warm'" },
-      { "text": "Asked after her cracker. Told it did the job." }
+      { "text": "Asked after her cracker. Got a shrug." }
     ] },
     { "name": "MARGARET SORENSEN", "clauses": [
       { "text": "Wrote down every box she destroyed.", "condition": "globalVars.sorensen_fate === 'talked'" },
-      { "text": "Stopped at the shredder. A concussion and a lawyer.", "condition": "globalVars.sorensen_fate === 'ko'" },
+      { "text": "Stopped at the shredder. Asked for a lawyer.", "condition": "globalVars.sorensen_fate === 'ko'" },
       { "text": "Fed the shredder all night." }
     ] },
     { "name": "NOOR HADDAD", "clauses": [
@@ -75,7 +75,7 @@ Every person ends on an unconditional clause, so each always has a line; clauses
     { "name": "JESSE TRAN", "clauses": [
       { "text": "Walked out and made a phone call.", "condition": "globalVars.tran_outcome === 'talked'" },
       { "text": "In custody. Asked for a phone charger.", "condition": "globalVars.tran_outcome === 'ko'" },
-      { "text": "Wiped the tape side and went home." }
+      { "text": "Wiped the tape side. Nobody stopped him." }
     ] },
     { "name": "THE RECRUITER", "clauses": [
       { "text": "Sold you a name and booked the sale.", "condition": "globalVars.recruiter_offer === 'taken'" },
@@ -108,4 +108,4 @@ Every person ends on an unconditional clause, so each always has a line; clauses
 - Changes from S4 §9's draft: 3d reads "Going into Montana with you." (was "Going in with you."); Sorensen's default is "Fed the shredder all night." (the draft's "until morning" broke the no-dawn rule); Netherton (the memo stance, M) and Kowalczyk (the hangar reply, N) get person lines, so both debrief choices are read back once; Noor gets a warned-in-the-spring clause before her default, matching the debrief's line for that route; the Albion "Elsewhere" line keeps the fix's real pace (ninety days for a fix, then the sites to reach) rather than "a fix in ninety days"; Nightshade's two lines are new, in `ELSEWHERE`.
 - The imports `m05_found_pipeline_list`, `m05_recruiter_deal_accepted` and `m08_nightshade_triple_agent` are read here as m09 globals, which `importGlobals` provides.
 - `old_coyote_told`, `noor_ko`, `old_coyote_ko`, `tran_outcome`, `memo_stance` and `kowalczyk_reply` must be in `globalVariables` (they are, per contract §5.3).
-- Kowalczyk's warm clause "Thanked for her cracker" is true even for a player who opened the safe with the rent ledger's date: the warm button's text ("It opened the safe.") is the contract's, so the open question is in the debrief, not here.
+- Script edit R1 (ruling 1, C-05, C-06): the hangar buttons now hold on the PIN route, so Kowalczyk's warm clause stands and her default reads "Got a shrug."; Sorensen's knock-out clause names no injury; Tran's default no longer says he went home (HaX has Arakawa's people collect him).

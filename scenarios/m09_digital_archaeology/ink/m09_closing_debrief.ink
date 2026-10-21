@@ -67,12 +67,13 @@ VAR notice_answered = false
     Narrator: Kowalczyk reaches you before Netherton does, a crate on her hip.
     Agent 0x5E 'Lantern': Well? Did my toy earn its keep?
 }
-+ [It opened the safe. Thank you.]
+// SE R1 ruling 1: both buttons hold whether the cracker or the PIN opened the safe.
++ [Thank you. I was glad of it.]
     #set_global:kowalczyk_reply:warm
-    Agent 0x5E 'Lantern': Course it did. I'll tell it you said so.
+    Agent 0x5E 'Lantern': Course you were. I'll tell it you said so.
     Narrator: She grins and goes back to the ramp.
     -> the_hour
-+ [It did the job.]
++ [It was in my pocket.]
     #set_global:kowalczyk_reply:flat
     Agent 0x5E 'Lantern': High praise. I'll have it framed.
     { sleeper_named:
@@ -141,7 +142,8 @@ Director Magnus Netherton: You read it. You decide. I'll sign whichever.
 // Beat 6: the question hub. Each topic once (ink-local VARs, which survive a
 // reload); "[Montana, sir.]" always there and goes to the spine.
 { asked_archive or asked_wren or asked_recruiter or asked_notice:
-    Director Magnus Netherton: {&What else?|Go on.|Anything more, before I sign?}
+    // SE R1 optional trim: one re-entry line, not a three-way cycle.
+    Director Magnus Netherton: Anything more, before I sign?
 - else:
     Director Magnus Netherton: Ask me what you need to. Then I sign.
 }
@@ -193,7 +195,7 @@ Director Magnus Netherton: You read it. You decide. I'll sign whichever.
     ~ said = said + 1
 }
 { sorensen_fate == "ko":
-    Director Magnus Netherton: Mrs Sorensen has a concussion and a lawyer. She has not said a word.
+    Director Magnus Netherton: Mrs Sorensen woke up asking for a lawyer. She has not said a word since.
     ~ said = said + 1
 }
 { legacy_files_saved:

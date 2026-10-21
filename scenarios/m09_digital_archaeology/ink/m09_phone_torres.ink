@@ -31,7 +31,7 @@ I am still a live placement. Every morning I wake up, and I am still a line in h
 }
 They pick people with someone to lose. Look for the ones with a sick parent.
 + [Are you safe?]
-    As safe as a line in her book can be. Please be quick.
+    Safe enough. Please be quick.
     #exit_conversation
     -> DONE
 + [Thank you, David.]

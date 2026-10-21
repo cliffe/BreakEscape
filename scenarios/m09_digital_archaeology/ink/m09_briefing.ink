@@ -56,7 +56,7 @@ Director Magnus Netherton: The label named the building. Mountain States Records
 - m08_completed and not m08_nightshade_ko_before_fate:
     Agent HaX: Keep not asking. By morning you won't need to.
 - else:
-    Agent HaX: Sorry about the leave. I'll tell you the rest on the plane.
+    Agent HaX: Sorry about the leave. This is why.
 }
 Director Magnus Netherton: HaX. The wall.
 -> the_wall
@@ -104,9 +104,8 @@ Agent HaX: One card for every operation against ENTROPY this year. The short ver
     Agent HaX: Viral Dynamics. You put Derek Lawson's projections on every front page.
 - m01_completed and m01_final_choice == "surrender":
     Agent HaX: Viral Dynamics. Derek Lawson put the device down. He still hasn't said why.
-- m01_completed:
-    Agent HaX: Viral Dynamics. Derek Lawson, arrested. He hasn't said a word since.
-- not shorten:
+- m01_completed or not shorten:
+    // SE R1 C-08: the arrest (or "") shares the canon line.
     Agent HaX: Viral Dynamics. Derek Lawson's cell planned a panic that would kill people. Arrested. He hasn't said a word since.
 }
 
@@ -138,20 +137,23 @@ Agent HaX: One card for every operation against ENTROPY this year. The short ver
     Agent HaX: Zero Day, ENTROPY's exploit shop. Their Cardiff broker was never identified, and they kept trading.
 }
 
-// m04 Albion (always kept). Voltage taken, or gone; the report full, half or quiet.
+// m04 Albion (always kept). Two lines when played (SE R1 C-08): Voltage taken
+// or gone, then the report full, half or quiet.
 {
-- m04_completed and m04_voltage_captured and m04_disclosure_choice == "full":
-    Agent HaX: Albion. Voltage is in custody, and you told the inquiry everything about how Critical Mass got in.
-- m04_completed and m04_voltage_captured and m04_disclosure_choice == "partial":
-    Agent HaX: Albion. Voltage is in custody. You told the inquiry half of how Critical Mass got in.
-- m04_completed and m04_voltage_captured:
-    Agent HaX: Albion. Voltage is in custody. The report said maintenance fault, and you let it.
-- m04_completed and m04_disclosure_choice == "full":
-    Agent HaX: Albion. Voltage got away, and you told the inquiry everything about how Critical Mass got in.
-- m04_completed and m04_disclosure_choice == "partial":
-    Agent HaX: Albion. Voltage got away. You told the inquiry half of how Critical Mass got in.
 - m04_completed:
-    Agent HaX: Albion. Voltage got away. The report said maintenance fault, and you let it.
+    { m04_voltage_captured:
+        Agent HaX: Albion. Voltage is in custody.
+    - else:
+        Agent HaX: Albion. Voltage got away.
+    }
+    {
+    - m04_disclosure_choice == "full":
+        Agent HaX: You told the inquiry everything about how Critical Mass got in.
+    - m04_disclosure_choice == "partial":
+        Agent HaX: You told the inquiry half of how Critical Mass got in.
+    - else:
+        Agent HaX: The report said maintenance fault, and you let it.
+    }
 - else:
     Agent HaX: Albion, a grid battery site. Critical Mass got in. Voltage, who led it, disappeared after.
 }
@@ -167,10 +169,9 @@ Narrator: She walks the wall fast, like someone who has rehearsed it.
     Agent HaX: Quantum Dynamics. David Torres died in that building.
 - m05_completed and m05_final_choice == "combat_nonlethal":
     Agent HaX: Quantum Dynamics. You put David Torres down and handed him over.
-- m05_completed and m05_final_choice == "arrest":
-    Agent HaX: Quantum Dynamics. David Torres stole for the Recruiter to pay for his wife's treatment. Arrested.
 - else:
-    Agent HaX: Quantum Dynamics. David Torres, recruited to steal the national dispatch network's keys. Arrested.
+    // SE R1 C-08: arrest and the canon share one line.
+    Agent HaX: Quantum Dynamics. David Torres stole for the Recruiter to pay for his wife's treatment. Arrested.
 }
 
 // m06 the fund.
@@ -187,8 +188,6 @@ Narrator: She walks the wall fast, like someone who has rehearsed it.
 // it too). Meltdown uncovered (row 85) carries the hospital line; Austin
 // uncovered gets "Day eleven. Eleven counties." in the stakes beat instead.
 {
-- m07_completed and m07_team_assignment == "trojan_horse" and m07_team_redirected:
-    Agent HaX: Portland. You moved the team to Austin with the clock running. Dispatch held. The hospitals are still rebooking operations.
 - m07_completed and m07_team_assignment == "trojan_horse":
     Agent HaX: Portland. You sent the team to Austin, and dispatch is still answering. The hospitals are still rebooking operations.
 - m07_completed and m07_team_assignment == "fracture":
@@ -228,7 +227,7 @@ Director Magnus Netherton: I will read those two myself. Later.
 // Beat 6: the suspect, without the name (fixed lines; no "Tonight we can.").
 Narrator: Above the cards, pinned on its own, the signature from the order, blown up: -- A.
 Director Magnus Netherton: ENTROPY's planner. Every card on this wall has his initial on it somewhere.
-Director Magnus Netherton: They call him the Architect. We have a suspect. He was one of ours, once.
+Director Magnus Netherton: They call him the Architect. We have a suspect.
 Director Magnus Netherton: I will not say the name in this room until we can prove it.
 { m06_architect_identity_found:
     Agent HaX: You heard me say it after HashChain. I called it his guess.
@@ -261,7 +260,7 @@ Agent HaX: Analysis says hundreds dead in the first month if the cells get it. T
     -> questions
 + { not asked_directly } [When do we go at the Architect directly?]
     ~ asked_directly = true
-    Agent HaX: Somebody always asks me that. Now.
+    Agent HaX: Somebody always asks me that. This time it's now.
     -> questions
 + [Let's go.]
     -> the_team
