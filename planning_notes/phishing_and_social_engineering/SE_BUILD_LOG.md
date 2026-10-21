@@ -105,6 +105,10 @@ Fix round 2 (opus48): T2-1 fixed with an applied-marker global `se_mail_applied`
 
 Fix round 1 for Phases 2-4 sent to grok with a one-line brief (P2-T, P3-T, P4-T findings).
 
+### Lab plan, round 1 (opus48): 0 blocker, 2 major, 8 minor
+
+`scenarios/lab_social_engineering/REVIEW_R1.md`. Engine audit verified claim by claim. R1-M1: the §4 table still had 22 tasks. R1-M2: with `test_account` required, a student who lands Hampshire from guest could be stuck without a cue. Decision: `test_account` is the first active task in `phish_easy` ("Set up an address to send from"), stated plainly by Ruth and the objective; no hard block on guest. Folding in by the planner (opus48).
+
 ## Questions for the user
 
 - **How to build the rest of Phase 4** (call preparation screen P4-C, call UI P4-E, its bridge and playtest). The orchestrator's brief for P4-C was stopped by a safety classifier.
@@ -223,6 +227,8 @@ Fix round 1 for Phases 2-4 sent to grok with a one-line brief (P2-T, P3-T, P4-T 
 - **P5-A** (opus48): builder model `landing-page-model.js` (pure: `scorePage`, `guardDomain`, `buildRecord`, `applyScore`, `setBuilt`, `linkInfoFor`, `describeVictimOutcome`, `betterVictim`, `captureGranted`; closed key sets). Tests 20/20 incl. the 07 worked example (34, 87, 75, 100). Plan table P5 rows now opus48 (the Phase 5 prose still says Haiku). Wordings need `slips: true` to score zero (sent to P5-C as a lint). P5-B duplicates the domain guard by rule; the review should consider importing `guardDomain` instead.
 
 - **P6-A finished** (opus48): `scenarios/lab_social_engineering/PLAN.md`, 15 sections (rooms, cast, 8 aims and 22 tasks, stages 0-7 and debrief, voice and ink, hand-offs, art and audio, cut order, playtest scripts L1-L6 and F1-F13, packets, checks, risks). Orchestrator decisions on its questions: Q1 add a `test_account` task completed on `acct_freemail` (23 tasks); Q2 keep the working title "Phishing and Social Engineering" (user may rename); Q3 open with `timedConversation` + `waitForEvent: game_loaded`, fix the §5 sentence; Q4 ENV read with a constant fallback. Review rounds on opus48 next.
+
+- **P5-C** (opus48): `validate_social/landing.rb` (the 07 N6 and N7 lints, the `expectedLink.brandId` cross-check, a punycode encoder, reuse of `HostLint` and `ctx.raw`, a confusables table, `wordings` must have one `match` and at least one `slips`), `social.landingPages` schema entry. Tests 24/24; validator glob 100/100; slice output byte-identical. Contract it set: defender strings at `strings["domainTier<N>Defender"]`; P5-D and the lab must use those keys and `slips: true`.
 
 ## Review rounds
 
