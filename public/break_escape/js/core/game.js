@@ -181,6 +181,17 @@ export function preload() {
     this.load.tilemapTiledJSON('room_pnw_scada', 'rooms/room_pnw_scada.json'); // m07 PNW Grid SCADA control: mimic board, countdown, master desk (2x1 GU, 10x6)
     this.load.tilemapTiledJSON('room_pnw_genhall', 'rooms/room_pnw_genhall.json'); // m07 PNW Grid backup generation hall: ATS-1, gensets, day tank (4x2 GU, 20x10)
     this.load.tilemapTiledJSON('room_pnw_vault', 'rooms/room_pnw_vault.json'); // m07 PNW Grid cable vault: cable ladder, splice, trench (2x1 GU, 10x6)
+    this.load.tilemapTiledJSON('room_m09_dock', 'rooms/room_m09_dock.json'); // m09 Mountain States Records & Retention loading dock yard: shutter, guard hut desk, pallets, fence (2x2 GU)
+    this.load.tilemapTiledJSON('room_m09_front', 'rooms/room_m09_front.json'); // m09 Mountain States Records & Retention front desk: counter, Noor's desk, box trolleys (2x2 GU)
+    this.load.tilemapTiledJSON('room_m09_stacks', 'rooms/room_m09_stacks.json'); // m09 Mountain States Records & Retention open stacks: client-deposit shelving bays, H&L bay (4x2 GU, 20x10)
+    this.load.tilemapTiledJSON('room_m09_closet', 'rooms/room_m09_closet.json'); // m09 Mountain States Records & Retention server closet: rack, degausser (1x1 GU, 5x6)
+    this.load.tilemapTiledJSON('room_m09_passage', 'rooms/room_m09_passage.json'); // m09 Mountain States Records & Retention staff passage: noticeboard, hooks (2x1 GU, 10x6)
+    this.load.tilemapTiledJSON('room_m09_reading', 'rooms/room_m09_reading.json'); // m09 Mountain States Records & Retention reading room: reading desk, drop terminal, microfiche (2x1 GU, 10x6)
+    this.load.tilemapTiledJSON('room_m09_restricted', 'rooms/room_m09_restricted.json'); // m09 Mountain States Records & Retention restricted stacks: hatch counter, binders (2x2 GU)
+    this.load.tilemapTiledJSON('room_m09_cage', 'rooms/room_m09_cage.json'); // m09 Mountain States Records & Retention restricted cage: shredder line, plan cabinet (2x2 GU)
+    this.load.tilemapTiledJSON('room_m09_office', 'rooms/room_m09_office.json'); // m09 Mountain States Records & Retention Sorensen's office: binders, credenza, floor safe (2x2 GU)
+    this.load.tilemapTiledJSON('room_m09_tape', 'rooms/room_m09_tape.json'); // m09 Mountain States Records & Retention tape room: reel shelves, reel deck, shelf-mark legend (2x2 GU)
+    this.load.tilemapTiledJSON('room_m09_salvage', 'rooms/room_m09_salvage.json'); // m09 Mountain States Records & Retention salvage cage: Tomb Beta rack, crates (2x1 GU, 10x6)
 
     // Load room images (now using smaller 32px scale images)
     this.load.image('room_reception', 'tiles/rooms/room1.png');
@@ -254,6 +265,18 @@ export function preload() {
     this.load.image('room_pnw_genhall_w', 'tiles/rooms/room_pnw_genhall_w.png'); // m07 PNW Grid: generation hall epoxy, west half
     this.load.image('room_pnw_genhall_e', 'tiles/rooms/room_pnw_genhall_e.png'); // m07 PNW Grid: generation hall epoxy, east half
     this.load.image('room_pnw_vault', 'tiles/rooms/room_pnw_vault.png'); // m07 PNW Grid: wet concrete, cable trench
+    this.load.image('room_m09_dock', 'tiles/rooms/room_m09_dock.png'); // m09 Mountain States Records & Retention sheet
+    this.load.image('room_m09_front', 'tiles/rooms/room_m09_front.png'); // m09 Mountain States Records & Retention sheet
+    this.load.image('room_m09_stacks_w', 'tiles/rooms/room_m09_stacks_w.png'); // m09 Mountain States Records & Retention sheet
+    this.load.image('room_m09_stacks_e', 'tiles/rooms/room_m09_stacks_e.png'); // m09 Mountain States Records & Retention sheet
+    this.load.image('room_m09_closet', 'tiles/rooms/room_m09_closet.png'); // m09 Mountain States Records & Retention sheet
+    this.load.image('room_m09_passage', 'tiles/rooms/room_m09_passage.png'); // m09 Mountain States Records & Retention sheet
+    this.load.image('room_m09_reading', 'tiles/rooms/room_m09_reading.png'); // m09 Mountain States Records & Retention sheet
+    this.load.image('room_m09_restricted', 'tiles/rooms/room_m09_restricted.png'); // m09 Mountain States Records & Retention sheet
+    this.load.image('room_m09_cage', 'tiles/rooms/room_m09_cage.png'); // m09 Mountain States Records & Retention sheet
+    this.load.image('room_m09_office', 'tiles/rooms/room_m09_office.png'); // m09 Mountain States Records & Retention sheet
+    this.load.image('room_m09_tape', 'tiles/rooms/room_m09_tape.png'); // m09 Mountain States Records & Retention sheet
+    this.load.image('room_m09_salvage', 'tiles/rooms/room_m09_salvage.png'); // m09 Mountain States Records & Retention sheet
     this.load.image('room14', 'tiles/rooms/room14.png');
     this.load.image('room19', 'tiles/rooms/room19.png');
     this.load.image('door_32', 'tiles/door_32.png');
@@ -1195,6 +1218,32 @@ export function preload() {
     this.load.image('pnw_console1_p4', 'objects/pnw_console1_p4.png');
     this.load.image('pnw_console2_p5', 'objects/pnw_console2_p5.png');
     this.load.image('pnw_console1_p6', 'objects/pnw_console1_p6.png');
+    this.load.image('m09_logo_sign1', 'objects/m09_logo_sign1.png');
+    this.load.image('m09_sign_reading1', 'objects/m09_sign_reading1.png');
+    this.load.image('m09_sign_restricted1', 'objects/m09_sign_restricted1.png');
+    this.load.image('m09_sign_staff1', 'objects/m09_sign_staff1.png');
+    this.load.image('m09_sign_tape1', 'objects/m09_sign_tape1.png');
+    this.load.image('m09_sign_salvage1', 'objects/m09_sign_salvage1.png');
+    this.load.image('m09_sign_bay2', 'objects/m09_sign_bay2.png');
+    this.load.image('m09_sign_director1', 'objects/m09_sign_director1.png');
+    this.load.image('m09_sign_series_r1', 'objects/m09_sign_series_r1.png');
+    this.load.image('m09_sign_stacks1', 'objects/m09_sign_stacks1.png');
+    this.load.image('m09_sign_returns1', 'objects/m09_sign_returns1.png');
+    this.load.image('m09_shelf_legend1', 'objects/m09_shelf_legend1.png');
+    this.load.image('m09_keypad1', 'objects/m09_keypad1.png');
+    this.load.image('m09_door_controller1', 'objects/m09_door_controller1.png');
+    this.load.image('m09_bay_plate10', 'objects/m09_bay_plate10.png');
+    this.load.image('m09_bay_plate11', 'objects/m09_bay_plate11.png');
+    this.load.image('m09_bay_plate12', 'objects/m09_bay_plate12.png');
+    this.load.image('m09_bay_label1', 'objects/m09_bay_label1.png');
+    this.load.image('m09_rubber_stamp1', 'objects/m09_rubber_stamp1.png');
+    this.load.image('m09_hatch_counter1', 'objects/m09_hatch_counter1.png');
+    this.load.image('m09_mesh_low1', 'objects/m09_mesh_low1.png');
+    this.load.image('m09_crate_alpha1', 'objects/m09_crate_alpha1.png');
+    this.load.image('m09_crate_beta1', 'objects/m09_crate_beta1.png');
+    this.load.image('m09_box_taped1', 'objects/m09_box_taped1.png');
+    this.load.image('m09_box_open1', 'objects/m09_box_open1.png');
+    this.load.image('m09_degausser1', 'objects/m09_degausser1.png');
     this.load.image('backup_recovery',         'objects/backup_recovery.png');
     this.load.image('dual_auth',               'objects/dual_auth.png');
     this.load.image('ehr-terminal',            'objects/ehr-terminal.png');
@@ -1285,6 +1334,13 @@ export function preload() {
     this.load.image('entropy_command_unit1', 'objects/entropy_command_unit1.png');
     this.load.image('entropy_comms_terminal1', 'objects/entropy_comms_terminal1.png');
     this.load.image('safetynet_flag_terminal1', 'objects/safetynet_flag_terminal1.png');
+    this.load.image('m09_reel_deck1', 'objects/m09_reel_deck1.png');
+    this.load.image('m09_microfiche1', 'objects/m09_microfiche1.png');
+    this.load.image('m09_box_trolley1', 'objects/m09_box_trolley1.png');
+    this.load.image('m09_reel_shelf1', 'objects/m09_reel_shelf1.png');
+    this.load.image('m09_tape_cabinet1', 'objects/m09_tape_cabinet1.png');
+    this.load.image('m09_drop_screen1', 'objects/m09_drop_screen1.png');
+    this.load.image('m09_sign_bay1', 'objects/m09_sign_bay1.png');
 
     // Load audio files
     // NPC system sounds

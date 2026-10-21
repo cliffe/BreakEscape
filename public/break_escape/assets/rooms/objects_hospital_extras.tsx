@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<tileset version="1.10" tiledversion="1.11.2" name="objects/hospital_extras" tilewidth="60" tileheight="60" tilecount="502" columns="0">
+<tileset version="1.10" tiledversion="1.11.2" name="objects/hospital_extras" tilewidth="60" tileheight="60" tilecount="537" columns="0">
  <grid orientation="orthogonal" width="1" height="1"/>
  <tile id="0">
   <image source="../objects/iv_stand1.png" width="25" height="60"/>
@@ -1506,5 +1506,110 @@
  </tile>
  <tile id="511">
   <image source="../objects/planter-fig1-top-ani1.png" width="40" height="61"/>
+ </tile>
+ <tile id="512">
+  <image source="../objects/m09_logo_sign1.png" width="98" height="19"/>
+ </tile>
+ <tile id="513">
+  <image source="../objects/m09_sign_reading1.png" width="55" height="11"/>
+ </tile>
+ <tile id="514">
+  <image source="../objects/m09_sign_restricted1.png" width="75" height="11"/>
+ </tile>
+ <tile id="515">
+  <image source="../objects/m09_sign_staff1.png" width="47" height="11"/>
+ </tile>
+ <tile id="516">
+  <image source="../objects/m09_sign_tape1.png" width="47" height="11"/>
+ </tile>
+ <tile id="517">
+  <image source="../objects/m09_sign_salvage1.png" width="35" height="11"/>
+ </tile>
+ <tile id="518">
+  <image source="../objects/m09_sign_bay2.png" width="27" height="11"/>
+ </tile>
+ <tile id="519">
+  <image source="../objects/m09_sign_director1.png" width="39" height="11"/>
+ </tile>
+ <tile id="520">
+  <image source="../objects/m09_sign_series_r1.png" width="39" height="11"/>
+ </tile>
+ <tile id="521">
+  <image source="../objects/m09_sign_stacks1.png" width="67" height="17"/>
+ </tile>
+ <tile id="522">
+  <image source="../objects/m09_sign_returns1.png" width="59" height="17"/>
+ </tile>
+ <tile id="523">
+  <image source="../objects/m09_shelf_legend1.png" width="32" height="28"/>
+ </tile>
+ <tile id="524">
+  <image source="../objects/m09_keypad1.png" width="9" height="13"/>
+ </tile>
+ <tile id="525">
+  <image source="../objects/m09_door_controller1.png" width="14" height="22"/>
+ </tile>
+ <tile id="526">
+  <image source="../objects/m09_bay_plate10.png" width="29" height="9"/>
+ </tile>
+ <tile id="527">
+  <image source="../objects/m09_bay_plate11.png" width="29" height="9"/>
+ </tile>
+ <tile id="528">
+  <image source="../objects/m09_bay_plate12.png" width="29" height="9"/>
+ </tile>
+ <tile id="529">
+  <image source="../objects/m09_bay_label1.png" width="26" height="18"/>
+ </tile>
+ <tile id="530">
+  <image source="../objects/m09_rubber_stamp1.png" width="16" height="11"/>
+ </tile>
+ <tile id="531">
+  <image source="../objects/m09_hatch_counter1.png" width="16" height="104"/>
+ </tile>
+ <tile id="532">
+  <image source="../objects/m09_mesh_low1.png" width="48" height="24"/>
+ </tile>
+ <tile id="533">
+  <image source="../objects/m09_crate_alpha1.png" width="32" height="24"/>
+ </tile>
+ <tile id="534">
+  <image source="../objects/m09_crate_beta1.png" width="32" height="24"/>
+ </tile>
+ <tile id="535">
+  <image source="../objects/m09_box_taped1.png" width="16" height="14"/>
+ </tile>
+ <tile id="536">
+  <image source="../objects/m09_box_open1.png" width="16" height="14"/>
+ </tile>
+ <tile id="537">
+  <image source="../objects/m09_degausser1.png" width="28" height="24"/>
+ </tile>
+ <tile id="538">
+  <image source="../objects/case-file.png" width="40" height="27"/>
+ </tile>
+ <tile id="539">
+  <image source="../objects/safetynet_flag_terminal1.png" width="23" height="24"/>
+ </tile>
+ <tile id="540">
+  <image source="../objects/m09_reel_deck1.png" width="54" height="59"/>
+ </tile>
+ <tile id="541">
+  <image source="../objects/m09_microfiche1.png" width="34" height="59"/>
+ </tile>
+ <tile id="542">
+  <image source="../objects/m09_box_trolley1.png" width="42" height="46"/>
+ </tile>
+ <tile id="543">
+  <image source="../objects/m09_reel_shelf1.png" width="42" height="58"/>
+ </tile>
+ <tile id="544">
+  <image source="../objects/m09_tape_cabinet1.png" width="54" height="61"/>
+ </tile>
+ <tile id="545">
+  <image source="../objects/m09_drop_screen1.png" width="36" height="26"/>
+ </tile>
+ <tile id="546">
+  <image source="../objects/m09_sign_bay1.png" width="27" height="11"/>
  </tile>
 </tileset>

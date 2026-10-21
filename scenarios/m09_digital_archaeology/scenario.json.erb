@@ -365,6 +365,7 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
   "show_scenario_brief": "on_resume",
 
   "startRoom": "loading_dock",
+  "startPosition": { "x": 7, "y": 7.5 },
 
 <%# VM-WIRE: top-level flag map. Keys must be the real SecGen system_names;
     the fallback arrays are standalone/dev placeholders only. Story order:
@@ -668,9 +669,9 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
     the first registered NPC with that displayName, so the dedicated speakers
     (director_netherton, hax_voice after agent_0x99) come before the cutscene
     hosts that borrow their names.
-    PLACEHOLDER map: room_aes_dock (ASSET_LIST §2). %>
+    Map: m09's own (room dressing R1, ROOM_DRESSING.md; was the placeholder room_aes_dock, ASSET_LIST §2). %>
     "loading_dock": {
-      "type": "room_aes_dock",
+      "type": "room_m09_dock",
       "door_sign": "Mountain States Records & Retention -- Deliveries",
       "connections": {
         "north": "open_stacks",
@@ -981,7 +982,7 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
           "sprite": "notes_ledger1",
           "id": "incident_book",
           "name": "Incident Log",
-          "position": { "x": 2.5, "y": 3.5 },
+          "position": "as-type:notes_ledger",
           "takeable": false,
           "readable": true,
           "readDisplay": "gameDisplay",
@@ -995,9 +996,9 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
     FRONT DESK (S5 §3.2). Route A: picks on the dock's office door, then
     Noor's card (cloned on every branch, or handed over warned in time) on
     the staff door into the staff passage, which leads on to the reading
-    room (stage 9 change, S5 §3.11). PLACEHOLDER map: room_reception. %>
+    room (stage 9 change, S5 §3.11). Map: m09's own (room dressing R1, ROOM_DRESSING.md; was the placeholder room_reception). %>
     "front_desk": {
-      "type": "room_reception",
+      "type": "room_m09_front",
       "door_sign": "Front Desk -- Staff Only Beyond This Point",
       "locked": true,
       "lockType": "key",
@@ -1063,7 +1064,7 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
           "sprite": "notes_clip1",
           "id": "trolley_list",
           "name": "Destruction Run, Series R",
-          "position": { "x": 3.5, "y": 6 },
+          "position": "as-type:notes_clip",
           "takeable": false,
           "readable": true,
           "readDisplay": "gameDisplay",
@@ -1079,10 +1080,9 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
         {
           "_comment": "S6 §1.2. On the warned-in-time branch Noor held the legacy files back. noor_box_read (stage 9) latches HaX's remark only on that branch.",
           "type": "notes",
-          "sprite": "office-misc-box1",
           "id": "noor_desk_box",
           "name": "Box Under the Desk",
-          "position": { "x": 2, "y": 3.5 },
+          "position": "as-type:m09_box_taped",
           "takeable": false,
           "readable": true,
           "readDisplay": "gameDisplay",
@@ -1105,10 +1105,10 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
     Old Coyote's round crosses the west end on every lap; the Harwick &
     Lowe boxes near the east end; the closet off the east wall. Dillard, the
     guard Tran calls on the m01_maya_ko branch, waits hidden by the shutter.
-    PLACEHOLDER map: room_aes_hall1 (patrol waypoints kept to the bottom
+    Map: m09's own (room dressing R1, ROOM_DRESSING.md; was the placeholder room_aes_hall1, patrol waypoints kept to the bottom
     walkway and the marked N-S aisle; ASSET_LIST §2). %>
     "open_stacks": {
-      "type": "room_aes_hall1",
+      "type": "room_m09_stacks",
       "door_sign": "Open Stacks -- Client Deposits",
       "ambientSound": "server_room_ventilation",
       "ambientVolume": 0.15,
@@ -1249,7 +1249,7 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
           "type": "directory_sign1",
           "id": "hl_bay_label",
           "name": "Bay Label",
-          "position": { "x": 15, "y": 2.6 },
+          "position": "as-type:m09_bay_label",
           "takeable": false,
           "observations": "HARWICK & LOWE, EXEC SEARCH (CLOSED). RETENTION 25 YRS."
         },
@@ -1259,7 +1259,7 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
           "sprite": "supply_boxes1",
           "id": "hl_box",
           "name": "Harwick & Lowe, Dead Files",
-          "position": { "x": 15, "y": 4.2 },
+          "position": "as-type:supply_boxes",
           "takeable": false,
           "locked": true,
           "lockType": "password",
@@ -1289,9 +1289,9 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
 <%# =========================================================================
     SERVER CLOSET (S5 §3.4). Jesse Tran wipes the tape side. On
     m01_maya_ko he sees the player first at the door and calls a guard.
-    PLACEHOLDER map: small_room_1x1gu. %>
+    Map: m09's own (room dressing R1, ROOM_DRESSING.md; was the placeholder small_room_1x1gu). %>
     "server_closet": {
-      "type": "small_room_1x1gu",
+      "type": "room_m09_closet",
       "door_sign": "IT -- Authorised Contractors Only",
       "ambientSound": "server_room_ventilation",
       "ambientVolume": 0.4,
@@ -1345,10 +1345,9 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
       "objects": [
         {
           "type": "notes",
-          "sprite": "pc6",
           "id": "tape_side_console",
           "name": "Wipe Console",
-          "position": { "x": 1.5, "y": 2.6 },
+          "position": "as-type:m09_degausser",
           "takeable": false,
           "readable": true,
           "readDisplay": "gameDisplay",
@@ -1371,9 +1370,9 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
     passage opens into the reading room: route A needs Noor's card, route B
     never meets the lock. The reading room shrinks to 2x1 to make the room.
     Only two floor rows show (the front desk's north wall covers the rest).
-    PLACEHOLDER map: room_qdc_hall. %>
+    Map: m09's own (room dressing R1, ROOM_DRESSING.md; was the placeholder room_qdc_hall). %>
     "staff_passage": {
-      "type": "room_qdc_hall",
+      "type": "room_m09_passage",
       "door_sign": "Staff Only -- Card Access",
       "locked": true,
       "lockType": "rfid",
@@ -1391,10 +1390,10 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
     the notebook scan. The only warm room. 2x1 since stage 9 (the staff
     passage sits below it); the passage's north wall covers the bottom two
     rows, so every object is on rows 2-3, clear of the NW and SW doors.
-    PLACEHOLDER map: room_uni_office (playtest R1). %>
+    Map: m09's own (room dressing R1, ROOM_DRESSING.md; was the placeholder room_uni_office, playtest R1). %>
     "reading_room": {
-      "_comment": "Playtest R1: room_library_1x2gu's table and shelf stood at the south-east door (the staff passage) and its furniture overlapped the pinned objects. room_uni_office keeps all three door spots clear.",
-      "type": "room_uni_office",
+      "_comment": "Playtest R1: room_library_1x2gu's furniture stood at the south-east door (the staff passage). Room dressing R1: m09's own map, room_m09_reading, keeps all three door spots clear.",
+      "type": "room_m09_reading",
       "door_sign": "Reading Room",
       "connections": {
         "south": "staff_passage",
@@ -1407,7 +1406,6 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
           "type": "vm-launcher",
           "id": "field_laptop",
           "name": "Field Laptop",
-          "position": { "x": 2.8, "y": 2.4 },
           "takeable": false,
           "observations": "Your field kit, set up on a reading desk: a laptop on the archive's network, quiet enough not to show up on anyone's screen.",
           "hacktivityMode": <%= vm_context && vm_context['hacktivity_mode'] ? 'true' : 'false' %>,
@@ -1420,7 +1418,7 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
           "sprite": "safetynet_flag_terminal1",
           "id": "drop_terminal",
           "name": "SAFETYNET Drop Terminal",
-          "position": { "x": 6.3, "y": 2.6 },
+          "position": "as-type:safetynet_flag_terminal",
           "takeable": false,
           "observations": "The drop terminal. Anything you pull off the catalogue server goes to HaX through here.",
           "acceptsVms": ["catalogue_server"],
@@ -1435,10 +1433,9 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
         {
           "_comment": "S6 §1.4. Every variant from flag 1 on ends with the coded salvage line, label and code apart (C-01).",
           "type": "notes",
-          "sprite": "monitor_stand1",
           "id": "drop_terminal_screen",
           "name": "Drop Terminal Screen",
-          "position": { "x": 7.5, "y": 2.6 },
+          "position": "as-type:m09_drop_screen",
           "takeable": false,
           "readable": true,
           "readDisplay": "gameDisplay",
@@ -1466,7 +1463,7 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
           "sprite": "case-file",
           "id": "case_file",
           "name": "Case File, Helena",
-          "position": { "x": 3.6, "y": 3.5 },
+          "position": "as-type:case-file",
           "takeable": false,
           "readable": true,
           "readDisplay": "gameDisplay",
@@ -1483,7 +1480,7 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
           "sprite": "notes_notebook1",
           "id": "notebook_scan",
           "name": "Training Notebook (scan)",
-          "position": { "x": 4.9, "y": 3.5 },
+          "position": "as-type:notes_notebook",
           "takeable": false,
           "readable": true,
           "readDisplay": "gameDisplay",
@@ -1500,9 +1497,9 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
     unlockDoor when flag 1 is in: `stacks_release` is a card id nothing in
     the world carries, so the validator's credential warning here is expected
     (m09-R §4.1). Sorensen works the hatch counter on the east wall.
-    PLACEHOLDER map: room_hq_ops (no counter yet; ASSET_LIST §2). %>
+    Map: m09's own (room dressing R1, ROOM_DRESSING.md; was the placeholder room_hq_ops, no counter yet; ASSET_LIST §2). %>
     "restricted_stacks": {
-      "type": "room_hq_ops",
+      "type": "room_m09_restricted",
       "_comment": "Expected validator warning: no item declares rfid 'stacks_release'. HaX's unlockDoor mapping on flag1_submitted opens this door (with a retry on door_unlock_attempt and a game_loaded backstop).",
       "door_sign": "Restricted Stacks -- Series R",
       "locked": true,
@@ -1585,7 +1582,7 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
           "type": "office-misc-stapler",
           "id": "sorensen_stamp",
           "name": "Rubber Stamp",
-          "position": { "x": 6.5, "y": 6.5 },
+          "position": "as-type:m09_rubber_stamp",
           "takeable": false,
           "observations": "A rubber stamp: DESTROYED, in red.",
           "observationVariants": [
@@ -1608,10 +1605,10 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
     records share one name and voice: the cage one can be knocked down and
     holds only her card; the hidden koImmune one hosts Victoria's door scene
     and the hatch route's default handover (stage 8 ruling 1).
-    PLACEHOLDER map: room_qdc_security (playtest R1 B1). %>
+    Map: m09's own (room dressing R1, ROOM_DRESSING.md; was the placeholder room_qdc_security, playtest R1 B1). %>
     "restricted_cage": {
-      "_comment": "Playtest R1 B1 (blocker): room_hce_vault's cabinets stand across its west wall, so the generated west door sat above the walkable floor and the cage was one-way. room_qdc_security's own door is on the west wall, row 2.",
-      "type": "room_qdc_security",
+      "_comment": "Playtest R1 B1 (blocker): room_hce_vault's cabinets stand across its west wall, so the generated west door sat above the walkable floor and the cage was one-way. Room dressing R1: m09's own map, room_m09_cage, keeps the west wall's row 2 clear (mouth x 32-92, y 64-118).",
+      "type": "room_m09_cage",
       "door_sign": "Restricted Cage -- Authorised Staff Only",
       "locked": true,
       "lockType": "rfid",
@@ -1735,17 +1732,16 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
           "type": "shredder1",
           "id": "cage_shredder",
           "name": "Cross-Cut Shredder",
-          "position": { "x": 3.2, "y": 3.1 },
+          "position": "as-type:shredder",
           "takeable": false,
           "observations": "An industrial cross-cut shredder. It has been running since before you landed."
         },
         {
           "_comment": "S6 §1.6, the Series L sheets. legacy_box_read latches HaX's remark; her mapping sends it only while the sheets show.",
           "type": "notes",
-          "sprite": "office-misc-box1",
           "id": "feed_table_box",
           "name": "The Last Box",
-          "position": { "x": 4.6, "y": 6.0 },
+          "position": "as-type:m09_box_open",
           "takeable": false,
           "readable": true,
           "readDisplay": "gameDisplay",
@@ -1770,7 +1766,7 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
           "sprite": "plan_chest2",
           "id": "plan_cabinet",
           "name": "Plan Cabinet",
-          "position": { "x": 8.4, "y": 2.9 },
+          "position": "as-type:plan_chest",
           "takeable": false,
           "locked": true,
           "lockType": "biometric",
@@ -1798,7 +1794,7 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
           "sprite": "binders1",
           "id": "printed_ledger",
           "name": "Initiative Ledger, Print Copy",
-          "position": { "x": 8.3, "y": 5.5 },
+          "position": "as-type:binders",
           "takeable": false,
           "readable": true,
           "readDisplay": "gameDisplay",
@@ -1826,9 +1822,9 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
     SORENSEN'S OFFICE (S5 §3.8). The keypad takes a code nobody has
     (password, so the PIN cracker can't skip it, S4 P11); HaX opens it on the
     deck choice. The safe: PIN 060216 (Kowalczyk's cracker, or the rent
-    ledger's header read the long way). PLACEHOLDER map: room_hce_office. %>
+    ledger's header read the long way). Map: m09's own (room dressing R1, ROOM_DRESSING.md; was the placeholder room_hce_office). %>
     "sorensen_office": {
-      "type": "room_hce_office",
+      "type": "room_m09_office",
       "door_sign": "Director -- M. Sorensen",
       "locked": true,
       "lockType": "password",
@@ -1842,7 +1838,7 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
           "sprite": "safe1",
           "id": "director_safe",
           "name": "Floor Safe",
-          "position": { "x": 6.5, "y": 7.5 },
+          "position": "as-type:safe",
           "takeable": false,
           "locked": true,
           "lockType": "pin",
@@ -1961,7 +1957,7 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
           "sprite": "book1",
           "id": "rent_book",
           "name": "Rent Ledger",
-          "position": { "x": 2.5, "y": 4 },
+          "position": "as-type:book",
           "takeable": false,
           "readable": true,
           "readDisplay": "gameDisplay",
@@ -1978,7 +1974,7 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
           "sprite": "case-file",
           "id": "lease_file",
           "name": "Lease Abstract and Construction File",
-          "position": { "x": 4.2, "y": 4 },
+          "position": "as-type:case-file",
           "takeable": true,
           "readable": true,
           "observations": "A lease and a roll of drawings for a bunker in this county.",
@@ -1990,7 +1986,6 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
           "sprite": "notes2",
           "id": "danny_sheet",
           "name": "Broker's Note: D. Foster",
-          "position": { "x": 5.9, "y": 4 },
           "takeable": false,
           "readable": true,
           "readDisplay": "gameDisplay",
@@ -2008,7 +2003,6 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
           "sprite": "notes4",
           "id": "refit_ledger",
           "name": "Build-Out Ledger",
-          "position": { "x": 7.5, "y": 4 },
           "takeable": false,
           "readable": true,
           "readDisplay": "gameDisplay",
@@ -2024,7 +2018,7 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
           "sprite": "tablet",
           "id": "deck_controller",
           "name": "Tape Deck Controller",
-          "position": { "x": 2.5, "y": 7 },
+          "position": "as-type:tablet",
           "takeable": false,
           "readable": true,
           "readDisplay": "gameDisplay",
@@ -2041,7 +2035,7 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
           "type": "hce_phd_frame1",
           "id": "clerk_certificate",
           "name": "Framed Certificate",
-          "position": { "x": 4.5, "y": 2.2 },
+          "position": "as-type:hce_phd_frame",
           "takeable": false,
           "observations": "LEWIS AND CLARK COUNTY, MONTANA. Board of County Commissioners. In appreciation of twenty years of service: Margaret A. Sorensen, Clerk and Recorder, 1986 to 2006. Presented June 2006."
         }
@@ -2052,9 +2046,9 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
     TAPE ROOM (S5 §3.9). The card from the safe opens it. The shelf-mark
     legend hangs beside the salvage keypad (the key to the coded line); the
     Alpha tapes' deck and annotation sheets on the deck route.
-    PLACEHOLDER map: room_servers. %>
+    Map: m09's own (room dressing R1, ROOM_DRESSING.md; was the placeholder room_servers). %>
     "tape_room": {
-      "type": "room_servers",
+      "type": "room_m09_tape",
       "door_sign": "Tape Store",
       "locked": true,
       "lockType": "rfid",
@@ -2105,7 +2099,7 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
           "type": "chart",
           "id": "shelf_code_legend",
           "name": "Shelf Marks",
-          "position": { "x": 3.2, "y": 2.2 },
+          "position": "as-type:m09_shelf_legend",
           "takeable": false,
           "observationDisplay": "gameDisplay",
           "observations": "MOUNTAIN STATES RECORDS & RETENTION -- SHELF MARKS\nBay 1 ....... Reading room ..... COTTONWOOD\nBays 2 to 9 . Open stacks ...... MERIDIAN\nBay 10 ...... Restricted ....... WATCHTOWER\nBay 11 ...... Tape store ....... STANDBY\nBay 12 ...... Salvage .......... BONEYARD\nHouse rule: cage and keypad codes use the bay word. Never write a code down. M.S.",
@@ -2119,7 +2113,7 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
           "type": "tape_library1",
           "id": "alpha_tape_deck",
           "name": "Reel Deck",
-          "position": { "x": 5.5, "y": 5.5 },
+          "position": "as-type:m09_reel_deck",
           "takeable": false,
           "observations": "A reel-to-reel deck. Empty spools.",
           "observationVariants": [
@@ -2135,7 +2129,6 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
           "sprite": "notes3",
           "id": "alpha_annotations",
           "name": "Annotation Sheets, Series ALPHA",
-          "position": { "x": 7.2, "y": 5.5 },
           "takeable": false,
           "readable": true,
           "readDisplay": "gameDisplay",
@@ -2158,9 +2151,9 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
     its own flag station (flags 3-4 only) and a second launcher onto the same
     attack VM. Objects spaced along the floor (slot_audit decides final
     spots). Only rows 2-3 show: the tape room's north wall covers rows 4-5.
-    PLACEHOLDER map: room_hq_intel (10x6, door S). %>
+    Map: m09's own (room dressing R1, ROOM_DRESSING.md; was the placeholder room_hq_intel, 10x6, door S). %>
     "salvage_cage": {
-      "type": "room_hq_intel",
+      "type": "room_m09_salvage",
       "door_sign": "Salvage -- Bay 12",
       "locked": true,
       "lockType": "password",
@@ -2175,7 +2168,7 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
           "type": "server_rack1",
           "id": "tomb_beta_rack",
           "name": "Rack Server",
-          "position": { "x": 1.6, "y": 2.4 },
+          "position": "as-type:server_rack",
           "takeable": false,
           "observations": "A rack server, still running, fans loud in the cold. Asset tag: TOMB BETA. Nobody has stamped anything in here."
         },
@@ -2185,7 +2178,7 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
           "sprite": "notes_tucked1",
           "id": "beta_asset_tag",
           "name": "Property Label",
-          "position": { "x": 2.6, "y": 3.5 },
+          "position": "as-type:notes_tucked",
           "takeable": false,
           "readable": true,
           "readDisplay": "gameDisplay",
@@ -2198,7 +2191,6 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
           "type": "vm-launcher",
           "id": "field_kit_link",
           "name": "Field Kit Link",
-          "position": { "x": 3.6, "y": 2.4 },
           "takeable": false,
           "observations": "Your field kit, plugged into Tomb Beta's rack and linked to the drop terminal.",
           "hacktivityMode": <%= vm_context && vm_context['hacktivity_mode'] ? 'true' : 'false' %>,
@@ -2211,7 +2203,7 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
           "sprite": "safetynet_flag_terminal1",
           "id": "tomb_beta_station",
           "name": "Tomb Beta Drop Link",
-          "position": { "x": 5, "y": 2.4 },
+          "position": "as-type:safetynet_flag_terminal",
           "takeable": false,
           "observations": "A drop link wired into Tomb Beta's rack. It takes what you pull off this server, and nothing else.",
           "acceptsVms": ["tomb_beta_server"],
@@ -2223,10 +2215,9 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
         },
         {
           "type": "notes",
-          "sprite": "notes5",
           "id": "albion_folder",
           "name": "Printed Folder: VH-2017-0312",
-          "position": { "x": 6.4, "y": 2.4 },
+          "position": "as-type:case-file",
           "takeable": false,
           "readable": true,
           "readDisplay": "gameDisplay",
@@ -2245,7 +2236,6 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
           "sprite": "notes1",
           "id": "mirror_job_printout",
           "name": "Mirror Job Printout",
-          "position": { "x": 7.4, "y": 3.5 },
           "takeable": false,
           "readable": true,
           "readDisplay": "gameDisplay",
@@ -2262,10 +2252,9 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
         {
           "_comment": "S5 §3.10: the enrolment binders in a picked crate (optional). Lockpick only by design: no key exists, so the validator's 'nothing can open it' warning is expected.",
           "type": "safe",
-          "sprite": "supply_boxes1",
           "id": "enrolment_crate",
           "name": "Crate, Stencilled BETA",
-          "position": { "x": 4.4, "y": 3.5 },
+          "position": "as-type:m09_crate_beta",
           "takeable": false,
           "locked": true,
           "lockType": "key",

@@ -1037,6 +1037,21 @@ WALL_MOUNTED_EXTRAS = {
     "hq_archive_sign",
     "hq_interview_sign",
     "qdc_first_aid_cabinet",
+    "m09_logo_sign",
+    "m09_sign_reading",
+    "m09_sign_restricted",
+    "m09_sign_staff",
+    "m09_sign_tape",
+    "m09_sign_salvage",
+    "m09_sign_bay",
+    "m09_sign_director",
+    "m09_sign_series_r",
+    "m09_sign_stacks",
+    "m09_sign_returns",
+    "m09_shelf_legend",
+    "m09_keypad",
+    "m09_door_controller",
+    "m09_drop_screen",
 }
 
 
@@ -4685,6 +4700,9 @@ def main():
     sys.path.insert(0, str(REF_DIR))
     import hq_rooms
     builders.update(hq_rooms.register(sys.modules[__name__]))
+    # m09's Mountain States Records & Retention rooms (room_m09_*) live in room_gen/m09_rooms.py.
+    import m09_rooms
+    builders.update(m09_rooms.register(sys.modules[__name__]))
     # Optionally restrict to specific rooms (argv) so already-updated rooms are
     # not clobbered, e.g.  python3 scripts/generate_rooms.py room_hospital_hall
     requested = sys.argv[1:]

@@ -59,6 +59,8 @@ Eleven new maps, `room_m09_*`, built and registered by the room-dressing pass (R
 | `tape_room` | 2×2 | S (SW corner), N (NW corner) | `room_servers` | `room_hce_servers` | tape racks to the roof, blue standby LEDs, the reel deck on a bench, the shelf-code legend framed on the N wall beside the salvage keypad |
 | `salvage_cage` | 2×1 / 10×6 | S (SW corner) | `room_hq_intel` | `room_hq_archives` (10×6) | mesh pen, the running rack server, crates stencilled ALPHA and BETA, the cut door controller, five object slots along the floor at x about 1.5, 3, 4.5, 6, 7.5 |
 
+**Room dressing R1 (2026-10-22):** the eleven `room_m09_*` maps exist and the scenario uses them (builders `scripts/room_gen/m09_rooms.py`, sheets `make_m09_tileset.py`, hand-drawn props `make_m09_props.py`); see `ROOM_DRESSING.md`.
+
 Check the hub's tap test once the real map exists (S5 §2, m09-R §4.2): the tape-room door (N) and the office door (W) share the north-west corner.
 
 ## 3. Cutscene backgrounds
@@ -104,6 +106,8 @@ Every object `type` in the scenario is a sprite that exists under `assets/object
 | `enrolment_crate` | salvage cage | `supply_boxes1` | a stencilled crate |
 | `drop_terminal`, `tomb_beta_station` | reading room, salvage cage | `safetynet_flag_terminal1` | none needed |
 | `field_laptop`, `field_kit_link` | reading room, salvage cage | default `vm-launcher` | none needed |
+
+**Room dressing R1:** done as hand-drawn art: the bay label (`m09_bay_label1`), the taped box (`m09_box_taped1`), the open box on the feed table (`m09_box_open1`), the degausser console (`m09_degausser1`), the drop terminal's wall screen (`m09_drop_screen1`), the rubber stamp (`m09_rubber_stamp1`), the shelf-mark chart (`m09_shelf_legend1`), the BETA crate (`m09_crate_beta1`); PixelLab: the reel deck on a bench (`m09_reel_deck1`). The printed folder now uses `case-file`. Still owed: the four-state trolleys (`m09_box_trolley1` stands in, one state), the bins' `cage_bin` states, the guard's logbook, the deck controller box, the county certificate.
 
 ## 5. Music and ambient sound
 
