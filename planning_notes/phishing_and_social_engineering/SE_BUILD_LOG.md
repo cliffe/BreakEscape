@@ -280,6 +280,8 @@ Fix round 1 for Phases 2-4 (grok): every P2-T, P3-T and P4-T finding reported fi
 
 - **P6-T0** (Sonnet): `tools/playtest/se/bridge-6.jsonl`, 35 evals on the lab (scope sheet, plan whiteboard, report, reload). Game 3045: 34/35; RP2 failed because the report model keyed calls by `id` while the contract and the lab use `callId`. Orchestrator fixed `report-model.js` to read `callId` (falling back to `id`) and the fixture; report test 15/15. Open for P6-R: Ruth's opening hub defeats `bootstrap`; report tasks complete from their globals while the `report` aim is still locked.
 
+- **P5-T** (opus48): `tools/playtest/se/bridge-5.jsonl`, 29/29 on a fresh slice game; verify-run progress (`lord_landed`). Steps 1-8: open, build rows, scores 34 and 87, change after score, attach anyway, inspect all seven giveaways, reloads at four points, step strip and 44 px targets. Lord was revealed by a console grant (the call is Phase 4's), the rest earned. A true 600 px render needs a separate run. **Phase 5 closed.**
+
 ## Review rounds
 
 ### Phase 0, round 1 (P0-R, Opus): 0 blocker, 2 major, 13 minor
