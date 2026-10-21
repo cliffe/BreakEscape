@@ -1086,6 +1086,16 @@ export function handleObjectInteraction(sprite) {
         return;
     }
 
+    // Engagement report workstation (P6-W): the report reads the case records itself.
+    if (sprite.scenarioData.type === 'report-workstation') {
+        if (window.startEngagementReport) {
+            window.startEngagementReport(sprite);
+        } else {
+            window.gameAlert('Report workstation unavailable.', 'error', 'Error', 3000);
+        }
+        return;
+    }
+
     // Handle Major Incident Command Board
     if (sprite.scenarioData.type === 'command_board') {
         if (window.startCommandBoardMinigame) {

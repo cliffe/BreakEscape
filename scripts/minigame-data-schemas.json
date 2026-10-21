@@ -94,7 +94,13 @@
 
   "case-file": {
     "required": [],
-    "optional": ["mode"]
+    "optional": ["mode"],
+    "modes": ["recon", "defender", "scope", "plan"]
+  },
+
+  "report-workstation": {
+    "required": [],
+    "optional": []
   },
 
   "phone": {

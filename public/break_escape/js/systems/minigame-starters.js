@@ -1213,6 +1213,26 @@ export function startLandingPageBuilder(sprite, options = {}) {
 }
 window.startLandingPageBuilder = startLandingPageBuilder;
 
+// Engagement report (P6-W): the workstation opens the report built from the case records.
+export function startEngagementReport(sprite, options = {}) {
+    if (!window.MinigameFramework) {
+        console.error('MinigameFramework not available');
+        window.gameAlert('Report workstation unavailable.', 'error', 'Error', 3000);
+        return;
+    }
+    if (!window.MinigameFramework.mainGameScene) {
+        window.MinigameFramework.init(window.game);
+    }
+    window.MinigameFramework.startMinigame('engagement-report', null, socialOverlayParams({
+        title: sprite?.scenarioData?.name || 'Engagement Report',
+        returnTo: options.returnTo,
+        onComplete: (success, result) => {
+            if (typeof options.onComplete === 'function') options.onComplete(success, result);
+        }
+    }));
+}
+window.startEngagementReport = startEngagementReport;
+
 // Pretext preparation (P4-T0). The callId branches in interactions.js call this
 // after the lockout check. socialOverlayParams sets requiresKeyboardInput and
 // disableClose before startMinigame reads them. The overlay draws its own Close.

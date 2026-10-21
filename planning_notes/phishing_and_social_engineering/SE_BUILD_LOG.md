@@ -270,6 +270,8 @@ Fix round 1 for Phases 2-4 (grok): every P2-T, P3-T and P4-T finding reported fi
 
 - **Fix round 2 for Phases 2-4** (opus48): every finding in both Claude reviews fixed (replay now uses Teague's spoofed send; `pay_today` uses a look-alike domain with a header note; new bridge-3b opens the replayed card, bridge-3c the collapsed header; check-bridge `--expect` fails on a short run; hint ladder advances on any failed call). Orchestrator re-ran: full Node 1499/1499, Rails 723/0, slice and lab `--strict-social` 0. Known harness gaps: a reload while an overlay is open breaks the session on this machine's headless shell (bridge-1a and bridge-3 at that step; reload-free equivalents pass), and bridge-1a B1 still expects one board person (the slice now has Lord). Phases 2, 3 and 4 closed. Committed with P5-G and P6-M.
 
+- **P6-W** (Sonnet): report registered, started, branched, linked, preloaded; schema notes the board's four modes. Lab `--strict-social` 0; full Node 1499/1499; the report opens in a lab game (3010). Found: the report's root-cause and control options have no `text`, so their buttons are blank; sent to opus48 with a lint so it cannot recur.
+
 ## Review rounds
 
 ### Phase 0, round 1 (P0-R, Opus): 0 blocker, 2 major, 13 minor

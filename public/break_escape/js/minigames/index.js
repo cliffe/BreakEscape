@@ -19,6 +19,7 @@ export { OsintBrowserMinigame } from './osint-browser/osint-browser-minigame.js'
 export { InboxTriageMinigame } from './inbox-triage/inbox-triage-minigame.js';
 export { PretextPrepMinigame } from './pretext-prep/pretext-prep-minigame.js';
 export { LandingPageBuilderMinigame } from './landing-page-builder/landing-page-builder-minigame.js';
+export { EngagementReportMinigame } from './engagement-report/engagement-report-minigame.js';
 export { PinMinigame, startPinMinigame } from './pin/pin-minigame.js';
 export { PasswordMinigame } from './password/password-minigame.js';
 export { TextFileMinigame, returnToTextFileAfterNotes } from './text-file/text-file-minigame.js';
@@ -107,6 +108,7 @@ import { OsintBrowserMinigame } from './osint-browser/osint-browser-minigame.js'
 import { InboxTriageMinigame } from './inbox-triage/inbox-triage-minigame.js';
 import { PretextPrepMinigame } from './pretext-prep/pretext-prep-minigame.js';
 import { LandingPageBuilderMinigame } from './landing-page-builder/landing-page-builder-minigame.js';
+import { EngagementReportMinigame } from './engagement-report/engagement-report-minigame.js';
 
 // Import the PIN minigame
 import { PinMinigame, startPinMinigame } from './pin/pin-minigame.js';
@@ -175,6 +177,7 @@ MinigameFramework.registerScene('osint-browser', OsintBrowserMinigame);
 MinigameFramework.registerScene('inbox-triage', InboxTriageMinigame);
 MinigameFramework.registerScene('pretext-prep', PretextPrepMinigame);
 MinigameFramework.registerScene('landing-page-builder', LandingPageBuilderMinigame);
+MinigameFramework.registerScene('engagement-report', EngagementReportMinigame);
 MinigameFramework.registerScene('pin', PinMinigame);
 MinigameFramework.registerScene('password', PasswordMinigame);
 MinigameFramework.registerScene('text-file', TextFileMinigame);
