@@ -140,7 +140,7 @@ scaled with `image-rendering: pixelated`. Anything the player reads or compares 
 |----|-------|---------|--------|-----------|------|
 | UI8 | Threshold icons, 16x16: wary, refuses, reports, hostile, trusts (shared by the bar, 03 and the world pip) | 00 S4; 03; 06 §8 | New | PixelLab | Lab |
 | UI9 | Influence bar, about 96x16, -100 to +100, calm/wary/refusing/reported bands | 06 §8; 00 S4 | New | PixelLab | Lab |
-| UI10 | World influence pip above a character sprite (Dev only in the lab) | 00 S13 | New | PixelLab | Lab |
+| UI10 | World influence pip above a character sprite, drawn only for characters with walk sprites (awareness, Eldritch Hacker). Not in the lab: there the influence bar shows in the phone-chat and person-chat header, and Dev is phone-only (settled 2026-10-21; moved from Lab, §9 counts not yet updated) | 00 S13 | New | PixelLab | Later |
 | UI11 | Tells-panel frame | 06 §8 | New | PixelLab | Lab |
 | UI12 | Pretext card frame (pinned-note look from the board) | 06 §8 | Adapt (UI6 card) | PixelLab | Lab |
 | UI13 | Portrait tint for wary and refusing bands (code tint of existing talk and viseme sheets, no new art) | 06 §8 | Reuse | code | Lab |
@@ -153,7 +153,7 @@ scaled with `image-rendering: pixelated`. Anything the player reads or compares 
 | UI20 | Triage result badge, 64x64, three states (sharp, getting there, practising) | 05 Assets | New | PixelLab | Lab |
 | UI21 | Engagement report panel: results table, finding cards, tick and cross. CSS plus UI4 marks | 10 §8 | Reuse | CSS | Lab |
 | UI22 | Landing-page builder chrome, at native size: fake-browser window frame, address-bar frame, padlock open, closed and crossed, and a "Not secure" badge (about 8 sprites, scaled 3x in the renderer); five step-strip icons (Pretext, Build, Score, Send, Inspect); a tell-found stamp; a credibility meter frame. Address bar, page text and field labels are DOM text, not sprites. Page body layouts are LOGO4 and LOGO6 | 07 §3, §8; README; 10 stage 4 | New | PixelLab | Lab |
-| UI23 | Padlock icon for the builder and the concept card. `icons/padlock_32.png` exists | 10 stage 4 | Reuse | existing | Lab |
+| UI23 | Padlock icon for the builder and the concept card. `public/break_escape/assets/icons/padlock_32.png` exists | 10 stage 4 | Reuse | existing | Lab |
 | UI24 | Concept-card images (`social.conceptCards[].image?`, optional), ten cards: four tools, six page cards | 10 §5 | New | PixelLab | Later |
 
 ### 4c. NPC headshots on fake social pages and cards
