@@ -385,7 +385,11 @@ I don't know if saying it would have saved them. I didn't say it.
 #set_global:hax_confession_answer:should_have_told
 #set_global:identity_scene_done:true
 #complete_task:hear_the_name
-// Script edit R2 A-R2-03 / audio cut 2: no Reading form on this answer.
+// Script edit R2 follow-up: the first half of the other answers' Reading
+// form, one clip shared.
+{reading_told_hax:
+    He wrote that I'd cover for you.
+}
 Yes. I should have.
 You get all of it from now on.
 -> back_to_work
@@ -395,7 +399,8 @@ You get all of it from now on.
 #set_global:identity_scene_done:true
 #complete_task:hear_the_name
 {reading_told_hax:
-    He wrote that I'd cover for you. Tonight you covered for me.
+    He wrote that I'd cover for you.
+    Tonight you covered for me.
 }
 Don't be kind about it. *beat* Thank you. Once.
 -> back_to_work
@@ -405,7 +410,8 @@ Don't be kind about it. *beat* Thank you. Once.
 #set_global:identity_scene_done:true
 #complete_task:hear_the_name
 {reading_told_hax:
-    He wrote that I'd cover for you. Tonight you covered for me.
+    He wrote that I'd cover for you.
+    Tonight you covered for me.
 }
 ...That's mine. You don't get to use it on me. *beat* Thank you.
 -> back_to_work

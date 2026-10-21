@@ -7,7 +7,8 @@
 // The recognition and HaX's bin lines are B3's strings, character for
 // character (m09_sorensen_hatch.ink); change both together. One exception
 // (R2 B-R2-05): nobody claimed the lease-holder on this route, so her line
-// after the recognition is her own.
+// after the recognition is her own. And the player never saw the hatch here,
+// so HaX's first bin line opens "One bin is…" (R2 follow-up).
 // "[Walk past her.]" sets nothing: cage_opened already wrote derek_file.
 // ===========================================
 
@@ -35,7 +36,7 @@ Narrator: Sorensen looks up from the feed table as the gate swings open.
 }
 Margaret Sorensen: You came in by the maintenance code, not my hatch. You're the one he writes about.
 Agent HaX: ...She's got a file on you.
-Agent HaX: Bin by the hatch is Derek Lawson's file, and it isn't Derek's handwriting on it. It's the only place anyone wrote down why he did what he did.
+Agent HaX: One bin is Derek Lawson's file, and it isn't Derek's handwriting on it. It's the only place anyone wrote down why he did what he did.
 {m08_nightshade_tidied:
     Agent HaX: The other's what Nightshade cleared from his locker. His own words on what he took. One of them's ash in a minute.
 - else:
