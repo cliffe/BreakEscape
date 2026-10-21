@@ -74,6 +74,7 @@ Each fires once on its document's read or pickup. The read latches (`rent_ledger
 | A3-31b | (same string as A3-31a) | as A3-31a with `globalVars.m02_reeves_fate === 'ko'` | `onceOnly` |
 | A3-31c | (same string as A3-31a) | as A3-31a with `globalVars.m02_reeves_fate === 'flagged'` | `onceOnly` |
 | A3-31d | (same string as A3-31a) | as A3-31a with `globalVars.m02_reeves_fate === '' && globalVars.m02_completed && globalVars.m02_insider_asset_arrested` | `onceOnly`. The read rule for m02 saves before the export (FA row 22) |
+| A3-32 | Strategy Directorate. One of ours signed this out and never handed it back. Find out who. | `global_variable_changed:asset_tag_read` with `value === true && !globalVars.flag3_submitted` | `onceOnly`. Stage 8 (coordinator, m-15's echo): the property label in the salvage cage (S6 §1.10 `beta_asset_tag`). No name, no VM detail; the hub's flag-3 steer ("whose box it is") points the same way |
 | A3-30 | Your tags, from HashChain. Someone's paying rent on a building in Montana that isn't this one. | `global_variable_changed:case_file_read` with `value === true && globalVars.m06_monitoring_enabled` | `onceOnly`. **Fixed** |
 
 ## 5. Notes for stage 9

@@ -191,6 +191,7 @@ Room types are placeholders. No shipped room type is a records warehouse; the ne
 - **NPCs.** None. The identity scene, the read and Tesseract's call are phone scenes heard here.
 - **Objects**, spaced along the four floor rows at about x 1.5, 3, 4.5, 6, 7.5 (a tile and a half apart, clear of the side walls); stage 9's `slot_audit.py` decides the final spots (review m-R2-8):
   - `tomb_beta_rack`: the server itself (dressing, with an `observations` line).
+  - `beta_asset_tag` (stage 8, the m-15 echo): a readable service property label on the rack's front handle (`notes`, `takeable: false`, `readable: true`), same tile as the rack's front; `onRead` sets `asset_tag_read`. Strings in stage 6 §1.10. It points at the leaver's credential before flag 3 without naming him.
   - `field_kit_link`: `vm-launcher` (the same attack VM as `field_laptop`), on a crate beside the rack.
   - `tomb_beta_station`: `flag-station`, `acceptsVms: ["tomb_beta_server"]`, `flagRewards: [set_global flag3_submitted, set_global flag4_submitted]`.
   - `albion_folder`: the catalogue entry, his memo and the unsent notice in one folder, printed off the box; `textVariants` on `flag3_submitted` (before it, "PRINTER READY. TRAY EMPTY.") (review D-07). The flaw is VH-2017-0312, Carrow Controls' RM-4 module (stage 6 §1.10).

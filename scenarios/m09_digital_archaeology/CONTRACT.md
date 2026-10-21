@@ -388,7 +388,7 @@ A local must never share a name with a global or an import.
 
 ### 5.5 Proposed for stage 9 (not read by ink)
 
-New mappings and read globals the texts and scenes need, which no stage document lists yet: M1, HaX `conversation_closed:briefing_cutscene` → phone-chat `targetKnot: "dock"`, `delayMs: 2000`, `onceOnly`, not forced, unvoiced; read latches for A3's document remarks (`rent_ledger_read`, `refit_ledger_read`, `danny_sheet_read`, `case_file_read`, `legacy_box_read`, and from stage 8 `reeves_sheet_read`, set only while the printed ledger shows the Reeves paragraph (A3-31), each an `onRead` `setVariable` on its `notes` object; `lease_file` and `derek_file` can key on `item_picked_up:notes` with `data.itemId`); a `setVisible: false` on `jesse_tran` on `tran_outcome === 'talked'` (he walks out); `onceOnly` on `sorensen_door`'s door-scene mapping; from stage 8, a second `sorensen_door` mapping for `handover` (§3.3), the `unlockTask: "match_the_hand"` on HaX's `nightshade_file_held` mapping (m-03, the task ships `locked`), and the told/KO guards plus an `open_stacks` relay on Old Coyote's override (m-01).
+New mappings and read globals the texts and scenes need, which no stage document lists yet: M1, HaX `conversation_closed:briefing_cutscene` → phone-chat `targetKnot: "dock"`, `delayMs: 2000`, `onceOnly`, not forced, unvoiced; read latches for A3's document remarks (`rent_ledger_read`, `refit_ledger_read`, `danny_sheet_read`, `case_file_read`, `legacy_box_read`, and from stage 8 `reeves_sheet_read` and `asset_tag_read` (the salvage cage's property label, A3-32), set only while the printed ledger shows the Reeves paragraph (A3-31), each an `onRead` `setVariable` on its `notes` object; `lease_file` and `derek_file` can key on `item_picked_up:notes` with `data.itemId`); a `setVisible: false` on `jesse_tran` on `tran_outcome === 'talked'` (he walks out); `onceOnly` on `sorensen_door`'s door-scene mapping; from stage 8, a second `sorensen_door` mapping for `handover` (§3.3), the `unlockTask: "match_the_hand"` on HaX's `nightshade_file_held` mapping (m-03, the task ships `locked`), and the told/KO guards plus an `open_stacks` relay on Old Coyote's override (m-01).
 
 ## 6. Tags, and the mappings they rely on
 
@@ -688,18 +688,19 @@ For the orchestrator. None stops the writers; each says what the writers do mean
 - A3-23a/b (BP F-05): "Big Sky was in Zero Day's sales ledger. Sterling's keys opened it after Cardiff."
 - A3-24 (BP F-10): "Irina's tip-off led us to this. Tell her it bought us the deed."
 - A3-31a–d (new; ruling 14, FA row 21 in custody): "Reeves' handler, from the hospital. Told to stand down the day we took Reeves." on a new read latch `reeves_sheet_read`, one row per custody value plus the pre-export read rule.
+- A3-32 (new; m-15's echo, below): HaX on the salvage cage's property label, on `asset_tag_read` before flag 3.
 - C7: the WHAT THE PURGE TOOK note records that the default file now reaches the notepad.
 
 **State (§5)**
 - Exports: twelve. `alpha_annotations_read` added (ruling 5, SR major 2); JSON only.
 - Imports: 43 + 8 `completed`. Dropped `m04_voltage_escaped`, `m07_team_redirected` (ruling 17, m09-R m-13); added `m06_assets_seized` (BP F-03; m06 already exports `assets_seized`). Ruling 17's "42 + 8" predates F-03.
-- New for stage 9: `reeves_sheet_read`; the `handover` mapping; `unlockTask: "match_the_hand"`; Old Coyote's override guards and relay.
+- New for stage 9: `reeves_sheet_read`; `asset_tag_read` and the `beta_asset_tag` object; the `handover` mapping; `unlockTask: "match_the_hand"`; Old Coyote's override guards and relay.
 
 **Stage documents** (s0, SA, SE, MC, S4, S5, S6): every string above copied where quoted; plus BA 1 (`hl_placing_sheet` "Client: confidential (security consultancy)."; SA "a consultancy client"), BP F-02 (`lease_file` "Refit drawings: withdrawn by lessee."), BP F-04 (`case_file` item 5 "From: the Architect's fund, tagged." with no "since 2016"), m-03, m-04 (the looped g and crossed sevens in both observations), m-05 (R5 closes after the naming line; re-ring 2 a guard), m-06 ("Tell HaX to bring you in to Netherton"; aim 6 description), m-07 (first-playtest check), m-09 (S4 and S5 copy S6's stamp and box strings), m-11 (Dillard sets no global; claim deleted), m-12 (branch callers outside `npcIds`), M-04 / ruling 20 (stage 9's first step is the asset list). Each doc has a "Stage 8 folded in" section or note.
 
 **Not changed, with reasons**
 - m-08: no change now; stage 9 times the briefing with audio. Stage 8's briefing lines are branch alternatives; the most any one save gains is the row-116 line and the tidied arm's second line, about 20 words, so the 4.0–4.4 minute estimate barely moves.
-- m-15: no ink; the lab sheet's concept section draws the line from the maintenance code Sorensen never changed to the leaver's credential nobody revoked (lab sheets come last).
+- m-15: answered in the room as well (coordinator, after the first stage 8 pass): a new readable `beta_asset_tag` in the salvage cage, "PROPERTY OF THE SERVICE. NOT FOR DISPOSAL. / ASSET 0412. Rack server, 2U. / Issued to: Strategy Directorate. / Returned: --" (S5 §3.10, S6 §1.10; stage 9 builds it), `onRead` sets `asset_tag_read`, and HaX's text A3-32 on the first read before flag 3, "Strategy Directorate. One of ours signed this out and never handed it back. Find out who." No name and no VM detail; no ink change. The lab sheet's concept section can still draws the line from the maintenance code Sorensen never changed to the leaver's credential nobody revoked (lab sheets come last).
 - SR minor 10 (the casualty figure, "One thousand one hundred…" against m10's "Eleven hundred…"): a taste call with no fix chosen; m09's form stands.
 - CC 2 / ruling 18: the Recruiter's "Agent 0x00" and "Goodnight, agent." stand.
 - `// VM hint` comments untouched.
