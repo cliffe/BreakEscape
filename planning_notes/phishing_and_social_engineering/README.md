@@ -38,7 +38,7 @@ it.
 
 | Doc | What it is | Status |
 |-----|------------|--------|
-| `designs/00_data_contract.md` | Shared schemas, canonical "AccountingNow" dataset and typed intel facts, factor library, intel-to-factor map, ink and engine constraints. §8 influence global and thresholds, §9 channels and synced globals, §10 email-to-ink contract, template and slot schema, §10a email identities, §11 where data lives (`social`), §12 engine work, §13 settled values (authoritative where a value is listed) | Plan. Current. Contract for 01 to 11 |
+| `designs/00_data_contract.md` | Shared schemas, canonical "Ledgerwell" dataset and typed intel facts, factor library, intel-to-factor map, ink and engine constraints. §8 influence global and thresholds, §9 channels and synced globals, §10 email-to-ink contract, template and slot schema, §10a email identities, §11 where data lives (`social`), §12 engine work, §13 settled values (authoritative where a value is listed) | Plan. Current. Contract for 01 to 11 |
 | `designs/01_mail_client.md` | Mail client (inbox and compose), accounts and mailboxes, reply delivery, persisted inbox | Plan. Current |
 | `designs/02_osint_browser.md` | OSINT browser: company site, social media, public documents | Plan. Current |
 | `designs/03_intel_board.md` | Intel board: evidence tracker, readiness, defender mode | Plan. Current |
@@ -257,6 +257,13 @@ the Cyrillic letter stays a `\u` escape in ASCII source, and the ASCII check rea
 - The capture note names the captured account and holds no password value. It is authored text, and the player never types it (`07` §5, `00` §11a).
 - Card examples use invented brand names, so the brand check no longer exempts card text: the denylist and fold-and-match apply to host-shaped tokens and brand words in `conceptCards[].text`, host-shaped tokens must end `.example`, and other card prose is reviewed by hand (`07` §1, `00` §11).
 
+**Z. Brand names, real software names, voicing (decided 2026-10-21).** A name search found real
+companies called Accounting Now and CloudBox in the same sectors, so the lab company is **Ledgerwell**
+and the second builder brand is **CloudBoxy**. Real software named in OSINT pages (Xero, Office 365,
+Microsoft Excel) stays, as incidental realism; the lint keeps its exemption for those fields. Ruth's
+hints and the minor characters are voiced as well as the main cast, but no TTS is generated until the
+words are signed off at a late stage. The lab has no theme song and reuses the existing playlists.
+
 Defaults taken elsewhere, for context: fictional targets only, no real-staff OSINT; the
 lab is the first slice; the awareness product measures pre and post from the start and defers LMS and
 SSO integration.
@@ -283,7 +290,7 @@ Key decisions (L to Y).
 **Landing-page builder (`07`)**
 
 - Homograph shown in the student lab only, as one authored example? Default: yes.
-- Invented brand and look names (AccountingNow, CloudBox, and the looks): are they clear of real companies and products? Pre-ship check, with a search before release, not a design question (`07` OQ2).
+- Invented brand and look names (Ledgerwell, CloudBoxy, and the looks): are they clear of real companies and products? Pre-ship check, with a search before release, not a design question (`07` OQ2).
 
 ## Engine work, consolidated
 
@@ -396,7 +403,7 @@ numbers are the owning doc's N-items. Nothing here is built yet.
 
 - Eldritch Hacker (game 2): `../eldritch_hacker/DIRECTION.md` and `FRESH_CONTEXT_PROMPTS.md`.
   Provisional until a universe-bible pass.
-- The student lab's cast and story (Tarnside Assurance, AccountingNow): `designs/10` and the canonical
+- The student lab's cast and story (Tarnside Assurance, Ledgerwell): `designs/10` and the canonical
   dataset in `designs/00` §1.
 - A parked VM-backed variant of this strand is kept for reference in
   `../MAYBE-LATER-phishing_and_social_engineering_secgen/`. It is out of scope.

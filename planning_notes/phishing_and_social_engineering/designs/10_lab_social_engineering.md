@@ -55,7 +55,7 @@ reasoning, and produce no runnable phishing kit, spoofing recipe or harvesting c
 
 ## 2. Player goal in their own words
 
-"I've been hired to test AccountingNow's staff. Find out about them, get three people to take the
+"I've been hired to test Ledgerwell's staff. Find out about them, get three people to take the
 bait, learn how the staff payroll portal works by phone, write it up, and then switch to the other
 side and show the company how they should have caught me."
 
@@ -64,19 +64,19 @@ side and show the company how they should have caught me."
 ### Setting and cast (fictional throughout)
 
 The student plays a junior consultant at **Tarnside Assurance**, a security consultancy, on a
-contracted engagement for **AccountingNow Ltd**, a 40-person accountancy software firm. Both are
-invented; every person, domain (`accountingnow.example`) and profile is fictional, and no real staff
+contracted engagement for **Ledgerwell Ltd**, a 40-person accountancy software firm. Both are
+invented; every person, domain (`ledgerwell.example`) and profile is fictional, and no real staff
 are profiled. Cast ids follow `00` §1.
 
 | Who | Role in the lab | How the student meets them |
 |-----|-----------------|----------------------------|
 | **Ruth Adeyemi** | Tarnside engagement lead: briefs, hands over keys, runs the support hub (progress-gated, as Agent HaX is in Licence to Hack) | Person NPC in the Engagement Office (`ruth`); phone contact `ruth_phone` for hints from any room |
-| **Gareth Fairbairn** | AccountingNow managing director, the signing client | Person NPC in the Engagement Office, one short scene once the sheet is signed |
+| **Gareth Fairbairn** | Ledgerwell managing director, the signing client | Person NPC in the Engagement Office, one short scene once the sheet is signed |
 | **Chris Hampshire** (`hampshire`, Careers/HR) | Target 1, easy: the open `careers@` inbox accepts CVs from anyone | Email only; data-only target (no `character`, no ink story): the reply is a text job from the target's authored `replies` |
 | **Melanie Pierce** (`pierce`, finance, new starter) | Target 2, medium: trusts colleague Jed Baker, primed for a Friday balance sheet (the worked example in 04) | Email only; `character: pierce`, mail story `pierce_mail` |
 | **Sofia Lord** (`lord`, intern) | Target 3, hard: new to the firm, uses the staff payroll portal, cautious about links | Email only; `character: lord`, mail story `lord_mail` |
 | **Dev** (`dev`, service desk) | The pretext-call target (06 §4.8): supports the staff portals | Phone only, record `dev_service_desk`; not an email target |
-| **Tomasz** (AccountingNow security lead) | Defender half only: sets the triage exercise and gives the closing debrief | Person NPC in the Blue Team Room |
+| **Tomasz** (Ledgerwell security lead) | Defender half only: sets the triage exercise and gives the closing debrief | Person NPC in the Blue Team Room |
 
 ### Rooms and movement (high level)
 
@@ -116,7 +116,7 @@ deterministic feedback:
 
 - *Sort the scope cards (step `roe_scope_done`).* Five cards: phish named staff by work email (in);
   phish staff at their personal addresses (out); call the published service-desk line (in); tailgate
-  into the building (out for this contract, physical is excluded); post to AccountingNow's real
+  into the building (out for this contract, physical is excluded); post to Ledgerwell's real
   customers (out). A wrong placement is explained from the document ("§4 excludes personal
   accounts") and the card goes back.
 - *Answer the stop-rule question (step `roe_stoprule_done`).* "What do you do if you find a real
@@ -134,7 +134,7 @@ At the planning whiteboard the student turns the brief into a plan with two pick
 single-select (`03`): each list has exactly one right option, and every wrong one carries a reason.
 
 1. **Objective** (step `plan_objective_done`): pick the one objective that fits the brief. The right
-   option is "find out how far email and a phone pretext get against AccountingNow's finance, HR and
+   option is "find out how far email and a phone pretext get against Ledgerwell's finance, HR and
    service-desk staff, and report the gaps". Wrong options include "disrupt payroll" (rejected with
    the rules-of-engagement reason) and "collect staff passwords" (the engagement keeps nobody's
    password: a submitted page is simulated, and the sign-in it hands over is a game note).
@@ -168,8 +168,8 @@ call in stage 5. Two further facts are stale on purpose.
   under Accounts. Selecting it gives the stale fact `old_org_chart` (shown under "Old or unverified"
   on the board's company panel), which offers a wrong manager and a wrong team later.
 - **Tools panel.** The student picks lookups from a short list; nothing is typed. The Hunter lookup
-  on `accountingnow.example` returns the pattern (`first-initial.surname@`) and grants
-  `email_pattern`. A name search for "J. Baker" returns two entries, Jed Baker of AccountingNow and a
+  on `ledgerwell.example` returns the pattern (`first-initial.surname@`) and grants
+  `email_pattern`. A name search for "J. Baker" returns two entries, Jed Baker of Ledgerwell and a
   plumber in Leeds. Choosing the right one grants nothing and says why it matched; choosing the
   namesake grants the stale fact `baker_namesake` (also under "Old or unverified"), a sender name Pierce does not trust. The four in-browser concept
   cards sit beside what they model: `tool_hunter` (the Hunter lookup), `tool_harvester` (the name
@@ -271,7 +271,7 @@ awareness product.
 factors. In round 1 it says "Sent as your own address, so there is nothing to spoof and nothing to
 fail" (the line is account-neutral, because Hampshire is mailed from whichever account is chosen). In round 2 Pierce's authored `factorStrings.senderAuth` line
 says the spoofed `j.baker@` address fails the domain's alignment check and that, because
-AccountingNow publishes its DMARC policy as `p=none`, it is still delivered. It never changes the
+Ledgerwell publishes its DMARC policy as `p=none`, it is still delivered. It never changes the
 verdict. It plants the question stage 7 answers: why was this flagged, and why can a message pass all
 three checks and still be a phish.
 
@@ -469,7 +469,7 @@ Tomasz takes the report and sets a debrief exercise. The same strings serve both
    the 05 glossary) is short and follows 05's definitions: SPF lists the hosts allowed to send for the
    envelope domain; DKIM signs chosen headers and the body; DMARC requires SPF or DKIM to pass *and
    align* with the visible `From` domain, and publishes a policy (`none`, `quarantine`, `reject`). The
-   consequence of AccountingNow's `p=none` is taught in the stage 6 finding and in the `headerNote` on
+   consequence of Ledgerwell's `p=none` is taught in the stage 6 finding and in the `headerNote` on
    the student's own Pierce phish ("a policy of `none` monitors but does not stop this").
 2. **Threat-intel profile (Ch. 12).** The SOC board switches to `defender` mode: the facts the student
    collected, titled "what an attacker can assemble about us". The mode lists only facts that carry a `reduceNote`. For each of the four (the
@@ -488,7 +488,7 @@ Tomasz gives a short in-person debrief once every required completion global is 
 and `profile_done` (both are synced VARs in `tomasz.ink`; until both are true he says "come back when
 you have finished the exercise"). The SOC `case-file` stays usable before the triage, so the gate is on
 Tomasz and not on the object. What the exercise showed, what
-AccountingNow will change, and the no-blame line. Branches are gated on globals (`dev_reported` and the latest call's
+Ledgerwell will change, and the no-blame line. Branches are gated on globals (`dev_reported` and the latest call's
 `pretext_service_desk_call_outcome` for the call; `phish_pierce_attempts` equal to 1 for a first-try
 land on Pierce) and use fixed strings, so voiced lines print no variables. The conversation ends with
 `#complete_task:closing_debrief` and `#exit_conversation`, which completes the mission-conclusion aim
@@ -846,8 +846,8 @@ Hampshire's reply is a text job from her target's authored `replies` (no ink sto
 
 ```jsonc
 "engagement": {
-  "client": "AccountingNow Ltd (fictional)",
-  "scopeNote": "Authorised exercise for AccountingNow Ltd (fictional). In scope: work email to named staff, the published service-desk line, public OSINT.",
+  "client": "Ledgerwell Ltd (fictional)",
+  "scopeNote": "Authorised exercise for Ledgerwell Ltd (fictional). In scope: work email to named staff, the published service-desk line, public OSINT.",
   "roe": {
     "inScope":  [ "work email to named staff", "published service-desk phone line", "public OSINT" ],
     "outScope": [ "personal accounts", "physical entry", "real customers", "denial of service" ],

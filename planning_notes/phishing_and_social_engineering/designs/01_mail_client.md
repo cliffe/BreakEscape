@@ -206,7 +206,7 @@ Sent to Melanie Pierce, as guest@workstation.example (claimed: Jed Baker).
   ✓ Addressed her by name
   ✗ I'm not expecting anything like this.
   ✗ You said you'd attach it, but there's nothing here.
-  Advisory: The spoofed j.baker@ address fails the domain's alignment check. AccountingNow
+  Advisory: The spoofed j.baker@ address fails the domain's alignment check. Ledgerwell
   publishes its DMARC policy as p=none, so a receiver would still deliver it.   [Edit & resend]
 ```
 
@@ -310,19 +310,19 @@ The minigame holds no content. A scenario supplies it under the top-level `socia
     "mailboxes": [ { "id": "guest" }, { "id": "freemail" } ],
     "contacts": [
       { "id": "pierce", "person": "pierce", "name": "Melanie Pierce",
-        "addresses": ["m.pierce@accountingnow.example"], "role": "Finance",
+        "addresses": ["m.pierce@ledgerwell.example"], "role": "Finance",
         "revealedBy": "se_intel_pierce_role",
         "character": "pierce",         // optional: the social.characters entry whose mail story replies
         "targetId": "pierce" },        // optional: the phishTargets entry that judges mail to this contact
       { "id": "hampshire", "person": "hampshire", "name": "Chris Hampshire",
-        "addresses": ["careers@accountingnow.example"], "role": "Careers",
+        "addresses": ["careers@ledgerwell.example"], "role": "Careers",
         "revealedBy": "se_intel_hampshire_careers", "targetId": "hampshire" },
       { "id": "lord", "person": "lord", "name": "Sofia Lord",
-        "addresses": ["s.lord@accountingnow.example"], "role": "Intern",
+        "addresses": ["s.lord@ledgerwell.example"], "role": "Intern",
         "revealedBy": "se_intel_lord_intern", "character": "lord", "targetId": "lord" }
     ],
     "seededMessages": [
-      { "id": "welcome", "mailbox": "guest", "from": { "name": "IT", "address": "it@accountingnow.example" },
+      { "id": "welcome", "mailbox": "guest", "from": { "name": "IT", "address": "it@ledgerwell.example" },
         "to": "guest@workstation.example", "subject": "Your new laptop", "body": "...",
         "time": "08:05", "unread": true }
       // optional per message: "folder": "sent" with "fromAccount" (history on a found device),
@@ -543,8 +543,8 @@ reads `metrics`, the sent records and the outcome globals.
   scenario has them. The mail frame (folder pane, buttons, window chrome) is styled like the game UI.
 - All text the player must read or compare uses the bundled Source Sans 3 (`00` §6), not a
   pixel font. That covers email headers, addresses, subjects, body text, contact and file names, and
-  the checklist, banner and tells lines. Look-alike addresses (`accountingnovv` against
-  `accountingnow`, `rn` against `m`) must read as they would in a real mail client. A homograph address (a Cyrillic letter in a Latin name) draws as typed in the same face, which covers Cyrillic (`00` §6); the tells line may add the punycode form as a contrast. Pixel fonts blur
+  the checklist, banner and tells lines. Look-alike addresses (`ledgervvell` against
+  `ledgerwell`, `rn` against `m`) must read as they would in a real mail client. A homograph address (a Cyrillic letter in a Latin name) draws as typed in the same face, which covers Cyrillic (`00` §6); the tells line may add the punycode form as a contrast. Pixel fonts blur
   those differences or make them obvious, and long reading in a pixel font is tiring.
 - The checklist and the tells use the house pixel style for chrome (icons, frames, headings that hold
   no authored string). Their reason text is Source Sans 3.

@@ -28,7 +28,7 @@ One conversation has five beats. Beats 1, 2 and 5 are small panels. Beats 3 and 
 
 ### Beat 1. Brief
 
-A card in the mission's UI theme (panel, colours and headings from the `--ui-*` tokens; all text the player reads in the bundled sans-serif, `01`). It states the authorisation and scope in one line ("Authorised test of FICTIONAL AccountingNow, helpdesk call in scope"). It gives the objective ("Confirm the staff email format", then optionally "Get a password reset for a Finance account") and lists what the player holds on the intel board. The ethics beat (Ch. 2) lives here, not on a separate screen.
+A card in the mission's UI theme (panel, colours and headings from the `--ui-*` tokens; all text the player reads in the bundled sans-serif, `01`). It states the authorisation and scope in one line ("Authorised test of FICTIONAL Ledgerwell, helpdesk call in scope"). It gives the objective ("Confirm the staff email format", then optionally "Get a password reset for a Finance account") and lists what the player holds on the intel board. The ethics beat (Ch. 2) lives here, not on a separate screen.
 
 ### Beat 2. Prepare the lines
 
@@ -148,7 +148,7 @@ Failures this avoids (the list in `04`): rejections that do not say what failed 
 
 After a reported call, the next attempt can show a one-line nudge that names what to find on the board. It runs in three steps: the category ("Check who runs Finance"), then the fact source ("The company page lists the Finance team"), then a near-explicit pointer ("Melanie Pierce manages Finance"). This is the same three-step ladder as `04`.
 
-### 4.6 Worked example: Priya at the AccountingNow helpdesk
+### 4.6 Worked example: Priya at the Ledgerwell helpdesk
 
 Fictional company. The people and facts in this example (Sam Okafor, the award, `helpdesk_email_format` and `reset_granted_okafor`) are example-only and are not in the lab's `intelFacts`. The stale org chart is different: it is the lab's own fact `old_org_chart` (`00` §1), reused here for the wrong manager. The lab's own call is 4.8. Priya Nair, helpdesk. Her character is `priya`, with influence global `priya_influence`, declared at -20. Her markers are wary -40, refuses -50, reports -70 and lockout -90, the `00` §8 example values. Her directory holds the new starter **Sam Okafor** (Finance, manager Melanie Pierce, started Monday the 6th, second floor). Her policy is no password reset without two matched verification facts. She is pleased that the helpdesk won the team award, which the company page mentions.
 
@@ -156,12 +156,12 @@ The player's card has Sam Okafor (Finance) and "I'm locked out". The manager bla
 
 | Turn | Priya says | Player picks | Judge | Influence | Panel shows |
 |---|---|---|---|---|---|
-| 0 | "AccountingNow helpdesk, Priya." | | start | -20 CALM | |
+| 0 | "Ledgerwell helpdesk, Priya." | | start | -20 CALM | |
 | 1 | (same) | "Hi, Sam Okafor, started in Finance Monday, locked out." | name ✓ and team ✓ make +20, capped to +10 | -10 CALM | `+10  CALM  ✓ Name and team are in the directory.` |
 | 2 | "Welcome, Sam. Who's your line manager?" | "Jed Baker said to ring you." | manager ✗ (identity) -30; fact opens | -40 WARY | `-30  WARY  ✗ Manager. You said "Jed Baker". Her directory shows Melanie Pierce.` Priya: "Jed Baker? He's a Finance colleague, isn't he?" |
 | 3 | (same) | "Sorry, Melanie Pierce. A week in and I'm mixing up names." | repair: claim ✓ +10, candour +10 | -20 CALM | `+20  CALM  ✓ Corrected. Owning a slip early costs less than defending it.` |
 | 4 | "No worries. Found you." | "Congrats on the team award, saw it on the company page." | shared detail: claim +10, technique +10; the cap limits claim credit only | 0 CALM | `+20  CALM  ✓ Shared detail. A real detail she can confirm builds trust.` |
-| 5 | "What can I do?" | "Can you confirm my email address? I want to give it to a supplier." | ask `email_format`, pressure 0, floor -30 | 0 CALM | `ASK OK  floor -30, she is at 0. Low-stakes: she would tell any new starter this.` Priya: "sam.okafor@accountingnow.example, first dot last." Grants the example-only fact `helpdesk_email_format` (`grants.intel`). |
+| 5 | "What can I do?" | "Can you confirm my email address? I want to give it to a supplier." | ask `email_format`, pressure 0, floor -30 | 0 CALM | `ASK OK  floor -30, she is at 0. Low-stakes: she would tell any new starter this.` Priya: "sam.okafor@ledgerwell.example, first dot last." Grants the example-only fact `helpdesk_email_format` (`grants.intel`). |
 | 6 | "Anything else?" | "Could you reset my password? I still can't get in." | ask `pw_reset`, pressure -10, floor -20; needs two verification facts | -10 CALM | `ASK PENDING  floor -20, she is at -10. She wants to verify you first.` Priya: "Before I do: your start date and which floor?" |
 | 7 | (same) | "I started Monday the 6th, second floor." | start date ✓ +10, floor ✓ +10; cap +10 | 0 CALM | `+10  CALM  ✓ Verification passed: start date and floor.` Priya: "Done. Temporary code is on your screen. Change it at login." Grants `reset_granted_okafor`. |
 

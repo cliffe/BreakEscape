@@ -243,10 +243,10 @@ that reporting, not merely not-clicking, is what a defender programme measures.
 `.eml` dump, and it contains nothing an attacker could lift into a real message.
 
 ```
-Display name:   Accounts Now Payroll
-From address:   payroll@accountingnow-hr.example
-Sent by (envelope): bounce.accountingnow-hr.example
-Reply goes to:  payroll@accountingnow-hr.example
+Display name:   Ledgerwell Payroll
+From address:   payroll@ledgerwell-hr.example
+Sent by (envelope): bounce.ledgerwell-hr.example
+Reply goes to:  payroll@ledgerwell-hr.example
 
 Authentication-Results
   SPF    pass   "The server that sent this is on the list its domain publishes."
@@ -268,7 +268,7 @@ the ways it must not mislead:
   (`none`, `quarantine`, `reject`) says what receivers should do on failure. None = no policy
   published.
 - **A pass is not a trust verdict.** Authentication proves *which domain* sent the mail, not that the
-  domain is honest. An attacker who owns `accountingnow-hr.example` can pass all three for that
+  domain is honest. An attacker who owns `ledgerwell-hr.example` can pass all three for that
   domain. So the header panel is read **alongside** the address, never instead of it.
 - **A fail is a clue, not proof.** Forwarding often breaks SPF and mailing lists (which rewrite the
   message) often break DKIM, so one failure with a DMARC pass is usually legitimate.
@@ -289,14 +289,14 @@ detects that.
 
 ### Worked example (4 messages, `feedbackMode: "immediate"`)
 
-Fictional company Accounts Now (`accountingnow.example`, as in `01`/`04`). Four messages:
+Fictional company Ledgerwell (`ledgerwell.example`, as in `01`/`04`). Four messages:
 
 | # | Message | Truth | Real flags |
 |---|---------|-------|------------|
-| 1 | IT: "Your new laptop", from `it@accountingnow.example`, auth all pass | Real | none |
-| 2 | "Accounts Now Payroll": "Verify your bank details today", from `payroll@accountingnow-hr.example`, link text `accountingnow.example/payroll` but destination `accountingnow-hr.example/login`, auth all pass | Phish | `senderTrust`, `linkCredible`, `urgencyCalibrated` |
+| 1 | IT: "Your new laptop", from `it@ledgerwell.example`, auth all pass | Real | none |
+| 2 | "Ledgerwell Payroll": "Verify your bank details today", from `payroll@ledgerwell-hr.example`, link text `ledgerwell.example/payroll` but destination `ledgerwell-hr.example/login`, auth all pass | Phish | `senderTrust`, `linkCredible`, `urgencyCalibrated` |
 | 3 | "Parcel Desk": "Delivery failed", from `delivery.notice4421@mailbox.example`, "Dear customer", `.zip` attached | Phish | `senderTrust`, `addressedTo`, `attachmentPlausible` |
-| 4 | Jed Baker: "Friday balance sheet", from `j.baker@accountingnow.example`, forwarded on by a colleague: SPF fail, DKIM pass, DMARC pass | Real | none |
+| 4 | Jed Baker: "Friday balance sheet", from `j.baker@ledgerwell.example`, forwarded on by a colleague: SPF fail, DKIM pass, DMARC pass | Real | none |
 
 The player's answers and the feedback shown after each:
 
@@ -305,9 +305,9 @@ The player's answers and the feedback shown after each:
    expecting a laptop. Nothing to flag."*
 2. **Report**, ticked sender, link, attachment. Verdict 60. Reasons: caught 2 (sender, link), missed
    1 (urgency), false claim 1 (attachment): `40 × (2−1)/3` = 13. Score **73**.
-   *"Right call: reported. Caught: sender address doesn't match who it says it is (accountingnow-hr
-   is not accountingnow); the link goes somewhere else (text says accountingnow.example, destination
-   is accountingnow-hr.example). Missed: it's pushing me to hurry ('today'). Not a flag here: there
+   *"Right call: reported. Caught: sender address doesn't match who it says it is (ledgerwell-hr
+   is not ledgerwell); the link goes somewhere else (text says ledgerwell.example, destination
+   is ledgerwell-hr.example). Missed: it's pushing me to hurry ('today'). Not a flag here: there
    was no attachment. Header note: SPF, DKIM and DMARC all passed, because the sender controls that
    look-alike domain. A pass tells you which domain sent it, not that you should trust it."*
 3. **Delete**, ticked sender and greeting. Verdict 30. Reasons: caught 2 of 3, no false claims:
@@ -388,23 +388,23 @@ do not move it onto an object or NPC. **Red-flag text is not defined here.** It 
     "messages": [
       {
         "id": "m2_payroll",
-        "from": { "name": "Accounts Now Payroll", "address": "payroll@accountingnow-hr.example" },
-        "to": "you@accountingnow.example",
+        "from": { "name": "Ledgerwell Payroll", "address": "payroll@ledgerwell-hr.example" },
+        "to": "you@ledgerwell.example",
         "subject": "Verify your bank details today",
         "time": "09:12",
         "body": "Hi,\nWe are updating payroll records. Confirm your bank details today to avoid a delay to your pay.\n{{link:verify}}",
-        "links": [ { "id": "verify", "text": "accountingnow.example/payroll",
-                     "destination": "https://accountingnow-hr.example/login" } ],
+        "links": [ { "id": "verify", "text": "ledgerwell.example/payroll",
+                     "destination": "https://ledgerwell-hr.example/login" } ],
         "attachments": [],
         "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass",
-                  "envelopeFrom": "bounce.accountingnow-hr.example",
-                  "replyTo": "payroll@accountingnow-hr.example" },
+                  "envelopeFrom": "bounce.ledgerwell-hr.example",
+                  "replyTo": "payroll@ledgerwell-hr.example" },
         "truth": {
           "isPhish": true,
           "flags": ["senderTrust", "linkCredible", "urgencyCalibrated"],
           "perFlagNote": {   // diegetic explanation per flag; the red-flag label itself comes from 00 §2
-            "senderTrust": "accountingnow-hr is not accountingnow: a look-alike domain",
-            "linkCredible": "The text says accountingnow.example; the destination is accountingnow-hr.example",
+            "senderTrust": "ledgerwell-hr is not ledgerwell: a look-alike domain",
+            "linkCredible": "The text says ledgerwell.example; the destination is ledgerwell-hr.example",
             "urgencyCalibrated": "'Today' and 'delay to your pay' is the pressure"
           },
           "headerNote": "All three passed because the sender owns the look-alike domain. A pass names the domain that sent it; it doesn't make it yours.",
@@ -414,8 +414,8 @@ do not move it onto an object or NPC. **Red-flag text is not defined here.** It 
       },
       {
         "id": "m4_jed",
-        "from": { "name": "Jed Baker", "address": "j.baker@accountingnow.example" },
-        "to": "you@accountingnow.example",
+        "from": { "name": "Jed Baker", "address": "j.baker@ledgerwell.example" },
+        "to": "you@ledgerwell.example",
         "subject": "Friday balance sheet", "time": "08:40",
         "body": "Hi, Q3 balance sheet attached, can you check the profit line before Friday?",
         "attachments": [ { "label": "Q3_balance_sheet.xlsx", "kind": "spreadsheet" } ],

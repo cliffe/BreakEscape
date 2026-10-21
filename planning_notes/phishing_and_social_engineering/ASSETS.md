@@ -55,7 +55,7 @@ the validator still wants one `assets/objects/<type>.png` per type.
 | OBJ14 | Three door keys (Recon, Operations, Blue Team). `key.png`; the `keyPins` tell them apart. Tinting optional | 10 §3, §8 | Reuse | existing | Lab |
 | OBJ15 | Room props named in 10 §8: desk, whiteboard, SOC wall of screens. Existing `exec_desk1`, `marble_desk1`, `whiteboard1`, `siem_dashboard`, `smartscreen`, `cctv_monitors1`; the room-dressing skill decides gaps | 10 §8 | Reuse | existing | Lab |
 | OBJ16 | Inventory icon for a takeable `mail_terminal` | 01 Assets; README O | New | PixelLab | Later |
-| OBJ17 | Company logo signs for rooms (Tarnside, AccountingNow), in the style of `hq_logo_sign1` and `pnw_logo_sign1`. Suggestion only, not in the plan | none | New | PixelLab | Later |
+| OBJ17 | Company logo signs for rooms (Tarnside, Ledgerwell), in the style of `hq_logo_sign1` and `pnw_logo_sign1`. Suggestion only, not in the plan | none | New | PixelLab | Later |
 
 ## 2. NPC cast
 
@@ -76,7 +76,7 @@ and headshot) and swapping later. Placeholder candidates with a full set: `femal
 |----|-----------|------------------|---------------|-------|-----------|------|
 | NPC1 | Ruth Adeyemi (`ruth`, `ruth_phone`) | Tarnside engagement lead; briefing and hint hub; person and phone | New (placeholder `female_office_worker_v2`) | Full set: concept, bust, talk, visemes, 8-direction walk, headshot | Gemini concept, PixelLab | Lab |
 | NPC2 | Gareth Fairbairn (`fairbairn`) | Client MD; one short scene | New (placeholder `male_office_worker_v2`) | Full set | Gemini concept, PixelLab | Lab |
-| NPC3 | Tomasz (`tomasz`) | AccountingNow security lead; triage brief and closing debrief | New (placeholder `male_telecom_v2`) | Full set | Gemini concept, PixelLab | Lab |
+| NPC3 | Tomasz (`tomasz`) | Ledgerwell security lead; triage brief and closing debrief | New (placeholder `male_telecom_v2`) | Full set | Gemini concept, PixelLab | Lab |
 | NPC4 | Dev (`dev`, `dev_service_desk`) | Service desk; the pretext-call target; phone only | New | Bust, talk, visemes, headshot; no walk sprite (10 §8) | Gemini concept, PixelLab | Lab |
 | NPC5 | Chris Hampshire (`hampshire`) | Target 1; email only, no ink, no bar | New | 32x32 headshot only, made at that size; a headshot asset id, no sprite key (10 §8, 02 N6) | PixelLab | Slice |
 | NPC6 | Melanie Pierce (`pierce`) | Target 2; email only; `pierce_mail` | New | 32x32 headshot only | PixelLab | Lab |
@@ -93,11 +93,11 @@ Notes.
 - **Names.** The client MD is Gareth Fairbairn (`fairbairn`) and the consultancy is Tarnside Assurance, chosen so that
   the lab shares no surname with m02's `gary_whitlock` and avoids the "Northgate" name used by m02 and
   `backgrounds/northgate_hospital.png`. `ruth_halloran` (m05) shares only a first name with Ruth Adeyemi.
-  AccountingNow and CloudBox are pending with the user.
+  Ledgerwell and CloudBoxy are the user's chosen names (README decision Z).
 - **Headshot route (settled).** Hampshire, Pierce, Lord and Baker are headshot-only (`10` §8, `02` N6): a
   32x32 headshot made at that size, with a headshot asset id and no sprite key or walk sheet.
 - **Stand-ins that need no art.** `leeds_baker` (the Leeds plumber) and `portal` (the payroll sender) are
-  text-only in the plan. The portal's sender chip can use the AccountingNow logo (LOGO1).
+  text-only in the plan. The portal's sender chip can use the Ledgerwell logo (LOGO1).
 
 ## 3. Backgrounds
 
@@ -164,7 +164,7 @@ scaled with `image-rendering: pixelated`. Anything the player reads or compares 
 No separate art. The fake social profiles (friendface), the company team page, the board's people cards,
 sender cards and reply headers all use the 32x32 `<key>_headshot.png` of NPC5 to NPC8, shown at an integer
 scale. Each headshot is checked after any art change, because headshots cut from a walk sprite can go stale
-(02 Assets). The AccountingNow Payroll Portal sender uses the logo instead of a face.
+(02 Assets). The Ledgerwell Payroll Portal sender uses the logo instead of a face.
 
 ### 4d. Brand logos (invented, generic or parody)
 
@@ -176,11 +176,11 @@ such as Hunter, theHarvester and Recon-ng appear in text as concept-card labels 
 
 | ID | Asset | Used in | Status | Generator | Tier |
 |----|-------|---------|--------|-----------|------|
-| LOGO1 | AccountingNow logo, with the builder's logo variants (per 07). Used on the company site, the payroll-page model, the portal sender chip and the favicon | 00 §1; 10 stage 4 | New | PixelLab | Lab |
+| LOGO1 | Ledgerwell logo, with the builder's logo variants (per 07). Used on the company site, the payroll-page model, the portal sender chip and the favicon | 00 §1; 10 stage 4 | New | PixelLab | Lab |
 | LOGO2 | Tarnside Assurance logo (RoE sheet, report, Ruth's signature block) | 10 §3 | New | PixelLab | Lab |
 | LOGO3 | friendface, the invented social network: logo, favicon and a plainly parody layout | 02 (site `friendface.example`) | New | PixelLab | Lab |
 | LOGO4 | Generic sign-in look (neutral layout art for the builder) | README S; 07 | New | PixelLab | Lab |
-| LOGO5 | CloudBox, a second invented builder brand named in the README open questions. Not on the lab's one page, so confirm it is wanted | README open questions | New | PixelLab | Later |
+| LOGO5 | CloudBoxy, a second invented builder brand named in the README open questions. Not on the lab's one page, so confirm it is wanted | README open questions | New | PixelLab | Later |
 | LOGO6 | Parody look art for the builder | README S; 11 E5 | New | PixelLab | Later |
 | LOGO7 | Awareness neutral-skin set: logo placeholder, generic badge, step strip | 11 §8 | New | PixelLab | Later |
 | LOGO8 | Invented SSO brand and look for episode E5 | 11 E5 | New | PixelLab | Later |
@@ -268,12 +268,11 @@ scenario. The lab authors no credits music (10 §5).
 
 ## 8. Open points for the user
 
-1. Whether AccountingNow and CloudBox keep their names (pending with the user).
-2. Whether Ruth's phone hints are voiced, and whether Fairbairn is (section 6a).
-3. Whether the lab gets a theme song (MUS4).
-4. Whether CloudBox is wanted at all (LOGO5).
-5. Gemini TTS and Gemini concept portraits are metered; confirm scope before either runs.
-6. A second pass on `designs/07` is needed to firm up UI22, the logo variants, LOGO4 to LOGO6 and the builder's sprite list.
+Settled (README decision Z): Ledgerwell and CloudBoxy are the names; Ruth's hints and the minor
+characters, Fairbairn included, are voiced, with TTS deferred to a late stage; no lab theme song (MUS4 dropped).
+
+1. Gemini TTS and Gemini concept portraits are metered; confirm scope before either runs.
+2. A second pass on `designs/07` is needed to firm up UI22, the logo variants, LOGO4 to LOGO6 and the builder's sprite list.
 
 ## 9. Counts
 

@@ -84,11 +84,11 @@ player picks an entry and reads its authored result list; selecting a result blo
 anywhere else. Some entries are decoys that return nothing useful ("No public results for this handle"),
 so picking is a judgement, not a click-through.
 
-- **Hunter lookup on `accountingnow.example`** returns the pattern most staff addresses follow. Its
+- **Hunter lookup on `ledgerwell.example`** returns the pattern most staff addresses follow. Its
   result grants `email_pattern`, the single award path for that fact. The team page also shows the
   published addresses, because a real directory does; seeing them is not a grant.
 - **A name search for "J. Baker"** (theHarvester or Recon-ng style) returns two entries on purpose, Jed
-  Baker of AccountingNow and a namesake in Leeds (`leeds_baker`, `00` §1), so the player must use the
+  Baker of Ledgerwell and a namesake in Leeds (`leeds_baker`, `00` §1), so the player must use the
   company site to decide. Selecting the namesake result `r_namesake` grants the `stale` fact
   `baker_namesake`; selecting the right entry (`r_jed`) grants
   nothing new and the result says why it matched (same employer, same role). OSINT is messy, which is
@@ -145,17 +145,17 @@ Facts are **not** defined here. `social.intelFacts` (`00` §1) holds each fact's
 "social": { "osint": {
   "profile": "student",                       // student | awareness | mission; picks layers and cards
   "sites": [
-    { "id": "company", "url": "accountingnow.example", "type": "company-site",
+    { "id": "company", "url": "ledgerwell.example", "type": "company-site",
       "pages": [
         { "id": "team", "title": "Our Team", "blocks": [
             { "id": "row_pierce", "kind": "staff", "person": "pierce", "name": "Melanie Pierce",
-              "role": "Finance", "address": "m.pierce@accountingnow.example", "fact": "pierce_role" },
+              "role": "Finance", "address": "m.pierce@ledgerwell.example", "fact": "pierce_role" },
             { "id": "row_baker",   "kind": "staff", "person": "baker", "name": "Jed Baker",
-              "role": "Finance", "address": "j.baker@accountingnow.example" },
+              "role": "Finance", "address": "j.baker@ledgerwell.example" },
             { "id": "row_hampshire", "kind": "staff", "person": "hampshire", "name": "Chris Hampshire",
-              "role": "Careers/HR", "address": "careers@accountingnow.example" },
+              "role": "Careers/HR", "address": "careers@ledgerwell.example" },
             { "id": "row_lord",    "kind": "staff", "person": "lord", "name": "Sofia Lord",
-              "role": "Intern", "address": "s.lord@accountingnow.example", "fact": "lord_intern" } ] },
+              "role": "Intern", "address": "s.lord@ledgerwell.example", "fact": "lord_intern" } ] },
         { "id": "archive", "title": "Archive", "blocks": [
             { "id": "org_old_chart", "kind": "p",
               "text": "Organisation chart (2019): Jed Baker manages the team. Interns sit in Accounts.",
@@ -165,7 +165,7 @@ Facts are **not** defined here. `social.intelFacts` (`00` §1) holds each fact's
               "fact": "pierce_expects_balance_sheet" },
             { "id": "note_lunch", "kind": "p", "text": "Friday lunch is in the kitchen, bring a plate." } ] },
         { "id": "careers", "title": "Careers", "blocks": [
-            { "id": "careers_inbox", "kind": "p", "text": "Send your CV to careers@accountingnow.example. We read every one.",
+            { "id": "careers_inbox", "kind": "p", "text": "Send your CV to careers@ledgerwell.example. We read every one.",
               "fact": "hampshire_careers" },
             { "id": "careers_stack", "kind": "p", "text": "You will use Xero and Office 365.", "fact": "tech_stack" } ] },
         { "id": "apply", "title": "How to apply", "blocks": [
@@ -181,20 +181,20 @@ Facts are **not** defined here. `social.intelFacts` (`00` §1) holds each fact's
         { "person": "hampshire", "showIf": "se_intel_hampshire_careers", "posts": [
             { "id": "post_hampshire_cvs", "text": "So many CVs to get through before Friday.",
               "fact": "hampshire_cv_backlog" } ] } ] },
-    { "id": "deck", "url": "accountingnow.example/Q3.pdf", "type": "document", "card": "tool_exiftool",
+    { "id": "deck", "url": "ledgerwell.example/Q3.pdf", "type": "document", "card": "tool_exiftool",
       "fields": [
         { "id": "f_author", "label": "Author", "value": "mpierce", "fact": "username_convention" },
         { "id": "f_software", "label": "Software", "value": "Microsoft Excel" },
         { "id": "f_path", "label": "Path", "value": "C:\\Users\\mpierce\\Documents" } ] }
   ],
   "tools": [
-    { "id": "hunter", "label": "Hunter lookup: accountingnow.example", "card": "tool_hunter",
+    { "id": "hunter", "label": "Hunter lookup: ledgerwell.example", "card": "tool_hunter",
       "unlockedBy": { "visited": "company.team" },
-      "results": [ { "id": "r_pattern", "text": "Most addresses follow first-initial.surname@accountingnow.example",
+      "results": [ { "id": "r_pattern", "text": "Most addresses follow first-initial.surname@ledgerwell.example",
                      "fact": "email_pattern" } ] },
     { "id": "name_baker", "label": "Name search: J. Baker", "card": "tool_harvester",
       "unlockedBy": { "visited": "company.team" },
-      "results": [ { "id": "r_jed", "text": "J. Baker, Finance, accountingnow.example" },
+      "results": [ { "id": "r_jed", "text": "J. Baker, Finance, ledgerwell.example" },
                    { "id": "r_namesake", "text": "J. Baker, Plumbing, Leeds", "fact": "baker_namesake" } ] },
     { "id": "name_pierce_decoy", "label": "Handle search: @mpierce_official", "card": "tool_recon",
       "unlockedBy": { "visited": "deck" },
@@ -340,7 +340,7 @@ browser. The composer (`01`) does not open the board at all; it reads the `se_in
 | N4 | Tools panel: picked lookups with `unlockedBy`, decoy entries, result blocks | in N1 |
 | N5 | Close as a normal exit, own Close control and Escape, nested launch to the case file with return-to (`00` S12) | `minigames/framework/base-minigame.js` (`disableClose`), `minigame-manager.js` |
 | N6 | Cast headshots: `pierce`, `baker`, `hampshire` and `lord` are headshot-only (`10` §8: they never walk), so none needs a sprite key or walk sheet; each has a headshot asset id, the `<id>` of a 32x32 `<id>_headshot.png` made at that size. A headshot-to-`<key>_talk.png` fallback for profile images does not exist (`person-chat-portraits.js:913-916` falls back the other way, `_talk` to `_headshot`), so either every key ships a headshot or the reverse fallback is new work here. Site images live under `assets/osint/<scenario>/` | `public/break_escape/assets/characters/`; path built as in `ui/hud.js`; `person-chat-portraits.js` |
-| N7 | Bundle Source Sans 3, the upstream Latin and Cyrillic subset files, unmodified, with the OFL text (`00` §6), and apply `--se-font-readable` to every string the browser shows that holds a domain, address, handle, file name or metadata field, wherever it appears (address bar, tools-panel labels such as "Hunter lookup: accountingnow.example", result lines, notes, confirmations); authored domains rendered raw | `public/break_escape/assets/fonts/`; `css/fonts.css`; `utils/display-dashes.js` bypass |
+| N7 | Bundle Source Sans 3, the upstream Latin and Cyrillic subset files, unmodified, with the OFL text (`00` §6), and apply `--se-font-readable` to every string the browser shows that holds a domain, address, handle, file name or metadata field, wherever it appears (address bar, tools-panel labels such as "Hunter lookup: ledgerwell.example", result lines, notes, confirmations); authored domains rendered raw | `public/break_escape/assets/fonts/`; `css/fonts.css`; `utils/display-dashes.js` bypass |
 | N8 | Validator: every fact (bar the call-granted ones, and bar the mail-highlight-granted ones, which `01` N18 checks: each is granted by exactly one highlight whose id equals the fact's `source`) is granted by exactly one element and each `source` equals that element's id; every `fact` and `showIf` resolves; every `unlockedBy` is `{ visited }` (a site id or `siteId.pageId` that exists) or `{ fact }` (a declared fact id); every `card` id is in `social.conceptCards`; every `se_intel_*` declared; `se_osint_state` declared with default `{}`; every field on the single lint field list in `00` §11 that this block authors (`sites[].url`, staff-block and contact `address` values, `provides` `address` values) passes the lint rules in `07` §1 and N6 (host-only `.example`, ASCII, denylist); this item does not restate the field list or the rules, and the raw-label brand-word allowlist does not apply to site urls; `social.osint` schema and the `minigameData` entry | `scripts/validate_scenario.rb` (`known_top_level`); `scripts/scenario-schema.json`; `scripts/minigame-data-schemas.json` (S11) |
 | N9 | Tests: the address-bar formatter (a pure function) returns the authored host as typed, with `--` (an `xn--` label) and any non-ASCII letter unchanged and never converted either way; clicking a page link leaves `window.location` unchanged and switches the displayed page (needs the DOM that `07` N3 supplies with `jsdom`). Both live in `test/js/social-osint-address-bar.test.mjs` and are run by the CI step in `00` S11 and `07` N6 (`bundle exec node --test test/js/validator-*.test.mjs test/js/social-*.test.mjs`) | `test/js/`; named in the CI step's `social-*` glob (`07` N6) |
 

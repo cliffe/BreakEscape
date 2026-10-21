@@ -118,7 +118,7 @@ three lab targets, so every recon-fed factor has backing intel:
 
 ```jsonc
 "social": { "intelBoard": {
-  "title": "Engagement: AccountingNow",
+  "title": "Engagement: Ledgerwell",
   "people": ["pierce", "hampshire", "lord"],
   "readinessSlots": {
     "pierce": [

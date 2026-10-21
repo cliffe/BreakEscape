@@ -25,7 +25,7 @@ Code locations are given as file plus function name where a line number would dr
 
 ---
 
-## 1. Canonical example dataset — "AccountingNow"
+## 1. Canonical example dataset — "Ledgerwell"
 
 One fictional company used in every worked example, so the recon→phish chain can be followed end
 to end. The engagement is authorised by the fictional client and run by the fictional consultancy
@@ -36,11 +36,11 @@ people are fictional.
 
 | id | Name | Role | Address | Notes |
 |----|------|------|---------|-------|
-| `pierce` | Melanie Pierce | Finance | m.pierce@accountingnow.example | flagship spear-phish target |
-| `baker` | Jed Baker | Finance (Melanie's colleague) | j.baker@accountingnow.example | the trusted sender to spoof |
-| `hampshire` | Chris Hampshire | Careers/HR | careers@accountingnow.example | easy target (open careers inbox) |
-| `lord` | Sofia Lord | Intern | s.lord@accountingnow.example | hard target (needs link + pretext) |
-| `portal` | AccountingNow Payroll Portal | non-cast sender | payroll-notices@accountingnow.example | Lord's trusted sender; known only after the call |
+| `pierce` | Melanie Pierce | Finance | m.pierce@ledgerwell.example | flagship spear-phish target |
+| `baker` | Jed Baker | Finance (Melanie's colleague) | j.baker@ledgerwell.example | the trusted sender to spoof |
+| `hampshire` | Chris Hampshire | Careers/HR | careers@ledgerwell.example | easy target (open careers inbox) |
+| `lord` | Sofia Lord | Intern | s.lord@ledgerwell.example | hard target (needs link + pretext) |
+| `portal` | Ledgerwell Payroll Portal | non-cast sender | payroll-notices@ledgerwell.example | Lord's trusted sender; known only after the call |
 | `leeds_baker` | J. Baker | outside the company | j.baker@leedsplumbing.example | the namesake the name search returns; a decoy |
 
 The table is also data. `social.people` is the machine-readable directory every id above resolves
@@ -49,16 +49,16 @@ cards, the `<person>_address` values):
 
 ```jsonc
 "people": [
-  { "id": "pierce", "kind": "cast", "address": "m.pierce@accountingnow.example",
+  { "id": "pierce", "kind": "cast", "address": "m.pierce@ledgerwell.example",
     "forms": { "first": "Melanie", "short": "Mel", "formal": "Ms Pierce", "full": "Melanie Pierce" } },
-  { "id": "baker",  "kind": "cast", "address": "j.baker@accountingnow.example",
+  { "id": "baker",  "kind": "cast", "address": "j.baker@ledgerwell.example",
     "forms": { "first": "Jed", "full": "Jed Baker" } },
-  { "id": "hampshire", "kind": "cast", "address": "careers@accountingnow.example",
+  { "id": "hampshire", "kind": "cast", "address": "careers@ledgerwell.example",
     "forms": { "full": "Chris Hampshire" } },
-  { "id": "lord",   "kind": "cast", "address": "s.lord@accountingnow.example",
+  { "id": "lord",   "kind": "cast", "address": "s.lord@ledgerwell.example",
     "forms": { "first": "Sofia", "full": "Sofia Lord" } },
-  { "id": "portal", "kind": "sender", "address": "payroll-notices@accountingnow.example",
-    "forms": { "full": "AccountingNow Payroll Portal" } },
+  { "id": "portal", "kind": "sender", "address": "payroll-notices@ledgerwell.example",
+    "forms": { "full": "Ledgerwell Payroll Portal" } },
   { "id": "leeds_baker", "kind": "outside", "address": "j.baker@leedsplumbing.example",
     "forms": { "full": "J. Baker" } }
 ]
@@ -87,7 +87,7 @@ a metadata field, a mail highlight (§10a), or, for call facts, the ask id. The 
 
 | fact id | Source element | Fact | Backs factor (§4) |
 |---------|----------------|------|-------------------|
-| `email_pattern` | `r_pattern`: the Hunter lookup result (the team page also shows the addresses; seeing them grants nothing) | first-initial.surname@accountingnow.example | senderTrust (compose any address) |
+| `email_pattern` | `r_pattern`: the Hunter lookup result (the team page also shows the addresses; seeing them grants nothing) | first-initial.surname@ledgerwell.example | senderTrust (compose any address) |
 | `username_convention` | `f_author`: deck document metadata (author `mpierce`, app "Microsoft Excel") | AD username = firstinitial+surname | (lab teaching; distinct from email alias) |
 | `pierce_role` | `row_pierce`: the team page row | Melanie Pierce works in Finance | addressing; supplies her name forms |
 | `pierce_trusts_jed` | `post_pierce_jed`: social post ("Jed's showing me the ropes!") | Melanie trusts Jed Baker | senderTrust (who to spoof) |
@@ -129,10 +129,10 @@ values it makes available. A blank option exists if and only if some collected f
     ]
   },
   "email_pattern": {
-    "text": "Staff addresses are first-initial.surname@accountingnow.example.",
+    "text": "Staff addresses are first-initial.surname@ledgerwell.example.",
     "subject": "company", "source": "r_pattern",
     "provides": [
-      { "type": "address", "rule": "initial.surname@accountingnow.example", "label": "an address built from the pattern" }
+      { "type": "address", "rule": "initial.surname@ledgerwell.example", "label": "an address built from the pattern" }
     ],
     "reduceNote": "Do not publish staff addresses in a pattern a lookup tool can learn; use role inboxes on public pages."   // 03 defender mode: what to take down
   }
@@ -177,7 +177,7 @@ Every entry is `type`, `about` (if any), `value` "label", `kind`. `subject` is t
 
 | fact | subject | provides |
 |------|---------|----------|
-| `email_pattern` | company | `address` rule `initial.surname@accountingnow.example` "an address built from the pattern" |
+| `email_pattern` | company | `address` rule `initial.surname@ledgerwell.example` "an address built from the pattern" |
 | `username_convention` | company | none |
 | `pierce_role` | pierce | `name`/recipient `pierce_first` "Melanie" generic; `pierce_formal` "Ms Pierce" generic; `pierce_full` "Melanie Pierce" generic; `team` `finance` "Finance" generic |
 | `pierce_trusts_jed` | pierce | `name`/sender `baker_full` "Jed Baker" distinctive |
@@ -190,7 +190,7 @@ Every entry is `type`, `about` (if any), `value` "label", `kind`. `subject` is t
 | `lord_portal` | lord | none (readiness; what to clone) |
 | `lord_portal_name` | lord | `portal` `staff_portal_name` "the staff portal" distinctive |
 | `lord_payslip_date` | lord | `date`/release `mon_6th` "Monday the 6th" distinctive |
-| `lord_trusts_portal_sender` | lord | `name`/sender `portal_full` "AccountingNow Payroll Portal" distinctive; `address` fixed `portal_address` "payroll-notices@accountingnow.example" distinctive |
+| `lord_trusts_portal_sender` | lord | `name`/sender `portal_full` "Ledgerwell Payroll Portal" distinctive; `address` fixed `portal_address` "payroll-notices@ledgerwell.example" distinctive |
 | `baker_namesake` | company | `name`/sender `leeds_baker_full` "J. Baker" stale |
 | `old_org_chart` | company | `name`/manager `baker_full` "Jed Baker" stale; `team`/intern `accounts` "Accounts" stale |
 
@@ -1444,7 +1444,7 @@ this example is for `04`'s test case, the worked found-mailbox case below and th
 and adds an account and a mailbox:
 
 ```jsonc
-{ "id": "jed_pc", "address": "j.baker@accountingnow.example", "displayName": "Jed Baker",
+{ "id": "jed_pc", "address": "j.baker@ledgerwell.example", "displayName": "Jed Baker",
   "kind": "found", "person": "baker", "unlockedBy": "acct_jed_pc", "mailbox": "jed", "spoofsFrom": false }
 ```
 
@@ -1543,8 +1543,8 @@ client stores it in `mailState.mailboxes[<mailboxId>].messages[]`.
   "mailbox": "guest",                     // the mailbox holding this record (mailState.mailboxes[<id>])
   "folder": "sent",                       // "inbox" | "sent"
   "fromAccount": "guest",                 // the account really used (sent mail only)
-  "from": { "name": "Jed Baker", "address": "j.baker@accountingnow.example" },   // the From as displayed
-  "to": "m.pierce@accountingnow.example",
+  "from": { "name": "Jed Baker", "address": "j.baker@ledgerwell.example" },   // the From as displayed
+  "to": "m.pierce@ledgerwell.example",
   "targetId": "pierce",                   // the phishTargets id, or null when the recipient is not a target
   "subject": "Quick one",
   "templates": { "from": "from_named", "greeting": "greet_named", "pretext": "pretext_sheet", "ask": "ask_open_attached" },
@@ -1678,7 +1678,7 @@ cards (`tool_hunter`, `tool_harvester`, `tool_recon`, `tool_exiftool` in `02`; `
 `padlock`, `hover-link`, `right-to-left` and `five-habits` in `07`). One shared card renderer shows
 them (`02` N1, `07` N7). Card prose uses only invented brand names, so a card teaches the look-alike with the
 lab's own brands. The lint reads card text for host-shaped tokens, and each must end `.example`
-(`five-habits` uses `accountingnow.example`); the denylist and fold-and-match apply to those host-shaped
+(`five-habits` uses `ledgerwell.example`); the denylist and fold-and-match apply to those host-shaped
 tokens and to the brand words in card text, so a real brand named in a card fails. Other card prose is
 reviewed by hand.
 The validator checks that every card id a doc or scenario references exists.
@@ -1842,7 +1842,7 @@ and completes its task through `completeTask`, since a global cannot open a lock
 
 ```jsonc
 { "pageId": "payroll_login", "targetId": "lord",
-  "choices": { "brand": "accountingnow", "purpose": "payslip", "domainId": "d_word", "logo": "crisp",
+  "choices": { "brand": "ledgerwell", "purpose": "payslip", "domainId": "d_word", "logo": "crisp",
                "wording": "w_formal", "fields": ["email","password"], "padlock": true },
   "credibility": 87, "gatesPassed": true, "meetsThreshold": true,
   "tellsFound": ["domain","formOrigin","hoverMismatch"],   // any subset of the factor ids plus formOrigin and hoverMismatch
@@ -1867,7 +1867,7 @@ therefore never overwrites an earlier success, and the report reads the same sto
 `submitted`; a page below its threshold gives `visited` and `noticed` (landed or not); a page that meets
 its threshold but whose email did not land gives nothing, because the message never reached the
 target. This keeps the noticed branch and the defender inspection reachable after "attach anyway". When the composer returns from the builder it re-attaches the link on the page record's `built` flag (the record is the truth; the `landing_<pageId>_built` global stays true after a first attach). The page definition carries an authored
-`linkText` (the address the mail client shows for the link, for example `accountingnow.example/payroll`)
+`linkText` (the address the mail client shows for the link, for example `ledgerwell.example/payroll`)
 that the hover-mismatch lesson contrasts with the real domain; the player does not write it.
 
 **Capture note.** When a send first stores `victim.submitted: true`, the mail client's send path adds the

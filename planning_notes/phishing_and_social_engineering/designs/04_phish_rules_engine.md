@@ -66,7 +66,7 @@ canonical **pass and fail lines** are in `00` §2, imported by both this engine 
   would likely be quarantined or flagged. The advisory text is the target's authored
   `factorStrings.senderAuth` line when it has one. Without one it is the canonical `00` §2 line plus
   a clause chosen by `dmarcPolicy`: `none` says the message is still delivered, `quarantine` that it
-  would likely be quarantined, `reject` that it would be rejected. AccountingNow publishes `p=none`,
+  would likely be quarantined, `reject` that it would be rejected. Ledgerwell publishes `p=none`,
   and Pierce's authored line says so; the verdict is never changed by it.
 - **`attachmentPlausible` has three states**, `pass` / `missing` / `wrong-type`, each with its own
   keyed reply and red-flag string. A no-attachment send returns `missing` with "there's nothing
@@ -235,7 +235,7 @@ The complete schema is `00` §7; targets live in `social.phishTargets` and templ
   {
     "id": "pierce",
     "character": "pierce",                       // social.characters entry; its email story writes replies
-    "address": "m.pierce@accountingnow.example",
+    "address": "m.pierce@ledgerwell.example",
     "displayName": "Melanie Pierce",
     "subjects": [ { "id": "s_quick", "text": "Quick one", "topic": "general" },
                   { "id": "s_review", "text": "For your review", "topic": "finance" } ],   // the wording is not judged; the topic feeds the open check; neutral so it never hints at a blank value
@@ -266,7 +266,7 @@ The complete schema is `00` §7; targets live in `social.phishTargets` and templ
       "addressedTo":         { "pass": "✓ Addressed her by name",   "fail": "This doesn't even have my name on it.",       "redFlag": null },
       "pretextRelevant":     { "pass": "✓ Relevant to her",         "fail": "I'm not expecting anything like this.",        "redFlag": null },
       "senderAuth":          { "pass": "✓ Sender authentication would pass",
-                               "fail": "The spoofed j.baker@ address fails the domain's alignment check. AccountingNow publishes its DMARC policy as p=none, so a receiver would still deliver it.",
+                               "fail": "The spoofed j.baker@ address fails the domain's alignment check. Ledgerwell publishes its DMARC policy as p=none, so a receiver would still deliver it.",
                                "redFlag": null },
       "attachmentPlausible": { "pass": "✓ The attachment fits",
                                "missing":    { "fail": "You said you'd attach it, but there's nothing here.", "redFlag": null },
@@ -279,7 +279,7 @@ The complete schema is `00` §7; targets live in `social.phishTargets` and templ
   },
   {
     "id": "hampshire",                            // easy: an open careers inbox, no character story
-    "address": "careers@accountingnow.example",
+    "address": "careers@ledgerwell.example",
     "displayName": "Chris Hampshire",
     "subjects": [ { "id": "s_application", "text": "Application", "topic": "recruitment" },
                   { "id": "s_hello", "text": "Hello", "topic": "general" } ],
@@ -307,7 +307,7 @@ The complete schema is `00` §7; targets live in `social.phishTargets` and templ
   {
     "id": "lord",
     "character": "lord",
-    "address": "s.lord@accountingnow.example",
+    "address": "s.lord@ledgerwell.example",
     "displayName": "Sofia Lord",
     "subjects": [ { "id": "s_notice", "text": "Your notice", "topic": "payroll" },
                   { "id": "s_account", "text": "Account notice", "topic": "it" } ],
@@ -326,7 +326,7 @@ The complete schema is `00` §7; targets live in `social.phishTargets` and templ
     },
     "requiredFactors": ["senderTrust","addressedTo","pretextRelevant","linkCredible"],
     "advisoryFactors": ["senderAuth","urgencyCalibrated"],
-    "expectedLink": { "brandId": "accountingnow", "realDomain": "accountingnow.example" },
+    "expectedLink": { "brandId": "ledgerwell", "realDomain": "ledgerwell.example" },
     "hints": ["She's a new intern — what routine admin is she doing?",
               "She mentioned the staff portal and her payslip.",
               "The service desk can tell you what the portal is called and when payslips drop. Ring them.",
