@@ -471,7 +471,7 @@ Optional hash and signature checks add 4 to 8 minutes and are not in the totals.
 **Setup**
 
 - One game per student, on a desktop or laptop browser. Each game generates its own answers, so a student cannot copy a neighbour's word or PIN. Sharing a recipe still works, and is fine.
-- The mission is "The Keyholder Trials" (`lab_tesseract_trials`, collection `escape_room`, difficulty 1). Nothing else needs installing. CyberChef is bundled in the game.
+- The mission is "The Keyholder Trials" (`lab_tesseract_trials`, collection `lab_games`, difficulty 1). Nothing else needs installing. CyberChef is bundled in the game.
 - **The keyless note is for playtesting only.** The playtest runs used a server on port 3001 started without a Gemini key, which turns off speech. A production server does not need to be run that way. Be aware that **no voice audio has been generated for this scenario yet**, so dialogue is text only until that is done, and several character portraits are placeholders (see `ART_NEEDED.md`). Neither affects the puzzles.
 - No VMs, no flag submission and no combat. A student needs nothing beyond the browser.
 - Run the scenario once yourself beforehand. Note the walk to Tom Shaw and the Keyholder device chat that opens a few seconds after the lockbox.

@@ -1,0 +1,273 @@
+// Landing-page builder: the preview renderer (SE design 07 N3, N6b renderer half, N8).
+//
+// Renders the *preview* only — a tiny fake browser (address bar + page body) — from a
+// landing-page record's choices, into two layers (07 §6):
+//   - Pixel layer: the brand logo and the padlock icon, as <img> scaled with
+//     image-rendering: pixelated (set in the builder CSS, P5-D).
+//   - Text layer: the address bar, the page's visible wording and the form-field label
+//     boxes, as inert DOM text set with textContent, at native resolution.
+//
+// Safety (07 §1, enforced by social-landing-page-render.test.mjs, not by convention):
+// the preview holds NO <form>, <input>, <textarea>, <select>, <a>, <button>, <iframe>
+// or <script> element, and NO contenteditable attribute. Form fields are styled <div>
+// boxes with a label, never form controls. The step-6 hot-spots are <div role="button"
+// tabindex="0">, which are allowed. Nothing here serialises the page, and no file in the
+// builder folder calls fetch, XMLHttpRequest, WebSocket or sendBeacon.
+//
+// Runtime guard (07 N6b, renderer half): a domain that is not on the page's authored
+// menu, or whose host does not end `.example`, is refused — the frame draws with the
+// address bar reading "Blocked address" and no page body.
+//
+// Authored domains and addresses render raw with textContent and are never passed through
+// utils/display-dashes.js, so a homograph letter or an `xn--` label shows exactly as typed
+// (07 §4, 00 §6). Every element holding an authored domain, address or field label is set
+// in var(--se-font-readable) (07 N8).
+//
+// This module imports nothing from the model (landing-page-model.js), which is written in
+// parallel: the guard below is self-contained so the renderer and its test do not depend
+// on the model being present. The two guards share one rule (00 §12 N6b) and must agree.
+
+const READABLE_FONT = 'var(--se-font-readable)';
+const PADLOCK_ICON = '/break_escape/assets/icons/padlock_32.png';
+// Brand logos (LOGO1/LOGO4-6, OBJ/UI rows in ASSETS.md) are not generated yet; the <img>
+// points at the settled path and the builder CSS (P5-D) styles the slot so a pending asset
+// shows as a labelled box rather than a broken image.
+const LOGO_BASE = '/break_escape/assets/social/landing/';
+
+// Human labels for the form-field ids a page may ask for (07 §3 step 6, 00 §1).
+const FIELD_LABELS = {
+    email: 'Email',
+    password: 'Password',
+    one_time_code: 'One-time code',
+    card_number: 'Card number',
+    ni_number: 'National insurance number',
+};
+
+// --- Guard (07 N6b) -------------------------------------------------------------------
+
+// The host part of a domain/address string: drop any scheme, take everything before the
+// first '/', and for an email address the part after the last '@' (07 §1 host rule).
+function hostOf(value) {
+    let s = String(value || '').trim();
+    s = s.replace(/^[a-z][a-z0-9+.-]*:\/\//i, '');
+    s = s.split('/')[0];
+    if (s.includes('@')) s = s.split('@').pop();
+    return s;
+}
+
+function hostEndsExample(domain) {
+    return hostOf(domain).toLowerCase().endsWith('.example');
+}
+
+/**
+ * Resolve the chosen domain option from the page definition. The menu is the union of
+ * every brand's `domains` (chips are shown per brand, so a chosen id belongs to one of
+ * them). Returns the option object, or null when the id is not on the authored menu.
+ * @param {object} pageDef  the social.landingPages entry
+ * @param {object} choices  the record's `choices` (reads `domainId`)
+ */
+export function resolveDomainOption(pageDef, choices) {
+    const id = choices && choices.domainId;
+    if (!id || !pageDef || !Array.isArray(pageDef.brands)) return null;
+    for (const brand of pageDef.brands) {
+        if (brand && Array.isArray(brand.domains)) {
+            for (const opt of brand.domains) {
+                if (opt && opt.id === id) return opt;
+            }
+        }
+    }
+    return null;
+}
+
+/**
+ * The renderer half of the N6b guard. True when the chosen domain is off the authored
+ * menu, or its host does not end `.example`. A blocked domain is never drawn as a page.
+ */
+export function isDomainBlocked(pageDef, choices) {
+    const opt = resolveDomainOption(pageDef, choices);
+    if (!opt || typeof opt.domain !== 'string') return true;
+    return !hostEndsExample(opt.domain);
+}
+
+// --- DOM helpers ----------------------------------------------------------------------
+
+function makeFactory(doc) {
+    return function make(tag, className, text) {
+        const node = doc.createElement(tag);
+        if (className) node.className = className;
+        if (text !== undefined) node.textContent = text;
+        return node;
+    };
+}
+
+// A text node that holds an authored domain/address/label: readable font, set raw.
+function readable(node) {
+    node.style.fontFamily = READABLE_FONT;
+    return node;
+}
+
+function brandById(pageDef, id) {
+    if (!pageDef || !Array.isArray(pageDef.brands)) return null;
+    return pageDef.brands.find((b) => b && b.id === id) || null;
+}
+
+function labelFromList(list, id) {
+    if (!Array.isArray(list)) return '';
+    const hit = list.find((x) => x && x.id === id);
+    return hit && typeof hit.label === 'string' ? hit.label : '';
+}
+
+function wordingText(pageDef, id) {
+    if (!pageDef || !Array.isArray(pageDef.wordings)) return '';
+    const hit = pageDef.wordings.find((w) => w && w.id === id);
+    return hit && typeof hit.text === 'string' ? hit.text : '';
+}
+
+// --- Rendering ------------------------------------------------------------------------
+
+/**
+ * Render the preview for a page record.
+ *
+ * @param {object}   options
+ * @param {object}   options.pageDef   the social.landingPages entry (brands, purposes, wordings, fields)
+ * @param {object}   options.choices   record.choices { brand, purpose, domainId, logo, wording, fields, padlock }
+ * @param {string}   [options.mode]    'build' | 'score' | 'inspect' (default 'build')
+ * @param {object}   [options.target]  optional { firstName } used only in the aria description
+ * @param {Document} [options.doc]     the DOM document (tests pass jsdom's; defaults to the global)
+ * @param {string}   [options.logoBase] override the logo asset base (tests)
+ * @returns {{ root: HTMLElement, blocked: boolean, regions: object }}
+ *          `regions` holds the five region elements ({ addressBar, padlock, logo, wording, form });
+ *          in 'inspect' mode each is a focusable <div role="button" tabindex="0"> hot-spot.
+ */
+export function renderLandingPage(options = {}) {
+    const { pageDef = {}, choices = {}, mode = 'build', target = null, logoBase = LOGO_BASE } = options;
+    const doc = options.doc || (typeof document !== 'undefined' ? document : null);
+    if (!doc) throw new Error('renderLandingPage needs a DOM document');
+    const make = makeFactory(doc);
+    const inspect = mode === 'inspect';
+
+    const root = make('div', 'lpb-preview');
+    root.setAttribute('data-mode', mode);
+
+    const blocked = isDomainBlocked(pageDef, choices);
+    const opt = resolveDomainOption(pageDef, choices);
+    const domain = opt && typeof opt.domain === 'string' ? opt.domain : '';
+    const browserDomain = opt && typeof opt.browserDomain === 'string' ? opt.browserDomain : '';
+
+    // In build/score the preview is one labelled figure (role="img") so a screen reader
+    // hears a description. In step 6 it becomes a role="group" so the hot-spots are
+    // exposed as buttons (07 §8a).
+    root.setAttribute('role', inspect ? 'group' : 'img');
+    root.setAttribute('aria-label', buildAriaLabel(pageDef, choices, { blocked, domain, target }));
+
+    // Mark a region as a focusable hot-spot in inspect mode (07 §6: div role="button").
+    const asRegion = (el, hotspot) => {
+        el.setAttribute('data-region', hotspot);
+        if (inspect) {
+            el.setAttribute('role', 'button');
+            el.setAttribute('tabindex', '0');
+            el.classList.add('lpb-hotspot');
+        }
+        return el;
+    };
+
+    // Chrome: the address bar, with the padlock / "Not secure" indicator.
+    const chrome = make('div', 'lpb-chrome');
+    const padlockOn = choices.padlock === true;
+
+    const padlock = make('div', 'lpb-padlock');
+    if (padlockOn) {
+        const img = make('img', 'lpb-padlock-icon');
+        img.src = PADLOCK_ICON;
+        img.alt = 'Padlock: secure connection';
+        padlock.appendChild(img);
+    } else {
+        // "Not secure" badge. UI22's badge art is pending, so the badge is a text chip the
+        // builder CSS styles; the words are always present (07 §8a: never a mark alone).
+        padlock.appendChild(make('span', 'lpb-not-secure', 'Not secure'));
+    }
+    chrome.appendChild(asRegion(padlock, 'padlock'));
+
+    const addressBar = make('div', 'lpb-address');
+    if (blocked) {
+        addressBar.appendChild(readable(make('span', 'lpb-address-text', 'Blocked address')));
+    } else {
+        addressBar.appendChild(readable(make('span', 'lpb-address-text', domain)));
+        if (browserDomain) {
+            // The punycode form a browser would show, as a teaching contrast (07 §4). Raw
+            // textContent: the `xn--` double hyphen must survive, so it never goes through
+            // displayDashes.
+            const alt = readable(make('span', 'lpb-address-alt', `Some browsers show it as ${browserDomain}`));
+            addressBar.appendChild(alt);
+        }
+    }
+    chrome.appendChild(asRegion(addressBar, 'address'));
+    root.appendChild(chrome);
+
+    const regions = { padlock, addressBar, logo: null, wording: null, form: null };
+
+    // A blocked address draws the frame only, with no page body (07 N6b).
+    if (blocked) {
+        root.classList.add('is-blocked');
+        return { root, blocked: true, regions };
+    }
+
+    const body = make('div', 'lpb-body');
+
+    // Logo (pixel layer). The blurry/stretched looks are drawn from one crisp source by a
+    // CSS class, never downscaled (ASSETS.md house rule). "none" draws no logo.
+    const logo = make('div', 'lpb-logo');
+    if (choices.logo && choices.logo !== 'none') {
+        const brand = brandById(pageDef, choices.brand);
+        const img = make('img', 'lpb-logo-img');
+        img.src = `${logoBase}logo-${choices.brand || 'unknown'}.png`;
+        img.alt = brand && brand.name ? brand.name : '';
+        if (choices.logo === 'blurry') img.classList.add('is-blurry');
+        else if (choices.logo === 'stretched') img.classList.add('is-stretched');
+        logo.appendChild(img);
+    } else {
+        logo.classList.add('is-missing');
+    }
+    body.appendChild(asRegion(logo, 'logo'));
+    regions.logo = logo;
+
+    // Purpose heading + wording (text layer).
+    const purposeLabel = labelFromList(pageDef.purposes, choices.purpose);
+    const wording = make('div', 'lpb-wording');
+    if (purposeLabel) wording.appendChild(readable(make('h3', 'lpb-purpose', purposeLabel)));
+    const copy = wordingText(pageDef, choices.wording);
+    if (copy) wording.appendChild(readable(make('p', 'lpb-copy', copy)));
+    body.appendChild(asRegion(wording, 'wording'));
+    regions.wording = wording;
+
+    // Form fields as inert styled boxes, never controls (07 §1).
+    const form = make('div', 'lpb-form');
+    const fields = Array.isArray(choices.fields) ? choices.fields : [];
+    for (const field of fields) {
+        const box = make('div', 'lpb-field');
+        box.setAttribute('data-field', field);
+        box.appendChild(readable(make('span', 'lpb-field-label', FIELD_LABELS[field] || field)));
+        // The input line is a plain, empty div — no <input>, nothing to type into.
+        box.appendChild(make('div', 'lpb-field-input'));
+        form.appendChild(box);
+    }
+    const submit = make('div', 'lpb-submit', purposeLabel || 'Sign in');
+    submit.setAttribute('aria-hidden', 'true'); // a drawn button face, not a control
+    form.appendChild(submit);
+    body.appendChild(asRegion(form, 'form'));
+    regions.form = form;
+
+    root.appendChild(body);
+    return { root, blocked: false, regions };
+}
+
+function buildAriaLabel(pageDef, choices, { blocked, domain, target }) {
+    if (blocked) return 'Blocked address: this page cannot be shown.';
+    const brand = brandById(pageDef, choices.brand);
+    const brandName = brand && brand.name ? brand.name : 'a service';
+    const purposeLabel = labelFromList(pageDef.purposes, choices.purpose) || 'Sign in';
+    const who = target && target.firstName ? ` for ${target.firstName}` : '';
+    const lock = choices.padlock === true ? 'padlock shown' : 'marked Not secure';
+    const addr = domain ? ` at ${domain}` : '';
+    return `Preview of a ${purposeLabel} page imitating ${brandName}${addr}${who}, ${lock}.`;
+}

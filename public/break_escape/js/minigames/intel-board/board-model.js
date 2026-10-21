@@ -252,3 +252,122 @@ export function buildBoardModel(social, globals) {
         total: targets.length
     };
 }
+
+// ── scope and plan modes (03 "Modes", N4; 00 §11 "Engagement mode blocks") ─────────────────────────
+
+export const ENGAGEMENT_MODES = ['scope', 'plan'];
+
+/**
+ * The answers saved in se_board_state for a scope or plan board: ids only (00 §5).
+ *   sorted:    { sortingCardId: 'in' | 'out' }   only placements that were right; a wrong one goes back
+ *   answers:   { questionCardId: optionId }
+ *   picks:     { pickGroupId: optionId }
+ *   confirmed: [ confirmItemId ]
+ */
+export function readEngagementState(globals, mode) {
+    const raw = readBoardState(globals)[mode];
+    const o = raw && typeof raw === 'object' ? raw : {};
+    const strMap = (m) => {
+        const out = {};
+        if (m && typeof m === 'object') for (const [k, v] of Object.entries(m)) if (typeof v === 'string') out[k] = v;
+        return out;
+    };
+    return {
+        sorted: strMap(o.sorted),
+        answers: strMap(o.answers),
+        picks: strMap(o.picks),
+        confirmed: Array.isArray(o.confirmed) ? o.confirmed.filter((s) => typeof s === 'string') : []
+    };
+}
+
+function optionList(list) {
+    return (Array.isArray(list) ? list : []).filter((o) => o && typeof o.id === 'string').map((o) => ({
+        id: o.id, text: o.text || o.label || o.id, correct: o.correct === true, why: o.why || ''
+    }));
+}
+
+/**
+ * Scope or plan mode, from `social.engagement[mode]`. Pure.
+ *
+ * Items, in authored order:
+ *  - `sort`    a scope card (`kind: "sort"`, or no kind but an `inScope` boolean). Done when saved in its right pile.
+ *  - `question` a card with `options[{id,text,correct,why}]`. Done when its `correct` option is chosen.
+ *  - `pick`    a single-select list. Plan authors `objectives[]` and `measures[]` (each option carries `step`),
+ *              or `picks[{id, step, text, options[]}]`. Done when the chosen option has `correct: true`.
+ *  - `confirm` `{ kind: "confirm", step, text }` in `items[]`. Done when pressed.
+ *
+ * Completion follows the step-binding rule (00 §11): a step is done when every item carrying its id is
+ * done; the block is done when every declared step is done, or, with no `steps[]`, when every item is.
+ * An empty block is never done. `toSet` lists the globals due and not yet true, steps first.
+ */
+export function buildEngagementModel(social, globals, mode) {
+    const g = globals || {};
+    const block = (social?.engagement && social.engagement[mode]) || {};
+    const st = readEngagementState(g, mode);
+    const items = [];
+    const stepOf = (x) => (typeof x?.step === 'string' ? x.step : null);
+
+    for (const c of Array.isArray(block.cards) ? block.cards : []) {
+        if (!c || typeof c.id !== 'string') continue;
+        const kind = c.kind || (Array.isArray(c.options) ? 'question' : 'sort');
+        if (kind === 'question') {
+            const options = optionList(c.options);
+            const picked = options.find((o) => o.id === st.answers[c.id]) || null;
+            items.push({ kind: 'question', id: c.id, step: stepOf(c), text: c.text || '', options,
+                pickedId: picked ? picked.id : null, picked, done: !!(picked && picked.correct) });
+        } else if (kind === 'sort') {
+            const right = c.inScope === true ? 'in' : 'out';
+            const placed = st.sorted[c.id] || null;
+            items.push({ kind: 'sort', id: c.id, step: stepOf(c), text: c.text || '', right, why: c.why || '',
+                placed, done: placed === right });
+        }
+    }
+
+    const groups = [];
+    if (Array.isArray(block.objectives)) groups.push({ id: 'objectives', text: block.objectivesPrompt || '', list: block.objectives });
+    if (Array.isArray(block.measures)) groups.push({ id: 'measures', text: block.measuresPrompt || '', list: block.measures });
+    for (const p of Array.isArray(block.picks) ? block.picks : []) {
+        if (p && typeof p.id === 'string') groups.push({ id: p.id, text: p.text || '', list: p.options, step: stepOf(p) });
+    }
+    for (const gr of groups) {
+        const options = optionList(gr.list);
+        const step = gr.step || stepOf((gr.list || []).find((o) => stepOf(o)) || null);
+        const picked = options.find((o) => o.id === st.picks[gr.id]) || null;
+        items.push({ kind: 'pick', id: gr.id, step, text: gr.text, options,
+            pickedId: picked ? picked.id : null, picked, done: !!(picked && picked.correct) });
+    }
+
+    for (const c of Array.isArray(block.items) ? block.items : []) {
+        if (!c || c.kind !== 'confirm') continue;
+        const id = typeof c.id === 'string' ? c.id : `confirm_${stepOf(c) || items.length}`;
+        items.push({ kind: 'confirm', id, step: stepOf(c), text: c.text || 'Confirm', done: st.confirmed.includes(id) });
+    }
+
+    const stepDecls = Array.isArray(block.steps) ? block.steps.filter((s) => s && s.id) : [];
+    const steps = stepDecls.map((s) => {
+        const bound = items.filter((i) => i.step === s.id);
+        return { id: s.id, title: s.title || '', onCompleteGlobal: s.onCompleteGlobal || null,
+            done: bound.length > 0 && bound.every((i) => i.done) };
+    });
+    const complete = items.length > 0 && (steps.length ? steps.every((s) => s.done) : items.every((i) => i.done));
+
+    const toSet = [];
+    for (const s of steps) if (s.done && s.onCompleteGlobal && !isTrue(g[s.onCompleteGlobal])) toSet.push(s.onCompleteGlobal);
+    if (complete && block.onCompleteGlobal && !isTrue(g[block.onCompleteGlobal])) toSet.push(block.onCompleteGlobal);
+
+    const roe = social?.engagement?.roe && typeof social.engagement.roe === 'object' ? social.engagement.roe : null;
+    return {
+        mode,
+        title: block.title || (mode === 'scope' ? 'Rules of engagement' : 'Engagement plan'),
+        intro: block.intro || block.brief || '',
+        roe: roe && mode === 'scope' ? {
+            inScope: Array.isArray(roe.inScope) ? roe.inScope.filter((s) => typeof s === 'string') : [],
+            outScope: Array.isArray(roe.outScope) ? roe.outScope.filter((s) => typeof s === 'string') : [],
+            stopContact: typeof roe.stopContact === 'string' ? roe.stopContact : ''
+        } : null,
+        items, steps, complete,
+        doneCount: items.filter((i) => i.done).length,
+        total: items.length,
+        toSet
+    };
+}

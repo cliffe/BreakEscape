@@ -23,7 +23,69 @@ const CHANGE_KEYS = { mailState: { jobs: mailJobsChangeKey } };
 // Lists replaced whole when they change
 const WHOLE_SECTIONS = ['commandBoardLog', 'biometricSamples', 'playerHealth'];
 
+// Landing-page builder state (07 §5; 00 §11a). Two object globals keyed by pageId:
+// se_landing_pages holds one closed record per built page, se_landing_drafts one
+// pre-Score choice set per page. The builder overlay already writes only closed keys
+// (buildRecord/applyScore/setBuilt and _pick7 in landing-page-model.js), but the shape is
+// enforced again here, at the sync boundary, so a hand-edited or older save can never push
+// an unknown key to the server (defence in depth, N4). The closed key sets mirror
+// landing-page-model.js's RECORD_KEYS, CHOICE_KEYS, victim keys and TELL_IDS; the
+// social-landing-page-state test asserts they stay in step with that module. A mission with
+// no landing state carries neither global, so guardLandingState leaves its payload untouched.
+const LANDING_PAGES_KEY = 'se_landing_pages';
+const LANDING_DRAFTS_KEY = 'se_landing_drafts';
+const LANDING_RECORD_KEYS = ['pageId', 'targetId', 'choices', 'credibility', 'gatesPassed', 'meetsThreshold', 'tellsFound', 'victim', 'built'];
+const LANDING_CHOICE_KEYS = ['brand', 'purpose', 'domainId', 'logo', 'wording', 'fields', 'padlock'];
+const LANDING_VICTIM_KEYS = ['visited', 'submitted', 'noticed'];
+const LANDING_TELL_IDS = ['brand', 'purpose', 'domain', 'logo', 'wording', 'form', 'padlock', 'formOrigin', 'hoverMismatch'];
+
 const json = v => JSON.stringify(v);
+
+const isPlainObject = v => v != null && typeof v === 'object' && !Array.isArray(v);
+const pickKeys = (obj, keys) => {
+  const out = {};
+  for (const k of keys) if (Object.prototype.hasOwnProperty.call(obj, k)) out[k] = obj[k];
+  return out;
+};
+
+// The seven draft choice keys only (null everything else away).
+const sanitizeLandingChoices = choices => (isPlainObject(choices) ? pickKeys(choices, LANDING_CHOICE_KEYS) : {});
+
+// One closed landing-page record: the nine record keys, with choices and tellsFound and
+// victim cleaned inside. A tellsFound id outside the nine, or a choice/victim key outside
+// its set, is dropped. Non-object records become {} so nothing unexpected is sent.
+const sanitizeLandingRecord = record => {
+  if (!isPlainObject(record)) return {};
+  const out = pickKeys(record, LANDING_RECORD_KEYS);
+  if ('choices' in out) out.choices = sanitizeLandingChoices(out.choices);
+  if ('tellsFound' in out) {
+    out.tellsFound = Array.isArray(out.tellsFound) ? out.tellsFound.filter(id => LANDING_TELL_IDS.includes(id)) : [];
+  }
+  if ('victim' in out && isPlainObject(out.victim)) out.victim = pickKeys(out.victim, LANDING_VICTIM_KEYS);
+  return out;
+};
+
+const sanitizeLandingMap = (map, perValue) => {
+  if (!isPlainObject(map)) return {};
+  const out = {};
+  for (const [pageId, value] of Object.entries(map)) out[pageId] = perValue(value);
+  return out;
+};
+
+/**
+ * Enforce the closed landing-page record and draft shapes on the globals about to be sent
+ * (N4; 07 §5; 00 §11a). Mutates the given shallow copy in place, never window.gameState: a
+ * replaced key gets a fresh object, so the live global is left as the overlay wrote it. Only
+ * keys that are present are touched, so a mission with no landing state is unchanged.
+ */
+function guardLandingState(globals) {
+  if (Object.prototype.hasOwnProperty.call(globals, LANDING_PAGES_KEY)) {
+    globals[LANDING_PAGES_KEY] = sanitizeLandingMap(globals[LANDING_PAGES_KEY], sanitizeLandingRecord);
+  }
+  if (Object.prototype.hasOwnProperty.call(globals, LANDING_DRAFTS_KEY)) {
+    globals[LANDING_DRAFTS_KEY] = sanitizeLandingMap(globals[LANDING_DRAFTS_KEY], sanitizeLandingChoices);
+  }
+}
 
 /**
  * Periodic state synchronisation with the server.
@@ -86,6 +148,8 @@ export class StateSync {
     const out = {};
     // Shallow copy, so a later change to a global doesn't alter what was built
     out.globalVariables = { ...(window.gameState?.globalVariables || {}) };
+    // Keep the landing-page globals to their closed shapes before they are synced or flushed (N4)
+    guardLandingState(out.globalVariables);
 
     // NPCs shown or hidden by setVisible, so a reveal survives a reload (N2)
     const npcVisibility = window.npcManager?.exportNpcVisibility?.();

@@ -4,7 +4,7 @@ Brief: `docs/agents/SE_BUILD_BRIEF.md`. Plan: `IMPLEMENTATION_PLAN.md`. Artefact
 
 ## Resume
 
-Status (2026-10-21): Phase 0 closed (two review rounds, ten browser comparison runs, two targeted checks). Phase 1a closed (`5e2889ff`). Phase 1 closed (`391b7dd7`). Phases 2-4 wave 1 and the P2/P3 wiring committed. Phases 2-4 built; Grok reviews found 2 blockers and 5 majors; a Grok fix round is running. Then Opus reviews Grok's Phase 2-3 work and opus48 its Phase 4 work (user, 2026-10-21). Running in parallel: P5-A, P5-B, P5-C (opus48) and the lab plan P6-A (Opus). Quota is ample for 24 hours (user): iterate for quality. Waiting on the user: art batch 1 questions (art_batch1/REVIEW.md) and the R-01 speaker-tie question below.
+Status (2026-10-21): Phase 0 closed (two review rounds, ten browser comparison runs, two targeted checks). Phase 1a closed (`5e2889ff`). Phase 1 closed (`391b7dd7`). Phases 2-4 wave 1 and the P2/P3 wiring committed. Phases 2-4 built; Grok reviews found 2 blockers and 5 majors; a Grok fix round is running. Phase 5 A-F and the lab (plan, data, ink, report, board modes) built and committed. Running: fix round 2 for Phases 2-4 (opus48), P5-G builder wiring, P6-M meter and mail debt. Next: P5-T, P5-R; P6-W, P6-G, P6-T0, P6-R, then lab playtests and design cycles. Waiting on the user: art batch 1 questions (art_batch1/REVIEW.md) and the R-01 speaker-tie question below.
 
 ## User instructions for this build (2026-10-21)
 
@@ -254,6 +254,10 @@ Fix round 1 for Phases 2-4 (grok): every P2-T, P3-T and P4-T finding reported fi
 - **P6-C** (Sonnet): board `scope` and `plan` modes (brief, rules sheet, sort piles, question card, single-select picks; wrong answers explain and stay changeable; step and block globals set once). Tests 33/33 with the recon and defender tests. For P6-W: add `scope` and `plan` to the case-file `mode` schema. For P6-G: lints for `step` and `correct` counts. For P6-E (sent): `plan.objectivesPrompt`, `plan.measuresPrompt`, `scope.intro`.
 
 - **P6-B** (opus48): engagement report overlay (`minigames/engagement-report/`: pure `buildReportModel(social, globals, mailState)` reading mail metrics, the page's victim record and the call globals; findings pair a root cause with a control; the blame option explains itself; `se_report_state` ids only). Test 15/15. Decision: the call panel reads the lab's fixed global names (`pretext_<callId>_outcome`/`_lowest`, `pretext_call_done`, `<character>_reported`). Wiring and bridge wait for P6-W, P6-T0 and the lab scenario.
+
+- **P6-F** (opus48): seven lab ink stories (Ruth, Ruth's phone hints, Fairbairn, Tomasz, Dev's call, Pierce and Lord mail replies); all compile; dialoguelint clean; inkcheck and loopcheck clean over a state matrix; tag trace confirms the landings, key hand-overs, backup completions and the debrief. Fixed its own bug (Fairbairn's scenes did not auto-play on first visit). Ids contract in `scenarios/lab_social_engineering/BUILD_P6F.md`, sent to P6-E.
+
+- **P6-E** (opus48): `scenarios/lab_social_engineering/` data (four rooms, the full social block, 8 aims and 23 tasks, globals), matched to P6-F's ids; strict validator 0 errors with the ink lints passing; doors aligned; P6-C's three text fields added. Placeholder `report-workstation.png` (copy of case-file.png). Committed with P5-A to P5-F, P6-B, P6-C, P6-D.
 
 ## Review rounds
 

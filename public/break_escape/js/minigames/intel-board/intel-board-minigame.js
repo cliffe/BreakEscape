@@ -1,6 +1,6 @@
 // The intel board (SE design 03; implementation plan Phase 1a, packet P1-G).
 //
-// Recon mode (P1-G) and defender mode (P3-D). Recon is a case-file overlay that shows what the player has
+// Recon mode (P1-G), defender mode (P3-D), scope and plan modes (P6-C). Recon is a case-file overlay that shows what the player has
 // found, grouped by person and company, and what is still missing. Display
 // only. It is rebuilt from the persisted `se_intel_*`, `target_ready_*` and
 // `osint_done` globals every time it opens (N2); nothing is collected while an
@@ -27,16 +27,24 @@
 // were complete but the global never landed. No typing, no indicators step
 // (engagement.defender.indicators is not read; the lab authors none).
 //
+// Scope and plan modes (03 "Modes"; 00 §11): sorting cards (in or out), question cards and single-select
+// picks, all "pick one of these buttons". A right answer locks; a wrong pick shows its `why` and can be
+// changed; a wrongly sorted card goes back. Right sorts and every question or pick answer are saved as
+// ids in se_board_state.<mode>. Step globals and the block global (roe_signed, plan_done) are set through
+// the shared writer on the false-to-true flip, and again on open if the saved answers were complete but
+// the global never landed. A `confirm` item (Confirm button) is supported for the report's read-only step.
+//
 // All text the player reads is set with textContent in Source Sans 3
 // (--se-font-readable), never through innerHTML or displayDashes.
 
 import { SocialOverlayScene } from '../framework/social-overlay.js';
 import { writeGlobal } from '../../systems/global-writer.js';
 import { createInfluenceBar } from '../../ui/influence-bar.js';
-import { buildBoardModel, buildDefenderModel, readBoardState, STATE_KEY, READY_TEXT } from './board-model.js';
+import { buildBoardModel, buildDefenderModel, buildEngagementModel, readBoardState, readEngagementState,
+    ENGAGEMENT_MODES, STATE_KEY, READY_TEXT } from './board-model.js';
 
 const ICON = '/break_escape/assets/icons/';
-const SUPPORTED_MODES = ['recon', 'defender'];
+const SUPPORTED_MODES = ['recon', 'defender', ...ENGAGEMENT_MODES];
 
 function h(tag, props = {}, ...kids) {
     const node = document.createElement(tag);
@@ -74,6 +82,8 @@ export class IntelBoardMinigame extends SocialOverlayScene {
         this.mode = SUPPORTED_MODES.includes(this.params.mode) ? this.params.mode : (this.params.mode || 'recon');
         this.model = null;
         this.dmodel = null;
+        this.emodel = null;
+        this._feedback = {};
         this._liveText = '';
         this._bars = [];
     }
@@ -93,6 +103,9 @@ export class IntelBoardMinigame extends SocialOverlayScene {
         if (this.mode === 'defender') {
             this.dmodel = buildDefenderModel(this.social, this.globals);
             this._applyDefenderCompletion();
+        } else if (ENGAGEMENT_MODES.includes(this.mode)) {
+            this.emodel = buildEngagementModel(this.social, this.globals, this.mode);
+            this._applyEngagementCompletion();
         }
         this._render();
         this._rememberReady();
@@ -115,6 +128,7 @@ export class IntelBoardMinigame extends SocialOverlayScene {
     _render() {
         this._destroyBars();
         if (this.mode === 'defender') { this._renderDefender(); return; }
+        if (ENGAGEMENT_MODES.includes(this.mode)) { this._renderEngagement(); return; }
         const m = this.model;
         const supported = SUPPORTED_MODES.includes(this.mode);
         this.gameContainer.textContent = '';
@@ -269,6 +283,238 @@ export class IntelBoardMinigame extends SocialOverlayScene {
         for (const name of due) writeGlobal(name, true, { openChat: false });
         window.stateSync?.sync?.();
         this.dmodel = buildDefenderModel(this.social, this.globals);
+        return due.includes(blockName);
+    }
+
+    // ── scope and plan modes ──────────────────────────────────────────────
+    _renderEngagement(focus = null) {
+        const e = this.emodel;
+        this.gameContainer.textContent = '';
+        const live = h('div', { class: 'ib-live', role: 'status', 'aria-live': 'polite' });
+        live.textContent = this._liveText;
+        this._liveEl = live;
+
+        const close = h('button', { type: 'button', class: 'se-overlay-close minigame-button ib-close',
+            'aria-label': 'Close', text: 'Close' });
+        this.addEventListener(close, 'click', (ev) => {
+            ev.preventDefault?.();
+            ev.stopPropagation?.();
+            this.requestClose();
+        });
+        this.closeButton = close;
+
+        const progress = e.complete
+            ? `${e.title} complete.`
+            : `${e.doneCount} of ${e.total} answered correctly.`;
+        const head = h('header', { class: 'ib-head' },
+            h('h2', { class: 'ib-title', text: e.title }),
+            h('p', { class: 'ib-progress', text: progress }),
+            close);
+
+        const body = h('div', { class: 'ib-scroll', tabindex: '0', role: 'region',
+            'aria-label': `${e.title}: choose an answer for each item` });
+        const note = this.model?.scopeNote;
+        if (note) body.appendChild(h('p', { class: 'ib-scope-note', text: note }));
+        if (e.intro) body.appendChild(h('p', { class: 'ib-brief', text: e.intro }));
+        if (e.roe) body.appendChild(this._roeSheet(e.roe));
+
+        if (!e.items.length) {
+            body.appendChild(h('p', { class: 'ib-empty', text: 'Nothing to do here yet.' }));
+        } else {
+            const sorts = e.items.filter((i) => i.kind === 'sort');
+            if (sorts.length) body.appendChild(this._sortSection(sorts));
+            const others = e.items.filter((i) => i.kind !== 'sort');
+            if (others.length) {
+                const list = h('ul', { class: 'ib-exposures ib-steps', 'aria-label': 'Questions' });
+                for (const item of others) list.appendChild(this._choiceCard(item));
+                body.appendChild(list);
+            }
+        }
+
+        this.root = h('div', { class: 'ib-root', tabindex: '-1', 'data-mode': this.mode }, head, live, body);
+        this.gameContainer.appendChild(this.root);
+        if (focus) this.root.querySelector(focus)?.focus?.();
+    }
+
+    _roeSheet(roe) {
+        const list = (label, arr, cls) => h('div', { class: `ib-roe-col ${cls}` },
+            h('h4', { class: 'ib-subh', text: label }),
+            h('ul', { class: 'ib-facts' }, arr.map((t) => h('li', { class: 'ib-fact' }, h('span', { class: 'ib-fact-text', text: t })))));
+        return h('section', { class: 'ib-section ib-roe', 'aria-labelledby': 'ib-h-roe' },
+            h('h3', { id: 'ib-h-roe', class: 'ib-h', text: 'Rules of engagement' }),
+            h('div', { class: 'ib-card ib-roe-card' },
+                h('img', { class: 'ib-pin', src: `${ICON}board-pushpin.png`, alt: '', 'aria-hidden': 'true', width: 11, height: 14 }),
+                h('div', { class: 'ib-roe-cols' },
+                    roe.inScope.length ? list('In scope', roe.inScope, 'in') : null,
+                    roe.outScope.length ? list('Out of scope', roe.outScope, 'out') : null),
+                roe.stopContact ? h('p', { class: 'ib-meta', text: `Emergency contact: ${roe.stopContact}` }) : null));
+    }
+
+    _sortSection(sorts) {
+        const open = sorts.filter((c) => !c.done);
+        const sec = h('section', { class: 'ib-section ib-sort', 'aria-labelledby': 'ib-h-sort' },
+            h('h3', { id: 'ib-h-sort', class: 'ib-h', text: 'Sort the scope cards' }),
+            h('p', { class: 'ib-ask', text: 'Put each card in the pile it belongs in.' }));
+        const list = h('ul', { class: 'ib-exposures ib-sort-cards', 'aria-label': 'Cards to sort' });
+        for (const c of open) list.appendChild(this._sortCard(c));
+        if (open.length) sec.appendChild(list);
+        else sec.appendChild(h('p', { class: 'ib-empty', text: 'Every card is sorted.' }));
+
+        const piles = h('div', { class: 'ib-piles' });
+        for (const [key, label] of [['in', 'In scope'], ['out', 'Out of scope']]) {
+            const placed = sorts.filter((c) => c.done && c.placed === key);
+            piles.appendChild(h('div', { class: `ib-pile ib-pile-${key}`, 'data-pile': key },
+                h('h4', { class: 'ib-subh', text: `${label} (${placed.length})` }),
+                h('ul', { class: 'ib-facts', 'aria-label': `${label} pile` }, placed.map((c) =>
+                    h('li', { class: 'ib-fact', 'data-card': c.id }, icon('mark-tick'),
+                        h('span', { class: 'ib-fact-text', text: c.text }),
+                        h('span', { class: 'ib-why', text: c.why }))))));
+        }
+        sec.appendChild(piles);
+        return sec;
+    }
+
+    _sortCard(c) {
+        const headingId = `ib-sort-${c.id}`;
+        const fb = this._feedback[c.id];
+        const card = h('li', { class: `ib-card ib-exposure is-${fb ? 'wrong' : 'open'}`, 'data-card': c.id,
+            'data-state': fb ? 'wrong' : 'open', 'aria-labelledby': headingId },
+            h('img', { class: 'ib-pin', src: `${ICON}board-pushpin.png`, alt: '', 'aria-hidden': 'true', width: 11, height: 14 }),
+            h('h4', { id: headingId, class: 'ib-name', text: c.text }));
+        const opts = h('ul', { class: 'ib-options', role: 'group', 'aria-labelledby': headingId });
+        for (const [key, label] of [['in', 'In scope'], ['out', 'Out of scope']]) {
+            const btn = h('button', { type: 'button', class: 'ib-option minigame-button', 'data-option': key, text: label });
+            this.addEventListener(btn, 'click', (e) => {
+                e.preventDefault?.();
+                e.stopPropagation?.();
+                this.placeCard(c.id, key);
+            });
+            opts.appendChild(h('li', { class: 'ib-option-row' }, btn));
+        }
+        card.appendChild(opts);
+        if (fb) {
+            card.appendChild(h('p', { class: 'ib-feedback bad', role: 'status' }, icon('mark-cross'),
+                h('span', { class: 'ib-word', text: `Not in the ${fb.tried === 'in' ? 'in scope' : 'out of scope'} pile:` }),
+                h('span', { class: 'ib-why', text: fb.why })));
+        }
+        return card;
+    }
+
+    _choiceCard(item) {
+        const headingId = `ib-ch-${item.id}`;
+        const state = item.done ? 'done' : (item.picked ? 'wrong' : 'open');
+        const card = h('li', { class: `ib-card ib-exposure is-${state}`, 'data-item': item.id, 'data-kind': item.kind,
+            'data-state': state, 'aria-labelledby': headingId },
+            h('img', { class: 'ib-pin', src: `${ICON}board-pushpin.png`, alt: '', 'aria-hidden': 'true', width: 11, height: 14 }),
+            h('div', { class: 'ib-card-head' },
+                h('h4', { id: headingId, class: 'ib-name', text: item.text || this._stepTitle(item) }),
+                h('span', { class: `ib-status ${item.done ? 'ready' : 'not-ready'}` },
+                    icon(item.done ? 'board-ready' : 'board-not-ready'),
+                    h('span', { class: 'ib-status-word', text: item.done ? 'Done' : 'Open' }))));
+
+        if (item.kind === 'confirm') {
+            const btn = h('button', { type: 'button', class: 'ib-option minigame-button', 'data-option': 'confirm',
+                disabled: item.done ? true : false, text: item.text });
+            this.addEventListener(btn, 'click', (e) => {
+                e.preventDefault?.();
+                e.stopPropagation?.();
+                this.confirmItem(item.id);
+            });
+            card.appendChild(h('ul', { class: 'ib-options' }, h('li', { class: 'ib-option-row' }, btn)));
+            return card;
+        }
+
+        const opts = h('ul', { class: 'ib-options', role: 'group', 'aria-labelledby': headingId });
+        for (const o of item.options) {
+            const chosen = item.pickedId === o.id;
+            const btn = h('button', { type: 'button', class: `ib-option minigame-button${chosen ? ' is-chosen' : ''}`,
+                'data-option': o.id, 'aria-pressed': String(chosen), disabled: item.done && !chosen ? true : false,
+                text: o.text });
+            this.addEventListener(btn, 'click', (e) => {
+                e.preventDefault?.();
+                e.stopPropagation?.();
+                this.choose(item.id, o.id);
+            });
+            opts.appendChild(h('li', { class: 'ib-option-row' }, btn));
+        }
+        card.appendChild(opts);
+        if (item.picked) {
+            const word = item.done ? 'Right answer:' : 'Not this one:';
+            card.appendChild(h('p', { class: `ib-feedback ${item.done ? 'good' : 'bad'}`, role: 'status' },
+                icon(item.done ? 'mark-tick' : 'mark-cross'),
+                h('span', { class: 'ib-word', text: word }),
+                h('span', { class: 'ib-why', text: item.picked.why })));
+        }
+        return card;
+    }
+
+    _stepTitle(item) {
+        const s = this.emodel?.steps.find((x) => x.id === item.step);
+        return s?.title || item.id;
+    }
+
+    /** Save this mode's answers, rebuild the model and set whatever globals are now due. */
+    _saveEngagement(patch) {
+        const state = readBoardState(this.globals);
+        const cur = readEngagementState(this.globals, this.mode);
+        this._writeState({ ...state, [this.mode]: { ...cur, ...patch } });
+        this.emodel = buildEngagementModel(this.social, this.globals, this.mode);
+        return this._applyEngagementCompletion();
+    }
+
+    /** Place a scope card in a pile. A right placement is saved; a wrong one goes back with its why. */
+    placeCard(cardId, pile) {
+        if (!ENGAGEMENT_MODES.includes(this.mode) || !this.emodel || !['in', 'out'].includes(pile)) return false;
+        const item = this.emodel.items.find((i) => i.kind === 'sort' && i.id === cardId);
+        if (!item || item.done) return false;
+        if (pile !== item.right) {
+            this._feedback[cardId] = { tried: pile, why: item.why };
+            this._liveText = `Not that pile. ${item.why}`;
+            this._renderEngagement(`[data-card="${cardId}"] [data-option="${pile}"]`);
+            return true;
+        }
+        delete this._feedback[cardId];
+        const cur = readEngagementState(this.globals, this.mode);
+        const flipped = this._saveEngagement({ sorted: { ...cur.sorted, [cardId]: pile } });
+        this._liveText = `Right. ${item.why}`.trim() + (flipped ? ` ${this.emodel.title} complete.` : '');
+        this._renderEngagement();
+        return true;
+    }
+
+    /** Answer a question card or a plan pick. A right answer locks it; a wrong one shows its why and can change. */
+    choose(itemId, optionId) {
+        if (!ENGAGEMENT_MODES.includes(this.mode) || !this.emodel) return false;
+        const item = this.emodel.items.find((i) => (i.kind === 'question' || i.kind === 'pick') && i.id === itemId);
+        if (!item || item.done || !item.options.some((o) => o.id === optionId)) return false;
+        const cur = readEngagementState(this.globals, this.mode);
+        const key = item.kind === 'question' ? 'answers' : 'picks';
+        const flipped = this._saveEngagement({ [key]: { ...cur[key], [itemId]: optionId } });
+        const now = this.emodel.items.find((i) => i.id === itemId);
+        this._liveText = `${now.done ? 'Right answer.' : 'Not this one.'} ${now.picked.why}`.trim()
+            + (flipped ? ` ${this.emodel.title} complete.` : '');
+        this._renderEngagement(`[data-item="${itemId}"] [data-option="${optionId}"]`);
+        return true;
+    }
+
+    confirmItem(itemId) {
+        if (!ENGAGEMENT_MODES.includes(this.mode) || !this.emodel) return false;
+        const item = this.emodel.items.find((i) => i.kind === 'confirm' && i.id === itemId);
+        if (!item || item.done) return false;
+        const cur = readEngagementState(this.globals, this.mode);
+        const flipped = this._saveEngagement({ confirmed: [...cur.confirmed, itemId] });
+        this._liveText = 'Confirmed.' + (flipped ? ` ${this.emodel.title} complete.` : '');
+        this._renderEngagement();
+        return true;
+    }
+
+    /** Set the step and block globals that are due (steps first). Returns whether the block global flipped. */
+    _applyEngagementCompletion() {
+        const due = this.emodel?.toSet || [];
+        if (!due.length) return false;
+        const blockName = this.social?.engagement?.[this.mode]?.onCompleteGlobal;
+        for (const name of due) writeGlobal(name, true, { openChat: false });
+        window.stateSync?.sync?.();
+        this.emodel = buildEngagementModel(this.social, this.globals, this.mode);
         return due.includes(blockName);
     }
 
@@ -436,7 +682,7 @@ export class IntelBoardMinigame extends SocialOverlayScene {
     /** Close and Esc are a normal exit; completion is reported in the result. */
     closeResult() {
         const m = this.model || buildBoardModel(this.social, this.globals);
-        const completed = this.mode === 'recon' ? m.osintDone : (this.mode === 'defender' ? !!this.dmodel?.complete : false);
+        const completed = this.mode === 'recon' ? m.osintDone : (this.mode === 'defender' ? !!this.dmodel?.complete : (this.emodel ? this.emodel.complete : false));
         return { mode: this.mode, completed, ready: [...m.ready] };
     }
 
@@ -447,6 +693,18 @@ export class IntelBoardMinigame extends SocialOverlayScene {
             ...super.getTestState(),
             board: m ? {
                 mode: this.mode,
+                engagement: this.emodel ? {
+                    complete: this.emodel.complete,
+                    done: this.emodel.doneCount,
+                    total: this.emodel.total,
+                    live: this._liveText,
+                    steps: this.emodel.steps.map((s) => ({ id: s.id, done: s.done })),
+                    items: this.emodel.items.map((i) => ({
+                        id: i.id, kind: i.kind, step: i.step, done: i.done,
+                        placed: i.placed || null, picked: i.pickedId || null,
+                        options: i.options ? i.options.map((o) => o.id) : undefined
+                    }))
+                } : null,
                 defender: this.dmodel ? {
                     complete: this.dmodel.complete,
                     done: this.dmodel.doneCount,
