@@ -2,7 +2,7 @@
 
 ## 0. Status and inputs
 
-Stage 4. Author: stages 4–5 author (Opus), 2026-10-21. Status: first draft, for review round 1. Written with `../stage_5/room_layout.md` (the two documents share room, NPC, object and global ids; where a choice was a layout choice it is argued there).
+Stage 4. Author: stages 4–5 author (Opus), 2026-10-21. Status: round 1 fixes folded in (§16; reviews `../stage_5/REVIEW_R1_PUZZLES.md` and `../stage_5/REVIEW_R1_DESIGN.md`), for review round 2. Designed to the user's decisions of 2026-10-21: **F17** forced phone calls can be voiced (a mapping key, written `voiced: true` here; the final name is in `docs/agents/FINALE_ENGINE_VOICED_CALLS.md` once written): the Recruiter's call, the identity scene and Tesseract's call are voiced; **F18** the flag-reward `unlock_door` bug is being fixed; **F19** an eventMapping key that unlocks a door persistently (written `unlockDoor` here; final name in `docs/agents/FINALE_ENGINE_UNLOCKS_SILENCE.md`); **F10** a `silence` playlist. Written with `../stage_5/room_layout.md` (the two documents share room, NPC, object and global ids; where a choice was a layout choice it is argued there).
 
 Inputs: `../stage_0_initialization.md`; `../stage_1/story_arc.md` (beats cited as "Beat 2.4"; §11's locks table and forced-phone rule are binding); `../stage_2/storytelling_elements.md` ("SE"); `../stage_3/moral_choices.md` ("MC"; its §10 state table is the source for every story global); `../../finale/FINALE_ARC.md` ("FA") §1–9, §13, §17; `story_design/story_dev_prompts/04_player_objectives.md`; the `mission-alignment-plan`, `scenario-design-review` and `mission-puzzle-chains` skills; `README_scenario_design.md` (objectives, forced calls, closing card, authoring rules); `tools/pass2/PASS2_LESSONS.md`; shipped `m08_the_mole/scenario.json.erb` (aims, flag station, debrief), m05's Recruiter and debrief wiring; the engine (`systems/npc-manager.js`, `systems/apply-actions.js`, `minigames/helpers/chat-helpers.js`, `systems/unlock-system.js`, `app/models/break_escape/game.rb`). VM flags appear by story meaning only; no VM material was opened.
 
@@ -10,8 +10,9 @@ Inputs: `../stage_0_initialization.md`; `../stage_1/story_arc.md` (beats cited a
 
 1. Six aims. Aims 2 and 3 run side by side in Act 2 (the cage and the ledger), and so do aims 4 and 5 in Act 3 (the office and Tomb Beta's server), so the player always has an in-game step and a VM step on screen at once.
 2. Every forced beat that would spoil itself as a task title (the Recruiter's call, the identity scene, the hour) is a task that ships `locked` and is unlocked by the scene's own first line, then completed by its done-flag.
-3. The night's order (stage 1 §11) becomes thirteen concrete conditions (§4): two flag-station rules, four door locks, one NPC unlock tag, and mappings keyed on done-flags.
+3. The night's order (stage 1 §11) becomes thirteen concrete conditions (§4): station ownership, door locks the kit can't skip, three persistent F19 door unlocks on HaX's mappings, and mappings keyed on done-flags, each with a load and room-entry backstop.
 4. Two changes to earlier stages, both forced by the engine: Tomb Beta's server moves into the salvage cage (one lock per door), and the cage's print and card split between the cage gate (card) and the plan cabinet (print). §14 lists them.
+5. Three forced phone scenes are voiced (F17); §6.7 lists their spoken lines for the audio budget.
 
 ## 1. Rules this stage works to
 
@@ -27,6 +28,7 @@ Where the 04 prompt and the newer standards differ, the newer standards win. The
 - **Mappings live on always-loaded NPCs.** HaX (`agent_0x99`), the Recruiter and every other phone contact are listed in the start room (`loading_dock`), so their mappings hear every event from the first frame (lesson 43). A person NPC in a later room only reacts to its own `room_entered` or to globals it reads on arrival.
 - **Conditions use `&&` only.** Every "A or B" in this document is two mappings.
 - **Imports never gate.** No import appears in an `unlockCondition` or `concludeRequires`; imports are read in ink, in mapping conditions and in object variants.
+- **New engine keys are placeholders too.** `voiced` (F17) and `unlockDoor` (F19) are working names; stage 9 takes the final ones from the two engine docs. If F19 lands in another shape, the fallback is HaX's ink `#unlock_door` with `"unlockable"` (round 0's design, which works today), retired on entering the room, not on the tag (review M3).
 - **VM system names are placeholders.** `catalogue_server` (flags 1–2) and `tomb_beta_server` (flags 3–4) stand in for the SecGen `system_name`s the opus48 VM plan will choose. Assumption: each machine numbers its own flags from 1, so story flag 3 is `tomb_beta_server-flag1` and story flag 4 is `tomb_beta_server-flag2`. Stage 9 re-derives the mapping from the built XML.
 
 ## 2. The aim ladder
@@ -36,7 +38,7 @@ One objective, six aims. "On screen" is what the player sees the moment the aim 
 | # | `aimId` | Title | Unlocks on | Act | On screen at unlock | Handoff line that announces it |
 |---|---|---|---|---|---|---|
 | 1 | `get_in` | Get In And Set Up The Drop Terminal | start (`active`) | 1 | get inside; set up the drop terminal; submit the catalogue flag; (optional) talk to the clerk | HaX at the dock: "That noise is a cross-cut shredder. It's been running since before you landed." |
-| 2 | `restricted_series` | Find The Restricted Series Before It Burns | `aimCompleted: get_in` (flag 1) | 2 | get into the restricted stacks; talk to Sorensen at the cage hatch; get through the cage gate; open the plan cabinet; compare the hand; (optional) stop the tape wipe | HaX on flag 1: the shelf marks are behind the cage mesh, and "the boxes on Noor's trolleys are the ones on this list" |
+| 2 | `restricted_series` | Find The Restricted Series Before It Burns | `aimCompleted: get_in` (flag 1) | 2 | get into the restricted stacks; talk to Sorensen at the cage hatch; get through the cage gate; open the plan cabinet; compare the hand on Nightshade's file with HaX's notebook scan; (optional) stop the tape wipe | HaX on flag 1: the shelf marks are behind the cage mesh, "the boxes on Noor's trolleys are the ones on this list", and "The ledger keeps. Her shredder doesn't. Stacks first." |
 | 3 | `read_the_ledger` | Read The Initiative's Ledger | `aimCompleted: get_in` (flag 1) | 2 | submit the ledger flag (the rest arrive `locked`) | the same HaX line, second sentence: "The catalogue keeps something else live. Their ledger." |
 | 4 | `search_the_office` | Search The Director's Office | `aimCompleted: read_the_ledger` (the deck choice) | 3 | get into Sorensen's office; open her safe; take the file she quoted from; take the tape room key card; find Tomb Gamma's deed | the deck call's last lines: "She fired it from Peg's office. I'm on the door." |
 | 5 | `take_tomb_beta` | Take Tomb Beta's Server | `aimCompleted: read_the_ledger` | 3 | get into the tape room; open the salvage cage; submit the owner flag; submit the control flag (two reveal tasks arrive `locked`) | the same call: "Her card for the tape room will be in that office." |
@@ -49,10 +51,10 @@ One objective, six aims. "On screen" is what the player sees the moment the aim 
 | Aim | Required tasks | With an in-world pointer | Dead-zone risk | Transition narrated |
 |---|---|---|---|---|
 | 1 | 3 | 3 (HaX at the dock names the dock doors and the reading room) | low: the shredder and HaX point inward | HaX on flag 1 (Beat 1.4) |
-| 2 | 5 | 5 (flag 1's shelf marks; Sorensen in view behind the mesh; HaX names the reader and the cabinet; the case file names the notebook) | the hand: covered by a HaX hub topic once the file is held (§7) | the recognition and HaX's clock line at the gate |
+| 2 | 5 | 5 (flag 1's shelf marks; Sorensen in view behind the mesh; HaX names the reader and the cabinet; HaX's text on picking up the file says what to compare and where) | the hand: if never compared, the identity scene closes it, so it can't hang open past flag 3 (review D-02) | the recognition and HaX's clock line at the gate |
 | 3 | 2 visible after the call starts | 2 | between flag 2 and the call when the cage is still shut: aim 2's tasks are still open, so the next step is on screen | the Recruiter's call is the transition |
 | 4 | 5 | 5 (HaX on the door; the safe in view; the safe holds the card and the file) | none | HaX's line on the deck |
-| 5 | 4 visible, 2 more arrive with their scenes | 4 (the card's label names the tape room; HaX names the keypad; Gary or the catalogue legend for the code) | at the salvage cage keypad without the code: HaX's hub topic (§7) and the catalogue entry both point at it | the identity scene, the read, Tesseract's call |
+| 5 | 4 visible, 2 more arrive with their scenes | 4 (the card's label names the tape room; the catalogue entry is in the notepad since Act 1; the shelf-code legend hangs in the tape room beside the keypad; Gary's hint on that branch) | low: the code and its key are both at hand in the tape room (review D-03) | the identity scene, the read, Tesseract's call |
 | 6 | 1 | 1 (HaX's last line; a hub choice to come in) | none | HaX |
 
 ## 3. Aims and tasks
@@ -68,7 +70,7 @@ Description: "Mountain States Records & Retention, after hours. Get inside, set 
 | `get_inside` | Get inside the archive | in-game | `custom`, active | HaX mappings: `room_entered:front_desk` and `room_entered:open_stacks` (two mappings, either first, `onceOnly`) | nothing; the dock's two doors teach the choice of route (office door by pick, or the shutter on the guard's round) |
 | `meet_the_clerk` | Talk to the clerk at the front desk | in-game | `npc_conversation` `noor_haddad`, active, **optional** | `#complete_task:meet_the_clerk` at the top of Noor's first knot (lesson 44); `taskOnKO` on Noor | Noor's branch (warning, card, held box) |
 | `set_up_drop_terminal` | Set up the field laptop in the reading room | in-game | `custom`, active | HaX mapping on `object_interacted`, condition `data.objectType === 'vm-launcher' && data.roomId === 'reading_room'` | `catalogue_guide_offered` (§7) |
-| `submit_catalogue_flag` | Get into the catalogue server and submit what it hides | VM flag 1 | `submit_flags`, active; `targetFlags: ["drop_terminal:catalogue_server-flag1"]`, `targetCount: 1` | the drop terminal | flag reward `unlock_door restricted_stacks` and `set_global flag1_submitted`; aims 2 and 3 |
+| `submit_catalogue_flag` | Get into the catalogue server and submit the flag | VM flag 1 | `submit_flags`, active; `targetFlags: ["drop_terminal:catalogue_server-flag1"]`, `targetCount: 1` | the drop terminal | flag reward `set_global flag1_submitted`; HaX's `unlockDoor` on the restricted stacks (§4 row 1); aims 2 and 3 |
 
 Aim 1 completes on its three required tasks. `get_inside` and `set_up_drop_terminal` are both done long before flag 1 on every route, so the aim closes on the flag.
 
@@ -82,15 +84,15 @@ Description: "The catalogue puts Series R behind the cage mesh in the restricted
 | `talk_at_the_hatch` | Talk to Sorensen at the cage hatch | in-game, social | `custom`, active | two mappings on HaX: `global_variable_changed:hatch_talked` (set at the top of her hatch knot) and `global_variable_changed:cage_opened` (Victoria's route skips the hatch) | the bluff, the recognition, the bin choice, the card clone, the stamp in reach |
 | `open_the_cage` | Get through the cage gate | in-game, RFID | `custom`, active | HaX mapping on `global_variable_changed:cage_opened` | `cage_opened`: the purge's first event (§4 row 2) |
 | `open_plan_cabinet` | Open the locked plan cabinet at the back of the cage | in-game, fingerprint | `unlock_object` `plan_cabinet`, active | the biometric unlock (Sorensen's print, lifted off the stamp) | Nightshade's recruitment file in reach |
-| `match_the_hand` | Compare the hand on the recruitment file with HaX's case file | correlation | `custom`, active | `#complete_task:match_the_hand` in HaX's hub knot `the_hand` (§7), offered once `nightshade_file_held` | `hand_matched`; HaX: "Those are my notes. That's his pen." then "Hold that." |
+| `match_the_hand` | Compare the hand on Nightshade's file with the notebook scan in HaX's case file | correlation | `custom`, active | `#complete_task:match_the_hand` in HaX's hub knot `the_hand` (§7.1) when the player answers "[Same hand.]"; or, for a player who never did, in the identity scene (§6.2), so it can't hang open past flag 3 | `hand_matched`; HaX: "Those are my notes. That's his pen." then "Hold that." |
 | `stop_the_shredding` | Stop Sorensen's shredding | in-game, choice | `custom`, **optional**, `locked` | unlocked by HaX's mapping on `cage_opened`; completed by two mappings: `global_variable_changed:sorensen_fate` with `value === 'ko'`, and with `value === 'talked'` | `legacy_files_saved` (on a knock-out before the clock), or her written account |
 | `stop_the_tape_wipe` | Stop the tape wipe in the server closet | in-game, choice | `custom`, **optional**, active | brief-gated pair on HaX (m08 pattern), so an Act 1 visit to Tran can't reveal aim 2 early: `global_variable_changed:tran_outcome` with `value !== 'left' && globalVars.flag1_submitted`, and `global_variable_changed:flag1_submitted` with `globalVars.tran_outcome !== 'left'` (Tran's default is `left`) | the tape side saved; Tran talked or held |
 
-Aim 2 completes on its five required tasks. `match_the_hand` is the only one with no lock behind it, so it can sit open into Act 3; that does no harm (aims gate nothing), and the identity scene holds the name until the file is held anyway (§4 row 9).
+Aim 2 completes on its five required tasks. `match_the_hand` is the one with no lock behind it. Three things keep it from becoming a stall (review D-02): HaX texts on picking up the file ("Hold his file next to the notebook scan in my case file. Then tell me what you see."), the hub topic shows on the file alone and sends the player to the scan if they haven't read it, and the answer is an honest choice: "[Same hand.]" completes it; "[Different hands.]" gets "Look at the loop on the g. Then look again."; "[I can't tell.]" gets "Put the scan beside it. Same pen pressure, same crossed sevens." Neither wrong answer costs anything but a line. A player who never answers has it closed inside the identity scene, where HaX says it for them.
 
 ### 3.3 Aim 3 `read_the_ledger`: Read The Initiative's Ledger (Act 2)
 
-Description: "The catalogue server keeps the Insider Threat Initiative's ledger live: placements, candidates, and an older legacy section. Pull it, and find out what it says about the people you met this morning."
+Description: "The catalogue server keeps the Insider Threat Initiative's ledger live: placements, candidates, and an older legacy section. Pull it, and see who's still on their books."
 
 | `taskId` | Title | Kind | Type / status | Completes on | Feeds |
 |---|---|---|---|---|---|
@@ -106,9 +108,9 @@ Description: "The Recruiter fired the wipe from Sorensen's office, and HaX has t
 
 | `taskId` | Title | Kind | Type / status | Completes on | Feeds |
 |---|---|---|---|---|---|
-| `enter_office` | Get into Sorensen's office | in-game | `enter_room` `sorensen_office`, active | entering (HaX's `#unlock_door:sorensen_office` on the deck choice) | – |
+| `enter_office` | Get into Sorensen's office | in-game | `enter_room` `sorensen_office`, active | entering (HaX's `unlockDoor` on the deck choice, §4 row 5) | – |
 | `open_the_safe` | Open Sorensen's safe | in-game, PIN cracker | `unlock_object` `director_safe`, active | the PIN unlock (Kowalczyk's cracker, or the PIN from her desk) | the Reading, the master schedule, the tape room card in reach |
-| `take_the_reading` | Take the file Sorensen quoted from | in-game | `collect_items`, `targetItemIds: ["the_reading"]`, `targetCount: 1`, active | the pickup | `reading_found`; reading it to its last page sets `reading_finished` (`onRead`, last page object; stage 7 decides one object or two) |
+| `take_the_reading` | Take the file Sorensen quoted from | in-game | `collect_items`, `targetItemIds: ["the_reading"]`, `targetCount: 1`, active | the pickup | `reading_found` (its `onPickup`). The last page is a second notes object in the safe, `the_reading_last_page`, whose `onRead` sets `reading_finished`; two objects because `onRead` shadows `onPickup` on one (`container-minigame.js:484`, review m1) |
 | `take_tape_room_card` | Take the tape room key card | in-game | `collect_items`, `targetItemIds: ["tape_room_keycard"]`, `targetCount: 1`, active | the pickup | opens `tape_room` |
 | `find_the_deed` | Find Tomb Gamma's deed and construction file | in-game | `collect_items`, `targetItemIds: ["lease_file"]`, `targetCount: 1`, active | the pickup | the paper half of the defences; the no-coordinate line (FA §3.1) |
 
@@ -121,7 +123,7 @@ Description: "Tomb Beta's last server is still running somewhere in the tape sto
 | `taskId` | Title | Kind | Type / status | Completes on | Feeds |
 |---|---|---|---|---|---|
 | `enter_tape_room` | Get into the tape room | in-game, RFID | `enter_room` `tape_room`, active | entering (the key card from the safe) | the Alpha-tapes deck (on that route); the double-cross text (on that route) |
-| `open_salvage_cage` | Open the salvage cage's keypad | in-game, decode | `unlock_room` `salvage_cage`, active | `door_unlocked` with `connectedRoom: salvage_cage` (objectives-manager's `unlock_room` path) | Tomb Beta's server, its station and the field kit link |
+| `open_salvage_cage` | Get through the salvage cage keypad | in-game, decode | `unlock_room` `salvage_cage`, active | `door_unlocked` with `connectedRoom: salvage_cage` (objectives-manager's `unlock_room` path) | Tomb Beta's server, its station and the field kit link |
 | `submit_owner_flag` | Find out who owns Tomb Beta's server and submit it | VM flag 3 | `submit_flags`, active; `targetFlags: ["tomb_beta_station:tomb_beta_server-flag1"]`, `targetCount: 1` | the salvage cage's station | `flag3_submitted`; the identity scene (§6.2) |
 | `hear_the_name` | Take the call with HaX and Netherton | scene, forced choice | `custom`, `locked` | `#unlock_task` on the identity scene's first line; `#complete_task` on the player's answer (the line that sets `identity_scene_done`) | `hax_confession_answer`; the Albion papers; `send_the_notice` unlocks |
 | `submit_control_flag` | Take full control of Tomb Beta's server and submit it | VM flag 4 | `submit_flags`, active; `targetFlags: ["tomb_beta_station:tomb_beta_server-flag2"]`, `targetCount: 1` | the salvage cage's station | `flag4_submitted`; the read (§6.3) |
@@ -144,36 +146,43 @@ The debrief starts from HaX's hub ("[Bring me in.]", §7), not by itself, so a p
 
 ## 4. The night's order as concrete conditions
 
-Stage 1 §11's locks table, row by row, as the build will hold it. "HaX" means a mapping on `agent_0x99` (start room, always loaded). Two engine facts shape this table (verified in code; §5 of stage 5 has the verdicts):
+Stage 1 §11's locks table, row by row, as the build will hold it. "HaX" means a mapping on `agent_0x99` (start room, always loaded). Engine facts behind it (checked in code, confirmed by round 1's reviewer):
 
-- **A flag carries exactly one reward.** `flagRewards` is index-parallel to `flags` (`games_controller.rb` ~2163-2170), so flag 1 can't both set a global and open a door.
-- **A flag reward's `unlock_door` opens the station's own room, not the target.** The server merges `'room_id' => <the station's room>` over the reward (`games_controller.rb` ~2166) and then reads `reward['room_id'] || reward['target_room']` (~2233), so `target_room` is never used when the station sits in a room. Until that is fixed (engine work, §15), doors that open on a flag are opened by HaX's ink `#unlock_door`, which the server allows for an NPC listed with `"unlockable": [...]` that the player has encountered (`game.rb:1247-1270`; every NPC in a loaded room counts as encountered, `games_controller.rb:1519-1557`).
+- **A flag carries exactly one reward** (`flagRewards` index-parallel to `flags`, `games_controller.rb:2160-2167`), so each flag sets one global and nothing else.
+- **Doors open on HaX's mappings with F19's `unlockDoor`**, which unlocks persistently. Before F19 the only way was HaX's ink `#unlock_door` (fire and forget, refused by the server unless HaX is `unlockable` and met, `game.rb:1246-1270`), and a flag reward's `unlock_door` opened the station's own room (being fixed as F18). With F19 a door no longer depends on a conversation opening, so the hub backstops for doors are gone (review M3).
+- **Every backstop retires on the thing it protects having happened** (entering the room, the scene starting), never on a tag having run (review M3).
 
 | # | Step | Held by | Concrete condition |
 |---|---|---|---|
-| 1 | flag 1 → the cage | the restricted stacks' outer door | `restricted_stacks`: `locked: true`, `lockType: "rfid"`, `requires: "stacks_release"` (no card in the world has that id, so the cloner can't help). Opened only by `#unlock_door:restricted_stacks` on the first line of HaX's knot `flag1_read`, which a HaX mapping opens on `global_variable_changed:flag1_submitted` (`value === true`, `delayMs: 2500`, so it waits for the station to close). The same tag sets `stacks_door_opened`. Backstop: hub choice `{flag1_submitted and not stacks_door_opened}`. HaX's `unlockable`: `["restricted_stacks", "restricted_cage", "sorensen_office"]` (the cage only for Victoria's route, row 2b). |
-| 2 | the cage gate | Sorensen's stacks card | `restricted_cage`: `lockType: "rfid"`, `requires: "stacks_card"`; `sorensen_hatch.rfidCard.card_id: "stacks_card"`, cloned by `#clone_keycard:stacks_card` in her hatch knot (m08's technique, `m08 scenario.json.erb:1434-1471`). `cage_opened` is set by HaX on `door_unlocked` with `data.connectedRoom === 'restricted_cage'`. |
-| 2b | the cage gate, Victoria's route | the maintenance code from Sorensen's mail | HaX hub knot `maintenance_code`, gated `{m03_victoria_fate == "recruited" and flag1_submitted and not cage_opened}`, ends `#unlock_door:restricted_cage`. A second HaX mapping sets `cage_opened` on `door_unlocked_by_npc` with `data.roomId === 'restricted_cage'` (that event carries the unlocked room in `roomId`). |
-| 2c | the plan cabinet | Sorensen's print | `plan_cabinet`: `lockType: "biometric"`, `requires: "Margaret Sorensen"`; `sorensen_stamp` on the hatch shelf has `hasFingerprint: true`, `fingerprintOwner: "Margaret Sorensen"`. |
-| 3 | the cage → the call | flag 2 **and** the opened cage, outside it | Recruiter mappings, each `conversationMode: "phone-chat"`, `targetKnot: "call"`, `disableClose: true`, `onceOnly: true`: (a) `room_exited` with `data.roomId === 'restricted_cage' && globalVars.ledger_read_heard && globalVars.cage_opened && !globalVars.in_cage && !globalVars.recruiter_call_started`, `delayMs: 3000`; (b) `global_variable_changed:ledger_read_heard` with `value === true && globalVars.cage_opened && !globalVars.in_cage && !globalVars.recruiter_call_started`, `delayMs: 3000`. Keying on `ledger_read_heard` (set on the first line of HaX's ledger read, which opens on `flag2_submitted`) rather than on the flag itself means the call can never ring before the ledger is read: two delayed mappings on one event would race once the station closed. A delayed mapping waits for any open conversation (`npc-manager.js:612-620`), so the call rings as HaX's read closes. `in_cage` is set true and false by HaX on `room_entered:restricted_cage` and `room_exited` (`data.roomId === 'restricted_cage'`). |
+| 1 | flag 1 → the cage | the restricted stacks' outer door | `restricted_stacks`: `locked: true`, `lockType: "rfid"`, `requires: "stacks_release"` (no card in the world has that id). HaX on `global_variable_changed:flag1_submitted` (`value === true`): `unlockDoor: "restricted_stacks"`. HaX on `game_loaded` with `globalVars.flag1_submitted && !globalVars.stacks_entered`: the same (idempotent; covers a crash inside the client-only window of the flag global, review m6). `stacks_entered` is set by HaX on `room_entered:restricted_stacks`. HaX's knot `flag1_read` still opens on the flag (`delayMs: 2500`) for the story. |
+| 2 | the cage gate | Sorensen's stacks card | `restricted_cage`: `lockType: "rfid"`, `requires: "stacks_card"`; `sorensen_hatch.rfidCard.card_id: "stacks_card"`, cloned by `#clone_keycard:stacks_card`, offered on **every** branch of her hatch knot and as a repeatable choice in its hub (review B1; m08's technique). `cage_opened` is set by HaX on `door_unlocked` with `data.connectedRoom === 'restricted_cage'`. |
+| 2b | the cage gate, Victoria's route | the maintenance code from Sorensen's mail | HaX hub topic gated `{m03_victoria_fate == "recruited" and stacks_entered and not cage_opened}` (the player is looking at the gate, review M6) sets `maintenance_code_used`. HaX on `global_variable_changed:maintenance_code_used`: `unlockDoor: "restricted_cage"`, `setGlobal: { "cage_opened": true }`. |
+| 2c | the plan cabinet | Sorensen's print | `plan_cabinet`: `lockType: "biometric"`, `requires: "Margaret Sorensen"`, `biometricMatchThreshold: 0.5` (a number, review m3); `sorensen_stamp` on the hatch shelf has `hasFingerprint: true`, `fingerprintOwner: "Margaret Sorensen"`, `fingerprintDifficulty: "medium"`. |
+| 3 | the cage → the call | the ledger read **and** the opened cage, outside it | Recruiter mappings, each `conversationMode: "phone-chat"`, `targetKnot: "call"`, `disableClose: true`, `voiced: true`, `onceOnly: true`: (a) `room_exited` with `data.roomId === 'restricted_cage' && globalVars.ledger_read_heard && globalVars.cage_opened && !globalVars.in_cage && !globalVars.recruiter_call_started`, `delayMs: 3000`; (b) `global_variable_changed:ledger_read_heard` with `value === true && globalVars.cage_opened && !globalVars.in_cage && !globalVars.recruiter_call_started`, `delayMs: 3000`; (c) backstop on `room_entered` (any room) with `data.roomId !== 'restricted_cage'` plus (b)'s globals, no delay (review M1: the any-room event fires before the cage's own, so without the room test the call could ring as the player walks into the cage). Keying on `ledger_read_heard` (the first line of HaX's ledger read, which opens on `flag2_submitted`) means the call can't ring before the ledger is read, and it rings as HaX's read closes (delayed mappings wait for an open conversation, `npc-manager.js:612-620`). `in_cage`: set true by HaX on `room_entered:restricted_cage`, false on `room_exited` with `data.roomId === 'restricted_cage'`, and false on `game_loaded` (a reload always respawns at the start room, review M2). |
 | 4 | the call → the deck choice | the call's first line and done-flag | first line: `#set_global:recruiter_call_started:true`, `recruiter_offer = refused`, `deck_pulled = alpha_tapes`, `recruiter_secret` by branch, `#unlock_task:answer_the_offer`. Last choice: the legal pair, `#set_global:deck_choice_made:true`, `#complete_task:answer_the_offer`. Re-ring and resume: §6.1. |
-| 5 | the deck → the office | the office door | `sorensen_office`: `lockType: "password"`, `requires` a long code that appears nowhere (her keypad is off the card system, and the PIN cracker only works on `pin` locks, `minigame-starters.js:525-540`). Opened by `#unlock_door:sorensen_office` on the line that sets `deck_choice_made`, in the Recruiter's knot and in HaX's resume knot; the Recruiter's `unlockable` is `["sorensen_office"]`. The tag also sets `office_door_opened`. Backstop: HaX hub `{deck_choice_made and not office_entered}`. |
+| 5 | the deck → the office | the office door | `sorensen_office`: `lockType: "password"`, `requires` a long code that appears nowhere (the PIN cracker works only on `pin` locks, `minigame-starters.js:525-540`). HaX on `global_variable_changed:deck_choice_made` (`value === true`): `unlockDoor: "sorensen_office"`; and on `game_loaded` with `globalVars.deck_choice_made && !globalVars.office_entered` (idempotent). In the story HaX says it on the call's last lines: "She fired it from Peg's office. I'm on the door." |
 | 6 | the office → the tape room | the key card in the safe | `tape_room`: `lockType: "rfid"`, `requires: "tape_room_reader"`; the only card with that id is `tape_room_keycard` in `director_safe` (`lockType: "pin"`). |
-| 7 | the tape room → Tomb Beta's server | the salvage cage keypad | `salvage_cage`: `lockType: "password"`, `requires` the decoded catalogue code (stage 6 writes it; letters and digits, so it reads as an archive shelf code). The encoded entry is on `catalogue_view` from flag 1 (§5). |
-| 8 | flags 3–4 only beside the server | station `acceptsVms` | `drop_terminal.acceptsVms: ["catalogue_server"]`; `tomb_beta_station.acceptsVms: ["tomb_beta_server"]`, inside `salvage_cage`. |
-| 9 | flag 3 → the identity scene | flag 3 **and** the file | HaX: `global_variable_changed:flag3_submitted` with `value === true && globalVars.nightshade_file_held` → forced call `identity_scene` (§6.2); with `value === true && !globalVars.nightshade_file_held` → text "Bring me his file. Then we say it."; `global_variable_changed:nightshade_file_held` with `value === true && globalVars.flag3_submitted && !globalVars.identity_scene_started` → the forced call. `nightshade_file_held` is the file's `onPickup` `setVariable`. |
-| 10 | the scene → flag 4's read | `identity_scene_done` | HaX: `global_variable_changed:flag4_submitted` with `value === true && globalVars.identity_scene_done` → forced call `hour_read`; `global_variable_changed:identity_scene_done` with `value === true && globalVars.flag4_submitted` → the same; `flag4_submitted` with `!globalVars.identity_scene_started` → text "His file first. Then the rest of his box."; with `globalVars.identity_scene_started && !globalVars.identity_scene_done` → re-ring the identity scene (`resume: true`). |
-| 11 | the read → Tesseract's call | `hour_read_done` | HaX: `global_variable_changed:hour_read_done` (`value === true`, `delayMs: 4000`) → forced call `tesseract_call`. |
+| 7 | the tape room → Tomb Beta's server | the salvage cage keypad | `salvage_cage`: `lockType: "password"`, `requires` the decoded catalogue code. The encoded line reaches the notepad when the player reads the drop terminal's screen after flag 1; the key to decode it is the shelf-code legend in the tape room (§8; stage 5 §3.9). **Stage 6 requirement** (review D-03, M7): the encoding is one CyberChef performs in one or two operations with a key or setting, and the legend supplies the key in the archive's own terms, so the legend is the clue and the workstation is the tool. |
+| 8 | flags 3–4 only beside the server | station `acceptsVms` | `drop_terminal.acceptsVms: ["catalogue_server"]`; `tomb_beta_station.acceptsVms: ["tomb_beta_server"]`, inside `salvage_cage`; a flag typed at the wrong station is refused by ownership (`games_controller.rb:1203-1216`). |
+| 9 | flag 3 → the identity scene | flag 3 **and** the file | HaX: `global_variable_changed:flag3_submitted` with `value === true && globalVars.nightshade_file_held`, `delayMs: 2500` → forced call `identity_scene` (§6.2); with `value === true && !globalVars.nightshade_file_held` → text "Bring me his file. Then we say it."; `global_variable_changed:nightshade_file_held` with `value === true && globalVars.flag3_submitted && !globalVars.identity_scene_started`, `delayMs: 1500` → the forced call. **First-ring backstop** (review B3) on `game_loaded` and on `room_entered`: `globalVars.flag3_submitted && globalVars.nightshade_file_held && !globalVars.identity_scene_started`, no delay. |
+| 10 | the scene → flag 4's read | `identity_scene_done` | HaX: `global_variable_changed:flag4_submitted` with `value === true && globalVars.identity_scene_done`, `delayMs: 1500` (so the station closes first, review m8) → forced call `hour_read`; `global_variable_changed:identity_scene_done` with `value === true && globalVars.flag4_submitted`, `delayMs: 3000` → the same; `flag4_submitted` with `!globalVars.identity_scene_started` → text "His file first. Then the rest of his box."; with `globalVars.identity_scene_started && !globalVars.identity_scene_done`, `delayMs: 1500` → re-ring the identity scene (`resume: true`). **First-ring backstop** on `game_loaded` and `room_entered`: `globalVars.flag4_submitted && globalVars.identity_scene_done && !globalVars.hour_read_started`. |
+| 11 | the read → Tesseract's call | `hour_read_done` | HaX: `global_variable_changed:hour_read_done` (`value === true`, `delayMs: 4000`) → forced call `tesseract_call`. **First-ring backstop** on `game_loaded` and `room_entered`: `globalVars.hour_read_done && !globalVars.tesseract_call_started`. |
 | 12 | the call → the conclusion | `tesseract_call_done` | HaX: `global_variable_changed:tesseract_call_done` → `completeTask: "hear_the_mirror_job"`; aim 6 unlocks on aim 5. |
-| 13 | the notice → the pen | the debrief's spine | debrief ink: `albion_notified` copied to a temp on the first line; the stance; the notice question if unsent; the hub; the spine; `#complete_task:report_to_netherton` on the last line. |
+| 13 | the notice → the pen | the debrief's spine | debrief ink: `albion_notified` copied to a temp on the first line; the stance; the notice question if unsent; the hub; the spine; `#complete_task:report_to_netherton` and `report_done` on the last line. Trigger and backstop key on `!report_done` (§6.5, review B2). |
 
 **The purge's three timed rules** (FA §6.1), as conditions:
 
 | Rule | Condition |
 |---|---|
-| The other bin goes when the cage opens | `cage_bin` default: HaX on `global_variable_changed:cage_opened` with `!globalVars.bin_chosen` → `setGlobal: { "cage_bin": "derek_file" }`. The bin choice sets `bin_chosen`. On Victoria's route the choice comes at the cage door just after, and overwrites (both bins' `spriteVariants` follow `cage_bin`, so the room always shows one bin emptied). |
+| The other bin goes when the cage opens | `cage_bin` default: HaX on `global_variable_changed:cage_opened` with `!globalVars.bin_chosen` → `setGlobal: { "cage_bin": "derek_file" }`. The bin choice sets `bin_chosen`. On Victoria's route the choice comes at the cage door just after, from a hidden `koImmune` record that holds the files (stage 5 §3.7, review M5), and overwrites. Both bins' `spriteVariants` follow `cage_bin`. |
 | The legacy box goes at the first of the chest or the first exit | `legacy_clock_run`: HaX on `global_variable_changed:nightshade_file_held` with `globalVars.cage_opened && !globalVars.legacy_clock_run`, and on `room_exited` with `data.roomId === 'restricted_cage' && globalVars.cage_opened && !globalVars.legacy_clock_run`. Saved by a knock-out first: HaX on `npc_ko:sorensen` with `!globalVars.legacy_clock_run` → `legacy_files_saved: true`. Held back by Noor: HaX on `global_variable_changed:cage_opened` with `globalVars.m05_found_pipeline_list && !globalVars.m05_recruiter_deal_accepted` → `legacy_files_saved: true`. |
 | The printed ledger goes once read, if Sorensen is free | `printed_ledger.onRead` sets `printed_ledger_read`; its `textVariants` show the shredded strips on `globalVars.printed_ledger_read && globalVars.sorensen_fate === 'left'` (the flag holds the content, so nothing is lost). |
+
+**The purge made visible** (review D-04; changes no outcome). The clock stays event-driven, but the building shows it moving:
+- the front desk's trolleys and `trolley_list` empty in three steps (`spriteVariants`/`textVariants` on `flag1_submitted`, `flag2_submitted`, `cage_opened`);
+- the hatch bins carry an `observationVariants` line on `flag2_submitted && !cage_opened`: "She's three boxes from the bins.";
+- HaX's `flag1_read` sets the order without forcing it: "The ledger keeps. Her shredder doesn't. Stacks first.";
+- HaX's text, once, on `room_entered` with `globalVars.flag2_submitted && !globalVars.hatch_talked`: "She's still feeding it."
 
 ## 5. Globals and event wiring
 
@@ -188,147 +197,188 @@ Every global below goes in `globalVariables` with the default shown and is `VAR`
 | Global | Default | Set by | Read by |
 |---|---|---|---|
 | `briefing_played` | `false` | briefing first line (`setGlobalOnStart`) | `skipIfGlobal`; music |
-| `cracker_given` | `false` | `item_picked_up:pin-cracker` mapping (lesson 26) | HaX's safe line ("Kowalczyk's toy.") |
 | `flag1_submitted` … `flag4_submitted` | `false` | each station's `flagRewards` (`set_global`, one per flag) | everything in §4 |
-| `stacks_door_opened` | `false` | HaX `flag1_read` knot, with the unlock tag | hub backstop |
-| `hatch_talked` | `false` | top of Sorensen's hatch knot | `talk_at_the_hatch`; her door knot on Victoria's route |
+| `stacks_entered` | `false` | HaX on `room_entered:restricted_stacks` | the stacks door's load backstop; Victoria's topic; hub topics |
+| `hatch_talked` | `false` | top of Sorensen's hatch knot | `talk_at_the_hatch`; the door scene on Victoria's route |
 | `bin_chosen` | `false` | the bin buttons (hatch or door) | the `cage_bin` default |
-| `cage_opened` | `false` | HaX on the gate's unlock (two mappings, §4 rows 2, 2b) | call, clock, Sorensen's swap, bins, tasks |
-| `in_cage` | `false` | HaX on entering and leaving `restricted_cage` | the call's mapping (b) |
+| `maintenance_code_used` | `false` | HaX's Victoria topic | the gate's `unlockDoor` |
+| `cage_opened` | `false` | HaX on the gate's unlock (§4 rows 2, 2b) | call, clock, Sorensen's swap, bins, tasks |
+| `in_cage` | `false` | HaX on entering and leaving `restricted_cage`; cleared on `game_loaded` | the call's mappings |
 | `nightshade_file_held` | `false` | `onPickup` on `nightshade_file` | the clock; the hand; the talk lever; the identity scene |
-| `notebook_read` | `false` | `onRead` on the case file's notebook page | the hub topic `the_hand` |
-| `hand_matched` | `false` | HaX `the_hand` knot | the identity scene's "two directions" line |
+| `notebook_read` | `false` | `onRead` on `notebook_scan` | the hand topic's reply |
+| `hand_matched` | `false` | HaX `the_hand` knot, or the identity scene | the scene's "two directions" line |
 | `legacy_clock_run` | `false` | §4 purge table | `legacy_files_saved`; `feed_table_box` variants; HaX's "She's done with that box." |
 | `sorensen_ko` | `false` | `globalVarOnKO` on `sorensen` | her cage-room visibility; the debrief |
 | `printed_ledger_read` | `false` | `printed_ledger.onRead` | its shredded variant |
-| `ledger_read_heard` | `false` | HaX `ledger_read` knot | hub topics after flag 2 |
+| `ledger_read_heard` | `false` | first line of HaX's `ledger_read` knot | the Recruiter's call; hub topics after flag 2 |
 | `recruiter_call_started`, `recruiter_said_yes`, `recruiter_gone` | `false` | the call's ink (first line; the "yes"; her last line, whether naming, refusing or hung up on) | the re-ring routing (§6.1) |
 | `deck_choice_made` | `false` | the deck's last choice | office, aims, Beat 2.7, the invoice |
-| `office_door_opened`, `office_entered` | `false` | the unlock tag; `room_entered:sorensen_office` | the backstop |
-| `invoice_booked` | `false` | HaX, 60 s after `deck_choice_made` on `taken` or `double_crossed` (two mappings) | `ledger_view` variant; HaX's text |
+| `office_entered` | `false` | HaX on `room_entered:sorensen_office` | the office's load backstop; the invoice and Beat 2.7 timing |
+| `invoice_booked` | `false` | HaX after `office_entered` on `taken` or `double_crossed` (two mappings, §6.6) | the drop terminal screen's variant; HaX's text |
 | `afterwards_heard` | `false` | HaX `afterwards` knot | its hub copy for a player who closed it early |
 | `torres_called` | `false` | Torres' call | his fallback timing |
-| `reading_found` | `false` | `the_reading.onPickup` | HaX's "Do you want to tell me what it says?" |
-| `gary_called` | `false` | Gary's call | the hub's keypad hint |
+| `reading_found` | `false` | `the_reading.onPickup` | HaX's "Do you want to tell me what it says?"; Torres' fallback |
+| `gary_called` | `false` | Gary's call | the keypad topic |
+| `salvage_keypad_seen`, `tape_room_entered`, `salvage_opened` | `false` | HaX on `door_unlock_attempt` (salvage cage); `room_entered:tape_room`; `door_unlocked` with `data.connectedRoom === 'salvage_cage'` | hub topics (review m4) |
 | `identity_scene_started`, `identity_scene_done` | `false` | first line; the answer | §4 rows 9–10 |
 | `hour_read_started`, `hour_read_done` | `false` | first line; last line | rows 10–11 |
 | `tesseract_call_started`, `tesseract_call_done` | `false` | first line; HaX's last line | row 12 |
-| `alpha_clip_played` | `false` | the clip's ink | the decode's hub line |
-| `tran_alerted`, `guard_called`, `old_coyote_rerouted` | `false` | Tran's `player_spotted` mapping; the guard's reveal; Old Coyote's override | the obstacle imports (stage 5 §3) |
-| `salvage_keypad_seen`, `tape_room_entered` | `false` | HaX on `door_unlock_attempt` (salvage cage); `room_entered:tape_room` | hub topics 4–5 |
-| `start_debrief`, `debrief_played`, `report_done` | `false` | HaX hub "[Bring me in.]"; debrief first line; debrief last line | debrief trigger; music and credits; reload backstop |
-| hub retire flags (`series_topic_given`, `tran_topic_given`, `name_topic_given`, `nightshade_file_decided`, `reading_told_hax_asked`) | `false` | their hub knots | their own gates (stage 7 may fold some into ink-local `VAR`s if no other file reads them) |
-| field-guide pairs | `false` | §7 | §7 |
+| `alpha_deck_used`, `alpha_clip_played` | `false` | the deck's `triggerOnInteract`; the clip's ink | the clip's mapping; the decode's hub line |
+| `tran_alerted` | `false` | Tran's `player_spotted` mapping | the called guard (stage 5 §3.3) |
+| `start_debrief`, `debrief_played`, `report_done` | `false` | HaX hub "[Bring me in.]"; debrief first line; debrief last line | debrief trigger and backstop (`!report_done`); music and credits |
+| hub retire flags (`series_topic_given`, `tran_topic_given`, `name_topic_given`, `nightshade_file_decided`, `reading_told_hax_asked`, one `flagN_help_given` per flag) | `false` | their hub knots | their own gates (stage 7 may fold some into ink-local `VAR`s if no other file reads them) |
+| field-guide pairs | `false` | §7.2 | §7.2 |
 
-**Where the mappings live.** HaX carries the bridges, the task completions, the clock, the purge rules and the forced scenes she hosts; the Recruiter carries her call, its re-rings and the double-cross text; Nightshade, Torres and Gary carry their own calls. All of them are listed in `loading_dock`'s `npcs`, so none of their mappings can be missed (lesson 43). Person NPCs carry only mappings on their own room (`room_entered:<own room>`) or their own KO.
+`cracker_given` and `stacks_door_opened` from round 0 are gone: the cracker is in the start kit (review M4) and the doors no longer need a "tag ran" flag (review M3).
 
-**Reload backstops** (delayed mappings are not saved, README "delayMs"). Each timed rule has a second mapping on `room_entered` (any room, no suffix) with the same condition and no delay. The two that hold the critical path come first: HaX's flag-1 call (`flag1_submitted && !stacks_door_opened`, which re-opens the stacks door) and her ledger read (`flag2_submitted && !ledger_read_heard`, which the Recruiter's call waits on). Then: the call (`ledger_read_heard && cage_opened && !in_cage && !recruiter_call_started`), the invoice, the Beat 2.7 call, Torres' fallback, the clip hold, and the debrief (m05's room-entry backstop, `m05 scenario.json.erb:1553-1560`). The forced scenes also re-ring on `game_loaded` (§6).
+**Where the mappings live.** HaX carries the bridges, the door unlocks, the task completions, the clock, the purge rules and the forced scenes she hosts; the Recruiter carries her call, its re-rings and the double-cross text; Nightshade, Torres and Gary carry their own calls. All of them are listed in `loading_dock`'s `npcs`, so none of their mappings can be missed (lesson 43). Person NPCs carry only mappings on their own room (`room_entered:<own room>`), their own KO, or a global they can only see once their room is loaded.
+
+**Reload and first-ring backstops** (delayed mappings are not saved, `npc-manager.js:606-626`). Every timed rule that holds the critical path has a no-delay mapping on `game_loaded` and on `room_entered` (any room) with the same condition, retired by the thing it protects having happened:
+
+| Protects | Condition |
+|---|---|
+| the stacks door | `flag1_submitted && !stacks_entered` (`game_loaded` only; `unlockDoor` is idempotent) |
+| HaX's ledger read | `flag2_submitted && !ledger_read_heard` |
+| the Recruiter's call | `ledger_read_heard && cage_opened && !in_cage && !recruiter_call_started`, plus `data.roomId !== 'restricted_cage'` on `room_entered` (review M1) |
+| `in_cage` | `game_loaded` → `false` (review M2) |
+| the office door | `deck_choice_made && !office_entered` (`game_loaded` only) |
+| the identity scene's first ring | `flag3_submitted && nightshade_file_held && !identity_scene_started` (review B3) |
+| flag 4's read, first ring | `flag4_submitted && identity_scene_done && !hour_read_started` |
+| Tesseract's call, first ring | `hour_read_done && !tesseract_call_started` |
+| the debrief | `start_debrief && !report_done` (review B2) |
+
+Optional timed beats (Beat 2.7, the invoice, Torres' fallback) get the `room_entered` backstop only.
 
 ## 6. The forced phone scenes
 
-Stage 1 §11's rule, built with the F14 forced-call feature (`README_scenario_design.md` "Forced phone calls that ring again"; `docs/agents/FINALE_ENGINE_TRIAL_CALLS_CREDITS.md`): `disableClose: true` on every ring, `resume: true` where the scene has a choice, `cooldown: 0` on re-rings, and the trigger is the mapping's `eventPattern`. A forced call can only be closed by a hit or a reload. Re-rings fire on `room_exited` (any room: "when the player leaves the room") and on `game_loaded` (the trial's note that nothing re-rings on load by itself). Each scene's other speakers are lines prefixed with their registered display name (`Director Magnus Netherton:`, `Agent HaX:`), which the phone draws under that name (F14).
+Stage 1 §11's rule, built with the F14 forced-call feature (`README_scenario_design.md` "Forced phone calls that ring again"; `docs/agents/FINALE_ENGINE_TRIAL_CALLS_CREDITS.md`): `disableClose: true` on every ring, `resume: true` where the scene has a choice, `cooldown: 0` on re-rings, and the trigger is the mapping's `eventPattern`. A forced call can only be closed by a hit or a reload. Re-rings fire on `room_exited` (any room) and on `game_loaded`; first rings also have backstops (§5). Every ring keyed on a flag global or a minigame event carries a `delayMs` so it waits for the station or keypad to close rather than shutting it (review m8). Each scene's other speakers are lines prefixed with their registered display name (`Director Magnus Netherton:`, `Agent HaX:`), which the phone draws under that name (F14).
 
-**Voicing.** Phone-chat text is not TTS-voiced (only `voice:` bubbles are, `phone-chat-ui.js:232-260`; `phone-chat-minigame.js:743`). These four scenes are therefore read, as m05's Recruiter call is. Stages 1–3 say "voiced" in the sense "said on the call, not in a later text"; that holds. If the user wants them spoken, §15 gives the two options.
+**Voicing (F17).** The Recruiter's call, the identity scene and Tesseract's call are voiced: every ring and re-ring mapping for them carries `voiced: true` (working name), so each line plays in its speaker's TTS voice. Flag 4's read stays text: it is information, and voicing it would double the budget for little. Their spoken lines are in §6.7.
 
-### 6.1 The Recruiter's call (host `recruiter`)
+### 6.1 The Recruiter's call (host `recruiter`, voiced)
 
 | Point | Wiring |
 |---|---|
-| Ring | §4 row 3 (mappings a and b), plus the backstop on `room_entered`. |
+| Ring | §4 row 3 (mappings a, b, c). |
 | First line | `#set_global:recruiter_call_started:true`, `#set_global:recruiter_offer:refused`, `#set_global:deck_pulled:alpha_tapes`, `recruiter_secret` by branch (`kept` on sold-and-lied, `confessed` on sold-and-confessed, else left `""`), `#unlock_task:answer_the_offer`. |
 | "[Give me the name. Let the deck go.]" | `recruiter_said_yes = true`, `recruiter_offer = taken`, `deck_pulled = none`. |
 | Her naming line | `sleeper_named = true`, `recruiter_gone = true` (she hangs up after it). |
 | "[No. Keep your name.]" / the hang-up | her last line (or none, on the hang-up) sets `recruiter_gone = true`; the hang-up form keeps `recruiter_offer = refused` and goes straight to HaX's tape choice. |
-| Last choice | the legal pair (`taken`+`none`, `double_crossed`+`her_file`, `named`+`her_file`, `refused`+`alpha_tapes`), then `#set_global:deck_choice_made:true`, `#unlock_door:sorensen_office`, `#set_global:office_door_opened:true`, `#complete_task:answer_the_offer`, HaX's "She fired it from Peg's office. I'm on the door.", `#exit_conversation`. |
+| Last choice | the legal pair (`taken`+`none`, `double_crossed`+`her_file`, `named`+`her_file`, `refused`+`alpha_tapes`), then `#set_global:deck_choice_made:true` (HaX's `unlockDoor` on the office follows, §4 row 5), `#complete_task:answer_the_offer`, HaX's "She fired it from Peg's office. I'm on the door." and "Her card for the tape room will be in that office.", `#exit_conversation`. |
 | Re-ring 1: before any answer | Recruiter, `room_exited` and `game_loaded`, condition `globalVars.recruiter_call_started && !globalVars.recruiter_said_yes && !globalVars.recruiter_gone && !globalVars.deck_choice_made`, `resume: true`. |
 | Re-ring 2: between "yes" and the name | Recruiter, same events, `globalVars.recruiter_said_yes && !globalVars.sleeper_named && !globalVars.deck_choice_made`, no `resume`, `targetKnot: "resume_name"`: "You hung up on the part you paid for. Halina Kowalczyk." (sets `sleeper_named`, `recruiter_gone`), then HaX's leave-or-pull choice in the same thread. |
-| Re-ring 3: after she has gone | **HaX**, same events, `globalVars.recruiter_gone && !globalVars.deck_choice_made`, no `resume`, `targetKnot: "deck_resume"`: "I've paused the deck. It won't hold long.", then the unanswered choice. The knot reads `recruiter_said_yes` to offer leave-or-pull, else her-file-or-tapes, and writes the same pair, done-flag and unlock tag as the Recruiter's knot (one shared ink include for the four outcomes). |
+| Re-ring 3: after she has gone | **HaX**, same events, `globalVars.recruiter_gone && !globalVars.deck_choice_made`, no `resume`, `targetKnot: "deck_resume"`: "I've paused the deck. It won't hold long.", then the unanswered choice. The knot reads `recruiter_said_yes` to offer leave-or-pull, else her-file-or-tapes, and writes the same pair and done-flag (one shared ink include for the four outcomes). |
 
-Re-rings 1–3 have disjoint conditions, so only one can fire for any state.
+Re-rings 1–3 have disjoint conditions, so only one can fire for any state. All three carry `voiced: true`.
 
-### 6.2 The identity scene (host `agent_0x99`, knot `identity_scene`)
+### 6.2 The identity scene (host `agent_0x99`, knot `identity_scene`, voiced)
 
 | Point | Wiring |
 |---|---|
-| Ring | §4 row 9. `delayMs: 2500` so the station closes first. |
+| Ring | §4 row 9, with its first-ring backstop. |
 | First line | `#set_global:identity_scene_started:true`, `#unlock_task:hear_the_name`. HaX reads the credential's first line. |
+| The hand | if `not hand_matched`, one HaX line closes it before the name: "You never told me about the hand on his file. I looked while you were busy. It's his." `#complete_task:match_the_hand`, `hand_matched = true` (review D-02). |
 | Netherton | prefixed lines in HaX's thread, from the aircraft's forward cabin (Beat 3.3). |
-| The answer | three buttons by the m06 form (MC §3.4); each sets `hax_confession_answer`, then `#set_global:identity_scene_done:true`, `#complete_task:hear_the_name`. Her reply follows, then "Seven years, and nobody turned it off.", the Albion knot (§8) with `#unlock_task:send_the_notice`, `#exit_conversation`. |
-| Re-ring | HaX, `room_exited`, `game_loaded` and `global_variable_changed:flag4_submitted`, condition `globalVars.identity_scene_started && !globalVars.identity_scene_done`, `resume: true`. |
+| The answer | three buttons by the m06 form (MC §3.4); each sets `hax_confession_answer`, then `#set_global:identity_scene_done:true`, `#complete_task:hear_the_name`. Her reply follows, then "Seven years, and nobody turned it off.", the Albion knot with `#unlock_task:send_the_notice`, and on `deck_pulled == "alpha_tapes"` "His tapes are on the bench next door. When you want them." (review D-16), `#exit_conversation`. |
+| Re-ring | HaX, `room_exited`, `game_loaded` and `global_variable_changed:flag4_submitted` (`delayMs: 1500`), condition `globalVars.identity_scene_started && !globalVars.identity_scene_done`, `resume: true`, `voiced: true`. |
 
-Stage 3 lets the scene run on with the Albion papers after the answer. A close after the answer and before the Albion lines loses nothing: the notice and the papers stay in HaX's hub (§7), and the files are objects in the salvage cage.
+A close after the answer and before the Albion lines loses nothing: the notice and the papers stay in HaX's hub (§7), and the papers are an object in the salvage cage.
 
-### 6.3 Flag 4's read (host `agent_0x99`, knot `hour_read`)
+### 6.3 Flag 4's read (host `agent_0x99`, knot `hour_read`, text)
 
 | Point | Wiring |
 |---|---|
-| Ring | §4 row 10. |
+| Ring | §4 row 10, with its first-ring backstop. |
 | First line | `#set_global:hour_read_started:true`, `#unlock_task:hear_the_mirror_job`. |
 | Body | the two modes, the D-02 line, the head start, the defences, the casualty sheet (and Kemal on `m06_minder_walked`). |
 | The realisation | on `schedule_read`, a choice: "[Her schedule. This room isn't on it.]" / "[Read me the defences.]"; otherwise HaX's line from the job's side. |
 | Last line | `#set_global:hour_read_done:true`, `#exit_conversation`. |
-| Re-ring | HaX, `room_exited` and `game_loaded`, `globalVars.hour_read_started && !globalVars.hour_read_done`: with `globalVars.schedule_read` → `resume: true`; with `!globalVars.schedule_read` → no `resume`, `targetKnot: "hour_read"` (no choice, so it restarts, stage 1 §11). |
+| Re-ring | HaX, `room_exited` and `game_loaded`, `globalVars.hour_read_started && !globalVars.hour_read_done`: with `globalVars.schedule_read` → `resume: true`; with `!globalVars.schedule_read` → no `resume`, `targetKnot: "hour_read"` (no choice, so it restarts). |
 
-### 6.4 Tesseract's call to HaX (host `agent_0x99`, knot `tesseract_call`)
+### 6.4 Tesseract's call to HaX (host `agent_0x99`, knot `tesseract_call`, voiced)
 
-No choice, so it restarts from the top if closed. First line `#set_global:tesseract_call_started:true`; HaX's last line of her four-sentence report sets `tesseract_call_done`. Re-ring: HaX, `room_exited` and `game_loaded`, `globalVars.tesseract_call_started && !globalVars.tesseract_call_done`, `targetKnot: "tesseract_call"`, no `resume`. The narrator line ("A man's voice on her end, too low to make out.") needs a registered narrator display name to draw as its own bubble; stage 7 checks that or folds it into HaX's thread as an italic aside.
+No choice, so it restarts from the top if closed. First line `#set_global:tesseract_call_started:true`; HaX's last line of her four-sentence report sets `tesseract_call_done`. Ring: §4 row 11, with its first-ring backstop. Re-ring: HaX, `room_exited` and `game_loaded`, `globalVars.tesseract_call_started && !globalVars.tesseract_call_done`, `targetKnot: "tesseract_call"`, no `resume`, `voiced: true`. Music: `silence` (F10) from its first line (§10). The narrator's line ("A man's voice on her end, too low to make out.") is voiced by the scenario's `narrator` voice if F17 voices narrator lines in a phone thread; otherwise stage 7 makes it HaX's own aside. Review D-07 noted this scene could run today as a voiced `video-call` with no `resume`; with F17 it stays in the phone with the others, which keeps one pattern.
 
 ### 6.5 The debrief (hidden person NPC `closing_debrief`, in `loading_dock`)
 
-Not a phone scene, but forced by the same rule. HaX's hub choice "[Bring me in.]" (gated `tesseract_call_done and not start_debrief`) sets `start_debrief`. `closing_debrief` opens on `global_variable_changed:start_debrief` (`value === true && !globalVars.debrief_played`), `conversationMode: "person-chat"`, `background` the hangar, `disableClose: true`. Its first line sets `debrief_played` and copies `albion_notified` to a temp. Reload backstop: `room_entered` (each room) with `globalVars.start_debrief && !globalVars.report_done`, re-emitting `start_debrief` (m05's pattern). The person-chat saves after each choice, so a reload mid-debrief resumes at the saved choice (stage 9 browser-checks it, MC engine item 40). `#complete_task:report_to_netherton` and `#set_global:report_done:true` are on the last line.
+Not a phone scene, but forced by the same rule. HaX's hub choice "[Bring me in.]" (gated `tesseract_call_done and not report_done`, so it can be asked again after a reload) sets `start_debrief` (`setGlobal` emits even when unchanged). `closing_debrief` opens on `global_variable_changed:start_debrief` with `value === true && !globalVars.report_done`, `conversationMode: "person-chat"`, `background` the hangar, `disableClose: true`. Backstop on `room_entered` (any room) with `globalVars.start_debrief && !globalVars.report_done`, re-emitting `start_debrief`. Keying both on `report_done` rather than `debrief_played` means a reload anywhere inside the debrief reopens it (review B2; m05's backstop only covered a reload before the first line). `debrief_played` (first line) is kept for the music; the first line also copies `albion_notified` to a temp. The person-chat saves after each choice, so the reopened debrief resumes at the saved choice. `#complete_task:report_to_netherton` and `#set_global:report_done:true` are on the last line.
 
-### 6.6 Calls that are not forced
+### 6.6 Calls and texts that are not forced
 
 | Call | Host | Trigger | Notes |
 |---|---|---|---|
-| HaX on flag 1 (`flag1_read`) | HaX | `flag1_submitted`, `delayMs: 2500` | opens the stacks door on its first line (§4 row 1); not forced, because the tag runs before any choice and the hub repeats it |
-| HaX's ledger read (`ledger_read`) | HaX | `flag2_submitted`, `delayMs: 2500` | WREN on the raid team; "neither will you"; the m05 and m07 lines; the H&L file number; unlocks `cross_reference_wren` (mapping) |
+| HaX on flag 1 (`flag1_read`) | HaX | `flag1_submitted`, `delayMs: 2500` | the shelf marks; "The ledger keeps. Her shredder doesn't. Stacks first."; "Her card's on a reel at her hip. You've done this before." (review D-11). The door opens on its own mapping (§4 row 1) |
+| HaX's ledger read (`ledger_read`) | HaX | `flag2_submitted`, `delayMs: 2500`; backstop §5 | first line sets `ledger_read_heard`; WREN on the raid team; "neither will you"; the m05 and m07 lines; the H&L file number; unlocks `cross_reference_wren` (mapping) |
 | Nightshade (triple agent) | `nightshade_phone` | `flag1_submitted && m08_nightshade_triple_agent`, `delayMs: 7000` | rings after HaX's flag-1 call closes; HaX's "He's right. I hate that he's right." is prefixed in his thread |
-| Beat 2.7 "Afterwards" | HaX | `room_exited` with `globalVars.deck_choice_made && !globalVars.afterwards_heard`, `delayMs: 2500`, `onceOnly` | the loss line, three words, one sentence, "The rest when this is over. Her office is past the binders." Closed early: a hub topic, once |
-| Torres (turned) | `torres_phone` | at the H&L boxes: `object_interacted` with `data.objectName` the boxes' name `&& globalVars.flag2_submitted && globalVars.m05_torres_turned`; fallback: `room_exited` with `globalVars.deck_choice_made && globalVars.afterwards_heard && globalVars.m05_torres_turned && !globalVars.torres_called`, `delayMs: 6000` | after HaX's Beat 2.7, never before WREN exists (R3-10) |
-| Gary (protected) | `gary_phone` | `door_unlock_attempt` with `data.connectedRoom === 'salvage_cage' && globalVars.m02_gary_protected`, `onceOnly` | the decode hint; sets `gary_called` |
-| The double-cross text | `recruiter` | `room_entered:tape_room` with `globalVars.recruiter_offer === 'double_crossed'`, `onceOnly`, `sendTimedMessage` | unvoiced, as written |
+| The file in hand | HaX text | `global_variable_changed:nightshade_file_held` with `value === true && !globalVars.flag3_submitted`, `onceOnly` | "Hold his file next to the notebook scan in my case file. Then tell me what you see." (review D-02) |
+| The cabinet's reader | HaX text | `room_entered:restricted_cage`, `onceOnly`, `delayMs: 2000` | "That cabinet takes a print. She stamps everything." (review D-11) |
+| Beat 2.7 "Afterwards" | HaX | `global_variable_changed:deck_choice_made` (`value === true`), `delayMs: 2500` | waits for the Recruiter's call to close, so it lands while the player is still in the hub (review D-12); the loss line, three words, one sentence, "The rest when this is over. Her office is past the binders." Closed early: a hub topic, once |
+| The invoice | HaX text | `global_variable_changed:office_entered` with `globalVars.recruiter_offer === 'taken'` (and a second mapping for `'double_crossed'`), `delayMs: 20000`, `onceOnly`; sets `invoice_booked` | held until the player is in the office so the seam after "Afterwards" stays quiet (review D-18) |
+| Torres (turned) | `torres_phone` | at the H&L boxes: `object_interacted` with the boxes' `data.objectName` `&& globalVars.flag2_submitted && globalVars.m05_torres_turned`, `delayMs: 1500`; fallback: `global_variable_changed:reading_found` with `globalVars.m05_torres_turned && !globalVars.torres_called`, `delayMs: 8000` | the fallback waits for the safe, never before WREN exists (R3-10), and after the seam (review D-18) |
+| Gary (protected) | `gary_phone` | `door_unlock_attempt` with `data.connectedRoom === 'salvage_cage' && globalVars.m02_gary_protected`, `delayMs: 1500`, `onceOnly` | the hint names the CyberChef operation and points at the legend; sets `gary_called` |
+| The double-cross text | `recruiter` | `room_entered:tape_room` with `globalVars.recruiter_offer === 'double_crossed'`, `onceOnly`, `sendTimedMessage` | unvoiced; m05 sends texts from the Recruiter outside the phone's `npcIds` (`m05 scenario.json.erb:1494-1500`) |
+| Door refusals | HaX texts | `door_unlock_failed` with `data.connectedRoom` the room, `onceOnly` each | stacks: "That reader's on the catalogue server. Get me in there and I'll open it."; office: "Her keypad's off the card system. Leave it for now."; tape room: "That reader wants a real card. Hers will be somewhere she trusts." (review D-09) |
+| "She's still feeding it." | HaX text | §4 "The purge made visible" | once |
+
+### 6.7 Spoken lines for the audio budget (F17)
+
+Counted from the stage 1–3 drafts; stage 7 writes the final strings, all fixed (no printed variables). Each variant is one audio line. Player choices aren't voiced.
+
+| Scene | Speaker | Lines | Variants included |
+|---|---|---|---|
+| Recruiter's call | The Recruiter | about 14 | four openings (sold-and-lied; "Last time I said the next one would cost me more. This is the next one."; the stranger, two lines; confessed has none), "Of course. Shall we do business anyway?", the grievance (two lines), the offer (two lines), the double-cross price, "Nobody has.", the naming line, "Then I'll tidy my own desk. Gone. Goodnight, agent.", "You hung up on the part you paid for. Halina Kowalczyk." |
+| | Agent HaX | about 14 | "We've talked about that. She has nothing on you.", "Noted. Later.", "She's wiping it. She thinks it's gone.", the deck line, "I can beat that wipe.", the invoice line, "You thanked her at the briefing. Keep doing it.", "She's watching the deck…", "She watched the counter. Not the copy. One of them. Now.", "One of them. Now." (hang-up), the first-handler line (two forms), "One of four. Two, if that firm's boxes say so.", the office lines (two), "I've paused the deck. It won't hold long." |
+| | Narrator | 1 | "The deck's counter starts running." |
+| Identity scene | Agent HaX | about 26 | the credential line; the hand line; two recognition lines; four confession openings; the wall line; three replies and three Reading-aware replies; "Seven years, and nobody turned it off…"; four m04 landing lines; two controller lines; three watch lines; the send-cost line and its inquiry clause; "It isn't my call…"; the tapes line |
+| | Director Magnus Netherton | 3 | "I said we wouldn't name him… Dr Adrian Tesseract."; "He was our chief strategist…"; "HaX." |
+| Tesseract's call | Agent HaX | about 7 | her side of the call (one line with beats, or split at the beats into three), the four-sentence report, "Netherton's on the ground at Helena. Tell me when you're ready to come in." |
+| | Narrator | 1 | "A man's voice on her end, too low to make out." |
+| **Total** | | **about 66** | plus the two-line Alpha-tapes clip already budgeted (F12) |
+
+A player hears about a third of these on any one route (one opening, one branch of each choice). The user hears the recording style for Netherton's aircraft cabin and Tesseract's tape before they ship (tts-audio skill).
 
 ## 7. HaX's support hub and the field guides
 
-`support_hub` in `m09_phone_agent0x99.ink`, the m01/m02 pattern (`m02_phone_agent0x99.ink`): each topic gated on a progress global and retired with a `_given` / `_heard` guard, **topics that arrive later listed first** so the newest sit at the top, and no more than ten choices showable at once (lint `crowded-hub`). Every answer is the next step or a cost, said once.
+`support_hub` in `m09_phone_agent0x99.ink`, the m01/m02/m08 pattern: each topic gated on a progress global and retired with a `_given` / `_heard` guard, **topics that arrive later listed first**, no more than ten choices showable at once (lint `crowded-hub`), and the field guides behind one choice (m08's "[I need a field guide.]"). Every answer is the next step or a cost, said once. Topics are text; HaX's hub isn't a forced call, so it isn't voiced.
 
 ### 7.1 Topics (in ink order, newest first)
 
 | # | Player's line (draft) | Shows when | Retires on | What it gives |
 |---|---|---|---|---|
-| 1 | "[Bring me in.]" | `tesseract_call_done` | `start_debrief` | sets `start_debrief` (§6.5). Before it, one line on anything still open: the notice unsent ("The notice is still on his box. Netherton will ask."), the boxes unread, Tran |
-| 2 | "[His notice. Send it.]" / "[Not yet.]" | `identity_scene_done and not albion_notified` | `albion_notified` | MC §3.5's archive send, moved here from the drop terminal so it works from the salvage cage (stage 5 verdict on engine item 28). HaX's two lines on send ("Gone." … the vendor; the watch) |
+| 1 | "[Bring me in.]" | `tesseract_call_done and not report_done` | `report_done` | sets `start_debrief` (§6.5); askable again after a reload (review B2). Before it, one line on anything still open: the notice unsent ("The notice is still on his box. Netherton will ask."), the boxes unread, Tran |
+| 2 | "[His notice. Send it.]" / "[Not yet.]" | `identity_scene_done and not albion_notified` | `albion_notified` | MC §3.5's archive send, here so it works from any room (P8). HaX's two lines on send ("Gone." … the vendor; the watch) |
 | 3 | "[About the name.]" | `identity_scene_done` | `name_topic_given` | "the name" (SE §4.4), once |
-| 4 | "[The keypad on the cage.]" | `room_entered` salvage door seen (`salvage_keypad_seen`) and not salvage open | the door opening | where the code is ("The catalogue gave you a shelf code in their own scheme. The legend's on the reading room wall."); on `gary_called`, "Gary told you how." |
-| 5 | "[The tape room.]" | `deck_choice_made and not tape_room_entered` | entering | "Her card for the tape room will be in the safe." |
-| 6 | "[Her office door's still shut.]" | `deck_choice_made and not office_entered` | `office_entered` | re-issues `#unlock_door:sorensen_office` (§4 row 5 backstop) |
+| 4 | VM help, flags 3–4: "[I'm on his box. Where do I look?]" | `salvage_opened and not flag4_submitted` | `flag4_submitted` | one line per stage in story terms, before flag 3 and between 3 and 4 (review D-06); the opus48 VM plan gives stage 7 the steer, at game-design level only |
+| 5 | "[The keypad on the cage.]" | `salvage_keypad_seen and not salvage_opened` | `salvage_opened` | "That's the line from the catalogue. It's in your notes. The chart on the wall here is the key." On `gary_called`, "Gary told you how." |
+| 6 | "[The tape room.]" | `deck_choice_made and not tape_room_entered` | `tape_room_entered` | "Her card for the tape room will be in the safe." |
 | 7 | "[Afterwards.]" | `deck_choice_made and not afterwards_heard` | `afterwards_heard` | Beat 2.7 for a player who closed the call |
 | 8 | "[The Reading.]" | `reading_found and not reading_told_hax_asked` | answered | MC §4.6: "[All of it.]" / "[It's about me. It can stay that way.]" (`reading_told_hax`) |
-| 9 | "[Her deck. What's on it?]" | `recruiter_call_started and not deck_choice_made` | `deck_choice_made` | only reachable after a reload between rings; the call re-rings anyway |
-| 10 | "[WREN.]" | `ledger_read_heard and not sleeper_named` | `sleeper_named` or `sleeper_shortlist` | the cross-reference nudge: "H&L's boxes are in the open stacks. You've got the number." On `m05_torres_turned`, his line follows |
-| 11 | "[Send Nightshade his file.]" / "[Hold it.]" | `m08_nightshade_triple_agent and nightshade_file_held and not nightshade_file_decided` | decided | MC §4.1, moved here from the drop terminal so it can be answered anywhere until the debrief |
-| 12 | "[The hand on his file.]" | `nightshade_file_held and notebook_read and not hand_matched` | `hand_matched` | the correlation (`match_the_hand`): the player says the two hands match; "Those are my notes. That's his pen." / "Hold that." On `cage_bin == "derek_file"`, "Two samples. One pen." |
+| 9 | "[WREN.]" | `ledger_read_heard and not sleeper_named` | `sleeper_named` or `sleeper_shortlist` | the cross-reference nudge: "H&L's boxes are in the open stacks. You've got the number." On `m05_torres_turned`, his line follows |
+| 10 | "[Send Nightshade his file.]" / "[Hold it.]" | `m08_nightshade_triple_agent and nightshade_file_held and not nightshade_file_decided` | decided | MC §4.1, here so it can be answered anywhere until the debrief (P8) |
+| 11 | "[The hand on his file.]" | `nightshade_file_held and not hand_matched` | `hand_matched` | if `not notebook_read`: "Read the notebook scan in my case file first. Then look again." Otherwise the honest choice (§3.2): "[Same hand.]" (completes `match_the_hand`; "Those are my notes. That's his pen." / "Hold that."; on `cage_bin == "derek_file"`, "Two samples. One pen.") / "[Different hands.]" / "[I can't tell.]" (a line each, no progress) (review D-02) |
+| 12 | VM help, flag 2: "[The ledger. Where is it?]" | `flag1_submitted and not flag2_submitted` | `flag2_submitted` | one story-level steer (review D-06) |
 | 13 | "[The box behind her.]" | `cage_opened and not legacy_clock_run and not legacy_files_saved` | the clock or the save | what the legacy box is and when it goes (MC §4.3), once |
-| 14 | "[Sorensen's mail.]" | `m03_victoria_fate == "recruited" and flag1_submitted and not cage_opened` | `cage_opened` | Victoria's route (§4 row 2b): "Victoria's people read their mail. There's a maintenance code for that gate." `#unlock_door:restricted_cage` |
-| 15 | "[The restricted series.]" | `flag1_submitted and not series_topic_given` | given | the shelf marks; Sorensen behind the mesh; the reader on the gate takes her card, the cabinet takes a print. Backstop for the stacks door (§4 row 1) |
-| 16 | "[Tran.]" | `not tran_topic_given` | given | the warning by m01 branch (Beat 1.1's three lines), then "He's wiping tapes from the server closet off the open stacks." |
-| 17 | "[Where do I stand?]" | always | never | a status answer that branches on every stage of the ladder (§2), most advanced first: debrief ready, the read, the scene, the salvage cage, the tape room, the office, the call, the cage, flag 2, flag 1, inside, outside. The README warns this answer is the commonest stale line, so stage 7 writes one line per row |
+| 14 | "[Sorensen's mail.]" | `m03_victoria_fate == "recruited" and stacks_entered and not cage_opened` | `cage_opened` | Victoria's route (§4 row 2b): "Victoria's people read their mail. There's a maintenance code for that gate." Sets `maintenance_code_used`. Then: "The cabinet in there takes her print. It's on the stamp on her shelf." (review D-10) |
+| 15 | "[The restricted series.]" | `flag1_submitted and not series_topic_given` | given | the shelf marks; Sorensen behind the mesh; "The gate takes her card, the cabinet takes a print." |
+| 16 | VM help, flag 1: "[The catalogue. What am I looking for?]" | `not flag1_submitted` | `flag1_submitted` | "The catalogue's the index. Find the part that isn't public." (review D-06) |
+| 17 | "[Tran.]" | `not tran_topic_given and not cage_opened` | given, or `cage_opened` | the warning by m01 branch (Beat 1.1), then "He's wiping tapes from the server closet off the open stacks. You'd need something he wants to talk him off it. Otherwise it's a fight." (review D-15) |
+| 18 | "[I need a field guide.]" | any `<x>_guide_offered and not <x>_guide_hint_given` | all offered guides given | a sub-menu listing only the offered, undelivered guides (§7.2) (review D-06) |
+| 19 | "[Where do I stand?]" | always | never | a status answer that branches on every stage of the ladder (§2), most advanced first. Stage 7 writes one line per row |
 
-Seventeen declared, but the gates leave at most about eight showing at any point (two to four story topics, "Where do I stand?", one or two guide offers). Stage 7 runs the lint.
+**Showable at once.** The gates make the VM-help topics (4, 12, 16) mutually exclusive, and 15 and 17 are Act 1–2 topics that retire before Act 3. The worst case is just after the deck choice: 6, 7, 8 (once the safe is open), 9, 10 (triple agent only), 11 (if the hand is still open), 13 (rarely still live), 18, 19, which is nine. Stage 7 runs the lint. The two door backstop topics from round 0 are gone (F19, review M3).
 
 ### 7.2 Field guides (exposure-gated, on request)
 
-Each guide is a `lab-workstation` in HaX's `itemsHeld`. An exposure mapping sets `<x>_guide_offered` and sends one text; the hub choice `{<x>_guide_offered and not <x>_guide_hint_given}` gives it with `#give_item:lab-workstation:<id>` (README "Field guides"). The lab sheet URLs wait for the VM plan and the lab-sheet stage (stage 0 §7 left both open).
+Each guide is a `lab-workstation` in HaX's `itemsHeld`. An exposure mapping sets `<x>_guide_offered` and sends one text; the guide is delivered from topic 18's sub-menu with `#give_item:lab-workstation:<id>` (README "Field guides"; m08's grouping). The lab sheet URLs wait for the VM plan and the lab-sheet stage. No offer text names the raid team or WREN (review D-05).
 
 | Guide | Offered on (exposure) | Covers |
 |---|---|---|
 | `m09_catalogue_field_guide` | `object_interacted` with `data.objectType === 'vm-launcher' && data.roomId === 'reading_room'` | flag 1 (the foothold) |
 | `m09_ledger_field_guide` | `flag1_submitted` | flag 2 |
-| `m09_tomb_beta_field_guide` | `room_entered:salvage_cage` | flags 3–4, including the leaver credential (M-05: "Seven years, and nobody turned it off.") |
-| `m09_archive_code_guide` | `door_unlock_attempt` on the salvage cage, or reading `catalogue_view` after flag 1 | the archive encoding at the CyberChef workstation (game-side, no VM content) |
+| `m09_tomb_beta_field_guide` | `room_entered:salvage_cage` | flags 3–4, including the leaver credential (M-05) |
+| `m09_archive_code_guide` | `global_variable_changed:salvage_keypad_seen` | the CyberChef operation for the archive code (game-side, no VM content) |
 
-The kit guides from earlier missions (picks, cloner, print kit, cracker) are not reissued; HaX names the technique in a line where the player first needs it (the gate reader: "Her card's on a reel at her hip. You've done this before."; the cabinet: "That reader takes a print. She stamps everything.").
+The kit techniques get a line where they are first needed, not a guide (§6.6: the card on the reel in `flag1_read`; the cabinet's reader on entering the cage).
 
 ## 8. Optional objectives and finds
 
@@ -340,15 +390,16 @@ No separate optional objective. The prompt allows 0–3; m08 keeps its optional 
 |---|---|---|
 | The master destruction schedule | `director_safe` | `schedule_read` (`onRead`): the realisation choice at flag 4 |
 | The Reading, to its last page | `the_reading` | `reading_finished` (`onRead` on the last page) |
-| The rent book, Danny's sheet, the refit ledger | Sorensen's office | Tier 2 lines (Irina, Danny, the ransom) |
+| The rent book, Danny's sheet, the refit ledger | Sorensen's office | Tier 2 lines (Irina, Danny, the ransom). The rent book also heads every page with the lease's start date, which is the safe's PIN: the long way, a read rather than a pick (review m7) |
 | The printed ledger | the cage | Reeves' handler's sheet (on that branch); Noor's codename (for "[Show her the page.]") |
 | The legacy box | the cage's feed table, or under Noor's desk | HaX: "Nobody of ours in here. Ours are on her tape, by codename." |
 | Derek's file / the letters / Nightshade's copy | given at the hatch | the second sample; Villanueva; the Tran lever |
 | Old Coyote's incident book | the dock's guard hut | a week of "shredder running, night" entries nobody read |
 | The tagged payments | `case_file` (on `m06_monitoring_enabled`) | HaX's line; the bunker pointer on the no-coordinate branch |
 | Tomb Beta's enrolment binders | salvage cage | the hand again (Beat 3.2) |
-| The Albion catalogue entry, the memo, the unsent notice | salvage cage (objects that read as files off the box; their `textVariants` show the text once `flag3_submitted`) | the papers HaX reads from in the identity scene's Albion knot |
+| The Albion papers (the catalogue entry, his memo and the unsent notice, in one folder) | salvage cage (`albion_folder`, printed off the box; its `textVariants` show the text once `flag3_submitted`) | the papers HaX summarises in the identity scene's Albion knot; one object rather than three to keep Act 3's reading down (review D-07) |
 | The Alpha tapes' annotation sheets | tape room (on `deck_pulled == "alpha_tapes"`) | the decode: his first draft of the line (optional, after the clip) |
+| The archive's shelf-code legend | tape room, on the wall by the salvage keypad, every route | the key to the salvage code (§4 row 7). The catalogue line itself is in the notepad from Act 1, because reading the drop terminal's screen adds it (review D-03, M7) |
 
 ## 9. Conclusion, concludeRequires and credits
 
@@ -393,7 +444,7 @@ Every line says what happened and judges nothing, per stage 1 §7.2. Stage 7 own
 
 ## 10. Music cues
 
-SE §6.2's table as `music.events` entries. No new track is assumed; the near-silence for Tesseract's call needs either a silent track asset or a long fade (milestone M-06 says no engine change is needed), and the user decides before a track is added (§15).
+SE §6.2's table as `music.events` entries. No new track is assumed. Tesseract's call plays under the `silence` playlist (F10, approved 2026-10-21).
 
 | Trigger | Condition | Playlist | Beat |
 |---|---|---|---|
@@ -404,7 +455,8 @@ SE §6.2's table as `music.events` entries. No new track is assumed; the near-si
 | `all_hostiles_ko` | – | `noir` | back to the search |
 | `global_variable_changed:identity_scene_started` | `value === true` | `cutscene` | the held cue |
 | `global_variable_changed:identity_scene_done` | `value === true` | `noir` | back to work |
-| `global_variable_changed:tesseract_call_started` | `value === true` | near-silence (asset or fade, §15) | his call |
+| `global_variable_changed:tesseract_call_started` | `value === true` | `silence` (F10) | his call |
+| `global_variable_changed:tesseract_call_done` | `value === true` | `noir` (fade) | back to the box |
 | `global_variable_changed:start_debrief` | `value === true` | `cutscene` | the hangar |
 | `global_variable_changed:report_done` | `value === true` | `victory`, with the closing card and credits (§9) | the pen |
 
@@ -416,38 +468,48 @@ SE §6.2's table as `music.events` entries. No new track is assumed; the near-si
 
 **Assumption, not a measurement:** each VM stage takes 7 minutes for a player following the field guide (stage 1 §2). No shipped mission records per-flag times, and M-14 (real times from m07/m08 play data or one timed VM run) is still open. When the times exist, only the VM rows below change.
 
-| Part | Beats and tasks | In-game | VM | Minutes |
-|---|---|---|---|---|
-| Briefing | cutscene; the cracker | 4 | – | 4 |
-| Act 1 | the dock and the route choice (`get_inside`) 2; Noor (`meet_the_clerk`, optional, budgeted) 3; the reading room and the laptop (`set_up_drop_terminal`) 3; flag 1 (`submit_catalogue_flag`) | 8 | 7 | 15 |
-| Act 2 | the hatch: bluff, recognition, bins, clone, print (`talk_at_the_hatch`) 6; the gate and the box (`open_the_cage`) 2; the cabinet and the hand (`open_plan_cabinet`, `match_the_hand`) 3; flag 2 and HaX's read (`submit_ledger_flag`) 2 + VM; the call (`answer_the_offer`) 5; the boxes (optional) 4; Tran (optional) 1–3; Beat 2.7 1 | 24 | 7 | 31 |
-| Act 3 | the office, the safe, the Reading, the deed (aim 4) 6; the tape room, the code, the salvage keypad (`enter_tape_room`, `open_salvage_cage`) 4; flag 3 and the identity scene (`submit_owner_flag`, `hear_the_name`) 3 + VM; the Albion papers and the notice 2; flag 4, the read and the call (`submit_control_flag`, `hear_the_mirror_job`) 2 + VM | 17 | 14 | 31 |
-| Debrief | the hangar (`report_to_netherton`) | 4 | – | 4 |
-| **Total** | | **57** | **28** | **85** |
+| Part | Beats and tasks | In-game | VM | Minutes | Critical path only |
+|---|---|---|---|---|---|
+| Briefing | cutscene; the cracker | 4 | – | 4 | 4 |
+| Act 1 | the dock and the route (`get_inside`) 2; Noor (`meet_the_clerk`, optional, and the first clone on route A) 3; the reading room and the laptop (`set_up_drop_terminal`) 3; flag 1 (`submit_catalogue_flag`) | 8 | 7 | 15 | 12 (Noor's 3 off, apart from a clone on route A) |
+| Act 2 | the hatch: bluff, recognition, bins, clone, print (`talk_at_the_hatch`) 6; the gate and the box (`open_the_cage`) 2; the cabinet and the hand (`open_plan_cabinet`, `match_the_hand`) 3; flag 2 and HaX's read (`submit_ledger_flag`) 2 + VM; the call (`answer_the_offer`) 5; the boxes (optional) 4; Tran (optional) 1–3; Beat 2.7 1 | 24 | 7 | 31 | 26 (boxes and Tran off) |
+| Act 3 | the office, the safe, the Reading, the deed (aim 4) 6; the tape room, the code at the legend, the salvage keypad (`enter_tape_room`, `open_salvage_cage`) 5; flag 3 and the identity scene (`submit_owner_flag`, `hear_the_name`) 3 + VM; the Albion folder and the notice 1; flag 4, the read and the call (`submit_control_flag`, `hear_the_mirror_job`) 2 + VM | 17 | 14 | 31 | 30 (the archive send off) |
+| Debrief | the hangar (`report_to_netherton`) | 4 | – | 4 | 4 |
+| **Total** | | **57** | **28** | **85** | **about 76** |
 
 Notes:
 
-- Without the field guides, stage 0's estimate is 95–100: the VM column grows, nothing else does.
-- **Walking.** Stage 5's layout keeps every critical walk to one or two doors: the reading room is beside the restricted stacks (the flag-2 walk-back is one door), and the office, the cage and the tape room all open off the restricted stacks, so Act 3 has no backtrack through the building. The one walk-back by design is the plan cabinet for a player who skipped it before flag 3 (the identity scene waits for the file).
+- **Published figure.** About 85 with the optional content, about 76 on the critical path alone, at 7 minutes a flag with the field guides (review D-17). Without the guides, stage 0's estimate is 95–100: the VM column grows, nothing else does.
+- **The decode is re-costed** at 5 minutes (was 4) and the Albion papers at 1 (was 2, now one folder). Round 0's walk-back to the reading room is gone: the coded line is in the notepad and the legend hangs by the keypad in the tape room (review D-03, M7).
+- **Walking.** Every critical walk is one or two doors: the reading room is beside the restricted stacks (the flag-2 walk-back is one door), and the office, the cage and the tape room all open off the restricted stacks. The one walk-back by design is the plan cabinet for a player who skipped it before flag 3 (the identity scene waits for the file). The open stacks is now a 4×2 warehouse floor (stage 5 §2), which lengthens route B's crossing by a few seconds and gives the guard a round worth timing.
 - **Cut order if playtests run long** (stage 1 §2, unchanged): the cross-reference, Tran's closet, the Alpha decode. Nothing on the critical path.
-- **If real VM times come in at 10 minutes a flag**, the total is about 97 with the guides. The cut order above recovers about 8 minutes; past that, the user decides between a longer published time and a lighter VM (stage 8).
+- **If real VM times come in at 10 minutes a flag**, the total is about 97 with the guides (88 critical path). The cut order recovers about 8 minutes; past that, the user decides between a longer published time and a lighter VM (stage 8).
 
 ## 12. Playtest routes and F15 starting states
 
-The F15 bootstrap (FA §13 item 42) starts a run in a named room with a set of globals loaded. For m09 a segment start needs three things: the room, the globals, and the tasks already completed server-side (the flag tasks especially, or `concludeRequires` refuses the end). Stage 9 builds the seed files from these.
+The F15 bootstrap (`tools/playtest/new-game.rb`, README "head start") starts a run in a named room with globals, items, unlocked rooms, completed tasks and submitted flags seeded. What it carries and doesn't, for m09:
+
+- `--start-room ROOM` moves every phone NPC from `loading_dock` into the new start room (HaX, the Recruiter and the branch callers), so the hub, the forced scenes and HaX's mappings are live, and they count as met when that room loads.
+- `--carry-npc ID` moves a person NPC; m09 carries `closing_debrief` for S7 (it keeps its 500,500 position and stays hidden). `briefing_cutscene` and its speakers stay in the dock, which is fine because every segment sets `briefing_played`.
+- `--complete-task` and `--submit-flag` write the server state, including each station's `set_global` rewards (`flag1_submitted` …), but no client mapping replays. Every door in m09 that opens on a mapping has a `game_loaded` backstop (§5: the stacks door, the office door) or is passed with `--unlock`, and every scene that would have rung has a first-ring backstop, so a seeded segment comes up in the right state. Globals the client would have set are passed with `--set`.
+- A reload respawns at the segment's start room.
 
 ### 12.1 Segment starts
 
-| Seg | Room | Globals set (beyond imports) | Tasks completed | Doors open |
+Flag ids use the station-qualified form (`drop_terminal:catalogue_server-flag1`, …), with the placeholder system names until the VM plan. "Imports" are passed with `--imports=<file>`.
+
+| Seg | `--start-room` | `--set` (beyond imports) | `--submit-flag` / `--complete-task` | `--unlock` / `--give` / `--carry-npc` |
 |---|---|---|---|---|
-| S0 | `loading_dock` | none (fresh game) | none | none |
-| S1 | `reading_room` | `briefing_played`, `cracker_given` | `get_inside`, `set_up_drop_terminal` | dock doors |
-| S2 | `restricted_stacks` | S1 + `flag1_submitted`, `stacks_door_opened` | S1 + `submit_catalogue_flag` | + `restricted_stacks` |
-| S3 | `restricted_cage` (outside the cabinet) | S2 + `hatch_talked`, `bin_chosen`, `cage_bin` (route's value), `cage_opened`, `in_cage` | S2 + `enter_restricted_stacks`, `talk_at_the_hatch`, `open_the_cage` | + `restricted_cage` |
-| S4 | `reading_room`, call due | S3 + `in_cage = false`, `nightshade_file_held`, `legacy_clock_run`, `flag2_submitted`, `ledger_read_heard` | S3 + `open_plan_cabinet`, `submit_ledger_flag` | – |
-| S5 | `sorensen_office` | S4 + the route's deck pair, `recruiter_call_started`, `recruiter_gone`, `deck_choice_made`, `office_door_opened`, `afterwards_heard` | S4 + `answer_the_offer` | + `sorensen_office` |
-| S6 | `salvage_cage` | S5 + `reading_found`, `tape_room_keycard` held, `flag3_submitted` (the scene then fires on load: tests the `game_loaded` ring) | S5 + aim 4's tasks, `enter_tape_room`, `open_salvage_cage`, `submit_owner_flag` | + `tape_room`, `salvage_cage` |
-| S7 | `salvage_cage` | S6 + `identity_scene_done`, the answer, `flag4_submitted`, `hour_read_done`, `tesseract_call_done` | all of aim 5 | – |
+| S0 | (none: the dock) | none | none | none |
+| S1 | `reading_room` | `briefing_played=true` | tasks `get_inside`, `set_up_drop_terminal` | – |
+| S2 | `restricted_stacks` | S1 + `stacks_entered=true` | S1 + flag 1 (completes `submit_catalogue_flag`, sets `flag1_submitted`) | `--unlock restricted_stacks` |
+| S3 | `restricted_cage` | S2 + `hatch_talked=true`, `bin_chosen=true`, `cage_bin=<route>`, `cage_opened=true` | S2 + tasks `enter_restricted_stacks`, `talk_at_the_hatch`, `open_the_cage` | + `--unlock restricted_cage` |
+| S4 | `reading_room`, call due on load | S3 + `nightshade_file_held=true`, `legacy_clock_run=true`, `ledger_read_heard=true` (the call's backstop rings on the first room entry) | S3 + flag 2, task `open_plan_cabinet` | + `--give nightshade_file` |
+| S5 | `sorensen_office` | S4 + the route's deck pair, `recruiter_call_started=true`, `recruiter_gone=true`, `deck_choice_made=true`, `afterwards_heard=true`, `office_entered=true` | S4 + task `answer_the_offer` | + `--unlock sorensen_office` |
+| S6 | `salvage_cage`, scene due on load | S5 + `reading_found=true`, `salvage_opened=true` | S5 + aim 4's tasks, `enter_tape_room`, `open_salvage_cage`, flag 3 | + `--unlock tape_room --unlock salvage_cage --give tape_room_keycard`. With `flag3_submitted` and `nightshade_file_held` set and `identity_scene_started` false, the identity scene's first-ring backstop rings on load (review B3) |
+| S7 | `salvage_cage` | S6 + `identity_scene_started=true`, `identity_scene_done=true`, `hax_confession_answer=<route>`, `hour_read_started=true`, `hour_read_done=true`, `tesseract_call_started=true`, `tesseract_call_done=true` | S6 + task `hear_the_name`, flag 4, task `hear_the_mirror_job` | + `--carry-npc closing_debrief` |
+
+If a segment can't be seeded this way in practice (a stage 9 check), it starts at the dock with the same `--set`, `--unlock`, `--give` and seeded tasks and flags, and walks in: six doors at most (review B4).
 
 ### 12.2 Routes (covering set)
 
@@ -456,21 +518,23 @@ Twelve routes, then the three stage 3 named, then the reload set. Import profile
 | # | Imports | From | Choices | Covers |
 |---|---|---|---|---|
 | R1 | none | S0 | shutter route past Old Coyote (sneak); Noor left; hatch, no bin pressed; Sorensen left; take the name, leave the deck; the Reading put down; confession "should have told"; notice held at the debrief; memo "yes"; Kowalczyk flat | cold-start path end to end; `cage_bin` default `derek_file`; `taken`+`none`; `sleeper_named`; the narrator line for flat on a named WREN; `albion_notified` false; never-played forms everywhere |
-| R2 | kind: `m05_found_pipeline_list`, no deal; `m02_gary_protected`; `m03_victoria_fate = recruited`; `m06_architect_identity_found` + `m07_teacher_discussed`; `m07_architect_echo_heard`; `m08_nightshade_triple_agent`; `m06_monitoring_enabled` | S0 | Noor's card route; Victoria's code at the gate; "[Take Derek's file.]" at the door; send Nightshade his file; refuse, her file; read the Reading to the end and tell HaX; confession "same in your place"; notice sent in the archive; Sorensen talked | Noor warned in time (`legacy_files_saved` true via Noor); Victoria's route (§4 row 2b); Gary's hint; identity form "found, discussed" + echo line; Nightshade's call and `nightshade_shown_file`; `named`+`her_file`; `reading_finished`; `albion_notified` in the archive; `talked` |
+| R2 | kind: `m05_found_pipeline_list`, no deal; `m02_gary_protected`; `m03_victoria_fate = recruited`; `m06_architect_identity_found` + `m07_teacher_discussed`; `m07_architect_echo_heard`; `m08_nightshade_triple_agent`; `m06_monitoring_enabled` | S0 | Noor's card route (handed over); Victoria's code at the gate; "[Take Derek's file.]" at the door; send Nightshade his file; refuse, her file; read the Reading to the end and tell HaX; confession "same in your place"; notice sent in the archive; Sorensen talked | Noor warned in time (`legacy_files_saved` true via Noor); Victoria's route (§4 row 2b); Gary's hint; identity form "found, discussed" + echo line; Nightshade's call and `nightshade_shown_file`; `named`+`her_file`; `reading_finished`; `albion_notified` in the archive; `talked` |
 | R3 | hard: `m05_recruiter_deal_accepted`, not confessed; `m01_maya_ko`; `m08_nightshade_ko_before_fate` (no coordinate); `m04_disclosure_choice = full`, `m04_crew_lost` | S0 | Old Coyote KO'd; Tran sees the player, guard called, Tran talked with the letters; the letters at the hatch; Sorensen KO'd before the clock; hang up on the Recruiter, the Alpha tapes; the clip and the decode; confession "afterwards"; notice held in the archive, sent at the debrief | sold-and-lied hang-up (`kept`); `refused`+`alpha_tapes`; `letters`; `legacy_files_saved` by KO; `ko`; Tran `talked`; maya_ko obstacles; no-coordinate lease line; the inquiry lines; the extra route "full with crew_lost, held then sent" |
 | R4 | `m05_recruiter_deal_accepted`, not confessed | S5 → back to S4's call | deny, then take | `denied` then `taken` (extra route) |
 | R5 | `m05_recruiter_deal_accepted`, not confessed | S4 | own it; say yes; **close the call between "yes" and the name** (a hit from Tran's guard, or a reload); then pull her file anyway | `told`; re-ring 2 (`resume_name`); `double_crossed`+`her_file`; the invoice line; the text at the tape room; Kowalczyk absent at the hangar and the `double_crossed` spine (extra route) |
 | R6 | `m05_recruiter_deal_accepted` + `m05_recruiter_deal_confessed` | S4 | refuse, Alpha tapes | `confessed` opening; Noor's late warning (from S0 if run full) |
 | R7 | `m08_nightshade_tidied`, `m08_nightshade_arrested` | S2 | "[Pull Nightshade's copy through.]" | `nightshade_copy`; the arrested wall card (briefing, from S0) |
 | R8 | `m05_torres_turned`; `m06_architect_identity_found` without `m07_teacher_discussed` | S4 | read the H&L sheet; refuse, her file; briefing answer "back Quintero" (from S0) | `sleeper_shortlist`; Torres at the boxes; HaX's Quintero line; identity form "found, not discussed"; closing card line 3c |
-| R9 | none, plus `m07_teacher_discussed` | S0 | Noor told (then "show her the page" variant on a second run from S4); Old Coyote told; Sorensen left; Tran left | `noor_told`; `old_coyote_told` (both leave, desks stay); identity form "not found, discussed" |
+| R9 | none, plus `m07_teacher_discussed` | S0 | route A with Noor's card cloned (the cloner's first use); Noor told (then "show her the page" variant on a second run from S4); Old Coyote told; Sorensen left; Tran left | the easy clone on a cold branch (review D-01); `noor_told`; `old_coyote_told` (both leave, desks stay); identity form "not found, discussed" |
 | R10 | `m03_directive_decoded`; `m05_final_choice = public_exposure` | S0 | knock out Noor, Old Coyote, Sorensen after the clock, Tran | `noor_ko` (card drops; debrief line); `sorensen_fate = ko` with `legacy_files_saved` false; `tran_outcome = ko`; recognition line by directive; the ledger's "blown" line |
 | R11 | Tier 2 sweep: `m02_reeves_fate = arrested`; `m02_paid_ransom`; `m06_irina_recruited`; `m03_danny_fate`; `m04_voltage_captured`; `m06_minder_walked`; `m08_debrief_stance = owned` | S3 → S7 | read every office file and the printed ledger | the contact sheet; the refit, rent and Danny lines; Kemal at the sheet; Netherton's "owned" line; the printed ledger shredded once read (Sorensen free) |
 | R12 | none | S0 (order tests) | submit flag 2 before the cage; open the cage, stay in it, then leave (the call must wait); submit flag 3 before opening the cabinet (HaX holds the name); submit flag 4 before the scene ends | §4 rows 3, 9 and 10; `in_cage`; the hold lines |
 
 ### 12.3 Reload in each forced scene
 
-From the matching segment: reload once **inside** each scene before its done-flag, and check it re-rings on `game_loaded` at the right point. Recruiter before any answer (re-ring 1), between "yes" and the name (R5 covers it), after she has gone (re-ring 3, HaX's `deck_resume`); the identity scene before the answer; the read on `schedule_read` (resume) and without it (restart); Tesseract's call (restart); the debrief at the notice question. Also one reload with the call due but not yet rung (the room-entry backstop) and one with the invoice pending.
+From the matching segment: reload once **inside** each scene before its done-flag, and check it re-rings on `game_loaded` at the right point. Recruiter before any answer (re-ring 1), between "yes" and the name (R5 covers it), after she has gone (re-ring 3, HaX's `deck_resume`); the identity scene before the answer; the read on `schedule_read` (resume) and without it (restart); Tesseract's call (restart); the debrief at the notice question (it must reopen, review B2).
+
+Then the **first-ring** reloads (review B3), each inside the delay window: flag 3 submitted with the file held, reload before the scene rings; flag 4 submitted with the scene done, reload before the read; the read's last line, reload before Tesseract's call. Each must ring on load. Also: a reload inside the cage with the call due (`in_cage` cleared, the call rings on the next room entry outside the cage, review M2); the gate opened from the hub with flag 2 in, then walking into the cage (the call must **not** ring there, review M1); a reload with the call due but not yet rung; one with the invoice pending.
 
 ## 13. Objectives JSON sketch
 
@@ -485,7 +549,7 @@ Shipped form (m08). Stage 9 adds `_comment`s and the `puzzle_graph_*` keys; syst
       { "taskId": "get_inside", "title": "Get inside the archive", "type": "custom", "status": "active" },
       { "taskId": "meet_the_clerk", "title": "Talk to the clerk at the front desk", "type": "npc_conversation", "targetNPC": "noor_haddad", "status": "active", "optional": true },
       { "taskId": "set_up_drop_terminal", "title": "Set up the field laptop in the reading room", "type": "custom", "status": "active" },
-      { "taskId": "submit_catalogue_flag", "title": "Get into the catalogue server and submit what it hides", "type": "submit_flags",
+      { "taskId": "submit_catalogue_flag", "title": "Get into the catalogue server and submit the flag", "type": "submit_flags",
         "targetFlags": ["drop_terminal:catalogue_server-flag1"], "targetCount": 1, "currentCount": 0, "showProgress": true, "status": "active" }
     ] },
   { "aimId": "restricted_series", "title": "Find The Restricted Series Before It Burns",
@@ -496,12 +560,12 @@ Shipped form (m08). Stage 9 adds `_comment`s and the `puzzle_graph_*` keys; syst
       { "taskId": "talk_at_the_hatch", "title": "Talk to Sorensen at the cage hatch", "type": "custom", "status": "active" },
       { "taskId": "open_the_cage", "title": "Get through the cage gate", "type": "custom", "status": "active" },
       { "taskId": "open_plan_cabinet", "title": "Open the locked plan cabinet at the back of the cage", "type": "unlock_object", "targetObject": "plan_cabinet", "status": "active" },
-      { "taskId": "match_the_hand", "title": "Compare the hand on the recruitment file with HaX's case file", "type": "custom", "status": "active" },
+      { "taskId": "match_the_hand", "title": "Compare the hand on Nightshade's file with the notebook scan in HaX's case file", "type": "custom", "status": "active" },
       { "taskId": "stop_the_shredding", "title": "Stop Sorensen's shredding", "type": "custom", "status": "locked", "optional": true },
       { "taskId": "stop_the_tape_wipe", "title": "Stop the tape wipe in the server closet", "type": "custom", "status": "active", "optional": true }
     ] },
   { "aimId": "read_the_ledger", "title": "Read The Initiative's Ledger",
-    "description": "The catalogue server keeps the Insider Threat Initiative's ledger live: placements, candidates, and an older legacy section. Pull it, and find out what it says about the people you met this morning.",
+    "description": "The catalogue server keeps the Insider Threat Initiative's ledger live: placements, candidates, and an older legacy section. Pull it, and see who's still on their books.",
     "status": "locked", "order": 2, "unlockCondition": { "aimCompleted": "get_in" },
     "tasks": [
       { "taskId": "submit_ledger_flag", "title": "Pull the Initiative's ledger off the catalogue server and submit it", "type": "submit_flags",
@@ -524,7 +588,7 @@ Shipped form (m08). Stage 9 adds `_comment`s and the `puzzle_graph_*` keys; syst
     "status": "locked", "order": 4, "unlockCondition": { "aimCompleted": "read_the_ledger" },
     "tasks": [
       { "taskId": "enter_tape_room", "title": "Get into the tape room", "type": "enter_room", "targetRoom": "tape_room", "status": "active" },
-      { "taskId": "open_salvage_cage", "title": "Open the salvage cage's keypad", "type": "unlock_room", "targetRoom": "salvage_cage", "status": "active" },
+      { "taskId": "open_salvage_cage", "title": "Get through the salvage cage keypad", "type": "unlock_room", "targetRoom": "salvage_cage", "status": "active" },
       { "taskId": "submit_owner_flag", "title": "Find out who owns Tomb Beta's server and submit it", "type": "submit_flags",
         "targetFlags": ["tomb_beta_station:tomb_beta_server-flag1"], "targetCount": 1, "currentCount": 0, "showProgress": true, "status": "active" },
       { "taskId": "hear_the_name", "title": "Take the call with HaX and Netherton", "type": "custom", "status": "locked" },
@@ -549,40 +613,93 @@ Checks against the validator rules: every `submit_flags` has `targetFlags` and `
 
 ## 14. Proposed changes
 
-Not made: FINALE_ARC, m10 and stages 0–3 are not this stage's to edit. Each change below is forced by the engine or by the layout, and none changes a choice, a cost or an export.
+Not made: FINALE_ARC, m10 and stages 0–3 are not this stage's to edit. Each change below is forced by the engine, the layout or round 1's review, and none changes a choice, a cost or an export.
 
 | # | Change | Why | Where |
 |---|---|---|---|
-| P1 | **Tomb Beta's server stands in the salvage cage**, off the tape room. The tape room door takes the key card from the safe; the salvage cage keypad takes the decoded catalogue code. Flags 3–4, the identity scene, flag 4's read and Tesseract's call all happen in the salvage cage. Gary rings at the salvage cage keypad. The Alpha-tapes deck stays in the tape room. | A door has one lock (`rooms[*].lockType`), and a flag station or VM launcher ignores an object lock (they are handled before the lock check, `interactions.js:918, 1051` vs `:1340`). The story's "card and code" needs two doors, and putting the server behind the code makes the decode required. | stage 1 Beats 3.2–3.6, §11 tables and §13 stage 5 notes; stage 0 §2.1, §2.3; FA §1.3, §1.4 ("Tomb Beta's last server racked in the tape room"), §6.1 header and flag 3–4 rows; SE §6.1 (the tape room's server fans) |
-| P2 | **The card opens the cage gate; the print opens the plan cabinet.** Sorensen locked the Architect's chest under her own print, which is why her query reads "plan chest: not listed. Keep?" Victoria's maintenance code replaces the card (the gate) only. | One lock per door again; the cabinet is the natural second lock, and it puts the print kit inside the cage. | stage 1 Beat 2.1 step 1 and Beat 2.2; stage 0 §2.2 RFID and fingerprint rows; FA §6.1 item 1, row 32 |
-| P3 | **Sorensen is two NPC records**: `sorensen_hatch` (behind the counter in the restricted stacks, `koImmune: true`, "behind the mesh") and `sorensen` (in the cage, at the shredder, can be knocked down). The first hides on `cage_opened`; the second shows on entering the cage unless `sorensen_ko`. | An NPC talks only to a player in its own room; the hatch scene needs her in the player's room before the cage opens. `koImmune` (F14) stops a knock-out through the mesh, which would drop her card where nobody can reach it. | stage 1 Beat 2.1 staging (S-09 settled); FA §13 item 31 |
-| P4 | **The cage is its own room**, so HaX's clock line is "…or walk out of this cage", and the exit is `room_exited` from `restricted_cage`. | MC §4.3 left the choice to stage 5. | MC §4.3, §11 change 33; FA §6.1 item 1 |
-| P5 | **Noor's card opens the staff door from the front desk into the reading room**, which keeps the player off Old Coyote's floor (the open stacks) for Act 1 and the cage. | A tree layout can't give the open stacks two doors from the front desk; the staff door gives the same help. | stage 1 Beat 1.2; stage 0 §2.2 social engineering row; FA row 62 wording if it names the side door |
-| P6 | **Tran's radio sends Old Coyote to the reading room's door** (a patrol override in the open stacks), not on a pass through the reading room. | An NPC patrols its own room; a reading-room pass would need a second Old Coyote record. HaX's text says it: "Tran's just sent the guard to your door." | stage 1 Beat 1.1; FA §3.1 `m01_maya_ko` |
-| P7 | **Flag 1's door opens by HaX's `#unlock_door`** on her flag-1 line ("I've got the stacks door off their own system."), not by a flag reward. | One reward per flag, and the reward's `unlock_door` opens the station's own room (§4; engine item for the user). | stage 1 Beat 1.4 and §11 row 1; FA §6.1 flag 1 row ("the reward opens…") |
-| P8 | **The two "send" actions live in HaX's hub**, on the player's word: the vendor notice and Nightshade's file. The drop terminal's text points at HaX. | Answers MC engine item 28 with no engine work: the hub is reachable from every room until the debrief. HaX already pushes both through in the story. | stage 1 Beats 2.2, 3.4; MC §3.5, §4.1; FA §3.4 `nightshade_shown_file` and `albion_notified` "Set where" |
-| P9 | **The tagged payments are a page of HaX's case file** (`textVariants` on `m06_monitoring_enabled`), not a separate object. | Objects can't appear or disappear on a global; a variant on a standing object can. | stage 1 Beat 1.3; FA §3.1 `m06_monitoring_enabled` |
-| P10 | **The Harwick & Lowe box takes the file number on a keypad** (`password`), so it is "findable without the number and readable only with it". | A key lock would fall to the picks, a PIN to the cracker. | stage 1 §13 stage 5 note; Beat 2.5 |
-| P11 | **Sorensen's office keypad takes a long code nobody has** (`password`), and HaX opens it on the deck. | A `pin` door would fall to Kowalczyk's cracker before the deck choice and break the order. | stage 1 Beat 3.1 "Getting in"; FA §6.1 "the night's order" |
-| P12 | **Forced phone scenes are read, not heard**, unless the user asks otherwise (§15 item 1). | Phone-chat text isn't TTS-voiced. | stage 1 §11 rule; MC §3.2 "every cost is voiced" (meaning said on the call) |
-| P13 | Stage 1 §11's engine list gains stage 5's verdicts and two findings: the flag-reward door bug, and that room ambient sound can't change on a global. | Verified in code. | stage 1 §11; FA §8 r22 |
-| P14 | FA §5 cast and stage 2 §3: the second guard Tran calls in needs a name and a sprite key (cast diversity). | New presence on the `m01_maya_ko` branch. | SE §3; FA §5.2 |
+| P1 | **Tomb Beta's server stands in the salvage cage**, off the tape room. The tape room door takes the key card from the safe; the salvage cage keypad takes the decoded catalogue code. Flags 3–4, the identity scene, flag 4's read and Tesseract's call all happen in the salvage cage. Gary rings at the salvage cage keypad. The Alpha-tapes deck and the shelf-code legend are in the tape room. | A door has one lock, and a flag station or VM launcher ignores an object lock (`interactions.js:917-925, 1047-1052` vs `:1340`). The story's "card and code" needs two doors, and putting the server behind the code makes the decode required. | stage 1 Beats 3.2–3.6, §11 tables and §13 stage 5 notes; stage 0 §2.1, §2.3; FA §1.3, §1.4, §6.1 header and flag 3–4 rows; SE §6.1 |
+| P2 | **The card opens the cage gate; the print opens the plan cabinet.** Sorensen locked the Architect's chest under her own print, which is why her query reads "plan chest: not listed. Keep?" Victoria's maintenance code replaces the card (the gate) only. | One lock per door; the cabinet puts the print kit inside the cage. | stage 1 Beats 2.1–2.2; stage 0 §2.2 RFID and fingerprint rows; FA §6.1 item 1, row 32 |
+| P3 | **Sorensen is three records**: `sorensen_hatch` (behind the counter, a static-sprite NPC whose body reaches the counter edge so she can be talked to across it, `koImmune`), `sorensen` (in the cage, can be knocked down, holds only her card), and `sorensen_door` (hidden, `koImmune`, hosts Victoria's door scene and holds the two files). | An NPC talks only in its own room and within 32 px of its body (`constants.js:65`, `npc-reach.js`); a KO drops everything held (`npc-hostile.js:339`), which would undo the bin on Victoria's route (review B1, M5). | stage 1 Beat 2.1 staging (S-09 settled); FA §13 item 31 |
+| P4 | **The cage is its own room**, so HaX's line is "…or walk out of this cage". | MC §4.3 left the choice to stage 5. | MC §4.3; FA §6.1 item 1 |
+| P5 | **Noor's card opens the staff door from the front desk into the reading room, and every player can clone it** while talking to her (an easy card, the cloner's first use before Sorensen's harder one). Warned in time, she hands it over and has held the box back. | Route A must work on every branch without knocking out an innocent clerk (review D-01). | stage 1 Beat 1.2; stage 0 §2.2 RFID and social rows; FA row 62 |
+| P6 | **Tran's radio sends Old Coyote to a tile beside the reading room's door** (a patrol override in the open stacks), not through the reading room. | An NPC patrols its own room; the tile is beside the door so his body can't block route B (review m5). | stage 1 Beat 1.1; FA §3.1 `m01_maya_ko` |
+| P7 | **Doors that open on story events open on HaX's mappings (F19)**: the stacks door on flag 1, the office on the deck choice, the gate on Victoria's code. | One reward per flag; F19 unlocks persistently without a conversation (review M3). | stage 1 Beat 1.4, Beat 3.1 and §11 rows 1, 4; FA §6.1 flag 1 row |
+| P8 | **The two "send" actions live in HaX's hub**, on the player's word: the vendor notice and Nightshade's file. | Reachable from every room until the debrief, with no engine work. | stage 1 Beats 2.2, 3.4; MC §3.5, §4.1; FA §3.4 "Set where" |
+| P9 | **The tagged payments are a page of HaX's case file** (`textVariants` on `m06_monitoring_enabled`). | Objects can't appear or disappear on a global. | stage 1 Beat 1.3; FA §3.1 `m06_monitoring_enabled` |
+| P10 | **The Harwick & Lowe box takes the file number on a keypad** (`password`). | A key lock falls to the picks, a PIN to the cracker. | stage 1 Beat 2.5 |
+| P11 | **Sorensen's office keypad takes a code nobody has** (`password`); HaX opens it on the deck. | A `pin` door would fall to the cracker before the deck choice. | stage 1 Beat 3.1; FA §6.1 |
+| P12 | **The Recruiter's call, the identity scene and Tesseract's call are voiced (F17); flag 4's read stays text.** | User decision F17; the read is information. | stage 1 §11 rule; MC §3.2; SE §4.3 |
+| P13 | Stage 1 §11's engine list gains stage 5's verdicts. | Verified in code. | stage 1 §11; FA §8 r22 |
+| P14 | The second guard Tran calls in needs a name and a sprite key (cast diversity). | New presence on the `m01_maya_ko` branch. | SE §3; FA §5.2 |
+| P15 | **The PIN cracker is in the start kit**, and the briefing narrates Kowalczyk handing it over. | A `#give_item` inside the briefing gives from the briefing's host, not from Kowalczyk (`chat-helpers.js:98-113`, review M4). | stage 1 §3.4, beat 10 |
+| P16 | **The safe's long-way PIN is the lease's start date, which heads every page of the rent book**, not a note in a picked drawer. | A same-room pick made the season's one new tool optional (review m7). | stage 1 Beat 3.1 ("the PIN is on her desk") |
+| P17 | **The hand comparison is an honest three-way answer to HaX**, prompted by her text when the file is picked up, and closed in the identity scene if never answered. | It was a required task with no pointer and one correct-only option (review D-02). | stage 1 Beat 2.2 |
+| P18 | **New lines for HaX**: "The ledger keeps. Her shredder doesn't. Stacks first.", "She's still feeding it.", the file-in-hand text, the three door refusals, the reel and print lines, the Victoria print line, the tapes-next-door line, one story-level VM steer per flag. Stage 7 words them. | Reviews D-02, D-04, D-06, D-09 to D-11, D-16. | SE §4.3 |
+| P19 | **The Albion papers are one folder**, summarised by HaX. | Act 3's reading load (review D-07). | stage 1 Beat 3.4 |
+| P20 | **Stage 6 requirement**: the salvage code's encoding is one CyberChef performs with a key, and the tape room's legend supplies the key in the archive's terms. | CyberChef needs a real use; a bespoke lookup isn't one (review M7, D-03). | stage 6 brief |
 
 ## 15. Open questions and items for the user
 
 **For the user**
 
-1. **Should the four forced phone scenes be spoken?** Phone-chat text is not voiced, so as designed the Recruiter's call, the identity scene, flag 4's read and Tesseract's call are read (as m05's Recruiter call was). Two ways to voice them: (a) engine work so phone-chat lines play TTS per speaker (the per-speaker voice lookup already exists in person-chat, `person-chat-minigame.js:1420-1431`); or (b) run them as `video-call` mode, which voices every speaker today but has no `resume`, so the re-ring-and-resume rule would need building again there. Recommendation: (a), small and reusable for m10; until then, text.
-2. **A near-silent track** for Tesseract's call (SE §6.2, FA §13 item 40). Without one, the call plays over `noir`.
-3. **Engine items found** (none blocks m09; each has a scenario pattern in use):
-   - **Bug: a flag reward's `unlock_door` opens the station's own room**, not `target_room` (`games_controller.rb` ~2166 merges the station's `room_id` over the reward; ~2233 reads it first). Likely affects any scenario using it (`secgen_vm_lab`). One-line fix; m09 doesn't depend on it.
-   - Room ambient sound can't change on a global (`rooms.js:3041-3068`), so the shredder can't stop when Sorensen does. Optional.
-   - Music events take no volume, so "`noir`, low" is a separate track or nothing. Optional.
-   - Objects can't be shown or hidden on a global; the bins, the legacy box and the printed ledger use sprite and text variants instead. Optional.
-4. **M-14:** real per-flag VM times, before stage 8 sets the published length (§11).
+1. **Voicing** (F17, decided): the Recruiter's call, the identity scene and Tesseract's call, about 66 audio lines in all (§6.7), plus the two-line clip. Flag 4's read stays text; say if it should be voiced too (about 15 more lines).
+2. **Engine items** still open after F17–F19 (none blocks m09):
+   - flag-reward `set_global` lands client-side only until the next sync (`apply-actions.js:34-44`, `state-sync.js:59-64`), so a crash (not a reload) right after a flag could lose it; a `stateSync.sync()` after rewards would close it. m09's load backstops can't recover a global that was never saved (review m6);
+   - a room's ambient sound can't follow a global, so the shredder can't fall silent when Sorensen stops (optional);
+   - music events take no volume (optional).
+3. **M-14:** real per-flag VM times, before stage 8 sets the published length (§11: about 85 with the optional content, about 76 critical path).
 
 **For the orchestrator**
 
-- The VM plan's `system_name`s replace `catalogue_server` and `tomb_beta_server`, and confirm each machine numbers its own flags from 1 (§1).
-- The milestone review after stage 5 should take P1–P11 into stages 0–3 and FINALE_ARC together.
+- The VM plan's `system_name`s replace `catalogue_server` and `tomb_beta_server`; confirm each machine numbers its own flags from 1 (§1).
+- The final key names for F17 and F19 from `docs/agents/FINALE_ENGINE_VOICED_CALLS.md` and `docs/agents/FINALE_ENGINE_UNLOCKS_SILENCE.md`; and whether F17 voices narrator lines in a phone thread (§6.4).
+- The milestone review after stage 5 takes P1–P20 into stages 0–3, stage 6's brief and FINALE_ARC together.
 - Lab-sheet URLs for the four field guides wait for the VM plan and the lab-sheet stage (§7.2).
+
+## 16. Review round 1 outcomes
+
+Reviews: `../stage_5/REVIEW_R1_PUZZLES.md` (B1–B4 blockers, M1–M7 majors, m1–m10 minors) and `../stage_5/REVIEW_R1_DESIGN.md` (D-01–D-08 majors, D-09–D-18 minors), with the orchestrator's rulings and user decisions F10 and F17–F19. Stage 5's §14 records the layout side of the same findings; this table records where each landed in this document.
+
+| ID | Sev | Outcome | Where |
+|---|---|---|---|
+| B1 | blocker | Fixed (ruling): `sorensen_hatch` is a static-sprite NPC whose body reaches the counter edge; the clone is on every branch and in a repeatable hub choice; the hatch bell is the fallback | §4 row 2; stage 5 §3.6 |
+| B2 | blocker | Fixed: the debrief trigger, backstop and hub choice key on `!report_done` | §6.5, §7.1 topic 1, §5 |
+| B3 | blocker | Fixed: first-ring backstops on `game_loaded` and `room_entered` for the identity scene, flag 4's read and Tesseract's call | §4 rows 9–11, §5 |
+| B4 | blocker | Fixed (ruling): segments use the extended bootstrap (`--start-room` with carried phone NPCs, `--carry-npc closing_debrief`, `--complete-task`, `--submit-flag`); dock start as the fallback | §12 |
+| M1 | major | Fixed: the call's room-entry backstop excludes the cage | §4 row 3, §5 |
+| M2 | major | Fixed: `in_cage` cleared on `game_loaded` | §4 row 3, §5 |
+| M3 | major | Fixed (ruling, F19): doors open on HaX's `unlockDoor` mappings; door backstop topics dropped; `stacks_entered` added | §4 rows 1, 5; §5; §7.1 |
+| M4 | major | Fixed (ruling): the cracker is in the start kit (P15); `cracker_given` removed | §5, §14; stage 5 §3.1 |
+| M5 | major | Fixed: `sorensen_door` (hidden, `koImmune`) hosts Victoria's door scene and holds the files; `sorensen` holds only her card | §4 purge table; stage 5 §3.7 |
+| M6 | major | Fixed: Victoria's topic gated on `stacks_entered`; a relay hide on `sorensen_hatch` | §7.1 topic 14; stage 5 §3.6 |
+| M7 | major | Fixed (ruling): the legend moves to the tape room; the coded line goes into the notepad; the CyberChef requirement for stage 6 (P20) | §4 row 7, §8, §11 |
+| m1 | minor | Fixed: the Reading is two objects (the file and its last page) | §3.4 |
+| m2 | minor | Fixed: the deck uses `triggerOnInteract` | stage 5 §3.9 |
+| m3 | minor | Fixed: `biometricMatchThreshold: 0.5` | §4 row 2c |
+| m4 | minor | Fixed: `salvage_opened`, `stacks_entered`, `tape_room_entered` declared | §5 |
+| m5 | minor | Fixed: Noor stands on the floor by the trolleys, not behind the counter; Old Coyote's override tile is beside the door | stage 5 §3.2, §3.3 |
+| m6 | minor | Recorded for the user (engine) | §15 item 2 |
+| m7 | minor | Fixed: the long way is the rent book's date, a read rather than a pick (P16) | §8; stage 5 §3.8 |
+| m8 | minor | Fixed: `delayMs` on every ring keyed on a flag global or a minigame event | §4 rows 9–10, §6.6 |
+| m9 | minor | Accepted, with a stage 9 check: the hub's tape-room and office doors share the north-west corner; each is its own tap target | stage 5 §2, §11 |
+| m10 | minor | Fixed: a hidden person-type `hax_voice` for HaX's line in the clip; the called guard is revealed and turned hostile by its own conversation (no hidden hostile); the Recruiter's texts outside `npcIds` have m05's precedent | §6.6; stage 5 §3.3, §3.9 |
+| D-01 | major | Fixed (ruling): Noor's card is cloneable on every branch (P5) | stage 5 §3.2, §5 |
+| D-02 | major | Fixed (ruling): retitled; HaX's text on the file; the hub topic on the file alone; same / different / can't tell; closed in the identity scene if never answered (P17) | §3.2, §6.2, §6.6, §7.1 topic 11 |
+| D-03 | major | Fixed with M7 | as M7 |
+| D-04 | major | Fixed: trolleys and list empty in steps; the bins' line; "The ledger keeps…"; "She's still feeding it." | §4 "The purge made visible" |
+| D-05 | major | Fixed: aim 3's text no longer points at the raid team; guide offers checked | §3.3, §7.2 |
+| D-06 | major | Fixed: one story-level VM help topic per stage; guides under one choice; Tran retires at the cage; worst case nine showable | §7 |
+| D-07 | major | Superseded by F17: three scenes voiced, the line list for the budget; Albion papers cut to one folder | §6, §6.7, §8 |
+| D-08 | major | Fixed (ruling): the open stacks is 4×2 and the salvage cage 2×1, checked with `scripts/check_door_alignment.py` on a stub | stage 5 §2 |
+| D-09 | minor | Fixed: three door-refusal texts | §6.6 |
+| D-10 | minor | Fixed: the print line in Victoria's topic | §7.1 topic 14 |
+| D-11 | minor | Fixed: the reel line in `flag1_read`; the print line on entering the cage | §6.6 |
+| D-12 | minor | Fixed: Beat 2.7 fires on `deck_choice_made` with a delay | §6.6 |
+| D-13 | minor | Partly fixed: the two screens are one object and the legend has moved; the notebook stays its own object because `onRead` on a page can't be told apart from the file's | stage 5 §3.5 |
+| D-14 | minor | Fixed: a stub run shows every N/S door on the west corner, clear of the hatch strip on the east wall | stage 5 §2 |
+| D-15 | minor | Fixed: titles reworded; the Tran topic says talking needs something he wants | §3, §7.1 topic 17 |
+| D-16 | minor | Fixed: the tapes line at the end of the identity scene | §6.2 |
+| D-17 | minor | Fixed: a critical-path column (about 76) | §11 |
+| D-18 | minor | Fixed: the invoice waits for the office, Torres' fallback for the safe | §6.6 |
+
+**Counts:** 39 findings (4 blockers, 15 majors, 20 minors). 36 fixed, 1 superseded by a user decision (D-07), 1 accepted with a stage 9 check (m9), 1 recorded for the user (m6). None withdrawn.
