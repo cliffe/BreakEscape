@@ -206,3 +206,5 @@ Orchestrator rulings for the milestone fix pass:
 - Three fixers by file (m09 docs; m10 docs; FINALE_ARC), so nobody edits the same file.
 
 ### Milestone fix pass and engine trials
+- F15 done: tools/playtest/new-game.rb --start-room/--unlock/--set/--give (test-only; README). Tested on :3001 with m08 game 2825 (room, inventory and globals confirmed in the browser and by verify-run). Limits: objectives, ink state and door states beyond unlocks aren't seeded.
+- Milestone fixes (m09 docs): 19 fixed, 2 open (M-14 real per-flag VM times before stage 4; MS-20 whose lecture the Alpha tapes hold, stage 6), 1 no change. D-01 codename-only placements, arrests at 06:00 day 13; D-02 HaX's full-vs-coordinated-disclosure line at flag 4; D-07 lease file split into four office objects; Cardiff; Recruiter "Elsewhere" clauses per value. Rulings: `noor_ko` stays local (no twelfth export); m09's Reading doesn't note the KO pattern. Cross-file items passed to the m10 and FINALE_ARC fixers.
